@@ -36,6 +36,7 @@ export const SQL = {
   insertarUsuario: "insert into users (id, nombre, correo, password_hash) values ($1, $2, $3, $4)",
   buscarCorreo: "select id, nombre, correo, password_hash from users where correo = $1",
   insertarSesion: "insert into sessions (id, user_id, token_hash, expires_at) values ($1, $2, $3, $4)",
+  borrarSesionesDelUsuario: "delete from sessions where user_id = $1",
   buscarSesion: `
     select s.id, s.expires_at, u.id as user_id, u.nombre, u.correo, m.company_id, m.rol
     from sessions s
@@ -106,7 +107,15 @@ export function repositorioPg(): RepositorioSesion {
       };
     },
     async abrirSesion(sesion) {
-      await consultar(SQL.insertarSesion, [sesion.id, sesion.userId, sesion.tokenHash, sesion.expiresAt]);
+      await conTransaccion(async (consulta) => {
+        await consulta.query(SQL.borrarSesionesDelUsuario, [sesion.userId]);
+        await consulta.query(SQL.insertarSesion, [
+          sesion.id,
+          sesion.userId,
+          sesion.tokenHash,
+          sesion.expiresAt,
+        ]);
+      });
     },
     async buscarPorTokenHash(tokenHash, ahora) {
       const resultado = await consultar(SQL.buscarSesion, [tokenHash, ahora]);

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import {
   leerAlta,
+  ordenarErrores,
   validarAlta,
   type ErrorCampo,
   type EstadoAlta,
@@ -33,7 +34,7 @@ const MENSAJE_CAMPO: Record<string, ErrorCampo> = {
   correo_invalido: { campo: "correo", mensaje: "Escribe un correo válido." },
   contrasena_invalida: {
     campo: "contrasena",
-    mensaje: "La contraseña tiene entre 10 caracteres y 72 bytes.",
+    mensaje: "La contraseña necesita al menos 10 caracteres. Si es demasiado larga, elige otra.",
   },
   credenciales_invalidas: {
     campo: "contrasena",
@@ -52,7 +53,7 @@ export async function enviarAlta(_previo: EstadoAlta, formData: FormData): Promi
     throw error;
   }
   if (!sesion) errores.push(...erroresDeCuenta(formData));
-  if (errores.length > 0) return { tipo: "invalido", errores };
+  if (errores.length > 0) return { tipo: "invalido", errores: ordenarErrores(errores) };
 
   try {
     const vigente = sesion ?? (await abrirOEntrar(formData));

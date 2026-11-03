@@ -46,6 +46,41 @@ function tipoDeRfc(longitud: number): TipoDeRfc | null {
   return null;
 }
 
+const RFC_GENERICO = new Set(["XAXX010101000", "XEXX010101000"]);
+
+export type MotivoRfcDeAlta = "vacio" | "longitud" | "patron" | "generico";
+
+export type ResultadoRfcDeAlta =
+  | { ok: true; rfc: string; tipo: TipoDeRfc }
+  | { ok: false; error: MotivoRfcDeAlta };
+
+/**
+ * La misma normalización en la puerta y en el servicio: sin espacios ni
+ * guiones, en mayúsculas. El patrón que sigue es `validarRfc`.
+ */
+export function normalizarRfcDeAlta(valor: string): string {
+  return valor.normalize("NFKC").toUpperCase().replace(/[\s-]/g, "");
+}
+
+/**
+ * Regla única del alta. Primero el patrón de la fase (`t_RFC`, 12 o 13).
+ * El dígito y el cruce de día con mes no entran: el CHECK de `companies`
+ * tampoco los calcula. `XAXX010101000` y `XEXX010101000` cumplen ese patrón
+ * y aun así no son una razón social: la puerta y el servicio los rechazan
+ * aquí, los dos con este mismo código.
+ */
+export function validarRfcDeAlta(entrada: unknown): ResultadoRfcDeAlta {
+  if (typeof entrada !== "string") return { ok: false, error: "vacio" };
+  const rfc = normalizarRfcDeAlta(entrada);
+  if (rfc.length === 0) return { ok: false, error: "vacio" };
+  if (RFC_GENERICO.has(rfc)) return { ok: false, error: "generico" };
+  const patron = validarRfc(rfc);
+  if (patron.ok) return patron;
+  if (patron.error === "rfc_longitud") return { ok: false, error: "longitud" };
+  if (patron.error === "rfc_requerido") return { ok: false, error: "vacio" };
+  return { ok: false, error: "patron" };
+}
+
 /** Normaliza y valida el RFC de la empresa. Devuelve el valor en mayúsculas. */
 export function validarRfc(entrada: unknown): ResultadoRfc {
   const crudo = recortar(entrada);

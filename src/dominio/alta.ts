@@ -1,5 +1,6 @@
-import { regimenPorCodigo, usoPorCodigo } from "@/dominio/catalogos-fiscales";
-import { normalizarRfc, tipoDeRfc, validarRfc } from "@/dominio/rfc";
+import { regimenFueraDeCuenta, usoFueraDeCuenta } from "../domain/recorte";
+import { regimenPorCodigo, usoPorCodigo } from "./catalogos-fiscales";
+import { normalizarRfc, tipoDeRfc, validarRfc } from "./rfc";
 
 export type AltaEmpresa = {
   rfc: string;
@@ -30,10 +31,27 @@ const MENSAJE_RFC = {
   vacio: "Escribe el RFC.",
   longitud: "Son 12 caracteres para una persona moral y 13 para una persona física.",
   patron: "El RFC no tiene la forma de una clave del SAT.",
-  fecha: "La fecha dentro del RFC no existe.",
-  digito: "El dígito verificador no coincide.",
   generico: "El RFC genérico no abre una cuenta. Hace falta el de la razón social.",
 } as const;
+
+const ORDEN_CAMPOS: readonly CampoAlta[] = [
+  "nombre",
+  "correo",
+  "contrasena",
+  "rfc",
+  "razonSocial",
+  "codigoPostal",
+  "regimen",
+  "usoCfdi",
+  "confirmaRecorte",
+];
+
+/** El resumen y el foco siguen el orden de la página, de arriba hacia abajo. */
+export function ordenarErrores(errores: readonly ErrorCampo[]): ErrorCampo[] {
+  return [...errores].sort(
+    (a, b) => ORDEN_CAMPOS.indexOf(a.campo) - ORDEN_CAMPOS.indexOf(b.campo),
+  );
+}
 
 export function leerAlta(formData: FormData): AltaEmpresa {
   return {
@@ -81,6 +99,8 @@ export function validarAlta(entrada: AltaEmpresa): { alta: AltaEmpresa; errores:
   const tipo = tipoDeRfc(alta.rfc);
   if (!regimen) {
     errores.push({ campo: "regimen", mensaje: "Elige un régimen del catálogo." });
+  } else if (regimenFueraDeCuenta(regimen.codigo)) {
+    errores.push({ campo: "regimen", mensaje: "Ese régimen no entra en esta cuenta." });
   } else if (tipo === "moral" && !regimen.moral) {
     errores.push({
       campo: "regimen",
@@ -96,6 +116,8 @@ export function validarAlta(entrada: AltaEmpresa): { alta: AltaEmpresa; errores:
   const uso = usoPorCodigo(alta.usoCfdi);
   if (!uso) {
     errores.push({ campo: "usoCfdi", mensaje: "Elige un uso de CFDI del catálogo." });
+  } else if (usoFueraDeCuenta(uso.codigo)) {
+    errores.push({ campo: "usoCfdi", mensaje: "Ese uso no entra en esta cuenta." });
   } else if (tipo === "moral" && !uso.moral) {
     errores.push({ campo: "usoCfdi", mensaje: "Ese uso de CFDI no aplica a una persona moral." });
   } else if (tipo === "fisica" && !uso.fisica) {

@@ -1,4 +1,5 @@
-import type { TipoPersona } from "@/dominio/rfc";
+import { regimenFueraDeCuenta, usoFueraDeCuenta } from "../domain/recorte";
+import type { TipoPersona } from "./rfc";
 
 export type RegimenFiscal = {
   codigo: string;
@@ -216,13 +217,15 @@ export function usoPorCodigo(codigo: string): UsoCfdi | null {
 }
 
 export function regimenesVisibles(tipo: TipoPersona | null): readonly RegimenFiscal[] {
-  if (tipo === "fisica") return REGIMENES.filter((regimen) => regimen.fisica);
-  if (tipo === "moral") return REGIMENES.filter((regimen) => regimen.moral);
-  return REGIMENES;
+  const entran = REGIMENES.filter((regimen) => !regimenFueraDeCuenta(regimen.codigo));
+  if (tipo === "fisica") return entran.filter((regimen) => regimen.fisica);
+  if (tipo === "moral") return entran.filter((regimen) => regimen.moral);
+  return entran;
 }
 
 export function usosVisibles(tipo: TipoPersona | null, regimen: string): readonly UsoCfdi[] {
   return USOS.filter((uso) => {
+    if (usoFueraDeCuenta(uso.codigo)) return false;
     if (tipo === "fisica" && !uso.fisica) return false;
     if (tipo === "moral" && !uso.moral) return false;
     if (regimen && !uso.regimenes.includes(regimen)) return false;

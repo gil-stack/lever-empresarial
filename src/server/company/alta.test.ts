@@ -14,7 +14,7 @@ import type { AltaEmpresaEntrada, Empresa } from "./tipos";
 import { validarAlta } from "./validar";
 
 describe("validación del alta", () => {
-  it("acepta RFC de 12 o 13 con patrón, fecha, régimen y uso compatibles", () => {
+  it("acepta RFC de 12 o 13 con el patrón de la fase, régimen y uso compatibles", () => {
     const moral = validarAlta(
       alta({
         rfc: " tcm-010101-ab1 ",
@@ -33,20 +33,20 @@ describe("validación del alta", () => {
     assert.equal(validarAlta(alta({ rfc: "ÑAB010101AB1" })).ok, true);
     assert.equal(validarAlta(alta({ rfc: "A&B010101AB1" })).ok, true);
     assert.equal(validarAlta(alta({ rfc: "ABC000229AB1" })).ok, true);
+    assert.equal(validarAlta(alta({ rfc: "ABC010229AB1" })).ok, true);
+    assert.equal(validarAlta(alta({ rfc: "ABC010431AB1" })).ok, true);
+    assert.equal(validarAlta(alta({ rfc: "PAL7202311U0" })).ok, true);
     assert.equal(validarAlta(alta({ rfc: "PELJ800101AB1", regimen: "612", usoCfdi: "G03" })).ok, true);
-    assert.equal(validarAlta(alta({ rfc: "PELJ800101AB1", regimen: "605", usoCfdi: "CN01" })).ok, true);
     assert.equal(validarAlta(alta({ rfc: "PELJ800101AB1", regimen: "612", usoCfdi: "D01" })).ok, true);
     assert.equal(validarAlta(alta({ rfc: "TCM010101AB1", regimen: "622", usoCfdi: "G03" })).ok, true);
-    assert.equal(validarAlta(alta({ rfc: "TCM010101AB1", regimen: "610", usoCfdi: "S01" })).ok, true);
     assert.equal(validarAlta(alta({ rfc: "PELJ800101AB1", regimen: "626", usoCfdi: "G03" })).ok, true);
     assert.equal(validarAlta(alta({ razonSocial: "A".repeat(254) })).ok, true);
   });
 
-  it("rechaza patrón, fecha, genérico, código postal, régimen o uso que no cruzan", () => {
+  it("rechaza patrón, genérico, código postal, régimen o uso que no entran", () => {
     assert.equal(codigoValidar(alta({ rfc: "NO" })), "rfc_invalido");
     assert.equal(codigoValidar(alta({ rfc: "ABC010101ABB" })), "rfc_invalido");
-    assert.equal(codigoValidar(alta({ rfc: "ABC010229AB1" })), "rfc_invalido");
-    assert.equal(codigoValidar(alta({ rfc: "ABC010431AB1" })), "rfc_invalido");
+    assert.equal(codigoValidar(alta({ rfc: "PAL7213161U0" })), "rfc_invalido");
     assert.equal(codigoValidar(alta({ rfc: "XAXX010101000" })), "rfc_generico");
     assert.equal(codigoValidar(alta({ rfc: "xexx-010101-000" })), "rfc_generico");
     assert.equal(codigoValidar(alta({ razonSocial: "..." })), "razon_social_invalida");
@@ -60,7 +60,10 @@ describe("validación del alta", () => {
     assert.equal(codigoValidar(alta({ rfc: "PELJ800101AB1", regimen: "601" })), "regimen_invalido");
     assert.equal(codigoValidar(alta({ rfc: "PELJ800101AB1", regimen: "622" })), "regimen_invalido");
     assert.equal(codigoValidar(alta({ usoCfdi: "D01" })), "uso_cfdi_invalido");
-    assert.equal(codigoValidar(alta({ regimen: "610", usoCfdi: "G03" })), "uso_cfdi_invalido");
+    assert.equal(codigoValidar(alta({ regimen: "610", usoCfdi: "G03" })), "regimen_invalido");
+    assert.equal(codigoValidar(alta({ rfc: "PELJ800101AB1", regimen: "605", usoCfdi: "CN01" })), "regimen_invalido");
+    assert.equal(codigoValidar(alta({ rfc: "TCM010101AB1", regimen: "610", usoCfdi: "S01" })), "regimen_invalido");
+    assert.equal(codigoValidar(alta({ rfc: "TCM010101AB1", regimen: "623", usoCfdi: "G03" })), "regimen_invalido");
     assert.equal(codigoValidar(alta({ rfc: "PELJ800101AB1", regimen: "612", usoCfdi: "CN01" })), "uso_cfdi_invalido");
     assert.equal(codigoValidar(alta({ usoCfdi: "ZZZ" })), "uso_cfdi_invalido");
   });

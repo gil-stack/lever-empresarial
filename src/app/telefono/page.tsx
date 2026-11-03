@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function PaginaTelefono() {
   return (
     <>
-      <Encabezado actual="/telefono" />
+      <Encabezado actual="/telefono" superficie="telefono" />
       <main id="contenido" className="superficie-telefono">
         <TelefonoSinFlujo />
       </main>

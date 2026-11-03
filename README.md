@@ -13,7 +13,7 @@ npm run dev
 
 ## Este corte
 
-Fase 1, integrada: una persona entra, da de alta una razón social y ve la consola vacía. El teléfono existe y no tiene flujo. Las funciones corren en `iad1` con runtime Node.js.
+Fase 1, integrada: una persona entra, da de alta una razón social y ve la consola vacía. El teléfono existe, está vacío y no comparte el menú de la consola. Las funciones corren en `iad1` con runtime Node.js.
 
 La cookie `sesion` y el alta viven en `src/server`. La puerta llama a `abrirCuenta` y a `darDeAltaEmpresa`. Una forma válida se guarda. Un segundo RFC en la misma cuenta no entra. La auditoría de ese alta se inserta en la misma transacción.
 

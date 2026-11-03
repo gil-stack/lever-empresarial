@@ -4,9 +4,14 @@
 # El servidor no llama a este script al arrancar. El servidor solo lee
 # DATABASE_URL (el connection string agrupado). Este comando lee
 # DATABASE_URL_UNPOOLED, el string directo: host sin -pooler, base plataforma.
-# No imprime el connection string.
+# No imprime el connection string. Si psql falla, la salida se redacta
+# antes de mostrarse: el argumento del cliente puede citar la URL.
 
 set -euo pipefail
+
+redact() {
+  sed -E 's#postgres(ql)?://[^[:space:]'\''"]+#***#g'
+}
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MIGRATIONS_DIR="${SCRIPT_DIR}/migrations"
@@ -78,8 +83,10 @@ for file in "${sorted[@]}"; do
 done
 
 runner="$(mktemp)"
+psql_out="$(mktemp)"
+psql_err="$(mktemp)"
 cleanup() {
-  rm -f "$runner"
+  rm -f "$runner" "$psql_out" "$psql_err"
 }
 trap cleanup EXIT
 
@@ -112,5 +119,13 @@ EOF
   printf '%s\n' "COMMIT;"
 } >"$runner"
 
-psql "$DATABASE_URL_UNPOOLED" -X -q -v ON_ERROR_STOP=1 -f "$runner"
+set +e
+psql "$DATABASE_URL_UNPOOLED" -X -q -v ON_ERROR_STOP=1 -f "$runner" >"$psql_out" 2>"$psql_err"
+status=$?
+set -e
+redact <"$psql_out"
+redact <"$psql_err" >&2
+if [[ "$status" -ne 0 ]]; then
+  exit "$status"
+fi
 echo "Listo."

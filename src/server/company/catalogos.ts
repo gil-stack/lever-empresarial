@@ -1,3 +1,5 @@
+import { regimenFueraDeCuenta, usoFueraDeCuenta } from "../../domain/recorte";
+
 export type TipoPersona = "fisica" | "moral";
 
 type Regimen = {
@@ -66,12 +68,14 @@ export function tipoDePersona(rfc: string): TipoPersona {
 }
 
 export function regimenAplica(codigo: string, tipo: TipoPersona): boolean {
+  if (regimenFueraDeCuenta(codigo)) return false;
   const regimen = REGIMENES.find((item) => item.codigo === codigo);
   if (!regimen) return false;
   return tipo === "fisica" ? regimen.fisica : regimen.moral;
 }
 
 export function usoAplica(uso: string, tipo: TipoPersona, regimen: string): boolean {
+  if (usoFueraDeCuenta(uso)) return false;
   const fila = USOS[uso];
   if (!fila) return false;
   if (tipo === "fisica" ? !fila.fisica : !fila.moral) return false;

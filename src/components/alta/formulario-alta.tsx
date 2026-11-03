@@ -1,11 +1,13 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import Link from "next/link";
 import { enviarAlta } from "@/app/alta/acciones";
 import { regimenesVisibles, usosVisibles } from "@/dominio/catalogos-fiscales";
 import {
   ESTADO_INICIAL,
   leerAlta,
+  ordenarErrores,
   validarAlta,
   type CampoAlta,
   type CodigoRechazo,
@@ -20,6 +22,9 @@ export type ContextoFormulario = {
   libroDisponible: boolean;
 };
 
+const MENSAJE_CONTRASENA =
+  "La contraseña necesita al menos 10 caracteres. Si es demasiado larga, elige otra.";
+
 const RECHAZO: Record<CodigoRechazo, { titulo: string; texto: string }> = {
   segunda_razon_social: {
     titulo: "No entra",
@@ -31,11 +36,11 @@ const RECHAZO: Record<CodigoRechazo, { titulo: string; texto: string }> = {
   },
   libro: {
     titulo: "No se guardó",
-    texto: "El libro no pudo confirmar el alta. Esta pantalla no muestra la configuración.",
+    texto: "No se pudo confirmar el alta. Vuelve a intentar.",
   },
   sesion: {
     titulo: "Hay que entrar",
-    texto: "La sesión no está. Vuelve a escribir correo y contraseña para guardar la razón social.",
+    texto: "Vuelve a escribir correo y contraseña para guardar la razón social.",
   },
 };
 
@@ -54,15 +59,23 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
   const resumen = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (estado.tipo === "inicial") return;
-    resumen.current?.focus();
+    if (estado.tipo === "invalido") {
+      const primero = ordenarErrores(estado.errores)[0];
+      if (primero) document.getElementById(primero.campo)?.focus();
+      return;
+    }
+    if (estado.tipo === "rechazado") resumen.current?.focus();
   }, [estado]);
 
-  const errores = erroresLocales ?? (estado.tipo === "invalido" ? estado.errores : []);
+  const errores = ordenarErrores(erroresLocales ?? (estado.tipo === "invalido" ? estado.errores : []));
   const tipo = tipoDeRfc(rfc);
   const regimenes = regimenesVisibles(tipo);
   const usos = usosVisibles(tipo, regimen);
   const rechazo = estado.tipo === "rechazado" ? RECHAZO[estado.codigo] : null;
+  const regimenElegido = regimenes.find((item) => item.codigo === regimen);
+  const usoElegido = usos.find((item) => item.codigo === usoCfdi);
+  const cuentaLlena =
+    Boolean(contexto.rfc) || (estado.tipo === "rechazado" && estado.codigo === "segunda_razon_social");
 
   function limpiarErrores() {
     setErroresLocales((prev) => (prev && prev.length === 0 ? prev : []));
@@ -92,8 +105,10 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
   }
 
   function alEnviar(event: FormEvent<HTMLFormElement>) {
-    const encontrados = validarAlta(leerAlta(new FormData(event.currentTarget))).errores;
-    if (!contexto.conSesion) encontrados.push(...revisarCuenta(new FormData(event.currentTarget)));
+    const encontrados = ordenarErrores([
+      ...validarAlta(leerAlta(new FormData(event.currentTarget))).errores,
+      ...(contexto.conSesion ? [] : revisarCuenta(new FormData(event.currentTarget))),
+    ]);
     if (encontrados.length > 0) {
       event.preventDefault();
       setErroresLocales(encontrados);
@@ -104,6 +119,35 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
   }
 
   const mensaje = (campo: CampoAlta) => errores.find((error) => error.campo === campo)?.mensaje;
+
+  if (!contexto.libroDisponible && estado.tipo === "inicial") {
+    return (
+      <div className="alerta" role="alert">
+        <p className="alerta-titulo">No se pudo abrir el alta</p>
+        <p>Vuelve a intentar en un momento.</p>
+      </div>
+    );
+  }
+
+  if (cuentaLlena) {
+    return (
+      <div className="estado-cuenta">
+        <p className="alerta-titulo">Ya hay un RFC</p>
+        <p>
+          {contexto.rfc ? (
+            <>
+              Esta cuenta ya tiene el RFC <span className="rfc-cuenta">{contexto.rfc}</span>. Un segundo RFC no entra.
+            </>
+          ) : (
+            "En esta cuenta no cabe un segundo RFC."
+          )}
+        </p>
+        <Link className="boton" href="/consola">
+          Ir a la consola
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -116,29 +160,11 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
       noValidate
       aria-busy={pendiente}
     >
-      {contexto.conSesion ? (
-        <p className="formulario-kicker">Entraste como {contexto.nombre}</p>
-      ) : (
-        <p className="formulario-kicker">Quién entra</p>
-      )}
-
-      {contexto.rfc ? (
-        <div className="aviso" role="status">
-          <p className="aviso-titulo">Ya hay un RFC</p>
-          <p>Esta cuenta ya tiene el RFC {contexto.rfc}. Un segundo RFC no entra.</p>
-        </div>
-      ) : null}
-
-      {!contexto.libroDisponible && estado.tipo === "inicial" ? (
-        <div className="aviso" role="status">
-          <p className="aviso-titulo">El libro no respondió</p>
-          <p>Sin el libro no se puede guardar la razón social. Esta pantalla no muestra la configuración.</p>
-        </div>
-      ) : null}
+      {contexto.conSesion ? null : <p className="formulario-kicker">Quién entra</p>}
 
       {errores.length > 0 ? (
-        <div className="aviso" role="alert" tabIndex={-1} ref={resumen}>
-          <p className="aviso-titulo">Revisa el alta</p>
+        <div className="alerta" role="alert">
+          <p className="alerta-titulo">Revisa el alta</p>
           <ul>
             {errores.map((error) => (
               <li key={error.campo}>
@@ -148,8 +174,8 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
           </ul>
         </div>
       ) : rechazo ? (
-        <div className="aviso" role="alert" tabIndex={-1} ref={resumen}>
-          <p className="aviso-titulo">{rechazo.titulo}</p>
+        <div className="alerta" role="alert" tabIndex={-1} ref={resumen}>
+          <p className="alerta-titulo">{rechazo.titulo}</p>
           <p>{rechazo.texto}</p>
         </div>
       ) : null}
@@ -176,7 +202,7 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
               aria-describedby={descritoPor("nombre", mensaje("nombre"))}
             />
           </Campo>
-          <Campo id="correo" etiqueta="Correo" pista="Con este correo se vuelve a entrar." error={mensaje("correo")}>
+          <Campo id="correo" etiqueta="Correo" pista="Con este correo se abre la cuenta." error={mensaje("correo")}>
             <input
               id="correo"
               name="correo"
@@ -192,12 +218,7 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
               aria-describedby={descritoPor("correo", mensaje("correo"))}
             />
           </Campo>
-          <Campo
-            id="contrasena"
-            etiqueta="Contraseña"
-            pista="Entre 10 caracteres y 72 bytes. No se guarda en claro."
-            error={mensaje("contrasena")}
-          >
+          <Campo id="contrasena" etiqueta="Contraseña" pista="Al menos 10 caracteres." error={mensaje("contrasena")}>
             <input
               id="contrasena"
               name="contrasena"
@@ -212,6 +233,9 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
               aria-describedby={descritoPor("contrasena", mensaje("contrasena"))}
             />
           </Campo>
+          <p className="ya-tengo-cuenta">
+            Si ya abriste la cuenta, <Link href="/entrar">entra con el correo</Link>.
+          </p>
         </>
       )}
 
@@ -290,7 +314,7 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
           onChange={(event) => alCambiarRegimen(event.target.value)}
           className={regimen ? undefined : "select-vacio"}
           aria-invalid={mensaje("regimen") ? true : undefined}
-          aria-describedby={descritoPor("regimen", mensaje("regimen"))}
+          aria-describedby={descritoPor("regimen", mensaje("regimen"), Boolean(regimenElegido))}
         >
           <option value="">Elige</option>
           {regimenes.map((item) => (
@@ -299,6 +323,11 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
             </option>
           ))}
         </select>
+        {regimenElegido ? (
+          <p className="elegido" id="regimen-elegido">
+            {regimenElegido.codigo} · {regimenElegido.nombre}
+          </p>
+        ) : null}
       </Campo>
 
       <Campo
@@ -317,7 +346,7 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
           }}
           className={usoCfdi ? undefined : "select-vacio"}
           aria-invalid={mensaje("usoCfdi") ? true : undefined}
-          aria-describedby={descritoPor("usoCfdi", mensaje("usoCfdi"))}
+          aria-describedby={descritoPor("usoCfdi", mensaje("usoCfdi"), Boolean(usoElegido))}
         >
           <option value="">Elige</option>
           {usos.map((item) => (
@@ -326,6 +355,11 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
             </option>
           ))}
         </select>
+        {usoElegido ? (
+          <p className="elegido" id="usoCfdi-elegido">
+            {usoElegido.codigo} · {usoElegido.nombre}
+          </p>
+        ) : null}
       </Campo>
 
       <div className="campo campo-confirmacion">
@@ -360,7 +394,11 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
 
       <div className="acciones">
         <button type="submit" className="boton" disabled={pendiente}>
-          {pendiente ? "Guardando la razón social…" : "Dar de alta"}
+          {pendiente
+            ? "Guardando la razón social…"
+            : estado.tipo === "rechazado" && estado.codigo === "libro"
+              ? "Volver a intentar"
+              : "Dar de alta"}
         </button>
         <p>Un segundo RFC no cabe en esta cuenta.</p>
       </div>
@@ -385,7 +423,7 @@ function revisarCuenta(formData: FormData): ErrorCampo[] {
   }
   const bytes = new TextEncoder().encode(contrasena).length;
   if (contrasena.length < 10 || contrasena.trim().length === 0 || bytes > 72) {
-    errores.push({ campo: "contrasena", mensaje: "La contraseña tiene entre 10 caracteres y 72 bytes." });
+    errores.push({ campo: "contrasena", mensaje: MENSAJE_CONTRASENA });
   }
   return errores;
 }
@@ -419,6 +457,9 @@ function Campo({
   );
 }
 
-function descritoPor(id: string, error: string | undefined): string {
-  return error ? `${id}-pista ${id}-error` : `${id}-pista`;
+function descritoPor(id: string, error: string | undefined, elegido = false): string {
+  const partes = [`${id}-pista`];
+  if (elegido) partes.push(`${id}-elegido`);
+  if (error) partes.push(`${id}-error`);
+  return partes.join(" ");
 }

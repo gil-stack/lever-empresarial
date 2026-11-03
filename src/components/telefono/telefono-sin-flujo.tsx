@@ -2,11 +2,11 @@ export function TelefonoSinFlujo() {
   return (
     <div className="telefono">
       <p className="kicker">Teléfono</p>
-      <h1>Sin flujo.</h1>
-      <p className="lede">El tarjetahabiente va a terminar en un gesto. Esta pantalla todavía no lo tiene.</p>
+      <h1>Nada pendiente.</h1>
+      <p className="lede">No hay un gasto que cerrar.</p>
       <div className="vacio">
-        <p className="vacio-titulo">Nada que completar</p>
-        <p>No hay un comprobante, una nota ni una confirmación.</p>
+        <p className="vacio-titulo">Sin comprobantes</p>
+        <p>No hay una nota ni una confirmación.</p>
       </div>
     </div>
   );

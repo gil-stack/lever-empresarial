@@ -5,7 +5,8 @@ import type { Empresa } from "./tipos";
 export const ROL_DE_ALTA = "administrador";
 
 // companies: id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, alta_at.
-// memberships: user_id, company_id, rol. El alta bloquea la fila de users.
+// memberships: user_id, company_id, rol. Una persona, una empresa
+// (memberships_una_persona_una_empresa). El alta bloquea la fila de users.
 export const SQL = {
   bloquearCuenta: "select id from users where id = $1 for update",
   tieneEmpresa: "select 1 as presente from memberships where user_id = $1 limit 1",

@@ -94,7 +94,7 @@ describe("cuenta y sesión", () => {
 
   it("rechaza el correo repetido y no dice si la contraseña o el correo existen al entrar", async () => {
     const repo = memoria();
-    await abrirCuenta(cuenta(), deps(repo));
+    const primera = await abrirCuenta(cuenta(), deps(repo));
     assert.equal(await codigo(abrirCuenta(cuenta({ nombre: "Otra" }), deps(repo))), "correo_duplicado");
 
     const verificaciones: string[] = [];
@@ -110,8 +110,10 @@ describe("cuenta y sesión", () => {
     assert.notEqual(verificaciones[1], `hash:${CONTRASENA}`);
 
     const segunda = await entrar({ correo: "ana@ejemplo.mx", contrasena: CONTRASENA }, deps(repo, verificar, "c".repeat(43)));
-    assert.equal(repo.sesiones.size, 2);
-    assert.notEqual(segunda.sesion.id, [...repo.sesiones.values()][0]?.id);
+    assert.equal(repo.sesiones.size, 1);
+    assert.notEqual(segunda.sesion.id, primera.sesion.id);
+    assert.equal(await leerSesion(primera.setCookie, deps(repo)), null);
+    assert.equal((await leerSesion(segunda.setCookie, deps(repo)))?.id, segunda.sesion.id);
     assert.equal(JSON.stringify(segunda).includes(CONTRASENA), false);
   });
 
@@ -127,10 +129,15 @@ describe("cuenta y sesión", () => {
     assert.equal(await leerSesion(abierta.setCookie, dependencias), null);
 
     ahora = AHORA;
+    const luis = await abrirCuenta(
+      cuenta({ nombre: "Luis Alma", correo: "luis@ejemplo.mx" }),
+      { ...deps(repo), token: () => "d".repeat(43) },
+    );
     const vigente = await entrar({ correo: "ana@ejemplo.mx", contrasena: CONTRASENA }, dependencias);
     const cierre = await cerrarSesion(vigente.setCookie, dependencias);
     assert.match(cierre.setCookie, /Max-Age=0/);
     assert.equal(await leerSesion(vigente.setCookie, dependencias), null);
+    assert.equal((await leerSesion(luis.setCookie, dependencias))?.usuario.correo, "luis@ejemplo.mx");
     assert.equal((await cerrarSesion(null, dependencias)).setCookie.includes("Secure"), true);
     assert.equal(await leerSesion(null, dependencias), null);
   });
@@ -170,6 +177,12 @@ describe("errores de base", () => {
       traducirErrorDeBase(Object.assign(new Error("x"), { code: "23505", constraint: "memberships_pkey" })).message,
       "segunda_razon_social",
     );
+    assert.equal(
+      traducirErrorDeBase(
+        Object.assign(new Error("x"), { code: "23505", constraint: "memberships_una_persona_una_empresa" }),
+      ).message,
+      "segunda_razon_social",
+    );
     const propio = new ErrorDeDominio("rfc_invalido");
     assert.equal(traducirErrorDeBase(propio), propio);
   });
@@ -178,6 +191,9 @@ describe("errores de base", () => {
     assert.match(SQL.buscarCorreo, /password_hash/);
     assert.doesNotMatch(SQL.buscarSesion, /password_hash/);
     assert.match(SQL.buscarSesion, /memberships/);
+    assert.match(SQL.borrarSesionesDelUsuario, /delete from sessions where user_id = \$1/i);
+    const fuenteRepo = readFileSync(new URL("./repositorio.ts", import.meta.url), "utf8");
+    assert.match(fuenteRepo, /consulta\.query\(SQL\.borrarSesionesDelUsuario/);
     const sesion = mapearSesion({
       id: randomUUID(),
       expires_at: AHORA,
@@ -293,6 +309,9 @@ function memoria(): RepositorioSesion & {
       return [...usuarios.values()].find((usuario) => usuario.correo === correo) ?? null;
     },
     async abrirSesion(sesion) {
+      for (const [hash, guardada] of [...sesiones.entries()]) {
+        if (guardada.userId === sesion.userId) sesiones.delete(hash);
+      }
       sesiones.set(sesion.tokenHash, sesion);
     },
     async buscarPorTokenHash(tokenHash, ahora) {

@@ -22,9 +22,13 @@ export default async function PaginaConsola({
 
   return (
     <>
-      <Encabezado actual="/consola" />
+      <Encabezado actual="/consola" persona={entrada.nombre ? { nombre: entrada.nombre } : null} />
       <main id="contenido">
-        <ConsolaVacia empresa={empresa} libroDisponible={entrada.libroDisponible} />
+        <ConsolaVacia
+          empresa={empresa}
+          libroDisponible={entrada.libroDisponible}
+          conSesion={entrada.nombre !== null}
+        />
       </main>
       <Pie />
     </>

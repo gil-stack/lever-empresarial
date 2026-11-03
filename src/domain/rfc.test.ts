@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import {
   validarCodigoPostal,
   validarRfc,
+  validarRfcDeAlta,
   type ErrorDeCodigoPostal,
   type ErrorDeRfc,
 } from "./rfc.ts";
@@ -84,6 +86,30 @@ describe("validarRfc", () => {
 
     for (const [entrada, error] of casos) {
       exigeErrorRfc(entrada, error);
+    }
+  });
+});
+
+describe("validarRfcDeAlta", () => {
+  it("usa el patrón de la fase, el mismo que el CHECK, sin dígito ni cruce de fecha", () => {
+    const sql = readFileSync(new URL("../../db/migrations/0001_companies.sql", import.meta.url), "utf8");
+    assert.match(sql, /char_length\(rfc\) IN \(12, 13\)/);
+    assert.match(sql, /\[A-Z&Ñ\]\{3\}/);
+    assert.match(sql, /\[A-Z&Ñ\]\{4\}/);
+    assert.match(sql, /\[A-Z0-9\]\{2\}\[0-9A\]/);
+
+    assert.deepEqual(validarRfcDeAlta(" tcm-010101-ab1 "), {
+      ok: true,
+      rfc: "TCM010101AB1",
+      tipo: "moral",
+    });
+    assert.equal(validarRfcDeAlta("PAL7202311U0").ok, true);
+    assert.equal(validarRfcDeAlta("EKU9003173C9").ok, true);
+    assert.equal(validarRfc("XAXX010101000").ok, true);
+    assert.equal(validarRfcDeAlta("XAXX010101000").ok, false);
+    assert.equal(validarRfcDeAlta("xexx-010101-000").ok, false);
+    if (!validarRfcDeAlta("XAXX010101000").ok) {
+      assert.equal(validarRfcDeAlta("XAXX010101000").error, "generico");
     }
   });
 });

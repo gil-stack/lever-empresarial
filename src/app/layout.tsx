@@ -22,6 +22,14 @@ const display = Fraunces({
   axes: ["SOFT", "WONK", "opsz"],
 });
 
+const displayCursiva = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-display-cursiva",
+  display: "swap",
+  style: "italic",
+  axes: ["SOFT", "WONK", "opsz"],
+});
+
 export const runtime = "nodejs";
 
 export const metadata: Metadata = {
@@ -42,7 +50,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="es" className={`${sans.variable} ${mono.variable} ${display.variable}`}>
+    <html lang="es" className={`${sans.variable} ${mono.variable} ${display.variable} ${displayCursiva.variable}`}>
       <body>{children}</body>
     </html>
   );

@@ -8,41 +8,49 @@ type EmpresaVisible = {
 export function ConsolaVacia({
   empresa,
   libroDisponible,
+  conSesion,
 }: {
   empresa: EmpresaVisible;
   libroDisponible: boolean;
+  conSesion: boolean;
 }) {
   return (
     <div className="consola">
       <p className="kicker">Consola</p>
       <h1>{empresa ? empresa.razonSocial : "Todavía no hay razón social."}</h1>
+      {empresa ? <p className="rfc-cuenta">{empresa.rfc}</p> : null}
       <p className="lede">
         {empresa
-          ? `RFC ${empresa.rfc}. En esta cuenta no cabe otro.`
+          ? "En esta cuenta no cabe otro."
           : libroDisponible
-            ? "La sesión no tiene empresa. El alta está en la puerta de entrada."
-            : "El libro no respondió. La consola no muestra la configuración."}
+            ? "Esta cuenta todavía no tiene razón social."
+            : "No se pudo consultar la cuenta."}
       </p>
-      {empresa ? null : (
-        <Link className="boton" href="/">
-          Dar de alta la razón social
-        </Link>
+      {empresa || !libroDisponible ? null : (
+        <div className="acciones">
+          <Link className="boton" href="/">
+            Dar de alta la razón social
+          </Link>
+          {conSesion ? null : (
+            <Link className="enlace-texto" href="/entrar">
+              Entrar
+            </Link>
+          )}
+        </div>
       )}
       <section className="saldos" aria-labelledby="saldos-titulo">
-        <h2 id="saldos-titulo">Dos cifras, cada una con su hora</h2>
+        <h2 id="saldos-titulo">Límite y saldo</h2>
         <dl>
           <div>
             <dt>Límite de la tarjeta</dt>
             <dd>
               <p className="frase">El emisor todavía no lo aplica.</p>
-              <p className="edad">Sin hora de consulta.</p>
             </dd>
           </div>
           <div>
             <dt>Saldo de la CLABE</dt>
             <dd>
               <p className="frase">Sin consulta al participante.</p>
-              <p className="edad">Sin hora de consulta.</p>
             </dd>
           </div>
         </dl>

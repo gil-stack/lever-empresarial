@@ -1,9 +1,7 @@
 import "server-only";
 
 /**
- * Hueco de la prueba de aislamiento.
- * Cuando existan la sesión y las empresas, la prueba debe demostrar
- * que el usuario de la empresa A no lee la empresa B.
- * Esta entrega no incluye esa prueba.
+ * La prueba de que el usuario de la empresa A no lee la empresa B
+ * está en `tests/aislamiento`. Este módulo no la ejecuta.
  */
-export const PRUEBA_DE_AISLAMIENTO = "pendiente" as const;
+export const PRUEBA_DE_AISLAMIENTO = "tests/aislamiento" as const;

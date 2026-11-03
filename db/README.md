@@ -13,11 +13,11 @@ export DATABASE_URL_UNPOOLED
 ./db/migrate.sh
 ```
 
-`DATABASE_URL_UNPOOLED` es el string directo de la base `plataforma`: el host no lleva `-pooler` y la URL no pide PgBouncer. El script rechaza el string agrupado y no lee `DATABASE_URL`, para no migrar por el pooler ni arrastrar el libro que usa el servidor. El valor se exporta en el entorno de quien opera. No se escribe en el repositorio, ni en la línea que queda en un log, ni en este archivo.
+`DATABASE_URL_UNPOOLED` es el string directo de la base `plataforma`: el host no lleva `-pooler` y la URL no pide PgBouncer. El script rechaza el string agrupado y no lee `DATABASE_URL`, para no migrar por el pooler ni arrastrar el libro que usa el servidor. El valor se exporta en el entorno de quien opera. No se escribe en el repositorio, ni en la línea que queda en un log, ni en este archivo. Si `psql` falla, la salida se redacta antes de mostrarse.
 
 El script aplica `db/migrations/` en orden numérico, dentro de una transacción, y anota cada archivo en `schema_migrations`. Volver a correrlo no repite una versión ya aplicada. Hace falta `psql` en el PATH.
 
-En Vercel el nombre `DATABASE_URL` ya existe en production, preview y development. El directo se agrega con el nombre `DATABASE_URL_UNPOOLED` en cada uno de esos entornos. Cada entorno lleva el string de su propia rama de Neon. Los valores se quedan en Vercel.
+En Vercel, `DATABASE_URL` es el string agrupado que lee el servidor. `DATABASE_URL_UNPOOLED` es el directo y solo lo usa este comando. Este corte no lo agrega a production ni migra ese libro. Cada rama de Neon se migra con su propio directo, a mano. Los valores se quedan en Vercel y no en el repositorio.
 
 ## Tablas
 
@@ -28,9 +28,9 @@ Coinciden con el contrato de la sesión. Los nombres no se renombran.
 | `users` | `id` uuid, `nombre` text, `correo` text único, `password_hash` text |
 | `sessions` | `id` uuid, `user_id` uuid, `token_hash` text único, `expires_at` timestamptz |
 | `companies` | `id` uuid, `rfc` text único, `razon_social` text, `codigo_postal` text, `regimen` text, `uso_cfdi` text, `alta_at` timestamptz |
-| `memberships` | `user_id` uuid, `company_id` uuid, `rol` text, única por (`user_id`, `company_id`) |
+| `memberships` | `user_id` uuid, `company_id` uuid, `rol` text, primaria (`user_id`, `company_id`) y única en `user_id` |
 
-La cuenta es la fila de `companies`. Tiene un solo RFC, de 12 caracteres (persona moral) o 13 (persona física), con el patrón `t_RFC` del SAT. El mismo RFC no puede repetirse en la plataforma. El RFC no se actualiza: un segundo RFC no cabe en la misma cuenta. No existe `grupo_id`. El código postal son cinco dígitos guardados como texto, para no perder el cero.
+La cuenta es la fila de `companies`. Tiene un solo RFC, de 12 caracteres (persona moral) o 13 (persona física), con el patrón `t_RFC` del SAT. El mismo RFC no puede repetirse en la plataforma. El RFC no se actualiza: un segundo RFC no cabe en la misma cuenta. `memberships_una_persona_una_empresa` impide una segunda empresa para la misma persona. No existe `grupo_id`. El código postal son cinco dígitos guardados como texto, para no perder el cero.
 
 `password_hash` solo acepta un hash bcrypt. `token_hash` es el SHA-256 en hexadecimal del token de la cookie. La cookie no se guarda.
 
@@ -54,7 +54,7 @@ insert into audit_events (
 
 Los parámetros salen del evento: un id nuevo, `companyId`, `actorId`, `alta_empresa`, `companies`, `identificador` y `ocurridoEn`. No hay columna de cuerpo, así que la fila no tiene sitio para un secreto ni para un PAN.
 
-El orden dentro de la transacción es persona, empresa, membresía y después `registrarEvento`. `actor_id` apunta a una persona que ya está en la transacción, y `company_id` a la empresa recién insertada.
+La persona se confirma antes, en su propia transacción (`users` y `sessions`), al abrir la cuenta. Si el alta de la empresa falla, esa fila no se deshace: el reintento usa la sesión. La transacción del alta es empresa, membresía y después `registrarEvento`. `actor_id` apunta a la persona ya confirmada, y `company_id` a la empresa recién insertada.
 
 La base confirma la empresa solo si esa fila existe en la misma transacción. `audit_events` rechaza `UPDATE`, `DELETE` y `TRUNCATE`. `company_id` puede ir vacío en un acto del operador de la plataforma; en el alta va la empresa recién creada.
 
@@ -77,6 +77,6 @@ Después, en Vercel, solo en el entorno preview:
 - `DATABASE_URL` queda en el string agrupado de la rama `preview`.
 - `DATABASE_URL_UNPOOLED` queda en el string directo de la rama `preview`, base `plataforma`.
 
-Production conserva los strings de la rama `main`. Development, si va a escribir, también necesita su propia rama: no se apunta a `main`.
+Production conserva el string de la rama `main`. Este corte no migra ese libro. Development no debe apuntar a `main`: si va a escribir, necesita su propia rama y su propio directo. Hoy ese directo no está en development y no se inventa aquí.
 
 El comando de migrar se corre una vez por rama, con el `DATABASE_URL_UNPOOLED` de esa rama. Migrar `preview` no toca `main`. El servidor no lo hace al desplegar.

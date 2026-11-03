@@ -27,7 +27,7 @@ export default async function PaginaAlta() {
 
   return (
     <>
-      <Encabezado actual="/" />
+      <Encabezado actual="/" persona={entrada.nombre ? { nombre: entrada.nombre } : null} />
       <main id="contenido" className="alta">
         <section className="alta-relato" aria-labelledby="titulo-alta">
           <p className="kicker">Alta de la empresa</p>

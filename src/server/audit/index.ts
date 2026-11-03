@@ -10,10 +10,13 @@ import { randomUUID } from "node:crypto";
  *
  * El evento dice quién (`actorId`), cuándo (`ocurridoEn`) y qué quedó
  * asentado: la acción, la entidad `companies` y el identificador de esa
- * empresa. La razón social, el RFC y el resto viven en `companies`. Aquí no
- * se copia un cuerpo libre: ahí cabría un secreto, un PAN o un connection
- * string. Si alguno de esos valores llega en el evento, no se ejecuta el
- * insert.
+ * empresa. La razón social, el RFC y el resto viven en `companies`.
+ *
+ * Lo que impide guardar un secreto es la forma del evento, no el recorrido
+ * de patrones. Tienen que venir exactamente las seis claves, la acción y la
+ * entidad están fijas, y los tres identificadores son UUID. El insert solo
+ * escribe esas columnas. La tabla no tiene cuerpo libre. El recorrido de
+ * patrones es una red de más: no sustituye esa lista blanca.
  *
  * Columnas de `audit_events`: id, company_id, actor_id, accion, entidad,
  * identificador, ocurrido_en. Solo hay insert.
