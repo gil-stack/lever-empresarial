@@ -249,8 +249,8 @@ END;
 $$;
 
 -- El trigger queda antes de la siembra. Una empresa que entre después
--- de este punto ya nace con política y cajones. La pasada de 0011
--- cubre la que se hubiera confirmado en la ventana anterior.
+-- de este punto ya nace con política y cajones. La pasada que cierra
+-- las firmas cubre la que se hubiera confirmado en la ventana anterior.
 CREATE TRIGGER companies_siembra_politica_y_cajones
 AFTER INSERT ON companies
 FOR EACH ROW

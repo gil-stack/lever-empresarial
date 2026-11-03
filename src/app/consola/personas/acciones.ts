@@ -73,7 +73,7 @@ export async function enviarBaja(_previo: EstadoMaestro, formData: FormData): Pr
   const sesion = await leerSesion();
   if (!sesion) return { tipo: "rechazado", codigo: "sesion" };
   try {
-    await registrarBaja(sesion, validada);
+    await registrarBaja(sesion, { personaId: validada.personaId, baja: validada.bajaEn });
   } catch (error) {
     return traducir(error, "baja");
   }

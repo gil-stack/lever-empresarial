@@ -239,6 +239,14 @@ describe("el maestro no dispersa y no abre con una sola firma", () => {
 });
 
 describe("contrato del libro", () => {
+  it("la ficha manda la baja con el nombre que el servicio valida", () => {
+    const acciones = readFileSync(new URL("../../app/consola/personas/acciones.ts", import.meta.url), "utf8");
+    assert.match(
+      acciones,
+      /registrarBaja\(\s*sesion,\s*\{\s*personaId:\s*validada\.personaId,\s*baja:\s*validada\.bajaEn,?\s*\}\)/,
+    );
+  });
+
   it("filtra por la empresa de la sesión y no selecciona el hash ni la CLABE para liberar", () => {
     assert.match(SQL.bloquearEmpresa, /for update of c/i);
     assert.match(SQL.personas, /e\.company_id = \$1/);

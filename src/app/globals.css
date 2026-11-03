@@ -862,7 +862,8 @@ a {
   font: inherit;
 }
 
-.fecha-leida {
+.fecha-leida,
+.fecha-partes .error-campo {
   flex-basis: 100%;
   margin: 0;
   font-family: var(--fuente-sans);

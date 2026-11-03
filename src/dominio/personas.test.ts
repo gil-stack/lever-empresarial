@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { readFileSync } from "node:fs";
+
 import {
   FRASE_CONTADOR,
   FRASE_SIN_DISPERSION,
@@ -8,8 +10,11 @@ import {
   empresaOperable,
   erroresDeAltaPersona,
   estaDeBaja,
+  fechaDesdePartes,
+  fechaValida,
   hoyEnMexico,
   lineaDeRol,
+  partesDeFecha,
   puedeSoltarDinero,
   relatoOperabilidad,
   validarAltaPersona,
@@ -164,5 +169,52 @@ describe("alta de persona", () => {
   it("usa el calendario de la Ciudad de México", () => {
     assert.equal(hoyEnMexico(new Date("2026-11-04T05:30:00.000Z")), "2026-11-03");
     assert.equal(hoyEnMexico(new Date("2026-11-04T06:00:00.000Z")), "2026-11-04");
+  });
+
+  it("guarda cada parte de la fecha y no borra el 31 de noviembre", () => {
+    let valor = "";
+    valor = fechaDesdePartes({ ...partesDeFecha(valor), dia: "3" });
+    assert.deepEqual(partesDeFecha(valor), { dia: "3", mes: "", anio: "" });
+    assert.equal(fechaValida(valor), null);
+
+    valor = fechaDesdePartes({ ...partesDeFecha(valor), mes: "11" });
+    assert.deepEqual(partesDeFecha(valor), { dia: "3", mes: "11", anio: "" });
+    assert.equal(fechaValida(valor), null);
+
+    valor = fechaDesdePartes({ ...partesDeFecha(valor), anio: "2026" });
+    assert.equal(valor, HOY);
+    assert.equal(fechaValida(valor), HOY);
+    assert.equal(
+      erroresDeAltaPersona({ alta: HOY, baja: valor }, HOY).some((error) => error.campo === "baja"),
+      false,
+    );
+
+    valor = fechaDesdePartes({ ...partesDeFecha(valor), dia: "31" });
+    assert.equal(valor, "2026-11-31");
+    assert.deepEqual(partesDeFecha(valor), { dia: "31", mes: "11", anio: "2026" });
+    assert.equal(fechaValida(valor), null);
+    assert.equal(
+      erroresDeAltaPersona({ alta: HOY, baja: valor }, HOY).some(
+        (error) => error.campo === "baja" && error.mensaje === "Esa fecha no existe.",
+      ),
+      true,
+    );
+
+    valor = fechaDesdePartes({ ...partesDeFecha(valor), dia: "" });
+    assert.deepEqual(partesDeFecha(valor), { dia: "", mes: "11", anio: "2026" });
+    valor = fechaDesdePartes({ dia: "", mes: "", anio: "" });
+    assert.equal(valor, "");
+    assert.deepEqual(partesDeFecha("2026-02-31"), { dia: "31", mes: "02", anio: "2026" });
+    assert.equal(fechaValida("2026-02-31"), null);
+
+    const fuente = readFileSync(new URL("../components/personas/formularios.tsx", import.meta.url), "utf8");
+    const inicio = fuente.indexOf("function FechaLegible");
+    const fin = fuente.indexOf("\nfunction Campo");
+    assert.equal(inicio >= 0 && fin > inicio, true);
+    const cuerpo = fuente.slice(inicio, fin);
+    assert.equal(cuerpo.includes('onChange("")'), false);
+    assert.match(cuerpo, /fechaDesdePartes/);
+    assert.match(cuerpo, /partesDeFecha/);
+    assert.match(cuerpo, /Esa fecha no existe/);
   });
 });

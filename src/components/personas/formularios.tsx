@@ -7,8 +7,10 @@ import { clabeValida, clabeVisible } from "@/dominio/clabe";
 import {
   erroresDeAltaPersona,
   ESTADO_MAESTRO_INICIAL,
+  fechaDesdePartes,
   fechaLarga,
   fechaValida,
+  partesDeFecha,
   MENSAJE_RECHAZO,
   ordenarErroresPersona,
   pistaDelRol,
@@ -533,17 +535,18 @@ function FechaLegible({
   invalido?: boolean;
   describedBy?: string;
 }) {
-  const partes = partirIso(valor);
+  const partes = partesDeFecha(valor);
   function escribir(siguiente: { dia: string; mes: string; anio: string }) {
-    if (!siguiente.dia || !siguiente.mes || !siguiente.anio) {
-      onChange("");
-      return;
-    }
-    onChange(`${siguiente.anio}-${siguiente.mes}-${siguiente.dia.padStart(2, "0")}`);
+    onChange(fechaDesdePartes(siguiente));
   }
   const anios: string[] = [];
   for (let anio = 2100; anio >= 2000; anio -= 1) anios.push(String(anio));
-  const leida = fechaValida(valor);
+  const iso = fechaDesdePartes(partes);
+  const leida = fechaValida(iso);
+  const imposible = Boolean(partes.dia && partes.mes && partes.anio && !leida);
+  const errorId = `${id}-inexistente`;
+  const descrito = [describedBy, imposible ? errorId : ""].filter(Boolean).join(" ");
+  const marcado = invalido || imposible;
   return (
     <div className="fecha-partes">
       <select
@@ -551,8 +554,8 @@ function FechaLegible({
         aria-label="Día"
         value={partes.dia}
         required={requerido}
-        aria-invalid={invalido || undefined}
-        aria-describedby={describedBy}
+        aria-invalid={marcado || undefined}
+        aria-describedby={descrito || undefined}
         onChange={(event) => escribir({ ...partes, dia: event.target.value })}
       >
         <option value="">Día</option>
@@ -562,7 +565,13 @@ function FechaLegible({
           </option>
         ))}
       </select>
-      <select aria-label="Mes" value={partes.mes} onChange={(event) => escribir({ ...partes, mes: event.target.value })}>
+      <select
+        aria-label="Mes"
+        value={partes.mes}
+        aria-invalid={marcado || undefined}
+        aria-describedby={descrito || undefined}
+        onChange={(event) => escribir({ ...partes, mes: event.target.value })}
+      >
         <option value="">Mes</option>
         {MESES.map((nombre, indice) => (
           <option key={nombre} value={String(indice + 1).padStart(2, "0")}>
@@ -573,6 +582,8 @@ function FechaLegible({
       <select
         aria-label="Año"
         value={partes.anio}
+        aria-invalid={marcado || undefined}
+        aria-describedby={descrito || undefined}
         onChange={(event) => escribir({ ...partes, anio: event.target.value })}
       >
         <option value="">Año</option>
@@ -583,16 +594,14 @@ function FechaLegible({
         ))}
       </select>
       <input type="hidden" name={name} value={valor} />
+      {imposible ? (
+        <p id={errorId} className="error-campo" role="alert">
+          Esa fecha no existe.
+        </p>
+      ) : null}
       {leida ? <p className="fecha-leida">{fechaLarga(leida)}</p> : null}
     </div>
   );
-}
-
-function partirIso(valor: string): { dia: string; mes: string; anio: string } {
-  const valida = fechaValida(valor);
-  if (!valida) return { dia: "", mes: "", anio: "" };
-  const [anio, mes, dia] = valida.split("-");
-  return { dia: String(Number(dia)), mes: mes ?? "", anio: anio ?? "" };
 }
 
 function Campo({

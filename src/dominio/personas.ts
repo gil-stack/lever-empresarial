@@ -177,6 +177,33 @@ export function fechaValida(valor: unknown): string | null {
   return valor;
 }
 
+const ANIO_SIN_ELEGIR = "0000";
+const MES_SIN_ELEGIR = "00";
+const DIA_SIN_ELEGIR = "00";
+
+/**
+ * La pantalla elige día, mes y año por separado. Un hueco se guarda en
+ * cero para que las otras dos listas no vuelvan a «Día», «Mes» y «Año».
+ * `fechaValida` sigue rechazando el 31 de un mes corto y la fecha a medias.
+ */
+export function partesDeFecha(valor: string): { dia: string; mes: string; anio: string } {
+  const coincidencia = /^(\d{4})-(\d{2})-(\d{2})$/.exec(valor);
+  if (!coincidencia) return { dia: "", mes: "", anio: "" };
+  const anio = coincidencia[1] === ANIO_SIN_ELEGIR ? "" : (coincidencia[1] ?? "");
+  const mes = coincidencia[2] === MES_SIN_ELEGIR ? "" : (coincidencia[2] ?? "");
+  const diaCrudo = coincidencia[3] ?? "";
+  const dia = diaCrudo === DIA_SIN_ELEGIR ? "" : String(Number(diaCrudo));
+  return { dia, mes, anio };
+}
+
+export function fechaDesdePartes(partes: { dia: string; mes: string; anio: string }): string {
+  if (!partes.dia && !partes.mes && !partes.anio) return "";
+  const anio = partes.anio || ANIO_SIN_ELEGIR;
+  const mes = partes.mes || MES_SIN_ELEGIR;
+  const dia = partes.dia ? partes.dia.padStart(2, "0") : DIA_SIN_ELEGIR;
+  return `${anio}-${mes}-${dia}`;
+}
+
 export function fechaLarga(iso: string): string {
   const valida = fechaValida(iso);
   if (!valida) return iso;
