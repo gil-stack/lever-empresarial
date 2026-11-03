@@ -116,6 +116,13 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (marca.includes("correo")) return new ErrorDeDominio("correo_duplicado");
     if (marca.includes("token_hash")) return new ErrorDeDominio("sesion_duplicada");
     if (marca.includes("membership")) return new ErrorDeDominio("segunda_razon_social");
+    if (marca.includes("cost_centers_nombre")) return new ErrorDeDominio("centro_duplicado");
+    if (marca.includes("employees_un_usuario")) return new ErrorDeDominio("persona_repetida");
+  }
+  if (campo(error, "code") === "23514") {
+    const marca = `${campo(error, "constraint")} ${campo(error, "table")}`.toLowerCase();
+    if (marca.includes("clabe")) return new ErrorDeDominio("clabe_invalida");
+    if (marca.includes("baja")) return new ErrorDeDominio("baja_anterior");
   }
   return new ErrorDeDominio("base_no_disponible");
 }
