@@ -727,6 +727,70 @@ a {
   margin-top: 8px;
 }
 
+.cajones .enlace-texto {
+  margin-top: 8px;
+}
+
+.politica-bloque {
+  margin-top: 64px;
+  max-width: 640px;
+}
+
+.politica-bloque h2 {
+  margin-bottom: 8px;
+}
+
+.politica-bloque h3 {
+  margin: 0 0 4px;
+  font-family: var(--fuente-display);
+  font-weight: 520;
+  font-size: 1.45rem;
+  letter-spacing: -0.03em;
+}
+
+.politica-bloque .persona,
+.politica-bloque .categoria {
+  padding: 28px 0 8px;
+  border-top: 1px solid var(--linea);
+}
+
+.politica-bloque .persona:last-of-type,
+.politica-bloque .categoria:last-of-type {
+  border-bottom: 1px solid var(--linea);
+}
+
+.politica-forma {
+  margin-top: 8px;
+}
+
+.politica-forma .acciones {
+  margin-top: 22px;
+}
+
+.politica-forma .boton:disabled,
+.politica-forma .boton-texto:disabled {
+  cursor: progress;
+  opacity: 0.72;
+}
+
+.boton-texto {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--tinta);
+  color: var(--tinta);
+  font: inherit;
+  font-size: 0.95rem;
+  min-height: 44px;
+  padding: 8px 2px;
+  cursor: pointer;
+}
+
+.boton-texto:hover {
+  color: var(--sello);
+  border-bottom-color: var(--sello);
+}
+
 .superficie-telefono {
   display: flex;
   justify-content: center;

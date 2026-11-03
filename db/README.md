@@ -1,6 +1,6 @@
 # Migraciones de la fase 1
 
-La fase 1 deja en Neon el cimiento de identidad: la cuenta de una razón social, la persona, la sesión mínima del alta, la membresía y la auditoría de ese alta. El dinero, los cajones y el resto de las fases entran en migraciones posteriores. Estas no se reescriben.
+La fase 1 deja en Neon el cimiento de identidad: la cuenta de una razón social, la persona, la sesión mínima del alta, la membresía y la auditoría de ese alta. Esas migraciones no se reescriben. La fase 2 agrega el maestro, la política, los cajones y el precio, en archivos posteriores a `0006`. El dinero que se mueve y el SPEI quedan para migraciones posteriores.
 
 El servidor de la aplicación lee solo `DATABASE_URL`. Ese valor es el connection string agrupado. El proceso del servidor no migra al arrancar: no hay hook de boot, ni `postinstall`, ni ruta que llame a `db/migrate.sh`.
 
@@ -39,6 +39,20 @@ La cuenta es la fila de `companies`. Tiene un solo RFC, de 12 caracteres (person
 ## Maestro de personas
 
 `0007_maestro_personas.sql` agrega `cost_centers` y `employees`. La CLABE se guarda completa y solo si `clabe_digito_371` cierra con la ponderación 3, 7 y 1. La baja es una fecha. Esta migración no crea dispersión, SPEI ni tarjeta. El alta del centro y de la persona, y la baja, escriben en `audit_events` dentro de la misma transacción.
+
+## Política y cajones
+
+`0008_politica_categorias_cajones.sql` agrega la política de la fase 2. No reescribe las tablas de la fase 1. El servidor sigue sin migrar al arrancar.
+
+| Tabla | Qué guarda |
+| --- | --- |
+| `policies` | Una por empresa. `dias_comprobante` y `max_vencidos` nacen en 5. `umbral_proveedores_centavos` nace vacío |
+| `policy_persons` | Plazo propio de una persona de la cuenta. Si no hay fila, usa el default de la empresa |
+| `policy_categories` | Nombre y `tope_centavos`. El tope nace vacío. No se siembran categorías |
+| `drawers` | Los cuatro códigos `viaticos`, `proveedores`, `impuestos`, `nomina`, con su nombre. No hay columna de saldo |
+| `postings` | Centavos con signo, motivo y hora. `drawer_id` vacío es «sin cajón». Esta migración no inserta filas |
+
+Al insertar una empresa, la misma transacción siembra la política y los cuatro cajones. El saldo que muestra la consola es `sum(postings.centavos)` por cajón. La suma de ningún asiento es cero. No hay un monto de ejemplo en el umbral, en un tope ni en un asiento. Desde estas tablas no sale un SPEI.
 
 ## Auditoría del alta
 

@@ -110,19 +110,29 @@ export async function conTransaccion<T>(fn: (consulta: Consulta) => Promise<T>):
 
 export function traducirErrorDeBase(error: unknown): Error {
   if (error instanceof ErrorDeDominio) return error;
-  if (campo(error, "code") === "23505") {
-    const marca = `${campo(error, "constraint")} ${campo(error, "table")}`.toLowerCase();
+  const codigo = campo(error, "code");
+  const marca = `${campo(error, "constraint")} ${campo(error, "table")}`.toLowerCase();
+  if (codigo === "23505") {
     if (marca.includes("rfc")) return new ErrorDeDominio("rfc_duplicado");
     if (marca.includes("correo")) return new ErrorDeDominio("correo_duplicado");
     if (marca.includes("token_hash")) return new ErrorDeDominio("sesion_duplicada");
     if (marca.includes("membership")) return new ErrorDeDominio("segunda_razon_social");
     if (marca.includes("cost_centers_nombre")) return new ErrorDeDominio("centro_duplicado");
     if (marca.includes("employees_un_usuario")) return new ErrorDeDominio("persona_repetida");
+    if (marca.includes("policy_categories")) return new ErrorDeDominio("categoria_duplicada");
+    if (marca.includes("polic") || marca.includes("drawer") || marca.includes("posting")) {
+      return new ErrorDeDominio("politica_invalida");
+    }
   }
-  if (campo(error, "code") === "23514") {
-    const marca = `${campo(error, "constraint")} ${campo(error, "table")}`.toLowerCase();
+  if (codigo === "23503" && marca.includes("policy_persons")) {
+    return new ErrorDeDominio("persona_ajena");
+  }
+  if (codigo === "23514") {
     if (marca.includes("clabe")) return new ErrorDeDominio("clabe_invalida");
     if (marca.includes("baja")) return new ErrorDeDominio("baja_anterior");
+    if (marca.includes("polic") || marca.includes("drawer") || marca.includes("posting")) {
+      return new ErrorDeDominio("politica_invalida");
+    }
   }
   return new ErrorDeDominio("base_no_disponible");
 }

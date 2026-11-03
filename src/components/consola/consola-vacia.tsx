@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { FRASE_CONTADOR, FRASE_SIN_DISPERSION } from "@/dominio/personas";
@@ -14,11 +15,13 @@ export function ConsolaVacia({
   libroDisponible,
   conSesion,
   personas = null,
+  despues = null,
 }: {
   empresa: EmpresaVisible;
   libroDisponible: boolean;
   conSesion: boolean;
   personas?: { titulo: string; detalle: string } | { fallo: true } | null;
+  despues?: ReactNode;
 }) {
   const vacia = empresa ? null : relatoSinEmpresa(libroDisponible, conSesion);
 
@@ -80,6 +83,7 @@ export function ConsolaVacia({
           )}
         </section>
       ) : null}
+      {despues}
     </div>
   );
 }
