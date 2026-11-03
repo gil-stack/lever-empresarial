@@ -80,3 +80,11 @@ Después, en Vercel, solo en el entorno preview:
 Production conserva el string de la rama `main`. Este corte no migra ese libro. Development no debe apuntar a `main`: si va a escribir, necesita su propia rama y su propio directo. Hoy ese directo no está en development y no se inventa aquí.
 
 El comando de migrar se corre una vez por rama, con el `DATABASE_URL_UNPOOLED` de esa rama. Migrar `preview` no toca `main`. El servidor no lo hace al desplegar.
+
+## Fase 2. Precios y suscripción
+
+`0007_platform_pricing.sql` crea una sola fila. `suscripcion_centavos` queda vacío: la cifra no está publicada y el archivo no siembra un monto. Publicar escribe los centavos una vez. La fila no se borra y el monto publicado no se reescribe.
+
+`0008_subscriptions.sql` abre una suscripción por empresa, en `recorrido`, con `recorrido_inicio` en la hora de alta. Los treinta días se cuentan desde esa hora; no hay una segunda columna. El alta de una empresa nueva inserta la fila en la misma transacción. Pasar a `aceptada` exige que `platform_pricing.suscripcion_centavos` ya no sea vacío. Si lo está, la base rechaza el cambio.
+
+La página `/precios` y la consola leen esa única fila. `OPERADORES_PLATAFORMA` es la lista de correos, separada por comas, que puede publicar el monto y registrar la aceptación. No es un rol de la empresa. El valor no va en el repositorio. Sin la variable, nadie publica un precio.

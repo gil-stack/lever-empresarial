@@ -25,3 +25,9 @@ export DATABASE_URL_UNPOOLED
 ```
 
 `DATABASE_URL_UNPOOLED` es el string directo de la base `plataforma`. El valor no va en el repositorio. La rama de Neon para que preview no comparta el libro de production se crea con `./db/preview-branch.sh`. El detalle está en `db/README.md`.
+
+## Precios
+
+`/precios` y la consola leen `platform_pricing.suscripcion_centavos`. Vacío, las dos dicen «cifra no publicada». Por persona, por tarjeta y de implementación se muestran en cero. No hay un monto sembrado.
+
+`OPERADORES_PLATAFORMA` lista los correos que pueden publicar ese monto una vez y registrar la suscripción como aceptada. Sin monto publicado, ese paso no existe. El valor no va en el repositorio.

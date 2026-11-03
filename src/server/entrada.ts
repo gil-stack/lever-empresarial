@@ -6,6 +6,7 @@ import { leerEmpresa } from "./company";
 import { leerSesion } from "./session";
 import { NOMBRE_COOKIE } from "./session/cookie";
 import { ErrorDeDominio } from "./session/error-de-dominio";
+import type { Sesion } from "./session/tipos";
 
 export type Entrada = {
   nombre: string | null;
@@ -43,6 +44,15 @@ export async function leerEntrada(companyIdPedido?: string | null): Promise<Entr
     if (pareceSecreto(error)) {
       return { nombre: null, rfc: null, razonSocial: null, libroDisponible: false };
     }
+    throw error;
+  }
+}
+
+export async function sesionSegura(): Promise<Sesion | null> {
+  try {
+    return await sesionDesdeCookie();
+  } catch (error) {
+    if (error instanceof ErrorDeDominio || pareceSecreto(error)) return null;
     throw error;
   }
 }

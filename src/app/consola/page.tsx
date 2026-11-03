@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { ConsolaVacia } from "@/components/consola/consola-vacia";
 import { Encabezado, Pie } from "@/components/cromo/encabezado";
-import { leerEntrada } from "@/server/entrada";
+import { leerEntrada, sesionSegura } from "@/server/entrada";
+import { esOperadorActual, leerSuscripcionDeLaSesion, leerTarifa } from "@/server/precio";
 
 export const runtime = "nodejs";
 
@@ -16,7 +17,13 @@ export default async function PaginaConsola({
 }) {
   const params = await searchParams;
   const pedido = typeof params.companyId === "string" ? params.companyId : null;
-  const entrada = await leerEntrada(pedido);
+  const sesionPendiente = sesionSegura();
+  const [entrada, sesion, tarifa, suscripcion] = await Promise.all([
+    leerEntrada(pedido),
+    sesionPendiente,
+    leerTarifa(),
+    sesionPendiente.then((sesionLeida) => leerSuscripcionDeLaSesion(sesionLeida)),
+  ]);
   const empresa =
     entrada.rfc && entrada.razonSocial ? { rfc: entrada.rfc, razonSocial: entrada.razonSocial } : null;
 
@@ -28,6 +35,9 @@ export default async function PaginaConsola({
           empresa={empresa}
           libroDisponible={entrada.libroDisponible}
           conSesion={entrada.nombre !== null}
+          tarifa={tarifa}
+          suscripcion={suscripcion}
+          esOperador={esOperadorActual(sesion)}
         />
       </main>
       <Pie />
