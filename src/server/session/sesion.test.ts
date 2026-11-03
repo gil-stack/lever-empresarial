@@ -198,6 +198,35 @@ describe("errores de base", () => {
       ).message,
       "segunda_razon_social",
     );
+    const categoria = traducirErrorDeBase(
+      Object.assign(new Error("duplicate postgres://usuario:secreto@db.neon.tech/plataforma"), {
+        code: "23505",
+        constraint: "policy_categories_nombre_unico",
+        table: "policy_categories",
+      }),
+    );
+    assert.equal(categoria.message, "categoria_duplicada");
+    assert.equal((categoria.stack ?? "").includes("secreto@"), false);
+    assert.equal(
+      traducirErrorDeBase(
+        Object.assign(new Error("x"), {
+          code: "23503",
+          constraint: "policy_persons_miembro",
+          table: "policy_persons",
+        }),
+      ).message,
+      "persona_ajena",
+    );
+    assert.equal(
+      traducirErrorDeBase(
+        Object.assign(new Error("x"), {
+          code: "23514",
+          constraint: "policies_dias_comprobante",
+          table: "policies",
+        }),
+      ).message,
+      "politica_invalida",
+    );
     const propio = new ErrorDeDominio("rfc_invalido");
     assert.equal(traducirErrorDeBase(propio), propio);
   });

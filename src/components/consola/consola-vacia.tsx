@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { relatoSinEmpresa } from "./relato";
@@ -11,10 +12,12 @@ export function ConsolaVacia({
   empresa,
   libroDisponible,
   conSesion,
+  despues = null,
 }: {
   empresa: EmpresaVisible;
   libroDisponible: boolean;
   conSesion: boolean;
+  despues?: ReactNode;
 }) {
   const vacia = empresa ? null : relatoSinEmpresa(libroDisponible, conSesion);
 
@@ -54,6 +57,7 @@ export function ConsolaVacia({
         </dl>
         <p className="nota-saldos">Estas dos cifras no se suman.</p>
       </section>
+      {despues}
     </div>
   );
 }

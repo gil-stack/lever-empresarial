@@ -5,6 +5,7 @@ import { salir } from "@/app/sesion/acciones";
 const FINANZAS = [
   { href: "/", etiqueta: "Alta" },
   { href: "/consola", etiqueta: "Consola" },
+  { href: "/consola/politica", etiqueta: "Política" },
 ] as const;
 
 export function Encabezado({
