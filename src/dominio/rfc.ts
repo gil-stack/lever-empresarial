@@ -2,7 +2,6 @@ const DICCIONARIO = "0123456789ABCDEFGHIJKLMN&OPQRSTUVWXYZ Ñ";
 const GENERICOS = new Set(["XAXX010101000", "XEXX010101000"]);
 const MORAL = /^[A-ZÑ&]{3}\d{6}[A-Z0-9]{3}$/;
 const FISICA = /^[A-ZÑ&]{4}\d{6}[A-Z0-9]{3}$/;
-const DIAS_POR_MES = [0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 export type TipoPersona = "fisica" | "moral";
 
@@ -40,11 +39,14 @@ export function validarRfc(valor: string): MotivoRfc | null {
 
 function fechaValida(rfc: string, tipo: TipoPersona): boolean {
   const inicio = tipo === "moral" ? 3 : 4;
-  const mes = Number(rfc.slice(inicio + 2, inicio + 4));
-  const dia = Number(rfc.slice(inicio + 4, inicio + 6));
-  const tope = DIAS_POR_MES[mes];
-  if (!tope) return false;
-  return dia >= 1 && dia <= tope;
+  const yy = Number(rfc.slice(inicio, inicio + 2));
+  const mm = Number(rfc.slice(inicio + 2, inicio + 4));
+  const dd = Number(rfc.slice(inicio + 4, inicio + 6));
+  // El alta que escribe acepta el año en 1900 o en 2000, el que sí exista.
+  return [1900 + yy, 2000 + yy].some((year) => {
+    const fecha = new Date(Date.UTC(year, mm - 1, dd));
+    return fecha.getUTCFullYear() === year && fecha.getUTCMonth() === mm - 1 && fecha.getUTCDate() === dd;
+  });
 }
 
 function digitoCoincide(rfc: string): boolean {

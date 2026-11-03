@@ -55,7 +55,7 @@ const SINONIMOS: Record<TablaCimiento, Record<string, readonly string[]>> = {
       "identificador_entidad",
       "target_id",
     ],
-    hora: ["created_at", "hora", "occurred_at", "created"],
+    hora: ["ocurrido_en", "created_at", "hora", "occurred_at", "created"],
   },
 };
 

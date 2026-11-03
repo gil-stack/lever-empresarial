@@ -1,21 +1,29 @@
 import Link from "next/link";
 
-type SesionConocida = {
-  usuarioId: string;
-  empresaId: string;
+type EmpresaVisible = {
+  rfc: string;
+  razonSocial: string;
 } | null;
 
-export function ConsolaVacia({ sesion }: { sesion: SesionConocida }) {
+export function ConsolaVacia({
+  empresa,
+  libroDisponible,
+}: {
+  empresa: EmpresaVisible;
+  libroDisponible: boolean;
+}) {
   return (
     <div className="consola">
       <p className="kicker">Consola</p>
-      <h1>{sesion ? "La empresa todavía no se lee." : "Todavía no hay razón social."}</h1>
+      <h1>{empresa ? empresa.razonSocial : "Todavía no hay razón social."}</h1>
       <p className="lede">
-        {sesion
-          ? "La sesión existe, pero esta pantalla todavía no consulta el libro."
-          : "La sesión no tiene empresa. El alta está en la puerta de entrada."}
+        {empresa
+          ? `RFC ${empresa.rfc}. En esta cuenta no cabe otro.`
+          : libroDisponible
+            ? "La sesión no tiene empresa. El alta está en la puerta de entrada."
+            : "El libro no respondió. La consola no muestra la configuración."}
       </p>
-      {sesion ? null : (
+      {empresa ? null : (
         <Link className="boton" href="/">
           Dar de alta la razón social
         </Link>

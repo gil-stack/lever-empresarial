@@ -256,11 +256,36 @@ type Ids = ContextoAislamiento["ids"] & {
 
 function sembrar(url: string, mapa: Mapa): ContextoAislamiento["ids"] {
   const ids = crearIds();
-  const hashA = "$2b$10$aislamientoFase1HashQueNoEsClaveRealDeAlfa00";
-  const hashB = "$2b$10$aislamientoFase1HashQueNoEsClaveRealDeBeta00";
-  const hashC = "$2b$10$aislamientoFase1HashQueNoEsClaveRealDeVisit0";
+  // La migración solo acepta la forma bcrypt. No son contraseñas.
+  const relleno = "a".repeat(52);
+  const hashA = `$2b$12$${relleno}A`;
+  const hashB = `$2b$12$${relleno}B`;
+  const hashC = `$2b$12$${relleno}C`;
+  const sentencias: string[] = [];
+  const anotar = (tabla: TablaMapeada, logicos: Record<string, string | null>) => {
+    sentencias.push(sqlInsertar(tabla, logicos));
+  };
 
-  insertar(url, mapa.companies, {
+  anotar(mapa.users, {
+    id: ids.usuarioA,
+    nombre: "Persona Alfa",
+    correo: "alfa@empresa-a.test",
+    passwordHash: hashA,
+  });
+  anotar(mapa.users, {
+    id: ids.usuarioB,
+    nombre: "Persona Beta",
+    correo: "beta@empresa-b.test",
+    passwordHash: hashB,
+  });
+  anotar(mapa.users, {
+    id: ids.usuarioC,
+    nombre: "Persona Sin Membresía",
+    correo: "sin-membresia@nadie.test",
+    passwordHash: hashC,
+  });
+
+  anotar(mapa.companies, {
     id: ids.empresaA,
     rfc: ids.rfcA,
     razonSocial: ids.razonA,
@@ -269,7 +294,7 @@ function sembrar(url: string, mapa: Mapa): ContextoAislamiento["ids"] {
     usoCfdi: "G03",
     alta: ALTA,
   });
-  insertar(url, mapa.companies, {
+  anotar(mapa.companies, {
     id: ids.empresaB,
     rfc: ids.rfcB,
     razonSocial: ids.razonB,
@@ -279,62 +304,43 @@ function sembrar(url: string, mapa: Mapa): ContextoAislamiento["ids"] {
     alta: ALTA,
   });
 
-  insertar(url, mapa.users, {
-    id: ids.usuarioA,
-    nombre: "Persona Alfa",
-    correo: "alfa@empresa-a.test",
-    passwordHash: hashA,
-  });
-  insertar(url, mapa.users, {
-    id: ids.usuarioB,
-    nombre: "Persona Beta",
-    correo: "beta@empresa-b.test",
-    passwordHash: hashB,
-  });
-  insertar(url, mapa.users, {
-    id: ids.usuarioC,
-    nombre: "Persona Sin Membresía",
-    correo: "sin-membresia@nadie.test",
-    passwordHash: hashC,
-  });
-
-  insertar(url, mapa.memberships, {
+  anotar(mapa.memberships, {
     userId: ids.usuarioA,
     companyId: ids.empresaA,
     rol: "administrador",
   });
-  insertar(url, mapa.memberships, {
+  anotar(mapa.memberships, {
     userId: ids.usuarioB,
     companyId: ids.empresaB,
     rol: "contador",
   });
 
-  insertar(url, mapa.sessions, {
+  anotar(mapa.sessions, {
     id: randomUUID(),
     userId: ids.usuarioA,
     tokenHash: ids.sesionA.tokenHash,
     vence: VIGENTE,
   });
-  insertar(url, mapa.sessions, {
+  anotar(mapa.sessions, {
     id: randomUUID(),
     userId: ids.usuarioA,
     tokenHash: ids.sesionAVencida.tokenHash,
     vence: VENCIDA,
   });
-  insertar(url, mapa.sessions, {
+  anotar(mapa.sessions, {
     id: randomUUID(),
     userId: ids.usuarioB,
     tokenHash: ids.sesionB.tokenHash,
     vence: VIGENTE,
   });
-  insertar(url, mapa.sessions, {
+  anotar(mapa.sessions, {
     id: randomUUID(),
     userId: ids.usuarioC,
     tokenHash: ids.sesionSinMembresia.tokenHash,
     vence: VIGENTE,
   });
 
-  insertar(url, mapa.audit_events, {
+  anotar(mapa.audit_events, {
     id: ids.eventoA,
     companyId: ids.empresaA,
     actor: ids.usuarioA,
@@ -343,7 +349,7 @@ function sembrar(url: string, mapa: Mapa): ContextoAislamiento["ids"] {
     identificador: ids.empresaA,
     hora: ALTA,
   });
-  insertar(url, mapa.audit_events, {
+  anotar(mapa.audit_events, {
     id: ids.eventoB,
     companyId: ids.empresaB,
     actor: ids.usuarioB,
@@ -357,7 +363,7 @@ function sembrar(url: string, mapa: Mapa): ContextoAislamiento["ids"] {
   let eventoOperador: string | null = null;
   if (companyId?.nullable) {
     eventoOperador = randomUUID();
-    insertar(url, mapa.audit_events, {
+    anotar(mapa.audit_events, {
       id: eventoOperador,
       companyId: null,
       actor: ids.usuarioC,
@@ -366,6 +372,14 @@ function sembrar(url: string, mapa: Mapa): ContextoAislamiento["ids"] {
       identificador: randomUUID(),
       hora: ALTA,
     });
+  }
+
+  // La empresa solo se confirma si su auditoría va en la misma transacción.
+  try {
+    ejecutar(url, `begin;\n${sentencias.join(";\n")};\ncommit;`);
+  } catch (error) {
+    const detalle = error instanceof Error ? error.message : String(error);
+    throw new Error(`No se pudo sembrar el aislamiento.\n${detalle}`);
   }
 
   return { ...ids, eventoOperador };
@@ -397,7 +411,7 @@ function token(): string {
   return randomBytes(32).toString("hex");
 }
 
-function insertar(url: string, tabla: TablaMapeada, logicos: Record<string, string | null>): void {
+function sqlInsertar(tabla: TablaMapeada, logicos: Record<string, string | null>): string {
   const valores = new Map<string, { columna: ColumnaFisica; valor: string | null }>();
   for (const [logico, valor] of Object.entries(logicos)) {
     const columna = tabla.campos[logico];
@@ -432,11 +446,5 @@ function insertar(url: string, tabla: TablaMapeada, logicos: Record<string, stri
     nombres.push(ident(columna.nombre));
     literales.push(literal(valor, columna));
   }
-  const sql = `insert into ${desde(tabla)} (${nombres.join(", ")}) values (${literales.join(", ")})`;
-  try {
-    ejecutar(url, sql);
-  } catch (error) {
-    const detalle = error instanceof Error ? error.message : String(error);
-    throw new Error(`No se pudo sembrar ${tabla.nombre}.\n${sql}\n${detalle}`);
-  }
+  return `insert into ${desde(tabla)} (${nombres.join(", ")}) values (${literales.join(", ")})`;
 }

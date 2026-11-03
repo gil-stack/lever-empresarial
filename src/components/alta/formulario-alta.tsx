@@ -8,13 +8,43 @@ import {
   leerAlta,
   validarAlta,
   type CampoAlta,
+  type CodigoRechazo,
   type ErrorCampo,
 } from "@/dominio/alta";
 import { normalizarRfc, tipoDeRfc } from "@/dominio/rfc";
 
-export function FormularioAlta() {
+export type ContextoFormulario = {
+  conSesion: boolean;
+  nombre: string | null;
+  rfc: string | null;
+  libroDisponible: boolean;
+};
+
+const RECHAZO: Record<CodigoRechazo, { titulo: string; texto: string }> = {
+  segunda_razon_social: {
+    titulo: "No entra",
+    texto: "En esta cuenta no cabe un segundo RFC.",
+  },
+  rfc_duplicado: {
+    titulo: "No entra",
+    texto: "Ese RFC ya está registrado en otra cuenta.",
+  },
+  libro: {
+    titulo: "No se guardó",
+    texto: "El libro no pudo confirmar el alta. Esta pantalla no muestra la configuración.",
+  },
+  sesion: {
+    titulo: "Hay que entrar",
+    texto: "La sesión no está. Vuelve a escribir correo y contraseña para guardar la razón social.",
+  },
+};
+
+export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
   const [estado, accion, pendiente] = useActionState(enviarAlta, ESTADO_INICIAL);
   const [erroresLocales, setErroresLocales] = useState<ErrorCampo[] | null>(null);
+  const [nombre, setNombre] = useState("");
+  const [correo, setCorreo] = useState("");
+  const [contrasena, setContrasena] = useState("");
   const [rfc, setRfc] = useState("");
   const [razonSocial, setRazonSocial] = useState("");
   const [codigoPostal, setCodigoPostal] = useState("");
@@ -32,6 +62,7 @@ export function FormularioAlta() {
   const tipo = tipoDeRfc(rfc);
   const regimenes = regimenesVisibles(tipo);
   const usos = usosVisibles(tipo, regimen);
+  const rechazo = estado.tipo === "rechazado" ? RECHAZO[estado.codigo] : null;
 
   function limpiarErrores() {
     setErroresLocales((prev) => (prev && prev.length === 0 ? prev : []));
@@ -62,6 +93,7 @@ export function FormularioAlta() {
 
   function alEnviar(event: FormEvent<HTMLFormElement>) {
     const encontrados = validarAlta(leerAlta(new FormData(event.currentTarget))).errores;
+    if (!contexto.conSesion) encontrados.push(...revisarCuenta(new FormData(event.currentTarget)));
     if (encontrados.length > 0) {
       event.preventDefault();
       setErroresLocales(encontrados);
@@ -79,13 +111,31 @@ export function FormularioAlta() {
       action={accion}
       onSubmit={alEnviar}
       onReset={(event) => {
-        // La acción exitosa reinicia el formulario. Los campos son controlados y se quedan.
         event.preventDefault();
       }}
       noValidate
       aria-busy={pendiente}
     >
-      <p className="formulario-kicker">Datos para pedir facturas</p>
+      {contexto.conSesion ? (
+        <p className="formulario-kicker">Entraste como {contexto.nombre}</p>
+      ) : (
+        <p className="formulario-kicker">Quién entra</p>
+      )}
+
+      {contexto.rfc ? (
+        <div className="aviso" role="status">
+          <p className="aviso-titulo">Ya hay un RFC</p>
+          <p>Esta cuenta ya tiene el RFC {contexto.rfc}. Un segundo RFC no entra.</p>
+        </div>
+      ) : null}
+
+      {!contexto.libroDisponible && estado.tipo === "inicial" ? (
+        <div className="aviso" role="status">
+          <p className="aviso-titulo">El libro no respondió</p>
+          <p>Sin el libro no se puede guardar la razón social. Esta pantalla no muestra la configuración.</p>
+        </div>
+      ) : null}
+
       {errores.length > 0 ? (
         <div className="aviso" role="alert" tabIndex={-1} ref={resumen}>
           <p className="aviso-titulo">Revisa el alta</p>
@@ -97,14 +147,75 @@ export function FormularioAlta() {
             ))}
           </ul>
         </div>
-      ) : estado.tipo === "pendiente_de_libro" ? (
+      ) : rechazo ? (
         <div className="aviso" role="alert" tabIndex={-1} ref={resumen}>
-          <p className="aviso-titulo">No se guardó</p>
-          <p>
-            La forma es válida. El libro todavía no escribe la empresa, así que esta razón social no quedó registrada.
-          </p>
+          <p className="aviso-titulo">{rechazo.titulo}</p>
+          <p>{rechazo.texto}</p>
         </div>
       ) : null}
+
+      {contexto.conSesion ? null : (
+        <>
+          <Campo
+            id="nombre"
+            etiqueta="Nombre"
+            pista="Quien abre la cuenta. No es la razón social."
+            error={mensaje("nombre")}
+          >
+            <input
+              id="nombre"
+              name="nombre"
+              value={nombre}
+              onChange={(event) => {
+                setNombre(event.target.value);
+                limpiarErrores();
+              }}
+              autoComplete="name"
+              maxLength={120}
+              aria-invalid={mensaje("nombre") ? true : undefined}
+              aria-describedby={descritoPor("nombre", mensaje("nombre"))}
+            />
+          </Campo>
+          <Campo id="correo" etiqueta="Correo" pista="Con este correo se vuelve a entrar." error={mensaje("correo")}>
+            <input
+              id="correo"
+              name="correo"
+              type="email"
+              value={correo}
+              onChange={(event) => {
+                setCorreo(event.target.value);
+                limpiarErrores();
+              }}
+              autoComplete="email"
+              maxLength={254}
+              aria-invalid={mensaje("correo") ? true : undefined}
+              aria-describedby={descritoPor("correo", mensaje("correo"))}
+            />
+          </Campo>
+          <Campo
+            id="contrasena"
+            etiqueta="Contraseña"
+            pista="Entre 10 caracteres y 72 bytes. No se guarda en claro."
+            error={mensaje("contrasena")}
+          >
+            <input
+              id="contrasena"
+              name="contrasena"
+              type="password"
+              value={contrasena}
+              onChange={(event) => {
+                setContrasena(event.target.value);
+                limpiarErrores();
+              }}
+              autoComplete="new-password"
+              aria-invalid={mensaje("contrasena") ? true : undefined}
+              aria-describedby={descritoPor("contrasena", mensaje("contrasena"))}
+            />
+          </Campo>
+        </>
+      )}
+
+      <p className="formulario-kicker">Datos para pedir facturas</p>
 
       <Campo
         id="rfc"
@@ -249,12 +360,34 @@ export function FormularioAlta() {
 
       <div className="acciones">
         <button type="submit" className="boton" disabled={pendiente}>
-          {pendiente ? "Revisando el alta…" : "Dar de alta"}
+          {pendiente ? "Guardando la razón social…" : "Dar de alta"}
         </button>
         <p>Un segundo RFC no cabe en esta cuenta.</p>
       </div>
     </form>
   );
+}
+
+function revisarCuenta(formData: FormData): ErrorCampo[] {
+  const errores: ErrorCampo[] = [];
+  const nombre = String(formData.get("nombre") ?? "")
+    .trim()
+    .replace(/\s+/g, " ");
+  const correo = String(formData.get("correo") ?? "")
+    .trim()
+    .toLowerCase();
+  const contrasena = String(formData.get("contrasena") ?? "");
+  if (nombre.length < 1 || nombre.length > 120 || !/[\p{L}\p{N}]/u.test(nombre)) {
+    errores.push({ campo: "nombre", mensaje: "Escribe el nombre de quien abre la cuenta." });
+  }
+  if (correo.length > 254 || !/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(correo)) {
+    errores.push({ campo: "correo", mensaje: "Escribe un correo válido." });
+  }
+  const bytes = new TextEncoder().encode(contrasena).length;
+  if (contrasena.length < 10 || contrasena.trim().length === 0 || bytes > 72) {
+    errores.push({ campo: "contrasena", mensaje: "La contraseña tiene entre 10 caracteres y 72 bytes." });
+  }
+  return errores;
 }
 
 function Campo({

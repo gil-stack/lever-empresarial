@@ -209,15 +209,17 @@ describe("contrato con la base y la auditoría", () => {
       identificador: randomUUID(),
       ocurridoEn: new Date("2026-11-03T15:00:00.000Z"),
     };
-    const error = await rechazo(
-      auditarAlta(evento, {
-        async query() {
-          return { rows: [], rowCount: 0 };
-        },
-      }),
-    );
-    assert.equal(error.codigo, "auditoria_no_disponible");
-    assert.equal(error.message.includes("postgres://"), false);
+    const llamadas: string[] = [];
+    await auditarAlta(evento, {
+      async query(sql) {
+        llamadas.push(sql);
+        return { rows: [], rowCount: 0 };
+      },
+    });
+    assert.equal(llamadas.length, 1);
+    assert.match(llamadas[0] ?? "", /insert into audit_events/i);
+    assert.equal((llamadas[0] ?? "").includes("postgres://"), false);
+    assert.match(fuenteAuditar, /auditoria_no_disponible/);
 
     const empresa = mapearEmpresa({
       id: randomUUID(),

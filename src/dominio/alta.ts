@@ -10,17 +10,19 @@ export type AltaEmpresa = {
   confirmaRecorte: boolean;
 };
 
-export type CampoAlta = keyof AltaEmpresa;
+export type CampoAlta = keyof AltaEmpresa | "nombre" | "correo" | "contrasena";
 
 export type ErrorCampo = {
   campo: CampoAlta;
   mensaje: string;
 };
 
+export type CodigoRechazo = "segunda_razon_social" | "rfc_duplicado" | "libro" | "sesion";
+
 export type EstadoAlta =
   | { tipo: "inicial" }
   | { tipo: "invalido"; errores: ErrorCampo[] }
-  | { tipo: "pendiente_de_libro" };
+  | { tipo: "rechazado"; codigo: CodigoRechazo };
 
 export const ESTADO_INICIAL: EstadoAlta = { tipo: "inicial" };
 
@@ -66,8 +68,13 @@ export function validarAlta(entrada: AltaEmpresa): { alta: AltaEmpresa; errores:
     errores.push({ campo: "razonSocial", mensaje: "Escribe la razón social tal como va a facturar." });
   }
 
-  if (!/^\d{5}$/.test(alta.codigoPostal) || alta.codigoPostal === "00000") {
+  if (!/^\d{5}$/.test(alta.codigoPostal)) {
     errores.push({ campo: "codigoPostal", mensaje: "El código postal son cinco dígitos." });
+  } else if (!prefijoPostalFiscal(alta.codigoPostal)) {
+    errores.push({
+      campo: "codigoPostal",
+      mensaje: "Ese código postal no corresponde a un domicilio fiscal.",
+    });
   }
 
   const regimen = regimenPorCodigo(alta.regimen);
@@ -105,4 +112,10 @@ export function validarAlta(entrada: AltaEmpresa): { alta: AltaEmpresa; errores:
   }
 
   return { alta, errores };
+}
+
+function prefijoPostalFiscal(cp: string): boolean {
+  const prefijo = Number(cp.slice(0, 2));
+  if (prefijo === 0 || prefijo === 17 || prefijo === 18 || prefijo === 19) return false;
+  return prefijo >= 1 && prefijo <= 99;
 }

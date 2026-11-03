@@ -13,6 +13,15 @@ npm run dev
 
 ## Este corte
 
-Fase 1 visual: alta de la razón social, consola vacía y teléfono sin flujo. Las funciones corren en `iad1` con runtime Node.js.
+Fase 1, integrada: una persona entra, da de alta una razón social y ve la consola vacía. El teléfono existe y no tiene flujo. Las funciones corren en `iad1` con runtime Node.js.
 
-En `src/server` quedan huecos para el libro, la sesión, la auditoría, las migraciones y la prueba de aislamiento. Este corte no trae SQL.
+La cookie `sesion` y el alta viven en `src/server`. La puerta llama a `abrirCuenta` y a `darDeAltaEmpresa`. Una forma válida se guarda. Un segundo RFC en la misma cuenta no entra. La auditoría de ese alta se inserta en la misma transacción.
+
+El servidor lee el connection string agrupado y no migra al arrancar. Las migraciones se aplican a mano:
+
+```bash
+export DATABASE_URL_UNPOOLED
+./db/migrate.sh
+```
+
+`DATABASE_URL_UNPOOLED` es el string directo de la base `plataforma`. El valor no va en el repositorio. La rama de Neon para que preview no comparta el libro de production se crea con `./db/preview-branch.sh`. El detalle está en `db/README.md`.

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { FormularioAlta } from "@/components/alta/formulario-alta";
 import { Encabezado, Pie } from "@/components/cromo/encabezado";
+import { leerEntrada } from "@/server/entrada";
 
 export const runtime = "nodejs";
 
@@ -21,7 +22,9 @@ const NO_ENTRA = [
   "Una sola firma para pedir y para liberar",
 ] as const;
 
-export default function PaginaAlta() {
+export default async function PaginaAlta() {
+  const entrada = await leerEntrada();
+
   return (
     <>
       <Encabezado actual="/" />
@@ -46,7 +49,14 @@ export default function PaginaAlta() {
             </ul>
           </section>
         </section>
-        <FormularioAlta />
+        <FormularioAlta
+          contexto={{
+            conSesion: entrada.nombre !== null,
+            nombre: entrada.nombre,
+            rfc: entrada.rfc,
+            libroDisponible: entrada.libroDisponible,
+          }}
+        />
       </main>
       <Pie />
     </>

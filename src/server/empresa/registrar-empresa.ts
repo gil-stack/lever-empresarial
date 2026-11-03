@@ -1,20 +1,9 @@
 import "server-only";
 
-import { validarAlta, type AltaEmpresa, type EstadoAlta } from "@/dominio/alta";
-
 /**
- * Hueco de la fase 1. La forma ya se valida aquí, en el servidor.
- * Falta escribir `companies`, abrir la sesión y registrar la auditoría.
- * Un segundo RFC no cabe en la misma cuenta: esa regla se aplica al
- * persistir, no en el navegador. No hay SQL en esta entrega.
+ * El alta que escribe la razón social está en `src/server/company`.
+ * La puerta la llama con `darDeAltaEmpresa`, dentro de la misma acción que
+ * abre la cookie. Un segundo RFC en la misma cuenta responde
+ * `segunda_razon_social` y no se inserta.
  */
-export function registrarEmpresa(entrada: AltaEmpresa): EstadoAlta {
-  const { alta, errores } = validarAlta(entrada);
-  if (errores.length > 0) return { tipo: "invalido", errores };
-  return dejarPendienteDeLibro(alta);
-}
-
-function dejarPendienteDeLibro(altaNormalizada: AltaEmpresa): EstadoAlta {
-  void altaNormalizada;
-  return { tipo: "pendiente_de_libro" };
-}
+export const ALTA_IMPLEMENTADA_EN = "src/server/company" as const;
