@@ -32,9 +32,8 @@ export function evaluarEsquema(directorio: string): Esquema {
       pendiente: true,
       motivo:
         `pendiente de esquema: no existe ${etiqueta}. ` +
-        "La prueba de aislamiento está escrita contra LecturaDeNegocio; " +
-        "correrá cuando el cimiento cree companies, users, sessions, " +
-        "memberships y audit_events. No se omite.",
+        "La prueba de aislamiento lee con leerEmpresa y leerSesion cuando el cimiento cree " +
+        "companies, users, sessions, memberships y audit_events. No se omite y no se da por pasada.",
     };
   }
 
@@ -48,7 +47,7 @@ export function evaluarEsquema(directorio: string): Esquema {
       pendiente: true,
       motivo:
         `pendiente de esquema: ${etiqueta} no tiene archivos .sql. ` +
-        "La prueba de aislamiento está escrita contra LecturaDeNegocio y no se omite.",
+        "La prueba de aislamiento lee con leerEmpresa y leerSesion, no se omite y no se da por pasada.",
     };
   }
 
@@ -65,7 +64,7 @@ export function evaluarEsquema(directorio: string): Esquema {
       pendiente: true,
       motivo:
         `pendiente de esquema: ${etiqueta} todavía no crea ${faltan.join(", ")}. ` +
-        "La prueba de aislamiento está escrita contra LecturaDeNegocio y no se omite.",
+        "La prueba de aislamiento lee con leerEmpresa y leerSesion, no se omite y no se da por pasada.",
     };
   }
 

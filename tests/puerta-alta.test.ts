@@ -14,11 +14,16 @@ describe("la puerta llama al alta de src/server", () => {
     assert.equal(typeof paquete.dependencies.bcryptjs, "string");
 
     const accion = readFileSync(path.join(RAIZ, "src/app/alta/acciones.ts"), "utf8");
-    assert.match(accion, /darDeAltaEmpresa/);
-    assert.match(accion, /abrirCuenta/);
+    const completar = readFileSync(path.join(RAIZ, "src/server/alta/completar.ts"), "utf8");
+    assert.match(accion, /completarAlta/);
+    assert.match(completar, /darDeAltaEmpresa/);
+    assert.match(completar, /abrirCuenta/);
+    assert.match(completar, /descartarCuentaSinEmpresa/);
+    assert.match(completar, /rfc_duplicado/);
     assert.match(accion, /segunda_razon_social/);
     assert.doesNotMatch(accion, /postgres(?:ql)?:\/\//);
     assert.doesNotMatch(accion, /DATABASE_URL/);
+    assert.doesNotMatch(completar, /DATABASE_URL/);
     assert.doesNotMatch(accion, /pendiente_de_libro/);
   });
 

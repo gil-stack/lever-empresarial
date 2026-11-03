@@ -54,7 +54,7 @@ insert into audit_events (
 
 Los parámetros salen del evento: un id nuevo, `companyId`, `actorId`, `alta_empresa`, `companies`, `identificador` y `ocurridoEn`. No hay columna de cuerpo, así que la fila no tiene sitio para un secreto ni para un PAN.
 
-La persona se confirma antes, en su propia transacción (`users` y `sessions`), al abrir la cuenta. Si el alta de la empresa falla, esa fila no se deshace: el reintento usa la sesión. La transacción del alta es empresa, membresía y después `registrarEvento`. `actor_id` apunta a la persona ya confirmada, y `company_id` a la empresa recién insertada.
+Abrir la cuenta confirma a la persona y su sesión en su propia transacción (`users` y `sessions`), antes de la empresa. Si esa persona se acaba de crear y el alta de la empresa no se guarda, el alta borra la cuenta y no deja la cookie: un RFC que ya es de otra cuenta no deja sesión ni persona sin empresa. Quien ya tenía empresa y repite el alta conserva la sesión. La transacción de la empresa es la fila, la membresía y después `registrarEvento`. `actor_id` apunta a la persona, y `company_id` a la empresa recién insertada.
 
 La base confirma la empresa solo si esa fila existe en la misma transacción. `audit_events` rechaza `UPDATE`, `DELETE` y `TRUNCATE`. `company_id` puede ir vacío en un acto del operador de la plataforma; en el alta va la empresa recién creada.
 

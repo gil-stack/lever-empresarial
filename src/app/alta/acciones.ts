@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import {
@@ -9,9 +10,10 @@ import {
   type ErrorCampo,
   type EstadoAlta,
 } from "@/dominio/alta";
-import { darDeAltaEmpresa } from "@/server/company";
+import { completarAlta } from "@/server/alta/completar";
 import { fijarCookieDeSesion, sesionDesdeCookie } from "@/server/entrada";
-import { ErrorDeDominio, abrirCuenta, entrar, type Sesion } from "@/server/session";
+import { ErrorDeDominio, cerrarSesion, type Sesion } from "@/server/session";
+import { NOMBRE_COOKIE } from "@/server/session/cookie";
 import { validarCuenta } from "@/server/session/validar";
 
 const MENSAJE_CAMPO: Record<string, ErrorCampo> = {
@@ -55,40 +57,41 @@ export async function enviarAlta(_previo: EstadoAlta, formData: FormData): Promi
   if (!sesion) errores.push(...erroresDeCuenta(formData));
   if (errores.length > 0) return { tipo: "invalido", errores: ordenarErrores(errores) };
 
-  try {
-    const vigente = sesion ?? (await abrirOEntrar(formData));
-    await darDeAltaEmpresa(vigente, {
+  const resultado = await completarAlta(
+    sesion,
+    sesion
+      ? null
+      : {
+          nombre: String(formData.get("nombre") ?? ""),
+          correo: String(formData.get("correo") ?? ""),
+          contrasena: String(formData.get("contrasena") ?? ""),
+        },
+    {
       rfc: alta.rfc,
       razonSocial: alta.razonSocial,
       codigoPostal: alta.codigoPostal,
       regimen: alta.regimen,
       usoCfdi: alta.usoCfdi,
-    });
-  } catch (error) {
-    const estado = traducir(error);
+    },
+  );
+
+  if (resultado.tipo === "rechazo") {
+    if (resultado.cerrarCookie) await cerrarCookieAbierta();
+    else if (resultado.setCookie) await fijarCookieDeSesion(resultado.setCookie);
+    const estado = traducir(resultado.error);
     if (estado) return estado;
-    throw error;
+    throw resultado.error;
   }
 
+  if (resultado.setCookie) await fijarCookieDeSesion(resultado.setCookie);
   redirect("/consola");
 }
 
-async function abrirOEntrar(formData: FormData): Promise<Sesion> {
-  const entrada = {
-    nombre: String(formData.get("nombre") ?? ""),
-    correo: String(formData.get("correo") ?? ""),
-    contrasena: String(formData.get("contrasena") ?? ""),
-  };
-  try {
-    const abierta = await abrirCuenta(entrada);
-    await fijarCookieDeSesion(abierta.setCookie);
-    return abierta.sesion;
-  } catch (error) {
-    if (!(error instanceof ErrorDeDominio) || error.codigo !== "correo_duplicado") throw error;
-  }
-  const abierta = await entrar({ correo: entrada.correo, contrasena: entrada.contrasena });
-  await fijarCookieDeSesion(abierta.setCookie);
-  return abierta.sesion;
+async function cerrarCookieAbierta(): Promise<void> {
+  const jar = await cookies();
+  const token = jar.get(NOMBRE_COOKIE)?.value;
+  const cierre = await cerrarSesion(token ? `${NOMBRE_COOKIE}=${token}` : null);
+  await fijarCookieDeSesion(cierre.setCookie);
 }
 
 function erroresDeCuenta(formData: FormData): ErrorCampo[] {

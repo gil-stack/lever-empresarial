@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { relatoSinEmpresa } from "./relato";
+
 type EmpresaVisible = {
   rfc: string;
   razonSocial: string;
@@ -14,18 +16,14 @@ export function ConsolaVacia({
   libroDisponible: boolean;
   conSesion: boolean;
 }) {
+  const vacia = empresa ? null : relatoSinEmpresa(libroDisponible, conSesion);
+
   return (
     <div className="consola">
       <p className="kicker">Consola</p>
-      <h1>{empresa ? empresa.razonSocial : "Todavía no hay razón social."}</h1>
+      <h1>{empresa ? empresa.razonSocial : vacia?.titulo}</h1>
       {empresa ? <p className="rfc-cuenta">{empresa.rfc}</p> : null}
-      <p className="lede">
-        {empresa
-          ? "En esta cuenta no cabe otro."
-          : libroDisponible
-            ? "Esta cuenta todavía no tiene razón social."
-            : "No se pudo consultar la cuenta."}
-      </p>
+      <p className="lede">{empresa ? "En esta cuenta no cabe otro." : vacia?.detalle}</p>
       {empresa || !libroDisponible ? null : (
         <div className="acciones">
           <Link className="boton" href="/">

@@ -1,19 +1,19 @@
 import { randomBytes } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { ident } from "./columnas.ts";
 
 /**
  * La prueba crea una base, aplica db/migrations y la borra.
- * DATABASE_URL es el libro de la plataforma: no se usa aquí y no se imprime.
+ * Este módulo no migra el libro. Compara el destino con DATABASE_URL para
+ * rechazarlo, y no imprime ninguna URL.
  */
 export function exigirBaseDesechable(): string {
   const url = process.env.AISLAMIENTO_DATABASE_URL?.trim() ?? "";
   if (!url) {
     throw new Error(
-      "El esquema de db/migrations ya está. Para correr el aislamiento hace falta " +
-        "AISLAMIENTO_DATABASE_URL apuntando a un Postgres desechable: la prueba crea una base, " +
-        "aplica las migraciones y la borra. No usa DATABASE_URL, porque esa variable es el libro " +
-        "y no debe aparecer en la prueba ni en sus logs.",
+      "No hay una base desechable. La prueba de aislamiento no se da por pasada. " +
+        "Hace falta AISLAMIENTO_DATABASE_URL apuntando a un Postgres donde se pueda crear y borrar una base. " +
+        "La prueba aplica las migraciones ahí y lee con leerEmpresa y leerSesion. " +
+        "No uses el libro: DATABASE_URL no es esa base y no debe aparecer en la salida.",
     );
   }
 
@@ -100,6 +100,13 @@ export function consultarJson<T>(url: string, sql: string): T {
   } catch {
     throw new Error(`La consulta de aislamiento no devolvió JSON.\n${salida.slice(0, 500)}`);
   }
+}
+
+function ident(nombre: string): string {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(nombre)) {
+    throw new Error("Nombre de base no admitido en la prueba de aislamiento.");
+  }
+  return `"${nombre}"`;
 }
 
 function urlConBase(url: string, base: string): string {

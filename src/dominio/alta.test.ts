@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 import { ordenarErrores, validarAlta } from "./alta.ts";
 import { regimenesVisibles, usosVisibles } from "./catalogos-fiscales.ts";
-import { validarRfc } from "./rfc.ts";
+import { rfcAlEscribir, validarRfc } from "./rfc.ts";
 
 const BASE = {
   rfc: "TCM010101AB1",
@@ -46,5 +47,14 @@ describe("la puerta usa el patrón de la fase", () => {
       ordenados.map((error) => error.campo),
       ["nombre", "contrasena", "rfc"],
     );
+  });
+
+  it("no corta un RFC con espacios antes de quitarlos", () => {
+    assert.equal(rfcAlEscribir("EKU 900317 3C9"), "EKU9003173C9");
+    assert.equal(rfcAlEscribir("eku-900317-3c9"), "EKU9003173C9");
+    assert.equal(rfcAlEscribir(`EKU9003173C9${"X".repeat(20)}`).length, 13);
+    const formulario = readFileSync(new URL("../components/alta/formulario-alta.tsx", import.meta.url), "utf8");
+    assert.match(formulario, /rfcAlEscribir/);
+    assert.equal(formulario.includes("maxLength={13}"), false);
   });
 });

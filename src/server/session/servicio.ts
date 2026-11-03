@@ -99,6 +99,18 @@ export async function leerSesion(
   return listo.repositorio.buscarPorTokenHash(hashDeToken(token), listo.ahora());
 }
 
+const UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+/** Quita una persona que se creó en un alta que no llegó a tener empresa. */
+export async function descartarCuentaSinEmpresa(
+  userId: string,
+  deps?: DependenciasSesion,
+): Promise<boolean> {
+  if (typeof userId !== "string" || !UUID.test(userId)) return false;
+  return resolver(deps).repositorio.descartarCuentaSinEmpresa(userId);
+}
+
 export async function cerrarSesion(
   cookieHeader: string | null | undefined,
   deps?: DependenciasSesion,

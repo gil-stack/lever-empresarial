@@ -16,7 +16,7 @@ import { conexionIniciada, traducirErrorDeBase } from "./db";
 import { ErrorDeDominio } from "./error-de-dominio";
 import { hashDeToken, tokenNuevo } from "./hash";
 import { mapearSesion, SQL, type RepositorioSesion, type UsuarioInterno } from "./repositorio";
-import { abrirCuenta, cerrarSesion, entrar, leerSesion } from "./servicio";
+import { abrirCuenta, cerrarSesion, descartarCuentaSinEmpresa, entrar, leerSesion } from "./servicio";
 import { validarCuenta } from "./validar";
 
 const AHORA = new Date("2026-11-03T10:00:00.000Z");
@@ -141,6 +141,21 @@ describe("cuenta y sesión", () => {
     assert.equal((await cerrarSesion(null, dependencias)).setCookie.includes("Secure"), true);
     assert.equal(await leerSesion(null, dependencias), null);
   });
+
+  it("borra la cuenta nueva solo si no tiene empresa", async () => {
+    const repo = memoria();
+    const abierta = await abrirCuenta(cuenta(), deps(repo));
+    assert.equal(await descartarCuentaSinEmpresa("no-es-uuid", deps(repo)), false);
+    assert.equal(await descartarCuentaSinEmpresa(abierta.sesion.usuario.id, deps(repo)), true);
+    assert.equal(repo.usuarios.size, 0);
+    assert.equal(repo.sesiones.size, 0);
+
+    const conEmpresa = await abrirCuenta(cuenta({ correo: "con-empresa@ejemplo.mx" }), deps(repo, undefined, "e".repeat(43)));
+    repo.marcarEmpresa(conEmpresa.sesion.usuario.id);
+    assert.equal(await descartarCuentaSinEmpresa(conEmpresa.sesion.usuario.id, deps(repo)), false);
+    assert.equal(repo.usuarios.has(conEmpresa.sesion.usuario.id), true);
+    assert.equal(repo.sesiones.size, 1);
+  });
 });
 
 describe("errores de base", () => {
@@ -192,6 +207,9 @@ describe("errores de base", () => {
     assert.doesNotMatch(SQL.buscarSesion, /password_hash/);
     assert.match(SQL.buscarSesion, /memberships/);
     assert.match(SQL.borrarSesionesDelUsuario, /delete from sessions where user_id = \$1/i);
+    assert.match(SQL.borrarUsuario, /delete from users where id = \$1/i);
+    assert.match(SQL.tieneMembresia, /from memberships where user_id = \$1/i);
+    assert.match(SQL.bloquearUsuario, /for update/i);
     const fuenteRepo = readFileSync(new URL("./repositorio.ts", import.meta.url), "utf8");
     assert.match(fuenteRepo, /consulta\.query\(SQL\.borrarSesionesDelUsuario/);
     const sesion = mapearSesion({
@@ -292,12 +310,17 @@ function deps(
 function memoria(): RepositorioSesion & {
   usuarios: Map<string, UsuarioInterno>;
   sesiones: Map<string, { id: string; userId: string; tokenHash: string; expiresAt: Date }>;
+  marcarEmpresa: (userId: string) => void;
 } {
   const usuarios = new Map<string, UsuarioInterno>();
   const sesiones = new Map<string, { id: string; userId: string; tokenHash: string; expiresAt: Date }>();
+  const conEmpresa = new Set<string>();
   return {
     usuarios,
     sesiones,
+    marcarEmpresa(userId) {
+      conEmpresa.add(userId);
+    },
     async crearCuenta(registro) {
       if ([...usuarios.values()].some((usuario) => usuario.correo === registro.usuario.correo)) {
         throw new ErrorDeDominio("correo_duplicado");
@@ -329,6 +352,14 @@ function memoria(): RepositorioSesion & {
     },
     async borrarPorTokenHash(tokenHash) {
       sesiones.delete(tokenHash);
+    },
+    async descartarCuentaSinEmpresa(userId) {
+      if (!usuarios.has(userId) || conEmpresa.has(userId)) return false;
+      usuarios.delete(userId);
+      for (const [hash, sesion] of [...sesiones.entries()]) {
+        if (sesion.userId === userId) sesiones.delete(hash);
+      }
+      return true;
     },
   };
 }

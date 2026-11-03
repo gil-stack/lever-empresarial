@@ -17,6 +17,7 @@ type ClientePg = {
 type PoolPg = {
   connect: () => Promise<ClientePg>;
   query: (sql: string, params?: unknown[]) => Promise<ResultadoPg>;
+  end: () => Promise<void>;
   on: (evento: "error", fn: () => void) => void;
 };
 
@@ -38,6 +39,33 @@ type ConstructorPool = new (opciones: OpcionesPool) => PoolPg;
 let pool: PoolPg | null = null;
 let pendiente: Promise<PoolPg> | null = null;
 let iniciada = false;
+let epoca = 0;
+
+/** Suelta el pool. La prueba de aislamiento lo usa antes de borrar su base. */
+export async function cerrarConexion(): Promise<void> {
+  epoca += 1;
+  const actual = pool;
+  const espera = pendiente;
+  pool = null;
+  pendiente = null;
+  iniciada = false;
+  const abiertos = new Set<PoolPg>();
+  if (actual) abiertos.add(actual);
+  if (espera) {
+    try {
+      abiertos.add(await espera);
+    } catch {
+      // La creación falló o ya cerró el pool al ver el cambio de época.
+    }
+  }
+  for (const abierto of abiertos) {
+    try {
+      await abierto.end();
+    } catch {
+      // El driver puede citar la conexión. No se publica.
+    }
+  }
+}
 
 export function conexionIniciada(): boolean {
   return iniciada;
@@ -113,14 +141,19 @@ async function conectar(): Promise<ClientePg> {
 function obtenerPool(): Promise<PoolPg> {
   if (pool) return Promise.resolve(pool);
   if (!pendiente) {
+    const marca = epoca;
     pendiente = crearPool().then(
       (creado) => {
+        if (marca !== epoca) {
+          void creado.end().catch(() => undefined);
+          throw new ErrorDeDominio("base_no_disponible");
+        }
         pool = creado;
         iniciada = true;
         return creado;
       },
       (error) => {
-        pendiente = null;
+        if (marca === epoca) pendiente = null;
         throw error;
       },
     );

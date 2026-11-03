@@ -13,7 +13,7 @@ import {
   type CodigoRechazo,
   type ErrorCampo,
 } from "@/dominio/alta";
-import { normalizarRfc, tipoDeRfc } from "@/dominio/rfc";
+import { rfcAlEscribir, tipoDeRfc } from "@/dominio/rfc";
 
 export type ContextoFormulario = {
   conSesion: boolean;
@@ -82,7 +82,7 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
   }
 
   function alCambiarRfc(valor: string) {
-    const siguiente = normalizarRfc(valor).slice(0, 13);
+    const siguiente = rfcAlEscribir(valor);
     const tipoSiguiente = tipoDeRfc(siguiente);
     const regimenSiguiente =
       tipoSiguiente && regimen && !regimenesVisibles(tipoSiguiente).some((item) => item.codigo === regimen)
@@ -256,7 +256,6 @@ export function FormularioAlta({ contexto }: { contexto: ContextoFormulario }) {
           autoComplete="off"
           autoCapitalize="characters"
           spellCheck={false}
-          maxLength={13}
           inputMode="text"
           aria-invalid={mensaje("rfc") ? true : undefined}
           aria-describedby={descritoPor("rfc", mensaje("rfc"))}

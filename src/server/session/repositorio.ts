@@ -27,6 +27,8 @@ export type RepositorioSesion = {
   abrirSesion: (sesion: SesionGuardada) => Promise<void>;
   buscarPorTokenHash: (tokenHash: string, ahora: Date) => Promise<Sesion | null>;
   borrarPorTokenHash: (tokenHash: string) => Promise<void>;
+  /** Borra la persona solo si no tiene empresa. Si ya hay membresía, no toca la fila. */
+  descartarCuentaSinEmpresa: (userId: string) => Promise<boolean>;
 };
 
 // users: id, nombre, correo, password_hash.
@@ -50,6 +52,9 @@ export const SQL = {
     where s.token_hash = $1 and s.expires_at > $2
   `,
   borrarSesion: "delete from sessions where token_hash = $1",
+  bloquearUsuario: "select id from users where id = $1 for update",
+  tieneMembresia: "select 1 as presente from memberships where user_id = $1 limit 1",
+  borrarUsuario: "delete from users where id = $1",
 } as const;
 
 type FilaUsuario = {
@@ -125,6 +130,17 @@ export function repositorioPg(): RepositorioSesion {
     },
     async borrarPorTokenHash(tokenHash) {
       await consultar(SQL.borrarSesion, [tokenHash]);
+    },
+    descartarCuentaSinEmpresa(userId) {
+      return conTransaccion(async (consulta) => {
+        const usuario = await consulta.query(SQL.bloquearUsuario, [userId]);
+        if (usuario.rows.length === 0) return false;
+        const membresia = await consulta.query(SQL.tieneMembresia, [userId]);
+        if (membresia.rows.length > 0) return false;
+        await consulta.query(SQL.borrarSesionesDelUsuario, [userId]);
+        const borrado = await consulta.query(SQL.borrarUsuario, [userId]);
+        return borrado.rowCount > 0;
+      });
     },
   };
 }
