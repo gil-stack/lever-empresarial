@@ -36,6 +36,10 @@ La cuenta es la fila de `companies`. Tiene un solo RFC, de 12 caracteres (person
 
 `rol` es `administrador`, `solicitante`, `liberador`, `tarjetahabiente` o `contador`. El alta del fundador usa `administrador`.
 
+## Maestro de personas
+
+`0007_maestro_personas.sql` agrega `cost_centers` y `employees`. La CLABE se guarda completa y solo si `clabe_digito_371` cierra con la ponderación 3, 7 y 1. La baja es una fecha. Esta migración no crea dispersión, SPEI ni tarjeta. El alta del centro y de la persona, y la baja, escriben en `audit_events` dentro de la misma transacción.
+
 ## Auditoría del alta
 
 `registrarEvento(evento, consulta)` inserta en la misma transacción del alta. `consulta.query(sql, params)` ejecuta:

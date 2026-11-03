@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { FRASE_CONTADOR, FRASE_SIN_DISPERSION } from "@/dominio/personas";
+
 import { relatoSinEmpresa } from "./relato";
 
 type EmpresaVisible = {
@@ -11,10 +13,12 @@ export function ConsolaVacia({
   empresa,
   libroDisponible,
   conSesion,
+  personas = null,
 }: {
   empresa: EmpresaVisible;
   libroDisponible: boolean;
   conSesion: boolean;
+  personas?: { titulo: string; detalle: string } | { fallo: true } | null;
 }) {
   const vacia = empresa ? null : relatoSinEmpresa(libroDisponible, conSesion);
 
@@ -54,6 +58,28 @@ export function ConsolaVacia({
         </dl>
         <p className="nota-saldos">Estas dos cifras no se suman.</p>
       </section>
+      {personas ? (
+        <section className="ficha" aria-labelledby="personas-titulo">
+          {"fallo" in personas ? (
+            <>
+              <h2 id="personas-titulo">Personas</h2>
+              <p className="frase">No se pudo consultar el maestro.</p>
+            </>
+          ) : (
+            <>
+              <h2 id="personas-titulo">{personas.titulo}</h2>
+              <p className="lede">{personas.detalle}</p>
+              <p className="regla-fija">{FRASE_CONTADOR}</p>
+              <p className="nota-saldos">{FRASE_SIN_DISPERSION}</p>
+              <div className="acciones">
+                <Link className="enlace-texto" href="/consola/personas">
+                  Abrir el maestro
+                </Link>
+              </div>
+            </>
+          )}
+        </section>
+      ) : null}
     </div>
   );
 }

@@ -11,11 +11,14 @@ export function Encabezado({
   actual,
   persona = null,
   superficie = "finanzas",
+  maestro = false,
 }: {
   actual: string;
   persona?: { nombre: string } | null;
   superficie?: "finanzas" | "telefono";
+  maestro?: boolean;
 }) {
+  const finanzas = maestro ? [...FINANZAS, { href: "/consola/personas", etiqueta: "Personas" }] : FINANZAS;
   return (
     <header className="encabezado">
       <a className="saltar" href="#contenido">
@@ -37,7 +40,7 @@ export function Encabezado({
           <div className="encabezado-acciones">
             <nav aria-label="Finanzas">
               <ul>
-                {FINANZAS.map((item) => (
+                {finanzas.map((item) => (
                   <li key={item.href}>
                     <Link href={item.href} aria-current={item.href === actual ? "page" : undefined}>
                       {item.etiqueta}

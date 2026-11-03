@@ -6,12 +6,14 @@ import { leerEmpresa } from "./company";
 import { leerSesion } from "./session";
 import { NOMBRE_COOKIE } from "./session/cookie";
 import { ErrorDeDominio } from "./session/error-de-dominio";
+import type { Rol } from "./session/tipos";
 
 export type Entrada = {
   nombre: string | null;
   rfc: string | null;
   razonSocial: string | null;
   libroDisponible: boolean;
+  rol: Rol | null;
 };
 
 const VACIA: Entrada = {
@@ -19,6 +21,7 @@ const VACIA: Entrada = {
   rfc: null,
   razonSocial: null,
   libroDisponible: true,
+  rol: null,
 };
 
 /**
@@ -35,16 +38,19 @@ export async function leerEntrada(companyIdPedido?: string | null): Promise<Entr
       rfc: empresa?.rfc ?? null,
       razonSocial: empresa?.razonSocial ?? null,
       libroDisponible: true,
+      rol: sesion.rol,
     };
   } catch (error) {
-    if (error instanceof ErrorDeDominio) {
-      return { nombre: null, rfc: null, razonSocial: null, libroDisponible: false };
-    }
-    if (pareceSecreto(error)) {
-      return { nombre: null, rfc: null, razonSocial: null, libroDisponible: false };
+    if (error instanceof ErrorDeDominio || errorConSecreto(error)) {
+      return { nombre: null, rfc: null, razonSocial: null, libroDisponible: false, rol: null };
     }
     throw error;
   }
+}
+
+export function errorConSecreto(error: unknown): boolean {
+  const texto = error instanceof Error ? `${error.name} ${error.message}` : "";
+  return /postgres(ql)?:\/\//i.test(texto) || /DATABASE_URL/i.test(texto);
 }
 
 export async function sesionDesdeCookie() {
@@ -85,7 +91,3 @@ export async function fijarCookieDeSesion(setCookie: string): Promise<void> {
   });
 }
 
-function pareceSecreto(error: unknown): boolean {
-  const texto = error instanceof Error ? `${error.name} ${error.message}` : "";
-  return /postgres(ql)?:\/\//i.test(texto) || /DATABASE_URL/i.test(texto);
-}
