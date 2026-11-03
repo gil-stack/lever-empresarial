@@ -5,9 +5,10 @@ import { ConsolaVacia } from "@/components/consola/consola-vacia";
 import { Encabezado, Pie } from "@/components/cromo/encabezado";
 import { puedeVerMaestro, relatoOperabilidad } from "@/dominio/personas";
 import type { VistaCajones } from "@/dominio/politica";
-import { errorConSecreto, leerEntrada, sesionDesdeCookie } from "@/server/entrada";
+import { errorConSecreto, leerEntrada, sesionDesdeCookie, sesionSegura } from "@/server/entrada";
 import { resumenParaConsola } from "@/server/personas";
 import { leerCajones } from "@/server/politica/servicio";
+import { esOperadorActual, leerSuscripcionDeLaSesion, leerTarifa } from "@/server/precio";
 import { ErrorDeDominio } from "@/server/session";
 
 export const runtime = "nodejs";
@@ -27,7 +28,14 @@ export default async function PaginaConsola({
 }) {
   const params = await searchParams;
   const pedido = typeof params.companyId === "string" ? params.companyId : null;
-  const [entrada, cajones] = await Promise.all([leerEntrada(pedido), cargarCajones()]);
+  const sesionPendiente = sesionSegura();
+  const [entrada, sesion, tarifa, suscripcion, cajones] = await Promise.all([
+    leerEntrada(pedido),
+    sesionPendiente,
+    leerTarifa(),
+    sesionPendiente.then((sesionLeida) => leerSuscripcionDeLaSesion(sesionLeida)),
+    cargarCajones(),
+  ]);
   const empresa =
     entrada.rfc && entrada.razonSocial ? { rfc: entrada.rfc, razonSocial: entrada.razonSocial } : null;
   const personas = empresa && puedeVerMaestro(entrada.rol) ? await resumenDePersonas() : null;
@@ -46,6 +54,9 @@ export default async function PaginaConsola({
           conSesion={entrada.nombre !== null}
           personas={personas}
           despues={empresa ? despuesDeCajones(cajones) : null}
+          tarifa={tarifa}
+          suscripcion={suscripcion}
+          esOperador={esOperadorActual(sesion)}
         />
       </main>
       <Pie />

@@ -134,8 +134,24 @@ export function traducirErrorDeBase(error: unknown): Error {
       return new ErrorDeDominio("politica_invalida");
     }
   }
+  if (campo(error, "code") === "P0001") {
+    const codigo = FRASES_DE_PRECIO[campo(error, "message")];
+    if (codigo) return new ErrorDeDominio(codigo);
+  }
   return new ErrorDeDominio("base_no_disponible");
 }
+
+const FRASES_DE_PRECIO: Readonly<Record<string, string>> = {
+  "el monto de la suscripcion ya esta publicado": "precio_ya_publicado",
+  "la suscripcion no pasa a aceptada sin monto publicado": "precio_no_publicado",
+  "la suscripcion aceptada no regresa a recorrido": "suscripcion_ya_aceptada",
+  "la suscripcion nace en recorrido": "suscripcion_invalida",
+  "platform_pricing no se borra": "precio_protegido",
+  "platform_pricing es una sola fila": "precio_protegido",
+  "la suscripcion no se borra": "suscripcion_protegida",
+  "el recorrido no se reescribe": "suscripcion_protegida",
+  "la aceptacion no trae quien ni cuando": "suscripcion_invalida",
+};
 
 function comoConsulta(cliente: ClientePg): Consulta {
   return {

@@ -6,7 +6,7 @@ import { leerEmpresa } from "./company";
 import { leerSesion } from "./session";
 import { NOMBRE_COOKIE } from "./session/cookie";
 import { ErrorDeDominio } from "./session/error-de-dominio";
-import type { Rol } from "./session/tipos";
+import type { Rol, Sesion } from "./session/tipos";
 
 export type Entrada = {
   nombre: string | null;
@@ -51,6 +51,15 @@ export async function leerEntrada(companyIdPedido?: string | null): Promise<Entr
 export function errorConSecreto(error: unknown): boolean {
   const texto = error instanceof Error ? `${error.name} ${error.message}` : "";
   return /postgres(ql)?:\/\//i.test(texto) || /DATABASE_URL/i.test(texto);
+}
+
+export async function sesionSegura(): Promise<Sesion | null> {
+  try {
+    return await sesionDesdeCookie();
+  } catch (error) {
+    if (error instanceof ErrorDeDominio || errorConSecreto(error)) return null;
+    throw error;
+  }
 }
 
 export async function sesionDesdeCookie() {

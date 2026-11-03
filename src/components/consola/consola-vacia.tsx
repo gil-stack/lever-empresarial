@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 
+import { RenglonesTarifa } from "@/components/precios/renglones";
+import { SuscripcionEmpresa } from "@/components/precios/suscripcion-empresa";
 import { FRASE_CONTADOR, FRASE_SIN_DISPERSION } from "@/dominio/personas";
+import type { LecturaSuscripcion, TarifaVisible } from "@/dominio/precio";
 
 import { relatoSinEmpresa } from "./relato";
 
@@ -16,12 +19,18 @@ export function ConsolaVacia({
   conSesion,
   personas = null,
   despues = null,
+  tarifa,
+  suscripcion,
+  esOperador,
 }: {
   empresa: EmpresaVisible;
   libroDisponible: boolean;
   conSesion: boolean;
   personas?: { titulo: string; detalle: string } | { fallo: true } | null;
   despues?: ReactNode;
+  tarifa: TarifaVisible;
+  suscripcion: LecturaSuscripcion;
+  esOperador: boolean;
 }) {
   const vacia = empresa ? null : relatoSinEmpresa(libroDisponible, conSesion);
 
@@ -84,6 +93,11 @@ export function ConsolaVacia({
         </section>
       ) : null}
       {despues}
+      <RenglonesTarifa tarifa={tarifa} ambito="consola" />
+      <p className="nota-saldos">
+        <Link href="/precios">La página de precios</Link> lee este mismo campo.
+      </p>
+      <SuscripcionEmpresa tarifa={tarifa} lectura={suscripcion} esOperador={esOperador} />
     </div>
   );
 }

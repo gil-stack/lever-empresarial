@@ -17,9 +17,9 @@ import { SQL } from "../../src/server/politica/repositorio.ts";
 
 const RAIZ = new URL("../../", import.meta.url);
 
-describe("el contrato de la migración 0007", () => {
+describe("el contrato de la migración 0008", () => {
   it("siembra nombres y defaults, y no siembra centavos", () => {
-    const sql = readFileSync(new URL("db/migrations/0007_politica_categorias_cajones.sql", RAIZ), "utf8").toLowerCase();
+    const sql = readFileSync(new URL("db/migrations/0008_politica_categorias_cajones.sql", RAIZ), "utf8").toLowerCase();
     assert.match(sql, new RegExp(`dias_comprobante integer not null default ${DIAS_DEFAULT}`));
     assert.match(sql, new RegExp(`max_vencidos integer not null default ${VENCIDOS_DEFAULT}`));
     assert.match(sql, new RegExp(`between ${DIAS_MIN} and ${DIAS_MAX}`));
