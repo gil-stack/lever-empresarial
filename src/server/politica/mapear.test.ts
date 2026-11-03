@@ -16,7 +16,7 @@ describe("el JSON de la política", () => {
       umbral: null,
       personas: [
         {
-          userId,
+          personaId: userId,
           nombre: "Ana",
           correo: "ana@ejemplo.mx",
           rol: "administrador",
@@ -40,7 +40,7 @@ describe("el JSON de la política", () => {
     assert.equal(texto.includes("secreto"), false);
     assert.equal(texto.includes("postgres"), false);
     assert.equal(vista.companyId, companyId);
-    assert.equal(vista.personas[0]?.userId, userId);
+    assert.equal(vista.personas[0]?.personaId, userId);
     assert.equal(vista.cajones[0]?.saldoCentavos, 0);
     assert.equal(vista.umbralCentavos, null);
   });

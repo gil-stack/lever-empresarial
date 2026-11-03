@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Encabezado, Pie } from "@/components/cromo/encabezado";
+import { puertasDe } from "@/components/cromo/puertas";
 import { FormularioPublicar } from "@/components/precios/formulario-publicar";
 import { RenglonesTarifa } from "@/components/precios/renglones";
 import { existePasoPublicar } from "@/dominio/precio";
@@ -25,17 +26,15 @@ export default async function PaginaPrecios() {
 
   return (
     <>
-      <Encabezado actual="/precios" persona={sesion ? { nombre: sesion.usuario.nombre } : null} />
+      <Encabezado
+        actual="/precios"
+        persona={sesion ? { nombre: sesion.usuario.nombre } : null}
+        {...puertasDe(sesion?.rol, Boolean(sesion?.companyId))}
+      />
       <main id="contenido" className="precios">
         <p className="kicker">Precios</p>
-        <h1 id="titulo-precios">
-          Dos
-          <br />
-          renglones.
-        </h1>
-        <p className="lede">
-          La suscripción de la plataforma y el costo SPEI del participante. La consola lee este mismo campo.
-        </p>
+        <h1 id="titulo-precios">Suscripción y costo del participante</h1>
+        <p className="lede">La consola muestra los mismos renglones.</p>
         <RenglonesTarifa tarifa={tarifa} />
         {publicar ? <FormularioPublicar /> : null}
       </main>

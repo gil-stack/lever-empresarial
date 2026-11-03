@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 
+import Link from "next/link";
+
 import { Encabezado, Pie } from "@/components/cromo/encabezado";
+import { puertasDe } from "@/components/cromo/puertas";
 import { PanelPolitica } from "@/components/politica/panel";
 import type { VistaPolitica } from "@/dominio/politica";
 import { sesionDesdeCookie } from "@/server/entrada";
 import { leerPolitica } from "@/server/politica/servicio";
-import { ErrorDeDominio } from "@/server/session";
+import { ErrorDeDominio, type Rol } from "@/server/session";
 
 export const runtime = "nodejs";
 
@@ -15,17 +18,21 @@ export const metadata: Metadata = {
 
 type Carga =
   | { tipo: "sin_sesion" }
-  | { tipo: "sin_empresa"; nombre: string }
-  | { tipo: "lista"; nombre: string; vista: VistaPolitica }
-  | { tipo: "aviso"; mensaje: string };
+  | { tipo: "sin_empresa"; nombre: string; rol: Rol | null }
+  | { tipo: "lista"; nombre: string; rol: Rol | null; vista: VistaPolitica }
+  | { tipo: "aviso"; mensaje: string; nombre: string | null; rol: Rol | null };
 
 export default async function PaginaPolitica() {
   const carga = await cargar();
-  const persona = carga.tipo === "lista" || carga.tipo === "sin_empresa" ? { nombre: carga.nombre } : null;
+  const persona = carga.tipo === "sin_sesion" ? null : carga.nombre ? { nombre: carga.nombre } : null;
+  const puertas = puertasDe(
+    carga.tipo === "sin_sesion" ? null : carga.rol,
+    carga.tipo === "lista" || (carga.tipo === "aviso" && carga.rol !== null),
+  );
 
   return (
     <>
-      <Encabezado actual="/consola/politica" persona={persona} />
+      <Encabezado actual="/consola/politica" persona={persona} {...puertas} />
       <main id="contenido">
         {carga.tipo === "lista" ? (
           <PanelPolitica vista={carga.vista} />
@@ -34,6 +41,13 @@ export default async function PaginaPolitica() {
             <p className="kicker">Política</p>
             <h1>{titulo(carga)}</h1>
             <p className="lede">{detalle(carga)}</p>
+            {carga.tipo === "sin_sesion" ? (
+              <div className="acciones">
+                <Link className="boton" href="/entrar">
+                  Entrar
+                </Link>
+              </div>
+            ) : null}
           </div>
         )}
       </main>
@@ -43,14 +57,20 @@ export default async function PaginaPolitica() {
 }
 
 async function cargar(): Promise<Carga> {
+  let nombre: string | null = null;
+  let rol: Rol | null = null;
   try {
     const sesion = await sesionDesdeCookie();
     if (!sesion) return { tipo: "sin_sesion" };
+    nombre = sesion.usuario.nombre;
+    rol = sesion.rol;
     const vista = await leerPolitica(sesion);
-    if (!vista) return { tipo: "sin_empresa", nombre: sesion.usuario.nombre };
-    return { tipo: "lista", nombre: sesion.usuario.nombre, vista };
+    if (!vista) return { tipo: "sin_empresa", nombre, rol };
+    return { tipo: "lista", nombre, rol, vista };
   } catch (error) {
-    if (error instanceof ErrorDeDominio) return { tipo: "aviso", mensaje: mensajeLibro(error.codigo) };
+    if (error instanceof ErrorDeDominio) {
+      return { tipo: "aviso", mensaje: mensajeLibro(error.codigo), nombre, rol };
+    }
     throw error;
   }
 }

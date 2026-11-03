@@ -28,6 +28,8 @@ const PARES = {
   alta_persona: "employees",
   alta_centro_costo: "cost_centers",
   baja_persona: "employees",
+  autorizar_liberador: "memberships",
+  quitar_liberador: "memberships",
 } as const;
 
 export type AccionMaestro = keyof typeof PARES;

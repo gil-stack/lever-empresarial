@@ -64,15 +64,17 @@ export const SQL = {
     limit 1
   `,
   jefePorId: `
-    select id, alta_en, baja_en
-    from employees
-    where id = $1 and company_id = $2
+    select e.id, e.alta_en, e.baja_en, e.user_id, mb.rol
+    from employees e
+    left join memberships mb on mb.user_id = e.user_id and mb.company_id = e.company_id
+    where e.id = $1 and e.company_id = $2
   `,
   bloquearPersona: `
-    select id, alta_en, baja_en
-    from employees
-    where id = $1 and company_id = $2
-    for update
+    select e.id, e.alta_en, e.baja_en, e.user_id, mb.rol
+    from employees e
+    left join memberships mb on mb.user_id = e.user_id and mb.company_id = e.company_id
+    where e.id = $1 and e.company_id = $2
+    for update of e
   `,
   usuarioPorCorreo: `
     select u.id,
@@ -95,6 +97,16 @@ export const SQL = {
     update employees
     set baja_en = $3::date
     where id = $1 and company_id = $2
+  `,
+  rolDeUsuario: `
+    select rol
+    from memberships
+    where user_id = $1 and company_id = $2
+  `,
+  quitarLiberador: `
+    update memberships
+    set rol = 'tarjetahabiente'
+    where user_id = $1 and company_id = $2 and rol = 'liberador'
   `,
   hechos: `
     select m.rol,
@@ -244,6 +256,15 @@ function contexto(consulta: Consulta, companyId: string, rol: Rol): ContextoMaes
       const resultado = await consulta.query(SQL.escribirBaja, [id, companyId, bajaEn]);
       if (resultado.rowCount < 1) throw new ErrorDeDominio("persona_ausente");
     },
+    async rolDeUsuario(userId) {
+      const resultado = await consulta.query(SQL.rolDeUsuario, [userId, companyId]);
+      const fila = resultado.rows[0] as { rol?: unknown } | undefined;
+      if (!fila) return null;
+      return rolLeido(fila.rol);
+    },
+    async quitarLiberador(userId) {
+      await consulta.query(SQL.quitarLiberador, [userId, companyId]);
+    },
   };
 }
 
@@ -266,12 +287,16 @@ function mapearNombre(fila: unknown): string {
 }
 
 function mapearBloqueada(fila: unknown): PersonaBloqueada {
-  const registro = fila as { id?: unknown; alta_en?: unknown; baja_en?: unknown };
+  const registro = fila as { id?: unknown; alta_en?: unknown; baja_en?: unknown; user_id?: unknown; rol?: unknown };
   if (typeof registro.id !== "string") throw new ErrorDeDominio("base_no_disponible");
+  const rol = registro.rol == null ? null : rolLeido(registro.rol);
+  if (registro.rol != null && !rol) throw new ErrorDeDominio("base_no_disponible");
   return {
     id: registro.id,
     altaEn: fechaDeColumna(registro.alta_en),
     bajaEn: registro.baja_en == null ? null : fechaDeColumna(registro.baja_en),
+    userId: typeof registro.user_id === "string" ? registro.user_id : null,
+    rol,
   };
 }
 

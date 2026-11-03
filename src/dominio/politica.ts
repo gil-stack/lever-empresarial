@@ -48,7 +48,7 @@ export type VistaCajones = {
 };
 
 export type PersonaVisible = {
-  userId: string;
+  personaId: string;
   nombre: string;
   correo: string;
   rol: string;
@@ -75,7 +75,7 @@ export type VistaPolitica = VistaCajones & {
 };
 
 export type DatosPersona = {
-  userId: string;
+  personaId: string;
   nombre: string;
   correo: string;
   rol: string;
@@ -291,9 +291,8 @@ function presentarPersona(
   empresa: { diasComprobante: number; maxVencidos: number },
   persona: DatosPersona,
 ): PersonaVisible | null {
-  if (!esUuid(persona.userId) || persona.nombre.trim().length === 0 || persona.correo.trim().length === 0) {
-    return null;
-  }
+  if (!esUuid(persona.personaId) || persona.nombre.trim().length === 0) return null;
+  if (typeof persona.correo !== "string" || typeof persona.rol !== "string") return null;
   const propio = persona.diasComprobante !== null || persona.maxVencidos !== null;
   if (propio && (persona.diasComprobante === null || persona.maxVencidos === null)) return null;
   const dias = persona.diasComprobante === null
@@ -304,11 +303,11 @@ function presentarPersona(
     : enteroGuardado(persona.maxVencidos, VENCIDOS_MIN, VENCIDOS_MAX);
   if (!dias || !vencidos) return null;
   return {
-    userId: persona.userId,
+    personaId: persona.personaId,
     nombre: persona.nombre,
     correo: persona.correo,
     rol: persona.rol,
-    rolEtiqueta: etiquetaRol(persona.rol),
+    rolEtiqueta: persona.rol === "" ? "No entra a la consola" : etiquetaRol(persona.rol),
     diasComprobante: dias,
     maxVencidos: vencidos,
     propio,

@@ -182,11 +182,59 @@ describe("el maestro no dispersa y no abre con una sola firma", () => {
     const maestro = await leerMaestro(sesion(admin, "administrador"), mundo.deps);
     const deBaja = maestro.personas.find((fila) => fila.id === segundo.id);
     assert.equal(deBaja?.bajaEn, "2026-11-03");
+    assert.equal(deBaja?.rol, "tarjetahabiente");
+    assert.equal(mundo.auditoria.some((evento) => evento.accion === "quitar_liberador"), true);
     assert.equal(deBaja?.clabe, CLABE);
     assert.equal(maestro.autorizados.length, 1);
     const resumen = await resumenParaConsola(sesion(admin, "administrador"), mundo.deps);
     assert.deepEqual(resumen?.nombres, ["Luis Soto"]);
     assert.equal(JSON.stringify(resumen).includes(CLABE), false);
+  });
+
+  it("el alta que ya trae baja deja el rastro y no conserva al liberador", async () => {
+    const mundo = memoria();
+    const admin = mundo.sembrar({ rol: "administrador", nombre: "Ada Admin" });
+    const centro = await nombrarCentro(sesion(admin, "administrador"), { nombre: "Nómina" }, mundo.deps);
+    const creada = await darDeAltaPersona(
+      sesion(admin, "administrador"),
+      alta({
+        centroId: centro.id,
+        nombre: "Helena Rivas",
+        acceso: "nueva",
+        correo: "helena@ejemplo.mx",
+        rol: "liberador",
+        baja: "2026-11-03",
+      }),
+      mundo.deps,
+    );
+    const maestro = await leerMaestro(sesion(admin, "administrador"), mundo.deps);
+    const helena = maestro.personas.find((fila) => fila.id === creada.id);
+    assert.equal(helena?.bajaEn, "2026-11-03");
+    assert.equal(helena?.rol, "tarjetahabiente");
+    assert.equal(mundo.auditoria.some((evento) => evento.accion === "baja_persona"), true);
+    assert.equal(mundo.auditoria.some((evento) => evento.accion === "quitar_liberador"), true);
+    assert.equal(maestro.autorizados.length, 0);
+
+    const futura = await darDeAltaPersona(
+      sesion(admin, "administrador"),
+      alta({
+        centroId: centro.id,
+        nombre: "Luis Soto",
+        acceso: "nueva",
+        correo: "luis@ejemplo.mx",
+        rol: "liberador",
+        baja: "2026-11-04",
+      }),
+      mundo.deps,
+    );
+    const despues = await leerMaestro(sesion(admin, "administrador"), mundo.deps);
+    const luis = despues.personas.find((fila) => fila.id === futura.id);
+    assert.equal(luis?.rol, "liberador");
+    assert.deepEqual(despues.autorizados, ["Luis Soto"]);
+    assert.equal(
+      mundo.auditoria.filter((evento) => evento.accion === "baja_persona").length >= 2,
+      true,
+    );
   });
 });
 
@@ -398,13 +446,11 @@ function memoria() {
       },
       async jefePorId(id) {
         const jefe = estado.personas.find((fila) => fila.id === id && fila.companyId === companyId);
-        return jefe ? { id: jefe.id, altaEn: jefe.altaEn, bajaEn: jefe.bajaEn } : null;
+        return jefe ? fichaBloqueada(jefe) : null;
       },
       async bloquearPersona(id) {
         const personaActual = estado.personas.find((fila) => fila.id === id && fila.companyId === companyId);
-        return personaActual
-          ? { id: personaActual.id, altaEn: personaActual.altaEn, bajaEn: personaActual.bajaEn }
-          : null;
+        return personaActual ? fichaBloqueada(personaActual) : null;
       },
       async usuarioPorCorreo(correo) {
         const usuario = estado.usuarios.find((fila) => fila.correo === correo.toLowerCase());
@@ -437,6 +483,26 @@ function memoria() {
         if (!personaActual) throw new ErrorDeDominio("persona_ausente");
         personaActual.bajaEn = bajaEn;
       },
+      async rolDeUsuario(userId) {
+        const miembro = estado.membresias.get(userId);
+        if (!miembro || miembro.companyId !== companyId) return null;
+        return miembro.rol;
+      },
+      async quitarLiberador(userId) {
+        const miembro = estado.membresias.get(userId);
+        if (!miembro || miembro.companyId !== companyId || miembro.rol !== "liberador") return;
+        miembro.rol = "tarjetahabiente";
+      },
+    };
+  }
+
+  function fichaBloqueada(personaActual: PersonaMem) {
+    return {
+      id: personaActual.id,
+      altaEn: personaActual.altaEn,
+      bajaEn: personaActual.bajaEn,
+      userId: personaActual.userId,
+      rol: personaActual.userId ? (estado.membresias.get(personaActual.userId)?.rol ?? null) : null,
     };
   }
 

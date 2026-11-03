@@ -43,6 +43,8 @@ export type PersonaBloqueada = {
   id: string;
   altaEn: string;
   bajaEn: string | null;
+  userId: string | null;
+  rol: Rol | null;
 };
 
 export type EmpleadoNuevo = {
@@ -75,6 +77,8 @@ export type ContextoMaestro = {
   insertarMembresia: (userId: string, rol: Rol) => Promise<void>;
   insertarEmpleado: (empleado: EmpleadoNuevo) => Promise<void>;
   escribirBaja: (id: string, bajaEn: string) => Promise<void>;
+  rolDeUsuario: (userId: string) => Promise<Rol | null>;
+  quitarLiberador: (userId: string) => Promise<void>;
 };
 
 export type RepositorioPersonas = {

@@ -132,7 +132,7 @@ function datos(): DatosPolitica {
 
 function persona(nombre: string, rol = "administrador") {
   return {
-    userId: randomUUID(),
+    personaId: randomUUID(),
     nombre,
     correo: `${nombre.split(" ")[0]?.toLowerCase()}@ejemplo.mx`,
     rol,

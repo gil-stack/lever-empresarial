@@ -59,18 +59,19 @@ export const SQL = {
       ),
       'personas', (
         select coalesce(jsonb_agg(jsonb_build_object(
-          'userId', u.id,
-          'nombre', u.nombre,
-          'correo', u.correo,
-          'rol', m2.rol,
+          'personaId', e.id,
+          'nombre', e.nombre,
+          'correo', coalesce(u.correo, ''),
+          'rol', coalesce(mb.rol, ''),
           'dias', pp.dias_comprobante,
           'vencidos', pp.max_vencidos
-        ) order by u.nombre, u.id), '[]'::jsonb)
-        from memberships m2
-        join users u on u.id = m2.user_id
+        ) order by e.nombre, e.id), '[]'::jsonb)
+        from employees e
+        left join users u on u.id = e.user_id
+        left join memberships mb on mb.user_id = e.user_id and mb.company_id = e.company_id
         left join policy_persons pp
-          on pp.company_id = m2.company_id and pp.user_id = m2.user_id
-        where m2.company_id = m.company_id
+          on pp.company_id = e.company_id and pp.employee_id = e.id
+        where e.company_id = m.company_id
       ),
       'categorias', (
         select coalesce(jsonb_agg(jsonb_build_object(
@@ -111,19 +112,19 @@ export const SQL = {
   `,
   personaDeLaEmpresa: `
     select 1 as presente
-    from memberships
-    where user_id = $2 and company_id = $1
+    from employees
+    where id = $2 and company_id = $1
   `,
   guardarPersona: `
-    insert into policy_persons (company_id, user_id, dias_comprobante, max_vencidos)
+    insert into policy_persons (company_id, employee_id, dias_comprobante, max_vencidos)
     values ($1, $2, $3, $4)
-    on conflict (company_id, user_id) do update
+    on conflict (company_id, employee_id) do update
     set dias_comprobante = excluded.dias_comprobante,
         max_vencidos = excluded.max_vencidos
   `,
   quitarPersona: `
     delete from policy_persons
-    where company_id = $1 and user_id = $2
+    where company_id = $1 and employee_id = $2
   `,
   crearCategoria: `
     insert into policy_categories (id, company_id, nombre, tope_centavos)
@@ -186,8 +187,8 @@ export type ContextoEscritura = {
   plazo: { diasComprobante: number; maxVencidos: number };
   guardarPlazo: (dias: number, vencidos: number) => Promise<void>;
   guardarUmbral: (centavos: number | null) => Promise<void>;
-  guardarPersona: (userId: string, dias: number, vencidos: number) => Promise<void>;
-  quitarPersona: (userId: string) => Promise<boolean>;
+  guardarPersona: (personaId: string, dias: number, vencidos: number) => Promise<void>;
+  quitarPersona: (personaId: string) => Promise<boolean>;
   crearCategoria: (categoria: { id: string; nombre: string; topeCentavos: number | null }) => Promise<void>;
   escribirTope: (categoriaId: string, centavos: number) => Promise<void>;
   quitarTope: (categoriaId: string) => Promise<void>;

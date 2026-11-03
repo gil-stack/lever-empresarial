@@ -27,7 +27,7 @@ export function FormularioPlazo({ dias, vencidos }: { dias: number; vencidos: nu
           autoComplete="off"
           required
           defaultValue={String(dias)}
-          aria-invalid={estado.tipo === "invalido" || undefined}
+          aria-invalid={invalidoEn(estado, "dias")}
         />
       </div>
       <div className="campo">
@@ -39,12 +39,12 @@ export function FormularioPlazo({ dias, vencidos }: { dias: number; vencidos: nu
           autoComplete="off"
           required
           defaultValue={String(vencidos)}
-          aria-invalid={estado.tipo === "invalido" || undefined}
+          aria-invalid={invalidoEn(estado, "vencidos")}
         />
       </div>
       <div className="acciones">
         <button type="submit" className="boton" disabled={pendiente}>
-          {pendiente ? "Guardando…" : "Guardar el default"}
+          {pendiente ? "Guardando…" : "Guardar el plazo"}
         </button>
       </div>
     </form>
@@ -84,23 +84,23 @@ export function FormularioUmbral({ escrito }: { escrito: boolean }) {
 }
 
 export function FormularioPersona({
-  userId,
+  personaId,
   dias,
   vencidos,
   propio,
 }: {
-  userId: string;
+  personaId: string;
   dias: number;
   vencidos: number;
   propio: boolean;
 }) {
   const [estado, accion, pendiente] = useActionState(guardarPoliticaPersona, FORMULARIO_INICIAL);
-  const diasId = `dias-${userId}`;
-  const vencidosId = `vencidos-${userId}`;
+  const diasId = `dias-${personaId}`;
+  const vencidosId = `vencidos-${personaId}`;
   return (
     <form className="politica-forma" action={accion} noValidate>
       <Aviso estado={estado} />
-      <input type="hidden" name="userId" value={userId} />
+      <input type="hidden" name="personaId" value={personaId} />
       <div className="campo">
         <label htmlFor={diasId}>Días de esta persona</label>
         <input
@@ -110,7 +110,7 @@ export function FormularioPersona({
           autoComplete="off"
           required
           defaultValue={String(dias)}
-          aria-invalid={estado.tipo === "invalido" || undefined}
+          aria-invalid={invalidoEn(estado, "dias")}
         />
       </div>
       <div className="campo">
@@ -122,7 +122,7 @@ export function FormularioPersona({
           autoComplete="off"
           required
           defaultValue={String(vencidos)}
-          aria-invalid={estado.tipo === "invalido" || undefined}
+          aria-invalid={invalidoEn(estado, "vencidos")}
         />
       </div>
       <div className="acciones">
@@ -131,7 +131,7 @@ export function FormularioPersona({
         </button>
         {propio ? (
           <button type="submit" className="boton-texto" name="intencion" value="quitar" disabled={pendiente}>
-            Volver al default
+            Volver al plazo de la empresa
           </button>
         ) : null}
       </div>
@@ -230,6 +230,11 @@ export function BotonBorrarCategoria({ categoriaId }: { categoriaId: string }) {
   );
 }
 
+function invalidoEn(estado: EstadoFormulario, campo: "dias" | "vencidos"): true | undefined {
+  if (estado.tipo !== "invalido" || estado.campo !== campo) return undefined;
+  return true;
+}
+
 function Aviso({ estado }: { estado: EstadoFormulario }) {
   if (estado.tipo === "inicial") return null;
   if (estado.tipo === "guardado") {
@@ -240,7 +245,7 @@ function Aviso({ estado }: { estado: EstadoFormulario }) {
     );
   }
   return (
-    <div className="alerta" role="alert">
+    <div className="alerta alerta-revisar" role="alert">
       <p>{estado.mensaje}</p>
     </div>
   );

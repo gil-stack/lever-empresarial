@@ -142,8 +142,12 @@ export function decidirLiberacion(hechos: {
 }): CodigoLiberacion {
   if (!puedeSoltarDinero(hechos.rol) || hechos.deBaja) return "sin_accion_de_liberar";
   if (!empresaOperable(hechos.autorizados)) return "empresa_no_operable";
-  if (hechos.otraFirmaId && hechos.otraFirmaId === hechos.actorId) return "misma_firma";
+  if (!hechos.otraFirmaId || mismoId(hechos.otraFirmaId, hechos.actorId)) return "misma_firma";
   return "sin_dispersion";
+}
+
+function mismoId(izquierda: string, derecha: string): boolean {
+  return izquierda.toLowerCase() === derecha.toLowerCase();
 }
 
 export function hoyEnMexico(ahora: Date): string {
@@ -407,7 +411,7 @@ export function relatoOperabilidad(nombres: readonly string[]): {
       ordenados.length === 2
         ? `${ordenados[0]} y ${ordenados[1]} pueden soltar dinero.`
         : `${ordenados[0]}, ${ordenados[1]} y ${ordenados.length - 2} más pueden soltar dinero.`;
-    return { operable: true, titulo: "Las dos firmas ya están.", detalle };
+    return { operable: true, titulo: "Hay dos personas autorizadas.", detalle };
   }
   if (ordenados.length === 1) {
     return {
@@ -426,7 +430,7 @@ export function relatoOperabilidad(nombres: readonly string[]): {
 export function lineaDeRol(rol: RolCuenta | null): string {
   if (rol === null) return "No entra a la consola.";
   if (rol === "contador") return `Contador. ${FRASE_CONTADOR}`;
-  if (rol === "liberador") return "Liberador. Autorizada a soltar dinero.";
+  if (rol === "liberador") return "Liberador. Puede soltar dinero.";
   if (rol === "administrador") return "Administrador. No suelta dinero por este rol.";
   if (rol === "solicitante") return "Solicitante. Pide, no suelta.";
   return "Tarjetahabiente. No abre este maestro.";
@@ -435,7 +439,7 @@ export function lineaDeRol(rol: RolCuenta | null): string {
 export function pistaDelRol(rol: RolCuenta | ""): string {
   if (rol === "contador") return "Ve el maestro. No tiene la acción de liberar.";
   if (rol === "liberador") {
-    return "Autorizada a soltar dinero. Hacen falta dos personas distintas. Hoy no se dispersa.";
+    return "Puede soltar dinero. Hacen falta dos personas distintas. Hoy no se dispersa.";
   }
   if (rol === "administrador") return "Da de alta a las personas. Este rol no suelta dinero.";
   if (rol === "solicitante") return "Puede pedir un pago, cuando esa pantalla exista. No lo suelta.";

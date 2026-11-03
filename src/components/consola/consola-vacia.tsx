@@ -3,7 +3,6 @@ import Link from "next/link";
 
 import { RenglonesTarifa } from "@/components/precios/renglones";
 import { SuscripcionEmpresa } from "@/components/precios/suscripcion-empresa";
-import { FRASE_CONTADOR, FRASE_SIN_DISPERSION } from "@/dominio/personas";
 import type { LecturaSuscripcion, TarifaVisible } from "@/dominio/precio";
 
 import { relatoSinEmpresa } from "./relato";
@@ -70,6 +69,7 @@ export function ConsolaVacia({
         </dl>
         <p className="nota-saldos">Estas dos cifras no se suman.</p>
       </section>
+      {despues}
       {personas ? (
         <section className="ficha" aria-labelledby="personas-titulo">
           {"fallo" in personas ? (
@@ -81,8 +81,6 @@ export function ConsolaVacia({
             <>
               <h2 id="personas-titulo">{personas.titulo}</h2>
               <p className="lede">{personas.detalle}</p>
-              <p className="regla-fija">{FRASE_CONTADOR}</p>
-              <p className="nota-saldos">{FRASE_SIN_DISPERSION}</p>
               <div className="acciones">
                 <Link className="enlace-texto" href="/consola/personas">
                   Abrir el maestro
@@ -92,10 +90,9 @@ export function ConsolaVacia({
           )}
         </section>
       ) : null}
-      {despues}
       <RenglonesTarifa tarifa={tarifa} ambito="consola" />
       <p className="nota-saldos">
-        <Link href="/precios">La página de precios</Link> lee este mismo campo.
+        <Link href="/precios">La página de precios</Link> muestra los mismos renglones.
       </p>
       <SuscripcionEmpresa tarifa={tarifa} lectura={suscripcion} esOperador={esOperador} />
     </div>

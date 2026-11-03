@@ -14,14 +14,14 @@ export function Cajones({ vista, enlace = true }: { vista: VistaCajones; enlace?
           <div key={cajon.codigo}>
             <dt>{cajon.nombre}</dt>
             <dd>
-              <p className="frase">{formatoPesos(cajon.saldoCentavos)}</p>
+              <p className="monto">{formatoPesos(cajon.saldoCentavos)}</p>
             </dd>
           </div>
         ))}
         <div>
           <dt>Sin cajón</dt>
           <dd>
-            <p className="frase">{formatoPesos(vista.sinCajonCentavos)}</p>
+            <p className="monto">{formatoPesos(vista.sinCajonCentavos)}</p>
             <p className="edad">Lo que todavía no tiene cajón.</p>
           </dd>
         </div>

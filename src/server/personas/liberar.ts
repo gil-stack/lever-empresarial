@@ -7,9 +7,9 @@ import { usuarioDeSesion, type DependenciasPersonas } from "./servicio";
 /**
  * La acción de soltar dinero no existe en esta fase.
  *
- * El contador ni siquiera consulta el maestro: su rol no libera. Un solo
- * liberador deja la empresa inoperable. Dos firmas distintas tampoco
- * dispersan: no hay instrucción de pago ni lote.
+ * El contador ve el maestro y no libera. Un solo liberador deja la empresa
+ * inoperable. Dos personas distintas tampoco dispersan: no hay instrucción
+ * de pago. Esta función no abre una pantalla.
  */
 export async function negarLiberacion(
   sesion: Sesion | null | undefined,

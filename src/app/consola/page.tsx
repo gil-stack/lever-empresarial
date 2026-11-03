@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Cajones } from "@/components/consola/cajones";
 import { ConsolaVacia } from "@/components/consola/consola-vacia";
 import { Encabezado, Pie } from "@/components/cromo/encabezado";
+import { puertasDe } from "@/components/cromo/puertas";
 import { puedeVerMaestro, relatoOperabilidad } from "@/dominio/personas";
 import type { VistaCajones } from "@/dominio/politica";
 import { errorConSecreto, leerEntrada, sesionDesdeCookie, sesionSegura } from "@/server/entrada";
@@ -45,7 +46,7 @@ export default async function PaginaConsola({
       <Encabezado
         actual="/consola"
         persona={entrada.nombre ? { nombre: entrada.nombre } : null}
-        maestro={Boolean(empresa) && puedeVerMaestro(entrada.rol)}
+        {...puertasDe(entrada.rol, Boolean(empresa))}
       />
       <main id="contenido">
         <ConsolaVacia

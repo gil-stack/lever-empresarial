@@ -43,12 +43,13 @@ describe("política, categorías y cajones", () => {
       ],
     );
     assert.equal(vista.sinCajonCentavos, 0);
-    assert.equal(vista.personas.find((persona) => persona.userId === beto)?.propio, false);
+    assert.equal(vista.personas.find((persona) => persona.personaId === beto.personaId)?.propio, false);
+    assert.equal(vista.personas.some((persona) => persona.nombre === "Alfa"), false);
 
-    const contador = await leerPolitica(sesion(beto), { repositorio: libro.repo, ahora: () => AHORA });
+    const contador = await leerPolitica(sesion(beto.userId), { repositorio: libro.repo, ahora: () => AHORA });
     assert.equal(contador?.puedeEditar, false);
     await assert.rejects(
-      editarPlazoEmpresa(sesion(beto), { dias: "10", vencidos: "3" }, { repositorio: libro.repo, ahora: () => AHORA }),
+      editarPlazoEmpresa(sesion(beto.userId), { dias: "10", vencidos: "3" }, { repositorio: libro.repo, ahora: () => AHORA }),
       (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "rol_sin_permiso",
     );
     assert.equal(libro.empresa(ana.companyId).dias, 5);
@@ -59,22 +60,34 @@ describe("política, categorías y cajones", () => {
     const libro = memoria();
     const ana = libro.sembrarEmpresa("Alfa");
     const cata = libro.agregarPersona(ana.companyId, "Cata", "tarjetahabiente");
+    const helena = libro.agregarSinConsola(ana.companyId, "Helena");
     const deps = { repositorio: libro.repo, ahora: () => AHORA };
 
     await editarPlazoEmpresa(sesion(ana.userId), { dias: "10", vencidos: "3" }, deps);
-    await editarPoliticaPersona(sesion(ana.userId), { userId: cata, dias: "9", vencidos: "2", quitar: false }, deps);
+    await editarPoliticaPersona(
+      sesion(ana.userId),
+      { personaId: helena, dias: "9", vencidos: "2", quitar: false },
+      deps,
+    );
     const conPropio = await leerPolitica(sesion(ana.userId), deps);
     assert.equal(conPropio?.diasComprobante, 10);
-    assert.equal(conPropio?.personas.find((persona) => persona.userId === cata)?.diasComprobante, 9);
-    assert.equal(conPropio?.personas.find((persona) => persona.userId === cata)?.propio, true);
-    assert.equal(conPropio?.personas.find((persona) => persona.userId === ana.userId)?.propio, false);
-    assert.equal(conPropio?.personas.find((persona) => persona.userId === ana.userId)?.diasComprobante, 10);
+    assert.equal(conPropio?.personas.find((persona) => persona.personaId === helena)?.diasComprobante, 9);
+    assert.equal(conPropio?.personas.find((persona) => persona.personaId === helena)?.propio, true);
+    assert.equal(conPropio?.personas.find((persona) => persona.personaId === helena)?.rolEtiqueta, "No entra a la consola");
+    assert.equal(conPropio?.personas.find((persona) => persona.personaId === cata.personaId)?.propio, false);
+    assert.equal(conPropio?.personas.find((persona) => persona.personaId === cata.personaId)?.diasComprobante, 10);
+    assert.equal(conPropio?.personas.some((persona) => persona.nombre === "Alfa"), false);
 
-    await editarPoliticaPersona(sesion(ana.userId), { userId: cata, dias: "10", vencidos: "3", quitar: false }, deps);
+    const igualado = await editarPoliticaPersona(
+      sesion(ana.userId),
+      { personaId: helena, dias: "10", vencidos: "3", quitar: false },
+      deps,
+    );
+    assert.equal(igualado.propio, false);
     const otraVez = await leerPolitica(sesion(ana.userId), deps);
-    assert.equal(otraVez?.personas.find((persona) => persona.userId === cata)?.propio, false);
+    assert.equal(otraVez?.personas.find((persona) => persona.personaId === helena)?.propio, false);
     assert.equal(
-      libro.auditoria.some((evento) => evento.accion === "quitar_politica_persona" && evento.identificador === cata),
+      libro.auditoria.some((evento) => evento.accion === "quitar_politica_persona" && evento.identificador === helena),
       true,
     );
     assert.equal(JSON.stringify(libro.auditoria).includes("centavos"), false);
@@ -152,7 +165,7 @@ describe("política, categorías y cajones", () => {
     await assert.rejects(
       editarPoliticaPersona(
         sesion(ana.userId),
-        { userId: beta.userId, dias: "4", vencidos: "4", quitar: false },
+        { personaId: beta.userId, dias: "4", vencidos: "4", quitar: false },
         deps,
       ),
       (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "persona_ajena",
@@ -184,6 +197,13 @@ type Miembro = {
   rol: string;
 };
 
+type EmpleadoPolitica = {
+  personaId: string;
+  nombre: string;
+  correo: string;
+  rol: string;
+};
+
 type Categoria = { id: string; nombre: string; topeCentavos: number | null };
 
 type Asiento = { codigo: (typeof CAJONES)[number]["codigo"] | null; centavos: number };
@@ -193,6 +213,7 @@ type Empresa = {
   vencidos: number;
   umbral: number | null;
   miembros: Miembro[];
+  empleados: EmpleadoPolitica[];
   plazos: Map<string, { dias: number; vencidos: number }>;
   categorias: Categoria[];
   asientos: Asiento[];
@@ -225,13 +246,13 @@ function memoria() {
         diasComprobante: empresa.dias,
         maxVencidos: empresa.vencidos,
         umbralCentavos: empresa.umbral,
-        personas: empresa.miembros.map((miembro) => ({
-          userId: miembro.userId,
-          nombre: miembro.nombre,
-          correo: miembro.correo,
-          rol: miembro.rol,
-          diasComprobante: empresa.plazos.get(miembro.userId)?.dias ?? null,
-          maxVencidos: empresa.plazos.get(miembro.userId)?.vencidos ?? null,
+        personas: empresa.empleados.map((empleado) => ({
+          personaId: empleado.personaId,
+          nombre: empleado.nombre,
+          correo: empleado.correo,
+          rol: empleado.rol,
+          diasComprobante: empresa.plazos.get(empleado.personaId)?.dias ?? null,
+          maxVencidos: empresa.plazos.get(empleado.personaId)?.vencidos ?? null,
         })),
         categorias: empresa.categorias.map((categoria) => ({ ...categoria })),
         cajones: CAJONES.map((cajon) => ({
@@ -263,13 +284,13 @@ function memoria() {
           empresa.umbral = centavos;
         },
         async guardarPersona(personaId, dias, vencidos) {
-          if (!empresa.miembros.some((miembro) => miembro.userId === personaId)) {
+          if (!empresa.empleados.some((empleado) => empleado.personaId === personaId)) {
             throw new ErrorDeDominio("persona_ajena");
           }
           empresa.plazos.set(personaId, { dias, vencidos });
         },
         async quitarPersona(personaId) {
-          if (!empresa.miembros.some((miembro) => miembro.userId === personaId)) {
+          if (!empresa.empleados.some((empleado) => empleado.personaId === personaId)) {
             throw new ErrorDeDominio("persona_ajena");
           }
           return empresa.plazos.delete(personaId);
@@ -321,6 +342,7 @@ function memoria() {
         vencidos: 5,
         umbral: null,
         miembros: [{ userId, nombre, correo: `${nombre.toLowerCase()}@ejemplo.mx`, rol: "administrador" }],
+        empleados: [],
         plazos: new Map(),
         categorias: [],
         asientos: [],
@@ -335,11 +357,21 @@ function memoria() {
     },
     agregarPersona(companyId: string, nombre: string, rol: string) {
       const userId = randomUUID();
+      const personaId = randomUUID();
       const empresa = empresas.get(companyId);
       if (!empresa) throw new Error("empresa ausente");
-      empresa.miembros.push({ userId, nombre, correo: `${nombre.toLowerCase()}@ejemplo.mx`, rol });
+      const correo = `${nombre.toLowerCase()}@ejemplo.mx`;
+      empresa.miembros.push({ userId, nombre, correo, rol });
+      empresa.empleados.push({ personaId, nombre, correo, rol });
       dueno.set(userId, companyId);
-      return userId;
+      return { userId, personaId };
+    },
+    agregarSinConsola(companyId: string, nombre: string) {
+      const personaId = randomUUID();
+      const empresa = empresas.get(companyId);
+      if (!empresa) throw new Error("empresa ausente");
+      empresa.empleados.push({ personaId, nombre, correo: "", rol: "" });
+      return personaId;
     },
     asentar(companyId: string, codigo: Asiento["codigo"], centavos: number) {
       empresas.get(companyId)?.asientos.push({ codigo, centavos });
@@ -358,6 +390,7 @@ function clonar(empresa: Empresa): Empresa {
     vencidos: empresa.vencidos,
     umbral: empresa.umbral,
     miembros: empresa.miembros.map((miembro) => ({ ...miembro })),
+    empleados: empresa.empleados.map((empleado) => ({ ...empleado })),
     plazos: new Map(empresa.plazos),
     categorias: empresa.categorias.map((categoria) => ({ ...categoria })),
     asientos: empresa.asientos.map((asiento) => ({ ...asiento })),

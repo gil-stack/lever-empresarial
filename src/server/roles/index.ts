@@ -10,6 +10,6 @@ export {
   puedeSoltarDinero,
 } from "./decidir.ts";
 export type { Accion, RolAsignable } from "./decidir.ts";
-export { asignarMembresia, cambiarRol, entrarAPoliza, firmarLoteDePrueba } from "./servicio.ts";
+export { asignarMembresia, cambiarRol, entrarAPoliza, liberarLoteDePrueba, solicitarLoteDePrueba } from "./servicio.ts";
 export type { DependenciasRoles } from "./servicio.ts";
-export type { LoteDePrueba, Membresia, RepositorioRoles } from "./tipos.ts";
+export type { FilaDeLote, LoteDePrueba, Membresia, RepositorioRoles, SolicitudDeLote } from "./tipos.ts";

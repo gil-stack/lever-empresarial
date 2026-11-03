@@ -35,8 +35,7 @@ export function FormularioPublicar() {
             required
           />
           <p className="pista" id="monto-pista">
-            Con punto decimal y hasta dos centavos. Sin un monto de ejemplo: el campo sigue vacío hasta que lo
-            publiques.
+            Con punto decimal y hasta dos centavos. Sigue vacío hasta que lo publiques.
           </p>
         </div>
         <div className="acciones">

@@ -3,15 +3,19 @@ import { randomUUID } from "node:crypto";
 import { ErrorDeDominio } from "../session/error-de-dominio.ts";
 import type { Sesion } from "../session/tipos.ts";
 import {
+  canonUsuario,
   esRolAsignable,
-  leerEntradaDeLote,
+  leerEntradaDeLiberacion,
+  leerEntradaDeSolicitud,
   loteNoGuardable,
+  mismoUsuario,
   puede,
-  rechazoDeFirmas,
+  rechazoDeLiberacion,
+  rechazoDeSolicitud,
   uuidValido,
   type RolAsignable,
 } from "./decidir.ts";
-import type { LoteDePrueba, Membresia, RepositorioRoles } from "./tipos.ts";
+import type { LoteDePrueba, Membresia, RepositorioRoles, SolicitudDeLote } from "./tipos.ts";
 
 export type DependenciasRoles = {
   repositorio?: RepositorioRoles;
@@ -86,45 +90,81 @@ export async function entrarAPoliza(
 }
 
 /**
- * Deja firmado un lote de nómina de prueba. Quien llama tiene que ser
- * quien libera, y esa persona no puede ser también quien solicita.
- * No hay monto: la fila no puede salir a un SPEI.
+ * Primer acto del lote de prueba. La sesión es quien solicita.
+ * No escribe al liberador: esa firma es otra persona, en otra llamada.
  */
-export async function firmarLoteDePrueba(
+export async function solicitarLoteDePrueba(
+  sesion: Sesion | null | undefined,
+  entrada: unknown,
+  deps?: DependenciasRoles,
+): Promise<SolicitudDeLote> {
+  const leida = leerEntradaDeSolicitud(entrada ?? {});
+  if (!leida.ok) throw new ErrorDeDominio(leida.codigo);
+  const actor = await exigirMembresia(sesion, deps);
+  if (leida.solicitanteId && !mismoUsuario(leida.solicitanteId, actor.userId)) {
+    throw new ErrorDeDominio("firma_ajena");
+  }
+  const repo = await repositorioDe(deps);
+  const miembros = await repo.membresiasDeLaEmpresa(actor.companyId);
+  const codigo = rechazoDeSolicitud({ actor, miembros });
+  if (codigo) throw new ErrorDeDominio(codigo);
+
+  const solicitud: SolicitudDeLote = {
+    id: (deps?.id ?? randomUUID)(),
+    companyId: actor.companyId,
+    solicitanteId: canonUsuario(actor.userId),
+    solicitadoEn: (deps?.ahora ?? (() => new Date()))(),
+    liberadorId: null,
+    liberadoEn: null,
+    esPrueba: true,
+  };
+  const estructural = loteNoGuardable(solicitud);
+  if (estructural) throw new ErrorDeDominio(estructural);
+  await repo.insertarSolicitud(solicitud);
+  return solicitud;
+}
+
+/**
+ * Segundo acto. La sesión es quien libera, y no puede ser quien pidió el lote.
+ * El administrador no libera. No hay monto.
+ */
+export async function liberarLoteDePrueba(
   sesion: Sesion | null | undefined,
   entrada: unknown,
   deps?: DependenciasRoles,
 ): Promise<LoteDePrueba> {
-  const leida = leerEntradaDeLote(entrada);
+  const leida = leerEntradaDeLiberacion(entrada);
   if (!leida.ok) throw new ErrorDeDominio(leida.codigo);
   const actor = await exigirMembresia(sesion, deps);
   const repo = await repositorioDe(deps);
-  const [solicitante, liberador, miembros] = await Promise.all([
-    repo.membresiaDe(leida.solicitanteId),
-    repo.membresiaDe(leida.liberadorId),
+  const fila = await repo.leerLote(leida.loteId);
+  if (!fila) throw new ErrorDeDominio("lote_ausente");
+  if (fila.companyId !== actor.companyId) throw new ErrorDeDominio("firmante_ajeno");
+  if (fila.liberadorId) throw new ErrorDeDominio("lote_ya_firmado");
+  const [solicitante, miembros] = await Promise.all([
+    repo.membresiaDe(fila.solicitanteId),
     repo.membresiasDeLaEmpresa(actor.companyId),
   ]);
-  const codigo = rechazoDeFirmas({
+  const codigo = rechazoDeLiberacion({
     actor,
-    solicitanteId: leida.solicitanteId,
-    liberadorId: leida.liberadorId,
+    solicitanteId: fila.solicitanteId,
     solicitante: deLaEmpresa(solicitante, actor.companyId),
-    liberador: deLaEmpresa(liberador, actor.companyId),
     miembros,
   });
   if (codigo) throw new ErrorDeDominio(codigo);
 
   const lote: LoteDePrueba = {
-    id: (deps?.id ?? randomUUID)(),
-    companyId: actor.companyId,
-    solicitanteId: leida.solicitanteId,
-    liberadorId: leida.liberadorId,
-    firmadoEn: (deps?.ahora ?? (() => new Date()))(),
+    id: fila.id,
+    companyId: fila.companyId,
+    solicitanteId: fila.solicitanteId,
+    solicitadoEn: fila.solicitadoEn,
+    liberadorId: canonUsuario(actor.userId),
+    liberadoEn: (deps?.ahora ?? (() => new Date()))(),
     esPrueba: true,
   };
   const estructural = loteNoGuardable(lote);
   if (estructural) throw new ErrorDeDominio(estructural);
-  await repo.insertarLote(lote);
+  await repo.cerrarLiberacion(lote);
   return lote;
 }
 

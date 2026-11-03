@@ -1,11 +1,10 @@
 import type { Rol } from "../session/tipos.ts";
-import type { LoteDePrueba, Membresia } from "./tipos.ts";
+import type { Membresia } from "./tipos.ts";
 
 /**
- * Quien libera es la membresía `liberador` que ya nombra la fase 1.
- * El administrador también suelta dinero: si no, el fundador del alta
- * no podría ser una de las dos firmas sin dejar de administrar.
- * El contador no está en esa lista.
+ * Quien suelta dinero es solo la membresía `liberador`.
+ * El administrador no es una segunda firma: no suelta, y no se cuenta
+ * para dejar la empresa operable. El contador entra a la póliza y no suelta.
  */
 export const QUIEN_LIBERA = "liberador" as const;
 
@@ -21,14 +20,15 @@ export const ACCIONES = ["administrar_membresias", "soltar_dinero", "exportar_po
 export type Accion = (typeof ACCIONES)[number];
 
 const POR_ROL: Record<Rol, readonly Accion[]> = {
-  administrador: ["administrar_membresias", "soltar_dinero", "exportar_poliza", "solicitar"],
+  administrador: ["administrar_membresias", "solicitar"],
   liberador: ["soltar_dinero", "solicitar"],
   contador: ["exportar_poliza"],
   solicitante: ["solicitar"],
   tarjetahabiente: [],
 };
 
-const CLAVES_DE_LOTE = new Set(["solicitanteId", "liberadorId", "companyId"]);
+const CLAVES_DE_SOLICITUD = new Set(["companyId", "solicitanteId"]);
+const CLAVES_DE_LIBERACION = new Set(["companyId", "loteId"]);
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -39,16 +39,23 @@ export type CodigoDeFirmas =
   | "sin_membresia"
   | "misma_persona_en_las_dos_firmas"
   | "firma_ajena"
+  | "firma_en_un_solo_acto"
   | "contador_no_libera"
   | "sin_permiso_para_liberar"
   | "empresa_no_operable"
   | "firmante_ajeno"
   | "contador_no_crea_pago"
-  | "sin_permiso_para_solicitar";
+  | "sin_permiso_para_solicitar"
+  | "lote_ausente"
+  | "lote_ya_firmado";
 
-export type EntradaDeLote =
-  | { ok: true; solicitanteId: string; liberadorId: string }
-  | { ok: false; codigo: CodigoDeEntrada };
+export type EntradaDeSolicitud =
+  | { ok: true; solicitanteId: string | null }
+  | { ok: false; codigo: CodigoDeEntrada | CodigoDeFirmas };
+
+export type EntradaDeLiberacion =
+  | { ok: true; loteId: string }
+  | { ok: false; codigo: CodigoDeEntrada | CodigoDeFirmas };
 
 export function accionesDe(rol: Rol): readonly Accion[] {
   return POR_ROL[rol];
@@ -70,15 +77,28 @@ export function esRolAsignable(rol: string): rol is RolAsignable {
   return (ROLES_ASIGNABLES as readonly string[]).includes(rol);
 }
 
+/** La misma persona en otra caja sigue siendo una. El uuid no distingue mayúsculas. */
+export function mismoUsuario(izquierda: string, derecha: string): boolean {
+  return izquierda.toLowerCase() === derecha.toLowerCase();
+}
+
+export function canonUsuario(id: string): string {
+  return id.toLowerCase();
+}
+
 export function personasQueSueltanDinero(miembros: readonly Membresia[]): string[] {
   const ids = new Set<string>();
   for (const miembro of miembros) {
-    if (puedeSoltarDinero(miembro.rol)) ids.add(miembro.userId);
+    if (miembro.deBaja) continue;
+    if (puedeSoltarDinero(miembro.rol)) ids.add(canonUsuario(miembro.userId));
   }
   return [...ids];
 }
 
-/** Hacen falta dos personas distintas autorizadas a soltar dinero. El contador no cuenta. */
+/**
+ * Hacen falta dos liberadores vigentes. El administrador no cuenta,
+ * ni el contador, ni quien ya está de baja.
+ */
 export function empresaOperable(miembros: readonly Membresia[]): boolean {
   return personasQueSueltanDinero(miembros).length >= FIRMAS_DE_NOMINA;
 }
@@ -87,58 +107,87 @@ export function empresaOperable(miembros: readonly Membresia[]): boolean {
  * La fila que se guarda solo lleva las dos personas y la marca de prueba.
  * El mismo usuario en los dos lugares no se persiste.
  */
-export function loteNoGuardable(
-  lote: Pick<LoteDePrueba, "solicitanteId" | "liberadorId" | "esPrueba">,
-): CodigoDeFirmas | "dinero_real_fuera" | null {
+export function loteNoGuardable(lote: {
+  solicitanteId: string;
+  liberadorId: string | null;
+  esPrueba: boolean;
+}): CodigoDeFirmas | "dinero_real_fuera" | null {
   if (lote.esPrueba !== true) return "dinero_real_fuera";
-  if (lote.solicitanteId === lote.liberadorId) return "misma_persona_en_las_dos_firmas";
+  if (lote.liberadorId && mismoUsuario(lote.solicitanteId, lote.liberadorId)) {
+    return "misma_persona_en_las_dos_firmas";
+  }
   return null;
 }
 
-export function leerEntradaDeLote(entrada: unknown): EntradaDeLote {
+/** El primer acto solo pide. Nombrar a quien libera en la misma llamada no es la segunda firma. */
+export function leerEntradaDeSolicitud(entrada: unknown): EntradaDeSolicitud {
   if (!esRegistro(entrada)) return { ok: false, codigo: "entrada_invalida" };
-  const dinero = claveProhibida(entrada, esClaveDeDinero);
-  if (dinero) return { ok: false, codigo: "dinero_real_fuera" };
-  const tercera = claveProhibida(entrada, esClaveDeTerceraFirma);
-  if (tercera) return { ok: false, codigo: "tercera_firma" };
-
+  const prohibida = prohibicion(entrada);
+  if (prohibida) return { ok: false, codigo: prohibida };
+  const par = parEnUnSoloCuerpo(entrada);
+  if (par) return { ok: false, codigo: par };
+  if ("liberadorId" in entrada) return { ok: false, codigo: "firma_en_un_solo_acto" };
   for (const clave of Object.keys(entrada)) {
-    if (!CLAVES_DE_LOTE.has(clave)) return { ok: false, codigo: "entrada_invalida" };
+    if (!CLAVES_DE_SOLICITUD.has(clave)) return { ok: false, codigo: "entrada_invalida" };
   }
-
   if ("companyId" in entrada && entrada.companyId !== null && typeof entrada.companyId !== "string") {
     return { ok: false, codigo: "entrada_invalida" };
   }
-
-  const solicitanteId = entrada.solicitanteId;
-  const liberadorId = entrada.liberadorId;
-  if (typeof solicitanteId !== "string" || typeof liberadorId !== "string") {
-    return { ok: false, codigo: "entrada_invalida" };
-  }
-  if (!UUID.test(solicitanteId) || !UUID.test(liberadorId)) {
+  if (!("solicitanteId" in entrada)) return { ok: true, solicitanteId: null };
+  if (typeof entrada.solicitanteId !== "string" || !UUID.test(entrada.solicitanteId)) {
     return { ok: false, codigo: "identificador_invalido" };
   }
-  return { ok: true, solicitanteId, liberadorId };
+  return { ok: true, solicitanteId: entrada.solicitanteId };
 }
 
-export function rechazoDeFirmas(estado: {
+/** El segundo acto es la sesión. El cuerpo solo dice qué lote cierra. */
+export function leerEntradaDeLiberacion(entrada: unknown): EntradaDeLiberacion {
+  if (!esRegistro(entrada)) return { ok: false, codigo: "entrada_invalida" };
+  const prohibida = prohibicion(entrada);
+  if (prohibida) return { ok: false, codigo: prohibida };
+  const par = parEnUnSoloCuerpo(entrada);
+  if (par) return { ok: false, codigo: par };
+  if ("solicitanteId" in entrada || "liberadorId" in entrada) {
+    return { ok: false, codigo: "firma_en_un_solo_acto" };
+  }
+  for (const clave of Object.keys(entrada)) {
+    if (!CLAVES_DE_LIBERACION.has(clave)) return { ok: false, codigo: "entrada_invalida" };
+  }
+  if ("companyId" in entrada && entrada.companyId !== null && typeof entrada.companyId !== "string") {
+    return { ok: false, codigo: "entrada_invalida" };
+  }
+  if (typeof entrada.loteId !== "string" || !UUID.test(entrada.loteId)) {
+    return { ok: false, codigo: "identificador_invalido" };
+  }
+  return { ok: true, loteId: entrada.loteId };
+}
+
+export function rechazoDeSolicitud(estado: {
   actor: Membresia | null;
-  solicitanteId: string;
-  liberadorId: string;
-  solicitante: Membresia | null;
-  liberador: Membresia | null;
   miembros: readonly Membresia[];
 }): CodigoDeFirmas | null {
   if (!estado.actor) return "sin_membresia";
-  if (estado.solicitanteId === estado.liberadorId) return "misma_persona_en_las_dos_firmas";
-  if (estado.actor.userId !== estado.liberadorId) return "firma_ajena";
-  if (!estado.liberador || estado.liberador.companyId !== estado.actor.companyId) return "firmante_ajeno";
-  if (!puedeSoltarDinero(estado.liberador.rol)) {
-    return estado.liberador.rol === "contador" ? "contador_no_libera" : "sin_permiso_para_liberar";
+  if (estado.actor.deBaja || !puede(estado.actor.rol, "solicitar")) {
+    return estado.actor.rol === "contador" ? "contador_no_crea_pago" : "sin_permiso_para_solicitar";
+  }
+  if (!empresaOperable(estado.miembros)) return "empresa_no_operable";
+  return null;
+}
+
+export function rechazoDeLiberacion(estado: {
+  actor: Membresia | null;
+  solicitanteId: string;
+  solicitante: Membresia | null;
+  miembros: readonly Membresia[];
+}): CodigoDeFirmas | null {
+  if (!estado.actor) return "sin_membresia";
+  if (mismoUsuario(estado.actor.userId, estado.solicitanteId)) return "misma_persona_en_las_dos_firmas";
+  if (estado.actor.deBaja || !puedeSoltarDinero(estado.actor.rol)) {
+    return estado.actor.rol === "contador" ? "contador_no_libera" : "sin_permiso_para_liberar";
   }
   if (!empresaOperable(estado.miembros)) return "empresa_no_operable";
   if (!estado.solicitante || estado.solicitante.companyId !== estado.actor.companyId) return "firmante_ajeno";
-  if (!puede(estado.solicitante.rol, "solicitar")) {
+  if (estado.solicitante.deBaja || !puede(estado.solicitante.rol, "solicitar")) {
     return estado.solicitante.rol === "contador" ? "contador_no_crea_pago" : "sin_permiso_para_solicitar";
   }
   return null;
@@ -146,6 +195,22 @@ export function rechazoDeFirmas(estado: {
 
 export function uuidValido(valor: string): boolean {
   return UUID.test(valor);
+}
+
+function prohibicion(entrada: Record<string, unknown>): CodigoDeEntrada | null {
+  if (claveProhibida(entrada, esClaveDeDinero)) return "dinero_real_fuera";
+  if (claveProhibida(entrada, esClaveDeTerceraFirma)) return "tercera_firma";
+  return null;
+}
+
+function parEnUnSoloCuerpo(entrada: Record<string, unknown>): CodigoDeFirmas | null {
+  if (!("solicitanteId" in entrada) || !("liberadorId" in entrada)) return null;
+  const solicitanteId = entrada.solicitanteId;
+  const liberadorId = entrada.liberadorId;
+  if (typeof solicitanteId === "string" && typeof liberadorId === "string" && UUID.test(solicitanteId) && UUID.test(liberadorId)) {
+    return mismoUsuario(solicitanteId, liberadorId) ? "misma_persona_en_las_dos_firmas" : "firma_en_un_solo_acto";
+  }
+  return "firma_en_un_solo_acto";
 }
 
 function esRegistro(valor: unknown): valor is Record<string, unknown> {

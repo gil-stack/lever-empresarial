@@ -14,13 +14,19 @@ export function Encabezado({
   persona = null,
   superficie = "finanzas",
   maestro = false,
+  poliza = false,
 }: {
   actual: string;
   persona?: { nombre: string } | null;
   superficie?: "finanzas" | "telefono";
   maestro?: boolean;
+  poliza?: boolean;
 }) {
-  const finanzas = maestro ? [...FINANZAS, { href: "/consola/personas", etiqueta: "Personas" }] : FINANZAS;
+  const finanzas = [
+    ...FINANZAS,
+    ...(poliza ? [{ href: "/consola/poliza", etiqueta: "Póliza" }] : []),
+    ...(maestro ? [{ href: "/consola/personas", etiqueta: "Personas" }] : []),
+  ];
   return (
     <header className="encabezado">
       <a className="saltar" href="#contenido">

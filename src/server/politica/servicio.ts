@@ -83,12 +83,12 @@ export async function editarUmbral(
 
 export async function editarPoliticaPersona(
   sesion: Sesion | null | undefined,
-  entrada: { userId: unknown; dias: unknown; vencidos: unknown; quitar: boolean },
+  entrada: { personaId: unknown; dias: unknown; vencidos: unknown; quitar: boolean },
   deps?: DependenciasPolitica,
-): Promise<void> {
+): Promise<{ propio: boolean }> {
   const actorId = exigirUsuario(sesion);
-  if (!esUuid(entrada.userId)) throw new ErrorDeDominio("persona_ajena");
-  const personaId = entrada.userId;
+  if (!esUuid(entrada.personaId)) throw new ErrorDeDominio("persona_ajena");
+  const personaId = entrada.personaId;
   const ocurridoEn = reloj(deps);
   if (entrada.quitar) {
     await repositorio(deps).escribir(actorId, async (ctx) => {
@@ -97,16 +97,18 @@ export async function editarPoliticaPersona(
         await ctx.auditar(evento("quitar_politica_persona", "policy_persons", personaId, ocurridoEn));
       }
     });
-    return;
+    return { propio: false };
   }
   const dias = leerEnteroEnRango(entrada.dias, DIAS_MIN, DIAS_MAX);
   const vencidos = leerEnteroEnRango(entrada.vencidos, VENCIDOS_MIN, VENCIDOS_MAX);
   if (dias.tipo !== "entero") throw new ErrorDeDominio("dias_invalidos");
   if (vencidos.tipo !== "entero") throw new ErrorDeDominio("vencidos_invalidos");
+  let propio = true;
   await repositorio(deps).escribir(actorId, async (ctx) => {
     const igual =
       dias.valor === ctx.plazo.diasComprobante && vencidos.valor === ctx.plazo.maxVencidos;
     if (igual) {
+      propio = false;
       const habia = await ctx.quitarPersona(personaId);
       if (habia) {
         await ctx.auditar(evento("quitar_politica_persona", "policy_persons", personaId, ocurridoEn));
@@ -116,6 +118,7 @@ export async function editarPoliticaPersona(
     await ctx.guardarPersona(personaId, dias.valor, vencidos.valor);
     await ctx.auditar(evento("editar_politica_persona", "policy_persons", personaId, ocurridoEn));
   });
+  return { propio };
 }
 
 export async function crearCategoria(

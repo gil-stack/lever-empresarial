@@ -90,11 +90,6 @@ BEFORE TRUNCATE ON subscriptions
 FOR EACH STATEMENT
 EXECUTE FUNCTION subscriptions_proteger();
 
--- Empresas que ya estaban en el libro, antes de este trigger.
-INSERT INTO subscriptions (company_id, estado, recorrido_inicio)
-SELECT id, 'recorrido', alta_at
-FROM companies;
-
 CREATE FUNCTION companies_abre_recorrido()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -111,3 +106,11 @@ CREATE TRIGGER companies_abre_recorrido
 AFTER INSERT ON companies
 FOR EACH ROW
 EXECUTE FUNCTION companies_abre_recorrido();
+
+-- Empresas que ya estaban en el libro. El trigger cubre las que entren después.
+INSERT INTO subscriptions (company_id, estado, recorrido_inicio)
+SELECT id, 'recorrido', alta_at
+FROM companies
+WHERE NOT EXISTS (
+  SELECT 1 FROM subscriptions AS suscripcion WHERE suscripcion.company_id = companies.id
+);

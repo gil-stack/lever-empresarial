@@ -47,7 +47,7 @@ function leerPersonas(valor: unknown): DatosPolitica["personas"] {
     const dias = leerEntero(fila.dias, true);
     const vencidos = leerEntero(fila.vencidos, true);
     if (
-      !esUuid(fila.userId) ||
+      !esUuid(fila.personaId) ||
       typeof fila.nombre !== "string" ||
       typeof fila.correo !== "string" ||
       typeof fila.rol !== "string" ||
@@ -57,7 +57,7 @@ function leerPersonas(valor: unknown): DatosPolitica["personas"] {
       throw new ErrorDeDominio("base_no_disponible");
     }
     return {
-      userId: fila.userId,
+      personaId: fila.personaId,
       nombre: fila.nombre,
       correo: fila.correo,
       rol: fila.rol,

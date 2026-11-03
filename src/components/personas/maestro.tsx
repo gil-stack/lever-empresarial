@@ -27,8 +27,7 @@ export function Maestro({ lectura, hoy }: { lectura: LecturaMaestro; hoy: string
       <p className="kicker">Maestro</p>
       <h1>Personas</h1>
       <p className="lede">
-        Aquí se anota el jefe, el centro de costo, la fecha de baja y la CLABE. El dígito se valida con la ponderación
-        3, 7 y 1. No sale dinero.
+        Aquí se anota el jefe, el centro de costo, la fecha de baja y la CLABE. No sale dinero.
       </p>
       <section className="ficha" aria-labelledby="firmas-titulo">
         <h2 id="firmas-titulo">{relato.titulo}</h2>
@@ -75,7 +74,7 @@ export function Maestro({ lectura, hoy }: { lectura: LecturaMaestro; hoy: string
               <article key={persona.id} className="persona" aria-labelledby={`persona-${persona.id}`}>
                 <div className="persona-cabeza">
                   <h3 id={`persona-${persona.id}`}>{persona.nombre}</h3>
-                  <p className="estado-persona">
+                  <p className={deBaja ? "estado-persona estado-baja" : "estado-persona"}>
                     {deBaja ? "De baja" : persona.bajaEn ? "Baja programada" : "Vigente"}
                   </p>
                 </div>
@@ -103,7 +102,7 @@ export function Maestro({ lectura, hoy }: { lectura: LecturaMaestro; hoy: string
                   <div>
                     <dt>En la consola</dt>
                     <dd>
-                      {lineaDeRol(persona.rol)}
+                      {deBaja ? "De baja. No suelta dinero." : lineaDeRol(persona.rol)}
                       {persona.correo ? <span className="pista"> {persona.correo}</span> : null}
                     </dd>
                   </div>

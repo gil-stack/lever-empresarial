@@ -66,15 +66,15 @@ export async function guardarPoliticaPersona(
 ): Promise<EstadoFormulario> {
   const quitar = formData.get("intencion") === "quitar";
   return correr(async (sesion) => {
-    await editarPoliticaPersona(sesion, {
-      userId: texto(formData, "userId"),
+    const resultado = await editarPoliticaPersona(sesion, {
+      personaId: texto(formData, "personaId"),
       dias: texto(formData, "dias"),
       vencidos: texto(formData, "vencidos"),
       quitar,
     });
-    return quitar
-      ? "Esta persona volvió al default de la empresa."
-      : "Quedó escrita la política de esta persona.";
+    if (quitar) return "Esta persona volvió al plazo de la empresa.";
+    if (!resultado.propio) return "Sigue el plazo de la empresa. No quedó un plazo propio.";
+    return "Quedó escrito el plazo de esta persona.";
   });
 }
 
@@ -141,7 +141,8 @@ async function correr(fn: (sesion: Sesion) => Promise<string>): Promise<EstadoFo
 }
 
 function invalido(codigo: string): EstadoFormulario {
-  return { tipo: "invalido", mensaje: MENSAJES[codigo] ?? "No se pudo guardar." };
+  const campo = codigo === "dias_invalidos" ? "dias" : codigo === "vencidos_invalidos" ? "vencidos" : undefined;
+  return { tipo: "invalido", mensaje: MENSAJES[codigo] ?? "No se pudo guardar.", campo };
 }
 
 function texto(formData: FormData, campo: string): string {

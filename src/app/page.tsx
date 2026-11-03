@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { FormularioAlta } from "@/components/alta/formulario-alta";
 import { Encabezado, Pie } from "@/components/cromo/encabezado";
+import { puertasDe } from "@/components/cromo/puertas";
 import { leerEntrada } from "@/server/entrada";
 
 export const runtime = "nodejs";
@@ -27,7 +28,11 @@ export default async function PaginaAlta() {
 
   return (
     <>
-      <Encabezado actual="/" persona={entrada.nombre ? { nombre: entrada.nombre } : null} />
+      <Encabezado
+        actual="/"
+        persona={entrada.nombre ? { nombre: entrada.nombre } : null}
+        {...puertasDe(entrada.rol, Boolean(entrada.rfc))}
+      />
       <main id="contenido" className="alta">
         <section className="alta-relato" aria-labelledby="titulo-alta">
           <p className="kicker">Alta de la empresa</p>

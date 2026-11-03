@@ -155,6 +155,13 @@ export async function darDeAltaPersona(
         await ctx.insertarMembresia(userIdPersona, valor.acceso.rol);
       }
 
+      const rolCuenta =
+        valor.acceso.tipo === "nueva"
+          ? valor.acceso.rol
+          : valor.acceso.tipo === "ya" && userIdPersona
+            ? await ctx.rolDeUsuario(userIdPersona)
+            : null;
+
       const id = randomUUID();
       if (valor.jefeId === id) throw new ErrorDeDominio("jefe_invalido");
       await ctx.insertarEmpleado({
@@ -167,14 +174,47 @@ export async function darDeAltaPersona(
         centroId: valor.centroId,
         userId: userIdPersona,
       });
+      const ocurridoEn = listo.ahora();
       await auditar(listo.auditar, ctx.consulta, {
         companyId: ctx.companyId,
         actorId: userId,
         accion: "alta_persona",
         entidad: "employees",
         identificador: id,
-        ocurridoEn: listo.ahora(),
+        ocurridoEn,
       });
+      if (valor.bajaEn !== null) {
+        await auditar(listo.auditar, ctx.consulta, {
+          companyId: ctx.companyId,
+          actorId: userId,
+          accion: "baja_persona",
+          entidad: "employees",
+          identificador: id,
+          ocurridoEn,
+        });
+      }
+      if (userIdPersona && rolCuenta === "liberador") {
+        if (valor.bajaEn && estaDeBaja(valor.bajaEn, hoy)) {
+          await auditar(listo.auditar, ctx.consulta, {
+            companyId: ctx.companyId,
+            actorId: userId,
+            accion: "quitar_liberador",
+            entidad: "memberships",
+            identificador: userIdPersona,
+            ocurridoEn,
+          });
+          await ctx.quitarLiberador(userIdPersona);
+        } else if (valor.acceso.tipo === "nueva") {
+          await auditar(listo.auditar, ctx.consulta, {
+            companyId: ctx.companyId,
+            actorId: userId,
+            accion: "autorizar_liberador",
+            entidad: "memberships",
+            identificador: userIdPersona,
+            ocurridoEn,
+          });
+        }
+      }
       return { id, nombre: valor.nombre };
     });
   } catch (error) {
@@ -191,11 +231,13 @@ export async function registrarBaja(
   const validada = validarBaja(entrada);
   if (!validada.ok) throw new ErrorDeDominio(validada.codigo);
   const listo = resolver(deps);
+  const hoy = hoyEnMexico(listo.ahora());
   return listo.repositorio.conEmpresa(userId, async (ctx) => {
     if (!puedeEditarMaestro(ctx.rol)) throw new ErrorDeDominio("sin_permiso");
     const persona = await ctx.bloquearPersona(validada.personaId);
     if (!persona) throw new ErrorDeDominio("persona_ausente");
     if (validada.bajaEn < persona.altaEn) throw new ErrorDeDominio("baja_anterior");
+    const ocurridoEn = listo.ahora();
     if (persona.bajaEn !== validada.bajaEn) {
       await ctx.escribirBaja(persona.id, validada.bajaEn);
       await auditar(listo.auditar, ctx.consulta, {
@@ -204,8 +246,19 @@ export async function registrarBaja(
         accion: "baja_persona",
         entidad: "employees",
         identificador: persona.id,
-        ocurridoEn: listo.ahora(),
+        ocurridoEn,
       });
+    }
+    if (estaDeBaja(validada.bajaEn, hoy) && persona.rol === "liberador" && persona.userId) {
+      await auditar(listo.auditar, ctx.consulta, {
+        companyId: ctx.companyId,
+        actorId: userId,
+        accion: "quitar_liberador",
+        entidad: "memberships",
+        identificador: persona.userId,
+        ocurridoEn,
+      });
+      await ctx.quitarLiberador(persona.userId);
     }
     return { id: persona.id, bajaEn: validada.bajaEn };
   });

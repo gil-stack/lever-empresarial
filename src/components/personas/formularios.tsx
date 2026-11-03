@@ -7,6 +7,8 @@ import { clabeValida, clabeVisible } from "@/dominio/clabe";
 import {
   erroresDeAltaPersona,
   ESTADO_MAESTRO_INICIAL,
+  fechaLarga,
+  fechaValida,
   MENSAJE_RECHAZO,
   ordenarErroresPersona,
   pistaDelRol,
@@ -169,17 +171,15 @@ export function FormularioPersona({
         />
       </Campo>
       <Campo id="alta" etiqueta="Fecha de alta" pista="El día en que entra. No puede ser posterior a hoy." error={mensaje("alta")}>
-        <input
+        <FechaLegible
           id="alta"
           name="alta"
-          type="date"
-          value={alta}
-          max={hoy}
-          required
-          aria-invalid={mensaje("alta") ? true : undefined}
-          aria-describedby={descritoPor("alta", mensaje("alta"))}
-          onChange={(event) => {
-            setAlta(event.target.value);
+          valor={alta}
+          requerido
+          invalido={Boolean(mensaje("alta"))}
+          describedBy={descritoPor("alta", mensaje("alta"))}
+          onChange={(siguiente) => {
+            setAlta(siguiente);
             setLocal(null);
           }}
         />
@@ -190,16 +190,14 @@ export function FormularioPersona({
         pista="Opcional. Si ya se fue, o si la baja está acordada. No dispersa y no apaga una tarjeta."
         error={mensaje("baja")}
       >
-        <input
+        <FechaLegible
           id="baja"
           name="baja"
-          type="date"
-          value={baja}
-          min={alta || undefined}
-          aria-invalid={mensaje("baja") ? true : undefined}
-          aria-describedby={descritoPor("baja", mensaje("baja"))}
-          onChange={(event) => {
-            setBaja(event.target.value);
+          valor={baja}
+          invalido={Boolean(mensaje("baja"))}
+          describedBy={descritoPor("baja", mensaje("baja"))}
+          onChange={(siguiente) => {
+            setBaja(siguiente);
             setLocal(null);
           }}
         />
@@ -415,19 +413,19 @@ export function FormularioBaja({
   return (
     <form className="alta-formulario baja-formulario" action={accion} noValidate aria-busy={pendiente}>
       {mensaje ? (
-        <div className="alerta" role="alert">
+        <div className="alerta alerta-revisar" role="alert">
           <p className="alerta-titulo">Revisa la baja</p>
           <p>
             <a href={`#${id}`}>{mensaje}</a>
           </p>
         </div>
       ) : estado.tipo === "listo" ? (
-        <div className="alerta" role="status">
+        <div className="alerta alerta-asentado" role="status">
           <p className="alerta-titulo">Quedó asentado</p>
           <p>{estado.mensaje}</p>
         </div>
       ) : rechazo ? (
-        <div className="alerta" role="alert">
+        <div className="alerta alerta-revisar" role="alert">
           <p className="alerta-titulo">{rechazo.titulo}</p>
           <p>{rechazo.texto}</p>
         </div>
@@ -439,15 +437,14 @@ export function FormularioBaja({
         pista="Queda en el maestro. No se dispersa dinero."
         error={mensaje}
       >
-        <input
+        <FechaLegible
           id={id}
           name="baja"
-          type="date"
-          value={baja}
-          required
-          aria-invalid={mensaje ? true : undefined}
-          aria-describedby={descritoPor(id, mensaje)}
-          onChange={(event) => setBaja(event.target.value)}
+          valor={baja}
+          requerido
+          invalido={Boolean(mensaje)}
+          describedBy={descritoPor(id, mensaje)}
+          onChange={setBaja}
         />
       </Campo>
       <div className="acciones">
@@ -468,7 +465,7 @@ function Avisos({
 }) {
   if (errores.length > 0) {
     return (
-      <div className="alerta" role="alert">
+      <div className="alerta alerta-revisar" role="alert">
         <p className="alerta-titulo">Revisa el maestro</p>
         <ul>
           {errores.map((error) => (
@@ -482,7 +479,7 @@ function Avisos({
   }
   if (estado.tipo === "listo" && estado.mensaje) {
     return (
-      <div className="alerta" role="status">
+      <div className="alerta alerta-asentado" role="status">
         <p className="alerta-titulo">Quedó asentado</p>
         <p>{estado.mensaje}</p>
       </div>
@@ -491,7 +488,7 @@ function Avisos({
   if (estado.tipo === "rechazado" && estado.codigo && esCodigo(estado.codigo)) {
     const rechazo = MENSAJE_RECHAZO[estado.codigo];
     return (
-      <div className="alerta" role="alert">
+      <div className="alerta alerta-revisar" role="alert">
         <p className="alerta-titulo">{rechazo.titulo}</p>
         <p>{rechazo.texto}</p>
       </div>
@@ -502,6 +499,100 @@ function Avisos({
 
 function esCodigo(codigo: string): codigo is keyof typeof MENSAJE_RECHAZO {
   return Object.hasOwn(MENSAJE_RECHAZO, codigo);
+}
+
+const MESES = [
+  "enero",
+  "febrero",
+  "marzo",
+  "abril",
+  "mayo",
+  "junio",
+  "julio",
+  "agosto",
+  "septiembre",
+  "octubre",
+  "noviembre",
+  "diciembre",
+] as const;
+
+function FechaLegible({
+  id,
+  name,
+  valor,
+  onChange,
+  requerido = false,
+  invalido = false,
+  describedBy,
+}: {
+  id: string;
+  name: string;
+  valor: string;
+  onChange: (iso: string) => void;
+  requerido?: boolean;
+  invalido?: boolean;
+  describedBy?: string;
+}) {
+  const partes = partirIso(valor);
+  function escribir(siguiente: { dia: string; mes: string; anio: string }) {
+    if (!siguiente.dia || !siguiente.mes || !siguiente.anio) {
+      onChange("");
+      return;
+    }
+    onChange(`${siguiente.anio}-${siguiente.mes}-${siguiente.dia.padStart(2, "0")}`);
+  }
+  const anios: string[] = [];
+  for (let anio = 2100; anio >= 2000; anio -= 1) anios.push(String(anio));
+  const leida = fechaValida(valor);
+  return (
+    <div className="fecha-partes">
+      <select
+        id={id}
+        aria-label="Día"
+        value={partes.dia}
+        required={requerido}
+        aria-invalid={invalido || undefined}
+        aria-describedby={describedBy}
+        onChange={(event) => escribir({ ...partes, dia: event.target.value })}
+      >
+        <option value="">Día</option>
+        {Array.from({ length: 31 }, (_, indice) => String(indice + 1)).map((dia) => (
+          <option key={dia} value={dia}>
+            {dia}
+          </option>
+        ))}
+      </select>
+      <select aria-label="Mes" value={partes.mes} onChange={(event) => escribir({ ...partes, mes: event.target.value })}>
+        <option value="">Mes</option>
+        {MESES.map((nombre, indice) => (
+          <option key={nombre} value={String(indice + 1).padStart(2, "0")}>
+            {nombre}
+          </option>
+        ))}
+      </select>
+      <select
+        aria-label="Año"
+        value={partes.anio}
+        onChange={(event) => escribir({ ...partes, anio: event.target.value })}
+      >
+        <option value="">Año</option>
+        {anios.map((anio) => (
+          <option key={anio} value={anio}>
+            {anio}
+          </option>
+        ))}
+      </select>
+      <input type="hidden" name={name} value={valor} />
+      {leida ? <p className="fecha-leida">{fechaLarga(leida)}</p> : null}
+    </div>
+  );
+}
+
+function partirIso(valor: string): { dia: string; mes: string; anio: string } {
+  const valida = fechaValida(valor);
+  if (!valida) return { dia: "", mes: "", anio: "" };
+  const [anio, mes, dia] = valida.split("-");
+  return { dia: String(Number(dia)), mes: mes ?? "", anio: anio ?? "" };
 }
 
 function Campo({

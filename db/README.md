@@ -47,12 +47,14 @@ La cuenta es la fila de `companies`. Tiene un solo RFC, de 12 caracteres (person
 | Tabla | Qué guarda |
 | --- | --- |
 | `policies` | Una por empresa. `dias_comprobante` y `max_vencidos` nacen en 5. `umbral_proveedores_centavos` nace vacío |
-| `policy_persons` | Plazo propio de una persona de la cuenta. Si no hay fila, usa el default de la empresa |
+| `policy_persons` | Plazo propio de una persona del maestro, aunque no entre a la consola. Si no hay fila, usa el plazo de la empresa |
 | `policy_categories` | Nombre y `tope_centavos`. El tope nace vacío. No se siembran categorías |
 | `drawers` | Los cuatro códigos `viaticos`, `proveedores`, `impuestos`, `nomina`, con su nombre. No hay columna de saldo |
 | `postings` | Centavos con signo, motivo y hora. `drawer_id` vacío es «sin cajón». Esta migración no inserta filas |
 
-Al insertar una empresa, la misma transacción siembra la política y los cuatro cajones. El saldo que muestra la consola es `sum(postings.centavos)` por cajón. La suma de ningún asiento es cero. No hay un monto de ejemplo en el umbral, en un tope ni en un asiento. Desde estas tablas no sale un SPEI.
+Al insertar una empresa, la misma transacción siembra la política y los cuatro cajones. El saldo que muestra la consola es `sum(postings.centavos)` por cajón. Con la tabla vacía esa suma es cero porque no hay filas: no hay un `CHECK` que imponga el cero, ni un asiento sembrado. No hay un monto de ejemplo en el umbral, en un tope ni en un asiento. Desde estas tablas no sale un SPEI.
+
+`0011_firmas_plazo_baja.sql` crea `lotes_prueba`. Las dos firmas son dos usuarios y dos actos, y el `CHECK` rechaza el mismo uuid en las dos columnas. También deja el plazo propio en la persona del maestro y, si la baja ya es efectiva, quita el rol de liberador.
 
 ## Auditoría del alta
 

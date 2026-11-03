@@ -12,8 +12,6 @@ export function RenglonesTarifa({
     { id: "tarjeta", etiqueta: "Por tarjeta", monto: tarifa.porTarjeta },
     { id: "implementacion", etiqueta: "Implementación", monto: tarifa.implementacion },
   ];
-  const suscripcionAusente = tarifa.disponible && !tarifa.suscripcionPublicada;
-
   return (
     <div className={ambito === "consola" ? "tarifa-bloque tarifa-consola" : "tarifa-bloque"}>
       <section className="tarifa" aria-labelledby="renglones-titulo">
@@ -28,9 +26,6 @@ export function RenglonesTarifa({
                 Gasto, proveedores, dispersión de nómina, tarjetas sin tope de personas y la app. Mes a mes.
               </span>
               {tarifa.publicadaEl ? <span className="edad-precio">Publicada el {tarifa.publicadaEl}.</span> : null}
-              {suscripcionAusente ? (
-                <span className="edad-precio">El operador de la plataforma todavía no publica el monto.</span>
-              ) : null}
             </dt>
             <dd>
               <p
@@ -48,7 +43,6 @@ export function RenglonesTarifa({
               <span className="tarifa-indice">02</span>
               Costo SPEI del participante
               <span className="tarifa-detalle">Renglón aparte. Esta plataforma no le suma un margen.</span>
-              <span className="edad-precio">El monto del participante no está publicado.</span>
             </dt>
             <dd>
               <p className="cifra-ausente">{tarifa.spei}</p>

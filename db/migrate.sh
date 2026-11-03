@@ -82,6 +82,17 @@ for file in "${sorted[@]}"; do
   fi
 done
 
+declare -A prefijos=()
+for file in "${sorted[@]}"; do
+  base="$(basename "$file")"
+  prefijo="${base%%_*}"
+  if [[ -n "${prefijos[$prefijo]+x}" ]]; then
+    echo "Prefijo repetido ${prefijo}: ${prefijos[$prefijo]} y ${base}." >&2
+    exit 1
+  fi
+  prefijos[$prefijo]="$base"
+done
+
 runner="$(mktemp)"
 psql_out="$(mktemp)"
 psql_err="$(mktemp)"

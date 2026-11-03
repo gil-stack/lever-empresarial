@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { Maestro, MaestroCerrado } from "@/components/personas/maestro";
 import { Encabezado, Pie } from "@/components/cromo/encabezado";
+import { puertasDe } from "@/components/cromo/puertas";
 import { hoyEnMexico, puedeVerMaestro } from "@/dominio/personas";
 import { errorConSecreto, leerEntrada, sesionDesdeCookie } from "@/server/entrada";
 import { leerMaestro } from "@/server/personas";
@@ -16,7 +17,6 @@ export const metadata: Metadata = {
 export default async function PaginaPersonas() {
   const entrada = await leerEntrada();
   const hoy = hoyEnMexico(new Date());
-  const maestroNav = Boolean(entrada.rfc) && puedeVerMaestro(entrada.rol);
   const cerrado = await cerrar(entrada);
 
   return (
@@ -24,7 +24,7 @@ export default async function PaginaPersonas() {
       <Encabezado
         actual="/consola/personas"
         persona={entrada.nombre ? { nombre: entrada.nombre } : null}
-        maestro={maestroNav}
+        {...puertasDe(entrada.rol, Boolean(entrada.rfc))}
       />
       <main id="contenido" className="consola">
         {cerrado.tipo === "abierto" ? (

@@ -21,18 +21,17 @@ export function PanelPolitica({ vista }: { vista: VistaPolitica }) {
       <p className="kicker">Política</p>
       <h1>Política de comprobantes</h1>
       <p className="lede">
-        El default de la empresa marca los días para pasar de «todavía no» a «ya se pasó» y cuántos
-        comprobantes vencidos pausan la tarjeta. Cada persona puede dejar el suyo. La categoría no trae
-        tope hasta que la empresa escribe el centavo.
+        El plazo de la empresa marca los días para pasar de «todavía no» a «ya se pasó» y cuántos
+        comprobantes vencidos pausan la tarjeta. Cada persona del maestro puede dejar el suyo, aunque no
+        entre a la consola. La categoría no trae tope hasta que la empresa escribe el centavo.
       </p>
 
-      <section className="politica-bloque" aria-labelledby="default-titulo">
-        <h2 id="default-titulo">Default de la empresa</h2>
+      <section className="politica-bloque" aria-labelledby="plazo-titulo">
+        <h2 id="plazo-titulo">Plazo de la empresa</h2>
         <p>{frasePlazo(vista.diasComprobante, vista.maxVencidos)}</p>
         <p className="pista">
-          La cuenta nace con cinco días y cinco comprobantes vencidos. La pausa todavía no llega al
-          emisor: aquí solo queda el número. Cambiar el default no reescribe a quien ya tiene un plazo
-          propio.
+          La cuenta nace con cinco días y cinco comprobantes vencidos. La pausa de la tarjeta no corre en
+          este corte. Cambiar este plazo no reescribe a quien ya tiene el suyo.
         </p>
         {vista.puedeEditar ? (
           <FormularioPlazo
@@ -48,36 +47,41 @@ export function PanelPolitica({ vista }: { vista: VistaPolitica }) {
       <section className="politica-bloque" aria-labelledby="personas-titulo">
         <h2 id="personas-titulo">Por persona</h2>
         <p className="pista">
-          Quien no tiene un plazo propio usa el default de la empresa. Guardar los mismos números que el
-          default quita el plazo propio.
+          Quien no tiene un plazo propio usa el de la empresa. Guardar los mismos números quita el plazo
+          propio.
         </p>
-        {vista.personas.map((persona) => (
-          <article className="persona" key={persona.userId}>
-            <h3>{persona.nombre}</h3>
-            <p className="pista">
-              {persona.rolEtiqueta}. {persona.correo}
-            </p>
-            <p>{frasePlazo(persona.diasComprobante, persona.maxVencidos)}</p>
-            <p className="pista">{persona.propio ? "Escrito para esta persona." : "Usa el default de la empresa."}</p>
-            {vista.puedeEditar ? (
-              <FormularioPersona
-                key={`${persona.userId}-${persona.diasComprobante}-${persona.maxVencidos}-${persona.propio}`}
-                userId={persona.userId}
-                dias={persona.diasComprobante}
-                vencidos={persona.maxVencidos}
-                propio={persona.propio}
-              />
-            ) : null}
-          </article>
-        ))}
+        {vista.personas.length === 0 ? (
+          <p className="lede">Todavía no hay personas en el maestro.</p>
+        ) : (
+          vista.personas.map((persona) => (
+            <article className="persona" key={persona.personaId}>
+              <h3>{persona.nombre}</h3>
+              <p className="pista">
+                {persona.correo ? `${persona.rolEtiqueta}. ${persona.correo}` : persona.rolEtiqueta}
+              </p>
+              {persona.propio ? <p>{frasePlazo(persona.diasComprobante, persona.maxVencidos)}</p> : null}
+              <p className="pista">
+                {persona.propio ? "Escrito para esta persona." : "Usa el plazo de la empresa."}
+              </p>
+              {vista.puedeEditar ? (
+                <FormularioPersona
+                  key={`${persona.personaId}-${persona.diasComprobante}-${persona.maxVencidos}-${persona.propio}`}
+                  personaId={persona.personaId}
+                  dias={persona.diasComprobante}
+                  vencidos={persona.maxVencidos}
+                  propio={persona.propio}
+                />
+              ) : null}
+            </article>
+          ))
+        )}
       </section>
 
       <section className="politica-bloque" aria-labelledby="umbral-titulo">
         <h2 id="umbral-titulo">Umbral de proveedores</h2>
         <p>{fraseUmbral(vista.umbralCentavos)}</p>
         <p className="pista">
-          Vacío hasta que la empresa escribe el monto. No hay una cifra de ejemplo. Escribirlo no libera un
-          pago ni envía un SPEI.
+          Vacío hasta que la empresa escribe el monto. Escribirlo no libera un pago ni envía un SPEI.
         </p>
         {vista.puedeEditar ? <FormularioUmbral escrito={vista.umbralCentavos !== null} /> : null}
       </section>
@@ -89,10 +93,7 @@ export function PanelPolitica({ vista }: { vista: VistaPolitica }) {
           tope. El plástico no sale en este corte.
         </p>
         {vista.categorias.length === 0 ? (
-          <div className="vacio">
-            <p className="vacio-titulo">Sin categorías</p>
-            <p>No hay una tabla de ejemplo. El tope nace vacío.</p>
-          </div>
+          <p className="lede">Todavía no hay categorías.</p>
         ) : (
           vista.categorias.map((categoria) => (
             <article className="categoria" key={categoria.id}>

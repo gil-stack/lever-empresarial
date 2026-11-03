@@ -60,7 +60,16 @@ describe("dos firmas y el contador", () => {
         deBaja: false,
         autorizados: 2,
         actorId: actor,
-        otraFirmaId: actor,
+        otraFirmaId: actor.toUpperCase(),
+      }),
+      "misma_firma",
+    );
+    assert.equal(
+      decidirLiberacion({
+        rol: "liberador",
+        deBaja: false,
+        autorizados: 2,
+        actorId: actor,
       }),
       "misma_firma",
     );
@@ -86,7 +95,10 @@ describe("dos firmas y el contador", () => {
     assert.match(una.detalle, /otra, distinta/);
     const dos = relatoOperabilidad(["Bruno Díaz", "Ana López"]);
     assert.equal(dos.operable, true);
+    assert.equal(dos.titulo, "Hay dos personas autorizadas.");
     assert.match(dos.detalle, /Ana López y Bruno Díaz pueden soltar dinero/);
+    assert.match(lineaDeRol("liberador"), /Puede soltar dinero/);
+    assert.equal(lineaDeRol("liberador").includes("Autorizada"), false);
   });
 });
 

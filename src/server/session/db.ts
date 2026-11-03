@@ -134,12 +134,34 @@ export function traducirErrorDeBase(error: unknown): Error {
       return new ErrorDeDominio("politica_invalida");
     }
   }
-  if (campo(error, "code") === "P0001") {
-    const codigo = FRASES_DE_PRECIO[campo(error, "message")];
-    if (codigo) return new ErrorDeDominio(codigo);
+  if (campo(error, "code") === "P0001" || codigo === "23514") {
+    const mensaje = campo(error, "message");
+    const dePrecio = FRASES_DE_PRECIO[mensaje];
+    if (dePrecio) return new ErrorDeDominio(dePrecio);
+    if (CODIGOS_DE_FIRMA.has(mensaje)) return new ErrorDeDominio(mensaje);
+  }
+  if (codigo === "23514" && marca.includes("lotes_prueba_dos_firmas")) {
+    return new ErrorDeDominio("misma_persona_en_las_dos_firmas");
+  }
+  if (codigo === "23514" && marca.includes("lotes_prueba_es_prueba")) {
+    return new ErrorDeDominio("dinero_real_fuera");
   }
   return new ErrorDeDominio("base_no_disponible");
 }
+
+const CODIGOS_DE_FIRMA = new Set([
+  "misma_persona_en_las_dos_firmas",
+  "dinero_real_fuera",
+  "firma_en_un_solo_acto",
+  "firmante_ajeno",
+  "contador_no_libera",
+  "sin_permiso_para_liberar",
+  "empresa_no_operable",
+  "contador_no_crea_pago",
+  "sin_permiso_para_solicitar",
+  "lote_ya_firmado",
+  "entrada_invalida",
+]);
 
 const FRASES_DE_PRECIO: Readonly<Record<string, string>> = {
   "el monto de la suscripcion ya esta publicado": "precio_ya_publicado",
