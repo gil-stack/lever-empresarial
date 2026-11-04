@@ -1,13 +1,13 @@
-# Sistema visual de Arco
+# Sistema visual de Lever
 
-Una página nueva se arma con estas piezas. No hace falta otra hoja de estilos ni otro color. La guía de marca completa (tono, paleta, superficies) vive fuera del repositorio, en `docs/marca-arco.md` del proyecto.
+Una página nueva se arma con estas piezas. No hace falta otra hoja de estilos ni otro color. La guía de marca completa (tono, paleta, superficies) vive fuera del repositorio, en `docs/marca-lever.md` del proyecto.
 
 ## Capas
 
 El layout las importa en este orden:
 
 1. `tokens.css`: colores, tipografía y medidas. Cada color es `light-dark(claro, oscuro)`.
-2. `marco.css`: la barra lateral del portal del cliente (Arco Empresas), el lienzo y el pie.
+2. `marco.css`: la barra lateral del portal del cliente (Lever Empresas), el lienzo y el pie.
 3. `telefono.css`: el aparato de quien paga. No comparte el menú ni el pie de la consola.
 4. `componentes.css`: página, hoja, renglones, rejilla, insignia, nota de regla, vacío, formularios, botones, avisos, resumen (cifra grande y métricas) y bandeja.
 5. `src/app/globals.css`: reglas de las páginas de la fase 1 y la fase 2.
@@ -31,11 +31,11 @@ Un color nuevo se declara como token en `tokens.css`, con sus dos mitades. No se
 | `--realce`, `--sombra` | Hover y sombra de las hojas |
 | `--fondo-telefono`, `--brillo-telefono` | El aparato del teléfono y su brillo azul |
 
-Tipografía: Geist (`--fuente-sans`) para todo el texto, títulos y cifras; la jerarquía la hacen el peso y el tamaño. Geist Mono (`--fuente-mono`) solo para RFC, CLABE y folios. La palabra ARCO no es texto: es el SVG de `PalabraArco`.
+Tipografía: Geist (`--fuente-sans`) para todo el texto, títulos y cifras; la jerarquía la hacen el peso y el tamaño. Geist Mono (`--fuente-mono`) solo para RFC, CLABE y folios. La palabra LEVER se presenta dentro del SVG de `PalabraLever`.
 
 ## Logotipo
 
-`src/components/cromo/logotipo.tsx` tiene el banderín (`Banderin`) y la palabra (`PalabraArco`), redibujados en SVG de la identidad oficial. Pintan con `currentColor`. En el portal del cliente van juntos con la línea «Empresas»; en el teléfono, sin la línea. Ningún texto, logotipo ni metadato dice «banco».
+`src/components/cromo/logotipo.tsx` tiene el banderín (`Banderin`) y la palabra (`PalabraLever`), redibujados en SVG de la identidad oficial. Pintan con `currentColor`. En el portal del cliente van juntos con la línea «Empresas»; en el teléfono, sin la línea. Ningún texto, logotipo ni metadato dice «banco».
 
 ## Navegación
 
@@ -55,7 +55,7 @@ Quien paga tiene otra superficie. Las piezas viven en `telefono.css`, fuera de `
 | `.superficie-telefono` | Centra el aparato y le deja aire |
 | `.telefono` | El aparato: borde, radio y sombra. Por debajo de 560 px ocupa el ancho |
 | `.telefono-cabeza` | La marca y el tema, en la misma fila |
-| `.marca-app` | El banderín y la palabra ARCO, sin la línea «Empresas» |
+| `.marca-app` | El banderín y la palabra LEVER, sin la línea «Empresas» |
 | `.kicker-app` | La entrada del teléfono. No es el `.kicker` de la consola |
 | `.telefono-cuerpo` | Lo que va entre la cabeza y el pie |
 | `.pie-app` | El pie del aparato |

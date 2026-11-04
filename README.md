@@ -1,6 +1,6 @@
-# Arco
+# Lever
 
-Arco: consola de control de gastos para una razón social mexicana. La guía corta del sistema visual está en `src/estilo/LEEME.md`.
+Lever: consola de control de gastos para una razón social mexicana. La guía corta del sistema visual está en `src/estilo/LEEME.md`.
 
 ## Desarrollo
 

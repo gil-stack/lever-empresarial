@@ -2,9 +2,9 @@ export function LogoArco({ inverso = false, className = "" }: { inverso?: boolea
   const clases = ["arco-logo", inverso ? "arco-logo-inverso" : "", className].filter(Boolean).join(" ");
 
   return (
-    <span className={clases} role="img" aria-label="ARCO Pagos">
+    <span className={clases} role="img" aria-label="LEVER Pagos">
       <span className="arco-logo-texto" aria-hidden="true">
-        <strong>ARCO</strong>
+        <strong>LEVER</strong>
         <small>PAGOS</small>
       </span>
     </span>

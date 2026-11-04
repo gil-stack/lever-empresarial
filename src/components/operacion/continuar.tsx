@@ -23,7 +23,7 @@ export function ContinuarOperacion({ paso, alta, yaInscrito = false }: { paso: P
   if (yaInscrito) return <Abrir />;
   if (paso.paso === "inscribir") return <Inscribir alta={alta} alGuardar={setCodigos} />;
   if (paso.paso === "recuperar") {
-    return <><p className="arco-kicker">Segundo factor</p><h1>La cuenta sigue cerrada.</h1><p className="arco-nota">Otra persona del personal debe revisar la recuperación desde la puerta general de Arco.</p></>;
+    return <><p className="arco-kicker">Segundo factor</p><h1>La cuenta sigue cerrada.</h1><p className="arco-nota">Otra persona del personal debe revisar la recuperación desde la puerta general de Lever.</p></>;
   }
   return <Verificar paso={paso} />;
 }

@@ -27,8 +27,8 @@ describe("totp", () => {
     const ida = aBase32(SEMILLA);
     assert.deepEqual(deBase32(semillaLegible(SEMILLA)), SEMILLA);
     assert.equal(deBase32(ida).equals(SEMILLA), true);
-    assert.match(uriOtpauth("Arco", "ana@ejemplo.mx", SEMILLA), /^otpauth:\/\/totp\/Arco/);
-    assert.equal(uriOtpauth("Arco", "ana@ejemplo.mx", SEMILLA).includes("algorithm=SHA1"), true);
+    assert.match(uriOtpauth("Lever", "ana@ejemplo.mx", SEMILLA), /^otpauth:\/\/totp\/Lever/);
+    assert.equal(uriOtpauth("Lever", "ana@ejemplo.mx", SEMILLA).includes("algorithm=SHA1"), true);
   });
 });
 

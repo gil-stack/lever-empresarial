@@ -14,7 +14,7 @@ export const enviarInvitacion: EnviarInvitacion = async (mensaje) => {
   const roles = mensaje.roles.filter((rol): rol is RolCliente => (ROLES_CLIENTE as readonly string[]).includes(rol));
   const plantilla = plantillaInvitacionUsuario({
     nombre: mensaje.nombre,
-    razonSocial: mensaje.razonSocial ?? "Arco",
+    razonSocial: mensaje.razonSocial ?? "Lever",
     quienInvita: mensaje.razonSocial ? null : "La operación",
     roles: roles.length > 0 ? roles : ["administrador"],
     enlace: mensaje.enlace,

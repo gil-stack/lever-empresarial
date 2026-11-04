@@ -34,7 +34,7 @@ const VENTANA_CONTRASENA_MS = 15 * 60 * 1000;
 const TOPE_SEGUNDO_FACTOR = 5;
 const VIGENCIA_RETO_MS = 5 * 60 * 1000;
 const VIGENCIA_RECUPERACION_MS = 12 * 60 * 60 * 1000;
-const EMISOR = "Arco";
+const EMISOR = "Lever";
 
 type Hashear = (contrasena: string) => Promise<string>;
 type Verificar = (contrasena: string, hash: string) => Promise<boolean>;
