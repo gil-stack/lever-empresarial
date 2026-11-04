@@ -407,38 +407,6 @@
   margin-top: 36px;
 }
 
-/* Teléfono: sin el menú de la consola */
-
-.superficie-telefono {
-  display: flex;
-  justify-content: center;
-  padding: 56px 16px 80px;
-}
-
-.telefono {
-  display: flex;
-  flex-direction: column;
-  width: min(100%, 390px);
-  min-height: 70vh;
-  padding: 22px 22px 20px;
-  border: 1px solid var(--linea);
-  border-radius: 40px;
-  background: var(--hoja);
-  box-shadow:
-    0 1px 2px var(--sombra),
-    0 24px 48px -24px var(--sombra);
-}
-
-.telefono h1 {
-  font-size: clamp(2rem, 8vw, 2.5rem);
-  line-height: 1.05;
-}
-
-.telefono .lede {
-  max-width: 32ch;
-  margin-top: 14px;
-}
-
 /* Anchos */
 
 @container (max-width: 900px) {
@@ -472,15 +440,3 @@
   }
 }
 
-@media (max-width: 560px) {
-  .superficie-telefono {
-    padding: 12px 12px 16px;
-  }
-
-  .telefono {
-    width: 100%;
-    min-height: calc(100dvh - 28px);
-    padding: 22px 18px 20px;
-    border-radius: 28px;
-  }
-}

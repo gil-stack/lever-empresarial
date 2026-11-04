@@ -19,6 +19,7 @@ import {
   Hoja,
   Insignia,
   NotaRegla,
+  Rejilla,
   Renglon,
   Renglones,
   Vacio,
@@ -47,9 +48,10 @@ export function PantallaProveedores({
       <CabezaPagina kicker="Proveedores" titulo="Proveedores">
         <p className="lede">Un RFC, su razón social y una CLABE.</p>
       </CabezaPagina>
-      <div className="proveedores-lienzo">
-        <div className="zona-principal">
-          <div className="zona-fichas">
+      <Rejilla
+        estable
+        principal={
+          <>
             <Hoja id="proveedores-empresa" titulo="En esta empresa">
               {proveedores.length === 0 ? (
                 <Vacio titulo="Todavía no hay proveedores" />
@@ -63,13 +65,11 @@ export function PantallaProveedores({
                 ))
               )}
             </Hoja>
-          </div>
-          <div className="zona-historial">
             <HistorialClabes lectura={historial} nombres={nombres} />
-          </div>
-        </div>
-        <div className="zona-lateral">
-          <div className="zona-alta">
+          </>
+        }
+        lateral={
+          <>
             <Hoja id="alta-proveedor" titulo="Alta">
               {edita ? (
                 <FormularioProveedor />
@@ -77,19 +77,15 @@ export function PantallaProveedores({
                 <p className="lede">Tu rol ve esta lista y no da de alta.</p>
               )}
             </Hoja>
-          </div>
-          <div className="zona-archivo">
             <Hoja className="hoja-archivo" id="lista-69b" titulo="Artículo 69-B">
               <ListaActual lista={lista} />
             </Hoja>
-          </div>
-          <div className="zona-pago">
             <Hoja id="pago-proveedor" titulo="Pago">
               <NotaRegla>Esta pantalla no envía dinero.</NotaRegla>
             </Hoja>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
     </>
   );
 }

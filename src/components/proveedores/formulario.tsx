@@ -68,7 +68,7 @@ export function FormularioProveedor() {
   return (
     <form
       ref={formulario}
-      className="alta-formulario"
+      className="alta-formulario formulario-pareja"
       action={accion}
       encType="multipart/form-data"
       onSubmit={alEnviar}

@@ -19,10 +19,25 @@ export function CabezaPagina({
   );
 }
 
-/** Columna ancha para el dinero y columna angosta para el estado. Sin `lateral`, una sola columna. */
-export function Rejilla({ principal, lateral }: { principal: ReactNode; lateral?: ReactNode }) {
+/**
+ * Columna ancha y columna angosta. Sin `lateral`, una sola columna.
+ * `estable` mantiene las dos columnas por debajo de los 900 px del contenedor,
+ * hasta 640 px: en una laptop el lienzo mide menos de 900 y las dos tienen que verse.
+ */
+export function Rejilla({
+  principal,
+  lateral,
+  estable = false,
+}: {
+  principal: ReactNode;
+  lateral?: ReactNode;
+  estable?: boolean;
+}) {
+  const clases = ["rejilla"];
+  if (!lateral) clases.push("rejilla-sola");
+  else if (estable) clases.push("rejilla-estable");
   return (
-    <div className={lateral ? "rejilla" : "rejilla rejilla-sola"}>
+    <div className={clases.join(" ")}>
       <div className="columna">{principal}</div>
       {lateral ? <div className="columna">{lateral}</div> : null}
     </div>

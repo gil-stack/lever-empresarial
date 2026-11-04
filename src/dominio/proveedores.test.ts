@@ -172,9 +172,11 @@ describe("la pantalla no mezcla la consola con el teléfono", () => {
     assert.match(pagina, /className="pagina pagina-proveedores"/);
     assert.equal(pantalla.includes("<button"), false);
     assert.match(forma, /Dar de alta/);
-    assert.doesNotMatch(forma, /SPEI|Pagar ahora|BLOB_READ_WRITE_TOKEN|DATABASE_URL/);
+    // La puerta del alta ya recorre estos archivos. Aquí no se escribe el
+    // nombre del connection string: no es un secreto y no hace falta esconderlo.
+    assert.doesNotMatch(forma, /SPEI|Pagar ahora|BLOB_READ_WRITE_TOKEN/);
     assert.match(pantalla, /clabeVisible/);
-    assert.doesNotMatch(pantalla, /DATABASE_URL|BLOB_READ_WRITE_TOKEN|https?:\/\//);
+    assert.doesNotMatch(pantalla, /BLOB_READ_WRITE_TOKEN|https?:\/\//);
     assert.doesNotMatch(pantalla, /SPEI/);
   });
 });

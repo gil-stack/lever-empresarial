@@ -189,8 +189,19 @@ h1 + .rfc-cuenta {
 }
 
 @container (max-width: 900px) {
-  .rejilla,
+  .rejilla:not(.rejilla-estable),
   .consola-rejilla {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/*
+ * La rejilla estable sigue en dos columnas cuando el contenedor baja de 900 px.
+ * En una ventana de 1280 la columna de contenido, descontada la barra, mide
+ * menos de eso. Si se apila, la ficha o «Dar de alta» quedan bajo el corte.
+ */
+@container (max-width: 640px) {
+  .rejilla-estable {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -494,6 +505,26 @@ h1 + .rfc-cuenta {
   margin-top: 32px;
 }
 
+/* Campos de dos en dos. El aviso y el botón ocupan la fila entera. */
+.formulario-pareja {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 20px;
+  align-items: start;
+  min-width: 0;
+}
+
+.formulario-pareja > .alerta,
+.formulario-pareja > .acciones {
+  grid-column: 1 / -1;
+}
+
+@container (max-width: 640px) {
+  .formulario-pareja {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .boton {
   appearance: none;
   display: inline-flex;
@@ -625,75 +656,7 @@ h1 + .rfc-cuenta {
   text-underline-offset: 3px;
 }
 
-/* Alta de proveedor. Estas clases no tocan los saldos de la consola. */
-
-.pagina-proveedores {
-  padding-top: 28px;
-  padding-bottom: 64px;
-}
-
-.pagina-proveedores > .pagina-cabeza + * {
-  margin-top: 28px;
-}
-
-.pagina-proveedores .kicker {
-  margin-bottom: 12px;
-}
-
-.pagina-proveedores h1 + .lede {
-  margin-top: 10px;
-}
-
-.proveedores-lienzo {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.85fr);
-  gap: 20px 24px;
-  align-items: start;
-}
-
-.zona-principal,
-.zona-lateral {
-  display: grid;
-  gap: 20px;
-  align-content: start;
-  min-width: 0;
-}
-
-.zona-alta .alta-formulario {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  column-gap: 12px;
-}
-
-.zona-alta .alerta,
-.zona-alta .acciones {
-  grid-column: 1 / -1;
-}
-
-.zona-alta .hoja {
-  padding: 16px 16px 14px;
-}
-
-.zona-alta .campo {
-  margin-top: 10px;
-}
-
-.zona-alta .campo label {
-  margin-bottom: 4px;
-}
-
-.zona-alta .campo input {
-  min-height: 40px;
-}
-
-.zona-alta .acciones {
-  margin-top: 12px;
-}
-
-.zona-alta .pista {
-  margin-top: 4px;
-  line-height: 1.35;
-}
+/* La ficha separa un proveedor del siguiente. El aire de la página es el de .pagina. */
 
 .hoja-archivo .renglones {
   margin-top: 12px;
@@ -709,26 +672,6 @@ h1 + .rfc-cuenta {
 .proveedor .frase,
 .hoja-archivo .frase {
   margin-top: 12px;
-}
-
-@container (max-width: 900px) {
-  .proveedores-lienzo {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .zona-lateral {
-    order: -1;
-  }
-
-  .zona-archivo {
-    order: -1;
-  }
-}
-
-@container (max-width: 560px) {
-  .zona-alta .alta-formulario {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 .proveedor {

@@ -7,6 +7,7 @@ import { COOKIE_TEMA, temaDesde } from "@/components/cromo/tema";
 
 import "@/estilo/tokens.css";
 import "@/estilo/marco.css";
+import "@/estilo/telefono.css";
 import "@/estilo/componentes.css";
 import "./globals.css";
 
