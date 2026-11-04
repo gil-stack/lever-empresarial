@@ -7,9 +7,9 @@ import type { Capacidad, Superficie } from "./capacidades";
  */
 /**
  * publica: sin sesión.
- * segundo_factor: solo con la sesión parcial (contraseña sin segundo factor),
- *   para verificarlo. La pantalla la construye el frente de autenticación.
- * sesion y capacidad: sesión completa, con el segundo factor verificado.
+ * segundo_factor: solo con la cookie de la entrada (contraseña ya comprobada)
+ *   o la del portal todavía no abierto, para registrar o verificar el factor.
+ * sesion y capacidad: sesión completa, nacida con passkey, TOTP o respaldo.
  */
 export type Acceso =
   | { tipo: "publica" }
@@ -17,7 +17,7 @@ export type Acceso =
   | { tipo: "sesion" }
   | { tipo: "capacidad"; alguna: readonly Capacidad[] };
 
-export const RUTA_SEGUNDO_FACTOR = "/entrar/segundo-factor";
+export const RUTA_SEGUNDO_FACTOR = "/entrar/continuar";
 
 export type Ruta = {
   patron: string;
@@ -30,7 +30,11 @@ export type Ruta = {
 export const RUTAS = [
   { patron: "/", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/entrar", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
-  { patron: "/entrar/segundo-factor", superficie: "cliente", acceso: { tipo: "segundo_factor" }, conEmpresa: false },
+  { patron: "/entrar/continuar", superficie: "cliente", acceso: { tipo: "segundo_factor" }, conEmpresa: false },
+  { patron: "/entrar/seguridad", superficie: "cliente", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/entrar/recuperaciones", superficie: "cliente", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/recuperar", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
+  { patron: "/recuperar/[token]", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/invitacion/[token]", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/salud", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/telefono", superficie: "telefono", acceso: { tipo: "publica" }, conEmpresa: false },

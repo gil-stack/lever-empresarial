@@ -149,7 +149,13 @@ function revisarArgumentoSql(archivo, nodo, hallazgos) {
   if (ts.isStringLiteral(nodo) || ts.isNoSubstitutionTemplateLiteral(nodo)) return;
   if (ts.isPropertyAccessExpression(nodo) || ts.isIdentifier(nodo)) {
     const inicial = inicializadorDe(nodo);
-    if (inicial) revisarArgumentoSql(archivo, inicial, hallazgos);
+    if (inicial) {
+      revisarArgumentoSql(archivo, inicial, hallazgos);
+      return;
+    }
+    if (ts.isIdentifier(nodo) && esParametroSql(nodo)) {
+      hallazgos.push(`${ubicar(archivo, nodo)} SQL recibido como parámetro`);
+    }
     return;
   }
   if (ts.isTemplateExpression(nodo)) {
@@ -167,6 +173,20 @@ function revisarArgumentoSql(archivo, nodo, hallazgos) {
     return;
   }
   hallazgos.push(`${ubicar(archivo, nodo)} SQL de origen no comprobable`);
+}
+
+function esParametroSql(nodo) {
+  let actual = nodo.parent;
+  while (actual) {
+    if (ts.isFunctionLike(actual)) {
+      const coincide = actual.parameters.some(
+        (parametro) => ts.isIdentifier(parametro.name) && parametro.name.text === nodo.text,
+      );
+      if (coincide) return true;
+    }
+    actual = actual.parent;
+  }
+  return false;
 }
 
 function inicializadorDe(nodo) {

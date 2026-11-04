@@ -35,8 +35,7 @@ export type ContextoResuelto = { ctx: ContextoDeTenant; eleccion: Eleccion };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/** Una empresa suspendida o dada de baja no da capacidades del cliente. */
-const ESTADOS_SIN_ACCION = new Set(["suspendida", "baja"]);
+/** Solo una empresa activa da roles y capacidades. El resto no actúa. */
 
 export async function resolverContexto(
   entrada: {
@@ -65,7 +64,11 @@ export async function resolverContexto(
     eleccion = pertenencia.membresias.length === 0 ? "ninguna" : "pendiente";
   }
 
-  const rolesCliente = elegida && !ESTADOS_SIN_ACCION.has(elegida.estado) ? elegida.roles : [];
+  if (pertenencia.personal) {
+    elegida = null;
+    eleccion = "ninguna";
+  }
+  const rolesCliente = elegida?.estado === "activa" ? elegida.roles : [];
   const rolesPlataforma = pertenencia.personal?.roles ?? [];
   const empresa: EmpresaDelContexto | null = elegida
     ? {
@@ -87,9 +90,12 @@ export async function resolverContexto(
       persona: { ...sesion.usuario },
       segundoFactor: sesion.segundoFactor.metodo,
       empresa,
-      roles: elegida ? elegida.roles : [],
+      roles: rolesCliente,
       personal: pertenencia.personal,
-      empresas: pertenencia.membresias.map((m) => ({ id: m.id, razonSocial: m.razonSocial })),
+      empresas: (pertenencia.personal ? [] : pertenencia.membresias).map((m) => ({
+        id: m.id,
+        razonSocial: m.razonSocial,
+      })),
       capacidades: capacidadesDe({ rolesCliente, rolesPlataforma }),
     },
   };

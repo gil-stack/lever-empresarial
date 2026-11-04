@@ -99,7 +99,8 @@ export async function conContexto<T>(
   const userId = valorDeContexto(base.userId);
   const operadorId = valorDeContexto(base.operadorId);
   return conTransaccion(async (consulta) => {
-    await consulta.query(`set local role ${base.rol}`);
+    if (base.rol === "plataforma_sofipo") await consulta.query("set local role plataforma_sofipo");
+    else await consulta.query("set local role plataforma_cliente");
     await consulta.query(
       "select set_config('app.company_id', $1, true), set_config('app.user_id', $2, true), set_config('app.operator_id', $3, true)",
       [companyId, userId, operadorId],
@@ -155,6 +156,12 @@ export function traducirErrorDeBase(error: unknown): Error {
   const marca = `${campo(error, "constraint")} ${campo(error, "table")}`.toLowerCase();
   if (codigo === "42501") return new ErrorDeDominio("sin_permiso");
   if (codigo === "23505") {
+    if (marca.includes("auth_passkeys")) return new ErrorDeDominio("passkey_duplicada");
+    if (marca.includes("auth_totp")) return new ErrorDeDominio("totp_duplicado");
+    if (marca.includes("auth_recuperaciones")) return new ErrorDeDominio("recuperacion_abierta");
+    if (marca.includes("auth_codigos")) return new ErrorDeDominio("respaldo_duplicado");
+    if (marca.includes("auth_retos")) return new ErrorDeDominio("reto_duplicado");
+    if (marca.includes("auth_entradas")) return new ErrorDeDominio("entrada_duplicada");
     if (marca.includes("suppliers_rfc")) return new ErrorDeDominio("proveedor_duplicado");
     if (marca.includes("rfc")) return new ErrorDeDominio("rfc_duplicado");
     if (marca.includes("correo")) return new ErrorDeDominio("correo_duplicado");
@@ -186,6 +193,7 @@ export function traducirErrorDeBase(error: unknown): Error {
     const dePrecio = FRASES_DE_PRECIO[mensaje];
     if (dePrecio) return new ErrorDeDominio(dePrecio);
     if (CODIGOS_DE_FIRMA.has(mensaje)) return new ErrorDeDominio(mensaje);
+    if (CODIGOS_DE_AUTENTICACION.has(mensaje)) return new ErrorDeDominio(mensaje);
     if (CODIGOS_DE_CLABE.has(mensaje)) return new ErrorDeDominio(mensaje);
     if (CODIGOS_DE_TENENCIA.has(mensaje)) return new ErrorDeDominio(mensaje);
     const deProveedor = FRASES_DE_PROVEEDOR[mensaje.trim()];
@@ -237,6 +245,31 @@ const FRASES_DE_PROVEEDOR: Readonly<Record<string, string>> = {
   constancia_no_se_reescribe: "archivo_no_disponible",
 };
 
+const CODIGOS_DE_AUTENTICACION = new Set([
+  "entrada_no_se_borra",
+  "entrada_no_se_reescribe",
+  "entrada_ya_consumida",
+  "sesion_no_se_reescribe",
+  "sesion_sin_segundo_factor",
+  "passkey_no_se_borra",
+  "passkey_no_se_reescribe",
+  "passkey_revocada",
+  "passkey_contador_atras",
+  "totp_no_se_borra",
+  "totp_no_se_reescribe",
+  "totp_revocado",
+  "totp_codigo_repetido",
+  "respaldo_no_se_borra",
+  "respaldo_no_se_reescribe",
+  "respaldo_ya_usado",
+  "recuperacion_no_se_borra",
+  "recuperacion_no_se_reescribe",
+  "recuperacion_transicion_invalida",
+  "recuperacion_sin_auditoria",
+  "recuperacion_con_factores_vigentes",
+  "factor_sin_auditoria",
+]);
+
 const CODIGOS_DE_FIRMA = new Set([
   "misma_persona_en_las_dos_firmas",
   "dinero_real_fuera",
@@ -262,6 +295,11 @@ const FRASES_DE_PRECIO: Readonly<Record<string, string>> = {
   "el recorrido no se reescribe": "suscripcion_protegida",
   "la aceptacion no trae quien ni cuando": "suscripcion_invalida",
 };
+
+/** Única entrega de un texto SQL al driver. El resto del servidor no arma la sentencia en el llamador. */
+export function aplicarSentencia(consulta: Consulta, sentencia: string, params: readonly unknown[] = []) {
+  return consulta.query(sentencia, params);
+}
 
 function comoConsulta(cliente: ClientePg): Consulta {
   return {
@@ -325,10 +363,50 @@ async function crearPool(): Promise<PoolPg> {
     creado.on("error", () => {
       // El driver puede adjuntar el connection string. No se registra.
     });
+    await afirmarRolDeAplicacion(creado);
     return creado;
   } catch (error) {
     throw traducirErrorDeBase(error);
   }
+}
+
+async function afirmarRolDeAplicacion(creado: PoolPg): Promise<void> {
+  const cliente = await creado.connect();
+  try {
+    const resultado = await cliente.query(
+      `select r.rolsuper as super,
+              r.rolbypassrls as salta,
+              (
+                select count(*)::int
+                from pg_class as c
+                join pg_namespace as n on n.oid = c.relnamespace
+                where n.nspname = 'public'
+                  and c.relkind = 'r'
+                  and c.relname <> 'schema_migrations'
+                  and c.relowner = r.oid
+              ) as tablas
+       from pg_roles as r
+       where r.rolname = current_user`,
+    );
+    const fila = resultado.rows[0] as { super?: boolean; salta?: boolean; tablas?: number } | undefined;
+    if (!fila || fila.super === true || fila.salta === true || Number(fila.tablas) > 0) {
+      throw new ErrorDeDominio("conexion_duena");
+    }
+  } catch (error) {
+    try {
+      cliente.release();
+    } catch {
+      // Se cierra el pool abajo.
+    }
+    try {
+      await creado.end();
+    } catch {
+      // El driver puede citar la conexión.
+    }
+    if (error instanceof ErrorDeDominio) throw error;
+    throw new ErrorDeDominio("conexion_duena");
+  }
+  cliente.release();
 }
 
 function leerConnectionString(): string {

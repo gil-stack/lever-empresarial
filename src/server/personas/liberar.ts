@@ -21,13 +21,15 @@ export async function negarLiberacion(
   const repositorio = deps?.repositorio ?? repositorioPg();
   const hoy = hoyEnMexico((deps?.ahora ?? (() => new Date()))());
   const hechos = await repositorio.hechosLiberacion(conEmpresa, hoy);
-  throw new ErrorDeDominio(
-    decidirLiberacion({
-      roles: conEmpresa.roles,
-      deBaja: hechos.actorDeBaja,
-      autorizados: hechos.autorizados,
-      actorId: conEmpresa.persona.id,
-      otraFirmaId,
-    }),
-  );
+  const codigo = decidirLiberacion({
+    roles: conEmpresa.roles,
+    deBaja: hechos.actorDeBaja,
+    autorizados: hechos.autorizados,
+    actorId: conEmpresa.persona.id,
+    otraFirmaId,
+  });
+  if (conEmpresa.empresa.demostracion && codigo === "sin_dispersion") {
+    throw new ErrorDeDominio("demostracion_no_mueve_dinero");
+  }
+  throw new ErrorDeDominio(codigo);
 }

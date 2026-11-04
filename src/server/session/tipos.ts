@@ -4,7 +4,7 @@ export type UsuarioPublico = {
   correo: string;
 };
 
-export const METODOS_SEGUNDO_FACTOR = ["passkey", "totp"] as const;
+export const METODOS_SEGUNDO_FACTOR = ["passkey", "totp", "respaldo"] as const;
 export type MetodoSegundoFactor = (typeof METODOS_SEGUNDO_FACTOR)[number];
 
 /**

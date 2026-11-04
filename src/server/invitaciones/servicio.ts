@@ -1,9 +1,8 @@
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { hashDeToken, hashearContrasena, verificarContrasena } from "../session/hash";
-import { abrirSesionDe, contrasenaCoincide, type DependenciasSesion } from "../session/servicio";
+import { contrasenaCoincide } from "../session/servicio";
 import { repositorioPg as repositorioSesionPg } from "../session/repositorio";
 import { tokenValido } from "../session/cookie";
-import type { SesionAbierta } from "../session/tipos";
 import { enlaceDeInvitacion, enviarInvitacion as enviarPorDefecto, urlPublica } from "./correo";
 import { repositorioPg, type RepositorioInvitaciones } from "./repositorio";
 import type {
@@ -22,7 +21,6 @@ export type DependenciasInvitacion = {
   hashear?: (contrasena: string) => Promise<string>;
   verificar?: (contrasena: string, hash: string) => Promise<boolean>;
   buscarHash?: (correo: string) => Promise<string | null>;
-  sesion?: DependenciasSesion;
 };
 
 /** Lo que muestra la página del enlace. No consume la invitación. */
@@ -44,12 +42,14 @@ export async function leerInvitacion(token: string, deps?: DependenciasInvitacio
 /**
  * Acepta una vez. Quien no tenía contraseña fija la suya; quien ya la tenía
  * (por ejemplo, una contadora que entra a una segunda empresa) confirma con
- * la suya. Después abre sesión: el enlace solo llegó a ese correo.
+ * la suya. No abre sesión: el siguiente paso es registrar o verificar el segundo factor.
  */
+export type Aceptacion = { userId: string; correo: string; cuentaNueva: boolean };
+
 export async function aceptarInvitacion(
   entrada: { token?: unknown; contrasena?: unknown; confirmacion?: unknown },
   deps?: DependenciasInvitacion,
-): Promise<SesionAbierta> {
+): Promise<Aceptacion> {
   const token = typeof entrada.token === "string" ? entrada.token : "";
   if (!tokenValido(token)) throw new ErrorDeDominio("invitacion_inexistente");
   const repositorio = deps?.repositorio ?? repositorioPg();
@@ -74,7 +74,7 @@ export async function aceptarInvitacion(
   }
 
   await repositorio.consumir(invitacion, passwordHash);
-  return abrirSesionDe(invitacion.userId, deps?.sesion);
+  return { userId: invitacion.userId, correo: invitacion.correo, cuentaNueva: passwordHash !== null };
 }
 
 /** Después de confirmar la emisión. Si el correo no sale, la invitación sigue emitida. */

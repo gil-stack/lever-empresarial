@@ -3,20 +3,26 @@
 import Link from "next/link";
 import { useActionState } from "react";
 
-import { enviarEntrada } from "@/app/sesion/acciones";
+import { enviarContrasena } from "@/app/entrar/acciones";
 import { ENTRADA_INICIAL } from "@/app/sesion/estado";
 
-export function FormularioEntrar() {
-  const [estado, accion, pendiente] = useActionState(enviarEntrada, ENTRADA_INICIAL);
+export function FormularioEntrar({ siguiente, aviso }: { siguiente: string; aviso: string | null }) {
+  const [estado, accion, pendiente] = useActionState(enviarContrasena, ENTRADA_INICIAL);
 
   return (
     <form className="alta-formulario" action={accion} noValidate>
+      {aviso ? (
+        <div className="alerta" role="status">
+          <p>{aviso}</p>
+        </div>
+      ) : null}
       {estado.tipo === "invalido" ? (
         <div className="alerta" role="alert">
           <p className="alerta-titulo">No se pudo entrar</p>
           <p>{estado.mensaje}</p>
         </div>
       ) : null}
+      <input type="hidden" name="siguiente" value={siguiente} />
       <div className="campo">
         <label htmlFor="correo">Correo</label>
         <input id="correo" name="correo" type="email" autoComplete="username" maxLength={254} required />
@@ -30,9 +36,10 @@ export function FormularioEntrar() {
       </div>
       <div className="acciones">
         <button type="submit" className="boton" disabled={pendiente}>
-          {pendiente ? "Entrando…" : "Entrar"}
+          {pendiente ? "Comprobando…" : "Continuar"}
         </button>
       </div>
+      <p className="arco-pie">Después hace falta una passkey o un código de tu app autenticadora.</p>
     </form>
   );
 }

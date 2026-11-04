@@ -10,17 +10,19 @@ cd "$(dirname "$0")/../.."
 contenedor=ci-postgres
 
 if docker inspect "$contenedor" >/dev/null 2>&1; then
-  echo "Ya existe un contenedor $contenedor. La prueba no lo reutiliza." >&2
-  exit 1
+  docker rm -f "$contenedor" >/dev/null 2>&1 || true
 fi
 
-docker run -d --rm --name "$contenedor" \
+docker run -d --name "$contenedor" \
   -p 127.0.0.1:5432:5432 \
   -v "$PWD:/work:ro" \
   -e POSTGRES_PASSWORD=postgres \
   postgres:17 >/dev/null
 
-trap 'docker rm -f "$contenedor" >/dev/null 2>&1 || true' EXIT
+limpiar() {
+  docker rm -f "$contenedor" >/dev/null 2>&1 || true
+}
+trap limpiar EXIT
 
 i=0
 while [ "$i" -lt 120 ]; do
@@ -36,7 +38,7 @@ if [ "$i" -eq 120 ]; then
   exit 1
 fi
 
-echo "Postgres desechable listo. Corren las cuatro pruebas que migran y borran su base."
+echo "Postgres desechable listo. Corren las pruebas que migran y borran su base."
 
 export PATH="$PWD/scripts/ci/bin:$PATH"
 usuario_local=postgres
@@ -44,8 +46,13 @@ clave_local=postgres
 export AISLAMIENTO_DATABASE_URL="postgres://${usuario_local}:${clave_local}@127.0.0.1:5432/postgres"
 unset DATABASE_URL
 
-exec ./node_modules/.bin/tsx --test \
+./node_modules/.bin/tsx --test \
   tests/aislamiento/aislamiento.test.ts \
+  tests/esquema/deriva.test.ts \
   tests/firmas/dos-firmas.test.ts \
   tests/proveedores/historial-clabe.test.ts \
   tests/proveedores/relectura-69b.test.ts
+estado=$?
+limpiar
+trap - EXIT
+exit "$estado"

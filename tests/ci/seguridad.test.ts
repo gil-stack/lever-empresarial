@@ -51,6 +51,15 @@ test("el placeholder $n del lote 69-B se acepta y un valor no", () => {
   assert.equal(revisarSql("src/server/x.ts", inseguro).length, 1);
 });
 
+test("un SQL que entra como parámetro no pasa", () => {
+  const fuente = `
+    function guardar(consulta: { query: (sql: string, params: unknown[]) => unknown }, sql: string) {
+      return consulta.query(sql, []);
+    }
+  `;
+  assert.equal(revisarSql("src/server/company/servicio.ts", fuente).some((linea) => linea.includes("parámetro")), true);
+});
+
 test("eval y child_process no entran al servidor", () => {
   assert.equal(revisarSql("src/app/salud/route.ts", "export function GET() { return eval('1'); }").length, 1);
   assert.equal(

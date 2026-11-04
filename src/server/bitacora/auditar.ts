@@ -105,9 +105,13 @@ export function actorDePersonal(
 }
 
 /** Entrar y salir no tienen empresa. La persona que entra es el actor. */
-export function actorDeIdentidad(persona: { id: string } | null, ctx?: Pick<ContextoDeTenant, "peticionId">): Actor {
+export function actorDeIdentidad(
+  persona: { id: string } | null,
+  ctx?: Pick<ContextoDeTenant, "peticionId">,
+  operadorId: string | null = null,
+): Actor {
   return {
-    operadorId: null,
+    operadorId,
     companyId: null,
     actorTipo: persona ? "miembro" : "sistema",
     actorId: persona?.id ?? null,
@@ -115,6 +119,13 @@ export function actorDeIdentidad(persona: { id: string } | null, ctx?: Pick<Cont
     peticionId: ctx?.peticionId ?? null,
     origen: "consola",
   };
+}
+
+export async function operadorDeLaPlataforma(consulta: Consulta): Promise<string | null> {
+  const resultado = await consulta.query("select id from operators order by alta_en limit 2");
+  const fila = resultado.rows[0] as { id?: unknown } | undefined;
+  if (resultado.rows.length !== 1 || typeof fila?.id !== "string") return null;
+  return fila.id;
 }
 
 export const auditar: Auditar = async (consulta, actor, hecho) => {

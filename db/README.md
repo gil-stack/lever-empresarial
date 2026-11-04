@@ -107,7 +107,7 @@ El comando de migrar se corre una vez por rama, con el `DATABASE_URL_UNPOOLED` d
 
 `0010_subscriptions.sql` abre una suscripción por empresa, en `recorrido`, con `recorrido_inicio` en la hora de alta. Los treinta días se cuentan desde esa hora; no hay una segunda columna. El alta de una empresa nueva inserta la fila en la misma transacción. Pasar a `aceptada` exige que `platform_pricing.suscripcion_centavos` ya no sea vacío. Si lo está, la base rechaza el cambio.
 
-La página `/precios` y la consola leen esa única fila. `OPERADORES_PLATAFORMA` es la lista de correos, separada por comas, que puede publicar el monto y registrar la aceptación. No es un rol de la empresa. El valor no va en el repositorio. Sin la variable, nadie publica un precio.
+La página `/precios` y la consola leen esa única fila. Quien publica el monto y registra la aceptación es el personal del operador, en `platform_staff` con rol `administracion_plataforma`. `OPERADORES_PLATAFORMA` ya no abre nada: solo la lee el comando `personal:migrar-variable`, que invita a esos correos. Hasta correr ese comando, no hay personal.
 
 ## Fase 3. Proveedores, listado 69-B y CLABE
 
@@ -123,16 +123,10 @@ La constancia es un PDF en el almacén privado. La clave no es una URL y no baja
 
 `0015_releer_69b_y_clabe.sql` no crea tablas de dinero. Una copia nueva vuelve a leer a los proveedores ya guardados: si el RFC entra, la ficha deja la situación publicada y `boton_pago` queda en falso. Quien se dio de alta sin archivo sigue sin pago si esa copia no lo trae. La CLABE exige el proveedor de la misma empresa. Cerrar la única vigente, sin dejar otra abierta en la misma transacción, no pasa. El hash de la constancia no se reescribe. Este corte sigue sin migrar el libro de production.
 
-## Fase 4. Invitaciones y recuperación (propuesta)
+## Fase 4. Tenencia, invitaciones y autenticación fuerte
 
-`db/propuestas/fase-4-invitaciones.sql` no está en `db/migrations` y `db/migrate.sh` no la aplica. Espera a la tenencia (rama `fase-4/tenencia`), que deja la tabla de invitaciones; en la integración las dos formas se alinean y entra con el número que siga.
+`0016_tenencia.sql`, `0017_bitacora.sql` y `0018_rls.sql` cambian el libro. `0019_autenticacion_fuerte.sql` agrega la entrada de minutos, las passkeys, el TOTP, los códigos de respaldo y la solicitud de factor perdido. `0020_cierre_fase4.sql` obliga la seguridad de filas, crea el rol con el que entra la aplicación y la recuperación de contraseña.
 
-| Tabla | Qué guarda |
-| --- | --- |
-| `invitations` | Empresa, tipo (`empresa` o `usuario`), correo, nombre, roles, SHA-256 del token, quién invitó, vencimiento y un solo desenlace: aceptada o revocada. Una sola pendiente por empresa y correo |
-| `password_resets` | Persona, SHA-256 del token, vencimiento (máximo dos horas) y un solo desenlace: usada o anulada |
-| `users.correo_verificado_en` | Primera vez que la persona abrió un enlace de un solo uso enviado a su correo |
+La aplicación no conecta como dueña de las tablas. `DATABASE_URL` es el rol `plataforma_app`: no es dueño, no tiene `BYPASSRLS` y en cada transacción baja a `plataforma_cliente` o `plataforma_sofipo`. Quien migra sigue siendo el único dueño. Este corte no migra el libro de production.
 
-Gastar un token es un `UPDATE` que exige la fila pendiente y vigente. El trigger vuelve a revisar el vencimiento contra el reloj de Postgres, no deja reescribir el correo, los roles ni el hash, no deja cambiar un desenlace ya escrito y rechaza `DELETE` y `TRUNCATE`. `tests/invitaciones/contrato.test.ts` aplica todas las migraciones más esta propuesta sobre la base desechable de `AISLAMIENTO_DATABASE_URL`.
-
-Queda para la integración: `operator_id`, la membresía con estado y varios roles, y la RLS. La aceptación ocurre sin sesión, así que con RLS necesita el rol de sistema o una función `SECURITY DEFINER` que solo gaste el token.
+La contraseña abre una entrada de minutos, no una sesión. La sesión nace cuando esa entrada se consume con passkey, TOTP o código de respaldo. Aprobar una recuperación de contraseña cambia la contraseña y cierra las sesiones. No revoca passkeys ni TOTP. Nadie aprueba la propia solicitud.

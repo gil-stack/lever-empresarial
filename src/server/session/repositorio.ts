@@ -1,4 +1,4 @@
-import { auditar, actorDeIdentidad } from "../bitacora/auditar";
+import { auditar, actorDeIdentidad, operadorDeLaPlataforma } from "../bitacora/auditar";
 import { conContexto, type Consulta } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { METODOS_SEGUNDO_FACTOR, type MetodoSegundoFactor, type Sesion } from "./tipos";
@@ -96,7 +96,10 @@ export function repositorioPg(): RepositorioSesion {
       return conContexto({ rol: "plataforma_cliente", userId: sesion.userId }, async (consulta) => {
         await consulta.query(SQL.borrarSesionesDelUsuario, [sesion.userId]);
         await consulta.query(SQL.insertarSesion, [sesion.id, sesion.userId, sesion.tokenHash, sesion.expiresAt]);
-        await auditar(consulta, actorDeIdentidad({ id: sesion.userId }), { accion: "entrada", identificador: sesion.id });
+        await auditar(consulta, actorDeIdentidad({ id: sesion.userId }, undefined, await operadorDeLaPlataforma(consulta)), {
+          accion: "entrada",
+          identificador: sesion.id,
+        });
       });
     },
     buscarPorTokenHash(tokenHash, ahora, completa) {
@@ -116,7 +119,7 @@ export function repositorioPg(): RepositorioSesion {
           verificado.expiresAt,
         ]);
         if (cambiada.rowCount !== 1) throw new ErrorDeDominio("sesion_ausente");
-        await auditar(consulta, actorDeIdentidad(parcial.usuario), {
+        await auditar(consulta, actorDeIdentidad(parcial.usuario, undefined, await operadorDeLaPlataforma(consulta)), {
           accion: "segundo_factor",
           identificador: parcial.id,
           cambio: { metodo: verificado.metodo },
@@ -136,17 +139,27 @@ export function repositorioPg(): RepositorioSesion {
       if (!sesion) return;
       await conContexto({ rol: "plataforma_cliente", userId: sesion.usuario.id }, async (consulta) => {
         await consulta.query(SQL.borrarSesion, [tokenHash]);
-        await auditar(consulta, actorDeIdentidad(sesion.usuario), { accion: "salida", identificador: sesion.id });
+        await auditar(consulta, actorDeIdentidad(sesion.usuario, undefined, await operadorDeLaPlataforma(consulta)), {
+          accion: "salida",
+          identificador: sesion.id,
+        });
       });
     },
     registrarFallo(userId) {
-      return conContexto(SIN_CONTEXTO, (consulta) =>
-        auditar(consulta, actorDeIdentidad(null), {
-          accion: "entrada_fallida",
-          identificador: userId,
-          cambio: { motivo: userId ? "contrasena" : "correo_desconocido" },
-        }),
-      );
+      const escribir = async (consulta: Consulta) => {
+        await auditar(
+          consulta,
+          actorDeIdentidad(userId ? { id: userId } : null, undefined, await operadorDeLaPlataforma(consulta)),
+          {
+            accion: "entrada_fallida",
+            identificador: userId,
+            cambio: { motivo: userId ? "contrasena" : "correo_desconocido" },
+          },
+        );
+      };
+      return userId
+        ? conContexto({ rol: "plataforma_cliente", userId }, escribir)
+        : conContexto(SIN_CONTEXTO, escribir);
     },
   };
 }

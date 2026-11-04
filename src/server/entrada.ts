@@ -4,6 +4,7 @@ import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 
+import { type Superficie } from "../nucleo/capacidades";
 import { puede, type ContextoDeTenant } from "../nucleo/contexto";
 import { ErrorDeDominio } from "../nucleo/error-de-dominio";
 import {
@@ -15,6 +16,7 @@ import {
 } from "../nucleo/rutas";
 import { leerSesion } from "./session";
 import { NOMBRE_COOKIE, NOMBRE_COOKIE_PARCIAL } from "./session/cookie";
+import type { Sesion } from "./session/tipos";
 import { resolverContexto, type ContextoResuelto } from "./tenencia/resolver";
 
 export type Apertura =
@@ -23,21 +25,32 @@ export type Apertura =
   | { tipo: "sin_empresa"; ctx: ContextoDeTenant }
   | { tipo: "libro" };
 
+export type Entrada = {
+  nombre: string | null;
+  rfc: string | null;
+  razonSocial: string | null;
+  libroDisponible: boolean;
+};
+
 type Resolucion = ContextoResuelto | null | "libro";
 
-/** Una lectura de sesión y de membresías por petición, sin importar cuántas piezas la pidan. */
-export const contextoDePeticion = cache(async (): Promise<Resolucion> => {
+const VACIA: Entrada = { nombre: null, rfc: null, razonSocial: null, libroDisponible: true };
+
+/**
+ * Una lectura de sesión y de membresías por petición. La superficie es la de
+ * la ruta, no un valor fijo: el teléfono no queda anotado como consola.
+ * Sin segundo factor la cookie no cuenta.
+ */
+export const contextoDePeticion = cache(async (superficie: Superficie = "cliente"): Promise<Resolucion> => {
   try {
-    const [jar, cabeceras] = await Promise.all([cookies(), headers()]);
-    const token = jar.get(NOMBRE_COOKIE)?.value;
-    if (!token) return null;
-    const sesion = await leerSesion(`${NOMBRE_COOKIE}=${token}`);
+    const sesion = await sesionDesdeCookie();
     if (!sesion) return null;
+    const cabeceras = await headers();
     return await resolverContexto({
       sesion,
       empresaPedida: cabeceras.get(CABECERA_EMPRESA),
       peticionId: cabeceras.get(CABECERA_PETICION),
-      superficie: "cliente",
+      superficie,
     });
   } catch (error) {
     if (error instanceof ErrorDeDominio || errorConSecreto(error)) return "libro";
@@ -45,24 +58,26 @@ export const contextoDePeticion = cache(async (): Promise<Resolucion> => {
   }
 });
 
-/** Para páginas públicas: el contexto si hay sesión, o nada. */
-export async function contextoOpcional(): Promise<ContextoDeTenant | null> {
-  const resuelto = await contextoDePeticion();
+/** Para páginas públicas: el contexto si hay sesión completa, o nada. */
+export async function contextoOpcional(superficie: Superficie = "cliente"): Promise<ContextoDeTenant | null> {
+  const resuelto = await contextoDePeticion(superficie);
   return resuelto && resuelto !== "libro" ? resuelto.ctx : null;
 }
 
 /**
  * La página declara su ruta y aquí se decide con el registro de rutas y la
- * matriz de capacidades. Sin sesión se va a entrar; con varias empresas y
- * ninguna en la ruta, a elegir; con una empresa ajena en la ruta, no existe.
+ * matriz de capacidades. Sin sesión se va a entrar; con la entrada del
+ * segundo factor, a registrarlo o verificarlo; con varias empresas y ninguna
+ * en la ruta, a elegir; con una empresa ajena en la ruta, no existe.
  */
 export async function abrirRuta(patron: PatronDeRuta): Promise<Apertura> {
   const ruta = rutaDeclarada(patron);
-  const resuelto = await contextoDePeticion();
+  const resuelto = await contextoDePeticion(ruta.superficie);
   if (resuelto === "libro") return { tipo: "libro" };
   if (!resuelto) {
-    const parcial = (await cookies()).get(NOMBRE_COOKIE_PARCIAL)?.value;
-    redirect(parcial ? RUTA_SEGUNDO_FACTOR : "/entrar");
+    const jar = await cookies();
+    const entrada = jar.get("entrada")?.value || jar.get("portal")?.value;
+    redirect(entrada ? RUTA_SEGUNDO_FACTOR : "/entrar");
   }
   const { ctx, eleccion } = resuelto;
   if (eleccion === "ajena") notFound();
@@ -74,11 +89,48 @@ export async function abrirRuta(patron: PatronDeRuta): Promise<Apertura> {
 }
 
 /** Las acciones de servidor piden el mismo contexto. Sin sesión no hay contexto. */
-export async function contextoDeAccion(): Promise<ContextoDeTenant | null> {
-  const resuelto = await contextoDePeticion();
+export async function contextoDeAccion(superficie: Superficie = "cliente"): Promise<ContextoDeTenant | null> {
+  const resuelto = await contextoDePeticion(superficie);
   if (!resuelto || resuelto === "libro") return null;
   if (resuelto.eleccion === "ajena") return null;
   return resuelto.ctx;
+}
+
+/** Lo que el portal muestra de quien ya entró. Sin segundo factor, no hay nombre. */
+export async function leerEntrada(superficie: Superficie = "cliente"): Promise<Entrada> {
+  try {
+    const resuelto = await contextoDePeticion(superficie);
+    if (!resuelto || resuelto === "libro") {
+      return resuelto === "libro" ? { ...VACIA, libroDisponible: false } : VACIA;
+    }
+    return {
+      nombre: resuelto.ctx.persona.nombre,
+      rfc: resuelto.ctx.empresa?.rfc ?? null,
+      razonSocial: resuelto.ctx.empresa?.razonSocial ?? null,
+      libroDisponible: true,
+    };
+  } catch (error) {
+    if (error instanceof ErrorDeDominio || errorConSecreto(error)) return { ...VACIA, libroDisponible: false };
+    throw error;
+  }
+}
+
+export async function sesionSegura(): Promise<Sesion | null> {
+  try {
+    return await sesionDesdeCookie();
+  } catch (error) {
+    if (error instanceof ErrorDeDominio || errorConSecreto(error)) return null;
+    throw error;
+  }
+}
+
+export async function sesionDesdeCookie(): Promise<Sesion | null> {
+  const jar = await cookies();
+  const token = jar.get(NOMBRE_COOKIE)?.value;
+  if (!token) return null;
+  const sesion = await leerSesion(`${NOMBRE_COOKIE}=${token}`);
+  if (!sesion?.segundoFactor) return null;
+  return sesion;
 }
 
 export function errorConSecreto(error: unknown): boolean {

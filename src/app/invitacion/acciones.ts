@@ -1,9 +1,11 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { RUTA_SEGUNDO_FACTOR } from "@/nucleo/rutas";
-import { fijarCookieDeSesion } from "@/server/entrada";
+import { iniciarConContrasena } from "@/server/autenticacion";
+import { NOMBRE_COOKIE_ENTRADA } from "@/server/autenticacion/cookie";
 import { aceptarInvitacion } from "@/server/invitaciones";
 import { ErrorDeDominio } from "@/server/session";
 import type { EstadoInvitacion } from "./estado";
@@ -19,15 +21,27 @@ const MENSAJES: Record<string, string> = {
   invitacion_cerrada: "Esta invitación ya no sirve. Pide otra a quien te invitó.",
 };
 
-/** Acepta una sola vez y abre la sesión parcial: falta el segundo factor. */
+/** Guarda la contraseña y lleva a registrar o verificar el segundo factor. No abre el portal. */
 export async function enviarAceptacion(_previo: EstadoInvitacion, formData: FormData): Promise<EstadoInvitacion> {
+  const contrasena = String(formData.get("contrasena") ?? "");
   try {
-    const abierta = await aceptarInvitacion({
+    const aceptada = await aceptarInvitacion({
       token: formData.get("token"),
-      contrasena: formData.get("contrasena"),
+      contrasena,
       confirmacion: formData.get("confirmacion"),
     });
-    await fijarCookieDeSesion(abierta.setCookie);
+    const entrada = await iniciarConContrasena({ correo: aceptada.correo, contrasena });
+    if (entrada.tipo === "rechazo") {
+      return { tipo: "invalido", mensaje: MENSAJES[entrada.codigo] ?? "La contraseña quedó guardada. Entra para registrar el segundo factor." };
+    }
+    const jar = await cookies();
+    jar.set(NOMBRE_COOKIE_ENTRADA, entrada.cookie.valor, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      maxAge: entrada.cookie.maxAge,
+    });
   } catch (error) {
     if (error instanceof ErrorDeDominio) {
       return { tipo: "invalido", mensaje: MENSAJES[error.codigo] ?? "No se pudo aceptar. Vuelve a intentar." };

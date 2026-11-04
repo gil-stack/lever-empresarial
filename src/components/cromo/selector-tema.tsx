@@ -42,6 +42,9 @@ export function SelectorTema({ inicial }: { inicial: Tema }) {
               value={valor}
               checked={tema === valor}
               onChange={() => elegir(valor)}
+              // React avisa al hidratar un radio controlado: el navegador
+              // restaura el marcado y no coincide con el HTML del servidor.
+              suppressHydrationWarning
             />
             <Icono />
             <span>{etiqueta}</span>

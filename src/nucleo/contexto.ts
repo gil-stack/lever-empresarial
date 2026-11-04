@@ -32,7 +32,7 @@ export type ContextoDeTenant = {
    * «comando» es el personal del operador en el comando de plataforma, que
    * ya entra con las credenciales directas de la base.
    */
-  segundoFactor: "passkey" | "totp" | "comando";
+  segundoFactor: "passkey" | "totp" | "respaldo" | "comando";
   empresa: EmpresaDelContexto | null;
   roles: readonly RolCliente[];
   personal: PersonalDelContexto | null;

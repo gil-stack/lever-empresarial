@@ -1,4 +1,4 @@
-import type { RolCliente } from "../../nucleo/capacidades";
+import type { RolCliente } from "../../../nucleo/capacidades";
 import type { CorreoPlantilla } from "../tipos";
 import { armarCorreo, fechaEnMexico } from "./marco";
 

@@ -53,6 +53,9 @@ export async function Marco({
                 <span className="quien-etiqueta">Entraste como </span>
                 <span className="quien-nombre">{persona.nombre}</span>
                 {vista.razonSocial ? <span className="quien-etiqueta"> en {vista.razonSocial}</span> : null}
+                <Link href="/entrar/seguridad" className="quien-factor">
+                  Segundo factor
+                </Link>
               </p>
               <form action={salir}>
                 <button type="submit" className="salir">
