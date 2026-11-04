@@ -122,3 +122,17 @@ Dos piezas nacieron las dos como `0012`. Quedan en orden, y no se pierde ninguna
 La constancia es un PDF en el almacén privado. La clave no es una URL y no baja al navegador. La consulta del 69-B usa la copia más reciente, y si dos copias comparten hora manda también el id. Si no hay copia, no hay pago. Si el RFC está en la copia, el proveedor puede existir y el pago no. No hay envío de dinero.
 
 `0015_releer_69b_y_clabe.sql` no crea tablas de dinero. Una copia nueva vuelve a leer a los proveedores ya guardados: si el RFC entra, la ficha deja la situación publicada y `boton_pago` queda en falso. Quien se dio de alta sin archivo sigue sin pago si esa copia no lo trae. La CLABE exige el proveedor de la misma empresa. Cerrar la única vigente, sin dejar otra abierta en la misma transacción, no pasa. El hash de la constancia no se reescribe. Este corte sigue sin migrar el libro de production.
+
+## Fase 4. Invitaciones y recuperación (propuesta)
+
+`db/propuestas/fase-4-invitaciones.sql` no está en `db/migrations` y `db/migrate.sh` no la aplica. Espera a la tenencia (rama `fase-4/tenencia`), que deja la tabla de invitaciones; en la integración las dos formas se alinean y entra con el número que siga.
+
+| Tabla | Qué guarda |
+| --- | --- |
+| `invitations` | Empresa, tipo (`empresa` o `usuario`), correo, nombre, roles, SHA-256 del token, quién invitó, vencimiento y un solo desenlace: aceptada o revocada. Una sola pendiente por empresa y correo |
+| `password_resets` | Persona, SHA-256 del token, vencimiento (máximo dos horas) y un solo desenlace: usada o anulada |
+| `users.correo_verificado_en` | Primera vez que la persona abrió un enlace de un solo uso enviado a su correo |
+
+Gastar un token es un `UPDATE` que exige la fila pendiente y vigente. El trigger vuelve a revisar el vencimiento contra el reloj de Postgres, no deja reescribir el correo, los roles ni el hash, no deja cambiar un desenlace ya escrito y rechaza `DELETE` y `TRUNCATE`. `tests/invitaciones/contrato.test.ts` aplica todas las migraciones más esta propuesta sobre la base desechable de `AISLAMIENTO_DATABASE_URL`.
+
+Queda para la integración: `operator_id`, la membresía con estado y varios roles, y la RLS. La aceptación ocurre sin sesión, así que con RLS necesita el rol de sistema o una función `SECURITY DEFINER` que solo gaste el token.

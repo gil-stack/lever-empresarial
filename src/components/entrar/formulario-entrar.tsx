@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 
 import { enviarEntrada } from "@/app/sesion/acciones";
@@ -23,6 +24,9 @@ export function FormularioEntrar() {
       <div className="campo">
         <label htmlFor="contrasena">Contraseña</label>
         <input id="contrasena" name="contrasena" type="password" autoComplete="current-password" required />
+        <p className="pista">
+          <Link href="/recuperar">¿Olvidaste tu contraseña?</Link>
+        </p>
       </div>
       <div className="acciones">
         <button type="submit" className="boton" disabled={pendiente}>
