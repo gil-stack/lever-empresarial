@@ -8,6 +8,7 @@ import { leerConfiguracionCorreo, leerUrlPublica } from "./configuracion.ts";
 import { enviadorDesdeEntorno } from "./enviar.ts";
 import { ErrorDeCorreo, explicarErrorDeCorreo } from "./errores.ts";
 import { plantillaInvitacionEmpresa } from "./plantillas/invitacion-empresa.ts";
+import { plantillaInvitacionPersonal } from "./plantillas/invitacion-personal.ts";
 import { plantillaInvitacionUsuario } from "./plantillas/invitacion-usuario.ts";
 import { escapar } from "./plantillas/marco.ts";
 import { plantillaRecuperarContrasena } from "./plantillas/recuperar-contrasena.ts";
@@ -153,7 +154,7 @@ describe("plantillas", () => {
       enlace: ENLACE,
       venceEn: VENCE,
     });
-    assert.equal(correo.asunto, "Tu acceso a Talleres del Norte");
+    assert.equal(correo.asunto, "Bienvenido a Talleres del Norte | LEVER");
     for (const parte of [correo.html, correo.texto]) {
       assert.match(parte, /Talleres del Norte/);
       assert.match(parte, /TNO010101AB1/);
@@ -164,9 +165,10 @@ describe("plantillas", () => {
       assert.match(parte, /sirve una sola vez/);
     }
     assert.match(correo.html, /<html lang="es-MX">/);
+    assert.match(correo.html, /Bienvenido a tu nueva plataforma/);
   });
 
-  it("invitación de un usuario: quién invita y los roles", () => {
+  it("invitación de un usuario: bienvenida con marca y roles", () => {
     const correo = plantillaInvitacionUsuario({
       nombre: "Luis",
       razonSocial: "Talleres del Norte",
@@ -175,9 +177,24 @@ describe("plantillas", () => {
       enlace: ENLACE,
       venceEn: VENCE,
     });
-    assert.equal(correo.asunto, "Ana Pérez te invitó a Talleres del Norte");
+    assert.equal(correo.asunto, "Bienvenido a Talleres del Norte | LEVER");
     assert.match(correo.texto, /Roles: Liberador, Tarjetahabiente/);
-    assert.match(correo.html, /Aceptar la invitación/);
+    assert.match(correo.html, /Crear mi acceso/);
+    assert.match(correo.html, /https:\/\/www\.leverpagos\.com\/lever-email\.png/);
+    assert.match(correo.html, /alt="LEVER"/);
+  });
+
+  it("invitación del personal: presenta el equipo LEVER y conserva el rol de plataforma", () => {
+    const correo = plantillaInvitacionPersonal({
+      nombre: "Gil",
+      roles: ["administracion_plataforma"],
+      enlace: ENLACE,
+      venceEn: VENCE,
+    });
+    assert.equal(correo.asunto, "Bienvenido al equipo LEVER");
+    assert.match(correo.html, /Un administrador de LEVER te dio acceso/);
+    assert.match(correo.texto, /Rol: Administración de plataforma/);
+    assert.doesNotMatch(correo.html, /La operación/);
   });
 
   it("recuperar contraseña: avisa que se cierran las sesiones y que se puede ignorar", () => {

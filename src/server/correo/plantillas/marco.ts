@@ -1,12 +1,5 @@
 import type { CorreoPlantilla } from "../tipos";
 
-/**
- * El marco de los correos. Los colores son los de `src/estilo/tokens.css`
- * (papel, hoja, tinta, línea y sello), en claro y en oscuro. Los clientes de
- * correo no cargan las fuentes de la consola, así que la familia cae a las
- * mismas alternativas que declara la hoja.
- */
-
 const CLARO = {
   papel: "#f2f2f3",
   hoja: "#ffffff",
@@ -29,10 +22,9 @@ const OSCURO = {
   sobreSello: "#05122a",
 } as const;
 
-// Comillas simples: estas pilas viven dentro de style="…".
-const DISPLAY = `'Iowan Old Style', Palatino, 'Palatino Linotype', Georgia, serif`;
 const SANS = `'Helvetica Neue', Helvetica, Arial, sans-serif`;
 const MONO = `ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace`;
+const LOGO = "https://www.leverpagos.com/lever-email.png";
 
 const FECHA = new Intl.DateTimeFormat("es-MX", {
   timeZone: "America/Mexico_City",
@@ -48,7 +40,6 @@ export type Bloque = {
   kicker: string;
   titulo: string;
   parrafos: readonly string[];
-  /** Pares de etiqueta y valor; el valor va en mono (RFC, correo). */
   datos?: ReadonlyArray<readonly [string, string]>;
   boton: { texto: string; url: string };
   notas: readonly string[];
@@ -75,26 +66,19 @@ export function armarCorreo(asunto: string, bloque: Bloque): CorreoPlantilla {
 function html(asunto: string, b: Bloque): string {
   const url = escapar(b.boton.url);
   const parrafos = b.parrafos
-    .map(
-      (p) =>
-        `<p class="suave" style="margin:0 0 16px;color:${CLARO.tintaSuave};font-family:${SANS};font-size:16px;line-height:1.6;">${escapar(p)}</p>`,
-    )
+    .map((p) => `<p class="suave" style="margin:0 0 17px;color:${CLARO.tintaSuave};font-family:${SANS};font-size:16px;line-height:1.65;">${escapar(p)}</p>`)
     .join("");
   const datos = (b.datos ?? [])
-    .map(
-      ([etiqueta, valor]) =>
-        `<tr><td class="tenue filo" style="padding:10px 0;border-top:1px solid ${CLARO.linea};color:${CLARO.tintaTenue};font-family:${SANS};font-size:14px;">${escapar(etiqueta)}</td>` +
-        `<td align="right" class="tinta filo" style="padding:10px 0;border-top:1px solid ${CLARO.linea};color:${CLARO.tinta};font-family:${MONO};font-size:14px;">${escapar(valor)}</td></tr>`,
+    .map(([etiqueta, valor]) =>
+      `<tr><td class="tenue filo" style="padding:11px 0;border-top:1px solid ${CLARO.linea};color:${CLARO.tintaTenue};font-family:${SANS};font-size:14px;">${escapar(etiqueta)}</td>` +
+      `<td align="right" class="tinta filo" style="padding:11px 0;border-top:1px solid ${CLARO.linea};color:${CLARO.tinta};font-family:${SANS};font-size:14px;font-weight:500;">${escapar(valor)}</td></tr>`,
     )
     .join("");
   const tablaDatos = datos
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0 24px;border-collapse:collapse;">${datos}</table>`
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:12px 0 26px;border-collapse:collapse;">${datos}</table>`
     : "";
   const notas = b.notas
-    .map(
-      (n) =>
-        `<p class="tenue" style="margin:0 0 8px;color:${CLARO.tintaTenue};font-family:${SANS};font-size:13px;line-height:1.5;">${escapar(n)}</p>`,
-    )
+    .map((n) => `<p class="tenue" style="margin:0 0 8px;color:${CLARO.tintaTenue};font-family:${SANS};font-size:13px;line-height:1.55;">${escapar(n)}</p>`)
     .join("");
 
   return `<!doctype html>
@@ -114,7 +98,6 @@ function html(asunto: string, b: Bloque): string {
   .tenue { color:${OSCURO.tintaTenue} !important; }
   .filo { border-color:${OSCURO.linea} !important; }
   .sello { background:${OSCURO.sello} !important; color:${OSCURO.sobreSello} !important; }
-  .marca-sello { background:${OSCURO.sello} !important; }
   .enlace { color:${OSCURO.sello} !important; }
 }
 </style>
@@ -122,26 +105,25 @@ function html(asunto: string, b: Bloque): string {
 <body class="papel" style="margin:0;padding:0;background:${CLARO.papel};">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapar(b.preencabezado)}</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" class="papel" style="background:${CLARO.papel};">
-<tr><td align="center" style="padding:40px 16px;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+<tr><td align="center" style="padding:36px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;">
 <tr><td style="padding:0 4px 20px;">
-<span class="marca-sello" style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${CLARO.sello};vertical-align:middle;"></span>
-<span class="tinta" style="margin-left:8px;color:${CLARO.tinta};font-family:${DISPLAY};font-size:18px;vertical-align:middle;">Plataforma</span>
+<img src="${LOGO}" alt="LEVER" width="260" height="67" style="display:block;width:260px;max-width:100%;height:auto;border-radius:8px;">
 </td></tr>
-<tr><td class="hoja" style="padding:36px 32px 32px;background:${CLARO.hoja};border:1px solid ${CLARO.linea};border-radius:16px;">
-<p class="suave" style="margin:0 0 18px;color:${CLARO.tintaSuave};font-family:${MONO};font-size:11px;letter-spacing:0.16em;text-transform:uppercase;">${escapar(b.kicker)}</p>
-<h1 class="tinta" style="margin:0 0 20px;color:${CLARO.tinta};font-family:${DISPLAY};font-size:28px;font-weight:normal;line-height:1.15;letter-spacing:-0.02em;">${escapar(b.titulo)}</h1>
+<tr><td class="hoja" style="padding:36px 32px 32px;background:${CLARO.hoja};border:1px solid ${CLARO.linea};border-radius:14px;">
+<p class="tenue" style="margin:0 0 18px;color:${CLARO.tintaTenue};font-family:${SANS};font-size:11px;font-weight:600;letter-spacing:0.13em;text-transform:uppercase;">${escapar(b.kicker)}</p>
+<h1 class="tinta" style="margin:0 0 22px;color:${CLARO.tinta};font-family:${SANS};font-size:30px;font-weight:600;line-height:1.18;letter-spacing:-0.035em;">${escapar(b.titulo)}</h1>
 ${parrafos}
 ${tablaDatos}
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 28px;"><tr><td class="sello" style="border-radius:10px;background:${CLARO.sello};">
-<a href="${url}" class="sello" style="display:inline-block;padding:13px 22px;border-radius:10px;background:${CLARO.sello};color:${CLARO.sobreSello};font-family:${SANS};font-size:15px;font-weight:600;text-decoration:none;">${escapar(b.boton.texto)}</a>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 28px;"><tr><td class="sello" style="border-radius:8px;background:${CLARO.sello};">
+<a href="${url}" class="sello" style="display:inline-block;padding:14px 23px;border-radius:8px;background:${CLARO.sello};color:${CLARO.sobreSello};font-family:${SANS};font-size:15px;font-weight:600;text-decoration:none;">${escapar(b.boton.texto)}</a>
 </td></tr></table>
 <p class="tenue" style="margin:0 0 6px;color:${CLARO.tintaTenue};font-family:${SANS};font-size:13px;line-height:1.5;">Si el botón no abre, copia esta dirección en el navegador:</p>
 <p style="margin:0 0 24px;font-family:${MONO};font-size:12px;line-height:1.5;word-break:break-all;"><a href="${url}" class="enlace" style="color:${CLARO.sello};">${url}</a></p>
 <div class="filo" style="border-top:1px solid ${CLARO.linea};padding-top:18px;">${notas}</div>
 </td></tr>
 <tr><td style="padding:20px 4px 0;">
-<p class="tenue" style="margin:0;color:${CLARO.tintaTenue};font-family:${SANS};font-size:12px;line-height:1.5;">Correo automático de la plataforma. No respondas a esta dirección.</p>
+<p class="tenue" style="margin:0;color:${CLARO.tintaTenue};font-family:${SANS};font-size:12px;line-height:1.5;">LEVER · Finanzas empresariales en orden. Correo automático, no respondas a esta dirección.</p>
 </td></tr>
 </table>
 </td></tr>
@@ -162,7 +144,7 @@ function texto(b: Bloque): string {
     "",
     ...b.notas,
     "",
-    "Correo automático de la plataforma. No respondas a esta dirección.",
+    "LEVER · Finanzas empresariales en orden. Correo automático, no respondas a esta dirección.",
   ].join("\n");
 }
 
