@@ -1,28 +1,27 @@
-import { conTransaccion, consultar, type Consulta } from "../session/db";
-import { ErrorDeDominio } from "../session/error-de-dominio";
-import { ROLES, type Rol } from "../session/tipos";
+import { rolesLeidos } from "../../nucleo/capacidades";
+import { baseCliente } from "../../nucleo/contexto";
+import { bloquearEmpresa, conContexto, type Consulta } from "../../nucleo/db";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import type {
   CentroVista,
-  ContextoMaestro,
   HechosLiberacion,
   LecturaMaestro,
+  MiembroDeCorreo,
   PersonaBloqueada,
   PersonaVista,
   RepositorioPersonas,
-  UsuarioDeCorreo,
+  TransaccionMaestro,
 } from "./tipos";
 
-// El company_id sale de la membresía del usuario, nunca de un dato del navegador.
+const ROLES_DE = `coalesce((
+  select array_agg(r.rol order by r.rol)
+  from membership_roles r
+  where r.user_id = e.user_id and r.company_id = e.company_id
+), '{}')`;
+
+// La empresa es la del contexto. RLS la vuelve a exigir en cada tabla.
 // Ninguna lectura del maestro trae password_hash.
 export const SQL = {
-  bloquearEmpresa: `
-    select m.company_id, m.rol
-    from memberships m
-    join companies c on c.id = m.company_id
-    where m.user_id = $1
-    for update of c
-  `,
-  puerta: "select rol from memberships where user_id = $1",
   centros: `
     select id, nombre
     from cost_centers
@@ -33,7 +32,7 @@ export const SQL = {
     select e.id, e.nombre, e.alta_en, e.baja_en, e.clabe,
            e.jefe_id, j.nombre as jefe_nombre,
            e.cost_center_id, c.nombre as centro_nombre,
-           mb.rol, u.correo
+           ${ROLES_DE} as roles, mb.estado as membresia, u.correo
     from employees e
     join cost_centers c on c.id = e.cost_center_id and c.company_id = e.company_id
     left join employees j on j.id = e.jefe_id and j.company_id = e.company_id
@@ -45,10 +44,11 @@ export const SQL = {
   autorizados: `
     select u.nombre
     from memberships m
+    join membership_roles r on r.user_id = m.user_id and r.company_id = m.company_id and r.rol = 'liberador'
     join users u on u.id = m.user_id
     left join employees e on e.user_id = m.user_id and e.company_id = m.company_id
     where m.company_id = $1
-      and m.rol = 'liberador'
+      and m.estado = 'activa'
       and (e.baja_en is null or e.baja_en > $2::date)
     order by u.nombre, u.id
   `,
@@ -64,29 +64,31 @@ export const SQL = {
     limit 1
   `,
   jefePorId: `
-    select e.id, e.alta_en, e.baja_en, e.user_id, mb.rol
+    select e.id, e.alta_en, e.baja_en, e.user_id, ${ROLES_DE} as roles
     from employees e
-    left join memberships mb on mb.user_id = e.user_id and mb.company_id = e.company_id
     where e.id = $1 and e.company_id = $2
   `,
   bloquearPersona: `
-    select e.id, e.alta_en, e.baja_en, e.user_id, mb.rol
+    select e.id, e.alta_en, e.baja_en, e.user_id, ${ROLES_DE} as roles
     from employees e
-    left join memberships mb on mb.user_id = e.user_id and mb.company_id = e.company_id
     where e.id = $1 and e.company_id = $2
     for update of e
   `,
-  usuarioPorCorreo: `
-    select u.id,
-           m.company_id,
-           exists (select 1 from employees e where e.user_id = u.id) as tiene_empleado
-    from users u
-    left join memberships m on m.user_id = u.id
-    where lower(u.correo) = lower($1)
+  miembroPorCorreo: `
+    select m.user_id as id,
+           exists (
+             select 1 from employees e where e.user_id = m.user_id and e.company_id = m.company_id
+           ) as tiene_empleado
+    from memberships m
+    join users u on u.id = m.user_id
+    where m.company_id = $1 and lower(u.correo) = lower($2)
+  `,
+  rolesDe: `
+    select coalesce(array_agg(rol order by rol), '{}') as roles
+    from membership_roles
+    where user_id = $1 and company_id = $2
   `,
   insertarCentro: "insert into cost_centers (id, company_id, nombre) values ($1, $2, $3)",
-  insertarUsuario: "insert into users (id, nombre, correo, password_hash) values ($1, $2, $3, $4)",
-  insertarMembresia: "insert into memberships (user_id, company_id, rol) values ($1, $2, $3)",
   insertarEmpleado: `
     insert into employees (
       id, company_id, user_id, jefe_id, cost_center_id,
@@ -98,108 +100,71 @@ export const SQL = {
     set baja_en = $3::date
     where id = $1 and company_id = $2
   `,
-  rolDeUsuario: `
-    select rol
-    from memberships
-    where user_id = $1 and company_id = $2
-  `,
+  // Si no le queda otro rol, conserva tarjetahabiente, como el trigger de la baja.
   quitarLiberador: `
-    update memberships
-    set rol = 'tarjetahabiente'
-    where user_id = $1 and company_id = $2 and rol = 'liberador'
+    with quitado as (
+      delete from membership_roles
+      where user_id = $1 and company_id = $2 and rol = 'liberador'
+      returning 1
+    )
+    insert into membership_roles (user_id, company_id, rol)
+    select $1, $2, 'tarjetahabiente'
+    where exists (select 1 from quitado)
+      and not exists (
+        select 1 from membership_roles
+        where user_id = $1 and company_id = $2 and rol <> 'liberador'
+      )
   `,
-  hechos: `
-    select m.rol,
-           coalesce(
-             (
-               select e.baja_en is not null and e.baja_en <= $2::date
-               from employees e
-               where e.user_id = m.user_id and e.company_id = m.company_id
-             ),
-             false
-           ) as actor_de_baja,
-           (
-             select count(*)::int
-             from memberships ml
-             left join employees el on el.user_id = ml.user_id and el.company_id = ml.company_id
-             where ml.company_id = m.company_id
-               and ml.rol = 'liberador'
-               and (el.baja_en is null or el.baja_en > $2::date)
-           ) as autorizados
-    from memberships m
-    where m.user_id = $1
+  actorDeBaja: `
+    select exists (
+      select 1 from employees e
+      where e.user_id = $1 and e.company_id = $2 and e.baja_en is not null and e.baja_en <= $3::date
+    ) as de_baja
   `,
 } as const;
 
 export function repositorioPg(): RepositorioPersonas {
   return {
-    conEmpresa(userId, fn) {
-      return conTransaccion(async (consulta) => {
-        const puerta = await consulta.query(SQL.bloquearEmpresa, [userId]);
-        const fila = puerta.rows[0] as { company_id?: unknown; rol?: unknown } | undefined;
-        if (!fila || typeof fila.company_id !== "string") throw new ErrorDeDominio("sin_empresa");
-        const rol = rolLeido(fila.rol);
-        if (!rol) throw new ErrorDeDominio("base_no_disponible");
-        return fn(contexto(consulta, fila.company_id, rol));
+    conEmpresa(ctx, fn) {
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        await bloquearEmpresa(consulta, ctx.empresa.id);
+        return fn(transaccion(consulta, ctx.empresa.id));
       });
     },
-    async puerta(userId) {
-      const resultado = await consultar(SQL.puerta, [userId]);
-      const fila = resultado.rows[0] as { rol?: unknown } | undefined;
-      if (!fila) return null;
-      const rol = rolLeido(fila.rol);
-      if (!rol) throw new ErrorDeDominio("base_no_disponible");
-      return { rol };
+    leer(ctx, hoy) {
+      return conContexto(baseCliente(ctx), async (consulta): Promise<LecturaMaestro> => {
+        const companyId = ctx.empresa.id;
+        const centros = await consulta.query(SQL.centros, [companyId]);
+        const personas = await consulta.query(SQL.personas, [companyId]);
+        const autorizados = await consulta.query(SQL.autorizados, [companyId, hoy]);
+        return {
+          centros: centros.rows.map(mapearCentro),
+          personas: personas.rows.map(mapearPersona),
+          autorizados: autorizados.rows.map(mapearNombre),
+        };
+      });
     },
-    async leer(userId, hoy) {
-      const puerta = await consultar(SQL.puerta, [userId]);
-      const miembro = puerta.rows[0] as { rol?: unknown } | undefined;
-      if (!miembro) return null;
-      const rol = rolLeido(miembro.rol);
-      if (!rol) throw new ErrorDeDominio("base_no_disponible");
-      const empresa = await consultar(
-        "select company_id from memberships where user_id = $1",
-        [userId],
-      );
-      const companyId = (empresa.rows[0] as { company_id?: unknown } | undefined)?.company_id;
-      if (typeof companyId !== "string") return null;
-      const [centros, personas, autorizados] = await Promise.all([
-        consultar(SQL.centros, [companyId]),
-        consultar(SQL.personas, [companyId]),
-        consultar(SQL.autorizados, [companyId, hoy]),
-      ]);
-      return {
-        rol,
-        centros: centros.rows.map((fila) => mapearCentro(fila)),
-        personas: personas.rows.map((fila) => mapearPersona(fila)),
-        autorizados: autorizados.rows.map((fila) => mapearNombre(fila)),
-      };
+    resumen(ctx, hoy) {
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        const autorizados = await consulta.query(SQL.autorizados, [ctx.empresa.id, hoy]);
+        return { nombres: autorizados.rows.map(mapearNombre) };
+      });
     },
-    async resumen(userId, hoy) {
-      const empresa = await consultar(
-        "select company_id from memberships where user_id = $1",
-        [userId],
-      );
-      const companyId = (empresa.rows[0] as { company_id?: unknown } | undefined)?.company_id;
-      if (typeof companyId !== "string") return null;
-      const autorizados = await consultar(SQL.autorizados, [companyId, hoy]);
-      return { nombres: autorizados.rows.map((fila) => mapearNombre(fila)) };
-    },
-    async hechosLiberacion(userId, hoy) {
-      const resultado = await consultar(SQL.hechos, [userId, hoy]);
-      const fila = resultado.rows[0] as
-        | { rol?: unknown; actor_de_baja?: unknown; autorizados?: unknown }
-        | undefined;
-      if (!fila) return null;
-      return mapearHechos(fila);
+    hechosLiberacion(ctx, hoy) {
+      return conContexto(baseCliente(ctx), async (consulta): Promise<HechosLiberacion> => {
+        const baja = await consulta.query(SQL.actorDeBaja, [ctx.persona.id, ctx.empresa.id, hoy]);
+        const autorizados = await consulta.query(SQL.autorizados, [ctx.empresa.id, hoy]);
+        const deBaja = (baja.rows[0] as { de_baja?: unknown } | undefined)?.de_baja;
+        if (typeof deBaja !== "boolean") throw new ErrorDeDominio("base_no_disponible");
+        return { actorDeBaja: deBaja, autorizados: autorizados.rows.length };
+      });
     },
   };
 }
 
-function contexto(consulta: Consulta, companyId: string, rol: Rol): ContextoMaestro {
+function transaccion(consulta: Consulta, companyId: string): TransaccionMaestro {
   return {
     companyId,
-    rol,
     consulta,
     async centroPorId(id) {
       const resultado = await consulta.query(SQL.centroPorId, [id, companyId]);
@@ -220,24 +185,17 @@ function contexto(consulta: Consulta, companyId: string, rol: Rol): ContextoMaes
       const fila = resultado.rows[0];
       return fila ? mapearBloqueada(fila) : null;
     },
-    async usuarioPorCorreo(correo) {
-      const resultado = await consulta.query(SQL.usuarioPorCorreo, [correo]);
+    async miembroPorCorreo(correo) {
+      const resultado = await consulta.query(SQL.miembroPorCorreo, [companyId, correo]);
       const fila = resultado.rows[0];
-      return fila ? mapearUsuario(fila) : null;
+      return fila ? mapearMiembro(fila) : null;
+    },
+    async rolesDe(userId) {
+      const resultado = await consulta.query(SQL.rolesDe, [userId, companyId]);
+      return rolesDeColumna((resultado.rows[0] as { roles?: unknown } | undefined)?.roles ?? []);
     },
     async insertarCentro(centro) {
       await consulta.query(SQL.insertarCentro, [centro.id, companyId, centro.nombre]);
-    },
-    async insertarUsuario(usuario) {
-      await consulta.query(SQL.insertarUsuario, [
-        usuario.id,
-        usuario.nombre,
-        usuario.correo,
-        usuario.passwordHash,
-      ]);
-    },
-    async insertarMembresia(userId, rolNuevo) {
-      await consulta.query(SQL.insertarMembresia, [userId, companyId, rolNuevo]);
     },
     async insertarEmpleado(empleado) {
       await consulta.query(SQL.insertarEmpleado, [
@@ -256,20 +214,15 @@ function contexto(consulta: Consulta, companyId: string, rol: Rol): ContextoMaes
       const resultado = await consulta.query(SQL.escribirBaja, [id, companyId, bajaEn]);
       if (resultado.rowCount < 1) throw new ErrorDeDominio("persona_ausente");
     },
-    async rolDeUsuario(userId) {
-      const resultado = await consulta.query(SQL.rolDeUsuario, [userId, companyId]);
-      const fila = resultado.rows[0] as { rol?: unknown } | undefined;
-      if (!fila) return null;
-      return rolLeido(fila.rol);
-    },
     async quitarLiberador(userId) {
       await consulta.query(SQL.quitarLiberador, [userId, companyId]);
     },
   };
 }
 
-function rolLeido(valor: unknown): Rol | null {
-  return ROLES.find((rol) => rol === valor) ?? null;
+function rolesDeColumna(valor: unknown) {
+  if (!Array.isArray(valor)) throw new ErrorDeDominio("base_no_disponible");
+  return rolesLeidos(valor);
 }
 
 function mapearCentro(fila: unknown): CentroVista {
@@ -287,29 +240,23 @@ function mapearNombre(fila: unknown): string {
 }
 
 function mapearBloqueada(fila: unknown): PersonaBloqueada {
-  const registro = fila as { id?: unknown; alta_en?: unknown; baja_en?: unknown; user_id?: unknown; rol?: unknown };
+  const registro = fila as { id?: unknown; alta_en?: unknown; baja_en?: unknown; user_id?: unknown; roles?: unknown };
   if (typeof registro.id !== "string") throw new ErrorDeDominio("base_no_disponible");
-  const rol = registro.rol == null ? null : rolLeido(registro.rol);
-  if (registro.rol != null && !rol) throw new ErrorDeDominio("base_no_disponible");
   return {
     id: registro.id,
     altaEn: fechaDeColumna(registro.alta_en),
     bajaEn: registro.baja_en == null ? null : fechaDeColumna(registro.baja_en),
     userId: typeof registro.user_id === "string" ? registro.user_id : null,
-    rol,
+    roles: rolesDeColumna(registro.roles),
   };
 }
 
-function mapearUsuario(fila: unknown): UsuarioDeCorreo {
-  const registro = fila as { id?: unknown; company_id?: unknown; tiene_empleado?: unknown };
+function mapearMiembro(fila: unknown): MiembroDeCorreo {
+  const registro = fila as { id?: unknown; tiene_empleado?: unknown };
   if (typeof registro.id !== "string" || typeof registro.tiene_empleado !== "boolean") {
     throw new ErrorDeDominio("base_no_disponible");
   }
-  return {
-    id: registro.id,
-    companyId: typeof registro.company_id === "string" ? registro.company_id : null,
-    tieneEmpleado: registro.tiene_empleado,
-  };
+  return { id: registro.id, tieneEmpleado: registro.tiene_empleado };
 }
 
 function mapearPersona(fila: unknown): PersonaVista {
@@ -323,7 +270,8 @@ function mapearPersona(fila: unknown): PersonaVista {
     jefe_nombre?: unknown;
     cost_center_id?: unknown;
     centro_nombre?: unknown;
-    rol?: unknown;
+    roles?: unknown;
+    membresia?: unknown;
     correo?: unknown;
   };
   if (
@@ -336,8 +284,6 @@ function mapearPersona(fila: unknown): PersonaVista {
     throw new ErrorDeDominio("base_no_disponible");
   }
   if (!/^[0-9]{18}$/.test(registro.clabe)) throw new ErrorDeDominio("base_no_disponible");
-  const rol = registro.rol == null ? null : rolLeido(registro.rol);
-  if (registro.rol != null && !rol) throw new ErrorDeDominio("base_no_disponible");
   return {
     id: registro.id,
     nombre: registro.nombre,
@@ -348,21 +294,10 @@ function mapearPersona(fila: unknown): PersonaVista {
     jefeNombre: typeof registro.jefe_nombre === "string" ? registro.jefe_nombre : null,
     centroId: registro.cost_center_id,
     centroNombre: registro.centro_nombre,
-    rol,
+    roles: rolesDeColumna(registro.roles),
+    invitada: registro.membresia === "invitada",
     correo: typeof registro.correo === "string" ? registro.correo : null,
   };
-}
-
-function mapearHechos(fila: {
-  rol?: unknown;
-  actor_de_baja?: unknown;
-  autorizados?: unknown;
-}): HechosLiberacion {
-  const rol = rolLeido(fila.rol);
-  if (!rol || typeof fila.actor_de_baja !== "boolean" || typeof fila.autorizados !== "number") {
-    throw new ErrorDeDominio("base_no_disponible");
-  }
-  return { rol, actorDeBaja: fila.actor_de_baja, autorizados: fila.autorizados };
 }
 
 export function fechaDeColumna(valor: unknown): string {
@@ -378,5 +313,3 @@ export function fechaDeColumna(valor: unknown): string {
   }
   throw new ErrorDeDominio("base_no_disponible");
 }
-
-export type { LecturaMaestro };

@@ -1,30 +1,25 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, it } from "node:test";
 
 const RAIZ = path.resolve(import.meta.dirname, "..");
 
-describe("la puerta llama al alta de src/server", () => {
-  it("declara pg y bcryptjs, y la acción guarda con darDeAltaEmpresa", () => {
-    const paquete = JSON.parse(readFileSync(path.join(RAIZ, "package.json"), "utf8")) as {
-      dependencies: Record<string, string>;
-    };
-    assert.equal(typeof paquete.dependencies.pg, "string");
-    assert.equal(typeof paquete.dependencies.bcryptjs, "string");
+describe("la puerta pública está cerrada", () => {
+  it("ninguna ruta de la aplicación crea una empresa ni abre una cuenta", () => {
+    assert.equal(existsSync(path.join(RAIZ, "src/app/alta")), false);
+    assert.equal(existsSync(path.join(RAIZ, "src/server/alta")), false);
+    for (const archivo of archivosEn(path.join(RAIZ, "src/app"))) {
+      const fuente = readFileSync(archivo, "utf8");
+      const relativo = path.relative(RAIZ, archivo);
+      assert.doesNotMatch(fuente, /darDeAltaEmpresa|insert into companies/i, relativo);
+      assert.doesNotMatch(fuente, /abrirCuenta/, relativo);
+    }
+  });
 
-    const accion = readFileSync(path.join(RAIZ, "src/app/alta/acciones.ts"), "utf8");
-    const completar = readFileSync(path.join(RAIZ, "src/server/alta/completar.ts"), "utf8");
-    assert.match(accion, /completarAlta/);
-    assert.match(completar, /darDeAltaEmpresa/);
-    assert.match(completar, /abrirCuenta/);
-    assert.match(completar, /descartarCuentaSinEmpresa/);
-    assert.match(completar, /rfc_duplicado/);
-    assert.match(accion, /segunda_razon_social/);
-    assert.doesNotMatch(accion, /postgres(?:ql)?:\/\//);
-    assert.doesNotMatch(accion, /DATABASE_URL/);
-    assert.doesNotMatch(completar, /DATABASE_URL/);
-    assert.doesNotMatch(accion, /pendiente_de_libro/);
+  it("el alta de empresa solo la hace el personal del operador", () => {
+    const servicio = readFileSync(path.join(RAIZ, "src/server/company/servicio.ts"), "utf8");
+    assert.match(servicio, /exigirPersonal\(ctx, "plataforma\.empresa\.alta"\)/);
   });
 
   it("el código que pinta el navegador no nombra el connection string", () => {

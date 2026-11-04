@@ -1,31 +1,20 @@
-import type { Rol } from "../session/tipos.ts";
+import { capacidadesDe, ROLES_CLIENTE, tiene, type CapacidadCliente, type RolCliente } from "../../nucleo/capacidades.ts";
 import type { Membresia } from "./tipos.ts";
 
 /**
- * Quien suelta dinero es solo la membresía `liberador`.
- * El administrador no es una segunda firma: no suelta, y no se cuenta
- * para dejar la empresa operable. El contador entra a la póliza y no suelta.
+ * Quien suelta dinero tiene la capacidad de liberar, que hoy da solo el rol
+ * liberador. El administrador no es una segunda firma por serlo: si también
+ * es liberador, sí cuenta. El contador entra a la póliza y no suelta.
  */
 export const QUIEN_LIBERA = "liberador" as const;
 
-export const ROLES_ASIGNABLES = ["administrador", QUIEN_LIBERA, "contador"] as const;
+/** Los roles se combinan. Cada uno se asigna o se quita en su propio acto. */
+export const ROLES_ASIGNABLES = ROLES_CLIENTE;
 
-export type RolAsignable = (typeof ROLES_ASIGNABLES)[number];
+export type RolAsignable = RolCliente;
 
 /** En nómina siempre hay dos firmas. No se abre una tercera. */
 export const FIRMAS_DE_NOMINA = 2 as const;
-
-export const ACCIONES = ["administrar_membresias", "soltar_dinero", "exportar_poliza", "solicitar"] as const;
-
-export type Accion = (typeof ACCIONES)[number];
-
-const POR_ROL: Record<Rol, readonly Accion[]> = {
-  administrador: ["administrar_membresias", "solicitar"],
-  liberador: ["soltar_dinero", "solicitar"],
-  contador: ["exportar_poliza"],
-  solicitante: ["solicitar"],
-  tarjetahabiente: [],
-};
 
 const CLAVES_DE_SOLICITUD = new Set(["companyId", "solicitanteId"]);
 const CLAVES_DE_LIBERACION = new Set(["companyId", "loteId"]);
@@ -57,20 +46,9 @@ export type EntradaDeLiberacion =
   | { ok: true; loteId: string }
   | { ok: false; codigo: CodigoDeEntrada | CodigoDeFirmas };
 
-export function accionesDe(rol: Rol): readonly Accion[] {
-  return POR_ROL[rol];
-}
-
-export function puede(rol: Rol, accion: Accion): boolean {
-  return POR_ROL[rol].includes(accion);
-}
-
-export function puedeSoltarDinero(rol: Rol): boolean {
-  return puede(rol, "soltar_dinero");
-}
-
-export function puedeEntrarAPoliza(rol: Rol): boolean {
-  return puede(rol, "exportar_poliza");
+/** La matriz de capacidades decide; este módulo solo la consulta con los roles de una membresía. */
+export function rolesPueden(roles: readonly RolCliente[], capacidad: CapacidadCliente): boolean {
+  return tiene(capacidadesDe({ rolesCliente: roles, rolesPlataforma: [] }), capacidad);
 }
 
 export function esRolAsignable(rol: string): rol is RolAsignable {
@@ -90,14 +68,14 @@ export function personasQueSueltanDinero(miembros: readonly Membresia[]): string
   const ids = new Set<string>();
   for (const miembro of miembros) {
     if (miembro.deBaja) continue;
-    if (puedeSoltarDinero(miembro.rol)) ids.add(canonUsuario(miembro.userId));
+    if (rolesPueden(miembro.roles, "cliente.pago.liberar")) ids.add(canonUsuario(miembro.userId));
   }
   return [...ids];
 }
 
 /**
- * Hacen falta dos liberadores vigentes. El administrador no cuenta,
- * ni el contador, ni quien ya está de baja.
+ * Hacen falta dos personas vigentes que puedan liberar. Un administrador
+ * sin rol de liberador no cuenta, ni el contador, ni quien ya está de baja.
  */
 export function empresaOperable(miembros: readonly Membresia[]): boolean {
   return personasQueSueltanDinero(miembros).length >= FIRMAS_DE_NOMINA;
@@ -167,8 +145,8 @@ export function rechazoDeSolicitud(estado: {
   miembros: readonly Membresia[];
 }): CodigoDeFirmas | null {
   if (!estado.actor) return "sin_membresia";
-  if (estado.actor.deBaja || !puede(estado.actor.rol, "solicitar")) {
-    return estado.actor.rol === "contador" ? "contador_no_crea_pago" : "sin_permiso_para_solicitar";
+  if (estado.actor.deBaja || !rolesPueden(estado.actor.roles, "cliente.pago.solicitar")) {
+    return soloContador(estado.actor.roles) ? "contador_no_crea_pago" : "sin_permiso_para_solicitar";
   }
   if (!empresaOperable(estado.miembros)) return "empresa_no_operable";
   return null;
@@ -182,15 +160,19 @@ export function rechazoDeLiberacion(estado: {
 }): CodigoDeFirmas | null {
   if (!estado.actor) return "sin_membresia";
   if (mismoUsuario(estado.actor.userId, estado.solicitanteId)) return "misma_persona_en_las_dos_firmas";
-  if (estado.actor.deBaja || !puedeSoltarDinero(estado.actor.rol)) {
-    return estado.actor.rol === "contador" ? "contador_no_libera" : "sin_permiso_para_liberar";
+  if (estado.actor.deBaja || !rolesPueden(estado.actor.roles, "cliente.pago.liberar")) {
+    return estado.actor.roles.includes("contador") ? "contador_no_libera" : "sin_permiso_para_liberar";
   }
   if (!empresaOperable(estado.miembros)) return "empresa_no_operable";
   if (!estado.solicitante || estado.solicitante.companyId !== estado.actor.companyId) return "firmante_ajeno";
-  if (estado.solicitante.deBaja || !puede(estado.solicitante.rol, "solicitar")) {
-    return estado.solicitante.rol === "contador" ? "contador_no_crea_pago" : "sin_permiso_para_solicitar";
+  if (estado.solicitante.deBaja || !rolesPueden(estado.solicitante.roles, "cliente.pago.solicitar")) {
+    return soloContador(estado.solicitante.roles) ? "contador_no_crea_pago" : "sin_permiso_para_solicitar";
   }
   return null;
+}
+
+function soloContador(roles: readonly RolCliente[]): boolean {
+  return roles.includes("contador");
 }
 
 export function uuidValido(valor: string): boolean {

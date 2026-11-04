@@ -1,5 +1,6 @@
-import type { Consulta } from "../session/db";
-import type { Rol } from "../session/tipos";
+import type { RolCliente } from "../../nucleo/capacidades";
+import type { ContextoConEmpresa } from "../../nucleo/contexto";
+import type { Consulta } from "../../nucleo/db";
 
 export type CentroVista = {
   id: string;
@@ -16,26 +17,25 @@ export type PersonaVista = {
   jefeNombre: string | null;
   centroId: string;
   centroNombre: string;
-  rol: Rol | null;
+  roles: RolCliente[];
+  /** Tiene acceso pero no ha aceptado su invitación. */
+  invitada: boolean;
   correo: string | null;
 };
 
 export type LecturaMaestro = {
-  rol: Rol;
   centros: CentroVista[];
   personas: PersonaVista[];
   autorizados: string[];
 };
 
 export type HechosLiberacion = {
-  rol: Rol;
   actorDeBaja: boolean;
   autorizados: number;
 };
 
-export type UsuarioDeCorreo = {
+export type MiembroDeCorreo = {
   id: string;
-  companyId: string | null;
   tieneEmpleado: boolean;
 };
 
@@ -44,7 +44,7 @@ export type PersonaBloqueada = {
   altaEn: string;
   bajaEn: string | null;
   userId: string | null;
-  rol: Rol | null;
+  roles: RolCliente[];
 };
 
 export type EmpleadoNuevo = {
@@ -58,33 +58,25 @@ export type EmpleadoNuevo = {
   userId: string | null;
 };
 
-export type ContextoMaestro = {
+/** La transacción del maestro, ya en el rol cliente y con la empresa del contexto. */
+export type TransaccionMaestro = {
   companyId: string;
-  rol: Rol;
   consulta: Consulta;
   centroPorId: (id: string) => Promise<CentroVista | null>;
   centroOcupado: (nombre: string) => Promise<boolean>;
   jefePorId: (id: string) => Promise<PersonaBloqueada | null>;
   bloquearPersona: (id: string) => Promise<PersonaBloqueada | null>;
-  usuarioPorCorreo: (correo: string) => Promise<UsuarioDeCorreo | null>;
+  miembroPorCorreo: (correo: string) => Promise<MiembroDeCorreo | null>;
+  rolesDe: (userId: string) => Promise<RolCliente[]>;
   insertarCentro: (centro: CentroVista) => Promise<void>;
-  insertarUsuario: (usuario: {
-    id: string;
-    nombre: string;
-    correo: string;
-    passwordHash: string;
-  }) => Promise<void>;
-  insertarMembresia: (userId: string, rol: Rol) => Promise<void>;
   insertarEmpleado: (empleado: EmpleadoNuevo) => Promise<void>;
   escribirBaja: (id: string, bajaEn: string) => Promise<void>;
-  rolDeUsuario: (userId: string) => Promise<Rol | null>;
   quitarLiberador: (userId: string) => Promise<void>;
 };
 
 export type RepositorioPersonas = {
-  conEmpresa: <T>(userId: string, fn: (ctx: ContextoMaestro) => Promise<T>) => Promise<T>;
-  puerta: (userId: string) => Promise<{ rol: Rol } | null>;
-  leer: (userId: string, hoy: string) => Promise<LecturaMaestro | null>;
-  resumen: (userId: string, hoy: string) => Promise<{ nombres: string[] } | null>;
-  hechosLiberacion: (userId: string, hoy: string) => Promise<HechosLiberacion | null>;
+  conEmpresa: <T>(ctx: ContextoConEmpresa, fn: (tx: TransaccionMaestro) => Promise<T>) => Promise<T>;
+  leer: (ctx: ContextoConEmpresa, hoy: string) => Promise<LecturaMaestro>;
+  resumen: (ctx: ContextoConEmpresa, hoy: string) => Promise<{ nombres: string[] }>;
+  hechosLiberacion: (ctx: ContextoConEmpresa, hoy: string) => Promise<HechosLiberacion>;
 };

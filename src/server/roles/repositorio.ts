@@ -1,6 +1,8 @@
-import { conTransaccion, consultar } from "../session/db";
-import { ErrorDeDominio } from "../session/error-de-dominio";
-import { ROLES } from "../session/tipos";
+import { rolesLeidos } from "../../nucleo/capacidades.ts";
+import { baseCliente } from "../../nucleo/contexto.ts";
+import { bloquearEmpresa, conContexto } from "../../nucleo/db.ts";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio.ts";
+import { auditar } from "../bitacora/auditar.ts";
 import { SQL } from "./contrato.ts";
 import { loteNoGuardable } from "./decidir.ts";
 import type { FilaDeLote, LoteDePrueba, Membresia, RepositorioRoles, SolicitudDeLote } from "./tipos.ts";
@@ -8,7 +10,7 @@ import type { FilaDeLote, LoteDePrueba, Membresia, RepositorioRoles, SolicitudDe
 type FilaMembresia = {
   user_id: unknown;
   company_id: unknown;
-  rol: unknown;
+  roles: unknown;
   de_baja?: unknown;
 };
 
@@ -23,48 +25,47 @@ type FilaLote = {
 
 export function repositorioPg(): RepositorioRoles {
   return {
-    async usuarioExiste(userId) {
-      const resultado = await consultar(SQL.usuarioExiste, [userId]);
-      return resultado.rows.length > 0;
-    },
-    async membresiaDe(userId) {
-      const resultado = await consultar(SQL.membresiaDe, [userId]);
-      const fila = resultado.rows[0] as FilaMembresia | undefined;
-      return fila ? mapearMembresia(fila) : null;
-    },
-    async membresiasDeLaEmpresa(companyId) {
-      const resultado = await consultar(SQL.membresiasDeLaEmpresa, [companyId]);
-      return resultado.rows.map((fila) => mapearMembresia(fila as FilaMembresia));
-    },
-    async insertarMembresia(membresia) {
-      await conTransaccion(async (consulta) => {
-        const usuario = await consulta.query(SQL.bloquearUsuario, [membresia.userId]);
-        if (usuario.rows.length === 0) throw new ErrorDeDominio("usuario_ausente");
-        const previa = await consulta.query(SQL.membresiaDe, [membresia.userId]);
-        const fila = previa.rows[0] as FilaMembresia | undefined;
-        if (fila) {
-          const empresa = typeof fila.company_id === "string" ? fila.company_id : "";
-          throw new ErrorDeDominio(empresa === membresia.companyId ? "membresia_existente" : "segunda_razon_social");
-        }
-        await consulta.query(SQL.insertarMembresia, [membresia.userId, membresia.companyId, membresia.rol]);
+    membresiaDe(ctx, userId) {
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        const resultado = await consulta.query(SQL.membresiaDe, [userId, ctx.empresa.id]);
+        const fila = resultado.rows[0] as FilaMembresia | undefined;
+        return fila ? mapearMembresia(fila) : null;
       });
     },
-    async actualizarRol(membresia) {
-      await conTransaccion(async (consulta) => {
-        const usuario = await consulta.query(SQL.bloquearUsuario, [membresia.userId]);
-        if (usuario.rows.length === 0) throw new ErrorDeDominio("usuario_ausente");
-        const actualizado = await consulta.query(SQL.actualizarRol, [
-          membresia.rol,
-          membresia.userId,
-          membresia.companyId,
-        ]);
-        if (actualizado.rowCount === 0) throw new ErrorDeDominio("sin_membresia");
+    membresiasDeLaEmpresa(ctx) {
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        const resultado = await consulta.query(SQL.membresiasDeLaEmpresa, [ctx.empresa.id]);
+        return resultado.rows.map((fila) => mapearMembresia(fila as FilaMembresia));
       });
     },
-    async insertarSolicitud(solicitud) {
+    agregarRol(ctx, cambio) {
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        await bloquearEmpresa(consulta, ctx.empresa.id);
+        await auditar(consulta, cambio.actor, {
+          accion: "asignar_rol",
+          identificador: cambio.userId,
+          cambio: { rol: cambio.rol },
+        });
+        const insertado = await consulta.query(SQL.agregarRol, [cambio.userId, ctx.empresa.id, cambio.rol]);
+        if (insertado.rowCount !== 1) throw new ErrorDeDominio("rol_existente");
+      });
+    },
+    quitarRol(ctx, cambio) {
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        await bloquearEmpresa(consulta, ctx.empresa.id);
+        await auditar(consulta, cambio.actor, {
+          accion: "quitar_rol",
+          identificador: cambio.userId,
+          cambio: { rol: cambio.rol },
+        });
+        const quitado = await consulta.query(SQL.quitarRol, [cambio.userId, ctx.empresa.id, cambio.rol]);
+        if (quitado.rowCount !== 1) throw new ErrorDeDominio("sin_membresia");
+      });
+    },
+    insertarSolicitud(ctx, solicitud) {
       const codigo = loteNoGuardable(solicitud);
       if (codigo) throw new ErrorDeDominio(codigo);
-      await conTransaccion(async (consulta) => {
+      return conContexto(baseCliente(ctx), async (consulta) => {
         await consulta.query(SQL.insertarSolicitud, [
           solicitud.id,
           solicitud.companyId,
@@ -73,15 +74,17 @@ export function repositorioPg(): RepositorioRoles {
         ]);
       });
     },
-    async leerLote(id) {
-      const resultado = await consultar(SQL.leerLote, [id]);
-      const fila = resultado.rows[0] as FilaLote | undefined;
-      return fila ? mapearLote(fila) : null;
+    leerLote(ctx, id) {
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        const resultado = await consulta.query(SQL.leerLote, [id, ctx.empresa.id]);
+        const fila = resultado.rows[0] as FilaLote | undefined;
+        return fila ? mapearLote(fila) : null;
+      });
     },
-    async cerrarLiberacion(lote) {
+    cerrarLiberacion(ctx, lote) {
       const codigo = loteNoGuardable(lote);
       if (codigo) throw new ErrorDeDominio(codigo);
-      await conTransaccion(async (consulta) => {
+      return conContexto(baseCliente(ctx), async (consulta) => {
         const actualizado = await consulta.query(SQL.cerrarLiberacion, [
           lote.id,
           lote.liberadorId,
@@ -95,12 +98,10 @@ export function repositorioPg(): RepositorioRoles {
 }
 
 function mapearMembresia(fila: FilaMembresia): Membresia {
-  if (typeof fila.user_id !== "string" || typeof fila.company_id !== "string" || typeof fila.rol !== "string") {
+  if (typeof fila.user_id !== "string" || typeof fila.company_id !== "string" || !Array.isArray(fila.roles)) {
     throw new ErrorDeDominio("base_no_disponible");
   }
-  const rol = ROLES.find((conocido) => conocido === fila.rol);
-  if (!rol) throw new ErrorDeDominio("base_no_disponible");
-  return { userId: fila.user_id, companyId: fila.company_id, rol, deBaja: fila.de_baja === true };
+  return { userId: fila.user_id, companyId: fila.company_id, roles: rolesLeidos(fila.roles), deBaja: fila.de_baja === true };
 }
 
 function mapearLote(fila: FilaLote): FilaDeLote {

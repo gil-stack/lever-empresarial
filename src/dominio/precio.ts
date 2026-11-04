@@ -135,13 +135,6 @@ export function existePasoPublicar(entrada: {
   return entrada.esOperador && entrada.disponible && !entrada.montoPublicado;
 }
 
-export function existePasoAceptada(entrada: {
-  esOperador: boolean;
-  montoPublicado: boolean;
-  estado: "recorrido" | "aceptada" | null;
-}): boolean {
-  return entrada.esOperador && entrada.montoPublicado && entrada.estado === "recorrido";
-}
 
 export function cerosDeProducto(): { porPersona: string; porTarjeta: string; implementacion: string } {
   const cero = formatoPesos(CERO);

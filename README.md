@@ -1,6 +1,6 @@
-# Plataforma
+# Arco
 
-Consola de control de gastos para una razón social mexicana.
+Arco: consola de control de gastos para una razón social mexicana. La guía corta del sistema visual está en `src/estilo/LEEME.md`.
 
 ## Desarrollo
 
@@ -9,15 +9,38 @@ npm install
 npm run dev
 ```
 
+## Comprobaciones
+
+Vercel CI corre estas tareas en cada push, tanto en un pull request como en `main`. La instalación de dependencias la hace el arranque del CI, una vez por corrida; no es una tarea aparte.
+
+```bash
+npm run typecheck
+npm run lint
+npm run test
+npm run test:db
+npm run build
+npm run security
+```
+
+`test` corre la suite con `tsx --test` y deja fuera las cuatro pruebas que necesitan Postgres. `test:db` levanta un Postgres desechable en Docker, aplica las migraciones y borra la base. No usa `DATABASE_URL` ni la rama de preview. Hace falta Docker en la máquina local; en Vercel CI el daemon ya está encendido.
+
+`security` revisa vulnerabilidades de dependencias (`npm audit`), secretos en el código y en el paquete del navegador, y las rutas de servidor. Vercel CI no trae un revisor propio: Vercel Security Review pertenece a Vercel Agent y publica otro check.
+
 `/salud` responde `ok` y no imprime configuración.
 
 ## Este corte
 
-Fase 1, integrada: una persona entra, da de alta una razón social y ve la consola vacía. El teléfono existe, está vacío y no comparte el menú de la consola. Las funciones corren en `iad1` con runtime Node.js.
+Fase 4, base multi-cliente. La SOFIPO es el operador y vive en la tabla `operators`. Su personal vive en `platform_staff`, no en una variable de entorno. Cada empresa cliente tiene su portal. Una persona puede pertenecer a varias empresas y tener varios roles en cada una.
 
-El maestro de personas vive en la consola: jefe, centro de costo, fecha de baja y CLABE con el dígito 3, 7 y 1. Hacen falta dos liberadores distintos para que la empresa esté operable. El contador no libera. No se dispersa dinero.
+Nadie crea una empresa desde `/`. Las da de alta el personal, con `scripts/plataforma.ts`, y el primer administrador entra por invitación. La invitación guarda solo el SHA-256 del enlace, caduca a las 72 horas y sirve una vez. Quien la acepta fija su propia contraseña.
 
-La cookie `sesion` y el alta viven en `src/server`. La puerta llama a `abrirCuenta` y a `darDeAltaEmpresa`. Una forma válida se guarda. Un segundo RFC en la misma cuenta no entra. La auditoría de ese alta se inserta en la misma transacción.
+La contraseña abre la cookie `sesion_parcial`. Ningún portal abre hasta que esa sesión queda marcada con el segundo factor (`sessions.segundo_factor_en`). El proxy exige esa cookie completa. Passkey y TOTP los construye otro frente, en `fase-4/autenticacion`, llamando a `completarSegundoFactor`.
+
+Cada petición resuelve un contexto de tenant. Los repositorios reciben ese contexto y Postgres vuelve a filtrar con RLS, con `set_config` local a la transacción. La lista 69-B y el precio los escribe solo el personal de la plataforma.
+
+La bitácora nueva es `audit_log`: tipo de actor, superficie y la transacción real (`txid`). `audit_events` queda como histórico.
+
+El maestro de personas sigue en la consola: jefe, centro de costo, fecha de baja y CLABE con el dígito 3, 7 y 1. Hacen falta dos personas que puedan liberar. El contador no libera. No se dispersa dinero. El teléfono sigue vacío y no comparte el menú.
 
 El servidor lee el connection string agrupado y no migra al arrancar. Las migraciones se aplican a mano:
 
@@ -28,6 +51,24 @@ export DATABASE_URL_UNPOOLED
 
 `DATABASE_URL_UNPOOLED` es el string directo de la base `plataforma`. El valor no va en el repositorio. La rama de Neon para que preview no comparta el libro de production se crea con `./db/preview-branch.sh`. El detalle está en `db/README.md`.
 
+## Invitaciones y correo
+
+La persona entra por invitación y elige su propia contraseña en `/invitacion/<token>`. La contraseña olvidada se cambia desde `/recuperar`. Los dos enlaces sirven una sola vez y vencen (72 horas la invitación, una hora la recuperación). La base guarda el SHA-256 del token, nunca el token. Cambiar la contraseña cierra todas las sesiones de la persona.
+
+Todos entran con correo, contraseña y segundo factor (passkey, o TOTP si no hay passkey). Aceptar la invitación no abre sesión: después de la contraseña, la persona sigue a registrar su segundo factor, o a verificarlo si ya tenía cuenta. Ese paso lo entrega la autenticación por `ContinuarConSegundoFactor` (`src/server/invitaciones/segundo-factor.ts`); mientras no esté, la contraseña queda guardada y nadie entra. La recuperación no abre sesión ni toca el segundo factor.
+
+El correo sale por Resend, desde `src/server/correo`. Hacen falta tres variables, cuyos valores no van en el repositorio:
+
+| Variable | Qué es |
+| --- | --- |
+| `RESEND_API_KEY` | Clave de envío de Resend. Basta una clave con permiso solo de envío |
+| `CORREO_REMITENTE` | `Nombre <direccion@dominio>`. El dominio tiene que estar verificado en Resend |
+| `URL_APLICACION` | Origen público de los enlaces, por ejemplo `https://app.dominio.mx`. Si falta, se usa el dominio que Vercel asigna al despliegue; nunca el encabezado `Host` de la petición |
+
+Sin clave o sin remitente no se envía nada y la base no se escribe: el servicio responde `correo_no_configurado` con el nombre de la variable que falta, nunca su valor.
+
+Las tablas están propuestas en `db/propuestas/fase-4-invitaciones.sql` hasta alinearlas con la tenencia.
+
 ## Política de comprobantes
 
 La consola muestra los cuatro cajones —Viáticos, Proveedores, Impuestos y Nómina— con el saldo que sale de sus asientos. La política nace en cinco días y cinco comprobantes vencidos, y se puede escribir distinto para cada persona. Las categorías no traen tope. El umbral de proveedores no trae monto. No hay dispersión ni SPEI en este corte. La pantalla está en `/consola/politica`.
@@ -36,7 +77,20 @@ La consola muestra los cuatro cajones —Viáticos, Proveedores, Impuestos y Nó
 
 `/precios` y la consola leen `platform_pricing.suscripcion_centavos`. Vacío, las dos dicen «cifra no publicada». Por persona, por tarjeta y de implementación se muestran en cero. No hay un monto sembrado.
 
-`OPERADORES_PLATAFORMA` lista los correos que pueden publicar ese monto una vez y registrar la suscripción como aceptada. Sin monto publicado, ese paso no existe. El valor no va en el repositorio.
+Publicar el monto y aceptar la suscripción de una empresa son actos del personal de la plataforma. Un administrador de cliente no los escribe.
+
+## Invitación
+
+Otro frente envía el correo. El contrato está en `src/server/invitaciones`: `EnviarInvitacion` recibe `MensajeDeInvitacion` (`para`, `nombre`, `razonSocial`, `roles`, `enlace`, `expiraEn`). `enviarInvitacion` hoy no tiene proveedor y la invitación queda emitida para reenviar. El enlace se arma con `enlaceDeInvitacion` y `PLATAFORMA_URL_PUBLICA`.
+
+## Pruebas
+
+```bash
+export AISLAMIENTO_DATABASE_URL=postgres://dueno@localhost:5432/postgres
+npm test
+```
+
+`AISLAMIENTO_DATABASE_URL` es un Postgres desechable, nunca el libro. La suite crea una base, aplica las migraciones y la borra. En cada pull request corre el workflow `Pruebas`.
 
 ## Proveedores
 
@@ -44,4 +98,12 @@ El alta vive en la consola, en `/consola/proveedores`, con la barra de la izquie
 
 La lista del artículo 69-B está en `/consola/lista-69b`. Si el RFC aparece, o si todavía no hay archivo, el proveedor puede existir y no hay botón de pago. No se envía dinero.
 
-`/telefono` no lleva proveedores, la CLABE ni la lista 69-B, y no usa el menú de la consola.
+`/telefono` no lleva proveedores, la CLABE ni la lista 69-B, y no usa el menú de la consola. Para verlo hace falta haber entrado con el segundo factor.
+
+## Autenticación
+
+Todo el mundo entra con correo, contraseña y un segundo factor: una passkey, o un código TOTP de una app autenticadora si no tiene passkey. Sin eso el portal no abre, ni la consola ni el teléfono. Al primer ingreso hay que registrar uno de los dos. Los códigos de respaldo se muestran una vez y se guardan como hash.
+
+Perder el segundo factor no se resuelve con un correo. La persona lo pide y otra persona, de `OPERADORES_PLATAFORMA`, verifica su identidad y aprueba. Esa aprobación cierra las sesiones y quita los factores. La cuenta sigue cerrada hasta que, con la contraseña, se registra uno nuevo.
+
+`AUTENTICACION_LLAVE_TOTP` es la llave de 32 bytes, en base64, con la que se cifra la semilla TOTP. No va en el repositorio. Se genera con `openssl rand -base64 32`. Sin ella se puede entrar con passkey y no con app autenticadora. `AUTENTICACION_DOMINIOS` lista, separada por comas, los dominios propios donde una passkey es válida. En Vercel se suman los dominios del despliegue. La migración es `0016_autenticacion_fuerte.sql`, con el mismo comando de siempre, y hay que aplicarla antes de servir este corte: borra las sesiones anteriores.

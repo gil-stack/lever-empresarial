@@ -1,8 +1,43 @@
 import type { ReactNode } from "react";
 
-/** Un monto ya formateado en pesos. Mono tabular para que las cifras se alineen. */
+import { formatoPesos } from "@/dominio/centavos";
+
+/** Un monto ya formateado en pesos, en cifras tabulares para que se alineen. */
 export function Monto({ children }: { children: ReactNode }) {
   return <p className="monto">{children}</p>;
+}
+
+/** La cifra principal de una pantalla: pesos grandes y centavos en pequeño. */
+export function CifraGrande({ centavos }: { centavos: number }) {
+  const texto = formatoPesos(centavos);
+  const punto = texto.lastIndexOf(".");
+  return (
+    <p className="cifra-grande">
+      <span className="cifra-entero">{texto.slice(0, punto)}</span>
+      <span className="cifra-centavos">{texto.slice(punto)}</span>
+    </p>
+  );
+}
+
+/** Métricas en línea, separadas por un filete vertical. Cada hija es una `Metrica`. */
+export function Metricas({ etiqueta, children }: { etiqueta: string; children: ReactNode }) {
+  return (
+    <dl className="metricas" aria-label={etiqueta}>
+      {children}
+    </dl>
+  );
+}
+
+export function Metrica({ rotulo, nota, children }: { rotulo: string; nota?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="metrica">
+      <dt className="rotulo">{rotulo}</dt>
+      <dd>
+        {children}
+        {nota ? <p className="pista">{nota}</p> : null}
+      </dd>
+    </div>
+  );
 }
 
 /** Una cifra que no existe todavía: «cifra no publicada», no `$0.00`. */
@@ -10,7 +45,7 @@ export function Ausencia({ children }: { children: ReactNode }) {
   return <p className="cifra-ausente">{children}</p>;
 }
 
-/** Un estado dicho en una frase, en la serif de los títulos. */
+/** Un estado dicho en una frase. */
 export function Frase({ children }: { children: ReactNode }) {
   return <p className="frase">{children}</p>;
 }

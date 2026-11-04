@@ -1,7 +1,7 @@
 import type { InstitucionClabe } from "../../dominio/clabe-proveedor";
 import type { DecisionPago, ListaVisible, ProveedorVisible } from "../../dominio/proveedores";
-import type { Consulta } from "../session/db";
-import type { Rol } from "../session/tipos";
+import type { ContextoConEmpresa } from "../../nucleo/contexto";
+import type { Consulta } from "../../nucleo/db";
 
 export type LecturaLista = {
   snapshotId: string | null;
@@ -38,16 +38,8 @@ export type ClabeNueva = {
   desde: Date;
 };
 
-export type SnapshotNuevo = {
-  id: string;
-  fechaArchivo: string;
-  cargadoEn: Date;
-  filas: { rfc: string; situacion: string }[];
-};
-
 export type ContextoProveedores = {
   companyId: string;
-  rol: Rol;
   consulta: Consulta;
   rfcOcupado(rfc: string): Promise<boolean>;
   leerLista(rfc: string): Promise<LecturaLista>;
@@ -57,7 +49,6 @@ export type ContextoProveedores = {
 };
 
 export type LecturaProveedores = {
-  rol: Rol;
   lista: ListaVisible;
   proveedores: ProveedorVisible[];
 };
@@ -68,9 +59,8 @@ export type AltaGuardada = {
 };
 
 export type RepositorioProveedores = {
-  conEmpresa<T>(userId: string, fn: (ctx: ContextoProveedores) => Promise<T>): Promise<T>;
-  leer(userId: string): Promise<LecturaProveedores | null>;
-  guardarSnapshot(snapshot: SnapshotNuevo): Promise<void>;
+  conEmpresa<T>(ctx: ContextoConEmpresa, fn: (tx: ContextoProveedores) => Promise<T>): Promise<T>;
+  leer(ctx: ContextoConEmpresa): Promise<LecturaProveedores>;
 };
 
 export type FilaClabe = {
@@ -90,7 +80,6 @@ export type FilaNueva = {
 
 export type ContextoClabes = {
   companyId: string;
-  rol: Rol;
   consulta: Consulta;
   vigente: (supplierId: string) => Promise<FilaClabe | null>;
   cerrar: (id: string, hasta: Date) => Promise<void>;
@@ -98,9 +87,8 @@ export type ContextoClabes = {
 };
 
 export type RepositorioClabes = {
-  puerta: (userId: string) => Promise<{ rol: Rol } | null>;
-  listar: (userId: string) => Promise<FilaClabe[]>;
-  conEmpresa: <T>(userId: string, fn: (ctx: ContextoClabes) => Promise<T>) => Promise<T>;
+  listar: (ctx: ContextoConEmpresa) => Promise<FilaClabe[]>;
+  conEmpresa: <T>(ctx: ContextoConEmpresa, fn: (tx: ContextoClabes) => Promise<T>) => Promise<T>;
 };
 
 export type LineaClabeVista = {

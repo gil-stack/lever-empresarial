@@ -1,28 +1,15 @@
-import { conTransaccion, consultar, type Consulta } from "../session/db";
-import { ErrorDeDominio } from "../session/error-de-dominio";
-import { ROLES, type Rol } from "../session/tipos";
+import { baseCliente } from "../../nucleo/contexto";
+import { bloquearEmpresa, conContexto, type Consulta } from "../../nucleo/db";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import type { ContextoClabes, FilaClabe, RepositorioClabes } from "./tipos";
 
-// El company_id sale de la membresía. El navegador no lo manda.
+// La empresa es la del contexto. El navegador no la manda.
 export const SQL = {
-  bloquearEmpresa: `
-    select m.company_id, m.rol
-    from memberships m
-    join companies c on c.id = m.company_id
-    where m.user_id = $1
-    for update of c
-  `,
-  puerta: `
-    select rol
-    from memberships
-    where user_id = $1
-  `,
   listar: `
-    select s.id, s.supplier_id, s.clabe, s.vigente_desde, s.vigente_hasta
-    from supplier_clabes s
-    join memberships m on m.company_id = s.company_id
-    where m.user_id = $1
-    order by s.vigente_desde desc, s.id
+    select id, supplier_id, clabe, vigente_desde, vigente_hasta
+    from supplier_clabes
+    where company_id = $1
+    order by vigente_desde desc, id
   `,
   vigente: `
     select id, supplier_id, clabe, vigente_desde, vigente_hasta
@@ -48,35 +35,24 @@ export const SQL = {
 
 export function repositorioPg(): RepositorioClabes {
   return {
-    async puerta(userId) {
-      const resultado = await consultar(SQL.puerta, [userId]);
-      const fila = resultado.rows[0] as { rol?: unknown } | undefined;
-      if (!fila) return null;
-      const rol = rolLeido(fila.rol);
-      if (!rol) throw new ErrorDeDominio("base_no_disponible");
-      return { rol };
+    listar(ctx) {
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        const resultado = await consulta.query(SQL.listar, [ctx.empresa.id]);
+        return resultado.rows.map(mapearFila);
+      });
     },
-    async listar(userId) {
-      const resultado = await consultar(SQL.listar, [userId]);
-      return resultado.rows.map(mapearFila);
-    },
-    conEmpresa(userId, fn) {
-      return conTransaccion(async (consulta) => {
-        const puerta = await consulta.query(SQL.bloquearEmpresa, [userId]);
-        const fila = puerta.rows[0] as { company_id?: unknown; rol?: unknown } | undefined;
-        if (!fila || typeof fila.company_id !== "string") throw new ErrorDeDominio("sin_empresa");
-        const rol = rolLeido(fila.rol);
-        if (!rol) throw new ErrorDeDominio("base_no_disponible");
-        return fn(contexto(consulta, fila.company_id, rol));
+    conEmpresa(ctx, fn) {
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        await bloquearEmpresa(consulta, ctx.empresa.id);
+        return fn(contexto(consulta, ctx.empresa.id));
       });
     },
   };
 }
 
-function contexto(consulta: Consulta, companyId: string, rol: Rol): ContextoClabes {
+function contexto(consulta: Consulta, companyId: string): ContextoClabes {
   return {
     companyId,
-    rol,
     consulta,
     async vigente(supplierId) {
       const resultado = await consulta.query(SQL.vigente, [companyId, supplierId]);
@@ -99,9 +75,6 @@ function contexto(consulta: Consulta, companyId: string, rol: Rol): ContextoClab
   };
 }
 
-function rolLeido(valor: unknown): Rol | null {
-  return ROLES.find((rol) => rol === valor) ?? null;
-}
 
 function mapearFila(fila: unknown): FilaClabe {
   if (typeof fila !== "object" || fila === null) throw new ErrorDeDominio("base_no_disponible");

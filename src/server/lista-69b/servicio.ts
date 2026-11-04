@@ -8,14 +8,11 @@ import {
   horaEnMexico,
   leerArchivo69b,
   leerPagina69b,
-  puedeGuardarLista69b,
-  puedeVerLista69b,
   type DecisionPago69b,
   type Fila69b,
 } from "../../dominio/lista-69b";
-import { esOperadorActual } from "../precio/servicio";
-import { ErrorDeDominio } from "../session/error-de-dominio";
-import type { Sesion } from "../session/tipos";
+import { exigirPersonal, exigirSesion, puede, type ContextoDeTenant } from "../../nucleo/contexto";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { origenSat, type OrigenListado } from "./descargar";
 import { idDeCopia, repositorio69bPg, type Repositorio69b, type Snapshot69b } from "./repositorio";
 
@@ -57,21 +54,24 @@ export type Dependencias69b = {
   origen?: OrigenListado;
   ahora?: () => Date;
   id?: () => string;
-  esOperador?: boolean;
 };
 
 export async function leerVista69b(
-  sesion: Sesion,
+  ctx: ContextoDeTenant | null | undefined,
   rfcPedido: string | null,
   deps?: Dependencias69b,
 ): Promise<VistaLista69b> {
+  const conSesion = exigirSesion(ctx);
+  if (!puede(conSesion, "cliente.lista69b.ver") && !puede(conSesion, "plataforma.lista69b.cargar")) {
+    throw new ErrorDeDominio("sin_permiso");
+  }
   const ahora = (deps?.ahora ?? reloj)();
   const repo = deps?.repositorio ?? repositorio69bPg();
   const snapshot = await repo.vigente();
   const consulta =
     rfcPedido === null ? ({ tipo: "vacia" } as const) : await decidirContra(rfcPedido, repo, snapshot);
   return {
-    puedeGuardar: puedeGuardarLista69b(sesion.rol, deps?.esOperador ?? esOperadorActual(sesion)),
+    puedeGuardar: puede(conSesion, "plataforma.lista69b.cargar"),
     fechaTexto: snapshot ? fraseFechaArchivo(snapshot.fechaArchivo) : null,
     cargadoTexto: snapshot ? horaEnMexico(snapshot.cargadoEn) : null,
     consultaTexto: horaEnMexico(ahora),
@@ -80,10 +80,6 @@ export async function leerVista69b(
     errorRfc: consulta.tipo === "invalida" ? consulta.mensaje : null,
     resultado: consulta.tipo === "lista" ? consulta : null,
   };
-}
-
-export function puedeAbrirLista69b(sesion: Sesion, esOperador = esOperadorActual(sesion)): boolean {
-  return puedeVerLista69b(sesion.rol) || esOperador;
 }
 
 export async function consultarRfc(rfcTexto: string, deps?: Dependencias69b): Promise<ResultadoConsulta> {
@@ -110,19 +106,18 @@ async function decidirContra(
   };
 }
 
+/** La lista es de la plataforma: la carga solo el personal del operador. */
 export async function guardarListado69b(
-  sesion: Sesion | null,
+  ctx: ContextoDeTenant | null | undefined,
   deps?: Dependencias69b,
 ): Promise<{ fechaTexto: string; contribuyentesTexto: string }> {
-  if (!sesion) throw new ErrorDeDominio("sesion_ausente");
-  const esOperador = deps?.esOperador ?? esOperadorActual(sesion);
-  if (!puedeGuardarLista69b(sesion.rol, esOperador)) throw new ErrorDeDominio("sin_permiso");
+  const personal = exigirPersonal(ctx, "plataforma.lista69b.cargar");
 
   const traido = await traerListado(deps?.origen ?? origenSat());
   const id = (deps?.id ?? idDeCopia)();
   if (!UUID.test(id)) throw new ErrorDeDominio("listado_irreconocible");
   const cargadoEn = (deps?.ahora ?? reloj)();
-  await (deps?.repositorio ?? repositorio69bPg()).guardar({
+  await (deps?.repositorio ?? repositorio69bPg()).guardar(personal, {
     id,
     fechaArchivo: traido.fechaArchivo,
     cargadoEn,

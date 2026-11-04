@@ -1,12 +1,11 @@
 import assert, { AssertionError } from "node:assert/strict";
 import { test } from "node:test";
 
-import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
-import { ErrorDeDominio } from "../../src/server/session/error-de-dominio.ts";
-import { cerrarConexion } from "../../src/server/session/db.ts";
-import { abrirCuenta } from "../../src/server/session/servicio.ts";
-import type { Sesion } from "../../src/server/session/tipos.ts";
-import { asignarMembresia, liberarLoteDePrueba, solicitarLoteDePrueba } from "../../src/server/roles/servicio.ts";
+import type { RolCliente } from "../../src/nucleo/capacidades.ts";
+import type { ContextoDeTenant } from "../../src/nucleo/contexto.ts";
+import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
+import { cerrarConexion } from "../../src/nucleo/db.ts";
+import { liberarLoteDePrueba, solicitarLoteDePrueba } from "../../src/server/roles/servicio.ts";
 import { DIRECTORIO_MIGRACIONES, evaluarEsquema } from "../aislamiento/esquema.ts";
 import {
   aplicarArchivo,
@@ -14,6 +13,7 @@ import {
   consultarJson,
   ejecutar,
   exigirBaseDesechable,
+  urlDeAplicacion,
 } from "../aislamiento/postgres.ts";
 
 /**
@@ -26,8 +26,12 @@ import {
  * Si no hay base, falla: no se omite y no se da por pasada.
  */
 
-const CONTRASENA = "clave-segura-12";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ELENA = "11111111-1111-4111-8111-111111111111";
+const LUIS = "22222222-2222-4222-8222-222222222222";
+const ROSA = "33333333-3333-4333-8333-333333333333";
+const CARMEN = "44444444-4444-4444-8444-444444444444";
+const EMPRESA = "55555555-5555-4555-8555-555555555555";
 
 type FilaDeFirmas = {
   solicitante: string | null;
@@ -56,7 +60,7 @@ test("dos usuarios firman, y el libro rechaza la misma persona, a la administrad
       }
     }
     await cerrarConexion();
-    process.env.DATABASE_URL = url;
+    process.env.DATABASE_URL = urlDeAplicacion(url);
     try {
       await escenario(url);
     } catch (error) {
@@ -70,58 +74,32 @@ test("dos usuarios firman, y el libro rechaza la misma persona, a la administrad
 });
 
 async function escenario(url: string): Promise<void> {
-  const elena = await abrirCuenta({
-    nombre: "Elena Ríos",
-    correo: "firmas-elena@ejemplo.mx",
-    contrasena: CONTRASENA,
-  });
-  await darDeAltaEmpresa(elena.sesion, {
-    rfc: "EKU9003173C9",
-    razonSocial: "Escuela Kemper Firmas",
-    codigoPostal: "06600",
-    regimen: "601",
-    usoCfdi: "G03",
-  });
-  const luis = await abrirCuenta({
-    nombre: "Luis Navarro",
-    correo: "firmas-luis@ejemplo.mx",
-    contrasena: CONTRASENA,
-  });
-  const rosa = await abrirCuenta({
-    nombre: "Rosa Vidal",
-    correo: "firmas-rosa@ejemplo.mx",
-    contrasena: CONTRASENA,
-  });
-  const carmen = await abrirCuenta({
-    nombre: "Carmen Solís",
-    correo: "firmas-carmen@ejemplo.mx",
-    contrasena: CONTRASENA,
-  });
+  sembrar(url);
+  const elena = contexto(ELENA, ["administrador"]);
+  const luis = contexto(LUIS, ["liberador"]);
+  const rosa = contexto(ROSA, ["liberador"]);
+  const carmen = contexto(CARMEN, ["contador"]);
 
-  await asignarMembresia(elena.sesion, { userId: luis.sesion.usuario.id, rol: "liberador" });
-  await asignarMembresia(elena.sesion, { userId: rosa.sesion.usuario.id, rol: "liberador" });
-  await asignarMembresia(elena.sesion, { userId: carmen.sesion.usuario.id, rol: "contador" });
-
-  const solicitud = await solicitarLoteDePrueba(luis.sesion, {});
+  const solicitud = await solicitarLoteDePrueba(luis, {});
   assert.equal(solicitud.liberadorId, null);
   assert.equal(solicitud.esPrueba, true);
-  assert.notEqual(luis.sesion.usuario.id.toLowerCase(), rosa.sesion.usuario.id.toLowerCase());
+  assert.notEqual(LUIS, ROSA);
 
   assert.equal(
-    await codigo(liberarLoteDePrueba(conId(luis.sesion, luis.sesion.usuario.id.toUpperCase()), { loteId: solicitud.id })),
+    await codigo(liberarLoteDePrueba(contexto(LUIS.toUpperCase(), ["liberador"]), { loteId: solicitud.id })),
     "misma_persona_en_las_dos_firmas",
   );
   assert.equal(
-    await codigo(liberarLoteDePrueba(elena.sesion, { loteId: solicitud.id })),
+    await codigo(liberarLoteDePrueba(elena, { loteId: solicitud.id })),
     "sin_permiso_para_liberar",
   );
   assert.equal(
-    await codigo(liberarLoteDePrueba(carmen.sesion, { loteId: solicitud.id })),
+    await codigo(liberarLoteDePrueba(carmen, { loteId: solicitud.id })),
     "contador_no_libera",
   );
 
   const abierta = leerFirmas(url, solicitud.id);
-  assert.equal(abierta.solicitante, luis.sesion.usuario.id.toLowerCase());
+  assert.equal(abierta.solicitante, LUIS);
   assert.equal(abierta.liberador, null);
 
   assert.equal(
@@ -148,7 +126,7 @@ async function escenario(url: string): Promise<void> {
     codigoDelLibro(
       url,
       `update lotes_prueba
-       set liberador_user_id = ${uuidSql(elena.sesion.usuario.id)},
+       set liberador_user_id = ${uuidSql(ELENA)},
            liberado_en = clock_timestamp()
        where id = ${uuidSql(solicitud.id)}`,
     ),
@@ -158,7 +136,7 @@ async function escenario(url: string): Promise<void> {
     codigoDelLibro(
       url,
       `update lotes_prueba
-       set liberador_user_id = ${uuidSql(carmen.sesion.usuario.id)},
+       set liberador_user_id = ${uuidSql(CARMEN)},
            liberado_en = clock_timestamp()
        where id = ${uuidSql(solicitud.id)}`,
     ),
@@ -168,9 +146,9 @@ async function escenario(url: string): Promise<void> {
   const sigueAbierta = leerFirmas(url, solicitud.id);
   assert.equal(sigueAbierta.liberador, null);
 
-  const cerrada = await liberarLoteDePrueba(rosa.sesion, { loteId: solicitud.id });
-  assert.equal(cerrada.solicitanteId, luis.sesion.usuario.id.toLowerCase());
-  assert.equal(cerrada.liberadorId, rosa.sesion.usuario.id.toLowerCase());
+  const cerrada = await liberarLoteDePrueba(rosa, { loteId: solicitud.id });
+  assert.equal(cerrada.solicitanteId, LUIS);
+  assert.equal(cerrada.liberadorId, ROSA);
   assert.notEqual(cerrada.solicitanteId, cerrada.liberadorId);
   assert.equal(cerrada.esPrueba, true);
 
@@ -192,8 +170,66 @@ function exigirBaseDeFirmas(): string {
   }
 }
 
-function conId(sesion: Sesion, userId: string): Sesion {
-  return { ...sesion, usuario: { ...sesion.usuario, id: userId } };
+function contexto(userId: string, roles: RolCliente[]): ContextoDeTenant {
+  return {
+    sesionId: "66666666-6666-4666-8666-666666666666",
+    peticionId: null,
+    superficie: "cliente",
+    persona: { id: userId, nombre: "Persona", correo: `${userId.slice(0, 8)}@ejemplo.mx` },
+    segundoFactor: "totp",
+    empresa: {
+      id: EMPRESA,
+      rfc: "EKU9003173C9",
+      razonSocial: "Escuela Kemper Firmas",
+      operadorId: "77777777-7777-4777-8777-777777777777",
+      estado: "activa",
+      demostracion: true,
+    },
+    roles,
+    personal: null,
+    empresas: [{ id: EMPRESA, razonSocial: "Escuela Kemper Firmas" }],
+    capacidades: [],
+  };
+}
+
+function sembrar(url: string): void {
+  const personas = [
+    [ELENA, "elena", "administrador"],
+    [LUIS, "luis", "liberador"],
+    [ROSA, "rosa", "liberador"],
+    [CARMEN, "carmen", "contador"],
+  ] as const;
+  const roles = personas
+    .map(
+      ([id, , rol]) =>
+        `insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, cambio)
+         values (operador, '${EMPRESA}', 'miembro', '${ELENA}', 'cliente', 'asignar_rol', 'membership_roles', '${id}', '{"rol":"${rol}"}');
+         insert into membership_roles (user_id, company_id, rol) values ('${id}', '${EMPRESA}', '${rol}');`,
+    )
+    .join("\n");
+  const usuarios = personas
+    .map(
+      ([id, nombre]) =>
+        `insert into users (id, nombre, correo) values ('${id}', '${nombre}', 'firmas-${nombre}@ejemplo.mx');
+         insert into memberships (user_id, company_id, estado) values ('${id}', '${EMPRESA}', 'activa');`,
+    )
+    .join("\n");
+  ejecutar(
+    url,
+    `begin;
+     insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, operator_id, estado, demostracion)
+       values ('${EMPRESA}', 'EKU9003173C9', 'Escuela Kemper Firmas', '06600', '601', 'G03',
+         (select id from operators order by alta_en limit 1), 'activa', true);
+     insert into audit_log (operator_id, company_id, actor_tipo, superficie, accion, entidad, identificador)
+       values ((select id from operators order by alta_en limit 1), '${EMPRESA}', 'sistema', 'sistema', 'alta_empresa', 'companies', '${EMPRESA}');
+     ${usuarios}
+     do $$
+     declare operador uuid := (select id from operators order by alta_en limit 1);
+     begin
+       ${roles}
+     end $$;
+     commit;`,
+  );
 }
 
 async function codigo(promesa: Promise<unknown>): Promise<string> {

@@ -107,7 +107,7 @@ El comando de migrar se corre una vez por rama, con el `DATABASE_URL_UNPOOLED` d
 
 `0010_subscriptions.sql` abre una suscripción por empresa, en `recorrido`, con `recorrido_inicio` en la hora de alta. Los treinta días se cuentan desde esa hora; no hay una segunda columna. El alta de una empresa nueva inserta la fila en la misma transacción. Pasar a `aceptada` exige que `platform_pricing.suscripcion_centavos` ya no sea vacío. Si lo está, la base rechaza el cambio.
 
-La página `/precios` y la consola leen esa única fila. `OPERADORES_PLATAFORMA` es la lista de correos, separada por comas, que puede publicar el monto y registrar la aceptación. No es un rol de la empresa. El valor no va en el repositorio. Sin la variable, nadie publica un precio.
+La página `/precios` y la consola leen esa única fila. Quien publica el monto y registra la aceptación es el personal del operador, en `platform_staff` con rol `administracion_plataforma`. `OPERADORES_PLATAFORMA` ya no abre nada: solo la lee el comando `personal:migrar-variable`, que invita a esos correos. Hasta correr ese comando, no hay personal.
 
 ## Fase 3. Proveedores, listado 69-B y CLABE
 
@@ -122,3 +122,11 @@ Dos piezas nacieron las dos como `0012`. Quedan en orden, y no se pierde ninguna
 La constancia es un PDF en el almacén privado. La clave no es una URL y no baja al navegador. La consulta del 69-B usa la copia más reciente, y si dos copias comparten hora manda también el id. Si no hay copia, no hay pago. Si el RFC está en la copia, el proveedor puede existir y el pago no. No hay envío de dinero.
 
 `0015_releer_69b_y_clabe.sql` no crea tablas de dinero. Una copia nueva vuelve a leer a los proveedores ya guardados: si el RFC entra, la ficha deja la situación publicada y `boton_pago` queda en falso. Quien se dio de alta sin archivo sigue sin pago si esa copia no lo trae. La CLABE exige el proveedor de la misma empresa. Cerrar la única vigente, sin dejar otra abierta en la misma transacción, no pasa. El hash de la constancia no se reescribe. Este corte sigue sin migrar el libro de production.
+
+## Fase 4. Tenencia, invitaciones y autenticación fuerte
+
+`0016_tenencia.sql`, `0017_bitacora.sql` y `0018_rls.sql` cambian el libro. `0019_autenticacion_fuerte.sql` agrega la entrada de minutos, las passkeys, el TOTP, los códigos de respaldo y la solicitud de factor perdido. `0020_cierre_fase4.sql` obliga la seguridad de filas, crea el rol con el que entra la aplicación y la recuperación de contraseña.
+
+La aplicación no conecta como dueña de las tablas. `DATABASE_URL` es el rol `plataforma_app`: no es dueño, no tiene `BYPASSRLS` y en cada transacción baja a `plataforma_cliente` o `plataforma_sofipo`. Quien migra sigue siendo el único dueño. Este corte no migra el libro de production.
+
+La contraseña abre una entrada de minutos, no una sesión. La sesión nace cuando esa entrada se consume con passkey, TOTP o código de respaldo. Aprobar una recuperación de contraseña cambia la contraseña y cierra las sesiones. No revoca passkeys ni TOTP. Nadie aprueba la propia solicitud.

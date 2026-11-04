@@ -1,4 +1,4 @@
-import { ErrorDeDominio } from "../session/error-de-dominio";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 
 /**
  * Archivo privado de la constancia. La clave que vuelve es una ruta, no una URL.

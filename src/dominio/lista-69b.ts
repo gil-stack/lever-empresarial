@@ -92,14 +92,6 @@ export function elProveedorPuedeExistir(): true {
   return true;
 }
 
-export function puedeVerLista69b(rol: string | null | undefined): boolean {
-  return rol === "administrador" || rol === "solicitante" || rol === "liberador" || rol === "contador";
-}
-
-export function puedeGuardarLista69b(rol: string | null | undefined, esOperador: boolean): boolean {
-  return esOperador || rol === "administrador";
-}
-
 export function decidirPago69b(entrada: {
   hayArchivo: boolean;
   situaciones: readonly string[];

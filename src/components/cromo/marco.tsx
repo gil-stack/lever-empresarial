@@ -4,9 +4,12 @@ import Link from "next/link";
 
 import { salir } from "@/app/sesion/acciones";
 
+import { estadoDelMarco, type EmpresaDelMarco } from "./estado-marco";
 import { IconoEntrar, IconoSalir } from "./iconos";
+import { Banderin, PalabraArco } from "./logotipo";
 import { LateralMovil } from "./lateral-movil";
-import { seccionesDe, type GrupoDeSecciones } from "./secciones";
+import { MARCO_SIN_SESION, puertasDe, type VistaDeMarco } from "./puertas";
+import { seccionesDe, type Contador, type GrupoDeSecciones } from "./secciones";
 import { SelectorTema } from "./selector-tema";
 import { COOKIE_TEMA, temaDesde } from "./tema";
 
@@ -14,50 +17,83 @@ async function temaElegido() {
   return temaDesde((await cookies()).get(COOKIE_TEMA)?.value);
 }
 
+/**
+ * El portal del cliente: banderín, palabra y la línea «Empresas».
+ * `vista` sale de la tenencia. El muestrario pasa la empresa a mano.
+ */
 export async function Marco({
   actual,
+  vista = MARCO_SIN_SESION,
   persona = null,
   maestro = false,
   poliza = false,
   proveedores = false,
   lista69b = false,
+  empresa,
+  contadores,
   children,
 }: {
   actual: string;
+  vista?: VistaDeMarco;
   persona?: { nombre: string } | null;
   maestro?: boolean;
   poliza?: boolean;
   proveedores?: boolean;
   lista69b?: boolean;
+  empresa?: EmpresaDelMarco | null;
+  contadores?: Record<string, Contador>;
   children: ReactNode;
 }) {
+  const deMuestra = empresa !== undefined || maestro || poliza || proveedores || lista69b;
   const tema = await temaElegido();
-  const grupos = seccionesDe({ maestro, poliza, proveedores, lista69b });
+  const leido = deMuestra
+    ? { empresa: empresa ?? null, contadores: contadores ?? {} }
+    : await estadoDelMarco();
+  const grupos = deMuestra
+    ? seccionesDe(
+        {
+          consola: true,
+          politica: true,
+          maestro,
+          poliza,
+          proveedores,
+          lista69b,
+          precios: true,
+        },
+        null,
+        false,
+      )
+    : seccionesDe(puertasDe(vista.capacidades), vista.empresaId, vista.variasEmpresas);
+  const quien = deMuestra ? persona : vista.persona;
 
   return (
     <div className="marco">
       <a className="saltar" href="#contenido">
         Saltar al contenido
       </a>
-      <LateralMovil marca={<Marca enlace />}>
+      <LateralMovil marca={<Marca linea="Empresas" />}>
         <div className="lateral-cabeza">
-          <Marca enlace />
+          <Marca linea="Empresas" />
         </div>
-        <nav className="secciones" aria-label="Finanzas">
+        {leido.empresa ? <EmpresaLateral empresa={leido.empresa} /> : null}
+        <nav className="secciones" aria-label="Secciones">
           {grupos.map((grupo) => (
-            <Grupo key={grupo.titulo} grupo={grupo} actual={actual} />
+            <Grupo key={grupo.titulo} grupo={grupo} actual={actual} contadores={leido.contadores} />
           ))}
         </nav>
         <div className="lateral-pie">
           <SelectorTema inicial={tema} />
-          {persona ? (
+          {quien ? (
             <div className="quien">
               <span className="quien-inicial" aria-hidden="true">
-                {inicialDe(persona.nombre)}
+                {inicialesDe(quien.nombre)}
               </span>
               <p>
-                <span className="quien-etiqueta">Entraste como </span>
-                <span className="quien-nombre">{persona.nombre}</span>
+                <span className="quien-nombre">{quien.nombre}</span>
+                {vista.razonSocial ? <span className="quien-etiqueta">{vista.razonSocial}</span> : null}
+                <Link href="/entrar/seguridad" className="quien-factor">
+                  Segundo factor
+                </Link>
               </p>
               <form action={salir}>
                 <button type="submit" className="salir">
@@ -67,11 +103,7 @@ export async function Marco({
               </form>
             </div>
           ) : (
-            <Link
-              href="/entrar"
-              className="seccion"
-              aria-current={actual === "/entrar" ? "page" : undefined}
-            >
+            <Link href="/entrar" className="seccion" aria-current={actual === "/entrar" ? "page" : undefined}>
               <IconoEntrar />
               Entrar
             </Link>
@@ -86,7 +118,7 @@ export async function Marco({
   );
 }
 
-/** La app de quien paga. No lleva el menú de la consola ni el pie del escritorio. */
+/** La app de quien paga. Solo el logotipo, sin la línea «Empresas». */
 export async function MarcoTelefono({ children }: { children: ReactNode }) {
   const tema = await temaElegido();
   return (
@@ -97,7 +129,11 @@ export async function MarcoTelefono({ children }: { children: ReactNode }) {
       <main id="contenido" className="superficie-telefono">
         <div className="telefono">
           <header className="telefono-cabeza">
-            <p className="marca-app">Gasto</p>
+            <p className="marca-app">
+              <Banderin />
+              <PalabraArco />
+              <span className="solo-lector">Arco</span>
+            </p>
             <SelectorTema inicial={tema} />
           </header>
           <div className="telefono-cuerpo">{children}</div>
@@ -110,49 +146,67 @@ export async function MarcoTelefono({ children }: { children: ReactNode }) {
   );
 }
 
-function Grupo({ grupo, actual }: { grupo: GrupoDeSecciones; actual: string }) {
+function EmpresaLateral({ empresa }: { empresa: EmpresaDelMarco }) {
+  return (
+    <div className="empresa-lateral">
+      <span className="empresa-iniciales" aria-hidden="true">
+        {inicialesDe(empresa.razonSocial)}
+      </span>
+      <p>
+        <span className="empresa-nombre">{empresa.razonSocial}</span>
+        <span className="empresa-rfc">RFC {empresa.rfc}</span>
+      </p>
+    </div>
+  );
+}
+
+function Grupo({
+  grupo,
+  actual,
+  contadores,
+}: {
+  grupo: GrupoDeSecciones;
+  actual: string;
+  contadores: Record<string, Contador>;
+}) {
+  const id = `grupo-${grupo.titulo.toLocaleLowerCase("es-MX")}`;
   return (
     <div className="secciones-grupo">
-      <p className="secciones-titulo">{grupo.titulo}</p>
-      <ul>
-        {grupo.secciones.map(({ href, etiqueta, Icono }) => (
-          <li key={href}>
-            <Link href={href} className="seccion" aria-current={href === actual ? "page" : undefined}>
-              <Icono />
-              {etiqueta}
-            </Link>
-          </li>
-        ))}
+      <p className="solo-lector" id={id}>
+        {grupo.titulo}
+      </p>
+      <ul aria-labelledby={id}>
+        {grupo.secciones.map(({ ruta, href, etiqueta, Icono }) => {
+          const contador = contadores[ruta];
+          return (
+            <li key={href}>
+              <Link href={href} className="seccion" aria-current={ruta === actual ? "page" : undefined}>
+                <Icono />
+                {etiqueta}
+                {contador ? (
+                  <span className="seccion-contador">
+                    {contador.valor}
+                    <span className="solo-lector">, {contador.etiqueta}</span>
+                  </span>
+                ) : null}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
 }
 
-function Marca({ enlace = false }: { enlace?: boolean }) {
-  const contenido = (
-    <>
-      <Sello />
-      Plataforma
-    </>
-  );
-  return enlace ? (
-    <Link href="/" className="marca">
-      {contenido}
-    </Link>
-  ) : (
-    <span className="marca">{contenido}</span>
-  );
-}
-
-function Sello() {
+function Marca({ linea }: { linea: string }) {
   return (
-    <span className="marca-sello" aria-hidden="true">
-      <svg viewBox="0 0 32 32" width="24" height="24">
-        <rect className="sello-fondo" x="0" y="0" width="32" height="32" rx="7" />
-        <rect className="sello-hoja" x="8" y="8" width="16" height="16" rx="1.5" />
-        <path className="sello-fondo" d="M15 8h2v16h-2z" />
-      </svg>
-    </span>
+    <Link href="/consola" className="marca" aria-label={`Arco ${linea}, ir al resumen`}>
+      <Banderin />
+      <span className="marca-texto">
+        <PalabraArco />
+        <span className="marca-linea">{linea}</span>
+      </span>
+    </Link>
   );
 }
 
@@ -164,6 +218,14 @@ function Pie() {
   );
 }
 
-function inicialDe(nombre: string): string {
-  return nombre.trim().charAt(0).toLocaleUpperCase("es-MX") || "·";
+function inicialesDe(nombre: string): string {
+  const palabras = nombre
+    .trim()
+    .split(/\s+/)
+    .filter((palabra) => /^\p{L}/u.test(palabra) && palabra.length > 2);
+  const letras = (palabras.length ? palabras : [nombre.trim()])
+    .slice(0, 2)
+    .map((palabra) => palabra.charAt(0).toLocaleUpperCase("es-MX"))
+    .join("");
+  return letras || "·";
 }

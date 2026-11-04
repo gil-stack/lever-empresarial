@@ -115,7 +115,7 @@ export function PanelPolitica({ vista }: { vista: VistaPolitica }) {
         {vista.puedeEditar ? <FormularioNuevaCategoria /> : null}
       </section>
 
-      <Cajones vista={vista} enlace={false} />
+      <Cajones vista={vista} />
     </div>
   );
 }

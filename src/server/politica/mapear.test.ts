@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 
-import { ErrorDeDominio } from "../session/error-de-dominio.ts";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio.ts";
 import { mapearPolitica } from "./mapear.ts";
 
 describe("el JSON de la política", () => {

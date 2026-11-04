@@ -1,7 +1,7 @@
-import { randomUUID } from "node:crypto";
-
-import { conTransaccion, consultar } from "../session/db";
-import { ErrorDeDominio } from "../session/error-de-dominio";
+import { baseCliente, basePlataforma, type ContextoConEmpresa, type ContextoDePersonal } from "../../nucleo/contexto";
+import { conContexto } from "../../nucleo/db";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
+import { actorDePersonal, auditar } from "../bitacora/auditar";
 
 export type FilaPrecio = {
   filaId: string;
@@ -20,20 +20,19 @@ export type FilaSuscripcion = {
 export type Publicacion = {
   centavos: bigint;
   cuando: Date;
-  actorId: string;
 };
 
 export type Aceptacion = {
   companyId: string;
-  actorId: string;
   cuando: Date;
 };
 
 export type RepositorioPrecios = {
   leerPrecio: () => Promise<FilaPrecio>;
-  publicar: (entrada: Publicacion) => Promise<FilaPrecio>;
-  leerSuscripcion: (companyId: string) => Promise<FilaSuscripcion | null>;
-  aceptar: (entrada: Aceptacion) => Promise<FilaSuscripcion>;
+  /** El precio es de la plataforma: lo publica el personal del operador. */
+  publicar: (ctx: ContextoDePersonal, entrada: Publicacion) => Promise<FilaPrecio>;
+  leerSuscripcion: (ctx: ContextoConEmpresa) => Promise<FilaSuscripcion | null>;
+  aceptar: (ctx: ContextoDePersonal, entrada: Aceptacion) => Promise<FilaSuscripcion>;
 };
 
 const UUID =
@@ -75,12 +74,6 @@ export const SQL = {
     where company_id = $1 and estado = 'recorrido'
     returning company_id, estado, recorrido_inicio, aceptada_en
   `,
-  nombreDe: "select nombre from users where id = $1",
-  auditar: `
-    insert into audit_events (
-      id, company_id, actor_id, accion, entidad, identificador, ocurrido_en
-    ) values ($1, $2, $3, $4, $5, $6, $7)
-  `,
 } as const;
 
 type FilaPrecioSql = {
@@ -97,40 +90,42 @@ type FilaSuscripcionSql = {
   aceptada_por_nombre?: unknown;
 };
 
+const LECTURA = { rol: "plataforma_cliente" } as const;
+
 export function repositorioPg(): RepositorioPrecios {
   return {
-    async leerPrecio() {
-      const resultado = await consultar(SQL.leerPrecio);
-      return mapearPrecioUnico(resultado.rows);
+    leerPrecio() {
+      return conContexto(LECTURA, async (consulta) => {
+        const resultado = await consulta.query(SQL.leerPrecio);
+        return mapearPrecioUnico(resultado.rows);
+      });
     },
-    publicar(entrada) {
-      return conTransaccion(async (consulta) => {
+    publicar(ctx, entrada) {
+      return conContexto(basePlataforma(ctx), async (consulta) => {
         const bloqueo = await consulta.query(SQL.bloquearPrecio);
         const actual = mapearPrecioUnico(bloqueo.rows);
         if (actual.centavos !== null) throw new ErrorDeDominio("precio_ya_publicado");
         const publicado = await consulta.query(SQL.publicar, [entrada.centavos.toString(), entrada.cuando]);
         const fila = mapearPrecioUnico(publicado.rows);
-        await consulta.query(SQL.auditar, [
-          randomUUID(),
-          null,
-          entrada.actorId,
-          "publicar_precio",
-          "platform_pricing",
-          fila.filaId,
-          entrada.cuando,
-        ]);
+        await auditar(consulta, actorDePersonal(ctx), {
+          accion: "publicar_precio",
+          identificador: fila.filaId,
+          cambio: { centavos: entrada.centavos.toString() },
+        });
         return fila;
       });
     },
-    async leerSuscripcion(companyId) {
-      const resultado = await consultar(SQL.leerSuscripcion, [companyId]);
-      const fila = resultado.rows[0] as FilaSuscripcionSql | undefined;
-      if (!fila) return null;
-      if (resultado.rows.length !== 1) throw new ErrorDeDominio("base_no_disponible");
-      return mapearSuscripcion(fila);
+    leerSuscripcion(ctx) {
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        const resultado = await consulta.query(SQL.leerSuscripcion, [ctx.empresa.id]);
+        const fila = resultado.rows[0] as FilaSuscripcionSql | undefined;
+        if (!fila) return null;
+        if (resultado.rows.length !== 1) throw new ErrorDeDominio("base_no_disponible");
+        return mapearSuscripcion(fila);
+      });
     },
-    aceptar(entrada) {
-      return conTransaccion(async (consulta) => {
+    aceptar(ctx, entrada) {
+      return conContexto(basePlataforma(ctx, entrada.companyId), async (consulta) => {
         const precio = await consulta.query(SQL.bloquearPrecio);
         const tarifa = mapearPrecioUnico(precio.rows);
         if (tarifa.centavos === null) throw new ErrorDeDominio("precio_no_publicado");
@@ -140,28 +135,14 @@ export function repositorioPg(): RepositorioPrecios {
         if (bloqueo.rows.length !== 1) throw new ErrorDeDominio("base_no_disponible");
         const estado = mapearSuscripcion(actual);
         if (estado.estado !== "recorrido") throw new ErrorDeDominio("suscripcion_ya_aceptada");
-        const actualizada = await consulta.query(SQL.aceptar, [
-          entrada.companyId,
-          entrada.actorId,
-          entrada.cuando,
-        ]);
+        const actualizada = await consulta.query(SQL.aceptar, [entrada.companyId, ctx.persona.id, entrada.cuando]);
         const fila = actualizada.rows[0] as FilaSuscripcionSql | undefined;
         if (!fila || actualizada.rowCount !== 1) throw new ErrorDeDominio("suscripcion_ya_aceptada");
-        const nombre = await consulta.query(SQL.nombreDe, [entrada.actorId]);
-        const crudo = nombre.rows[0] as { nombre?: unknown } | undefined;
-        await consulta.query(SQL.auditar, [
-          randomUUID(),
-          entrada.companyId,
-          entrada.actorId,
-          "aceptar_suscripcion",
-          "subscriptions",
-          entrada.companyId,
-          entrada.cuando,
-        ]);
-        return mapearSuscripcion({
-          ...fila,
-          aceptada_por_nombre: crudo?.nombre ?? null,
+        await auditar(consulta, actorDePersonal(ctx, entrada.companyId, "comando"), {
+          accion: "aceptar_suscripcion",
+          identificador: entrada.companyId,
         });
+        return mapearSuscripcion({ ...fila, aceptada_por_nombre: ctx.persona.nombre });
       });
     },
   };

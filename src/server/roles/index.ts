@@ -1,15 +1,6 @@
 export { CONTRATO_TABLAS, SQL } from "./contrato.ts";
-export {
-  FIRMAS_DE_NOMINA,
-  QUIEN_LIBERA,
-  ROLES_ASIGNABLES,
-  accionesDe,
-  empresaOperable,
-  puede,
-  puedeEntrarAPoliza,
-  puedeSoltarDinero,
-} from "./decidir.ts";
-export type { Accion, RolAsignable } from "./decidir.ts";
-export { asignarMembresia, cambiarRol, entrarAPoliza, liberarLoteDePrueba, solicitarLoteDePrueba } from "./servicio.ts";
+export { FIRMAS_DE_NOMINA, QUIEN_LIBERA, ROLES_ASIGNABLES, empresaOperable, rolesPueden } from "./decidir.ts";
+export type { RolAsignable } from "./decidir.ts";
+export { asignarRol, entrarAPoliza, liberarLoteDePrueba, quitarRol, solicitarLoteDePrueba } from "./servicio.ts";
 export type { DependenciasRoles } from "./servicio.ts";
 export type { FilaDeLote, LoteDePrueba, Membresia, RepositorioRoles, SolicitudDeLote } from "./tipos.ts";

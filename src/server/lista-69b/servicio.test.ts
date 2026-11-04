@@ -2,11 +2,12 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import type { Fila69b } from "../../dominio/lista-69b.ts";
-import { ErrorDeDominio } from "../session/error-de-dominio.ts";
-import type { Rol, Sesion } from "../session/tipos.ts";
+import { capacidadesDe, type RolCliente } from "../../nucleo/capacidades.ts";
+import type { ContextoDeTenant } from "../../nucleo/contexto.ts";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio.ts";
 import type { OrigenListado } from "./descargar.ts";
 import type { Repositorio69b, Snapshot69b } from "./repositorio.ts";
-import { consultarRfc, guardarListado69b, leerVista69b, puedeAbrirLista69b } from "./servicio.ts";
+import { consultarRfc, guardarListado69b, leerVista69b } from "./servicio.ts";
 
 const AHORA = new Date("2026-11-04T18:30:00.000Z");
 const COPIA = "33333333-3333-4333-8333-333333333333";
@@ -32,13 +33,12 @@ const CSV = [
 describe("la copia y la consulta", () => {
   it("sin copia no hay pago, aunque el RFC sea válido", async () => {
     const libro = memoria();
-    const vista = await leerVista69b(sesion("administrador"), "PAL7202161U0", {
+    const vista = await leerVista69b(cliente("administrador"), "PAL7202161U0", {
       repositorio: libro.repo,
       ahora: () => AHORA,
-      esOperador: false,
     });
     assert.equal(vista.fechaTexto, null);
-    assert.equal(vista.puedeGuardar, true);
+    assert.equal(vista.puedeGuardar, false);
     assert.equal(vista.resultado?.bloqueado, true);
     assert.equal(vista.resultado?.frase, "El proveedor puede existir. El pago no.");
     assert.equal(vista.resultado?.decision.listaPermitePago, false);
@@ -46,12 +46,11 @@ describe("la copia y la consulta", () => {
 
   it("guarda la fecha del archivo y bloquea solo a quien aparece", async () => {
     const libro = memoria();
-    const guardado = await guardarListado69b(sesion("liberador"), {
+    const guardado = await guardarListado69b(personal(), {
       repositorio: libro.repo,
       origen: origen(CSV),
       ahora: () => AHORA,
       id: () => COPIA,
-      esOperador: true,
     });
     assert.equal(guardado.fechaTexto, "30 de septiembre de 2026");
     assert.equal(guardado.contribuyentesTexto, "2");
@@ -72,10 +71,9 @@ describe("la copia y la consulta", () => {
     assert.equal(limpio.decision.listaPermitePago, true);
     assert.equal(limpio.situaciones.length, 0);
 
-    const vista = await leerVista69b(sesion("contador"), "CABL840215RF4", {
+    const vista = await leerVista69b(cliente("contador"), "CABL840215RF4", {
       repositorio: libro.repo,
       ahora: () => AHORA,
-      esOperador: false,
     });
     assert.equal(vista.fechaTexto, "30 de septiembre de 2026");
     assert.equal(vista.puedeGuardar, false);
@@ -89,12 +87,11 @@ describe("la copia y la consulta", () => {
     const distinto = CSV.replace("30 de septiembre de 2026", "1 de enero de 2026");
     await assert.rejects(
       () =>
-        guardarListado69b(sesion("administrador"), {
+        guardarListado69b(personal(), {
           repositorio: libro.repo,
           origen: origen(distinto),
           ahora: () => AHORA,
           id: () => COPIA,
-          esOperador: false,
         }),
       (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "fechas_distintas",
     );
@@ -105,32 +102,34 @@ describe("la copia y la consulta", () => {
   it("el contador no guarda y el tarjetahabiente no abre la lista", async () => {
     const libro = memoria();
     await assert.rejects(
-      () => guardarListado69b(sesion("contador"), { repositorio: libro.repo, origen: origen(CSV), esOperador: false }),
+      () => guardarListado69b(cliente("contador"), { repositorio: libro.repo, origen: origen(CSV) }),
+      (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "no_es_operador",
+    );
+    await assert.rejects(
+      () => leerVista69b(cliente("tarjetahabiente"), null, { repositorio: libro.repo }),
       (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "sin_permiso",
     );
-    assert.equal(puedeAbrirLista69b(sesion("tarjetahabiente"), false), false);
-    assert.equal(puedeAbrirLista69b(sesion("solicitante"), false), true);
+    const solicitante = await leerVista69b(cliente("solicitante"), null, { repositorio: libro.repo });
+    assert.equal(solicitante.puedeGuardar, false);
     const invalido = await consultarRfc("XAXX010101000", { repositorio: libro.repo });
     assert.equal(invalido.tipo, "invalida");
   });
 
   it("la copia más reciente es la que se consulta", async () => {
     const libro = memoria();
-    await guardarListado69b(sesion("administrador"), {
+    await guardarListado69b(personal(), {
       repositorio: libro.repo,
       origen: origen(CSV),
       ahora: () => new Date("2026-10-01T12:00:00.000Z"),
       id: () => COPIA,
-      esOperador: false,
     });
     const segunda = "44444444-4444-4444-8444-444444444444";
     const otro = CSV.replace("Presunto", "Desvirtuado").replace("30 de septiembre de 2026", "30 de septiembre de 2026");
-    await guardarListado69b(sesion("administrador"), {
+    await guardarListado69b(personal(), {
       repositorio: libro.repo,
       origen: origen(otro),
       ahora: () => AHORA,
       id: () => segunda,
-      esOperador: false,
     });
     const vigente = await libro.repo.vigente();
     assert.equal(vigente?.id, segunda);
@@ -153,14 +152,41 @@ function origen(csv: string): OrigenListado {
   };
 }
 
-function sesion(rol: Rol): Sesion {
+function base(roles: RolCliente[], plataforma: boolean): ContextoDeTenant {
   return {
-    id: "55555555-5555-4555-8555-555555555555",
-    venceEn: AHORA,
-    usuario: { id: PERSONA, nombre: "Ana", correo: "ana@ejemplo.test" },
-    companyId: EMPRESA,
-    rol,
+    sesionId: "55555555-5555-4555-8555-555555555555",
+    peticionId: null,
+    superficie: plataforma ? "sofipo" : "cliente",
+    persona: { id: PERSONA, nombre: "Ana", correo: "ana@ejemplo.test" },
+    segundoFactor: "totp",
+    empresa: plataforma
+      ? null
+      : {
+          id: EMPRESA,
+          rfc: "EKU9003173C9",
+          razonSocial: "Escuela",
+          operadorId: "66666666-6666-4666-8666-666666666666",
+          estado: "activa",
+          demostracion: true,
+        },
+    roles,
+    personal: plataforma
+      ? { operadorId: "66666666-6666-4666-8666-666666666666", roles: ["administracion_plataforma"] }
+      : null,
+    empresas: [],
+    capacidades: capacidadesDe({
+      rolesCliente: plataforma ? [] : roles,
+      rolesPlataforma: plataforma ? ["administracion_plataforma"] : [],
+    }),
   };
+}
+
+function cliente(rol: RolCliente): ContextoDeTenant {
+  return base([rol], false);
+}
+
+function personal(): ContextoDeTenant {
+  return base([], true);
 }
 
 function memoria(): { repo: Repositorio69b; guardados: number } {
@@ -178,7 +204,7 @@ function memoria(): { repo: Repositorio69b; guardados: number } {
         .map((fila) => fila.fila.situacion)
         .sort((a, b) => a.localeCompare(b, "es"));
     },
-    async guardar(entrada) {
+    async guardar(_ctx, entrada) {
       const contribuyentes = new Set(entrada.filas.map((fila) => fila.rfc)).size;
       snapshots.push({
         id: entrada.id,

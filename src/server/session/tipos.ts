@@ -1,34 +1,26 @@
-export const ROLES = [
-  "administrador",
-  "solicitante",
-  "liberador",
-  "tarjetahabiente",
-  "contador",
-] as const;
-
-export type Rol = (typeof ROLES)[number];
-
 export type UsuarioPublico = {
   id: string;
   nombre: string;
   correo: string;
 };
 
+export const METODOS_SEGUNDO_FACTOR = ["passkey", "totp", "respaldo"] as const;
+export type MetodoSegundoFactor = (typeof METODOS_SEGUNDO_FACTOR)[number];
+
+/**
+ * La sesión dice quién es la persona y si ya verificó su segundo factor. No
+ * dice en qué empresa está ni con qué rol: eso lo resuelve el contexto de
+ * tenant con la empresa de la ruta.
+ */
 export type Sesion = {
   id: string;
   venceEn: Date;
   usuario: UsuarioPublico;
-  companyId: string | null;
-  rol: Rol | null;
+  /** Vacío: sesión parcial. Solo sirve para verificar el segundo factor. */
+  segundoFactor: { metodo: MetodoSegundoFactor; en: Date } | null;
 };
 
 export type SesionAbierta = {
   sesion: Sesion;
   setCookie: string;
-};
-
-export type AltaCuenta = {
-  nombre: string;
-  correo: string;
-  contrasena: string;
 };

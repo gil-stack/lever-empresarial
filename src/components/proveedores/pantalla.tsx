@@ -3,14 +3,12 @@ import { FRASE_INSTITUCION_PENDIENTE, institucionTradicional } from "@/dominio/c
 import {
   fechaDeArchivo,
   horaDeLectura,
-  puedeDarDeAltaProveedor,
   relatoDePago,
   type ListaVisible,
   type ProveedorVisible,
 } from "@/dominio/proveedores";
 import { FRASE_SIN_PAGO } from "@/dominio/lista-69b";
 import type { LecturaClabes } from "@/server/proveedores/tipos";
-import type { Rol } from "@/server/session";
 import {
   Ausencia,
   CabezaPagina,
@@ -29,17 +27,17 @@ import { FormularioProveedor } from "./formulario";
 import { HistorialClabes } from "./panel";
 
 export function PantallaProveedores({
-  rol,
+  edita,
   lista,
   proveedores,
   historial,
 }: {
-  rol: Rol;
+  /** Lo decide la matriz de capacidades con el contexto. */
+  edita: boolean;
   lista: ListaVisible;
   proveedores: ProveedorVisible[];
   historial: LecturaClabes;
 }) {
-  const edita = puedeDarDeAltaProveedor(rol);
   const nombres: Record<string, string> = {};
   for (const proveedor of proveedores) nombres[proveedor.id] = proveedor.razonSocial;
 

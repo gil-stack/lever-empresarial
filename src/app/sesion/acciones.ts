@@ -3,37 +3,21 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { fijarCookieDeSesion } from "@/server/entrada";
-import { ErrorDeDominio, cerrarSesion, entrar } from "@/server/session";
-import { NOMBRE_COOKIE } from "@/server/session/cookie";
-import type { EstadoEntrada } from "./estado";
+import { NOMBRE_COOKIE_ENTRADA, NOMBRE_COOKIE_PORTAL } from "@/server/autenticacion/cookie";
+import { fijarCookiesDeSesion } from "@/server/entrada";
+import { cerrarSesion } from "@/server/session";
+import { NOMBRE_COOKIE, NOMBRE_COOKIE_PARCIAL } from "@/server/session/cookie";
 
 export async function salir(): Promise<void> {
   const jar = await cookies();
-  const token = jar.get(NOMBRE_COOKIE)?.value;
-  const cierre = await cerrarSesion(token ? `${NOMBRE_COOKIE}=${token}` : null);
-  await fijarCookieDeSesion(cierre.setCookie);
+  const partes = [NOMBRE_COOKIE, NOMBRE_COOKIE_PARCIAL]
+    .map((nombre) => [nombre, jar.get(nombre)?.value] as const)
+    .filter(([, valor]) => Boolean(valor))
+    .map(([nombre, valor]) => `${nombre}=${valor}`);
+  const cierre = await cerrarSesion(partes.join("; ") || null);
+  await fijarCookiesDeSesion(cierre.setCookies);
+  const vacia = { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/", maxAge: 0 };
+  jar.set(NOMBRE_COOKIE_ENTRADA, "", vacia);
+  jar.set(NOMBRE_COOKIE_PORTAL, "", vacia);
   redirect("/");
-}
-
-export async function enviarEntrada(
-  _previo: EstadoEntrada,
-  formData: FormData,
-): Promise<EstadoEntrada> {
-  try {
-    const abierta = await entrar({
-      correo: String(formData.get("correo") ?? ""),
-      contrasena: String(formData.get("contrasena") ?? ""),
-    });
-    await fijarCookieDeSesion(abierta.setCookie);
-  } catch (error) {
-    if (error instanceof ErrorDeDominio) {
-      if (error.codigo === "credenciales_invalidas") {
-        return { tipo: "invalido", mensaje: "El correo o la contraseña no coinciden." };
-      }
-      return { tipo: "invalido", mensaje: "No se pudo entrar. Vuelve a intentar." };
-    }
-    throw error;
-  }
-  redirect("/consola");
 }

@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 
-import { ErrorDeDominio } from "./error-de-dominio";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 
 const RONDAS_BCRYPT = 12;
 

@@ -1,9 +1,12 @@
-import type { Rol } from "../session/tipos.ts";
+import type { RolCliente } from "../../nucleo/capacidades.ts";
+import type { ContextoConEmpresa } from "../../nucleo/contexto.ts";
+import type { Actor } from "../bitacora/auditar.ts";
 
+/** Membresía activa con sus roles. Las invitadas no firman ni administran. */
 export type Membresia = {
   userId: string;
   companyId: string;
-  rol: Rol;
+  roles: RolCliente[];
   deBaja?: boolean;
 };
 
@@ -31,13 +34,15 @@ export type LoteDePrueba = {
 
 export type FilaDeLote = SolicitudDeLote | LoteDePrueba;
 
+export type CambioDeRol = { userId: string; rol: RolCliente; actor: Actor };
+
 export type RepositorioRoles = {
-  usuarioExiste: (userId: string) => Promise<boolean>;
-  membresiaDe: (userId: string) => Promise<Membresia | null>;
-  membresiasDeLaEmpresa: (companyId: string) => Promise<Membresia[]>;
-  insertarMembresia: (membresia: Membresia) => Promise<void>;
-  actualizarRol: (membresia: Membresia) => Promise<void>;
-  insertarSolicitud: (solicitud: SolicitudDeLote) => Promise<void>;
-  leerLote: (id: string) => Promise<FilaDeLote | null>;
-  cerrarLiberacion: (lote: LoteDePrueba) => Promise<void>;
+  membresiaDe: (ctx: ContextoConEmpresa, userId: string) => Promise<Membresia | null>;
+  membresiasDeLaEmpresa: (ctx: ContextoConEmpresa) => Promise<Membresia[]>;
+  /** Agrega o quita un rol con su evento, en la misma transacción. */
+  agregarRol: (ctx: ContextoConEmpresa, cambio: CambioDeRol) => Promise<void>;
+  quitarRol: (ctx: ContextoConEmpresa, cambio: CambioDeRol) => Promise<void>;
+  insertarSolicitud: (ctx: ContextoConEmpresa, solicitud: SolicitudDeLote) => Promise<void>;
+  leerLote: (ctx: ContextoConEmpresa, id: string) => Promise<FilaDeLote | null>;
+  cerrarLiberacion: (ctx: ContextoConEmpresa, lote: LoteDePrueba) => Promise<void>;
 };

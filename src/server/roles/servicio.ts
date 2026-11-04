@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 
-import { ErrorDeDominio } from "../session/error-de-dominio.ts";
-import type { Sesion } from "../session/tipos.ts";
+import { exigir, exigirEmpresa, puede, type ContextoConEmpresa, type ContextoDeTenant } from "../../nucleo/contexto.ts";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio.ts";
+import { actorDeCliente } from "../bitacora/auditar.ts";
 import {
   canonUsuario,
   esRolAsignable,
@@ -9,7 +10,6 @@ import {
   leerEntradaDeSolicitud,
   loteNoGuardable,
   mismoUsuario,
-  puede,
   rechazoDeLiberacion,
   rechazoDeSolicitud,
   uuidValido,
@@ -30,63 +30,56 @@ type EntradaDeRol = {
 };
 
 /**
- * El rol sale de la membresía guardada, no del objeto de sesión que armó
- * el llamador. El companyId que viaje en la entrada no elige la empresa.
+ * Da un rol más a una persona con membresía activa en la empresa del
+ * contexto. El companyId que viaje en la entrada no elige la empresa.
+ * Las personas nuevas entran por invitación, no por aquí.
  */
-export async function asignarMembresia(
-  sesion: Sesion | null | undefined,
+export async function asignarRol(
+  ctx: ContextoDeTenant | null | undefined,
   entrada: EntradaDeRol,
   deps?: DependenciasRoles,
 ): Promise<Membresia> {
-  const actor = await exigirMembresia(sesion, deps);
-  if (!puede(actor.rol, "administrar_membresias")) throw new ErrorDeDominio("sin_permiso");
-  // La empresa la da la membresía de quien administra, no este campo.
-  void entrada.companyId;
+  const conEmpresa = exigirAdministracion(ctx);
   const userId = exigirUsuario(entrada.userId);
   const rol = exigirRol(entrada.rol);
   const repo = await repositorioDe(deps);
-  if (!(await repo.usuarioExiste(userId))) throw new ErrorDeDominio("usuario_ausente");
-  const previa = await repo.membresiaDe(userId);
-  if (previa) {
-    throw new ErrorDeDominio(previa.companyId === actor.companyId ? "membresia_existente" : "segunda_razon_social");
-  }
-  const membresia: Membresia = { userId, companyId: actor.companyId, rol };
-  await repo.insertarMembresia(membresia);
-  return membresia;
+  const previa = await repo.membresiaDe(conEmpresa, userId);
+  if (!previa) throw new ErrorDeDominio("sin_membresia");
+  if (previa.roles.includes(rol)) return previa;
+  await repo.agregarRol(conEmpresa, { userId, rol, actor: actorDeCliente(conEmpresa) });
+  return { ...previa, roles: [...previa.roles, rol] };
 }
 
-export async function cambiarRol(
-  sesion: Sesion | null | undefined,
+/** Quita un rol. La empresa no se queda sin administrador y nadie queda sin roles. */
+export async function quitarRol(
+  ctx: ContextoDeTenant | null | undefined,
   entrada: EntradaDeRol,
   deps?: DependenciasRoles,
 ): Promise<Membresia> {
-  const actor = await exigirMembresia(sesion, deps);
-  if (!puede(actor.rol, "administrar_membresias")) throw new ErrorDeDominio("sin_permiso");
-  void entrada.companyId;
+  const conEmpresa = exigirAdministracion(ctx);
   const userId = exigirUsuario(entrada.userId);
   const rol = exigirRol(entrada.rol);
   const repo = await repositorioDe(deps);
-  const previa = await repo.membresiaDe(userId);
-  if (!previa || previa.companyId !== actor.companyId) throw new ErrorDeDominio("sin_membresia");
-  if (previa.rol === rol) return previa;
-  if (previa.rol === "administrador" && rol !== "administrador") {
-    const miembros = await repo.membresiasDeLaEmpresa(actor.companyId);
-    const administradores = miembros.filter((miembro) => miembro.rol === "administrador");
+  const previa = await repo.membresiaDe(conEmpresa, userId);
+  if (!previa) throw new ErrorDeDominio("sin_membresia");
+  if (!previa.roles.includes(rol)) return previa;
+  if (previa.roles.length === 1) throw new ErrorDeDominio("ultimo_rol");
+  if (rol === "administrador") {
+    const miembros = await repo.membresiasDeLaEmpresa(conEmpresa);
+    const administradores = miembros.filter((miembro) => miembro.roles.includes("administrador") && !miembro.deBaja);
     if (administradores.length < 2) throw new ErrorDeDominio("ultimo_administrador");
   }
-  const membresia: Membresia = { userId, companyId: actor.companyId, rol };
-  await repo.actualizarRol(membresia);
-  return membresia;
+  await repo.quitarRol(conEmpresa, { userId, rol, actor: actorDeCliente(conEmpresa) });
+  return { ...previa, roles: previa.roles.filter((actual) => actual !== rol) };
 }
 
 /** La entrada del contador exporta la póliza. No devuelve una acción de soltar dinero. */
 export async function entrarAPoliza(
-  sesion: Sesion | null | undefined,
-  deps?: DependenciasRoles,
+  ctx: ContextoDeTenant | null | undefined,
 ): Promise<{ accion: "exportar_poliza"; companyId: string }> {
-  const actor = await exigirMembresia(sesion, deps);
-  if (!puede(actor.rol, "exportar_poliza")) throw new ErrorDeDominio("sin_entrada_a_poliza");
-  return { accion: "exportar_poliza", companyId: actor.companyId };
+  const conEmpresa = exigirEmpresa(ctx);
+  if (!puede(conEmpresa, "cliente.poliza.ver")) throw new ErrorDeDominio("sin_entrada_a_poliza");
+  return { accion: "exportar_poliza", companyId: conEmpresa.empresa.id };
 }
 
 /**
@@ -94,24 +87,25 @@ export async function entrarAPoliza(
  * No escribe al liberador: esa firma es otra persona, en otra llamada.
  */
 export async function solicitarLoteDePrueba(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   entrada: unknown,
   deps?: DependenciasRoles,
 ): Promise<SolicitudDeLote> {
   const leida = leerEntradaDeSolicitud(entrada ?? {});
   if (!leida.ok) throw new ErrorDeDominio(leida.codigo);
-  const actor = await exigirMembresia(sesion, deps);
+  const conEmpresa = exigirEmpresa(ctx);
+  const repo = await repositorioDe(deps);
+  const actor = await exigirMembresia(conEmpresa, repo);
   if (leida.solicitanteId && !mismoUsuario(leida.solicitanteId, actor.userId)) {
     throw new ErrorDeDominio("firma_ajena");
   }
-  const repo = await repositorioDe(deps);
-  const miembros = await repo.membresiasDeLaEmpresa(actor.companyId);
+  const miembros = await repo.membresiasDeLaEmpresa(conEmpresa);
   const codigo = rechazoDeSolicitud({ actor, miembros });
   if (codigo) throw new ErrorDeDominio(codigo);
 
   const solicitud: SolicitudDeLote = {
     id: (deps?.id ?? randomUUID)(),
-    companyId: actor.companyId,
+    companyId: conEmpresa.empresa.id,
     solicitanteId: canonUsuario(actor.userId),
     solicitadoEn: (deps?.ahora ?? (() => new Date()))(),
     liberadorId: null,
@@ -120,35 +114,36 @@ export async function solicitarLoteDePrueba(
   };
   const estructural = loteNoGuardable(solicitud);
   if (estructural) throw new ErrorDeDominio(estructural);
-  await repo.insertarSolicitud(solicitud);
+  await repo.insertarSolicitud(conEmpresa, solicitud);
   return solicitud;
 }
 
 /**
  * Segundo acto. La sesión es quien libera, y no puede ser quien pidió el lote.
- * El administrador no libera. No hay monto.
+ * Solo libera quien tiene el rol de liberador. No hay monto.
  */
 export async function liberarLoteDePrueba(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   entrada: unknown,
   deps?: DependenciasRoles,
 ): Promise<LoteDePrueba> {
   const leida = leerEntradaDeLiberacion(entrada);
   if (!leida.ok) throw new ErrorDeDominio(leida.codigo);
-  const actor = await exigirMembresia(sesion, deps);
+  const conEmpresa = exigirEmpresa(ctx);
   const repo = await repositorioDe(deps);
-  const fila = await repo.leerLote(leida.loteId);
+  const actor = await exigirMembresia(conEmpresa, repo);
+  const fila = await repo.leerLote(conEmpresa, leida.loteId);
   if (!fila) throw new ErrorDeDominio("lote_ausente");
   if (fila.companyId !== actor.companyId) throw new ErrorDeDominio("firmante_ajeno");
   if (fila.liberadorId) throw new ErrorDeDominio("lote_ya_firmado");
   const [solicitante, miembros] = await Promise.all([
-    repo.membresiaDe(fila.solicitanteId),
-    repo.membresiasDeLaEmpresa(actor.companyId),
+    repo.membresiaDe(conEmpresa, fila.solicitanteId),
+    repo.membresiasDeLaEmpresa(conEmpresa),
   ]);
   const codigo = rechazoDeLiberacion({
     actor,
     solicitanteId: fila.solicitanteId,
-    solicitante: deLaEmpresa(solicitante, actor.companyId),
+    solicitante,
     miembros,
   });
   if (codigo) throw new ErrorDeDominio(codigo);
@@ -164,14 +159,16 @@ export async function liberarLoteDePrueba(
   };
   const estructural = loteNoGuardable(lote);
   if (estructural) throw new ErrorDeDominio(estructural);
-  await repo.cerrarLiberacion(lote);
+  await repo.cerrarLiberacion(conEmpresa, lote);
   return lote;
 }
 
-async function exigirMembresia(sesion: Sesion | null | undefined, deps?: DependenciasRoles): Promise<Membresia> {
-  const userId = sesion?.usuario?.id;
-  if (typeof userId !== "string" || !uuidValido(userId)) throw new ErrorDeDominio("sesion_ausente");
-  const membresia = await (await repositorioDe(deps)).membresiaDe(userId);
+function exigirAdministracion(ctx: ContextoDeTenant | null | undefined): ContextoConEmpresa {
+  return exigir(ctx, "cliente.membresias.administrar");
+}
+
+async function exigirMembresia(ctx: ContextoConEmpresa, repo: RepositorioRoles): Promise<Membresia> {
+  const membresia = await repo.membresiaDe(ctx, ctx.persona.id);
   if (!membresia) throw new ErrorDeDominio("sin_membresia");
   return membresia;
 }
@@ -184,11 +181,6 @@ function exigirUsuario(valor: unknown): string {
 function exigirRol(valor: unknown): RolAsignable {
   if (typeof valor !== "string" || !esRolAsignable(valor)) throw new ErrorDeDominio("rol_no_asignable");
   return valor;
-}
-
-function deLaEmpresa(membresia: Membresia | null, companyId: string): Membresia | null {
-  if (!membresia || membresia.companyId !== companyId) return null;
-  return membresia;
 }
 
 async function repositorioDe(deps?: DependenciasRoles): Promise<RepositorioRoles> {

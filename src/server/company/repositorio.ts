@@ -1,50 +1,33 @@
-import { conTransaccion, consultar, type Consulta } from "../session/db";
-import { ErrorDeDominio } from "../session/error-de-dominio";
-import type { Empresa } from "./tipos";
+import { auditar, actorDePersonal } from "../bitacora/auditar";
+import { baseCliente, basePlataforma, type ContextoConEmpresa, type ContextoDePersonal } from "../../nucleo/contexto";
+import { conContexto } from "../../nucleo/db";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
+import type { Empresa, EmpresaNormalizada } from "./tipos";
 
-export const ROL_DE_ALTA = "administrador";
-
-// companies: id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, alta_at.
-// memberships: user_id, company_id, rol. Una persona, una empresa
-// (memberships_una_persona_una_empresa). El alta bloquea la fila de users.
 export const SQL = {
-  bloquearCuenta: "select id from users where id = $1 for update",
-  tieneEmpresa: "select 1 as presente from memberships where user_id = $1 limit 1",
   rfcOcupado: "select 1 as presente from companies where rfc = $1 limit 1",
   insertarEmpresa: `
-    insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, alta_at)
-    values ($1, $2, $3, $4, $5, $6, now())
+    insert into companies (
+      id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, alta_at,
+      operator_id, estado, demostracion, originada_por
+    )
+    values ($1, $2, $3, $4, $5, $6, now(), $7, 'activa', $8, $9)
     returning id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, alta_at
   `,
-  insertarMembresia: "insert into memberships (user_id, company_id, rol) values ($1, $2, $3)",
   leerEmpresa: `
-    select c.id, c.rfc, c.razon_social, c.codigo_postal, c.regimen, c.uso_cfdi, c.alta_at
-    from memberships m
-    join companies c on c.id = m.company_id
-    where m.user_id = $1
-    limit 1
+    select id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, alta_at
+    from companies
+    where id = $1
   `,
 } as const;
 
-export type EmpresaInsertada = {
-  id: string;
-  rfc: string;
-  razonSocial: string;
-  codigoPostal: string;
-  regimen: string;
-  usoCfdi: string;
-};
-
-export type CuentaBloqueada = {
-  tieneEmpresa: () => Promise<boolean>;
-  rfcOcupado: (rfc: string) => Promise<boolean>;
-  insertar: (empresa: EmpresaInsertada) => Promise<Empresa>;
-  consulta: Consulta;
-};
-
 export type RepositorioEmpresas = {
-  conCuenta: <T>(userId: string, fn: (cuenta: CuentaBloqueada) => Promise<T>) => Promise<T>;
-  leerDeLaCuenta: (userId: string) => Promise<Empresa | null>;
+  /** El personal del operador da de alta. La empresa nace con su operador y su evento. */
+  insertar: (
+    ctx: ContextoDePersonal,
+    empresa: EmpresaNormalizada & { id: string; demostracion: boolean },
+  ) => Promise<Empresa>;
+  leer: (ctx: ContextoConEmpresa) => Promise<Empresa | null>;
 };
 
 type FilaEmpresa = {
@@ -59,17 +42,37 @@ type FilaEmpresa = {
 
 export function repositorioPg(): RepositorioEmpresas {
   return {
-    conCuenta(userId, fn) {
-      return conTransaccion(async (consulta) => {
-        const usuario = await consulta.query(SQL.bloquearCuenta, [userId]);
-        if (usuario.rows.length === 0) throw new ErrorDeDominio("usuario_ausente");
-        return fn(cuentaDesde(consulta, userId));
+    insertar(ctx, empresa) {
+      return conContexto(basePlataforma(ctx, empresa.id), async (consulta) => {
+        const ocupado = await consulta.query(SQL.rfcOcupado, [empresa.rfc]);
+        if (ocupado.rows.length > 0) throw new ErrorDeDominio("rfc_duplicado");
+        const insertada = await consulta.query(SQL.insertarEmpresa, [
+          empresa.id,
+          empresa.rfc,
+          empresa.razonSocial,
+          empresa.codigoPostal,
+          empresa.regimen,
+          empresa.usoCfdi,
+          ctx.personal.operadorId,
+          empresa.demostracion,
+          ctx.persona.id,
+        ]);
+        const fila = insertada.rows[0] as FilaEmpresa | undefined;
+        if (!fila) throw new ErrorDeDominio("base_no_disponible");
+        await auditar(consulta, actorDePersonal(ctx, empresa.id, "comando"), {
+          accion: "alta_empresa",
+          identificador: empresa.id,
+          cambio: { demostracion: empresa.demostracion },
+        });
+        return mapearEmpresa(fila);
       });
     },
-    async leerDeLaCuenta(userId) {
-      const resultado = await consultar(SQL.leerEmpresa, [userId]);
-      const fila = resultado.rows[0] as FilaEmpresa | undefined;
-      return fila ? mapearEmpresa(fila) : null;
+    leer(ctx) {
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        const resultado = await consulta.query(SQL.leerEmpresa, [ctx.empresa.id]);
+        const fila = resultado.rows[0] as FilaEmpresa | undefined;
+        return fila ? mapearEmpresa(fila) : null;
+      });
     },
   };
 }
@@ -95,33 +98,5 @@ export function mapearEmpresa(fila: FilaEmpresa): Empresa {
     regimen: fila.regimen,
     usoCfdi: fila.uso_cfdi,
     altaEn,
-  };
-}
-
-function cuentaDesde(consulta: Consulta, userId: string): CuentaBloqueada {
-  return {
-    async tieneEmpresa() {
-      const resultado = await consulta.query(SQL.tieneEmpresa, [userId]);
-      return resultado.rows.length > 0;
-    },
-    async rfcOcupado(rfc) {
-      const resultado = await consulta.query(SQL.rfcOcupado, [rfc]);
-      return resultado.rows.length > 0;
-    },
-    async insertar(empresa) {
-      const insertada = await consulta.query(SQL.insertarEmpresa, [
-        empresa.id,
-        empresa.rfc,
-        empresa.razonSocial,
-        empresa.codigoPostal,
-        empresa.regimen,
-        empresa.usoCfdi,
-      ]);
-      await consulta.query(SQL.insertarMembresia, [userId, empresa.id, ROL_DE_ALTA]);
-      const fila = insertada.rows[0] as FilaEmpresa | undefined;
-      if (!fila) throw new ErrorDeDominio("base_no_disponible");
-      return mapearEmpresa(fila);
-    },
-    consulta,
   };
 }

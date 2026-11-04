@@ -1,3 +1,4 @@
-export { Ausencia, EtiquetaMono, Frase, Insignia, Monto } from "./cifras";
+export { Bandeja, type Decision } from "./bandeja";
+export { Ausencia, CifraGrande, EtiquetaMono, Frase, Insignia, Metrica, Metricas, Monto } from "./cifras";
 export { Aviso, Hoja, NotaRegla, Renglon, Renglones, Vacio } from "./hoja";
 export { CabezaPagina, Rejilla } from "./pagina";

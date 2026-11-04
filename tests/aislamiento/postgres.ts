@@ -84,6 +84,19 @@ export async function conBaseDesechable<T>(
   }
 }
 
+const CLAVE_APLICACION = "aplicacion-local";
+
+/** La aplicación no entra como dueña. Esta URL es el rol que las políticas filtran. */
+export function urlDeAplicacion(urlDuena: string): string {
+  const analizada = new URL(urlDuena);
+  const base = decodeURIComponent(analizada.pathname.replace(/^\//, ""));
+  ejecutar(urlDuena, `alter role plataforma_app with login password '${CLAVE_APLICACION}'`);
+  ejecutar(urlDuena, `grant connect on database ${ident(base)} to plataforma_app`);
+  analizada.username = "plataforma_app";
+  analizada.password = CLAVE_APLICACION;
+  return analizada.toString();
+}
+
 export function aplicarArchivo(url: string, archivo: string): void {
   correrPsql(url, ["-f", archivo]);
 }
@@ -94,11 +107,15 @@ export function ejecutar(url: string, sql: string): void {
 
 export function consultarJson<T>(url: string, sql: string): T {
   const salida = correrPsql(url, ["-A", "-t", "-c", sql]).trim();
-  if (!salida) throw new Error("La consulta de aislamiento no devolvió JSON.");
+  const json = salida
+    .split("\n")
+    .map((linea) => linea.trim())
+    .find((linea) => linea.startsWith("[") || linea.startsWith("{"));
+  if (!json) throw new Error("La consulta de aislamiento no devolvió JSON.");
   try {
-    return JSON.parse(salida) as T;
+    return JSON.parse(json) as T;
   } catch {
-    throw new Error(`La consulta de aislamiento no devolvió JSON.\n${salida.slice(0, 500)}`);
+    throw new Error(`La consulta de aislamiento no devolvió JSON.\n${json.slice(0, 500)}`);
   }
 }
 

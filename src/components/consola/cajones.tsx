@@ -3,7 +3,7 @@ import Link from "next/link";
 import { formatoPesos } from "@/dominio/centavos";
 import { ledeCajones, type VistaCajones } from "@/dominio/politica";
 
-export function Cajones({ vista, enlace = true }: { vista: VistaCajones; enlace?: boolean }) {
+export function Cajones({ vista, enlace = null }: { vista: VistaCajones; enlace?: string | null }) {
   return (
     <section className="saldos cajones" id="cajones" aria-labelledby="cajones-titulo">
       <h2 id="cajones-titulo">Cajones</h2>
@@ -32,7 +32,7 @@ export function Cajones({ vista, enlace = true }: { vista: VistaCajones; enlace?
       </p>
       <p className="nota-saldos">El participante sigue sin consulta. Desde aquí no se dispersa ni se envía un SPEI.</p>
       {enlace ? (
-        <Link className="enlace-texto" href="/consola/politica">
+        <Link className="enlace-texto" href={enlace}>
           Política de comprobantes
         </Link>
       ) : null}

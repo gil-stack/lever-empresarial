@@ -12,7 +12,7 @@ import {
   type ErrorCampoProveedor,
   type EstadoAltaProveedor,
 } from "@/dominio/proveedores";
-import { errorConSecreto, sesionDesdeCookie } from "@/server/entrada";
+import { contextoDeAccion, errorConSecreto } from "@/server/entrada";
 import { cambiarClabeProveedor, darDeAltaProveedor } from "@/server/proveedores";
 import { ErrorDeDominio } from "@/server/session";
 
@@ -81,13 +81,8 @@ async function leerArchivo(valor: unknown): Promise<{
   return { meta: { nombre, tipo, peso: bytes.byteLength }, bytes };
 }
 
-async function leerSesion() {
-  try {
-    return await sesionDesdeCookie();
-  } catch (error) {
-    if (error instanceof ErrorDeDominio || errorConSecreto(error)) return null;
-    throw error;
-  }
+function leerSesion() {
+  return contextoDeAccion();
 }
 
 function traducir(error: unknown): EstadoAltaProveedor {
@@ -148,7 +143,7 @@ export async function guardarClabeProveedor(
   formData: FormData,
 ): Promise<EstadoClabe> {
   try {
-    const sesion = await sesionDesdeCookie();
+    const sesion = await contextoDeAccion();
     const resultado = await cambiarClabeProveedor(sesion, {
       supplierId: texto(formData, "supplierId"),
       clabe: texto(formData, "clabe"),

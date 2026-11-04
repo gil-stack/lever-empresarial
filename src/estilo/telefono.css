@@ -1,13 +1,20 @@
 /*
- * Teléfono: el aparato de quien paga.
- * No usa la barra lateral, el pie ni el kicker de la consola.
+ * Teléfono: el aparato de quien paga, Arco en el bolsillo.
+ * No usa la barra lateral, la empresa, el pie ni el kicker del portal del cliente.
  */
+
+/* Sin elección, el teléfono arranca oscuro, como en la identidad; «Claro» se respeta. */
+:root:not([data-tema="claro"]) .marco-telefono {
+  color-scheme: dark;
+}
 
 .marco-telefono {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
+  background: var(--papel);
+  color: var(--tinta);
 }
 
 .marco-telefono > main {
@@ -28,20 +35,29 @@
   padding: 22px 22px 20px;
   border: 1px solid var(--linea);
   border-radius: 40px;
-  background: var(--hoja);
+  background:
+    radial-gradient(120% 55% at 105% -5%, var(--brillo-telefono), transparent 62%),
+    var(--fondo-telefono);
   box-shadow:
     0 1px 2px var(--sombra),
     0 24px 48px -24px var(--sombra);
 }
 
 .telefono h1 {
-  font-size: clamp(2rem, 8vw, 2.5rem);
-  line-height: 1.05;
+  font-size: clamp(1.9rem, 8vw, 2.3rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
 }
 
 .telefono .lede {
   max-width: 32ch;
   margin-top: 14px;
+}
+
+.telefono .lede,
+.pie-app p {
+  color: var(--tinta-suave);
 }
 
 .telefono-cabeza {
@@ -53,19 +69,40 @@
 }
 
 .marca-app {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
   color: var(--tinta);
-  font-family: var(--fuente-sans);
-  font-size: 0.95rem;
-  font-weight: 650;
-  letter-spacing: 0.01em;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   line-height: 1;
+}
+
+.marca-app .banderin {
+  display: block;
+  width: 38px;
+  height: auto;
+}
+
+.marca-app .palabra-arco {
+  display: block;
+  width: 46px;
+  height: auto;
+}
+
+/* En el teléfono la acción principal es una píldora clara sobre negro: es otra superficie */
+.telefono .boton {
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 999px;
+  font-size: 0.95rem;
 }
 
 .kicker-app {
   margin: 0 0 8px;
   color: var(--tinta-tenue);
-  font-family: var(--fuente-sans);
   font-size: 0.95rem;
   font-weight: 500;
   letter-spacing: 0;

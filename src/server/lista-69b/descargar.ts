@@ -1,5 +1,5 @@
 import { PAGINA_LISTADO_69B, urlPublica } from "../../dominio/lista-69b";
-import { ErrorDeDominio } from "../session/error-de-dominio";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 
 const TOPE_PAGINA = 1_000_000;
 const TOPE_ARCHIVO = 20_000_000;

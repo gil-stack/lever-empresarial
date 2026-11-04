@@ -73,6 +73,8 @@ test("la copia nueva apaga el pago y la CLABE no cruza de empresa", async () => 
       `begin;
        insert into lista_69b_snapshots (id, fecha_archivo, cargado_en)
          values ('${COPIA_2}', date '2026-10-31', timestamptz '2026-11-04 21:09:00+00');
+       insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador)
+         values ((select id from operators order by alta_en limit 1), 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', '${COPIA_2}');
        insert into lista_69b_rows (snapshot_id, rfc, situacion)
          values ('${COPIA_2}', 'AAA080808HL8', 'Definitivo');
        commit;`,
@@ -139,16 +141,18 @@ function sembrar(url: string): void {
     `begin;
      insert into users (id, nombre, correo, password_hash)
        values ('${USUARIO}', 'Elena Ríos', 'relectura@ejemplo.mx', '${HASH}');
-     insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi)
-       values ('${EMPRESA}', 'EKU9003173C9', 'Escuela Kemper', '06600', '601', 'G03');
-     insert into audit_events (id, company_id, actor_id, accion, entidad, identificador, ocurrido_en)
-       values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2', '${EMPRESA}', '${USUARIO}', 'alta_empresa', 'companies', '${EMPRESA}', now());
-     insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi)
-       values ('${OTRA}', 'PAL7202161U0', 'Otra cuenta', '06600', '601', 'G03');
-     insert into audit_events (id, company_id, actor_id, accion, entidad, identificador, ocurrido_en)
-       values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3', '${OTRA}', '${USUARIO}', 'alta_empresa', 'companies', '${OTRA}', now());
+     insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, operator_id, estado, demostracion)
+       values ('${EMPRESA}', 'EKU9003173C9', 'Escuela Kemper', '06600', '601', 'G03', (select id from operators order by alta_en limit 1), 'activa', true);
+     insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+       values ((select id from operators order by alta_en limit 1), '${EMPRESA}', 'miembro', '${USUARIO}', 'cliente', 'alta_empresa', 'companies', '${EMPRESA}');
+     insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, operator_id, estado, demostracion)
+       values ('${OTRA}', 'PAL7202161U0', 'Otra cuenta', '06600', '601', 'G03', (select id from operators order by alta_en limit 1), 'activa', true);
+     insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+       values ((select id from operators order by alta_en limit 1), '${OTRA}', 'miembro', '${USUARIO}', 'cliente', 'alta_empresa', 'companies', '${OTRA}');
      insert into lista_69b_snapshots (id, fecha_archivo, cargado_en)
        values ('${COPIA_1}', date '2026-09-30', timestamptz '2026-10-01 15:00:00+00');
+     insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador)
+       values ((select id from operators order by alta_en limit 1), 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', '${COPIA_1}');
      insert into lista_69b_rows (snapshot_id, rfc, situacion)
        values ('${COPIA_1}', 'PAL7202161U0', 'Presunto');
      insert into documents (id, company_id, clave_blob, hash_sha256, tipo, nombre_original, creado_en)
@@ -174,18 +178,18 @@ function sembrar(url: string): void {
        'CABL840215RF4', 'Taller Norte', null, null,
        timestamptz '2026-10-02 15:00:00+00', false, timestamptz '2026-10-02 16:00:00+00'
      );
-     insert into audit_events (id, company_id, actor_id, accion, entidad, identificador, ocurrido_en)
+     insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
        values
-         ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4', '${EMPRESA}', '${USUARIO}', 'alta_proveedor', 'suppliers', '${ENTRA}', now()),
-         ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa5', '${EMPRESA}', '${USUARIO}', 'alta_proveedor', 'suppliers', '${SIN_ARCHIVO}', now());
+         ((select id from operators order by alta_en limit 1), '${EMPRESA}', 'miembro', '${USUARIO}', 'cliente', 'alta_proveedor', 'suppliers', '${ENTRA}'),
+         ((select id from operators order by alta_en limit 1), '${EMPRESA}', 'miembro', '${USUARIO}', 'cliente', 'alta_proveedor', 'suppliers', '${SIN_ARCHIVO}');
      insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde)
        values
          ('${CLABE_ENTRA}', '${EMPRESA}', '${ENTRA}', '${BANAMEX}', true, timestamptz '2026-10-02 15:00:00+00'),
          ('${CLABE_SIN}', '${EMPRESA}', '${SIN_ARCHIVO}', '${FONDOS}', true, timestamptz '2026-10-02 16:00:00+00');
-     insert into audit_events (id, company_id, actor_id, accion, entidad, identificador, ocurrido_en)
+     insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
        values
-         ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa6', '${EMPRESA}', '${USUARIO}', 'clabe_proveedor', 'supplier_clabes', '${CLABE_ENTRA}', now()),
-         ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa7', '${EMPRESA}', '${USUARIO}', 'clabe_proveedor', 'supplier_clabes', '${CLABE_SIN}', now());
+         ((select id from operators order by alta_en limit 1), '${EMPRESA}', 'miembro', '${USUARIO}', 'cliente', 'clabe_proveedor', 'supplier_clabes', '${CLABE_ENTRA}'),
+         ((select id from operators order by alta_en limit 1), '${EMPRESA}', 'miembro', '${USUARIO}', 'cliente', 'clabe_proveedor', 'supplier_clabes', '${CLABE_SIN}');
      commit;`,
   );
 }

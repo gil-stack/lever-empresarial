@@ -20,7 +20,7 @@ export function PanelLista69b({ vista }: { vista: VistaLista69b }) {
       lateral={
         <>
           <Archivo vista={vista} />
-          {vista.puedeGuardar ? <Carga /> : <NotaRegla>La copia la guarda el administrador o el operador de la plataforma.</NotaRegla>}
+          {vista.puedeGuardar ? <Carga /> : <NotaRegla>La copia la guarda la plataforma. El administrador de la empresa no la modifica.</NotaRegla>}
         </>
       }
     />

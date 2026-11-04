@@ -1,11 +1,20 @@
 import { randomBytes, randomUUID } from "node:crypto";
 
-import { encabezadoCerrarSesion, encabezadoDeSesion, leerToken, VIGENCIA_SESION_MS } from "./cookie";
-import { ErrorDeDominio } from "./error-de-dominio";
+import {
+  encabezadoCerrarSesion,
+  encabezadoCerrarSesionParcial,
+  encabezadoDeSesion,
+  encabezadoDeSesionParcial,
+  leerToken,
+  leerTokenParcial,
+  VIGENCIA_PARCIAL_MS,
+  VIGENCIA_SESION_MS,
+} from "./cookie";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { hashearContrasena, hashDeToken, tokenNuevo, verificarContrasena } from "./hash";
 import { repositorioPg, type RepositorioSesion } from "./repositorio";
-import type { AltaCuenta, Sesion, SesionAbierta } from "./tipos";
-import { correoValido, normalizarCorreo, validarCuenta } from "./validar";
+import { METODOS_SEGUNDO_FACTOR, type MetodoSegundoFactor, type Sesion, type SesionAbierta } from "./tipos";
+import { correoValido, normalizarCorreo } from "./validar";
 
 type Hashear = (contrasena: string) => Promise<string>;
 type Verificar = (contrasena: string, hash: string) => Promise<boolean>;
@@ -20,46 +29,11 @@ export type DependenciasSesion = {
 
 const rellenos = new WeakMap<Hashear, Promise<string>>();
 
-export async function abrirCuenta(
-  entrada: AltaCuenta,
-  deps?: DependenciasSesion,
-): Promise<SesionAbierta> {
-  const listo = resolver(deps);
-  const cuenta = validarCuenta(entrada);
-  if (!cuenta.ok) throw new ErrorDeDominio(cuenta.codigo);
-  const id = randomUUID();
-  const sesionId = randomUUID();
-  const token = listo.token();
-  const ahora = listo.ahora();
-  const venceEn = new Date(ahora.getTime() + VIGENCIA_SESION_MS);
-  const setCookie = encabezadoDeSesion(token, venceEn, ahora);
-  const passwordHash = await listo.hashear(cuenta.valor.contrasena);
-  await listo.repositorio.crearCuenta({
-    usuario: {
-      id,
-      nombre: cuenta.valor.nombre,
-      correo: cuenta.valor.correo,
-      passwordHash,
-    },
-    sesion: {
-      id: sesionId,
-      userId: id,
-      tokenHash: hashDeToken(token),
-      expiresAt: venceEn,
-    },
-  });
-  return {
-    setCookie,
-    sesion: {
-      id: sesionId,
-      venceEn,
-      usuario: { id, nombre: cuenta.valor.nombre, correo: cuenta.valor.correo },
-      companyId: null,
-      rol: null,
-    },
-  };
-}
-
+/**
+ * La contraseña abre una sesión parcial, en la cookie `sesion_parcial`. Esa
+ * cookie no abre ningún portal: solo deja verificar el segundo factor.
+ * Quien no ha aceptado su invitación no tiene contraseña y no entra.
+ */
 export async function entrar(
   entrada: { correo?: string; contrasena?: string },
   deps?: DependenciasSesion,
@@ -72,23 +46,61 @@ export async function entrar(
   }
   const usuario = await listo.repositorio.buscarPorCorreo(correo);
   const coincide = await contrasenaCoincide(contrasena, usuario?.passwordHash ?? null, listo.hashear, listo.verificar);
-  if (!coincide || !usuario) throw new ErrorDeDominio("credenciales_invalidas");
-  const sesionId = randomUUID();
+  if (!coincide || !usuario) {
+    await registrarFallo(listo.repositorio, usuario?.id ?? null);
+    throw new ErrorDeDominio("credenciales_invalidas");
+  }
+  return abrirSesionDe(usuario.id, listo);
+}
+
+/** Sesión parcial para una persona que ya probó su contraseña o abrió su invitación. */
+export async function abrirSesionDe(userId: string, deps?: DependenciasSesion): Promise<SesionAbierta> {
+  const listo = resolver(deps);
+  const token = listo.token();
+  const ahora = listo.ahora();
+  const venceEn = new Date(ahora.getTime() + VIGENCIA_PARCIAL_MS);
+  const setCookie = encabezadoDeSesionParcial(token, venceEn, ahora);
+  await listo.repositorio.abrirSesion({
+    id: randomUUID(),
+    userId,
+    tokenHash: hashDeToken(token),
+    expiresAt: venceEn,
+  });
+  const parcial = await listo.repositorio.buscarPorTokenHash(hashDeToken(token), ahora, false);
+  if (!parcial) throw new ErrorDeDominio("base_no_disponible");
+  return { setCookie, sesion: parcial };
+}
+
+/**
+ * Contrato con el verificador del segundo factor. Lo llama solo después de
+ * comprobar la passkey o el código TOTP de la persona de la sesión parcial.
+ * Pone la marca, cambia el token y devuelve las dos cookies: la completa y
+ * el cierre de la parcial.
+ */
+export async function completarSegundoFactor(
+  cookieHeader: string | null | undefined,
+  metodo: MetodoSegundoFactor,
+  deps?: DependenciasSesion,
+): Promise<{ sesion: Sesion; setCookies: [string, string] }> {
+  if (!(METODOS_SEGUNDO_FACTOR as readonly string[]).includes(metodo)) throw new ErrorDeDominio("entrada_invalida");
+  const parcial = leerTokenParcial(cookieHeader);
+  if (!parcial) throw new ErrorDeDominio("sesion_ausente");
+  const listo = resolver(deps);
   const token = listo.token();
   const ahora = listo.ahora();
   const venceEn = new Date(ahora.getTime() + VIGENCIA_SESION_MS);
   const setCookie = encabezadoDeSesion(token, venceEn, ahora);
-  await listo.repositorio.abrirSesion({
-    id: sesionId,
-    userId: usuario.id,
-    tokenHash: hashDeToken(token),
+  const sesion = await listo.repositorio.completarSegundoFactor({
+    tokenHashParcial: hashDeToken(parcial),
+    tokenHashCompleto: hashDeToken(token),
+    metodo,
     expiresAt: venceEn,
+    ahora,
   });
-  const vigente = await listo.repositorio.buscarPorTokenHash(hashDeToken(token), ahora);
-  if (!vigente) throw new ErrorDeDominio("base_no_disponible");
-  return { setCookie, sesion: vigente };
+  return { sesion, setCookies: [setCookie, encabezadoCerrarSesionParcial()] };
 }
 
+/** Solo la sesión completa: contraseña y segundo factor verificado. */
 export async function leerSesion(
   cookieHeader: string | null | undefined,
   deps?: DependenciasSesion,
@@ -96,30 +108,39 @@ export async function leerSesion(
   const token = leerToken(cookieHeader);
   if (!token) return null;
   const listo = resolver(deps);
-  return listo.repositorio.buscarPorTokenHash(hashDeToken(token), listo.ahora());
+  return listo.repositorio.buscarPorTokenHash(hashDeToken(token), listo.ahora(), true);
 }
 
-const UUID =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-/** Quita una persona que se creó en un alta que no llegó a tener empresa. */
-export async function descartarCuentaSinEmpresa(
-  userId: string,
+/** Para la pantalla del segundo factor: quién es la persona que lo está verificando. */
+export async function leerSesionParcial(
+  cookieHeader: string | null | undefined,
   deps?: DependenciasSesion,
-): Promise<boolean> {
-  if (typeof userId !== "string" || !UUID.test(userId)) return false;
-  return resolver(deps).repositorio.descartarCuentaSinEmpresa(userId);
+): Promise<Sesion | null> {
+  const token = leerTokenParcial(cookieHeader);
+  if (!token) return null;
+  const listo = resolver(deps);
+  return listo.repositorio.buscarPorTokenHash(hashDeToken(token), listo.ahora(), false);
 }
 
+/** Cierra la sesión que haya, completa o parcial, y borra las dos cookies. */
 export async function cerrarSesion(
   cookieHeader: string | null | undefined,
   deps?: DependenciasSesion,
-): Promise<{ setCookie: string }> {
-  const token = leerToken(cookieHeader);
-  if (token) {
-    await resolver(deps).repositorio.borrarPorTokenHash(hashDeToken(token));
+): Promise<{ setCookies: [string, string] }> {
+  const listo = resolver(deps);
+  for (const token of [leerToken(cookieHeader), leerTokenParcial(cookieHeader)]) {
+    if (token) await listo.repositorio.borrarPorTokenHash(hashDeToken(token), listo.ahora());
   }
-  return { setCookie: encabezadoCerrarSesion() };
+  return { setCookies: [encabezadoCerrarSesion(), encabezadoCerrarSesionParcial()] };
+}
+
+async function registrarFallo(repositorio: RepositorioSesion, userId: string | null): Promise<void> {
+  try {
+    await repositorio.registrarFallo(userId);
+  } catch (error) {
+    // El rechazo de la entrada no depende de que su rastro se escriba.
+    if (!(error instanceof ErrorDeDominio)) throw error;
+  }
 }
 
 function resolver(deps?: DependenciasSesion): {
@@ -138,7 +159,7 @@ function resolver(deps?: DependenciasSesion): {
   };
 }
 
-async function contrasenaCoincide(
+export async function contrasenaCoincide(
   contrasena: string,
   hash: string | null,
   hashear: Hashear,

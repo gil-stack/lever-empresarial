@@ -2,17 +2,31 @@
   "name": "plataforma-administrativa",
   "version": "0.1.0",
   "private": true,
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": "10.9.9",
+      "onFail": "ignore"
+    }
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "find src tests -name '*.test.ts' ! -name 'aislamiento.test.ts' ! -name 'dos-firmas.test.ts' ! -name 'historial-clabe.test.ts' ! -name 'relectura-69b.test.ts' ! -name 'deriva.test.ts' -print0 | xargs -0 tsx --test",
+    "test:db": "sh scripts/ci/pruebas-postgres.sh",
+    "security": "node scripts/ci/seguridad.mjs"
   },
   "dependencies": {
+    "@simplewebauthn/browser": "^13.3.0",
+    "@simplewebauthn/server": "^13.3.3",
     "@vercel/blob": "^2.8.2",
     "bcryptjs": "^2.4.3",
     "next": "16.4.4",
     "pg": "^8.23.1",
+    "qrcode": "^1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "0.0.1"
@@ -21,10 +35,16 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/pg": "^8.23.1",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.4",
+    "tsx": "^4.23.15",
+    "turbo": "^2.11.10",
     "typescript": "^5"
+  },
+  "overrides": {
+    "@vercel/cli-config": "0.3.6"
   }
 }

@@ -96,8 +96,7 @@ export function FormularioPersona({
   const [clabe, setClabe] = useState("");
   const [acceso, setAcceso] = useState<AccesoForma | "">("");
   const [correo, setCorreo] = useState("");
-  const [contrasena, setContrasena] = useState("");
-  const [rol, setRol] = useState<RolCuenta | "">("");
+  const [roles, setRoles] = useState<RolCuenta[]>([]);
   const [local, setLocal] = useState<ErrorCampo[] | null>(null);
   const [visto, setVisto] = useState(estado);
   if (visto !== estado) {
@@ -111,8 +110,7 @@ export function FormularioPersona({
       setClabe("");
       setAcceso("");
       setCorreo("");
-      setContrasena("");
-      setRol("");
+      setRoles([]);
       setLocal(null);
     }
   }
@@ -139,8 +137,7 @@ export function FormularioPersona({
         clabe,
         acceso,
         correo,
-        contrasena,
-        rol,
+        rol: roles,
       },
       hoy,
     );
@@ -310,7 +307,7 @@ export function FormularioPersona({
           pista={
             acceso === "ya"
               ? "El correo con el que ya entra. No se cambia el rol ni la contraseña."
-              : "Con este correo va a entrar."
+              : "Le llega una invitación a este correo. Ella fija su contraseña; nadie más la conoce."
           }
           error={mensaje("correo")}
         >
@@ -333,55 +330,42 @@ export function FormularioPersona({
       {acceso === "nueva" ? (
         <>
           <Campo
-            id="contrasena"
-            etiqueta="Contraseña"
-            pista="La de esta persona. Al menos 10 caracteres. No se vuelve a mostrar."
-            error={mensaje("contrasena")}
-          >
-            <input
-              id="contrasena"
-              name="contrasena"
-              type="password"
-              value={contrasena}
-              autoComplete="new-password"
-              aria-invalid={mensaje("contrasena") ? true : undefined}
-              aria-describedby={descritoPor("contrasena", mensaje("contrasena"))}
-              onChange={(event) => {
-                setContrasena(event.target.value);
-                setLocal(null);
-              }}
-            />
-          </Campo>
-          <Campo
             id="rol"
-            etiqueta="Rol"
-            pista="Soltar dinero es el liberador, y tienen que ser dos. El contador no libera."
+            etiqueta="Roles"
+            pista="Se combinan. Soltar dinero es el liberador, y tienen que ser dos personas. El contador no libera."
             error={mensaje("rol")}
           >
-            <select
-              id="rol"
-              name="rol"
-              value={rol}
-              className={rol ? undefined : "select-vacio"}
-              aria-invalid={mensaje("rol") ? true : undefined}
-              aria-describedby={descritoPor("rol", mensaje("rol"), Boolean(rol))}
-              onChange={(event) => {
-                setRol(event.target.value as RolCuenta | "");
-                setLocal(null);
-              }}
-            >
-              <option value="">Elige</option>
-              {ROLES_VISIBLES.map((item) => (
-                <option key={item.valor} value={item.valor}>
-                  {item.etiqueta}
-                </option>
+            <div className="opciones" role="group" aria-describedby={descritoPor("rol", mensaje("rol"))}>
+              {ROLES_VISIBLES.map((item, indice) => (
+                <label key={item.valor} className="confirmacion">
+                  <input
+                    id={indice === 0 ? "rol" : undefined}
+                    type="checkbox"
+                    name="rol"
+                    value={item.valor}
+                    checked={roles.includes(item.valor)}
+                    aria-invalid={mensaje("rol") ? true : undefined}
+                    onChange={(event) => {
+                      const marcado = event.target.checked;
+                      setRoles((actuales) =>
+                        ROLES_VISIBLES.map((rol) => rol.valor).filter((valor) =>
+                          valor === item.valor ? marcado : actuales.includes(valor),
+                        ),
+                      );
+                      setLocal(null);
+                    }}
+                  />
+                  <span>{item.etiqueta}</span>
+                </label>
               ))}
-            </select>
+            </div>
           </Campo>
-          {rol ? (
-            <p className="elegido" id="rol-elegido">
-              {pistaDelRol(rol)}
-            </p>
+          {roles.length > 0 ? (
+            <div className="elegido" id="rol-elegido">
+              {roles.map((rol) => (
+                <p key={rol}>{pistaDelRol(rol)}</p>
+              ))}
+            </div>
           ) : null}
         </>
       ) : null}

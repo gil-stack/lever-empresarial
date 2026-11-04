@@ -1,0 +1,216 @@
+/*
+ * Pantallas de entrar y del segundo factor. La marca es Arco: banderín,
+ * negro y azul. El resto del portal sigue con los tokens de siempre hasta
+ * que el frente de marca los publique.
+ */
+.arco {
+  --papel: light-dark(#f2f3f5, #0b0b0b);
+  --hoja: light-dark(#ffffff, #141414);
+  --campo: light-dark(#ffffff, #101010);
+  --tinta: light-dark(#111111, #f5f5f5);
+  --tinta-suave: light-dark(#4d515a, #b7bac1);
+  --tinta-tenue: light-dark(#6d727c, #8e939c);
+  --linea: light-dark(#e3e5ea, #2a2a2a);
+  --linea-fuerte: light-dark(#c5c9d1, #3c3c3c);
+  --sombra: light-dark(rgb(17 17 17 / 0.08), rgb(0 0 0 / 0.45));
+  --sello: light-dark(#111111, #f5f5f5);
+  --sello-profundo: light-dark(#000000, #ffffff);
+  --sobre-sello: light-dark(#ffffff, #111111);
+  --sello-tenue: light-dark(#e7eeff, #172033);
+  --aviso: light-dark(#b42318, #ff8d82);
+  --aviso-tenue: light-dark(#fdeceb, #2c1614);
+  --arco: light-dark(#0047ff, #5b86ff);
+  --sobre-banderin: light-dark(#ffffff, #0b0b0b);
+
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(900px 420px at 100% -10%, rgb(0 71 255 / 0.16), transparent 60%),
+    var(--papel);
+  color: var(--tinta);
+}
+
+.arco-cabeza {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px 16px;
+  padding: 28px clamp(20px, 5vw, 72px) 0;
+}
+
+.arco-cabeza .selector-tema {
+  margin-left: auto;
+}
+
+.arco-cabeza .banderin {
+  width: 40px;
+  height: auto;
+}
+
+.arco-cabeza .palabra-arco {
+  display: block;
+  width: 54px;
+  height: auto;
+}
+
+.arco-marca {
+  flex: none;
+  min-width: 0;
+}
+
+.arco-nombre {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 0.95rem;
+}
+
+.arco-frase {
+  margin: 2px 0 0;
+  color: var(--tinta-suave);
+  font-size: 0.92rem;
+}
+
+.banderin {
+  width: 74px;
+  height: 52px;
+  flex: none;
+  color: light-dark(#111111, #f5f5f5);
+}
+
+.arco-lienzo {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 36px 20px 72px;
+}
+
+.arco-tarjeta {
+  width: min(460px, 100%);
+  background: var(--hoja);
+  border: 1px solid var(--linea);
+  border-radius: 22px;
+  padding: 32px 28px 28px;
+  box-shadow: 0 18px 50px var(--sombra);
+}
+
+.arco-tarjeta h1 {
+  margin: 8px 0;
+  font-family: var(--fuente-display);
+  font-size: clamp(1.8rem, 4vw, 2.3rem);
+  font-weight: 560;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.arco-kicker {
+  margin: 0;
+  color: var(--tinta-tenue);
+  font-size: 0.78rem;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.arco-nota {
+  margin-top: 8px;
+  color: var(--tinta-suave);
+}
+
+.arco .campo input:focus-visible {
+  border-color: var(--arco);
+  box-shadow: 0 0 0 4px rgb(0 71 255 / 0.18);
+  outline: none;
+}
+
+.arco-opciones {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.arco-qr {
+  width: 196px;
+  height: 196px;
+  margin: 8px 0;
+  padding: 8px;
+  background: #fff;
+  border-radius: 12px;
+}
+
+.arco-semilla {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--linea);
+  border-radius: 10px;
+  background: var(--campo);
+  font-family: var(--fuente-mono);
+  font-size: 0.92rem;
+  letter-spacing: 0.06em;
+  line-height: 1.6;
+}
+
+.arco-codigos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 16px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.arco-codigos li {
+  padding: 8px 10px;
+  border: 1px solid var(--linea);
+  border-radius: 8px;
+  font-family: var(--fuente-mono);
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
+}
+
+.arco-lista {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.arco-lista li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--linea);
+}
+
+.arco-enlace {
+  display: inline-block;
+  margin-top: 16px;
+  color: var(--arco);
+  font-weight: 550;
+}
+
+.arco-pie {
+  margin-top: 18px;
+  color: var(--tinta-tenue);
+  font-size: 0.86rem;
+}
+
+@media (max-width: 720px) {
+  .arco-cabeza .selector-tema {
+    flex: 1 0 100%;
+    margin-left: 0;
+  }
+
+  .arco-tarjeta {
+    padding: 24px 18px 20px;
+  }
+
+  .arco-codigos {
+    grid-template-columns: 1fr;
+  }
+}

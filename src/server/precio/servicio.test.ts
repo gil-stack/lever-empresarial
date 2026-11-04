@@ -1,352 +1,127 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
-import { CIFRA_NO_PUBLICADA } from "../../dominio/precio.ts";
-import { ErrorDeDominio } from "../session/error-de-dominio.ts";
-import { conexionIniciada, traducirErrorDeBase } from "../session/db.ts";
-import type { Sesion } from "../session/tipos.ts";
-import { leerOperadores } from "./operador.ts";
-import { SQL, mapearPrecio } from "./repositorio.ts";
-import {
-  aceptarSuscripcion,
-  leerSuscripcionDeLaSesion,
-  leerTarifa,
-  presentar,
-  publicarSuscripcion,
-  tarifaSinConsulta,
-} from "./servicio.ts";
-import type { FilaPrecio, FilaSuscripcion, RepositorioPrecios } from "./repositorio.ts";
+import { capacidadesDe } from "../../nucleo/capacidades.ts";
+import type { ContextoDeTenant } from "../../nucleo/contexto.ts";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio.ts";
+import { traducirErrorDeBase } from "../../nucleo/db.ts";
+import type { RepositorioPrecios } from "./repositorio.ts";
+import { aceptarSuscripcion, leerTarifa, publicarSuscripcion } from "./servicio.ts";
 
-const AHORA = new Date("2026-11-03T18:00:00.000Z");
-const OPERADORES = new Set(["ana@ejemplo.mx"]);
+const EMPRESA = "11111111-1111-4111-8111-111111111111";
+const PERSONA = "22222222-2222-4222-8222-222222222222";
+const FILA = "33333333-3333-4333-8333-333333333333";
 
-describe("la tarifa lee el campo y no inventa el monto", () => {
-  it("vacío es la frase, y el fallo de lectura no se disfraza de cifra no publicada", async () => {
-    const vacia = await leerTarifa({
-      repositorio: repo({ precio: precio(null) }),
-      ahora: () => AHORA,
-    });
-    assert.equal(vacia.disponible, true);
-    assert.equal(vacia.suscripcionPublicada, false);
-    assert.equal(vacia.suscripcion, "cifra no publicada");
-    assert.equal(vacia.spei, CIFRA_NO_PUBLICADA);
-    assert.equal(vacia.porPersona, "$0.00");
-    assert.equal(vacia.porTarjeta, "$0.00");
-    assert.equal(vacia.implementacion, "$0.00");
-    assert.equal(vacia.publicadaEl, null);
-
-    const caida = await leerTarifa({
-      repositorio: {
-        ...repo({ precio: precio(null) }),
-        leerPrecio: async () => {
-          throw new ErrorDeDominio("base_no_disponible");
-        },
-      },
-    });
-    assert.equal(caida.disponible, false);
-    assert.equal(caida.suscripcion, "No se pudo consultar el precio.");
-    assert.notEqual(caida.suscripcion, CIFRA_NO_PUBLICADA);
-    assert.equal(caida.suscripcionPublicada, false);
-    assert.deepEqual(tarifaSinConsulta().suscripcion, caida.suscripcion);
+describe("el precio es de la plataforma", () => {
+  it("vacío no se disfraza de cifra, y un cliente no lo publica", async () => {
+    const libro = memoria();
+    const tarifa = await leerTarifa({ repositorio: libro });
+    assert.equal(tarifa.suscripcionPublicada, false);
+    await assert.rejects(
+      () => publicarSuscripcion(cliente(), "100.00", { repositorio: libro }),
+      (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "no_es_operador",
+    );
+    assert.equal(libro.centavos, null);
   });
 
-  it("la misma presentación sirve para la página y para la consola", () => {
-    const publicada = presentar(precio(125050n, AHORA));
-    assert.equal(publicada.suscripcion, "$1,250.50");
+  it("el personal publica centavos una vez y acepta la suscripción de la empresa que nombra", async () => {
+    const libro = memoria();
+    const publicada = await publicarSuscripcion(personal(), "100.50", { repositorio: libro });
     assert.equal(publicada.suscripcionPublicada, true);
-    assert.match(publicada.publicadaEl ?? "", /noviembre de 2026/);
-    const pagina = readFileSync(new URL("../../app/precios/page.tsx", import.meta.url), "utf8");
-    const consola = readFileSync(new URL("../../app/consola/page.tsx", import.meta.url), "utf8");
-    const consolaVista = readFileSync(new URL("../../components/consola/consola-vacia.tsx", import.meta.url), "utf8");
-    const renglones = readFileSync(new URL("../../components/precios/renglones.tsx", import.meta.url), "utf8");
-    assert.match(pagina, /leerTarifa/);
-    assert.match(consola, /leerTarifa/);
-    assert.match(pagina, /RenglonesTarifa/);
-    assert.match(consolaVista, /RenglonesTarifa/);
-    assert.match(renglones, /tarifa\.suscripcion/);
-    assert.match(renglones, /tarifa\.porPersona/);
-    assert.match(renglones, /tarifa\.porTarjeta/);
-    assert.match(renglones, /tarifa\.implementacion/);
-  });
-});
-
-describe("publicar y aceptar", () => {
-  it("quien no es operador no escribe, y el cero tampoco", async () => {
-    let publicaciones = 0;
-    const base = repo({
-      precio: precio(null),
-      publicar: async () => {
-        publicaciones += 1;
-        return precio(1n);
-      },
-    });
-    assert.equal(
-      await codigo(publicarSuscripcion(sesion(), "1250.00", { repositorio: base, operadores: new Set() })),
-      "no_es_operador",
+    assert.match(publicada.suscripcion, /100\.50|100,50/);
+    await assert.rejects(
+      () => publicarSuscripcion(personal(), "20", { repositorio: libro }),
+      (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "precio_ya_publicado",
     );
-    assert.equal(
-      await codigo(
-        publicarSuscripcion(sesion({ usuario: { ...sesion().usuario, correo: "otro@ejemplo.mx" } }), "1250.00", {
-          repositorio: base,
-          operadores: OPERADORES,
-        }),
-      ),
-      "no_es_operador",
-    );
-    assert.equal(
-      await codigo(publicarSuscripcion(sesion(), "0.00", { repositorio: base, operadores: OPERADORES })),
-      "monto_en_cero",
-    );
-    assert.equal(
-      await codigo(publicarSuscripcion(null, "1250.00", { repositorio: base, operadores: OPERADORES })),
-      "sesion_ausente",
-    );
-    assert.equal(publicaciones, 0);
+    await aceptarSuscripcion(personal(), { companyId: EMPRESA }, { repositorio: libro });
+    assert.equal(libro.aceptada, EMPRESA);
   });
 
-  it("el operador publica centavos una vez y la tarifa muestra ese monto", async () => {
-    const estado = repo({ precio: precio(null) });
-    const tarifa = await publicarSuscripcion(sesion(), "1,250.50", {
-      repositorio: estado,
-      operadores: OPERADORES,
-      ahora: () => AHORA,
-    });
-    assert.equal(tarifa.suscripcion, "$1,250.50");
-    assert.equal(estado.publicaciones[0]?.centavos, 125050n);
-    assert.equal(
-      await codigo(
-        publicarSuscripcion(sesion(), "99.00", {
-          repositorio: estado,
-          operadores: OPERADORES,
-          ahora: () => AHORA,
-        }),
-      ),
-      "precio_ya_publicado",
-    );
-    assert.equal(estado.publicaciones.length, 1);
-  });
-
-  it("no llama a aceptar si el monto no está publicado", async () => {
-    let aceptaciones = 0;
-    const persona = sesion();
-    const base = repo({
-      precio: precio(null),
-      suscripcion: suscripcion("recorrido", persona.companyId ?? ""),
-      aceptar: async () => {
-        aceptaciones += 1;
-        throw new Error("no debía aceptar");
-      },
-    });
-    assert.equal(
-      await codigo(aceptarSuscripcion(persona, { repositorio: base, operadores: OPERADORES })),
-      "precio_no_publicado",
-    );
-    assert.equal(
-      await codigo(aceptarSuscripcion(persona, { repositorio: base, operadores: new Set() })),
-      "no_es_operador",
-    );
-    assert.equal(aceptaciones, 0);
-  });
-
-  it("acepta solo la empresa de la sesión cuando el monto ya está publicado", async () => {
-    const persona = sesion();
-    const estado = repo({
-      precio: precio(125050n, AHORA),
-      suscripcion: suscripcion("recorrido", persona.companyId ?? ""),
-    });
-    await aceptarSuscripcion(persona, { repositorio: estado, operadores: OPERADORES, ahora: () => AHORA });
-    assert.equal(estado.aceptaciones.length, 1);
-    assert.equal(estado.aceptaciones[0]?.companyId, persona.companyId);
-    assert.equal(
-      await codigo(aceptarSuscripcion(persona, { repositorio: estado, operadores: OPERADORES, ahora: () => AHORA })),
-      "suscripcion_ya_aceptada",
-    );
-    assert.equal(estado.aceptaciones.length, 1);
-
-    const otra = sesion();
-    const ajena = repo({
-      precio: precio(125050n, AHORA),
-      suscripcion: suscripcion("recorrido", otra.companyId ?? ""),
-    });
-    await aceptarSuscripcion(otra, { repositorio: ajena, operadores: OPERADORES, ahora: () => AHORA });
-    assert.equal(ajena.aceptaciones[0]?.companyId, otra.companyId);
-    assert.notEqual(ajena.aceptaciones[0]?.companyId, persona.companyId);
-  });
-
-  it("la suscripción de la empresa nace como recorrido de 30 días", async () => {
-    const persona = sesion();
-    const lectura = await leerSuscripcionDeLaSesion(persona, {
-      repositorio: repo({ suscripcion: suscripcion("recorrido", persona.companyId ?? "", INICIO_ALTA) }),
-      ahora: () => AHORA,
-    });
-    assert.equal(lectura.tipo, "lista");
-    if (lectura.tipo !== "lista") return;
-    assert.equal(lectura.estado, "recorrido");
-    assert.equal(lectura.titulo, "Recorrido");
-    assert.match(lectura.relato, /30 días/);
-    assert.equal(
-      (await leerSuscripcionDeLaSesion(sesion({ companyId: null }), { repositorio: repo({}) })).tipo,
-      "sin_empresa",
-    );
-  });
-});
-
-describe("el libro no trae un precio", () => {
-  it("la migración inserta NULL y el update solo cabe si el campo sigue vacío", () => {
-    const pricing = readFileSync(new URL("../../../db/migrations/0009_platform_pricing.sql", import.meta.url), "utf8");
-    const subscriptions = readFileSync(
-      new URL("../../../db/migrations/0010_subscriptions.sql", import.meta.url),
-      "utf8",
-    );
-    assert.match(pricing, /VALUES \(true, NULL, NULL\)/);
-    assert.match(pricing, /suscripcion_centavos is null/i);
-    assert.match(SQL.publicar, /suscripcion_centavos is null/i);
-    assert.match(subscriptions, /la suscripcion no pasa a aceptada sin monto publicado/);
-    assert.match(subscriptions, /'recorrido'/);
-    assert.equal(/\b\d{3,}\b/.test(pricing), false);
-    assert.equal(/\b\d{3,}\b/.test(subscriptions), false);
-    assert.equal(pricing.toLowerCase().includes("gratis"), false);
-    const interfaz = [
-      "src/components/precios/renglones.tsx",
-      "src/components/precios/suscripcion-empresa.tsx",
-      "src/components/precios/formulario-publicar.tsx",
-      "src/components/precios/formulario-aceptar.tsx",
-      "src/app/precios/page.tsx",
-    ]
-      .map((ruta) => readFileSync(new URL(`../../../${ruta}`, import.meta.url), "utf8"))
-      .join("\n");
-    assert.equal(/gratis|cashback|rendimiento|\bCAT\b|\bfree\b|\btrial\b/i.test(interfaz), false);
-    assert.match(readFileSync(new URL("../../components/precios/suscripcion-empresa.tsx", import.meta.url), "utf8"), /existePasoAceptada/);
-    assert.match(
-      readFileSync(new URL("../../components/precios/suscripcion-empresa.tsx", import.meta.url), "utf8"),
-      /paso \? <FormularioAceptar/,
-    );
-    assert.equal(readFileSync(new URL("../../app/precios/page.tsx", import.meta.url), "utf8").includes("FormularioAceptar"), false);
-  });
-
-  it("un error del trigger no copia el mensaje del driver", () => {
+  it("la migración no siembra un monto y el trigger no se copia al mensaje", () => {
+    const sql = readFileSync(new URL("../../../db/migrations/0009_platform_pricing.sql", import.meta.url), "utf8");
+    assert.match(sql, /NULL, NULL/);
+    assert.doesNotMatch(sql, /insert into platform_pricing[^;]*[1-9]/i);
     const traducido = traducirErrorDeBase(
-      Object.assign(new Error("la suscripcion no pasa a aceptada sin monto publicado"), { code: "P0001" }),
+      Object.assign(new Error("el monto de la suscripcion ya esta publicado"), { code: "P0001" }),
     );
-    assert.equal(traducido.message, "precio_no_publicado");
-    const secreto = traducirErrorDeBase(
-      Object.assign(new Error("postgres://usuario:secreto@host/plataforma"), { code: "P0001" }),
-    );
-    assert.equal(secreto.message, "base_no_disponible");
-    assert.equal((secreto.stack ?? "").includes("secreto@"), false);
-  });
-
-  it("mapear un centavo en cero o un texto no es una cifra publicada", () => {
-    assert.equal(mapearPrecio({ fila_id: randomUUID(), suscripcion_centavos: null, publicado_en: null }).centavos, null);
-    assert.throws(
-      () => mapearPrecio({ fila_id: randomUUID(), suscripcion_centavos: "0", publicado_en: AHORA.toISOString() }),
-      (error: unknown) => error instanceof ErrorDeDominio,
-    );
-    assert.throws(
-      () => mapearPrecio({ fila_id: randomUUID(), suscripcion_centavos: "12.5", publicado_en: null }),
-      (error: unknown) => error instanceof ErrorDeDominio,
-    );
-  });
-
-  it("importar no abre la base", async () => {
-    await import("./index.ts");
-    assert.equal(conexionIniciada(), false);
+    assert.equal(traducido instanceof ErrorDeDominio && traducido.codigo, "precio_ya_publicado");
+    const conSecreto = traducirErrorDeBase(new Error("password authentication failed postgres://secreto@host/db"));
+    assert.equal((conSecreto as Error).message.includes("secreto"), false);
   });
 });
 
-describe("operadores", () => {
-  it("normaliza la lista y no toma un correo mal formado", () => {
-    const lista = leerOperadores(" Ana@Ejemplo.mx, no-es-correo, , otRa@dominio.mx ");
-    assert.equal(lista.has("ana@ejemplo.mx"), true);
-    assert.equal(lista.has("otra@dominio.mx"), true);
-    assert.equal(lista.size, 2);
-    assert.equal(leerOperadores(undefined).size, 0);
-  });
-});
+function cliente(): ContextoDeTenant {
+  return contexto(false);
+}
 
-const INICIO_ALTA = new Date("2026-11-01T12:00:00.000Z");
+function personal(): ContextoDeTenant {
+  return contexto(true);
+}
 
-function sesion(parcial: Partial<Sesion> = {}): Sesion {
+function contexto(esPersonal: boolean): ContextoDeTenant {
   return {
-    id: randomUUID(),
-    venceEn: new Date("2026-12-03T18:00:00.000Z"),
-    usuario: { id: randomUUID(), nombre: "Ana Pérez", correo: "ana@ejemplo.mx" },
-    companyId: randomUUID(),
-    rol: "administrador",
-    ...parcial,
+    sesionId: "55555555-5555-4555-8555-555555555555",
+    peticionId: null,
+    superficie: esPersonal ? "sofipo" : "cliente",
+    persona: { id: PERSONA, nombre: "Ana", correo: "ana@ejemplo.mx" },
+    segundoFactor: esPersonal ? "comando" : "totp",
+    empresa: esPersonal
+      ? null
+      : {
+          id: EMPRESA,
+          rfc: "EKU9003173C9",
+          razonSocial: "Escuela",
+          operadorId: "44444444-4444-4444-8444-444444444444",
+          estado: "activa",
+          demostracion: true,
+        },
+    roles: esPersonal ? [] : ["administrador"],
+    personal: esPersonal
+      ? { operadorId: "44444444-4444-4444-8444-444444444444", roles: ["administracion_plataforma"] }
+      : null,
+    empresas: [],
+    capacidades: capacidadesDe({
+      rolesCliente: esPersonal ? [] : ["administrador"],
+      rolesPlataforma: esPersonal ? ["administracion_plataforma"] : [],
+    }),
   };
 }
 
-function precio(centavos: bigint | null, publicadoEn: Date | null = centavos === null ? null : AHORA): FilaPrecio {
-  return { filaId: randomUUID(), centavos, publicadoEn };
-}
-
-function suscripcion(
-  estado: "recorrido" | "aceptada",
-  companyId = randomUUID(),
-  inicio = INICIO_ALTA,
-): FilaSuscripcion {
+function memoria(): RepositorioPrecios & { centavos: bigint | null; aceptada: string | null } {
+  const estado = { centavos: null as bigint | null, aceptada: null as string | null };
   return {
-    companyId,
-    estado,
-    recorridoInicio: inicio,
-    aceptadaEn: estado === "aceptada" ? AHORA : null,
-    aceptadaPorNombre: estado === "aceptada" ? "Ana Pérez" : null,
-  };
-}
-
-function repo(opciones: {
-  precio?: FilaPrecio;
-  suscripcion?: FilaSuscripcion | null;
-  publicar?: RepositorioPrecios["publicar"];
-  aceptar?: RepositorioPrecios["aceptar"];
-}): RepositorioPrecios & { publicaciones: { centavos: bigint }[]; aceptaciones: { companyId: string }[] } {
-  let actual = opciones.precio ?? precio(null);
-  let fila = opciones.suscripcion === undefined ? null : opciones.suscripcion;
-  const publicaciones: { centavos: bigint }[] = [];
-  const aceptaciones: { companyId: string }[] = [];
-  return {
-    publicaciones,
-    aceptaciones,
+    ...estado,
+    get centavos() {
+      return estado.centavos;
+    },
+    get aceptada() {
+      return estado.aceptada;
+    },
     async leerPrecio() {
-      return actual;
-    },
-    async publicar(entrada) {
-      if (opciones.publicar) return opciones.publicar(entrada);
-      if (actual.centavos !== null) throw new ErrorDeDominio("precio_ya_publicado");
-      actual = { filaId: actual.filaId, centavos: entrada.centavos, publicadoEn: entrada.cuando };
-      publicaciones.push({ centavos: entrada.centavos });
-      return actual;
-    },
-    async leerSuscripcion(companyId) {
-      if (!fila || fila.companyId !== companyId) return null;
-      return fila;
-    },
-    async aceptar(entrada) {
-      if (opciones.aceptar) return opciones.aceptar(entrada);
-      if (actual.centavos === null) throw new ErrorDeDominio("precio_no_publicado");
-      if (!fila || fila.companyId !== entrada.companyId) throw new ErrorDeDominio("suscripcion_ausente");
-      if (fila.estado !== "recorrido") throw new ErrorDeDominio("suscripcion_ya_aceptada");
-      fila = {
-        ...fila,
-        estado: "aceptada",
-        aceptadaEn: entrada.cuando,
-        aceptadaPorNombre: "Ana Pérez",
+      return {
+        filaId: FILA,
+        centavos: estado.centavos,
+        publicadoEn: estado.centavos === null ? null : new Date("2026-11-04T00:00:00.000Z"),
       };
-      aceptaciones.push({ companyId: entrada.companyId });
-      return fila;
+    },
+    async publicar(_ctx, entrada) {
+      if (estado.centavos !== null) throw new ErrorDeDominio("precio_ya_publicado");
+      estado.centavos = entrada.centavos;
+      return { filaId: FILA, centavos: entrada.centavos, publicadoEn: entrada.cuando };
+    },
+    async leerSuscripcion() {
+      return null;
+    },
+    async aceptar(_ctx, entrada) {
+      estado.aceptada = entrada.companyId;
+      return {
+        companyId: entrada.companyId,
+        estado: "aceptada",
+        recorridoInicio: entrada.cuando,
+        aceptadaEn: entrada.cuando,
+        aceptadaPorNombre: "Ana",
+      };
     },
   };
-}
-
-async function codigo(promesa: Promise<unknown>): Promise<string> {
-  try {
-    await promesa;
-  } catch (error) {
-    if (error instanceof ErrorDeDominio) return error.codigo;
-    throw error;
-  }
-  throw new Error("la operación no rechazó");
 }

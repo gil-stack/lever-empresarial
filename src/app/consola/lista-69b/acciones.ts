@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { sesionDesdeCookie } from "@/server/entrada";
+import { contextoDeAccion } from "@/server/entrada";
 import { guardarListado69b } from "@/server/lista-69b";
 import { ErrorDeDominio } from "@/server/session";
 
@@ -10,7 +10,8 @@ import type { EstadoFormulario } from "./estado";
 
 const MENSAJES: Record<string, string> = {
   sesion_ausente: "Hay que entrar para guardar el listado.",
-  sin_permiso: "Solo el administrador o el operador de la plataforma guarda el listado.",
+  sin_permiso: "La lista la guarda el personal de la plataforma.",
+  no_es_operador: "La lista la guarda el personal de la plataforma.",
   sat_no_disponible: "No se pudo leer el listado que publica el SAT. No quedó una copia nueva.",
   pagina_irreconocible: "La página del SAT no trae el listado del artículo 69-B. No se guardó.",
   url_no_publica: "El enlace del listado no es una dirección pública. No se guardó.",
@@ -28,8 +29,8 @@ const MENSAJES: Record<string, string> = {
 
 export async function guardarCopia69b(): Promise<EstadoFormulario> {
   try {
-    const sesion = await sesionDesdeCookie();
-    const guardado = await guardarListado69b(sesion);
+    const ctx = await contextoDeAccion();
+    const guardado = await guardarListado69b(ctx);
     revalidatePath("/consola/lista-69b");
     revalidatePath("/consola/proveedores");
     return {

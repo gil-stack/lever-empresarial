@@ -97,7 +97,8 @@ export type DatosCajon = {
 
 export type DatosPolitica = {
   companyId: string;
-  rol: string;
+  /** Lo decide la matriz de capacidades con el contexto, no este módulo. */
+  puedeEditar: boolean;
   diasComprobante: number;
   maxVencidos: number;
   umbralCentavos: number | null;
@@ -115,12 +116,17 @@ export function esUuid(valor: unknown): valor is string {
   return typeof valor === "string" && UUID.test(valor);
 }
 
-export function puedeEscribirPolitica(rol: string): boolean {
-  return rol === "administrador";
-}
-
 export function etiquetaRol(rol: string): string {
   return ETIQUETAS_ROL[rol] ?? "Rol no reconocido";
+}
+
+/** La vista trae los roles separados por coma. Vacío: no entra a la consola. */
+export function etiquetaRoles(roles: string): string {
+  if (roles === "") return "No entra a la consola";
+  const etiquetas = roles.split(",").map(etiquetaRol);
+  if (etiquetas.length === 1) return etiquetas[0] ?? "Rol no reconocido";
+  const ultima = etiquetas.pop() ?? "";
+  return `${etiquetas.join(", ")} y ${ultima.toLocaleLowerCase("es-MX")}`;
 }
 
 /** Vacío no alcanza para emitir. Cero ya es un tope que la empresa escribió. */
@@ -219,7 +225,7 @@ export function presentarPolitica(datos: DatosPolitica, ahora: Date): Presentaci
       diasComprobante: dias,
       maxVencidos: vencidos,
       umbralCentavos: umbral,
-      puedeEditar: puedeEscribirPolitica(datos.rol),
+      puedeEditar: datos.puedeEditar,
       personas,
       categorias,
       cajones,
@@ -307,7 +313,7 @@ function presentarPersona(
     nombre: persona.nombre,
     correo: persona.correo,
     rol: persona.rol,
-    rolEtiqueta: persona.rol === "" ? "No entra a la consola" : etiquetaRol(persona.rol),
+    rolEtiqueta: etiquetaRoles(persona.rol),
     diasComprobante: dias,
     maxVencidos: vencidos,
     propio,

@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
-import { Sora, Fraunces, Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Sora } from "next/font/google";
 
 import { COOKIE_TEMA, temaDesde } from "@/components/cromo/tema";
 
 import "@/estilo/tokens.css";
+import "@/estilo/arco.css";
 import "@/estilo/marco.css";
 import "@/estilo/telefono.css";
 import "@/estilo/componentes.css";
@@ -30,21 +31,6 @@ const arco = Sora({
   display: "swap",
 });
 
-const display = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-  axes: ["SOFT", "WONK", "opsz"],
-});
-
-const displayCursiva = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-display-cursiva",
-  display: "swap",
-  style: "italic",
-  axes: ["SOFT", "WONK", "opsz"],
-});
-
 export const runtime = "nodejs";
 
 export const metadata: Metadata = {
@@ -52,14 +38,14 @@ export const metadata: Metadata = {
     default: "ARCO",
     template: "%s · ARCO",
   },
-  description: "Control de gasto empresarial diseñado para una razón social mexicana.",
-  applicationName: "ARCO",
+  description: "ARCO Pagos: control de gasto empresarial diseñado para razones sociales mexicanas.",
+  applicationName: "ARCO Pagos",
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f3f1ec" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f0f0d" },
+    { media: "(prefers-color-scheme: light)", color: "#f2f2f3" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c0d10" },
   ],
   colorScheme: "light dark",
   width: "device-width",
@@ -72,7 +58,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html
       lang="es"
       data-tema={tema === "auto" ? undefined : tema}
-      className={`${sans.variable} ${mono.variable} ${arco.variable} ${display.variable} ${displayCursiva.variable}`}
+      className={`${sans.variable} ${mono.variable} ${arco.variable}`}
     >
       <body>{children}</body>
     </html>

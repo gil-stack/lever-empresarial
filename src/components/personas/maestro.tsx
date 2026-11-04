@@ -6,8 +6,7 @@ import {
   fechaLarga,
   FRASE_CONTADOR,
   FRASE_SIN_DISPERSION,
-  lineaDeRol,
-  puedeEditarMaestro,
+  lineaDeRoles,
   relatoOperabilidad,
   type RolCuenta,
 } from "@/dominio/personas";
@@ -15,9 +14,20 @@ import type { LecturaMaestro } from "@/server/personas/tipos";
 
 import { FormularioBaja, FormularioCentro, FormularioPersona } from "./formularios";
 
-export function Maestro({ lectura, hoy }: { lectura: LecturaMaestro; hoy: string }) {
+export function Maestro({
+  lectura,
+  hoy,
+  roles,
+  edita,
+}: {
+  lectura: LecturaMaestro;
+  hoy: string;
+  /** Roles de quien mira, en esta empresa. Solo cambian el texto de entrada. */
+  roles: readonly RolCuenta[];
+  /** Lo decide la matriz de capacidades con el contexto. */
+  edita: boolean;
+}) {
   const relato = relatoOperabilidad(lectura.autorizados);
-  const edita = puedeEditarMaestro(lectura.rol);
   const jefes = lectura.personas
     .filter((persona) => !estaDeBaja(persona.bajaEn, hoy))
     .map((persona) => ({ id: persona.id, nombre: persona.nombre }));
@@ -47,7 +57,7 @@ export function Maestro({ lectura, hoy }: { lectura: LecturaMaestro; hoy: string
           </div>
         </dl>
       </section>
-      <p className="regla-fija">{entradaDe(lectura.rol)}</p>
+      <p className="regla-fija">{entradaDe(roles, edita)}</p>
 
       <section className="bloque" aria-labelledby="centros-titulo">
         <h2 id="centros-titulo">Centros de costo</h2>
@@ -102,7 +112,7 @@ export function Maestro({ lectura, hoy }: { lectura: LecturaMaestro; hoy: string
                   <div>
                     <dt>En la consola</dt>
                     <dd>
-                      {deBaja ? "De baja. No suelta dinero." : lineaDeRol(persona.rol)}
+                      {deBaja ? "De baja. No suelta dinero." : lineaDeRoles(persona.roles, persona.invitada)}
                       {persona.correo ? <span className="pista"> {persona.correo}</span> : null}
                     </dd>
                   </div>
@@ -124,10 +134,10 @@ export function Maestro({ lectura, hoy }: { lectura: LecturaMaestro; hoy: string
   );
 }
 
-function entradaDe(rol: RolCuenta): string {
-  if (rol === "contador") return "Entraste como contador. Ves el maestro y no sueltas dinero.";
-  if (rol === "liberador") return "Entraste como liberador. Esta pantalla no suelta dinero.";
-  return "Das de alta a las personas. Este rol no suelta dinero.";
+function entradaDe(roles: readonly RolCuenta[], edita: boolean): string {
+  if (edita) return "Das de alta a las personas. Esta pantalla no suelta dinero.";
+  if (roles.includes("liberador")) return "Entraste como liberador. Esta pantalla no suelta dinero.";
+  return "Entraste como contador. Ves el maestro y no sueltas dinero.";
 }
 
 export function MaestroCerrado({
@@ -154,12 +164,7 @@ export function MaestroCerrado({
       <>
         <p className="kicker">Maestro</p>
         <h1>Todavía no hay razón social.</h1>
-        <p className="lede">Primero se da de alta la empresa. Luego, las personas.</p>
-        <div className="acciones">
-          <Link className="boton" href="/alta">
-            Dar de alta la razón social
-          </Link>
-        </div>
+        <p className="lede">La SOFIPO da de alta a las empresas. Luego, sus personas.</p>
       </>
     );
   }

@@ -5,7 +5,6 @@ import {
   CIFRA_NO_PUBLICADA,
   DIAS_DE_RECORRIDO,
   centavosDesdePesos,
-  existePasoAceptada,
   existePasoPublicar,
   finDeRecorrido,
   formatoPesos,
@@ -51,25 +50,8 @@ describe("la suscripción vacía no es un monto", () => {
   });
 });
 
-describe("el paso a aceptada", () => {
-  it("solo existe si el monto ya está publicado y quien actúa es el operador", () => {
-    assert.equal(
-      existePasoAceptada({ esOperador: true, montoPublicado: false, estado: "recorrido" }),
-      false,
-    );
-    assert.equal(
-      existePasoAceptada({ esOperador: false, montoPublicado: true, estado: "recorrido" }),
-      false,
-    );
-    assert.equal(
-      existePasoAceptada({ esOperador: true, montoPublicado: true, estado: "aceptada" }),
-      false,
-    );
-    assert.equal(existePasoAceptada({ esOperador: true, montoPublicado: true, estado: null }), false);
-    assert.equal(
-      existePasoAceptada({ esOperador: true, montoPublicado: true, estado: "recorrido" }),
-      true,
-    );
+describe("el paso a publicar", () => {
+  it("solo existe si el monto no está publicado y quien actúa es el personal", () => {
     assert.equal(
       existePasoPublicar({ esOperador: true, montoPublicado: false, disponible: true }),
       true,
