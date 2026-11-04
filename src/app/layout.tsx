@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Sora } from "next/font/google";
 
 import { COOKIE_TEMA, temaDesde } from "@/components/cromo/tema";
 
@@ -11,6 +11,7 @@ import "@/estilo/marco.css";
 import "@/estilo/telefono.css";
 import "@/estilo/componentes.css";
 import "./globals.css";
+import "@/estilo/landing.css";
 
 const sans = Geist({
   subsets: ["latin"],
@@ -24,15 +25,21 @@ const mono = Geist_Mono({
   display: "swap",
 });
 
+const arco = Sora({
+  subsets: ["latin"],
+  variable: "--font-arco",
+  display: "swap",
+});
+
 export const runtime = "nodejs";
 
 export const metadata: Metadata = {
   title: {
-    default: "Arco",
-    template: "%s · Arco",
+    default: "ARCO",
+    template: "%s · ARCO",
   },
-  description: "Arco: control de gastos de una razón social mexicana. Una cuenta, un RFC.",
-  applicationName: "Arco",
+  description: "ARCO Pagos: control de gasto empresarial diseñado para razones sociales mexicanas.",
+  applicationName: "ARCO Pagos",
 };
 
 export const viewport: Viewport = {
@@ -51,7 +58,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html
       lang="es"
       data-tema={tema === "auto" ? undefined : tema}
-      className={`${sans.variable} ${mono.variable}`}
+      className={`${sans.variable} ${mono.variable} ${arco.variable}`}
     >
       <body>{children}</body>
     </html>
