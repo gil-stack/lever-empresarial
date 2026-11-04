@@ -69,7 +69,7 @@ function Cerrada({ carga }: { carga: Exclude<Carga, { tipo: "lista" }> }) {
       ) : null}
       {carga.tipo === "sin_empresa" ? (
         <div className="acciones">
-          <Link className="boton" href="/">
+          <Link className="boton" href="/alta">
             Dar de alta la empresa
           </Link>
         </div>

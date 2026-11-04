@@ -29,7 +29,7 @@ export function FormularioEntrar() {
         <button type="submit" className="boton" disabled={pendiente}>
           {pendiente ? "Entrando…" : "Entrar"}
         </button>
-        <Link className="enlace-texto" href="/">
+        <Link className="enlace-texto" href="/alta">
           Dar de alta la razón social
         </Link>
       </div>

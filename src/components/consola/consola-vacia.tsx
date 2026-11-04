@@ -41,7 +41,7 @@ export function ConsolaVacia({
         <p className="lede">{empresa ? "En esta cuenta no cabe otro." : vacia?.detalle}</p>
         {empresa || !libroDisponible ? null : (
           <div className="acciones">
-            <Link className="boton" href="/">
+            <Link className="boton" href="/alta">
               Dar de alta la razón social
             </Link>
             {conSesion ? null : (

@@ -156,7 +156,7 @@ export function MaestroCerrado({
         <h1>Todavía no hay razón social.</h1>
         <p className="lede">Primero se da de alta la empresa. Luego, las personas.</p>
         <div className="acciones">
-          <Link className="boton" href="/">
+          <Link className="boton" href="/alta">
             Dar de alta la razón social
           </Link>
         </div>
