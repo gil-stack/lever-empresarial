@@ -4,7 +4,7 @@
   --campo: light-dark(#ffffff, #09111c);
   --tinta: light-dark(#111722, #f1f5fa);
   --tinta-suave: light-dark(#586577, #a2afbf);
-  --tinta-tenue: light-dark(#758191, #748499);
+  --tinta-tenue: light-dark(#647083, #748499);
   --linea: light-dark(#dfe4ea, #202c3c);
   --linea-fuerte: light-dark(#c6ced8, #35445a);
   --sombra: light-dark(rgb(21 35 55 / 0.1), rgb(0 0 0 / 0.42));
@@ -299,7 +299,6 @@
 
 .arco-acceso-tarjeta .campo input::placeholder {
   color: var(--tinta-tenue);
-  opacity: 0.75;
 }
 
 .arco-acceso-tarjeta .campo input:focus-visible,

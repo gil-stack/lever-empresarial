@@ -14,7 +14,7 @@ export function Banderin({ className = "banderin" }: { className?: string }) {
 
 export function PalabraLever({ className = "palabra-arco" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 105 24" aria-hidden="true" focusable="false">
+    <svg className={className} viewBox="0 0 64 24" aria-hidden="true" focusable="false">
       <text
         x="1"
         y="19"
