@@ -31,6 +31,7 @@ export async function guardarCopia69b(): Promise<EstadoFormulario> {
     const sesion = await sesionDesdeCookie();
     const guardado = await guardarListado69b(sesion);
     revalidatePath("/consola/lista-69b");
+    revalidatePath("/consola/proveedores");
     return {
       tipo: "guardado",
       mensaje: `Quedó la copia del ${guardado.fechaTexto}, con ${guardado.contribuyentesTexto} RFC.`,

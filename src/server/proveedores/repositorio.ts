@@ -46,7 +46,10 @@ export const SQL = {
            to_char(s.lista_fecha, 'YYYY-MM-DD') as lista_fecha,
            s.lista_leida_en, c.clabe, d.nombre_original
     from suppliers s
-    join supplier_clabes c on c.supplier_id = s.id and c.vigente_hasta is null
+    join supplier_clabes c
+      on c.supplier_id = s.id
+     and c.company_id = s.company_id
+     and c.vigente_hasta is null
     join documents d on d.id = s.document_id and d.company_id = s.company_id
     where s.company_id = $1
     order by s.alta_en desc, s.id
@@ -105,6 +108,10 @@ export function repositorioPg(): RepositorioProveedores {
       await conTransaccion(async (consulta) => {
         await consulta.query(SQL.insertarSnapshot, [snapshot.id, snapshot.fechaArchivo, snapshot.cargadoEn]);
         await insertarFilas(consulta, snapshot);
+        await consulta.query("select releer_proveedores_69b($1::uuid, $2::timestamptz)", [
+          snapshot.id,
+          snapshot.cargadoEn,
+        ]);
       });
     },
   };

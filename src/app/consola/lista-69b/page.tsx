@@ -43,8 +43,7 @@ export default async function PaginaLista69b({
           <>
             <CabezaPagina kicker="Lista 69-B" titulo="Listado del artículo 69-B">
               <p className="lede">
-                El SAT publica este listado. Si el RFC está en el archivo, el proveedor puede existir y el pago no.
-                Si todavía no hay archivo, tampoco hay pago.
+                El SAT publica este listado. El proveedor puede existir. El pago no.
               </p>
             </CabezaPagina>
             <PanelLista69b vista={carga.vista} />

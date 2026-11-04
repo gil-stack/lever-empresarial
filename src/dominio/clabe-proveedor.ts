@@ -118,18 +118,4 @@ export function puedeCambiarClabeProveedor(rol: RolCuenta | null | undefined): b
   return rol === "administrador";
 }
 
-/** Hora de la vigencia, en la hora de la Ciudad de México. */
-export function momentoClabe(instante: Date): string {
-  const partes = new Intl.DateTimeFormat("es-MX", {
-    timeZone: "America/Mexico_City",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(instante);
-  const tomar = (tipo: Intl.DateTimeFormatPartTypes) =>
-    partes.find((parte) => parte.type === tipo)?.value ?? "";
-  return `${tomar("day")} de ${tomar("month")} de ${tomar("year")}, ${tomar("hour")}:${tomar("minute")}`;
-}
+export { horaEnMexico as momentoClabe } from "./reloj";

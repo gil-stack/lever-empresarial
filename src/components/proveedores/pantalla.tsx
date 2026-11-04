@@ -8,16 +8,17 @@ import {
   type ListaVisible,
   type ProveedorVisible,
 } from "@/dominio/proveedores";
+import { FRASE_SIN_PAGO } from "@/dominio/lista-69b";
 import type { LecturaClabes } from "@/server/proveedores/tipos";
 import type { Rol } from "@/server/session";
 import {
+  Ausencia,
   CabezaPagina,
   EtiquetaMono,
   Frase,
   Hoja,
   Insignia,
   NotaRegla,
-  Rejilla,
   Renglon,
   Renglones,
   Vacio,
@@ -43,52 +44,52 @@ export function PantallaProveedores({
 
   return (
     <>
-      <CabezaPagina kicker="Proveedores" titulo="Alta de proveedor">
-        <p className="lede">
-          El proveedor es un RFC, su razón social y una CLABE de dieciocho dígitos. Otro nombre con el
-          mismo RFC no abre una segunda ficha.
-        </p>
+      <CabezaPagina kicker="Proveedores" titulo="Proveedores">
+        <p className="lede">Un RFC, su razón social y una CLABE.</p>
       </CabezaPagina>
-      <Rejilla
-        principal={
-          <>
-            <Hoja id="alta-proveedor" titulo="Datos del proveedor">
+      <div className="proveedores-lienzo">
+        <div className="zona-principal">
+          <div className="zona-fichas">
+            <Hoja id="proveedores-empresa" titulo="En esta empresa">
+              {proveedores.length === 0 ? (
+                <Vacio titulo="Todavía no hay proveedores" />
+              ) : (
+                proveedores.map((proveedor) => (
+                  <FichaProveedor
+                    key={proveedor.id}
+                    proveedor={proveedor}
+                    puedeCambiar={historial.puedeCambiar}
+                  />
+                ))
+              )}
+            </Hoja>
+          </div>
+          <div className="zona-historial">
+            <HistorialClabes lectura={historial} nombres={nombres} />
+          </div>
+        </div>
+        <div className="zona-lateral">
+          <div className="zona-alta">
+            <Hoja id="alta-proveedor" titulo="Alta">
               {edita ? (
-                <>
-                  <p className="lede">
-                    Los dieciocho dígitos se ven completos. La constancia se archiva en privado.
-                  </p>
-                  <FormularioProveedor />
-                </>
+                <FormularioProveedor />
               ) : (
                 <p className="lede">Tu rol ve esta lista y no da de alta.</p>
               )}
             </Hoja>
-            <Hoja id="proveedores-empresa" titulo="En esta empresa">
-              {proveedores.length === 0 ? (
-                <Vacio titulo="Todavía no hay proveedores">El alta de arriba es la primera. No sale dinero.</Vacio>
-              ) : (
-                proveedores.map((proveedor) => <FichaProveedor key={proveedor.id} proveedor={proveedor} />)
-              )}
-            </Hoja>
-            <HistorialClabes lectura={historial} nombres={nombres} />
-          </>
-        }
-        lateral={
-          <>
-            <Hoja id="lista-69b" titulo="Artículo 69-B">
+          </div>
+          <div className="zona-archivo">
+            <Hoja className="hoja-archivo" id="lista-69b" titulo="Artículo 69-B">
               <ListaActual lista={lista} />
             </Hoja>
+          </div>
+          <div className="zona-pago">
             <Hoja id="pago-proveedor" titulo="Pago">
-              <NotaRegla>Esta pantalla no envía dinero. El participante de la CLABE no está conectado.</NotaRegla>
-              <p className="pista">
-                Si el RFC está en el archivo, el proveedor existe y no hay botón de pago. Si el archivo no
-                está cargado, tampoco.
-              </p>
+              <NotaRegla>Esta pantalla no envía dinero.</NotaRegla>
             </Hoja>
-          </>
-        }
-      />
+          </div>
+        </div>
+      </div>
     </>
   );
 }
@@ -98,10 +99,12 @@ function ListaActual({ lista }: { lista: ListaVisible }) {
     return (
       <>
         <Insignia tono="aviso">Sin archivo</Insignia>
-        <Frase>No hay botón de pago.</Frase>
-        <p className="pista">
-          El listado del SAT no está cargado. La fecha del archivo no existe, y sin ella no se ofrece pago.
-        </p>
+        <Frase>{FRASE_SIN_PAGO}</Frase>
+        <Renglones>
+          <Renglon etiqueta="Fecha del archivo">
+            <Ausencia>sin fecha</Ausencia>
+          </Renglon>
+        </Renglones>
       </>
     );
   }
@@ -112,14 +115,21 @@ function ListaActual({ lista }: { lista: ListaVisible }) {
         <Renglon etiqueta="Fecha del archivo">{fechaDeArchivo(lista.fechaArchivo)}</Renglon>
         <Renglon etiqueta="Hora de carga">{horaDeLectura(lista.cargadoEn)}</Renglon>
       </Renglones>
-      <p className="pista">La lectura de cada proveedor es la del momento del alta.</p>
+      <p className="pista">Una copia nueva vuelve a leer a los proveedores ya guardados.</p>
     </>
   );
 }
 
-function FichaProveedor({ proveedor }: { proveedor: ProveedorVisible }) {
+function FichaProveedor({
+  proveedor,
+  puedeCambiar,
+}: {
+  proveedor: ProveedorVisible;
+  puedeCambiar: boolean;
+}) {
   const relato = relatoDePago(proveedor.decision);
   const institucion = institucionTradicional(proveedor.clabe.slice(0, 3));
+  const fecha = proveedor.decision.fechaArchivo;
   return (
     <article className="proveedor" aria-labelledby={`proveedor-${proveedor.id}`}>
       <div className="proveedor-cabeza">
@@ -128,18 +138,22 @@ function FichaProveedor({ proveedor }: { proveedor: ProveedorVisible }) {
       </div>
       <EtiquetaMono nombre="RFC">{proveedor.rfc}</EtiquetaMono>
       <Frase>{relato.frase}</Frase>
-      <p className="pista">{relato.detalle}</p>
+      <EtiquetaMono nombre="CLABE">{clabeVisible(proveedor.clabe)}</EtiquetaMono>
       <Renglones>
-        <Renglon etiqueta="CLABE">
-          <span className="clabe clabe-grande">{clabeVisible(proveedor.clabe)}</span>
+        {proveedor.decision.situacion ? (
+          <Renglon etiqueta="Situación">{proveedor.decision.situacion}</Renglon>
+        ) : null}
+        <Renglon etiqueta="Fecha del archivo">
+          {fecha ? fechaDeArchivo(fecha) : <Ausencia>sin fecha</Ausencia>}
         </Renglon>
         <Renglon etiqueta="Institución">{institucion ?? FRASE_INSTITUCION_PENDIENTE}</Renglon>
         <Renglon etiqueta="Constancia">
           {proveedor.constancia}
-          <span className="pista">Archivada. No hay liga pública.</span>
+          <span className="pista">Sin liga pública.</span>
         </Renglon>
         <Renglon etiqueta="Lectura">{horaDeLectura(proveedor.leidaEn)}</Renglon>
       </Renglones>
+      {puedeCambiar ? null : <p className="pista">Este rol ve la CLABE. No la cambia.</p>}
     </article>
   );
 }

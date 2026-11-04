@@ -5,13 +5,15 @@ import { useActionState } from "react";
 
 import { guardarClabeProveedor } from "@/app/consola/proveedores/acciones";
 import { FORMULARIO_CLABE_INICIAL, type EstadoClabe } from "@/app/consola/proveedores/estado";
-import { Aviso, EtiquetaMono, Frase, Renglon, Renglones } from "@/components/sistema";
-import { presentarClabe } from "@/dominio/clabe-proveedor";
+import { Aviso, EtiquetaMono, Renglon, Renglones } from "@/components/sistema";
+import { FRASE_INSTITUCION_PENDIENTE, presentarClabe } from "@/dominio/clabe-proveedor";
 
 export function FormularioCambio({ supplierId }: { supplierId: string }) {
   const [estado, accion, pendiente] = useActionState(guardarClabeProveedor, FORMULARIO_CLABE_INICIAL);
   const [valor, setValor] = useState("");
-  const lectura = valor.trim() === "" ? null : presentarClabe(valor);
+  const digitos = valor.replace(/\D/g, "");
+  const lectura = digitos.length >= 18 ? presentarClabe(valor) : null;
+  const noCierra = lectura !== null && !lectura.ok;
   const campo = `clabe-nueva-${supplierId}`;
 
   return (
@@ -29,28 +31,30 @@ export function FormularioCambio({ supplierId }: { supplierId: string }) {
           spellCheck={false}
           maxLength={32}
           className="entrada-rfc"
-          aria-invalid={estado.tipo === "invalido" || (lectura && !lectura.ok) ? true : undefined}
-          aria-describedby={`${campo}-pista`}
+          aria-invalid={estado.tipo === "invalido" || noCierra ? true : undefined}
+          aria-describedby={noCierra ? `${campo}-pista ${campo}-error` : `${campo}-pista`}
           onChange={(event) => setValor(event.target.value)}
         />
         <p className="pista" id={`${campo}-pista`}>
           La anterior se queda en el historial. No se envía dinero.
         </p>
+        {noCierra ? (
+          <p className="error-campo" id={`${campo}-error`}>
+            Esa CLABE no cierra. El dígito usa la ponderación 3, 7 y 1.
+          </p>
+        ) : null}
       </div>
       {lectura?.ok ? (
-        lectura.clabe.institucion.conocida ? (
-          <>
-            <EtiquetaMono nombre="CLABE">{lectura.clabe.visible}</EtiquetaMono>
-            <Renglones>
-              <Renglon etiqueta="Banco">{lectura.clabe.institucion.nombre}</Renglon>
-            </Renglones>
-          </>
-        ) : (
-          <>
-            <EtiquetaMono nombre="CLABE">{lectura.clabe.visible}</EtiquetaMono>
-            <Frase>{lectura.clabe.institucion.frase}</Frase>
-          </>
-        )
+        <>
+          <EtiquetaMono nombre="CLABE">{lectura.clabe.visible}</EtiquetaMono>
+          <Renglones>
+            <Renglon etiqueta="Institución">
+              {lectura.clabe.institucion.conocida
+                ? lectura.clabe.institucion.nombre
+                : FRASE_INSTITUCION_PENDIENTE}
+            </Renglon>
+          </Renglones>
+        </>
       ) : null}
       <div className="acciones">
         <button type="submit" className="boton" disabled={pendiente}>

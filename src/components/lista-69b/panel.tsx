@@ -66,7 +66,7 @@ function Consulta({ vista }: { vista: VistaLista69b }) {
 
 function Archivo({ vista }: { vista: VistaLista69b }) {
   return (
-    <Hoja id="archivo-69b" titulo="Archivo del SAT">
+    <Hoja className="hoja-archivo" id="archivo-69b" titulo="Archivo del SAT">
       {vista.fechaTexto ? (
         <Renglones>
           <Renglon etiqueta="Fecha del archivo">{vista.fechaTexto}</Renglon>
@@ -77,7 +77,7 @@ function Archivo({ vista }: { vista: VistaLista69b }) {
       ) : (
         <>
           <Vacio titulo="Todavía no hay archivo">
-            Sin esta copia no hay pago. La fecha aparece cuando el servidor guarda el listado.
+            La fecha aparece cuando el servidor guarda el listado.
           </Vacio>
           <Renglones>
             <Renglon etiqueta="Fecha del archivo">
@@ -87,9 +87,6 @@ function Archivo({ vista }: { vista: VistaLista69b }) {
           </Renglones>
         </>
       )}
-      <NotaRegla>
-        Si el RFC está en el archivo, el proveedor puede existir y el pago no. Si no hay archivo, tampoco hay pago.
-      </NotaRegla>
     </Hoja>
   );
 }
@@ -111,26 +108,26 @@ function Resultado({ vista }: { vista: VistaLista69b }) {
   if (!resultado) return null;
   return (
     <>
-      <EtiquetaMono nombre="RFC">{resultado.rfc}</EtiquetaMono>
-      <Frase>{resultado.frase}</Frase>
-      {resultado.situaciones.length > 0 ? (
-        <ul className="lista-simple">
-          {resultado.situaciones.map((situacion) => (
-            <li key={situacion}>
-              <Insignia tono="aviso">{situacion}</Insignia>
-            </li>
-          ))}
-        </ul>
-      ) : resultado.bloqueado ? (
-        <Ausencia>sin situación publicada</Ausencia>
-      ) : (
-        <Insignia>No publicado</Insignia>
-      )}
-      {vista.fechaTexto ? (
+      <div className="resultado-69b">
+        <EtiquetaMono nombre="RFC">{resultado.rfc}</EtiquetaMono>
+        <Frase>{resultado.frase}</Frase>
+        {resultado.situaciones.length > 0 ? (
+          <ul className="lista-simple">
+            {resultado.situaciones.map((situacion) => (
+              <li key={situacion}>
+                <Insignia tono="aviso">{situacion}</Insignia>
+              </li>
+            ))}
+          </ul>
+        ) : resultado.decision.motivo === "fuera_del_listado" ? (
+          <Insignia>Fuera de la lista</Insignia>
+        ) : null}
         <Renglones>
-          <Renglon etiqueta="Fecha del archivo">{vista.fechaTexto}</Renglon>
+          <Renglon etiqueta="Fecha del archivo">
+            {vista.fechaTexto ?? <Ausencia>sin fecha</Ausencia>}
+          </Renglon>
         </Renglones>
-      ) : null}
+      </div>
     </>
   );
 }

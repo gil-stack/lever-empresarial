@@ -14,7 +14,7 @@ import {
   type CodigoRechazoProveedor,
 } from "@/dominio/proveedores";
 import { rfcAlEscribir } from "@/dominio/rfc";
-import { Aviso } from "@/components/sistema";
+import { Aviso, EtiquetaMono } from "@/components/sistema";
 
 export function FormularioProveedor() {
   const [estado, accion, pendiente] = useActionState(enviarProveedor, ESTADO_ALTA_INICIAL);
@@ -79,7 +79,7 @@ export function FormularioProveedor() {
       <Campo
         id="rfc"
         etiqueta="RFC"
-        pista="12 o 13 caracteres, como en el SAT. El nombre comercial no abre otra ficha."
+        pista="12 o 13 caracteres."
         error={mensaje("rfc")}
       >
         <input
@@ -102,7 +102,7 @@ export function FormularioProveedor() {
       <Campo
         id="razonSocial"
         etiqueta="Razón social"
-        pista="Como viene en la constancia."
+        pista="Como en la constancia."
         error={mensaje("razonSocial")}
       >
         <input
@@ -122,7 +122,7 @@ export function FormularioProveedor() {
       <Campo
         id="clabe"
         etiqueta="CLABE"
-        pista="Dieciocho dígitos. El último es el verificador 3, 7 y 1. Se muestran todos."
+        pista="18 dígitos. Se muestran todos."
         error={mensaje("clabe")}
       >
         <input
@@ -142,9 +142,9 @@ export function FormularioProveedor() {
           }}
         />
         {clabe.length === 18 ? (
-          <p id="clabe-elegido" className="elegido">
-            <span className="clabe clabe-grande">{clabeVisible(clabe)}</span>
-          </p>
+          <div id="clabe-elegido">
+            <EtiquetaMono nombre="CLABE">{clabeVisible(clabe)}</EtiquetaMono>
+          </div>
         ) : null}
         {institucion ? (
           <p id="clabe-banco" className="pista">
@@ -154,8 +154,8 @@ export function FormularioProveedor() {
       </Campo>
       <Campo
         id="constancia"
-        etiqueta="Constancia de situación fiscal"
-        pista="PDF del SAT. Se archiva en privado, sin liga pública."
+        etiqueta="Constancia"
+        pista="PDF del SAT."
         error={mensaje("constancia")}
       >
         <div className="archivo">
@@ -172,7 +172,7 @@ export function FormularioProveedor() {
               setLocal(null);
             }}
           />
-          <label htmlFor="constancia" className="boton-texto">
+          <label htmlFor="constancia" className="boton-texto boton-archivo">
             Elegir PDF
           </label>
           <span className={archivoNombre ? "elegido archivo-nombre" : "pista archivo-nombre"}>

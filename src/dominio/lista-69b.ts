@@ -114,10 +114,15 @@ export function decidirPago69b(entrada: {
   return { listaPermitePago: true, motivo: "fuera_del_listado", situaciones: [] };
 }
 
+/** La misma frase en la ficha y en la lista cuando el archivo no deja pagar. */
+export const FRASE_SIN_PAGO = "El proveedor puede existir. El pago no.";
+
+/** Esta pantalla no manda el pago, aunque el archivo no lo impida. */
+export const FRASE_ESTA_PANTALLA = "Esta pantalla no envía dinero.";
+
 export function fraseDePago69b(decision: DecisionPago69b): string {
-  if (decision.motivo === "sin_archivo") return "No hay archivo del SAT. No hay pago.";
-  if (decision.motivo === "en_el_listado") return "El proveedor puede existir. El pago no.";
-  return "Este RFC no está en el archivo. Esta pantalla no envía dinero.";
+  if (decision.motivo === "fuera_del_listado") return FRASE_ESTA_PANTALLA;
+  return FRASE_SIN_PAGO;
 }
 
 export function fraseFechaArchivo(iso: string): string {
@@ -128,19 +133,7 @@ export function fraseFechaArchivo(iso: string): string {
   return `${Number(partes[3])} de ${mes} de ${partes[1]}`;
 }
 
-export function horaEnMexico(instante: Date): string {
-  if (Number.isNaN(instante.getTime())) return "";
-  const texto = new Intl.DateTimeFormat("es-MX", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-    timeZone: "America/Mexico_City",
-  }).format(instante);
-  return `${texto}, hora del centro de México`;
-}
+export { horaEnMexico } from "./reloj";
 
 export function fraseConteo(cantidad: number): string {
   return new Intl.NumberFormat("es-MX").format(cantidad);

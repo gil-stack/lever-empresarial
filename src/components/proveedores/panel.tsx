@@ -1,15 +1,5 @@
 import { FormularioCambio } from "./formulario-cambio";
-import { LecturaClabe } from "./lectura";
-import {
-  EtiquetaMono,
-  Frase,
-  Hoja,
-  Insignia,
-  NotaRegla,
-  Renglon,
-  Renglones,
-  Vacio,
-} from "@/components/sistema";
+import { EtiquetaMono, Hoja, Insignia, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { FRASE_INSTITUCION_PENDIENTE } from "@/dominio/clabe-proveedor";
 import type { GrupoClabeVista, LecturaClabes, LineaClabeVista } from "@/server/proveedores/tipos";
 
@@ -25,20 +15,11 @@ export function HistorialClabes({
   nombres: Readonly<Record<string, string>>;
 }) {
   return (
-    <>
-      <Hoja id="lectura-clabe" titulo="Lectura de una CLABE">
-        <LecturaClabe />
-        <NotaRegla>
-          El nombre del banco solo aparece si los tres primeros dígitos están en el catálogo tradicional de la
-          ABM. Si no están, la pantalla dice: {FRASE_INSTITUCION_PENDIENTE} No se envía dinero.
-        </NotaRegla>
-      </Hoja>
+    <Hoja id="historial-clabe" titulo="Historial">
       {lectura.grupos.length === 0 ? (
-        <Hoja id="historial-clabe" titulo="Historial">
-          <Vacio titulo="Todavía no hay una CLABE de proveedor.">
-            La primera se asienta con el alta. Cuando se cambie, la anterior se queda aquí.
-          </Vacio>
-        </Hoja>
+        <Vacio titulo="Todavía no hay una CLABE de proveedor.">
+          La primera se asienta con el alta. Cuando se cambie, la anterior se queda aquí. No se envía dinero.
+        </Vacio>
       ) : (
         lectura.grupos.map((grupo) => (
           <Grupo
@@ -49,7 +30,7 @@ export function HistorialClabes({
           />
         ))
       )}
-    </>
+    </Hoja>
   );
 }
 
@@ -63,11 +44,12 @@ function Grupo({
   puedeCambiar: boolean;
 }) {
   return (
-    <Hoja id={`clabe-${grupo.supplierId}`} titulo={titulo}>
+    <section className="clabe-linea" aria-labelledby={`historial-${grupo.supplierId}`}>
+      <h3 id={`historial-${grupo.supplierId}`}>{titulo}</h3>
       {grupo.vigente ? <Linea linea={grupo.vigente} vigente /> : null}
       {grupo.anteriores.length > 0 ? (
         <>
-          <h3>Anteriores</h3>
+          <p className="historial-anteriores">Anteriores</p>
           {grupo.anteriores.map((linea) => (
             <Linea key={linea.id} linea={linea} vigente={false} />
           ))}
@@ -76,33 +58,23 @@ function Grupo({
         <p className="pista">No hay una CLABE anterior.</p>
       ) : null}
       {grupo.vigente && puedeCambiar ? <FormularioCambio supplierId={grupo.supplierId} /> : null}
-      {grupo.vigente && !puedeCambiar ? <p className="pista">Este rol ve la CLABE. No la cambia.</p> : null}
-    </Hoja>
+    </section>
   );
 }
 
 function Linea({ linea, vigente }: { linea: LineaClabeVista; vigente: boolean }) {
+  const institucion = linea.institucion.conocida ? linea.institucion.nombre : FRASE_INSTITUCION_PENDIENTE;
   return (
-    <div className="clabe-linea">
+    <div>
       <p>
         <Insignia tono={vigente ? "sello" : "neutro"}>{vigente ? "Vigente" : "Anterior"}</Insignia>
       </p>
       <EtiquetaMono nombre="CLABE">{linea.visible}</EtiquetaMono>
-      {linea.institucion.conocida ? (
-        <Renglones>
-          <Renglon etiqueta="Banco">{linea.institucion.nombre}</Renglon>
-          <Renglon etiqueta="Desde">{linea.desde}</Renglon>
-          {linea.hasta ? <Renglon etiqueta="Hasta">{linea.hasta}</Renglon> : null}
-        </Renglones>
-      ) : (
-        <>
-          <Frase>{linea.institucion.frase}</Frase>
-          <Renglones>
-            <Renglon etiqueta="Desde">{linea.desde}</Renglon>
-            {linea.hasta ? <Renglon etiqueta="Hasta">{linea.hasta}</Renglon> : null}
-          </Renglones>
-        </>
-      )}
+      <Renglones>
+        <Renglon etiqueta="Institución">{institucion}</Renglon>
+        <Renglon etiqueta="Desde">{linea.desde}</Renglon>
+        {linea.hasta ? <Renglon etiqueta="Hasta">{linea.hasta}</Renglon> : null}
+      </Renglones>
     </div>
   );
 }

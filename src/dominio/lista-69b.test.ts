@@ -111,13 +111,13 @@ describe("el pago", () => {
     const sinArchivo = decidirPago69b({ hayArchivo: false, situaciones: [] });
     assert.equal(sinArchivo.listaPermitePago, false);
     assert.equal(sinArchivo.motivo, "sin_archivo");
-    assert.equal(fraseDePago69b(sinArchivo), "No hay archivo del SAT. No hay pago.");
+    assert.equal(fraseDePago69b(sinArchivo), "El proveedor puede existir. El pago no.");
 
     const publicado = decidirPago69b({ hayArchivo: true, situaciones: ["Definitivo", "Sentencia Favorable"] });
     assert.equal(publicado.listaPermitePago, false);
     assert.equal(publicado.motivo, "en_el_listado");
     assert.deepEqual(publicado.situaciones, ["Definitivo", "Sentencia Favorable"]);
-    assert.equal(fraseDePago69b(publicado), "El proveedor puede existir. El pago no.");
+    assert.equal(fraseDePago69b(publicado), fraseDePago69b(sinArchivo));
     assert.equal(elProveedorPuedeExistir(), true);
   });
 

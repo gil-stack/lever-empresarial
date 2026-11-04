@@ -147,6 +147,16 @@ h3 {
   background: var(--sello);
 }
 
+.kicker-app {
+  margin: 0 0 8px;
+  color: var(--tinta-tenue);
+  font-family: var(--fuente-sans);
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.3;
+}
+
 .lede {
   max-width: 56ch;
   color: var(--tinta-suave);

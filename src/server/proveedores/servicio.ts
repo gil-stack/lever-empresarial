@@ -18,7 +18,7 @@ import { registrarHechoProveedor, type HechoProveedor } from "./auditar";
 import { almacenVercel, type AlmacenConstancia } from "./constancia";
 import { repositorioPg } from "./repositorio";
 import type { AltaGuardada, LecturaProveedores, RepositorioProveedores } from "./tipos";
-import { leerListado69b } from "../../dominio/lista-69b";
+import { leerArchivo69b } from "../../dominio/lista-69b";
 
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -140,15 +140,15 @@ export async function darDeAltaProveedor(
 }
 
 /**
- * Guarda un snapshot del listado 69-B. No es una acción de la empresa:
- * un cliente no sube el archivo, porque un listado vacío abriría el pago.
- * No hay ruta que lo llame.
+ * Guarda un snapshot con el mismo lector que el botón de la lista.
+ * Una fila rota rechaza el archivo entero. La copia nueva relee a los proveedores.
+ * No hay ruta que llame a esta función: el botón usa el servicio de la lista.
  */
 export async function guardarListado69b(
   texto: string,
   deps?: DependenciasProveedores,
 ): Promise<{ filas: number; fechaArchivo: string }> {
-  const leido = leerListado69b(texto);
+  const leido = leerArchivo69b(texto);
   if (!leido.ok) throw new ErrorDeDominio(leido.codigo);
   const listo = resolver(deps);
   await listo.repositorio.guardarSnapshot({

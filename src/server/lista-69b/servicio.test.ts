@@ -40,7 +40,7 @@ describe("la copia y la consulta", () => {
     assert.equal(vista.fechaTexto, null);
     assert.equal(vista.puedeGuardar, true);
     assert.equal(vista.resultado?.bloqueado, true);
-    assert.equal(vista.resultado?.frase, "No hay archivo del SAT. No hay pago.");
+    assert.equal(vista.resultado?.frase, "El proveedor puede existir. El pago no.");
     assert.equal(vista.resultado?.decision.listaPermitePago, false);
   });
 

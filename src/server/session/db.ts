@@ -169,7 +169,15 @@ const FRASES_DE_PROVEEDOR: Readonly<Record<string, string>> = {
   constancia_sin_proveedor: "archivo_no_disponible",
   proveedor_sin_clabe: "clabe_invalida",
   clabe_no_se_reescribe: "clabe_invalida",
+  clabe_de_otra_empresa: "proveedor_ausente",
   rfc_de_proveedor_fijo: "proveedor_duplicado",
+  pago_con_rfc_publicado: "listado_irreconocible",
+  fecha_de_lista_distinta: "listado_irreconocible",
+  situacion_distinta_de_la_copia: "listado_irreconocible",
+  lectura_sin_copia: "listado_irreconocible",
+  copia_69b_ausente: "listado_irreconocible",
+  copia_69b_sin_filas: "listado_irreconocible",
+  constancia_no_se_reescribe: "archivo_no_disponible",
 };
 
 const CODIGOS_DE_FIRMA = new Set([

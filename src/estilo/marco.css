@@ -336,21 +336,47 @@
   flex: 1;
 }
 
-.barra-telefono {
+.telefono-cabeza {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  padding: 14px var(--margen);
-  border-bottom: 1px solid var(--linea);
+  gap: 12px;
+  margin-bottom: 22px;
 }
 
-.barra-telefono .selector-tema {
-  width: 132px;
+.marca-app {
+  margin: 0;
+  color: var(--tinta);
+  font-family: var(--fuente-sans);
+  font-size: 0.95rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  line-height: 1;
 }
 
-.barra-telefono .selector-tema legend,
-.barra-telefono .selector-tema span {
+.telefono-cuerpo {
+  flex: 1;
+}
+
+.pie-app {
+  margin-top: 28px;
+  padding-top: 14px;
+  border-top: 1px solid var(--linea);
+}
+
+.pie-app p {
+  margin: 0;
+  color: var(--tinta-tenue);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.telefono-cabeza .selector-tema {
+  width: 120px;
+}
+
+.telefono-cabeza .selector-tema legend,
+.telefono-cabeza .selector-tema span {
   position: absolute;
   width: 1px;
   height: 1px;

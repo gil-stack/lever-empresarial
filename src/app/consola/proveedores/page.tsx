@@ -39,7 +39,7 @@ export default async function PaginaProveedores() {
       persona={persona}
       {...puertasDe(carga.tipo === "sin_sesion" ? null : carga.rol, conEmpresa)}
     >
-      <main id="contenido" className="pagina">
+      <main id="contenido" className="pagina pagina-proveedores">
         {carga.tipo === "lista" ? (
           <PantallaProveedores
             rol={carga.rol}

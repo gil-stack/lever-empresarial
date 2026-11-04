@@ -6,12 +6,15 @@ import { decodificarListado, leerListado69b } from "./lista-69b.ts";
 import {
   decidirPago,
   erroresDeAltaProveedor,
+  horaDeLectura,
   mensajeDeAlta,
   puedeDarDeAltaProveedor,
   puedeVerProveedores,
+  releerFichas,
   relatoDePago,
   rfcDeProveedor,
 } from "./proveedores.ts";
+import { horaEnMexico } from "./reloj.ts";
 
 const LISTADO = `"Información actualizada al 30 de septiembre de 2026; listado público.",
 Listado completo de contribuyentes (Artículo 69-B del CFF)
@@ -60,13 +63,15 @@ describe("decisión de pago", () => {
     assert.equal(relatoDePago(enLista).hayBoton, false);
     assert.equal(relatoDePago(sinArchivo).hayBoton, false);
     assert.equal(relatoDePago(fuera).hayBoton, false);
-    assert.equal(relatoDePago(enLista).frase, "No hay botón de pago.");
+    assert.equal(relatoDePago(enLista).frase, "El proveedor puede existir. El pago no.");
+    assert.equal(relatoDePago(sinArchivo).frase, relatoDePago(enLista).frase);
+    assert.equal(relatoDePago(fuera).frase, "Esta pantalla no envía dinero.");
+    assert.equal(relatoDePago(fuera).tono, "neutro");
     assert.match(relatoDePago(enLista).detalle, /Sentencia Favorable/);
     assert.match(relatoDePago(enLista).detalle, /30 de septiembre de 2026/);
-    assert.equal(relatoDePago(sinArchivo).frase, "No hay botón de pago.");
-    assert.notEqual(relatoDePago(fuera).frase, "No hay botón de pago.");
-    assert.match(mensajeDeAlta(enLista), /no hay botón de pago/);
-    assert.match(mensajeDeAlta(sinArchivo), /no hay botón de pago/);
+    assert.match(mensajeDeAlta(enLista), /El pago no/);
+    assert.match(mensajeDeAlta(sinArchivo), /El pago no/);
+    assert.match(mensajeDeAlta(fuera), /no envía dinero/);
   });
 
   it("manda el RFC: un nombre no crea al proveedor", () => {
@@ -92,6 +97,61 @@ describe("decisión de pago", () => {
   });
 });
 
+describe("relectura del 69-B", () => {
+  it("si el RFC entra después, la ficha deja de estar fuera y el pago sigue apagado", () => {
+    const copia = {
+      id: "44444444-4444-4444-8444-444444444444",
+      fechaArchivo: "2026-10-31",
+      filas: [
+        { rfc: "EKU9003173C9", situacion: "Definitivo" },
+        { rfc: "EKU9003173C9", situacion: "Presunto" },
+      ],
+    };
+    const [entro, limpio, sinArchivo] = releerFichas(
+      [
+        {
+          rfc: "EKU9003173C9",
+          snapshotId: "33333333-3333-4333-8333-333333333333",
+          situacion: null,
+          fechaArchivo: "2026-09-30",
+          botonPago: true,
+        },
+        {
+          rfc: "AAA080808HL8",
+          snapshotId: "33333333-3333-4333-8333-333333333333",
+          situacion: null,
+          fechaArchivo: "2026-09-30",
+          botonPago: true,
+        },
+        {
+          rfc: "CABL840215RF4",
+          snapshotId: null,
+          situacion: null,
+          fechaArchivo: null,
+          botonPago: false,
+        },
+      ],
+      copia,
+    );
+    assert.equal(entro?.botonPago, false);
+    assert.equal(entro?.situacion, "Definitivo · Presunto");
+    assert.equal(entro?.fechaArchivo, "2026-10-31");
+    assert.equal(relatoDePago({ botonPago: false, motivo: "en_lista", situacion: entro?.situacion ?? null, fechaArchivo: entro?.fechaArchivo ?? null }).insignia, "En la lista 69-B");
+    assert.equal(limpio?.botonPago, true);
+    assert.equal(limpio?.situacion, null);
+    assert.equal(limpio?.snapshotId, copia.id);
+    assert.equal(sinArchivo?.botonPago, false);
+    assert.equal(sinArchivo?.snapshotId, null);
+    assert.equal(sinArchivo?.fechaArchivo, null);
+  });
+
+  it("escribe la hora igual que la lista", () => {
+    const instante = new Date("2026-11-03T21:09:00.000Z");
+    assert.equal(horaDeLectura(instante.toISOString()), horaEnMexico(instante));
+    assert.match(horaEnMexico(instante), /3 de noviembre de 2026 a las \d{2}:09, hora del centro de México/);
+  });
+});
+
 describe("la pantalla no mezcla la consola con el teléfono", () => {
   it("el alta entra en la consola y el teléfono no lleva esa sección", () => {
     const marco = readFileSync(new URL("../components/cromo/marco.tsx", import.meta.url), "utf8");
@@ -109,7 +169,7 @@ describe("la pantalla no mezcla la consola con el teléfono", () => {
     assert.doesNotMatch(paginaTelefono, /69/);
     assert.match(pagina, /<Marco/);
     assert.doesNotMatch(pagina, /MarcoTelefono/);
-    assert.match(pagina, /className="pagina"/);
+    assert.match(pagina, /className="pagina pagina-proveedores"/);
     assert.equal(pantalla.includes("<button"), false);
     assert.match(forma, /Dar de alta/);
     assert.doesNotMatch(forma, /SPEI|Pagar ahora|BLOB_READ_WRITE_TOKEN|DATABASE_URL/);

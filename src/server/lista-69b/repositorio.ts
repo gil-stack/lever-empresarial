@@ -34,7 +34,7 @@ const SQL = {
         where r.snapshot_id = s.id
       ) as contribuyentes
     from lista_69b_snapshots s
-    order by s.cargado_en desc
+    order by s.cargado_en desc, s.id desc
     limit 1
   `,
   situaciones: `
@@ -83,6 +83,10 @@ export function repositorio69bPg(): Repositorio69b {
             lote.map((fila) => fila.situacion),
           ]);
         }
+        await consulta.query("select releer_proveedores_69b($1::uuid, $2::timestamptz)", [
+          entrada.id,
+          entrada.cargadoEn,
+        ]);
       });
     },
   };

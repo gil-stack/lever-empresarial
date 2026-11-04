@@ -86,7 +86,7 @@ export async function Marco({
   );
 }
 
-/** El teléfono del tarjetahabiente. No lleva el menú de la consola, ni proveedores, ni la CLABE, ni la lista 69-B. */
+/** La app de quien paga. No lleva el menú de la consola ni el pie del escritorio. */
 export async function MarcoTelefono({ children }: { children: ReactNode }) {
   const tema = await temaElegido();
   return (
@@ -94,12 +94,18 @@ export async function MarcoTelefono({ children }: { children: ReactNode }) {
       <a className="saltar" href="#contenido">
         Saltar al contenido
       </a>
-      <header className="barra-telefono">
-        <Marca />
-        <SelectorTema inicial={tema} />
-      </header>
-      {children}
-      <Pie />
+      <main id="contenido" className="superficie-telefono">
+        <div className="telefono">
+          <header className="telefono-cabeza">
+            <p className="marca-app">Gasto</p>
+            <SelectorTema inicial={tema} />
+          </header>
+          <div className="telefono-cuerpo">{children}</div>
+          <footer className="pie-app">
+            <p>Aquí se cierra un gasto. El escritorio de finanzas es otra pantalla.</p>
+          </footer>
+        </div>
+      </main>
     </div>
   );
 }

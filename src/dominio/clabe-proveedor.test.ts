@@ -85,7 +85,10 @@ describe("catálogo tradicional de la CLABE", () => {
   });
 
   it("dice la hora de la Ciudad de México", () => {
-    assert.equal(momentoClabe(new Date("2026-11-04T18:40:00.000Z")), "4 de noviembre de 2026, 12:40");
+    assert.equal(
+      momentoClabe(new Date("2026-11-04T18:40:00.000Z")),
+      "4 de noviembre de 2026 a las 12:40, hora del centro de México",
+    );
   });
 
   it("la ve finanzas en la consola y solo el administrador la cambia", () => {
@@ -126,7 +129,10 @@ describe("la CLABE vive en la consola y no en el teléfono", () => {
     const telefonoMarco = marco.slice(marco.indexOf("export async function MarcoTelefono"));
     const pagina = readFileSync(new URL("../app/consola/proveedores/page.tsx", import.meta.url), "utf8");
     const panel = readFileSync(new URL("../components/proveedores/panel.tsx", import.meta.url), "utf8");
-    const lectura = readFileSync(new URL("../components/proveedores/lectura.tsx", import.meta.url), "utf8");
+    const cambio = readFileSync(new URL("../components/proveedores/formulario-cambio.tsx", import.meta.url), "utf8");
+    const marcoInicio = marco.indexOf("export async function MarcoTelefono");
+    const marcoFin = marco.indexOf("\nfunction Grupo", marcoInicio);
+    const telefonoCuerpo = marco.slice(marcoInicio, marcoFin);
 
     assert.equal(telefono.includes("proveedores"), false);
     assert.equal(telefono.includes("69"), false);
@@ -142,7 +148,16 @@ describe("la CLABE vive en la consola y no en el teléfono", () => {
     assert.match(panel, /EtiquetaMono/);
     assert.match(panel, /FRASE_INSTITUCION_PENDIENTE/);
     assert.match(panel, /No se envía dinero/);
-    assert.match(lectura, /presentarClabe/);
+    assert.equal(panel.includes("<LecturaClabe"), false);
+    assert.equal(panel.includes('from "./lectura"'), false);
+    assert.equal(panel.includes('id="lectura-clabe"'), false);
+    assert.match(cambio, /digitos.length >= 18/);
+    assert.match(cambio, /Esa CLABE no cierra/);
+    assert.equal(telefonoCuerpo.includes("CLABE"), false);
+    assert.doesNotMatch(telefonoCuerpo, /El saldo vive/);
+    assert.match(telefonoCuerpo, /marca-app/);
+    assert.match(telefonoCuerpo, /pie-app/);
+    assert.match(marco, /El saldo vive con el participante de la CLABE/);
     assert.equal(panel.includes("•"), false);
     assert.doesNotMatch(panel, /SPEI|transferir|Pagar/);
   });

@@ -625,18 +625,110 @@ h1 + .rfc-cuenta {
   text-underline-offset: 3px;
 }
 
-/* Alta de proveedor. Solo la consola: el teléfono no usa estas clases. */
+/* Alta de proveedor. Estas clases no tocan los saldos de la consola. */
 
-.hoja .frase {
-  margin-top: 16px;
+.pagina-proveedores {
+  padding-top: 28px;
+  padding-bottom: 64px;
 }
 
-.hoja .insignia + .frase {
+.pagina-proveedores > .pagina-cabeza + * {
+  margin-top: 28px;
+}
+
+.pagina-proveedores .kicker {
+  margin-bottom: 12px;
+}
+
+.pagina-proveedores h1 + .lede {
+  margin-top: 10px;
+}
+
+.proveedores-lienzo {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.85fr);
+  gap: 20px 24px;
+  align-items: start;
+}
+
+.zona-principal,
+.zona-lateral {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+  min-width: 0;
+}
+
+.zona-alta .alta-formulario {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 12px;
+}
+
+.zona-alta .alerta,
+.zona-alta .acciones {
+  grid-column: 1 / -1;
+}
+
+.zona-alta .hoja {
+  padding: 16px 16px 14px;
+}
+
+.zona-alta .campo {
+  margin-top: 10px;
+}
+
+.zona-alta .campo label {
+  margin-bottom: 4px;
+}
+
+.zona-alta .campo input {
+  min-height: 40px;
+}
+
+.zona-alta .acciones {
   margin-top: 12px;
 }
 
-.hoja .vacio {
-  margin-top: 22px;
+.zona-alta .pista {
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+.hoja-archivo .renglones {
+  margin-top: 12px;
+}
+
+.hoja-archivo .renglones > div {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  padding: 10px 0;
+}
+
+.resultado-69b .frase,
+.proveedor .frase,
+.hoja-archivo .frase {
+  margin-top: 12px;
+}
+
+@container (max-width: 900px) {
+  .proveedores-lienzo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .zona-lateral {
+    order: -1;
+  }
+
+  .zona-archivo {
+    order: -1;
+  }
+}
+
+@container (max-width: 560px) {
+  .zona-alta .alta-formulario {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .proveedor {
@@ -661,10 +753,6 @@ h1 + .rfc-cuenta {
   margin-top: 14px;
 }
 
-.proveedor .frase {
-  margin-top: 16px;
-}
-
 .proveedor dd .pista {
   display: block;
 }
@@ -673,9 +761,11 @@ h1 + .rfc-cuenta {
   margin-top: 8px;
 }
 
-.clabe-grande {
-  font-size: 1.15rem;
-  letter-spacing: 0.06em;
+.historial-anteriores {
+  margin-top: 16px;
+  color: var(--tinta-suave);
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 .clabe-linea + .clabe-linea {
@@ -698,10 +788,16 @@ h1 + .rfc-cuenta {
 }
 
 .archivo {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 12px 16px;
+}
+
+.archivo:focus-within .boton-archivo {
+  outline: 2px solid var(--sello);
+  outline-offset: 3px;
 }
 
 .archivo-nombre {

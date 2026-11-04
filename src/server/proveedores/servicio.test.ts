@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 import { digitoClabe } from "../../dominio/clabe.ts";
-import { decisionGuardada } from "../../dominio/proveedores.ts";
+import { decisionGuardada, releerFichas } from "../../dominio/proveedores.ts";
 import { ErrorDeDominio } from "../session/error-de-dominio.ts";
 import type { Rol, Sesion } from "../session/tipos.ts";
 import { SQL } from "./repositorio.ts";
@@ -44,7 +44,7 @@ describe("alta de proveedor", () => {
     const admin = mundo.sembrar("administrador");
     const primero = await darDeAlta(mundo, admin, { razonSocial: "Escuela Kemper Urgate" });
     assert.equal(primero.decision.botonPago, false);
-    assert.match(primero.mensaje, /no hay botón de pago/);
+    assert.match(primero.mensaje, /El pago no/);
     assert.equal(mundo.guardados.length, 1);
     assert.equal(mundo.guardados[0]?.startsWith("http"), false);
 
@@ -67,7 +67,7 @@ describe("alta de proveedor", () => {
     assert.equal(guardado.decision.botonPago, false);
     assert.equal(guardado.decision.motivo, "en_lista");
     assert.equal(guardado.decision.situacion, "Sentencia Favorable");
-    assert.match(guardado.mensaje, /no hay botón de pago/);
+    assert.match(guardado.mensaje, /El pago no/);
 
     const lectura = await leerProveedores(sesion(admin, "administrador"), mundo.deps);
     assert.equal(lectura.lista?.fechaArchivo, "2026-09-30");
@@ -87,8 +87,43 @@ describe("alta de proveedor", () => {
     const guardado = await darDeAlta(mundo, admin, {});
     assert.equal(guardado.decision.botonPago, true);
     assert.equal(guardado.decision.motivo, "fuera_de_lista");
-    assert.match(guardado.mensaje, /no envía el pago/);
-    assert.doesNotMatch(guardado.mensaje, /no hay botón de pago/);
+    assert.match(guardado.mensaje, /no envía dinero/);
+    assert.doesNotMatch(guardado.mensaje, /El pago no/);
+  });
+
+  it("una copia nueva deja de decir fuera de la lista y el pago sigue apagado", async () => {
+    const mundo = memoria();
+    const admin = mundo.sembrar("administrador");
+    await guardarListado69b(LISTADO, mundo.deps);
+    const fuera = await darDeAlta(mundo, admin, {});
+    assert.equal(fuera.decision.motivo, "fuera_de_lista");
+    assert.equal(fuera.decision.botonPago, true);
+
+    const segunda = LISTADO.replace("30 de septiembre de 2026", "31 de octubre de 2026").replace(
+      "1,AAA080808HL8,ASESORES,Sentencia Favorable",
+      "1,EKU9003173C9,ESCUELA,Definitivo",
+    );
+    await guardarListado69b(segunda, mundo.deps);
+    const lectura = await leerProveedores(sesion(admin, "administrador"), mundo.deps);
+    const ficha = lectura.proveedores[0];
+    assert.equal(ficha?.decision.motivo, "en_lista");
+    assert.equal(ficha?.decision.botonPago, false);
+    assert.equal(ficha?.decision.situacion, "Definitivo");
+    assert.equal(ficha?.decision.fechaArchivo, "2026-10-31");
+    assert.notEqual(ficha?.decision.motivo, "fuera_de_lista");
+  });
+
+  it("quien se dio de alta sin archivo sigue sin pago si la copia nueva no lo trae", async () => {
+    const mundo = memoria();
+    const admin = mundo.sembrar("administrador");
+    const alta = await darDeAlta(mundo, admin, {});
+    assert.equal(alta.decision.motivo, "sin_archivo");
+    assert.equal(alta.decision.botonPago, false);
+    await guardarListado69b(LISTADO, mundo.deps);
+    const lectura = await leerProveedores(sesion(admin, "administrador"), mundo.deps);
+    assert.equal(lectura.proveedores[0]?.decision.motivo, "sin_archivo");
+    assert.equal(lectura.proveedores[0]?.decision.botonPago, false);
+    assert.equal(lectura.proveedores[0]?.decision.fechaArchivo, null);
   });
 
   it("el contador ve y no da de alta; el tarjetahabiente no entra; otra empresa no se ve", async () => {
@@ -193,6 +228,7 @@ function memoria() {
     constancia: string;
     hash: string;
     clave: string;
+    snapshotId: string | null;
     decision: ReturnType<typeof decisionGuardada>;
     leidaEn: string;
   }[] = [];
@@ -251,6 +287,7 @@ function memoria() {
           constancia: doc.nombre,
           hash: doc.hash,
           clave: doc.clave,
+          snapshotId: alta.snapshotId,
           decision: decisionGuardada({ situacion: alta.situacion, fechaArchivo: alta.fechaArchivo }),
           leidaEn: alta.leidaEn.toISOString(),
         });
@@ -281,6 +318,28 @@ function memoria() {
     },
     async guardarSnapshot(snapshot) {
       snapshots.push(snapshot);
+      const releidas = releerFichas(
+        proveedores.map((ficha) => ({
+          rfc: ficha.rfc,
+          snapshotId: ficha.snapshotId,
+          situacion: ficha.decision.situacion,
+          fechaArchivo: ficha.decision.fechaArchivo,
+          botonPago: ficha.decision.botonPago,
+        })),
+        snapshot,
+      );
+      releidas.forEach((releida, indice) => {
+        const ficha = proveedores[indice];
+        if (!ficha) return;
+        const cambio =
+          releida.snapshotId !== ficha.snapshotId || releida.situacion !== ficha.decision.situacion;
+        ficha.snapshotId = releida.snapshotId;
+        ficha.decision = decisionGuardada({
+          situacion: releida.situacion,
+          fechaArchivo: releida.fechaArchivo,
+        });
+        if (cambio) ficha.leidaEn = snapshot.cargadoEn.toISOString();
+      });
     },
   };
 

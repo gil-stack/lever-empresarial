@@ -1,5 +1,7 @@
 import { clabeValida } from "./clabe";
+import { FRASE_ESTA_PANTALLA, FRASE_SIN_PAGO } from "./lista-69b";
 import type { RolCuenta } from "./personas";
+import { horaEnMexico } from "./reloj";
 import { normalizarRfc, validarRfc } from "./rfc";
 
 /**
@@ -8,7 +10,7 @@ import { normalizarRfc, validarRfc } from "./rfc";
  * Manda el RFC. «Amazon», «AMZN» y «Amazon México» no abren tres fichas.
  * La CLABE se guarda solo si el dígito cierra. La constancia es un PDF.
  * Si el RFC está en el archivo 69-B, o si ese archivo no está cargado,
- * no hay botón de pago. Esta fase no envía un SPEI.
+ * el proveedor puede existir y el pago no. Esta fase no envía un SPEI.
  */
 
 export const PESO_MAXIMO_CONSTANCIA = 8_000_000;
@@ -65,7 +67,7 @@ export type DecisionPago = {
 };
 
 export type RelatoPago = {
-  tono: "aviso" | "sello";
+  tono: "aviso" | "neutro";
   insignia: string;
   frase: string;
   detalle: string;
@@ -200,11 +202,11 @@ export function decisionGuardada(fila: { situacion: string | null; fechaArchivo:
 
 export function relatoDePago(decision: DecisionPago): RelatoPago {
   if (decision.motivo === "en_lista") {
-    const fecha = decision.fechaArchivo ? fechaDeArchivo(decision.fechaArchivo) : "sin fecha de archivo";
+    const fecha = decision.fechaArchivo ? fechaDeArchivo(decision.fechaArchivo) : "sin fecha";
     return {
       tono: "aviso",
       insignia: "En la lista 69-B",
-      frase: "No hay botón de pago.",
+      frase: FRASE_SIN_PAGO,
       detalle: `Situación publicada: ${decision.situacion ?? "la del archivo"}. Archivo del SAT del ${fecha}.`,
       hayBoton: false,
     };
@@ -213,28 +215,25 @@ export function relatoDePago(decision: DecisionPago): RelatoPago {
     return {
       tono: "aviso",
       insignia: "Sin archivo",
-      frase: "No hay botón de pago.",
-      detalle: "Al darlo de alta no había archivo del artículo 69-B. Sin esa fecha no se ofrece pago.",
+      frase: FRASE_SIN_PAGO,
+      detalle: "Al darlo de alta no había archivo del artículo 69-B.",
       hayBoton: false,
     };
   }
   return {
-    tono: "sello",
+    tono: "neutro",
     insignia: "Fuera de la lista",
-    frase: "El pago no sale de esta pantalla.",
-    detalle: `El RFC no está en el archivo del ${fechaDeArchivo(decision.fechaArchivo ?? "")}. El participante de la CLABE no está conectado.`,
+    frase: FRASE_ESTA_PANTALLA,
+    detalle: `El RFC no está en el archivo del ${fechaDeArchivo(decision.fechaArchivo ?? "")}.`,
     hayBoton: false,
   };
 }
 
 export function mensajeDeAlta(decision: DecisionPago): string {
-  if (decision.motivo === "en_lista") {
-    return "El proveedor quedó. Está en la lista 69-B, así que no hay botón de pago.";
+  if (decision.motivo === "fuera_de_lista") {
+    return `El proveedor quedó. ${FRASE_ESTA_PANTALLA}`;
   }
-  if (decision.motivo === "sin_archivo") {
-    return "El proveedor quedó. Sin el archivo 69-B no hay botón de pago.";
-  }
-  return "El proveedor quedó. No está en la lista. Esta pantalla no envía el pago.";
+  return `El proveedor quedó. ${FRASE_SIN_PAGO}`;
 }
 
 export function fechaDeArchivo(iso: string): string {
@@ -246,16 +245,59 @@ export function fechaDeArchivo(iso: string): string {
 }
 
 export function horaDeLectura(iso: string): string {
-  const fecha = new Date(iso);
-  if (Number.isNaN(fecha.getTime())) return iso;
-  return new Intl.DateTimeFormat("es-MX", {
-    timeZone: "America/Mexico_City",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(fecha);
+  const texto = horaEnMexico(new Date(iso));
+  return texto || iso;
+}
+
+const SEPARADOR_SITUACION = " · ";
+
+export type FichaReleida = {
+  rfc: string;
+  snapshotId: string | null;
+  situacion: string | null;
+  fechaArchivo: string | null;
+  botonPago: boolean;
+};
+
+/**
+ * Una copia nueva vuelve a leer las fichas.
+ * Si el RFC entra, deja de estar fuera de la lista y el pago sigue apagado.
+ * Quien se dio de alta sin archivo no recibe pago solo porque llegó una copia limpia.
+ */
+export function releerFichas<T extends FichaReleida>(
+  fichas: readonly T[],
+  copia: { id: string; fechaArchivo: string; filas: readonly { rfc: string; situacion: string }[] },
+): T[] {
+  const porRfc = new Map<string, string[]>();
+  for (const fila of copia.filas) {
+    const lista = porRfc.get(fila.rfc);
+    if (lista) {
+      if (!lista.includes(fila.situacion)) lista.push(fila.situacion);
+    } else {
+      porRfc.set(fila.rfc, [fila.situacion]);
+    }
+  }
+  return fichas.map((ficha) => {
+    const halladas = porRfc.get(ficha.rfc);
+    if (halladas && halladas.length > 0) {
+      const situacion = [...halladas].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).join(SEPARADOR_SITUACION);
+      return {
+        ...ficha,
+        snapshotId: copia.id,
+        situacion,
+        fechaArchivo: copia.fechaArchivo,
+        botonPago: false,
+      };
+    }
+    if (ficha.snapshotId === null) return ficha;
+    return {
+      ...ficha,
+      snapshotId: copia.id,
+      situacion: null,
+      fechaArchivo: copia.fechaArchivo,
+      botonPago: true,
+    };
+  });
 }
 
 export const MENSAJE_RECHAZO: Record<CodigoRechazoProveedor, { titulo: string; texto: string }> = {
