@@ -5,6 +5,7 @@ import { useActionState } from "react";
 
 import { enviarContrasena } from "@/app/entrar/acciones";
 import { ENTRADA_INICIAL } from "@/app/sesion/estado";
+import { CampoContrasena } from "@/components/sistema/campo-contrasena";
 
 export function FormularioEntrar({ siguiente, aviso }: { siguiente: string; aviso: string | null }) {
   const [estado, accion, pendiente] = useActionState(enviarContrasena, ENTRADA_INICIAL);
@@ -29,7 +30,7 @@ export function FormularioEntrar({ siguiente, aviso }: { siguiente: string; avis
       </div>
       <div className="campo">
         <label htmlFor="contrasena">Contraseña</label>
-        <input id="contrasena" name="contrasena" type="password" autoComplete="current-password" required />
+        <CampoContrasena id="contrasena" name="contrasena" autoComplete="current-password" required />
         <p className="pista">
           <Link href="/recuperar">¿Olvidaste tu contraseña?</Link>
         </p>

@@ -5,6 +5,7 @@ import { useActionState } from "react";
 
 import { guardarContrasena, pedirEnlace } from "@/app/recuperar/acciones";
 import { RECUPERAR_INICIAL, type EstadoRecuperar } from "@/app/recuperar/estado";
+import { CampoContrasena } from "@/components/sistema/campo-contrasena";
 
 function Resultado({ estado }: { estado: EstadoRecuperar }) {
   if (estado.tipo === "inicial") return null;
@@ -55,11 +56,11 @@ export function FormularioNuevaContrasena({ token }: { token: string }) {
       <input type="hidden" name="token" value={token} />
       <div className="campo">
         <label htmlFor="contrasena">Contraseña nueva</label>
-        <input id="contrasena" name="contrasena" type="password" autoComplete="new-password" required minLength={10} />
+        <CampoContrasena id="contrasena" name="contrasena" autoComplete="new-password" required minLength={10} />
       </div>
       <div className="campo">
         <label htmlFor="confirmacion">Otra vez</label>
-        <input id="confirmacion" name="confirmacion" type="password" autoComplete="new-password" required minLength={10} />
+        <CampoContrasena id="confirmacion" name="confirmacion" autoComplete="new-password" required minLength={10} />
       </div>
       <p className="pista">Tu segundo factor no cambia. Al entrar te lo pedimos.</p>
       <button type="submit" className="boton" disabled={pendiente}>

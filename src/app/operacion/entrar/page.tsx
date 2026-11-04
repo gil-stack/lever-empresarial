@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { MarcoArco } from "@/components/entrar/marco-arco";
+import { CampoContrasena } from "@/components/sistema/campo-contrasena";
 import { contextoOperacion } from "@/server/operacion/contexto";
 
 import { entrarOperacion } from "../acciones-autenticacion";
@@ -32,7 +33,7 @@ export default async function PaginaEntrarOperacion({ searchParams }: { searchPa
         </div>
         <div className="campo">
           <label htmlFor="contrasena">Contraseña</label>
-          <input id="contrasena" name="contrasena" type="password" autoComplete="current-password" required />
+          <CampoContrasena id="contrasena" name="contrasena" autoComplete="current-password" required />
         </div>
         <div className="acciones"><button className="boton" type="submit">Continuar</button></div>
       </form>
