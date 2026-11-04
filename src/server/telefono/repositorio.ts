@@ -8,17 +8,28 @@ export const SQL_TELEFONO = {
     select e.nombre, e.baja_en
     from employees e
     where e.company_id = $1 and e.user_id = $2
+      and (e.baja_en is null or e.baja_en > current_date)
   `,
   topes: `
     select c.id, c.nombre, c.tope_centavos::text
     from policy_categories c
     where c.company_id = $1
+      and exists (
+        select 1 from employees e
+        where e.company_id = c.company_id and e.user_id = $2
+          and (e.baja_en is null or e.baja_en > current_date)
+      )
     order by c.nombre, c.id
   `,
   facturacion: `
     select c.rfc, c.razon_social, c.codigo_postal, c.regimen, c.uso_cfdi
     from companies c
     where c.id = $1
+      and exists (
+        select 1 from employees e
+        where e.company_id = c.id and e.user_id = $2
+          and (e.baja_en is null or e.baja_en > current_date)
+      )
   `,
 } as const;
 
@@ -35,13 +46,13 @@ export function repositorioPg(): RepositorioTelefono {
     },
     async topes(ctx) {
       return conContexto(baseCliente(ctx), async (consulta) => {
-        const resultado = await consulta.query(SQL_TELEFONO.topes, [ctx.empresa.id]);
+        const resultado = await consulta.query(SQL_TELEFONO.topes, [ctx.empresa.id, ctx.persona.id]);
         return resultado.rows.map((fila) => mapearTope(fila as Record<string, unknown>));
       });
     },
     async facturacion(ctx) {
       return conContexto(baseCliente(ctx), async (consulta) => {
-        const resultado = await consulta.query(SQL_TELEFONO.facturacion, [ctx.empresa.id]);
+        const resultado = await consulta.query(SQL_TELEFONO.facturacion, [ctx.empresa.id, ctx.persona.id]);
         const fila = resultado.rows[0] as Record<string, unknown> | undefined;
         if (!fila) return null;
         return mapearFiscales(fila);
