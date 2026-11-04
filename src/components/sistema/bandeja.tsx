@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 export type Decision = {
   id: string;
@@ -33,17 +33,11 @@ export function Bandeja({
 }) {
   const [activa, setActiva] = useState(0);
   const [elegidas, setElegidas] = useState<ReadonlySet<string>>(new Set());
-  const ids = decisiones.map((decision) => decision.id).join("\n");
-  useEffect(() => {
-    setElegidas((antes) => {
-      const vivas = new Set(ids.split("\n").filter(Boolean));
-      const despues = new Set([...antes].filter((id) => vivas.has(id)));
-      return despues.size === antes.size ? antes : despues;
-    });
-  }, [ids]);
+  const vivas = new Set(decisiones.map((decision) => decision.id));
+  const elegidasVivas = new Set([...elegidas].filter((id) => vivas.has(id)));
   const filas = useRef<(HTMLLIElement | null)[]>([]);
   const conLote = Boolean(aprobarSeleccionadas) && decisiones.length > 0;
-  const todas = decisiones.length > 0 && decisiones.every((decision) => elegidas.has(decision.id));
+  const todas = decisiones.length > 0 && decisiones.every((decision) => elegidasVivas.has(decision.id));
 
   function enfocar(indice: number) {
     const destino = Math.max(0, Math.min(decisiones.length - 1, indice));
@@ -123,8 +117,8 @@ export function Bandeja({
                 <button
                   type="button"
                   className="boton boton-apagado"
-                  disabled={elegidas.size === 0}
-                  onClick={() => aprobarSeleccionadas?.([...elegidas])}
+                  disabled={elegidasVivas.size === 0}
+                  onClick={() => aprobarSeleccionadas?.([...elegidasVivas])}
                 >
                   Aprobar seleccionadas
                 </button>
