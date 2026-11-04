@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
 
-import { Cajones } from "@/components/consola/cajones";
-import { ConsolaVacia } from "@/components/consola/consola-vacia";
+import { ConsolaVacia, type CargaCajones } from "@/components/consola/consola-vacia";
 import { Marco } from "@/components/cromo/marco";
 import { puertasDe } from "@/components/cromo/puertas";
 import { puedeVerMaestro, relatoOperabilidad } from "@/dominio/personas";
-import type { VistaCajones } from "@/dominio/politica";
 import { errorConSecreto, leerEntrada, sesionDesdeCookie, sesionSegura } from "@/server/entrada";
 import { resumenParaConsola } from "@/server/personas";
 import { leerCajones } from "@/server/politica/servicio";
@@ -15,12 +13,8 @@ import { ErrorDeDominio } from "@/server/session";
 export const runtime = "nodejs";
 
 export const metadata: Metadata = {
-  title: "Consola",
+  title: "Resumen",
 };
-
-type CargaCajones =
-  | { tipo: "listos"; vista: VistaCajones }
-  | { tipo: "aviso"; mensaje: string };
 
 export default async function PaginaConsola({
   searchParams,
@@ -52,8 +46,9 @@ export default async function PaginaConsola({
           empresa={empresa}
           libroDisponible={entrada.libroDisponible}
           conSesion={entrada.nombre !== null}
+          nombre={entrada.nombre}
           personas={personas}
-          despues={empresa ? despuesDeCajones(cajones) : null}
+          cajones={empresa ? cajones : null}
           tarifa={tarifa}
           suscripcion={suscripcion}
           esOperador={esOperadorActual(sesion)}
@@ -75,11 +70,6 @@ async function resumenDePersonas(): Promise<{ titulo: string; detalle: string } 
     if (error instanceof ErrorDeDominio || errorConSecreto(error)) return { fallo: true };
     throw error;
   }
-}
-
-function despuesDeCajones(cajones: CargaCajones) {
-  if (cajones.tipo === "listos") return <Cajones vista={cajones.vista} />;
-  return <p className="nota-saldos">{cajones.mensaje}</p>;
 }
 
 async function cargarCajones(): Promise<CargaCajones> {

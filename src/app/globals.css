@@ -1,8 +1,7 @@
 /* Páginas de este corte. Lo reutilizable vive en src/estilo. */
 
 .consola h1 {
-  max-width: 24ch;
-  font-size: clamp(2.1rem, 3.2vw, 3.1rem);
+  max-width: 28ch;
   overflow-wrap: break-word;
 }
 
@@ -18,9 +17,7 @@
 
 .cajones > .edad {
   margin-top: 10px;
-  font-family: var(--fuente-mono);
-  font-size: 0.74rem;
-  letter-spacing: 0.02em;
+  font-size: 0.78rem;
 }
 
 .cajones dd .edad {
@@ -97,8 +94,8 @@
 
 .persona dt {
   color: var(--tinta-tenue);
-  font-family: var(--fuente-mono);
   font-size: 0.68rem;
+  font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -226,22 +223,20 @@
 }
 
 .tarifa dt {
-  font-family: var(--fuente-display);
-  font-size: clamp(1.35rem, 2vw, 1.7rem);
-  font-weight: 420;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
-  font-variation-settings: "opsz" 72, "SOFT" 30, "WONK" 0;
+  font-size: clamp(1.2rem, 1.7vw, 1.45rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.022em;
 }
 
 .tarifa-indice {
   display: block;
   margin-bottom: 12px;
   color: var(--sello);
-  font-family: var(--fuente-mono);
   font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
@@ -333,19 +328,15 @@
 }
 
 .alta-relato h1 {
-  font-size: clamp(3rem, 6vw, 5.6rem);
-  line-height: 0.94;
+  font-size: clamp(2.6rem, 5vw, 4.4rem);
+  line-height: 1;
   letter-spacing: -0.045em;
-  font-weight: 380;
-  font-variation-settings: "opsz" 144, "SOFT" 10, "WONK" 1;
+  font-weight: 400;
 }
 
 .alta-relato h1 em {
-  font-family: var(--fuente-display-cursiva);
-  font-style: italic;
-  font-synthesis: none;
+  font-style: normal;
   color: var(--sello);
-  font-variation-settings: "opsz" 144, "SOFT" 60, "WONK" 1;
 }
 
 .alta-relato .lede {
@@ -359,11 +350,10 @@
 
 .exclusiones h2 {
   margin-bottom: 14px;
-  color: var(--tinta-suave);
-  font-family: var(--fuente-mono);
-  font-size: 0.72rem;
+  color: var(--tinta-tenue);
+  font-size: 0.7rem;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -440,3 +430,11 @@
   }
 }
 
+
+/* Muestrario */
+
+.fila-muestra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

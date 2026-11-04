@@ -159,3 +159,31 @@ export function IconoCerrar() {
     </Trazo>
   );
 }
+
+export function IconoAumento() {
+  return (
+    <Trazo>
+      <path d="M5 18.5 18.5 5" />
+      <path d="M9.5 5h9v9" />
+    </Trazo>
+  );
+}
+
+export function IconoReembolso() {
+  return (
+    <Trazo>
+      <path d="M4.5 9.5h15v10h-15z" />
+      <path d="M12 3.5 4.5 9.5M12 3.5l7.5 6" />
+      <path d="M9.5 13v3.5M14.5 13v3.5" />
+    </Trazo>
+  );
+}
+
+export function IconoCompra() {
+  return (
+    <Trazo>
+      <path d="M5.5 8.5h13l-1 12h-11z" />
+      <path d="M9 8.5V7a3 3 0 0 1 6 0v1.5" />
+    </Trazo>
+  );
+}

@@ -13,6 +13,20 @@ const FORMATO = new Intl.DateTimeFormat("es-MX", {
   hourCycle: "h23",
 });
 
+const HORA = new Intl.DateTimeFormat("es-MX", {
+  timeZone: "America/Mexico_City",
+  hour: "2-digit",
+  hourCycle: "h23",
+});
+
+/** «Buenas tardes, Laura»: el primer nombre y la hora del centro de México. */
+export function saludoEnMexico(instante: Date, nombre: string): string {
+  const hora = Number(HORA.format(instante).replace(/\D/g, ""));
+  const parte = hora >= 5 && hora < 12 ? "Buenos días" : hora >= 12 && hora < 19 ? "Buenas tardes" : "Buenas noches";
+  const primero = nombre.trim().split(/\s+/)[0] ?? "";
+  return primero ? `${parte}, ${primero}` : parte;
+}
+
 export function horaEnMexico(instante: Date): string {
   if (Number.isNaN(instante.getTime())) return "";
   const partes = FORMATO.formatToParts(instante);
