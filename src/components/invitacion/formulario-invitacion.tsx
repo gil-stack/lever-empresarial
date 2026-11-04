@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { enviarAceptacion } from "@/app/invitacion/acciones";
 import { INVITACION_INICIAL } from "@/app/invitacion/estado";
+import { CampoContrasena } from "@/components/sistema/campo-contrasena";
 
 export function FormularioInvitacion({ token, yaTieneContrasena }: { token: string; yaTieneContrasena: boolean }) {
   const [estado, accion, pendiente] = useActionState(enviarAceptacion, INVITACION_INICIAL);
@@ -19,10 +20,9 @@ export function FormularioInvitacion({ token, yaTieneContrasena }: { token: stri
       <input type="hidden" name="token" value={token} />
       <div className="campo">
         <label htmlFor="contrasena">{yaTieneContrasena ? "Tu contraseña" : "Contraseña nueva"}</label>
-        <input
+        <CampoContrasena
           id="contrasena"
           name="contrasena"
-          type="password"
           autoComplete={yaTieneContrasena ? "current-password" : "new-password"}
           required
         />
@@ -31,7 +31,7 @@ export function FormularioInvitacion({ token, yaTieneContrasena }: { token: stri
       {yaTieneContrasena ? null : (
         <div className="campo">
           <label htmlFor="confirmacion">Repite la contraseña</label>
-          <input id="confirmacion" name="confirmacion" type="password" autoComplete="new-password" required />
+          <CampoContrasena id="confirmacion" name="confirmacion" autoComplete="new-password" required />
         </div>
       )}
       <div className="acciones">

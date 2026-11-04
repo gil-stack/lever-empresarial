@@ -352,6 +352,41 @@ h1 + .rfc-cuenta {
   margin-top: 22px;
 }
 
+.campo-contrasena {
+  position: relative;
+}
+
+.campo-contrasena input {
+  padding-right: 48px;
+}
+
+.campo-contrasena-boton {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--tinta-tenue);
+  cursor: pointer;
+}
+
+.campo-contrasena-boton:hover {
+  background: var(--realce);
+  color: var(--tinta);
+}
+
+.campo-contrasena-boton svg {
+  width: 19px;
+  height: 19px;
+}
+
 .campo label,
 .confirmacion span {
   display: block;
