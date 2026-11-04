@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 
-import { Encabezado, Pie } from "@/components/cromo/encabezado";
+import { Marco } from "@/components/cromo/marco";
 import { puertasDe } from "@/components/cromo/puertas";
 import { FormularioPublicar } from "@/components/precios/formulario-publicar";
 import { RenglonesTarifa } from "@/components/precios/renglones";
+import { CabezaPagina } from "@/components/sistema";
 import { existePasoPublicar } from "@/dominio/precio";
 import { sesionSegura } from "@/server/entrada";
 import { esOperadorActual, leerTarifa } from "@/server/precio";
@@ -25,20 +26,18 @@ export default async function PaginaPrecios() {
   });
 
   return (
-    <>
-      <Encabezado
-        actual="/precios"
-        persona={sesion ? { nombre: sesion.usuario.nombre } : null}
-        {...puertasDe(sesion?.rol, Boolean(sesion?.companyId))}
-      />
+    <Marco
+      actual="/precios"
+      persona={sesion ? { nombre: sesion.usuario.nombre } : null}
+      {...puertasDe(sesion?.rol, Boolean(sesion?.companyId))}
+    >
       <main id="contenido" className="precios">
-        <p className="kicker">Precios</p>
-        <h1 id="titulo-precios">Suscripción y costo del participante</h1>
-        <p className="lede">La consola muestra los mismos renglones.</p>
+        <CabezaPagina kicker="Precios" titulo="Suscripción y costo del participante">
+          <p className="lede">La consola muestra los mismos renglones.</p>
+        </CabezaPagina>
         <RenglonesTarifa tarifa={tarifa} />
         {publicar ? <FormularioPublicar /> : null}
       </main>
-      <Pie />
-    </>
+    </Marco>
   );
 }

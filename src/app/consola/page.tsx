@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { Cajones } from "@/components/consola/cajones";
 import { ConsolaVacia } from "@/components/consola/consola-vacia";
-import { Encabezado, Pie } from "@/components/cromo/encabezado";
+import { Marco } from "@/components/cromo/marco";
 import { puertasDe } from "@/components/cromo/puertas";
 import { puedeVerMaestro, relatoOperabilidad } from "@/dominio/personas";
 import type { VistaCajones } from "@/dominio/politica";
@@ -42,12 +42,11 @@ export default async function PaginaConsola({
   const personas = empresa && puedeVerMaestro(entrada.rol) ? await resumenDePersonas() : null;
 
   return (
-    <>
-      <Encabezado
-        actual="/consola"
-        persona={entrada.nombre ? { nombre: entrada.nombre } : null}
-        {...puertasDe(entrada.rol, Boolean(empresa))}
-      />
+    <Marco
+      actual="/consola"
+      persona={entrada.nombre ? { nombre: entrada.nombre } : null}
+      {...puertasDe(entrada.rol, Boolean(empresa))}
+    >
       <main id="contenido">
         <ConsolaVacia
           empresa={empresa}
@@ -60,8 +59,7 @@ export default async function PaginaConsola({
           esOperador={esOperadorActual(sesion)}
         />
       </main>
-      <Pie />
-    </>
+    </Marco>
   );
 }
 

@@ -1,0 +1,626 @@
+/*
+ * Componentes del sistema. Las clases genéricas (.pagina, .hoja, .renglones,
+ * .rejilla, .insignia, .nota-regla, .vacio) son las que usa una página nueva;
+ * los nombres de dominio de la fase 1 y 2 (.saldos, .ficha, .regla-fija…) son
+ * alias de los mismos estilos. Los componentes de React que las pintan viven en
+ * src/components/sistema.
+ */
+
+/* Página: ancho, aire y cabeza */
+
+.pagina,
+.consola,
+.precios {
+  width: var(--ancho);
+  margin: 0 auto;
+  padding: clamp(40px, 6vw, 80px) 0 104px;
+  container-type: inline-size;
+}
+
+.pagina-cabeza {
+  max-width: 820px;
+}
+
+.pagina-cabeza .acciones {
+  margin-top: 28px;
+}
+
+.pagina > .pagina-cabeza + *,
+.consola > .pagina-cabeza + * {
+  margin-top: 56px;
+}
+
+.pagina > .hoja + .hoja,
+.pagina > .hoja + .rejilla,
+.pagina > .rejilla + .hoja,
+.pagina > .rejilla + .rejilla {
+  margin-top: 24px;
+}
+
+h1 + .etiqueta-mono,
+h1 + .rfc-cuenta {
+  margin-top: 18px;
+}
+
+@media (max-width: 560px) {
+  .pagina,
+  .consola,
+  .precios {
+    padding-top: 32px;
+  }
+
+  .pagina > .pagina-cabeza + *,
+  .consola > .pagina-cabeza + * {
+    margin-top: 36px;
+  }
+}
+
+/* Hoja: la superficie de cada bloque de dinero o de reglas */
+
+.hoja,
+.saldos,
+.ficha,
+.tarifa,
+.ceros,
+.recorrido,
+.politica-bloque,
+.bloque,
+.personas,
+.publicar,
+.alta > .alta-formulario,
+.entrada > .alta-formulario,
+.estado-cuenta {
+  min-width: 0;
+  padding: clamp(22px, 2.6vw, 32px);
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--hoja);
+  box-shadow: 0 1px 2px var(--sombra);
+}
+
+.hoja > h2,
+.saldos > h2,
+.ficha > h2,
+.bloque > h2,
+.personas > h2,
+.politica-bloque > h2,
+.recorrido > h2,
+.tarifa > h2,
+.ceros > h2 {
+  margin-bottom: 6px;
+}
+
+.hoja .lede,
+.saldos .lede,
+.ficha .lede,
+.bloque .lede,
+.personas .lede,
+.politica-bloque .lede {
+  font-size: 0.95rem;
+}
+
+/* Renglones: etiqueta a la izquierda, valor a la derecha, filo entre filas */
+
+.renglones,
+.saldos dl,
+.ficha dl {
+  margin: 22px 0 0;
+  border-top: 1px solid var(--linea);
+}
+
+.renglones > div,
+.saldos dl > div,
+.ficha dl > div {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.75fr) minmax(0, 1.25fr);
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.renglones > div + div,
+.saldos dl > div + div,
+.ficha dl > div + div {
+  border-top: 1px solid var(--linea);
+}
+
+.renglones dt,
+.saldos dt,
+.ficha dt {
+  padding-top: 3px;
+  color: var(--tinta-suave);
+  font-size: 0.9rem;
+}
+
+.renglones dd,
+.saldos dd,
+.ficha dd {
+  margin: 0;
+}
+
+/* Renglones de dinero: el monto alineado a la derecha, en mono tabular */
+.renglones-dinero > div,
+.cajones dl > div {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  padding: 16px 0;
+}
+
+.renglones-dinero dt,
+.cajones dt {
+  color: var(--tinta);
+  font-size: 0.98rem;
+  font-weight: 500;
+}
+
+.renglones-dinero dd,
+.cajones dd {
+  text-align: right;
+}
+
+.renglones-dinero .monto,
+.cajones .monto {
+  font-size: 1.3rem;
+}
+
+.nota-saldos {
+  margin-top: 14px;
+}
+
+/* Rejilla: columna principal ancha y columna lateral angosta */
+
+.rejilla,
+.consola-rejilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.rejilla-sola,
+.consola-rejilla-sola {
+  grid-template-columns: minmax(0, 820px);
+}
+
+.columna,
+.consola-columna {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+@container (max-width: 900px) {
+  .rejilla,
+  .consola-rejilla {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container (max-width: 560px) {
+  .renglones > div,
+  .saldos dl > div,
+  .ficha dl > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .renglones-dinero > div,
+  .cajones dl > div {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+/* Insignia: estado corto de una persona, una cuenta o un pago */
+
+.insignia,
+.estado-persona {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--linea);
+  border-radius: 999px;
+  color: var(--tinta-suave);
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.insignia-sello {
+  border-color: transparent;
+  background: var(--sello-tenue);
+  color: var(--sello);
+}
+
+.insignia-aviso,
+.estado-baja {
+  border-color: transparent;
+  background: var(--aviso-tenue);
+  color: var(--aviso);
+}
+
+/* Nota de regla: una regla fija del producto, con filo verde */
+
+.nota-regla,
+.regla-fija {
+  max-width: 62ch;
+  margin-top: 24px;
+  padding: 2px 0 2px 16px;
+  border-left: 2px solid var(--sello);
+  color: var(--tinta-suave);
+  font-size: 0.95rem;
+}
+
+/* Lista simple con filos */
+
+.lista-simple,
+.nombres {
+  max-width: 480px;
+  margin: 18px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--linea);
+  list-style: none;
+}
+
+.lista-simple li,
+.nombres li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--linea);
+  font-size: 0.98rem;
+}
+
+/* Vacío: lo que todavía no existe, sin disfrazarlo de cero */
+
+.vacio {
+  margin-top: 40px;
+  padding: 22px 20px;
+  border: 1px dashed var(--linea-fuerte);
+  border-radius: 14px;
+}
+
+.columna > .vacio,
+.columna > .nota-saldos,
+.consola-columna > .nota-saldos {
+  margin: 0;
+  padding: 18px 20px;
+  border: 1px dashed var(--linea-fuerte);
+  border-radius: var(--radio);
+}
+
+.vacio-titulo {
+  margin-bottom: 6px;
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+}
+
+.vacio p:last-child {
+  color: var(--tinta-suave);
+  font-size: 0.92rem;
+}
+
+/* Etiqueta en mono: RFC, CLABE, folios */
+
+.etiqueta-mono,
+.rfc-cuenta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border: 1px solid var(--linea);
+  border-radius: 999px;
+  background: var(--hoja);
+  font-family: var(--fuente-mono);
+  font-size: 0.86rem;
+  letter-spacing: 0.06em;
+}
+
+.etiqueta-mono-nombre,
+.rfc-etiqueta {
+  color: var(--tinta-tenue);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+}
+
+/* Formularios */
+
+.formulario-kicker {
+  margin: 0 0 4px;
+  font-size: 1.3rem;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  font-variation-settings: "opsz" 36, "SOFT" 30, "WONK" 0;
+}
+
+.formulario-kicker ~ .formulario-kicker {
+  margin-top: 40px;
+  padding-top: 32px;
+  border-top: 1px solid var(--linea);
+}
+
+.campo {
+  margin-top: 22px;
+}
+
+.campo label,
+.confirmacion span {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--tinta);
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.campo input,
+.campo select,
+.fecha-partes select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio-control);
+  background-color: var(--campo);
+  color: var(--tinta);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.4;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.campo input:hover,
+.campo select:hover,
+.fecha-partes select:hover {
+  border-color: var(--tinta-tenue);
+}
+
+.campo input:focus-visible,
+.campo select:focus-visible,
+.fecha-partes select:focus-visible {
+  outline: none;
+  border-color: var(--sello);
+  box-shadow: 0 0 0 3px var(--sello-tenue);
+}
+
+.campo select,
+.fecha-partes select {
+  appearance: none;
+  padding-right: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--tinta-suave) 50%),
+    linear-gradient(135deg, var(--tinta-suave) 50%, transparent 50%);
+  background-position:
+    calc(100% - 20px) calc(50% + 1px),
+    calc(100% - 15px) calc(50% + 1px);
+  background-size:
+    5px 5px,
+    5px 5px;
+  background-repeat: no-repeat;
+}
+
+.campo select option {
+  color: var(--tinta);
+  background: var(--campo);
+}
+
+.select-vacio {
+  color: var(--tinta-suave);
+}
+
+.campo input.entrada-rfc {
+  font-family: var(--fuente-mono);
+  letter-spacing: 0.08em;
+}
+
+.elegido {
+  margin-top: 10px;
+  color: var(--tinta);
+  font-size: 0.94rem;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.campo input[aria-invalid="true"],
+.campo select[aria-invalid="true"],
+.confirmacion input[aria-invalid="true"] {
+  border-color: var(--aviso);
+  box-shadow: 0 0 0 3px var(--aviso-tenue);
+}
+
+.pista {
+  margin-top: 8px;
+}
+
+.error-campo {
+  margin-top: 8px;
+  color: var(--aviso);
+  font-weight: 500;
+}
+
+.campo-confirmacion {
+  margin-top: 28px;
+}
+
+.confirmacion {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.confirmacion input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex: none;
+  accent-color: var(--sello);
+}
+
+.confirmacion span {
+  margin: 0;
+  font-size: 0.94rem;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.fecha-partes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+}
+
+.fecha-partes select {
+  width: auto;
+  min-width: 7.5rem;
+}
+
+.fecha-leida,
+.fecha-partes .error-campo {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  margin-top: 32px;
+}
+
+.boton {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: var(--radio-control);
+  background: var(--sello);
+  color: var(--sobre-sello);
+  font: inherit;
+  font-size: 0.94rem;
+  font-weight: 550;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.12),
+    0 1px 2px var(--sombra);
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.boton:hover {
+  background: var(--sello-profundo);
+}
+
+.boton:active {
+  transform: translateY(1px);
+}
+
+.boton:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.boton-texto {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio-control);
+  background: transparent;
+  color: var(--tinta);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.boton-texto:hover {
+  background: var(--realce);
+}
+
+.enlace-texto {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--tinta);
+  font-size: 0.94rem;
+  font-weight: 550;
+  text-decoration: underline;
+  text-decoration-color: var(--linea-fuerte);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 5px;
+}
+
+.enlace-texto:hover {
+  color: var(--sello);
+  text-decoration-color: currentColor;
+}
+
+.alerta {
+  margin: 0 0 24px;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--linea);
+  border-left: 3px solid var(--aviso);
+  border-radius: var(--radio-control);
+  background: var(--aviso-tenue);
+}
+
+.alerta-asentado {
+  border-left-color: var(--sello);
+  background: var(--sello-tenue);
+}
+
+.alerta-titulo {
+  margin-bottom: 6px;
+  font-family: var(--fuente-sans);
+  font-size: 0.92rem;
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.alerta ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alerta li + li {
+  margin-top: 6px;
+}
+
+.alerta a {
+  color: var(--tinta);
+  text-underline-offset: 3px;
+}
+
+.estado-cuenta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.ya-tengo-cuenta {
+  margin-top: 16px;
+  color: var(--tinta-suave);
+  font-size: 0.9rem;
+}
+
+.ya-tengo-cuenta a {
+  color: var(--tinta);
+  text-underline-offset: 3px;
+}

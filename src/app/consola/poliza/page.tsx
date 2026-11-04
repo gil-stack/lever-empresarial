@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Encabezado, Pie } from "@/components/cromo/encabezado";
+import { Marco } from "@/components/cromo/marco";
 import { puertasDe } from "@/components/cromo/puertas";
+import { CabezaPagina } from "@/components/sistema";
 import { sesionDesdeCookie } from "@/server/entrada";
 import { entrarAPoliza } from "@/server/roles/servicio";
 import { ErrorDeDominio, type Rol } from "@/server/session";
@@ -25,22 +26,20 @@ export default async function PaginaPoliza() {
   const puertas = puertasDe(carga.tipo === "entrar" ? null : carga.rol, carga.tipo === "abierta" || carga.tipo === "ajena");
 
   return (
-    <>
-      <Encabezado actual="/consola/poliza" persona={persona} {...puertas} />
+    <Marco actual="/consola/poliza" persona={persona} {...puertas}>
       <main id="contenido" className="consola">
-        <p className="kicker">Póliza</p>
-        <h1>{titulo(carga)}</h1>
-        <p className="lede">{detalle(carga)}</p>
-        {carga.tipo === "entrar" ? (
-          <div className="acciones">
-            <Link className="boton" href="/entrar">
-              Entrar
-            </Link>
-          </div>
-        ) : null}
+        <CabezaPagina kicker="Póliza" titulo={titulo(carga)}>
+          <p className="lede">{detalle(carga)}</p>
+          {carga.tipo === "entrar" ? (
+            <div className="acciones">
+              <Link className="boton" href="/entrar">
+                Entrar
+              </Link>
+            </div>
+          ) : null}
+        </CabezaPagina>
       </main>
-      <Pie />
-    </>
+    </Marco>
   );
 }
 

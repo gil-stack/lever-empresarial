@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { FormularioAlta } from "@/components/alta/formulario-alta";
-import { Encabezado, Pie } from "@/components/cromo/encabezado";
+import { Marco } from "@/components/cromo/marco";
 import { puertasDe } from "@/components/cromo/puertas";
 import { leerEntrada } from "@/server/entrada";
 
@@ -27,19 +27,18 @@ export default async function PaginaAlta() {
   const entrada = await leerEntrada();
 
   return (
-    <>
-      <Encabezado
-        actual="/"
-        persona={entrada.nombre ? { nombre: entrada.nombre } : null}
-        {...puertasDe(entrada.rol, Boolean(entrada.rfc))}
-      />
+    <Marco
+      actual="/"
+      persona={entrada.nombre ? { nombre: entrada.nombre } : null}
+      {...puertasDe(entrada.rol, Boolean(entrada.rfc))}
+    >
       <main id="contenido" className="alta">
         <section className="alta-relato" aria-labelledby="titulo-alta">
           <p className="kicker">Alta de la empresa</p>
           <h1 id="titulo-alta">
             Una sola
             <br />
-            razón social.
+            <em>razón social.</em>
           </h1>
           <p className="lede">
             Doce o trece caracteres, un código postal y el régimen con el que esta empresa va a pedir sus facturas. En
@@ -63,7 +62,6 @@ export default async function PaginaAlta() {
           }}
         />
       </main>
-      <Pie />
-    </>
+    </Marco>
   );
 }

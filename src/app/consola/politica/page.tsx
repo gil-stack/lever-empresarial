@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 
 import Link from "next/link";
 
-import { Encabezado, Pie } from "@/components/cromo/encabezado";
+import { Marco } from "@/components/cromo/marco";
 import { puertasDe } from "@/components/cromo/puertas";
 import { PanelPolitica } from "@/components/politica/panel";
+import { CabezaPagina } from "@/components/sistema";
 import type { VistaPolitica } from "@/dominio/politica";
 import { sesionDesdeCookie } from "@/server/entrada";
 import { leerPolitica } from "@/server/politica/servicio";
@@ -31,28 +32,26 @@ export default async function PaginaPolitica() {
   );
 
   return (
-    <>
-      <Encabezado actual="/consola/politica" persona={persona} {...puertas} />
+    <Marco actual="/consola/politica" persona={persona} {...puertas}>
       <main id="contenido">
         {carga.tipo === "lista" ? (
           <PanelPolitica vista={carga.vista} />
         ) : (
           <div className="consola">
-            <p className="kicker">Política</p>
-            <h1>{titulo(carga)}</h1>
-            <p className="lede">{detalle(carga)}</p>
-            {carga.tipo === "sin_sesion" ? (
-              <div className="acciones">
-                <Link className="boton" href="/entrar">
-                  Entrar
-                </Link>
-              </div>
-            ) : null}
+            <CabezaPagina kicker="Política" titulo={titulo(carga)}>
+              <p className="lede">{detalle(carga)}</p>
+              {carga.tipo === "sin_sesion" ? (
+                <div className="acciones">
+                  <Link className="boton" href="/entrar">
+                    Entrar
+                  </Link>
+                </div>
+              ) : null}
+            </CabezaPagina>
           </div>
         )}
       </main>
-      <Pie />
-    </>
+    </Marco>
   );
 }
 

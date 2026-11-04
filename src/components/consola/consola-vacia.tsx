@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { RenglonesTarifa } from "@/components/precios/renglones";
+import { CabezaPagina, EtiquetaMono, Frase, Hoja, Rejilla, Renglon, Renglones } from "@/components/sistema";
 import { SuscripcionEmpresa } from "@/components/precios/suscripcion-empresa";
 import type { LecturaSuscripcion, TarifaVisible } from "@/dominio/precio";
 
@@ -35,66 +36,66 @@ export function ConsolaVacia({
 
   return (
     <div className="consola">
-      <p className="kicker">Consola</p>
-      <h1>{empresa ? empresa.razonSocial : vacia?.titulo}</h1>
-      {empresa ? <p className="rfc-cuenta">{empresa.rfc}</p> : null}
-      <p className="lede">{empresa ? "En esta cuenta no cabe otro." : vacia?.detalle}</p>
-      {empresa || !libroDisponible ? null : (
-        <div className="acciones">
-          <Link className="boton" href="/">
-            Dar de alta la razón social
-          </Link>
-          {conSesion ? null : (
-            <Link className="enlace-texto" href="/entrar">
-              Entrar
+      <CabezaPagina kicker="Consola" titulo={empresa ? empresa.razonSocial : vacia?.titulo}>
+        {empresa ? <EtiquetaMono nombre="RFC">{empresa.rfc}</EtiquetaMono> : null}
+        <p className="lede">{empresa ? "En esta cuenta no cabe otro." : vacia?.detalle}</p>
+        {empresa || !libroDisponible ? null : (
+          <div className="acciones">
+            <Link className="boton" href="/">
+              Dar de alta la razón social
             </Link>
-          )}
-        </div>
-      )}
-      <section className="saldos" aria-labelledby="saldos-titulo">
-        <h2 id="saldos-titulo">Límite y saldo</h2>
-        <dl>
-          <div>
-            <dt>Límite de la tarjeta</dt>
-            <dd>
-              <p className="frase">El emisor todavía no lo aplica.</p>
-            </dd>
+            {conSesion ? null : (
+              <Link className="enlace-texto" href="/entrar">
+                Entrar
+              </Link>
+            )}
           </div>
-          <div>
-            <dt>Saldo de la CLABE</dt>
-            <dd>
-              <p className="frase">Sin consulta al participante.</p>
-            </dd>
-          </div>
-        </dl>
-        <p className="nota-saldos">Estas dos cifras no se suman.</p>
-      </section>
-      {despues}
-      {personas ? (
-        <section className="ficha" aria-labelledby="personas-titulo">
-          {"fallo" in personas ? (
-            <>
-              <h2 id="personas-titulo">Personas</h2>
-              <p className="frase">No se pudo consultar el maestro.</p>
-            </>
-          ) : (
-            <>
-              <h2 id="personas-titulo">{personas.titulo}</h2>
-              <p className="lede">{personas.detalle}</p>
-              <div className="acciones">
-                <Link className="enlace-texto" href="/consola/personas">
-                  Abrir el maestro
-                </Link>
-              </div>
-            </>
-          )}
-        </section>
-      ) : null}
+        )}
+      </CabezaPagina>
+      <Rejilla
+        principal={
+          <>
+            <Hoja className="saldos" id="saldos-titulo" titulo="Límite y saldo">
+              <Renglones>
+                <Renglon etiqueta="Límite de la tarjeta">
+                  <Frase>El emisor todavía no lo aplica.</Frase>
+                </Renglon>
+                <Renglon etiqueta="Saldo de la CLABE">
+                  <Frase>Sin consulta al participante.</Frase>
+                </Renglon>
+              </Renglones>
+              <p className="nota-saldos">Estas dos cifras no se suman.</p>
+            </Hoja>
+            {despues}
+          </>
+        }
+        lateral={personas ? <FichaPersonas personas={personas} /> : null}
+      />
       <RenglonesTarifa tarifa={tarifa} ambito="consola" />
       <p className="nota-saldos">
         <Link href="/precios">La página de precios</Link> muestra los mismos renglones.
       </p>
       <SuscripcionEmpresa tarifa={tarifa} lectura={suscripcion} esOperador={esOperador} />
     </div>
+  );
+}
+
+function FichaPersonas({ personas }: { personas: { titulo: string; detalle: string } | { fallo: true } }) {
+  if ("fallo" in personas) {
+    return (
+      <Hoja className="ficha" id="personas-titulo" titulo="Personas">
+        <Frase>No se pudo consultar el maestro.</Frase>
+      </Hoja>
+    );
+  }
+  return (
+    <Hoja className="ficha" id="personas-titulo" titulo={personas.titulo}>
+      <p className="lede">{personas.detalle}</p>
+      <div className="acciones">
+        <Link className="enlace-texto" href="/consola/personas">
+          Abrir el maestro
+        </Link>
+      </div>
+    </Hoja>
   );
 }

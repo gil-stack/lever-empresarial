@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { Maestro, MaestroCerrado } from "@/components/personas/maestro";
-import { Encabezado, Pie } from "@/components/cromo/encabezado";
+import { Marco } from "@/components/cromo/marco";
 import { puertasDe } from "@/components/cromo/puertas";
 import { hoyEnMexico, puedeVerMaestro } from "@/dominio/personas";
 import { errorConSecreto, leerEntrada, sesionDesdeCookie } from "@/server/entrada";
@@ -20,12 +20,11 @@ export default async function PaginaPersonas() {
   const cerrado = await cerrar(entrada);
 
   return (
-    <>
-      <Encabezado
-        actual="/consola/personas"
-        persona={entrada.nombre ? { nombre: entrada.nombre } : null}
-        {...puertasDe(entrada.rol, Boolean(entrada.rfc))}
-      />
+    <Marco
+      actual="/consola/personas"
+      persona={entrada.nombre ? { nombre: entrada.nombre } : null}
+      {...puertasDe(entrada.rol, Boolean(entrada.rfc))}
+    >
       <main id="contenido" className="consola">
         {cerrado.tipo === "abierto" ? (
           <Maestro lectura={cerrado.lectura} hoy={hoy} />
@@ -33,8 +32,7 @@ export default async function PaginaPersonas() {
           <MaestroCerrado aviso={cerrado.aviso} />
         )}
       </main>
-      <Pie />
-    </>
+    </Marco>
   );
 }
 

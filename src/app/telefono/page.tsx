@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Encabezado, Pie } from "@/components/cromo/encabezado";
+import { MarcoTelefono } from "@/components/cromo/marco";
 import { TelefonoSinFlujo } from "@/components/telefono/telefono-sin-flujo";
 
 export const runtime = "nodejs";
@@ -10,12 +10,10 @@ export const metadata: Metadata = {
 
 export default function PaginaTelefono() {
   return (
-    <>
-      <Encabezado actual="/telefono" superficie="telefono" />
+    <MarcoTelefono>
       <main id="contenido" className="superficie-telefono">
         <TelefonoSinFlujo />
       </main>
-      <Pie />
-    </>
+    </MarcoTelefono>
   );
 }
