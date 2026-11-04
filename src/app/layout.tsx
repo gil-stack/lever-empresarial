@@ -6,6 +6,7 @@ import { Fraunces, Geist, Geist_Mono } from "next/font/google";
 import { COOKIE_TEMA, temaDesde } from "@/components/cromo/tema";
 
 import "@/estilo/tokens.css";
+import "@/estilo/arco.css";
 import "@/estilo/marco.css";
 import "@/estilo/telefono.css";
 import "@/estilo/componentes.css";

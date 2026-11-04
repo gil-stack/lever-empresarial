@@ -113,6 +113,12 @@ export function traducirErrorDeBase(error: unknown): Error {
   const codigo = campo(error, "code");
   const marca = `${campo(error, "constraint")} ${campo(error, "table")}`.toLowerCase();
   if (codigo === "23505") {
+    if (marca.includes("auth_passkeys")) return new ErrorDeDominio("passkey_duplicada");
+    if (marca.includes("auth_totp")) return new ErrorDeDominio("totp_duplicado");
+    if (marca.includes("auth_recuperaciones")) return new ErrorDeDominio("recuperacion_abierta");
+    if (marca.includes("auth_codigos")) return new ErrorDeDominio("respaldo_duplicado");
+    if (marca.includes("auth_retos")) return new ErrorDeDominio("reto_duplicado");
+    if (marca.includes("auth_entradas")) return new ErrorDeDominio("entrada_duplicada");
     if (marca.includes("suppliers_rfc")) return new ErrorDeDominio("proveedor_duplicado");
     if (marca.includes("rfc")) return new ErrorDeDominio("rfc_duplicado");
     if (marca.includes("correo")) return new ErrorDeDominio("correo_duplicado");
@@ -143,6 +149,7 @@ export function traducirErrorDeBase(error: unknown): Error {
     const dePrecio = FRASES_DE_PRECIO[mensaje];
     if (dePrecio) return new ErrorDeDominio(dePrecio);
     if (CODIGOS_DE_FIRMA.has(mensaje)) return new ErrorDeDominio(mensaje);
+    if (CODIGOS_DE_AUTENTICACION.has(mensaje)) return new ErrorDeDominio(mensaje);
     if (CODIGOS_DE_CLABE.has(mensaje)) return new ErrorDeDominio(mensaje);
     const deProveedor = FRASES_DE_PROVEEDOR[mensaje.trim()];
     if (deProveedor) return new ErrorDeDominio(deProveedor);
@@ -179,6 +186,31 @@ const FRASES_DE_PROVEEDOR: Readonly<Record<string, string>> = {
   copia_69b_sin_filas: "listado_irreconocible",
   constancia_no_se_reescribe: "archivo_no_disponible",
 };
+
+const CODIGOS_DE_AUTENTICACION = new Set([
+  "entrada_no_se_borra",
+  "entrada_no_se_reescribe",
+  "entrada_ya_consumida",
+  "sesion_no_se_reescribe",
+  "sesion_sin_segundo_factor",
+  "passkey_no_se_borra",
+  "passkey_no_se_reescribe",
+  "passkey_revocada",
+  "passkey_contador_atras",
+  "totp_no_se_borra",
+  "totp_no_se_reescribe",
+  "totp_revocado",
+  "totp_codigo_repetido",
+  "respaldo_no_se_borra",
+  "respaldo_no_se_reescribe",
+  "respaldo_ya_usado",
+  "recuperacion_no_se_borra",
+  "recuperacion_no_se_reescribe",
+  "recuperacion_transicion_invalida",
+  "recuperacion_sin_auditoria",
+  "recuperacion_con_factores_vigentes",
+  "factor_sin_auditoria",
+]);
 
 const CODIGOS_DE_FIRMA = new Set([
   "misma_persona_en_las_dos_firmas",

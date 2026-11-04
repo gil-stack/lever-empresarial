@@ -58,6 +58,9 @@ export async function Marco({
               <p>
                 <span className="quien-etiqueta">Entraste como </span>
                 <span className="quien-nombre">{persona.nombre}</span>
+                <Link href="/entrar/seguridad" className="quien-factor">
+                  Segundo factor
+                </Link>
               </p>
               <form action={salir}>
                 <button type="submit" className="salir">

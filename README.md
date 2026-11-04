@@ -44,4 +44,12 @@ El alta vive en la consola, en `/consola/proveedores`, con la barra de la izquie
 
 La lista del artículo 69-B está en `/consola/lista-69b`. Si el RFC aparece, o si todavía no hay archivo, el proveedor puede existir y no hay botón de pago. No se envía dinero.
 
-`/telefono` no lleva proveedores, la CLABE ni la lista 69-B, y no usa el menú de la consola.
+`/telefono` no lleva proveedores, la CLABE ni la lista 69-B, y no usa el menú de la consola. Para verlo hace falta haber entrado con el segundo factor.
+
+## Autenticación
+
+Todo el mundo entra con correo, contraseña y un segundo factor: una passkey, o un código TOTP de una app autenticadora si no tiene passkey. Sin eso el portal no abre, ni la consola ni el teléfono. Al primer ingreso hay que registrar uno de los dos. Los códigos de respaldo se muestran una vez y se guardan como hash.
+
+Perder el segundo factor no se resuelve con un correo. La persona lo pide y otra persona, de `OPERADORES_PLATAFORMA`, verifica su identidad y aprueba. Esa aprobación cierra las sesiones y quita los factores. La cuenta sigue cerrada hasta que, con la contraseña, se registra uno nuevo.
+
+`AUTENTICACION_LLAVE_TOTP` es la llave de 32 bytes, en base64, con la que se cifra la semilla TOTP. No va en el repositorio. Se genera con `openssl rand -base64 32`. Sin ella se puede entrar con passkey y no con app autenticadora. `AUTENTICACION_DOMINIOS` lista, separada por comas, los dominios propios donde una passkey es válida. En Vercel se suman los dominios del despliegue. La migración es `0016_autenticacion_fuerte.sql`, con el mismo comando de siempre, y hay que aplicarla antes de servir este corte: borra las sesiones anteriores.

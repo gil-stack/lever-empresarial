@@ -122,3 +122,9 @@ Dos piezas nacieron las dos como `0012`. Quedan en orden, y no se pierde ninguna
 La constancia es un PDF en el almacén privado. La clave no es una URL y no baja al navegador. La consulta del 69-B usa la copia más reciente, y si dos copias comparten hora manda también el id. Si no hay copia, no hay pago. Si el RFC está en la copia, el proveedor puede existir y el pago no. No hay envío de dinero.
 
 `0015_releer_69b_y_clabe.sql` no crea tablas de dinero. Una copia nueva vuelve a leer a los proveedores ya guardados: si el RFC entra, la ficha deja la situación publicada y `boton_pago` queda en falso. Quien se dio de alta sin archivo sigue sin pago si esa copia no lo trae. La CLABE exige el proveedor de la misma empresa. Cerrar la única vigente, sin dejar otra abierta en la misma transacción, no pasa. El hash de la constancia no se reescribe. Este corte sigue sin migrar el libro de production.
+
+## Fase 4. Autenticación fuerte
+
+`0016_autenticacion_fuerte.sql` no crea envíos ni órdenes de pago. Borra las sesiones que ya existían, porque nacieron solo con contraseña. Agrega `auth_entradas`, `auth_passkeys`, `auth_totp`, `auth_codigos_respaldo`, `auth_retos` y `auth_recuperaciones`, y dos columnas en `sessions`: `segundo_factor` y `entrada_id`.
+
+La contraseña abre una entrada de minutos. La sesión con segundo factor solo entra si esa entrada se consumió en la misma transacción, con el mismo método y sin estar vencida. Una passkey no se borra: se revoca. Un TOTP confirmado tampoco. Un código de respaldo sirve una vez. La semilla TOTP va cifrada; la llave no está en la base. Registrar o revocar un factor, y cada paso de una recuperación, exigen su fila en `audit_events` en la misma transacción. Aprobar una recuperación deja a la persona sin factores, sin códigos y sin sesiones. Nadie aprueba la propia.

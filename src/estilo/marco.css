@@ -272,6 +272,14 @@
   white-space: nowrap;
 }
 
+.quien-factor {
+  display: inline-block;
+  margin-top: 2px;
+  color: var(--arco, var(--tinta-suave));
+  font-size: 0.78rem;
+  font-weight: 550;
+}
+
 .salir {
   appearance: none;
   display: inline-flex;

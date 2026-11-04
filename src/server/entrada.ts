@@ -2,6 +2,7 @@ import "server-only";
 
 import { cookies } from "next/headers";
 
+import { sesionTieneSegundoFactor } from "./autenticacion/puerta";
 import { leerEmpresa } from "./company";
 import { leerSesion } from "./session";
 import { NOMBRE_COOKIE } from "./session/cookie";
@@ -66,7 +67,12 @@ export async function sesionDesdeCookie() {
   const jar = await cookies();
   const token = jar.get(NOMBRE_COOKIE)?.value;
   if (!token) return null;
-  return leerSesion(`${NOMBRE_COOKIE}=${token}`);
+  const sesion = await leerSesion(`${NOMBRE_COOKIE}=${token}`);
+  // `entrar` y `abrirCuenta` todavía pueden dejar una sesión que solo pasó
+  // la contraseña (el alta, y el frente de invitaciones mientras no llame
+  // a este módulo). Sin segundo factor el portal no la honra.
+  if (!sesion || !(await sesionTieneSegundoFactor(sesion.id))) return null;
+  return sesion;
 }
 
 /** Aplica el encabezado que ya construyó la sesión, sin devolver el token a la página. */
