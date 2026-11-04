@@ -11,6 +11,7 @@ import {
   IconoPoliza,
   IconoPrecios,
   IconoProveedores,
+  IconoEntrar,
 } from "./iconos";
 import type { puertasDe } from "./puertas";
 
@@ -37,7 +38,7 @@ export function seccionesDe(
     Icono,
   });
   const operacion = [
-    ...(puertas.consola ? [seccion("/consola", "Resumen", IconoConsola)] : []),
+    ...(puertas.consola ? [seccion("/consola", "Pendientes", IconoConsola)] : []),
     ...(puertas.politica ? [seccion("/consola/politica", "Política", IconoPolitica)] : []),
     ...(puertas.proveedores ? [seccion("/consola/proveedores", "Proveedores", IconoProveedores)] : []),
     ...(puertas.lista69b ? [seccion("/consola/lista-69b", "Lista 69-B", IconoLista)] : []),
@@ -45,7 +46,8 @@ export function seccionesDe(
     ...(puertas.poliza ? [seccion("/consola/poliza", "Póliza", IconoPoliza)] : []),
   ];
   const cuenta = [
-    ...(puertas.precios ? [seccion("/precios", "Precios", IconoPrecios)] : []),
+    ...(puertas.configuracion ? [seccion("/consola/configuracion", "Configuración", IconoPrecios)] : []),
+    ...(puertas.telefono ? [seccion("/telefono", "Teléfono", IconoEntrar)] : []),
     ...(variasEmpresas ? [seccion("/empresas", "Cambiar de empresa", IconoAlta)] : []),
   ];
   return [

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 
 import { Continuar } from "@/components/entrar/continuar";
 import { MarcoArco } from "@/components/entrar/marco-arco";
-import { destinoSeguro, leerPaso, NOMBRE_COOKIE_ENTRADA, prepararTotp, type AltaTotp } from "@/server/autenticacion";
+import { destinoSeguro, leerPaso, NOMBRE_COOKIE_ENTRADA, prepararTotp, rutaDeDestino, type AltaTotp } from "@/server/autenticacion";
 import { leerTokenEntrada, NOMBRE_COOKIE_PORTAL } from "@/server/autenticacion/cookie";
 import { leerEntrada } from "@/server/entrada";
 import { ErrorDeDominio } from "@/server/session";
@@ -22,7 +22,7 @@ export default async function PaginaContinuar({
 }) {
   const destino = destinoSeguro((await searchParams).siguiente);
   const entrada = await leerEntrada();
-  if (entrada.nombre) redirect(destino);
+  if (entrada.nombre) redirect(rutaDeDestino(destino));
 
   const jar = await cookies();
   const portal = leerTokenEntrada(jar.get(NOMBRE_COOKIE_PORTAL)?.value);

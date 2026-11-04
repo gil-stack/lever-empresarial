@@ -1073,3 +1073,48 @@ h1 + .rfc-cuenta {
     justify-content: flex-start;
   }
 }
+
+/* Pendientes reales de la portada y selector de superficies por empresa. */
+.pendientes-inicio ul {
+  margin: 20px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--linea);
+  list-style: none;
+}
+
+.pendientes-inicio li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.pendientes-inicio h3 {
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.pendientes-inicio li p {
+  margin-top: 5px;
+  color: var(--tinta-suave);
+  font-size: 0.88rem;
+}
+
+.acciones-empresa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+}
+
+@container (max-width: 560px) {
+  .pendientes-inicio li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .pendientes-inicio li .boton-texto {
+    justify-self: start;
+  }
+}

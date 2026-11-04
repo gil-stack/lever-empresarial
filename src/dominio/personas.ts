@@ -238,6 +238,8 @@ export function rolesDeCuenta(valor: unknown): RolCuenta[] | null {
   const crudos = Array.isArray(valor) ? valor : valor === undefined || valor === null || valor === "" ? [] : [valor];
   if (crudos.length === 0 || crudos.length > ROLES_DE_CUENTA.length) return null;
   if (!crudos.every((crudo) => rolDeCuenta(crudo) !== null)) return null;
+  // Las membresías históricas conservan solicitante; no se ofrece en altas nuevas.
+  if (crudos.includes("solicitante")) return null;
   return rolesLeidos(crudos);
 }
 
@@ -567,7 +569,6 @@ export const MENSAJE_RECHAZO: Record<
 
 export const ROLES_VISIBLES: readonly { valor: RolCuenta; etiqueta: string }[] = [
   { valor: "administrador", etiqueta: "Administrador" },
-  { valor: "solicitante", etiqueta: "Solicitante" },
   { valor: "liberador", etiqueta: "Liberador" },
   { valor: "tarjetahabiente", etiqueta: "Tarjetahabiente" },
   { valor: "contador", etiqueta: "Contador" },

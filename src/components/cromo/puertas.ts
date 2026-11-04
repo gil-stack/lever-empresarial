@@ -37,7 +37,8 @@ export function puertasDe(capacidades: readonly Capacidad[]): {
   poliza: boolean;
   proveedores: boolean;
   lista69b: boolean;
-  precios: boolean;
+  configuracion: boolean;
+  telefono: boolean;
 } {
   return {
     consola: tiene(capacidades, "cliente.consola.ver"),
@@ -46,6 +47,7 @@ export function puertasDe(capacidades: readonly Capacidad[]): {
     poliza: tiene(capacidades, "cliente.poliza.ver"),
     proveedores: tiene(capacidades, "cliente.proveedores.ver"),
     lista69b: tiene(capacidades, "cliente.lista69b.ver") || tiene(capacidades, "plataforma.lista69b.cargar"),
-    precios: tiene(capacidades, "cliente.precio.ver") || tiene(capacidades, "plataforma.precio.publicar"),
+    configuracion: tiene(capacidades, "cliente.configuracion.ver"),
+    telefono: tiene(capacidades, "telefono.inicio.ver"),
   };
 }

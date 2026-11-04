@@ -18,11 +18,14 @@ export type RolPlataforma = (typeof ROLES_PLATAFORMA)[number];
 type Regla<R> = { superficie: Superficie; roles: readonly R[] };
 
 const TODOS: readonly RolCliente[] = ROLES_CLIENTE;
+const DE_CONSOLA: readonly RolCliente[] = ["administrador", "solicitante", "liberador", "contador"];
 
 const DEL_CLIENTE = {
-  "cliente.consola.ver": { superficie: "cliente", roles: TODOS },
-  "cliente.precio.ver": { superficie: "cliente", roles: TODOS },
-  "cliente.politica.ver": { superficie: "cliente", roles: TODOS },
+  "cliente.consola.ver": { superficie: "cliente", roles: DE_CONSOLA },
+  "cliente.precio.ver": { superficie: "cliente", roles: DE_CONSOLA },
+  "cliente.plan.ver": { superficie: "cliente", roles: ["administrador"] },
+  "cliente.configuracion.ver": { superficie: "cliente", roles: ["administrador"] },
+  "cliente.politica.ver": { superficie: "cliente", roles: DE_CONSOLA },
   "cliente.politica.editar": { superficie: "cliente", roles: ["administrador"] },
   "cliente.maestro.ver": { superficie: "cliente", roles: ["administrador", "contador", "liberador"] },
   "cliente.maestro.editar": { superficie: "cliente", roles: ["administrador"] },
@@ -31,9 +34,15 @@ const DEL_CLIENTE = {
   "cliente.proveedores.alta": { superficie: "cliente", roles: ["administrador", "liberador"] },
   "cliente.proveedores.clabe.cambiar": { superficie: "cliente", roles: ["administrador"] },
   "cliente.lista69b.ver": { superficie: "cliente", roles: ["administrador", "solicitante", "liberador", "contador"] },
-  "cliente.poliza.ver": { superficie: "cliente", roles: ["contador"] },
+  "cliente.poliza.ver": { superficie: "cliente", roles: ["administrador", "contador"] },
   "cliente.pago.solicitar": { superficie: "cliente", roles: ["administrador", "liberador", "solicitante"] },
   "cliente.pago.liberar": { superficie: "cliente", roles: ["liberador"] },
+} as const satisfies Record<string, Regla<RolCliente>>;
+
+const DEL_TELEFONO = {
+  "telefono.inicio.ver": { superficie: "telefono", roles: TODOS },
+  "telefono.topes.ver": { superficie: "telefono", roles: TODOS },
+  "telefono.facturacion.ver": { superficie: "telefono", roles: TODOS },
 } as const satisfies Record<string, Regla<RolCliente>>;
 
 const DE_LA_PLATAFORMA = {
@@ -46,18 +55,20 @@ const DE_LA_PLATAFORMA = {
 } as const satisfies Record<string, Regla<RolPlataforma>>;
 
 export type CapacidadCliente = keyof typeof DEL_CLIENTE;
+export type CapacidadTelefono = keyof typeof DEL_TELEFONO;
 export type CapacidadPlataforma = keyof typeof DE_LA_PLATAFORMA;
-export type Capacidad = CapacidadCliente | CapacidadPlataforma;
+export type Capacidad = CapacidadCliente | CapacidadTelefono | CapacidadPlataforma;
 
 export const CAPACIDADES: readonly Capacidad[] = [
   ...(Object.keys(DEL_CLIENTE) as CapacidadCliente[]),
+  ...(Object.keys(DEL_TELEFONO) as CapacidadTelefono[]),
   ...(Object.keys(DE_LA_PLATAFORMA) as CapacidadPlataforma[]),
 ];
 
 export function superficieDe(capacidad: Capacidad): Superficie {
-  return capacidad in DEL_CLIENTE
-    ? DEL_CLIENTE[capacidad as CapacidadCliente].superficie
-    : DE_LA_PLATAFORMA[capacidad as CapacidadPlataforma].superficie;
+  if (capacidad in DEL_CLIENTE) return DEL_CLIENTE[capacidad as CapacidadCliente].superficie;
+  if (capacidad in DEL_TELEFONO) return DEL_TELEFONO[capacidad as CapacidadTelefono].superficie;
+  return DE_LA_PLATAFORMA[capacidad as CapacidadPlataforma].superficie;
 }
 
 /** Capacidades de una persona: las de sus roles en la empresa elegida y las de su rol de plataforma. */
@@ -67,6 +78,9 @@ export function capacidadesDe(entrada: {
 }): Capacidad[] {
   const dadas: Capacidad[] = [];
   for (const [capacidad, regla] of Object.entries(DEL_CLIENTE) as [CapacidadCliente, Regla<RolCliente>][]) {
+    if (regla.roles.some((rol) => entrada.rolesCliente.includes(rol))) dadas.push(capacidad);
+  }
+  for (const [capacidad, regla] of Object.entries(DEL_TELEFONO) as [CapacidadTelefono, Regla<RolCliente>][]) {
     if (regla.roles.some((rol) => entrada.rolesCliente.includes(rol))) dadas.push(capacidad);
   }
   for (const [capacidad, regla] of Object.entries(DE_LA_PLATAFORMA) as [

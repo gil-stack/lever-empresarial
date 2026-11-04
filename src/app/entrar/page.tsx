@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { FormularioEntrar } from "@/components/entrar/formulario-entrar";
 import { MarcoArco } from "@/components/entrar/marco-arco";
-import { destinoSeguro } from "@/server/autenticacion";
+import { destinoSeguro, rutaDeDestino } from "@/server/autenticacion";
 import { leerEntrada } from "@/server/entrada";
 
 export const runtime = "nodejs";
@@ -26,7 +26,7 @@ export default async function PaginaEntrar({
   const params = await searchParams;
   const destino = destinoSeguro(params.siguiente);
   const entrada = await leerEntrada();
-  if (entrada.nombre) redirect(destino);
+  if (entrada.nombre) redirect(rutaDeDestino(destino));
 
   const aviso = typeof params.aviso === "string" ? (AVISOS[params.aviso] ?? null) : null;
 

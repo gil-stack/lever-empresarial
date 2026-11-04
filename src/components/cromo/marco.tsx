@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 
 import { salir } from "@/app/sesion/acciones";
+import { enEmpresa } from "@/nucleo/rutas";
 
 import { estadoDelMarco, type EmpresaDelMarco } from "./estado-marco";
 import { IconoEntrar, IconoSalir } from "./iconos";
@@ -58,7 +59,8 @@ export async function Marco({
           poliza,
           proveedores,
           lista69b,
-          precios: true,
+          configuracion: true,
+          telefono: false,
         },
         null,
         false,
@@ -71,9 +73,9 @@ export async function Marco({
       <a className="saltar" href="#contenido">
         Saltar al contenido
       </a>
-      <LateralMovil marca={<Marca linea="Empresas" />}>
+      <LateralMovil marca={<Marca linea="Empresas" empresaId={vista.empresaId} />}>
         <div className="lateral-cabeza">
-          <Marca linea="Empresas" />
+          <Marca linea="Empresas" empresaId={vista.empresaId} />
         </div>
         {leido.empresa ? <EmpresaLateral empresa={leido.empresa} /> : null}
         <nav className="secciones" aria-label="Secciones">
@@ -118,28 +120,49 @@ export async function Marco({
   );
 }
 
-/** La app de quien paga. Solo el logotipo, sin la línea «Empresas». */
-export async function MarcoTelefono({ children }: { children: ReactNode }) {
+/** Teléfono protegido y de solo lectura. Los enlaces conservan la empresa elegida. */
+export async function MarcoTelefono({
+  children,
+  actual = "/telefono",
+  empresaId = null,
+  consola = false,
+  variasEmpresas = false,
+}: {
+  children: ReactNode;
+  actual?: "/telefono" | "/telefono/topes" | "/telefono/facturacion";
+  empresaId?: string | null;
+  consola?: boolean;
+  variasEmpresas?: boolean;
+}) {
   const tema = await temaElegido();
+  const secciones = [
+    { ruta: "/telefono", etiqueta: "Inicio" },
+    { ruta: "/telefono/topes", etiqueta: "Topes" },
+    { ruta: "/telefono/facturacion", etiqueta: "Facturación" },
+  ] as const;
   return (
     <div className="marco-telefono">
-      <a className="saltar" href="#contenido">
-        Saltar al contenido
-      </a>
+      <a className="saltar" href="#contenido">Saltar al contenido</a>
       <main id="contenido" className="superficie-telefono">
         <div className="telefono">
           <header className="telefono-cabeza">
-            <p className="marca-app">
-              <Banderin />
-              <PalabraArco />
-              <span className="solo-lector">Arco</span>
-            </p>
+            <p className="marca-app"><Banderin /><PalabraArco /><span className="solo-lector">Arco</span></p>
             <SelectorTema inicial={tema} />
           </header>
           <div className="telefono-cuerpo">{children}</div>
-          <footer className="pie-app">
-            <p>Aquí se cierra un gasto. El escritorio de finanzas es otra pantalla.</p>
-          </footer>
+          <nav className="navegacion-app" aria-label="Teléfono">
+            {secciones.map((seccion) => (
+              <Link key={seccion.ruta} href={enEmpresa(empresaId, seccion.ruta)} aria-current={actual === seccion.ruta ? "page" : undefined}>
+                {seccion.etiqueta}
+              </Link>
+            ))}
+          </nav>
+          <div className="enlaces-app">
+            {consola ? <Link href={enEmpresa(empresaId, "/consola")}>Abrir consola</Link> : null}
+            {variasEmpresas ? <Link href="/empresas">Cambiar de empresa</Link> : null}
+            <form action={salir}><button type="submit">Salir</button></form>
+          </div>
+          <footer className="pie-app"><p>Consulta de solo lectura. No hay gastos, tarjetas ni movimientos de dinero en esta superficie.</p></footer>
         </div>
       </main>
     </div>
@@ -198,9 +221,9 @@ function Grupo({
   );
 }
 
-function Marca({ linea }: { linea: string }) {
+function Marca({ linea, empresaId = null }: { linea: string; empresaId?: string | null }) {
   return (
-    <Link href="/consola" className="marca" aria-label={`Arco ${linea}, ir al resumen`}>
+    <Link href={enEmpresa(empresaId, "/consola")} className="marca" aria-label={`Arco ${linea}, ir a Pendientes`}>
       <Banderin />
       <span className="marca-texto">
         <PalabraArco />
