@@ -11,7 +11,7 @@ import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
 import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
 import { leerPendientesInicio } from "../../src/server/inicio/servicio.ts";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio.ts";
-import { darDeAltaPersona, nombrarCentro } from "../../src/server/personas/servicio.ts";
+import { darDeAltaPersona, nombrarCentro, registrarBaja } from "../../src/server/personas/servicio.ts";
 import { invitarAdministrador, contextoDePersonal } from "../../src/server/plataforma/servicio.ts";
 import { leerSesion } from "../../src/server/session/servicio.ts";
 import type { Sesion } from "../../src/server/session/tipos.ts";
@@ -77,7 +77,7 @@ async function escenario(url: string): Promise<void> {
   const centro = await nombrarCentro(admin.ctx, { nombre: "Operación" });
 
   let tokenTarjeta = "";
-  await darDeAltaPersona(admin.ctx, {
+  const tarjetaPersona = await darDeAltaPersona(admin.ctx, {
     nombre: "Tarjeta Propia",
     alta: "2026-11-04",
     baja: "",
@@ -139,6 +139,11 @@ async function escenario(url: string): Promise<void> {
   assert.equal(ajena.eleccion, "ajena");
   assert.equal(ajena.ctx.empresa, null);
   await assert.rejects(() => leerTopesTelefono(ajena.ctx), (error: unknown) => error instanceof ErrorDeDominio);
+
+  await registrarBaja(admin.ctx, { personaId: tarjetaPersona.id, baja: new Date().toISOString().slice(0, 10) });
+  assert.equal(await leerInicioTelefono(tarjeta.ctx), null);
+  assert.deepEqual(await leerTopesTelefono(tarjeta.ctx), []);
+  assert.equal(await leerFacturacionTelefono(tarjeta.ctx), null);
 
   assert.equal(tiene(admin.ctx.capacidades, "cliente.consola.ver"), true);
   assert.equal(tiene(admin.ctx.capacidades, "telefono.inicio.ver"), true);
