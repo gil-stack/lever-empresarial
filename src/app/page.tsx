@@ -10,7 +10,7 @@ import { contextoOpcional } from "@/server/entrada";
 export const runtime = "nodejs";
 
 export const metadata: Metadata = {
-  title: "Plataforma",
+  title: "Inicio",
 };
 
 /** La portada no da de alta empresas: las da de alta la SOFIPO y después invita a su administrador. */
@@ -20,7 +20,7 @@ export default async function Portada() {
   return (
     <Marco actual="/" vista={vistaDeMarco(ctx)}>
       <main id="contenido" className="pagina">
-        <CabezaPagina kicker="Plataforma" titulo="Las empresas las da de alta la SOFIPO.">
+        <CabezaPagina kicker="Arco" titulo="Las empresas las da de alta la SOFIPO.">
           <p className="lede">
             Si tu empresa ya es cliente, entra con tu correo, tu contraseña y tu segundo factor. Si te invitaron,
             abre el enlace que llegó a tu correo.

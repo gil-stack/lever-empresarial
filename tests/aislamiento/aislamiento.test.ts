@@ -1,14 +1,15 @@
 import assert from "node:assert/strict";
+import { createHash, randomUUID } from "node:crypto";
 import { test } from "node:test";
 
 import { darDeAltaEmpresa, leerEmpresa } from "../../src/server/company/servicio.ts";
 import { invitarAdministrador, contextoDePersonal } from "../../src/server/plataforma/servicio.ts";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio.ts";
-import { completarSegundoFactor } from "../../src/server/session/servicio.ts";
+import { leerSesion } from "../../src/server/session/servicio.ts";
 import { cerrarConexion } from "../../src/nucleo/db.ts";
 import { resolverContexto } from "../../src/server/tenencia/resolver.ts";
 import { DIRECTORIO_MIGRACIONES, evaluarEsquema } from "./esquema.ts";
-import { aplicarArchivo, conBaseDesechable, consultarJson, ejecutar, exigirBaseDesechable } from "./postgres.ts";
+import { aplicarArchivo, conBaseDesechable, consultarJson, ejecutar, exigirBaseDesechable, urlDeAplicacion } from "./postgres.ts";
 
 /**
  * Fase 4. La empresa A no se lee desde la empresa B, ni por el servicio ni
@@ -30,7 +31,7 @@ test("el usuario de la empresa A no lee la empresa B, y Postgres tampoco", async
   await conBaseDesechable(urlAdmin, async (url) => {
     for (const archivo of esquema.archivos) aplicarArchivo(url, archivo);
     await cerrarConexion();
-    process.env.DATABASE_URL = url;
+    process.env.DATABASE_URL = urlDeAplicacion(url);
     try {
       await escenario(url);
     } finally {
@@ -61,7 +62,7 @@ async function escenario(url: string): Promise<void> {
     nombre: "Contadora Norte",
     correo: CORREO,
   });
-  const sesionA = await entrar(primera.emitida.token);
+  const sesionA = await entrar(url, primera.emitida.token);
   const soloAlfa = await resolverContexto({
     sesion: sesionA,
     empresaPedida: null,
@@ -89,7 +90,7 @@ async function escenario(url: string): Promise<void> {
     nombre: "Contadora Norte",
     correo: CORREO,
   });
-  const sesionB = await entrar(segunda.emitida.token);
+  const sesionB = await entrar(url, segunda.emitida.token);
   const enBeta = await resolverContexto({
     sesion: sesionB,
     empresaPedida: beta.id,
@@ -162,11 +163,26 @@ async function escenario(url: string): Promise<void> {
   assert.equal(centros[0]?.n, 1);
 }
 
-async function entrar(token: string) {
-  const parcial = await aceptarInvitacion({ token, contrasena: CLAVE, confirmacion: CLAVE });
-  const completa = await completarSegundoFactor(parcial.setCookie, "totp");
-  assert.equal(completa.sesion.segundoFactor?.metodo, "totp");
-  return completa.sesion;
+async function entrar(url: string, token: string) {
+  const aceptada = await aceptarInvitacion({ token, contrasena: CLAVE, confirmacion: CLAVE });
+  const sesionToken = `S${randomUUID().replace(/-/g, "")}AAAAAAAAAA`.slice(0, 43);
+  const entradaId = randomUUID();
+  const sesionId = randomUUID();
+  const hashEntrada = createHash("sha256").update(entradaId).digest("hex");
+  const hashSesion = createHash("sha256").update(sesionToken).digest("hex");
+  ejecutar(
+    url,
+    `begin;
+     insert into auth_entradas (id, user_id, token_hash, creada_en, vence_en, verificada_con, verificada_en, consumida_en)
+       values ('${entradaId}', '${aceptada.userId}', '${hashEntrada}', now(), now() + interval '10 minutes', 'totp', now(), now());
+     insert into sessions (id, user_id, token_hash, expires_at, segundo_factor, entrada_id)
+       values ('${sesionId}', '${aceptada.userId}', '${hashSesion}', now() + interval '12 hours', 'totp', '${entradaId}');
+     commit;`,
+  );
+  const sesion = await leerSesion(`sesion=${sesionToken}`);
+  assert.equal(sesion?.segundoFactor?.metodo, "totp");
+  if (!sesion) throw new Error("la sesión de la prueba no se leyó");
+  return sesion;
 }
 
 function sembrarPersonal(url: string): void {

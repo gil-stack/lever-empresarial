@@ -1,5 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <rect width="32" height="32" fill="#f4f1ea"/>
-  <rect x="5" y="5" width="22" height="22" fill="#0c5c48"/>
-  <path d="M15 5h2v22h-2z" fill="#f4f1ea"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#0b0b0c"/>
+  <g transform="translate(5.2 16) scale(0.22)">
+    <mask id="icono-arco" maskUnits="userSpaceOnUse">
+      <path fill="white" d="M0 0 L93 -36.65 A100 100 0 0 1 93 36.65 Z"/>
+      <g fill="none" stroke="black" stroke-linecap="butt" stroke-linejoin="miter">
+        <path d="M19.6 11 L25.5 -9.4 L31.4 11 M21.8 4.2 H29.2" stroke-width="7"/>
+        <path d="M38.2 15 V-12.8 H42.6 A5 7 0 0 1 42.6 1.2 H38.2 M43.2 1.2 L49.4 15" stroke-width="7"/>
+        <path d="M63.7 -13.4 A5 17.5 0 1 0 63.7 13.4" stroke-width="8"/>
+        <ellipse cx="81" cy="0" rx="7.2" ry="20" stroke-width="9"/>
+      </g>
+    </mask>
+    <path fill="#ffffff" d="M0 0 L93 -36.65 A100 100 0 0 1 93 36.65 Z" mask="url(#icono-arco)"/>
+  </g>
 </svg>

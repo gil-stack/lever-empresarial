@@ -37,6 +37,7 @@ export const RUTAS = [
   { patron: "/recuperar/[token]", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/invitacion/[token]", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/salud", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
+  { patron: "/muestrario", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/telefono", superficie: "telefono", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/empresas", superficie: "cliente", acceso: { tipo: "sesion" }, conEmpresa: false },
   {

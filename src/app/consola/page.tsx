@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 
-import { Cajones } from "@/components/consola/cajones";
 import { ConsolaVacia } from "@/components/consola/consola-vacia";
 import { Marco } from "@/components/cromo/marco";
 import { vistaDeMarco } from "@/components/cromo/puertas";
 import { relatoOperabilidad } from "@/dominio/personas";
 import type { VistaCajones } from "@/dominio/politica";
 import { puede, type ContextoDeTenant } from "@/nucleo/contexto";
-import { enEmpresa } from "@/nucleo/rutas";
 import { abrirRuta, errorConSecreto } from "@/server/entrada";
 import { resumenParaConsola } from "@/server/personas";
 import { leerCajones } from "@/server/politica/servicio";
@@ -27,9 +25,7 @@ type CargaCajones =
 export default async function PaginaConsola() {
   const apertura = await abrirRuta("/consola");
   const ctx = apertura.tipo === "abierta" ? apertura.ctx : null;
-  const empresa = ctx?.empresa
-    ? { id: ctx.empresa.id, rfc: ctx.empresa.rfc, razonSocial: ctx.empresa.razonSocial }
-    : null;
+  const empresa = ctx?.empresa ? { rfc: ctx.empresa.rfc, razonSocial: ctx.empresa.razonSocial } : null;
   const [tarifa, suscripcion, cajones, personas] = await Promise.all([
     leerTarifa(),
     leerSuscripcionDeLaEmpresa(ctx),
@@ -43,8 +39,10 @@ export default async function PaginaConsola() {
         <ConsolaVacia
           empresa={empresa}
           libroDisponible={apertura.tipo !== "libro"}
+          conSesion={Boolean(ctx)}
+          nombre={ctx?.persona.nombre ?? null}
           personas={personas}
-          despues={empresa && cajones ? despuesDeCajones(cajones, empresa.id) : null}
+          cajones={empresa ? cajones : null}
           tarifa={tarifa}
           suscripcion={suscripcion}
         />
@@ -65,13 +63,6 @@ async function resumenDePersonas(
     if (error instanceof ErrorDeDominio || errorConSecreto(error)) return { fallo: true };
     throw error;
   }
-}
-
-function despuesDeCajones(cajones: CargaCajones, empresaId: string) {
-  if (cajones.tipo === "listos") {
-    return <Cajones vista={cajones.vista} enlace={enEmpresa(empresaId, "/consola/politica")} />;
-  }
-  return <p className="nota-saldos">{cajones.mensaje}</p>;
 }
 
 async function cargarCajones(ctx: ContextoDeTenant): Promise<CargaCajones> {

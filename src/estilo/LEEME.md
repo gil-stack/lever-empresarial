@@ -1,15 +1,15 @@
-# Sistema visual
+# Sistema visual de Arco
 
-Una página nueva se arma con estas piezas. No hace falta otra hoja de estilos ni otro color.
+Una página nueva se arma con estas piezas. No hace falta otra hoja de estilos ni otro color. La guía de marca completa (tono, paleta, superficies) vive fuera del repositorio, en `docs/marca-arco.md` del proyecto.
 
 ## Capas
 
 El layout las importa en este orden:
 
 1. `tokens.css`: colores, tipografía y medidas. Cada color es `light-dark(claro, oscuro)`.
-2. `marco.css`: la navegación lateral de la consola, el lienzo y el pie.
+2. `marco.css`: la barra lateral del portal del cliente (Arco Empresas), el lienzo y el pie.
 3. `telefono.css`: el aparato de quien paga. No comparte el menú ni el pie de la consola.
-4. `componentes.css`: página, hoja, renglones, rejilla, insignia, nota de regla, vacío, formularios, botones y avisos.
+4. `componentes.css`: página, hoja, renglones, rejilla, insignia, nota de regla, vacío, formularios, botones, avisos, resumen (cifra grande y métricas) y bandeja.
 5. `src/app/globals.css`: reglas de las páginas de la fase 1 y la fase 2.
 
 ## Tema
@@ -20,26 +20,34 @@ Un color nuevo se declara como token en `tokens.css`, con sus dos mitades. No se
 
 | Token | Uso |
 | --- | --- |
-| `--papel` | Fondo de la página y de la barra lateral |
-| `--hoja` | Superficie de un bloque |
+| `--papel`, `--papel-lateral` | Fondo gris del lienzo y de la barra lateral, un tono más hondo |
+| `--hoja` | Superficie blanca de un bloque y de la bandeja |
 | `--campo` | Fondo de un input |
-| `--tinta`, `--tinta-suave`, `--tinta-tenue` | Texto principal, secundario y rótulos |
-| `--linea`, `--linea-fuerte` | Filos y bordes de controles |
-| `--sello`, `--sello-tenue`, `--sobre-sello` | Acción principal, su fondo tenue y el texto sobre ella |
-| `--aviso`, `--aviso-tenue` | Error o algo que revisar |
+| `--tinta`, `--tinta-suave`, `--tinta-tenue` | Negro del texto, secundario y rótulos |
+| `--linea`, `--linea-fuerte` | Filos y bordes de controles; `--linea-fuerte` es el gris de la paleta |
+| `--primario`, `--primario-encima`, `--sobre-primario` | El botón principal: negro en claro, blanco en oscuro |
+| `--sello`, `--sello-profundo`, `--sello-tenue`, `--sobre-sello` | El azul de acento: foco, sección activa, contadores, enlaces al pasar, insignia «al día» |
+| `--aviso`, `--aviso-tenue` | Error o algo que revisar. Es color de estado, no de marca |
 | `--realce`, `--sombra` | Hover y sombra de las hojas |
+| `--fondo-telefono`, `--brillo-telefono` | El aparato del teléfono y su brillo azul |
 
-Tipografía: Fraunces (`--fuente-display`) para títulos y frases, su cursiva para las ausencias, Geist (`--fuente-sans`) para el texto y Geist Mono (`--fuente-mono`) para montos, RFC y CLABE.
+Tipografía: Geist (`--fuente-sans`) para todo el texto, títulos y cifras; la jerarquía la hacen el peso y el tamaño. Geist Mono (`--fuente-mono`) solo para RFC, CLABE y folios. La palabra ARCO no es texto: es el SVG de `PalabraArco`.
+
+## Logotipo
+
+`src/components/cromo/logotipo.tsx` tiene el banderín (`Banderin`) y la palabra (`PalabraArco`), redibujados en SVG de la identidad oficial. Pintan con `currentColor`. En el portal del cliente van juntos con la línea «Empresas»; en el teléfono, sin la línea. Ningún texto, logotipo ni metadato dice «banco».
 
 ## Navegación
 
-Las secciones viven en `src/components/cromo/secciones.ts`. Una sección nueva es una entrada ahí y un ícono en `iconos.tsx`. Si depende del rol, la decide `puertasDe`, no el marco.
+Las secciones viven en `src/components/cromo/secciones.ts`. Una sección nueva es una entrada ahí y un ícono en `iconos.tsx`. Si depende del rol, la decide `puertasDe`, no el marco. Los grupos se separan con un filete; su título lo lee el lector de pantalla.
+
+La barra lateral muestra la empresa de la sesión y los contadores. Los lee `estado-marco.ts` una vez por petición. Un contador es un pendiente real (hoy: los liberadores que faltan en Personas), nunca un total ni un número de ejemplo.
 
 Cada página de finanzas va dentro de `<Marco actual="/ruta" persona={…} {...puertasDe(…)}>`. El teléfono usa `<MarcoTelefono>`, que no lleva el menú de la consola. Sus clases están en la sección Teléfono.
 
 ## Teléfono
 
-Quien paga tiene otra superficie. Las piezas viven en `telefono.css`, fuera de `globals.css` y fuera del marco de la consola. La consola no las usa. El teléfono no hereda la barra lateral ni el pie del escritorio.
+Quien paga tiene otra superficie. Las piezas viven en `telefono.css`, fuera de `globals.css` y fuera del marco de la consola. La consola no las usa. El teléfono no hereda la barra lateral, la empresa ni el pie del escritorio. Sin elección de tema arranca oscuro, con el brillo azul de la identidad; si la persona elige «Claro», se ve claro. Su botón principal es una píldora.
 
 | Clase | Para qué |
 | --- | --- |
@@ -47,7 +55,7 @@ Quien paga tiene otra superficie. Las piezas viven en `telefono.css`, fuera de `
 | `.superficie-telefono` | Centra el aparato y le deja aire |
 | `.telefono` | El aparato: borde, radio y sombra. Por debajo de 560 px ocupa el ancho |
 | `.telefono-cabeza` | La marca y el tema, en la misma fila |
-| `.marca-app` | La palabra «Gasto», en sans, sin el sello de la consola |
+| `.marca-app` | El banderín y la palabra ARCO, sin la línea «Empresas» |
 | `.kicker-app` | La entrada del teléfono. No es el `.kicker` de la consola |
 | `.telefono-cuerpo` | Lo que va entre la cabeza y el pie |
 | `.pie-app` | El pie del aparato |
@@ -87,7 +95,10 @@ Se importan de `@/components/sistema`.
 | `Rejilla` | Columna ancha y columna angosta. Se apila si el contenedor mide menos de 900 px. Con `estable`, las dos columnas siguen juntas hasta 640 px, para que una laptop siga mostrando las dos |
 | `Hoja` | Un bloque con título |
 | `Renglones`, `Renglon` | Etiqueta y valor; `dinero` alinea el monto a la derecha |
-| `Monto` | Pesos ya formateados, en mono tabular |
+| `Monto` | Pesos ya formateados, en cifras tabulares |
+| `CifraGrande` | La cifra principal de la pantalla, de centavos: pesos grandes y centavos en pequeño |
+| `Metricas`, `Metrica` | Cifras en línea con rótulo, separadas por un filete vertical |
+| `Bandeja` | «Necesita tu decisión»: filas con Rechazar y Aprobar, atajos A, R y flechas cuando el foco está dentro, y aprobación en lote si se pasa `aprobarSeleccionadas` |
 | `Ausencia` | Una cifra que no existe; nunca `$0.00` en su lugar |
 | `Frase` | Un estado dicho en una frase |
 | `Insignia` | Estado corto: `neutro`, `sello` o `aviso` |
@@ -97,3 +108,9 @@ Se importan de `@/components/sistema`.
 | `Aviso` | Resultado de un formulario: `revisar` o `asentado` |
 
 Formularios: `.campo` con `label`, `input` o `select` y `.pista`; `.error-campo` y `aria-invalid` para el error; `.acciones` con `.boton` (principal), `.boton-texto` (secundario) o `.enlace-texto`. `.formulario-pareja` pone los campos de dos en dos; el aviso y las acciones ocupan la fila entera. Bajo 640 px de contenedor, los campos vuelven a una columna.
+
+Botones: `.boton` es el principal, negro (blanco en oscuro); `.boton-texto` es el secundario, con borde sobre blanco, como «Rechazar». En una fila de la bandeja, Rechazar lleva `data-atajo="rechazar"` y Aprobar `data-atajo="aprobar"`.
+
+## Muestrario
+
+`/muestrario` pinta estas piezas con datos de ejemplo, incluida la bandeja con filas. No está en el menú y responde 404 en producción.

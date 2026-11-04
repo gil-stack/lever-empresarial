@@ -13,6 +13,7 @@ import {
   consultarJson,
   ejecutar,
   exigirBaseDesechable,
+  urlDeAplicacion,
 } from "../aislamiento/postgres.ts";
 
 /**
@@ -59,7 +60,7 @@ test("dos usuarios firman, y el libro rechaza la misma persona, a la administrad
       }
     }
     await cerrarConexion();
-    process.env.DATABASE_URL = url;
+    process.env.DATABASE_URL = urlDeAplicacion(url);
     try {
       await escenario(url);
     } catch (error) {

@@ -17,10 +17,13 @@ import type { puertasDe } from "./puertas";
 export type Seccion = { ruta: string; href: string; etiqueta: string; Icono: () => ReactNode };
 export type GrupoDeSecciones = { titulo: string; secciones: Seccion[] };
 
+/** Un pendiente real de una sección. Sin pendiente, la sección no lleva número. */
+export type Contador = { valor: number; etiqueta: string };
+
 /**
- * La navegación lateral entera. Una sección nueva entra aquí, con su ícono en
- * iconos.tsx; las puertas llegan de `puertasDe` y no se deciden aquí. Cada
- * enlace lleva la empresa en la ruta: elegirla no autoriza nada.
+ * La navegación lateral entera. Las puertas llegan de `puertasDe`. Cada enlace
+ * lleva la empresa en la ruta: elegirla no autoriza nada. El título de cada
+ * grupo lo lee el lector de pantalla; a la vista los separa un filete.
  */
 export function seccionesDe(
   puertas: ReturnType<typeof puertasDe>,
@@ -34,7 +37,7 @@ export function seccionesDe(
     Icono,
   });
   const operacion = [
-    ...(puertas.consola ? [seccion("/consola", "Consola", IconoConsola)] : []),
+    ...(puertas.consola ? [seccion("/consola", "Resumen", IconoConsola)] : []),
     ...(puertas.politica ? [seccion("/consola/politica", "Política", IconoPolitica)] : []),
     ...(puertas.proveedores ? [seccion("/consola/proveedores", "Proveedores", IconoProveedores)] : []),
     ...(puertas.lista69b ? [seccion("/consola/lista-69b", "Lista 69-B", IconoLista)] : []),

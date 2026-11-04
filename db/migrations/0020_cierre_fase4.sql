@@ -199,11 +199,29 @@ $$;
 REVOKE ALL ON FUNCTION entrada_por_token(text, timestamptz) FROM PUBLIC;
 REVOKE ALL ON FUNCTION fallos_de_contrasena(uuid, timestamptz) FROM PUBLIC;
 REVOKE ALL ON FUNCTION factor_de_sesion(uuid) FROM PUBLIC;
+CREATE FUNCTION password_reset_por_token(p_hash text)
+RETURNS TABLE (
+  id uuid,
+  user_id uuid,
+  vence_en timestamptz,
+  usado_en timestamptz,
+  anulado_en timestamptz
+)
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT r.id, r.user_id, r.vence_en, r.usado_en, r.anulado_en
+  FROM password_resets AS r
+  WHERE r.token_hash = p_hash
+$$;
+
 REVOKE ALL ON FUNCTION recuperaciones_pendientes() FROM PUBLIC;
+REVOKE ALL ON FUNCTION password_reset_por_token(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION entrada_por_token(text, timestamptz) TO plataforma_cliente;
 GRANT EXECUTE ON FUNCTION fallos_de_contrasena(uuid, timestamptz) TO plataforma_cliente;
 GRANT EXECUTE ON FUNCTION factor_de_sesion(uuid) TO plataforma_cliente;
 GRANT EXECUTE ON FUNCTION recuperaciones_pendientes() TO plataforma_cliente, plataforma_sofipo;
+GRANT EXECUTE ON FUNCTION password_reset_por_token(text) TO plataforma_cliente;
 
 -- Políticas de los factores ---------------------------------------------------
 

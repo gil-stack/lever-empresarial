@@ -1,6 +1,6 @@
-# Plataforma
+# Arco
 
-Consola de control de gastos para una razón social mexicana.
+Arco: consola de control de gastos para una razón social mexicana. La guía corta del sistema visual está en `src/estilo/LEEME.md`.
 
 ## Desarrollo
 

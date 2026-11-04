@@ -8,25 +8,25 @@ import type { CorreoPlantilla } from "../tipos";
  */
 
 const CLARO = {
-  papel: "#f3f1ec",
-  hoja: "#fffefb",
-  tinta: "#16140f",
-  tintaSuave: "#5d584f",
-  tintaTenue: "#736d62",
-  linea: "#e4dfd5",
-  sello: "#0c5c48",
-  sobreSello: "#fbfaf6",
+  papel: "#f2f2f3",
+  hoja: "#ffffff",
+  tinta: "#0b0b0c",
+  tintaSuave: "#47474d",
+  tintaTenue: "#616168",
+  linea: "#e0e0e3",
+  sello: "#0d5fd0",
+  sobreSello: "#ffffff",
 } as const;
 
 const OSCURO = {
-  papel: "#0f0f0d",
-  hoja: "#171715",
-  tinta: "#eeeae2",
-  tintaSuave: "#a9a399",
-  tintaTenue: "#8a857b",
-  linea: "#272623",
-  sello: "#63c7a3",
-  sobreSello: "#05221a",
+  papel: "#0c0d10",
+  hoja: "#151619",
+  tinta: "#f2f2f3",
+  tintaSuave: "#aeaeb5",
+  tintaTenue: "#8e8e96",
+  linea: "#24252a",
+  sello: "#5c9dff",
+  sobreSello: "#05122a",
 } as const;
 
 // Comillas simples: estas pilas viven dentro de style="…".

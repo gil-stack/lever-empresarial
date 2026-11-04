@@ -47,6 +47,31 @@ test("el esquema vivo coincide con las migraciones y toda tabla tiene RLS", asyn
          and rolbypassrls`,
     );
     assert.deepEqual(saltan, []);
+
+    const sinFuerza = consultarJson<string[]>(
+      url,
+      `select coalesce(json_agg(clase.relname order by clase.relname), '[]'::json)
+       from pg_class clase
+       join pg_namespace espacio on espacio.oid = clase.relnamespace
+       where espacio.nspname = 'public'
+         and clase.relkind = 'r'
+         and clase.relname <> 'schema_migrations'
+         and clase.relforcerowsecurity = false`,
+    );
+    assert.deepEqual(sinFuerza, []);
+
+    const aplicacion = consultarJson<Array<{ salta: boolean; duena: number }>>(
+      url,
+      `select json_agg(fila) from (
+         select r.rolbypassrls as salta,
+           (select count(*)::int from pg_class c
+             join pg_namespace n on n.oid = c.relnamespace
+             where n.nspname = 'public' and c.relkind = 'r' and c.relowner = r.oid) as duena
+         from pg_roles r where r.rolname = 'plataforma_app'
+       ) fila`,
+    );
+    assert.equal(aplicacion[0]?.salta, false);
+    assert.equal(aplicacion[0]?.duena, 0);
   });
 });
 

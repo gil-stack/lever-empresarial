@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 
+import { Banderin, PalabraArco } from "@/components/cromo/logotipo";
 import { SelectorTema } from "@/components/cromo/selector-tema";
 import { COOKIE_TEMA, temaDesde } from "@/components/cromo/tema";
-
-import { Banderin } from "./banderin";
 
 /** La puerta de las tres superficies. No usa el menú de la consola ni el del teléfono. */
 export async function MarcoArco({ children }: { children: ReactNode }) {
@@ -17,8 +16,8 @@ export async function MarcoArco({ children }: { children: ReactNode }) {
       <header className="arco-cabeza">
         <Banderin />
         <div className="arco-marca">
-          <p className="arco-nombre">Arco</p>
-          <p className="arco-frase">Todo tu dinero en un solo lugar</p>
+          <PalabraArco />
+          <span className="solo-lector">Arco</span>
         </div>
         <SelectorTema inicial={tema} />
       </header>

@@ -41,6 +41,8 @@ export const CATALOGO = {
   segundo_factor: { entidad: "sessions", cambio: ["metodo"] },
   salida: { entidad: "sessions", cambio: [] },
   entrada_fallida: { entidad: "users", cambio: ["motivo"] },
+  recuperacion_solicitada: { entidad: "password_resets", cambio: [] },
+  contrasena_restablecida: { entidad: "password_resets", cambio: [] },
 } as const satisfies Record<string, { entidad: string; cambio: readonly string[] }>;
 
 export type AccionDeBitacora = keyof typeof CATALOGO;

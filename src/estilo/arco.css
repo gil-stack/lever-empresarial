@@ -43,8 +43,19 @@
   margin-left: auto;
 }
 
+.arco-cabeza .banderin {
+  width: 40px;
+  height: auto;
+}
+
+.arco-cabeza .palabra-arco {
+  display: block;
+  width: 54px;
+  height: auto;
+}
+
 .arco-marca {
-  flex: 1;
+  flex: none;
   min-width: 0;
 }
 
@@ -96,7 +107,7 @@
 
 .arco-kicker {
   margin: 0;
-  color: var(--arco);
+  color: var(--tinta-tenue);
   font-size: 0.78rem;
   font-weight: 650;
   letter-spacing: 0.14em;

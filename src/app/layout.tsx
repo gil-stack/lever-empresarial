@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
-import { Fraunces, Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 
 import { COOKIE_TEMA, temaDesde } from "@/components/cromo/tema";
 
@@ -24,36 +24,21 @@ const mono = Geist_Mono({
   display: "swap",
 });
 
-const display = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-display",
-  display: "swap",
-  axes: ["SOFT", "WONK", "opsz"],
-});
-
-const displayCursiva = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-display-cursiva",
-  display: "swap",
-  style: "italic",
-  axes: ["SOFT", "WONK", "opsz"],
-});
-
 export const runtime = "nodejs";
 
 export const metadata: Metadata = {
   title: {
-    default: "Plataforma",
-    template: "%s · Plataforma",
+    default: "Arco",
+    template: "%s · Arco",
   },
-  description: "Control de gastos de una razón social mexicana. Una cuenta, un RFC.",
-  applicationName: "Plataforma",
+  description: "Arco: control de gastos de una razón social mexicana. Una cuenta, un RFC.",
+  applicationName: "Arco",
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f3f1ec" },
-    { media: "(prefers-color-scheme: dark)", color: "#0f0f0d" },
+    { media: "(prefers-color-scheme: light)", color: "#f2f2f3" },
+    { media: "(prefers-color-scheme: dark)", color: "#0c0d10" },
   ],
   colorScheme: "light dark",
   width: "device-width",
@@ -66,7 +51,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html
       lang="es"
       data-tema={tema === "auto" ? undefined : tema}
-      className={`${sans.variable} ${mono.variable} ${display.variable} ${displayCursiva.variable}`}
+      className={`${sans.variable} ${mono.variable}`}
     >
       <body>{children}</body>
     </html>

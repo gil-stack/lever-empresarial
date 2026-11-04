@@ -43,9 +43,12 @@ describe("autenticación en Postgres", { skip: urlAdmin.length === 0 }, () => {
           hash,
         ]);
 
-        await cliente.query(
-          "insert into sessions (id, user_id, token_hash, expires_at) values ($1, $2, $3, now() + interval '1 hour')",
-          [randomUUID(), usuario, "ab".repeat(32)],
+        await assert.rejects(
+          cliente.query(
+            "insert into sessions (id, user_id, token_hash, expires_at) values ($1, $2, $3, now() + interval '1 hour')",
+            [randomUUID(), usuario, "ab".repeat(32)],
+          ),
+          /sesion_sin_segundo_factor|sessions_segundo_factor/,
         );
 
         const entrada = randomUUID();
@@ -88,9 +91,9 @@ describe("autenticación en Postgres", { skip: urlAdmin.length === 0 }, () => {
 
         await cliente.query("begin");
         await cliente.query(
-          `insert into audit_events (id, company_id, actor_id, accion, entidad, identificador, ocurrido_en)
-           values ($1, null, $2, 'passkey_registrada', 'auth_passkeys', $3, now())`,
-          [randomUUID(), usuario, passkey],
+          `insert into audit_log (operator_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+           values ((select id from operators order by alta_en limit 1), 'miembro', $1, 'cliente', 'passkey_registrada', 'auth_passkeys', $2)`,
+          [usuario, passkey],
         );
         await cliente.query(
           `insert into auth_passkeys (id, user_id, credencial_id, llave_publica, nombre, creada_en)
@@ -103,9 +106,9 @@ describe("autenticación en Postgres", { skip: urlAdmin.length === 0 }, () => {
         const recuperacion = randomUUID();
         await cliente.query("begin");
         await cliente.query(
-          `insert into audit_events (id, company_id, actor_id, accion, entidad, identificador, ocurrido_en)
-           values ($1, null, $2, 'recuperacion_solicitada', 'auth_recuperaciones', $3, now())`,
-          [randomUUID(), usuario, recuperacion],
+          `insert into audit_log (operator_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+           values ((select id from operators order by alta_en limit 1), 'miembro', $1, 'cliente', 'recuperacion_solicitada', 'auth_recuperaciones', $2)`,
+          [usuario, recuperacion],
         );
         await cliente.query(
           "insert into auth_recuperaciones (id, user_id, solicitada_en, motivo) values ($1, $2, now(), 'Perdí el teléfono')",

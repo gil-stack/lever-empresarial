@@ -213,8 +213,8 @@ function Recuperar({ nombre, solicitudAbierta }: { nombre: string; solicitudAbie
       <p className="arco-kicker">Recuperación</p>
       <h1>{nombre}, la cuenta sigue cerrada.</h1>
       <p className="arco-nota">
-        Perder el segundo factor no se resuelve con un correo. Alguien del equipo verifica tu identidad, en persona o
-        por videollamada, y solo entonces puedes registrar uno nuevo.
+        Perder el teléfono no borra la passkey ni la app autenticadora. Si guardaste un código de respaldo, entra con
+        él. Pedir ayuda no quita los factores que ya tienes.
       </p>
       {solicitudAbierta ? (
         <p className="arco-nota">Tu solicitud ya está en revisión.</p>

@@ -84,6 +84,19 @@ export async function conBaseDesechable<T>(
   }
 }
 
+const CLAVE_APLICACION = "aplicacion-local";
+
+/** La aplicación no entra como dueña. Esta URL es el rol que las políticas filtran. */
+export function urlDeAplicacion(urlDuena: string): string {
+  const analizada = new URL(urlDuena);
+  const base = decodeURIComponent(analizada.pathname.replace(/^\//, ""));
+  ejecutar(urlDuena, `alter role plataforma_app with login password '${CLAVE_APLICACION}'`);
+  ejecutar(urlDuena, `grant connect on database ${ident(base)} to plataforma_app`);
+  analizada.username = "plataforma_app";
+  analizada.password = CLAVE_APLICACION;
+  return analizada.toString();
+}
+
 export function aplicarArchivo(url: string, archivo: string): void {
   correrPsql(url, ["-f", archivo]);
 }
