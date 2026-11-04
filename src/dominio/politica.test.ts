@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { describe, it } from "node:test";
 
+import { capacidadesDe, tiene } from "../nucleo/capacidades.ts";
+
 import {
   CAJONES,
   DIAS_DEFAULT,
@@ -13,7 +15,6 @@ import {
   fraseUmbral,
   ledeCajones,
   presentarPolitica,
-  puedeEscribirPolitica,
   saldoDeAsientos,
   validarNombreCategoria,
   leerEnteroEnRango,
@@ -33,10 +34,12 @@ describe("la política de comprobantes", () => {
     assert.equal(saldoDeAsientos([100, -40]), 60);
   });
 
-  it("solo quien administra escribe", () => {
-    assert.equal(puedeEscribirPolitica("administrador"), true);
-    for (const rol of ["contador", "solicitante", "liberador", "tarjetahabiente", ""]) {
-      assert.equal(puedeEscribirPolitica(rol), false);
+  it("solo quien administra escribe, y eso lo dice la matriz", () => {
+    const puede = (rol: "administrador" | "contador" | "solicitante" | "liberador" | "tarjetahabiente") =>
+      tiene(capacidadesDe({ rolesCliente: [rol], rolesPlataforma: [] }), "cliente.politica.editar");
+    assert.equal(puede("administrador"), true);
+    for (const rol of ["contador", "solicitante", "liberador", "tarjetahabiente"] as const) {
+      assert.equal(puede(rol), false);
     }
   });
 
@@ -112,7 +115,7 @@ function presentar(datosPolitica: DatosPolitica) {
 function datos(): DatosPolitica {
   return {
     companyId: randomUUID(),
-    rol: "administrador",
+    puedeEditar: true,
     diasComprobante: DIAS_DEFAULT,
     maxVencidos: VENCIDOS_DEFAULT,
     umbralCentavos: null,

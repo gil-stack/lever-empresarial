@@ -12,12 +12,12 @@ import {
   NOMBRE_COOKIE,
   VIGENCIA_SESION_MS,
 } from "./cookie";
-import { conexionIniciada, traducirErrorDeBase } from "./db";
-import { ErrorDeDominio } from "./error-de-dominio";
+import { conexionIniciada, traducirErrorDeBase } from "../../nucleo/db";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { hashDeToken, tokenNuevo } from "./hash";
 import { mapearSesion, SQL, type RepositorioSesion, type UsuarioInterno } from "./repositorio";
-import { abrirCuenta, cerrarSesion, descartarCuentaSinEmpresa, entrar, leerSesion } from "./servicio";
-import { validarCuenta } from "./validar";
+import { NOMBRE_COOKIE_PARCIAL } from "./cookie";
+import { cerrarSesion, completarSegundoFactor, entrar, leerSesion, leerSesionParcial } from "./servicio";
 
 const AHORA = new Date("2026-11-03T10:00:00.000Z");
 const TOKEN = "b".repeat(43);
@@ -50,111 +50,87 @@ describe("cookie de sesión", () => {
 });
 
 describe("cuenta y sesión", () => {
-  it("guarda el hash del token y el hash de la contraseña, y no los devuelve", async () => {
+  it("la contraseña abre una sesión parcial y el segundo factor la completa", async () => {
     const repo = memoria();
-    const abierta = await abrirCuenta(cuenta(), deps(repo));
+    const persona = usuario();
+    repo.usuarios.set(persona.id, persona);
+    const abierta = await entrar({ correo: "ana@ejemplo.mx", contrasena: CONTRASENA }, deps(repo));
     const guardada = [...repo.sesiones.values()][0];
-    const usuario = [...repo.usuarios.values()][0];
     assert.equal(guardada?.tokenHash, hashDeToken(TOKEN));
-    assert.notEqual(guardada?.tokenHash, TOKEN);
-    assert.equal(usuario?.passwordHash, `hash:${CONTRASENA}`);
-    assert.equal(usuario?.correo, "ana@ejemplo.mx");
-    assert.equal(usuario?.nombre, "Ana Pérez");
-    assert.equal(abierta.setCookie.includes(TOKEN), true);
+    assert.equal(guardada?.completa, false);
+    assert.match(abierta.setCookie, new RegExp(`^${NOMBRE_COOKIE_PARCIAL}=`));
     assert.equal(abierta.setCookie.includes(CONTRASENA), false);
-    assert.equal(abierta.setCookie.includes(usuario?.passwordHash ?? "hash:"), false);
-    assert.deepEqual(Object.keys(abierta.sesion.usuario).sort(), ["correo", "id", "nombre"]);
-    assert.equal(abierta.sesion.companyId, null);
-    assert.equal(JSON.stringify(abierta).includes("passwordHash"), false);
+    assert.equal(abierta.sesion.segundoFactor, null);
+    assert.equal(await leerSesion(abierta.setCookie, deps(repo)), null);
+    assert.equal((await leerSesionParcial(abierta.setCookie, deps(repo)))?.id, abierta.sesion.id);
 
-    const leida = await leerSesion(abierta.setCookie, deps(repo));
-    assert.equal(leida?.usuario.correo, "ana@ejemplo.mx");
-    assert.equal(leida?.id, abierta.sesion.id);
+    const completa = await completarSegundoFactor(abierta.setCookie, "totp", deps(repo, undefined, "c".repeat(43)));
+    assert.equal(completa.sesion.segundoFactor?.metodo, "totp");
+    assert.equal(repo.sesiones.size, 1);
+    assert.equal((await leerSesion(completa.setCookies[0], deps(repo)))?.usuario.correo, "ana@ejemplo.mx");
+    assert.equal(await leerSesionParcial(abierta.setCookie, deps(repo)), null);
+    assert.equal(JSON.stringify(completa).includes("passwordHash"), false);
   });
 
-  it("no escribe la base si la cuenta es inválida", async () => {
+  it("no abre sesión si el correo o la contraseña no sirven", async () => {
     const repo = memoria();
-    let escrituras = 0;
-    repo.crearCuenta = async (registro) => {
-      escrituras += 1;
-      return memoria().crearCuenta(registro);
+    let aperturas = 0;
+    const original = repo.abrirSesion.bind(repo);
+    repo.abrirSesion = async (sesion) => {
+      aperturas += 1;
+      return original(sesion);
     };
-    assert.equal(
-      await codigo(abrirCuenta({ nombre: " ", correo: "ana@ejemplo.mx", contrasena: CONTRASENA }, deps(repo))),
-      "nombre_invalido",
-    );
-    assert.equal(await codigo(abrirCuenta(cuenta({ contrasena: "corta" }), deps(repo))), "contrasena_invalida");
-    assert.equal(await codigo(abrirCuenta(cuenta({ contrasena: "a".repeat(73) }), deps(repo))), "contrasena_invalida");
-    assert.equal(await codigo(abrirCuenta(cuenta({ contrasena: "ñ".repeat(37) }), deps(repo))), "contrasena_invalida");
-    assert.equal(validarCuenta(cuenta({ contrasena: "a".repeat(72) })).ok, true);
-    assert.equal(validarCuenta(cuenta({ contrasena: "ñ".repeat(36) })).ok, true);
-    assert.equal(await codigo(abrirCuenta(cuenta({ correo: "no-es-correo" }), deps(repo))), "correo_invalido");
-    assert.equal(escrituras, 0);
+    assert.equal(await codigo(entrar({ correo: "no-es-correo", contrasena: CONTRASENA }, deps(repo))), "credenciales_invalidas");
+    assert.equal(await codigo(entrar({ correo: "ana@ejemplo.mx", contrasena: "" }, deps(repo))), "credenciales_invalidas");
+    assert.equal(aperturas, 0);
   });
 
-  it("rechaza el correo repetido y no dice si la contraseña o el correo existen al entrar", async () => {
+  it("no dice si falló el correo o la contraseña", async () => {
     const repo = memoria();
-    const primera = await abrirCuenta(cuenta(), deps(repo));
-    assert.equal(await codigo(abrirCuenta(cuenta({ nombre: "Otra" }), deps(repo))), "correo_duplicado");
-
+    repo.usuarios.set("1", usuario());
     const verificaciones: string[] = [];
     const verificar = async (plana: string, hash: string) => {
       verificaciones.push(hash);
       return hash === `hash:${plana}`;
     };
     const dependencias = deps(repo, verificar);
-    assert.equal(await codigo(entrar({ correo: "ANA@ejemplo.mx", contrasena: "otra-clave-99" }, dependencias)), "credenciales_invalidas");
-    assert.equal(await codigo(entrar({ correo: "nadie@ejemplo.mx", contrasena: CONTRASENA }, dependencias)), "credenciales_invalidas");
+    assert.equal(
+      await codigo(entrar({ correo: "ANA@ejemplo.mx", contrasena: "otra-clave-99" }, dependencias)),
+      "credenciales_invalidas",
+    );
+    assert.equal(
+      await codigo(entrar({ correo: "nadie@ejemplo.mx", contrasena: CONTRASENA }, dependencias)),
+      "credenciales_invalidas",
+    );
     assert.equal(verificaciones.length, 2);
-    assert.equal(verificaciones[1]?.startsWith("hash:"), true);
     assert.notEqual(verificaciones[1], `hash:${CONTRASENA}`);
-
-    const segunda = await entrar({ correo: "ana@ejemplo.mx", contrasena: CONTRASENA }, deps(repo, verificar, "c".repeat(43)));
-    assert.equal(repo.sesiones.size, 1);
-    assert.notEqual(segunda.sesion.id, primera.sesion.id);
-    assert.equal(await leerSesion(primera.setCookie, deps(repo)), null);
-    assert.equal((await leerSesion(segunda.setCookie, deps(repo)))?.id, segunda.sesion.id);
-    assert.equal(JSON.stringify(segunda).includes(CONTRASENA), false);
+    assert.equal(repo.fallos.length, 2);
   });
 
-  it("caduca la sesión y cerrar solo borra el token presentado", async () => {
+  it("caduca la sesión completa y cerrar solo borra el token presentado", async () => {
     const repo = memoria();
     let ahora = AHORA;
     const dependencias = deps(repo);
     dependencias.ahora = () => ahora;
-    const abierta = await abrirCuenta(cuenta(), dependencias);
+    repo.usuarios.set("1", usuario());
+    repo.usuarios.set("2", { ...usuario(), id: "2", correo: "luis@ejemplo.mx", nombre: "Luis Alma" });
+    const ana = await entrar({ correo: "ana@ejemplo.mx", contrasena: CONTRASENA }, dependencias);
+    const completa = await completarSegundoFactor(ana.setCookie, "passkey", {
+      ...dependencias,
+      token: () => "c".repeat(43),
+    });
     ahora = new Date(AHORA.getTime() + VIGENCIA_SESION_MS - 1);
-    assert.ok(await leerSesion(abierta.setCookie, dependencias));
+    assert.ok(await leerSesion(completa.setCookies[0], dependencias));
     ahora = new Date(AHORA.getTime() + VIGENCIA_SESION_MS);
-    assert.equal(await leerSesion(abierta.setCookie, dependencias), null);
+    assert.equal(await leerSesion(completa.setCookies[0], dependencias), null);
 
     ahora = AHORA;
-    const luis = await abrirCuenta(
-      cuenta({ nombre: "Luis Alma", correo: "luis@ejemplo.mx" }),
-      { ...deps(repo), token: () => "d".repeat(43) },
-    );
-    const vigente = await entrar({ correo: "ana@ejemplo.mx", contrasena: CONTRASENA }, dependencias);
-    const cierre = await cerrarSesion(vigente.setCookie, dependencias);
-    assert.match(cierre.setCookie, /Max-Age=0/);
-    assert.equal(await leerSesion(vigente.setCookie, dependencias), null);
-    assert.equal((await leerSesion(luis.setCookie, dependencias))?.usuario.correo, "luis@ejemplo.mx");
-    assert.equal((await cerrarSesion(null, dependencias)).setCookie.includes("Secure"), true);
-    assert.equal(await leerSesion(null, dependencias), null);
-  });
-
-  it("borra la cuenta nueva solo si no tiene empresa", async () => {
-    const repo = memoria();
-    const abierta = await abrirCuenta(cuenta(), deps(repo));
-    assert.equal(await descartarCuentaSinEmpresa("no-es-uuid", deps(repo)), false);
-    assert.equal(await descartarCuentaSinEmpresa(abierta.sesion.usuario.id, deps(repo)), true);
-    assert.equal(repo.usuarios.size, 0);
-    assert.equal(repo.sesiones.size, 0);
-
-    const conEmpresa = await abrirCuenta(cuenta({ correo: "con-empresa@ejemplo.mx" }), deps(repo, undefined, "e".repeat(43)));
-    repo.marcarEmpresa(conEmpresa.sesion.usuario.id);
-    assert.equal(await descartarCuentaSinEmpresa(conEmpresa.sesion.usuario.id, deps(repo)), false);
-    assert.equal(repo.usuarios.has(conEmpresa.sesion.usuario.id), true);
-    assert.equal(repo.sesiones.size, 1);
+    const luis = await entrar({ correo: "luis@ejemplo.mx", contrasena: CONTRASENA }, { ...deps(repo), token: () => "d".repeat(43) });
+    const luisCompleta = await completarSegundoFactor(luis.setCookie, "totp", { ...deps(repo), token: () => "e".repeat(43) });
+    const cierre = await cerrarSesion(completa.setCookies[0], dependencias);
+    assert.match(cierre.setCookies[0], /Max-Age=0/);
+    assert.equal(await leerSesion(completa.setCookies[0], dependencias), null);
+    assert.equal((await leerSesion(luisCompleta.setCookies[0], dependencias))?.usuario.correo, "luis@ejemplo.mx");
   });
 });
 
@@ -190,13 +166,13 @@ describe("errores de base", () => {
     );
     assert.equal(
       traducirErrorDeBase(Object.assign(new Error("x"), { code: "23505", constraint: "memberships_pkey" })).message,
-      "segunda_razon_social",
+      "membresia_existente",
     );
     assert.equal(
       traducirErrorDeBase(
         Object.assign(new Error("x"), { code: "23505", constraint: "memberships_una_persona_una_empresa" }),
       ).message,
-      "segunda_razon_social",
+      "membresia_existente",
     );
     const categoria = traducirErrorDeBase(
       Object.assign(new Error("duplicate postgres://usuario:secreto@db.neon.tech/plataforma"), {
@@ -234,11 +210,9 @@ describe("errores de base", () => {
   it("la lectura de sesión no trae el hash de la contraseña", () => {
     assert.match(SQL.buscarCorreo, /password_hash/);
     assert.doesNotMatch(SQL.buscarSesion, /password_hash/);
-    assert.match(SQL.buscarSesion, /memberships/);
-    assert.match(SQL.borrarSesionesDelUsuario, /delete from sessions where user_id = \$1/i);
-    assert.match(SQL.borrarUsuario, /delete from users where id = \$1/i);
-    assert.match(SQL.tieneMembresia, /from memberships where user_id = \$1/i);
-    assert.match(SQL.bloquearUsuario, /for update/i);
+    assert.match(SQL.buscarSesion, /sesion_por_token/);
+    assert.doesNotMatch(SQL.buscarSesion, /memberships/);
+    assert.match(SQL.completar, /segundo_factor_en/);
     const fuenteRepo = readFileSync(new URL("./repositorio.ts", import.meta.url), "utf8");
     assert.match(fuenteRepo, /consulta\.query\(SQL\.borrarSesionesDelUsuario/);
     const sesion = mapearSesion({
@@ -247,11 +221,11 @@ describe("errores de base", () => {
       user_id: randomUUID(),
       nombre: "Ana",
       correo: "ana@ejemplo.mx",
-      company_id: randomUUID(),
-      rol: "administrador_falso",
+      segundo_factor_en: null,
+      segundo_factor_metodo: null,
       password_hash: "secreto",
     });
-    assert.equal(sesion.rol, null);
+    assert.equal(sesion.segundoFactor, null);
     assert.equal(JSON.stringify(sesion).includes("secreto"), false);
     assert.equal(
       mapearSesion({
@@ -260,10 +234,10 @@ describe("errores de base", () => {
         user_id: randomUUID(),
         nombre: "Ana",
         correo: "ana@ejemplo.mx",
-        company_id: null,
-        rol: "contador",
-      }).rol,
-      "contador",
+        segundo_factor_en: AHORA,
+        segundo_factor_metodo: "passkey",
+      }).segundoFactor?.metodo,
+      "passkey",
     );
   });
 });
@@ -313,15 +287,6 @@ describe("bcrypt", () => {
   });
 });
 
-function cuenta(parcial: Partial<{ nombre: string; correo: string; contrasena: string }> = {}) {
-  return {
-    nombre: "  Ana   Pérez ",
-    correo: "  ANA@ejemplo.mx ",
-    contrasena: CONTRASENA,
-    ...parcial,
-  };
-}
-
 function deps(
   repositorio: RepositorioSesion,
   verificar: (plana: string, hash: string) => Promise<boolean> = async (plana, hash) => hash === `hash:${plana}`,
@@ -336,59 +301,73 @@ function deps(
   };
 }
 
+type SesionMem = { id: string; userId: string; tokenHash: string; expiresAt: Date; completa: boolean };
+
+function usuario(): UsuarioInterno {
+  return {
+    id: "11111111-1111-4111-8111-111111111111",
+    nombre: "Ana Pérez",
+    correo: "ana@ejemplo.mx",
+    passwordHash: `hash:${CONTRASENA}`,
+  };
+}
+
 function memoria(): RepositorioSesion & {
   usuarios: Map<string, UsuarioInterno>;
-  sesiones: Map<string, { id: string; userId: string; tokenHash: string; expiresAt: Date }>;
-  marcarEmpresa: (userId: string) => void;
+  sesiones: Map<string, SesionMem>;
+  fallos: Array<string | null>;
 } {
   const usuarios = new Map<string, UsuarioInterno>();
-  const sesiones = new Map<string, { id: string; userId: string; tokenHash: string; expiresAt: Date }>();
-  const conEmpresa = new Set<string>();
+  const sesiones = new Map<string, SesionMem>();
+  const fallos: Array<string | null> = [];
+  function aSesion(fila: SesionMem) {
+    const persona = [...usuarios.values()].find((actual) => actual.id === fila.userId);
+    if (!persona) return null;
+    return {
+      id: fila.id,
+      venceEn: fila.expiresAt,
+      usuario: { id: persona.id, nombre: persona.nombre, correo: persona.correo },
+      segundoFactor: fila.completa ? { metodo: "totp" as const, en: AHORA } : null,
+    };
+  }
   return {
     usuarios,
     sesiones,
-    marcarEmpresa(userId) {
-      conEmpresa.add(userId);
-    },
-    async crearCuenta(registro) {
-      if ([...usuarios.values()].some((usuario) => usuario.correo === registro.usuario.correo)) {
-        throw new ErrorDeDominio("correo_duplicado");
-      }
-      usuarios.set(registro.usuario.id, registro.usuario);
-      sesiones.set(registro.sesion.tokenHash, registro.sesion);
-    },
+    fallos,
     async buscarPorCorreo(correo) {
-      return [...usuarios.values()].find((usuario) => usuario.correo === correo) ?? null;
+      return [...usuarios.values()].find((actual) => actual.correo === correo) ?? null;
     },
     async abrirSesion(sesion) {
       for (const [hash, guardada] of [...sesiones.entries()]) {
         if (guardada.userId === sesion.userId) sesiones.delete(hash);
       }
-      sesiones.set(sesion.tokenHash, sesion);
+      sesiones.set(sesion.tokenHash, { ...sesion, completa: false });
     },
-    async buscarPorTokenHash(tokenHash, ahora) {
-      const sesion = sesiones.get(tokenHash);
-      if (!sesion || sesion.expiresAt.getTime() <= ahora.getTime()) return null;
-      const usuario = usuarios.get(sesion.userId);
-      if (!usuario) return null;
-      return {
-        id: sesion.id,
-        venceEn: sesion.expiresAt,
-        usuario: { id: usuario.id, nombre: usuario.nombre, correo: usuario.correo },
-        companyId: null,
-        rol: null,
+    async buscarPorTokenHash(tokenHash, ahora, completa) {
+      const fila = sesiones.get(tokenHash);
+      if (!fila || fila.expiresAt.getTime() <= ahora.getTime() || fila.completa !== completa) return null;
+      return aSesion(fila);
+    },
+    async completarSegundoFactor(verificado) {
+      const parcial = sesiones.get(verificado.tokenHashParcial);
+      if (!parcial || parcial.completa) throw new ErrorDeDominio("sesion_ausente");
+      sesiones.delete(verificado.tokenHashParcial);
+      const fila: SesionMem = {
+        ...parcial,
+        tokenHash: verificado.tokenHashCompleto,
+        expiresAt: verificado.expiresAt,
+        completa: true,
       };
+      sesiones.set(fila.tokenHash, fila);
+      const sesion = aSesion(fila);
+      if (!sesion) throw new ErrorDeDominio("base_no_disponible");
+      return { ...sesion, segundoFactor: { metodo: verificado.metodo, en: verificado.ahora } };
     },
     async borrarPorTokenHash(tokenHash) {
       sesiones.delete(tokenHash);
     },
-    async descartarCuentaSinEmpresa(userId) {
-      if (!usuarios.has(userId) || conEmpresa.has(userId)) return false;
-      usuarios.delete(userId);
-      for (const [hash, sesion] of [...sesiones.entries()]) {
-        if (sesion.userId === userId) sesiones.delete(hash);
-      }
-      return true;
+    async registrarFallo(userId) {
+      fallos.push(userId);
     },
   };
 }

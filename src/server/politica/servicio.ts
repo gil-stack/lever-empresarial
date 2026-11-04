@@ -14,9 +14,9 @@ import {
   type VistaCajones,
   type VistaPolitica,
 } from "../../dominio/politica";
-import type { Sesion } from "../session/tipos";
-import { ErrorDeDominio } from "../session/error-de-dominio";
-import { repositorioPg, type EventoPolitica, type RepositorioPolitica } from "./repositorio";
+import { exigirEmpresa, type ContextoDeTenant } from "../../nucleo/contexto";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
+import { repositorioPg, type RepositorioPolitica } from "./repositorio";
 
 export type DependenciasPolitica = {
   repositorio?: RepositorioPolitica;
@@ -24,11 +24,11 @@ export type DependenciasPolitica = {
 };
 
 export async function leerPolitica(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   deps?: DependenciasPolitica,
 ): Promise<VistaPolitica | null> {
-  const userId = exigirUsuario(sesion);
-  const datos = await repositorio(deps).leer(userId);
+  const conEmpresa = exigirEmpresa(ctx);
+  const datos = await repositorio(deps).leer(conEmpresa);
   if (!datos) return null;
   const presentada = presentarPolitica(datos, reloj(deps));
   if (!presentada.ok) throw new ErrorDeDominio(presentada.codigo);
@@ -36,10 +36,10 @@ export async function leerPolitica(
 }
 
 export async function leerCajones(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   deps?: DependenciasPolitica,
 ): Promise<VistaCajones | null> {
-  const vista = await leerPolitica(sesion, deps);
+  const vista = await leerPolitica(ctx, deps);
   if (!vista) return null;
   return {
     cajones: vista.cajones,
@@ -49,52 +49,49 @@ export async function leerCajones(
 }
 
 export async function editarPlazoEmpresa(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   entrada: { dias: unknown; vencidos: unknown },
   deps?: DependenciasPolitica,
 ): Promise<void> {
-  const userId = exigirUsuario(sesion);
+  const conEmpresa = exigirEmpresa(ctx);
   const dias = leerEnteroEnRango(entrada.dias, DIAS_MIN, DIAS_MAX);
   const vencidos = leerEnteroEnRango(entrada.vencidos, VENCIDOS_MIN, VENCIDOS_MAX);
   if (dias.tipo !== "entero") throw new ErrorDeDominio("dias_invalidos");
   if (vencidos.tipo !== "entero") throw new ErrorDeDominio("vencidos_invalidos");
-  const ocurridoEn = reloj(deps);
-  await repositorio(deps).escribir(userId, async (ctx) => {
+  await repositorio(deps).escribir(conEmpresa, async (ctx) => {
     await ctx.guardarPlazo(dias.valor, vencidos.valor);
-    await ctx.auditar(evento("editar_politica", "policies", ctx.companyId, ocurridoEn));
+    await ctx.auditar({ accion: "editar_politica", identificador: ctx.companyId });
   });
 }
 
 export async function editarUmbral(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   entrada: { texto: unknown; quitar: boolean },
   deps?: DependenciasPolitica,
 ): Promise<void> {
-  const userId = exigirUsuario(sesion);
+  const conEmpresa = exigirEmpresa(ctx);
   const centavos = entrada.quitar ? null : exigirMonto(entrada.texto, "umbral_invalido", false);
-  const ocurridoEn = reloj(deps);
-  await repositorio(deps).escribir(userId, async (ctx) => {
+  await repositorio(deps).escribir(conEmpresa, async (ctx) => {
     await ctx.guardarUmbral(centavos);
     await ctx.auditar(
-      evento(centavos === null ? "quitar_umbral" : "editar_umbral", "policies", ctx.companyId, ocurridoEn),
+      { accion: centavos === null ? "quitar_umbral" : "editar_umbral", identificador: ctx.companyId },
     );
   });
 }
 
 export async function editarPoliticaPersona(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   entrada: { personaId: unknown; dias: unknown; vencidos: unknown; quitar: boolean },
   deps?: DependenciasPolitica,
 ): Promise<{ propio: boolean }> {
-  const actorId = exigirUsuario(sesion);
+  const conEmpresa = exigirEmpresa(ctx);
   if (!esUuid(entrada.personaId)) throw new ErrorDeDominio("persona_ajena");
   const personaId = entrada.personaId;
-  const ocurridoEn = reloj(deps);
   if (entrada.quitar) {
-    await repositorio(deps).escribir(actorId, async (ctx) => {
+    await repositorio(deps).escribir(conEmpresa, async (ctx) => {
       const habia = await ctx.quitarPersona(personaId);
       if (habia) {
-        await ctx.auditar(evento("quitar_politica_persona", "policy_persons", personaId, ocurridoEn));
+        await ctx.auditar({ accion: "quitar_politica_persona", identificador: personaId });
       }
     });
     return { propio: false };
@@ -104,84 +101,80 @@ export async function editarPoliticaPersona(
   if (dias.tipo !== "entero") throw new ErrorDeDominio("dias_invalidos");
   if (vencidos.tipo !== "entero") throw new ErrorDeDominio("vencidos_invalidos");
   let propio = true;
-  await repositorio(deps).escribir(actorId, async (ctx) => {
+  await repositorio(deps).escribir(conEmpresa, async (ctx) => {
     const igual =
       dias.valor === ctx.plazo.diasComprobante && vencidos.valor === ctx.plazo.maxVencidos;
     if (igual) {
       propio = false;
       const habia = await ctx.quitarPersona(personaId);
       if (habia) {
-        await ctx.auditar(evento("quitar_politica_persona", "policy_persons", personaId, ocurridoEn));
+        await ctx.auditar({ accion: "quitar_politica_persona", identificador: personaId });
       }
       return;
     }
     await ctx.guardarPersona(personaId, dias.valor, vencidos.valor);
-    await ctx.auditar(evento("editar_politica_persona", "policy_persons", personaId, ocurridoEn));
+    await ctx.auditar({ accion: "editar_politica_persona", identificador: personaId });
   });
   return { propio };
 }
 
 export async function crearCategoria(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   entrada: { nombre: unknown; tope: unknown },
   deps?: DependenciasPolitica,
 ): Promise<void> {
-  const userId = exigirUsuario(sesion);
+  const conEmpresa = exigirEmpresa(ctx);
   const nombre = validarNombreCategoria(entrada.nombre);
   if (!nombre.ok) throw new ErrorDeDominio(nombre.codigo);
   const tope = exigirMonto(entrada.tope, "tope_invalido", true);
   const id = randomUUID();
-  const ocurridoEn = reloj(deps);
-  await repositorio(deps).escribir(userId, async (ctx) => {
+  await repositorio(deps).escribir(conEmpresa, async (ctx) => {
     await ctx.crearCategoria({ id, nombre: nombre.nombre, topeCentavos: tope });
-    await ctx.auditar(evento("crear_categoria", "policy_categories", id, ocurridoEn));
+    await ctx.auditar({ accion: "crear_categoria", identificador: id });
   });
 }
 
 export async function escribirTopeCategoria(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   entrada: { categoriaId: unknown; tope: unknown },
   deps?: DependenciasPolitica,
 ): Promise<void> {
-  const userId = exigirUsuario(sesion);
+  const conEmpresa = exigirEmpresa(ctx);
   if (!esUuid(entrada.categoriaId)) throw new ErrorDeDominio("categoria_ajena");
   const categoriaId = entrada.categoriaId;
   const tope = exigirMonto(entrada.tope, "tope_invalido", false);
   if (tope === null) throw new ErrorDeDominio("tope_invalido");
-  const ocurridoEn = reloj(deps);
-  await repositorio(deps).escribir(userId, async (ctx) => {
+  await repositorio(deps).escribir(conEmpresa, async (ctx) => {
     await ctx.escribirTope(categoriaId, tope);
-    await ctx.auditar(evento("escribir_tope", "policy_categories", categoriaId, ocurridoEn));
+    await ctx.auditar({ accion: "escribir_tope", identificador: categoriaId });
   });
 }
 
 export async function quitarTopeCategoria(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   entrada: { categoriaId: unknown },
   deps?: DependenciasPolitica,
 ): Promise<void> {
-  const userId = exigirUsuario(sesion);
+  const conEmpresa = exigirEmpresa(ctx);
   if (!esUuid(entrada.categoriaId)) throw new ErrorDeDominio("categoria_ajena");
   const categoriaId = entrada.categoriaId;
-  const ocurridoEn = reloj(deps);
-  await repositorio(deps).escribir(userId, async (ctx) => {
+  await repositorio(deps).escribir(conEmpresa, async (ctx) => {
     await ctx.quitarTope(categoriaId);
-    await ctx.auditar(evento("quitar_tope", "policy_categories", categoriaId, ocurridoEn));
+    await ctx.auditar({ accion: "quitar_tope", identificador: categoriaId });
   });
 }
 
 export async function borrarCategoria(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   entrada: { categoriaId: unknown },
   deps?: DependenciasPolitica,
 ): Promise<void> {
-  const userId = exigirUsuario(sesion);
+  const conEmpresa = exigirEmpresa(ctx);
   if (!esUuid(entrada.categoriaId)) throw new ErrorDeDominio("categoria_ajena");
   const categoriaId = entrada.categoriaId;
-  const ocurridoEn = reloj(deps);
-  await repositorio(deps).escribir(userId, async (ctx) => {
+  await repositorio(deps).escribir(conEmpresa, async (ctx) => {
     await ctx.borrarCategoria(categoriaId);
-    await ctx.auditar(evento("borrar_categoria", "policy_categories", categoriaId, ocurridoEn));
+    await ctx.auditar({ accion: "borrar_categoria", identificador: categoriaId });
   });
 }
 
@@ -207,25 +200,10 @@ function exigirMonto(
   return texto.centavos;
 }
 
-function evento(
-  accion: EventoPolitica["accion"],
-  entidad: EventoPolitica["entidad"],
-  identificador: string,
-  ocurridoEn: Date,
-): EventoPolitica {
-  return { accion, entidad, identificador, ocurridoEn };
-}
-
 function repositorio(deps?: DependenciasPolitica): RepositorioPolitica {
   return deps?.repositorio ?? repositorioPg();
 }
 
 function reloj(deps?: DependenciasPolitica): Date {
   return (deps?.ahora ?? (() => new Date()))();
-}
-
-function exigirUsuario(sesion: Sesion | null | undefined): string {
-  const id = sesion?.usuario?.id;
-  if (!esUuid(id)) throw new ErrorDeDominio("sesion_ausente");
-  return id;
 }

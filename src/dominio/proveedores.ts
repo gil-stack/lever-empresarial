@@ -1,6 +1,5 @@
 import { clabeValida } from "./clabe";
 import { FRASE_ESTA_PANTALLA, FRASE_SIN_PAGO } from "./lista-69b";
-import type { RolCuenta } from "./personas";
 import { horaEnMexico } from "./reloj";
 import { normalizarRfc, validarRfc } from "./rfc";
 
@@ -91,15 +90,6 @@ export type ListaVisible = {
 } | null;
 
 const ORDEN: readonly CampoProveedor[] = ["rfc", "razonSocial", "clabe", "constancia"];
-
-export function puedeVerProveedores(rol: RolCuenta | null | undefined): boolean {
-  return rol === "administrador" || rol === "liberador" || rol === "contador";
-}
-
-/** El contador ve la ficha y no da de alta. El tarjetahabiente no entra. */
-export function puedeDarDeAltaProveedor(rol: RolCuenta | null | undefined): boolean {
-  return rol === "administrador" || rol === "liberador";
-}
 
 export function ordenarErroresProveedor(errores: readonly ErrorCampoProveedor[]): ErrorCampoProveedor[] {
   return [...errores].sort((a, b) => ORDEN.indexOf(a.campo) - ORDEN.indexOf(b.campo));

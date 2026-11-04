@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 
 import { Maestro, MaestroCerrado } from "@/components/personas/maestro";
 import { Marco } from "@/components/cromo/marco";
-import { puertasDe } from "@/components/cromo/puertas";
-import { hoyEnMexico, puedeVerMaestro } from "@/dominio/personas";
-import { errorConSecreto, leerEntrada, sesionDesdeCookie } from "@/server/entrada";
+import { vistaDeMarco } from "@/components/cromo/puertas";
+import { hoyEnMexico } from "@/dominio/personas";
+import { puede, type ContextoDeTenant } from "@/nucleo/contexto";
+import { abrirRuta, errorConSecreto } from "@/server/entrada";
 import { leerMaestro } from "@/server/personas";
 import { ErrorDeDominio } from "@/server/session";
 
@@ -15,36 +16,30 @@ export const metadata: Metadata = {
 };
 
 export default async function PaginaPersonas() {
-  const entrada = await leerEntrada();
+  const apertura = await abrirRuta("/consola/personas");
+  const ctx = apertura.tipo === "libro" ? null : apertura.ctx;
   const hoy = hoyEnMexico(new Date());
-  const cerrado = await cerrar(entrada);
+  const cerrado = await cerrar(apertura.tipo === "abierta" ? apertura.ctx : null, apertura.tipo);
 
   return (
-    <Marco
-      actual="/consola/personas"
-      persona={entrada.nombre ? { nombre: entrada.nombre } : null}
-      {...puertasDe(entrada.rol, Boolean(entrada.rfc))}
-    >
+    <Marco actual="/consola/personas" vista={vistaDeMarco(ctx)}>
       <main id="contenido" className="consola">
-        {cerrado.tipo === "abierto" ? (
-          <Maestro lectura={cerrado.lectura} hoy={hoy} />
-        ) : (
+        {cerrado.tipo === "abierto" && ctx ? (
+          <Maestro lectura={cerrado.lectura} hoy={hoy} roles={ctx.roles} edita={puede(ctx, "cliente.maestro.editar")} />
+        ) : cerrado.tipo === "cerrado" ? (
           <MaestroCerrado aviso={cerrado.aviso} />
-        )}
+        ) : null}
       </main>
     </Marco>
   );
 }
 
-async function cerrar(entrada: Awaited<ReturnType<typeof leerEntrada>>) {
-  if (!entrada.libroDisponible) return { tipo: "cerrado" as const, aviso: "libro" as const };
-  if (!entrada.nombre) return { tipo: "cerrado" as const, aviso: "entrar" as const };
-  if (!entrada.rfc) return { tipo: "cerrado" as const, aviso: "sin_empresa" as const };
-  if (!puedeVerMaestro(entrada.rol)) return { tipo: "cerrado" as const, aviso: "no_abre" as const };
+async function cerrar(ctx: ContextoDeTenant | null, apertura: string) {
+  if (apertura === "libro") return { tipo: "cerrado" as const, aviso: "libro" as const };
+  if (apertura === "sin_empresa") return { tipo: "cerrado" as const, aviso: "sin_empresa" as const };
+  if (!ctx) return { tipo: "cerrado" as const, aviso: "no_abre" as const };
   try {
-    const sesion = await sesionDesdeCookie();
-    if (!sesion) return { tipo: "cerrado" as const, aviso: "entrar" as const };
-    const lectura = await leerMaestro(sesion);
+    const lectura = await leerMaestro(ctx);
     return { tipo: "abierto" as const, lectura };
   } catch (error) {
     if (error instanceof ErrorDeDominio) {

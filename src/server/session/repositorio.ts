@@ -1,12 +1,13 @@
-import { conTransaccion, consultar } from "./db";
-import { ErrorDeDominio } from "./error-de-dominio";
-import { ROLES, type Rol, type Sesion } from "./tipos";
+import { auditar, actorDeIdentidad } from "../bitacora/auditar";
+import { conContexto, type Consulta } from "../../nucleo/db";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
+import { METODOS_SEGUNDO_FACTOR, type MetodoSegundoFactor, type Sesion } from "./tipos";
 
 export type UsuarioInterno = {
   id: string;
   nombre: string;
   correo: string;
-  passwordHash: string;
+  passwordHash: string | null;
 };
 
 export type SesionGuardada = {
@@ -16,156 +17,176 @@ export type SesionGuardada = {
   expiresAt: Date;
 };
 
-export type RegistroCuenta = {
-  usuario: UsuarioInterno;
-  sesion: SesionGuardada;
+export type SegundoFactorVerificado = {
+  tokenHashParcial: string;
+  tokenHashCompleto: string;
+  metodo: MetodoSegundoFactor;
+  expiresAt: Date;
+  ahora: Date;
 };
 
 export type RepositorioSesion = {
-  crearCuenta: (registro: RegistroCuenta) => Promise<void>;
   buscarPorCorreo: (correo: string) => Promise<UsuarioInterno | null>;
+  /** La sesión nace parcial: contraseña sí, segundo factor todavía no. */
   abrirSesion: (sesion: SesionGuardada) => Promise<void>;
-  buscarPorTokenHash: (tokenHash: string, ahora: Date) => Promise<Sesion | null>;
-  borrarPorTokenHash: (tokenHash: string) => Promise<void>;
-  /** Borra la persona solo si no tiene empresa. Si ya hay membresía, no toca la fila. */
-  descartarCuentaSinEmpresa: (userId: string) => Promise<boolean>;
+  buscarPorTokenHash: (tokenHash: string, ahora: Date, completa: boolean) => Promise<Sesion | null>;
+  /** Marca el segundo factor y cambia el token en un acto. Devuelve la sesión completa. */
+  completarSegundoFactor: (verificado: SegundoFactorVerificado) => Promise<Sesion>;
+  borrarPorTokenHash: (tokenHash: string, ahora: Date) => Promise<void>;
+  registrarFallo: (userId: string | null) => Promise<void>;
 };
 
-// users: id, nombre, correo, password_hash.
-// sessions: id, user_id, token_hash, expires_at.
-// La empresa de la sesión sale de memberships, no de un id enviado por el navegador.
+// Antes de saber quién entra no hay empresa ni persona en el contexto. Esas
+// búsquedas pasan por funciones SECURITY DEFINER de entrada estrecha.
 export const SQL = {
-  insertarUsuario: "insert into users (id, nombre, correo, password_hash) values ($1, $2, $3, $4)",
-  buscarCorreo: "select id, nombre, correo, password_hash from users where correo = $1",
-  insertarSesion: "insert into sessions (id, user_id, token_hash, expires_at) values ($1, $2, $3, $4)",
-  borrarSesionesDelUsuario: "delete from sessions where user_id = $1",
+  buscarCorreo: "select id, nombre, correo, password_hash from identidad_por_correo($1)",
   buscarSesion: `
-    select s.id, s.expires_at, u.id as user_id, u.nombre, u.correo, m.company_id, m.rol
-    from sessions s
-    join users u on u.id = s.user_id
-    left join lateral (
-      select company_id, rol
-      from memberships
-      where user_id = u.id
-      limit 1
-    ) m on true
-    where s.token_hash = $1 and s.expires_at > $2
+    select sesion_id as id, user_id, nombre, correo, expires_at, segundo_factor_en, segundo_factor_metodo
+    from sesion_por_token($1, $2, $3)
+  `,
+  insertarSesion:
+    "insert into sessions (id, user_id, token_hash, expires_at, superficie) values ($1, $2, $3, $4, 'cliente')",
+  borrarSesionesDelUsuario: "delete from sessions where user_id = $1",
+  completar: `
+    update sessions
+    set token_hash = $2, segundo_factor_en = $3, segundo_factor_metodo = $4, expires_at = $5
+    where token_hash = $1 and segundo_factor_en is null and expires_at > $3
   `,
   borrarSesion: "delete from sessions where token_hash = $1",
-  bloquearUsuario: "select id from users where id = $1 for update",
-  tieneMembresia: "select 1 as presente from memberships where user_id = $1 limit 1",
-  borrarUsuario: "delete from users where id = $1",
 } as const;
 
 type FilaUsuario = {
-  id: string;
-  nombre: string;
-  correo: string;
-  password_hash: string;
+  id: unknown;
+  nombre: unknown;
+  correo: unknown;
+  password_hash: unknown;
 };
 
 type FilaSesion = {
-  id: string;
-  expires_at: Date | string;
-  user_id: string;
-  nombre: string;
-  correo: string;
-  company_id: string | null;
-  rol: string | null;
+  id: unknown;
+  expires_at: unknown;
+  user_id: unknown;
+  nombre: unknown;
+  correo: unknown;
+  segundo_factor_en?: unknown;
+  segundo_factor_metodo?: unknown;
 };
+
+const SIN_CONTEXTO = { rol: "plataforma_cliente" } as const;
 
 export function repositorioPg(): RepositorioSesion {
   return {
-    async crearCuenta(registro) {
-      await conTransaccion(async (consulta) => {
-        await consulta.query(SQL.insertarUsuario, [
-          registro.usuario.id,
-          registro.usuario.nombre,
-          registro.usuario.correo,
-          registro.usuario.passwordHash,
-        ]);
-        await consulta.query(SQL.insertarSesion, [
-          registro.sesion.id,
-          registro.sesion.userId,
-          registro.sesion.tokenHash,
-          registro.sesion.expiresAt,
-        ]);
+    buscarPorCorreo(correo) {
+      return conContexto(SIN_CONTEXTO, async (consulta) => {
+        const resultado = await consulta.query(SQL.buscarCorreo, [correo]);
+        const fila = resultado.rows[0] as FilaUsuario | undefined;
+        if (!fila) return null;
+        if (
+          typeof fila.id !== "string" ||
+          typeof fila.nombre !== "string" ||
+          typeof fila.correo !== "string" ||
+          (fila.password_hash !== null && typeof fila.password_hash !== "string")
+        ) {
+          throw new ErrorDeDominio("base_no_disponible");
+        }
+        return { id: fila.id, nombre: fila.nombre, correo: fila.correo, passwordHash: fila.password_hash };
       });
     },
-    async buscarPorCorreo(correo) {
-      const resultado = await consultar(SQL.buscarCorreo, [correo]);
-      const fila = resultado.rows[0] as FilaUsuario | undefined;
-      if (!fila) return null;
-      if (
-        typeof fila.id !== "string" ||
-        typeof fila.nombre !== "string" ||
-        typeof fila.correo !== "string" ||
-        typeof fila.password_hash !== "string"
-      ) {
-        throw new ErrorDeDominio("base_no_disponible");
-      }
-      return {
-        id: fila.id,
-        nombre: fila.nombre,
-        correo: fila.correo,
-        passwordHash: fila.password_hash,
-      };
-    },
-    async abrirSesion(sesion) {
-      await conTransaccion(async (consulta) => {
+    abrirSesion(sesion) {
+      return conContexto({ rol: "plataforma_cliente", userId: sesion.userId }, async (consulta) => {
         await consulta.query(SQL.borrarSesionesDelUsuario, [sesion.userId]);
-        await consulta.query(SQL.insertarSesion, [
-          sesion.id,
-          sesion.userId,
-          sesion.tokenHash,
-          sesion.expiresAt,
+        await consulta.query(SQL.insertarSesion, [sesion.id, sesion.userId, sesion.tokenHash, sesion.expiresAt]);
+        await auditar(consulta, actorDeIdentidad({ id: sesion.userId }), { accion: "entrada", identificador: sesion.id });
+      });
+    },
+    buscarPorTokenHash(tokenHash, ahora, completa) {
+      return conContexto(SIN_CONTEXTO, (consulta) => sesionPorToken(consulta, tokenHash, ahora, completa));
+    },
+    async completarSegundoFactor(verificado) {
+      const parcial = await conContexto(SIN_CONTEXTO, (consulta) =>
+        sesionPorToken(consulta, verificado.tokenHashParcial, verificado.ahora, false),
+      );
+      if (!parcial) throw new ErrorDeDominio("sesion_ausente");
+      return conContexto({ rol: "plataforma_cliente", userId: parcial.usuario.id }, async (consulta) => {
+        const cambiada = await consulta.query(SQL.completar, [
+          verificado.tokenHashParcial,
+          verificado.tokenHashCompleto,
+          verificado.ahora,
+          verificado.metodo,
+          verificado.expiresAt,
         ]);
+        if (cambiada.rowCount !== 1) throw new ErrorDeDominio("sesion_ausente");
+        await auditar(consulta, actorDeIdentidad(parcial.usuario), {
+          accion: "segundo_factor",
+          identificador: parcial.id,
+          cambio: { metodo: verificado.metodo },
+        });
+        const completa = await sesionPorToken(consulta, verificado.tokenHashCompleto, verificado.ahora, true);
+        if (!completa) throw new ErrorDeDominio("base_no_disponible");
+        return completa;
       });
     },
-    async buscarPorTokenHash(tokenHash, ahora) {
-      const resultado = await consultar(SQL.buscarSesion, [tokenHash, ahora]);
-      const fila = resultado.rows[0] as FilaSesion | undefined;
-      if (!fila) return null;
-      return mapearSesion(fila);
-    },
-    async borrarPorTokenHash(tokenHash) {
-      await consultar(SQL.borrarSesion, [tokenHash]);
-    },
-    descartarCuentaSinEmpresa(userId) {
-      return conTransaccion(async (consulta) => {
-        const usuario = await consulta.query(SQL.bloquearUsuario, [userId]);
-        if (usuario.rows.length === 0) return false;
-        const membresia = await consulta.query(SQL.tieneMembresia, [userId]);
-        if (membresia.rows.length > 0) return false;
-        await consulta.query(SQL.borrarSesionesDelUsuario, [userId]);
-        const borrado = await consulta.query(SQL.borrarUsuario, [userId]);
-        return borrado.rowCount > 0;
+    async borrarPorTokenHash(tokenHash, ahora) {
+      const sesion = await conContexto(
+        SIN_CONTEXTO,
+        async (consulta) =>
+          (await sesionPorToken(consulta, tokenHash, ahora, true)) ??
+          (await sesionPorToken(consulta, tokenHash, ahora, false)),
+      );
+      if (!sesion) return;
+      await conContexto({ rol: "plataforma_cliente", userId: sesion.usuario.id }, async (consulta) => {
+        await consulta.query(SQL.borrarSesion, [tokenHash]);
+        await auditar(consulta, actorDeIdentidad(sesion.usuario), { accion: "salida", identificador: sesion.id });
       });
+    },
+    registrarFallo(userId) {
+      return conContexto(SIN_CONTEXTO, (consulta) =>
+        auditar(consulta, actorDeIdentidad(null), {
+          accion: "entrada_fallida",
+          identificador: userId,
+          cambio: { motivo: userId ? "contrasena" : "correo_desconocido" },
+        }),
+      );
     },
   };
 }
 
+async function sesionPorToken(
+  consulta: Consulta,
+  tokenHash: string,
+  ahora: Date,
+  completa: boolean,
+): Promise<Sesion | null> {
+  const resultado = await consulta.query(SQL.buscarSesion, [tokenHash, ahora, completa]);
+  const fila = resultado.rows[0] as FilaSesion | undefined;
+  return fila ? mapearSesion(fila) : null;
+}
+
 export function mapearSesion(fila: FilaSesion): Sesion {
-  const venceEn = fila.expires_at instanceof Date ? fila.expires_at : new Date(String(fila.expires_at));
+  const venceEn = instante(fila.expires_at);
   if (
     typeof fila.id !== "string" ||
     typeof fila.user_id !== "string" ||
     typeof fila.nombre !== "string" ||
     typeof fila.correo !== "string" ||
-    Number.isNaN(venceEn.getTime())
+    !venceEn
   ) {
+    throw new ErrorDeDominio("base_no_disponible");
+  }
+  const en = fila.segundo_factor_en == null ? null : instante(fila.segundo_factor_en);
+  const metodo = METODOS_SEGUNDO_FACTOR.find((conocido) => conocido === fila.segundo_factor_metodo) ?? null;
+  if ((en === null) !== (metodo === null) || (fila.segundo_factor_en != null && !en)) {
     throw new ErrorDeDominio("base_no_disponible");
   }
   return {
     id: fila.id,
     venceEn,
     usuario: { id: fila.user_id, nombre: fila.nombre, correo: fila.correo },
-    companyId: typeof fila.company_id === "string" ? fila.company_id : null,
-    rol: rolLeido(fila.rol),
+    segundoFactor: en && metodo ? { metodo, en } : null,
   };
 }
 
-function rolLeido(valor: string | null): Rol | null {
-  if (valor === null) return null;
-  return ROLES.find((rol) => rol === valor) ?? null;
+function instante(valor: unknown): Date | null {
+  const fecha = valor instanceof Date ? valor : new Date(String(valor));
+  return Number.isNaN(fecha.getTime()) ? null : fecha;
 }

@@ -5,10 +5,12 @@ import { RenglonesTarifa } from "@/components/precios/renglones";
 import { CabezaPagina, EtiquetaMono, Frase, Hoja, Rejilla, Renglon, Renglones } from "@/components/sistema";
 import { SuscripcionEmpresa } from "@/components/precios/suscripcion-empresa";
 import type { LecturaSuscripcion, TarifaVisible } from "@/dominio/precio";
+import { enEmpresa } from "@/nucleo/rutas";
 
 import { relatoSinEmpresa } from "./relato";
 
 type EmpresaVisible = {
+  id: string;
   rfc: string;
   razonSocial: string;
 } | null;
@@ -16,41 +18,25 @@ type EmpresaVisible = {
 export function ConsolaVacia({
   empresa,
   libroDisponible,
-  conSesion,
   personas = null,
   despues = null,
   tarifa,
   suscripcion,
-  esOperador,
 }: {
   empresa: EmpresaVisible;
   libroDisponible: boolean;
-  conSesion: boolean;
   personas?: { titulo: string; detalle: string } | { fallo: true } | null;
   despues?: ReactNode;
   tarifa: TarifaVisible;
   suscripcion: LecturaSuscripcion;
-  esOperador: boolean;
 }) {
-  const vacia = empresa ? null : relatoSinEmpresa(libroDisponible, conSesion);
+  const vacia = empresa ? null : relatoSinEmpresa(libroDisponible);
 
   return (
     <div className="consola">
       <CabezaPagina kicker="Consola" titulo={empresa ? empresa.razonSocial : vacia?.titulo}>
         {empresa ? <EtiquetaMono nombre="RFC">{empresa.rfc}</EtiquetaMono> : null}
         <p className="lede">{empresa ? "En esta cuenta no cabe otro." : vacia?.detalle}</p>
-        {empresa || !libroDisponible ? null : (
-          <div className="acciones">
-            <Link className="boton" href="/">
-              Dar de alta la razón social
-            </Link>
-            {conSesion ? null : (
-              <Link className="enlace-texto" href="/entrar">
-                Entrar
-              </Link>
-            )}
-          </div>
-        )}
       </CabezaPagina>
       <Rejilla
         principal={
@@ -69,18 +55,24 @@ export function ConsolaVacia({
             {despues}
           </>
         }
-        lateral={personas ? <FichaPersonas personas={personas} /> : null}
+        lateral={personas ? <FichaPersonas personas={personas} empresaId={empresa?.id ?? null} /> : null}
       />
       <RenglonesTarifa tarifa={tarifa} ambito="consola" />
       <p className="nota-saldos">
-        <Link href="/precios">La página de precios</Link> muestra los mismos renglones.
+        <Link href={enEmpresa(empresa?.id, "/precios")}>La página de precios</Link> muestra los mismos renglones.
       </p>
-      <SuscripcionEmpresa tarifa={tarifa} lectura={suscripcion} esOperador={esOperador} />
+      <SuscripcionEmpresa tarifa={tarifa} lectura={suscripcion} />
     </div>
   );
 }
 
-function FichaPersonas({ personas }: { personas: { titulo: string; detalle: string } | { fallo: true } }) {
+function FichaPersonas({
+  personas,
+  empresaId,
+}: {
+  personas: { titulo: string; detalle: string } | { fallo: true };
+  empresaId: string | null;
+}) {
   if ("fallo" in personas) {
     return (
       <Hoja className="ficha" id="personas-titulo" titulo="Personas">
@@ -92,7 +84,7 @@ function FichaPersonas({ personas }: { personas: { titulo: string; detalle: stri
     <Hoja className="ficha" id="personas-titulo" titulo={personas.titulo}>
       <p className="lede">{personas.detalle}</p>
       <div className="acciones">
-        <Link className="enlace-texto" href="/consola/personas">
+        <Link className="enlace-texto" href={enEmpresa(empresaId, "/consola/personas")}>
           Abrir el maestro
         </Link>
       </div>

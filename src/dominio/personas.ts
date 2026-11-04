@@ -1,14 +1,9 @@
+import { capacidadesDe, ROLES_CLIENTE, rolesLeidos, tiene, type RolCliente } from "../nucleo/capacidades";
 import { clabeValida } from "./clabe";
 
-export const ROLES_DE_CUENTA = [
-  "administrador",
-  "solicitante",
-  "liberador",
-  "tarjetahabiente",
-  "contador",
-] as const;
+export const ROLES_DE_CUENTA = ROLES_CLIENTE;
 
-export type RolCuenta = (typeof ROLES_DE_CUENTA)[number];
+export type RolCuenta = RolCliente;
 
 /**
  * Reglas del maestro que la pantalla y el servidor comparten.
@@ -52,7 +47,6 @@ export type CampoPersona =
   | "clabe"
   | "acceso"
   | "correo"
-  | "contrasena"
   | "rol"
   | "centroNombre"
   | "persona";
@@ -95,7 +89,6 @@ const ORDEN_CAMPOS: readonly CampoPersona[] = [
   "clabe",
   "acceso",
   "correo",
-  "contrasena",
   "rol",
   "persona",
 ];
@@ -106,17 +99,9 @@ export function ordenarErroresPersona(errores: readonly ErrorCampo[]): ErrorCamp
   );
 }
 
-export function puedeVerMaestro(rol: RolCuenta | null | undefined): boolean {
-  return rol === "administrador" || rol === "contador" || rol === "liberador";
-}
-
-export function puedeEditarMaestro(rol: RolCuenta | null | undefined): boolean {
-  return rol === "administrador";
-}
-
-/** Solo el liberador está autorizado a soltar dinero. El contador no. */
-export function puedeSoltarDinero(rol: RolCuenta | null | undefined): boolean {
-  return rol === "liberador";
+/** Quién suelta dinero lo dice la matriz de capacidades, no este módulo. */
+function sueltaDinero(roles: readonly RolCuenta[]): boolean {
+  return tiene(capacidadesDe({ rolesCliente: roles, rolesPlataforma: [] }), "cliente.pago.liberar");
 }
 
 export function empresaOperable(autorizados: number): boolean {
@@ -134,13 +119,13 @@ export type CodigoLiberacion =
  * respuesta sigue siendo que esta fase no dispersa.
  */
 export function decidirLiberacion(hechos: {
-  rol: RolCuenta | null;
+  roles: readonly RolCuenta[];
   deBaja: boolean;
   autorizados: number;
   actorId: string;
   otraFirmaId?: string | null;
 }): CodigoLiberacion {
-  if (!puedeSoltarDinero(hechos.rol) || hechos.deBaja) return "sin_accion_de_liberar";
+  if (!sueltaDinero(hechos.roles) || hechos.deBaja) return "sin_accion_de_liberar";
   if (!empresaOperable(hechos.autorizados)) return "empresa_no_operable";
   if (!hechos.otraFirmaId || mismoId(hechos.otraFirmaId, hechos.actorId)) return "misma_firma";
   return "sin_dispersion";
@@ -248,11 +233,19 @@ export function rolDeCuenta(valor: unknown): RolCuenta | null {
   return ROLES_DE_CUENTA.find((rol) => rol === valor) ?? null;
 }
 
+/** Los roles llegan como un valor o como varios. Un rol desconocido invalida la lista. */
+export function rolesDeCuenta(valor: unknown): RolCuenta[] | null {
+  const crudos = Array.isArray(valor) ? valor : valor === undefined || valor === null || valor === "" ? [] : [valor];
+  if (crudos.length === 0 || crudos.length > ROLES_DE_CUENTA.length) return null;
+  if (!crudos.every((crudo) => rolDeCuenta(crudo) !== null)) return null;
+  return rolesLeidos(crudos);
+}
+
+/** La persona recibe una invitación y fija su propia contraseña. Nadie más la conoce. */
 export type AccesoNuevo = {
   tipo: "nueva";
   correo: string;
-  contrasena: string;
-  rol: RolCuenta;
+  roles: RolCuenta[];
 };
 
 export type AccesoYa = {
@@ -287,7 +280,6 @@ export type EntradaAltaPersona = {
   clabe?: unknown;
   acceso?: unknown;
   correo?: unknown;
-  contrasena?: unknown;
   rol?: unknown;
 };
 
@@ -346,18 +338,13 @@ function armarAlta(
   }
 
   const correo = normalizarCorreoPersona(entrada.correo);
-  let contrasena = "";
-  let rol: RolCuenta | null = null;
+  let roles: RolCuenta[] | null = null;
   if (acceso === "nueva" || acceso === "ya") {
     if (!correoPersonaValido(correo)) errores.push({ codigo: "correo_invalido", campo: "correo" });
   }
   if (acceso === "nueva") {
-    contrasena = typeof entrada.contrasena === "string" ? entrada.contrasena : "";
-    if (!contrasenaPersonaValida(contrasena)) {
-      errores.push({ codigo: "contrasena_invalida", campo: "contrasena" });
-    }
-    rol = rolDeCuenta(entrada.rol);
-    if (!rol) errores.push({ codigo: "rol_invalido", campo: "rol" });
+    roles = rolesDeCuenta(entrada.rol);
+    if (!roles) errores.push({ codigo: "rol_invalido", campo: "rol" });
   }
 
   if (errores.length > 0 || !nombre || !altaEn || !clabe.ok || !UUID.test(centroId)) {
@@ -392,7 +379,7 @@ function armarAlta(
       },
     };
   }
-  if (!rol || !contrasenaPersonaValida(contrasena)) return { errores, valor: null };
+  if (!roles) return { errores, valor: null };
   return {
     errores,
     valor: {
@@ -402,7 +389,7 @@ function armarAlta(
       centroId,
       jefeId,
       clabe: clabe.clabe,
-      acceso: { tipo: "nueva", correo, contrasena, rol },
+      acceso: { tipo: "nueva", correo, roles },
     },
   };
 }
@@ -463,6 +450,25 @@ export function lineaDeRol(rol: RolCuenta | null): string {
   return "Tarjetahabiente. No abre este maestro.";
 }
 
+/** Una persona puede tener varios roles. Si ninguno suelta dinero, se dice una vez. */
+export function lineaDeRoles(roles: readonly RolCuenta[], invitada = false): string {
+  if (roles.length === 0) return "No entra a la consola.";
+  if (roles.length === 1) return invitada ? `${lineaDeRol(roles[0] ?? null)} Invitación pendiente.` : lineaDeRol(roles[0] ?? null);
+  const etiquetas = roles.map((rol) => ETIQUETA_ROL[rol]);
+  const ultima = etiquetas.pop();
+  const lista = `${etiquetas.join(", ")} y ${ultima?.toLocaleLowerCase("es-MX")}`;
+  const dinero = sueltaDinero(roles) ? "Puede soltar dinero." : "No suelta dinero.";
+  return `${lista}. ${dinero}${invitada ? " Invitación pendiente." : ""}`;
+}
+
+const ETIQUETA_ROL: Record<RolCuenta, string> = {
+  administrador: "Administrador",
+  solicitante: "Solicitante",
+  liberador: "Liberador",
+  tarjetahabiente: "Tarjetahabiente",
+  contador: "Contador",
+};
+
 export function pistaDelRol(rol: RolCuenta | ""): string {
   if (rol === "contador") return "Ve el maestro. No tiene la acción de liberar.";
   if (rol === "liberador") {
@@ -489,11 +495,7 @@ export const MENSAJE_CAMPO: Record<string, ErrorCampo> = {
   },
   acceso_invalido: { campo: "acceso", mensaje: "Elige si entra a la consola." },
   correo_invalido: { campo: "correo", mensaje: "Escribe un correo válido." },
-  contrasena_invalida: {
-    campo: "contrasena",
-    mensaje: "La contraseña necesita al menos 10 caracteres. Si es demasiado larga, elige otra.",
-  },
-  rol_invalido: { campo: "rol", mensaje: "Elige un rol de la cuenta." },
+  rol_invalido: { campo: "rol", mensaje: "Elige al menos un rol de la cuenta." },
 };
 
 export function erroresDeAltaPersona(entrada: EntradaAltaPersona, hoy: string): ErrorCampo[] {
@@ -523,7 +525,7 @@ export const MENSAJE_RECHAZO: Record<
   },
   sin_empresa: {
     titulo: "Todavía no hay razón social",
-    texto: "Primero se da de alta la empresa. Luego, las personas.",
+    texto: "La SOFIPO da de alta a las empresas. Luego, sus personas.",
   },
   libro: {
     titulo: "No se guardó",
@@ -531,7 +533,7 @@ export const MENSAJE_RECHAZO: Record<
   },
   correo_ya_entra: {
     titulo: "Ese correo ya entra",
-    texto: "Ya está en esta cuenta. Márcalo como «Ya entra». No se cambia el rol ni la contraseña.",
+    texto: "Ya está en esta cuenta. Márcalo como «Ya entra». No se cambian sus roles.",
   },
   correo_no_disponible: {
     titulo: "Ese correo no se puede usar",

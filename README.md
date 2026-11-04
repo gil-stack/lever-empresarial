@@ -13,11 +13,17 @@ npm run dev
 
 ## Este corte
 
-Fase 1, integrada: una persona entra, da de alta una razón social y ve la consola vacía. El teléfono existe, está vacío y no comparte el menú de la consola. Las funciones corren en `iad1` con runtime Node.js.
+Fase 4, base multi-cliente. La SOFIPO es el operador y vive en la tabla `operators`. Su personal vive en `platform_staff`, no en una variable de entorno. Cada empresa cliente tiene su portal. Una persona puede pertenecer a varias empresas y tener varios roles en cada una.
 
-El maestro de personas vive en la consola: jefe, centro de costo, fecha de baja y CLABE con el dígito 3, 7 y 1. Hacen falta dos liberadores distintos para que la empresa esté operable. El contador no libera. No se dispersa dinero.
+Nadie crea una empresa desde `/`. Las da de alta el personal, con `scripts/plataforma.ts`, y el primer administrador entra por invitación. La invitación guarda solo el SHA-256 del enlace, caduca a las 72 horas y sirve una vez. Quien la acepta fija su propia contraseña.
 
-La cookie `sesion` y el alta viven en `src/server`. La puerta llama a `abrirCuenta` y a `darDeAltaEmpresa`. Una forma válida se guarda. Un segundo RFC en la misma cuenta no entra. La auditoría de ese alta se inserta en la misma transacción.
+La contraseña abre la cookie `sesion_parcial`. Ningún portal abre hasta que esa sesión queda marcada con el segundo factor (`sessions.segundo_factor_en`). El proxy exige esa cookie completa. Passkey y TOTP los construye otro frente, en `fase-4/autenticacion`, llamando a `completarSegundoFactor`.
+
+Cada petición resuelve un contexto de tenant. Los repositorios reciben ese contexto y Postgres vuelve a filtrar con RLS, con `set_config` local a la transacción. La lista 69-B y el precio los escribe solo el personal de la plataforma.
+
+La bitácora nueva es `audit_log`: tipo de actor, superficie y la transacción real (`txid`). `audit_events` queda como histórico.
+
+El maestro de personas sigue en la consola: jefe, centro de costo, fecha de baja y CLABE con el dígito 3, 7 y 1. Hacen falta dos personas que puedan liberar. El contador no libera. No se dispersa dinero. El teléfono sigue vacío y no comparte el menú.
 
 El servidor lee el connection string agrupado y no migra al arrancar. Las migraciones se aplican a mano:
 
@@ -36,7 +42,20 @@ La consola muestra los cuatro cajones —Viáticos, Proveedores, Impuestos y Nó
 
 `/precios` y la consola leen `platform_pricing.suscripcion_centavos`. Vacío, las dos dicen «cifra no publicada». Por persona, por tarjeta y de implementación se muestran en cero. No hay un monto sembrado.
 
-`OPERADORES_PLATAFORMA` lista los correos que pueden publicar ese monto una vez y registrar la suscripción como aceptada. Sin monto publicado, ese paso no existe. El valor no va en el repositorio.
+Publicar el monto y aceptar la suscripción de una empresa son actos del personal de la plataforma. Un administrador de cliente no los escribe.
+
+## Invitación
+
+Otro frente envía el correo. El contrato está en `src/server/invitaciones`: `EnviarInvitacion` recibe `MensajeDeInvitacion` (`para`, `nombre`, `razonSocial`, `roles`, `enlace`, `expiraEn`). `enviarInvitacion` hoy no tiene proveedor y la invitación queda emitida para reenviar. El enlace se arma con `enlaceDeInvitacion` y `PLATAFORMA_URL_PUBLICA`.
+
+## Pruebas
+
+```bash
+export AISLAMIENTO_DATABASE_URL=postgres://dueno@localhost:5432/postgres
+npm test
+```
+
+`AISLAMIENTO_DATABASE_URL` es un Postgres desechable, nunca el libro. La suite crea una base, aplica las migraciones y la borra. En cada pull request corre el workflow `Pruebas`.
 
 ## Proveedores
 

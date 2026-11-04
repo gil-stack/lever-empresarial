@@ -1,3 +1,4 @@
+import { capacidadesDe, tiene } from "../nucleo/capacidades";
 import { clabeValida, clabeVisible } from "./clabe";
 import type { RolCuenta } from "./personas";
 
@@ -110,12 +111,15 @@ export function presentarClabe(
   };
 }
 
+/** Delegan en la matriz de capacidades. Un rol, no la combinación: la pantalla usa el contexto. */
 export function puedeVerClabeProveedor(rol: RolCuenta | null | undefined): boolean {
-  return rol === "administrador" || rol === "liberador" || rol === "contador";
+  return Boolean(rol && tiene(capacidadesDe({ rolesCliente: [rol], rolesPlataforma: [] }), "cliente.proveedores.ver"));
 }
 
 export function puedeCambiarClabeProveedor(rol: RolCuenta | null | undefined): boolean {
-  return rol === "administrador";
+  return Boolean(
+    rol && tiene(capacidadesDe({ rolesCliente: [rol], rolesPlataforma: [] }), "cliente.proveedores.clabe.cambiar"),
+  );
 }
 
 export { horaEnMexico as momentoClabe } from "./reloj";

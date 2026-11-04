@@ -1,24 +1,8 @@
-import { existePasoAceptada, type LecturaSuscripcion, type TarifaVisible } from "@/dominio/precio";
+import type { LecturaSuscripcion, TarifaVisible } from "@/dominio/precio";
 
-import { FormularioAceptar } from "./formulario-aceptar";
-
-export function SuscripcionEmpresa({
-  tarifa,
-  lectura,
-  esOperador,
-}: {
-  tarifa: TarifaVisible;
-  lectura: LecturaSuscripcion;
-  esOperador: boolean;
-}) {
+/** La empresa solo lee su suscripción. La aceptación la registra el personal del operador. */
+export function SuscripcionEmpresa({ tarifa, lectura }: { tarifa: TarifaVisible; lectura: LecturaSuscripcion }) {
   if (lectura.tipo === "sin_empresa") return null;
-
-  const estado = lectura.tipo === "lista" ? lectura.estado : null;
-  const paso = existePasoAceptada({
-    esOperador,
-    montoPublicado: tarifa.disponible && tarifa.suscripcionPublicada,
-    estado,
-  });
 
   return (
     <section className="recorrido" aria-labelledby="recorrido-titulo">
@@ -35,12 +19,11 @@ export function SuscripcionEmpresa({
             : "No se pudo consultar la suscripción de esta empresa."}
         </p>
       )}
-      {paso ? <FormularioAceptar /> : null}
       {lectura.tipo === "lista" && lectura.estado === "recorrido" && !tarifa.suscripcionPublicada ? (
         <p className="nota-saldos">El paso a aceptada espera a que el monto esté publicado.</p>
       ) : null}
-      {lectura.tipo === "lista" && lectura.estado === "recorrido" && tarifa.suscripcionPublicada && !esOperador ? (
-        <p className="nota-saldos">El operador de la plataforma lo registra cuando el cliente acepta el monto.</p>
+      {lectura.tipo === "lista" && lectura.estado === "recorrido" && tarifa.suscripcionPublicada ? (
+        <p className="nota-saldos">La plataforma lo registra cuando la empresa acepta el monto.</p>
       ) : null}
     </section>
   );

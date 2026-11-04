@@ -6,6 +6,7 @@ import { salir } from "@/app/sesion/acciones";
 
 import { IconoEntrar, IconoSalir } from "./iconos";
 import { LateralMovil } from "./lateral-movil";
+import { MARCO_SIN_SESION, puertasDe, type VistaDeMarco } from "./puertas";
 import { seccionesDe, type GrupoDeSecciones } from "./secciones";
 import { SelectorTema } from "./selector-tema";
 import { COOKIE_TEMA, temaDesde } from "./tema";
@@ -16,23 +17,16 @@ async function temaElegido() {
 
 export async function Marco({
   actual,
-  persona = null,
-  maestro = false,
-  poliza = false,
-  proveedores = false,
-  lista69b = false,
+  vista = MARCO_SIN_SESION,
   children,
 }: {
   actual: string;
-  persona?: { nombre: string } | null;
-  maestro?: boolean;
-  poliza?: boolean;
-  proveedores?: boolean;
-  lista69b?: boolean;
+  vista?: VistaDeMarco;
   children: ReactNode;
 }) {
   const tema = await temaElegido();
-  const grupos = seccionesDe({ maestro, poliza, proveedores, lista69b });
+  const grupos = seccionesDe(puertasDe(vista.capacidades), vista.empresaId, vista.variasEmpresas);
+  const persona = vista.persona;
 
   return (
     <div className="marco">
@@ -58,6 +52,7 @@ export async function Marco({
               <p>
                 <span className="quien-etiqueta">Entraste como </span>
                 <span className="quien-nombre">{persona.nombre}</span>
+                {vista.razonSocial ? <span className="quien-etiqueta"> en {vista.razonSocial}</span> : null}
               </p>
               <form action={salir}>
                 <button type="submit" className="salir">
@@ -115,9 +110,9 @@ function Grupo({ grupo, actual }: { grupo: GrupoDeSecciones; actual: string }) {
     <div className="secciones-grupo">
       <p className="secciones-titulo">{grupo.titulo}</p>
       <ul>
-        {grupo.secciones.map(({ href, etiqueta, Icono }) => (
+        {grupo.secciones.map(({ ruta, href, etiqueta, Icono }) => (
           <li key={href}>
-            <Link href={href} className="seccion" aria-current={href === actual ? "page" : undefined}>
+            <Link href={href} className="seccion" aria-current={ruta === actual ? "page" : undefined}>
               <Icono />
               {etiqueta}
             </Link>

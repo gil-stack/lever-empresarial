@@ -1,8 +1,8 @@
 import { decidirLiberacion, hoyEnMexico } from "../../dominio/personas";
-import { ErrorDeDominio } from "../session/error-de-dominio";
-import type { Sesion } from "../session/tipos";
+import { exigirEmpresa, puede, type ContextoDeTenant } from "../../nucleo/contexto";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { repositorioPg } from "./repositorio";
-import { usuarioDeSesion, type DependenciasPersonas } from "./servicio";
+import type { DependenciasPersonas } from "./servicio";
 
 /**
  * La acción de soltar dinero no existe en esta fase.
@@ -12,22 +12,21 @@ import { usuarioDeSesion, type DependenciasPersonas } from "./servicio";
  * de pago. Esta función no abre una pantalla.
  */
 export async function negarLiberacion(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   otraFirmaId: string | null,
   deps?: DependenciasPersonas,
 ): Promise<never> {
-  const userId = usuarioDeSesion(sesion);
-  if (sesion?.rol !== "liberador") throw new ErrorDeDominio("sin_accion_de_liberar");
-  const listo = deps?.repositorio ?? repositorioPg();
+  const conEmpresa = exigirEmpresa(ctx);
+  if (!puede(conEmpresa, "cliente.pago.liberar")) throw new ErrorDeDominio("sin_accion_de_liberar");
+  const repositorio = deps?.repositorio ?? repositorioPg();
   const hoy = hoyEnMexico((deps?.ahora ?? (() => new Date()))());
-  const hechos = await listo.hechosLiberacion(userId, hoy);
-  if (!hechos) throw new ErrorDeDominio("sin_empresa");
+  const hechos = await repositorio.hechosLiberacion(conEmpresa, hoy);
   throw new ErrorDeDominio(
     decidirLiberacion({
-      rol: hechos.rol,
+      roles: conEmpresa.roles,
       deBaja: hechos.actorDeBaja,
       autorizados: hechos.autorizados,
-      actorId: userId,
+      actorId: conEmpresa.persona.id,
       otraFirmaId,
     }),
   );

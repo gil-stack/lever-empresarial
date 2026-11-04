@@ -1,12 +1,12 @@
 import { esUuid, type DatosPolitica } from "../../dominio/politica";
-import { ErrorDeDominio } from "../session/error-de-dominio";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 
 /**
  * La consulta devuelve un JSON con las columnas que la pantalla puede ver.
  * Cualquier otra clave —hash, connection string, un id de otra cuenta— se queda fuera.
  */
 
-export function mapearPolitica(vista: unknown): DatosPolitica {
+export function mapearPolitica(vista: unknown, puedeEditar: boolean): DatosPolitica {
   const fila = comoObjeto(vista);
   if (fila.plazo === null || fila.plazo === undefined) {
     throw new ErrorDeDominio("politica_ausente");
@@ -18,7 +18,6 @@ export function mapearPolitica(vista: unknown): DatosPolitica {
   const sinCajon = leerEntero(fila.sinCajon, false);
   if (
     !esUuid(fila.companyId) ||
-    typeof fila.rol !== "string" ||
     dias === undefined ||
     vencidos === undefined ||
     umbral === undefined ||
@@ -29,7 +28,7 @@ export function mapearPolitica(vista: unknown): DatosPolitica {
 
   return {
     companyId: fila.companyId,
-    rol: fila.rol,
+    puedeEditar,
     diasComprobante: dias,
     maxVencidos: vencidos,
     umbralCentavos: umbral,

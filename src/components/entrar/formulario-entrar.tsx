@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState } from "react";
-import Link from "next/link";
 
 import { enviarEntrada } from "@/app/sesion/acciones";
 import { ENTRADA_INICIAL } from "@/app/sesion/estado";
@@ -29,9 +28,6 @@ export function FormularioEntrar() {
         <button type="submit" className="boton" disabled={pendiente}>
           {pendiente ? "Entrando…" : "Entrar"}
         </button>
-        <Link className="enlace-texto" href="/">
-          Dar de alta la razón social
-        </Link>
       </div>
     </form>
   );

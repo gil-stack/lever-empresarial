@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 import {
@@ -11,8 +12,6 @@ import {
   fraseFechaArchivo,
   leerArchivo69b,
   leerPagina69b,
-  puedeGuardarLista69b,
-  puedeVerLista69b,
   urlPublica,
 } from "./lista-69b.ts";
 
@@ -129,14 +128,10 @@ describe("el pago", () => {
     assert.match(fraseDePago69b(fuera), /no envía dinero/);
   });
 
-  it("el tarjetahabiente no consulta ni guarda; el administrador sí guarda", () => {
-    assert.equal(puedeVerLista69b("tarjetahabiente"), false);
-    assert.equal(puedeVerLista69b("administrador"), true);
-    assert.equal(puedeVerLista69b("contador"), true);
-    assert.equal(puedeGuardarLista69b("contador", false), false);
-    assert.equal(puedeGuardarLista69b("solicitante", false), false);
-    assert.equal(puedeGuardarLista69b("administrador", false), true);
-    assert.equal(puedeGuardarLista69b("tarjetahabiente", true), true);
+  it("guardar la lista no es una decisión de este módulo", () => {
+    const fuente = readFileSync(new URL("./lista-69b.ts", import.meta.url), "utf8");
+    assert.equal(fuente.includes("puedeGuardarLista69b"), false);
+    assert.equal(fuente.includes("puedeVerLista69b"), false);
   });
 
   it("el tope de filas es un límite de la carga, no una cifra del SAT", () => {

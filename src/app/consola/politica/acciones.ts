@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 
-import { sesionDesdeCookie } from "@/server/entrada";
-import { ErrorDeDominio, type Sesion } from "@/server/session";
+import type { ContextoDeTenant } from "@/nucleo/contexto";
+import { contextoDeAccion } from "@/server/entrada";
+import { ErrorDeDominio } from "@/server/session";
 import {
   borrarCategoria,
   crearCategoria,
@@ -38,8 +39,8 @@ export async function guardarPlazoEmpresa(
   _previo: EstadoFormulario,
   formData: FormData,
 ): Promise<EstadoFormulario> {
-  return correr(async (sesion) => {
-    await editarPlazoEmpresa(sesion, {
+  return correr(async (ctx) => {
+    await editarPlazoEmpresa(ctx, {
       dias: texto(formData, "dias"),
       vencidos: texto(formData, "vencidos"),
     });
@@ -52,8 +53,8 @@ export async function guardarUmbral(
   formData: FormData,
 ): Promise<EstadoFormulario> {
   const quitar = formData.get("intencion") === "quitar";
-  return correr(async (sesion) => {
-    await editarUmbral(sesion, { texto: texto(formData, "umbral"), quitar });
+  return correr(async (ctx) => {
+    await editarUmbral(ctx, { texto: texto(formData, "umbral"), quitar });
     return quitar
       ? "El umbral volvió a quedar sin monto."
       : "Quedó escrito el umbral de proveedores.";
@@ -65,8 +66,8 @@ export async function guardarPoliticaPersona(
   formData: FormData,
 ): Promise<EstadoFormulario> {
   const quitar = formData.get("intencion") === "quitar";
-  return correr(async (sesion) => {
-    const resultado = await editarPoliticaPersona(sesion, {
+  return correr(async (ctx) => {
+    const resultado = await editarPoliticaPersona(ctx, {
       personaId: texto(formData, "personaId"),
       dias: texto(formData, "dias"),
       vencidos: texto(formData, "vencidos"),
@@ -82,8 +83,8 @@ export async function agregarCategoria(
   _previo: EstadoFormulario,
   formData: FormData,
 ): Promise<EstadoFormulario> {
-  return correr(async (sesion) => {
-    await crearCategoria(sesion, {
+  return correr(async (ctx) => {
+    await crearCategoria(ctx, {
       nombre: texto(formData, "nombre"),
       tope: texto(formData, "tope"),
     });
@@ -97,8 +98,8 @@ export async function guardarTopeCategoria(
   _previo: EstadoFormulario,
   formData: FormData,
 ): Promise<EstadoFormulario> {
-  return correr(async (sesion) => {
-    await escribirTopeCategoria(sesion, {
+  return correr(async (ctx) => {
+    await escribirTopeCategoria(ctx, {
       categoriaId: texto(formData, "categoriaId"),
       tope: texto(formData, "tope"),
     });
@@ -110,8 +111,8 @@ export async function dejarCategoriaSinTope(
   _previo: EstadoFormulario,
   formData: FormData,
 ): Promise<EstadoFormulario> {
-  return correr(async (sesion) => {
-    await quitarTopeCategoria(sesion, { categoriaId: texto(formData, "categoriaId") });
+  return correr(async (ctx) => {
+    await quitarTopeCategoria(ctx, { categoriaId: texto(formData, "categoriaId") });
     return "La categoría volvió a quedar sin tope.";
   });
 }
@@ -120,17 +121,17 @@ export async function eliminarCategoria(
   _previo: EstadoFormulario,
   formData: FormData,
 ): Promise<EstadoFormulario> {
-  return correr(async (sesion) => {
-    await borrarCategoria(sesion, { categoriaId: texto(formData, "categoriaId") });
+  return correr(async (ctx) => {
+    await borrarCategoria(ctx, { categoriaId: texto(formData, "categoriaId") });
     return "Se borró la categoría.";
   });
 }
 
-async function correr(fn: (sesion: Sesion) => Promise<string>): Promise<EstadoFormulario> {
+async function correr(fn: (ctx: ContextoDeTenant) => Promise<string>): Promise<EstadoFormulario> {
   try {
-    const sesion = await sesionDesdeCookie();
-    if (!sesion) return invalido("sesion_ausente");
-    const mensaje = await fn(sesion);
+    const ctx = await contextoDeAccion();
+    if (!ctx) return invalido("sesion_ausente");
+    const mensaje = await fn(ctx);
     revalidatePath("/consola");
     revalidatePath("/consola/politica");
     return { tipo: "guardado", mensaje };

@@ -8,8 +8,6 @@ import {
   erroresDeAltaProveedor,
   horaDeLectura,
   mensajeDeAlta,
-  puedeDarDeAltaProveedor,
-  puedeVerProveedores,
   releerFichas,
   relatoDePago,
   rfcDeProveedor,
@@ -79,11 +77,9 @@ describe("decisión de pago", () => {
     assert.equal(rfcDeProveedor("AMZN"), null);
     assert.equal(rfcDeProveedor("Amazon México"), null);
     assert.equal(rfcDeProveedor("eku 900317 3c9"), "EKU9003173C9");
-    assert.equal(puedeVerProveedores("contador"), true);
-    assert.equal(puedeDarDeAltaProveedor("contador"), false);
-    assert.equal(puedeVerProveedores("tarjetahabiente"), false);
-    assert.equal(puedeVerProveedores("solicitante"), false);
-    assert.equal(puedeDarDeAltaProveedor("liberador"), true);
+    const fuente = readFileSync(new URL("./proveedores.ts", import.meta.url), "utf8");
+    assert.equal(fuente.includes("puedeVerProveedores"), false);
+    assert.equal(fuente.includes("puedeDarDeAltaProveedor"), false);
 
     const errores = erroresDeAltaProveedor({
       rfc: "Amazon",

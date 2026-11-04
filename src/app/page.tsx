@@ -1,66 +1,42 @@
 import type { Metadata } from "next";
-import { FormularioAlta } from "@/components/alta/formulario-alta";
+import Link from "next/link";
+
 import { Marco } from "@/components/cromo/marco";
-import { puertasDe } from "@/components/cromo/puertas";
-import { leerEntrada } from "@/server/entrada";
+import { vistaDeMarco } from "@/components/cromo/puertas";
+import { CabezaPagina } from "@/components/sistema";
+import { enEmpresa } from "@/nucleo/rutas";
+import { contextoOpcional } from "@/server/entrada";
 
 export const runtime = "nodejs";
 
 export const metadata: Metadata = {
-  title: "Alta de razón social",
+  title: "Plataforma",
 };
 
-const NO_ENTRA = [
-  "Varias razones sociales",
-  "Un ERP como condición para pagar",
-  "Cálculo de sueldos o seguridad social",
-  "Crédito, flotante o rendimiento",
-  "Viajes reservables, flotilla, órdenes de compra o cuentas por cobrar",
-  "Una persona cuya empresa no adopta el producto",
-  "Un despacho que quiere revender la cuenta",
-  "Gasto centrado en el extranjero o en stablecoins",
-  "Operación fuera de México",
-  "Una sola firma para pedir y para liberar",
-] as const;
-
-export default async function PaginaAlta() {
-  const entrada = await leerEntrada();
+/** La portada no da de alta empresas: las da de alta la SOFIPO y después invita a su administrador. */
+export default async function Portada() {
+  const ctx = await contextoOpcional();
 
   return (
-    <Marco
-      actual="/"
-      persona={entrada.nombre ? { nombre: entrada.nombre } : null}
-      {...puertasDe(entrada.rol, Boolean(entrada.rfc))}
-    >
-      <main id="contenido" className="alta">
-        <section className="alta-relato" aria-labelledby="titulo-alta">
-          <p className="kicker">Alta de la empresa</p>
-          <h1 id="titulo-alta">
-            Una sola
-            <br />
-            <em>razón social.</em>
-          </h1>
+    <Marco actual="/" vista={vistaDeMarco(ctx)}>
+      <main id="contenido" className="pagina">
+        <CabezaPagina kicker="Plataforma" titulo="Las empresas las da de alta la SOFIPO.">
           <p className="lede">
-            Doce o trece caracteres, un código postal y el régimen con el que esta empresa va a pedir sus facturas. En
-            esta cuenta cabe un RFC.
+            Si tu empresa ya es cliente, entra con tu correo, tu contraseña y tu segundo factor. Si te invitaron,
+            abre el enlace que llegó a tu correo.
           </p>
-          <section className="exclusiones" aria-labelledby="no-entra">
-            <h2 id="no-entra">No entra en esta cuenta</h2>
-            <ul>
-              {NO_ENTRA.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </section>
-        </section>
-        <FormularioAlta
-          contexto={{
-            conSesion: entrada.nombre !== null,
-            nombre: entrada.nombre,
-            rfc: entrada.rfc,
-            libroDisponible: entrada.libroDisponible,
-          }}
-        />
+          <div className="acciones">
+            {ctx ? (
+              <Link className="boton" href={ctx.empresa ? enEmpresa(ctx.empresa.id, "/consola") : "/empresas"}>
+                Ir a la consola
+              </Link>
+            ) : (
+              <Link className="boton" href="/entrar">
+                Entrar
+              </Link>
+            )}
+          </div>
+        </CabezaPagina>
       </main>
     </Marco>
   );

@@ -15,12 +15,15 @@ import {
   type EntradaAltaPersona,
   type EstadoMaestro,
 } from "@/dominio/personas";
-import { errorConSecreto, sesionDesdeCookie } from "@/server/entrada";
+import { contextoDeAccion, errorConSecreto } from "@/server/entrada";
 import { darDeAltaPersona, nombrarCentro, registrarBaja } from "@/server/personas";
 import { ErrorDeDominio } from "@/server/session";
 
 const LISTO_CENTRO = "El centro de costo quedó nombrado.";
 const LISTO_PERSONA = "La persona quedó en el maestro. No se dispersó dinero.";
+const LISTO_INVITADA = "La persona quedó en el maestro y su invitación salió a su correo. No se dispersó dinero.";
+const LISTO_PENDIENTE =
+  "La persona quedó en el maestro. Su invitación quedó emitida, pero el correo todavía no sale. No se dispersó dinero.";
 const LISTO_BAJA = "La fecha de baja quedó en el maestro. No se dispersó dinero.";
 
 export async function enviarCentro(_previo: EstadoMaestro, formData: FormData): Promise<EstadoMaestro> {
@@ -47,12 +50,15 @@ export async function enviarPersona(_previo: EstadoMaestro, formData: FormData):
   if (errores.length > 0) return { tipo: "invalido", errores };
   const sesion = await leerSesion();
   if (!sesion) return { tipo: "rechazado", codigo: "sesion" };
+  let invitacion: "enviada" | "pendiente" | null;
   try {
-    await darDeAltaPersona(sesion, entrada);
+    invitacion = (await darDeAltaPersona(sesion, entrada)).invitacion;
   } catch (error) {
     return traducir(error);
   }
   refrescar();
+  if (invitacion === "enviada") return { tipo: "listo", mensaje: LISTO_INVITADA };
+  if (invitacion === "pendiente") return { tipo: "listo", mensaje: LISTO_PENDIENTE };
   return { tipo: "listo", mensaje: LISTO_PERSONA };
 }
 
@@ -91,18 +97,12 @@ function leerPersona(formData: FormData): EntradaAltaPersona {
     clabe: formData.get("clabe"),
     acceso: formData.get("acceso"),
     correo: formData.get("correo"),
-    contrasena: formData.get("contrasena"),
-    rol: formData.get("rol"),
+    rol: formData.getAll("rol"),
   };
 }
 
-async function leerSesion() {
-  try {
-    return await sesionDesdeCookie();
-  } catch (error) {
-    if (error instanceof ErrorDeDominio || errorConSecreto(error)) return null;
-    throw error;
-  }
+function leerSesion() {
+  return contextoDeAccion();
 }
 
 function traducir(error: unknown, campoFecha: CampoPersona = "alta"): EstadoMaestro {
@@ -116,8 +116,7 @@ function traducir(error: unknown, campoFecha: CampoPersona = "alta"): EstadoMaes
   if (
     error.codigo === "base_no_disponible" ||
     error.codigo === "base_no_configurada" ||
-    error.codigo === "auditoria_no_disponible" ||
-    error.codigo === "contrasena_no_disponible"
+    error.codigo === "auditoria_no_disponible"
   ) {
     return { tipo: "rechazado", codigo: "libro" };
   }

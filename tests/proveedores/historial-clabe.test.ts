@@ -70,8 +70,8 @@ test("la CLABE del proveedor conserva el historial en Postgres", async () => {
          where id = '${PRIMERA}';
        insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde)
          values ('${SEGUNDA}', '${EMPRESA}', '${PROVEEDOR}', '${FONDOS}', true, timestamptz '2026-11-04 20:00:00+00');
-       insert into audit_events (id, company_id, actor_id, accion, entidad, identificador, ocurrido_en)
-         values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', '${EMPRESA}', '${USUARIO}', 'clabe_proveedor', 'supplier_clabes', '${SEGUNDA}', timestamptz '2026-11-04 20:00:00+00');
+       insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+         values ((select id from operators order by alta_en limit 1), '${EMPRESA}', 'miembro', '${USUARIO}', 'cliente', 'clabe_proveedor', 'supplier_clabes', '${SEGUNDA}');
        commit;`,
     );
 
@@ -100,10 +100,10 @@ function sembrar(url: string): void {
     `begin;
      insert into users (id, nombre, correo, password_hash)
        values ('${USUARIO}', 'Elena Ríos', 'clabe-historial@ejemplo.mx', '${HASH}');
-     insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi)
-       values ('${EMPRESA}', 'EKU9003173C9', 'Escuela Kemper', '06600', '601', 'G03');
-     insert into audit_events (id, company_id, actor_id, accion, entidad, identificador, ocurrido_en)
-       values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2', '${EMPRESA}', '${USUARIO}', 'alta_empresa', 'companies', '${EMPRESA}', now());
+     insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, operator_id, estado, demostracion)
+       values ('${EMPRESA}', 'EKU9003173C9', 'Escuela Kemper', '06600', '601', 'G03', (select id from operators order by alta_en limit 1), 'activa', true);
+     insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+       values ((select id from operators order by alta_en limit 1), '${EMPRESA}', 'miembro', '${USUARIO}', 'cliente', 'alta_empresa', 'companies', '${EMPRESA}');
      insert into documents (id, company_id, clave_blob, hash_sha256, tipo, nombre_original, creado_en)
        values (
          'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
@@ -126,20 +126,12 @@ function sembrar(url: string): void {
        false,
        timestamptz '2026-11-04 18:40:00+00'
      );
-     insert into audit_events (id, company_id, actor_id, accion, entidad, identificador, ocurrido_en)
-       values (
-         'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4',
-         '${EMPRESA}',
-         '${USUARIO}',
-         'alta_proveedor',
-         'suppliers',
-         '${PROVEEDOR}',
-         timestamptz '2026-11-04 18:40:00+00'
-       );
+     insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+       values ((select id from operators order by alta_en limit 1), '${EMPRESA}', 'miembro', '${USUARIO}', 'cliente', 'alta_proveedor', 'suppliers', '${PROVEEDOR}');
      insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde)
        values ('${PRIMERA}', '${EMPRESA}', '${PROVEEDOR}', '${BANAMEX}', true, timestamptz '2026-11-04 18:40:00+00');
-     insert into audit_events (id, company_id, actor_id, accion, entidad, identificador, ocurrido_en)
-       values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3', '${EMPRESA}', '${USUARIO}', 'clabe_proveedor', 'supplier_clabes', '${PRIMERA}', timestamptz '2026-11-04 18:40:00+00');
+     insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+       values ((select id from operators order by alta_en limit 1), '${EMPRESA}', 'miembro', '${USUARIO}', 'cliente', 'clabe_proveedor', 'supplier_clabes', '${PRIMERA}');
      commit;`,
   );
 }

@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 import { readFileSync } from "node:fs";
 
+import { capacidadesDe, tiene, type RolCliente } from "../nucleo/capacidades.ts";
 import {
   FRASE_CONTADOR,
   FRASE_SIN_DISPERSION,
@@ -15,10 +16,13 @@ import {
   hoyEnMexico,
   lineaDeRol,
   partesDeFecha,
-  puedeSoltarDinero,
   relatoOperabilidad,
   validarAltaPersona,
 } from "./personas.ts";
+
+function suelta(roles: RolCliente[]): boolean {
+  return tiene(capacidadesDe({ rolesCliente: roles, rolesPlataforma: [] }), "cliente.pago.liberar");
+}
 
 const HOY = "2026-11-03";
 const CENTRO = "11111111-1111-4111-8111-111111111111";
@@ -26,12 +30,13 @@ const CLABE = "002180701150123452";
 
 describe("dos firmas y el contador", () => {
   it("solo el liberador suelta dinero, y una sola persona no deja operable la empresa", () => {
-    assert.equal(puedeSoltarDinero("liberador"), true);
-    assert.equal(puedeSoltarDinero("contador"), false);
-    assert.equal(puedeSoltarDinero("administrador"), false);
-    assert.equal(puedeSoltarDinero("solicitante"), false);
-    assert.equal(puedeSoltarDinero("tarjetahabiente"), false);
-    assert.equal(puedeSoltarDinero(null), false);
+    assert.equal(suelta(["liberador"]), true);
+    assert.equal(suelta(["contador"]), false);
+    assert.equal(suelta(["administrador"]), false);
+    assert.equal(suelta(["administrador", "liberador"]), true);
+    assert.equal(suelta(["solicitante"]), false);
+    assert.equal(suelta(["tarjetahabiente"]), false);
+    assert.equal(suelta([]), false);
     assert.equal(empresaOperable(0), false);
     assert.equal(empresaOperable(1), false);
     assert.equal(empresaOperable(2), true);
@@ -44,24 +49,24 @@ describe("dos firmas y el contador", () => {
     const actor = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
     const otra = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
     assert.equal(
-      decidirLiberacion({ rol: "contador", deBaja: false, autorizados: 2, actorId: actor }),
+      decidirLiberacion({ roles: ["contador"], deBaja: false, autorizados: 2, actorId: actor }),
       "sin_accion_de_liberar",
     );
     assert.equal(
-      decidirLiberacion({ rol: "administrador", deBaja: false, autorizados: 2, actorId: actor }),
+      decidirLiberacion({ roles: ["administrador"], deBaja: false, autorizados: 2, actorId: actor }),
       "sin_accion_de_liberar",
     );
     assert.equal(
-      decidirLiberacion({ rol: "liberador", deBaja: true, autorizados: 2, actorId: actor }),
+      decidirLiberacion({ roles: ["liberador"], deBaja: true, autorizados: 2, actorId: actor }),
       "sin_accion_de_liberar",
     );
     assert.equal(
-      decidirLiberacion({ rol: "liberador", deBaja: false, autorizados: 1, actorId: actor }),
+      decidirLiberacion({ roles: ["liberador"], deBaja: false, autorizados: 1, actorId: actor }),
       "empresa_no_operable",
     );
     assert.equal(
       decidirLiberacion({
-        rol: "liberador",
+        roles: ["liberador"],
         deBaja: false,
         autorizados: 2,
         actorId: actor,
@@ -71,7 +76,7 @@ describe("dos firmas y el contador", () => {
     );
     assert.equal(
       decidirLiberacion({
-        rol: "liberador",
+        roles: ["liberador"],
         deBaja: false,
         autorizados: 2,
         actorId: actor,
@@ -80,7 +85,7 @@ describe("dos firmas y el contador", () => {
     );
     assert.equal(
       decidirLiberacion({
-        rol: "liberador",
+        roles: ["liberador"],
         deBaja: false,
         autorizados: 2,
         actorId: actor,
@@ -118,7 +123,6 @@ describe("alta de persona", () => {
         clabe: "002180701150123453",
         acceso: "nueva",
         correo: "mal",
-        contrasena: "corta",
         rol: "contador",
       },
       HOY,
@@ -129,7 +133,6 @@ describe("alta de persona", () => {
     assert.ok(campos.includes("centro"));
     assert.ok(campos.includes("clabe"));
     assert.ok(campos.includes("correo"));
-    assert.ok(campos.includes("contrasena"));
     assert.equal(errores.some((error) => error.mensaje.includes("002180")), false);
   });
 
@@ -144,7 +147,6 @@ describe("alta de persona", () => {
         clabe: "002 180 70115012345 2",
         acceso: "nueva",
         correo: "Contadora@Ejemplo.MX",
-        contrasena: "una frase larga",
         rol: "contador",
       },
       HOY,
@@ -154,7 +156,7 @@ describe("alta de persona", () => {
       assert.equal(resultado.valor.clabe, CLABE);
       assert.equal(resultado.valor.nombre, "Contadora Norte");
       assert.equal(resultado.valor.acceso.correo, "contadora@ejemplo.mx");
-      assert.equal(resultado.valor.acceso.rol, "contador");
+      assert.deepEqual(resultado.valor.acceso.roles, ["contador"]);
       assert.equal("puedeLiberar" in resultado.valor, false);
       assert.equal("puedeLiberar" in resultado.valor.acceso, false);
     }

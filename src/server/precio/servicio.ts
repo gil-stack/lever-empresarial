@@ -3,7 +3,6 @@ import {
   FRASE_SIN_CONSULTA,
   cerosDeProducto,
   centavosDesdePesos,
-  existePasoAceptada,
   fechaYHoraEnMexico,
   presentarSuscripcion,
   relatoAceptada,
@@ -11,9 +10,8 @@ import {
   type LecturaSuscripcion,
   type TarifaVisible,
 } from "../../dominio/precio";
-import type { Sesion } from "../session/tipos";
-import { ErrorDeDominio } from "../session/error-de-dominio";
-import { esCorreoOperador, operadoresDesdeEntorno } from "./operador";
+import { exigirPersonal, type ContextoDeTenant } from "../../nucleo/contexto";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { repositorioPg, type FilaPrecio, type RepositorioPrecios } from "./repositorio";
 
 const UUID =
@@ -21,17 +19,8 @@ const UUID =
 
 export type DependenciasPrecio = {
   repositorio?: RepositorioPrecios;
-  operadores?: ReadonlySet<string>;
   ahora?: () => Date;
 };
-
-export function esOperadorActual(
-  sesion: Sesion | null | undefined,
-  lista?: ReadonlySet<string>,
-): boolean {
-  if (!sesion?.usuario?.correo) return false;
-  return esCorreoOperador(sesion.usuario.correo, lista ?? operadoresDesdeEntorno());
-}
 
 export async function leerTarifa(deps?: DependenciasPrecio): Promise<TarifaVisible> {
   try {
@@ -43,14 +32,14 @@ export async function leerTarifa(deps?: DependenciasPrecio): Promise<TarifaVisib
   }
 }
 
-export async function leerSuscripcionDeLaSesion(
-  sesion: Sesion | null | undefined,
+export async function leerSuscripcionDeLaEmpresa(
+  ctx: ContextoDeTenant | null | undefined,
   deps?: DependenciasPrecio,
 ): Promise<LecturaSuscripcion> {
-  const companyId = sesion?.companyId;
-  if (!companyId || !UUID.test(companyId)) return { tipo: "sin_empresa" };
+  if (!ctx?.empresa) return { tipo: "sin_empresa" };
+  const companyId = ctx.empresa.id;
   try {
-    const fila = await (deps?.repositorio ?? repositorioPg()).leerSuscripcion(companyId);
+    const fila = await (deps?.repositorio ?? repositorioPg()).leerSuscripcion({ ...ctx, empresa: ctx.empresa });
     if (!fila) return { tipo: "ausente" };
     if (fila.companyId !== companyId) throw new ErrorDeDominio("base_no_disponible");
     if (fila.estado === "aceptada") {
@@ -75,48 +64,35 @@ export async function leerSuscripcionDeLaSesion(
 }
 
 export async function publicarSuscripcion(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   texto: string,
   deps?: DependenciasPrecio,
 ): Promise<TarifaVisible> {
-  const actorId = exigirActor(sesion);
-  if (!esOperadorActual(sesion, deps?.operadores)) throw new ErrorDeDominio("no_es_operador");
+  const personal = exigirPersonal(ctx, "plataforma.precio.publicar");
   const monto = centavosDesdePesos(typeof texto === "string" ? texto : "");
   if (!monto.ok) throw new ErrorDeDominio(monto.codigo);
-  const fila = await (deps?.repositorio ?? repositorioPg()).publicar({
+  const fila = await (deps?.repositorio ?? repositorioPg()).publicar(personal, {
     centavos: monto.centavos,
     cuando: (deps?.ahora ?? reloj)(),
-    actorId,
   });
   if (fila.centavos !== monto.centavos) throw new ErrorDeDominio("base_no_disponible");
   return presentar(fila);
 }
 
+/** El personal del operador registra que el cliente aceptó. No es un acto de la empresa. */
 export async function aceptarSuscripcion(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
+  entrada: { companyId?: unknown },
   deps?: DependenciasPrecio,
 ): Promise<void> {
-  const actorId = exigirActor(sesion);
-  if (!esOperadorActual(sesion, deps?.operadores)) throw new ErrorDeDominio("no_es_operador");
-  const companyId = sesion?.companyId;
-  if (!companyId || !UUID.test(companyId)) throw new ErrorDeDominio("empresa_ausente");
+  const personal = exigirPersonal(ctx, "plataforma.suscripcion.aceptar");
+  const companyId = typeof entrada?.companyId === "string" ? entrada.companyId : "";
+  if (!UUID.test(companyId)) throw new ErrorDeDominio("empresa_ausente");
   const repo = deps?.repositorio ?? repositorioPg();
   const precio = await repo.leerPrecio();
   if (precio.centavos === null) throw new ErrorDeDominio("precio_no_publicado");
-  const actual = await repo.leerSuscripcion(companyId);
-  if (!actual || actual.companyId !== companyId) throw new ErrorDeDominio("suscripcion_ausente");
-  if (
-    !existePasoAceptada({
-      esOperador: true,
-      montoPublicado: true,
-      estado: actual.estado,
-    })
-  ) {
-    throw new ErrorDeDominio("suscripcion_ya_aceptada");
-  }
-  const aceptada = await repo.aceptar({
+  const aceptada = await repo.aceptar(personal, {
     companyId,
-    actorId,
     cuando: (deps?.ahora ?? reloj)(),
   });
   if (aceptada.companyId !== companyId || aceptada.estado !== "aceptada") {
@@ -147,12 +123,6 @@ export function tarifaSinConsulta(): TarifaVisible {
     spei: CIFRA_NO_PUBLICADA,
     ...ceros,
   };
-}
-
-function exigirActor(sesion: Sesion | null | undefined): string {
-  const id = sesion?.usuario?.id;
-  if (typeof id !== "string" || !UUID.test(id)) throw new ErrorDeDominio("sesion_ausente");
-  return id;
 }
 
 function reloj(): Date {

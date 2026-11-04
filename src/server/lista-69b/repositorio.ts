@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 
-import { conTransaccion, consultar } from "../session/db";
-import { ErrorDeDominio } from "../session/error-de-dominio";
+import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
+import { conContexto } from "../../nucleo/db";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import type { Fila69b } from "../../dominio/lista-69b";
+import { actorDePersonal, auditar } from "../bitacora/auditar";
 
 export type Snapshot69b = {
   id: string;
@@ -14,7 +16,7 @@ export type Snapshot69b = {
 export type Repositorio69b = {
   vigente: () => Promise<Snapshot69b | null>;
   situaciones: (snapshotId: string, rfc: string) => Promise<string[]>;
-  guardar: (entrada: {
+  guardar: (ctx: ContextoDePersonal, entrada: {
     id: string;
     fechaArchivo: string;
     cargadoEn: Date;
@@ -56,15 +58,20 @@ const SQL = {
 
 const LOTE = 2000;
 
+/** La copia es de la plataforma: cualquier contexto la lee. */
+const LECTURA = { rol: "plataforma_cliente" } as const;
+
 export function repositorio69bPg(): Repositorio69b {
   return {
-    async vigente() {
-      const resultado = await consultar(SQL.vigente);
-      const fila = resultado.rows[0];
-      return fila ? exigirSnapshot(fila) : null;
+    vigente() {
+      return conContexto(LECTURA, async (consulta) => {
+        const resultado = await consulta.query(SQL.vigente);
+        const fila = resultado.rows[0];
+        return fila ? exigirSnapshot(fila) : null;
+      });
     },
     async situaciones(snapshotId, rfc) {
-      const resultado = await consultar(SQL.situaciones, [snapshotId, rfc]);
+      const resultado = await conContexto(LECTURA, (consulta) => consulta.query(SQL.situaciones, [snapshotId, rfc]));
       return resultado.rows.map((fila) => {
         if (!esRegistro(fila) || typeof fila.situacion !== "string" || fila.situacion.length === 0) {
           throw new ErrorDeDominio("base_no_disponible");
@@ -72,9 +79,17 @@ export function repositorio69bPg(): Repositorio69b {
         return fila.situacion;
       });
     },
-    async guardar(entrada) {
-      await conTransaccion(async (consulta) => {
+    async guardar(ctx, entrada) {
+      await conContexto(basePlataforma(ctx), async (consulta) => {
         await consulta.query(SQL.snapshot, [entrada.id, entrada.fechaArchivo, entrada.cargadoEn]);
+        await auditar(consulta, actorDePersonal(ctx), {
+          accion: "cargar_lista_69b",
+          identificador: entrada.id,
+          cambio: {
+            fecha_archivo: entrada.fechaArchivo,
+            contribuyentes: new Set(entrada.filas.map((fila) => fila.rfc)).size,
+          },
+        });
         for (let inicio = 0; inicio < entrada.filas.length; inicio += LOTE) {
           const lote = entrada.filas.slice(inicio, inicio + LOTE);
           await consulta.query(SQL.filas, [

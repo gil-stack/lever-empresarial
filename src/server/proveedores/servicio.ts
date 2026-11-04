@@ -4,26 +4,17 @@ import { clabeValida } from "../../dominio/clabe";
 import {
   decidirPago,
   mensajeDeAlta,
-  puedeDarDeAltaProveedor,
-  puedeVerProveedores,
   razonNormalizada,
   rfcDeProveedor,
   validarConstancia,
 } from "../../dominio/proveedores";
 import { validarRfc } from "../../dominio/rfc";
-import type { Consulta } from "../session/db";
-import { ErrorDeDominio } from "../session/error-de-dominio";
-import type { Sesion } from "../session/tipos";
-import { registrarHechoProveedor, type HechoProveedor } from "./auditar";
+import { exigir, exigirEmpresa, puede, type ContextoDeTenant } from "../../nucleo/contexto";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
+import { actorDeCliente, auditar as auditarPorDefecto, type Auditar } from "../bitacora/auditar";
 import { almacenVercel, type AlmacenConstancia } from "./constancia";
 import { repositorioPg } from "./repositorio";
 import type { AltaGuardada, LecturaProveedores, RepositorioProveedores } from "./tipos";
-import { leerArchivo69b } from "../../dominio/lista-69b";
-
-const UUID =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-type Auditar = (evento: HechoProveedor, consulta: Consulta) => Promise<void>;
 
 export type DependenciasProveedores = {
   repositorio?: RepositorioProveedores;
@@ -39,45 +30,36 @@ export type EntradaAltaProveedor = {
   constancia: { nombre: string; bytes: Uint8Array } | null;
 };
 
-export function usuarioDeSesion(sesion: Sesion | null | undefined): string {
-  const id = sesion?.usuario?.id;
-  if (typeof id !== "string" || !UUID.test(id)) throw new ErrorDeDominio("sesion_ausente");
-  return id;
-}
-
 export async function leerProveedores(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   deps?: DependenciasProveedores,
 ): Promise<LecturaProveedores> {
-  const userId = usuarioDeSesion(sesion);
-  const repo = resolver(deps).repositorio;
-  const lectura = await repo.leer(userId);
-  if (!lectura) throw new ErrorDeDominio("sin_empresa");
-  if (!puedeVerProveedores(lectura.rol)) throw new ErrorDeDominio("proveedores_no_disponibles");
-  return lectura;
+  const conEmpresa = exigirEmpresa(ctx);
+  if (!puede(conEmpresa, "cliente.proveedores.ver")) throw new ErrorDeDominio("proveedores_no_disponibles");
+  return resolver(deps).repositorio.leer(conEmpresa);
 }
 
 export async function darDeAltaProveedor(
-  sesion: Sesion | null | undefined,
+  ctx: ContextoDeTenant | null | undefined,
   entrada: EntradaAltaProveedor,
   deps?: DependenciasProveedores,
 ): Promise<AltaGuardada & { mensaje: string }> {
-  const userId = usuarioDeSesion(sesion);
   const preparado = prepararEntrada(entrada);
+  const conEmpresa = exigir(ctx, "cliente.proveedores.alta");
+  const actor = actorDeCliente(conEmpresa);
   const listo = resolver(deps);
   const ahora = listo.ahora();
   const hash = createHash("sha256").update(preparado.bytes).digest("hex");
   let claveGuardada: string | null = null;
 
   try {
-    const guardado = await listo.repositorio.conEmpresa(userId, async (ctx) => {
-      if (!puedeDarDeAltaProveedor(ctx.rol)) throw new ErrorDeDominio("sin_permiso");
+    const guardado = await listo.repositorio.conEmpresa(conEmpresa, async (ctx) => {
       if (await ctx.rfcOcupado(preparado.rfc)) throw new ErrorDeDominio("proveedor_duplicado");
       const lectura = await ctx.leerLista(preparado.rfc);
       const decision = decidirPago(lectura);
       const proveedorId = randomUUID();
       const documentoId = randomUUID();
-      const propuesta = `${ctx.companyId}/constancias/${documentoId}`;
+      const propuesta = `${conEmpresa.empresa.operadorId}/${ctx.companyId}/constancias/${documentoId}`;
       const archivo = await listo.almacen.guardar({
         clave: propuesta,
         bytes: preparado.bytes,
@@ -111,22 +93,8 @@ export async function darDeAltaProveedor(
         clabe: preparado.clabe,
         desde: ahora,
       });
-      await auditar(listo.auditar, ctx.consulta, {
-        companyId: ctx.companyId,
-        actorId: userId,
-        accion: "alta_proveedor",
-        entidad: "suppliers",
-        identificador: proveedorId,
-        ocurridoEn: ahora,
-      });
-      await auditar(listo.auditar, ctx.consulta, {
-        companyId: ctx.companyId,
-        actorId: userId,
-        accion: "clabe_proveedor",
-        entidad: "supplier_clabes",
-        identificador: clabeId,
-        ocurridoEn: ahora,
-      });
+      await listo.auditar(ctx.consulta, actor, { accion: "alta_proveedor", identificador: proveedorId });
+      await listo.auditar(ctx.consulta, actor, { accion: "clabe_proveedor", identificador: clabeId });
       return { id: proveedorId, decision };
     });
     return { ...guardado, mensaje: mensajeDeAlta(guardado.decision) };
@@ -137,27 +105,6 @@ export async function darDeAltaProveedor(
     }
     throw error;
   }
-}
-
-/**
- * Guarda un snapshot con el mismo lector que el botón de la lista.
- * Una fila rota rechaza el archivo entero. La copia nueva relee a los proveedores.
- * No hay ruta que llame a esta función: el botón usa el servicio de la lista.
- */
-export async function guardarListado69b(
-  texto: string,
-  deps?: DependenciasProveedores,
-): Promise<{ filas: number; fechaArchivo: string }> {
-  const leido = leerArchivo69b(texto);
-  if (!leido.ok) throw new ErrorDeDominio(leido.codigo);
-  const listo = resolver(deps);
-  await listo.repositorio.guardarSnapshot({
-    id: randomUUID(),
-    fechaArchivo: leido.fechaArchivo,
-    cargadoEn: listo.ahora(),
-    filas: leido.filas,
-  });
-  return { filas: leido.filas.length, fechaArchivo: leido.fechaArchivo };
 }
 
 function prepararEntrada(entrada: EntradaAltaProveedor): {
@@ -198,27 +145,6 @@ function errorDeRazon(razon: string): string | null {
   return null;
 }
 
-async function auditar(fn: Auditar, consulta: Consulta, evento: HechoProveedor): Promise<void> {
-  try {
-    await fn(evento, consultaSinCierre(consulta));
-  } catch (error) {
-    if (error instanceof ErrorDeDominio) throw error;
-    throw new ErrorDeDominio("auditoria_no_disponible");
-  }
-}
-
-function consultaSinCierre(consulta: Consulta): Consulta {
-  return {
-    async query(sql, params) {
-      const verbo = (sql.trim().toLowerCase().split(/\s+/)[0] ?? "").replace(/;$/, "");
-      if (verbo === "begin" || verbo === "commit" || verbo === "rollback" || verbo === "start") {
-        throw new ErrorDeDominio("auditoria_no_disponible");
-      }
-      return consulta.query(sql, params);
-    },
-  };
-}
-
 function resolver(deps?: DependenciasProveedores): {
   repositorio: RepositorioProveedores;
   ahora: () => Date;
@@ -229,6 +155,6 @@ function resolver(deps?: DependenciasProveedores): {
     repositorio: deps?.repositorio ?? repositorioPg(),
     ahora: deps?.ahora ?? (() => new Date()),
     almacen: deps?.almacen ?? almacenVercel(),
-    auditar: deps?.auditar ?? registrarHechoProveedor,
+    auditar: deps?.auditar ?? auditarPorDefecto,
   };
 }

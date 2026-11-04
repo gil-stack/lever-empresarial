@@ -1,7 +1,7 @@
 import { decisionGuardada } from "../../dominio/proveedores";
-import { conTransaccion, consultar, type Consulta } from "../session/db";
-import { ErrorDeDominio } from "../session/error-de-dominio";
-import { ROLES, type Rol } from "../session/tipos";
+import { baseCliente } from "../../nucleo/contexto";
+import { bloquearEmpresa, conContexto, type Consulta } from "../../nucleo/db";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import type {
   ClabeNueva,
   ContextoProveedores,
@@ -9,19 +9,10 @@ import type {
   LecturaLista,
   ProveedorNuevo,
   RepositorioProveedores,
-  SnapshotNuevo,
 } from "./tipos";
 
-// El company_id sale de la membresía. Ninguna lectura trae la clave del archivo ni un hash.
+// La empresa es la del contexto. Ninguna lectura trae la clave del archivo ni un hash.
 export const SQL = {
-  bloquearEmpresa: `
-    select m.company_id, m.rol
-    from memberships m
-    join companies c on c.id = m.company_id
-    where m.user_id = $1
-    for update of c
-  `,
-  puerta: "select rol, company_id from memberships where user_id = $1",
   rfcOcupado: `
     select 1 as presente
     from suppliers
@@ -68,59 +59,32 @@ export const SQL = {
     insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde)
     values ($1, $2, $3, $4, true, $5)
   `,
-  insertarSnapshot: `
-    insert into lista_69b_snapshots (id, fecha_archivo, cargado_en)
-    values ($1, $2::date, $3)
-  `,
 } as const;
-
-const LOTE = 400;
 
 export function repositorioPg(): RepositorioProveedores {
   return {
-    conEmpresa(userId, fn) {
-      return conTransaccion(async (consulta) => {
-        const puerta = await consulta.query(SQL.bloquearEmpresa, [userId]);
-        const fila = puerta.rows[0] as { company_id?: unknown; rol?: unknown } | undefined;
-        if (!fila || typeof fila.company_id !== "string") throw new ErrorDeDominio("sin_empresa");
-        const rol = rolLeido(fila.rol);
-        if (!rol) throw new ErrorDeDominio("base_no_disponible");
-        return fn(contexto(consulta, fila.company_id, rol));
+    conEmpresa(ctx, fn) {
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        await bloquearEmpresa(consulta, ctx.empresa.id);
+        return fn(contexto(consulta, ctx.empresa.id));
       });
     },
-    async leer(userId) {
-      const puerta = await consultar(SQL.puerta, [userId]);
-      const miembro = puerta.rows[0] as { rol?: unknown; company_id?: unknown } | undefined;
-      if (!miembro || typeof miembro.company_id !== "string") return null;
-      const rol = rolLeido(miembro.rol);
-      if (!rol) throw new ErrorDeDominio("base_no_disponible");
-      const [proveedores, snapshot] = await Promise.all([
-        consultar(SQL.proveedores, [miembro.company_id]),
-        consultar(SQL.snapshot, []),
-      ]);
-      return {
-        rol,
-        lista: mapearLista(snapshot.rows[0]),
-        proveedores: proveedores.rows.map((fila) => mapearProveedor(fila)),
-      };
-    },
-    async guardarSnapshot(snapshot) {
-      await conTransaccion(async (consulta) => {
-        await consulta.query(SQL.insertarSnapshot, [snapshot.id, snapshot.fechaArchivo, snapshot.cargadoEn]);
-        await insertarFilas(consulta, snapshot);
-        await consulta.query("select releer_proveedores_69b($1::uuid, $2::timestamptz)", [
-          snapshot.id,
-          snapshot.cargadoEn,
-        ]);
+    leer(ctx) {
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        const proveedores = await consulta.query(SQL.proveedores, [ctx.empresa.id]);
+        const snapshot = await consulta.query(SQL.snapshot, []);
+        return {
+          lista: mapearLista(snapshot.rows[0]),
+          proveedores: proveedores.rows.map((fila) => mapearProveedor(fila)),
+        };
       });
     },
   };
 }
 
-function contexto(consulta: Consulta, companyId: string, rol: Rol): ContextoProveedores {
+function contexto(consulta: Consulta, companyId: string): ContextoProveedores {
   return {
     companyId,
-    rol,
     consulta,
     async rfcOcupado(rfc) {
       const resultado = await consulta.query(SQL.rfcOcupado, [companyId, rfc]);
@@ -185,23 +149,6 @@ function contexto(consulta: Consulta, companyId: string, rol: Rol): ContextoProv
   };
 }
 
-async function insertarFilas(consulta: Consulta, snapshot: SnapshotNuevo): Promise<void> {
-  for (let inicio = 0; inicio < snapshot.filas.length; inicio += LOTE) {
-    const lote = snapshot.filas.slice(inicio, inicio + LOTE);
-    const valores: string[] = [];
-    const params: unknown[] = [];
-    lote.forEach((fila, indice) => {
-      const base = indice * 3;
-      valores.push(`($${base + 1}, $${base + 2}, $${base + 3})`);
-      params.push(snapshot.id, fila.rfc, fila.situacion);
-    });
-    await consulta.query(
-      `insert into lista_69b_rows (snapshot_id, rfc, situacion) values ${valores.join(", ")} on conflict (snapshot_id, rfc, situacion) do nothing`,
-      params,
-    );
-  }
-}
-
 function mapearProveedor(fila: unknown) {
   const registro = fila as {
     id?: unknown;
@@ -247,10 +194,6 @@ function mapearLista(fila: unknown) {
   const cargadoEn = instanteIso(registro.cargado_en);
   if (!fechaArchivo || !cargadoEn) throw new ErrorDeDominio("base_no_disponible");
   return { fechaArchivo, cargadoEn };
-}
-
-function rolLeido(valor: unknown): Rol | null {
-  return ROLES.find((rol) => rol === valor) ?? null;
 }
 
 function fechaDe(valor: unknown): string | null {

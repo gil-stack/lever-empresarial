@@ -71,20 +71,61 @@ export function conexionIniciada(): boolean {
   return iniciada;
 }
 
-export async function consultar(
-  sql: string,
-  params: readonly unknown[] = [],
-): Promise<{ rows: unknown[]; rowCount: number }> {
-  try {
-    const actual = await obtenerPool();
-    const resultado = await actual.query(sql, [...params]);
-    return { rows: resultado.rows, rowCount: resultado.rowCount ?? 0 };
-  } catch (error) {
-    throw traducirErrorDeBase(error);
-  }
+/** Rol de base al que baja cada transacción. Ninguno es dueño de las tablas ni salta RLS. */
+export const ROLES_DE_BASE = ["plataforma_cliente", "plataforma_sofipo"] as const;
+export type RolDeBase = (typeof ROLES_DE_BASE)[number];
+
+/** Lo que Postgres sabe de la petición. Las políticas de RLS leen estas tres variables. */
+export type ContextoDeBase = {
+  rol: RolDeBase;
+  companyId?: string | null;
+  userId?: string | null;
+  operadorId?: string | null;
+};
+
+const UUID_DE_CONTEXTO = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Toda consulta de negocio pasa por aquí. Abre una transacción explícita,
+ * baja al rol de base y fija el contexto con set_config local: Neon agrupa
+ * conexiones en modo transacción y un ajuste de sesión pasaría a otra petición.
+ */
+export async function conContexto<T>(
+  base: ContextoDeBase,
+  fn: (consulta: Consulta) => Promise<T>,
+): Promise<T> {
+  if (!(ROLES_DE_BASE as readonly string[]).includes(base.rol)) throw new ErrorDeDominio("base_no_disponible");
+  const companyId = valorDeContexto(base.companyId);
+  const userId = valorDeContexto(base.userId);
+  const operadorId = valorDeContexto(base.operadorId);
+  return conTransaccion(async (consulta) => {
+    await consulta.query(`set local role ${base.rol}`);
+    await consulta.query(
+      "select set_config('app.company_id', $1, true), set_config('app.user_id', $2, true), set_config('app.operator_id', $3, true)",
+      [companyId, userId, operadorId],
+    );
+    return fn(consulta);
+  });
 }
 
-export async function conTransaccion<T>(fn: (consulta: Consulta) => Promise<T>): Promise<T> {
+/**
+ * Serializa las escrituras de una empresa dentro de la transacción. Un candado
+ * consultivo no pide permiso de escribir la fila de la empresa, que el rol
+ * cliente no tiene. Falla si la empresa no es visible en el contexto.
+ */
+export async function bloquearEmpresa(consulta: Consulta, companyId: string): Promise<void> {
+  const visible = await consulta.query("select id from companies where id = $1", [companyId]);
+  if (visible.rows.length !== 1) throw new ErrorDeDominio("sin_empresa");
+  await consulta.query("select pg_advisory_xact_lock(hashtextextended($1::text, 814272))", [companyId]);
+}
+
+function valorDeContexto(valor: string | null | undefined): string {
+  if (valor === null || valor === undefined) return "";
+  if (!UUID_DE_CONTEXTO.test(valor)) throw new ErrorDeDominio("base_no_disponible");
+  return valor;
+}
+
+async function conTransaccion<T>(fn: (consulta: Consulta) => Promise<T>): Promise<T> {
   const cliente = await conectar();
   const consulta = comoConsulta(cliente);
   try {
@@ -112,12 +153,14 @@ export function traducirErrorDeBase(error: unknown): Error {
   if (error instanceof ErrorDeDominio) return error;
   const codigo = campo(error, "code");
   const marca = `${campo(error, "constraint")} ${campo(error, "table")}`.toLowerCase();
+  if (codigo === "42501") return new ErrorDeDominio("sin_permiso");
   if (codigo === "23505") {
     if (marca.includes("suppliers_rfc")) return new ErrorDeDominio("proveedor_duplicado");
     if (marca.includes("rfc")) return new ErrorDeDominio("rfc_duplicado");
     if (marca.includes("correo")) return new ErrorDeDominio("correo_duplicado");
     if (marca.includes("token_hash")) return new ErrorDeDominio("sesion_duplicada");
-    if (marca.includes("membership")) return new ErrorDeDominio("segunda_razon_social");
+    if (marca.includes("membership")) return new ErrorDeDominio("membresia_existente");
+    if (marca.includes("platform_staff")) return new ErrorDeDominio("personal_existente");
     if (marca.includes("cost_centers_nombre")) return new ErrorDeDominio("centro_duplicado");
     if (marca.includes("employees_un_usuario")) return new ErrorDeDominio("persona_repetida");
     if (marca.includes("policy_categories")) return new ErrorDeDominio("categoria_duplicada");
@@ -144,8 +187,10 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (dePrecio) return new ErrorDeDominio(dePrecio);
     if (CODIGOS_DE_FIRMA.has(mensaje)) return new ErrorDeDominio(mensaje);
     if (CODIGOS_DE_CLABE.has(mensaje)) return new ErrorDeDominio(mensaje);
+    if (CODIGOS_DE_TENENCIA.has(mensaje)) return new ErrorDeDominio(mensaje);
     const deProveedor = FRASES_DE_PROVEEDOR[mensaje.trim()];
     if (deProveedor) return new ErrorDeDominio(deProveedor);
+    if (FRASES_DE_AUDITORIA.has(mensaje)) return new ErrorDeDominio("auditoria_no_disponible");
   }
   if (codigo === "23514" && marca.includes("lotes_prueba_dos_firmas")) {
     return new ErrorDeDominio("misma_persona_en_las_dos_firmas");
@@ -161,6 +206,18 @@ const CODIGOS_DE_CLABE = new Set([
   "clabe_ya_cerrada",
   "historial_de_clabe_no_se_borra",
   "auditoria_de_clabe_ausente",
+]);
+
+const CODIGOS_DE_TENENCIA = new Set([
+  "invitacion_cerrada",
+  "invitacion_vencida",
+  "invitacion_no_se_borra",
+]);
+
+const FRASES_DE_AUDITORIA = new Set([
+  "auditoria_de_rol_ausente",
+  "auditoria_de_lista_ausente",
+  "audit_log solo acepta inserciones",
 ]);
 
 const FRASES_DE_PROVEEDOR: Readonly<Record<string, string>> = {

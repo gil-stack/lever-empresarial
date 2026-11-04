@@ -456,6 +456,13 @@ h1 + .rfc-cuenta {
   margin-top: 28px;
 }
 
+/* Varias casillas dentro de un campo: roles combinables. */
+.opciones {
+  display: grid;
+  gap: 10px;
+  margin-top: 4px;
+}
+
 .confirmacion {
   display: flex;
   gap: 12px;

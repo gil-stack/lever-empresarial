@@ -1,72 +1,38 @@
-import assert, { AssertionError } from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
-import path from "node:path";
+import assert from "node:assert/strict";
 import { test } from "node:test";
-import { fileURLToPath } from "node:url";
 
 import { darDeAltaEmpresa, leerEmpresa } from "../../src/server/company/servicio.ts";
-import { ErrorDeDominio } from "../../src/server/session/error-de-dominio.ts";
-import { NOMBRE_COOKIE } from "../../src/server/session/cookie.ts";
-import { cerrarConexion } from "../../src/server/session/db.ts";
-import { abrirCuenta, leerSesion } from "../../src/server/session/servicio.ts";
+import { invitarAdministrador, contextoDePersonal } from "../../src/server/plataforma/servicio.ts";
+import { aceptarInvitacion } from "../../src/server/invitaciones/servicio.ts";
+import { completarSegundoFactor } from "../../src/server/session/servicio.ts";
+import { cerrarConexion } from "../../src/nucleo/db.ts";
+import { resolverContexto } from "../../src/server/tenencia/resolver.ts";
 import { DIRECTORIO_MIGRACIONES, evaluarEsquema } from "./esquema.ts";
-import { aplicarArchivo, conBaseDesechable, exigirBaseDesechable } from "./postgres.ts";
+import { aplicarArchivo, conBaseDesechable, consultarJson, ejecutar, exigirBaseDesechable } from "./postgres.ts";
 
 /**
- * Fase 1. El usuario de la empresa A no lee la empresa B.
- *
- * Corre con `node --test tests/aislamiento/aislamiento.test.ts`.
- * Lee con `leerSesion` y `leerEmpresa` de `src/server`. No hay un SQL paralelo.
- *
- * Hace falta AISLAMIENTO_DATABASE_URL: un Postgres desechable, no el libro.
- * La prueba crea una base, aplica las seis migraciones y la borra. Apunta
- * DATABASE_URL solo a esa base, en este proceso, y no imprime la URL.
- * Si no hay base desechable, falla: no se omite y no se da por pasada.
+ * Fase 4. La empresa A no se lee desde la empresa B, ni por el servicio ni
+ * por Postgres cuando el filtro de la aplicación no está.
  */
 
-const AQUI = path.dirname(fileURLToPath(import.meta.url));
-const CONTRASENA = "clave-segura-12";
 const RFC_A = "TCM010101AB1";
 const RFC_B = "CABL840215RF4";
-const RAZON_A = "Escuela Alfa Aislamiento";
-const RAZON_B = "Taller Beta Aislamiento";
+const CORREO = "contador-aislamiento@ejemplo.mx";
+const CLAVE = "clave-segura-12";
+const HASH = "a".repeat(53);
 
-test("el aislamiento lee con leerEmpresa y leerSesion, no con un SQL paralelo", () => {
-  const otras = readdirSync(AQUI)
-    .filter((nombre) => nombre.endsWith(".ts") && nombre !== "aislamiento.test.ts")
-    .map((nombre) => readFileSync(path.join(AQUI, nombre), "utf8"))
-    .join("\n");
-  const esta = readFileSync(new URL("./aislamiento.test.ts", import.meta.url), "utf8");
-  assert.match(esta, /leerEmpresa/);
-  assert.match(esta, /leerSesion/);
-  assert.match(esta, /src\/server\/company\/servicio/);
-  assert.match(esta, /src\/server\/session\/servicio/);
-  assert.equal(otras.includes("crearLectura"), false);
-  assert.equal(otras.includes("sqlLeerEmpresa"), false);
-  assert.equal(otras.includes("LecturaDeNegocio"), false);
-});
-
-test("el usuario de la empresa A no lee la empresa B", async () => {
+test("el usuario de la empresa A no lee la empresa B, y Postgres tampoco", async () => {
   const esquema = evaluarEsquema(DIRECTORIO_MIGRACIONES);
   if (esquema.pendiente) throw new Error(esquema.motivo);
-  if (esquema.archivos.length < 6) {
-    throw new Error(
-      `La prueba de aislamiento no se da por pasada: hacían falta las seis migraciones y hay ${esquema.archivos.length}.`,
-    );
-  }
 
   const urlAdmin = exigirBaseDesechable();
   const previo = process.env.DATABASE_URL;
   await conBaseDesechable(urlAdmin, async (url) => {
-    for (const archivo of esquema.archivos) {
-      aplicarArchivo(url, archivo);
-    }
+    for (const archivo of esquema.archivos) aplicarArchivo(url, archivo);
     await cerrarConexion();
     process.env.DATABASE_URL = url;
     try {
-      await escenario();
-    } catch (error) {
-      throw sinSecreto(error);
+      await escenario(url);
     } finally {
       await cerrarConexion();
       if (previo === undefined) delete process.env.DATABASE_URL;
@@ -75,127 +41,143 @@ test("el usuario de la empresa A no lee la empresa B", async () => {
   });
 });
 
-async function escenario(): Promise<void> {
-  const alfa = await abrirEmpresa({
-    nombre: "Persona Alfa",
-    correo: "alfa-aislamiento@ejemplo.mx",
-    rfc: RFC_A,
-    razonSocial: RAZON_A,
-    codigoPostal: "06600",
-    regimen: "601",
-    usoCfdi: "G03",
-  });
-  const beta = await abrirEmpresa({
-    nombre: "Persona Beta",
-    correo: "beta-aislamiento@ejemplo.mx",
-    rfc: RFC_B,
-    razonSocial: RAZON_B,
-    codigoPostal: "44100",
-    regimen: "612",
-    usoCfdi: "G03",
-  });
-
-  const sesionA = await leerSesion(alfa.cookie);
-  const sesionB = await leerSesion(beta.cookie);
-  assert.ok(sesionA);
-  assert.ok(sesionB);
-  assert.equal(sesionA.companyId, alfa.empresaId);
-  assert.equal(sesionB.companyId, beta.empresaId);
-  assert.notEqual(sesionA.companyId, beta.empresaId);
-
-  const aPideB = await leerEmpresa(sesionA, { companyId: beta.empresaId });
-  assert.equal(aPideB?.id, alfa.empresaId);
-  assert.equal(aPideB?.rfc, RFC_A);
-  assert.equal(aPideB?.razonSocial, RAZON_A);
-  assert.equal(json(aPideB).includes(beta.empresaId), false);
-  assert.equal(json(aPideB).includes(RFC_B), false);
-  assert.equal(json(aPideB).includes(RAZON_B), false);
-  assert.equal(json(sesionA).includes(RFC_B), false);
-  assert.equal(json(sesionA).includes(RAZON_B), false);
-  assert.equal(json(sesionA).includes(beta.empresaId), false);
-
-  const bPideA = await leerEmpresa(sesionB, { companyId: alfa.empresaId });
-  assert.equal(bPideA?.id, beta.empresaId);
-  assert.equal(bPideA?.rfc, RFC_B);
-  assert.equal(json(bPideA).includes(RFC_A), false);
-  assert.equal(json(bPideA).includes(RAZON_A), false);
-  assert.equal(json(bPideA).includes(alfa.empresaId), false);
-
-  const suelta = await abrirCuenta({
-    nombre: "Persona Suelta",
-    correo: "suelta-aislamiento@ejemplo.mx",
-    contrasena: CONTRASENA,
-  });
-  const sesionSuelta = await leerSesion(suelta.setCookie);
-  assert.equal(sesionSuelta?.companyId, null);
-  assert.equal(await leerEmpresa(sesionSuelta), null);
-  assert.equal(json(sesionSuelta).includes(RFC_A), false);
-  assert.equal(json(sesionSuelta).includes(RFC_B), false);
-
-  const tokenVencido = "e".repeat(43);
-  await abrirCuenta(
-    {
-      nombre: "Persona Vencida",
-      correo: "vencida-aislamiento@ejemplo.mx",
-      contrasena: CONTRASENA,
-    },
-    {
-      ahora: () => new Date("2000-01-01T00:00:00.000Z"),
-      token: () => tokenVencido,
-    },
+async function escenario(url: string): Promise<void> {
+  sembrarPersonal(url);
+  const personal = await contextoDePersonal("sofipo-aislamiento@ejemplo.mx");
+  const alfa = await darDeAltaEmpresa(
+    personal,
+    { rfc: RFC_A, razonSocial: "Escuela Alfa Aislamiento", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" },
+    { demostracion: true },
   );
-  assert.equal(await leerSesion(`${NOMBRE_COOKIE}=${tokenVencido}`), null);
-  assert.equal(await leerSesion(`${NOMBRE_COOKIE}=${"f".repeat(43)}`), null);
-
-  await assert.rejects(
-    leerEmpresa(null, { companyId: beta.empresaId }),
-    (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "sesion_ausente",
+  const beta = await darDeAltaEmpresa(
+    personal,
+    { rfc: RFC_B, razonSocial: "Taller Beta Aislamiento", codigoPostal: "44100", regimen: "612", usoCfdi: "G03" },
+    { demostracion: true },
   );
-}
 
-async function abrirEmpresa(datos: {
-  nombre: string;
-  correo: string;
-  rfc: string;
-  razonSocial: string;
-  codigoPostal: string;
-  regimen: string;
-  usoCfdi: string;
-}): Promise<{ cookie: string; empresaId: string }> {
-  const abierta = await abrirCuenta({
-    nombre: datos.nombre,
-    correo: datos.correo,
-    contrasena: CONTRASENA,
+  const primera = await invitarAdministrador(personal, {
+    companyId: alfa.id,
+    razonSocial: alfa.razonSocial,
+    nombre: "Contadora Norte",
+    correo: CORREO,
   });
-  const empresa = await darDeAltaEmpresa(abierta.sesion, {
-    rfc: datos.rfc,
-    razonSocial: datos.razonSocial,
-    codigoPostal: datos.codigoPostal,
-    regimen: datos.regimen,
-    usoCfdi: datos.usoCfdi,
+  const sesionA = await entrar(primera.emitida.token);
+  const soloAlfa = await resolverContexto({
+    sesion: sesionA,
+    empresaPedida: null,
+    peticionId: null,
+    superficie: "cliente",
   });
-  return { cookie: abierta.setCookie, empresaId: empresa.id };
+  assert.equal(soloAlfa.eleccion, "unica");
+  const leida = await leerEmpresa(soloAlfa.ctx);
+  assert.equal(leida?.id, alfa.id);
+  assert.equal(leida?.rfc, RFC_A);
+  assert.equal(JSON.stringify(leida).includes(RFC_B), false);
+
+  const ajena = await resolverContexto({
+    sesion: sesionA,
+    empresaPedida: beta.id,
+    peticionId: null,
+    superficie: "cliente",
+  });
+  assert.equal(ajena.eleccion, "ajena");
+  assert.equal(ajena.ctx.empresa, null);
+
+  const segunda = await invitarAdministrador(personal, {
+    companyId: beta.id,
+    razonSocial: beta.razonSocial,
+    nombre: "Contadora Norte",
+    correo: CORREO,
+  });
+  const sesionB = await entrar(segunda.emitida.token);
+  const enBeta = await resolverContexto({
+    sesion: sesionB,
+    empresaPedida: beta.id,
+    peticionId: null,
+    superficie: "cliente",
+  });
+  assert.equal(enBeta.eleccion, "ruta");
+  const leidaBeta = await leerEmpresa(enBeta.ctx);
+  assert.equal(leidaBeta?.rfc, RFC_B);
+  assert.equal(JSON.stringify(leidaBeta).includes(RFC_A), false);
+
+  const enAlfa = await resolverContexto({
+    sesion: sesionB,
+    empresaPedida: alfa.id,
+    peticionId: null,
+    superficie: "cliente",
+  });
+  assert.equal((await leerEmpresa(enAlfa.ctx))?.rfc, RFC_A);
+
+  const sinFiltro = consultarJson<Array<{ empresas: number; cajones: number }>>(
+    url,
+    `begin;
+     set local role plataforma_cliente;
+     select json_agg(fila) from (
+       select
+         (select count(*) from companies) as empresas,
+         (select count(*) from drawers) as cajones
+     ) fila;`,
+  );
+  // set local role inside a select script: psql runs the whole script. json_agg
+  // after set role sees RLS. The begin/rollback keeps it in one transaction.
+  assert.equal(sinFiltro[0]?.empresas, 0);
+  assert.equal(sinFiltro[0]?.cajones, 0);
+
+  const deAlfa = consultarJson<Array<{ empresas: number }>>(
+    url,
+    `begin;
+     set local role plataforma_cliente;
+     select set_config('app.company_id', '${alfa.id}', true);
+     select json_agg(fila) from (select (select count(*) from companies) as empresas) fila;`,
+  );
+  assert.equal(deAlfa[0]?.empresas, 1);
+
+  assert.throws(
+    () =>
+      ejecutar(
+        url,
+        `begin; set local role plataforma_cliente; insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values (gen_random_uuid(), current_date, now()); commit;`,
+      ),
+    /permission denied|sin_permiso/,
+  );
+
+  ejecutar(
+    url,
+    `begin;
+     savepoint marca;
+     insert into cost_centers (id, company_id, nombre)
+       values ('88888888-8888-4888-8888-888888888888', '${alfa.id}', 'Obra');
+     insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+       values ((select operator_id from companies where id = '${alfa.id}'),
+         '${alfa.id}', 'miembro', (select user_id from memberships where company_id = '${alfa.id}' limit 1),
+         'cliente', 'alta_centro_costo', 'cost_centers', '88888888-8888-4888-8888-888888888888');
+     release savepoint marca;
+     commit;`,
+  );
+  const centros = consultarJson<Array<{ n: number }>>(
+    url,
+    `select json_agg(fila) from (select count(*)::int as n from cost_centers where nombre = 'Obra') fila`,
+  );
+  assert.equal(centros[0]?.n, 1);
 }
 
-function json(valor: unknown): string {
-  return JSON.stringify(valor);
+async function entrar(token: string) {
+  const parcial = await aceptarInvitacion({ token, contrasena: CLAVE, confirmacion: CLAVE });
+  const completa = await completarSegundoFactor(parcial.setCookie, "totp");
+  assert.equal(completa.sesion.segundoFactor?.metodo, "totp");
+  return completa.sesion;
 }
 
-function sinSecreto(error: unknown): Error {
-  if (error instanceof AssertionError) return error;
-  const secretos: string[] = [];
-  for (const valor of [process.env.DATABASE_URL ?? "", process.env.AISLAMIENTO_DATABASE_URL ?? ""]) {
-    if (!valor) continue;
-    secretos.push(valor);
-    try {
-      const clave = decodeURIComponent(new URL(valor).password);
-      if (clave) secretos.push(clave);
-    } catch {
-      // El valor no es una URL. Igual se redacta entero.
-    }
-  }
-  const texto = error instanceof Error ? error.message : String(error);
-  let limpio = texto;
-  for (const secreto of secretos) limpio = limpio.split(secreto).join("***");
-  return new Error(limpio || "La prueba de aislamiento falló.");
+function sembrarPersonal(url: string): void {
+  ejecutar(
+    url,
+    `insert into users (id, nombre, correo, password_hash)
+       values ('99999999-9999-4999-8999-999999999999', 'Personal', 'sofipo-aislamiento@ejemplo.mx',
+         '$2b$12$${HASH}');
+     insert into platform_staff (operator_id, user_id, estado)
+       values ((select id from operators order by alta_en limit 1), '99999999-9999-4999-8999-999999999999', 'activo');
+     insert into platform_staff_roles (operator_id, user_id, rol)
+       values ((select id from operators order by alta_en limit 1), '99999999-9999-4999-8999-999999999999', 'administracion_plataforma');`,
+  );
 }

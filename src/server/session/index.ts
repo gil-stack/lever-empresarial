@@ -1,5 +1,13 @@
-export { NOMBRE_COOKIE, VIGENCIA_SESION_MS, leerToken } from "./cookie";
-export { ErrorDeDominio } from "./error-de-dominio";
-export { abrirCuenta, cerrarSesion, descartarCuentaSinEmpresa, entrar, leerSesion } from "./servicio";
+export { NOMBRE_COOKIE, NOMBRE_COOKIE_PARCIAL, VIGENCIA_SESION_MS, leerToken, leerTokenParcial } from "./cookie";
+export { ErrorDeDominio } from "../../nucleo/error-de-dominio";
+export {
+  abrirSesionDe,
+  cerrarSesion,
+  completarSegundoFactor,
+  entrar,
+  leerSesion,
+  leerSesionParcial,
+} from "./servicio";
 export type { DependenciasSesion } from "./servicio";
-export type { AltaCuenta, Rol, Sesion, SesionAbierta, UsuarioPublico } from "./tipos";
+export { METODOS_SEGUNDO_FACTOR } from "./tipos";
+export type { MetodoSegundoFactor, Sesion, SesionAbierta, UsuarioPublico } from "./tipos";

@@ -1,15 +1,14 @@
 import type { Metadata } from "next";
 
-import Link from "next/link";
-
 import { Marco } from "@/components/cromo/marco";
-import { puertasDe } from "@/components/cromo/puertas";
+import { vistaDeMarco } from "@/components/cromo/puertas";
 import { PanelPolitica } from "@/components/politica/panel";
 import { CabezaPagina } from "@/components/sistema";
 import type { VistaPolitica } from "@/dominio/politica";
-import { sesionDesdeCookie } from "@/server/entrada";
+import type { ContextoDeTenant } from "@/nucleo/contexto";
+import { abrirRuta, errorConSecreto } from "@/server/entrada";
 import { leerPolitica } from "@/server/politica/servicio";
-import { ErrorDeDominio, type Rol } from "@/server/session";
+import { ErrorDeDominio } from "@/server/session";
 
 export const runtime = "nodejs";
 
@@ -18,21 +17,22 @@ export const metadata: Metadata = {
 };
 
 type Carga =
-  | { tipo: "sin_sesion" }
-  | { tipo: "sin_empresa"; nombre: string; rol: Rol | null }
-  | { tipo: "lista"; nombre: string; rol: Rol | null; vista: VistaPolitica }
-  | { tipo: "aviso"; mensaje: string; nombre: string | null; rol: Rol | null };
+  | { tipo: "sin_empresa" }
+  | { tipo: "lista"; vista: VistaPolitica }
+  | { tipo: "aviso"; mensaje: string };
 
 export default async function PaginaPolitica() {
-  const carga = await cargar();
-  const persona = carga.tipo === "sin_sesion" ? null : carga.nombre ? { nombre: carga.nombre } : null;
-  const puertas = puertasDe(
-    carga.tipo === "sin_sesion" ? null : carga.rol,
-    carga.tipo === "lista" || (carga.tipo === "aviso" && carga.rol !== null),
-  );
+  const apertura = await abrirRuta("/consola/politica");
+  const ctx = apertura.tipo === "libro" ? null : apertura.ctx;
+  const carga =
+    apertura.tipo === "libro"
+      ? ({ tipo: "aviso", mensaje: "No se pudieron leer la política ni los cajones." } as const)
+      : apertura.tipo === "sin_empresa" || apertura.tipo === "sin_permiso" || !ctx
+        ? ({ tipo: "sin_empresa" } as const)
+        : await cargar(ctx);
 
   return (
-    <Marco actual="/consola/politica" persona={persona} {...puertas}>
+    <Marco actual="/consola/politica" vista={vistaDeMarco(ctx)}>
       <main id="contenido">
         {carga.tipo === "lista" ? (
           <PanelPolitica vista={carga.vista} />
@@ -40,13 +40,6 @@ export default async function PaginaPolitica() {
           <div className="consola">
             <CabezaPagina kicker="Política" titulo={titulo(carga)}>
               <p className="lede">{detalle(carga)}</p>
-              {carga.tipo === "sin_sesion" ? (
-                <div className="acciones">
-                  <Link className="boton" href="/entrar">
-                    Entrar
-                  </Link>
-                </div>
-              ) : null}
             </CabezaPagina>
           </div>
         )}
@@ -55,34 +48,26 @@ export default async function PaginaPolitica() {
   );
 }
 
-async function cargar(): Promise<Carga> {
-  let nombre: string | null = null;
-  let rol: Rol | null = null;
+async function cargar(ctx: ContextoDeTenant): Promise<Carga> {
   try {
-    const sesion = await sesionDesdeCookie();
-    if (!sesion) return { tipo: "sin_sesion" };
-    nombre = sesion.usuario.nombre;
-    rol = sesion.rol;
-    const vista = await leerPolitica(sesion);
-    if (!vista) return { tipo: "sin_empresa", nombre, rol };
-    return { tipo: "lista", nombre, rol, vista };
+    const vista = await leerPolitica(ctx);
+    if (!vista) return { tipo: "sin_empresa" };
+    return { tipo: "lista", vista };
   } catch (error) {
-    if (error instanceof ErrorDeDominio) {
-      return { tipo: "aviso", mensaje: mensajeLibro(error.codigo), nombre, rol };
+    if (error instanceof ErrorDeDominio || errorConSecreto(error)) {
+      return { tipo: "aviso", mensaje: mensajeLibro(error instanceof ErrorDeDominio ? error.codigo : "") };
     }
     throw error;
   }
 }
 
 function titulo(carga: Exclude<Carga, { tipo: "lista" }>): string {
-  if (carga.tipo === "sin_sesion") return "Hay que entrar.";
   if (carga.tipo === "sin_empresa") return "Todavía no hay razón social.";
   return "No se pudo consultar la cuenta.";
 }
 
 function detalle(carga: Exclude<Carga, { tipo: "lista" }>): string {
-  if (carga.tipo === "sin_sesion") return "La política se ve después de entrar.";
-  if (carga.tipo === "sin_empresa") return "La política nace con la cuenta.";
+  if (carga.tipo === "sin_empresa") return "La política nace con la empresa. La SOFIPO la da de alta.";
   return carga.mensaje;
 }
 

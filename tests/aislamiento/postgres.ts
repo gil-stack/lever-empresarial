@@ -94,11 +94,15 @@ export function ejecutar(url: string, sql: string): void {
 
 export function consultarJson<T>(url: string, sql: string): T {
   const salida = correrPsql(url, ["-A", "-t", "-c", sql]).trim();
-  if (!salida) throw new Error("La consulta de aislamiento no devolvió JSON.");
+  const json = salida
+    .split("\n")
+    .map((linea) => linea.trim())
+    .find((linea) => linea.startsWith("[") || linea.startsWith("{"));
+  if (!json) throw new Error("La consulta de aislamiento no devolvió JSON.");
   try {
-    return JSON.parse(salida) as T;
+    return JSON.parse(json) as T;
   } catch {
-    throw new Error(`La consulta de aislamiento no devolvió JSON.\n${salida.slice(0, 500)}`);
+    throw new Error(`La consulta de aislamiento no devolvió JSON.\n${json.slice(0, 500)}`);
   }
 }
 

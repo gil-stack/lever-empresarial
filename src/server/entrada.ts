@@ -1,51 +1,84 @@
 import "server-only";
 
-import { cookies } from "next/headers";
+import { cache } from "react";
+import { cookies, headers } from "next/headers";
+import { notFound, redirect } from "next/navigation";
 
-import { leerEmpresa } from "./company";
+import { puede, type ContextoDeTenant } from "../nucleo/contexto";
+import { ErrorDeDominio } from "../nucleo/error-de-dominio";
+import {
+  CABECERA_EMPRESA,
+  CABECERA_PETICION,
+  RUTA_SEGUNDO_FACTOR,
+  rutaDeclarada,
+  type PatronDeRuta,
+} from "../nucleo/rutas";
 import { leerSesion } from "./session";
-import { NOMBRE_COOKIE } from "./session/cookie";
-import { ErrorDeDominio } from "./session/error-de-dominio";
-import type { Rol, Sesion } from "./session/tipos";
+import { NOMBRE_COOKIE, NOMBRE_COOKIE_PARCIAL } from "./session/cookie";
+import { resolverContexto, type ContextoResuelto } from "./tenencia/resolver";
 
-export type Entrada = {
-  nombre: string | null;
-  rfc: string | null;
-  razonSocial: string | null;
-  libroDisponible: boolean;
-  rol: Rol | null;
-};
+export type Apertura =
+  | { tipo: "abierta"; ctx: ContextoDeTenant }
+  | { tipo: "sin_permiso"; ctx: ContextoDeTenant }
+  | { tipo: "sin_empresa"; ctx: ContextoDeTenant }
+  | { tipo: "libro" };
 
-const VACIA: Entrada = {
-  nombre: null,
-  rfc: null,
-  razonSocial: null,
-  libroDisponible: true,
-  rol: null,
-};
+type Resolucion = ContextoResuelto | null | "libro";
 
-/**
- * Lee la cookie que armó `src/server/session` y la empresa de esa membresía.
- * `companyIdPedido` llega del navegador y no autoriza: `leerEmpresa` lo ignora.
- */
-export async function leerEntrada(companyIdPedido?: string | null): Promise<Entrada> {
+/** Una lectura de sesión y de membresías por petición, sin importar cuántas piezas la pidan. */
+export const contextoDePeticion = cache(async (): Promise<Resolucion> => {
   try {
-    const sesion = await sesionDesdeCookie();
-    if (!sesion) return VACIA;
-    const empresa = await leerEmpresa(sesion, { companyId: companyIdPedido });
-    return {
-      nombre: sesion.usuario.nombre,
-      rfc: empresa?.rfc ?? null,
-      razonSocial: empresa?.razonSocial ?? null,
-      libroDisponible: true,
-      rol: sesion.rol,
-    };
+    const [jar, cabeceras] = await Promise.all([cookies(), headers()]);
+    const token = jar.get(NOMBRE_COOKIE)?.value;
+    if (!token) return null;
+    const sesion = await leerSesion(`${NOMBRE_COOKIE}=${token}`);
+    if (!sesion) return null;
+    return await resolverContexto({
+      sesion,
+      empresaPedida: cabeceras.get(CABECERA_EMPRESA),
+      peticionId: cabeceras.get(CABECERA_PETICION),
+      superficie: "cliente",
+    });
   } catch (error) {
-    if (error instanceof ErrorDeDominio || errorConSecreto(error)) {
-      return { nombre: null, rfc: null, razonSocial: null, libroDisponible: false, rol: null };
-    }
+    if (error instanceof ErrorDeDominio || errorConSecreto(error)) return "libro";
     throw error;
   }
+});
+
+/** Para páginas públicas: el contexto si hay sesión, o nada. */
+export async function contextoOpcional(): Promise<ContextoDeTenant | null> {
+  const resuelto = await contextoDePeticion();
+  return resuelto && resuelto !== "libro" ? resuelto.ctx : null;
+}
+
+/**
+ * La página declara su ruta y aquí se decide con el registro de rutas y la
+ * matriz de capacidades. Sin sesión se va a entrar; con varias empresas y
+ * ninguna en la ruta, a elegir; con una empresa ajena en la ruta, no existe.
+ */
+export async function abrirRuta(patron: PatronDeRuta): Promise<Apertura> {
+  const ruta = rutaDeclarada(patron);
+  const resuelto = await contextoDePeticion();
+  if (resuelto === "libro") return { tipo: "libro" };
+  if (!resuelto) {
+    const parcial = (await cookies()).get(NOMBRE_COOKIE_PARCIAL)?.value;
+    redirect(parcial ? RUTA_SEGUNDO_FACTOR : "/entrar");
+  }
+  const { ctx, eleccion } = resuelto;
+  if (eleccion === "ajena") notFound();
+  if (ruta.conEmpresa && eleccion === "pendiente") redirect("/empresas");
+  if (ruta.acceso.tipo === "capacidad" && !ruta.acceso.alguna.some((capacidad) => puede(ctx, capacidad))) {
+    return ctx.empresa || ctx.personal ? { tipo: "sin_permiso", ctx } : { tipo: "sin_empresa", ctx };
+  }
+  return { tipo: "abierta", ctx };
+}
+
+/** Las acciones de servidor piden el mismo contexto. Sin sesión no hay contexto. */
+export async function contextoDeAccion(): Promise<ContextoDeTenant | null> {
+  const resuelto = await contextoDePeticion();
+  if (!resuelto || resuelto === "libro") return null;
+  if (resuelto.eleccion === "ajena") return null;
+  return resuelto.ctx;
 }
 
 export function errorConSecreto(error: unknown): boolean {
@@ -53,20 +86,9 @@ export function errorConSecreto(error: unknown): boolean {
   return /postgres(ql)?:\/\//i.test(texto) || /DATABASE_URL/i.test(texto);
 }
 
-export async function sesionSegura(): Promise<Sesion | null> {
-  try {
-    return await sesionDesdeCookie();
-  } catch (error) {
-    if (error instanceof ErrorDeDominio || errorConSecreto(error)) return null;
-    throw error;
-  }
-}
-
-export async function sesionDesdeCookie() {
-  const jar = await cookies();
-  const token = jar.get(NOMBRE_COOKIE)?.value;
-  if (!token) return null;
-  return leerSesion(`${NOMBRE_COOKIE}=${token}`);
+/** Aplica los encabezados que ya construyó la sesión, en orden. */
+export async function fijarCookiesDeSesion(setCookies: readonly string[]): Promise<void> {
+  for (const setCookie of setCookies) await fijarCookieDeSesion(setCookie);
 }
 
 /** Aplica el encabezado que ya construyó la sesión, sin devolver el token a la página. */
@@ -79,7 +101,7 @@ export async function fijarCookieDeSesion(setCookie: string): Promise<void> {
   const separador = primera.indexOf("=");
   if (separador < 1) throw new ErrorDeDominio("sesion_ausente");
   const nombre = primera.slice(0, separador);
-  if (nombre !== NOMBRE_COOKIE) throw new ErrorDeDominio("sesion_ausente");
+  if (nombre !== NOMBRE_COOKIE && nombre !== NOMBRE_COOKIE_PARCIAL) throw new ErrorDeDominio("sesion_ausente");
   const valor = primera.slice(separador + 1);
   const attrs = new Map<string, string>();
   for (const parte of partes.slice(1)) {
@@ -99,4 +121,3 @@ export async function fijarCookieDeSesion(setCookie: string): Promise<void> {
     ...(expira ? { expires: new Date(expira) } : {}),
   });
 }
-

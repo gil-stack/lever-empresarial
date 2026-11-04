@@ -1,14 +1,14 @@
-import { randomUUID } from "node:crypto";
-
-import { esUuid, puedeEscribirPolitica } from "../../dominio/politica";
-import { conTransaccion, consultar, type Consulta } from "../session/db";
-import { ErrorDeDominio } from "../session/error-de-dominio";
+import { esUuid } from "../../dominio/politica";
+import { baseCliente, puede, type ContextoConEmpresa } from "../../nucleo/contexto";
+import { bloquearEmpresa, conContexto, type Consulta } from "../../nucleo/db";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
+import { actorDeCliente, auditar as auditarEnBitacora } from "../bitacora/auditar";
 import { mapearPolitica } from "./mapear";
 import type { DatosPolitica } from "../../dominio/politica";
 
 /**
- * La empresa sale de la membresía del usuario. El id que mande el navegador
- * no es un parámetro de estas consultas.
+ * La empresa es la del contexto. El id que mande el navegador no es un
+ * parámetro de estas consultas, y RLS vuelve a exigir la empresa.
  */
 
 const CAJONES_JSON = `
@@ -43,7 +43,6 @@ export const SQL = {
   leer: `
     select jsonb_build_object(
       'companyId', m.company_id,
-      'rol', m.rol,
       'plazo', (
         select jsonb_build_object(
           'dias', p.dias_comprobante,
@@ -62,13 +61,16 @@ export const SQL = {
           'personaId', e.id,
           'nombre', e.nombre,
           'correo', coalesce(u.correo, ''),
-          'rol', coalesce(mb.rol, ''),
+          'rol', coalesce((
+            select string_agg(r.rol, ',' order by r.rol)
+            from membership_roles r
+            where r.user_id = e.user_id and r.company_id = e.company_id
+          ), ''),
           'dias', pp.dias_comprobante,
           'vencidos', pp.max_vencidos
         ) order by e.nombre, e.id), '[]'::jsonb)
         from employees e
         left join users u on u.id = e.user_id
-        left join memberships mb on mb.user_id = e.user_id and mb.company_id = e.company_id
         left join policy_persons pp
           on pp.company_id = e.company_id and pp.employee_id = e.id
         where e.company_id = m.company_id
@@ -85,14 +87,7 @@ export const SQL = {
       'cajones', (${CAJONES_JSON}),
       'sinCajon', (${SIN_CAJON_JSON})
     ) as vista
-    from memberships m
-    where m.user_id = $1
-  `,
-  bloquearMiembro: `
-    select company_id, rol
-    from memberships
-    where user_id = $1
-    for update
+    from (select $1::uuid as company_id) m
   `,
   bloquearPolitica: `
     select dias_comprobante, max_vencidos
@@ -144,26 +139,7 @@ export const SQL = {
     delete from policy_categories
     where company_id = $1 and id = $2
   `,
-  auditar: `
-    insert into audit_events (
-      id, company_id, actor_id, accion, entidad, identificador, ocurrido_en
-    ) values ($1, $2, $3, $4, $5, $6, $7)
-  `,
 } as const;
-
-const ACCIONES = new Set([
-  "editar_politica",
-  "editar_umbral",
-  "quitar_umbral",
-  "editar_politica_persona",
-  "quitar_politica_persona",
-  "crear_categoria",
-  "escribir_tope",
-  "quitar_tope",
-  "borrar_categoria",
-]);
-
-const ENTIDADES = new Set(["policies", "policy_persons", "policy_categories"]);
 
 export type EventoPolitica = {
   accion:
@@ -176,14 +152,11 @@ export type EventoPolitica = {
     | "escribir_tope"
     | "quitar_tope"
     | "borrar_categoria";
-  entidad: "policies" | "policy_persons" | "policy_categories";
   identificador: string;
-  ocurridoEn: Date;
 };
 
 export type ContextoEscritura = {
   companyId: string;
-  rol: string;
   plazo: { diasComprobante: number; maxVencidos: number };
   guardarPlazo: (dias: number, vencidos: number) => Promise<void>;
   guardarUmbral: (centavos: number | null) => Promise<void>;
@@ -197,66 +170,53 @@ export type ContextoEscritura = {
 };
 
 export type RepositorioPolitica = {
-  leer: (userId: string) => Promise<DatosPolitica | null>;
-  escribir: (userId: string, fn: (ctx: ContextoEscritura) => Promise<void>) => Promise<void>;
+  leer: (ctx: ContextoConEmpresa) => Promise<DatosPolitica | null>;
+  escribir: (ctx: ContextoConEmpresa, fn: (escritura: ContextoEscritura) => Promise<void>) => Promise<void>;
 };
 
-export function rechazarSiNoEscribe(rol: string): void {
-  if (!puedeEscribirPolitica(rol)) throw new ErrorDeDominio("rol_sin_permiso");
+export function rechazarSiNoEscribe(ctx: ContextoConEmpresa): void {
+  if (!puede(ctx, "cliente.politica.editar")) throw new ErrorDeDominio("rol_sin_permiso");
 }
 
 export function repositorioPg(): RepositorioPolitica {
   return {
-    async leer(userId) {
-      const resultado = await consultar(SQL.leer, [userId]);
-      const fila = resultado.rows[0] as { vista?: unknown } | undefined;
-      if (!fila) return null;
-      return mapearPolitica(fila.vista);
+    leer(ctx) {
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        const resultado = await consulta.query(SQL.leer, [ctx.empresa.id]);
+        const fila = resultado.rows[0] as { vista?: unknown } | undefined;
+        if (!fila) return null;
+        return mapearPolitica(fila.vista, puede(ctx, "cliente.politica.editar"));
+      });
     },
-    escribir(userId, fn) {
-      return conTransaccion(async (consulta) => {
-        const ctx = await abrirEscritura(consulta, userId);
-        await fn(ctx);
+    escribir(ctx, fn) {
+      rechazarSiNoEscribe(ctx);
+      return conContexto(baseCliente(ctx), async (consulta) => {
+        const escritura = await abrirEscritura(consulta, ctx);
+        await fn(escritura);
       });
     },
   };
 }
 
-async function abrirEscritura(consulta: Consulta, userId: string): Promise<ContextoEscritura> {
-  const miembro = await consulta.query(SQL.bloquearMiembro, [userId]);
-  const fila = miembro.rows[0] as { company_id?: unknown; rol?: unknown } | undefined;
-  if (!fila) throw new ErrorDeDominio("sin_empresa");
-  if (!esUuid(fila.company_id) || typeof fila.rol !== "string") {
-    throw new ErrorDeDominio("base_no_disponible");
-  }
-  rechazarSiNoEscribe(fila.rol);
-  const politica = await consulta.query(SQL.bloquearPolitica, [fila.company_id]);
+async function abrirEscritura(consulta: Consulta, ctx: ContextoConEmpresa): Promise<ContextoEscritura> {
+  await bloquearEmpresa(consulta, ctx.empresa.id);
+  const politica = await consulta.query(SQL.bloquearPolitica, [ctx.empresa.id]);
   const plazo = politica.rows[0] as { dias_comprobante?: unknown; max_vencidos?: unknown } | undefined;
   const dias = leerColumnaEntera(plazo?.dias_comprobante);
   const vencidos = leerColumnaEntera(plazo?.max_vencidos);
   if (!plazo || dias === null || vencidos === null) throw new ErrorDeDominio("politica_ausente");
-  return contexto(consulta, {
-    companyId: fila.company_id,
-    rol: fila.rol,
-    actorId: userId,
-    plazo: { diasComprobante: dias, maxVencidos: vencidos },
-  });
+  return contexto(consulta, ctx, { diasComprobante: dias, maxVencidos: vencidos });
 }
 
 function contexto(
   consulta: Consulta,
-  ancla: {
-    companyId: string;
-    rol: string;
-    actorId: string;
-    plazo: { diasComprobante: number; maxVencidos: number };
-  },
+  ctx: ContextoConEmpresa,
+  plazo: { diasComprobante: number; maxVencidos: number },
 ): ContextoEscritura {
-  const companyId = ancla.companyId;
+  const companyId = ctx.empresa.id;
   return {
     companyId,
-    rol: ancla.rol,
-    plazo: ancla.plazo,
+    plazo,
     async guardarPlazo(dias, vencidos) {
       const resultado = await consulta.query(SQL.guardarPlazo, [companyId, dias, vencidos]);
       if (resultado.rowCount !== 1) throw new ErrorDeDominio("politica_ausente");
@@ -295,21 +255,11 @@ function contexto(
       if (resultado.rowCount !== 1) throw new ErrorDeDominio("categoria_ajena");
     },
     async auditar(evento) {
-      if (!ACCIONES.has(evento.accion) || !ENTIDADES.has(evento.entidad)) {
-        throw new ErrorDeDominio("politica_invalida");
-      }
-      if (!esUuid(evento.identificador) || Number.isNaN(evento.ocurridoEn.getTime())) {
-        throw new ErrorDeDominio("politica_invalida");
-      }
-      await consulta.query(SQL.auditar, [
-        randomUUID(),
-        companyId,
-        ancla.actorId,
-        evento.accion,
-        evento.entidad,
-        evento.identificador,
-        evento.ocurridoEn,
-      ]);
+      if (!esUuid(evento.identificador)) throw new ErrorDeDominio("politica_invalida");
+      await auditarEnBitacora(consulta, actorDeCliente(ctx), {
+        accion: evento.accion,
+        identificador: evento.identificador,
+      });
     },
   };
 }

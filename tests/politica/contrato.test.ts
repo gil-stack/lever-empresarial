@@ -60,7 +60,7 @@ describe("el contrato de la migración 0008", () => {
   });
 
   it("la lectura filtra por la membresía y el saldo es la suma", () => {
-    assert.match(SQL.leer, /where m\.user_id = \$1/);
+    assert.match(SQL.leer, /\$1::uuid as company_id/);
     assert.match(SQL.leer, /company_id = m\.company_id/);
     assert.match(SQL.leer, /coalesce\(sum\(p\.centavos\), 0\)/);
     assert.doesNotMatch(SQL.leer, /password/);
@@ -70,7 +70,7 @@ describe("el contrato de la migración 0008", () => {
     assert.doesNotMatch(SQL.crearCategoria, /insert into postings/i);
     const fuente = readFileSync(new URL("src/server/politica/repositorio.ts", RAIZ), "utf8");
     const servicio = readFileSync(new URL("src/server/politica/servicio.ts", RAIZ), "utf8");
-    assert.match(fuente, /rechazarSiNoEscribe\(fila\.rol\)/);
+    assert.match(fuente, /rechazarSiNoEscribe\(ctx\)/);
     assert.equal(fuente.toLowerCase().includes("insert into postings"), false);
     assert.equal(servicio.toLowerCase().includes("insert into postings"), false);
     assert.equal(fuente.includes("${userId}"), false);
