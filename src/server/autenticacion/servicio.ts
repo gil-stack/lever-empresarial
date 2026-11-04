@@ -51,6 +51,8 @@ export type DependenciasAutenticacion = {
   operadores?: ReadonlySet<string>;
   codigos?: () => string[];
   semilla?: () => Buffer;
+  /** La puerta de operación fija `sofipo`; el resto conserva `cliente`. */
+  superficie?: "cliente" | "sofipo" | "telefono";
 };
 
 export type ResultadoContrasena =
@@ -69,6 +71,7 @@ type Listo = {
   operadores: ReadonlySet<string> | undefined;
   codigos: () => string[];
   semilla: () => Buffer;
+  superficie: "cliente" | "sofipo" | "telefono";
 };
 
 const rellenos = new WeakMap<Hashear, Promise<string>>();
@@ -458,6 +461,7 @@ function resolver(deps?: DependenciasAutenticacion): Listo {
     operadores: deps?.operadores,
     codigos: deps?.codigos ?? codigosNuevos,
     semilla: deps?.semilla ?? semillaNueva,
+    superficie: deps?.superficie ?? "cliente",
   };
 }
 
@@ -521,7 +525,7 @@ async function abrirSesion(
     entradaId: entrada.id,
     userId: entrada.userId,
     metodo,
-    sesion: { id: listo.ids(), tokenHash: hashDeToken(token), expiresAt: venceEn },
+    sesion: { id: listo.ids(), tokenHash: hashDeToken(token), expiresAt: venceEn, superficie: listo.superficie },
     efecto,
     ahora,
   });

@@ -84,6 +84,16 @@ export const RUTAS = [
     acceso: { tipo: "capacidad", alguna: ["cliente.precio.ver", "plataforma.precio.publicar"] },
     conEmpresa: true,
   },
+  // El layout y las acciones vuelven a exigir la superficie SOFIPO y la capacidad.
+  { patron: "/operacion/entrar", superficie: "sofipo", acceso: { tipo: "publica" }, conEmpresa: false },
+  { patron: "/operacion/continuar", superficie: "sofipo", acceso: { tipo: "segundo_factor" }, conEmpresa: false },
+  { patron: "/operacion", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/clientes", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/clientes/[id]", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/aprobaciones", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/alertas", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/comisiones", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/bitacora", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
 ] as const satisfies readonly Ruta[];
 
 export type PatronDeRuta = (typeof RUTAS)[number]["patron"];

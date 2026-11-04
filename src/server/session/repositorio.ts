@@ -41,7 +41,7 @@ export type RepositorioSesion = {
 export const SQL = {
   buscarCorreo: "select id, nombre, correo, password_hash from identidad_por_correo($1)",
   buscarSesion: `
-    select sesion_id as id, user_id, nombre, correo, expires_at, segundo_factor_en, segundo_factor_metodo
+    select sesion_id as id, user_id, nombre, correo, expires_at, superficie, segundo_factor_en, segundo_factor_metodo
     from sesion_por_token($1, $2, $3)
   `,
   insertarSesion:
@@ -68,6 +68,7 @@ type FilaSesion = {
   user_id: unknown;
   nombre: unknown;
   correo: unknown;
+  superficie?: unknown;
   segundo_factor_en?: unknown;
   segundo_factor_metodo?: unknown;
 };
@@ -191,10 +192,17 @@ export function mapearSesion(fila: FilaSesion): Sesion {
   if ((en === null) !== (metodo === null) || (fila.segundo_factor_en != null && !en)) {
     throw new ErrorDeDominio("base_no_disponible");
   }
+  const superficie = ["cliente", "sofipo", "telefono"].find((valor) => valor === fila.superficie) as
+    | "cliente"
+    | "sofipo"
+    | "telefono"
+    | undefined;
+  if (fila.superficie !== undefined && !superficie) throw new ErrorDeDominio("base_no_disponible");
   return {
     id: fila.id,
     venceEn,
     usuario: { id: fila.user_id, nombre: fila.nombre, correo: fila.correo },
+    ...(superficie ? { superficie } : {}),
     segundoFactor: en && metodo ? { metodo, en } : null,
   };
 }
