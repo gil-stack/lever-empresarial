@@ -1,25 +1,27 @@
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { enviadorDesdeEntorno } from "../correo/enviar";
+import { plantillaInvitacionPersonal } from "../correo/plantillas/invitacion-personal";
 import { plantillaInvitacionUsuario } from "../correo/plantillas/invitacion-usuario";
-import { ROLES_CLIENTE, type RolCliente } from "../../nucleo/capacidades";
+import { esRolCliente, esRolPlataforma } from "../../nucleo/capacidades";
 import type { EnviarInvitacion } from "./tipos";
 
-/**
- * Implementación del puerto de correo. Mientras no haya proveedor de correo
- * transaccional, la invitación queda emitida y no sale: el llamador lo dice y
- * se puede reenviar. El frente de correo reemplaza este cuerpo.
- */
 export const enviarInvitacion: EnviarInvitacion = async (mensaje) => {
   const enviador = enviadorDesdeEntorno();
-  const roles = mensaje.roles.filter((rol): rol is RolCliente => (ROLES_CLIENTE as readonly string[]).includes(rol));
-  const plantilla = plantillaInvitacionUsuario({
-    nombre: mensaje.nombre,
-    razonSocial: mensaje.razonSocial ?? "Lever",
-    quienInvita: mensaje.razonSocial ? null : "La operación",
-    roles: roles.length > 0 ? roles : ["administrador"],
-    enlace: mensaje.enlace,
-    venceEn: mensaje.expiraEn,
-  });
+  const plantilla = mensaje.razonSocial === null
+    ? plantillaInvitacionPersonal({
+        nombre: mensaje.nombre,
+        roles: mensaje.roles.filter(esRolPlataforma),
+        enlace: mensaje.enlace,
+        venceEn: mensaje.expiraEn,
+      })
+    : plantillaInvitacionUsuario({
+        nombre: mensaje.nombre,
+        razonSocial: mensaje.razonSocial,
+        quienInvita: null,
+        roles: mensaje.roles.filter(esRolCliente),
+        enlace: mensaje.enlace,
+        venceEn: mensaje.expiraEn,
+      });
   await enviador({
     para: mensaje.para,
     asunto: plantilla.asunto,
