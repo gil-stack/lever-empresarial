@@ -14,7 +14,7 @@ import { plantillaRecuperarContrasena } from "./plantillas/recuperar-contrasena.
 import { enviadorResend } from "./resend.ts";
 import type { MensajeCorreo } from "./tipos.ts";
 
-const CLAVE = "re_secretoDePrueba1234567890";
+const CLAVE = "clave_de_prueba_no_real";
 const REMITENTE = "Plataforma <avisos@ejemplo.mx>";
 const VENCE = new Date("2026-11-07T18:30:00.000Z");
 const ENLACE = `https://app.ejemplo.mx/invitacion/${"a".repeat(43)}`;

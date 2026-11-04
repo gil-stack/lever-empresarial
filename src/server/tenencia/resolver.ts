@@ -95,6 +95,7 @@ export async function resolverContexto(
       empresas: (pertenencia.personal ? [] : pertenencia.membresias).map((m) => ({
         id: m.id,
         razonSocial: m.razonSocial,
+        roles: m.estado === "activa" ? [...m.roles] : [],
       })),
       capacidades: capacidadesDe({ rolesCliente, rolesPlataforma }),
     },

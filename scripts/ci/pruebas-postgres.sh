@@ -1,5 +1,5 @@
 #!/bin/sh
-# Postgres desechable para las cuatro pruebas que crean y borran una base.
+# Postgres desechable para las pruebas que crean y borran una base.
 # No lee DATABASE_URL ni AISLAMIENTO_DATABASE_URL del entorno: así no puede
 # apuntar al libro de production ni al de preview. La contraseña es la del
 # contenedor local, armada aquí para no dejar una URL completa en el archivo.
@@ -48,6 +48,7 @@ unset DATABASE_URL
 
 ./node_modules/.bin/tsx --test \
   tests/aislamiento/aislamiento.test.ts \
+  tests/aislamiento/telefono.test.ts \
   tests/esquema/deriva.test.ts \
   tests/firmas/dos-firmas.test.ts \
   tests/proveedores/historial-clabe.test.ts \

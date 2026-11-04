@@ -1,5 +1,5 @@
 export { NOMBRE_COOKIE_ENTRADA, cookieSinEntrada, leerTokenEntrada } from "./cookie";
-export { destinoSeguro } from "./destino";
+export { destinoDeMembresia, destinoDespuesDeEntrar, destinoSeguro, rutaDeDestino } from "./destino";
 export { dominiosDesdeEntorno, VARIABLE_DOMINIOS, VARIABLE_LLAVE_TOTP } from "./entorno";
 export { origenDe, type Origen } from "./origen";
 export { sesionTieneSegundoFactor } from "./puerta";

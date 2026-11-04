@@ -19,7 +19,7 @@ import {
   pedirOpcionesPasskey,
   pedirRegistroPasskey,
 } from "@/app/entrar/acciones";
-import type { AltaTotp, PasoEntrada } from "@/server/autenticacion";
+import type { AltaTotp, PasoEntrada } from "@/nucleo/autenticacion-tipos";
 
 import { CodigosDeRespaldo, ListoParaEntrar } from "./codigos";
 

@@ -17,6 +17,7 @@ import {
   lineaDeRol,
   partesDeFecha,
   relatoOperabilidad,
+  ROLES_VISIBLES,
   validarAltaPersona,
 } from "./personas.ts";
 
@@ -134,6 +135,26 @@ describe("alta de persona", () => {
     assert.ok(campos.includes("clabe"));
     assert.ok(campos.includes("correo"));
     assert.equal(errores.some((error) => error.mensaje.includes("002180")), false);
+  });
+
+  it("retira solicitante de nuevas altas sin tocar el rol histórico", () => {
+    const resultado = validarAltaPersona(
+      {
+        nombre: "Persona histórica",
+        alta: HOY,
+        baja: "",
+        centroId: CENTRO,
+        jefeId: "",
+        clabe: CLABE,
+        acceso: "nueva",
+        correo: "persona@ejemplo.mx",
+        rol: "solicitante",
+      },
+      HOY,
+    );
+    assert.equal(resultado.ok, false);
+    assert.equal(ROLES_VISIBLES.some((rol) => rol.valor === "solicitante"), false);
+    assert.match(lineaDeRol("solicitante"), /Solicitante/);
   });
 
   it("guarda la CLABE completa cuando el dígito cierra y el contador no gana un permiso aparte", () => {

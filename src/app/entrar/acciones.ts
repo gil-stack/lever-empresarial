@@ -26,6 +26,7 @@ import {
   quitarPasskey,
   quitarTotp,
   resolverRecuperacion,
+  rutaDeDestino,
 } from "@/server/autenticacion";
 import { leerTokenEntrada, NOMBRE_COOKIE_PORTAL, type CookieEntrada } from "@/server/autenticacion/cookie";
 import { encabezadoDeSesion, VIGENCIA_SESION_MS } from "@/server/session/cookie";
@@ -85,7 +86,7 @@ export async function enviarTotp(_previo: EstadoFactor, formData: FormData): Pro
   } catch (error) {
     return await salida(error, destino);
   }
-  redirect(destino);
+  redirect(rutaDeDestino(destino));
 }
 
 export async function enviarRespaldo(_previo: EstadoFactor, formData: FormData): Promise<EstadoFactor> {
@@ -97,7 +98,7 @@ export async function enviarRespaldo(_previo: EstadoFactor, formData: FormData):
   } catch (error) {
     return await salida(error, destino);
   }
-  redirect(destino);
+  redirect(rutaDeDestino(destino));
 }
 
 export async function pedirOpcionesPasskey(): Promise<{ tipo: "opciones"; opciones: unknown } | { tipo: "error"; mensaje: string }> {
@@ -118,7 +119,7 @@ export async function enviarPasskey(respuesta: unknown, siguiente: string): Prom
     const estado = await salida(error, destino);
     return { tipo: "error", mensaje: estado.tipo === "error" ? estado.mensaje : "No se pudo usar la passkey." };
   }
-  redirect(destino);
+  redirect(rutaDeDestino(destino));
 }
 
 export async function enviarInscripcionTotp(_previo: EstadoFactor, formData: FormData): Promise<EstadoFactor> {
@@ -169,10 +170,10 @@ export async function abrirPortal(formData: FormData): Promise<void> {
     if (sesion) {
       const ahora = new Date();
       await fijarCookieDeSesion(encabezadoDeSesion(token, new Date(ahora.getTime() + VIGENCIA_SESION_MS), ahora));
-      redirect(destino);
+      redirect(rutaDeDestino(destino));
     }
   }
-  if (await sesionDesdeCookie()) redirect(destino);
+  if (await sesionDesdeCookie()) redirect(rutaDeDestino(destino));
   redirect(`/entrar?siguiente=${encodeURIComponent(destino)}`);
 }
 
