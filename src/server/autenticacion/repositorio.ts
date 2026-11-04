@@ -74,7 +74,12 @@ export type RecuperacionAbierta = {
   venceEn: Date | null;
 };
 
-export type SesionNueva = { id: string; tokenHash: string; expiresAt: Date };
+export type SesionNueva = {
+  id: string;
+  tokenHash: string;
+  expiresAt: Date;
+  superficie?: "cliente" | "sofipo" | "telefono";
+};
 
 export type NuevaPasskey = {
   id: string;
@@ -190,8 +195,8 @@ export const SQL = {
     )
     returning reto`,
   borrarSesionesDelUsuario: "delete from sessions where user_id = $1",
-  insertarSesion: `insert into sessions (id, user_id, token_hash, expires_at, segundo_factor, entrada_id)
-    values ($1, $2, $3, $4, $5, $6)`,
+  insertarSesion: `insert into sessions (id, user_id, token_hash, expires_at, segundo_factor, entrada_id, superficie)
+    values ($1, $2, $3, $4, $5, $6, $7)`,
   usarTotp: `update auth_totp set ultimo_paso = $2
     where id = $1 and user_id = $3 and revocado_en is null and confirmado_en is not null
       and (ultimo_paso is null or ultimo_paso < $2)`,
@@ -345,8 +350,27 @@ export function repositorioPg(): RepositorioAutenticacion {
           sesion.expiresAt,
           metodo,
           entradaId,
+          sesion.superficie ?? "cliente",
         ]);
-        await registrarHechoAutenticacion(hecho("entrada_completa", sesion.id, userId, ahora), consulta);
+        const sofipo = sesion.superficie === "sofipo";
+        if (sofipo) {
+          const personal = await consulta.query(
+            "select operator_id from platform_staff where user_id = $1 and estado = 'activo'",
+            [userId],
+          );
+          const fila = personal.rows[0] as { operator_id?: unknown } | undefined;
+          if (typeof fila?.operator_id !== "string") throw new ErrorDeDominio("sin_permiso");
+          await consulta.query("set local role plataforma_sofipo");
+          await consulta.query("select set_config('app.operator_id', $1, true), set_config('app.user_id', $2, true)", [
+            fila.operator_id,
+            userId,
+          ]);
+        }
+        await registrarHechoAutenticacion(
+          hecho("entrada_completa", sesion.id, userId, ahora),
+          consulta,
+          sofipo ? "sofipo" : "cliente",
+        );
       });
     },
     async guardarTotpPendiente({ id, userId, secretoCifrado, creadoEn }) {

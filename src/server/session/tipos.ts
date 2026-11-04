@@ -16,6 +16,8 @@ export type Sesion = {
   id: string;
   venceEn: Date;
   usuario: UsuarioPublico;
+  /** Las lecturas de Postgres siempre la traen; los dobles antiguos pueden omitirla. */
+  superficie?: "cliente" | "sofipo" | "telefono";
   /** Vacío: sesión parcial. Solo sirve para verificar el segundo factor. */
   segundoFactor: { metodo: MetodoSegundoFactor; en: Date } | null;
 };

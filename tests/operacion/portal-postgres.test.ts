@@ -1,0 +1,181 @@
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+import { readdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
+
+import { diaAnterior, hoyEnMexico } from "../../src/dominio/operacion/comisiones.ts";
+import type { ContextoDePersonal } from "../../src/nucleo/contexto.ts";
+import { cerrarConexion, conContexto } from "../../src/nucleo/db.ts";
+import { decidirActivacion, solicitarActivacion } from "../../src/server/operacion/activaciones.ts";
+import { asignarAlerta, cerrarAlerta, crearAlerta, listarAlertas } from "../../src/server/operacion/alertas.ts";
+import { listarClientes, leerCliente, registrarProspecto } from "../../src/server/operacion/clientes.ts";
+import { decidirComision, listarComisiones, solicitarComision } from "../../src/server/operacion/comisiones.ts";
+import { invitarPrimerAdministrador } from "../../src/server/operacion/invitaciones.ts";
+import { entrarConRespaldo } from "../../src/server/autenticacion/servicio.ts";
+import { hashDeRespaldo } from "../../src/server/autenticacion/respaldo.ts";
+import { hashDeToken } from "../../src/server/session/hash.ts";
+import { leerSesion } from "../../src/server/session/servicio.ts";
+import { aplicarArchivo, conBaseDesechable, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
+
+const urlAdmin = process.env.AISLAMIENTO_DATABASE_URL?.trim() ?? "";
+const AHORA = new Date();
+const sesionSofipo = { superficie: "sofipo" as const, segundoFactor: { metodo: "totp" as const, en: AHORA } };
+
+describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length === 0 }, () => {
+  it("origina, separa aprobadores, invalida reenvíos, aísla RLS y versiona sin solapes", async () => {
+    exigirBaseDesechable();
+    await conBaseDesechable(urlAdmin, async (urlDuena) => {
+      const dir = join(dirname(fileURLToPath(import.meta.url)), "../../db/migrations");
+      for (const archivo of readdirSync(dir).sort()) if (archivo.endsWith(".sql")) aplicarArchivo(urlDuena, join(dir, archivo));
+      const { Client } = await import("pg");
+      const admin = new Client({ connectionString: urlDuena });
+      await admin.connect();
+      const operador = await admin.query("select id from operators order by alta_en limit 1");
+      const operatorId = String(operador.rows[0].id);
+      const otroOperador = randomUUID();
+      await admin.query("insert into operators (id, nombre) values ($1, 'Otro operador')", [otroOperador]);
+      const a = randomUUID();
+      const b = randomUUID();
+      const externa = randomUUID();
+      for (const [id, correo] of [[a, "a@ejemplo.mx"], [b, "b@ejemplo.mx"], [externa, "externa@ejemplo.mx"]] as const) {
+        await admin.query("insert into users (id, nombre, correo, password_hash) values ($1, $2, $3, null)", [id, correo.split("@")[0].toUpperCase(), correo]);
+      }
+      for (const id of [a, b]) {
+        await admin.query("insert into platform_staff (operator_id, user_id, estado) values ($1, $2, 'activo')", [operatorId, id]);
+        await admin.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'administracion_plataforma')", [operatorId, id]);
+      }
+      await admin.query("insert into platform_staff (operator_id, user_id, estado) values ($1, $2, 'activo')", [otroOperador, externa]);
+      await admin.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'administracion_plataforma')", [otroOperador, externa]);
+      await admin.end();
+
+      process.env.DATABASE_URL = urlDeAplicacion(urlDuena);
+      await cerrarConexion();
+      const ana = contexto(operatorId, a);
+      const beto = contexto(operatorId, b);
+      const ajena = contexto(otroOperador, externa);
+      try {
+        const authOwner = new Client({ connectionString: urlDuena });
+        await authOwner.connect();
+        const entradaToken = "e".repeat(43);
+        const sesionToken = "f".repeat(43);
+        const respaldo = "ABCDEFGHJKLMNPQR";
+        await authOwner.query("update users set password_hash = $2 where id = $1", [b, `$2b$12$${"a".repeat(53)}`]);
+        await authOwner.query(
+          "insert into auth_entradas (id, user_id, token_hash, creada_en, vence_en) values ($1, $2, $3, now(), now() + interval '10 minutes')",
+          [randomUUID(), b, hashDeToken(entradaToken)],
+        );
+        await authOwner.query("insert into auth_codigos_respaldo (id, user_id, codigo_hash, creado_en) values ($1, $2, $3, now())", [
+          randomUUID(), b, hashDeRespaldo(respaldo),
+        ]);
+        await authOwner.end();
+        const cookieSofipo = await entrarConRespaldo(entradaToken, respaldo, {
+          superficie: "sofipo",
+          token: () => sesionToken,
+          ids: () => randomUUID(),
+        });
+        const sesionLeida = await leerSesion(cookieSofipo);
+        assert.equal(sesionLeida?.superficie, "sofipo");
+        assert.equal(sesionLeida?.segundoFactor?.metodo, "respaldo");
+
+        const companyId = await registrarProspecto(ana, {
+          rfc: "AAA010101AAA", razonSocial: "Empresa Uno", codigoPostal: "01000", regimen: "601", usoCfdi: "G03",
+        });
+        assert.equal((await leerCliente(ana, companyId))?.estado, "prospecto");
+        assert.deepEqual(await listarClientes(ajena), []);
+        const solicitudId = await solicitarActivacion(ana, companyId);
+        assert.equal((await leerCliente(ana, companyId))?.estado, "en_alta");
+        await assert.rejects(decidirActivacion(ana, sesionSofipo, { id: solicitudId, aprobada: true }), /misma_persona_en_activacion/);
+        await decidirActivacion(beto, sesionSofipo, { id: solicitudId, aprobada: true });
+        assert.equal((await leerCliente(ana, companyId))?.estado, "activa");
+        assert.ok((await listarAlertas(ana, companyId)).every((alerta) => alerta.estado === "cerrada"));
+
+        let llamadasCorreo = 0;
+        const entregar = async () => { llamadasCorreo += 1; return { entregada: true as const }; };
+        const primera = await invitarPrimerAdministrador(ana, { companyId, nombre: "Admin Uno", correo: "admin@ejemplo.mx" }, { produccion: false, entregar });
+        const segunda = await invitarPrimerAdministrador(ana, { companyId, nombre: "Admin Uno", correo: "admin@ejemplo.mx" }, { produccion: false, entregar });
+        assert.equal(llamadasCorreo, 0);
+        assert.equal(primera.entrega, "omitida_desarrollo");
+        assert.equal(JSON.stringify(segunda).includes("token"), false);
+        const invitaciones = await conContexto({ rol: "plataforma_sofipo", userId: a, operadorId: operatorId }, (consulta) =>
+          consulta.query("select revocada_en from invitations where company_id = $1 order by emitida_en", [companyId]),
+        );
+        assert.equal(invitaciones.rows.length, 2);
+        assert.notEqual((invitaciones.rows[0] as { revocada_en: unknown }).revocada_en, null);
+        assert.equal((invitaciones.rows[1] as { revocada_en: unknown }).revocada_en, null);
+
+        const hoy = hoyEnMexico(new Date());
+        const despues = new Date(`${hoy}T00:00:00Z`);
+        despues.setUTCDate(despues.getUTCDate() + 2);
+        const vigenteDespues = despues.toISOString().slice(0, 10);
+        const comisionId = await solicitarComision(ana, { companyId, tipo: "fondeo", valor: "250", vigenteDesde: hoy });
+        await assert.rejects(decidirComision(ana, sesionSofipo, { id: comisionId, aprobada: true }), /misma_persona_en_comision/);
+        await decidirComision(beto, sesionSofipo, { id: comisionId, aprobada: true });
+        const segundaComision = await solicitarComision(ana, { companyId, tipo: "fondeo", valor: "300", vigenteDesde: vigenteDespues });
+        await decidirComision(beto, sesionSofipo, { id: segundaComision, aprobada: true });
+        const versiones = await listarComisiones(ana, companyId);
+        assert.deepEqual(versiones.map((v) => v.estado).sort(), ["cerrada", "vigente"]);
+        assert.equal(
+          versiones.find((v) => v.id === comisionId)?.vigenteHasta,
+          diaAnterior(vigenteDespues),
+          JSON.stringify({ hoy, vigenteDespues, versiones }),
+        );
+        await assert.rejects(
+          conContexto({ rol: "plataforma_sofipo", userId: b, operadorId: operatorId }, (consulta) => consulta.query(
+            `insert into company_commissions (id, operator_id, company_id, tipo, valor, vigente_desde, estado, solicitada_por, solicitada_en, decidida_por, decidida_en)
+             values ($1, $2, $3, 'fondeo', 100, $4, 'vigente', $5, now(), $6, now())`,
+            [randomUUID(), operatorId, companyId, hoy, a, b],
+          )),
+          /base_no_disponible|comision_sin_auditoria|company_commissions_sin_solape/,
+        );
+
+        await crearAlerta(ana, { companyId, titulo: "Revisar datos", detalle: "Seguimiento operativo", responsableId: a });
+        const abierta = (await listarAlertas(ana, companyId)).find((alerta) => alerta.titulo === "Revisar datos");
+        assert.ok(abierta);
+        await asignarAlerta(ana, abierta.id, b);
+        await cerrarAlerta(beto, abierta.id, "Datos revisados");
+        assert.equal((await listarAlertas(ana, companyId)).find((alerta) => alerta.id === abierta.id)?.motivoCierre, "Datos revisados");
+        await assert.rejects(cerrarAlerta(beto, abierta.id, "Otra vez"), /alerta_ya_cerrada/);
+
+        const rollbackCompanyId = await registrarProspecto(ana, {
+          rfc: "BBB010101BBA", razonSocial: "Empresa Rollback", codigoPostal: "01000", regimen: "601", usoCfdi: "G03",
+        });
+        const rollbackRequestId = await solicitarActivacion(ana, rollbackCompanyId);
+        const owner = new Client({ connectionString: urlDuena });
+        await owner.connect();
+        try {
+          await owner.query("revoke insert on audit_log from plataforma_sofipo");
+          await assert.rejects(
+            decidirActivacion(beto, sesionSofipo, { id: rollbackRequestId, aprobada: true }),
+            /sin_permiso|auditoria_no_disponible/,
+          );
+        } finally {
+          await owner.query("grant insert on audit_log to plataforma_sofipo");
+          await owner.end();
+        }
+        assert.equal((await leerCliente(ana, rollbackCompanyId))?.estado, "en_alta");
+        const pendiente = await conContexto({ rol: "plataforma_sofipo", userId: b, operadorId: operatorId }, (consulta) =>
+          consulta.query("select estado from company_activation_requests where id = $1", [rollbackRequestId]),
+        );
+        assert.equal((pendiente.rows[0] as { estado: string }).estado, "pendiente");
+
+        await assert.rejects(
+          conContexto({ rol: "plataforma_cliente", userId: a }, (consulta) => consulta.query("select id from company_commissions", [])),
+          /sin_permiso/,
+        );
+      } finally {
+        await cerrarConexion();
+        delete process.env.DATABASE_URL;
+      }
+    });
+  });
+});
+
+function contexto(operadorId: string, userId: string): ContextoDePersonal {
+  return {
+    sesionId: randomUUID(), peticionId: null, superficie: "sofipo",
+    persona: { id: userId, nombre: userId, correo: `${userId}@ejemplo.mx` }, segundoFactor: "totp",
+    empresa: null, roles: [], personal: { operadorId, roles: ["administracion_plataforma"] }, empresas: [], capacidades: [],
+  };
+}

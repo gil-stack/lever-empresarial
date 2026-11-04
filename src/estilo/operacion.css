@@ -1,0 +1,368 @@
+/* Superficie de personal SOFIPO. Usa los tokens compartidos, sin tocar la consola. */
+
+.operacion-marco {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+}
+
+.operacion-lateral {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  padding: 24px 18px;
+  border-right: 1px solid var(--linea);
+  background: var(--papel-lateral);
+}
+
+.operacion-nav {
+  display: grid;
+  gap: 4px;
+}
+
+.operacion-nav a {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--tinta-suave);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.operacion-nav a:hover,
+.operacion-nav a[aria-current="page"] {
+  background: var(--realce);
+  color: var(--tinta);
+}
+
+.operacion-cuenta {
+  display: grid;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 18px;
+  border-top: 1px solid var(--linea);
+}
+
+.operacion-cuenta p {
+  display: grid;
+  gap: 2px;
+  font-size: 0.85rem;
+}
+
+.operacion-cuenta span {
+  color: var(--tinta-tenue);
+  font-size: 0.75rem;
+}
+
+.operacion-cuenta .boton-texto {
+  justify-self: start;
+}
+
+.operacion-lienzo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.operacion-pagina {
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 52px 0 80px;
+  container-type: inline-size;
+}
+
+.operacion-cabeza {
+  max-width: 760px;
+  margin-bottom: 36px;
+}
+
+.operacion-cabeza .lede {
+  margin-top: 14px;
+}
+
+.operacion-pagina > .alerta {
+  margin-top: -16px;
+}
+
+.operacion-rejilla {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+.operacion-rejilla-tres {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.operacion-columna {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.operacion-tarjeta {
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--hoja);
+  box-shadow: 0 1px 2px var(--sombra);
+}
+
+.operacion-tarjeta > h2 {
+  margin-bottom: 8px;
+}
+
+.operacion-tarjeta > .lede,
+.operacion-tarjeta > .pista {
+  margin-bottom: 18px;
+}
+
+.operacion-metrica {
+  display: block;
+  margin-top: 12px;
+  font-size: 2.2rem;
+  font-weight: 350;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.operacion-lista {
+  margin: 18px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--linea);
+  list-style: none;
+}
+
+.operacion-lista > li {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.operacion-lista > li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.operacion-fila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 20px;
+}
+
+.operacion-fila-cuerpo {
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
+.operacion-fila h3 a {
+  text-decoration-color: var(--linea-fuerte);
+  text-underline-offset: 4px;
+}
+
+.operacion-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 8px;
+  color: var(--tinta-tenue);
+  font-size: 0.8rem;
+}
+
+.operacion-detalle {
+  margin-top: 8px;
+  color: var(--tinta-suave);
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
+
+.operacion-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+
+.operacion-acciones form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+
+.operacion-acciones .campo {
+  min-width: 180px;
+  margin: 0;
+}
+
+.operacion-acciones .campo label {
+  font-size: 0.75rem;
+}
+
+.operacion-forma {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+}
+
+.operacion-forma .acciones,
+.operacion-forma .operacion-ancho {
+  grid-column: 1 / -1;
+}
+
+.operacion-forma textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 12px 14px;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio-control);
+  background: var(--campo);
+  color: var(--tinta);
+  font: inherit;
+  resize: vertical;
+}
+
+.operacion-tabla-envoltura {
+  overflow-x: auto;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--hoja);
+}
+
+.operacion-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.operacion-tabla th,
+.operacion-tabla td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--linea);
+  text-align: left;
+  vertical-align: top;
+}
+
+.operacion-tabla th {
+  color: var(--tinta-tenue);
+  font-size: 0.72rem;
+  font-weight: 550;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.operacion-tabla tr:last-child td {
+  border-bottom: 0;
+}
+
+.operacion-tabla td small {
+  display: block;
+  margin-top: 4px;
+  color: var(--tinta-tenue);
+}
+
+.operacion-pie {
+  margin-top: auto;
+  padding: 20px 24px;
+  border-top: 1px solid var(--linea);
+  color: var(--tinta-tenue);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.operacion-codigos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 24px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.operacion-codigos li {
+  padding: 10px;
+  border: 1px solid var(--linea);
+  border-radius: 8px;
+  text-align: center;
+}
+
+@container (max-width: 800px) {
+  .operacion-rejilla,
+  .operacion-rejilla-tres {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container (max-width: 580px) {
+  .operacion-forma {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .operacion-tarjeta {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 900px) {
+  .operacion-marco {
+    display: block;
+  }
+
+  .operacion-lateral {
+    position: static;
+    height: auto;
+    gap: 18px;
+    padding: 18px 24px;
+    border-right: 0;
+    border-bottom: 1px solid var(--linea);
+  }
+
+  .operacion-nav {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .operacion-nav a {
+    flex: none;
+  }
+
+  .operacion-cuenta {
+    grid-template-columns: minmax(150px, 1fr) auto auto;
+    align-items: center;
+    margin-top: 0;
+    padding-top: 14px;
+  }
+
+  .operacion-cuenta .selector-tema {
+    max-width: 260px;
+  }
+}
+
+@media (max-width: 560px) {
+  .operacion-pagina {
+    width: min(100% - 32px, 1180px);
+    padding-top: 32px;
+  }
+
+  .operacion-cuenta {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .operacion-cuenta .selector-tema {
+    grid-column: 1 / -1;
+  }
+
+  .operacion-codigos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
