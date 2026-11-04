@@ -28,6 +28,24 @@ export DATABASE_URL_UNPOOLED
 
 `DATABASE_URL_UNPOOLED` es el string directo de la base `plataforma`. El valor no va en el repositorio. La rama de Neon para que preview no comparta el libro de production se crea con `./db/preview-branch.sh`. El detalle está en `db/README.md`.
 
+## Invitaciones y correo
+
+La persona entra por invitación y elige su propia contraseña en `/invitacion/<token>`. La contraseña olvidada se cambia desde `/recuperar`. Los dos enlaces sirven una sola vez y vencen (72 horas la invitación, una hora la recuperación). La base guarda el SHA-256 del token, nunca el token. Cambiar la contraseña cierra todas las sesiones de la persona.
+
+Todos entran con correo, contraseña y segundo factor (passkey, o TOTP si no hay passkey). Aceptar la invitación no abre sesión: después de la contraseña, la persona sigue a registrar su segundo factor, o a verificarlo si ya tenía cuenta. Ese paso lo entrega la autenticación por `ContinuarConSegundoFactor` (`src/server/invitaciones/segundo-factor.ts`); mientras no esté, la contraseña queda guardada y nadie entra. La recuperación no abre sesión ni toca el segundo factor.
+
+El correo sale por Resend, desde `src/server/correo`. Hacen falta tres variables, cuyos valores no van en el repositorio:
+
+| Variable | Qué es |
+| --- | --- |
+| `RESEND_API_KEY` | Clave de envío de Resend. Basta una clave con permiso solo de envío |
+| `CORREO_REMITENTE` | `Nombre <direccion@dominio>`. El dominio tiene que estar verificado en Resend |
+| `URL_APLICACION` | Origen público de los enlaces, por ejemplo `https://app.dominio.mx`. Si falta, se usa el dominio que Vercel asigna al despliegue; nunca el encabezado `Host` de la petición |
+
+Sin clave o sin remitente no se envía nada y la base no se escribe: el servicio responde `correo_no_configurado` con el nombre de la variable que falta, nunca su valor.
+
+Las tablas están propuestas en `db/propuestas/fase-4-invitaciones.sql` hasta alinearlas con la tenencia.
+
 ## Política de comprobantes
 
 La consola muestra los cuatro cajones —Viáticos, Proveedores, Impuestos y Nómina— con el saldo que sale de sus asientos. La política nace en cinco días y cinco comprobantes vencidos, y se puede escribir distinto para cada persona. Las categorías no traen tope. El umbral de proveedores no trae monto. No hay dispersión ni SPEI en este corte. La pantalla está en `/consola/politica`.

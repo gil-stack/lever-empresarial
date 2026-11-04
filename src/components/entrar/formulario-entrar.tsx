@@ -24,6 +24,9 @@ export function FormularioEntrar() {
       <div className="campo">
         <label htmlFor="contrasena">Contraseña</label>
         <input id="contrasena" name="contrasena" type="password" autoComplete="current-password" required />
+        <p className="pista">
+          <Link href="/recuperar">¿Olvidaste tu contraseña?</Link>
+        </p>
       </div>
       <div className="acciones">
         <button type="submit" className="boton" disabled={pendiente}>

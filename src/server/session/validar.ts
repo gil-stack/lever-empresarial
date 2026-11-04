@@ -31,7 +31,7 @@ export function correoValido(correo: string): boolean {
   return correo.length <= 254 && CORREO.test(correo);
 }
 
-function normalizarNombre(valor: unknown): string | null {
+export function normalizarNombre(valor: unknown): string | null {
   if (typeof valor !== "string" || CONTROL.test(valor)) return null;
   const nombre = valor.trim().replace(/\s+/g, " ");
   if (nombre.length < 1 || nombre.length > 120) return null;
@@ -39,7 +39,7 @@ function normalizarNombre(valor: unknown): string | null {
   return nombre;
 }
 
-function contrasenaValida(contrasena: string): boolean {
+export function contrasenaValida(contrasena: string): boolean {
   if (contrasena.length < 10 || contrasena.trim().length === 0) return false;
   // bcrypt solo usa los primeros 72 bytes y truncaría en silencio.
   return Buffer.byteLength(contrasena, "utf8") <= 72;
