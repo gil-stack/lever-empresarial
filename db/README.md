@@ -108,3 +108,15 @@ El comando de migrar se corre una vez por rama, con el `DATABASE_URL_UNPOOLED` d
 `0010_subscriptions.sql` abre una suscripción por empresa, en `recorrido`, con `recorrido_inicio` en la hora de alta. Los treinta días se cuentan desde esa hora; no hay una segunda columna. El alta de una empresa nueva inserta la fila en la misma transacción. Pasar a `aceptada` exige que `platform_pricing.suscripcion_centavos` ya no sea vacío. Si lo está, la base rechaza el cambio.
 
 La página `/precios` y la consola leen esa única fila. `OPERADORES_PLATAFORMA` es la lista de correos, separada por comas, que puede publicar el monto y registrar la aceptación. No es un rol de la empresa. El valor no va en el repositorio. Sin la variable, nadie publica un precio.
+
+## Fase 3. Proveedores, listado 69-B y CLABE
+
+Dos piezas nacieron las dos como `0012`. Quedan en orden, y no se pierde ninguna tabla. El servidor no las aplica al arrancar. Este corte no migra el libro de production.
+
+| Archivo | Tablas |
+| --- | --- |
+| `0012_proveedores.sql` | `documents` y `suppliers`. Única por empresa y RFC. `boton_pago` solo si había archivo y el RFC no aparecía |
+| `0013_lista_69b.sql` | `lista_69b_snapshots` y `lista_69b_rows`. Archivo público, sin `company_id`. Una copia nueva no borra la anterior |
+| `0014_clabes_proveedor.sql` | `supplier_clabes`. Era la otra `0012`. 18 dígitos con el dígito 3, 7 y 1. Cambiar agrega una fila. También enlaza `suppliers.snapshot_id` con el listado |
+
+La constancia es un PDF en el almacén privado. La clave no es una URL y no baja al navegador. La consulta del 69-B usa la copia más reciente. Si no hay copia, no hay pago. Si el RFC está en la copia, el proveedor puede existir y el pago no. No hay envío de dinero.

@@ -41,6 +41,15 @@ export function IconoPolitica() {
   );
 }
 
+export function IconoLista() {
+  return (
+    <Trazo>
+      <path d="M9 6.5h10M9 12h10M9 17.5h7" />
+      <path d="M4.5 6.5h.01M4.5 12h.01M4.5 17.5h.01" />
+    </Trazo>
+  );
+}
+
 export function IconoPersonas() {
   return (
     <Trazo>
@@ -77,6 +86,16 @@ export function IconoPrecios() {
     <Trazo>
       <path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.4 1.4 0 0 1 0 2l-6.7 6.7a1.4 1.4 0 0 1-2 0z" />
       <circle cx="8.5" cy="8.5" r="1.5" />
+    </Trazo>
+  );
+}
+
+export function IconoProveedores() {
+  return (
+    <Trazo>
+      <path d="M4 10.5 12 4.5l8 6" />
+      <path d="M6.5 9.2V20h11V9.2" />
+      <path d="M10 20v-5.5h4V20" />
     </Trazo>
   );
 }

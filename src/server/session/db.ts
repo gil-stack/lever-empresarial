@@ -113,6 +113,7 @@ export function traducirErrorDeBase(error: unknown): Error {
   const codigo = campo(error, "code");
   const marca = `${campo(error, "constraint")} ${campo(error, "table")}`.toLowerCase();
   if (codigo === "23505") {
+    if (marca.includes("suppliers_rfc")) return new ErrorDeDominio("proveedor_duplicado");
     if (marca.includes("rfc")) return new ErrorDeDominio("rfc_duplicado");
     if (marca.includes("correo")) return new ErrorDeDominio("correo_duplicado");
     if (marca.includes("token_hash")) return new ErrorDeDominio("sesion_duplicada");
@@ -120,6 +121,8 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (marca.includes("cost_centers_nombre")) return new ErrorDeDominio("centro_duplicado");
     if (marca.includes("employees_un_usuario")) return new ErrorDeDominio("persona_repetida");
     if (marca.includes("policy_categories")) return new ErrorDeDominio("categoria_duplicada");
+    if (marca.includes("supplier_clabes_una_vigente")) return new ErrorDeDominio("clabe_ya_vigente");
+    if (marca.includes("lista_69b")) return new ErrorDeDominio("listado_irreconocible");
     if (marca.includes("polic") || marca.includes("drawer") || marca.includes("posting")) {
       return new ErrorDeDominio("politica_invalida");
     }
@@ -128,6 +131,7 @@ export function traducirErrorDeBase(error: unknown): Error {
     return new ErrorDeDominio("persona_ajena");
   }
   if (codigo === "23514") {
+    if (marca.includes("lista_69b")) return new ErrorDeDominio("listado_irreconocible");
     if (marca.includes("clabe")) return new ErrorDeDominio("clabe_invalida");
     if (marca.includes("baja")) return new ErrorDeDominio("baja_anterior");
     if (marca.includes("polic") || marca.includes("drawer") || marca.includes("posting")) {
@@ -139,6 +143,9 @@ export function traducirErrorDeBase(error: unknown): Error {
     const dePrecio = FRASES_DE_PRECIO[mensaje];
     if (dePrecio) return new ErrorDeDominio(dePrecio);
     if (CODIGOS_DE_FIRMA.has(mensaje)) return new ErrorDeDominio(mensaje);
+    if (CODIGOS_DE_CLABE.has(mensaje)) return new ErrorDeDominio(mensaje);
+    const deProveedor = FRASES_DE_PROVEEDOR[mensaje.trim()];
+    if (deProveedor) return new ErrorDeDominio(deProveedor);
   }
   if (codigo === "23514" && marca.includes("lotes_prueba_dos_firmas")) {
     return new ErrorDeDominio("misma_persona_en_las_dos_firmas");
@@ -148,6 +155,22 @@ export function traducirErrorDeBase(error: unknown): Error {
   }
   return new ErrorDeDominio("base_no_disponible");
 }
+
+const CODIGOS_DE_CLABE = new Set([
+  "clabe_no_se_pisa",
+  "clabe_ya_cerrada",
+  "historial_de_clabe_no_se_borra",
+  "auditoria_de_clabe_ausente",
+]);
+
+const FRASES_DE_PROVEEDOR: Readonly<Record<string, string>> = {
+  auditoria_de_proveedor_ausente: "auditoria_no_disponible",
+  constancia_ajena: "archivo_no_disponible",
+  constancia_sin_proveedor: "archivo_no_disponible",
+  proveedor_sin_clabe: "clabe_invalida",
+  clabe_no_se_reescribe: "clabe_invalida",
+  rfc_de_proveedor_fijo: "proveedor_duplicado",
+};
 
 const CODIGOS_DE_FIRMA = new Set([
   "misma_persona_en_las_dos_firmas",

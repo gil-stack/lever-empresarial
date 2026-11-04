@@ -1,0 +1,194 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+
+import type { Fila69b } from "../../dominio/lista-69b.ts";
+import { ErrorDeDominio } from "../session/error-de-dominio.ts";
+import type { Rol, Sesion } from "../session/tipos.ts";
+import type { OrigenListado } from "./descargar.ts";
+import type { Repositorio69b, Snapshot69b } from "./repositorio.ts";
+import { consultarRfc, guardarListado69b, leerVista69b, puedeAbrirLista69b } from "./servicio.ts";
+
+const AHORA = new Date("2026-11-04T18:30:00.000Z");
+const COPIA = "33333333-3333-4333-8333-333333333333";
+const EMPRESA = "11111111-1111-4111-8111-111111111111";
+const PERSONA = "22222222-2222-4222-8222-222222222222";
+
+const HTML = `
+  <p>Artículo 69-B del Código Fiscal de la Federación</p>
+  <strong>Información actualizada al 30 de septiembre de 2026.</strong>
+  <a href="https://archivos.example/Listado_completo_69-B.csv">Listado completo</a>
+  <p>Artículo 69-B Bis</p>
+  <a href="https://archivos.example/bis.csv">Listado completo</a>
+`;
+
+const CSV = [
+  "Información actualizada al 30 de septiembre de 2026",
+  "No,RFC,Nombre del Contribuyente,Situación del contribuyente",
+  "1,PAL7202161U0,UNO,Definitivo",
+  "2,PAL7202161U0,UNO,Definitivo",
+  "3,CABL840215RF4,DOS,Presunto",
+].join("\n");
+
+describe("la copia y la consulta", () => {
+  it("sin copia no hay pago, aunque el RFC sea válido", async () => {
+    const libro = memoria();
+    const vista = await leerVista69b(sesion("administrador"), "PAL7202161U0", {
+      repositorio: libro.repo,
+      ahora: () => AHORA,
+      esOperador: false,
+    });
+    assert.equal(vista.fechaTexto, null);
+    assert.equal(vista.puedeGuardar, true);
+    assert.equal(vista.resultado?.bloqueado, true);
+    assert.equal(vista.resultado?.frase, "No hay archivo del SAT. No hay pago.");
+    assert.equal(vista.resultado?.decision.listaPermitePago, false);
+  });
+
+  it("guarda la fecha del archivo y bloquea solo a quien aparece", async () => {
+    const libro = memoria();
+    const guardado = await guardarListado69b(sesion("liberador"), {
+      repositorio: libro.repo,
+      origen: origen(CSV),
+      ahora: () => AHORA,
+      id: () => COPIA,
+      esOperador: true,
+    });
+    assert.equal(guardado.fechaTexto, "30 de septiembre de 2026");
+    assert.equal(guardado.contribuyentesTexto, "2");
+    assert.equal(libro.guardados, 1);
+
+    const publicado = await consultarRfc("pal 720216 1u0", { repositorio: libro.repo });
+    assert.equal(publicado.tipo, "lista");
+    if (publicado.tipo !== "lista") return;
+    assert.equal(publicado.rfc, "PAL7202161U0");
+    assert.equal(publicado.bloqueado, true);
+    assert.deepEqual(publicado.situaciones, ["Definitivo"]);
+    assert.equal(publicado.frase, "El proveedor puede existir. El pago no.");
+
+    const limpio = await consultarRfc("EKU9003173C9", { repositorio: libro.repo });
+    assert.equal(limpio.tipo, "lista");
+    if (limpio.tipo !== "lista") return;
+    assert.equal(limpio.bloqueado, false);
+    assert.equal(limpio.decision.listaPermitePago, true);
+    assert.equal(limpio.situaciones.length, 0);
+
+    const vista = await leerVista69b(sesion("contador"), "CABL840215RF4", {
+      repositorio: libro.repo,
+      ahora: () => AHORA,
+      esOperador: false,
+    });
+    assert.equal(vista.fechaTexto, "30 de septiembre de 2026");
+    assert.equal(vista.puedeGuardar, false);
+    assert.equal(vista.contribuyentesTexto, "2");
+    assert.deepEqual(vista.resultado?.situaciones, ["Presunto"]);
+    assert.match(vista.consultaTexto, /hora del centro de México/);
+  });
+
+  it("no guarda si la fecha de la página y la del archivo no coinciden", async () => {
+    const libro = memoria();
+    const distinto = CSV.replace("30 de septiembre de 2026", "1 de enero de 2026");
+    await assert.rejects(
+      () =>
+        guardarListado69b(sesion("administrador"), {
+          repositorio: libro.repo,
+          origen: origen(distinto),
+          ahora: () => AHORA,
+          id: () => COPIA,
+          esOperador: false,
+        }),
+      (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "fechas_distintas",
+    );
+    assert.equal(libro.guardados, 0);
+    assert.equal(await libro.repo.vigente(), null);
+  });
+
+  it("el contador no guarda y el tarjetahabiente no abre la lista", async () => {
+    const libro = memoria();
+    await assert.rejects(
+      () => guardarListado69b(sesion("contador"), { repositorio: libro.repo, origen: origen(CSV), esOperador: false }),
+      (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "sin_permiso",
+    );
+    assert.equal(puedeAbrirLista69b(sesion("tarjetahabiente"), false), false);
+    assert.equal(puedeAbrirLista69b(sesion("solicitante"), false), true);
+    const invalido = await consultarRfc("XAXX010101000", { repositorio: libro.repo });
+    assert.equal(invalido.tipo, "invalida");
+  });
+
+  it("la copia más reciente es la que se consulta", async () => {
+    const libro = memoria();
+    await guardarListado69b(sesion("administrador"), {
+      repositorio: libro.repo,
+      origen: origen(CSV),
+      ahora: () => new Date("2026-10-01T12:00:00.000Z"),
+      id: () => COPIA,
+      esOperador: false,
+    });
+    const segunda = "44444444-4444-4444-8444-444444444444";
+    const otro = CSV.replace("Presunto", "Desvirtuado").replace("30 de septiembre de 2026", "30 de septiembre de 2026");
+    await guardarListado69b(sesion("administrador"), {
+      repositorio: libro.repo,
+      origen: origen(otro),
+      ahora: () => AHORA,
+      id: () => segunda,
+      esOperador: false,
+    });
+    const vigente = await libro.repo.vigente();
+    assert.equal(vigente?.id, segunda);
+    const consulta = await consultarRfc("CABL840215RF4", { repositorio: libro.repo });
+    assert.equal(consulta.tipo, "lista");
+    if (consulta.tipo !== "lista") return;
+    assert.deepEqual(consulta.situaciones, ["Desvirtuado"]);
+  });
+});
+
+function origen(csv: string): OrigenListado {
+  return {
+    async leerPagina() {
+      return HTML;
+    },
+    async leerArchivo(url) {
+      assert.equal(url, "https://archivos.example/Listado_completo_69-B.csv");
+      return new TextEncoder().encode(csv);
+    },
+  };
+}
+
+function sesion(rol: Rol): Sesion {
+  return {
+    id: "55555555-5555-4555-8555-555555555555",
+    venceEn: AHORA,
+    usuario: { id: PERSONA, nombre: "Ana", correo: "ana@ejemplo.test" },
+    companyId: EMPRESA,
+    rol,
+  };
+}
+
+function memoria(): { repo: Repositorio69b; guardados: number } {
+  const snapshots: Snapshot69b[] = [];
+  const filas: { snapshotId: string; fila: Fila69b }[] = [];
+  const estado = { guardados: 0 };
+  const repo: Repositorio69b = {
+    async vigente() {
+      const orden = [...snapshots].sort((a, b) => b.cargadoEn.getTime() - a.cargadoEn.getTime());
+      return orden[0] ?? null;
+    },
+    async situaciones(snapshotId, rfc) {
+      return filas
+        .filter((fila) => fila.snapshotId === snapshotId && fila.fila.rfc === rfc)
+        .map((fila) => fila.fila.situacion)
+        .sort((a, b) => a.localeCompare(b, "es"));
+    },
+    async guardar(entrada) {
+      const contribuyentes = new Set(entrada.filas.map((fila) => fila.rfc)).size;
+      snapshots.push({
+        id: entrada.id,
+        fechaArchivo: entrada.fechaArchivo,
+        cargadoEn: entrada.cargadoEn,
+        contribuyentes,
+      });
+      for (const fila of entrada.filas) filas.push({ snapshotId: entrada.id, fila });
+      estado.guardados += 1;
+    },
+  };
+  return { repo, get guardados() { return estado.guardados; } };
+}

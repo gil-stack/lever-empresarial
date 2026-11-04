@@ -19,16 +19,20 @@ export async function Marco({
   persona = null,
   maestro = false,
   poliza = false,
+  proveedores = false,
+  lista69b = false,
   children,
 }: {
   actual: string;
   persona?: { nombre: string } | null;
   maestro?: boolean;
   poliza?: boolean;
+  proveedores?: boolean;
+  lista69b?: boolean;
   children: ReactNode;
 }) {
   const tema = await temaElegido();
-  const grupos = seccionesDe({ maestro, poliza });
+  const grupos = seccionesDe({ maestro, poliza, proveedores, lista69b });
 
   return (
     <div className="marco">
@@ -82,7 +86,7 @@ export async function Marco({
   );
 }
 
-/** El teléfono no comparte el menú de la consola: solo la marca y la apariencia. */
+/** El teléfono del tarjetahabiente. No lleva el menú de la consola, ni proveedores, ni la CLABE, ni la lista 69-B. */
 export async function MarcoTelefono({ children }: { children: ReactNode }) {
   const tema = await temaElegido();
   return (
