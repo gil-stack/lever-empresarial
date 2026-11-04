@@ -29,9 +29,17 @@ export function proxy(request: NextRequest) {
   const factor =
     Boolean(request.cookies.get(NOMBRE_COOKIE_ENTRADA)?.value) ||
     Boolean(request.cookies.get(NOMBRE_COOKIE_PORTAL)?.value);
-  if (ruta.acceso.tipo === "segundo_factor" && !factor) return desviar(request, completa ? "/consola" : "/entrar");
+  const operacion = resto === "/operacion" || resto.startsWith("/operacion/");
+  const superficie = operacion ? "/operacion" : resto.startsWith("/telefono") ? "/telefono" : "/consola";
+  const siguiente = `siguiente=${encodeURIComponent(superficie)}`;
+  const entrada = operacion ? "/operacion/entrar" : "/entrar";
+  const continuacion = operacion ? "/operacion/continuar" : RUTA_SEGUNDO_FACTOR;
+  const destinoAutenticado = operacion ? "/operacion" : "/entrar/destino";
+  if (ruta.acceso.tipo === "segundo_factor" && !factor) {
+    return desviar(request, completa ? `${destinoAutenticado}?${siguiente}` : `${entrada}?${siguiente}`);
+  }
   if ((ruta.acceso.tipo === "sesion" || ruta.acceso.tipo === "capacidad") && !completa) {
-    return desviar(request, factor ? RUTA_SEGUNDO_FACTOR : "/entrar");
+    return desviar(request, factor ? `${continuacion}?${siguiente}` : `${entrada}?${siguiente}`);
   }
 
   if (empresa) {

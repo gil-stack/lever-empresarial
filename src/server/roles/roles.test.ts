@@ -62,8 +62,9 @@ describe("membresías con varios roles", () => {
     assert.equal(empresaOperable(await repo.membresiasDeLaEmpresa(ctx(ANA, ["administrador"]))), true);
   });
 
-  it("la póliza es del contador", async () => {
+  it("la póliza abre en lectura para contador y administrador", async () => {
     assert.equal((await entrarAPoliza(ctx(ROSA, ["contador"]))).accion, "exportar_poliza");
+    assert.equal((await entrarAPoliza(ctx(ANA, ["administrador"]))).accion, "exportar_poliza");
     assert.equal(await codigo(entrarAPoliza(ctx(LUIS, ["liberador"]))), "sin_entrada_a_poliza");
   });
 });

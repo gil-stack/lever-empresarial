@@ -36,7 +36,7 @@ export type ContextoDeTenant = {
   empresa: EmpresaDelContexto | null;
   roles: readonly RolCliente[];
   personal: PersonalDelContexto | null;
-  empresas: readonly { id: string; razonSocial: string }[];
+  empresas: readonly { id: string; razonSocial: string; roles: readonly RolCliente[] }[];
   capacidades: readonly Capacidad[];
 };
 

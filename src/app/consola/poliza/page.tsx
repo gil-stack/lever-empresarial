@@ -50,15 +50,15 @@ async function cargar(
 }
 
 function titulo(carga: Carga): string {
-  if (carga.tipo === "abierta") return "Entrada del contador.";
-  if (carga.tipo === "ajena") return "Esta entrada es del contador.";
+  if (carga.tipo === "abierta") return "Póliza en solo lectura.";
+  if (carga.tipo === "ajena") return "Esta lectura no está disponible para tu rol.";
   return "No se pudo abrir la póliza.";
 }
 
 function detalle(carga: Carga): string {
   if (carga.tipo === "abierta") {
-    return "Desde aquí se exporta la póliza. No se suelta dinero. En este corte no hay archivo: todavía no hay expedientes que cerrar.";
+    return "El administrador y el contador pueden consultar esta entrada. En este corte no hay archivo que exportar: todavía no existen expedientes cerrados ni se mueve dinero.";
   }
-  if (carga.tipo === "ajena") return "Quien administra y quien libera no entran por esta puerta.";
+  if (carga.tipo === "ajena") return "La póliza solo abre para el administrador y el contador.";
   return carga.mensaje;
 }
