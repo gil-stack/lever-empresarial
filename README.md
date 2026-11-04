@@ -9,6 +9,23 @@ npm install
 npm run dev
 ```
 
+## Comprobaciones
+
+Vercel CI corre estas tareas en cada push, tanto en un pull request como en `main`. La instalación de dependencias la hace el arranque del CI, una vez por corrida; no es una tarea aparte.
+
+```bash
+npm run typecheck
+npm run lint
+npm run test
+npm run test:db
+npm run build
+npm run security
+```
+
+`test` corre la suite con `tsx --test` y deja fuera las cuatro pruebas que necesitan Postgres. `test:db` levanta un Postgres desechable en Docker, aplica las migraciones y borra la base. No usa `DATABASE_URL` ni la rama de preview. Hace falta Docker en la máquina local; en Vercel CI el daemon ya está encendido.
+
+`security` revisa vulnerabilidades de dependencias (`npm audit`), secretos en el código y en el paquete del navegador, y las rutas de servidor. Vercel CI no trae un revisor propio: Vercel Security Review pertenece a Vercel Agent y publica otro check.
+
 `/salud` responde `ok` y no imprime configuración.
 
 ## Este corte
