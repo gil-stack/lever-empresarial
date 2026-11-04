@@ -35,7 +35,7 @@ Tipografía: Geist (`--fuente-sans`) para todo el texto, títulos y cifras; la j
 
 ## Logotipo
 
-`src/components/cromo/logotipo.tsx` tiene el banderín (`Banderin`) y la palabra (`PalabraLever`), redibujados en SVG de la identidad oficial. Pintan con `currentColor`. En el portal del cliente van juntos con la línea «Empresas»; en el teléfono, sin la línea. Ningún texto, logotipo ni metadato dice «banco».
+`src/components/cromo/logotipo.tsx` tiene el símbolo (`Banderin`) y la palabra (`PalabraLever`) en SVG. El símbolo conserva el gradiente azul/cian de la identidad y la palabra pinta con `currentColor`. En el portal del cliente van juntos con la línea «Empresas»; en el teléfono, sin la línea. Ningún texto, logotipo ni metadato dice «banco».
 
 ## Navegación
 
