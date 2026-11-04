@@ -1,67 +1,45 @@
 import { Icono } from "./iconos";
-import { LogoArco } from "./logo-arco";
+import { LogoLever } from "./logo-lever";
 
-const BARRAS = [36, 52, 44, 68, 58, 82, 74, 92, 66, 84, 96, 78] as const;
+const MOVIMIENTOS = [
+  { nombre: "Materiales del norte", detalle: "Proveedores · Hoy", monto: "$18,450.00" },
+  { nombre: "Viáticos de ventas", detalle: "Comprobante relacionado · Ayer", monto: "$6,280.00" },
+  { nombre: "Nómina quincenal", detalle: "Programada · 15 de noviembre", monto: "$42,900.00" },
+] as const;
 
 export function VisualHero() {
   return (
-    <div className="arco-hero-visual" role="img" aria-label="Vista ilustrativa de una tarjeta LEVER y un panel de control empresarial">
-      <div className="arco-orbita" aria-hidden="true" />
+    <div className="arco-hero-visual" role="img" aria-label="Vista ilustrativa del control de operación de LEVER">
       <div className="arco-panel">
         <div className="arco-panel-cabeza">
-          <span>Resumen de operación</span>
-          <span className="arco-panel-periodo">ESTE MES</span>
+          <LogoLever />
+          <span className="arco-panel-periodo">RESUMEN DE OPERACIÓN</span>
         </div>
-        <p className="arco-panel-etiqueta">Saldo de la empresa</p>
-        <p className="arco-panel-monto">
-          $125,450<small>.00 MXN</small>
-        </p>
-        <div className="arco-grafica" aria-hidden="true">
-          {BARRAS.map((altura, indice) => (
-            <span key={indice} style={{ height: `${altura}%` }} />
-          ))}
+        <div className="arco-panel-resumen">
+          <div>
+            <p className="arco-panel-etiqueta">Saldo de la empresa</p>
+            <p className="arco-panel-monto">$125,450<small>.00 MXN</small></p>
+          </div>
+          <span className="arco-panel-estado"><i /> Al día</span>
         </div>
         <dl className="arco-panel-datos">
-          <div>
-            <dt>Viáticos</dt>
-            <dd>$42,180</dd>
-          </div>
-          <div>
-            <dt>Proveedores</dt>
-            <dd>$56,900</dd>
-          </div>
-          <div>
-            <dt>Nómina</dt>
-            <dd>$26,370</dd>
-          </div>
+          <div><dt>Por comprobar</dt><dd>3 movimientos</dd></div>
+          <div><dt>Por aprobar</dt><dd>1 solicitud</dd></div>
+          <div><dt>Centros de costo</dt><dd>4 activos</dd></div>
         </dl>
-      </div>
-
-      <div className="arco-tarjeta">
-        <div className="arco-tarjeta-cabeza">
-          <LogoArco inverso />
-          <span>EMPRESARIAL</span>
+        <div className="arco-movimientos">
+          <p>Actividad reciente</p>
+          {MOVIMIENTOS.map((movimiento) => (
+            <div className="arco-movimiento" key={movimiento.nombre}>
+              <span><strong>{movimiento.nombre}</strong><small>{movimiento.detalle}</small></span>
+              <b>{movimiento.monto}</b>
+            </div>
+          ))}
         </div>
-        <div className="arco-tarjeta-media" aria-hidden="true">
-          <span className="arco-chip" />
-          <svg viewBox="0 0 28 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
-            <path d="M6 7a10 10 0 0 1 0 10M11 4a15 15 0 0 1 0 16M16 1a20 20 0 0 1 0 22" />
-          </svg>
+        <div className="arco-aprobacion">
+          <span className="arco-aprobacion-icono"><Icono nombre="check" /></span>
+          <span><strong>Política aplicada</strong><small>Cada movimiento tiene contexto y trazabilidad</small></span>
         </div>
-        <div className="arco-tarjeta-pie">
-          <span>LEVER PAGOS</span>
-          <span>•••• 2408</span>
-        </div>
-      </div>
-
-      <div className="arco-aprobacion">
-        <span className="arco-aprobacion-icono">
-          <Icono nombre="check" />
-        </span>
-        <span>
-          <strong>Aprobación completa</strong>
-          <small>2 de 2 firmas</small>
-        </span>
       </div>
       <p className="arco-visual-nota">Vista ilustrativa del producto</p>
     </div>
