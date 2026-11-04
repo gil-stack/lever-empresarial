@@ -1,0 +1,24 @@
+#!/bin/bash
+# Cliente psql de las pruebas. La imagen de Vercel CI no trae psql y un
+# paquete del sistema instalado en el arranque no llega a la tarea: solo
+# viaja lo que queda dentro del repositorio. Este envoltorio ejecuta el
+# psql del contenedor desechable y reescribe las rutas del anfitrión para
+# que -f encuentre db/migrations, montado en /work.
+set -euo pipefail
+
+raiz=$(cd "$(dirname "$0")/../../.." && pwd)
+args=()
+for arg in "$@"; do
+  case "$arg" in
+    "$raiz"/*) args+=("/work${arg#"$raiz"}") ;;
+    *) args+=("$arg") ;;
+  esac
+done
+
+exec docker exec -i \
+  -e PGPASSWORD \
+  -e PGOPTIONS \
+  -e PGCLIENTENCODING \
+  -w /work \
+  ci-postgres \
+  psql "${args[@]}"

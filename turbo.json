@@ -1,0 +1,32 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "tasks": {
+    "typecheck": {
+      "outputs": [],
+      "tags": ["ci"]
+    },
+    "lint": {
+      "outputs": [],
+      "tags": ["ci"]
+    },
+    "test": {
+      "outputs": [],
+      "tags": ["ci"]
+    },
+    "test:db": {
+      "cache": false,
+      "outputs": [],
+      "tags": ["ci", "ci:cpus:4"]
+    },
+    "build": {
+      "outputs": [".next/**", "!.next/cache/**"],
+      "tags": ["ci"]
+    },
+    "security": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "outputs": [],
+      "tags": ["ci"]
+    }
+  }
+}
