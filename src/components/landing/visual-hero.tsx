@@ -39,7 +39,7 @@ export function VisualHero() {
 
       <div className="arco-tarjeta">
         <div className="arco-tarjeta-cabeza">
-          <LogoArco inverso soloSello />
+          <LogoArco inverso />
           <span>EMPRESARIAL</span>
         </div>
         <div className="arco-tarjeta-media" aria-hidden="true">
@@ -49,7 +49,7 @@ export function VisualHero() {
           </svg>
         </div>
         <div className="arco-tarjeta-pie">
-          <span>ARCO BANCO</span>
+          <span>ARCO PAGOS</span>
           <span>•••• 2408</span>
         </div>
       </div>

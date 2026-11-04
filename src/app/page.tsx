@@ -207,7 +207,7 @@ export default function PaginaInicio() {
               <div className="arco-telefono-marco">
                 <div className="arco-telefono-isla" aria-hidden="true" />
                 <div className="arco-app-cabeza">
-                  <LogoArco inverso soloSello />
+                  <LogoArco inverso />
                   <span>•••</span>
                 </div>
                 <p className="arco-app-saludo">Hola, Jorge</p>
@@ -324,7 +324,7 @@ export default function PaginaInicio() {
 
       <section className="arco-cierre" aria-labelledby="titulo-cierre">
         <div className="arco-cierre-bruma" aria-hidden="true" />
-        <LogoArco inverso soloSello />
+        <LogoArco inverso />
         <p className="arco-eyebrow arco-eyebrow-claro"><span aria-hidden="true" />Tu empresa, en orden</p>
         <h2 id="titulo-cierre">El control se siente<br /><span>muy distinto.</span></h2>
         <p>Menos ruido para tu equipo. Más claridad para cada decisión.</p>

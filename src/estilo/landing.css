@@ -1632,7 +1632,6 @@ html:has(.arco-landing) {
   .arco-logo-sello > span { left: 8px; font-size: 14px; }
   .arco-logo-texto strong { font-size: 21px; }
   .arco-logo-texto small { font-size: 8px; letter-spacing: 4px; }
-  .arco-header-marca .arco-logo-texto { display: none; }
   .arco-entrar { display: none; }
   .arco-boton-compacto { min-height: 40px; }
 
