@@ -8,7 +8,7 @@ import { VisualHero } from "@/components/landing/visual-hero";
 export const metadata: Metadata = {
   title: "La tarjeta empresarial que ordena cada gasto",
   description:
-    "ARCO reúne tarjetas empresariales, reglas, comprobantes y decisiones de finanzas en una plataforma diseñada para equipos mexicanos.",
+    "LEVER reúne tarjetas empresariales, reglas, comprobantes y decisiones de finanzas en una plataforma diseñada para equipos mexicanos.",
 };
 
 const BENEFICIOS = [
@@ -86,16 +86,16 @@ const INDUSTRIAS = [
 
 const PREGUNTAS = [
   {
-    pregunta: "¿La tarjeta de ARCO es de crédito?",
-    respuesta: "No. La propuesta de ARCO parte de una tarjeta recargable, prefondeada contra la cuenta de la empresa. El crédito queda fuera de esta experiencia.",
+    pregunta: "¿La tarjeta de LEVER es de crédito?",
+    respuesta: "No. La propuesta de LEVER parte de una tarjeta recargable, prefondeada contra la cuenta de la empresa. El crédito queda fuera de esta experiencia.",
   },
   {
     pregunta: "¿Cómo se comprueba un gasto?",
     respuesta: "El gasto reúne su cargo, comprobante, aprobación y contexto en un mismo expediente. El XML y el ticket se relacionan con esa operación para que finanzas no tenga que unirlos a mano.",
   },
   {
-    pregunta: "¿ARCO sustituye a nuestro contador o al ERP?",
-    respuesta: "No. ARCO ordena la operación del gasto y prepara información útil para contabilidad. No sustituye el criterio de tu contador ni convierte tu ERP en una dependencia para trabajar.",
+    pregunta: "¿LEVER sustituye a nuestro contador o al ERP?",
+    respuesta: "No. LEVER ordena la operación del gasto y prepara información útil para contabilidad. No sustituye el criterio de tu contador ni convierte tu ERP en una dependencia para trabajar.",
   },
   {
     pregunta: "¿Podemos decidir quién aprueba?",
@@ -110,7 +110,7 @@ export default function PaginaInicio() {
 
       <div className="arco-header-envoltura">
         <header className="arco-header">
-          <Link href="/" className="arco-header-marca" aria-label="ARCO, inicio">
+          <Link href="/" className="arco-header-marca" aria-label="LEVER, inicio">
             <LogoArco inverso />
           </Link>
           <nav className="arco-nav" aria-label="Navegación principal">
@@ -157,13 +157,13 @@ export default function PaginaInicio() {
             </div>
             <VisualHero />
             <div className="arco-hero-pie" aria-hidden="true">
-              <span>Desliza para conocer ARCO</span>
+              <span>Desliza para conocer LEVER</span>
               <i />
               <strong>TODO TU DINERO EN UN SOLO LUGAR</strong>
             </div>
           </section>
 
-          <section className="arco-franja" aria-label="La plataforma ARCO">
+          <section className="arco-franja" aria-label="La plataforma LEVER">
             <p>Un solo núcleo para ordenar el gasto</p>
             <ul>
               <li>Tarjetas</li>
@@ -179,7 +179,7 @@ export default function PaginaInicio() {
         <div className="arco-capitulo-cabeza">
           <p className="arco-eyebrow"><span aria-hidden="true" />El producto</p>
           <h2 id="titulo-producto">Menos tickets perdidos.<br />Más tiempo para tu negocio.</h2>
-          <p>ARCO convierte el gasto diario en un proceso claro para quien paga, quien aprueba y quien contabiliza.</p>
+          <p>LEVER convierte el gasto diario en un proceso claro para quien paga, quien aprueba y quien contabiliza.</p>
         </div>
         <div className="arco-beneficios">
           {BENEFICIOS.map((beneficio) => (
@@ -203,7 +203,7 @@ export default function PaginaInicio() {
           </div>
 
           <div className="arco-experiencia">
-            <div className="arco-telefono-demo" role="img" aria-label="Vista ilustrativa de la app ARCO con saldo y validación de una compra">
+            <div className="arco-telefono-demo" role="img" aria-label="Vista ilustrativa de la app LEVER con saldo y validación de una compra">
               <div className="arco-telefono-marco">
                 <div className="arco-telefono-isla" aria-hidden="true" />
                 <div className="arco-app-cabeza">
@@ -302,7 +302,7 @@ export default function PaginaInicio() {
           <h2 id="titulo-precios">Un plan claro para cada etapa.</h2>
         </div>
         <div>
-          <p>Conoce cómo se estructura ARCO para tu equipo, sin cifras inventadas ni paquetes que no corresponden a tu operación.</p>
+          <p>Conoce cómo se estructura LEVER para tu equipo, sin cifras inventadas ni paquetes que no corresponden a tu operación.</p>
           <Link href="/precios" className="arco-enlace">Consultar precios <Icono nombre="flecha" /></Link>
         </div>
       </section>
@@ -349,7 +349,7 @@ export default function PaginaInicio() {
             <a href="#preguntas">Preguntas</a>
             <Link href="/entrar">Entrar</Link>
           </nav>
-          <p className="arco-footer-nota">ARCO · Control de gasto empresarial, diseñado para México.</p>
+          <p className="arco-footer-nota">LEVER · Control de gasto empresarial, diseñado para México.</p>
         </div>
       </footer>
     </div>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 
 import { salirOperacion } from "@/app/operacion/acciones";
-import { Banderin, PalabraArco } from "@/components/cromo/logotipo";
+import { Banderin, PalabraLever } from "@/components/cromo/logotipo";
 import { SelectorTema } from "@/components/cromo/selector-tema";
 import { COOKIE_TEMA, temaDesde } from "@/components/cromo/tema";
 
@@ -22,8 +22,8 @@ export async function MarcoOperacion({ actual, nombre, children }: { actual: str
     <div className="operacion-marco">
       <a className="saltar" href="#contenido">Saltar al contenido</a>
       <aside className="operacion-lateral">
-        <Link href="/operacion" className="marca" aria-label="Arco Operación, ir al resumen">
-          <Banderin /><span className="marca-texto"><PalabraArco /><span className="marca-linea">Operación SOFIPO</span></span>
+        <Link href="/operacion" className="marca" aria-label="Lever Operación, ir al resumen">
+          <Banderin /><span className="marca-texto"><PalabraLever /><span className="marca-linea">Operación SOFIPO</span></span>
         </Link>
         <nav className="operacion-nav" aria-label="Operación">
           {SECCIONES.map(([ruta, etiqueta]) => <Link key={ruta} href={ruta} aria-current={actual === ruta ? "page" : undefined}>{etiqueta}</Link>)}

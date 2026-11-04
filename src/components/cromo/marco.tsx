@@ -7,7 +7,7 @@ import { enEmpresa } from "@/nucleo/rutas";
 
 import { estadoDelMarco, type EmpresaDelMarco } from "./estado-marco";
 import { IconoEntrar, IconoSalir } from "./iconos";
-import { Banderin, PalabraArco } from "./logotipo";
+import { Banderin, PalabraLever } from "./logotipo";
 import { LateralMovil } from "./lateral-movil";
 import { MARCO_SIN_SESION, puertasDe, type VistaDeMarco } from "./puertas";
 import { seccionesDe, type Contador, type GrupoDeSecciones } from "./secciones";
@@ -146,7 +146,7 @@ export async function MarcoTelefono({
       <main id="contenido" className="superficie-telefono">
         <div className="telefono">
           <header className="telefono-cabeza">
-            <p className="marca-app"><Banderin /><PalabraArco /><span className="solo-lector">Arco</span></p>
+            <p className="marca-app"><Banderin /><PalabraLever /><span className="solo-lector">Lever</span></p>
             <SelectorTema inicial={tema} />
           </header>
           <div className="telefono-cuerpo">{children}</div>
@@ -223,10 +223,10 @@ function Grupo({
 
 function Marca({ linea, empresaId = null }: { linea: string; empresaId?: string | null }) {
   return (
-    <Link href={enEmpresa(empresaId, "/consola")} className="marca" aria-label={`Arco ${linea}, ir a Pendientes`}>
+    <Link href={enEmpresa(empresaId, "/consola")} className="marca" aria-label={`Lever ${linea}, ir a Pendientes`}>
       <Banderin />
       <span className="marca-texto">
-        <PalabraArco />
+        <PalabraLever />
         <span className="marca-linea">{linea}</span>
       </span>
     </Link>

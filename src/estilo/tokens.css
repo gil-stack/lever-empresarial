@@ -1,5 +1,5 @@
 /*
- * Tokens de Arco. `color-scheme` decide qué mitad de cada light-dark() se pinta:
+ * Tokens de Lever. `color-scheme` decide qué mitad de cada light-dark() se pinta:
  * sin elección manda el sistema; data-tema fija claro u oscuro.
  * light-dark() se resuelve donde se declara la variable, por eso el teléfono, que
  * tiene su propio esquema, vuelve a declarar los tokens.

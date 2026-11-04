@@ -42,7 +42,7 @@ export function RenglonesTarifa({
             <dt>
               <span className="tarifa-indice">02</span>
               Costo SPEI del participante
-              <span className="tarifa-detalle">Renglón aparte. Arco no le suma un margen.</span>
+              <span className="tarifa-detalle">Renglón aparte. Lever no le suma un margen.</span>
             </dt>
             <dd>
               <p className="cifra-ausente">{tarifa.spei}</p>

@@ -10,7 +10,7 @@ import type { PasskeyGuardada, Persona } from "./repositorio";
  * exige verificación de la persona y no se pide atestación del fabricante.
  */
 
-export const NOMBRE_RP = "Arco";
+export const NOMBRE_RP = "Lever";
 
 export type CredencialPublica = { credencialId: string; transportes: string[] };
 

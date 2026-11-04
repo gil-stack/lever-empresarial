@@ -25,7 +25,7 @@ export function FormularioEntrar({ siguiente, aviso }: { siguiente: string; avis
       <input type="hidden" name="siguiente" value={siguiente} />
       <div className="campo">
         <label htmlFor="correo">Correo</label>
-        <input id="correo" name="correo" type="email" autoComplete="username" maxLength={254} required />
+        <input id="correo" name="correo" type="email" autoComplete="username" maxLength={254} placeholder="nombre@empresa.com" required />
       </div>
       <div className="campo">
         <label htmlFor="contrasena">Contraseña</label>
@@ -39,7 +39,7 @@ export function FormularioEntrar({ siguiente, aviso }: { siguiente: string; avis
           {pendiente ? "Comprobando…" : "Continuar"}
         </button>
       </div>
-      <p className="arco-pie">Después hace falta una passkey o un código de tu app autenticadora.</p>
+      <p className="arco-pie">Acceso protegido mediante passkey, aplicación autenticadora o código de respaldo.</p>
     </form>
   );
 }

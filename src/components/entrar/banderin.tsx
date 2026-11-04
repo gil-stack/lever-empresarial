@@ -1,18 +1,9 @@
-/** El banderín de Arco, sin la palabra Banco. */
 export function Banderin() {
   return (
-    <svg className="banderin" viewBox="0 0 78 56" role="img" aria-label="Arco">
-      <path fill="currentColor" d="M2 3h50L76 28 52 53H2V3z" />
-      <text
-        x="9"
-        y="33"
-        fill="var(--sobre-banderin)"
-        fontFamily="var(--fuente-sans), sans-serif"
-        fontSize="15"
-        fontWeight="700"
-        letterSpacing="0.5"
-      >
-        ARCO
+    <svg className="banderin" viewBox="0 0 96 40" role="img" aria-label="Lever">
+      <path d="M0 0 L38 -15 A42 42 0 0 1 38 15 Z" fill="currentColor" transform="translate(0 20)" />
+      <text x="46" y="26" fill="currentColor" fontSize="18" fontWeight="700" style={{ fontFamily: "var(--font-arco), sans-serif" }}>
+        LEVER
       </text>
     </svg>
   );

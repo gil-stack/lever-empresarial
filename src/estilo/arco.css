@@ -1,128 +1,367 @@
-/*
- * Pantallas de entrar y del segundo factor. La marca es Arco: banderín,
- * negro y azul. El resto del portal sigue con los tokens de siempre hasta
- * que el frente de marca los publique.
- */
 .arco {
-  --papel: light-dark(#f2f3f5, #0b0b0b);
-  --hoja: light-dark(#ffffff, #141414);
-  --campo: light-dark(#ffffff, #101010);
-  --tinta: light-dark(#111111, #f5f5f5);
-  --tinta-suave: light-dark(#4d515a, #b7bac1);
-  --tinta-tenue: light-dark(#6d727c, #8e939c);
-  --linea: light-dark(#e3e5ea, #2a2a2a);
-  --linea-fuerte: light-dark(#c5c9d1, #3c3c3c);
-  --sombra: light-dark(rgb(17 17 17 / 0.08), rgb(0 0 0 / 0.45));
-  --sello: light-dark(#111111, #f5f5f5);
-  --sello-profundo: light-dark(#000000, #ffffff);
-  --sobre-sello: light-dark(#ffffff, #111111);
-  --sello-tenue: light-dark(#e7eeff, #172033);
-  --aviso: light-dark(#b42318, #ff8d82);
+  --papel: light-dark(#f2f4f7, #060a11);
+  --hoja: light-dark(#ffffff, #0d141f);
+  --campo: light-dark(#ffffff, #09111c);
+  --tinta: light-dark(#111722, #f1f5fa);
+  --tinta-suave: light-dark(#586577, #a2afbf);
+  --tinta-tenue: light-dark(#647083, #748499);
+  --linea: light-dark(#dfe4ea, #202c3c);
+  --linea-fuerte: light-dark(#c6ced8, #35445a);
+  --sombra: light-dark(rgb(21 35 55 / 0.1), rgb(0 0 0 / 0.42));
+  --sello: light-dark(#1768ed, #76a5ff);
+  --sello-tenue: light-dark(#e7effd, #13294a);
+  --aviso: light-dark(#b42318, #ff9b91);
   --aviso-tenue: light-dark(#fdeceb, #2c1614);
-  --arco: light-dark(#0047ff, #5b86ff);
-  --sobre-banderin: light-dark(#ffffff, #0b0b0b);
+  --arco-azul: light-dark(#1768ed, #82acff);
+  --arco-azul-fuerte: light-dark(#0d53c8, #a3c1ff);
+  --sobre-arco: light-dark(#ffffff, #07111f);
 
+  position: relative;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  min-height: 100dvh;
+  overflow: hidden;
   background:
-    radial-gradient(900px 420px at 100% -10%, rgb(0 71 255 / 0.16), transparent 60%),
+    radial-gradient(ellipse at 12% 42%, light-dark(rgb(36 116 255 / 0.09), rgb(28 91 178 / 0.17)), transparent 43%),
+    radial-gradient(ellipse at 100% 0%, light-dark(rgb(157 194 255 / 0.16), rgb(27 76 140 / 0.13)), transparent 42%),
     var(--papel);
   color: var(--tinta);
+  isolation: isolate;
+}
+
+.arco::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: light-dark(0.18, 0.1);
+  background-image: linear-gradient(rgb(117 139 166 / 0.1) 1px, transparent 1px), linear-gradient(90deg, rgb(117 139 166 / 0.1) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: linear-gradient(to right, black, transparent 72%);
+  pointer-events: none;
 }
 
 .arco-cabeza {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px 16px;
-  padding: 28px clamp(20px, 5vw, 72px) 0;
+  gap: 18px 24px;
+  width: min(1376px, 100%);
+  margin: 0 auto;
+  padding: 28px clamp(24px, 4vw, 56px) 0;
+}
+
+.arco-marca {
+  display: inline-flex;
+  flex: none;
+  text-decoration: none;
+}
+
+.arco .arco-logo {
+  color: var(--tinta);
 }
 
 .arco-cabeza .selector-tema {
   margin-left: auto;
 }
 
-.arco-cabeza .banderin {
-  width: 40px;
-  height: auto;
+.arco-cabeza .selector-tema legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
-.arco-cabeza .palabra-arco {
-  display: block;
-  width: 54px;
-  height: auto;
+.arco-cabeza .selector-tema-opciones {
+  border: 1px solid var(--linea);
+  background: light-dark(rgb(255 255 255 / 0.5), rgb(255 255 255 / 0.035));
 }
 
-.arco-marca {
-  flex: none;
-  min-width: 0;
-}
-
-.arco-nombre {
-  margin: 0;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  font-size: 0.95rem;
-}
-
-.arco-frase {
-  margin: 2px 0 0;
-  color: var(--tinta-suave);
-  font-size: 0.92rem;
-}
-
-.banderin {
-  width: 74px;
-  height: 52px;
-  flex: none;
-  color: light-dark(#111111, #f5f5f5);
+.arco-cabeza .selector-tema label {
+  min-height: 34px;
+  padding: 0 11px;
+  font-size: 0.72rem;
 }
 
 .arco-lienzo {
-  flex: 1;
   display: grid;
-  place-items: center;
-  padding: 36px 20px 72px;
+  grid-template-columns: minmax(0, 1fr) minmax(400px, 460px);
+  gap: clamp(64px, 9vw, 144px);
+  align-items: center;
+  width: min(1180px, calc(100% - 96px));
+  min-height: calc(100vh - 108px);
+  min-height: calc(100dvh - 108px);
+  margin: 0 auto;
+  padding: 54px 0 76px;
 }
 
-.arco-tarjeta {
-  width: min(460px, 100%);
-  background: var(--hoja);
+.arco-presentacion {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-self: stretch;
+  min-height: 520px;
+  padding: 38px 0 12px;
+}
+
+.arco-presentacion::before,
+.arco-presentacion::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  border: 1px solid light-dark(rgb(23 104 237 / 0.12), rgb(118 165 255 / 0.1));
+  border-radius: 50% 50% 0 0;
+  pointer-events: none;
+}
+
+.arco-presentacion::before {
+  right: 4%;
+  bottom: 48px;
+  width: 340px;
+  height: 210px;
+}
+
+.arco-presentacion::after {
+  right: calc(4% + 42px);
+  bottom: 48px;
+  width: 256px;
+  height: 152px;
+}
+
+.arco-presentacion-copy {
+  max-width: 580px;
+  animation: arco-acceso-entrar 800ms 80ms cubic-bezier(0.2, 0.7, 0.1, 1) both;
+}
+
+.arco-eyebrow-acceso {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 0 0 30px;
+  color: var(--tinta-tenue);
+  font-family: var(--font-arco), var(--fuente-sans);
+  font-size: 0.63rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+.arco-eyebrow-acceso > span {
+  width: 5px;
+  height: 5px;
+  transform: rotate(45deg);
+  background: var(--arco-azul);
+}
+
+.arco-presentacion h2 {
+  margin: 0;
+  font-family: var(--font-arco), var(--fuente-sans);
+  font-size: clamp(3.3rem, 5.2vw, 5.1rem);
+  font-weight: 250;
+  letter-spacing: -0.06em;
+  line-height: 1.03;
+}
+
+.arco-presentacion h2 span {
+  color: light-dark(#3978d5, #a7c7fa);
+  font-weight: 200;
+}
+
+.arco-presentacion-copy > p:last-child {
+  max-width: 470px;
+  margin: 30px 0 0;
+  color: var(--tinta-suave);
+  font-size: 0.98rem;
+  line-height: 1.8;
+  text-wrap: pretty;
+}
+
+.arco-confianza {
+  display: grid;
+  gap: 0;
+  max-width: 470px;
+  margin-top: 48px;
+  border-top: 1px solid var(--linea);
+}
+
+.arco-confianza p {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--linea);
+  color: var(--tinta-suave);
+  font-size: 0.76rem;
+}
+
+.arco-confianza p span {
+  color: var(--arco-azul);
+  font-family: var(--font-arco), var(--fuente-sans);
+  font-size: 0.57rem;
+  letter-spacing: 0.12em;
+}
+
+.arco-firma {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 30px;
+  color: var(--tinta-tenue);
+  font-family: var(--font-arco), var(--fuente-sans);
+  font-size: 0.53rem;
+  letter-spacing: 0.2em;
+}
+
+.arco-firma > span {
+  width: 38px;
+  height: 1px;
+  background: var(--linea-fuerte);
+}
+
+.arco-acceso-tarjeta {
+  position: relative;
+  width: 100%;
+  padding: 40px;
   border: 1px solid var(--linea);
   border-radius: 22px;
-  padding: 32px 28px 28px;
-  box-shadow: 0 18px 50px var(--sombra);
+  background:
+    radial-gradient(circle at 100% 0%, light-dark(rgb(36 116 255 / 0.045), rgb(63 122 211 / 0.09)), transparent 38%),
+    var(--hoja);
+  box-shadow: 0 26px 70px var(--sombra), inset 0 1px 0 light-dark(#ffffff, rgb(255 255 255 / 0.035));
+  animation: arco-acceso-entrar 800ms 180ms cubic-bezier(0.2, 0.7, 0.1, 1) both;
 }
 
-.arco-tarjeta h1 {
-  margin: 8px 0;
-  font-family: var(--fuente-display);
-  font-size: clamp(1.8rem, 4vw, 2.3rem);
-  font-weight: 560;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
+.arco-acceso-tarjeta::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 40px;
+  width: 56px;
+  height: 2px;
+  background: var(--arco-azul);
+}
+
+.arco-acceso-tarjeta h1 {
+  margin: 10px 0 0;
+  font-family: var(--font-arco), var(--fuente-sans);
+  font-size: clamp(2rem, 3.4vw, 2.65rem);
+  font-weight: 300;
+  letter-spacing: -0.05em;
+  line-height: 1.08;
 }
 
 .arco-kicker {
   margin: 0;
-  color: var(--tinta-tenue);
-  font-size: 0.78rem;
-  font-weight: 650;
-  letter-spacing: 0.14em;
+  color: var(--arco-azul);
+  font-family: var(--font-arco), var(--fuente-sans);
+  font-size: 0.65rem;
+  font-weight: 550;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
 .arco-nota {
-  margin-top: 8px;
+  margin-top: 17px;
   color: var(--tinta-suave);
+  font-size: 0.9rem;
+  line-height: 1.75;
+  text-wrap: pretty;
 }
 
-.arco .campo input:focus-visible {
-  border-color: var(--arco);
-  box-shadow: 0 0 0 4px rgb(0 71 255 / 0.18);
+.arco-acceso-tarjeta .alta-formulario {
+  margin-top: 28px;
+}
+
+.arco-acceso-tarjeta .campo {
+  margin-top: 20px;
+}
+
+.arco-acceso-tarjeta .campo label,
+.arco-acceso-tarjeta .confirmacion span {
+  margin-bottom: 8px;
+  color: var(--tinta);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.015em;
+}
+
+.arco-acceso-tarjeta .campo input,
+.arco-acceso-tarjeta .campo select {
+  min-height: 50px;
+  border-color: var(--linea-fuerte);
+  border-radius: 10px;
+  background-color: var(--campo);
+  font-size: 0.92rem;
+}
+
+.arco-acceso-tarjeta .campo input::placeholder {
+  color: var(--tinta-tenue);
+}
+
+.arco-acceso-tarjeta .campo input:focus-visible,
+.arco-acceso-tarjeta .campo select:focus-visible {
+  border-color: var(--arco-azul);
+  box-shadow: 0 0 0 4px light-dark(rgb(23 104 237 / 0.12), rgb(118 165 255 / 0.14));
   outline: none;
+}
+
+.arco-acceso-tarjeta .campo .pista {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 9px;
+  font-size: 0.75rem;
+}
+
+.arco-acceso-tarjeta .campo .pista a {
+  color: var(--tinta-suave);
+  text-decoration-color: var(--linea-fuerte);
+  text-underline-offset: 4px;
+}
+
+.arco-acceso-tarjeta .campo .pista a:hover {
+  color: var(--arco-azul);
+  text-decoration-color: currentColor;
+}
+
+.arco-acceso-tarjeta .acciones {
+  margin-top: 28px;
+}
+
+.arco-acceso-tarjeta .acciones .boton {
+  width: 100%;
+  min-height: 48px;
+  border-color: var(--arco-azul);
+  border-radius: 999px;
+  background: var(--arco-azul);
+  color: var(--sobre-arco);
+  font-size: 0.82rem;
+  font-weight: 600;
+  box-shadow: 0 9px 24px light-dark(rgb(23 104 237 / 0.18), rgb(0 0 0 / 0.2));
+  transition: transform 200ms ease, background-color 200ms ease, border-color 200ms ease;
+}
+
+.arco-acceso-tarjeta .acciones .boton:hover {
+  transform: translateY(-1px);
+  border-color: var(--arco-azul-fuerte);
+  background: var(--arco-azul-fuerte);
+}
+
+.arco-acceso-tarjeta .alerta {
+  border-radius: 10px;
+  font-size: 0.84rem;
+}
+
+.arco-pie {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--linea);
+  color: var(--tinta-tenue);
+  font-size: 0.75rem;
+  line-height: 1.65;
+  text-align: center;
 }
 
 .arco-opciones {
@@ -187,30 +426,86 @@
   border-bottom: 1px solid var(--linea);
 }
 
-.arco-enlace {
-  display: inline-block;
-  margin-top: 16px;
-  color: var(--arco);
+.arco .arco-enlace {
+  display: inline-flex;
+  margin-top: 18px;
+  padding: 0 0 4px;
+  border-bottom: 1px solid var(--linea-fuerte);
+  color: var(--arco-azul);
+  font-size: 0.8rem;
   font-weight: 550;
 }
 
-.arco-pie {
-  margin-top: 18px;
-  color: var(--tinta-tenue);
-  font-size: 0.86rem;
+@keyframes arco-acceso-entrar {
+  from { transform: translateY(16px); opacity: 0; }
+  to { transform: none; opacity: 1; }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 980px) {
+  .arco-lienzo {
+    grid-template-columns: minmax(0, 1fr) minmax(380px, 430px);
+    gap: 48px;
+    width: calc(100% - 64px);
+  }
+
+  .arco-presentacion h2 {
+    font-size: clamp(2.9rem, 5.8vw, 4rem);
+  }
+}
+
+@media (max-width: 820px) {
+  .arco-lienzo {
+    display: block;
+    width: min(480px, calc(100% - 48px));
+    min-height: auto;
+    padding: 58px 0 72px;
+  }
+
+  .arco-presentacion {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .arco-cabeza {
+    padding: 22px 20px 0;
+  }
+
   .arco-cabeza .selector-tema {
     flex: 1 0 100%;
     margin-left: 0;
   }
 
-  .arco-tarjeta {
-    padding: 24px 18px 20px;
+  .arco-cabeza .selector-tema label {
+    justify-content: center;
+  }
+
+  .arco-lienzo {
+    width: calc(100% - 32px);
+    padding: 36px 0 48px;
+  }
+
+  .arco-acceso-tarjeta {
+    padding: 30px 24px 26px;
+    border-radius: 18px;
+  }
+
+  .arco-acceso-tarjeta::before {
+    left: 24px;
+  }
+
+  .arco-acceso-tarjeta h1 {
+    font-size: 2rem;
   }
 
   .arco-codigos {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arco-presentacion-copy,
+  .arco-acceso-tarjeta {
+    animation: none;
   }
 }

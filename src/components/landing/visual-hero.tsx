@@ -5,7 +5,7 @@ const BARRAS = [36, 52, 44, 68, 58, 82, 74, 92, 66, 84, 96, 78] as const;
 
 export function VisualHero() {
   return (
-    <div className="arco-hero-visual" role="img" aria-label="Vista ilustrativa de una tarjeta ARCO y un panel de control empresarial">
+    <div className="arco-hero-visual" role="img" aria-label="Vista ilustrativa de una tarjeta LEVER y un panel de control empresarial">
       <div className="arco-orbita" aria-hidden="true" />
       <div className="arco-panel">
         <div className="arco-panel-cabeza">
@@ -49,7 +49,7 @@ export function VisualHero() {
           </svg>
         </div>
         <div className="arco-tarjeta-pie">
-          <span>ARCO PAGOS</span>
+          <span>LEVER PAGOS</span>
           <span>•••• 2408</span>
         </div>
       </div>

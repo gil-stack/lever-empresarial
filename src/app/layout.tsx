@@ -35,11 +35,11 @@ export const runtime = "nodejs";
 
 export const metadata: Metadata = {
   title: {
-    default: "ARCO",
-    template: "%s · ARCO",
+    default: "LEVER",
+    template: "%s · LEVER",
   },
-  description: "ARCO Pagos: control de gasto empresarial diseñado para razones sociales mexicanas.",
-  applicationName: "ARCO Pagos",
+  description: "LEVER Pagos: control de gasto empresarial diseñado para razones sociales mexicanas.",
+  applicationName: "LEVER Pagos",
 };
 
 export const viewport: Viewport = {

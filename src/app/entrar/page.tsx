@@ -32,11 +32,10 @@ export default async function PaginaEntrar({
 
   return (
     <MarcoArco>
-      <p className="arco-kicker">Entrar</p>
-      <h1>Correo, contraseña y un segundo factor.</h1>
+      <p className="arco-kicker">Portal de clientes</p>
+      <h1>Bienvenido de nuevo.</h1>
       <p className="arco-nota">
-        El correo y la contraseña no abren el portal. La sesión nace con una passkey, un código de la app o un código de
-        respaldo.
+        Entra a la cuenta de tu empresa. Después de validar tu correo y contraseña, te pediremos un segundo factor.
       </p>
       <FormularioEntrar siguiente={destino} aviso={aviso} />
     </MarcoArco>
