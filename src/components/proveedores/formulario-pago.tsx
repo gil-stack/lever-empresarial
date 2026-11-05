@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 
 import {
   enviarPago,
@@ -14,6 +14,8 @@ import { formatoPesos } from "@/dominio/centavos";
 import { sumarDias, type OrigenPago } from "@/dominio/pagos-proveedores";
 import { enEmpresa } from "@/nucleo/rutas";
 import type { PagoVista, ProveedorPago } from "@/dominio/pagos-vistas";
+
+import { enviarSinReiniciar } from "./sin-reinicio";
 
 export function FormularioPago({
   empresaId,
@@ -53,7 +55,7 @@ export function FormularioPago({
   }
 
   return (
-    <form className="pago-formulario" action={accion}>
+    <form className="pago-formulario" onSubmit={enviarSinReiniciar(accion)}>
       <input type="hidden" name="clientRequestId" value={clientRequestId} />
       {edicion ? <input type="hidden" name="requestId" value={edicion.id} /> : null}
       <input type="hidden" name="origen" value={origen} />
@@ -99,7 +101,7 @@ export function FormularioPago({
               <input id="xml" name="xml" type="file" accept=".xml,application/xml,text/xml" required onChange={(event) => {
                 const archivo = event.target.files?.[0];
                 if (!archivo) return;
-                const datos = new FormData(); datos.set("xml", archivo); inspeccionar(datos);
+                const datos = new FormData(); datos.set("xml", archivo); startTransition(() => inspeccionar(datos));
               }} />
             </label>
             <label className="soltar-archivo" htmlFor="pdf">

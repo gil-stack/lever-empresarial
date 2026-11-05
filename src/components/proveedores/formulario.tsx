@@ -16,6 +16,8 @@ import {
 import { rfcAlEscribir } from "@/dominio/rfc";
 import { Aviso, EtiquetaMono } from "@/components/sistema";
 
+import { enviarSinReiniciar } from "./sin-reinicio";
+
 export function FormularioProveedor() {
   const [estado, accion, pendiente] = useActionState(enviarProveedor, ESTADO_ALTA_INICIAL);
   const [rfc, setRfc] = useState("");
@@ -65,13 +67,13 @@ export function FormularioProveedor() {
       return;
     }
     setLocal(null);
+    enviarSinReiniciar(accion)(event);
   }
 
   return (
     <form
       ref={formulario}
       className="alta-formulario formulario-pareja"
-      action={accion}
       onSubmit={alEnviar}
       noValidate
       aria-busy={pendiente}

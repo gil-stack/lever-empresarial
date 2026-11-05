@@ -10,6 +10,8 @@ import {
 import { ESTADO_PAGO_INICIAL } from "@/app/consola/proveedores/estado";
 import { Aviso } from "@/components/sistema";
 
+import { enviarSinReiniciar } from "./sin-reinicio";
+
 /**
  * La decisión viaja con la versión y el importe que la persona tiene en
  * pantalla. Si la solicitud cambió desde que abrió el detalle, no se aplica.
@@ -32,7 +34,7 @@ export function DecisionPago({ requestId, version, totalCentavos, puedeAutorizar
           : "Compara proveedor, importe y CLABE. Autorizar exige un segundo factor verificado en los últimos 30 minutos."}
       </p>
       {estado.tipo !== "inicial" ? <Aviso tono={estado.tipo === "listo" ? "asentado" : "revisar"} titulo={estado.tipo === "listo" ? "Decisión asentada" : "No se completó"}>{estado.mensaje}</Aviso> : null}
-      <form action={accion}>
+      <form onSubmit={enviarSinReiniciar(accion)}>
         <input type="hidden" name="requestId" value={requestId} />
         <input type="hidden" name="version" value={version} />
         <input type="hidden" name="totalCentavos" value={totalCentavos} />
@@ -62,7 +64,7 @@ export function Cancelacion({ requestId, tipo }: { requestId: string; tipo: keyo
       <summary>{textos.resumen}</summary>
       <p className="pista">{textos.detalle}</p>
       {estado.tipo !== "inicial" ? <p className={estado.tipo === "listo" ? "mensaje-exito" : "error-campo"} role="status">{estado.mensaje}</p> : null}
-      <form action={accion}>
+      <form onSubmit={enviarSinReiniciar(accion)}>
         <input type="hidden" name="requestId" value={requestId} />
         <div className="campo"><label htmlFor={`cancelar-${requestId}`}>Motivo de cancelación</label><textarea id={`cancelar-${requestId}`} name="motivoCancelacion" rows={2} minLength={5} maxLength={500} required /></div>
         <button className="boton-texto" type="submit" disabled={pendiente}>Confirmar cancelación</button>
