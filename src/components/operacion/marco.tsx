@@ -7,16 +7,9 @@ import { Banderin, PalabraLever } from "@/components/cromo/logotipo";
 import { SelectorTema } from "@/components/cromo/selector-tema";
 import { COOKIE_TEMA, temaDesde } from "@/components/cromo/tema";
 
-const SECCIONES = [
-  ["/operacion", "Resumen"],
-  ["/operacion/clientes", "Clientes"],
-  ["/operacion/aprobaciones", "Aprobaciones"],
-  ["/operacion/alertas", "Alertas"],
-  ["/operacion/comisiones", "Comisiones"],
-  ["/operacion/bitacora", "Bitácora"],
-] as const;
+import { NavegacionOperacion } from "./navegacion";
 
-export async function MarcoOperacion({ actual, nombre, children }: { actual: string; nombre: string; children: ReactNode }) {
+export async function MarcoOperacion({ nombre, children }: { nombre: string; children: ReactNode }) {
   const tema = temaDesde((await cookies()).get(COOKIE_TEMA)?.value);
   return (
     <div className="operacion-marco">
@@ -25,9 +18,7 @@ export async function MarcoOperacion({ actual, nombre, children }: { actual: str
         <Link href="/operacion" className="marca" aria-label="Lever Operación, ir al resumen">
           <Banderin /><span className="marca-texto"><PalabraLever /><span className="marca-linea">Operación SOFIPO</span></span>
         </Link>
-        <nav className="operacion-nav" aria-label="Operación">
-          {SECCIONES.map(([ruta, etiqueta]) => <Link key={ruta} href={ruta} aria-current={actual === ruta ? "page" : undefined}>{etiqueta}</Link>)}
-        </nav>
+        <NavegacionOperacion />
         <div className="operacion-cuenta">
           <SelectorTema inicial={tema} />
           <p><strong>{nombre}</strong><span>Personal de plataforma</span></p>
