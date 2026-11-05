@@ -46,7 +46,9 @@ clave_local=postgres
 export AISLAMIENTO_DATABASE_URL="postgres://${usuario_local}:${clave_local}@127.0.0.1:5432/postgres"
 unset DATABASE_URL
 
-./node_modules/.bin/tsx --test \
+# Una a la vez: los archivos crean roles de clúster y en paralelo chocan
+# (tuple concurrently updated).
+./node_modules/.bin/tsx --test --test-concurrency=1 \
   tests/aislamiento/aislamiento.test.ts \
   tests/aislamiento/telefono.test.ts \
   tests/esquema/deriva.test.ts \

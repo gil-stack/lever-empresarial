@@ -5,13 +5,15 @@ const EMPRESA = "33333333-3333-4333-8333-333333333333";
 const BASE = `/c/${EMPRESA}/consola/proveedores`;
 const GIL = "a".repeat(43);
 const ROSA = "b".repeat(43);
-const EVIDENCIA = "docs/evidence/pagos-proveedores";
+const ORIGEN = process.env.E2E_BASE_URL ?? `http://localhost:${process.env.E2E_PUERTO ?? "3109"}`;
+// Las capturas de esta suite no pisan la evidencia del PR.
+const EVIDENCIA = process.env.E2E_CAPTURAS ?? "test-results/pagos-proveedores";
 
 test.beforeAll(() => mkdirSync(EVIDENCIA, { recursive: true }));
 
 async function entrar(page: Page, token = GIL) {
   await page.context().clearCookies();
-  await page.context().addCookies([{ name: "sesion", value: token, url: "http://localhost:3109", httpOnly: true, sameSite: "Lax" }]);
+  await page.context().addCookies([{ name: "sesion", value: token, url: ORIGEN, httpOnly: true, sameSite: "Lax" }]);
 }
 
 async function captura(page: Page, nombre: string) {
