@@ -234,6 +234,9 @@ test("cuentas por pagar contra Postgres: personas, versiones, CLABE, 69-B, SQL d
         await assert.rejects(() => cancelarPagoProveedor(sofia, { requestId: pagoA.requestId, motivo: "Ya no aplica" }, deps), conCodigo("cancelacion_no_permitida"));
         await cancelarPagoProveedor(rosa, { requestId: pagoA.requestId, motivo: "El proveedor pidió reprogramar" }, deps);
         assert.equal(estado(url, pagoA.requestId), "cancelado");
+        const retiro = (await leerPagosProveedores(rosa, { pagoId: pagoA.requestId }, deps)).historial
+          .find((version) => version.estado === "listo_para_pagar" && version.estadoNuevo === "cancelado");
+        assert.equal(retiro?.motivo, "El proveedor pidió reprogramar", "el historial explica por qué se retiró la autorización");
         const anulado = consultarJson<Array<{ anulado: boolean }>>(url, `select json_agg(json_build_object('anulado', anulado_en is not null)) from supplier_payables where id = '${pagoA.payableId}'`);
         assert.equal(anulado[0]?.anulado, true);
         const recaptura = await crearPagoProveedor(sofia, { ...entradaCfdi, clientRequestId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3" }, deps);

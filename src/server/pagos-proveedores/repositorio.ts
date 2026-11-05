@@ -80,15 +80,15 @@ export function repositorioPg(): RepositorioPagos {
         const historial = pagoId
           ? await consulta.query(`select h.version, h.estado, h.estado_nuevo, h.total_centavos,
                 to_char(h.programada_el, 'YYYY-MM-DD') as programada_el, h.clabe, u.nombre as resolvio,
-                coalesce(h.motivo_resolucion, regreso.motivo) as motivo, h.resuelto_en, h.cerrado_en
+                coalesce(h.motivo_resolucion, retiro.motivo) as motivo, h.resuelto_en, h.cerrado_en
               from supplier_payment_request_history h
               left join users u on u.id = h.resuelto_por
               left join lateral (
                 select a.motivo from audit_log a
                 where a.company_id = h.company_id and a.txid = h.txid and a.identificador = h.request_id
-                  and a.accion = 'regresar_pago_proveedor'
+                  and a.accion in ('regresar_pago_proveedor', 'cancelar_pago_proveedor')
                 limit 1
-              ) regreso on h.estado = 'listo_para_pagar' and h.estado_nuevo = 'por_autorizar'
+              ) retiro on h.estado = 'listo_para_pagar' and h.estado_nuevo in ('por_autorizar', 'cancelado')
               where h.company_id = $1 and h.request_id = $2
               order by h.cerrado_en desc, h.version desc limit 20`, [ctx.empresa.id, pagoId])
           : { rows: [] };
