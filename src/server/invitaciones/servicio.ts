@@ -44,7 +44,7 @@ export async function leerInvitacion(token: string, deps?: DependenciasInvitacio
  * (por ejemplo, una contadora que entra a una segunda empresa) confirma con
  * la suya. No abre sesión: el siguiente paso es registrar o verificar el segundo factor.
  */
-export type Aceptacion = { userId: string; correo: string; cuentaNueva: boolean };
+export type Aceptacion = { userId: string; correo: string; companyId: string | null; cuentaNueva: boolean };
 
 export async function aceptarInvitacion(
   entrada: { token?: unknown; contrasena?: unknown; confirmacion?: unknown },
@@ -74,7 +74,7 @@ export async function aceptarInvitacion(
   }
 
   await repositorio.consumir(invitacion, passwordHash);
-  return { userId: invitacion.userId, correo: invitacion.correo, cuentaNueva: passwordHash !== null };
+  return { userId: invitacion.userId, correo: invitacion.correo, companyId: invitacion.companyId, cuentaNueva: passwordHash !== null };
 }
 
 /** Después de confirmar la emisión. Si el correo no sale, la invitación sigue emitida. */

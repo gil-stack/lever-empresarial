@@ -3,10 +3,9 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { RUTA_SEGUNDO_FACTOR } from "@/nucleo/rutas";
 import { iniciarConContrasena } from "@/server/autenticacion";
-import { NOMBRE_COOKIE_ENTRADA } from "@/server/autenticacion/cookie";
 import { aceptarInvitacion } from "@/server/invitaciones";
+import { resolverDestinoInvitacion } from "@/server/invitaciones/destino";
 import { ErrorDeDominio } from "@/server/session";
 import type { EstadoInvitacion } from "./estado";
 
@@ -30,23 +29,24 @@ export async function enviarAceptacion(_previo: EstadoInvitacion, formData: Form
       contrasena,
       confirmacion: formData.get("confirmacion"),
     });
-    const entrada = await iniciarConContrasena({ correo: aceptada.correo, contrasena });
+    const destino = resolverDestinoInvitacion(aceptada.companyId);
+    const entrada = await iniciarConContrasena({ correo: aceptada.correo, contrasena }, { superficie: destino.superficie });
     if (entrada.tipo === "rechazo") {
       return { tipo: "invalido", mensaje: MENSAJES[entrada.codigo] ?? "La contraseña quedó guardada. Entra para registrar el segundo factor." };
     }
     const jar = await cookies();
-    jar.set(NOMBRE_COOKIE_ENTRADA, entrada.cookie.valor, {
+    jar.set(destino.cookieEntrada, entrada.cookie.valor, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",
       path: "/",
       maxAge: entrada.cookie.maxAge,
     });
+    redirect(destino.ruta);
   } catch (error) {
     if (error instanceof ErrorDeDominio) {
       return { tipo: "invalido", mensaje: MENSAJES[error.codigo] ?? "No se pudo aceptar. Vuelve a intentar." };
     }
     throw error;
   }
-  redirect(RUTA_SEGUNDO_FACTOR);
 }
