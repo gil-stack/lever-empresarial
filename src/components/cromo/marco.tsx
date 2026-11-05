@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 
 import { salir } from "@/app/sesion/acciones";
-import { enEmpresa } from "@/nucleo/rutas";
+import { enEmpresa, rutaConsola } from "@/nucleo/rutas";
 
 import { estadoDelMarco, type EmpresaDelMarco } from "./estado-marco";
 import { IconoEntrar, IconoSalir } from "./iconos";
@@ -55,6 +55,7 @@ export async function Marco({
     ? seccionesDe(
         {
           consola: true,
+          resumen: true,
           politica: true,
           maestro,
           poliza,
@@ -68,15 +69,16 @@ export async function Marco({
       )
     : seccionesDe(puertasDe(vista.capacidades), vista.empresaId, vista.variasEmpresas);
   const quien = deMuestra ? persona : vista.persona;
+  const destinoConsola = deMuestra ? "/consola" : rutaConsola(vista.capacidades);
 
   return (
     <div className="marco">
       <a className="saltar" href="#contenido">
         Saltar al contenido
       </a>
-      <LateralMovil marca={<Marca linea="Empresas" empresaId={vista.empresaId} />}>
+      <LateralMovil marca={<Marca linea="Empresas" empresaId={vista.empresaId} destino={destinoConsola} />}>
         <div className="lateral-cabeza">
-          <Marca linea="Empresas" empresaId={vista.empresaId} />
+          <Marca linea="Empresas" empresaId={vista.empresaId} destino={destinoConsola} />
         </div>
         {leido.empresa ? <EmpresaLateral empresa={leido.empresa} /> : null}
         <nav className="secciones" aria-label="Secciones">
@@ -124,12 +126,14 @@ export async function MarcoTelefono({
   actual = "/telefono",
   empresaId = null,
   consola = false,
+  resumen = false,
   variasEmpresas = false,
 }: {
   children: ReactNode;
   actual?: "/telefono" | "/telefono/topes" | "/telefono/facturacion";
   empresaId?: string | null;
   consola?: boolean;
+  resumen?: boolean;
   variasEmpresas?: boolean;
 }) {
   const tema = await temaElegido();
@@ -156,7 +160,7 @@ export async function MarcoTelefono({
             ))}
           </nav>
           <div className="enlaces-app">
-            {consola ? <Link href={enEmpresa(empresaId, "/consola")}>Abrir consola</Link> : null}
+            {consola ? <Link href={enEmpresa(empresaId, resumen ? "/consola" : "/consola/pendientes")}>Abrir consola</Link> : null}
             {variasEmpresas ? <Link href="/empresas">Cambiar de empresa</Link> : null}
             <form action={salir}><button type="submit">Salir</button></form>
           </div>
@@ -220,9 +224,9 @@ function Grupo({
   );
 }
 
-function Marca({ linea, empresaId = null }: { linea: string; empresaId?: string | null }) {
+function Marca({ linea, empresaId = null, destino }: { linea: string; empresaId?: string | null; destino: "/consola" | "/consola/pendientes" }) {
   return (
-    <Link href={enEmpresa(empresaId, "/consola")} className="marca" aria-label={`Lever ${linea}, ir a Pendientes`}>
+    <Link href={enEmpresa(empresaId, destino)} className="marca" aria-label={`Lever ${linea}, ir a ${destino === "/consola" ? "Inicio" : "Pendientes"}`}>
       <Banderin />
       <span className="marca-texto">
         <PalabraLever />

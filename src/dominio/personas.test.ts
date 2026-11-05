@@ -157,6 +157,27 @@ describe("alta de persona", () => {
     assert.match(lineaDeRol("solicitante"), /Solicitante/);
   });
 
+  it("admite Finanzas como acceso adicional, pero no como único rol de trabajo", () => {
+    const base = {
+      nombre: "Contadora Norte",
+      alta: HOY,
+      baja: "",
+      centroId: CENTRO,
+      jefeId: "",
+      clabe: CLABE,
+      acceso: "nueva",
+      correo: "contadora@ejemplo.mx",
+    };
+    const valida = validarAltaPersona({ ...base, rol: ["contador", "finanzas"] }, HOY);
+    assert.equal(valida.ok, true);
+    if (valida.ok && valida.valor.acceso.tipo === "nueva") {
+      assert.deepEqual(valida.valor.acceso.roles, ["contador", "finanzas"]);
+    }
+    const invalida = validarAltaPersona({ ...base, rol: "finanzas" }, HOY);
+    assert.equal(invalida.ok, false);
+    if (!invalida.ok) assert.equal(invalida.codigo, "finanzas_sin_rol");
+  });
+
   it("guarda la CLABE completa cuando el dígito cierra y el contador no gana un permiso aparte", () => {
     const resultado = validarAltaPersona(
       {
@@ -239,5 +260,11 @@ describe("alta de persona", () => {
     assert.match(cuerpo, /fechaDesdePartes/);
     assert.match(cuerpo, /partesDeFecha/);
     assert.match(cuerpo, /Esa fecha no existe/);
+  });
+
+  it("conserva montado el aviso al otorgar o revocar Finanzas", () => {
+    const fuente = readFileSync(new URL("../components/personas/maestro.tsx", import.meta.url), "utf8");
+    assert.match(fuente, /key=\{persona\.userId\}/);
+    assert.doesNotMatch(fuente, /key=\{`\$\{persona\.userId\}-\$\{persona\.roles\.includes\("finanzas"\)\}`\}/);
   });
 });

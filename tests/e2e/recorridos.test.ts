@@ -45,8 +45,14 @@ describe("recorridos de entrada y superficie", () => {
     }
   });
 
-  it("la portada no consulta tesorería y el teléfono no llama a la política completa", () => {
+  it("separa el permiso financiero de Inicio del acceso general a Pendientes", () => {
+    assert.deepEqual(rutaDe("/consola")?.acceso, { tipo: "capacidad", alguna: ["cliente.resumen.ver"] });
+    assert.deepEqual(rutaDe("/consola/pendientes")?.acceso, { tipo: "capacidad", alguna: ["cliente.consola.ver"] });
+  });
+
+  it("Inicio consulta el resumen autorizado, Pendientes no lee tesorería y el teléfono no llama a la política completa", () => {
     const consola = readFileSync(new URL("src/app/consola/page.tsx", RAIZ), "utf8");
+    const pendientes = readFileSync(new URL("src/app/consola/pendientes/page.tsx", RAIZ), "utf8");
     const telefono = [
       "src/app/telefono/page.tsx",
       "src/app/telefono/topes/page.tsx",
@@ -54,7 +60,9 @@ describe("recorridos de entrada y superficie", () => {
       "src/server/telefono/servicio.ts",
       "src/server/telefono/repositorio.ts",
     ].map((archivo) => readFileSync(new URL(archivo, RAIZ), "utf8")).join("\n");
-    assert.doesNotMatch(consola, /leerCajones|leerPolitica|leerTarifa|postings|saldo/i);
+    assert.match(consola, /leerResumenInicio/);
+    assert.doesNotMatch(consola, /leerCajones|leerPolitica|leerTarifa|postings/i);
+    assert.doesNotMatch(pendientes, /leerResumenInicio|leerCajones|postings|saldo/i);
     assert.match(consola, /sin_permiso\"\) notFound/);
     assert.doesNotMatch(telefono, /leerPolitica|postings|drawers|password_hash/i);
     const visibles = [

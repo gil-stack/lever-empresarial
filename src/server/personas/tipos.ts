@@ -9,6 +9,7 @@ export type CentroVista = {
 
 export type PersonaVista = {
   id: string;
+  userId: string | null;
   nombre: string;
   altaEn: string;
   bajaEn: string | null;

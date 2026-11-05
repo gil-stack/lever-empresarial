@@ -29,7 +29,7 @@ export const SQL = {
     order by lower(nombre), id
   `,
   personas: `
-    select e.id, e.nombre, e.alta_en, e.baja_en, e.clabe,
+    select e.id, e.user_id, e.nombre, e.alta_en, e.baja_en, e.clabe,
            e.jefe_id, j.nombre as jefe_nombre,
            e.cost_center_id, c.nombre as centro_nombre,
            ${ROLES_DE} as roles, mb.estado as membresia, u.correo
@@ -262,6 +262,7 @@ function mapearMiembro(fila: unknown): MiembroDeCorreo {
 function mapearPersona(fila: unknown): PersonaVista {
   const registro = fila as {
     id?: unknown;
+    user_id?: unknown;
     nombre?: unknown;
     alta_en?: unknown;
     baja_en?: unknown;
@@ -286,6 +287,7 @@ function mapearPersona(fila: unknown): PersonaVista {
   if (!/^[0-9]{18}$/.test(registro.clabe)) throw new ErrorDeDominio("base_no_disponible");
   return {
     id: registro.id,
+    userId: typeof registro.user_id === "string" ? registro.user_id : null,
     nombre: registro.nombre,
     altaEn: fechaDeColumna(registro.alta_en),
     bajaEn: registro.baja_en == null ? null : fechaDeColumna(registro.baja_en),

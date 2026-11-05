@@ -10,9 +10,10 @@ import {
   relatoOperabilidad,
   type RolCuenta,
 } from "@/dominio/personas";
+import { capacidadesDe, tiene } from "@/nucleo/capacidades";
 import type { LecturaMaestro } from "@/server/personas/tipos";
 
-import { FormularioBaja, FormularioCentro, FormularioPersona } from "./formularios";
+import { FormularioBaja, FormularioCentro, FormularioFinanzas, FormularioPersona } from "./formularios";
 
 export function Maestro({
   lectura,
@@ -117,6 +118,17 @@ export function Maestro({
                     </dd>
                   </div>
                 </dl>
+                {edita && persona.userId && tiene(capacidadesDe({ rolesCliente: persona.roles, rolesPlataforma: [] }), "cliente.consola.ver") ? (
+                  persona.roles.includes("administrador") ? (
+                    <p className="pista">Inicio financiero está incluido con administración.</p>
+                  ) : (
+                    <FormularioFinanzas
+                      key={persona.userId}
+                      userId={persona.userId}
+                      habilitado={persona.roles.includes("finanzas")}
+                    />
+                  )
+                ) : null}
                 {edita ? (
                   <FormularioBaja personaId={persona.id} nombre={persona.nombre} bajaActual={persona.bajaEn} />
                 ) : null}

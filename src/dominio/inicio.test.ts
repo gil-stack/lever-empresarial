@@ -6,13 +6,13 @@ import type { ContextoDeTenant } from "../nucleo/contexto.ts";
 import { leerPendientesInicio } from "../server/inicio/servicio.ts";
 import { pendientesDeInicio, type DatosInicio } from "./inicio.ts";
 
-const datos: DatosInicio = { centros: 0, personas: 0, liberadores: 1, categorias: 2, topesSinEscribir: 1, plan: "recorrido" };
+const datos: DatosInicio = { centros: 0, personas: 0, liberadores: 1, categorias: 2, topesSinEscribir: 1, proveedores: 0, plan: "recorrido" };
 
 describe("pendientes de la portada", () => {
   it("deriva acciones reales solo para quien puede abrirlas", () => {
     const admin = capacidadesDe({ rolesCliente: ["administrador"], rolesPlataforma: [] });
     const pendientes = pendientesDeInicio(datos, admin);
-    assert.deepEqual(pendientes.map((pendiente) => pendiente.id), ["centro", "liberadores", "topes", "plan"]);
+    assert.deepEqual(pendientes.map((pendiente) => pendiente.id), ["liberadores", "centro", "topes", "proveedor", "plan"]);
     assert.equal(pendientes.some((pendiente) => pendiente.id === "persona"), false);
     const contador = capacidadesDe({ rolesCliente: ["contador"], rolesPlataforma: [] });
     assert.deepEqual(pendientesDeInicio(datos, contador), []);
@@ -20,7 +20,7 @@ describe("pendientes de la portada", () => {
 
   it("un tope cero ya está escrito y no aparece como pendiente", () => {
     const admin = capacidadesDe({ rolesCliente: ["administrador"], rolesPlataforma: [] });
-    const completo: DatosInicio = { centros: 1, personas: 2, liberadores: 2, categorias: 1, topesSinEscribir: 0, plan: "aceptada" };
+    const completo: DatosInicio = { centros: 1, personas: 2, liberadores: 2, categorias: 1, topesSinEscribir: 0, proveedores: 1, plan: "aceptada" };
     assert.deepEqual(pendientesDeInicio(completo, admin), []);
   });
 

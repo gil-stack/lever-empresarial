@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState, type FormEvent, type ReactNode } from "react";
 
-import { enviarBaja, enviarCentro, enviarPersona } from "@/app/consola/personas/acciones";
+import { enviarBaja, enviarCentro, enviarFinanzas, enviarPersona } from "@/app/consola/personas/acciones";
 import { clabeValida, clabeVisible } from "@/dominio/clabe";
 import {
   erroresDeAltaPersona,
@@ -97,6 +97,7 @@ export function FormularioPersona({
   const [acceso, setAcceso] = useState<AccesoForma | "">("");
   const [correo, setCorreo] = useState("");
   const [roles, setRoles] = useState<RolCuenta[]>([]);
+  const [verFinanzas, setVerFinanzas] = useState(false);
   const [local, setLocal] = useState<ErrorCampo[] | null>(null);
   const [visto, setVisto] = useState(estado);
   if (visto !== estado) {
@@ -111,6 +112,7 @@ export function FormularioPersona({
       setAcceso("");
       setCorreo("");
       setRoles([]);
+      setVerFinanzas(false);
       setLocal(null);
     }
   }
@@ -137,7 +139,7 @@ export function FormularioPersona({
         clabe,
         acceso,
         correo,
-        rol: roles,
+        rol: verFinanzas ? [...roles, "finanzas"] : roles,
       },
       hoy,
     );
@@ -367,6 +369,22 @@ export function FormularioPersona({
               ))}
             </div>
           ) : null}
+          <div className="permiso-finanzas">
+            <label className="confirmacion" htmlFor="verFinanzas">
+              <input
+                id="verFinanzas"
+                type="checkbox"
+                checked={verFinanzas}
+                onChange={(event) => {
+                  setVerFinanzas(event.target.checked);
+                  setLocal(null);
+                }}
+              />
+              <span>Ver Inicio financiero</span>
+            </label>
+            {verFinanzas ? <input type="hidden" name="rol" value="finanzas" /> : null}
+            <p className="pista">Podrá consultar ingresos, gastos y movimientos. Es un acceso adicional a su rol; no mueve dinero.</p>
+          </div>
         </>
       ) : null}
       <div className="acciones">
@@ -375,6 +393,28 @@ export function FormularioPersona({
         </button>
         <p>La CLABE se guarda. No se dispersa.</p>
       </div>
+    </form>
+  );
+}
+
+export function FormularioFinanzas({ userId, habilitado }: { userId: string; habilitado: boolean }) {
+  const [estado, accion, pendiente] = useActionState(enviarFinanzas, ESTADO_MAESTRO_INICIAL);
+  const [verFinanzas, setVerFinanzas] = useState(habilitado);
+  return (
+    <form className="permiso-finanzas permiso-finanzas-edicion" action={accion} aria-busy={pendiente}>
+      <input type="hidden" name="userId" value={userId} />
+      <input type="hidden" name="verFinanzas" value={verFinanzas ? "si" : "no"} />
+      <label className="confirmacion">
+        <input type="checkbox" checked={verFinanzas} onChange={(event) => setVerFinanzas(event.target.checked)} />
+        <span>Puede ver Inicio financiero</span>
+      </label>
+      <p className="pista">Consulta ingresos, gastos y movimientos. No cambia sus otros permisos.</p>
+      <div className="acciones">
+        <button type="submit" className="boton-texto" disabled={pendiente}>
+          {pendiente ? "Guardando…" : "Guardar acceso financiero"}
+        </button>
+      </div>
+      <Avisos errores={[]} estado={estado} />
     </form>
   );
 }

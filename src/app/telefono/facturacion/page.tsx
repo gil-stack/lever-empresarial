@@ -40,7 +40,7 @@ export default async function PaginaFacturacion() {
     }
   }
   return (
-    <MarcoTelefono actual="/telefono/facturacion" empresaId={ctx?.empresa?.id ?? null} consola={puede(ctx, "cliente.consola.ver")} variasEmpresas={Boolean(ctx && ctx.empresas.length > 1)}>
+    <MarcoTelefono actual="/telefono/facturacion" empresaId={ctx?.empresa?.id ?? null} consola={puede(ctx, "cliente.consola.ver")} resumen={puede(ctx, "cliente.resumen.ver")} variasEmpresas={Boolean(ctx && ctx.empresas.length > 1)}>
       {carga.tipo === "lista" ? <Facturacion datos={carga.datos} qr={carga.qr} /> : <EstadoTelefono tipo={carga.tipo} />}
     </MarcoTelefono>
   );

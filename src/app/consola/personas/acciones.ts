@@ -17,6 +17,7 @@ import {
 } from "@/dominio/personas";
 import { contextoDeAccion, errorConSecreto } from "@/server/entrada";
 import { darDeAltaPersona, nombrarCentro, registrarBaja } from "@/server/personas";
+import { asignarRol, quitarRol } from "@/server/roles";
 import { ErrorDeDominio } from "@/server/session";
 
 const LISTO_CENTRO = "El centro de costo quedó nombrado.";
@@ -60,6 +61,28 @@ export async function enviarPersona(_previo: EstadoMaestro, formData: FormData):
   if (invitacion === "enviada") return { tipo: "listo", mensaje: LISTO_INVITADA };
   if (invitacion === "pendiente") return { tipo: "listo", mensaje: LISTO_PENDIENTE };
   return { tipo: "listo", mensaje: LISTO_PERSONA };
+}
+
+export async function enviarFinanzas(_previo: EstadoMaestro, formData: FormData): Promise<EstadoMaestro> {
+  const userId = formData.get("userId");
+  const verFinanzas = formData.get("verFinanzas");
+  if (typeof userId !== "string" || (verFinanzas !== "si" && verFinanzas !== "no")) {
+    return { tipo: "rechazado", codigo: "persona_ausente" };
+  }
+  const sesion = await leerSesion();
+  if (!sesion) return { tipo: "rechazado", codigo: "sesion" };
+  try {
+    const entrada = { userId, rol: "finanzas" as const };
+    if (verFinanzas === "si") await asignarRol(sesion, entrada);
+    else await quitarRol(sesion, entrada);
+  } catch (error) {
+    return traducir(error);
+  }
+  refrescar();
+  return {
+    tipo: "listo",
+    mensaje: verFinanzas === "si" ? "La persona ya puede ver Inicio financiero." : "Se retiró el acceso a Inicio financiero.",
+  };
 }
 
 export async function enviarBaja(_previo: EstadoMaestro, formData: FormData): Promise<EstadoMaestro> {
@@ -135,6 +158,7 @@ function esRechazo(codigo: string): codigo is CodigoRechazoPersona {
 
 function refrescar(): void {
   revalidatePath("/consola/personas");
+  revalidatePath("/consola/pendientes");
   revalidatePath("/consola");
 }
 

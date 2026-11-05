@@ -21,6 +21,16 @@ describe("capacidades por superficie", () => {
     assert.equal(tiene(capacidades, "cliente.plan.ver"), true);
   });
 
+  it("finanzas abre solo el resumen y pendientes, sin permisos operativos", () => {
+    const capacidades = capacidadesDe({ rolesCliente: ["finanzas"], rolesPlataforma: [] });
+    assert.equal(tiene(capacidades, "cliente.consola.ver"), true);
+    assert.equal(tiene(capacidades, "cliente.resumen.ver"), true);
+    assert.equal(tiene(capacidades, "cliente.politica.ver"), false);
+    assert.equal(tiene(capacidades, "cliente.poliza.ver"), false);
+    assert.equal(tiene(capacidades, "cliente.proveedores.ver"), false);
+    assert.equal(tiene(capacidades, "cliente.pago.liberar"), false);
+  });
+
   it("solicitante sigue leyéndose en membresías históricas", () => {
     assert.deepEqual(rolesLeidos(["solicitante", "desconocido"]), ["solicitante"]);
   });

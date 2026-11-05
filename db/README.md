@@ -130,3 +130,7 @@ La constancia es un PDF en el almacén privado. La clave no es una URL y no baja
 La aplicación no conecta como dueña de las tablas. `DATABASE_URL` es el rol `plataforma_app`: no es dueño, no tiene `BYPASSRLS` y en cada transacción baja a `plataforma_cliente` o `plataforma_sofipo`. Quien migra sigue siendo el único dueño. Este corte no migra el libro de production.
 
 La contraseña abre una entrada de minutos, no una sesión. La sesión nace cuando esa entrada se consume con passkey, TOTP o código de respaldo. Aprobar una recuperación de contraseña cambia la contraseña y cierra las sesiones. No revoca passkeys ni TOTP. Nadie aprueba la propia solicitud.
+
+## Inicio financiero
+
+`0024_rol_finanzas.sql` admite el rol combinable `finanzas` en `membership_roles`. Administración ve Inicio por su propio rol; Finanzas permite que otra persona de consola vea el resumen y Pendientes sin darle acceso a póliza, proveedores, política, configuración ni liberación. El resumen solo lee `postings`: los ingresos son asientos positivos y los gastos son el valor absoluto de los negativos. El índice por empresa y fecha sostiene esa lectura. Este archivo no inserta asientos ni migra production.

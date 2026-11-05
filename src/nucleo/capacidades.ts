@@ -8,7 +8,7 @@
 export const SUPERFICIES = ["cliente", "sofipo", "telefono"] as const;
 export type Superficie = (typeof SUPERFICIES)[number];
 
-export const ROLES_CLIENTE = ["administrador", "solicitante", "liberador", "tarjetahabiente", "contador"] as const;
+export const ROLES_CLIENTE = ["administrador", "solicitante", "liberador", "tarjetahabiente", "contador", "finanzas"] as const;
 export type RolCliente = (typeof ROLES_CLIENTE)[number];
 
 /** Cada rol de la plataforma se enciende cuando su fase le da trabajo. */
@@ -21,7 +21,8 @@ const TODOS: readonly RolCliente[] = ROLES_CLIENTE;
 const DE_CONSOLA: readonly RolCliente[] = ["administrador", "solicitante", "liberador", "contador"];
 
 const DEL_CLIENTE = {
-  "cliente.consola.ver": { superficie: "cliente", roles: DE_CONSOLA },
+  "cliente.consola.ver": { superficie: "cliente", roles: [...DE_CONSOLA, "finanzas"] },
+  "cliente.resumen.ver": { superficie: "cliente", roles: ["administrador", "finanzas"] },
   "cliente.precio.ver": { superficie: "cliente", roles: DE_CONSOLA },
   "cliente.plan.ver": { superficie: "cliente", roles: ["administrador"] },
   "cliente.configuracion.ver": { superficie: "cliente", roles: ["administrador"] },

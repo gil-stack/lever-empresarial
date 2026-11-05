@@ -1,4 +1,4 @@
-import type { Capacidad, Superficie } from "./capacidades";
+import { tiene, type Capacidad, type Superficie } from "./capacidades";
 
 /**
  * Cada ruta declara su superficie y quién la abre. Una ruta que no está aquí
@@ -60,6 +60,12 @@ export const RUTAS = [
   { patron: "/empresas", superficie: "cliente", acceso: { tipo: "sesion" }, conEmpresa: false },
   {
     patron: "/consola",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.resumen.ver"] },
+    conEmpresa: true,
+  },
+  {
+    patron: "/consola/pendientes",
     superficie: "cliente",
     acceso: { tipo: "capacidad", alguna: ["cliente.consola.ver"] },
     conEmpresa: true,
@@ -161,6 +167,11 @@ export function enEmpresa(empresaId: string | null | undefined, ruta: string): s
   const declarada = rutaDe(ruta.split("?")[0] ?? ruta);
   if (!declarada?.conEmpresa) return ruta;
   return `/c/${empresaId}${ruta}`;
+}
+
+/** La consola abre cifras solo con permiso financiero; el resto aterriza en sus acciones. */
+export function rutaConsola(capacidades: readonly Capacidad[]): "/consola" | "/consola/pendientes" {
+  return tiene(capacidades, "cliente.resumen.ver") ? "/consola" : "/consola/pendientes";
 }
 
 function coincide(patron: string, pathname: string): boolean {

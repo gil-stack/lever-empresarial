@@ -347,6 +347,7 @@ function armarAlta(
   if (acceso === "nueva") {
     roles = rolesDeCuenta(entrada.rol);
     if (!roles) errores.push({ codigo: "rol_invalido", campo: "rol" });
+    else if (roles.length === 1 && roles[0] === "finanzas") errores.push({ codigo: "finanzas_sin_rol", campo: "rol" });
   }
 
   if (errores.length > 0 || !nombre || !altaEn || !clabe.ok || !UUID.test(centroId)) {
@@ -449,6 +450,7 @@ export function lineaDeRol(rol: RolCuenta | null): string {
   if (rol === "liberador") return "Liberador. Puede soltar dinero.";
   if (rol === "administrador") return "Administrador. No suelta dinero por este rol.";
   if (rol === "solicitante") return "Solicitante. Pide, no suelta.";
+  if (rol === "finanzas") return "Finanzas. Ve Inicio y sus movimientos; no mueve dinero.";
   return "Tarjetahabiente. No abre este maestro.";
 }
 
@@ -469,6 +471,7 @@ const ETIQUETA_ROL: Record<RolCuenta, string> = {
   liberador: "Liberador",
   tarjetahabiente: "Tarjetahabiente",
   contador: "Contador",
+  finanzas: "Finanzas",
 };
 
 export function pistaDelRol(rol: RolCuenta | ""): string {
@@ -478,6 +481,7 @@ export function pistaDelRol(rol: RolCuenta | ""): string {
   }
   if (rol === "administrador") return "Da de alta a las personas. Este rol no suelta dinero.";
   if (rol === "solicitante") return "Puede pedir un pago, cuando esa pantalla exista. No lo suelta.";
+  if (rol === "finanzas") return "Ve Inicio, ingresos, gastos y movimientos. No abre otros módulos ni mueve dinero.";
   if (rol === "tarjetahabiente") return "El gasto vive en el teléfono. No abre este maestro.";
   return "Elige el rol con el que va a entrar.";
 }
@@ -498,6 +502,7 @@ export const MENSAJE_CAMPO: Record<string, ErrorCampo> = {
   acceso_invalido: { campo: "acceso", mensaje: "Elige si entra a la consola." },
   correo_invalido: { campo: "correo", mensaje: "Escribe un correo válido." },
   rol_invalido: { campo: "rol", mensaje: "Elige al menos un rol de la cuenta." },
+  finanzas_sin_rol: { campo: "rol", mensaje: "Finanzas es un acceso adicional. Elige también el rol de trabajo de la persona." },
 };
 
 export function erroresDeAltaPersona(entrada: EntradaAltaPersona, hoy: string): ErrorCampo[] {

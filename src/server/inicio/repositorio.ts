@@ -22,6 +22,7 @@ export const SQL_INICIO = `
         and (e.baja_en is null or e.baja_en > $2::date)) as liberadores,
     (select count(*) from policy_categories c where c.company_id = $1) as categorias,
     (select count(*) from policy_categories c where c.company_id = $1 and c.tope_centavos is null) as topes_sin_escribir,
+    (select count(*) from suppliers s where s.company_id = $1) as proveedores,
     (select s.estado from subscriptions s where s.company_id = $1) as plan_estado
 `;
 
@@ -38,6 +39,7 @@ export function repositorioPg(): RepositorioInicio {
           liberadores: entero(fila.liberadores),
           categorias: entero(fila.categorias),
           topesSinEscribir: entero(fila.topes_sin_escribir),
+          proveedores: entero(fila.proveedores),
           plan: fila.plan_estado === null ? null : plan(fila.plan_estado),
         };
       });

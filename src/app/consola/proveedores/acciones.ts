@@ -51,6 +51,7 @@ export async function enviarProveedor(
           constancia: { nombre: validada.nombre, bytes: validada.bytes },
         });
         revalidatePath("/consola/proveedores");
+        revalidatePath("/consola/pendientes");
         return { tipo: "listo", mensaje: guardado.mensaje };
       } catch (error) {
         return traducir(error);
