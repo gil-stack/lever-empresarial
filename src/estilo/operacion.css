@@ -34,6 +34,46 @@
   text-decoration: none;
 }
 
+.operacion-nav-estado {
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  margin-left: auto;
+}
+
+.operacion-nav-spinner {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--linea-fuerte);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: operacion-girar 700ms linear infinite;
+}
+
+.operacion-nav-lectura {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes operacion-girar {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .operacion-nav-spinner {
+    animation: none;
+  }
+}
+
 .operacion-nav a:hover,
 .operacion-nav a[aria-current="page"] {
   background: var(--realce);
