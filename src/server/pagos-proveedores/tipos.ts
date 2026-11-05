@@ -70,6 +70,7 @@ export type CargoNuevo = {
 export type SolicitudNueva = {
   id: string;
   payableId: string;
+  clientRequestId: string;
   supplierClabeId: string;
   clabe: string;
   totalCentavos: number;
@@ -96,6 +97,7 @@ export type ContextoPagos = {
   cargo(payableId: string): Promise<CargoNuevo | null>;
   vincularDocumentoCargo(documentoId: string, payableId: string, tipo: string, creadoEn: Date): Promise<void>;
   insertarSolicitud(solicitud: SolicitudNueva): Promise<void>;
+  solicitudPorClave(clientRequestId: string): Promise<{ requestId: string; payableId: string } | null>;
   solicitud(id: string): Promise<SolicitudActual | null>;
   actualizarCargo(cargo: CargoNuevo & { actualizadoEn: Date }): Promise<void>;
   actualizarSolicitud(entrada: {

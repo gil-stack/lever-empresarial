@@ -34,6 +34,7 @@ const MENSAJES: Record<string, string> = {
   motivo_invalido: "Explica el motivo con al menos 10 caracteres. Al rechazar o cancelar bastan 5.",
   archivo_ausente: "Carga todos los archivos requeridos antes de continuar.",
   archivo_no_disponible: "El archivo no es válido o no está disponible. Usa PDF legible de hasta 8 MB.",
+  archivos_peso_total: "El XML y el PDF juntos no pueden superar 8 MB.",
   cfdi_invalido: "El XML no es legible o contiene una estructura no permitida.",
   cfdi_codificacion: "El XML debe venir codificado en UTF-8.",
   cfdi_no_es_ingreso_mxn: "El CFDI debe ser versión 4.0, tipo ingreso y moneda MXN.",
@@ -43,6 +44,7 @@ const MENSAJES: Record<string, string> = {
   cfdi_duplicado: "Ese UUID ya está registrado en esta empresa.",
   reautenticacion_requerida: "La autorización exige un segundo factor reciente. Sal y vuelve a entrar para renovarlo.",
   cancelacion_no_permitida: "Solo quien solicitó el pago puede cancelarlo mientras sigue pendiente.",
+  idempotencia_invalida: "La referencia de esta solicitud no es válida. Recarga el formulario para generar una nueva.",
   base_no_disponible: "No se pudo completar la operación. Inténtalo de nuevo.",
   auditoria_no_disponible: "No se pudo dejar constancia. La operación no se guardó.",
 };
@@ -68,9 +70,10 @@ export async function enviarPago(
 ): Promise<EstadoPagoFormulario> {
   try {
     const [xml, pdf] = await Promise.all([leerArchivo(formData.get("xml")), leerArchivo(formData.get("pdf"))]);
+    if ((xml?.bytes.byteLength ?? 0) + (pdf?.bytes.byteLength ?? 0) > 8_000_000) throw new ErrorDeDominio("archivos_peso_total");
     const creado = await crearPagoProveedor(await contextoDeAccion(), entrada(formData, xml, pdf));
     revalidatePath("/consola/proveedores");
-    return { tipo: "listo", mensaje: "El pago quedó enviado a autorización. Todavía no se mueve dinero.", requestId: creado.requestId };
+    return { tipo: "listo", mensaje: creado.existente ? "La solicitud ya existía. No se duplicó el pago." : "El pago quedó enviado a autorización. Todavía no se mueve dinero.", requestId: creado.requestId };
   } catch (error) {
     return { tipo: "invalido", mensaje: traducir(error) };
   }
@@ -148,7 +151,8 @@ export async function subirContrato(
 
 function entrada(formData: FormData, xml: ArchivoPago, pdf: ArchivoPago) {
   return {
-    supplierId: texto(formData, "supplierId"), origen: texto(formData, "origen"), xml, pdf,
+    supplierId: texto(formData, "supplierId"), origen: texto(formData, "origen"),
+    clientRequestId: texto(formData, "clientRequestId"), xml, pdf,
     monto: texto(formData, "monto"), referencia: texto(formData, "referencia"),
     emitidaEl: texto(formData, "emitidaEl"), venceEl: texto(formData, "venceEl"),
     programadaEl: texto(formData, "programadaEl"), motivoExcepcion: texto(formData, "motivoExcepcion"),

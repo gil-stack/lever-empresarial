@@ -138,6 +138,7 @@ CREATE TABLE supplier_payment_requests (
   resuelto_en timestamptz,
   motivo_resolucion text,
   version integer NOT NULL DEFAULT 1,
+  client_request_id uuid,
   creado_en timestamptz NOT NULL,
   CONSTRAINT supplier_payment_requests_cargo
     FOREIGN KEY (payable_id, company_id) REFERENCES supplier_payables (id, company_id) ON DELETE RESTRICT,
@@ -163,6 +164,8 @@ CREATE TABLE supplier_payment_requests (
 );
 
 CREATE UNIQUE INDEX supplier_payment_requests_una_por_cargo ON supplier_payment_requests (payable_id);
+CREATE UNIQUE INDEX supplier_payment_requests_idempotencia
+  ON supplier_payment_requests (company_id, client_request_id) WHERE client_request_id IS NOT NULL;
 CREATE INDEX supplier_payment_requests_bandeja_idx
   ON supplier_payment_requests (company_id, estado, programada_el, solicitado_en);
 
@@ -290,7 +293,8 @@ BEGIN
     END IF;
   ELSIF OLD.estado = 'rechazado' AND NEW.estado = 'por_autorizar' THEN
     validar_instruccion := true;
-    IF NEW.solicitado_por IS DISTINCT FROM app_usuario()
+    IF NEW.solicitado_por IS DISTINCT FROM OLD.solicitado_por
+      OR NEW.solicitado_por IS DISTINCT FROM app_usuario()
       OR NOT cliente_tiene_rol_operativo(NEW.company_id, NEW.solicitado_por, ARRAY['administrador','liberador','solicitante'])
       OR NEW.version <> OLD.version + 1 THEN
       RAISE EXCEPTION 'sin_permiso_para_solicitar';

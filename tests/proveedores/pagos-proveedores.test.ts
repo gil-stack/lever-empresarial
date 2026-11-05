@@ -49,6 +49,7 @@ test("cuentas por pagar: dos personas, duplicados, corrección y CLABE cambiada"
     const sesion = { superficie: "cliente" as const, segundoFactor: { metodo: "totp" as const, en: new Date(AHORA) } };
     try {
       const entradaCfdi = {
+        clientRequestId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1",
         supplierId: PROVEEDOR, origen: "cfdi", xml: { nombre: "factura.xml", bytes: cfdiDePrueba() },
         pdf: { nombre: "factura.pdf", bytes: PDF }, venceEl: "2026-11-30", programadaEl: "2026-11-06",
       };
@@ -61,17 +62,28 @@ test("cuentas por pagar: dos personas, duplicados, corrección y CLABE cambiada"
       assert.equal(estado(url, creado.requestId), "listo_para_pagar");
 
       await assert.rejects(
-        () => crearPagoProveedor(luis, entradaCfdi, deps),
+        () => crearPagoProveedor(luis, { ...entradaCfdi, clientRequestId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2" }, deps),
         (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "cfdi_duplicado",
       );
       assert.equal(borrados.length, 0, "el duplicado se detecta antes de subir archivos y no deja huérfanos");
 
-      const excepcion = await crearPagoProveedor(luis, {
+      const entradaExcepcion = {
+        clientRequestId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3",
         supplierId: PROVEEDOR, origen: "excepcion", pdf: { nombre: "soporte.pdf", bytes: PDF },
         monto: "1,250.50", referencia: "Servicio extraordinario", emitidaEl: "2026-11-01",
         venceEl: "2026-11-30", programadaEl: "2026-11-07", motivoExcepcion: "Trabajo urgente autorizado por dirección",
-      }, deps);
+      };
+      const excepcion = await crearPagoProveedor(luis, entradaExcepcion, deps);
+      const reintento = await crearPagoProveedor(luis, entradaExcepcion, deps);
+      assert.deepEqual(reintento, { requestId: excepcion.requestId, payableId: excepcion.payableId, existente: true });
       await resolverPagoProveedor(rosa, sesion, { requestId: excepcion.requestId, decision: "rechazar", motivo: "Falta desglose del trabajo" }, deps);
+      await assert.rejects(
+        () => editarYReenviarPago(rosa, excepcion.requestId, {
+          origen: "excepcion", monto: "9,999.00", referencia: "Servicio extraordinario", emitidaEl: "2026-11-01",
+          venceEl: "2026-11-30", programadaEl: "2026-11-08", motivoExcepcion: "Cambio propuesto por otra persona",
+        }, deps),
+        (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "pago_no_autorizable",
+      );
       await editarYReenviarPago(luis, excepcion.requestId, {
         origen: "excepcion", monto: "2,000.00", referencia: "Servicio extraordinario", emitidaEl: "2026-11-01",
         venceEl: "2026-11-30", programadaEl: "2026-11-08", motivoExcepcion: "Trabajo urgente con desglose anexado por dirección",
@@ -79,9 +91,9 @@ test("cuentas por pagar: dos personas, duplicados, corrección y CLABE cambiada"
       assert.equal(estado(url, excepcion.requestId), "por_autorizar");
 
       ejecutar(url, `begin;
-        update supplier_clabes set vigente_hasta = timestamptz '2026-11-05 12:00:00+00' where id = '${CLABE_ID}';
+        update supplier_clabes set vigente_hasta = clock_timestamp() where id = '${CLABE_ID}';
         insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde)
-          values ('${CLABE_NUEVA_ID}', '${EMPRESA}', '${PROVEEDOR}', '${CLABE_NUEVA}', true, timestamptz '2026-11-05 12:00:00+00');
+          values ('${CLABE_NUEVA_ID}', '${EMPRESA}', '${PROVEEDOR}', '${CLABE_NUEVA}', true, clock_timestamp());
         insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
           values ('${operadorId}', '${EMPRESA}', 'miembro', '${LUIS}', 'cliente', 'clabe_proveedor', 'supplier_clabes', '${CLABE_NUEVA_ID}');
         commit;`);

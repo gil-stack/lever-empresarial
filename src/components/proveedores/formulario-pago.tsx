@@ -28,6 +28,7 @@ export function FormularioPago({
   hoy: string;
   edicion?: PagoVista;
 }) {
+  const [clientRequestId] = useState(() => crypto.randomUUID());
   const [estado, accion, pendiente] = useActionState(edicion ? reenviarPago : enviarPago, ESTADO_PAGO_INICIAL);
   const [lectura, inspeccionar, inspeccionando] = useActionState(prellenarCfdi, { tipo: "inicial" } as const);
   const [origen, setOrigen] = useState<OrigenPago>(edicion?.origen ?? "cfdi");
@@ -53,6 +54,7 @@ export function FormularioPago({
 
   return (
     <form className="pago-formulario" action={accion}>
+      <input type="hidden" name="clientRequestId" value={clientRequestId} />
       {edicion ? <input type="hidden" name="requestId" value={edicion.id} /> : null}
       <input type="hidden" name="origen" value={origen} />
       {edicion ? <input type="hidden" name="supplierId" value={supplierId} /> : null}
@@ -142,7 +144,7 @@ export function FormularioPago({
 
       <div className="formulario-final">
         <div><strong>{edicion ? "Volver a solicitar" : "Enviar a autorización"}</strong><p>Otra persona deberá revisar proveedor, importe y CLABE. No se enviará dinero.</p></div>
-        <button className="boton" type="submit" disabled={pendiente || inspeccionando || (origen === "cfdi" && !edicion && !cfdi)}>
+        <button className="boton" type="submit" disabled={pendiente || inspeccionando || estado.tipo === "listo" || (origen === "cfdi" && !edicion && !cfdi)}>
           {pendiente ? "Guardando…" : edicion ? "Guardar y solicitar" : "Revisar y solicitar"}
         </button>
       </div>

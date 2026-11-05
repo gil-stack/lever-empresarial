@@ -31,6 +31,7 @@ export type PagoVista = {
   venceEl: string;
   programadaEl: string;
   estado: EstadoPago;
+  clabe: string;
   solicitadoPor: string;
   solicitante: string;
   resueltoPor: string | null;

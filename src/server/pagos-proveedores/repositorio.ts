@@ -33,7 +33,7 @@ export function repositorioPg(): RepositorioPagos {
               to_char(p.emitida_el, 'YYYY-MM-DD') as emitida_el,
               to_char(p.vence_el, 'YYYY-MM-DD') as vence_el,
               to_char(p.programada_el, 'YYYY-MM-DD') as programada_el,
-              r.estado, r.solicitado_por, u.nombre as solicitante, r.resuelto_por,
+              r.estado, r.clabe, r.solicitado_por, u.nombre as solicitante, r.resuelto_por,
               r.motivo_resolucion, p.motivo_excepcion, r.version
             from supplier_payment_requests r
             join supplier_payables p on p.company_id = r.company_id and p.id = r.payable_id
@@ -161,11 +161,18 @@ function contexto(consulta: Consulta, companyId: string): ContextoPagos {
     async insertarSolicitud(solicitud) {
       await consulta.query(`insert into supplier_payment_requests (
         id, company_id, payable_id, supplier_clabe_id, clabe, total_centavos, programada_el,
-        solicitado_por, solicitado_en, creado_en
-      ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$9)`, [
+        solicitado_por, solicitado_en, client_request_id, creado_en
+      ) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$9)`, [
         solicitud.id, companyId, solicitud.payableId, solicitud.supplierClabeId, solicitud.clabe,
-        solicitud.totalCentavos, solicitud.programadaEl, solicitud.solicitadoPor, solicitud.solicitadoEn,
+        solicitud.totalCentavos, solicitud.programadaEl, solicitud.solicitadoPor, solicitud.solicitadoEn, solicitud.clientRequestId,
       ]);
+    },
+    async solicitudPorClave(clientRequestId) {
+      const resultado = await consulta.query(`select id, payable_id from supplier_payment_requests
+        where company_id = $1 and client_request_id = $2`, [companyId, clientRequestId]);
+      const fila = resultado.rows[0] as Record<string, unknown> | undefined;
+      if (!fila) return null;
+      return { requestId: texto(fila.id), payableId: texto(fila.payable_id) };
     },
     async solicitud(id) {
       const resultado = await consulta.query(`select id, payable_id, estado, solicitado_por, version
@@ -226,7 +233,7 @@ function mapearPago(valor: unknown): PagoVista {
     id: texto(r.id), payableId: texto(r.payable_id), supplierId: texto(r.supplier_id),
     proveedor: texto(r.razon_social), rfc: texto(r.rfc), referencia: texto(r.referencia), origen,
     cfdiUuid: nullable(r.cfdi_uuid), totalCentavos: entero(r.total_centavos), emitidaEl: texto(r.emitida_el),
-    venceEl: texto(r.vence_el), programadaEl: texto(r.programada_el), estado,
+    venceEl: texto(r.vence_el), programadaEl: texto(r.programada_el), estado, clabe: texto(r.clabe),
     solicitadoPor: texto(r.solicitado_por), solicitante: texto(r.solicitante), resueltoPor: nullable(r.resuelto_por),
     motivoResolucion: nullable(r.motivo_resolucion), motivoExcepcion: nullable(r.motivo_excepcion), version: entero(r.version),
   };

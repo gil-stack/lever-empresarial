@@ -29,6 +29,9 @@ export async function enviarProveedor(
     clabe: formData.get("clabe"),
     archivo: archivo.meta,
   });
+  if ((archivo.bytes?.byteLength ?? 0) + (contrato.bytes?.byteLength ?? 0) > 8_000_000) {
+    return { tipo: "invalido", errores: [{ campo: "contrato", mensaje: "La constancia y el contrato juntos no pueden superar 8 MB." }] };
+  }
   if (contrato.meta && !contrato.bytes) {
     return { tipo: "invalido", errores: [{ campo: "contrato", mensaje: "El contrato debe ser un PDF de hasta 8 MB." }] };
   }

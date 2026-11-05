@@ -110,6 +110,7 @@ test("alta, factura, excepción, descarga y autorización con otra persona", asy
   await captura(page, "09-nuevo-pago-excepcion");
   await page.getByRole("button", { name: "Revisar y solicitar" }).click();
   await expect(page.getByText("El pago quedó enviado a autorización. Todavía no se mueve dinero.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Revisar y solicitar" })).toBeDisabled();
   const detalleExcepcion = await page.getByRole("link", { name: "Ver el detalle del pago" }).getAttribute("href");
   expect(detalleExcepcion).toBeTruthy();
 
@@ -120,14 +121,34 @@ test("alta, factura, excepción, descarga y autorización con otra persona", asy
   await captura(page, "10-autorizacion-segunda-persona");
 });
 
+test("limita archivos combinados y no ofrece cambiar CLABE a un liberador", async ({ page }) => {
+  await entrar(page, ROSA);
+  await page.goto(`${BASE}?vista=proveedores&proveedor=44444444-4444-4444-8444-444444444441`);
+  await expect(page.getByRole("complementary", { name: "Expediente del proveedor" })).toBeVisible();
+  await expect(page.getByText("Cambiar CLABE", { exact: true })).toHaveCount(0);
+
+  await entrar(page);
+  await page.goto(`${BASE}/nuevo-proveedor`);
+  await page.getByLabel("RFC", { exact: true }).fill("EEE050505EA5");
+  await page.getByLabel("Razón social", { exact: true }).fill("Archivos Grandes");
+  await page.getByLabel("CLABE", { exact: true }).fill("002180701150123452");
+  const grande = Buffer.concat([Buffer.from("%PDF-"), Buffer.alloc(4_500_000)]);
+  await page.locator("#constancia").setInputFiles({ name: "constancia-grande.pdf", mimeType: "application/pdf", buffer: grande });
+  await page.locator("#contrato").setInputFiles({ name: "contrato-grande.pdf", mimeType: "application/pdf", buffer: grande });
+  await page.getByRole("button", { name: "Dar de alta" }).click();
+  await expect(page.locator("#contrato-error")).toHaveText("La constancia y el contrato juntos no pueden superar 8 MB.");
+});
+
 test("rechazo, corrección y cancelación conservan el historial", async ({ page }) => {
   await entrar(page, ROSA);
   const pendiente = `${BASE}?pago=88888888-8888-4888-8888-888888888882`;
   await page.goto(pendiente);
+  await expect(page.getByText("CLABE destino", { exact: true })).toBeVisible();
   await page.getByLabel("Motivo al rechazar").fill("La fecha no coincide con el contrato");
   await page.getByRole("button", { name: "Rechazar", exact: true }).click();
   await expect(page.locator(".detalle-cabeza").getByText("Rechazado", { exact: true })).toBeVisible();
   await expect(page.getByText("La fecha no coincide con el contrato", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Corregir y volver a solicitar" })).toHaveCount(0);
 
   await entrar(page);
   await page.goto(pendiente);

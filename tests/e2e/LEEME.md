@@ -4,7 +4,7 @@ Requisitos: Chrome instalado, Postgres local en `127.0.0.1:55432`, `DATABASE_URL
 
 ```sh
 npm run test:e2e:reset
-DATABASE_URL=postgres://plataforma_app:aplicacion-local@127.0.0.1:55432/lever_pagos_dev npm start -- --port 3109
+DATABASE_URL=<url-local-del-rol-de-aplicacion> npm start -- --port 3109
 # En otra terminal, con las mismas variables de base y Blob:
 npm run test:e2e
 ```

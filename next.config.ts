@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["pg", "bcryptjs"],
   experimental: {
     serverActions: {
-      bodySizeLimit: "8mb",
+      bodySizeLimit: "20mb",
     },
   },
   agentRules: false,

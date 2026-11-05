@@ -173,6 +173,7 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (marca.includes("policy_categories")) return new ErrorDeDominio("categoria_duplicada");
     if (marca.includes("supplier_clabes_una_vigente")) return new ErrorDeDominio("clabe_ya_vigente");
     if (marca.includes("supplier_payables_cfdi")) return new ErrorDeDominio("cfdi_duplicado");
+    if (marca.includes("supplier_payment_requests_idempotencia")) return new ErrorDeDominio("idempotencia_pago_duplicada");
     if (marca.includes("lista_69b")) return new ErrorDeDominio("listado_irreconocible");
     if (marca.includes("polic") || marca.includes("drawer") || marca.includes("posting")) {
       return new ErrorDeDominio("politica_invalida");

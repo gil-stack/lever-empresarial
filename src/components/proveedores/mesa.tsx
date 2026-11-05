@@ -178,6 +178,7 @@ function DetallePago({ pago, lectura, empresaId, personaId, cerrar, puedeSolicit
   return <aside className="detalle-proveedor" aria-label="Detalle del pago">
     <Cerrar href={enEmpresa(empresaId, cerrar)} />
     <div className="detalle-cabeza"><p className="detalle-kicker">{pago.origen === "cfdi" ? "Factura" : "Excepción documentada"}</p><Insignia tono={tonoEstado(pago.estado)}>{ETIQUETA_ESTADO[pago.estado]}</Insignia><h2>{pago.proveedor}</h2><p>{pago.referencia}</p><strong className="detalle-monto">{formatoPesos(pago.totalCentavos)}</strong><span>MXN</span></div>
+    <div className="detalle-instruccion"><EtiquetaMono nombre="CLABE destino">{clabeVisible(pago.clabe)}</EtiquetaMono><p className="pista">{institucionTradicional(pago.clabe.slice(0, 3)) ?? FRASE_INSTITUCION_PENDIENTE}</p></div>
     <Renglones>
       <Renglon etiqueta="Vencimiento">{fechaLegible(pago.venceEl)}</Renglon><Renglon etiqueta="Fecha prevista">{fechaLegible(pago.programadaEl)}</Renglon>
       <Renglon etiqueta="Emisión">{fechaLegible(pago.emitidaEl)}</Renglon><Renglon etiqueta="Solicitó">{pago.solicitante}</Renglon>
@@ -186,7 +187,7 @@ function DetallePago({ pago, lectura, empresaId, personaId, cerrar, puedeSolicit
       {pago.motivoResolucion ? <Renglon etiqueta="Motivo de resolución">{pago.motivoResolucion}</Renglon> : null}
     </Renglones>
     <Documentos documentos={documentos} empresaId={empresaId} />
-    {pago.estado === "rechazado" && puedeSolicitar ? <Link className="boton boton-completo" href={enEmpresa(empresaId, `/consola/proveedores/nuevo?pago=${pago.id}`)}>Corregir y volver a solicitar</Link> : null}
+    {pago.estado === "rechazado" && puedeSolicitar && pago.solicitadoPor === personaId ? <Link className="boton boton-completo" href={enEmpresa(empresaId, `/consola/proveedores/nuevo?pago=${pago.id}`)}>Corregir y volver a solicitar</Link> : null}
     {autoriza || cancela ? <DecisionPago requestId={pago.id} puedeAutorizar={autoriza} puedeCancelar={cancela} /> : null}
     <div className="detalle-nota"><strong>Qué significa autorizar</strong><p>La instrucción queda lista para una futura operación bancaria. Esta versión no envía SPEI ni confirma recepción.</p></div>
   </aside>;
@@ -206,7 +207,7 @@ function DetalleProveedor({ proveedor, lectura, historial, empresaId, cerrar, pu
     </Renglones>
     <Documentos documentos={[{ id: proveedor.constanciaId, nombre: proveedor.constancia, tipo: "constancia", supplierId: proveedor.id, payableId: null, vigenteHasta: null }, ...documentos]} empresaId={empresaId} />
     {puedeAdministrar ? <FormularioContrato supplierId={proveedor.id} /> : null}
-    {grupo?.vigente && puedeAdministrar ? <div className="detalle-clabe"><h3>Cambiar CLABE</h3><p className="pista">La cuenta anterior se conserva. Este cambio exige segundo factor reciente.</p><FormularioCambio supplierId={proveedor.id} /></div> : null}
+    {grupo?.vigente && historial.puedeCambiar ? <div className="detalle-clabe"><h3>Cambiar CLABE</h3><p className="pista">La cuenta anterior se conserva. Este cambio exige segundo factor reciente.</p><FormularioCambio supplierId={proveedor.id} /></div> : null}
     {grupo && grupo.anteriores.length > 0 ? <div className="historial-compacto"><h3>CLABE anteriores</h3>{grupo.anteriores.map((linea) => <p key={linea.id}><span>{linea.visible}</span><small>{linea.desde} — {linea.hasta}</small></p>)}</div> : null}
   </aside>;
 }

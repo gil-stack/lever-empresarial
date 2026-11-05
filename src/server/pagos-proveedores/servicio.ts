@@ -23,6 +23,7 @@ export type ArchivoPago = { nombre: string; bytes: Uint8Array } | null;
 export type EntradaPago = {
   supplierId: unknown;
   origen: unknown;
+  clientRequestId?: unknown;
   xml?: ArchivoPago;
   pdf?: ArchivoPago;
   monto?: unknown;
@@ -58,8 +59,10 @@ export async function crearPagoProveedor(
   ctx: ContextoDeTenant | null | undefined,
   entrada: EntradaPago,
   deps?: DependenciasPagos,
-): Promise<{ requestId: string; payableId: string }> {
+): Promise<{ requestId: string; payableId: string; existente: boolean }> {
   const conEmpresa = exigir(ctx, "cliente.pago.solicitar");
+  if (!uuidPago(entrada.clientRequestId)) throw new ErrorDeDominio("idempotencia_invalida");
+  const clientRequestId = entrada.clientRequestId;
   const listo = resolver(deps);
   const ahora = listo.ahora();
   const hoy = fechaEnMexico(ahora);
@@ -67,6 +70,8 @@ export async function crearPagoProveedor(
   const claves: string[] = [];
   try {
     return await listo.repositorio.conEmpresa(conEmpresa, async (tx) => {
+      const existente = await tx.solicitudPorClave(clientRequestId);
+      if (existente) return { ...existente, existente: true };
       const proveedor = await exigirProveedor(tx, preparado.supplierId, conEmpresa, preparado.cfdi);
       const payableId = listo.id();
       const requestId = listo.id();
@@ -101,7 +106,7 @@ export async function crearPagoProveedor(
         });
       }
       await tx.insertarSolicitud({
-        id: requestId, payableId, supplierClabeId: proveedor.clabeId, clabe: proveedor.clabe,
+        id: requestId, payableId, clientRequestId, supplierClabeId: proveedor.clabeId, clabe: proveedor.clabe,
         totalCentavos: cargo.totalCentavos, programadaEl: cargo.programadaEl,
         solicitadoPor: conEmpresa.persona.id, solicitadoEn: ahora,
       });
@@ -109,10 +114,17 @@ export async function crearPagoProveedor(
         accion: "solicitar_pago_proveedor", identificador: requestId,
         cambio: { total_centavos: cargo.totalCentavos },
       });
-      return { requestId, payableId };
+      return { requestId, payableId, existente: false };
     });
   } catch (error) {
     await limpiarArchivos(listo.almacen, claves);
+    if (error instanceof ErrorDeDominio && error.codigo === "idempotencia_pago_duplicada") {
+      return listo.repositorio.conEmpresa(conEmpresa, async (tx) => {
+        const existente = await tx.solicitudPorClave(clientRequestId);
+        if (!existente) throw error;
+        return { ...existente, existente: true };
+      });
+    }
     throw error;
   }
 }
@@ -130,7 +142,9 @@ export async function editarYReenviarPago(
   const hoy = fechaEnMexico(ahora);
   await listo.repositorio.conEmpresa(conEmpresa, async (tx) => {
     const solicitud = await tx.solicitud(requestId);
-    if (!solicitud || solicitud.estado !== "rechazado") throw new ErrorDeDominio("pago_no_autorizable");
+    if (!solicitud || solicitud.estado !== "rechazado" || solicitud.solicitadoPor !== conEmpresa.persona.id) {
+      throw new ErrorDeDominio("pago_no_autorizable");
+    }
     const cargo = await tx.cargo(solicitud.payableId);
     if (!cargo) throw new ErrorDeDominio("pago_no_autorizable");
     const preparado = prepararPago({ ...entrada, supplierId: cargo.supplierId, origen: cargo.origen }, hoy, cargo);
