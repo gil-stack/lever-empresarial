@@ -1,6 +1,8 @@
 set client_encoding = 'UTF8';
 begin;
 select set_config('app.user_id', '11111111-1111-4111-8111-111111111111', false);
+-- Las funciones de rol solo responden por la empresa del contexto.
+select set_config('app.company_id', '33333333-3333-4333-8333-333333333333', false);
 insert into users (id, nombre, correo) values
   ('11111111-1111-4111-8111-111111111111', 'Gil Villarreal', 'gil-pagos@ejemplo.mx'),
   ('22222222-2222-4222-8222-222222222222', 'Rosa Liberadora', 'rosa-pagos@ejemplo.mx');
