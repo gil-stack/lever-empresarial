@@ -9,6 +9,7 @@ import { estadoDelMarco, type EmpresaDelMarco } from "./estado-marco";
 import { IconoEntrar, IconoSalir } from "./iconos";
 import { Banderin, PalabraLever } from "./logotipo";
 import { LateralMovil } from "./lateral-movil";
+import { ProgresoEnlace } from "./progreso-enlace";
 import { MARCO_SIN_SESION, puertasDe, type VistaDeMarco } from "./puertas";
 import { seccionesDe, type Contador, type GrupoDeSecciones } from "./secciones";
 import { SelectorTema } from "./selector-tema";
@@ -203,7 +204,7 @@ function Grupo({
           const contador = contadores[ruta];
           return (
             <li key={href}>
-              <Link href={href} className="seccion" aria-current={ruta === actual ? "page" : undefined}>
+              <Link href={href} className="seccion" prefetch={true} aria-current={ruta === actual ? "page" : undefined}>
                 <Icono />
                 {etiqueta}
                 {contador ? (
@@ -212,6 +213,7 @@ function Grupo({
                     <span className="solo-lector">, {contador.etiqueta}</span>
                   </span>
                 ) : null}
+                <ProgresoEnlace />
               </Link>
             </li>
           );

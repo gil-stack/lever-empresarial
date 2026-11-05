@@ -217,6 +217,50 @@
   font-variant-numeric: tabular-nums;
 }
 
+.seccion-progreso {
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  margin-left: auto;
+}
+
+.seccion-contador + .seccion-progreso {
+  margin-left: 0;
+}
+
+.seccion-spinner {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--linea-fuerte);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: seccion-girar 700ms linear infinite;
+}
+
+.seccion-lectura {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes seccion-girar {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seccion-spinner {
+    animation: none;
+  }
+}
+
 .lateral-pie {
   display: grid;
   gap: 14px;
