@@ -28,6 +28,9 @@ export type ProveedorNuevo = {
   fechaArchivo: string | null;
   leidaEn: Date;
   botonPago: boolean;
+  nombreComercial: string | null;
+  contactoCorreo: string | null;
+  diasCredito: number;
   altaEn: Date;
 };
 
@@ -46,6 +49,7 @@ export type ContextoProveedores = {
   insertarDocumento(documento: DocumentoNuevo): Promise<void>;
   insertarProveedor(proveedor: ProveedorNuevo): Promise<void>;
   insertarClabe(clabe: ClabeNueva): Promise<void>;
+  vincularContrato(documentoId: string, supplierId: string, vigenteDesde: string | null, vigenteHasta: string | null, creadoEn: Date): Promise<void>;
 };
 
 export type LecturaProveedores = {

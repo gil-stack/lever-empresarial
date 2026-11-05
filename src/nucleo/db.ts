@@ -172,6 +172,7 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (marca.includes("employees_un_usuario")) return new ErrorDeDominio("persona_repetida");
     if (marca.includes("policy_categories")) return new ErrorDeDominio("categoria_duplicada");
     if (marca.includes("supplier_clabes_una_vigente")) return new ErrorDeDominio("clabe_ya_vigente");
+    if (marca.includes("supplier_payables_cfdi")) return new ErrorDeDominio("cfdi_duplicado");
     if (marca.includes("lista_69b")) return new ErrorDeDominio("listado_irreconocible");
     if (marca.includes("polic") || marca.includes("drawer") || marca.includes("posting")) {
       return new ErrorDeDominio("politica_invalida");
@@ -243,6 +244,16 @@ const FRASES_DE_PROVEEDOR: Readonly<Record<string, string>> = {
   copia_69b_ausente: "listado_irreconocible",
   copia_69b_sin_filas: "listado_irreconocible",
   constancia_no_se_reescribe: "archivo_no_disponible",
+  pago_proveedor_no_autorizable: "pago_no_autorizable",
+  pago_proveedor_transicion_invalida: "pago_no_autorizable",
+  pago_proveedor_inmutable: "pago_no_autorizable",
+  pago_proveedor_no_se_borra: "pago_no_autorizable",
+  cargo_proveedor_no_editable: "pago_no_autorizable",
+  cargo_proveedor_inmutable: "pago_no_autorizable",
+  cargo_proveedor_no_se_borra: "pago_no_autorizable",
+  cancelacion_no_permitida: "cancelacion_no_permitida",
+  documento_relacionado_inmutable: "archivo_no_disponible",
+  auditoria_pago_proveedor_ausente: "auditoria_no_disponible",
 };
 
 const CODIGOS_DE_AUTENTICACION = new Set([

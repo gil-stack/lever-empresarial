@@ -12,7 +12,7 @@ import {
   type ErrorCampoProveedor,
   type EstadoAltaProveedor,
 } from "@/dominio/proveedores";
-import { contextoDeAccion, errorConSecreto } from "@/server/entrada";
+import { contextoDeAccion, errorConSecreto, sesionSegura } from "@/server/entrada";
 import { cambiarClabeProveedor, darDeAltaProveedor } from "@/server/proveedores";
 import { ErrorDeDominio } from "@/server/session";
 
@@ -22,13 +22,16 @@ export async function enviarProveedor(
   _previo: EstadoAltaProveedor,
   formData: FormData,
 ): Promise<EstadoAltaProveedor> {
-  const archivo = await leerArchivo(formData.get("constancia"));
+  const [archivo, contrato] = await Promise.all([leerArchivo(formData.get("constancia")), leerArchivo(formData.get("contrato"))]);
   const errores = erroresDeAltaProveedor({
     rfc: formData.get("rfc"),
     razonSocial: formData.get("razonSocial"),
     clabe: formData.get("clabe"),
     archivo: archivo.meta,
   });
+  if (contrato.meta && !contrato.bytes) {
+    return { tipo: "invalido", errores: [{ campo: "contrato", mensaje: "El contrato debe ser un PDF de hasta 8 MB." }] };
+  }
   if (archivo.bytes && archivo.meta) {
     const validada = validarConstancia({ nombre: archivo.meta.nombre, bytes: archivo.bytes });
     if (!validada.ok) {
@@ -49,6 +52,12 @@ export async function enviarProveedor(
           razonSocial: formData.get("razonSocial"),
           clabe: formData.get("clabe"),
           constancia: { nombre: validada.nombre, bytes: validada.bytes },
+          nombreComercial: formData.get("nombreComercial"),
+          contactoCorreo: formData.get("contactoCorreo"),
+          diasCredito: formData.get("diasCredito"),
+          contrato: contrato.bytes && contrato.meta ? { nombre: contrato.meta.nombre, bytes: contrato.bytes } : null,
+          contratoDesde: formData.get("contratoDesde"),
+          contratoHasta: formData.get("contratoHasta"),
         });
         revalidatePath("/consola/proveedores");
         return { tipo: "listo", mensaje: guardado.mensaje };
@@ -134,6 +143,7 @@ const MENSAJES_CLABE: Record<string, string> = {
   historial_de_clabe_no_se_borra: "El historial de la CLABE no se borra.",
   auditoria_de_clabe_ausente: "No se pudo dejar constancia del cambio.",
   auditoria_no_disponible: "No se pudo dejar constancia del cambio.",
+  reautenticacion_requerida: "El cambio de CLABE exige un segundo factor reciente. Sal y vuelve a entrar.",
   base_no_disponible: "No se pudo guardar. El libro no respondió.",
   base_no_configurada: "No se pudo guardar. El libro no respondió.",
 };
@@ -144,10 +154,12 @@ export async function guardarClabeProveedor(
 ): Promise<EstadoClabe> {
   try {
     const sesion = await contextoDeAccion();
+    const segura = await sesionSegura();
+    if (!segura) return { tipo: "invalido", mensaje: MENSAJES_CLABE.reautenticacion_requerida ?? "Vuelve a entrar." };
     const resultado = await cambiarClabeProveedor(sesion, {
       supplierId: texto(formData, "supplierId"),
       clabe: texto(formData, "clabe"),
-    });
+    }, segura);
     revalidatePath("/consola/proveedores");
     if (resultado.tipo === "misma") {
       return { tipo: "guardado", mensaje: "Sigue la misma CLABE. No se agregó otra fila." };

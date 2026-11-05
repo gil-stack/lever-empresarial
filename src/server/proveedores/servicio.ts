@@ -9,6 +9,7 @@ import {
   validarConstancia,
 } from "../../dominio/proveedores";
 import { validarRfc } from "../../dominio/rfc";
+import { correoOpcional, fechaValida, textoPago } from "../../dominio/pagos-proveedores";
 import { exigir, exigirEmpresa, puede, type ContextoDeTenant } from "../../nucleo/contexto";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { actorDeCliente, auditar as auditarPorDefecto, type Auditar } from "../bitacora/auditar";
@@ -28,6 +29,12 @@ export type EntradaAltaProveedor = {
   razonSocial: unknown;
   clabe: unknown;
   constancia: { nombre: string; bytes: Uint8Array } | null;
+  nombreComercial?: unknown;
+  contactoCorreo?: unknown;
+  diasCredito?: unknown;
+  contrato?: { nombre: string; bytes: Uint8Array } | null;
+  contratoDesde?: unknown;
+  contratoHasta?: unknown;
 };
 
 export async function leerProveedores(
@@ -50,7 +57,7 @@ export async function darDeAltaProveedor(
   const listo = resolver(deps);
   const ahora = listo.ahora();
   const hash = createHash("sha256").update(preparado.bytes).digest("hex");
-  let claveGuardada: string | null = null;
+  const clavesGuardadas: string[] = [];
 
   try {
     const guardado = await listo.repositorio.conEmpresa(conEmpresa, async (ctx) => {
@@ -65,7 +72,7 @@ export async function darDeAltaProveedor(
         bytes: preparado.bytes,
         tipo: "application/pdf",
       });
-      claveGuardada = archivo.clave;
+      clavesGuardadas.push(archivo.clave);
       await ctx.insertarDocumento({
         id: documentoId,
         clave: archivo.clave,
@@ -84,6 +91,9 @@ export async function darDeAltaProveedor(
         fechaArchivo: decision.fechaArchivo,
         leidaEn: ahora,
         botonPago: decision.botonPago,
+        nombreComercial: preparado.nombreComercial,
+        contactoCorreo: preparado.contactoCorreo,
+        diasCredito: preparado.diasCredito,
         altaEn: ahora,
       });
       const clabeId = randomUUID();
@@ -95,11 +105,32 @@ export async function darDeAltaProveedor(
       });
       await listo.auditar(ctx.consulta, actor, { accion: "alta_proveedor", identificador: proveedorId });
       await listo.auditar(ctx.consulta, actor, { accion: "clabe_proveedor", identificador: clabeId });
+      if (preparado.contrato) {
+        const contratoId = randomUUID();
+        const contrato = await listo.almacen.guardar({
+          clave: `${conEmpresa.empresa.operadorId}/${ctx.companyId}/proveedores/${proveedorId}/contratos/${contratoId}`,
+          bytes: preparado.contrato.bytes,
+          tipo: "application/pdf",
+        });
+        clavesGuardadas.push(contrato.clave);
+        await ctx.insertarDocumento({
+          id: contratoId,
+          clave: contrato.clave,
+          hash: createHash("sha256").update(preparado.contrato.bytes).digest("hex"),
+          tipo: "application/pdf",
+          nombre: preparado.contrato.nombre,
+          creadoEn: ahora,
+        });
+        await ctx.vincularContrato(contratoId, proveedorId, preparado.contratoDesde, preparado.contratoHasta, ahora);
+        await listo.auditar(ctx.consulta, actor, {
+          accion: "documento_proveedor", identificador: contratoId, cambio: { tipo: "contrato" },
+        });
+      }
       return { id: proveedorId, decision };
     });
     return { ...guardado, mensaje: mensajeDeAlta(guardado.decision) };
   } catch (error) {
-    if (claveGuardada) await listo.almacen.borrar(claveGuardada);
+    for (const clave of clavesGuardadas) await listo.almacen.borrar(clave);
     if (error instanceof ErrorDeDominio && error.codigo === "rfc_duplicado") {
       throw new ErrorDeDominio("proveedor_duplicado");
     }
@@ -113,6 +144,12 @@ function prepararEntrada(entrada: EntradaAltaProveedor): {
   clabe: string;
   nombre: string;
   bytes: Uint8Array;
+  nombreComercial: string | null;
+  contactoCorreo: string | null;
+  diasCredito: number;
+  contrato: { nombre: string; bytes: Uint8Array } | null;
+  contratoDesde: string | null;
+  contratoHasta: string | null;
 } {
   if (typeof entrada.rfc !== "string") throw new ErrorDeDominio("rfc_vacio");
   const motivo = validarRfc(entrada.rfc);
@@ -135,7 +172,29 @@ function prepararEntrada(entrada: EntradaAltaProveedor): {
   const constancia = validarConstancia(entrada.constancia);
   if (!constancia.ok) throw new ErrorDeDominio(constancia.codigo);
 
-  return { rfc, razonSocial, clabe: clabe.clabe, nombre: constancia.nombre, bytes: constancia.bytes };
+  const nombreComercial = entrada.nombreComercial === undefined || entrada.nombreComercial === ""
+    ? null
+    : textoPago(entrada.nombreComercial, 180);
+  if (entrada.nombreComercial && !nombreComercial) throw new ErrorDeDominio("nombre_comercial_invalido");
+  const correo = correoOpcional(entrada.contactoCorreo);
+  if (correo === "invalido") throw new ErrorDeDominio("contacto_correo_invalido");
+  const diasCredito = entrada.diasCredito === undefined || entrada.diasCredito === "" ? 30 : Number(entrada.diasCredito);
+  if (!Number.isInteger(diasCredito) || diasCredito < 0 || diasCredito > 365) throw new ErrorDeDominio("dias_credito_invalido");
+  const contratoDesde = entrada.contratoDesde ? String(entrada.contratoDesde) : null;
+  const contratoHasta = entrada.contratoHasta ? String(entrada.contratoHasta) : null;
+  if ((contratoDesde && !fechaValida(contratoDesde)) || (contratoHasta && !fechaValida(contratoHasta)) ||
+    (contratoDesde && contratoHasta && contratoHasta < contratoDesde)) throw new ErrorDeDominio("fecha_invalida");
+  let contrato: { nombre: string; bytes: Uint8Array } | null = null;
+  if (entrada.contrato) {
+    const validado = validarConstancia(entrada.contrato);
+    if (!validado.ok) throw new ErrorDeDominio(validado.codigo);
+    contrato = { nombre: validado.nombre, bytes: validado.bytes };
+  }
+
+  return {
+    rfc, razonSocial, clabe: clabe.clabe, nombre: constancia.nombre, bytes: constancia.bytes,
+    nombreComercial, contactoCorreo: correo, diasCredito, contrato, contratoDesde, contratoHasta,
+  };
 }
 
 function errorDeRazon(razon: string): string | null {

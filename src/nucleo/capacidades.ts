@@ -30,7 +30,7 @@ const DEL_CLIENTE = {
   "cliente.maestro.ver": { superficie: "cliente", roles: ["administrador", "contador", "liberador"] },
   "cliente.maestro.editar": { superficie: "cliente", roles: ["administrador"] },
   "cliente.membresias.administrar": { superficie: "cliente", roles: ["administrador"] },
-  "cliente.proveedores.ver": { superficie: "cliente", roles: ["administrador", "liberador", "contador"] },
+  "cliente.proveedores.ver": { superficie: "cliente", roles: ["administrador", "solicitante", "liberador", "contador"] },
   "cliente.proveedores.alta": { superficie: "cliente", roles: ["administrador", "liberador"] },
   "cliente.proveedores.clabe.cambiar": { superficie: "cliente", roles: ["administrador"] },
   "cliente.lista69b.ver": { superficie: "cliente", roles: ["administrador", "solicitante", "liberador", "contador"] },

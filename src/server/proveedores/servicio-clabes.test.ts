@@ -13,11 +13,12 @@ const PERSONA = "22222222-2222-4222-8222-222222222222";
 const PROVEEDOR = "33333333-3333-4333-8333-333333333333";
 const VIGENTE = "002180701150123452";
 const NUEVA = "646180701150123452";
+const SESION = { superficie: "cliente" as const, segundoFactor: { metodo: "totp" as const, en: new Date() } };
 
 describe("historial de la CLABE del proveedor", () => {
   it("cierra la vigente y deja la anterior", async () => {
     const libro = memoria();
-    const resultado = await cambiarClabeProveedor(ctx(["administrador"]), { supplierId: PROVEEDOR, clabe: NUEVA }, { repositorio: libro });
+    const resultado = await cambiarClabeProveedor(ctx(["administrador"]), { supplierId: PROVEEDOR, clabe: NUEVA }, SESION, { repositorio: libro, avisar: async () => 0 });
     assert.equal(resultado.tipo, "cambiada");
     assert.equal(libro.filas.length, 2);
     assert.equal(libro.filas.filter((fila) => fila.hasta === null).length, 1);
@@ -26,11 +27,11 @@ describe("historial de la CLABE del proveedor", () => {
 
   it("la misma CLABE no agrega otra fila y el contador no cambia", async () => {
     const libro = memoria();
-    const misma = await cambiarClabeProveedor(ctx(["administrador"]), { supplierId: PROVEEDOR, clabe: VIGENTE }, { repositorio: libro });
+    const misma = await cambiarClabeProveedor(ctx(["administrador"]), { supplierId: PROVEEDOR, clabe: VIGENTE }, SESION, { repositorio: libro, avisar: async () => 0 });
     assert.equal(misma.tipo, "misma");
     assert.equal(libro.filas.length, 1);
     await assert.rejects(
-      () => cambiarClabeProveedor(ctx(["contador"]), { supplierId: PROVEEDOR, clabe: NUEVA }, { repositorio: libro }),
+      () => cambiarClabeProveedor(ctx(["contador"]), { supplierId: PROVEEDOR, clabe: NUEVA }, SESION, { repositorio: libro, avisar: async () => 0 }),
       (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "sin_permiso",
     );
   });

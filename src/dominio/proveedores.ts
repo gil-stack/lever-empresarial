@@ -31,7 +31,7 @@ const MESES = [
   "diciembre",
 ] as const;
 
-export type CampoProveedor = "rfc" | "razonSocial" | "clabe" | "constancia";
+export type CampoProveedor = "rfc" | "razonSocial" | "nombreComercial" | "contactoCorreo" | "diasCredito" | "clabe" | "constancia" | "contrato";
 
 export type ErrorCampoProveedor = {
   campo: CampoProveedor;
@@ -89,7 +89,7 @@ export type ListaVisible = {
   cargadoEn: string;
 } | null;
 
-const ORDEN: readonly CampoProveedor[] = ["rfc", "razonSocial", "clabe", "constancia"];
+const ORDEN: readonly CampoProveedor[] = ["rfc", "razonSocial", "nombreComercial", "contactoCorreo", "diasCredito", "clabe", "constancia", "contrato"];
 
 export function ordenarErroresProveedor(errores: readonly ErrorCampoProveedor[]): ErrorCampoProveedor[] {
   return [...errores].sort((a, b) => ORDEN.indexOf(a.campo) - ORDEN.indexOf(b.campo));
@@ -119,7 +119,7 @@ export function validarConstancia(entrada: {
   nombre: unknown;
   bytes: Uint8Array;
 }): { ok: true; nombre: string; bytes: Uint8Array } | { ok: false; codigo: CodigoConstancia } {
-  if (!(entrada.bytes instanceof Uint8Array) || entrada.bytes.byteLength === 0) {
+  if (!ArrayBuffer.isView(entrada.bytes) || entrada.bytes.byteLength === 0) {
     return { ok: false, codigo: "constancia_vacia" };
   }
   if (entrada.bytes.byteLength > PESO_MAXIMO_CONSTANCIA) {
@@ -147,6 +147,10 @@ const CAMPO_DE_CODIGO: Readonly<Record<string, ErrorCampoProveedor>> = {
   constancia_peso: { campo: "constancia", mensaje: "Ese PDF pesa de más. No se guardó." },
   constancia_vacia: { campo: "constancia", mensaje: "Ese PDF está vacío." },
   proveedor_duplicado: { campo: "rfc", mensaje: "Ese RFC ya es un proveedor. No entra otra vez." },
+  nombre_comercial_invalido: { campo: "nombreComercial", mensaje: "Revisa el nombre comercial." },
+  contacto_correo_invalido: { campo: "contactoCorreo", mensaje: "Escribe un correo válido o deja el campo vacío." },
+  dias_credito_invalido: { campo: "diasCredito", mensaje: "Los días de crédito van de 0 a 365." },
+  fecha_invalida: { campo: "contrato", mensaje: "Revisa la vigencia del contrato." },
 };
 
 export function errorDeCodigo(codigo: string): ErrorCampoProveedor | null {

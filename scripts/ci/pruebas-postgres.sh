@@ -52,7 +52,8 @@ unset DATABASE_URL
   tests/esquema/deriva.test.ts \
   tests/firmas/dos-firmas.test.ts \
   tests/proveedores/historial-clabe.test.ts \
-  tests/proveedores/relectura-69b.test.ts
+  tests/proveedores/relectura-69b.test.ts \
+  tests/proveedores/pagos-proveedores.test.ts
 estado=$?
 limpiar
 trap - EXIT

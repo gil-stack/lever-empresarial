@@ -3,108 +3,69 @@ import Link from "next/link";
 
 import { Marco } from "@/components/cromo/marco";
 import { vistaDeMarco } from "@/components/cromo/puertas";
-import { PantallaProveedores } from "@/components/proveedores/pantalla";
+import { MesaProveedores, type VistaProveedores } from "@/components/proveedores/mesa";
 import { CabezaPagina } from "@/components/sistema";
-import { puede, type ContextoDeTenant } from "@/nucleo/contexto";
+import { fechaEnMexico } from "@/dominio/pagos-proveedores";
+import { puede, type ContextoConEmpresa } from "@/nucleo/contexto";
 import { abrirRuta, errorConSecreto } from "@/server/entrada";
-import { leerClabesProveedor, leerProveedores } from "@/server/proveedores";
+import { leerPagosProveedores } from "@/server/pagos-proveedores";
+import { leerClabesProveedor } from "@/server/proveedores";
 import { ErrorDeDominio } from "@/server/session";
 
 export const runtime = "nodejs";
+export const metadata: Metadata = { title: "Pagos a proveedores" };
 
-export const metadata: Metadata = {
-  title: "Proveedores",
-};
+type Params = { vista?: string; q?: string; estado?: string; pagina?: string; pago?: string; proveedor?: string };
 
-type Carga =
-  | { tipo: "sin_empresa" }
-  | { tipo: "cerrado"; aviso: "rol" | "libro" }
-  | {
-      tipo: "lista";
-      edita: boolean;
-      lectura: Awaited<ReturnType<typeof leerProveedores>>;
-      historial: Awaited<ReturnType<typeof leerClabesProveedor>>;
-    };
-
-export default async function PaginaProveedores() {
+export default async function PaginaProveedores({ searchParams }: { searchParams: Promise<Params> }) {
   const apertura = await abrirRuta("/consola/proveedores");
-  const ctx = apertura.tipo === "libro" ? null : apertura.ctx;
-  const carga =
-    apertura.tipo === "libro"
-      ? ({ tipo: "cerrado", aviso: "libro" } as const)
-      : apertura.tipo === "sin_permiso"
-        ? ({ tipo: "cerrado", aviso: "rol" } as const)
-        : apertura.tipo === "sin_empresa" || !ctx
-          ? ({ tipo: "sin_empresa" } as const)
-          : await cargar(ctx);
-
+  const params = await searchParams;
+  if (apertura.tipo !== "abierta" || !apertura.ctx.empresa) {
+    return <Marco actual="/consola/proveedores" vista={vistaDeMarco(apertura.tipo === "libro" ? null : apertura.ctx)}><main id="contenido" className="pagina"><Cerrada tipo={apertura.tipo} /></main></Marco>;
+  }
+  const ctx = apertura.ctx as ContextoConEmpresa;
+  const vista: VistaProveedores = params.vista === "proveedores" || params.vista === "agenda" ? params.vista : "pagos";
+  let carga: Awaited<ReturnType<typeof cargar>> | null = null;
+  try {
+    carga = await cargar(ctx, params, vista);
+  } catch (error) {
+    if (!(error instanceof ErrorDeDominio) && !errorConSecreto(error)) throw error;
+  }
+  if (!carga) {
+    return <Marco actual="/consola/proveedores" vista={vistaDeMarco(ctx)}><main id="contenido" className="pagina"><Cerrada tipo="libro" /></main></Marco>;
+  }
   return (
     <Marco actual="/consola/proveedores" vista={vistaDeMarco(ctx)}>
       <main id="contenido" className="pagina pagina-proveedores">
-        {carga.tipo === "lista" ? (
-          <PantallaProveedores
-            edita={carga.edita}
-            lista={carga.lectura.lista}
-            proveedores={carga.lectura.proveedores}
-            historial={carga.historial}
-          />
-        ) : (
-          <Cerrada carga={carga} />
-        )}
+        <MesaProveedores
+          lectura={carga.lectura} historial={carga.historial} empresaId={ctx.empresa.id} personaId={ctx.persona.id}
+          hoy={fechaEnMexico()} vista={vista} q={params.q ?? ""} estado={params.estado ?? ""}
+          pagoId={params.pago} proveedorId={params.proveedor}
+          puedeSolicitar={puede(ctx, "cliente.pago.solicitar")} puedeLiberar={puede(ctx, "cliente.pago.liberar")}
+          puedeAdministrar={puede(ctx, "cliente.proveedores.alta")}
+        />
       </main>
     </Marco>
   );
 }
 
-function Cerrada({ carga }: { carga: Exclude<Carga, { tipo: "lista" }> }) {
-  const relato = relatoCerrado(carga);
-  return (
-    <CabezaPagina kicker="Proveedores" titulo={relato.titulo}>
-      <p className="lede">{relato.detalle}</p>
-      {carga.tipo === "sin_empresa" ? (
-        <div className="acciones">
-          <Link className="boton" href="/entrar">
-            Entrar
-          </Link>
-        </div>
-      ) : null}
-    </CabezaPagina>
-  );
+async function cargar(ctx: ContextoConEmpresa, params: Params, vista: VistaProveedores) {
+  const [lectura, historial] = await Promise.all([
+    leerPagosProveedores(ctx, {
+      q: params.q,
+      estado: vista === "pagos" ? params.estado : undefined,
+      pagina: Number(params.pagina) || 1,
+      pagoId: params.pago,
+    }),
+    leerClabesProveedor(ctx),
+  ]);
+  return { lectura, historial };
 }
 
-function relatoCerrado(carga: Exclude<Carga, { tipo: "lista" }>): { titulo: string; detalle: string } {
-  if (carga.tipo === "sin_empresa") {
-    return {
-      titulo: "Primero, la razón social.",
-      detalle: "El proveedor pertenece a una empresa. La SOFIPO da de alta a las empresas.",
-    };
-  }
-  if (carga.aviso === "rol") {
-    return {
-      titulo: "Esta sección no abre con tu rol.",
-      detalle: "El alta de proveedores es de la consola de finanzas. El teléfono del tarjetahabiente no la lleva.",
-    };
-  }
-  return {
-    titulo: "El libro no está disponible.",
-    detalle: "No se mostró un proveedor ni una constancia.",
-  };
-}
-
-async function cargar(ctx: ContextoDeTenant): Promise<Carga> {
-  try {
-    const lectura = await leerProveedores(ctx);
-    const historial = await leerClabesProveedor(ctx);
-    return { tipo: "lista", edita: puede(ctx, "cliente.proveedores.alta"), lectura, historial };
-  } catch (error) {
-    if (error instanceof ErrorDeDominio) {
-      if (error.codigo === "proveedores_no_disponibles" || error.codigo === "clabe_no_disponible") {
-        return { tipo: "cerrado", aviso: "rol" };
-      }
-      if (error.codigo === "sin_empresa") return { tipo: "sin_empresa" };
-      return { tipo: "cerrado", aviso: "libro" };
-    }
-    if (errorConSecreto(error)) return { tipo: "cerrado", aviso: "libro" };
-    throw error;
-  }
+function Cerrada({ tipo }: { tipo: string }) {
+  const sinSesion = tipo === "sin_empresa";
+  return <CabezaPagina kicker="Pagos a proveedores" titulo={sinSesion ? "Entra a tu empresa." : tipo === "sin_permiso" ? "Esta sección no abre con tu rol." : "No se pudo abrir la mesa de pagos."}>
+    <p className="lede">{sinSesion ? "Selecciona una empresa para consultar proveedores y pagos." : "No se mostraron importes, documentos ni datos de proveedores."}</p>
+    {sinSesion ? <Link className="boton" href="/entrar">Entrar</Link> : null}
+  </CabezaPagina>;
 }

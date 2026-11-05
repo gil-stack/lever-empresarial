@@ -4,6 +4,9 @@ import { momentoClabe, presentarClabe } from "../../dominio/clabe-proveedor";
 import { exigir, exigirEmpresa, puede, type ContextoDeTenant } from "../../nucleo/contexto";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { actorDeCliente, auditar as auditarPorDefecto, type Auditar } from "../bitacora/auditar";
+import { exigirAutenticacionRecienteCliente } from "../autenticacion/reautenticacion";
+import type { Sesion } from "../session/tipos";
+import { avisarCambioClabe } from "./avisos";
 import { repositorioPg } from "./repositorio-clabes";
 import type {
   FilaClabe,
@@ -20,6 +23,7 @@ export type DependenciasClabes = {
   repositorio?: RepositorioClabes;
   ahora?: () => Date;
   auditar?: Auditar;
+  avisar?: typeof avisarCambioClabe;
 };
 
 export type ResultadoClabe = { tipo: "asentada" | "cambiada" | "misma" };
@@ -68,6 +72,7 @@ export async function asentarClabeProveedor(
 export async function cambiarClabeProveedor(
   ctx: ContextoDeTenant | null | undefined,
   entrada: { supplierId?: unknown; clabe?: unknown },
+  sesion: Pick<Sesion, "segundoFactor" | "superficie">,
   deps?: DependenciasClabes,
 ): Promise<ResultadoClabe> {
   const conEmpresa = exigir(ctx, "cliente.proveedores.clabe.cambiar");
@@ -76,10 +81,11 @@ export async function cambiarClabeProveedor(
   if (!presentada.ok) throw new ErrorDeDominio("clabe_invalida");
   const listo = resolver(deps);
   const ahora = new Date(listo.ahora().getTime());
-  return listo.repositorio.conEmpresa(conEmpresa, async (ctx) => {
+  const resultado = await listo.repositorio.conEmpresa<ResultadoClabe & { clabeId?: string }>(conEmpresa, async (ctx) => {
     const actual = await ctx.vigente(supplierId);
     if (!actual) throw new ErrorDeDominio("proveedor_ausente");
-    if (actual.clabe === presentada.clabe.clabe) return { tipo: "misma" };
+    if (actual.clabe === presentada.clabe.clabe) return { tipo: "misma" as const };
+    exigirAutenticacionRecienteCliente(sesion, ahora);
     const id = randomUUID();
     await ctx.cerrar(actual.id, ahora);
     await ctx.insertar({
@@ -89,8 +95,12 @@ export async function cambiarClabeProveedor(
       desde: ahora,
     });
     await listo.auditar(ctx.consulta, actorDeCliente(conEmpresa), { accion: "clabe_proveedor", identificador: id });
-    return { tipo: "cambiada" };
+    return { tipo: "cambiada" as const, clabeId: id };
   });
+  if (resultado.tipo === "cambiada" && resultado.clabeId) {
+    await (deps?.avisar ?? avisarCambioClabe)(conEmpresa, { supplierId, clabeId: resultado.clabeId, clabe: presentada.clabe.clabe, ahora });
+  }
+  return resultado;
 }
 
 function armarGrupos(filas: readonly FilaClabe[]): GrupoClabeVista[] {
