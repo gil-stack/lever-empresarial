@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 import { rutaSeccionOperacion, SECCIONES_OPERACION } from "../../src/components/operacion/secciones.ts";
@@ -17,5 +18,12 @@ describe("navegación del portal SOFIPO", () => {
       const segmento = ruta === "/operacion" ? null : ruta.slice("/operacion/".length);
       assert.equal(rutaSeccionOperacion(segmento), ruta);
     }
+  });
+
+  it("conserva la página actual y limita el progreso al enlace pendiente", () => {
+    const fallbackGlobal = new URL("../../src/app/operacion/(portal)/loading.tsx", import.meta.url);
+    const navegacion = readFileSync(new URL("../../src/components/operacion/navegacion.tsx", import.meta.url), "utf8");
+    assert.equal(existsSync(fallbackGlobal), false, "El fallback global reemplaza toda la página durante la navegación");
+    assert.match(navegacion, /useLinkStatus/);
   });
 });
