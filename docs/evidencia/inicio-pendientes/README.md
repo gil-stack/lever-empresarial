@@ -25,7 +25,8 @@ psql postgres://dueno@127.0.0.1:5513/postgres -c "create database plataforma"
 # Aplicar db/migrations/*.sql en orden con psql -1 -v ON_ERROR_STOP=1 -f y registrar cada versión en schema_migrations.
 psql postgres://dueno@127.0.0.1:5513/plataforma -c "alter role plataforma_app login password 'local'"
 
-export DATABASE_URL=postgres://plataforma_app:local@127.0.0.1:5513/plataforma
+CLAVE_APP=local  # la clave que se acaba de fijar a plataforma_app, solo en esta base desechable
+export DATABASE_URL=postgres://plataforma_app:${CLAVE_APP}@127.0.0.1:5513/plataforma
 OPERADORES_PLATAFORMA=op@lever.test npx tsx scripts/plataforma.ts personal:migrar-variable
 psql postgres://dueno@127.0.0.1:5513/plataforma -c "update platform_staff set estado='activo'"
 npx tsx scripts/plataforma.ts empresa:alta --personal op@lever.test --rfc ALO180312AB1 --razon "Altamar Logística" \
