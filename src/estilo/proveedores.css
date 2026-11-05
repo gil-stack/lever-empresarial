@@ -347,7 +347,8 @@
 .detalle-documentos > h3 span { margin-left: 5px; color: var(--tinta-tenue); font-size: 0.68rem; }
 .detalle-documentos > a {
   display: grid;
-  grid-template-columns: 38px minmax(0, 1fr) auto;
+  /* Cabe CONSTANCIA, la etiqueta más larga, sin montarse sobre el nombre. */
+  grid-template-columns: 4.6rem minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding: 10px 0;
@@ -358,6 +359,8 @@
 .documento-tipo {
   display: grid;
   place-items: center;
+  justify-self: start;
+  min-width: 38px;
   min-height: 30px;
   padding: 0 4px;
   border: 1px solid var(--linea);
