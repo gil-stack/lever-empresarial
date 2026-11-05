@@ -345,15 +345,15 @@
 
 .quien {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-columns: 32px minmax(0, 1fr) 32px;
   align-items: center;
   gap: 10px;
-  padding: 0 4px 0 8px;
+  padding: 0 4px;
 }
 
 .quien p {
   min-width: 0;
-  line-height: 1.25;
+  line-height: 1.35;
 }
 
 .quien-nombre {
@@ -367,35 +367,64 @@
 
 .quien-etiqueta {
   display: block;
+  overflow: hidden;
   color: var(--tinta-tenue);
   font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quien-factor {
+  display: block;
+  width: fit-content;
+  margin-top: 3px;
+  color: var(--tinta-tenue);
+  font-size: 0.7rem;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.quien-factor:hover {
+  color: var(--tinta);
+}
+
+.quien-factor:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--sello);
+  outline-offset: 3px;
 }
 
 .salir {
   appearance: none;
+  width: 32px;
+  height: 32px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--linea-fuerte);
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
-  color: var(--tinta-suave);
-  font: inherit;
-  font-size: 0.78rem;
-  font-weight: 500;
+  color: var(--tinta-tenue);
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .salir .icono {
-  width: 15px;
-  height: 15px;
+  width: 16px;
+  height: 16px;
 }
 
 .salir:hover {
   background: var(--realce);
   color: var(--tinta);
+}
+
+.salir:focus-visible {
+  outline: 2px solid var(--sello);
+  outline-offset: 2px;
 }
 
 .lienzo {

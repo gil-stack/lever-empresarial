@@ -94,14 +94,11 @@ export async function Marco({
               <p>
                 <span className="quien-nombre">{quien.nombre}</span>
                 {vista.razonSocial ? <span className="quien-etiqueta">{vista.razonSocial}</span> : null}
-                <Link href="/entrar/seguridad" className="quien-factor">
-                  Segundo factor
-                </Link>
+                <Link href="/entrar/seguridad" className="quien-factor">Segundo factor</Link>
               </p>
               <form action={salir}>
-                <button type="submit" className="salir">
+                <button type="submit" className="salir" aria-label="Salir" title="Salir">
                   <IconoSalir />
-                  Salir
                 </button>
               </form>
             </div>
