@@ -37,6 +37,32 @@ describe("lectura segura del CFDI", () => {
     assert.equal(leerCfdi(cfdiDePrueba({ moneda: "USD" })).ok, false);
     assert.equal(leerCfdi(cfdiDePrueba({ total: "0.001" })).ok, false);
   });
+
+  it("rechaza un CFDI válido que trae marcado ejecutable en la addenda", () => {
+    const conAddenda = (addenda: string, prologo = "") => new TextEncoder().encode(
+      new TextDecoder().decode(cfdiDePrueba()).replace("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", `<?xml version="1.0" encoding="UTF-8"?>${prologo}`)
+        .replace("</cfdi:Comprobante>", `<cfdi:Addenda>${addenda}</cfdi:Addenda></cfdi:Comprobante>`),
+    );
+    const casos = [
+      `<h:script xmlns:h="http://www.w3.org/1999/xhtml">alert(document.domain)</h:script>`,
+      `<x:div xmlns:x="http://www.w3.org/1999/xhtml"><x:img src="x" onerror="alert(1)"/></x:div>`,
+      `<x:div xmlns:x="http://www.w3.org/1999/&#120;html"><x:a href="#">texto</x:a></x:div>`,
+      `<div xmlns="http&#x3a;//www.w3.org/1999/xhtml">texto</div>`,
+      `<s:svg xmlns:s="http://www.w3.org/2000/svg"><s:circle r="1"/></s:svg>`,
+      `<m:math xmlns:m="http://www.w3.org/1998/Math/MathML"><m:mi>x</m:mi></m:math>`,
+      `<script>alert(1)</script>`,
+      `<a:SCRIPT xmlns:a="urn:proveedor">x</a:SCRIPT>`,
+    ];
+    for (const addenda of casos) {
+      assert.deepEqual(leerCfdi(conAddenda(addenda)), { ok: false, codigo: "cfdi_contenido_no_permitido" }, addenda);
+    }
+    assert.deepEqual(
+      leerCfdi(conAddenda("", `<?xml-stylesheet type="text/xsl" href="https://ataque.example/x.xsl"?>`)),
+      { ok: false, codigo: "cfdi_contenido_no_permitido" },
+    );
+    const addendaComercial = leerCfdi(conAddenda(`<p:Pedido xmlns:p="http://www.proveedor.com.mx/addenda" Numero="4500"/>`));
+    assert.equal(addendaComercial.ok, true, "una addenda comercial sin marcado activo se acepta");
+  });
 });
 
 describe("fechas de la obligación", () => {

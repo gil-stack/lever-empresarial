@@ -37,6 +37,7 @@ const MENSAJES: Record<string, string> = {
   archivos_peso_total: "El XML y el PDF juntos no pueden superar 8 MB.",
   cfdi_invalido: "El XML no es legible o contiene una estructura no permitida.",
   cfdi_codificacion: "El XML debe venir codificado en UTF-8.",
+  cfdi_contenido_no_permitido: "El XML trae HTML, SVG, scripts u hojas de estilo, que un CFDI no lleva. Sube el XML original que timbró el SAT.",
   cfdi_no_es_ingreso_mxn: "El CFDI debe ser versión 4.0, tipo ingreso y moneda MXN.",
   cfdi_datos_incompletos: "Al CFDI le faltan timbre, partes, fecha o importe válido.",
   cfdi_emisor_distinto: "El RFC emisor del CFDI no coincide con el proveedor seleccionado.",

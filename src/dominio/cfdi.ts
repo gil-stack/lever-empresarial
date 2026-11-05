@@ -34,6 +34,7 @@ export function leerCfdi(bytes: Uint8Array): ResultadoCfdi {
   if (/<!\s*(?:DOCTYPE|ENTITY)\b/i.test(xml) || XMLValidator.validate(xml) !== true) {
     return { ok: false, codigo: "cfdi_invalido" };
   }
+  if (contenidoActivo(xml)) return { ok: false, codigo: "cfdi_contenido_no_permitido" };
   try {
     const parser = new XMLParser({
       ignoreAttributes: false,
@@ -94,6 +95,41 @@ export function validarPdfPrivado(nombre: unknown, bytes: Uint8Array): { ok: tru
   const limpio = (typeof nombre === "string" ? nombre : "").replaceAll("\\", "/").split("/").pop()?.trim() ?? "";
   if (!limpio || limpio.length > 180 || /[\u0000-\u001f\u007f]/.test(limpio)) return { ok: false };
   return { ok: true, nombre: limpio };
+}
+
+/**
+ * Un CFDI no trae marcado que un navegador ejecute. Se rechazan los espacios
+ * de nombres de HTML, SVG, MathML, XLink, XSLT y XInclude (también escritos con
+ * referencias de carácter), cualquier elemento script y la hoja de estilo XSL.
+ */
+const ESPACIOS_ACTIVOS = [
+  "http://www.w3.org/1999/xhtml",
+  "http://www.w3.org/2000/svg",
+  "http://www.w3.org/1998/math/mathml",
+  "http://www.w3.org/1999/xlink",
+  "http://www.w3.org/1999/xsl/transform",
+  "http://www.w3.org/2001/xinclude",
+];
+
+function contenidoActivo(xml: string): boolean {
+  if (/<\?\s*xml-stylesheet\b/i.test(xml)) return true;
+  if (/<\s*(?:[A-Za-z_][\w.-]*:)?script(?=[\s/>])/i.test(xml)) return true;
+  for (const declaracion of xml.matchAll(/\sxmlns(?::[^\s=]+)?\s*=\s*(["'])([\s\S]*?)\1/g)) {
+    const valor = decodificarReferencias(declaracion[2] ?? "").trim().toLowerCase();
+    if (ESPACIOS_ACTIVOS.some((espacio) => valor.includes(espacio))) return true;
+  }
+  return false;
+}
+
+function decodificarReferencias(valor: string): string {
+  return valor.replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos);/gi, (_completa, ref: string) => {
+    const nombre = ref.toLowerCase();
+    if (nombre.startsWith("#")) {
+      const punto = nombre.startsWith("#x") ? Number.parseInt(nombre.slice(2), 16) : Number.parseInt(nombre.slice(1), 10);
+      return punto > 0 && punto <= 0x10ffff ? String.fromCodePoint(punto) : "�";
+    }
+    return { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" }[nombre] ?? "";
+  });
 }
 
 function registro(valor: unknown): Record<string, unknown> | null {
