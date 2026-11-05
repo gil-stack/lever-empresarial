@@ -49,7 +49,7 @@ function leerFiltros(parametros: Record<string, string | string[] | undefined>):
   const pagina = Math.max(1, Math.min(100000, Number.parseInt(texto("pagina"), 10) || 1));
   return {
     buscar: texto("q").slice(0, 100),
-    centroId: /^[0-9a-f-]{36}$/i.test(area) ? area : null,
+    centroId: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(area) ? area : null,
     estado,
     pagina,
   };

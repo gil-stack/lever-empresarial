@@ -85,7 +85,19 @@ export type CodigoRechazoPersona =
   | "nomina_sin_personas"
   | "fecha_ya_preparada"
   | "destino_incompleto"
-  | "lote_ausente";
+  | "lote_ausente"
+  | "auditoria"
+  | "ultimo_administrador"
+  | "reautenticacion_requerida"
+  | "clabe_requerida"
+  | "clabe_misma"
+  | "baja_ya_efectiva"
+  | "sin_baja_programada"
+  | "nomina_fecha_distinta"
+  | "lote_inconsistente"
+  | "lote_inmutable"
+  | "persona_identidad_inmutable"
+  | "baja_no_efectiva";
 
 export type EstadoMaestro =
   | { tipo: "inicial" }
@@ -290,7 +302,8 @@ export type AltaPersonaValida = {
   presupuestoCentavos: number | null;
   altaLlave: string | null;
   clabe: string | null;
-  destino: "clabe" | "tarjeta";
+  /** Vacío: la persona no recibe nómina por aquí (solo acceso o solo ficha). */
+  destino: "clabe" | "tarjeta" | null;
   acceso: AccesoNuevo | AccesoYa | AccesoNo;
 };
 
@@ -311,7 +324,27 @@ export type EntradaAltaPersona = {
   acceso?: unknown;
   correo?: unknown;
   rol?: unknown;
+  /** «si» o «no». Sin decirlo, la alta lleva nómina si trae neto, frecuencia o primer pago. */
+  nomina?: unknown;
+  neto?: unknown;
+  frecuencia?: unknown;
+  primerPago?: unknown;
 };
+
+/**
+ * Una persona «solo acceso» no recibe nómina: no se le exige neto, destino
+ * ni CLABE. Un campo vacío de FormData llega como null o "": no cuenta.
+ */
+export function altaConNomina(entrada: EntradaAltaPersona): boolean {
+  if (entrada.nomina === "no") return false;
+  if (entrada.nomina === "si") return true;
+  return [entrada.neto, entrada.frecuencia, entrada.primerPago].some(presente);
+}
+
+function presente(valor: unknown): boolean {
+  if (valor === undefined || valor === null) return false;
+  return !(typeof valor === "string" && valor.trim() === "");
+}
 
 type Hallazgo = { codigo: string; campo: CampoPersona };
 
@@ -367,8 +400,10 @@ function armarAlta(
   const altaLlave = llaveCruda || null;
   if (altaLlave && !UUID.test(altaLlave)) errores.push({ codigo: "alta_llave_invalida", campo: "persona" });
 
-  const destino = entrada.destino === undefined || entrada.destino === "" ? "clabe" : entrada.destino;
-  if (destino !== "clabe" && destino !== "tarjeta") errores.push({ codigo: "destino_invalido", campo: "destino" });
+  const destinoCrudo = presente(entrada.destino) ? entrada.destino : altaConNomina(entrada) ? "clabe" : null;
+  const destinoValido = destinoCrudo === null || destinoCrudo === "clabe" || destinoCrudo === "tarjeta";
+  if (!destinoValido) errores.push({ codigo: "destino_invalido", campo: "destino" });
+  const destino = destinoCrudo === "clabe" || destinoCrudo === "tarjeta" ? destinoCrudo : null;
   const clabeCruda = typeof entrada.clabe === "string" ? entrada.clabe.trim() : "";
   const clabe = clabeCruda ? clabeValida(clabeCruda) : null;
   if ((destino === "clabe" && !clabe?.ok) || (clabe && !clabe.ok)) {
@@ -390,7 +425,7 @@ function armarAlta(
     if (!roles) errores.push({ codigo: "rol_invalido", campo: "rol" });
   }
 
-  if (errores.length > 0 || !nombre || !altaEn || !UUID.test(centroId) || (destino !== "clabe" && destino !== "tarjeta")) {
+  if (errores.length > 0 || !nombre || !altaEn || !UUID.test(centroId) || !destinoValido) {
     return { errores, valor: null };
   }
   const base = {
@@ -642,6 +677,54 @@ export const MENSAJE_RECHAZO: Record<
   lote_ausente: {
     titulo: "El lote no existe",
     texto: "No pertenece a esta empresa o ya no está disponible.",
+  },
+  auditoria: {
+    titulo: "No se guardó",
+    texto: "La bitácora no confirmó el cambio y nada quedó a medias. Vuelve a intentar.",
+  },
+  ultimo_administrador: {
+    titulo: "Es la única persona administradora",
+    texto: "La empresa no puede quedarse sin administrador. Da ese rol a otra persona vigente antes de registrar esta baja.",
+  },
+  reautenticacion_requerida: {
+    titulo: "Confirma que eres tú",
+    texto: "Cambiar la CLABE de nómina exige haber verificado tu segundo factor en los últimos 30 minutos. Sal y vuelve a entrar, y repite el cambio.",
+  },
+  clabe_requerida: {
+    titulo: "Falta la CLABE de nómina",
+    texto: "Registra primero la CLABE en «CLABE de nómina» y después elige ese destino.",
+  },
+  clabe_misma: {
+    titulo: "Es la misma CLABE",
+    texto: "La CLABE vigente ya es esa. No se registró un cambio.",
+  },
+  baja_ya_efectiva: {
+    titulo: "La baja ya es efectiva",
+    texto: "Una baja que ya llegó a su fecha no se cancela: el acceso ya se cerró.",
+  },
+  sin_baja_programada: {
+    titulo: "No hay baja programada",
+    texto: "Esta persona no tiene una baja futura que cancelar.",
+  },
+  nomina_fecha_distinta: {
+    titulo: "La fecha vencida cambió",
+    texto: "Mientras revisabas, la nómina vencida dejó de ser la que viste. Recarga la página y revisa de nuevo.",
+  },
+  lote_inconsistente: {
+    titulo: "El lote no cuadra",
+    texto: "El total no coincide con sus renglones o no tiene personas. No se guardó nada.",
+  },
+  lote_inmutable: {
+    titulo: "El lote ya está congelado",
+    texto: "Un lote preparado no se edita ni se borra.",
+  },
+  persona_identidad_inmutable: {
+    titulo: "Ese dato no cambia",
+    texto: "La empresa y el usuario enlazado de una persona no se reasignan.",
+  },
+  baja_no_efectiva: {
+    titulo: "La baja todavía no es efectiva",
+    texto: "El acceso se cierra el día de la baja.",
   },
 };
 

@@ -441,10 +441,6 @@
 
 /* Personas: directorio, áreas, altas y nómina */
 
-.personas-modulo {
-  width: min(100%, 1180px);
-}
-
 .personas-modulo .pagina-cabeza {
   margin-bottom: 26px;
 }
@@ -890,6 +886,11 @@
 
 .expediente-rejilla .nota-regla {
   margin-top: 20px;
+}
+
+.clabe-historial td:first-child {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .lotes-lista {

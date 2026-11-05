@@ -27,7 +27,13 @@ export default async function PaginaExpediente({ params }: { params: Promise<{ i
     }
   }
   const contenido = aviso ? <MaestroCerrado aviso={aviso} /> : apertura.ctx && detalle ? (
-    <ExpedientePersona detalle={detalle} hoy={hoyEnMexico(new Date())} empresaId={apertura.ctx.empresa?.id ?? ""} edita={puede(apertura.ctx, "cliente.maestro.editar")} />
+    <ExpedientePersona
+      detalle={detalle}
+      hoy={hoyEnMexico(new Date())}
+      empresaId={apertura.ctx.empresa?.id ?? ""}
+      edita={puede(apertura.ctx, "cliente.maestro.editar")}
+      cambiaClabe={puede(apertura.ctx, "cliente.personas.clabe.cambiar")}
+    />
   ) : <MaestroCerrado aviso="libro" />;
   return <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)}><main id="contenido" className="consola personas-modulo">{contenido}</main></Marco>;
 }

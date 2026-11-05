@@ -131,7 +131,7 @@ test("recorrido completo de colaboradores, presupuesto, nómina, tarjeta y baja"
   const totalElegible = elegibles.reduce((total, perfil) => total + perfil.neto, 0);
   const pendientesElegibles = elegibles.filter((perfil) => perfil.destino === "tarjeta").length;
   const totalVisible = `$${(totalElegible / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  await page.getByRole("button", { name: "Preparar nómina vencida" }).click();
+  await page.getByRole("button", { name: /^Preparar nómina del / }).click();
   await page.waitForURL(/\/consola\/personas\/nomina\/[0-9a-f-]{36}$/);
   await expect(page.getByText(totalVisible, { exact: true }).first()).toBeVisible();
   await expect(page.locator("tbody tr")).toHaveCount(elegibles.length);

@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 
-import { tieneConfiguracionNomina, validarConfiguracionNomina, type ConfiguracionNomina, type EntradaNomina } from "../../dominio/nomina";
+import { clabeEnmascarada, clabeValida } from "../../dominio/clabe";
+import { validarConfiguracionNomina, type ConfiguracionNomina, type EntradaNomina } from "../../dominio/nomina";
 import {
+  altaConNomina,
   estaDeBaja,
   hoyEnMexico,
   validarAltaPersona,
@@ -10,18 +12,33 @@ import {
   type EntradaAltaPersona,
 } from "../../dominio/personas";
 import type { RolCliente } from "../../nucleo/capacidades";
-import { exigir, exigirEmpresa, puede, type ContextoDeTenant } from "../../nucleo/contexto";
+import { exigir, exigirEmpresa, puede, type ContextoConEmpresa, type ContextoDeTenant } from "../../nucleo/contexto";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
+import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import { actorDeCliente, auditar as auditarPorDefecto, type Auditar } from "../bitacora/auditar";
+import { enviadorDesdeEntorno } from "../correo/enviar";
+import { plantillaAvisoClabeNomina } from "../correo/plantillas/aviso-clabe-nomina";
+import { urlPublica } from "../invitaciones/correo";
 import { emitirEnTransaccion, emitirToken } from "../invitaciones/repositorio";
 import { entregarInvitacion } from "../invitaciones/servicio";
 import type { InvitacionEmitida, ResultadoDeEntrega } from "../invitaciones/tipos";
+import type { Sesion } from "../session/tipos";
 import { repositorioPg } from "./repositorio";
-import type { DetallePersona, FiltrosPersonas, LecturaMaestro, RepositorioPersonas } from "./tipos";
+import type { DetallePersona, FiltrosPersonas, LecturaMaestro, PersonaVista, RepositorioPersonas } from "./tipos";
 
 type Emitir = typeof emitirEnTransaccion;
 type Reemitir = typeof emitirToken;
 type Entregar = (emitida: InvitacionEmitida, razonSocial: string | null) => Promise<ResultadoDeEntrega>;
+
+export type AvisoClabeNomina = {
+  historialId: string;
+  para: string;
+  nombre: string;
+  razonSocial: string;
+  finalNueva: string;
+  cambiadaEn: Date;
+};
+type Avisar = (aviso: AvisoClabeNomina) => Promise<ResultadoDeEntrega>;
 
 export type DependenciasPersonas = {
   repositorio?: RepositorioPersonas;
@@ -30,6 +47,7 @@ export type DependenciasPersonas = {
   emitir?: Emitir;
   reemitir?: Reemitir;
   entregar?: Entregar;
+  avisar?: Avisar;
 };
 
 export type AltaDePersona = {
@@ -50,7 +68,8 @@ export async function leerMaestro(
   const conEmpresa = exigirEmpresa(ctx);
   if (!puede(conEmpresa, "cliente.maestro.ver")) throw new ErrorDeDominio("maestro_no_disponible");
   const listo = resolver(deps);
-  return listo.repositorio.leer(conEmpresa, hoyEnMexico(listo.ahora()), filtros);
+  const lectura = await listo.repositorio.leer(conEmpresa, hoyEnMexico(listo.ahora()), filtros);
+  return { ...lectura, personas: lectura.personas.map((persona) => vistaPara(conEmpresa, persona)) };
 }
 
 export async function leerDetallePersona(
@@ -62,7 +81,29 @@ export async function leerDetallePersona(
   if (!puede(conEmpresa, "cliente.maestro.ver")) throw new ErrorDeDominio("maestro_no_disponible");
   if (!uuidValido(personaId)) throw new ErrorDeDominio("persona_ausente");
   const listo = resolver(deps);
-  return listo.repositorio.detalle(conEmpresa, hoyEnMexico(listo.ahora()), personaId);
+  const detalle = await listo.repositorio.detalle(conEmpresa, hoyEnMexico(listo.ahora()), personaId);
+  if (!detalle) return null;
+  const veClabe = puede(conEmpresa, "cliente.personas.clabe.cambiar");
+  return {
+    ...detalle,
+    persona: vistaPara(conEmpresa, detalle.persona),
+    // Quien no cambia la CLABE tampoco sabe si se repite en otra persona.
+    clabeDuplicada: veClabe ? detalle.clabeDuplicada : false,
+    historialClabe: veClabe ? detalle.historialClabe : [],
+  };
+}
+
+/**
+ * Mínimo privilegio en la vista: los 18 dígitos solo para quien puede
+ * cambiar la CLABE; el neto por persona solo para quien prepara o autoriza
+ * la nómina. Los demás ven la terminación y los totales.
+ */
+export function vistaPara(ctx: ContextoConEmpresa, persona: PersonaVista): PersonaVista {
+  const clabe = puede(ctx, "cliente.personas.clabe.cambiar") ? persona.clabe : null;
+  const nomina = persona.nomina && !puede(ctx, "cliente.nomina.detalle.ver")
+    ? { ...persona.nomina, netoCentavos: null }
+    : persona.nomina;
+  return { ...persona, clabe, nomina };
 }
 
 export async function resumenParaConsola(
@@ -116,8 +157,12 @@ export async function editarArea(
       accion: "editar_area",
       identificador: id,
       cambio: {
+        nombre_anterior: previo.nombre,
+        nombre_nuevo: validado.nombre,
         presupuesto_anterior: previo.presupuestoCentavos,
         presupuesto_nuevo: validado.presupuestoCentavos,
+        tesoreria_anterior: previo.esTesoreria,
+        tesoreria_nueva: validado.esTesoreria,
       },
     });
     await tx.actualizarCentro({ id, ...validado });
@@ -136,7 +181,7 @@ export async function darDeAltaPersona(
   if (!validada.ok) throw new ErrorDeDominio(validada.codigo);
   const valor = validada.valor;
   let nomina: ConfiguracionNomina | null = null;
-  if (tieneConfiguracionNomina(entrada)) {
+  if (altaConNomina(entrada)) {
     const validadaNomina = validarConfiguracionNomina(entrada, hoy, valor.altaEn);
     if (!validadaNomina.ok) throw new ErrorDeDominio(codigoDeNomina(validadaNomina.errores[0]?.campo));
     nomina = validadaNomina.valor;
@@ -177,7 +222,10 @@ export async function darDeAltaPersona(
     await listo.auditar(tx.consulta, actor, {
       accion: "alta_persona",
       identificador: id,
-      cambio: { presupuesto_centavos: valor.presupuestoCentavos },
+      cambio: {
+        presupuesto_centavos: valor.presupuestoCentavos,
+        clabe_nueva: valor.clabe ? clabeEnmascarada(valor.clabe) : null,
+      },
     });
     if (valor.bajaEn !== null) await listo.auditar(tx.consulta, actor, { accion: "baja_persona", identificador: id });
     const roles: readonly RolCliente[] = valor.acceso.tipo === "nueva"
@@ -198,8 +246,20 @@ export async function darDeAltaPersona(
       centroId: valor.centroId,
       userId: userIdPersona,
     });
+    if (valor.clabe) {
+      await tx.insertarClabe({ id: randomUUID(), employeeId: id, clabe: valor.clabe, desde: listo.ahora(), actorId: conEmpresa.persona.id });
+    }
     if (nomina) {
-      await listo.auditar(tx.consulta, actor, { accion: "configurar_nomina", identificador: id });
+      await listo.auditar(tx.consulta, actor, {
+        accion: "configurar_nomina",
+        identificador: id,
+        cambio: {
+          neto_nuevo: nomina.netoCentavos,
+          frecuencia_nueva: nomina.frecuencia,
+          destino_nuevo: nomina.destino,
+          pago_nuevo: nomina.proximoPagoEn,
+        },
+      });
       await tx.insertarNomina(id, nomina);
     }
     if (valor.destino === "tarjeta") {
@@ -227,7 +287,12 @@ export async function editarPersona(
   if (!uuidValido(personaId)) throw new ErrorDeDominio("persona_ausente");
   const listo = resolver(deps);
   const hoy = hoyEnMexico(listo.ahora());
-  const validada = validarAltaPersona({ ...entrada, acceso: "no", altaLlave: null }, hoy);
+  // Los datos laborales no tocan la CLABE ni el destino: esos tienen su propio
+  // formulario, permiso y reautenticación. Lo que mande el cliente ahí se ignora.
+  const validada = validarAltaPersona(
+    { ...entrada, acceso: "no", altaLlave: null, nomina: "no", destino: "", clabe: "" },
+    hoy,
+  );
   if (!validada.ok) throw new ErrorDeDominio(validada.codigo);
   const valor = validada.valor;
   const conEmpresa = exigir(ctx, "cliente.maestro.editar");
@@ -241,20 +306,129 @@ export async function editarPersona(
     }
     const proximoPago = await tx.proximoPago(personaId);
     if (proximoPago && proximoPago < valor.altaEn) throw new ErrorDeDominio("alta_posterior_pago");
+    const campos = [
+      previa.nombre !== valor.nombre ? "nombre" : null,
+      previa.altaEn !== valor.altaEn ? "ingreso" : null,
+      previa.centroId !== valor.centroId ? "area" : null,
+      previa.jefeId !== valor.jefeId ? "jefe" : null,
+      previa.presupuestoCentavos !== valor.presupuestoCentavos ? "presupuesto" : null,
+    ].filter((campo): campo is string => campo !== null);
+    if (campos.length === 0) return;
     await listo.auditar(tx.consulta, actorDeCliente(conEmpresa), {
       accion: "editar_persona",
       identificador: personaId,
-      cambio: { presupuesto_nuevo: valor.presupuestoCentavos },
+      cambio: {
+        campos: campos.join(","),
+        presupuesto_anterior: previa.presupuestoCentavos,
+        presupuesto_nuevo: valor.presupuestoCentavos,
+      },
     });
     await tx.actualizarEmpleado({
       id: personaId,
       nombre: valor.nombre,
       altaEn: valor.altaEn,
-      clabe: valor.clabe,
       presupuestoCentavos: valor.presupuestoCentavos,
       jefeId: valor.jefeId,
       centroId: valor.centroId,
     });
+  });
+}
+
+export type CambioDeClabe = {
+  tipo: "cambiada" | "registrada";
+  aviso: "enviado" | "no_enviado" | "sin_usuario";
+};
+
+/**
+ * Cambia la CLABE de nómina de una persona. Cierra la vigente y agrega otra
+ * fila al historial; la anterior se queda. Exige el permiso propio y un
+ * segundo factor verificado hace menos de 30 minutos en esta misma sesión.
+ * La bitácora guarda solo las terminaciones. Si la persona tiene usuario, se
+ * le avisa por correo; si el correo no sale, el cambio se conserva y queda
+ * asentado que el aviso no salió.
+ */
+export async function cambiarClabeNomina(
+  ctx: ContextoDeTenant | null | undefined,
+  sesion: Pick<Sesion, "id" | "segundoFactor" | "superficie"> | null,
+  entrada: { personaId?: unknown; clabe?: unknown },
+  deps?: DependenciasPersonas,
+): Promise<CambioDeClabe> {
+  const personaId = typeof entrada.personaId === "string" ? entrada.personaId.trim() : "";
+  if (!uuidValido(personaId)) throw new ErrorDeDominio("persona_ausente");
+  const leida = clabeValida(entrada.clabe);
+  if (!leida.ok) throw new ErrorDeDominio("clabe_invalida");
+  const conEmpresa = exigir(ctx, "cliente.personas.clabe.cambiar");
+  const listo = resolver(deps);
+  const ahora = listo.ahora();
+  if (!sesion || sesion.id !== conEmpresa.sesionId) throw new ErrorDeDominio("reautenticacion_requerida");
+  exigirAutenticacionReciente(sesion, ahora, "cliente");
+  const hoy = hoyEnMexico(ahora);
+  const actor = actorDeCliente(conEmpresa);
+  const hecho = await listo.repositorio.conEmpresa(conEmpresa, async (tx) => {
+    const persona = await tx.bloquearPersona(personaId);
+    if (!persona) throw new ErrorDeDominio("persona_ausente");
+    if (estaDeBaja(persona.bajaEn, hoy)) throw new ErrorDeDominio("persona_de_baja");
+    if (persona.clabe === leida.clabe) throw new ErrorDeDominio("clabe_misma");
+    const historialId = randomUUID();
+    await listo.auditar(tx.consulta, actor, {
+      accion: "cambiar_clabe_nomina",
+      identificador: persona.id,
+      cambio: {
+        clabe_anterior: persona.clabe ? clabeEnmascarada(persona.clabe) : null,
+        clabe_nueva: clabeEnmascarada(leida.clabe),
+      },
+    });
+    if (persona.clabe) await tx.cerrarClabe(persona.id, ahora);
+    await tx.insertarClabe({ id: historialId, employeeId: persona.id, clabe: leida.clabe, desde: ahora, actorId: conEmpresa.persona.id });
+    await tx.escribirClabe(persona.id, leida.clabe);
+    return {
+      historialId,
+      tenia: persona.clabe !== null,
+      destinatario: persona.userId && persona.correo ? { correo: persona.correo, nombre: persona.nombre } : null,
+    };
+  });
+  const tipo = hecho.tenia ? "cambiada" : "registrada";
+  if (!hecho.destinatario) return { tipo, aviso: "sin_usuario" };
+  const entrega = await listo.avisar({
+    historialId: hecho.historialId,
+    para: hecho.destinatario.correo,
+    nombre: hecho.destinatario.nombre,
+    razonSocial: conEmpresa.empresa.razonSocial,
+    finalNueva: leida.clabe.slice(-4),
+    cambiadaEn: ahora,
+  });
+  // El aviso se asienta aparte: un correo caído no deshace el cambio, pero
+  // tampoco se pierde que la persona no fue avisada.
+  await listo.repositorio.conEmpresa(conEmpresa, (tx) => listo.auditar(tx.consulta, actor, {
+    accion: "aviso_clabe_nomina",
+    identificador: personaId,
+    cambio: { entregado: entrega.entregada, codigo: entrega.entregada ? null : entrega.codigo },
+  }));
+  return { tipo, aviso: entrega.entregada ? "enviado" : "no_enviado" };
+}
+
+/** Cancela una baja que todavía no llega. Una baja efectiva ya cerró el acceso y no se revierte. */
+export async function cancelarBaja(
+  ctx: ContextoDeTenant | null | undefined,
+  entrada: { personaId?: unknown },
+  deps?: DependenciasPersonas,
+): Promise<void> {
+  const personaId = typeof entrada.personaId === "string" ? entrada.personaId.trim() : "";
+  if (!uuidValido(personaId)) throw new ErrorDeDominio("persona_ausente");
+  const conEmpresa = exigir(ctx, "cliente.maestro.editar");
+  const listo = resolver(deps);
+  const hoy = hoyEnMexico(listo.ahora());
+  await listo.repositorio.conEmpresa(conEmpresa, async (tx) => {
+    const persona = await tx.bloquearPersona(personaId);
+    if (!persona) throw new ErrorDeDominio("persona_ausente");
+    if (!persona.bajaEn) throw new ErrorDeDominio("sin_baja_programada");
+    if (estaDeBaja(persona.bajaEn, hoy)) throw new ErrorDeDominio("baja_ya_efectiva");
+    await listo.auditar(tx.consulta, actorDeCliente(conEmpresa), {
+      accion: "baja_persona",
+      identificador: persona.id,
+      cambio: { baja_anterior: persona.bajaEn, baja_nueva: null },
+    });
+    await tx.escribirBaja(persona.id, null);
   });
 }
 
@@ -299,6 +473,19 @@ export async function registrarBaja(
     const persona = await tx.bloquearPersona(validada.personaId);
     if (!persona) throw new ErrorDeDominio("persona_ausente");
     if (validada.bajaEn < persona.altaEn) throw new ErrorDeDominio("baja_anterior");
+    // Una baja que ya llegó cerró el acceso: se puede corregir a otra fecha
+    // pasada, pero no moverla al futuro como si la persona siguiera vigente.
+    if (estaDeBaja(persona.bajaEn, hoy) && !estaDeBaja(validada.bajaEn, hoy)) {
+      throw new ErrorDeDominio("baja_ya_efectiva");
+    }
+    // La empresa no se queda sin administrador, ni hoy ni cuando venza una
+    // baja programada: cuentan solo los administradores sin baja registrada.
+    if (
+      persona.userId && persona.membresia === "activa" && persona.roles.includes("administrador") &&
+      await tx.administradoresVigentes(persona.userId) === 0
+    ) {
+      throw new ErrorDeDominio("ultimo_administrador");
+    }
     const efectiva = estaDeBaja(validada.bajaEn, hoy);
     if (efectiva && persona.userId && persona.roles.includes("liberador")) {
       await listo.auditar(tx.consulta, actor, {
@@ -308,7 +495,11 @@ export async function registrarBaja(
       });
     }
     if (persona.bajaEn !== validada.bajaEn) {
-      await listo.auditar(tx.consulta, actor, { accion: "baja_persona", identificador: persona.id });
+      await listo.auditar(tx.consulta, actor, {
+        accion: "baja_persona",
+        identificador: persona.id,
+        cambio: { baja_anterior: persona.bajaEn, baja_nueva: validada.bajaEn },
+      });
       await tx.escribirBaja(persona.id, validada.bajaEn);
     }
     if (efectiva) {
@@ -320,8 +511,13 @@ export async function registrarBaja(
         await listo.auditar(tx.consulta, actor, { accion: "cancelar_tarjeta", identificador: tarjetaId });
         await tx.cancelarTarjeta(tarjetaId);
       }
-      if (persona.userId) {
-        await listo.auditar(tx.consulta, actor, { accion: "desprovisionar_persona", identificador: persona.id });
+      // Repetir la misma baja no duplica eventos: si el acceso ya se cerró, no se vuelve a cerrar.
+      if (persona.userId && persona.membresia !== null && persona.membresia !== "suspendida") {
+        await listo.auditar(tx.consulta, actor, {
+          accion: "desprovisionar_persona",
+          identificador: persona.id,
+          cambio: { baja_en: validada.bajaEn },
+        });
         if (persona.roles.includes("liberador")) await tx.quitarLiberador(persona.userId);
         await tx.desprovisionar(persona.userId);
       }
@@ -373,5 +569,30 @@ function resolver(deps?: DependenciasPersonas): Required<DependenciasPersonas> {
     emitir: deps?.emitir ?? emitirEnTransaccion,
     reemitir: deps?.reemitir ?? emitirToken,
     entregar: deps?.entregar ?? ((emitida, razonSocial) => entregarInvitacion(emitida, razonSocial)),
+    avisar: deps?.avisar ?? avisarPorCorreo,
   };
+}
+
+async function avisarPorCorreo(aviso: AvisoClabeNomina): Promise<ResultadoDeEntrega> {
+  try {
+    const plantilla = plantillaAvisoClabeNomina({
+      nombre: aviso.nombre,
+      razonSocial: aviso.razonSocial,
+      finalNueva: aviso.finalNueva,
+      cambiadaEn: aviso.cambiadaEn,
+      enlace: `${urlPublica()}/entrar`,
+    });
+    await enviadorDesdeEntorno()({
+      para: aviso.para,
+      asunto: plantilla.asunto,
+      html: plantilla.html,
+      texto: plantilla.texto,
+      idempotencia: `clabe-nomina/${aviso.historialId}`,
+      etiqueta: "aviso_clabe_nomina",
+    });
+    return { entregada: true };
+  } catch (error) {
+    if (error instanceof ErrorDeDominio) return { entregada: false, codigo: error.codigo };
+    return { entregada: false, codigo: "correo_no_disponible" };
+  }
 }

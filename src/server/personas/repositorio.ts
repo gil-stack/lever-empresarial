@@ -1,3 +1,4 @@
+import { clabeEnmascarada } from "../../dominio/clabe";
 import { disponibleParaPlaneacion, mensualEstimado, sumarCentavos, type DestinoNomina, type FrecuenciaNomina } from "../../dominio/nomina";
 import { rolesLeidos, type RolCliente } from "../../nucleo/capacidades";
 import { baseCliente } from "../../nucleo/contexto";
@@ -6,6 +7,7 @@ import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import type {
   AreaVista,
   CentroVista,
+  ClabeHistorialVista,
   DetallePersona,
   FiltrosPersonas,
   HechosLiberacion,
@@ -47,6 +49,15 @@ const PERSONAS_BASE = `
   left join employee_payroll_profiles p on p.employee_id = e.id and p.company_id = e.company_id
 `;
 
+const PERSONA_BLOQUEADA = `
+  select e.id, e.nombre, e.alta_en, e.baja_en, e.user_id, e.clabe, e.cost_center_id,
+         e.jefe_id, e.presupuesto_mensual_centavos, ${ROLES_DE} as roles,
+         mb.estado as membresia, u.correo
+  from employees e
+  left join memberships mb on mb.user_id = e.user_id and mb.company_id = e.company_id
+  left join users u on u.id = e.user_id
+`;
+
 // La empresa es la del contexto. RLS la vuelve a exigir en cada tabla.
 // Ninguna lectura del maestro trae password_hash.
 export const SQL = {
@@ -63,7 +74,7 @@ export const SQL = {
   directorio: `${PERSONAS_BASE}
     where e.company_id = $1
       and $2::date is not null
-      and ($3 = '' or e.nombre ilike '%' || $3 || '%' or u.correo ilike '%' || $3 || '%')
+      and ($3 = '' or e.nombre ilike '%' || $3 || '%' escape '\\' or u.correo ilike '%' || $3 || '%' escape '\\')
       and ($4::uuid is null or e.cost_center_id = $4::uuid)
       and (
         $5 = 'todos'
@@ -80,7 +91,7 @@ export const SQL = {
     left join employee_payroll_profiles p on p.employee_id = e.id and p.company_id = e.company_id
     where e.company_id = $1
       and $2::date is not null
-      and ($3 = '' or e.nombre ilike '%' || $3 || '%' or u.correo ilike '%' || $3 || '%')
+      and ($3 = '' or e.nombre ilike '%' || $3 || '%' escape '\\' or u.correo ilike '%' || $3 || '%' escape '\\')
       and ($4::uuid is null or e.cost_center_id = $4::uuid)
       and (
         $5 = 'todos'
@@ -122,17 +133,43 @@ export const SQL = {
       and ($3::uuid is null or id <> $3::uuid)
     limit 1
   `,
-  jefePorId: `
-    select e.id, e.alta_en, e.baja_en, e.user_id, ${ROLES_DE} as roles
-    from employees e
+  jefePorId: `${PERSONA_BLOQUEADA}
     where e.id = $1 and e.company_id = $2
   `,
-  bloquearPersona: `
-    select e.id, e.alta_en, e.baja_en, e.user_id, ${ROLES_DE} as roles
-    from employees e
+  bloquearPersona: `${PERSONA_BLOQUEADA}
     where e.id = $1 and e.company_id = $2
     for update of e
   `,
+  administradoresVigentes: `
+    select count(distinct m.user_id)::int as total
+    from memberships m
+    join membership_roles r
+      on r.user_id = m.user_id and r.company_id = m.company_id and r.rol = 'administrador'
+    left join employees e on e.user_id = m.user_id and e.company_id = m.company_id
+    where m.company_id = $1 and m.estado = 'activa' and m.user_id <> $2
+      and (e.id is null or e.baja_en is null)
+  `,
+  historialClabe: `
+    select h.id, h.clabe, h.vigente_desde, h.vigente_hasta, u.nombre as registrada_por
+    from employee_payroll_clabes h
+    left join users u on u.id = h.registrada_por
+    where h.company_id = $1 and h.employee_id = $2
+    order by h.vigente_desde desc, h.id
+  `,
+  cerrarClabe: `
+    update employee_payroll_clabes set vigente_hasta = $3
+    where company_id = $1 and employee_id = $2 and vigente_hasta is null
+  `,
+  insertarClabe: `
+    insert into employee_payroll_clabes (
+      id, company_id, employee_id, clabe, digito_valido, vigente_desde, registrada_por
+    ) values ($1, $2, $3, $4, true, $5, $6)
+  `,
+  escribirClabe: `
+    update employees set clabe = $3, clabe_digito_valido = true
+    where id = $1 and company_id = $2
+  `,
+  aplicarBajasVencidas: "select aplicar_bajas_vencidas_empresa()",
   miembroPorCorreo: `
     select m.user_id as id, m.estado,
            exists (
@@ -182,7 +219,7 @@ export const SQL = {
   actualizarEmpleado: `
     update employees
     set jefe_id = $3, cost_center_id = $4, nombre = $5, alta_en = $6::date,
-        clabe = $7, clabe_digito_valido = $8, presupuesto_mensual_centavos = $9
+        presupuesto_mensual_centavos = $7
     where id = $1 and company_id = $2
   `,
   insertarNomina: `
@@ -256,12 +293,14 @@ export function repositorioPg(): RepositorioPersonas {
     conEmpresa(ctx, fn) {
       return conContexto(baseCliente(ctx), async (consulta) => {
         await bloquearEmpresa(consulta, ctx.empresa.id);
+        await consulta.query(SQL.aplicarBajasVencidas);
         return fn(transaccion(consulta, ctx.empresa.id));
       });
     },
     leer(ctx, hoy, filtros) {
       return conContexto(baseCliente(ctx), async (consulta): Promise<LecturaMaestro> => {
         const companyId = ctx.empresa.id;
+        await consulta.query(SQL.aplicarBajasVencidas);
         const parametros = parametrosDirectorio(companyId, hoy, filtros);
         const centros = await consulta.query(SQL.centros, [companyId]);
         const personas = await consulta.query(SQL.directorio, [
@@ -291,6 +330,7 @@ export function repositorioPg(): RepositorioPersonas {
     detalle(ctx, hoy, personaId) {
       return conContexto(baseCliente(ctx), async (consulta): Promise<DetallePersona | null> => {
         const companyId = ctx.empresa.id;
+        await consulta.query(SQL.aplicarBajasVencidas);
         const resultado = await consulta.query(SQL.personaPorId, [companyId, personaId]);
         const fila = resultado.rows[0];
         if (!fila) return null;
@@ -300,6 +340,7 @@ export function repositorioPg(): RepositorioPersonas {
         const duplicada = persona.clabe
           ? await consulta.query(SQL.clabeDuplicada, [companyId, persona.clabe, personaId])
           : null;
+        const historial = await consulta.query(SQL.historialClabe, [companyId, personaId]);
         return {
           persona,
           centros: centros.rows.map(mapearCentro),
@@ -309,6 +350,7 @@ export function repositorioPg(): RepositorioPersonas {
             return { id: r.id, nombre: r.nombre };
           }),
           clabeDuplicada: duplicada ? booleano((duplicada.rows[0] as { duplicada?: unknown })?.duplicada) : false,
+          historialClabe: historial.rows.map(mapearHistorialClabe),
         };
       });
     },
@@ -331,7 +373,12 @@ export function repositorioPg(): RepositorioPersonas {
 }
 
 function parametrosDirectorio(companyId: string, hoy: string, filtros: FiltrosPersonas) {
-  return [companyId, hoy, filtros.buscar, filtros.centroId, filtros.estado] as const;
+  return [companyId, hoy, escaparComodines(filtros.buscar), filtros.centroId, filtros.estado] as const;
+}
+
+/** «%» y «_» se buscan como texto, no como comodines de ILIKE. */
+export function escaparComodines(texto: string): string {
+  return texto.replace(/[\\%_]/g, (caracter) => `\\${caracter}`);
 }
 
 function transaccion(consulta: Consulta, companyId: string): TransaccionMaestro {
@@ -412,8 +459,6 @@ function transaccion(consulta: Consulta, companyId: string): TransaccionMaestro 
         empleado.centroId,
         empleado.nombre,
         empleado.altaEn,
-        empleado.clabe,
-        empleado.clabe !== null,
         empleado.presupuestoCentavos,
       ]);
       if (resultado.rowCount !== 1) throw new ErrorDeDominio("persona_ausente");
@@ -458,6 +503,20 @@ function transaccion(consulta: Consulta, companyId: string): TransaccionMaestro 
     async escribirBaja(id, bajaEn) {
       const resultado = await consulta.query(SQL.escribirBaja, [id, companyId, bajaEn]);
       if (resultado.rowCount < 1) throw new ErrorDeDominio("persona_ausente");
+    },
+    async administradoresVigentes(exceptoUserId) {
+      const resultado = await consulta.query(SQL.administradoresVigentes, [companyId, exceptoUserId]);
+      return numeroSeguro((resultado.rows[0] as { total?: unknown } | undefined)?.total ?? 0);
+    },
+    async cerrarClabe(employeeId, hasta) {
+      await consulta.query(SQL.cerrarClabe, [companyId, employeeId, hasta]);
+    },
+    async insertarClabe(clabe) {
+      await consulta.query(SQL.insertarClabe, [clabe.id, companyId, clabe.employeeId, clabe.clabe, clabe.desde, clabe.actorId]);
+    },
+    async escribirClabe(employeeId, clabe) {
+      const resultado = await consulta.query(SQL.escribirClabe, [employeeId, companyId, clabe]);
+      if (resultado.rowCount !== 1) throw new ErrorDeDominio("persona_ausente");
     },
     async quitarLiberador(userId) {
       await consulta.query(SQL.quitarLiberador, [userId, companyId]);
@@ -508,14 +567,43 @@ function mapearJefe(fila: unknown): { id: string; nombre: string } {
 
 function mapearBloqueada(fila: unknown): PersonaBloqueada {
   const r = fila as Record<string, unknown>;
-  if (typeof r.id !== "string") throw new ErrorDeDominio("base_no_disponible");
+  if (typeof r.id !== "string" || typeof r.nombre !== "string" || typeof r.cost_center_id !== "string") {
+    throw new ErrorDeDominio("base_no_disponible");
+  }
+  const membresia = r.membresia === null || r.membresia === undefined ? null : String(r.membresia);
+  if (membresia !== null && !["invitada", "activa", "suspendida"].includes(membresia)) throw new ErrorDeDominio("base_no_disponible");
   return {
     id: r.id,
+    nombre: r.nombre,
     altaEn: fechaDeColumna(r.alta_en),
     bajaEn: r.baja_en == null ? null : fechaDeColumna(r.baja_en),
     userId: typeof r.user_id === "string" ? r.user_id : null,
     roles: rolesDeColumna(r.roles),
+    clabe: typeof r.clabe === "string" ? r.clabe : null,
+    centroId: r.cost_center_id,
+    jefeId: typeof r.jefe_id === "string" ? r.jefe_id : null,
+    presupuestoCentavos: numeroNullable(r.presupuesto_mensual_centavos),
+    membresia: membresia as PersonaBloqueada["membresia"],
+    correo: typeof r.correo === "string" ? r.correo : null,
   };
+}
+
+function mapearHistorialClabe(fila: unknown): ClabeHistorialVista {
+  const r = fila as Record<string, unknown>;
+  if (typeof r.id !== "string" || typeof r.clabe !== "string") throw new ErrorDeDominio("base_no_disponible");
+  return {
+    id: r.id,
+    visible: clabeEnmascarada(r.clabe),
+    desde: instante(r.vigente_desde),
+    hasta: r.vigente_hasta == null ? null : instante(r.vigente_hasta),
+    registradaPor: typeof r.registrada_por === "string" ? r.registrada_por : null,
+  };
+}
+
+function instante(valor: unknown): string {
+  if (valor instanceof Date && !Number.isNaN(valor.getTime())) return valor.toISOString();
+  if (typeof valor === "string" && !Number.isNaN(Date.parse(valor))) return new Date(valor).toISOString();
+  throw new ErrorDeDominio("base_no_disponible");
 }
 
 function mapearMiembro(fila: unknown): MiembroDeCorreo {
@@ -541,6 +629,7 @@ function mapearPersona(fila: unknown): PersonaVista {
     altaEn: fechaDeColumna(r.alta_en),
     bajaEn: r.baja_en == null ? null : fechaDeColumna(r.baja_en),
     clabe: typeof r.clabe === "string" ? r.clabe : null,
+    clabeFinal: typeof r.clabe === "string" ? r.clabe.slice(-4) : null,
     presupuestoCentavos: numeroNullable(r.presupuesto_mensual_centavos),
     jefeId: typeof r.jefe_id === "string" ? r.jefe_id : null,
     jefeNombre: typeof r.jefe_nombre === "string" ? r.jefe_nombre : null,

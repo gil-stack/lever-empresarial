@@ -12,6 +12,7 @@ import type { Consulta } from "../../nucleo/db";
 export type {
   AreaVista,
   CentroVista,
+  ClabeHistorialVista,
   DetallePersona,
   FiltrosPersonas,
   LecturaMaestro,
@@ -33,10 +34,17 @@ export type MiembroDeCorreo = {
 
 export type PersonaBloqueada = {
   id: string;
+  nombre: string;
   altaEn: string;
   bajaEn: string | null;
   userId: string | null;
   roles: RolCliente[];
+  clabe: string | null;
+  centroId: string;
+  jefeId: string | null;
+  presupuestoCentavos: number | null;
+  membresia: "invitada" | "activa" | "suspendida" | null;
+  correo: string | null;
 };
 
 export type EmpleadoNuevo = {
@@ -52,7 +60,15 @@ export type EmpleadoNuevo = {
   userId: string | null;
 };
 
-export type ActualizacionPersona = Omit<EmpleadoNuevo, "userId" | "altaLlave" | "bajaEn">;
+export type ActualizacionPersona = Omit<EmpleadoNuevo, "userId" | "altaLlave" | "bajaEn" | "clabe">;
+
+export type ClabeNueva = {
+  id: string;
+  employeeId: string;
+  clabe: string;
+  desde: Date;
+  actorId: string;
+};
 
 /** La transacción del maestro, ya en el rol cliente y con la empresa del contexto. */
 export type TransaccionMaestro = {
@@ -78,7 +94,12 @@ export type TransaccionMaestro = {
   solicitarTarjeta: (entrada: { id: string; employeeId: string; actorId: string }) => Promise<void>;
   tarjetasPendientes: (employeeId: string) => Promise<string[]>;
   cancelarTarjeta: (id: string) => Promise<void>;
-  escribirBaja: (id: string, bajaEn: string) => Promise<void>;
+  escribirBaja: (id: string, bajaEn: string | null) => Promise<void>;
+  /** Administradores con membresía activa y sin baja registrada, sin contar a esta persona. */
+  administradoresVigentes: (exceptoUserId: string) => Promise<number>;
+  cerrarClabe: (employeeId: string, hasta: Date) => Promise<void>;
+  insertarClabe: (clabe: ClabeNueva) => Promise<void>;
+  escribirClabe: (employeeId: string, clabe: string) => Promise<void>;
   quitarLiberador: (userId: string) => Promise<void>;
   desprovisionar: (userId: string) => Promise<void>;
   personaParaInvitacion: (personaId: string) => Promise<{

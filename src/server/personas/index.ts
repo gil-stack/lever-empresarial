@@ -1,5 +1,7 @@
 export { negarLiberacion } from "./liberar";
 export {
+  cambiarClabeNomina,
+  cancelarBaja,
   darDeAltaPersona,
   editarArea,
   editarPersona,
@@ -10,4 +12,4 @@ export {
   registrarBaja,
   resumenParaConsola,
 } from "./servicio";
-export type { AltaDePersona, DependenciasPersonas } from "./servicio";
+export type { AltaDePersona, CambioDeClabe, DependenciasPersonas } from "./servicio";

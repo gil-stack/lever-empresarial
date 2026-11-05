@@ -11,7 +11,7 @@ export default defineConfig({
   outputDir: "./test-results/personas",
   reporter: "list",
   use: {
-    baseURL: "http://127.0.0.1:3107",
+    baseURL: `http://127.0.0.1:${process.env.E2E_PUERTO ?? "3107"}`,
     viewport: { width: 1440, height: 1000 },
     screenshot: "only-on-failure",
     trace: "retain-on-failure",

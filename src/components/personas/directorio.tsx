@@ -97,7 +97,7 @@ export function DirectorioPersonas({
                     </td>
                     <td data-label="Área">{persona.centroNombre}<span className="persona-celda-nota">{persona.jefeNombre ? `Jefe · ${persona.jefeNombre}` : "Sin jefe"}</span></td>
                     <td className="numero" data-label="Nómina neta">
-                      {persona.nomina ? dinero(persona.nomina.netoCentavos) : "Pendiente"}
+                      {persona.nomina ? dinero(persona.nomina.netoCentavos, "Reservado") : "Pendiente"}
                       <span className="persona-celda-nota">{persona.nomina ? `Próximo · ${fechaLarga(persona.nomina.proximoPagoEn)}` : "Falta configurar"}</span>
                     </td>
                     <td className="numero" data-label="Presupuesto">{dinero(persona.presupuestoCentavos)}<span className="persona-celda-nota">Mensual</span></td>

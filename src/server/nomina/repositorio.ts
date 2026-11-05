@@ -11,6 +11,7 @@ import type {
   PersonaParaPago,
   ProximaNomina,
   RepositorioNomina,
+  TotalesNomina,
   TransaccionNomina,
 } from "./tipos";
 
@@ -27,6 +28,26 @@ export const SQL = {
       and (e.baja_en is null or p.proximo_pago_en <= e.baja_en)
     order by p.proximo_pago_en, lower(e.nombre), e.id
     limit 60
+  `,
+  // Agregados sin el tope de la lista: la pantalla no suma sobre 60 renglones.
+  totales: `
+    with elegibles as (
+      select p.proximo_pago_en, p.neto_centavos, p.destino, e.clabe
+      from employee_payroll_profiles p
+      join employees e on e.id = p.employee_id and e.company_id = p.company_id
+      where p.company_id = $1 and p.activa
+        and p.proximo_pago_en >= $2::date - 365
+        and e.alta_en <= p.proximo_pago_en
+        and (e.baja_en is null or p.proximo_pago_en <= e.baja_en)
+    ), proxima as (
+      select min(proximo_pago_en) as fecha from elegibles
+    )
+    select (select fecha from proxima) as proxima_fecha,
+           coalesce((select sum(neto_centavos) from elegibles where proximo_pago_en = (select fecha from proxima)), 0)::bigint as neto_proxima,
+           (select count(*) from elegibles where proximo_pago_en = (select fecha from proxima))::bigint as personas_proxima,
+           (select count(*) from elegibles where not (destino = 'clabe' and clabe is not null))::bigint as destinos_pendientes,
+           (select count(*) from elegibles)::bigint as programadas,
+           (select count(*) from payroll_batches where company_id = $1)::bigint as lotes
   `,
   lotes: `
     select b.id, b.fecha_pago, b.total_centavos, b.preparada_en,
@@ -55,8 +76,10 @@ export const SQL = {
     order by lower(nombre_snapshot), employee_id
   `,
   empleado: "select id, alta_en, baja_en, clabe from employees where company_id = $1 and id = $2 for update",
-  perfil: "select neto_centavos, proximo_pago_en from employee_payroll_profiles where company_id = $1 and employee_id = $2",
-  actualizarClabe: "update employees set clabe = $3, clabe_digito_valido = true where company_id = $1 and id = $2",
+  perfil: `
+    select neto_centavos, proximo_pago_en, frecuencia, destino
+    from employee_payroll_profiles where company_id = $1 and employee_id = $2
+  `,
   guardarPerfil: `
     insert into employee_payroll_profiles (
       employee_id, company_id, neto_centavos, frecuencia, proximo_pago_en,
@@ -77,6 +100,8 @@ export const SQL = {
     values ($2, $1, $3, $4)
   `,
   lotePorFecha: "select id from payroll_batches where company_id = $1 and fecha_pago = $2::date",
+  // La más antigua vencida que todavía no tiene lote. Una fecha ya preparada
+  // no bloquea el botón para toda la empresa.
   primeraFechaVencida: `
     select min(p.proximo_pago_en) as fecha
     from employee_payroll_profiles p
@@ -84,7 +109,12 @@ export const SQL = {
     where p.company_id = $1 and p.activa and p.proximo_pago_en <= $2::date
       and e.alta_en <= p.proximo_pago_en
       and (e.baja_en is null or p.proximo_pago_en <= e.baja_en)
+      and not exists (
+        select 1 from payroll_batches b
+        where b.company_id = p.company_id and b.fecha_pago = p.proximo_pago_en
+      )
   `,
+  aplicarBajasVencidas: "select aplicar_bajas_vencidas_empresa()",
   personasParaPago: `
     select e.id, e.nombre, e.clabe, p.neto_centavos, p.frecuencia,
            p.proximo_pago_en, p.ancla_dia, p.destino
@@ -115,14 +145,22 @@ export const SQL = {
 export function repositorioPg(): RepositorioNomina {
   return {
     leer(ctx, hoy) {
-      return conContexto(baseCliente(ctx), async (consulta): Promise<LecturaNomina> => {
+      return conContexto(baseCliente(ctx), async (consulta): Promise<Omit<LecturaNomina, "detalle">> => {
+        await consulta.query(SQL.aplicarBajasVencidas);
         const proximas = await consulta.query(SQL.proximas, [ctx.empresa.id, hoy]);
+        const totales = await consulta.query(SQL.totales, [ctx.empresa.id, hoy]);
+        const vencida = await consulta.query(SQL.primeraFechaVencida, [ctx.empresa.id, hoy]);
         const lotes = await consulta.query(SQL.lotes, [ctx.empresa.id]);
-        return { proximas: proximas.rows.map(mapearProxima), lotes: lotes.rows.map(mapearLote) };
+        return {
+          proximas: proximas.rows.map(mapearProxima),
+          totales: mapearTotales(totales.rows[0], (vencida.rows[0] as { fecha?: unknown } | undefined)?.fecha),
+          lotes: lotes.rows.map(mapearLote),
+        };
       });
     },
     lote(ctx, id) {
       return conContexto(baseCliente(ctx), async (consulta) => {
+        await consulta.query(SQL.aplicarBajasVencidas);
         const resultado = await consulta.query(SQL.lote, [ctx.empresa.id, id]);
         const fila = resultado.rows[0];
         if (!fila) return null;
@@ -133,6 +171,7 @@ export function repositorioPg(): RepositorioNomina {
     conEmpresa(ctx, fn) {
       return conContexto(baseCliente(ctx), async (consulta) => {
         await bloquearEmpresa(consulta, ctx.empresa.id);
+        await consulta.query(SQL.aplicarBajasVencidas);
         return fn(transaccion(consulta, ctx.empresa.id));
       });
     },
@@ -157,11 +196,16 @@ function transaccion(consulta: Consulta, companyId: string): TransaccionNomina {
     },
     async perfilAnterior(id) {
       const resultado = await consulta.query(SQL.perfil, [companyId, id]);
-      const fila = resultado.rows[0] as { neto_centavos?: unknown; proximo_pago_en?: unknown } | undefined;
-      return fila ? { netoCentavos: numero(fila.neto_centavos), proximoPagoEn: fechaDeColumna(fila.proximo_pago_en) } : null;
-    },
-    async actualizarClabe(employeeId, clabe) {
-      await consulta.query(SQL.actualizarClabe, [companyId, employeeId, clabe]);
+      const fila = resultado.rows[0] as Record<string, unknown> | undefined;
+      if (!fila) return null;
+      const frecuencia = String(fila.frecuencia);
+      if (!["semanal", "quincenal", "mensual"].includes(frecuencia)) throw new ErrorDeDominio("base_no_disponible");
+      return {
+        netoCentavos: numero(fila.neto_centavos),
+        proximoPagoEn: fechaDeColumna(fila.proximo_pago_en),
+        frecuencia: frecuencia as FrecuenciaNomina,
+        destino: destinoDe(fila.destino),
+      };
     },
     async guardarPerfil(employeeId, nomina) {
       await consulta.query(SQL.guardarPerfil, [
@@ -258,7 +302,21 @@ function mapearItem(fila: unknown): LoteItem {
     netoCentavos: numero(r.neto_centavos),
     destino: destinoDe(r.destino),
     clabe: typeof r.clabe_snapshot === "string" ? r.clabe_snapshot : null,
+    clabeFinal: typeof r.clabe_snapshot === "string" ? r.clabe_snapshot.slice(-4) : null,
     destinoListo: r.destino_estado === "listo",
+  };
+}
+
+function mapearTotales(fila: unknown, vencida: unknown): TotalesNomina {
+  const r = (fila ?? {}) as Record<string, unknown>;
+  return {
+    proximaFecha: r.proxima_fecha == null ? null : fechaDeColumna(r.proxima_fecha),
+    netoProximaCentavos: numero(r.neto_proxima ?? 0),
+    personasProxima: numero(r.personas_proxima ?? 0),
+    destinosPendientes: numero(r.destinos_pendientes ?? 0),
+    programadas: numero(r.programadas ?? 0),
+    lotes: numero(r.lotes ?? 0),
+    primeraVencida: vencida == null ? null : fechaDeColumna(vencida),
   };
 }
 

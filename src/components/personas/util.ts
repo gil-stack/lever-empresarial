@@ -11,6 +11,21 @@ export function frecuenciaVisible(frecuencia: FrecuenciaNomina): string {
   return frecuencia === "semanal" ? "Semanal" : frecuencia === "quincenal" ? "Quincenal · 15 y último" : "Mensual";
 }
 
+const MOMENTO = new Intl.DateTimeFormat("es-MX", {
+  timeZone: "America/Mexico_City",
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+});
+
+export function momentoLegible(iso: string): string {
+  const instante = new Date(iso);
+  return Number.isNaN(instante.getTime()) ? iso : MOMENTO.format(instante);
+}
+
 export function estadoDePersona(persona: Pick<PersonaVista, "bajaEn" | "nomina">, hoy: string): {
   texto: string;
   tono: "neutro" | "sello" | "aviso";

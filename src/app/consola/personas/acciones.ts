@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 
-import { erroresDeConfiguracionNomina, tieneConfiguracionNomina } from "@/dominio/nomina";
+import { erroresDeConfiguracionNomina } from "@/dominio/nomina";
 import {
+  altaConNomina,
   erroresDeAltaPersona,
   hoyEnMexico,
   MENSAJE_CAMPO,
@@ -16,9 +17,11 @@ import {
   type EntradaAltaPersona,
   type EstadoMaestro,
 } from "@/dominio/personas";
-import { contextoDeAccion, errorConSecreto } from "@/server/entrada";
+import { contextoDeAccion, errorConSecreto, sesionSegura } from "@/server/entrada";
 import { configurarNomina, prepararNomina } from "@/server/nomina";
 import {
+  cambiarClabeNomina,
+  cancelarBaja,
   darDeAltaPersona,
   editarArea,
   editarPersona,
@@ -59,7 +62,7 @@ export async function enviarPersona(_previo: EstadoMaestro, formData: FormData):
   const hoy = hoyEnMexico(new Date());
   const entrada = leerPersona(formData);
   const errores = erroresDeAltaPersona(entrada, hoy);
-  if (tieneConfiguracionNomina(entrada)) {
+  if (altaConNomina(entrada)) {
     const alta = typeof entrada.alta === "string" ? entrada.alta : "";
     errores.push(...erroresDeConfiguracionNomina(entrada, hoy, alta));
   }
@@ -75,9 +78,10 @@ export async function enviarPersona(_previo: EstadoMaestro, formData: FormData):
         ? " La invitación quedó pendiente de correo; puedes reenviarla desde su expediente."
         : "";
     const duplicada = creada.clabeDuplicada ? " Revisa: la CLABE también aparece en otra persona." : "";
+    const queda = altaConNomina(entrada) ? "con su presupuesto y nómina" : "sin nómina, solo con su ficha y acceso";
     const mensaje = creada.repetida
       ? "El alta ya estaba registrada; el reintento no creó otra persona."
-      : `La persona quedó registrada con su presupuesto y nómina.${acceso}${duplicada} No se dispersó dinero.`;
+      : `La persona quedó registrada ${queda}.${acceso}${duplicada} No se dispersó dinero.`;
     return { tipo: "listo", mensaje, id: creada.id };
   } catch (error) {
     return traducir(error);
@@ -109,7 +113,6 @@ export async function enviarNomina(_previo: EstadoMaestro, formData: FormData): 
     frecuencia: formData.get("frecuencia"),
     primerPago: formData.get("primerPago"),
     destino: formData.get("destino"),
-    clabe: formData.get("clabe"),
   };
   const alta = String(formData.get("alta") ?? "");
   const pagoAnterior = String(formData.get("pagoAnterior") ?? "") || undefined;
@@ -138,6 +141,38 @@ export async function enviarPreparacionNomina(_previo: EstadoMaestro, formData: 
   } catch (error) {
     return traducir(error);
   }
+}
+
+export async function enviarClabeNomina(_previo: EstadoMaestro, formData: FormData): Promise<EstadoMaestro> {
+  const personaId = formData.get("personaId");
+  const clabe = formData.get("clabe");
+  const sesion = await leerSesion();
+  if (!sesion) return { tipo: "rechazado", codigo: "sesion" };
+  try {
+    const cambio = await cambiarClabeNomina(sesion, await sesionSegura(), { personaId, clabe });
+    refrescar();
+    const aviso = cambio.aviso === "enviado"
+      ? " Le avisamos por correo a la persona."
+      : cambio.aviso === "no_enviado"
+        ? " El correo de aviso no salió; avísale tú. Quedó asentado en la bitácora."
+        : "";
+    const que = cambio.tipo === "cambiada" ? "La CLABE de nómina cambió y la anterior quedó en el historial." : "La CLABE de nómina quedó registrada.";
+    return { tipo: "listo", mensaje: `${que}${aviso} No se dispersó dinero.` };
+  } catch (error) {
+    return traducir(error);
+  }
+}
+
+export async function enviarCancelacionBaja(_previo: EstadoMaestro, formData: FormData): Promise<EstadoMaestro> {
+  const sesion = await leerSesion();
+  if (!sesion) return { tipo: "rechazado", codigo: "sesion" };
+  try {
+    await cancelarBaja(sesion, { personaId: formData.get("personaId") });
+  } catch (error) {
+    return traducir(error);
+  }
+  refrescar();
+  return { tipo: "listo", mensaje: "La baja programada quedó cancelada. La persona sigue vigente." };
 }
 
 export async function enviarReenvioInvitacion(_previo: EstadoMaestro, formData: FormData): Promise<EstadoMaestro> {
@@ -184,6 +219,7 @@ function leerPersona(formData: FormData): EntradaAltaPersona & {
   primerPago: FormDataEntryValue | null;
 } {
   return {
+    nomina: formData.get("nomina"),
     nombre: formData.get("nombre"),
     alta: formData.get("alta"),
     baja: formData.get("baja") ?? "",
@@ -214,7 +250,8 @@ function traducir(error: unknown, campoFecha: CampoPersona = "alta"): EstadoMaes
   if (error.codigo === "sesion_ausente" || error.codigo === "usuario_ausente") {
     return { tipo: "rechazado", codigo: "sesion" };
   }
-  if (["base_no_disponible", "base_no_configurada", "auditoria_no_disponible"].includes(error.codigo)) {
+  if (error.codigo === "auditoria_no_disponible") return { tipo: "rechazado", codigo: "auditoria" };
+  if (["base_no_disponible", "base_no_configurada"].includes(error.codigo)) {
     return { tipo: "rechazado", codigo: "libro" };
   }
   const plantilla = MENSAJE_CAMPO[error.codigo];

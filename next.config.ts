@@ -19,7 +19,11 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: "8mb",
-      allowedOrigins: process.env.E2E_SERVER_ACTIONS === "1" ? ["127.0.0.1:3107", "localhost:3107", "null"] : undefined,
+      // Solo para la prueba de navegador local. Nunca un origen opaco («null»):
+      // aceptarlo abriría las acciones a iframes con sandbox y a file://.
+      allowedOrigins: process.env.E2E_SERVER_ACTIONS === "1"
+        ? [`127.0.0.1:${process.env.E2E_PUERTO ?? "3107"}`, `localhost:${process.env.E2E_PUERTO ?? "3107"}`]
+        : undefined,
     },
   },
   agentRules: false,

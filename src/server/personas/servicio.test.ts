@@ -35,6 +35,7 @@ describe("el maestro no dispersa y no abre con una sola firma", () => {
     assert.equal(mundo.personas.find((fila) => fila.id === creada.id)?.clabe, CLABE);
     assert.equal(mundo.usuarios[0]?.passwordHash, null);
     assert.equal(JSON.stringify(mundo.auditoria).includes(CLABE), false);
+    assert.deepEqual(mundo.historialClabe, [CLABE]);
   });
 
   it("el contador no da de alta y un centro de otra empresa no se ve", async () => {
@@ -124,6 +125,7 @@ function memoria() {
     usuarios: [] as Array<{ id: string; correo: string; passwordHash: null }>,
     roles: new Map<string, string[]>(),
     auditoria: [] as Array<{ accion: string }>,
+    historialClabe: [] as string[],
     autorizados: 1,
   };
   const tx = (): TransaccionMaestro => ({
@@ -179,6 +181,9 @@ function memoria() {
     async quitarLiberador(userId) {
       const roles = (estado.roles.get(userId) ?? []).filter((rol) => rol !== "liberador");
       estado.roles.set(userId, roles.length > 0 ? roles : ["tarjetahabiente"]);
+    },
+    async insertarClabe(clabe) {
+      estado.historialClabe.push(clabe.clabe);
     },
   });
   const repo: RepositorioPersonas = {

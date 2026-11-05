@@ -29,6 +29,10 @@ const DEL_CLIENTE = {
   "cliente.politica.editar": { superficie: "cliente", roles: ["administrador"] },
   "cliente.maestro.ver": { superficie: "cliente", roles: ["administrador", "contador", "liberador"] },
   "cliente.maestro.editar": { superficie: "cliente", roles: ["administrador"] },
+  // Cambiar la CLABE de nómina de una persona: además exige segundo factor reciente.
+  "cliente.personas.clabe.cambiar": { superficie: "cliente", roles: ["administrador"] },
+  // Neto por persona y renglones del lote: quien prepara o autoriza la nómina.
+  "cliente.nomina.detalle.ver": { superficie: "cliente", roles: ["administrador", "liberador"] },
   "cliente.membresias.administrar": { superficie: "cliente", roles: ["administrador"] },
   "cliente.proveedores.ver": { superficie: "cliente", roles: ["administrador", "liberador", "contador"] },
   "cliente.proveedores.alta": { superficie: "cliente", roles: ["administrador", "liberador"] },

@@ -41,6 +41,7 @@ export function AltaColaborador({
   const [centroId, setCentroId] = useState(areas[0]?.id ?? "");
   const [jefeId, setJefeId] = useState("");
   const [presupuesto, setPresupuesto] = useState("");
+  const [conNomina, setConNomina] = useState<"si" | "no">("si");
   const [neto, setNeto] = useState("");
   const [frecuencia, setFrecuencia] = useState<FrecuenciaNomina>("quincenal");
   const [primerPago, setPrimerPago] = useState(hoy);
@@ -61,6 +62,7 @@ export function AltaColaborador({
 
   const area = areas.find((item) => item.id === centroId);
   const mensual = useMemo(() => {
+    if (conNomina === "no") return 0;
     const crudo = neto.replace(/[$,\s]/g, "");
     const numero = Number(crudo);
     if (!Number.isFinite(numero) || numero <= 0) return 0;
@@ -69,7 +71,7 @@ export function AltaColaborador({
     } catch {
       return 0;
     }
-  }, [frecuencia, neto]);
+  }, [conNomina, frecuencia, neto]);
   const individual = useMemo(() => {
     const crudo = presupuesto.replace(/[$,\s]/g, "");
     const numero = Number(crudo || 0);
@@ -81,13 +83,15 @@ export function AltaColaborador({
   const clabeLeida = clabeValida(clabe);
 
   function alEnviar(event: FormEvent<HTMLFormElement>) {
-    const entrada = {
-      nombre, alta, baja: "", centroId, jefeId, presupuesto, altaLlave, destino, clabe,
-      acceso, correo, rol: roles, neto, frecuencia, primerPago,
-    };
+    const entrada = conNomina === "si"
+      ? {
+          nomina: "si", nombre, alta, baja: "", centroId, jefeId, presupuesto, altaLlave, destino, clabe,
+          acceso, correo, rol: roles, neto, frecuencia, primerPago,
+        }
+      : { nomina: "no", nombre, alta, baja: "", centroId, jefeId, presupuesto, altaLlave, acceso, correo, rol: roles };
     const encontrados = [
       ...erroresDeAltaPersona(entrada, hoy),
-      ...erroresDeConfiguracionNomina(entrada, hoy, alta),
+      ...(conNomina === "si" ? erroresDeConfiguracionNomina(entrada, hoy, alta) : []),
     ];
     if (encontrados.length > 0) {
       event.preventDefault();
@@ -141,6 +145,18 @@ export function AltaColaborador({
         <section className="alta-seccion" aria-labelledby="alta-nomina">
           <p className="formulario-kicker">02 · Nómina</p>
           <h2 id="alta-nomina">Neto y calendario</h2>
+          <input type="hidden" name="nomina" value={conNomina} />
+          <div className="destino-opciones" role="radiogroup" aria-label="¿Recibe nómina por Lever?">
+            <label className={conNomina === "si" ? "destino-opcion seleccionada" : "destino-opcion"}>
+              <input type="radio" name="conNomina" value="si" checked={conNomina === "si"} onChange={() => { setConNomina("si"); setLocal(null); }} />
+              <span><strong>Recibe nómina</strong><small>Neto, calendario y destino del depósito.</small></span>
+            </label>
+            <label className={conNomina === "no" ? "destino-opcion seleccionada" : "destino-opcion"}>
+              <input type="radio" name="conNomina" value="no" checked={conNomina === "no"} onChange={() => { setConNomina("no"); setLocal(null); }} />
+              <span><strong>Solo acceso o ficha</strong><small>Sin nómina por aquí. Se puede configurar después.</small></span>
+            </label>
+          </div>
+          {conNomina === "si" ? (
           <div className="formulario-pareja">
             <CampoFormulario id="neto" etiqueta="Neto por pago" pista="Lo que debe recibir. No calcula impuestos ni retenciones." error={mensaje("neto")}>
               <input id="neto" name="neto" value={neto} onChange={(e) => { setNeto(e.target.value); setLocal(null); }} inputMode="decimal" placeholder="12500.00" required aria-invalid={mensaje("neto") ? true : undefined} aria-describedby={descritoPor("neto", mensaje("neto"))} />
@@ -156,8 +172,10 @@ export function AltaColaborador({
               <input id="primerPago" name="primerPago" type="date" value={primerPago} min={hoy} onChange={(e) => { setPrimerPago(e.target.value); setLocal(null); }} required aria-invalid={mensaje("primerPago") ? true : undefined} aria-describedby={descritoPor("primerPago", mensaje("primerPago"))} />
             </CampoFormulario>
           </div>
+          ) : <p className="pista">La persona queda en el directorio sin nómina. Para pagarle después, configura su nómina desde el expediente.</p>}
         </section>
 
+        {conNomina === "si" ? (
         <section className="alta-seccion" aria-labelledby="alta-destino">
           <p className="formulario-kicker">03 · Depósito</p>
           <h2 id="alta-destino">Dónde recibirá su nómina</h2>
@@ -179,9 +197,10 @@ export function AltaColaborador({
           ) : <input type="hidden" name="clabe" value="" />}
           {destino === "clabe" && clabeLeida.ok ? <p className="elegido">El dígito cierra. {clabeVisible(clabeLeida.clabe)}</p> : null}
         </section>
+        ) : null}
 
         <section className="alta-seccion" aria-labelledby="alta-acceso">
-          <p className="formulario-kicker">04 · Plataforma</p>
+          <p className="formulario-kicker">{conNomina === "si" ? "04" : "03"} · Plataforma</p>
           <h2 id="alta-acceso">Acceso independiente de la tarjeta</h2>
           <CampoFormulario id="acceso" etiqueta="Usuario de plataforma" pista="La tarjeta no crea un usuario y el acceso no cambia el destino de nómina." error={mensaje("acceso")}>
             <select id="acceso" name="acceso" value={acceso} onChange={(e) => { setAcceso(e.target.value as AccesoForma); setLocal(null); }} aria-invalid={mensaje("acceso") ? true : undefined} aria-describedby={descritoPor("acceso", mensaje("acceso"))}>
@@ -219,10 +238,10 @@ export function AltaColaborador({
         <h2>{nombre.trim() || "Nuevo colaborador"}</h2>
         <p className="alta-resumen-area">{area?.nombre ?? "Elige un área"}</p>
         <dl>
-          <div><dt>Nómina mensual estimada</dt><dd>{dinero(mensual)}</dd></div>
-          <div><dt>Neto por pago</dt><dd>{neto ? `$${neto}` : "—"}</dd></div>
+          <div><dt>Nómina mensual estimada</dt><dd>{conNomina === "si" ? dinero(mensual) : "Sin nómina"}</dd></div>
+          <div><dt>Neto por pago</dt><dd>{conNomina === "si" && neto ? `$${neto}` : "—"}</dd></div>
           <div><dt>Presupuesto individual</dt><dd>{presupuesto ? `$${presupuesto}` : "Sin asignar"}</dd></div>
-          <div><dt>Destino</dt><dd>{destino === "clabe" ? "CLABE externa" : "Tarjeta de nómina"}</dd></div>
+          <div><dt>Destino</dt><dd>{conNomina === "no" ? "—" : destino === "clabe" ? "CLABE externa" : "Tarjeta de nómina"}</dd></div>
           <div><dt>Plataforma</dt><dd>{acceso === "no" ? "Sin acceso" : acceso === "nueva" ? "Invitación nueva" : "Usuario existente"}</dd></div>
         </dl>
         {area && proyectado !== null ? (
@@ -235,7 +254,7 @@ export function AltaColaborador({
         <button className="boton" type="submit" disabled={pendiente || areas.length === 0 || !altaLlave}>
           {pendiente ? "Guardando expediente…" : "Dar de alta colaborador"}
         </button>
-        <p className="pista">Se guardan ficha, nómina, tarjeta e invitación juntas. No se dispersa dinero.</p>
+        <p className="pista">{conNomina === "si" ? "Se guardan ficha, nómina, tarjeta e invitación juntas." : "Se guardan ficha e invitación juntas, sin nómina."} No se dispersa dinero.</p>
       </aside>
     </form>
   );

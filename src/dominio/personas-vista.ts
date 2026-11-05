@@ -16,7 +16,8 @@ export type AreaVista = CentroVista & {
 };
 
 export type NominaPersonaVista = {
-  netoCentavos: number;
+  /** Vacío para quien no prepara ni autoriza la nómina: ve totales, no el neto de cada persona. */
+  netoCentavos: number | null;
   frecuencia: FrecuenciaNomina;
   proximoPagoEn: string;
   destino: DestinoNomina;
@@ -28,7 +29,10 @@ export type PersonaVista = {
   nombre: string;
   altaEn: string;
   bajaEn: string | null;
+  /** Los 18 dígitos solo para quien puede cambiar la CLABE; para los demás, vacío. */
   clabe: string | null;
+  /** Últimos cuatro dígitos de la CLABE vigente, para todos los que ven el maestro. */
+  clabeFinal: string | null;
   presupuestoCentavos: number | null;
   jefeId: string | null;
   jefeNombre: string | null;
@@ -69,9 +73,19 @@ export type LecturaMaestro = {
   porPagina: number;
 };
 
+export type ClabeHistorialVista = {
+  id: string;
+  /** Enmascarada: «•••• 1234». El historial nunca muestra los 18 dígitos. */
+  visible: string;
+  desde: string;
+  hasta: string | null;
+  registradaPor: string | null;
+};
+
 export type DetallePersona = {
   persona: PersonaVista;
   centros: CentroVista[];
   jefes: Array<{ id: string; nombre: string }>;
   clabeDuplicada: boolean;
+  historialClabe: ClabeHistorialVista[];
 };

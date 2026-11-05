@@ -22,12 +22,6 @@ export type EntradaNomina = {
   destino?: unknown;
 };
 
-export function tieneConfiguracionNomina(entrada: EntradaNomina): boolean {
-  return [entrada.neto, entrada.frecuencia, entrada.primerPago, entrada.destino].some(
-    (valor) => valor !== undefined,
-  );
-}
-
 export function validarConfiguracionNomina(
   entrada: EntradaNomina,
   hoy: string,

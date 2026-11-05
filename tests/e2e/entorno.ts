@@ -13,6 +13,7 @@ import { contextoDePersonal, invitarAdministrador } from "../../src/server/plata
 import { aplicarArchivo, ejecutar, urlDeAplicacion } from "../aislamiento/postgres";
 
 const CLAVE = "clave-segura-12";
+const PUERTO = process.env.E2E_PUERTO ?? "3107";
 
 export async function iniciarEntorno(): Promise<void> {
   const admin = process.env.E2E_ADMIN_URL ?? process.env.AISLAMIENTO_DATABASE_URL;
@@ -34,7 +35,7 @@ export async function iniciarEntorno(): Promise<void> {
       if (archivo.endsWith(".sql")) aplicarArchivo(owner, join(dir, archivo));
     }
     process.env.DATABASE_URL = urlDeAplicacion(owner);
-    process.env.URL_APLICACION = "http://127.0.0.1:3107";
+    process.env.URL_APLICACION = `http://127.0.0.1:${PUERTO}`;
     process.env.E2E_SERVER_ACTIONS = "1";
     delete process.env.RESEND_API_KEY;
     delete process.env.CORREO_REMITENTE;
@@ -94,7 +95,7 @@ export async function cerrarEntorno(): Promise<void> {
 async function levantarServidor(): Promise<void> {
   const directorioRegistro = mkdtempSync(join(tmpdir(), "personas-e2e-"));
   const registro = createWriteStream(join(directorioRegistro, "next.log"));
-  const servidor = spawn("npm", ["run", "start", "--", "-p", "3107"], {
+  const servidor = spawn("npm", ["run", "start", "--", "-p", PUERTO], {
     cwd: process.cwd(),
     env: { ...process.env, NODE_ENV: "production" },
     detached: true,
@@ -107,14 +108,14 @@ async function levantarServidor(): Promise<void> {
   for (let intento = 0; intento < 120; intento += 1) {
     if (servidor.exitCode !== null) throw new Error("Next terminó antes de abrir el puerto E2E.");
     try {
-      const respuesta = await fetch("http://127.0.0.1:3107/salud");
+      const respuesta = await fetch(`http://127.0.0.1:${PUERTO}/salud`);
       if (respuesta.ok) return;
     } catch {
       // El servidor todavía está compilando.
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  throw new Error("Next no abrió el puerto 3107 en 60 segundos.");
+  throw new Error(`Next no abrió el puerto ${PUERTO} en 60 segundos.`);
 }
 
 async function detenerServidor(): Promise<void> {
