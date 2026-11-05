@@ -11,7 +11,7 @@ export function NavegacionOperacion() {
   return (
     <nav className="operacion-nav" aria-label="Operación">
       {SECCIONES_OPERACION.map(([ruta, etiqueta]) => (
-        <Link key={ruta} href={ruta} aria-current={actual === ruta ? "page" : undefined}>{etiqueta}</Link>
+        <Link key={ruta} href={ruta} prefetch={true} aria-current={actual === ruta ? "page" : undefined}>{etiqueta}</Link>
       ))}
     </nav>
   );
