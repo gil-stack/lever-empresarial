@@ -98,6 +98,9 @@ test("alta, factura, excepción, descarga y autorización con otra persona", asy
   const respuesta = await page.request.get(hrefPdf!);
   expect(respuesta.status()).toBe(200);
   expect((await respuesta.body()).subarray(0, 5).toString()).toBe("%PDF-");
+  // La regla general de next.config no debe quitarle a la descarga su sandbox.
+  expect(respuesta.headers()["content-security-policy"]).toBe("sandbox; default-src 'none'; frame-ancestors 'none'");
+  expect(respuesta.headers()["content-disposition"]).toMatch(/^attachment;/);
 
   await page.goto(`${BASE}/nuevo`);
   await page.getByLabel("Proveedor", { exact: true }).selectOption({ label: "Diseño Delta Operaciones · " + rfc });
@@ -121,6 +124,54 @@ test("alta, factura, excepción, descarga y autorización con otra persona", asy
   await page.getByRole("button", { name: "Autorizar para pagar" }).click();
   await expect(page.locator(".detalle-cabeza").getByText("Listo para pagar", { exact: true })).toBeVisible();
   await captura(page, "10-autorizacion-segunda-persona");
+});
+
+test("alta sin contrato y lectura del XML sin errores en la consola", async ({ page }) => {
+  // El campo de contrato vacío llega como un archivo de 0 bytes; no es un PDF vacío.
+  const errores: string[] = [];
+  page.on("console", (mensaje) => {
+    if (mensaje.type() === "error") errores.push(mensaje.text());
+  });
+  await entrar(page);
+  await page.goto(`${BASE}/nuevo-proveedor`);
+  // Un RFC ya dado de alta falla en el servidor; los datos y la constancia se conservan.
+  await page.getByLabel("RFC", { exact: true }).fill("AAA010101AAA");
+  await page.getByLabel("Razón social", { exact: true }).fill("Fletes Sin Contrato");
+  await page.getByLabel("Nombre comercial").fill("Fletes");
+  await page.getByLabel("CLABE", { exact: true }).fill("002180701150123452");
+  await page.locator("#constancia").setInputFiles("tests/e2e/fixtures/soporte-prueba.pdf");
+  await page.getByRole("button", { name: "Dar de alta" }).click();
+  await expect(page.getByText("Ese RFC ya es un proveedor. No entra otra vez.").first()).toBeVisible();
+  await expect(page.getByLabel("Nombre comercial")).toHaveValue("Fletes");
+  expect(await page.locator("#constancia").evaluate((campo: HTMLInputElement) => campo.files?.length ?? 0)).toBe(1);
+  await page.getByLabel("RFC", { exact: true }).fill(`FFF060606FA${Math.floor(Math.random() * 9) + 1}`);
+  await page.getByLabel("Razón social", { exact: true }).fill("Fletes Sin Contrato");
+  await page.getByLabel("CLABE", { exact: true }).fill("002180701150123452");
+  await page.locator("#constancia").setInputFiles("tests/e2e/fixtures/soporte-prueba.pdf");
+  await page.getByRole("button", { name: "Dar de alta" }).click();
+  await expect(page.getByText("Quedó asentado", { exact: true })).toBeVisible();
+
+  await page.goto(`${BASE}/nuevo`);
+  await page.getByLabel("Proveedor", { exact: true }).selectOption({ label: "Proveedor Uno, S.A. de C.V. · AAA010101AAA" });
+  await page.locator("#xml").setInputFiles("tests/e2e/fixtures/factura-prueba.xml");
+  await expect(page.getByText("123e4567-e89b-42d3-a456-426614174998".toUpperCase())).toBeVisible();
+  expect(errores).toEqual([]);
+});
+
+test("una corrección que falla conserva el importe y la evidencia elegidos", async ({ page }) => {
+  // React vacía los campos de un form action al terminar, aun con error: el
+  // importe corregido regresaba en silencio al original.
+  await entrar(page);
+  await page.goto(`${BASE}/nuevo?pago=88888888-8888-4888-8888-888888888883`);
+  await page.getByLabel("Importe MXN").fill("9450.00");
+  await page.getByRole("button", { name: "Guardar y solicitar" }).click();
+  await expect(page.getByText("Si cambias el importe de una excepción, adjunta evidencia nueva en PDF que lo respalde.")).toBeVisible();
+  await expect(page.getByLabel("Importe MXN")).toHaveValue("9450.00");
+  await page.locator("#pdf").setInputFiles("tests/e2e/fixtures/soporte-prueba.pdf");
+  await page.getByRole("button", { name: "Guardar y solicitar" }).click();
+  await page.waitForURL(/consola\/proveedores\?pago=88888888-8888-4888-8888-888888888883/);
+  await expect(page.locator(".detalle-cabeza")).toContainText("$9,450.00");
+  await expect(page.locator(".historial-diferencia")).toContainText("$8,900.00");
 });
 
 test("limita archivos combinados y no ofrece cambiar CLABE a un liberador", async ({ page }) => {
