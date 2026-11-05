@@ -20,9 +20,12 @@ npm run test
 npm run test:db
 npm run build
 npm run security
+npm run test:e2e
 ```
 
-`test` corre la suite con `tsx --test` y deja fuera las cuatro pruebas que necesitan Postgres. `test:db` levanta un Postgres desechable en Docker, aplica las migraciones y borra la base. No usa `DATABASE_URL` ni la rama de preview. Hace falta Docker en la máquina local; en Vercel CI el daemon ya está encendido.
+`test` corre la suite con `tsx --test` y deja fuera las pruebas que necesitan Postgres. `test:db` levanta un Postgres desechable en Docker, aplica las migraciones y borra la base. No usa `DATABASE_URL` ni la rama de preview. Hace falta Docker en la máquina local; en Vercel CI el daemon ya está encendido.
+
+`test:e2e` crea otra base desechable, siembra una empresa y una sesión, levanta Next en el puerto 3107 y recorre Personas con Chromium. Antes hay que ejecutar `npx playwright install chromium` y definir `E2E_ADMIN_URL` con un Postgres local desechable; esa variable jamás debe apuntar a la base `plataforma`. Las capturas del recorrido quedan en `docs/evidencia/personas`.
 
 `security` revisa vulnerabilidades de dependencias (`npm audit`), secretos en el código y en el paquete del navegador, y las rutas de servidor. Vercel CI no trae un revisor propio: Vercel Security Review pertenece a Vercel Agent y publica otro check.
 
@@ -40,7 +43,7 @@ Cada petición resuelve un contexto de tenant. Los repositorios reciben ese cont
 
 La bitácora nueva es `audit_log`: tipo de actor, superficie y la transacción real (`txid`). `audit_events` queda como histórico.
 
-El maestro de personas sigue en la consola: jefe, centro de costo, fecha de baja y CLABE con el dígito 3, 7 y 1. Hacen falta dos personas que puedan liberar. El contador no libera. No se dispersa dinero. El teléfono sigue vacío y no comparte el menú.
+Personas reúne el expediente laboral, el área, los presupuestos mensuales y la nómina neta. Acceso a plataforma y tarjeta son independientes: una persona puede tener solo tarjeta, solo acceso o ambos. La tarjeta se registra como solicitud interna pendiente; no se afirma que un emisor la haya emitido. Las quincenas son 15 y último, y los cambios de sueldo no alteran un lote ya preparado. Preparar nómina congela personas, importes y destinos para revisión; no es una orden bancaria y no se dispersa dinero. La baja efectiva cierra acceso y sesiones, detiene nuevas nóminas y cancela solicitudes de tarjeta pendientes. El contador no libera y el teléfono no comparte el menú.
 
 El servidor lee el connection string agrupado y no migra al arrancar. Las migraciones se aplican a mano:
 

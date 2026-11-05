@@ -15,8 +15,9 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "find src tests -name '*.test.ts' ! -name 'aislamiento.test.ts' ! -name 'dos-firmas.test.ts' ! -name 'historial-clabe.test.ts' ! -name 'relectura-69b.test.ts' ! -name 'deriva.test.ts' -print0 | xargs -0 tsx --test",
+    "test": "find src tests -name '*.test.ts' ! -name 'aislamiento.test.ts' ! -name 'dos-firmas.test.ts' ! -name 'historial-clabe.test.ts' ! -name 'relectura-69b.test.ts' ! -name 'deriva.test.ts' ! -name 'colaboradores-postgres.test.ts' -print0 | xargs -0 tsx --test",
     "test:db": "sh scripts/ci/pruebas-postgres.sh",
+    "test:e2e": "npm run build && playwright test",
     "security": "node scripts/ci/seguridad.mjs"
   },
   "dependencies": {
@@ -32,6 +33,7 @@
     "server-only": "0.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/pg": "^8.23.1",

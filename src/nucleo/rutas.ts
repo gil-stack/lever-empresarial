@@ -83,6 +83,36 @@ export const RUTAS = [
     conEmpresa: true,
   },
   {
+    patron: "/consola/personas/areas",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.maestro.ver"] },
+    conEmpresa: true,
+  },
+  {
+    patron: "/consola/personas/nueva",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.maestro.ver"] },
+    conEmpresa: true,
+  },
+  {
+    patron: "/consola/personas/nomina",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.maestro.ver"] },
+    conEmpresa: true,
+  },
+  {
+    patron: "/consola/personas/nomina/[loteId]",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.maestro.ver"] },
+    conEmpresa: true,
+  },
+  {
+    patron: "/consola/personas/[id]",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.maestro.ver"] },
+    conEmpresa: true,
+  },
+  {
     patron: "/consola/politica",
     superficie: "cliente",
     acceso: { tipo: "capacidad", alguna: ["cliente.politica.ver"] },

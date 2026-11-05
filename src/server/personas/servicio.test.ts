@@ -7,7 +7,7 @@ import { capacidadesDe, type RolCliente } from "../../nucleo/capacidades.ts";
 import type { ContextoDeTenant } from "../../nucleo/contexto.ts";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio.ts";
 import { negarLiberacion } from "./liberar.ts";
-import { SQL } from "./repositorio.ts";
+import { fechaDeColumna, SQL } from "./repositorio.ts";
 import { darDeAltaPersona, nombrarCentro } from "./servicio.ts";
 import type { RepositorioPersonas, TransaccionMaestro } from "./tipos.ts";
 
@@ -140,6 +140,9 @@ function memoria() {
     async centroOcupado(nombre) {
       return estado.centros.some((fila) => fila.companyId === EMPRESA && fila.nombre.toLowerCase() === nombre.toLowerCase());
     },
+    async clabeDuplicada() {
+      return false;
+    },
     async jefePorId() {
       return null;
     },
@@ -219,6 +222,13 @@ function memoria() {
     },
   };
 }
+
+describe("fechas DATE del driver", () => {
+  it("conserva el día local y no lo corre al convertirlo a ISO", () => {
+    const local = new Date(2026, 10, 5);
+    assert.equal(fechaDeColumna(local), "2026-11-05");
+  });
+});
 
 describe("contrato del libro", () => {
   it("la ficha manda la baja con el nombre que el servicio valida", () => {

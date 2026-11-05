@@ -195,6 +195,7 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (CODIGOS_DE_FIRMA.has(mensaje)) return new ErrorDeDominio(mensaje);
     if (CODIGOS_DE_AUTENTICACION.has(mensaje)) return new ErrorDeDominio(mensaje);
     if (CODIGOS_DE_CLABE.has(mensaje)) return new ErrorDeDominio(mensaje);
+    if (mensaje === "fecha_ya_preparada") return new ErrorDeDominio("fecha_ya_preparada");
     if (CODIGOS_DE_TENENCIA.has(mensaje)) return new ErrorDeDominio(mensaje);
     const deProveedor = FRASES_DE_PROVEEDOR[mensaje.trim()];
     if (deProveedor) return new ErrorDeDominio(deProveedor);

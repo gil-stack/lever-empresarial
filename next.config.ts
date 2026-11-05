@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: process.env.E2E_SERVER_ACTIONS === "1" ? ["127.0.0.1", "localhost"] : undefined,
   async headers() {
     return [
       {
@@ -18,6 +19,7 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: "8mb",
+      allowedOrigins: process.env.E2E_SERVER_ACTIONS === "1" ? ["127.0.0.1:3107", "localhost:3107", "null"] : undefined,
     },
   },
   agentRules: false,

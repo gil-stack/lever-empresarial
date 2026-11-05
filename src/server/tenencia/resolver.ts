@@ -109,7 +109,12 @@ export const SQL = {
     from memberships m
     join companies c on c.id = m.company_id
     left join membership_roles r on r.user_id = m.user_id and r.company_id = m.company_id
+    left join employees e on e.user_id = m.user_id and e.company_id = m.company_id
     where m.user_id = $1 and m.estado = 'activa'
+      and (
+        e.id is null or e.baja_en is null
+        or e.baja_en > (timezone('America/Mexico_City', clock_timestamp()))::date
+      )
     group by c.id
     order by c.razon_social, c.id
   `,
