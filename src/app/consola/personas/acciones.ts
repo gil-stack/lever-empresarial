@@ -13,11 +13,12 @@ import {
   type CampoPersona,
   type CodigoRechazoPersona,
   type EntradaAltaPersona,
+  type EstadoFinanzas,
   type EstadoMaestro,
 } from "@/dominio/personas";
 import { contextoDeAccion, errorConSecreto } from "@/server/entrada";
 import { darDeAltaPersona, nombrarCentro, registrarBaja } from "@/server/personas";
-import { asignarRol, quitarRol } from "@/server/roles";
+import { cambiarAccesoFinanzas, rechazoDeFinanzas } from "@/server/roles";
 import { ErrorDeDominio } from "@/server/session";
 
 const LISTO_CENTRO = "El centro de costo quedó nombrado.";
@@ -63,26 +64,16 @@ export async function enviarPersona(_previo: EstadoMaestro, formData: FormData):
   return { tipo: "listo", mensaje: LISTO_PERSONA };
 }
 
-export async function enviarFinanzas(_previo: EstadoMaestro, formData: FormData): Promise<EstadoMaestro> {
-  const userId = formData.get("userId");
-  const verFinanzas = formData.get("verFinanzas");
-  if (typeof userId !== "string" || (verFinanzas !== "si" && verFinanzas !== "no")) {
-    return { tipo: "rechazado", codigo: "persona_ausente" };
-  }
-  const sesion = await leerSesion();
-  if (!sesion) return { tipo: "rechazado", codigo: "sesion" };
+export async function enviarFinanzas(_previo: EstadoFinanzas, formData: FormData): Promise<EstadoFinanzas> {
+  const entrada = { userId: formData.get("userId"), verFinanzas: formData.get("verFinanzas") };
   try {
-    const entrada = { userId, rol: "finanzas" as const };
-    if (verFinanzas === "si") await asignarRol(sesion, entrada);
-    else await quitarRol(sesion, entrada);
+    const estado = await cambiarAccesoFinanzas(await leerSesion(), entrada);
+    if (estado.tipo === "listo") refrescar();
+    return estado;
   } catch (error) {
-    return traducir(error);
+    if (errorConSecreto(error)) return rechazoDeFinanzas("libro", entrada.verFinanzas === "si");
+    throw error;
   }
-  refrescar();
-  return {
-    tipo: "listo",
-    mensaje: verFinanzas === "si" ? "La persona ya puede ver Inicio financiero." : "Se retiró el acceso a Inicio financiero.",
-  };
 }
 
 export async function enviarBaja(_previo: EstadoMaestro, formData: FormData): Promise<EstadoMaestro> {

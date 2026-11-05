@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { capacidadesDe, rolesLeidos, superficieDe, tiene } from "./capacidades.ts";
+import { capacidadesDe, rolesLeidos, superficieDe, tiene, tieneRolDeTrabajo } from "./capacidades.ts";
 
 describe("capacidades por superficie", () => {
   it("el tarjetahabiente puro no recibe consola ni tesorería", () => {
@@ -21,14 +21,23 @@ describe("capacidades por superficie", () => {
     assert.equal(tiene(capacidades, "cliente.plan.ver"), true);
   });
 
-  it("finanzas abre solo el resumen y pendientes, sin permisos operativos", () => {
+  it("finanzas abre exactamente el resumen y pendientes: sin teléfono ni permisos operativos", () => {
     const capacidades = capacidadesDe({ rolesCliente: ["finanzas"], rolesPlataforma: [] });
-    assert.equal(tiene(capacidades, "cliente.consola.ver"), true);
-    assert.equal(tiene(capacidades, "cliente.resumen.ver"), true);
-    assert.equal(tiene(capacidades, "cliente.politica.ver"), false);
-    assert.equal(tiene(capacidades, "cliente.poliza.ver"), false);
-    assert.equal(tiene(capacidades, "cliente.proveedores.ver"), false);
-    assert.equal(tiene(capacidades, "cliente.pago.liberar"), false);
+    assert.deepEqual([...capacidades].sort(), ["cliente.consola.ver", "cliente.resumen.ver"]);
+    for (const telefono of ["telefono.inicio.ver", "telefono.topes.ver", "telefono.facturacion.ver"] as const) {
+      assert.equal(tiene(capacidades, telefono), false, telefono);
+    }
+  });
+
+  it("finanzas no agrega teléfono a un rol de consola y no cuenta como rol de trabajo", () => {
+    const contador = capacidadesDe({ rolesCliente: ["contador"], rolesPlataforma: [] });
+    const conFinanzas = capacidadesDe({ rolesCliente: ["contador", "finanzas"], rolesPlataforma: [] });
+    assert.deepEqual(
+      conFinanzas.filter((capacidad) => !contador.includes(capacidad)),
+      ["cliente.resumen.ver"],
+    );
+    assert.equal(tieneRolDeTrabajo(["finanzas"]), false);
+    assert.equal(tieneRolDeTrabajo(["tarjetahabiente", "finanzas"]), true);
   });
 
   it("solicitante sigue leyéndose en membresías históricas", () => {

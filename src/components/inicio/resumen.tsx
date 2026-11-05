@@ -48,9 +48,9 @@ export function Resumen({ carga, empresaId, nombre, atajos }: { carga: CargaResu
           <p>Suma histórica de los asientos registrados.</p>
         </div>
         <dl className="inicio-metricas">
-          <Metrica rotulo="Ingresos del mes" centavos={resumen.ingresosMesCentavos} tono="ingreso" />
-          <Metrica rotulo="Gastos del mes" centavos={resumen.gastosMesCentavos} tono="gasto" />
-          <Metrica rotulo="Resultado del mes" centavos={resumen.resultadoMesCentavos} tono="resultado" />
+          <Metrica rotulo="Entradas del mes" centavos={resumen.entradasMesCentavos} tono="ingreso" />
+          <Metrica rotulo="Salidas del mes" centavos={resumen.salidasMesCentavos} tono="gasto" />
+          <Metrica rotulo="Neto del mes" centavos={resumen.netoMesCentavos} tono="resultado" />
         </dl>
       </section>
 
@@ -59,13 +59,13 @@ export function Resumen({ carga, empresaId, nombre, atajos }: { carga: CargaResu
           <div className="inicio-analisis">
             <section className="hoja inicio-grafica-principal" aria-labelledby="flujo-titulo">
               <header className="inicio-seccion-cabeza">
-                <div><h2 id="flujo-titulo">Ingresos y gastos</h2><p>Comparativa mensual del libro.</p></div>
+                <div><h2 id="flujo-titulo">Entradas y salidas</h2><p>Comparativa mensual de los asientos del libro.</p></div>
                 <Leyenda />
               </header>
               <GraficaMensual meses={resumen.meses} />
             </section>
             <section className="hoja inicio-categorias" aria-labelledby="categorias-titulo">
-              <header className="inicio-seccion-cabeza"><div><h2 id="categorias-titulo">Gastos por categoría</h2><p>Distribución del mes actual.</p></div></header>
+              <header className="inicio-seccion-cabeza"><div><h2 id="categorias-titulo">Salidas por categoría</h2><p>Distribución del mes actual, por cajón.</p></div></header>
               <GraficaCategorias categorias={resumen.categorias} />
             </section>
           </div>
@@ -85,7 +85,7 @@ export function Resumen({ carga, empresaId, nombre, atajos }: { carga: CargaResu
       ) : (
         <SinMovimientos atajos={atajos} empresaId={empresaId} />
       )}
-      <p className="inicio-fuente">Cifras calculadas con los asientos del libro. No representan el saldo del participante de la CLABE ni una conciliación bancaria.</p>
+      <p className="inicio-fuente">Cifras calculadas con el signo de los asientos del libro: entradas y salidas, no ingresos ni gastos fiscales. No representan el saldo del participante de la CLABE ni una conciliación bancaria.</p>
     </div>
   );
 }
@@ -105,7 +105,7 @@ function Periodo({ periodo, empresaId }: { periodo: PeriodoResumen; empresaId: s
 }
 
 function Leyenda() {
-  return <div className="grafica-leyenda" aria-label="Leyenda"><span><i className="leyenda-ingreso" />Ingresos</span><span><i className="leyenda-gasto" />Gastos</span></div>;
+  return <div className="grafica-leyenda" aria-label="Leyenda"><span><i className="leyenda-ingreso" />Entradas</span><span><i className="leyenda-gasto" />Salidas</span></div>;
 }
 
 function SinMovimientos({ atajos, empresaId }: { atajos: PendienteInicio[]; empresaId: string | null }) {

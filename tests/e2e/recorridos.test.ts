@@ -3,8 +3,10 @@ import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { NextRequest } from "next/server";
 
-import { CABECERA_EMPRESA, rutaDe } from "../../src/nucleo/rutas.ts";
+import { capacidadesDe, tiene } from "../../src/nucleo/capacidades.ts";
+import { CABECERA_EMPRESA, rutaConsola, rutaDe, separarEmpresa } from "../../src/nucleo/rutas.ts";
 import { proxy } from "../../src/proxy.ts";
+import { SQL_RESUMEN } from "../../src/server/inicio/resumen-repositorio.ts";
 
 const EMPRESA = "11111111-1111-4111-8111-111111111111";
 const SESION = `sesion=${"a".repeat(43)}`;
@@ -45,9 +47,24 @@ describe("recorridos de entrada y superficie", () => {
     }
   });
 
-  it("separa el permiso financiero de Inicio del acceso general a Pendientes", () => {
-    assert.deepEqual(rutaDe("/consola")?.acceso, { tipo: "capacidad", alguna: ["cliente.resumen.ver"] });
+  it("separa el permiso financiero de Inicio del acceso general a Pendientes sin dejar un 404", () => {
+    // /consola y /c/<empresa> abren con cualquier rol de consola; la página manda a Pendientes a quien no ve cifras.
+    assert.deepEqual(rutaDe("/consola")?.acceso, { tipo: "capacidad", alguna: ["cliente.consola.ver"] });
     assert.deepEqual(rutaDe("/consola/pendientes")?.acceso, { tipo: "capacidad", alguna: ["cliente.consola.ver"] });
+    assert.equal(separarEmpresa(`/c/${EMPRESA}`).resto, "/consola");
+    for (const rol of ["contador", "liberador", "solicitante"] as const) {
+      const capacidades = capacidadesDe({ rolesCliente: [rol], rolesPlataforma: [] });
+      assert.equal(tiene(capacidades, "cliente.consola.ver"), true, rol);
+      assert.equal(rutaConsola(capacidades), "/consola/pendientes", rol);
+    }
+    assert.equal(rutaConsola(capacidadesDe({ rolesCliente: ["contador", "finanzas"], rolesPlataforma: [] })), "/consola");
+    const pagina = readFileSync(new URL("src/app/consola/page.tsx", RAIZ), "utf8");
+    assert.match(
+      pagina,
+      /apertura\.tipo === "abierta" && rutaConsola\(apertura\.ctx\.capacidades\) !== "\/consola"\) \{\s*redirect\(enEmpresa\(apertura\.ctx\.empresa\?\.id, "\/consola\/pendientes"\)\)/,
+    );
+    // El redirect va antes de leer cifras; la lectura vuelve a exigir el permiso financiero.
+    assert.ok(pagina.indexOf("redirect(") < pagina.indexOf("leerResumenInicio(apertura.ctx"));
   });
 
   it("Inicio consulta el resumen autorizado, Pendientes no lee tesorería y el teléfono no llama a la política completa", () => {
@@ -62,6 +79,17 @@ describe("recorridos de entrada y superficie", () => {
     ].map((archivo) => readFileSync(new URL(archivo, RAIZ), "utf8")).join("\n");
     assert.match(consola, /leerResumenInicio/);
     assert.doesNotMatch(consola, /leerCajones|leerPolitica|leerTarifa|postings/i);
+    // La portada solo llega al libro por el resumen: ni política, ni tarifas, ni credenciales.
+    const portada = [
+      "src/app/consola/page.tsx",
+      "src/components/inicio/resumen.tsx",
+      "src/components/inicio/graficas.tsx",
+      "src/server/inicio/resumen-servicio.ts",
+      "src/server/inicio/resumen-repositorio.ts",
+    ].map((archivo) => readFileSync(new URL(archivo, RAIZ), "utf8")).join("\n");
+    assert.doesNotMatch(portada, /leerCajones|leerPolitica|leerTarifa|password_hash|policy_categories|platform_pricing|subscriptions|tope_centavos/i);
+    const tablas = new Set([...SQL_RESUMEN.matchAll(/\b(?:from|join)\s+([a-z_]+)/gi)].map((coincidencia) => coincidencia[1]));
+    assert.deepEqual([...tablas].sort(), ["categorias", "drawers", "limites", "mensuales", "postings", "recientes"]);
     assert.doesNotMatch(pendientes, /leerResumenInicio|leerCajones|postings|saldo/i);
     assert.match(consola, /sin_permiso\"\) notFound/);
     assert.doesNotMatch(telefono, /leerPolitica|postings|drawers|password_hash/i);

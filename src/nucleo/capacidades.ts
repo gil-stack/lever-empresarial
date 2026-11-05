@@ -17,7 +17,12 @@ export type RolPlataforma = (typeof ROLES_PLATAFORMA)[number];
 
 type Regla<R> = { superficie: Superficie; roles: readonly R[] };
 
-const TODOS: readonly RolCliente[] = ROLES_CLIENTE;
+/**
+ * Finanzas es un acceso adicional, no un rol de trabajo: abre Inicio y
+ * Pendientes y nada más (ni el teléfono). Una membresía no se queda solo con
+ * Finanzas.
+ */
+const DE_TRABAJO: readonly RolCliente[] = ROLES_CLIENTE.filter((rol) => rol !== "finanzas");
 const DE_CONSOLA: readonly RolCliente[] = ["administrador", "solicitante", "liberador", "contador"];
 
 const DEL_CLIENTE = {
@@ -41,9 +46,9 @@ const DEL_CLIENTE = {
 } as const satisfies Record<string, Regla<RolCliente>>;
 
 const DEL_TELEFONO = {
-  "telefono.inicio.ver": { superficie: "telefono", roles: TODOS },
-  "telefono.topes.ver": { superficie: "telefono", roles: TODOS },
-  "telefono.facturacion.ver": { superficie: "telefono", roles: TODOS },
+  "telefono.inicio.ver": { superficie: "telefono", roles: DE_TRABAJO },
+  "telefono.topes.ver": { superficie: "telefono", roles: DE_TRABAJO },
+  "telefono.facturacion.ver": { superficie: "telefono", roles: DE_TRABAJO },
 } as const satisfies Record<string, Regla<RolCliente>>;
 
 const DE_LA_PLATAFORMA = {
@@ -105,6 +110,11 @@ export function esRolCliente(valor: unknown): valor is RolCliente {
 
 export function esRolPlataforma(valor: unknown): valor is RolPlataforma {
   return typeof valor === "string" && (ROLES_PLATAFORMA as readonly string[]).includes(valor);
+}
+
+/** Hay al menos un rol de trabajo; Finanzas solo no cuenta. */
+export function tieneRolDeTrabajo(roles: readonly RolCliente[]): boolean {
+  return roles.some((rol) => DE_TRABAJO.includes(rol));
 }
 
 /** Roles en un orden estable, sin repetidos ni desconocidos. */

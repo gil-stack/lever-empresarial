@@ -1,4 +1,4 @@
-import { capacidadesDe, ROLES_CLIENTE, rolesLeidos, tiene, type RolCliente } from "../nucleo/capacidades";
+import { capacidadesDe, ROLES_CLIENTE, rolesLeidos, tiene, tieneRolDeTrabajo, type RolCliente } from "../nucleo/capacidades";
 import { clabeValida } from "./clabe";
 
 export const ROLES_DE_CUENTA = ROLES_CLIENTE;
@@ -78,6 +78,51 @@ export type EstadoMaestro =
   | { tipo: "listo"; mensaje: string };
 
 export const ESTADO_MAESTRO_INICIAL: EstadoMaestro = { tipo: "inicial" };
+
+/**
+ * Resultado de dar o quitar Finanzas. Lleva el valor real de la casilla:
+ * si el guardado falla, la casilla regresa a lo que la base conserva.
+ */
+export type EstadoFinanzas =
+  | { tipo: "inicial" }
+  | { tipo: "listo"; mensaje: string; habilitado: boolean }
+  | { tipo: "rechazado"; codigo: CodigoFinanzas; habilitado: boolean };
+
+export const ESTADO_FINANZAS_INICIAL: EstadoFinanzas = { tipo: "inicial" };
+
+export type CodigoFinanzas =
+  | "sesion"
+  | "sin_permiso"
+  | "identificador_invalido"
+  | "sin_membresia"
+  | "rol_existente"
+  | "ultimo_rol"
+  | "libro";
+
+export const MENSAJE_FINANZAS: Record<CodigoFinanzas, { titulo: string; texto: string }> = {
+  sesion: { titulo: "Hay que entrar", texto: "Vuelve a entrar para cambiar el acceso financiero." },
+  sin_permiso: {
+    titulo: "No se guardó",
+    texto: "Solo quien administra la empresa da o retira el acceso a Inicio financiero.",
+  },
+  identificador_invalido: {
+    titulo: "No se guardó",
+    texto: "No reconocimos a la persona. Recarga la página y vuelve a intentar.",
+  },
+  sin_membresia: {
+    titulo: "No se guardó",
+    texto: "Esa persona no tiene una cuenta activa en esta empresa. Su acceso no cambió.",
+  },
+  rol_existente: {
+    titulo: "Ya tenía el acceso",
+    texto: "Esa persona ya podía ver Inicio financiero. No cambió nada.",
+  },
+  ultimo_rol: {
+    titulo: "No se quitó",
+    texto: "Finanzas es su único rol y nadie queda sin rol. Dale primero su rol de trabajo.",
+  },
+  libro: { titulo: "No se guardó", texto: "No se pudo confirmar el cambio. Vuelve a intentar." },
+};
 
 const ORDEN_CAMPOS: readonly CampoPersona[] = [
   "centroNombre",
@@ -198,6 +243,19 @@ export function fechaLarga(iso: string): string {
 
 export function estaDeBaja(baja: string | null, hoy: string): boolean {
   return baja !== null && baja <= hoy;
+}
+
+/**
+ * La misma regla que el alta: Finanzas se suma a cualquier rol de trabajo,
+ * también al tarjetahabiente. Con administración ya viene incluido. Quien no
+ * tiene cuenta activa o ya está de baja no recibe la casilla.
+ */
+export function accesoFinanzasDe(
+  persona: { userId: string | null; roles: readonly RolCliente[]; invitada: boolean; bajaEn: string | null },
+  hoy: string,
+): "incluido" | "casilla" | null {
+  if (!persona.userId || persona.invitada || persona.roles.length === 0 || estaDeBaja(persona.bajaEn, hoy)) return null;
+  return persona.roles.includes("administrador") ? "incluido" : "casilla";
 }
 
 export function normalizarNombrePersona(valor: unknown): string | null {
@@ -347,7 +405,7 @@ function armarAlta(
   if (acceso === "nueva") {
     roles = rolesDeCuenta(entrada.rol);
     if (!roles) errores.push({ codigo: "rol_invalido", campo: "rol" });
-    else if (roles.length === 1 && roles[0] === "finanzas") errores.push({ codigo: "finanzas_sin_rol", campo: "rol" });
+    else if (!tieneRolDeTrabajo(roles)) errores.push({ codigo: "finanzas_sin_rol", campo: "rol" });
   }
 
   if (errores.length > 0 || !nombre || !altaEn || !clabe.ok || !UUID.test(centroId)) {
@@ -481,7 +539,7 @@ export function pistaDelRol(rol: RolCuenta | ""): string {
   }
   if (rol === "administrador") return "Da de alta a las personas. Este rol no suelta dinero.";
   if (rol === "solicitante") return "Puede pedir un pago, cuando esa pantalla exista. No lo suelta.";
-  if (rol === "finanzas") return "Ve Inicio, ingresos, gastos y movimientos. No abre otros módulos ni mueve dinero.";
+  if (rol === "finanzas") return "Ve Inicio: entradas, salidas y movimientos del libro. No abre otros módulos, ni el teléfono, ni mueve dinero.";
   if (rol === "tarjetahabiente") return "El gasto vive en el teléfono. No abre este maestro.";
   return "Elige el rol con el que va a entrar.";
 }

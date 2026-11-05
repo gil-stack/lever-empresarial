@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { Marco } from "@/components/cromo/marco";
 import { vistaDeMarco } from "@/components/cromo/puertas";
 import { Resumen, type CargaResumen } from "@/components/inicio/resumen";
 import { atajosDeInicio } from "@/dominio/inicio";
 import { periodoResumen, type PeriodoResumen } from "@/dominio/resumen";
+import { enEmpresa, rutaConsola } from "@/nucleo/rutas";
 import { abrirRuta, errorConSecreto } from "@/server/entrada";
 import { leerResumenInicio } from "@/server/inicio/resumen-servicio";
 import { ErrorDeDominio } from "@/server/session";
@@ -19,6 +20,10 @@ export default async function PaginaConsola({ searchParams }: { searchParams: Pr
   const periodo = periodoResumen(params.periodo);
   const apertura = await abrirRuta("/consola");
   if (apertura.tipo === "sin_permiso") notFound();
+  // Marcadores viejos y /c/<empresa>: quien no ve cifras aterriza en Pendientes, no en un 404.
+  if (apertura.tipo === "abierta" && rutaConsola(apertura.ctx.capacidades) !== "/consola") {
+    redirect(enEmpresa(apertura.ctx.empresa?.id, "/consola/pendientes"));
+  }
   const ctx = apertura.tipo === "libro" ? null : apertura.ctx;
   const carga = await cargar(apertura, periodo);
 

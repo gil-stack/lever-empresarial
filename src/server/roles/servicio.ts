@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { tieneRolDeTrabajo } from "../../nucleo/capacidades.ts";
 import { exigir, exigirEmpresa, puede, type ContextoConEmpresa, type ContextoDeTenant } from "../../nucleo/contexto.ts";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio.ts";
 import { actorDeCliente } from "../bitacora/auditar.ts";
@@ -50,7 +51,10 @@ export async function asignarRol(
   return { ...previa, roles: [...previa.roles, rol] };
 }
 
-/** Quita un rol. La empresa no se queda sin administrador y nadie queda sin roles. */
+/**
+ * Quita un rol. La empresa no se queda sin administrador, nadie queda sin
+ * roles y nadie queda solo con Finanzas, que es un acceso adicional.
+ */
 export async function quitarRol(
   ctx: ContextoDeTenant | null | undefined,
   entrada: EntradaDeRol,
@@ -64,6 +68,7 @@ export async function quitarRol(
   if (!previa) throw new ErrorDeDominio("sin_membresia");
   if (!previa.roles.includes(rol)) return previa;
   if (previa.roles.length === 1) throw new ErrorDeDominio("ultimo_rol");
+  if (!tieneRolDeTrabajo(previa.roles.filter((actual) => actual !== rol))) throw new ErrorDeDominio("ultimo_rol_de_trabajo");
   if (rol === "administrador") {
     const miembros = await repo.membresiasDeLaEmpresa(conEmpresa);
     const administradores = miembros.filter((miembro) => miembro.roles.includes("administrador") && !miembro.deBaja);

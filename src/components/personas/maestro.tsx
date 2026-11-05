@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { clabeVisible } from "@/dominio/clabe";
 import {
+  accesoFinanzasDe,
   estaDeBaja,
   fechaLarga,
   FRASE_CONTADOR,
@@ -10,7 +11,6 @@ import {
   relatoOperabilidad,
   type RolCuenta,
 } from "@/dominio/personas";
-import { capacidadesDe, tiene } from "@/nucleo/capacidades";
 import type { LecturaMaestro } from "@/server/personas/tipos";
 
 import { FormularioBaja, FormularioCentro, FormularioFinanzas, FormularioPersona } from "./formularios";
@@ -81,6 +81,7 @@ export function Maestro({
         ) : (
           lectura.personas.map((persona) => {
             const deBaja = estaDeBaja(persona.bajaEn, hoy);
+            const finanzas = edita ? accesoFinanzasDe(persona, hoy) : null;
             return (
               <article key={persona.id} className="persona" aria-labelledby={`persona-${persona.id}`}>
                 <div className="persona-cabeza">
@@ -118,16 +119,14 @@ export function Maestro({
                     </dd>
                   </div>
                 </dl>
-                {edita && persona.userId && tiene(capacidadesDe({ rolesCliente: persona.roles, rolesPlataforma: [] }), "cliente.consola.ver") ? (
-                  persona.roles.includes("administrador") ? (
-                    <p className="pista">Inicio financiero está incluido con administración.</p>
-                  ) : (
-                    <FormularioFinanzas
-                      key={persona.userId}
-                      userId={persona.userId}
-                      habilitado={persona.roles.includes("finanzas")}
-                    />
-                  )
+                {finanzas === "incluido" ? (
+                  <p className="pista">Inicio financiero está incluido con administración.</p>
+                ) : finanzas === "casilla" && persona.userId ? (
+                  <FormularioFinanzas
+                    key={persona.userId}
+                    userId={persona.userId}
+                    habilitado={persona.roles.includes("finanzas")}
+                  />
                 ) : null}
                 {edita ? (
                   <FormularioBaja personaId={persona.id} nombre={persona.nombre} bajaActual={persona.bajaEn} />

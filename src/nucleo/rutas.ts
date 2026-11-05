@@ -59,9 +59,10 @@ export const RUTAS = [
   },
   { patron: "/empresas", superficie: "cliente", acceso: { tipo: "sesion" }, conEmpresa: false },
   {
+    // Abre con cualquier rol de consola: sin cliente.resumen.ver la página manda a Pendientes.
     patron: "/consola",
     superficie: "cliente",
-    acceso: { tipo: "capacidad", alguna: ["cliente.resumen.ver"] },
+    acceso: { tipo: "capacidad", alguna: ["cliente.consola.ver"] },
     conEmpresa: true,
   },
   {

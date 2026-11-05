@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 
 import { capacidadesDe, tiene, type RolCliente } from "../nucleo/capacidades.ts";
 import {
+  accesoFinanzasDe,
   FRASE_CONTADOR,
   FRASE_SIN_DISPERSION,
   decidirLiberacion,
@@ -260,6 +261,22 @@ describe("alta de persona", () => {
     assert.match(cuerpo, /fechaDesdePartes/);
     assert.match(cuerpo, /partesDeFecha/);
     assert.match(cuerpo, /Esa fecha no existe/);
+  });
+
+  it("la ficha ofrece Finanzas con la misma regla que el alta", () => {
+    const base = { userId: "11111111-1111-4111-8111-111111111111", invitada: false, bajaEn: null };
+    // El alta acepta tarjetahabiente + Finanzas; la ficha también ofrece la casilla.
+    assert.equal(validarAltaPersona({
+      nombre: "Ana Tarjeta", alta: HOY, baja: "", centroId: CENTRO, jefeId: "", clabe: CLABE,
+      acceso: "nueva", correo: "ana@ejemplo.mx", rol: ["tarjetahabiente", "finanzas"],
+    }, HOY).ok, true);
+    assert.equal(accesoFinanzasDe({ ...base, roles: ["tarjetahabiente"] }, HOY), "casilla");
+    assert.equal(accesoFinanzasDe({ ...base, roles: ["contador", "finanzas"] }, HOY), "casilla");
+    assert.equal(accesoFinanzasDe({ ...base, roles: ["finanzas"] }, HOY), "casilla");
+    assert.equal(accesoFinanzasDe({ ...base, roles: ["administrador"] }, HOY), "incluido");
+    assert.equal(accesoFinanzasDe({ ...base, userId: null, roles: [] }, HOY), null);
+    assert.equal(accesoFinanzasDe({ ...base, invitada: true, roles: ["contador"] }, HOY), null);
+    assert.equal(accesoFinanzasDe({ ...base, bajaEn: HOY, roles: ["contador"] }, HOY), null);
   });
 
   it("conserva montado el aviso al otorgar o revocar Finanzas", () => {

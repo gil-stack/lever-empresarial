@@ -5,7 +5,7 @@ import { cache } from "react";
 import { empresaOperable } from "@/dominio/personas";
 import { puede } from "@/nucleo/contexto";
 import { contextoOpcional, errorConSecreto } from "@/server/entrada";
-import { leerPendientesInicio } from "@/server/inicio/servicio";
+import { bandejaDeLaPeticion } from "@/server/inicio/peticion";
 import { resumenParaConsola } from "@/server/personas";
 import { ErrorDeDominio } from "@/server/session";
 
@@ -45,22 +45,46 @@ export const estadoDelMarco = cache(async (): Promise<EstadoDelMarco> => {
   };
 });
 
-async function pendientesQueFaltan(ctx: NonNullable<Awaited<ReturnType<typeof contextoOpcional>>>): Promise<number> {
+type Contexto = NonNullable<Awaited<ReturnType<typeof contextoOpcional>>>;
+
+async function pendientesQueFaltan(ctx: Contexto): Promise<number> {
   try {
-    return (await leerPendientesInicio(ctx)).length;
+    return (await bandejaDeLaPeticion(ctx)).pendientes.length;
   } catch (error) {
-    if (error instanceof ErrorDeDominio || errorConSecreto(error)) return 0;
+    if (error instanceof ErrorDeDominio || errorConSecreto(error)) {
+      registrarFallo("pendientes", ctx, error);
+      return 0;
+    }
     throw error;
   }
 }
 
-async function liberadoresQueFaltan(ctx: NonNullable<Awaited<ReturnType<typeof contextoOpcional>>>): Promise<number> {
+async function liberadoresQueFaltan(ctx: Contexto): Promise<number> {
   try {
     const cuentas = await resumenParaConsola(ctx);
     if (!cuentas) return 0;
     return empresaOperable(cuentas.nombres.length) ? 0 : Math.max(0, 2 - cuentas.nombres.length);
   } catch (error) {
-    if (error instanceof ErrorDeDominio || errorConSecreto(error)) return 0;
+    if (error instanceof ErrorDeDominio || errorConSecreto(error)) {
+      registrarFallo("liberadores", ctx, error);
+      return 0;
+    }
     throw error;
   }
+}
+
+/**
+ * El lateral no se cae por un contador, pero el fallo queda registrado. Solo
+ * el código de dominio y la petición: nunca el mensaje crudo, que puede traer
+ * la URL de la base, ni datos de la empresa o de la persona.
+ */
+function registrarFallo(contador: "pendientes" | "liberadores", ctx: Contexto, error: unknown): void {
+  console.error(
+    JSON.stringify({
+      evento: "marco.contador_no_disponible",
+      contador,
+      codigo: error instanceof ErrorDeDominio ? error.codigo : "base_no_disponible",
+      peticionId: ctx.peticionId,
+    }),
+  );
 }

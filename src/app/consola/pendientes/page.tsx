@@ -5,7 +5,7 @@ import { Marco } from "@/components/cromo/marco";
 import { vistaDeMarco } from "@/components/cromo/puertas";
 import { Pendientes, type CargaInicio } from "@/components/inicio/pendientes";
 import { abrirRuta, errorConSecreto } from "@/server/entrada";
-import { leerBandejaInicio } from "@/server/inicio/servicio";
+import { bandejaDeLaPeticion } from "@/server/inicio/peticion";
 import { ErrorDeDominio } from "@/server/session";
 
 export const runtime = "nodejs";
@@ -31,7 +31,7 @@ async function cargar(apertura: Awaited<ReturnType<typeof abrirRuta>>): Promise<
   if (apertura.tipo === "libro") return { tipo: "error" };
   if (apertura.tipo === "sin_empresa") return { tipo: "sin_empresa" };
   try {
-    const bandeja = await leerBandejaInicio(apertura.ctx);
+    const bandeja = await bandejaDeLaPeticion(apertura.ctx);
     return { tipo: "lista", ...bandeja };
   } catch (error) {
     if (error instanceof ErrorDeDominio || errorConSecreto(error)) return { tipo: "error" };

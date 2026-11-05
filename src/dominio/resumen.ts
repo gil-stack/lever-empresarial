@@ -1,16 +1,21 @@
 export type PeriodoResumen = 6 | 12;
 
+/**
+ * Las cifras salen del signo de cada asiento del libro: positivo es una
+ * entrada y negativo una salida. No son ingresos ni gastos fiscales: una
+ * reversa de cargo cuenta como entrada (ver src/server/inicio/README.md).
+ */
 export type MesResumen = {
   clave: string;
   etiqueta: string;
-  ingresosCentavos: number;
-  gastosCentavos: number;
+  entradasCentavos: number;
+  salidasCentavos: number;
 };
 
 export type CategoriaResumen = {
   codigo: string;
   nombre: string;
-  gastosCentavos: number;
+  salidasCentavos: number;
 };
 
 export type MovimientoResumen = {
@@ -31,9 +36,9 @@ export type DatosResumenInicio = {
 export type ResumenInicio = {
   periodo: PeriodoResumen;
   saldoCentavos: number;
-  ingresosMesCentavos: number;
-  gastosMesCentavos: number;
-  resultadoMesCentavos: number;
+  entradasMesCentavos: number;
+  salidasMesCentavos: number;
+  netoMesCentavos: number;
   meses: MesResumen[];
   categorias: CategoriaResumen[];
   recientes: MovimientoResumen[];
@@ -56,22 +61,22 @@ export function armarResumenInicio(
     return {
       clave,
       etiqueta,
-      ingresosCentavos: centavosSeguros(encontrado?.ingresosCentavos ?? 0),
-      gastosCentavos: centavosSeguros(encontrado?.gastosCentavos ?? 0),
+      entradasCentavos: centavosSeguros(encontrado?.entradasCentavos ?? 0),
+      salidasCentavos: centavosSeguros(encontrado?.salidasCentavos ?? 0),
     };
   });
-  const actual = meses.at(-1) ?? { ingresosCentavos: 0, gastosCentavos: 0 };
+  const actual = meses.at(-1) ?? { entradasCentavos: 0, salidasCentavos: 0 };
   return {
     periodo,
     saldoCentavos: centavosSeguros(datos.saldoCentavos),
-    ingresosMesCentavos: actual.ingresosCentavos,
-    gastosMesCentavos: actual.gastosCentavos,
-    resultadoMesCentavos: centavosSeguros(actual.ingresosCentavos - actual.gastosCentavos),
+    entradasMesCentavos: actual.entradasCentavos,
+    salidasMesCentavos: actual.salidasCentavos,
+    netoMesCentavos: centavosSeguros(actual.entradasCentavos - actual.salidasCentavos),
     meses,
     categorias: datos.categorias
-      .filter((categoria) => categoria.gastosCentavos > 0)
-      .map((categoria) => ({ ...categoria, gastosCentavos: centavosSeguros(categoria.gastosCentavos) }))
-      .sort((a, b) => b.gastosCentavos - a.gastosCentavos || a.nombre.localeCompare(b.nombre, "es")),
+      .filter((categoria) => categoria.salidasCentavos > 0)
+      .map((categoria) => ({ ...categoria, salidasCentavos: centavosSeguros(categoria.salidasCentavos) }))
+      .sort((a, b) => b.salidasCentavos - a.salidasCentavos || a.nombre.localeCompare(b.nombre, "es")),
     recientes: datos.recientes,
     tieneMovimientos: datos.recientes.length > 0 || datos.mensuales.length > 0,
   };

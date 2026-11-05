@@ -6,11 +6,13 @@ import { enviarBaja, enviarCentro, enviarFinanzas, enviarPersona } from "@/app/c
 import { clabeValida, clabeVisible } from "@/dominio/clabe";
 import {
   erroresDeAltaPersona,
+  ESTADO_FINANZAS_INICIAL,
   ESTADO_MAESTRO_INICIAL,
   fechaDesdePartes,
   fechaLarga,
   fechaValida,
   partesDeFecha,
+  MENSAJE_FINANZAS,
   MENSAJE_RECHAZO,
   ordenarErroresPersona,
   pistaDelRol,
@@ -383,7 +385,7 @@ export function FormularioPersona({
               <span>Ver Inicio financiero</span>
             </label>
             {verFinanzas ? <input type="hidden" name="rol" value="finanzas" /> : null}
-            <p className="pista">Podrá consultar ingresos, gastos y movimientos. Es un acceso adicional a su rol; no mueve dinero.</p>
+            <p className="pista">Podrá consultar entradas, salidas y movimientos del libro. Es un acceso adicional a su rol; no mueve dinero.</p>
           </div>
         </>
       ) : null}
@@ -398,8 +400,15 @@ export function FormularioPersona({
 }
 
 export function FormularioFinanzas({ userId, habilitado }: { userId: string; habilitado: boolean }) {
-  const [estado, accion, pendiente] = useActionState(enviarFinanzas, ESTADO_MAESTRO_INICIAL);
+  const [estado, accion, pendiente] = useActionState(enviarFinanzas, ESTADO_FINANZAS_INICIAL);
   const [verFinanzas, setVerFinanzas] = useState(habilitado);
+  const [estadoVisto, setEstadoVisto] = useState(estado);
+  // Cada respuesta trae el valor real: si el guardado falló, la casilla regresa.
+  if (estado !== estadoVisto) {
+    setEstadoVisto(estado);
+    if (estado.tipo !== "inicial") setVerFinanzas(estado.habilitado);
+  }
+  const rechazo = estado.tipo === "rechazado" ? MENSAJE_FINANZAS[estado.codigo] : null;
   return (
     <form className="permiso-finanzas permiso-finanzas-edicion" action={accion} aria-busy={pendiente}>
       <input type="hidden" name="userId" value={userId} />
@@ -408,13 +417,23 @@ export function FormularioFinanzas({ userId, habilitado }: { userId: string; hab
         <input type="checkbox" checked={verFinanzas} onChange={(event) => setVerFinanzas(event.target.checked)} />
         <span>Puede ver Inicio financiero</span>
       </label>
-      <p className="pista">Consulta ingresos, gastos y movimientos. No cambia sus otros permisos.</p>
+      <p className="pista">Consulta entradas, salidas y movimientos del libro. No cambia sus otros permisos.</p>
       <div className="acciones">
         <button type="submit" className="boton-texto" disabled={pendiente}>
           {pendiente ? "Guardando…" : "Guardar acceso financiero"}
         </button>
       </div>
-      <Avisos errores={[]} estado={estado} />
+      {estado.tipo === "listo" ? (
+        <div className="alerta alerta-asentado" role="status">
+          <p className="alerta-titulo">Quedó asentado</p>
+          <p>{estado.mensaje}</p>
+        </div>
+      ) : rechazo ? (
+        <div className="alerta alerta-revisar" role="alert">
+          <p className="alerta-titulo">{rechazo.titulo}</p>
+          <p>{rechazo.texto}</p>
+        </div>
+      ) : null}
     </form>
   );
 }

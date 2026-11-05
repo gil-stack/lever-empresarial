@@ -1,74 +1,93 @@
 import { formatoPesos } from "@/dominio/centavos";
 import type { CategoriaResumen, MesResumen } from "@/dominio/resumen";
 
+const MARCAS = [0, 0.25, 0.5, 0.75, 1] as const;
+
 export function GraficaMensual({ meses }: { meses: MesResumen[] }) {
-  const maximo = Math.max(0, ...meses.flatMap((mes) => [mes.ingresosCentavos, mes.gastosCentavos]));
+  const maximo = Math.max(0, ...meses.flatMap((mes) => [mes.entradasCentavos, mes.salidasCentavos]));
   if (maximo === 0) {
     return <div className="grafica-vacia"><p>No hay movimientos en este periodo.</p><p>Elige otro rango para consultar meses anteriores.</p></div>;
   }
-  const izquierda = 58;
-  const base = 204;
-  const alto = 154;
-  const paso = 650 / meses.length;
-  const barra = Math.min(14, (paso * 0.58) / 2);
   return (
     <div className="grafica-mensual">
-      <svg viewBox="0 0 720 248" role="img" aria-labelledby="grafica-mensual-titulo grafica-mensual-descripcion">
-        <title id="grafica-mensual-titulo">Ingresos y gastos por mes</title>
-        <desc id="grafica-mensual-descripcion">Barras azules para ingresos y barras naranjas para gastos. La tabla accesible incluye todas las cifras.</desc>
-        {[0, 0.25, 0.5, 0.75, 1].map((proporcion) => {
-          const y = base - alto * proporcion;
-          return (
-            <g key={proporcion}>
-              <line className="grafica-linea" x1={izquierda} x2="708" y1={y} y2={y} />
-              <text className="grafica-eje-valor" x="48" y={y + 3} textAnchor="end">{compacto(maximo * proporcion)}</text>
-            </g>
-          );
-        })}
+      <div className="grafica-mensual-amplia">
+        <Barras meses={meses} maximo={maximo} />
+      </div>
+      {/* En pantallas angostas: los últimos tres meses, con el mismo eje y la misma escala del periodo. */}
+      <div className="grafica-mensual-compacta">
+        <p className="grafica-mensual-nota">Últimos 3 meses · misma escala del periodo</p>
+        <Barras meses={meses.slice(-3)} maximo={maximo} />
+      </div>
+      <table className="solo-lector">
+        <caption>Entradas y salidas por mes</caption>
+        <thead><tr><th>Mes</th><th>Entradas</th><th>Salidas</th></tr></thead>
+        <tbody>{meses.map((mes) => <tr key={mes.clave}><th>{mes.etiqueta}</th><td>{formatoPesos(mes.entradasCentavos)}</td><td>{formatoPesos(mes.salidasCentavos)}</td></tr>)}</tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * Las barras viven en un SVG que se estira al ancho disponible; los ejes son
+ * texto HTML, así que miden lo mismo (0.75rem) en cualquier pantalla. Las
+ * cifras completas están en la tabla para lector de pantalla.
+ */
+function Barras({ meses, maximo }: { meses: MesResumen[]; maximo: number }) {
+  const ancho = meses.length * 100;
+  const alto = 200;
+  const barra = 28;
+  return (
+    <div className="grafica-lienzo" aria-hidden="true">
+      <ol className="grafica-eje-y">
+        {MARCAS.map((proporcion) => (
+          <li key={proporcion} style={{ bottom: `${proporcion * 100}%` }}>{compacto(maximo * proporcion)}</li>
+        ))}
+      </ol>
+      <svg className="grafica-barras" viewBox={`0 0 ${ancho} ${alto}`} preserveAspectRatio="none" focusable="false">
+        {MARCAS.map((proporcion) => (
+          <line key={proporcion} className="grafica-linea" x1="0" x2={ancho} y1={alto - alto * proporcion} y2={alto - alto * proporcion} vectorEffect="non-scaling-stroke" />
+        ))}
         {meses.map((mes, indice) => {
-          const centro = izquierda + paso * indice + paso / 2;
-          const ingresosAlto = (mes.ingresosCentavos / maximo) * alto;
-          const gastosAlto = (mes.gastosCentavos / maximo) * alto;
+          const centro = indice * 100 + 50;
+          const entradasAlto = (mes.entradasCentavos / maximo) * alto;
+          const salidasAlto = (mes.salidasCentavos / maximo) * alto;
           return (
             <g key={mes.clave}>
-              <rect className="grafica-ingreso" x={centro - barra - 2} y={base - ingresosAlto} width={barra} height={ingresosAlto} rx="3">
-                <title>{`${mes.etiqueta}: ingresos ${formatoPesos(mes.ingresosCentavos)}`}</title>
+              <rect className="grafica-ingreso" x={centro - barra - 3} y={alto - entradasAlto} width={barra} height={entradasAlto}>
+                <title>{`${mes.etiqueta}: entradas ${formatoPesos(mes.entradasCentavos)}`}</title>
               </rect>
-              <rect className="grafica-gasto" x={centro + 2} y={base - gastosAlto} width={barra} height={gastosAlto} rx="3">
-                <title>{`${mes.etiqueta}: gastos ${formatoPesos(mes.gastosCentavos)}`}</title>
+              <rect className="grafica-gasto" x={centro + 3} y={alto - salidasAlto} width={barra} height={salidasAlto}>
+                <title>{`${mes.etiqueta}: salidas ${formatoPesos(mes.salidasCentavos)}`}</title>
               </rect>
-              <text className="grafica-eje-mes" x={centro} y="229" textAnchor="middle">{mes.etiqueta}</text>
             </g>
           );
         })}
       </svg>
-      <table className="solo-lector">
-        <caption>Ingresos y gastos por mes</caption>
-        <thead><tr><th>Mes</th><th>Ingresos</th><th>Gastos</th></tr></thead>
-        <tbody>{meses.map((mes) => <tr key={mes.clave}><th>{mes.etiqueta}</th><td>{formatoPesos(mes.ingresosCentavos)}</td><td>{formatoPesos(mes.gastosCentavos)}</td></tr>)}</tbody>
-      </table>
+      <ol className="grafica-eje-x">
+        {meses.map((mes) => <li key={mes.clave}>{mes.etiqueta}</li>)}
+      </ol>
     </div>
   );
 }
 
 export function GraficaCategorias({ categorias }: { categorias: CategoriaResumen[] }) {
   if (categorias.length === 0) {
-    return <div className="grafica-vacia"><p>No hay gastos registrados este mes.</p><p>Las categorías aparecerán cuando exista un cargo en el libro.</p></div>;
+    return <div className="grafica-vacia"><p>No hay salidas registradas este mes.</p><p>Las categorías aparecerán cuando exista un cargo en el libro.</p></div>;
   }
-  const total = categorias.reduce((suma, categoria) => suma + categoria.gastosCentavos, 0);
-  const maximo = Math.max(...categorias.map((categoria) => categoria.gastosCentavos));
+  const total = categorias.reduce((suma, categoria) => suma + categoria.salidasCentavos, 0);
+  const maximo = Math.max(...categorias.map((categoria) => categoria.salidasCentavos));
   return (
     <ul className="grafica-categorias">
       {categorias.map((categoria) => (
         <li key={categoria.codigo}>
           <div className="grafica-categoria-cabeza">
             <span>{categoria.nombre}</span>
-            <strong>{formatoPesos(categoria.gastosCentavos)}</strong>
+            <strong>{formatoPesos(categoria.salidasCentavos)}</strong>
           </div>
           <div className="grafica-categoria-pista" aria-hidden="true">
-            <span style={{ width: `${(categoria.gastosCentavos / maximo) * 100}%` }} />
+            <span style={{ width: `${(categoria.salidasCentavos / maximo) * 100}%` }} />
           </div>
-          <p>{new Intl.NumberFormat("es-MX", { maximumFractionDigits: 1 }).format((categoria.gastosCentavos / total) * 100)}% de los gastos del mes</p>
+          <p>{new Intl.NumberFormat("es-MX", { maximumFractionDigits: 1 }).format((categoria.salidasCentavos / total) * 100)}% de las salidas del mes</p>
         </li>
       ))}
     </ul>

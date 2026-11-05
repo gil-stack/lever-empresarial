@@ -1458,10 +1458,19 @@ h1 + .rfc-cuenta {
   margin-top: 22px;
 }
 
-.grafica-mensual svg {
+.grafica-lienzo {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  grid-template-rows: 184px auto;
+  column-gap: 10px;
+}
+
+.grafica-barras {
   display: block;
+  grid-column: 2;
+  grid-row: 1;
   width: 100%;
-  height: auto;
+  height: 100%;
   overflow: visible;
 }
 
@@ -1470,11 +1479,51 @@ h1 + .rfc-cuenta {
   stroke-width: 1;
 }
 
-.grafica-eje-valor,
-.grafica-eje-mes {
-  fill: var(--tinta-tenue);
+/* Ejes en HTML: 0.75rem reales a cualquier ancho, no escalados por el SVG. */
+.grafica-eje-y,
+.grafica-eje-x {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--tinta-tenue);
   font-family: var(--fuente-sans);
-  font-size: 9px;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.grafica-eje-y {
+  position: relative;
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.grafica-eje-y li {
+  position: absolute;
+  right: 0;
+  transform: translateY(50%);
+  white-space: nowrap;
+}
+
+.grafica-eje-x {
+  display: grid;
+  grid-column: 2;
+  grid-row: 2;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  padding-top: 10px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.grafica-mensual-compacta {
+  display: none;
+}
+
+.grafica-mensual-nota {
+  margin: 0 0 8px;
+  color: var(--tinta-tenue);
+  font-size: 0.75rem;
 }
 
 .grafica-ingreso {
@@ -1680,17 +1729,12 @@ h1 + .rfc-cuenta {
     margin: 0;
   }
 
-  .grafica-mensual {
-    overflow-x: auto;
-    scrollbar-width: thin;
-  }
-
-  .grafica-mensual svg {
-    min-width: 640px;
-  }
-
-  .grafica-eje-valor {
+  .grafica-mensual-amplia {
     display: none;
+  }
+
+  .grafica-mensual-compacta {
+    display: block;
   }
 
   .inicio-recientes li {
