@@ -16,13 +16,14 @@ import { contextoDeAccion, errorConSecreto, sesionSegura } from "@/server/entrad
 import { cambiarClabeProveedor, darDeAltaProveedor } from "@/server/proveedores";
 import { ErrorDeDominio } from "@/server/session";
 
+import { leerArchivoAlta } from "./archivos";
 import { type EstadoClabe } from "./estado";
 
 export async function enviarProveedor(
   _previo: EstadoAltaProveedor,
   formData: FormData,
 ): Promise<EstadoAltaProveedor> {
-  const [archivo, contrato] = await Promise.all([leerArchivo(formData.get("constancia")), leerArchivo(formData.get("contrato"))]);
+  const [archivo, contrato] = await Promise.all([leerArchivoAlta(formData.get("constancia")), leerArchivoAlta(formData.get("contrato"))]);
   const errores = erroresDeAltaProveedor({
     rfc: formData.get("rfc"),
     razonSocial: formData.get("razonSocial"),
@@ -72,25 +73,6 @@ export async function enviarProveedor(
 
   if (errores.length > 0) return { tipo: "invalido", errores: ordenarErroresProveedor(errores) };
   return { tipo: "invalido", errores: ordenarErroresProveedor(errores.length > 0 ? errores : [exigir("constancia_ausente")]) };
-}
-
-async function leerArchivo(valor: unknown): Promise<{
-  meta: { nombre: string; tipo: string; peso: number } | null;
-  bytes: Uint8Array | null;
-}> {
-  if (typeof valor !== "object" || valor === null || !("arrayBuffer" in valor) || !("size" in valor)) {
-    return { meta: null, bytes: null };
-  }
-  const archivo = valor as { name?: unknown; type?: unknown; size?: unknown; arrayBuffer?: () => Promise<ArrayBuffer> };
-  const peso = typeof archivo.size === "number" ? archivo.size : 0;
-  const nombre = typeof archivo.name === "string" ? archivo.name : "";
-  const tipo = typeof archivo.type === "string" ? archivo.type : "";
-  if (peso === 0 && nombre.trim() === "") return { meta: null, bytes: null };
-  if (peso > 8_000_000 || typeof archivo.arrayBuffer !== "function") {
-    return { meta: { nombre, tipo, peso }, bytes: null };
-  }
-  const bytes = new Uint8Array(await archivo.arrayBuffer());
-  return { meta: { nombre, tipo, peso: bytes.byteLength }, bytes };
 }
 
 function leerSesion() {

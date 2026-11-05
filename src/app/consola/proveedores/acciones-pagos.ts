@@ -18,6 +18,7 @@ import {
 import { contextoDeAccion, errorConSecreto, sesionSegura } from "@/server/entrada";
 import { ErrorDeDominio } from "@/server/session";
 
+import { leerArchivoPago } from "./archivos";
 import type { EstadoPagoFormulario } from "./estado";
 export type { EstadoPagoFormulario } from "./estado";
 
@@ -62,7 +63,7 @@ export async function prellenarCfdi(
   formData: FormData,
 ): Promise<EstadoLecturaCfdi> {
   try {
-    const archivo = await leerArchivo(formData.get("xml"));
+    const archivo = await leerArchivoPago(formData.get("xml"));
     const cfdi = inspeccionarCfdi(await contextoDeAccion(), archivo);
     return { tipo: "listo", cfdi };
   } catch (error) {
@@ -75,7 +76,7 @@ export async function enviarPago(
   formData: FormData,
 ): Promise<EstadoPagoFormulario> {
   try {
-    const [xml, pdf] = await Promise.all([leerArchivo(formData.get("xml")), leerArchivo(formData.get("pdf"))]);
+    const [xml, pdf] = await Promise.all([leerArchivoPago(formData.get("xml")), leerArchivoPago(formData.get("pdf"))]);
     if ((xml?.bytes.byteLength ?? 0) + (pdf?.bytes.byteLength ?? 0) > 8_000_000) throw new ErrorDeDominio("archivos_peso_total");
     const creado = await crearPagoProveedor(await contextoDeAccion(), entrada(formData, xml, pdf));
     revalidatePath("/consola/proveedores");
@@ -91,7 +92,7 @@ export async function reenviarPago(
 ): Promise<EstadoPagoFormulario> {
   try {
     const requestId = texto(formData, "requestId");
-    const pdf = await leerArchivo(formData.get("pdf"));
+    const pdf = await leerArchivoPago(formData.get("pdf"));
     const ctx = await contextoDeAccion();
     await editarYReenviarPago(ctx, requestId, entrada(formData, null, pdf));
     revalidatePath("/consola/proveedores");
@@ -147,7 +148,7 @@ export async function subirContrato(
 ): Promise<EstadoPagoFormulario> {
   try {
     await agregarContratoProveedor(await contextoDeAccion(), {
-      supplierId: texto(formData, "supplierId"), pdf: await leerArchivo(formData.get("contrato")),
+      supplierId: texto(formData, "supplierId"), pdf: await leerArchivoPago(formData.get("contrato")),
       vigenteDesde: texto(formData, "vigenteDesde") || null, vigenteHasta: texto(formData, "vigenteHasta") || null,
     });
     revalidatePath("/consola/proveedores");
@@ -165,16 +166,6 @@ function entrada(formData: FormData, xml: ArchivoPago, pdf: ArchivoPago) {
     emitidaEl: texto(formData, "emitidaEl"), venceEl: texto(formData, "venceEl"),
     programadaEl: texto(formData, "programadaEl"), motivoExcepcion: texto(formData, "motivoExcepcion"),
   };
-}
-
-async function leerArchivo(valor: unknown): Promise<ArchivoPago> {
-  if (typeof valor !== "object" || valor === null || !("arrayBuffer" in valor) || !("size" in valor)) return null;
-  const archivo = valor as { name?: unknown; size?: unknown; arrayBuffer?: () => Promise<ArrayBuffer> };
-  const peso = typeof archivo.size === "number" ? archivo.size : 0;
-  const nombre = typeof archivo.name === "string" ? archivo.name : "";
-  if (peso === 0 && !nombre.trim()) return null;
-  if (peso > 8_000_000 || typeof archivo.arrayBuffer !== "function") return { nombre, bytes: new Uint8Array() };
-  return { nombre, bytes: new Uint8Array(await archivo.arrayBuffer()) };
 }
 
 function texto(formData: FormData, campo: string): string {
