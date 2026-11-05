@@ -3,6 +3,7 @@ import { baseCliente } from "../../nucleo/contexto";
 import { bloquearEmpresa, conContexto, type Consulta } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import type {
+  AmbitoDocumento,
   ContextoPagos,
   DocumentoVista,
   MetricasPagos,
@@ -10,6 +11,7 @@ import type {
   ProveedorPago,
   RepositorioPagos,
   SolicitudActual,
+  VersionPagoVista,
 } from "./tipos";
 
 export function repositorioPg(): RepositorioPagos {
@@ -34,10 +36,12 @@ export function repositorioPg(): RepositorioPagos {
               to_char(p.vence_el, 'YYYY-MM-DD') as vence_el,
               to_char(p.programada_el, 'YYYY-MM-DD') as programada_el,
               r.estado, r.clabe, r.solicitado_por, u.nombre as solicitante, r.resuelto_por,
-              r.motivo_resolucion, p.motivo_excepcion, r.version
+              r.motivo_resolucion, p.motivo_excepcion, r.version,
+              rc.vigente_hasta is null as clabe_vigente, (s.activo and s.boton_pago) as proveedor_habilitado
             from supplier_payment_requests r
             join supplier_payables p on p.company_id = r.company_id and p.id = r.payable_id
             join suppliers s on s.company_id = p.company_id and s.id = p.supplier_id
+            join supplier_clabes rc on rc.company_id = r.company_id and rc.id = r.supplier_clabe_id
             join users u on u.id = r.solicitado_por
             where r.company_id = $1 and ($2 = '' or s.razon_social ilike $4 or s.rfc ilike $4 or p.referencia ilike $4 or p.cfdi_uuid ilike $4)
               and ($3 = '' or r.estado = $3) and ($6 = '' or r.id = $6::uuid)
@@ -58,26 +62,43 @@ export function repositorioPg(): RepositorioPagos {
             order by a.ocurrido_en desc, a.id desc limit 12`, [ctx.empresa.id, [
               "alta_proveedor", "clabe_proveedor", "documento_proveedor", "crear_cargo_proveedor",
               "editar_cargo_proveedor", "solicitar_pago_proveedor", "autorizar_pago_proveedor",
-              "rechazar_pago_proveedor", "cancelar_pago_proveedor",
+              "rechazar_pago_proveedor", "cancelar_pago_proveedor", "regresar_pago_proveedor",
             ]]);
+        // Las sumas salen como texto: un numeric mayor que 2^53 no cabe en un número de JavaScript.
         const metricas = await consulta.query(`select
               count(*) filter (where r.estado in ('por_autorizar','listo_para_pagar') and p.vence_el >= hoy and p.vence_el <= hoy + 7)::int as por_vencer_cantidad,
-              coalesce(sum(p.total_centavos) filter (where r.estado in ('por_autorizar','listo_para_pagar') and p.vence_el >= hoy and p.vence_el <= hoy + 7), 0) as por_vencer_centavos,
+              coalesce(sum(p.total_centavos) filter (where r.estado in ('por_autorizar','listo_para_pagar') and p.vence_el >= hoy and p.vence_el <= hoy + 7), 0)::text as por_vencer_centavos,
               count(*) filter (where r.estado in ('por_autorizar','listo_para_pagar') and p.vence_el < hoy)::int as vencidos_cantidad,
-              coalesce(sum(p.total_centavos) filter (where r.estado in ('por_autorizar','listo_para_pagar') and p.vence_el < hoy), 0) as vencidos_centavos,
+              coalesce(sum(p.total_centavos) filter (where r.estado in ('por_autorizar','listo_para_pagar') and p.vence_el < hoy), 0)::text as vencidos_centavos,
               count(*) filter (where r.estado = 'por_autorizar')::int as autorizar_cantidad,
-              coalesce(sum(p.total_centavos) filter (where r.estado = 'por_autorizar'), 0) as autorizar_centavos,
+              coalesce(sum(p.total_centavos) filter (where r.estado = 'por_autorizar'), 0)::text as autorizar_centavos,
               count(*) filter (where r.estado = 'listo_para_pagar')::int as listos_cantidad,
-              coalesce(sum(p.total_centavos) filter (where r.estado = 'listo_para_pagar'), 0) as listos_centavos
+              coalesce(sum(p.total_centavos) filter (where r.estado = 'listo_para_pagar'), 0)::text as listos_centavos
             from supplier_payment_requests r join supplier_payables p on p.company_id = r.company_id and p.id = r.payable_id
             cross join (select (timezone('America/Mexico_City', clock_timestamp()))::date as hoy) fecha
             where r.company_id = $1`, [ctx.empresa.id]);
+        const historial = pagoId
+          ? await consulta.query(`select h.version, h.estado, h.estado_nuevo, h.total_centavos,
+                to_char(h.programada_el, 'YYYY-MM-DD') as programada_el, h.clabe, u.nombre as resolvio,
+                coalesce(h.motivo_resolucion, regreso.motivo) as motivo, h.resuelto_en, h.cerrado_en
+              from supplier_payment_request_history h
+              left join users u on u.id = h.resuelto_por
+              left join lateral (
+                select a.motivo from audit_log a
+                where a.company_id = h.company_id and a.txid = h.txid and a.identificador = h.request_id
+                  and a.accion = 'regresar_pago_proveedor'
+                limit 1
+              ) regreso on h.estado = 'listo_para_pagar' and h.estado_nuevo = 'por_autorizar'
+              where h.company_id = $1 and h.request_id = $2
+              order by h.cerrado_en desc, h.version desc limit 20`, [ctx.empresa.id, pagoId])
+          : { rows: [] };
         return {
           proveedores: proveedores.rows.map(mapearProveedor),
           pagos: pagos.rows.slice(0, 50).map(mapearPago),
           documentos: documentos.rows.map(mapearDocumento),
           actividad: actividad.rows.map(mapearActividad),
           metricas: mapearMetricas(metricas.rows[0]),
+          historial: historial.rows.map(mapearVersion),
           pagina,
           hayMas: pagos.rows.length > 50,
         };
@@ -91,13 +112,23 @@ export function repositorioPg(): RepositorioPagos {
     },
     async documento(ctx, id) {
       return conContexto(baseCliente(ctx), async (consulta) => {
+        // Solo documentos ligados a un cargo o al expediente de un proveedor. Otro
+        // documento de la empresa (nómina, firmas) no sale por esta ruta.
         const resultado = await consulta.query(
-          `select id, clave_blob, hash_sha256, nombre_original, tipo from documents where company_id = $1 and id = $2`,
+          `select d.id, d.clave_blob, d.hash_sha256, d.nombre_original, d.tipo,
+              case
+                when exists (select 1 from supplier_payable_documents pd where pd.company_id = d.company_id and pd.document_id = d.id) then 'cargo'
+                when exists (select 1 from supplier_documents sd where sd.company_id = d.company_id and sd.document_id = d.id)
+                  or exists (select 1 from suppliers s where s.company_id = d.company_id and s.document_id = d.id) then 'proveedor'
+              end as ambito
+            from documents d where d.company_id = $1 and d.id = $2`,
           [ctx.empresa.id, id],
         );
         const fila = resultado.rows[0] as Record<string, unknown> | undefined;
         if (!fila || typeof fila.id !== "string" || typeof fila.clave_blob !== "string" || typeof fila.hash_sha256 !== "string" || typeof fila.nombre_original !== "string" || typeof fila.tipo !== "string") return null;
-        return { id: fila.id, clave: fila.clave_blob, hash: fila.hash_sha256, nombre: fila.nombre_original, tipo: fila.tipo };
+        if (fila.ambito !== "cargo" && fila.ambito !== "proveedor") return null;
+        const ambito: AmbitoDocumento = fila.ambito;
+        return { id: fila.id, clave: fila.clave_blob, hash: fila.hash_sha256, nombre: fila.nombre_original, tipo: fila.tipo, ambito };
       });
     },
   };
@@ -174,15 +205,23 @@ function contexto(consulta: Consulta, companyId: string): ContextoPagos {
       if (!fila) return null;
       return { requestId: texto(fila.id), payableId: texto(fila.payable_id) };
     },
+    async cfdiVigente(uuid) {
+      const resultado = await consulta.query(`select 1 from supplier_payables
+        where company_id = $1 and cfdi_uuid = $2 and anulado_en is null`, [companyId, uuid]);
+      return resultado.rows.length > 0;
+    },
     async solicitud(id) {
-      const resultado = await consulta.query(`select id, payable_id, estado, solicitado_por, version
+      const resultado = await consulta.query(`select id, payable_id, estado, solicitado_por, version, total_centavos
         from supplier_payment_requests where company_id = $1 and id = $2 for update`, [companyId, id]);
       const fila = resultado.rows[0] as Record<string, unknown> | undefined;
       if (!fila) return null;
       if (typeof fila.id !== "string" || typeof fila.payable_id !== "string" || typeof fila.solicitado_por !== "string" || !ESTADOS_PAGO.includes(fila.estado as EstadoPago)) {
         throw new ErrorDeDominio("base_no_disponible");
       }
-      return { id: fila.id, payableId: fila.payable_id, estado: fila.estado as EstadoPago, solicitadoPor: fila.solicitado_por, version: Number(fila.version) } satisfies SolicitudActual;
+      return {
+        id: fila.id, payableId: fila.payable_id, estado: fila.estado as EstadoPago, solicitadoPor: fila.solicitado_por,
+        version: entero(fila.version), totalCentavos: entero(fila.total_centavos),
+      } satisfies SolicitudActual;
     },
     async actualizarCargo(cargo) {
       const resultado = await consulta.query(`update supplier_payables set
@@ -192,23 +231,27 @@ function contexto(consulta: Consulta, companyId: string): ContextoPagos {
         cargo.totalCentavos, cargo.emitidaEl, cargo.venceEl, cargo.programadaEl, cargo.motivoExcepcion, cargo.actualizadoEn]);
       if (resultado.rowCount !== 1) throw new ErrorDeDominio("pago_no_autorizable");
     },
-    async actualizarSolicitud(entrada) {
-      const resultado = entrada.instantanea
-        ? await consulta.query(`update supplier_payment_requests set estado = 'por_autorizar',
-            solicitado_por = $3, solicitado_en = $4, supplier_clabe_id = $5, clabe = $6,
-            total_centavos = $7, programada_el = $8, resuelto_por = null, resuelto_en = null,
-            motivo_resolucion = null, version = $9
-            where company_id = $1 and id = $2 and estado = 'rechazado' and version = $10`, [
-            companyId, entrada.id, entrada.actor, entrada.instantanea.solicitadoEn, entrada.instantanea.supplierClabeId,
-            entrada.instantanea.clabe, entrada.instantanea.totalCentavos, entrada.instantanea.programadaEl,
-            entrada.version, entrada.version - 1,
-          ])
-        : await consulta.query(`update supplier_payment_requests set estado = $3,
-            resuelto_por = $4, resuelto_en = $5, motivo_resolucion = $6
-            where company_id = $1 and id = $2 and estado = 'por_autorizar' and version = $7`, [
-            companyId, entrada.id, entrada.estado, entrada.actor, entrada.ahora, entrada.motivo, entrada.version,
-          ]);
-      if (resultado.rowCount !== 1) throw new ErrorDeDominio("pago_no_autorizable");
+    async resolverSolicitud(entrada) {
+      // La versión y el importe son los que vio quien decide: si cambiaron, no se toca la fila.
+      const resultado = await consulta.query(`update supplier_payment_requests set estado = $3,
+          resuelto_por = $4, resuelto_en = $5, motivo_resolucion = $6
+          where company_id = $1 and id = $2 and estado = $7 and version = $8 and total_centavos = $9`, [
+        companyId, entrada.id, entrada.estado, entrada.actor, entrada.ahora, entrada.motivo, entrada.desde,
+        entrada.version, entrada.totalCentavos,
+      ]);
+      if (resultado.rowCount !== 1) throw new ErrorDeDominio("pago_cambio_en_revision");
+    },
+    async reenviarSolicitud(entrada) {
+      const resultado = await consulta.query(`update supplier_payment_requests set estado = 'por_autorizar',
+          solicitado_por = $3, solicitado_en = $4, supplier_clabe_id = $5, clabe = $6,
+          total_centavos = $7, programada_el = $8, resuelto_por = null, resuelto_en = null,
+          motivo_resolucion = null, version = $9
+          where company_id = $1 and id = $2 and estado = 'rechazado' and version = $10`, [
+        companyId, entrada.id, entrada.actor, entrada.instantanea.solicitadoEn, entrada.instantanea.supplierClabeId,
+        entrada.instantanea.clabe, entrada.instantanea.totalCentavos, entrada.instantanea.programadaEl,
+        entrada.version, entrada.version - 1,
+      ]);
+      if (resultado.rowCount !== 1) throw new ErrorDeDominio("pago_cambio_en_revision");
     },
   };
 }
@@ -219,7 +262,7 @@ function mapearProveedor(valor: unknown): ProveedorPago {
     id: texto(r.id), rfc: texto(r.rfc), razonSocial: texto(r.razon_social),
     nombreComercial: nullable(r.nombre_comercial), contactoCorreo: nullable(r.contacto_correo),
     diasCredito: entero(r.dias_credito), activo: booleano(r.activo), botonPago: booleano(r.boton_pago),
-    situacion: nullable(r.situacion_69b), clabeId: texto(r.clabe_id), clabe: texto(r.clabe),
+    situacion: nullable(r.situacion_69b), clabeId: texto(r.clabe_id), clabe: texto(r.clabe), clabeFinal: texto(r.clabe).slice(-4),
     constanciaId: texto(r.constancia_id), constancia: texto(r.constancia),
   };
 }
@@ -233,9 +276,23 @@ function mapearPago(valor: unknown): PagoVista {
     id: texto(r.id), payableId: texto(r.payable_id), supplierId: texto(r.supplier_id),
     proveedor: texto(r.razon_social), rfc: texto(r.rfc), referencia: texto(r.referencia), origen,
     cfdiUuid: nullable(r.cfdi_uuid), totalCentavos: entero(r.total_centavos), emitidaEl: texto(r.emitida_el),
-    venceEl: texto(r.vence_el), programadaEl: texto(r.programada_el), estado, clabe: texto(r.clabe),
+    venceEl: texto(r.vence_el), programadaEl: texto(r.programada_el), estado, clabe: texto(r.clabe), clabeFinal: texto(r.clabe).slice(-4),
     solicitadoPor: texto(r.solicitado_por), solicitante: texto(r.solicitante), resueltoPor: nullable(r.resuelto_por),
     motivoResolucion: nullable(r.motivo_resolucion), motivoExcepcion: nullable(r.motivo_excepcion), version: entero(r.version),
+    bloqueo: estado !== "por_autorizar" ? null : !booleano(r.clabe_vigente) ? "clabe_cambiada" : !booleano(r.proveedor_habilitado) ? "proveedor_bloqueado" : null,
+  };
+}
+
+function mapearVersion(valor: unknown): VersionPagoVista {
+  const r = registro(valor);
+  const estado = texto(r.estado) as EstadoPago;
+  const estadoNuevo = texto(r.estado_nuevo) as EstadoPago;
+  if (!ESTADOS_PAGO.includes(estado) || !ESTADOS_PAGO.includes(estadoNuevo)) throw new ErrorDeDominio("base_no_disponible");
+  return {
+    version: entero(r.version), estado, estadoNuevo, totalCentavos: entero(r.total_centavos),
+    programadaEl: texto(r.programada_el), clabe: texto(r.clabe), clabeFinal: texto(r.clabe).slice(-4),
+    resolvio: nullable(r.resolvio), resueltoEn: r.resuelto_en == null ? null : instante(r.resuelto_en),
+    motivo: nullable(r.motivo), cerradoEn: instante(r.cerrado_en),
   };
 }
 
@@ -253,10 +310,10 @@ function mapearActividad(valor: unknown) {
 function mapearMetricas(valor: unknown): MetricasPagos {
   const r = registro(valor);
   return {
-    porVencer: { cantidad: entero(r.por_vencer_cantidad), centavos: entero(r.por_vencer_centavos) },
-    vencidos: { cantidad: entero(r.vencidos_cantidad), centavos: entero(r.vencidos_centavos) },
-    porAutorizar: { cantidad: entero(r.autorizar_cantidad), centavos: entero(r.autorizar_centavos) },
-    listos: { cantidad: entero(r.listos_cantidad), centavos: entero(r.listos_centavos) },
+    porVencer: { cantidad: entero(r.por_vencer_cantidad), centavos: enteroTexto(r.por_vencer_centavos) },
+    vencidos: { cantidad: entero(r.vencidos_cantidad), centavos: enteroTexto(r.vencidos_centavos) },
+    porAutorizar: { cantidad: entero(r.autorizar_cantidad), centavos: enteroTexto(r.autorizar_centavos) },
+    listos: { cantidad: entero(r.listos_cantidad), centavos: enteroTexto(r.listos_centavos) },
   };
 }
 
@@ -276,6 +333,13 @@ function entero(valor: unknown): number {
   const numero = Number(valor);
   if (!Number.isSafeInteger(numero)) throw new ErrorDeDominio("base_no_disponible");
   return numero;
+}
+function enteroTexto(valor: unknown): string {
+  if (typeof valor !== "string" || !/^\d{1,40}$/.test(valor)) throw new ErrorDeDominio("base_no_disponible");
+  return valor;
+}
+function instante(valor: unknown): string {
+  return valor instanceof Date ? valor.toISOString() : texto(valor);
 }
 function booleano(valor: unknown): boolean {
   if (typeof valor !== "boolean") throw new ErrorDeDominio("base_no_disponible");

@@ -10,9 +10,13 @@ export async function avisarCambioClabe(
   datos: { supplierId: string; clabeId: string; clabe: string; ahora: Date },
   enviar?: Enviador,
 ): Promise<number> {
+  const rastro = { empresa: ctx.empresa.id, proveedor: datos.supplierId, clabe_id: datos.clabeId };
   try {
     const destino = await destinatarios(ctx, datos.supplierId);
-    if (!destino || destino.correos.length === 0) return 0;
+    if (!destino || destino.correos.length === 0) {
+      registrarFallo({ ...rastro, evento: "aviso_clabe_sin_destinatarios" });
+      return 0;
+    }
     const enlace = `${leerUrlPublica()}/c/${ctx.empresa.id}/consola/proveedores?vista=proveedores&proveedor=${datos.supplierId}`;
     const plantilla = armarCorreo(`Cambió la CLABE de ${destino.proveedor}`, {
       preencabezado: "Revisa este cambio antes de autorizar pagos al proveedor.",
@@ -47,14 +51,29 @@ export async function avisarCambioClabe(
           etiqueta: "clabe_proveedor",
         });
         enviados += 1;
-      } catch {
-        // El cambio ya quedó asentado. No se anuncia un envío que falló.
+      } catch (error) {
+        // El cambio ya quedó asentado. No se anuncia un envío que falló, pero se registra.
+        registrarFallo({ ...rastro, evento: "aviso_clabe_envio_fallido", error: nombreDeError(error) });
       }
     }
     return enviados;
-  } catch {
+  } catch (error) {
+    registrarFallo({ ...rastro, evento: "aviso_clabe_no_preparado", error: nombreDeError(error) });
     return 0;
   }
+}
+
+/**
+ * Registro estructurado del aviso que no salió. Solo identificadores internos y
+ * el nombre del error: nunca correos, CLABE, nombres ni el mensaje del proveedor
+ * de correo, que puede citar al destinatario.
+ */
+function registrarFallo(campos: { evento: string; empresa: string; proveedor: string; clabe_id: string; error?: string }): void {
+  console.error(JSON.stringify({ nivel: "error", origen: "proveedores.avisos", ...campos }));
+}
+
+function nombreDeError(error: unknown): string {
+  return error instanceof Error && /^[A-Za-z]{1,60}$/.test(error.name) ? error.name : "desconocido";
 }
 
 async function destinatarios(ctx: ContextoConEmpresa, supplierId: string): Promise<{ proveedor: string; correos: string[] } | null> {

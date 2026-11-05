@@ -44,7 +44,12 @@ const MENSAJES: Record<string, string> = {
   cfdi_receptor_distinto: "El CFDI no está emitido a la empresa con la que entraste.",
   cfdi_duplicado: "Ese UUID ya está registrado en esta empresa.",
   reautenticacion_requerida: "La autorización exige un segundo factor reciente. Sal y vuelve a entrar para renovarlo.",
-  cancelacion_no_permitida: "Solo quien solicitó el pago puede cancelarlo mientras sigue pendiente.",
+  cancelacion_no_permitida: "Quien solicitó cancela mientras espera autorización o tras un rechazo; un pago listo para pagar lo cancela un liberador o administrador.",
+  pago_cambio_en_revision: "La solicitud cambió mientras la revisabas (otra decisión, una corrección o un regreso a revisión). Recarga y revisa la versión vigente antes de decidir.",
+  evidencia_requerida: "Si cambias el importe de una excepción, adjunta evidencia nueva en PDF que lo respalde.",
+  cfdi_inmutable: "Los datos fiscales de un CFDI no se corrigen. Si la factura está mal, cancela esta solicitud y captura el CFDI correcto.",
+  sin_permiso_para_liberar: "Solo un liberador vigente, distinto de quien solicitó, puede decidir este pago.",
+  sin_permiso_para_solicitar: "Tu rol o tu alta vigente no permiten solicitar este pago.",
   idempotencia_invalida: "La referencia de esta solicitud no es válida. Recarga el formulario para generar una nueva.",
   base_no_disponible: "No se pudo completar la operación. Inténtalo de nuevo.",
   auditoria_no_disponible: "No se pudo dejar constancia. La operación no se guardó.",
@@ -86,8 +91,9 @@ export async function reenviarPago(
 ): Promise<EstadoPagoFormulario> {
   try {
     const requestId = texto(formData, "requestId");
+    const pdf = await leerArchivo(formData.get("pdf"));
     const ctx = await contextoDeAccion();
-    await editarYReenviarPago(ctx, requestId, entrada(formData, null, null));
+    await editarYReenviarPago(ctx, requestId, entrada(formData, null, pdf));
     revalidatePath("/consola/proveedores");
     if (!ctx?.empresa) throw new ErrorDeDominio("sin_empresa");
     redirect(enEmpresa(ctx.empresa.id, `/consola/proveedores?pago=${requestId}`));
@@ -107,6 +113,7 @@ export async function decidirPago(
     if (!sesion) throw new ErrorDeDominio("reautenticacion_requerida");
     await resolverPagoProveedor(await contextoDeAccion(), sesion, {
       requestId: texto(formData, "requestId"), decision, motivo: texto(formData, "motivo"),
+      version: texto(formData, "version"), totalCentavos: texto(formData, "totalCentavos"),
     });
     revalidatePath("/consola/proveedores");
     return {
@@ -128,7 +135,7 @@ export async function cancelarPago(
       requestId: texto(formData, "requestId"), motivo: texto(formData, "motivoCancelacion"),
     });
     revalidatePath("/consola/proveedores");
-    return { tipo: "listo", mensaje: "La solicitud quedó cancelada. Su historial se conserva." };
+    return { tipo: "listo", mensaje: "La solicitud quedó cancelada y su CFDI quedó libre para capturarse de nuevo. Su historial se conserva." };
   } catch (error) {
     return { tipo: "invalido", mensaje: traducir(error) };
   }

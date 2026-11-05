@@ -31,12 +31,15 @@ const DEL_CLIENTE = {
   "cliente.maestro.editar": { superficie: "cliente", roles: ["administrador"] },
   "cliente.membresias.administrar": { superficie: "cliente", roles: ["administrador"] },
   "cliente.proveedores.ver": { superficie: "cliente", roles: ["administrador", "solicitante", "liberador", "contador"] },
+  /** CLABE completa, constancia y contratos. Quien solo solicita ve la terminación. */
+  "cliente.proveedores.expediente.ver": { superficie: "cliente", roles: ["administrador", "liberador", "contador"] },
   "cliente.proveedores.alta": { superficie: "cliente", roles: ["administrador", "liberador"] },
   "cliente.proveedores.clabe.cambiar": { superficie: "cliente", roles: ["administrador"] },
   "cliente.lista69b.ver": { superficie: "cliente", roles: ["administrador", "solicitante", "liberador", "contador"] },
   "cliente.poliza.ver": { superficie: "cliente", roles: ["administrador", "contador"] },
   "cliente.pago.solicitar": { superficie: "cliente", roles: ["administrador", "liberador", "solicitante"] },
   "cliente.pago.liberar": { superficie: "cliente", roles: ["liberador"] },
+  "cliente.pago.cancelar_listo": { superficie: "cliente", roles: ["administrador", "liberador"] },
 } as const satisfies Record<string, Regla<RolCliente>>;
 
 const DEL_TELEFONO = {

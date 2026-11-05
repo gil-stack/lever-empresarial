@@ -91,11 +91,11 @@ describe("catálogo tradicional de la CLABE", () => {
     );
   });
 
-  it("la ve quien opera pagos en la consola y solo el administrador la cambia", () => {
+  it("la ve finanzas en la consola y solo el administrador la cambia", () => {
     assert.equal(puedeVerClabeProveedor("administrador"), true);
     assert.equal(puedeVerClabeProveedor("liberador"), true);
     assert.equal(puedeVerClabeProveedor("contador"), true);
-    assert.equal(puedeVerClabeProveedor("solicitante"), true);
+    assert.equal(puedeVerClabeProveedor("solicitante"), false);
     assert.equal(puedeVerClabeProveedor("tarjetahabiente"), false);
     assert.equal(puedeCambiarClabeProveedor("administrador"), true);
     assert.equal(puedeCambiarClabeProveedor("contador"), false);

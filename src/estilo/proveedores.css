@@ -392,6 +392,24 @@
 .historial-compacto span { display: block; font-family: var(--fuente-mono); font-size: 0.68rem; }
 .historial-compacto small { color: var(--tinta-tenue); font-size: 0.6rem; }
 
+/* Bloqueo de la instrucción e historial de versiones de la solicitud. */
+.aviso-bloqueo { margin-top: 16px; padding: 12px 14px; border-left: 2px solid var(--aviso); background: var(--aviso-tenue); color: var(--tinta); font-size: 0.72rem; line-height: 1.5; }
+.historial-pago { margin-top: 22px; }
+.historial-pago > h3 { margin-bottom: 12px; font-size: 0.82rem; font-weight: 650; }
+.historial-diferencia { padding: 12px 14px; border: 1px solid var(--linea); background: var(--realce); }
+.historial-diferencia > p { color: var(--tinta-suave); font-size: 0.7rem; }
+.historial-diferencia dl { display: grid; gap: 6px; margin-top: 8px; }
+.historial-diferencia dl > div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 8px; font-size: 0.72rem; }
+.historial-diferencia dt { color: var(--tinta-tenue); }
+.historial-diferencia dd { color: var(--tinta-suave); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.historial-diferencia .cambio dd strong { color: var(--tinta); font-weight: 650; }
+.historial-diferencia .cambio dd s { color: var(--tinta-tenue); }
+.historial-pago ol { margin-top: 10px; list-style: none; }
+.historial-pago li { padding: 10px 0; border-top: 1px solid var(--linea); }
+.historial-pago li strong { display: block; font-size: 0.74rem; }
+.historial-pago li span { display: block; margin-top: 2px; color: var(--tinta-tenue); font-size: 0.66rem; }
+.historial-pago li p { margin-top: 6px; color: var(--tinta-suave); font-size: 0.72rem; line-height: 1.5; }
+
 /* Agenda operativa. */
 .agenda-pagos { padding: 4px 20px 16px; }
 .agenda-dia { padding: 18px 0; }

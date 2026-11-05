@@ -1,16 +1,16 @@
 import Link from "next/link";
 
-import { DecisionPago, FormularioContrato } from "./acciones-pago";
+import { Cancelacion, DecisionPago, FormularioContrato } from "./acciones-pago";
 import { FormularioCambio } from "./formulario-cambio";
 import { CabezaPagina, EtiquetaMono, Insignia, Renglon, Renglones, Vacio } from "@/components/sistema";
-import { formatoPesos } from "@/dominio/centavos";
+import { formatoPesos, formatoPesosGrande } from "@/dominio/centavos";
 import { clabeVisible } from "@/dominio/clabe";
 import { institucionTradicional, FRASE_INSTITUCION_PENDIENTE } from "@/dominio/clabe-proveedor";
 import { ETIQUETA_ESTADO, ESTADOS_PAGO, fechaLegible, tonoEstado } from "@/dominio/pagos-proveedores";
 import { horaEnMexico } from "@/dominio/reloj";
 import { enEmpresa } from "@/nucleo/rutas";
 import type { LecturaPagosProveedores } from "@/server/pagos-proveedores";
-import type { PagoVista, ProveedorPago } from "@/dominio/pagos-vistas";
+import type { BloqueoPago, PagoVista, ProveedorPago, VersionPagoVista } from "@/dominio/pagos-vistas";
 import type { LecturaClabes } from "@/server/proveedores/tipos";
 
 export type VistaProveedores = "pagos" | "proveedores" | "agenda";
@@ -28,6 +28,7 @@ export function MesaProveedores({
   proveedorId,
   puedeSolicitar,
   puedeLiberar,
+  puedeCancelarListo,
   puedeAdministrar,
 }: {
   lectura: LecturaPagosProveedores;
@@ -42,6 +43,7 @@ export function MesaProveedores({
   proveedorId?: string;
   puedeSolicitar: boolean;
   puedeLiberar: boolean;
+  puedeCancelarListo: boolean;
   puedeAdministrar: boolean;
 }) {
   const pago = pagoId ? lectura.pagos.find((actual) => actual.id === pagoId) : undefined;
@@ -108,18 +110,18 @@ export function MesaProveedores({
           </section>
           {!detalle ? <Actividad lectura={lectura} /> : null}
         </div>
-        {pago ? <DetallePago pago={pago} lectura={lectura} empresaId={empresaId} personaId={personaId} cerrar={base} puedeSolicitar={puedeSolicitar} puedeLiberar={puedeLiberar} /> : null}
+        {pago ? <DetallePago pago={pago} lectura={lectura} empresaId={empresaId} personaId={personaId} cerrar={base} puedeSolicitar={puedeSolicitar} puedeLiberar={puedeLiberar} puedeCancelarListo={puedeCancelarListo} /> : null}
         {proveedor ? <DetalleProveedor proveedor={proveedor} lectura={lectura} historial={historial} empresaId={empresaId} cerrar={base} puedeAdministrar={puedeAdministrar} /> : null}
       </div>
     </>
   );
 }
 
-function Metrica({ titulo, detalle, valor, alerta = false, acento = false }: { titulo: string; detalle: string; valor: { cantidad: number; centavos: number }; alerta?: boolean; acento?: boolean }) {
+function Metrica({ titulo, detalle, valor, alerta = false, acento = false }: { titulo: string; detalle: string; valor: { cantidad: number; centavos: string }; alerta?: boolean; acento?: boolean }) {
   return (
     <article className={`pago-metrica${alerta ? " alerta" : ""}${acento ? " acento" : ""}`}>
       <div><p>{titulo}</p><span>{valor.cantidad} {valor.cantidad === 1 ? "operación" : "operaciones"}</span></div>
-      <strong>{formatoPesos(valor.centavos)}</strong><small>{detalle}</small>
+      <strong>{formatoPesosGrande(valor.centavos)}</strong><small>{detalle}</small>
     </article>
   );
 }
@@ -148,7 +150,7 @@ function TablaProveedores({ proveedores, pagos, base, href }: { proveedores: Pro
         return <tr key={proveedor.id}>
           <td><Link className="celda-proveedor" href={href(`${base}&proveedor=${proveedor.id}`)}><strong>{proveedor.razonSocial}</strong><span>{proveedor.nombreComercial ?? proveedor.rfc}</span></Link></td>
           <td>{proveedor.contactoCorreo ?? <span className="texto-tenue">Sin correo</span>}</td>
-          <td className="celda-mono">•••• {proveedor.clabe.slice(-4)}</td>
+          <td className="celda-mono">•••• {proveedor.clabeFinal}</td>
           <td>{proveedor.diasCredito} días{pendientes ? <span>{pendientes} por autorizar</span> : null}</td>
           <td><Insignia tono={!proveedor.activo || !proveedor.botonPago ? "aviso" : "sello"}>{!proveedor.activo ? "Inactivo" : proveedor.botonPago ? "Habilitado" : "Revisar"}</Insignia></td>
           <td><Link className="abrir-fila" href={href(`${base}&proveedor=${proveedor.id}`)} aria-label={`Abrir expediente de ${proveedor.razonSocial}`}>→</Link></td>
@@ -163,7 +165,7 @@ function Agenda({ pagos, base, href, hoy }: { pagos: PagoVista[]; base: string; 
   const grupos = new Map<string, PagoVista[]>();
   for (const pago of activos) grupos.set(pago.programadaEl, [...(grupos.get(pago.programadaEl) ?? []), pago]);
   return <div className="agenda-pagos">{[...grupos].map(([fecha, lineas]) => <section key={fecha} className="agenda-dia">
-    <div className="agenda-fecha"><p>{fechaLegible(fecha)}</p><span>{lineas.length} pagos · {formatoPesos(lineas.reduce((total, pago) => total + pago.totalCentavos, 0))}</span></div>
+    <div className="agenda-fecha"><p>{fechaLegible(fecha)}</p><span>{lineas.length} pagos · {formatoPesosGrande(lineas.reduce((total, pago) => total + BigInt(pago.totalCentavos), BigInt(0)))}</span></div>
     {lineas.map((pago) => <Link key={pago.id} href={href(`${base}&pago=${pago.id}`)} className="agenda-linea">
       <span className="agenda-marca" aria-hidden="true" /><div><strong>{pago.proveedor}</strong><span>{pago.referencia} · {pago.venceEl < hoy ? "Vencido" : `Vence ${fechaLegible(pago.venceEl)}`}</span></div>
       <strong>{formatoPesos(pago.totalCentavos)}</strong><Insignia tono={tonoEstado(pago.estado)}>{ETIQUETA_ESTADO[pago.estado]}</Insignia>
@@ -171,14 +173,19 @@ function Agenda({ pagos, base, href, hoy }: { pagos: PagoVista[]; base: string; 
   </section>)}</div>;
 }
 
-function DetallePago({ pago, lectura, empresaId, personaId, cerrar, puedeSolicitar, puedeLiberar }: { pago: PagoVista; lectura: LecturaPagosProveedores; empresaId: string; personaId: string; cerrar: string; puedeSolicitar: boolean; puedeLiberar: boolean }) {
+function DetallePago({ pago, lectura, empresaId, personaId, cerrar, puedeSolicitar, puedeLiberar, puedeCancelarListo }: { pago: PagoVista; lectura: LecturaPagosProveedores; empresaId: string; personaId: string; cerrar: string; puedeSolicitar: boolean; puedeLiberar: boolean; puedeCancelarListo: boolean }) {
   const documentos = lectura.documentos.filter((documento) => documento.payableId === pago.payableId);
   const autoriza = puedeLiberar && pago.estado === "por_autorizar" && pago.solicitadoPor !== personaId;
-  const cancela = puedeSolicitar && pago.estado === "por_autorizar" && pago.solicitadoPor === personaId;
+  const propia = puedeSolicitar && pago.solicitadoPor === personaId && (pago.estado === "por_autorizar" || pago.estado === "rechazado");
+  const cancelaListo = puedeCancelarListo && pago.estado === "listo_para_pagar";
   return <aside className="detalle-proveedor" aria-label="Detalle del pago">
     <Cerrar href={enEmpresa(empresaId, cerrar)} />
     <div className="detalle-cabeza"><p className="detalle-kicker">{pago.origen === "cfdi" ? "Factura" : "Excepción documentada"}</p><Insignia tono={tonoEstado(pago.estado)}>{ETIQUETA_ESTADO[pago.estado]}</Insignia><h2>{pago.proveedor}</h2><p>{pago.referencia}</p><strong className="detalle-monto">{formatoPesos(pago.totalCentavos)}</strong><span>MXN</span></div>
-    <div className="detalle-instruccion"><EtiquetaMono nombre="CLABE destino">{clabeVisible(pago.clabe)}</EtiquetaMono><p className="pista">{institucionTradicional(pago.clabe.slice(0, 3)) ?? FRASE_INSTITUCION_PENDIENTE}</p></div>
+    {pago.bloqueo ? <p className="aviso-bloqueo" role="note">{TEXTO_BLOQUEO[pago.bloqueo]}</p> : null}
+    <div className="detalle-instruccion">
+      <EtiquetaMono nombre="CLABE destino">{pago.clabe ? clabeVisible(pago.clabe) : `•••• ${pago.clabeFinal}`}</EtiquetaMono>
+      <p className="pista">{pago.clabe ? institucionTradicional(pago.clabe.slice(0, 3)) ?? FRASE_INSTITUCION_PENDIENTE : "Tu rol ve solo la terminación de la CLABE."}</p>
+    </div>
     <Renglones>
       <Renglon etiqueta="Vencimiento">{fechaLegible(pago.venceEl)}</Renglon><Renglon etiqueta="Fecha prevista">{fechaLegible(pago.programadaEl)}</Renglon>
       <Renglon etiqueta="Emisión">{fechaLegible(pago.emitidaEl)}</Renglon><Renglon etiqueta="Solicitó">{pago.solicitante}</Renglon>
@@ -186,9 +193,12 @@ function DetallePago({ pago, lectura, empresaId, personaId, cerrar, puedeSolicit
       {pago.motivoExcepcion ? <Renglon etiqueta="Motivo de excepción">{pago.motivoExcepcion}</Renglon> : null}
       {pago.motivoResolucion ? <Renglon etiqueta="Motivo de resolución">{pago.motivoResolucion}</Renglon> : null}
     </Renglones>
+    <Historial pago={pago} versiones={lectura.historial} />
     <Documentos documentos={documentos} empresaId={empresaId} />
     {pago.estado === "rechazado" && puedeSolicitar && pago.solicitadoPor === personaId ? <Link className="boton boton-completo" href={enEmpresa(empresaId, `/consola/proveedores/nuevo?pago=${pago.id}`)}>Corregir y volver a solicitar</Link> : null}
-    {autoriza || cancela ? <DecisionPago requestId={pago.id} puedeAutorizar={autoriza} puedeCancelar={cancela} /> : null}
+    {autoriza ? <DecisionPago key={`${pago.id}-${pago.version}`} requestId={pago.id} version={pago.version} totalCentavos={pago.totalCentavos} puedeAutorizar={autoriza} soloRechazo={pago.bloqueo !== null} /> : null}
+    {propia ? <Cancelacion requestId={pago.id} tipo="propia" /> : null}
+    {cancelaListo ? <Cancelacion requestId={pago.id} tipo="listo" /> : null}
     <div className="detalle-nota"><strong>Qué significa autorizar</strong><p>La instrucción queda lista para una futura operación bancaria. Esta versión no envía SPEI ni confirma recepción.</p></div>
   </aside>;
 }
@@ -199,13 +209,15 @@ function DetalleProveedor({ proveedor, lectura, historial, empresaId, cerrar, pu
   return <aside className="detalle-proveedor" aria-label="Expediente del proveedor">
     <Cerrar href={enEmpresa(empresaId, cerrar)} />
     <div className="detalle-cabeza"><p className="detalle-kicker">Expediente del proveedor</p><Insignia tono={proveedor.activo && proveedor.botonPago ? "sello" : "aviso"}>{proveedor.activo && proveedor.botonPago ? "Habilitado" : "Pago bloqueado"}</Insignia><h2>{proveedor.razonSocial}</h2><p>{proveedor.nombreComercial ?? proveedor.rfc}</p></div>
-    <EtiquetaMono nombre="RFC">{proveedor.rfc}</EtiquetaMono><EtiquetaMono nombre="CLABE">{clabeVisible(proveedor.clabe)}</EtiquetaMono>
+    <EtiquetaMono nombre="RFC">{proveedor.rfc}</EtiquetaMono><EtiquetaMono nombre="CLABE">{proveedor.clabe ? clabeVisible(proveedor.clabe) : `•••• ${proveedor.clabeFinal}`}</EtiquetaMono>
     <Renglones>
-      <Renglon etiqueta="Institución">{institucionTradicional(proveedor.clabe.slice(0, 3)) ?? FRASE_INSTITUCION_PENDIENTE}</Renglon>
+      <Renglon etiqueta="Institución">{proveedor.clabe ? institucionTradicional(proveedor.clabe.slice(0, 3)) ?? FRASE_INSTITUCION_PENDIENTE : "Visible para administración, liberadores y contabilidad"}</Renglon>
       <Renglon etiqueta="Contacto">{proveedor.contactoCorreo ?? "Sin correo"}</Renglon><Renglon etiqueta="Crédito">{proveedor.diasCredito} días</Renglon>
       <Renglon etiqueta="Lista 69-B">{proveedor.situacion ?? "Fuera de la lista en la última lectura"}</Renglon>
     </Renglones>
-    <Documentos documentos={[{ id: proveedor.constanciaId, nombre: proveedor.constancia, tipo: "constancia", supplierId: proveedor.id, payableId: null, vigenteHasta: null }, ...documentos]} empresaId={empresaId} />
+    {proveedor.constanciaId && proveedor.constancia
+      ? <Documentos documentos={[{ id: proveedor.constanciaId, nombre: proveedor.constancia, tipo: "constancia", supplierId: proveedor.id, payableId: null, vigenteHasta: null }, ...documentos]} empresaId={empresaId} />
+      : <p className="pista">La constancia y los contratos del proveedor los consultan administración, liberadores y contabilidad.</p>}
     {puedeAdministrar ? <FormularioContrato supplierId={proveedor.id} /> : null}
     {grupo?.vigente && historial.puedeCambiar ? <div className="detalle-clabe"><h3>Cambiar CLABE</h3><p className="pista">La cuenta anterior se conserva. Este cambio exige segundo factor reciente.</p><FormularioCambio supplierId={proveedor.id} /></div> : null}
     {grupo && grupo.anteriores.length > 0 ? <div className="historial-compacto"><h3>CLABE anteriores</h3>{grupo.anteriores.map((linea) => <p key={linea.id}><span>{linea.visible}</span><small>{linea.desde} — {linea.hasta}</small></p>)}</div> : null}
@@ -214,7 +226,7 @@ function DetalleProveedor({ proveedor, lectura, historial, empresaId, cerrar, pu
 
 function Documentos({ documentos, empresaId }: { documentos: LecturaPagosProveedores["documentos"]; empresaId: string }) {
   return <div className="detalle-documentos"><h3>Documentos <span>{documentos.length}</span></h3>{documentos.length === 0 ? <p className="pista">No hay documentos adicionales.</p> : documentos.map((documento) => <a key={documento.id} href={enEmpresa(empresaId, `/consola/proveedores/documento/${documento.id}`)}>
-    <span className="documento-tipo">{documento.tipo.toUpperCase()}</span><span><strong>{documento.nombre}</strong><small>{documento.vigenteHasta ? `Vigente hasta ${fechaLegible(documento.vigenteHasta)}` : "Archivo privado verificado"}</small></span><span aria-hidden="true">↓</span>
+    <span className="documento-tipo">{documento.tipo.toUpperCase()}</span><span><strong>{documento.nombre}</strong><small>{documento.vigenteHasta ? `Vigente hasta ${fechaLegible(documento.vigenteHasta)}` : documento.tipo === "xml" ? "XML leído; validación ante el SAT pendiente" : "Archivo privado · se descarga"}</small></span><span aria-hidden="true">↓</span>
   </a>)}</div>;
 }
 
@@ -225,6 +237,44 @@ function Actividad({ lectura }: { lectura: LecturaPagosProveedores }) {
 
 function Cerrar({ href }: { href: string }) { return <Link className="detalle-cerrar" href={href} aria-label="Cerrar detalle">×</Link>; }
 function tituloActividad(accion: string): string {
-  const titulos: Record<string, string> = { alta_proveedor: "Proveedor creado", clabe_proveedor: "CLABE actualizada", documento_proveedor: "Documento agregado", crear_cargo_proveedor: "Factura u obligación creada", editar_cargo_proveedor: "Obligación corregida", solicitar_pago_proveedor: "Pago enviado a autorización", autorizar_pago_proveedor: "Pago listo para pagar", rechazar_pago_proveedor: "Pago rechazado", cancelar_pago_proveedor: "Solicitud cancelada" };
+  const titulos: Record<string, string> = { alta_proveedor: "Proveedor creado", clabe_proveedor: "CLABE actualizada", documento_proveedor: "Documento agregado", crear_cargo_proveedor: "Factura u obligación creada", editar_cargo_proveedor: "Obligación corregida", solicitar_pago_proveedor: "Pago enviado a autorización", autorizar_pago_proveedor: "Pago listo para pagar", rechazar_pago_proveedor: "Pago rechazado", cancelar_pago_proveedor: "Solicitud cancelada", regresar_pago_proveedor: "Autorización retirada: pago de vuelta en revisión" };
   return titulos[accion] ?? "Actividad de proveedores";
+}
+
+const TEXTO_BLOQUEO: Record<Exclude<BloqueoPago, null>, string> = {
+  clabe_cambiada: "La CLABE del proveedor cambió después de esta solicitud. No se puede autorizar con la cuenta anterior: recházala para que se vuelva a solicitar con la CLABE vigente.",
+  proveedor_bloqueado: "El proveedor está bloqueado (lista 69-B o inactivo). No se puede autorizar mientras siga así.",
+};
+
+/** La versión anterior de la solicitud: quién la resolvió, por qué y qué cambió desde entonces. */
+function Historial({ pago, versiones }: { pago: PagoVista; versiones: VersionPagoVista[] }) {
+  const cierres = versiones.filter((version) => version.estado !== version.estadoNuevo && version.estado !== "por_autorizar");
+  if (cierres.length === 0) return null;
+  const anterior = versiones.find((version) => version.version < pago.version);
+  return <div className="historial-pago">
+    <h3>Historial de la solicitud</h3>
+    {anterior ? <div className="historial-diferencia" aria-label="Diferencia con la versión anterior">
+      <p><strong>Versión {pago.version}</strong> frente a la versión {anterior.version}</p>
+      <dl>
+        <Diferencia etiqueta="Importe" antes={formatoPesos(anterior.totalCentavos)} ahora={formatoPesos(pago.totalCentavos)} />
+        <Diferencia etiqueta="Fecha prevista" antes={fechaLegible(anterior.programadaEl)} ahora={fechaLegible(pago.programadaEl)} />
+        <Diferencia etiqueta="CLABE" antes={`•••• ${anterior.clabeFinal}`} ahora={`•••• ${pago.clabeFinal}`} />
+      </dl>
+    </div> : null}
+    <ol>{cierres.map((version) => <li key={`${version.version}-${version.cerradoEn}`}>
+      <strong>{TITULO_CIERRE[version.estado] ?? "Cambio"} · versión {version.version}</strong>
+      <span>{version.estado === "rechazado" ? "Rechazó" : "Autorizó"} {version.resolvio ?? "el sistema"}{version.resueltoEn ? ` · ${horaEnMexico(new Date(version.resueltoEn))}` : ""}</span>
+      {version.motivo ? <p>{version.motivo}</p> : null}
+    </li>)}</ol>
+  </div>;
+}
+
+const TITULO_CIERRE: Partial<Record<VersionPagoVista["estado"], string>> = {
+  rechazado: "Rechazada",
+  listo_para_pagar: "Autorización retirada",
+};
+
+function Diferencia({ etiqueta, antes, ahora }: { etiqueta: string; antes: string; ahora: string }) {
+  const cambio = antes !== ahora;
+  return <div className={cambio ? "cambio" : undefined}><dt>{etiqueta}</dt><dd>{cambio ? <><s>{antes}</s> → <strong>{ahora}</strong></> : <span>{ahora} · sin cambio</span>}</dd></div>;
 }

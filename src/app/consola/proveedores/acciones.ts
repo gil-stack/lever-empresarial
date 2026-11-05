@@ -164,12 +164,23 @@ export async function guardarClabeProveedor(
       clabe: texto(formData, "clabe"),
     }, segura);
     revalidatePath("/consola/proveedores");
-    if (resultado.tipo === "misma") {
+    if (resultado.tipo !== "cambiada") {
       return { tipo: "guardado", mensaje: "Sigue la misma CLABE. No se agregó otra fila." };
+    }
+    const regresados = resultado.pagosRegresados === 0
+      ? ""
+      : resultado.pagosRegresados === 1
+        ? " Un pago listo para pagar regresó a revisión."
+        : ` ${resultado.pagosRegresados} pagos listos para pagar regresaron a revisión.`;
+    if (resultado.avisosEnviados === 0) {
+      return {
+        tipo: "guardado_sin_aviso",
+        mensaje: `Quedó la CLABE nueva y la anterior sigue en el historial.${regresados} No salió ningún correo de alerta: avisa hoy mismo a administradores y liberadores por otro medio.`,
+      };
     }
     return {
       tipo: "guardado",
-      mensaje: "Quedó la CLABE nueva. La anterior sigue en el historial.",
+      mensaje: `Quedó la CLABE nueva. La anterior sigue en el historial.${regresados} Se avisó por correo a ${resultado.avisosEnviados === 1 ? "una persona" : `${resultado.avisosEnviados} personas`}.`,
     };
   } catch (error) {
     if (error instanceof ErrorDeDominio) {

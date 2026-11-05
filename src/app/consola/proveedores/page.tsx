@@ -10,6 +10,7 @@ import { puede, type ContextoConEmpresa } from "@/nucleo/contexto";
 import { abrirRuta, errorConSecreto } from "@/server/entrada";
 import { leerPagosProveedores } from "@/server/pagos-proveedores";
 import { leerClabesProveedor } from "@/server/proveedores";
+import type { LecturaClabes } from "@/server/proveedores/tipos";
 import { ErrorDeDominio } from "@/server/session";
 
 export const runtime = "nodejs";
@@ -42,12 +43,15 @@ export default async function PaginaProveedores({ searchParams }: { searchParams
           hoy={fechaEnMexico()} vista={vista} q={params.q ?? ""} estado={params.estado ?? ""}
           pagoId={params.pago} proveedorId={params.proveedor}
           puedeSolicitar={puede(ctx, "cliente.pago.solicitar")} puedeLiberar={puede(ctx, "cliente.pago.liberar")}
+          puedeCancelarListo={puede(ctx, "cliente.pago.cancelar_listo")}
           puedeAdministrar={puede(ctx, "cliente.proveedores.alta")}
         />
       </main>
     </Marco>
   );
 }
+
+const SIN_HISTORIAL: LecturaClabes = { puedeCambiar: false, grupos: [] };
 
 async function cargar(ctx: ContextoConEmpresa, params: Params, vista: VistaProveedores) {
   const [lectura, historial] = await Promise.all([
@@ -57,7 +61,8 @@ async function cargar(ctx: ContextoConEmpresa, params: Params, vista: VistaProve
       pagina: Number(params.pagina) || 1,
       pagoId: params.pago,
     }),
-    leerClabesProveedor(ctx),
+    // El historial de CLABEs completas es del expediente: quien solo solicita no lo recibe.
+    puede(ctx, "cliente.proveedores.expediente.ver") ? leerClabesProveedor(ctx) : Promise.resolve(SIN_HISTORIAL),
   ]);
   return { lectura, historial };
 }

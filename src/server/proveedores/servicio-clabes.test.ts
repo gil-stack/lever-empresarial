@@ -19,7 +19,7 @@ describe("historial de la CLABE del proveedor", () => {
   it("cierra la vigente y deja la anterior", async () => {
     const libro = memoria();
     const resultado = await cambiarClabeProveedor(ctx(["administrador"]), { supplierId: PROVEEDOR, clabe: NUEVA }, SESION, { repositorio: libro, avisar: async () => 0 });
-    assert.equal(resultado.tipo, "cambiada");
+    assert.deepEqual(resultado, { tipo: "cambiada", pagosRegresados: 2, avisosEnviados: 0 }, "informa pagos regresados y que no salió ningún aviso");
     assert.equal(libro.filas.length, 2);
     assert.equal(libro.filas.filter((fila) => fila.hasta === null).length, 1);
     assert.equal(libro.filas[0]?.hasta instanceof Date, true);
@@ -93,6 +93,7 @@ function memoria(): RepositorioClabes & { filas: FilaClabe[] } {
     async cerrar(id, hasta) {
       const fila = filas.find((actual) => actual.id === id);
       if (fila) fila.hasta = hasta;
+      return { pagosRegresados: 2 };
     },
     async insertar(fila) {
       filas.push({ ...fila, hasta: null });

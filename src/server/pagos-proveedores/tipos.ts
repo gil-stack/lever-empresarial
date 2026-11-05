@@ -1,9 +1,9 @@
 import type { EstadoPago, OrigenPago } from "../../dominio/pagos-proveedores";
-import type { PagoVista, ProveedorPago } from "../../dominio/pagos-vistas";
+import type { PagoVista, ProveedorPago, VersionPagoVista } from "../../dominio/pagos-vistas";
 import type { ContextoConEmpresa } from "../../nucleo/contexto";
 import type { Consulta } from "../../nucleo/db";
 
-export type { PagoVista, ProveedorPago } from "../../dominio/pagos-vistas";
+export type { PagoVista, ProveedorPago, VersionPagoVista } from "../../dominio/pagos-vistas";
 
 export type DocumentoVista = {
   id: string;
@@ -14,6 +14,9 @@ export type DocumentoVista = {
   vigenteHasta: string | null;
 };
 
+/** A qué está ligado un documento descargable: al expediente del proveedor o a un cargo. */
+export type AmbitoDocumento = "proveedor" | "cargo";
+
 export type ActividadVista = {
   id: string;
   accion: string;
@@ -22,11 +25,14 @@ export type ActividadVista = {
   ocurridoEn: string;
 };
 
+/** Las sumas viajan como entero en texto: pueden pasar de 2^53 centavos. */
+export type MetricaPagos = { cantidad: number; centavos: string };
+
 export type MetricasPagos = {
-  porVencer: { cantidad: number; centavos: number };
-  vencidos: { cantidad: number; centavos: number };
-  porAutorizar: { cantidad: number; centavos: number };
-  listos: { cantidad: number; centavos: number };
+  porVencer: MetricaPagos;
+  vencidos: MetricaPagos;
+  porAutorizar: MetricaPagos;
+  listos: MetricaPagos;
 };
 
 export type LecturaPagosProveedores = {
@@ -35,6 +41,8 @@ export type LecturaPagosProveedores = {
   documentos: DocumentoVista[];
   actividad: ActividadVista[];
   metricas: MetricasPagos;
+  /** Versiones cerradas del pago abierto en el detalle, de la más reciente a la más antigua. */
+  historial: VersionPagoVista[];
   pagina: number;
   hayMas: boolean;
 };
@@ -85,6 +93,7 @@ export type SolicitudActual = {
   estado: EstadoPago;
   solicitadoPor: string;
   version: number;
+  totalCentavos: number;
 };
 
 export type ContextoPagos = {
@@ -98,21 +107,32 @@ export type ContextoPagos = {
   vincularDocumentoCargo(documentoId: string, payableId: string, tipo: string, creadoEn: Date): Promise<void>;
   insertarSolicitud(solicitud: SolicitudNueva): Promise<void>;
   solicitudPorClave(clientRequestId: string): Promise<{ requestId: string; payableId: string } | null>;
+  /** Verdadero si el UUID ya está en un cargo vigente (no anulado) de la empresa. */
+  cfdiVigente(uuid: string): Promise<boolean>;
   solicitud(id: string): Promise<SolicitudActual | null>;
   actualizarCargo(cargo: CargoNuevo & { actualizadoEn: Date }): Promise<void>;
-  actualizarSolicitud(entrada: {
+  /** Resuelve o cancela. Solo cambia la fila si sigue en `desde`, con la versión y el importe esperados. */
+  resolverSolicitud(entrada: {
     id: string;
-    estado: EstadoPago;
+    desde: EstadoPago;
+    estado: Exclude<EstadoPago, "por_autorizar">;
     actor: string;
     ahora: Date;
     motivo: string | null;
     version: number;
-    instantanea?: { supplierClabeId: string; clabe: string; totalCentavos: number; programadaEl: string; solicitadoEn: Date };
+    totalCentavos: number;
+  }): Promise<void>;
+  /** Vuelve a solicitar una rechazada con la instrucción nueva y la versión siguiente. */
+  reenviarSolicitud(entrada: {
+    id: string;
+    actor: string;
+    version: number;
+    instantanea: { supplierClabeId: string; clabe: string; totalCentavos: number; programadaEl: string; solicitadoEn: Date };
   }): Promise<void>;
 };
 
 export type RepositorioPagos = {
   leer(ctx: ContextoConEmpresa, filtros: FiltrosPagos): Promise<LecturaPagosProveedores>;
   conEmpresa<T>(ctx: ContextoConEmpresa, fn: (tx: ContextoPagos) => Promise<T>): Promise<T>;
-  documento(ctx: ContextoConEmpresa, id: string): Promise<{ id: string; clave: string; hash: string; nombre: string; tipo: string } | null>;
+  documento(ctx: ContextoConEmpresa, id: string): Promise<{ id: string; clave: string; hash: string; nombre: string; tipo: string; ambito: AmbitoDocumento } | null>;
 };

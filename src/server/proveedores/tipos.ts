@@ -86,7 +86,8 @@ export type ContextoClabes = {
   companyId: string;
   consulta: Consulta;
   vigente: (supplierId: string) => Promise<FilaClabe | null>;
-  cerrar: (id: string, hasta: Date) => Promise<void>;
+  /** Cierra la vigente. Devuelve cuántos pagos listos regresaron a revisión por ese cierre. */
+  cerrar: (id: string, hasta: Date) => Promise<{ pagosRegresados: number }>;
   insertar: (fila: FilaNueva) => Promise<void>;
 };
 

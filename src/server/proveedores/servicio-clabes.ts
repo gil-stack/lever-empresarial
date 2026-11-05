@@ -26,14 +26,16 @@ export type DependenciasClabes = {
   avisar?: typeof avisarCambioClabe;
 };
 
-export type ResultadoClabe = { tipo: "asentada" | "cambiada" | "misma" };
+export type ResultadoClabe =
+  | { tipo: "asentada" | "misma" }
+  | { tipo: "cambiada"; pagosRegresados: number; avisosEnviados: number };
 
 export async function leerClabesProveedor(
   ctx: ContextoDeTenant | null | undefined,
   deps?: DependenciasClabes,
 ): Promise<LecturaClabes> {
   const conEmpresa = exigirEmpresa(ctx);
-  if (!puede(conEmpresa, "cliente.proveedores.ver")) throw new ErrorDeDominio("clabe_no_disponible");
+  if (!puede(conEmpresa, "cliente.proveedores.expediente.ver")) throw new ErrorDeDominio("clabe_no_disponible");
   const filas = await resolver(deps).repositorio.listar(conEmpresa);
   return {
     puedeCambiar: puede(conEmpresa, "cliente.proveedores.clabe.cambiar"),
@@ -81,13 +83,14 @@ export async function cambiarClabeProveedor(
   if (!presentada.ok) throw new ErrorDeDominio("clabe_invalida");
   const listo = resolver(deps);
   const ahora = new Date(listo.ahora().getTime());
-  const resultado = await listo.repositorio.conEmpresa<ResultadoClabe & { clabeId?: string }>(conEmpresa, async (ctx) => {
+  const resultado = await listo.repositorio.conEmpresa(conEmpresa, async (ctx) => {
     const actual = await ctx.vigente(supplierId);
     if (!actual) throw new ErrorDeDominio("proveedor_ausente");
     if (actual.clabe === presentada.clabe.clabe) return { tipo: "misma" as const };
     exigirAutenticacionRecienteCliente(sesion, ahora);
     const id = randomUUID();
-    await ctx.cerrar(actual.id, ahora);
+    // Al cerrar la vigente, la base regresa a revisión los pagos listos que la usaban.
+    const { pagosRegresados } = await ctx.cerrar(actual.id, ahora);
     await ctx.insertar({
       id,
       supplierId,
@@ -95,12 +98,13 @@ export async function cambiarClabeProveedor(
       desde: ahora,
     });
     await listo.auditar(ctx.consulta, actorDeCliente(conEmpresa), { accion: "clabe_proveedor", identificador: id });
-    return { tipo: "cambiada" as const, clabeId: id };
+    return { tipo: "cambiada" as const, clabeId: id, pagosRegresados };
   });
-  if (resultado.tipo === "cambiada" && resultado.clabeId) {
-    await (deps?.avisar ?? avisarCambioClabe)(conEmpresa, { supplierId, clabeId: resultado.clabeId, clabe: presentada.clabe.clabe, ahora });
-  }
-  return resultado;
+  if (resultado.tipo !== "cambiada") return resultado;
+  const avisosEnviados = await (deps?.avisar ?? avisarCambioClabe)(conEmpresa, {
+    supplierId, clabeId: resultado.clabeId, clabe: presentada.clabe.clabe, ahora,
+  });
+  return { tipo: "cambiada", pagosRegresados: resultado.pagosRegresados, avisosEnviados };
 }
 
 function armarGrupos(filas: readonly FilaClabe[]): GrupoClabeVista[] {

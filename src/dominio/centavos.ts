@@ -44,6 +44,19 @@ export function formatoPesos(centavos: number): string {
   return `${negativo ? "-" : ""}$${grupos}.${String(resto).padStart(2, "0")}`;
 }
 
+/** Igual que formatoPesos, para sumas que pueden pasar de 2^53 centavos. Recibe el entero en texto. */
+export function formatoPesosGrande(centavos: string | bigint): string {
+  const texto = typeof centavos === "bigint" ? centavos.toString() : centavos.trim();
+  if (!/^-?\d{1,40}$/.test(texto)) throw new Error("centavos_invalidos");
+  const valor = BigInt(texto);
+  const negativo = valor < BigInt(0);
+  const absoluto = negativo ? -valor : valor;
+  const pesos = absoluto / BigInt(100);
+  const resto = absoluto % BigInt(100);
+  const grupos = pesos.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `${negativo ? "-" : ""}$${grupos}.${resto.toString().padStart(2, "0")}`;
+}
+
 function partir(texto: string): { entero: string; fraccion: string } | null {
   const tienePunto = texto.includes(".");
   const tieneComa = texto.includes(",");

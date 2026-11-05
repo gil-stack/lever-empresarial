@@ -1,6 +1,7 @@
 export type EstadoClabe =
   | { tipo: "inicial" }
   | { tipo: "guardado"; mensaje: string }
+  | { tipo: "guardado_sin_aviso"; mensaje: string }
   | { tipo: "invalido"; mensaje: string };
 
 export const FORMULARIO_CLABE_INICIAL: EstadoClabe = { tipo: "inicial" };

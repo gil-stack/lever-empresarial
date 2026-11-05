@@ -78,7 +78,7 @@ export function FormularioPago({
               </option>
             ))}
           </select>
-          {proveedor ? <p className="pista">CLABE terminación {proveedor.clabe.slice(-4)} · {proveedor.diasCredito} días de crédito.</p> : null}
+          {proveedor ? <p className="pista">CLABE terminación {proveedor.clabeFinal} · {proveedor.diasCredito} días de crédito.</p> : null}
         </div>
         <div className="selector-origen" role="group" aria-label="Origen del pago">
           <button type="button" className={origen === "cfdi" ? "activo" : ""} disabled={Boolean(edicion)} onClick={() => setOrigen("cfdi")}>
@@ -115,6 +115,12 @@ export function FormularioPago({
           </label>
         ) : null}
         {edicion ? <p className="nota-edicion">Los documentos originales se conservan. Esta corrección no los reemplaza.</p> : null}
+        {edicion?.origen === "excepcion" ? (
+          <label className="soltar-archivo" htmlFor="pdf">
+            <span className="soltar-archivo-icono">PDF</span><strong>Evidencia nueva</strong><span>Obligatoria si cambias el importe</span>
+            <input id="pdf" name="pdf" type="file" accept="application/pdf,.pdf" />
+          </label>
+        ) : null}
         {lectura.tipo === "invalido" ? <p className="error-campo" role="alert">{lectura.mensaje}</p> : null}
         {cfdi || edicion?.origen === "cfdi" ? (
           <div className="cfdi-resumen" aria-live="polite">

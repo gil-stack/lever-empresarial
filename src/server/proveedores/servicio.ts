@@ -59,20 +59,36 @@ export async function darDeAltaProveedor(
   const hash = createHash("sha256").update(preparado.bytes).digest("hex");
   const clavesGuardadas: string[] = [];
 
+  const proveedorId = randomUUID();
+  const documentoId = randomUUID();
+  const contratoId = randomUUID();
+  const carpeta = `${conEmpresa.empresa.operadorId}/${conEmpresa.empresa.id}`;
+
   try {
+    // Lectura previa: un RFC ya dado de alta no sube archivos.
+    if (await listo.repositorio.conEmpresa(conEmpresa, (ctx) => ctx.rfcOcupado(preparado.rfc))) {
+      throw new ErrorDeDominio("proveedor_duplicado");
+    }
+    // Los archivos suben antes de abrir la transacción con candado de la empresa.
+    const archivo = await listo.almacen.guardar({
+      clave: `${carpeta}/constancias/${documentoId}`,
+      bytes: preparado.bytes,
+      tipo: "application/pdf",
+    });
+    clavesGuardadas.push(archivo.clave);
+    const contrato = preparado.contrato
+      ? await listo.almacen.guardar({
+        clave: `${carpeta}/proveedores/${proveedorId}/contratos/${contratoId}`,
+        bytes: preparado.contrato.bytes,
+        tipo: "application/pdf",
+      })
+      : null;
+    if (contrato) clavesGuardadas.push(contrato.clave);
+
     const guardado = await listo.repositorio.conEmpresa(conEmpresa, async (ctx) => {
       if (await ctx.rfcOcupado(preparado.rfc)) throw new ErrorDeDominio("proveedor_duplicado");
       const lectura = await ctx.leerLista(preparado.rfc);
       const decision = decidirPago(lectura);
-      const proveedorId = randomUUID();
-      const documentoId = randomUUID();
-      const propuesta = `${conEmpresa.empresa.operadorId}/${ctx.companyId}/constancias/${documentoId}`;
-      const archivo = await listo.almacen.guardar({
-        clave: propuesta,
-        bytes: preparado.bytes,
-        tipo: "application/pdf",
-      });
-      clavesGuardadas.push(archivo.clave);
       await ctx.insertarDocumento({
         id: documentoId,
         clave: archivo.clave,
@@ -105,14 +121,7 @@ export async function darDeAltaProveedor(
       });
       await listo.auditar(ctx.consulta, actor, { accion: "alta_proveedor", identificador: proveedorId });
       await listo.auditar(ctx.consulta, actor, { accion: "clabe_proveedor", identificador: clabeId });
-      if (preparado.contrato) {
-        const contratoId = randomUUID();
-        const contrato = await listo.almacen.guardar({
-          clave: `${conEmpresa.empresa.operadorId}/${ctx.companyId}/proveedores/${proveedorId}/contratos/${contratoId}`,
-          bytes: preparado.contrato.bytes,
-          tipo: "application/pdf",
-        });
-        clavesGuardadas.push(contrato.clave);
+      if (contrato && preparado.contrato) {
         await ctx.insertarDocumento({
           id: contratoId,
           clave: contrato.clave,
