@@ -582,15 +582,21 @@ async function calendario(url: string): Promise<void> {
 
   // H5: el servidor decide la fecha; una del cliente que no es la vencida más antigua se rechaza.
   const el16 = { ahora: () => new Date("2026-11-16T18:00:00.000Z") };
+  // Pendientes nombra la misma fecha que prepararNomina toma sin fecha del cliente: la vencida más antigua.
+  const nominaDeA = async () =>
+    (await leerPendientesInicio(a.ctx, el16)).find((pendiente) => pendiente.id === "nomina-por-preparar")?.titulo ?? null;
+  assert.equal(await nominaDeA(), "Prepara el lote de nómina del 8 de noviembre");
   await assert.rejects(() => prepararNomina(a.ctx, "2026-11-15", el16), codigo("nomina_fecha_distinta"));
   await assert.rejects(() => prepararNomina(a.ctx, "2026-12-01", el16), codigo("nomina_fecha_distinta"));
   const del8 = await prepararNomina(a.ctx, "2026-11-08", el16);
+  assert.equal(await nominaDeA(), "Prepara el lote de nómina del 15 de noviembre");
   assert.equal((await leerLoteNomina(a.ctx, del8.id))?.lote.totalCentavos, 5000);
   // Semanal avanzó al 15, que todavía no tiene lote.
   // H15: la liberadora (rol que la app deja preparar) también pasa la base.
   const del15 = await prepararNomina(liberadora.ctx, undefined, el16);
   const lote15 = await leerLoteNomina(a.ctx, del15.id);
   assert.equal(lote15?.lote.fechaPago, "2026-11-15");
+  assert.equal(await nominaDeA(), null);
   assert.equal(lote15?.lote.personas, 62);
   assert.equal(lote15?.lote.totalCentavos, 61 * 10000 + 5000);
   assert.equal((await prepararNomina(a.ctx, "2026-11-15", el16)).repetida, true);

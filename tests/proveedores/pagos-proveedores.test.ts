@@ -89,15 +89,24 @@ test("cuentas por pagar contra Postgres: personas, versiones, CLABE, 69-B, SQL d
         xml: { nombre: "otra.xml", bytes: cfdiConUuid("123E4567-E89B-42D3-A456-4266141740CC") },
       }, deps);
 
+      const enPendientes = async (ctx: ContextoDeTenant) =>
+        (await leerPendientesInicio(ctx, { ahora: () => new Date(AHORA) }))
+          .find((pendiente) => pendiente.id === "pagos-por-autorizar")?.titulo ?? null;
       await t.test("Pendientes cuenta los pagos por autorizar solo para quien puede resolverlos", async () => {
-        const enPendientes = async (ctx: ContextoDeTenant) =>
-          (await leerPendientesInicio(ctx, { ahora: () => new Date(AHORA) }))
-            .find((pendiente) => pendiente.id === "pagos-por-autorizar")?.titulo ?? null;
         assert.equal(await enPendientes(rosa), "Autoriza 3 pagos a proveedores");
         // Luis pidió uno de los tres: no se lo cuenta, porque no puede autorizarlo.
         assert.equal(await enPendientes(luis), "Autoriza 2 pagos a proveedores");
         assert.equal(await enPendientes(carlos), null);
         assert.equal(await enPendientes(sofia), null);
+      });
+
+      await t.test("quien pidió el pago no lo ve como pendiente suyo", async () => {
+        // Luis también es liberador. Su propio pago le suma a Rosa, no a él.
+        const propio = await crearPagoProveedor(luis, excepcion("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae7", PROVEEDOR, "2,000.00"), deps);
+        assert.equal(await enPendientes(rosa), "Autoriza 4 pagos a proveedores");
+        assert.equal(await enPendientes(luis), "Autoriza 2 pagos a proveedores");
+        await cancelarPagoProveedor(luis, { requestId: propio.requestId, motivo: "Lo pidió por error" }, deps);
+        assert.equal(await enPendientes(rosa), "Autoriza 3 pagos a proveedores");
       });
 
       await t.test("dos personas: quien solicita no autoriza y el CFDI repetido no sube archivos", async () => {
