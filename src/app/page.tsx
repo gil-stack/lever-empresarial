@@ -196,7 +196,7 @@ export default function PaginaInicio() {
         <section className="arco-precios-resumen" id="precios" aria-labelledby="titulo-precios">
           <div><p className="arco-eyebrow">Precios</p><h2 id="titulo-precios">Un plan claro para cada etapa.</h2></div>
           <div>
-            <p>Una suscripción mensual por empresa. Sin cobro por persona, por tarjeta ni de implementación. Cada empresa ve el monto de su plan dentro de su cuenta.</p>
+            <p>Conoce cómo se estructura LEVER para tu equipo, sin cifras inventadas ni paquetes que no corresponden a tu operación.</p>
           </div>
         </section>
 
