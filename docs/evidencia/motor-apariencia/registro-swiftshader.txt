@@ -1,0 +1,9 @@
+
+== Equipo lento (SwiftShader, sin GPU, 1440x900 DPR 1) ==
+  renderer: ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)
+  ok - arranca vivo
+  pasó a lento en 3.0 s · ms medio por dibujo hasta ahí 95.49 · cuadros 28
+  ok - quieto por lento: cuadros 28 → 28, rAF +0 en 2 s
+  ok - cambiar de escena con equipo lento pinta un solo cuadro quieto
+  avisos de Chrome por lectura de píxeles sin GPU: 4
+  ok - sin otros errores ni avisos (ninguno)

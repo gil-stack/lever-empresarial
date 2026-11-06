@@ -1,0 +1,56 @@
+/*
+ * Escena de fondo (motor de apariencia de Lever Empresas).
+ * Respira arriba y se calma donde hay contenido: el velo es el del diseño (.stageBg::after).
+ * Única diferencia: con menos de 565 px de ancho, el 46 % queda antes de los 260 px y el diseño
+ * corta el degradado en seco (se ve una línea vertical); min()/max() lo evitan. Desde 565 px es igual.
+ * Los colores de fondo por tema son el --void de cada tema del diseño. Al integrar el rediseño
+ * pasan a tokens.css; mientras, viven aquí para no tocar hojas que otros PRs están cambiando.
+ */
+.escena-fondo {
+  --escena-vacio: #0e0a08;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--escena-vacio);
+}
+
+.escena-fondo[data-tema="claro"] {
+  --escena-vacio: #ece6de;
+}
+
+.escena-fondo[data-tema="lever"] {
+  --escena-vacio: #5e1c15;
+}
+
+.escena-lienzo {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.escena-fondo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--escena-vacio) 55%, transparent) 0,
+      color-mix(in srgb, var(--escena-vacio) 18%, transparent) min(260px, 46%),
+      transparent max(46%, 260px)
+    ),
+    linear-gradient(180deg, transparent 30%, color-mix(in srgb, var(--escena-vacio) 40%, transparent) 100%);
+}
+
+/* En claro, la misma bruma blanca de la portada del sitio: luminosa arriba, se asienta abajo donde hay tablas. */
+.escena-fondo[data-tema="claro"]::after {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--escena-vacio) 20%, transparent) 0,
+      color-mix(in srgb, var(--escena-vacio) 5%, transparent) min(260px, 46%),
+      transparent max(46%, 260px)
+    ),
+    linear-gradient(180deg, transparent 40%, color-mix(in srgb, var(--escena-vacio) 28%, transparent) 100%);
+}
