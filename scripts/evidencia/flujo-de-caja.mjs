@@ -1,0 +1,660 @@
+// Recorrido funcional del flujo de caja con Playwright headless, contra
+// `next build` + `next start` y un Postgres local recién migrado y sembrado con
+// scripts/evidencia/flujo-de-caja-siembra.ts. Pasos previos y variables en
+// docs/evidencia/flujo-de-caja/README.md.
+//
+//   BASE=http://localhost:4806 \
+//   DUENO_URL=postgres://<dueño>@127.0.0.1:5541/plataforma \
+//   SEMILLAS=/fuera/del/repo/flujo-semillas.json \
+//   CORREO_FALSO_ARCHIVO=/fuera/del/repo/correos.jsonl \
+//   CRON_SECRET_ARCHIVO=/fuera/del/repo/cron-secreto \
+//   TEMPORAL=/fuera/del/repo/tmp \
+//   node scripts/evidencia/flujo-de-caja.mjs
+//
+// Todo lo que cambia datos pasa por clics en la aplicación. La base se toca
+// como dueño solo para abrir la sesión de cada persona (como los e2e de #49)
+// y para leer lo que prueba cada paso (programada_el, historial, bitácora).
+// Rechaza un DUENO_URL que no sea local y no imprime URLs, tokens ni el secreto.
+
+import { createHash, randomUUID } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { join } from "node:path";
+
+const BASE = process.env.BASE ?? "http://localhost:4806";
+const DUENO = process.env.DUENO_URL ?? "";
+const SALIDA = process.env.SALIDA ?? "docs/evidencia/flujo-de-caja";
+const SEMILLAS = process.env.SEMILLAS ?? "";
+const CORREOS = process.env.CORREO_FALSO_ARCHIVO ?? "";
+const SECRETO = process.env.CRON_SECRET_ARCHIVO ? readFileSync(process.env.CRON_SECRET_ARCHIVO, "utf8").trim() : "";
+const TEMPORAL = process.env.TEMPORAL ?? "";
+const PDF = process.env.PDF_PRUEBA ?? "tests/e2e/fixtures/soporte-prueba.pdf";
+const SOLO = (process.env.SOLO ?? "").split(",").filter(Boolean);
+
+if (!/^postgres(ql)?:\/\/[^@]+@(127\.0\.0\.1|localhost)(:\d+)?\//.test(DUENO)) {
+  throw new Error("DUENO_URL tiene que apuntar a un Postgres local desechable (127.0.0.1 o localhost).");
+}
+for (const [nombre, valor] of [["SEMILLAS", SEMILLAS], ["CORREO_FALSO_ARCHIVO", CORREOS], ["TEMPORAL", TEMPORAL]]) {
+  if (!valor || valor.startsWith("docs/") || valor.includes("/docs/")) throw new Error(`${nombre} tiene que estar fuera del repositorio.`);
+}
+if (!SECRETO) throw new Error("Falta CRON_SECRET_ARCHIVO con el CRON_SECRET del servidor local.");
+
+const requerir = createRequire(import.meta.url);
+const { chromium } = requerir("playwright");
+mkdirSync(SALIDA, { recursive: true });
+mkdirSync(TEMPORAL, { recursive: true });
+
+const semillas = JSON.parse(readFileSync(SEMILLAS, "utf8"));
+const HOY = semillas.hoy;
+let comprobaciones = 0;
+const consola = [];
+let avisosWebgl = 0;
+/** Rutas que (j) espera en 404 y lo que el navegador anotó en ellas (el 404 y la precarga sin usar). */
+const rutas404 = new Set();
+let cuatrocientos = 0;
+
+function anotar(texto) {
+  console.log(`OK ${texto}`);
+}
+
+function exigir(condicion, texto) {
+  if (!condicion) throw new Error(`FALLO ${texto}`);
+  comprobaciones += 1;
+  anotar(texto);
+}
+
+function sql(consulta) {
+  try {
+    return execFileSync("psql", [DUENO, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1", "-c", consulta], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  } catch (error) {
+    throw new Error(`psql: ${String(error.stderr ?? "").trim()}`);
+  }
+}
+
+const empresa = (razon) => sql(`select id from companies where razon_social = '${razon}'`);
+const A = semillas.empresas.altamar;
+const B = empresa("Bahía Comercial");
+const C = empresa("Demostración Lever");
+const en = (id, ruta) => `${BASE}/c/${id}${ruta}`;
+const pesos = (centavos) => `$${(centavos / 100 || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// Fechas en hora de México, en texto AAAA-MM-DD, sin depender de la zona del equipo.
+function desplazar(fecha, dias) {
+  const d = new Date(`${fecha}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+function lunesDe(fecha) {
+  const dia = new Date(`${fecha}T12:00:00Z`).getUTCDay();
+  return desplazar(fecha, dia === 0 ? -6 : 1 - dia);
+}
+function ultimoDia(anio, mes) {
+  return new Date(Date.UTC(anio, mes, 0)).getUTCDate();
+}
+function fechaDe(anio, mes, dia) {
+  return new Date(Date.UTC(anio, mes - 1, dia, 12)).toISOString().slice(0, 10);
+}
+
+/** Abre una sesión para la persona, como dueño de la base (la entrada con contraseña y TOTP la cubre #49). */
+function sesion(correo) {
+  const token = `S${randomUUID().replace(/-/g, "")}AAAAAAAAAA`.slice(0, 43);
+  const entrada = randomUUID();
+  sql(`
+    insert into auth_entradas (id, user_id, token_hash, creada_en, vence_en, verificada_con, verificada_en, consumida_en)
+      select '${entrada}', id, '${createHash("sha256").update(entrada).digest("hex")}', now(), now() + interval '10 minutes', 'totp', now(), now() from users where correo = '${correo}';
+    insert into sessions (id, user_id, token_hash, expires_at, segundo_factor, entrada_id)
+      select '${randomUUID()}', id, '${createHash("sha256").update(token).digest("hex")}', now() + interval '8 hours', 'totp', '${entrada}' from users where correo = '${correo}';`);
+  return token;
+}
+
+async function abrir(navegador, correo, { tema = "claro", ancho = 1440, alto = 900 } = {}) {
+  const ctx = await navegador.newContext({ viewport: { width: ancho, height: alto }, locale: "es-MX", timezoneId: "America/Mexico_City" });
+  const host = new URL(BASE).hostname;
+  // `next start` es producción: la cookie lleva el prefijo __Host- (Secure, Path=/, sin Domain), como en los e2e de #49.
+  await ctx.addCookies([
+    { name: "__Host-sesion", value: sesion(correo), domain: host, path: "/", httpOnly: true, secure: true, sameSite: "Lax" },
+    { name: "tema", value: tema, domain: host, path: "/" },
+  ]);
+  // Sin tope, un clic sobre un botón que nunca se habilita esperaría para siempre.
+  ctx.setDefaultTimeout(20000);
+  const pagina = await ctx.newPage();
+  pagina.on("pageerror", (error) => consola.push(`ERROR DE PÁGINA ${correo} ${pagina.url()} :: ${error.message.slice(0, 300)}`));
+  pagina.on("console", (mensaje) => {
+    if (mensaje.type() !== "error" && mensaje.type() !== "warning") return;
+    // Avisos del driver de WebGL del fondo animado (motor de #47) en Chromium headless: fuera de esta zona, se cuentan aparte.
+    if (mensaje.text().includes("GL Driver Message")) {
+      avisosWebgl += 1;
+      return;
+    }
+    const ruta = pagina.url().replace(BASE, "");
+    // (j) abre a propósito páginas que deben responder 404: el navegador anota el 404 del documento.
+    // En esas páginas Next deja precargadas las hojas de estilo de la ruta que el 404 no usa: el navegador lo advierte.
+    if (rutas404.has(ruta) && (mensaje.text().includes("status of 404") || mensaje.text().includes("was preloaded using link preload but not used"))) {
+      cuatrocientos += 1;
+      return;
+    }
+    consola.push(`CONSOLA ${correo} ${mensaje.type()} ${ruta} :: ${mensaje.text().slice(0, 300)}`);
+  });
+  return { ctx, pagina };
+}
+
+async function captura(pagina, archivo, completa = true) {
+  await pagina.waitForTimeout(250);
+  await pagina.screenshot({ path: `${SALIDA}/${archivo}`, fullPage: completa, type: "jpeg", quality: 72 });
+  anotar(`captura ${archivo}`);
+}
+
+/**
+ * Clic en el botón del formulario y espera a que su acción de servidor responda
+ * y React termine de pintar. No espera `response.finished()`: la respuesta de
+ * una acción es un flujo RSC y Playwright no siempre la da por terminada (sin
+ * tope, el recorrido se quedaba colgado); el formulario deja de estar
+ * aria-busy cuando React ya la consumió.
+ */
+async function clicConAccion(pagina, clic) {
+  await Promise.all([
+    pagina.waitForResponse((r) => r.request().method() === "POST" && Boolean(r.request().headers()["next-action"]), { timeout: 20000 }),
+    clic(),
+  ]);
+  await pagina.waitForFunction(() => !document.querySelector('form[aria-busy="true"]'), null, { timeout: 15000 });
+  await pagina.waitForTimeout(150);
+}
+
+async function enviar(formulario, boton) {
+  await clicConAccion(formulario.page(), () => formulario.getByRole("button", { name: boton }).click());
+  await formulario.locator(".alerta-asentado, .alerta-revisar").first().waitFor({ timeout: 15000 });
+  return (await formulario.locator(".alerta-asentado").count()) > 0;
+}
+
+async function tablaProyeccion(pagina) {
+  return pagina.locator('table[data-tabla="proyeccion"] tbody tr').evaluateAll((filas) =>
+    filas.map((fila) => ({
+      semana: fila.getAttribute("data-semana"),
+      ...Object.fromEntries([...fila.querySelectorAll("td[data-cifra]")].map((td) => [td.getAttribute("data-cifra"), td.hasAttribute("data-centavos") ? Number(td.getAttribute("data-centavos")) : null])),
+    })),
+  );
+}
+
+/**
+ * La proyección hecha a mano con la siembra conocida: series de nómina y renta
+ * por sus reglas (quincenal 15 y fin de mes; mensual por su día), los cargos
+ * de la siembra sin el cancelado, y el cobro que no está vencido. Semanas de
+ * lunes a domingo. No usa código de la aplicación.
+ */
+function proyeccionAMano(saldo, corte, extras = []) {
+  const inicio = lunesDe(HOY);
+  const fin = desplazar(inicio, 13 * 7 - 1);
+  const movs = [];
+  const serie = (desde, siguiente, centavos) => {
+    for (let f = desde; f <= fin; f = siguiente(f)) movs.push({ fecha: f, centavos: -centavos });
+  };
+  const quincenal = (f) => {
+    const [a, m, d] = f.split("-").map(Number);
+    if (d === 15) return fechaDe(a, m, ultimoDia(a, m));
+    return m === 12 ? fechaDe(a + 1, 1, 15) : fechaDe(a, m + 1, 15);
+  };
+  const mensual = (ancla) => (f) => {
+    const [a, m] = f.split("-").map(Number);
+    const [sa, sm] = m === 12 ? [a + 1, 1] : [a, m + 1];
+    return fechaDe(sa, sm, Math.min(ancla, ultimoDia(sa, sm)));
+  };
+  serie("2026-11-15", quincenal, 1_000_000); // Ana
+  serie("2026-11-15", quincenal, 800_000); // Beto
+  serie("2026-11-30", mensual(30), 2_000_000); // Carla
+  serie(desplazar(HOY, 14), mensual(Number(desplazar(HOY, 14).slice(8))), 3_000_000); // Renta
+  for (const cargo of Object.values(semillas.cargos)) if (cargo.estado !== "cancelado") movs.push({ fecha: cargo.programada, centavos: -cargo.total });
+  movs.push({ fecha: desplazar(HOY, 19), centavos: 6_000_000 }); // Cliente Mayorista; Distribuidora Sur ya venció
+  movs.push(...extras);
+  const semanas = [];
+  let saldoCorriente = saldo;
+  for (let i = 0; i < 13; i += 1) {
+    const lunes = desplazar(inicio, i * 7);
+    const domingo = desplazar(lunes, 6);
+    const dentro = movs.filter((m) => m.fecha > corte && m.fecha >= (i === 0 ? "0000-00-00" : lunes) && m.fecha <= domingo);
+    const entradas = dentro.filter((m) => m.centavos > 0).reduce((s, m) => s + m.centavos, 0);
+    const salidas = -dentro.filter((m) => m.centavos < 0).reduce((s, m) => s + m.centavos, 0);
+    const inicial = saldoCorriente;
+    saldoCorriente = inicial + entradas - salidas;
+    semanas.push({ semana: lunes, "saldo-inicial": inicial, entradas, salidas, "saldo-final": saldoCorriente });
+  }
+  return semanas;
+}
+
+function correosAnotados() {
+  return existsSync(CORREOS) ? readFileSync(CORREOS, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l)) : [];
+}
+
+async function cron(autorizacion) {
+  const respuesta = await fetch(`${BASE}/tareas/correo-semanal`, { headers: autorizacion ? { authorization: autorizacion } : {} });
+  return { estado: respuesta.status, cuerpo: await respuesta.json().catch(() => null) };
+}
+
+const debe = (flujo) => SOLO.length === 0 || SOLO.includes(flujo);
+let accionSaldo = null;
+
+async function principal() {
+  const navegador = await chromium.launch({ headless: true });
+  const { pagina: laura } = await abrir(navegador, "laura@lever.test");
+  // La solicitud de la acción del saldo, para repetirla a mano como contador en (j).
+  laura.on("request", (req) => {
+    if (req.method() === "POST" && req.headers()["next-action"] && req.url().includes("/consola/flujo") && !accionSaldo) {
+      accionSaldo = { url: req.url(), headers: req.headers(), cuerpo: req.postData() };
+    }
+  });
+
+  if (debe("a")) {
+    console.log("\n(a) Empresa nueva sin datos");
+    const { pagina: bruno } = await abrir(navegador, "bruno@lever.test");
+    await bruno.goto(en(B, "/consola"));
+    const saldo = bruno.locator('.flujo-saldo[data-estado="sin-saldo"]');
+    exigir(await saldo.isVisible(), "Bahía (sin datos): Inicio muestra el estado «Sin saldo declarado», no un saldo de $0.00");
+    exigir(!(await bruno.locator("body").textContent()).includes("Saldo en el libro"), "ya no aparece «Saldo en el libro»");
+    exigir((await bruno.locator('[data-cifra="alcance"]').innerText()) === "Sin saldo declarado", "«Cuánto alcanza el dinero» dice «Sin saldo declarado»");
+    exigir(!(await bruno.locator("body").textContent()).includes("Confirmado por el banco"), "a un cliente real no se le pinta «Confirmado por el banco»");
+    await captura(bruno, "a-empresa-sin-datos.jpg");
+    await saldo.getByRole("link", { name: "Declarar el saldo" }).click();
+    await bruno.waitForURL(/\/consola\/flujo#declarar$/);
+    exigir(await bruno.locator('form[data-formulario="saldo"]').isVisible(), "«Declarar el saldo» lleva al formulario de Saldo y alertas");
+  }
+
+  if (debe("b")) {
+    console.log("\n(b) Saldo declarado e historial");
+    await laura.goto(en(A, "/consola"));
+    await laura.locator(".flujo-saldo").getByRole("link", { name: "Declarar el saldo" }).click();
+    await laura.waitForURL(/\/consola\/flujo#declarar$/);
+    const forma = laura.locator('form[data-formulario="saldo"]');
+    await forma.locator("#saldo").fill("120000.00");
+    await forma.locator("#alDia").fill(desplazar(HOY, -1));
+    exigir(await enviar(forma, "Declarar el saldo"), "primera declaración: $120,000.00 al día anterior, asentada");
+    await forma.locator("#saldo").fill("150000.00");
+    await forma.locator("#alDia").fill(HOY);
+    exigir(await enviar(forma, "Declarar el saldo"), "segunda declaración: $150,000.00 al día de hoy, asentada");
+    await laura.reload();
+    const historial = await laura.locator('table[data-tabla="historial-saldo"] td[data-centavos]').evaluateAll((c) => c.map((td) => Number(td.getAttribute("data-centavos"))));
+    exigir(JSON.stringify(historial) === JSON.stringify([15_000_000, 12_000_000]), `el historial conserva las dos: ${historial.map(pesos).join(" y ")}`);
+    exigir(sql(`select count(*) from cash_balance_declarations where company_id = '${A}'`) === "2", "la base tiene 2 declaraciones (append-only)");
+    exigir(sql(`select count(*) from audit_log where company_id = '${A}' and accion = 'declarar_saldo'`) === "2", "y 2 eventos declarar_saldo en la bitácora");
+    await captura(laura, "b-saldo-historial.jpg");
+    await laura.goto(en(A, "/consola"));
+    const hero = laura.locator('.flujo-saldo[data-estado="declarado"]');
+    const textoHero = await hero.textContent();
+    exigir(textoHero.includes("Declarado por tu empresa") && textoHero.includes("$150,000.00"), "Inicio muestra $150,000.00 con «Declarado por tu empresa»");
+    exigir(/Al \d+ de noviembre de 2026 · declarado por Laura Méndez el/.test(textoHero), "con fecha y autor: «Al … · declarado por Laura Méndez el …»");
+    exigir(textoHero.includes("No es un saldo confirmado por el banco."), "y aclara que no es un saldo confirmado por el banco");
+  }
+
+  if (debe("c")) {
+    console.log("\n(c) Proyección de 13 semanas contra el cálculo a mano");
+    await laura.goto(en(A, "/consola"));
+    const tabla = await tablaProyeccion(laura);
+    const esperado = proyeccionAMano(15_000_000, HOY);
+    exigir(tabla.length === 13, "13 semanas de lunes a domingo");
+    for (let i = 0; i < 13; i += 1) {
+      const t = tabla[i];
+      const e = esperado[i];
+      exigir(
+        t.semana === e.semana && t["saldo-inicial"] === e["saldo-inicial"] && t.entradas === e.entradas && t.salidas === e.salidas && t["saldo-final"] === e["saldo-final"],
+        `semana del ${e.semana}: inicial ${pesos(e["saldo-inicial"])}, entra ${pesos(e.entradas)}, sale ${pesos(e.salidas)}, final ${pesos(e["saldo-final"])}`,
+      );
+    }
+    const movimientos = await laura.locator(".flujo-movimientos").innerText();
+    exigir(!movimientos.includes("TN-498"), "el cargo cancelado TN-498 ($40,000.00) no cuenta");
+    exigir(!movimientos.includes("Distribuidora Sur"), "el cobro vencido de Distribuidora Sur no entra en la proyección");
+    await captura(laura, "c-proyeccion-13-semanas.jpg");
+  }
+
+  if (debe("d")) {
+    console.log("\n(d) Alerta de faltante");
+    await laura.goto(en(A, "/consola"));
+    const esperado = proyeccionAMano(15_000_000, HOY);
+    const primera = esperado.find((s) => s["saldo-final"] < 0);
+    const alerta = laura.locator('[data-alerta="faltante"]');
+    const titulo = await alerta.innerText();
+    exigir(titulo.includes("Faltante: el saldo queda en negativo") && (await laura.locator(`tr[data-semana="${primera.semana}"] .insignia`).innerText()) === "Faltante",
+      `la alerta marca la semana del ${primera.semana} (primera con saldo final negativo: ${pesos(primera["saldo-final"])})`);
+    exigir(titulo.includes("Lo provoca:"), `y dice qué la provoca: «${titulo.split("Lo provoca:")[1]?.trim().slice(0, 90)}…»`);
+    await captura(laura, "d1-faltante.jpg", false);
+
+    await laura.goto(en(A, "/consola/cobros"));
+    const cobro = laura.locator('form[data-formulario="cobro"]');
+    await cobro.locator("#clienteNombre").fill("Cliente Mayorista");
+    await cobro.locator("#concepto").fill("Anticipo de diciembre");
+    await cobro.locator("#monto").fill("150000.00");
+    await cobro.locator("#fechaProbable").fill(desplazar(lunesDe(HOY), 6 * 7 + 3));
+    exigir(await enviar(cobro, "Registrar el cobro"), "se registra un cobro esperado de $150,000.00 antes del faltante");
+    await laura.goto(en(A, "/consola"));
+    exigir((await laura.locator('[data-alerta="faltante"]').count()) === 0, "la alerta de faltante desaparece");
+    await captura(laura, "d2-sin-faltante.jpg", false);
+
+    await laura.goto(en(A, "/consola/cobros"));
+    const fila = laura.locator('tr[data-cobro]', { hasText: "Anticipo de diciembre" });
+    await fila.getByRole("button", { name: "Cancelar" }).click();
+    const dialogo = laura.locator("dialog.dialogo[open]");
+    await dialogo.locator('input[name="motivo"]').fill("El cliente pospuso el anticipo");
+    await clicConAccion(laura, () => dialogo.getByRole("button", { name: "Cancelar el cobro" }).click());
+    await laura.locator(".alerta-asentado", { hasText: "cancelado con su motivo" }).waitFor();
+    exigir(sql(`select estado || '|' || motivo_cancelacion from expected_collections where concepto = 'Anticipo de diciembre'`) === "cancelado|El cliente pospuso el anticipo", "se cancela el cobro con su motivo");
+    await laura.goto(en(A, "/consola"));
+    exigir((await laura.locator(`tr[data-semana="${primera.semana}"] .insignia`).innerText()) === "Faltante", "y la alerta regresa a la misma semana");
+
+    await laura.goto(en(A, "/consola/flujo"));
+    const colchon = laura.locator('form[data-formulario="colchon"]');
+    await colchon.locator("#colchon").fill("30000.00");
+    exigir(await enviar(colchon, "Guardar el colchón"), "se guarda un colchón de $30,000.00");
+    await laura.goto(en(A, "/consola"));
+    const bajo = esperado.find((s) => s["saldo-final"] < 3_000_000);
+    const tituloColchon = await laura.locator('[data-alerta="faltante"]').innerText();
+    exigir(tituloColchon.includes("El saldo baja del colchón") && (await laura.locator(`tr[data-semana="${bajo.semana}"] .insignia`).innerText()) === "Faltante",
+      `con colchón la alerta se adelanta a la semana del ${bajo.semana} (${pesos(bajo["saldo-final"])} < $30,000.00)`);
+    await captura(laura, "d3-faltante-colchon.jpg", false);
+  }
+
+  if (debe("h")) {
+    console.log("\n(h) Escenario «¿y si muevo este pago?»");
+    const cargo = semillas.cargos["TN-501"];
+    const antes = sql(`select programada_el from supplier_payables where id = '${cargo.id}'`);
+    const bitacora = sql(`select count(*) from audit_log where company_id = '${A}'`);
+    await laura.goto(en(A, "/consola"));
+    const real = await tablaProyeccion(laura);
+    const nueva = desplazar(cargo.programada, 7);
+    await laura.locator("#mover").selectOption(`cxp:${cargo.id}`);
+    await laura.locator("#fecha-escenario").fill(nueva);
+    await laura.getByRole("button", { name: "Ver el escenario" }).click();
+    await laura.locator('[data-escenario="activo"]').waitFor();
+    const movido = await tablaProyeccion(laura);
+    const iOrigen = real.findIndex((s) => s.semana === lunesDe(cargo.programada));
+    exigir(movido[iOrigen].salidas === real[iOrigen].salidas - cargo.total && movido[iOrigen + 1].salidas === real[iOrigen + 1].salidas + cargo.total,
+      `mover TN-501 (${pesos(cargo.total)}) a la semana siguiente baja las salidas de la semana del ${real[iOrigen].semana} y sube las de la siguiente`);
+    exigir(movido.at(-1)["saldo-final"] === real.at(-1)["saldo-final"], "el saldo al final de las 13 semanas no cambia (solo se mueve de semana)");
+    exigir(sql(`select programada_el from supplier_payables where id = '${cargo.id}'`) === antes, `en la base programada_el sigue en ${antes}`);
+    exigir(sql(`select count(*) from audit_log where company_id = '${A}'`) === bitacora, "y la bitácora no tiene eventos nuevos: el escenario no escribe");
+    await captura(laura, "h-escenario.jpg");
+    await laura.getByRole("link", { name: "Quitar el escenario" }).click();
+    await laura.waitForURL((url) => !url.search.includes("mover"));
+    exigir((await laura.locator('[data-escenario="activo"]').count()) === 0, "«Quitar el escenario» regresa a la proyección real");
+  }
+
+  if (debe("e")) {
+    console.log("\n(e) Cobros esperados");
+    await laura.goto(en(A, "/consola/cobros"));
+    exigir((await laura.locator('tr[data-cobro][data-estado="vencido"]', { hasText: "Distribuidora Sur" }).count()) === 1, "el cobro con fecha pasada (Distribuidora Sur) aparece vencido");
+    const cobro = laura.locator('form[data-formulario="cobro"]');
+    await cobro.locator("#clienteNombre").fill("Abarrotes del Puerto");
+    await cobro.locator("#clienteRfc").fill("APU150101AB1");
+    await cobro.locator("#concepto").fill("Fletes de noviembre");
+    await cobro.locator("#monto").fill("22500.50");
+    await cobro.locator("#fechaProbable").fill(desplazar(HOY, 10));
+    await cobro.locator("#referencia").fill("F-1040");
+    exigir(await enviar(cobro, "Registrar el cobro"), "alta manual: Abarrotes del Puerto por $22,500.50");
+
+    const uuid = randomUUID().toUpperCase();
+    const xml = (emisor) => `<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital" Version="4.0" Fecha="${HOY}T10:00:00" TipoDeComprobante="I" Moneda="MXN" Total="45000.00" Serie="F" Folio="1041">
+  <cfdi:Emisor Rfc="${emisor}" Nombre="Altamar Logística" RegimenFiscal="601" />
+  <cfdi:Receptor Rfc="CLM120101AB2" Nombre="Comercializadora La Moderna" DomicilioFiscalReceptor="06600" RegimenFiscalReceptor="601" UsoCFDI="G03" />
+  <cfdi:Complemento><tfd:TimbreFiscalDigital UUID="${uuid}" /></cfdi:Complemento>
+</cfdi:Comprobante>`;
+    writeFileSync(join(TEMPORAL, "emitida.xml"), xml("ALO180312AB1"));
+    writeFileSync(join(TEMPORAL, "ajena.xml"), xml("XAX010101000"));
+    const conXml = laura.locator('form[data-formulario="cobro-xml"]');
+    await conXml.locator("#xml").setInputFiles(join(TEMPORAL, "ajena.xml"));
+    await conXml.locator("#fechaProbableXml").fill(desplazar(HOY, 12));
+    exigir(!(await enviar(conXml, "Registrar con el XML")), "una factura con RFC emisor ajeno se rechaza");
+    const rechazo = await conXml.locator(".alerta-revisar").innerText();
+    exigir(rechazo.includes("XAX010101000") && rechazo.includes("ALO180312AB1"), `con un mensaje claro: «${rechazo.replace(/\s+/g, " ").trim()}»`);
+    await captura(laura, "e1-xml-ajeno-rechazado.jpg", false);
+    await conXml.locator("#xml").setInputFiles(join(TEMPORAL, "emitida.xml"));
+    exigir(await enviar(conXml, "Registrar con el XML"), "la factura emitida por Altamar se registra como cobro esperado");
+    exigir(sql(`select origen || '|' || cliente_nombre || '|' || monto_centavos || '|' || cfdi_uuid from expected_collections where cfdi_uuid = '${uuid}'`) === `cfdi|Comercializadora La Moderna|4500000|${uuid}`,
+      "con origen cfdi, el cliente receptor, $45,000.00 y su UUID");
+
+    await laura.reload();
+    const abarrotes = laura.locator("tr[data-cobro]", { hasText: "Abarrotes del Puerto" });
+    await abarrotes.getByRole("button", { name: "Marcar cobrado" }).click();
+    const dialogo = laura.locator("dialog.dialogo[open]");
+    await dialogo.locator('input[name="cobradoEl"]').fill(HOY);
+    await clicConAccion(laura, () => dialogo.getByRole("button", { name: "Marcar cobrado" }).click());
+    await laura.locator(".alerta-asentado", { hasText: "marcado como cobrado" }).waitFor();
+    exigir(sql(`select estado || '|' || cobrado_el from expected_collections where cliente_nombre = 'Abarrotes del Puerto'`) === `cobrado|${HOY}`, "marcar cobrado guarda la fecha real");
+    // Desde el filtro «Esperados» la fila sale de la lista al cancelarse: el aviso tiene que quedarse.
+    await laura.getByRole("link", { name: "Esperados" }).click();
+    await laura.waitForURL(/estado=esperado/);
+    const moderna = laura.locator("tr[data-cobro]", { hasText: "Comercializadora La Moderna" });
+    await moderna.getByRole("button", { name: "Cancelar" }).click();
+    await laura.locator("dialog.dialogo[open]").locator('input[name="motivo"]').fill("Factura sustituida por otra");
+    await clicConAccion(laura, () => laura.locator("dialog.dialogo[open]").getByRole("button", { name: "Cancelar el cobro" }).click());
+    await laura.locator(".alerta-asentado", { hasText: "cancelado con su motivo" }).waitFor();
+    exigir(sql(`select estado from expected_collections where cfdi_uuid = '${uuid}'`) === "cancelado", "cancelar con motivo deja el cobro cancelado");
+    exigir((await moderna.count()) === 0 && (await laura.locator(".alerta-asentado", { hasText: "cancelado con su motivo" }).isVisible()),
+      "en «Esperados» la fila sale de la lista y el aviso «quedó asentado» se queda a la vista");
+
+    await laura.goto(en(A, "/consola/cobros?estado=vencido"));
+    const vencidos = await laura.locator("tr[data-cobro]").evaluateAll((f) => f.map((x) => x.getAttribute("data-estado")));
+    exigir(vencidos.length === 1 && vencidos[0] === "vencido", "el filtro «Vencidos» muestra solo el vencido");
+    await laura.goto(en(A, "/consola/cobros?estado=cobrado"));
+    exigir((await laura.locator("tr[data-cobro]").count()) === 1, "el filtro «Cobrados» muestra el cobrado");
+    await laura.goto(en(A, "/consola/cobros?vence=7"));
+    const enSiete = await laura.locator("tr[data-cobro]").allInnerTexts();
+    exigir(enSiete.every((t) => !t.includes("Cliente Mayorista")), "el filtro «Próximos 7 días» deja fuera el cobro del día 25");
+    await laura.goto(en(A, "/consola/cobros"));
+    const porCobrar = Number(await laura.locator('[data-cifra="por-cobrar"]').getAttribute("data-centavos"));
+    exigir(porCobrar === 6_000_000 + 1_800_000, `total por cobrar ${pesos(porCobrar)} (esperados vigentes y vencidos, sin cobrados ni cancelados)`);
+    await captura(laura, "e2-cobros.jpg");
+  }
+
+  if (debe("f")) {
+    console.log("\n(f) Calendario");
+    await laura.goto(en(A, "/consola/calendario"));
+    for (const [tipo, nombre] of [["nomina", "nómina"], ["proveedor", "pago a proveedor"], ["cobro", "cobro"], ["obligacion", "renta"]]) {
+      const evento = laura.locator(`.flujo-mes button.flujo-evento[data-tipo="${tipo}"]`).first();
+      exigir(await evento.isVisible(), `el mes muestra ${nombre}`);
+      await evento.click();
+      const panel = laura.locator("dialog.panel-detalle[open]");
+      await panel.locator("[data-detalle]").waitFor();
+      const detalle = await panel.innerText();
+      exigir(detalle.includes("Comprometido") && /\$[\d,]+\.\d\d/.test(detalle), `al clicar ${nombre} se abre su detalle con origen y monto`);
+      if (tipo === "nomina") await captura(laura, "f1-detalle-nomina.jpg", false);
+      await panel.getByRole("button").first().click();
+      await laura.locator("dialog.panel-detalle[open]").waitFor({ state: "detached" }).catch(() => {});
+    }
+    const renta = laura.locator('.flujo-mes button.flujo-evento[data-tipo="obligacion"]', { hasText: "Renta" });
+    exigir(await renta.count() >= 1, "la renta aparece el día 20");
+    exigir((await laura.locator('.flujo-mes button.flujo-evento[data-vencido="true"]', { hasText: "Distribuidora" }).count()) === 1, "el cobro vencido sale marcado como vencido");
+
+    const nueva = laura.locator('form[data-formulario="obligacion"]');
+    await nueva.getByRole("button", { name: "Usar la plantilla «Impuestos provisionales (día 17)»" }).click();
+    const plantilla = laura.locator('form[data-formulario="obligacion"]');
+    exigir((await plantilla.locator('input[name="concepto"]').inputValue()) === "Impuestos provisionales", "la plantilla llena «Impuestos provisionales»");
+    const fecha17 = await plantilla.locator('input[name="proximaFecha"]').inputValue();
+    exigir(fecha17.endsWith("-17") && fecha17 >= HOY, `con el siguiente día 17 (${fecha17}) y frecuencia mensual`);
+    await plantilla.locator('input[name="monto"]').fill("18500.00");
+    exigir(await enviar(plantilla, "Registrar la obligación"), "se registra la obligación de impuestos");
+    await laura.reload();
+    const impuestos = laura.locator("li[data-obligacion]", { hasText: "Impuestos provisionales" });
+    await impuestos.locator("summary").click();
+    const editar = impuestos.locator('form[data-formulario="editar-obligacion"]');
+    await editar.locator('input[name="monto"]').fill("19250.00");
+    exigir(await enviar(editar, "Guardar los cambios"), "se edita el monto a $19,250.00");
+    exigir(sql(`select monto_centavos from recurring_obligations where concepto = 'Impuestos provisionales'`) === "1925000", "la base guarda el monto nuevo");
+    await laura.reload();
+    exigir((await laura.locator('.flujo-mes button.flujo-evento[data-tipo="obligacion"]', { hasText: "Impuestos" }).count()) >= 1 || fecha17.slice(0, 7) !== HOY.slice(0, 7),
+      "los impuestos aparecen en el calendario del mes de su día 17");
+    await captura(laura, "f2-calendario.jpg");
+    await laura.getByRole("link", { name: "Mes siguiente →" }).click();
+    await laura.waitForURL(/mes=/);
+    exigir((await laura.locator(".flujo-mes button.flujo-evento").count()) > 0, "«Mes siguiente →» muestra diciembre con sus fechas");
+    await laura.goto(en(A, "/consola/calendario"));
+    const fila = laura.locator("li[data-obligacion]", { hasText: "Impuestos provisionales" });
+    await fila.getByRole("button", { name: "Desactivar" }).click();
+    await clicConAccion(laura, () => laura.locator("dialog.dialogo[open]").getByRole("button", { name: "Desactivar" }).click());
+    await laura.locator(".alerta-asentado", { hasText: "se desactivó" }).waitFor();
+    exigir(sql(`select activa from recurring_obligations where concepto = 'Impuestos provisionales'`) === "f", "«Desactivar» la saca del calendario y de la proyección (activa = false)");
+  }
+
+  if (debe("g")) {
+    console.log("\n(g) Presupuestos");
+    const { operacion, ventas } = semillas.areas;
+    await laura.goto(en(A, "/consola/presupuestos"));
+    const op = laura.locator(`[data-presupuesto="${operacion}"]`);
+    const ve = laura.locator(`[data-presupuesto="${ventas}"]`);
+    const gastoOp = Number(await op.locator('[data-cifra="gasto"]').getAttribute("data-centavos"));
+    const gastoVe = Number(await ve.locator('[data-cifra="gasto"]').getAttribute("data-centavos"));
+    exigir(gastoOp === 3_600_000 + 2_500_000 + 3_000_000, `Operación: nómina prorrateada $36,000.00 + Transportes del Norte $25,000.00 + renta $30,000.00 = ${pesos(gastoOp)} de $90,000.00`);
+    exigir((await op.getAttribute("data-estado")) === "excedido", "Operación (101 %) aparece excedido");
+    exigir(gastoVe === 2_000_000 + 1_500_000, `Ventas: nómina $20,000.00 + Publicidad Creativa $15,000.00 = ${pesos(gastoVe)} de $40,000.00`);
+    exigir((await ve.getAttribute("data-estado")) === "atencion", "Ventas (87.5 %) aparece en atención");
+    await captura(laura, "g1-presupuestos.jpg");
+    await laura.goto(en(A, "/consola"));
+    const alerta = await laura.locator('[data-alerta="presupuesto"]').innerText();
+    exigir(alerta.includes("Operación") && alerta.includes("Ventas"), "Inicio avisa de los dos presupuestos");
+    await laura.goto(en(A, "/consola/pendientes"));
+    const pendientes = await laura.locator("body").innerText();
+    exigir(pendientes.includes("El presupuesto del área Operación está excedido") && pendientes.includes("El presupuesto del área Ventas está por agotarse"), "Pendientes también");
+    await captura(laura, "g2-pendientes.jpg", false);
+
+    await laura.goto(en(A, "/consola/presupuestos"));
+    const papeleria = laura.locator("form.flujo-area-proveedor", { hasText: "Papelería Central" });
+    await papeleria.locator("select").selectOption(ventas);
+    exigir(await enviar(papeleria, "Guardar"), "a Papelería Central se le asigna el área Ventas");
+    await laura.reload();
+    const gastoVe2 = Number(await laura.locator(`[data-presupuesto="${ventas}"] [data-cifra="gasto"]`).getAttribute("data-centavos"));
+    exigir(gastoVe2 === gastoVe + 1_200_000 && (await laura.locator(`[data-presupuesto="${ventas}"]`).getAttribute("data-estado")) === "excedido",
+      `su cargo PA-12 ($12,000.00) entra al presupuesto de Ventas: ${pesos(gastoVe2)}, excedido`);
+    exigir(sql(`select count(*) from audit_log where company_id = '${A}' and accion = 'asignar_area_proveedor' and cambio->>'area_nueva' = 'Ventas'`) === "1", "con su evento asignar_area_proveedor (área por nombre)");
+
+    await laura.goto(en(A, "/consola/proveedores/nuevo-proveedor"));
+    await laura.getByLabel("RFC", { exact: true }).fill("MDE040404AB7");
+    await laura.getByLabel("Razón social", { exact: true }).fill("Mensajería del Este");
+    await laura.getByLabel("CLABE", { exact: true }).fill("002180701150123452");
+    await laura.locator("#constancia").setInputFiles(PDF);
+    await laura.locator("#areaId").selectOption({ label: "Operación" });
+    await laura.getByRole("button", { name: "Dar de alta" }).click();
+    await laura.getByText("Quedó asentado", { exact: true }).waitFor();
+    exigir(sql(`select cost_center_id from suppliers where rfc = 'MDE040404AB7'`) === operacion, "el alta de proveedor guarda el área opcional (Operación)");
+    await captura(laura, "g3-alta-proveedor-area.jpg", false);
+  }
+
+  if (debe("i")) {
+    console.log("\n(i) Correo semanal");
+    // Laura apaga y vuelve a encender su resumen; Diego (contador) lo enciende para él.
+    await laura.goto(en(A, "/consola/flujo"));
+    const correo = laura.locator('form[data-formulario="correo"]');
+    exigir(await enviar(correo, "Dejar de recibirlo"), "Laura deja de recibir el resumen");
+    await laura.reload();
+    exigir(await enviar(laura.locator('form[data-formulario="correo"]'), "Recibirlo los lunes"), "y lo vuelve a encender");
+    const { pagina: diego } = await abrir(navegador, "diego@lever.test");
+    await diego.goto(en(A, "/consola/flujo"));
+    exigir(await enviar(diego.locator('form[data-formulario="correo"]'), "Recibirlo los lunes"), "Diego (contador) lo enciende para sí");
+
+    const sin = await cron(null);
+    exigir(sin.estado === 401, `GET /tareas/correo-semanal sin secreto: ${sin.estado}`);
+    const otro = await cron("Bearer otro-secreto");
+    exigir(otro.estado === 401, `con otro secreto: ${otro.estado}`);
+    const antes = correosAnotados().length;
+    const primera = await cron(`Bearer ${SECRETO}`);
+    exigir(primera.estado === 200, `con el secreto: 200 ${JSON.stringify(primera.cuerpo)}`);
+    const correos = correosAnotados().slice(antes);
+    const para = correos.map((c) => c.para[0]).sort();
+    exigir(JSON.stringify(para) === JSON.stringify(["bruno@lever.test", "diana@lever.test", "diego@lever.test", "laura@lever.test"]),
+      `el proveedor falso registra ${correos.length} correos: ${para.join(", ")}`);
+    const segunda = await cron(`Bearer ${SECRETO}`);
+    exigir(segunda.estado === 200 && segunda.cuerpo.enviados === 0 && segunda.cuerpo.omitidos === primera.cuerpo.empresas, `la segunda llamada de la semana no manda nada: ${JSON.stringify(segunda.cuerpo)}`);
+    exigir(correosAnotados().length === antes + correos.length, "el proveedor falso no tiene correos nuevos");
+    exigir(sql(`select count(*) from weekly_digest_sends where semana = '${lunesDe(HOY)}' and estado = 'enviado'`) === String(primera.cuerpo.empresas), "un envío por empresa y semana, enviado");
+    const deA = correos.filter((c) => c.para[0] === "laura@lever.test")[0];
+    const deB = correos.filter((c) => c.para[0] === "bruno@lever.test")[0];
+    exigir(deA.texto.includes("Altamar") && deA.texto.includes("$150,000.00") && deA.texto.includes("Declarado por tu empresa") === false && deA.texto.includes("Saldo declarado por tu empresa"), "el de Altamar trae su saldo declarado ($150,000.00) con su origen");
+    for (const ajeno of ["Altamar", "Transportes", "Renta de la bodega", "150,000", "Mayorista", "Operación"]) {
+      exigir(!deB.html.includes(ajeno) && !deB.texto.includes(ajeno), `el correo de Bahía no trae «${ajeno}» de Altamar`);
+    }
+    exigir(!deA.texto.includes("Bahía") && !deA.texto.includes("Confirmado por el banco"), "ni el de Altamar trae datos de Bahía ni dice «Confirmado por el banco»");
+    writeFileSync(join(TEMPORAL, "correo-altamar.html"), deA.html);
+    const vista = await navegador.newPage({ viewport: { width: 720, height: 900 } });
+    await vista.goto(`file://${join(TEMPORAL, "correo-altamar.html")}`);
+    await captura(vista, "i-correo-semanal.jpg");
+    await vista.close();
+  }
+
+  if (debe("j")) {
+    console.log("\n(j) Permisos");
+    const { pagina: diego } = await abrir(navegador, "diego@lever.test");
+    for (const ruta of ["/consola", "/consola/flujo", "/consola/cobros", "/consola/calendario", "/consola/presupuestos"]) {
+      const r = await diego.goto(en(A, ruta));
+      exigir(r.status() === 200, `el contador abre ${ruta} (${r.status()})`);
+    }
+    await diego.goto(en(A, "/consola/flujo"));
+    exigir((await diego.locator('form[data-formulario="saldo"], form[data-formulario="colchon"]').count()) === 0, "no ve los formularios de saldo ni colchón");
+    await diego.goto(en(A, "/consola/cobros"));
+    exigir((await diego.locator('form[data-formulario="cobro"], form[data-formulario="cobro-xml"]').count()) === 0 && (await diego.getByRole("button", { name: "Marcar cobrado" }).count()) === 0, "ni el alta de cobros ni «Marcar cobrado»");
+    await diego.goto(en(A, "/consola/presupuestos"));
+    exigir((await diego.locator("form.flujo-area-proveedor").count()) === 0, "ni el área de cada proveedor");
+    await captura(diego, "j1-contador-solo-lectura.jpg", false);
+
+    if (!accionSaldo) throw new Error("FALLO no se capturó la acción del saldo en (b)");
+    await diego.goto(en(A, "/consola/flujo"));
+    const antes = sql(`select count(*) from cash_balance_declarations where company_id = '${A}'`);
+    const { url, headers, cuerpo } = accionSaldo;
+    const encabezados = Object.fromEntries(Object.entries(headers).filter(([k]) => ["next-action", "content-type", "accept", "next-router-state-tree"].includes(k)));
+    const respuesta = await diego.evaluate(async ({ url: u, encabezados: h, cuerpo: c }) => {
+      const r = await fetch(u, { method: "POST", headers: h, body: c });
+      return { estado: r.status, texto: await r.text() };
+    }, { url, encabezados, cuerpo });
+    exigir(respuesta.texto.includes("Sin permiso para cambiar el flujo"), "el formulario del saldo enviado a mano por el contador: el servidor responde «Sin permiso para cambiar el flujo»");
+    exigir(sql(`select count(*) from cash_balance_declarations where company_id = '${A}'`) === antes, "y la base no cambia");
+
+    const { pagina: ernesto } = await abrir(navegador, "ernesto@lever.test");
+    for (const ruta of ["/consola/flujo", "/consola/cobros", "/consola/calendario", "/consola/presupuestos"]) {
+      rutas404.add(en(A, ruta).replace(BASE, ""));
+      const r = await ernesto.goto(en(A, ruta));
+      exigir(r.status() === 404, `un empleado sin la capacidad (tarjetahabiente) no ve ${ruta}: ${r.status()}`);
+    }
+    await captura(ernesto, "j2-empleado-404.jpg", false);
+    for (const ruta of ["/consola/flujo", "/consola/cobros"]) {
+      rutas404.add(en(B, ruta).replace(BASE, ""));
+      const r = await laura.goto(en(B, ruta));
+      exigir(r.status() === 404, `Laura (Altamar) en ${ruta} de Bahía: ${r.status()}`);
+    }
+    const { pagina: bruno } = await abrir(navegador, "bruno@lever.test");
+    const r = await bruno.goto(en(A, "/consola/presupuestos"));
+    exigir(r.status() === 404, `Bruno (Bahía) en Presupuestos de Altamar: ${r.status()}`);
+
+    const { pagina: diana } = await abrir(navegador, "diana@lever.test");
+    await diana.goto(en(C, "/consola"));
+    const libro = diana.locator('[data-libro="demostracion"]');
+    exigir(await libro.isVisible() && (await libro.textContent()).includes("Confirmado por el banco · demostración"), "en la empresa de demostración el libro sale marcado «Confirmado por el banco · demostración»");
+    await captura(diana, "j3-demostracion-libro.jpg");
+    await laura.goto(en(A, "/consola"));
+    exigir((await laura.locator('[data-libro="demostracion"]').count()) === 0 && !(await laura.locator("body").textContent()).includes("Confirmado por el banco"), "en Altamar (cliente real) nunca");
+  }
+
+  if (debe("k")) {
+    console.log("\n(k) Capturas en 3 temas × 1440 y 390");
+    for (const tema of ["claro", "oscuro", "lever"]) {
+      for (const [ancho, alto] of [[1440, 900], [390, 844]]) {
+        const { ctx, pagina } = await abrir(navegador, "laura@lever.test", { tema, ancho, alto });
+        for (const [nombre, ruta] of [["inicio", "/consola"], ["cobros", "/consola/cobros"], ["calendario", "/consola/calendario"], ["presupuestos", "/consola/presupuestos"]]) {
+          const r = await pagina.goto(en(A, ruta));
+          exigir(r.status() === 200, `${nombre} ${tema} ${ancho}: 200`);
+          const desborde = await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+          exigir(desborde <= 0, `${nombre} ${tema} ${ancho}: sin desplazamiento horizontal`);
+          await captura(pagina, `k-${nombre}-${tema}-${ancho}.jpg`);
+        }
+        await ctx.close();
+      }
+    }
+  }
+
+  await navegador.close();
+  console.log(`\n${comprobaciones} comprobaciones`);
+  console.log(consola.length === 0 ? "Consola del navegador: sin errores ni advertencias de la aplicación" : `Consola del navegador (${consola.length}):\n${consola.join("\n")}`);
+  console.log(`Avisos «GL Driver Message» del fondo WebGL (fuera de zona): ${avisosWebgl}`);
+  console.log(`Mensajes esperados en las páginas 404 de (j) (el 404 del documento y la precarga de estilos sin usar): ${cuatrocientos}`);
+  console.log("VALIDACION_FUNCIONAL_OK");
+}
+
+principal().catch((error) => {
+  console.error(error.message);
+  if (consola.length > 0) console.error(`Consola del navegador:\n${consola.join("\n")}`);
+  process.exit(1);
+});

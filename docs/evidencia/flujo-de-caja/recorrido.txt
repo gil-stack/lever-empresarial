@@ -1,0 +1,238 @@
+
+(a) Empresa nueva sin datos
+OK Bahía (sin datos): Inicio muestra el estado «Sin saldo declarado», no un saldo de $0.00
+OK ya no aparece «Saldo en el libro»
+OK «Cuánto alcanza el dinero» dice «Sin saldo declarado»
+OK a un cliente real no se le pinta «Confirmado por el banco»
+OK captura a-empresa-sin-datos.jpg
+OK «Declarar el saldo» lleva al formulario de Saldo y alertas
+
+(b) Saldo declarado e historial
+OK primera declaración: $120,000.00 al día anterior, asentada
+OK segunda declaración: $150,000.00 al día de hoy, asentada
+OK el historial conserva las dos: $150,000.00 y $120,000.00
+OK la base tiene 2 declaraciones (append-only)
+OK y 2 eventos declarar_saldo en la bitácora
+OK captura b-saldo-historial.jpg
+OK Inicio muestra $150,000.00 con «Declarado por tu empresa»
+OK con fecha y autor: «Al … · declarado por Laura Méndez el …»
+OK y aclara que no es un saldo confirmado por el banco
+
+(c) Proyección de 13 semanas contra el cálculo a mano
+OK 13 semanas de lunes a domingo
+OK semana del 2026-11-02: inicial $150,000.00, entra $0.00, sale $0.00, final $150,000.00
+OK semana del 2026-11-09: inicial $150,000.00, entra $0.00, sale $55,000.00, final $95,000.00
+OK semana del 2026-11-16: inicial $95,000.00, entra $0.00, sale $45,000.00, final $50,000.00
+OK semana del 2026-11-23: inicial $50,000.00, entra $60,000.00, sale $0.00, final $110,000.00
+OK semana del 2026-11-30: inicial $110,000.00, entra $0.00, sale $38,000.00, final $72,000.00
+OK semana del 2026-12-07: inicial $72,000.00, entra $0.00, sale $0.00, final $72,000.00
+OK semana del 2026-12-14: inicial $72,000.00, entra $0.00, sale $48,000.00, final $24,000.00
+OK semana del 2026-12-21: inicial $24,000.00, entra $0.00, sale $0.00, final $24,000.00
+OK semana del 2026-12-28: inicial $24,000.00, entra $0.00, sale $38,000.00, final $-14,000.00
+OK semana del 2027-01-04: inicial $-14,000.00, entra $0.00, sale $0.00, final $-14,000.00
+OK semana del 2027-01-11: inicial $-14,000.00, entra $0.00, sale $18,000.00, final $-32,000.00
+OK semana del 2027-01-18: inicial $-32,000.00, entra $0.00, sale $30,000.00, final $-62,000.00
+OK semana del 2027-01-25: inicial $-62,000.00, entra $0.00, sale $38,000.00, final $-100,000.00
+OK el cargo cancelado TN-498 ($40,000.00) no cuenta
+OK el cobro vencido de Distribuidora Sur no entra en la proyección
+OK captura c-proyeccion-13-semanas.jpg
+
+(d) Alerta de faltante
+OK la alerta marca la semana del 2026-12-28 (primera con saldo final negativo: $-14,000.00)
+OK y dice qué la provoca: «Nómina mensual (1 persona) ($20,000.00), Nómina quincenal (2 personas) ($18,000.00).…»
+OK captura d1-faltante.jpg
+OK se registra un cobro esperado de $150,000.00 antes del faltante
+OK la alerta de faltante desaparece
+OK captura d2-sin-faltante.jpg
+OK se cancela el cobro con su motivo
+OK y la alerta regresa a la misma semana
+OK se guarda un colchón de $30,000.00
+OK con colchón la alerta se adelanta a la semana del 2026-12-14 ($24,000.00 < $30,000.00)
+OK captura d3-faltante-colchon.jpg
+
+(h) Escenario «¿y si muevo este pago?»
+OK mover TN-501 ($25,000.00) a la semana siguiente baja las salidas de la semana del 2026-11-09 y sube las de la siguiente
+OK el saldo al final de las 13 semanas no cambia (solo se mueve de semana)
+OK en la base programada_el sigue en 2026-11-12
+OK y la bitácora no tiene eventos nuevos: el escenario no escribe
+OK captura h-escenario.jpg
+OK «Quitar el escenario» regresa a la proyección real
+
+(e) Cobros esperados
+OK el cobro con fecha pasada (Distribuidora Sur) aparece vencido
+OK alta manual: Abarrotes del Puerto por $22,500.50
+OK una factura con RFC emisor ajeno se rechaza
+OK con un mensaje claro: «Revisa antes de continuar Esta factura la emitió el RFC XAX010101000, no ALO180312AB1. Solo se registran facturas que emitió Altamar Logística.»
+OK captura e1-xml-ajeno-rechazado.jpg
+OK la factura emitida por Altamar se registra como cobro esperado
+OK con origen cfdi, el cliente receptor, $45,000.00 y su UUID
+OK marcar cobrado guarda la fecha real
+OK cancelar con motivo deja el cobro cancelado
+OK en «Esperados» la fila sale de la lista y el aviso «quedó asentado» se queda a la vista
+OK el filtro «Vencidos» muestra solo el vencido
+OK el filtro «Cobrados» muestra el cobrado
+OK el filtro «Próximos 7 días» deja fuera el cobro del día 25
+OK total por cobrar $78,000.00 (esperados vigentes y vencidos, sin cobrados ni cancelados)
+OK captura e2-cobros.jpg
+
+(f) Calendario
+OK el mes muestra nómina
+OK al clicar nómina se abre su detalle con origen y monto
+OK captura f1-detalle-nomina.jpg
+OK el mes muestra pago a proveedor
+OK al clicar pago a proveedor se abre su detalle con origen y monto
+OK el mes muestra cobro
+OK al clicar cobro se abre su detalle con origen y monto
+OK el mes muestra renta
+OK al clicar renta se abre su detalle con origen y monto
+OK la renta aparece el día 20
+OK el cobro vencido sale marcado como vencido
+OK la plantilla llena «Impuestos provisionales»
+OK con el siguiente día 17 (2026-11-17) y frecuencia mensual
+OK se registra la obligación de impuestos
+OK se edita el monto a $19,250.00
+OK la base guarda el monto nuevo
+OK los impuestos aparecen en el calendario del mes de su día 17
+OK captura f2-calendario.jpg
+OK «Mes siguiente →» muestra diciembre con sus fechas
+OK «Desactivar» la saca del calendario y de la proyección (activa = false)
+
+(g) Presupuestos
+OK Operación: nómina prorrateada $36,000.00 + Transportes del Norte $25,000.00 + renta $30,000.00 = $91,000.00 de $90,000.00
+OK Operación (101 %) aparece excedido
+OK Ventas: nómina $20,000.00 + Publicidad Creativa $15,000.00 = $35,000.00 de $40,000.00
+OK Ventas (87.5 %) aparece en atención
+OK captura g1-presupuestos.jpg
+OK Inicio avisa de los dos presupuestos
+OK Pendientes también
+OK captura g2-pendientes.jpg
+OK a Papelería Central se le asigna el área Ventas
+OK su cargo PA-12 ($12,000.00) entra al presupuesto de Ventas: $47,000.00, excedido
+OK con su evento asignar_area_proveedor (área por nombre)
+OK el alta de proveedor guarda el área opcional (Operación)
+OK captura g3-alta-proveedor-area.jpg
+
+(i) Correo semanal
+OK Laura deja de recibir el resumen
+OK y lo vuelve a encender
+OK Diego (contador) lo enciende para sí
+OK GET /tareas/correo-semanal sin secreto: 401
+OK con otro secreto: 401
+OK con el secreto: 200 {"semana":"2026-11-02","empresas":3,"enviados":3,"omitidos":0,"fallidos":0}
+OK el proveedor falso registra 4 correos: bruno@lever.test, diana@lever.test, diego@lever.test, laura@lever.test
+OK la segunda llamada de la semana no manda nada: {"semana":"2026-11-02","empresas":3,"enviados":0,"omitidos":3,"fallidos":0}
+OK el proveedor falso no tiene correos nuevos
+OK un envío por empresa y semana, enviado
+OK el de Altamar trae su saldo declarado ($150,000.00) con su origen
+OK el correo de Bahía no trae «Altamar» de Altamar
+OK el correo de Bahía no trae «Transportes» de Altamar
+OK el correo de Bahía no trae «Renta de la bodega» de Altamar
+OK el correo de Bahía no trae «150,000» de Altamar
+OK el correo de Bahía no trae «Mayorista» de Altamar
+OK el correo de Bahía no trae «Operación» de Altamar
+OK ni el de Altamar trae datos de Bahía ni dice «Confirmado por el banco»
+OK captura i-correo-semanal.jpg
+
+(j) Permisos
+OK el contador abre /consola (200)
+OK el contador abre /consola/flujo (200)
+OK el contador abre /consola/cobros (200)
+OK el contador abre /consola/calendario (200)
+OK el contador abre /consola/presupuestos (200)
+OK no ve los formularios de saldo ni colchón
+OK ni el alta de cobros ni «Marcar cobrado»
+OK ni el área de cada proveedor
+OK captura j1-contador-solo-lectura.jpg
+OK el formulario del saldo enviado a mano por el contador: el servidor responde «Sin permiso para cambiar el flujo»
+OK y la base no cambia
+OK un empleado sin la capacidad (tarjetahabiente) no ve /consola/flujo: 404
+OK un empleado sin la capacidad (tarjetahabiente) no ve /consola/cobros: 404
+OK un empleado sin la capacidad (tarjetahabiente) no ve /consola/calendario: 404
+OK un empleado sin la capacidad (tarjetahabiente) no ve /consola/presupuestos: 404
+OK captura j2-empleado-404.jpg
+OK Laura (Altamar) en /consola/flujo de Bahía: 404
+OK Laura (Altamar) en /consola/cobros de Bahía: 404
+OK Bruno (Bahía) en Presupuestos de Altamar: 404
+OK en la empresa de demostración el libro sale marcado «Confirmado por el banco · demostración»
+OK captura j3-demostracion-libro.jpg
+OK en Altamar (cliente real) nunca
+
+(k) Capturas en 3 temas × 1440 y 390
+OK inicio claro 1440: 200
+OK inicio claro 1440: sin desplazamiento horizontal
+OK captura k-inicio-claro-1440.jpg
+OK cobros claro 1440: 200
+OK cobros claro 1440: sin desplazamiento horizontal
+OK captura k-cobros-claro-1440.jpg
+OK calendario claro 1440: 200
+OK calendario claro 1440: sin desplazamiento horizontal
+OK captura k-calendario-claro-1440.jpg
+OK presupuestos claro 1440: 200
+OK presupuestos claro 1440: sin desplazamiento horizontal
+OK captura k-presupuestos-claro-1440.jpg
+OK inicio claro 390: 200
+OK inicio claro 390: sin desplazamiento horizontal
+OK captura k-inicio-claro-390.jpg
+OK cobros claro 390: 200
+OK cobros claro 390: sin desplazamiento horizontal
+OK captura k-cobros-claro-390.jpg
+OK calendario claro 390: 200
+OK calendario claro 390: sin desplazamiento horizontal
+OK captura k-calendario-claro-390.jpg
+OK presupuestos claro 390: 200
+OK presupuestos claro 390: sin desplazamiento horizontal
+OK captura k-presupuestos-claro-390.jpg
+OK inicio oscuro 1440: 200
+OK inicio oscuro 1440: sin desplazamiento horizontal
+OK captura k-inicio-oscuro-1440.jpg
+OK cobros oscuro 1440: 200
+OK cobros oscuro 1440: sin desplazamiento horizontal
+OK captura k-cobros-oscuro-1440.jpg
+OK calendario oscuro 1440: 200
+OK calendario oscuro 1440: sin desplazamiento horizontal
+OK captura k-calendario-oscuro-1440.jpg
+OK presupuestos oscuro 1440: 200
+OK presupuestos oscuro 1440: sin desplazamiento horizontal
+OK captura k-presupuestos-oscuro-1440.jpg
+OK inicio oscuro 390: 200
+OK inicio oscuro 390: sin desplazamiento horizontal
+OK captura k-inicio-oscuro-390.jpg
+OK cobros oscuro 390: 200
+OK cobros oscuro 390: sin desplazamiento horizontal
+OK captura k-cobros-oscuro-390.jpg
+OK calendario oscuro 390: 200
+OK calendario oscuro 390: sin desplazamiento horizontal
+OK captura k-calendario-oscuro-390.jpg
+OK presupuestos oscuro 390: 200
+OK presupuestos oscuro 390: sin desplazamiento horizontal
+OK captura k-presupuestos-oscuro-390.jpg
+OK inicio lever 1440: 200
+OK inicio lever 1440: sin desplazamiento horizontal
+OK captura k-inicio-lever-1440.jpg
+OK cobros lever 1440: 200
+OK cobros lever 1440: sin desplazamiento horizontal
+OK captura k-cobros-lever-1440.jpg
+OK calendario lever 1440: 200
+OK calendario lever 1440: sin desplazamiento horizontal
+OK captura k-calendario-lever-1440.jpg
+OK presupuestos lever 1440: 200
+OK presupuestos lever 1440: sin desplazamiento horizontal
+OK captura k-presupuestos-lever-1440.jpg
+OK inicio lever 390: 200
+OK inicio lever 390: sin desplazamiento horizontal
+OK captura k-inicio-lever-390.jpg
+OK cobros lever 390: 200
+OK cobros lever 390: sin desplazamiento horizontal
+OK captura k-cobros-lever-390.jpg
+OK calendario lever 390: 200
+OK calendario lever 390: sin desplazamiento horizontal
+OK captura k-calendario-lever-390.jpg
+OK presupuestos lever 390: 200
+OK presupuestos lever 390: sin desplazamiento horizontal
+OK captura k-presupuestos-lever-390.jpg
+
+168 comprobaciones
+Consola del navegador: sin errores ni advertencias de la aplicación
+Avisos «GL Driver Message» del fondo WebGL (fuera de zona): 4
+Mensajes esperados en las páginas 404 de (j) (el 404 del documento y la precarga de estilos sin usar): 11
+VALIDACION_FUNCIONAL_OK
