@@ -1,5 +1,5 @@
 import { capacidadesDe, tiene, type RolCliente } from "../../nucleo/capacidades";
-import { enEmpresa } from "../../nucleo/rutas";
+import { enEmpresa, rutaConsola } from "../../nucleo/rutas";
 
 /** Solo superficies conocidas; nunca se acepta una URL como destino. */
 const DESTINOS = new Set(["/consola", "/telefono"]);
@@ -34,7 +34,7 @@ export function destinoDeMembresia(
   const consola = tiene(capacidades, "cliente.consola.ver");
   const telefono = tiene(capacidades, "telefono.inicio.ver");
   if (preferida === "/telefono" && telefono) return enEmpresa(empresa.id, "/telefono");
-  if (consola) return enEmpresa(empresa.id, "/consola");
+  if (consola) return enEmpresa(empresa.id, rutaConsola(capacidades));
   if (telefono) return enEmpresa(empresa.id, "/telefono");
   return null;
 }

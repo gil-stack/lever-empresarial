@@ -32,6 +32,7 @@ export function vistaDeMarco(ctx: ContextoDeTenant | null | undefined): VistaDeM
 /** El menú no cambia de página en página. Lo decide la matriz de capacidades, no el marco. */
 export function puertasDe(capacidades: readonly Capacidad[]): {
   consola: boolean;
+  resumen: boolean;
   politica: boolean;
   maestro: boolean;
   poliza: boolean;
@@ -42,6 +43,7 @@ export function puertasDe(capacidades: readonly Capacidad[]): {
 } {
   return {
     consola: tiene(capacidades, "cliente.consola.ver"),
+    resumen: tiene(capacidades, "cliente.resumen.ver"),
     politica: tiene(capacidades, "cliente.politica.ver"),
     maestro: tiene(capacidades, "cliente.maestro.ver"),
     poliza: tiene(capacidades, "cliente.poliza.ver"),

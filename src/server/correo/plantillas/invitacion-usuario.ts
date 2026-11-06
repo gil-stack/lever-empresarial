@@ -17,6 +17,7 @@ const ETIQUETAS: Readonly<Record<RolCliente, string>> = {
   liberador: "Liberador",
   tarjetahabiente: "Tarjetahabiente",
   contador: "Contador",
+  finanzas: "Finanzas",
 };
 
 export function plantillaInvitacionUsuario(datos: DatosInvitacionUsuario): CorreoPlantilla {

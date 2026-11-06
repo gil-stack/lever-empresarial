@@ -30,7 +30,7 @@ const ROLES_DE = `coalesce((
 ), '{}')`;
 
 const PERSONAS_BASE = `
-  select e.id, e.nombre, e.alta_en, e.baja_en, e.clabe,
+  select e.id, e.user_id, e.nombre, e.alta_en, e.baja_en, e.clabe,
          e.presupuesto_mensual_centavos,
          e.jefe_id, j.nombre as jefe_nombre,
          e.cost_center_id, c.nombre as centro_nombre,
@@ -625,6 +625,7 @@ function mapearPersona(fila: unknown): PersonaVista {
   if (membresia !== null && !["invitada", "activa", "suspendida"].includes(membresia)) throw new ErrorDeDominio("base_no_disponible");
   return {
     id: r.id,
+    userId: typeof r.user_id === "string" ? r.user_id : null,
     nombre: r.nombre,
     altaEn: fechaDeColumna(r.alta_en),
     bajaEn: r.baja_en == null ? null : fechaDeColumna(r.baja_en),

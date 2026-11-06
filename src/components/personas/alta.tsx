@@ -4,6 +4,7 @@ import { useActionState, useEffect, useMemo, useState, type FormEvent } from "re
 import { useRouter } from "next/navigation";
 
 import { enviarPersona } from "@/app/consola/personas/acciones";
+import { enviarSinReiniciar } from "@/components/proveedores/sin-reinicio";
 import { clabeValida, clabeVisible } from "@/dominio/clabe";
 import { erroresDeConfiguracionNomina, mensualEstimado, type FrecuenciaNomina } from "@/dominio/nomina";
 import {
@@ -50,6 +51,7 @@ export function AltaColaborador({
   const [acceso, setAcceso] = useState<AccesoForma>("no");
   const [correo, setCorreo] = useState("");
   const [roles, setRoles] = useState<RolCuenta[]>([]);
+  const [verFinanzas, setVerFinanzas] = useState(false);
   const [local, setLocal] = useState<ErrorCampo[] | null>(null);
 
   useEffect(() => {
@@ -83,12 +85,14 @@ export function AltaColaborador({
   const clabeLeida = clabeValida(clabe);
 
   function alEnviar(event: FormEvent<HTMLFormElement>) {
+    // Finanzas es un acceso adicional: viaja como un rol más y la validación exige un rol de trabajo.
+    const rol: RolCuenta[] = verFinanzas ? [...roles, "finanzas"] : roles;
     const entrada = conNomina === "si"
       ? {
           nomina: "si", nombre, alta, baja: "", centroId, jefeId, presupuesto, altaLlave, destino, clabe,
-          acceso, correo, rol: roles, neto, frecuencia, primerPago,
+          acceso, correo, rol, neto, frecuencia, primerPago,
         }
-      : { nomina: "no", nombre, alta, baja: "", centroId, jefeId, presupuesto, altaLlave, acceso, correo, rol: roles };
+      : { nomina: "no", nombre, alta, baja: "", centroId, jefeId, presupuesto, altaLlave, acceso, correo, rol };
     const encontrados = [
       ...erroresDeAltaPersona(entrada, hoy),
       ...(conNomina === "si" ? erroresDeConfiguracionNomina(entrada, hoy, alta) : []),
@@ -100,10 +104,12 @@ export function AltaColaborador({
       return;
     }
     setLocal(null);
+    // Sin el reinicio de `<form action>`: tras un rechazo, las casillas siguen mostrando lo que se enviará.
+    enviarSinReiniciar(accion)(event);
   }
 
   return (
-    <form className="alta-colaborador" action={accion} onSubmit={alEnviar} noValidate aria-busy={pendiente}>
+    <form className="alta-colaborador" onSubmit={alEnviar} noValidate aria-busy={pendiente}>
       <input type="hidden" name="altaLlave" value={altaLlave} />
       <input type="hidden" name="baja" value="" />
       <div className="alta-colaborador-formulario">
@@ -227,6 +233,12 @@ export function AltaColaborador({
                   <span>{rol.etiqueta}</span>
                 </label>
               ))}
+              <label className="confirmacion alta-finanzas">
+                <input id="verFinanzas" type="checkbox" checked={verFinanzas} onChange={(e) => { setVerFinanzas(e.target.checked); setLocal(null); }} />
+                <span>Ver Inicio financiero</span>
+              </label>
+              {verFinanzas ? <input type="hidden" name="rol" value="finanzas" /> : null}
+              <p className="pista">Acceso adicional a su rol: entradas, salidas y movimientos del libro. No mueve dinero ni abre el teléfono.</p>
               {mensaje("rol") ? <p className="error-campo">{mensaje("rol")}</p> : null}
             </fieldset>
           ) : null}

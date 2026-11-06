@@ -26,6 +26,8 @@ export type NominaPersonaVista = {
 
 export type PersonaVista = {
   id: string;
+  /** Usuario de plataforma, si la persona tiene cuenta. Lo usa la casilla de Finanzas. */
+  userId: string | null;
   nombre: string;
   altaEn: string;
   bajaEn: string | null;

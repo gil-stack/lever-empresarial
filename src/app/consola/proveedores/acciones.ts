@@ -64,6 +64,7 @@ export async function enviarProveedor(
           contratoHasta: formData.get("contratoHasta"),
         });
         revalidatePath("/consola/proveedores");
+        revalidatePath("/consola/pendientes");
         return { tipo: "listo", mensaje: guardado.mensaje };
       } catch (error) {
         return traducir(error);

@@ -15,6 +15,7 @@ import {
   type CampoPersona,
   type CodigoRechazoPersona,
   type EntradaAltaPersona,
+  type EstadoFinanzas,
   type EstadoMaestro,
 } from "@/dominio/personas";
 import { contextoDeAccion, errorConSecreto, sesionSegura } from "@/server/entrada";
@@ -29,6 +30,7 @@ import {
   reenviarInvitacionPersona,
   registrarBaja,
 } from "@/server/personas";
+import { cambiarAccesoFinanzas, rechazoDeFinanzas } from "@/server/roles";
 import { ErrorDeDominio } from "@/server/session";
 
 export async function enviarCentro(_previo: EstadoMaestro, formData: FormData): Promise<EstadoMaestro> {
@@ -191,6 +193,18 @@ export async function enviarReenvioInvitacion(_previo: EstadoMaestro, formData: 
   }
 }
 
+export async function enviarFinanzas(_previo: EstadoFinanzas, formData: FormData): Promise<EstadoFinanzas> {
+  const entrada = { userId: formData.get("userId"), verFinanzas: formData.get("verFinanzas") };
+  try {
+    const estado = await cambiarAccesoFinanzas(await leerSesion(), entrada);
+    if (estado.tipo === "listo") refrescar();
+    return estado;
+  } catch (error) {
+    if (errorConSecreto(error)) return rechazoDeFinanzas("libro", entrada.verFinanzas === "si");
+    throw error;
+  }
+}
+
 export async function enviarBaja(_previo: EstadoMaestro, formData: FormData): Promise<EstadoMaestro> {
   const validada = validarBaja({
     personaId: formData.get("personaId"),
@@ -271,5 +285,6 @@ function refrescar(): void {
   revalidatePath("/consola/personas");
   revalidatePath("/consola/personas/areas");
   revalidatePath("/consola/personas/nomina");
+  revalidatePath("/consola/pendientes");
   revalidatePath("/consola");
 }

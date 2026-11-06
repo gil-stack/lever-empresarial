@@ -7,6 +7,7 @@ import {
   IconoConsola,
   IconoLista,
   IconoPersonas,
+  IconoPendientes,
   IconoPolitica,
   IconoPoliza,
   IconoPrecios,
@@ -38,7 +39,8 @@ export function seccionesDe(
     Icono,
   });
   const operacion = [
-    ...(puertas.consola ? [seccion("/consola", "Pendientes", IconoConsola)] : []),
+    ...(puertas.resumen ? [seccion("/consola", "Inicio", IconoConsola)] : []),
+    ...(puertas.consola ? [seccion("/consola/pendientes", "Pendientes", IconoPendientes)] : []),
     ...(puertas.politica ? [seccion("/consola/politica", "Política", IconoPolitica)] : []),
     ...(puertas.proveedores ? [seccion("/consola/proveedores", "Proveedores", IconoProveedores)] : []),
     ...(puertas.lista69b ? [seccion("/consola/lista-69b", "Lista 69-B", IconoLista)] : []),

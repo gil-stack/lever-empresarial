@@ -31,6 +31,15 @@ export function IconoConsola() {
   );
 }
 
+export function IconoPendientes() {
+  return (
+    <Trazo>
+      <path d="M9 5.5h10M9 12h10M9 18.5h10" />
+      <path d="m3.5 5.5 1.2 1.2 2.3-2.4M3.5 12l1.2 1.2L7 10.8M3.5 18.5l1.2 1.2 2.3-2.4" />
+    </Trazo>
+  );
+}
+
 export function IconoPolitica() {
   return (
     <Trazo>
