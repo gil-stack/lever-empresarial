@@ -9,6 +9,8 @@ import {
   enviarNomina,
   enviarReenvioInvitacion,
 } from "@/app/consola/personas/acciones";
+import { enviarSinReiniciar } from "@/components/proveedores/sin-reinicio";
+import { BotonEnviar } from "@/components/sistema";
 import { clabeValida } from "@/dominio/clabe";
 import { erroresDeConfiguracionNomina, type FrecuenciaNomina } from "@/dominio/nomina";
 import {
@@ -18,7 +20,7 @@ import {
 } from "@/dominio/personas";
 import type { PersonaVista } from "@/dominio/personas-vista";
 
-import { AvisosFormulario, CampoFormulario } from "./estado-formulario";
+import { AvisosFormulario, CampoFormulario, descritoPor } from "./estado-formulario";
 
 /** Datos laborales. La CLABE y el destino no viajan aquí: tienen su propio formulario. */
 export function FormularioEdicionPersona({
@@ -43,34 +45,38 @@ export function FormularioEdicionPersona({
       event.preventDefault();
       setLocal(encontrados);
       document.getElementById(encontrados[0]?.campo ?? "")?.focus();
-    } else setLocal(null);
+      return;
+    }
+    setLocal(null);
+    // Sin el reinicio de `<form action>`: tras un rechazo, los campos conservan lo que se escribió.
+    enviarSinReiniciar(accion)(event);
   }
 
   return (
-    <form className="formulario-pareja" action={accion} onSubmit={validar} noValidate aria-busy={pendiente}>
+    <form className="formulario-pareja" onSubmit={validar} noValidate aria-busy={pendiente}>
       <input type="hidden" name="personaId" value={persona.id} />
       <div className="formulario-aviso-ancho"><AvisosFormulario estado={estado} errores={errores} /></div>
       <CampoFormulario id="nombre" etiqueta="Nombre" error={mensaje("nombre")}>
-        <input id="nombre" name="nombre" defaultValue={persona.nombre} maxLength={120} required aria-invalid={mensaje("nombre") ? true : undefined} />
+        <input id="nombre" name="nombre" defaultValue={persona.nombre} maxLength={120} required aria-invalid={mensaje("nombre") ? true : undefined} aria-describedby={descritoPor("nombre", mensaje("nombre"), false)} />
       </CampoFormulario>
       <CampoFormulario id="alta" etiqueta="Ingreso" error={mensaje("alta")}>
-        <input id="alta" name="alta" type="date" defaultValue={persona.altaEn} required aria-invalid={mensaje("alta") ? true : undefined} />
+        <input id="alta" name="alta" type="date" defaultValue={persona.altaEn} required aria-invalid={mensaje("alta") ? true : undefined} aria-describedby={descritoPor("alta", mensaje("alta"), false)} />
       </CampoFormulario>
       <CampoFormulario id="centro" etiqueta="Área" error={mensaje("centro")}>
-        <select id="centro" name="centroId" defaultValue={persona.centroId} required aria-invalid={mensaje("centro") ? true : undefined}>
+        <select id="centro" name="centroId" defaultValue={persona.centroId} required aria-invalid={mensaje("centro") ? true : undefined} aria-describedby={descritoPor("centro", mensaje("centro"), false)}>
           {centros.map((centro) => <option key={centro.id} value={centro.id}>{centro.nombre}</option>)}
         </select>
       </CampoFormulario>
       <CampoFormulario id="jefe" etiqueta="Jefe" pista="No se permiten ciclos jerárquicos." error={mensaje("jefe")}>
-        <select id="jefe" name="jefeId" defaultValue={persona.jefeId ?? ""} aria-invalid={mensaje("jefe") ? true : undefined}>
+        <select id="jefe" name="jefeId" defaultValue={persona.jefeId ?? ""} aria-invalid={mensaje("jefe") ? true : undefined} aria-describedby={descritoPor("jefe", mensaje("jefe"))}>
           <option value="">Sin jefe</option>
           {jefes.map((jefe) => <option key={jefe.id} value={jefe.id}>{jefe.nombre}</option>)}
         </select>
       </CampoFormulario>
       <CampoFormulario id="presupuesto" etiqueta="Presupuesto individual mensual" error={mensaje("presupuesto")}>
-        <input id="presupuesto" name="presupuesto" defaultValue={persona.presupuestoCentavos == null ? "" : (persona.presupuestoCentavos / 100).toFixed(2)} inputMode="decimal" aria-invalid={mensaje("presupuesto") ? true : undefined} />
+        <input id="presupuesto" name="presupuesto" defaultValue={persona.presupuestoCentavos == null ? "" : (persona.presupuestoCentavos / 100).toFixed(2)} inputMode="decimal" aria-invalid={mensaje("presupuesto") ? true : undefined} aria-describedby={descritoPor("presupuesto", mensaje("presupuesto"), false)} />
       </CampoFormulario>
-      <div className="acciones"><button className="boton" type="submit" disabled={pendiente}>{pendiente ? "Guardando…" : "Guardar datos laborales"}</button></div>
+      <div className="acciones"><BotonEnviar pendiente={pendiente} enviando="Guardando…">Guardar datos laborales</BotonEnviar></div>
     </form>
   );
 }
@@ -96,27 +102,30 @@ export function FormularioNominaPersona({ persona, hoy }: { persona: PersonaVist
       event.preventDefault();
       setLocal(encontrados);
       document.getElementById(`nomina-${encontrados[0]?.campo ?? ""}`)?.focus();
-    } else setLocal(null);
+      return;
+    }
+    setLocal(null);
+    enviarSinReiniciar(accion)(event);
   }
 
   return (
-    <form className="formulario-pareja" action={accion} onSubmit={validar} noValidate aria-busy={pendiente}>
+    <form className="formulario-pareja" onSubmit={validar} noValidate aria-busy={pendiente}>
       <input type="hidden" name="personaId" value={persona.id} />
       <input type="hidden" name="alta" value={persona.altaEn} />
       <input type="hidden" name="pagoAnterior" value={nomina?.proximoPagoEn ?? ""} />
       <div className="formulario-aviso-ancho"><AvisosFormulario estado={estado} errores={errores} prefijo="nomina-" /></div>
       <CampoFormulario id="nomina-neto" etiqueta="Neto por pago" pista="No calcula retenciones." error={mensaje("neto")}>
-        <input id="nomina-neto" name="neto" defaultValue={nomina?.netoCentavos != null ? (nomina.netoCentavos / 100).toFixed(2) : ""} inputMode="decimal" required aria-invalid={mensaje("neto") ? true : undefined} />
+        <input id="nomina-neto" name="neto" defaultValue={nomina?.netoCentavos != null ? (nomina.netoCentavos / 100).toFixed(2) : ""} inputMode="decimal" required aria-invalid={mensaje("neto") ? true : undefined} aria-describedby={descritoPor("nomina-neto", mensaje("neto"))} />
       </CampoFormulario>
       <CampoFormulario id="nomina-frecuencia" etiqueta="Frecuencia" error={mensaje("frecuencia")}>
-        <select id="nomina-frecuencia" name="frecuencia" value={frecuencia} onChange={(e) => setFrecuencia(e.target.value as FrecuenciaNomina)}>
+        <select id="nomina-frecuencia" name="frecuencia" value={frecuencia} onChange={(e) => setFrecuencia(e.target.value as FrecuenciaNomina)} aria-invalid={mensaje("frecuencia") ? true : undefined} aria-describedby={descritoPor("nomina-frecuencia", mensaje("frecuencia"), false)}>
           <option value="semanal">Semanal</option>
           <option value="quincenal">Quincenal · 15 y último</option>
           <option value="mensual">Mensual</option>
         </select>
       </CampoFormulario>
       <CampoFormulario id="nomina-primerPago" etiqueta={nomina ? "Próximo pago" : "Primer pago"} pista="Un lote ya preparado conserva su importe original." error={mensaje("primerPago")}>
-        <input id="nomina-primerPago" name="primerPago" type="date" defaultValue={nomina?.proximoPagoEn ?? hoy} min={hoy} required aria-invalid={mensaje("primerPago") ? true : undefined} />
+        <input id="nomina-primerPago" name="primerPago" type="date" defaultValue={nomina?.proximoPagoEn ?? hoy} min={hoy} required aria-invalid={mensaje("primerPago") ? true : undefined} aria-describedby={descritoPor("nomina-primerPago", mensaje("primerPago"))} />
       </CampoFormulario>
       <CampoFormulario
         id="nomina-destino"
@@ -124,12 +133,12 @@ export function FormularioNominaPersona({ persona, hoy }: { persona: PersonaVist
         pista={destino === "clabe" ? (persona.clabeFinal ? `Usa la CLABE vigente terminación ${persona.clabeFinal}.` : "Falta registrar la CLABE de nómina.") : "Acceso y tarjeta son independientes."}
         error={mensaje("destino")}
       >
-        <select id="nomina-destino" name="destino" value={destino} onChange={(e) => setDestino(e.target.value as "clabe" | "tarjeta")}>
+        <select id="nomina-destino" name="destino" value={destino} onChange={(e) => setDestino(e.target.value as "clabe" | "tarjeta")} aria-invalid={mensaje("destino") ? true : undefined} aria-describedby={descritoPor("nomina-destino", mensaje("destino"))}>
           <option value="clabe">CLABE externa</option>
           <option value="tarjeta">Tarjeta de nómina</option>
         </select>
       </CampoFormulario>
-      <div className="acciones"><button className="boton" type="submit" disabled={pendiente}>{pendiente ? "Guardando…" : "Guardar programación"}</button></div>
+      <div className="acciones"><BotonEnviar pendiente={pendiente} enviando="Guardando…">Guardar programación</BotonEnviar></div>
     </form>
   );
 }
@@ -163,12 +172,10 @@ export function FormularioClabeNomina({ persona }: { persona: PersonaVista }) {
         pista="18 dígitos. Exige haber confirmado tu segundo factor en los últimos 30 minutos."
         error={mensaje}
       >
-        <input id="nomina-clabe" name="clabe" value={clabe} onChange={(e) => { setClabe(e.target.value); setLocal(null); }} inputMode="numeric" maxLength={23} className="entrada-rfc" autoComplete="off" required aria-invalid={mensaje ? true : undefined} />
+        <input id="nomina-clabe" name="clabe" value={clabe} onChange={(e) => { setClabe(e.target.value); setLocal(null); }} inputMode="numeric" maxLength={23} className="entrada-rfc" autoComplete="off" required aria-invalid={mensaje ? true : undefined} aria-describedby={descritoPor("nomina-clabe", mensaje)} />
       </CampoFormulario>
       <div className="acciones">
-        <button className="boton" type="submit" disabled={pendiente}>
-          {pendiente ? "Guardando…" : persona.clabeFinal ? "Cambiar CLABE de nómina" : "Registrar CLABE de nómina"}
-        </button>
+        <BotonEnviar pendiente={pendiente} enviando="Guardando…">{persona.clabeFinal ? "Cambiar CLABE de nómina" : "Registrar CLABE de nómina"}</BotonEnviar>
       </div>
     </form>
   );
@@ -180,7 +187,7 @@ export function BotonCancelarBaja({ personaId }: { personaId: string }) {
     <form action={accion} aria-busy={pendiente}>
       <input type="hidden" name="personaId" value={personaId} />
       <AvisosFormulario estado={estado} errores={[]} />
-      <button className="boton-texto" type="submit" disabled={pendiente}>{pendiente ? "Cancelando…" : "Cancelar la baja programada"}</button>
+      <BotonEnviar className="boton-texto" pendiente={pendiente} enviando="Cancelando…">Cancelar la baja programada</BotonEnviar>
     </form>
   );
 }
@@ -191,7 +198,7 @@ export function BotonReenviarInvitacion({ personaId }: { personaId: string }) {
     <form action={accion} aria-busy={pendiente}>
       <input type="hidden" name="personaId" value={personaId} />
       <AvisosFormulario estado={estado} errores={[]} />
-      <button className="boton-texto" type="submit" disabled={pendiente}>{pendiente ? "Reenviando…" : "Renovar y reenviar invitación"}</button>
+      <BotonEnviar className="boton-texto" pendiente={pendiente} enviando="Reenviando…">Renovar y reenviar invitación</BotonEnviar>
     </form>
   );
 }

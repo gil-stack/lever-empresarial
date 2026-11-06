@@ -17,7 +17,7 @@ export function NavegacionPersonas({
     { id: "nomina" as const, titulo: "Nómina", ruta: "/consola/personas/nomina" },
   ];
   return (
-    <nav className="personas-navegacion" aria-label="Dentro de Personas">
+    <nav className="segmentado personas-navegacion" aria-label="Dentro de Personas">
       {secciones.map((seccion) => (
         <Link
           key={seccion.id}

@@ -450,40 +450,26 @@
 }
 
 .personas-modulo .metricas {
-  margin: 0 0 28px;
+  margin: 0;
 }
 
+/* Las vistas de Personas usan el segmentado del sistema; aquí solo su lugar. */
 .personas-navegacion {
-  display: flex;
-  gap: 4px;
-  width: fit-content;
   max-width: 100%;
-  margin: 0 0 26px;
-  padding: 4px;
+  margin: 36px 0 18px;
   overflow-x: auto;
-  border: 1px solid var(--linea);
-  border-radius: 11px;
-  background: var(--hoja);
 }
 
-.personas-navegacion a {
+.personas-navegacion > a {
   flex: 0 0 auto;
-  padding: 9px 14px;
-  border-radius: 7px;
-  color: var(--tinta-suave);
-  font-size: 0.84rem;
-  font-weight: 500;
-  text-decoration: none;
 }
 
-.personas-navegacion a:hover {
-  color: var(--tinta);
-  background: var(--realce);
+.personas-modulo > h1 + .personas-navegacion {
+  margin-top: 8px;
 }
 
-.personas-navegacion a[aria-current="page"] {
-  color: var(--sobre-primario);
-  background: var(--primario);
+.personas-rol {
+  margin: -6px 0 14px;
 }
 
 .personas-filtros {
@@ -491,73 +477,15 @@
   grid-template-columns: minmax(220px, 1.6fr) minmax(150px, 1fr) minmax(150px, 0.8fr) auto;
   gap: 14px;
   align-items: end;
-  padding: 18px;
-  border: 1px solid var(--linea);
-  border-radius: var(--radio-hoja);
-  background: var(--hoja);
+  margin-bottom: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
 }
 
 .personas-filtros .acciones {
   align-items: center;
   min-height: 46px;
   margin: 0;
-  white-space: nowrap;
-}
-
-.personas-total {
-  margin: 22px 2px 10px;
-  color: var(--tinta-tenue);
-  font-size: 0.78rem;
-}
-
-.personas-tabla-envoltura {
-  width: 100%;
-  overflow-x: auto;
-  border: 1px solid var(--linea);
-  border-radius: var(--radio-hoja);
-  background: var(--hoja);
-}
-
-.personas-tabla {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-  text-align: left;
-}
-
-.personas-tabla th {
-  padding: 13px 16px;
-  border-bottom: 1px solid var(--linea);
-  color: var(--tinta-tenue);
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.personas-tabla td {
-  padding: 17px 16px;
-  border-bottom: 1px solid var(--linea);
-  color: var(--tinta-suave);
-  vertical-align: middle;
-}
-
-.personas-tabla tr:last-child td {
-  border-bottom: 0;
-}
-
-.personas-tabla tbody tr {
-  transition: background 140ms ease;
-}
-
-.personas-tabla tbody tr:hover {
-  background: var(--realce);
-}
-
-.personas-tabla .numero {
-  color: var(--tinta);
-  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
@@ -574,18 +502,6 @@
   text-underline-offset: 3px;
 }
 
-.persona-celda-nota {
-  display: block;
-  max-width: 230px;
-  margin-top: 4px;
-  overflow: hidden;
-  color: var(--tinta-tenue);
-  font-size: 0.72rem;
-  font-weight: 400;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .personas-tabla td > .insignia {
   margin-left: 8px;
 }
@@ -595,9 +511,35 @@
   justify-content: flex-end;
   align-items: center;
   gap: 14px;
-  margin-top: 18px;
-  color: var(--tinta-tenue);
-  font-size: 0.8rem;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--tx3);
+  font-size: 12px;
+}
+
+.nomina-rejilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(280px, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.nomina-rejilla .panel-cabeza {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.preparar-nomina {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.preparar-nomina .pista {
+  margin: 0;
 }
 
 .personas-modulo > .nota-regla {
@@ -643,13 +585,6 @@
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-}
-
-.area-cifra {
-  font-size: 1.65rem;
-  font-weight: 550;
-  letter-spacing: -0.035em;
-  font-variant-numeric: tabular-nums;
 }
 
 .area-cabeza .pista {
@@ -864,9 +799,13 @@
 
 .expediente-estado {
   justify-content: flex-start;
-  margin-top: 12px;
+  margin: 0 0 28px;
   color: var(--tinta-suave);
   font-size: 0.85rem;
+}
+
+.expediente-estado > .enlace-texto {
+  margin-left: auto;
 }
 
 .expediente-rejilla {
@@ -893,13 +832,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-.lotes-lista {
-  margin-top: 10px;
-}
-
 .lote-renglon {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(150px, 0.8fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
   align-items: center;
   padding: 18px 0;
@@ -923,6 +858,16 @@
   color: var(--tinta-tenue);
 }
 
+.lote-renglon > .insignia {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.lotes-lista > .lote-renglon:first-child {
+  border-top: 0;
+  padding-top: 4px;
+}
+
 @container (max-width: 1000px) {
   .personas-filtros {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -934,6 +879,10 @@
 
   .alta-resumen {
     position: static;
+  }
+
+  .nomina-rejilla {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -959,8 +908,13 @@
   }
 
   .personas-tabla tr {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--linea);
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .personas-tabla th,
+  .personas-tabla td.cifra {
+    text-align: left;
   }
 
   .personas-tabla tr:last-child {
@@ -997,11 +951,6 @@
     margin-left: 0;
   }
 
-  .persona-celda-nota {
-    max-width: 100%;
-    white-space: normal;
-  }
-
   .alta-seccion {
     padding: 20px;
   }
@@ -1017,27 +966,10 @@
     justify-content: flex-start;
   }
 
-  .personas-navegacion {
-    width: 100%;
-  }
-
-  .personas-navegacion a {
-    padding-inline: 11px;
-    font-size: 0.78rem;
-  }
-
   .alta-resumen {
     padding: 20px;
   }
 
-  .lote-renglon {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .lote-renglon > .insignia {
-    grid-column: 1 / -1;
-    justify-self: start;
-  }
 }
 
 /* Página no encontrada */

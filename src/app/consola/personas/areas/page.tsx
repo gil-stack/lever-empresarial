@@ -27,5 +27,5 @@ export default async function PaginaAreas() {
   const contenido = aviso ? <MaestroCerrado aviso={aviso} /> : apertura.ctx && lectura ? (
     <AreasPersonas lectura={lectura} empresaId={apertura.ctx.empresa?.id ?? ""} edita={puede(apertura.ctx, "cliente.maestro.editar")} />
   ) : <MaestroCerrado aviso="libro" />;
-  return <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)}><main id="contenido" className="consola personas-modulo">{contenido}</main></Marco>;
+  return <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)} titulo="Áreas y presupuestos"><main id="contenido" className="consola personas-modulo">{contenido}</main></Marco>;
 }

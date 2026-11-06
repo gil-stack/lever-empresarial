@@ -105,7 +105,7 @@ test("recorrido completo de colaboradores, presupuesto, nómina, tarjeta y baja"
   await page.goto(tesoreria);
   await page.locator("#nomina-neto").fill("21000");
   await page.getByRole("button", { name: "Guardar programación" }).click();
-  await expect(page.getByText("La nómina quedó programada. No se dispersó dinero.")).toBeVisible();
+  await expect(page.getByText("La nómina quedó programada.", { exact: true })).toBeVisible();
 
   await abrir(page, "/consola/personas/nomina");
   const fechaBoton = await page.locator('input[name="fechaPago"]').inputValue();

@@ -28,5 +28,5 @@ export default async function PaginaNomina() {
   const contenido = aviso ? <MaestroCerrado aviso={aviso} /> : apertura.ctx && lectura ? (
     <PantallaNomina lectura={lectura} hoy={hoyEnMexico(new Date())} empresaId={apertura.ctx.empresa?.id ?? ""} puedePreparar={puede(apertura.ctx, "cliente.pago.solicitar")} />
   ) : <MaestroCerrado aviso="libro" />;
-  return <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)}><main id="contenido" className="consola personas-modulo">{contenido}</main></Marco>;
+  return <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)} titulo="Nómina"><main id="contenido" className="consola personas-modulo">{contenido}</main></Marco>;
 }

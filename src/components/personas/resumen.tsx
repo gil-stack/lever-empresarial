@@ -1,4 +1,4 @@
-import { Metrica, Metricas } from "@/components/sistema";
+import { Metrica, Metricas, Monto } from "@/components/sistema";
 import { fechaLarga } from "@/dominio/personas";
 import type { ResumenPersonas } from "@/server/personas/tipos";
 
@@ -7,18 +7,18 @@ import { dinero } from "./util";
 export function ResumenPersonas({ resumen }: { resumen: ResumenPersonas }) {
   return (
     <Metricas etiqueta="Resumen de personas y nómina">
-      <Metrica rotulo="Colaboradores vigentes">{resumen.vigentes}</Metrica>
+      <Metrica rotulo="Colaboradores vigentes"><Monto>{resumen.vigentes}</Monto></Metrica>
       <Metrica rotulo="Nómina mensual estimada" nota="Planeación con neto vigente">
-        {dinero(resumen.nominaMensualCentavos)}
+        <Monto>{dinero(resumen.nominaMensualCentavos)}</Monto>
       </Metrica>
       <Metrica
         rotulo="Próxima nómina"
         nota={resumen.proximoPagoEn ? fechaLarga(resumen.proximoPagoEn) : "Sin fecha programada"}
       >
-        {resumen.proximoPagoEn ? dinero(resumen.proximoPagoCentavos) : "—"}
+        <Monto>{resumen.proximoPagoEn ? dinero(resumen.proximoPagoCentavos) : "—"}</Monto>
       </Metrica>
       <Metrica rotulo="Por configurar" nota={resumen.porConfigurar ? "Falta nómina" : "Todo al día"}>
-        {resumen.porConfigurar}
+        <Monto>{resumen.porConfigurar}</Monto>
       </Metrica>
     </Metricas>
   );

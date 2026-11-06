@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { Marco } from "@/components/cromo/marco";
 import { vistaDeMarco } from "@/components/cromo/puertas";
@@ -6,6 +7,7 @@ import { DirectorioPersonas } from "@/components/personas/directorio";
 import { MaestroCerrado } from "@/components/personas/maestro";
 import { hoyEnMexico } from "@/dominio/personas";
 import { puede } from "@/nucleo/contexto";
+import { enEmpresa } from "@/nucleo/rutas";
 import { leerMaestro } from "@/server/personas";
 import type { FiltrosPersonas, LecturaMaestro } from "@/server/personas/tipos";
 
@@ -31,8 +33,11 @@ export default async function PaginaPersonas({ searchParams }: { searchParams: B
   const contenido = aviso ? <MaestroCerrado aviso={aviso} /> : apertura.ctx && lectura ? (
     <DirectorioPersonas lectura={lectura} filtros={filtros} hoy={hoyEnMexico(new Date())} empresaId={apertura.ctx.empresa?.id ?? ""} edita={puede(apertura.ctx, "cliente.maestro.editar")} />
   ) : <MaestroCerrado aviso="libro" />;
+  const accion = !aviso && apertura.ctx && puede(apertura.ctx, "cliente.maestro.editar")
+    ? <Link className="boton" href={enEmpresa(apertura.ctx.empresa?.id ?? "", "/consola/personas/nueva")}>Dar de alta</Link>
+    : undefined;
   return (
-    <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)}>
+    <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)} titulo="Personas" accion={accion}>
       <main id="contenido" className="consola personas-modulo">{contenido}</main>
     </Marco>
   );

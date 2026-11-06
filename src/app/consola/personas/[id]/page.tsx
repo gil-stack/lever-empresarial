@@ -35,5 +35,5 @@ export default async function PaginaExpediente({ params }: { params: Promise<{ i
       cambiaClabe={puede(apertura.ctx, "cliente.personas.clabe.cambiar")}
     />
   ) : <MaestroCerrado aviso="libro" />;
-  return <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)}><main id="contenido" className="consola personas-modulo">{contenido}</main></Marco>;
+  return <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)} titulo={detalle?.persona.nombre ?? "Personas"}><main id="contenido" className="consola personas-modulo">{contenido}</main></Marco>;
 }

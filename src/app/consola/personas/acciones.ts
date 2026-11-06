@@ -83,7 +83,7 @@ export async function enviarPersona(_previo: EstadoMaestro, formData: FormData):
     const queda = altaConNomina(entrada) ? "con su presupuesto y nómina" : "sin nómina, solo con su ficha y acceso";
     const mensaje = creada.repetida
       ? "El alta ya estaba registrada; el reintento no creó otra persona."
-      : `La persona quedó registrada ${queda}.${acceso}${duplicada} No se dispersó dinero.`;
+      : `La persona quedó registrada ${queda}.${acceso}${duplicada}`;
     return { tipo: "listo", mensaje, id: creada.id };
   } catch (error) {
     return traducir(error);
@@ -126,7 +126,7 @@ export async function enviarNomina(_previo: EstadoMaestro, formData: FormData): 
     return traducir(error);
   }
   refrescar();
-  return { tipo: "listo", mensaje: "La nómina quedó programada. No se dispersó dinero." };
+  return { tipo: "listo", mensaje: "La nómina quedó programada." };
 }
 
 export async function enviarPreparacionNomina(_previo: EstadoMaestro, formData: FormData): Promise<EstadoMaestro> {
@@ -138,7 +138,7 @@ export async function enviarPreparacionNomina(_previo: EstadoMaestro, formData: 
     return {
       tipo: "listo",
       id: preparada.id,
-      mensaje: preparada.repetida ? "El lote ya estaba preparado; no se duplicó." : "El lote quedó preparado para revisión. No se dispersó dinero.",
+      mensaje: preparada.repetida ? "El lote ya estaba preparado; no se duplicó." : "El lote quedó preparado para revisión.",
     };
   } catch (error) {
     return traducir(error);
@@ -159,7 +159,7 @@ export async function enviarClabeNomina(_previo: EstadoMaestro, formData: FormDa
         ? " El correo de aviso no salió; avísale tú. Quedó asentado en la bitácora."
         : "";
     const que = cambio.tipo === "cambiada" ? "La CLABE de nómina cambió y la anterior quedó en el historial." : "La CLABE de nómina quedó registrada.";
-    return { tipo: "listo", mensaje: `${que}${aviso} No se dispersó dinero.` };
+    return { tipo: "listo", mensaje: `${que}${aviso}` };
   } catch (error) {
     return traducir(error);
   }
@@ -224,7 +224,7 @@ export async function enviarBaja(_previo: EstadoMaestro, formData: FormData): Pr
     return traducir(error, "baja");
   }
   refrescar();
-  return { tipo: "listo", mensaje: "La baja quedó registrada. La nómina y los accesos efectivos se actualizaron; no se dispersó dinero." };
+  return { tipo: "listo", mensaje: "La baja quedó registrada. La nómina y los accesos efectivos se actualizaron." };
 }
 
 function leerPersona(formData: FormData): EntradaAltaPersona & {

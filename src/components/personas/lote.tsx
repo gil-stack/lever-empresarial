@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { CabezaPagina, EtiquetaMono, Hoja, Insignia, Metrica, Metricas, NotaRegla } from "@/components/sistema";
+import { EtiquetaMono, Insignia, Metrica, Metricas, Monto, NotaRegla } from "@/components/sistema";
 import { clabeVisible } from "@/dominio/clabe";
 import { fechaLarga } from "@/dominio/personas";
 import { enEmpresa } from "@/nucleo/rutas";
@@ -19,28 +19,28 @@ export function DetalleLoteNomina({
   const { lote, items, detalle } = lectura;
   return (
     <>
-      <Link className="enlace-texto" href={enEmpresa(empresaId, "/consola/personas/nomina")}>← Volver a Nómina</Link>
-      <CabezaPagina kicker="Lote preparado" titulo={fechaLarga(lote.fechaPago)}>
-        <p className="lede">Snapshot administrativo para revisión. Sus importes y destinos no cambian con ediciones posteriores.</p>
-      </CabezaPagina>
-      <NavegacionPersonas actual="nomina" empresaId={empresaId} />
+      <h1 className="solo-lector">Lote de nómina del {fechaLarga(lote.fechaPago)}</h1>
       <Metricas etiqueta="Resumen del lote">
-        <Metrica rotulo="Total programado">{dinero(lote.totalCentavos)}</Metrica>
-        <Metrica rotulo="Personas">{lote.personas}</Metrica>
-        <Metrica rotulo="Destinos pendientes">{lote.destinosPendientes}</Metrica>
+        <Metrica rotulo="Total programado" nota={`Pago del ${fechaLarga(lote.fechaPago)}`}><Monto>{dinero(lote.totalCentavos)}</Monto></Metrica>
+        <Metrica rotulo="Personas"><Monto>{lote.personas}</Monto></Metrica>
+        <Metrica rotulo="Destinos pendientes"><Monto>{lote.destinosPendientes}</Monto></Metrica>
         <Metrica rotulo="Estado"><Insignia tono={lote.destinosPendientes ? "aviso" : "sello"}>Preparada</Insignia></Metrica>
       </Metricas>
-      <NotaRegla>Este lote no es una orden bancaria. No se ha dispersado dinero ni se ha emitido una tarjeta.</NotaRegla>
-      <Hoja id="personas-lote" titulo="Personas e importes congelados">
+      <NavegacionPersonas actual="nomina" empresaId={empresaId} />
+      <section className="panel" aria-labelledby="personas-lote">
+        <div className="panel-cabeza">
+          <h2 id="personas-lote">Personas e importes congelados</h2>
+          <Link className="enlace-texto" href={enEmpresa(empresaId, "/consola/personas/nomina")}>Volver a Nómina</Link>
+        </div>
         {detalle ? (
-          <div className="personas-tabla-envoltura">
-            <table className="personas-tabla">
-              <thead><tr><th scope="col">Colaborador</th><th scope="col">Neto</th><th scope="col">Destino registrado</th><th scope="col">Revisión</th></tr></thead>
+          <div className="tabla-contenedor">
+            <table className="tabla personas-tabla">
+              <thead><tr><th scope="col">Colaborador</th><th scope="col" className="derecha">Neto</th><th scope="col">Destino registrado</th><th scope="col">Revisión</th></tr></thead>
               <tbody>
                 {items.map((item) => (
                   <tr key={item.id}>
                     <td data-label="Colaborador">{item.nombre}</td>
-                    <td className="numero" data-label="Neto">{dinero(item.netoCentavos)}</td>
+                    <td className="cifra" data-label="Neto">{dinero(item.netoCentavos)}</td>
                     <td data-label="Destino registrado">
                       {item.clabe
                         ? <EtiquetaMono nombre="CLABE">{clabeVisible(item.clabe)}</EtiquetaMono>
@@ -57,7 +57,8 @@ export function DetalleLoteNomina({
         ) : (
           <p className="lede">Tu rol ve el total del lote. El neto y el destino de cada persona los ve quien prepara o autoriza la nómina.</p>
         )}
-      </Hoja>
+      </section>
+      <NotaRegla>Los importes y destinos quedaron congelados al preparar el lote; editar un expediente no los cambia. La dispersión de la nómina todavía no sale desde Lever.</NotaRegla>
     </>
   );
 }

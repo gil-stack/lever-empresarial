@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState, type FormEvent, type ReactNode } f
 
 import { enviarBaja, enviarCentro, enviarFinanzas, enviarPersona } from "@/app/consola/personas/acciones";
 import { enviarSinReiniciar } from "@/components/proveedores/sin-reinicio";
+import { BotonEnviar } from "@/components/sistema";
 import { clabeValida, clabeVisible } from "@/dominio/clabe";
 import {
   erroresDeAltaPersona,
@@ -403,9 +404,7 @@ export function FormularioFinanzas({ userId, habilitado }: { userId: string; hab
       </label>
       <p className="pista">Consulta entradas, salidas y movimientos del libro. No cambia sus otros permisos.</p>
       <div className="acciones">
-        <button type="submit" className="boton-texto" disabled={pendiente}>
-          {pendiente ? "Guardando…" : "Guardar acceso financiero"}
-        </button>
+        <BotonEnviar className="boton-texto" pendiente={pendiente} enviando="Guardando…">Guardar acceso financiero</BotonEnviar>
       </div>
       {estado.tipo === "listo" ? (
         <div className="alerta alerta-asentado" role="status">
@@ -463,7 +462,7 @@ export function FormularioBaja({
       <Campo
         id={id}
         etiqueta={`Fecha de baja de ${nombre}`}
-        pista="Queda en el maestro. No se dispersa dinero."
+        pista="La persona sigue en el directorio con su fecha de baja."
         error={mensaje}
       >
         <FechaLegible
@@ -477,9 +476,7 @@ export function FormularioBaja({
         />
       </Campo>
       <div className="acciones">
-        <button type="submit" className="boton" disabled={pendiente}>
-          {pendiente ? "Guardando…" : bajaActual ? "Corregir la fecha de baja" : "Registrar la baja"}
-        </button>
+        <BotonEnviar pendiente={pendiente} enviando="Guardando…">{bajaActual ? "Corregir la fecha de baja" : "Registrar la baja"}</BotonEnviar>
       </div>
     </form>
   );

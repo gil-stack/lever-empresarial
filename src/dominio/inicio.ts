@@ -16,6 +16,8 @@ export type DatosInicio = {
 
 export type RutaPendiente =
   | "/consola/personas"
+  | "/consola/personas/areas"
+  | "/consola/personas/nueva"
   | "/consola/personas/nomina"
   | "/consola/politica"
   | "/consola/proveedores"
@@ -42,7 +44,7 @@ export function pendientesDeInicio(
     pendientes.push({
       id: "pagos-por-autorizar",
       titulo: datos.pagosPorAutorizar === 1 ? "Autoriza un pago a proveedor" : `Autoriza ${datos.pagosPorAutorizar} pagos a proveedores`,
-      detalle: "Revisa la factura, la CLABE vigente y el importe. Autorizar deja la instrucción lista; no envía SPEI.",
+      detalle: "Revisa la factura, la CLABE vigente y el importe antes de dejarlo listo para pagar.",
       ruta: "/consola/proveedores",
       accion: "Revisar pagos",
       area: "operacion",
@@ -53,7 +55,7 @@ export function pendientesDeInicio(
     pendientes.push({
       id: "nomina-por-preparar",
       titulo: `Prepara el lote de nómina del ${fechaCorta(datos.nominaPorPreparar)}`,
-      detalle: "La fecha ya venció y todavía no tiene lote. Prepararlo deja el lote para revisión; no dispersa dinero.",
+      detalle: "La fecha ya venció y todavía no tiene lote. Prepararlo congela importes y destinos para revisión.",
       ruta: "/consola/personas/nomina",
       accion: "Preparar nómina",
       area: "operacion",
@@ -65,7 +67,7 @@ export function pendientesDeInicio(
       pendientes.push({
         id: "liberadores",
         titulo: faltan === 1 ? "Falta una persona autorizada para liberar" : "Faltan dos personas autorizadas para liberar",
-        detalle: "Deben ser dos personas vigentes y distintas. Configurarlas no mueve dinero.",
+        detalle: "Deben ser dos personas vigentes y distintas.",
         ruta: "/consola/personas",
         accion: "Revisar accesos",
         area: "operacion",
@@ -74,19 +76,19 @@ export function pendientesDeInicio(
     if (datos.centros === 0) {
       pendientes.push({
         id: "centro",
-        titulo: "Nombra el primer centro de costo",
-        detalle: "Las personas del maestro necesitan un centro de esta empresa.",
-        ruta: "/consola/personas",
-        accion: "Abrir Personas",
+        titulo: "Crea la primera área",
+        detalle: "Cada colaborador pertenece a un área, que también es su centro de costo.",
+        ruta: "/consola/personas/areas",
+        accion: "Crear área",
         area: "configuracion",
       });
     } else if (datos.personas === 0) {
       pendientes.push({
         id: "persona",
-        titulo: "Da de alta a la primera persona",
-        detalle: "El maestro todavía no tiene una ficha de persona.",
-        ruta: "/consola/personas",
-        accion: "Abrir Personas",
+        titulo: "Da de alta al primer colaborador",
+        detalle: "El directorio de Personas todavía está vacío.",
+        ruta: "/consola/personas/nueva",
+        accion: "Dar de alta",
         area: "configuracion",
       });
     }

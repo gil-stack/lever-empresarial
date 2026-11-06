@@ -1,9 +1,11 @@
+import { createHash, randomUUID } from "node:crypto";
+
 // Los 11 flujos de Ola 1B (consola), clicados en la aplicación con Playwright
 // headless. Cada envío se hace con doble clic y la base confirma que quedó una
 // sola operación. Lo llama scripts/evidencia/ola1b-consola.mjs flujos.
 
 const CLABE = "002180701150123452";
-const CLABE_NUEVA = "014180655012345678";
+const CLABE_NUEVA = "014180655012345674";
 const UUID_FACTURA = "123E4567-E89B-42D3-A456-426614174998";
 const PDF = "tests/e2e/fixtures/soporte-prueba.pdf";
 const XML = "tests/e2e/fixtures/factura-prueba.xml";
@@ -17,6 +19,17 @@ function fecha(dias) {
 /** Hoy en la Ciudad de México, como lo calcula la aplicación. */
 function hoyMexico() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City" }).format(new Date());
+}
+
+/** Vuelve a sembrar una sesión con el mismo valor de cookie (como preparar.ts). */
+function reponerSesion(sql, userId, valor, superficie) {
+  const entradaId = randomUUID();
+  sql(`
+    insert into auth_entradas (id, user_id, token_hash, creada_en, vence_en, verificada_con, verificada_en, consumida_en)
+      values ('${entradaId}', '${userId}', '${createHash("sha256").update(entradaId).digest("hex")}', now(), now() + interval '10 minutes', 'totp', now(), now());
+    insert into sessions (id, user_id, token_hash, expires_at, superficie, segundo_factor, entrada_id)
+      values ('${randomUUID()}', '${userId}', '${createHash("sha256").update(valor).digest("hex")}', now() + interval '12 hours', '${superficie}', 'totp', '${entradaId}');
+  `);
 }
 
 /** El botón queda desactivado y anuncia que trabaja entre el primer clic y la respuesta. */
@@ -176,6 +189,136 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
       anotar(errores.length === 0, "flujo 4: sin errores de consola (cancelación)", errores.join(" | "));
       await nav.close();
     }
+  }
+
+  const EMPRESA_ALTAMAR = ENTORNO.EMPRESA_ALTAMAR;
+  const COLABORADORA = "Mariana López Ruiz";
+
+  // ---------- 5. Alta de colaborador con nómina ----------
+  if (corre(5)) {
+    const { nav, p, errores } = await abrir({ quien: "laura" });
+    // Primero el área: un presupuesto mal escrito no se pierde al volver con el error.
+    await p.goto(`${BASE}${ALTAMAR}/consola/personas/areas`);
+    const forma = p.locator("section.area-nueva");
+    // La corrida es repetible: si el área ya existe, se crea otra con nombre distinto.
+    const nombreArea = sql(`select count(*) from cost_centers where company_id = '${EMPRESA_ALTAMAR}' and nombre = 'Operaciones'`) === "0" ? "Operaciones" : `Operaciones ${Date.now() % 10000}`;
+    await forma.getByLabel("Área", { exact: true }).fill(nombreArea);
+    await forma.getByLabel("Presupuesto mensual").fill("ciento cincuenta mil");
+    await forma.getByRole("button", { name: "Crear área" }).click();
+    await forma.getByText("Revisa antes de continuar").waitFor({ timeout: 20000 });
+    const presupuesto = forma.getByLabel("Presupuesto mensual");
+    const conserva = await presupuesto.inputValue();
+    const describe = await presupuesto.getAttribute("aria-describedby");
+    const invalido = await presupuesto.getAttribute("aria-invalid");
+    await foto(p, "05-area-error-ligado");
+    anotar(conserva === "ciento cincuenta mil", "flujo 5: tras el error, el presupuesto escrito sigue en el campo", `valor=${conserva}`);
+    anotar(invalido === "true" && (describe ?? "").includes("centroPresupuesto-error"), "flujo 5: el error del presupuesto queda ligado a su campo", `aria-describedby=${describe}`);
+    await presupuesto.fill("150000");
+    const marcasArea = await dobleClic(p, forma.getByRole("button", { name: "Crear área" }));
+    await forma.getByText("El área quedó creada con su presupuesto.").waitFor({ timeout: 20000 });
+    const vistasArea = await marcasArea();
+    const areas = sql(`select count(*) from cost_centers where company_id = '${EMPRESA_ALTAMAR}' and nombre = '${nombreArea}'`);
+    anotar(vistasArea.some((v) => v.disabled && v.busy === "true" && v.texto === "Guardando…"), "flujo 5: «Crear área» se desactiva y dice «Guardando…»", JSON.stringify(vistasArea.slice(0, 3)));
+    anotar(areas === "1", "flujo 5: doble clic deja una sola área", `áreas=${areas}`);
+
+    // El alta, desde la acción de la barra.
+    await p.goto(`${BASE}${ALTAMAR}/consola/personas`);
+    await p.locator(".barra-superior").getByRole("link", { name: "Dar de alta" }).click();
+    await p.waitForURL(/personas\/nueva/);
+    await p.getByLabel("Nombre completo").fill(COLABORADORA);
+    await p.getByLabel("Área", { exact: true }).selectOption({ label: "Operaciones" });
+    await p.getByLabel("Presupuesto individual mensual").fill("8000");
+    await p.getByLabel("Neto por pago").fill("12500");
+    await p.getByLabel("Frecuencia").selectOption("mensual");
+    await p.getByLabel("Primer pago").fill(hoyMexico());
+    await p.getByLabel("CLABE", { exact: true }).fill(CLABE);
+    await p.getByLabel("Usuario de plataforma").selectOption("no");
+    await foto(p, "05-alta-colaborador-llena");
+    const marcas = await dobleClic(p, p.getByRole("button", { name: "Dar de alta colaborador" }));
+    await p.waitForURL(/\/consola\/personas\/[0-9a-f-]{36}/, { timeout: 30000 });
+    await p.getByRole("heading", { name: COLABORADORA, exact: true }).waitFor();
+    const vistas = await marcas();
+    await foto(p, "05-alta-colaborador-expediente");
+    const personas = sql(`select count(*) from employees where company_id = '${EMPRESA_ALTAMAR}' and nombre = '${COLABORADORA}'`);
+    const nominas = sql(`select count(*) from employee_payroll_profiles n join employees e on e.id = n.employee_id where e.nombre = '${COLABORADORA}' and n.neto_centavos = 1250000 and n.activa`);
+    const altas = sql(`select count(*) from audit_log a join employees e on e.id = a.identificador where e.nombre = '${COLABORADORA}' and a.accion = 'alta_persona'`);
+    anotar(vistas.some((v) => v.disabled && v.busy === "true" && v.texto === "Guardando expediente…"), "flujo 5: «Dar de alta colaborador» se desactiva y dice «Guardando expediente…»", JSON.stringify(vistas.slice(0, 3)));
+    anotar(personas === "1" && nominas === "1" && altas === "1", "flujo 5: doble clic deja una persona, una nómina y un asiento de alta", `personas=${personas} nóminas=${nominas} altas=${altas}`);
+    anotar(errores.length === 0, "flujo 5: sin errores de consola", errores.join(" | "));
+    estado.colaboradora = sql(`select id from employees where company_id = '${EMPRESA_ALTAMAR}' and nombre = '${COLABORADORA}'`);
+    await nav.close();
+  }
+
+  // ---------- 6. Cambio de CLABE de nómina con reautenticación ----------
+  if (corre(6)) {
+    const id = estado.colaboradora || sql(`select id from employees where company_id = '${EMPRESA_ALTAMAR}' and nombre = '${COLABORADORA}'`);
+    const ruta = `${BASE}${ALTAMAR}/consola/personas/${id}`;
+    {
+      // La sesión sembrada probó su segundo factor hace más de 30 minutos.
+      const { nav, p, errores } = await abrir({ quien: "laura" });
+      await p.goto(ruta);
+      const hoja = p.locator("section:has(#expediente-clabe)");
+      await hoja.getByLabel("CLABE nueva").fill(CLABE_NUEVA);
+      await hoja.getByRole("button", { name: "Cambiar CLABE de nómina" }).click();
+      await hoja.getByText("Confirma que eres tú").waitFor({ timeout: 20000 });
+      await foto(p, "06-clabe-pide-reautenticar");
+      anotar(sql(`select clabe from employees where id = '${id}'`) === CLABE, "flujo 6: sin segundo factor reciente, la CLABE no cambia");
+      anotar(errores.length === 0, "flujo 6: sin errores de consola (rechazo)", errores.join(" | "));
+      await nav.close();
+    }
+    {
+      // Vuelve a entrar con contraseña y app autenticadora.
+      const { nav, p, errores } = await abrir({});
+      await p.goto(`${BASE}/entrar`);
+      await p.getByLabel("Correo").fill("laura@lever.test");
+      await p.getByLabel("Contraseña", { exact: true }).fill(ENTORNO.CLAVE_LAURA);
+      await p.getByRole("button", { name: "Continuar" }).click();
+      await p.waitForURL(/entrar\/continuar/, { timeout: 30000 });
+      const semilla = (await p.locator(".arco-semilla").textContent()).trim();
+      await p.getByLabel("Código que muestra la app").fill(codigoTotp(semilla));
+      await p.getByRole("button", { name: "Confirmar el código" }).click();
+      await p.getByText("Ya los guardé en un lugar seguro").click();
+      await p.getByRole("button", { name: "Entrar al portal" }).click();
+      await p.waitForURL(/\/consola/, { timeout: 30000 });
+      await p.goto(ruta);
+      const hoja = p.locator("section:has(#expediente-clabe)");
+      await hoja.getByLabel("CLABE nueva").fill(CLABE_NUEVA);
+      await foto(p, "06-clabe-tras-entrar");
+      const marcas = await dobleClic(p, hoja.getByRole("button", { name: "Cambiar CLABE de nómina" }));
+      await hoja.getByText("Quedó asentado").waitFor({ timeout: 30000 });
+      const vistas = await marcas();
+      await foto(p, "06-clabe-cambiada");
+      const vigente = sql(`select clabe from employees where id = '${id}'`);
+      const historial = sql(`select count(*) from employee_payroll_clabes where employee_id = '${id}'`);
+      const cambios = sql(`select count(*) from audit_log where identificador = '${id}' and accion = 'cambiar_clabe_nomina'`);
+      anotar(vistas.some((v) => v.disabled && v.busy === "true" && v.texto === "Guardando…"), "flujo 6: «Cambiar CLABE de nómina» se desactiva y dice «Guardando…»", JSON.stringify(vistas.slice(0, 3)));
+      anotar(vigente === CLABE_NUEVA && historial === "2" && cambios === "1", "flujo 6: tras volver a entrar, doble clic deja un solo cambio y la anterior en el historial", `vigente=${vigente} historial=${historial} cambios=${cambios}`);
+      anotar(errores.length === 0, "flujo 6: sin errores de consola (cambio)", errores.join(" | "));
+      await nav.close();
+    }
+    // Entrar de nuevo cierra las demás sesiones de Laura: se repone la sembrada para los flujos que siguen.
+    reponerSesion(sql, ENTORNO.LAURA_ID, ENTORNO.SESION_LAURA, "cliente");
+  }
+
+  // ---------- 7. Preparar el lote de nómina ----------
+  if (corre(7)) {
+    const { nav, p, errores } = await abrir({ quien: "laura" });
+    await p.goto(`${BASE}${ALTAMAR}/consola/personas/nomina`);
+    const boton = p.getByRole("button", { name: /^Preparar nómina del / });
+    await boton.waitFor();
+    await foto(p, "07-nomina-por-preparar");
+    const marcas = await dobleClic(p, boton);
+    await p.waitForURL(/personas\/nomina\/[0-9a-f-]{36}/, { timeout: 30000 });
+    await p.getByText("Personas e importes congelados").waitFor();
+    const vistas = await marcas();
+    await foto(p, "07-lote-preparado");
+    const lotes = sql(`select count(*) from payroll_batches where company_id = '${EMPRESA_ALTAMAR}'`);
+    const renglones = sql(`select count(*) from payroll_batch_items i join payroll_batches b on b.id = i.batch_id where b.company_id = '${EMPRESA_ALTAMAR}'`);
+    const total = sql(`select total_centavos from payroll_batches where company_id = '${EMPRESA_ALTAMAR}'`);
+    anotar(vistas.some((v) => v.disabled && v.busy === "true" && v.texto === "Preparando…"), "flujo 7: «Preparar nómina» se desactiva y dice «Preparando…»", JSON.stringify(vistas.slice(0, 3)));
+    anotar(lotes === "1" && renglones === "1" && total === "1250000", "flujo 7: doble clic deja un solo lote con su renglón", `lotes=${lotes} renglones=${renglones} total=${total}`);
+    anotar(errores.length === 0, "flujo 7: sin errores de consola", errores.join(" | "));
+    await nav.close();
   }
 
   return { estado, hoyMexico, fecha, CLABE, CLABE_NUEVA, codigoTotp, ALTAMAR, ENTORNO };

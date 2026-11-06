@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CabezaPagina } from "@/components/sistema";
 import { clabeVisible } from "@/dominio/clabe";
 import {
   estaDeBaja,
@@ -147,53 +148,38 @@ export function MaestroCerrado({
 }) {
   if (aviso === "ausente") {
     return (
-      <>
-        <p className="kicker">Personas</p>
-        <h1>No encontramos este registro.</h1>
+      <CabezaPagina kicker="Personas" titulo="No encontramos este registro.">
         <p className="lede">No pertenece a esta empresa o ya no está disponible.</p>
         <div className="acciones"><Link className="boton" href="/consola/personas">Volver a Personas</Link></div>
-      </>
+      </CabezaPagina>
     );
   }
   if (aviso === "entrar") {
     return (
-      <>
-        <p className="kicker">Maestro</p>
-        <h1>Hay que entrar.</h1>
-        <p className="lede">El maestro se abre con la sesión de la empresa.</p>
-        <div className="acciones">
-          <Link className="boton" href="/entrar">
-            Entrar
-          </Link>
-        </div>
-      </>
+      <CabezaPagina kicker="Personas" titulo="Entra para ver Personas.">
+        <p className="lede">Personas se abre con la sesión de tu empresa.</p>
+        <div className="acciones"><Link className="boton" href="/entrar">Entrar</Link></div>
+      </CabezaPagina>
     );
   }
   if (aviso === "sin_empresa") {
     return (
-      <>
-        <p className="kicker">Maestro</p>
-        <h1>Todavía no hay razón social.</h1>
-        <p className="lede">La SOFIPO da de alta a las empresas. Luego, sus personas.</p>
-      </>
+      <CabezaPagina kicker="Personas" titulo="Elige una empresa.">
+        <p className="lede">Personas se abre dentro de una empresa.</p>
+        <div className="acciones"><Link className="boton" href="/empresas">Elegir empresa</Link></div>
+      </CabezaPagina>
     );
   }
   if (aviso === "no_abre") {
     return (
-      <>
-        <p className="kicker">Maestro</p>
-        <h1>Este rol no abre el maestro.</h1>
-        <p className="lede">
-          La CLABE de las personas la ve quien administra, quien libera y el contador. Este rol no.
-        </p>
-      </>
+      <CabezaPagina kicker="Personas" titulo="Tu rol no abre esta pantalla.">
+        <p className="lede">Pide acceso a quien administra la empresa.</p>
+      </CabezaPagina>
     );
   }
   return (
-    <>
-      <p className="kicker">Maestro</p>
-      <h1>No se pudo consultar el maestro.</h1>
-      <p className="lede">Vuelve a intentar en un momento.</p>
-    </>
+    <CabezaPagina kicker="Personas" titulo="No se pudo abrir Personas.">
+      <p className="lede">Vuelve a intentarlo en un momento.</p>
+    </CabezaPagina>
   );
 }
