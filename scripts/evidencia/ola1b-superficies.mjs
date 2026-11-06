@@ -69,6 +69,13 @@ function sql(consulta) {
   return execFileSync("psql", [DUENO, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1", "-c", consulta], { encoding: "utf8" }).trim();
 }
 const contar = (consulta) => Number(sql(consulta));
+async function esperarBase(consulta, valor, ms = 15_000) {
+  const fin = Date.now() + ms;
+  while (contar(consulta) < valor) {
+    if (Date.now() > fin) throw new Error(`FALLO la base no llegó a ${valor}: ${consulta}`);
+    await new Promise((r) => setTimeout(r, 250));
+  }
+}
 
 // Toma la tabla con un candado en una conexión aparte y lo sostiene hasta soltarlo: así una sección
 // que la lee se queda esperando a la base, como cuando la base tarda de verdad.
@@ -227,7 +234,7 @@ async function guardarSesion(nombre, ctx) {
 
 // ---------- Pasos compartidos ----------
 
-async function inscribirTotp(page, correo, { operacion }) {
+async function inscribirTotp(page, correo, { operacion, recargar = false }) {
   const semilla = (await page.locator(".arco-semilla").innerText()).trim();
   estado.semillas[correo] = semilla;
   delete estado.pasos[correo];
@@ -236,7 +243,15 @@ async function inscribirTotp(page, correo, { operacion }) {
   await page.getByRole("button", { name: "Confirmar el código" }).click();
   await page.getByRole("heading", { name: /códigos de respaldo/i }).waitFor();
   if (operacion) {
+    // Se guardan para entrar después con uno: son secretos, no se imprimen ni salen de ESTADO.
+    estado.respaldos = { ...estado.respaldos, [correo]: await page.locator(".arco-codigos li").allInnerTexts() };
+    guardar();
     await page.getByRole("button", { name: "Abrir operación" }).click();
+  } else if (recargar) {
+    // Si la página se recarga con los códigos a la vista, ya no se muestran: queda «Ya puedes entrar.».
+    await page.reload({ waitUntil: "networkidle" });
+    await page.getByRole("heading", { name: "Ya puedes entrar." }).waitFor();
+    await dobleClic(page.getByRole("button", { name: "Entrar al portal" }));
   } else {
     await page.getByText("Ya los guardé en un lugar seguro").click();
     await page.getByRole("button", { name: "Entrar al portal" }).click();
@@ -465,6 +480,17 @@ async function flujos() {
   await op.waitForURL(/aviso=invitacion_/);
   await listo(op);
   exigir(contar(`select count(*) from invitations where user_id = '${idDe(LAURA)}'`) === 1, "doble clic en «Enviar invitación» emite una sola invitación");
+  // Reenviar anula el enlace anterior y emite otro (doble clic): Laura acepta después el vigente.
+  await dobleClic(op.getByRole("button", { name: "Reenviar invitación" }));
+  await esperarBase(`select count(*) from invitations where user_id = '${idDe(LAURA)}'`, 2);
+  await new Promise((r) => setTimeout(r, 1500));
+  await listo(op);
+  exigir(
+    contar(`select count(*) from invitations where user_id = '${idDe(LAURA)}'`) === 2 &&
+      contar(`select count(*) from invitations where user_id = '${idDe(LAURA)}' and revocada_en is not null`) === 1 &&
+      contar(`select count(*) from invitations where user_id = '${idDe(LAURA)}' and revocada_en is null and usada_en is null`) === 1,
+    "doble clic en «Reenviar invitación» anula el enlace anterior y deja uno solo vigente",
+  );
   await capturarEnTodo(op, "15-operacion-ficha-cliente");
 
   // Alertas: crear (doble clic), reasignar y cerrar con motivo.
@@ -565,9 +591,10 @@ async function flujos() {
   const { ctx: ctxL, page: laura } = await contexto();
   await aceptarInvitacion(laura, LAURA, "32-laura");
   await capturarEnTodo(laura, "33-laura-alta-factor");
-  await inscribirTotp(laura, LAURA, { operacion: false });
+  await inscribirTotp(laura, LAURA, { operacion: false, recargar: true });
   await laura.waitForURL(/\/consola|\/empresas/);
   anotar("Laura acepta la invitación, registra su app autenticadora y entra al portal");
+  anotar("si la página se recarga con los códigos a la vista, «Ya puedes entrar.» y «Entrar al portal» abren el portal");
   await ctxL.close();
 
   const { ctx: ctxL2, page: l2 } = await contexto();
@@ -773,7 +800,115 @@ async function flujos() {
   await nuevo.waitForURL(/\/consola|\/empresas/);
   anotar("Laura entra después de la recuperación");
   await guardarSesion(LAURA, ctxN);
+
+  // Seguridad de la cuenta: cada envío con su clic real y el doble clic contado en la base.
+  const laId = idDe(LAURA);
+  const cuenta = (consulta) => contar(`select count(*) from ${consulta.replace("$U", `'${laId}'`)}`);
+  const sinAlerta = async (page) => (await page.locator("#seguridad-error").count()) === 0;
+  const cdp = await ctxN.newCDPSession(nuevo);
+  await cdp.send("WebAuthn.enable");
+  await cdp.send("WebAuthn.addVirtualAuthenticator", {
+    options: { protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true },
+  });
+  await nuevo.goto(`${BASE}/entrar/seguridad`);
+  await listo(nuevo);
+  await nuevo.getByRole("button", { name: "Agregar una passkey" }).click();
+  await nuevo.getByText("Este dispositivo").waitFor();
+  exigir(cuenta("auth_passkeys where user_id = $U and revocada_en is null") === 1, "Seguridad: «Agregar una passkey» registra una con el autenticador del navegador");
+
+  const totpRevocadas = cuenta("auth_totp where user_id = $U and revocado_en is not null");
+  await dobleClic(nuevo.getByRole("button", { name: "Revocar la app" }));
+  await nuevo.getByRole("button", { name: "Configurar la app autenticadora" }).waitFor();
+  exigir(
+    cuenta("auth_totp where user_id = $U and revocado_en is not null") === totpRevocadas + 1 &&
+      cuenta("auth_totp where user_id = $U and revocado_en is null") === 0 &&
+      (await sinAlerta(nuevo)),
+    "doble clic en «Revocar la app» quita una sola app autenticadora, sin error",
+  );
+
+  await nuevo.getByRole("button", { name: "Configurar la app autenticadora" }).click();
+  await nuevo.locator(".arco-semilla").waitFor();
+  estado.semillas[LAURA] = (await nuevo.locator(".arco-semilla").innerText()).trim();
+  delete estado.pasos[LAURA];
+  guardar();
+  await nuevo.getByLabel("Código que muestra la app").fill(await codigoFresco(LAURA));
+  await dobleClic(nuevo.getByRole("button", { name: "Confirmar", exact: true }));
+  await nuevo.getByRole("button", { name: "Revocar la app" }).waitFor();
+  exigir(
+    cuenta("auth_totp where user_id = $U and revocado_en is null and confirmado_en is not null") === 1 && (await sinAlerta(nuevo)),
+    "doble clic en «Confirmar» deja una sola app autenticadora activa, sin error",
+  );
+
+  await nuevo.getByRole("button", { name: "Generar códigos nuevos" }).click();
+  await nuevo.getByRole("heading", { name: "Códigos de respaldo." }).waitFor();
+  const codigosLaura = await nuevo.locator(".arco-codigos li").allInnerTexts();
+  exigir(await nuevo.getByRole("button", { name: "Volver a Seguridad" }).isDisabled(), "con los códigos a la vista, «Volver a Seguridad» espera a que se marque que ya se guardaron");
+  await captura(nuevo, "94a-seguridad-codigos-nuevos-oscuro-1440");
+  await nuevo.getByText("Ya los guardé en un lugar seguro").click();
+  await nuevo.getByRole("button", { name: "Volver a Seguridad" }).click();
+  await nuevo.getByRole("heading", { name: "Segundo factor." }).waitFor();
+  await nuevo.getByText(`Códigos de respaldo disponibles: ${codigosLaura.length}.`).waitFor();
+  exigir(codigosLaura.length >= 2 && /\/entrar\/seguridad/.test(nuevo.url()), "«Generar códigos nuevos» los muestra una vez y «Volver a Seguridad» regresa a la misma página con la cuenta al día");
+
+  // «Confirma que eres tú» con un código de respaldo, cuando el factor ya tiene más de cinco minutos.
+  envejecerFactor(LAURA, 6);
+  await nuevo.reload({ waitUntil: "networkidle" });
+  const confirmaL = nuevo.getByRole("region", { name: "Confirma que eres tú" });
+  await confirmaL.waitFor();
+  const usadosL = cuenta("auth_codigos_respaldo where user_id = $U and usado_en is not null");
+  await confirmaL.getByLabel("Código de respaldo").fill(codigosLaura[0]);
+  await dobleClic(confirmaL.getByRole("button", { name: "Usar un código de respaldo" }));
+  await confirmaL.waitFor({ state: "detached", timeout: 15_000 });
+  await listo(nuevo);
+  exigir(cuenta("auth_codigos_respaldo where user_id = $U and usado_en is not null") === usadosL + 1, "«Confirma que eres tú» con un código de respaldo: el doble clic gasta uno solo");
+
+  await dobleClic(nuevo.getByRole("listitem").filter({ hasText: "Este dispositivo" }).getByRole("button", { name: "Revocar", exact: true }));
+  await nuevo.getByText("No hay passkeys.").waitFor();
+  exigir(
+    cuenta("auth_passkeys where user_id = $U and revocada_en is null") === 0 &&
+      cuenta("auth_passkeys where user_id = $U and revocada_en is not null") === 1 &&
+      (await sinAlerta(nuevo)),
+    "doble clic en «Revocar» quita una sola passkey, sin error",
+  );
+  await guardarSesion(LAURA, ctxN);
   await ctxN.close();
+
+  // Entrada de cliente con un código de respaldo y «Salir» del teléfono.
+  const { ctx: ctxRes, page: res } = await contexto();
+  await entrarCliente(res, LAURA, CLAVE_NUEVA);
+  const usadosAntesEntrada = cuenta("auth_codigos_respaldo where user_id = $U and usado_en is not null");
+  await res.getByLabel("Código de respaldo").fill(codigosLaura[1]);
+  await dobleClic(res.getByRole("button", { name: "Usar un código de respaldo" }));
+  await res.waitForURL(/\/consola|\/empresas/);
+  await listo(res);
+  exigir(cuenta("auth_codigos_respaldo where user_id = $U and usado_en is not null") === usadosAntesEntrada + 1, "Entrar con un código de respaldo: el doble clic gasta uno solo y abre el portal");
+  await res.goto(`${BASE}/telefono`);
+  await listo(res);
+  const sesionesL = cuenta("sessions where user_id = $U");
+  await dobleClic(res.getByRole("button", { name: "Salir" }));
+  await res.waitForURL(`${BASE}/`);
+  await res.goto(`${BASE}/telefono`);
+  exigir(cuenta("sessions where user_id = $U") === sesionesL - 1 && !/\/telefono/.test(res.url()), "«Salir» del teléfono cierra esa sesión: la base la borra y /telefono ya no abre");
+  await ctxRes.close();
+
+  // Operación con un código de respaldo de los que se mostraron al registrar la app.
+  const { ctx: ctxOr, page: opr } = await contexto();
+  await opr.goto(`${BASE}/operacion/entrar`);
+  await opr.getByLabel("Correo").fill(OP);
+  await opr.getByLabel("Contraseña", { exact: true }).fill(CLAVE);
+  await opr.getByRole("button", { name: "Continuar" }).click();
+  await opr.waitForURL(/\/operacion\/continuar/);
+  await listo(opr);
+  const usadosOp = contar(`select count(*) from auth_codigos_respaldo where user_id = '${idDe(OP)}' and usado_en is not null`);
+  await opr.getByLabel("Código de respaldo").fill(estado.respaldos[OP][0]);
+  await dobleClic(opr.getByRole("button", { name: "Usar un código de respaldo" }));
+  await opr.waitForURL(/\/operacion(\?|$)/);
+  await listo(opr);
+  exigir(
+    contar(`select count(*) from auth_codigos_respaldo where user_id = '${idDe(OP)}' and usado_en is not null`) === usadosOp + 1,
+    "Operación: entrar con un código de respaldo gasta uno solo con doble clic",
+  );
+  await ctxOr.close();
   await guardarSesion(OP, ctxOp);
 
   // Salir de Operación desde el menú de la persona.
