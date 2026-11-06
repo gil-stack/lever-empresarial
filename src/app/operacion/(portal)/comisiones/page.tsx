@@ -5,7 +5,7 @@ import { solicitarComisionAccion } from "@/app/operacion/acciones";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { etiquetaEstado, fechaDia } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
-import { Hoja, Insignia, Rejilla, Vacio } from "@/components/sistema";
+import { Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
 import { textoComision } from "@/dominio/operacion";
 import { exigirContextoOperacion, listarClientes, listarComisiones } from "@/server/operacion";
 
@@ -17,11 +17,7 @@ export default async function ComisionesOperacion({ searchParams }: { searchPara
   const [clientes, versiones, params] = await Promise.all([listarClientes(ctx), listarComisiones(ctx), searchParams]);
   const activos = clientes.filter((cliente) => cliente.estado === "activa");
   return (
-    <PaginaOperacion
-      titulo="Comisiones"
-      entrada="La tarifa de cada empresa, por versiones con vigencia. Una persona la propone y otra la autoriza; hoy no genera cargos."
-      aviso={params.aviso}
-    >
+    <PaginaOperacion titulo="Comisiones" aviso={params.aviso}>
       <Rejilla
         principal={
           <Hoja id="versiones-titulo" titulo="Versiones">
@@ -108,6 +104,7 @@ export default async function ComisionesOperacion({ searchParams }: { searchPara
           </Hoja>
         }
       />
+      <NotaRegla>Una persona propone la tarifa y otra la autoriza. Hoy no genera cargos.</NotaRegla>
     </PaginaOperacion>
   );
 }

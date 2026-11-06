@@ -13,10 +13,6 @@
   display: none;
 }
 
-.operacion-pagina > .operacion-entrada {
-  margin: -6px 0 28px;
-}
-
 .operacion-pagina > .saludo {
   margin: 0 0 26px;
 }

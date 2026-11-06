@@ -10,19 +10,17 @@ import { exigirContextoOperacion } from "@/server/operacion/contexto";
 import { AvisoOperacion } from "./aviso";
 
 /**
- * Una página de Operación: la barra de arriba con el título de la página (el único h1),
- * la acción de la página y el chip de la persona; debajo, el aviso del último envío y el contenido.
+ * Una página de Operación, como la consola: el título y la acción van en la barra de arriba
+ * junto al chip de la persona; el contenido abre con el h1 para el lector de pantalla y el aviso
+ * del último envío. Una regla necesaria va una vez donde aplica (NotaRegla), no bajo la barra.
  */
 export async function PaginaOperacion({
   titulo,
-  entrada,
   aviso,
   accion,
   children,
 }: {
   titulo: string;
-  /** Una frase bajo la barra, solo si dice algo que la página no muestra. */
-  entrada?: ReactNode;
   aviso?: string;
   accion?: ReactNode;
   children: ReactNode;
@@ -31,13 +29,13 @@ export async function PaginaOperacion({
   return (
     <>
       <BarraSuperior>
-        <h1 className="barra-titulo">{titulo}</h1>
+        <p className="barra-titulo">{titulo}</p>
         <span className="barra-espacio" />
         {accion}
         <MenuPersona nombre={ctx.persona.nombre} />
       </BarraSuperior>
       <main id="contenido" className="pagina operacion-pagina">
-        {entrada ? <p className="lede operacion-entrada">{entrada}</p> : null}
+        <h1 className="solo-lector">{titulo}</h1>
         <AvisoOperacion codigo={aviso} />
         {children}
       </main>

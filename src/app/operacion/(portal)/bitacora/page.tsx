@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { etiquetaAccion, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
-import { Hoja, Vacio } from "@/components/sistema";
+import { Hoja, NotaRegla, Vacio } from "@/components/sistema";
 import { exigirContextoOperacion, leerBitacora } from "@/server/operacion";
 
 export const runtime = "nodejs";
@@ -13,7 +13,7 @@ export default async function BitacoraOperacion() {
   const ctx = await exigirContextoOperacion();
   const eventos = await leerBitacora(ctx);
   return (
-    <PaginaOperacion titulo="Bitácora" entrada="Quién hizo qué, cuándo y por qué. Nadie la puede editar.">
+    <PaginaOperacion titulo="Bitácora">
       <Hoja id="eventos-titulo" titulo="Eventos">
         {eventos.length === 0 ? (
           <Vacio titulo="Sin eventos">Cada decisión de Operación queda aquí.</Vacio>
@@ -55,6 +55,7 @@ export default async function BitacoraOperacion() {
           </div>
         )}
       </Hoja>
+      <NotaRegla>Nadie puede editar la Bitácora.</NotaRegla>
     </PaginaOperacion>
   );
 }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { asignarAlertaAccion, cerrarAlertaAccion, crearAlertaAccion } from "@/app/operacion/acciones";
 import { etiquetaCategoria, etiquetaEstado, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
-import { Hoja, Insignia, Rejilla, Vacio } from "@/components/sistema";
+import { Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
 import { exigirContextoOperacion, listarAlertas, listarClientes, listarPersonal } from "@/server/operacion";
 
 export const runtime = "nodejs";
@@ -16,7 +16,7 @@ export default async function AlertasOperacion({ searchParams }: { searchParams:
   const abiertas = alertas.filter((alerta) => alerta.estado === "abierta").length;
   const seguimiento = alertas.length === 0 ? "Seguimiento" : `Seguimiento · ${abiertas} ${abiertas === 1 ? "abierta" : "abiertas"} de ${alertas.length}`;
   return (
-    <PaginaOperacion titulo="Alertas" entrada="Cada alerta tiene responsable. Se cierra con un motivo, que no se puede reescribir." aviso={params.aviso}>
+    <PaginaOperacion titulo="Alertas" aviso={params.aviso}>
       <Rejilla
         principal={
           <Hoja id="seguimiento-titulo" titulo={seguimiento}>
@@ -113,6 +113,7 @@ export default async function AlertasOperacion({ searchParams }: { searchParams:
           </Hoja>
         }
       />
+      <NotaRegla>Una alerta se cierra con un motivo, que no se puede reescribir.</NotaRegla>
     </PaginaOperacion>
   );
 }

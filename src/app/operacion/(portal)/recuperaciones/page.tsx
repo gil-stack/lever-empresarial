@@ -6,7 +6,7 @@ import { ConfirmarIdentidad } from "@/components/entrar/confirmar-identidad";
 import { IconoSeguridad } from "@/components/cromo/iconos";
 import { fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
-import { Bandeja, Vacio } from "@/components/sistema";
+import { Bandeja, NotaRegla, Vacio } from "@/components/sistema";
 import { estadoDeConfirmacion, verRecuperaciones } from "@/server/autenticacion";
 import { sesionSegura } from "@/server/entrada";
 import { exigirContextoOperacion } from "@/server/operacion";
@@ -25,11 +25,7 @@ export default async function RecuperacionesOperacion({ searchParams }: { search
   ]);
   const notaInvalida = params.aviso === "verificacion_invalida";
   return (
-    <PaginaOperacion
-      titulo="Recuperaciones"
-      entrada="Aprobar deja que la persona registre un segundo factor nuevo en su próxima entrada; los que ya tiene siguen activos. Nadie decide su propia solicitud."
-      aviso={params.aviso}
-    >
+    <PaginaOperacion titulo="Recuperaciones" aviso={params.aviso}>
       {confirmacion.reciente ? null : (
         <div className="panel operacion-confirmar">
           <ConfirmarIdentidad
@@ -80,6 +76,7 @@ export default async function RecuperacionesOperacion({ searchParams }: { search
           ),
         }))}
       />
+      <NotaRegla>Nadie decide su propia solicitud.</NotaRegla>
     </PaginaOperacion>
   );
 }

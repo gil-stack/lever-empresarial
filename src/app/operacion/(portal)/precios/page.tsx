@@ -21,10 +21,7 @@ export default async function PreciosOperacion() {
     disponible: tarifa.disponible,
   });
   return (
-    <PaginaOperacion
-      titulo="Precios"
-      entrada="Lo que ve cada cliente en Precios y en su plan. La suscripción se publica una sola vez y no se puede cambiar."
-    >
+    <PaginaOperacion titulo="Precios">
       <div className="operacion-precios">
         <RenglonesTarifa tarifa={tarifa} />
         {publicar ? <FormularioPublicar /> : null}
