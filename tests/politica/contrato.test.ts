@@ -82,7 +82,7 @@ describe("el contrato de la migración 0008", () => {
     const acciones = readFileSync(new URL("src/app/consola/politica/acciones.ts", RAIZ), "utf8");
     assert.match(cajones, /formatoPesos\(cajon\.saldoCentavos\)/);
     assert.match(cajones, /formatoPesos\(vista\.sinCajonCentavos\)/);
-    assert.match(cajones, /no se dispersa/i);
+    assert.match(cajones, /ni reemplazan el saldo de la CLABE/);
     assert.doesNotMatch(cajones, /<form/i);
     assert.doesNotMatch(cajones, /<button/i);
     assert.doesNotMatch(cajones, /\$0\.00/);

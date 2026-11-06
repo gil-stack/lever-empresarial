@@ -63,13 +63,13 @@ describe("decisión de pago", () => {
     assert.equal(relatoDePago(fuera).hayBoton, false);
     assert.equal(relatoDePago(enLista).frase, "El proveedor puede existir. El pago no.");
     assert.equal(relatoDePago(sinArchivo).frase, relatoDePago(enLista).frase);
-    assert.equal(relatoDePago(fuera).frase, "Esta pantalla no envía dinero.");
+    assert.equal(relatoDePago(fuera).frase, "No aparece en la lista 69-B.");
     assert.equal(relatoDePago(fuera).tono, "neutro");
     assert.match(relatoDePago(enLista).detalle, /Sentencia Favorable/);
     assert.match(relatoDePago(enLista).detalle, /30 de septiembre de 2026/);
     assert.match(mensajeDeAlta(enLista), /El pago no/);
     assert.match(mensajeDeAlta(sinArchivo), /El pago no/);
-    assert.match(mensajeDeAlta(fuera), /no envía dinero/);
+    assert.match(mensajeDeAlta(fuera), /No aparece en la lista 69-B/);
   });
 
   it("manda el RFC: un nombre no crea al proveedor", () => {

@@ -32,6 +32,19 @@ function reponerSesion(sql, userId, valor, superficie) {
   `);
 }
 
+/** Un pendiente aparece en Pendientes y su acción lleva a la pantalla que lo resuelve. */
+async function pendiente(p, { BASE, empresa, titulo, accion, destino, anotar, foto, nombre }) {
+  await p.goto(`${BASE}${empresa}/consola/pendientes`);
+  const fila = p.locator(".pendientes-inicio li").filter({ has: p.getByRole("heading", { name: titulo }) });
+  const visible = (await fila.count()) === 1;
+  if (visible && foto) await foto(p, nombre);
+  if (visible) {
+    await fila.getByRole("link", { name: accion, exact: true }).click();
+    await p.waitForURL(destino, { timeout: 20000 });
+  }
+  anotar(visible && destino.test(p.url()), `flujo 11: «${typeof titulo === "string" ? titulo : titulo.source}» aparece y «${accion}» lleva a su pantalla`, p.url().replace(BASE, ""));
+}
+
 /** El botón queda desactivado y anuncia que trabaja entre el primer clic y la respuesta. */
 async function dobleClic(p, boton) {
   const marcas = await boton.evaluate((el) => new Promise((resolver) => {
@@ -126,6 +139,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
   if (corre(3)) {
     const id = estado.solicitud || sql(`select r.id from supplier_payment_requests r join supplier_payables p on p.id = r.payable_id where p.cfdi_uuid = '${UUID_FACTURA}'`);
     const { nav, p, errores } = await abrir({ quien: "rosa" });
+    if (corre(11)) await pendiente(p, { BASE, empresa: TALLER, titulo: /^Autoriza (un pago|\d+ pagos)/, accion: "Revisar pagos", destino: /\/consola\/proveedores/, anotar, foto, nombre: "11-pendiente-pago-por-autorizar" });
     await p.goto(`${BASE}${TALLER}/consola/proveedores`);
     await p.getByRole("link", { name: "Abrir pago de Proveedor Uno, S.A. de C.V." }).first().click();
     await p.getByRole("dialog").waitFor();
@@ -197,6 +211,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
   // ---------- 5. Alta de colaborador con nómina ----------
   if (corre(5)) {
     const { nav, p, errores } = await abrir({ quien: "laura" });
+    if (corre(11)) await pendiente(p, { BASE, empresa: ALTAMAR, titulo: "Crea la primera área", accion: "Crear área", destino: /\/consola\/personas\/areas/, anotar, foto, nombre: "11-pendiente-area" });
     // Primero el área: un presupuesto mal escrito no se pierde al volver con el error.
     await p.goto(`${BASE}${ALTAMAR}/consola/personas/areas`);
     const forma = p.locator("section.area-nueva");
@@ -221,6 +236,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
     anotar(vistasArea.some((v) => v.disabled && v.busy === "true" && v.texto === "Guardando…"), "flujo 5: «Crear área» se desactiva y dice «Guardando…»", JSON.stringify(vistasArea.slice(0, 3)));
     anotar(areas === "1", "flujo 5: doble clic deja una sola área", `áreas=${areas}`);
 
+    if (corre(11)) await pendiente(p, { BASE, empresa: ALTAMAR, titulo: "Da de alta al primer colaborador", accion: "Dar de alta", destino: /\/consola\/personas\/nueva/, anotar, foto, nombre: "11-pendiente-primer-colaborador" });
     // El alta, desde la acción de la barra.
     await p.goto(`${BASE}${ALTAMAR}/consola/personas`);
     await p.locator(".barra-superior").getByRole("link", { name: "Dar de alta" }).click();
@@ -303,6 +319,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
   // ---------- 7. Preparar el lote de nómina ----------
   if (corre(7)) {
     const { nav, p, errores } = await abrir({ quien: "laura" });
+    if (corre(11)) await pendiente(p, { BASE, empresa: ALTAMAR, titulo: /^Prepara el lote de nómina del /, accion: "Preparar nómina", destino: /\/consola\/personas\/nomina$/, anotar, foto, nombre: "11-pendiente-nomina" });
     await p.goto(`${BASE}${ALTAMAR}/consola/personas/nomina`);
     const boton = p.getByRole("button", { name: /^Preparar nómina del / });
     await boton.waitFor();
@@ -319,6 +336,121 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
     anotar(lotes === "1" && renglones === "1" && total === "1250000", "flujo 7: doble clic deja un solo lote con su renglón", `lotes=${lotes} renglones=${renglones} total=${total}`);
     anotar(errores.length === 0, "flujo 7: sin errores de consola", errores.join(" | "));
     await nav.close();
+  }
+
+  const EMPRESA_TALLER = ENTORNO.EMPRESA_TALLER;
+
+  // ---------- 8. Editar la política ----------
+  if (corre(8)) {
+    const { nav, p, errores } = await abrir({ quien: "gil" });
+    await p.goto(`${BASE}${TALLER}/consola/politica`);
+    const plazo = p.locator("section").filter({ has: p.getByRole("heading", { name: "Plazo de la empresa" }) });
+    const dias = plazo.getByLabel("Días para pasar de «todavía no» a «ya se pasó»");
+    await dias.fill("muchos");
+    await plazo.getByRole("button", { name: "Guardar el plazo" }).click();
+    await plazo.getByRole("alert").waitFor({ timeout: 20000 });
+    const conserva = await dias.inputValue();
+    const describe = await dias.getAttribute("aria-describedby");
+    const alerta = await plazo.getByRole("alert").getAttribute("id");
+    await foto(p, "08-politica-error-ligado");
+    anotar(conserva === "muchos", "flujo 8: tras el error, el plazo escrito sigue en el campo", `valor=${conserva}`);
+    anotar(Boolean(describe) && describe === alerta && (await dias.getAttribute("aria-invalid")) === "true", "flujo 8: el error del plazo queda ligado a su campo", `aria-describedby=${describe}`);
+    const nuevo = sql(`select dias_comprobante from policies where company_id = '${EMPRESA_TALLER}'`) === "7" ? "8" : "7";
+    await dias.fill(nuevo);
+    const antes = Number(sql(`select count(*) from audit_log where company_id = '${EMPRESA_TALLER}' and accion = 'editar_politica'`));
+    const marcas = await dobleClic(p, plazo.getByRole("button", { name: "Guardar el plazo" }));
+    await plazo.getByRole("status").waitFor({ timeout: 20000 });
+    const vistas = await marcas();
+    await p.getByText(`${nuevo} días para pasar de «todavía no» a «ya se pasó»`).first().waitFor({ timeout: 20000 });
+    const despues = Number(sql(`select count(*) from audit_log where company_id = '${EMPRESA_TALLER}' and accion = 'editar_politica'`));
+    const guardado = sql(`select dias_comprobante from policies where company_id = '${EMPRESA_TALLER}'`);
+    anotar(vistas.some((v) => v.disabled && v.busy === "true" && v.texto === "Guardando…"), "flujo 8: «Guardar el plazo» se desactiva y dice «Guardando…»", JSON.stringify(vistas.slice(0, 3)));
+    anotar(guardado === nuevo && despues - antes === 1, "flujo 8: doble clic guarda el plazo una sola vez", `días=${guardado} asientos nuevos=${despues - antes}`);
+    // Una categoría sin tope: deja el pendiente «topes» para el flujo 11.
+    const categorias = p.locator("section").filter({ has: p.getByRole("heading", { name: "Categorías", exact: true }) });
+    const nombre = `Viáticos de campo ${Date.now() % 10000}`;
+    await categorias.getByLabel("Nombre", { exact: true }).fill(nombre);
+    const marcasCategoria = await dobleClic(p, categorias.getByRole("button", { name: "Agregar categoría" }));
+    await categorias.getByRole("heading", { name: nombre }).waitFor({ timeout: 20000 });
+    const vistasCategoria = await marcasCategoria();
+    await foto(p, "08-politica-guardada");
+    const creadas = sql(`select count(*) from policy_categories where company_id = '${EMPRESA_TALLER}' and nombre = '${nombre}'`);
+    anotar(vistasCategoria.some((v) => v.disabled && v.busy === "true"), "flujo 8: «Agregar categoría» se desactiva mientras guarda", JSON.stringify(vistasCategoria.slice(0, 3)));
+    anotar(creadas === "1" && (await categorias.getByLabel("Nombre", { exact: true }).inputValue()) === "", "flujo 8: doble clic crea una sola categoría y la forma queda lista para otra", `categorías=${creadas}`);
+    anotar(errores.length === 0, "flujo 8: sin errores de consola", errores.join(" | "));
+    await nav.close();
+  }
+
+  // ---------- 9. Lista 69-B: copia como personal SOFIPO y consulta de un RFC ----------
+  if (corre(9)) {
+    {
+      const { nav, p, errores } = await abrir({ quien: "ofelia" });
+      await p.goto(`${BASE}/consola/lista-69b`);
+      const antes = sql("select count(*) from lista_69b_snapshots");
+      await foto(p, "09-lista-69b-sofipo");
+      const marcas = await dobleClic(p, p.getByRole("button", { name: "Guardar el listado" }));
+      await p.locator("#carga-69b").locator("xpath=..").locator(".alerta").first().waitFor({ timeout: 70000 });
+      const vistas = await marcas();
+      const aviso = (await p.locator(".alerta").first().textContent()).trim();
+      await foto(p, "09-lista-69b-resultado");
+      const despues = sql("select count(*) from lista_69b_snapshots");
+      anotar(vistas.some((v) => v.disabled && v.busy === "true" && v.texto === "Descargando…"), "flujo 9: «Guardar el listado» se desactiva y dice «Descargando…»", JSON.stringify(vistas.slice(0, 3)));
+      const guardo = Number(despues) - Number(antes);
+      anotar(guardo <= 1, "flujo 9: doble clic no guarda dos copias", `copias antes=${antes} después=${despues} · aviso=${aviso.slice(0, 160)}`);
+      anotar(errores.length === 0, "flujo 9: sin errores de consola (copia)", errores.join(" | "));
+      estado.copia69b = { guardo, aviso };
+      await nav.close();
+    }
+    {
+      const { nav, p, errores } = await abrir({ quien: "gil" });
+      await p.goto(`${BASE}${TALLER}/consola/lista-69b`);
+      await p.getByLabel("RFC del proveedor").fill("AAA010101AAA");
+      await p.getByRole("button", { name: "Consultar" }).click();
+      await p.locator(".resultado-69b").waitFor({ timeout: 20000 });
+      const frase = (await p.locator(".resultado-69b .frase").first().textContent()).trim();
+      await foto(p, "09-lista-69b-consulta");
+      anotar(frase.length > 0 && !/no envía dinero/i.test(frase), "flujo 9: la consulta de un RFC responde con su situación", frase);
+      anotar(errores.length === 0, "flujo 9: sin errores de consola (consulta)", errores.join(" | "));
+      await nav.close();
+    }
+  }
+
+  // ---------- 10. Configuración y plan ----------
+  if (corre(10)) {
+    const { nav, p, errores } = await abrir({ quien: "gil" });
+    const destinos = [
+      { nombre: "Plan", url: /\/consola\/configuracion\/plan/, ve: "Suscripción de esta empresa" },
+      { nombre: "Póliza", url: /\/consola\/poliza/, ve: "Pólizas para tu contador" },
+      { nombre: "Apariencia", url: /\/consola\/apariencia/, ve: null },
+      { nombre: "Seguridad", url: /\/entrar\/seguridad/, ve: null },
+    ];
+    for (const destino of destinos) {
+      await p.goto(`${BASE}${TALLER}/consola/configuracion`);
+      if (destino.nombre === "Plan") await foto(p, "10-configuracion");
+      await p.locator(".ajustes").getByRole("link", { name: new RegExp(`^${destino.nombre}`) }).click();
+      await p.waitForURL(destino.url, { timeout: 20000 });
+      if (destino.ve) await p.getByText(destino.ve).first().waitFor({ timeout: 20000 });
+      const h1 = await p.locator("h1").count();
+      if (destino.nombre === "Plan") await foto(p, "10-plan");
+      anotar(destino.url.test(p.url()) && h1 === 1, `flujo 10: «${destino.nombre}» abre su pantalla con un solo h1`, p.url().replace(BASE, ""));
+    }
+    anotar(errores.length === 0, "flujo 10: sin errores de consola", errores.join(" | "));
+    await nav.close();
+  }
+
+  // ---------- 11. Pendientes: los que quedan, con su acción clicada ----------
+  if (corre(11)) {
+    const { nav, p, errores } = await abrir({ quien: "laura" });
+    await pendiente(p, { BASE, empresa: ALTAMAR, titulo: /^Falta(n)? (una|dos) personas? autorizadas? para liberar/, accion: "Revisar accesos", destino: /\/consola\/personas$/, anotar, foto, nombre: "11-pendiente-liberadores" });
+    await pendiente(p, { BASE, empresa: ALTAMAR, titulo: "Crea la primera categoría", accion: "Configurar política", destino: /\/consola\/politica/, anotar, foto, nombre: "11-pendiente-categoria" });
+    await pendiente(p, { BASE, empresa: ALTAMAR, titulo: "Registra el primer proveedor", accion: "Configurar proveedores", destino: /\/consola\/proveedores/, anotar, foto, nombre: "11-pendiente-proveedor" });
+    await pendiente(p, { BASE, empresa: ALTAMAR, titulo: "Revisa el plan de esta empresa", accion: "Ver plan", destino: /\/consola\/configuracion\/plan/, anotar, foto, nombre: "11-pendiente-plan" });
+    anotar(errores.length === 0, "flujo 11: sin errores de consola (Altamar)", errores.join(" | "));
+    await nav.close();
+    const gil = await abrir({ quien: "gil" });
+    await pendiente(gil.p, { BASE, empresa: TALLER, titulo: /categorías? sin tope escrito/, accion: "Revisar topes", destino: /\/consola\/politica/, anotar, foto, nombre: "11-pendiente-topes" });
+    anotar(gil.errores.length === 0, "flujo 11: sin errores de consola (Taller)", gil.errores.join(" | "));
+    await gil.nav.close();
   }
 
   return { estado, hoyMexico, fecha, CLABE, CLABE_NUEVA, codigoTotp, ALTAMAR, ENTORNO };

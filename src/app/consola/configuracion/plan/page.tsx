@@ -5,7 +5,7 @@ import { Marco } from "@/components/cromo/marco";
 import { vistaDeMarco } from "@/components/cromo/puertas";
 import { RenglonesTarifa } from "@/components/precios/renglones";
 import { SuscripcionEmpresa } from "@/components/precios/suscripcion-empresa";
-import { CabezaPagina } from "@/components/sistema";
+import { Aviso } from "@/components/sistema";
 import { abrirRuta } from "@/server/entrada";
 import { leerSuscripcionDeLaEmpresa, leerTarifa } from "@/server/precio";
 
@@ -19,14 +19,12 @@ export default async function PaginaPlan() {
   const tarifa = await leerTarifa();
   const suscripcion = apertura.tipo === "abierta" ? await leerSuscripcionDeLaEmpresa(apertura.ctx) : { tipo: "sin_empresa" as const };
   return (
-    <Marco actual="/consola/configuracion" vista={vistaDeMarco(ctx)}>
-      <main id="contenido" className="precios">
-        <CabezaPagina kicker="Configuración" titulo="Plan">
-          <p className="lede">Consulta la suscripción de esta empresa y los renglones publicados por la plataforma.</p>
-        </CabezaPagina>
-        {apertura.tipo === "libro" ? <div className="alerta" role="alert"><p>No se pudo confirmar la empresa. La tarifa pública se muestra sin datos de suscripción.</p></div> : null}
-        <RenglonesTarifa tarifa={tarifa} />
+    <Marco actual="/consola/configuracion" vista={vistaDeMarco(ctx)} titulo="Plan">
+      <main id="contenido" className="precios plan-empresa">
+        <h1 className="solo-lector">Plan de la empresa</h1>
+        {apertura.tipo === "libro" ? <Aviso titulo="No se pudo confirmar la empresa">La tarifa publicada se muestra sin los datos de tu suscripción.</Aviso> : null}
         <SuscripcionEmpresa tarifa={tarifa} lectura={suscripcion} />
+        <RenglonesTarifa tarifa={tarifa} />
       </main>
     </Marco>
   );

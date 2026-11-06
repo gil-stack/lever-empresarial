@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 
 type Carga =
   | { tipo: "sin_empresa" }
+  | { tipo: "sin_permiso" }
   | { tipo: "lista"; vista: VistaPolitica }
   | { tipo: "aviso"; mensaje: string };
 
@@ -27,12 +28,14 @@ export default async function PaginaPolitica() {
   const carga =
     apertura.tipo === "libro"
       ? ({ tipo: "aviso", mensaje: "No se pudieron leer la política ni los cajones." } as const)
-      : apertura.tipo === "sin_empresa" || apertura.tipo === "sin_permiso" || !ctx
-        ? ({ tipo: "sin_empresa" } as const)
-        : await cargar(ctx);
+      : apertura.tipo === "sin_permiso"
+        ? ({ tipo: "sin_permiso" } as const)
+        : apertura.tipo === "sin_empresa" || !ctx
+          ? ({ tipo: "sin_empresa" } as const)
+          : await cargar(ctx);
 
   return (
-    <Marco actual="/consola/politica" vista={vistaDeMarco(ctx)}>
+    <Marco actual="/consola/politica" vista={vistaDeMarco(ctx)} titulo="Política">
       <main id="contenido">
         {carga.tipo === "lista" ? (
           <PanelPolitica vista={carga.vista} />
@@ -62,12 +65,14 @@ async function cargar(ctx: ContextoDeTenant): Promise<Carga> {
 }
 
 function titulo(carga: Exclude<Carga, { tipo: "lista" }>): string {
-  if (carga.tipo === "sin_empresa") return "Todavía no hay razón social.";
-  return "No se pudo consultar la cuenta.";
+  if (carga.tipo === "sin_empresa") return "Elige una empresa.";
+  if (carga.tipo === "sin_permiso") return "Tu rol no abre Política.";
+  return "No se pudo abrir la política.";
 }
 
 function detalle(carga: Exclude<Carga, { tipo: "lista" }>): string {
-  if (carga.tipo === "sin_empresa") return "La política nace con la empresa. La SOFIPO la da de alta.";
+  if (carga.tipo === "sin_empresa") return "La política se abre dentro de una empresa.";
+  if (carga.tipo === "sin_permiso") return "Pide acceso a quien administra la empresa.";
   return carga.mensaje;
 }
 

@@ -47,29 +47,30 @@ test("la mesa se ve completa en claro, oscuro y móvil", async ({ page }) => {
   await entrar(page);
   await page.goto(BASE);
   await elegirTema(page, "Claro");
-  await expect(page.getByRole("heading", { name: "Pagos a proveedores", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Facturas y obligaciones", exact: true })).toBeVisible();
   await expect(page.getByText("Servicios Norte Integrales", { exact: true })).toBeVisible();
   await captura(page, "01-mesa-claro");
 
   await page.getByRole("link", { name: "Abrir pago de Servicios Norte Integrales" }).click();
-  await expect(page.getByRole("complementary", { name: "Detalle del pago" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Servicios Norte Integrales" })).toBeVisible();
   await expect(page.getByText("N-204", { exact: true }).last()).toBeVisible();
   await captura(page, "02-detalle-pago-claro");
 
   await elegirTema(page, "Oscuro");
   await expect(page.locator("html")).toHaveAttribute("data-tema", "oscuro");
-  await expect(page.getByRole("complementary", { name: "Detalle del pago" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Servicios Norte Integrales" })).toBeVisible();
   await captura(page, "03-detalle-pago-oscuro");
   await elegirTema(page, "Claro");
   await expect(page.locator("html")).toHaveAttribute("data-tema", "claro");
 
-  await page.locator(".proveedores-tabs").getByRole("link", { name: "Proveedores 3", exact: true }).click();
+  await page.locator(".mesa-vistas").getByRole("link", { name: "Proveedores · 3", exact: true }).click();
   await page.getByRole("link", { name: "Abrir expediente de Proveedor Uno, S.A. de C.V." }).click();
-  await expect(page.getByRole("complementary", { name: "Expediente del proveedor" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Proveedor Uno, S.A. de C.V." })).toBeVisible();
   await captura(page, "04-expediente-proveedor");
 
-  await page.getByRole("link", { name: "Agenda", exact: true }).click();
-  await expect(page.getByText("Agenda ordenada por fecha prevista")).toBeVisible();
+  await page.getByRole("dialog").getByRole("button", { name: "Cerrar" }).click();
+  await page.locator(".mesa-vistas").getByRole("link", { name: "Agenda", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Agenda de pagos", exact: true })).toBeVisible();
   await captura(page, "05-agenda");
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -103,7 +104,7 @@ test("alta, factura, excepción, descarga y autorización con otra persona", asy
   await page.getByLabel("Fecha prevista de pago").fill(fecha(5));
   await captura(page, "08-nuevo-pago-cfdi");
   await page.getByRole("button", { name: "Revisar y solicitar" }).click();
-  await expect(page.getByText("El pago quedó enviado a autorización. Todavía no se mueve dinero.")).toBeVisible();
+  await expect(page.getByText("El pago quedó en autorización. Otra persona lo revisa.")).toBeVisible();
   const detalleCfdi = await page.getByRole("link", { name: "Ver el detalle del pago" }).getAttribute("href");
   expect(detalleCfdi).toBeTruthy();
 
@@ -130,7 +131,7 @@ test("alta, factura, excepción, descarga y autorización con otra persona", asy
   await page.getByLabel("Por qué no hay factura").fill("Trabajo excepcional aprobado por dirección general");
   await captura(page, "09-nuevo-pago-excepcion");
   await page.getByRole("button", { name: "Revisar y solicitar" }).click();
-  await expect(page.getByText("El pago quedó enviado a autorización. Todavía no se mueve dinero.")).toBeVisible();
+  await expect(page.getByText("El pago quedó en autorización. Otra persona lo revisa.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Revisar y solicitar" })).toBeDisabled();
   const detalleExcepcion = await page.getByRole("link", { name: "Ver el detalle del pago" }).getAttribute("href");
   expect(detalleExcepcion).toBeTruthy();
@@ -193,7 +194,7 @@ test("una corrección que falla conserva el importe y la evidencia elegidos", as
 test("limita archivos combinados y no ofrece cambiar CLABE a un liberador", async ({ page }) => {
   await entrar(page, ROSA);
   await page.goto(`${BASE}?vista=proveedores&proveedor=44444444-4444-4444-8444-444444444441`);
-  await expect(page.getByRole("complementary", { name: "Expediente del proveedor" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Proveedor Uno, S.A. de C.V." })).toBeVisible();
   await expect(page.getByText("Cambiar CLABE", { exact: true })).toHaveCount(0);
 
   await entrar(page);

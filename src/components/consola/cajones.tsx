@@ -30,7 +30,6 @@ export function Cajones({ vista, enlace = null }: { vista: VistaCajones; enlace?
         El saldo de cada cajón es la suma de sus asientos. Estas cifras no se suman con el límite de la
         tarjeta ni reemplazan el saldo de la CLABE.
       </p>
-      <p className="nota-saldos">El participante sigue sin consulta. Desde aquí no se dispersa ni se envía un SPEI.</p>
       {enlace ? (
         <Link className="enlace-texto" href={enlace}>
           Política de comprobantes

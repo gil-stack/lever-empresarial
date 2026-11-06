@@ -109,11 +109,11 @@ export function decidirPago69b(entrada: {
 /** La misma frase en la ficha y en la lista cuando el archivo no deja pagar. */
 export const FRASE_SIN_PAGO = "El proveedor puede existir. El pago no.";
 
-/** Esta pantalla no manda el pago, aunque el archivo no lo impida. */
-export const FRASE_ESTA_PANTALLA = "Esta pantalla no envía dinero.";
+/** Lo que se dice cuando el RFC no está en el archivo vigente. */
+export const FRASE_FUERA_DE_LISTA = "No aparece en la lista 69-B.";
 
 export function fraseDePago69b(decision: DecisionPago69b): string {
-  if (decision.motivo === "fuera_del_listado") return FRASE_ESTA_PANTALLA;
+  if (decision.motivo === "fuera_del_listado") return FRASE_FUERA_DE_LISTA;
   return FRASE_SIN_PAGO;
 }
 
