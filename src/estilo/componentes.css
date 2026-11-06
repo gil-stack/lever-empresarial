@@ -8,12 +8,14 @@
 
 /* Página: ancho, aire y cabeza */
 
+/* El lienzo del diseño: alineado con la barra de arriba, hasta 1380 px */
 .pagina,
 .consola,
 .precios {
-  width: var(--ancho);
-  margin: 0 auto;
-  padding: clamp(40px, 6vw, 80px) 0 104px;
+  width: 100%;
+  max-width: 1380px;
+  margin: 0;
+  padding: 18px var(--margen) 80px;
   container-type: inline-size;
 }
 
@@ -70,12 +72,14 @@ h1 + .rfc-cuenta {
 .alta > .alta-formulario,
 .entrada > .alta-formulario,
 .estado-cuenta {
+  position: relative;
   min-width: 0;
-  padding: clamp(22px, 2.6vw, 32px);
-  border: 1px solid var(--linea);
-  border-radius: var(--radio);
-  background: var(--hoja);
-  box-shadow: 0 1px 2px var(--sombra);
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel);
+  -webkit-backdrop-filter: blur(30px) saturate(115%);
+  backdrop-filter: blur(30px) saturate(115%);
 }
 
 .hoja > h2,
@@ -88,6 +92,9 @@ h1 + .rfc-cuenta {
 .tarifa > h2,
 .ceros > h2 {
   margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
 }
 
 .hoja .lede,
@@ -226,27 +233,36 @@ h1 + .rfc-cuenta {
 .estado-persona {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
-  padding: 0 10px;
-  border: 1px solid var(--linea);
-  border-radius: 999px;
-  color: var(--tinta-suave);
-  font-size: 0.78rem;
+  gap: 7px;
+  color: var(--tx2);
+  font-size: 12px;
   font-weight: 500;
   white-space: nowrap;
+  vertical-align: 1px;
 }
 
-.insignia-sello {
-  border-color: transparent;
-  background: var(--sello-tenue);
-  color: var(--sello);
+.insignia::before,
+.estado-persona::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tx3);
+}
+
+.insignia-sello::before {
+  background: var(--acc);
 }
 
 .insignia-aviso,
 .estado-baja {
-  border-color: transparent;
-  background: var(--aviso-tenue);
-  color: var(--aviso);
+  color: var(--danger);
+}
+
+.insignia-aviso::before,
+.estado-baja::before {
+  background: var(--danger);
 }
 
 /* Nota de regla: una regla fija del producto, con el filete de la página */
@@ -390,10 +406,10 @@ h1 + .rfc-cuenta {
 .campo label,
 .confirmacion span {
   display: block;
-  margin-bottom: 8px;
-  color: var(--tinta);
-  font-size: 0.88rem;
-  font-weight: 500;
+  margin-bottom: 7px;
+  color: var(--tx2);
+  font-size: 12.5px;
+  font-weight: 400;
   line-height: 1.4;
 }
 
@@ -401,32 +417,32 @@ h1 + .rfc-cuenta {
 .campo select,
 .fecha-partes select {
   width: 100%;
-  min-height: 46px;
-  padding: 0 14px;
-  border: 1px solid var(--linea-fuerte);
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid var(--line2);
   border-radius: var(--radio-control);
   background-color: var(--campo);
   color: var(--tinta);
   font: inherit;
-  font-size: 1rem;
+  font-size: 13.5px;
   line-height: 1.4;
   transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+    border-color 0.3s,
+    box-shadow 0.3s;
 }
 
 .campo input:hover,
 .campo select:hover,
 .fecha-partes select:hover {
-  border-color: var(--tinta-tenue);
+  border-color: color-mix(in srgb, var(--tx) 26%, transparent);
 }
 
 .campo input:focus-visible,
 .campo select:focus-visible,
 .fecha-partes select:focus-visible {
   outline: none;
-  border-color: var(--sello);
-  box-shadow: 0 0 0 3px var(--sello-tenue);
+  border-color: color-mix(in srgb, var(--tx) 40%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tx) 8%, transparent);
 }
 
 .campo select,
@@ -451,7 +467,7 @@ h1 + .rfc-cuenta {
 
 .campo select option {
   color: var(--tinta);
-  background: var(--campo);
+  background: var(--s2);
 }
 
 .select-vacio {
@@ -574,22 +590,24 @@ h1 + .rfc-cuenta {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 40px;
+  min-height: 36px;
   padding: 0 16px;
   border: 1px solid var(--primario);
   border-radius: var(--radio-control);
   background: var(--primario);
   color: var(--sobre-primario);
   font: inherit;
-  font-size: 0.88rem;
-  font-weight: 550;
+  font-size: 13px;
+  font-weight: 500;
   line-height: 1;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
-  box-shadow: 0 1px 2px var(--sombra);
   transition:
-    background-color 0.15s ease,
-    transform 0.1s ease;
+    background-color 0.3s,
+    color 0.3s,
+    border-color 0.3s,
+    opacity 0.3s;
 }
 
 .boton:hover {
@@ -608,34 +626,73 @@ h1 + .rfc-cuenta {
 
 .boton[aria-disabled="true"],
 .boton-apagado:disabled {
-  border-color: var(--linea-fuerte);
-  background: var(--linea-fuerte);
-  color: var(--tinta-suave);
-  box-shadow: none;
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
-.boton-texto {
+/* Secundario: con borde, sin fondo. `.boton-secundario` es el mismo botón. */
+.boton-texto,
+.boton-secundario {
   appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   min-height: 36px;
-  padding: 0 13px;
-  border: 1px solid var(--linea-fuerte);
+  padding: 0 16px;
+  border: 1px solid var(--line2);
   border-radius: var(--radio-control);
-  background: var(--hoja);
+  background: none;
   color: var(--tinta);
   font: inherit;
-  font-size: 0.84rem;
+  font-size: 13px;
   font-weight: 500;
   line-height: 1;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
+  transition:
+    background-color 0.3s,
+    border-color 0.3s;
 }
 
-.boton-texto:hover {
-  background: var(--realce);
+.boton-texto:hover,
+.boton-secundario:hover {
+  border-color: color-mix(in srgb, var(--tx) 32%, transparent);
+  background: color-mix(in srgb, var(--tx) 4%, transparent);
+}
+
+.boton-fantasma {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radio-control);
+  background: none;
+  color: var(--tx2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.boton-fantasma:hover {
+  color: var(--tx);
+}
+
+.boton.boton-chico,
+.boton-texto.boton-chico,
+.boton-secundario.boton-chico,
+.boton-fantasma.boton-chico {
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 9px;
+  font-size: 12.5px;
 }
 
 .enlace-texto {
@@ -652,29 +709,27 @@ h1 + .rfc-cuenta {
 }
 
 .enlace-texto:hover {
-  color: var(--sello);
   text-decoration-color: currentColor;
 }
 
 .alerta {
   margin: 0 0 24px;
   padding: 14px 16px 16px;
-  border: 1px solid var(--linea);
-  border-left: 3px solid var(--aviso);
-  border-radius: var(--radio-control);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  border-radius: 12px;
   background: var(--aviso-tenue);
 }
 
 .alerta-asentado {
-  border-left-color: var(--sello);
+  border-color: color-mix(in srgb, var(--acc) 35%, transparent);
   background: var(--sello-tenue);
 }
 
 .alerta-titulo {
   margin-bottom: 6px;
   font-family: var(--fuente-sans);
-  font-size: 0.92rem;
-  font-weight: 650;
+  font-size: 13.5px;
+  font-weight: 500;
   line-height: 1.3;
 }
 
@@ -813,14 +868,14 @@ h1 + .rfc-cuenta {
 .saludo {
   margin-top: 18px;
   color: var(--tinta-suave);
-  font-size: 0.88rem;
+  font-size: 12.5px;
 }
 
 .resumen-cifras {
   display: grid;
-  grid-template-columns: minmax(280px, 1.15fr) minmax(0, 2.4fr);
-  gap: 22px 0;
-  align-items: start;
+  grid-template-columns: minmax(280px, 1.25fr) minmax(0, 2fr);
+  gap: 30px 44px;
+  align-items: end;
 }
 
 .saldo-principal {
@@ -831,21 +886,22 @@ h1 + .rfc-cuenta {
 .cifra-grande {
   display: flex;
   align-items: flex-start;
-  margin: 0;
-  font-size: clamp(2.6rem, 5.2cqi, 4.1rem);
+  margin: 16px 0 18px;
+  font-family: var(--fd);
+  font-size: clamp(42px, 4.3vw, 70px);
   font-variant-numeric: tabular-nums;
-  font-weight: 300;
+  font-weight: 200;
   letter-spacing: -0.045em;
-  line-height: 1;
+  line-height: 0.95;
   white-space: nowrap;
 }
 
 .cifra-centavos {
-  margin: 0.16em 0 0 0.04em;
-  color: var(--tinta-tenue);
-  font-size: 0.4em;
-  font-weight: 400;
-  letter-spacing: -0.01em;
+  margin: 0.12em 0 0 2px;
+  color: var(--tx3);
+  font-size: 0.5em;
+  font-weight: 200;
+  letter-spacing: 0;
 }
 
 .saldo-pie {
@@ -881,8 +937,8 @@ h1 + .rfc-cuenta {
 
 .metrica {
   min-width: 0;
-  padding: 2px 22px 0;
-  border-left: 1px solid var(--linea);
+  padding: 2px 26px 0;
+  border-left: 1px solid var(--line2);
 }
 
 .metrica .rotulo {
@@ -894,12 +950,15 @@ h1 + .rfc-cuenta {
 }
 
 .metrica .monto {
-  font-size: clamp(1.25rem, 1.8cqi, 1.55rem);
+  margin: 14px 0 6px;
+  font-size: clamp(20px, 1.8vw, 26px);
+  white-space: nowrap;
 }
 
 .metrica .pista {
   margin-top: 6px;
-  font-size: 0.8rem;
+  color: var(--tx3);
+  font-size: 12px;
 }
 
 @container (max-width: 860px) {
@@ -921,10 +980,12 @@ h1 + .rfc-cuenta {
 
 .bandeja {
   margin-top: 40px;
-  border: 1px solid var(--linea);
-  border-radius: var(--radio);
-  background: var(--hoja);
-  box-shadow: 0 1px 2px var(--sombra);
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel);
+  -webkit-backdrop-filter: blur(30px) saturate(115%);
+  backdrop-filter: blur(30px) saturate(115%);
 }
 
 .consola > .bandeja + * {
@@ -936,24 +997,24 @@ h1 + .rfc-cuenta {
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 12px 20px;
-  padding: 16px 20px;
+  gap: 12px;
+  margin-bottom: 18px;
 }
 
 .bandeja-cabeza h2 {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .bandeja-cuenta {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  color: var(--tinta-suave);
-  font-size: 0.82rem;
+  gap: 7px;
+  color: var(--tx2);
+  font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -962,7 +1023,7 @@ h1 + .rfc-cuenta {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--sello);
+  background: var(--warn);
 }
 
 .bandeja-herramientas {
@@ -978,13 +1039,13 @@ h1 + .rfc-cuenta {
   align-items: center;
   gap: 5px;
   margin-right: 6px;
-  color: var(--tinta-tenue);
-  font-size: 0.78rem;
+  color: var(--tx3);
+  font-size: 12px;
 }
 
 .bandeja-vacia {
-  padding: 22px 20px 24px;
-  border-top: 1px solid var(--linea);
+  padding: 16px 0 4px;
+  border-top: 1px solid var(--line);
 }
 
 .bandeja-vacia p:last-child:not(.vacio-titulo) {
@@ -1003,26 +1064,40 @@ h1 + .rfc-cuenta {
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 14px;
-  padding: 16px 20px;
-  border-top: 1px solid var(--linea);
-  outline-offset: -2px;
+  gap: 16px;
+  margin: 0 -14px;
+  padding: 16px 14px;
+  border-top: 1px solid var(--line);
+  border-radius: 12px;
+  outline: none;
+  transition: background-color 0.3s;
+}
+
+.decision:first-child {
+  border-top: 0;
+  padding-top: 4px;
 }
 
 .decision-con-casilla {
-  grid-template-columns: 18px 34px minmax(0, 1fr) auto;
+  grid-template-columns: 15px 34px minmax(0, 1fr) auto;
+}
+
+.decision:hover {
+  background: color-mix(in srgb, var(--tx) 2.5%, transparent);
 }
 
 .decision:focus-visible,
 .decision:focus-within {
-  background: var(--realce);
+  background: color-mix(in srgb, var(--tx) 4.5%, transparent);
+  box-shadow: inset 2px 0 0 var(--acc);
 }
 
 .decision-casilla {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   margin: 0;
-  accent-color: var(--primario);
+  accent-color: var(--acc);
+  cursor: pointer;
 }
 
 .decision-icono {
@@ -1030,14 +1105,14 @@ h1 + .rfc-cuenta {
   place-items: center;
   width: 34px;
   height: 34px;
-  border: 1px solid var(--linea-fuerte);
+  border: 1px solid var(--line2);
   border-radius: 50%;
-  color: var(--tinta-suave);
+  color: var(--tx2);
 }
 
 .decision-icono .icono {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
 }
 
 .decision-cuerpo {
@@ -1045,29 +1120,30 @@ h1 + .rfc-cuenta {
 }
 
 .decision-titulo {
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 500;
 }
 
 .decision-detalle {
-  margin-top: 2px;
-  color: var(--tinta);
-  font-size: 0.84rem;
+  margin-top: 3px;
+  color: var(--tx2);
+  font-size: 12.5px;
   line-height: 1.5;
 }
 
 .decision-contexto {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 22px;
-  margin-top: 8px;
-  color: var(--tinta-tenue);
-  font-size: 0.78rem;
+  gap: 3px 22px;
+  margin-top: 9px;
+  color: var(--tx3);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .decision-contexto strong {
-  color: var(--tinta);
-  font-weight: 500;
+  color: var(--tx);
+  font-weight: 400;
 }
 
 .decision-acciones {
@@ -1077,15 +1153,12 @@ h1 + .rfc-cuenta {
   gap: 8px;
 }
 
-.decision-acciones .boton {
-  min-height: 34px;
-  padding: 0 14px;
-  font-size: 0.82rem;
-}
-
+.decision-acciones .boton,
 .decision-acciones .boton-texto {
-  min-height: 34px;
-  font-size: 0.82rem;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 9px;
+  font-size: 12.5px;
 }
 
 @container (max-width: 640px) {
@@ -1744,4 +1817,425 @@ h1 + .rfc-cuenta {
   .inicio-recientes li > strong {
     grid-column: 2;
   }
+}
+
+/*
+ * Piezas base del diseño de Lever Empresas que todavía no tenían clase propia.
+ * Panel mate, interruptor, tabla, barra de avance, segmentado, aviso inferior
+ * con «Deshacer», diálogo y panel lateral de detalle.
+ */
+
+/* Panel mate con línea fina (diseño .card) y su cabeza (.hd) */
+.panel {
+  position: relative;
+  min-width: 0;
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel);
+  -webkit-backdrop-filter: blur(30px) saturate(115%);
+  backdrop-filter: blur(30px) saturate(115%);
+}
+
+.panel-cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.panel-cabeza h2,
+.panel-cabeza h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+.panel-cabeza small {
+  color: var(--tx3);
+  font-size: 12px;
+}
+
+/* Interruptor (diseño .sw): encendido toma el acento */
+.interruptor {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 21px;
+  padding: 0;
+  border: 0;
+  border-radius: 11px;
+  background: var(--s4);
+  cursor: pointer;
+  transition: background-color 0.35s var(--ease);
+}
+
+.interruptor::after {
+  content: "";
+  position: absolute;
+  top: 2.5px;
+  left: 2.5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+  transition: transform 0.35s var(--ease);
+}
+
+.interruptor[aria-checked="true"] {
+  background: var(--acc);
+}
+
+.interruptor[aria-checked="true"]::after {
+  transform: translateX(15px);
+}
+
+/* Tabla: encabezado en minúsculas tenues y renglones con filete (diseño .tbl) */
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla th {
+  padding: 0 14px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--tx3);
+  font-size: 11.5px;
+  font-weight: 400;
+  text-align: left;
+}
+
+.tabla td {
+  padding: 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.tabla tr:last-child td {
+  border-bottom: 0;
+}
+
+.tabla tbody tr td {
+  transition: background-color 0.25s;
+}
+
+.tabla tbody tr:hover td {
+  background: color-mix(in srgb, var(--tx) 2.5%, transparent);
+}
+
+.tabla .cifra,
+.tabla .derecha {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tabla td small {
+  display: block;
+  margin-top: 2px;
+  color: var(--tx3);
+  font-size: 12px;
+}
+
+.tabla-contenedor {
+  overflow-x: auto;
+}
+
+/* Barra de avance coral (diseño .bar): ámbar cerca del límite, rojo pasado */
+.barra-avance {
+  height: 2px;
+  margin-top: 14px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--line2);
+}
+
+.barra-avance > i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--acc);
+  transition: width 1.2s var(--ease);
+}
+
+.barra-avance-alta > i {
+  background: var(--warn);
+}
+
+.barra-avance-excedida > i {
+  background: var(--danger);
+}
+
+/* Segmentado (diseño .seg): una sola opción encendida */
+.segmentado {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+}
+
+.segmentado > a,
+.segmentado > button {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--tx2);
+  font: inherit;
+  font-size: 12.5px;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color 0.3s,
+    background-color 0.3s;
+}
+
+.segmentado > a:hover,
+.segmentado > button:hover {
+  color: var(--tx);
+}
+
+.segmentado > [aria-current="page"],
+.segmentado > [aria-current="true"],
+.segmentado > [aria-pressed="true"] {
+  background: color-mix(in srgb, var(--tx) 9%, transparent);
+  color: var(--tx);
+}
+
+/* Aviso inferior (diseño .toast): lo reversible se hace al instante y se puede deshacer */
+.aviso-inferior {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border: 1px solid var(--line2);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--s3) 88%, transparent);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  box-shadow: 0 30px 60px -30px var(--sombra-flotante);
+  color: var(--tx);
+  font-size: 13px;
+  transform: translate(-50%, 0);
+}
+
+.aviso-inferior .icono {
+  color: var(--acc);
+}
+
+.aviso-inferior-deshacer {
+  margin-left: 8px;
+  padding: 3px 8px;
+  border: 1px solid var(--line2);
+  border-radius: 7px;
+  background: none;
+  color: var(--tx);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .aviso-inferior {
+    animation: aviso-sube 0.55s var(--ease);
+  }
+}
+
+@keyframes aviso-sube {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px);
+  }
+}
+
+/* Diálogo (diseño .ovl + .modal) y panel lateral de detalle (diseño .gsd), sobre <dialog> */
+.dialogo,
+.panel-detalle {
+  border: 1px solid var(--line2);
+  background: color-mix(in srgb, var(--s1) 94%, transparent);
+  color: var(--tx);
+  padding: 0;
+}
+
+.dialogo::backdrop,
+.panel-detalle::backdrop {
+  background: color-mix(in srgb, var(--void) 55%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.dialogo {
+  width: min(520px, calc(100% - 40px));
+  max-height: calc(100vh - 40px);
+  border-radius: 20px;
+  box-shadow: 0 50px 120px -40px var(--sombra-flotante);
+}
+
+.dialogo-cuerpo {
+  padding: 28px;
+}
+
+.dialogo h2 {
+  margin: 0;
+  font-family: var(--fd);
+  font-size: 24px;
+  font-weight: 300;
+  letter-spacing: -0.005em;
+}
+
+.dialogo-sub {
+  margin: 8px 0 6px;
+  color: var(--tx2);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.dialogo-pie {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.panel-detalle {
+  inset: 0 0 0 auto;
+  width: min(540px, 100vw);
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  border-width: 0 0 0 1px;
+  box-shadow: -30px 0 80px rgb(0 0 0 / 0.28);
+}
+
+.panel-detalle-cabeza {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel-detalle-cuerpo {
+  padding: 22px 26px 40px;
+}
+
+.panel-detalle-cuerpo h2 {
+  margin: 14px 0 4px;
+  font-family: var(--fd);
+  font-size: 24px;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dialogo[open] {
+    animation: dialogo-entra 0.6s var(--ease);
+  }
+
+  .panel-detalle[open] {
+    animation: panel-entra 0.45s var(--ease);
+  }
+}
+
+@keyframes dialogo-entra {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+}
+
+@keyframes panel-entra {
+  from {
+    transform: translateX(104%);
+  }
+}
+
+.superficies-de-ejemplo {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+/* Selector de tema de la entrada y de Operación SOFIPO (segmentado del diseño) */
+.selector-tema {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.selector-tema legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.selector-tema-opciones {
+  display: inline-grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+}
+
+.selector-tema label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 11px;
+  border-radius: 8px;
+  color: var(--tx2);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition:
+    color 0.3s,
+    background-color 0.3s;
+}
+
+.selector-tema label .icono,
+.selector-tema label .lazo {
+  width: 14px;
+  height: 14px;
+}
+
+.selector-tema input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.selector-tema label:hover {
+  color: var(--tx);
+}
+
+.selector-tema label:has(input:checked) {
+  background: color-mix(in srgb, var(--tx) 9%, transparent);
+  color: var(--tx);
+}
+
+.selector-tema label:has(input:focus-visible) {
+  outline: 1px solid var(--tx2);
+  outline-offset: 2px;
 }

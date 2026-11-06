@@ -69,3 +69,14 @@ export function EtiquetaMono({ nombre, children }: { nombre: string; children: R
     </p>
   );
 }
+
+/** Avance contra un tope (diseño .bar): coral; ámbar desde el 85 %; rojo al pasarse. */
+export function BarraAvance({ valor, tope, etiqueta }: { valor: number; tope: number; etiqueta: string }) {
+  const proporcion = tope > 0 ? valor / tope : 0;
+  const clase = proporcion > 1 ? "barra-avance barra-avance-excedida" : proporcion >= 0.85 ? "barra-avance barra-avance-alta" : "barra-avance";
+  return (
+    <div className={clase} role="meter" aria-label={etiqueta} aria-valuemin={0} aria-valuemax={tope} aria-valuenow={Math.min(valor, tope)}>
+      <i style={{ width: `${Math.min(100, Math.max(0, proporcion * 100))}%` }} />
+    </div>
+  );
+}

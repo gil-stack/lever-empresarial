@@ -482,8 +482,8 @@
 }
 
 .personas-navegacion a[aria-current="page"] {
-  color: var(--sobre-sello);
-  background: var(--sello);
+  color: var(--sobre-primario);
+  background: var(--primario);
 }
 
 .personas-filtros {

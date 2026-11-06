@@ -1,10 +1,5 @@
 /* Mesa de cuentas por pagar. Sistema LEVER: precisión, aire y una sola voz de marca. */
 
-.pagina-proveedores,
-.pagina-nuevo-pago,
-.pagina-nuevo-proveedor {
-  width: min(1420px, 100% - 2 * var(--margen));
-}
 
 .pagina-proveedores .pagina-cabeza {
   display: grid;
@@ -20,10 +15,10 @@
 }
 
 .pagina-proveedores .pagina-cabeza > h1 {
-  font-family: var(--font-arco), var(--fuente-sans);
+  font-family: var(--fd);
   font-size: clamp(2rem, 3vw, 2.7rem);
-  font-weight: 500;
-  letter-spacing: -0.045em;
+  font-weight: 300;
+  letter-spacing: -0.02em;
 }
 
 .pagina-proveedores .cabeza-acciones {
@@ -43,27 +38,12 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  min-height: 42px;
-  padding: 0 18px;
+  min-height: 36px;
+  padding: 0 16px;
   border-radius: 10px;
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
   text-decoration: none;
-  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
-}
-
-.pagina-proveedores .boton:hover,
-.pagina-nuevo-pago .boton:hover,
-.pagina-nuevo-proveedor .boton:hover,
-.detalle-proveedor .boton:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 7px 18px var(--sombra);
-}
-
-.boton-secundario {
-  border: 1px solid var(--linea-fuerte);
-  background: var(--hoja);
-  color: var(--tinta);
 }
 
 .boton-completo { width: 100%; }
@@ -184,7 +164,7 @@
   box-shadow: 0 1px 3px var(--sombra);
 }
 
-.bandeja-herramientas { padding: 14px 16px; border-bottom: 1px solid var(--linea); }
+.bandeja-pagos .bandeja-herramientas { padding: 14px 16px; border-bottom: 1px solid var(--linea); }
 
 .buscador-pagos {
   display: flex;
@@ -465,7 +445,7 @@
 .pagina-nuevo-pago .pagina-cabeza,
 .pagina-nuevo-proveedor .pagina-cabeza { max-width: 760px; }
 .pagina-nuevo-pago .pagina-cabeza h1,
-.pagina-nuevo-proveedor .pagina-cabeza h1 { font-family: var(--font-arco), var(--fuente-sans); font-size: clamp(2rem, 3.5cqi, 3rem); letter-spacing: -0.05em; }
+.pagina-nuevo-proveedor .pagina-cabeza h1 { font-family: var(--fd); font-size: clamp(2rem, 3.5cqi, 3rem); font-weight: 300; letter-spacing: -0.02em; }
 
 .pago-formulario { max-width: 1040px; }
 .formulario-seccion {
@@ -592,7 +572,7 @@
   .pago-metrica > div span { display: block; margin-top: 3px; }
   .pago-metrica strong { margin-top: 14px; font-size: 1.3rem; }
   .proveedores-tabs { gap: 22px; margin-top: 28px; }
-  .bandeja-herramientas { padding: 12px; }
+  .bandeja-pagos .bandeja-herramientas { padding: 12px; }
   .buscador-pagos { flex-wrap: wrap; }
   .buscador-pagos input { min-width: 120px; min-height: 34px; }
   .buscador-pagos select { flex: 1; }
