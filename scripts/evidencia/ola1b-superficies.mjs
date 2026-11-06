@@ -909,11 +909,47 @@ async function correos() {
   }
 }
 
+// ==================================================================================
+// COMPARACIÓN: el diseño de los socios junto a la captura del producto (Oscuro)
+// ==================================================================================
+
+async function comparacion() {
+  // Las capturas del diseño no viven en el repositorio: DISENO apunta a su carpeta.
+  const diseno = process.env.DISENO;
+  if (!diseno) throw new Error("DISENO tiene que apuntar a la carpeta con las capturas del diseño (plat-00-resumen.png…).");
+  const rotulo = (texto, ancho) =>
+    Buffer.from(
+      `<svg width="${ancho}" height="40" xmlns="http://www.w3.org/2000/svg"><rect width="${ancho}" height="40" fill="#000" fill-opacity="0.74"/><text x="16" y="26" font-family="Helvetica, Arial" font-size="17" fill="#fff">${texto}</text></svg>`,
+    );
+  async function lamina(nombre, izquierda, derecha, ancho, alto) {
+    const pieza = async ([ruta, texto]) =>
+      sharp(ruta)
+        .resize(ancho, alto, { fit: "cover", position: "top" })
+        .composite([{ input: rotulo(texto, ancho), top: alto - 40, left: 0 }])
+        .png()
+        .toBuffer();
+    const [a, b] = await Promise.all([pieza(izquierda), pieza(derecha)]);
+    await sharp({ create: { width: ancho * 2 + 20, height: alto, channels: 3, background: "#000" } })
+      .composite([
+        { input: a, left: 0, top: 0 },
+        { input: b, left: ancho + 20, top: 0 },
+      ])
+      .webp({ quality: 82 })
+      .toFile(`${SALIDA}/comparacion-${nombre}.webp`);
+    anotar(`comparación ${nombre}: ${izquierda[1]} junto a ${derecha[1]}`);
+  }
+  const c = `${SALIDA}/capturas`;
+  await lamina("aprobaciones", [`${diseno}/plat-02-aprobaciones.png`, "Diseño · plat-02-aprobaciones"], [`${c}/13-operacion-aprobaciones-oscuro-1440.webp`, "Producto · Operación › Aprobaciones (Oscuro, 1440)"], 1440, 900);
+  await lamina("resumen", [`${diseno}/plat-00-resumen.png`, "Diseño · plat-00-resumen"], [`${c}/80-operacion-resumen-oscuro-1440.webp`, "Producto · Operación › Resumen (Oscuro, 1440)"], 1440, 900);
+  await lamina("telefono", [`${diseno}/app-home.png`, "Diseño · app-home"], [`${c}/90-telefono-inicio-oscuro-390.webp`, "Producto · Teléfono › Inicio (Oscuro, 390)"], 430, 932);
+}
+
 try {
   if (FASES.includes("flujos")) await flujos();
   if (FASES.includes("publicas")) await publicas();
   if (FASES.includes("capturas")) await capturas();
   if (FASES.includes("correos")) await correos();
+  if (FASES.includes("comparacion")) await comparacion();
   exigir(erroresDeConsola.length === 0, `sin errores de consola del navegador${erroresDeConsola.length ? `:\n  ${erroresDeConsola.join("\n  ")}` : ""}`);
 } catch (error) {
   // Para diagnosticar: cada página abierta al momento del fallo, fuera de la carpeta de evidencia.
