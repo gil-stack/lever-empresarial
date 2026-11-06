@@ -1,0 +1,50 @@
+// Operación SOFIPO clicada en un tema y un tamaño. Uso: node operacion.mjs <tema> <escritorio|movil>
+import { readFileSync, writeFileSync } from "node:fs";
+import { BASE, CLAVE, EVIDENCIA, SV, abrir, capturador, totp } from "./comun.mjs";
+
+const [tema = "oscuro", forma = "escritorio"] = process.argv.slice(2);
+const movil = forma === "movil";
+const [ancho, alto] = movil ? [390, 844] : [1440, 900];
+const DIR = EVIDENCIA;
+const sufijo = `${tema}-${ancho}`;
+const checks = [];
+const comprobar = (nombre, ok, detalle = "") => {
+  checks.push({ nombre, ok: Boolean(ok), detalle });
+  console.log(`${ok ? "OK " : "MAL"} ${nombre}${detalle ? ` — ${detalle}` : ""}`);
+};
+
+const { nav, p, errores } = await abrir({ tema, ancho, alto, movil });
+const foto = capturador(p, DIR, sufijo);
+await p.goto(`${BASE}/operacion/entrar`);
+await p.waitForLoadState("networkidle");
+await foto("90-operacion-entrar");
+await p.getByLabel("Correo").fill("op@lever.test");
+await p.getByLabel("Contraseña", { exact: true }).fill(CLAVE);
+await p.getByRole("button", { name: "Continuar" }).click();
+await p.waitForURL(/operacion\/continuar/);
+await p.locator("#codigo").fill(await totp(readFileSync(`${SV}/semilla-op.txt`, "utf8").trim()));
+await foto("91-operacion-totp");
+await p.getByRole("button", { name: "Entrar con el código" }).click();
+await p.waitForTimeout(1500);
+const abrirOp = p.getByRole("button", { name: "Abrir operación" });
+if (await abrirOp.count()) await abrirOp.click();
+await p.waitForURL((u) => u.pathname === "/operacion", { timeout: 20000 });
+await p.waitForLoadState("networkidle");
+comprobar("Operación: entrada con contraseña y TOTP", new URL(p.url()).pathname === "/operacion", p.url());
+comprobar("tema en <html>", (await p.locator("html").getAttribute("data-tema")) === tema);
+await p.waitForTimeout(600);
+await foto("92-operacion-resumen");
+const antes = p.url();
+await p.locator(".operacion-nav").getByRole("link", { name: "Clientes" }).click();
+await p.waitForURL((u) => u.href !== antes, { timeout: 15000 });
+await p.waitForLoadState("networkidle");
+comprobar("Operación: Clientes", /operacion\/clientes/.test(p.url()));
+await foto("93-operacion-clientes");
+await p.getByRole("button", { name: "Salir" }).click();
+await p.waitForURL((u) => !/^\/operacion$|clientes/.test(u.pathname), { timeout: 15000 });
+comprobar("Operación: Salir", true, p.url());
+const errs = errores.filter((e) => !/Failed to load resource.*404/.test(e));
+comprobar("sin errores de consola", errs.length === 0, errs.slice(0, 5).join(" || "));
+writeFileSync(`${SV}/checks-operacion-${sufijo}.json`, JSON.stringify(checks, null, 2));
+await nav.close();
+process.exit(checks.every((c) => c.ok) ? 0 : 1);
