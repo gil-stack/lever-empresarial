@@ -1,5 +1,5 @@
 import { mensualEstimado, sumarCentavos, type FrecuenciaNomina } from "../nomina";
-import { fechasDeSerie, primeroDelMes, siguienteObligacion, ultimoDelMes, type FrecuenciaObligacion } from "./fechas";
+import { adelantarObligacion, fechasDeSerie, primeroDelMes, siguienteObligacion, ultimoDelMes, type FrecuenciaObligacion } from "./fechas";
 
 /**
  * Presupuestos vivos del mes en curso (hora de México). El gasto de un área es:
@@ -27,6 +27,8 @@ export type FuentesPresupuesto = {
     frecuencia: FrecuenciaObligacion;
     proximaFecha: string;
     anclaDia: number;
+    /** Meses (YYYY-MM) en que su proveedor ya trae un cargo: ese mes la obligación no suma otra vez. */
+    mesesConCargo?: readonly string[];
   }[];
   personas: readonly { id: string; nombre: string; areaNombre: string | null; presupuestoCentavos: number; pagosCentavos: number }[];
 };
@@ -38,8 +40,8 @@ export type LineaPresupuesto = {
   presupuestoCentavos: number | null;
   gastoCentavos: number;
   estado: EstadoPresupuesto;
-  /** Solo en áreas: de dónde sale el gasto. */
-  desglose?: { nominaCentavos: number; proveedoresCentavos: number; obligacionesCentavos: number };
+  /** Solo en áreas: de dónde sale el gasto. `nominaPersonas` decide si se puede mostrar sin detalle de nómina. */
+  desglose?: { nominaCentavos: number; nominaPersonas: number; proveedoresCentavos: number; obligacionesCentavos: number };
   detalle?: string | null;
 };
 
@@ -63,9 +65,8 @@ export function calcularPresupuestos(fuentes: FuentesPresupuesto): Presupuestos 
   const desde = primeroDelMes(fuentes.hoy);
   const hasta = ultimoDelMes(fuentes.hoy);
   const areas = fuentes.areas.map((area) => {
-    const nominaCentavos = sumarCentavos(
-      fuentes.nomina.filter((perfil) => perfil.areaId === area.id).map((perfil) => mensualEstimado(perfil.netoCentavos, perfil.frecuencia)),
-    );
+    const nominaDelArea = fuentes.nomina.filter((perfil) => perfil.areaId === area.id);
+    const nominaCentavos = sumarCentavos(nominaDelArea.map((perfil) => mensualEstimado(perfil.netoCentavos, perfil.frecuencia)));
     const proveedoresCentavos = sumarCentavos(
       fuentes.pagosPorArea.filter((pago) => pago.areaId === area.id).map((pago) => pago.centavos),
     );
@@ -78,7 +79,10 @@ export function calcularPresupuestos(fuentes: FuentesPresupuesto): Presupuestos 
             (fecha) => siguienteObligacion(fecha, obligacion.frecuencia, obligacion.anclaDia),
             desde,
             hasta,
-          ).map(() => obligacion.montoCentavos),
+            (base, inicio) => adelantarObligacion(base, inicio, obligacion.frecuencia, obligacion.anclaDia),
+          )
+            .filter((fecha) => !obligacion.mesesConCargo?.includes(fecha.slice(0, 7)))
+            .map(() => obligacion.montoCentavos),
         ),
     );
     const gastoCentavos = sumarCentavos([nominaCentavos, proveedoresCentavos, obligacionesCentavos]);
@@ -89,7 +93,7 @@ export function calcularPresupuestos(fuentes: FuentesPresupuesto): Presupuestos 
       presupuestoCentavos: area.presupuestoCentavos,
       gastoCentavos,
       estado: estadoDe(gastoCentavos, area.presupuestoCentavos),
-      desglose: { nominaCentavos, proveedoresCentavos, obligacionesCentavos },
+      desglose: { nominaCentavos, nominaPersonas: nominaDelArea.length, proveedoresCentavos, obligacionesCentavos },
     } satisfies LineaPresupuesto;
   });
   const personas = fuentes.personas.map((persona) => ({

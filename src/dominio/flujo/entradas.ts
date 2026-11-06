@@ -111,6 +111,8 @@ export type ObligacionEscrita = {
   proximaFecha: string;
   anclaDia: number;
   areaId: string | null;
+  /** Quien la factura, si la empresa lo elige: evita contarla dos veces en el mes que ya trae su cargo. */
+  proveedorId: string | null;
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -129,6 +131,8 @@ export function validarObligacion(entrada: Record<string, unknown>): Resultado<O
   if (!proximaFecha) errores.push({ campo: "proximaFecha", mensaje: "Elige la próxima fecha de pago." });
   const area = typeof entrada.areaId === "string" ? entrada.areaId.trim() : "";
   if (area !== "" && !UUID.test(area)) errores.push({ campo: "areaId", mensaje: "Elige un área de la lista." });
+  const proveedor = typeof entrada.proveedorId === "string" ? entrada.proveedorId.trim() : "";
+  if (proveedor !== "" && !UUID.test(proveedor)) errores.push({ campo: "proveedorId", mensaje: "Elige un proveedor de la lista." });
   if (errores.length > 0 || !concepto || montoCentavos === null || !frecuencia || !proximaFecha) return { ok: false, errores };
   return {
     ok: true,
@@ -139,6 +143,7 @@ export function validarObligacion(entrada: Record<string, unknown>): Resultado<O
       proximaFecha,
       anclaDia: Number(proximaFecha.slice(8, 10)),
       areaId: area === "" ? null : area.toLowerCase(),
+      proveedorId: proveedor === "" ? null : proveedor.toLowerCase(),
     },
   };
 }

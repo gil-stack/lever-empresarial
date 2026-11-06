@@ -1,5 +1,9 @@
 import { siguientePago, sumarCentavos, type FrecuenciaNomina } from "../nomina";
 import {
+  adelantarMeses,
+  adelantarObligacion,
+  adelantarQuincenal,
+  adelantarSemanal,
   desplazar,
   diasEntre,
   exigirFecha,
@@ -21,10 +25,16 @@ import {
  *   fecha programada y obligaciones recurrentes activas. Una salida posterior
  *   al corte pero anterior a esta semana sigue debiéndose: entra en la
  *   primera semana marcada como atrasada.
- * - Entradas: cobros esperados. Un cobro cuya fecha ya pasó está vencido y no
- *   se cuenta: no se proyecta dinero que ya llegó tarde.
+ * - Un cargo de proveedor sigue sin pagar mientras exista (Lever no paga): si
+ *   su fecha programada quedó antes del corte, el saldo declarado no lo
+ *   descontó, así que también entra en la primera semana como atrasado.
+ * - Entradas: cobros esperados y lo ya cobrado después del corte (en la semana
+ *   en que llegó). Un cobro esperado cuya fecha ya pasó está vencido y no se
+ *   cuenta: no se proyecta dinero que ya llegó tarde.
  * - Nada aquí escribe: el escenario cambia la fecha de un movimiento en esta
  *   copia y vuelve a calcular.
+ * - Sin permiso de ver el detalle de la nómina, el pago de una sola persona no
+ *   se desglosa: la semana junta toda su nómina en un renglón «Nómina».
  */
 
 export const SEMANAS = 13;
@@ -44,6 +54,10 @@ export type Movimiento = {
   /** Se puede mover en el escenario: pagos a proveedores y obligaciones. */
   movible: boolean;
   atrasado?: boolean;
+  /** Cobro ya recibido (después del corte): entra en la semana en que llegó. */
+  cobrado?: boolean;
+  /** Nómina: cuántas personas suma el movimiento. */
+  personas?: number;
   /** La fecha real cuando el escenario la movió. */
   fechaOriginal?: string;
 };
@@ -67,7 +81,7 @@ export type FuentesFlujo = {
     altaEn: string;
     bajaEn: string | null;
   }[];
-  lotes: readonly { id: string; fechaPago: string; totalCentavos: number }[];
+  lotes: readonly { id: string; fechaPago: string; totalCentavos: number; personas?: number }[];
   /** Ya sin cancelados, rechazados ni anulados. */
   pagos: readonly { id: string; proveedor: string; referencia: string; totalCentavos: number; programadaEl: string }[];
   obligaciones: readonly {
@@ -77,9 +91,13 @@ export type FuentesFlujo = {
     frecuencia: FrecuenciaObligacion;
     proximaFecha: string;
     anclaDia: number;
+    /** Meses (YYYY-MM) en que su proveedor ya trae un cargo: ahí no se cuenta otra vez. */
+    mesesConCargo?: readonly string[];
   }[];
   /** Solo los que siguen esperados. */
   cobros: readonly { id: string; cliente: string; concepto: string; montoCentavos: number; fechaProbable: string }[];
+  /** Los ya cobrados, por la fecha en que llegó el dinero. */
+  cobrados: readonly { id: string; cliente: string; concepto: string; montoCentavos: number; cobradoEl: string }[];
 };
 
 export type Semana = {
@@ -143,9 +161,29 @@ const FRECUENCIA_NOMINA: Record<FrecuenciaNomina, string> = {
   mensual: "mensual",
 };
 
-/** Los movimientos que cuentan para la proyección: después del corte y hasta el fin de la ventana. */
+/**
+ * Los movimientos que cuentan para la proyección: después del corte y hasta el
+ * fin de la ventana, más los cargos de proveedor con fecha anterior al corte,
+ * que siguen sin pagar y van como atrasados.
+ */
 export function movimientosDe(fuentes: FuentesFlujo): Movimiento[] {
-  return movimientosEntre(fuentes, desplazar(corteDe(fuentes), 1), ventanaDe(fuentes.hoy).fin);
+  const desde = desplazar(corteDe(fuentes), 1);
+  const atrasados = fuentes.pagos
+    .filter((pago) => pago.programadaEl < desde)
+    .map((pago) => ({ ...movimientoDePago(pago), atrasado: true }));
+  return [...atrasados, ...movimientosEntre(fuentes, desde, ventanaDe(fuentes.hoy).fin)];
+}
+
+function movimientoDePago(pago: FuentesFlujo["pagos"][number]): Movimiento {
+  return {
+    clave: `cxp:${pago.id}`,
+    tipo: "proveedor",
+    sentido: "salida",
+    fecha: pago.programadaEl,
+    centavos: pago.totalCentavos,
+    concepto: `${pago.proveedor} · ${pago.referencia}`,
+    movible: true,
+  };
 }
 
 /** Todos los movimientos con fecha entre `desde` y `fin` (incluidas). El calendario usa el mes. */
@@ -161,6 +199,11 @@ export function movimientosEntre(fuentes: FuentesFlujo, desde: string, fin: stri
       (fecha) => siguientePago(fecha, perfil.frecuencia, perfil.anclaDia),
       desde > perfil.altaEn ? desde : perfil.altaEn,
       ultimo,
+      perfil.frecuencia === "semanal"
+        ? adelantarSemanal
+        : perfil.frecuencia === "quincenal"
+          ? adelantarQuincenal
+          : (base, inicio) => adelantarMeses(base, inicio, 1, perfil.anclaDia),
     );
     for (const fecha of fechas) {
       const grupo = porFecha.get(fecha) ?? { centavos: [], personas: 0, frecuencias: new Set<string>() };
@@ -180,6 +223,7 @@ export function movimientosEntre(fuentes: FuentesFlujo, desde: string, fin: stri
       centavos: sumarCentavos(grupo.centavos),
       concepto: `Nómina ${[...grupo.frecuencias].sort().join(" y ")} (${personas})`,
       movible: false,
+      personas: grupo.personas,
     });
   }
   for (const lote of fuentes.lotes) {
@@ -192,19 +236,12 @@ export function movimientosEntre(fuentes: FuentesFlujo, desde: string, fin: stri
       centavos: lote.totalCentavos,
       concepto: "Lote de nómina preparado",
       movible: false,
+      ...(lote.personas === undefined ? {} : { personas: lote.personas }),
     });
   }
   for (const pago of fuentes.pagos) {
     if (pago.programadaEl < desde || pago.programadaEl > fin) continue;
-    movimientos.push({
-      clave: `cxp:${pago.id}`,
-      tipo: "proveedor",
-      sentido: "salida",
-      fecha: pago.programadaEl,
-      centavos: pago.totalCentavos,
-      concepto: `${pago.proveedor} · ${pago.referencia}`,
-      movible: true,
-    });
+    movimientos.push(movimientoDePago(pago));
   }
   for (const obligacion of fuentes.obligaciones) {
     const fechas = fechasDeSerie(
@@ -212,8 +249,10 @@ export function movimientosEntre(fuentes: FuentesFlujo, desde: string, fin: stri
       (fecha) => siguienteObligacion(fecha, obligacion.frecuencia, obligacion.anclaDia),
       desde,
       fin,
+      (base, inicio) => adelantarObligacion(base, inicio, obligacion.frecuencia, obligacion.anclaDia),
     );
     for (const fecha of fechas) {
+      if (obligacion.mesesConCargo?.includes(fecha.slice(0, 7))) continue;
       movimientos.push({
         clave: `obl:${obligacion.id}:${fecha}`,
         tipo: "obligacion",
@@ -237,6 +276,19 @@ export function movimientosEntre(fuentes: FuentesFlujo, desde: string, fin: stri
       movible: false,
     });
   }
+  for (const cobro of fuentes.cobrados) {
+    if (cobro.cobradoEl < desde || cobro.cobradoEl > fin) continue;
+    movimientos.push({
+      clave: `cob:${cobro.id}`,
+      tipo: "cobro",
+      sentido: "entrada",
+      fecha: cobro.cobradoEl,
+      centavos: cobro.montoCentavos,
+      concepto: `${cobro.cliente} · ${cobro.concepto}`,
+      movible: false,
+      cobrado: true,
+    });
+  }
   // Orden estable para la pantalla y las pruebas.
   return movimientos.sort((a, b) => a.fecha.localeCompare(b.fecha) || a.clave.localeCompare(b.clave));
 }
@@ -245,7 +297,40 @@ export function corteDe(fuentes: Pick<FuentesFlujo, "hoy" | "saldo">): string {
   return fuentes.saldo ? exigirFecha(fuentes.saldo.alDia) : desplazar(ventanaDe(fuentes.hoy).inicio, -1);
 }
 
-export function proyectar(fuentes: FuentesFlujo, escenario: Escenario | null = null): Proyeccion {
+export type OpcionesProyeccion = {
+  /** Quien puede ver el detalle de la nómina (cliente.nomina.detalle.ver). Sin él, el pago de una persona no se desglosa. */
+  detalleNomina?: boolean;
+};
+
+/** ¿Este movimiento de nómina deja ver el neto de una sola persona? */
+export function nominaDeUnaPersona(movimiento: Pick<Movimiento, "tipo" | "personas">): boolean {
+  return movimiento.tipo === "nomina" && movimiento.personas !== undefined && movimiento.personas < 2;
+}
+
+/**
+ * Sin detalle de nómina: si en la semana algún pago de nómina es de una sola
+ * persona, toda la nómina de la semana se junta en un renglón «Nómina», sin
+ * conteo ni frecuencia. El total de la semana no cambia.
+ */
+function reservarNomina(movimientos: Movimiento[], semana: string): Movimiento[] {
+  if (!movimientos.some(nominaDeUnaPersona)) return movimientos;
+  const nomina = movimientos.filter((movimiento) => movimiento.tipo === "nomina");
+  const junta: Movimiento = {
+    clave: `nom:semana:${semana}`,
+    tipo: "nomina",
+    sentido: "salida",
+    fecha: nomina.reduce((primera, movimiento) => (movimiento.fecha < primera ? movimiento.fecha : primera), nomina[0]!.fecha),
+    centavos: sumarCentavos(nomina.map((movimiento) => movimiento.centavos)),
+    concepto: "Nómina",
+    movible: false,
+    ...(nomina.some((movimiento) => movimiento.atrasado) ? { atrasado: true } : {}),
+  };
+  return [...movimientos.filter((movimiento) => movimiento.tipo !== "nomina"), junta].sort(
+    (a, b) => a.fecha.localeCompare(b.fecha) || a.clave.localeCompare(b.clave),
+  );
+}
+
+export function proyectar(fuentes: FuentesFlujo, escenario: Escenario | null = null, opciones: OpcionesProyeccion = {}): Proyeccion {
   const { inicio, fin } = ventanaDe(fuentes.hoy);
   const corte = corteDe(fuentes);
   const base = movimientosDe(fuentes);
@@ -272,15 +357,27 @@ export function proyectar(fuentes: FuentesFlujo, escenario: Escenario | null = n
 
   for (const movimiento of movimientos) {
     if (movimiento.fecha > fin) continue;
-    // Un cobro con fecha pasada está vencido: no se proyecta dinero que ya llegó tarde.
-    if (movimiento.sentido === "entrada" && movimiento.fecha < fuentes.hoy) continue;
-    if (movimiento.fecha < inicio) {
+    // Un cobro esperado con fecha pasada está vencido: no se proyecta dinero que ya llegó tarde.
+    if (movimiento.sentido === "entrada" && !movimiento.cobrado && movimiento.fecha < fuentes.hoy) continue;
+    // Lo cobrado después del corte y antes de esta semana ya está en la cuenta: va a la primera semana.
+    if (movimiento.cobrado && movimiento.fecha < inicio) {
+      semanas[0]?.movimientos.push(movimiento);
+      continue;
+    }
+    if (movimiento.fecha < inicio || movimiento.atrasado) {
       const atrasado = { ...movimiento, atrasado: true };
       atrasados.push(atrasado);
       semanas[0]?.movimientos.push(atrasado);
       continue;
     }
     semanas[Math.floor(diasEntre(inicio, movimiento.fecha) / 7)]?.movimientos.push(movimiento);
+  }
+
+  if (!opciones.detalleNomina) {
+    for (const semana of semanas) semana.movimientos = reservarNomina(semana.movimientos, semana.inicio);
+    for (const [indice, atrasado] of atrasados.entries()) {
+      if (nominaDeUnaPersona(atrasado)) atrasados[indice] = { ...atrasado, concepto: "Nómina", personas: undefined };
+    }
   }
 
   let saldo = fuentes.saldo ? fuentes.saldo.centavos : null;
@@ -349,9 +446,9 @@ function faltanteDe(semanas: readonly Semana[], colchon: number): Faltante | nul
   return null;
 }
 
-/** El escenario solo acepta un movimiento movible y una fecha desde hoy. */
+/** El escenario solo acepta un movimiento movible y una fecha entre hoy y el fin de la ventana. */
 export function escenarioValido(
-  proyeccion: Pick<Proyeccion, "movibles" | "hoy">,
+  proyeccion: Pick<Proyeccion, "movibles" | "hoy" | "fin">,
   clave: unknown,
   fecha: unknown,
 ): Escenario | null {
@@ -362,7 +459,8 @@ export function escenarioValido(
   } catch {
     return null;
   }
-  if (fecha < proyeccion.hoy) return null;
+  // Fuera de la ventana el pago desaparecería de la proyección: no es un escenario, es quitarlo.
+  if (fecha < proyeccion.hoy || fecha > proyeccion.fin) return null;
   return proyeccion.movibles.some((movimiento) => movimiento.clave === clave) ? { clave, fecha } : null;
 }
 

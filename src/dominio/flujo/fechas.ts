@@ -12,7 +12,10 @@ export const FRECUENCIAS_OBLIGACION = ["semanal", "mensual", "bimestral", "trime
 export type FrecuenciaObligacion = (typeof FRECUENCIAS_OBLIGACION)[number];
 
 const DIA_MS = 86_400_000;
-/** Un año de una obligación semanal y una década de una anual: la recurrencia no recorre más. */
+/**
+ * Tope de vueltas por serie. Con `adelantar`, la serie arranca a un periodo de
+ * `desde`, así que el tope solo cuida contra un ciclo sin fin.
+ */
 const TOPE_OCURRENCIAS = 600;
 
 export function exigirFecha(fecha: string): string {
@@ -68,19 +71,55 @@ export function siguienteObligacion(fecha: string, frecuencia: FrecuenciaObligac
   return sumarMeses(fecha, meses, anclaDia);
 }
 
+function mesesEntre(desde: string, hasta: string): number {
+  const [a1, m1] = exigirFecha(desde).split("-").map(Number) as [number, number];
+  const [a2, m2] = exigirFecha(hasta).split("-").map(Number) as [number, number];
+  return (a2 - a1) * 12 + (m2 - m1);
+}
+
+/** Un punto de una serie semanal a menos de dos semanas antes de `desde`, sin recorrerla. */
+export function adelantarSemanal(base: string, desde: string): string {
+  const semanas = Math.floor(diasEntre(base, desde) / 7) - 1;
+  return semanas > 0 ? desplazar(base, semanas * 7) : base;
+}
+
+/** Igual, para una serie de cada `meses` meses con su día ancla (31 → 28 de febrero → 31 de marzo). */
+export function adelantarMeses(base: string, desde: string, meses: number, anclaDia: number): string {
+  const pasos = Math.floor(mesesEntre(base, desde) / meses) - 1;
+  return pasos > 0 ? sumarMeses(base, pasos * meses, anclaDia) : base;
+}
+
+/** El punto de partida de una obligación vieja: un periodo antes de `desde`. */
+export function adelantarObligacion(base: string, desde: string, frecuencia: FrecuenciaObligacion, anclaDia: number): string {
+  if (frecuencia === "semanal") return adelantarSemanal(base, desde);
+  return adelantarMeses(base, desde, { mensual: 1, bimestral: 2, trimestral: 3, anual: 12 }[frecuencia], anclaDia);
+}
+
+/**
+ * Quincenal (15 y último día): desde el segundo pago la serie pasa por cada
+ * día 15, así que el 15 del mes anterior a `desde` está en ella.
+ */
+export function adelantarQuincenal(base: string, desde: string): string {
+  if (mesesEntre(base, desde) < 2) return base;
+  return sumarMeses(`${exigirFecha(desde).slice(0, 7)}-15`, -1, 15);
+}
+
 /**
  * Las fechas de una serie entre `desde` y `hasta` (ambas incluidas), a partir
- * de su fecha base. Una base vieja avanza hasta la ventana; nunca cuenta dos
- * veces ni se queda en un ciclo sin fin.
+ * de su fecha base. Una base vieja avanza hasta la ventana: `adelantar` salta
+ * aritméticamente a un punto de la serie cercano a `desde`, así una base de
+ * hace años no se queda sin ocurrencias por el tope. Nunca cuenta dos veces ni
+ * se queda en un ciclo sin fin.
  */
 export function fechasDeSerie(
   base: string,
   siguiente: (fecha: string) => string,
   desde: string,
   hasta: string,
+  adelantar?: (base: string, desde: string) => string,
 ): string[] {
   const fechas: string[] = [];
-  let actual = exigirFecha(base);
+  let actual = exigirFecha(adelantar && base < desde ? adelantar(base, desde) : base);
   for (let vuelta = 0; vuelta < TOPE_OCURRENCIAS && actual <= hasta; vuelta += 1) {
     if (actual >= desde) fechas.push(actual);
     const proxima = siguiente(actual);

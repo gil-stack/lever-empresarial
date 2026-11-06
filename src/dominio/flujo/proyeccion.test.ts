@@ -1,13 +1,18 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { siguientePago } from "../nomina.ts";
 import { hoyEnMexico } from "../personas.ts";
-import { fechasDeSerie, lunesDe, siguienteObligacion } from "./fechas.ts";
+import { siguienteDia17 } from "./entradas.ts";
+import { adelantarObligacion, adelantarQuincenal, fechasDeSerie, lunesDe, siguienteObligacion } from "./fechas.ts";
 import { calcularPresupuestos, estadoDe } from "./presupuestos.ts";
 import { escenarioValido, proyectar, ventanaDe, type FuentesFlujo } from "./proyeccion.ts";
 
 /** Reloj fijo: viernes 6 de noviembre de 2026 en México. La ventana cruza el cambio de año. */
 const HOY = "2026-11-06";
+
+/** Programado el día del saldo (5 de noviembre) y sin pagar. */
+const FLETES_DEL_5 = { id: "p3", proveedor: "Fletes", referencia: "C-3", totalCentavos: 900_000, programadaEl: "2026-11-05" };
 
 function fuentes(cambios: Partial<FuentesFlujo> = {}): FuentesFlujo {
   return {
@@ -23,8 +28,6 @@ function fuentes(cambios: Partial<FuentesFlujo> = {}): FuentesFlujo {
     pagos: [
       { id: "p1", proveedor: "Aceros", referencia: "A-1", totalCentavos: 5_000_000, programadaEl: "2026-11-10" },
       { id: "p2", proveedor: "Papelería", referencia: "B-2", totalCentavos: 3_000_000, programadaEl: "2026-11-20" },
-      // Programado el día del saldo: ya está dentro del saldo declarado.
-      { id: "p3", proveedor: "Fletes", referencia: "C-3", totalCentavos: 900_000, programadaEl: "2026-11-05" },
     ],
     obligaciones: [
       { id: "renta", concepto: "Renta", montoCentavos: 2_500_000, frecuencia: "mensual", proximaFecha: "2026-11-01", anclaDia: 1 },
@@ -34,6 +37,7 @@ function fuentes(cambios: Partial<FuentesFlujo> = {}): FuentesFlujo {
       // Vencido: su fecha ya pasó, no se proyecta.
       { id: "k2", cliente: "Cliente Dos", concepto: "Anticipo", montoCentavos: 4_000_000, fechaProbable: "2026-11-03" },
     ],
+    cobrados: [],
     ...cambios,
   };
 }
@@ -106,9 +110,8 @@ describe("proyección de 13 semanas", () => {
     const nomina30 = p.semanas[4]?.movimientos.find((m) => m.clave === "nom:2026-11-30");
     assert.equal(nomina30?.centavos, 4_500_000);
     assert.equal(nomina30?.concepto, "Nómina mensual y quincenal (3 personas)");
-    // Lo del día del saldo y el cobro vencido no cuentan.
+    // El cobro vencido no cuenta.
     const claves = p.semanas.flatMap((semana) => semana.movimientos.map((m) => m.clave));
-    assert.equal(claves.includes("cxp:p3"), false);
     assert.equal(claves.includes("cob:k2"), false);
   });
 
@@ -137,13 +140,70 @@ describe("proyección de 13 semanas", () => {
   });
 
   it("sin saldo declarado muestra lo comprometido sin saldo ni alerta", () => {
-    const p = proyectar(fuentes({ saldo: null }));
+    const p = proyectar(fuentes({ saldo: null, pagos: [...fuentes().pagos, FLETES_DEL_5] }));
     assert.equal(p.corte, "2026-11-01");
     assert.equal(p.semanas.every((semana) => semana.saldoFinal === null), true);
     assert.deepEqual(p.alcance, { tipo: "sin_saldo" });
     assert.equal(p.faltante, null);
-    // Sin saldo, cuenta desde el lunes: el pago del 5 sí entra.
+    // Sin saldo, cuenta desde el lunes: el pago del 5 entra en su semana, sin marca de atrasado.
     assert.equal(p.semanas[0]?.salidas, 900_000);
+    assert.deepEqual(p.atrasados, []);
+  });
+
+  it("un cargo sin pagar con fecha del saldo o anterior sigue debiéndose: entra atrasado en la primera semana", () => {
+    // Lever no paga: mientras el cargo exista sin cancelar, el saldo declarado no lo descontó.
+    const viejo = { id: "p0", proveedor: "Aceros", referencia: "A-0", totalCentavos: 400_000, programadaEl: "2026-09-15" };
+    const p = proyectar(fuentes({ pagos: [...fuentes().pagos, FLETES_DEL_5, viejo] }));
+    assert.deepEqual(p.atrasados.map((m) => m.clave).sort(), ["cxp:p0", "cxp:p3"]);
+    assert.equal(p.semanas[0]?.salidas, 1_300_000);
+    assert.equal(p.semanas[0]?.saldoFinal, 8_700_000);
+    assert.equal(p.semanas[0]?.movimientos.every((m) => m.atrasado), true);
+    // No se pueden mover en el escenario: su fecha ya pasó.
+    assert.equal(p.movibles.some((m) => m.clave === "cxp:p3"), false);
+  });
+
+  it("la sonda del revisor: con el saldo declarado hoy, el cargo del 5 no desaparece", () => {
+    const p = proyectar({
+      ...fuentes({ hoy: "2026-11-07", nomina: [], obligaciones: [], cobros: [] }),
+      saldo: { centavos: 10_000_000, alDia: "2026-11-07", autor: "x", declaradoEn: "2026-11-07T18:00:00Z" },
+      pagos: [{ id: "p1", proveedor: "Aceros", referencia: "A-1", totalCentavos: 8_000_000, programadaEl: "2026-11-05" }],
+    });
+    assert.equal(p.semanas[0]?.salidas, 8_000_000);
+    assert.equal(p.semanas[12]?.saldoFinal, 2_000_000);
+  });
+
+  it("lo cobrado después del saldo entra en la semana en que llegó; lo cobrado antes ya está en el saldo", () => {
+    const p = proyectar(fuentes({
+      cobrados: [
+        { id: "k5", cliente: "Cliente Cinco", concepto: "Pago", montoCentavos: 1_000_000, cobradoEl: "2026-11-06" },
+        { id: "k6", cliente: "Cliente Seis", concepto: "Pago", montoCentavos: 2_000_000, cobradoEl: "2026-11-05" },
+      ],
+    }));
+    assert.equal(p.semanas[0]?.entradas, 1_000_000);
+    const k5 = p.semanas[0]?.movimientos.find((m) => m.clave === "cob:k5");
+    assert.equal(k5?.cobrado, true);
+    assert.equal(k5?.atrasado, undefined);
+    assert.equal(p.semanas.some((semana) => semana.movimientos.some((m) => m.clave === "cob:k6")), false);
+    // Con un saldo viejo, lo cobrado entre el saldo y esta semana va a la primera semana, sin marca de atrasado.
+    const viejo = proyectar(fuentes({
+      saldo: { centavos: 10_000_000, alDia: "2026-10-28", autor: "Laura", declaradoEn: "2026-10-28T20:00:00.000Z" },
+      cobrados: [{ id: "k7", cliente: "Cliente Siete", concepto: "Pago", montoCentavos: 300_000, cobradoEl: "2026-10-30" }],
+      cobros: [],
+      nomina: [],
+      pagos: [],
+      obligaciones: [],
+    }));
+    assert.equal(viejo.semanas[0]?.entradas, 300_000);
+    assert.deepEqual(viejo.atrasados, []);
+  });
+
+  it("la sonda del revisor: marcar cobrado un cobro esperado no baja el saldo proyectado", () => {
+    const saldo = { centavos: 10_000_000, alDia: "2026-11-02", autor: "x", declaradoEn: "2026-11-02T18:00:00Z" };
+    const vacias = { nomina: [], pagos: [], obligaciones: [], hoy: "2026-11-07" };
+    const esperado = proyectar(fuentes({ ...vacias, saldo, cobros: [{ id: "k", cliente: "C", concepto: "S", montoCentavos: 5_000_000, fechaProbable: "2026-11-10" }] }));
+    const cobrado = proyectar(fuentes({ ...vacias, saldo, cobros: [], cobrados: [{ id: "k", cliente: "C", concepto: "S", montoCentavos: 5_000_000, cobradoEl: "2026-11-05" }] }));
+    assert.equal(esperado.semanas[12]?.saldoFinal, 15_000_000);
+    assert.equal(cobrado.semanas[12]?.saldoFinal, 15_000_000);
   });
 
   it("con un saldo viejo, una salida posterior al saldo y anterior a esta semana entra atrasada en la primera", () => {
@@ -174,9 +234,99 @@ describe("proyección de 13 semanas", () => {
     assert.equal(proyectar(base).semanas[1]?.salidas, 7_500_000);
     // Ni una fecha pasada ni algo que no se puede mover.
     assert.equal(escenarioValido(real, "cxp:p1", "2026-11-01"), null);
+    // Ni fuera de la ventana: el pago desaparecería de la proyección (sonda del revisor).
+    assert.equal(real.fin, "2027-01-31");
+    assert.deepEqual(escenarioValido(real, "cxp:p1", "2027-01-31"), { clave: "cxp:p1", fecha: "2027-01-31" });
+    assert.equal(escenarioValido(real, "cxp:p1", "2027-02-01"), null);
+    assert.equal(escenarioValido(real, "cxp:p1", "2027-03-15"), null);
     assert.equal(escenarioValido(real, "nom:2026-11-15", "2026-11-20"), null);
     assert.equal(escenarioValido(real, "cxp:otro", "2026-11-20"), null);
     assert.equal(escenarioValido(real, "cxp:p1", "2026-02-30"), null);
+  });
+
+  it("una obligación con su proveedor no se cuenta el mes en que ese proveedor ya trae un cargo", () => {
+    const renta = { id: "renta", concepto: "Renta", montoCentavos: 2_500_000, frecuencia: "mensual" as const, proximaFecha: "2026-11-01", anclaDia: 1 };
+    const sin = proyectar(fuentes({ obligaciones: [renta] }));
+    const con = proyectar(fuentes({ obligaciones: [{ ...renta, mesesConCargo: ["2026-12"] }] }));
+    const fechas = (p: ReturnType<typeof proyectar>) =>
+      p.semanas.flatMap((s) => s.movimientos).filter((m) => m.tipo === "obligacion").map((m) => m.fecha);
+    assert.deepEqual(fechas(sin), ["2026-12-01", "2027-01-01"]);
+    assert.deepEqual(fechas(con), ["2027-01-01"]);
+    assert.equal(sin.salidas - con.salidas, 2_500_000);
+  });
+
+  it("sin permiso de detalle, el neto de una sola persona no se desglosa: la semana junta su nómina en «Nómina»", () => {
+    const nomina = [
+      // Dos personas el 15 y una sola el 13 (semanal): la del 13 es el sueldo de alguien.
+      { netoCentavos: 1_500_000, frecuencia: "quincenal" as const, proximoPagoEn: "2026-11-15", anclaDia: 15, altaEn: "2026-01-01", bajaEn: null },
+      { netoCentavos: 1_000_000, frecuencia: "quincenal" as const, proximoPagoEn: "2026-11-15", anclaDia: 15, altaEn: "2026-01-01", bajaEn: null },
+      { netoCentavos: 700_000, frecuencia: "semanal" as const, proximoPagoEn: "2026-11-13", anclaDia: 13, altaEn: "2026-01-01", bajaEn: null },
+    ];
+    const base = fuentes({ nomina, pagos: [], obligaciones: [], cobros: [] });
+    const conDetalle = proyectar(base, null, { detalleNomina: true });
+    const sinDetalle = proyectar(base);
+    const semana = (p: ReturnType<typeof proyectar>) => p.semanas[1]!.movimientos.filter((m) => m.tipo === "nomina");
+    assert.deepEqual(semana(conDetalle).map((m) => [m.concepto, m.centavos]), [
+      ["Nómina semanal (1 persona)", 700_000],
+      ["Nómina quincenal (2 personas)", 2_500_000],
+    ]);
+    assert.deepEqual(semana(sinDetalle).map((m) => [m.concepto, m.centavos]), [["Nómina", 3_200_000]]);
+    // El total de la semana y el saldo no cambian.
+    assert.equal(sinDetalle.semanas[1]?.salidas, conDetalle.semanas[1]?.salidas);
+    assert.equal(sinDetalle.semanas[12]?.saldoFinal, conDetalle.semanas[12]?.saldoFinal);
+    // Ninguna semana deja ver «(1 persona)».
+    assert.equal(JSON.stringify(sinDetalle).includes("1 persona"), false);
+    // Una semana donde todos los pagos son de grupos de 2 o más se ve igual.
+    const soloGrupos = proyectar(fuentes({ nomina: nomina.slice(0, 2), pagos: [], obligaciones: [], cobros: [] }));
+    assert.equal(soloGrupos.semanas[1]?.movimientos.find((m) => m.tipo === "nomina")?.concepto, "Nómina quincenal (2 personas)");
+  });
+
+  it("una obligación o una nómina con base de hace años no pierde ocurrencias (sonda del revisor)", () => {
+    // Antes: 600 vueltas desde 2014 se acababan antes de llegar a la ventana y daban 0.
+    const vigilancia = { id: "o", concepto: "Vigilancia", montoCentavos: 100_000, frecuencia: "semanal" as const, proximaFecha: "2014-01-06", anclaDia: 6 };
+    const p = proyectar(fuentes({ nomina: [], pagos: [], cobros: [], obligaciones: [vigilancia] }));
+    const fechas = p.semanas.flatMap((s) => s.movimientos).filter((m) => m.tipo === "obligacion").map((m) => m.fecha);
+    // Los lunes del 9 de noviembre al 25 de enero: el del 2 ya está dentro del saldo del 5.
+    assert.equal(fechas.length, 12);
+    assert.equal(fechas[0], "2026-11-09");
+    assert.equal(fechas.every((f) => new Date(`${f}T00:00:00Z`).getUTCDay() === 1), true);
+    // Mensual con ancla 31 desde 2010: cae en el último día de cada mes.
+    const fin = proyectar(fuentes({ nomina: [], pagos: [], cobros: [], obligaciones: [{ ...vigilancia, frecuencia: "mensual", proximaFecha: "2010-01-31", anclaDia: 31 }] }));
+    assert.deepEqual(fin.semanas.flatMap((s) => s.movimientos).map((m) => m.fecha), ["2026-11-30", "2026-12-31", "2027-01-31"]);
+    // El salto cae en la serie: es la misma fecha que se obtiene recorriéndola una por una.
+    assert.equal(adelantarObligacion("2026-01-31", "2026-06-10", "mensual", 31), "2026-05-31");
+    assert.equal(adelantarQuincenal("2024-02-29", "2026-11-02"), "2026-10-15");
+    // Nómina semanal sin avanzar desde 2015: sigue contando cada semana de la ventana.
+    const nomina = proyectar(fuentes({
+      nomina: [{ netoCentavos: 500_000, frecuencia: "semanal", proximoPagoEn: "2015-01-02", anclaDia: 2, altaEn: "2015-01-01", bajaEn: null }],
+      pagos: [], cobros: [], obligaciones: [],
+    }));
+    assert.equal(nomina.salidas, 13 * 500_000);
+  });
+
+  it("la quincena del 31 de diciembre sigue el 15 de enero y la proyección cruza el año", () => {
+    assert.equal(siguientePago("2026-12-31", "quincenal"), "2027-01-15");
+    assert.equal(siguientePago("2027-01-15", "quincenal"), "2027-01-31");
+    const p = proyectar(fuentes({
+      hoy: "2026-12-21",
+      saldo: { centavos: 10_000_000, alDia: "2026-12-20", autor: "Laura", declaradoEn: "2026-12-20T20:00:00.000Z" },
+      nomina: [{ netoCentavos: 1_000_000, frecuencia: "quincenal", proximoPagoEn: "2026-12-31", anclaDia: 15, altaEn: "2026-01-01", bajaEn: null }],
+      pagos: [], cobros: [], obligaciones: [],
+    }));
+    const fechas = p.semanas.flatMap((s) => s.movimientos).map((m) => m.fecha);
+    assert.deepEqual(fechas.slice(0, 3), ["2026-12-31", "2027-01-15", "2027-01-31"]);
+    // El 31 de diciembre (jueves) cae en la semana del 28; el 15 de enero (viernes), en la del 11.
+    assert.equal(p.semanas.find((s) => s.inicio === "2026-12-28")?.salidas, 1_000_000);
+    assert.equal(p.semanas.find((s) => s.inicio === "2027-01-11")?.salidas, 1_000_000);
+  });
+
+  it("la plantilla de impuestos toma el siguiente día 17, incluido el 17 mismo y el cambio de año", () => {
+    assert.equal(siguienteDia17("2026-12-17"), "2026-12-17");
+    assert.equal(siguienteDia17("2026-12-18"), "2027-01-17");
+    assert.equal(siguienteDia17("2026-12-31"), "2027-01-17");
+    assert.equal(siguienteDia17("2027-01-16"), "2027-01-17");
+    assert.equal(siguienteDia17("2027-01-17"), "2027-01-17");
+    assert.equal(siguienteDia17("2027-02-01"), "2027-02-17");
   });
 
   it("una baja corta la nómina en su fecha", () => {
@@ -225,10 +375,23 @@ describe("presupuestos vivos", () => {
     const planta = resultado.areas.find((area) => area.id === "planta");
     assert.equal(ventas?.gastoCentavos, 8_000_000);
     assert.equal(ventas?.estado, "atencion");
-    assert.deepEqual(planta?.desglose, { nominaCentavos: 4_333_333, proveedoresCentavos: 0, obligacionesCentavos: 666_667 });
+    assert.deepEqual(planta?.desglose, { nominaCentavos: 4_333_333, nominaPersonas: 1, proveedoresCentavos: 0, obligacionesCentavos: 666_667 });
     assert.equal(planta?.gastoCentavos, 5_000_000);
     assert.equal(planta?.estado, "excedido");
     assert.equal(resultado.areas.find((area) => area.id === "sin")?.estado, "sin_presupuesto");
     assert.deepEqual(resultado.alertas.map((linea) => [linea.nombre, linea.estado]), [["Planta", "excedido"], ["Ventas", "atencion"]]);
+  });
+
+  it("la obligación cuyo proveedor ya trae cargo en el mes no suma otra vez al área", () => {
+    const base = {
+      hoy: "2026-11-06",
+      areas: [{ id: "planta", nombre: "Planta", presupuestoCentavos: 5_000_000 }],
+      nomina: [],
+      pagosPorArea: [{ areaId: "planta", centavos: 3_000_000 }],
+      personas: [],
+    };
+    const renta = { areaId: "planta", montoCentavos: 3_000_000, frecuencia: "mensual" as const, proximaFecha: "2026-11-15", anclaDia: 15 };
+    assert.equal(calcularPresupuestos({ ...base, obligaciones: [renta] }).areas[0]?.gastoCentavos, 6_000_000);
+    assert.equal(calcularPresupuestos({ ...base, obligaciones: [{ ...renta, mesesConCargo: ["2026-11"] }] }).areas[0]?.gastoCentavos, 3_000_000);
   });
 });
