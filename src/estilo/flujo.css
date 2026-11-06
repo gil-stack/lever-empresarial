@@ -1,0 +1,521 @@
+/*
+ * Flujo de caja: Inicio, Saldo y alertas, Cobros, Calendario y Presupuestos.
+ * Solo tokens del sistema visual (tokens.css); ningún color suelto.
+ */
+
+.flujo-origen {
+  margin-left: 8px;
+  font-size: 11.5px;
+  font-weight: 450;
+  vertical-align: 1px;
+}
+
+.flujo-hero {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.9fr) minmax(0, 1.6fr);
+  gap: 28px;
+  margin-top: 28px;
+  padding: 30px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--hoja);
+  box-shadow: 0 1px 2px var(--sombra);
+}
+
+.flujo-saldo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding-right: 28px;
+  border-right: 1px solid var(--linea);
+}
+
+.flujo-saldo > p:not(.rotulo):not(.cifra-grande):not(.cifra-ausente) {
+  margin: 0;
+  color: var(--tinta-suave);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.flujo-indicadores {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 28px;
+  align-content: center;
+  margin: 0;
+}
+
+.flujo-indicadores > div {
+  min-width: 0;
+}
+
+.flujo-indicadores dt {
+  color: var(--tinta-suave);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.flujo-indicadores dd {
+  margin: 8px 0 0;
+  font-size: clamp(1.1rem, 1.8cqi, 1.55rem);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+.flujo-indicadores dd.pista {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  letter-spacing: 0;
+}
+
+.flujo-alertas {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.flujo-alertas .alerta {
+  margin: 0;
+}
+
+.flujo-alertas .alerta p {
+  margin: 4px 0 0;
+  color: var(--tinta-suave);
+  font-size: 0.86rem;
+}
+
+.flujo-proyeccion,
+.flujo-bloque {
+  margin-top: 20px;
+}
+
+.flujo-seccion-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 24px;
+  margin-bottom: 18px;
+}
+
+.flujo-seccion-cabeza h2 {
+  margin: 0;
+}
+
+.flujo-seccion-cabeza p {
+  max-width: 60ch;
+  margin: 6px 0 0;
+  color: var(--tinta-suave);
+  font-size: 0.85rem;
+}
+
+.flujo-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  color: var(--tx3);
+  font-size: 12px;
+}
+
+.flujo-leyenda .flujo-origen {
+  margin-left: 0;
+}
+
+.flujo-tabla th[scope="row"] {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--tinta);
+  font-size: 0.85rem;
+  font-weight: 450;
+  white-space: nowrap;
+}
+
+.flujo-tabla th[scope="row"] .insignia {
+  margin-left: 8px;
+}
+
+.flujo-negativo {
+  color: var(--danger);
+}
+
+.flujo-semana-negativa th[scope="row"] {
+  box-shadow: inset 2px 0 0 var(--danger);
+}
+
+.flujo-sin-cifra {
+  color: var(--tx3);
+}
+
+.flujo-movimientos {
+  display: grid;
+  gap: 6px;
+  margin-top: 18px;
+}
+
+.flujo-movimientos details {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.flujo-movimientos summary {
+  color: var(--tinta-suave);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.flujo-movimientos ul,
+.flujo-lista {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flujo-movimientos li,
+.flujo-lista li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+  font-size: 0.86rem;
+}
+
+.flujo-movimientos li .insignia {
+  margin-left: 8px;
+}
+
+.flujo-movimientos strong,
+.flujo-lista strong {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.flujo-escenario {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.flujo-escenario h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.flujo-nota {
+  margin: 16px 0 0;
+  color: var(--tinta-suave);
+  font-size: 0.86rem;
+}
+
+.flujo-libro-demo {
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.flujo-libro-demo h2 {
+  margin: 0;
+}
+
+/* Formularios y listas de las páginas del flujo */
+
+.flujo-formulario {
+  display: grid;
+  gap: 14px;
+}
+
+.flujo-formulario .acciones {
+  margin-top: 4px;
+}
+
+.flujo-historial td,
+.flujo-historial th {
+  white-space: nowrap;
+}
+
+.flujo-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.flujo-filtros .segmentado {
+  flex-wrap: wrap;
+}
+
+.flujo-acciones-fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.flujo-resolver {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* Calendario */
+
+.flujo-mes-navegacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.flujo-mes-navegacion h2 {
+  margin: 0;
+}
+
+.flujo-mes {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+
+.flujo-mes-dia-semana {
+  padding: 8px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--tx3);
+  font-size: 11.5px;
+  text-align: left;
+}
+
+.flujo-dia {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 104px;
+  padding: 8px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.flujo-dia-fuera {
+  background: color-mix(in srgb, var(--tx) 2%, transparent);
+}
+
+.flujo-dia-numero {
+  color: var(--tx3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.flujo-dia-hoy .flujo-dia-numero {
+  color: var(--acc);
+  font-weight: 600;
+}
+
+.flujo-evento {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  padding: 4px 6px;
+  border: 0;
+  border-left: 2px solid var(--tx3);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--tx) 4%, transparent);
+  color: var(--tinta);
+  font: inherit;
+  font-size: 11.5px;
+  line-height: 1.3;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.flujo-evento:hover {
+  background: color-mix(in srgb, var(--tx) 8%, transparent);
+}
+
+.flujo-evento:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 1px;
+}
+
+.flujo-evento[data-tipo="nomina"] {
+  border-left-color: var(--acc);
+}
+
+.flujo-evento[data-tipo="proveedor"] {
+  border-left-color: var(--warn);
+}
+
+.flujo-evento[data-tipo="cobro"] {
+  border-left-color: var(--ingreso);
+}
+
+.flujo-evento[data-tipo="obligacion"] {
+  border-left-color: var(--tx2);
+}
+
+.flujo-evento[data-vencido="true"] {
+  border-left-color: var(--danger);
+}
+
+.flujo-proximos {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flujo-proximos li {
+  border-bottom: 1px solid var(--line);
+}
+
+.flujo-proximos li:last-child {
+  border-bottom: 0;
+}
+
+.flujo-proximos button {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 12px 0;
+  border: 0;
+  background: none;
+  color: var(--tinta);
+  font: inherit;
+  font-size: 0.86rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.flujo-proximos button:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
+
+.flujo-mes-lista {
+  display: none;
+}
+
+.flujo-proximos small {
+  display: block;
+  color: var(--tx3);
+  font-size: 12px;
+}
+
+/* Presupuestos */
+
+.flujo-presupuesto {
+  display: grid;
+  gap: 6px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.flujo-presupuesto:last-child {
+  border-bottom: 0;
+}
+
+.flujo-presupuesto-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 16px;
+}
+
+.flujo-presupuesto-cabeza h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.flujo-presupuesto-cifras {
+  color: var(--tinta-suave);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.flujo-presupuesto .barra-avance {
+  margin-top: 6px;
+}
+
+.flujo-presupuesto[data-estado="atencion"] .barra-avance > i {
+  background: var(--warn);
+}
+
+.flujo-presupuesto[data-estado="excedido"] .barra-avance > i {
+  background: var(--danger);
+}
+
+.flujo-desglose {
+  margin: 0;
+  color: var(--tx3);
+  font-size: 12px;
+}
+
+.flujo-area-proveedor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.flujo-area-proveedor .campo {
+  flex: 1 1 180px;
+  margin: 0;
+}
+
+@container (max-width: 760px) {
+  .flujo-hero {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 22px;
+  }
+
+  .flujo-saldo {
+    padding: 0 0 22px;
+    border-right: 0;
+    border-bottom: 1px solid var(--linea);
+  }
+}
+
+@media (max-width: 760px) {
+  .flujo-hero {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 22px;
+  }
+
+  .flujo-saldo {
+    padding: 0 0 22px;
+    border-right: 0;
+    border-bottom: 1px solid var(--linea);
+  }
+
+  .flujo-indicadores {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .flujo-mes {
+    display: none;
+  }
+
+  .flujo-mes-lista {
+    display: grid;
+    margin-bottom: 20px;
+  }
+}

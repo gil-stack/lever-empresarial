@@ -1,0 +1,629 @@
+import { randomUUID } from "node:crypto";
+
+import { leerCfdi } from "../../dominio/cfdi";
+import {
+  validarCobrado,
+  validarCobroManual,
+  validarColchon,
+  validarFechaProbable,
+  validarMotivo,
+  validarObligacion,
+  validarSaldo,
+  textoLimpio,
+  uuidValido,
+  type CobroManual,
+  type ErrorFlujo,
+  type ObligacionEscrita,
+} from "../../dominio/flujo/entradas";
+import { desplazar, primeroDelMes, ultimoDelMes } from "../../dominio/flujo/fechas";
+import { calcularPresupuestos, type Presupuestos } from "../../dominio/flujo/presupuestos";
+import {
+  corteDe,
+  escenarioValido,
+  movimientosEntre,
+  proyectar,
+  ventanaDe,
+  type Escenario,
+  type FuentesFlujo,
+  type Movimiento,
+  type Proyeccion,
+} from "../../dominio/flujo/proyeccion";
+import { hoyEnMexico } from "../../dominio/personas";
+import { baseCliente, exigir, puede, type ContextoConEmpresa, type ContextoDeTenant } from "../../nucleo/contexto";
+import { aplicarSentencia, conContexto, type Consulta } from "../../nucleo/db";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
+import { actorDeCliente, auditar as auditarPorDefecto, type Auditar } from "../bitacora/auditar";
+import {
+  leerAreas,
+  leerCobros,
+  leerFuentes,
+  leerFuentesPresupuesto,
+  leerHistorialSaldo,
+  leerObligaciones,
+  leerPreferenciaCorreo,
+  leerProveedoresConArea,
+  leerSaldo,
+  leerTotalesCobro,
+  type CobroVista,
+  type DeclaracionVista,
+  type Fuentes,
+  type ObligacionVista,
+  type ProveedorConArea,
+} from "./repositorio";
+
+export type DependenciasFlujo = {
+  ahora?: () => Date;
+  auditar?: Auditar;
+};
+
+/** Un error de captura que vuelve al formulario con su campo. */
+export class ErrorDeCaptura extends Error {
+  constructor(readonly errores: ErrorFlujo[]) {
+    super("captura_invalida");
+  }
+}
+
+function hoyDe(deps?: DependenciasFlujo): string {
+  return hoyEnMexico((deps?.ahora ?? (() => new Date()))());
+}
+
+function leerCon<T>(ctx: ContextoConEmpresa, fn: (consulta: Consulta) => Promise<T>): Promise<T> {
+  return conContexto(baseCliente(ctx), fn);
+}
+
+// Lecturas -------------------------------------------------------------------------
+
+export type FlujoInicio = {
+  proyeccion: Proyeccion;
+  /** La proyección real cuando la vista trae un escenario. */
+  real: Proyeccion | null;
+  presupuestos: Presupuestos;
+  cobros: { porCobrar: number; vencidos: number; vencidosCentavos: number };
+  puedeEditar: boolean;
+};
+
+/** Las fuentes de la proyección de una empresa. La consulta ya trae su contexto (RLS). */
+export async function proyeccionCon(
+  consulta: Consulta,
+  empresaId: string,
+  hoy: string,
+): Promise<{ fuentes: FuentesFlujo; extra: Fuentes }> {
+  const { saldo, colchonCentavos } = await leerSaldo(consulta, empresaId);
+  const corte = corteDe({ hoy, saldo });
+  const extra = await leerFuentes(consulta, empresaId, desplazar(corte, 1), ventanaDe(hoy).fin);
+  return { fuentes: { hoy, saldo, colchonCentavos, ...extra }, extra };
+}
+
+/** Lo que Inicio muestra del flujo. El escenario recalcula sin escribir nada. */
+export async function leerFlujoInicio(
+  ctx: ContextoDeTenant | null | undefined,
+  pedido: { mover?: unknown; fecha?: unknown } = {},
+  deps?: DependenciasFlujo,
+): Promise<FlujoInicio> {
+  const conEmpresa = exigir(ctx, "cliente.flujo.ver");
+  const hoy = hoyDe(deps);
+  return leerCon(conEmpresa, async (consulta) => {
+    const { fuentes } = await proyeccionCon(consulta, conEmpresa.empresa.id, hoy);
+    const real = proyectar(fuentes);
+    const escenario: Escenario | null = pedido.mover === undefined ? null : escenarioValido(real, pedido.mover, pedido.fecha);
+    const presupuestos = calcularPresupuestos(
+      await leerFuentesPresupuesto(consulta, conEmpresa.empresa.id, hoy, primeroDelMes(hoy), ultimoDelMes(hoy)),
+    );
+    return {
+      proyeccion: escenario ? proyectar(fuentes, escenario) : real,
+      real: escenario ? real : null,
+      presupuestos,
+      cobros: await leerTotalesCobro(consulta, conEmpresa.empresa.id, hoy),
+      puedeEditar: puede(conEmpresa, "cliente.flujo.editar"),
+    };
+  });
+}
+
+export type VistaSaldo = {
+  hoy: string;
+  historial: DeclaracionVista[];
+  colchonCentavos: number;
+  correoSemanal: boolean;
+  puedeEditar: boolean;
+};
+
+/** Áreas para el campo opcional del alta de proveedores; lo ve quien puede dar de alta. */
+export async function leerAreasParaProveedor(ctx: ContextoDeTenant | null | undefined): Promise<{ id: string; nombre: string }[]> {
+  const conEmpresa = exigir(ctx, "cliente.proveedores.alta");
+  return leerCon(conEmpresa, (consulta) => leerAreas(consulta, conEmpresa.empresa.id));
+}
+
+export async function leerVistaSaldo(ctx: ContextoDeTenant | null | undefined, deps?: DependenciasFlujo): Promise<VistaSaldo> {
+  const conEmpresa = exigir(ctx, "cliente.flujo.ver");
+  return leerCon(conEmpresa, async (consulta) => ({
+    hoy: hoyDe(deps),
+    historial: await leerHistorialSaldo(consulta, conEmpresa.empresa.id),
+    colchonCentavos: (await leerSaldo(consulta, conEmpresa.empresa.id)).colchonCentavos,
+    correoSemanal: await leerPreferenciaCorreo(consulta, conEmpresa.empresa.id, conEmpresa.persona.id),
+    puedeEditar: puede(conEmpresa, "cliente.flujo.editar"),
+  }));
+}
+
+export type VistaCobros = {
+  hoy: string;
+  cobros: CobroVista[];
+  totales: { porCobrar: number; vencidos: number; vencidosCentavos: number };
+  puedeEditar: boolean;
+};
+
+export async function leerVistaCobros(ctx: ContextoDeTenant | null | undefined, deps?: DependenciasFlujo): Promise<VistaCobros> {
+  const conEmpresa = exigir(ctx, "cliente.flujo.ver");
+  const hoy = hoyDe(deps);
+  return leerCon(conEmpresa, async (consulta) => ({
+    hoy,
+    cobros: await leerCobros(consulta, conEmpresa.empresa.id),
+    totales: await leerTotalesCobro(consulta, conEmpresa.empresa.id, hoy),
+    puedeEditar: puede(conEmpresa, "cliente.flujo.editar"),
+  }));
+}
+
+export type EventoCalendario = Movimiento & {
+  vencido: boolean;
+  detalle: readonly (readonly [string, string])[];
+};
+
+export type VistaCalendario = {
+  hoy: string;
+  mes: string;
+  eventos: EventoCalendario[];
+  proximos: EventoCalendario[];
+  obligaciones: ObligacionVista[];
+  areas: { id: string; nombre: string }[];
+  puedeEditar: boolean;
+};
+
+const ESTADO_PAGO: Record<string, string> = {
+  por_autorizar: "Por autorizar",
+  listo_para_pagar: "Listo para pagar",
+  sin_solicitud: "Sin solicitud",
+};
+
+function eventosDe(fuentes: FuentesFlujo, extra: Fuentes, desde: string, hasta: string, hoy: string): EventoCalendario[] {
+  const pagos = new Map(extra.pagos.map((pago) => [pago.id, pago]));
+  const obligaciones = new Map(extra.obligaciones.map((obligacion) => [obligacion.id, obligacion]));
+  const cobros = new Map(extra.cobros.map((cobro) => [cobro.id, cobro]));
+  return movimientosEntre(fuentes, desde, hasta).map((movimiento) => {
+    const [, id] = movimiento.clave.split(":");
+    const detalle: [string, string][] = [];
+    if (movimiento.tipo === "proveedor") {
+      const pago = pagos.get(id ?? "");
+      if (pago) {
+        detalle.push(["Proveedor", pago.proveedor], ["Referencia", pago.referencia], ["Vence", pago.venceEl], ["Estado", ESTADO_PAGO[pago.estado] ?? pago.estado]);
+      }
+    } else if (movimiento.tipo === "obligacion") {
+      const obligacion = obligaciones.get(id ?? "");
+      if (obligacion) detalle.push(["Concepto", obligacion.concepto], ["Área", obligacion.areaNombre ?? "Sin área"]);
+    } else if (movimiento.tipo === "cobro") {
+      const cobro = cobros.get(id ?? "");
+      if (cobro) detalle.push(["Cliente", cobro.cliente], ["Concepto", cobro.concepto], ["Referencia", cobro.referencia ?? "Sin referencia"]);
+    } else {
+      detalle.push(["Origen", movimiento.clave.startsWith("lote:") ? "Lote ya preparado en Nómina" : "Calendario de nómina de las personas activas"]);
+    }
+    return { ...movimiento, vencido: movimiento.sentido === "entrada" && movimiento.fecha < hoy, detalle };
+  });
+}
+
+export async function leerVistaCalendario(
+  ctx: ContextoDeTenant | null | undefined,
+  mesPedido: unknown,
+  deps?: DependenciasFlujo,
+): Promise<VistaCalendario> {
+  const conEmpresa = exigir(ctx, "cliente.flujo.ver");
+  const hoy = hoyDe(deps);
+  const mes = typeof mesPedido === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(mesPedido) ? `${mesPedido}-01` : primeroDelMes(hoy);
+  const desde = mes;
+  const hasta = ultimoDelMes(mes);
+  const proximoFin = desplazar(hoy, 30);
+  return leerCon(conEmpresa, async (consulta) => {
+    const inicio = desde < hoy ? desde : hoy;
+    const fin = hasta > proximoFin ? hasta : proximoFin;
+    const extra = await leerFuentes(consulta, conEmpresa.empresa.id, inicio, fin);
+    const fuentes: FuentesFlujo = { hoy, saldo: null, colchonCentavos: 0, ...extra };
+    return {
+      hoy,
+      mes,
+      eventos: eventosDe(fuentes, extra, desde, hasta, hoy),
+      proximos: eventosDe(fuentes, extra, hoy, proximoFin, hoy),
+      obligaciones: await leerObligaciones(consulta, conEmpresa.empresa.id),
+      areas: await leerAreas(consulta, conEmpresa.empresa.id),
+      puedeEditar: puede(conEmpresa, "cliente.flujo.editar"),
+    };
+  });
+}
+
+export type VistaPresupuestos = {
+  hoy: string;
+  presupuestos: Presupuestos;
+  proveedores: ProveedorConArea[];
+  areas: { id: string; nombre: string }[];
+  puedeEditar: boolean;
+};
+
+export async function leerVistaPresupuestos(ctx: ContextoDeTenant | null | undefined, deps?: DependenciasFlujo): Promise<VistaPresupuestos> {
+  const conEmpresa = exigir(ctx, "cliente.flujo.ver");
+  const hoy = hoyDe(deps);
+  return leerCon(conEmpresa, async (consulta) => ({
+    hoy,
+    presupuestos: calcularPresupuestos(
+      await leerFuentesPresupuesto(consulta, conEmpresa.empresa.id, hoy, primeroDelMes(hoy), ultimoDelMes(hoy)),
+    ),
+    proveedores: await leerProveedoresConArea(consulta, conEmpresa.empresa.id),
+    areas: await leerAreas(consulta, conEmpresa.empresa.id),
+    puedeEditar: puede(conEmpresa, "cliente.flujo.editar"),
+  }));
+}
+
+/** Alertas de presupuesto para Pendientes: solo quien ve el flujo. */
+export async function leerAlertasPresupuesto(ctx: ContextoConEmpresa, hoy: string): Promise<Presupuestos["alertas"]> {
+  if (!puede(ctx, "cliente.flujo.ver")) return [];
+  return leerCon(ctx, async (consulta) =>
+    calcularPresupuestos(await leerFuentesPresupuesto(consulta, ctx.empresa.id, hoy, primeroDelMes(hoy), ultimoDelMes(hoy))).alertas,
+  );
+}
+
+// Escrituras -----------------------------------------------------------------------
+// Cada una exige cliente.flujo.editar en el servidor, escribe y deja su evento en
+// la misma transacción. La base vuelve a exigir el rol y el evento (0026).
+
+function escribir<T>(
+  ctx: ContextoDeTenant | null | undefined,
+  deps: DependenciasFlujo | undefined,
+  fn: (consulta: Consulta, conEmpresa: ContextoConEmpresa, auditar: Auditar, hoy: string) => Promise<T>,
+): Promise<T> {
+  const conEmpresa = exigir(ctx, "cliente.flujo.editar");
+  return leerCon(conEmpresa, (consulta) => fn(consulta, conEmpresa, deps?.auditar ?? auditarPorDefecto, hoyDe(deps)));
+}
+
+function exigirValido<T>(resultado: { ok: true; valor: T } | { ok: false; errores: ErrorFlujo[] }): T {
+  if (!resultado.ok) throw new ErrorDeCaptura(resultado.errores);
+  return resultado.valor;
+}
+
+export async function declararSaldo(
+  ctx: ContextoDeTenant | null | undefined,
+  entrada: { saldo?: unknown; alDia?: unknown },
+  deps?: DependenciasFlujo,
+): Promise<{ id: string }> {
+  const conEmpresa = exigir(ctx, "cliente.flujo.editar");
+  const valor = exigirValido(validarSaldo(entrada, hoyDe(deps)));
+  const id = randomUUID();
+  await escribir(conEmpresa, deps, async (consulta, c, auditar) => {
+    await auditar(consulta, actorDeCliente(c), {
+      accion: "declarar_saldo",
+      identificador: id,
+      cambio: { saldo_centavos: valor.centavos, al_dia: valor.alDia },
+    });
+    await aplicarSentencia(
+      consulta,
+      `insert into cash_balance_declarations (id, company_id, saldo_centavos, al_dia, declarado_por)
+       values ($1, $2, $3, $4::date, $5)`,
+      [id, c.empresa.id, valor.centavos, valor.alDia, c.persona.id],
+    );
+  });
+  return { id };
+}
+
+export async function configurarColchon(
+  ctx: ContextoDeTenant | null | undefined,
+  entrada: { colchon?: unknown },
+  deps?: DependenciasFlujo,
+): Promise<void> {
+  exigir(ctx, "cliente.flujo.editar");
+  const colchon = exigirValido(validarColchon(entrada.colchon));
+  await escribir(ctx, deps, async (consulta, c, auditar) => {
+    const previo = await aplicarSentencia(consulta, "select colchon_centavos::text as c from cash_flow_settings where company_id = $1", [c.empresa.id]);
+    const anterior = previo.rows[0] ? Number((previo.rows[0] as { c: string }).c) : null;
+    await auditar(consulta, actorDeCliente(c), {
+      accion: "configurar_colchon",
+      identificador: c.empresa.id,
+      cambio: { colchon_anterior: anterior, colchon_nuevo: colchon },
+    });
+    await aplicarSentencia(
+      consulta,
+      `insert into cash_flow_settings (company_id, colchon_centavos, actualizado_por)
+       values ($1, $2, $3)
+       on conflict (company_id) do update
+         set colchon_centavos = excluded.colchon_centavos, actualizado_por = excluded.actualizado_por, actualizado_en = now()`,
+      [c.empresa.id, colchon, c.persona.id],
+    );
+  });
+}
+
+/** Cada quien enciende o apaga su propio aviso. Basta ver el flujo. */
+export async function cambiarCorreoSemanal(
+  ctx: ContextoDeTenant | null | undefined,
+  entrada: { activo?: unknown },
+  deps?: DependenciasFlujo,
+): Promise<boolean> {
+  const conEmpresa = exigir(ctx, "cliente.flujo.ver");
+  if (entrada.activo !== "si" && entrada.activo !== "no") throw new ErrorDeDominio("entrada_invalida");
+  const activo = entrada.activo === "si";
+  await leerCon(conEmpresa, async (consulta) => {
+    await (deps?.auditar ?? auditarPorDefecto)(consulta, actorDeCliente(conEmpresa), {
+      accion: "preferencia_correo_semanal",
+      identificador: conEmpresa.persona.id,
+      cambio: { activo },
+    });
+    await aplicarSentencia(
+      consulta,
+      `insert into weekly_digest_preferences (company_id, user_id, activo)
+       values ($1, $2, $3)
+       on conflict (company_id, user_id) do update set activo = excluded.activo, actualizado_en = now()`,
+      [conEmpresa.empresa.id, conEmpresa.persona.id, activo],
+    );
+  });
+  return activo;
+}
+
+async function insertarCobro(
+  consulta: Consulta,
+  c: ContextoConEmpresa,
+  auditar: Auditar,
+  cobro: CobroManual & { origen: "manual" | "cfdi"; cfdiUuid: string | null },
+): Promise<string> {
+  const id = randomUUID();
+  await auditar(consulta, actorDeCliente(c), {
+    accion: "registrar_cobro",
+    identificador: id,
+    cambio: { origen: cobro.origen, monto_centavos: cobro.montoCentavos, fecha_probable: cobro.fechaProbable },
+  });
+  await aplicarSentencia(
+    consulta,
+    `insert into expected_collections
+       (id, company_id, origen, cliente_nombre, cliente_rfc, concepto, monto_centavos, fecha_probable, referencia, cfdi_uuid, creado_por)
+     values ($1, $2, $3, $4, $5, $6, $7, $8::date, $9, $10, $11)`,
+    [id, c.empresa.id, cobro.origen, cobro.clienteNombre, cobro.clienteRfc, cobro.concepto, cobro.montoCentavos,
+      cobro.fechaProbable, cobro.referencia, cobro.cfdiUuid, c.persona.id],
+  );
+  return id;
+}
+
+export async function registrarCobro(
+  ctx: ContextoDeTenant | null | undefined,
+  entrada: Record<string, unknown>,
+  deps?: DependenciasFlujo,
+): Promise<{ id: string }> {
+  exigir(ctx, "cliente.flujo.editar");
+  const cobro = exigirValido(validarCobroManual(entrada));
+  const id = await escribir(ctx, deps, (consulta, c, auditar) =>
+    insertarCobro(consulta, c, auditar, { ...cobro, origen: "manual", cfdiUuid: null }));
+  return { id };
+}
+
+const MENSAJE_CFDI: Record<string, string> = {
+  cfdi_invalido: "El archivo no es un XML de CFDI válido.",
+  cfdi_codificacion: "El XML no está en UTF-8.",
+  cfdi_contenido_no_permitido: "El XML trae contenido que no se acepta (scripts, XHTML o SVG).",
+  cfdi_no_es_ingreso_mxn: "Solo se registran facturas de ingreso CFDI 4.0 en pesos.",
+  cfdi_datos_incompletos: "Al XML le faltan datos: UUID, RFC, nombres, total o fecha.",
+};
+
+/**
+ * Alta con el XML de una factura emitida. El lector es el mismo de
+ * proveedores (`leerCfdi`), que ya rechaza XHTML, SVG y scripts. La factura
+ * tiene que haberla emitido esta empresa: el RFC emisor es el de la empresa.
+ */
+export async function registrarCobroCfdi(
+  ctx: ContextoDeTenant | null | undefined,
+  entrada: { bytes: Uint8Array | null; fechaProbable?: unknown; concepto?: unknown },
+  deps?: DependenciasFlujo,
+): Promise<{ id: string; cliente: string; montoCentavos: number }> {
+  const conEmpresa = exigir(ctx, "cliente.flujo.editar");
+  const errores: ErrorFlujo[] = [];
+  const fecha = validarFechaProbable(entrada.fechaProbable);
+  if (!fecha.ok) errores.push(...fecha.errores);
+  if (!entrada.bytes || entrada.bytes.byteLength === 0) {
+    errores.push({ campo: "xml", mensaje: "Elige el XML de la factura emitida." });
+    throw new ErrorDeCaptura(errores);
+  }
+  const leido = leerCfdi(entrada.bytes);
+  if (!leido.ok) {
+    errores.push({ campo: "xml", mensaje: MENSAJE_CFDI[leido.codigo] ?? MENSAJE_CFDI.cfdi_invalido! });
+    throw new ErrorDeCaptura(errores);
+  }
+  const cfdi = leido.cfdi;
+  if (cfdi.rfcEmisor !== conEmpresa.empresa.rfc.toUpperCase()) {
+    errores.push({
+      campo: "xml",
+      mensaje: `Esta factura la emitió el RFC ${cfdi.rfcEmisor}, no ${conEmpresa.empresa.rfc}. Solo se registran facturas que emitió ${conEmpresa.empresa.razonSocial}.`,
+    });
+  }
+  const conceptoEscrito = typeof entrada.concepto === "string" ? entrada.concepto.trim() : "";
+  const concepto = conceptoEscrito === "" ? `Factura ${cfdi.referencia}` : textoLimpio(conceptoEscrito, 200);
+  if (!concepto) errores.push({ campo: "conceptoXml", mensaje: "El concepto admite hasta 200 caracteres." });
+  if (errores.length > 0 || !fecha.ok || !concepto) throw new ErrorDeCaptura(errores);
+  const id = await escribir(conEmpresa, deps, (consulta, c, auditar) =>
+    insertarCobro(consulta, c, auditar, {
+      origen: "cfdi",
+      cfdiUuid: cfdi.uuid,
+      clienteNombre: cfdi.nombreReceptor.slice(0, 254),
+      clienteRfc: cfdi.rfcReceptor,
+      concepto,
+      montoCentavos: cfdi.totalCentavos,
+      fechaProbable: fecha.valor,
+      referencia: cfdi.referencia.slice(0, 120),
+    }));
+  return { id, cliente: cfdi.nombreReceptor, montoCentavos: cfdi.totalCentavos };
+}
+
+export async function marcarCobrado(
+  ctx: ContextoDeTenant | null | undefined,
+  entrada: { id?: unknown; cobradoEl?: unknown },
+  deps?: DependenciasFlujo,
+): Promise<void> {
+  exigir(ctx, "cliente.flujo.editar");
+  if (!uuidValido(entrada.id)) throw new ErrorDeDominio("cobro_ausente");
+  const id = entrada.id;
+  const cobradoEl = exigirValido(validarCobrado(entrada.cobradoEl, hoyDe(deps)));
+  await escribir(ctx, deps, async (consulta, c, auditar) => {
+    await auditar(consulta, actorDeCliente(c), { accion: "cobrar_cobro", identificador: id, cambio: { cobrado_el: cobradoEl } });
+    const hecho = await aplicarSentencia(
+      consulta,
+      `update expected_collections
+          set estado = 'cobrado', cobrado_el = $3::date, resuelto_por = $4, resuelto_en = now()
+        where company_id = $1 and id = $2 and estado = 'esperado'`,
+      [c.empresa.id, id, cobradoEl, c.persona.id],
+    );
+    if (hecho.rowCount !== 1) throw new ErrorDeDominio("cobro_ya_resuelto");
+  });
+}
+
+export async function cancelarCobro(
+  ctx: ContextoDeTenant | null | undefined,
+  entrada: { id?: unknown; motivo?: unknown },
+  deps?: DependenciasFlujo,
+): Promise<void> {
+  exigir(ctx, "cliente.flujo.editar");
+  if (!uuidValido(entrada.id)) throw new ErrorDeDominio("cobro_ausente");
+  const id = entrada.id;
+  const motivo = exigirValido(validarMotivo(entrada.motivo));
+  await escribir(ctx, deps, async (consulta, c, auditar) => {
+    await auditar(consulta, actorDeCliente(c), { accion: "cancelar_cobro", identificador: id, motivo });
+    const hecho = await aplicarSentencia(
+      consulta,
+      `update expected_collections
+          set estado = 'cancelado', motivo_cancelacion = $3, resuelto_por = $4, resuelto_en = now()
+        where company_id = $1 and id = $2 and estado = 'esperado'`,
+      [c.empresa.id, id, motivo, c.persona.id],
+    );
+    if (hecho.rowCount !== 1) throw new ErrorDeDominio("cobro_ya_resuelto");
+  });
+}
+
+async function nombreDeArea(consulta: Consulta, empresaId: string, areaId: string | null): Promise<string | null> {
+  if (!areaId) return null;
+  const fila = await aplicarSentencia(consulta, "select nombre from cost_centers where company_id = $1 and id = $2", [empresaId, areaId]);
+  const nombre = (fila.rows[0] as { nombre?: unknown } | undefined)?.nombre;
+  if (typeof nombre !== "string") throw new ErrorDeDominio("area_ajena");
+  return nombre;
+}
+
+export async function registrarObligacion(
+  ctx: ContextoDeTenant | null | undefined,
+  entrada: Record<string, unknown>,
+  deps?: DependenciasFlujo,
+): Promise<{ id: string }> {
+  exigir(ctx, "cliente.flujo.editar");
+  const valor: ObligacionEscrita = exigirValido(validarObligacion(entrada));
+  const id = randomUUID();
+  await escribir(ctx, deps, async (consulta, c, auditar) => {
+    await nombreDeArea(consulta, c.empresa.id, valor.areaId);
+    await auditar(consulta, actorDeCliente(c), {
+      accion: "registrar_obligacion",
+      identificador: id,
+      cambio: { monto_centavos: valor.montoCentavos, frecuencia: valor.frecuencia, proxima_fecha: valor.proximaFecha },
+    });
+    await aplicarSentencia(
+      consulta,
+      `insert into recurring_obligations
+         (id, company_id, concepto, monto_centavos, frecuencia, proxima_fecha, ancla_dia, cost_center_id, creado_por, actualizado_por)
+       values ($1, $2, $3, $4, $5, $6::date, $7, $8, $9, $9)`,
+      [id, c.empresa.id, valor.concepto, valor.montoCentavos, valor.frecuencia, valor.proximaFecha, valor.anclaDia, valor.areaId, c.persona.id],
+    );
+  });
+  return { id };
+}
+
+export async function editarObligacion(
+  ctx: ContextoDeTenant | null | undefined,
+  entrada: Record<string, unknown>,
+  deps?: DependenciasFlujo,
+): Promise<void> {
+  exigir(ctx, "cliente.flujo.editar");
+  if (!uuidValido(entrada.id)) throw new ErrorDeDominio("obligacion_ausente");
+  const id = entrada.id;
+  const valor = exigirValido(validarObligacion(entrada));
+  await escribir(ctx, deps, async (consulta, c, auditar) => {
+    await nombreDeArea(consulta, c.empresa.id, valor.areaId);
+    const previo = await aplicarSentencia(
+      consulta,
+      `select monto_centavos::text as monto, frecuencia, to_char(proxima_fecha, 'YYYY-MM-DD') as fecha
+         from recurring_obligations where company_id = $1 and id = $2 and activa for update`,
+      [c.empresa.id, id],
+    );
+    const fila = previo.rows[0] as { monto: string; frecuencia: string; fecha: string } | undefined;
+    if (!fila) throw new ErrorDeDominio("obligacion_inactiva");
+    await auditar(consulta, actorDeCliente(c), {
+      accion: "editar_obligacion",
+      identificador: id,
+      cambio: {
+        monto_anterior: Number(fila.monto),
+        monto_nuevo: valor.montoCentavos,
+        frecuencia_anterior: fila.frecuencia,
+        frecuencia_nueva: valor.frecuencia,
+        fecha_anterior: fila.fecha,
+        fecha_nueva: valor.proximaFecha,
+      },
+    });
+    await aplicarSentencia(
+      consulta,
+      `update recurring_obligations
+          set concepto = $3, monto_centavos = $4, frecuencia = $5, proxima_fecha = $6::date, ancla_dia = $7,
+              cost_center_id = $8, actualizado_por = $9, actualizado_en = now()
+        where company_id = $1 and id = $2 and activa`,
+      [c.empresa.id, id, valor.concepto, valor.montoCentavos, valor.frecuencia, valor.proximaFecha, valor.anclaDia, valor.areaId, c.persona.id],
+    );
+  });
+}
+
+export async function desactivarObligacion(
+  ctx: ContextoDeTenant | null | undefined,
+  entrada: { id?: unknown },
+  deps?: DependenciasFlujo,
+): Promise<void> {
+  exigir(ctx, "cliente.flujo.editar");
+  if (!uuidValido(entrada.id)) throw new ErrorDeDominio("obligacion_ausente");
+  const id = entrada.id;
+  await escribir(ctx, deps, async (consulta, c, auditar) => {
+    await auditar(consulta, actorDeCliente(c), { accion: "desactivar_obligacion", identificador: id });
+    const hecho = await aplicarSentencia(
+      consulta,
+      `update recurring_obligations set activa = false, actualizado_por = $3, actualizado_en = now()
+        where company_id = $1 and id = $2 and activa`,
+      [c.empresa.id, id, c.persona.id],
+    );
+    if (hecho.rowCount !== 1) throw new ErrorDeDominio("obligacion_inactiva");
+  });
+}
+
+/** El único cambio a un proveedor desde el flujo: su área, para sumar sus pagos al presupuesto. */
+export async function asignarAreaProveedor(
+  ctx: ContextoDeTenant | null | undefined,
+  entrada: { proveedorId?: unknown; areaId?: unknown },
+  deps?: DependenciasFlujo,
+): Promise<void> {
+  exigir(ctx, "cliente.flujo.editar");
+  if (!uuidValido(entrada.proveedorId)) throw new ErrorDeDominio("proveedor_ausente");
+  const proveedorId = entrada.proveedorId;
+  const areaEscrita = typeof entrada.areaId === "string" ? entrada.areaId.trim() : "";
+  if (areaEscrita !== "" && !uuidValido(areaEscrita)) throw new ErrorDeDominio("area_ajena");
+  const areaId = areaEscrita === "" ? null : areaEscrita.toLowerCase();
+  await escribir(ctx, deps, async (consulta, c, auditar) => {
+    const previo = await aplicarSentencia(
+      consulta,
+      `select s.cost_center_id, a.nombre from suppliers s
+         left join cost_centers a on a.id = s.cost_center_id and a.company_id = s.company_id
+        where s.company_id = $1 and s.id = $2 for update of s`,
+      [c.empresa.id, proveedorId],
+    );
+    const fila = previo.rows[0] as { cost_center_id: string | null; nombre: string | null } | undefined;
+    if (!fila) throw new ErrorDeDominio("proveedor_ausente");
+    if ((fila.cost_center_id ?? null) === areaId) return;
+    const nueva = await nombreDeArea(consulta, c.empresa.id, areaId);
+    await auditar(consulta, actorDeCliente(c), {
+      accion: "asignar_area_proveedor",
+      identificador: proveedorId,
+      cambio: { area_anterior: fila.nombre ?? null, area_nueva: nueva },
+    });
+    await aplicarSentencia(
+      consulta,
+      "update suppliers set cost_center_id = $3 where company_id = $1 and id = $2",
+      [c.empresa.id, proveedorId, areaId],
+    );
+  });
+}

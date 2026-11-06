@@ -157,6 +157,31 @@ export const RUTAS = [
     acceso: { tipo: "capacidad", alguna: ["cliente.proveedores.ver"] },
     conEmpresa: true,
   },
+  // Flujo de caja: lo abre quien ve el flujo; editar lo vuelve a exigir el servidor.
+  {
+    patron: "/consola/flujo",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] },
+    conEmpresa: true,
+  },
+  {
+    patron: "/consola/cobros",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] },
+    conEmpresa: true,
+  },
+  {
+    patron: "/consola/calendario",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] },
+    conEmpresa: true,
+  },
+  {
+    patron: "/consola/presupuestos",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] },
+    conEmpresa: true,
+  },
   {
     patron: "/consola/poliza",
     superficie: "cliente",
@@ -177,6 +202,8 @@ export const RUTAS = [
     acceso: { tipo: "capacidad", alguna: ["cliente.precio.ver", "plataforma.precio.publicar"] },
     conEmpresa: true,
   },
+  // La tarea programada del lunes. Sin sesión: la protege CRON_SECRET en la propia ruta.
+  { patron: "/tareas/correo-semanal", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   // El layout y las acciones vuelven a exigir la superficie SOFIPO y la capacidad.
   { patron: "/operacion/entrar", superficie: "sofipo", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/operacion/continuar", superficie: "sofipo", acceso: { tipo: "segundo_factor" }, conEmpresa: false },

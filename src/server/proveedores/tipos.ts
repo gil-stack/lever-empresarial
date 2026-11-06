@@ -31,6 +31,8 @@ export type ProveedorNuevo = {
   nombreComercial: string | null;
   contactoCorreo: string | null;
   diasCredito: number;
+  /** Área opcional para Presupuestos. */
+  costCenterId: string | null;
   altaEn: Date;
 };
 

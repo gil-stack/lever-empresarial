@@ -31,7 +31,7 @@ const MESES = [
   "diciembre",
 ] as const;
 
-export type CampoProveedor = "rfc" | "razonSocial" | "nombreComercial" | "contactoCorreo" | "diasCredito" | "clabe" | "constancia" | "contrato";
+export type CampoProveedor = "rfc" | "razonSocial" | "nombreComercial" | "contactoCorreo" | "diasCredito" | "areaId" | "clabe" | "constancia" | "contrato";
 
 export type ErrorCampoProveedor = {
   campo: CampoProveedor;
@@ -89,7 +89,7 @@ export type ListaVisible = {
   cargadoEn: string;
 } | null;
 
-const ORDEN: readonly CampoProveedor[] = ["rfc", "razonSocial", "nombreComercial", "contactoCorreo", "diasCredito", "clabe", "constancia", "contrato"];
+const ORDEN: readonly CampoProveedor[] = ["rfc", "razonSocial", "nombreComercial", "contactoCorreo", "diasCredito", "areaId", "clabe", "constancia", "contrato"];
 
 export function ordenarErroresProveedor(errores: readonly ErrorCampoProveedor[]): ErrorCampoProveedor[] {
   return [...errores].sort((a, b) => ORDEN.indexOf(a.campo) - ORDEN.indexOf(b.campo));

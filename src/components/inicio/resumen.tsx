@@ -1,19 +1,28 @@
 import Link from "next/link";
 
+import { InicioFlujo } from "@/components/flujo/inicio-flujo";
+import { Origen } from "@/components/flujo/origen";
 import { CifraGrande } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
 import type { PendienteInicio } from "@/dominio/inicio";
 import { fechaMovimiento, type PeriodoResumen, type ResumenInicio } from "@/dominio/resumen";
 import { saludoEnMexico } from "@/dominio/reloj";
 import { enEmpresa } from "@/nucleo/rutas";
+import type { FlujoInicio } from "@/server/flujo/servicio";
 
 import { GraficaCategorias, GraficaMensual } from "./graficas";
 
 export type CargaResumen =
-  | { tipo: "lista"; resumen: ResumenInicio }
+  | { tipo: "lista"; flujo: FlujoInicio; libro: ResumenInicio | null }
   | { tipo: "error" }
   | { tipo: "sin_empresa" };
 
+/**
+ * Inicio: el flujo de caja primero (saldo declarado, lo comprometido y la
+ * proyección). El libro de asientos solo aparece en empresas de demostración,
+ * marcado como «Confirmado por el banco · demostración»: a un cliente real la
+ * plataforma no le pinta un saldo de banco que no tiene.
+ */
 export function Resumen({ carga, empresaId, nombre, atajos }: { carga: CargaResumen; empresaId: string | null; nombre: string; atajos: PendienteInicio[] }) {
   if (carga.tipo !== "lista") {
     const sinEmpresa = carga.tipo === "sin_empresa";
@@ -29,23 +38,41 @@ export function Resumen({ carga, empresaId, nombre, atajos }: { carga: CargaResu
     );
   }
 
-  const { resumen } = carga;
   return (
     <div className="consola inicio-financiero">
       <header className="inicio-cabeza">
         <div>
           <p className="kicker">Inicio</p>
           <h1>{saludoEnMexico(new Date(), nombre)}</h1>
-          <p className="lede">Esta es la lectura global de los números de tu empresa.</p>
+          <p className="lede">Cuánto tienes, qué viene en las próximas 13 semanas y si alcanza.</p>
+        </div>
+      </header>
+      <InicioFlujo flujo={carga.flujo} empresaId={empresaId} />
+      {carga.libro ? <LibroDemo resumen={carga.libro} empresaId={empresaId} /> : <SinMovimientos atajos={atajos} empresaId={empresaId} vacio={sinDatos(carga.flujo)} />}
+    </div>
+  );
+}
+
+function sinDatos(flujo: FlujoInicio): boolean {
+  return !flujo.proyeccion.saldo && flujo.proyeccion.semanas.every((semana) => semana.movimientos.length === 0);
+}
+
+function LibroDemo({ resumen, empresaId }: { resumen: ResumenInicio; empresaId: string | null }) {
+  return (
+    <section className="flujo-libro-demo" aria-labelledby="libro-titulo" data-libro="demostracion">
+      <header className="inicio-cabeza">
+        <div>
+          <h2 id="libro-titulo">Movimientos del banco <Origen de="banco_demo" /></h2>
+          <p className="lede">Esta empresa es de demostración: sus asientos son de ejemplo y nunca se muestran a un cliente real.</p>
         </div>
         <Periodo periodo={resumen.periodo} empresaId={empresaId} />
       </header>
 
       <section className="inicio-hero" aria-labelledby="saldo-libro">
         <div className="inicio-saldo">
-          <p className="rotulo" id="saldo-libro">Saldo en el libro</p>
+          <p className="rotulo" id="saldo-libro">Saldo confirmado por el banco <Origen de="banco_demo" /></p>
           <CifraGrande centavos={resumen.saldoCentavos} />
-          <p>Suma histórica de los asientos registrados.</p>
+          <p>Suma de los asientos de demostración.</p>
         </div>
         <dl className="inicio-metricas">
           <Metrica rotulo="Entradas del mes" centavos={resumen.entradasMesCentavos} tono="ingreso" />
@@ -82,11 +109,9 @@ export function Resumen({ carga, empresaId, nombre, atajos }: { carga: CargaResu
             </ul>
           </section>
         </>
-      ) : (
-        <SinMovimientos atajos={atajos} empresaId={empresaId} />
-      )}
-      <p className="inicio-fuente">Cifras calculadas con el signo de los asientos del libro: entradas y salidas, no ingresos ni gastos fiscales. No representan el saldo del participante de la CLABE ni una conciliación bancaria.</p>
-    </div>
+      ) : null}
+      <p className="inicio-fuente">Cifras de demostración calculadas con el signo de los asientos: entradas y salidas, no ingresos ni gastos fiscales.</p>
+    </section>
   );
 }
 
@@ -108,12 +133,13 @@ function Leyenda() {
   return <div className="grafica-leyenda" aria-label="Leyenda"><span><i className="leyenda-ingreso" />Entradas</span><span><i className="leyenda-gasto" />Salidas</span></div>;
 }
 
-function SinMovimientos({ atajos, empresaId }: { atajos: PendienteInicio[]; empresaId: string | null }) {
+function SinMovimientos({ atajos, empresaId, vacio }: { atajos: PendienteInicio[]; empresaId: string | null; vacio: boolean }) {
+  if (!vacio || atajos.length === 0) return null;
   return (
     <section className="inicio-sin-movimientos" aria-labelledby="sin-movimientos-titulo">
       <div className="inicio-sin-movimientos-mensaje">
         <span aria-hidden="true">↗</span>
-        <div><h2 id="sin-movimientos-titulo">Todavía no hay movimientos.</h2><p>Las gráficas aparecerán cuando el primer asiento exista. Mientras tanto, puedes dejar lista la configuración de la empresa.</p></div>
+        <div><h2 id="sin-movimientos-titulo">Empieza por lo que ya sabes.</h2><p>Declara el saldo de tus cuentas y registra nómina, proveedores, cobros y obligaciones: la proyección se arma sola con eso.</p></div>
       </div>
       {atajos.length > 0 ? (
         <div className="atajos-inicio-rejilla">
