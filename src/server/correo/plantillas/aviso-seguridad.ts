@@ -49,7 +49,7 @@ export function plantillaAvisoSeguridad(datos: {
     parrafos: [
       texto.que,
       "Si fuiste tú, no tienes que hacer nada.",
-      "Si no fuiste tú, cambia tu contraseña desde «Olvidé mi contraseña» y avisa hoy mismo a quien administra tu empresa.",
+      "Si no fuiste tú, cambia tu contraseña desde «¿Olvidaste tu contraseña?» y avisa hoy mismo a quien administra tu empresa.",
     ],
     datos: [["Fecha del cambio", fechaEnMexico(datos.cuando)]],
     boton: { texto: "Entrar a Lever", url: datos.enlace },
