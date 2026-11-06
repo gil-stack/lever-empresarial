@@ -11,7 +11,7 @@ const requerir = createRequire(`${process.cwd()}/package.json`);
 const sharp = requerir("sharp");
 
 const DISENO = process.env.DISENO ?? "capturas";
-const ANTES = process.env.ANTES ?? "test-results/ola1b-consola/antes";
+const ANTES = process.env.ANTES ?? "docs/evidencia/ola1b-consola/antes";
 const DESPUES = process.env.DESPUES ?? "docs/evidencia/ola1b-consola/pantallas";
 const SALIDA = process.env.SALIDA ?? "docs/evidencia/ola1b-consola";
 

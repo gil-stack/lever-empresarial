@@ -77,6 +77,8 @@ Cada comparación pone tres paneles en Oscuro a 1440: el diseño de los socios, 
 - `comparacion-nomina.webp`: `plat-10-no-mina` frente a Nómina.
 - `comparacion-pendientes.webp`: `plat-02-aprobaciones` frente a Pendientes.
 
+`antes/` guarda cada pantalla de la zona sobre main en `81da672`, en Oscuro a 1440 y a 390, con las mismas claves que `pantallas/`. Con eso cada pantalla se puede comparar antes y después.
+
 ## Cómo reproducirlo
 
 1. **Postgres 17 de Homebrew**, en una carpeta propia. El socket va sin ruta porque la de la carpeta temporal es demasiado larga:

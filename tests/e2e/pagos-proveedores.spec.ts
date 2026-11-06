@@ -30,6 +30,9 @@ async function captura(page: Page, nombre: string) {
 /** El tema se elige en Apariencia (menú de la cuenta); luego se vuelve a la misma pantalla. */
 async function elegirTema(page: Page, tema: "Claro" | "Oscuro") {
   const regreso = page.url();
+  // El detalle abre como diálogo modal: se cierra antes de usar el menú de la cuenta y la URL lo vuelve a abrir.
+  const dialogo = page.getByRole("dialog");
+  if (await dialogo.isVisible()) await dialogo.getByRole("button", { name: "Cerrar" }).click();
   await page.locator(".cuenta .menu-desplegable-boton").click();
   await page.getByRole("menuitem", { name: "Apariencia", exact: true }).click();
   await page.locator(".temas").getByRole("button", { name: tema, exact: true }).click();
@@ -63,6 +66,7 @@ test("la mesa se ve completa en claro, oscuro y móvil", async ({ page }) => {
   await elegirTema(page, "Claro");
   await expect(page.locator("html")).toHaveAttribute("data-tema", "claro");
 
+  await page.getByRole("dialog").getByRole("button", { name: "Cerrar" }).click();
   await page.locator(".mesa-vistas").getByRole("link", { name: "Proveedores · 3", exact: true }).click();
   await page.getByRole("link", { name: "Abrir expediente de Proveedor Uno, S.A. de C.V." }).click();
   await expect(page.getByRole("dialog", { name: "Proveedor Uno, S.A. de C.V." })).toBeVisible();
