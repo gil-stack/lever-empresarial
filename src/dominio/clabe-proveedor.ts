@@ -113,7 +113,7 @@ export function presentarClabe(
 
 /** Delegan en la matriz de capacidades. Un rol, no la combinación: la pantalla usa el contexto. */
 export function puedeVerClabeProveedor(rol: RolCuenta | null | undefined): boolean {
-  return Boolean(rol && tiene(capacidadesDe({ rolesCliente: [rol], rolesPlataforma: [] }), "cliente.proveedores.ver"));
+  return Boolean(rol && tiene(capacidadesDe({ rolesCliente: [rol], rolesPlataforma: [] }), "cliente.proveedores.expediente.ver"));
 }
 
 export function puedeCambiarClabeProveedor(rol: RolCuenta | null | undefined): boolean {

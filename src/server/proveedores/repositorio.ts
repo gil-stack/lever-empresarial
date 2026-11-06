@@ -52,8 +52,9 @@ export const SQL = {
   insertarProveedor: `
     insert into suppliers (
       id, company_id, document_id, snapshot_id, rfc, razon_social,
-      situacion_69b, lista_fecha, lista_leida_en, boton_pago, alta_en
-    ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      situacion_69b, lista_fecha, lista_leida_en, boton_pago, alta_en,
+      nombre_comercial, contacto_correo, dias_credito
+    ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
   `,
   insertarClabe: `
     insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde)
@@ -135,6 +136,9 @@ function contexto(consulta: Consulta, companyId: string): ContextoProveedores {
         proveedor.leidaEn,
         proveedor.botonPago,
         proveedor.altaEn,
+        proveedor.nombreComercial,
+        proveedor.contactoCorreo,
+        proveedor.diasCredito,
       ]);
     },
     async insertarClabe(clabe) {
@@ -145,6 +149,11 @@ function contexto(consulta: Consulta, companyId: string): ContextoProveedores {
         clabe.clabe,
         clabe.desde,
       ]);
+    },
+    async vincularContrato(documentoId, supplierId, vigenteDesde, vigenteHasta, creadoEn) {
+      await consulta.query(`insert into supplier_documents (
+        document_id, company_id, supplier_id, tipo, vigente_desde, vigente_hasta, creado_en
+      ) values ($1, $2, $3, 'contrato', $4, $5, $6)`, [documentoId, companyId, supplierId, vigenteDesde, vigenteHasta, creadoEn]);
     },
   };
 }

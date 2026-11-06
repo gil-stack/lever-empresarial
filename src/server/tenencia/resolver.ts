@@ -103,6 +103,13 @@ export async function resolverContexto(
 }
 
 export const SQL = {
+  /**
+   * Sin empresa en el contexto, RLS no deja leer employees: un filtro por baja
+   * aquí no vería a nadie. La puerta SECURITY DEFINER aplica, en esta misma
+   * transacción, las bajas vencidas de quien pide (suspende la membresía,
+   * cierra sesiones, deja su evento) y la lectura de abajo ya no las incluye.
+   */
+  bajasVencidas: "select aplicar_bajas_vencidas_propias()",
   membresias: `
     select c.id, c.rfc, c.razon_social, c.operator_id, c.estado, c.demostracion,
            coalesce(array_agg(r.rol order by r.rol) filter (where r.rol is not null), '{}') as roles
@@ -129,6 +136,7 @@ export function repositorioPg(): RepositorioTenencia {
   return {
     pertenencia(userId) {
       return conContexto({ rol: "plataforma_cliente", userId }, async (consulta) => {
+        await consulta.query(SQL.bajasVencidas);
         const membresias = await consulta.query(SQL.membresias, [userId]);
         const personal = await consulta.query(SQL.personal, [userId]);
         const filaPersonal = personal.rows[0] as { operator_id?: unknown; roles?: unknown } | undefined;

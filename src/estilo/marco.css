@@ -511,10 +511,13 @@
     transition: transform 0.22s ease;
   }
 
+  /* Debajo de la barra móvil (20): el mismo botón que abrió el lateral dice
+     «Cerrar» y tiene que recibir el clic, no quedar tapado por el velo.
+     Arriba del contenido, que no declara z-index. */
   .velo {
     position: fixed;
     inset: 0;
-    z-index: 25;
+    z-index: 15;
     background: var(--velo);
   }
 }

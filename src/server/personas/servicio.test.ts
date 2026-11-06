@@ -7,7 +7,7 @@ import { capacidadesDe, type RolCliente } from "../../nucleo/capacidades.ts";
 import type { ContextoDeTenant } from "../../nucleo/contexto.ts";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio.ts";
 import { negarLiberacion } from "./liberar.ts";
-import { SQL } from "./repositorio.ts";
+import { fechaDeColumna, SQL } from "./repositorio.ts";
 import { darDeAltaPersona, nombrarCentro } from "./servicio.ts";
 import type { RepositorioPersonas, TransaccionMaestro } from "./tipos.ts";
 
@@ -35,6 +35,7 @@ describe("el maestro no dispersa y no abre con una sola firma", () => {
     assert.equal(mundo.personas.find((fila) => fila.id === creada.id)?.clabe, CLABE);
     assert.equal(mundo.usuarios[0]?.passwordHash, null);
     assert.equal(JSON.stringify(mundo.auditoria).includes(CLABE), false);
+    assert.deepEqual(mundo.historialClabe, [CLABE]);
   });
 
   it("el contador no da de alta y un centro de otra empresa no se ve", async () => {
@@ -124,6 +125,7 @@ function memoria() {
     usuarios: [] as Array<{ id: string; correo: string; passwordHash: null }>,
     roles: new Map<string, string[]>(),
     auditoria: [] as Array<{ accion: string }>,
+    historialClabe: [] as string[],
     autorizados: 1,
   };
   const tx = (): TransaccionMaestro => ({
@@ -139,6 +141,9 @@ function memoria() {
     },
     async centroOcupado(nombre) {
       return estado.centros.some((fila) => fila.companyId === EMPRESA && fila.nombre.toLowerCase() === nombre.toLowerCase());
+    },
+    async clabeDuplicada() {
+      return false;
     },
     async jefePorId() {
       return null;
@@ -176,6 +181,9 @@ function memoria() {
     async quitarLiberador(userId) {
       const roles = (estado.roles.get(userId) ?? []).filter((rol) => rol !== "liberador");
       estado.roles.set(userId, roles.length > 0 ? roles : ["tarjetahabiente"]);
+    },
+    async insertarClabe(clabe) {
+      estado.historialClabe.push(clabe.clabe);
     },
   });
   const repo: RepositorioPersonas = {
@@ -219,6 +227,13 @@ function memoria() {
     },
   };
 }
+
+describe("fechas DATE del driver", () => {
+  it("conserva el día local y no lo corre al convertirlo a ISO", () => {
+    const local = new Date(2026, 10, 5);
+    assert.equal(fechaDeColumna(local), "2026-11-05");
+  });
+});
 
 describe("contrato del libro", () => {
   it("la ficha manda la baja con el nombre que el servicio valida", () => {

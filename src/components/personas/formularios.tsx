@@ -99,7 +99,6 @@ export function FormularioPersona({
   const [acceso, setAcceso] = useState<AccesoForma | "">("");
   const [correo, setCorreo] = useState("");
   const [roles, setRoles] = useState<RolCuenta[]>([]);
-  const [verFinanzas, setVerFinanzas] = useState(false);
   const [local, setLocal] = useState<ErrorCampo[] | null>(null);
   const [visto, setVisto] = useState(estado);
   if (visto !== estado) {
@@ -114,7 +113,6 @@ export function FormularioPersona({
       setAcceso("");
       setCorreo("");
       setRoles([]);
-      setVerFinanzas(false);
       setLocal(null);
     }
   }
@@ -141,7 +139,7 @@ export function FormularioPersona({
         clabe,
         acceso,
         correo,
-        rol: verFinanzas ? [...roles, "finanzas"] : roles,
+        rol: roles,
       },
       hoy,
     );
@@ -371,22 +369,6 @@ export function FormularioPersona({
               ))}
             </div>
           ) : null}
-          <div className="permiso-finanzas">
-            <label className="confirmacion" htmlFor="verFinanzas">
-              <input
-                id="verFinanzas"
-                type="checkbox"
-                checked={verFinanzas}
-                onChange={(event) => {
-                  setVerFinanzas(event.target.checked);
-                  setLocal(null);
-                }}
-              />
-              <span>Ver Inicio financiero</span>
-            </label>
-            {verFinanzas ? <input type="hidden" name="rol" value="finanzas" /> : null}
-            <p className="pista">Podrá consultar entradas, salidas y movimientos del libro. Es un acceso adicional a su rol; no mueve dinero.</p>
-          </div>
         </>
       ) : null}
       <div className="acciones">

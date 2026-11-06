@@ -15,8 +15,10 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "find src tests -name '*.test.ts' ! -name 'aislamiento.test.ts' ! -name 'dos-firmas.test.ts' ! -name 'historial-clabe.test.ts' ! -name 'relectura-69b.test.ts' ! -name 'deriva.test.ts' -print0 | xargs -0 tsx --test",
+    "test": "find src tests -name '*.test.ts' ! -name 'aislamiento.test.ts' ! -name 'dos-firmas.test.ts' ! -name 'historial-clabe.test.ts' ! -name 'relectura-69b.test.ts' ! -name 'pagos-proveedores.test.ts' ! -name 'deriva.test.ts' ! -name 'colaboradores-postgres.test.ts' -print0 | xargs -0 tsx --test",
     "test:db": "sh scripts/ci/pruebas-postgres.sh",
+    "test:e2e": "npm run build && playwright test",
+    "test:e2e:reset": "sh tests/e2e/reiniciar-pagos.sh",
     "security": "node scripts/ci/seguridad.mjs"
   },
   "dependencies": {
@@ -24,6 +26,7 @@
     "@simplewebauthn/server": "^13.3.3",
     "@vercel/blob": "^2.8.2",
     "bcryptjs": "^2.4.3",
+    "fast-xml-parser": "^5.12.0",
     "next": "16.4.4",
     "pg": "^8.23.1",
     "qrcode": "^1.5.4",
@@ -32,6 +35,7 @@
     "server-only": "0.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/pg": "^8.23.1",

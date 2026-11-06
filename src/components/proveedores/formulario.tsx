@@ -16,12 +16,15 @@ import {
 import { rfcAlEscribir } from "@/dominio/rfc";
 import { Aviso, EtiquetaMono } from "@/components/sistema";
 
+import { enviarSinReiniciar } from "./sin-reinicio";
+
 export function FormularioProveedor() {
   const [estado, accion, pendiente] = useActionState(enviarProveedor, ESTADO_ALTA_INICIAL);
   const [rfc, setRfc] = useState("");
   const [razonSocial, setRazonSocial] = useState("");
   const [clabe, setClabe] = useState("");
   const [archivoNombre, setArchivoNombre] = useState("");
+  const [contratoNombre, setContratoNombre] = useState("");
   const [local, setLocal] = useState<ReturnType<typeof erroresDeAltaProveedor> | null>(null);
   const [visto, setVisto] = useState(estado);
   const formulario = useRef<HTMLFormElement>(null);
@@ -33,6 +36,7 @@ export function FormularioProveedor() {
       setRazonSocial("");
       setClabe("");
       setArchivoNombre("");
+      setContratoNombre("");
       setLocal(null);
     }
   }
@@ -63,14 +67,13 @@ export function FormularioProveedor() {
       return;
     }
     setLocal(null);
+    enviarSinReiniciar(accion)(event);
   }
 
   return (
     <form
       ref={formulario}
       className="alta-formulario formulario-pareja"
-      action={accion}
-      encType="multipart/form-data"
       onSubmit={alEnviar}
       noValidate
       aria-busy={pendiente}
@@ -118,6 +121,15 @@ export function FormularioProveedor() {
             setLocal(null);
           }}
         />
+      </Campo>
+      <Campo id="nombreComercial" etiqueta="Nombre comercial" pista="Cómo lo reconoce tu equipo. Opcional." error={mensaje("nombreComercial")}>
+        <input id="nombreComercial" name="nombreComercial" maxLength={180} autoComplete="off" />
+      </Campo>
+      <Campo id="contactoCorreo" etiqueta="Correo de contacto" pista="Para facturas y seguimiento. Opcional." error={mensaje("contactoCorreo")}>
+        <input id="contactoCorreo" name="contactoCorreo" type="email" maxLength={254} autoComplete="off" />
+      </Campo>
+      <Campo id="diasCredito" etiqueta="Días de crédito" pista="Se usa como sugerencia al programar facturas." error={mensaje("diasCredito")}>
+        <input id="diasCredito" name="diasCredito" type="number" min={0} max={365} step={1} defaultValue={30} inputMode="numeric" />
       </Campo>
       <Campo
         id="clabe"
@@ -178,6 +190,20 @@ export function FormularioProveedor() {
           <span className={archivoNombre ? "elegido archivo-nombre" : "pista archivo-nombre"}>
             {archivoNombre || "Ningún PDF elegido"}
           </span>
+        </div>
+      </Campo>
+      <Campo id="contrato" etiqueta="Contrato" pista="PDF privado, opcional. Puedes agregar otros después." error={mensaje("contrato")}>
+        <div className="archivo">
+          <input id="contrato" name="contrato" className="archivo-nativo" type="file" accept="application/pdf,.pdf"
+            onChange={(event) => setContratoNombre(event.target.files?.[0]?.name ?? "")} />
+          <label htmlFor="contrato" className="boton-texto boton-archivo">Elegir contrato</label>
+          <span className={contratoNombre ? "elegido archivo-nombre" : "pista archivo-nombre"}>{contratoNombre || "Sin contrato todavía"}</span>
+        </div>
+      </Campo>
+      <Campo id="contratoDesde" etiqueta="Vigencia del contrato" pista="Inicio y fin, si el contrato los tiene.">
+        <div className="campos-fechas">
+          <input id="contratoDesde" name="contratoDesde" type="date" aria-label="Inicio de vigencia" />
+          <input id="contratoHasta" name="contratoHasta" type="date" aria-label="Fin de vigencia" />
         </div>
       </Campo>
       <div className="acciones">

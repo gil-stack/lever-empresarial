@@ -73,7 +73,11 @@ if [[ ${#files[@]} -eq 0 ]]; then
   exit 1
 fi
 
-mapfile -t sorted < <(printf '%s\n' "${files[@]}" | LC_ALL=C sort)
+# Sin mapfile ni arreglos asociativos: el bash 3.2 de macOS también tiene que correrlo.
+sorted=()
+while IFS= read -r file; do
+  sorted+=("$file")
+done < <(printf '%s\n' "${files[@]}" | LC_ALL=C sort)
 for file in "${sorted[@]}"; do
   base="$(basename "$file")"
   if [[ ! "$base" =~ ^[0-9]{4}_[a-z0-9_]+\.sql$ ]]; then
@@ -82,15 +86,17 @@ for file in "${sorted[@]}"; do
   fi
 done
 
-declare -A prefijos=()
+anterior_prefijo=""
+anterior_base=""
 for file in "${sorted[@]}"; do
   base="$(basename "$file")"
   prefijo="${base%%_*}"
-  if [[ -n "${prefijos[$prefijo]+x}" ]]; then
-    echo "Prefijo repetido ${prefijo}: ${prefijos[$prefijo]} y ${base}." >&2
+  if [[ "$prefijo" == "$anterior_prefijo" ]]; then
+    echo "Prefijo repetido ${prefijo}: ${anterior_base} y ${base}." >&2
     exit 1
   fi
-  prefijos[$prefijo]="$base"
+  anterior_prefijo="$prefijo"
+  anterior_base="$base"
 done
 
 runner="$(mktemp)"

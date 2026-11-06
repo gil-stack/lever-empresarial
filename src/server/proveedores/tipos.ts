@@ -28,6 +28,9 @@ export type ProveedorNuevo = {
   fechaArchivo: string | null;
   leidaEn: Date;
   botonPago: boolean;
+  nombreComercial: string | null;
+  contactoCorreo: string | null;
+  diasCredito: number;
   altaEn: Date;
 };
 
@@ -46,6 +49,7 @@ export type ContextoProveedores = {
   insertarDocumento(documento: DocumentoNuevo): Promise<void>;
   insertarProveedor(proveedor: ProveedorNuevo): Promise<void>;
   insertarClabe(clabe: ClabeNueva): Promise<void>;
+  vincularContrato(documentoId: string, supplierId: string, vigenteDesde: string | null, vigenteHasta: string | null, creadoEn: Date): Promise<void>;
 };
 
 export type LecturaProveedores = {
@@ -82,7 +86,8 @@ export type ContextoClabes = {
   companyId: string;
   consulta: Consulta;
   vigente: (supplierId: string) => Promise<FilaClabe | null>;
-  cerrar: (id: string, hasta: Date) => Promise<void>;
+  /** Cierra la vigente. Devuelve cuántos pagos listos regresaron a revisión por ese cierre. */
+  cerrar: (id: string, hasta: Date) => Promise<{ pagosRegresados: number }>;
   insertar: (fila: FilaNueva) => Promise<void>;
 };
 

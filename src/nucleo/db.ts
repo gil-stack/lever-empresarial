@@ -172,6 +172,8 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (marca.includes("employees_un_usuario")) return new ErrorDeDominio("persona_repetida");
     if (marca.includes("policy_categories")) return new ErrorDeDominio("categoria_duplicada");
     if (marca.includes("supplier_clabes_una_vigente")) return new ErrorDeDominio("clabe_ya_vigente");
+    if (marca.includes("supplier_payables_cfdi")) return new ErrorDeDominio("cfdi_duplicado");
+    if (marca.includes("supplier_payment_requests_idempotencia")) return new ErrorDeDominio("idempotencia_pago_duplicada");
     if (marca.includes("lista_69b")) return new ErrorDeDominio("listado_irreconocible");
     if (marca.includes("polic") || marca.includes("drawer") || marca.includes("posting")) {
       return new ErrorDeDominio("politica_invalida");
@@ -195,6 +197,8 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (CODIGOS_DE_FIRMA.has(mensaje)) return new ErrorDeDominio(mensaje);
     if (CODIGOS_DE_AUTENTICACION.has(mensaje)) return new ErrorDeDominio(mensaje);
     if (CODIGOS_DE_CLABE.has(mensaje)) return new ErrorDeDominio(mensaje);
+    const dePersonas = FRASES_DE_PERSONAS[mensaje.trim()];
+    if (dePersonas) return new ErrorDeDominio(dePersonas);
     if (CODIGOS_DE_TENENCIA.has(mensaje)) return new ErrorDeDominio(mensaje);
     const deProveedor = FRASES_DE_PROVEEDOR[mensaje.trim()];
     if (deProveedor) return new ErrorDeDominio(deProveedor);
@@ -215,6 +219,29 @@ const CODIGOS_DE_CLABE = new Set([
   "historial_de_clabe_no_se_borra",
   "auditoria_de_clabe_ausente",
 ]);
+
+/** Reglas de Personas y nómina (0023). Cada una con su propio mensaje en pantalla. */
+const FRASES_DE_PERSONAS: Readonly<Record<string, string>> = {
+  fecha_ya_preparada: "fecha_ya_preparada",
+  sin_permiso_para_preparar_nomina: "sin_permiso",
+  empresa_de_otra_cuenta: "sin_permiso",
+  sin_permiso: "sin_permiso",
+  total_de_lote_no_coincide: "lote_inconsistente",
+  lote_de_nomina_vacio: "lote_inconsistente",
+  lote_de_nomina_inmutable: "lote_inmutable",
+  persona_identidad_inmutable: "persona_identidad_inmutable",
+  baja_no_efectiva: "baja_no_efectiva",
+  area_empresa_inmutable: "centro_invalido",
+  clabe_nomina_sin_historial: "auditoria_no_disponible",
+  auditoria_de_edicion_persona_ausente: "auditoria_no_disponible",
+  auditoria_de_clabe_nomina_ausente: "auditoria_no_disponible",
+  auditoria_de_area_ausente: "auditoria_no_disponible",
+  auditoria_de_nomina_ausente: "auditoria_no_disponible",
+  auditoria_de_tarjeta_ausente: "auditoria_no_disponible",
+  auditoria_de_lote_nomina_ausente: "auditoria_no_disponible",
+  auditoria_de_baja_ausente: "auditoria_no_disponible",
+  auditoria_de_persona_ausente: "auditoria_no_disponible",
+};
 
 const CODIGOS_DE_TENENCIA = new Set([
   "invitacion_cerrada",
@@ -243,6 +270,20 @@ const FRASES_DE_PROVEEDOR: Readonly<Record<string, string>> = {
   copia_69b_ausente: "listado_irreconocible",
   copia_69b_sin_filas: "listado_irreconocible",
   constancia_no_se_reescribe: "archivo_no_disponible",
+  pago_proveedor_no_autorizable: "pago_no_autorizable",
+  pago_proveedor_transicion_invalida: "pago_no_autorizable",
+  pago_proveedor_inmutable: "pago_no_autorizable",
+  pago_proveedor_no_se_borra: "pago_no_autorizable",
+  cargo_proveedor_no_editable: "pago_no_autorizable",
+  cargo_proveedor_inmutable: "pago_no_autorizable",
+  cargo_proveedor_no_se_borra: "pago_no_autorizable",
+  cargo_cfdi_inmutable: "cfdi_inmutable",
+  cargo_sin_evidencia_nueva: "evidencia_requerida",
+  pago_proveedor_regreso_sin_causa: "pago_no_autorizable",
+  historial_pago_inmutable: "pago_no_autorizable",
+  cancelacion_no_permitida: "cancelacion_no_permitida",
+  documento_relacionado_inmutable: "archivo_no_disponible",
+  auditoria_pago_proveedor_ausente: "auditoria_no_disponible",
 };
 
 const CODIGOS_DE_AUTENTICACION = new Set([
