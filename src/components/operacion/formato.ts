@@ -81,7 +81,7 @@ export function etiquetaAccion(accion: string): string | null {
     respaldo_generado: "Generó códigos de respaldo",
     contrasena_restablecida: "Cambió su contraseña con el enlace",
     recuperacion_solicitada: "Pidió recuperar el acceso",
-    recuperacion_aprobada: "Aprobó registrar un segundo factor nuevo",
+    recuperacion_aprobada: "Aprobó la recuperación",
     recuperacion_rechazada: "Rechazó la recuperación",
     emitir_invitacion: "Envió una invitación",
     aceptar_invitacion: "Aceptó la invitación",
