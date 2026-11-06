@@ -30,14 +30,51 @@ test("un correo que no sale no se anuncia: solo pasaría con cuentas que existen
 
 test("toda solicitud espera el mismo piso de tiempo, aun la que se rechaza antes de buscar la cuenta", async () => {
   const esperas: number[] = [];
+  const tareas: Array<() => Promise<void>> = [];
   await assert.rejects(
     () =>
       solicitarRecuperacion(
         { correo: "no-es-correo" },
-        { enviador: async () => ({ id: "x" }), esperar: async (ms) => void esperas.push(ms), ahoraMs: () => 1_000 },
+        {
+          diferir: (tarea) => void tareas.push(tarea),
+          enviador: async () => ({ id: "x" }),
+          esperar: async (ms) => void esperas.push(ms),
+          ahoraMs: () => 1_000,
+        },
       ),
     (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "correo_invalido",
   );
   assert.deepEqual(esperas, [PISO_RESPUESTA_MS]);
+  assert.equal(tareas.length, 0);
   assert.ok(PISO_RESPUESTA_MS >= 1_000);
+});
+
+test("la respuesta no espera a la base ni al proveedor de correo: todo eso corre después", async () => {
+  const esperas: number[] = [];
+  const tareas: Array<() => Promise<void>> = [];
+  let envios = 0;
+  // Un proveedor que nunca contesta: si la respuesta lo esperara, la prueba no terminaría.
+  const enviadorColgado = () => {
+    envios += 1;
+    return new Promise<{ id: string }>(() => {});
+  };
+  for (const correo of ["ana@demo.test", "nadie@demo.test"]) {
+    await solicitarRecuperacion(
+      { correo },
+      {
+        diferir: (tarea) => void tareas.push(tarea),
+        enviador: enviadorColgado,
+        esperar: async (ms) => void esperas.push(ms),
+        ahoraMs: () => 1_000,
+      },
+    );
+  }
+  assert.deepEqual(esperas, [PISO_RESPUESTA_MS, PISO_RESPUESTA_MS]);
+  assert.equal(tareas.length, 2, "exista o no la cuenta, la búsqueda queda para después");
+  assert.equal(envios, 0);
+});
+
+test("cambiar la contraseña vence la recuperación de segundo factor aprobada, con su evento", () => {
+  assert.match(fuente, /update auth_recuperaciones set estado = 'vencida' where user_id = \$1 and estado = 'aprobada' returning id/);
+  assert.match(fuente, /hecho\("recuperacion_vencida"/);
 });

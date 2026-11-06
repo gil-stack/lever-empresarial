@@ -11,7 +11,7 @@ import { cookieDeEntrada, VIGENCIA_ENTRADA_MS, type CookieEntrada } from "./cook
 import { llaveTotpDesdeEntorno } from "./entorno";
 import { qrComoDataUri } from "./qr";
 import { exigirFactorReciente, factorReciente, VIGENCIA_FACTORES_MS } from "./reautenticacion";
-import { repositorioPg, type Entrada, type RepositorioAutenticacion } from "./repositorio";
+import { repositorioPg, type Entrada, type PropositoDeReto, type RepositorioAutenticacion } from "./repositorio";
 import { codigosNuevos, hashDeRespaldo, normalizarRespaldo } from "./respaldo";
 import type {
   AltaTotp,
@@ -130,13 +130,14 @@ export async function entrarConTotp(
 ): Promise<string> {
   const listo = resolver(deps);
   const entrada = await exigirEntrada(token, listo);
+  const intentos = await apartarIntento(entrada, listo);
   const normalizado = normalizarCodigoTotp(codigo);
   const factores = await listo.repositorio.factores(entrada.userId);
   const totp = factores.totp?.confirmado ? factores.totp : null;
   const semilla = totp ? descifrarDe(totp.secretoCifrado, entrada.userId, listo) : null;
   const paso = semilla && normalizado ? verificarTotp(semilla, normalizado, listo.ahora(), totp!.ultimoPaso) : null;
-  if (!totp || paso === null) return fallo(entrada, listo);
-  return abrirSesion(entrada, "totp", { tipo: "totp", totpId: totp.id, paso }, listo);
+  if (!totp || paso === null) return fallo(entrada, intentos, listo);
+  return abrirSesion(entrada, intentos, "totp", { tipo: "totp", totpId: totp.id, paso }, listo);
 }
 
 export async function entrarConRespaldo(
@@ -146,9 +147,10 @@ export async function entrarConRespaldo(
 ): Promise<string> {
   const listo = resolver(deps);
   const entrada = await exigirEntrada(token, listo);
+  const intentos = await apartarIntento(entrada, listo);
   const normalizado = normalizarRespaldo(codigo);
-  if (!normalizado) return fallo(entrada, listo);
-  return abrirSesion(entrada, "respaldo", { tipo: "respaldo", codigoHash: hashDeRespaldo(normalizado) }, listo);
+  if (!normalizado) return fallo(entrada, intentos, listo);
+  return abrirSesion(entrada, intentos, "respaldo", { tipo: "respaldo", codigoHash: hashDeRespaldo(normalizado) }, listo);
 }
 
 export async function opcionesParaEntrarConPasskey(
@@ -176,6 +178,7 @@ export async function entrarConPasskey(
 ): Promise<string> {
   const listo = resolver(deps);
   const entrada = await exigirEntrada(token, listo);
+  const intentos = await apartarIntento(entrada, listo);
   const credencialId = credencialDeRespuesta(respuesta);
   const reto = await listo.repositorio.tomarReto(entrada.userId, "entrar", listo.ahora());
   const passkey = credencialId
@@ -183,9 +186,10 @@ export async function entrarConPasskey(
     : undefined;
   const verificada =
     reto && passkey ? await listo.webauthn.verificarEntrada({ respuesta, reto, origen, passkey }) : null;
-  if (!verificada) return fallo(entrada, listo);
+  if (!verificada) return fallo(entrada, intentos, listo);
   return abrirSesion(
     entrada,
+    intentos,
     "passkey",
     { tipo: "passkey", passkeyId: passkey!.id, contador: verificada.contador },
     listo,
@@ -211,13 +215,15 @@ export async function inscribirTotp(
   if (paso.paso !== "inscribir") throw new ErrorDeDominio("ya_tiene_segundo_factor");
   const factores = await listo.repositorio.factores(entrada.userId);
   const pendiente = factores.totp && !factores.totp.confirmado ? factores.totp : null;
+  const intentos = await apartarIntento(entrada, listo);
   const normalizado = normalizarCodigoTotp(codigo);
   const semilla = pendiente ? descifrarDe(pendiente.secretoCifrado, entrada.userId, listo) : null;
   const pasoTotp = semilla && normalizado ? verificarTotp(semilla, normalizado, listo.ahora(), null) : null;
-  if (!pendiente || pasoTotp === null) return fallo(entrada, listo);
+  if (!pendiente || pasoTotp === null) return fallo(entrada, intentos, listo);
   const codigos = listo.codigos();
   const setCookie = await abrirSesion(
     entrada,
+    intentos,
     "totp",
     {
       tipo: "inscribir_totp",
@@ -257,12 +263,14 @@ export async function inscribirPasskey(
   const entrada = await exigirEntrada(token, listo);
   const { paso, persona, recuperacionId } = await contextoDeInscripcion(entrada.userId, listo);
   if (paso.paso !== "inscribir") throw new ErrorDeDominio("ya_tiene_segundo_factor");
+  const intentos = await apartarIntento(entrada, listo);
   const reto = await listo.repositorio.tomarReto(entrada.userId, "registrar", listo.ahora());
   const credencial = reto ? await listo.webauthn.verificarRegistro({ respuesta, reto, origen }) : null;
-  if (!credencial) return fallo(entrada, listo);
+  if (!credencial) return fallo(entrada, intentos, listo);
   const codigos = listo.codigos();
   const setCookie = await abrirSesion(
     entrada,
+    intentos,
     "passkey",
     {
       tipo: "inscribir_passkey",
@@ -424,27 +432,24 @@ export async function estadoDeConfirmacion(
 export async function confirmarConTotp(sesion: Sesion, codigo: unknown, deps?: DependenciasAutenticacion): Promise<void> {
   const listo = resolver(deps);
   await exigirFuerte(sesion, listo);
+  const intentos = await apartarConfirmacion(sesion, listo);
   const normalizado = normalizarCodigoTotp(codigo);
   const factores = await listo.repositorio.factores(sesion.usuario.id);
   const totp = factores.totp?.confirmado ? factores.totp : null;
   const semilla = totp ? descifrarDe(totp.secretoCifrado, sesion.usuario.id, listo) : null;
   const paso = semilla && normalizado ? verificarTotp(semilla, normalizado, listo.ahora(), totp!.ultimoPaso) : null;
-  if (!totp || paso === null) return falloDeConfirmacion(sesion, listo);
-  await renovarFactor(sesion, "totp", { tipo: "totp", totpId: totp.id, paso }, listo);
+  if (!totp || paso === null) return falloDeConfirmacion(sesion, intentos, listo);
+  await renovarFactor(sesion, intentos, "totp", { tipo: "totp", totpId: totp.id, paso }, listo);
 }
 
 /** Confirma la identidad con un código de respaldo; el código queda usado. */
 export async function confirmarConRespaldo(sesion: Sesion, codigo: unknown, deps?: DependenciasAutenticacion): Promise<void> {
   const listo = resolver(deps);
   await exigirFuerte(sesion, listo);
+  const intentos = await apartarConfirmacion(sesion, listo);
   const normalizado = normalizarRespaldo(codigo);
-  if (!normalizado) return falloDeConfirmacion(sesion, listo);
-  try {
-    await renovarFactor(sesion, "respaldo", { tipo: "respaldo", codigoHash: hashDeRespaldo(normalizado) }, listo);
-  } catch (error) {
-    if (error instanceof ErrorDeDominio && error.codigo === "segundo_factor_invalido") return falloDeConfirmacion(sesion, listo);
-    throw error;
-  }
+  if (!normalizado) return falloDeConfirmacion(sesion, intentos, listo);
+  await renovarFactor(sesion, intentos, "respaldo", { tipo: "respaldo", codigoHash: hashDeRespaldo(normalizado) }, listo);
 }
 
 export async function opcionesParaConfirmarConPasskey(
@@ -460,7 +465,8 @@ export async function opcionesParaConfirmarConPasskey(
     origen,
     passkeys: factores.passkeys.map((p) => ({ credencialId: p.credencialId, transportes: p.transportes })),
   });
-  await guardarReto(sesion.usuario.id, "entrar", opciones.reto, listo);
+  // Reto propio y ligado a esta sesión: los retos de la puerta no lo consumen.
+  await guardarReto(sesion.usuario.id, "reautenticar", opciones.reto, listo, sesion.id);
   return opciones.opciones;
 }
 
@@ -472,15 +478,22 @@ export async function confirmarConPasskey(
 ): Promise<void> {
   const listo = resolver(deps);
   await exigirFuerte(sesion, listo);
+  const intentos = await apartarConfirmacion(sesion, listo);
   const credencialId = credencialDeRespuesta(respuesta);
-  const reto = await listo.repositorio.tomarReto(sesion.usuario.id, "entrar", listo.ahora());
+  const reto = await listo.repositorio.tomarReto(sesion.usuario.id, "reautenticar", listo.ahora(), sesion.id);
   const passkey = credencialId
     ? (await listo.repositorio.factores(sesion.usuario.id)).passkeys.find((p) => p.credencialId === credencialId)
     : undefined;
   const verificada =
     reto && passkey ? await listo.webauthn.verificarEntrada({ respuesta, reto, origen, passkey }) : null;
-  if (!verificada) return falloDeConfirmacion(sesion, listo);
-  await renovarFactor(sesion, "passkey", { tipo: "passkey", passkeyId: passkey!.id, contador: verificada.contador }, listo);
+  if (!verificada) return falloDeConfirmacion(sesion, intentos, listo);
+  await renovarFactor(
+    sesion,
+    intentos,
+    "passkey",
+    { tipo: "passkey", passkeyId: passkey!.id, contador: verificada.contador },
+    listo,
+  );
 }
 
 export async function pedirRecuperacion(
@@ -537,8 +550,13 @@ export async function resolverRecuperacion(
       ahora,
       venceEn: new Date(ahora.getTime() + VIGENCIA_RECUPERACION_MS),
     });
-    const persona = await listo.repositorio.buscarPersona(userId);
-    if (persona) await avisar(persona, "recuperacion_aprobada", listo);
+    // La aprobación ya quedó: leer a la persona o avisarle no la convierte en error.
+    await avisarSinDeshacer(listo.avisar, {
+      userId,
+      cambio: "recuperacion_aprobada",
+      cuando: listo.ahora(),
+      persona: () => listo.repositorio.buscarPersona(userId),
+    });
     return;
   }
   if (!nota) throw new ErrorDeDominio("motivo_invalido");
@@ -611,8 +629,13 @@ async function contextoDeInscripcion(userId: string, listo: Listo) {
   return { paso, persona, recuperacionId };
 }
 
+/**
+ * El factor que la base rechaza al aplicarlo (paso TOTP repetido, código de
+ * respaldo que no existe) cuenta como fallo del intento ya apartado.
+ */
 async function abrirSesion(
   entrada: Entrada,
+  intentos: number,
   metodo: "passkey" | "totp" | "respaldo",
   efecto: Parameters<RepositorioAutenticacion["completarEntrada"]>[0]["efecto"],
   listo: Listo,
@@ -620,19 +643,39 @@ async function abrirSesion(
   const token = listo.token();
   const ahora = listo.ahora();
   const venceEn = new Date(ahora.getTime() + VIGENCIA_SESION_MS);
-  await listo.repositorio.completarEntrada({
-    entradaId: entrada.id,
-    userId: entrada.userId,
-    metodo,
-    sesion: { id: listo.ids(), tokenHash: hashDeToken(token), expiresAt: venceEn, superficie: listo.superficie },
-    efecto,
-    ahora,
-  });
+  try {
+    await listo.repositorio.completarEntrada({
+      entradaId: entrada.id,
+      userId: entrada.userId,
+      metodo,
+      sesion: { id: listo.ids(), tokenHash: hashDeToken(token), expiresAt: venceEn, superficie: listo.superficie },
+      efecto,
+      ahora,
+    });
+  } catch (error) {
+    if (error instanceof ErrorDeDominio && error.codigo === "segundo_factor_invalido") return fallo(entrada, intentos, listo);
+    throw error;
+  }
   return encabezadoDeSesion(token, venceEn, ahora);
 }
 
-async function fallo(entrada: Entrada, listo: Listo): Promise<never> {
-  const intentos = await listo.repositorio.sumarFallo(entrada.id, entrada.userId, listo.ahora());
+/**
+ * Aparta el intento en la base antes de verificar el factor. Con 5 apartados no
+ * se verifica nada más, aunque lleguen muchas peticiones a la vez.
+ */
+async function apartarIntento(entrada: Entrada, listo: Listo): Promise<number> {
+  const intentos = await listo.repositorio.apartarIntentoDeEntrada(entrada.id, entrada.userId);
+  if (intentos === null) throw new ErrorDeDominio("entrada_agotada");
+  return intentos;
+}
+
+async function fallo(entrada: Entrada, intentos: number, listo: Listo): Promise<never> {
+  await listo.repositorio.registrarFalloDeEntrada({
+    entradaId: entrada.id,
+    userId: entrada.userId,
+    intentos,
+    ahora: listo.ahora(),
+  });
   throw new ErrorDeDominio(intentos >= TOPE_SEGUNDO_FACTOR ? "entrada_agotada" : "segundo_factor_invalido");
 }
 
@@ -670,7 +713,13 @@ function exigirLlave(listo: Listo): Buffer {
   return listo.llaveTotp;
 }
 
-async function guardarReto(userId: string, proposito: "entrar" | "registrar", reto: string, listo: Listo): Promise<void> {
+async function guardarReto(
+  userId: string,
+  proposito: PropositoDeReto,
+  reto: string,
+  listo: Listo,
+  sesionId: string | null = null,
+): Promise<void> {
   const ahora = listo.ahora();
   await listo.repositorio.guardarReto({
     id: listo.ids(),
@@ -679,6 +728,7 @@ async function guardarReto(userId: string, proposito: "entrar" | "registrar", re
     reto,
     creadoEn: ahora,
     venceEn: new Date(ahora.getTime() + VIGENCIA_RETO_MS),
+    sesionId,
   });
 }
 
@@ -694,27 +744,47 @@ async function exigirCambioDeFactor(sesion: Sesion, listo: Listo): Promise<void>
   exigirFactorReciente(sesion, { vigenciaMs: VIGENCIA_FACTORES_MS }, listo.ahora());
 }
 
+/** Renueva el sello y regresa el contador a 0. Si la base rechaza el factor, cuenta como fallo. */
 async function renovarFactor(
   sesion: Sesion,
+  intentos: number,
   metodo: "passkey" | "totp" | "respaldo",
   efecto: Parameters<RepositorioAutenticacion["reautenticar"]>[0]["efecto"],
   listo: Listo,
 ): Promise<void> {
-  await listo.repositorio.reautenticar({
-    sesionId: sesion.id,
-    userId: sesion.usuario.id,
-    metodo,
-    efecto,
-    superficie: sesion.superficie ?? "cliente",
-    ahora: listo.ahora(),
-  });
+  try {
+    await listo.repositorio.reautenticar({
+      sesionId: sesion.id,
+      userId: sesion.usuario.id,
+      metodo,
+      efecto,
+      superficie: sesion.superficie ?? "cliente",
+      ahora: listo.ahora(),
+    });
+  } catch (error) {
+    if (error instanceof ErrorDeDominio && error.codigo === "segundo_factor_invalido") {
+      return falloDeConfirmacion(sesion, intentos, listo);
+    }
+    throw error;
+  }
 }
 
-async function falloDeConfirmacion(sesion: Sesion, listo: Listo): Promise<never> {
-  const intentos = await listo.repositorio.sumarFalloDeReautenticacion({
+/** Aparta el intento de confirmar antes de verificar. Sin intentos, la sesión ya se cerró. */
+async function apartarConfirmacion(sesion: Sesion, listo: Listo): Promise<number> {
+  const intentos = await listo.repositorio.apartarIntentoDeReautenticacion({
+    sesionId: sesion.id,
+    userId: sesion.usuario.id,
+  });
+  if (intentos === null) throw new ErrorDeDominio("reautenticacion_agotada");
+  return intentos;
+}
+
+async function falloDeConfirmacion(sesion: Sesion, intentos: number, listo: Listo): Promise<never> {
+  await listo.repositorio.registrarFalloDeReautenticacion({
     sesionId: sesion.id,
     userId: sesion.usuario.id,
     superficie: sesion.superficie ?? "cliente",
+    intentos,
     ahora: listo.ahora(),
   });
   throw new ErrorDeDominio(intentos >= TOPE_SEGUNDO_FACTOR ? "reautenticacion_agotada" : "segundo_factor_invalido");

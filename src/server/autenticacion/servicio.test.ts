@@ -347,6 +347,122 @@ describe("las recuperaciones se resuelven solo desde Operación y con confirmaci
   });
 });
 
+describe("los intentos se apartan antes de verificar y cada reto sirve a su propósito", () => {
+  it("diez confirmaciones a la vez verifican como mucho cinco y cierran la sesión", async () => {
+    const repo = anaConPasskey();
+    let verificaciones = 0;
+    const deps = { ...base(repo, undefined, LUEGO), webauthn: webauthnQueCuenta(() => (verificaciones += 1)) };
+    const vieja = sesionDe(repo, undefined, "ana@ejemplo.mx", { factorEn: AHORA });
+    for (let i = 0; i < 10; i += 1) await opcionesParaConfirmarConPasskey(vieja, origen(), deps);
+    const codigos = await Promise.all(
+      Array.from({ length: 10 }, () => codigoDe(confirmarConPasskey(vieja, { id: CREDENCIAL }, origen(), deps))),
+    );
+    assert.ok(verificaciones <= 5, `verificó ${verificaciones}`);
+    assert.equal(repo.sesiones.length, 0);
+    assert.ok(codigos.every((c) => c === "segundo_factor_invalido" || c === "reautenticacion_agotada"), codigos.join());
+  });
+
+  it("en la puerta, diez intentos a la vez verifican como mucho cinco y queman la entrada", async () => {
+    const repo = anaConPasskey();
+    let verificaciones = 0;
+    const deps = { ...base(repo), webauthn: webauthnQueCuenta(() => (verificaciones += 1)) };
+    const token = await entrarHasta(deps);
+    for (let i = 0; i < 10; i += 1) await opcionesParaEntrarConPasskey(token, origen(), deps);
+    await Promise.all(Array.from({ length: 10 }, () => codigoDe(entrarConPasskey(token, { id: CREDENCIAL }, origen(), deps))));
+    assert.ok(verificaciones <= 5, `verificó ${verificaciones}`);
+    assert.equal(repo.entradas[0]?.consumida, true);
+    assert.equal(repo.sesiones.filter((s) => s.factor === "passkey").length, 0);
+  });
+
+  it("un acierto en la puerta no deja su intento contado", async () => {
+    const repo = anaConPasskey();
+    const deps = base(repo);
+    const token = await entrarHasta(deps);
+    await opcionesParaEntrarConPasskey(token, origen(), deps);
+    await entrarConPasskey(token, { id: CREDENCIAL }, origen(), deps);
+    assert.equal(repo.entradas[0]?.intentos, 0);
+  });
+
+  it("los retos que alguien pide en la puerta no tocan la confirmación del titular", async () => {
+    const repo = anaConPasskey();
+    const emitidos: string[] = [];
+    const deps = {
+      ...base(repo, undefined, LUEGO),
+      webauthn: {
+        ...webauthnFalso(),
+        async opcionesEntrada() {
+          const reto = `reto${String(emitidos.length).padStart(2, "0")}`.padEnd(43, "x");
+          emitidos.push(reto);
+          return { opciones: { challenge: reto }, reto };
+        },
+        async verificarEntrada({ reto }: { reto: string }) {
+          return reto === emitidos[0] ? { contador: 1 } : null;
+        },
+      } as AdaptadorWebauthn,
+    };
+    const vieja = sesionDe(repo, undefined, "ana@ejemplo.mx", { factorEn: AHORA });
+    await opcionesParaConfirmarConPasskey(vieja, origen(), deps);
+    // Quien sabe la contraseña pide retos de entrada y prueba la puerta.
+    const intruso = await entrarHasta(deps);
+    for (let i = 0; i < 3; i += 1) await opcionesParaEntrarConPasskey(intruso, origen(), deps);
+    assert.equal(await codigoDe(entrarConPasskey(await entrarHasta(deps), { id: CREDENCIAL }, origen(), deps)), "segundo_factor_invalido");
+    assert.equal(repo.retos.find((r) => r.reto === emitidos[0])?.usado, false);
+    await confirmarConPasskey(vieja, { id: CREDENCIAL }, origen(), deps);
+    assert.equal(repo.sesiones.find((s) => s.id === vieja.id)?.renovadaCon, "passkey");
+    assert.equal(repo.retos.find((r) => r.reto === emitidos[0])?.sesionId, vieja.id);
+  });
+
+  it("si leer a quien pidió falla tras aprobar, la aprobación queda y no da error", async () => {
+    const repo = memoria();
+    const token = await entrarHasta(base(repo));
+    await prepararTotp(token, base(repo));
+    await inscribirTotp(token, codigoDelPaso(SEMILLA, pasoDe(AHORA)), base(repo));
+    await pedirRecuperacion(await entrarHasta(base(repo)), "Perdí el teléfono", base(repo));
+    const operadorId = "00000000-0000-4000-8000-0000000000bb";
+    const sofipo = sesionDe(repo, operadorId, "operador@arco.mx", { superficie: "sofipo", factorEn: LUEGO });
+    repo.sesiones.push({ id: sofipo.id, userId: operadorId, factor: "totp" });
+    const leer = repo.repo.buscarPersona;
+    repo.repo.buscarPersona = async (userId) => {
+      if (userId === repo.ana.id) throw new Error("conexion_perdida");
+      return leer(userId);
+    };
+    const deps = base(repo, undefined, LUEGO);
+    await resolverRecuperacion(sofipo, { id: repo.recuperaciones[0]!.id, aprobada: true, verificacion: "videollamada" }, deps);
+    assert.equal(repo.recuperaciones[0]?.estado, "aprobada");
+    assert.deepEqual(repo.avisos, []);
+  });
+});
+
+function anaConPasskey() {
+  const repo = anaConTotp();
+  repo.passkeys.push({
+    id: "00000000-0000-4000-8000-0000000000p3",
+    userId: repo.ana.id,
+    credencialId: CREDENCIAL,
+    llavePublica: new Uint8Array(32),
+    contador: 0,
+    transportes: [],
+    nombre: "Laptop",
+    respaldada: false,
+    creadaEn: AHORA,
+    ultimoUsoEn: null,
+    revocado: false,
+  });
+  return repo;
+}
+
+/** Cuenta cada verificación de passkey y la rechaza: así se ve cuántas llegaron a verificarse. */
+function webauthnQueCuenta(contar: () => void): AdaptadorWebauthn {
+  return {
+    ...webauthnFalso(),
+    async verificarEntrada() {
+      contar();
+      await new Promise((resolver) => setTimeout(resolver, 1));
+      return null;
+    },
+  };
+}
+
 function origen() {
   return { rpID: "localhost", origen: "http://localhost:3000" };
 }
@@ -453,7 +569,7 @@ class Memoria {
   passkeys: (PasskeyGuardada & { revocado: boolean })[] = [];
   totp: (TotpGuardado & { revocado: boolean })[] = [];
   respaldos: RespaldoMem[] = [];
-  retos: { userId: string; proposito: string; reto: string; usado: boolean }[] = [];
+  retos: { userId: string; proposito: string; reto: string; usado: boolean; sesionId: string | null }[] = [];
   sesiones: { id: string; userId: string; factor: string; fallos?: number; renovadaCon?: string }[] = [];
   recuperaciones: RecuperacionMem[] = [];
   eventos: string[] = [];
@@ -490,12 +606,16 @@ class Memoria {
       contarFallosContrasena: async () => {
         return this.fallos.length;
       },
-      sumarFallo: async (entradaId) => {
-        const entrada = this.entradas.find((e) => e.id === entradaId && !e.consumida);
-        if (!entrada) throw new ErrorDeDominio("entrada_vencida");
+      apartarIntentoDeEntrada: async (entradaId) => {
+        const entrada = this.entradas.find((e) => e.id === entradaId && !e.consumida && e.intentos < 5);
+        if (!entrada) return null;
         entrada.intentos += 1;
-        if (entrada.intentos >= 5) entrada.consumida = true;
         return entrada.intentos;
+      },
+      registrarFalloDeEntrada: async ({ entradaId, intentos }) => {
+        const entrada = this.entradas.find((e) => e.id === entradaId);
+        if (entrada && intentos >= 5) entrada.consumida = true;
+        this.eventos.push("segundo_factor_fallido");
       },
       factores: async (userId) => {
         return this.estado(userId);
@@ -506,19 +626,29 @@ class Memoria {
         return { id: abierta.id, estado: abierta.estado as "solicitada" | "aprobada", venceEn: abierta.venceEn };
       },
       guardarReto: async (reto) => {
-        this.retos.push({ userId: reto.userId, proposito: reto.proposito, reto: reto.reto, usado: false });
+        this.retos.push({
+          userId: reto.userId,
+          proposito: reto.proposito,
+          reto: reto.reto,
+          usado: false,
+          sesionId: reto.sesionId ?? null,
+        });
       },
-      tomarReto: async (userId, proposito) => {
-        const reto = [...this.retos].reverse().find((r) => r.userId === userId && r.proposito === proposito && !r.usado);
+      tomarReto: async (userId, proposito, _ahora, sesionId = null) => {
+        const reto = [...this.retos]
+          .reverse()
+          .find((r) => r.userId === userId && r.proposito === proposito && r.sesionId === sesionId && !r.usado);
         if (!reto) return null;
         reto.usado = true;
         return reto.reto;
       },
       completarEntrada: async ({ entradaId, userId, metodo, sesion, efecto }) => {
         this.aplicar(userId, efecto);
-        const entrada = this.entradas.find((e) => e.id === entradaId && !e.consumida);
+        const entrada = this.entradas.find((e) => e.id === entradaId && !e.consumida && e.intentos >= 1);
         if (!entrada) throw new ErrorDeDominio("entrada_vencida");
         entrada.consumida = true;
+        // El intento apartado acertó: se devuelve al consumir, como en la base.
+        entrada.intentos -= 1;
         this.sesiones = this.sesiones.filter((s) => s.userId !== userId);
         this.sesiones.push({ id: sesion.id, userId, factor: metodo });
         this.eventos.push("entrada_completa");
@@ -561,13 +691,18 @@ class Memoria {
         sesion.fallos = 0;
         this.eventos.push("reautenticacion");
       },
-      sumarFalloDeReautenticacion: async ({ sesionId, userId }) => {
+      apartarIntentoDeReautenticacion: async ({ sesionId, userId }) => {
         const sesion = this.sesiones.find((s) => s.id === sesionId && s.userId === userId);
-        if (!sesion) throw new ErrorDeDominio("sesion_ausente");
-        sesion.fallos = Math.min((sesion.fallos ?? 0) + 1, 5);
-        if (sesion.fallos >= 5) this.sesiones = this.sesiones.filter((s) => s !== sesion);
-        this.eventos.push("reautenticacion_fallida");
+        if (!sesion || (sesion.fallos ?? 0) >= 5) {
+          this.sesiones = this.sesiones.filter((s) => s !== sesion);
+          return null;
+        }
+        sesion.fallos = (sesion.fallos ?? 0) + 1;
         return sesion.fallos;
+      },
+      registrarFalloDeReautenticacion: async ({ sesionId, userId, intentos }) => {
+        if (intentos >= 5) this.sesiones = this.sesiones.filter((s) => !(s.id === sesionId && s.userId === userId));
+        this.eventos.push("reautenticacion_fallida");
       },
       solicitarRecuperacion: async ({ id, userId, motivo, entradaId }) => {
         const entrada = this.entradas.find((e) => e.id === entradaId && !e.consumida);

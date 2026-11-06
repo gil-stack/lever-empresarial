@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { conContexto } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { avisarPorCorreo, avisarSinDeshacer, type Avisar } from "../seguridad/avisos";
+import { hecho, registrarHechoAutenticacion } from "../autenticacion/auditar";
 import { auditar, operadorDeLaPlataforma } from "../bitacora/auditar";
 import { enviadorDesdeEntorno } from "../correo/enviar";
 import type { Enviador } from "../correo/tipos";
@@ -17,38 +18,47 @@ const HORA_MS = 60 * 60 * 1000;
 const VIGENCIA_MS = 60 * 60 * 1000;
 const TOPE_POR_HORA = 3;
 /**
- * Toda solicitud tarda al menos esto, exista o no la cuenta. Cubre las dos
- * transacciones y el envío del caso con cuenta, para que el tiempo de
- * respuesta no diga si el correo está registrado.
+ * Toda solicitud tarda esto. La respuesta ya no toca la base ni el proveedor de
+ * correo (eso corre después de responder), así que el piso no esconde trabajo:
+ * deja el mismo tiempo para todos y frena a quien prueba correos en serie.
  */
 export const PISO_RESPUESTA_MS = 1_500;
 
 export type EstadoRecuperacion = "vigente" | "vencida" | "no_valida";
 
+/** Corre la tarea después de responder. En la aplicación es `after` de next/server. */
+export type Diferir = (tarea: () => Promise<void>) => void;
+
 export type DependenciasRecuperar = {
+  diferir: Diferir;
   enviador?: Enviador;
   esperar?: (ms: number) => Promise<void>;
   ahoraMs?: () => number;
 };
 
 /**
- * Responde igual exista o no la cuenta: misma salida, mismo piso de tiempo, y
- * un correo que no sale no se anuncia (se registra y la solicitud se anula).
- * Sin remitente configurado no escribe nada y lo dice: eso no depende del
- * correo que se escribió. No abre sesión y no toca passkeys, TOTP ni códigos
- * de respaldo.
+ * Responde igual exista o no la cuenta: misma salida y mismo tiempo, porque
+ * buscar la cuenta, guardar el enlace y mandar el correo corren después de
+ * responder. Un correo que no sale no se anuncia: se registra y la solicitud
+ * se anula. Sin remitente configurado no escribe nada y lo dice: eso no
+ * depende del correo que se escribió. No abre sesión y no toca passkeys, TOTP
+ * ni códigos de respaldo.
  */
 export async function solicitarRecuperacion(
   entrada: { correo?: unknown },
-  deps?: DependenciasRecuperar,
+  deps: DependenciasRecuperar,
 ): Promise<void> {
-  const ahoraMs = deps?.ahoraMs ?? Date.now;
+  const ahoraMs = deps.ahoraMs ?? Date.now;
   const inicio = ahoraMs();
   try {
-    await emitirSiHayCuenta(entrada, deps?.enviador);
+    const enviador = deps.enviador ?? enviadorDesdeEntorno();
+    const base = urlPublica();
+    const correo = typeof entrada.correo === "string" ? normalizarCorreo(entrada.correo) : "";
+    if (!correoValido(correo)) throw new ErrorDeDominio("correo_invalido");
+    deps.diferir(() => emitirSiHayCuenta(correo, enviador, base));
   } finally {
     const resta = PISO_RESPUESTA_MS - (ahoraMs() - inicio);
-    if (resta > 0) await (deps?.esperar ?? esperar)(resta);
+    if (resta > 0) await (deps.esperar ?? esperar)(resta);
   }
 }
 
@@ -56,12 +66,26 @@ function esperar(ms: number): Promise<void> {
   return new Promise((resolver) => setTimeout(resolver, ms));
 }
 
-async function emitirSiHayCuenta(entrada: { correo?: unknown }, enviadorDado?: Enviador): Promise<void> {
-  const enviador = enviadorDado ?? enviadorDesdeEntorno();
-  const base = urlPublica();
-  const correo = typeof entrada.correo === "string" ? normalizarCorreo(entrada.correo) : "";
-  if (!correoValido(correo)) throw new ErrorDeDominio("correo_invalido");
+/**
+ * Corre después de responder: nadie espera su resultado, así que nada lanza.
+ * Cualquier falla queda registrada con identificadores internos.
+ */
+async function emitirSiHayCuenta(correo: string, enviador: Enviador, base: string): Promise<void> {
+  try {
+    await emitir(correo, enviador, base);
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        nivel: "error",
+        origen: "invitaciones.recuperar",
+        evento: "recuperacion_no_emitida",
+        error: error instanceof ErrorDeDominio ? error.codigo : "desconocido",
+      }),
+    );
+  }
+}
 
+async function emitir(correo: string, enviador: Enviador, base: string): Promise<void> {
   const cuenta = await conContexto({ rol: "plataforma_cliente" }, async (consulta) => {
     const fila = (
       await consulta.query("select id, nombre from usuario_por_correo($1)", [correo])
@@ -153,9 +177,11 @@ export async function leerRecuperacion(token: string): Promise<EstadoRecuperacio
  * Cambia la contraseña. Decisión: el enlace de correo prueba el correo, no a la
  * persona, así que no toca el segundo factor ni abre sesión. Después de esto
  * se entra con la contraseña nueva Y el segundo factor de siempre. En la misma
- * transacción cierra todas las sesiones (cliente y SOFIPO) y quema las
- * entradas abiertas con la contraseña anterior: nada de antes sobrevive. Al
- * final avisa por correo; si el correo no sale, se registra y el cambio sigue.
+ * transacción cierra todas las sesiones (cliente y SOFIPO), quema las entradas
+ * abiertas con la contraseña anterior y vence la recuperación de segundo factor
+ * que estuviera aprobada (se aprobó para quien sabía la contraseña anterior):
+ * nada de antes sobrevive. Al final avisa por correo; si el correo no sale, se
+ * registra y el cambio sigue.
  */
 export async function restablecerContrasena(
   entrada: {
@@ -191,6 +217,14 @@ export async function restablecerContrasena(
       "update auth_entradas set consumida_en = $2 where user_id = $1 and consumida_en is null",
       [fila.userId, ahora],
     );
+    const vencidas = await consulta.query(
+      "update auth_recuperaciones set estado = 'vencida' where user_id = $1 and estado = 'aprobada' returning id",
+      [fila.userId],
+    );
+    for (const vencida of vencidas.rows as { id?: unknown }[]) {
+      if (typeof vencida.id !== "string") continue;
+      await registrarHechoAutenticacion(hecho("recuperacion_vencida", vencida.id, fila.userId, ahora), consulta);
+    }
     await auditar(
       consulta,
       {

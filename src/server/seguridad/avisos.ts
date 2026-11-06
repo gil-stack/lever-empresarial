@@ -33,14 +33,29 @@ export const avisarPorCorreo: Avisar = async (aviso) => {
   });
 };
 
+/** Un aviso cuya persona todavía hay que leer de la base. */
+export type AvisoPorArmar = {
+  userId: string;
+  cambio: CambioDeSeguridad;
+  cuando: Date;
+  persona: () => Promise<{ nombre: string; correo: string } | null>;
+};
+
 /**
- * El cambio ya quedó asentado y auditado cuando se llama: un correo que no sale
- * no lo deshace ni lo esconde. Se registra con identificadores internos y el
- * código del error, nunca con el correo ni el nombre.
+ * El cambio ya quedó asentado y auditado cuando se llama: ni un correo que no
+ * sale ni una lectura de la persona que falla lo deshacen o lo esconden. Se
+ * registra con identificadores internos y el código del error, nunca con el
+ * correo ni el nombre.
  */
-export async function avisarSinDeshacer(avisar: Avisar, aviso: AvisoDeSeguridad): Promise<boolean> {
+export async function avisarSinDeshacer(avisar: Avisar, aviso: AvisoDeSeguridad | AvisoPorArmar): Promise<boolean> {
   try {
-    await avisar(aviso);
+    if ("persona" in aviso) {
+      const persona = await aviso.persona();
+      if (!persona) throw new ErrorDeDominio("usuario_ausente");
+      await avisar({ userId: aviso.userId, para: persona.correo, nombre: persona.nombre, cambio: aviso.cambio, cuando: aviso.cuando });
+    } else {
+      await avisar(aviso);
+    }
     return true;
   } catch (error) {
     console.error(

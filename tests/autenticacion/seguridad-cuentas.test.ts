@@ -9,10 +9,19 @@ import { cerrarConexion } from "../../src/nucleo/db.ts";
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
 import { repositorioPg } from "../../src/server/autenticacion/repositorio.ts";
 import { hashDeRespaldo } from "../../src/server/autenticacion/respaldo.ts";
-import { iniciarConContrasena, leerPaso } from "../../src/server/autenticacion/servicio.ts";
+import {
+  confirmarConPasskey,
+  entrarConPasskey,
+  iniciarConContrasena,
+  leerPaso,
+  opcionesParaConfirmarConPasskey,
+  opcionesParaEntrarConPasskey,
+} from "../../src/server/autenticacion/servicio.ts";
+import type { AdaptadorWebauthn } from "../../src/server/autenticacion/webauthn.ts";
 import { restablecerContrasena, solicitarRecuperacion } from "../../src/server/invitaciones/recuperar.ts";
 import type { AvisoDeSeguridad } from "../../src/server/seguridad/avisos.ts";
 import { NOMBRE_COOKIE } from "../../src/server/session/cookie.ts";
+import type { Sesion } from "../../src/server/session/tipos.ts";
 import { hashDeToken, hashearContrasena } from "../../src/server/session/hash.ts";
 import { leerSesion } from "../../src/server/session/servicio.ts";
 import { aplicarArchivo, conBaseDesechable, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
@@ -158,7 +167,7 @@ describe("seguridad de cuentas en Postgres", { skip: urlAdmin.length === 0 }, ()
           ana,
           hashDeRespaldo(respaldo),
         ]);
-        await duena.query("update sessions set segundo_factor_en = now() - interval '10 minutes' where id = $1", [sesionAna]);
+        await envejecerSello(duena, sesionAna, 10);
         await repo.reautenticar({
           sesionId: sesionAna,
           userId: ana,
@@ -213,13 +222,144 @@ describe("seguridad de cuentas en Postgres", { skip: urlAdmin.length === 0 }, ()
         ).rows[0];
         assert.deepEqual(firmaOp, { actor_tipo: "personal", superficie: "sofipo" });
 
-        const intentos: number[] = [];
+        const intentos: (number | null)[] = [];
         for (let i = 0; i < 5; i += 1) {
-          intentos.push(await repo.sumarFalloDeReautenticacion({ sesionId: sesionOp, userId: op, superficie: "sofipo", ahora: new Date() }));
+          const apartado = await repo.apartarIntentoDeReautenticacion({ sesionId: sesionOp, userId: op });
+          intentos.push(apartado);
+          if (apartado !== null) {
+            await repo.registrarFalloDeReautenticacion({ sesionId: sesionOp, userId: op, superficie: "sofipo", intentos: apartado, ahora: new Date() });
+          }
         }
         assert.deepEqual(intentos, [1, 2, 3, 4, 5]);
         assert.equal((await duena.query("select 1 from sessions where id = $1", [sesionOp])).rows.length, 0, "al quinto se cierra");
         assert.equal(await contarAuditoria(duena, "reautenticacion_fallida", sesionOp), 5);
+        assert.equal(await repo.apartarIntentoDeReautenticacion({ sesionId: sesionOp, userId: op }), null, "sin sesión no hay intento");
+
+        // R49-1. Diez confirmaciones a la vez con passkey mala: como mucho cinco llegan a verificarse.
+        const credencialAna = "credencial-ana-0001";
+        await duena.query("begin");
+        const passkeyAna = randomUUID();
+        await duena.query(
+          `insert into auth_passkeys (id, user_id, credencial_id, llave_publica, nombre, creada_en)
+           values ($1, $2, $3, $4, 'Laptop', now())`,
+          [passkeyAna, ana, credencialAna, Buffer.alloc(32, 7)],
+        );
+        await duena.query(
+          `insert into audit_log (operator_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+           values ($1, 'miembro', $2, 'cliente', 'passkey_registrada', 'auth_passkeys', $3)`,
+          [operador, ana, passkeyAna],
+        );
+        await duena.query("commit");
+        const tokenCarrera = "c".repeat(43);
+        const sesionCarrera = await abrirSesion(duena, ana, tokenCarrera, "cliente");
+        let verificadas = 0;
+        const contador = webauthnQueCuenta(() => (verificadas += 1));
+        const deCarrera: Sesion = {
+          id: sesionCarrera,
+          venceEn: new Date(Date.now() + 3_600_000),
+          usuario: { id: ana, nombre: "Ana de Empresa A", correo: "ana@empresa-a.mx" },
+          superficie: "cliente",
+          segundoFactor: { metodo: "totp", en: new Date() },
+        };
+        for (let i = 0; i < 10; i += 1) await opcionesParaConfirmarConPasskey(deCarrera, ORIGEN, { webauthn: contador });
+        const resultados = await Promise.all(
+          Array.from({ length: 10 }, () => codigoDe(confirmarConPasskey(deCarrera, { id: credencialAna }, ORIGEN, { webauthn: contador }))),
+        );
+        assert.ok(verificadas <= 5, `llegaron a verificarse ${verificadas}`);
+        assert.ok(resultados.every((r) => r === "segundo_factor_invalido" || r === "reautenticacion_agotada"), resultados.join());
+        assert.equal((await duena.query("select 1 from sessions where id = $1", [sesionCarrera])).rows.length, 0, "la sesión quedó cerrada");
+        assert.ok((await contarAuditoria(duena, "reautenticacion_fallida", sesionCarrera)) <= 5);
+        assert.equal(
+          (await duena.query("select count(*)::int as n from auth_retos where sesion_id = $1", [sesionCarrera])).rows[0]?.n,
+          0,
+          "sus retos se fueron con la sesión",
+        );
+
+        // R49-1. En la puerta: diez intentos a la vez, como mucho cinco verificados y la entrada quemada.
+        const entradaCarrera = await iniciarConContrasena({ correo: "ana@empresa-a.mx", contrasena: "clave-segura-12" });
+        assert.equal(entradaCarrera.tipo, "entrada");
+        if (entradaCarrera.tipo === "entrada") {
+          let enPuerta = 0;
+          const contadorPuerta = webauthnQueCuenta(() => (enPuerta += 1));
+          const token = entradaCarrera.cookie.valor;
+          for (let i = 0; i < 10; i += 1) await opcionesParaEntrarConPasskey(token, ORIGEN, { webauthn: contadorPuerta });
+          await Promise.all(Array.from({ length: 10 }, () => codigoDe(entrarConPasskey(token, { id: credencialAna }, ORIGEN, { webauthn: contadorPuerta }))));
+          assert.ok(enPuerta <= 5, `en la puerta llegaron a verificarse ${enPuerta}`);
+          const quemada = (
+            await duena.query("select intentos_fallidos, consumida_en from auth_entradas where token_hash = $1", [hashDeToken(token)])
+          ).rows[0];
+          assert.equal(quemada?.intentos_fallidos, 5);
+          assert.ok(quemada?.consumida_en, "con cinco intentos la entrada quedó quemada");
+        }
+
+        // R49-2. Los retos de confirmar son de la sesión: los de la puerta no se mezclan.
+        const tokenRetos = "d".repeat(43);
+        const sesionRetos = await abrirSesion(duena, ana, tokenRetos, "cliente");
+        const ahora = new Date();
+        const vence = new Date(ahora.getTime() + 60_000);
+        const insertarReto = `insert into auth_retos (id, user_id, proposito, reto, creado_en, vence_en, sesion_id)
+          values ($1, $2, $3, $4, now(), now() + interval '1 minute', $5)`;
+        await assert.rejects(duena.query(insertarReto, [randomUUID(), ana, "reautenticar", "R".repeat(43), null]), /auth_retos_sesion/);
+        await assert.rejects(duena.query(insertarReto, [randomUUID(), ana, "entrar", "S".repeat(43), sesionRetos]), /auth_retos_sesion/);
+        await repo.guardarReto({ id: randomUUID(), userId: ana, proposito: "reautenticar", reto: "T".repeat(43), creadoEn: ahora, venceEn: vence, sesionId: sesionRetos });
+        await repo.guardarReto({ id: randomUUID(), userId: ana, proposito: "entrar", reto: "U".repeat(43), creadoEn: ahora, venceEn: vence });
+        assert.equal(await repo.tomarReto(ana, "reautenticar", new Date(), randomUUID()), null, "otra sesión no lo toma");
+        // La puerta se lleva todos sus retos (quedan algunos de la carrera) y ninguno de confirmar.
+        const deLaPuerta: string[] = [];
+        for (let reto = await repo.tomarReto(ana, "entrar", new Date()); reto; reto = await repo.tomarReto(ana, "entrar", new Date())) {
+          deLaPuerta.push(reto);
+        }
+        assert.ok(deLaPuerta.includes("U".repeat(43)), "la puerta toma el suyo");
+        assert.ok(!deLaPuerta.includes("T".repeat(43)), "y nunca el de confirmar");
+        assert.equal(await repo.tomarReto(ana, "reautenticar", new Date(), sesionRetos), "T".repeat(43));
+
+        // R49-5. El sello no se renueva sin su evento y el contador no baja sin renovar el sello.
+        await repo.apartarIntentoDeReautenticacion({ sesionId: sesionRetos, userId: ana });
+        await repo.apartarIntentoDeReautenticacion({ sesionId: sesionRetos, userId: ana });
+        await comoCliente(duena, ana, async () => {
+          await duena.query("update sessions set segundo_factor_en = clock_timestamp() where id = $1", [sesionRetos]);
+        }).then(
+          () => assert.fail("renovó el sello sin evento"),
+          (error: unknown) => assert.match(String(error), /sesion_sin_auditoria/),
+        );
+        await comoCliente(duena, ana, async () => {
+          await duena.query("update sessions set reautenticaciones_fallidas = 0 where id = $1", [sesionRetos]);
+        }).then(
+          () => assert.fail("bajó el contador sin renovar el sello"),
+          (error: unknown) => assert.match(String(error), /sesion_no_se_reescribe/),
+        );
+        await comoCliente(duena, ana, async () => {
+          await duena.query("update sessions set segundo_factor_en = segundo_factor_en - interval '1 minute' where id = $1", [sesionRetos]);
+        }).then(
+          () => assert.fail("movió el sello hacia atrás"),
+          (error: unknown) => assert.match(String(error), /sesion_no_se_reescribe/),
+        );
+        await comoCliente(duena, ana, async () => {
+          await duena.query("update sessions set segundo_factor_metodo = 'passkey' where id = $1", [sesionRetos]);
+        }).then(
+          () => assert.fail("cambió el método sin renovar el sello"),
+          (error: unknown) => assert.match(String(error), /sesion_no_se_reescribe/),
+        );
+        assert.equal(
+          (await duena.query("select reautenticaciones_fallidas from sessions where id = $1", [sesionRetos])).rows[0]?.reautenticaciones_fallidas,
+          2,
+        );
+        // Con su evento en la misma transacción, renovar sí pasa y el contador vuelve a 0.
+        await comoCliente(duena, ana, async () => {
+          await duena.query(
+            `insert into audit_log (operator_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+             values ($1, 'miembro', $2, 'cliente', 'reautenticacion', 'sessions', $3)`,
+            [operador, ana, sesionRetos],
+          );
+          await duena.query(
+            "update sessions set segundo_factor_en = clock_timestamp(), reautenticaciones_fallidas = 0 where id = $1",
+            [sesionRetos],
+          );
+        });
+        assert.equal(
+          (await duena.query("select reautenticaciones_fallidas from sessions where id = $1", [sesionRetos])).rows[0]?.reautenticaciones_fallidas,
+          0,
+        );
 
         // H10. Revocar una app autenticadora ya usada funciona; un paso repetido o menor sigue rechazado.
         const totpUsado = randomUUID();
@@ -238,6 +378,8 @@ describe("seguridad de cuentas en Postgres", { skip: urlAdmin.length === 0 }, ()
         await duena.query("commit");
         await assert.rejects(duena.query("update auth_totp set ultimo_paso = 100 - 1 where id = $1", [totpUsado]), /totp_codigo_repetido/);
         await duena.query("update auth_totp set ultimo_paso = 101 where id = $1", [totpUsado]);
+        // R49-4. El mismo paso sin revocar sigue siendo un código repetido.
+        await assert.rejects(duena.query("update auth_totp set ultimo_paso = 101 where id = $1", [totpUsado]), /totp_codigo_repetido/);
         await duena.query("begin");
         await duena.query(
           `insert into audit_log (operator_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
@@ -260,6 +402,24 @@ describe("seguridad de cuentas en Postgres", { skip: urlAdmin.length === 0 }, ()
           beto,
           hashDeRespaldo("BCDEFGHJKLMNPQRS"),
         ]);
+        // R49-6. Beto tenía una recuperación de segundo factor aprobada: el reset la vence.
+        // La solicitud de Beto de la sección H3 sigue abierta: el personal la aprueba.
+        const recuperacionBeto = String(
+          (await duena.query("select id from auth_recuperaciones where user_id = $1 and estado = 'solicitada'", [beto])).rows[0]?.id,
+        );
+        await duena.query("begin");
+        await duena.query(
+          `update auth_recuperaciones
+           set estado = 'aprobada', resuelta_por = $2, resuelta_en = now(), verificacion = 'videollamada', vence_en = now() + interval '12 hours'
+           where id = $1`,
+          [recuperacionBeto, op],
+        );
+        await duena.query(
+          `insert into audit_log (operator_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+           values ($1, 'personal', $2, 'sofipo', 'recuperacion_aprobada', 'auth_recuperaciones', $3)`,
+          [operador, op, recuperacionBeto],
+        );
+        await duena.query("commit");
         const tokenReset = "r".repeat(43);
         await duena.query(
           "insert into password_resets (id, user_id, token_hash, creado_en, vence_en) values ($1, $2, $3, now(), now() + interval '1 hour')",
@@ -283,28 +443,41 @@ describe("seguridad de cuentas en Postgres", { skip: urlAdmin.length === 0 }, ()
           "el segundo factor sigue igual",
         );
         assert.deepEqual(avisos.map((aviso) => [aviso.cambio, aviso.para, aviso.userId]), [["contrasena_cambiada", "beto@empresa-b.mx", beto]]);
+        assert.equal(
+          (await duena.query("select estado from auth_recuperaciones where id = $1", [recuperacionBeto])).rows[0]?.estado,
+          "vencida",
+          "la recuperación aprobada no sobrevive al cambio de contraseña",
+        );
+        assert.equal(await contarAuditoria(duena, "recuperacion_vencida", recuperacionBeto), 1);
         const otraVez = await iniciarConContrasena({ correo: "beto@empresa-b.mx", contrasena: "clave-nueva-segura-1" });
         assert.equal(otraVez.tipo, "entrada", "la contraseña nueva abre solo la entrada, no una sesión");
         assert.equal((await duena.query("select 1 from sessions where user_id = $1", [beto])).rows.length, 0);
         if (otraVez.tipo === "entrada") assert.equal((await leerPaso(otraVez.cookie.valor)).paso, "verificar");
 
-        // H7. Misma respuesta y piso de tiempo exista o no la cuenta, aunque el correo no salga.
+        // H7 / R49-3. Misma respuesta y mismo tiempo exista o no la cuenta: la búsqueda,
+        // el enlace y el correo corren después de responder. Si el correo no sale, se anula.
         const esperas: number[] = [];
+        const despues: Array<() => Promise<void>> = [];
         const caido = async () => {
           throw new ErrorDeDominio("correo_no_disponible");
         };
-        const conCuenta = await solicitarRecuperacion(
-          { correo: "ana@empresa-a.mx" },
-          { enviador: caido, esperar: async (ms) => void esperas.push(ms) },
-        );
-        const sinCuenta = await solicitarRecuperacion(
-          { correo: "nadie@empresa-z.mx" },
-          { enviador: caido, esperar: async (ms) => void esperas.push(ms) },
-        );
-        assert.equal(conCuenta, undefined);
-        assert.equal(sinCuenta, undefined);
+        const pedir = (correo: string) =>
+          solicitarRecuperacion(
+            { correo },
+            { diferir: (tarea) => void despues.push(tarea), enviador: caido, esperar: async (ms) => void esperas.push(ms) },
+          );
+        const antes = Number((await duena.query("select count(*)::int as n from password_resets")).rows[0]?.n);
+        assert.equal(await pedir("ana@empresa-a.mx"), undefined);
+        assert.equal(await pedir("nadie@empresa-z.mx"), undefined);
         assert.equal(esperas.length, 2);
         assert.ok(esperas.every((ms) => ms > 0), "las dos esperan hasta el piso");
+        assert.equal(
+          Number((await duena.query("select count(*)::int as n from password_resets")).rows[0]?.n),
+          antes,
+          "al responder todavía no se tocó la base",
+        );
+        assert.equal(despues.length, 2);
+        for (const tarea of despues) await tarea();
         const reset = (
           await duena.query("select anulado_en from password_resets where user_id = $1 order by creado_en desc limit 1", [ana])
         ).rows[0];
@@ -316,6 +489,61 @@ describe("seguridad de cuentas en Postgres", { skip: urlAdmin.length === 0 }, ()
     });
   });
 });
+
+const ORIGEN = { rpID: "localhost", origen: "http://localhost:3000" };
+
+/** Simula que el sello se probó hace `minutos`. Solo la dueña y sin triggers: en la aplicación el sello solo avanza. */
+async function envejecerSello(duena: Cliente, sesion: string, minutos: number): Promise<void> {
+  await duena.query("begin");
+  await duena.query("set local session_replication_role = replica");
+  await duena.query(`update sessions set segundo_factor_en = now() - interval '${minutos} minutes' where id = $1`, [sesion]);
+  await duena.query("commit");
+}
+
+/** Corre como el rol de la aplicación para una persona; deshace si algo falla (también al confirmar). */
+async function comoCliente(duena: Cliente, userId: string, fn: () => Promise<void>): Promise<void> {
+  await duena.query("begin");
+  try {
+    await duena.query("set local role plataforma_cliente");
+    await duena.query("select set_config('app.user_id', $1, true)", [userId]);
+    await fn();
+    await duena.query("commit");
+  } catch (error) {
+    await duena.query("rollback").catch(() => undefined);
+    throw error;
+  }
+}
+
+/** Cada reto distinto (la base exige que sean únicos); toda verificación cuenta y se rechaza. */
+function webauthnQueCuenta(contar: () => void): AdaptadorWebauthn {
+  return {
+    async opcionesRegistro() {
+      throw new Error("no se usa");
+    },
+    async verificarRegistro() {
+      return null;
+    },
+    async opcionesEntrada() {
+      const reto = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "").slice(0, 11);
+      return { opciones: { challenge: reto }, reto };
+    },
+    async verificarEntrada() {
+      contar();
+      await new Promise((resolver) => setTimeout(resolver, 5));
+      return null;
+    },
+  };
+}
+
+async function codigoDe(promesa: Promise<unknown>): Promise<string> {
+  try {
+    await promesa;
+  } catch (error) {
+    if (error instanceof ErrorDeDominio) return error.codigo;
+    throw error;
+  }
+  return "ok";
+}
 
 /** Sesión con segundo factor como la abre la puerta: entrada verificada y consumida en la misma transacción. */
 async function abrirSesion(duena: Cliente, userId: string, token: string, superficie: "cliente" | "sofipo"): Promise<string> {

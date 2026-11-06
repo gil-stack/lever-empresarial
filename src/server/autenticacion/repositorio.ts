@@ -76,6 +76,9 @@ export type RecuperacionAbierta = {
 
 export type SuperficieDeSesion = "cliente" | "sofipo" | "telefono";
 
+/** «reautenticar»: confirmar la identidad dentro de una sesión. Su reto queda ligado a esa sesión. */
+export type PropositoDeReto = "entrar" | "registrar" | "reautenticar";
+
 export type SesionNueva = {
   id: string;
   tokenHash: string;
@@ -108,18 +111,27 @@ export type RepositorioAutenticacion = {
   registrarContrasenaFallida: (userId: string | null, ahora: Date) => Promise<void>;
   leerEntrada: (tokenHash: string, ahora: Date) => Promise<Entrada | null>;
   contarFallosContrasena: (userId: string, desde: Date) => Promise<number>;
-  sumarFallo: (entradaId: string, userId: string, ahora: Date) => Promise<number>;
+  /**
+   * Aparta un intento de segundo factor en la entrada antes de verificar. Devuelve
+   * los intentos apartados, o null si ya hay 5 (o la entrada venció): entonces no
+   * se verifica nada. Un acierto lo devuelve al consumir la entrada.
+   */
+  apartarIntentoDeEntrada: (entradaId: string, userId: string) => Promise<number | null>;
+  /** El intento apartado falló: queda en la bitácora y, con 5, la entrada se quema. */
+  registrarFalloDeEntrada: (args: { entradaId: string; userId: string; intentos: number; ahora: Date }) => Promise<void>;
   factores: (userId: string) => Promise<EstadoFactores>;
   recuperacionAbierta: (userId: string) => Promise<RecuperacionAbierta | null>;
   guardarReto: (reto: {
     id: string;
     userId: string;
-    proposito: "entrar" | "registrar";
+    proposito: PropositoDeReto;
     reto: string;
     creadoEn: Date;
     venceEn: Date;
+    /** Solo para reautenticar: la sesión que pidió el reto. */
+    sesionId?: string | null;
   }) => Promise<void>;
-  tomarReto: (userId: string, proposito: "entrar" | "registrar", ahora: Date) => Promise<string | null>;
+  tomarReto: (userId: string, proposito: PropositoDeReto, ahora: Date, sesionId?: string | null) => Promise<string | null>;
   completarEntrada: (args: {
     entradaId: string;
     userId: string;
@@ -147,13 +159,20 @@ export type RepositorioAutenticacion = {
     superficie: SuperficieDeSesion;
     ahora: Date;
   }) => Promise<void>;
-  /** Suma un intento fallido a la sesión. Al quinto borra la sesión. Devuelve el total. */
-  sumarFalloDeReautenticacion: (args: {
+  /**
+   * Aparta un intento de confirmar la identidad antes de verificar. Devuelve los
+   * intentos apartados, o null si ya hay 5: entonces borra la sesión sin verificar.
+   * Un acierto lo regresa a 0 en la transacción que renueva el sello.
+   */
+  apartarIntentoDeReautenticacion: (args: { sesionId: string; userId: string }) => Promise<number | null>;
+  /** El intento apartado falló: queda en la bitácora y, con 5, la sesión se borra. */
+  registrarFalloDeReautenticacion: (args: {
     sesionId: string;
     userId: string;
     superficie: SuperficieDeSesion;
+    intentos: number;
     ahora: Date;
-  }) => Promise<number>;
+  }) => Promise<void>;
   solicitarRecuperacion: (args: { id: string; userId: string; motivo: string; entradaId: string; ahora: Date }) => Promise<void>;
   /** Solo el personal activo: corre como plataforma_sofipo. */
   recuperacionesPendientes: (personalId: string) => Promise<RecuperacionPendiente[]>;
@@ -179,14 +198,14 @@ export const SQL = {
     values ($1, $2, $3, $4, $5)`,
   leerEntrada: "select id, user_id, vence_en, intentos_fallidos from entrada_por_token($1, $2)",
   contarFallosContrasena: "select fallos_de_contrasena($1, $2) as fallos",
-  sumarFallo: `update auth_entradas
-    set intentos_fallidos = intentos_fallidos + 1,
-        consumida_en = case when intentos_fallidos + 1 >= 5 then now() else consumida_en end
-    where id = $1 and user_id = $2 and consumida_en is null
+  apartarIntentoDeEntrada: `update auth_entradas
+    set intentos_fallidos = intentos_fallidos + 1
+    where id = $1 and user_id = $2 and consumida_en is null and intentos_fallidos < 5 and vence_en > now()
     returning intentos_fallidos`,
+  // El intento apartado acertó: se devuelve en la misma escritura que consume.
   consumirEntrada: `update auth_entradas
-    set verificada_con = $3, verificada_en = now(), consumida_en = now()
-    where id = $1 and user_id = $2 and consumida_en is null and intentos_fallidos < 5 and vence_en >= now()`,
+    set verificada_con = $3, verificada_en = now(), consumida_en = now(), intentos_fallidos = intentos_fallidos - 1
+    where id = $1 and user_id = $2 and consumida_en is null and intentos_fallidos between 1 and 5 and vence_en >= now()`,
   quemarEntrada: `update auth_entradas set consumida_en = now()
     where id = $1 and user_id = $2 and consumida_en is null`,
   passkeysVigentes: `select id, user_id, credencial_id, llave_publica, contador, transportes, nombre, respaldada,
@@ -207,12 +226,12 @@ export const SQL = {
     where user_id = $1 and estado in ('solicitada', 'aprobada')`,
   recuperacionParaActualizar: `select id, estado, vence_en from auth_recuperaciones
     where user_id = $1 and estado in ('solicitada', 'aprobada') for update`,
-  insertarReto: `insert into auth_retos (id, user_id, proposito, reto, creado_en, vence_en)
-    values ($1, $2, $3, $4, $5, $6)`,
+  insertarReto: `insert into auth_retos (id, user_id, proposito, reto, creado_en, vence_en, sesion_id)
+    values ($1, $2, $3, $4, $5, $6, $7)`,
   tomarReto: `update auth_retos set usado_en = $3
     where id = (
       select id from auth_retos
-      where user_id = $1 and proposito = $2 and usado_en is null and vence_en > $3
+      where user_id = $1 and proposito = $2 and sesion_id is not distinct from $4 and usado_en is null and vence_en > $3
       order by creado_en desc
       limit 1
       for update skip locked
@@ -263,12 +282,14 @@ export const SQL = {
     where user_id = $1 and revocada_en is null
     returning id`,
   segundoFactorDeSesion: "select factor_de_sesion($1) as segundo_factor",
+  // clock_timestamp(): después del candado de la persona, así el sello siempre
+  // avanza aunque otra confirmación de esta sesión haya empezado después.
   renovarFactorDeSesion: `update sessions
-    set segundo_factor_en = now(), segundo_factor_metodo = $3, reautenticaciones_fallidas = 0
+    set segundo_factor_en = clock_timestamp(), segundo_factor_metodo = $3, reautenticaciones_fallidas = 0
     where id = $1 and user_id = $2`,
-  sumarFalloDeReautenticacion: `update sessions
-    set reautenticaciones_fallidas = least(reautenticaciones_fallidas + 1, 5)
-    where id = $1 and user_id = $2
+  apartarIntentoDeReautenticacion: `update sessions
+    set reautenticaciones_fallidas = reautenticaciones_fallidas + 1
+    where id = $1 and user_id = $2 and reautenticaciones_fallidas < 5
     returning reautenticaciones_fallidas`,
   borrarSesion: "delete from sessions where id = $1 and user_id = $2",
 } as const;
@@ -329,15 +350,14 @@ export function repositorioPg(): RepositorioAutenticacion {
       const fila = primera(await consultarDefinidor(SQL.contarFallosContrasena, [userId, desde]));
       return Number(fila?.fallos ?? 0);
     },
-    async sumarFallo(entradaId, userId, ahora) {
-      return conTransaccion(userId, async (consulta) => {
-        const suma = await consulta.query(SQL.sumarFallo, [entradaId, userId]);
-        const fila = suma.rows[0] as { intentos_fallidos?: unknown } | undefined;
-        if (typeof fila?.intentos_fallidos !== "number" && typeof fila?.intentos_fallidos !== "string") {
-          throw new ErrorDeDominio("entrada_vencida");
-        }
+    async apartarIntentoDeEntrada(entradaId, userId) {
+      const fila = primera(await consultar(SQL.apartarIntentoDeEntrada, [entradaId, userId], userId));
+      return fila ? Number(fila.intentos_fallidos) : null;
+    },
+    async registrarFalloDeEntrada({ entradaId, userId, intentos, ahora }) {
+      await conTransaccion(userId, async (consulta) => {
+        if (intentos >= 5) await consulta.query(SQL.quemarEntrada, [entradaId, userId]);
         await registrarHechoAutenticacion(hecho("segundo_factor_fallido", entradaId, userId, ahora), consulta);
-        return Number(fila.intentos_fallidos);
       });
     },
     async factores(userId) {
@@ -359,10 +379,14 @@ export function repositorioPg(): RepositorioAutenticacion {
       return mapearAbierta(primera(await consultar(SQL.recuperacionAbierta, [userId], userId)));
     },
     async guardarReto(reto) {
-      await consultar(SQL.insertarReto, [reto.id, reto.userId, reto.proposito, reto.reto, reto.creadoEn, reto.venceEn], reto.userId);
+      await consultar(
+        SQL.insertarReto,
+        [reto.id, reto.userId, reto.proposito, reto.reto, reto.creadoEn, reto.venceEn, reto.sesionId ?? null],
+        reto.userId,
+      );
     },
-    async tomarReto(userId, proposito, ahora) {
-      const fila = primera(await consultar(SQL.tomarReto, [userId, proposito, ahora], userId));
+    async tomarReto(userId, proposito, ahora, sesionId) {
+      const fila = primera(await consultar(SQL.tomarReto, [userId, proposito, ahora, sesionId ?? null], userId));
       return typeof fila?.reto === "string" ? fila.reto : null;
     },
     async completarEntrada({ entradaId, userId, metodo, sesion, efecto, ahora }) {
@@ -477,15 +501,19 @@ export function repositorioPg(): RepositorioAutenticacion {
         await auditarEnSuperficie(consulta, userId, superficie, hecho("reautenticacion", sesionId, userId, ahora));
       });
     },
-    async sumarFalloDeReautenticacion({ sesionId, userId, superficie, ahora }) {
+    async apartarIntentoDeReautenticacion({ sesionId, userId }) {
       return conTransaccion(userId, async (consulta) => {
-        const suma = await consulta.query(SQL.sumarFalloDeReautenticacion, [sesionId, userId]);
-        const fila = suma.rows[0] as { reautenticaciones_fallidas?: unknown } | undefined;
-        if (fila?.reautenticaciones_fallidas === undefined) throw new ErrorDeDominio("sesion_ausente");
-        const intentos = Number(fila.reautenticaciones_fallidas);
+        const fila = primera(await consulta.query(SQL.apartarIntentoDeReautenticacion, [sesionId, userId]));
+        if (fila) return Number(fila.reautenticaciones_fallidas);
+        // Sin intento que apartar: la sesión agotó sus 5 (o ya no existe).
+        await consulta.query(SQL.borrarSesion, [sesionId, userId]);
+        return null;
+      });
+    },
+    async registrarFalloDeReautenticacion({ sesionId, userId, superficie, intentos, ahora }) {
+      await conTransaccion(userId, async (consulta) => {
         if (intentos >= 5) await consulta.query(SQL.borrarSesion, [sesionId, userId]);
         await auditarEnSuperficie(consulta, userId, superficie, hecho("reautenticacion_fallida", sesionId, userId, ahora));
-        return intentos;
       });
     },
     async recuperacionesPendientes(personalId) {
