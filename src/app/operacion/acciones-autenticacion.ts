@@ -43,8 +43,9 @@ export async function entrarOperacion(_previo: EstadoEntrada, formData: FormData
     await ponerToken(NOMBRE_COOKIE_ENTRADA_OPERACION, resultado.cookie.valor, resultado.cookie.maxAge);
   } catch (error) {
     if (error instanceof ErrorDeDominio) {
-      const mensaje = RECHAZOS_DE_ENTRADA[error.codigo] ?? "No se pudo entrar. Vuelve a intentar.";
-      return { tipo: "invalido", mensaje, correo };
+      const mensaje = RECHAZOS_DE_ENTRADA[error.codigo];
+      if (!mensaje) registrarInesperado("entrada_no_completada", error);
+      return { tipo: "invalido", mensaje: mensaje ?? "No se pudo entrar. Vuelve a intentar.", correo };
     }
     throw error;
   }
@@ -172,7 +173,10 @@ function salidaDeFactor(error: unknown): EstadoAcceso {
 }
 
 function mensajeDe(error: unknown): string {
-  if (!(error instanceof ErrorDeDominio)) return "No se pudo completar. Vuelve a intentar.";
+  if (!(error instanceof ErrorDeDominio)) {
+    registrarInesperado("factor_no_completado", error);
+    return "No se pudo completar. Vuelve a intentar.";
+  }
   const mensajes: Record<string, string> = {
     segundo_factor_invalido: "El código o la passkey no coinciden.",
     entrada_vencida: "La entrada venció. Vuelve a escribir tu contraseña.",
@@ -181,5 +185,15 @@ function mensajeDe(error: unknown): string {
     totp_no_disponible: "La app autenticadora no está disponible. Usa una passkey.",
     origen_no_permitido: "Este dominio no puede usar passkeys.",
   };
+  if (!mensajes[error.codigo]) registrarInesperado("factor_no_completado", error);
   return mensajes[error.codigo] ?? "No se pudo completar. Vuelve a intentar.";
+}
+
+/**
+ * Un rechazo sin mensaje propio llega a la persona como «Vuelve a intentar»; aquí queda su código
+ * para poder diagnosticarlo. Solo el código o el nombre del error: nada de la persona ni del factor.
+ */
+function registrarInesperado(evento: string, error: unknown): void {
+  const codigo = error instanceof ErrorDeDominio ? error.codigo : error instanceof Error && /^[A-Za-z]{1,60}$/.test(error.name) ? error.name : "desconocido";
+  console.error(JSON.stringify({ nivel: "error", origen: "operacion.entrada", evento, error: codigo }));
 }
