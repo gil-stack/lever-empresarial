@@ -1,3 +1,6 @@
+Listo.
+siembra lista
+
 (a) Empresa nueva sin datos
 OK Bahía (sin datos): Inicio muestra el estado «Sin saldo declarado», no un saldo de $0.00
 OK ya no aparece «Saldo en el libro»
@@ -14,8 +17,10 @@ OK primera declaración: $120,000.00 al día anterior, asentada (doble clic)
 OK el doble clic manda 1 acción(es) de servidor (se espera 1)
 OK doble clic en «Declarar el saldo»: mientras se envía dice «Enviando…», queda desactivado y con aria-busy
 OK segunda declaración: $150,000.00 al día de hoy, asentada (doble clic)
+OK el mismo envío repetido byte por byte (mismo id del formulario) responde igual: «El saldo quedó declarado»
+OK el formulario mandó su id (UUID 58853791-544f-450d-a788-daadc7d94491) y la página ya trae otro (7e5d490d-53f1-469d-b9d5-4bdaf53303a4) para la siguiente declaración
 OK el historial conserva las dos: $150,000.00 y $120,000.00
-OK la base tiene 2 declaraciones (append-only): cada doble clic dejó una sola
+OK la base tiene 2 declaraciones (append-only): cada doble clic y el reenvío idéntico dejaron una sola
 OK y 2 eventos declarar_saldo en la bitácora
 OK captura b-saldo-historial.jpg
 OK Inicio muestra $150,000.00 con «Declarado por tu empresa»
@@ -55,6 +60,7 @@ OK con colchón la alerta se adelanta a la semana del 2026-12-14 ($24,000.00 < $
 OK captura d3-faltante-colchon.jpg
 
 (h) Escenario «¿y si muevo este pago?»
+OK la fecha del escenario no pasa del último día de la ventana (2027-01-31)
 OK mover TN-501 ($25,000.00) a la semana siguiente baja las salidas de la semana del 2026-11-09 y sube las de la siguiente
 OK el saldo al final de las 13 semanas no cambia (solo se mueve de semana)
 OK en la base programada_el sigue en 2026-11-12
@@ -69,6 +75,8 @@ OK el doble clic manda 1 acción(es) de servidor (se espera 1)
 OK doble clic en «Registrar el cobro»: mientras se envía dice «Enviando…», queda desactivado y con aria-busy
 OK alta manual: Abarrotes del Puerto por $22,500.50 (doble clic)
 OK el doble clic deja un solo cobro y un solo evento registrar_cobro
+OK el mismo formulario reenviado byte por byte responde igual
+OK y la base sigue con un cobro y un evento (el servidor usa el id del formulario)
 OK una factura con RFC emisor ajeno se rechaza
 OK con un mensaje claro: «Revisa antes de continuar Esta factura la emitió el RFC XAX010101000, no ALO180312AB1. Solo se registran facturas que emitió Altamar Logística.»
 OK captura e1-xml-ajeno-rechazado.jpg
@@ -76,6 +84,8 @@ OK el doble clic manda 1 acción(es) de servidor (se espera 1)
 OK doble clic en «Registrar con el XML»: mientras se envía dice «Enviando…», queda desactivado y con aria-busy
 OK la factura emitida por Altamar se registra como cobro esperado (doble clic)
 OK el doble clic deja una sola fila con ese UUID
+OK el mismo formulario del XML reenviado con su mismo id responde igual (asentado), sin «ya está registrada»
+OK y sigue una sola fila con ese UUID y un solo evento
 OK con origen cfdi, el cliente receptor, $45,000.00 y su UUID
 OK el doble clic manda 1 acción(es) de servidor (se espera 1)
 OK doble clic en «Marcar cobrado» del diálogo: el botón se ve ocupado
@@ -105,12 +115,15 @@ OK el mes muestra renta
 OK al clicar renta se abre su detalle con origen y monto
 OK la renta aparece el día 20
 OK el cobro vencido sale marcado como vencido
+OK el formulario avisa que lo que llega como factura de proveedor ya cuenta en Pagos a proveedores
+OK y deja elegir el proveedor que la factura (3 proveedores)
 OK la plantilla llena «Impuestos provisionales»
 OK con el siguiente día 17 (2026-11-17) y frecuencia mensual
 OK el doble clic manda 1 acción(es) de servidor (se espera 1)
 OK doble clic en «Registrar la obligación»: mientras se envía dice «Enviando…», queda desactivado y con aria-busy
 OK se registra la obligación de impuestos (doble clic)
 OK el doble clic deja una sola obligación y un solo evento registrar_obligacion
+OK el mismo formulario reenviado byte por byte no crea otra obligación
 OK se edita el monto a $19,250.00
 OK la base guarda el monto nuevo
 OK los impuestos aparecen en el calendario del mes de su día 17
@@ -144,9 +157,14 @@ OK y lo vuelve a encender
 OK Diego (contador) lo enciende para sí
 OK GET /tareas/correo-semanal sin secreto: 401
 OK con otro secreto: 401
-OK con el secreto: 200 {"semana":"2026-11-02","empresas":3,"enviados":3,"omitidos":0,"fallidos":0}
-OK el proveedor falso registra 4 correos: bruno@lever.test, diana@lever.test, diego@lever.test, laura@lever.test
-OK la segunda llamada de la semana no manda nada: {"semana":"2026-11-02","empresas":3,"enviados":0,"omitidos":3,"fallidos":0}
+OK con el secreto: 200 {"semana":"2026-11-02","empresas":2,"enviados":2,"omitidos":0,"fallidos":0,"pendientes":0}
+OK el proveedor falso registra 4 correos: bruno@lever.test, diego@lever.test, fernanda@lever.test, laura@lever.test; la empresa de demostración (Diana) no recibe cifras de ejemplo
+OK cada persona que lo recibió queda registrada (4 entregas)
+OK el correo a laura@lever.test no desglosa la nómina de una sola persona
+OK el correo a bruno@lever.test no desglosa la nómina de una sola persona
+OK el correo a fernanda@lever.test no desglosa la nómina de una sola persona
+OK el correo a diego@lever.test no desglosa la nómina de una sola persona
+OK la segunda llamada de la semana no manda nada: {"semana":"2026-11-02","empresas":2,"enviados":0,"omitidos":2,"fallidos":0,"pendientes":0}
 OK el proveedor falso no tiene correos nuevos
 OK un envío por empresa y semana, enviado
 OK el de Altamar trae su saldo declarado ($150,000.00) con su origen
@@ -156,6 +174,7 @@ OK el correo de Bahía no trae «Renta de la bodega» de Altamar
 OK el correo de Bahía no trae «150,000» de Altamar
 OK el correo de Bahía no trae «Mayorista» de Altamar
 OK el correo de Bahía no trae «Operación» de Altamar
+OK Bahía no declaró saldo: su correo explica que sin saldo no se sabe si alcanza e invita a declararlo
 OK ni el de Altamar trae datos de Bahía ni dice «Confirmado por el banco»
 OK captura i-correo-semanal.jpg
 
@@ -171,6 +190,16 @@ OK ni la acción de la barra en /consola/calendario
 OK ni el alta de cobros ni «Marcar cobrado»
 OK ni el área de cada proveedor
 OK captura j1-contador-solo-lectura.jpg
+OK el contador no ve «1 persona» en /consola/calendario
+OK el contador no ve «1 persona» en /consola/presupuestos
+OK finanzas no ve «1 persona» en /consola
+OK finanzas no ve «1 persona» en /consola/calendario
+OK finanzas no ve «1 persona» en /consola/presupuestos
+OK en Inicio de finanzas, la semana con la nómina de Carla junta la nómina en un renglón «Nómina»
+OK Laura (administración) sí ve el detalle «(1 persona)»
+OK en el calendario de 2026-12, el pago de una sola persona dice «Monto reservado»
+OK captura j4-contador-nomina-reservada.jpg
+OK y Laura ve todos los montos
 OK el formulario del saldo enviado a mano por el contador: el servidor responde «Sin permiso para cambiar el flujo»
 OK y la base no cambia
 OK un empleado sin la capacidad (tarjetahabiente) no ve /consola/flujo: 404
@@ -263,7 +292,7 @@ OK presupuestos lever 390: 200
 OK presupuestos lever 390: sin desplazamiento horizontal
 OK captura k-presupuestos-lever-390.jpg
 
-201 comprobaciones
+226 comprobaciones
 Consola del navegador: sin errores ni advertencias de la aplicación
 Avisos «GL Driver Message» del fondo WebGL (fuera de zona): 4
 Mensajes esperados en las páginas 404 de (j) (el 404 del documento y la precarga de estilos sin usar): 11

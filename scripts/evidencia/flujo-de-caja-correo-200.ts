@@ -20,7 +20,6 @@ import { performance } from "node:perf_hooks";
 import { cerrarConexion } from "../../src/nucleo/db";
 import type { ContextoConEmpresa } from "../../src/nucleo/contexto";
 import { darDeAltaEmpresa } from "../../src/server/company/servicio";
-import type { MensajeCorreo } from "../../src/server/correo/tipos";
 import { CONCURRENCIA, enviarCorreosSemanales, PRESUPUESTO_MS, RITMO_MS } from "../../src/server/flujo/correo-semanal";
 import { declararSaldo, registrarCobro, registrarObligacion } from "../../src/server/flujo/servicio";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio";
@@ -100,7 +99,7 @@ async function medir(url: string): Promise<void> {
     ["Sin ritmo (para comparar)", "2026-11-16", 0],
   ] as const) {
     const envios: number[] = [];
-    const enviador = async (_mensaje: MensajeCorreo) => {
+    const enviador = async () => {
       envios.push(performance.now());
       await new Promise((listo) => setTimeout(listo, LATENCIA_PROVEEDOR_MS));
       return { id: randomUUID() };
