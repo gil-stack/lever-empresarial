@@ -6,19 +6,34 @@ import { IconoCerrar, IconoPendientes } from "@/components/cromo/iconos";
 
 /**
  * <dialog> modal: el navegador atrapa el foco, Escape cierra y el foco vuelve
- * a quien lo abrió. `alCerrar` se llama con Escape, el velo o el botón.
+ * a quien lo abrió. `alCerrar` se llama una sola vez con Escape, el velo o el
+ * botón: cuando el cierre lo pidió la página (`abierto` ya es false), el evento
+ * `close` que dispara `dialog.close()` no vuelve a avisar. Mientras está abierto,
+ * el fondo no se desplaza.
  */
 function useDialogo(abierto: boolean, alCerrar: () => void) {
   const ref = useRef<HTMLDialogElement>(null);
+  const pedidoAbierto = useRef(abierto);
   useEffect(() => {
+    pedidoAbierto.current = abierto;
     const dialogo = ref.current;
     if (!dialogo) return;
     if (abierto && !dialogo.open) dialogo.showModal();
     if (!abierto && dialogo.open) dialogo.close();
+    if (!abierto) return;
+    const raiz = document.documentElement;
+    const antes = raiz.style.overflow;
+    raiz.style.overflow = "hidden";
+    return () => {
+      raiz.style.overflow = antes;
+    };
   }, [abierto]);
   const props = {
     ref,
-    onClose: alCerrar,
+    // Solo el cierre que hizo el navegador (Escape) avisa por aquí.
+    onClose: () => {
+      if (pedidoAbierto.current) alCerrar();
+    },
     // Un clic en el velo cae sobre el propio <dialog>, fuera de su contenido.
     onClick: (evento: React.MouseEvent<HTMLDialogElement>) => {
       if (evento.target === evento.currentTarget) alCerrar();

@@ -181,7 +181,7 @@ describe("plantillas", () => {
     assert.match(correo.texto, /Roles: Liberador, Tarjetahabiente/);
     assert.match(correo.html, /Crear mi acceso/);
     assert.match(correo.html, /https:\/\/www\.leverpagos\.com\/lever-email\.png/);
-    assert.match(correo.html, /alt="LEVER"/);
+    assert.match(correo.html, /alt="Lever Empresas"/);
   });
 
   it("invitación del personal: presenta el equipo LEVER y conserva el rol de plataforma", () => {

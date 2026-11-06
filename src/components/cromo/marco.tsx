@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 
 import { salir } from "@/app/sesion/acciones";
+import { AcentoInicial } from "@/components/apariencia/acento-inicial";
 import { AparienciaViva } from "@/components/apariencia/viva";
 import { enEmpresa, rutaConsola } from "@/nucleo/rutas";
 
@@ -24,7 +25,7 @@ import { MARCO_SIN_SESION, puertasDe, type EmpresaElegible, type VistaDeMarco } 
 import { seccionesDe, type Contador, type GrupoDeSecciones } from "./secciones";
 import { COOKIE_TEMA, temaDesde } from "./tema";
 
-/** El único pie regulatorio de la plataforma, como lo dice el diseño. */
+/** El único pie regulatorio de la plataforma: lo usan el lateral y, en pantallas angostas, el final de cada página. */
 export const PIE_REGULATORIO =
   "Los productos financieros los ofrece y opera una Sociedad Financiera Popular supervisada por la CNBV (razón social por definir). Lever Empresas es una marca comercial y no es entidad financiera.";
 
@@ -109,6 +110,7 @@ export async function Marco({
 
   return (
     <>
+      <AcentoInicial persona={quien?.id} tema={tema} />
       <AparienciaViva persona={quien?.id} tema={tema} />
       <div className="marco">
         <a className="saltar" href="#contenido">
@@ -144,7 +146,7 @@ export async function Marco({
               <MenuPersona
                 nombre={quien.nombre}
                 rol={quien.rol}
-                apariencia={enEmpresa(vista.empresaId, "/consola/apariencia")}
+                apariencia={vista.empresaId ? enEmpresa(vista.empresaId, "/consola/apariencia") : null}
                 cambiarEmpresa={vista.variasEmpresas}
               />
             ) : (
@@ -155,6 +157,8 @@ export async function Marco({
             )}
           </BarraSuperior>
           {children}
+          {/* En pantallas angostas el lateral es un cajón: el aviso regulatorio no se esconde ahí, va al final de la página. */}
+          <p className="pie-movil">{PIE_REGULATORIO}</p>
         </div>
       </div>
     </>
@@ -183,13 +187,14 @@ function EmpresaLateral({
   );
   if (empresas.length < 2) return <div className="empresa-lateral">{tarjeta}</div>;
   return (
-    <MenuDesplegable clase="empresa-lateral" etiqueta="Cambiar de empresa" disparador={tarjeta}>
+    <MenuDesplegable clase="empresa-lateral" etiqueta="Cambiar de empresa" disparador={tarjeta} fijo>
       <p className="menu-seccion">Tus empresas</p>
       {empresas.map((otra) => (
         <Link
           key={otra.id}
           href={otra.destino}
           role="menuitem"
+          tabIndex={-1}
           className="menu-opcion"
           aria-current={otra.id === actual ? "true" : undefined}
         >
@@ -211,7 +216,8 @@ function MenuPersona({
 }: {
   nombre: string;
   rol: string | null;
-  apariencia: string;
+  /** Sin empresa elegida (en /empresas) no hay Apariencia a la cual ir. */
+  apariencia: string | null;
   cambiarEmpresa: boolean;
 }) {
   return (
@@ -231,25 +237,27 @@ function MenuPersona({
       }
     >
       <p className="menu-seccion">Tú</p>
-      <Link href="/entrar/seguridad" role="menuitem" className="menu-opcion">
+      <Link href="/entrar/seguridad" role="menuitem" tabIndex={-1} className="menu-opcion">
         <IconoSeguridad />
         Mi perfil y seguridad
       </Link>
-      <Link href={apariencia} role="menuitem" className="menu-opcion">
-        <IconoApariencia />
-        Apariencia
-      </Link>
+      {apariencia ? (
+        <Link href={apariencia} role="menuitem" tabIndex={-1} className="menu-opcion">
+          <IconoApariencia />
+          Apariencia
+        </Link>
+      ) : null}
       {cambiarEmpresa ? (
         <>
           <p className="menu-seccion">Empresa</p>
-          <Link href="/empresas" role="menuitem" className="menu-opcion">
+          <Link href="/empresas" role="menuitem" tabIndex={-1} className="menu-opcion">
             <IconoEmpresas />
             Cambiar de empresa
           </Link>
         </>
       ) : null}
       <form action={salir} className="menu-pie">
-        <button type="submit" role="menuitem" className="menu-opcion">
+        <button type="submit" role="menuitem" tabIndex={-1} className="menu-opcion">
           <IconoSalir />
           Salir
         </button>
@@ -348,6 +356,7 @@ export async function MarcoTelefono({
   ] as const;
   return (
     <>
+      <AcentoInicial persona={personaId} tema={tema} />
       <AparienciaViva persona={personaId} tema={tema} />
       <div className="marco-telefono">
         <a className="saltar" href="#contenido">Saltar al contenido</a>

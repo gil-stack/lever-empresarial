@@ -56,9 +56,18 @@ const accAntes = await p.evaluate(() => getComputedStyle(document.documentElemen
 await p.getByLabel("Elige tu color").fill("#3cc48f");
 await p.waitForTimeout(500);
 const accDespues = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--acc").trim());
-comprobar("«Tu color» queda elegido", (await p.locator('.tono[data-elegido="si"]').count()) === 1);
+const tuColor = p.locator(".tonos").getByRole("button", { name: "Tu color" });
+comprobar("«Tu color» queda elegido (aria-pressed)", (await tuColor.getAttribute("aria-pressed")) === "true");
 comprobar("«Tu color» cambia el acento", accAntes !== accDespues, `${accAntes} → ${accDespues}`);
 await foto("A3-tu-color");
+// Otro tono y de vuelta a «Tu color» con el mismo color: vuelve a quedar elegido (antes solo respondía a un color distinto).
+await p.locator(".tonos").getByRole("button", { name: "Arena" }).click();
+comprobar("con Arena, «Tu color» deja de estar elegido", (await tuColor.getAttribute("aria-pressed")) === "false");
+await tuColor.click();
+await p.keyboard.press("Escape");
+await p.waitForTimeout(400);
+const accDeVuelta = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--acc").trim());
+comprobar("«Tu color» con el mismo color se vuelve a elegir", (await tuColor.getAttribute("aria-pressed")) === "true" && accDeVuelta === accDespues, `${accDeVuelta}`);
 
 // El tema se ve en otra página
 await p.goto(`${BASE}/c/${empresa}/consola`);

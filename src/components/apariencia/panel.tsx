@@ -66,6 +66,7 @@ function MiniaturaEscena({ escena, tema, tono, colorPropio }: { escena: ClaveEsc
 export function PanelApariencia({ persona, tema: temaInicial, empresa }: { persona?: string; tema: ClaveTema; empresa: string | null }) {
   const ajustes = useApariencia(persona, temaInicial);
   const [sinGuardar, setSinGuardar] = useState(false);
+  const selectorColor = useRef<HTMLInputElement>(null);
   const escena = ESCENAS.find((e) => e.clave === ajustes.escena) ?? ESCENAS[0];
 
   function cambiar(cambio: Partial<PreferenciasApariencia>) {
@@ -177,17 +178,40 @@ export function PanelApariencia({ persona, tema: temaInicial, empresa }: { perso
         <div className="tonos">
           {TONOS_VISIBLES.map((clave) =>
             clave === "mio" ? (
-              <label key={clave} className="tono" data-elegido={ajustes.tono === "mio" ? "si" : "no"}>
+              // «Tu color» es un botón como los demás tonos: al tocarlo vuelve a quedar elegido (aunque el color
+              // sea el mismo de antes) y abre el selector; el color nuevo llega con el cambio del selector.
+              <span key={clave} className="tono-propio">
+                <button
+                  type="button"
+                  className="tono"
+                  aria-pressed={ajustes.tono === "mio"}
+                  onClick={() => {
+                    cambiar({ tono: "mio", colorPropio: ajustes.colorPropio ?? TONOS.mio.colores[2] });
+                    const selector = selectorColor.current;
+                    if (selector && typeof selector.showPicker === "function") {
+                      try {
+                        selector.showPicker();
+                        return;
+                      } catch {
+                        // Sin permiso para abrirlo así: se abre con el clic de abajo.
+                      }
+                    }
+                    selector?.click();
+                  }}
+                >
+                  <i style={{ background: muestraDelTono(clave, ajustes.colorPropio) } as CSSProperties} />
+                  {TONOS[clave].nombre}
+                </button>
                 <input
+                  ref={selectorColor}
                   type="color"
                   className="solo-lector"
+                  tabIndex={-1}
                   aria-label="Elige tu color"
                   value={ajustes.colorPropio ?? TONOS.mio.colores[2]}
                   onChange={(evento) => cambiar({ tono: "mio", colorPropio: evento.target.value.toUpperCase() })}
                 />
-                <i style={{ background: muestraDelTono(clave, ajustes.colorPropio) } as CSSProperties} />
-                {TONOS[clave].nombre}
-              </label>
+              </span>
             ) : (
               <button
                 key={clave}

@@ -114,7 +114,7 @@ function html(asunto: string, b: Bloque): string {
 <tr><td align="center" style="padding:36px 16px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;">
 <tr><td style="padding:0 4px 20px;">
-<img src="${LOGO}" alt="LEVER" width="260" height="67" style="display:block;width:260px;max-width:100%;height:auto;border-radius:8px;">
+<img src="${LOGO}" alt="Lever Empresas" width="260" height="67" style="display:block;width:260px;max-width:100%;height:auto;border-radius:8px;">
 </td></tr>
 <tr><td class="hoja" style="padding:36px 32px 32px;background:${CLARO.hoja};border:1px solid ${CLARO.linea};border-radius:16px;">
 <p class="tenue" style="margin:0 0 18px;color:${CLARO.tintaTenue};font-family:${SANS};font-size:11px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">${escapar(b.kicker)}</p>

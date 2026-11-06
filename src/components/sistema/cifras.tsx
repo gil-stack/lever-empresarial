@@ -70,12 +70,27 @@ export function EtiquetaMono({ nombre, children }: { nombre: string; children: R
   );
 }
 
+/** Lo que anuncia el lector de pantalla para una barra de avance: el porcentaje y, al pasarse, «excedido». */
+export function textoDeAvance(valor: number, tope: number): string {
+  const porcentaje = tope > 0 ? Math.round((valor / tope) * 100) : 0;
+  return porcentaje > 100 ? `${porcentaje} %, excedido` : `${porcentaje} %`;
+}
+
 /** Avance contra un tope (diseño .bar): coral; ámbar desde el 85 %; rojo al pasarse. */
 export function BarraAvance({ valor, tope, etiqueta }: { valor: number; tope: number; etiqueta: string }) {
   const proporcion = tope > 0 ? valor / tope : 0;
   const clase = proporcion > 1 ? "barra-avance barra-avance-excedida" : proporcion >= 0.85 ? "barra-avance barra-avance-alta" : "barra-avance";
   return (
-    <div className={clase} role="meter" aria-label={etiqueta} aria-valuemin={0} aria-valuemax={tope} aria-valuenow={Math.min(valor, tope)}>
+    <div
+      className={clase}
+      role="meter"
+      aria-label={etiqueta}
+      aria-valuemin={0}
+      aria-valuemax={tope}
+      aria-valuenow={Math.min(valor, tope)}
+      // aria-valuenow no puede pasar del tope: el texto dice cuánto y si ya se excedió.
+      aria-valuetext={textoDeAvance(valor, tope)}
+    >
       <i style={{ width: `${Math.min(100, Math.max(0, proporcion * 100))}%` }} />
     </div>
   );

@@ -205,21 +205,19 @@
   transition: box-shadow 0.3s;
 }
 
-.tono[aria-pressed="true"],
-.tono[data-elegido="si"] {
+.tono[aria-pressed="true"] {
   color: var(--tx);
 }
 
-.tono[aria-pressed="true"] i,
-.tono[data-elegido="si"] i {
+.tono[aria-pressed="true"] i {
   box-shadow:
     0 0 0 2px var(--void),
     0 0 0 3px var(--tx);
 }
 
-.tono:has(input:focus-visible) i {
-  outline: 1px solid var(--tx2);
-  outline-offset: 5px;
+/* «Tu color»: el botón y su selector de color (oculto) van juntos sin cambiar la fila de tonos. */
+.tono-propio {
+  display: contents;
 }
 
 /* En el tema Lever el color es el coral de la marca: la paleta se oculta y lo dice una nota. */

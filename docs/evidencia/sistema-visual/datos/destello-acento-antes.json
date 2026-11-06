@@ -1,0 +1,47 @@
+[
+  {
+    "recarga": 1,
+    "final": "#E9DAC5",
+    "primerCuadroVisible": {
+      "t": 787,
+      "acc": "#ff5a4e",
+      "pintado": true
+    },
+    "cuadrosVisiblesConOtroAcento": 4,
+    "ultimoConOtro": {
+      "t": 860,
+      "acc": "#ff5a4e",
+      "pintado": true
+    }
+  },
+  {
+    "recarga": 2,
+    "final": "#E9DAC5",
+    "primerCuadroVisible": {
+      "t": 487,
+      "acc": "#ff5a4e",
+      "pintado": true
+    },
+    "cuadrosVisiblesConOtroAcento": 5,
+    "ultimoConOtro": {
+      "t": 574,
+      "acc": "#ff5a4e",
+      "pintado": true
+    }
+  },
+  {
+    "recarga": 3,
+    "final": "#E9DAC5",
+    "primerCuadroVisible": {
+      "t": 392,
+      "acc": "#ff5a4e",
+      "pintado": true
+    },
+    "cuadrosVisiblesConOtroAcento": 4,
+    "ultimoConOtro": {
+      "t": 460,
+      "acc": "#ff5a4e",
+      "pintado": true
+    }
+  }
+]

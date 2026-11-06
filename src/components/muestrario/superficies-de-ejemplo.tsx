@@ -20,6 +20,8 @@ export function SuperficiesDeEjemplo() {
   const [detalle, setDetalle] = useState<string | null>(null);
   const [aviso, setAviso] = useState<{ mensaje: string; deshacer?: () => void } | null>(null);
   const [archivadas, setArchivadas] = useState<string[]>([]);
+  // Contrato del diálogo y del panel: `alCerrar` avisa una sola vez por cierre.
+  const [cierres, setCierres] = useState(0);
   const terminar = useCallback(() => setAviso(null), []);
 
   function archivar(nombre: string) {
@@ -68,7 +70,10 @@ export function SuperficiesDeEjemplo() {
       )}
       <Dialogo
         abierto={dialogo}
-        alCerrar={() => setDialogo(false)}
+        alCerrar={() => {
+          setCierres((n) => n + 1);
+          setDialogo(false);
+        }}
         titulo="Confirma la acción"
         explicacion="Lo irreversible pide confirmación; lo reversible se hace al instante y se puede deshacer."
         pie={
@@ -78,9 +83,20 @@ export function SuperficiesDeEjemplo() {
           </>
         }
       />
-      <PanelDetalle abierto={detalle !== null} alCerrar={() => setDetalle(null)} titulo={detalle ?? ""} contexto="Detalle de ejemplo">
+      <PanelDetalle
+        abierto={detalle !== null}
+        alCerrar={() => {
+          setCierres((n) => n + 1);
+          setDetalle(null);
+        }}
+        titulo={detalle ?? ""}
+        contexto="Detalle de ejemplo"
+      >
         <p className="lede">El panel lateral muestra el detalle sin salir de la lista.</p>
       </PanelDetalle>
+      <p className="pista" data-cierres={cierres}>
+        Cierres avisados por el diálogo y el panel: {cierres}
+      </p>
       <AvisoInferior mensaje={aviso?.mensaje ?? null} alDeshacer={aviso?.deshacer} alTerminar={terminar} />
     </div>
   );

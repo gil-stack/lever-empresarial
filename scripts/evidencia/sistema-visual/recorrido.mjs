@@ -212,10 +212,20 @@ if (!movil || tema === "oscuro") {
   await ejemplo.getByRole("button", { name: "Ver detalle" }).first().click();
   await p.waitForTimeout(400);
   comprobar("panel lateral abre", await p.locator("dialog.panel-detalle[open]").count() === 1);
+  const cierres = async () => Number(await ejemplo.locator("[data-cierres]").getAttribute("data-cierres"));
+  const desplazamiento = await p.evaluate(() => scrollY);
+  await p.mouse.wheel(0, 600);
+  await p.waitForTimeout(300);
+  comprobar(
+    "con el panel abierto el fondo no se desplaza",
+    (await p.evaluate(() => document.documentElement.style.overflow)) === "hidden" && (await p.evaluate(() => scrollY)) === desplazamiento,
+  );
   await foto("70-muestrario-panel");
   await p.keyboard.press("Escape");
-  await p.waitForTimeout(200);
+  await p.waitForTimeout(300);
   comprobar("panel lateral cierra con Escape", await p.locator("dialog.panel-detalle[open]").count() === 0);
+  comprobar("Escape avisa el cierre una sola vez", (await cierres()) === 1, `${await cierres()}`);
+  comprobar("al cerrar, el fondo vuelve a desplazarse", (await p.evaluate(() => document.documentElement.style.overflow)) === "");
   const filas = await ejemplo.locator("tbody tr").count();
   await ejemplo.getByRole("button", { name: "Archivar" }).first().click();
   await p.waitForTimeout(300);
@@ -229,9 +239,11 @@ if (!movil || tema === "oscuro") {
   await p.waitForTimeout(400);
   comprobar("diálogo abre", await p.locator("dialog.dialogo[open]").count() === 1);
   await foto("72-muestrario-dialogo");
-  await p.keyboard.press("Escape");
-  await p.waitForTimeout(200);
-  comprobar("diálogo cierra", await p.locator("dialog.dialogo[open]").count() === 0);
+  // Clic en el velo (fuera del cuerpo del diálogo).
+  await p.mouse.click(6, 6);
+  await p.waitForTimeout(300);
+  comprobar("diálogo cierra con el velo", await p.locator("dialog.dialogo[open]").count() === 0);
+  comprobar("el velo avisa el cierre una sola vez", (await cierres()) === 2, `${await cierres()}`);
 }
 
 // 10. Salir desde el menú de la persona

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useSyncExternalStore } from "react";
 
 import { COOKIE_TEMA } from "@/components/cromo/tema";
 
+import { COOKIE_ACENTO, valorAcentoGuardado } from "./acento-guardado";
 import { acentoPorTema, esTema, type ClaveTema } from "./catalogo";
 import { FondoEscena } from "./fondo-escena";
 import { claveDe, guardarPreferencias, leerPreferencias, type PreferenciasApariencia } from "./preferencias";
@@ -79,7 +80,10 @@ export function AparienciaViva({ persona, tema: temaInicial }: { persona?: strin
     const raiz = document.documentElement.style;
     raiz.setProperty("--acc", acento);
     raiz.setProperty("--ink", tinta);
-  }, [tema, tono, colorPropio]);
+    // El servidor lo pinta desde el primer cuadro en la siguiente carga (AcentoInicial).
+    const guardado = persona ? valorAcentoGuardado(persona, tema, acento, tinta) : null;
+    if (guardado) document.cookie = `${COOKIE_ACENTO}=${guardado}; path=/; max-age=31536000; samesite=lax`;
+  }, [persona, tema, tono, colorPropio]);
 
   return (
     <FondoEscena

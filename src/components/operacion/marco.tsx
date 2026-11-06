@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 
 import { salirOperacion } from "@/app/operacion/acciones";
+import { AcentoInicial } from "@/components/apariencia/acento-inicial";
 import { AparienciaViva } from "@/components/apariencia/viva";
 import { Logotipo } from "@/components/cromo/logotipo";
 import { SelectorTema } from "@/components/cromo/selector-tema";
@@ -14,6 +15,7 @@ export async function MarcoOperacion({ nombre, personaId, children }: { nombre: 
   const tema = temaDesde((await cookies()).get(COOKIE_TEMA)?.value);
   return (
     <>
+      <AcentoInicial persona={personaId} tema={tema} />
       <AparienciaViva persona={personaId} tema={tema} />
       <div className="operacion-marco">
         <a className="saltar" href="#contenido">Saltar al contenido</a>
