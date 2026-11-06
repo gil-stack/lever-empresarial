@@ -1,0 +1,20 @@
+Asunto: Bienvenido al equipo LEVER
+
+Bienvenido al equipo LEVER, Ana Torres.
+
+Un administrador de LEVER te dio acceso a Operación: clientes, aprobaciones, alertas, comisiones y bitácora.
+
+Para comenzar, define tu contraseña y registra tu segundo factor: una passkey o una app autenticadora. Los dos pasos protegen tu acceso.
+
+Si ya tenías una cuenta con este correo, confirma con tu contraseña y tu segundo factor actuales.
+
+Equipo: LEVER
+Rol: Administración de plataforma
+
+Crear mi acceso:
+https://www.leverpagos.com/invitacion/ejemplo
+
+El enlace sirve una sola vez y vence el 13 de noviembre de 2026 a las 11:30 (hora del centro de México).
+Si no esperabas esta invitación, ignora este correo. Sin abrir el enlace no se activa ningún acceso.
+
+LEVER · Finanzas empresariales en orden. Correo automático, no respondas a esta dirección.

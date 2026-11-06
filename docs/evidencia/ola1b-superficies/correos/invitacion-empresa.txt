@@ -1,0 +1,21 @@
+Asunto: Bienvenido a Altamar Logística | LEVER
+
+Bienvenido a tu nueva plataforma, Laura Méndez.
+
+La cuenta de Altamar Logística está lista. Como administrador, puedes invitar a tu equipo, configurar las reglas de gasto y revisar cada decisión.
+
+Para comenzar, define tu contraseña y registra tu segundo factor: una passkey o una app autenticadora. Los dos pasos protegen tu acceso.
+
+Desde tu primer ingreso, cada comprobante y cada aprobación queda en el expediente correcto.
+
+Razón social: Altamar Logística
+RFC: ALO180312AB1
+Rol: Administrador
+
+Crear mi acceso:
+https://www.leverpagos.com/invitacion/ejemplo
+
+El enlace sirve una sola vez y vence el 13 de noviembre de 2026 a las 11:30 (hora del centro de México).
+Si no esperabas este correo, ignóralo. Sin abrir el enlace no se activa ningún acceso.
+
+LEVER · Finanzas empresariales en orden. Correo automático, no respondas a esta dirección.
