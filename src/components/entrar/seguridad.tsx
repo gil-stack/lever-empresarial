@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useActionState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { startRegistration } from "@simplewebauthn/browser";
 import type { PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/browser";
 
@@ -50,12 +51,20 @@ export function Seguridad({
   const [error, setError] = useState<string | null>(null);
   const [alta, setAlta] = useState<{ qr: string; semilla: string } | null>(null);
   const [codigos, setCodigos] = useState<string[] | null>(null);
+  const router = useRouter();
   // El servidor también puede pedirlo: el factor venció mientras la página estaba abierta.
   const [pideConfirmar, setPideConfirmar] = useState(false);
   const [confirmado, enviarCodigo, pendiente] = useActionState(confirmarTotpDeCuenta, FACTOR_INICIAL);
   const reautenticar = pideConfirmar || !confirmacion.reciente || (confirmado.tipo === "error" && confirmado.codigo === "reautenticacion_requerida");
 
-  if (codigos) return <CodigosDeRespaldo codigos={codigos} destino="/entrar/seguridad" />;
+  if (codigos) {
+    // Vuelve a esta misma página y relee cuántos códigos quedan.
+    const volver = () => {
+      setCodigos(null);
+      router.refresh();
+    };
+    return <CodigosDeRespaldo codigos={codigos} alTerminar={volver} />;
+  }
 
   function rechazo(resultado: { mensaje: string; codigo?: string }) {
     setError(resultado.mensaje);

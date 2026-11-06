@@ -5,9 +5,21 @@ import { useState } from "react";
 import { abrirPortal } from "@/app/entrar/acciones";
 import { BotonEnviar } from "@/components/sistema/boton-enviar";
 
-/** Se muestran una vez. En la base solo queda el hash. */
-export function CodigosDeRespaldo({ codigos, destino }: { codigos: string[]; destino: string }) {
+/**
+ * Se muestran una vez. En la base solo queda el hash. Al entrar, `destino` abre el portal; desde
+ * Seguridad, `alTerminar` vuelve a la misma página (abrirPortal solo lleva a la consola o al teléfono).
+ */
+export function CodigosDeRespaldo({
+  codigos,
+  ...salida
+}: { codigos: string[] } & ({ destino: string } | { alTerminar: () => void })) {
   const [guardados, setGuardados] = useState(false);
+  const confirmacion = (
+    <label className="campo-confirmacion">
+      <input type="checkbox" checked={guardados} onChange={(evento) => setGuardados(evento.target.checked)} />
+      Ya los guardé en un lugar seguro
+    </label>
+  );
   return (
     <div>
       <p className="arco-kicker">Guárdalos ahora</p>
@@ -20,16 +32,24 @@ export function CodigosDeRespaldo({ codigos, destino }: { codigos: string[]; des
           <li key={codigo}>{codigo}</li>
         ))}
       </ul>
-      <form action={abrirPortal}>
-        <input type="hidden" name="siguiente" value={destino} />
-        <label className="campo-confirmacion">
-          <input type="checkbox" checked={guardados} onChange={(evento) => setGuardados(evento.target.checked)} />
-          Ya los guardé en un lugar seguro
-        </label>
-        <div className="acciones">
-          <BotonEnviar disabled={!guardados}>Entrar al portal</BotonEnviar>
-        </div>
-      </form>
+      {"alTerminar" in salida ? (
+        <>
+          {confirmacion}
+          <div className="acciones">
+            <button type="button" className="boton" disabled={!guardados} onClick={salida.alTerminar}>
+              Volver a Seguridad
+            </button>
+          </div>
+        </>
+      ) : (
+        <form action={abrirPortal}>
+          <input type="hidden" name="siguiente" value={salida.destino} />
+          {confirmacion}
+          <div className="acciones">
+            <BotonEnviar disabled={!guardados}>Entrar al portal</BotonEnviar>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
