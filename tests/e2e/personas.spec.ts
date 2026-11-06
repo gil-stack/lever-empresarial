@@ -191,9 +191,14 @@ test("recorrido completo de colaboradores, presupuesto, nómina, tarjeta y baja"
   await page.locator("#q").fill("Operativo");
   await page.getByRole("button", { name: "Aplicar filtros" }).click();
   await expect(page.locator("tbody tr")).toHaveCount(1);
-  await page.getByRole("button", { name: "Secciones", exact: true }).click();
-  await page.getByRole("radio", { name: "Oscuro", exact: true }).check();
+  // El tema se elige en Apariencia, desde el menú de la cuenta, y se regresa al directorio filtrado.
+  const directorio = page.url();
+  await page.locator(".cuenta .menu-desplegable-boton").click();
+  await page.getByRole("menuitem", { name: "Apariencia", exact: true }).click();
+  await page.locator(".temas").getByRole("button", { name: "Oscuro", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-tema", "oscuro");
-  await page.getByRole("button", { name: "Cerrar", exact: true }).click();
+  await page.goto(directorio);
+  await expect(page.locator("html")).toHaveAttribute("data-tema", "oscuro");
+  await expect(page.locator("tbody tr")).toHaveCount(1);
   await captura(page, "07-directorio-movil-oscuro");
 });
