@@ -1,6 +1,8 @@
 /* Superficie de personal SOFIPO. Usa los tokens compartidos, sin tocar la consola. */
 
 .operacion-marco {
+  position: relative;
+  z-index: 1;
   min-height: 100dvh;
   display: grid;
   grid-template-columns: 236px minmax(0, 1fr);

@@ -29,7 +29,7 @@ export default async function PaginaTopes() {
     }
   }
   return (
-    <MarcoTelefono actual="/telefono/topes" empresaId={ctx?.empresa?.id ?? null} consola={puede(ctx, "cliente.consola.ver")} resumen={puede(ctx, "cliente.resumen.ver")} variasEmpresas={Boolean(ctx && ctx.empresas.length > 1)}>
+    <MarcoTelefono actual="/telefono/topes" empresaId={ctx?.empresa?.id ?? null} personaId={ctx?.persona.id} consola={puede(ctx, "cliente.consola.ver")} resumen={puede(ctx, "cliente.resumen.ver")} variasEmpresas={Boolean(ctx && ctx.empresas.length > 1)}>
       {carga.tipo === "lista" ? <Topes topes={carga.topes} /> : <EstadoTelefono tipo={carga.tipo} />}
     </MarcoTelefono>
   );

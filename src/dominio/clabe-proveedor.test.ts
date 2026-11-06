@@ -154,10 +154,11 @@ describe("la CLABE vive en la consola y no en el teléfono", () => {
     assert.match(cambio, /digitos.length >= 18/);
     assert.match(cambio, /Esa CLABE no cierra/);
     assert.equal(telefonoCuerpo.includes("CLABE"), false);
-    assert.doesNotMatch(telefonoCuerpo, /El saldo vive/);
+    assert.equal(telefonoCuerpo.includes("PIE_REGULATORIO"), false);
     assert.match(telefonoCuerpo, /marca-app/);
     assert.match(telefonoCuerpo, /pie-app/);
-    assert.match(marco, /El saldo vive con el participante de la CLABE/);
+    assert.match(marco, /Sociedad Financiera Popular supervisada por la CNBV/);
+    assert.match(marco, /Lever Empresas es una marca comercial y no es entidad financiera/);
     assert.equal(panel.includes("•"), false);
     assert.doesNotMatch(panel, /SPEI|transferir|Pagar/);
   });

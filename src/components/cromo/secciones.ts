@@ -3,16 +3,15 @@ import type { ReactNode } from "react";
 import { enEmpresa } from "@/nucleo/rutas";
 
 import {
-  IconoAlta,
-  IconoConsola,
+  IconoConfiguracion,
+  IconoInicio,
   IconoLista,
   IconoPersonas,
   IconoPendientes,
   IconoPolitica,
   IconoPoliza,
-  IconoPrecios,
   IconoProveedores,
-  IconoEntrar,
+  IconoTelefono,
 } from "./iconos";
 import type { puertasDe } from "./puertas";
 
@@ -26,12 +25,9 @@ export type Contador = { valor: number; etiqueta: string };
  * La navegación lateral entera. Las puertas llegan de `puertasDe`. Cada enlace
  * lleva la empresa en la ruta: elegirla no autoriza nada. El título de cada
  * grupo lo lee el lector de pantalla; a la vista los separa un filete.
+ * Cambiar de empresa vive en la tarjeta de la empresa y en el menú de la persona.
  */
-export function seccionesDe(
-  puertas: ReturnType<typeof puertasDe>,
-  empresaId: string | null,
-  variasEmpresas: boolean,
-): GrupoDeSecciones[] {
+export function seccionesDe(puertas: ReturnType<typeof puertasDe>, empresaId: string | null): GrupoDeSecciones[] {
   const seccion = (ruta: string, etiqueta: string, Icono: () => ReactNode): Seccion => ({
     ruta,
     href: enEmpresa(empresaId, ruta),
@@ -39,7 +35,7 @@ export function seccionesDe(
     Icono,
   });
   const operacion = [
-    ...(puertas.resumen ? [seccion("/consola", "Inicio", IconoConsola)] : []),
+    ...(puertas.resumen ? [seccion("/consola", "Inicio", IconoInicio)] : []),
     ...(puertas.consola ? [seccion("/consola/pendientes", "Pendientes", IconoPendientes)] : []),
     ...(puertas.politica ? [seccion("/consola/politica", "Política", IconoPolitica)] : []),
     ...(puertas.proveedores ? [seccion("/consola/proveedores", "Proveedores", IconoProveedores)] : []),
@@ -48,9 +44,8 @@ export function seccionesDe(
     ...(puertas.poliza ? [seccion("/consola/poliza", "Póliza", IconoPoliza)] : []),
   ];
   const cuenta = [
-    ...(puertas.configuracion ? [seccion("/consola/configuracion", "Configuración", IconoPrecios)] : []),
-    ...(puertas.telefono ? [seccion("/telefono", "Teléfono", IconoEntrar)] : []),
-    ...(variasEmpresas ? [seccion("/empresas", "Cambiar de empresa", IconoAlta)] : []),
+    ...(puertas.configuracion ? [seccion("/consola/configuracion", "Configuración", IconoConfiguracion)] : []),
+    ...(puertas.telefono ? [seccion("/telefono", "Teléfono", IconoTelefono)] : []),
   ];
   return [
     ...(operacion.length > 0 ? [{ titulo: "Operación", secciones: operacion }] : []),

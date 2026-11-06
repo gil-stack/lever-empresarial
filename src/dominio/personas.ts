@@ -601,6 +601,11 @@ const ETIQUETA_ROL: Record<RolCuenta, string> = {
   finanzas: "Finanzas",
 };
 
+/** El nombre de un rol tal como lo lee la persona (por ejemplo, en el menú de su cuenta). */
+export function etiquetaDelRol(rol: RolCuenta): string {
+  return ETIQUETA_ROL[rol];
+}
+
 export function pistaDelRol(rol: RolCuenta | ""): string {
   if (rol === "contador") return "Ve el maestro. No tiene la acción de liberar.";
   if (rol === "liberador") {
