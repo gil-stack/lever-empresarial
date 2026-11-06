@@ -1,0 +1,27 @@
+[
+  {
+    "nombre": "Operación: entrada con contraseña y TOTP",
+    "ok": true,
+    "detalle": "http://localhost:4802/operacion"
+  },
+  {
+    "nombre": "tema en <html>",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Operación: Clientes",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Operación: Salir",
+    "ok": true,
+    "detalle": "http://localhost:4802/operacion/entrar"
+  },
+  {
+    "nombre": "sin errores de consola",
+    "ok": true,
+    "detalle": ""
+  }
+]

@@ -1,0 +1,179 @@
+{
+  "oscuro": {
+    "medidos": 54,
+    "minimo": 5.34,
+    "fallas": [],
+    "porColor": {
+      "#edf0ed": {
+        "textos": 17,
+        "minimo": 10.33,
+        "fondo": "#3d3631",
+        "ejemplo": "/precios «Oscuro»"
+      },
+      "#bdbab8": {
+        "textos": 15,
+        "minimo": 8.15,
+        "fondo": "#2a211e",
+        "ejemplo": "/entrar «Claro»"
+      },
+      "#aeaba9": {
+        "textos": 6,
+        "minimo": 8.17,
+        "fondo": "#18110f",
+        "ejemplo": "/precios «Portal de clientes»"
+      },
+      "#0c0b0b": {
+        "textos": 4,
+        "minimo": 17.48,
+        "fondo": "#f1f2ee",
+        "ejemplo": "/entrar «Continuar»"
+      },
+      "#ffffff": {
+        "textos": 2,
+        "minimo": 18.58,
+        "fondo": "#111318",
+        "ejemplo": "/ «Ver demo»"
+      },
+      "#656b75": {
+        "textos": 5,
+        "minimo": 5.37,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Saldo de la empresa»"
+      },
+      "#17191d": {
+        "textos": 3,
+        "minimo": 17.6,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «$125,450»"
+      },
+      "#2e333b": {
+        "textos": 1,
+        "minimo": 12.71,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Cómo funciona»"
+      },
+      "#39734a": {
+        "textos": 1,
+        "minimo": 5.34,
+        "fondo": "#f5faf6",
+        "ejemplo": "/ «Al día»"
+      }
+    }
+  },
+  "claro": {
+    "medidos": 54,
+    "minimo": 4.97,
+    "fallas": [],
+    "porColor": {
+      "#141312": {
+        "textos": 17,
+        "minimo": 10.66,
+        "fondo": "#c7c4be",
+        "ejemplo": "/entrar «Tema»"
+      },
+      "#4f4a45": {
+        "textos": 15,
+        "minimo": 4.97,
+        "fondo": "#c5c3bc",
+        "ejemplo": "/precios «Acceso seguro a tu empresa»"
+      },
+      "#57524d": {
+        "textos": 6,
+        "minimo": 6.23,
+        "fondo": "#ece6de",
+        "ejemplo": "/esta-no-existe «Error 404»"
+      },
+      "#ffffff": {
+        "textos": 6,
+        "minimo": 17.93,
+        "fondo": "#1b1614",
+        "ejemplo": "/esta-no-existe «Entrar a mi cuenta»"
+      },
+      "#656b75": {
+        "textos": 5,
+        "minimo": 5.37,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Saldo de la empresa»"
+      },
+      "#17191d": {
+        "textos": 3,
+        "minimo": 17.6,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «$125,450»"
+      },
+      "#2e333b": {
+        "textos": 1,
+        "minimo": 12.71,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Cómo funciona»"
+      },
+      "#39734a": {
+        "textos": 1,
+        "minimo": 5.34,
+        "fondo": "#f5faf6",
+        "ejemplo": "/ «Al día»"
+      }
+    }
+  },
+  "lever": {
+    "medidos": 54,
+    "minimo": 5.34,
+    "fallas": [],
+    "porColor": {
+      "#fff5f1": {
+        "textos": 17,
+        "minimo": 6.73,
+        "fondo": "#88433a",
+        "ejemplo": "/precios «Lever»"
+      },
+      "#f9d8d0": {
+        "textos": 15,
+        "minimo": 6.73,
+        "fondo": "#7d3128",
+        "ejemplo": "/precios «Oscuro»"
+      },
+      "#f0c8be": {
+        "textos": 6,
+        "minimo": 8.29,
+        "fondo": "#5e1c15",
+        "ejemplo": "/esta-no-existe «Error 404»"
+      },
+      "#0c0b0b": {
+        "textos": 4,
+        "minimo": 17.48,
+        "fondo": "#f1f2ee",
+        "ejemplo": "/entrar «Continuar»"
+      },
+      "#ffffff": {
+        "textos": 2,
+        "minimo": 18.58,
+        "fondo": "#111318",
+        "ejemplo": "/ «Ver demo»"
+      },
+      "#656b75": {
+        "textos": 5,
+        "minimo": 5.37,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Saldo de la empresa»"
+      },
+      "#17191d": {
+        "textos": 3,
+        "minimo": 17.6,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «$125,450»"
+      },
+      "#2e333b": {
+        "textos": 1,
+        "minimo": 12.71,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Cómo funciona»"
+      },
+      "#39734a": {
+        "textos": 1,
+        "minimo": 5.34,
+        "fondo": "#f5faf6",
+        "ejemplo": "/ «Al día»"
+      }
+    }
+  }
+}

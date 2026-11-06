@@ -1,0 +1,82 @@
+[
+  {
+    "nombre": "escena del marco viva (movimiento encendido)",
+    "ok": true,
+    "detalle": "vivo"
+  },
+  {
+    "nombre": "tema cambia al instante",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "cookie de tema",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "escena quieta al apagar el movimiento",
+    "ok": true,
+    "detalle": "quieto"
+  },
+  {
+    "nombre": "tras recargar: tema Claro",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "tras recargar: escena Halo",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "tras recargar: tono Arena",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "tras recargar: fondo animado apagado",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "tras recargar: luz apagada",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "«Tu color» queda elegido",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "«Tu color» cambia el acento",
+    "ok": true,
+    "detalle": "#756d63 → #397c62"
+  },
+  {
+    "nombre": "el tema viaja a Inicio",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Lever oculta la paleta",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "movimiento encendido otra vez: escena viva",
+    "ok": true,
+    "detalle": "vivo"
+  },
+  {
+    "nombre": "prefers-reduced-motion: escena quieta",
+    "ok": true,
+    "detalle": "quieto"
+  },
+  {
+    "nombre": "sin errores de consola",
+    "ok": true,
+    "detalle": ""
+  }
+]

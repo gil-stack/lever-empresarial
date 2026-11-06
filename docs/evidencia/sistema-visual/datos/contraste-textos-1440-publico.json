@@ -1,0 +1,197 @@
+{
+  "oscuro": {
+    "medidos": 61,
+    "minimo": 5.34,
+    "fallas": [],
+    "porColor": {
+      "#edf0ed": {
+        "textos": 17,
+        "minimo": 11.07,
+        "fondo": "#39312e",
+        "ejemplo": "/precios «Oscuro»"
+      },
+      "#bdbab8": {
+        "textos": 15,
+        "minimo": 8.29,
+        "fondo": "#2a1f1d",
+        "ejemplo": "/entrar «Claro»"
+      },
+      "#aeaba9": {
+        "textos": 6,
+        "minimo": 7.49,
+        "fondo": "#221a17",
+        "ejemplo": "/precios «Portal de clientes»"
+      },
+      "#0c0b0b": {
+        "textos": 4,
+        "minimo": 17.48,
+        "fondo": "#f1f2ee",
+        "ejemplo": "/entrar «Continuar»"
+      },
+      "#60656d": {
+        "textos": 5,
+        "minimo": 5.87,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Preguntas»"
+      },
+      "#17191d": {
+        "textos": 4,
+        "minimo": 17.6,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «$125,450»"
+      },
+      "#ffffff": {
+        "textos": 2,
+        "minimo": 18.58,
+        "fondo": "#111318",
+        "ejemplo": "/ «Ver demo»"
+      },
+      "#656b75": {
+        "textos": 6,
+        "minimo": 5.37,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «.00 MXN»"
+      },
+      "#2e333b": {
+        "textos": 1,
+        "minimo": 12.71,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Cómo funciona»"
+      },
+      "#39734a": {
+        "textos": 1,
+        "minimo": 5.34,
+        "fondo": "#f5faf6",
+        "ejemplo": "/ «Al día»"
+      }
+    }
+  },
+  "claro": {
+    "medidos": 61,
+    "minimo": 5.34,
+    "fallas": [],
+    "porColor": {
+      "#141312": {
+        "textos": 17,
+        "minimo": 10.83,
+        "fondo": "#c7c6bf",
+        "ejemplo": "/entrar «Claro»"
+      },
+      "#4f4a45": {
+        "textos": 15,
+        "minimo": 5.72,
+        "fondo": "#d2d1cb",
+        "ejemplo": "/entrar «Lever»"
+      },
+      "#57524d": {
+        "textos": 6,
+        "minimo": 6.23,
+        "fondo": "#ece6de",
+        "ejemplo": "/esta-no-existe «Error 404»"
+      },
+      "#ffffff": {
+        "textos": 6,
+        "minimo": 17.93,
+        "fondo": "#1b1614",
+        "ejemplo": "/esta-no-existe «Entrar a mi cuenta»"
+      },
+      "#60656d": {
+        "textos": 5,
+        "minimo": 5.87,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Preguntas»"
+      },
+      "#17191d": {
+        "textos": 4,
+        "minimo": 17.6,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «$125,450»"
+      },
+      "#656b75": {
+        "textos": 6,
+        "minimo": 5.37,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «.00 MXN»"
+      },
+      "#2e333b": {
+        "textos": 1,
+        "minimo": 12.71,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Cómo funciona»"
+      },
+      "#39734a": {
+        "textos": 1,
+        "minimo": 5.34,
+        "fondo": "#f5faf6",
+        "ejemplo": "/ «Al día»"
+      }
+    }
+  },
+  "lever": {
+    "medidos": 61,
+    "minimo": 5.34,
+    "fallas": [],
+    "porColor": {
+      "#fff5f1": {
+        "textos": 17,
+        "minimo": 7.14,
+        "fondo": "#824039",
+        "ejemplo": "/entrar «Lever»"
+      },
+      "#f9d8d0": {
+        "textos": 15,
+        "minimo": 6.82,
+        "fondo": "#7b3128",
+        "ejemplo": "/precios «Claro»"
+      },
+      "#f0c8be": {
+        "textos": 6,
+        "minimo": 7.88,
+        "fondo": "#61211a",
+        "ejemplo": "/precios «Portal de clientes»"
+      },
+      "#0c0b0b": {
+        "textos": 4,
+        "minimo": 17.48,
+        "fondo": "#f1f2ee",
+        "ejemplo": "/entrar «Continuar»"
+      },
+      "#60656d": {
+        "textos": 5,
+        "minimo": 5.87,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Preguntas»"
+      },
+      "#17191d": {
+        "textos": 4,
+        "minimo": 17.6,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «$125,450»"
+      },
+      "#ffffff": {
+        "textos": 2,
+        "minimo": 18.58,
+        "fondo": "#111318",
+        "ejemplo": "/ «Ver demo»"
+      },
+      "#656b75": {
+        "textos": 6,
+        "minimo": 5.37,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «.00 MXN»"
+      },
+      "#2e333b": {
+        "textos": 1,
+        "minimo": 12.71,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Cómo funciona»"
+      },
+      "#39734a": {
+        "textos": 1,
+        "minimo": 5.34,
+        "fondo": "#f5faf6",
+        "ejemplo": "/ «Al día»"
+      }
+    }
+  }
+}
