@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { aprobarRecuperacionAccion, rechazarRecuperacionAccion } from "@/app/operacion/acciones-recuperaciones";
+import { decidirRecuperacionAccion } from "@/app/operacion/acciones-recuperaciones";
 import { ConfirmarIdentidad } from "@/components/entrar/confirmar-identidad";
 import { IconoSeguridad } from "@/components/cromo/iconos";
 import { fechaHora } from "@/components/operacion/formato";
@@ -45,7 +45,7 @@ export default async function RecuperacionesOperacion({ searchParams }: { search
           detalle: <span className="operacion-detalle">{solicitud.motivo}</span>,
           contexto: [solicitud.correo, fechaHora(solicitud.solicitadaEn)],
           acciones: (
-            <form action={aprobarRecuperacionAccion} className="operacion-decision-forma">
+            <form action={decidirRecuperacionAccion} className="operacion-decision-forma">
               <input type="hidden" name="id" value={solicitud.id} />
               <div className="campo">
                 <label htmlFor={`verificacion-${solicitud.id}`}>Cómo verificaste la identidad</label>
@@ -65,7 +65,7 @@ export default async function RecuperacionesOperacion({ searchParams }: { search
                 />
               </div>
               <div className="operacion-decision-botones">
-                <BotonEnviar className="boton-texto" formAction={rechazarRecuperacionAccion} name="decision" value="rechazar" data-atajo="rechazar">
+                <BotonEnviar className="boton-texto" name="decision" value="rechazar" data-atajo="rechazar">
                   Rechazar
                 </BotonEnviar>
                 <BotonEnviar name="decision" value="aprobar" data-atajo="aprobar">
