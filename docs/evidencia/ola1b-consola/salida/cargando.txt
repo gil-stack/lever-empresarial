@@ -1,0 +1,14 @@
+OK    95-cargando oscuro 1440: la sección dice «Cargando…» y el marco se queda
+OK    95-cargando oscuro 1440: la barra y el lateral siguen visibles
+OK    95-cargando oscuro 1440: al llegar, se pinta Política
+OK    95-cargando oscuro 1440: sin errores de consola
+OK    95-cargando claro 1440: la sección dice «Cargando…» y el marco se queda
+OK    95-cargando claro 1440: la barra y el lateral siguen visibles
+OK    95-cargando claro 1440: al llegar, se pinta Política
+OK    95-cargando claro 1440: sin errores de consola
+OK    95-cargando lever 1440: la sección dice «Cargando…» y el marco se queda
+OK    95-cargando lever 1440: la barra y el lateral siguen visibles
+OK    95-cargando lever 1440: al llegar, se pinta Política
+OK    95-cargando lever 1440: sin errores de consola
+
+12 de 12 comprobaciones en verde.

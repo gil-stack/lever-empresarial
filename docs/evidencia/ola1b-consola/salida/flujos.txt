@@ -1,0 +1,64 @@
+OK    flujo 1: el botón se desactiva y dice «Enviando…» con aria-busy · [{"disabled":true,"busy":"true","texto":"Enviando…"},{"disabled":false,"busy":null,"texto":"Dar de alta"}]
+OK    flujo 1: doble clic deja un proveedor, una CLABE y un asiento · proveedores=1 clabes=1 bitácora=1
+OK    flujo 1: sin errores de consola
+OK    flujo 2: el botón se desactiva con aria-busy mientras se guarda · [{"disabled":true,"busy":"true","texto":"Enviando…"},{"disabled":true,"busy":null,"texto":"Revisar y solicitar"}]
+OK    flujo 2: doble clic deja una cuenta por pagar, una solicitud y sus dos archivos (XML y PDF) · cargos=1 solicitudes=1 documentos=2
+OK    flujo 2: el XML guardado se descarga del almacén privado · HTTP 200
+OK    flujo 2: quien solicita no puede autorizar su propio pago
+OK    flujo 2: sin errores de consola
+OK    flujo 11: «^Autoriza (un pago|\d+ pagos)» aparece y «Revisar pagos» lleva a su pantalla · /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    flujo 3: «Autorizar para pagar» se desactiva y dice «Enviando…» · [{"disabled":true,"busy":"true","texto":"Enviando…"}]
+OK    flujo 3: «Rechazar» no anuncia que envía cuando se oprimió «Autorizar»
+OK    flujo 3: doble clic de otra persona deja una sola autorización · estado=listo_para_pagar autorizaciones=1
+OK    flujo 3: sin errores de consola
+OK    flujo 4: «Rechazar» se desactiva y dice «Enviando…» · [{"disabled":true,"busy":"true","texto":"Enviando…"}]
+OK    flujo 4: doble clic deja un solo rechazo con su motivo · rechazos=1
+OK    flujo 4: sin errores de consola (rechazo)
+OK    flujo 4: sin motivo no se cancela
+OK    flujo 4: «Confirmar cancelación» se desactiva y dice «Enviando…» · [{"disabled":true,"busy":"true","texto":"Enviando…"}]
+OK    flujo 4: doble clic deja una sola cancelación con su motivo · cancelaciones=1 motivo=Se reprograma con el proveedor
+OK    flujo 4: sin errores de consola (cancelación)
+OK    flujo 11: «Crea la primera área» aparece y «Crear área» lleva a su pantalla · /c/7cbcf41c-e2d8-4550-94c4-28b22bf59e50/consola/personas/areas
+OK    flujo 5: tras el error, el presupuesto escrito sigue en el campo · valor=ciento cincuenta mil
+OK    flujo 5: el error del presupuesto queda ligado a su campo · aria-describedby=centroPresupuesto-pista centroPresupuesto-error
+OK    flujo 5: «Crear área» se desactiva y dice «Guardando…» · [{"disabled":true,"busy":"true","texto":"Guardando…"},{"disabled":false,"busy":null,"texto":"Crear área"}]
+OK    flujo 5: doble clic deja una sola área · áreas=1
+OK    flujo 11: «Da de alta al primer colaborador» aparece y «Dar de alta» lleva a su pantalla · /c/7cbcf41c-e2d8-4550-94c4-28b22bf59e50/consola/personas/nueva
+OK    flujo 5: «Dar de alta colaborador» se desactiva y dice «Guardando expediente…» · [{"disabled":true,"busy":"true","texto":"Guardando expediente…"},{"disabled":false,"busy":null,"texto":"Dar de alta colaborador"}]
+OK    flujo 5: doble clic deja una persona, una nómina y un asiento de alta · personas=1 nóminas=1 altas=1
+OK    flujo 5: sin errores de consola
+OK    flujo 6: sin segundo factor reciente, la CLABE no cambia
+OK    flujo 6: sin errores de consola (rechazo)
+OK    flujo 6: «Cambiar CLABE de nómina» se desactiva y dice «Guardando…» · [{"disabled":true,"busy":"true","texto":"Guardando…"},{"disabled":false,"busy":null,"texto":"Cambiar CLABE de nómina"}]
+OK    flujo 6: tras volver a entrar, doble clic deja un solo cambio y la anterior en el historial · vigente=014180655012345674 historial=2 cambios=1
+OK    flujo 6: sin errores de consola (cambio)
+OK    flujo 11: «^Prepara el lote de nómina del » aparece y «Preparar nómina» lleva a su pantalla · /c/7cbcf41c-e2d8-4550-94c4-28b22bf59e50/consola/personas/nomina
+OK    flujo 7: «Preparar nómina» se desactiva y dice «Preparando…» · [{"disabled":true,"busy":"true","texto":"Preparando…"},{"disabled":true,"busy":null,"texto":"Preparar nómina vencida"}]
+OK    flujo 7: doble clic deja un solo lote con su renglón · lotes=1 renglones=1 total=1250000
+OK    flujo 7: sin errores de consola
+OK    flujo 8: tras el error, el plazo escrito sigue en el campo · valor=muchos
+OK    flujo 8: el error del plazo queda ligado a su campo · aria-describedby=aviso-plazo-empresa
+OK    flujo 8: «Guardar el plazo» se desactiva y dice «Guardando…» · [{"disabled":true,"busy":"true","texto":"Guardando…"},{"disabled":false,"busy":null,"texto":"Guardar el plazo"}]
+OK    flujo 8: doble clic guarda el plazo una sola vez · días=7 asientos nuevos=1
+OK    flujo 8: «Agregar categoría» se desactiva mientras guarda · [{"disabled":true,"busy":"true","texto":"Guardando…"},{"disabled":false,"busy":null,"texto":"Agregar categoría"}]
+OK    flujo 8: doble clic crea una sola categoría y la forma queda lista para otra · categorías=1
+OK    flujo 8: sin errores de consola
+OK    flujo 9: «Guardar el listado» se desactiva y dice «Descargando…» · [{"disabled":true,"busy":"true","texto":"Descargando…"},{"disabled":false,"busy":null,"texto":"Guardar el listado"}]
+OK    flujo 9: doble clic no guarda dos copias · copias antes=1 después=1 · aviso=No se guardóNo se pudo leer el listado que publica el SAT. No quedó una copia nueva.
+OK    flujo 9: sin errores de consola (copia)
+OK    flujo 9: la consulta de un RFC responde con su situación · No aparece en la lista 69-B.
+OK    flujo 9: sin errores de consola (consulta)
+OK    flujo 10: «Plan» abre su pantalla con un solo h1 · /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan
+OK    flujo 10: «Póliza» abre su pantalla con un solo h1 · /c/33333333-3333-4333-8333-333333333333/consola/poliza
+OK    flujo 10: «Apariencia» abre su pantalla con un solo h1 · /c/33333333-3333-4333-8333-333333333333/consola/apariencia
+OK    flujo 10: «Seguridad» abre su pantalla con un solo h1 · /entrar/seguridad
+OK    flujo 10: sin errores de consola
+OK    flujo 11: «^Falta(n)? (una|dos) personas? autorizadas? para liberar» aparece y «Revisar accesos» lleva a su pantalla · /c/7cbcf41c-e2d8-4550-94c4-28b22bf59e50/consola/personas
+OK    flujo 11: «Crea la primera categoría» aparece y «Configurar política» lleva a su pantalla · /c/7cbcf41c-e2d8-4550-94c4-28b22bf59e50/consola/politica
+OK    flujo 11: «Registra el primer proveedor» aparece y «Configurar proveedores» lleva a su pantalla · /c/7cbcf41c-e2d8-4550-94c4-28b22bf59e50/consola/proveedores
+OK    flujo 11: «Revisa el plan de esta empresa» aparece y «Ver plan» lleva a su pantalla · /c/7cbcf41c-e2d8-4550-94c4-28b22bf59e50/consola/configuracion/plan
+OK    flujo 11: sin errores de consola (Altamar)
+OK    flujo 11: «categorías? sin tope escrito» aparece y «Revisar topes» lleva a su pantalla · /c/33333333-3333-4333-8333-333333333333/consola/politica
+OK    flujo 11: sin errores de consola (Taller)
+
+62 de 62 comprobaciones en verde.

@@ -1,0 +1,62 @@
+[
+  {
+    "ok": true,
+    "texto": "95-cargando oscuro 1440: la sección dice «Cargando…» y el marco se queda",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando oscuro 1440: la barra y el lateral siguen visibles",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando oscuro 1440: al llegar, se pinta Política",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando claro 1440: la sección dice «Cargando…» y el marco se queda",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando claro 1440: la barra y el lateral siguen visibles",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando claro 1440: al llegar, se pinta Política",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando lever 1440: la sección dice «Cargando…» y el marco se queda",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando lever 1440: la barra y el lateral siguen visibles",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando lever 1440: al llegar, se pinta Política",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando lever 1440: sin errores de consola",
+    "detalle": ""
+  }
+]

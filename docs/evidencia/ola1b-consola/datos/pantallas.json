@@ -1,0 +1,7202 @@
+[
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 1440: tabulación en orden del documento",
+    "detalle": "16 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 1440: tabulación en orden del documento",
+    "detalle": "18 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 1440: tabulación en orden del documento",
+    "detalle": "26 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 1440: tabulación en orden del documento",
+    "detalle": "26 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 1440: tabulación en orden del documento",
+    "detalle": "19 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 1440: tabulación en orden del documento",
+    "detalle": "3 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 1440: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo-proveedor"
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 1440: tabulación en orden del documento",
+    "detalle": "25 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo"
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 1440: tabulación en orden del documento",
+    "detalle": "21 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 1440: tabulación en orden del documento",
+    "detalle": "20 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 1440: tabulación en orden del documento",
+    "detalle": "22 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/nueva"
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 1440: tabulación en orden del documento",
+    "detalle": "17 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/areas"
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 1440: tabulación en orden del documento",
+    "detalle": "20 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/nomina"
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 1440: tabulación en orden del documento",
+    "detalle": "16 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 1440: tabulación en orden del documento",
+    "detalle": "18 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 1440: tabulación en orden del documento",
+    "detalle": "21 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 1440: tabulación en orden del documento",
+    "detalle": "21 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 1440: tabulación en orden del documento",
+    "detalle": "15 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 1440: responde en su ruta",
+    "detalle": "200 /consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 1440: tabulación en orden del documento",
+    "detalle": "7 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 1440: tabulación en orden del documento",
+    "detalle": "17 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 1440: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 1440: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 390: tabulación en orden del documento",
+    "detalle": "8 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 390: tabulación en orden del documento",
+    "detalle": "10 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 390: tabulación en orden del documento",
+    "detalle": "18 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 390: tabulación en orden del documento",
+    "detalle": "18 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 390: tabulación en orden del documento",
+    "detalle": "11 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 390: tabulación en orden del documento",
+    "detalle": "3 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo-proveedor"
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 390: tabulación en orden del documento",
+    "detalle": "17 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo"
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 390: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 390: tabulación en orden del documento",
+    "detalle": "12 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 390: tabulación en orden del documento",
+    "detalle": "14 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/nueva"
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 390: tabulación en orden del documento",
+    "detalle": "9 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/areas"
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 390: tabulación en orden del documento",
+    "detalle": "12 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/nomina"
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 390: tabulación en orden del documento",
+    "detalle": "8 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 390: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 390: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 390: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 390: tabulación en orden del documento",
+    "detalle": "7 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 390: responde en su ruta",
+    "detalle": "200 /consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 390: tabulación en orden del documento",
+    "detalle": "7 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 390: tabulación en orden del documento",
+    "detalle": "9 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 390: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 390: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 1440: tabulación en orden del documento",
+    "detalle": "16 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 1440: tabulación en orden del documento",
+    "detalle": "18 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 1440: tabulación en orden del documento",
+    "detalle": "26 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 1440: tabulación en orden del documento",
+    "detalle": "26 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 1440: tabulación en orden del documento",
+    "detalle": "19 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 1440: tabulación en orden del documento",
+    "detalle": "3 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 1440: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo-proveedor"
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 1440: tabulación en orden del documento",
+    "detalle": "25 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo"
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 1440: tabulación en orden del documento",
+    "detalle": "21 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 1440: tabulación en orden del documento",
+    "detalle": "20 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 1440: tabulación en orden del documento",
+    "detalle": "22 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/nueva"
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 1440: tabulación en orden del documento",
+    "detalle": "17 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/areas"
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 1440: tabulación en orden del documento",
+    "detalle": "20 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/nomina"
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 1440: tabulación en orden del documento",
+    "detalle": "16 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 1440: tabulación en orden del documento",
+    "detalle": "18 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 1440: tabulación en orden del documento",
+    "detalle": "21 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 1440: tabulación en orden del documento",
+    "detalle": "21 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 1440: tabulación en orden del documento",
+    "detalle": "15 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 1440: responde en su ruta",
+    "detalle": "200 /consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 1440: tabulación en orden del documento",
+    "detalle": "7 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 1440: tabulación en orden del documento",
+    "detalle": "17 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 1440: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 1440: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 390: tabulación en orden del documento",
+    "detalle": "8 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 390: tabulación en orden del documento",
+    "detalle": "10 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 390: tabulación en orden del documento",
+    "detalle": "18 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 390: tabulación en orden del documento",
+    "detalle": "18 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 390: tabulación en orden del documento",
+    "detalle": "11 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 390: tabulación en orden del documento",
+    "detalle": "3 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo-proveedor"
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 390: tabulación en orden del documento",
+    "detalle": "17 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo"
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 390: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 390: tabulación en orden del documento",
+    "detalle": "12 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 390: tabulación en orden del documento",
+    "detalle": "14 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/nueva"
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 390: tabulación en orden del documento",
+    "detalle": "9 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/areas"
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 390: tabulación en orden del documento",
+    "detalle": "12 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/nomina"
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 390: tabulación en orden del documento",
+    "detalle": "8 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 390: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 390: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 390: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 390: tabulación en orden del documento",
+    "detalle": "7 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 390: responde en su ruta",
+    "detalle": "200 /consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 390: tabulación en orden del documento",
+    "detalle": "7 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 390: tabulación en orden del documento",
+    "detalle": "9 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 390: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 390: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 1440: tabulación en orden del documento",
+    "detalle": "16 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 1440: tabulación en orden del documento",
+    "detalle": "18 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 1440: tabulación en orden del documento",
+    "detalle": "26 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 1440: tabulación en orden del documento",
+    "detalle": "26 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 1440: tabulación en orden del documento",
+    "detalle": "19 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 1440: tabulación en orden del documento",
+    "detalle": "3 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 1440: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo-proveedor"
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 1440: tabulación en orden del documento",
+    "detalle": "25 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo"
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 1440: tabulación en orden del documento",
+    "detalle": "21 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 1440: tabulación en orden del documento",
+    "detalle": "20 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 1440: tabulación en orden del documento",
+    "detalle": "22 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/nueva"
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 1440: tabulación en orden del documento",
+    "detalle": "17 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/areas"
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 1440: tabulación en orden del documento",
+    "detalle": "20 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/nomina"
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 1440: tabulación en orden del documento",
+    "detalle": "16 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 1440: tabulación en orden del documento",
+    "detalle": "18 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 1440: tabulación en orden del documento",
+    "detalle": "21 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 1440: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 1440: tabulación en orden del documento",
+    "detalle": "21 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 1440: tabulación en orden del documento",
+    "detalle": "15 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 1440: responde en su ruta",
+    "detalle": "200 /consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 1440: tabulación en orden del documento",
+    "detalle": "7 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 1440: tabulación en orden del documento",
+    "detalle": "17 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 1440: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 1440: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 1440: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 1440: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 1440: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 390: tabulación en orden del documento",
+    "detalle": "8 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-pendientes lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 390: tabulación en orden del documento",
+    "detalle": "10 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-pendientes-altamar lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 390: tabulación en orden del documento",
+    "detalle": "18 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-proveedores-pagos lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 390: tabulación en orden del documento",
+    "detalle": "18 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-proveedores-directorio lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 390: tabulación en orden del documento",
+    "detalle": "11 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-proveedores-agenda lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 390: tabulación en orden del documento",
+    "detalle": "3 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-proveedores-detalle-pago lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-proveedores-expediente lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo-proveedor"
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 390: tabulación en orden del documento",
+    "detalle": "17 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-proveedores-alta lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo"
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 390: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-proveedores-nuevo-pago lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 390: tabulación en orden del documento",
+    "detalle": "12 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-proveedores-vacio lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 390: tabulación en orden del documento",
+    "detalle": "14 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-personas-directorio lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/nueva"
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 390: tabulación en orden del documento",
+    "detalle": "9 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-personas-alta lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/areas"
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 390: tabulación en orden del documento",
+    "detalle": "12 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-personas-areas lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/personas/nomina"
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 390: tabulación en orden del documento",
+    "detalle": "8 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "33-personas-nomina lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 390: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-personas-sin-permiso lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 390: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-politica lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 390: responde en su ruta",
+    "detalle": "200 /c/6ee94fec-49b7-47ce-b2de-21e2aa31fe35/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 390: tabulación en orden del documento",
+    "detalle": "13 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-politica-altamar lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 390: tabulación en orden del documento",
+    "detalle": "7 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "50-lista-69b lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 390: responde en su ruta",
+    "detalle": "200 /consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 390: tabulación en orden del documento",
+    "detalle": "7 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "51-lista-69b-sofipo lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 390: tabulación en orden del documento",
+    "detalle": "9 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "60-configuracion lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 390: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "61-configuracion-plan lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 390: tabulación en orden del documento",
+    "detalle": "5 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "70-poliza lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "80-sin-permiso-proveedores lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "81-sin-permiso-personas lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "82-sin-permiso-politica lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "83-sin-permiso-lista-69b lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "84-sin-permiso-configuracion lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "85-sin-permiso-plan lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "86-sin-permiso-poliza lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 390: campos con etiqueta",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 390: tabulación en orden del documento",
+    "detalle": "4 paradas "
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 390: foco visible en cada parada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "87-pendientes-finanzas lever 390: sin errores de consola",
+    "detalle": ""
+  }
+]

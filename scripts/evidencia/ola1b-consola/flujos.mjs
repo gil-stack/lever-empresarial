@@ -70,6 +70,9 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
   const solo = process.env.FLUJOS ? process.env.FLUJOS.split(",").map(Number) : null;
   const corre = (n) => !solo || solo.includes(n);
   renovarSesiones();
+  // Autorizar un pago y cambiar una CLABE exigen un segundo factor de menos de 30 minutos.
+  const edad = Number(sql("select coalesce(extract(epoch from now() - min(segundo_factor_en)), 0)::int from sessions"));
+  if (edad > 25 * 60) throw new Error(`Las sesiones sembradas probaron su segundo factor hace ${Math.round(edad / 60)} minutos: vuelve a correr preparar.ts justo antes de los flujos.`);
   const estado = {};
 
   // ---------- 1. Alta de proveedor con CLABE ----------
@@ -270,7 +273,10 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
     const id = estado.colaboradora || sql(`select id from employees where company_id = '${EMPRESA_ALTAMAR}' and nombre = '${COLABORADORA}'`);
     const ruta = `${BASE}${ALTAMAR}/consola/personas/${id}`;
     {
-      // La sesión sembrada probó su segundo factor hace más de 30 minutos.
+      // Envejece el segundo factor de la sesión de Laura a 31 minutos. El trigger de sessions no deja
+      // reescribirlo; en la base desechable, el dueño lo salta solo en esta transacción (como seguridad-cuentas.mjs).
+      sql(`begin; set local session_replication_role = replica;
+           update sessions set segundo_factor_en = now() - interval '31 minutes' where user_id = '${ENTORNO.LAURA_ID}'; commit;`);
       const { nav, p, errores } = await abrir({ quien: "laura" });
       await p.goto(ruta);
       const hoja = p.locator("section:has(#expediente-clabe)");

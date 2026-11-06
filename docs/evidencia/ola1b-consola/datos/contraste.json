@@ -1,0 +1,32 @@
+[
+  {
+    "ok": true,
+    "texto": "contraste oscuro 1440: 961 textos, mínimo 4.95",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "contraste oscuro 390: 461 textos, mínimo 6.12",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "contraste claro 1440: 961 textos, mínimo 4.96",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "contraste claro 390: 461 textos, mínimo 4.55",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "contraste lever 1440: 961 textos, mínimo 4.86",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "contraste lever 390: 461 textos, mínimo 5.36",
+    "detalle": ""
+  }
+]

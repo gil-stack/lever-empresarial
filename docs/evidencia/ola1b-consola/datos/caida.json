@@ -1,0 +1,1082 @@
+[
+  {
+    "ok": true,
+    "texto": "90-error-pendientes oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes oscuro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores oscuro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas oscuro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nomina"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina oscuro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica oscuro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b oscuro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion oscuro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan oscuro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza oscuro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza oscuro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes oscuro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores oscuro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas oscuro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nomina"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina oscuro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica oscuro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b oscuro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion oscuro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan oscuro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza oscuro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza oscuro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes claro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores claro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas claro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nomina"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina claro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica claro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b claro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion claro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan claro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza claro 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza claro 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes claro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores claro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas claro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nomina"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina claro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica claro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b claro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion claro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan claro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza claro 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza claro 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes lever 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores lever 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas lever 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nomina"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina lever 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica lever 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b lever 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion lever 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan lever 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza lever 1440: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza lever 1440: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes lever 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-pendientes lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores lever 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-proveedores lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas lever 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nomina"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina lever 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-personas-nomina lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/politica"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica lever 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-politica lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b lever 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-lista-69b lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion lever 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan lever 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-configuracion-plan lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza lever 390: responde en su ruta",
+    "detalle": "200 /c/33333333-3333-4333-8333-333333333333/consola/poliza"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza lever 390: dice que no se pudo, sin cifras supuestas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-poliza lever 390: sin errores de consola",
+    "detalle": ""
+  }
+]
