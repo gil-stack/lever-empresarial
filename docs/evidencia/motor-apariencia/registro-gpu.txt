@@ -1,0 +1,118 @@
+
+== Capturas principales 1440 ==
+  lienzo 1224x765 para 1440x900 CSS a DPR 1 (esperado 1224 de ancho)
+  ok - escala 0.85 y DPR máximo 2 (1224 px)
+  ok - el fondo es aria-hidden
+  ok - botón Bruma queda presionado
+  ok - el panel muestra Bruma
+  ok - botón Cristal queda presionado
+  ok - el panel muestra Cristal
+  ok - botón Halo queda presionado
+  ok - el panel muestra Halo
+  ok - botón Calma queda presionado
+  ok - el panel muestra Calma
+  ok - botón Flujo queda presionado
+  ok - el panel muestra Flujo
+  ok - botón Duna queda presionado
+  ok - el panel muestra Duna
+  ok - tema Claro presionado
+  ok - data-tema=claro en el fondo
+  ok - tema Lever presionado
+  ok - data-tema=lever en el fondo
+  ok - sin errores ni avisos en consola (ninguno)
+
+== Capturas principales 390 ==
+  lienzo 663x1435 para 390x844 CSS a DPR 3 (esperado 663 de ancho)
+  ok - escala 0.85 y DPR máximo 2 (663 px)
+  ok - el fondo es aria-hidden
+  ok - botón Bruma queda presionado
+  ok - el panel muestra Bruma
+  ok - botón Cristal queda presionado
+  ok - el panel muestra Cristal
+  ok - botón Halo queda presionado
+  ok - el panel muestra Halo
+  ok - botón Calma queda presionado
+  ok - el panel muestra Calma
+  ok - botón Flujo queda presionado
+  ok - el panel muestra Flujo
+  ok - botón Duna queda presionado
+  ok - el panel muestra Duna
+  ok - tema Claro presionado
+  ok - data-tema=claro en el fondo
+  ok - tema Lever presionado
+  ok - data-tema=lever en el fondo
+  ok - sin errores ni avisos en consola (ninguno)
+
+== Recorrido de controles (1440x900) ==
+  ok - arranca vivo
+  ok - pinta con GPU: si
+  ok - tono Papel Lever presionado
+  ok - tono Tinta Lever presionado
+  ok - tono Coral Lever presionado
+  ok - tono Papel blanco presionado
+  ok - tono Arena presionado
+  ok - tono Aluminio presionado
+  ok - tono Tu color presionado
+  acentos en oscuro: {"Papel Lever":"#FF5A4E","Tinta Lever":"#FF5A4E","Coral Lever":"#FF5A4E","Papel blanco":"#FF5A4E","Arena":"#E9DAC5","Aluminio":"#FF5A4E","Tu color":"#A79CFF"}
+  ok - acento de Arena y Tu color como en el diseño
+  ok - Tu color #3CC48F da acento #5fcfa3 (mkPal)
+  ok - en Claro el acento de Tu color se oscurece para contrastar (#397c62, luminancia 0.162)
+  ok - al apagar «Fondo animado» pinta un solo cuadro quieto (1)
+  ok - con «Fondo animado» apagado los cuadros no avanzan en 2 s (1 → 1); rAF de la página +0
+  ok - quieto, cambiar de escena pinta exactamente un cuadro
+  ok - al encenderlo vuelve a vivo y avanza
+  ok - luz dinámica apagada
+  ok - luz dinámica encendida y el cursor se mueve sin errores
+  ok - tras recargar se recupera Halo, Oscuro y Papel Lever
+  localStorage: {"tema":"oscuro","escena":"halo","tono":"petroleoC","luzDinamica":true,"movimiento":true,"colorPropio":"#3CC48F"}
+  ok - pestaña oculta → pausa
+  ok - en pausa no pinta (0 → 0)
+  ok - pestaña visible → vivo otra vez
+  ok - Cerrar quita el lienzo
+  ok - tras cerrar no queda rAF corriendo (+0 en 1.5 s)
+  ok - sin errores ni avisos en consola (ninguno)
+
+== prefers-reduced-motion: reduce ==
+  ok - con reducir movimiento arranca quieto
+  ok - pinta un solo cuadro quieto (1)
+  ok - los cuadros no avanzan en 2 s (1 → 1)
+  ok - ningún requestAnimationFrame en 2 s (+0)
+  ok - «Fondo animado» sigue encendido: manda el sistema
+  ok - cambiar de escena pinta un solo cuadro quieto
+  ok - sin errores ni avisos en consola (ninguno)
+
+== Comparación contra el diseño original (quieto, 1440x900) ==
+  ok - diseño: apMot apagado desde su panel
+  ok - diseño: apDyn apagado desde su panel
+  bruma        diferencia media 0.004/255 · píxeles con >8 niveles 0% · máx 1
+  cristal      diferencia media 0/255 · píxeles con >8 niveles 0% · máx 1
+  halo         diferencia media 0/255 · píxeles con >8 niveles 0% · máx 0
+  calma        diferencia media 0/255 · píxeles con >8 niveles 0% · máx 0
+  flujo        diferencia media 0/255 · píxeles con >8 niveles 0% · máx 1
+  duna         diferencia media 0/255 · píxeles con >8 niveles 0% · máx 0
+  bruma-claro  diferencia media 0/255 · píxeles con >8 niveles 0% · máx 0
+  bruma-lever  diferencia media 0/255 · píxeles con >8 niveles 0% · máx 1
+  ok - app sin errores ni avisos en consola (ninguno)
+  avisos del diseño original (no son nuestros): 0
+
+== Costo por cuadro (gpu, 1440x900, DPR 1) ==
+  renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version)
+  bruma    lienzo 1224x765 · 0.14 ms por dibujo · 20.0 dibujos/s · rAF 59.9/s · vivo
+  cristal  lienzo 1224x765 · 0.13 ms por dibujo · 20.0 dibujos/s · rAF 59.9/s · vivo
+  halo     lienzo 1224x765 · 0.15 ms por dibujo · 20.0 dibujos/s · rAF 60.2/s · vivo
+  calma    lienzo 1224x765 · 0.14 ms por dibujo · 20.0 dibujos/s · rAF 59.9/s · vivo
+  flujo    lienzo 1224x765 · 0.12 ms por dibujo · 20.0 dibujos/s · rAF 59.9/s · vivo
+  duna     lienzo 1224x765 · 0.16 ms por dibujo · 20.0 dibujos/s · rAF 59.9/s · vivo
+  estado al final: vivo
+  ok - sin errores ni avisos en consola (ninguno)
+
+== Costo por cuadro (gpu, 1440x900, DPR 2) ==
+  renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version)
+  bruma    lienzo 2448x1530 · 0.15 ms por dibujo · 20.0 dibujos/s · rAF 59.9/s · vivo
+  cristal  lienzo 2448x1530 · 0.13 ms por dibujo · 20.0 dibujos/s · rAF 60.2/s · vivo
+  halo     lienzo 2448x1530 · 0.12 ms por dibujo · 20.0 dibujos/s · rAF 59.9/s · vivo
+  calma    lienzo 2448x1530 · 0.11 ms por dibujo · 20.0 dibujos/s · rAF 59.9/s · vivo
+  flujo    lienzo 2448x1530 · 0.12 ms por dibujo · 19.9 dibujos/s · rAF 60.2/s · vivo
+  duna     lienzo 2448x1530 · 0.16 ms por dibujo · 20.0 dibujos/s · rAF 59.9/s · vivo
+  estado al final: vivo
+  ok - sin errores ni avisos en consola (ninguno)
