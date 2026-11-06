@@ -220,6 +220,9 @@ if (!movil || tema === "oscuro") {
     "con el panel abierto el fondo no se desplaza",
     (await p.evaluate(() => document.documentElement.style.overflow)) === "hidden" && (await p.evaluate(() => scrollY)) === desplazamiento,
   );
+  // En móvil la rueda movía la vista (visualViewport) aunque la página estuviera bloqueada, y el panel se salía.
+  const vista = await p.evaluate(() => ({ arriba: visualViewport.offsetTop, panel: document.querySelector("dialog.panel-detalle").getBoundingClientRect().top }));
+  comprobar("con el panel abierto la vista no se mueve y el panel sigue arriba", vista.arriba === 0 && vista.panel === 0, JSON.stringify(vista));
   await foto("70-muestrario-panel");
   await p.keyboard.press("Escape");
   await p.waitForTimeout(300);

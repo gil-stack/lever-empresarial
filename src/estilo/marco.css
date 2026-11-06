@@ -711,7 +711,8 @@ div.empresa-lateral:not(.menu-desplegable),
     margin: 40px var(--margen) 28px;
     padding-top: 18px;
     border-top: 1px solid var(--line);
-    color: var(--tx3);
+    /* --tx2: al final de la página el texto va directo sobre la escena (en Claro, --tx3 daba 4.29). */
+    color: var(--tx2);
     font-size: 11px;
     line-height: 1.6;
     white-space: normal;

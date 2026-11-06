@@ -2066,6 +2066,8 @@ h1 + .rfc-cuenta {
   background: color-mix(in srgb, var(--s1) 94%, transparent);
   color: var(--tx);
   padding: 0;
+  /* Con la página bloqueada, la rueda o el dedo no pasan a la página: en móvil movían la vista y el panel se salía. */
+  overscroll-behavior: contain;
 }
 
 .dialogo::backdrop,

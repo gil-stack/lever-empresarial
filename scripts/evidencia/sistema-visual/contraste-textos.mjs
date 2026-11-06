@@ -25,7 +25,7 @@ const informe = {};
 for (const tema of (process.env.TEMAS ?? "oscuro,claro,lever").split(",")) {
   const nav = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
   const ctx = await nav.newContext({ viewport: { width: ancho, height: alto }, reducedMotion: "reduce", deviceScaleFactor: 1 });
-  await ctx.addCookies([...(process.env.SIN_SESION ? [] : [{ name: "sesion", value: "a".repeat(43), url: BASE }]), { name: "tema", value: tema, url: BASE }]);
+  await ctx.addCookies([...(process.env.SIN_SESION ? [] : [{ name: "sesion", value: process.env.SESION ?? "a".repeat(43), url: BASE }]), { name: "tema", value: tema, url: BASE }]);
   const p = await ctx.newPage();
   const fallas = [];
   const porColor = {};
@@ -109,4 +109,4 @@ for (const tema of (process.env.TEMAS ?? "oscuro,claro,lever").split(",")) {
   for (const f of fallas.slice(0, 40)) console.log(`  ${f.contraste} < ${f.umbral} · ${f.ruta} · «${f.texto}» .${f.clase} ${f.color}${f.alfa < 1 ? `@${f.alfa}` : ""} sobre ${f.fondo} (${f.tamano}px)`);
   await nav.close();
 }
-writeFileSync(`${SV}/contraste-textos-${ancho}${process.env.SIN_SESION ? "-publico" : ""}.json`, JSON.stringify(informe, null, 2));
+writeFileSync(`${SV}/contraste-textos-${ancho}${process.env.SUFIJO ?? (process.env.SIN_SESION ? "-publico" : "")}.json`, JSON.stringify(informe, null, 2));
