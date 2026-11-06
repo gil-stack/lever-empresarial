@@ -15,9 +15,10 @@ export const metadata: Metadata = {
 const AVISOS: Record<string, string> = {
   entrada_vencida: "Esa entrada venció. Vuelve a escribir tu contraseña.",
   entrada_agotada: "Demasiados intentos. Vuelve a escribir tu contraseña.",
-  // Solo llega aquí tras pedir la recuperación del segundo factor: no sale ningún enlace, la revisa Operación.
+  // Solo llega aquí tras pedir la recuperación del segundo factor: no sale ningún enlace, la revisa Operación
+  // y al aprobarla se manda el aviso de seguridad `recuperacion_aprobada` (src/server/autenticacion/servicio.ts).
   recuperacion:
-    "Tu solicitud quedó en revisión. Lever confirma tu identidad por videollamada o en persona antes de aprobarla; los factores que ya tienes no cambian.",
+    "Tu solicitud quedó en revisión. Antes de aprobarla, el equipo de Lever confirma que eres tú. Te avisamos por correo cuando quede aprobada.",
 };
 
 export default async function PaginaEntrar({
