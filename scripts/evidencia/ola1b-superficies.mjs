@@ -736,7 +736,24 @@ const hex = (c) => `#${c.slice(0, 3).map((v) => Math.round(v).toString(16).padSt
 const mezcla = (frente, fondo, a) => frente.map((v, i) => v * a + fondo[i] * (1 - a));
 
 /** El método del #50: color calculado de cada texto contra los píxeles reales de su fondo, con el texto oculto. */
+/** Contraste de toda la página: se mide pantalla por pantalla bajando hasta el final (tope de 10 pantallas). */
 async function medirContraste(page, ruta) {
+  const total = { medidos: 0, minimo: Infinity, fallas: [] };
+  const alto = await page.evaluate(() => document.documentElement.scrollHeight);
+  const vista = page.viewportSize().height;
+  for (let y = 0, n = 0; y < alto && n < 10; y += vista, n += 1) {
+    await page.evaluate((destino) => window.scrollTo(0, destino), y);
+    await page.waitForTimeout(150);
+    const parcial = await medirPantalla(page, ruta);
+    total.medidos += parcial.medidos;
+    total.minimo = Math.min(total.minimo, parcial.minimo);
+    total.fallas.push(...parcial.fallas);
+  }
+  await page.evaluate(() => window.scrollTo(0, 0));
+  return total;
+}
+
+async function medirPantalla(page, ruta) {
   const textos = await page.evaluate(() => {
     const salida = [];
     const recorrido = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
@@ -750,10 +767,15 @@ async function medirContraste(page, ruta) {
       if (el.closest("[aria-hidden=true], .logotipo, .solo-lector, script, style, noscript, option, [disabled], .saltar, svg, dialog:not([open])")) continue;
       const estilo = getComputedStyle(el);
       if (estilo.visibility === "hidden" || Number(estilo.opacity) === 0) continue;
+      // La respuesta de un <details> cerrado conserva caja pero no se pinta.
+      if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
       const rango = document.createRange();
       rango.selectNodeContents(nodo);
       const r = rango.getBoundingClientRect();
       if (r.width < 2 || r.height < 2 || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) continue;
+      // Un texto tapado (bajo la barra fija al bajar) no se ve: no se mide contra lo que lo tapa.
+      const encima = document.elementFromPoint(Math.min(innerWidth - 1, r.x + r.width / 2), Math.min(innerHeight - 1, Math.max(0, r.y + r.height / 2)));
+      if (encima && !el.contains(encima) && !encima.contains(el)) continue;
       let opacidad = 1;
       for (let a = el; a; a = a.parentElement) opacidad *= Number(getComputedStyle(a).opacity);
       const n = estilo.color.match(/[\d.]+/g).map(Number);
@@ -803,6 +825,53 @@ async function revisarPantalla(page, ruta) {
   );
   exigir(h1 === 1, `${ruta}: un solo h1`);
   exigir(sinEtiqueta.length === 0, `${ruta}: todos los campos con etiqueta${sinEtiqueta.length ? ` (faltan: ${sinEtiqueta})` : ""}`);
+
+  // Tabulación: nadie se adelanta con tabindex positivo, el Tab avanza en el orden del documento
+  // y cada parada se ve (contorno o sombra de foco distintos a los de reposo).
+  const positivos = await page.locator("[tabindex]:not([tabindex='0']):not([tabindex^='-'])").count();
+  exigir(positivos === 0, `${ruta}: sin tabindex positivo`);
+  await page.evaluate(() => {
+    document.activeElement?.blur();
+    window.scrollTo(0, 0);
+  });
+  // Sin transiciones mientras se mide: el estilo de foco se lee completo, no a medio camino.
+  const quietud = await page.addStyleTag({ content: "*, *::before, *::after { transition: none !important; }" });
+  const paradas = [];
+  for (let i = 0; i < 25; i += 1) {
+    await page.keyboard.press("Tab");
+    const parada = await page.evaluate(() => {
+      const el = document.activeElement;
+      if (!el || el === document.body) return null;
+      const todos = [...document.querySelectorAll("*")];
+      const estilo = getComputedStyle(el);
+      const contorno = estilo.outlineStyle !== "none" && parseFloat(estilo.outlineWidth) > 0;
+      const sombra = estilo.boxShadow !== "none";
+      // Un campo sin contorno propio puede marcar el foco en su caja (:focus-within): se compara
+      // la caja con el foco y sin él.
+      const caja = el.parentElement;
+      const huella = () => (caja ? ["borderColor", "boxShadow", "outlineStyle", "backgroundColor"].map((p) => getComputedStyle(caja)[p]).join("|") : "");
+      let enLaCaja = false;
+      if (!contorno && !sombra && caja) {
+        const conFoco = huella();
+        el.blur();
+        enLaCaja = huella() !== conFoco;
+        el.focus();
+      }
+      return {
+        indice: todos.indexOf(el),
+        nombre: (el.getAttribute("aria-label") || el.textContent || el.getAttribute("name") || el.tagName).trim().slice(0, 40),
+        visible: contorno || sombra || enLaCaja,
+      };
+    });
+    if (!parada || paradas.some((p) => p.indice === parada.indice)) break;
+    paradas.push(parada);
+  }
+  await quietud.evaluate((estilo) => estilo.remove());
+  await page.evaluate(() => document.activeElement?.blur());
+  const fueraDeOrden = paradas.filter((p, i) => i > 0 && p.indice < paradas[i - 1].indice);
+  const sinFoco = paradas.filter((p) => !p.visible).map((p) => p.nombre);
+  exigir(paradas.length > 0 && fueraDeOrden.length === 0, `${ruta}: el Tab recorre ${paradas.length} paradas en el orden del documento`);
+  exigir(sinFoco.length === 0, `${ruta}: cada parada del Tab tiene foco visible${sinFoco.length ? ` (sin foco: ${sinFoco.join(", ")})` : ""}`);
 }
 
 async function capturas() {
