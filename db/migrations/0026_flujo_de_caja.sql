@@ -216,6 +216,8 @@ CREATE TABLE recurring_obligations (
   proxima_fecha date NOT NULL,
   ancla_dia smallint NOT NULL,
   cost_center_id uuid,
+  -- Opcional: quien la factura. Un mes que ya tiene un cargo de ese proveedor no la cuenta otra vez.
+  supplier_id uuid,
   activa boolean NOT NULL DEFAULT true,
   creado_por uuid NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
   creado_en timestamptz NOT NULL DEFAULT now(),
@@ -223,6 +225,8 @@ CREATE TABLE recurring_obligations (
   actualizado_en timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT recurring_obligations_area
     FOREIGN KEY (cost_center_id, company_id) REFERENCES cost_centers (id, company_id) ON DELETE RESTRICT,
+  CONSTRAINT recurring_obligations_proveedor
+    FOREIGN KEY (supplier_id, company_id) REFERENCES suppliers (id, company_id) ON DELETE RESTRICT,
   CONSTRAINT recurring_obligations_concepto CHECK (
     concepto = btrim(concepto) AND char_length(concepto) BETWEEN 1 AND 120 AND concepto !~ '[[:cntrl:]]'
   ),
@@ -236,7 +240,7 @@ CREATE INDEX recurring_obligations_empresa
   ON recurring_obligations (company_id, activa, proxima_fecha, id);
 
 COMMENT ON TABLE recurring_obligations IS
-  'Salida que se repite con la frecuencia y el monto que captura la empresa. proxima_fecha es la base del calendario.';
+  'Salida que se repite con la frecuencia y el monto que captura la empresa. proxima_fecha es la base del calendario. Con supplier_id, el mes que ya tiene un cargo de ese proveedor no la cuenta dos veces.';
 
 CREATE FUNCTION recurring_obligations_revisar()
 RETURNS trigger
@@ -362,6 +366,7 @@ CREATE TABLE weekly_digest_sends (
   intentado_en timestamptz NOT NULL DEFAULT now(),
   terminado_en timestamptz,
   CONSTRAINT weekly_digest_sends_unico UNIQUE (company_id, semana),
+  CONSTRAINT weekly_digest_sends_id_empresa UNIQUE (id, company_id),
   CONSTRAINT weekly_digest_sends_lunes CHECK (extract(isodow FROM semana) = 1),
   CONSTRAINT weekly_digest_sends_estado CHECK (estado IN ('enviando', 'enviado', 'fallido')),
   CONSTRAINT weekly_digest_sends_destinatarios CHECK (destinatarios >= 0),
@@ -404,6 +409,45 @@ CREATE TRIGGER weekly_digest_sends_revisar
 BEFORE INSERT OR UPDATE OR DELETE ON weekly_digest_sends
 FOR EACH ROW EXECUTE FUNCTION weekly_digest_sends_revisar();
 
+-- Una entrega por persona, empresa y semana. La llave de idempotencia del
+-- proveedor de correo dura 24 horas; esta fila no vence, así que cualquier
+-- reintento de la semana salta a quien ya lo recibió. No guarda el correo.
+CREATE TABLE weekly_digest_deliveries (
+  id uuid PRIMARY KEY,
+  company_id uuid NOT NULL REFERENCES companies (id) ON DELETE RESTRICT,
+  semana date NOT NULL,
+  user_id uuid NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  send_id uuid NOT NULL,
+  entregado_en timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT weekly_digest_deliveries_unica UNIQUE (company_id, semana, user_id),
+  CONSTRAINT weekly_digest_deliveries_envio
+    FOREIGN KEY (send_id, company_id) REFERENCES weekly_digest_sends (id, company_id) ON DELETE RESTRICT,
+  CONSTRAINT weekly_digest_deliveries_lunes CHECK (extract(isodow FROM semana) = 1)
+);
+
+COMMENT ON TABLE weekly_digest_deliveries IS
+  'A quién ya le llegó el correo semanal de la empresa en esa semana. Lo escribe la tarea; nunca se reescribe.';
+
+CREATE FUNCTION weekly_digest_deliveries_revisar()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  IF TG_OP <> 'INSERT' THEN
+    RAISE EXCEPTION 'entrega_no_se_reescribe';
+  END IF;
+  IF app_usuario() IS NOT NULL THEN
+    RAISE EXCEPTION 'entrega_solo_del_sistema';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER weekly_digest_deliveries_revisar
+BEFORE INSERT OR UPDATE OR DELETE ON weekly_digest_deliveries
+FOR EACH ROW EXECUTE FUNCTION weekly_digest_deliveries_revisar();
+
 -- Rol de las tareas programadas. Solo lo usa la tarea del correo semanal, ya
 -- autenticada con CRON_SECRET, y solo para pedir los ids de abajo. No lee
 -- tablas: si falta el contexto en una ruta del portal (entrar, recuperar,
@@ -440,6 +484,8 @@ AS $$
   LEFT JOIN employees e ON e.company_id = m.company_id AND e.user_id = m.user_id
   LEFT JOIN weekly_digest_preferences p ON p.company_id = m.company_id AND p.user_id = m.user_id
   WHERE c.estado = 'activa'
+    -- Una empresa de demostración tiene cifras de ejemplo: no se mandan a correos reales.
+    AND NOT c.demostracion
     AND m.estado = 'activa'
     AND r.rol IN ('administrador', 'finanzas', 'contador')
     AND (e.id IS NULL OR e.baja_en IS NULL OR e.baja_en > (timezone('America/Mexico_City', clock_timestamp()))::date)
@@ -477,6 +523,8 @@ BEGIN
     esperada := 'configurar_colchon'; fila_id := NEW.company_id;
   ELSIF TG_TABLE_NAME = 'weekly_digest_preferences' THEN
     esperada := 'preferencia_correo_semanal'; fila_id := NEW.user_id;
+  ELSIF TG_TABLE_NAME = 'weekly_digest_deliveries' THEN
+    esperada := 'correo_semanal_entregado'; fila_id := NEW.id;
   ELSE
     -- weekly_digest_sends: apartar no se audita; cerrar el envío, sí.
     IF NEW.estado = 'enviando' THEN RETURN NULL; END IF;
@@ -507,6 +555,9 @@ FOR EACH ROW EXECUTE FUNCTION flujo_exige_auditoria();
 CREATE CONSTRAINT TRIGGER weekly_digest_sends_auditoria
 AFTER INSERT OR UPDATE ON weekly_digest_sends DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION flujo_exige_auditoria();
+CREATE CONSTRAINT TRIGGER weekly_digest_deliveries_auditoria
+AFTER INSERT ON weekly_digest_deliveries DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION flujo_exige_auditoria();
 
 -- Lectura del flujo: no hace falta otro índice sobre tablas existentes. Medido con
 -- 1,000 cuentas por pagar de la empresa y 20,000 de otra (docs/evidencia/flujo-de-caja):
@@ -520,6 +571,7 @@ GRANT SELECT, INSERT, UPDATE ON recurring_obligations TO plataforma_cliente;
 GRANT SELECT, INSERT, UPDATE ON cash_flow_settings TO plataforma_cliente;
 GRANT SELECT, INSERT, UPDATE ON weekly_digest_preferences TO plataforma_cliente;
 GRANT SELECT, INSERT, UPDATE ON weekly_digest_sends TO plataforma_cliente;
+GRANT SELECT, INSERT ON weekly_digest_deliveries TO plataforma_cliente;
 
 ALTER TABLE cash_balance_declarations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expected_collections ENABLE ROW LEVEL SECURITY;
@@ -527,6 +579,7 @@ ALTER TABLE recurring_obligations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cash_flow_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE weekly_digest_preferences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE weekly_digest_sends ENABLE ROW LEVEL SECURITY;
+ALTER TABLE weekly_digest_deliveries ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY cash_balance_declarations_cliente ON cash_balance_declarations FOR ALL TO plataforma_cliente
   USING (company_id = app_empresa()) WITH CHECK (company_id = app_empresa());
@@ -540,6 +593,8 @@ CREATE POLICY weekly_digest_preferences_cliente ON weekly_digest_preferences FOR
   USING (company_id = app_empresa()) WITH CHECK (company_id = app_empresa());
 CREATE POLICY weekly_digest_sends_cliente ON weekly_digest_sends FOR ALL TO plataforma_cliente
   USING (company_id = app_empresa()) WITH CHECK (company_id = app_empresa());
+CREATE POLICY weekly_digest_deliveries_cliente ON weekly_digest_deliveries FOR ALL TO plataforma_cliente
+  USING (company_id = app_empresa()) WITH CHECK (company_id = app_empresa());
 
 ALTER TABLE cash_balance_declarations FORCE ROW LEVEL SECURITY;
 ALTER TABLE expected_collections FORCE ROW LEVEL SECURITY;
@@ -547,3 +602,4 @@ ALTER TABLE recurring_obligations FORCE ROW LEVEL SECURITY;
 ALTER TABLE cash_flow_settings FORCE ROW LEVEL SECURITY;
 ALTER TABLE weekly_digest_preferences FORCE ROW LEVEL SECURITY;
 ALTER TABLE weekly_digest_sends FORCE ROW LEVEL SECURITY;
+ALTER TABLE weekly_digest_deliveries FORCE ROW LEVEL SECURITY;

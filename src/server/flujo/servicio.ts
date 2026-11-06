@@ -21,6 +21,7 @@ import {
   corteDe,
   escenarioValido,
   movimientosEntre,
+  nominaDeUnaPersona,
   proyectar,
   ventanaDe,
   type Escenario,
@@ -104,13 +105,15 @@ export async function leerFlujoInicio(
   const hoy = hoyDe(deps);
   return leerCon(conEmpresa, async (consulta) => {
     const { fuentes } = await proyeccionCon(consulta, conEmpresa.empresa.id, hoy);
-    const real = proyectar(fuentes);
+    const opciones = { detalleNomina: puede(conEmpresa, "cliente.nomina.detalle.ver") };
+    const real = proyectar(fuentes, null, opciones);
     const escenario: Escenario | null = pedido.mover === undefined ? null : escenarioValido(real, pedido.mover, pedido.fecha);
-    const presupuestos = calcularPresupuestos(
-      await leerFuentesPresupuesto(consulta, conEmpresa.empresa.id, hoy, primeroDelMes(hoy), ultimoDelMes(hoy)),
+    const presupuestos = presupuestosPara(
+      conEmpresa,
+      calcularPresupuestos(await leerFuentesPresupuesto(consulta, conEmpresa.empresa.id, hoy, primeroDelMes(hoy), ultimoDelMes(hoy))),
     );
     return {
-      proyeccion: escenario ? proyectar(fuentes, escenario) : real,
+      proyeccion: escenario ? proyectar(fuentes, escenario, opciones) : real,
       real: escenario ? real : null,
       presupuestos,
       cobros: await leerTotalesCobro(consulta, conEmpresa.empresa.id, hoy),
@@ -121,6 +124,8 @@ export async function leerFlujoInicio(
 
 export type VistaSaldo = {
   hoy: string;
+  /** El id de la próxima declaración: un envío repetido del formulario no crea otra. */
+  altaId: string;
   historial: DeclaracionVista[];
   colchonCentavos: number;
   correoSemanal: boolean;
@@ -137,6 +142,7 @@ export async function leerVistaSaldo(ctx: ContextoDeTenant | null | undefined, d
   const conEmpresa = exigir(ctx, "cliente.flujo.ver");
   return leerCon(conEmpresa, async (consulta) => ({
     hoy: hoyDe(deps),
+    altaId: idDeAlta(),
     historial: await leerHistorialSaldo(consulta, conEmpresa.empresa.id),
     colchonCentavos: (await leerSaldo(consulta, conEmpresa.empresa.id)).colchonCentavos,
     correoSemanal: await leerPreferenciaCorreo(consulta, conEmpresa.empresa.id, conEmpresa.persona.id),
@@ -146,6 +152,8 @@ export async function leerVistaSaldo(ctx: ContextoDeTenant | null | undefined, d
 
 export type VistaCobros = {
   hoy: string;
+  /** Un id por formulario de alta (a mano y con XML). */
+  altaIds: { manual: string; xml: string };
   cobros: CobroVista[];
   totales: { porCobrar: number; vencidos: number; vencidosCentavos: number };
   puedeEditar: boolean;
@@ -156,6 +164,7 @@ export async function leerVistaCobros(ctx: ContextoDeTenant | null | undefined, 
   const hoy = hoyDe(deps);
   return leerCon(conEmpresa, async (consulta) => ({
     hoy,
+    altaIds: { manual: idDeAlta(), xml: idDeAlta() },
     cobros: await leerCobros(consulta, conEmpresa.empresa.id),
     totales: await leerTotalesCobro(consulta, conEmpresa.empresa.id, hoy),
     puedeEditar: puede(conEmpresa, "cliente.flujo.editar"),
@@ -164,8 +173,24 @@ export async function leerVistaCobros(ctx: ContextoDeTenant | null | undefined, 
 
 export type EventoCalendario = Movimiento & {
   vencido: boolean;
+  /** Pago de nómina de una sola persona visto sin permiso de detalle: el monto no se muestra. */
+  reservado: boolean;
   detalle: readonly (readonly [string, string])[];
 };
+
+/**
+ * Sin permiso de ver el detalle de la nómina, un área cuya nómina es de una sola
+ * persona no se desglosa: su gasto se ve solo como total.
+ */
+function presupuestosPara(ctx: ContextoConEmpresa, presupuestos: Presupuestos): Presupuestos {
+  if (puede(ctx, "cliente.nomina.detalle.ver")) return presupuestos;
+  return {
+    ...presupuestos,
+    areas: presupuestos.areas.map((linea) =>
+      linea.desglose && linea.desglose.nominaPersonas === 1 ? { ...linea, desglose: undefined } : linea,
+    ),
+  };
+}
 
 export type VistaCalendario = {
   hoy: string;
@@ -174,6 +199,9 @@ export type VistaCalendario = {
   proximos: EventoCalendario[];
   obligaciones: ObligacionVista[];
   areas: { id: string; nombre: string }[];
+  proveedores: { id: string; nombre: string }[];
+  /** El id de la próxima obligación. */
+  altaId: string;
   puedeEditar: boolean;
 };
 
@@ -183,10 +211,18 @@ const ESTADO_PAGO: Record<string, string> = {
   sin_solicitud: "Sin solicitud",
 };
 
-function eventosDe(fuentes: FuentesFlujo, extra: Fuentes, desde: string, hasta: string, hoy: string): EventoCalendario[] {
+function eventosDe(
+  fuentes: FuentesFlujo,
+  extra: Fuentes,
+  desde: string,
+  hasta: string,
+  hoy: string,
+  detalleNomina: boolean,
+): EventoCalendario[] {
   const pagos = new Map(extra.pagos.map((pago) => [pago.id, pago]));
   const obligaciones = new Map(extra.obligaciones.map((obligacion) => [obligacion.id, obligacion]));
   const cobros = new Map(extra.cobros.map((cobro) => [cobro.id, cobro]));
+  const cobrados = new Map(extra.cobrados.map((cobro) => [cobro.id, cobro]));
   return movimientosEntre(fuentes, desde, hasta).map((movimiento) => {
     const [, id] = movimiento.clave.split(":");
     const detalle: [string, string][] = [];
@@ -197,14 +233,31 @@ function eventosDe(fuentes: FuentesFlujo, extra: Fuentes, desde: string, hasta: 
       }
     } else if (movimiento.tipo === "obligacion") {
       const obligacion = obligaciones.get(id ?? "");
-      if (obligacion) detalle.push(["Concepto", obligacion.concepto], ["Área", obligacion.areaNombre ?? "Sin área"]);
+      if (obligacion) {
+        detalle.push(["Concepto", obligacion.concepto], ["Área", obligacion.areaNombre ?? "Sin área"]);
+        detalle.push(["Proveedor", obligacion.proveedorNombre ?? "Sin proveedor: si llega como factura, ya cuenta en Pagos a proveedores"]);
+      }
     } else if (movimiento.tipo === "cobro") {
-      const cobro = cobros.get(id ?? "");
+      const cobro = movimiento.cobrado ? cobrados.get(id ?? "") : cobros.get(id ?? "");
       if (cobro) detalle.push(["Cliente", cobro.cliente], ["Concepto", cobro.concepto], ["Referencia", cobro.referencia ?? "Sin referencia"]);
+      if (movimiento.cobrado) detalle.push(["Estado", "Cobrado"]);
     } else {
       detalle.push(["Origen", movimiento.clave.startsWith("lote:") ? "Lote ya preparado en Nómina" : "Calendario de nómina de las personas activas"]);
     }
-    return { ...movimiento, vencido: movimiento.sentido === "entrada" && movimiento.fecha < hoy, detalle };
+    const vencido = movimiento.sentido === "entrada" && !movimiento.cobrado && movimiento.fecha < hoy;
+    if (!detalleNomina && nominaDeUnaPersona(movimiento)) {
+      // El neto de una sola persona: ni el monto ni el conteo.
+      return {
+        ...movimiento,
+        concepto: "Nómina",
+        centavos: 0,
+        personas: undefined,
+        vencido,
+        reservado: true,
+        detalle: [["Monto", "Solo lo ve quien puede ver el detalle de la nómina."]],
+      };
+    }
+    return { ...movimiento, vencido, reservado: false, detalle };
   });
 }
 
@@ -224,13 +277,16 @@ export async function leerVistaCalendario(
     const fin = hasta > proximoFin ? hasta : proximoFin;
     const extra = await leerFuentes(consulta, conEmpresa.empresa.id, inicio, fin);
     const fuentes: FuentesFlujo = { hoy, saldo: null, colchonCentavos: 0, ...extra };
+    const detalleNomina = puede(conEmpresa, "cliente.nomina.detalle.ver");
     return {
       hoy,
       mes,
-      eventos: eventosDe(fuentes, extra, desde, hasta, hoy),
-      proximos: eventosDe(fuentes, extra, hoy, proximoFin, hoy),
+      eventos: eventosDe(fuentes, extra, desde, hasta, hoy, detalleNomina),
+      proximos: eventosDe(fuentes, extra, hoy, proximoFin, hoy, detalleNomina),
       obligaciones: await leerObligaciones(consulta, conEmpresa.empresa.id),
       areas: await leerAreas(consulta, conEmpresa.empresa.id),
+      proveedores: (await leerProveedoresConArea(consulta, conEmpresa.empresa.id)).map(({ id, nombre }) => ({ id, nombre })),
+      altaId: idDeAlta(),
       puedeEditar: puede(conEmpresa, "cliente.flujo.editar"),
     };
   });
@@ -249,8 +305,9 @@ export async function leerVistaPresupuestos(ctx: ContextoDeTenant | null | undef
   const hoy = hoyDe(deps);
   return leerCon(conEmpresa, async (consulta) => ({
     hoy,
-    presupuestos: calcularPresupuestos(
-      await leerFuentesPresupuesto(consulta, conEmpresa.empresa.id, hoy, primeroDelMes(hoy), ultimoDelMes(hoy)),
+    presupuestos: presupuestosPara(
+      conEmpresa,
+      calcularPresupuestos(await leerFuentesPresupuesto(consulta, conEmpresa.empresa.id, hoy, primeroDelMes(hoy), ultimoDelMes(hoy))),
     ),
     proveedores: await leerProveedoresConArea(consulta, conEmpresa.empresa.id),
     areas: await leerAreas(consulta, conEmpresa.empresa.id),
@@ -284,26 +341,58 @@ function exigirValido<T>(resultado: { ok: true; valor: T } | { ok: false; errore
   return resultado.valor;
 }
 
+/**
+ * El id de una alta lo genera la página al pintar el formulario (campo oculto).
+ * Un segundo envío del mismo formulario (doble clic, reintento de red) trae el
+ * mismo id: la fila ya existe y se responde igual, sin otra fila ni otro evento.
+ */
+function exigirAltaId(valor: unknown): string {
+  if (!uuidValido(valor)) throw new ErrorDeDominio("entrada_invalida");
+  return valor.toLowerCase();
+}
+
+type TablaDeAlta = "cash_balance_declarations" | "expected_collections" | "recurring_obligations";
+
+/** ¿La alta ya quedó? Solo cuenta si es de esta empresa (RLS y el filtro); un id ajeno no se acepta. */
+async function altaHecha(consulta: Consulta, tabla: TablaDeAlta, id: string, empresaId: string): Promise<boolean> {
+  const fila = await aplicarSentencia(consulta, `select 1 from ${tabla} where id = $1 and company_id = $2`, [id, empresaId]);
+  return fila.rows.length === 1;
+}
+
+/** Después de un ON CONFLICT (id) DO NOTHING: si no insertó, la fila tiene que ser de esta empresa. */
+async function exigirAltaPropia(consulta: Consulta, tabla: TablaDeAlta, id: string, empresaId: string): Promise<void> {
+  if (!(await altaHecha(consulta, tabla, id, empresaId))) throw new ErrorDeDominio("entrada_invalida");
+}
+
+/** Pide un id nuevo para cada formulario de alta que pinta la página. */
+export function idDeAlta(): string {
+  return randomUUID();
+}
+
 export async function declararSaldo(
   ctx: ContextoDeTenant | null | undefined,
-  entrada: { saldo?: unknown; alDia?: unknown },
+  entrada: { saldo?: unknown; alDia?: unknown; altaId?: unknown },
   deps?: DependenciasFlujo,
 ): Promise<{ id: string }> {
   const conEmpresa = exigir(ctx, "cliente.flujo.editar");
   const valor = exigirValido(validarSaldo(entrada, hoyDe(deps)));
-  const id = randomUUID();
+  const id = exigirAltaId(entrada.altaId);
   await escribir(conEmpresa, deps, async (consulta, c, auditar) => {
+    const insertado = await aplicarSentencia(
+      consulta,
+      `insert into cash_balance_declarations (id, company_id, saldo_centavos, al_dia, declarado_por)
+       values ($1, $2, $3, $4::date, $5)
+       on conflict (id) do nothing
+       returning id`,
+      [id, c.empresa.id, valor.centavos, valor.alDia, c.persona.id],
+    );
+    if (insertado.rows.length === 0) return exigirAltaPropia(consulta, "cash_balance_declarations", id, c.empresa.id);
+    // El evento va después de la fila: el trigger diferido lo exige al confirmar, y un envío repetido no deja otro.
     await auditar(consulta, actorDeCliente(c), {
       accion: "declarar_saldo",
       identificador: id,
       cambio: { saldo_centavos: valor.centavos, al_dia: valor.alDia },
     });
-    await aplicarSentencia(
-      consulta,
-      `insert into cash_balance_declarations (id, company_id, saldo_centavos, al_dia, declarado_por)
-       values ($1, $2, $3, $4::date, $5)`,
-      [id, c.empresa.id, valor.centavos, valor.alDia, c.persona.id],
-    );
   });
   return { id };
 }
@@ -364,23 +453,25 @@ async function insertarCobro(
   consulta: Consulta,
   c: ContextoConEmpresa,
   auditar: Auditar,
+  id: string,
   cobro: CobroManual & { origen: "manual" | "cfdi"; cfdiUuid: string | null },
-): Promise<string> {
-  const id = randomUUID();
+): Promise<void> {
+  const insertado = await aplicarSentencia(
+    consulta,
+    `insert into expected_collections
+       (id, company_id, origen, cliente_nombre, cliente_rfc, concepto, monto_centavos, fecha_probable, referencia, cfdi_uuid, creado_por)
+     values ($1, $2, $3, $4, $5, $6, $7, $8::date, $9, $10, $11)
+     on conflict (id) do nothing
+     returning id`,
+    [id, c.empresa.id, cobro.origen, cobro.clienteNombre, cobro.clienteRfc, cobro.concepto, cobro.montoCentavos,
+      cobro.fechaProbable, cobro.referencia, cobro.cfdiUuid, c.persona.id],
+  );
+  if (insertado.rows.length === 0) return exigirAltaPropia(consulta, "expected_collections", id, c.empresa.id);
   await auditar(consulta, actorDeCliente(c), {
     accion: "registrar_cobro",
     identificador: id,
     cambio: { origen: cobro.origen, monto_centavos: cobro.montoCentavos, fecha_probable: cobro.fechaProbable },
   });
-  await aplicarSentencia(
-    consulta,
-    `insert into expected_collections
-       (id, company_id, origen, cliente_nombre, cliente_rfc, concepto, monto_centavos, fecha_probable, referencia, cfdi_uuid, creado_por)
-     values ($1, $2, $3, $4, $5, $6, $7, $8::date, $9, $10, $11)`,
-    [id, c.empresa.id, cobro.origen, cobro.clienteNombre, cobro.clienteRfc, cobro.concepto, cobro.montoCentavos,
-      cobro.fechaProbable, cobro.referencia, cobro.cfdiUuid, c.persona.id],
-  );
-  return id;
 }
 
 export async function registrarCobro(
@@ -390,8 +481,9 @@ export async function registrarCobro(
 ): Promise<{ id: string }> {
   exigir(ctx, "cliente.flujo.editar");
   const cobro = exigirValido(validarCobroManual(entrada));
-  const id = await escribir(ctx, deps, (consulta, c, auditar) =>
-    insertarCobro(consulta, c, auditar, { ...cobro, origen: "manual", cfdiUuid: null }));
+  const id = exigirAltaId(entrada.altaId);
+  await escribir(ctx, deps, (consulta, c, auditar) =>
+    insertarCobro(consulta, c, auditar, id, { ...cobro, origen: "manual", cfdiUuid: null }));
   return { id };
 }
 
@@ -410,10 +502,11 @@ const MENSAJE_CFDI: Record<string, string> = {
  */
 export async function registrarCobroCfdi(
   ctx: ContextoDeTenant | null | undefined,
-  entrada: { bytes: Uint8Array | null; fechaProbable?: unknown; concepto?: unknown },
+  entrada: { bytes: Uint8Array | null; fechaProbable?: unknown; concepto?: unknown; altaId?: unknown },
   deps?: DependenciasFlujo,
 ): Promise<{ id: string; cliente: string; montoCentavos: number }> {
   const conEmpresa = exigir(ctx, "cliente.flujo.editar");
+  const id = exigirAltaId(entrada.altaId);
   const errores: ErrorFlujo[] = [];
   const fecha = validarFechaProbable(entrada.fechaProbable);
   if (!fecha.ok) errores.push(...fecha.errores);
@@ -437,8 +530,21 @@ export async function registrarCobroCfdi(
   const concepto = conceptoEscrito === "" ? `Factura ${cfdi.referencia}` : textoLimpio(conceptoEscrito, 200);
   if (!concepto) errores.push({ campo: "conceptoXml", mensaje: "El concepto admite hasta 200 caracteres." });
   if (errores.length > 0 || !fecha.ok || !concepto) throw new ErrorDeCaptura(errores);
-  const id = await escribir(conEmpresa, deps, (consulta, c, auditar) =>
-    insertarCobro(consulta, c, auditar, {
+  await escribir(conEmpresa, deps, async (consulta, c, auditar) => {
+    // Un segundo envío del mismo formulario ya encuentra su fila: se responde igual.
+    if (await altaHecha(consulta, "expected_collections", id, c.empresa.id)) return;
+    // La misma factura en otro cobro vivo: el mensaje dice en qué estado está.
+    const previo = await aplicarSentencia(
+      consulta,
+      `select estado from expected_collections
+        where company_id = $1 and cfdi_uuid = $2 and estado <> 'cancelado'
+        limit 1`,
+      [c.empresa.id, cfdi.uuid],
+    );
+    const estado = (previo.rows[0] as { estado?: unknown } | undefined)?.estado;
+    if (estado === "cobrado") throw new ErrorDeDominio("cobro_ya_cobrado");
+    if (estado === "esperado") throw new ErrorDeDominio("cobro_duplicado");
+    await insertarCobro(consulta, c, auditar, id, {
       origen: "cfdi",
       cfdiUuid: cfdi.uuid,
       clienteNombre: cfdi.nombreReceptor.slice(0, 254),
@@ -447,7 +553,8 @@ export async function registrarCobroCfdi(
       montoCentavos: cfdi.totalCentavos,
       fechaProbable: fecha.valor,
       referencia: cfdi.referencia.slice(0, 120),
-    }));
+    });
+  });
   return { id, cliente: cfdi.nombreReceptor, montoCentavos: cfdi.totalCentavos };
 }
 
@@ -503,6 +610,18 @@ async function nombreDeArea(consulta: Consulta, empresaId: string, areaId: strin
   return nombre;
 }
 
+async function nombreDeProveedor(consulta: Consulta, empresaId: string, proveedorId: string | null): Promise<string | null> {
+  if (!proveedorId) return null;
+  const fila = await aplicarSentencia(
+    consulta,
+    "select coalesce(nombre_comercial, razon_social) as nombre from suppliers where company_id = $1 and id = $2",
+    [empresaId, proveedorId],
+  );
+  const nombre = (fila.rows[0] as { nombre?: unknown } | undefined)?.nombre;
+  if (typeof nombre !== "string") throw new ErrorDeDominio("proveedor_ausente");
+  return nombre;
+}
+
 export async function registrarObligacion(
   ctx: ContextoDeTenant | null | undefined,
   entrada: Record<string, unknown>,
@@ -510,21 +629,33 @@ export async function registrarObligacion(
 ): Promise<{ id: string }> {
   exigir(ctx, "cliente.flujo.editar");
   const valor: ObligacionEscrita = exigirValido(validarObligacion(entrada));
-  const id = randomUUID();
+  const id = exigirAltaId(entrada.altaId);
   await escribir(ctx, deps, async (consulta, c, auditar) => {
-    await nombreDeArea(consulta, c.empresa.id, valor.areaId);
+    const area = await nombreDeArea(consulta, c.empresa.id, valor.areaId);
+    const proveedor = await nombreDeProveedor(consulta, c.empresa.id, valor.proveedorId);
+    const insertado = await aplicarSentencia(
+      consulta,
+      `insert into recurring_obligations
+         (id, company_id, concepto, monto_centavos, frecuencia, proxima_fecha, ancla_dia, cost_center_id, supplier_id, creado_por, actualizado_por)
+       values ($1, $2, $3, $4, $5, $6::date, $7, $8, $9, $10, $10)
+       on conflict (id) do nothing
+       returning id`,
+      [id, c.empresa.id, valor.concepto, valor.montoCentavos, valor.frecuencia, valor.proximaFecha, valor.anclaDia, valor.areaId,
+        valor.proveedorId, c.persona.id],
+    );
+    if (insertado.rows.length === 0) return exigirAltaPropia(consulta, "recurring_obligations", id, c.empresa.id);
     await auditar(consulta, actorDeCliente(c), {
       accion: "registrar_obligacion",
       identificador: id,
-      cambio: { monto_centavos: valor.montoCentavos, frecuencia: valor.frecuencia, proxima_fecha: valor.proximaFecha },
+      cambio: {
+        concepto: valor.concepto,
+        monto_centavos: valor.montoCentavos,
+        frecuencia: valor.frecuencia,
+        proxima_fecha: valor.proximaFecha,
+        area: area,
+        proveedor: proveedor,
+      },
     });
-    await aplicarSentencia(
-      consulta,
-      `insert into recurring_obligations
-         (id, company_id, concepto, monto_centavos, frecuencia, proxima_fecha, ancla_dia, cost_center_id, creado_por, actualizado_por)
-       values ($1, $2, $3, $4, $5, $6::date, $7, $8, $9, $9)`,
-      [id, c.empresa.id, valor.concepto, valor.montoCentavos, valor.frecuencia, valor.proximaFecha, valor.anclaDia, valor.areaId, c.persona.id],
-    );
   });
   return { id };
 }
@@ -539,34 +670,50 @@ export async function editarObligacion(
   const id = entrada.id;
   const valor = exigirValido(validarObligacion(entrada));
   await escribir(ctx, deps, async (consulta, c, auditar) => {
-    await nombreDeArea(consulta, c.empresa.id, valor.areaId);
+    const areaNueva = await nombreDeArea(consulta, c.empresa.id, valor.areaId);
+    const proveedorNuevo = await nombreDeProveedor(consulta, c.empresa.id, valor.proveedorId);
     const previo = await aplicarSentencia(
       consulta,
-      `select monto_centavos::text as monto, frecuencia, to_char(proxima_fecha, 'YYYY-MM-DD') as fecha
-         from recurring_obligations where company_id = $1 and id = $2 and activa for update`,
+      `select o.concepto, o.monto_centavos::text as monto, o.frecuencia, to_char(o.proxima_fecha, 'YYYY-MM-DD') as fecha,
+              a.nombre as area, coalesce(s.nombre_comercial, s.razon_social) as proveedor
+         from recurring_obligations o
+         left join cost_centers a on a.id = o.cost_center_id and a.company_id = o.company_id
+         left join suppliers s on s.id = o.supplier_id and s.company_id = o.company_id
+        where o.company_id = $1 and o.id = $2 and o.activa
+        for update of o`,
       [c.empresa.id, id],
     );
-    const fila = previo.rows[0] as { monto: string; frecuencia: string; fecha: string } | undefined;
+    const fila = previo.rows[0] as
+      | { concepto: string; monto: string; frecuencia: string; fecha: string; area: string | null; proveedor: string | null }
+      | undefined;
     if (!fila) throw new ErrorDeDominio("obligacion_inactiva");
+    // Antes y después de todo lo que se puede cambiar; área y proveedor por nombre.
     await auditar(consulta, actorDeCliente(c), {
       accion: "editar_obligacion",
       identificador: id,
       cambio: {
+        concepto_anterior: fila.concepto,
+        concepto_nuevo: valor.concepto,
         monto_anterior: Number(fila.monto),
         monto_nuevo: valor.montoCentavos,
         frecuencia_anterior: fila.frecuencia,
         frecuencia_nueva: valor.frecuencia,
         fecha_anterior: fila.fecha,
         fecha_nueva: valor.proximaFecha,
+        area_anterior: fila.area ?? null,
+        area_nueva: areaNueva,
+        proveedor_anterior: fila.proveedor ?? null,
+        proveedor_nuevo: proveedorNuevo,
       },
     });
     await aplicarSentencia(
       consulta,
       `update recurring_obligations
           set concepto = $3, monto_centavos = $4, frecuencia = $5, proxima_fecha = $6::date, ancla_dia = $7,
-              cost_center_id = $8, actualizado_por = $9, actualizado_en = now()
+              cost_center_id = $8, supplier_id = $9, actualizado_por = $10, actualizado_en = now()
         where company_id = $1 and id = $2 and activa`,
-      [c.empresa.id, id, valor.concepto, valor.montoCentavos, valor.frecuencia, valor.proximaFecha, valor.anclaDia, valor.areaId, c.persona.id],
+      [c.empresa.id, id, valor.concepto, valor.montoCentavos, valor.frecuencia, valor.proximaFecha, valor.anclaDia, valor.areaId,
+        valor.proveedorId, c.persona.id],
     );
   });
 }

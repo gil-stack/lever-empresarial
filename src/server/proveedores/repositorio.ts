@@ -91,6 +91,11 @@ function contexto(consulta: Consulta, companyId: string): ContextoProveedores {
       const resultado = await consulta.query(SQL.rfcOcupado, [companyId, rfc]);
       return resultado.rowCount > 0;
     },
+    async nombreDeArea(areaId) {
+      const resultado = await consulta.query("select nombre from cost_centers where company_id = $1 and id = $2", [companyId, areaId]);
+      const nombre = (resultado.rows[0] as { nombre?: unknown } | undefined)?.nombre;
+      return typeof nombre === "string" ? nombre : null;
+    },
     async leerLista(rfc) {
       const snapshot = await consulta.query(SQL.snapshot, []);
       const fila = snapshot.rows[0] as { id?: unknown; fecha_archivo?: unknown } | undefined;

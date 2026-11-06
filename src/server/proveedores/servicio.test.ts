@@ -43,6 +43,29 @@ describe("alta de proveedor", () => {
       (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "sin_permiso",
     );
   });
+
+  it("el área inicial queda en el evento del alta, por nombre; un área ajena no da de alta", async () => {
+    const area = "66666666-6666-4666-8666-666666666666";
+    const libro = memoria({ [area]: "Ventas" });
+    const eventos: { accion: string; cambio?: unknown }[] = [];
+    const auditar = async (_consulta: unknown, _actor: unknown, hecho: { accion: string; cambio?: unknown }) => {
+      eventos.push({ accion: hecho.accion, cambio: hecho.cambio });
+    };
+    await darDeAltaProveedor(ctx(["administrador"]), { ...entrada({}), areaId: area }, { repositorio: libro, almacen: almacen(), auditar });
+    assert.deepEqual(eventos.find((e) => e.accion === "alta_proveedor")?.cambio, { area: "Ventas" });
+    // Sin área, el evento no lleva cambio.
+    eventos.length = 0;
+    await darDeAltaProveedor(ctx(["administrador"]), entrada({ rfc: "CABL840215RF4" }), { repositorio: libro, almacen: almacen(), auditar });
+    assert.equal(eventos.find((e) => e.accion === "alta_proveedor")?.cambio, undefined);
+    await assert.rejects(
+      () => darDeAltaProveedor(ctx(["administrador"]), { ...entrada({ rfc: "GODE561231GR8" }), areaId: "77777777-7777-4777-8777-777777777777" }, {
+        repositorio: libro,
+        almacen: almacen(),
+        auditar,
+      }),
+      (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "area_ajena",
+    );
+  });
 });
 
 function entrada(parcial: { clabe?: string; rfc?: string }) {
@@ -85,7 +108,7 @@ function almacen(): AlmacenConstancia {
   };
 }
 
-function memoria(): RepositorioProveedores & { altas: number; situaciones: string[] } {
+function memoria(areas: Record<string, string> = {}): RepositorioProveedores & { altas: number; situaciones: string[] } {
   const estado = { altas: 0, situaciones: [] as string[] };
   const tx: ContextoProveedores = {
     companyId: EMPRESA,
@@ -101,6 +124,9 @@ function memoria(): RepositorioProveedores & { altas: number; situaciones: strin
       estado.altas += 1;
     },
     async insertarClabe() {},
+    async nombreDeArea(areaId) {
+      return areas[areaId] ?? null;
+    },
   };
   return {
     get altas() {

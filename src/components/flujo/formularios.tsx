@@ -114,6 +114,16 @@ function Campo({ id, etiqueta, pista, error, children }: { id: string; etiqueta:
   );
 }
 
+/**
+ * El id de la alta: lo genera el servidor al pintar la página. Un segundo envío
+ * del mismo formulario lleva el mismo id y el servidor no crea otra fila. Con
+ * `key` se monta de nuevo cuando la página trae un id nuevo, y `reset()` lo
+ * conserva.
+ */
+function IdDeAlta({ id }: { id: string }) {
+  return <input key={id} type="hidden" name="altaId" defaultValue={id} />;
+}
+
 function describe(id: string, error?: string, pista = false): string | undefined {
   const ids = [pista ? `${id}-pista` : "", error ? `${id}-error` : ""].filter(Boolean);
   return ids.length > 0 ? ids.join(" ") : undefined;
@@ -121,11 +131,12 @@ function describe(id: string, error?: string, pista = false): string | undefined
 
 // Saldo, colchón y correo ------------------------------------------------------------
 
-export function FormularioSaldo({ hoy }: { hoy: string }) {
+export function FormularioSaldo({ hoy, altaId }: { hoy: string; altaId: string }) {
   const f = useFormulario(enviarSaldo);
   return (
     <form id={f.idForma} className="flujo-formulario" onSubmit={f.enviar} noValidate aria-busy={f.pendiente} data-formulario="saldo">
       <AvisoFlujo estado={f.estado} />
+      <IdDeAlta id={altaId} />
       <div className="formulario-pareja">
         <Campo id="saldo" etiqueta="Saldo en bancos" pista="La suma de las cuentas de banco de la empresa, en pesos." error={f.mensaje("saldo")}>
           <input id="saldo" name="saldo" inputMode="decimal" placeholder="250000.00" autoComplete="off" required
@@ -171,11 +182,12 @@ export function FormularioCorreo({ activo }: { activo: boolean }) {
 
 // Cobros ------------------------------------------------------------------------------
 
-export function FormularioCobro({ hoy }: { hoy: string }) {
+export function FormularioCobro({ hoy, altaId }: { hoy: string; altaId: string }) {
   const f = useFormulario(enviarCobro);
   return (
     <form id={f.idForma} className="flujo-formulario" onSubmit={f.enviar} noValidate aria-busy={f.pendiente} data-formulario="cobro">
       <AvisoFlujo estado={f.estado} />
+      <IdDeAlta id={altaId} />
       <div className="formulario-pareja">
         <Campo id="clienteNombre" etiqueta="Cliente" error={f.mensaje("clienteNombre")}>
           <input id="clienteNombre" name="clienteNombre" maxLength={254} required autoComplete="off" aria-invalid={f.mensaje("clienteNombre") ? true : undefined} />
@@ -202,11 +214,12 @@ export function FormularioCobro({ hoy }: { hoy: string }) {
   );
 }
 
-export function FormularioCobroXml({ hoy }: { hoy: string }) {
+export function FormularioCobroXml({ hoy, altaId }: { hoy: string; altaId: string }) {
   const f = useFormulario(enviarCobroXml);
   return (
     <form id={f.idForma} className="flujo-formulario" onSubmit={f.enviar} noValidate aria-busy={f.pendiente} data-formulario="cobro-xml">
       <AvisoFlujo estado={f.estado} />
+      <IdDeAlta id={altaId} />
       <Campo id="xml" etiqueta="XML de la factura emitida" pista="CFDI 4.0 de ingreso en pesos. El RFC emisor tiene que ser el de tu empresa." error={f.mensaje("xml")}>
         <input id="xml" name="xml" type="file" accept=".xml,text/xml,application/xml" required
           aria-invalid={f.mensaje("xml") ? true : undefined} aria-describedby={describe("xml", f.mensaje("xml"), true)} />
@@ -277,16 +290,26 @@ export type ObligacionEditable = {
   frecuencia: string;
   proximaFecha: string;
   areaId: string | null;
+  proveedorId: string | null;
 };
+
+/** Lo que la renta o un servicio facturado no debe hacer: contarse dos veces. */
+export const AVISO_FACTURA =
+  "¿Llega como factura de un proveedor? Entonces ya cuenta en Pagos a proveedores: no la registres aquí. Si la registras, elige su proveedor y el mes que ya traiga su cargo no se cuenta dos veces.";
 
 export function FormularioObligacion({
   areas,
+  proveedores,
   hoy,
   obligacion,
+  altaId,
 }: {
   areas: readonly { id: string; nombre: string }[];
+  proveedores: readonly { id: string; nombre: string }[];
   hoy: string;
+  /** Al editar, la obligación; sin ella es una alta y lleva su id. */
   obligacion?: ObligacionEditable;
+  altaId?: string;
 }) {
   const f = useFormulario(enviarObligacion);
   const prefijo = obligacion ? `${obligacion.id}-` : "";
@@ -306,6 +329,8 @@ export function FormularioObligacion({
     >
       <AvisoFlujo estado={f.estado} />
       {obligacion ? <input type="hidden" name="id" value={obligacion.id} /> : null}
+      {!obligacion && altaId ? <IdDeAlta id={altaId} /> : null}
+      <p className="pista" data-aviso="factura">{AVISO_FACTURA}</p>
       {!obligacion ? (
         <p className="pista">
           ¿Impuestos?{" "}
@@ -336,6 +361,13 @@ export function FormularioObligacion({
           <select id={`${prefijo}areaId`} name="areaId" defaultValue={obligacion?.areaId ?? ""} aria-describedby={describe(`${prefijo}areaId`, f.mensaje("areaId"), true)}>
             <option value="">Sin área</option>
             {areas.map((area) => <option key={area.id} value={area.id}>{area.nombre}</option>)}
+          </select>
+        </Campo>
+        <Campo id={`${prefijo}proveedorId`} etiqueta="Proveedor que la factura (opcional)" pista="El mes en que ese proveedor ya tiene un cargo, la obligación no se suma." error={f.mensaje("proveedorId")}>
+          <select id={`${prefijo}proveedorId`} name="proveedorId" defaultValue={obligacion?.proveedorId ?? ""}
+            aria-invalid={f.mensaje("proveedorId") ? true : undefined} aria-describedby={describe(`${prefijo}proveedorId`, f.mensaje("proveedorId"), true)}>
+            <option value="">Sin proveedor</option>
+            {proveedores.map((proveedor) => <option key={proveedor.id} value={proveedor.id}>{proveedor.nombre}</option>)}
           </select>
         </Campo>
       </div>

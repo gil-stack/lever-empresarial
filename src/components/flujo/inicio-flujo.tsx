@@ -5,7 +5,7 @@ import "@/estilo/flujo.css";
 
 import { Ausencia, Aviso, CifraGrande, Insignia } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
-import { desplazar, fechaConAnio, fechaCorta } from "@/dominio/flujo/fechas";
+import { fechaConAnio, fechaCorta } from "@/dominio/flujo/fechas";
 import { ETIQUETA_ESTADO_PRESUPUESTO } from "@/dominio/flujo/presupuestos";
 import { textoAlcance, type Movimiento, type Proyeccion, type Semana } from "@/dominio/flujo/proyeccion";
 import { horaEnMexico } from "@/dominio/reloj";
@@ -29,7 +29,7 @@ export function InicioFlujo({ flujo, empresaId }: { flujo: FlujoInicio; empresaI
           <Indicador rotulo="Salidas comprometidas, 4 semanas" origen="comprometido">
             <span data-cifra="comprometido4" data-centavos={p.comprometido4}>{formatoPesos(p.comprometido4)}</span>
           </Indicador>
-          <Indicador rotulo="Cobros esperados, 4 semanas" origen="comprometido">
+          <Indicador rotulo="Cobros, 4 semanas" origen="comprometido" nota="Los esperados y los ya cobrados después del saldo declarado.">
             <span data-cifra="entradas4" data-centavos={p.entradas4}>{formatoPesos(p.entradas4)}</span>
           </Indicador>
           <Indicador rotulo="Gasto neto mensual promedio" origen="comprometido" nota="Salidas menos entradas de las 13 semanas, entre tres meses.">
@@ -139,7 +139,7 @@ function Alertas({ flujo, empresaId }: { flujo: FlujoInicio; empresaId: string |
         <div data-alerta="cobros-vencidos">
           <Aviso titulo={vencidos === 1 ? "Un cobro esperado ya venció" : `${vencidos} cobros esperados ya vencieron`}>
             <p>
-              Suman {formatoPesos(flujo.cobros.vencidosCentavos)} y no entran en la proyección hasta que se cobren.{" "}
+              Suman {formatoPesos(flujo.cobros.vencidosCentavos)} y no entran en la proyección. Al marcarlos como cobrados, entran en la semana en que llegó el dinero.{" "}
               <Link href={enEmpresa(empresaId, "/consola/cobros?estado=vencido")}>Revisar cobros vencidos</Link>
             </p>
           </Aviso>
@@ -167,7 +167,10 @@ function ProyeccionSemanal({ flujo, empresaId }: { flujo: FlujoInicio; empresaId
       <header className="flujo-seccion-cabeza">
         <div>
           <h2 id="proyeccion-titulo">Proyección a 13 semanas</h2>
-          <p>Semanas de lunes a domingo, hora del centro de México. Movimientos después del {fechaConAnio(p.corte)}.</p>
+          <p>
+            Semanas de lunes a domingo, hora del centro de México. Movimientos después del {fechaConAnio(p.corte)}; los pagos a proveedores
+            de antes que siguen sin pagar van como atrasados en la primera semana.
+          </p>
         </div>
         <p className="flujo-leyenda">
           <Origen de="declarado" /> saldo inicial · <Origen de="comprometido" /> entradas y salidas
@@ -238,7 +241,7 @@ function ProyeccionSemanal({ flujo, empresaId }: { flujo: FlujoInicio; empresaId
             </div>
             <div className="campo">
               <label htmlFor="fecha-escenario">Nueva fecha</label>
-              <input id="fecha-escenario" name="fecha" type="date" min={p.hoy} max={desplazar(p.fin, 60)} defaultValue={p.escenario?.fecha ?? ""} required />
+              <input id="fecha-escenario" name="fecha" type="date" min={p.hoy} max={p.fin} defaultValue={p.escenario?.fecha ?? ""} required />
             </div>
           </div>
           <div className="acciones">
@@ -285,6 +288,7 @@ function Renglon({ m }: { m: Movimiento }) {
       <span>
         {fechaCorta(m.fecha)} · {m.concepto}
         {m.atrasado ? <Insignia tono="aviso">Atrasado</Insignia> : null}
+        {m.cobrado ? <Insignia tono="sello">Cobrado</Insignia> : null}
         {m.fechaOriginal ? <Insignia tono="sello">Escenario</Insignia> : null}
       </span>
       <strong className={m.sentido === "entrada" ? "cifra-ingreso" : "cifra-gasto"}>

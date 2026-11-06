@@ -122,7 +122,14 @@ export async function darDeAltaProveedor(
         clabe: preparado.clabe,
         desde: ahora,
       });
-      await listo.auditar(ctx.consulta, actor, { accion: "alta_proveedor", identificador: proveedorId });
+      // El área inicial queda en el evento del alta, por nombre (quien da de alta puede elegirla).
+      const area = preparado.areaId ? await ctx.nombreDeArea(preparado.areaId) : null;
+      if (preparado.areaId && area === null) throw new ErrorDeDominio("area_ajena");
+      await listo.auditar(ctx.consulta, actor, {
+        accion: "alta_proveedor",
+        identificador: proveedorId,
+        ...(area ? { cambio: { area } } : {}),
+      });
       await listo.auditar(ctx.consulta, actor, { accion: "clabe_proveedor", identificador: clabeId });
       if (contrato && preparado.contrato) {
         await ctx.insertarDocumento({

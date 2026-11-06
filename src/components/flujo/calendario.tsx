@@ -17,14 +17,20 @@ export type EventoVista = {
   centavos: number;
   concepto: string;
   vencido: boolean;
+  /** Nómina de una sola persona vista sin permiso de detalle: no se muestra el monto. */
+  reservado: boolean;
   detalle: readonly (readonly [string, string])[];
 };
+
+function monto(evento: EventoVista): string {
+  return evento.reservado ? "Monto reservado" : formatoPesos(evento.centavos);
+}
 
 const TIPO: Record<TipoMovimiento, string> = {
   nomina: "Nómina",
   proveedor: "Pago a proveedor",
   obligacion: "Obligación recurrente",
-  cobro: "Cobro esperado",
+  cobro: "Cobro",
 };
 
 const DIAS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
@@ -63,7 +69,7 @@ export function Calendario({ mes, hoy, eventos, proximos }: { mes: string; hoy: 
                   data-vencido={evento.vencido ? "true" : undefined}
                   data-clave={evento.clave}
                   onClick={() => setAbierto(evento)}
-                  title={`${evento.concepto} · ${formatoPesos(evento.centavos)}`}
+                  title={`${evento.concepto} · ${monto(evento)}`}
                 >
                   {evento.concepto}
                 </button>
@@ -100,7 +106,7 @@ export function Calendario({ mes, hoy, eventos, proximos }: { mes: string; hoy: 
             <Renglones dinero>
               <Renglon etiqueta="Fecha">{fechaConAnio(abierto.fecha)}</Renglon>
               <Renglon etiqueta={abierto.sentido === "entrada" ? "Entra" : "Sale"}>
-                <span className="monto">{formatoPesos(abierto.centavos)}</span>
+                {abierto.reservado ? <span>Monto reservado</span> : <span className="monto">{formatoPesos(abierto.centavos)}</span>}
               </Renglon>
             </Renglones>
             <Renglones>
@@ -121,9 +127,13 @@ function Fila({ evento, alAbrir }: { evento: EventoVista; alAbrir: (evento: Even
           {fechaCorta(evento.fecha)} · {evento.concepto}
           <small>{TIPO[evento.tipo]}{evento.vencido ? " · vencido" : ""}</small>
         </span>
-        <strong className={evento.sentido === "entrada" ? "cifra-ingreso" : "cifra-gasto"}>
-          {evento.sentido === "entrada" ? "+" : "−"}{formatoPesos(evento.centavos)}
-        </strong>
+        {evento.reservado ? (
+          <strong data-reservado="true">Monto reservado</strong>
+        ) : (
+          <strong className={evento.sentido === "entrada" ? "cifra-ingreso" : "cifra-gasto"}>
+            {evento.sentido === "entrada" ? "+" : "−"}{formatoPesos(evento.centavos)}
+          </strong>
+        )}
       </button>
     </li>
   );

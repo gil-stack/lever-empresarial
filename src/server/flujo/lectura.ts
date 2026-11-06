@@ -15,6 +15,12 @@ export function lista(valor: unknown): Record<string, unknown>[] {
   return valor.map(registro);
 }
 
+/** Una lista JSON de textos (por ejemplo, meses YYYY-MM). */
+export function textos(valor: unknown): string[] {
+  if (!Array.isArray(valor)) throw new ErrorDeDominio("base_no_disponible");
+  return valor.map(texto);
+}
+
 export function texto(valor: unknown): string {
   if (typeof valor !== "string") throw new ErrorDeDominio("base_no_disponible");
   return valor;

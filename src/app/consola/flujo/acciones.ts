@@ -32,7 +32,8 @@ const RECHAZO: Record<string, { titulo: string; mensaje: string }> = {
   sin_empresa: { titulo: "Sin empresa elegida", mensaje: "Elige la empresa desde el menú y repite el cambio." },
   cobro_ya_resuelto: { titulo: "Ese cobro ya estaba resuelto", mensaje: "Alguien lo marcó como cobrado o cancelado antes. Recarga la lista." },
   cobro_ausente: { titulo: "No encontramos ese cobro", mensaje: "Recarga la lista y vuelve a intentar." },
-  cobro_duplicado: { titulo: "Esa factura ya está registrada", mensaje: "Ya hay un cobro esperado con el mismo UUID. Cancélalo primero si lo quieres volver a registrar." },
+  cobro_duplicado: { titulo: "Esa factura ya está registrada", mensaje: "Ya hay un cobro esperado con la misma factura. Si la quieres registrar otra vez, cancela primero el que está." },
+  cobro_ya_cobrado: { titulo: "Esa factura ya se cobró", mensaje: "La misma factura ya está registrada y marcada como cobrada. No hace falta registrarla otra vez." },
   obligacion_inactiva: { titulo: "Esa obligación ya no está activa", mensaje: "Recarga el calendario." },
   obligacion_ausente: { titulo: "No encontramos esa obligación", mensaje: "Recarga el calendario." },
   area_ajena: { titulo: "Esa área no es de esta empresa", mensaje: "Elige un área de la lista." },
@@ -75,7 +76,7 @@ function campos(formData: FormData, nombres: readonly string[]): Record<string, 
 
 export async function enviarSaldo(_previo: EstadoFlujo, formData: FormData): Promise<EstadoFlujo> {
   return ejecutar(async () => {
-    await declararSaldo(await contextoDeAccion(), campos(formData, ["saldo", "alDia"]));
+    await declararSaldo(await contextoDeAccion(), campos(formData, ["saldo", "alDia", "altaId"]));
     return "El saldo quedó declarado. La proyección ya parte de él; la declaración anterior sigue en el historial.";
   });
 }
@@ -96,7 +97,7 @@ export async function enviarCorreoSemanal(_previo: EstadoFlujo, formData: FormDa
 
 export async function enviarCobro(_previo: EstadoFlujo, formData: FormData): Promise<EstadoFlujo> {
   return ejecutar(async () => {
-    await registrarCobro(await contextoDeAccion(), campos(formData, ["clienteNombre", "clienteRfc", "concepto", "monto", "fechaProbable", "referencia"]));
+    await registrarCobro(await contextoDeAccion(), campos(formData, ["clienteNombre", "clienteRfc", "concepto", "monto", "fechaProbable", "referencia", "altaId"]));
     return "El cobro quedó registrado como esperado y ya cuenta en la proyección.";
   });
 }
@@ -112,6 +113,7 @@ export async function enviarCobroXml(_previo: EstadoFlujo, formData: FormData): 
       bytes,
       fechaProbable: formData.get("fechaProbableXml") ?? undefined,
       concepto: formData.get("conceptoXml") ?? undefined,
+      altaId: formData.get("altaId") ?? undefined,
     });
     return `La factura a ${hecho.cliente} quedó registrada como cobro esperado.`;
   });
@@ -120,7 +122,7 @@ export async function enviarCobroXml(_previo: EstadoFlujo, formData: FormData): 
 export async function enviarCobrado(_previo: EstadoFlujo, formData: FormData): Promise<EstadoFlujo> {
   return ejecutar(async () => {
     await marcarCobrado(await contextoDeAccion(), campos(formData, ["id", "cobradoEl"]));
-    return "El cobro quedó marcado como cobrado. Sale de la proyección.";
+    return "El cobro quedó marcado como cobrado. Si llegó después del saldo declarado, la proyección lo cuenta en la semana en que llegó.";
   });
 }
 
@@ -133,7 +135,7 @@ export async function enviarCancelacionCobro(_previo: EstadoFlujo, formData: For
 
 export async function enviarObligacion(_previo: EstadoFlujo, formData: FormData): Promise<EstadoFlujo> {
   return ejecutar(async () => {
-    const entrada = campos(formData, ["id", "concepto", "monto", "frecuencia", "proximaFecha", "areaId"]);
+    const entrada = campos(formData, ["id", "concepto", "monto", "frecuencia", "proximaFecha", "areaId", "proveedorId", "altaId"]);
     if (typeof entrada.id === "string" && entrada.id !== "") {
       await editarObligacion(await contextoDeAccion(), entrada);
       return "La obligación quedó actualizada.";

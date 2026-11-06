@@ -50,7 +50,7 @@ export function VistaFlujo({ vista }: { vista: VistaSaldo | null }) {
           <>
             <Hoja id="declarar" titulo="Declarar el saldo en bancos">
               {vista.puedeEditar ? (
-                <FormularioSaldo hoy={vista.hoy} />
+                <FormularioSaldo hoy={vista.hoy} altaId={vista.altaId} />
               ) : (
                 <NotaRegla>{SOLO_LECTURA}</NotaRegla>
               )}
@@ -225,8 +225,8 @@ export function VistaCobrosPagina({
 
       {vista.puedeEditar ? (
         <Rejilla
-          principal={<Hoja id="nuevo-cobro" titulo="Registrar un cobro" className="flujo-bloque"><FormularioCobro hoy={vista.hoy} /></Hoja>}
-          lateral={<Hoja id="cobro-xml" titulo="Desde una factura emitida" className="flujo-bloque"><FormularioCobroXml hoy={vista.hoy} /></Hoja>}
+          principal={<Hoja id="nuevo-cobro" titulo="Registrar un cobro" className="flujo-bloque"><FormularioCobro hoy={vista.hoy} altaId={vista.altaIds.manual} /></Hoja>}
+          lateral={<Hoja id="cobro-xml" titulo="Desde una factura emitida" className="flujo-bloque"><FormularioCobroXml hoy={vista.hoy} altaId={vista.altaIds.xml} /></Hoja>}
         />
       ) : (
         <NotaRegla>{SOLO_LECTURA}</NotaRegla>
@@ -276,6 +276,7 @@ export function VistaCalendarioPagina({ vista, empresaId }: { vista: VistaCalend
                       <span>
                         <strong>{o.concepto}</strong> · {ETIQUETA_FRECUENCIA[o.frecuencia].toLowerCase()} · próxima el {fechaCorta(o.proximaFecha)}
                         {o.areaNombre ? <> · {o.areaNombre}</> : null}
+                        {o.proveedorNombre ? <> · la factura {o.proveedorNombre}</> : null}
                       </span>
                       <span className="flujo-acciones-fila">
                         <strong>{formatoPesos(o.montoCentavos)}</strong>
@@ -284,7 +285,7 @@ export function VistaCalendarioPagina({ vista, empresaId }: { vista: VistaCalend
                       {vista.puedeEditar ? (
                         <details>
                           <summary>Editar</summary>
-                          <FormularioObligacion areas={vista.areas} hoy={vista.hoy} obligacion={o} />
+                          <FormularioObligacion areas={vista.areas} proveedores={vista.proveedores} hoy={vista.hoy} obligacion={o} />
                         </details>
                       ) : null}
                     </li>
@@ -296,7 +297,11 @@ export function VistaCalendarioPagina({ vista, empresaId }: { vista: VistaCalend
         }
         lateral={
           <Hoja id="nueva-obligacion" titulo="Nueva obligación" className="flujo-bloque">
-            {vista.puedeEditar ? <FormularioObligacion areas={vista.areas} hoy={vista.hoy} /> : <NotaRegla>{SOLO_LECTURA}</NotaRegla>}
+            {vista.puedeEditar ? (
+              <FormularioObligacion areas={vista.areas} proveedores={vista.proveedores} hoy={vista.hoy} altaId={vista.altaId} />
+            ) : (
+              <NotaRegla>{SOLO_LECTURA}</NotaRegla>
+            )}
           </Hoja>
         }
       />

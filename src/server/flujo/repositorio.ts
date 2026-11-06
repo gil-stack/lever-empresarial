@@ -17,6 +17,7 @@ import {
   registro,
   texto,
   textoONulo,
+  textos,
   unaFila,
 } from "./lectura";
 
@@ -27,8 +28,13 @@ import {
  */
 
 export type PagoFuente = FuentesFlujo["pagos"][number] & { venceEl: string; estado: "por_autorizar" | "listo_para_pagar" | "sin_solicitud" };
-export type ObligacionFuente = FuentesFlujo["obligaciones"][number] & { areaId: string | null; areaNombre: string | null };
+export type ObligacionFuente = FuentesFlujo["obligaciones"][number] & {
+  areaId: string | null;
+  areaNombre: string | null;
+  proveedorNombre: string | null;
+};
 export type CobroFuente = FuentesFlujo["cobros"][number] & { referencia: string | null };
+export type CobradoFuente = FuentesFlujo["cobrados"][number] & { referencia: string | null };
 export type NominaFuente = FuentesFlujo["nomina"][number] & { areaId: string | null };
 
 export type Fuentes = {
@@ -37,6 +43,7 @@ export type Fuentes = {
   pagos: PagoFuente[];
   obligaciones: ObligacionFuente[];
   cobros: CobroFuente[];
+  cobrados: CobradoFuente[];
 };
 
 const SQL_SALDO = `
@@ -67,8 +74,11 @@ export async function leerSaldo(consulta: Consulta, empresaId: string): Promise<
 
 /**
  * Las fuentes del flujo con fecha entre $2 y $3. Pagos: sin anulados, ni
- * rechazados ni cancelados (un cargo sin solicitud todavía cuenta). Nómina y
- * obligaciones: su base, para que el dominio arme la serie.
+ * rechazados ni cancelados (un cargo sin solicitud todavía cuenta), y también
+ * los de antes de $2: siguen sin pagar y la proyección los lleva como
+ * atrasados. Cobros: los esperados por su fecha probable y los cobrados por la
+ * fecha en que llegó el dinero. Nómina y obligaciones: su base, para que el
+ * dominio arme la serie.
  */
 export const SQL_FUENTES = `
   select
@@ -82,7 +92,8 @@ export const SQL_FUENTES = `
       where p.company_id = $1 and p.activa and p.proximo_pago_en <= $3::date
         and (e.baja_en is null or e.baja_en >= $2::date)), '[]'::json) as nomina,
     coalesce((select json_agg(json_build_object(
-        'id', b.id, 'fecha', to_char(b.fecha_pago, 'YYYY-MM-DD'), 'total', b.total_centavos::text) order by b.fecha_pago, b.id)
+        'id', b.id, 'fecha', to_char(b.fecha_pago, 'YYYY-MM-DD'), 'total', b.total_centavos::text,
+        'personas', (select count(*) from payroll_batch_items i where i.batch_id = b.id and i.company_id = b.company_id)) order by b.fecha_pago, b.id)
        from payroll_batches b
       where b.company_id = $1 and b.fecha_pago between $2::date and $3::date), '[]'::json) as lotes,
     coalesce((select json_agg(json_build_object(
@@ -93,21 +104,36 @@ export const SQL_FUENTES = `
        join suppliers s on s.id = p.supplier_id and s.company_id = p.company_id
        left join supplier_payment_requests r on r.payable_id = p.id and r.company_id = p.company_id
       where p.company_id = $1 and p.anulado_en is null
-        and p.programada_el between $2::date and $3::date
+        and p.programada_el <= $3::date
         and coalesce(r.estado, 'por_autorizar') in ('por_autorizar', 'listo_para_pagar')), '[]'::json) as pagos,
     coalesce((select json_agg(json_build_object(
         'id', o.id, 'concepto', o.concepto, 'monto', o.monto_centavos::text, 'frecuencia', o.frecuencia,
         'proxima', to_char(o.proxima_fecha, 'YYYY-MM-DD'), 'ancla', o.ancla_dia,
-        'area', o.cost_center_id, 'area_nombre', c.nombre) order by o.proxima_fecha, o.id)
+        'area', o.cost_center_id, 'area_nombre', c.nombre,
+        'proveedor_nombre', coalesce(s.nombre_comercial, s.razon_social),
+        -- Meses en que el proveedor de la obligación ya trae un cargo vivo: ahí no se cuenta otra vez.
+        'meses_con_cargo', case when o.supplier_id is null then '[]'::json else (select coalesce(json_agg(distinct to_char(p.programada_el, 'YYYY-MM')), '[]'::json)
+           from supplier_payables p
+           left join supplier_payment_requests r on r.payable_id = p.id and r.company_id = p.company_id
+          where p.company_id = $1 and p.supplier_id = o.supplier_id and p.anulado_en is null
+            and p.programada_el between date_trunc('month', $2::date)::date and $3::date
+            and coalesce(r.estado, 'por_autorizar') in ('por_autorizar', 'listo_para_pagar')) end) order by o.proxima_fecha, o.id)
        from recurring_obligations o
        left join cost_centers c on c.id = o.cost_center_id and c.company_id = o.company_id
+       left join suppliers s on s.id = o.supplier_id and s.company_id = o.company_id
       where o.company_id = $1 and o.activa and o.proxima_fecha <= $3::date), '[]'::json) as obligaciones,
     coalesce((select json_agg(json_build_object(
         'id', k.id, 'cliente', k.cliente_nombre, 'concepto', k.concepto, 'monto', k.monto_centavos::text,
         'fecha', to_char(k.fecha_probable, 'YYYY-MM-DD'), 'referencia', k.referencia) order by k.fecha_probable, k.id)
        from expected_collections k
       where k.company_id = $1 and k.estado = 'esperado'
-        and k.fecha_probable between $2::date and $3::date), '[]'::json) as cobros
+        and k.fecha_probable between $2::date and $3::date), '[]'::json) as cobros,
+    coalesce((select json_agg(json_build_object(
+        'id', k.id, 'cliente', k.cliente_nombre, 'concepto', k.concepto, 'monto', k.monto_centavos::text,
+        'cobrado', to_char(k.cobrado_el, 'YYYY-MM-DD'), 'referencia', k.referencia) order by k.cobrado_el, k.id)
+       from expected_collections k
+      where k.company_id = $1 and k.estado = 'cobrado'
+        and k.cobrado_el between $2::date and $3::date), '[]'::json) as cobrados
 `;
 
 export async function leerFuentes(consulta: Consulta, empresaId: string, desde: string, hasta: string): Promise<Fuentes> {
@@ -122,7 +148,7 @@ export async function leerFuentes(consulta: Consulta, empresaId: string, desde: 
       bajaEn: fechaONula(p.baja),
       areaId: textoONulo(p.area),
     })),
-    lotes: lista(fila.lotes).map((b) => ({ id: texto(b.id), fechaPago: fecha(b.fecha), totalCentavos: centavos(b.total) })),
+    lotes: lista(fila.lotes).map((b) => ({ id: texto(b.id), fechaPago: fecha(b.fecha), totalCentavos: centavos(b.total), personas: entero(b.personas) })),
     pagos: lista(fila.pagos).map((p) => ({
       id: texto(p.id),
       proveedor: texto(p.proveedor),
@@ -141,6 +167,8 @@ export async function leerFuentes(consulta: Consulta, empresaId: string, desde: 
       anclaDia: entero(o.ancla),
       areaId: textoONulo(o.area),
       areaNombre: textoONulo(o.area_nombre),
+      proveedorNombre: textoONulo(o.proveedor_nombre),
+      mesesConCargo: textos(o.meses_con_cargo),
     })),
     cobros: lista(fila.cobros).map((k) => ({
       id: texto(k.id),
@@ -148,6 +176,14 @@ export async function leerFuentes(consulta: Consulta, empresaId: string, desde: 
       concepto: texto(k.concepto),
       montoCentavos: centavos(k.monto),
       fechaProbable: fecha(k.fecha),
+      referencia: textoONulo(k.referencia),
+    })),
+    cobrados: lista(fila.cobrados).map((k) => ({
+      id: texto(k.id),
+      cliente: texto(k.cliente),
+      concepto: texto(k.concepto),
+      montoCentavos: centavos(k.monto),
+      cobradoEl: fecha(k.cobrado),
       referencia: textoONulo(k.referencia),
     })),
   };
@@ -162,6 +198,7 @@ export const SQL_PRESUPUESTOS = `
        from employee_payroll_profiles p
        join employees e on e.id = p.employee_id and e.company_id = p.company_id
       where p.company_id = $1 and p.activa and e.cost_center_id is not null
+        and e.alta_en <= $3::date
         and (e.baja_en is null or e.baja_en >= $2::date)), '[]'::json) as nomina,
     coalesce((select json_agg(json_build_object('area', x.area, 'centavos', x.total::text)) from (
         select s.cost_center_id as area, sum(p.total_centavos) as total
@@ -174,7 +211,13 @@ export const SQL_PRESUPUESTOS = `
          group by s.cost_center_id) x), '[]'::json) as pagos,
     coalesce((select json_agg(json_build_object(
         'area', o.cost_center_id, 'monto', o.monto_centavos::text, 'frecuencia', o.frecuencia,
-        'proxima', to_char(o.proxima_fecha, 'YYYY-MM-DD'), 'ancla', o.ancla_dia))
+        'proxima', to_char(o.proxima_fecha, 'YYYY-MM-DD'), 'ancla', o.ancla_dia,
+        'meses_con_cargo', case when o.supplier_id is null then '[]'::json else (select coalesce(json_agg(distinct to_char(p.programada_el, 'YYYY-MM')), '[]'::json)
+           from supplier_payables p
+           left join supplier_payment_requests r on r.payable_id = p.id and r.company_id = p.company_id
+          where p.company_id = $1 and p.supplier_id = o.supplier_id and p.anulado_en is null
+            and p.programada_el between date_trunc('month', $2::date)::date and $3::date
+            and coalesce(r.estado, 'por_autorizar') in ('por_autorizar', 'listo_para_pagar')) end))
        from recurring_obligations o
       where o.company_id = $1 and o.activa and o.cost_center_id is not null and o.proxima_fecha <= $3::date), '[]'::json) as obligaciones,
     coalesce((select json_agg(json_build_object(
@@ -213,6 +256,7 @@ export async function leerFuentesPresupuesto(
       frecuencia: frecuenciaObligacion(o.frecuencia),
       proximaFecha: fecha(o.proxima),
       anclaDia: entero(o.ancla),
+      mesesConCargo: textos(o.meses_con_cargo),
     })),
     personas: lista(fila.personas).map((p) => ({
       id: texto(p.id),
@@ -318,15 +362,18 @@ export type ObligacionVista = {
   proximaFecha: string;
   areaId: string | null;
   areaNombre: string | null;
+  proveedorId: string | null;
+  proveedorNombre: string | null;
 };
 
 export async function leerObligaciones(consulta: Consulta, empresaId: string): Promise<ObligacionVista[]> {
   const resultado = await aplicarSentencia(
     consulta,
     `select o.id, o.concepto, o.monto_centavos::text as monto, o.frecuencia, to_char(o.proxima_fecha, 'YYYY-MM-DD') as proxima,
-            o.cost_center_id, c.nombre as area
+            o.cost_center_id, c.nombre as area, o.supplier_id, coalesce(s.nombre_comercial, s.razon_social) as proveedor
        from recurring_obligations o
        left join cost_centers c on c.id = o.cost_center_id and c.company_id = o.company_id
+       left join suppliers s on s.id = o.supplier_id and s.company_id = o.company_id
       where o.company_id = $1 and o.activa
       order by o.proxima_fecha, lower(o.concepto), o.id`,
     [empresaId],
@@ -339,6 +386,8 @@ export async function leerObligaciones(consulta: Consulta, empresaId: string): P
     proximaFecha: fecha(o.proxima),
     areaId: textoONulo(o.cost_center_id),
     areaNombre: textoONulo(o.area),
+    proveedorId: textoONulo(o.supplier_id),
+    proveedorNombre: textoONulo(o.proveedor),
   }));
 }
 
