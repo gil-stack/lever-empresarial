@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 
 import { IconoCerrar, IconoMenu } from "./iconos";
+import { AvisarCarga } from "./progreso-enlace";
 import { esVisible } from "./visible";
 
 const ENFOCABLES = 'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
@@ -13,11 +14,16 @@ const PANTALLA_ANGOSTA = "(max-width: 960px)";
  * En pantallas angostas la navegación lateral se abre desde la izquierda; no se vuelve un menú de arriba.
  * Abierto, el foco queda entre el botón «Cerrar» y el cajón: Tab da la vuelta, y Escape o tocar el velo
  * cierran y regresan el foco al botón. El resto del marco queda `inert` mientras tanto.
+ *
+ * Al pulsar una sección el cajón se cierra y el progreso de su enlace queda dentro, oculto: mientras
+ * la sección carga, la barra de arriba lo dice, y la página anterior sigue a la vista.
  */
 export function LateralMovil({ marca, children }: { marca: ReactNode; children: ReactNode }) {
   const [abierto, setAbierto] = useState(false);
   const boton = useRef<HTMLButtonElement>(null);
   const cajon = useRef<HTMLElement>(null);
+  const [cargando, setCargando] = useState(0);
+  const avisarCarga = useCallback((si: boolean) => setCargando((n) => Math.max(0, n + (si ? 1 : -1))), []);
 
   function cerrar() {
     setAbierto(false);
@@ -81,6 +87,14 @@ export function LateralMovil({ marca, children }: { marca: ReactNode; children: 
     <>
       <div className="barra-movil">
         {marca}
+        <span className="barra-movil-carga" role="status">
+          {cargando > 0 ? (
+            <>
+              <span className="seccion-spinner" aria-hidden="true" />
+              Cargando…
+            </>
+          ) : null}
+        </span>
         <button
           ref={boton}
           type="button"
@@ -101,7 +115,7 @@ export function LateralMovil({ marca, children }: { marca: ReactNode; children: 
         aria-label="Navegación"
         onClick={alPulsarDentro}
       >
-        {children}
+        <AvisarCarga.Provider value={avisarCarga}>{children}</AvisarCarga.Provider>
       </aside>
       {abierto ? <div className="velo" aria-hidden="true" onClick={cerrar} /> : null}
     </>
