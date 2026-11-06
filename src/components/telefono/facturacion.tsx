@@ -10,9 +10,8 @@ export function Facturacion({ datos, qr }: { datos: DatosFiscalesTelefono; qr: s
   ] as const;
   return (
     <>
-      <p className="kicker-app">Datos de la empresa</p>
-      <h1>Pedir factura</h1>
-      <p className="lede">Dáselos al comercio para que facture a nombre de la empresa.</p>
+      <h1 className="solo-lector">Pedir factura</h1>
+      <p className="pista-app">Dáselos al comercio para que facture a nombre de la empresa.</p>
       <dl className="datos-app">
         {renglones.map(([etiqueta, valor]) => <div key={etiqueta}><dt>{etiqueta}</dt><dd>{valor}</dd></div>)}
       </dl>

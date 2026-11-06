@@ -76,6 +76,53 @@
   line-height: 1;
 }
 
+/* Pantallas internas: el título va al centro de la barra y Apariencia a la derecha, como en el diseño. */
+.telefono-cabeza-titulo {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+}
+
+.telefono-cabeza-titulo .telefono-titulo {
+  grid-column: 2;
+}
+
+.telefono-cabeza-titulo .enlace-apariencia {
+  grid-column: 3;
+  justify-self: end;
+}
+
+.telefono-titulo {
+  margin: 0;
+  color: var(--tinta);
+  font-family: var(--fd);
+  font-size: 1.05rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* La empresa de la sesión, en una píldora al centro (en el diseño, la cuenta). */
+.empresa-app {
+  width: fit-content;
+  max-width: 100%;
+  margin: 4px auto 26px;
+  padding: 7px 14px;
+  overflow: hidden;
+  border: 1px solid var(--line2);
+  border-radius: 999px;
+  color: var(--tinta);
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pista-app {
+  margin: 0 0 18px;
+  color: var(--tinta-suave);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
 .enlace-apariencia {
   display: inline-flex;
   align-items: center;

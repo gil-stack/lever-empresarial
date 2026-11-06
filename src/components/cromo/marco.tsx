@@ -337,6 +337,7 @@ function inicialesDe(nombre: string): string {
 /** Teléfono protegido y de solo lectura. Los enlaces conservan la empresa elegida. */
 export async function MarcoTelefono({
   children,
+  titulo,
   actual = "/telefono",
   empresaId = null,
   personaId,
@@ -345,6 +346,8 @@ export async function MarcoTelefono({
   variasEmpresas = false,
 }: {
   children: ReactNode;
+  /** Título de la barra en las pantallas internas; Inicio lleva el logotipo, como en el diseño. */
+  titulo?: string;
   actual?: "/telefono" | "/telefono/topes" | "/telefono/facturacion";
   empresaId?: string | null;
   /** Para leer la apariencia de la persona (escena y tono). */
@@ -367,8 +370,8 @@ export async function MarcoTelefono({
         <a className="saltar" href="#contenido">Saltar al contenido</a>
         <main id="contenido" className="superficie-telefono">
           <div className="telefono">
-            <header className="telefono-cabeza">
-              <p className="marca-app"><Logotipo linea={null} /></p>
+            <header className={titulo ? "telefono-cabeza telefono-cabeza-titulo" : "telefono-cabeza"}>
+              {titulo ? <p className="telefono-titulo">{titulo}</p> : <p className="marca-app"><Logotipo linea={null} /></p>}
               <Link href={enEmpresa(empresaId, "/consola/apariencia")} className="enlace-apariencia">
                 <IconoApariencia />
                 Apariencia
