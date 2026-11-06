@@ -8,6 +8,7 @@ import { CabezaPagina } from "@/components/sistema";
 import { fechaEnMexico } from "@/dominio/pagos-proveedores";
 import { puede, type ContextoConEmpresa } from "@/nucleo/contexto";
 import { abrirRuta, errorConSecreto } from "@/server/entrada";
+import { enEmpresa } from "@/nucleo/rutas";
 import { leerPagosProveedores } from "@/server/pagos-proveedores";
 import { leerClabesProveedor } from "@/server/proveedores";
 import type { LecturaClabes } from "@/server/proveedores/tipos";
@@ -35,8 +36,11 @@ export default async function PaginaProveedores({ searchParams }: { searchParams
   if (!carga) {
     return <Marco actual="/consola/proveedores" vista={vistaDeMarco(ctx)}><main id="contenido" className="pagina"><Cerrada tipo="libro" /></main></Marco>;
   }
+  const accion = puede(ctx, "cliente.pago.solicitar")
+    ? <Link className="boton" href={enEmpresa(ctx.empresa.id, "/consola/proveedores/nuevo")}>Nuevo pago</Link>
+    : null;
   return (
-    <Marco actual="/consola/proveedores" vista={vistaDeMarco(ctx)}>
+    <Marco actual="/consola/proveedores" vista={vistaDeMarco(ctx)} accion={accion}>
       <main id="contenido" className="pagina pagina-proveedores">
         <MesaProveedores
           lectura={carga.lectura} historial={carga.historial} empresaId={ctx.empresa.id} personaId={ctx.persona.id}
@@ -69,8 +73,9 @@ async function cargar(ctx: ContextoConEmpresa, params: Params, vista: VistaProve
 
 function Cerrada({ tipo }: { tipo: string }) {
   const sinSesion = tipo === "sin_empresa";
-  return <CabezaPagina kicker="Pagos a proveedores" titulo={sinSesion ? "Entra a tu empresa." : tipo === "sin_permiso" ? "Esta sección no abre con tu rol." : "No se pudo abrir la mesa de pagos."}>
-    <p className="lede">{sinSesion ? "Selecciona una empresa para consultar proveedores y pagos." : "No se mostraron importes, documentos ni datos de proveedores."}</p>
-    {sinSesion ? <Link className="boton" href="/entrar">Entrar</Link> : null}
+  const sinPermiso = tipo === "sin_permiso";
+  return <CabezaPagina kicker="Proveedores" titulo={sinSesion ? "Elige una empresa." : sinPermiso ? "Tu rol no abre Proveedores." : "No se pudo abrir la mesa de pagos."}>
+    <p className="lede">{sinSesion ? "Proveedores y pagos se consultan dentro de una empresa." : sinPermiso ? "Pide a quien administra la empresa el rol que necesitas." : "Vuelve a intentarlo en un momento."}</p>
+    {sinSesion ? <Link className="boton" href="/empresas">Elegir empresa</Link> : null}
   </CabezaPagina>;
 }

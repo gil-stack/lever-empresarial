@@ -10,7 +10,9 @@ import { useFormStatus } from "react-dom";
  *
  * Lee el estado del `<form>` que lo contiene (`useFormStatus`), con `action`
  * o con un `onSubmit` que arranca una transición. Si la acción la lleva el
- * padre con `useActionState`, pásale su `pendiente`.
+ * padre con `useActionState`, pásale su `pendiente`. En un formulario con dos
+ * botones (`name` y `value` distintos), los dos se desactivan y solo el que se
+ * oprimió dice «Enviando…».
  */
 export function BotonEnviar({
   children,
@@ -26,11 +28,13 @@ export function BotonEnviar({
   /** El pendiente de `useActionState`, cuando el formulario lo lleva el padre. */
   pendiente?: boolean;
 }) {
-  const { pending } = useFormStatus();
+  const { pending, data } = useFormStatus();
   const ocupado = pending || pendiente;
+  const oprimido = !(data instanceof FormData) || resto.name === undefined || data.get(resto.name) === String(resto.value ?? "");
+  const enviandoEste = ocupado && oprimido;
   return (
-    <button {...resto} type="submit" className={className} disabled={disabled || ocupado} aria-busy={ocupado || undefined}>
-      {ocupado ? enviando : children}
+    <button {...resto} type="submit" className={className} disabled={disabled || ocupado} aria-busy={enviandoEste || undefined}>
+      {enviandoEste ? enviando : children}
     </button>
   );
 }

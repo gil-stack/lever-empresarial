@@ -5,7 +5,7 @@ import { useActionState } from "react";
 
 import { guardarClabeProveedor } from "@/app/consola/proveedores/acciones";
 import { FORMULARIO_CLABE_INICIAL, type EstadoClabe } from "@/app/consola/proveedores/estado";
-import { Aviso, EtiquetaMono, Renglon, Renglones } from "@/components/sistema";
+import { Aviso, BotonEnviar, EtiquetaMono, Renglon, Renglones } from "@/components/sistema";
 import { FRASE_INSTITUCION_PENDIENTE, presentarClabe } from "@/dominio/clabe-proveedor";
 
 export function FormularioCambio({ supplierId }: { supplierId: string }) {
@@ -15,6 +15,7 @@ export function FormularioCambio({ supplierId }: { supplierId: string }) {
   const lectura = digitos.length >= 18 ? presentarClabe(valor) : null;
   const noCierra = lectura !== null && !lectura.ok;
   const campo = `clabe-nueva-${supplierId}`;
+  const error = noCierra ? "Esa CLABE no cierra. El dígito usa la ponderación 3, 7 y 1." : estado.tipo === "invalido" ? estado.mensaje : null;
 
   return (
     <form action={accion} noValidate>
@@ -31,16 +32,16 @@ export function FormularioCambio({ supplierId }: { supplierId: string }) {
           spellCheck={false}
           maxLength={32}
           className="entrada-rfc"
-          aria-invalid={estado.tipo === "invalido" || noCierra ? true : undefined}
-          aria-describedby={noCierra ? `${campo}-pista ${campo}-error` : `${campo}-pista`}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${campo}-pista ${campo}-error` : `${campo}-pista`}
           onChange={(event) => setValor(event.target.value)}
         />
         <p className="pista" id={`${campo}-pista`}>
-          La anterior se queda en el historial. No se envía dinero.
+          La anterior se queda en el historial.
         </p>
-        {noCierra ? (
+        {error ? (
           <p className="error-campo" id={`${campo}-error`}>
-            Esa CLABE no cierra. El dígito usa la ponderación 3, 7 y 1.
+            {error}
           </p>
         ) : null}
       </div>
@@ -57,9 +58,7 @@ export function FormularioCambio({ supplierId }: { supplierId: string }) {
         </>
       ) : null}
       <div className="acciones">
-        <button type="submit" className="boton" disabled={pendiente}>
-          {pendiente ? "Guardando…" : "Guardar la CLABE"}
-        </button>
+        <BotonEnviar pendiente={pendiente}>Guardar la CLABE</BotonEnviar>
       </div>
     </form>
   );
@@ -81,9 +80,6 @@ function AvisoDeEstado({ estado }: { estado: EstadoClabe }) {
       </Aviso>
     );
   }
-  return (
-    <Aviso tono="revisar" titulo="No se guardó">
-      <p>{estado.mensaje}</p>
-    </Aviso>
-  );
+  // El error va junto al campo, ligado con aria-describedby.
+  return null;
 }

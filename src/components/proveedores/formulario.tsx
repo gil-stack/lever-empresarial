@@ -14,7 +14,7 @@ import {
   type CodigoRechazoProveedor,
 } from "@/dominio/proveedores";
 import { rfcAlEscribir } from "@/dominio/rfc";
-import { Aviso, EtiquetaMono } from "@/components/sistema";
+import { Aviso, BotonEnviar, EtiquetaMono } from "@/components/sistema";
 
 import { enviarSinReiniciar } from "./sin-reinicio";
 
@@ -123,13 +123,13 @@ export function FormularioProveedor() {
         />
       </Campo>
       <Campo id="nombreComercial" etiqueta="Nombre comercial" pista="Cómo lo reconoce tu equipo. Opcional." error={mensaje("nombreComercial")}>
-        <input id="nombreComercial" name="nombreComercial" maxLength={180} autoComplete="off" />
+        <input id="nombreComercial" name="nombreComercial" maxLength={180} autoComplete="off" aria-describedby={descritoPor("nombreComercial", mensaje("nombreComercial"))} aria-invalid={mensaje("nombreComercial") ? true : undefined} />
       </Campo>
       <Campo id="contactoCorreo" etiqueta="Correo de contacto" pista="Para facturas y seguimiento. Opcional." error={mensaje("contactoCorreo")}>
-        <input id="contactoCorreo" name="contactoCorreo" type="email" maxLength={254} autoComplete="off" />
+        <input id="contactoCorreo" name="contactoCorreo" type="email" maxLength={254} autoComplete="off" aria-describedby={descritoPor("contactoCorreo", mensaje("contactoCorreo"))} aria-invalid={mensaje("contactoCorreo") ? true : undefined} />
       </Campo>
       <Campo id="diasCredito" etiqueta="Días de crédito" pista="Se usa como sugerencia al programar facturas." error={mensaje("diasCredito")}>
-        <input id="diasCredito" name="diasCredito" type="number" min={0} max={365} step={1} defaultValue={30} inputMode="numeric" />
+        <input id="diasCredito" name="diasCredito" type="number" min={0} max={365} step={1} defaultValue={30} inputMode="numeric" aria-describedby={descritoPor("diasCredito", mensaje("diasCredito"))} aria-invalid={mensaje("diasCredito") ? true : undefined} />
       </Campo>
       <Campo
         id="clabe"
@@ -195,21 +195,20 @@ export function FormularioProveedor() {
       <Campo id="contrato" etiqueta="Contrato" pista="PDF privado, opcional. Puedes agregar otros después." error={mensaje("contrato")}>
         <div className="archivo">
           <input id="contrato" name="contrato" className="archivo-nativo" type="file" accept="application/pdf,.pdf"
+            aria-describedby={descritoPor("contrato", mensaje("contrato"))} aria-invalid={mensaje("contrato") ? true : undefined}
             onChange={(event) => setContratoNombre(event.target.files?.[0]?.name ?? "")} />
           <label htmlFor="contrato" className="boton-texto boton-archivo">Elegir contrato</label>
           <span className={contratoNombre ? "elegido archivo-nombre" : "pista archivo-nombre"}>{contratoNombre || "Sin contrato todavía"}</span>
         </div>
       </Campo>
-      <Campo id="contratoDesde" etiqueta="Vigencia del contrato" pista="Inicio y fin, si el contrato los tiene.">
-        <div className="campos-fechas">
-          <input id="contratoDesde" name="contratoDesde" type="date" aria-label="Inicio de vigencia" />
-          <input id="contratoHasta" name="contratoHasta" type="date" aria-label="Fin de vigencia" />
-        </div>
+      <Campo id="contratoDesde" etiqueta="Vigente desde" pista="Si el contrato trae fecha de inicio.">
+        <input id="contratoDesde" name="contratoDesde" type="date" aria-describedby="contratoDesde-pista" />
+      </Campo>
+      <Campo id="contratoHasta" etiqueta="Vigente hasta" pista="Si el contrato trae fecha de fin.">
+        <input id="contratoHasta" name="contratoHasta" type="date" aria-describedby="contratoHasta-pista" />
       </Campo>
       <div className="acciones">
-        <button type="submit" className="boton" disabled={pendiente}>
-          {pendiente ? "Guardando…" : "Dar de alta"}
-        </button>
+        <BotonEnviar pendiente={pendiente}>Dar de alta</BotonEnviar>
       </div>
     </form>
   );

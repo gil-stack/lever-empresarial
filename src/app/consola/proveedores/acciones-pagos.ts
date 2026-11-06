@@ -80,7 +80,7 @@ export async function enviarPago(
     if ((xml?.bytes.byteLength ?? 0) + (pdf?.bytes.byteLength ?? 0) > 8_000_000) throw new ErrorDeDominio("archivos_peso_total");
     const creado = await crearPagoProveedor(await contextoDeAccion(), entrada(formData, xml, pdf));
     revalidatePath("/consola/proveedores");
-    return { tipo: "listo", mensaje: creado.existente ? "La solicitud ya existía. No se duplicó el pago." : "El pago quedó enviado a autorización. Todavía no se mueve dinero.", requestId: creado.requestId };
+    return { tipo: "listo", mensaje: creado.existente ? "La solicitud ya existía. No se duplicó el pago." : "El pago quedó en autorización. Otra persona lo revisa.", requestId: creado.requestId };
   } catch (error) {
     return { tipo: "invalido", mensaje: traducir(error) };
   }
@@ -119,7 +119,7 @@ export async function decidirPago(
     revalidatePath("/consola/proveedores");
     return {
       tipo: "listo",
-      mensaje: decision === "autorizar" ? "Quedó listo para pagar. No se envió dinero." : "Quedó rechazado con su motivo. La factura sigue disponible para corrección.",
+      mensaje: decision === "autorizar" ? "Quedó listo para pagar." : "Quedó rechazado con su motivo. La factura sigue disponible para corrección.",
       requestId: texto(formData, "requestId"),
     };
   } catch (error) {
