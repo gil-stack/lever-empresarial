@@ -39,3 +39,17 @@ El hallazgo pedía regresar `.velo` a `z-index: 25` salvo razón demostrada. Con
 | `npm run build` | Compilación correcta, 36 páginas |
 | `npm run security` | «Revisión de seguridad en verde» |
 | `npm run test:e2e` (`E2E_PUERTO=4812`) | 1 de 1 |
+
+## Recorrido corto sobre main integrado (#44 y #46)
+
+Tras fusionar `origin/main` (con la migración 0022 de Pagos a proveedores), base nueva con las 23 migraciones y el mismo método de entrada real.
+
+| Flujo | Resultado observado | Captura |
+|---|---|---|
+| Alta con nómina | Ana Ríos con neto $18,500 mensual a CLABE; un renglón en el historial de CLABE | `i-01` |
+| CLABE con segundo factor de hace 45 min | «Confirma que eres tú…»; la CLABE sigue terminando en 3452 | — |
+| CLABE tras volver a entrar | Cambia a `•••• 7899`; historial con la anterior cerrada; aviso registrado como `correo_no_configurado`; 0 eventos con la CLABE completa | `i-02` |
+| Baja futura que vence | Antes de vencer Ana entra a Personas; al vencer recibe el 404 de la marca, membresía suspendida, 0 sesiones, 0 nóminas activas y 1 evento del sistema | `i-03` |
+| Reingreso | Con contraseña y TOTP llega a «Todavía no hay empresa» | `i-04` |
+
+Única entrada de consola: el 404 de la propia página de la empresa, que es el resultado esperado.
