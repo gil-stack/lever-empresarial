@@ -167,10 +167,7 @@ function ProyeccionSemanal({ flujo, empresaId }: { flujo: FlujoInicio; empresaId
       <header className="flujo-seccion-cabeza">
         <div>
           <h2 id="proyeccion-titulo">Proyección a 13 semanas</h2>
-          <p>
-            Semanas de lunes a domingo, hora del centro de México. Parte del saldo declarado; las entradas y salidas son lo
-            comprometido en la plataforma después del {fechaConAnio(p.corte)}.
-          </p>
+          <p>Semanas de lunes a domingo, hora del centro de México. Movimientos después del {fechaConAnio(p.corte)}.</p>
         </div>
         <p className="flujo-leyenda">
           <Origen de="declarado" /> saldo inicial · <Origen de="comprometido" /> entradas y salidas

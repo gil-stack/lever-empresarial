@@ -25,7 +25,11 @@ export default async function PaginaCobros({ searchParams }: { searchParams: Pro
     }
   }
   return (
-    <Marco actual="/consola/cobros" vista={vistaDeMarco(ctx)}>
+    <Marco
+      actual="/consola/cobros"
+      vista={vistaDeMarco(ctx)}
+      accion={vista?.puedeEditar ? <a className="boton" href="#nuevo-cobro">Registrar un cobro</a> : null}
+    >
       <main id="contenido" className="pagina">
         <VistaCobrosPagina vista={vista} empresaId={ctx?.empresa?.id ?? null} estado={params.estado} vence={params.vence} />
       </main>

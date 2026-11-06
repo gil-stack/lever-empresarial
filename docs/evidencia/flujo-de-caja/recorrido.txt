@@ -8,6 +8,7 @@ OK captura a-empresa-sin-datos.jpg
 OK «Declarar el saldo» lleva al formulario de Saldo y alertas
 
 (b) Saldo declarado e historial
+OK Saldo y alertas: un h1 solo para lector y sin encabezado grande
 OK primera declaración: $120,000.00 al día anterior, asentada
 OK segunda declaración: $150,000.00 al día de hoy, asentada
 OK el historial conserva las dos: $150,000.00 y $120,000.00
@@ -59,6 +60,7 @@ OK captura h-escenario.jpg
 OK «Quitar el escenario» regresa a la proyección real
 
 (e) Cobros esperados
+OK «Registrar un cobro» de la barra lleva al formulario
 OK el cobro con fecha pasada (Distribuidora Sur) aparece vencido
 OK alta manual: Abarrotes del Puerto por $22,500.50
 OK una factura con RFC emisor ajeno se rechaza
@@ -76,6 +78,7 @@ OK total por cobrar $78,000.00 (esperados vigentes y vencidos, sin cobrados ni c
 OK captura e2-cobros.jpg
 
 (f) Calendario
+OK «Nueva obligación» de la barra lleva al formulario
 OK el mes muestra nómina
 OK al clicar nómina se abre su detalle con origen y monto
 OK captura f1-detalle-nomina.jpg
@@ -140,6 +143,8 @@ OK el contador abre /consola/cobros (200)
 OK el contador abre /consola/calendario (200)
 OK el contador abre /consola/presupuestos (200)
 OK no ve los formularios de saldo ni colchón
+OK ni la acción de la barra en /consola/cobros
+OK ni la acción de la barra en /consola/calendario
 OK ni el alta de cobros ni «Marcar cobrado»
 OK ni el área de cada proveedor
 OK captura j1-contador-solo-lectura.jpg
@@ -160,15 +165,19 @@ OK en Altamar (cliente real) nunca
 (k) Capturas en 3 temas × 1440 y 390
 OK inicio claro 1440: 200
 OK inicio claro 1440: sin desplazamiento horizontal
+OK inicio: barra «Inicio», un h1 solo para lector («Inicio») y sin encabezado grande
 OK captura k-inicio-claro-1440.jpg
 OK cobros claro 1440: 200
 OK cobros claro 1440: sin desplazamiento horizontal
+OK cobros: barra «Cobros», un h1 solo para lector («Cobros esperados») y sin encabezado grande
 OK captura k-cobros-claro-1440.jpg
 OK calendario claro 1440: 200
 OK calendario claro 1440: sin desplazamiento horizontal
+OK calendario: barra «Calendario», un h1 solo para lector («Calendario de obligaciones») y sin encabezado grande
 OK captura k-calendario-claro-1440.jpg
 OK presupuestos claro 1440: 200
 OK presupuestos claro 1440: sin desplazamiento horizontal
+OK presupuestos: barra «Presupuestos», un h1 solo para lector («Presupuestos») y sin encabezado grande
 OK captura k-presupuestos-claro-1440.jpg
 OK inicio claro 390: 200
 OK inicio claro 390: sin desplazamiento horizontal
@@ -231,7 +240,7 @@ OK presupuestos lever 390: 200
 OK presupuestos lever 390: sin desplazamiento horizontal
 OK captura k-presupuestos-lever-390.jpg
 
-168 comprobaciones
+177 comprobaciones
 Consola del navegador: sin errores ni advertencias de la aplicación
 Avisos «GL Driver Message» del fondo WebGL (fuera de zona): 4
 Mensajes esperados en las páginas 404 de (j) (el 404 del documento y la precarga de estilos sin usar): 11

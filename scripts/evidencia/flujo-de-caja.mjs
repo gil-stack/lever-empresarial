@@ -263,6 +263,9 @@ async function principal() {
     await laura.goto(en(A, "/consola"));
     await laura.locator(".flujo-saldo").getByRole("link", { name: "Declarar el saldo" }).click();
     await laura.waitForURL(/\/consola\/flujo#declarar$/);
+    const h1Saldo = await laura.locator("h1").evaluateAll((hs) => hs.map((h) => `${h.textContent?.trim()}|${h.classList.contains("solo-lector")}`));
+    exigir(JSON.stringify(h1Saldo) === JSON.stringify(["Saldo y alertas|true"]) && (await laura.locator("main .pagina-cabeza, main .lede").count()) === 0,
+      "Saldo y alertas: un h1 solo para lector y sin encabezado grande");
     const forma = laura.locator('form[data-formulario="saldo"]');
     await forma.locator("#saldo").fill("120000.00");
     await forma.locator("#alDia").fill(desplazar(HOY, -1));
@@ -378,6 +381,10 @@ async function principal() {
   if (debe("e")) {
     console.log("\n(e) Cobros esperados");
     await laura.goto(en(A, "/consola/cobros"));
+    // La acción principal vive en la barra del Marco y lleva al formulario.
+    await laura.locator(".barra-superior").getByRole("link", { name: "Registrar un cobro" }).click();
+    await laura.waitForURL(/#nuevo-cobro$/);
+    exigir(await laura.locator('form[data-formulario="cobro"] #clienteNombre').isVisible(), "«Registrar un cobro» de la barra lleva al formulario");
     exigir((await laura.locator('tr[data-cobro][data-estado="vencido"]', { hasText: "Distribuidora Sur" }).count()) === 1, "el cobro con fecha pasada (Distribuidora Sur) aparece vencido");
     const cobro = laura.locator('form[data-formulario="cobro"]');
     await cobro.locator("#clienteNombre").fill("Abarrotes del Puerto");
@@ -445,6 +452,10 @@ async function principal() {
 
   if (debe("f")) {
     console.log("\n(f) Calendario");
+    await laura.goto(en(A, "/consola/calendario"));
+    await laura.locator(".barra-superior").getByRole("link", { name: "Nueva obligación" }).click();
+    await laura.waitForURL(/#nueva-obligacion$/);
+    exigir(await laura.locator("#nueva-obligacion").isVisible(), "«Nueva obligación» de la barra lleva al formulario");
     await laura.goto(en(A, "/consola/calendario"));
     for (const [tipo, nombre] of [["nomina", "nómina"], ["proveedor", "pago a proveedor"], ["cobro", "cobro"], ["obligacion", "renta"]]) {
       const evento = laura.locator(`.flujo-mes button.flujo-evento[data-tipo="${tipo}"]`).first();
@@ -585,6 +596,11 @@ async function principal() {
     }
     await diego.goto(en(A, "/consola/flujo"));
     exigir((await diego.locator('form[data-formulario="saldo"], form[data-formulario="colchon"]').count()) === 0, "no ve los formularios de saldo ni colchón");
+    for (const ruta of ["/consola/cobros", "/consola/calendario"]) {
+      await diego.goto(en(A, ruta));
+      exigir((await diego.locator(".barra-superior a.boton").count()) === 0, `ni la acción de la barra en ${ruta}`);
+    }
+    await diego.goto(en(A, "/consola/flujo"));
     await diego.goto(en(A, "/consola/cobros"));
     exigir((await diego.locator('form[data-formulario="cobro"], form[data-formulario="cobro-xml"]').count()) === 0 && (await diego.getByRole("button", { name: "Marcar cobrado" }).count()) === 0, "ni el alta de cobros ni «Marcar cobrado»");
     await diego.goto(en(A, "/consola/presupuestos"));
@@ -638,6 +654,16 @@ async function principal() {
           exigir(r.status() === 200, `${nombre} ${tema} ${ancho}: 200`);
           const desborde = await pagina.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
           exigir(desborde <= 0, `${nombre} ${tema} ${ancho}: sin desplazamiento horizontal`);
+          if (tema === "claro" && ancho === 1440) {
+            // Convención de la Ola 1B: el título en la barra, un solo h1 (para lector de pantalla) y sin encabezado grande.
+            const cabeza = await pagina.evaluate(() => ({
+              h1: [...document.querySelectorAll("h1")].map((h) => ({ texto: h.textContent?.trim(), oculto: h.classList.contains("solo-lector") })),
+              grande: document.querySelectorAll("main .pagina-cabeza, main .inicio-financiero > .inicio-cabeza, main .lede").length,
+              barra: document.querySelector(".barra-titulo")?.textContent?.trim(),
+            }));
+            exigir(cabeza.h1.length === 1 && cabeza.h1[0].oculto && cabeza.grande === 0,
+              `${nombre}: barra «${cabeza.barra}», un h1 solo para lector («${cabeza.h1[0]?.texto}») y sin encabezado grande`);
+          }
           await captura(pagina, `k-${nombre}-${tema}-${ancho}.jpg`);
         }
         await ctx.close();

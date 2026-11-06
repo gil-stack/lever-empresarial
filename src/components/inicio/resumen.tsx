@@ -6,7 +6,6 @@ import { CifraGrande } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
 import type { PendienteInicio } from "@/dominio/inicio";
 import { fechaMovimiento, type PeriodoResumen, type ResumenInicio } from "@/dominio/resumen";
-import { saludoEnMexico } from "@/dominio/reloj";
 import { enEmpresa } from "@/nucleo/rutas";
 import type { FlujoInicio } from "@/server/flujo/servicio";
 
@@ -23,7 +22,7 @@ export type CargaResumen =
  * marcado como «Confirmado por el banco · demostración»: a un cliente real la
  * plataforma no le pinta un saldo de banco que no tiene.
  */
-export function Resumen({ carga, empresaId, nombre, atajos }: { carga: CargaResumen; empresaId: string | null; nombre: string; atajos: PendienteInicio[] }) {
+export function Resumen({ carga, empresaId, atajos }: { carga: CargaResumen; empresaId: string | null; atajos: PendienteInicio[] }) {
   if (carga.tipo !== "lista") {
     const sinEmpresa = carga.tipo === "sin_empresa";
     return (
@@ -40,13 +39,8 @@ export function Resumen({ carga, empresaId, nombre, atajos }: { carga: CargaResu
 
   return (
     <div className="consola inicio-financiero">
-      <header className="inicio-cabeza">
-        <div>
-          <p className="kicker">Inicio</p>
-          <h1>{saludoEnMexico(new Date(), nombre)}</h1>
-          <p className="lede">Cuánto tienes, qué viene en las próximas 13 semanas y si alcanza.</p>
-        </div>
-      </header>
+      {/* El título vive en la barra del Marco; el h1 queda para el lector de pantalla. */}
+      <h1 className="solo-lector">Inicio</h1>
       <InicioFlujo flujo={carga.flujo} empresaId={empresaId} />
       {carga.libro ? <LibroDemo resumen={carga.libro} empresaId={empresaId} /> : <SinMovimientos atajos={atajos} empresaId={empresaId} vacio={sinDatos(carga.flujo)} />}
     </div>

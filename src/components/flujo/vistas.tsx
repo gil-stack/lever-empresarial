@@ -43,9 +43,8 @@ export function VistaFlujo({ vista }: { vista: VistaSaldo | null }) {
   if (!vista) return <SinLectura kicker="Flujo de caja" titulo="Saldo y alertas" />;
   return (
     <>
-      <CabezaPagina kicker="Flujo de caja" titulo="Saldo y alertas">
-        <p className="lede">El saldo de tus cuentas de banco, declarado por tu empresa. La proyección de Inicio parte del más reciente.</p>
-      </CabezaPagina>
+      {/* El título y la acción viven en la barra del Marco; el h1 queda para el lector de pantalla. */}
+      <h1 className="solo-lector">Saldo y alertas</h1>
       <Rejilla
         principal={
           <>
@@ -162,9 +161,7 @@ export function VistaCobrosPagina({
   };
   return (
     <>
-      <CabezaPagina kicker="Flujo de caja" titulo="Cobros esperados">
-        <p className="lede">El dinero que tu empresa espera cobrar y cuándo. Cuenta como entrada en la proyección mientras siga esperado y su fecha no haya pasado.</p>
-      </CabezaPagina>
+      <h1 className="solo-lector">Cobros esperados</h1>
       <Metricas etiqueta="Totales de cobros">
         <Metrica rotulo="Por cobrar" nota={<Origen de="comprometido" />}>
           <Monto><span data-cifra="por-cobrar" data-centavos={vista.totales.porCobrar}>{formatoPesos(vista.totales.porCobrar)}</span></Monto>
@@ -253,9 +250,7 @@ export function VistaCalendarioPagina({ vista, empresaId }: { vista: VistaCalend
   const siguiente = desplazar(ultimoDelMes(vista.mes), 1).slice(0, 7);
   return (
     <>
-      <CabezaPagina kicker="Flujo de caja" titulo="Calendario de obligaciones">
-        <p className="lede">Nómina, pagos a proveedores, cobros esperados y obligaciones recurrentes en un solo calendario. Toca cualquiera para ver su detalle.</p>
-      </CabezaPagina>
+      <h1 className="solo-lector">Calendario de obligaciones</h1>
       <Hoja id="mes-titulo" titulo={nombreDelMes(vista.mes)}>
         <div className="flujo-mes-navegacion">
           <p className="flujo-leyenda"><Origen de="comprometido" /> cada fecha sale de un dato registrado en la plataforma</p>
@@ -316,13 +311,9 @@ export function VistaPresupuestosPagina({ vista, empresaId }: { vista: VistaPres
   const { presupuestos } = vista;
   return (
     <>
-      <CabezaPagina kicker="Flujo de caja" titulo="Presupuestos">
-        <p className="lede">
-          {nombreDelMes(vista.hoy)}: lo comprometido de cada área contra su presupuesto. Atención desde el 80 %, excedido desde el 100 %.
-        </p>
-      </CabezaPagina>
-      <Hoja id="areas-titulo" titulo="Por área">
-        <p className="pista">Gasto del mes = nómina neta del área prorrateada al mes + pagos a proveedores del área (no rechazados ni cancelados) programados en el mes + obligaciones del área. <Origen de="comprometido" /></p>
+      <h1 className="solo-lector">Presupuestos</h1>
+      <Hoja id="areas-titulo" titulo={`Por área · ${nombreDelMes(vista.hoy)}`}>
+        <p className="pista">Gasto del mes = nómina neta del área prorrateada al mes + pagos a proveedores del área (no rechazados ni cancelados) programados en el mes + obligaciones del área. Atención desde el 80 %, excedido desde el 100 %. <Origen de="comprometido" /></p>
         {presupuestos.areas.length === 0 ? (
           <Vacio titulo="Todavía no hay áreas.">Las áreas y su presupuesto se crean en <Link href={enEmpresa(empresaId, "/consola/personas/areas")}>Personas</Link>.</Vacio>
         ) : (

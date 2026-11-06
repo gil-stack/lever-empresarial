@@ -33,7 +33,7 @@ export default async function PaginaConsola({ searchParams }: { searchParams: Pr
   return (
     <Marco actual="/consola" vista={vistaDeMarco(ctx)}>
       <main id="contenido">
-        <Resumen carga={carga} empresaId={ctx?.empresa?.id ?? null} nombre={ctx?.persona.nombre ?? ""} atajos={ctx ? atajosDeInicio(ctx.capacidades) : []} />
+        <Resumen carga={carga} empresaId={ctx?.empresa?.id ?? null} atajos={ctx ? atajosDeInicio(ctx.capacidades) : []} />
       </main>
     </Marco>
   );

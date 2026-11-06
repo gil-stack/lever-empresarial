@@ -25,7 +25,11 @@ export default async function PaginaCalendario({ searchParams }: { searchParams:
     }
   }
   return (
-    <Marco actual="/consola/calendario" vista={vistaDeMarco(ctx)}>
+    <Marco
+      actual="/consola/calendario"
+      vista={vistaDeMarco(ctx)}
+      accion={vista?.puedeEditar ? <a className="boton" href="#nueva-obligacion">Nueva obligación</a> : null}
+    >
       <main id="contenido" className="pagina">
         <VistaCalendarioPagina vista={vista} empresaId={ctx?.empresa?.id ?? null} />
       </main>
