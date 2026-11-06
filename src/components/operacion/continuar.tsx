@@ -21,7 +21,7 @@ export function ContinuarOperacion({ paso, alta, yaInscrito = false }: { paso: P
   const [codigos, setCodigos] = useState<string[] | null>(null);
   if (codigos) return <Codigos codigos={codigos} />;
   if (yaInscrito) return <Abrir />;
-  if (paso.paso === "inscribir") return <Inscribir alta={alta} alGuardar={setCodigos} />;
+  if (paso.paso === "inscribir") return <Inscribir alta={alta} alGuardar={setCodigos} porRecuperacion={paso.porRecuperacion} />;
   if (paso.paso === "recuperar") {
     return <><p className="arco-kicker">Segundo factor</p><h1>La cuenta sigue cerrada.</h1><p className="arco-nota">Otra persona del personal debe aprobar la recuperación en Operación, en Recuperaciones.</p></>;
   }
@@ -73,7 +73,15 @@ function Verificar({ paso }: { paso: Extract<PasoOperacion, { paso: "verificar" 
   );
 }
 
-function Inscribir({ alta, alGuardar }: { alta: AltaOperacion; alGuardar: (codigos: string[]) => void }) {
+function Inscribir({
+  alta,
+  alGuardar,
+  porRecuperacion,
+}: {
+  alta: AltaOperacion;
+  alGuardar: (codigos: string[]) => void;
+  porRecuperacion: boolean;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [estado, registrarTotp, pendiente] = useActionState(registrarTotpOperacion, ESTADO_ACCESO_INICIAL);
   if (estado.tipo === "codigos") return <Codigos codigos={estado.codigos} />;
@@ -96,8 +104,9 @@ function Inscribir({ alta, alGuardar }: { alta: AltaOperacion; alGuardar: (codig
   const mensaje = error ?? (estado.tipo === "error" ? estado.mensaje : null);
   return (
     <div>
-      <p className="arco-kicker">Primer ingreso · Operación</p>
-      <h1>Registra tu segundo factor.</h1>
+      <p className="arco-kicker">{porRecuperacion ? "Recuperación aprobada · Operación" : "Primer ingreso · Operación"}</p>
+      <h1>{porRecuperacion ? "Registra un factor nuevo." : "Registra tu segundo factor."}</h1>
+      {porRecuperacion ? <p className="arco-nota">Al confirmarlo, tus passkeys, tu app autenticadora y tus códigos de respaldo anteriores dejan de servir y se cierran tus otras sesiones.</p> : null}
       {mensaje ? <div className="alerta" role="alert"><p>{mensaje}</p></div> : null}
       <div className="arco-opciones">
         <button type="button" className="boton" onClick={conPasskey}>Crear una passkey</button>
