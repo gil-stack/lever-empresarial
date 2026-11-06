@@ -18,6 +18,7 @@ import {
 } from "@/app/entrar/acciones";
 
 import { CodigosDeRespaldo } from "./codigos";
+import { ConfirmarIdentidad } from "./confirmar-identidad";
 
 export type PasskeyVisible = {
   id: string;
@@ -30,27 +31,38 @@ export function Seguridad({
   passkeys,
   totp,
   respaldoRestantes,
+  confirmacion,
   esOperador,
   aviso,
 }: {
   passkeys: PasskeyVisible[];
   totp: boolean;
   respaldoRestantes: number;
+  /** Si el factor de la sesión sigue fresco para cambiar métodos, y con qué se renueva. */
+  confirmacion: { reciente: boolean; passkey: boolean; totp: boolean; respaldo: boolean };
   esOperador: boolean;
   aviso: string | null;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [alta, setAlta] = useState<{ qr: string; semilla: string } | null>(null);
   const [codigos, setCodigos] = useState<string[] | null>(null);
+  // El servidor también puede pedirlo: el factor venció mientras la página estaba abierta.
+  const [pideConfirmar, setPideConfirmar] = useState(false);
   const [confirmado, enviarCodigo, pendiente] = useActionState(confirmarTotpDeCuenta, FACTOR_INICIAL);
+  const reautenticar = pideConfirmar || !confirmacion.reciente || (confirmado.tipo === "error" && confirmado.codigo === "reautenticacion_requerida");
 
   if (codigos) return <CodigosDeRespaldo codigos={codigos} destino="/entrar/seguridad" />;
+
+  function rechazo(resultado: { mensaje: string; codigo?: string }) {
+    setError(resultado.mensaje);
+    if (resultado.codigo === "reautenticacion_requerida") setPideConfirmar(true);
+  }
 
   async function agregarPasskey() {
     setError(null);
     const pedido = await pedirPasskeyDeCuenta();
     if (pedido.tipo === "error") {
-      setError(pedido.mensaje);
+      rechazo(pedido);
       return;
     }
     try {
@@ -58,7 +70,7 @@ export function Seguridad({
         optionsJSON: pedido.opciones as PublicKeyCredentialCreationOptionsJSON,
       });
       const resultado = await guardarPasskeyDeCuenta(respuesta, "Este dispositivo");
-      if (resultado?.tipo === "error") setError(resultado.mensaje);
+      if (resultado?.tipo === "error") rechazo(resultado);
     } catch (causa) {
       if (causa instanceof Error && causa.message.includes("NEXT_REDIRECT")) throw causa;
       setError(causa instanceof Error && causa.name === "NotAllowedError" ? "No se creó la passkey." : "No se pudo crear la passkey.");
@@ -69,14 +81,14 @@ export function Seguridad({
     setError(null);
     const resultado = await empezarTotpDeCuenta();
     if (resultado.tipo === "alta") setAlta(resultado.alta);
-    else if (resultado.tipo === "error") setError(resultado.mensaje);
+    else if (resultado.tipo === "error") rechazo(resultado);
   }
 
   async function regenerar() {
     setError(null);
     const resultado = await regenerarCodigosDeCuenta();
     if (resultado.tipo === "codigos") setCodigos(resultado.codigos);
-    else if (resultado.tipo === "error") setError(resultado.mensaje);
+    else if (resultado.tipo === "error") rechazo(resultado);
   }
 
   const mensaje = error ?? (confirmado.tipo === "error" ? confirmado.mensaje : null) ?? aviso;
@@ -86,6 +98,18 @@ export function Seguridad({
       <p className="arco-kicker">Tu cuenta</p>
       <h1>Segundo factor.</h1>
       <p className="arco-nota">Puedes tener una passkey y una app. No se puede quitar el último método.</p>
+      {reautenticar ? (
+        <ConfirmarIdentidad
+          passkey={confirmacion.passkey}
+          totp={confirmacion.totp}
+          respaldo={confirmacion.respaldo}
+          motivo="Para agregar, quitar o regenerar un método, prueba tu segundo factor. Vale cinco minutos."
+          alConfirmar={() => {
+            setPideConfirmar(false);
+            setError(null);
+          }}
+        />
+      ) : null}
       {mensaje ? (
         <div className="alerta" role="alert">
           <p>{mensaje}</p>
@@ -146,7 +170,7 @@ export function Seguridad({
         </button>
       </div>
       {esOperador ? (
-        <Link className="arco-enlace" href="/entrar/recuperaciones">
+        <Link className="arco-enlace" href="/operacion/recuperaciones">
           Solicitudes de recuperación
         </Link>
       ) : null}

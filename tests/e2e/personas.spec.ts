@@ -53,7 +53,12 @@ async function terminarAlta(page: Page, nombre: string): Promise<string> {
 }
 
 test("recorrido completo de colaboradores, presupuesto, nómina, tarjeta y baja", async ({ page, context, baseURL }) => {
-  await context.addCookies([{ name: "sesion", value: process.env.E2E_SESSION_TOKEN ?? "", url: baseURL, httpOnly: true, sameSite: "Lax" }]);
+  // `next start` corre en producción: la cookie de sesión lleva el prefijo __Host- (Secure, Path=/, sin Domain).
+  // Con `url` http Playwright quita `secure` y Chromium rechaza el prefijo; con domain + path queda host-only.
+  const host = new URL(baseURL ?? "http://localhost").hostname;
+  await context.addCookies([
+    { name: "__Host-sesion", value: process.env.E2E_SESSION_TOKEN ?? "", domain: host, path: "/", httpOnly: true, secure: true, sameSite: "Lax" },
+  ]);
 
   await abrir(page, "/consola/personas/areas");
   await page.getByLabel("Área", { exact: true }).fill("Tesorería E2E");

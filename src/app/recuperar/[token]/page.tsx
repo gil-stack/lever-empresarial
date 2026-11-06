@@ -21,7 +21,7 @@ export default async function PaginaToken({ params }: { params: Promise<{ token:
         {estado === "vigente" ? (
           <>
             <h1>Elige una contraseña nueva.</h1>
-            <p className="lede">Al guardarla se cierran las otras sesiones. El segundo factor no se borra.</p>
+            <p className="lede">Al guardarla se cierran todas tus sesiones abiertas. El segundo factor no se borra.</p>
             <FormularioNuevaContrasena token={token} />
           </>
         ) : (

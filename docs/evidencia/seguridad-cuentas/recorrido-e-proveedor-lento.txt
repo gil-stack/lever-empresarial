@@ -1,0 +1,5 @@
+Ana entra a la consola con TOTP (/c/03752b41-d354-4516-a9de-df8af53f892d/consola)
+captura e-existente.png
+captura e-inexistente.png
+(e) misma respuesta: «Revisa tu correo Si ese correo tiene cuenta, te llegará un enlace. Sirve una sola vez, vence en una hora y no cambia tu segundo factor.»
+(e) [proveedor_lento_3s] tiempos parecidos: existente 1824 ms, inexistente 1826 ms

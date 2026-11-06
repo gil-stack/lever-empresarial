@@ -1,12 +1,22 @@
+import { nombreDeCookie } from "../../nucleo/cookies";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 
+export { nombreDeCookie } from "../../nucleo/cookies";
+
 /** Sesión completa: contraseña y segundo factor. La única que abre un portal. */
-export const NOMBRE_COOKIE = "sesion";
+export const NOMBRE_COOKIE = nombreDeCookie("sesion");
 
 /** Sesión parcial: contraseña sola. Solo sirve para verificar el segundo factor. */
-export const NOMBRE_COOKIE_PARCIAL = "sesion_parcial";
+export const NOMBRE_COOKIE_PARCIAL = nombreDeCookie("sesion_parcial");
 
+/** Vencimiento absoluto. Además, la base deja de honrarla tras INACTIVIDAD_SESION_MS sin uso. */
 export const VIGENCIA_SESION_MS = 12 * 60 * 60 * 1000;
+
+/** Igual que el intervalo de sesion_por_token en 0025_seguridad_cuentas.sql. */
+export const INACTIVIDAD_SESION_MS = 30 * 60 * 1000;
+
+/** ultimo_uso se escribe como mucho una vez por este intervalo, no en cada petición. */
+export const RENOVACION_USO_MS = 60 * 1000;
 
 export const VIGENCIA_PARCIAL_MS = 10 * 60 * 1000;
 

@@ -5,7 +5,7 @@
  */
 export type EstadoFactor =
   | { tipo: "inicial" }
-  | { tipo: "error"; mensaje: string }
+  | { tipo: "error"; mensaje: string; codigo?: string }
   | { tipo: "codigos"; codigos: string[] }
   | { tipo: "alta"; alta: { qr: string; semilla: string } };
 
