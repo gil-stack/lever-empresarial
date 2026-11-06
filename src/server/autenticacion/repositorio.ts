@@ -62,7 +62,10 @@ export type TotpGuardado = {
 
 export type EstadoFactores = {
   passkeys: PasskeyGuardada[];
+  /** La app autenticadora confirmada y vigente. */
   totp: TotpGuardado | null;
+  /** La app que se está inscribiendo. Con una recuperación aprobada convive con la confirmada vieja. */
+  totpPendiente: TotpGuardado | null;
   respaldoRestantes: number;
   /** Alguna vez tuvo passkey o TOTP confirmado, aunque hoy estén revocados. */
   tuvoFactores: boolean;
@@ -238,6 +241,7 @@ export const SQL = {
     )
     returning reto`,
   borrarSesionesDelUsuario: "delete from sessions where user_id = $1",
+  cerrarSesionesDelUsuario: "delete from sessions where user_id = $1 returning id",
   insertarSesion: `insert into sessions (id, user_id, token_hash, expires_at, segundo_factor, entrada_id, superficie)
     values ($1, $2, $3, $4, $5, $6, $7)`,
   usarTotp: `update auth_totp set ultimo_paso = $2
@@ -367,10 +371,11 @@ export function repositorioPg(): RepositorioAutenticacion {
         consultar(SQL.respaldoRestantes, [userId], userId),
         consultar(SQL.tuvoFactores, [userId], userId),
       ]);
-      const filaTotp = totp.rows[0] as Record<string, unknown> | undefined;
+      const apps = (totp.rows as Record<string, unknown>[]).map(mapearTotp);
       return {
         passkeys: (passkeys.rows as Record<string, unknown>[]).map(mapearPasskey),
-        totp: filaTotp ? mapearTotp(filaTotp) : null,
+        totp: apps.find((app) => app.confirmado) ?? null,
+        totpPendiente: apps.find((app) => !app.confirmado) ?? null,
         respaldoRestantes: Number((respaldo.rows[0] as { restantes?: unknown } | undefined)?.restantes ?? 0),
         tuvoFactores: (tuvo.rows[0] as { tuvo?: unknown } | undefined)?.tuvo === true,
       };
@@ -588,7 +593,7 @@ async function aplicarEfecto(consulta: Consulta, userId: string, efecto: Efecto,
       return;
     }
     case "inscribir_totp": {
-      await exigirSinFactores(consulta, userId);
+      await retirarFactoresAnteriores(consulta, userId, efecto.recuperacionId, ahora);
       const confirmado = await consulta.query(SQL.confirmarTotp, [efecto.totpId, userId, ahora, efecto.paso]);
       if (confirmado.rowCount !== 1) throw new ErrorDeDominio("segundo_factor_invalido");
       await registrarHechoAutenticacion(hecho("totp_confirmado", efecto.totpId, userId, ahora), consulta);
@@ -597,7 +602,7 @@ async function aplicarEfecto(consulta: Consulta, userId: string, efecto: Efecto,
       return;
     }
     case "inscribir_passkey": {
-      await exigirSinFactores(consulta, userId);
+      await retirarFactoresAnteriores(consulta, userId, efecto.recuperacionId, ahora);
       await consulta.query(SQL.borrarTotpPendiente, [userId]);
       await insertarPasskey(consulta, userId, efecto.passkey, ahora);
       await guardarRespaldo(consulta, userId, efecto.codigosHash, ahora);
@@ -638,6 +643,41 @@ async function cumplirRecuperacion(
   const cumplida = await consulta.query(SQL.cumplirRecuperacion, [recuperacionId, userId, ahora]);
   if (cumplida.rowCount !== 1) throw new ErrorDeDominio("recuperacion_vencida");
   await registrarHechoAutenticacion(hecho("recuperacion_cumplida", recuperacionId, userId, ahora), consulta);
+}
+
+/**
+ * Sin recuperación, inscribir solo cabe sin factores. Con la recuperación
+ * aprobada, los factores anteriores pueden estar en otras manos: se revocan las
+ * passkeys y la app confirmada y se cierran las sesiones, cada uno con su
+ * evento, en la transacción que confirma el factor nuevo y cumple la
+ * recuperación. Los códigos de respaldo viejos los invalida guardarRespaldo.
+ */
+async function retirarFactoresAnteriores(
+  consulta: Consulta,
+  userId: string,
+  recuperacionId: string | null,
+  ahora: Date,
+): Promise<void> {
+  if (!recuperacionId) {
+    await exigirSinFactores(consulta, userId);
+    return;
+  }
+  const passkeys = await consulta.query(SQL.revocarPasskeysDelUsuario, [userId, ahora, userId]);
+  for (const id of idsDe(passkeys.rows)) {
+    await registrarHechoAutenticacion(hecho("passkey_revocada", id, userId, ahora), consulta);
+  }
+  const apps = await consulta.query(SQL.revocarTotp, [userId, ahora, userId]);
+  for (const id of idsDe(apps.rows)) {
+    await registrarHechoAutenticacion(hecho("totp_revocado", id, userId, ahora), consulta);
+  }
+  const sesiones = await consulta.query(SQL.cerrarSesionesDelUsuario, [userId]);
+  for (const id of idsDe(sesiones.rows)) {
+    await registrarHechoAutenticacion(hecho("sesion_cerrada", id, userId, ahora), consulta);
+  }
+}
+
+function idsDe(filas: unknown[]): string[] {
+  return (filas as { id?: unknown }[]).map((fila) => texto(fila.id));
 }
 
 async function contarVigentes(consulta: Consulta, userId: string): Promise<number> {

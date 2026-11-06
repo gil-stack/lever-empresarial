@@ -182,7 +182,7 @@ describe("entrar con segundo factor", () => {
 
     const deNuevo = await entrarHasta(deps);
     const paso = await leerPaso(deNuevo, deps);
-    assert.equal(paso.paso, "verificar");
+    assert.deepEqual(paso, { paso: "inscribir", nombre: "Ana Pérez", correo: "ana@ejemplo.mx", porRecuperacion: true });
   });
 });
 
@@ -347,6 +347,141 @@ describe("las recuperaciones se resuelven solo desde Operación y con confirmaci
   });
 });
 
+describe("con la recuperación aprobada se inscribe un factor nuevo y los anteriores quedan sin efecto", () => {
+  it("Ana pide, otra persona aprueba, Ana inscribe una app nueva: la app, la passkey, los códigos y la sesión viejos dejan de servir", async () => {
+    const repo = anaConPasskey();
+    const deps = base(repo, undefined, LUEGO);
+    await pedirRecuperacion(await entrarHasta(deps), "Perdí el teléfono con la app", deps);
+    const operadorId = "00000000-0000-4000-8000-0000000000bb";
+    const operador = sesionDe(repo, operadorId, "operador@arco.mx", { superficie: "sofipo", factorEn: LUEGO });
+    repo.sesiones.push({ id: operador.id, userId: operadorId, factor: "totp" });
+    await resolverRecuperacion(operador, { id: repo.recuperaciones[0]!.id, aprobada: true, verificacion: "videollamada" }, deps);
+
+    const token = await entrarHasta(deps);
+    assert.deepEqual(await leerPaso(token, deps), {
+      paso: "inscribir",
+      nombre: "Ana Pérez",
+      correo: "ana@ejemplo.mx",
+      porRecuperacion: true,
+    });
+    const conSemillaNueva = { ...deps, semilla: () => SEMILLA_NUEVA };
+    await prepararTotp(token, conSemillaNueva);
+    assert.equal(repo.totp.filter((t) => t.userId === repo.ana.id && !t.revocado).length, 2);
+    const inscripcion = await inscribirTotp(token, codigoDelPaso(SEMILLA_NUEVA, pasoDe(LUEGO)), conSemillaNueva);
+    assert.equal(inscripcion.codigos.length, 10);
+
+    assert.equal(repo.totp.find((t) => t.id === TOTP_CONFIRMADO)?.revocado, true);
+    assert.equal(repo.passkeys.every((p) => p.revocado), true);
+    assert.equal(repo.respaldos.find((r) => r.id === "r1")?.usado, true);
+    assert.deepEqual(
+      repo.totp.filter((t) => t.userId === repo.ana.id && !t.revocado).map((t) => t.confirmado),
+      [true],
+    );
+    assert.equal(repo.recuperaciones[0]?.estado, "cumplida");
+    assert.deepEqual(
+      repo.sesiones.filter((s) => s.userId === repo.ana.id).map((s) => s.factor),
+      ["totp"],
+      "solo queda la sesión que abrió la inscripción",
+    );
+    assert.ok(repo.sesiones.some((s) => s.id === operador.id), "la sesión de otra persona sigue");
+    assert.ok(repo.eventos.includes("passkey_revocada"));
+    assert.ok(repo.eventos.includes("totp_revocado"));
+    assert.ok(repo.eventos.includes("sesion_cerrada:00000000-0000-4000-8000-00000000aa01"));
+    assert.deepEqual(repo.avisos.at(-1)?.cambio, "factor_reinscrito");
+
+    const conLaVieja = await entrarHasta(deps);
+    assert.equal(await codigoDe(entrarConTotp(conLaVieja, codigoDelPaso(SEMILLA, pasoDe(LUEGO)), deps)), "segundo_factor_invalido");
+    assert.equal(await codigoDe(entrarConRespaldo(await entrarHasta(deps), "ABCD-EFGH-JKLM-NPQR", deps)), "segundo_factor_invalido");
+    assert.equal(
+      await codigoDe(entrarConPasskey(await entrarHasta(deps), { id: CREDENCIAL }, origen(), deps)),
+      "segundo_factor_invalido",
+    );
+    assert.deepEqual(await leerPaso(await entrarHasta(deps), deps), {
+      paso: "verificar",
+      nombre: "Ana Pérez",
+      passkey: false,
+      totp: true,
+      respaldo: true,
+      solicitudAbierta: false,
+    });
+  });
+
+  it("con una passkey nueva también revoca la app y la passkey viejas", async () => {
+    const repo = anaConPasskey();
+    conRecuperacionAprobada(repo);
+    const deps = { ...base(repo), webauthn: webauthnQueRegistra(CREDENCIAL_NUEVA) };
+    const token = await entrarHasta(deps);
+    await opcionesParaInscribirPasskey(token, origen(), deps);
+    await inscribirPasskey(token, { id: CREDENCIAL_NUEVA }, origen(), "Teléfono nuevo", deps);
+
+    assert.deepEqual(
+      repo.passkeys.map((p) => [p.credencialId, p.revocado]),
+      [
+        [CREDENCIAL, true],
+        [CREDENCIAL_NUEVA, false],
+      ],
+    );
+    assert.equal(repo.totp.find((t) => t.id === TOTP_CONFIRMADO)?.revocado, true);
+    assert.equal(repo.recuperaciones[0]?.estado, "cumplida");
+    assert.deepEqual(repo.avisos.at(-1)?.cambio, "factor_reinscrito");
+  });
+
+  it("la recuperación vencida ya no deja inscribir: vuelve a pedir el factor de siempre", async () => {
+    const repo = anaConTotp();
+    conRecuperacionAprobada(repo, new Date(AHORA.getTime() - 1));
+    const deps = base(repo);
+    const token = await entrarHasta(deps);
+    assert.equal((await leerPaso(token, deps)).paso, "verificar");
+    assert.equal(await codigoDe(prepararTotp(token, deps)), "ya_tiene_segundo_factor");
+    assert.equal(await codigoDe(inscribirTotp(token, codigoDelPaso(SEMILLA, pasoDe(AHORA)), deps)), "ya_tiene_segundo_factor");
+    assert.equal(repo.totp.find((t) => t.id === TOTP_CONFIRMADO)?.revocado, false);
+    assert.equal(repo.sesiones.length, 1);
+  });
+
+  it("si la recuperación vence entre el QR y el código, no se inscribe nada", async () => {
+    const repo = anaConTotp();
+    conRecuperacionAprobada(repo);
+    const deps = { ...base(repo), semilla: () => SEMILLA_NUEVA };
+    const token = await entrarHasta(deps);
+    await prepararTotp(token, deps);
+    repo.recuperaciones[0]!.venceEn = new Date(AHORA.getTime() - 1);
+    assert.equal(
+      await codigoDe(inscribirTotp(token, codigoDelPaso(SEMILLA_NUEVA, pasoDe(AHORA)), deps)),
+      "ya_tiene_segundo_factor",
+    );
+    assert.equal(repo.totp.find((t) => t.id === TOTP_CONFIRMADO)?.revocado, false);
+    assert.equal(repo.totp.filter((t) => t.confirmado).length, 1);
+  });
+
+  it("sin recuperación aprobada, quien tiene factores sigue en verificar y no puede inscribir", async () => {
+    const repo = anaConTotp();
+    const deps = base(repo);
+    const token = await entrarHasta(deps);
+    assert.equal((await leerPaso(token, deps)).paso, "verificar");
+    assert.equal(await codigoDe(prepararTotp(token, deps)), "ya_tiene_segundo_factor");
+    await pedirRecuperacion(await entrarHasta(deps), "Perdí el teléfono", deps);
+    const conSolicitud = await leerPaso(await entrarHasta(deps), deps);
+    assert.equal(conSolicitud.paso, "verificar");
+    assert.equal(conSolicitud.paso === "verificar" && conSolicitud.solicitudAbierta, true);
+    assert.equal(repo.totp.find((t) => t.id === TOTP_CONFIRMADO)?.revocado, false);
+    // Control: el mismo código de respaldo que la recuperación anula sí abre mientras no hay recuperación.
+    assert.match(await entrarConRespaldo(await entrarHasta(deps), "ABCD-EFGH-JKLM-NPQR", deps), /sesion=/);
+  });
+
+  it("si el aviso por correo falla, el factor nuevo queda inscrito igual", async () => {
+    const repo = anaConTotp();
+    conRecuperacionAprobada(repo);
+    repo.correoCaido = true;
+    const deps = { ...base(repo), semilla: () => SEMILLA_NUEVA };
+    const token = await entrarHasta(deps);
+    await prepararTotp(token, deps);
+    const inscripcion = await inscribirTotp(token, codigoDelPaso(SEMILLA_NUEVA, pasoDe(AHORA)), deps);
+    assert.equal(inscripcion.codigos.length, 10);
+    assert.equal(repo.recuperaciones[0]?.estado, "cumplida");
+    assert.deepEqual(repo.avisos, []);
+  });
+});
+
 describe("los intentos se apartan antes de verificar y cada reto sirve a su propósito", () => {
   it("diez confirmaciones a la vez verifican como mucho cinco y cierran la sesión", async () => {
     const repo = anaConPasskey();
@@ -432,6 +567,32 @@ describe("los intentos se apartan antes de verificar y cada reto sirve a su prop
     assert.deepEqual(repo.avisos, []);
   });
 });
+
+const SEMILLA_NUEVA = Buffer.from("abcdefghijabcdefghij");
+const CREDENCIAL_NUEVA = "credencial-nueva-00002";
+
+/** Recuperación de Ana ya aprobada por otra persona, vigente hasta `venceEn`. */
+function conRecuperacionAprobada(repo: Memoria, venceEn = new Date(AHORA.getTime() + 60 * 60 * 1000)) {
+  repo.recuperaciones.push({
+    id: "00000000-0000-4000-8000-0000000000c1",
+    userId: repo.ana.id,
+    estado: "aprobada",
+    venceEn,
+    motivo: "Perdí el teléfono",
+  });
+}
+
+/** Registra una credencial con el id dado: una passkey nueva no repite el id de la vieja. */
+function webauthnQueRegistra(credencialId: string): AdaptadorWebauthn {
+  const falso = webauthnFalso();
+  return {
+    ...falso,
+    async verificarRegistro(args) {
+      const registro = await falso.verificarRegistro(args);
+      return registro ? { ...registro, credencialId } : null;
+    },
+  };
+}
 
 function anaConPasskey() {
   const repo = anaConTotp();
@@ -740,10 +901,11 @@ class Memoria {
 
   estado(userId: string): EstadoFactores {
     const passkeys = this.passkeys.filter((p) => p.userId === userId && !p.revocado);
-    const totp = this.totp.find((t) => t.userId === userId && !t.revocado) ?? null;
+    const vivas = this.totp.filter((t) => t.userId === userId && !t.revocado);
     return {
       passkeys,
-      totp,
+      totp: vivas.find((t) => t.confirmado) ?? null,
+      totpPendiente: vivas.find((t) => !t.confirmado) ?? null,
       respaldoRestantes: this.respaldos.filter((r) => r.userId === userId && !r.usado).length,
       tuvoFactores: this.passkeys.some((p) => p.userId === userId) || this.totp.some((t) => t.userId === userId && t.confirmado),
     };
@@ -776,8 +938,8 @@ class Memoria {
       return;
     }
     if (efecto.tipo === "inscribir_totp") {
-      if (this.vigentes(userId) > 0) throw new ErrorDeDominio("ya_tiene_segundo_factor");
-      const totp = this.totp.find((t) => t.id === efecto.totpId && !t.confirmado);
+      this.retirarAnteriores(userId, efecto.recuperacionId);
+      const totp = this.totp.find((t) => t.id === efecto.totpId && !t.confirmado && !t.revocado);
       if (!totp) throw new ErrorDeDominio("segundo_factor_invalido");
       totp.confirmado = true;
       totp.ultimoPaso = efecto.paso;
@@ -785,11 +947,33 @@ class Memoria {
       this.cumplir(userId, efecto.recuperacionId);
       return;
     }
-    if (this.vigentes(userId) > 0) throw new ErrorDeDominio("ya_tiene_segundo_factor");
-    this.totp = this.totp.filter((t) => t.confirmado || t.userId !== userId);
+    this.retirarAnteriores(userId, efecto.recuperacionId);
+    this.totp = this.totp.filter((t) => t.confirmado || t.revocado || t.userId !== userId);
     this.agregarPasskey(userId, efecto.passkey);
     this.guardarRespaldo(userId, efecto.codigosHash);
     this.cumplir(userId, efecto.recuperacionId);
+  }
+
+  /** Como la base: sin recuperación exige no tener factores; con ella revoca los viejos y cierra las sesiones. */
+  retirarAnteriores(userId: string, recuperacionId: string | null): void {
+    if (!recuperacionId) {
+      if (this.vigentes(userId) > 0) throw new ErrorDeDominio("ya_tiene_segundo_factor");
+      return;
+    }
+    for (const passkey of this.passkeys) {
+      if (passkey.userId === userId && !passkey.revocado) {
+        passkey.revocado = true;
+        this.eventos.push("passkey_revocada");
+      }
+    }
+    for (const app of this.totp) {
+      if (app.userId === userId && app.confirmado && !app.revocado) {
+        app.revocado = true;
+        this.eventos.push("totp_revocado");
+      }
+    }
+    for (const sesion of this.sesiones.filter((s) => s.userId === userId)) this.eventos.push(`sesion_cerrada:${sesion.id}`);
+    this.sesiones = this.sesiones.filter((s) => s.userId !== userId);
   }
 
   agregarPasskey(userId: string, passkey: NuevaPasskey): void {
