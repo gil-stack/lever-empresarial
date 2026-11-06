@@ -1,0 +1,32 @@
+[
+  {
+    "nombre": "sin fondo del navegador",
+    "ok": true,
+    "detalle": "rgba(0, 0, 0, 0)"
+  },
+  {
+    "nombre": "solo la línea de abajo",
+    "ok": true,
+    "detalle": "0px/0px/1px/0px"
+  },
+  {
+    "nombre": "fuente del texto, no la del navegador",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "cursor de mano",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "clic abre la recuperación",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "sin errores de consola",
+    "ok": true,
+    "detalle": ""
+  }
+]

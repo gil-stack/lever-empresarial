@@ -237,14 +237,27 @@
   border-bottom: 1px solid var(--linea);
 }
 
+/* Sirve igual para un enlace y para un <button> (como «Perdí el segundo factor»): sin el fondo,
+   los bordes ni la fuente del navegador, solo la línea de abajo. */
 .arco .arco-enlace {
   display: inline-flex;
   margin-top: 18px;
   padding: 0 0 4px;
+  border: 0;
   border-bottom: 1px solid var(--linea-fuerte);
+  border-radius: 0;
+  background: none;
   color: var(--tinta);
+  font: inherit;
   font-size: 0.79rem;
   font-weight: 550;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.arco .arco-enlace:hover {
+  border-bottom-color: var(--sello);
+  color: var(--tinta);
 }
 
 @media (max-width: 560px) {

@@ -31,8 +31,9 @@ Cada entrada (consola y Operación) se hizo con contraseña y un código TOTP de
 | 404 | `61-404` | Logotipo y botones del sistema |
 | Muestrario (Oscuro 1440 y 390; los tres temas en 1440) | `70-muestrario-panel`, `71-muestrario-aviso`, `72-muestrario-dialogo` | Panel lateral abre y cierra con Escape; «Archivar» muestra el aviso y «Deshacer» regresa la fila; el diálogo abre y cierra |
 | Operación SOFIPO | `90-operacion-entrar`, `91-operacion-totp`, `92-operacion-resumen`, `93-operacion-clientes` | Contraseña → TOTP → Abrir operación → resumen → Clientes → Salir |
+| «Perdí el segundo factor» | `95-perdi-factor-boton`, `96-perdi-factor-hover`, `97-perdi-factor-recuperacion` | Es un `<button>` con aspecto de enlace: fondo transparente, borde de 0 px arriba, a la izquierda y a la derecha, línea de 1 px abajo, la misma fuente del texto y cursor de mano (antes se veía como un botón gris del navegador). Al pasar el cursor la línea toma el acento; al clicarlo abre «Recuperación» con el campo «Qué pasó» (`#motivo`) |
 
-Resultado: **217 de 217 comprobaciones en verde**, incluida «sin errores de consola del navegador» en cada corrida: consola 29 por tema en 1440, 26 en 390 (32 en Oscuro 390, que suma el muestrario), Operación 5 por tema y tamaño, y Apariencia 16. El detalle de cada comprobación está en `datos/checks-*.json`.
+Resultado: **217 de 217 comprobaciones en verde**, incluida «sin errores de consola del navegador» en cada corrida: consola 29 por tema en 1440, 26 en 390 (32 en Oscuro 390, que suma el muestrario), Operación 5 por tema y tamaño, y Apariencia 16. Aparte, «Perdí el segundo factor» suma 6 por tema y tamaño, 36 de 36 en verde (`datos/checks-perdi-factor-*.json`). El detalle de cada comprobación está en `datos/checks-*.json`.
 
 ### Apariencia: persiste al recargar
 
@@ -117,6 +118,7 @@ TOKEN_LAURA=<token del enlace de alta> TOKEN_OP=<token de la invitación de pers
 for tema in oscuro claro lever; do for forma in escritorio movil; do
   node scripts/evidencia/sistema-visual/recorrido.mjs $tema $forma
   node scripts/evidencia/sistema-visual/operacion.mjs $tema $forma
+  node scripts/evidencia/sistema-visual/perdi-factor.mjs $tema $forma
 done; done
 node scripts/evidencia/sistema-visual/apariencia.mjs
 # Contraste y comparación con el diseño

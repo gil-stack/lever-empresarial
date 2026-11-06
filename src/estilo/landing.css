@@ -772,7 +772,7 @@
 
 .arco-enlace:hover {
   border-color: var(--arco-azul);
-  color: #1b64cf;
+  color: var(--arco-azul);
 }
 
 .arco-preguntas {
