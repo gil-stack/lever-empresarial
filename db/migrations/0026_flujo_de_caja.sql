@@ -489,12 +489,10 @@ CREATE CONSTRAINT TRIGGER weekly_digest_sends_auditoria
 AFTER INSERT OR UPDATE ON weekly_digest_sends DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION flujo_exige_auditoria();
 
--- Lectura del flujo: índices de las fuentes que la proyección recorre ----------
--- Pagos a proveedores vivos por fecha programada (sin anulados).
-CREATE INDEX supplier_payables_flujo_idx
-  ON supplier_payables (company_id, programada_el) INCLUDE (supplier_id, total_centavos)
-  WHERE anulado_en IS NULL;
--- Lotes de nómina preparados por fecha de pago: payroll_batches_empresa ya cubre (company_id, fecha_pago).
+-- Lectura del flujo: no hace falta otro índice sobre tablas existentes. Medido con
+-- 1,000 cuentas por pagar de la empresa y 20,000 de otra (docs/evidencia/flujo-de-caja):
+-- los pagos por fecha usan supplier_payables_agenda_idx (company_id, programada_el, ...)
+-- de 0022 y los lotes de nómina, payroll_batches_empresa (company_id, fecha_pago).
 
 -- Permisos mínimos y RLS --------------------------------------------------------
 GRANT SELECT, INSERT ON cash_balance_declarations TO plataforma_cliente;

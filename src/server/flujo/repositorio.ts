@@ -179,15 +179,17 @@ export const SQL_PRESUPUESTOS = `
       where o.company_id = $1 and o.activa and o.cost_center_id is not null and o.proxima_fecha <= $3::date), '[]'::json) as obligaciones,
     coalesce((select json_agg(json_build_object(
         'id', e.id, 'nombre', e.nombre, 'area', c.nombre, 'presupuesto', e.presupuesto_mensual_centavos::text,
-        'pagos', coalesce((
-          select sum(p.total_centavos)
-            from supplier_payment_requests r
-            join supplier_payables p on p.id = r.payable_id and p.company_id = r.company_id
-           where r.company_id = e.company_id and r.solicitado_por = e.user_id
-             and r.estado not in ('rechazado', 'cancelado') and p.anulado_en is null
-             and p.programada_el between $2::date and $3::date), 0)::text) order by e.nombre, e.id)
+        'pagos', coalesce(g.total, 0)::text) order by e.nombre, e.id)
        from employees e
        left join cost_centers c on c.id = e.cost_center_id and c.company_id = e.company_id
+       -- Una sola pasada por las solicitudes del mes, agrupada por quien pidió; no una subconsulta por persona.
+       left join (
+         select r.solicitado_por, sum(p.total_centavos) as total
+           from supplier_payment_requests r
+           join supplier_payables p on p.id = r.payable_id and p.company_id = r.company_id
+          where r.company_id = $1 and r.estado not in ('rechazado', 'cancelado') and p.anulado_en is null
+            and p.programada_el between $2::date and $3::date
+          group by r.solicitado_por) g on g.solicitado_por = e.user_id
       where e.company_id = $1 and e.presupuesto_mensual_centavos is not null
         and (e.baja_en is null or e.baja_en >= $2::date)), '[]'::json) as personas
 `;
