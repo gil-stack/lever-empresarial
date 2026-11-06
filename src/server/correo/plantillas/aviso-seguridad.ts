@@ -26,7 +26,7 @@ const TEXTOS: Record<CambioDeSeguridad, { asunto: string; que: string }> = {
   },
   factor_reinscrito: {
     asunto: "Registraste un segundo factor nuevo",
-    que: "Se registró un segundo factor nuevo después de una recuperación aprobada.",
+    que: "Registraste un segundo factor nuevo; los anteriores quedaron desactivados.",
   },
   contrasena_cambiada: {
     asunto: "Cambiaste tu contraseña",

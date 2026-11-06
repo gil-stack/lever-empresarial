@@ -214,7 +214,7 @@ export async function inscribirTotp(
   const { paso, persona, recuperacionId } = await contextoDeInscripcion(entrada.userId, listo);
   if (paso.paso !== "inscribir") throw new ErrorDeDominio("ya_tiene_segundo_factor");
   const factores = await listo.repositorio.factores(entrada.userId);
-  const pendiente = factores.totp && !factores.totp.confirmado ? factores.totp : null;
+  const pendiente = factores.totpPendiente;
   const intentos = await apartarIntento(entrada, listo);
   const normalizado = normalizarCodigoTotp(codigo);
   const semilla = pendiente ? descifrarDe(pendiente.secretoCifrado, entrada.userId, listo) : null;
@@ -314,7 +314,7 @@ export async function confirmarTotpDeSesion(
   const listo = resolver(deps);
   await exigirCambioDeFactor(sesion, listo);
   const factores = await listo.repositorio.factores(sesion.usuario.id);
-  const pendiente = factores.totp && !factores.totp.confirmado ? factores.totp : null;
+  const pendiente = factores.totpPendiente;
   const normalizado = normalizarCodigoTotp(codigo);
   const semilla = pendiente ? descifrarDe(pendiente.secretoCifrado, sesion.usuario.id, listo) : null;
   const paso = semilla && normalizado ? verificarTotp(semilla, normalizado, listo.ahora(), null) : null;
@@ -597,6 +597,11 @@ async function armarPaso(userId: string, listo: Listo): Promise<PasoEntrada> {
   const ahora = listo.ahora().getTime();
   const aprobadaVigente =
     recuperacion?.estado === "aprobada" && recuperacion.venceEn !== null && recuperacion.venceEn.getTime() > ahora;
+  // Con la recuperación aprobada y vigente se inscribe un factor nuevo aunque
+  // haya viejos: pueden estar en otras manos y se revocan al confirmar el nuevo.
+  if (aprobadaVigente) {
+    return { paso: "inscribir", nombre: persona.nombre, correo: persona.correo, porRecuperacion: true };
+  }
   const passkey = factores.passkeys.length > 0;
   const totp = Boolean(factores.totp?.confirmado);
   const respaldo = factores.respaldoRestantes > 0;
@@ -610,8 +615,8 @@ async function armarPaso(userId: string, listo: Listo): Promise<PasoEntrada> {
       solicitudAbierta: recuperacion?.estado === "solicitada",
     };
   }
-  if (!factores.tuvoFactores || aprobadaVigente) {
-    return { paso: "inscribir", nombre: persona.nombre, correo: persona.correo, porRecuperacion: Boolean(aprobadaVigente) };
+  if (!factores.tuvoFactores) {
+    return { paso: "inscribir", nombre: persona.nombre, correo: persona.correo, porRecuperacion: false };
   }
   return { paso: "recuperar", nombre: persona.nombre, solicitudAbierta: recuperacion?.estado === "solicitada" };
 }
@@ -681,7 +686,7 @@ async function fallo(entrada: Entrada, intentos: number, listo: Listo): Promise<
 
 async function altaTotp(userId: string, correo: string, listo: Listo): Promise<AltaTotp> {
   const factores = await listo.repositorio.factores(userId);
-  const pendiente = factores.totp && !factores.totp.confirmado ? factores.totp : null;
+  const pendiente = factores.totpPendiente;
   const llave = exigirLlave(listo);
   let semilla: Buffer | null = null;
   if (pendiente) {

@@ -41,7 +41,14 @@ export function Continuar({
   if (codigos) return <CodigosDeRespaldo codigos={codigos} destino={siguiente} />;
   if (paso.paso === "inscribir") {
     return (
-      <Inscribir siguiente={siguiente} alta={alta} sinTotp={sinTotp} alGuardar={setCodigos} yaInscrito={yaInscrito} />
+      <Inscribir
+        siguiente={siguiente}
+        alta={alta}
+        sinTotp={sinTotp}
+        alGuardar={setCodigos}
+        yaInscrito={yaInscrito}
+        porRecuperacion={paso.porRecuperacion}
+      />
     );
   }
   if (paso.paso === "recuperar") return <Recuperar nombre={paso.nombre} solicitudAbierta={paso.solicitudAbierta} />;
@@ -145,12 +152,14 @@ function Inscribir({
   sinTotp,
   alGuardar,
   yaInscrito,
+  porRecuperacion,
 }: {
   siguiente: string;
   alta: AltaTotp | null;
   sinTotp: boolean;
   alGuardar: (codigos: string[]) => void;
   yaInscrito: boolean;
+  porRecuperacion: boolean;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [totp, enviarCodigo, pendiente] = useActionState(enviarInscripcionTotp, FACTOR_INICIAL);
@@ -180,9 +189,13 @@ function Inscribir({
 
   return (
     <div>
-      <p className="arco-kicker">Primer ingreso</p>
-      <h1>Registra cómo vas a entrar.</h1>
-      <p className="arco-nota">Elige una passkey o una app autenticadora. Con eso entras cada vez.</p>
+      <p className="arco-kicker">{porRecuperacion ? "Recuperación aprobada" : "Primer ingreso"}</p>
+      <h1>{porRecuperacion ? "Registra un factor nuevo." : "Registra cómo vas a entrar."}</h1>
+      <p className="arco-nota">
+        {porRecuperacion
+          ? "Al confirmarlo, tus passkeys, tu app autenticadora y tus códigos de respaldo anteriores dejan de servir y se cierran tus otras sesiones."
+          : "Elige una passkey o una app autenticadora. Con eso entras cada vez."}
+      </p>
       {mensaje ? (
         <div className="alerta" role="alert" id="factor-error">
           <p>{mensaje}</p>

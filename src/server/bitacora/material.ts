@@ -76,8 +76,17 @@ function pasaLuhn(digitos: string): boolean {
   return suma % 10 === 0;
 }
 
+// Un UUID completo, sin pegarse a otro carácter hexadecimal.
+const UUID_EN_TEXTO = /(?<![0-9a-f])[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?![0-9a-f])/gi;
+
+/**
+ * Un UUID no es una tarjeta. Sus grupos separados por guiones pueden juntar 13
+ * o más dígitos que pasan Luhn (0.2% de los UUID aleatorios), así que se quitan
+ * antes de buscar la racha. Una tarjeta escrita con espacios o guiones de 4 en 4
+ * se sigue rechazando.
+ */
 function contienePan(valor: string): boolean {
-  const coincidencias = valor.match(new RegExp("\\d(?:[ -]?\\d){12,18}", "g"));
+  const coincidencias = valor.replace(UUID_EN_TEXTO, " ").match(new RegExp("\\d(?:[ -]?\\d){12,18}", "g"));
   if (!coincidencias) return false;
   return coincidencias.some((candidato) => {
     const digitos = candidato.replace(/\D/g, "");

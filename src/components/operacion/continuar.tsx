@@ -23,7 +23,9 @@ export function ContinuarOperacion({ paso, alta, yaInscrito = false }: { paso: P
   if (codigos) return <Codigos codigos={codigos} />;
   // Inscribir se pinta también ya inscrito: al confirmar la app, la página se vuelve a pintar con
   // yaInscrito y los códigos viven en el estado de Inscribir. Cortar antes los perdía.
-  if (paso.paso === "inscribir") return <Inscribir alta={alta} alGuardar={setCodigos} yaInscrito={yaInscrito} />;
+  if (paso.paso === "inscribir") {
+    return <Inscribir alta={alta} alGuardar={setCodigos} yaInscrito={yaInscrito} porRecuperacion={paso.porRecuperacion} />;
+  }
   if (paso.paso === "recuperar") {
     return <><p className="arco-kicker">Segundo factor</p><h1>La cuenta sigue cerrada.</h1><p className="arco-nota">Otra persona del personal aprueba la recuperación en Operación, en Recuperaciones.</p></>;
   }
@@ -75,7 +77,17 @@ function Verificar({ paso }: { paso: Extract<PasoOperacion, { paso: "verificar" 
   );
 }
 
-function Inscribir({ alta, alGuardar, yaInscrito }: { alta: AltaOperacion; alGuardar: (codigos: string[]) => void; yaInscrito: boolean }) {
+function Inscribir({
+  alta,
+  alGuardar,
+  yaInscrito,
+  porRecuperacion,
+}: {
+  alta: AltaOperacion;
+  alGuardar: (codigos: string[]) => void;
+  yaInscrito: boolean;
+  porRecuperacion: boolean;
+}) {
   const [error, setError] = useState<string | null>(null);
   const [estado, registrarTotp, pendiente] = useActionState(registrarTotpOperacion, ESTADO_ACCESO_INICIAL);
   if (estado.tipo === "codigos") return <Codigos codigos={estado.codigos} />;
@@ -99,8 +111,9 @@ function Inscribir({ alta, alGuardar, yaInscrito }: { alta: AltaOperacion; alGua
   const mensaje = error ?? (estado.tipo === "error" ? estado.mensaje : null);
   return (
     <div>
-      <p className="arco-kicker">Primer ingreso · Operación</p>
-      <h1>Registra tu segundo factor.</h1>
+      <p className="arco-kicker">{porRecuperacion ? "Recuperación aprobada · Operación" : "Primer ingreso · Operación"}</p>
+      <h1>{porRecuperacion ? "Registra un factor nuevo." : "Registra tu segundo factor."}</h1>
+      {porRecuperacion ? <p className="arco-nota">Al confirmarlo, tus passkeys, tu app autenticadora y tus códigos de respaldo anteriores dejan de servir y se cierran tus otras sesiones.</p> : null}
       {mensaje ? <div className="alerta" role="alert" id="factor-error"><p>{mensaje}</p></div> : null}
       <div className="arco-opciones">
         <button type="button" className="boton" onClick={conPasskey}>Crear una passkey</button>
