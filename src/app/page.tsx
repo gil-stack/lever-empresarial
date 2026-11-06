@@ -84,13 +84,13 @@ export default function PaginaInicio() {
           <a href="#producto">Producto</a>
           <a href="#como-funciona">Cómo funciona</a>
           <a href="#para-quien">Para quién</a>
-          <Link href="/precios">Precios</Link>
+          <a href="#precios">Precios</a>
           <a href="#preguntas">Preguntas</a>
         </nav>
         <div className="arco-header-acciones">
           <Link href="/entrar" className="arco-entrar">Entrar</Link>
           <Link href="#producto" className="arco-boton arco-boton-principal arco-boton-compacto">
-            Ver demo <Icono nombre="flecha" />
+            Ver el producto <Icono nombre="flecha" />
           </Link>
         </div>
       </header>
@@ -105,7 +105,7 @@ export default function PaginaInicio() {
               controlar el gasto de tu empresa.
             </p>
             <div className="arco-hero-acciones">
-              <Link href="#producto" className="arco-boton arco-boton-principal">Ver la demo <Icono nombre="flecha" /></Link>
+              <Link href="#producto" className="arco-boton arco-boton-principal">Ver el producto <Icono nombre="flecha" /></Link>
               <a href="#como-funciona" className="arco-boton arco-boton-secundario">Cómo funciona</a>
             </div>
             <p className="arco-hero-nota">Tarjeta recargable · Sin crédito · Control para toda la empresa</p>
@@ -193,11 +193,10 @@ export default function PaginaInicio() {
           </ul>
         </section>
 
-        <section className="arco-precios-resumen" aria-labelledby="titulo-precios">
+        <section className="arco-precios-resumen" id="precios" aria-labelledby="titulo-precios">
           <div><p className="arco-eyebrow">Precios</p><h2 id="titulo-precios">Un plan claro para cada etapa.</h2></div>
           <div>
-            <p>Conoce cómo se estructura LEVER para tu equipo, sin cifras inventadas ni paquetes que no corresponden a tu operación.</p>
-            <Link href="/precios" className="arco-enlace">Consultar precios <Icono nombre="flecha" /></Link>
+            <p>Una suscripción mensual por empresa. Sin cobro por persona, por tarjeta ni de implementación. Cada empresa ve el monto de su plan dentro de su cuenta.</p>
           </div>
         </section>
 
@@ -219,7 +218,7 @@ export default function PaginaInicio() {
           <h2 id="titulo-cierre">Menos ruido.<br />Más claridad.</h2>
           <p>Una mejor manera de trabajar con el dinero de tu empresa.</p>
           <div className="arco-cierre-acciones">
-            <Link href="#producto" className="arco-boton arco-boton-claro">Ver la demo <Icono nombre="flecha" /></Link>
+            <Link href="#producto" className="arco-boton arco-boton-claro">Ver el producto <Icono nombre="flecha" /></Link>
             <Link href="/entrar" className="arco-boton arco-boton-linea">Entrar a mi cuenta</Link>
           </div>
         </section>
@@ -229,7 +228,7 @@ export default function PaginaInicio() {
         <Logotipo />
         <nav aria-label="Navegación del pie de página">
           <a href="#producto">Producto</a><a href="#como-funciona">Cómo funciona</a><a href="#para-quien">Para quién</a>
-          <Link href="/precios">Precios</Link><a href="#preguntas">Preguntas</a><Link href="/entrar">Entrar</Link>
+          <a href="#precios">Precios</a><a href="#preguntas">Preguntas</a><Link href="/entrar">Entrar</Link>
         </nav>
         <p>LEVER · Control de gasto empresarial, diseñado para México.</p>
       </footer>
