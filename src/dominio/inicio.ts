@@ -8,10 +8,15 @@ export type DatosInicio = {
   topesSinEscribir: number;
   proveedores: number;
   plan: "recorrido" | "aceptada" | null;
+  /** Solicitudes de pago en «por autorizar» que la persona puede resolver (no cuenta las que pidió). */
+  pagosPorAutorizar: number;
+  /** La fecha de nómina más antigua ya vencida y sin lote, la misma que usaría prepararNomina. */
+  nominaPorPreparar: string | null;
 };
 
 export type RutaPendiente =
   | "/consola/personas"
+  | "/consola/personas/nomina"
   | "/consola/politica"
   | "/consola/proveedores"
   | "/consola/poliza"
@@ -32,6 +37,28 @@ export function pendientesDeInicio(
   capacidades: readonly Capacidad[],
 ): PendienteInicio[] {
   const pendientes: PendienteInicio[] = [];
+  // Autorizar es de un liberador distinto de quien pidió el pago (lo exige también la base).
+  if (datos.pagosPorAutorizar > 0 && tiene(capacidades, "cliente.pago.liberar")) {
+    pendientes.push({
+      id: "pagos-por-autorizar",
+      titulo: datos.pagosPorAutorizar === 1 ? "Autoriza un pago a proveedor" : `Autoriza ${datos.pagosPorAutorizar} pagos a proveedores`,
+      detalle: "Revisa la factura, la CLABE vigente y el importe. Autorizar deja la instrucción lista; no envía SPEI.",
+      ruta: "/consola/proveedores",
+      accion: "Revisar pagos",
+      area: "operacion",
+    });
+  }
+  // Preparar la nómina pide las mismas capacidades que prepararNomina.
+  if (datos.nominaPorPreparar && tiene(capacidades, "cliente.pago.solicitar") && tiene(capacidades, "cliente.maestro.ver")) {
+    pendientes.push({
+      id: "nomina-por-preparar",
+      titulo: `Prepara el lote de nómina del ${fechaCorta(datos.nominaPorPreparar)}`,
+      detalle: "La fecha ya venció y todavía no tiene lote. Prepararlo deja el lote para revisión; no dispersa dinero.",
+      ruta: "/consola/personas/nomina",
+      accion: "Preparar nómina",
+      area: "operacion",
+    });
+  }
   if (tiene(capacidades, "cliente.maestro.editar")) {
     if (datos.liberadores < 2) {
       const faltan = 2 - datos.liberadores;
@@ -106,6 +133,12 @@ export function pendientesDeInicio(
     });
   }
   return pendientes;
+}
+
+function fechaCorta(fecha: string): string {
+  const [anio, mes, dia] = fecha.split("-").map(Number);
+  if (!anio || !mes || !dia) throw new Error("fecha_invalida");
+  return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(anio, mes - 1, dia)));
 }
 
 /** Accesos reales para el estado vacío. No se presentan como trabajo pendiente. */

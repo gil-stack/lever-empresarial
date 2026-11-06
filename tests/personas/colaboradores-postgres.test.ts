@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 import { cerrarConexion } from "../../src/nucleo/db.ts";
 import { configurarNomina, leerLoteNomina, leerNomina, prepararNomina } from "../../src/server/nomina/servicio.ts";
+import { leerPendientesInicio } from "../../src/server/inicio/servicio.ts";
 import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio.ts";
 import { hoyEnMexico } from "../../src/dominio/personas.ts";
@@ -159,9 +160,16 @@ async function escenario(url: string): Promise<void> {
   assert.equal(antesDePreparar?.persona.nomina?.netoCentavos, 25000);
   assert.equal(antesDePreparar?.persona.nomina?.activa, true);
 
+  // Pendientes avisa la fecha vencida sin lote (la misma que prepararNomina) y la retira al prepararla.
+  const nominaEnPendientes = async () =>
+    (await leerPendientesInicio(admin, { ahora: () => new Date("2026-11-15T18:00:00.000Z") }))
+      .find((pendiente) => pendiente.id === "nomina-por-preparar")?.titulo ?? null;
+  assert.equal(await nominaEnPendientes(), "Prepara el lote de nómina del 15 de noviembre");
+
   const preparada = await prepararNomina(admin, "2026-11-15", {
     ahora: () => new Date("2026-11-15T18:00:00.000Z"),
   });
+  assert.equal(await nominaEnPendientes(), null);
   const repetida = await prepararNomina(admin, "2026-11-15", {
     ahora: () => new Date("2026-11-15T18:00:00.000Z"),
   });

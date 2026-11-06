@@ -29,7 +29,9 @@ export async function leerBandejaInicio(
     puede(conEmpresa, "cliente.maestro.editar") ||
     puede(conEmpresa, "cliente.politica.editar") ||
     puede(conEmpresa, "cliente.proveedores.alta") ||
-    puede(conEmpresa, "cliente.plan.ver");
+    puede(conEmpresa, "cliente.plan.ver") ||
+    puede(conEmpresa, "cliente.pago.liberar") ||
+    puede(conEmpresa, "cliente.pago.solicitar");
   const atajos = atajosDeInicio(conEmpresa.capacidades);
   if (!configurable) return { pendientes: [], atajos };
   const datos = await (deps?.repositorio ?? repositorioPg()).leer(

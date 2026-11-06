@@ -2,11 +2,11 @@ import Link from "next/link";
 
 import { CabezaPagina, EtiquetaMono, Hoja, Insignia, Metrica, Metricas, NotaRegla, Renglon, Renglones } from "@/components/sistema";
 import { clabeVisible } from "@/dominio/clabe";
-import { estaDeBaja, fechaLarga, lineaDeRoles } from "@/dominio/personas";
+import { accesoFinanzasDe, estaDeBaja, fechaLarga, lineaDeRoles } from "@/dominio/personas";
 import { enEmpresa } from "@/nucleo/rutas";
 import type { DetallePersona } from "@/server/personas/tipos";
 
-import { FormularioBaja } from "./formularios";
+import { FormularioBaja, FormularioFinanzas } from "./formularios";
 import {
   BotonCancelarBaja,
   BotonReenviarInvitacion,
@@ -33,6 +33,7 @@ export function ExpedientePersona({
   const { persona } = detalle;
   const estado = estadoDePersona(persona, hoy);
   const deBaja = estaDeBaja(persona.bajaEn, hoy);
+  const finanzas = edita ? accesoFinanzasDe(persona, hoy) : null;
   // En el bloque de nómina basta la terminación; los 18 dígitos viven solo en «CLABE de nómina».
   const clabe = persona.clabeFinal ? `•••• ${persona.clabeFinal}` : null;
   const neto = persona.nomina ? dinero(persona.nomina.netoCentavos, "Reservado") : "Pendiente";
@@ -119,6 +120,11 @@ export function ExpedientePersona({
             <Renglon etiqueta="Tarjeta de nómina">{persona.tarjetaPendiente ? "Solicitud interna pendiente de emisión" : "Sin solicitud pendiente"}</Renglon>
           </Renglones>
           {edita && persona.invitada ? <BotonReenviarInvitacion personaId={persona.id} /> : null}
+          {finanzas === "incluido" ? (
+            <p className="pista">Inicio financiero está incluido con administración.</p>
+          ) : finanzas === "casilla" && persona.userId ? (
+            <FormularioFinanzas key={persona.userId} userId={persona.userId} habilitado={persona.roles.includes("finanzas")} />
+          ) : null}
           <NotaRegla>La tarjeta no crea acceso. Tesorería puede tener acceso y tarjeta de forma independiente.</NotaRegla>
         </Hoja>
 

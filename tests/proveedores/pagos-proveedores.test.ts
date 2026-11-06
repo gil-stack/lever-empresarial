@@ -6,6 +6,7 @@ import pg from "pg";
 import { cfdiDePrueba } from "../../src/dominio/cfdi.test.ts";
 import { capacidadesDe, type RolCliente } from "../../src/nucleo/capacidades.ts";
 import type { ContextoDeTenant } from "../../src/nucleo/contexto.ts";
+import { leerPendientesInicio } from "../../src/server/inicio/servicio.ts";
 import { cerrarConexion } from "../../src/nucleo/db.ts";
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
 import {
@@ -87,6 +88,17 @@ test("cuentas por pagar contra Postgres: personas, versiones, CLABE, 69-B, SQL d
         ...entradaCfdi, clientRequestId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaac1",
         xml: { nombre: "otra.xml", bytes: cfdiConUuid("123E4567-E89B-42D3-A456-4266141740CC") },
       }, deps);
+
+      await t.test("Pendientes cuenta los pagos por autorizar solo para quien puede resolverlos", async () => {
+        const enPendientes = async (ctx: ContextoDeTenant) =>
+          (await leerPendientesInicio(ctx, { ahora: () => new Date(AHORA) }))
+            .find((pendiente) => pendiente.id === "pagos-por-autorizar")?.titulo ?? null;
+        assert.equal(await enPendientes(rosa), "Autoriza 3 pagos a proveedores");
+        // Luis pidió uno de los tres: no se lo cuenta, porque no puede autorizarlo.
+        assert.equal(await enPendientes(luis), "Autoriza 2 pagos a proveedores");
+        assert.equal(await enPendientes(carlos), null);
+        assert.equal(await enPendientes(sofia), null);
+      });
 
       await t.test("dos personas: quien solicita no autoriza y el CFDI repetido no sube archivos", async () => {
         await assert.rejects(() => decidir(luis, pagoA.requestId, "autorizar", { version: 1, total: 123456 }), conCodigo("pago_no_autorizable"));

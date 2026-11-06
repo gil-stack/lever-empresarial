@@ -302,8 +302,18 @@ describe("alta de persona", () => {
     assert.equal(accesoFinanzasDe({ ...base, bajaEn: HOY, roles: ["contador"] }, HOY), null);
   });
 
+  it("el alta y la ficha nuevas de Personas ofrecen Finanzas con la regla común", () => {
+    const alta = readFileSync(new URL("../components/personas/alta.tsx", import.meta.url), "utf8");
+    assert.match(alta, /const rol: RolCuenta\[\] = verFinanzas \? \[\.\.\.roles, "finanzas"\] : roles;/);
+    assert.match(alta, /erroresDeAltaPersona\(entrada, hoy\)/);
+    assert.match(alta, /\{verFinanzas \? <input type="hidden" name="rol" value="finanzas" \/> : null\}/);
+    const ficha = readFileSync(new URL("../components/personas/detalle.tsx", import.meta.url), "utf8");
+    assert.match(ficha, /const finanzas = edita \? accesoFinanzasDe\(persona, hoy\) : null;/);
+    assert.match(ficha, /<FormularioFinanzas key=\{persona\.userId\} userId=\{persona\.userId\} habilitado=\{persona\.roles\.includes\("finanzas"\)\} \/>/);
+  });
+
   it("conserva montado el aviso al otorgar o revocar Finanzas", () => {
-    const fuente = readFileSync(new URL("../components/personas/maestro.tsx", import.meta.url), "utf8");
+    const fuente = readFileSync(new URL("../components/personas/detalle.tsx", import.meta.url), "utf8");
     assert.match(fuente, /key=\{persona\.userId\}/);
     assert.doesNotMatch(fuente, /key=\{`\$\{persona\.userId\}-\$\{persona\.roles\.includes\("finanzas"\)\}`\}/);
   });
