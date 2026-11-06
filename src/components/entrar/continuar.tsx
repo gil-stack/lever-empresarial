@@ -87,11 +87,11 @@ function Verificar({
       <h1>Hola, {paso.nombre}.</h1>
       <p className="arco-nota">La contraseña ya coincidió. Falta confirmar que eres tú.</p>
       {mensaje ? (
-        <div className="alerta" role="alert">
+        <div className="alerta" role="alert" id="factor-error">
           <p>{mensaje}</p>
         </div>
       ) : null}
-      {paso.solicitudAbierta ? <p className="arco-nota">Hay una solicitud de recuperación en revisión.</p> : null}
+      {paso.solicitudAbierta ? <p className="arco-nota">Tu solicitud de recuperación sigue en revisión.</p> : null}
       <div className="arco-opciones">
         {paso.passkey ? (
           <button type="button" className="boton" onClick={conPasskey}>
@@ -103,9 +103,17 @@ function Verificar({
             <input type="hidden" name="siguiente" value={siguiente} />
             <div className="campo">
               <label htmlFor="codigo">Código de la app autenticadora</label>
-              <input id="codigo" name="codigo" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required />
+              <input
+                id="codigo"
+                name="codigo"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                required
+                {...ligarError(totp.tipo === "error")}
+              />
             </div>
-            <button type="submit" className="boton" disabled={pendienteTotp}>
+            <button type="submit" className="boton" disabled={pendienteTotp} aria-busy={pendienteTotp}>
               {pendienteTotp ? "Comprobando…" : "Entrar con el código"}
             </button>
           </form>
@@ -115,10 +123,10 @@ function Verificar({
             <input type="hidden" name="siguiente" value={siguiente} />
             <div className="campo">
               <label htmlFor="respaldo">Código de respaldo</label>
-              <input id="respaldo" name="codigo" autoComplete="off" spellCheck={false} required />
+              <input id="respaldo" name="codigo" autoComplete="off" spellCheck={false} required {...ligarError(respaldo.tipo === "error")} />
             </div>
-            <button type="submit" className="boton-texto" disabled={pendienteRespaldo}>
-              Usar un código de respaldo
+            <button type="submit" className="boton-texto" disabled={pendienteRespaldo} aria-busy={pendienteRespaldo}>
+              {pendienteRespaldo ? "Comprobando…" : "Usar un código de respaldo"}
             </button>
           </form>
         ) : null}
@@ -173,9 +181,9 @@ function Inscribir({
     <div>
       <p className="arco-kicker">Primer ingreso</p>
       <h1>Registra cómo vas a entrar.</h1>
-      <p className="arco-nota">Sin una passkey o un código de app autenticadora, el portal no abre.</p>
+      <p className="arco-nota">Elige una passkey o una app autenticadora. Con eso entras cada vez.</p>
       {mensaje ? (
-        <div className="alerta" role="alert">
+        <div className="alerta" role="alert" id="factor-error">
           <p>{mensaje}</p>
         </div>
       ) : null}
@@ -193,9 +201,17 @@ function Inscribir({
             <p className="arco-semilla">{alta.semilla}</p>
             <div className="campo">
               <label htmlFor="codigo-alta">Código que muestra la app</label>
-              <input id="codigo-alta" name="codigo" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required />
+              <input
+                id="codigo-alta"
+                name="codigo"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                required
+                {...ligarError(totp.tipo === "error")}
+              />
             </div>
-            <button type="submit" className="boton-texto" disabled={pendiente}>
+            <button type="submit" className="boton-texto" disabled={pendiente} aria-busy={pendiente}>
               {pendiente ? "Comprobando…" : "Confirmar el código"}
             </button>
           </form>
@@ -213,27 +229,39 @@ function Recuperar({ nombre, solicitudAbierta }: { nombre: string; solicitudAbie
       <p className="arco-kicker">Recuperación</p>
       <h1>{nombre}, la cuenta sigue cerrada.</h1>
       <p className="arco-nota">
-        Perder el teléfono no borra la passkey ni la app autenticadora. Si guardaste un código de respaldo, entra con
-        él. Pedir ayuda no quita los factores que ya tienes.
+        Si guardaste un código de respaldo, entra con él. Si no, pide ayuda: el equipo de Lever confirma que eres tú y
+        después registras uno nuevo. Los que ya tienes siguen sirviendo.
       </p>
       {solicitudAbierta ? (
         <p className="arco-nota">Tu solicitud ya está en revisión.</p>
       ) : (
         <form action={accion}>
           {estado.tipo === "error" ? (
-            <div className="alerta" role="alert">
+            <div className="alerta" role="alert" id="factor-error">
               <p>{estado.mensaje}</p>
             </div>
           ) : null}
           <div className="campo">
             <label htmlFor="motivo">Qué pasó</label>
-            <input id="motivo" name="motivo" maxLength={500} required placeholder="Perdí el teléfono con la app" />
+            <input
+              id="motivo"
+              name="motivo"
+              maxLength={500}
+              required
+              placeholder="Perdí el teléfono con la app"
+              {...ligarError(estado.tipo === "error")}
+            />
           </div>
-          <button type="submit" className="boton" disabled={pendiente}>
+          <button type="submit" className="boton" disabled={pendiente} aria-busy={pendiente}>
             {pendiente ? "Enviando…" : "Pedir recuperación"}
           </button>
         </form>
       )}
     </div>
   );
+}
+
+/** El error de la tarjeta se liga al campo que lo causó. */
+function ligarError(conError: boolean) {
+  return conError ? ({ "aria-invalid": true, "aria-describedby": "factor-error" } as const) : {};
 }

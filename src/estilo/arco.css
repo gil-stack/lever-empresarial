@@ -210,6 +210,11 @@
   margin-top: 20px;
 }
 
+/* El botón de cada forma de entrar no se pega a su campo. */
+.arco-opciones form > .campo + button {
+  margin-top: 12px;
+}
+
 .arco-qr {
   width: 196px;
   height: 196px;

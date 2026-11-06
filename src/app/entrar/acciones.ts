@@ -59,16 +59,16 @@ const MENSAJES: Record<string, string> = {
 export async function enviarContrasena(previo: EstadoEntrada, formData: FormData): Promise<EstadoEntrada> {
   void previo;
   const destino = destinoSeguro(formData.get("siguiente"));
+  const correo = String(formData.get("correo") ?? "").slice(0, 254);
   try {
     const resultado = await iniciarConContrasena({
-      correo: String(formData.get("correo") ?? ""),
+      correo,
       contrasena: String(formData.get("contrasena") ?? ""),
     });
-    if (resultado.tipo === "rechazo") return { tipo: "invalido", mensaje: texto(resultado.codigo) };
+    if (resultado.tipo === "rechazo") return { tipo: "invalido", mensaje: texto(resultado.codigo), correo };
     await ponerEntrada(resultado.cookie);
   } catch (error) {
-    const estado = comoEntrada(error);
-    if (estado) return estado;
+    if (error instanceof ErrorDeDominio) return { tipo: "invalido", mensaje: texto(error.codigo), correo };
     throw error;
   }
   redirect(`/entrar/continuar?siguiente=${encodeURIComponent(destino)}`);
@@ -281,11 +281,6 @@ async function salida(error: unknown, destino: string): Promise<EstadoFactor> {
 function errorDeFactor(error: unknown): EstadoFactor {
   if (error instanceof ErrorDeDominio) return { tipo: "error", mensaje: texto(error.codigo), codigo: error.codigo };
   throw error;
-}
-
-function comoEntrada(error: unknown): EstadoEntrada | null {
-  if (error instanceof ErrorDeDominio) return { tipo: "invalido", mensaje: texto(error.codigo) };
-  return null;
 }
 
 function texto(codigo: string): string {

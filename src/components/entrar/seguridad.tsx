@@ -117,7 +117,7 @@ export function Seguridad({
         />
       ) : null}
       {mensaje ? (
-        <div className="alerta" role="alert">
+        <div className="alerta" role="alert" id="seguridad-error">
           <p>{mensaje}</p>
         </div>
       ) : null}
@@ -163,9 +163,17 @@ export function Seguridad({
             <p className="arco-semilla">{alta.semilla}</p>
             <div className="campo">
               <label htmlFor="codigo-cuenta">Código que muestra la app</label>
-              <input id="codigo-cuenta" name="codigo" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required />
+              <input
+                id="codigo-cuenta"
+                name="codigo"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                required
+                {...(confirmado.tipo === "error" ? { "aria-invalid": true, "aria-describedby": "seguridad-error" } : {})}
+              />
             </div>
-            <button type="submit" className="boton" disabled={pendiente}>
+            <button type="submit" className="boton" disabled={pendiente} aria-busy={pendiente}>
               {pendiente ? "Comprobando…" : "Confirmar"}
             </button>
           </form>
