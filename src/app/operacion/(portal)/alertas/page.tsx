@@ -14,11 +14,12 @@ export default async function AlertasOperacion({ searchParams }: { searchParams:
   const ctx = await exigirContextoOperacion();
   const [alertas, clientes, personal, params] = await Promise.all([listarAlertas(ctx), listarClientes(ctx), listarPersonal(ctx), searchParams]);
   const abiertas = alertas.filter((alerta) => alerta.estado === "abierta").length;
+  const seguimiento = alertas.length === 0 ? "Seguimiento" : `Seguimiento · ${abiertas} ${abiertas === 1 ? "abierta" : "abiertas"} de ${alertas.length}`;
   return (
     <PaginaOperacion titulo="Alertas" entrada="Cada alerta tiene responsable. Se cierra con un motivo, que no se puede reescribir." aviso={params.aviso}>
       <Rejilla
         principal={
-          <Hoja id="seguimiento-titulo" titulo={`Seguimiento · ${abiertas} abiertas de ${alertas.length}`}>
+          <Hoja id="seguimiento-titulo" titulo={seguimiento}>
             {alertas.length === 0 ? (
               <Vacio titulo="Sin alertas">Las alertas que crees aparecen aquí con su responsable.</Vacio>
             ) : (

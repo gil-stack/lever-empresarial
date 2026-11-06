@@ -6,13 +6,16 @@
 //   BASE=http://localhost:4808 \
 //   DUENO_URL=postgres://postgres@127.0.0.1:5543/plataforma \
 //   ESTADO=/ruta/fuera/del/repo/ola1b.json \
-//   [FASES=flujos,capturas,correos] node scripts/evidencia/ola1b-superficies.mjs
+//   DISENO=/ruta/a/las/capturas/del/diseno \
+//   [FASES=flujos,publicas,capturas,correos,estados,comparacion] node scripts/evidencia/ola1b-superficies.mjs
 //
 // Todo pasa por clics. La base se toca como dueña solo para: fijar el token de una
 // invitación o de un enlace de recuperación (en local el correo no sale), envejecer el
 // segundo factor de una sesión (para ver «Confirma que eres tú» sin esperar 5 minutos),
-// sembrar dos categorías de la política para el teléfono y contar filas que prueban
-// que un doble clic dejó una sola operación. Rechaza un DUENO_URL que no sea local.
+// sembrar dos categorías de la política para el teléfono, contar filas que prueban
+// que un doble clic dejó una sola operación y provocar los estados de Operación (un
+// candado de unos segundos para «cargando» y un permiso retirado, y devuelto, para
+// «error»). Rechaza un DUENO_URL que no sea local.
 
 import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
 import { execFileSync, spawn } from "node:child_process";
@@ -23,7 +26,7 @@ const BASE = process.env.BASE ?? "http://localhost:4808";
 const DUENO = process.env.DUENO_URL ?? "";
 const ESTADO = process.env.ESTADO ?? "";
 const SALIDA = process.env.SALIDA ?? "docs/evidencia/ola1b-superficies";
-const FASES = (process.env.FASES ?? "flujos,publicas,capturas,correos").split(",");
+const FASES = (process.env.FASES ?? "flujos,publicas,capturas,correos,estados,comparacion").split(",");
 const CLAVE = "clave-segura-12";
 const CLAVE_NUEVA = "clave-nueva-2026";
 const TEMAS = ["oscuro", "claro", "lever"];
@@ -346,6 +349,19 @@ async function flujos() {
   await listo(op);
   anotar("op entra a Operación con contraseña y código TOTP");
   await guardarSesion(OP, ctxOp);
+
+  // Vacíos: la plataforma recién creada todavía no tiene clientes, decisiones, alertas ni comisiones.
+  for (const [ruta, nombre, titulos] of [
+    ["/operacion/clientes", "09a-operacion-clientes-vacio", ["Todavía no hay clientes"]],
+    ["/operacion/aprobaciones", "09b-operacion-aprobaciones-vacio", ["Nada por decidir"]],
+    ["/operacion/alertas", "09c-operacion-alertas-vacio", ["Sin alertas", "Sin clientes"]],
+    ["/operacion/comisiones", "09d-operacion-comisiones-vacio", ["Sin versiones", "Sin empresas activas"]],
+    ["/operacion/recuperaciones", "09e-operacion-recuperaciones-vacio", ["Sin solicitudes"]],
+  ]) {
+    await op.goto(`${BASE}${ruta}`, { waitUntil: "networkidle" });
+    for (const titulo of titulos) exigir(await op.locator(".vacio-titulo", { hasText: titulo }).isVisible(), `${ruta} sin datos lo dice: «${titulo}»`);
+    await capturarEnTodo(op, nombre);
+  }
 
   // Clientes: registrar prospecto con doble clic.
   await irA(op, "Clientes");
@@ -996,7 +1012,7 @@ async function correos() {
 }
 
 // ==================================================================================
-// ESTADOS: cargando, error y sin permiso en Operación (los vacíos salen en capturas)
+// ESTADOS: cargando, error y sin permiso en Operación (los vacíos salen al inicio de los flujos)
 // ==================================================================================
 
 async function estados() {
