@@ -36,7 +36,7 @@ export async function guardarCopia69b(): Promise<EstadoFormulario> {
     revalidatePath("/consola/proveedores");
     return {
       tipo: "guardado",
-      mensaje: `Quedó la copia del ${guardado.fechaTexto}, con ${guardado.contribuyentesTexto} RFC.`,
+      mensaje: `Archivo del ${guardado.fechaTexto}, con ${guardado.contribuyentesTexto} RFC.`,
     };
   } catch (error) {
     if (error instanceof ErrorDeDominio) {

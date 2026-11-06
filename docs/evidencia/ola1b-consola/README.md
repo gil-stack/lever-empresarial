@@ -13,6 +13,7 @@ Las capturas están en WebP, en tres temas (Oscuro, Claro y Lever) y en dos tama
 | `cargando` | Con la respuesta de Política detenida: la sección del lateral muestra «Cargando…» con su indicador, la barra y la página actual se quedan, y al soltar la respuesta se pinta Política | **12 de 12** | `salida/cargando.txt` |
 | `caida` | Con Postgres apagado (`pg_ctl stop`), 9 pantallas × 3 temas × 2 tamaños. Cada una responde 200 en su ruta, con un solo `h1` y dentro del marco, dice «No se pudo…», no muestra cifras supuestas y no tiene errores de consola | **216 de 216** | `salida/caida.txt` |
 | `flujos` | Los 11 flujos clicados, con doble clic en cada envío y verificación en la base | **62 de 62** | `salida/flujos.txt`, `datos/flujos.json` |
+| `flujos` con SAT simulado | Flujo 9 con el camino feliz de la 69-B y la negativa por IP privada (ver abajo) | **5 de 5** y **3 de 3** | `salida/flujos-sat-simulado-*.txt`, `salida/sat-simulado-bitacora.txt` |
 
 Contraste por tema y tamaño:
 
@@ -59,15 +60,27 @@ Cada envío se hizo con **doble clic real** sobre `BotonEnviar`, y la base se co
 | 7. Preparar el lote de nómina | Desde Pendientes, «Preparar nómina» y doble clic | 1 lote con 1 renglón, total 1,250,000 centavos |
 | 8. Editar la política | Plazo «muchos»: el valor se queda y el error queda ligado al campo. Luego plazo válido con doble clic y categoría nueva con doble clic | 1 asiento `editar_politica`; 1 categoría, y la forma queda vacía para la siguiente |
 | 9. Lista 69-B | Ofelia da doble clic en «Guardar el listado» («Descargando…»); Gil consulta `AAA010101AAA` | Sin copia doble; la consulta responde «No aparece en la lista 69-B.» |
+| 9 con SAT simulado | Ofelia da doble clic en «Guardar el listado»; Gil consulta `PAL7202161U0` | 1 copia nueva (2026-10-31, 3 filas); el pago a ese RFC queda bloqueado. Con IP privada, 0 copias |
 | 10. Configuración y plan | Plan, Póliza, Apariencia y Seguridad desde Configuración | Cada una abre con un solo `h1` |
 | 11. Pendientes | Cada tipo de pendiente de Taller y de Altamar, con su acción clicada | Cada acción lleva a la pantalla que lo resuelve |
 
-**El camino feliz de la carga 69-B no se pudo clicar en esta máquina.** El DNS local no resuelve los hosts del SAT:
+### Flujo 9 con el SAT real y con «SAT simulado»
 
-- `dig omawww.sat.gob.mx` devuelve `SERVFAIL`;
-- `curl https://www.sat.gob.mx/` responde `Could not resolve host`.
+El DNS local no resuelve los hosts del SAT: `dig omawww.sat.gob.mx` devuelve `SERVFAIL` y `curl https://www.sat.gob.mx/` responde `Could not resolve host`. Por eso el flujo 9 corre dos veces:
 
-El flujo 9 sí comprueba el camino de error («No se pudo leer el listado que publica el SAT. No quedó una copia nueva.»), que el doble clic no guarde dos copias y la consulta sobre la copia sembrada.
+1. **SAT real** (dentro de `flujos`). Ofelia da doble clic en «Guardar el listado» y la pantalla dice «No se pudo leer el listado que publica el SAT. No quedó una copia nueva.». No se guardan dos copias. Gil consulta `AAA010101AAA` sobre la copia sembrada.
+2. **SAT simulado**, con el visto bueno del líder. Las capturas `09s-*` llevan el rótulo amarillo «SAT simulado». El preload `scripts/evidencia/ola1b-consola/sat-simulado.mjs` vive solo en `scripts/evidencia` y no toca el código de la aplicación. Contesta por `*.sat.gob.mx` en dos niveles:
+   - **DNS.** Los resuelve a `203.0.113.69`, una dirección pública de documentación. Así la aplicación sigue validando el host del SAT y que la IP no sea privada.
+   - **HTTP.** Responde la página citada y el «Listado completo» con un salto 302 dentro del SAT, para que también corra la validación de cada redirección.
+
+| Corrida | Qué pasa | Resultado | Salida literal |
+| --- | --- | --- | --- |
+| `SAT_SIMULADO=ok` | Doble clic en «Guardar el listado»: una sola copia nueva, del 31 de octubre de 2026, con 3 filas («Archivo del 31 de octubre de 2026, con 2 RFC.»). Después Gil consulta `PAL7202161U0`, que la copia nueva tiene como «Definitivo», y la pantalla responde «El proveedor puede existir. El pago no.» | **5 de 5** | `salida/flujos-sat-simulado-ok.txt` |
+| `SAT_SIMULADO=ip-privada` | El mismo preload resuelve los hosts del SAT a `10.0.0.5`. La carga se niega con «No se pudo leer el listado…» y no guarda copia | **3 de 3** | `salida/flujos-sat-simulado-ip-privada.txt` |
+
+`salida/sat-simulado-bitacora.txt` anota cada resolución y cada petición del preload:
+- Con la IP pública, cada salto se resuelve antes de pedirse: la página, el enlace que responde 302 y el archivo final, siempre con `redirect=manual`.
+- Con la IP privada solo hay una resolución y ninguna petición. La aplicación se niega antes de conectarse.
 
 ## Comparación con el diseño
 
@@ -127,3 +140,13 @@ Cada comparación pone tres paneles en Oscuro a 1440: el diseño de los socios, 
    - Para correr solo algunas pantallas: `SOLO=40,41`. Para algunos temas o tamaños: `TEMAS=oscuro`, `ANCHOS=390`. Para algunos flujos: `FLUJOS=8,9`.
    - **Los flujos se corren justo después del paso 2.** Autorizar un pago exige un segundo factor de menos de 30 minutos, y el guion se detiene si las sesiones sembradas son más viejas.
    - Para el rechazo del flujo 6, el guion envejece el factor de Laura a 31 minutos con SQL de dueño, en la base desechable.
+
+6. **Flujo 9 con SAT simulado.** Se vuelve al paso 2 y se arranca el servidor con el preload además del de Blob. Después se corre solo el flujo 9:
+
+   ```sh
+   NODE_OPTIONS="--import=<preload de Blob> --import=./scripts/evidencia/ola1b-consola/sat-simulado.mjs" \
+     SAT_SIMULADO_IP=203.0.113.69 SAT_SIMULADO_BITACORA=<bitácora> npx next start -p 4807
+   FLUJOS=9 SAT_SIMULADO=ok SUFIJO=-sat-simulado-ok node scripts/evidencia/ola1b-consola.mjs flujos
+   ```
+
+   Para la corrida negativa se repite con `SAT_SIMULADO_IP=10.0.0.5` y `SAT_SIMULADO=ip-privada`.

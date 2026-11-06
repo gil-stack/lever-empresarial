@@ -387,8 +387,59 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
     await nav.close();
   }
 
+  // ---------- 9 con «SAT simulado» (scripts/evidencia/ola1b-consola/sat-simulado.mjs) ----------
+  // SAT_SIMULADO=ok: el servidor corre con el preload y la IP pública de documentación.
+  // SAT_SIMULADO=ip-privada: el mismo preload resuelve a una IP privada y la carga tiene que fallar.
+  const simulado = process.env.SAT_SIMULADO ?? null;
+  if (corre(9) && simulado) {
+    const rotular = (p) => p.evaluate((texto) => {
+      const rotulo = document.createElement("div");
+      rotulo.textContent = texto;
+      rotulo.setAttribute("aria-hidden", "true");
+      rotulo.style.cssText = "position:fixed;top:12px;right:12px;z-index:2147483647;padding:8px 14px;border-radius:999px;background:#FFD23F;color:#141210;font:600 14px/1.2 system-ui,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.35)";
+      document.body.append(rotulo);
+    }, simulado === "ok" ? "SAT simulado · evidencia" : "SAT simulado · IP privada");
+    const copias = () => Number(sql("select count(*) from lista_69b_snapshots"));
+    {
+      const { nav, p, errores } = await abrir({ quien: "ofelia" });
+      await p.goto(`${BASE}/consola/lista-69b`);
+      const antes = copias();
+      const marcas = await dobleClic(p, p.getByRole("button", { name: "Guardar el listado" }));
+      await p.locator("#carga-69b").locator("xpath=..").locator(".alerta").first().waitFor({ timeout: 70000 });
+      const vistas = await marcas();
+      await p.waitForTimeout(1500);
+      const aviso = (await p.locator(".alerta").first().textContent()).trim();
+      const despues = copias();
+      await rotular(p);
+      anotar(vistas.some((v) => v.disabled && v.busy === "true" && v.texto === "Descargando…"), `flujo 9 (SAT simulado, ${simulado}): «Guardar el listado» se desactiva y dice «Descargando…»`, JSON.stringify(vistas.slice(0, 3)));
+      if (simulado === "ok") {
+        await foto(p, "09s-lista-69b-guardada");
+        const ultima = sql("select fecha_archivo::text || ' filas=' || (select count(*) from lista_69b_rows r where r.snapshot_id = s.id) from lista_69b_snapshots s order by cargado_en desc limit 1");
+        anotar(despues - antes === 1 && /31 de octubre de 2026/.test(aviso), "flujo 9 (SAT simulado): doble clic guarda una sola copia con la fecha del archivo", `copias antes=${antes} después=${despues} · última=${ultima} · aviso=${aviso.slice(0, 160)}`);
+      } else {
+        await foto(p, "09s-lista-69b-ip-privada");
+        anotar(despues === antes && /No se pudo leer el listado/.test(aviso), "flujo 9 (SAT simulado, IP privada): la carga se niega y no guarda copia", `copias antes=${antes} después=${despues} · aviso=${aviso.slice(0, 160)}`);
+      }
+      anotar(errores.length === 0, `flujo 9 (SAT simulado, ${simulado}): sin errores de consola (copia)`, errores.join(" | "));
+      await nav.close();
+    }
+    if (simulado === "ok") {
+      const { nav, p, errores } = await abrir({ quien: "gil" });
+      await p.goto(`${BASE}${TALLER}/consola/lista-69b`);
+      await p.getByLabel("RFC del proveedor").fill("PAL7202161U0");
+      await p.getByRole("button", { name: "Consultar" }).click();
+      await p.locator(".resultado-69b").waitFor({ timeout: 20000 });
+      const resultado = (await p.locator(".resultado-69b").first().textContent()).replace(/\s+/g, " ").trim();
+      await rotular(p);
+      await foto(p, "09s-lista-69b-consulta");
+      anotar(/El pago no\./.test(resultado) && /Definitivo/.test(resultado), "flujo 9 (SAT simulado): la consulta usa la copia nueva y bloquea el pago a un RFC definitivo", resultado.slice(0, 200));
+      anotar(errores.length === 0, "flujo 9 (SAT simulado): sin errores de consola (consulta)", errores.join(" | "));
+      await nav.close();
+    }
+  }
+
   // ---------- 9. Lista 69-B: copia como personal SOFIPO y consulta de un RFC ----------
-  if (corre(9)) {
+  if (corre(9) && !simulado) {
     {
       const { nav, p, errores } = await abrir({ quien: "ofelia" });
       await p.goto(`${BASE}/consola/lista-69b`);

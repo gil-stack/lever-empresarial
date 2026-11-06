@@ -1,0 +1,5 @@
+OK    flujo 9 (SAT simulado, ip-privada): «Guardar el listado» se desactiva y dice «Descargando…» · [{"disabled":true,"busy":"true","texto":"Descargando…"},{"disabled":false,"busy":null,"texto":"Guardar el listado"}]
+OK    flujo 9 (SAT simulado, IP privada): la carga se niega y no guarda copia · copias antes=1 después=1 · aviso=No se guardóNo se pudo leer el listado que publica el SAT. No quedó una copia nueva.
+OK    flujo 9 (SAT simulado, ip-privada): sin errores de consola (copia)
+
+3 de 3 comprobaciones en verde.

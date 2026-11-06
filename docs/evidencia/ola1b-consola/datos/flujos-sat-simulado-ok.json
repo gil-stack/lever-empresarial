@@ -1,0 +1,27 @@
+[
+  {
+    "ok": true,
+    "texto": "flujo 9 (SAT simulado, ok): «Guardar el listado» se desactiva y dice «Descargando…»",
+    "detalle": "[{\"disabled\":true,\"busy\":\"true\",\"texto\":\"Descargando…\"},{\"disabled\":false,\"busy\":null,\"texto\":\"Guardar el listado\"}]"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 9 (SAT simulado): doble clic guarda una sola copia con la fecha del archivo",
+    "detalle": "copias antes=1 después=2 · última=2026-10-31 filas=3 · aviso=Quedó la copiaArchivo del 31 de octubre de 2026, con 2 RFC."
+  },
+  {
+    "ok": true,
+    "texto": "flujo 9 (SAT simulado, ok): sin errores de consola (copia)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 9 (SAT simulado): la consulta usa la copia nueva y bloquea el pago a un RFC definitivo",
+    "detalle": "RFC PAL7202161U0El proveedor puede existir. El pago no.DefinitivoFecha del archivo31 de octubre de 2026"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 9 (SAT simulado): sin errores de consola (consulta)",
+    "detalle": ""
+  }
+]
