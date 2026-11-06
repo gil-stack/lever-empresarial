@@ -57,6 +57,21 @@ async function principal(): Promise<void> {
   aplicarArchivo(url, join(process.cwd(), "tests/e2e/seed-pagos.sql"));
   process.env.DATABASE_URL = urlDeAplicacion(url);
 
+  // Fernanda solo tiene el rol de finanzas en Taller: abre Inicio y Pendientes, y
+  // el resto de la consola le muestra el estado «sin permiso».
+  const finanzasId = randomUUID();
+  ejecutar(url, `
+    select set_config('app.user_id', '11111111-1111-4111-8111-111111111111', false);
+    select set_config('app.company_id', '33333333-3333-4333-8333-333333333333', false);
+    insert into users (id, nombre, correo, password_hash)
+      values ('${finanzasId}', 'Fernanda Finanzas', 'fernanda@lever.test', '$2b$12$${"a".repeat(53)}');
+    insert into memberships (user_id, company_id, estado) values ('${finanzasId}', '33333333-3333-4333-8333-333333333333', 'activa');
+    insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, cambio)
+      select operator_id, id, 'miembro', '11111111-1111-4111-8111-111111111111', 'cliente', 'asignar_rol', 'membership_roles', '${finanzasId}', '{"rol":"finanzas"}'
+      from companies where id = '33333333-3333-4333-8333-333333333333';
+    insert into membership_roles (user_id, company_id, rol) values ('${finanzasId}', '33333333-3333-4333-8333-333333333333', 'finanzas');
+  `);
+
   const personalId = randomUUID();
   ejecutar(url, `
     insert into users (id, nombre, correo, password_hash)
@@ -94,6 +109,7 @@ async function principal(): Promise<void> {
     SESION_LAURA: sesion(url, invitacion.emitida.userId, "cliente"),
     CLAVE_LAURA: CLAVE,
     SESION_OFELIA: sesion(url, personalId, "sofipo"),
+    SESION_FERNANDA: sesion(url, finanzasId, "cliente"),
   }, null, 2));
 }
 

@@ -5,6 +5,8 @@
 //   node scripts/evidencia/ola1b-consola.mjs pantallas [carpeta]  capturas 3 temas × 1440/390 + h1, etiquetas y consola
 //   node scripts/evidencia/ola1b-consola.mjs flujos                 los 11 flujos clicados, doble clic y verificación en la base
 //   node scripts/evidencia/ola1b-consola.mjs contraste              AA de cada texto contra la escena real
+//   node scripts/evidencia/ola1b-consola.mjs caida [carpeta]       con el Postgres apagado: el error de cada pantalla
+//   node scripts/evidencia/ola1b-consola.mjs cargando [carpeta]    el «Cargando…» de la sección mientras llega la página
 //
 // Solo corre contra un Postgres local (DUENO_URL en 127.0.0.1 o localhost).
 import { execFileSync } from "node:child_process";
@@ -26,7 +28,7 @@ const TALLER = `/c/${ENTORNO.EMPRESA_TALLER}`;
 const ALTAMAR = `/c/${ENTORNO.EMPRESA_ALTAMAR}`;
 const TEMAS = (process.env.TEMAS ?? "oscuro,claro,lever").split(",");
 const ANCHOS = (process.env.ANCHOS ?? "1440,390").split(",").map(Number);
-const SESIONES = { gil: ENTORNO.SESION_GIL, rosa: ENTORNO.SESION_ROSA, laura: ENTORNO.SESION_LAURA, ofelia: ENTORNO.SESION_OFELIA };
+const SESIONES = { gil: ENTORNO.SESION_GIL, rosa: ENTORNO.SESION_ROSA, laura: ENTORNO.SESION_LAURA, ofelia: ENTORNO.SESION_OFELIA, fernanda: ENTORNO.SESION_FERNANDA };
 
 const resultados = [];
 function anotar(ok, texto, detalle = "") {
@@ -78,6 +80,79 @@ async function capturar(p, ruta, opciones = {}) {
   await sharp(await p.screenshot({ fullPage: opciones.completa ?? true })).webp({ quality: 78 }).toFile(ruta);
 }
 
+/**
+ * Recorre la página con Tab (hasta 80 paradas): nadie usa tabindex positivo,
+ * el foco avanza en el orden del documento, cada parada se ve en pantalla y
+ * algo cambia a la vista al enfocarla (contorno, sombra, borde o fondo del
+ * elemento o de su contenedor, como la línea del buscador).
+ */
+async function revisarFoco(p) {
+  await p.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    window.scrollTo(0, 0);
+    window.__previo = null;
+    window.__primero = null;
+  });
+  const positivos = await p.evaluate(() => [...document.querySelectorAll("[tabindex]")].filter((el) => el.tabIndex > 0).map((el) => el.outerHTML.slice(0, 60)));
+  const fueraDeOrden = [];
+  const sinIndicador = [];
+  const invisibles = [];
+  let paradas = 0;
+  for (let i = 0; i < 80; i += 1) {
+    await p.keyboard.press("Tab");
+    const parada = await p.evaluate(async () => {
+      // Dos cuadros y 80 ms: el cambio de estilo (y su transición de 0.01 ms con movimiento reducido) ya terminó.
+      const cuadro = () => new Promise((listo) => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(listo, 80))));
+      const el = document.activeElement;
+      if (!el || el === document.body) return { cuerpo: true };
+      if (el === window.__primero) return { fin: true };
+      // Un campo de fecha recibe varios Tab (día, mes, año): es la misma parada.
+      if (el === window.__previo) return { mismo: true };
+      window.__primero ??= el;
+      const previo = window.__previo;
+      const vuelta = previo && previo.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_PRECEDING;
+      window.__previo = el;
+      const cadena = [el, el.parentElement, el.parentElement?.parentElement].filter(Boolean);
+      const foto = () =>
+        cadena
+          .map((n) => {
+            const e = getComputedStyle(n);
+            return [e.outlineStyle, e.outlineWidth, e.outlineColor, e.boxShadow, e.borderTopColor, e.borderBottomColor, e.borderLeftColor, e.backgroundColor, e.color, e.textDecorationLine].join("|");
+          })
+          .join("#");
+      await cuadro();
+      const enfocado = foto();
+      const r = el.getBoundingClientRect();
+      // El foco pasa a un ancla sin estilo: blur() no suelta un campo de fecha en el emulador móvil.
+      const ancla = document.createElement("span");
+      ancla.tabIndex = -1;
+      // Dentro de un diálogo modal, el resto de la página es inerte: el ancla va en el diálogo.
+      (el.closest("dialog[open]") ?? document.body).append(ancla);
+      ancla.focus({ preventScroll: true });
+      await cuadro();
+      const suelto = foto();
+      ancla.remove();
+      el.focus({ preventScroll: true });
+      await cuadro();
+      const nombre = `${el.tagName.toLowerCase()}«${(el.getAttribute("aria-label") || el.textContent || el.getAttribute("name") || "").trim().slice(0, 30)}»`;
+      const visible = r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
+      return { vuelta: Boolean(vuelta), nombre, indicador: enfocado !== suelto, visible };
+    });
+    // El cuerpo antes de la primera parada es el punto de partida; después, el final del recorrido.
+    if (parada.cuerpo) {
+      if (paradas > 0) break;
+      continue;
+    }
+    if (parada.fin) break;
+    if (parada.mismo) continue;
+    if (parada.vuelta) fueraDeOrden.push(parada.nombre);
+    paradas += 1;
+    if (!parada.indicador) sinIndicador.push(`sin indicador ${parada.nombre}`);
+    if (!parada.visible) invisibles.push(`fuera de vista ${parada.nombre}`);
+  }
+  return { paradas, positivos, fueraDeOrden, sinIndicador, invisibles };
+}
+
 /** Un solo h1, ningún campo sin nombre accesible y los errores ligados a su campo. */
 async function revisarAccesibilidad(p) {
   return p.evaluate(() => {
@@ -122,6 +197,15 @@ const PANTALLAS = [
   { clave: "60-configuracion", quien: "gil", ruta: `${TALLER}/consola/configuracion` },
   { clave: "61-configuracion-plan", quien: "gil", ruta: `${TALLER}/consola/configuracion/plan` },
   { clave: "70-poliza", quien: "gil", ruta: `${TALLER}/consola/poliza` },
+  // Sin permiso: Fernanda solo tiene el rol de finanzas.
+  { clave: "80-sin-permiso-proveedores", quien: "fernanda", ruta: `${TALLER}/consola/proveedores` },
+  { clave: "81-sin-permiso-personas", quien: "fernanda", ruta: `${TALLER}/consola/personas` },
+  { clave: "82-sin-permiso-politica", quien: "fernanda", ruta: `${TALLER}/consola/politica` },
+  { clave: "83-sin-permiso-lista-69b", quien: "fernanda", ruta: `${TALLER}/consola/lista-69b` },
+  { clave: "84-sin-permiso-configuracion", quien: "fernanda", ruta: `${TALLER}/consola/configuracion` },
+  { clave: "85-sin-permiso-plan", quien: "fernanda", ruta: `${TALLER}/consola/configuracion/plan` },
+  { clave: "86-sin-permiso-poliza", quien: "fernanda", ruta: `${TALLER}/consola/poliza` },
+  { clave: "87-pendientes-finanzas", quien: "fernanda", ruta: `${TALLER}/consola/pendientes` },
   ...(process.env.EXTRA_PANTALLAS ? JSON.parse(process.env.EXTRA_PANTALLAS) : []),
 ];
 
@@ -136,17 +220,86 @@ async function pantallas(carpeta) {
         const respuesta = await p.goto(`${BASE}${pantalla.ruta}`, { waitUntil: "networkidle" });
         await capturar(p, `${carpeta}/${pantalla.clave}-${tema}-${ancho}.webp`);
         const a11y = await revisarAccesibilidad(p);
-        const desborda = await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+        // En móvil, innerWidth crece con el contenido que se sale; clientWidth es el ancho del dispositivo.
+        const desborda = await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
         const etiqueta = `${pantalla.clave} ${tema} ${ancho}`;
-        anotar(respuesta?.status() === 200 || respuesta?.status() === 404, `${etiqueta}: responde`, String(respuesta?.status()));
+        anotar(respuesta?.status() === 200 && new URL(p.url()).pathname === new URL(`${BASE}${pantalla.ruta}`).pathname, `${etiqueta}: responde en su ruta`, `${respuesta?.status()} ${new URL(p.url()).pathname}`);
         anotar(a11y.h1 === 1, `${etiqueta}: un solo h1`, `h1=${a11y.h1}`);
         anotar(a11y.sinNombre.length === 0, `${etiqueta}: campos con etiqueta`, a11y.sinNombre.join(","));
         anotar(a11y.erroresSueltos.length === 0, `${etiqueta}: errores ligados a su campo`, a11y.erroresSueltos.join(","));
         anotar(!desborda, `${etiqueta}: sin desplazamiento horizontal`);
+        const foco = await revisarFoco(p);
+        anotar(foco.positivos.length === 0 && foco.fueraDeOrden.length === 0, `${etiqueta}: tabulación en orden del documento`, `${foco.paradas} paradas ${[...foco.positivos, ...foco.fueraDeOrden].join(",")}`);
+        anotar(foco.sinIndicador.length === 0 && foco.invisibles.length === 0, `${etiqueta}: foco visible en cada parada`, [...foco.sinIndicador, ...foco.invisibles].join(","));
         anotar(errores.length === 0, `${etiqueta}: sin errores de consola`, errores.join(" | "));
         await nav.close();
       }
     }
+  }
+}
+
+// ---------- Estado de error: la base apagada ----------
+const CAIDAS = ["pendientes", "proveedores", "personas", "personas/nomina", "politica", "lista-69b", "configuracion", "configuracion/plan", "poliza"];
+
+/** Corre con el Postgres local apagado (pg_ctl stop): cada pantalla de la zona muestra su error dentro del marco. */
+async function caida(carpeta) {
+  let arriba = true;
+  try {
+    sql("select 1");
+  } catch {
+    arriba = false;
+  }
+  if (arriba) throw new Error("El modo caida necesita el Postgres local apagado.");
+  for (const tema of TEMAS) {
+    for (const ancho of ANCHOS) {
+      for (const ruta of CAIDAS) {
+        const { nav, p, errores } = await abrir({ quien: "gil", tema, ancho });
+        const respuesta = await p.goto(`${BASE}${TALLER}/consola/${ruta}`, { waitUntil: "networkidle" });
+        const clave = `90-error-${ruta.replace("/", "-")}`;
+        await capturar(p, `${carpeta}/${clave}-${tema}-${ancho}.webp`);
+        const a11y = await revisarAccesibilidad(p);
+        const aviso = await p.evaluate(() => /No se pud/.test(document.querySelector("main")?.innerText ?? ""));
+        const etiqueta = `${clave} ${tema} ${ancho}`;
+        anotar(respuesta?.status() === 200 && new URL(p.url()).pathname === `${TALLER}/consola/${ruta}`, `${etiqueta}: responde en su ruta`, `${respuesta?.status()} ${new URL(p.url()).pathname}`);
+        anotar(a11y.h1 === 1, `${etiqueta}: un solo h1`, `h1=${a11y.h1}`);
+        anotar(aviso, `${etiqueta}: dice que no se pudo, sin cifras supuestas`);
+        anotar(errores.length === 0, `${etiqueta}: sin errores de consola`, errores.join(" | "));
+        await nav.close();
+      }
+    }
+  }
+}
+
+// ---------- Estado de carga: la sección muestra «Cargando…» mientras llega la página ----------
+async function cargando(carpeta) {
+  for (const tema of TEMAS) {
+    renovarSesiones();
+    const { nav, p, errores } = await abrir({ quien: "gil", tema, ancho: 1440 });
+    // Detiene la respuesta de Política (y su prefetch del lateral) hasta tomar la captura:
+    // con el prefetch ya resuelto, la sección abre al instante y no hay estado de carga que ver.
+    let soltar;
+    const espera = new Promise((listo) => {
+      soltar = listo;
+    });
+    await p.route((url) => url.pathname.endsWith("/consola/politica"), async (ruta) => {
+      await espera;
+      await ruta.continue().catch(() => {});
+    });
+    await p.goto(`${BASE}${TALLER}/consola/pendientes`, { waitUntil: "load" });
+    await p.getByRole("heading", { name: "Pendientes" }).waitFor({ state: "attached" });
+    await p.waitForTimeout(800);
+    await p.locator("a.seccion", { hasText: "Política" }).click();
+    const aviso = p.locator(".seccion-lectura", { hasText: "Cargando…" });
+    const visto = await aviso.waitFor({ timeout: 8000 }).then(() => true, () => false);
+    await capturar(p, `${carpeta}/95-cargando-${tema}-1440.webp`, { completa: false, espera: 100 });
+    anotar(visto, `95-cargando ${tema} 1440: la sección dice «Cargando…» y el marco se queda`);
+    const marco = await p.locator(".barra-superior").isVisible();
+    anotar(marco, `95-cargando ${tema} 1440: la barra y el lateral siguen visibles`);
+    soltar();
+    const llego = await p.getByRole("heading", { name: "Política de comprobantes" }).waitFor({ state: "attached", timeout: 15000 }).then(() => true, () => false);
+    anotar(llego, `95-cargando ${tema} 1440: al llegar, se pinta Política`);
+    anotar(errores.length === 0, `95-cargando ${tema} 1440: sin errores de consola`, errores.join(" | "));
+    await nav.close();
   }
 }
 
@@ -168,7 +321,9 @@ async function contraste() {
       const fallas = [];
       let medidos = 0;
       let minimo = Infinity;
+      const solo = process.env.SOLO ? process.env.SOLO.split(",") : null;
       for (const pantalla of PANTALLAS) {
+        if (solo && !solo.some((s) => pantalla.clave.startsWith(s))) continue;
         const { nav, p } = await abrir({ quien: pantalla.quien, tema, ancho });
         await p.goto(`${BASE}${pantalla.ruta}`, { waitUntil: "networkidle" });
         await p.waitForFunction(() => ["quieto", "lento", "sin-motor"].includes(document.querySelector(".escena-fondo canvas")?.dataset.estado ?? ""), null, { timeout: 20000 }).catch(() => {});
@@ -178,12 +333,15 @@ async function contraste() {
           const salida = [];
           const recorrido = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
           const vistos = new Set();
+          // Con un diálogo modal abierto, lo de atrás queda inerte bajo el velo: solo se mide el diálogo.
+          const modal = document.querySelector("dialog:modal");
           while (recorrido.nextNode()) {
             const nodo = recorrido.currentNode;
             if (!nodo.textContent.trim()) continue;
             const el = nodo.parentElement;
             if (!el || vistos.has(el)) continue;
             vistos.add(el);
+            if (modal && !modal.contains(el)) continue;
             if (el.closest("[aria-hidden=true], .logotipo, .solo-lector, script, style, noscript, option, [disabled], .saltar, svg, dialog:not([open])")) continue;
             const estilo = getComputedStyle(el);
             if (estilo.visibility === "hidden" || Number(estilo.opacity) === 0) continue;
@@ -252,6 +410,8 @@ export function codigoTotp(semilla, paso = Math.floor(Date.now() / 30000)) {
 const modo = process.argv[2] ?? "pantallas";
 if (modo === "pantallas") await pantallas(process.argv[3] ?? `${DIR}/pantallas`);
 else if (modo === "contraste") await contraste();
+else if (modo === "caida") await caida(process.argv[3] ?? `${DIR}/pantallas`);
+else if (modo === "cargando") await cargando(process.argv[3] ?? `${DIR}/pantallas`);
 else if (modo === "flujos") await (await import("./ola1b-consola/flujos.mjs")).flujos({ abrir, capturar, anotar, sql, renovarSesiones, codigoTotp, BASE, DIR, TALLER, ALTAMAR, ENTORNO });
 else throw new Error(`Modo desconocido: ${modo}`);
 

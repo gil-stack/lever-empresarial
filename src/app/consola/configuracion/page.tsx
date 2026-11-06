@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 
 import { Marco } from "@/components/cromo/marco";
 import { vistaDeMarco } from "@/components/cromo/puertas";
@@ -13,7 +12,6 @@ export const metadata: Metadata = { title: "Configuración" };
 
 export default async function PaginaConfiguracion() {
   const apertura = await abrirRuta("/consola/configuracion");
-  if (apertura.tipo === "sin_permiso") notFound();
   const ctx = apertura.tipo === "libro" ? null : apertura.ctx;
   const empresaId = ctx?.empresa?.id ?? null;
   return (
@@ -22,6 +20,10 @@ export default async function PaginaConfiguracion() {
         {apertura.tipo === "libro" ? (
           <CabezaPagina kicker="Configuración" titulo="No se pudo abrir Configuración.">
             <p className="lede">Vuelve a intentarlo en un momento.</p>
+          </CabezaPagina>
+        ) : apertura.tipo === "sin_permiso" ? (
+          <CabezaPagina kicker="Configuración" titulo="Tu rol no abre Configuración.">
+            <p className="lede">Pide acceso a quien administra la empresa.</p>
           </CabezaPagina>
         ) : apertura.tipo === "sin_empresa" ? (
           <CabezaPagina kicker="Configuración" titulo="Elige una empresa.">
