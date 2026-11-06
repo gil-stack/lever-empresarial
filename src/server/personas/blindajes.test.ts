@@ -7,7 +7,7 @@ import type { PersonaVista } from "../../dominio/personas-vista.ts";
 import { capacidadesDe, type RolCliente } from "../../nucleo/capacidades.ts";
 import type { ContextoConEmpresa } from "../../nucleo/contexto.ts";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio.ts";
-import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion.ts";
+import { exigirAutenticacionRecienteCliente } from "../autenticacion/reautenticacion.ts";
 import { preparar } from "../bitacora/auditar.ts";
 import { escaparComodines } from "./repositorio.ts";
 import { cambiarClabeNomina, vistaPara } from "./servicio.ts";
@@ -73,8 +73,8 @@ describe("CLABE de nómina con mínimo privilegio", () => {
       () => cambiarClabeNomina(ctx(["administrador"]), { ...sesion(AHORA), id: "otra" }, { personaId: CENTRO, clabe: CLABE }, { ahora: () => AHORA }),
       (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "reautenticacion_requerida",
     );
-    assert.throws(() => exigirAutenticacionReciente({ superficie: "sofipo", segundoFactor: { metodo: "totp", en: AHORA } }, AHORA, "cliente"));
-    assert.doesNotThrow(() => exigirAutenticacionReciente({ superficie: "cliente", segundoFactor: { metodo: "totp", en: AHORA } }, AHORA, "cliente"));
+    assert.throws(() => exigirAutenticacionRecienteCliente({ superficie: "sofipo", segundoFactor: { metodo: "totp", en: AHORA } }, AHORA));
+    assert.doesNotThrow(() => exigirAutenticacionRecienteCliente({ superficie: "cliente", segundoFactor: { metodo: "totp", en: AHORA } }, AHORA));
   });
 });
 

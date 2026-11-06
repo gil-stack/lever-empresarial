@@ -74,6 +74,13 @@ function AvisoDeEstado({ estado }: { estado: EstadoClabe }) {
       </Aviso>
     );
   }
+  if (estado.tipo === "guardado_sin_aviso") {
+    return (
+      <Aviso tono="revisar" titulo="Quedó asentada, sin aviso por correo">
+        <p>{estado.mensaje}</p>
+      </Aviso>
+    );
+  }
   return (
     <Aviso tono="revisar" titulo="No se guardó">
       <p>{estado.mensaje}</p>

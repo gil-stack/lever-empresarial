@@ -14,7 +14,7 @@ import {
 import type { RolCliente } from "../../nucleo/capacidades";
 import { exigir, exigirEmpresa, puede, type ContextoConEmpresa, type ContextoDeTenant } from "../../nucleo/contexto";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
-import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
+import { exigirAutenticacionRecienteCliente } from "../autenticacion/reautenticacion";
 import { actorDeCliente, auditar as auditarPorDefecto, type Auditar } from "../bitacora/auditar";
 import { enviadorDesdeEntorno } from "../correo/enviar";
 import { plantillaAvisoClabeNomina } from "../correo/plantillas/aviso-clabe-nomina";
@@ -361,7 +361,7 @@ export async function cambiarClabeNomina(
   const listo = resolver(deps);
   const ahora = listo.ahora();
   if (!sesion || sesion.id !== conEmpresa.sesionId) throw new ErrorDeDominio("reautenticacion_requerida");
-  exigirAutenticacionReciente(sesion, ahora, "cliente");
+  exigirAutenticacionRecienteCliente(sesion, ahora);
   const hoy = hoyEnMexico(ahora);
   const actor = actorDeCliente(conEmpresa);
   const hecho = await listo.repositorio.conEmpresa(conEmpresa, async (tx) => {

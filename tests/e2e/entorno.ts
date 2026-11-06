@@ -13,14 +13,25 @@ import { contextoDePersonal, invitarAdministrador } from "../../src/server/plata
 import { aplicarArchivo, ejecutar, urlDeAplicacion } from "../aislamiento/postgres";
 
 const CLAVE = "clave-segura-12";
-const PUERTO = process.env.E2E_PUERTO ?? "3107";
+// Los mismos valores por omisión que playwright.config.ts y next.config.ts.
+const PUERTO = process.env.E2E_PUERTO ?? "3109";
+const ORIGEN = process.env.E2E_BASE_URL ?? `http://localhost:${PUERTO}`;
+
+/** E2E_ADMIN_URL puede venir sin base (como la usa reiniciar-pagos.sh): se conecta a postgres. */
+function urlAdministrativa(): string | undefined {
+  const admin = process.env.E2E_ADMIN_URL ?? process.env.AISLAMIENTO_DATABASE_URL;
+  if (!admin) return undefined;
+  const analizada = new URL(admin);
+  if (analizada.pathname === "" || analizada.pathname === "/") analizada.pathname = "/postgres";
+  return analizada.toString();
+}
 
 export async function iniciarEntorno(): Promise<void> {
-  const admin = process.env.E2E_ADMIN_URL ?? process.env.AISLAMIENTO_DATABASE_URL;
+  const admin = urlAdministrativa();
   if (!admin) throw new Error("Define E2E_ADMIN_URL con un Postgres desechable. Nunca uses la base plataforma.");
   const analizada = new URL(admin);
   if (analizada.pathname === "/plataforma") throw new Error("La base administrativa de E2E no puede ser plataforma.");
-  const nombre = `personas_e2e_${randomUUID().replace(/-/g, "").slice(0, 16)}`;
+  const nombre = `e2e_${randomUUID().replace(/-/g, "").slice(0, 16)}`;
   const cliente = new Client({ connectionString: admin });
   await cliente.connect();
   await cliente.query(`create database "${nombre}"`);
@@ -34,8 +45,11 @@ export async function iniciarEntorno(): Promise<void> {
     for (const archivo of readdirSync(dir).sort()) {
       if (archivo.endsWith(".sql")) aplicarArchivo(owner, join(dir, archivo));
     }
+    // La empresa de Pagos a proveedores va primero: su semilla reescribe la
+    // contraseña de todos los usuarios que existan en ese momento.
+    aplicarArchivo(owner, join(process.cwd(), "tests/e2e/seed-pagos.sql"));
     process.env.DATABASE_URL = urlDeAplicacion(owner);
-    process.env.URL_APLICACION = `http://127.0.0.1:${PUERTO}`;
+    process.env.URL_APLICACION = ORIGEN;
     process.env.E2E_SERVER_ACTIONS = "1";
     delete process.env.RESEND_API_KEY;
     delete process.env.CORREO_REMITENTE;
@@ -87,13 +101,13 @@ export async function iniciarEntorno(): Promise<void> {
 export async function cerrarEntorno(): Promise<void> {
   await detenerServidor();
   await cerrarConexion();
-  const admin = process.env.E2E_ADMIN_URL ?? process.env.AISLAMIENTO_DATABASE_URL;
+  const admin = urlAdministrativa();
   const nombre = process.env.E2E_DATABASE_NAME;
   if (admin && nombre) await borrarBase(admin, nombre);
 }
 
 async function levantarServidor(): Promise<void> {
-  const directorioRegistro = mkdtempSync(join(tmpdir(), "personas-e2e-"));
+  const directorioRegistro = mkdtempSync(join(tmpdir(), "plataforma-e2e-"));
   const registro = createWriteStream(join(directorioRegistro, "next.log"));
   const servidor = spawn("npm", ["run", "start", "--", "-p", PUERTO], {
     cwd: process.cwd(),

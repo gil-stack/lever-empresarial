@@ -52,8 +52,8 @@ async function terminarAlta(page: Page, nombre: string): Promise<string> {
   return page.url();
 }
 
-test("recorrido completo de colaboradores, presupuesto, nómina, tarjeta y baja", async ({ page, context }) => {
-  await context.addCookies([{ name: "sesion", value: process.env.E2E_SESSION_TOKEN ?? "", domain: "127.0.0.1", path: "/", httpOnly: true, sameSite: "Lax" }]);
+test("recorrido completo de colaboradores, presupuesto, nómina, tarjeta y baja", async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: "sesion", value: process.env.E2E_SESSION_TOKEN ?? "", url: baseURL, httpOnly: true, sameSite: "Lax" }]);
 
   await abrir(page, "/consola/personas/areas");
   await page.getByLabel("Área", { exact: true }).fill("Tesorería E2E");

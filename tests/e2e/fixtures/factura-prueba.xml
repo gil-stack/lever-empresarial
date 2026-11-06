@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital"
+  Version="4.0" Fecha="2026-11-01T10:20:30" TipoDeComprobante="I" Moneda="MXN" Total="1234.56" Serie="A" Folio="998">
+  <cfdi:Emisor Rfc="AAA010101AAA" Nombre="Proveedor Uno, S.A. de C.V." RegimenFiscal="601" />
+  <cfdi:Receptor Rfc="EKU9003173C9" Nombre="Taller del Cierre" DomicilioFiscalReceptor="06600" RegimenFiscalReceptor="601" UsoCFDI="G03" />
+  <cfdi:Complemento>
+    <tfd:TimbreFiscalDigital UUID="123e4567-e89b-42d3-a456-426614174998" />
+  </cfdi:Complemento>
+</cfdi:Comprobante>

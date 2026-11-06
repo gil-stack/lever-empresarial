@@ -6,14 +6,27 @@ export const VIGENCIA_AUTORIZACION_MS = 30 * 60 * 1000;
 /**
  * Las decisiones de activación y comisión exigen un segundo factor reciente.
  * No se piden ni guardan contraseñas en operación: para renovar la prueba, la
- * persona sale y vuelve a entrar por la puerta SOFIPO. En el portal del
- * cliente, cambiar la CLABE de nómina de una persona exige lo mismo por la
- * puerta del cliente.
+ * persona sale y vuelve a entrar por la puerta SOFIPO.
  */
 export function exigirAutenticacionReciente(
   sesion: Pick<Sesion, "segundoFactor" | "superficie">,
   ahora: Date = new Date(),
-  superficie: "sofipo" | "cliente" = "sofipo",
+): void {
+  exigirFactorRecienteEnSuperficie(sesion, "sofipo", ahora);
+}
+
+/** Cambiar una CLABE o autorizar un pago exige la misma prueba reciente en el portal cliente. */
+export function exigirAutenticacionRecienteCliente(
+  sesion: Pick<Sesion, "segundoFactor" | "superficie">,
+  ahora: Date = new Date(),
+): void {
+  exigirFactorRecienteEnSuperficie(sesion, "cliente", ahora);
+}
+
+function exigirFactorRecienteEnSuperficie(
+  sesion: Pick<Sesion, "segundoFactor" | "superficie">,
+  superficie: "cliente" | "sofipo",
+  ahora: Date,
 ): void {
   const verificado = sesion.segundoFactor?.en;
   if (

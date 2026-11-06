@@ -25,7 +25,7 @@ npm run test:e2e
 
 `test` corre la suite con `tsx --test` y deja fuera las pruebas que necesitan Postgres. `test:db` levanta un Postgres desechable en Docker, aplica las migraciones y borra la base. No usa `DATABASE_URL` ni la rama de preview. Hace falta Docker en la máquina local; en Vercel CI el daemon ya está encendido.
 
-`test:e2e` crea otra base desechable, siembra una empresa y una sesión, levanta Next en el puerto 3107 (o el de `E2E_PUERTO`) y recorre Personas con Chromium. Antes hay que ejecutar `npx playwright install chromium` y definir `E2E_ADMIN_URL` con un Postgres local desechable; esa variable jamás debe apuntar a la base `plataforma`. Las capturas del recorrido quedan en `docs/evidencia/personas`.
+`test:e2e` compila, crea otra base desechable, siembra las empresas de Personas y de Pagos a proveedores con sus sesiones, levanta `next start` en el puerto 3109 (o el de `E2E_PUERTO`) y corre todos los recorridos de `tests/e2e` con Chromium. Antes hay que ejecutar `npx playwright install chromium` y definir `E2E_ADMIN_URL` con un Postgres local desechable; esa variable jamás debe apuntar a la base `plataforma`. Los detalles y las demás variables están en `tests/e2e/LEEME.md`. Las capturas de Personas quedan en `docs/evidencia/personas`.
 
 `security` revisa vulnerabilidades de dependencias (`npm audit`), secretos en el código y en el paquete del navegador, y las rutas de servidor. Vercel CI no trae un revisor propio: Vercel Security Review pertenece a Vercel Agent y publica otro check.
 
