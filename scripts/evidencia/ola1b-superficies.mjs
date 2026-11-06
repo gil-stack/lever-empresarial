@@ -52,10 +52,6 @@ const guardar = () => writeFileSync(ESTADO, JSON.stringify(estado));
 const comprobaciones = [];
 // Lo que el recorrido encontró y no se arregla en esta zona: queda escrito en la salida y en el JSON.
 const pendientes = [];
-function pendiente(texto) {
-  console.log(`PENDIENTE ${texto}`);
-  pendientes.push(texto);
-}
 function anotar(texto) {
   console.log(`OK ${texto}`);
   comprobaciones.push(texto);
@@ -785,20 +781,16 @@ async function flujos() {
 
   const { ctx: ctxN, page: nuevo } = await contexto();
   await entrarCliente(nuevo, LAURA, CLAVE_NUEVA);
-  const ofreceRegistrar = (await nuevo.getByRole("heading", { name: "Registra cómo vas a entrar." }).count()) === 1;
-  if (!ofreceRegistrar) {
-    // Falla fuera de esta zona (armarPaso en src/server/autenticacion/servicio.ts): con un factor todavía
-    // registrado, la entrada pide ese factor aunque la recuperación esté aprobada. Se anota y Laura entra
-    // con el factor que conserva.
-    pendiente("con la recuperación aprobada la entrada no ofrece registrar un factor nuevo (armarPaso, src/server/autenticacion/servicio.ts)");
-    await nuevo.getByLabel("Código de la app autenticadora").fill(await codigoFresco(LAURA));
-    await nuevo.getByRole("button", { name: "Entrar con el código" }).click();
-  } else {
-    await capturarEnTodo(nuevo, "54-perdi-factor-registrar-nuevo");
-    await inscribirTotp(nuevo, LAURA, { operacion: false });
-  }
+  // Con la recuperación aprobada, la entrada ofrece registrar un factor nuevo (#55) y el anterior deja de servir.
+  exigir((await nuevo.getByRole("heading", { name: "Registra un factor nuevo." }).count()) === 1, "con la recuperación aprobada, la entrada ofrece registrar un factor nuevo");
+  await capturarEnTodo(nuevo, "54-perdi-factor-registrar-nuevo");
+  await inscribirTotp(nuevo, LAURA, { operacion: false });
   await nuevo.waitForURL(/\/consola|\/empresas/);
-  anotar("Laura entra después de la recuperación");
+  exigir(
+    contar(`select count(*) from auth_totp where user_id = '${idDe(LAURA)}' and revocado_en is null and confirmado_en is not null`) === 1 &&
+      contar(`select count(*) from auth_recuperaciones where user_id = '${idDe(LAURA)}' and estado = 'cumplida'`) === 1,
+    "Laura entra con su app nueva: queda una sola activa y la recuperación cumplida",
+  );
   await guardarSesion(LAURA, ctxN);
 
   // Seguridad de la cuenta: cada envío con su clic real y el doble clic contado en la base.
