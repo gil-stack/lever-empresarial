@@ -1,4 +1,3 @@
-
 (a) Empresa nueva sin datos
 OK Bahía (sin datos): Inicio muestra el estado «Sin saldo declarado», no un saldo de $0.00
 OK ya no aparece «Saldo en el libro»
@@ -9,10 +8,14 @@ OK «Declarar el saldo» lleva al formulario de Saldo y alertas
 
 (b) Saldo declarado e historial
 OK Saldo y alertas: un h1 solo para lector y sin encabezado grande
-OK primera declaración: $120,000.00 al día anterior, asentada
-OK segunda declaración: $150,000.00 al día de hoy, asentada
+OK el doble clic manda 1 acción(es) de servidor (se espera 1)
+OK doble clic en «Declarar el saldo»: mientras se envía dice «Enviando…», queda desactivado y con aria-busy
+OK primera declaración: $120,000.00 al día anterior, asentada (doble clic)
+OK el doble clic manda 1 acción(es) de servidor (se espera 1)
+OK doble clic en «Declarar el saldo»: mientras se envía dice «Enviando…», queda desactivado y con aria-busy
+OK segunda declaración: $150,000.00 al día de hoy, asentada (doble clic)
 OK el historial conserva las dos: $150,000.00 y $120,000.00
-OK la base tiene 2 declaraciones (append-only)
+OK la base tiene 2 declaraciones (append-only): cada doble clic dejó una sola
 OK y 2 eventos declarar_saldo en la bitácora
 OK captura b-saldo-historial.jpg
 OK Inicio muestra $150,000.00 con «Declarado por tu empresa»
@@ -62,14 +65,26 @@ OK «Quitar el escenario» regresa a la proyección real
 (e) Cobros esperados
 OK «Registrar un cobro» de la barra lleva al formulario
 OK el cobro con fecha pasada (Distribuidora Sur) aparece vencido
-OK alta manual: Abarrotes del Puerto por $22,500.50
+OK el doble clic manda 1 acción(es) de servidor (se espera 1)
+OK doble clic en «Registrar el cobro»: mientras se envía dice «Enviando…», queda desactivado y con aria-busy
+OK alta manual: Abarrotes del Puerto por $22,500.50 (doble clic)
+OK el doble clic deja un solo cobro y un solo evento registrar_cobro
 OK una factura con RFC emisor ajeno se rechaza
 OK con un mensaje claro: «Revisa antes de continuar Esta factura la emitió el RFC XAX010101000, no ALO180312AB1. Solo se registran facturas que emitió Altamar Logística.»
 OK captura e1-xml-ajeno-rechazado.jpg
-OK la factura emitida por Altamar se registra como cobro esperado
+OK el doble clic manda 1 acción(es) de servidor (se espera 1)
+OK doble clic en «Registrar con el XML»: mientras se envía dice «Enviando…», queda desactivado y con aria-busy
+OK la factura emitida por Altamar se registra como cobro esperado (doble clic)
+OK el doble clic deja una sola fila con ese UUID
 OK con origen cfdi, el cliente receptor, $45,000.00 y su UUID
+OK el doble clic manda 1 acción(es) de servidor (se espera 1)
+OK doble clic en «Marcar cobrado» del diálogo: el botón se ve ocupado
 OK marcar cobrado guarda la fecha real
+OK y deja un solo evento cobrar_cobro
+OK el doble clic manda 1 acción(es) de servidor (se espera 1)
+OK doble clic en «Cancelar el cobro»: el botón se ve ocupado
 OK cancelar con motivo deja el cobro cancelado
+OK y deja un solo evento cancelar_cobro
 OK en «Esperados» la fila sale de la lista y el aviso «quedó asentado» se queda a la vista
 OK el filtro «Vencidos» muestra solo el vencido
 OK el filtro «Cobrados» muestra el cobrado
@@ -92,13 +107,19 @@ OK la renta aparece el día 20
 OK el cobro vencido sale marcado como vencido
 OK la plantilla llena «Impuestos provisionales»
 OK con el siguiente día 17 (2026-11-17) y frecuencia mensual
-OK se registra la obligación de impuestos
+OK el doble clic manda 1 acción(es) de servidor (se espera 1)
+OK doble clic en «Registrar la obligación»: mientras se envía dice «Enviando…», queda desactivado y con aria-busy
+OK se registra la obligación de impuestos (doble clic)
+OK el doble clic deja una sola obligación y un solo evento registrar_obligacion
 OK se edita el monto a $19,250.00
 OK la base guarda el monto nuevo
 OK los impuestos aparecen en el calendario del mes de su día 17
 OK captura f2-calendario.jpg
 OK «Mes siguiente →» muestra diciembre con sus fechas
+OK el doble clic manda 1 acción(es) de servidor (se espera 1)
+OK doble clic en «Desactivar»: el botón se ve ocupado
 OK «Desactivar» la saca del calendario y de la proyección (activa = false)
+OK con un solo evento desactivar_obligacion
 
 (g) Presupuestos
 OK Operación: nómina prorrateada $36,000.00 + Transportes del Norte $25,000.00 + renta $30,000.00 = $91,000.00 de $90,000.00
@@ -109,7 +130,9 @@ OK captura g1-presupuestos.jpg
 OK Inicio avisa de los dos presupuestos
 OK Pendientes también
 OK captura g2-pendientes.jpg
-OK a Papelería Central se le asigna el área Ventas
+OK el doble clic manda 1 acción(es) de servidor (se espera 1)
+OK doble clic en «Guardar»: mientras se envía dice «Enviando…», queda desactivado y con aria-busy
+OK a Papelería Central se le asigna el área Ventas (doble clic)
 OK su cargo PA-12 ($12,000.00) entra al presupuesto de Ventas: $47,000.00, excedido
 OK con su evento asignar_area_proveedor (área por nombre)
 OK el alta de proveedor guarda el área opcional (Operación)
@@ -240,7 +263,7 @@ OK presupuestos lever 390: 200
 OK presupuestos lever 390: sin desplazamiento horizontal
 OK captura k-presupuestos-lever-390.jpg
 
-177 comprobaciones
+201 comprobaciones
 Consola del navegador: sin errores ni advertencias de la aplicación
 Avisos «GL Driver Message» del fondo WebGL (fuera de zona): 4
 Mensajes esperados en las páginas 404 de (j) (el 404 del documento y la precarga de estilos sin usar): 11

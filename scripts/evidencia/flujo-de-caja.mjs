@@ -157,7 +157,7 @@ async function clicConAccion(pagina, clic) {
     pagina.waitForResponse((r) => r.request().method() === "POST" && Boolean(r.request().headers()["next-action"]), { timeout: 20000 }),
     clic(),
   ]);
-  await pagina.waitForFunction(() => !document.querySelector('form[aria-busy="true"]'), null, { timeout: 15000 });
+  await pagina.waitForFunction(() => !document.querySelector('form[aria-busy="true"], button[aria-busy="true"]'), null, { timeout: 15000 });
   await pagina.waitForTimeout(150);
 }
 
@@ -165,6 +165,48 @@ async function enviar(formulario, boton) {
   await clicConAccion(formulario.page(), () => formulario.getByRole("button", { name: boton }).click());
   await formulario.locator(".alerta-asentado, .alerta-revisar").first().waitFor({ timeout: 15000 });
   return (await formulario.locator(".alerta-asentado").count()) > 0;
+}
+
+/**
+ * Doble clic real en un botón de envío (`BotonEnviar`): el segundo clic llega
+ * mientras la acción corre. Devuelve si el botón se vio ocupado entretanto
+ * («Enviando…», desactivado y con aria-busy) y exige que el navegador mande una
+ * sola acción de servidor. Además, cada llamada va seguida de un conteo en la
+ * base que exige una sola operación.
+ */
+async function dobleClicConAccion(boton) {
+  const pagina = boton.page();
+  await pagina.evaluate(() => {
+    const vistos = [];
+    const revisar = () => {
+      for (const b of document.querySelectorAll('button[aria-busy="true"]')) vistos.push(`${b.textContent?.trim()}|${b.disabled}`);
+    };
+    const observador = new MutationObserver(revisar);
+    observador.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
+    window.__ocupados = vistos;
+    window.__dejarDeVigilar = () => observador.disconnect();
+  });
+  let acciones = 0;
+  const contar = (peticion) => {
+    if (peticion.method() === "POST" && peticion.headers()["next-action"]) acciones += 1;
+  };
+  pagina.on("request", contar);
+  await clicConAccion(pagina, () => boton.dblclick());
+  await pagina.waitForTimeout(300);
+  pagina.off("request", contar);
+  exigir(acciones === 1, `el doble clic manda ${acciones} acción(es) de servidor (se espera 1)`);
+  const ocupados = await pagina.evaluate(() => {
+    window.__dejarDeVigilar();
+    return window.__ocupados;
+  });
+  return ocupados.includes("Enviando…|true");
+}
+
+async function enviarConDobleClic(formulario, boton) {
+  const ocupado = await dobleClicConAccion(formulario.getByRole("button", { name: boton }));
+  exigir(ocupado, `doble clic en «${boton}»: mientras se envía dice «Enviando…», queda desactivado y con aria-busy`);
+  await formulario.locator(".alerta-asentado, .alerta-revisar").first().waitFor({ timeout: 15000 });
+  return { asentado: (await formulario.locator(".alerta-asentado").count()) > 0, ocupado };
 }
 
 async function tablaProyeccion(pagina) {
@@ -269,14 +311,15 @@ async function principal() {
     const forma = laura.locator('form[data-formulario="saldo"]');
     await forma.locator("#saldo").fill("120000.00");
     await forma.locator("#alDia").fill(desplazar(HOY, -1));
-    exigir(await enviar(forma, "Declarar el saldo"), "primera declaración: $120,000.00 al día anterior, asentada");
+    const primera = await enviarConDobleClic(forma, "Declarar el saldo");
+    exigir(primera.asentado, "primera declaración: $120,000.00 al día anterior, asentada (doble clic)");
     await forma.locator("#saldo").fill("150000.00");
     await forma.locator("#alDia").fill(HOY);
-    exigir(await enviar(forma, "Declarar el saldo"), "segunda declaración: $150,000.00 al día de hoy, asentada");
+    exigir((await enviarConDobleClic(forma, "Declarar el saldo")).asentado, "segunda declaración: $150,000.00 al día de hoy, asentada (doble clic)");
     await laura.reload();
     const historial = await laura.locator('table[data-tabla="historial-saldo"] td[data-centavos]').evaluateAll((c) => c.map((td) => Number(td.getAttribute("data-centavos"))));
     exigir(JSON.stringify(historial) === JSON.stringify([15_000_000, 12_000_000]), `el historial conserva las dos: ${historial.map(pesos).join(" y ")}`);
-    exigir(sql(`select count(*) from cash_balance_declarations where company_id = '${A}'`) === "2", "la base tiene 2 declaraciones (append-only)");
+    exigir(sql(`select count(*) from cash_balance_declarations where company_id = '${A}'`) === "2", "la base tiene 2 declaraciones (append-only): cada doble clic dejó una sola");
     exigir(sql(`select count(*) from audit_log where company_id = '${A}' and accion = 'declarar_saldo'`) === "2", "y 2 eventos declarar_saldo en la bitácora");
     await captura(laura, "b-saldo-historial.jpg");
     await laura.goto(en(A, "/consola"));
@@ -393,7 +436,10 @@ async function principal() {
     await cobro.locator("#monto").fill("22500.50");
     await cobro.locator("#fechaProbable").fill(desplazar(HOY, 10));
     await cobro.locator("#referencia").fill("F-1040");
-    exigir(await enviar(cobro, "Registrar el cobro"), "alta manual: Abarrotes del Puerto por $22,500.50");
+    exigir((await enviarConDobleClic(cobro, "Registrar el cobro")).asentado, "alta manual: Abarrotes del Puerto por $22,500.50 (doble clic)");
+    exigir(sql(`select count(*) from expected_collections where company_id = '${A}' and cliente_nombre = 'Abarrotes del Puerto'`) === "1"
+      && sql(`select count(*) from audit_log where company_id = '${A}' and accion = 'registrar_cobro' and identificador::text in (select id::text from expected_collections where cliente_nombre = 'Abarrotes del Puerto')`) === "1",
+      "el doble clic deja un solo cobro y un solo evento registrar_cobro");
 
     const uuid = randomUUID().toUpperCase();
     const xml = (emisor) => `<?xml version="1.0" encoding="UTF-8"?>
@@ -412,7 +458,8 @@ async function principal() {
     exigir(rechazo.includes("XAX010101000") && rechazo.includes("ALO180312AB1"), `con un mensaje claro: «${rechazo.replace(/\s+/g, " ").trim()}»`);
     await captura(laura, "e1-xml-ajeno-rechazado.jpg", false);
     await conXml.locator("#xml").setInputFiles(join(TEMPORAL, "emitida.xml"));
-    exigir(await enviar(conXml, "Registrar con el XML"), "la factura emitida por Altamar se registra como cobro esperado");
+    exigir((await enviarConDobleClic(conXml, "Registrar con el XML")).asentado, "la factura emitida por Altamar se registra como cobro esperado (doble clic)");
+    exigir(sql(`select count(*) from expected_collections where cfdi_uuid = '${uuid}'`) === "1", "el doble clic deja una sola fila con ese UUID");
     exigir(sql(`select origen || '|' || cliente_nombre || '|' || monto_centavos || '|' || cfdi_uuid from expected_collections where cfdi_uuid = '${uuid}'`) === `cfdi|Comercializadora La Moderna|4500000|${uuid}`,
       "con origen cfdi, el cliente receptor, $45,000.00 y su UUID");
 
@@ -421,18 +468,20 @@ async function principal() {
     await abarrotes.getByRole("button", { name: "Marcar cobrado" }).click();
     const dialogo = laura.locator("dialog.dialogo[open]");
     await dialogo.locator('input[name="cobradoEl"]').fill(HOY);
-    await clicConAccion(laura, () => dialogo.getByRole("button", { name: "Marcar cobrado" }).click());
+    exigir(await dobleClicConAccion(dialogo.getByRole("button", { name: "Marcar cobrado" })), "doble clic en «Marcar cobrado» del diálogo: el botón se ve ocupado");
     await laura.locator(".alerta-asentado", { hasText: "marcado como cobrado" }).waitFor();
     exigir(sql(`select estado || '|' || cobrado_el from expected_collections where cliente_nombre = 'Abarrotes del Puerto'`) === `cobrado|${HOY}`, "marcar cobrado guarda la fecha real");
+    exigir(sql(`select count(*) from audit_log where company_id = '${A}' and accion = 'cobrar_cobro' and identificador::text in (select id::text from expected_collections where cliente_nombre = 'Abarrotes del Puerto')`) === "1", "y deja un solo evento cobrar_cobro");
     // Desde el filtro «Esperados» la fila sale de la lista al cancelarse: el aviso tiene que quedarse.
     await laura.getByRole("link", { name: "Esperados" }).click();
     await laura.waitForURL(/estado=esperado/);
     const moderna = laura.locator("tr[data-cobro]", { hasText: "Comercializadora La Moderna" });
     await moderna.getByRole("button", { name: "Cancelar" }).click();
     await laura.locator("dialog.dialogo[open]").locator('input[name="motivo"]').fill("Factura sustituida por otra");
-    await clicConAccion(laura, () => laura.locator("dialog.dialogo[open]").getByRole("button", { name: "Cancelar el cobro" }).click());
+    exigir(await dobleClicConAccion(laura.locator("dialog.dialogo[open]").getByRole("button", { name: "Cancelar el cobro" })), "doble clic en «Cancelar el cobro»: el botón se ve ocupado");
     await laura.locator(".alerta-asentado", { hasText: "cancelado con su motivo" }).waitFor();
     exigir(sql(`select estado from expected_collections where cfdi_uuid = '${uuid}'`) === "cancelado", "cancelar con motivo deja el cobro cancelado");
+    exigir(sql(`select count(*) from audit_log where company_id = '${A}' and accion = 'cancelar_cobro' and identificador::text in (select id::text from expected_collections where cfdi_uuid = '${uuid}')`) === "1", "y deja un solo evento cancelar_cobro");
     exigir((await moderna.count()) === 0 && (await laura.locator(".alerta-asentado", { hasText: "cancelado con su motivo" }).isVisible()),
       "en «Esperados» la fila sale de la lista y el aviso «quedó asentado» se queda a la vista");
 
@@ -480,7 +529,10 @@ async function principal() {
     const fecha17 = await plantilla.locator('input[name="proximaFecha"]').inputValue();
     exigir(fecha17.endsWith("-17") && fecha17 >= HOY, `con el siguiente día 17 (${fecha17}) y frecuencia mensual`);
     await plantilla.locator('input[name="monto"]').fill("18500.00");
-    exigir(await enviar(plantilla, "Registrar la obligación"), "se registra la obligación de impuestos");
+    exigir((await enviarConDobleClic(plantilla, "Registrar la obligación")).asentado, "se registra la obligación de impuestos (doble clic)");
+    exigir(sql(`select count(*) from recurring_obligations where company_id = '${A}' and concepto = 'Impuestos provisionales'`) === "1"
+      && sql(`select count(*) from audit_log where company_id = '${A}' and accion = 'registrar_obligacion' and identificador::text in (select id::text from recurring_obligations where concepto = 'Impuestos provisionales')`) === "1",
+      "el doble clic deja una sola obligación y un solo evento registrar_obligacion");
     await laura.reload();
     const impuestos = laura.locator("li[data-obligacion]", { hasText: "Impuestos provisionales" });
     await impuestos.locator("summary").click();
@@ -498,9 +550,10 @@ async function principal() {
     await laura.goto(en(A, "/consola/calendario"));
     const fila = laura.locator("li[data-obligacion]", { hasText: "Impuestos provisionales" });
     await fila.getByRole("button", { name: "Desactivar" }).click();
-    await clicConAccion(laura, () => laura.locator("dialog.dialogo[open]").getByRole("button", { name: "Desactivar" }).click());
+    exigir(await dobleClicConAccion(laura.locator("dialog.dialogo[open]").getByRole("button", { name: "Desactivar" })), "doble clic en «Desactivar»: el botón se ve ocupado");
     await laura.locator(".alerta-asentado", { hasText: "se desactivó" }).waitFor();
     exigir(sql(`select activa from recurring_obligations where concepto = 'Impuestos provisionales'`) === "f", "«Desactivar» la saca del calendario y de la proyección (activa = false)");
+    exigir(sql(`select count(*) from audit_log where company_id = '${A}' and accion = 'desactivar_obligacion' and identificador::text in (select id::text from recurring_obligations where concepto = 'Impuestos provisionales')`) === "1", "con un solo evento desactivar_obligacion");
   }
 
   if (debe("g")) {
@@ -527,7 +580,7 @@ async function principal() {
     await laura.goto(en(A, "/consola/presupuestos"));
     const papeleria = laura.locator("form.flujo-area-proveedor", { hasText: "Papelería Central" });
     await papeleria.locator("select").selectOption(ventas);
-    exigir(await enviar(papeleria, "Guardar"), "a Papelería Central se le asigna el área Ventas");
+    exigir((await enviarConDobleClic(papeleria, "Guardar")).asentado, "a Papelería Central se le asigna el área Ventas (doble clic)");
     await laura.reload();
     const gastoVe2 = Number(await laura.locator(`[data-presupuesto="${ventas}"] [data-cifra="gasto"]`).getAttribute("data-centavos"));
     exigir(gastoVe2 === gastoVe + 1_200_000 && (await laura.locator(`[data-presupuesto="${ventas}"]`).getAttribute("data-estado")) === "excedido",

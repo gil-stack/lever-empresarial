@@ -15,7 +15,7 @@ import {
   enviarSaldo,
 } from "@/app/consola/flujo/acciones";
 import { enviarSinReiniciar } from "@/components/proveedores/sin-reinicio";
-import { Aviso, Dialogo } from "@/components/sistema";
+import { Aviso, BotonEnviar, Dialogo } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
 import { ESTADO_FLUJO_INICIAL, ETIQUETA_FRECUENCIA, siguienteDia17, type EstadoFlujo } from "@/dominio/flujo/entradas";
 import { FRECUENCIAS_OBLIGACION } from "@/dominio/flujo/fechas";
@@ -119,14 +119,6 @@ function describe(id: string, error?: string, pista = false): string | undefined
   return ids.length > 0 ? ids.join(" ") : undefined;
 }
 
-function Enviar({ pendiente, children, clase = "boton" }: { pendiente: boolean; children: ReactNode; clase?: string }) {
-  return (
-    <button className={clase} type="submit" disabled={pendiente} aria-disabled={pendiente}>
-      {pendiente ? "Guardando…" : children}
-    </button>
-  );
-}
-
 // Saldo, colchón y correo ------------------------------------------------------------
 
 export function FormularioSaldo({ hoy }: { hoy: string }) {
@@ -144,7 +136,7 @@ export function FormularioSaldo({ hoy }: { hoy: string }) {
             aria-invalid={f.mensaje("alDia") ? true : undefined} aria-describedby={describe("alDia", f.mensaje("alDia"))} />
         </Campo>
       </div>
-      <div className="acciones"><Enviar pendiente={f.pendiente}>Declarar el saldo</Enviar></div>
+      <div className="acciones"><BotonEnviar pendiente={f.pendiente}>Declarar el saldo</BotonEnviar></div>
     </form>
   );
 }
@@ -158,7 +150,7 @@ export function FormularioColchon({ colchonCentavos }: { colchonCentavos: number
         <input id="colchon" name="colchon" inputMode="decimal" defaultValue={(colchonCentavos / 100).toFixed(2)} autoComplete="off"
           aria-invalid={f.mensaje("colchon") ? true : undefined} aria-describedby={describe("colchon", f.mensaje("colchon"), true)} />
       </Campo>
-      <div className="acciones"><Enviar pendiente={f.pendiente} clase="boton-texto">Guardar el colchón</Enviar></div>
+      <div className="acciones"><BotonEnviar pendiente={f.pendiente} className="boton-texto">Guardar el colchón</BotonEnviar></div>
     </form>
   );
 }
@@ -171,7 +163,7 @@ export function FormularioCorreo({ activo }: { activo: boolean }) {
       <p className="pista">{activo ? "Hoy lo recibes: lunes a las 8:00, hora del centro de México." : "Hoy no lo recibes."}</p>
       <input type="hidden" name="activo" value={activo ? "no" : "si"} />
       <div className="acciones">
-        <Enviar pendiente={f.pendiente} clase="boton-texto">{activo ? "Dejar de recibirlo" : "Recibirlo los lunes"}</Enviar>
+        <BotonEnviar pendiente={f.pendiente} className="boton-texto">{activo ? "Dejar de recibirlo" : "Recibirlo los lunes"}</BotonEnviar>
       </div>
     </form>
   );
@@ -205,7 +197,7 @@ export function FormularioCobro({ hoy }: { hoy: string }) {
           <input id="referencia" name="referencia" maxLength={120} autoComplete="off" aria-invalid={f.mensaje("referencia") ? true : undefined} />
         </Campo>
       </div>
-      <div className="acciones"><Enviar pendiente={f.pendiente}>Registrar el cobro</Enviar></div>
+      <div className="acciones"><BotonEnviar pendiente={f.pendiente}>Registrar el cobro</BotonEnviar></div>
     </form>
   );
 }
@@ -227,7 +219,7 @@ export function FormularioCobroXml({ hoy }: { hoy: string }) {
           <input id="conceptoXml" name="conceptoXml" maxLength={200} autoComplete="off" aria-describedby={describe("conceptoXml", f.mensaje("conceptoXml"), true)} />
         </Campo>
       </div>
-      <div className="acciones"><Enviar pendiente={f.pendiente}>Registrar con el XML</Enviar></div>
+      <div className="acciones"><BotonEnviar pendiente={f.pendiente}>Registrar con el XML</BotonEnviar></div>
     </form>
   );
 }
@@ -247,7 +239,7 @@ export function ResolverCobro({ id, cliente, montoCentavos, hoy }: { id: string;
         alCerrar={() => setAbierto(null)}
         titulo="Marcar como cobrado"
         explicacion={resumen}
-        pie={<button type="submit" form={cobrado.idForma} className="boton" disabled={cobrado.pendiente}>{cobrado.pendiente ? "Guardando…" : "Marcar cobrado"}</button>}
+        pie={<BotonEnviar form={cobrado.idForma} pendiente={cobrado.pendiente}>Marcar cobrado</BotonEnviar>}
       >
         <form id={cobrado.idForma} className="flujo-resolver" onSubmit={cobrado.enviar} noValidate>
           <AvisoFlujo estado={cobrado.estado} />
@@ -262,7 +254,7 @@ export function ResolverCobro({ id, cliente, montoCentavos, hoy }: { id: string;
         alCerrar={() => setAbierto(null)}
         titulo="Cancelar el cobro"
         explicacion={`${resumen}. Sale de la proyección y queda en el historial con su motivo.`}
-        pie={<button type="submit" form={cancelado.idForma} className="boton" disabled={cancelado.pendiente}>{cancelado.pendiente ? "Guardando…" : "Cancelar el cobro"}</button>}
+        pie={<BotonEnviar form={cancelado.idForma} pendiente={cancelado.pendiente}>Cancelar el cobro</BotonEnviar>}
       >
         <form id={cancelado.idForma} className="flujo-resolver" onSubmit={cancelado.enviar} noValidate>
           <AvisoFlujo estado={cancelado.estado} />
@@ -347,7 +339,7 @@ export function FormularioObligacion({
           </select>
         </Campo>
       </div>
-      <div className="acciones"><Enviar pendiente={f.pendiente}>{obligacion ? "Guardar los cambios" : "Registrar la obligación"}</Enviar></div>
+      <div className="acciones"><BotonEnviar pendiente={f.pendiente}>{obligacion ? "Guardar los cambios" : "Registrar la obligación"}</BotonEnviar></div>
     </form>
   );
 }
@@ -363,7 +355,7 @@ export function DesactivarObligacion({ id, concepto }: { id: string; concepto: s
         alCerrar={() => setAbierto(false)}
         titulo={`Desactivar «${concepto}»`}
         explicacion="Sale del calendario, de la proyección y del presupuesto. Su historial se queda."
-        pie={<button type="submit" form={f.idForma} className="boton" disabled={f.pendiente}>{f.pendiente ? "Guardando…" : "Desactivar"}</button>}
+        pie={<BotonEnviar form={f.idForma} pendiente={f.pendiente}>Desactivar</BotonEnviar>}
       >
         <form id={f.idForma} onSubmit={f.enviar} noValidate>
           <AvisoFlujo estado={f.estado} />
@@ -394,7 +386,7 @@ export function AreaProveedor({
           {areas.map((area) => <option key={area.id} value={area.id}>{area.nombre}</option>)}
         </select>
       </div>
-      <Enviar pendiente={f.pendiente} clase="boton-texto boton-chico">Guardar</Enviar>
+      <BotonEnviar pendiente={f.pendiente} className="boton-texto boton-chico">Guardar</BotonEnviar>
       <AvisoFlujo estado={f.estado} />
     </form>
   );
