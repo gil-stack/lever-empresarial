@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 
-import { contextoDeAccion } from "@/server/entrada";
+import { contextoDeAccion, sesionSegura } from "@/server/entrada";
 import { publicarSuscripcion } from "@/server/precio";
 import { ErrorDeDominio } from "@/server/session";
 import type { EstadoFormulario } from "./estado";
@@ -14,6 +14,8 @@ const MENSAJES: Record<string, string> = {
   monto_en_cero: "La suscripción no se anuncia en cero.",
   precio_ya_publicado: "Ese monto ya está publicado.",
   precio_protegido: "Ese monto ya está publicado.",
+  reautenticacion_requerida:
+    "Publicar exige un segundo factor verificado en los últimos 30 minutos. Sal y vuelve a entrar por la puerta de operación.",
   base_no_disponible: "No se pudo guardar. Vuelve a intentar.",
   base_no_configurada: "No se pudo guardar. Vuelve a intentar.",
 };
@@ -29,7 +31,7 @@ export async function enviarPublicacion(
   const texto = typeof crudo === "string" ? crudo : "";
   if (texto.length > 32) return invalido("monto_invalido");
   try {
-    await publicarSuscripcion(ctx, texto);
+    await publicarSuscripcion(ctx, await sesionSegura(), texto);
   } catch (error) {
     if (error instanceof ErrorDeDominio) return invalido(error.codigo);
     throw error;

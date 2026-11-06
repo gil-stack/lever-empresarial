@@ -1,11 +1,11 @@
-import { tokenValido } from "../session/cookie";
+import { nombreDeCookie, tokenValido } from "../session/cookie";
 
 /**
  * Cookie de la entrada. Dice que la contraseña ya coincidió y nada más:
  * no abre el portal. Dura diez minutos y es distinta de la cookie `sesion`.
  */
 
-export const NOMBRE_COOKIE_ENTRADA = "entrada";
+export const NOMBRE_COOKIE_ENTRADA = nombreDeCookie("entrada");
 
 /**
  * La sesión ya existe, pero el portal no la honra todavía. La persona tiene
@@ -13,7 +13,7 @@ export const NOMBRE_COOKIE_ENTRADA = "entrada";
  * consola. Si esa cookie se fijara en la misma acción, la página redirige
  * y los códigos no llegan a mostrarse.
  */
-export const NOMBRE_COOKIE_PORTAL = "portal";
+export const NOMBRE_COOKIE_PORTAL = nombreDeCookie("portal");
 export const VIGENCIA_ENTRADA_MS = 10 * 60 * 1000;
 
 export function leerTokenEntrada(valor: string | null | undefined): string | null {
@@ -22,7 +22,7 @@ export function leerTokenEntrada(valor: string | null | undefined): string | nul
 }
 
 export type CookieEntrada = {
-  nombre: typeof NOMBRE_COOKIE_ENTRADA;
+  nombre: string;
   valor: string;
   maxAge: number;
 };

@@ -14,6 +14,7 @@ import {
   rutaDeclarada,
   type PatronDeRuta,
 } from "../nucleo/rutas";
+import { NOMBRE_COOKIE_ENTRADA, NOMBRE_COOKIE_PORTAL } from "./autenticacion/cookie";
 import { leerSesion } from "./session";
 import { NOMBRE_COOKIE, NOMBRE_COOKIE_PARCIAL } from "./session/cookie";
 import type { Sesion } from "./session/tipos";
@@ -76,7 +77,7 @@ export async function abrirRuta(patron: PatronDeRuta): Promise<Apertura> {
   if (resuelto === "libro") return { tipo: "libro" };
   if (!resuelto) {
     const jar = await cookies();
-    const entrada = jar.get("entrada")?.value || jar.get("portal")?.value;
+    const entrada = jar.get(NOMBRE_COOKIE_ENTRADA)?.value || jar.get(NOMBRE_COOKIE_PORTAL)?.value;
     redirect(entrada ? RUTA_SEGUNDO_FACTOR : "/entrar");
   }
   const { ctx, eleccion } = resuelto;

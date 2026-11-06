@@ -20,6 +20,8 @@ export type Sesion = {
   superficie?: "cliente" | "sofipo" | "telefono";
   /** Vacío: sesión parcial. Solo sirve para verificar el segundo factor. */
   segundoFactor: { metodo: MetodoSegundoFactor; en: Date } | null;
+  /** Último uso registrado. Sin uso en 30 minutos la base ya no devuelve la sesión. */
+  ultimoUsoEn?: Date;
 };
 
 export type SesionAbierta = {

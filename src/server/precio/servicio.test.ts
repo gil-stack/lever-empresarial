@@ -12,6 +12,8 @@ import { aceptarSuscripcion, leerTarifa, publicarSuscripcion } from "./servicio.
 const EMPRESA = "11111111-1111-4111-8111-111111111111";
 const PERSONA = "22222222-2222-4222-8222-222222222222";
 const FILA = "33333333-3333-4333-8333-333333333333";
+const AHORA = new Date("2026-11-06T12:00:00.000Z");
+const SOFIPO_RECIENTE = { superficie: "sofipo" as const, segundoFactor: { metodo: "totp" as const, en: AHORA } };
 
 describe("el precio es de la plataforma", () => {
   it("vacío no se disfraza de cifra, y un cliente no lo publica", async () => {
@@ -19,7 +21,7 @@ describe("el precio es de la plataforma", () => {
     const tarifa = await leerTarifa({ repositorio: libro });
     assert.equal(tarifa.suscripcionPublicada, false);
     await assert.rejects(
-      () => publicarSuscripcion(cliente(), "100.00", { repositorio: libro }),
+      () => publicarSuscripcion(cliente(), SOFIPO_RECIENTE, "100.00", { repositorio: libro, ahora: () => AHORA }),
       (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "no_es_operador",
     );
     assert.equal(libro.centavos, null);
@@ -27,15 +29,31 @@ describe("el precio es de la plataforma", () => {
 
   it("el personal publica centavos una vez y acepta la suscripción de la empresa que nombra", async () => {
     const libro = memoria();
-    const publicada = await publicarSuscripcion(personal(), "100.50", { repositorio: libro });
+    const publicada = await publicarSuscripcion(personal(), SOFIPO_RECIENTE, "100.50", {
+      repositorio: libro,
+      ahora: () => AHORA,
+    });
     assert.equal(publicada.suscripcionPublicada, true);
     assert.match(publicada.suscripcion, /100\.50|100,50/);
     await assert.rejects(
-      () => publicarSuscripcion(personal(), "20", { repositorio: libro }),
+      () => publicarSuscripcion(personal(), SOFIPO_RECIENTE, "20", { repositorio: libro, ahora: () => AHORA }),
       (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "precio_ya_publicado",
     );
     await aceptarSuscripcion(personal(), { companyId: EMPRESA }, { repositorio: libro });
     assert.equal(libro.aceptada, EMPRESA);
+  });
+
+  it("publicar exige un segundo factor SOFIPO de los últimos 30 minutos", async () => {
+    const libro = memoria();
+    const viejo = { superficie: "sofipo" as const, segundoFactor: { metodo: "totp" as const, en: new Date(AHORA.getTime() - 31 * 60_000) } };
+    const deCliente = { superficie: "cliente" as const, segundoFactor: { metodo: "totp" as const, en: AHORA } };
+    for (const sesion of [viejo, deCliente, null]) {
+      await assert.rejects(
+        () => publicarSuscripcion(personal(), sesion, "100.00", { repositorio: libro, ahora: () => AHORA }),
+        (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "reautenticacion_requerida",
+      );
+    }
+    assert.equal(libro.centavos, null);
   });
 
   it("la migración no siembra un monto y el trigger no se copia al mensaje", () => {

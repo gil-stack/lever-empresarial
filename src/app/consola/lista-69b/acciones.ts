@@ -15,6 +15,7 @@ const MENSAJES: Record<string, string> = {
   sat_no_disponible: "No se pudo leer el listado que publica el SAT. No quedó una copia nueva.",
   pagina_irreconocible: "La página del SAT no trae el listado del artículo 69-B. No se guardó.",
   url_no_publica: "El enlace del listado no es una dirección pública. No se guardó.",
+  url_fuera_del_sat: "El enlace del listado no es una dirección del SAT. No se guardó.",
   sin_fecha: "El archivo no declara su fecha. No se guardó.",
   sin_encabezado: "El archivo no trae las columnas de RFC y situación. No se guardó.",
   fila_incompleta: "Una fila del archivo no trae RFC o situación. No se guardó.",

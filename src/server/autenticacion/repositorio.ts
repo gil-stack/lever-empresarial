@@ -74,6 +74,8 @@ export type RecuperacionAbierta = {
   venceEn: Date | null;
 };
 
+export type SuperficieDeSesion = "cliente" | "sofipo" | "telefono";
+
 export type SesionNueva = {
   id: string;
   tokenHash: string;
@@ -132,8 +134,30 @@ export type RepositorioAutenticacion = {
   revocarPasskey: (args: { userId: string; passkeyId: string; actorId: string; ahora: Date }) => Promise<void>;
   revocarTotp: (args: { userId: string; actorId: string; ahora: Date }) => Promise<void>;
   regenerarRespaldo: (args: { userId: string; codigosHash: string[]; ahora: Date }) => Promise<void>;
+  /**
+   * Confirma la identidad dentro de una sesión ya abierta: consume el factor
+   * (paso TOTP, contador de passkey o código de respaldo) y renueva
+   * segundo_factor_en de esa sesión en la misma transacción. Queda auditado.
+   */
+  reautenticar: (args: {
+    sesionId: string;
+    userId: string;
+    metodo: MetodoSegundoFactor;
+    efecto: Extract<Efecto, { tipo: "totp" | "passkey" | "respaldo" }>;
+    superficie: SuperficieDeSesion;
+    ahora: Date;
+  }) => Promise<void>;
+  /** Suma un intento fallido a la sesión. Al quinto borra la sesión. Devuelve el total. */
+  sumarFalloDeReautenticacion: (args: {
+    sesionId: string;
+    userId: string;
+    superficie: SuperficieDeSesion;
+    ahora: Date;
+  }) => Promise<number>;
   solicitarRecuperacion: (args: { id: string; userId: string; motivo: string; entradaId: string; ahora: Date }) => Promise<void>;
-  recuperacionesPendientes: () => Promise<RecuperacionPendiente[]>;
+  /** Solo el personal activo: corre como plataforma_sofipo. */
+  recuperacionesPendientes: (personalId: string) => Promise<RecuperacionPendiente[]>;
+  /** Devuelve a quién pertenece la solicitud aprobada, para avisarle. */
   aprobarRecuperacion: (args: {
     id: string;
     aprobadorId: string;
@@ -141,7 +165,7 @@ export type RepositorioAutenticacion = {
     nota: string | null;
     ahora: Date;
     venceEn: Date;
-  }) => Promise<void>;
+  }) => Promise<{ userId: string }>;
   rechazarRecuperacion: (args: { id: string; aprobadorId: string; nota: string; ahora: Date }) => Promise<void>;
   segundoFactorDeSesion: (sessionId: string) => Promise<MetodoSegundoFactor | null>;
   esPersonal: (userId: string) => Promise<boolean>;
@@ -239,6 +263,14 @@ export const SQL = {
     where user_id = $1 and revocada_en is null
     returning id`,
   segundoFactorDeSesion: "select factor_de_sesion($1) as segundo_factor",
+  renovarFactorDeSesion: `update sessions
+    set segundo_factor_en = now(), segundo_factor_metodo = $3, reautenticaciones_fallidas = 0
+    where id = $1 and user_id = $2`,
+  sumarFalloDeReautenticacion: `update sessions
+    set reautenticaciones_fallidas = least(reautenticaciones_fallidas + 1, 5)
+    where id = $1 and user_id = $2
+    returning reautenticaciones_fallidas`,
+  borrarSesion: "delete from sessions where id = $1 and user_id = $2",
 } as const;
 
 export function repositorioPg(): RepositorioAutenticacion {
@@ -436,8 +468,28 @@ export function repositorioPg(): RepositorioAutenticacion {
         await registrarHechoAutenticacion(hecho("recuperacion_solicitada", id, userId, ahora), consulta);
       });
     },
-    async recuperacionesPendientes() {
-      const resultado = await consultarDefinidor(SQL.recuperacionesPendientes, []);
+    async reautenticar({ sesionId, userId, metodo, efecto, superficie, ahora }) {
+      await conTransaccion(userId, async (consulta) => {
+        await consulta.query(SQL.bloquearUsuario, [userId]);
+        await aplicarEfecto(consulta, userId, efecto, ahora);
+        const renovada = await consulta.query(SQL.renovarFactorDeSesion, [sesionId, userId, metodo]);
+        if (renovada.rowCount !== 1) throw new ErrorDeDominio("sesion_ausente");
+        await auditarEnSuperficie(consulta, userId, superficie, hecho("reautenticacion", sesionId, userId, ahora));
+      });
+    },
+    async sumarFalloDeReautenticacion({ sesionId, userId, superficie, ahora }) {
+      return conTransaccion(userId, async (consulta) => {
+        const suma = await consulta.query(SQL.sumarFalloDeReautenticacion, [sesionId, userId]);
+        const fila = suma.rows[0] as { reautenticaciones_fallidas?: unknown } | undefined;
+        if (fila?.reautenticaciones_fallidas === undefined) throw new ErrorDeDominio("sesion_ausente");
+        const intentos = Number(fila.reautenticaciones_fallidas);
+        if (intentos >= 5) await consulta.query(SQL.borrarSesion, [sesionId, userId]);
+        await auditarEnSuperficie(consulta, userId, superficie, hecho("reautenticacion_fallida", sesionId, userId, ahora));
+        return intentos;
+      });
+    },
+    async recuperacionesPendientes(personalId) {
+      const resultado = await conPersonal(personalId, (consulta) => consulta.query(SQL.recuperacionesPendientes, []));
       return (resultado.rows as Record<string, unknown>[]).map((fila) => ({
         id: texto(fila.id),
         nombre: texto(fila.nombre),
@@ -447,8 +499,8 @@ export function repositorioPg(): RepositorioAutenticacion {
       }));
     },
     async aprobarRecuperacion({ id, aprobadorId, verificacion, nota, ahora, venceEn }) {
-      await conPersonal(aprobadorId, async (consulta) => {
-        await bloquearSolicitud(consulta, id, aprobadorId);
+      return conPersonal(aprobadorId, async (consulta) => {
+        const userId = await bloquearSolicitud(consulta, id, aprobadorId);
         const aprobada = await consulta.query(SQL.aprobarRecuperacion, [
           id,
           aprobadorId,
@@ -459,6 +511,7 @@ export function repositorioPg(): RepositorioAutenticacion {
         ]);
         if (aprobada.rowCount !== 1) throw new ErrorDeDominio("recuperacion_ausente");
         await registrarHechoAutenticacion(hecho("recuperacion_aprobada", id, aprobadorId, ahora), consulta, "sofipo");
+        return { userId };
       });
     },
     async rechazarRecuperacion({ id, aprobadorId, nota, ahora }) {
@@ -572,6 +625,34 @@ async function exigirSinFactores(consulta: Consulta, userId: string): Promise<vo
 
 async function exigirOtroFactor(consulta: Consulta, userId: string): Promise<void> {
   if ((await contarVigentes(consulta, userId)) === 0) throw new ErrorDeDominio("ultimo_factor");
+}
+
+/**
+ * El personal firma como personal: igual que al abrir su sesión, la
+ * transacción pasa a plataforma_sofipo con su operador antes de auditar.
+ */
+async function auditarEnSuperficie(
+  consulta: Consulta,
+  userId: string,
+  superficie: SuperficieDeSesion,
+  evento: ReturnType<typeof hecho>,
+): Promise<void> {
+  if (superficie !== "sofipo") {
+    await registrarHechoAutenticacion(evento, consulta, "cliente");
+    return;
+  }
+  const personal = await consulta.query(
+    "select operator_id from platform_staff where user_id = $1 and estado = 'activo'",
+    [userId],
+  );
+  const fila = personal.rows[0] as { operator_id?: unknown } | undefined;
+  if (typeof fila?.operator_id !== "string") throw new ErrorDeDominio("sin_permiso");
+  await consulta.query("set local role plataforma_sofipo");
+  await consulta.query("select set_config('app.operator_id', $1, true), set_config('app.user_id', $2, true)", [
+    fila.operator_id,
+    userId,
+  ]);
+  await registrarHechoAutenticacion(evento, consulta, "sofipo");
 }
 
 async function bloquearSolicitud(consulta: Consulta, id: string, aprobadorId: string): Promise<string> {

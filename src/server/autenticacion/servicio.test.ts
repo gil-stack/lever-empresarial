@@ -5,23 +5,37 @@ import { NOMBRE_COOKIE } from "../session/cookie";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import type { Sesion } from "../session/tipos";
 import { aBase32, codigoDelPaso, pasoDe } from "./totp";
+import { cifrarSemilla } from "./cifrado";
 import { hashDeRespaldo } from "./respaldo";
 import {
+  agregarPasskeyDeSesion,
+  confirmarConPasskey,
+  confirmarConRespaldo,
+  confirmarConTotp,
+  confirmarTotpDeSesion,
   entrarConPasskey,
   entrarConRespaldo,
   entrarConTotp,
+  estadoDeConfirmacion,
   iniciarConContrasena,
   inscribirPasskey,
   inscribirTotp,
   leerPaso,
+  nuevosCodigos,
+  opcionesParaConfirmarConPasskey,
   opcionesParaEntrarConPasskey,
   opcionesParaInscribirPasskey,
+  opcionesPasskeyDeSesion,
   pedirRecuperacion,
   prepararTotp,
+  prepararTotpDeSesion,
   quitarPasskey,
+  quitarTotp,
   resolverRecuperacion,
   verFactores,
+  verRecuperaciones,
 } from "./servicio";
+import type { AvisoDeSeguridad } from "../seguridad/avisos";
 import type {
   Efecto,
   EstadoFactores,
@@ -146,11 +160,11 @@ describe("entrar con segundo factor", () => {
     deps.operadores.add("ana@ejemplo.mx");
     assert.equal(
       await codigoDe(
-        resolverRecuperacion(sesion, { id: repo.recuperaciones[0]!.id, aprobada: true, verificacion: "presencial" }, deps),
+        resolverRecuperacion({ ...sesion, superficie: "sofipo" }, { id: repo.recuperaciones[0]!.id, aprobada: true, verificacion: "presencial" }, deps),
       ),
       "misma_persona_en_recuperacion",
     );
-    const operador = sesionDe(repo, "00000000-0000-4000-8000-0000000000bb", "operador@arco.mx");
+    const operador = sesionDe(repo, "00000000-0000-4000-8000-0000000000bb", "operador@arco.mx", { superficie: "sofipo" });
     repo.sesiones.push({ id: operador.id, userId: operador.usuario.id, factor: "totp" });
     await resolverRecuperacion(
       operador,
@@ -172,6 +186,167 @@ describe("entrar con segundo factor", () => {
   });
 });
 
+const LUEGO = new Date(AHORA.getTime() + 6 * 60 * 1000);
+const TOTP_CONFIRMADO = "00000000-0000-4000-8000-0000000000f1";
+
+/** Ana con TOTP confirmado (ya usado en AHORA), códigos de respaldo y una sesión cliente abierta en AHORA. */
+function anaConTotp() {
+  const repo = memoria();
+  repo.totp.push({
+    id: TOTP_CONFIRMADO,
+    userId: repo.ana.id,
+    secretoCifrado: cifrarSemilla(SEMILLA, repo.ana.id, LLAVE),
+    confirmado: true,
+    ultimoPaso: pasoDe(AHORA),
+    revocado: false,
+  });
+  repo.respaldos.push({ id: "r1", userId: repo.ana.id, hash: hashDeRespaldo("ABCDEFGHJKLMNPQR"), usado: false });
+  repo.sesiones.push({ id: "00000000-0000-4000-8000-00000000aa01", userId: repo.ana.id, factor: "totp" });
+  return repo;
+}
+
+describe("cambiar factores exige confirmar la identidad hace cinco minutos o menos", () => {
+  it("con el factor de hace seis minutos ningún cambio pasa y nada cambia ni se avisa", async () => {
+    const repo = anaConTotp();
+    repo.passkeys.push({
+      id: "00000000-0000-4000-8000-0000000000p1",
+      userId: repo.ana.id,
+      credencialId: CREDENCIAL,
+      llavePublica: new Uint8Array(32),
+      contador: 0,
+      transportes: [],
+      nombre: "Laptop",
+      respaldada: false,
+      creadaEn: AHORA,
+      ultimoUsoEn: null,
+      revocado: false,
+    });
+    const deps = base(repo, undefined, LUEGO);
+    const vieja = sesionDe(repo, undefined, "ana@ejemplo.mx", { factorEn: AHORA });
+    const intentos: Array<[string, Promise<unknown>]> = [
+      ["nuevosCodigos", nuevosCodigos(vieja, deps)],
+      ["prepararTotpDeSesion", prepararTotpDeSesion(vieja, deps)],
+      ["confirmarTotpDeSesion", confirmarTotpDeSesion(vieja, "123456", deps)],
+      ["opcionesPasskeyDeSesion", opcionesPasskeyDeSesion(vieja, origen(), deps)],
+      ["agregarPasskeyDeSesion", agregarPasskeyDeSesion(vieja, { id: CREDENCIAL }, origen(), "Otra", deps)],
+      ["quitarPasskey", quitarPasskey(vieja, repo.passkeys[0]!.id, deps)],
+      ["quitarTotp", quitarTotp(vieja, deps)],
+    ];
+    for (const [nombre, intento] of intentos) {
+      assert.equal(await codigoDe(intento), "reautenticacion_requerida", nombre);
+    }
+    assert.equal(repo.respaldos.length, 1);
+    assert.equal(repo.passkeys.filter((p) => !p.revocado).length, 1);
+    assert.equal(repo.totp.filter((t) => t.confirmado && !t.revocado).length, 1);
+    assert.equal(repo.retos.length, 0);
+    assert.deepEqual(repo.avisos, []);
+    assert.equal((await estadoDeConfirmacion(vieja, deps)).reciente, false);
+  });
+
+  it("confirmar con el código de la app renueva el factor; luego regenerar pasa, se audita y se avisa", async () => {
+    const repo = anaConTotp();
+    const deps = base(repo, undefined, LUEGO);
+    const vieja = sesionDe(repo, undefined, "ana@ejemplo.mx", { factorEn: AHORA });
+    // El código ya usado al entrar no sirve para confirmar (no se repite un paso TOTP).
+    assert.equal(await codigoDe(confirmarConTotp(vieja, codigoDelPaso(SEMILLA, pasoDe(AHORA)), deps)), "segundo_factor_invalido");
+    await confirmarConTotp(vieja, codigoDelPaso(SEMILLA, pasoDe(LUEGO)), deps);
+    assert.equal(repo.sesiones[0]?.renovadaCon, "totp");
+    assert.equal(repo.sesiones[0]?.fallos, 0);
+    assert.equal(repo.eventos.includes("reautenticacion"), true);
+
+    // Lo que la base devuelve después: segundo_factor_en renovado.
+    const renovada = sesionDe(repo, undefined, "ana@ejemplo.mx", { factorEn: LUEGO });
+    assert.equal((await estadoDeConfirmacion(renovada, deps)).reciente, true);
+    const codigos = await nuevosCodigos(renovada, deps);
+    assert.equal(codigos.length, 10);
+    assert.equal(repo.eventos.includes("respaldo_generado"), true);
+    assert.deepEqual(
+      repo.avisos.map((a) => [a.cambio, a.para, a.userId]),
+      [["respaldo_regenerado", "ana@ejemplo.mx", repo.ana.id]],
+    );
+  });
+
+  it("confirmar con un código de respaldo lo consume; con passkey usa un reto nuevo", async () => {
+    const repo = anaConTotp();
+    repo.passkeys.push({
+      id: "00000000-0000-4000-8000-0000000000p2",
+      userId: repo.ana.id,
+      credencialId: CREDENCIAL,
+      llavePublica: new Uint8Array(32),
+      contador: 0,
+      transportes: [],
+      nombre: "Laptop",
+      respaldada: false,
+      creadaEn: AHORA,
+      ultimoUsoEn: null,
+      revocado: false,
+    });
+    const deps = base(repo, undefined, LUEGO);
+    const vieja = sesionDe(repo, undefined, "ana@ejemplo.mx", { factorEn: AHORA });
+    await confirmarConRespaldo(vieja, "ABCD-EFGH-JKLM-NPQR", deps);
+    assert.equal(repo.respaldos[0]?.usado, true);
+    assert.equal(await codigoDe(confirmarConRespaldo(vieja, "ABCD-EFGH-JKLM-NPQR", deps)), "segundo_factor_invalido");
+
+    assert.equal(await codigoDe(confirmarConPasskey(vieja, { id: CREDENCIAL }, origen(), deps)), "segundo_factor_invalido");
+    await opcionesParaConfirmarConPasskey(vieja, origen(), deps);
+    await confirmarConPasskey(vieja, { id: CREDENCIAL }, origen(), deps);
+    assert.equal(repo.sesiones[0]?.renovadaCon, "passkey");
+  });
+
+  it("cinco confirmaciones fallidas cierran la sesión", async () => {
+    const repo = anaConTotp();
+    const deps = base(repo, undefined, LUEGO);
+    const vieja = sesionDe(repo, undefined, "ana@ejemplo.mx", { factorEn: AHORA });
+    for (let i = 0; i < 4; i += 1) assert.equal(await codigoDe(confirmarConTotp(vieja, "000000", deps)), "segundo_factor_invalido");
+    assert.equal(await codigoDe(confirmarConTotp(vieja, "000000", deps)), "reautenticacion_agotada");
+    assert.equal(repo.sesiones.length, 0);
+  });
+
+  it("si el aviso por correo falla, el cambio queda hecho igual", async () => {
+    const repo = anaConTotp();
+    repo.correoCaido = true;
+    const deps = base(repo);
+    const fresca = sesionDe(repo);
+    const codigos = await nuevosCodigos(fresca, deps);
+    assert.equal(codigos.length, 10);
+    assert.equal(repo.respaldos.filter((r) => !r.usado).length, 10);
+    assert.deepEqual(repo.avisos, []);
+  });
+});
+
+describe("las recuperaciones se resuelven solo desde Operación y con confirmación reciente", () => {
+  it("rechaza la sesión cliente del personal y la SOFIPO vieja; aprueba la fresca y avisa a quien pidió", async () => {
+    const repo = memoria();
+    const deps = base(repo, undefined, LUEGO);
+    const token = await entrarHasta(base(repo));
+    await prepararTotp(token, base(repo));
+    await inscribirTotp(token, codigoDelPaso(SEMILLA, pasoDe(AHORA)), base(repo));
+    await pedirRecuperacion(await entrarHasta(base(repo)), "Perdí el teléfono", base(repo));
+    const id = repo.recuperaciones[0]!.id;
+    const operadorId = "00000000-0000-4000-8000-0000000000bb";
+    const desdeCliente = sesionDe(repo, operadorId, "operador@arco.mx", { superficie: "cliente", factorEn: LUEGO });
+    const sofipoVieja = sesionDe(repo, operadorId, "operador@arco.mx", { superficie: "sofipo", factorEn: AHORA });
+    const sofipoFresca = sesionDe(repo, operadorId, "operador@arco.mx", { superficie: "sofipo", factorEn: LUEGO });
+    repo.sesiones.push({ id: sofipoFresca.id, userId: operadorId, factor: "totp" });
+
+    assert.equal(await codigoDe(verRecuperaciones(desdeCliente, deps)), "sin_permiso");
+    assert.equal(
+      await codigoDe(resolverRecuperacion(desdeCliente, { id, aprobada: true, verificacion: "videollamada" }, deps)),
+      "sin_permiso",
+    );
+    assert.equal(
+      await codigoDe(resolverRecuperacion(sofipoVieja, { id, aprobada: true, verificacion: "videollamada" }, deps)),
+      "reautenticacion_requerida",
+    );
+    assert.equal(repo.recuperaciones[0]?.estado, "solicitada");
+
+    assert.equal((await verRecuperaciones(sofipoFresca, deps)).length, 1);
+    await resolverRecuperacion(sofipoFresca, { id, aprobada: true, verificacion: "videollamada" }, deps);
+    assert.equal(repo.recuperaciones[0]?.estado, "aprobada");
+    assert.deepEqual(repo.avisos.map((a) => [a.cambio, a.para]), [["recuperacion_aprobada", "ana@ejemplo.mx"]]);
+  });
+});
+
 function origen() {
   return { rpID: "localhost", origen: "http://localhost:3000" };
 }
@@ -182,14 +357,21 @@ async function entrarHasta(deps: ReturnType<typeof base>): Promise<string> {
   return inicio.cookie.valor;
 }
 
-function sesionDe(repo: Memoria, userId?: string, correo = "ana@ejemplo.mx"): Sesion {
+function sesionDe(
+  repo: Memoria,
+  userId?: string,
+  correo = "ana@ejemplo.mx",
+  opciones: { superficie?: "cliente" | "sofipo"; factorEn?: Date } = {},
+): Sesion {
+  const segundoFactor = { metodo: "totp" as const, en: opciones.factorEn ?? AHORA };
+  const superficie = opciones.superficie ?? "cliente";
   if (userId) {
     return {
       id: `11111111-1111-4111-8111-${userId.slice(-12)}`,
       venceEn: AHORA,
       usuario: { id: userId, nombre: "Operador", correo },
-      companyId: null,
-      rol: null,
+      superficie,
+      segundoFactor,
     };
   }
   const guardada = repo.sesiones[repo.sesiones.length - 1];
@@ -198,17 +380,21 @@ function sesionDe(repo: Memoria, userId?: string, correo = "ana@ejemplo.mx"): Se
     id: guardada.id,
     venceEn: AHORA,
     usuario: { id: guardada.userId, nombre: "Ana Pérez", correo },
-    companyId: null,
-    rol: null,
+    superficie,
+    segundoFactor,
   };
 }
 
-function base(repo: Memoria, verificar?: (plana: string, hash: string) => Promise<boolean>) {
+function base(repo: Memoria, verificar?: (plana: string, hash: string) => Promise<boolean>, ahora: Date = AHORA) {
   let n = 0;
   let t = 0;
   return {
     repositorio: repo.repo,
-    ahora: () => AHORA,
+    ahora: () => ahora,
+    avisar: async (aviso: AvisoDeSeguridad) => {
+      if (repo.correoCaido) throw new ErrorDeDominio("correo_no_disponible");
+      repo.avisos.push(aviso);
+    },
     token: () => {
       t += 1;
       return (`t${String(t).padStart(2, "0")}` + "b".repeat(43)).slice(0, 43);
@@ -268,9 +454,11 @@ class Memoria {
   totp: (TotpGuardado & { revocado: boolean })[] = [];
   respaldos: RespaldoMem[] = [];
   retos: { userId: string; proposito: string; reto: string; usado: boolean }[] = [];
-  sesiones: { id: string; userId: string; factor: string }[] = [];
+  sesiones: { id: string; userId: string; factor: string; fallos?: number; renovadaCon?: string }[] = [];
   recuperaciones: RecuperacionMem[] = [];
   eventos: string[] = [];
+  avisos: AvisoDeSeguridad[] = [];
+  correoCaido = false;
   repo: RepositorioAutenticacion;
 
   constructor() {
@@ -339,8 +527,11 @@ class Memoria {
         this.totp = this.totp.filter((t) => t.confirmado || t.revocado);
         this.totp.push({ id, userId, secretoCifrado, confirmado: false, ultimoPaso: null, revocado: false });
       },
-      confirmarTotp: async () => {
-        throw new ErrorDeDominio("segundo_factor_invalido");
+      confirmarTotp: async ({ userId, totpId, paso }) => {
+        const totp = this.totp.find((t) => t.id === totpId && t.userId === userId && !t.confirmado && !t.revocado);
+        if (!totp) throw new ErrorDeDominio("segundo_factor_invalido");
+        totp.confirmado = true;
+        totp.ultimoPaso = paso;
       },
       agregarPasskey: async ({ userId, passkey }) => {
         this.agregarPasskey(userId, passkey);
@@ -360,6 +551,23 @@ class Memoria {
       regenerarRespaldo: async ({ userId, codigosHash }) => {
         for (const respaldo of this.respaldos) if (respaldo.userId === userId) respaldo.usado = true;
         for (const hash of codigosHash) this.respaldos.push({ id: hash.slice(0, 8), userId, hash, usado: false });
+        this.eventos.push("respaldo_generado");
+      },
+      reautenticar: async ({ sesionId, userId, metodo, efecto }) => {
+        this.aplicar(userId, efecto);
+        const sesion = this.sesiones.find((s) => s.id === sesionId && s.userId === userId);
+        if (!sesion) throw new ErrorDeDominio("sesion_ausente");
+        sesion.renovadaCon = metodo;
+        sesion.fallos = 0;
+        this.eventos.push("reautenticacion");
+      },
+      sumarFalloDeReautenticacion: async ({ sesionId, userId }) => {
+        const sesion = this.sesiones.find((s) => s.id === sesionId && s.userId === userId);
+        if (!sesion) throw new ErrorDeDominio("sesion_ausente");
+        sesion.fallos = Math.min((sesion.fallos ?? 0) + 1, 5);
+        if (sesion.fallos >= 5) this.sesiones = this.sesiones.filter((s) => s !== sesion);
+        this.eventos.push("reautenticacion_fallida");
+        return sesion.fallos;
       },
       solicitarRecuperacion: async ({ id, userId, motivo, entradaId }) => {
         const entrada = this.entradas.find((e) => e.id === entradaId && !e.consumida);
@@ -380,6 +588,7 @@ class Memoria {
         if (solicitud.userId === aprobadorId) throw new ErrorDeDominio("misma_persona_en_recuperacion");
         solicitud.estado = "aprobada";
         solicitud.venceEn = venceEn;
+        return { userId: solicitud.userId };
       },
       rechazarRecuperacion: async ({ id }) => {
         const solicitud = this.recuperaciones.find((r) => r.id === id && r.estado === "solicitada");

@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { Seguridad } from "@/components/entrar/seguridad";
 import { MarcoArco } from "@/components/entrar/marco-arco";
-import { verFactores } from "@/server/autenticacion";
+import { estadoDeConfirmacion, verFactores } from "@/server/autenticacion";
 import { contextoOpcional, sesionDesdeCookie } from "@/server/entrada";
 
 export const runtime = "nodejs";
@@ -16,6 +16,8 @@ const AVISOS: Record<string, string> = {
   ultimo_factor: "Agrega otro método antes de quitar este. Sin segundo factor no se entra.",
   passkey_ausente: "Esa passkey ya no está.",
   totp_ausente: "No hay una app autenticadora activa.",
+  reautenticacion_requerida:
+    "Confirma que eres tú: cambiar tus métodos exige tu segundo factor de los últimos cinco minutos.",
 };
 
 export default async function PaginaSeguridad({
@@ -25,7 +27,7 @@ export default async function PaginaSeguridad({
 }) {
   const sesion = await sesionDesdeCookie();
   if (!sesion) redirect("/entrar?siguiente=/entrar/seguridad");
-  const factores = await verFactores(sesion);
+  const [factores, confirmacion] = await Promise.all([verFactores(sesion), estadoDeConfirmacion(sesion)]);
   const avisoParam = (await searchParams).aviso;
   const aviso = typeof avisoParam === "string" ? (AVISOS[avisoParam] ?? null) : null;
   const formato = new Intl.DateTimeFormat("es-MX", {
@@ -44,6 +46,7 @@ export default async function PaginaSeguridad({
         }))}
         totp={factores.totp}
         respaldoRestantes={factores.respaldoRestantes}
+        confirmacion={confirmacion}
         esOperador={Boolean((await contextoOpcional())?.personal)}
         aviso={aviso}
       />

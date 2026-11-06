@@ -5,10 +5,12 @@ import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { hashearContrasena, hashDeToken, tokenNuevo, verificarContrasena } from "../session/hash";
 import type { Sesion } from "../session/tipos";
 import { correoValido, normalizarCorreo } from "../session/validar";
+import { avisarPorCorreo, avisarSinDeshacer, type Avisar, type CambioDeSeguridad } from "../seguridad/avisos";
 import { cifrarSemilla, descifrarSemilla } from "./cifrado";
 import { cookieDeEntrada, VIGENCIA_ENTRADA_MS, type CookieEntrada } from "./cookie";
 import { llaveTotpDesdeEntorno } from "./entorno";
 import { qrComoDataUri } from "./qr";
+import { exigirFactorReciente, factorReciente, VIGENCIA_FACTORES_MS } from "./reautenticacion";
 import { repositorioPg, type Entrada, type RepositorioAutenticacion } from "./repositorio";
 import { codigosNuevos, hashDeRespaldo, normalizarRespaldo } from "./respaldo";
 import type {
@@ -53,6 +55,8 @@ export type DependenciasAutenticacion = {
   semilla?: () => Buffer;
   /** La puerta de operación fija `sofipo`; el resto conserva `cliente`. */
   superficie?: "cliente" | "sofipo" | "telefono";
+  /** Aviso por correo de cada cambio de factor. Si falla, se registra y el cambio sigue. */
+  avisar?: Avisar;
 };
 
 export type ResultadoContrasena =
@@ -72,6 +76,7 @@ type Listo = {
   codigos: () => string[];
   semilla: () => Buffer;
   superficie: "cliente" | "sofipo" | "telefono";
+  avisar: Avisar;
 };
 
 const rellenos = new WeakMap<Hashear, Promise<string>>();
@@ -202,7 +207,7 @@ export async function inscribirTotp(
 ): Promise<Inscripcion> {
   const listo = resolver(deps);
   const entrada = await exigirEntrada(token, listo);
-  const { paso, recuperacionId } = await contextoDeInscripcion(entrada.userId, listo);
+  const { paso, persona, recuperacionId } = await contextoDeInscripcion(entrada.userId, listo);
   if (paso.paso !== "inscribir") throw new ErrorDeDominio("ya_tiene_segundo_factor");
   const factores = await listo.repositorio.factores(entrada.userId);
   const pendiente = factores.totp && !factores.totp.confirmado ? factores.totp : null;
@@ -223,6 +228,7 @@ export async function inscribirTotp(
     },
     listo,
   );
+  if (recuperacionId) await avisar(persona, "factor_reinscrito", listo);
   return { setCookie, codigos };
 }
 
@@ -249,7 +255,7 @@ export async function inscribirPasskey(
 ): Promise<Inscripcion> {
   const listo = resolver(deps);
   const entrada = await exigirEntrada(token, listo);
-  const { paso, recuperacionId } = await contextoDeInscripcion(entrada.userId, listo);
+  const { paso, persona, recuperacionId } = await contextoDeInscripcion(entrada.userId, listo);
   if (paso.paso !== "inscribir") throw new ErrorDeDominio("ya_tiene_segundo_factor");
   const reto = await listo.repositorio.tomarReto(entrada.userId, "registrar", listo.ahora());
   const credencial = reto ? await listo.webauthn.verificarRegistro({ respuesta, reto, origen }) : null;
@@ -274,6 +280,7 @@ export async function inscribirPasskey(
     },
     listo,
   );
+  if (recuperacionId) await avisar(persona, "factor_reinscrito", listo);
   return { setCookie, codigos };
 }
 
@@ -285,7 +292,7 @@ export async function verFactores(sesion: Sesion, deps?: DependenciasAutenticaci
 
 export async function prepararTotpDeSesion(sesion: Sesion, deps?: DependenciasAutenticacion): Promise<AltaTotp> {
   const listo = resolver(deps);
-  await exigirFuerte(sesion, listo);
+  await exigirCambioDeFactor(sesion, listo);
   const factores = await listo.repositorio.factores(sesion.usuario.id);
   if (factores.totp?.confirmado) throw new ErrorDeDominio("ya_tiene_segundo_factor");
   return altaTotp(sesion.usuario.id, sesion.usuario.correo, listo);
@@ -297,7 +304,7 @@ export async function confirmarTotpDeSesion(
   deps?: DependenciasAutenticacion,
 ): Promise<void> {
   const listo = resolver(deps);
-  await exigirFuerte(sesion, listo);
+  await exigirCambioDeFactor(sesion, listo);
   const factores = await listo.repositorio.factores(sesion.usuario.id);
   const pendiente = factores.totp && !factores.totp.confirmado ? factores.totp : null;
   const normalizado = normalizarCodigoTotp(codigo);
@@ -305,6 +312,7 @@ export async function confirmarTotpDeSesion(
   const paso = semilla && normalizado ? verificarTotp(semilla, normalizado, listo.ahora(), null) : null;
   if (!pendiente || paso === null) throw new ErrorDeDominio("segundo_factor_invalido");
   await listo.repositorio.confirmarTotp({ userId: sesion.usuario.id, totpId: pendiente.id, paso, ahora: listo.ahora() });
+  await avisar(sesion.usuario, "totp_activado", listo);
 }
 
 export async function opcionesPasskeyDeSesion(
@@ -313,7 +321,7 @@ export async function opcionesPasskeyDeSesion(
   deps?: DependenciasAutenticacion,
 ): Promise<unknown> {
   const listo = resolver(deps);
-  await exigirFuerte(sesion, listo);
+  await exigirCambioDeFactor(sesion, listo);
   const persona = await listo.repositorio.buscarPersona(sesion.usuario.id);
   if (!persona) throw new ErrorDeDominio("usuario_ausente");
   const factores = await listo.repositorio.factores(sesion.usuario.id);
@@ -334,7 +342,7 @@ export async function agregarPasskeyDeSesion(
   deps?: DependenciasAutenticacion,
 ): Promise<void> {
   const listo = resolver(deps);
-  await exigirFuerte(sesion, listo);
+  await exigirCambioDeFactor(sesion, listo);
   const reto = await listo.repositorio.tomarReto(sesion.usuario.id, "registrar", listo.ahora());
   const credencial = reto ? await listo.webauthn.verificarRegistro({ respuesta, reto, origen }) : null;
   if (!credencial) throw new ErrorDeDominio("segundo_factor_invalido");
@@ -351,6 +359,7 @@ export async function agregarPasskeyDeSesion(
       respaldada: credencial.respaldada,
     },
   });
+  await avisar(sesion.usuario, "passkey_agregada", listo);
 }
 
 export async function quitarPasskey(
@@ -359,7 +368,7 @@ export async function quitarPasskey(
   deps?: DependenciasAutenticacion,
 ): Promise<void> {
   const listo = resolver(deps);
-  await exigirFuerte(sesion, listo);
+  await exigirCambioDeFactor(sesion, listo);
   if (typeof passkeyId !== "string") throw new ErrorDeDominio("passkey_ausente");
   await listo.repositorio.revocarPasskey({
     userId: sesion.usuario.id,
@@ -367,17 +376,19 @@ export async function quitarPasskey(
     actorId: sesion.usuario.id,
     ahora: listo.ahora(),
   });
+  await avisar(sesion.usuario, "passkey_quitada", listo);
 }
 
 export async function quitarTotp(sesion: Sesion, deps?: DependenciasAutenticacion): Promise<void> {
   const listo = resolver(deps);
-  await exigirFuerte(sesion, listo);
+  await exigirCambioDeFactor(sesion, listo);
   await listo.repositorio.revocarTotp({ userId: sesion.usuario.id, actorId: sesion.usuario.id, ahora: listo.ahora() });
+  await avisar(sesion.usuario, "totp_quitado", listo);
 }
 
 export async function nuevosCodigos(sesion: Sesion, deps?: DependenciasAutenticacion): Promise<string[]> {
   const listo = resolver(deps);
-  await exigirFuerte(sesion, listo);
+  await exigirCambioDeFactor(sesion, listo);
   const factores = await listo.repositorio.factores(sesion.usuario.id);
   if (factores.passkeys.length === 0 && !factores.totp?.confirmado) throw new ErrorDeDominio("segundo_factor_ausente");
   const codigos = listo.codigos();
@@ -386,7 +397,90 @@ export async function nuevosCodigos(sesion: Sesion, deps?: DependenciasAutentica
     codigosHash: codigos.map((c) => hashDeRespaldo(c.replace(/-/g, ""))),
     ahora: listo.ahora(),
   });
+  await avisar(sesion.usuario, "respaldo_regenerado", listo);
   return codigos;
+}
+
+/**
+ * Lo que la pantalla «Confirma que eres tú» necesita: si el factor de la sesión
+ * sigue fresco para cambiar factores y con qué métodos puede renovarlo.
+ */
+export async function estadoDeConfirmacion(
+  sesion: Sesion,
+  deps?: DependenciasAutenticacion,
+): Promise<{ reciente: boolean; passkey: boolean; totp: boolean; respaldo: boolean }> {
+  const listo = resolver(deps);
+  await exigirFuerte(sesion, listo);
+  const factores = await listo.repositorio.factores(sesion.usuario.id);
+  return {
+    reciente: factorReciente(sesion, { vigenciaMs: VIGENCIA_FACTORES_MS }, listo.ahora()),
+    passkey: factores.passkeys.length > 0,
+    totp: Boolean(factores.totp?.confirmado),
+    respaldo: factores.respaldoRestantes > 0,
+  };
+}
+
+/** Confirma la identidad con el código de la app y renueva el factor de esta sesión. */
+export async function confirmarConTotp(sesion: Sesion, codigo: unknown, deps?: DependenciasAutenticacion): Promise<void> {
+  const listo = resolver(deps);
+  await exigirFuerte(sesion, listo);
+  const normalizado = normalizarCodigoTotp(codigo);
+  const factores = await listo.repositorio.factores(sesion.usuario.id);
+  const totp = factores.totp?.confirmado ? factores.totp : null;
+  const semilla = totp ? descifrarDe(totp.secretoCifrado, sesion.usuario.id, listo) : null;
+  const paso = semilla && normalizado ? verificarTotp(semilla, normalizado, listo.ahora(), totp!.ultimoPaso) : null;
+  if (!totp || paso === null) return falloDeConfirmacion(sesion, listo);
+  await renovarFactor(sesion, "totp", { tipo: "totp", totpId: totp.id, paso }, listo);
+}
+
+/** Confirma la identidad con un código de respaldo; el código queda usado. */
+export async function confirmarConRespaldo(sesion: Sesion, codigo: unknown, deps?: DependenciasAutenticacion): Promise<void> {
+  const listo = resolver(deps);
+  await exigirFuerte(sesion, listo);
+  const normalizado = normalizarRespaldo(codigo);
+  if (!normalizado) return falloDeConfirmacion(sesion, listo);
+  try {
+    await renovarFactor(sesion, "respaldo", { tipo: "respaldo", codigoHash: hashDeRespaldo(normalizado) }, listo);
+  } catch (error) {
+    if (error instanceof ErrorDeDominio && error.codigo === "segundo_factor_invalido") return falloDeConfirmacion(sesion, listo);
+    throw error;
+  }
+}
+
+export async function opcionesParaConfirmarConPasskey(
+  sesion: Sesion,
+  origen: Origen,
+  deps?: DependenciasAutenticacion,
+): Promise<unknown> {
+  const listo = resolver(deps);
+  await exigirFuerte(sesion, listo);
+  const factores = await listo.repositorio.factores(sesion.usuario.id);
+  if (factores.passkeys.length === 0) throw new ErrorDeDominio("passkey_ausente");
+  const opciones = await listo.webauthn.opcionesEntrada({
+    origen,
+    passkeys: factores.passkeys.map((p) => ({ credencialId: p.credencialId, transportes: p.transportes })),
+  });
+  await guardarReto(sesion.usuario.id, "entrar", opciones.reto, listo);
+  return opciones.opciones;
+}
+
+export async function confirmarConPasskey(
+  sesion: Sesion,
+  respuesta: unknown,
+  origen: Origen,
+  deps?: DependenciasAutenticacion,
+): Promise<void> {
+  const listo = resolver(deps);
+  await exigirFuerte(sesion, listo);
+  const credencialId = credencialDeRespuesta(respuesta);
+  const reto = await listo.repositorio.tomarReto(sesion.usuario.id, "entrar", listo.ahora());
+  const passkey = credencialId
+    ? (await listo.repositorio.factores(sesion.usuario.id)).passkeys.find((p) => p.credencialId === credencialId)
+    : undefined;
+  const verificada =
+    reto && passkey ? await listo.webauthn.verificarEntrada({ respuesta, reto, origen, passkey }) : null;
+  if (!verificada) return falloDeConfirmacion(sesion, listo);
+  await renovarFactor(sesion, "passkey", { tipo: "passkey", passkeyId: passkey!.id, contador: verificada.contador }, listo);
 }
 
 export async function pedirRecuperacion(
@@ -415,7 +509,7 @@ export async function verRecuperaciones(
 ): Promise<RecuperacionPendiente[]> {
   const listo = resolver(deps);
   await exigirOperador(sesion, listo);
-  return listo.repositorio.recuperacionesPendientes();
+  return listo.repositorio.recuperacionesPendientes(sesion.usuario.id);
 }
 
 export async function resolverRecuperacion(
@@ -425,6 +519,8 @@ export async function resolverRecuperacion(
 ): Promise<void> {
   const listo = resolver(deps);
   await exigirOperador(sesion, listo);
+  // Decidir quién vuelve a registrar un segundo factor es un cambio de factor.
+  exigirFactorReciente(sesion, { superficie: "sofipo", vigenciaMs: VIGENCIA_FACTORES_MS }, listo.ahora());
   if (typeof decision.id !== "string") throw new ErrorDeDominio("recuperacion_ausente");
   const ahora = listo.ahora();
   const nota = textoBreve(decision.nota, 500);
@@ -433,7 +529,7 @@ export async function resolverRecuperacion(
       ? decision.verificacion
       : null;
     if (!verificacion) throw new ErrorDeDominio("verificacion_invalida");
-    await listo.repositorio.aprobarRecuperacion({
+    const { userId } = await listo.repositorio.aprobarRecuperacion({
       id: decision.id,
       aprobadorId: sesion.usuario.id,
       verificacion: verificacion as VerificacionIdentidad,
@@ -441,6 +537,8 @@ export async function resolverRecuperacion(
       ahora,
       venceEn: new Date(ahora.getTime() + VIGENCIA_RECUPERACION_MS),
     });
+    const persona = await listo.repositorio.buscarPersona(userId);
+    if (persona) await avisar(persona, "recuperacion_aprobada", listo);
     return;
   }
   if (!nota) throw new ErrorDeDominio("motivo_invalido");
@@ -462,6 +560,7 @@ function resolver(deps?: DependenciasAutenticacion): Listo {
     codigos: deps?.codigos ?? codigosNuevos,
     semilla: deps?.semilla ?? semillaNueva,
     superficie: deps?.superficie ?? "cliente",
+    avisar: deps?.avisar ?? avisarPorCorreo,
   };
 }
 
@@ -589,8 +688,56 @@ async function exigirFuerte(sesion: Sesion, listo: Listo): Promise<void> {
   if (!factor) throw new ErrorDeDominio("segundo_factor_ausente");
 }
 
+/** Agregar, quitar o regenerar un factor exige haberlo probado hace cinco minutos o menos. */
+async function exigirCambioDeFactor(sesion: Sesion, listo: Listo): Promise<void> {
+  await exigirFuerte(sesion, listo);
+  exigirFactorReciente(sesion, { vigenciaMs: VIGENCIA_FACTORES_MS }, listo.ahora());
+}
+
+async function renovarFactor(
+  sesion: Sesion,
+  metodo: "passkey" | "totp" | "respaldo",
+  efecto: Parameters<RepositorioAutenticacion["reautenticar"]>[0]["efecto"],
+  listo: Listo,
+): Promise<void> {
+  await listo.repositorio.reautenticar({
+    sesionId: sesion.id,
+    userId: sesion.usuario.id,
+    metodo,
+    efecto,
+    superficie: sesion.superficie ?? "cliente",
+    ahora: listo.ahora(),
+  });
+}
+
+async function falloDeConfirmacion(sesion: Sesion, listo: Listo): Promise<never> {
+  const intentos = await listo.repositorio.sumarFalloDeReautenticacion({
+    sesionId: sesion.id,
+    userId: sesion.usuario.id,
+    superficie: sesion.superficie ?? "cliente",
+    ahora: listo.ahora(),
+  });
+  throw new ErrorDeDominio(intentos >= TOPE_SEGUNDO_FACTOR ? "reautenticacion_agotada" : "segundo_factor_invalido");
+}
+
+async function avisar(
+  persona: { id: string; nombre: string; correo: string },
+  cambio: CambioDeSeguridad,
+  listo: Listo,
+): Promise<void> {
+  await avisarSinDeshacer(listo.avisar, {
+    userId: persona.id,
+    para: persona.correo,
+    nombre: persona.nombre,
+    cambio,
+    cuando: listo.ahora(),
+  });
+}
+
 async function exigirOperador(sesion: Sesion, listo: Listo): Promise<void> {
   await exigirFuerte(sesion, listo);
+  // El personal resuelve recuperaciones desde Operación, no desde una sesión cliente.
+  if (sesion.superficie !== "sofipo") throw new ErrorDeDominio("sin_permiso");
   if (listo.operadores) {
     if (!listo.operadores.has(normalizarCorreo(sesion.usuario.correo))) throw new ErrorDeDominio("sin_permiso");
     return;

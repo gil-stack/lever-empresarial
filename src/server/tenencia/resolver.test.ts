@@ -30,6 +30,36 @@ describe("destino multiempresa con tenencia intacta", () => {
   });
 });
 
+describe("el personal actúa como plataforma solo con la sesión SOFIPO", () => {
+  const personal = {
+    async pertenencia() {
+      return { membresias: [], personal: { operadorId: "55555555-5555-4555-8555-555555555555", roles: ["administracion_plataforma" as const] } };
+    },
+  };
+
+  it("entrar por /entrar no le da capacidades plataforma.* (69-B, precio) ni lo marca como personal", async () => {
+    for (const superficie of ["cliente", undefined] as const) {
+      const resuelto = await resolverContexto(
+        { sesion: { ...sesion(), ...(superficie ? { superficie } : {}) }, empresaPedida: null, peticionId: null, superficie: "cliente" },
+        { repositorio: personal },
+      );
+      assert.equal(resuelto.ctx.personal, null);
+      assert.equal(resuelto.ctx.capacidades.some((capacidad) => capacidad.startsWith("plataforma.")), false);
+      assert.equal(resuelto.ctx.empresa, null);
+    }
+  });
+
+  it("con la sesión de la puerta SOFIPO conserva sus capacidades, aun en una ruta cliente", async () => {
+    const resuelto = await resolverContexto(
+      { sesion: { ...sesion(), superficie: "sofipo" }, empresaPedida: null, peticionId: null, superficie: "cliente" },
+      { repositorio: personal },
+    );
+    assert.equal(resuelto.ctx.personal?.operadorId, "55555555-5555-4555-8555-555555555555");
+    assert.equal(resuelto.ctx.capacidades.includes("plataforma.precio.publicar"), true);
+    assert.equal(resuelto.ctx.capacidades.includes("plataforma.lista69b.cargar"), true);
+  });
+});
+
 function membresia(id: string, roles: MembresiaLeida["roles"]): MembresiaLeida {
   return { id, rfc: "EKU9003173C9", razonSocial: `Empresa ${id.slice(0, 1)}`, operadorId: "55555555-5555-4555-8555-555555555555", estado: "activa", demostracion: true, roles };
 }

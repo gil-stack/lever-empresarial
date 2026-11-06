@@ -19,7 +19,7 @@ import { leerTokenEntrada } from "@/server/autenticacion/cookie";
 import { fijarCookieDeSesion } from "@/server/entrada";
 import { NOMBRE_COOKIE_ENTRADA_OPERACION, NOMBRE_COOKIE_PORTAL_OPERACION } from "@/server/operacion/acceso";
 import { ErrorDeDominio, leerSesion } from "@/server/session";
-import { encabezadoDeSesion } from "@/server/session/cookie";
+import { encabezadoDeSesion, NOMBRE_COOKIE } from "@/server/session/cookie";
 
 import type { EstadoAcceso } from "./tipos-acceso";
 
@@ -118,7 +118,7 @@ export async function abrirPortalOperacion(): Promise<void> {
   const jar = await cookies();
   const token = leerTokenEntrada(jar.get(NOMBRE_COOKIE_PORTAL_OPERACION)?.value);
   if (token) {
-    const sesion = await leerSesion(`sesion=${token}`);
+    const sesion = await leerSesion(`${NOMBRE_COOKIE}=${token}`);
     if (sesion?.superficie === "sofipo") {
       await fijarCookieDeSesion(encabezadoDeSesion(token, sesion.venceEn, new Date()));
       await quitarToken(NOMBRE_COOKIE_PORTAL_OPERACION);
