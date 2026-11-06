@@ -33,7 +33,8 @@ export const RUTAS = [
   { patron: "/entrar/continuar", superficie: "cliente", acceso: { tipo: "segundo_factor" }, conEmpresa: false },
   { patron: "/entrar/destino", superficie: "cliente", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/entrar/seguridad", superficie: "cliente", acceso: { tipo: "sesion" }, conEmpresa: false },
-  { patron: "/entrar/recuperaciones", superficie: "cliente", acceso: { tipo: "sesion" }, conEmpresa: false },
+  // Solo redirige a /operacion/recuperaciones: ahí se aprueba, con sesión SOFIPO.
+  { patron: "/entrar/recuperaciones", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/recuperar", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/recuperar/[token]", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/invitacion/[token]", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
@@ -179,6 +180,7 @@ export const RUTAS = [
   { patron: "/operacion/alertas", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/comisiones", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/bitacora", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/recuperaciones", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
 ] as const satisfies readonly Ruta[];
 
 export type PatronDeRuta = (typeof RUTAS)[number]["patron"];

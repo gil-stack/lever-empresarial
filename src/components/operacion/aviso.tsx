@@ -25,6 +25,11 @@ const MENSAJES: Record<string, string> = {
   correo_ya_entra: "Esa persona ya tiene membresía en la empresa.",
   motivo_invalido: "Escribe un motivo breve y claro.",
   activacion_transicion_invalida: "La empresa cambió de estado. Revisa la ficha antes de continuar.",
+  recuperacion_ausente: "Esa solicitud ya no está pendiente.",
+  misma_persona_en_recuperacion: "Quien pidió la recuperación no puede aprobarla.",
+  verificacion_invalida: "Di cómo verificaste la identidad.",
+  sin_permiso: "Tu sesión no puede resolver recuperaciones. Entra por la puerta de operación.",
+  reautenticacion_factor: "Confirma que eres tú con tu segundo factor antes de decidir. Vale cinco minutos.",
 };
 
 export function AvisoOperacion({ codigo }: { codigo?: string }) {

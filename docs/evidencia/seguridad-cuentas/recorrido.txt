@@ -1,0 +1,70 @@
+Ana entra a la consola con TOTP (/c/268a2a68-7841-4d02-8940-800d8903fe72/consola)
+(a) con el factor de hace 6 min la página pide «Confirma que eres tú»
+captura a1-pide-confirmar.png
+(a) regenerar sin confirmar no genera códigos
+captura a2-regenerar-rechazado.png
+(a) confirmar con el código queda auditado como reautenticacion
+captura a3-confirmado.png
+(a) tras confirmar, los códigos nuevos quedan auditados
+captura a4-codigos-nuevos.png
+(b) sin confirmar no se registra la passkey
+captura b1-passkey-rechazada.png
+(b) tras confirmar, la passkey queda registrada y auditada
+captura b2-passkey-agregada.png
+(b) sin confirmar no se quita la app autenticadora
+captura b3-quitar-totp-rechazado.png
+(b) confirmar con passkey renueva el factor de la sesión
+(b) tras confirmar, la app se quita y queda auditada
+(b) sin confirmar no se muestra un QR nuevo
+captura b4-inscribir-totp-rechazado.png
+(b) tras confirmar, la app nueva queda activa y auditada
+captura b5-totp-reinscrito.png
+(c) Ana deja una solicitud de recuperación
+(c) la ruta vieja /entrar/recuperaciones ya no aprueba: lleva a /operacion/recuperaciones
+(c) con el factor de hace 6 min Operación pide confirmar
+captura c1-operacion-pide-confirmar.png
+(c) aprobar sin confirmar no cambia la solicitud
+captura c2-aprobar-rechazado.png
+(c) tras confirmar, la solicitud queda aprobada
+(c) la aprobación queda en la bitácora a nombre del personal
+captura c3-aprobada.png
+(c) el personal no aprueba su propia solicitud
+captura c4-propia-rechazada.png
+(d) el personal tiene sesión cliente al entrar por /entrar
+captura d1-personal-por-entrar.png
+(d) en /precios no aparece el formulario de publicar
+captura d2-precios-sin-publicar.png
+(d) en /consola/lista-69b no aparece cargar la 69-B
+captura d3-lista69b-sin-cargar.png
+(d) con sesión cliente, /operacion/recuperaciones manda a la puerta de operación
+(d) con sesión SOFIPO el formulario de publicar sí aparece
+(d) con el factor de hace 31 min el precio no se publica
+captura d4-publicar-exige-factor-reciente.png
+captura e-existente.png
+captura e-inexistente.png
+(e) misma respuesta: «Revisa tu correo Si ese correo tiene cuenta, te llegará un enlace. Sirve una sola vez, vence en una hora y no cambia tu segundo factor.»
+(e) [correo_rechazado_al_instante] tiempos parecidos: existente 1827 ms, inexistente 1826 ms
+(f) con uso reciente la consola abre
+(f) tras 31 min sin uso la consola manda a entrar
+captura f1-inactiva-vuelve-a-entrar.png
+(f) al volver a entrar con su segundo factor, la consola abre otra vez
+captura f2-vuelve-a-entrar.png
+(g) tras la contraseña, la cookie es __Host-entrada (Secure, Path=/, sin Domain)
+(g) no queda una cookie «entrada» sin prefijo
+(g) tras el factor, la sesión vive en __Host-sesion (HttpOnly, Secure, Path=/, sin Domain)
+(g) no hay cookie «sesion» sin prefijo
+(g) el portal honra la cookie __Host-sesion
+captura g1-produccion-host-cookies.png
+(h) Ana tiene su sesión abierta en la consola
+captura h1-contrasena-guardada.png
+(h) la recuperación de segundo factor que (c) le aprobó a Ana quedó vencida
+(h) al guardar se cierran todas las sesiones de Ana
+(h) no queda ninguna entrada a medias de antes del cambio
+(h) el cambio queda en la bitácora
+(h) la sesión que Ana tenía abierta ya no abre la consola
+captura h2-sesion-anterior-cerrada.png
+(h) la contraseña anterior ya no entra
+(h) con la contraseña nueva la puerta pide el segundo factor y todavía no hay sesión
+captura h3-contrasena-nueva-pide-factor.png
+(h) con la contraseña nueva y su app autenticadora de siempre, la consola abre
+captura h4-entra-con-factor.png

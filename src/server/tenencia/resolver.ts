@@ -68,8 +68,12 @@ export async function resolverContexto(
     elegida = null;
     eleccion = "ninguna";
   }
+  // El personal actúa como plataforma solo con la sesión que abrió por la puerta
+  // SOFIPO. Si entra por /entrar, su sesión cliente no carga la 69-B, no publica
+  // precio ni ve nada de la plataforma.
+  const personal = sesion.superficie === "sofipo" ? pertenencia.personal : null;
   const rolesCliente = elegida?.estado === "activa" ? elegida.roles : [];
-  const rolesPlataforma = pertenencia.personal?.roles ?? [];
+  const rolesPlataforma = personal?.roles ?? [];
   const empresa: EmpresaDelContexto | null = elegida
     ? {
         id: elegida.id,
@@ -91,7 +95,7 @@ export async function resolverContexto(
       segundoFactor: sesion.segundoFactor.metodo,
       empresa,
       roles: rolesCliente,
-      personal: pertenencia.personal,
+      personal,
       empresas: (pertenencia.personal ? [] : pertenencia.membresias).map((m) => ({
         id: m.id,
         razonSocial: m.razonSocial,

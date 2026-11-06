@@ -8,8 +8,11 @@ import { fileURLToPath } from "node:url";
 import {
   encabezadoCerrarSesion,
   encabezadoDeSesion,
+  INACTIVIDAD_SESION_MS,
   leerToken,
   NOMBRE_COOKIE,
+  nombreDeCookie,
+  RENOVACION_USO_MS,
   VIGENCIA_SESION_MS,
 } from "./cookie";
 import { conexionIniciada, traducirErrorDeBase } from "../../nucleo/db";
@@ -46,6 +49,58 @@ describe("cookie de sesión", () => {
     assert.throws(() => encabezadoDeSesion("abc", AHORA, AHORA), (error: unknown) => {
       return error instanceof ErrorDeDominio && error.codigo === "sesion_ausente";
     });
+  });
+});
+
+describe("cookies __Host- e inactividad", () => {
+  it("en producción las cookies de acceso llevan __Host-; en desarrollo no", () => {
+    for (const base of ["sesion", "sesion_parcial", "entrada", "portal", "entrada_operacion", "portal_operacion"]) {
+      assert.equal(nombreDeCookie(base, "production"), `__Host-${base}`);
+      assert.equal(nombreDeCookie(base, "development"), base);
+      assert.equal(nombreDeCookie(base, undefined), base);
+    }
+    // __Host- exige Secure, Path=/ y ningún Domain: el encabezado ya los cumple.
+    const encabezado = encabezadoDeSesion(TOKEN, new Date(AHORA.getTime() + 60_000), AHORA);
+    assert.match(encabezado, /; Secure;/);
+    assert.match(encabezado, /; Path=\/;/);
+    assert.doesNotMatch(encabezado, /Domain=/i);
+  });
+
+  it("la sesión sin uso en 30 minutos ya no abre; leerla renueva el uso como mucho cada minuto", async () => {
+    const repo = memoria();
+    const persona = usuario();
+    repo.usuarios.set(persona.id, persona);
+    const tokenHash = hashDeToken(TOKEN);
+    const fila: SesionMem = {
+      id: randomUUID(),
+      userId: persona.id,
+      tokenHash,
+      expiresAt: new Date(AHORA.getTime() + VIGENCIA_SESION_MS),
+      completa: true,
+      ultimoUso: new Date(AHORA.getTime() - 30_000),
+    };
+    repo.sesiones.set(tokenHash, fila);
+    const cookie = `${NOMBRE_COOKIE}=${TOKEN}`;
+
+    assert.ok(await leerSesion(cookie, deps(repo)));
+    assert.equal(repo.renovaciones.length, 0, "dentro del minuto no escribe");
+
+    fila.ultimoUso = new Date(AHORA.getTime() - RENOVACION_USO_MS - 1);
+    assert.ok(await leerSesion(cookie, deps(repo)));
+    assert.deepEqual(repo.renovaciones, [AHORA.toISOString()]);
+    assert.equal(fila.ultimoUso.getTime(), AHORA.getTime());
+
+    fila.ultimoUso = new Date(AHORA.getTime() - INACTIVIDAD_SESION_MS - 1);
+    assert.equal(await leerSesion(cookie, deps(repo)), null);
+    assert.equal(repo.renovaciones.length, 1, "la sesión inactiva no se revive");
+  });
+
+  it("la base aplica la inactividad: sesion_por_token filtra ultimo_uso y la renovación espera un minuto", () => {
+    const migracion = readFileSync(new URL("../../../db/migrations/0025_seguridad_cuentas.sql", import.meta.url), "utf8");
+    assert.match(migracion, /s\.ultimo_uso > p_ahora - interval '30 minutes'/);
+    assert.equal(INACTIVIDAD_SESION_MS, 30 * 60 * 1000);
+    assert.match(SQL.renovarUso, /ultimo_uso < \$3::timestamptz - interval '1 minute'/);
+    assert.match(SQL.buscarSesion, /ultimo_uso/);
   });
 });
 
@@ -301,7 +356,7 @@ function deps(
   };
 }
 
-type SesionMem = { id: string; userId: string; tokenHash: string; expiresAt: Date; completa: boolean };
+type SesionMem = { id: string; userId: string; tokenHash: string; expiresAt: Date; completa: boolean; ultimoUso?: Date };
 
 function usuario(): UsuarioInterno {
   return {
@@ -316,10 +371,12 @@ function memoria(): RepositorioSesion & {
   usuarios: Map<string, UsuarioInterno>;
   sesiones: Map<string, SesionMem>;
   fallos: Array<string | null>;
+  renovaciones: string[];
 } {
   const usuarios = new Map<string, UsuarioInterno>();
   const sesiones = new Map<string, SesionMem>();
   const fallos: Array<string | null> = [];
+  const renovaciones: string[] = [];
   function aSesion(fila: SesionMem) {
     const persona = [...usuarios.values()].find((actual) => actual.id === fila.userId);
     if (!persona) return null;
@@ -328,12 +385,14 @@ function memoria(): RepositorioSesion & {
       venceEn: fila.expiresAt,
       usuario: { id: persona.id, nombre: persona.nombre, correo: persona.correo },
       segundoFactor: fila.completa ? { metodo: "totp" as const, en: AHORA } : null,
+      ...(fila.ultimoUso ? { ultimoUsoEn: fila.ultimoUso } : {}),
     };
   }
   return {
     usuarios,
     sesiones,
     fallos,
+    renovaciones,
     async buscarPorCorreo(correo) {
       return [...usuarios.values()].find((actual) => actual.correo === correo) ?? null;
     },
@@ -346,6 +405,7 @@ function memoria(): RepositorioSesion & {
     async buscarPorTokenHash(tokenHash, ahora, completa) {
       const fila = sesiones.get(tokenHash);
       if (!fila || fila.expiresAt.getTime() <= ahora.getTime() || fila.completa !== completa) return null;
+      if (fila.ultimoUso && fila.ultimoUso.getTime() <= ahora.getTime() - INACTIVIDAD_SESION_MS) return null;
       return aSesion(fila);
     },
     async completarSegundoFactor(verificado) {
@@ -368,6 +428,13 @@ function memoria(): RepositorioSesion & {
     },
     async registrarFallo(userId) {
       fallos.push(userId);
+    },
+    async renovarUso(sesionId, userId, ahora) {
+      const fila = [...sesiones.values()].find((actual) => actual.id === sesionId && actual.userId === userId);
+      if (fila?.ultimoUso && fila.ultimoUso.getTime() < ahora.getTime() - RENOVACION_USO_MS) {
+        fila.ultimoUso = ahora;
+        renovaciones.push(ahora.toISOString());
+      }
     },
   };
 }

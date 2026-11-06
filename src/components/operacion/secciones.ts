@@ -4,6 +4,7 @@ export const SECCIONES_OPERACION = [
   ["/operacion/aprobaciones", "Aprobaciones"],
   ["/operacion/alertas", "Alertas"],
   ["/operacion/comisiones", "Comisiones"],
+  ["/operacion/recuperaciones", "Recuperaciones"],
   ["/operacion/bitacora", "Bitácora"],
 ] as const;
 

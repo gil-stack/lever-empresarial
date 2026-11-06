@@ -7,6 +7,7 @@ import {
   encabezadoDeSesionParcial,
   leerToken,
   leerTokenParcial,
+  RENOVACION_USO_MS,
   VIGENCIA_PARCIAL_MS,
   VIGENCIA_SESION_MS,
 } from "./cookie";
@@ -100,7 +101,11 @@ export async function completarSegundoFactor(
   return { sesion, setCookies: [setCookie, encabezadoCerrarSesionParcial()] };
 }
 
-/** Solo la sesión completa: contraseña y segundo factor verificado. */
+/**
+ * Solo la sesión completa: contraseña y segundo factor verificado. La base no
+ * devuelve la sesión vencida ni la que lleva 30 minutos sin uso. Leerla cuenta
+ * como uso: ultimo_uso se renueva, como mucho, una vez por minuto.
+ */
 export async function leerSesion(
   cookieHeader: string | null | undefined,
   deps?: DependenciasSesion,
@@ -108,7 +113,12 @@ export async function leerSesion(
   const token = leerToken(cookieHeader);
   if (!token) return null;
   const listo = resolver(deps);
-  return listo.repositorio.buscarPorTokenHash(hashDeToken(token), listo.ahora(), true);
+  const ahora = listo.ahora();
+  const sesion = await listo.repositorio.buscarPorTokenHash(hashDeToken(token), ahora, true);
+  if (sesion?.ultimoUsoEn && ahora.getTime() - sesion.ultimoUsoEn.getTime() >= RENOVACION_USO_MS) {
+    await listo.repositorio.renovarUso(sesion.id, sesion.usuario.id, ahora);
+  }
+  return sesion;
 }
 
 /** Para la pantalla del segundo factor: quién es la persona que lo está verificando. */

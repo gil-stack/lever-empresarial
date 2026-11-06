@@ -11,6 +11,8 @@ import {
   type TarifaVisible,
 } from "../../dominio/precio";
 import { exigirPersonal, type ContextoDeTenant } from "../../nucleo/contexto";
+import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
+import type { Sesion } from "../session/tipos";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { repositorioPg, type FilaPrecio, type RepositorioPrecios } from "./repositorio";
 
@@ -63,12 +65,20 @@ export async function leerSuscripcionDeLaEmpresa(
   }
 }
 
+/**
+ * Publicar el monto es irreversible: exige la capacidad de plataforma (solo con
+ * sesión SOFIPO) y un segundo factor verificado en los últimos 30 minutos, como
+ * las demás decisiones de Operación. La doble firma de precios es otro frente.
+ */
 export async function publicarSuscripcion(
   ctx: ContextoDeTenant | null | undefined,
+  sesion: Pick<Sesion, "segundoFactor" | "superficie"> | null | undefined,
   texto: string,
   deps?: DependenciasPrecio,
 ): Promise<TarifaVisible> {
   const personal = exigirPersonal(ctx, "plataforma.precio.publicar");
+  if (!sesion) throw new ErrorDeDominio("reautenticacion_requerida");
+  exigirAutenticacionReciente(sesion, (deps?.ahora ?? reloj)());
   const monto = centavosDesdePesos(typeof texto === "string" ? texto : "");
   if (!monto.ok) throw new ErrorDeDominio(monto.codigo);
   const fila = await (deps?.repositorio ?? repositorioPg()).publicar(personal, {

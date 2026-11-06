@@ -13,7 +13,11 @@ test.beforeAll(() => mkdirSync(EVIDENCIA, { recursive: true }));
 
 async function entrar(page: Page, token = GIL) {
   await page.context().clearCookies();
-  await page.context().addCookies([{ name: "sesion", value: token, url: ORIGEN, httpOnly: true, sameSite: "Lax" }]);
+  // `next start` corre en producción: la cookie de sesión lleva el prefijo __Host- (Secure, Path=/, sin Domain).
+  // Con `url` http Playwright quita `secure` y Chromium rechaza el prefijo; con domain + path queda host-only.
+  await page.context().addCookies([
+    { name: "__Host-sesion", value: token, domain: new URL(ORIGEN).hostname, path: "/", httpOnly: true, secure: true, sameSite: "Lax" },
+  ]);
 }
 
 async function captura(page: Page, nombre: string) {

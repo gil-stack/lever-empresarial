@@ -1,0 +1,11 @@
+# (e) con el proveedor de correo lento: proxy local que espera 3 s y rechaza (nada sale a internet)
+# Respuestas medidas por el navegador: ver e-tiempos.json > proveedor_lento_3s
+
+## Proxy (UTC): el envío al proveedor tardó 3 s; la respuesta no lo esperó (1824 ms, igual que sin cuenta)
+2026-11-06T05:28:59.212Z CONNECT api.resend.com:443 HTTP/1.1 (espera 3000 ms y rechaza)
+
+## Servidor: el correo no salió, la solicitud se anuló y se registró
+{"nivel":"error","origen":"invitaciones.recuperar","evento":"recuperacion_correo_no_enviado","solicitud":"46c1b5fa-eefb-4610-bf2d-638ca98f67a2","error":"correo_no_disponible"}
+
+## Base (hora del servidor): enlace creado y anulado 3 s después
+creado_en=05:28:59.201Z anulado_en=05:29:02.219Z

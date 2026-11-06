@@ -1,12 +1,16 @@
 "use server";
 
+import { after } from "next/server";
+
 import { restablecerContrasena, solicitarRecuperacion } from "@/server/invitaciones/recuperar";
 import { ErrorDeDominio } from "@/server/session";
 import type { EstadoRecuperar } from "./estado";
 
 export async function pedirEnlace(_previo: EstadoRecuperar, formData: FormData): Promise<EstadoRecuperar> {
   try {
-    await solicitarRecuperacion({ correo: String(formData.get("correo") ?? "") });
+    // Buscar la cuenta y mandar el correo corre después de responder: el tiempo
+    // de respuesta no depende de la base ni del proveedor de correo.
+    await solicitarRecuperacion({ correo: String(formData.get("correo") ?? "") }, { diferir: after });
   } catch (error) {
     if (!(error instanceof ErrorDeDominio)) throw error;
     if (error.codigo === "correo_invalido") {

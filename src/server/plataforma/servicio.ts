@@ -35,6 +35,8 @@ export async function contextoDePersonal(correo: string): Promise<ContextoDeTena
         id: randomUUID(),
         venceEn: new Date(Date.now() + 60_000),
         usuario: { id: persona.id, nombre: persona.nombre, correo: persona.correo },
+        // El comando corre con las credenciales directas de la base: es la puerta SOFIPO.
+        superficie: "sofipo",
         segundoFactor: { metodo: "totp", en: new Date() },
       },
       empresaPedida: null,

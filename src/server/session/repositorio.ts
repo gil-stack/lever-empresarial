@@ -34,6 +34,8 @@ export type RepositorioSesion = {
   completarSegundoFactor: (verificado: SegundoFactorVerificado) => Promise<Sesion>;
   borrarPorTokenHash: (tokenHash: string, ahora: Date) => Promise<void>;
   registrarFallo: (userId: string | null) => Promise<void>;
+  /** Mueve ultimo_uso a `ahora` si pasó al menos un minuto. No escribe en cada petición. */
+  renovarUso: (sesionId: string, userId: string, ahora: Date) => Promise<void>;
 };
 
 // Antes de saber quién entra no hay empresa ni persona en el contexto. Esas
@@ -41,7 +43,8 @@ export type RepositorioSesion = {
 export const SQL = {
   buscarCorreo: "select id, nombre, correo, password_hash from identidad_por_correo($1)",
   buscarSesion: `
-    select sesion_id as id, user_id, nombre, correo, expires_at, superficie, segundo_factor_en, segundo_factor_metodo
+    select sesion_id as id, user_id, nombre, correo, expires_at, superficie, segundo_factor_en, segundo_factor_metodo,
+           ultimo_uso
     from sesion_por_token($1, $2, $3)
   `,
   insertarSesion:
@@ -53,6 +56,10 @@ export const SQL = {
     where token_hash = $1 and segundo_factor_en is null and expires_at > $3
   `,
   borrarSesion: "delete from sessions where token_hash = $1",
+  renovarUso: `
+    update sessions set ultimo_uso = $3
+    where id = $1 and user_id = $2 and ultimo_uso < $3::timestamptz - interval '1 minute'
+  `,
 } as const;
 
 type FilaUsuario = {
@@ -71,6 +78,7 @@ type FilaSesion = {
   superficie?: unknown;
   segundo_factor_en?: unknown;
   segundo_factor_metodo?: unknown;
+  ultimo_uso?: unknown;
 };
 
 const SIN_CONTEXTO = { rol: "plataforma_cliente" } as const;
@@ -162,6 +170,11 @@ export function repositorioPg(): RepositorioSesion {
         ? conContexto({ rol: "plataforma_cliente", userId }, escribir)
         : conContexto(SIN_CONTEXTO, escribir);
     },
+    async renovarUso(sesionId, userId, ahora) {
+      await conContexto({ rol: "plataforma_cliente", userId }, (consulta) =>
+        consulta.query(SQL.renovarUso, [sesionId, userId, ahora]),
+      );
+    },
   };
 }
 
@@ -198,12 +211,15 @@ export function mapearSesion(fila: FilaSesion): Sesion {
     | "telefono"
     | undefined;
   if (fila.superficie !== undefined && !superficie) throw new ErrorDeDominio("base_no_disponible");
+  const ultimoUsoEn = fila.ultimo_uso == null ? null : instante(fila.ultimo_uso);
+  if (fila.ultimo_uso != null && !ultimoUsoEn) throw new ErrorDeDominio("base_no_disponible");
   return {
     id: fila.id,
     venceEn,
     usuario: { id: fila.user_id, nombre: fila.nombre, correo: fila.correo },
     ...(superficie ? { superficie } : {}),
     segundoFactor: en && metodo ? { metodo, en } : null,
+    ...(ultimoUsoEn ? { ultimoUsoEn } : {}),
   };
 }
 

@@ -25,11 +25,10 @@ import {
   prepararTotpDeSesion,
   quitarPasskey,
   quitarTotp,
-  resolverRecuperacion,
   rutaDeDestino,
 } from "@/server/autenticacion";
 import { leerTokenEntrada, NOMBRE_COOKIE_PORTAL, type CookieEntrada } from "@/server/autenticacion/cookie";
-import { encabezadoDeSesion, VIGENCIA_SESION_MS } from "@/server/session/cookie";
+import { encabezadoDeSesion, NOMBRE_COOKIE, VIGENCIA_SESION_MS } from "@/server/session/cookie";
 import { ErrorDeDominio, leerSesion } from "@/server/session";
 import type { Sesion } from "@/server/session/tipos";
 
@@ -48,15 +47,13 @@ const MENSAJES: Record<string, string> = {
   ultimo_factor: "Agrega otro método antes de quitar este. Sin segundo factor no se entra.",
   ya_tiene_segundo_factor: "Ese método ya está registrado.",
   recuperacion_abierta: "Ya hay una solicitud en revisión.",
-  recuperacion_ausente: "Esa solicitud ya no está pendiente.",
   recuperacion_no_aplica: "Primero registra un segundo factor.",
   recuperacion_vencida: "La autorización venció. Vuelve a pedirla.",
-  misma_persona_en_recuperacion: "Otra persona tiene que aprobar la recuperación.",
-  sin_permiso: "No puedes resolver recuperaciones.",
   motivo_invalido: "Escribe el motivo, en una frase.",
-  verificacion_invalida: "Di cómo verificaste la identidad.",
   origen_no_permitido: "Esta dirección no puede usar passkeys.",
   segundo_factor_ausente: "Entra de nuevo con tu segundo factor.",
+  reautenticacion_requerida:
+    "Confirma que eres tú: cambiar tus métodos exige tu segundo factor de los últimos cinco minutos.",
 };
 
 export async function enviarContrasena(previo: EstadoEntrada, formData: FormData): Promise<EstadoEntrada> {
@@ -165,7 +162,7 @@ export async function abrirPortal(formData: FormData): Promise<void> {
   const jar = await cookies();
   const token = leerTokenEntrada(jar.get(NOMBRE_COOKIE_PORTAL)?.value);
   if (token) {
-    const sesion = await leerSesion(`sesion=${token}`);
+    const sesion = await leerSesion(`${NOMBRE_COOKIE}=${token}`);
     jar.set(NOMBRE_COOKIE_PORTAL, "", cookieVacia());
     if (sesion) {
       const ahora = new Date();
@@ -208,26 +205,28 @@ export async function confirmarTotpDeCuenta(_previo: EstadoFactor, formData: For
   redirect("/entrar/seguridad");
 }
 
-export async function pedirPasskeyDeCuenta(): Promise<{ tipo: "opciones"; opciones: unknown } | { tipo: "error"; mensaje: string }> {
+export async function pedirPasskeyDeCuenta(): Promise<
+  { tipo: "opciones"; opciones: unknown } | { tipo: "error"; mensaje: string; codigo?: string }
+> {
   const { sesionDesdeCookie } = await import("@/server/entrada");
   try {
     const sesion = await exigir(await sesionDesdeCookie());
     return { tipo: "opciones", opciones: await opcionesPasskeyDeSesion(sesion, await origenActual()) };
   } catch (error) {
-    return { tipo: "error", mensaje: textoDe(error) };
+    return { tipo: "error", mensaje: textoDe(error), codigo: codigoDe(error) };
   }
 }
 
 export async function guardarPasskeyDeCuenta(
   respuesta: unknown,
   nombre: string,
-): Promise<{ tipo: "error"; mensaje: string } | { tipo: "listo" }> {
+): Promise<{ tipo: "error"; mensaje: string; codigo?: string } | { tipo: "listo" }> {
   const { sesionDesdeCookie } = await import("@/server/entrada");
   try {
     const sesion = await exigir(await sesionDesdeCookie());
     await agregarPasskeyDeSesion(sesion, respuesta, await origenActual(), nombre);
   } catch (error) {
-    return { tipo: "error", mensaje: textoDe(error) };
+    return { tipo: "error", mensaje: textoDe(error), codigo: codigoDe(error) };
   }
   redirect("/entrar/seguridad");
 }
@@ -266,31 +265,6 @@ export async function regenerarCodigosDeCuenta(): Promise<EstadoFactor> {
   }
 }
 
-export async function aprobarRecuperacion(formData: FormData): Promise<void> {
-  await resolver(formData, true);
-}
-
-export async function rechazarRecuperacion(formData: FormData): Promise<void> {
-  await resolver(formData, false);
-}
-
-async function resolver(formData: FormData, aprobada: boolean): Promise<void> {
-  const { sesionDesdeCookie } = await import("@/server/entrada");
-  const sesion = await exigir(await sesionDesdeCookie());
-  try {
-    await resolverRecuperacion(sesion, {
-      id: formData.get("id"),
-      aprobada,
-      verificacion: formData.get("verificacion"),
-      nota: formData.get("nota"),
-    });
-  } catch (error) {
-    if (error instanceof ErrorDeDominio) redirect(`/entrar/recuperaciones?aviso=${error.codigo}`);
-    throw error;
-  }
-  redirect("/entrar/recuperaciones");
-}
-
 async function exigir(sesion: Sesion | null): Promise<Sesion> {
   if (!sesion) redirect("/entrar?siguiente=/entrar/seguridad");
   return sesion;
@@ -305,7 +279,7 @@ async function salida(error: unknown, destino: string): Promise<EstadoFactor> {
 }
 
 function errorDeFactor(error: unknown): EstadoFactor {
-  if (error instanceof ErrorDeDominio) return { tipo: "error", mensaje: texto(error.codigo) };
+  if (error instanceof ErrorDeDominio) return { tipo: "error", mensaje: texto(error.codigo), codigo: error.codigo };
   throw error;
 }
 
@@ -320,6 +294,10 @@ function texto(codigo: string): string {
 
 function textoDe(error: unknown): string {
   return error instanceof ErrorDeDominio ? texto(error.codigo) : "No se pudo completar. Vuelve a intentar.";
+}
+
+function codigoDe(error: unknown): string | undefined {
+  return error instanceof ErrorDeDominio ? error.codigo : undefined;
 }
 
 async function tokenDeEntrada(): Promise<string | null> {
