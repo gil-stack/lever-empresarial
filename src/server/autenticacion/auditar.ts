@@ -38,6 +38,7 @@ export const PARES_AUTENTICACION = {
   entrada_completa: "sessions",
   reautenticacion: "sessions",
   reautenticacion_fallida: "sessions",
+  sesion_cerrada: "sessions",
   passkey_registrada: "auth_passkeys",
   passkey_revocada: "auth_passkeys",
   totp_confirmado: "auth_totp",

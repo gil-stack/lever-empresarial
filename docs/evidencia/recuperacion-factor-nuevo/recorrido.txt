@@ -1,0 +1,35 @@
+1. Laura tiene su app y diez códigos de respaldo
+captura 01-otro-equipo-con-sesion.png
+captura 02-pide-recuperacion.png
+2. queda la solicitud de recuperación
+3. con el factor de hace 6 min, Operación pide «Confirma que eres tú»
+captura 03-operacion-confirma-que-eres-tu.png
+3. op aprueba la recuperación
+captura 04-aprobada.png
+4. con la contraseña ve «Recuperación aprobada · Registra un factor nuevo»
+4. la contraseña sola no abre sesión (solo sigue la del otro equipo)
+4. la app nueva queda pendiente junto a la vieja, que sigue viva hasta confirmar
+captura 05-registra-factor-nuevo.png
+5. el QR es de una semilla nueva
+5. tras el doble clic siguen a la vista los códigos nuevos
+5. doble clic: exactamente una app confirmada vigente
+5. no queda ninguna app pendiente
+5. solo una confirmación nueva en la bitácora (2 en total con la del primer ingreso)
+5. la app vigente es la nueva
+5. la app vieja quedó revocada a nombre de Laura
+5. solo valen los diez códigos nuevos
+5. la recuperación queda cumplida
+captura 06-codigos-nuevos.png
+5. Laura queda con una sola sesión, la nueva
+captura 07-consola-con-factor-nuevo.png
+6. la sesión del otro equipo se cerró: /consola lo manda a /entrar
+captura 08-otro-equipo-cerrado.png
+6. el código de la app vieja ya no entra (queda como intento fallido)
+captura 09-app-vieja-rechazada.png
+6. un código de respaldo viejo ya no entra (queda como intento fallido)
+captura 10-respaldo-viejo-rechazado.png
+6. control: la app nueva sí entra
+captura 11-app-nueva-entra.png
+7. una sola transacción con su bitácora: entrada_completa, recuperacion_cumplida, respaldo_generado, sesion_cerrada, totp_confirmado, totp_revocado
+7. totp_revocado apunta a la app vieja
+7. el aviso factor_reinscrito se intentó; en local el correo no sale y queda registrado sin datos personales

@@ -1,0 +1,6 @@
+totp_confirmado auth_totp 5325d942-550c-4616-ad87-71b241905bec cliente
+totp_revocado auth_totp d69a93cb-7132-408a-bc0a-9a686d9abe8e cliente
+recuperacion_cumplida auth_recuperaciones b85a911b-60b5-47dc-98d2-540108bcbc93 cliente
+respaldo_generado users 36194a6a-41fc-4113-b6f0-d9567071ce7f cliente
+sesion_cerrada sessions 7cfb181b-0bbe-4ccd-98b1-501e6fd05787 cliente
+entrada_completa sessions f138f1eb-c31f-4a67-87a8-281e602d17a6 cliente

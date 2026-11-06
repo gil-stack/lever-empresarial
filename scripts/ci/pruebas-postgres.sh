@@ -58,6 +58,7 @@ unset DATABASE_URL
   tests/proveedores/pagos-proveedores.test.ts \
   tests/autenticacion/postgres.test.ts \
   tests/autenticacion/seguridad-cuentas.test.ts \
+  tests/autenticacion/recuperacion-factor-nuevo.test.ts \
   tests/operacion/portal-postgres.test.ts \
   tests/personas/colaboradores-postgres.test.ts \
   tests/inicio/resumen-postgres.test.ts \
