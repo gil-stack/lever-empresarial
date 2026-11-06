@@ -26,7 +26,10 @@ export function plantillaResumenSemanal(datos: DatosResumenSemanal): CorreoPlant
   const parrafos = [
     datos.faltante
       ? `Atención: ${datos.faltante}`
-      : "Con lo comprometido y lo que esperas cobrar, ninguna de las próximas 13 semanas cae por debajo de cero ni de tu colchón.",
+      : datos.saldoDeclarado === null
+        ? // Sin saldo no hay con qué comparar: no se puede decir que alcanza.
+          "Sin un saldo declarado no se puede saber si el dinero alcanza. Declara el saldo de tus cuentas de banco en Flujo de caja › Saldo y alertas; mientras tanto, aquí va lo comprometido."
+        : "Con lo comprometido y lo que esperas cobrar, ninguna de las próximas 13 semanas cae por debajo de cero ni de tu colchón.",
     ...(datos.presupuestos.length > 0 ? [`Presupuestos: ${datos.presupuestos.join(" ")}`] : []),
   ];
   return armarCorreo(`Tu flujo de la semana · ${datos.razonSocial}`, {
@@ -38,7 +41,7 @@ export function plantillaResumenSemanal(datos: DatosResumenSemanal): CorreoPlant
     datos: [
       ["Saldo declarado por tu empresa", datos.saldoDeclarado ?? "Sin declarar"],
       ["Sale en 4 semanas (comprometido)", datos.salidas4],
-      ["Entra en 4 semanas (cobros esperados)", datos.entradas4],
+      ["Entra en 4 semanas (cobros esperados y ya cobrados)", datos.entradas4],
       ["Alcance del saldo", datos.alcance],
       ...(datos.cobrosVencidos ? ([["Cobros vencidos", datos.cobrosVencidos]] as const) : []),
     ],

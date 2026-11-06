@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 import { GET } from "../../src/app/tareas/correo-semanal/route.ts";
+import { proyectar, textoAlcance } from "../../src/dominio/flujo/proyeccion.ts";
 import { plantillaResumenSemanal } from "../../src/server/correo/plantillas/resumen-semanal.ts";
-import { autorizada } from "../../src/server/flujo/correo-semanal.ts";
+import { autorizada, marcarRitmo, RITMO_MS } from "../../src/server/flujo/correo-semanal.ts";
 
 describe("Tarea del correo semanal", () => {
   it("solo abre con el Bearer exacto de CRON_SECRET", () => {
@@ -36,6 +37,26 @@ describe("Tarea del correo semanal", () => {
   });
 });
 
+describe("Ritmo de envío del correo semanal", () => {
+  it("separa los envíos aunque los pidan varias empresas a la vez, y no espera si ya pasó el turno", async () => {
+    // Resend: 10 por segundo por equipo, sin ráfaga. La tarea no pasa de la mitad.
+    assert.ok(1000 / RITMO_MS <= 5);
+    let reloj = 1_000;
+    const esperas: number[] = [];
+    const turno = marcarRitmo(200, () => reloj, async (ms) => {
+      esperas.push(ms);
+    });
+    await Promise.all([turno(), turno(), turno()]);
+    assert.deepEqual(esperas, [200, 400]);
+    reloj = 5_000;
+    await turno();
+    assert.deepEqual(esperas, [200, 400]);
+    reloj = 5_050;
+    await turno();
+    assert.deepEqual(esperas, [200, 400, 150]);
+  });
+});
+
 describe("Plantilla del resumen semanal", () => {
   const base = {
     razonSocial: "Escuela <Alfa> & Hijos",
@@ -61,17 +82,36 @@ describe("Plantilla del resumen semanal", () => {
     assert.ok(correo.html.includes("Escuela &lt;Alfa&gt; &amp; Hijos"));
   });
 
-  it("sin saldo lo dice, y la alerta de faltante va primero", () => {
+  it("con faltante, la alerta va primero", () => {
     const correo = plantillaResumenSemanal({
       ...base,
-      saldoDeclarado: null,
       faltante: "el saldo proyectado queda en -$5,000.00 la semana del 16 nov al 22 nov.",
       cobrosVencidos: "1 por $3,000.00",
       presupuestos: ["Área Operación: excedido ($86,000.00 de $50,000.00)."],
     });
-    assert.match(correo.texto, /Saldo declarado por tu empresa: Sin declarar/);
     assert.match(correo.texto, /^Tu flujo de caja de la semana · Escuela <Alfa> & Hijos\n\nAtención: el saldo proyectado queda en -\$5,000\.00/);
     assert.match(correo.texto, /Cobros vencidos: 1 por \$3,000\.00/);
     assert.match(correo.texto, /Presupuestos: Área Operación: excedido/);
+  });
+
+  it("sin saldo declarado no dice que alcanza: lo explica e invita a declararlo", () => {
+    // El caso real: sin saldo la proyección no tiene saldo final, así que nunca hay faltante.
+    const p = proyectar({
+      hoy: "2026-11-09",
+      saldo: null,
+      colchonCentavos: 0,
+      nomina: [{ netoCentavos: 50_000_000, frecuencia: "quincenal", proximoPagoEn: "2026-11-15", anclaDia: 15, altaEn: "2026-01-01", bajaEn: null }],
+      lotes: [],
+      pagos: [],
+      obligaciones: [],
+      cobros: [],
+      cobrados: [],
+    });
+    assert.equal(p.faltante, null);
+    const correo = plantillaResumenSemanal({ ...base, saldoDeclarado: null, alcance: textoAlcance(p), faltante: null });
+    assert.match(correo.texto, /Saldo declarado por tu empresa: Sin declarar/);
+    assert.match(correo.texto, /Sin un saldo declarado no se puede saber si el dinero alcanza\. Declara el saldo/);
+    assert.match(correo.texto, /Alcance del saldo: Sin saldo declarado/);
+    assert.equal(/ninguna de las próximas 13 semanas/.test(correo.texto + correo.html), false);
   });
 });

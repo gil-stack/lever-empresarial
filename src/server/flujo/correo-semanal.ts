@@ -23,6 +23,13 @@ import { proyeccionCon } from "./servicio";
  * puede ejecutar) y después trabaja empresa por empresa, cada una en su propia
  * transacción con su contexto y RLS normal. Un fallo de una empresa se registra
  * y no detiene a las demás. Quien llama ya validó CRON_SECRET.
+ *
+ * Trabaja tres empresas a la vez (el tope del pool de conexiones), espacia los
+ * envíos para no pasar el límite del proveedor y deja de empezar empresas
+ * nuevas al agotar su tiempo; las que faltan quedan como
+ * pendientes, se registran y las toma la siguiente corrida del cron. Cada
+ * persona que ya recibió el correo de la semana queda registrada: un reintento,
+ * aunque pasen más de 24 horas, no se lo vuelve a mandar.
  */
 
 export type ResultadoCorreoSemanal = {
@@ -31,6 +38,8 @@ export type ResultadoCorreoSemanal = {
   enviados: number;
   omitidos: number;
   fallidos: number;
+  /** Empresas que no se alcanzaron a empezar antes del tope de tiempo. */
+  pendientes: number;
 };
 
 export type DependenciasCorreoSemanal = {
@@ -39,12 +48,37 @@ export type DependenciasCorreoSemanal = {
   urlPublica?: string;
   auditar?: Auditar;
   registrar?: (campos: Readonly<Record<string, string | number>>) => void;
+  /** Milisegundos transcurridos desde que empezó la tarea (reloj de prueba). */
+  transcurrido?: () => number;
+  /** Después de este tiempo no se empieza otra empresa. */
+  presupuestoMs?: number;
+  /** Separación mínima entre dos envíos de la corrida. */
+  ritmoMs?: number;
 };
 
-type Paso = { hoy: string; semana: string; enviador: Enviador; url: string; auditar: Auditar; registrar: NonNullable<DependenciasCorreoSemanal["registrar"]> };
+type Paso = {
+  hoy: string;
+  semana: string;
+  enviador: Enviador;
+  url: string;
+  auditar: Auditar;
+  registrar: NonNullable<DependenciasCorreoSemanal["registrar"]>;
+  turno: () => Promise<void>;
+};
 
 /** Un apartado «enviando» más viejo que esto es de una corrida que se cayó a medias. */
 const INTERRUMPIDO = "30 minutes";
+/** Igual al tope del pool (src/nucleo/db.ts, max: 3): más empresas a la vez solo esperarían conexión. */
+export const CONCURRENCIA = 3;
+/** La ruta tiene 300 s (maxDuration); se deja margen para cerrar la empresa en curso. */
+export const PRESUPUESTO_MS = 240_000;
+/**
+ * Resend admite 10 peticiones por segundo por equipo, sin ráfaga, y la 11.ª del
+ * mismo segundo recibe 429 (resend.com/docs/api-reference/rate-limit). La tarea
+ * usa la mitad y deja el resto a los correos de la aplicación (invitaciones,
+ * avisos de seguridad) que salen en ese mismo minuto.
+ */
+export const RITMO_MS = 200;
 const CODIGO = /^[a-z][a-z0-9_]{0,63}$/;
 
 export async function enviarCorreosSemanales(deps: DependenciasCorreoSemanal = {}): Promise<ResultadoCorreoSemanal> {
@@ -60,6 +94,7 @@ export async function enviarCorreosSemanales(deps: DependenciasCorreoSemanal = {
     url,
     auditar: deps.auditar ?? auditarPorDefecto,
     registrar: deps.registrar ?? registrarPorDefecto,
+    turno: marcarRitmo(deps.ritmoMs ?? RITMO_MS),
   };
 
   const empresas = await comoTarea(async (consulta) => {
@@ -67,14 +102,30 @@ export async function enviarCorreosSemanales(deps: DependenciasCorreoSemanal = {
     return lista(resultado.rows).map((fila) => texto(fila.empresa));
   });
 
-  const resultado: ResultadoCorreoSemanal = { semana, empresas: empresas.length, enviados: 0, omitidos: 0, fallidos: 0 };
-  for (const empresaId of empresas) {
-    try {
-      resultado[await enviarAEmpresa(empresaId, paso)] += 1;
-    } catch (error) {
-      resultado.fallidos += 1;
-      paso.registrar({ evento: "correo_semanal_fallido", empresa: empresaId, semana, codigo: codigoDe(error) });
+  const resultado: ResultadoCorreoSemanal = { semana, empresas: empresas.length, enviados: 0, omitidos: 0, fallidos: 0, pendientes: 0 };
+  const inicio = Date.now();
+  const transcurrido = deps.transcurrido ?? (() => Date.now() - inicio);
+  const presupuesto = deps.presupuestoMs ?? PRESUPUESTO_MS;
+  const cola = [...empresas];
+  const trabajar = async (): Promise<void> => {
+    for (let empresaId = cola.shift(); empresaId !== undefined; empresaId = cola.shift()) {
+      if (transcurrido() >= presupuesto) {
+        resultado.pendientes += 1 + cola.length;
+        cola.length = 0;
+        return;
+      }
+      try {
+        resultado[await enviarAEmpresa(empresaId, paso)] += 1;
+      } catch (error) {
+        resultado.fallidos += 1;
+        paso.registrar({ evento: "correo_semanal_fallido", empresa: empresaId, semana, codigo: codigoDe(error) });
+      }
     }
+  };
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCIA, empresas.length) }, trabajar));
+  if (resultado.pendientes > 0) {
+    // Sin ids ni datos: cuántas faltan. La siguiente corrida del cron las toma.
+    paso.registrar({ evento: "correo_semanal_pendientes", semana, pendientes: resultado.pendientes, empresas: resultado.empresas });
   }
   return resultado;
 }
@@ -88,7 +139,8 @@ async function enviarAEmpresa(empresaId: string, paso: Paso): Promise<"enviados"
   let destinatarios = 0;
   let codigo: string | null = null;
   try {
-    const datos = await conContexto(apartado.base, (consulta) => leerResumen(consulta, empresaId, paso.hoy));
+    const datos = await conContexto(apartado.base, (consulta) => leerResumen(consulta, empresaId, paso.hoy, paso.semana));
+    destinatarios = datos.entregados.size;
     const plantilla = plantillaResumenSemanal({
       razonSocial: apartado.razonSocial,
       semana: fechaConAnio(paso.semana),
@@ -107,18 +159,28 @@ async function enviarAEmpresa(empresaId: string, paso: Paso): Promise<"enviados"
       enlace: `${paso.url}${enEmpresa(empresaId, "/consola")}`,
     });
     for (const persona of datos.destinatarios) {
+      // Ya lo recibió esta semana (en esta corrida o en una anterior): no se le vuelve a mandar.
+      if (datos.entregados.has(persona.id)) continue;
       try {
+        await paso.turno();
         await paso.enviador({
           para: persona.correo,
           ...plantilla,
-          // Un reintento de la misma semana no manda un segundo correo a la misma persona.
+          // Segunda defensa: el proveedor descarta un repetido dentro de sus 24 horas.
           idempotencia: `correo-semanal/${empresaId}/${paso.semana}/${persona.id}`,
           etiqueta: "correo_semanal",
         });
-        destinatarios += 1;
       } catch (error) {
         codigo ??= codigoDe(error);
         paso.registrar({ evento: "correo_semanal_destinatario_fallido", empresa: empresaId, semana: paso.semana, usuario: persona.id, codigo: codigoDe(error) });
+        continue;
+      }
+      try {
+        await conContexto(apartado.base, (consulta) => registrarEntrega(consulta, apartado, paso, persona.id));
+        destinatarios += 1;
+      } catch (error) {
+        codigo ??= codigoDe(error);
+        paso.registrar({ evento: "correo_semanal_entrega_sin_registro", empresa: empresaId, semana: paso.semana, usuario: persona.id, codigo: codigoDe(error) });
       }
     }
   } catch (error) {
@@ -216,24 +278,51 @@ async function cerrar(
   });
 }
 
+/** Deja constancia de que la persona ya recibió el correo de la semana, con su evento. */
+async function registrarEntrega(consulta: Consulta, apartado: Apartado, paso: Paso, usuarioId: string): Promise<void> {
+  const id = randomUUID();
+  const insertado = await aplicarSentencia(
+    consulta,
+    `insert into weekly_digest_deliveries (id, company_id, semana, user_id, send_id)
+     values ($1, $2, $3, $4, $5)
+     on conflict (company_id, semana, user_id) do nothing
+     returning id`,
+    [id, apartado.base.companyId, paso.semana, usuarioId, apartado.envioId],
+  );
+  if (insertado.rows.length === 0) return;
+  await paso.auditar(consulta, apartado.actor, { accion: "correo_semanal_entregado", identificador: id });
+}
+
 type Resumen = {
   proyeccion: Proyeccion;
   cobros: { vencidos: number; vencidosCentavos: number };
   alertas: ReturnType<typeof calcularPresupuestos>["alertas"];
   destinatarios: { id: string; correo: string }[];
+  /** Quienes ya lo recibieron esta semana. */
+  entregados: Set<string>;
 };
 
-/** Todo con el contexto de la empresa: RLS solo deja ver sus filas. */
-async function leerResumen(consulta: Consulta, empresaId: string, hoy: string): Promise<Resumen> {
+/**
+ * Todo con el contexto de la empresa: RLS solo deja ver sus filas. El correo va
+ * a varias personas y no todas pueden ver el detalle de la nómina: la
+ * proyección sale sin desglosar el pago de una sola persona.
+ */
+async function leerResumen(consulta: Consulta, empresaId: string, hoy: string, semana: string): Promise<Resumen> {
   const { fuentes } = await proyeccionCon(consulta, empresaId, hoy);
   const presupuestos = calcularPresupuestos(
     await leerFuentesPresupuesto(consulta, empresaId, hoy, primeroDelMes(hoy), ultimoDelMes(hoy)),
   );
+  const entregas = await aplicarSentencia(
+    consulta,
+    "select user_id from weekly_digest_deliveries where company_id = $1 and semana = $2",
+    [empresaId, semana],
+  );
   return {
-    proyeccion: proyectar(fuentes),
+    proyeccion: proyectar(fuentes, null, { detalleNomina: false }),
     cobros: await leerTotalesCobro(consulta, empresaId, hoy),
     alertas: presupuestos.alertas,
     destinatarios: await leerDestinatarios(consulta, empresaId, hoy),
+    entregados: new Set(lista(entregas.rows).map((fila) => texto(fila.user_id))),
   };
 }
 
@@ -271,6 +360,24 @@ function textoFaltante(p: Proyeccion): string | null {
       : `el saldo proyectado baja a ${formatoPesos(f.saldoFinal)} ${semana}, debajo de tu colchón de ${formatoPesos(p.colchonCentavos)}.`;
   const causas = f.causas.length > 0 ? ` Lo provoca: ${f.causas.map((m) => `${m.concepto} (${formatoPesos(m.centavos)})`).join(", ")}.` : "";
   return `${cierre}${causas}`;
+}
+
+/**
+ * Turnos de envío separados al menos `intervaloMs`, compartidos por todas las
+ * empresas en curso: cada quien aparta el siguiente hueco y espera a que llegue.
+ */
+export function marcarRitmo(
+  intervaloMs: number,
+  reloj: () => number = Date.now,
+  dormir: (ms: number) => Promise<void> = (ms) => new Promise((listo) => setTimeout(listo, ms)),
+): () => Promise<void> {
+  let siguiente = 0;
+  return async () => {
+    const ahora = reloj();
+    const turno = Math.max(ahora, siguiente);
+    siguiente = turno + intervaloMs;
+    if (turno > ahora) await dormir(turno - ahora);
+  };
 }
 
 function codigoDe(error: unknown): string {
