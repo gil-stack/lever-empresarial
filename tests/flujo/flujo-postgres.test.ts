@@ -17,13 +17,17 @@ import { enviarCorreosSemanales } from "../../src/server/flujo/correo-semanal.ts
 import {
   asignarAreaProveedor,
   cambiarCorreoSemanal,
+  cancelarCobro,
   configurarColchon,
   declararSaldo,
+  editarObligacion,
   leerFlujoInicio,
+  leerVistaCalendario,
   leerVistaPresupuestos,
   leerVistaSaldo,
   marcarCobrado,
   registrarCobro,
+  registrarCobroCfdi,
   registrarObligacion,
 } from "../../src/server/flujo/servicio.ts";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio.ts";
@@ -47,6 +51,7 @@ const TABLAS = [
   "cash_flow_settings",
   "weekly_digest_preferences",
   "weekly_digest_sends",
+  "weekly_digest_deliveries",
 ] as const;
 
 describe("Flujo de caja en Postgres", { skip: urlAdmin.length === 0 }, () => {
@@ -76,7 +81,7 @@ describe("Flujo de caja en Postgres", { skip: urlAdmin.length === 0 }, () => {
 async function escenario(url: string): Promise<void> {
   sembrarPersonal(url);
   const personal = await contextoDePersonal("personal-flujo@ejemplo.mx");
-  // Alfa es un cliente real; Beta, una empresa de demostración.
+  // Alfa y Beta son clientes reales (la tarea del correo solo escribe a empresas reales).
   const alfa = await darDeAltaEmpresa(personal, {
     rfc: "TCM010101AB1",
     razonSocial: "Escuela Alfa Flujo",
@@ -90,12 +95,12 @@ async function escenario(url: string): Promise<void> {
     codigoPostal: "44100",
     regimen: "612",
     usoCfdi: "G03",
-  }, { demostracion: true });
+  }, { demostracion: false });
 
   const admin = await administrador(url, personal, alfa, "admin-alfa-flujo@ejemplo.mx");
   const adminBeta = await administrador(url, personal, beta, "admin-beta-flujo@ejemplo.mx");
   assert.equal(admin.empresa.demostracion, false);
-  assert.equal(adminBeta.empresa.demostracion, true);
+  assert.equal(adminBeta.empresa.demostracion, false);
 
   const operacion = await nombrarCentro(admin, { nombre: "Operación", presupuesto: "50000.00" }, AHORA);
   const contador = await persona(url, admin, operacion.id, "Contadora Flujo", "contadora-flujo@ejemplo.mx", ["contador"]);
@@ -119,37 +124,82 @@ async function escenario(url: string): Promise<void> {
   }, AHORA);
 
   // Alfa declara saldo, colchón, un cobro y la renta. Beta, lo suyo.
-  await declararSaldo(admin, { saldo: "100000.00", alDia: "2026-11-05" }, AHORA);
+  // Cada alta llega dos veces a la vez y una tercera después (doble clic, reintento de red): una sola fila y un solo evento.
+  const dosVecesYOtra = async <T>(fn: () => Promise<T>): Promise<T[]> => [...(await Promise.all([fn(), fn()])), await fn()];
+  const altaSaldo = randomUUID();
+  const saldos = await dosVecesYOtra(() => declararSaldo(admin, { saldo: "100000.00", alDia: "2026-11-05", altaId: altaSaldo }, AHORA));
+  assert.deepEqual(saldos.map((s) => s.id), [altaSaldo, altaSaldo, altaSaldo]);
   await configurarColchon(admin, { colchon: "20000.00" }, AHORA);
-  const cobro = await registrarCobro(admin, {
+  const altaCobro = randomUUID();
+  const [cobro] = await dosVecesYOtra(() => registrarCobro(admin, {
     clienteNombre: "Cliente Alfa",
     clienteRfc: "",
     concepto: "Colegiaturas de noviembre",
     monto: "25000.00",
     fechaProbable: "2026-11-20",
     referencia: "",
-  }, AHORA);
-  const renta = await registrarObligacion(admin, {
+    altaId: altaCobro,
+  }, AHORA));
+  const altaRenta = randomUUID();
+  const [renta] = await dosVecesYOtra(() => registrarObligacion(admin, {
     concepto: "Renta del local",
     monto: "30000.00",
     frecuencia: "mensual",
     proximaFecha: "2026-11-15",
     areaId: operacion.id,
-  }, AHORA);
-  await declararSaldo(adminBeta, { saldo: "777777.00", alDia: "2026-11-05" }, AHORA);
+    altaId: altaRenta,
+  }, AHORA));
+  assert.ok(cobro && renta);
+  for (const [tabla, accion, id] of [
+    ["cash_balance_declarations", "declarar_saldo", altaSaldo],
+    ["expected_collections", "registrar_cobro", altaCobro],
+    ["recurring_obligations", "registrar_obligacion", altaRenta],
+  ] as const) {
+    assert.equal(contar(url, `select count(*) from ${tabla} where company_id = '${alfa.id}'`), 1, tabla);
+    assert.equal(contar(url, `select count(*) from audit_log where accion = '${accion}' and identificador = '${id}'`), 1, accion);
+  }
+  // Sin el id del formulario no hay alta.
+  await assert.rejects(() => declararSaldo(admin, { saldo: "1.00", alDia: "2026-11-05" }, AHORA), codigo("entrada_invalida"));
+  await assert.rejects(() => declararSaldo(admin, { saldo: "1.00", alDia: "2026-11-05", altaId: "no-es-uuid" }, AHORA), codigo("entrada_invalida"));
+  await declararSaldo(adminBeta, { saldo: "777777.00", alDia: "2026-11-05", altaId: randomUUID() }, AHORA);
   await configurarColchon(adminBeta, { colchon: "1.00" }, AHORA);
-  await registrarCobro(adminBeta, {
+  const cobroBeta = await registrarCobro(adminBeta, {
     clienteNombre: "Cliente Secreto Beta",
     clienteRfc: "",
     concepto: "Secreto Beta",
     monto: "99999.00",
     fechaProbable: "2026-11-18",
     referencia: "",
+    altaId: randomUUID(),
   }, AHORA);
-  await registrarObligacion(adminBeta, { concepto: "Obligación Secreta Beta", monto: "1.00", frecuencia: "mensual", proximaFecha: "2026-11-17", areaId: "" }, AHORA);
+  await registrarObligacion(adminBeta, { concepto: "Obligación Secreta Beta", monto: "1.00", frecuencia: "mensual", proximaFecha: "2026-11-17", areaId: "", altaId: randomUUID() }, AHORA);
+  // El id de una fila de otra empresa no se acepta como alta repetida: RLS no la deja ver.
+  await assert.rejects(
+    () => registrarCobro(admin, { clienteNombre: "X", concepto: "X", monto: "1.00", fechaProbable: "2026-11-20", altaId: cobroBeta.id }, AHORA),
+    codigo("entrada_invalida"),
+  );
+  assert.equal(contar(url, `select count(*) from expected_collections where id = '${cobroBeta.id}' and company_id = '${beta.id}'`), 1);
   await cambiarCorreoSemanal(adminBeta, { activo: "si" }, AHORA);
 
   const pago = sembrarPago(url, alfa.id, admin.persona.id, operacion.id);
+  // R3: un cargo sin pagar programado antes del saldo declarado sigue debiéndose.
+  const atrasado = sembrarPago(url, alfa.id, admin.persona.id, null, {
+    rfc: "BBB010101BB1", nombre: "Proveedor Dos", uuid: "123E4567-E89B-42D3-A456-426614174002", folio: "90", programada: "2026-11-03", total: 1_500_000,
+  });
+  // R4: la renta facturada por Proveedor Uno no se cuenta el mes en que ya trae su cargo (noviembre).
+  const facturada = await registrarObligacion(admin, {
+    concepto: "Mantenimiento facturado",
+    monto: "1000.00",
+    frecuencia: "mensual",
+    proximaFecha: "2026-11-20",
+    areaId: operacion.id,
+    proveedorId: pago.proveedorId,
+    altaId: randomUUID(),
+  }, AHORA);
+  assert.deepEqual(
+    consultarJson<Record<string, unknown>[]>(url, `select json_agg(cambio) from audit_log where accion = 'registrar_obligacion' and identificador = '${facturada.id}'`),
+    [{ concepto: "Mantenimiento facturado", monto_centavos: 100_000, frecuencia: "mensual", proxima_fecha: "2026-11-20", area: "Operación", proveedor: "Proveedor Uno" }],
+  );
 
   // Inicio de Alfa: su saldo, su cobro, su renta, su pago y la nómina sumada por fecha. Nada de Beta.
   const flujo = await leerFlujoInicio(admin, {}, AHORA);
@@ -164,6 +214,22 @@ async function escenario(url: string): Promise<void> {
   assert.ok(movimientos.some((m) => m.tipo === "obligacion" && m.fecha === "2026-11-15" && m.centavos === 3_000_000));
   assert.ok(movimientos.some((m) => m.tipo === "nomina" && m.fecha === "2026-11-15" && m.centavos === 800_000));
   assert.equal(cobro.id.length, 36);
+  // R3: el cargo del 3 de noviembre (antes del saldo del 5) va atrasado en la primera semana.
+  assert.ok(flujo.proyeccion.semanas[0]?.movimientos.some((m) => m.clave === `cxp:${atrasado.id}` && m.atrasado === true && m.centavos === 1_500_000));
+  // R4: noviembre ya trae el cargo de Proveedor Uno; diciembre no.
+  assert.equal(movimientos.some((m) => m.clave === `obl:${facturada.id}:2026-11-20`), false);
+  assert.ok(movimientos.some((m) => m.clave === `obl:${facturada.id}:2026-12-20`));
+
+  // R2: un cobro que llegó después del saldo declarado entra en la semana en que llegó.
+  const pronto = await registrarCobro(admin, {
+    clienteNombre: "Cliente Pronto", clienteRfc: "", concepto: "Anticipo", monto: "5000.00", fechaProbable: "2026-11-10", referencia: "", altaId: randomUUID(),
+  }, AHORA);
+  await marcarCobrado(admin, { id: pronto.id, cobradoEl: "2026-11-06" }, AHORA);
+  const conCobrado = await leerFlujoInicio(admin, {}, AHORA);
+  const llegado = conCobrado.proyeccion.semanas[0]?.movimientos.find((m) => m.clave === `cob:${pronto.id}`);
+  assert.equal(llegado?.cobrado, true);
+  assert.equal(llegado?.fecha, "2026-11-06");
+  assert.equal(conCobrado.proyeccion.semanas[0]?.entradas, (flujo.proyeccion.semanas[0]?.entradas ?? 0) + 500_000);
 
   // «¿Y si muevo este pago?» recalcula sin escribir: ni programada_el ni la bitácora cambian.
   const bitacoraAntes = contar(url, "select count(*) from audit_log");
@@ -183,8 +249,11 @@ async function escenario(url: string): Promise<void> {
   const vistaContador = await leerFlujoInicio(contador, {}, AHORA);
   assert.equal(vistaContador.puedeEditar, false);
   assert.equal(vistaContador.proyeccion.saldo?.centavos, 10_000_000);
-  await assert.rejects(() => declararSaldo(contador, { saldo: "1.00", alDia: "2026-11-05" }, AHORA), codigo("sin_permiso"));
-  await assert.rejects(() => registrarCobro(contador, { clienteNombre: "X", concepto: "X", monto: "1.00", fechaProbable: "2026-11-20" }, AHORA), codigo("sin_permiso"));
+  await assert.rejects(() => declararSaldo(contador, { saldo: "1.00", alDia: "2026-11-05", altaId: randomUUID() }, AHORA), codigo("sin_permiso"));
+  await assert.rejects(
+    () => registrarCobro(contador, { clienteNombre: "X", concepto: "X", monto: "1.00", fechaProbable: "2026-11-20", altaId: randomUUID() }, AHORA),
+    codigo("sin_permiso"),
+  );
   await assert.rejects(() => marcarCobrado(contador, { id: cobro.id, cobradoEl: "2026-11-05" }, AHORA), codigo("sin_permiso"));
   await assert.rejects(
     () => conContexto(baseCliente(contador), (consulta) => consulta.query(
@@ -225,10 +294,13 @@ async function escenario(url: string): Promise<void> {
     codigo("sin_permiso"),
   );
   assert.throws(() => ejecutar(url, `delete from cash_balance_declarations where company_id = '${alfa.id}'`), /saldo_declarado_no_se_pisa/);
-  await declararSaldo(admin, { saldo: "90000.00", alDia: "2026-11-06" }, AHORA);
+  await declararSaldo(admin, { saldo: "90000.00", alDia: "2026-11-06", altaId: randomUUID() }, AHORA);
   const historial = await leerVistaSaldo(admin, AHORA);
   assert.deepEqual(historial.historial.map((d) => d.centavos), [9_000_000, 10_000_000]);
-  assert.equal((await leerFlujoInicio(admin, {}, AHORA)).proyeccion.saldo?.centavos, 9_000_000);
+  const conSaldoNuevo = await leerFlujoInicio(admin, {}, AHORA);
+  assert.equal(conSaldoNuevo.proyeccion.saldo?.centavos, 9_000_000);
+  // El cobro del 6 ya está dentro del saldo al 6: no se cuenta otra vez.
+  assert.equal(conSaldoNuevo.proyeccion.semanas.some((s) => s.movimientos.some((m) => m.clave === `cob:${pronto.id}`)), false);
 
   // Una escritura sin su evento de bitácora no queda.
   assert.throws(
@@ -244,8 +316,70 @@ async function escenario(url: string): Promise<void> {
   const presupuestos = await leerVistaPresupuestos(admin, AHORA);
   const area = presupuestos.presupuestos.areas.find((linea) => linea.id === operacion.id);
   assert.ok(area);
+  // La obligación facturada de Proveedor Uno no suma en noviembre: ese mes ya trae su cargo (R4).
   assert.equal(area.gastoCentavos, 1_600_000 + 4_000_000 + 3_000_000);
   assert.equal(area.estado, "excedido");
+
+  // S1: sin permiso de ver el detalle de la nómina (contadora, finanzas) no se ve el neto de una sola persona.
+  const inicioContadora = await leerFlujoInicio(contador, {}, AHORA);
+  const nominaContadora = inicioContadora.proyeccion.semanas.flatMap((s) => s.movimientos).filter((m) => m.tipo === "nomina");
+  assert.ok(nominaContadora.length > 0);
+  assert.deepEqual([...new Set(nominaContadora.map((m) => m.concepto))], ["Nómina"]);
+  assert.equal(JSON.stringify(inicioContadora).includes("1 persona"), false);
+  assert.ok((await leerFlujoInicio(admin, {}, AHORA)).proyeccion.semanas.flatMap((s) => s.movimientos).some((m) => m.concepto === "Nómina quincenal (1 persona)"));
+  const calendarioContadora = await leerVistaCalendario(contador, "2026-11", AHORA);
+  const nomina15 = calendarioContadora.eventos.find((e) => e.clave === "nom:2026-11-15");
+  assert.deepEqual([nomina15?.concepto, nomina15?.centavos, nomina15?.reservado], ["Nómina", 0, true]);
+  assert.equal(JSON.stringify(calendarioContadora).includes("800000"), false);
+  assert.equal((await leerVistaCalendario(admin, "2026-11", AHORA)).eventos.find((e) => e.clave === "nom:2026-11-15")?.centavos, 800_000);
+  const presupuestosContadora = await leerVistaPresupuestos(finanzas, AHORA);
+  assert.equal(presupuestosContadora.presupuestos.areas.find((linea) => linea.id === operacion.id)?.desglose, undefined);
+  assert.equal(area.desglose?.nominaCentavos, 1_600_000);
+
+  // R8: una persona con alta futura no suma su nómina al presupuesto del mes.
+  ejecutar(url, `set session_replication_role = replica; update employees set alta_en = '2026-12-01' where company_id = '${alfa.id}' and nombre = 'Operativo Quincenal';`);
+  const conAltaFutura = await leerVistaPresupuestos(admin, AHORA);
+  assert.equal(conAltaFutura.presupuestos.areas.find((linea) => linea.id === operacion.id)?.gastoCentavos, 4_000_000 + 3_000_000);
+  ejecutar(url, `set session_replication_role = replica; update employees set alta_en = '2026-11-01' where company_id = '${alfa.id}' and nombre = 'Operativo Quincenal';`);
+
+  // S2: editar una obligación deja antes y después de concepto, área y proveedor, por nombre.
+  await editarObligacion(admin, {
+    id: renta.id, concepto: "Renta del local principal", monto: "31000.00", frecuencia: "mensual", proximaFecha: "2026-11-15", areaId: "", proveedorId: "",
+  }, AHORA);
+  assert.deepEqual(
+    consultarJson<Record<string, unknown>[]>(url, `select json_agg(cambio) from audit_log where accion = 'editar_obligacion' and identificador = '${renta.id}'`),
+    [{
+      concepto_anterior: "Renta del local", concepto_nuevo: "Renta del local principal",
+      monto_anterior: 3_000_000, monto_nuevo: 3_100_000,
+      frecuencia_anterior: "mensual", frecuencia_nueva: "mensual",
+      fecha_anterior: "2026-11-15", fecha_nueva: "2026-11-15",
+      area_anterior: "Operación", area_nueva: null,
+      proveedor_anterior: null, proveedor_nuevo: null,
+    }],
+  );
+
+  // R5 y R9 con el XML de una factura emitida: el mismo formulario dos veces deja un cobro; la misma factura
+  // en otro formulario dice en qué estado está.
+  const factura = (uuid: string) => new TextEncoder().encode(`<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital" Version="4.0" Fecha="2026-11-02T10:00:00" TipoDeComprobante="I" Moneda="MXN" Total="12000.00" Serie="F" Folio="7">
+  <cfdi:Emisor Rfc="TCM010101AB1" Nombre="Escuela Alfa Flujo" RegimenFiscal="601" />
+  <cfdi:Receptor Rfc="CLM120101AB2" Nombre="Comercializadora Uno" DomicilioFiscalReceptor="06600" RegimenFiscalReceptor="601" UsoCFDI="G03" />
+  <cfdi:Complemento><tfd:TimbreFiscalDigital UUID="${uuid}" /></cfdi:Complemento>
+</cfdi:Comprobante>`);
+  const uuidFactura = "AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE";
+  const altaXml = randomUUID();
+  const conXml = await dosVecesYOtra(() => registrarCobroCfdi(admin, { bytes: factura(uuidFactura), fechaProbable: "2026-11-25", altaId: altaXml }, AHORA));
+  assert.deepEqual(conXml.map((c) => c.id), [altaXml, altaXml, altaXml]);
+  assert.equal(contar(url, `select count(*) from expected_collections where cfdi_uuid = '${uuidFactura}'`), 1);
+  assert.equal(contar(url, `select count(*) from audit_log where accion = 'registrar_cobro' and identificador = '${altaXml}'`), 1);
+  await assert.rejects(() => registrarCobroCfdi(admin, { bytes: factura(uuidFactura), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA), codigo("cobro_duplicado"));
+  await marcarCobrado(admin, { id: altaXml, cobradoEl: "2026-11-06" }, AHORA);
+  await assert.rejects(() => registrarCobroCfdi(admin, { bytes: factura(uuidFactura), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA), codigo("cobro_ya_cobrado"));
+  // Cancelado, la misma factura se puede volver a registrar.
+  const otraFactura = "BBBBBBBB-CCCC-4DDD-8EEE-FFFFFFFFFFFF";
+  const sustituida = await registrarCobroCfdi(admin, { bytes: factura(otraFactura), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA);
+  await cancelarCobro(admin, { id: sustituida.id, motivo: "Factura sustituida" }, AHORA);
+  await registrarCobroCfdi(admin, { bytes: factura(otraFactura), fechaProbable: "2026-11-26", altaId: randomUUID() }, AHORA);
 
   // Correo semanal ----------------------------------------------------------------
   // La puerta sin empresa es solo de plataforma_tarea. Que falte el contexto no da más acceso.
@@ -286,6 +420,9 @@ async function escenario(url: string): Promise<void> {
   await persona(url, adminDelta, areaDelta.id, "Finanzas Delta", "finanzas-delta@ejemplo.mx", ["tarjetahabiente", "finanzas"]);
   // En Delta solo queda Finanzas como destinataria.
   await cambiarCorreoSemanal(adminDelta, { activo: "no" }, AHORA);
+  // S7: una empresa de demostración tiene cifras de ejemplo: nunca entra en la lista, aunque tenga administración.
+  const epsilon = await darDeAltaEmpresa(personal, { rfc: "EPS010101AB4", razonSocial: "Épsilon Demostración", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: true });
+  await administrador(url, personal, epsilon, "admin-epsilon-flujo@ejemplo.mx");
   assert.deepEqual(await empresasDeTarea(), [alfa.id, beta.id, gamma.id, delta.id].sort());
   // Gamma se suspende y la persona de Finanzas de Delta queda dada de baja (sin pasar por los
   // triggers, para probar solo el filtro de la función).
@@ -310,9 +447,10 @@ async function escenario(url: string): Promise<void> {
     return { id: `re_${enviados.length}` };
   };
   const registros: Record<string, string | number>[] = [];
-  const deps = { ahora: () => VIERNES, enviador, urlPublica: "https://lever.test", registrar: (c: Readonly<Record<string, string | number>>) => void registros.push({ ...c }) };
+  // Sin ritmo: la separación entre envíos se prueba aparte (correo-semanal.test.ts) y se mide con 200 empresas.
+  const deps = { ahora: () => VIERNES, enviador, urlPublica: "https://lever.test", ritmoMs: 0, registrar: (c: Readonly<Record<string, string | number>>) => void registros.push({ ...c }) };
   const primera = await enviarCorreosSemanales(deps);
-  assert.deepEqual(primera, { semana: "2026-11-02", empresas: 2, enviados: 2, omitidos: 0, fallidos: 0 });
+  assert.deepEqual(primera, { semana: "2026-11-02", empresas: 2, enviados: 2, omitidos: 0, fallidos: 0, pendientes: 0 });
   const correosAlfa = enviados.filter((m) => m.idempotencia.includes(alfa.id));
   const correosBeta = enviados.filter((m) => m.idempotencia.includes(beta.id));
   assert.deepEqual(correosAlfa.map((m) => m.para).sort(), ["admin-alfa-flujo@ejemplo.mx", "contadora-flujo@ejemplo.mx"]);
@@ -323,6 +461,11 @@ async function escenario(url: string): Promise<void> {
     for (const ajeno of ["Secreto Beta", "777,777", "Taller Beta"]) assert.equal(m.html.includes(ajeno) || m.texto.includes(ajeno), false, ajeno);
     assert.equal(m.texto.includes("Confirmado por el banco"), false);
   }
+  // S1: el correo va también a quien no ve el detalle de la nómina: nunca desglosa a una sola persona.
+  for (const m of enviados) assert.equal(m.texto.includes("1 persona") || m.html.includes("1 persona"), false);
+  // S4: cada persona que lo recibió queda registrada, sin su correo.
+  assert.equal(contar(url, "select count(*) from weekly_digest_deliveries where semana = '2026-11-02'"), 3);
+  assert.equal(contar(url, "select count(*) from audit_log where accion = 'correo_semanal_entregado'"), 3);
   for (const m of correosBeta) {
     for (const ajeno of ["Escuela Alfa", "Renta del local", "Colegiaturas", "90,000"]) assert.equal(m.html.includes(ajeno) || m.texto.includes(ajeno), false, ajeno);
   }
@@ -330,7 +473,7 @@ async function escenario(url: string): Promise<void> {
 
   // Vercel puede llamar dos veces: la segunda no manda nada.
   const repetida = await enviarCorreosSemanales(deps);
-  assert.deepEqual(repetida, { semana: "2026-11-02", empresas: 2, enviados: 0, omitidos: 2, fallidos: 0 });
+  assert.deepEqual(repetida, { semana: "2026-11-02", empresas: 2, enviados: 0, omitidos: 2, fallidos: 0, pendientes: 0 });
   assert.equal(enviados.length, 3);
   assert.equal(contar(url, "select count(*) from weekly_digest_sends where estado = 'enviado'"), 2);
   assert.equal(contar(url, "select count(*) from audit_log where accion = 'correo_semanal' and actor_tipo = 'sistema' and actor_id is null"), 2);
@@ -342,7 +485,7 @@ async function escenario(url: string): Promise<void> {
     return enviador(mensaje);
   };
   const conFalla = await enviarCorreosSemanales({ ...deps, ahora: () => lunes, enviador: fallaBeta });
-  assert.deepEqual(conFalla, { semana: "2026-11-09", empresas: 2, enviados: 1, omitidos: 0, fallidos: 1 });
+  assert.deepEqual(conFalla, { semana: "2026-11-09", empresas: 2, enviados: 1, omitidos: 0, fallidos: 1, pendientes: 0 });
   assert.deepEqual(
     consultarJson<{ e: string; c: string | null }[]>(url, `select json_agg(json_build_object('e', estado, 'c', codigo)) from weekly_digest_sends where company_id = '${beta.id}' and semana = '2026-11-09'`),
     [{ e: "fallido", c: "correo_limite" }],
@@ -351,7 +494,7 @@ async function escenario(url: string): Promise<void> {
   assert.equal(JSON.stringify(registros).includes("@"), false, "el registro no lleva correos");
   // Un reintento vuelve a abrir solo la fallida.
   const reintento = await enviarCorreosSemanales({ ...deps, ahora: () => lunes });
-  assert.deepEqual(reintento, { semana: "2026-11-09", empresas: 2, enviados: 1, omitidos: 1, fallidos: 0 });
+  assert.deepEqual(reintento, { semana: "2026-11-09", empresas: 2, enviados: 1, omitidos: 1, fallidos: 0, pendientes: 0 });
 
   // Un apartado «enviando» reciente es otra corrida en curso; uno viejo, una corrida que se cayó.
   ejecutar(url, `
@@ -360,11 +503,53 @@ async function escenario(url: string): Promise<void> {
              ('${randomUUID()}', '${beta.id}', '2026-11-16', 'enviando', clock_timestamp());
   `);
   const tercera = await enviarCorreosSemanales({ ...deps, ahora: () => new Date("2026-11-16T14:00:00.000Z") });
-  assert.deepEqual(tercera, { semana: "2026-11-16", empresas: 2, enviados: 1, omitidos: 1, fallidos: 0 });
+  assert.deepEqual(tercera, { semana: "2026-11-16", empresas: 2, enviados: 1, omitidos: 1, fallidos: 0, pendientes: 0 });
   assert.deepEqual(
     consultarJson<{ c: string | null }[]>(url, `select json_agg(json_build_object('c', a.cambio->>'codigo') order by a.ocurrido_en) from audit_log a join weekly_digest_sends w on w.id = a.identificador where w.company_id = '${alfa.id}' and w.semana = '2026-11-16'`),
     [{ c: "interrumpido" }, { c: null }],
   );
+
+  // S4: si una persona falla, el reintento solo le manda a ella; quien ya lo recibió no lo vuelve a recibir,
+  // aunque el reintento llegue después de las 24 horas de la llave del proveedor.
+  const lunes30 = new Date("2026-11-30T14:00:00.000Z");
+  const fallaContadora = async (mensaje: MensajeCorreo) => {
+    if (mensaje.para.startsWith("contadora-flujo")) throw new ErrorDeCorreo("correo_limite");
+    return enviador(mensaje);
+  };
+  const parcial = await enviarCorreosSemanales({ ...deps, ahora: () => lunes30, enviador: fallaContadora });
+  assert.deepEqual(parcial, { semana: "2026-11-30", empresas: 2, enviados: 1, omitidos: 0, fallidos: 1, pendientes: 0 });
+  const dosDiasDespues = new Date("2026-12-02T14:00:00.000Z");
+  const completo = await enviarCorreosSemanales({ ...deps, ahora: () => dosDiasDespues });
+  assert.deepEqual(completo, { semana: "2026-11-30", empresas: 2, enviados: 1, omitidos: 1, fallidos: 0, pendientes: 0 });
+  const semana30 = enviados.filter((m) => m.idempotencia.includes("/2026-11-30/"));
+  assert.deepEqual(semana30.map((m) => m.para).sort(), ["admin-alfa-flujo@ejemplo.mx", "admin-beta-flujo@ejemplo.mx", "contadora-flujo@ejemplo.mx"]);
+  assert.equal(contar(url, `select destinatarios from weekly_digest_sends where company_id = '${alfa.id}' and semana = '2026-11-30'`), 2);
+  // Una persona no escribe el registro de entregas, ni con SQL directo.
+  await assert.rejects(() => conContexto(baseCliente(admin), (consulta) => consulta.query(
+    "insert into weekly_digest_deliveries (id, company_id, semana, user_id, send_id) select $1, company_id, semana, $2, id from weekly_digest_sends where company_id = $3 limit 1",
+    [randomUUID(), admin.persona.id, alfa.id],
+  )));
+
+  // S6: dos corridas a la vez (Vercel puede entregar dos veces): una fila por empresa y semana, un correo por persona.
+  const lunes7 = new Date("2026-12-07T14:00:00.000Z");
+  const antes = enviados.length;
+  const [una, otra] = await Promise.all([
+    enviarCorreosSemanales({ ...deps, ahora: () => lunes7 }),
+    enviarCorreosSemanales({ ...deps, ahora: () => lunes7 }),
+  ]);
+  assert.equal(una.enviados + otra.enviados, 2);
+  assert.equal(una.omitidos + otra.omitidos, 2);
+  assert.equal(contar(url, "select count(*) from weekly_digest_sends where semana = '2026-12-07'"), 2);
+  const semana7 = enviados.slice(antes).map((m) => m.para).sort();
+  assert.deepEqual(semana7, ["admin-alfa-flujo@ejemplo.mx", "admin-beta-flujo@ejemplo.mx", "contadora-flujo@ejemplo.mx"]);
+
+  // S5: con el tiempo agotado no empieza más empresas: quedan pendientes, se registran y la siguiente corrida las toma.
+  const lunes14 = new Date("2026-12-14T14:00:00.000Z");
+  const agotada = await enviarCorreosSemanales({ ...deps, ahora: () => lunes14, transcurrido: () => 300_000 });
+  assert.deepEqual(agotada, { semana: "2026-12-14", empresas: 2, enviados: 0, omitidos: 0, fallidos: 0, pendientes: 2 });
+  assert.ok(registros.some((r) => r.evento === "correo_semanal_pendientes" && r.pendientes === 2));
+  const siguiente = await enviarCorreosSemanales({ ...deps, ahora: () => lunes14 });
+  assert.equal(siguiente.enviados, 2);
 
   // Sin destinatarios activos la empresa ni aparece.
   await cambiarCorreoSemanal(adminBeta, { activo: "no" }, AHORA);
@@ -400,31 +585,41 @@ async function areaDe(ctx: ContextoConEmpresa): Promise<string> {
   return (await nombrarCentro(ctx, { nombre: "Área Beta" }, AHORA)).id;
 }
 
-/** Un proveedor con área y una cuenta por pagar sin solicitud, con sus eventos en la misma transacción. */
-function sembrarPago(url: string, empresaId: string, userId: string, areaId: string): { id: string; proveedorId: string } {
+type OpcionesPago = { rfc?: string; nombre?: string; uuid?: string; folio?: string; programada?: string; total?: number };
+
+/** Un proveedor (con área si se da) y una cuenta por pagar sin solicitud, con sus eventos en la misma transacción. */
+function sembrarPago(url: string, empresaId: string, userId: string, areaId: string | null, opciones: OpcionesPago = {}): { id: string; proveedorId: string } {
   const documento = randomUUID();
   const proveedorId = randomUUID();
   const clabeId = randomUUID();
   const id = randomUUID();
+  const rfc = opciones.rfc ?? "AAA010101AAA";
+  const nombre = opciones.nombre ?? "Proveedor Uno";
+  const uuid = opciones.uuid ?? "123E4567-E89B-42D3-A456-426614174001";
+  const folio = opciones.folio ?? "81";
+  const programada = opciones.programada ?? "2026-11-12";
+  const total = opciones.total ?? 4_000_000;
+  const area = areaId === null ? "" : `
+    update suppliers set cost_center_id = '${areaId}' where id = '${proveedorId}';
+    insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+      select operator_id, id, 'miembro', '${userId}', 'cliente', 'asignar_area_proveedor', 'suppliers', '${proveedorId}' from companies where id = '${empresaId}';`;
   ejecutar(url, `
     select set_config('app.user_id', '${userId}', true), set_config('app.company_id', '${empresaId}', true);
     insert into documents (id, company_id, clave_blob, hash_sha256, tipo, nombre_original, creado_en)
       values ('${documento}', '${empresaId}', 'prueba/constancia', '${"a".repeat(64)}', 'application/pdf', 'Constancia.pdf', now());
     insert into suppliers (id, company_id, document_id, rfc, razon_social, lista_leida_en, boton_pago, alta_en, nombre_comercial, dias_credito)
-      values ('${proveedorId}', '${empresaId}', '${documento}', 'AAA010101AAA', 'Proveedor Uno, S.A. de C.V.', now(), false, now(), 'Proveedor Uno', 30);
+      values ('${proveedorId}', '${empresaId}', '${documento}', '${rfc}', '${nombre}, S.A. de C.V.', now(), false, now(), '${nombre}', 30);
     insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
       select operator_id, id, 'miembro', '${userId}', 'cliente', 'alta_proveedor', 'suppliers', '${proveedorId}' from companies where id = '${empresaId}';
     insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde)
       values ('${clabeId}', '${empresaId}', '${proveedorId}', '${CLABE}', true, now());
     insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
       select operator_id, id, 'miembro', '${userId}', 'cliente', 'clabe_proveedor', 'supplier_clabes', '${clabeId}' from companies where id = '${empresaId}';
-    update suppliers set cost_center_id = '${areaId}' where id = '${proveedorId}';
-    insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
-      select operator_id, id, 'miembro', '${userId}', 'cliente', 'asignar_area_proveedor', 'suppliers', '${proveedorId}' from companies where id = '${empresaId}';
+    ${area}
     insert into supplier_payables (id, company_id, supplier_id, origen, cfdi_uuid, serie, folio, referencia, total_centavos, emitida_el, vence_el, programada_el, creado_por, creado_en, actualizado_en)
-      values ('${id}', '${empresaId}', '${proveedorId}', 'cfdi', '123E4567-E89B-42D3-A456-426614174001', 'A', '81', 'A-81', 4000000, '2026-11-01', '2026-11-15', '2026-11-12', '${userId}', now(), now());
+      values ('${id}', '${empresaId}', '${proveedorId}', 'cfdi', '${uuid}', 'A', '${folio}', 'A-${folio}', ${total}, '2026-11-01', '2026-11-15', '${programada}', '${userId}', now(), now());
     insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, cambio)
-      select operator_id, id, 'miembro', '${userId}', 'cliente', 'crear_cargo_proveedor', 'supplier_payables', '${id}', '{"origen":"cfdi","total_centavos":4000000}' from companies where id = '${empresaId}';
+      select operator_id, id, 'miembro', '${userId}', 'cliente', 'crear_cargo_proveedor', 'supplier_payables', '${id}', '{"origen":"cfdi","total_centavos":${total}}' from companies where id = '${empresaId}';
   `);
   return { id, proveedorId };
 }

@@ -112,6 +112,8 @@ async function principal(): Promise<void> {
   const accesoSinNomina = { nomina: "no", acceso: "nueva" };
   const rosa = await persona(a.ctx, { ...accesoSinNomina, nombre: "Rosa Liberadora", centroId: operacion.id, correo: "rosa@lever.test", rol: ["liberador"] });
   await persona(a.ctx, { ...accesoSinNomina, nombre: "Diego Contador", centroId: operacion.id, correo: "diego@lever.test", rol: ["contador"] });
+  // Finanzas ve Inicio y recibe el correo, pero no el detalle de la nómina por persona.
+  await persona(a.ctx, { ...accesoSinNomina, nombre: "Fernanda Finanzas", centroId: operacion.id, correo: "fernanda@lever.test", rol: ["tarjetahabiente", "finanzas"] });
   await persona(a.ctx, { ...accesoSinNomina, nombre: "Ernesto Tarjeta", centroId: ventas.id, correo: "ernesto@lever.test", rol: ["tarjetahabiente"] });
   if (!rosa) throw new Error("Rosa no quedó con acceso.");
 
@@ -194,9 +196,9 @@ async function principal(): Promise<void> {
   sql(partes.join("\n"));
 
   // Dos cobros (uno ya vencido) y la renta, por los servicios.
-  await registrarCobro(a.ctx, { clienteNombre: "Cliente Mayorista", clienteRfc: "", concepto: "Fletes de octubre", monto: "60000.00", fechaProbable: desplazar(hoy, 19), referencia: "F-1032" });
-  await registrarCobro(a.ctx, { clienteNombre: "Distribuidora Sur", clienteRfc: "", concepto: "Saldo pendiente", monto: "18000.00", fechaProbable: desplazar(hoy, -3), referencia: "" });
-  await registrarObligacion(a.ctx, { concepto: "Renta de la bodega", monto: "30000.00", frecuencia: "mensual", proximaFecha: desplazar(hoy, 14), areaId: operacion.id });
+  await registrarCobro(a.ctx, { clienteNombre: "Cliente Mayorista", clienteRfc: "", concepto: "Fletes de octubre", monto: "60000.00", fechaProbable: desplazar(hoy, 19), referencia: "F-1032", altaId: randomUUID() });
+  await registrarCobro(a.ctx, { clienteNombre: "Distribuidora Sur", clienteRfc: "", concepto: "Saldo pendiente", monto: "18000.00", fechaProbable: desplazar(hoy, -3), referencia: "", altaId: randomUUID() });
+  await registrarObligacion(a.ctx, { concepto: "Renta de la bodega", monto: "30000.00", frecuencia: "mensual", proximaFecha: desplazar(hoy, 14), areaId: operacion.id, altaId: randomUUID() });
 
   // Empresa B: cliente real sin datos (estado vacío, otra empresa y su propio correo).
   await empresaConAdmin(personal, { rfc: "BCO190101CD2", razon: "Bahía Comercial", demostracion: false, admin: "Bruno Salas", correo: "bruno@lever.test" });

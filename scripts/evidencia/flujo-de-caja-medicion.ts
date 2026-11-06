@@ -2,7 +2,7 @@
  * Medición del flujo de caja con 1,000 cuentas por pagar y 200 personas en nómina.
  *
  *   MEDICION_ADMIN_URL=postgres://<dueño>@127.0.0.1:5541/postgres \
- *   npx tsx scripts/evidencia/flujo-de-caja-medicion.ts > docs/evidencia/flujo-de-caja/rendimiento.txt
+ *   npx tsx scripts/evidencia/flujo-de-caja-medicion.ts (salida literal en docs/evidencia/flujo-de-caja/rendimiento.md)
  *
  * Crea una base desechable, aplica db/migrations, siembra el volumen y mide las
  * lecturas reales de la aplicación (servicio + RLS + dominio) como plataforma_app.

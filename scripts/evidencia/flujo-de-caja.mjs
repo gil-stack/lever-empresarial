@@ -188,7 +188,10 @@ async function dobleClicConAccion(boton) {
   });
   let acciones = 0;
   const contar = (peticion) => {
-    if (peticion.method() === "POST" && peticion.headers()["next-action"]) acciones += 1;
+    if (peticion.method() === "POST" && peticion.headers()["next-action"]) {
+      acciones += 1;
+      ultimaAccion = { url: peticion.url(), headers: peticion.headers(), cuerpo: peticion.postDataBuffer()?.toString("base64") ?? "" };
+    }
   };
   pagina.on("request", contar);
   await clicConAccion(pagina, () => boton.dblclick());
@@ -200,6 +203,31 @@ async function dobleClicConAccion(boton) {
     return window.__ocupados;
   });
   return ocupados.includes("Enviando…|true");
+}
+
+/** La última acción de servidor que mandó un doble clic: misma URL, encabezados y cuerpo (con su altaId). */
+let ultimaAccion = null;
+
+/**
+ * Manda otra vez, byte por byte, la última acción de servidor (un reintento de
+ * red o un segundo envío del mismo formulario ya pintado): mismo altaId.
+ */
+async function repetirUltimaAccion(pagina) {
+  if (!ultimaAccion) throw new Error("FALLO no hay acción capturada para repetir");
+  const { url, headers, cuerpo } = ultimaAccion;
+  const encabezados = Object.fromEntries(Object.entries(headers).filter(([k]) => ["next-action", "content-type", "accept", "next-router-state-tree"].includes(k)));
+  return pagina.evaluate(async ({ url: u, encabezados: h, cuerpo: c }) => {
+    const bytes = Uint8Array.from(atob(c), (x) => x.charCodeAt(0));
+    const r = await fetch(u, { method: "POST", headers: h, body: bytes });
+    return { estado: r.status, texto: await r.text() };
+  }, { url, encabezados, cuerpo });
+}
+
+/** El id del formulario (campo oculto altaId) que viajó en la última acción. */
+function altaIdDeUltimaAccion() {
+  const texto = Buffer.from(ultimaAccion?.cuerpo ?? "", "base64").toString("latin1");
+  // React antepone al nombre de cada campo el número del argumento: «_1_altaId».
+  return /name="(?:_?\d+_)?altaId"\r\n\r\n([0-9a-f-]{36})/.exec(texto)?.[1] ?? null;
 }
 
 async function enviarConDobleClic(formulario, boton) {
@@ -221,7 +249,8 @@ async function tablaProyeccion(pagina) {
 /**
  * La proyección hecha a mano con la siembra conocida: series de nómina y renta
  * por sus reglas (quincenal 15 y fin de mes; mensual por su día), los cargos
- * de la siembra sin el cancelado, y el cobro que no está vencido. Semanas de
+ * de la siembra sin el cancelado (los de antes del corte, atrasados en la
+ * primera semana), y el cobro que no está vencido. Semanas de
  * lunes a domingo. No usa código de la aplicación.
  */
 function proyeccionAMano(saldo, corte, extras = []) {
@@ -245,7 +274,7 @@ function proyeccionAMano(saldo, corte, extras = []) {
   serie("2026-11-15", quincenal, 800_000); // Beto
   serie("2026-11-30", mensual(30), 2_000_000); // Carla
   serie(desplazar(HOY, 14), mensual(Number(desplazar(HOY, 14).slice(8))), 3_000_000); // Renta
-  for (const cargo of Object.values(semillas.cargos)) if (cargo.estado !== "cancelado") movs.push({ fecha: cargo.programada, centavos: -cargo.total });
+  for (const cargo of Object.values(semillas.cargos)) if (cargo.estado !== "cancelado") movs.push({ fecha: cargo.programada, centavos: -cargo.total, cargo: true });
   movs.push({ fecha: desplazar(HOY, 19), centavos: 6_000_000 }); // Cliente Mayorista; Distribuidora Sur ya venció
   movs.push(...extras);
   const semanas = [];
@@ -253,7 +282,8 @@ function proyeccionAMano(saldo, corte, extras = []) {
   for (let i = 0; i < 13; i += 1) {
     const lunes = desplazar(inicio, i * 7);
     const domingo = desplazar(lunes, 6);
-    const dentro = movs.filter((m) => m.fecha > corte && m.fecha >= (i === 0 ? "0000-00-00" : lunes) && m.fecha <= domingo);
+    // Un cargo sin pagar programado antes del corte sigue debiéndose: va atrasado en la primera semana.
+    const dentro = movs.filter((m) => (i === 0 && m.cargo && m.fecha <= corte) || (m.fecha > corte && m.fecha >= (i === 0 ? "0000-00-00" : lunes) && m.fecha <= domingo));
     const entradas = dentro.filter((m) => m.centavos > 0).reduce((s, m) => s + m.centavos, 0);
     const salidas = -dentro.filter((m) => m.centavos < 0).reduce((s, m) => s + m.centavos, 0);
     const inicial = saldoCorriente;
@@ -316,10 +346,16 @@ async function principal() {
     await forma.locator("#saldo").fill("150000.00");
     await forma.locator("#alDia").fill(HOY);
     exigir((await enviarConDobleClic(forma, "Declarar el saldo")).asentado, "segunda declaración: $150,000.00 al día de hoy, asentada (doble clic)");
+    const repetida = await repetirUltimaAccion(laura);
+    exigir(repetida.estado === 200 && repetida.texto.includes("El saldo quedó declarado"), "el mismo envío repetido byte por byte (mismo id del formulario) responde igual: «El saldo quedó declarado»");
+    const idEnviado = altaIdDeUltimaAccion();
+    const idEnPagina = await forma.locator('input[name="altaId"]').inputValue();
+    exigir(/^[0-9a-f-]{36}$/.test(idEnviado ?? "") && idEnPagina !== idEnviado,
+      `el formulario mandó su id (UUID ${idEnviado}) y la página ya trae otro (${idEnPagina}) para la siguiente declaración`);
     await laura.reload();
     const historial = await laura.locator('table[data-tabla="historial-saldo"] td[data-centavos]').evaluateAll((c) => c.map((td) => Number(td.getAttribute("data-centavos"))));
     exigir(JSON.stringify(historial) === JSON.stringify([15_000_000, 12_000_000]), `el historial conserva las dos: ${historial.map(pesos).join(" y ")}`);
-    exigir(sql(`select count(*) from cash_balance_declarations where company_id = '${A}'`) === "2", "la base tiene 2 declaraciones (append-only): cada doble clic dejó una sola");
+    exigir(sql(`select count(*) from cash_balance_declarations where company_id = '${A}'`) === "2", "la base tiene 2 declaraciones (append-only): cada doble clic y el reenvío idéntico dejaron una sola");
     exigir(sql(`select count(*) from audit_log where company_id = '${A}' and accion = 'declarar_saldo'`) === "2", "y 2 eventos declarar_saldo en la bitácora");
     await captura(laura, "b-saldo-historial.jpg");
     await laura.goto(en(A, "/consola"));
@@ -404,6 +440,8 @@ async function principal() {
     await laura.goto(en(A, "/consola"));
     const real = await tablaProyeccion(laura);
     const nueva = desplazar(cargo.programada, 7);
+    exigir((await laura.locator("#fecha-escenario").getAttribute("max")) === desplazar(real.at(-1).semana, 6),
+      `la fecha del escenario no pasa del último día de la ventana (${desplazar(real.at(-1).semana, 6)})`);
     await laura.locator("#mover").selectOption(`cxp:${cargo.id}`);
     await laura.locator("#fecha-escenario").fill(nueva);
     await laura.getByRole("button", { name: "Ver el escenario" }).click();
@@ -440,6 +478,11 @@ async function principal() {
     exigir(sql(`select count(*) from expected_collections where company_id = '${A}' and cliente_nombre = 'Abarrotes del Puerto'`) === "1"
       && sql(`select count(*) from audit_log where company_id = '${A}' and accion = 'registrar_cobro' and identificador::text in (select id::text from expected_collections where cliente_nombre = 'Abarrotes del Puerto')`) === "1",
       "el doble clic deja un solo cobro y un solo evento registrar_cobro");
+    const cobroRepetido = await repetirUltimaAccion(laura);
+    exigir(cobroRepetido.estado === 200 && cobroRepetido.texto.includes("quedó registrado"), "el mismo formulario reenviado byte por byte responde igual");
+    exigir(sql(`select count(*) from expected_collections where company_id = '${A}' and cliente_nombre = 'Abarrotes del Puerto'`) === "1"
+      && sql(`select count(*) from audit_log where company_id = '${A}' and accion = 'registrar_cobro' and identificador::text in (select id::text from expected_collections where cliente_nombre = 'Abarrotes del Puerto')`) === "1",
+      "y la base sigue con un cobro y un evento (el servidor usa el id del formulario)");
 
     const uuid = randomUUID().toUpperCase();
     const xml = (emisor) => `<?xml version="1.0" encoding="UTF-8"?>
@@ -458,8 +501,18 @@ async function principal() {
     exigir(rechazo.includes("XAX010101000") && rechazo.includes("ALO180312AB1"), `con un mensaje claro: «${rechazo.replace(/\s+/g, " ").trim()}»`);
     await captura(laura, "e1-xml-ajeno-rechazado.jpg", false);
     await conXml.locator("#xml").setInputFiles(join(TEMPORAL, "emitida.xml"));
+    const idXml = await conXml.locator('input[name="altaId"]').inputValue();
     exigir((await enviarConDobleClic(conXml, "Registrar con el XML")).asentado, "la factura emitida por Altamar se registra como cobro esperado (doble clic)");
     exigir(sql(`select count(*) from expected_collections where cfdi_uuid = '${uuid}'`) === "1", "el doble clic deja una sola fila con ese UUID");
+    // El navegador no deja copiar los bytes del archivo de la petición capturada: se reenvía el mismo formulario
+    // con su mismo id (como un reintento o una segunda pestaña con la página vieja).
+    await conXml.locator('input[name="altaId"]').evaluate((campo, id) => { campo.value = id; }, idXml);
+    await conXml.locator("#xml").setInputFiles(join(TEMPORAL, "emitida.xml"));
+    await conXml.locator("#fechaProbableXml").fill(desplazar(HOY, 12));
+    exigir(await enviar(conXml, "Registrar con el XML"), "el mismo formulario del XML reenviado con su mismo id responde igual (asentado), sin «ya está registrada»");
+    exigir(sql(`select count(*) from expected_collections where cfdi_uuid = '${uuid}'`) === "1"
+      && sql(`select count(*) from audit_log where accion = 'registrar_cobro' and identificador::text in (select id::text from expected_collections where cfdi_uuid = '${uuid}')`) === "1",
+      "y sigue una sola fila con ese UUID y un solo evento");
     exigir(sql(`select origen || '|' || cliente_nombre || '|' || monto_centavos || '|' || cfdi_uuid from expected_collections where cfdi_uuid = '${uuid}'`) === `cfdi|Comercializadora La Moderna|4500000|${uuid}`,
       "con origen cfdi, el cliente receptor, $45,000.00 y su UUID");
 
@@ -523,6 +576,9 @@ async function principal() {
     exigir((await laura.locator('.flujo-mes button.flujo-evento[data-vencido="true"]', { hasText: "Distribuidora" }).count()) === 1, "el cobro vencido sale marcado como vencido");
 
     const nueva = laura.locator('form[data-formulario="obligacion"]');
+    exigir((await nueva.locator('[data-aviso="factura"]').innerText()).includes("factura"), "el formulario avisa que lo que llega como factura de proveedor ya cuenta en Pagos a proveedores");
+    const opcionesProveedor = await nueva.locator('select[name="proveedorId"] option').allInnerTexts();
+    exigir(opcionesProveedor[0] === "Sin proveedor" && opcionesProveedor.some((o) => o.includes("Transportes")), `y deja elegir el proveedor que la factura (${opcionesProveedor.length - 1} proveedores)`);
     await nueva.getByRole("button", { name: "Usar la plantilla «Impuestos provisionales (día 17)»" }).click();
     const plantilla = laura.locator('form[data-formulario="obligacion"]');
     exigir((await plantilla.locator('input[name="concepto"]').inputValue()) === "Impuestos provisionales", "la plantilla llena «Impuestos provisionales»");
@@ -533,6 +589,9 @@ async function principal() {
     exigir(sql(`select count(*) from recurring_obligations where company_id = '${A}' and concepto = 'Impuestos provisionales'`) === "1"
       && sql(`select count(*) from audit_log where company_id = '${A}' and accion = 'registrar_obligacion' and identificador::text in (select id::text from recurring_obligations where concepto = 'Impuestos provisionales')`) === "1",
       "el doble clic deja una sola obligación y un solo evento registrar_obligacion");
+    const obligacionRepetida = await repetirUltimaAccion(laura);
+    exigir(obligacionRepetida.estado === 200 && sql(`select count(*) from recurring_obligations where company_id = '${A}' and concepto = 'Impuestos provisionales'`) === "1",
+      "el mismo formulario reenviado byte por byte no crea otra obligación");
     await laura.reload();
     const impuestos = laura.locator("li[data-obligacion]", { hasText: "Impuestos provisionales" });
     await impuestos.locator("summary").click();
@@ -620,8 +679,10 @@ async function principal() {
     exigir(primera.estado === 200, `con el secreto: 200 ${JSON.stringify(primera.cuerpo)}`);
     const correos = correosAnotados().slice(antes);
     const para = correos.map((c) => c.para[0]).sort();
-    exigir(JSON.stringify(para) === JSON.stringify(["bruno@lever.test", "diana@lever.test", "diego@lever.test", "laura@lever.test"]),
-      `el proveedor falso registra ${correos.length} correos: ${para.join(", ")}`);
+    exigir(JSON.stringify(para) === JSON.stringify(["bruno@lever.test", "diego@lever.test", "fernanda@lever.test", "laura@lever.test"]),
+      `el proveedor falso registra ${correos.length} correos: ${para.join(", ")}; la empresa de demostración (Diana) no recibe cifras de ejemplo`);
+    exigir(sql(`select count(*) from weekly_digest_deliveries where semana = '${lunesDe(HOY)}'`) === "4", "cada persona que lo recibió queda registrada (4 entregas)");
+    for (const c of correos) exigir(!c.texto.includes("1 persona") && !c.html.includes("1 persona"), `el correo a ${c.para[0]} no desglosa la nómina de una sola persona`);
     const segunda = await cron(`Bearer ${SECRETO}`);
     exigir(segunda.estado === 200 && segunda.cuerpo.enviados === 0 && segunda.cuerpo.omitidos === primera.cuerpo.empresas, `la segunda llamada de la semana no manda nada: ${JSON.stringify(segunda.cuerpo)}`);
     exigir(correosAnotados().length === antes + correos.length, "el proveedor falso no tiene correos nuevos");
@@ -632,6 +693,8 @@ async function principal() {
     for (const ajeno of ["Altamar", "Transportes", "Renta de la bodega", "150,000", "Mayorista", "Operación"]) {
       exigir(!deB.html.includes(ajeno) && !deB.texto.includes(ajeno), `el correo de Bahía no trae «${ajeno}» de Altamar`);
     }
+    exigir(deB.texto.includes("Sin un saldo declarado no se puede saber si el dinero alcanza") && !deB.texto.includes("alcanza para"),
+      "Bahía no declaró saldo: su correo explica que sin saldo no se sabe si alcanza e invita a declararlo");
     exigir(!deA.texto.includes("Bahía") && !deA.texto.includes("Confirmado por el banco"), "ni el de Altamar trae datos de Bahía ni dice «Confirmado por el banco»");
     writeFileSync(join(TEMPORAL, "correo-altamar.html"), deA.html);
     const vista = await navegador.newPage({ viewport: { width: 720, height: 900 } });
@@ -659,6 +722,26 @@ async function principal() {
     await diego.goto(en(A, "/consola/presupuestos"));
     exigir((await diego.locator("form.flujo-area-proveedor").count()) === 0, "ni el área de cada proveedor");
     await captura(diego, "j1-contador-solo-lectura.jpg", false);
+    // Carla cobra sola cada fin de mes: sin el permiso de detalle de nómina (contaduría, finanzas) no se ve el neto de una sola persona.
+    const { pagina: fernanda } = await abrir(navegador, "fernanda@lever.test");
+    for (const [quien, pagina, ruta] of [["el contador", diego, "/consola/calendario"], ["el contador", diego, "/consola/presupuestos"],
+      ["finanzas", fernanda, "/consola"], ["finanzas", fernanda, "/consola/calendario"], ["finanzas", fernanda, "/consola/presupuestos"]]) {
+      await pagina.goto(en(A, ruta));
+      exigir(!(await pagina.locator("main").innerText()).includes("1 persona"), `${quien} no ve «1 persona» en ${ruta}`);
+    }
+    await fernanda.goto(en(A, "/consola"));
+    const semanasFinanzas = await fernanda.locator("details[data-movimientos]").allTextContents();
+    exigir(semanasFinanzas.some((s) => /· Nómina(?! quincenal| mensual)/.test(s)), "en Inicio de finanzas, la semana con la nómina de Carla junta la nómina en un renglón «Nómina»");
+    await laura.goto(en(A, "/consola"));
+    exigir((await laura.locator("details[data-movimientos]").allTextContents()).some((s) => s.includes("(1 persona)")), "Laura (administración) sí ve el detalle «(1 persona)»");
+    // La nómina se agrupa por día: el 30 de noviembre paga a tres personas; el 30 de diciembre, solo a Carla.
+    const [anio, mes] = HOY.split("-").map(Number);
+    const siguienteMes = mes === 12 ? `${anio + 1}-01` : `${anio}-${String(mes + 1).padStart(2, "0")}`;
+    await diego.goto(en(A, `/consola/calendario?mes=${siguienteMes}`));
+    exigir((await diego.locator('[data-reservado="true"]').count()) >= 1, `en el calendario de ${siguienteMes}, el pago de una sola persona dice «Monto reservado»`);
+    await captura(diego, "j4-contador-nomina-reservada.jpg", false);
+    await laura.goto(en(A, `/consola/calendario?mes=${siguienteMes}`));
+    exigir((await laura.locator('[data-reservado="true"]').count()) === 0, "y Laura ve todos los montos");
 
     if (!accionSaldo) throw new Error("FALLO no se capturó la acción del saldo en (b)");
     await diego.goto(en(A, "/consola/flujo"));
