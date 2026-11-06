@@ -222,31 +222,86 @@
   text-align: center;
 }
 
+/* La barra de abajo del diseño: ícono sobre el rótulo, en una píldora mate. */
 .navegacion-app {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   margin-top: 30px;
-  padding: 4px;
-  border-radius: 12px;
-  background: var(--realce);
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--panel2);
+  -webkit-backdrop-filter: blur(24px) saturate(120%);
+  backdrop-filter: blur(24px) saturate(120%);
 }
 
 .navegacion-app a {
   display: grid;
-  place-items: center;
-  min-height: 42px;
-  padding: 4px;
-  border-radius: 8px;
-  color: var(--tinta-suave);
-  font-size: 0.78rem;
+  justify-items: center;
+  gap: 4px;
+  min-height: 52px;
+  padding: 8px 4px 6px;
+  border-radius: 16px;
+  color: var(--tx3);
+  font-size: 0.72rem;
   text-decoration: none;
+  transition: color 0.3s, background-color 0.3s;
+}
+
+.navegacion-app a .icono {
+  width: 19px;
+  height: 19px;
+}
+
+.navegacion-app a:hover {
+  color: var(--tx2);
 }
 
 .navegacion-app a[aria-current="page"] {
-  background: var(--hoja);
-  color: var(--tinta);
-  box-shadow: 0 0 0 1px var(--linea);
+  background: color-mix(in srgb, var(--tx) 6%, transparent);
+  color: var(--tx);
+}
+
+/* Accesos del inicio: círculos con línea y rótulo abajo, como en el diseño. */
+.accesos-app {
+  display: flex;
+  gap: 22px;
+  margin-top: 30px;
+}
+
+.acceso-app {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  width: 76px;
+  color: var(--tx2);
+  font-size: 0.75rem;
+  line-height: 1.3;
+  text-align: center;
+  text-decoration: none;
+}
+
+.acceso-app-icono {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--line2);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tx) 3%, transparent);
+  color: var(--tx);
+  transition: border-color 0.3s, background-color 0.3s;
+}
+
+.acceso-app:hover .acceso-app-icono {
+  border-color: color-mix(in srgb, var(--tx) 32%, transparent);
+  background: color-mix(in srgb, var(--tx) 6%, transparent);
+}
+
+.acceso-app-icono .icono {
+  width: 20px;
+  height: 20px;
 }
 
 .enlaces-app {
@@ -255,6 +310,10 @@
   justify-content: center;
   gap: 8px 16px;
   margin-top: 16px;
+}
+
+.pie-app.enlaces-app {
+  padding-top: 10px;
 }
 
 .enlaces-app a,
@@ -276,7 +335,7 @@
 
 @media (max-width: 360px) {
   .navegacion-app a {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
   }
 
   .topes-app > div {

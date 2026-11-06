@@ -14,6 +14,9 @@ import {
   IconoBuscar,
   IconoEmpresas,
   IconoEntrar,
+  IconoInicio,
+  IconoPolitica,
+  IconoPoliza,
   IconoSalir,
   IconoSeguridad,
 } from "./iconos";
@@ -352,9 +355,9 @@ export async function MarcoTelefono({
 }) {
   const tema = await temaElegido();
   const secciones = [
-    { ruta: "/telefono", etiqueta: "Inicio" },
-    { ruta: "/telefono/topes", etiqueta: "Topes" },
-    { ruta: "/telefono/facturacion", etiqueta: "Facturación" },
+    { ruta: "/telefono", etiqueta: "Inicio", Icono: IconoInicio },
+    { ruta: "/telefono/topes", etiqueta: "Topes", Icono: IconoPolitica },
+    { ruta: "/telefono/facturacion", etiqueta: "Factura", Icono: IconoPoliza },
   ] as const;
   return (
     <>
@@ -373,18 +376,18 @@ export async function MarcoTelefono({
             </header>
             <div className="telefono-cuerpo">{children}</div>
             <nav className="navegacion-app" aria-label="Teléfono">
-              {secciones.map((seccion) => (
-                <Link key={seccion.ruta} href={enEmpresa(empresaId, seccion.ruta)} aria-current={actual === seccion.ruta ? "page" : undefined}>
-                  {seccion.etiqueta}
+              {secciones.map(({ ruta, etiqueta, Icono }) => (
+                <Link key={ruta} href={enEmpresa(empresaId, ruta)} aria-current={actual === ruta ? "page" : undefined}>
+                  <Icono />
+                  {etiqueta}
                 </Link>
               ))}
             </nav>
-            <div className="enlaces-app">
+            <footer className="pie-app enlaces-app">
               {consola ? <Link href={enEmpresa(empresaId, resumen ? "/consola" : "/consola/pendientes")}>Abrir consola</Link> : null}
               {variasEmpresas ? <Link href="/empresas">Cambiar de empresa</Link> : null}
               <form action={salir}><button type="submit">Salir</button></form>
-            </div>
-            <footer className="pie-app"><p>Consulta de solo lectura. No hay gastos, tarjetas ni movimientos de dinero en esta superficie.</p></footer>
+            </footer>
           </div>
         </main>
       </div>

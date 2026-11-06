@@ -4,11 +4,11 @@ import type { TopeTelefono } from "@/server/telefono/tipos";
 export function Topes({ topes }: { topes: TopeTelefono[] }) {
   return (
     <>
-      <p className="kicker-app">Solo lectura</p>
-      <h1>Topes</h1>
-      <p className="lede">Son los topes escritos en la política de la empresa. Vacío no significa cero.</p>
+      <p className="kicker-app">Política de la empresa</p>
+      <h1>Tus topes</h1>
+      <p className="lede">Cuánto permite la política en cada categoría.</p>
       {topes.length === 0 ? (
-        <div className="vacio"><p className="vacio-titulo">Sin categorías</p><p>La empresa todavía no ha creado categorías.</p></div>
+        <div className="vacio"><p className="vacio-titulo">Sin categorías</p><p>Quien administra la empresa todavía no las crea.</p></div>
       ) : (
         <dl className="topes-app">
           {topes.map((tope) => (
