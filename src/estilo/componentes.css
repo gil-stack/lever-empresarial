@@ -2214,6 +2214,7 @@ h1 + .rfc-cuenta {
 
 .selector-tema label .icono,
 .selector-tema label .lazo {
+  flex: none;
   width: 14px;
   height: 14px;
 }

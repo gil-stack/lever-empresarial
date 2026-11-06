@@ -390,6 +390,11 @@
   }
 }
 
+/* El lateral de Operación mide ~200 px: el selector de tema va solo con texto para que no se encime. */
+.operacion-cuenta .selector-tema label .icono {
+  display: none;
+}
+
 @media (max-width: 560px) {
   .operacion-pagina {
     width: min(100% - 32px, 1180px);
