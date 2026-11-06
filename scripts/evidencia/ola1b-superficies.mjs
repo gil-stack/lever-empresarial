@@ -665,7 +665,7 @@ async function flujos() {
   await filaLaura.getByLabel("Cómo verificaste la identidad").selectOption("videollamada");
   await dobleClic(filaLaura.getByRole("button", { name: "Aprobar" }));
   await op.getByText("Decisión registrada").waitFor();
-  exigir(sql(`select estado from auth_recuperaciones where user_id = '${idDe(LAURA)}'`) === "aprobada", "op aprueba la recuperación tras confirmar que es él");
+  exigir(sql(`select estado from auth_recuperaciones where user_id = '${idDe(LAURA)}'`) === "aprobada", "op aprueba la recuperación tras confirmar su identidad");
   exigir(contar(`select count(*) from audit_log where accion = 'recuperacion_aprobada' and actor_id = '${idDe(OP)}'`) === 1, "doble clic en «Aprobar» deja una sola aprobación en la bitácora");
 
   const { ctx: ctxN, page: nuevo } = await contexto();
@@ -1016,9 +1016,10 @@ async function correos() {
 // ==================================================================================
 
 async function estados() {
-  // Cargando: la base sostiene un candado sobre las solicitudes de activación, que solo lee la lista de
-  // Clientes; el servidor manda primero el marco con la forma de la página y, al soltar el candado
-  // (antes de los 10 s que la app espera a la base), llega la sección.
+  // Cargando: Operación no reemplaza la página al navegar (f063a20); el enlace que se pidió muestra su
+  // progreso y la página de antes sigue a la vista. Para verlo, la base sostiene un candado sobre las
+  // solicitudes de activación, que lee la lista de Clientes: su precarga y su navegación esperan hasta
+  // soltarlo (antes de los 10 s que la app espera a la base).
   {
     const { ctx, page } = await contexto();
     await entrarOperacion(page, OP);
@@ -1028,20 +1029,31 @@ async function estados() {
         await page.setViewportSize({ width: ancho, height: ancho < 600 ? 844 : 900 });
         const soltar = await sostenerCandado("company_activation_requests");
         try {
-          await page.goto(`${BASE}/operacion/clientes`, { waitUntil: "commit" });
-          await page.locator(".operacion-carga").waitFor();
-          exigir((await page.locator(".operacion-carga").getAttribute("aria-busy")) === "true", `Operación ${tema}-${ancho}: mientras carga, la página lo anuncia (aria-busy y estado para el lector)`);
-          const navegacion = ancho < 600 ? page.getByRole("button", { name: "Secciones" }) : page.getByRole("navigation", { name: "Operación" });
-          exigir((await navegacion.count()) === 1, `Operación ${tema}-${ancho}: mientras carga, la navegación ya está a la mano`);
+          await page.goto(`${BASE}/operacion/bitacora`, { waitUntil: "domcontentloaded" });
+          await page.getByRole("heading", { level: 1, name: "Bitácora" }).waitFor();
+          if (ancho < 600) await page.getByRole("button", { name: "Secciones" }).click();
+          await irA(page, "Clientes");
+          const enlace = page.getByRole("navigation", { name: "Operación" }).getByRole("link", { name: /^Clientes/ });
+          await enlace.locator(".seccion-spinner").waitFor({ state: "attached" });
+          exigir((await page.getByRole("heading", { level: 1, name: "Bitácora" }).count()) === 1, `Operación ${tema}-${ancho}: mientras carga, la página de antes sigue a la vista`);
+          if (ancho < 600) {
+            // El cajón se cierra al pulsar un enlace (src/components/cromo/lateral-movil.tsx): el progreso queda dentro.
+            exigir((await page.getByRole("button", { name: "Secciones" }).getAttribute("aria-expanded")) === "false", `Operación ${tema}-${ancho}: el cajón se cerró al pulsar Clientes`);
+          } else {
+            exigir(await enlace.locator(".seccion-spinner").isVisible(), `Operación ${tema}-${ancho}: el enlace pedido muestra su progreso`);
+            exigir((await enlace.locator(".seccion-lectura").innerText()) === "Cargando…", `Operación ${tema}-${ancho}: el enlace pedido anuncia «Cargando…» al lector de pantalla`);
+          }
           await captura(page, `96-operacion-cargando-${tema}-${ancho}`, { completa: false });
         } finally {
           await soltar();
         }
         await page.getByRole("heading", { level: 1, name: "Clientes" }).waitFor();
-        exigir((await page.locator(".operacion-carga").count()) === 0, `Operación ${tema}-${ancho}: al llegar la sección, la forma de carga se va`);
+        await page.locator(".seccion-spinner").first().waitFor({ state: "detached" }).catch(() => {});
+        exigir((await page.locator(".seccion-spinner").count()) === 0, `Operación ${tema}-${ancho}: al llegar Clientes, el progreso del enlace se va`);
       }
     }
     await ctx.close();
+    console.log("PENDIENTE en 390 el cajón se cierra al pulsar una sección y su progreso queda oculto: no hay señal de carga a la vista hasta que llega la página");
   }
 
   // Error: la base le niega a Operación la lectura de empresas; la sección lo dice dentro del marco
