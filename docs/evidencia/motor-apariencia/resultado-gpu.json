@@ -1,0 +1,161 @@
+{
+  "modo": "gpu",
+  "comparacion": [
+    {
+      "caso": "bruma",
+      "mediaAbs": 0.004,
+      "pctMas8": 0,
+      "max": 1
+    },
+    {
+      "caso": "cristal",
+      "mediaAbs": 0,
+      "pctMas8": 0,
+      "max": 1
+    },
+    {
+      "caso": "halo",
+      "mediaAbs": 0,
+      "pctMas8": 0,
+      "max": 0
+    },
+    {
+      "caso": "calma",
+      "mediaAbs": 0,
+      "pctMas8": 0,
+      "max": 0
+    },
+    {
+      "caso": "flujo",
+      "mediaAbs": 0,
+      "pctMas8": 0,
+      "max": 1
+    },
+    {
+      "caso": "duna",
+      "mediaAbs": 0,
+      "pctMas8": 0,
+      "max": 0
+    },
+    {
+      "caso": "bruma-claro",
+      "mediaAbs": 0,
+      "pctMas8": 0,
+      "max": 0
+    },
+    {
+      "caso": "bruma-lever",
+      "mediaAbs": 0,
+      "pctMas8": 0,
+      "max": 1
+    }
+  ],
+  "costoDpr1": {
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version)",
+    "filas": [
+      {
+        "escena": "bruma",
+        "lienzo": "1224x765",
+        "msPorCuadro": 0.14,
+        "dibujosPorSeg": 20,
+        "rafPorSeg": 59.9,
+        "estado": "vivo"
+      },
+      {
+        "escena": "cristal",
+        "lienzo": "1224x765",
+        "msPorCuadro": 0.13,
+        "dibujosPorSeg": 20,
+        "rafPorSeg": 59.9,
+        "estado": "vivo"
+      },
+      {
+        "escena": "halo",
+        "lienzo": "1224x765",
+        "msPorCuadro": 0.15,
+        "dibujosPorSeg": 20,
+        "rafPorSeg": 60.2,
+        "estado": "vivo"
+      },
+      {
+        "escena": "calma",
+        "lienzo": "1224x765",
+        "msPorCuadro": 0.14,
+        "dibujosPorSeg": 20,
+        "rafPorSeg": 59.9,
+        "estado": "vivo"
+      },
+      {
+        "escena": "flujo",
+        "lienzo": "1224x765",
+        "msPorCuadro": 0.12,
+        "dibujosPorSeg": 20,
+        "rafPorSeg": 59.9,
+        "estado": "vivo"
+      },
+      {
+        "escena": "duna",
+        "lienzo": "1224x765",
+        "msPorCuadro": 0.16,
+        "dibujosPorSeg": 20,
+        "rafPorSeg": 59.9,
+        "estado": "vivo"
+      }
+    ],
+    "estadoFinal": "vivo"
+  },
+  "costoDpr2": {
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version)",
+    "filas": [
+      {
+        "escena": "bruma",
+        "lienzo": "2448x1530",
+        "msPorCuadro": 0.15,
+        "dibujosPorSeg": 20,
+        "rafPorSeg": 59.9,
+        "estado": "vivo"
+      },
+      {
+        "escena": "cristal",
+        "lienzo": "2448x1530",
+        "msPorCuadro": 0.13,
+        "dibujosPorSeg": 20,
+        "rafPorSeg": 60.2,
+        "estado": "vivo"
+      },
+      {
+        "escena": "halo",
+        "lienzo": "2448x1530",
+        "msPorCuadro": 0.12,
+        "dibujosPorSeg": 20,
+        "rafPorSeg": 59.9,
+        "estado": "vivo"
+      },
+      {
+        "escena": "calma",
+        "lienzo": "2448x1530",
+        "msPorCuadro": 0.11,
+        "dibujosPorSeg": 20,
+        "rafPorSeg": 59.9,
+        "estado": "vivo"
+      },
+      {
+        "escena": "flujo",
+        "lienzo": "2448x1530",
+        "msPorCuadro": 0.12,
+        "dibujosPorSeg": 19.9,
+        "rafPorSeg": 60.2,
+        "estado": "vivo"
+      },
+      {
+        "escena": "duna",
+        "lienzo": "2448x1530",
+        "msPorCuadro": 0.16,
+        "dibujosPorSeg": 20,
+        "rafPorSeg": 59.9,
+        "estado": "vivo"
+      }
+    ],
+    "estadoFinal": "vivo"
+  }
+}

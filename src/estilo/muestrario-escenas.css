@@ -1,0 +1,90 @@
+/* Prueba visual del motor de escenas en el muestrario (no existe en producción). */
+.muestrario-escenas {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+
+.muestrario-escenas-panel {
+  position: absolute;
+  z-index: 1;
+  left: 24px;
+  bottom: 24px;
+  display: grid;
+  gap: 14px;
+  width: min(420px, calc(100% - 32px));
+  max-height: calc(100% - 48px);
+  overflow-y: auto;
+  padding: 18px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--hoja);
+  color: var(--tinta);
+  box-shadow: 0 12px 40px var(--sombra);
+}
+
+.muestrario-escenas-cabeza {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.muestrario-escenas-cabeza h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.muestrario-escenas-cabeza p {
+  margin: 4px 0 0;
+  color: var(--tinta-suave);
+  font-size: 0.86rem;
+}
+
+.muestrario-escenas-panel fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.muestrario-escenas-panel legend {
+  margin-bottom: 6px;
+  color: var(--tinta-tenue);
+  font-size: 0.78rem;
+}
+
+.muestrario-escenas-panel .boton-texto[aria-pressed="true"] {
+  border-color: var(--primario);
+  background: var(--primario);
+  color: var(--sobre-primario);
+}
+
+.muestrario-escenas-color,
+.muestrario-escenas-acento {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+.muestrario-escenas-muestra {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+@media (max-width: 560px) {
+  .muestrario-escenas-panel {
+    left: 16px;
+    bottom: 16px;
+    max-height: 46%;
+  }
+}

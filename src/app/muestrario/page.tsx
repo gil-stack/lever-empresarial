@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { MuestrarioEscenas } from "@/components/apariencia/muestrario-escenas";
 import { Marco } from "@/components/cromo/marco";
 import { BandejaDeEjemplo } from "@/components/muestrario/bandeja-de-ejemplo";
 import {
@@ -110,6 +111,9 @@ export default function PaginaMuestrario() {
             </Hoja>
           }
         />
+        <Hoja id="escenas-titulo" titulo="Escenas">
+          <MuestrarioEscenas />
+        </Hoja>
       </main>
     </Marco>
   );

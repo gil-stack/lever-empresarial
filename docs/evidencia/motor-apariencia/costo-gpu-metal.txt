@@ -1,0 +1,4 @@
+Renderer: ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version)
+1224x765   bruma 1.44 ms · cristal 0.41 ms · halo 0.32 ms · calma 0.34 ms · flujo 0.4 ms · duna 1 ms
+2448x1530  bruma 4.28 ms · cristal 0.95 ms · halo 0.5 ms · calma 0.64 ms · flujo 0.95 ms · duna 3.9 ms
+663x1435   bruma 1.71 ms · cristal 0.53 ms · halo 0.42 ms · calma 0.45 ms · flujo 0.51 ms · duna 1.44 ms
