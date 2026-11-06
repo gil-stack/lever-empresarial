@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { LogoLever } from "@/components/landing/logo-lever";
+import { Logotipo } from "@/components/cromo/logotipo";
 
 export const metadata: Metadata = {
   title: "Página no encontrada",
@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 export default function NoEncontrada() {
   return (
     <main id="contenido" className="consola no-encontrada">
-      <Link href="/" className="no-encontrada-marca" aria-label="LEVER, inicio">
-        <LogoLever />
+      <Link href="/" className="no-encontrada-marca" aria-label="Lever Empresas, inicio">
+        <Logotipo />
       </Link>
       <p className="kicker">Error 404</p>
       <h1>No encontramos esta página.</h1>

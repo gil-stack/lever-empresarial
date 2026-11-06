@@ -1,17 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="azul" x1="18" y1="57" x2="54" y2="4" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#2474ff"/>
-      <stop offset="1" stop-color="#4b9cff"/>
-    </linearGradient>
-    <linearGradient id="cian" x1="34" y1="56" x2="65" y2="35" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#36bffa"/>
-      <stop offset="1" stop-color="#63e6e2"/>
+    <linearGradient id="coral" gradientUnits="userSpaceOnUse" x1="6" y1="5" x2="34" y2="35">
+      <stop offset="0" stop-color="#FF7A6F"/>
+      <stop offset=".5" stop-color="#FF5A4E"/>
+      <stop offset="1" stop-color="#FF5A4E"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="14" fill="#070b17"/>
-  <g transform="translate(4 4) scale(.78)">
-    <path d="M7 57C12 45 15 32 26 23L59 3C53 17 49 33 42 46C37 55 32 57 24 57H7Z" fill="url(#azul)"/>
-    <path d="M30 57C36 43 42 37 53 37H68C63 48 59 57 52 57H30Z" fill="url(#cian)"/>
+  <rect width="64" height="64" rx="14" fill="#0E0A08"/>
+  <g transform="translate(6.8 7.6) scale(1.232)">
+    <path fill="url(#coral)" d="M12.058 25.034L10.653 27.148A3.042 3.042 0 1 1 8.978 22.548L25.559 27.426A9.703 9.703 0 1 0 20.214 12.75L15.595 19.707L18.686 20.616L22.778 14.453A6.625 6.625 0 1 1 26.427 24.474L9.847 19.595A6.119 6.119 0 1 0 13.217 28.851L15.148 25.943Z"/>
   </g>
 </svg>

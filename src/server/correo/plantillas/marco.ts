@@ -1,29 +1,35 @@
 import type { CorreoPlantilla } from "../tipos";
 
+/**
+ * Colores de src/estilo/tokens.css (Lever Empresas), en claro y en oscuro: fondo
+ * (--void), hoja (--s1), textos (--tx, --tx2, --tx3) y el botón principal marfil
+ * (--ivory con --ivk). La línea es --line ya mezclada sobre la hoja, porque varios
+ * clientes de correo no entienden la transparencia.
+ */
 const CLARO = {
-  papel: "#f2f2f3",
-  hoja: "#ffffff",
-  tinta: "#0b0b0c",
-  tintaSuave: "#47474d",
-  tintaTenue: "#616168",
-  linea: "#e0e0e3",
-  sello: "#0d5fd0",
-  sobreSello: "#ffffff",
+  papel: "#ece6de",
+  hoja: "#fbf8f4",
+  tinta: "#141312",
+  tintaSuave: "#4f4a45",
+  tintaTenue: "#57524d",
+  linea: "#e4e1dd",
+  boton: "#1b1614",
+  sobreBoton: "#ffffff",
 } as const;
 
 const OSCURO = {
-  papel: "#0c0d10",
-  hoja: "#151619",
-  tinta: "#f2f2f3",
-  tintaSuave: "#aeaeb5",
-  tintaTenue: "#8e8e96",
-  linea: "#24252a",
-  sello: "#5c9dff",
-  sobreSello: "#05122a",
+  papel: "#0e0a08",
+  hoja: "#15100e",
+  tinta: "#edf0ed",
+  tintaSuave: "#bdbab8",
+  tintaTenue: "#aeaba9",
+  linea: "#25211f",
+  boton: "#f1f2ee",
+  sobreBoton: "#0c0b0b",
 } as const;
 
-const SANS = `'Helvetica Neue', Helvetica, Arial, sans-serif`;
-const MONO = `ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace`;
+const SANS = `-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif`;
+const MONO = `'SF Mono', ui-monospace, 'IBM Plex Mono', Menlo, Consolas, monospace`;
 const LOGO = "https://www.leverpagos.com/lever-email.png";
 
 const FECHA = new Intl.DateTimeFormat("es-MX", {
@@ -97,8 +103,8 @@ function html(asunto: string, b: Bloque): string {
   .suave { color:${OSCURO.tintaSuave} !important; }
   .tenue { color:${OSCURO.tintaTenue} !important; }
   .filo { border-color:${OSCURO.linea} !important; }
-  .sello { background:${OSCURO.sello} !important; color:${OSCURO.sobreSello} !important; }
-  .enlace { color:${OSCURO.sello} !important; }
+  .boton { background:${OSCURO.boton} !important; color:${OSCURO.sobreBoton} !important; }
+  .enlace { color:${OSCURO.tinta} !important; }
 }
 </style>
 </head>
@@ -110,16 +116,16 @@ function html(asunto: string, b: Bloque): string {
 <tr><td style="padding:0 4px 20px;">
 <img src="${LOGO}" alt="LEVER" width="260" height="67" style="display:block;width:260px;max-width:100%;height:auto;border-radius:8px;">
 </td></tr>
-<tr><td class="hoja" style="padding:36px 32px 32px;background:${CLARO.hoja};border:1px solid ${CLARO.linea};border-radius:14px;">
-<p class="tenue" style="margin:0 0 18px;color:${CLARO.tintaTenue};font-family:${SANS};font-size:11px;font-weight:600;letter-spacing:0.13em;text-transform:uppercase;">${escapar(b.kicker)}</p>
-<h1 class="tinta" style="margin:0 0 22px;color:${CLARO.tinta};font-family:${SANS};font-size:30px;font-weight:600;line-height:1.18;letter-spacing:-0.035em;">${escapar(b.titulo)}</h1>
+<tr><td class="hoja" style="padding:36px 32px 32px;background:${CLARO.hoja};border:1px solid ${CLARO.linea};border-radius:16px;">
+<p class="tenue" style="margin:0 0 18px;color:${CLARO.tintaTenue};font-family:${SANS};font-size:11px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">${escapar(b.kicker)}</p>
+<h1 class="tinta" style="margin:0 0 22px;color:${CLARO.tinta};font-family:${SANS};font-size:30px;font-weight:400;line-height:1.18;letter-spacing:-0.02em;">${escapar(b.titulo)}</h1>
 ${parrafos}
 ${tablaDatos}
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 28px;"><tr><td class="sello" style="border-radius:8px;background:${CLARO.sello};">
-<a href="${url}" class="sello" style="display:inline-block;padding:14px 23px;border-radius:8px;background:${CLARO.sello};color:${CLARO.sobreSello};font-family:${SANS};font-size:15px;font-weight:600;text-decoration:none;">${escapar(b.boton.texto)}</a>
+<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 28px;"><tr><td class="boton" style="border-radius:10px;background:${CLARO.boton};">
+<a href="${url}" class="boton" style="display:inline-block;padding:14px 23px;border-radius:10px;background:${CLARO.boton};color:${CLARO.sobreBoton};font-family:${SANS};font-size:15px;font-weight:500;text-decoration:none;">${escapar(b.boton.texto)}</a>
 </td></tr></table>
 <p class="tenue" style="margin:0 0 6px;color:${CLARO.tintaTenue};font-family:${SANS};font-size:13px;line-height:1.5;">Si el botón no abre, copia esta dirección en el navegador:</p>
-<p style="margin:0 0 24px;font-family:${MONO};font-size:12px;line-height:1.5;word-break:break-all;"><a href="${url}" class="enlace" style="color:${CLARO.sello};">${url}</a></p>
+<p style="margin:0 0 24px;font-family:${MONO};font-size:12px;line-height:1.5;word-break:break-all;"><a href="${url}" class="enlace" style="color:${CLARO.tinta};">${url}</a></p>
 <div class="filo" style="border-top:1px solid ${CLARO.linea};padding-top:18px;">${notas}</div>
 </td></tr>
 <tr><td style="padding:20px 4px 0;">

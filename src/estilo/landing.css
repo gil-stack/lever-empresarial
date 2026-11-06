@@ -3,8 +3,8 @@
   --arco-suave: #656b75;
   --arco-papel: #ffffff;
   --arco-linea: #e6e8eb;
-  --arco-azul: #2474ff;
-  --arco-noche: #070b17;
+  --arco-azul: #c2392f;
+  --arco-noche: #0e0a08;
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--arco-papel);
@@ -33,7 +33,7 @@
 }
 
 .arco-landing ::selection {
-  background: #dce9ff;
+  background: #ffe4dd;
   color: #111111;
 }
 
@@ -55,34 +55,35 @@
   transform: none;
 }
 
-.arco-logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
+/* La portada es clara siempre: el lazo usa el degradado del tema claro, salvo en el cierre oscuro. */
+.arco-landing .logotipo {
   color: var(--arco-tinta);
-  font-family: var(--font-arco), sans-serif;
-  line-height: 1;
 }
 
-.arco-logo-inverso {
-  color: #ffffff;
-}
-
-.arco-logo-sello {
-  display: block;
-  flex: none;
-  width: 31px;
+.arco-landing .lazo {
+  width: 28px;
   height: 28px;
 }
 
-.arco-logo-texto {
-  display: block;
+.arco-landing .lazo path {
+  fill: var(--lazo-claro);
 }
 
-.arco-logo-texto strong {
+.arco-landing .logotipo-palabra {
   font-size: 23px;
-  font-weight: 650;
-  letter-spacing: -1.15px;
+}
+
+.arco-landing .logotipo-linea {
+  color: var(--arco-suave);
+}
+
+.arco-cierre .logotipo,
+.arco-cierre .logotipo-linea {
+  color: #ffffff;
+}
+
+.arco-cierre .lazo path {
+  fill: var(--lazo-oscuro);
 }
 
 .arco-icono {
@@ -94,7 +95,7 @@
 
 .arco-eyebrow {
   margin: 0 0 22px;
-  color: #737a85;
+  color: var(--arco-suave);
   font-size: 0.7rem;
   font-weight: 550;
   letter-spacing: 0.12em;
@@ -235,7 +236,7 @@
 
 .arco-hero-nota {
   margin: 20px 0 0;
-  color: #858b94;
+  color: var(--arco-suave);
   font-size: 0.72rem;
 }
 
@@ -262,17 +263,17 @@
   border-bottom: 1px solid var(--arco-linea);
 }
 
-.arco-panel-cabeza .arco-logo-sello {
-  width: 25px;
-  height: 23px;
+.arco-panel-cabeza .lazo {
+  width: 22px;
+  height: 22px;
 }
 
-.arco-panel-cabeza .arco-logo-texto strong {
+.arco-panel-cabeza .logotipo-palabra {
   font-size: 18px;
 }
 
 .arco-panel-periodo {
-  color: #858b94;
+  color: var(--arco-suave);
   font-size: 0.61rem;
   font-weight: 550;
   letter-spacing: 0.11em;
@@ -288,7 +289,7 @@
 
 .arco-panel-etiqueta {
   margin: 0 0 5px;
-  color: #737a85;
+  color: var(--arco-suave);
   font-size: 0.73rem;
 }
 
@@ -302,7 +303,7 @@
 
 .arco-panel-monto small {
   margin-left: 6px;
-  color: #7a828e;
+  color: var(--arco-suave);
   font-size: 0.37em;
   font-weight: 450;
   letter-spacing: -0.01em;
@@ -412,8 +413,8 @@
   width: 29px;
   height: 29px;
   border-radius: 50%;
-  background: #e3edff;
-  color: #2869d7;
+  background: #ffe4dd;
+  color: #c2392f;
 }
 
 .arco-aprobacion-icono .arco-icono {
@@ -731,7 +732,7 @@
 .arco-mexico-lista .arco-icono {
   width: 16px;
   height: 16px;
-  color: #3173d8;
+  color: #c2392f;
 }
 
 .arco-precios-resumen {
@@ -844,7 +845,7 @@
   text-align: center;
 }
 
-.arco-cierre > .arco-logo {
+.arco-cierre > .logotipo {
   margin-bottom: 38px;
 }
 

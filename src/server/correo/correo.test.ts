@@ -240,7 +240,8 @@ describe("plantillas", () => {
   it("usa los colores de src/estilo/tokens.css, en claro y en oscuro", () => {
     const tokens = readFileSync(new URL("../../estilo/tokens.css", import.meta.url), "utf8");
     const html = plantillaRecuperarContrasena({ nombre: "Ana", enlace: ENLACE, venceEn: VENCE }).html;
-    for (const token of ["--papel", "--hoja", "--tinta", "--linea", "--sello", "--sobre-sello"]) {
+    // Fondo, hoja, los tres textos y el botón principal marfil del diseño.
+    for (const token of ["--void", "--s1", "--tx", "--tx2", "--tx3", "--ivory", "--ivk"]) {
       const linea = new RegExp(`${token}: light-dark\\((#[0-9a-f]{6}), (#[0-9a-f]{6})\\)`).exec(tokens);
       assert.ok(linea, token);
       assert.ok(html.includes(linea[1]), `${token} claro`);
