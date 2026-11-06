@@ -319,6 +319,8 @@ try {
   await laura.waitForURL(/\/consola\/personas\/nomina$/);
   await laura.getByRole("button", { name: /^Preparar nómina del / }).click();
   await laura.waitForURL(/\/consola\/personas\/nomina\/[0-9a-f-]{36}$/);
+  await laura.getByRole("heading", { level: 1 }).first().waitFor();
+  await captura(laura, "11-lote-preparado-desde-pendientes.png", false);
   const fechaLote = sql(`select to_char(fecha_pago, 'YYYY-MM-DD') from payroll_batches where company_id = '${empresa}'`);
   const fechaAnunciada = new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${fechaLote}T00:00:00Z`));
   exigir(avisoNomina === `Prepara el lote de nómina del ${fechaAnunciada}`, `el lote preparado desde Pendientes es el del ${fechaLote}, la fecha anunciada`);

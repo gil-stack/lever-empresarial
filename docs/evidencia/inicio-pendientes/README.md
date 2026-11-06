@@ -1,6 +1,6 @@
 # Evidencia funcional: Inicio y Pendientes
 
-Recorrido del 6 de noviembre de 2026 sobre `main` integrado (#44 pagos a proveedores, #45 Personas y nómina, #46 estabilización), con `next dev` en el puerto 4813 y un Postgres 17 desechable en el puerto 5513. Empresa, personas, proveedor y asientos son datos locales de prueba; no se tocó Neon ni una base compartida. El recorrido es reproducible con `scripts/evidencia/inicio-pendientes.mjs`: 57 comprobaciones y `VALIDACION_FUNCIONAL_OK` (la última corrida, sobre la rama que reutiliza la consulta de `prepararNomina`, agrega la preparación del lote; las capturas no cambian). Los únicos errores de consola del navegador fueron los dos 404 buscados (Inicio sin Finanzas y el teléfono con solo Finanzas).
+Recorrido del 6 de noviembre de 2026 sobre `main` integrado (#44 pagos a proveedores, #45 Personas y nómina, #46 estabilización), con `next dev` en el puerto 4813 y un Postgres 17 desechable en el puerto 5513. Empresa, personas, proveedor y asientos son datos locales de prueba; no se tocó Neon ni una base compartida. El recorrido es reproducible con `scripts/evidencia/inicio-pendientes.mjs`: 58 comprobaciones y `VALIDACION_FUNCIONAL_OK`. La última corrida, sobre `main` con #47, agrega la preparación del lote desde Pendientes y su captura (11); las capturas 01 a 10 no cambian. Los únicos errores de consola del navegador fueron los dos 404 buscados (Inicio sin Finanzas y el teléfono con solo Finanzas).
 
 | Captura | Flujo clicado | Comprobado |
 | --- | --- | --- |
@@ -14,6 +14,7 @@ Recorrido del 6 de noviembre de 2026 sobre `main` integrado (#44 pagos a proveed
 | `08-grafica-movil-oscuro.png` | Tomás (solo Finanzas) en Inicio a 390 px, tema oscuro. | Últimos tres meses (Sep, Oct, Nov) con el mes actual, eje Y con sus cinco marcas, misma escala del periodo, sin desplazamiento horizontal, ejes a 12 px. Menú: solo Inicio y Pendientes. |
 | `09-grafica-movil-claro.png` | La administradora en Inicio a 390 px, tema claro. | Igual que la anterior en claro. |
 | `10-inicio-12-meses-oscuro.png` | La administradora elige «12 meses», tema oscuro. | Doce meses dibujados y etiquetas sin encimarse. |
+| `11-lote-preparado-desde-pendientes.png` | La administradora pulsa «Preparar nómina» en Pendientes y luego «Preparar nómina del …» en Nómina. | El lote se prepara para el 5 de noviembre de 2026, la fecha que anunciaba Pendientes (la misma que elige `prepararNomina`), y la nómina sale de Pendientes. |
 
 ## Cómo reproducir
 
