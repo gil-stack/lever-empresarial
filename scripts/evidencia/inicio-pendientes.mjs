@@ -1,10 +1,11 @@
-// Recorrido funcional de Inicio y Pendientes (PR #43) con Playwright headless.
+// Recorrido funcional de Inicio y Pendientes (PR #43) sobre main integrado
+// (#44 pagos a proveedores y #45 Personas), con Playwright headless.
 //
 // Solo corre contra una base local desechable: rechaza un DUENO_URL que no sea
 // 127.0.0.1 o localhost. Pasos previos y variables en
 // docs/evidencia/inicio-pendientes/README.md.
 //
-//   PLAYWRIGHT_DESDE=/ruta/con/node_modules/ \
+//   [PLAYWRIGHT_DESDE=/ruta/con/node_modules/] \
 //   BASE=http://localhost:4813 \
 //   DUENO_URL=postgres://dueno@127.0.0.1:5513/plataforma \
 //   INVITACION_ADMIN=http://localhost:4813/invitacion/<token> \
@@ -25,8 +26,10 @@ const BASE = process.env.BASE ?? "http://localhost:4813";
 const DUENO = process.env.DUENO_URL ?? "";
 const INVITACION_ADMIN = process.env.INVITACION_ADMIN ?? "";
 const SALIDA = process.env.SALIDA ?? "docs/evidencia/inicio-pendientes";
+const PDF = process.env.PDF_PRUEBA ?? "tests/e2e/fixtures/soporte-prueba.pdf";
 const CLAVE = "Clave-local-43!";
 const CLABE = "002180701150123452";
+const ROLES = { administrador: "Administrador", liberador: "Liberador", tarjetahabiente: "Tarjetahabiente", contador: "Contador" };
 
 if (!/^postgres(ql)?:\/\/[^@]+@(127\.0\.0\.1|localhost)(:\d+)?\//.test(DUENO)) {
   throw new Error("DUENO_URL tiene que apuntar a un Postgres local desechable (127.0.0.1 o localhost).");
@@ -37,10 +40,8 @@ const requerir = createRequire(process.env.PLAYWRIGHT_DESDE ?? import.meta.url);
 const { chromium } = requerir("playwright");
 
 mkdirSync(SALIDA, { recursive: true });
-const hechos = [];
 
 function anotar(texto) {
-  hechos.push(texto);
   console.log(`OK ${texto}`);
 }
 
@@ -51,6 +52,16 @@ function exigir(condicion, texto) {
 
 function sql(consulta) {
   return execFileSync("psql", [DUENO, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1", "-c", consulta], { encoding: "utf8" }).trim();
+}
+
+function rolesDe(correo) {
+  return sql(`select coalesce(string_agg(rol, ',' order by rol), '') from membership_roles r join users u on u.id = r.user_id where u.correo = '${correo}'`);
+}
+
+function fecha(dias) {
+  const valor = new Date();
+  valor.setUTCDate(valor.getUTCDate() + dias);
+  return valor.toISOString().slice(0, 10);
 }
 
 function totp(semilla) {
@@ -118,10 +129,17 @@ async function captura(pagina, archivo, completa = true) {
   anotar(`captura ${archivo}`);
 }
 
-async function vigilar(pagina, nombre) {
+function vigilar(pagina, nombre) {
   pagina.on("pageerror", (error) => {
     throw new Error(`FALLO error de página en ${nombre}: ${error.message}`);
   });
+  pagina.on("console", (mensaje) => {
+    if (mensaje.type() === "error" || mensaje.type() === "warning") console.log(`CONSOLA ${nombre} ${mensaje.type()} ${pagina.url()} :: ${mensaje.text().slice(0, 400)}`);
+  });
+}
+
+async function cifra(pagina, rotulo) {
+  return (await pagina.locator(".inicio-metricas div", { hasText: rotulo }).locator("dd").textContent()).trim();
 }
 
 /** Tamaño de letra en pantalla de una etiqueta de eje (texto HTML, sin escala de SVG). */
@@ -129,20 +147,20 @@ async function tamanoReal(texto) {
   return texto.evaluate((nodo) => parseFloat(getComputedStyle(nodo).fontSize));
 }
 
-async function cifra(pagina, rotulo) {
-  return (await pagina.locator(".inicio-metricas div", { hasText: rotulo }).locator("dd").textContent()).trim();
+async function pendientesVisibles(pagina) {
+  return (await pagina.locator("main h3").allTextContents()).map((texto) => texto.trim());
 }
 
-// CHROMIUM permite usar un navegador ya descargado si la versión de Playwright pide otro build.
 const navegador = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
 try {
   // (a) Inicio con datos, como administradora.
   const admin = await contexto(navegador);
   const laura = await admin.newPage();
-  await vigilar(laura, "administradora");
+  vigilar(laura, "administradora");
   await entrarPorInvitacion(laura, INVITACION_ADMIN);
   const empresa = /\/c\/([0-9a-f-]{36})\//.exec(laura.url())?.[1];
   exigir(Boolean(empresa) && laura.url().endsWith("/consola"), `la administradora aterriza en Inicio (${laura.url()})`);
+  const raiz = `${BASE}/c/${empresa}`;
   await laura.getByRole("heading", { name: "Entradas y salidas" }).waitFor();
   const salidas = await cifra(laura, "Salidas del mes");
   const categorias = await laura.locator(".grafica-categorias li").evaluateAll((filas) =>
@@ -161,49 +179,77 @@ try {
   exigir(ejeEscritorio >= 11 && ejeEscritorio <= 13, `texto del eje en escritorio (1440 px) = ${ejeEscritorio.toFixed(1)} px reales`);
   await captura(laura, "01-inicio-datos-claro.png");
 
-  // (b) Contador y liberador entran por /c/<id> y llegan a Pendientes, no a un 404.
-  await laura.goto(`${BASE}/c/${empresa}/consola/personas`);
-  await laura.fill("#centroNombre", "Operación");
-  await laura.getByRole("button", { name: "Nombrar centro" }).click();
-  await laura.getByText("El centro de costo quedó nombrado.").waitFor();
-  const personas = [
-    { nombre: "Carlos Contador", correo: "carlos@lever.test", roles: ["contador"] },
-    { nombre: "Lucía Liberadora", correo: "lucia@lever.test", roles: ["liberador"] },
-    { nombre: "Tomás Tarjeta", correo: "tomas@lever.test", roles: ["tarjetahabiente"] },
-  ];
-  async function llenarAlta(persona, conFinanzas) {
-    const alta = laura.locator("form.formulario-maestro");
-    await alta.locator("#nombre").fill(persona.nombre);
-    await alta.locator("#alta").selectOption("2");
-    await alta.locator("select[aria-label=Mes]").first().selectOption("11");
-    await alta.locator("select[aria-label=Año]").first().selectOption("2026");
-    await alta.locator("#centro").selectOption({ label: "Operación" });
-    await alta.locator("#clabe").fill(CLABE);
-    await alta.locator("#acceso").selectOption("nueva");
-    await alta.locator("#correo").fill(persona.correo);
-    for (const rol of persona.roles) await alta.locator(`input[name=rol][value=${rol}]`).check();
-    if (conFinanzas) await alta.locator("#verFinanzas").check();
-    await alta.getByRole("button", { name: "Dar de alta a la persona" }).click();
-  }
-  for (const persona of personas) {
-    await llenarAlta(persona, false);
-    await laura.getByText(/La persona quedó en el maestro/).first().waitFor();
-    await laura.reload();
-  }
-  anotar("alta por la pantalla de Carlos (contador), Lucía (liberadora) y Tomás (tarjetahabiente)");
+  // Personas nueva (#45): área y altas desde la pantalla.
+  await laura.goto(`${raiz}/consola/personas/areas`);
+  await laura.getByLabel("Área", { exact: true }).fill("Operación");
+  await laura.getByLabel("Presupuesto mensual").fill("200000");
+  await laura.getByRole("button", { name: "Crear área" }).click();
+  await laura.getByText("El área quedó creada con su presupuesto.").waitFor();
 
-  // (c) Alta solo con Finanzas: rechazada con su mensaje.
-  await llenarAlta({ nombre: "Sofía Solo Finanzas", correo: "sofia@lever.test", roles: [] }, true);
-  const avisoAlta = laura.getByText("Finanzas es un acceso adicional. Elige también el rol de trabajo de la persona.").first();
+  async function alta({ nombre, nomina = false, acceso = "no", correo = "", roles = [], finanzas = false }) {
+    await laura.goto(`${raiz}/consola/personas/nueva`);
+    await laura.getByLabel("Nombre completo").fill(nombre);
+    await laura.getByLabel("Área", { exact: true }).selectOption({ label: "Operación" });
+    if (nomina) {
+      await laura.getByLabel("Neto por pago").fill("12000");
+      await laura.getByLabel("Frecuencia").selectOption("mensual");
+      await laura.getByLabel("CLABE", { exact: true }).fill(CLABE);
+    } else {
+      await laura.locator('input[name="conNomina"][value="no"]').check();
+    }
+    await laura.getByLabel("Usuario de plataforma").selectOption(acceso);
+    if (acceso !== "no") await laura.getByLabel("Correo", { exact: true }).fill(correo);
+    for (const rol of roles) await laura.getByRole("checkbox", { name: ROLES[rol], exact: true }).check();
+    if (finanzas) await laura.getByRole("checkbox", { name: "Ver Inicio financiero" }).check();
+    await laura.getByRole("button", { name: "Dar de alta colaborador" }).click();
+  }
+
+  // (c) El alta nueva rechaza a alguien solo con Finanzas.
+  await alta({ nombre: "Sofía Solo Finanzas", acceso: "nueva", correo: "sofia@lever.test", finanzas: true });
+  const avisoAlta = laura.locator(".alta-roles").getByText("Finanzas es un acceso adicional. Elige también el rol de trabajo de la persona.");
   await avisoAlta.waitFor();
-  await avisoAlta.scrollIntoViewIfNeeded();
-  await captura(laura, "04-alta-solo-finanzas-rechazada.png", false);
+  await laura.locator(".alta-roles").scrollIntoViewIfNeeded();
+  await captura(laura, "04-alta-nueva-solo-finanzas-rechazada.png", false);
   exigir(sql("select count(*) from users where correo = 'sofia@lever.test'") === "0", "el alta solo con Finanzas no creó a la persona");
 
-  for (const persona of personas.slice(0, 2)) {
+  for (const persona of [
+    { nombre: "Operativo Nómina", nomina: true },
+    { nombre: "Carlos Contador", acceso: "nueva", correo: "carlos@lever.test", roles: ["contador"] },
+    { nombre: "Lucía Liberadora", acceso: "nueva", correo: "lucia@lever.test", roles: ["liberador"] },
+    { nombre: "Mateo Liberador", acceso: "nueva", correo: "mateo@lever.test", roles: ["liberador"] },
+  ]) {
+    await alta(persona);
+    await laura.waitForURL(/\/consola\/personas\/[0-9a-f-]{36}$/);
+  }
+  anotar("alta nueva de Operativo Nómina (nómina hoy), Carlos (contador), Lucía y Mateo (liberadores)");
+
+  // Un rechazo del servidor no desmarca en pantalla lo que sí se enviaría.
+  await alta({ nombre: "Correo Repetido", acceso: "nueva", correo: "carlos@lever.test", roles: ["tarjetahabiente"], finanzas: true });
+  await laura.getByText("Ese correo ya entra").first().waitFor();
+  exigir(
+    (await laura.getByRole("checkbox", { name: "Tarjetahabiente", exact: true }).isChecked()) &&
+      (await laura.getByRole("checkbox", { name: "Ver Inicio financiero" }).isChecked()),
+    "tras el rechazo del servidor, el alta conserva marcados Tarjetahabiente y Finanzas",
+  );
+  exigir(sql("select count(*) from employees where nombre = 'Correo Repetido'") === "0", "el alta rechazada no creó a la persona");
+
+  // (c) Otorgar Finanzas desde el alta nueva: tarjetahabiente + Ver Inicio financiero.
+  await alta({ nombre: "Tomás Tarjeta", acceso: "nueva", correo: "tomas@lever.test", roles: ["tarjetahabiente"], finanzas: true });
+  await laura.waitForURL(/\/consola\/personas\/[0-9a-f-]{36}$/);
+  const fichaTomas = laura.url();
+  exigir(rolesDe("tomas@lever.test") === "finanzas,tarjetahabiente", "el alta nueva guarda Finanzas + tarjetahabiente");
+
+  // (b) Contador y liberadores entran por la invitación y por /c/<id> y llegan a Pendientes.
+  // Un pago solo se solicita con dos liberadores activos, así que entran antes del pago.
+  const equipo = [];
+  for (const persona of [
+    { nombre: "Carlos Contador", correo: "carlos@lever.test", archivo: "02-contador-pendientes.png" },
+    { nombre: "Lucía Liberadora", correo: "lucia@lever.test", archivo: "03-liberadora-pendientes-pagos-nomina.png" },
+    { nombre: "Mateo Liberador", correo: "mateo@lever.test" },
+  ]) {
     const ctx = await contexto(navegador);
     const pagina = await ctx.newPage();
-    await vigilar(pagina, persona.nombre);
+    vigilar(pagina, persona.nombre);
     await entrarPorInvitacion(pagina, invitacionLocal(persona.correo));
     exigir(pagina.url().endsWith(`/c/${empresa}/consola/pendientes`), `${persona.nombre} aterriza en Pendientes al entrar`);
     for (const ruta of [`/c/${empresa}`, `/c/${empresa}/consola`]) {
@@ -213,38 +259,88 @@ try {
         `${persona.nombre} abre ${ruta} y llega a Pendientes (HTTP ${respuesta.status()})`,
       );
     }
+    equipo.push({ ...persona, ctx, pagina });
+  }
+  const lucia = equipo[1].pagina;
+  exigir(!(await pendientesVisibles(lucia)).includes("Autoriza un pago a proveedor"), "antes de la solicitud la liberadora no tiene pagos por autorizar");
+
+  // Pagos a proveedores (#44): un pago queda por autorizar.
+  await laura.goto(`${raiz}/consola/proveedores/nuevo-proveedor`);
+  await laura.getByLabel("RFC", { exact: true }).fill("DDD040404DA7");
+  await laura.getByLabel("Razón social", { exact: true }).fill("Diesel del Bajío");
+  await laura.getByLabel("Nombre comercial").fill("Diesel Bajío");
+  await laura.getByLabel("Correo de contacto").fill("facturas@dieselbajio.mx");
+  await laura.getByLabel("CLABE", { exact: true }).fill(CLABE);
+  await laura.locator("#constancia").setInputFiles(PDF);
+  await laura.getByRole("button", { name: "Dar de alta" }).click();
+  await laura.getByText("Quedó asentado", { exact: true }).waitFor();
+  await laura.goto(`${raiz}/consola/proveedores/nuevo`);
+  await laura.getByLabel("Proveedor", { exact: true }).selectOption({ label: "Diesel del Bajío · DDD040404DA7" });
+  await laura.getByRole("button", { name: /Excepción Motivo/ }).click();
+  await laura.locator("#pdf").setInputFiles(PDF);
+  await laura.getByLabel("Importe MXN").fill("8450.00");
+  await laura.getByLabel("Referencia", { exact: true }).fill("Diésel ruta Bajío");
+  await laura.getByLabel("Fecha de la obligación").fill(fecha(-2));
+  await laura.getByLabel("Vencimiento", { exact: true }).fill(fecha(25));
+  await laura.getByLabel("Fecha prevista de pago").fill(fecha(6));
+  await laura.getByLabel("Por qué no hay factura").fill("Carga urgente sin factura del proveedor todavía");
+  await laura.getByRole("button", { name: "Revisar y solicitar" }).click();
+  await laura.getByText("El pago quedó enviado a autorización. Todavía no se mueve dinero.").waitFor();
+  exigir(sql(`select count(*) from supplier_payment_requests where company_id = '${empresa}' and estado = 'por_autorizar'`) === "1", "la base tiene un pago por autorizar");
+
+  // Al recargar, la liberadora ve el pago por autorizar y la nómina; el contador entra a Pendientes sin el pago como tarea.
+  for (const { nombre, correo, archivo, ctx, pagina } of equipo) {
+    await pagina.goto(`${raiz}/consola/pendientes`);
     await pagina.getByRole("heading", { level: 1 }).first().waitFor();
-    if (persona.roles.includes("contador")) await captura(pagina, "02-contador-redirige-a-pendientes.png", false);
-    else await captura(pagina, "03-liberador-redirige-a-pendientes.png", false);
+    const vistos = await pendientesVisibles(pagina);
+    if (correo === "lucia@lever.test") {
+      exigir(vistos.includes("Autoriza un pago a proveedor"), `la liberadora ve el pago por autorizar: ${vistos.join(" | ")}`);
+      exigir(vistos.some((texto) => texto.startsWith("Prepara el lote de nómina del ")), "la liberadora ve la nómina por preparar");
+      await captura(pagina, archivo, false);
+      await pagina.getByRole("link", { name: /Revisar pagos/ }).click();
+      await pagina.waitForURL(/\/consola\/proveedores$/);
+      await pagina.getByText("Diesel del Bajío").first().waitFor();
+      anotar("«Revisar pagos» abre la mesa de Proveedores con el pago de Diesel del Bajío");
+    } else if (correo === "carlos@lever.test") {
+      exigir(!vistos.includes("Autoriza un pago a proveedor"), `${nombre} entra a Pendientes y no recibe el pago como tarea suya: ${vistos.join(" | ") || "sin tareas"}`);
+      await captura(pagina, archivo, false);
+    }
     await ctx.close();
   }
 
-  // (c) Otorgar y quitar Finanzas desde la ficha de Tomás (solo tarjetahabiente: misma regla que el alta).
+  // La administradora ve la nómina por preparar (no autoriza pagos: no es liberadora).
+  await laura.goto(`${raiz}/consola/pendientes`);
+  const deLaura = await pendientesVisibles(laura);
+  exigir(deLaura.some((texto) => texto.startsWith("Prepara el lote de nómina del ")) && !deLaura.includes("Autoriza un pago a proveedor"), `la administradora ve la nómina y no el pago: ${deLaura.join(" | ")}`);
+
+  // (c) Otorgar y quitar Finanzas desde la ficha nueva.
   const tomasCtx = await contexto(navegador, { tema: "oscuro", ancho: 390, alto: 844 });
   const tomas = await tomasCtx.newPage();
-  await vigilar(tomas, "Tomás");
+  vigilar(tomas, "Tomás");
   await entrarPorInvitacion(tomas, invitacionLocal("tomas@lever.test"));
-  exigir(tomas.url().endsWith(`/c/${empresa}/telefono`), "Tomás (tarjetahabiente) entra al teléfono");
+  exigir(tomas.url().endsWith(`/c/${empresa}/consola`), `Tomás (tarjetahabiente + Finanzas) aterriza en Inicio (${tomas.url()})`);
 
-  await laura.goto(`${BASE}/c/${empresa}/consola/personas`);
-  const fichaTomas = laura.locator("article.persona", { hasText: "Tomás Tarjeta" });
-  await fichaTomas.getByLabel("Puede ver Inicio financiero").check();
-  await fichaTomas.getByRole("button", { name: "Guardar acceso financiero" }).click();
-  await fichaTomas.getByText("La persona ya puede ver Inicio financiero.").waitFor();
-  await fichaTomas.scrollIntoViewIfNeeded();
-  await captura(laura, "05-finanzas-otorgado.png", false);
-  exigir(sql("select string_agg(rol, ',' order by rol) from membership_roles r join users u on u.id = r.user_id where u.correo = 'tomas@lever.test'") === "finanzas,tarjetahabiente", "la base guarda Finanzas + tarjetahabiente");
-
-  const inicioTomas = await tomas.goto(`${BASE}/c/${empresa}/consola`);
-  exigir(inicioTomas.status() === 200 && (await tomas.locator(".inicio-metricas").count()) === 1, "con Finanzas, Tomás ve Inicio");
+  await laura.goto(fichaTomas);
+  const bloque = laura.getByRole("region", { name: "Plataforma y tarjeta" });
+  const casilla = bloque.getByLabel("Puede ver Inicio financiero");
+  exigir(await casilla.isChecked(), "la ficha nueva muestra la casilla de Finanzas marcada");
+  await casilla.uncheck();
+  await bloque.getByRole("button", { name: "Guardar acceso financiero" }).click();
+  await bloque.getByText("Se retiró el acceso a Inicio financiero.").waitFor();
+  exigir(rolesDe("tomas@lever.test") === "tarjetahabiente", "quitar desde la ficha deja solo tarjetahabiente");
+  const sinFinanzas = await tomas.goto(`${raiz}/consola`);
+  exigir(sinFinanzas.status() === 404, `sin Finanzas, Inicio no existe para Tomás (HTTP ${sinFinanzas.status()})`);
 
   await laura.reload();
-  await fichaTomas.getByLabel("Puede ver Inicio financiero").uncheck();
-  await fichaTomas.getByRole("button", { name: "Guardar acceso financiero" }).click();
-  await fichaTomas.getByText("Se retiró el acceso a Inicio financiero.").waitFor();
-  exigir(sql("select string_agg(rol, ',' order by rol) from membership_roles r join users u on u.id = r.user_id where u.correo = 'tomas@lever.test'") === "tarjetahabiente", "la base vuelve a solo tarjetahabiente");
-  const sinFinanzas = await tomas.goto(`${BASE}/c/${empresa}/consola`);
-  exigir(sinFinanzas.status() === 404, `sin Finanzas, Inicio no existe para Tomás (HTTP ${sinFinanzas.status()})`);
+  await casilla.check();
+  await bloque.getByRole("button", { name: "Guardar acceso financiero" }).click();
+  await bloque.getByText("La persona ya puede ver Inicio financiero.").waitFor();
+  exigir(await casilla.isChecked(), "tras otorgar, la casilla de la ficha queda marcada (no se reinicia)");
+  await bloque.scrollIntoViewIfNeeded();
+  await captura(laura, "05-ficha-nueva-finanzas-otorgado.png", false);
+  exigir(rolesDe("tomas@lever.test") === "finanzas,tarjetahabiente", "otorgar desde la ficha vuelve a guardar Finanzas");
+  const conFinanzas = await tomas.goto(`${raiz}/consola`);
+  exigir(conFinanzas.status() === 200 && (await tomas.locator(".inicio-metricas").count()) === 1, "con Finanzas, Tomás vuelve a ver Inicio");
 
   // (c) Membresía heredada con solo Finanzas: quitarla no deja a nadie sin rol, el aviso lo dice y la casilla regresa.
   // La aplicación ya no deja crear este estado; se simula como dueño de la base, con su evento de bitácora.
@@ -252,30 +348,28 @@ try {
     insert into audit_log (operator_id, company_id, actor_tipo, superficie, accion, entidad, identificador)
       select c.operator_id, c.id, 'sistema', 'sistema', 'simular_membresia_heredada', 'membership_roles', u.id
       from companies c, users u where c.id = '${empresa}' and u.correo = 'tomas@lever.test';
-    insert into membership_roles (user_id, company_id, rol)
-      select id, '${empresa}', 'finanzas' from users where correo = 'tomas@lever.test';
     delete from membership_roles where rol = 'tarjetahabiente'
       and user_id = (select id from users where correo = 'tomas@lever.test');`);
   await laura.reload();
-  const casilla = fichaTomas.getByLabel("Puede ver Inicio financiero");
   exigir(await casilla.isChecked(), "la ficha muestra a Tomás con solo Finanzas");
   await casilla.uncheck();
-  await fichaTomas.getByRole("button", { name: "Guardar acceso financiero" }).click();
-  await fichaTomas.getByText("Finanzas es su único rol y nadie queda sin rol. Dale primero su rol de trabajo.").waitFor();
+  await bloque.getByRole("button", { name: "Guardar acceso financiero" }).click();
+  await bloque.getByText("Finanzas es su único rol y nadie queda sin rol. Dale primero su rol de trabajo.").waitFor();
   exigir(await casilla.isChecked(), "tras el rechazo la casilla regresa a marcada (valor real)");
-  await fichaTomas.scrollIntoViewIfNeeded();
+  await bloque.scrollIntoViewIfNeeded();
   await captura(laura, "06-quitar-unico-rol-rechazado.png", false);
 
   // (d) Finanzas no abre el teléfono.
-  // /telefono tiene loading.tsx: la respuesta ya salió con 200 cuando la página llama a notFound(),
-  // así que se comprueba lo que se pinta (la página 404) y no el código HTTP.
-  await tomas.goto(`${BASE}/c/${empresa}/telefono`);
-  await tomas.getByText("This page could not be found.").waitFor();
-  exigir((await tomas.locator(".telefono").count()) === 0, "con solo Finanzas, el teléfono pinta la página 404 y ningún dato");
+  const telefono = await tomas.goto(`${raiz}/telefono`);
+  await tomas.getByRole("heading", { name: "No encontramos esta página." }).waitFor();
+  exigir(
+    telefono.status() === 404 && (await tomas.locator(".telefono").count()) === 0,
+    `con solo Finanzas, el teléfono responde 404 con la página de la marca y ningún dato (HTTP ${telefono.status()})`,
+  );
   await captura(tomas, "07-finanzas-sin-telefono.png", false);
 
   // (e) Gráfica a 390 px: mes actual y eje, sin barra de desplazamiento. (f) oscuro.
-  await tomas.goto(`${BASE}/c/${empresa}/consola`);
+  await tomas.goto(`${raiz}/consola`);
   const compacta = tomas.locator(".grafica-mensual-compacta");
   await compacta.waitFor();
   exigir(await tomas.locator(".grafica-mensual-amplia").isHidden(), "a 390 px la gráfica amplia se oculta");
@@ -294,14 +388,14 @@ try {
 
   const movilClaro = await contexto(navegador, { tema: "claro", ancho: 390, alto: 844 });
   const lauraMovil = await movilClaro.newPage();
-  await movilClaro.addCookies(await admin.cookies());
-  await lauraMovil.goto(`${BASE}/c/${empresa}/consola`);
+  await movilClaro.addCookies((await admin.cookies()).filter((cookie) => cookie.name !== "tema"));
+  await lauraMovil.goto(`${raiz}/consola`);
   await lauraMovil.locator(".grafica-mensual-compacta").evaluate((nodo) => nodo.scrollIntoView({ block: "center" }));
   await captura(lauraMovil, "09-grafica-movil-claro.png", false);
   await movilClaro.close();
 
   await admin.addCookies([{ name: "tema", value: "oscuro", url: BASE }]);
-  await laura.goto(`${BASE}/c/${empresa}/consola`);
+  await laura.goto(`${raiz}/consola`);
   await laura.getByRole("link", { name: "12 meses" }).click();
   await laura.waitForURL(/periodo=12/);
   exigir((await laura.locator(".grafica-mensual-amplia .grafica-eje-x li").count()) === 12, "el selector de 12 meses dibuja doce meses");

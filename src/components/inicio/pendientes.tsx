@@ -48,7 +48,7 @@ export function Pendientes({ carga, empresaId }: { carga: CargaInicio; empresaId
         <EstadoVacio atajos={carga.atajos} empresaId={empresaId} />
       ) : (
         <div className="pendientes-grupos">
-          <Grupo id="atencion" titulo="Requiere atención" detalle="Configuración que condiciona la operación." pendientes={operativos} empresaId={empresaId} />
+          <Grupo id="atencion" titulo="Requiere atención" detalle="Pagos, nómina y configuración que condicionan la operación." pendientes={operativos} empresaId={empresaId} />
           <Grupo id="puesta-marcha" titulo="Puesta en marcha" detalle="Completa las piezas básicas de tu empresa." pendientes={configuracion} empresaId={empresaId} />
         </div>
       )}
