@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { NOMBRE_COOKIE_ENTRADA, NOMBRE_COOKIE_PORTAL } from "./server/autenticacion/cookie";
 import { CABECERA_EMPRESA, CABECERA_PETICION, RUTA_SEGUNDO_FACTOR, rutaDe, separarEmpresa } from "./nucleo/rutas";
+import { NOMBRE_COOKIE_ENTRADA_OPERACION, NOMBRE_COOKIE_PORTAL_OPERACION } from "./server/operacion/acceso";
 import { NOMBRE_COOKIE } from "./server/session/cookie";
 
 /**
@@ -26,10 +27,14 @@ export function proxy(request: NextRequest) {
   if (empresa) cabeceras.set(CABECERA_EMPRESA, empresa);
 
   const completa = Boolean(request.cookies.get(NOMBRE_COOKIE)?.value);
-  const factor =
-    Boolean(request.cookies.get(NOMBRE_COOKIE_ENTRADA)?.value) ||
-    Boolean(request.cookies.get(NOMBRE_COOKIE_PORTAL)?.value);
   const operacion = resto === "/operacion" || resto.startsWith("/operacion/");
+  // Cada superficie lee solo sus cookies de entrada: la del cliente no abre el
+  // segundo factor de Operación, ni la de Operación el del cliente.
+  const [cookieEntrada, cookiePortal] = operacion
+    ? [NOMBRE_COOKIE_ENTRADA_OPERACION, NOMBRE_COOKIE_PORTAL_OPERACION]
+    : [NOMBRE_COOKIE_ENTRADA, NOMBRE_COOKIE_PORTAL];
+  const factor =
+    Boolean(request.cookies.get(cookieEntrada)?.value) || Boolean(request.cookies.get(cookiePortal)?.value);
   const superficie = operacion ? "/operacion" : resto.startsWith("/telefono") ? "/telefono" : "/consola";
   const siguiente = `siguiente=${encodeURIComponent(superficie)}`;
   const entrada = operacion ? "/operacion/entrar" : "/entrar";
