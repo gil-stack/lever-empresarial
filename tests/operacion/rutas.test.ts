@@ -13,6 +13,8 @@ const PROTEGIDAS = [
   "/operacion/alertas",
   "/operacion/comisiones",
   "/operacion/bitacora",
+  "/operacion/recuperaciones",
+  "/operacion/precios",
 ] as const;
 
 describe("guardia central del portal SOFIPO", () => {

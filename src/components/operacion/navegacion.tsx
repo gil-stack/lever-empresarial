@@ -1,30 +1,46 @@
 "use client";
 
-import Link, { useLinkStatus } from "next/link";
+import type { ReactNode } from "react";
+import Link from "next/link";
 import { useSelectedLayoutSegment } from "next/navigation";
 
+import { IconoEmpresas, IconoInicio, IconoPendientes } from "@/components/cromo/iconos";
+import { ProgresoEnlace } from "@/components/cromo/progreso-enlace";
+
+import { IconoAlertas, IconoBitacora, IconoComisiones, IconoPrecios, IconoRecuperaciones } from "./iconos";
 import { rutaSeccionOperacion, SECCIONES_OPERACION } from "./secciones";
 
-function ProgresoEnlace() {
-  const { pending } = useLinkStatus();
+const ICONOS: Record<(typeof SECCIONES_OPERACION)[number][0], () => ReactNode> = {
+  "/operacion": IconoInicio,
+  "/operacion/clientes": IconoEmpresas,
+  "/operacion/aprobaciones": IconoPendientes,
+  "/operacion/alertas": IconoAlertas,
+  "/operacion/comisiones": IconoComisiones,
+  "/operacion/recuperaciones": IconoRecuperaciones,
+  "/operacion/precios": IconoPrecios,
+  "/operacion/bitacora": IconoBitacora,
+};
 
-  return (
-    <span className="operacion-nav-estado" aria-live="polite">
-      {pending ? <><span className="operacion-nav-spinner" aria-hidden="true" /><span className="operacion-nav-lectura">Cargando…</span></> : null}
-    </span>
-  );
-}
-
+/** Las secciones de Operación con el lateral de la consola: ícono, barra coral en la actual y progreso por enlace (useLinkStatus). */
 export function NavegacionOperacion() {
   const actual = rutaSeccionOperacion(useSelectedLayoutSegment());
 
   return (
-    <nav className="operacion-nav" aria-label="Operación">
-      {SECCIONES_OPERACION.map(([ruta, etiqueta]) => (
-        <Link key={ruta} href={ruta} prefetch={true} aria-current={actual === ruta ? "page" : undefined}>
-          {etiqueta}<ProgresoEnlace />
-        </Link>
-      ))}
+    <nav className="secciones" aria-label="Operación">
+      <ul>
+        {SECCIONES_OPERACION.map(([ruta, etiqueta]) => {
+          const Icono = ICONOS[ruta];
+          return (
+            <li key={ruta}>
+              <Link href={ruta} className="seccion" prefetch={true} aria-current={actual === ruta ? "page" : undefined}>
+                <Icono />
+                {etiqueta}
+                <ProgresoEnlace />
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }

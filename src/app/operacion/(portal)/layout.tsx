@@ -9,5 +9,5 @@ export const runtime = "nodejs";
 
 export default async function LayoutOperacion({ children }: { children: ReactNode }) {
   const ctx = await exigirContextoOperacion();
-  return <MarcoOperacion nombre={ctx.persona.nombre} personaId={ctx.persona.id}>{children}</MarcoOperacion>;
+  return <MarcoOperacion personaId={ctx.persona.id}>{children}</MarcoOperacion>;
 }

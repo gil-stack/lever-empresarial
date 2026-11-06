@@ -23,7 +23,10 @@ describe("navegación del portal SOFIPO", () => {
   it("conserva la página actual y limita el progreso al enlace pendiente", () => {
     const fallbackGlobal = new URL("../../src/app/operacion/(portal)/loading.tsx", import.meta.url);
     const navegacion = readFileSync(new URL("../../src/components/operacion/navegacion.tsx", import.meta.url), "utf8");
+    const progreso = readFileSync(new URL("../../src/components/cromo/progreso-enlace.tsx", import.meta.url), "utf8");
     assert.equal(existsSync(fallbackGlobal), false, "El fallback global reemplaza toda la página durante la navegación");
-    assert.match(navegacion, /useLinkStatus/);
+    // Cada enlace lleva su propio indicador: el mismo de la consola, que lee useLinkStatus.
+    assert.match(navegacion, /<ProgresoEnlace \/>/);
+    assert.match(progreso, /useLinkStatus/);
   });
 });

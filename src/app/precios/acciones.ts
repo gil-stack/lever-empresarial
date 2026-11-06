@@ -36,7 +36,7 @@ export async function enviarPublicacion(
     if (error instanceof ErrorDeDominio) return invalido(error.codigo);
     throw error;
   }
-  redirect("/precios");
+  redirect("/operacion/precios");
 }
 
 function invalido(codigo: string): EstadoFormulario {
