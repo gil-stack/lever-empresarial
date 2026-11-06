@@ -27,6 +27,7 @@ const FASES = (process.env.FASES ?? "flujos,publicas,capturas,correos").split(",
 const CLAVE = "clave-segura-12";
 const CLAVE_NUEVA = "clave-nueva-2026";
 const TEMAS = ["oscuro", "claro", "lever"];
+const TOPE_CAPTURA = 8000;
 const ANCHOS = [1440, 390];
 
 if (!/^postgres(ql)?:\/\/[^@]+@(127\.0\.0\.1|localhost)(:\d+)?\//.test(DUENO)) {
@@ -122,8 +123,13 @@ async function captura(page, nombre, { completa = true } = {}) {
   const ruta = `${SALIDA}/capturas/${nombre}.webp`;
   // La semilla, el QR y los códigos de respaldo son secretos aunque la base sea desechable: se tapan.
   const secretos = page.locator(".arco-semilla, .arco-qr, .arco-codigos");
-  await sharp(await page.screenshot({ fullPage: completa, mask: [secretos], maskColor: "#7a7a7a" })).webp({ quality: 78 }).toFile(ruta);
-  anotar(`captura ${nombre}.webp`);
+  // Chrome no captura más de 16 384 px reales: una página más alta (la bitácora en 390) se corta a 8 000 px.
+  const alto = completa ? await page.evaluate(() => document.documentElement.scrollHeight) : 0;
+  const recorte = alto > TOPE_CAPTURA ? { clip: { x: 0, y: 0, width: page.viewportSize().width, height: TOPE_CAPTURA } } : {};
+  await sharp(await page.screenshot({ fullPage: completa, ...recorte, mask: [secretos], maskColor: "#7a7a7a" }))
+    .webp({ quality: 78 })
+    .toFile(ruta);
+  anotar(`captura ${nombre}.webp${recorte.clip ? ` (primeros ${TOPE_CAPTURA} de ${alto} px)` : ""}`);
 }
 
 /** Captura la página en los 3 temas y los 2 anchos, recargándola (solo para pantallas que se pueden recargar). */

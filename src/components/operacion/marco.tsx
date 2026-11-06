@@ -18,11 +18,6 @@ import { NavegacionOperacion } from "./navegacion";
  */
 export async function MarcoOperacion({ personaId, children }: { personaId: string; children: ReactNode }) {
   const tema = temaDesde((await cookies()).get(COOKIE_TEMA)?.value);
-  const marca = (
-    <Link href="/operacion" className="marca" aria-label="Lever Operación SOFIPO, ir al resumen">
-      <Logotipo linea="Operación SOFIPO" />
-    </Link>
-  );
   return (
     <>
       <AcentoInicial persona={personaId} tema={tema} />
@@ -31,8 +26,12 @@ export async function MarcoOperacion({ personaId, children }: { personaId: strin
         <a className="saltar" href="#contenido">
           Saltar al contenido
         </a>
-        <LateralMovil marca={marca}>
-          <div className="lateral-cabeza">{marca}</div>
+        {/* Dos marcas, no el mismo elemento dos veces: el servidor lo mandaría una sola vez y los dos
+            lazos compartirían el id de su degradado, que vive en el de la barra móvil, oculta en escritorio. */}
+        <LateralMovil marca={<Marca />}>
+          <div className="lateral-cabeza">
+            <Marca />
+          </div>
           <NavegacionOperacion />
           <div className="operacion-lateral-pie">
             <SelectorTema inicial={tema} />
@@ -41,5 +40,13 @@ export async function MarcoOperacion({ personaId, children }: { personaId: strin
         <div className="lienzo">{children}</div>
       </div>
     </>
+  );
+}
+
+function Marca() {
+  return (
+    <Link href="/operacion" className="marca" aria-label="Lever Operación SOFIPO, ir al resumen">
+      <Logotipo linea="Operación SOFIPO" />
+    </Link>
   );
 }

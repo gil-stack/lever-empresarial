@@ -29,7 +29,7 @@ export default async function ComisionesOperacion({ searchParams }: { searchPara
               <Vacio titulo="Sin versiones">Propón la primera para una empresa activa.</Vacio>
             ) : (
               <div className="tabla-contenedor">
-                <table className="tabla">
+                <table className="tabla operacion-tabla">
                   <thead>
                     <tr>
                       <th scope="col">Empresa</th>
@@ -45,12 +45,12 @@ export default async function ComisionesOperacion({ searchParams }: { searchPara
                           <Link href={`/operacion/clientes/${version.companyId}`}>{version.razonSocial}</Link>
                           <small>Propuso {version.solicitante}</small>
                         </td>
-                        <td>{textoComision(version.tipo, version.valor)}</td>
-                        <td>
+                        <td data-rotulo="Tarifa">{textoComision(version.tipo, version.valor)}</td>
+                        <td data-rotulo="Vigencia">
                           {fechaDia(version.vigenteDesde)}
                           {version.vigenteHasta ? <small>hasta {fechaDia(version.vigenteHasta)}</small> : null}
                         </td>
-                        <td>
+                        <td data-rotulo="Estado">
                           <Insignia tono={version.estado === "vigente" ? "sello" : "neutro"}>{etiquetaEstado(version.estado)}</Insignia>
                         </td>
                       </tr>

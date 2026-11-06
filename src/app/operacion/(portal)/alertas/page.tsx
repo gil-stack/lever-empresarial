@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { asignarAlertaAccion, cerrarAlertaAccion, crearAlertaAccion } from "@/app/operacion/acciones";
-import { etiquetaEstado, fechaHora } from "@/components/operacion/formato";
+import { etiquetaCategoria, etiquetaEstado, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { Hoja, Insignia, Rejilla, Vacio } from "@/components/sistema";
 import { exigirContextoOperacion, listarAlertas, listarClientes, listarPersonal } from "@/server/operacion";
@@ -32,7 +32,7 @@ export default async function AlertasOperacion({ searchParams }: { searchParams:
                         </h3>
                         <p className="operacion-meta">
                           <span>{alerta.razonSocial}</span>
-                          <span>{alerta.categoria}</span>
+                          <span>{etiquetaCategoria(alerta.categoria)}</span>
                           <span>Responsable: {alerta.responsable}</span>
                         </p>
                         <p className="operacion-detalle">{alerta.detalle}</p>

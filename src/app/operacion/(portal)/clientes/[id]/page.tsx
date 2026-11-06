@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { invitarAdministradorAccion, solicitarActivacionAccion } from "@/app/operacion/acciones";
 import { errorDelCampo } from "@/components/operacion/aviso";
-import { etiquetaEstado, fechaDia, fechaHora } from "@/components/operacion/formato";
+import { REGIMENES, USOS_CFDI, conNombre, etiquetaEstado, fechaDia, fechaHora, motivoDeEntrega } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { EtiquetaMono, Hoja, Insignia, NotaRegla, Rejilla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { textoComision } from "@/dominio/operacion";
@@ -40,8 +40,8 @@ export default async function FichaCliente({ params, searchParams }: { params: P
             <Hoja id="datos-titulo" titulo="Datos y activación">
               <Renglones>
                 <Renglon etiqueta="Código postal">{cliente.codigoPostal}</Renglon>
-                <Renglon etiqueta="Régimen fiscal">{cliente.regimen}</Renglon>
-                <Renglon etiqueta="Uso CFDI">{cliente.usoCfdi}</Renglon>
+                <Renglon etiqueta="Régimen fiscal">{conNombre(REGIMENES, cliente.regimen)}</Renglon>
+                <Renglon etiqueta="Uso CFDI">{conNombre(USOS_CFDI, cliente.usoCfdi)}</Renglon>
                 <Renglon etiqueta="Administrador">{cliente.administrador ?? "Todavía no invitado"}</Renglon>
               </Renglones>
               {cliente.estado === "prospecto" ? (
@@ -117,7 +117,7 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                       <p>{ENTREGAS[entrega.estado] ?? "El correo no salió"}</p>
                       <p className="operacion-meta">
                         {fechaHora(entrega.registradaEn)}
-                        {entrega.detalle ? ` · ${entrega.detalle}` : ""}
+                        {motivoDeEntrega(entrega.detalle) ? ` · ${motivoDeEntrega(entrega.detalle)}` : ""}
                       </p>
                     </li>
                   ))}

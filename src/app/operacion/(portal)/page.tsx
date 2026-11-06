@@ -24,11 +24,11 @@ export default async function ResumenOperacion() {
     <PaginaOperacion titulo="Resumen">
       <p className="saludo">Hola, {ctx.persona.nombre} · Operación SOFIPO</p>
       <Metricas etiqueta="Operación">
-        <Metrica rotulo="Clientes" nota={`${activos} activos para el portal`}>
+        <Metrica rotulo="Clientes" nota={`${activos} ${activos === 1 ? "activo" : "activos"} para el portal`}>
           <Monto>{clientes.length}</Monto>
           <Link className="enlace-texto" href="/operacion/clientes">Ver clientes</Link>
         </Metrica>
-        <Metrica rotulo="Por decidir" nota={`${solicitudes.length} activaciones · ${comisionesPendientes.length} comisiones`}>
+        <Metrica rotulo="Por decidir" nota={`${solicitudes.length} ${solicitudes.length === 1 ? "activación" : "activaciones"} · ${comisionesPendientes.length} ${comisionesPendientes.length === 1 ? "comisión" : "comisiones"}`}>
           <Monto>{solicitudes.length + comisionesPendientes.length}</Monto>
           <Link className="enlace-texto" href="/operacion/aprobaciones">Ir a Aprobaciones</Link>
         </Metrica>

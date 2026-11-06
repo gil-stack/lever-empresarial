@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { registrarProspectoAccion } from "@/app/operacion/acciones";
 import { errorDelCampo } from "@/components/operacion/aviso";
-import { etiquetaEstado } from "@/components/operacion/formato";
+import { REGIMENES, USOS_CFDI, etiquetaEstado } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { Hoja, Insignia, Rejilla, Vacio } from "@/components/sistema";
 import { exigirContextoOperacion, listarClientes } from "@/server/operacion";
@@ -23,7 +23,7 @@ export default async function ClientesOperacion({ searchParams }: { searchParams
               <Vacio titulo="Todavía no hay clientes">Registra el primer prospecto con su RFC.</Vacio>
             ) : (
               <div className="tabla-contenedor">
-                <table className="tabla">
+                <table className="tabla operacion-tabla">
                   <thead>
                     <tr>
                       <th scope="col">Empresa</th>
@@ -38,8 +38,8 @@ export default async function ClientesOperacion({ searchParams }: { searchParams
                           <Link href={`/operacion/clientes/${cliente.id}`}>{cliente.razonSocial}</Link>
                           <small className="operacion-mono">{cliente.rfc}</small>
                         </td>
-                        <td>{cliente.administrador ?? <span className="pista">Sin administrador</span>}</td>
-                        <td>
+                        <td data-rotulo="Administrador">{cliente.administrador ?? <span className="pista">Sin administrador</span>}</td>
+                        <td data-rotulo="Estado">
                           <Insignia tono={cliente.estado === "activa" ? "sello" : "neutro"}>{etiquetaEstado(cliente.estado)}</Insignia>
                         </td>
                       </tr>
@@ -69,19 +69,21 @@ export default async function ClientesOperacion({ searchParams }: { searchParams
               <div className="campo">
                 <label htmlFor="regimen">Régimen fiscal</label>
                 <select id="regimen" name="regimen" defaultValue="601" required>
-                  <option value="601">601 · General de ley</option>
-                  <option value="612">612 · Actividades empresariales</option>
-                  <option value="620">620 · Sociedad cooperativa</option>
-                  <option value="626">626 · Simplificado de confianza</option>
-                  <option value="603">603 · Instituciones sin fines de lucro</option>
+                  {REGIMENES.map(([valor, nombre]) => (
+                    <option key={valor} value={valor}>
+                      {valor} · {nombre}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="campo">
                 <label htmlFor="usoCfdi">Uso CFDI</label>
                 <select id="usoCfdi" name="usoCfdi" defaultValue="G03" required>
-                  <option value="G03">G03 · Gastos en general</option>
-                  <option value="S01">S01 · Sin efectos fiscales</option>
-                  <option value="CP01">CP01 · Pagos</option>
+                  {USOS_CFDI.map(([valor, nombre]) => (
+                    <option key={valor} value={valor}>
+                      {valor} · {nombre}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="acciones">

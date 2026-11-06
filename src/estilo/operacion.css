@@ -63,6 +63,12 @@
   padding-top: 4px;
 }
 
+/* Las entregas del correo bajo el estado del administrador no se pegan a su caja. */
+.vacio + .operacion-lista,
+form + .operacion-lista {
+  margin-top: 18px;
+}
+
 .operacion-fila {
   display: flex;
   flex-wrap: wrap;
@@ -222,5 +228,61 @@
 
   .operacion-decision-botones {
     justify-content: flex-start;
+  }
+}
+
+/*
+ * Tablas en pantallas angostas: sin columnas cortadas. Cada renglón se apila, el primer
+ * dato a todo lo ancho y los demás en dos columnas con su rótulo (`data-rotulo`).
+ * El encabezado sigue en la tabla para el lector de pantalla.
+ */
+@container (max-width: 560px) {
+  .operacion-tabla thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .operacion-tabla tbody,
+  .operacion-tabla td {
+    display: block;
+  }
+
+  .operacion-tabla tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .operacion-tabla tbody tr:first-child {
+    padding-top: 4px;
+  }
+
+  .operacion-tabla tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .operacion-tabla td,
+  .operacion-tabla tbody tr:hover td {
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .operacion-tabla td:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .operacion-tabla td[data-rotulo]::before {
+    content: attr(data-rotulo);
+    display: block;
+    margin-bottom: 3px;
+    color: var(--tx3);
+    font-size: 11.5px;
   }
 }

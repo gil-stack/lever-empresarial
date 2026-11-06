@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { fechaHora } from "@/components/operacion/formato";
+import { etiquetaAccion, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { Hoja, Vacio } from "@/components/sistema";
 import { exigirContextoOperacion, leerBitacora } from "@/server/operacion";
@@ -19,7 +19,7 @@ export default async function BitacoraOperacion() {
           <Vacio titulo="Sin eventos">Cada decisión de Operación queda aquí.</Vacio>
         ) : (
           <div className="tabla-contenedor">
-            <table className="tabla">
+            <table className="tabla operacion-tabla">
               <thead>
                 <tr>
                   <th scope="col">Fecha</th>
@@ -33,19 +33,21 @@ export default async function BitacoraOperacion() {
                 {eventos.map((evento) => (
                   <tr key={evento.id}>
                     <td className="operacion-sin-corte">{fechaHora(evento.ocurridoEn)}</td>
-                    <td>
+                    <td data-rotulo="Empresa">
                       {evento.companyId && evento.razonSocial ? (
                         <Link href={`/operacion/clientes/${evento.companyId}`}>{evento.razonSocial}</Link>
                       ) : (
                         "Plataforma"
                       )}
                     </td>
-                    <td>{evento.actor}</td>
-                    <td>
-                      {evento.accion}
-                      <small>{evento.entidad}</small>
+                    <td data-rotulo="Quién">{evento.actor}</td>
+                    <td data-rotulo="Acción">
+                      {etiquetaAccion(evento.accion) ?? evento.accion}
+                      <small className="operacion-mono">
+                        {evento.accion} · {evento.entidad}
+                      </small>
                     </td>
-                    <td>{evento.motivo ?? "—"}</td>
+                    <td data-rotulo="Motivo">{evento.motivo ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>
