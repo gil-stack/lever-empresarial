@@ -191,13 +191,17 @@ async function dobleClic(boton) {
  * botón tiene que quedar apagado, con aria-busy y «Enviando…» (o su texto propio) hasta que
  * la base responde. Al soltar, el envío termina una sola vez; eso lo cuenta quien llama.
  */
-async function dobleClicRetenido(page, boton, tabla, { texto = "Enviando…", captura: nombre } = {}) {
+async function dobleClicRetenido(page, boton, tabla, { texto = "Enviando…", captura: nombre, otro } = {}) {
   const soltar = await sostenerCandado(tabla);
   try {
     await dobleClic(boton);
     const ocupado = page.locator('button[aria-busy="true"]');
     await ocupado.waitFor({ timeout: 4000 });
     exigir((await ocupado.count()) === 1 && (await ocupado.isDisabled()) && (await ocupado.innerText()).trim() === texto, `mientras la base retiene ${tabla}, el botón queda apagado, con aria-busy y «${texto}»`);
+    // En un formulario con dos botones, el que no se oprimió se apaga sin decir «Enviando…».
+    if (otro) {
+      exigir((await otro.boton.isDisabled()) && (await otro.boton.getAttribute("aria-busy")) === null && (await otro.boton.innerText()).trim() === otro.texto, `el otro botón del formulario («${otro.texto}») se apaga sin aria-busy y conserva su texto`);
+    }
     if (nombre) await captura(page, nombre, { completa: false });
   } finally {
     await soltar();
@@ -701,7 +705,10 @@ async function flujos() {
   // Primero se rechaza con nota (el botón de la izquierda); Laura vuelve a pedir y entonces se aprueba.
   const primera = op.getByRole("listitem", { name: "Recuperación · Laura Méndez" });
   await primera.getByLabel("Nota (obligatoria para rechazar)").fill("No se pudo confirmar la identidad por videollamada.");
-  await dobleClic(primera.getByRole("button", { name: "Rechazar" }));
+  await dobleClicRetenido(op, primera.getByRole("button", { name: "Rechazar" }), "auth_recuperaciones", {
+    captura: "53a-recuperaciones-rechazando-oscuro-1440",
+    otro: { boton: primera.getByRole("button", { name: "Aprobar" }), texto: "Aprobar" },
+  });
   await op.getByText("Decisión registrada").waitFor();
   exigir(contar(`select count(*) from auth_recuperaciones where user_id = '${idDe(LAURA)}' and estado = 'rechazada'`) === 1, "op rechaza la solicitud con nota");
   exigir(contar(`select count(*) from audit_log where accion = 'recuperacion_rechazada' and actor_id = '${idDe(OP)}'`) === 1, "doble clic en «Rechazar» deja un solo rechazo en la bitácora");
@@ -720,7 +727,9 @@ async function flujos() {
   await confirmarSiLoPide(op, OP);
   const filaLaura = op.getByRole("listitem", { name: "Recuperación · Laura Méndez" });
   await filaLaura.getByLabel("Cómo verificaste la identidad").selectOption("videollamada");
-  await dobleClic(filaLaura.getByRole("button", { name: "Aprobar" }));
+  await dobleClicRetenido(op, filaLaura.getByRole("button", { name: "Aprobar" }), "auth_recuperaciones", {
+    otro: { boton: filaLaura.getByRole("button", { name: "Rechazar" }), texto: "Rechazar" },
+  });
   await op.getByText("Decisión registrada").waitFor();
   exigir(contar(`select count(*) from auth_recuperaciones where user_id = '${idDe(LAURA)}' and estado = 'aprobada'`) === 1, "op aprueba la segunda solicitud tras confirmar su identidad");
   exigir(contar(`select count(*) from audit_log where accion = 'recuperacion_aprobada' and actor_id = '${idDe(OP)}'`) === 1, "doble clic en «Aprobar» deja una sola aprobación en la bitácora");
