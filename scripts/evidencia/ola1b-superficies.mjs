@@ -15,7 +15,7 @@
 // que un doble clic dejó una sola operación. Rechaza un DUENO_URL que no sea local.
 
 import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 
@@ -60,6 +60,23 @@ function sql(consulta) {
   return execFileSync("psql", [DUENO, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1", "-c", consulta], { encoding: "utf8" }).trim();
 }
 const contar = (consulta) => Number(sql(consulta));
+
+// Toma la tabla con un candado en una conexión aparte y lo sostiene hasta soltarlo: así una sección
+// que la lee se queda esperando a la base, como cuando la base tarda de verdad.
+async function sostenerCandado(tabla) {
+  const psql = spawn("psql", [DUENO, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1"], { stdio: ["pipe", "pipe", "inherit"] });
+  const tomado = new Promise((listo, falla) => {
+    psql.stdout.on("data", (d) => String(d).includes("candado_tomado") && listo());
+    psql.on("exit", (codigo) => falla(new Error(`psql salió con ${codigo} antes de tomar el candado`)));
+  });
+  psql.stdin.write(`begin; lock table ${tabla} in access exclusive mode; select 'candado_tomado';\n`);
+  await tomado;
+  return () => new Promise((listo) => {
+    psql.removeAllListeners("exit");
+    psql.on("exit", listo);
+    psql.stdin.end("rollback;\n\\q\n");
+  });
+}
 const idDe = (correo) => sql(`select id from users where correo = '${correo}'`);
 const sha256 = (texto) => createHash("sha256").update(texto).digest("hex");
 const tokenNuevo = () => randomBytes(32).toString("base64url");
@@ -979,6 +996,97 @@ async function correos() {
 }
 
 // ==================================================================================
+// ESTADOS: cargando, error y sin permiso en Operación (los vacíos salen en capturas)
+// ==================================================================================
+
+async function estados() {
+  // Cargando: la base sostiene un candado sobre las solicitudes de activación, que solo lee la lista de
+  // Clientes; el servidor manda primero el marco con la forma de la página y, al soltar el candado
+  // (antes de los 10 s que la app espera a la base), llega la sección.
+  {
+    const { ctx, page } = await contexto();
+    await entrarOperacion(page, OP);
+    for (const tema of TEMAS) {
+      await ctx.addCookies([{ name: "tema", value: tema, url: BASE }]);
+      for (const ancho of ANCHOS) {
+        await page.setViewportSize({ width: ancho, height: ancho < 600 ? 844 : 900 });
+        const soltar = await sostenerCandado("company_activation_requests");
+        try {
+          await page.goto(`${BASE}/operacion/clientes`, { waitUntil: "commit" });
+          await page.locator(".operacion-carga").waitFor();
+          exigir((await page.locator(".operacion-carga").getAttribute("aria-busy")) === "true", `Operación ${tema}-${ancho}: mientras carga, la página lo anuncia (aria-busy y estado para el lector)`);
+          const navegacion = ancho < 600 ? page.getByRole("button", { name: "Secciones" }) : page.getByRole("navigation", { name: "Operación" });
+          exigir((await navegacion.count()) === 1, `Operación ${tema}-${ancho}: mientras carga, la navegación ya está a la mano`);
+          await captura(page, `96-operacion-cargando-${tema}-${ancho}`, { completa: false });
+        } finally {
+          await soltar();
+        }
+        await page.getByRole("heading", { level: 1, name: "Clientes" }).waitFor();
+        exigir((await page.locator(".operacion-carga").count()) === 0, `Operación ${tema}-${ancho}: al llegar la sección, la forma de carga se va`);
+      }
+    }
+    await ctx.close();
+  }
+
+  // Error: la base le niega a Operación la lectura de empresas; la sección lo dice dentro del marco
+  // y «Reintentar» vuelve a pedirla al servidor cuando la base responde otra vez.
+  {
+    const { ctx, page } = await contexto();
+    await entrarOperacion(page, OP);
+    const erroresAntes = erroresDeConsola.length;
+    sql("revoke select on companies from plataforma_sofipo");
+    try {
+      for (const tema of TEMAS) {
+        await ctx.addCookies([{ name: "tema", value: tema, url: BASE }]);
+        for (const ancho of ANCHOS) {
+          await page.setViewportSize({ width: ancho, height: ancho < 600 ? 844 : 900 });
+          await page.goto(`${BASE}/operacion/clientes`, { waitUntil: "networkidle" });
+          await page.getByRole("heading", { level: 1, name: "No se pudo abrir esta sección." }).waitFor();
+          const navegacion = ancho < 600 ? page.getByRole("button", { name: "Secciones" }) : page.getByRole("navigation", { name: "Operación" });
+          exigir((await navegacion.count()) === 1, `Operación ${tema}-${ancho}: el error se muestra dentro del marco, con la navegación a la mano`);
+          await captura(page, `97-operacion-error-${tema}-${ancho}`);
+        }
+      }
+    } finally {
+      sql("grant select on companies to plataforma_sofipo");
+    }
+    await page.getByRole("button", { name: "Reintentar" }).click();
+    await page.getByRole("heading", { level: 1, name: "Clientes" }).waitFor();
+    anotar("Operación: «Reintentar» vuelve a pedir la sección y Clientes abre en cuanto la base responde");
+    // El navegador anota el error del servidor que se provocó a propósito; cualquier otro se queda en la lista.
+    const provocados = erroresDeConsola.splice(erroresAntes).filter((e) => {
+      // #441 es el error de render de Server Components en producción: lo dejan los prefetch de las demás
+      // secciones, que también leen empresas mientras la base niega la lectura.
+      const esperado = /operacion\/clientes/.test(e) && /Server Components render|status of 500|digest|React error #441/i.test(e);
+      if (!esperado) erroresDeConsola.push(e);
+      return esperado;
+    });
+    anotar(`Operación: ${provocados.length} errores de consola esperados por el error provocado, ninguno más`);
+    await ctx.close();
+  }
+
+  // Sin permiso: una sesión de cliente no abre Operación; la manda a la puerta del personal.
+  {
+    const { ctx, page } = await contexto();
+    await entrarCliente(page, LAURA, estado.claves[LAURA]);
+    await page.getByLabel("Código de la app autenticadora").fill(await codigoFresco(LAURA));
+    await page.getByRole("button", { name: "Entrar con el código" }).click();
+    await page.waitForURL(/\/consola|\/empresas|\/telefono/);
+    await page.goto(`${BASE}/operacion/clientes`, { waitUntil: "networkidle" });
+    exigir(new URL(page.url()).pathname === "/operacion/entrar", "Sin permiso: con sesión de cliente, /operacion/clientes lleva a la entrada de Operación");
+    for (const tema of TEMAS) {
+      await ctx.addCookies([{ name: "tema", value: tema, url: BASE }]);
+      for (const ancho of ANCHOS) {
+        await page.setViewportSize({ width: ancho, height: ancho < 600 ? 844 : 900 });
+        await page.goto(`${BASE}/operacion/clientes`, { waitUntil: "networkidle" });
+        await captura(page, `98-operacion-sin-permiso-${tema}-${ancho}`);
+      }
+    }
+    await ctx.close();
+  }
+}
+
+// ==================================================================================
 // COMPARACIÓN: el diseño de los socios junto a la captura del producto (Oscuro)
 // ==================================================================================
 
@@ -1018,6 +1126,7 @@ try {
   if (FASES.includes("publicas")) await publicas();
   if (FASES.includes("capturas")) await capturas();
   if (FASES.includes("correos")) await correos();
+  if (FASES.includes("estados")) await estados();
   if (FASES.includes("comparacion")) await comparacion();
   exigir(erroresDeConsola.length === 0, `sin errores de consola del navegador${erroresDeConsola.length ? `:\n  ${erroresDeConsola.join("\n  ")}` : ""}`);
 } catch (error) {
