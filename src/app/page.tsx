@@ -89,7 +89,7 @@ export default function PaginaInicio() {
         </nav>
         <div className="arco-header-acciones">
           <Link href="/entrar" className="arco-entrar">Entrar</Link>
-          <Link href="/muestrario" className="arco-boton arco-boton-principal arco-boton-compacto">
+          <Link href="#producto" className="arco-boton arco-boton-principal arco-boton-compacto">
             Ver demo <Icono nombre="flecha" />
           </Link>
         </div>
@@ -105,7 +105,7 @@ export default function PaginaInicio() {
               controlar el gasto de tu empresa.
             </p>
             <div className="arco-hero-acciones">
-              <Link href="/muestrario" className="arco-boton arco-boton-principal">Ver la demo <Icono nombre="flecha" /></Link>
+              <Link href="#producto" className="arco-boton arco-boton-principal">Ver la demo <Icono nombre="flecha" /></Link>
               <a href="#como-funciona" className="arco-boton arco-boton-secundario">Cómo funciona</a>
             </div>
             <p className="arco-hero-nota">Tarjeta recargable · Sin crédito · Control para toda la empresa</p>
@@ -219,7 +219,7 @@ export default function PaginaInicio() {
           <h2 id="titulo-cierre">Menos ruido.<br />Más claridad.</h2>
           <p>Una mejor manera de trabajar con el dinero de tu empresa.</p>
           <div className="arco-cierre-acciones">
-            <Link href="/muestrario" className="arco-boton arco-boton-claro">Ver la demo <Icono nombre="flecha" /></Link>
+            <Link href="#producto" className="arco-boton arco-boton-claro">Ver la demo <Icono nombre="flecha" /></Link>
             <Link href="/entrar" className="arco-boton arco-boton-linea">Entrar a mi cuenta</Link>
           </div>
         </section>

@@ -46,13 +46,17 @@ clave_local=postgres
 export AISLAMIENTO_DATABASE_URL="postgres://${usuario_local}:${clave_local}@127.0.0.1:5432/postgres"
 unset DATABASE_URL
 
-./node_modules/.bin/tsx --test \
+# En serie: las pruebas alteran el mismo rol temporal y en paralelo chocan
+# con «tuple concurrently updated».
+./node_modules/.bin/tsx --test --test-concurrency=1 \
   tests/aislamiento/aislamiento.test.ts \
   tests/aislamiento/telefono.test.ts \
   tests/esquema/deriva.test.ts \
   tests/firmas/dos-firmas.test.ts \
   tests/proveedores/historial-clabe.test.ts \
-  tests/proveedores/relectura-69b.test.ts
+  tests/proveedores/relectura-69b.test.ts \
+  tests/autenticacion/postgres.test.ts \
+  tests/operacion/portal-postgres.test.ts
 estado=$?
 limpiar
 trap - EXIT
