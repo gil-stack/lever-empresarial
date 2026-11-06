@@ -110,6 +110,18 @@ export async function conContexto<T>(
 }
 
 /**
+ * Solo para una tarea programada que ya se autenticó (el cron con CRON_SECRET):
+ * baja a plataforma_tarea, sin empresa ni persona en el contexto. Ese rol no lee
+ * tablas; solo ejecuta las funciones que 0026 le otorga.
+ */
+export async function comoTarea<T>(fn: (consulta: Consulta) => Promise<T>): Promise<T> {
+  return conTransaccion(async (consulta) => {
+    await consulta.query("set local role plataforma_tarea");
+    return fn(consulta);
+  });
+}
+
+/**
  * Serializa las escrituras de una empresa dentro de la transacción. Un candado
  * consultivo no pide permiso de escribir la fila de la empresa, que el rol
  * cliente no tiene. Falla si la empresa no es visible en el contexto.

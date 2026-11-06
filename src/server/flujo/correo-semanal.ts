@@ -5,7 +5,7 @@ import { fechaConAnio, fechaCorta, lunesDe, primeroDelMes, ultimoDelMes } from "
 import { calcularPresupuestos, ETIQUETA_ESTADO_PRESUPUESTO } from "../../dominio/flujo/presupuestos";
 import { proyectar, textoAlcance, type Proyeccion } from "../../dominio/flujo/proyeccion";
 import { hoyEnMexico } from "../../dominio/personas";
-import { aplicarSentencia, conContexto, type Consulta, type ContextoDeBase } from "../../nucleo/db";
+import { aplicarSentencia, comoTarea, conContexto, type Consulta, type ContextoDeBase } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { enEmpresa } from "../../nucleo/rutas";
 import { auditar as auditarPorDefecto, type Actor, type Auditar } from "../bitacora/auditar";
@@ -17,11 +17,12 @@ import { leerFuentesPresupuesto, leerTotalesCobro } from "./repositorio";
 import { proyeccionCon } from "./servicio";
 
 /**
- * El correo de los lunes. La tarea no tiene sesión: pide a la base solo los ids
- * de las empresas con destinatarios (empresas_con_correo_semanal, la única
- * puerta sin empresa) y después trabaja empresa por empresa, cada una en su
- * propia transacción con su contexto y RLS normal. Un fallo de una empresa se
- * registra y no detiene a las demás.
+ * El correo de los lunes. La tarea no tiene sesión: como plataforma_tarea pide a
+ * la base solo los ids de las empresas con destinatarios
+ * (empresas_con_correo_semanal, la única puerta sin empresa, que ningún otro rol
+ * puede ejecutar) y después trabaja empresa por empresa, cada una en su propia
+ * transacción con su contexto y RLS normal. Un fallo de una empresa se registra
+ * y no detiene a las demás. Quien llama ya validó CRON_SECRET.
  */
 
 export type ResultadoCorreoSemanal = {
@@ -61,7 +62,7 @@ export async function enviarCorreosSemanales(deps: DependenciasCorreoSemanal = {
     registrar: deps.registrar ?? registrarPorDefecto,
   };
 
-  const empresas = await conContexto({ rol: "plataforma_cliente" }, async (consulta) => {
+  const empresas = await comoTarea(async (consulta) => {
     const resultado = await aplicarSentencia(consulta, "select empresa from empresas_con_correo_semanal() as empresa order by empresa");
     return lista(resultado.rows).map((fila) => texto(fila.empresa));
   });

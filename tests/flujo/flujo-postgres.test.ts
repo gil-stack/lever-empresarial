@@ -5,7 +5,9 @@ import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { cerrarConexion, conContexto } from "../../src/nucleo/db.ts";
+import pg from "pg";
+
+import { cerrarConexion, comoTarea, conContexto } from "../../src/nucleo/db.ts";
 import { baseCliente, type ContextoConEmpresa } from "../../src/nucleo/contexto.ts";
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
 import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
@@ -246,10 +248,53 @@ async function escenario(url: string): Promise<void> {
   assert.equal(area.estado, "excedido");
 
   // Correo semanal ----------------------------------------------------------------
-  // La puerta sin empresa no responde dentro de una sesión.
-  const desdeSesion = await conContexto(baseCliente(admin), async (consulta) =>
-    (await consulta.query("select * from empresas_con_correo_semanal()")).rows.length);
-  assert.equal(desdeSesion, 0);
+  // La puerta sin empresa es solo de plataforma_tarea. Que falte el contexto no da más acceso.
+  assert.deepEqual(
+    consultarJson<Record<string, boolean>[]>(url, `select json_agg(json_build_object(
+      'cliente', has_function_privilege('plataforma_cliente', 'empresas_con_correo_semanal()', 'execute'),
+      'sofipo', has_function_privilege('plataforma_sofipo', 'empresas_con_correo_semanal()', 'execute'),
+      'app', has_function_privilege('plataforma_app', 'empresas_con_correo_semanal()', 'execute'),
+      'tarea', has_function_privilege('plataforma_tarea', 'empresas_con_correo_semanal()', 'execute')))`),
+    [{ cliente: false, sofipo: false, app: false, tarea: true }],
+  );
+  const duena = new pg.Client({ connectionString: url });
+  await duena.connect();
+  try {
+    for (const rol of ["plataforma_cliente", "plataforma_sofipo"]) {
+      await duena.query("begin");
+      await duena.query(`set local role ${rol}`);
+      await assert.rejects(duena.query("select * from empresas_con_correo_semanal()"), (error: unknown) => (error as { code?: string }).code === "42501", rol);
+      await duena.query("rollback");
+    }
+  } finally {
+    await duena.end();
+  }
+  // Por la conexión de la aplicación: sin contexto (como en entrar o recuperar) y dentro de una sesión.
+  await assert.rejects(() => conContexto({ rol: "plataforma_cliente" }, (consulta) => consulta.query("select * from empresas_con_correo_semanal()")), codigo("sin_permiso"));
+  await assert.rejects(() => conContexto(baseCliente(admin), (consulta) => consulta.query("select * from empresas_con_correo_semanal()")), codigo("sin_permiso"));
+  // plataforma_tarea solo ejecuta esa función: no lee tablas.
+  await assert.rejects(() => comoTarea((consulta) => consulta.query("select id from companies")), codigo("sin_permiso"));
+
+  // La tarea ve solo empresas activas con al menos un destinatario vigente.
+  const empresasDeTarea = async () =>
+    (await comoTarea((consulta) => consulta.query("select empresa from empresas_con_correo_semanal() as empresa"))).rows.map((fila) => String(fila.empresa)).sort();
+  const gamma = await darDeAltaEmpresa(personal, { rfc: "GAM010101AB2", razonSocial: "Gamma Suspendida", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
+  await administrador(url, personal, gamma, "admin-gamma-flujo@ejemplo.mx");
+  const delta = await darDeAltaEmpresa(personal, { rfc: "DEL010101AB3", razonSocial: "Delta Baja", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
+  const adminDelta = await administrador(url, personal, delta, "admin-delta-flujo@ejemplo.mx");
+  const areaDelta = await nombrarCentro(adminDelta, { nombre: "General", presupuesto: "" }, AHORA);
+  await persona(url, adminDelta, areaDelta.id, "Finanzas Delta", "finanzas-delta@ejemplo.mx", ["tarjetahabiente", "finanzas"]);
+  // En Delta solo queda Finanzas como destinataria.
+  await cambiarCorreoSemanal(adminDelta, { activo: "no" }, AHORA);
+  assert.deepEqual(await empresasDeTarea(), [alfa.id, beta.id, gamma.id, delta.id].sort());
+  // Gamma se suspende y la persona de Finanzas de Delta queda dada de baja (sin pasar por los
+  // triggers, para probar solo el filtro de la función).
+  ejecutar(url, `
+    set session_replication_role = replica;
+    update companies set estado = 'suspendida' where id = '${gamma.id}';
+    update employees set baja_en = alta_en where company_id = '${delta.id}' and nombre = 'Finanzas Delta';
+  `);
+  assert.deepEqual(await empresasDeTarea(), [alfa.id, beta.id].sort());
   // Una persona no escribe el registro de envíos.
   await assert.rejects(() => conContexto(baseCliente(admin), (consulta) => consulta.query(
     "insert into weekly_digest_sends (id, company_id, semana, estado) values ($1, $2, '2026-11-02', 'enviando')", [randomUUID(), alfa.id],

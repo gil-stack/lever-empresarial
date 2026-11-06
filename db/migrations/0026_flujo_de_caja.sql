@@ -404,9 +404,29 @@ CREATE TRIGGER weekly_digest_sends_revisar
 BEFORE INSERT OR UPDATE OR DELETE ON weekly_digest_sends
 FOR EACH ROW EXECUTE FUNCTION weekly_digest_sends_revisar();
 
+-- Rol de las tareas programadas. Solo lo usa la tarea del correo semanal, ya
+-- autenticada con CRON_SECRET, y solo para pedir los ids de abajo. No lee
+-- tablas: si falta el contexto en una ruta del portal (entrar, recuperar,
+-- invitación), plataforma_cliente recibe 42501 en lugar de la lista.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'plataforma_tarea') THEN
+    CREATE ROLE plataforma_tarea NOLOGIN NOBYPASSRLS NOINHERIT;
+  END IF;
+END;
+$$;
+
+COMMENT ON ROLE plataforma_tarea IS
+  'Tareas programadas (cron con CRON_SECRET). Sin BYPASSRLS ni tablas: solo ejecuta empresas_con_correo_semanal().';
+
+-- Como 0018 y 0020 con plataforma_cliente y plataforma_sofipo: quien migra y la
+-- conexión de la aplicación pueden bajar a este rol, sin heredar sus permisos.
+GRANT plataforma_tarea TO CURRENT_USER;
+GRANT plataforma_tarea TO plataforma_app;
+GRANT USAGE ON SCHEMA public TO plataforma_tarea;
+
 -- La única puerta sin empresa: los ids de las empresas con alguien que debe
--- recibir el correo. Solo responde fuera de toda sesión (sin persona ni
--- empresa en el contexto), que es como corre la tarea. Lo demás se lee después,
+-- recibir el correo. Solo plataforma_tarea la ejecuta. Lo demás se lee después,
 -- empresa por empresa, con su contexto y RLS normal.
 CREATE FUNCTION empresas_con_correo_semanal()
 RETURNS SETOF uuid
@@ -419,8 +439,7 @@ AS $$
   JOIN membership_roles r ON r.company_id = m.company_id AND r.user_id = m.user_id
   LEFT JOIN employees e ON e.company_id = m.company_id AND e.user_id = m.user_id
   LEFT JOIN weekly_digest_preferences p ON p.company_id = m.company_id AND p.user_id = m.user_id
-  WHERE app_usuario() IS NULL AND app_empresa() IS NULL
-    AND c.estado NOT IN ('suspendida', 'baja')
+  WHERE c.estado = 'activa'
     AND m.estado = 'activa'
     AND r.rol IN ('administrador', 'finanzas', 'contador')
     AND (e.id IS NULL OR e.baja_en IS NULL OR e.baja_en > (timezone('America/Mexico_City', clock_timestamp()))::date)
@@ -428,7 +447,7 @@ AS $$
 $$;
 
 REVOKE ALL ON FUNCTION empresas_con_correo_semanal() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION empresas_con_correo_semanal() TO plataforma_cliente;
+GRANT EXECUTE ON FUNCTION empresas_con_correo_semanal() TO plataforma_tarea;
 
 -- Toda escritura deja su evento en la misma transacción -------------------------
 
