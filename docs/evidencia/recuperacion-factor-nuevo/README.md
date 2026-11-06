@@ -68,6 +68,8 @@ Laura no tenía passkey, así que no hay `passkey_revocada`. Ese caso lo cubre l
 - **Rollback completo** en dos casos: cuando la app que se confirma no existe (falla después de revocar) y cuando la recuperación vence justo antes (falla al final, después de confirmar la nueva). En los dos, nada cambia.
 - Con la recuperación vencida, la persona vuelve a «verificar» y no puede inscribir.
 - Sin recuperación, quien tiene factores sigue en «verificar», y la base rechaza inscribir otro (`ya_tiene_segundo_factor`).
-- El índice de `0027` rechaza dos apps confirmadas vigentes y dos pendientes.
+- El índice de `0027` rechaza dos apps confirmadas vigentes y dos pendientes. Confirmar la nueva sin revocar antes la vieja falla con `auth_totp_uno_confirmado`; revocando antes, en la misma transacción, sí se confirma.
+- Preparar otra vez no deja dos pendientes: muestra la misma app, y guardar otra borra la anterior.
+- `0027` se aplica sobre una base en `0025` que ya tiene apps confirmadas, pendientes y revocadas. Antes de aplicarla, una consulta confirma que nada viola los índices nuevos. Después, las filas quedan intactas.
 - Con una passkey nueva, la vieja se revoca antes de guardar la nueva, y la nueva queda vigente.
 - Dos confirmaciones enviadas a la vez dejan exactamente una app nueva: una entra y la otra se rechaza.

@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 import { cerrarConexion } from "../../src/nucleo/db.ts";
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
+import { cifrarSemilla } from "../../src/server/autenticacion/cifrado.ts";
 import { repositorioPg } from "../../src/server/autenticacion/repositorio.ts";
 import { hashDeRespaldo } from "../../src/server/autenticacion/respaldo.ts";
 import {
@@ -70,6 +71,7 @@ describe("recuperación con factores viejos en Postgres", { skip: urlAdmin.lengt
           beto: randomUUID(),
           carla: randomUUID(),
           eva: randomUUID(),
+          fer: randomUUID(),
         };
         for (const [nombre, id] of Object.entries(personas)) {
           await duena.query("insert into users (id, nombre, correo, password_hash) values ($1, $2, $3, $4)", [
@@ -325,6 +327,30 @@ describe("recuperación con factores viejos en Postgres", { skip: urlAdmin.lengt
         );
         assert.deepEqual(await vivos(personas.mario), { ...antes, eventos: (await vivos(personas.mario))?.eventos });
 
+        // 8b. Con la app vieja viva, la base no deja confirmar la nueva: hay que revocar la vieja antes, en la misma
+        // transacción. Pasa por los triggers de auth_totp con una fila pendiente junto a una confirmada.
+        await duena.query("begin");
+        await assert.rejects(
+          duena.query("update auth_totp set confirmado_en = now(), ultimo_paso = $2 where id = $1", [
+            pendienteMario,
+            pasoDe(en(300)),
+          ]),
+          /auth_totp_uno_confirmado/,
+        );
+        await duena.query("rollback");
+        await duena.query("begin");
+        await duena.query(
+          `update auth_totp set revocado_en = now(), revocado_por = $1
+           where user_id = $1 and confirmado_en is not null and revocado_en is null`,
+          [personas.mario],
+        );
+        const cabe = await duena.query("update auth_totp set confirmado_en = now(), ultimo_paso = $2 where id = $1", [
+          pendienteMario,
+          pasoDe(en(300)),
+        ]);
+        assert.equal(cabe.rowCount, 1, "control: con la vieja revocada antes, la nueva sí se confirma");
+        await duena.query("rollback");
+
         // 9. Sin recuperación, quien tiene factores sigue en verificar y la base no deja inscribir otro.
         await conAppVieja("beto");
         const tokenBeto = await entrar("beto", 60);
@@ -443,10 +469,101 @@ describe("recuperación con factores viejos en Postgres", { skip: urlAdmin.lengt
           2,
           "la del primer ingreso y una sola nueva",
         );
+
+        // 12. Preparar otra vez no deja dos pendientes: muestra la misma, y guardar otra reemplaza a la anterior.
+        await conAppVieja("fer");
+        await aprobar(personas.fer, 60, en(60 + 12 * 3600));
+        const tokenFer = await entrar("fer", 90);
+        const pendientesFer = async () =>
+          (
+            await duena.query("select id from auth_totp where user_id = $1 and confirmado_en is null and revocado_en is null", [
+              personas.fer,
+            ])
+          ).rows.map((fila) => String(fila.id));
+        const primera = await prepararTotp(tokenFer, deps(90, { semilla: () => SEMILLA_NUEVA }));
+        const [pendienteFer] = await pendientesFer();
+        const segunda = await prepararTotp(tokenFer, deps(95, { semilla: () => SEMILLA_VIEJA }));
+        assert.equal(segunda.semilla, primera.semilla, "preparar otra vez muestra la misma app pendiente");
+        assert.deepEqual(await pendientesFer(), [pendienteFer]);
+        const reemplazo = randomUUID();
+        await repo.guardarTotpPendiente({
+          id: reemplazo,
+          userId: personas.fer,
+          secretoCifrado: cifrarSemilla(SEMILLA_VIEJA, personas.fer, LLAVE),
+          creadoEn: en(100),
+        });
+        assert.deepEqual(await pendientesFer(), [reemplazo], "la pendiente nueva reemplaza a la anterior");
+        assert.equal(
+          (await duena.query("select count(*)::int as n from auth_totp where id = $1", [pendienteFer])).rows[0]?.n,
+          0,
+          "la pendiente anterior se borró: no queda basura",
+        );
+        assert.equal((await vivos(personas.fer))?.apps, 1, "la app confirmada vieja sigue viva hasta confirmar la nueva");
       } finally {
         await duena.end();
         await cerrarConexion();
         delete process.env.DATABASE_URL;
+      }
+    });
+  });
+
+  it("0027 se aplica sobre datos que ya cumplían el índice de 0019 y los conserva", async () => {
+    exigirBaseDesechable();
+    await conBaseDesechable(urlAdmin, async (urlDuena) => {
+      const dir = join(dirname(fileURLToPath(import.meta.url)), "../../db/migrations");
+      const archivos = readdirSync(dir)
+        .filter((archivo) => archivo.endsWith(".sql"))
+        .sort();
+      for (const archivo of archivos.filter((nombre) => nombre < "0027")) aplicarArchivo(urlDuena, join(dir, archivo));
+      const { Client } = (await import("pg")) as unknown as { Client: new (opts: { connectionString: string }) => Cliente };
+      const duena = new Client({ connectionString: urlDuena });
+      await duena.connect();
+      try {
+        const [conApp, conPendiente, conAmbas] = [randomUUID(), randomUUID(), randomUUID()];
+        const hash = await hashearContrasena(CLAVE);
+        for (const id of [conApp, conPendiente, conAmbas]) {
+          await duena.query("insert into users (id, nombre, correo, password_hash) values ($1, $2, $3, $4)", [
+            id,
+            `persona ${id.slice(0, 4)}`,
+            `${id}@empresa.mx`,
+            hash,
+          ]);
+        }
+        const fila = (userId: string, confirmada: boolean, revocada: boolean) =>
+          duena.query(
+            `insert into auth_totp (id, user_id, secreto_cifrado, creado_en, confirmado_en, ultimo_paso, revocado_en, revocado_por)
+             values ($1, $2, $3, now(), ${confirmada ? "now(), 1" : "null, null"}, ${revocada ? "now(), $2" : "null, null"})`,
+            [randomUUID(), userId, cifradoDePrueba()],
+          );
+        // Como en producción con 0025: a lo más una fila viva por persona, más las revocadas que haya.
+        await fila(conApp, true, true);
+        await fila(conApp, true, false);
+        await fila(conPendiente, false, false);
+        await fila(conAmbas, true, true);
+        await fila(conAmbas, false, false);
+        await duena.query("begin");
+        await assert.rejects(fila(conApp, false, false), /auth_totp_uno_vigente/, "con 0025, la pendiente no cabe junto a la app");
+        await duena.query("rollback");
+
+        const consultaPrevia = `select user_id from auth_totp where revocado_en is null group by user_id
+          having count(*) filter (where confirmado_en is not null) > 1 or count(*) filter (where confirmado_en is null) > 1`;
+        assert.equal((await duena.query(consultaPrevia)).rows.length, 0, "nada viola los índices nuevos antes de aplicar 0027");
+        const antes = (await duena.query("select id, confirmado_en, revocado_en from auth_totp order by id")).rows;
+
+        for (const archivo of archivos.filter((nombre) => nombre >= "0027")) aplicarArchivo(urlDuena, join(dir, archivo));
+        assert.deepEqual((await duena.query("select id, confirmado_en, revocado_en from auth_totp order by id")).rows, antes);
+        const indices = (
+          await duena.query("select indexname from pg_indexes where tablename = 'auth_totp' and indexname like 'auth_totp_uno_%' order by 1")
+        ).rows.map((fila) => fila.indexname);
+        assert.deepEqual(indices, ["auth_totp_uno_confirmado", "auth_totp_uno_pendiente"]);
+        await fila(conApp, false, false);
+        assert.equal(
+          (await duena.query("select count(*)::int as n from auth_totp where user_id = $1 and revocado_en is null", [conApp])).rows[0]?.n,
+          2,
+          "con 0027, la app pendiente cabe junto a la confirmada",
+        );
+      } finally {
+        await duena.end();
       }
     });
   });
