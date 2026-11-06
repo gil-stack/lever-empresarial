@@ -38,6 +38,14 @@ Dos cosas del entorno no son de producción:
 
 El orden de las letras es el del encargo; (k), (l) y (r) son recorridos adicionales.
 
+### Tras integrar main (#46)
+
+Con `main` integrado (proxy con cookies de entrada por superficie), recorrido corto con las mismas personas: Sofía solicita con un CFDI nuevo de Combustibles del Bajío ($18,420.75) y Mateo, otra persona, lo autoriza. En la base quedó `listo_para_pagar` con `solicitar_pago_proveedor` y `autorizar_pago_proveedor` en la bitácora; consola sin errores.
+
+| Flujo | Quién | Captura |
+|---|---|---|
+| (s) Solicitud con CFDI y autorización por otra persona | Sofía, Mateo | [s-23](s-23-integrado-solicitud-cfdi.png), [s-24](s-24-integrado-autoriza-otra-persona.png) |
+
 ## Encabezados de la descarga (flujo d)
 
 Respuesta cruda del documento XML, pedida con la sesión de Laura:
