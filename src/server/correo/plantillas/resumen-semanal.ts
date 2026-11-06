@@ -32,7 +32,8 @@ export function plantillaResumenSemanal(datos: DatosResumenSemanal): CorreoPlant
   return armarCorreo(`Tu flujo de la semana · ${datos.razonSocial}`, {
     preencabezado: `Lo que sale, lo que entra y hasta dónde alcanza el saldo de ${datos.razonSocial}.`,
     kicker: `Semana del ${datos.semana}`,
-    titulo: "Tu flujo de caja de la semana",
+    // El cuerpo nombra a la empresa: quien administra varias recibe un correo por cada una.
+    titulo: `Tu flujo de caja de la semana · ${datos.razonSocial}`,
     parrafos,
     datos: [
       ["Saldo declarado por tu empresa", datos.saldoDeclarado ?? "Sin declarar"],

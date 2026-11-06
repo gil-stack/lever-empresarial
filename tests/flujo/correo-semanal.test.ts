@@ -70,7 +70,7 @@ describe("Plantilla del resumen semanal", () => {
       presupuestos: ["Área Operación: excedido ($86,000.00 de $50,000.00)."],
     });
     assert.match(correo.texto, /Saldo declarado por tu empresa: Sin declarar/);
-    assert.match(correo.texto, /^Tu flujo de caja de la semana\n\nAtención: el saldo proyectado queda en -\$5,000\.00/);
+    assert.match(correo.texto, /^Tu flujo de caja de la semana · Escuela <Alfa> & Hijos\n\nAtención: el saldo proyectado queda en -\$5,000\.00/);
     assert.match(correo.texto, /Cobros vencidos: 1 por \$3,000\.00/);
     assert.match(correo.texto, /Presupuestos: Área Operación: excedido/);
   });

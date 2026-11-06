@@ -145,6 +145,18 @@
   box-shadow: inset 2px 0 0 var(--danger);
 }
 
+/* .tabla quita la línea de la última fila en sus td; el encabezado de fila también. */
+.flujo-tabla tr:last-child th[scope="row"] {
+  border-bottom: 0;
+}
+
+/* Contiene lo que va oculto para lector de pantalla (el «Acciones» del
+   encabezado, el encabezado entero en móvil): posicionado en absoluto y sin
+   contenedor, se sale de la tabla y ensancha la página. */
+.flujo-apilada {
+  position: relative;
+}
+
 .flujo-sin-cifra {
   color: var(--tx3);
 }
@@ -517,5 +529,120 @@
   .flujo-mes-lista {
     display: grid;
     margin-bottom: 20px;
+  }
+
+  /* Tablas apiladas: cada fila es una tarjeta y lo importante queda a la vista sin deslizar. */
+  .flujo-apilada,
+  .flujo-apilada tbody {
+    display: block;
+  }
+
+  .flujo-apilada thead tr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .flujo-apilada tbody tr {
+    display: grid;
+    gap: 6px 12px;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .flujo-apilada tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .flujo-apilada tbody th,
+  .flujo-apilada tbody td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border-bottom: 0;
+    text-align: left;
+  }
+
+  .flujo-apilada tbody td[data-etiqueta]::before {
+    content: attr(data-etiqueta);
+    display: block;
+    margin-bottom: 2px;
+    color: var(--tx3);
+    font-size: 11.5px;
+    font-weight: 400;
+  }
+
+  .flujo-apilada tbody tr:hover td {
+    background: none;
+  }
+
+  /* Proyección: semana y saldo final arriba; inicial, entradas y salidas abajo. */
+  .flujo-tabla.flujo-apilada tbody tr {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .flujo-tabla.flujo-apilada th[scope="row"] {
+    grid-column: 1 / 3;
+    align-self: center;
+    white-space: normal;
+  }
+
+  .flujo-tabla.flujo-apilada td[data-cifra="saldo-final"] {
+    grid-column: 3;
+    grid-row: 1;
+    text-align: right;
+    font-weight: 500;
+  }
+
+  .flujo-tabla.flujo-apilada td:not([data-cifra="saldo-final"]) {
+    font-size: 13px;
+  }
+
+  .flujo-tabla.flujo-apilada .flujo-semana-negativa {
+    box-shadow: inset 2px 0 0 var(--danger);
+    padding-left: 12px;
+  }
+
+  .flujo-tabla.flujo-apilada .flujo-semana-negativa th[scope="row"] {
+    box-shadow: none;
+  }
+
+  /* Cobros: cliente y monto, concepto y estado, la fecha y al final las acciones. */
+  .flujo-tabla-cobros.flujo-apilada tbody tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .flujo-tabla-cobros td[data-columna="monto"],
+  .flujo-tabla-cobros td[data-columna="estado"] {
+    grid-column: 2;
+    text-align: right;
+  }
+
+  .flujo-tabla-cobros td[data-columna="monto"] {
+    grid-row: 1;
+    font-weight: 500;
+  }
+
+  .flujo-tabla-cobros td[data-columna="estado"] {
+    grid-row: 2;
+  }
+
+  .flujo-tabla-cobros td[data-columna="concepto"] {
+    grid-row: 2;
+  }
+
+  .flujo-tabla-cobros td[data-columna="fecha"] {
+    grid-column: 1 / -1;
+  }
+
+  .flujo-tabla-cobros td[data-columna="acciones"]:not(:empty) {
+    grid-column: 1 / -1;
+  }
+
+  .flujo-tabla-cobros td[data-columna="acciones"] .flujo-acciones-fila {
+    justify-content: flex-start;
   }
 }

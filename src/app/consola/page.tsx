@@ -43,13 +43,12 @@ async function cargar(apertura: Awaited<ReturnType<typeof abrirRuta>>, periodo: 
   if (apertura.tipo === "libro") return { tipo: "error" };
   if (apertura.tipo === "sin_empresa") return { tipo: "sin_empresa" };
   try {
-    const ctx = apertura.ctx;
     // El escenario llega por la dirección y solo recalcula: no escribe nada.
     const pedido = params.mover === undefined ? {} : { mover: params.mover, fecha: params.fecha };
     // El libro de asientos solo se pinta en demostración, como «confirmado por el banco».
     const [flujo, libro] = await Promise.all([
-      leerFlujoInicio(ctx, pedido),
-      ctx.empresa?.demostracion ? leerResumenInicio(ctx, periodo) : Promise.resolve(null),
+      leerFlujoInicio(apertura.ctx, pedido),
+      apertura.ctx.empresa?.demostracion ? leerResumenInicio(apertura.ctx, periodo) : Promise.resolve(null),
     ]);
     return { tipo: "lista", flujo, libro: libro?.tieneMovimientos ? libro : null };
   } catch (error) {

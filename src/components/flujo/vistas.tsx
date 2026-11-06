@@ -15,6 +15,7 @@ import type { VistaCalendario, VistaCobros, VistaPresupuestos, VistaSaldo } from
 import { Calendario } from "./calendario";
 import {
   AreaProveedor,
+  AvisosDeLista,
   DesactivarObligacion,
   FormularioCobro,
   FormularioCobroXml,
@@ -174,52 +175,55 @@ export function VistaCobrosPagina({
       </Metricas>
 
       <Hoja id="lista-cobros" titulo="Cobros" className="flujo-bloque">
-        <div className="flujo-filtros">
-          <nav className="segmentado" aria-label="Estado">
-            {FILTROS_ESTADO.map(([clave, texto]) => (
-              <Link key={clave} href={enlace({ estado: clave })} aria-current={estado === clave ? "page" : undefined}>{texto}</Link>
-            ))}
-          </nav>
-          <nav className="segmentado" aria-label="Vencimiento">
-            {FILTROS_VENCE.map(([clave, texto]) => (
-              <Link key={clave} href={enlace({ vence: clave })} aria-current={vence === clave ? "page" : undefined}>{texto}</Link>
-            ))}
-          </nav>
-        </div>
-        {lista.length === 0 ? (
-          <Vacio titulo={vista.cobros.length === 0 ? "Todavía no hay cobros esperados." : "Ningún cobro con estos filtros."}>
-            {vista.cobros.length === 0 ? "Registra el primero a mano o con el XML de una factura que emitiste." : undefined}
-          </Vacio>
-        ) : (
-          <div className="tabla-contenedor">
-            <table className="tabla" data-tabla="cobros">
-              <thead>
-                <tr>
-                  <th scope="col">Cliente</th>
-                  <th scope="col">Concepto</th>
-                  <th scope="col">Fecha probable</th>
-                  <th scope="col" className="derecha">Monto</th>
-                  <th scope="col">Estado</th>
-                  {vista.puedeEditar ? <th scope="col"><span className="solo-lector">Acciones</span></th> : null}
-                </tr>
-              </thead>
-              <tbody>
-                {lista.map((cobro) => (
-                  <tr key={cobro.id} data-cobro={cobro.id} data-estado={vencido(cobro, vista.hoy) ? "vencido" : cobro.estado}>
-                    <td>{cobro.cliente}{cobro.rfc ? <small>{cobro.rfc}</small> : null}</td>
-                    <td>{cobro.concepto}{cobro.referencia ? <small>{cobro.origen === "cfdi" ? "Factura " : ""}{cobro.referencia}</small> : null}</td>
-                    <td>{fechaCorta(cobro.fechaProbable)}</td>
-                    <td className="cifra">{formatoPesos(cobro.montoCentavos)}</td>
-                    <td><EstadoCobro cobro={cobro} hoy={vista.hoy} /></td>
-                    {vista.puedeEditar ? (
-                      <td>{cobro.estado === "esperado" ? <ResolverCobro id={cobro.id} cliente={cobro.cliente} montoCentavos={cobro.montoCentavos} hoy={vista.hoy} /> : null}</td>
-                    ) : null}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <AvisosDeLista>
+          <div className="flujo-filtros">
+            <nav className="segmentado" aria-label="Estado">
+              {FILTROS_ESTADO.map(([clave, texto]) => (
+                <Link key={clave} href={enlace({ estado: clave })} aria-current={estado === clave ? "page" : undefined}>{texto}</Link>
+              ))}
+            </nav>
+            <nav className="segmentado" aria-label="Vencimiento">
+              {FILTROS_VENCE.map(([clave, texto]) => (
+                <Link key={clave} href={enlace({ vence: clave })} aria-current={vence === clave ? "page" : undefined}>{texto}</Link>
+              ))}
+            </nav>
           </div>
-        )}
+          {lista.length === 0 ? (
+            <Vacio titulo={vista.cobros.length === 0 ? "Todavía no hay cobros esperados." : "Ningún cobro con estos filtros."}>
+              {vista.cobros.length === 0 ? "Registra el primero a mano o con el XML de una factura que emitiste." : undefined}
+            </Vacio>
+          ) : (
+            <div className="tabla-contenedor">
+              {/* Roles explícitos: en móvil cada cobro se apila como tarjeta y la tabla sigue siendo tabla para el lector de pantalla. */}
+              <table className="tabla flujo-apilada flujo-tabla-cobros" data-tabla="cobros" role="table">
+                <thead role="rowgroup">
+                  <tr role="row">
+                    <th scope="col" role="columnheader">Cliente</th>
+                    <th scope="col" role="columnheader">Concepto</th>
+                    <th scope="col" role="columnheader">Fecha probable</th>
+                    <th scope="col" role="columnheader" className="derecha">Monto</th>
+                    <th scope="col" role="columnheader">Estado</th>
+                    {vista.puedeEditar ? <th scope="col" role="columnheader"><span className="solo-lector">Acciones</span></th> : null}
+                  </tr>
+                </thead>
+                <tbody role="rowgroup">
+                  {lista.map((cobro) => (
+                    <tr key={cobro.id} role="row" data-cobro={cobro.id} data-estado={vencido(cobro, vista.hoy) ? "vencido" : cobro.estado}>
+                      <td role="cell" data-columna="cliente">{cobro.cliente}{cobro.rfc ? <small>{cobro.rfc}</small> : null}</td>
+                      <td role="cell" data-columna="concepto">{cobro.concepto}{cobro.referencia ? <small>{cobro.origen === "cfdi" ? "Factura " : ""}{cobro.referencia}</small> : null}</td>
+                      <td role="cell" data-columna="fecha" data-etiqueta="Fecha probable">{fechaCorta(cobro.fechaProbable)}</td>
+                      <td role="cell" data-columna="monto" className="cifra">{formatoPesos(cobro.montoCentavos)}</td>
+                      <td role="cell" data-columna="estado"><EstadoCobro cobro={cobro} hoy={vista.hoy} /></td>
+                      {vista.puedeEditar ? (
+                        <td role="cell" data-columna="acciones">{cobro.estado === "esperado" ? <ResolverCobro id={cobro.id} cliente={cobro.cliente} montoCentavos={cobro.montoCentavos} hoy={vista.hoy} /> : null}</td>
+                      ) : null}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </AvisosDeLista>
       </Hoja>
 
       {vista.puedeEditar ? (
@@ -267,30 +271,32 @@ export function VistaCalendarioPagina({ vista, empresaId }: { vista: VistaCalend
       <Rejilla
         principal={
           <Hoja id="obligaciones-titulo" titulo="Obligaciones recurrentes" className="flujo-bloque">
-            {vista.obligaciones.length === 0 ? (
-              <Vacio titulo="Todavía no hay obligaciones recurrentes.">Renta, software, seguros o impuestos: lo que tu empresa paga cada cierto tiempo.</Vacio>
-            ) : (
-              <ul className="flujo-lista" data-lista="obligaciones">
-                {vista.obligaciones.map((o) => (
-                  <li key={o.id} data-obligacion={o.id}>
-                    <span>
-                      <strong>{o.concepto}</strong> · {ETIQUETA_FRECUENCIA[o.frecuencia].toLowerCase()} · próxima el {fechaCorta(o.proximaFecha)}
-                      {o.areaNombre ? <> · {o.areaNombre}</> : null}
-                    </span>
-                    <span className="flujo-acciones-fila">
-                      <strong>{formatoPesos(o.montoCentavos)}</strong>
-                      {vista.puedeEditar ? <DesactivarObligacion id={o.id} concepto={o.concepto} /> : null}
-                    </span>
-                    {vista.puedeEditar ? (
-                      <details>
-                        <summary>Editar</summary>
-                        <FormularioObligacion areas={vista.areas} hoy={vista.hoy} obligacion={o} />
-                      </details>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <AvisosDeLista>
+              {vista.obligaciones.length === 0 ? (
+                <Vacio titulo="Todavía no hay obligaciones recurrentes.">Renta, software, seguros o impuestos: lo que tu empresa paga cada cierto tiempo.</Vacio>
+              ) : (
+                <ul className="flujo-lista" data-lista="obligaciones">
+                  {vista.obligaciones.map((o) => (
+                    <li key={o.id} data-obligacion={o.id}>
+                      <span>
+                        <strong>{o.concepto}</strong> · {ETIQUETA_FRECUENCIA[o.frecuencia].toLowerCase()} · próxima el {fechaCorta(o.proximaFecha)}
+                        {o.areaNombre ? <> · {o.areaNombre}</> : null}
+                      </span>
+                      <span className="flujo-acciones-fila">
+                        <strong>{formatoPesos(o.montoCentavos)}</strong>
+                        {vista.puedeEditar ? <DesactivarObligacion id={o.id} concepto={o.concepto} /> : null}
+                      </span>
+                      {vista.puedeEditar ? (
+                        <details>
+                          <summary>Editar</summary>
+                          <FormularioObligacion areas={vista.areas} hoy={vista.hoy} obligacion={o} />
+                        </details>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </AvisosDeLista>
           </Hoja>
         }
         lateral={

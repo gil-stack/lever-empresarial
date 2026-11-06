@@ -192,29 +192,31 @@ function ProyeccionSemanal({ flujo, empresaId }: { flujo: FlujoInicio; empresaId
       ) : null}
 
       <div className="tabla-contenedor">
-        <table className="tabla flujo-tabla" data-tabla="proyeccion">
+        {/* Roles explícitos: en móvil la tabla se apila con CSS y sin ellos el lector de pantalla deja de verla como tabla. */}
+        <table className="tabla flujo-tabla flujo-apilada" data-tabla="proyeccion" role="table">
           <caption className="solo-lector">Saldo inicial, entradas, salidas y saldo final por semana</caption>
-          <thead>
-            <tr>
-              <th scope="col">Semana</th>
-              <th scope="col" className="derecha">Saldo inicial</th>
-              <th scope="col" className="derecha">Entradas</th>
-              <th scope="col" className="derecha">Salidas</th>
-              <th scope="col" className="derecha">Saldo final</th>
+          <thead role="rowgroup">
+            <tr role="row">
+              <th scope="col" role="columnheader">Semana</th>
+              <th scope="col" role="columnheader" className="derecha">Saldo inicial</th>
+              <th scope="col" role="columnheader" className="derecha">Entradas</th>
+              <th scope="col" role="columnheader" className="derecha">Salidas</th>
+              <th scope="col" role="columnheader" className="derecha">Saldo final</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody role="rowgroup">
             {p.semanas.map((semana) => (
               <tr
                 key={semana.inicio}
+                role="row"
                 data-semana={semana.inicio}
                 className={semana.saldoFinal !== null && semana.saldoFinal < 0 ? "flujo-semana-negativa" : undefined}
               >
-                <th scope="row">{rango(semana)}{p.faltante?.semana === semana.indice ? <Insignia tono="aviso">Faltante</Insignia> : null}</th>
-                <Cifra valor={semana.saldoInicial} nombre="saldo-inicial" />
-                <Cifra valor={semana.entradas} nombre="entradas" />
-                <Cifra valor={semana.salidas} nombre="salidas" />
-                <Cifra valor={semana.saldoFinal} nombre="saldo-final" />
+                <th scope="row" role="rowheader">{rango(semana)}{p.faltante?.semana === semana.indice ? <Insignia tono="aviso">Faltante</Insignia> : null}</th>
+                <Cifra valor={semana.saldoInicial} nombre="saldo-inicial" etiqueta="Inicial" />
+                <Cifra valor={semana.entradas} nombre="entradas" etiqueta="Entra" />
+                <Cifra valor={semana.salidas} nombre="salidas" etiqueta="Sale" />
+                <Cifra valor={semana.saldoFinal} nombre="saldo-final" etiqueta="Saldo final" />
               </tr>
             ))}
           </tbody>
@@ -251,10 +253,11 @@ function ProyeccionSemanal({ flujo, empresaId }: { flujo: FlujoInicio; empresaId
   );
 }
 
-function Cifra({ valor, nombre }: { valor: number | null; nombre: string }) {
-  if (valor === null) return <td className="cifra flujo-sin-cifra" data-cifra={nombre}>—</td>;
+/** `etiqueta` solo se pinta en móvil, cuando la fila se apila y ya no hay encabezado a la vista. */
+function Cifra({ valor, nombre, etiqueta }: { valor: number | null; nombre: string; etiqueta: string }) {
+  if (valor === null) return <td role="cell" className="cifra flujo-sin-cifra" data-cifra={nombre} data-etiqueta={etiqueta}>—</td>;
   return (
-    <td className={valor < 0 ? "cifra flujo-negativo" : "cifra"} data-cifra={nombre} data-centavos={valor}>
+    <td role="cell" className={valor < 0 ? "cifra flujo-negativo" : "cifra"} data-cifra={nombre} data-etiqueta={etiqueta} data-centavos={valor}>
       {formatoPesos(valor)}
     </td>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useId, useState, type ReactNode } from "react";
+import { createContext, startTransition, use, useActionState, useEffect, useId, useState, useTransition, type FormEvent, type ReactNode } from "react";
 
 import {
   enviarAreaProveedor,
@@ -44,13 +44,50 @@ function useFormulario(accion: Accion, idPropio?: string) {
   return { estado, enviar: enviarSinReiniciar(despachar), pendiente, idForma, mensaje };
 }
 
-/** Cierra un diálogo cuando su acción quedó asentada, sin un efecto que cambie estado. */
-function useCerrarAlAsentar(estados: readonly EstadoFlujo[], cerrar: () => void) {
-  const [vistos, setVistos] = useState(estados);
-  if (estados.some((estado, i) => estado !== vistos[i])) {
-    setVistos(estados);
-    if (estados.some((estado, i) => estado !== vistos[i] && estado.tipo === "listo")) cerrar();
-  }
+const AvisarEnLista = createContext<((estado: EstadoFlujo) => void) | null>(null);
+
+/**
+ * El «quedó asentado» de las acciones de fila (cobrado, cancelado, desactivar)
+ * vive arriba de la lista: al asentarse, la fila cambia o sale de la lista y el
+ * aviso se iría con ella.
+ */
+export function AvisosDeLista({ children }: { children: ReactNode }) {
+  const [aviso, setAviso] = useState<EstadoFlujo>(ESTADO_FLUJO_INICIAL);
+  return (
+    <AvisarEnLista value={setAviso}>
+      <AvisoFlujo estado={aviso} />
+      {children}
+    </AvisarEnLista>
+  );
+}
+
+/** Acción de una fila: los errores se quedan en su diálogo; lo asentado cierra el diálogo y se avisa en la lista. */
+function useAccionDeFila(accion: Accion, idForma: string, alAsentar: () => void) {
+  const avisar = use(AvisarEnLista);
+  if (!avisar) throw new Error("Las acciones de fila van dentro de <AvisosDeLista>.");
+  const [estado, setEstado] = useState<EstadoFlujo>(ESTADO_FLUJO_INICIAL);
+  const [pendiente, iniciar] = useTransition();
+  const enviar = (evento: FormEvent<HTMLFormElement>) => {
+    evento.preventDefault();
+    const forma = evento.currentTarget;
+    const datos = new FormData(forma);
+    iniciar(async () => {
+      const resultado = await accion(ESTADO_FLUJO_INICIAL, datos);
+      startTransition(() => {
+        if (resultado.tipo === "listo") {
+          setEstado(ESTADO_FLUJO_INICIAL);
+          avisar(resultado);
+          alAsentar();
+          return;
+        }
+        setEstado(resultado);
+        const primero = resultado.tipo === "invalido" ? resultado.errores[0] : undefined;
+        if (primero) forma.querySelector<HTMLElement>(`[name="${primero.campo}"]`)?.focus();
+      });
+    });
+  };
+  const mensaje = (campo: string) => (estado.tipo === "invalido" ? estado.errores.find((error) => error.campo === campo)?.mensaje : undefined);
+  return { estado, enviar, pendiente, idForma, mensaje };
 }
 
 export function AvisoFlujo({ estado }: { estado: EstadoFlujo }) {
@@ -198,13 +235,11 @@ export function FormularioCobroXml({ hoy }: { hoy: string }) {
 /** Marcar cobrado o cancelar: un diálogo con lo único que pide cada uno. */
 export function ResolverCobro({ id, cliente, montoCentavos, hoy }: { id: string; cliente: string; montoCentavos: number; hoy: string }) {
   const [abierto, setAbierto] = useState<"cobrado" | "cancelado" | null>(null);
-  const cobrado = useFormulario(enviarCobrado, `cobrado-${id}`);
-  const cancelado = useFormulario(enviarCancelacionCobro, `cancelado-${id}`);
-  useCerrarAlAsentar([cobrado.estado, cancelado.estado], () => setAbierto(null));
+  const cobrado = useAccionDeFila(enviarCobrado, `cobrado-${id}`, () => setAbierto(null));
+  const cancelado = useAccionDeFila(enviarCancelacionCobro, `cancelado-${id}`, () => setAbierto(null));
   const resumen = `${cliente} · ${formatoPesos(montoCentavos)}`;
   return (
     <div className="flujo-acciones-fila">
-      <AvisoFlujo estado={cobrado.estado.tipo === "listo" ? cobrado.estado : cancelado.estado.tipo === "listo" ? cancelado.estado : ESTADO_FLUJO_INICIAL} />
       <button type="button" className="boton-texto boton-chico" onClick={() => setAbierto("cobrado")}>Marcar cobrado</button>
       <button type="button" className="boton-fantasma boton-chico" onClick={() => setAbierto("cancelado")}>Cancelar</button>
       <Dialogo
@@ -215,7 +250,7 @@ export function ResolverCobro({ id, cliente, montoCentavos, hoy }: { id: string;
         pie={<button type="submit" form={cobrado.idForma} className="boton" disabled={cobrado.pendiente}>{cobrado.pendiente ? "Guardando…" : "Marcar cobrado"}</button>}
       >
         <form id={cobrado.idForma} className="flujo-resolver" onSubmit={cobrado.enviar} noValidate>
-          <AvisoFlujo estado={cobrado.estado.tipo === "listo" ? ESTADO_FLUJO_INICIAL : cobrado.estado} />
+          <AvisoFlujo estado={cobrado.estado} />
           <input type="hidden" name="id" value={id} />
           <Campo id={`cobradoEl-${id}`} etiqueta="Día en que llegó el dinero" error={cobrado.mensaje("cobradoEl")}>
             <input id={`cobradoEl-${id}`} name="cobradoEl" type="date" max={hoy} defaultValue={hoy} required />
@@ -230,7 +265,7 @@ export function ResolverCobro({ id, cliente, montoCentavos, hoy }: { id: string;
         pie={<button type="submit" form={cancelado.idForma} className="boton" disabled={cancelado.pendiente}>{cancelado.pendiente ? "Guardando…" : "Cancelar el cobro"}</button>}
       >
         <form id={cancelado.idForma} className="flujo-resolver" onSubmit={cancelado.enviar} noValidate>
-          <AvisoFlujo estado={cancelado.estado.tipo === "listo" ? ESTADO_FLUJO_INICIAL : cancelado.estado} />
+          <AvisoFlujo estado={cancelado.estado} />
           <input type="hidden" name="id" value={id} />
           <Campo id={`motivo-${id}`} etiqueta="Motivo" error={cancelado.mensaje("motivo")}>
             <input id={`motivo-${id}`} name="motivo" minLength={5} maxLength={500} required autoComplete="off" />
@@ -318,12 +353,10 @@ export function FormularioObligacion({
 }
 
 export function DesactivarObligacion({ id, concepto }: { id: string; concepto: string }) {
-  const f = useFormulario(enviarDesactivarObligacion, `desactivar-${id}`);
   const [abierto, setAbierto] = useState(false);
-  useCerrarAlAsentar([f.estado], () => setAbierto(false));
+  const f = useAccionDeFila(enviarDesactivarObligacion, `desactivar-${id}`, () => setAbierto(false));
   return (
     <>
-      <AvisoFlujo estado={f.estado} />
       <button type="button" className="boton-fantasma boton-chico" onClick={() => setAbierto(true)}>Desactivar</button>
       <Dialogo
         abierto={abierto}
@@ -333,6 +366,7 @@ export function DesactivarObligacion({ id, concepto }: { id: string; concepto: s
         pie={<button type="submit" form={f.idForma} className="boton" disabled={f.pendiente}>{f.pendiente ? "Guardando…" : "Desactivar"}</button>}
       >
         <form id={f.idForma} onSubmit={f.enviar} noValidate>
+          <AvisoFlujo estado={f.estado} />
           <input type="hidden" name="id" value={id} />
         </form>
       </Dialogo>
