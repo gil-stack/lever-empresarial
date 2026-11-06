@@ -1,0 +1,149 @@
+{
+  "oscuro": {
+    "medidos": 450,
+    "minimo": 4.71,
+    "fallas": [],
+    "porColor": {
+      "#edf0ed": {
+        "textos": 147,
+        "minimo": 8.83,
+        "fondo": "#4e3e39",
+        "ejemplo": "/consola/apariencia «Taller del Cierre y Servicios Logísticos»"
+      },
+      "#aeaba9": {
+        "textos": 101,
+        "minimo": 4.71,
+        "fondo": "#483b36",
+        "ejemplo": "/consola/personas «Planeación con neto vigente»"
+      },
+      "#bdbab8": {
+        "textos": 174,
+        "minimo": 5.56,
+        "fondo": "#483b37",
+        "ejemplo": "/muestrario «Sin cajón $84,560.40»"
+      },
+      "#ddb45e": {
+        "textos": 10,
+        "minimo": 6.71,
+        "fondo": "#372f2b",
+        "ejemplo": "/consola/pendientes «3»"
+      },
+      "#0c0b0b": {
+        "textos": 12,
+        "minimo": 17.48,
+        "fondo": "#f1f2ee",
+        "ejemplo": "/consola «6»"
+      },
+      "#ff5a4e": {
+        "textos": 4,
+        "minimo": 5.38,
+        "fondo": "#251d1a",
+        "ejemplo": "/consola «$0.00»"
+      },
+      "#e8735f": {
+        "textos": 2,
+        "minimo": 6.39,
+        "fondo": "#140f0d",
+        "ejemplo": "/consola/proveedores «3 nov 2026»"
+      }
+    }
+  },
+  "claro": {
+    "medidos": 450,
+    "minimo": 4.96,
+    "fallas": [],
+    "porColor": {
+      "#141312": {
+        "textos": 147,
+        "minimo": 7.79,
+        "fondo": "#a5a9a4",
+        "ejemplo": "/consola/apariencia «Capas de niebla con luz que entra de lad»"
+      },
+      "#57524d": {
+        "textos": 101,
+        "minimo": 4.96,
+        "fondo": "#d1cfc9",
+        "ejemplo": "/muestrario «RFC»"
+      },
+      "#4f4a45": {
+        "textos": 174,
+        "minimo": 5.66,
+        "fondo": "#d1d0c9",
+        "ejemplo": "/consola/lista-69b «La copia la guarda la plataforma. El adm»"
+      },
+      "#6b500c": {
+        "textos": 10,
+        "minimo": 5.05,
+        "fondo": "#d5d3cd",
+        "ejemplo": "/consola/pendientes «3»"
+      },
+      "#ffffff": {
+        "textos": 12,
+        "minimo": 17.93,
+        "fondo": "#1b1614",
+        "ejemplo": "/esta-no-existe «Entrar a mi cuenta»"
+      },
+      "#a33a32": {
+        "textos": 4,
+        "minimo": 5.69,
+        "fondo": "#efefec",
+        "ejemplo": "/consola «Abrir Proveedores»"
+      },
+      "#a93c29": {
+        "textos": 2,
+        "minimo": 5.38,
+        "fondo": "#efeeeb",
+        "ejemplo": "/consola/proveedores «Rechazado»"
+      }
+    }
+  },
+  "lever": {
+    "medidos": 444,
+    "minimo": 4.73,
+    "fallas": [],
+    "porColor": {
+      "#fff5f1": {
+        "textos": 145,
+        "minimo": 4.8,
+        "fondo": "#b05044",
+        "ejemplo": "/consola/apariencia «Taller del Cierre y Servicios Logísticos»"
+      },
+      "#f0c8be": {
+        "textos": 97,
+        "minimo": 4.73,
+        "fondo": "#903d33",
+        "ejemplo": "/consola/personas «Planeación con neto vigente»"
+      },
+      "#f9d8d0": {
+        "textos": 174,
+        "minimo": 5.62,
+        "fondo": "#8d3b31",
+        "ejemplo": "/consola/pendientes «acciones pendientes»"
+      },
+      "#ecc77e": {
+        "textos": 10,
+        "minimo": 4.92,
+        "fondo": "#853a32",
+        "ejemplo": "/consola/pendientes «3»"
+      },
+      "#0c0b0b": {
+        "textos": 12,
+        "minimo": 17.48,
+        "fondo": "#f1f2ee",
+        "ejemplo": "/consola «6»"
+      },
+      "#ffe4dd": {
+        "textos": 4,
+        "minimo": 9.89,
+        "fondo": "#5e251d",
+        "ejemplo": "/consola «$0.00»"
+      },
+      "#ee998a": {
+        "textos": 2,
+        "minimo": 6.6,
+        "fondo": "#4b1915",
+        "ejemplo": "/consola/proveedores «3 nov 2026»"
+      }
+    }
+  }
+}

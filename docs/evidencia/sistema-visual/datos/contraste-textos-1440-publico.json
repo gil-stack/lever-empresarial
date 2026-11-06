@@ -1,0 +1,197 @@
+{
+  "oscuro": {
+    "medidos": 70,
+    "minimo": 5.34,
+    "fallas": [],
+    "porColor": {
+      "#edf0ed": {
+        "textos": 21,
+        "minimo": 10.24,
+        "fondo": "#423531",
+        "ejemplo": "/recuperar «Entrar»"
+      },
+      "#bdbab8": {
+        "textos": 17,
+        "minimo": 5.63,
+        "fondo": "#483a35",
+        "ejemplo": "/recuperar «El enlace sirve una sola vez y vence en »"
+      },
+      "#aeaba9": {
+        "textos": 8,
+        "minimo": 5.54,
+        "fondo": "#3d302d",
+        "ejemplo": "/recuperar «Recuperar contraseña»"
+      },
+      "#0c0b0b": {
+        "textos": 5,
+        "minimo": 17.48,
+        "fondo": "#f1f2ee",
+        "ejemplo": "/entrar «Continuar»"
+      },
+      "#60656d": {
+        "textos": 5,
+        "minimo": 5.87,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Preguntas»"
+      },
+      "#17191d": {
+        "textos": 4,
+        "minimo": 17.6,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «$125,450»"
+      },
+      "#ffffff": {
+        "textos": 2,
+        "minimo": 18.58,
+        "fondo": "#111318",
+        "ejemplo": "/ «Ver demo»"
+      },
+      "#656b75": {
+        "textos": 6,
+        "minimo": 5.37,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «.00 MXN»"
+      },
+      "#2e333b": {
+        "textos": 1,
+        "minimo": 12.71,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Cómo funciona»"
+      },
+      "#39734a": {
+        "textos": 1,
+        "minimo": 5.34,
+        "fondo": "#f5faf6",
+        "ejemplo": "/ «Al día»"
+      }
+    }
+  },
+  "claro": {
+    "medidos": 70,
+    "minimo": 5.21,
+    "fallas": [],
+    "porColor": {
+      "#141312": {
+        "textos": 21,
+        "minimo": 10.83,
+        "fondo": "#c7c6bf",
+        "ejemplo": "/entrar «Claro»"
+      },
+      "#4f4a45": {
+        "textos": 17,
+        "minimo": 5.72,
+        "fondo": "#d2d1cb",
+        "ejemplo": "/entrar «Lever»"
+      },
+      "#57524d": {
+        "textos": 8,
+        "minimo": 5.21,
+        "fondo": "#d6d4cd",
+        "ejemplo": "/recuperar «El saldo vive con el participante de la »"
+      },
+      "#ffffff": {
+        "textos": 7,
+        "minimo": 17.93,
+        "fondo": "#1b1614",
+        "ejemplo": "/esta-no-existe «Entrar a mi cuenta»"
+      },
+      "#60656d": {
+        "textos": 5,
+        "minimo": 5.87,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Preguntas»"
+      },
+      "#17191d": {
+        "textos": 4,
+        "minimo": 17.6,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «$125,450»"
+      },
+      "#656b75": {
+        "textos": 6,
+        "minimo": 5.37,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «.00 MXN»"
+      },
+      "#2e333b": {
+        "textos": 1,
+        "minimo": 12.71,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Cómo funciona»"
+      },
+      "#39734a": {
+        "textos": 1,
+        "minimo": 5.34,
+        "fondo": "#f5faf6",
+        "ejemplo": "/ «Al día»"
+      }
+    }
+  },
+  "lever": {
+    "medidos": 70,
+    "minimo": 4.93,
+    "fallas": [],
+    "porColor": {
+      "#fff5f1": {
+        "textos": 21,
+        "minimo": 7,
+        "fondo": "#8e3a30",
+        "ejemplo": "/recuperar «Te mandamos un enlace.»"
+      },
+      "#f9d8d0": {
+        "textos": 17,
+        "minimo": 5.47,
+        "fondo": "#903c33",
+        "ejemplo": "/recuperar «El enlace sirve una sola vez y vence en »"
+      },
+      "#f0c8be": {
+        "textos": 8,
+        "minimo": 4.93,
+        "fondo": "#8d3a30",
+        "ejemplo": "/recuperar «Recuperar contraseña»"
+      },
+      "#0c0b0b": {
+        "textos": 5,
+        "minimo": 17.48,
+        "fondo": "#f1f2ee",
+        "ejemplo": "/entrar «Continuar»"
+      },
+      "#60656d": {
+        "textos": 5,
+        "minimo": 5.87,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Preguntas»"
+      },
+      "#17191d": {
+        "textos": 4,
+        "minimo": 17.6,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «$125,450»"
+      },
+      "#ffffff": {
+        "textos": 2,
+        "minimo": 18.58,
+        "fondo": "#111318",
+        "ejemplo": "/ «Ver demo»"
+      },
+      "#656b75": {
+        "textos": 6,
+        "minimo": 5.37,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «.00 MXN»"
+      },
+      "#2e333b": {
+        "textos": 1,
+        "minimo": 12.71,
+        "fondo": "#ffffff",
+        "ejemplo": "/ «Cómo funciona»"
+      },
+      "#39734a": {
+        "textos": 1,
+        "minimo": 5.34,
+        "fondo": "#f5faf6",
+        "ejemplo": "/ «Al día»"
+      }
+    }
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "oscuro": {
+    "medidos": 154,
+    "minimo": 7.59,
+    "fallas": [],
+    "porColor": {
+      "#edf0ed": {
+        "textos": 65,
+        "minimo": 11.49,
+        "fondo": "#352f2a",
+        "ejemplo": "/operacion «Oscuro»"
+      },
+      "#bdbab8": {
+        "textos": 70,
+        "minimo": 7.6,
+        "fondo": "#312622",
+        "ejemplo": "/operacion/bitacora «Actores, acciones y motivos registrados »"
+      },
+      "#aeaba9": {
+        "textos": 18,
+        "minimo": 7.59,
+        "fondo": "#201916",
+        "ejemplo": "/operacion/bitacora «Personal de plataforma»"
+      },
+      "#0c0b0b": {
+        "textos": 1,
+        "minimo": 17.48,
+        "fondo": "#f1f2ee",
+        "ejemplo": "/operacion/recuperaciones «Confirmar con el código»"
+      }
+    }
+  },
+  "claro": {
+    "medidos": 154,
+    "minimo": 4.86,
+    "fallas": [],
+    "porColor": {
+      "#141312": {
+        "textos": 65,
+        "minimo": 10.44,
+        "fondo": "#c5c2bc",
+        "ejemplo": "/operacion/bitacora «entrada_contrasena»"
+      },
+      "#4f4a45": {
+        "textos": 70,
+        "minimo": 4.86,
+        "fondo": "#c3c1ba",
+        "ejemplo": "/operacion/bitacora «auth_entradas»"
+      },
+      "#57524d": {
+        "textos": 18,
+        "minimo": 5.26,
+        "fondo": "#d7d5ce",
+        "ejemplo": "/operacion/bitacora «Operación SOFIPO»"
+      },
+      "#ffffff": {
+        "textos": 1,
+        "minimo": 17.93,
+        "fondo": "#1b1614",
+        "ejemplo": "/operacion/recuperaciones «Confirmar con el código»"
+      }
+    }
+  },
+  "lever": {
+    "medidos": 154,
+    "minimo": 6.24,
+    "fallas": [],
+    "porColor": {
+      "#fff5f1": {
+        "textos": 65,
+        "minimo": 7.04,
+        "fondo": "#834139",
+        "ejemplo": "/operacion «Lever»"
+      },
+      "#f9d8d0": {
+        "textos": 70,
+        "minimo": 6.24,
+        "fondo": "#84352b",
+        "ejemplo": "/operacion/bitacora «Actores, acciones y motivos registrados »"
+      },
+      "#f0c8be": {
+        "textos": 18,
+        "minimo": 6.53,
+        "fondo": "#732b23",
+        "ejemplo": "/operacion «Personal de plataforma»"
+      },
+      "#0c0b0b": {
+        "textos": 1,
+        "minimo": 17.48,
+        "fondo": "#f1f2ee",
+        "ejemplo": "/operacion/recuperaciones «Confirmar con el código»"
+      }
+    }
+  }
+}

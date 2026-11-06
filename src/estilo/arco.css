@@ -1,26 +1,11 @@
+/* La puerta de las tres superficies. Hereda la paleta Lever del tema; el fondo es la escena. */
 .arco {
-  --papel: light-dark(#f7f7f5, #090909);
-  --hoja: light-dark(#ffffff, #111111);
-  --campo: light-dark(#ffffff, #0c0c0c);
-  --tinta: light-dark(#171717, #f5f5f5);
-  --tinta-suave: light-dark(#60656d, #a3a3a3);
-  --tinta-tenue: light-dark(#647083, #858585);
-  --linea: light-dark(#e3e3e3, #292929);
-  --linea-fuerte: light-dark(#c9cdd2, #404040);
-  --sombra: light-dark(rgb(0 0 0 / 0.045), rgb(0 0 0 / 0.25));
-  --sello: light-dark(#2474ff, #78a7ff);
-  --sello-tenue: light-dark(#e8f0ff, #14233d);
-  --aviso: light-dark(#b42318, #ff9b91);
-  --aviso-tenue: light-dark(#fdeceb, #2c1614);
-  --primario: light-dark(#171717, #f5f5f5);
-  --primario-hover: light-dark(#343434, #ffffff);
-  --sobre-primario: light-dark(#ffffff, #111111);
-
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
-  background: var(--papel);
   color: var(--tinta);
 }
 
@@ -38,36 +23,12 @@
   text-decoration: none;
 }
 
-.arco .arco-logo {
+.arco .logotipo {
   color: var(--tinta);
 }
 
 .arco-cabeza .selector-tema {
   margin-left: auto;
-}
-
-.arco-cabeza .selector-tema legend {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.arco-cabeza .selector-tema-opciones {
-  border: 1px solid var(--linea);
-  background: var(--hoja);
-}
-
-.arco-cabeza .selector-tema label {
-  min-height: 32px;
-  padding: 0 10px;
-  font-size: 0.7rem;
-}
-
-.arco-cabeza .selector-tema label:has(input:checked) {
-  background: var(--papel);
 }
 
 .arco-lienzo {
@@ -82,25 +43,58 @@
   width: min(440px, 100%);
   padding: 36px;
   border: 1px solid var(--linea);
-  border-radius: 12px;
-  background: var(--hoja);
-  box-shadow: 0 12px 36px var(--sombra);
+  border-radius: var(--r);
+  background: var(--panel);
+  -webkit-backdrop-filter: blur(30px) saturate(115%);
+  backdrop-filter: blur(30px) saturate(115%);
+  box-shadow: 0 30px 80px -40px var(--sombra-flotante);
 }
 
 .arco-acceso-tarjeta h1 {
   margin: 10px 0 0;
   font-size: clamp(1.9rem, 4vw, 2.25rem);
-  font-weight: 450;
-  letter-spacing: -0.045em;
+  font-weight: 300;
+  letter-spacing: -0.02em;
   line-height: 1.12;
+}
+
+/* «Confirma que eres tú» dentro de la tarjeta de la entrada: un bloque aparte, no una línea más. */
+.arco .confirmar-identidad {
+  margin: 24px 0;
+  padding: 20px 0;
+  border-top: 1px solid var(--linea);
+  border-bottom: 1px solid var(--linea);
+}
+
+.arco .confirmar-identidad h2 {
+  margin: 0 0 6px;
+  color: var(--tinta);
+  font-family: var(--fd);
+  font-size: 1.15rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.arco-volver {
+  display: inline-flex;
+  margin-bottom: 22px;
+  color: var(--tinta-suave);
+  font-size: 0.79rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.arco-volver:hover {
+  color: var(--tinta);
 }
 
 .arco-kicker {
   margin: 0;
-  color: var(--tinta-tenue);
-  font-size: 0.67rem;
-  font-weight: 550;
-  letter-spacing: 0.11em;
+  color: var(--tx3);
+  font-family: var(--fd);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
 }
 
@@ -132,7 +126,7 @@
 .arco-acceso-tarjeta .campo select {
   min-height: 46px;
   border-color: var(--linea-fuerte);
-  border-radius: 7px;
+  border-radius: var(--radio-control);
   background-color: var(--campo);
   font-size: 0.9rem;
 }
@@ -144,7 +138,7 @@
 .arco-acceso-tarjeta .campo input:focus-visible,
 .arco-acceso-tarjeta .campo select:focus-visible {
   border-color: var(--sello);
-  box-shadow: 0 0 0 3px light-dark(rgb(36 116 255 / 0.12), rgb(120 167 255 / 0.15));
+  box-shadow: 0 0 0 3px var(--sello-tenue);
   outline: none;
 }
 
@@ -174,7 +168,7 @@
   width: 100%;
   min-height: 44px;
   border-color: var(--primario);
-  border-radius: 7px;
+  border-radius: var(--radio-control);
   background: var(--primario);
   color: var(--sobre-primario);
   font-size: 0.82rem;
@@ -184,8 +178,8 @@
 }
 
 .arco-acceso-tarjeta .acciones .boton:hover {
-  border-color: var(--primario-hover);
-  background: var(--primario-hover);
+  border-color: var(--primario-encima);
+  background: var(--primario-encima);
 }
 
 .arco-acceso-tarjeta .alerta {
@@ -205,7 +199,7 @@
 
 .arco-pie-pagina {
   padding: 0 24px 24px;
-  color: var(--tinta-tenue);
+  color: var(--tinta-suave);
   font-size: 0.68rem;
   text-align: center;
 }
@@ -251,8 +245,9 @@
   border: 1px solid var(--linea);
   border-radius: 7px;
   font-family: var(--fuente-mono);
-  font-size: 0.84rem;
-  letter-spacing: 0.04em;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .arco-lista {
@@ -272,14 +267,27 @@
   border-bottom: 1px solid var(--linea);
 }
 
+/* Sirve igual para un enlace y para un <button> (como «Perdí el segundo factor»): sin el fondo,
+   los bordes ni la fuente del navegador, solo la línea de abajo. */
 .arco .arco-enlace {
   display: inline-flex;
   margin-top: 18px;
   padding: 0 0 4px;
+  border: 0;
   border-bottom: 1px solid var(--linea-fuerte);
+  border-radius: 0;
+  background: none;
   color: var(--tinta);
+  font: inherit;
   font-size: 0.79rem;
   font-weight: 550;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.arco .arco-enlace:hover {
+  border-bottom-color: var(--sello);
+  color: var(--tinta);
 }
 
 @media (max-width: 560px) {

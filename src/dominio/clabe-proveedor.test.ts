@@ -154,10 +154,13 @@ describe("la CLABE vive en la consola y no en el teléfono", () => {
     assert.match(cambio, /digitos.length >= 18/);
     assert.match(cambio, /Esa CLABE no cierra/);
     assert.equal(telefonoCuerpo.includes("CLABE"), false);
+    assert.equal(telefonoCuerpo.includes("PIE_REGULATORIO"), false);
     assert.doesNotMatch(telefonoCuerpo, /El saldo vive/);
     assert.match(telefonoCuerpo, /marca-app/);
     assert.match(telefonoCuerpo, /pie-app/);
-    assert.match(marco, /El saldo vive con el participante de la CLABE/);
+    // El aviso vigente hasta que legal apruebe el nuevo; el texto del diseño (SOFIPO por definir) no se publica.
+    assert.match(marco, /El saldo vive con el participante de la CLABE\. El plástico vive con el emisor\./);
+    assert.doesNotMatch(marco, /Sociedad Financiera Popular|razón social por definir/);
     assert.equal(panel.includes("•"), false);
     assert.doesNotMatch(panel, /SPEI|transferir|Pagar/);
   });

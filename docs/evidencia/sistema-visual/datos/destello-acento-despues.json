@@ -1,0 +1,35 @@
+[
+  {
+    "recarga": 1,
+    "final": "#E9DAC5",
+    "primerCuadroVisible": {
+      "t": 409,
+      "acc": "#E9DAC5",
+      "pintado": true
+    },
+    "cuadrosVisiblesConOtroAcento": 0,
+    "ultimoConOtro": null
+  },
+  {
+    "recarga": 2,
+    "final": "#E9DAC5",
+    "primerCuadroVisible": {
+      "t": 266,
+      "acc": "#E9DAC5",
+      "pintado": true
+    },
+    "cuadrosVisiblesConOtroAcento": 0,
+    "ultimoConOtro": null
+  },
+  {
+    "recarga": 3,
+    "final": "#E9DAC5",
+    "primerCuadroVisible": {
+      "t": 262,
+      "acc": "#E9DAC5",
+      "pintado": true
+    },
+    "cuadrosVisiblesConOtroAcento": 0,
+    "ultimoConOtro": null
+  }
+]

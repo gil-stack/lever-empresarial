@@ -511,8 +511,9 @@ function sembrar(url: string): string {
       values ('${id}', '${EMPRESA}', '${indice === 0 ? DOCUMENTO : `5555555${indice}-5555-4555-8555-555555555555`}', '${COPIA}', '${rfc}', '${nombre}', date '2026-09-30', now(), true, now());
     insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
       select operator_id, '${EMPRESA}', 'miembro', '${LUIS}', 'cliente', 'alta_proveedor', 'suppliers', '${id}' from companies where id = '${EMPRESA}';
+    -- Vigente desde el reloj fijo de la prueba: con now(), al cambiarla en AHORA se cerraba antes de abrir.
     insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde)
-      values ('${clabeId}', '${EMPRESA}', '${id}', '${CLABE}', true, now() - interval '1 day');
+      values ('${clabeId}', '${EMPRESA}', '${id}', '${CLABE}', true, timestamptz '${AHORA.toISOString()}' - interval '1 day');
     insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
       select operator_id, '${EMPRESA}', 'miembro', '${LUIS}', 'cliente', 'clabe_proveedor', 'supplier_clabes', '${clabeId}' from companies where id = '${EMPRESA}';`).join("\n");
   ejecutar(url, `begin;

@@ -1,0 +1,87 @@
+[
+  {
+    "nombre": "Laura: el menú abre Seguridad",
+    "ok": true,
+    "detalle": "http://localhost:4802/entrar/seguridad"
+  },
+  {
+    "nombre": "tema en <html>",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Seguridad: enlace para volver a la consola",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "factor de hace 6 min: pide «Confirma que eres tú»",
+    "ok": true,
+    "detalle": "1 sesiones"
+  },
+  {
+    "nombre": "Confirma que eres tú: el código TOTP la cierra",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "«Volver a la consola» regresa a la consola",
+    "ok": true,
+    "detalle": "http://localhost:4802/consola"
+  },
+  {
+    "nombre": "Laura: sin errores de consola",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Laura: la recuperación queda en revisión y el aviso lo dice",
+    "ok": true,
+    "detalle": "http://localhost:4802/entrar?aviso=recuperacion"
+  },
+  {
+    "nombre": "pedir recuperación: sin errores de consola",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Operación: sección Recuperaciones",
+    "ok": true,
+    "detalle": "http://localhost:4802/operacion/recuperaciones"
+  },
+  {
+    "nombre": "la solicitud de Laura aparece",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Recuperaciones: pide «Confirma que eres tú»",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Recuperaciones: el código TOTP confirma",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Rechazar quita la solicitud de la lista",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Seguridad con sesión SOFIPO: enlace a Operación",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "«Volver a Operación» regresa a /operacion",
+    "ok": true,
+    "detalle": "http://localhost:4802/operacion"
+  },
+  {
+    "nombre": "op: sin errores de consola",
+    "ok": true,
+    "detalle": ""
+  }
+]

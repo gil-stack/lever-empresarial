@@ -1,6 +1,8 @@
 /* Superficie de personal SOFIPO. Usa los tokens compartidos, sin tocar la consola. */
 
 .operacion-marco {
+  position: relative;
+  z-index: 1;
   min-height: 100dvh;
   display: grid;
   grid-template-columns: 236px minmax(0, 1fr);
@@ -94,8 +96,13 @@
   font-size: 0.85rem;
 }
 
-.operacion-cuenta span {
+/* Solo el rol bajo el nombre: los rótulos del selector de tema llevan su propio color (el activo, --tx). */
+.operacion-cuenta p span {
   color: var(--tinta-tenue);
+  font-size: 0.75rem;
+}
+
+.operacion-cuenta .selector-tema label {
   font-size: 0.75rem;
 }
 
@@ -306,7 +313,8 @@
 .operacion-tabla td small {
   display: block;
   margin-top: 4px;
-  color: var(--tinta-tenue);
+  /* La tabla va directo sobre la escena en móvil: --tinta-tenue daba 4.29 en Claro. */
+  color: var(--tinta-suave);
 }
 
 .operacion-pie {
@@ -386,6 +394,11 @@
   .operacion-cuenta .selector-tema {
     max-width: 260px;
   }
+}
+
+/* El lateral de Operación mide ~200 px: el selector de tema va solo con texto para que no se encime. */
+.operacion-cuenta .selector-tema label .icono {
+  display: none;
 }
 
 @media (max-width: 560px) {

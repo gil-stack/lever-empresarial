@@ -1,0 +1,47 @@
+[
+  {
+    "nombre": "/empresas: el menú no ofrece Apariencia",
+    "ok": true,
+    "detalle": "Mi perfil y seguridad · Cambiar de empresa · Salir"
+  },
+  {
+    "nombre": "tema en <html>",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "opciones del menú con tabindex -1",
+    "ok": true,
+    "detalle": "-1,-1,-1,-1"
+  },
+  {
+    "nombre": "al abrir, el foco va a la primera opción",
+    "ok": true,
+    "detalle": "a.menu-opcion|Mi perfil y seguridad"
+  },
+  {
+    "nombre": "Tab cierra el menú y el foco regresa al botón",
+    "ok": true,
+    "detalle": "button.menu-desplegable-boton|LMLaura MéndezAdministrador"
+  },
+  {
+    "nombre": "Escape cierra el menú y el foco regresa al botón",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "el menú de empresa sale del lateral (no se recorta)",
+    "ok": true,
+    "detalle": "menú 280 px, lateral 240 px"
+  },
+  {
+    "nombre": "la razón social larga se ve completa y encima de la página",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "sin errores de consola",
+    "ok": true,
+    "detalle": ""
+  }
+]

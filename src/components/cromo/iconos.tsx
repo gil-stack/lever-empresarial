@@ -1,15 +1,16 @@
 import type { ReactNode } from "react";
 
+/** Íconos de trazo 1.4, redondos, sobre caja de 24: los del diseño de Lever Empresas. */
 function Trazo({ children }: { children: ReactNode }) {
   return (
     <svg
       className="icono"
       viewBox="0 0 24 24"
-      width="18"
-      height="18"
+      width="17"
+      height="17"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.6"
+      strokeWidth="1.4"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -20,13 +21,10 @@ function Trazo({ children }: { children: ReactNode }) {
   );
 }
 
-export function IconoConsola() {
+export function IconoInicio() {
   return (
     <Trazo>
-      <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
-      <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
-      <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
-      <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
+      <path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" />
     </Trazo>
   );
 }
@@ -34,8 +32,7 @@ export function IconoConsola() {
 export function IconoPendientes() {
   return (
     <Trazo>
-      <path d="M9 5.5h10M9 12h10M9 18.5h10" />
-      <path d="m3.5 5.5 1.2 1.2 2.3-2.4M3.5 12l1.2 1.2L7 10.8M3.5 18.5l1.2 1.2 2.3-2.4" />
+      <path d="m5 12 5 5 9-10" />
     </Trazo>
   );
 }
@@ -43,9 +40,7 @@ export function IconoPendientes() {
 export function IconoPolitica() {
   return (
     <Trazo>
-      <path d="M6 3.5h8.5L18.5 7.5V20.5H6z" />
-      <path d="M14 3.5V8h4.5" />
-      <path d="M9 12.5h6M9 16h4" />
+      <path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" />
     </Trazo>
   );
 }
@@ -53,8 +48,7 @@ export function IconoPolitica() {
 export function IconoLista() {
   return (
     <Trazo>
-      <path d="M9 6.5h10M9 12h10M9 17.5h7" />
-      <path d="M4.5 6.5h.01M4.5 12h.01M4.5 17.5h.01" />
+      <path d="M12 3v18M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0zM8 21h8" />
     </Trazo>
   );
 }
@@ -62,9 +56,7 @@ export function IconoLista() {
 export function IconoPersonas() {
   return (
     <Trazo>
-      <circle cx="9.5" cy="8.5" r="3.5" />
-      <path d="M3.5 19.5c.8-3.3 3.1-5 6-5s5.2 1.7 6 5" />
-      <path d="M15.5 5.3a3.5 3.5 0 0 1 0 6.4M17.5 14.8c1.5.6 2.6 2.2 3 4.7" />
+      <path d="M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 20v-1a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" />
     </Trazo>
   );
 }
@@ -72,29 +64,15 @@ export function IconoPersonas() {
 export function IconoPoliza() {
   return (
     <Trazo>
-      <path d="M5 4.5A1.5 1.5 0 0 1 6.5 3h12v15h-12A1.5 1.5 0 0 0 5 19.5z" />
-      <path d="M5 19.5A1.5 1.5 0 0 0 6.5 21h12v-3" />
-      <path d="M9 7.5h6M9 11h6" />
+      <path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6" />
     </Trazo>
   );
 }
 
-export function IconoAlta() {
+export function IconoConfiguracion() {
   return (
     <Trazo>
-      <path d="M4 20.5h16" />
-      <path d="M6 20.5V5.5l7-2v17" />
-      <path d="M13 9.5h5v11" />
-      <path d="M9 8.5v.01M9 12v.01M9 15.5v.01M16 13v.01M16 16.5v.01" />
-    </Trazo>
-  );
-}
-
-export function IconoPrecios() {
-  return (
-    <Trazo>
-      <path d="M3.5 12.2V4.5a1 1 0 0 1 1-1h7.7l8.3 8.3a1.4 1.4 0 0 1 0 2l-6.7 6.7a1.4 1.4 0 0 1-2 0z" />
-      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
     </Trazo>
   );
 }
@@ -102,9 +80,15 @@ export function IconoPrecios() {
 export function IconoProveedores() {
   return (
     <Trazo>
-      <path d="M4 10.5 12 4.5l8 6" />
-      <path d="M6.5 9.2V20h11V9.2" />
-      <path d="M10 20v-5.5h4V20" />
+      <path d="M3 9l1.5-5h15L21 9M3 9h18v11H3zM10 20v-5h4v5" />
+    </Trazo>
+  );
+}
+
+export function IconoTelefono() {
+  return (
+    <Trazo>
+      <path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 10h18M7 15h4" />
     </Trazo>
   );
 }
@@ -112,8 +96,7 @@ export function IconoProveedores() {
 export function IconoEntrar() {
   return (
     <Trazo>
-      <path d="M13.5 4.5h4a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-4" />
-      <path d="M4.5 12h10M11 8.5l3.5 3.5-3.5 3.5" />
+      <path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M14 17l5-5-5-5M19 12H8" />
     </Trazo>
   );
 }
@@ -121,8 +104,48 @@ export function IconoEntrar() {
 export function IconoSalir() {
   return (
     <Trazo>
-      <path d="M10.5 4.5h-4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h4" />
-      <path d="M9.5 12h10M16 8.5l3.5 3.5-3.5 3.5" />
+      <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h11" />
+    </Trazo>
+  );
+}
+
+export function IconoApariencia() {
+  return (
+    <Trazo>
+      <path d="M12 3a9 9 0 1 0 0 18c1 0 1.6-.8 1.6-1.6 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-4-4-7.4-9-7.4zM7.5 12a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM10.5 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2zM15.5 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2z" />
+    </Trazo>
+  );
+}
+
+export function IconoSeguridad() {
+  return (
+    <Trazo>
+      <path d="M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3" />
+    </Trazo>
+  );
+}
+
+export function IconoEmpresas() {
+  return (
+    <Trazo>
+      <path d="M3 10 12 4l9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18" />
+    </Trazo>
+  );
+}
+
+export function IconoBuscar() {
+  return (
+    <Trazo>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-3.5-3.5" />
+    </Trazo>
+  );
+}
+
+export function IconoChevron() {
+  return (
+    <Trazo>
+      <path d="m6 9 6 6 6-6" />
     </Trazo>
   );
 }
@@ -140,15 +163,6 @@ export function IconoLuna() {
   return (
     <Trazo>
       <path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z" />
-    </Trazo>
-  );
-}
-
-export function IconoAuto() {
-  return (
-    <Trazo>
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="M12 3.5v17a8.5 8.5 0 0 0 0-17z" fill="currentColor" stroke="none" />
     </Trazo>
   );
 }
@@ -172,8 +186,7 @@ export function IconoCerrar() {
 export function IconoAumento() {
   return (
     <Trazo>
-      <path d="M5 18.5 18.5 5" />
-      <path d="M9.5 5h9v9" />
+      <path d="M4 17 10 11l4 4 6-7M14 8h6v6" />
     </Trazo>
   );
 }
@@ -181,9 +194,7 @@ export function IconoAumento() {
 export function IconoReembolso() {
   return (
     <Trazo>
-      <path d="M4.5 9.5h15v10h-15z" />
-      <path d="M12 3.5 4.5 9.5M12 3.5l7.5 6" />
-      <path d="M9.5 13v3.5M14.5 13v3.5" />
+      <path d="M3 10 12 4l9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18" />
     </Trazo>
   );
 }
@@ -191,8 +202,7 @@ export function IconoReembolso() {
 export function IconoCompra() {
   return (
     <Trazo>
-      <path d="M5.5 8.5h13l-1 12h-11z" />
-      <path d="M9 8.5V7a3 3 0 0 1 6 0v1.5" />
+      <path d="M3 9l1.5-5h15L21 9M3 9h18v11H3zM10 20v-5h4v5" />
     </Trazo>
   );
 }

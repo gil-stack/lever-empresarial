@@ -1,0 +1,172 @@
+[
+  {
+    "nombre": "tema en <html>",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "entrada con contraseña y TOTP",
+    "ok": true,
+    "detalle": "http://localhost:4802/empresas"
+  },
+  {
+    "nombre": "Inicio con aria-current",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "título de la barra",
+    "ok": true,
+    "detalle": "Inicio"
+  },
+  {
+    "nombre": "Pendientes abre",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "buscador lleva a Personas con q",
+    "ok": true,
+    "detalle": "http://localhost:4802/c/bef421f3-0072-4796-96ce-390413afcfff/consola/personas?q=Tom%C3%A1s"
+  },
+  {
+    "nombre": "ficha de persona",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "barra con desenfoque al hacer scroll",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Nómina abre",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "menú abierto",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "menú de la persona: opciones",
+    "ok": true,
+    "detalle": "Mi perfil y seguridad | Apariencia | Cambiar de empresa | Salir"
+  },
+  {
+    "nombre": "menú: Escape cierra",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "menú: Escape regresa el foco al chip",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Mi perfil y seguridad",
+    "ok": true,
+    "detalle": "http://localhost:4802/entrar/seguridad"
+  },
+  {
+    "nombre": "Apariencia desde el menú",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "6 miniaturas pintadas",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Cambiar de empresa abre /empresas",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "cambio de empresa",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "alta de proveedor",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "buscador con q",
+    "ok": true,
+    "detalle": "Buscar persona → http://localhost:4802/c/33333333-3333-4333-8333-333333333333/consola/personas?q=Papel"
+  },
+  {
+    "nombre": "teléfono abre",
+    "ok": true,
+    "detalle": "http://localhost:4802/c/33333333-3333-4333-8333-333333333333/telefono"
+  },
+  {
+    "nombre": "panel lateral abre",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "con el panel abierto el fondo no se desplaza",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "con el panel abierto la vista no se mueve y el panel sigue arriba",
+    "ok": true,
+    "detalle": "{\"arriba\":0,\"panel\":0}"
+  },
+  {
+    "nombre": "panel lateral cierra con Escape",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Escape avisa el cierre una sola vez",
+    "ok": true,
+    "detalle": "1"
+  },
+  {
+    "nombre": "al cerrar, el fondo vuelve a desplazarse",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "aviso con Deshacer",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Deshacer regresa la fila",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "diálogo abre",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "diálogo cierra con el velo",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "el velo avisa el cierre una sola vez",
+    "ok": true,
+    "detalle": "2"
+  },
+  {
+    "nombre": "Salir",
+    "ok": true,
+    "detalle": "http://localhost:4802/"
+  },
+  {
+    "nombre": "sin errores de consola",
+    "ok": true,
+    "detalle": ""
+  }
+]

@@ -30,6 +30,13 @@ export default async function PaginaSeguridad({
   const [factores, confirmacion] = await Promise.all([verFactores(sesion), estadoDeConfirmacion(sesion)]);
   const avisoParam = (await searchParams).aviso;
   const aviso = typeof avisoParam === "string" ? (AVISOS[avisoParam] ?? null) : null;
+  // Se regresa a la superficie con la que se abrió la sesión; la consola elige la empresa.
+  const regreso =
+    sesion.superficie === "sofipo"
+      ? { href: "/operacion", texto: "Volver a Operación" }
+      : sesion.superficie === "telefono"
+        ? { href: "/telefono", texto: "Volver al teléfono" }
+        : { href: "/consola", texto: "Volver a la consola" };
   const formato = new Intl.DateTimeFormat("es-MX", {
     dateStyle: "medium",
     timeZone: "America/Mexico_City",
@@ -49,6 +56,7 @@ export default async function PaginaSeguridad({
         confirmacion={confirmacion}
         esOperador={Boolean((await contextoOpcional())?.personal)}
         aviso={aviso}
+        regreso={regreso}
       />
     </MarcoArco>
   );

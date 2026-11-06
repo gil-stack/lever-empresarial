@@ -1,0 +1,82 @@
+[
+  {
+    "nombre": "/empresas: el menú no ofrece Apariencia",
+    "ok": true,
+    "detalle": "Mi perfil y seguridad · Cambiar de empresa · Salir"
+  },
+  {
+    "nombre": "tema en <html>",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "opciones del menú con tabindex -1",
+    "ok": true,
+    "detalle": "-1,-1,-1,-1"
+  },
+  {
+    "nombre": "al abrir, el foco va a la primera opción",
+    "ok": true,
+    "detalle": "a.menu-opcion|Mi perfil y seguridad"
+  },
+  {
+    "nombre": "Tab cierra el menú y el foco regresa al botón",
+    "ok": true,
+    "detalle": "button.menu-desplegable-boton|LMLaura MéndezAdministrador"
+  },
+  {
+    "nombre": "Escape cierra el menú y el foco regresa al botón",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "móvil: pie regulatorio visible al final de Inicio",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "simulación Safari < 17.4: checkVisibility ausente",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "cajón abre sin checkVisibility",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "con el cajón abierto, la página queda inert",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Tab no sale del cajón",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "menú de empresa abre dentro del cajón",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "primer Escape: cierra el menú, el cajón sigue abierto y el foco en el botón de empresa",
+    "ok": true,
+    "detalle": "button.menu-desplegable-boton|ALAltamar LogísticaRFC ALO180312AB1"
+  },
+  {
+    "nombre": "segundo Escape: cierra el cajón y el foco regresa a «Secciones»",
+    "ok": true,
+    "detalle": "button.boton-menu|Secciones"
+  },
+  {
+    "nombre": "tocar el velo cierra, regresa el foco a «Secciones» y quita el inert",
+    "ok": true,
+    "detalle": "button.boton-menu|Secciones"
+  },
+  {
+    "nombre": "sin errores de consola",
+    "ok": true,
+    "detalle": ""
+  }
+]

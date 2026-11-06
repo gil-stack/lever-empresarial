@@ -1,63 +1,130 @@
 /*
- * Tokens de Lever. `color-scheme` decide qué mitad de cada light-dark() se pinta:
- * sin elección manda el sistema; data-tema fija claro u oscuro.
- * light-dark() se resuelve donde se declara la variable, por eso el teléfono, que
- * tiene su propio esquema, vuelve a declarar los tokens.
+ * Tokens de Lever Empresas (diseño de los socios, «Plataforma v6»).
+ * Tres temas: Oscuro (por defecto), Claro y Lever. `data-tema` en <html> sale de la
+ * cookie, así el primer cuadro ya pinta el tema elegido. Claro y Oscuro comparten
+ * light-dark(claro, oscuro) y los decide `color-scheme`; Lever redeclara sus valores.
+ * Los nombres de siempre (--papel, --tinta, --sello…) apuntan a los del diseño: todas
+ * las pantallas cambian de piel sin reescribirse.
+ * Contraste AA medido texto por texto contra los píxeles reales de la escena (no solo contra
+ * --void): --tx2 (oscuro), --tx3 y --warn (los tres temas) y --danger (claro y Lever) se
+ * aclararon u oscurecieron lo mínimo sobre el valor del diseño para pasar 4.5:1, junto con
+ * el velo de lectura de escena.css. Detalle en docs/evidencia/sistema-visual/README.md.
  */
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
+
+  /* Paleta del diseño */
+  --void: light-dark(#ece6de, #0e0a08);
+  --s1: light-dark(#fbf8f4, #15100e);
+  --s2: light-dark(#f4efe8, #1b1614);
+  --s3: light-dark(#e4ddd3, #231d1a);
+  --s4: light-dark(#cfc6ba, #2d2624);
+  --line: light-dark(rgb(20 19 18 / 0.1), rgb(236 240 237 / 0.075));
+  --line2: light-dark(rgb(20 19 18 / 0.17), rgb(236 240 237 / 0.14));
+  --tx: light-dark(#141312, #edf0ed);
+  --tx2: light-dark(#4f4a45, #bdbab8);
+  --tx3: light-dark(#57524d, #aeaba9);
+  /* Acento por tema con el tono de inicio; la apariencia de cada persona lo reemplaza (applyPal). */
+  --acc: light-dark(#cc483e, #ff5a4e);
+  --ink: #ffffff;
+  --ivory: light-dark(#1b1614, #f1f2ee);
+  --ivory-encima: light-dark(#000000, #ffffff);
+  --ivk: light-dark(#ffffff, #0c0b0b);
+  --warn: light-dark(#6b500c, #ddb45e);
+  --danger: light-dark(#a93c29, #e8735f);
+  --blue: #93a6d8;
+  --panel: light-dark(color-mix(in srgb, #ffffff 62%, transparent), color-mix(in srgb, #0e0a08 58%, transparent));
+  --panel2: light-dark(color-mix(in srgb, #ffffff 80%, transparent), color-mix(in srgb, #0e0a08 74%, transparent));
+  --sombra-flotante: light-dark(rgb(20 19 18 / 0.22), rgb(0 0 0 / 0.6));
+
+  --fd: var(--font-arco), system-ui, sans-serif;
+  --fb: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-sans), system-ui, "Segoe UI", sans-serif;
+  --fm: "SF Mono", ui-monospace, var(--font-mono), Menlo, monospace;
+  --ease: cubic-bezier(0.2, 0.7, 0.1, 1);
+  --r: 16px;
+
+  /* Nombres de siempre, sobre la paleta del diseño */
+  --papel: var(--void);
+  --papel-lateral: transparent;
+  --hoja: var(--panel);
+  /* Para lo que flota o se encima (menús, cajón, celdas fijas): opaco. */
+  --hoja-solida: var(--s1);
+  --campo: color-mix(in srgb, var(--tx) 3%, transparent);
+  --tinta: var(--tx);
+  --tinta-suave: var(--tx2);
+  --tinta-tenue: var(--tx3);
+  --linea: var(--line);
+  --linea-fuerte: var(--line2);
+  --surco: var(--line2);
+  --realce: color-mix(in srgb, var(--tx) 5%, transparent);
+  --sombra: light-dark(rgb(20 19 18 / 0.08), rgb(0 0 0 / 0.45));
+  --velo: color-mix(in srgb, var(--void) 55%, transparent);
+
+  --primario: var(--ivory);
+  --primario-encima: var(--ivory-encima);
+  --sobre-primario: var(--ivk);
+
+  /* El acento como texto: en claro se oscurece para leerse sobre marfil. */
+  --sello: light-dark(color-mix(in srgb, var(--acc) 80%, #000000), var(--acc));
+  --sello-profundo: light-dark(color-mix(in srgb, var(--acc) 68%, #000000), color-mix(in srgb, var(--acc) 78%, #ffffff));
+  --sello-tenue: color-mix(in srgb, var(--acc) 12%, transparent);
+  --sobre-sello: var(--ink);
+  --aviso: var(--danger);
+  --aviso-tenue: color-mix(in srgb, var(--danger) 12%, transparent);
+  --ingreso: var(--sello);
+  --ingreso-tenue: color-mix(in srgb, var(--acc) 12%, transparent);
+  --gasto: var(--tx2);
+  --gasto-tenue: color-mix(in srgb, var(--tx) 8%, transparent);
+
+  --fondo-telefono: var(--panel2);
+  --brillo-telefono: color-mix(in srgb, var(--acc) 22%, transparent);
+
+  --fuente-sans: var(--fb);
+  --fuente-mono: var(--fm);
+
+  --lateral: 240px;
+  /* Aire a los lados del lienzo: el de la barra de arriba y el de las páginas */
+  --margen: 44px;
+  --ancho: min(1292px, 100% - 2 * var(--margen));
+  --radio: var(--r);
+  --radio-control: 10px;
 }
 
-:root,
-.marco-telefono {
-  --papel: light-dark(#f2f2f3, #0c0d10);
-  --papel-lateral: light-dark(#eaeaec, #08090b);
-  --hoja: light-dark(#ffffff, #151619);
-  --campo: light-dark(#ffffff, #101114);
-  --tinta: light-dark(#0b0b0c, #f2f2f3);
-  --tinta-suave: light-dark(#47474d, #aeaeb5);
-  --tinta-tenue: light-dark(#616168, #8e8e96);
-  --linea: light-dark(#e0e0e3, #24252a);
-  --linea-fuerte: light-dark(#c9c8cd, #3b3c42);
-  --surco: var(--linea-fuerte);
-  --realce: light-dark(rgb(11 11 12 / 0.05), rgb(242 242 243 / 0.06));
-  --sombra: light-dark(rgb(11 11 12 / 0.06), rgb(0 0 0 / 0.5));
-  --velo: light-dark(rgb(11 11 12 / 0.3), rgb(0 0 0 / 0.62));
+@media (max-width: 1180px) {
+  :root {
+    --margen: 32px;
+  }
+}
 
-  --primario: light-dark(#0b0b0c, #f2f2f3);
-  --primario-encima: light-dark(#2a2a2f, #ffffff);
-  --sobre-primario: light-dark(#ffffff, #0b0b0c);
-
-  --sello: light-dark(#0d5fd0, #5c9dff);
-  --sello-profundo: light-dark(#0a4aa6, #86b6ff);
-  --sello-tenue: light-dark(#e4edfb, #0f2142);
-  --sobre-sello: light-dark(#ffffff, #05122a);
-  --aviso: light-dark(#b3261e, #f2958c);
-  --aviso-tenue: light-dark(#fbeceb, #2c1514);
-  --ingreso: light-dark(#0d5fd0, #6ea8ff);
-  --ingreso-tenue: light-dark(#e4edfb, #102444);
-  --gasto: light-dark(#b55b22, #f0a56c);
-  --gasto-tenue: light-dark(#f9ede3, #2c1d13);
-
-  --fondo-telefono: light-dark(#ffffff, #060709);
-  --brillo-telefono: light-dark(rgb(13 95 208 / 0.1), rgb(46 110 230 / 0.42));
-
-  --fuente-sans: var(--font-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --fuente-mono: var(--font-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
-
-  --lateral: 248px;
-  --margen: clamp(20px, 4.4vw, 64px);
-  --ancho: min(1180px, 100% - 2 * var(--margen));
-  --radio: 14px;
-  --radio-control: 9px;
+@media (max-width: 960px) {
+  :root {
+    --margen: 16px;
+  }
 }
 
 :root[data-tema="claro"] {
   color-scheme: light;
 }
 
-:root[data-tema="oscuro"] {
+/* Lever: el coral de la marca de fondo; el acento es el claro del tono Coral Lever. */
+:root[data-tema="lever"] {
   color-scheme: dark;
+  --void: #5e1c15;
+  --s1: #6a211a;
+  --s2: #76261e;
+  --s3: #832c23;
+  --s4: #903228;
+  --line: rgb(255 214 206 / 0.1);
+  --line2: rgb(255 228 220 / 0.17);
+  --tx: #fff5f1;
+  --tx2: #f9d8d0;
+  --tx3: #f0c8be;
+  --acc: #ffe4dd;
+  --ink: #1a0705;
+  --danger: #ee998a;
+  --warn: #ecc77e;
+  --panel: color-mix(in srgb, #1e0705 44%, transparent);
+  --panel2: color-mix(in srgb, #1e0705 62%, transparent);
 }
 
 * {
@@ -75,8 +142,9 @@ body {
   background: var(--papel);
   color: var(--tinta);
   font-family: var(--fuente-sans);
-  font-size: 15px;
-  line-height: 1.55;
+  font-size: 13.5px;
+  line-height: 1.45;
+  letter-spacing: -0.003em;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -91,16 +159,16 @@ a {
 }
 
 ::selection {
-  background: var(--sello-tenue);
+  background: color-mix(in srgb, var(--acc) 30%, transparent);
   color: var(--tinta);
 }
 
 :focus-visible {
-  outline: 2px solid var(--sello);
-  outline-offset: 2px;
+  outline: 1px solid var(--tx2);
+  outline-offset: 3px;
 }
 
-/* Tipografía: una sola sans; el peso y el tamaño hacen la jerarquía */
+/* Tipografía: Sora fina para títulos y cifras; la del sistema para leer */
 
 h1,
 h2,
@@ -111,31 +179,36 @@ h3 {
 }
 
 h1 {
+  font-family: var(--fd);
   font-size: clamp(1.75rem, 2.3vw, 2.15rem);
+  font-weight: 300;
   line-height: 1.12;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.01em;
 }
 
 h2 {
   font-size: 1.08rem;
   line-height: 1.3;
-  letter-spacing: -0.012em;
+  letter-spacing: -0.005em;
 }
 
 h3 {
   font-size: 1rem;
   line-height: 1.3;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.005em;
 }
 
+/* La etiqueta en mayúsculas espaciadas es la firma de Lever: se usa poco y siempre igual. */
 .kicker,
-.rotulo {
+.rotulo,
+.eyebrow {
   display: block;
   margin: 0 0 14px;
-  color: var(--tinta-tenue);
-  font-size: 0.7rem;
-  font-weight: 500;
-  letter-spacing: 0.14em;
+  color: var(--tx3);
+  font-family: var(--fd);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
   line-height: 1.3;
   text-transform: uppercase;
 }
@@ -143,7 +216,7 @@ h3 {
 .lede {
   max-width: 60ch;
   color: var(--tinta-suave);
-  font-size: 0.98rem;
+  font-size: 0.9rem;
   line-height: 1.6;
   text-wrap: pretty;
 }
@@ -164,10 +237,11 @@ h1 + .lede,
 
 .monto {
   margin: 0;
-  font-size: clamp(1.35rem, 1.9vw, 1.7rem);
+  font-family: var(--fd);
+  font-size: clamp(1.5rem, 2.1vw, 1.875rem);
   font-variant-numeric: tabular-nums;
-  font-weight: 400;
-  letter-spacing: -0.025em;
+  font-weight: 300;
+  letter-spacing: -0.035em;
   line-height: 1.15;
 }
 
@@ -185,7 +259,7 @@ h1 + .lede,
 .nota-saldos,
 .acciones p {
   color: var(--tinta-suave);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   line-height: 1.5;
 }
 
@@ -211,16 +285,15 @@ h1 + .lede,
 kbd {
   display: inline-grid;
   place-items: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 5px;
-  border: 1px solid var(--linea-fuerte);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--line2);
   border-radius: 5px;
-  background: var(--hoja);
-  color: var(--tinta-suave);
-  font-family: var(--fuente-sans);
-  font-size: 0.7rem;
-  font-weight: 500;
+  color: var(--tx2);
+  font-family: var(--fm);
+  font-size: 10px;
+  font-weight: 400;
   line-height: 1;
 }
 

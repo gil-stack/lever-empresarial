@@ -1,5 +1,6 @@
+import { Logotipo } from "@/components/cromo/logotipo";
+
 import { Icono } from "./iconos";
-import { LogoLever } from "./logo-lever";
 
 const MOVIMIENTOS = [
   { nombre: "Materiales del norte", detalle: "Proveedores · Hoy", monto: "$18,450.00" },
@@ -12,7 +13,7 @@ export function VisualHero() {
     <div className="arco-hero-visual" role="img" aria-label="Vista ilustrativa del control de operación de LEVER">
       <div className="arco-panel">
         <div className="arco-panel-cabeza">
-          <LogoLever />
+          <Logotipo linea={null} />
           <span className="arco-panel-periodo">RESUMEN DE OPERACIÓN</span>
         </div>
         <div className="arco-panel-resumen">

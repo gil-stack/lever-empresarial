@@ -34,6 +34,7 @@ export function Seguridad({
   confirmacion,
   esOperador,
   aviso,
+  regreso,
 }: {
   passkeys: PasskeyVisible[];
   totp: boolean;
@@ -42,6 +43,8 @@ export function Seguridad({
   confirmacion: { reciente: boolean; passkey: boolean; totp: boolean; respaldo: boolean };
   esOperador: boolean;
   aviso: string | null;
+  /** A dónde vuelve la persona: la superficie de su sesión. */
+  regreso: { href: string; texto: string };
 }) {
   const [error, setError] = useState<string | null>(null);
   const [alta, setAlta] = useState<{ qr: string; semilla: string } | null>(null);
@@ -95,6 +98,9 @@ export function Seguridad({
 
   return (
     <div>
+      <Link className="arco-volver" href={regreso.href}>
+        ← {regreso.texto}
+      </Link>
       <p className="arco-kicker">Tu cuenta</p>
       <h1>Segundo factor.</h1>
       <p className="arco-nota">Puedes tener una passkey y una app. No se puede quitar el último método.</p>

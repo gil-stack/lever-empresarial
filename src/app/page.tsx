@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { Logotipo } from "@/components/cromo/logotipo";
 import { Icono } from "@/components/landing/iconos";
-import { LogoLever } from "@/components/landing/logo-lever";
 import { VisualHero } from "@/components/landing/visual-hero";
 
 export const metadata: Metadata = {
@@ -79,7 +79,7 @@ export default function PaginaInicio() {
     <div className="arco-landing">
       <a className="arco-saltar" href="#contenido">Saltar al contenido</a>
       <header className="arco-header">
-        <Link href="/" className="arco-header-marca" aria-label="LEVER, inicio"><LogoLever /></Link>
+        <Link href="/" className="arco-header-marca" aria-label="Lever Empresas, inicio"><Logotipo /></Link>
         <nav className="arco-nav" aria-label="Navegación principal">
           <a href="#producto">Producto</a>
           <a href="#como-funciona">Cómo funciona</a>
@@ -214,7 +214,7 @@ export default function PaginaInicio() {
         </section>
 
         <section className="arco-cierre" aria-labelledby="titulo-cierre">
-          <LogoLever inverso />
+          <Logotipo />
           <p className="arco-eyebrow">Tu empresa, en orden</p>
           <h2 id="titulo-cierre">Menos ruido.<br />Más claridad.</h2>
           <p>Una mejor manera de trabajar con el dinero de tu empresa.</p>
@@ -226,7 +226,7 @@ export default function PaginaInicio() {
       </main>
 
       <footer className="arco-footer">
-        <LogoLever />
+        <Logotipo />
         <nav aria-label="Navegación del pie de página">
           <a href="#producto">Producto</a><a href="#como-funciona">Cómo funciona</a><a href="#para-quien">Para quién</a>
           <Link href="/precios">Precios</Link><a href="#preguntas">Preguntas</a><Link href="/entrar">Entrar</Link>

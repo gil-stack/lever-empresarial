@@ -32,6 +32,7 @@ export default async function PaginaTelefono() {
     <MarcoTelefono
       actual="/telefono"
       empresaId={ctx?.empresa?.id ?? null}
+      personaId={ctx?.persona.id}
       consola={puede(ctx, "cliente.consola.ver")}
       resumen={puede(ctx, "cliente.resumen.ver")}
       variasEmpresas={Boolean(ctx && ctx.empresas.length > 1)}

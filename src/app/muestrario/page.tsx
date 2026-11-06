@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { MuestrarioEscenas } from "@/components/apariencia/muestrario-escenas";
 import { Marco } from "@/components/cromo/marco";
 import { BandejaDeEjemplo } from "@/components/muestrario/bandeja-de-ejemplo";
+import { SuperficiesDeEjemplo } from "@/components/muestrario/superficies-de-ejemplo";
 import {
   Ausencia,
   CifraGrande,
@@ -111,6 +112,9 @@ export default function PaginaMuestrario() {
             </Hoja>
           }
         />
+        <Hoja id="superficies-titulo" titulo="Tabla, diálogo, panel lateral y aviso">
+          <SuperficiesDeEjemplo />
+        </Hoja>
         <Hoja id="escenas-titulo" titulo="Escenas">
           <MuestrarioEscenas />
         </Hoja>

@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
-import { Geist, Geist_Mono, Sora } from "next/font/google";
+import { IBM_Plex_Mono, Inter, Sora } from "next/font/google";
 
-import { COOKIE_TEMA, temaDesde } from "@/components/cromo/tema";
+import { COOKIE_TEMA, FONDO_DEL_TEMA, temaDesde } from "@/components/cromo/tema";
 
 import "@/estilo/tokens.css";
 import "@/estilo/arco.css";
@@ -14,20 +14,25 @@ import "@/estilo/proveedores.css";
 import "./globals.css";
 import "@/estilo/landing.css";
 
-const sans = Geist({
+/** Cuerpo: la pila del sistema primero y, donde no hay SF, Inter. */
+const sans = Inter({
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
   variable: "--font-sans",
   display: "swap",
 });
 
-const mono = Geist_Mono({
+const mono = IBM_Plex_Mono({
   subsets: ["latin"],
+  weight: ["400", "500"],
   variable: "--font-mono",
   display: "swap",
 });
 
+/** Sora: títulos, cifras y la palabra «lever». */
 const arco = Sora({
   subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600"],
   variable: "--font-arco",
   display: "swap",
 });
@@ -36,31 +41,31 @@ export const runtime = "nodejs";
 
 export const metadata: Metadata = {
   title: {
-    default: "LEVER",
-    template: "%s · LEVER",
+    default: "Lever Empresas",
+    template: "%s · Lever Empresas",
   },
-  description: "LEVER Pagos: control de gasto empresarial diseñado para razones sociales mexicanas.",
-  applicationName: "LEVER Pagos",
+  description: "Lever Empresas: control de gasto empresarial diseñado para razones sociales mexicanas.",
+  applicationName: "Lever Empresas",
 };
 
-export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f2f2f3" },
-    { media: "(prefers-color-scheme: dark)", color: "#0c0d10" },
-  ],
-  colorScheme: "light dark",
-  width: "device-width",
-  initialScale: 1,
-};
+async function temaElegido() {
+  return temaDesde((await cookies()).get(COOKIE_TEMA)?.value);
+}
+
+export async function generateViewport(): Promise<Viewport> {
+  const tema = await temaElegido();
+  return {
+    themeColor: FONDO_DEL_TEMA[tema],
+    colorScheme: tema === "claro" ? "light" : "dark",
+    width: "device-width",
+    initialScale: 1,
+  };
+}
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const tema = temaDesde((await cookies()).get(COOKIE_TEMA)?.value);
+  const tema = await temaElegido();
   return (
-    <html
-      lang="es"
-      data-tema={tema === "auto" ? undefined : tema}
-      className={`${sans.variable} ${mono.variable} ${arco.variable}`}
-    >
+    <html lang="es" data-tema={tema} className={`${sans.variable} ${mono.variable} ${arco.variable}`}>
       <body>{children}</body>
     </html>
   );

@@ -3,17 +3,13 @@
  * No usa la barra lateral, la empresa, el pie ni el kicker del portal del cliente.
  */
 
-/* Sin elección, el teléfono arranca oscuro, como en la identidad; «Claro» se respeta. */
-:root:not([data-tema="claro"]) .marco-telefono {
-  color-scheme: dark;
-}
-
 .marco-telefono {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
-  background: var(--papel);
   color: var(--tinta);
 }
 
@@ -38,16 +34,16 @@
   background:
     radial-gradient(120% 55% at 105% -5%, var(--brillo-telefono), transparent 62%),
     var(--fondo-telefono);
-  box-shadow:
-    0 1px 2px var(--sombra),
-    0 24px 48px -24px var(--sombra);
+  -webkit-backdrop-filter: blur(30px) saturate(115%);
+  backdrop-filter: blur(30px) saturate(115%);
+  box-shadow: 0 50px 120px -40px var(--sombra-flotante);
 }
 
 .telefono h1 {
   font-size: clamp(1.9rem, 8vw, 2.3rem);
-  font-weight: 600;
+  font-weight: 300;
   line-height: 1.08;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.02em;
 }
 
 .telefono .lede {
@@ -80,16 +76,23 @@
   line-height: 1;
 }
 
-.marca-app .banderin {
-  display: block;
-  width: 38px;
-  height: auto;
+.enlace-apariencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line2);
+  border-radius: 9px;
+  color: var(--tx2);
+  font-size: 12.5px;
+  text-decoration: none;
+  transition: color 0.3s, border-color 0.3s;
 }
 
-.marca-app .palabra-arco {
-  display: block;
-  width: 46px;
-  height: auto;
+.enlace-apariencia:hover {
+  border-color: color-mix(in srgb, var(--tx) 32%, transparent);
+  color: var(--tx);
 }
 
 /* En el teléfono la acción principal es una píldora clara sobre negro: es otra superficie */
@@ -124,20 +127,6 @@
   color: var(--tinta-tenue);
   font-size: 0.78rem;
   line-height: 1.45;
-}
-
-.telefono-cabeza .selector-tema {
-  width: 120px;
-}
-
-.telefono-cabeza .selector-tema legend,
-.telefono-cabeza .selector-tema span {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }
 
 @media (max-width: 560px) {
@@ -271,6 +260,8 @@
 .enlaces-app a,
 .enlaces-app button {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
   min-height: 34px;
   padding: 0;
   border: 0;

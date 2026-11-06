@@ -73,6 +73,13 @@ export const RUTAS = [
     conEmpresa: true,
   },
   {
+    // La apariencia es de cada persona: basta la sesión con su empresa, sin capacidad.
+    patron: "/consola/apariencia",
+    superficie: "cliente",
+    acceso: { tipo: "sesion" },
+    conEmpresa: true,
+  },
+  {
     patron: "/consola/configuracion",
     superficie: "cliente",
     acceso: { tipo: "capacidad", alguna: ["cliente.configuracion.ver"] },

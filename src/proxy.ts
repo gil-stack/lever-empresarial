@@ -62,6 +62,9 @@ function desviar(request: NextRequest, destino: string): NextResponse {
   return new NextResponse(null, { status: 401 });
 }
 
+// Los archivos de public/ van por nombre exacto (sin comodín de extensiones: una ruta de la app con punto
+// debe seguir pasando por aquí). Sin esto el proxy reescribía /lever-email.png a 404 y los correos salían sin logo.
+// tests/operacion/publicos.test.ts falla si un archivo de public/ no queda fuera.
 export const config = {
-  matcher: ["/((?!_next|__next|favicon.ico|icon.svg).*)"],
+  matcher: ["/((?!_next|__next|favicon\\.ico$|icon\\.svg$|lever-email\\.png$).*)"],
 };

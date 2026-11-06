@@ -27,6 +27,16 @@ async function captura(page: Page, nombre: string) {
   await page.screenshot({ path: `${EVIDENCIA}/${nombre}.png`, fullPage: true });
 }
 
+/** El tema se elige en Apariencia (menú de la cuenta); luego se vuelve a la misma pantalla. */
+async function elegirTema(page: Page, tema: "Claro" | "Oscuro") {
+  const regreso = page.url();
+  await page.locator(".cuenta .menu-desplegable-boton").click();
+  await page.getByRole("menuitem", { name: "Apariencia", exact: true }).click();
+  await page.locator(".temas").getByRole("button", { name: tema, exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-tema", tema.toLowerCase());
+  await page.goto(regreso);
+}
+
 function fecha(dias: number): string {
   const fecha = new Date();
   fecha.setUTCDate(fecha.getUTCDate() + dias);
@@ -36,6 +46,7 @@ function fecha(dias: number): string {
 test("la mesa se ve completa en claro, oscuro y móvil", async ({ page }) => {
   await entrar(page);
   await page.goto(BASE);
+  await elegirTema(page, "Claro");
   await expect(page.getByRole("heading", { name: "Pagos a proveedores", exact: true })).toBeVisible();
   await expect(page.getByText("Servicios Norte Integrales", { exact: true })).toBeVisible();
   await captura(page, "01-mesa-claro");
@@ -45,10 +56,11 @@ test("la mesa se ve completa en claro, oscuro y móvil", async ({ page }) => {
   await expect(page.getByText("N-204", { exact: true }).last()).toBeVisible();
   await captura(page, "02-detalle-pago-claro");
 
-  await page.getByLabel("Oscuro", { exact: true }).check();
+  await elegirTema(page, "Oscuro");
   await expect(page.locator("html")).toHaveAttribute("data-tema", "oscuro");
+  await expect(page.getByRole("complementary", { name: "Detalle del pago" })).toBeVisible();
   await captura(page, "03-detalle-pago-oscuro");
-  await page.getByLabel("Claro", { exact: true }).check();
+  await elegirTema(page, "Claro");
   await expect(page.locator("html")).toHaveAttribute("data-tema", "claro");
 
   await page.locator(".proveedores-tabs").getByRole("link", { name: "Proveedores 3", exact: true }).click();
