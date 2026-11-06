@@ -16,6 +16,7 @@ import {
   verificarTotpOperacion,
 } from "@/app/operacion/acciones-autenticacion";
 import { ESTADO_ACCESO_INICIAL, type AltaOperacion, type PasoOperacion } from "@/app/operacion/tipos-acceso";
+import { BotonEnviar } from "@/components/sistema/boton-enviar";
 
 export function ContinuarOperacion({ paso, alta, yaInscrito = false }: { paso: PasoOperacion; alta: AltaOperacion; yaInscrito?: boolean }) {
   const [codigos, setCodigos] = useState<string[] | null>(null);
@@ -60,13 +61,13 @@ function Verificar({ paso }: { paso: Extract<PasoOperacion, { paso: "verificar" 
         {paso.totp ? (
           <form action={enviarTotp}>
             <div className="campo"><label htmlFor="codigo">Código de la app autenticadora</label><input id="codigo" name="codigo" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required {...ligarError(totp.tipo === "error")} /></div>
-            <button className="boton" disabled={pendienteTotp} aria-busy={pendienteTotp}>{pendienteTotp ? "Comprobando…" : "Entrar con el código"}</button>
+            <BotonEnviar pendiente={pendienteTotp} enviando="Comprobando…">Entrar con el código</BotonEnviar>
           </form>
         ) : null}
         {paso.respaldo ? (
           <form action={enviarRespaldo}>
             <div className="campo"><label htmlFor="respaldo">Código de respaldo</label><input id="respaldo" name="codigo" autoComplete="off" required {...ligarError(respaldo.tipo === "error")} /></div>
-            <button className="boton-texto" disabled={pendienteRespaldo} aria-busy={pendienteRespaldo}>{pendienteRespaldo ? "Comprobando…" : "Usar un código de respaldo"}</button>
+            <BotonEnviar className="boton-texto" pendiente={pendienteRespaldo} enviando="Comprobando…">Usar un código de respaldo</BotonEnviar>
           </form>
         ) : null}
       </div>
@@ -110,7 +111,7 @@ function Inscribir({ alta, alGuardar, yaInscrito }: { alta: AltaOperacion; alGua
             <img className="arco-qr" alt="Código QR para la app autenticadora" src={alta.qr} width={196} height={196} />
             <p className="arco-semilla">{alta.semilla}</p>
             <div className="campo"><label htmlFor="codigo-alta">Código que muestra la app</label><input id="codigo-alta" name="codigo" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required {...ligarError(estado.tipo === "error")} /></div>
-            <button className="boton-texto" disabled={pendiente} aria-busy={pendiente}>{pendiente ? "Comprobando…" : "Confirmar el código"}</button>
+            <BotonEnviar className="boton-texto" pendiente={pendiente} enviando="Comprobando…">Confirmar el código</BotonEnviar>
           </form>
         ) : <p className="arco-nota">Si la app no está disponible, usa una passkey.</p>}
       </div>
@@ -143,7 +144,7 @@ function ListoParaAbrir() {
 }
 
 function Abrir() {
-  return <form action={abrirPortalOperacion}><button className="boton" type="submit">Abrir operación</button></form>;
+  return <form action={abrirPortalOperacion}><BotonEnviar>Abrir operación</BotonEnviar></form>;
 }
 
 /** El error de la tarjeta se liga al campo que lo causó. */

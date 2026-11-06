@@ -5,6 +5,7 @@ import { useActionState } from "react";
 
 import { guardarContrasena, pedirEnlace } from "@/app/recuperar/acciones";
 import { RECUPERAR_INICIAL, type EstadoRecuperar } from "@/app/recuperar/estado";
+import { BotonEnviar } from "@/components/sistema/boton-enviar";
 import { CampoContrasena } from "@/components/sistema/campo-contrasena";
 
 const ID_RESULTADO = "recuperar-resultado";
@@ -33,9 +34,7 @@ export function FormularioPedirEnlace() {
         <input id="correo" name="correo" type="email" autoComplete="username" required maxLength={254} {...ligado(estado)} />
       </div>
       <div className="acciones">
-        <button type="submit" className="boton" disabled={pendiente} aria-busy={pendiente}>
-          {pendiente ? "Enviando…" : "Enviar el enlace"}
-        </button>
+        <BotonEnviar pendiente={pendiente}>Enviar el enlace</BotonEnviar>
       </div>
       <Link className="arco-enlace" href="/entrar">
         Volver a entrar
@@ -82,9 +81,9 @@ export function FormularioNuevaContrasena({ token }: { token: string }) {
         <CampoContrasena id="confirmacion" name="confirmacion" autoComplete="new-password" required minLength={10} {...ligado(estado)} />
       </div>
       <div className="acciones">
-        <button type="submit" className="boton" disabled={pendiente} aria-busy={pendiente}>
-          {pendiente ? "Guardando…" : "Guardar la contraseña"}
-        </button>
+        <BotonEnviar pendiente={pendiente} enviando="Guardando…">
+          Guardar la contraseña
+        </BotonEnviar>
       </div>
     </form>
   );

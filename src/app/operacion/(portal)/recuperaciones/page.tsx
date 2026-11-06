@@ -6,7 +6,7 @@ import { ConfirmarIdentidad } from "@/components/entrar/confirmar-identidad";
 import { IconoSeguridad } from "@/components/cromo/iconos";
 import { fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
-import { Bandeja, NotaRegla, Vacio } from "@/components/sistema";
+import { Bandeja, BotonEnviar, NotaRegla, Vacio } from "@/components/sistema";
 import { estadoDeConfirmacion, verRecuperaciones } from "@/server/autenticacion";
 import { sesionSegura } from "@/server/entrada";
 import { exigirContextoOperacion } from "@/server/operacion";
@@ -65,12 +65,12 @@ export default async function RecuperacionesOperacion({ searchParams }: { search
                 />
               </div>
               <div className="operacion-decision-botones">
-                <button type="submit" className="boton-texto" formAction={rechazarRecuperacionAccion} data-atajo="rechazar">
+                <BotonEnviar className="boton-texto" formAction={rechazarRecuperacionAccion} name="decision" value="rechazar" data-atajo="rechazar">
                   Rechazar
-                </button>
-                <button type="submit" className="boton" data-atajo="aprobar">
+                </BotonEnviar>
+                <BotonEnviar name="decision" value="aprobar" data-atajo="aprobar">
                   Aprobar
-                </button>
+                </BotonEnviar>
               </div>
             </form>
           ),

@@ -6,7 +6,7 @@ import { invitarAdministradorAccion, solicitarActivacionAccion } from "@/app/ope
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { REGIMENES, USOS_CFDI, conNombre, etiquetaEstado, fechaDia, fechaHora, motivoDeEntrega } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
-import { EtiquetaMono, Hoja, Insignia, NotaRegla, Rejilla, Renglon, Renglones, Vacio } from "@/components/sistema";
+import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Rejilla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { textoComision } from "@/dominio/operacion";
 import { exigirContextoOperacion, leerCliente, listarComisiones } from "@/server/operacion";
 
@@ -48,7 +48,7 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                 <form action={solicitarActivacionAccion}>
                   <input type="hidden" name="companyId" value={cliente.id} />
                   <div className="acciones">
-                    <button className="boton" type="submit">Solicitar activación</button>
+                    <BotonEnviar>Solicitar activación</BotonEnviar>
                     <p>Pasa a «En alta» y la decide otra persona.</p>
                   </div>
                 </form>
@@ -100,7 +100,7 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                     {cliente.administrador ? <p className="pista">Reenviar anula el enlace anterior.</p> : null}
                   </div>
                   <div className="acciones">
-                    <button className="boton" type="submit">{cliente.administrador ? "Reenviar invitación" : "Enviar invitación"}</button>
+                    <BotonEnviar>{cliente.administrador ? "Reenviar invitación" : "Enviar invitación"}</BotonEnviar>
                   </div>
                 </form>
               ) : (

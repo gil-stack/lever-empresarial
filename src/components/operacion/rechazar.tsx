@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 
-import { Dialogo } from "@/components/sistema";
+import { BotonEnviar, Dialogo } from "@/components/sistema";
 
 /**
  * «Rechazar» abre un diálogo que pide el motivo: rechazar no se deshace y el motivo
@@ -43,9 +43,7 @@ export function RechazarConMotivo({
             <button type="button" className="boton-texto" onClick={() => setAbierto(false)}>
               Cancelar
             </button>
-            <button type="submit" className="boton">
-              Rechazar
-            </button>
+            <BotonEnviar>Rechazar</BotonEnviar>
           </div>
         </form>
       </Dialogo>

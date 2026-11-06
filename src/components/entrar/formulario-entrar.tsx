@@ -5,6 +5,7 @@ import { useActionState } from "react";
 
 import { enviarContrasena } from "@/app/entrar/acciones";
 import { ENTRADA_INICIAL } from "@/app/sesion/estado";
+import { BotonEnviar } from "@/components/sistema/boton-enviar";
 import { CampoContrasena } from "@/components/sistema/campo-contrasena";
 
 export function FormularioEntrar({ siguiente, aviso }: { siguiente: string; aviso: string | null }) {
@@ -49,9 +50,9 @@ export function FormularioEntrar({ siguiente, aviso }: { siguiente: string; avis
         </p>
       </div>
       <div className="acciones">
-        <button type="submit" className="boton" disabled={pendiente} aria-busy={pendiente}>
-          {pendiente ? "Comprobando…" : "Continuar"}
-        </button>
+        <BotonEnviar pendiente={pendiente} enviando="Comprobando…">
+          Continuar
+        </BotonEnviar>
       </div>
       <p className="arco-pie">Después te pedimos tu passkey, el código de tu app autenticadora o un código de respaldo.</p>
     </form>

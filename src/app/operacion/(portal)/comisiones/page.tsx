@@ -5,7 +5,7 @@ import { solicitarComisionAccion } from "@/app/operacion/acciones";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { etiquetaEstado, fechaDia } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
-import { Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
+import { BotonEnviar, Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
 import { textoComision } from "@/dominio/operacion";
 import { exigirContextoOperacion, listarClientes, listarComisiones } from "@/server/operacion";
 
@@ -97,7 +97,7 @@ export default async function ComisionesOperacion({ searchParams }: { searchPara
                   <input id="vigenteDesde" name="vigenteDesde" type="date" required {...errorDelCampo(params.aviso, "vigenteDesde")} />
                 </div>
                 <div className="acciones">
-                  <button className="boton" type="submit">Pedir autorización</button>
+                  <BotonEnviar>Pedir autorización</BotonEnviar>
                 </div>
               </form>
             )}

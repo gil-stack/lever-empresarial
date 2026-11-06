@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { enviarAceptacion } from "@/app/invitacion/acciones";
 import { INVITACION_INICIAL } from "@/app/invitacion/estado";
+import { BotonEnviar } from "@/components/sistema/boton-enviar";
 import { CampoContrasena } from "@/components/sistema/campo-contrasena";
 
 export function FormularioInvitacion({ token, yaTieneContrasena }: { token: string; yaTieneContrasena: boolean }) {
@@ -37,9 +38,9 @@ export function FormularioInvitacion({ token, yaTieneContrasena }: { token: stri
         </div>
       )}
       <div className="acciones">
-        <button type="submit" className="boton" disabled={pendiente} aria-busy={pendiente}>
-          {pendiente ? "Aceptando…" : "Aceptar la invitación"}
-        </button>
+        <BotonEnviar pendiente={pendiente} enviando="Aceptando…">
+          Aceptar la invitación
+        </BotonEnviar>
       </div>
     </form>
   );

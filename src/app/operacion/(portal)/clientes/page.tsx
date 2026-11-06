@@ -5,7 +5,7 @@ import { registrarProspectoAccion } from "@/app/operacion/acciones";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { REGIMENES, USOS_CFDI, etiquetaEstado } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
-import { Hoja, Insignia, Rejilla, Vacio } from "@/components/sistema";
+import { BotonEnviar, Hoja, Insignia, Rejilla, Vacio } from "@/components/sistema";
 import { exigirContextoOperacion, listarClientes } from "@/server/operacion";
 
 export const runtime = "nodejs";
@@ -87,7 +87,7 @@ export default async function ClientesOperacion({ searchParams }: { searchParams
                 </select>
               </div>
               <div className="acciones">
-                <button className="boton" type="submit">Registrar prospecto</button>
+                <BotonEnviar>Registrar prospecto</BotonEnviar>
               </div>
             </form>
           </Hoja>

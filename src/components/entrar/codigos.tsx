@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { abrirPortal } from "@/app/entrar/acciones";
+import { BotonEnviar } from "@/components/sistema/boton-enviar";
 
 /** Se muestran una vez. En la base solo queda el hash. */
 export function CodigosDeRespaldo({ codigos, destino }: { codigos: string[]; destino: string }) {
@@ -26,9 +27,7 @@ export function CodigosDeRespaldo({ codigos, destino }: { codigos: string[]; des
           Ya los guardé en un lugar seguro
         </label>
         <div className="acciones">
-          <button type="submit" className="boton" disabled={!guardados}>
-            Entrar al portal
-          </button>
+          <BotonEnviar disabled={!guardados}>Entrar al portal</BotonEnviar>
         </div>
       </form>
     </div>
@@ -44,9 +43,7 @@ export function ListoParaEntrar({ siguiente }: { siguiente: string }) {
       <p className="arco-nota">Los códigos de respaldo se mostraron una sola vez. Si no los guardaste, podrás generar otros desde la cuenta.</p>
       <form action={abrirPortal}>
         <input type="hidden" name="siguiente" value={siguiente} />
-        <button type="submit" className="boton">
-          Entrar al portal
-        </button>
+        <BotonEnviar>Entrar al portal</BotonEnviar>
       </form>
     </div>
   );

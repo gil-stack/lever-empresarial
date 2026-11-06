@@ -5,6 +5,7 @@ import Link from "next/link";
 import { salir } from "@/app/sesion/acciones";
 import { AcentoInicial } from "@/components/apariencia/acento-inicial";
 import { AparienciaViva } from "@/components/apariencia/viva";
+import { BotonEnviar } from "@/components/sistema/boton-enviar";
 import { enEmpresa, rutaConsola } from "@/nucleo/rutas";
 
 import { BarraSuperior } from "./barra-superior";
@@ -389,7 +390,7 @@ export async function MarcoTelefono({
             <footer className="pie-app enlaces-app">
               {consola ? <Link href={enEmpresa(empresaId, resumen ? "/consola" : "/consola/pendientes")}>Abrir consola</Link> : null}
               {variasEmpresas ? <Link href="/empresas">Cambiar de empresa</Link> : null}
-              <form action={salir}><button type="submit">Salir</button></form>
+              <form action={salir}><BotonEnviar className="" enviando="Saliendo…">Salir</BotonEnviar></form>
             </footer>
           </div>
         </main>

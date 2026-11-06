@@ -4,7 +4,7 @@ import Link from "next/link";
 import { asignarAlertaAccion, cerrarAlertaAccion, crearAlertaAccion } from "@/app/operacion/acciones";
 import { etiquetaCategoria, etiquetaEstado, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
-import { Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
+import { BotonEnviar, Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
 import { exigirContextoOperacion, listarAlertas, listarClientes, listarPersonal } from "@/server/operacion";
 
 export const runtime = "nodejs";
@@ -52,7 +52,7 @@ export default async function AlertasOperacion({ searchParams }: { searchParams:
                               ))}
                             </select>
                           </div>
-                          <button className="boton-texto" type="submit">Guardar responsable</button>
+                          <BotonEnviar className="boton-texto">Guardar responsable</BotonEnviar>
                         </form>
                         <form action={cerrarAlertaAccion}>
                           <input type="hidden" name="id" value={alerta.id} />
@@ -60,7 +60,7 @@ export default async function AlertasOperacion({ searchParams }: { searchParams:
                             <label htmlFor={`motivo-${alerta.id}`}>Motivo de cierre</label>
                             <input id={`motivo-${alerta.id}`} name="motivo" maxLength={500} required />
                           </div>
-                          <button className="boton-texto" type="submit">Cerrar alerta</button>
+                          <BotonEnviar className="boton-texto">Cerrar alerta</BotonEnviar>
                         </form>
                       </div>
                     ) : (
@@ -106,7 +106,7 @@ export default async function AlertasOperacion({ searchParams }: { searchParams:
                   <textarea id="detalle" name="detalle" maxLength={500} required />
                 </div>
                 <div className="acciones">
-                  <button className="boton" type="submit">Crear alerta</button>
+                  <BotonEnviar>Crear alerta</BotonEnviar>
                 </div>
               </form>
             )}

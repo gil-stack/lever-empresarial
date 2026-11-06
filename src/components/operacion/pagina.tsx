@@ -5,6 +5,7 @@ import { salirOperacion } from "@/app/operacion/acciones";
 import { BarraSuperior } from "@/components/cromo/barra-superior";
 import { IconoSalir, IconoSeguridad } from "@/components/cromo/iconos";
 import { MenuDesplegable } from "@/components/cromo/menu-desplegable";
+import { BotonEnviar } from "@/components/sistema";
 import { exigirContextoOperacion } from "@/server/operacion/contexto";
 
 import { AvisoOperacion } from "./aviso";
@@ -66,10 +67,10 @@ function MenuPersona({ nombre }: { nombre: string }) {
         Mi perfil y seguridad
       </Link>
       <form action={salirOperacion} className="menu-pie">
-        <button type="submit" role="menuitem" tabIndex={-1} className="menu-opcion">
+        <BotonEnviar role="menuitem" tabIndex={-1} className="menu-opcion" enviando="Saliendo…">
           <IconoSalir />
           Salir
-        </button>
+        </BotonEnviar>
       </form>
     </MenuDesplegable>
   );

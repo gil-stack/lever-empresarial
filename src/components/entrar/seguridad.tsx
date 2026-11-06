@@ -16,6 +16,7 @@ import {
   revocarPasskeyDeCuenta,
   revocarTotpDeCuenta,
 } from "@/app/entrar/acciones";
+import { BotonEnviar } from "@/components/sistema/boton-enviar";
 
 import { CodigosDeRespaldo } from "./codigos";
 import { ConfirmarIdentidad } from "./confirmar-identidad";
@@ -131,9 +132,7 @@ export function Seguridad({
             </span>
             <form action={revocarPasskeyDeCuenta}>
               <input type="hidden" name="passkey" value={passkey.id} />
-              <button type="submit" className="boton-texto">
-                Revocar
-              </button>
+              <BotonEnviar className="boton-texto">Revocar</BotonEnviar>
             </form>
           </li>
         ))}
@@ -146,9 +145,7 @@ export function Seguridad({
         {totp ? (
           <form action={revocarTotpDeCuenta}>
             <p className="arco-nota">La app autenticadora está activa.</p>
-            <button type="submit" className="boton-texto">
-              Revocar la app
-            </button>
+            <BotonEnviar className="boton-texto">Revocar la app</BotonEnviar>
           </form>
         ) : (
           <button type="button" className="boton-texto" onClick={mostrarQr}>
@@ -173,9 +170,9 @@ export function Seguridad({
                 {...(confirmado.tipo === "error" ? { "aria-invalid": true, "aria-describedby": "seguridad-error" } : {})}
               />
             </div>
-            <button type="submit" className="boton" disabled={pendiente} aria-busy={pendiente}>
-              {pendiente ? "Comprobando…" : "Confirmar"}
-            </button>
+            <BotonEnviar pendiente={pendiente} enviando="Comprobando…">
+              Confirmar
+            </BotonEnviar>
           </form>
         ) : null}
         <p className="arco-nota">Códigos de respaldo disponibles: {respaldoRestantes}.</p>

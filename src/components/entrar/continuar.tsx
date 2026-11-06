@@ -20,6 +20,7 @@ import {
   pedirRegistroPasskey,
 } from "@/app/entrar/acciones";
 import type { AltaTotp, PasoEntrada } from "@/nucleo/autenticacion-tipos";
+import { BotonEnviar } from "@/components/sistema/boton-enviar";
 
 import { CodigosDeRespaldo, ListoParaEntrar } from "./codigos";
 
@@ -113,9 +114,9 @@ function Verificar({
                 {...ligarError(totp.tipo === "error")}
               />
             </div>
-            <button type="submit" className="boton" disabled={pendienteTotp} aria-busy={pendienteTotp}>
-              {pendienteTotp ? "Comprobando…" : "Entrar con el código"}
-            </button>
+            <BotonEnviar pendiente={pendienteTotp} enviando="Comprobando…">
+              Entrar con el código
+            </BotonEnviar>
           </form>
         ) : null}
         {paso.respaldo ? (
@@ -125,9 +126,9 @@ function Verificar({
               <label htmlFor="respaldo">Código de respaldo</label>
               <input id="respaldo" name="codigo" autoComplete="off" spellCheck={false} required {...ligarError(respaldo.tipo === "error")} />
             </div>
-            <button type="submit" className="boton-texto" disabled={pendienteRespaldo} aria-busy={pendienteRespaldo}>
-              {pendienteRespaldo ? "Comprobando…" : "Usar un código de respaldo"}
-            </button>
+            <BotonEnviar className="boton-texto" pendiente={pendienteRespaldo} enviando="Comprobando…">
+              Usar un código de respaldo
+            </BotonEnviar>
           </form>
         ) : null}
       </div>
@@ -211,9 +212,9 @@ function Inscribir({
                 {...ligarError(totp.tipo === "error")}
               />
             </div>
-            <button type="submit" className="boton-texto" disabled={pendiente} aria-busy={pendiente}>
-              {pendiente ? "Comprobando…" : "Confirmar el código"}
-            </button>
+            <BotonEnviar className="boton-texto" pendiente={pendiente} enviando="Comprobando…">
+              Confirmar el código
+            </BotonEnviar>
           </form>
         ) : null}
         {sinTotp ? <p className="arco-nota">La app autenticadora no está disponible en este entorno. Usa una passkey.</p> : null}
@@ -252,9 +253,7 @@ function Recuperar({ nombre, solicitudAbierta }: { nombre: string; solicitudAbie
               {...ligarError(estado.tipo === "error")}
             />
           </div>
-          <button type="submit" className="boton" disabled={pendiente} aria-busy={pendiente}>
-            {pendiente ? "Enviando…" : "Pedir recuperación"}
-          </button>
+          <BotonEnviar pendiente={pendiente}>Pedir recuperación</BotonEnviar>
         </form>
       )}
     </div>

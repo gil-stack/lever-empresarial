@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { decidirActivacionAccion, decidirComisionAccion } from "@/app/operacion/acciones";
-import { Bandeja, Vacio, type Decision } from "@/components/sistema";
+import { Bandeja, BotonEnviar, Vacio, type Decision } from "@/components/sistema";
 import { textoComision } from "@/dominio/operacion";
 import type { listarComisiones, listarSolicitudesActivacion } from "@/server/operacion";
 
@@ -81,9 +81,7 @@ function Acciones({ id, accion, que }: { id: string; accion: (formData: FormData
       <form action={accion}>
         <input type="hidden" name="id" value={id} />
         <input type="hidden" name="decision" value="aprobar" />
-        <button type="submit" className="boton" data-atajo="aprobar">
-          Aprobar
-        </button>
+        <BotonEnviar data-atajo="aprobar">Aprobar</BotonEnviar>
       </form>
     </>
   );

@@ -12,6 +12,7 @@ import {
   pedirOpcionesDeConfirmacion,
 } from "@/app/entrar/acciones-confirmacion";
 import { CONFIRMACION_INICIAL, type EstadoConfirmacion } from "@/app/entrar/estado-confirmacion";
+import { BotonEnviar } from "@/components/sistema/boton-enviar";
 
 const errorLigado = { "aria-invalid": true, "aria-describedby": "confirmar-error" } as const;
 
@@ -102,9 +103,9 @@ export function ConfirmarIdentidad({
               {...(conTotp.tipo === "error" ? errorLigado : {})}
             />
           </div>
-          <button type="submit" className="boton" disabled={pendienteTotp} aria-busy={pendienteTotp}>
-            {pendienteTotp ? "Comprobando…" : "Confirmar con el código"}
-          </button>
+          <BotonEnviar pendiente={pendienteTotp} enviando="Comprobando…">
+            Confirmar con el código
+          </BotonEnviar>
         </form>
       ) : null}
       {respaldo ? (
@@ -120,9 +121,9 @@ export function ConfirmarIdentidad({
               {...(conRespaldo.tipo === "error" ? errorLigado : {})}
             />
           </div>
-          <button type="submit" className="boton-texto" disabled={pendienteRespaldo} aria-busy={pendienteRespaldo}>
-            {pendienteRespaldo ? "Comprobando…" : "Usar un código de respaldo"}
-          </button>
+          <BotonEnviar className="boton-texto" pendiente={pendienteRespaldo} enviando="Comprobando…">
+            Usar un código de respaldo
+          </BotonEnviar>
         </form>
       ) : null}
     </section>
