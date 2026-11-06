@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 
 import { capacidadesDe, tiene, type RolCliente } from "../nucleo/capacidades.ts";
 import {
+  accesoFinanzasDe,
   FRASE_CONTADOR,
   FRASE_SIN_DISPERSION,
   decidirLiberacion,
@@ -114,11 +115,11 @@ describe("dos firmas y el contador", () => {
 });
 
 describe("alta de persona", () => {
-  it("exige CLABE válida, centro y un alta que no sea futura", () => {
+  it("exige CLABE válida, centro y una fecha de alta real", () => {
     const errores = erroresDeAltaPersona(
       {
         nombre: "  ",
-        alta: "2026-11-04",
+        alta: "2026-11-31",
         baja: "2026-11-01",
         centroId: "no",
         clabe: "002180701150123453",
@@ -135,6 +136,29 @@ describe("alta de persona", () => {
     assert.ok(campos.includes("clabe"));
     assert.ok(campos.includes("correo"));
     assert.equal(errores.some((error) => error.mensaje.includes("002180")), false);
+  });
+
+  it("admite contratación futura y tarjeta sin CLABE externa", () => {
+    const resultado = validarAltaPersona(
+      {
+        nombre: "Persona futura",
+        alta: "2026-12-01",
+        baja: "",
+        centroId: CENTRO,
+        jefeId: "",
+        presupuesto: "8000.00",
+        destino: "tarjeta",
+        clabe: "",
+        acceso: "no",
+      },
+      HOY,
+    );
+    assert.equal(resultado.ok, true);
+    if (resultado.ok) {
+      assert.equal(resultado.valor.clabe, null);
+      assert.equal(resultado.valor.destino, "tarjeta");
+      assert.equal(resultado.valor.presupuestoCentavos, 800000);
+    }
   });
 
   it("retira solicitante de nuevas altas sin tocar el rol histórico", () => {
@@ -155,6 +179,27 @@ describe("alta de persona", () => {
     assert.equal(resultado.ok, false);
     assert.equal(ROLES_VISIBLES.some((rol) => rol.valor === "solicitante"), false);
     assert.match(lineaDeRol("solicitante"), /Solicitante/);
+  });
+
+  it("admite Finanzas como acceso adicional, pero no como único rol de trabajo", () => {
+    const base = {
+      nombre: "Contadora Norte",
+      alta: HOY,
+      baja: "",
+      centroId: CENTRO,
+      jefeId: "",
+      clabe: CLABE,
+      acceso: "nueva",
+      correo: "contadora@ejemplo.mx",
+    };
+    const valida = validarAltaPersona({ ...base, rol: ["contador", "finanzas"] }, HOY);
+    assert.equal(valida.ok, true);
+    if (valida.ok && valida.valor.acceso.tipo === "nueva") {
+      assert.deepEqual(valida.valor.acceso.roles, ["contador", "finanzas"]);
+    }
+    const invalida = validarAltaPersona({ ...base, rol: "finanzas" }, HOY);
+    assert.equal(invalida.ok, false);
+    if (!invalida.ok) assert.equal(invalida.codigo, "finanzas_sin_rol");
   });
 
   it("guarda la CLABE completa cuando el dígito cierra y el contador no gana un permiso aparte", () => {
@@ -239,5 +284,48 @@ describe("alta de persona", () => {
     assert.match(cuerpo, /fechaDesdePartes/);
     assert.match(cuerpo, /partesDeFecha/);
     assert.match(cuerpo, /Esa fecha no existe/);
+  });
+
+  it("la ficha ofrece Finanzas con la misma regla que el alta", () => {
+    const base = { userId: "11111111-1111-4111-8111-111111111111", invitada: false, bajaEn: null };
+    // El alta acepta tarjetahabiente + Finanzas; la ficha también ofrece la casilla.
+    assert.equal(validarAltaPersona({
+      nombre: "Ana Tarjeta", alta: HOY, baja: "", centroId: CENTRO, jefeId: "", clabe: CLABE,
+      acceso: "nueva", correo: "ana@ejemplo.mx", rol: ["tarjetahabiente", "finanzas"],
+    }, HOY).ok, true);
+    assert.equal(accesoFinanzasDe({ ...base, roles: ["tarjetahabiente"] }, HOY), "casilla");
+    assert.equal(accesoFinanzasDe({ ...base, roles: ["contador", "finanzas"] }, HOY), "casilla");
+    assert.equal(accesoFinanzasDe({ ...base, roles: ["finanzas"] }, HOY), "casilla");
+    assert.equal(accesoFinanzasDe({ ...base, roles: ["administrador"] }, HOY), "incluido");
+    assert.equal(accesoFinanzasDe({ ...base, userId: null, roles: [] }, HOY), null);
+    assert.equal(accesoFinanzasDe({ ...base, invitada: true, roles: ["contador"] }, HOY), null);
+    assert.equal(accesoFinanzasDe({ ...base, bajaEn: HOY, roles: ["contador"] }, HOY), null);
+  });
+
+  it("el alta y la ficha nuevas de Personas ofrecen Finanzas con la regla común", () => {
+    const alta = readFileSync(new URL("../components/personas/alta.tsx", import.meta.url), "utf8");
+    assert.match(alta, /const rol: RolCuenta\[\] = verFinanzas \? \[\.\.\.roles, "finanzas"\] : roles;/);
+    assert.match(alta, /erroresDeAltaPersona\(entrada, hoy\)/);
+    assert.match(alta, /\{verFinanzas \? <input type="hidden" name="rol" value="finanzas" \/> : null\}/);
+    const ficha = readFileSync(new URL("../components/personas/detalle.tsx", import.meta.url), "utf8");
+    assert.match(ficha, /const finanzas = edita \? accesoFinanzasDe\(persona, hoy\) : null;/);
+    assert.match(ficha, /<FormularioFinanzas key=\{persona\.userId\} userId=\{persona\.userId\} habilitado=\{persona\.roles\.includes\("finanzas"\)\} \/>/);
+  });
+
+  it("conserva montado el aviso al otorgar o revocar Finanzas", () => {
+    const fuente = readFileSync(new URL("../components/personas/detalle.tsx", import.meta.url), "utf8");
+    assert.match(fuente, /key=\{persona\.userId\}/);
+    assert.doesNotMatch(fuente, /key=\{`\$\{persona\.userId\}-\$\{persona\.roles\.includes\("finanzas"\)\}`\}/);
+  });
+
+  it("la casilla de Finanzas no se desmarca sola después de guardar", () => {
+    // `<form action>` reinicia el formulario al terminar: una casilla controlada volvía a su valor inicial
+    // aunque la base ya tuviera el cambio, y en el alta el campo oculto de Finanzas seguía enviándose.
+    const formularios = readFileSync(new URL("../components/personas/formularios.tsx", import.meta.url), "utf8");
+    const casilla = formularios.slice(formularios.indexOf("export function FormularioFinanzas"));
+    assert.match(casilla, /<form className="permiso-finanzas permiso-finanzas-edicion" onSubmit=\{enviarSinReiniciar\(accion\)\}/);
+    const alta = readFileSync(new URL("../components/personas/alta.tsx", import.meta.url), "utf8");
+    assert.match(alta, /enviarSinReiniciar\(accion\)\(event\);/);
+    assert.doesNotMatch(alta, /<form className="alta-colaborador" action=/);
   });
 });

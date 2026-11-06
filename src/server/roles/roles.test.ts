@@ -9,6 +9,7 @@ import type { ContextoDeTenant } from "../../nucleo/contexto.ts";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio.ts";
 import { CONTRATO_TABLAS, SQL } from "./contrato.ts";
 import { empresaOperable, rolesPueden } from "./decidir.ts";
+import { cambiarAccesoFinanzas } from "./finanzas.ts";
 import { asignarRol, entrarAPoliza, liberarLoteDePrueba, quitarRol, solicitarLoteDePrueba } from "./servicio.ts";
 import type { FilaDeLote, Membresia, RepositorioRoles } from "./tipos.ts";
 
@@ -43,6 +44,77 @@ describe("membresías con varios roles", () => {
     assert.equal(
       await codigo(asignarRol(ctx(ANA, ["administrador"]), { userId: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", rol: "contador" }, { repositorio: repo })),
       "sin_membresia",
+    );
+  });
+
+  it("nadie queda solo con Finanzas: es un acceso adicional, no un rol de trabajo", async () => {
+    const repo = memoria();
+    repo.sembrar(ANA, ["administrador"]);
+    repo.sembrar(LUIS, ["contador", "finanzas"]);
+    assert.equal(
+      await codigo(quitarRol(ctx(ANA, ["administrador"]), { userId: LUIS, rol: "contador" }, { repositorio: repo })),
+      "ultimo_rol_de_trabajo",
+    );
+    assert.deepEqual((await repo.membresiaDe(ctx(ANA, ["administrador"]), LUIS))?.roles, ["contador", "finanzas"]);
+    await quitarRol(ctx(ANA, ["administrador"]), { userId: LUIS, rol: "finanzas" }, { repositorio: repo });
+    assert.deepEqual((await repo.membresiaDe(ctx(ANA, ["administrador"]), LUIS))?.roles, ["contador"]);
+  });
+
+  it("la casilla de Finanzas solo la cambia administración, en su empresa, y regresa a su valor si falla", async () => {
+    const repo = memoria();
+    repo.sembrar(ANA, ["administrador"]);
+    repo.sembrar(LUIS, ["tarjetahabiente"]);
+    repo.sembrar(ROSA, ["finanzas"]);
+    const admin = ctx(ANA, ["administrador"]);
+
+    const otorgado = await cambiarAccesoFinanzas(admin, { userId: LUIS, verFinanzas: "si" }, { repositorio: repo });
+    assert.deepEqual(otorgado, { tipo: "listo", mensaje: "La persona ya puede ver Inicio financiero.", habilitado: true });
+    assert.deepEqual((await repo.membresiaDe(admin, LUIS))?.roles, ["tarjetahabiente", "finanzas"]);
+
+    // Un contador (o la propia persona con Finanzas) no se da ni se quita el acceso.
+    const sinPermiso = await cambiarAccesoFinanzas(ctx(LUIS, ["tarjetahabiente", "finanzas"]), { userId: LUIS, verFinanzas: "no" }, { repositorio: repo });
+    assert.deepEqual(sinPermiso, { tipo: "rechazado", codigo: "sin_permiso", habilitado: true });
+    assert.deepEqual((await repo.membresiaDe(admin, LUIS))?.roles, ["tarjetahabiente", "finanzas"]);
+
+    // Una persona de otra empresa no está en este repositorio: el userId ajeno no elige empresa.
+    const ajena = await cambiarAccesoFinanzas(admin, { userId: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", verFinanzas: "si" }, { repositorio: repo });
+    assert.deepEqual(ajena, { tipo: "rechazado", codigo: "sin_membresia", habilitado: false });
+
+    assert.deepEqual(
+      await cambiarAccesoFinanzas(admin, { userId: "no-es-uuid", verFinanzas: "si" }, { repositorio: repo }),
+      { tipo: "rechazado", codigo: "identificador_invalido", habilitado: false },
+    );
+    assert.deepEqual(
+      await cambiarAccesoFinanzas(admin, { userId: LUIS, verFinanzas: "quizas" }, { repositorio: repo }),
+      { tipo: "rechazado", codigo: "identificador_invalido", habilitado: false },
+    );
+    assert.deepEqual(
+      await cambiarAccesoFinanzas(admin, { userId: ROSA, verFinanzas: "no" }, { repositorio: repo }),
+      { tipo: "rechazado", codigo: "ultimo_rol", habilitado: true },
+    );
+    assert.deepEqual(
+      await cambiarAccesoFinanzas(null, { userId: LUIS, verFinanzas: "no" }, { repositorio: repo }),
+      { tipo: "rechazado", codigo: "sesion", habilitado: true },
+    );
+
+    const carrera = memoria();
+    carrera.sembrar(LUIS, ["contador"]);
+    carrera.agregarRol = async () => {
+      throw new ErrorDeDominio("rol_existente");
+    };
+    assert.deepEqual(
+      await cambiarAccesoFinanzas(admin, { userId: LUIS, verFinanzas: "si" }, { repositorio: carrera }),
+      { tipo: "rechazado", codigo: "rol_existente", habilitado: true },
+    );
+
+    const caida = memoria();
+    caida.sembrar(LUIS, ["contador", "finanzas"]);
+    caida.membresiaDe = async () => {
+      throw new ErrorDeDominio("base_no_disponible");
+    };
+    assert.deepEqual(
+      await cambiarAccesoFinanzas(admin, { userId: LUIS, verFinanzas: "no" }, { repositorio: caida }),
+      { tipo: "rechazado", codigo: "libro", habilitado: true },
     );
   });
 

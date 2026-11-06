@@ -49,3 +49,8 @@ export function clabeValida(valor: unknown): ClabeResultado {
 export function clabeVisible(clabe: string): string {
   return `${clabe.slice(0, 3)} ${clabe.slice(3, 6)} ${clabe.slice(6, 17)} ${clabe.slice(17)}`;
 }
+
+/** Solo los últimos cuatro dígitos: para quien no edita la CLABE y para la bitácora. */
+export function clabeEnmascarada(clabe: string): string {
+  return `•••• ${clabe.slice(-4)}`;
+}

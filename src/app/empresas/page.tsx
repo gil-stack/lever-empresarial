@@ -5,7 +5,7 @@ import { Marco } from "@/components/cromo/marco";
 import { vistaDeMarco } from "@/components/cromo/puertas";
 import { CabezaPagina, Hoja, Renglon, Renglones } from "@/components/sistema";
 import { capacidadesDe, tiene } from "@/nucleo/capacidades";
-import { enEmpresa } from "@/nucleo/rutas";
+import { enEmpresa, rutaConsola } from "@/nucleo/rutas";
 import { abrirRuta } from "@/server/entrada";
 
 export const runtime = "nodejs";
@@ -30,7 +30,7 @@ export default async function PaginaEmpresas() {
                 return (
                   <Renglon key={empresa.id} etiqueta={empresa.razonSocial}>
                     <span className="acciones-empresa">
-                      {tiene(capacidades, "cliente.consola.ver") ? <Link className="enlace-texto" href={enEmpresa(empresa.id, "/consola")}>Abrir consola</Link> : null}
+                      {tiene(capacidades, "cliente.consola.ver") ? <Link className="enlace-texto" href={enEmpresa(empresa.id, rutaConsola(capacidades))}>Abrir consola</Link> : null}
                       {tiene(capacidades, "telefono.inicio.ver") ? <Link className="enlace-texto" href={enEmpresa(empresa.id, "/telefono")}>Abrir teléfono</Link> : null}
                     </span>
                   </Renglon>

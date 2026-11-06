@@ -8,7 +8,7 @@
 export const SUPERFICIES = ["cliente", "sofipo", "telefono"] as const;
 export type Superficie = (typeof SUPERFICIES)[number];
 
-export const ROLES_CLIENTE = ["administrador", "solicitante", "liberador", "tarjetahabiente", "contador"] as const;
+export const ROLES_CLIENTE = ["administrador", "solicitante", "liberador", "tarjetahabiente", "contador", "finanzas"] as const;
 export type RolCliente = (typeof ROLES_CLIENTE)[number];
 
 /** Cada rol de la plataforma se enciende cuando su fase le da trabajo. */
@@ -17,11 +17,17 @@ export type RolPlataforma = (typeof ROLES_PLATAFORMA)[number];
 
 type Regla<R> = { superficie: Superficie; roles: readonly R[] };
 
-const TODOS: readonly RolCliente[] = ROLES_CLIENTE;
+/**
+ * Finanzas es un acceso adicional, no un rol de trabajo: abre Inicio y
+ * Pendientes y nada más (ni el teléfono). Una membresía no se queda solo con
+ * Finanzas.
+ */
+const DE_TRABAJO: readonly RolCliente[] = ROLES_CLIENTE.filter((rol) => rol !== "finanzas");
 const DE_CONSOLA: readonly RolCliente[] = ["administrador", "solicitante", "liberador", "contador"];
 
 const DEL_CLIENTE = {
-  "cliente.consola.ver": { superficie: "cliente", roles: DE_CONSOLA },
+  "cliente.consola.ver": { superficie: "cliente", roles: [...DE_CONSOLA, "finanzas"] },
+  "cliente.resumen.ver": { superficie: "cliente", roles: ["administrador", "finanzas"] },
   "cliente.precio.ver": { superficie: "cliente", roles: DE_CONSOLA },
   "cliente.plan.ver": { superficie: "cliente", roles: ["administrador"] },
   "cliente.configuracion.ver": { superficie: "cliente", roles: ["administrador"] },
@@ -29,6 +35,10 @@ const DEL_CLIENTE = {
   "cliente.politica.editar": { superficie: "cliente", roles: ["administrador"] },
   "cliente.maestro.ver": { superficie: "cliente", roles: ["administrador", "contador", "liberador"] },
   "cliente.maestro.editar": { superficie: "cliente", roles: ["administrador"] },
+  // Cambiar la CLABE de nómina de una persona: además exige segundo factor reciente.
+  "cliente.personas.clabe.cambiar": { superficie: "cliente", roles: ["administrador"] },
+  // Neto por persona y renglones del lote: quien prepara o autoriza la nómina.
+  "cliente.nomina.detalle.ver": { superficie: "cliente", roles: ["administrador", "liberador"] },
   "cliente.membresias.administrar": { superficie: "cliente", roles: ["administrador"] },
   "cliente.proveedores.ver": { superficie: "cliente", roles: ["administrador", "solicitante", "liberador", "contador"] },
   /** CLABE completa, constancia y contratos. Quien solo solicita ve la terminación. */
@@ -43,9 +53,9 @@ const DEL_CLIENTE = {
 } as const satisfies Record<string, Regla<RolCliente>>;
 
 const DEL_TELEFONO = {
-  "telefono.inicio.ver": { superficie: "telefono", roles: TODOS },
-  "telefono.topes.ver": { superficie: "telefono", roles: TODOS },
-  "telefono.facturacion.ver": { superficie: "telefono", roles: TODOS },
+  "telefono.inicio.ver": { superficie: "telefono", roles: DE_TRABAJO },
+  "telefono.topes.ver": { superficie: "telefono", roles: DE_TRABAJO },
+  "telefono.facturacion.ver": { superficie: "telefono", roles: DE_TRABAJO },
 } as const satisfies Record<string, Regla<RolCliente>>;
 
 const DE_LA_PLATAFORMA = {
@@ -107,6 +117,11 @@ export function esRolCliente(valor: unknown): valor is RolCliente {
 
 export function esRolPlataforma(valor: unknown): valor is RolPlataforma {
   return typeof valor === "string" && (ROLES_PLATAFORMA as readonly string[]).includes(valor);
+}
+
+/** Hay al menos un rol de trabajo; Finanzas solo no cuenta. */
+export function tieneRolDeTrabajo(roles: readonly RolCliente[]): boolean {
+  return roles.some((rol) => DE_TRABAJO.includes(rol));
 }
 
 /** Roles en un orden estable, sin repetidos ni desconocidos. */

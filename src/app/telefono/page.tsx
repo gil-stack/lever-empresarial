@@ -33,6 +33,7 @@ export default async function PaginaTelefono() {
       actual="/telefono"
       empresaId={ctx?.empresa?.id ?? null}
       consola={puede(ctx, "cliente.consola.ver")}
+      resumen={puede(ctx, "cliente.resumen.ver")}
       variasEmpresas={Boolean(ctx && ctx.empresas.length > 1)}
     >
       {carga.tipo === "lista" ? (

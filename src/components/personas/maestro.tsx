@@ -107,7 +107,7 @@ export function Maestro({
                   </div>
                   <div>
                     <dt>CLABE</dt>
-                    <dd className="clabe">{clabeVisible(persona.clabe)}</dd>
+                    <dd className="clabe">{persona.clabe ? clabeVisible(persona.clabe) : "Tarjeta de nómina"}</dd>
                   </div>
                   <div>
                     <dt>En la consola</dt>
@@ -143,8 +143,18 @@ function entradaDe(roles: readonly RolCuenta[], edita: boolean): string {
 export function MaestroCerrado({
   aviso,
 }: {
-  aviso: "libro" | "entrar" | "sin_empresa" | "no_abre";
+  aviso: "libro" | "entrar" | "sin_empresa" | "no_abre" | "ausente";
 }) {
+  if (aviso === "ausente") {
+    return (
+      <>
+        <p className="kicker">Personas</p>
+        <h1>No encontramos este registro.</h1>
+        <p className="lede">No pertenece a esta empresa o ya no está disponible.</p>
+        <div className="acciones"><Link className="boton" href="/consola/personas">Volver a Personas</Link></div>
+      </>
+    );
+  }
   if (aviso === "entrar") {
     return (
       <>

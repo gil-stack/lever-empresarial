@@ -34,6 +34,10 @@
   --sobre-sello: light-dark(#ffffff, #05122a);
   --aviso: light-dark(#b3261e, #f2958c);
   --aviso-tenue: light-dark(#fbeceb, #2c1514);
+  --ingreso: light-dark(#0d5fd0, #6ea8ff);
+  --ingreso-tenue: light-dark(#e4edfb, #102444);
+  --gasto: light-dark(#b55b22, #f0a56c);
+  --gasto-tenue: light-dark(#f9ede3, #2c1d13);
 
   --fondo-telefono: light-dark(#ffffff, #060709);
   --brillo-telefono: light-dark(rgb(13 95 208 / 0.1), rgb(46 110 230 / 0.42));
