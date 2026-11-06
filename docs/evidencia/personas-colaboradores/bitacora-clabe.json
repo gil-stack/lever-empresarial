@@ -1,0 +1,40 @@
+{
+  "eventos": [
+    {
+      "accion": "alta_persona",
+      "actor_tipo": "miembro",
+      "cambio": {
+        "clabe_nueva": "•••• 3452",
+        "presupuesto_centavos": 300000
+      }
+    },
+    {
+      "accion": "cambiar_clabe_nomina",
+      "actor_tipo": "miembro",
+      "cambio": {
+        "clabe_nueva": "•••• 7899",
+        "clabe_anterior": "•••• 3452"
+      }
+    },
+    {
+      "accion": "aviso_clabe_nomina",
+      "actor_tipo": "miembro",
+      "cambio": {
+        "codigo": "correo_no_configurado",
+        "entregado": false
+      }
+    }
+  ],
+  "historial": [
+    {
+      "termina": "3452",
+      "vigente_desde": "2026-11-05T21:43:38.278Z",
+      "vigente_hasta": "2026-11-05T21:44:16.766Z"
+    },
+    {
+      "termina": "7899",
+      "vigente_desde": "2026-11-05T21:44:16.766Z",
+      "vigente_hasta": null
+    }
+  ]
+}

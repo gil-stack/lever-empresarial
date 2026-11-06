@@ -444,6 +444,9 @@ function darDeBaja(url: string, operadorId: string, userId: string): void {
     insert into employees (id, company_id, user_id, cost_center_id, nombre, alta_en, baja_en, clabe, clabe_digito_valido)
       values ('${persona}', '${EMPRESA}', '${userId}', '${centro}', 'Beto', current_date - 30,
         (timezone('America/Mexico_City', clock_timestamp()))::date, '${CLABE}', true);
+    -- Desde 0023 toda CLABE de nómina vive también en su historial.
+    insert into employee_payroll_clabes (id, company_id, employee_id, clabe, digito_valido, vigente_desde, registrada_por)
+      values ('17171717-1717-4717-8717-171717171717', '${EMPRESA}', '${persona}', '${CLABE}', true, now() - interval '30 days', '${LUIS}');
     commit;`);
 }
 

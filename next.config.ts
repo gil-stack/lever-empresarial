@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 import { POLITICA_DESCARGA } from "./src/server/pagos-proveedores/descarga";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: process.env.E2E_SERVER_ACTIONS === "1" ? ["127.0.0.1", "localhost"] : undefined,
   async headers() {
     return [
       {
@@ -26,6 +27,11 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",
+      // Solo para la prueba de navegador local. Nunca un origen opaco («null»):
+      // aceptarlo abriría las acciones a iframes con sandbox y a file://.
+      allowedOrigins: process.env.E2E_SERVER_ACTIONS === "1"
+        ? [`127.0.0.1:${process.env.E2E_PUERTO ?? "3109"}`, `localhost:${process.env.E2E_PUERTO ?? "3109"}`]
+        : undefined,
     },
   },
   agentRules: false,

@@ -1,4 +1,5 @@
 import { capacidadesDe, ROLES_CLIENTE, rolesLeidos, tiene, type RolCliente } from "../nucleo/capacidades";
+import { leerCentavosEscritos } from "./centavos";
 import { clabeValida } from "./clabe";
 
 export const ROLES_DE_CUENTA = ROLES_CLIENTE;
@@ -49,6 +50,12 @@ export type CampoPersona =
   | "correo"
   | "rol"
   | "centroNombre"
+  | "centroPresupuesto"
+  | "presupuesto"
+  | "neto"
+  | "frecuencia"
+  | "primerPago"
+  | "destino"
   | "persona";
 
 export type ErrorCampo = {
@@ -69,23 +76,50 @@ export type CodigoRechazoPersona =
   | "persona_ausente"
   | "centro_duplicado"
   | "jefe_invalido"
-  | "centro_invalido";
+  | "jefe_ciclo"
+  | "alta_posterior_pago"
+  | "centro_invalido"
+  | "persona_de_baja"
+  | "nomina_sin_vencimientos"
+  | "nomina_aun_no_vence"
+  | "nomina_sin_personas"
+  | "fecha_ya_preparada"
+  | "destino_incompleto"
+  | "lote_ausente"
+  | "auditoria"
+  | "ultimo_administrador"
+  | "reautenticacion_requerida"
+  | "clabe_requerida"
+  | "clabe_misma"
+  | "baja_ya_efectiva"
+  | "sin_baja_programada"
+  | "nomina_fecha_distinta"
+  | "lote_inconsistente"
+  | "lote_inmutable"
+  | "persona_identidad_inmutable"
+  | "baja_no_efectiva";
 
 export type EstadoMaestro =
   | { tipo: "inicial" }
   | { tipo: "invalido"; errores: ErrorCampo[] }
   | { tipo: "rechazado"; codigo: CodigoRechazoPersona }
-  | { tipo: "listo"; mensaje: string };
+  | { tipo: "listo"; mensaje: string; id?: string };
 
 export const ESTADO_MAESTRO_INICIAL: EstadoMaestro = { tipo: "inicial" };
 
 const ORDEN_CAMPOS: readonly CampoPersona[] = [
   "centroNombre",
+  "centroPresupuesto",
   "nombre",
   "alta",
   "baja",
   "centro",
   "jefe",
+  "presupuesto",
+  "neto",
+  "frecuencia",
+  "primerPago",
+  "destino",
   "clabe",
   "acceso",
   "correo",
@@ -265,7 +299,11 @@ export type AltaPersonaValida = {
   bajaEn: string | null;
   centroId: string;
   jefeId: string | null;
-  clabe: string;
+  presupuestoCentavos: number | null;
+  altaLlave: string | null;
+  clabe: string | null;
+  /** Vacío: la persona no recibe nómina por aquí (solo acceso o solo ficha). */
+  destino: "clabe" | "tarjeta" | null;
   acceso: AccesoNuevo | AccesoYa | AccesoNo;
 };
 
@@ -279,11 +317,34 @@ export type EntradaAltaPersona = {
   baja?: unknown;
   centroId?: unknown;
   jefeId?: unknown;
+  presupuesto?: unknown;
+  altaLlave?: unknown;
+  destino?: unknown;
   clabe?: unknown;
   acceso?: unknown;
   correo?: unknown;
   rol?: unknown;
+  /** «si» o «no». Sin decirlo, la alta lleva nómina si trae neto, frecuencia o primer pago. */
+  nomina?: unknown;
+  neto?: unknown;
+  frecuencia?: unknown;
+  primerPago?: unknown;
 };
+
+/**
+ * Una persona «solo acceso» no recibe nómina: no se le exige neto, destino
+ * ni CLABE. Un campo vacío de FormData llega como null o "": no cuenta.
+ */
+export function altaConNomina(entrada: EntradaAltaPersona): boolean {
+  if (entrada.nomina === "no") return false;
+  if (entrada.nomina === "si") return true;
+  return [entrada.neto, entrada.frecuencia, entrada.primerPago].some(presente);
+}
+
+function presente(valor: unknown): boolean {
+  if (valor === undefined || valor === null) return false;
+  return !(typeof valor === "string" && valor.trim() === "");
+}
 
 type Hallazgo = { codigo: string; campo: CampoPersona };
 
@@ -304,13 +365,13 @@ function armarAlta(
   entrada: EntradaAltaPersona,
   hoy: string,
 ): { errores: Hallazgo[]; valor: AltaPersonaValida | null } {
+  void hoy; // Las contrataciones futuras sí son válidas; el primer pago valida su propia fecha.
   const errores: Hallazgo[] = [];
   const nombre = normalizarNombrePersona(entrada.nombre);
   if (!nombre) errores.push({ codigo: "nombre_invalido", campo: "nombre" });
 
   const altaEn = fechaValida(entrada.alta);
   if (!altaEn) errores.push({ codigo: "fecha_invalida", campo: "alta" });
-  else if (altaEn > hoy) errores.push({ codigo: "alta_futura", campo: "alta" });
 
   const bajaCruda = typeof entrada.baja === "string" ? entrada.baja.trim() : "";
   let bajaEn: string | null = null;
@@ -331,8 +392,23 @@ function armarAlta(
     else jefeId = jefeCrudo;
   }
 
-  const clabe = clabeValida(entrada.clabe);
-  if (!clabe.ok) errores.push({ codigo: "clabe_invalida", campo: "clabe" });
+  const presupuesto = leerCentavosEscritos(typeof entrada.presupuesto === "string" ? entrada.presupuesto : "");
+  if (presupuesto.tipo === "invalido") errores.push({ codigo: "presupuesto_invalido", campo: "presupuesto" });
+  const presupuestoCentavos = presupuesto.tipo === "centavos" ? presupuesto.centavos : null;
+
+  const llaveCruda = typeof entrada.altaLlave === "string" ? entrada.altaLlave.trim() : "";
+  const altaLlave = llaveCruda || null;
+  if (altaLlave && !UUID.test(altaLlave)) errores.push({ codigo: "alta_llave_invalida", campo: "persona" });
+
+  const destinoCrudo = presente(entrada.destino) ? entrada.destino : altaConNomina(entrada) ? "clabe" : null;
+  const destinoValido = destinoCrudo === null || destinoCrudo === "clabe" || destinoCrudo === "tarjeta";
+  if (!destinoValido) errores.push({ codigo: "destino_invalido", campo: "destino" });
+  const destino = destinoCrudo === "clabe" || destinoCrudo === "tarjeta" ? destinoCrudo : null;
+  const clabeCruda = typeof entrada.clabe === "string" ? entrada.clabe.trim() : "";
+  const clabe = clabeCruda ? clabeValida(clabeCruda) : null;
+  if ((destino === "clabe" && !clabe?.ok) || (clabe && !clabe.ok)) {
+    errores.push({ codigo: "clabe_invalida", campo: "clabe" });
+  }
 
   const acceso = entrada.acceso;
   if (acceso !== "no" && acceso !== "nueva" && acceso !== "ya") {
@@ -349,60 +425,53 @@ function armarAlta(
     if (!roles) errores.push({ codigo: "rol_invalido", campo: "rol" });
   }
 
-  if (errores.length > 0 || !nombre || !altaEn || !clabe.ok || !UUID.test(centroId)) {
+  if (errores.length > 0 || !nombre || !altaEn || !UUID.test(centroId) || !destinoValido) {
     return { errores, valor: null };
   }
-  if (acceso === "no") {
-    return {
-      errores,
-      valor: {
-        nombre,
-        altaEn,
-        bajaEn,
-        centroId,
-        jefeId,
-        clabe: clabe.clabe,
-        acceso: { tipo: "no" },
-      },
-    };
-  }
+  const base = {
+    nombre,
+    altaEn,
+    bajaEn,
+    centroId,
+    jefeId,
+    presupuestoCentavos,
+    altaLlave,
+    clabe: clabe?.ok ? clabe.clabe : null,
+    destino,
+  } as const;
+  if (acceso === "no") return { errores, valor: { ...base, acceso: { tipo: "no" } } };
   if (!correoPersonaValido(correo)) return { errores, valor: null };
-  if (acceso === "ya") {
-    return {
-      errores,
-      valor: {
-        nombre,
-        altaEn,
-        bajaEn,
-        centroId,
-        jefeId,
-        clabe: clabe.clabe,
-        acceso: { tipo: "ya", correo },
-      },
-    };
-  }
+  if (acceso === "ya") return { errores, valor: { ...base, acceso: { tipo: "ya", correo } } };
   if (!roles) return { errores, valor: null };
+  return { errores, valor: { ...base, acceso: { tipo: "nueva", correo, roles } } };
+}
+
+export function validarCentro(entrada: {
+  nombre?: unknown;
+  presupuesto?: unknown;
+  esTesoreria?: unknown;
+}): ResultadoCentro {
+  const nombre = normalizarCentro(entrada.nombre);
+  if (!nombre) return { ok: false, codigo: "centro_nombre_invalido" };
+  const monto = leerCentavosEscritos(typeof entrada.presupuesto === "string" ? entrada.presupuesto : "");
+  if (monto.tipo === "invalido") return { ok: false, codigo: "centro_presupuesto_invalido" };
   return {
-    errores,
-    valor: {
-      nombre,
-      altaEn,
-      bajaEn,
-      centroId,
-      jefeId,
-      clabe: clabe.clabe,
-      acceso: { tipo: "nueva", correo, roles },
-    },
+    ok: true,
+    nombre,
+    presupuestoCentavos: monto.tipo === "centavos" ? monto.centavos : null,
+    esTesoreria: entrada.esTesoreria === true || entrada.esTesoreria === "si",
   };
 }
 
-export function validarCentro(entrada: { nombre?: unknown }): ResultadoCentro {
-  const nombre = normalizarCentro(entrada.nombre);
-  if (!nombre) return { ok: false, codigo: "centro_nombre_invalido" };
-  return { ok: true, nombre };
-}
+export type CentroValido = {
+  nombre: string;
+  presupuestoCentavos: number | null;
+  esTesoreria: boolean;
+};
 
-type ResultadoCentro = { ok: true; nombre: string } | { ok: false; codigo: "centro_nombre_invalido" };
+type ResultadoCentro =
+  | ({ ok: true } & CentroValido)
+  | { ok: false; codigo: "centro_nombre_invalido" | "centro_presupuesto_invalido" };
 
 export function validarBaja(entrada: { personaId?: unknown; baja?: unknown }): ResultadoBaja {
   const personaId = typeof entrada.personaId === "string" ? entrada.personaId.trim() : "";
@@ -488,7 +557,11 @@ export const MENSAJE_CAMPO: Record<string, ErrorCampo> = {
   alta_futura: { campo: "alta", mensaje: "La fecha de alta no puede ser posterior a hoy." },
   baja_anterior: { campo: "baja", mensaje: "La baja no puede ser anterior al alta." },
   centro_invalido: { campo: "centro", mensaje: "Elige un centro de costo de esta empresa." },
-  centro_nombre_invalido: { campo: "centroNombre", mensaje: "Escribe el nombre del centro de costo." },
+  centro_nombre_invalido: { campo: "centroNombre", mensaje: "Escribe el nombre del área." },
+  centro_presupuesto_invalido: { campo: "centroPresupuesto", mensaje: "Escribe un presupuesto mensual válido." },
+  presupuesto_invalido: { campo: "presupuesto", mensaje: "Escribe un presupuesto mensual válido o déjalo vacío." },
+  destino_invalido: { campo: "destino", mensaje: "Elige CLABE externa o tarjeta de nómina." },
+  alta_llave_invalida: { campo: "persona", mensaje: "No se pudo confirmar el alta. Vuelve a intentar." },
   jefe_invalido: { campo: "jefe", mensaje: "Elige un jefe de esta empresa, o déjalo sin jefe." },
   jefe_de_baja: { campo: "jefe", mensaje: "Esa persona ya está de baja. Elige otro jefe." },
   clabe_invalida: {
@@ -498,6 +571,10 @@ export const MENSAJE_CAMPO: Record<string, ErrorCampo> = {
   acceso_invalido: { campo: "acceso", mensaje: "Elige si entra a la consola." },
   correo_invalido: { campo: "correo", mensaje: "Escribe un correo válido." },
   rol_invalido: { campo: "rol", mensaje: "Elige al menos un rol de la cuenta." },
+  neto_invalido: { campo: "neto", mensaje: "Escribe el neto que recibirá en cada pago." },
+  frecuencia_invalida: { campo: "frecuencia", mensaje: "Elige semanal, quincenal o mensual." },
+  primer_pago_invalido: { campo: "primerPago", mensaje: "Revisa la fecha del primer pago." },
+  nomina_invalida: { campo: "neto", mensaje: "Revisa neto, frecuencia, primer pago y destino." },
 };
 
 export function erroresDeAltaPersona(entrada: EntradaAltaPersona, hoy: string): ErrorCampo[] {
@@ -562,8 +639,92 @@ export const MENSAJE_RECHAZO: Record<
     texto: "Elige un jefe de esta empresa, o déjalo sin jefe.",
   },
   centro_invalido: {
-    titulo: "El centro no entra",
-    texto: "Elige un centro de costo de esta empresa.",
+    titulo: "El área no entra",
+    texto: "Elige un área de esta empresa.",
+  },
+  jefe_ciclo: {
+    titulo: "La jerarquía se haría circular",
+    texto: "Elige un jefe que no dependa de esta persona.",
+  },
+  alta_posterior_pago: {
+    titulo: "El ingreso queda después del pago",
+    texto: "Cambia primero la fecha de nómina o elige un ingreso anterior al próximo pago.",
+  },
+  persona_de_baja: {
+    titulo: "La persona ya está de baja",
+    texto: "No se puede configurar una nómina nueva para una baja efectiva.",
+  },
+  nomina_sin_vencimientos: {
+    titulo: "No hay nómina vencida",
+    texto: "La próxima fecha todavía no llega.",
+  },
+  nomina_aun_no_vence: {
+    titulo: "Esa fecha todavía no llega",
+    texto: "La nómina se prepara cuando vence, nunca por adelantado en este corte.",
+  },
+  nomina_sin_personas: {
+    titulo: "No hay personas elegibles",
+    texto: "Revisa ingresos, bajas y configuración de nómina para esa fecha.",
+  },
+  fecha_ya_preparada: {
+    titulo: "Esa fecha ya tiene un lote",
+    texto: "El lote es inmutable. Elige la siguiente fecha de pago para esta persona.",
+  },
+  destino_incompleto: {
+    titulo: "Falta un destino",
+    texto: "Hay una persona con CLABE externa incompleta. Complétala antes de preparar.",
+  },
+  lote_ausente: {
+    titulo: "El lote no existe",
+    texto: "No pertenece a esta empresa o ya no está disponible.",
+  },
+  auditoria: {
+    titulo: "No se guardó",
+    texto: "La bitácora no confirmó el cambio y nada quedó a medias. Vuelve a intentar.",
+  },
+  ultimo_administrador: {
+    titulo: "Es la única persona administradora",
+    texto: "La empresa no puede quedarse sin administrador. Da ese rol a otra persona vigente antes de registrar esta baja.",
+  },
+  reautenticacion_requerida: {
+    titulo: "Confirma que eres tú",
+    texto: "Cambiar la CLABE de nómina exige haber verificado tu segundo factor en los últimos 30 minutos. Sal y vuelve a entrar, y repite el cambio.",
+  },
+  clabe_requerida: {
+    titulo: "Falta la CLABE de nómina",
+    texto: "Registra primero la CLABE en «CLABE de nómina» y después elige ese destino.",
+  },
+  clabe_misma: {
+    titulo: "Es la misma CLABE",
+    texto: "La CLABE vigente ya es esa. No se registró un cambio.",
+  },
+  baja_ya_efectiva: {
+    titulo: "La baja ya es efectiva",
+    texto: "Una baja que ya llegó a su fecha no se cancela: el acceso ya se cerró.",
+  },
+  sin_baja_programada: {
+    titulo: "No hay baja programada",
+    texto: "Esta persona no tiene una baja futura que cancelar.",
+  },
+  nomina_fecha_distinta: {
+    titulo: "La fecha vencida cambió",
+    texto: "Mientras revisabas, la nómina vencida dejó de ser la que viste. Recarga la página y revisa de nuevo.",
+  },
+  lote_inconsistente: {
+    titulo: "El lote no cuadra",
+    texto: "El total no coincide con sus renglones o no tiene personas. No se guardó nada.",
+  },
+  lote_inmutable: {
+    titulo: "El lote ya está congelado",
+    texto: "Un lote preparado no se edita ni se borra.",
+  },
+  persona_identidad_inmutable: {
+    titulo: "Ese dato no cambia",
+    texto: "La empresa y el usuario enlazado de una persona no se reasignan.",
+  },
+  baja_no_efectiva: {
+    titulo: "La baja todavía no es efectiva",
+    texto: "El acceso se cierra el día de la baja.",
   },
 };
 

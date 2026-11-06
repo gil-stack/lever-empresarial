@@ -114,11 +114,11 @@ describe("dos firmas y el contador", () => {
 });
 
 describe("alta de persona", () => {
-  it("exige CLABE válida, centro y un alta que no sea futura", () => {
+  it("exige CLABE válida, centro y una fecha de alta real", () => {
     const errores = erroresDeAltaPersona(
       {
         nombre: "  ",
-        alta: "2026-11-04",
+        alta: "2026-11-31",
         baja: "2026-11-01",
         centroId: "no",
         clabe: "002180701150123453",
@@ -135,6 +135,29 @@ describe("alta de persona", () => {
     assert.ok(campos.includes("clabe"));
     assert.ok(campos.includes("correo"));
     assert.equal(errores.some((error) => error.mensaje.includes("002180")), false);
+  });
+
+  it("admite contratación futura y tarjeta sin CLABE externa", () => {
+    const resultado = validarAltaPersona(
+      {
+        nombre: "Persona futura",
+        alta: "2026-12-01",
+        baja: "",
+        centroId: CENTRO,
+        jefeId: "",
+        presupuesto: "8000.00",
+        destino: "tarjeta",
+        clabe: "",
+        acceso: "no",
+      },
+      HOY,
+    );
+    assert.equal(resultado.ok, true);
+    if (resultado.ok) {
+      assert.equal(resultado.valor.clabe, null);
+      assert.equal(resultado.valor.destino, "tarjeta");
+      assert.equal(resultado.valor.presupuestoCentavos, 800000);
+    }
   });
 
   it("retira solicitante de nuevas altas sin tocar el rol histórico", () => {

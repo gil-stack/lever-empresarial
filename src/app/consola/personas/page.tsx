@@ -1,54 +1,56 @@
 import type { Metadata } from "next";
 
-import { Maestro, MaestroCerrado } from "@/components/personas/maestro";
 import { Marco } from "@/components/cromo/marco";
 import { vistaDeMarco } from "@/components/cromo/puertas";
+import { DirectorioPersonas } from "@/components/personas/directorio";
+import { MaestroCerrado } from "@/components/personas/maestro";
 import { hoyEnMexico } from "@/dominio/personas";
-import { puede, type ContextoDeTenant } from "@/nucleo/contexto";
-import { abrirRuta, errorConSecreto } from "@/server/entrada";
+import { puede } from "@/nucleo/contexto";
 import { leerMaestro } from "@/server/personas";
-import { ErrorDeDominio } from "@/server/session";
+import type { FiltrosPersonas, LecturaMaestro } from "@/server/personas/tipos";
+
+import { abrirPersonas, errorDePersonas, type AvisoPersonas } from "./apertura";
 
 export const runtime = "nodejs";
+export const metadata: Metadata = { title: "Personas" };
 
-export const metadata: Metadata = {
-  title: "Personas",
-};
+type Busqueda = Promise<Record<string, string | string[] | undefined>>;
 
-export default async function PaginaPersonas() {
-  const apertura = await abrirRuta("/consola/personas");
-  const ctx = apertura.tipo === "libro" ? null : apertura.ctx;
-  const hoy = hoyEnMexico(new Date());
-  const cerrado = await cerrar(apertura.tipo === "abierta" ? apertura.ctx : null, apertura.tipo);
-
+export default async function PaginaPersonas({ searchParams }: { searchParams: Busqueda }) {
+  const [apertura, parametros] = await Promise.all([abrirPersonas("/consola/personas"), searchParams]);
+  const filtros = leerFiltros(parametros);
+  let lectura: LecturaMaestro | null = null;
+  let aviso: AvisoPersonas | null = apertura.aviso;
+  if (apertura.ctx) {
+    try {
+      lectura = await leerMaestro(apertura.ctx, filtros);
+    } catch (error) {
+      aviso = errorDePersonas(error);
+    }
+  }
+  const contenido = aviso ? <MaestroCerrado aviso={aviso} /> : apertura.ctx && lectura ? (
+    <DirectorioPersonas lectura={lectura} filtros={filtros} hoy={hoyEnMexico(new Date())} empresaId={apertura.ctx.empresa?.id ?? ""} edita={puede(apertura.ctx, "cliente.maestro.editar")} />
+  ) : <MaestroCerrado aviso="libro" />;
   return (
-    <Marco actual="/consola/personas" vista={vistaDeMarco(ctx)}>
-      <main id="contenido" className="consola">
-        {cerrado.tipo === "abierto" && ctx ? (
-          <Maestro lectura={cerrado.lectura} hoy={hoy} roles={ctx.roles} edita={puede(ctx, "cliente.maestro.editar")} />
-        ) : cerrado.tipo === "cerrado" ? (
-          <MaestroCerrado aviso={cerrado.aviso} />
-        ) : null}
-      </main>
+    <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)}>
+      <main id="contenido" className="consola personas-modulo">{contenido}</main>
     </Marco>
   );
 }
 
-async function cerrar(ctx: ContextoDeTenant | null, apertura: string) {
-  if (apertura === "libro") return { tipo: "cerrado" as const, aviso: "libro" as const };
-  if (apertura === "sin_empresa") return { tipo: "cerrado" as const, aviso: "sin_empresa" as const };
-  if (!ctx) return { tipo: "cerrado" as const, aviso: "no_abre" as const };
-  try {
-    const lectura = await leerMaestro(ctx);
-    return { tipo: "abierto" as const, lectura };
-  } catch (error) {
-    if (error instanceof ErrorDeDominio) {
-      if (error.codigo === "maestro_no_disponible") return { tipo: "cerrado" as const, aviso: "no_abre" as const };
-      if (error.codigo === "sin_empresa") return { tipo: "cerrado" as const, aviso: "sin_empresa" as const };
-      if (error.codigo === "sesion_ausente") return { tipo: "cerrado" as const, aviso: "entrar" as const };
-      return { tipo: "cerrado" as const, aviso: "libro" as const };
-    }
-    if (errorConSecreto(error)) return { tipo: "cerrado" as const, aviso: "libro" as const };
-    throw error;
-  }
+function leerFiltros(parametros: Record<string, string | string[] | undefined>): FiltrosPersonas {
+  const texto = (clave: string) => {
+    const valor = parametros[clave];
+    return typeof valor === "string" ? valor.trim() : "";
+  };
+  const estadoCrudo = texto("estado");
+  const estado = ["vigentes", "pendientes", "bajas"].includes(estadoCrudo) ? estadoCrudo as FiltrosPersonas["estado"] : "todos";
+  const area = texto("area");
+  const pagina = Math.max(1, Math.min(100000, Number.parseInt(texto("pagina"), 10) || 1));
+  return {
+    buscar: texto("q").slice(0, 100),
+    centroId: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(area) ? area : null,
+    estado,
+    pagina,
+  };
 }
