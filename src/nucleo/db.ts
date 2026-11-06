@@ -210,7 +210,43 @@ export function traducirErrorDeBase(error: unknown): Error {
   if (codigo === "23514" && marca.includes("lotes_prueba_es_prueba")) {
     return new ErrorDeDominio("dinero_real_fuera");
   }
+  registrarErrorSinTraducir(error, codigo);
   return new ErrorDeDominio("base_no_disponible");
+}
+
+// pg-pool y pg no ponen código a la espera agotada de una conexión; se reconoce
+// por su frase fija. Solo se registra la clase, nunca el texto.
+const FRASES_DE_ESPERA = ["timeout exceeded when trying to connect", "connection terminated due to connection timeout"];
+const CODIGO_DE_RAISE = /^[a-z_]{1,64}$/;
+
+/**
+ * Deja rastro de lo que llegó como «base_no_disponible»: el SQLSTATE o el código
+ * de red, la restricción, la tabla y la rutina. No guarda el mensaje crudo ni los
+ * parámetros, que pueden traer datos de personas. La única excepción es el texto
+ * de un RAISE de la base cuando tiene forma de código (`sesion_sin_auditoria`).
+ */
+function registrarErrorSinTraducir(error: unknown, codigo: string): void {
+  const mensaje = error instanceof Error ? error.message.trim().toLowerCase() : "";
+  const clase = FRASES_DE_ESPERA.some((frase) => mensaje.includes(frase))
+    ? "espera_de_conexion_agotada"
+    : /^[0-9A-Z]{5}$/.test(codigo)
+      ? "postgres"
+      : codigo
+        ? "red"
+        : "desconocida";
+  console.error(
+    JSON.stringify({
+      nivel: "error",
+      origen: "nucleo.db",
+      evento: "error_de_base_sin_traducir",
+      clase,
+      codigo: codigo || null,
+      restriccion: campo(error, "constraint") || null,
+      tabla: campo(error, "table") || null,
+      rutina: campo(error, "routine") || null,
+      raise: codigo === "P0001" && CODIGO_DE_RAISE.test(mensaje) ? mensaje : null,
+    }),
+  );
 }
 
 const CODIGOS_DE_CLABE = new Set([
