@@ -4,7 +4,7 @@
 //   BASE=http://localhost:4805 \
 //   DUENO_URL=postgres://dueno@127.0.0.1:5531/plataforma \
 //   SEMILLAS=/ruta/fuera/del/repo/semillas.json \
-//   [SOLO=a,b,c,d,e,f,h] \
+//   [SOLO=a,b,c,d,e,f,h] [CASO_CORREO=proveedor_lento_3s] \
 //   node scripts/evidencia/seguridad-cuentas.mjs
 //
 // SEMILLAS guarda la semilla TOTP de cada persona en cuanto se inscribe, para
@@ -27,6 +27,8 @@ const SALIDA = process.env.SALIDA ?? "docs/evidencia/seguridad-cuentas";
 const CLAVE = process.env.CLAVE ?? "clave-segura-12";
 const SOLO = (process.env.SOLO ?? "").split(",").filter(Boolean);
 const SEMILLAS = process.env.SEMILLAS ?? "";
+// Con qué proveedor de correo corre el servidor en esta corrida: (e) guarda sus tiempos bajo esta clave.
+const CASO_CORREO = process.env.CASO_CORREO ?? "correo_rechazado_al_instante";
 
 if (!/^postgres(ql)?:\/\/[^@]+@(127\.0\.0\.1|localhost)(:\d+)?\//.test(DUENO)) {
   throw new Error("DUENO_URL tiene que apuntar a un Postgres local desechable (127.0.0.1 o localhost).");
@@ -146,9 +148,15 @@ async function entrarOperacion(page, correo) {
   await page.waitForURL(/\/operacion(\?|$)/);
 }
 
-/** Simula que el factor de la sesión se probó hace `minutos`. */
+/**
+ * Simula que el factor de la sesión se probó hace `minutos`. En la aplicación el
+ * sello solo avanza y con su evento; la simulación del reloj corre como dueña
+ * con los triggers apagados en esa transacción.
+ */
 function envejecerFactor(correo, minutos) {
-  sql(`update sessions set segundo_factor_en = now() - interval '${minutos} minutes' where user_id = '${idDe(correo)}'`);
+  const id = idDe(correo);
+  sql(`begin; set local session_replication_role = replica;
+       update sessions set segundo_factor_en = now() - interval '${minutos} minutes' where user_id = '${id}'; commit;`);
 }
 
 async function confirmarConCodigo(page, correo) {
@@ -358,8 +366,21 @@ try {
       await captura(pagRec, `e-${clave}`);
     }
     exigir(tiempos.existente.texto === tiempos.inexistente.texto, `(e) misma respuesta: «${tiempos.existente.texto.replace(/\s+/g, " ")}»`);
-    exigir(Math.abs(tiempos.existente.ms - tiempos.inexistente.ms) < 400, `(e) tiempos parecidos: existente ${tiempos.existente.ms} ms, inexistente ${tiempos.inexistente.ms} ms`);
-    writeFileSync(`${SALIDA}/e-tiempos.json`, `${JSON.stringify(tiempos, null, 2)}\n`);
+    exigir(
+      Math.abs(tiempos.existente.ms - tiempos.inexistente.ms) < 400,
+      `(e) [${CASO_CORREO}] tiempos parecidos: existente ${tiempos.existente.ms} ms, inexistente ${tiempos.inexistente.ms} ms`,
+    );
+    const archivoTiempos = `${SALIDA}/e-tiempos.json`;
+    let previos = {};
+    try {
+      previos = JSON.parse(readFileSync(archivoTiempos, "utf8"));
+    } catch {
+      previos = {};
+    }
+    // Un caso por proveedor de correo; el formato viejo (sin casos) se reemplaza.
+    const casos = previos && typeof previos === "object" && !("existente" in previos) ? previos : {};
+    casos[CASO_CORREO] = tiempos;
+    writeFileSync(archivoTiempos, `${JSON.stringify(casos, null, 2)}\n`);
     await ctxRec.close();
   }
 
@@ -426,8 +447,14 @@ try {
     const ctxRes = await navegador.newContext({ viewport: { width: 1280, height: 900 } });
     const pagRes = await ctxRes.newPage();
     const restablecidasAntes = auditoria("contrasena_restablecida", ana);
+    const recuperacionDeAna = () =>
+      sql(`select estado from auth_recuperaciones where user_id = '${idDe(ana)}' order by solicitada_en desc limit 1`);
+    const recuperacionAntes = recuperacionDeAna();
     await guardarContrasena(pagRes, enlaceDeRecuperacion(ana), NUEVA);
     await captura(pagRes, "h1-contrasena-guardada");
+    if (recuperacionAntes === "aprobada") {
+      exigir(recuperacionDeAna() === "vencida", "(h) la recuperación de segundo factor que (c) le aprobó a Ana quedó vencida");
+    }
     exigir(sesionesDeAna() === 0, "(h) al guardar se cierran todas las sesiones de Ana");
     exigir(sql(`select count(*) from auth_entradas where user_id = '${idDe(ana)}' and consumida_en is null`) === "0", "(h) no queda ninguna entrada a medias de antes del cambio");
     exigir(auditoria("contrasena_restablecida", ana) === restablecidasAntes + 1, "(h) el cambio queda en la bitácora");

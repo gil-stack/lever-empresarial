@@ -1,8 +1,8 @@
-{"nivel":"error","origen":"autenticacion.avisos","evento":"aviso_seguridad_no_enviado","cambio":"respaldo_regenerado","usuario":"e4a2b6e5-c244-4cd0-969f-ecbb9f50472b","error":"correo_no_disponible"}
-{"nivel":"error","origen":"autenticacion.avisos","evento":"aviso_seguridad_no_enviado","cambio":"passkey_agregada","usuario":"e4a2b6e5-c244-4cd0-969f-ecbb9f50472b","error":"correo_no_disponible"}
-{"nivel":"error","origen":"autenticacion.avisos","evento":"aviso_seguridad_no_enviado","cambio":"totp_quitado","usuario":"e4a2b6e5-c244-4cd0-969f-ecbb9f50472b","error":"correo_no_disponible"}
-{"nivel":"error","origen":"autenticacion.avisos","evento":"aviso_seguridad_no_enviado","cambio":"totp_activado","usuario":"e4a2b6e5-c244-4cd0-969f-ecbb9f50472b","error":"correo_no_disponible"}
-{"nivel":"error","origen":"autenticacion.avisos","evento":"aviso_seguridad_no_enviado","cambio":"recuperacion_aprobada","usuario":"e4a2b6e5-c244-4cd0-969f-ecbb9f50472b","error":"correo_no_disponible"}
-{"nivel":"error","origen":"invitaciones.recuperar","evento":"recuperacion_correo_no_enviado","solicitud":"2fa44fd1-ccee-4b6c-96e8-9e5169512a89","error":"correo_no_disponible"}
-{"nivel":"error","origen":"autenticacion.avisos","evento":"aviso_seguridad_no_enviado","cambio":"contrasena_cambiada","usuario":"e4a2b6e5-c244-4cd0-969f-ecbb9f50472b","error":"correo_no_disponible"}
-{"nivel":"error","origen":"autenticacion.avisos","evento":"aviso_seguridad_no_enviado","cambio":"contrasena_cambiada","usuario":"e4a2b6e5-c244-4cd0-969f-ecbb9f50472b","error":"correo_no_disponible"}
+{"nivel":"error","origen":"autenticacion.avisos","evento":"aviso_seguridad_no_enviado","cambio":"respaldo_regenerado","usuario":"3bad9998-4879-46f3-84e1-fd8a475dffa9","error":"correo_no_disponible"}
+{"nivel":"error","origen":"autenticacion.avisos","evento":"aviso_seguridad_no_enviado","cambio":"passkey_agregada","usuario":"3bad9998-4879-46f3-84e1-fd8a475dffa9","error":"correo_no_disponible"}
+{"nivel":"error","origen":"autenticacion.avisos","evento":"aviso_seguridad_no_enviado","cambio":"totp_quitado","usuario":"3bad9998-4879-46f3-84e1-fd8a475dffa9","error":"correo_no_disponible"}
+{"nivel":"error","origen":"autenticacion.avisos","evento":"aviso_seguridad_no_enviado","cambio":"totp_activado","usuario":"3bad9998-4879-46f3-84e1-fd8a475dffa9","error":"correo_no_disponible"}
+{"nivel":"error","origen":"autenticacion.avisos","evento":"aviso_seguridad_no_enviado","cambio":"recuperacion_aprobada","usuario":"3bad9998-4879-46f3-84e1-fd8a475dffa9","error":"correo_no_disponible"}
+{"nivel":"error","origen":"invitaciones.recuperar","evento":"recuperacion_correo_no_enviado","solicitud":"d336805a-ebc8-410f-8ad1-c59051af48c1","error":"correo_no_disponible"}
+{"nivel":"error","origen":"autenticacion.avisos","evento":"aviso_seguridad_no_enviado","cambio":"contrasena_cambiada","usuario":"3bad9998-4879-46f3-84e1-fd8a475dffa9","error":"correo_no_disponible"}
+{"nivel":"error","origen":"autenticacion.avisos","evento":"aviso_seguridad_no_enviado","cambio":"contrasena_cambiada","usuario":"3bad9998-4879-46f3-84e1-fd8a475dffa9","error":"correo_no_disponible"}

@@ -4,7 +4,7 @@
       "name": "__Host-entrada",
       "domain": "localhost",
       "path": "/",
-      "expires": 1793940608.798271,
+      "expires": 1793943426.628614,
       "httpOnly": true,
       "secure": true,
       "sameSite": "Lax"
@@ -15,7 +15,7 @@
       "name": "__Host-sesion",
       "domain": "localhost",
       "path": "/",
-      "expires": 1793983230.803381,
+      "expires": 1793986050.568732,
       "httpOnly": true,
       "secure": true,
       "sameSite": "Lax"

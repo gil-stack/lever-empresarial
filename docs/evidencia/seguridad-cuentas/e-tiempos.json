@@ -1,10 +1,22 @@
 {
-  "existente": {
-    "ms": 1856,
-    "texto": "Revisa tu correo\n\nSi ese correo tiene cuenta, te llegará un enlace. Sirve una sola vez, vence en una hora y no cambia tu segundo factor."
+  "correo_rechazado_al_instante": {
+    "existente": {
+      "ms": 1827,
+      "texto": "Revisa tu correo\n\nSi ese correo tiene cuenta, te llegará un enlace. Sirve una sola vez, vence en una hora y no cambia tu segundo factor."
+    },
+    "inexistente": {
+      "ms": 1826,
+      "texto": "Revisa tu correo\n\nSi ese correo tiene cuenta, te llegará un enlace. Sirve una sola vez, vence en una hora y no cambia tu segundo factor."
+    }
   },
-  "inexistente": {
-    "ms": 1832,
-    "texto": "Revisa tu correo\n\nSi ese correo tiene cuenta, te llegará un enlace. Sirve una sola vez, vence en una hora y no cambia tu segundo factor."
+  "proveedor_lento_3s": {
+    "existente": {
+      "ms": 1824,
+      "texto": "Revisa tu correo\n\nSi ese correo tiene cuenta, te llegará un enlace. Sirve una sola vez, vence en una hora y no cambia tu segundo factor."
+    },
+    "inexistente": {
+      "ms": 1826,
+      "texto": "Revisa tu correo\n\nSi ese correo tiene cuenta, te llegará un enlace. Sirve una sola vez, vence en una hora y no cambia tu segundo factor."
+    }
   }
 }

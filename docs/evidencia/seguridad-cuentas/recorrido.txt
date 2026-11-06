@@ -1,4 +1,4 @@
-Ana entra a la consola con TOTP (/c/ffb2e298-aafd-46ea-b229-14655dc07d76/consola)
+Ana entra a la consola con TOTP (/c/268a2a68-7841-4d02-8940-800d8903fe72/consola)
 (a) con el factor de hace 6 min la página pide «Confirma que eres tú»
 captura a1-pide-confirmar.png
 (a) regenerar sin confirmar no genera códigos
@@ -43,7 +43,7 @@ captura d4-publicar-exige-factor-reciente.png
 captura e-existente.png
 captura e-inexistente.png
 (e) misma respuesta: «Revisa tu correo Si ese correo tiene cuenta, te llegará un enlace. Sirve una sola vez, vence en una hora y no cambia tu segundo factor.»
-(e) tiempos parecidos: existente 1856 ms, inexistente 1832 ms
+(e) [correo_rechazado_al_instante] tiempos parecidos: existente 1827 ms, inexistente 1826 ms
 (f) con uso reciente la consola abre
 (f) tras 31 min sin uso la consola manda a entrar
 captura f1-inactiva-vuelve-a-entrar.png
@@ -57,6 +57,7 @@ captura f2-vuelve-a-entrar.png
 captura g1-produccion-host-cookies.png
 (h) Ana tiene su sesión abierta en la consola
 captura h1-contrasena-guardada.png
+(h) la recuperación de segundo factor que (c) le aprobó a Ana quedó vencida
 (h) al guardar se cierran todas las sesiones de Ana
 (h) no queda ninguna entrada a medias de antes del cambio
 (h) el cambio queda en la bitácora
