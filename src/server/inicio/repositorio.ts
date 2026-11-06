@@ -29,6 +29,9 @@ export const SQL_INICIO = `
     (select s.estado from subscriptions s where s.company_id = $1) as plan_estado,
     (select count(*) from supplier_payment_requests r
       where r.company_id = $1 and r.estado = 'por_autorizar' and r.solicitado_por <> $3) as pagos_por_autorizar,
+    -- Igual que SQL.primeraFechaVencida de nomina/repositorio.ts, la fecha que toma prepararNomina.
+    -- La revisión de seguridad no deja interpolar SQL de otro módulo; la prueba de Postgres
+    -- tests/personas/colaboradores-postgres.test.ts exige que las dos fechas coincidan.
     (select to_char(min(p.proximo_pago_en), 'YYYY-MM-DD')
        from employee_payroll_profiles p
        join employees e on e.id = p.employee_id and e.company_id = p.company_id

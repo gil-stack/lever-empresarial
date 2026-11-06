@@ -313,6 +313,18 @@ try {
   const deLaura = await pendientesVisibles(laura);
   exigir(deLaura.some((texto) => texto.startsWith("Prepara el lote de nómina del ")) && !deLaura.includes("Autoriza un pago a proveedor"), `la administradora ve la nómina y no el pago: ${deLaura.join(" | ")}`);
 
+  // La nómina se prepara desde Pendientes y el lote sale con la fecha que se anunciaba.
+  const avisoNomina = deLaura.find((texto) => texto.startsWith("Prepara el lote de nómina del "));
+  await laura.getByRole("link", { name: /Preparar nómina/ }).click();
+  await laura.waitForURL(/\/consola\/personas\/nomina$/);
+  await laura.getByRole("button", { name: /^Preparar nómina del / }).click();
+  await laura.waitForURL(/\/consola\/personas\/nomina\/[0-9a-f-]{36}$/);
+  const fechaLote = sql(`select to_char(fecha_pago, 'YYYY-MM-DD') from payroll_batches where company_id = '${empresa}'`);
+  const fechaAnunciada = new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${fechaLote}T00:00:00Z`));
+  exigir(avisoNomina === `Prepara el lote de nómina del ${fechaAnunciada}`, `el lote preparado desde Pendientes es el del ${fechaLote}, la fecha anunciada`);
+  await laura.goto(`${raiz}/consola/pendientes`);
+  exigir(!(await pendientesVisibles(laura)).some((texto) => texto.startsWith("Prepara el lote de nómina del ")), "con el lote preparado, la nómina sale de Pendientes");
+
   // (c) Otorgar y quitar Finanzas desde la ficha nueva.
   const tomasCtx = await contexto(navegador, { tema: "oscuro", ancho: 390, alto: 844 });
   const tomas = await tomasCtx.newPage();
