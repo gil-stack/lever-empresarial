@@ -186,6 +186,36 @@ async function dobleClic(boton) {
   await boton.dblclick({ delay: 40 });
 }
 
+/**
+ * Doble clic mientras la base retiene la acción con un candado sobre la tabla que escribe: el
+ * botón tiene que quedar apagado, con aria-busy y «Enviando…» (o su texto propio) hasta que
+ * la base responde. Al soltar, el envío termina una sola vez; eso lo cuenta quien llama.
+ */
+async function dobleClicRetenido(page, boton, tabla, { texto = "Enviando…", captura: nombre } = {}) {
+  const soltar = await sostenerCandado(tabla);
+  try {
+    await dobleClic(boton);
+    const ocupado = page.locator('button[aria-busy="true"]');
+    await ocupado.waitFor({ timeout: 4000 });
+    exigir((await ocupado.count()) === 1 && (await ocupado.isDisabled()) && (await ocupado.innerText()).trim() === texto, `mientras la base retiene ${tabla}, el botón queda apagado, con aria-busy y «${texto}»`);
+    if (nombre) await captura(page, nombre, { completa: false });
+  } finally {
+    await soltar();
+  }
+}
+
+/**
+ * En 390, con el cajón ya cerrado, la barra de arriba dice que la sección carga: progreso a la vista,
+ * «Cargando…» en un role=status y contraste AA de lo que se ve en ese momento.
+ */
+async function revisarCargaMovil(page, donde, ruta) {
+  const carga = page.locator(".barra-movil-carga");
+  await carga.locator(".seccion-spinner").waitFor();
+  exigir((await carga.getAttribute("role")) === "status" && (await carga.innerText()).trim() === "Cargando…" && (await carga.locator(".seccion-spinner").isVisible()), `${donde}: la barra de arriba muestra el progreso y dice «Cargando…»`);
+  const medida = await medirPantalla(page, ruta);
+  exigir(medida.fallas.length === 0, `${donde}: contraste AA mientras carga (${medida.medidos} textos, mínimo ${medida.minimo.toFixed(2)})`);
+}
+
 async function guardarSesion(nombre, ctx) {
   estado.sesiones[nombre] = await ctx.storageState();
   guardar();
@@ -440,7 +470,7 @@ async function flujos() {
   await op.getByLabel("Empresa").selectOption({ label: "Altamar Logística" });
   await op.getByLabel("Título").fill("Documentos por completar");
   await op.getByLabel("Detalle").fill("Falta el comprobante de domicilio de Altamar.");
-  await dobleClic(op.getByRole("button", { name: "Crear alerta" }));
+  await dobleClicRetenido(op, op.getByRole("button", { name: "Crear alerta" }), "operational_alerts", { captura: "16a-operacion-crear-alerta-enviando-oscuro-1440" });
   await op.getByText("Alerta creada").waitFor();
   exigir(contar(`select count(*) from operational_alerts where company_id = '${altamarId}' and titulo = 'Documentos por completar'`) === 1, "doble clic en «Crear alerta» deja una sola alerta");
   const opId2 = idDe(OP2);
@@ -594,7 +624,7 @@ async function flujos() {
   await capturarEnTodo(rec, "40-recuperar");
   const resetsAntes = contar(`select count(*) from password_resets where user_id = '${idDe(LAURA)}'`);
   await rec.getByLabel("Correo").fill(LAURA);
-  await dobleClic(rec.getByRole("button", { name: "Enviar el enlace" }));
+  await dobleClicRetenido(rec, rec.getByRole("button", { name: "Enviar el enlace" }), "password_resets", { captura: "40a-recuperar-enviando-oscuro-1440" });
   await rec.getByText("Revisa tu correo").waitFor();
   await new Promise((r) => setTimeout(r, 1500));
   exigir(contar(`select count(*) from password_resets where user_id = '${idDe(LAURA)}'`) === resetsAntes + 1, "doble clic en «Enviar el enlace» crea un solo enlace");
@@ -1044,8 +1074,9 @@ async function estados() {
           await enlace.locator(".seccion-spinner").waitFor({ state: "attached" });
           exigir((await page.getByRole("heading", { level: 1, name: "Bitácora" }).count()) === 1, `Operación ${tema}-${ancho}: mientras carga, la página de antes sigue a la vista`);
           if (ancho < 600) {
-            // El cajón se cierra al pulsar un enlace (src/components/cromo/lateral-movil.tsx): el progreso queda dentro.
+            // El cajón se cierra al pulsar un enlace y el progreso del enlace queda dentro, oculto: lo dice la barra.
             exigir((await page.getByRole("button", { name: "Secciones" }).getAttribute("aria-expanded")) === "false", `Operación ${tema}-${ancho}: el cajón se cerró al pulsar Clientes`);
+            await revisarCargaMovil(page, `Operación ${tema}-${ancho}`, "/operacion (cargando)");
           } else {
             exigir(await enlace.locator(".seccion-spinner").isVisible(), `Operación ${tema}-${ancho}: el enlace pedido muestra su progreso`);
             exigir((await enlace.locator(".seccion-lectura").innerText()) === "Cargando…", `Operación ${tema}-${ancho}: el enlace pedido anuncia «Cargando…» al lector de pantalla`);
@@ -1060,7 +1091,6 @@ async function estados() {
       }
     }
     await ctx.close();
-    pendiente("en 390 el cajón se cierra al pulsar una sección y su progreso queda oculto: no hay señal de carga a la vista hasta que llega la página (src/components/cromo/lateral-movil.tsx)");
   }
 
   // Error: la base le niega a Operación la lectura de empresas; la sección lo dice dentro del marco
@@ -1100,13 +1130,44 @@ async function estados() {
     await ctx.close();
   }
 
-  // Sin permiso: una sesión de cliente no abre Operación; la manda a la puerta del personal.
+  // Cargando en la consola (390) y sin permiso, con la sesión de Laura.
   {
     const { ctx, page } = await contexto();
     await entrarCliente(page, LAURA, estado.claves[LAURA]);
     await page.getByLabel("Código de la app autenticadora").fill(await codigoFresco(LAURA));
     await page.getByRole("button", { name: "Entrar con el código" }).click();
     await page.waitForURL(/\/consola|\/empresas|\/telefono/);
+
+    // Laura pulsa Personas en el cajón. El navegador retiene la respuesta de la sección (su precarga y su
+    // navegación) hasta que se comprueba la barra; luego la deja pasar.
+    await page.setViewportSize({ width: 390, height: 844 });
+    // La consola con empresa elegida vive en /c/<empresa>/consola/….
+    const personas = (url) => /\/consola\/personas$/.test(url.pathname);
+    let soltar = () => {};
+    let retenida = Promise.resolve();
+    await page.route(personas, async (ruta) => {
+      if (ruta.request().headers().rsc) await retenida;
+      await ruta.continue();
+    });
+    for (const tema of TEMAS) {
+      retenida = new Promise((listo) => (soltar = listo));
+      await ctx.addCookies([{ name: "tema", value: tema, url: BASE }]);
+      await page.goto(`${BASE}/consola/pendientes`, { waitUntil: "domcontentloaded" });
+      await page.locator("main#contenido").waitFor();
+      await page.getByRole("button", { name: "Secciones" }).click();
+      await page.locator("#lateral").getByRole("link", { name: /^Personas/ }).click();
+      exigir((await page.getByRole("button", { name: "Secciones" }).getAttribute("aria-expanded")) === "false", `consola ${tema}-390: el cajón se cerró al pulsar Personas`);
+      exigir(/\/consola\/pendientes$/.test(new URL(page.url()).pathname) && (await page.locator("main#contenido").isVisible()), `consola ${tema}-390: mientras carga, Pendientes sigue a la vista`);
+      await revisarCargaMovil(page, `consola ${tema}-390`, "/consola (cargando)");
+      await captura(page, `96b-consola-cargando-${tema}-390`, { completa: false });
+      soltar();
+      await page.waitForURL(/\/consola\/personas/);
+      await page.locator(".barra-movil-carga .seccion-spinner").waitFor({ state: "detached" });
+      exigir((await page.locator(".barra-movil-carga").innerText()).trim() === "", `consola ${tema}-390: al llegar Personas, la barra deja de decir «Cargando…»`);
+    }
+    await page.unroute(personas);
+
+    // Sin permiso: una sesión de cliente no abre Operación; la manda a la puerta del personal.
     await page.goto(`${BASE}/operacion/clientes`, { waitUntil: "networkidle" });
     exigir(new URL(page.url()).pathname === "/operacion/entrar", "Sin permiso: con sesión de cliente, /operacion/clientes lleva a la entrada de Operación");
     for (const tema of TEMAS) {
