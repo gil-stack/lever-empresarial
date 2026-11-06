@@ -1,29 +1,29 @@
 {
   "oscuro": {
-    "medidos": 61,
+    "medidos": 70,
     "minimo": 5.34,
     "fallas": [],
     "porColor": {
       "#edf0ed": {
-        "textos": 17,
-        "minimo": 11.07,
-        "fondo": "#39312e",
-        "ejemplo": "/precios «Oscuro»"
+        "textos": 21,
+        "minimo": 10.24,
+        "fondo": "#423531",
+        "ejemplo": "/recuperar «Entrar»"
       },
       "#bdbab8": {
-        "textos": 15,
-        "minimo": 8.29,
-        "fondo": "#2a1f1d",
-        "ejemplo": "/entrar «Claro»"
+        "textos": 17,
+        "minimo": 5.63,
+        "fondo": "#483a35",
+        "ejemplo": "/recuperar «El enlace sirve una sola vez y vence en »"
       },
       "#aeaba9": {
-        "textos": 6,
-        "minimo": 7.49,
-        "fondo": "#221a17",
-        "ejemplo": "/precios «Portal de clientes»"
+        "textos": 8,
+        "minimo": 5.54,
+        "fondo": "#3d302d",
+        "ejemplo": "/recuperar «Recuperar contraseña»"
       },
       "#0c0b0b": {
-        "textos": 4,
+        "textos": 5,
         "minimo": 17.48,
         "fondo": "#f1f2ee",
         "ejemplo": "/entrar «Continuar»"
@@ -67,30 +67,30 @@
     }
   },
   "claro": {
-    "medidos": 61,
-    "minimo": 5.34,
+    "medidos": 70,
+    "minimo": 5.21,
     "fallas": [],
     "porColor": {
       "#141312": {
-        "textos": 17,
+        "textos": 21,
         "minimo": 10.83,
         "fondo": "#c7c6bf",
         "ejemplo": "/entrar «Claro»"
       },
       "#4f4a45": {
-        "textos": 15,
+        "textos": 17,
         "minimo": 5.72,
         "fondo": "#d2d1cb",
         "ejemplo": "/entrar «Lever»"
       },
       "#57524d": {
-        "textos": 6,
-        "minimo": 6.23,
-        "fondo": "#ece6de",
-        "ejemplo": "/esta-no-existe «Error 404»"
+        "textos": 8,
+        "minimo": 5.21,
+        "fondo": "#d6d4cd",
+        "ejemplo": "/recuperar «El saldo vive con el participante de la »"
       },
       "#ffffff": {
-        "textos": 6,
+        "textos": 7,
         "minimo": 17.93,
         "fondo": "#1b1614",
         "ejemplo": "/esta-no-existe «Entrar a mi cuenta»"
@@ -128,30 +128,30 @@
     }
   },
   "lever": {
-    "medidos": 61,
-    "minimo": 5.34,
+    "medidos": 70,
+    "minimo": 4.93,
     "fallas": [],
     "porColor": {
       "#fff5f1": {
-        "textos": 17,
-        "minimo": 7.14,
-        "fondo": "#824039",
-        "ejemplo": "/entrar «Lever»"
+        "textos": 21,
+        "minimo": 7,
+        "fondo": "#8e3a30",
+        "ejemplo": "/recuperar «Te mandamos un enlace.»"
       },
       "#f9d8d0": {
-        "textos": 15,
-        "minimo": 6.82,
-        "fondo": "#7b3128",
-        "ejemplo": "/precios «Claro»"
+        "textos": 17,
+        "minimo": 5.47,
+        "fondo": "#903c33",
+        "ejemplo": "/recuperar «El enlace sirve una sola vez y vence en »"
       },
       "#f0c8be": {
-        "textos": 6,
-        "minimo": 7.88,
-        "fondo": "#61211a",
-        "ejemplo": "/precios «Portal de clientes»"
+        "textos": 8,
+        "minimo": 4.93,
+        "fondo": "#8d3a30",
+        "ejemplo": "/recuperar «Recuperar contraseña»"
       },
       "#0c0b0b": {
-        "textos": 4,
+        "textos": 5,
         "minimo": 17.48,
         "fondo": "#f1f2ee",
         "ejemplo": "/entrar «Continuar»"

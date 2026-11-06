@@ -110,7 +110,27 @@
     "detalle": ""
   },
   {
+    "nombre": "con el panel abierto el fondo no se desplaza",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "con el panel abierto la vista no se mueve y el panel sigue arriba",
+    "ok": true,
+    "detalle": "{\"arriba\":0,\"panel\":0}"
+  },
+  {
     "nombre": "panel lateral cierra con Escape",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "Escape avisa el cierre una sola vez",
+    "ok": true,
+    "detalle": "1"
+  },
+  {
+    "nombre": "al cerrar, el fondo vuelve a desplazarse",
     "ok": true,
     "detalle": ""
   },
@@ -130,9 +150,14 @@
     "detalle": ""
   },
   {
-    "nombre": "diálogo cierra",
+    "nombre": "diálogo cierra con el velo",
     "ok": true,
     "detalle": ""
+  },
+  {
+    "nombre": "el velo avisa el cierre una sola vez",
+    "ok": true,
+    "detalle": "2"
   },
   {
     "nombre": "Salir",

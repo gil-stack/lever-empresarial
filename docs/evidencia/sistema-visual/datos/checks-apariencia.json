@@ -45,7 +45,7 @@
     "detalle": ""
   },
   {
-    "nombre": "«Tu color» queda elegido",
+    "nombre": "«Tu color» queda elegido (aria-pressed)",
     "ok": true,
     "detalle": ""
   },
@@ -53,6 +53,16 @@
     "nombre": "«Tu color» cambia el acento",
     "ok": true,
     "detalle": "#756d63 → #397c62"
+  },
+  {
+    "nombre": "con Arena, «Tu color» deja de estar elegido",
+    "ok": true,
+    "detalle": ""
+  },
+  {
+    "nombre": "«Tu color» con el mismo color se vuelve a elegir",
+    "ok": true,
+    "detalle": "#397c62"
   },
   {
     "nombre": "el tema viaja a Inicio",

@@ -1,29 +1,29 @@
 {
   "oscuro": {
-    "medidos": 196,
+    "medidos": 213,
     "minimo": 6.19,
     "fallas": [],
     "porColor": {
       "#edf0ed": {
-        "textos": 85,
-        "minimo": 9.1,
-        "fondo": "#4c3c38",
-        "ejemplo": "/consola/apariencia «Tu empresa»"
+        "textos": 92,
+        "minimo": 6.61,
+        "fondo": "#62504a",
+        "ejemplo": "/consola/apariencia «Taller del Cierre y Servicios Logísticos»"
       },
       "#aeaba9": {
-        "textos": 45,
+        "textos": 46,
         "minimo": 6.19,
         "fondo": "#332926",
         "ejemplo": "/muestrario «Saldo en el libro»"
       },
       "#bdbab8": {
-        "textos": 58,
+        "textos": 66,
         "minimo": 7.6,
         "fondo": "#312623",
         "ejemplo": "/consola/proveedores «Facturas, documentos y autorizaciones en»"
       },
       "#0c0b0b": {
-        "textos": 7,
+        "textos": 8,
         "minimo": 17.48,
         "fondo": "#f1f2ee",
         "ejemplo": "/consola «6»"
@@ -37,30 +37,30 @@
     }
   },
   "claro": {
-    "medidos": 196,
+    "medidos": 213,
     "minimo": 4.54,
     "fallas": [],
     "porColor": {
       "#141312": {
-        "textos": 85,
+        "textos": 92,
         "minimo": 7.67,
         "fondo": "#a3a8a2",
         "ejemplo": "/consola/apariencia «Bruma»"
       },
       "#57524d": {
-        "textos": 45,
+        "textos": 46,
         "minimo": 4.54,
         "fondo": "#cac6bf",
         "ejemplo": "/consola/proveedores «3»"
       },
       "#4f4a45": {
-        "textos": 58,
+        "textos": 66,
         "minimo": 4.66,
         "fondo": "#cabab2",
         "ejemplo": "/consola «Las gráficas aparecerán cuando el primer»"
       },
       "#ffffff": {
-        "textos": 7,
+        "textos": 8,
         "minimo": 17.93,
         "fondo": "#1b1614",
         "ejemplo": "/esta-no-existe «Entrar a mi cuenta»"
@@ -74,30 +74,30 @@
     }
   },
   "lever": {
-    "medidos": 196,
-    "minimo": 4.84,
+    "medidos": 213,
+    "minimo": 4.25,
     "fallas": [],
     "porColor": {
       "#fff5f1": {
-        "textos": 85,
-        "minimo": 4.84,
-        "fondo": "#b04f44",
-        "ejemplo": "/consola/apariencia «Tu empresa»"
+        "textos": 92,
+        "minimo": 4.25,
+        "fondo": "#bb584c",
+        "ejemplo": "/consola/apariencia «Taller del Cierre y Servicios Logísticos»"
       },
       "#f0c8be": {
-        "textos": 45,
+        "textos": 46,
         "minimo": 5.43,
         "fondo": "#85342c",
         "ejemplo": "/consola/personas «Nómina mensual estimada»"
       },
       "#f9d8d0": {
-        "textos": 58,
+        "textos": 66,
         "minimo": 6.29,
         "fondo": "#84342b",
         "ejemplo": "/consola/proveedores «Facturas, documentos y autorizaciones en»"
       },
       "#0c0b0b": {
-        "textos": 7,
+        "textos": 8,
         "minimo": 17.48,
         "fondo": "#f1f2ee",
         "ejemplo": "/consola «6»"

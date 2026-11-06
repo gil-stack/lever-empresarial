@@ -1,0 +1,95 @@
+{
+  "oscuro": {
+    "medidos": 260,
+    "minimo": 4.91,
+    "fallas": [],
+    "porColor": {
+      "#edf0ed": {
+        "textos": 122,
+        "minimo": 9.61,
+        "fondo": "#473934",
+        "ejemplo": "/operacion/bitacora «Bitácora de solo lectura»"
+      },
+      "#bdbab8": {
+        "textos": 105,
+        "minimo": 6.21,
+        "fondo": "#403430",
+        "ejemplo": "/operacion «Origina clientes, coordina decisiones y »"
+      },
+      "#aeaba9": {
+        "textos": 29,
+        "minimo": 4.91,
+        "fondo": "#463833",
+        "ejemplo": "/operacion/bitacora «Operación SOFIPO»"
+      },
+      "#0c0b0b": {
+        "textos": 4,
+        "minimo": 17.48,
+        "fondo": "#f1f2ee",
+        "ejemplo": "/operacion/clientes «Registrar prospecto»"
+      }
+    }
+  },
+  "claro": {
+    "medidos": 260,
+    "minimo": 5.1,
+    "fallas": [],
+    "porColor": {
+      "#141312": {
+        "textos": 122,
+        "minimo": 10.74,
+        "fondo": "#c7c5be",
+        "ejemplo": "/operacion «Tema»"
+      },
+      "#4f4a45": {
+        "textos": 105,
+        "minimo": 6.04,
+        "fondo": "#d9d6d0",
+        "ejemplo": "/operacion/bitacora «Lever»"
+      },
+      "#57524d": {
+        "textos": 29,
+        "minimo": 5.1,
+        "fondo": "#d4d2ca",
+        "ejemplo": "/operacion «Activación para el portal, nunca autoriz»"
+      },
+      "#ffffff": {
+        "textos": 4,
+        "minimo": 17.93,
+        "fondo": "#1b1614",
+        "ejemplo": "/operacion/comisiones «Solicitar autorización»"
+      }
+    }
+  },
+  "lever": {
+    "medidos": 260,
+    "minimo": 4.93,
+    "fallas": [],
+    "porColor": {
+      "#fff5f1": {
+        "textos": 122,
+        "minimo": 6.94,
+        "fondo": "#8e3b31",
+        "ejemplo": "/operacion/aprobaciones «Aprobaciones»"
+      },
+      "#f9d8d0": {
+        "textos": 105,
+        "minimo": 5.67,
+        "fondo": "#8d3a30",
+        "ejemplo": "/operacion/clientes «Registra prospectos reales y sigue su ac»"
+      },
+      "#f0c8be": {
+        "textos": 29,
+        "minimo": 4.93,
+        "fondo": "#8d3a31",
+        "ejemplo": "/operacion/bitacora «Operación SOFIPO»"
+      },
+      "#0c0b0b": {
+        "textos": 4,
+        "minimo": 17.48,
+        "fondo": "#f1f2ee",
+        "ejemplo": "/operacion/clientes «Registrar prospecto»"
+      }
+    }
+  }
+}
