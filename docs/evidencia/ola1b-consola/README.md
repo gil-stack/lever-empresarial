@@ -91,8 +91,11 @@ Cada comparación pone tres paneles en Oscuro a 1440: el diseño de los socios, 
    ```sh
    DUENO_URL=postgres://postgres@127.0.0.1:5542/postgres \
      ./node_modules/.bin/tsx scripts/evidencia/ola1b-consola/preparar.ts \
-     > test-results/ola1b-consola/entorno.json
+     > <fuera del repositorio>/entorno.json
+   export ENTORNO=<fuera del repositorio>/entorno.json
    ```
+
+   El JSON lleva la contraseña local del rol de la aplicación. Debe quedar fuera del árbol del repositorio, porque `npm run security` revisa todos los archivos y lo marcaría.
 
 3. **Blob local.** `@vercel/blob` acepta `VERCEL_BLOB_API_URL`, así que basta con apuntarlo a un emulador local en el puerto 4892. Las lecturas del almacén privado se desvían al mismo emulador con un `--import` de Node, que solo intercepta `*.blob.vercel-storage.com`. El código de la aplicación no cambia.
 
