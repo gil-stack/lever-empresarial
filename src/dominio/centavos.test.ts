@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { formatoPesos, leerCentavosEscritos } from "./centavos.ts";
+import { formatoPesos, formatoPesosGrande, leerCentavosEscritos } from "./centavos.ts";
 
 describe("centavos escritos por la empresa", () => {
   it("el vacío no es cero", () => {
@@ -49,5 +49,14 @@ describe("centavos escritos por la empresa", () => {
       const leido = leerCentavosEscritos(formatoPesos(centavos));
       assert.deepEqual(leido, { tipo: "centavos", centavos });
     }
+  });
+
+  it("una suma mayor que 2^53 centavos se presenta exacta y no rompe la página", () => {
+    assert.equal(formatoPesosGrande("0"), "$0.00");
+    assert.equal(formatoPesosGrande("123456"), formatoPesos(123456));
+    assert.equal(formatoPesosGrande("-150"), "-$1.50");
+    assert.equal(formatoPesosGrande("18000000000000000"), "$180,000,000,000,000.00");
+    assert.equal(formatoPesosGrande(BigInt("9007199254740993")), "$90,071,992,547,409.93");
+    assert.throws(() => formatoPesosGrande("1e20"), /centavos_invalidos/);
   });
 });

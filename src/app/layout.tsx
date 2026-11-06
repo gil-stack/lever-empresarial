@@ -10,6 +10,7 @@ import "@/estilo/arco.css";
 import "@/estilo/marco.css";
 import "@/estilo/telefono.css";
 import "@/estilo/componentes.css";
+import "@/estilo/proveedores.css";
 import "./globals.css";
 import "@/estilo/landing.css";
 

@@ -12,9 +12,25 @@ export function exigirAutenticacionReciente(
   sesion: Pick<Sesion, "segundoFactor" | "superficie">,
   ahora: Date = new Date(),
 ): void {
+  exigirFactorRecienteEnSuperficie(sesion, "sofipo", ahora);
+}
+
+/** Cambiar una CLABE o autorizar un pago exige la misma prueba reciente en el portal cliente. */
+export function exigirAutenticacionRecienteCliente(
+  sesion: Pick<Sesion, "segundoFactor" | "superficie">,
+  ahora: Date = new Date(),
+): void {
+  exigirFactorRecienteEnSuperficie(sesion, "cliente", ahora);
+}
+
+function exigirFactorRecienteEnSuperficie(
+  sesion: Pick<Sesion, "segundoFactor" | "superficie">,
+  superficie: "cliente" | "sofipo",
+  ahora: Date,
+): void {
   const verificado = sesion.segundoFactor?.en;
   if (
-    sesion.superficie !== "sofipo" ||
+    sesion.superficie !== superficie ||
     !verificado ||
     verificado.getTime() > ahora.getTime() ||
     ahora.getTime() - verificado.getTime() > VIGENCIA_AUTORIZACION_MS

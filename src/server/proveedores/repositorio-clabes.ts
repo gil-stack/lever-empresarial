@@ -26,6 +26,13 @@ export const SQL = {
       and company_id = $2
       and vigente_hasta is null
   `,
+  regresados: `
+    select count(*)::int as cantidad
+    from audit_log
+    where company_id = $1
+      and accion = 'regresar_pago_proveedor'
+      and txid = txid_current()
+  `,
   insertar: `
     insert into supplier_clabes (
       id, company_id, supplier_id, clabe, digito_valido, vigente_desde
@@ -62,6 +69,9 @@ function contexto(consulta: Consulta, companyId: string): ContextoClabes {
     async cerrar(id, hasta) {
       const resultado = await consulta.query(SQL.cerrar, [id, companyId, hasta]);
       if (resultado.rowCount !== 1) throw new ErrorDeDominio("proveedor_ausente");
+      const regresados = await consulta.query(SQL.regresados, [companyId]);
+      const cantidad = Number((regresados.rows[0] as { cantidad?: unknown } | undefined)?.cantidad ?? 0);
+      return { pagosRegresados: Number.isSafeInteger(cantidad) ? cantidad : 0 };
     },
     async insertar(fila) {
       await consulta.query(SQL.insertar, [

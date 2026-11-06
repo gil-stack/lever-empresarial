@@ -55,6 +55,7 @@ unset DATABASE_URL
   tests/firmas/dos-firmas.test.ts \
   tests/proveedores/historial-clabe.test.ts \
   tests/proveedores/relectura-69b.test.ts \
+  tests/proveedores/pagos-proveedores.test.ts \
   tests/autenticacion/postgres.test.ts \
   tests/operacion/portal-postgres.test.ts
 estado=$?

@@ -95,6 +95,24 @@ export const RUTAS = [
     conEmpresa: true,
   },
   {
+    patron: "/consola/proveedores/nuevo",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.pago.solicitar"] },
+    conEmpresa: true,
+  },
+  {
+    patron: "/consola/proveedores/nuevo-proveedor",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.proveedores.alta"] },
+    conEmpresa: true,
+  },
+  {
+    patron: "/consola/proveedores/documento/[id]",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.proveedores.ver"] },
+    conEmpresa: true,
+  },
+  {
     patron: "/consola/poliza",
     superficie: "cliente",
     acceso: { tipo: "capacidad", alguna: ["cliente.poliza.ver"] },
