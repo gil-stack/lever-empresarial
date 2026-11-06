@@ -73,7 +73,7 @@ export function ConfirmarIdentidad({
     error ?? (conTotp.tipo === "error" ? conTotp.mensaje : null) ?? (conRespaldo.tipo === "error" ? conRespaldo.mensaje : null);
 
   return (
-    <section aria-labelledby="confirmar-identidad-titulo">
+    <section className="confirmar-identidad" aria-labelledby="confirmar-identidad-titulo">
       <h2 id="confirmar-identidad-titulo">Confirma que eres tú</h2>
       <p className="arco-nota">{motivo}</p>
       {mensaje ? (

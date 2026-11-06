@@ -15,7 +15,9 @@ export const metadata: Metadata = {
 const AVISOS: Record<string, string> = {
   entrada_vencida: "Esa entrada venció. Vuelve a escribir tu contraseña.",
   entrada_agotada: "Demasiados intentos. Vuelve a escribir tu contraseña.",
-  recuperacion: "Si el correo tiene cuenta, el enlace ya va en camino. El segundo factor no cambia.",
+  // Solo llega aquí tras pedir la recuperación del segundo factor: no sale ningún enlace, la revisa Operación.
+  recuperacion:
+    "Tu solicitud quedó en revisión. Lever confirma tu identidad por videollamada o en persona antes de aprobarla; los factores que ya tienes no cambian.",
 };
 
 export default async function PaginaEntrar({
