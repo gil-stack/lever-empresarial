@@ -64,6 +64,20 @@ describe("error de base sin traducir", () => {
     assert.doesNotMatch(registros[1] ?? "", /laura/);
   });
 
+  it("una auditoría rechazada antes de escribir queda con su clase y su código, sin el resto", () => {
+    const traducido = traducirErrorDeBase(new Error("Auditoría rechazada: evento_con_secreto"));
+    traducirErrorDeBase(new Error("Auditoría rechazada: laura@altamar.mx 4111111111111111"));
+    assert.equal(traducido.message, "base_no_disponible");
+    const registro = JSON.parse(registros[0] ?? "{}");
+    assert.equal(registro.clase, "auditoria_rechazada");
+    assert.equal(registro.raise, "evento_con_secreto");
+    assert.equal(registro.codigo, null);
+    const conDatos = JSON.parse(registros[1] ?? "{}");
+    assert.equal(conDatos.clase, "auditoria_rechazada");
+    assert.equal(conDatos.raise, null);
+    assert.doesNotMatch(registros[1] ?? "", /laura|4111/);
+  });
+
   it("lo que sí se traduce no deja registro", () => {
     assert.equal(traducirErrorDeBase(errorPg({ code: "42501" })).message, "sin_permiso");
     const propio = new ErrorDeDominio("entrada_vencida");

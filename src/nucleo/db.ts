@@ -218,22 +218,31 @@ export function traducirErrorDeBase(error: unknown): Error {
 // por su frase fija. Solo se registra la clase, nunca el texto.
 const FRASES_DE_ESPERA = ["timeout exceeded when trying to connect", "connection terminated due to connection timeout"];
 const CODIGO_DE_RAISE = /^[a-z_]{1,64}$/;
+// rechazarAuditoria (bitacora/material.ts) lanza un Error simple con este prefijo.
+const AUDITORIA_RECHAZADA = "auditoría rechazada: ";
 
 /**
  * Deja rastro de lo que llegó como «base_no_disponible»: el SQLSTATE o el código
  * de red, la restricción, la tabla y la rutina. No guarda el mensaje crudo ni los
  * parámetros, que pueden traer datos de personas. La única excepción es el texto
- * de un RAISE de la base cuando tiene forma de código (`sesion_sin_auditoria`).
+ * de un RAISE de la base cuando tiene forma de código (`sesion_sin_auditoria`),
+ * y el código de una auditoría que la aplicación rechazó antes de escribir
+ * (`evento_con_secreto`).
  */
 function registrarErrorSinTraducir(error: unknown, codigo: string): void {
   const mensaje = error instanceof Error ? error.message.trim().toLowerCase() : "";
-  const clase = FRASES_DE_ESPERA.some((frase) => mensaje.includes(frase))
-    ? "espera_de_conexion_agotada"
-    : /^[0-9A-Z]{5}$/.test(codigo)
-      ? "postgres"
-      : codigo
-        ? "red"
-        : "desconocida";
+  const deAuditoria = mensaje.startsWith(AUDITORIA_RECHAZADA) ? mensaje.slice(AUDITORIA_RECHAZADA.length) : null;
+  const clase =
+    deAuditoria !== null
+      ? "auditoria_rechazada"
+      : FRASES_DE_ESPERA.some((frase) => mensaje.includes(frase))
+        ? "espera_de_conexion_agotada"
+        : /^[0-9A-Z]{5}$/.test(codigo)
+          ? "postgres"
+          : codigo
+            ? "red"
+            : "desconocida";
+  const raise = deAuditoria ?? (codigo === "P0001" ? mensaje : "");
   console.error(
     JSON.stringify({
       nivel: "error",
@@ -244,7 +253,7 @@ function registrarErrorSinTraducir(error: unknown, codigo: string): void {
       restriccion: campo(error, "constraint") || null,
       tabla: campo(error, "table") || null,
       rutina: campo(error, "routine") || null,
-      raise: codigo === "P0001" && CODIGO_DE_RAISE.test(mensaje) ? mensaje : null,
+      raise: CODIGO_DE_RAISE.test(raise) ? raise : null,
     }),
   );
 }
