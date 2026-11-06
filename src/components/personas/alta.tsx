@@ -4,6 +4,7 @@ import { useActionState, useEffect, useMemo, useState, type FormEvent } from "re
 import { useRouter } from "next/navigation";
 
 import { enviarPersona } from "@/app/consola/personas/acciones";
+import { enviarSinReiniciar } from "@/components/proveedores/sin-reinicio";
 import { clabeValida, clabeVisible } from "@/dominio/clabe";
 import { erroresDeConfiguracionNomina, mensualEstimado, type FrecuenciaNomina } from "@/dominio/nomina";
 import {
@@ -103,10 +104,12 @@ export function AltaColaborador({
       return;
     }
     setLocal(null);
+    // Sin el reinicio de `<form action>`: tras un rechazo, las casillas siguen mostrando lo que se enviará.
+    enviarSinReiniciar(accion)(event);
   }
 
   return (
-    <form className="alta-colaborador" action={accion} onSubmit={alEnviar} noValidate aria-busy={pendiente}>
+    <form className="alta-colaborador" onSubmit={alEnviar} noValidate aria-busy={pendiente}>
       <input type="hidden" name="altaLlave" value={altaLlave} />
       <input type="hidden" name="baja" value="" />
       <div className="alta-colaborador-formulario">

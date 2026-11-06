@@ -317,4 +317,15 @@ describe("alta de persona", () => {
     assert.match(fuente, /key=\{persona\.userId\}/);
     assert.doesNotMatch(fuente, /key=\{`\$\{persona\.userId\}-\$\{persona\.roles\.includes\("finanzas"\)\}`\}/);
   });
+
+  it("la casilla de Finanzas no se desmarca sola después de guardar", () => {
+    // `<form action>` reinicia el formulario al terminar: una casilla controlada volvía a su valor inicial
+    // aunque la base ya tuviera el cambio, y en el alta el campo oculto de Finanzas seguía enviándose.
+    const formularios = readFileSync(new URL("../components/personas/formularios.tsx", import.meta.url), "utf8");
+    const casilla = formularios.slice(formularios.indexOf("export function FormularioFinanzas"));
+    assert.match(casilla, /<form className="permiso-finanzas permiso-finanzas-edicion" onSubmit=\{enviarSinReiniciar\(accion\)\}/);
+    const alta = readFileSync(new URL("../components/personas/alta.tsx", import.meta.url), "utf8");
+    assert.match(alta, /enviarSinReiniciar\(accion\)\(event\);/);
+    assert.doesNotMatch(alta, /<form className="alta-colaborador" action=/);
+  });
 });

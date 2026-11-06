@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState, type FormEvent, type ReactNode } from "react";
 
 import { enviarBaja, enviarCentro, enviarFinanzas, enviarPersona } from "@/app/consola/personas/acciones";
+import { enviarSinReiniciar } from "@/components/proveedores/sin-reinicio";
 import { clabeValida, clabeVisible } from "@/dominio/clabe";
 import {
   erroresDeAltaPersona,
@@ -392,7 +393,8 @@ export function FormularioFinanzas({ userId, habilitado }: { userId: string; hab
   }
   const rechazo = estado.tipo === "rechazado" ? MENSAJE_FINANZAS[estado.codigo] : null;
   return (
-    <form className="permiso-finanzas permiso-finanzas-edicion" action={accion} aria-busy={pendiente}>
+    // Con `action`, React reinicia el formulario al terminar y la casilla volvería a su valor inicial.
+    <form className="permiso-finanzas permiso-finanzas-edicion" onSubmit={enviarSinReiniciar(accion)} aria-busy={pendiente}>
       <input type="hidden" name="userId" value={userId} />
       <input type="hidden" name="verFinanzas" value={verFinanzas ? "si" : "no"} />
       <label className="confirmacion">
