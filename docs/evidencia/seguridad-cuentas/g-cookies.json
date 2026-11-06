@@ -1,0 +1,24 @@
+{
+  "tras_contrasena": [
+    {
+      "name": "__Host-entrada",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1793940608.798271,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    }
+  ],
+  "tras_segundo_factor": [
+    {
+      "name": "__Host-sesion",
+      "domain": "localhost",
+      "path": "/",
+      "expires": 1793983230.803381,
+      "httpOnly": true,
+      "secure": true,
+      "sameSite": "Lax"
+    }
+  ]
+}

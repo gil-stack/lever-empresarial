@@ -1,0 +1,10 @@
+{
+  "existente": {
+    "ms": 1856,
+    "texto": "Revisa tu correo\n\nSi ese correo tiene cuenta, te llegará un enlace. Sirve una sola vez, vence en una hora y no cambia tu segundo factor."
+  },
+  "inexistente": {
+    "ms": 1832,
+    "texto": "Revisa tu correo\n\nSi ese correo tiene cuenta, te llegará un enlace. Sirve una sola vez, vence en una hora y no cambia tu segundo factor."
+  }
+}
