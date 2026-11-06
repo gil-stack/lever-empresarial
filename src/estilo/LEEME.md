@@ -53,7 +53,7 @@ Contraste: cada texto se midió contra los píxeles reales de la escena que tien
 
 `<Marco actual="/ruta" vista={vistaDeMarco(ctx)} titulo? accion?>`:
 
-- **Lateral**: logotipo, tarjeta de la empresa (con menú para cambiar si la persona tiene varias), secciones con contadores y `aria-current`, y el pie regulatorio único (`PIE_REGULATORIO`).
+- **Lateral**: logotipo, tarjeta de la empresa (con menú para cambiar si la persona tiene varias), secciones con contadores y `aria-current`, y el pie regulatorio único (`PIE_REGULATORIO`, en `src/components/cromo/marco.tsx`). Por ahora es el aviso «El saldo vive con el participante de la CLABE. El plástico vive con el emisor.», hasta que legal apruebe el texto nuevo; en pantallas angostas va al final de cada página.
 - **Barra superior**: título de la sección en Sora 300, búsqueda con línea (va a Personas con `?q=`, o a Proveedores si no hay maestro), la acción contextual que pase la página y el chip de la persona con su menú (Mi perfil y seguridad, Apariencia, Cambiar de empresa si hay varias, Salir). Al hacer scroll se desenfoca.
 - **Móvil (≤ 960 px)**: el lateral es un cajón con el foco atrapado; Escape lo cierra y regresa el foco al botón.
 

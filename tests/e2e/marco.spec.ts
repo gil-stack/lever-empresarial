@@ -96,7 +96,7 @@ test.describe("cajón móvil", () => {
     await expect(cajon).toHaveAttribute("data-abierto", "no");
     await expect(page.getByRole("button", { name: "Secciones" })).toBeFocused();
 
-    await expect(page.locator(".pie-movil")).toContainText("Sociedad Financiera Popular");
+    await expect(page.locator(".pie-movil")).toHaveText("El saldo vive con el participante de la CLABE. El plástico vive con el emisor.");
     expect(errores).toEqual([]);
   });
 });

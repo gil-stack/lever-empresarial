@@ -25,9 +25,11 @@ import { MARCO_SIN_SESION, puertasDe, type EmpresaElegible, type VistaDeMarco } 
 import { seccionesDe, type Contador, type GrupoDeSecciones } from "./secciones";
 import { COOKIE_TEMA, temaDesde } from "./tema";
 
-/** El único pie regulatorio de la plataforma: lo usan el lateral y, en pantallas angostas, el final de cada página. */
-export const PIE_REGULATORIO =
-  "Los productos financieros los ofrece y opera una Sociedad Financiera Popular supervisada por la CNBV (razón social por definir). Lever Empresas es una marca comercial y no es entidad financiera.";
+/**
+ * El único pie regulatorio de la plataforma: lo usan el lateral y, en pantallas angostas, el final de cada página.
+ * Es el aviso vigente hasta que legal apruebe el texto nuevo (decisión de Gil); cambiarlo es cambiar esta constante.
+ */
+export const PIE_REGULATORIO = "El saldo vive con el participante de la CLABE. El plástico vive con el emisor.";
 
 /** Títulos de las páginas que no están en el menú lateral. */
 const TITULOS_FUERA_DEL_MENU: Record<string, string> = {

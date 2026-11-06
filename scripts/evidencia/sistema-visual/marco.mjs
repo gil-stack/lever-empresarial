@@ -86,7 +86,7 @@ if (!movil) {
   // Pie regulatorio al final de la página, sin abrir el cajón.
   const pie = p.locator(".pie-movil");
   await pie.scrollIntoViewIfNeeded();
-  comprobar("móvil: pie regulatorio visible al final de Inicio", (await pie.isVisible()) && /Sociedad Financiera Popular/.test((await pie.textContent()) ?? ""));
+  comprobar("móvil: pie regulatorio visible al final de Inicio", (await pie.isVisible()) && /El saldo vive con el participante de la CLABE/.test((await pie.textContent()) ?? ""));
   await foto("M2-pie-movil");
   await p.evaluate(() => scrollTo(0, 0));
 
