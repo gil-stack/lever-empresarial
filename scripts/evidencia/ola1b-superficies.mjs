@@ -727,6 +727,28 @@ async function flujos() {
   await confirmarSiLoPide(op, OP);
   const filaLaura = op.getByRole("listitem", { name: "Recuperación · Laura Méndez" });
   await filaLaura.getByLabel("Cómo verificaste la identidad").selectOption("videollamada");
+
+  // Lo que el #49 exige en el servidor sigue en pie con la acción única. Con la página abierta, el
+  // segundo factor de op envejece 6 minutos: aprobar no pasa, la base no cambia y vuelve a pedir
+  // «Confirma que eres tú».
+  const solicitadas = () => contar(`select count(*) from auth_recuperaciones where user_id = '${idDe(LAURA)}' and estado = 'solicitada'`);
+  const aprobaciones = () => contar("select count(*) from audit_log where accion = 'recuperacion_aprobada'");
+  envejecerFactor(OP, 6);
+  await filaLaura.getByRole("button", { name: "Aprobar" }).click();
+  await op.waitForURL(/aviso=reautenticacion_factor/);
+  await listo(op);
+  exigir(solicitadas() === 1 && aprobaciones() === 0, "con el segundo factor de hace 6 minutos, Aprobar no aprueba: la solicitud sigue abierta y la bitácora no tiene aprobación");
+  exigir((await op.getByRole("region", { name: "Confirma que eres tú" }).count()) === 1, "tras el intento, Recuperaciones vuelve a pedir «Confirma que eres tú»");
+  await confirmarSiLoPide(op, OP);
+  // Un valor de decisión alterado cuenta como rechazo, que exige nota: sin nota no decide nada.
+  const filaOtraVez = op.getByRole("listitem", { name: "Recuperación · Laura Méndez" });
+  await filaOtraVez.getByRole("button", { name: "Aprobar" }).evaluate((boton) => { boton.value = "aprobar-sin-permiso"; });
+  await filaOtraVez.getByRole("button", { name: "Aprobar" }).click();
+  await op.waitForURL(/aviso=motivo_invalido/);
+  await listo(op);
+  exigir(solicitadas() === 1 && aprobaciones() === 0 && contar(`select count(*) from audit_log where accion = 'recuperacion_rechazada'`) === 1, "una decisión alterada no aprueba: sin nota no decide y la solicitud sigue abierta");
+  await confirmarSiLoPide(op, OP);
+  await filaLaura.getByLabel("Cómo verificaste la identidad").selectOption("videollamada");
   await dobleClicRetenido(op, filaLaura.getByRole("button", { name: "Aprobar" }), "auth_recuperaciones", {
     otro: { boton: filaLaura.getByRole("button", { name: "Rechazar" }), texto: "Rechazar" },
   });
