@@ -441,7 +441,27 @@
   },
   {
     "ok": true,
-    "texto": "2 demo Movimientos: «Filtrar» por Carlos Méndez deja solo sus compras",
+    "texto": "2 demo Movimientos: sin filtros no hay «Filtrar» ni «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Movimientos: elegir a Carlos Méndez en Persona deja solo sus compras, sin botón",
+    "detalle": "13 de 34"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Movimientos: con un filtro puesto aparece «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Movimientos: «Limpiar filtros» vuelve a todas las compras",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Movimientos: sin JavaScript, «Filtrar» deja las mismas compras",
     "detalle": "13 de 34"
   },
   {
@@ -728,6 +748,11 @@
     "ok": true,
     "texto": "4 autorizar: la fila decidida sale de la bandeja",
     "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "4 atajos: con el rechazo abierto, A en «Cancelar» y en su «Rechazar» no autoriza el pago",
+    "detalle": "por_autorizar, autorizaciones=0, foco en «Rechazar»"
   },
   {
     "ok": true,

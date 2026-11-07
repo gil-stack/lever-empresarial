@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { capacidadesDe, rolesLeidos, superficieDe, tiene, tieneRolDeTrabajo } from "./capacidades.ts";
+import { capacidadesDe, rolesLeidos, superficieDe, tiene, tieneRolDeTrabajo, type RolCliente } from "./capacidades.ts";
+import { rutaDe } from "./rutas.ts";
 
 describe("capacidades por superficie", () => {
   it("el tarjetahabiente puro no recibe consola ni tesorería", () => {
@@ -57,6 +58,23 @@ describe("capacidades por superficie", () => {
       assert.equal(tiene(de(rol), "cliente.flujo.ver"), false, rol);
       assert.equal(tiene(de(rol), "cliente.flujo.editar"), false, rol);
     }
+  });
+
+  it("cada rol abre los módulos en demostración que dice el comentario de Finanzas", () => {
+    const DEMO = ["conciliacion", "gastos", "tarjetas", "movimientos", "cuenta", "internacional", "credito", "inversion", "viajes", "gasolina", "ahorro", "integraciones"];
+    const abre = (...roles: RolCliente[]) => {
+      const capacidades = capacidadesDe({ rolesCliente: roles, rolesPlataforma: [] });
+      return DEMO.filter((modulo) => {
+        const acceso = rutaDe(`/consola/${modulo}`)?.acceso;
+        return acceso?.tipo === "capacidad" && acceso.alguna.some((capacidad) => tiene(capacidades, capacidad));
+      });
+    };
+    assert.deepEqual(abre("administrador"), DEMO);
+    assert.deepEqual(abre("tarjetahabiente", "finanzas"), ["gastos", "tarjetas", "movimientos", "cuenta", "credito", "inversion", "ahorro"]);
+    assert.deepEqual(abre("contador"), ["conciliacion", "gastos", "movimientos", "internacional", "viajes", "gasolina", "ahorro"]);
+    assert.deepEqual(abre("liberador"), ["internacional", "viajes", "gasolina"]);
+    assert.deepEqual(abre("solicitante"), ["internacional", "viajes", "gasolina"]);
+    assert.deepEqual(abre("tarjetahabiente"), []);
   });
 
   it("solicitante sigue leyéndose en membresías históricas", () => {

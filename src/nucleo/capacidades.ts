@@ -19,8 +19,19 @@ type Regla<R> = { superficie: Superficie; roles: readonly R[] };
 
 /**
  * Finanzas es un acceso adicional, no un rol de trabajo: abre Inicio,
- * Pendientes y el flujo de caja (saldo, cobros, calendario y presupuestos), y
- * nada más (ni el teléfono). Una membresía no se queda solo con Finanzas.
+ * Aprobaciones y el flujo de caja (saldo, cobros, calendario y presupuestos),
+ * pero no el teléfono ni los módulos de pagos, personas o política. Una
+ * membresía no se queda solo con Finanzas.
+ *
+ * Los módulos en demostración abren con la capacidad más cercana a su trabajo
+ * (`src/nucleo/rutas.ts`) y en una empresa real dicen «Disponible pronto», sin
+ * cifras. Además de lo suyo, cada rol ve:
+ * - administrador: los doce, con Integraciones;
+ * - finanzas: Gastos, Tarjetas, Movimientos, Cuenta, Crédito, Inversión y Ahorro;
+ * - contador: Conciliación, Gastos, Movimientos, Pagos internacionales, Viajes
+ *   y proyectos, Gasolina y Ahorro;
+ * - liberador y solicitante: Pagos internacionales, Viajes y proyectos y Gasolina;
+ * - tarjetahabiente: ninguno.
  */
 const DE_TRABAJO: readonly RolCliente[] = ROLES_CLIENTE.filter((rol) => rol !== "finanzas");
 const DE_CONSOLA: readonly RolCliente[] = ["administrador", "solicitante", "liberador", "contador"];

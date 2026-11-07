@@ -73,9 +73,6 @@ export function VistaFiscal({ datos, empresaId }: { datos: FiscalDemo; empresaId
                   <th scope="col" className="derecha">
                     Pagado sin IVA
                   </th>
-                  <th scope="col" className="derecha">
-                    IVA
-                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -86,7 +83,6 @@ export function VistaFiscal({ datos, empresaId }: { datos: FiscalDemo; empresaId
                       <small className="demo-mono">{renglon.rfc}</small>
                     </td>
                     <td className="derecha">{pesos(renglon.sinIvaCentavos)}</td>
-                    <td className="derecha">{pesos(renglon.ivaCentavos)}</td>
                   </tr>
                 ))}
               </tbody>

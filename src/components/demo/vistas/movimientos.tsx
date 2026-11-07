@@ -5,9 +5,12 @@ import { IconoDescargar } from "@/components/cromo/iconos";
 import type { CompraDemo, MovimientosDemo } from "@/dominio/demo/movimientos";
 import { enEmpresa } from "@/nucleo/rutas";
 
+import { FiltrosAlCambiar } from "../filtros-al-cambiar";
 import { Accion, Cifras, iniciales, pesos, pesosRedondos, Tarjeta } from "../piezas";
 
 const HOY = 22;
+/** Las compras de ejemplo son de un solo mes: el selector «Mes» del diseño lo nombra. */
+const MES = "Octubre 2026";
 const PERIODOS = [
   ["hoy", "Hoy"],
   ["7", "7 días"],
@@ -156,6 +159,9 @@ export function VistaMovimientos({
   const cifras = datos.cifras.map((cifra, i) =>
     i === 0 ? { ...cifra, valor: pesosRedondos(total), nota: `${compras.length} ${compras.length === 1 ? "compra" : "compras"} con los filtros` } : cifra,
   );
+  const conFiltros =
+    filtros.periodo !== "mes" ||
+    Boolean(filtros.persona || filtros.area || filtros.tarjeta || filtros.categoria || filtros.comprobante || filtros.desde);
   const grupos = new Map<string, CompraDemo[]>();
   for (const compra of compras) {
     const llave = grupoDe(compra, filtros.agrupar);
@@ -165,23 +171,26 @@ export function VistaMovimientos({
     <>
       <Cifras cifras={cifras} etiqueta="Movimientos en cifras" />
       <section className="hoja" aria-label="Filtros de movimientos">
-        <form className="demo-filtros" action={base} method="get">
-          <div className="campo demo-campo-periodo">
-            <span className="demo-etiqueta-campo" id="movimientos-periodo">
-              Periodo
-            </span>
-            <nav className="segmentado" aria-labelledby="movimientos-periodo">
-              {PERIODOS.map(([valor, texto]) => (
-                <Link key={valor} href={enlaceDePeriodo(base, filtros, valor)} aria-current={filtros.periodo === valor ? "page" : undefined}>
-                  {texto}
-                </Link>
-              ))}
-            </nav>
+        <FiltrosAlCambiar action={base}>
+          <div className="campo">
+            <label htmlFor="movimientos-mes">Mes</label>
+            <select id="movimientos-mes">
+              <option>{MES}</option>
+            </select>
           </div>
+          <nav className="segmentado" aria-label="Periodo">
+            {PERIODOS.map(([valor, texto]) => (
+              <Link key={valor} href={enlaceDePeriodo(base, filtros, valor)} aria-current={filtros.periodo === valor ? "page" : undefined}>
+                {texto}
+              </Link>
+            ))}
+          </nav>
           {filtros.periodo !== "mes" ? <input type="hidden" name="periodo" value={filtros.periodo} /> : null}
           <Selector id="movimientos-persona" etiqueta="Persona" nombre="persona" valor={filtros.persona} opciones={unicos(datos.compras, "persona")} />
           <Selector id="movimientos-area" etiqueta="Área" nombre="area" valor={filtros.area} opciones={unicos(datos.compras, "area")} />
           <Selector id="movimientos-tarjeta" etiqueta="Tarjeta" nombre="tarjeta" valor={filtros.tarjeta} opciones={unicos(datos.compras, "tarjeta")} />
+          {/* El diseño parte la barra en dos renglones después de Tarjeta. */}
+          <span className="demo-filtros-salto" aria-hidden="true" />
           <Selector id="movimientos-categoria" etiqueta="Categoría" nombre="categoria" valor={filtros.categoria} opciones={unicos(datos.compras, "categoria")} />
           <Selector id="movimientos-comprobante" etiqueta="Comprobante" nombre="comprobante" valor={filtros.comprobante} opciones={unicos(datos.compras, "comprobante")} />
           <div className="campo">
@@ -198,17 +207,20 @@ export function VistaMovimientos({
               ))}
             </select>
           </div>
-          <div className="demo-filtros-acciones">
+          <span className="demo-filtros-espacio" aria-hidden="true" />
+          <noscript>
             <button type="submit" className="boton-texto boton-chico">
               Filtrar
             </button>
+          </noscript>
+          {conFiltros ? (
             <Link className="boton-fantasma boton-chico" href={base}>
-              Quitar filtros
+              Limpiar filtros
             </Link>
-            <Accion accion={{ etiqueta: "Excel", tipo: "secundaria" }} icono={<IconoDescargar />} />
-            <Accion accion={{ etiqueta: "Póliza contable", tipo: "secundaria" }} icono={<IconoDescargar />} />
-          </div>
-        </form>
+          ) : null}
+          <Accion accion={{ etiqueta: "Excel", tipo: "secundaria" }} icono={<IconoDescargar />} />
+          <Accion accion={{ etiqueta: "Póliza contable", tipo: "secundaria" }} icono={<IconoDescargar />} />
+        </FiltrosAlCambiar>
       </section>
       <Tarjeta id="movimientos-mapa" titulo="Dónde se usó" nota={datos.lugaresResumen}>
         <div className="demo-mapa">

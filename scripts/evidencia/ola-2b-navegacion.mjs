@@ -79,10 +79,11 @@ function renovarSesiones() {
   sql("update sessions set ultimo_uso = now() where expires_at > now()");
 }
 
-async function abrir({ quien, tema = "oscuro", ancho = 1440 }) {
+async function abrir({ quien, tema = "oscuro", ancho = 1440, javaScript = true }) {
   const nav = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
   const movil = ancho < 600;
   const ctx = await nav.newContext({
+    javaScriptEnabled: javaScript,
     viewport: { width: ancho, height: movil ? 844 : 900 },
     isMobile: movil,
     hasTouch: movil,
@@ -262,12 +263,31 @@ async function flujos() {
     anotar(await p.getByText("Al ritmo actual se acaba el día 24").isVisible(), "2 demo Tarjetas: clic en «Presupuestos por área» cambia la vista");
     await capturar(p, `${carpeta}/2-tarjetas-presupuestos-1440.webp`);
     await p.goto(`${BASE}${ALTAMAR}/consola/movimientos`, { waitUntil: "networkidle" });
+    // Como mfBar del diseño: sin botón «Filtrar»; elegir en un selector filtra, y «Limpiar filtros» sale con un filtro puesto.
+    const filtrar = p.getByRole("button", { name: "Filtrar" });
+    const limpiar = p.getByRole("link", { name: "Limpiar filtros" });
+    anotar((await filtrar.count()) === 0 && (await limpiar.count()) === 0, "2 demo Movimientos: sin filtros no hay «Filtrar» ni «Limpiar filtros»");
     await p.getByLabel("Persona", { exact: true }).selectOption("Carlos Méndez");
-    await p.getByRole("button", { name: "Filtrar" }).click();
     await p.waitForURL(/persona=Carlos/);
+    await p.waitForFunction(() => !/\b34 compras con los filtros/.test(document.querySelector("main")?.innerText ?? ""));
     const filtrado = await p.evaluate(() => document.querySelector("main").innerText.match(/(\d+) compras? con los filtros/)?.[1] ?? null);
-    anotar(filtrado !== null && Number(filtrado) < 34, "2 demo Movimientos: «Filtrar» por Carlos Méndez deja solo sus compras", `${filtrado} de 34`);
+    anotar(filtrado !== null && Number(filtrado) < 34, "2 demo Movimientos: elegir a Carlos Méndez en Persona deja solo sus compras, sin botón", `${filtrado} de 34`);
+    anotar(await limpiar.isVisible(), "2 demo Movimientos: con un filtro puesto aparece «Limpiar filtros»");
     await capturar(p, `${carpeta}/2-movimientos-filtrado-1440.webp`);
+    await limpiar.click();
+    await p.waitForURL((url) => url.pathname.endsWith("/consola/movimientos") && url.search === "");
+    anotar((await limpiar.count()) === 0, "2 demo Movimientos: «Limpiar filtros» vuelve a todas las compras");
+    {
+      // Sin JavaScript el formulario GET sigue filtrando con el botón de <noscript>.
+      const sinJs = await abrir({ quien: "laura", javaScript: false });
+      await sinJs.p.goto(`${BASE}${ALTAMAR}/consola/movimientos`);
+      await sinJs.p.getByLabel("Persona", { exact: true }).selectOption("Carlos Méndez");
+      await sinJs.p.getByRole("button", { name: "Filtrar" }).click();
+      await sinJs.p.waitForURL(/persona=Carlos/);
+      const sinJsFiltrado = await sinJs.p.evaluate(() => document.querySelector("main").innerText.match(/(\d+) compras? con los filtros/)?.[1] ?? null);
+      anotar(sinJsFiltrado === filtrado, "2 demo Movimientos: sin JavaScript, «Filtrar» deja las mismas compras", `${sinJsFiltrado} de 34`);
+      await sinJs.nav.close();
+    }
     await p.goto(`${BASE}${ALTAMAR}/consola/fiscal`, { waitUntil: "networkidle" });
     await p.getByRole("link", { name: "Lista 69-B" }).click();
     await p.waitForURL(/\/consola\/lista-69b/);
@@ -323,6 +343,22 @@ async function flujos() {
     const dialogo = p.getByRole("dialog", { name: "Rechazar el pago" });
     await dialogo.waitFor();
     await capturar(p, `${carpeta}/4c-rechazar-dialogo-1440.webp`, { completa: false, conFoco: true });
+    // Con el diálogo abierto y el foco en sus botones, la tecla A no autoriza el pago que se está rechazando.
+    await dialogo.getByLabel("Motivo").pressSequentially("Falta la factura");
+    await p.keyboard.press("Tab");
+    await p.keyboard.press("a");
+    await p.keyboard.press("Tab");
+    await p.keyboard.press("a");
+    await p.waitForTimeout(1500);
+    const trasA = sql(`select estado from supplier_payment_requests where id = '${rechazar}'`);
+    const autorizadoPorA = sql(`select count(*) from audit_log where accion = 'autorizar_pago_proveedor' and identificador = '${rechazar}'`);
+    const foco = await p.evaluate(() => document.activeElement?.textContent?.trim());
+    anotar(
+      trasA === "por_autorizar" && autorizadoPorA === "0" && (await dialogo.isVisible()),
+      "4 atajos: con el rechazo abierto, A en «Cancelar» y en su «Rechazar» no autoriza el pago",
+      `${trasA}, autorizaciones=${autorizadoPorA}, foco en «${foco}»`,
+    );
+    await capturar(p, `${carpeta}/4c-atajo-a-en-dialogo-1440.webp`, { completa: false, conFoco: true });
     await dialogo.getByLabel("Motivo").fill("Falta la factura del servicio");
     await dialogo.getByRole("button", { name: "Rechazar", exact: true }).dblclick();
     await p.getByText("Decisión asentada").waitFor({ timeout: 15000 });
