@@ -7,11 +7,12 @@
 | `pagos-proveedores.spec.ts` | Mesa, alta de proveedor, CFDI, excepción, descarga privada, autorización por un segundo liberador, rechazo, corrección y cancelación. El alta, las solicitudes y la autorización se envían con doble clic y la prueba cuenta en la base que quedó una sola operación. |
 | `personas.spec.ts` | Áreas, altas con nómina, tarjeta y acceso, lote, baja y volumen de 200 personas. |
 | `nomina.spec.ts` | Alta con nómina, cambio de CLABE de nómina con reautenticación y preparación del lote vencido, todo con doble clic. |
-| `flujo-de-caja.spec.ts` | Saldo declarado, cobro manual y con XML, obligación recurrente, presupuesto al 80 y al 100 %, «mover pago», faltante en Inicio y Pendientes y «Monto reservado» para Finanzas. |
+| `flujo-de-caja.spec.ts` | Saldo declarado, cobro manual y con XML, obligación recurrente, presupuesto al 80 y al 100 %, «mover pago», faltante en Inicio y Aprobaciones (entrando por la dirección vieja de Pendientes) y «Monto reservado» para Finanzas. |
 | `entrada.spec.ts` | Entrada de cliente con contraseña y TOTP. El tope de intentos no revela si el correo tiene cuenta: mismo texto, marcado, dirección y tiempo. |
 | `operacion.spec.ts` | Entrada SOFIPO con TOTP, prospecto → activación decidida por otra persona, «Perdí el segundo factor» con «Confirma que eres tú» en Recuperaciones y publicación del precio con reautenticación. |
 | `invitacion.spec.ts` | Invitación del primer administrador desde Operación, «Reenviar invitación» con doble clic, cuenta con TOTP y recuperación de contraseña por correo. |
-| `roles.spec.ts` | Lo que cada rol ve en el lateral y las rutas que no le abren aunque escriba la dirección. |
+| `roles.spec.ts` | Lo que cada rol ve en el lateral y en «Más», las rutas que no le abren aunque escriba la dirección y la redirección de Pendientes a Aprobaciones. |
+| `demostracion.spec.ts` | Modo demostración: en la empresa real cada módulo sin proveedor dice «Disponible pronto» y ni el HTML ni la carga RSC traen cifras o nombres de ejemplo; en la de demostración, el aviso y los botones de dinero apagados. |
 | `marco.spec.ts` | Menú de la persona, buscador, Apariencia y cajón móvil. |
 
 ## Correr en local

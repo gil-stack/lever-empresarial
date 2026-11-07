@@ -7,7 +7,7 @@ import { CORREOS } from "./siembra";
 /**
  * Flujo de caja de Altamar E2E (empresa real): saldo declarado, cobros (manual y
  * con XML), obligación recurrente, presupuesto al 80 % y al 100 %, escenario
- * «mover pago», faltante en Inicio y en Pendientes, y la nómina de una sola
+ * «mover pago», faltante en Inicio y en Aprobaciones, y la nómina de una sola
  * persona reservada para quien no ve su detalle. Cada envío es un doble clic
  * rápido y la base debe quedar con una sola operación.
  */
@@ -113,7 +113,7 @@ test("cobro esperado y cobro con XML: cada doble clic deja un solo cobro", async
   expect(errores).toEqual([]);
 });
 
-test("obligación recurrente con doble clic y presupuesto al 80 % y al 100 % en Presupuestos, Inicio y Pendientes", async ({ page, context }) => {
+test("obligación recurrente con doble clic y presupuesto al 80 % y al 100 % en Presupuestos, Inicio y Aprobaciones", async ({ page, context }) => {
   const errores = vigilarConsola(page);
   await sesionDe(context, CORREOS.laura);
   const mercadotecnia = await areaId("Mercadotecnia");
@@ -144,7 +144,7 @@ test("obligación recurrente con doble clic y presupuesto al 80 % y al 100 % en 
   await expect(tarjeta.locator('[data-cifra="gasto"]')).toHaveAttribute("data-centavos", "800000");
   await page.goto(en("/consola"));
   await expect(page.locator('[data-alerta="presupuesto"]')).toContainText("Mercadotecnia");
-  await page.goto(en("/consola/pendientes"));
+  await page.goto(en("/consola/aprobaciones"));
   await expect(page.locator("main")).toContainText("El presupuesto del área Mercadotecnia está por agotarse");
 
   // $10,000.00 de $10,000.00: el 100 % es «excedido».
@@ -152,7 +152,7 @@ test("obligación recurrente con doble clic y presupuesto al 80 % y al 100 % en 
   await page.goto(en("/consola/presupuestos"));
   await expect(tarjeta).toHaveAttribute("data-estado", "excedido");
   await expect(tarjeta.locator('[data-cifra="gasto"]')).toHaveAttribute("data-centavos", "1000000");
-  await page.goto(en("/consola/pendientes"));
+  await page.goto(en("/consola/aprobaciones"));
   await expect(page.locator("main")).toContainText("El presupuesto del área Mercadotecnia está excedido");
   expect(errores).toEqual([]);
 });
@@ -196,7 +196,7 @@ test("escenario «mover pago»: la semana cambia en pantalla y la base no", asyn
   expect(errores).toEqual([]);
 });
 
-test("faltante: con poco saldo, Inicio y Pendientes avisan en qué semana", async ({ page, context }) => {
+test("faltante: con poco saldo, Inicio y Aprobaciones avisan en qué semana", async ({ page, context }) => {
   const errores = vigilarConsola(page);
   await sesionDe(context, CORREOS.laura);
   await page.goto(en("/consola/flujo"));
@@ -215,10 +215,12 @@ test("faltante: con poco saldo, Inicio y Pendientes avisan en qué semana", asyn
   await expect(alerta).toContainText("Lo provoca:");
   await expect(page.locator(`tr[data-semana="${primera!.semana}"] .insignia`)).toHaveText("Faltante");
 
+  // La dirección vieja de Pendientes llega a Aprobaciones y la alerta sigue ahí.
   await page.goto(en("/consola/pendientes"));
-  const enPendientes = page.locator('[data-alerta="faltante"]');
-  await expect(enPendientes).toContainText("Faltante: el saldo queda en negativo");
-  await enPendientes.getByRole("link", { name: "Ver la proyección" }).click();
+  await expect(page).toHaveURL(new RegExp(`/c/${altamar()}/consola/aprobaciones$`));
+  const enAprobaciones = page.locator('[data-alerta="faltante"]');
+  await expect(enAprobaciones).toContainText("Faltante: el saldo queda en negativo");
+  await enAprobaciones.getByRole("link", { name: "Ver la proyección" }).click();
   await expect(page).toHaveURL(new RegExp(`/c/${altamar()}/consola#proyeccion-titulo$`));
   expect(errores).toEqual([]);
 });
