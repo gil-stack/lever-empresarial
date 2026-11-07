@@ -84,6 +84,8 @@ export type LugarDemo = { readonly comercio: string; readonly direccion: string;
 export type PuntoDemo = { readonly nombre: string; readonly lon: number; readonly lat: number };
 
 export type MovimientosDemo = {
+  /** Las compras del mes que la lista filtra; salen de aquí y no de un import aparte, para pasar por la regla. */
+  readonly compras: readonly CompraDemo[];
   readonly cifras: readonly CifraDemo[];
   readonly lugares: readonly LugarDemo[];
   /** Los otros lugares del mes, solo como punto en el mapa. */
@@ -93,6 +95,7 @@ export type MovimientosDemo = {
 };
 
 export const MOVIMIENTOS_DEMO: MovimientosDemo = congelar({
+  compras: COMPRAS_DE_OCTUBRE,
   cifras: [
     { rotulo: "Gastado", valor: "$98,422", nota: "34 compras con los filtros" },
     { rotulo: "Por comprobar", valor: "0", nota: "$0 · IVA en riesgo $0" },

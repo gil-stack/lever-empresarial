@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Fragment } from "react";
 
 import { IconoDescargar } from "@/components/cromo/iconos";
-import { COMPRAS_DE_OCTUBRE, type CompraDemo, type MovimientosDemo } from "@/dominio/demo/movimientos";
+import type { CompraDemo, MovimientosDemo } from "@/dominio/demo/movimientos";
 import { enEmpresa } from "@/nucleo/rutas";
 
 import { Accion, Cifras, iniciales, pesos, pesosRedondos, Tarjeta } from "../piezas";
@@ -34,29 +34,29 @@ export type FiltrosMovimientos = {
   agrupar: Agrupar;
 };
 
-function unicos(campo: keyof CompraDemo): string[] {
-  return [...new Set(COMPRAS_DE_OCTUBRE.map((compra) => String(compra[campo])))].sort((a, b) => a.localeCompare(b, "es"));
+function unicos(compras: readonly CompraDemo[], campo: keyof CompraDemo): string[] {
+  return [...new Set(compras.map((compra) => String(compra[campo])))].sort((a, b) => a.localeCompare(b, "es"));
 }
 
 /** Lee los filtros de la dirección. Solo acepta valores que existen en la lista; lo demás se ignora. */
-export function leerFiltros(params: Record<string, string | undefined>): FiltrosMovimientos {
+export function leerFiltros(compras: readonly CompraDemo[], params: Record<string, string | undefined>): FiltrosMovimientos {
   const elegir = (valor: string | undefined, opciones: readonly string[]) => (valor && opciones.includes(valor) ? valor : "");
   const desde = Number.parseFloat(params.desde ?? "");
   return {
     periodo: params.periodo === "hoy" || params.periodo === "7" ? params.periodo : "mes",
-    persona: elegir(params.persona, unicos("persona")),
-    area: elegir(params.area, unicos("area")),
-    tarjeta: elegir(params.tarjeta, unicos("tarjeta")),
-    categoria: elegir(params.categoria, unicos("categoria")),
-    comprobante: elegir(params.comprobante, unicos("comprobante")),
+    persona: elegir(params.persona, unicos(compras, "persona")),
+    area: elegir(params.area, unicos(compras, "area")),
+    tarjeta: elegir(params.tarjeta, unicos(compras, "tarjeta")),
+    categoria: elegir(params.categoria, unicos(compras, "categoria")),
+    comprobante: elegir(params.comprobante, unicos(compras, "comprobante")),
     desde: Number.isFinite(desde) && desde > 0 ? Math.round(desde * 100) : 0,
     agrupar: (AGRUPAR.map(([valor]) => valor) as readonly string[]).includes(params.agrupar ?? "") ? (params.agrupar as Agrupar) : "",
   };
 }
 
-export function filtrarCompras(filtros: FiltrosMovimientos): CompraDemo[] {
+export function filtrarCompras(compras: readonly CompraDemo[], filtros: FiltrosMovimientos): CompraDemo[] {
   const primerDia = filtros.periodo === "hoy" ? HOY : filtros.periodo === "7" ? HOY - 6 : 1;
-  return COMPRAS_DE_OCTUBRE.filter(
+  return compras.filter(
     (compra) =>
       compra.dia >= primerDia &&
       (!filtros.persona || compra.persona === filtros.persona) &&
@@ -150,8 +150,8 @@ export function VistaMovimientos({
   params: Record<string, string | undefined>;
 }) {
   const base = enEmpresa(empresaId, "/consola/movimientos");
-  const filtros = leerFiltros(params);
-  const compras = filtrarCompras(filtros);
+  const filtros = leerFiltros(datos.compras, params);
+  const compras = filtrarCompras(datos.compras, filtros);
   const total = compras.reduce((suma, compra) => suma + compra.centavos, 0);
   const cifras = datos.cifras.map((cifra, i) =>
     i === 0 ? { ...cifra, valor: pesosRedondos(total), nota: `${compras.length} ${compras.length === 1 ? "compra" : "compras"} con los filtros` } : cifra,
@@ -179,11 +179,11 @@ export function VistaMovimientos({
             </nav>
           </div>
           {filtros.periodo !== "mes" ? <input type="hidden" name="periodo" value={filtros.periodo} /> : null}
-          <Selector id="movimientos-persona" etiqueta="Persona" nombre="persona" valor={filtros.persona} opciones={unicos("persona")} />
-          <Selector id="movimientos-area" etiqueta="Área" nombre="area" valor={filtros.area} opciones={unicos("area")} />
-          <Selector id="movimientos-tarjeta" etiqueta="Tarjeta" nombre="tarjeta" valor={filtros.tarjeta} opciones={unicos("tarjeta")} />
-          <Selector id="movimientos-categoria" etiqueta="Categoría" nombre="categoria" valor={filtros.categoria} opciones={unicos("categoria")} />
-          <Selector id="movimientos-comprobante" etiqueta="Comprobante" nombre="comprobante" valor={filtros.comprobante} opciones={unicos("comprobante")} />
+          <Selector id="movimientos-persona" etiqueta="Persona" nombre="persona" valor={filtros.persona} opciones={unicos(datos.compras, "persona")} />
+          <Selector id="movimientos-area" etiqueta="Área" nombre="area" valor={filtros.area} opciones={unicos(datos.compras, "area")} />
+          <Selector id="movimientos-tarjeta" etiqueta="Tarjeta" nombre="tarjeta" valor={filtros.tarjeta} opciones={unicos(datos.compras, "tarjeta")} />
+          <Selector id="movimientos-categoria" etiqueta="Categoría" nombre="categoria" valor={filtros.categoria} opciones={unicos(datos.compras, "categoria")} />
+          <Selector id="movimientos-comprobante" etiqueta="Comprobante" nombre="comprobante" valor={filtros.comprobante} opciones={unicos(datos.compras, "comprobante")} />
           <div className="campo">
             <label htmlFor="movimientos-desde">Monto desde</label>
             <input id="movimientos-desde" name="desde" type="number" min="0" step="1" inputMode="decimal" placeholder="$0" defaultValue={filtros.desde ? filtros.desde / 100 : undefined} />

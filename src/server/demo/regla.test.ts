@@ -73,6 +73,31 @@ describe("regla del modo demostración", () => {
     assert.equal(porDia, total);
   });
 
+  it("cada página de un módulo demo decide con la regla única y nada fuera de ella importa los datos de ejemplo", () => {
+    const raiz = join(process.cwd(), "src");
+    for (const modulo of MODULOS_DEMO) {
+      const pagina = readFileSync(join(raiz, "app/consola", modulo, "page.tsx"), "utf8");
+      assert.match(pagina, new RegExp(`leerDemo\\([^)]*, "${modulo}"\\)`), modulo);
+      assert.doesNotMatch(pagina, /dominio\/demo|cargaDemo/, modulo);
+    }
+    // Fuera de los datos y de la regla, solo tipos (y la línea de producto): ningún valor de ejemplo
+    // llega a una pantalla sin pasar por cargaDemo.
+    const culpables: string[] = [];
+    const recorrer = (dir: string) => {
+      for (const nombre of readdirSync(dir)) {
+        const ruta = join(dir, nombre);
+        if (statSync(ruta).isDirectory()) {
+          if (ruta !== join(raiz, "dominio/demo") && ruta !== join(raiz, "server/demo")) recorrer(ruta);
+        } else if (/\.tsx?$/.test(nombre) && !/\.test\.tsx?$/.test(nombre)) {
+          const codigo = readFileSync(ruta, "utf8");
+          if (/import (?!type )[^;]*from "[^"]*dominio\/demo(?!\/productos")[^"]*"/.test(codigo)) culpables.push(ruta);
+        }
+      }
+    };
+    recorrer(raiz);
+    assert.deepEqual(culpables, []);
+  });
+
   it("ningún componente de cliente importa los datos de ejemplo", () => {
     const raiz = join(process.cwd(), "src");
     const culpables: string[] = [];
