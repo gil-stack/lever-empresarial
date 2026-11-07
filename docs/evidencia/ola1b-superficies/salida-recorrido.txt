@@ -93,7 +93,9 @@ OK doble clic en «Aprobar» deja una sola transición a activa
 OK captura 14-operacion-rechazar-dialogo-oscuro-1440.webp
 OK op2 rechaza con motivo desde el diálogo: una sola solicitud rechazada
 OK doble clic en «Enviar invitación» emite una sola invitación
-OK doble clic en «Reenviar invitación» anula el enlace anterior y deja uno solo vigente
+OK doble clic en «Reenviar invitación» anula el enlace anterior, deja uno solo vigente y registra un solo correo
+OK reenviar desde una ficha vieja no reemite: avisa que la invitación ya salió y no manda otro correo
+OK captura 15b-operacion-invitacion-ya-enviada-oscuro-1440.webp
 OK captura 15-operacion-ficha-cliente-oscuro-1440.webp
 OK captura 15-operacion-ficha-cliente-oscuro-390.webp
 OK captura 15-operacion-ficha-cliente-claro-1440.webp
@@ -111,6 +113,9 @@ OK captura 16-operacion-alertas-claro-390.webp
 OK captura 16-operacion-alertas-lever-1440.webp
 OK captura 16-operacion-alertas-lever-390.webp
 OK «Cerrar alerta» con motivo la cierra una vez
+OK «Alerta cerrada» se anuncia como hecho (role=status)
+OK cerrar una alerta que otra persona ya cerró se anuncia como rechazo (role=alert) y no cambia nada
+OK captura 16b-operacion-alerta-ya-cerrada-oscuro-1440.webp
 OK doble clic en «Pedir autorización» deja una sola versión
 OK op2 aprueba una comisión (queda vigente) y rechaza la otra con motivo
 OK captura 17-operacion-comisiones-oscuro-1440.webp
@@ -199,8 +204,14 @@ OK captura 44-recuperar-enlace-usado-claro-390.webp
 OK captura 44-recuperar-enlace-usado-lever-1440.webp
 OK captura 44-recuperar-enlace-usado-lever-390.webp
 OK Laura entra con la contraseña nueva y su segundo factor de siempre
+OK «Perdí el segundo factor» dice que pedir ayuda no quita nada y que el factor nuevo reemplaza a los anteriores
 OK captura 50-perdi-factor-oscuro-1440.webp
 OK captura 50-perdi-factor-oscuro-390.webp
+OK captura 50-perdi-factor-claro-1440.webp
+OK captura 50-perdi-factor-claro-390.webp
+OK captura 50-perdi-factor-lever-1440.webp
+OK captura 50-perdi-factor-lever-390.webp
+OK /entrar/continuar (perdí el segundo factor): contraste AA en 3 temas × 2 anchos (36 textos)
 OK doble clic en «Pedir recuperación» deja una sola solicitud
 OK captura 51-perdi-factor-en-revision-oscuro-1440.webp
 OK captura 51-perdi-factor-en-revision-oscuro-390.webp
@@ -221,15 +232,25 @@ OK captura 53-recuperaciones-solicitud-claro-1440.webp
 OK captura 53-recuperaciones-solicitud-claro-390.webp
 OK captura 53-recuperaciones-solicitud-lever-1440.webp
 OK captura 53-recuperaciones-solicitud-lever-390.webp
+OK /operacion/recuperaciones (con solicitud): contraste AA en 3 temas × 2 anchos (129 textos)
 OK mientras la base retiene auth_recuperaciones, el botón queda apagado, con aria-busy y «Enviando…»
 OK el otro botón del formulario («Aprobar») se apaga sin aria-busy y conserva su texto
 OK captura 53a-recuperaciones-rechazando-oscuro-1440.webp
 OK op rechaza la solicitud con nota
 OK doble clic en «Rechazar» deja un solo rechazo en la bitácora
 OK la solicitud rechazada sale de la lista
+OK Enter en la nota escribe una línea y no decide: la solicitud sigue abierta
+OK el método de verificación arranca sin elegir
+OK el atajo «A» sin método no aprueba: 0 aprobaciones y la solicitud sigue abierta
+OK con el método vacío, el foco queda en el método y su error está ligado (aria-invalid, aria-describedby)
+OK captura 53b-recuperaciones-sin-metodo-oscuro-1440.webp
+OK contraste AA con el error del método a la vista (27 textos)
+OK al elegir el método, su error se va
 OK con el segundo factor de hace 6 minutos, Aprobar no aprueba: la solicitud sigue abierta y la bitácora no tiene aprobación
 OK tras el intento, Recuperaciones vuelve a pedir «Confirma que eres tú»
 OK una decisión alterada no aprueba: sin nota no decide y la solicitud sigue abierta
+OK motivo_invalido marca la nota (aria-invalid y aria-describedby al aviso), no el método
+OK verificacion_invalida marca el método, no la nota
 OK mientras la base retiene auth_recuperaciones, el botón queda apagado, con aria-busy y «Enviando…»
 OK el otro botón del formulario («Rechazar») se apaga sin aria-busy y conserva su texto
 OK op aprueba la segunda solicitud tras confirmar su identidad
@@ -366,11 +387,11 @@ OK /operacion/clientes: sin tabindex positivo
 OK /operacion/clientes: el Tab recorre 20 paradas en el orden del documento
 OK /operacion/clientes: cada parada del Tab tiene foco visible
 OK captura 81-operacion-clientes-oscuro-1440.webp
-OK /operacion/clientes/46f14636-d591-471c-b9d7-946e82e0d802: un solo h1
-OK /operacion/clientes/46f14636-d591-471c-b9d7-946e82e0d802: todos los campos con etiqueta
-OK /operacion/clientes/46f14636-d591-471c-b9d7-946e82e0d802: sin tabindex positivo
-OK /operacion/clientes/46f14636-d591-471c-b9d7-946e82e0d802: el Tab recorre 14 paradas en el orden del documento
-OK /operacion/clientes/46f14636-d591-471c-b9d7-946e82e0d802: cada parada del Tab tiene foco visible
+OK /operacion/clientes/ee4f7ff5-7f99-4ae3-a587-dc4b973a2367: un solo h1
+OK /operacion/clientes/ee4f7ff5-7f99-4ae3-a587-dc4b973a2367: todos los campos con etiqueta
+OK /operacion/clientes/ee4f7ff5-7f99-4ae3-a587-dc4b973a2367: sin tabindex positivo
+OK /operacion/clientes/ee4f7ff5-7f99-4ae3-a587-dc4b973a2367: el Tab recorre 14 paradas en el orden del documento
+OK /operacion/clientes/ee4f7ff5-7f99-4ae3-a587-dc4b973a2367: cada parada del Tab tiene foco visible
 OK captura 82-operacion-ficha-oscuro-1440.webp
 OK /operacion/aprobaciones: un solo h1
 OK /operacion/aprobaciones: todos los campos con etiqueta
@@ -645,4 +666,4 @@ OK comparación resumen: Diseño · plat-00-resumen junto a Producto · Operaci�
 OK comparación telefono: Diseño · app-home junto a Producto · Teléfono › Inicio (Oscuro, 390)
 OK sin errores de consola del navegador
 
-632 comprobaciones en verde.
+653 comprobaciones en verde.
