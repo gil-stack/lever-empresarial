@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { arrecife, sesionDe, vigilarConsola } from "./apoyo";
+import { arrecife, consultar, contar, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS } from "./siembra";
 
 /**
@@ -8,7 +8,9 @@ import { CORREOS } from "./siembra";
  * su módulo: Personas, Política, Proveedores y Flujo de caja revalidan la ruta de
  * Aprobaciones, y al volver con un clic en el lateral el pendiente ya no está (o
  * aparece el aviso nuevo). Arrecife E2E es una empresa recién dada de alta que
- * solo usa este spec.
+ * solo usa este spec. Los atajos de la bandeja no deciden desde un diálogo abierto
+ * en la fila: el pago E-12 de Taller del Cierre (tests/e2e/seed-pagos.sql) es solo
+ * para esa prueba.
  */
 
 const en = (ruta: string) => `/c/${arrecife()}${ruta}`;
@@ -88,5 +90,59 @@ test("Aprobaciones se refresca al volver por el lateral tras una acción en Pers
   await volver();
   await expect(renglon("El presupuesto del área Ventas está excedido")).toBeVisible();
   expect(await cuenta()).toBe(inicial);
+  expect(errores).toEqual([]);
+});
+
+test("con el rechazo abierto, A y R no deciden el pago; con el foco en la fila, A lo autoriza una sola vez", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  await sesionDe(context, "rosa-pagos@ejemplo.mx");
+  const PAGO = "88888888-8888-4888-8888-888888888884";
+  const estado = async () =>
+    (await consultar<{ estado: string }>("select estado from supplier_payment_requests where id = $1", [PAGO]))[0]?.estado;
+  const eventos = (accion: string) => contar("select 1 from audit_log where accion = $1 and identificador = $2", [accion, PAGO]);
+  const envios: string[] = [];
+  page.on("request", (peticion) => {
+    if (peticion.method() === "POST") envios.push(peticion.url());
+  });
+
+  await page.goto("/c/33333333-3333-4333-8333-333333333333/consola/aprobaciones");
+  const fila = page.locator("li.decision").filter({ hasText: "E-12" });
+  await expect(fila).toBeVisible();
+  await fila.getByRole("button", { name: "Rechazar" }).click();
+  const dialogo = page.getByRole("dialog", { name: "Rechazar el pago" });
+  await expect(dialogo).toBeVisible();
+  // pressSequentially, no fill: cada letra llega como keydown, igual que al teclear.
+  await dialogo.getByLabel("Motivo").pressSequentially("Falta la orden de compra");
+  // Una autorización por atajo sale en el mismo cuadro; un segundo da tiempo de sobra a que salga.
+  async function sinDecidir(paso: string) {
+    await page.waitForTimeout(1000);
+    expect(envios, paso).toEqual([]);
+    await expect(dialogo, paso).toBeVisible();
+  }
+  await page.keyboard.press("Tab");
+  await expect(dialogo.getByRole("button", { name: "Cancelar" })).toBeFocused();
+  await page.keyboard.press("a");
+  await sinDecidir("A con el foco en Cancelar");
+  await page.keyboard.press("Tab");
+  await expect(dialogo.getByRole("button", { name: "Rechazar", exact: true })).toBeFocused();
+  await page.keyboard.press("a");
+  await sinDecidir("A con el foco en Rechazar del diálogo");
+  await page.keyboard.press("r");
+  await sinDecidir("R con el foco en Rechazar del diálogo");
+  await expect(dialogo.getByLabel("Motivo")).toHaveValue("Falta la orden de compra");
+  expect(await estado()).toBe("por_autorizar");
+  expect(await eventos("autorizar_pago_proveedor")).toBe(0);
+  expect(await eventos("rechazar_pago_proveedor")).toBe(0);
+
+  // Control: fuera del diálogo, con el foco en la fila, A autoriza una sola vez.
+  await page.keyboard.press("Escape");
+  await expect(dialogo).toBeHidden();
+  await fila.focus();
+  await page.keyboard.press("a");
+  await expect(fila).toHaveCount(0);
+  expect(envios).toHaveLength(1);
+  expect(await estado()).toBe("listo_para_pagar");
+  expect(await eventos("autorizar_pago_proveedor")).toBe(1);
+  expect(await eventos("rechazar_pago_proveedor")).toBe(0);
   expect(errores).toEqual([]);
 });

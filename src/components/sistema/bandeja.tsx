@@ -18,8 +18,8 @@ export type Decision = {
 const CAMPOS_DE_TEXTO = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 
 /**
- * «Necesita tu decisión». Los atajos solo escuchan cuando el foco está dentro de la bandeja:
- * A aprueba y R rechaza la fila con foco; las flechas mueven entre filas.
+ * «Necesita tu decisión». Los atajos solo escuchan cuando el foco está dentro de la bandeja
+ * y fuera de un diálogo: A aprueba y R rechaza la fila con foco; las flechas mueven entre filas.
  * Sin `aprobarSeleccionadas` no hay casillas ni aprobación en lote.
  */
 export function Bandeja({
@@ -48,6 +48,9 @@ export function Bandeja({
   function alTeclear(evento: KeyboardEvent<HTMLUListElement>) {
     if (evento.altKey || evento.ctrlKey || evento.metaKey) return;
     const objetivo = evento.target as HTMLElement;
+    // Un diálogo abierto desde la fila (el motivo de un rechazo) se pinta dentro de ella:
+    // sus teclas suben hasta aquí, pero no son atajos. Sin esto, A en «Cancelar» aprobaría.
+    if (objetivo.closest("dialog")) return;
     const esTexto =
       CAMPOS_DE_TEXTO.has(objetivo.tagName) && !(objetivo instanceof HTMLInputElement && objetivo.type === "checkbox");
     if (esTexto) return;
