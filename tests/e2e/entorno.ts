@@ -1,9 +1,11 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
-import { createWriteStream, mkdtempSync, readdirSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { createWriteStream, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Client } from "pg";
+
+import { iniciarBlobLocal, type BlobLocal } from "./blob-local/servidor";
+import { sembrarRecorridos } from "./siembra";
 
 import { hoyEnMexico } from "../../src/dominio/personas";
 import { cerrarConexion } from "../../src/nucleo/db";
@@ -16,6 +18,21 @@ const CLAVE = "clave-segura-12";
 // Los mismos valores por omisión que playwright.config.ts y next.config.ts.
 const PUERTO = process.env.E2E_PUERTO ?? "3109";
 const ORIGEN = process.env.E2E_BASE_URL ?? `http://localhost:${PUERTO}`;
+// 0 deja que el sistema elija un puerto libre.
+const PUERTO_BLOB = Number(process.env.E2E_BLOB_PUERTO ?? "0");
+// Token falso con la forma vercel_blob_rw_<almacén>_<clave>: @vercel/blob saca
+// de ahí el almacén («e2elocal»). Solo vale contra el emulador local.
+const TOKEN_BLOB_LOCAL = ["vercel", "blob", "rw", "e2elocal", "emulador"].join("_");
+const PRELOAD_BLOB = join(process.cwd(), "tests/e2e/blob-local/preload.mjs");
+// Proveedor de correo falso: los recorridos leen las invitaciones y los enlaces de recuperación que «llegan».
+const PRELOAD_CORREO = join(process.cwd(), "tests/e2e/correo-local/preload.mjs");
+const ARCHIVO_CORREO = join(process.cwd(), "test-results/correos-e2e.jsonl");
+// Solo existe en el servidor de la prueba, que nunca llama a Resend: el preload contesta por él.
+const CLAVE_CORREO_LOCAL = ["e2e", "correo", "local"].join("-");
+
+declare global {
+  var __blobLocalE2E: BlobLocal | undefined;
+}
 
 /** E2E_ADMIN_URL puede venir sin base (como la usa reiniciar-pagos.sh): se conecta a postgres. */
 function urlAdministrativa(): string | undefined {
@@ -53,6 +70,8 @@ export async function iniciarEntorno(): Promise<void> {
     process.env.E2E_SERVER_ACTIONS = "1";
     delete process.env.RESEND_API_KEY;
     delete process.env.CORREO_REMITENTE;
+    // Llave TOTP de esta corrida: la siembra cifra las semillas con ella y el servidor las lee.
+    process.env.AUTENTICACION_LLAVE_TOTP = randomBytes(32).toString("base64url");
     ejecutar(owner, `
       insert into users (id, nombre, correo, password_hash)
         values ('99999999-9999-4999-8999-999999999999', 'Personal E2E', 'personal-e2e@ejemplo.mx', '$2b$12$${"a".repeat(53)}');
@@ -88,11 +107,14 @@ export async function iniciarEntorno(): Promise<void> {
     process.env.E2E_COMPANY_ID = empresa.id;
     process.env.E2E_ADMIN_ID = invitacion.emitida.userId;
     process.env.E2E_TODAY = hoyEnMexico(new Date());
+    await sembrarRecorridos(owner);
     await cerrarConexion();
+    await levantarBlobLocal();
     await levantarServidor();
   } catch (error) {
     await cerrarConexion();
     await detenerServidor();
+    await detenerBlobLocal();
     await borrarBase(admin, nombre);
     throw error;
   }
@@ -100,18 +122,50 @@ export async function iniciarEntorno(): Promise<void> {
 
 export async function cerrarEntorno(): Promise<void> {
   await detenerServidor();
+  await detenerBlobLocal();
   await cerrarConexion();
   const admin = urlAdministrativa();
   const nombre = process.env.E2E_DATABASE_NAME;
   if (admin && nombre) await borrarBase(admin, nombre);
 }
 
+/**
+ * Los recorridos que suben constancias, contratos, CFDI y evidencia nunca usan
+ * un almacén real: el token de Blob del entorno se reemplaza por el del
+ * emulador y put/del/get van a 127.0.0.1.
+ */
+async function levantarBlobLocal(): Promise<void> {
+  const blob = await iniciarBlobLocal(PUERTO_BLOB, TOKEN_BLOB_LOCAL);
+  globalThis.__blobLocalE2E = blob;
+  delete process.env.VERCEL_OIDC_TOKEN;
+  delete process.env.BLOB_STORE_ID;
+  process.env.BLOB_READ_WRITE_TOKEN = TOKEN_BLOB_LOCAL;
+  process.env.VERCEL_BLOB_API_URL = blob.api;
+  process.env.E2E_BLOB_LOCAL_URL = blob.origen;
+  process.env.E2E_BLOB_LOCAL = "1";
+}
+
+async function detenerBlobLocal(): Promise<void> {
+  await globalThis.__blobLocalE2E?.cerrar();
+  globalThis.__blobLocalE2E = undefined;
+}
+
 async function levantarServidor(): Promise<void> {
-  const directorioRegistro = mkdtempSync(join(tmpdir(), "plataforma-e2e-"));
-  const registro = createWriteStream(join(directorioRegistro, "next.log"));
+  // Fuera de outputDir (Playwright lo vacía al empezar); el script de CI lo imprime si algo falla.
+  mkdirSync(join(process.cwd(), "test-results"), { recursive: true });
+  const registro = createWriteStream(join(process.cwd(), "test-results/next-e2e.log"));
+  writeFileSync(ARCHIVO_CORREO, "");
+  process.env.E2E_CORREO_ARCHIVO = ARCHIVO_CORREO;
   const servidor = spawn("npm", ["run", "start", "--", "-p", PUERTO], {
     cwd: process.cwd(),
-    env: { ...process.env, NODE_ENV: "production" },
+    env: {
+      ...process.env,
+      NODE_ENV: "production",
+      RESEND_API_KEY: CLAVE_CORREO_LOCAL,
+      CORREO_REMITENTE: "Lever E2E <no-responder@lever-e2e.mx>",
+      // Solo el servidor de la prueba carga el desvío del almacén privado al emulador y el correo falso.
+      NODE_OPTIONS: [process.env.NODE_OPTIONS, `--import=${PRELOAD_BLOB}`, `--import=${PRELOAD_CORREO}`].filter(Boolean).join(" "),
+    },
     detached: true,
     stdio: ["ignore", "pipe", "pipe"],
   });
