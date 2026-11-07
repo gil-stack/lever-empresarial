@@ -3,21 +3,13 @@
     "superficie": "cliente",
     "intento": 1,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1504,
+    "servidor": {
+      "real": 1508,
       "inexistente": 1504
-    },
-    "primerByte": {
-      "real": 1504,
-      "inexistente": 1504
-    },
-    "redireccion": {
-      "real": 0,
-      "inexistente": 0
     },
     "pantalla": {
-      "real": 1612,
-      "inexistente": 1610
+      "real": 1594,
+      "inexistente": 1827
     },
     "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -25,21 +17,13 @@
     "superficie": "cliente",
     "intento": 2,
     "contrasena": "contraseña mala",
-    "accion": {
+    "servidor": {
       "real": 1504,
-      "inexistente": 1506
-    },
-    "primerByte": {
-      "real": 1504,
-      "inexistente": 1506
-    },
-    "redireccion": {
-      "real": 0,
-      "inexistente": 0
+      "inexistente": 1504
     },
     "pantalla": {
-      "real": 1622,
-      "inexistente": 1611
+      "real": 1576,
+      "inexistente": 1598
     },
     "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -47,21 +31,13 @@
     "superficie": "cliente",
     "intento": 3,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1505,
+    "servidor": {
+      "real": 1504,
       "inexistente": 1504
-    },
-    "primerByte": {
-      "real": 1505,
-      "inexistente": 1504
-    },
-    "redireccion": {
-      "real": 0,
-      "inexistente": 0
     },
     "pantalla": {
-      "real": 1681,
-      "inexistente": 1741
+      "real": 1568,
+      "inexistente": 1875
     },
     "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -69,21 +45,13 @@
     "superficie": "cliente",
     "intento": 4,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1504,
-      "inexistente": 1505
-    },
-    "primerByte": {
-      "real": 1504,
-      "inexistente": 1505
-    },
-    "redireccion": {
-      "real": 0,
-      "inexistente": 0
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1503
     },
     "pantalla": {
-      "real": 1663,
-      "inexistente": 1649
+      "real": 1559,
+      "inexistente": 1569
     },
     "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -91,21 +59,13 @@
     "superficie": "cliente",
     "intento": 5,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1503,
-      "inexistente": 1504
-    },
-    "primerByte": {
-      "real": 1503,
-      "inexistente": 1504
-    },
-    "redireccion": {
-      "real": 0,
-      "inexistente": 0
+    "servidor": {
+      "real": 1506,
+      "inexistente": 1503
     },
     "pantalla": {
-      "real": 1648,
-      "inexistente": 1613
+      "real": 1776,
+      "inexistente": 1566
     },
     "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -113,21 +73,13 @@
     "superficie": "cliente",
     "intento": 6,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1509,
-      "inexistente": 1504
-    },
-    "primerByte": {
-      "real": 1509,
-      "inexistente": 1504
-    },
-    "redireccion": {
-      "real": 0,
-      "inexistente": 0
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1503
     },
     "pantalla": {
-      "real": 1756,
-      "inexistente": 1686
+      "real": 1792,
+      "inexistente": 1795
     },
     "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -135,21 +87,13 @@
     "superficie": "cliente",
     "intento": 7,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1507,
+    "servidor": {
+      "real": 1503,
       "inexistente": 1504
-    },
-    "primerByte": {
-      "real": 1507,
-      "inexistente": 1504
-    },
-    "redireccion": {
-      "real": 0,
-      "inexistente": 0
     },
     "pantalla": {
-      "real": 1609,
-      "inexistente": 1637
+      "real": 1826,
+      "inexistente": 1562
     },
     "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -157,21 +101,13 @@
     "superficie": "cliente",
     "intento": 8,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1512,
-      "inexistente": 1506
-    },
-    "primerByte": {
-      "real": 1512,
-      "inexistente": 1506
-    },
-    "redireccion": {
-      "real": 0,
-      "inexistente": 0
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1504
     },
     "pantalla": {
-      "real": 1688,
-      "inexistente": 1604
+      "real": 1562,
+      "inexistente": 1564
     },
     "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -179,21 +115,13 @@
     "superficie": "cliente",
     "intento": 9,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1505,
-      "inexistente": 1502
-    },
-    "primerByte": {
-      "real": 1505,
-      "inexistente": 1502
-    },
-    "redireccion": {
-      "real": 0,
-      "inexistente": 0
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1504
     },
     "pantalla": {
-      "real": 1638,
-      "inexistente": 1635
+      "real": 1565,
+      "inexistente": 1891
     },
     "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -201,21 +129,13 @@
     "superficie": "cliente",
     "intento": 10,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1504,
-      "inexistente": 1504
-    },
-    "primerByte": {
-      "real": 1504,
-      "inexistente": 1504
-    },
-    "redireccion": {
-      "real": 0,
-      "inexistente": 0
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1503
     },
     "pantalla": {
-      "real": 1610,
-      "inexistente": 2127
+      "real": 1840,
+      "inexistente": 1548
     },
     "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -223,21 +143,13 @@
     "superficie": "cliente",
     "intento": 11,
     "contrasena": "contraseña CORRECTA",
-    "accion": {
-      "real": 1506,
-      "inexistente": 1506
-    },
-    "primerByte": {
-      "real": 1506,
-      "inexistente": 1506
-    },
-    "redireccion": {
-      "real": 0,
-      "inexistente": 0
+    "servidor": {
+      "real": 1502,
+      "inexistente": 1502
     },
     "pantalla": {
-      "real": 1656,
-      "inexistente": 1657
+      "real": 1808,
+      "inexistente": 1805
     },
     "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -245,21 +157,13 @@
     "superficie": "operacion",
     "intento": 1,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1508,
-      "inexistente": 1509
-    },
-    "primerByte": {
-      "real": 1514,
-      "inexistente": 2014
-    },
-    "redireccion": {
-      "real": 6,
-      "inexistente": 505
+    "servidor": {
+      "real": 1504,
+      "inexistente": 1503
     },
     "pantalla": {
-      "real": 1714,
-      "inexistente": 2149
+      "real": 1825,
+      "inexistente": 1891
     },
     "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -267,21 +171,13 @@
     "superficie": "operacion",
     "intento": 2,
     "contrasena": "contraseña mala",
-    "accion": {
+    "servidor": {
       "real": 1504,
-      "inexistente": 1503
-    },
-    "primerByte": {
-      "real": 1510,
-      "inexistente": 2043
-    },
-    "redireccion": {
-      "real": 6,
-      "inexistente": 540
+      "inexistente": 1504
     },
     "pantalla": {
-      "real": 1765,
-      "inexistente": 2136
+      "real": 1577,
+      "inexistente": 1597
     },
     "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -289,21 +185,13 @@
     "superficie": "operacion",
     "intento": 3,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1509,
-      "inexistente": 1519
-    },
-    "primerByte": {
-      "real": 1994,
-      "inexistente": 1879
-    },
-    "redireccion": {
-      "real": 485,
-      "inexistente": 360
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1502
     },
     "pantalla": {
-      "real": 2085,
-      "inexistente": 2066
+      "real": 1853,
+      "inexistente": 1573
     },
     "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -311,21 +199,13 @@
     "superficie": "operacion",
     "intento": 4,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1508,
-      "inexistente": 1506
-    },
-    "primerByte": {
-      "real": 2197,
-      "inexistente": 2080
-    },
-    "redireccion": {
-      "real": 689,
-      "inexistente": 574
+    "servidor": {
+      "real": 1502,
+      "inexistente": 1504
     },
     "pantalla": {
-      "real": 2738,
-      "inexistente": 2235
+      "real": 1584,
+      "inexistente": 1940
     },
     "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -333,21 +213,13 @@
     "superficie": "operacion",
     "intento": 5,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1508,
-      "inexistente": 1521
-    },
-    "primerByte": {
-      "real": 2122,
-      "inexistente": 1778
-    },
-    "redireccion": {
-      "real": 614,
-      "inexistente": 257
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1503
     },
     "pantalla": {
-      "real": 2279,
-      "inexistente": 1921
+      "real": 1586,
+      "inexistente": 1856
     },
     "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -355,21 +227,13 @@
     "superficie": "operacion",
     "intento": 6,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1505,
-      "inexistente": 1505
-    },
-    "primerByte": {
-      "real": 1852,
-      "inexistente": 1800
-    },
-    "redireccion": {
-      "real": 347,
-      "inexistente": 295
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1502
     },
     "pantalla": {
-      "real": 2043,
-      "inexistente": 1922
+      "real": 1563,
+      "inexistente": 1574
     },
     "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -377,21 +241,13 @@
     "superficie": "operacion",
     "intento": 7,
     "contrasena": "contraseña mala",
-    "accion": {
+    "servidor": {
       "real": 1505,
-      "inexistente": 1522
-    },
-    "primerByte": {
-      "real": 1958,
-      "inexistente": 1961
-    },
-    "redireccion": {
-      "real": 453,
-      "inexistente": 439
+      "inexistente": 1503
     },
     "pantalla": {
-      "real": 2069,
-      "inexistente": 2163
+      "real": 1595,
+      "inexistente": 1564
     },
     "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -399,21 +255,13 @@
     "superficie": "operacion",
     "intento": 8,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1505,
-      "inexistente": 1505
-    },
-    "primerByte": {
-      "real": 2224,
-      "inexistente": 2060
-    },
-    "redireccion": {
-      "real": 719,
-      "inexistente": 555
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1504
     },
     "pantalla": {
-      "real": 2792,
-      "inexistente": 2240
+      "real": 1562,
+      "inexistente": 1861
     },
     "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -421,21 +269,13 @@
     "superficie": "operacion",
     "intento": 9,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1504,
-      "inexistente": 1509
-    },
-    "primerByte": {
-      "real": 2249,
-      "inexistente": 1905
-    },
-    "redireccion": {
-      "real": 745,
-      "inexistente": 396
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1503
     },
     "pantalla": {
-      "real": 2443,
-      "inexistente": 2045
+      "real": 1565,
+      "inexistente": 1561
     },
     "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -443,21 +283,13 @@
     "superficie": "operacion",
     "intento": 10,
     "contrasena": "contraseña mala",
-    "accion": {
-      "real": 1505,
-      "inexistente": 1507
-    },
-    "primerByte": {
-      "real": 2384,
-      "inexistente": 1984
-    },
-    "redireccion": {
-      "real": 879,
-      "inexistente": 477
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1503
     },
     "pantalla": {
-      "real": 2858,
-      "inexistente": 2201
+      "real": 1885,
+      "inexistente": 1559
     },
     "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   },
@@ -465,21 +297,13 @@
     "superficie": "operacion",
     "intento": 11,
     "contrasena": "contraseña CORRECTA",
-    "accion": {
-      "real": 1503,
+    "servidor": {
+      "real": 1504,
       "inexistente": 1504
     },
-    "primerByte": {
-      "real": 2371,
-      "inexistente": 2109
-    },
-    "redireccion": {
-      "real": 868,
-      "inexistente": 605
-    },
     "pantalla": {
-      "real": 2507,
-      "inexistente": 2562
+      "real": 1595,
+      "inexistente": 1558
     },
     "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
   }

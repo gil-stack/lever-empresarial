@@ -3,14 +3,7 @@
 //
 //   BASE=http://localhost:4805 \
 //   DUENO_URL=postgres://dueno@127.0.0.1:5531/plataforma \
-//   SERVIDOR_LOG=/ruta/fuera/del/repo/next-start.log \
 //   node scripts/evidencia/enumeracion-tope.mjs
-//
-// SERVIDOR_LOG es la salida de `next start` arrancado con la precarga
-// scripts/evidencia/medir-fetch-interno.mjs. En /operacion/entrar la acción
-// redirige y Next arma la página de destino con un fetch interno cuyo tiempo
-// varía de 5 a 1100 ms en local sin relación con la cuenta; el recorrido lo
-// resta para comparar el tiempo de la acción misma.
 //
 // En /entrar y en /operacion/entrar: diez contraseñas malas con un correo que
 // tiene cuenta y diez con uno que no, y un undécimo intento con la contraseña
@@ -21,7 +14,7 @@
 // no sea local.
 
 import { execFileSync } from "node:child_process";
-import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 
 const BASE = process.env.BASE ?? "http://localhost:4805";
@@ -31,8 +24,6 @@ const CLAVE = process.env.CLAVE ?? "clave-segura-12";
 const MALA = "otra-clave-99";
 const INTENTOS = 10;
 const PISO_MS = 1_500;
-const SERVIDOR_LOG = process.env.SERVIDOR_LOG ?? "";
-if (!SERVIDOR_LOG || SERVIDOR_LOG.includes("/docs/")) throw new Error("SERVIDOR_LOG tiene que ser la salida de next start, fuera del repo.");
 
 if (!/^postgres(ql)?:\/\/[^@]+@(127\.0\.0\.1|localhost)(:\d+)?\//.test(DUENO)) {
   throw new Error("DUENO_URL tiene que apuntar a un Postgres local desechable (127.0.0.1 o localhost).");
@@ -91,7 +82,6 @@ async function intentar(superficie, correo, contrasena, archivo) {
   if ((await aviso.count()) > 0) throw new Error(`FALLO ${superficie.ruta} ya mostraba un aviso antes de enviar`);
   await pagina.getByLabel("Correo").fill(correo);
   await pagina.getByLabel("Contraseña", { exact: true }).fill(contrasena);
-  const logAntes = statSync(SERVIDOR_LOG).size;
   const envio = pagina.waitForResponse((r) => r.request().method() === "POST", { timeout: 15_000 });
   const inicio = Date.now();
   await pagina.getByRole("button", { name: "Continuar" }).click();
@@ -100,17 +90,12 @@ async function intentar(superficie, correo, contrasena, archivo) {
   const ms = Date.now() - inicio;
   const t = respuesta.request().timing();
   const servidor = Math.round(t.responseStart - t.requestStart);
-  // Fetch interno de la página de destino (solo cuando la acción redirige).
-  const nuevo = readFileSync(SERVIDOR_LOG).subarray(logAntes).toString("utf8");
-  const interno = [...nuevo.matchAll(/\[fetch-interno\] (\S+) \d+ (\d+) ms/g)].filter((m) => m[1] === superficie.ruta);
-  const redireccion = interno.length > 0 ? Number(interno[interno.length - 1][2]) : 0;
-  const accion = servidor - redireccion;
   // La tarjeta de la entrada, en JPEG: 44 capturas a pantalla completa pesaban 41 MB.
   await pagina.locator(".arco-acceso-tarjeta").screenshot({ path: `${SALIDA}/${archivo}.jpg`, type: "jpeg", quality: 82 });
   const texto = (await aviso.first().innerText()).replace(/\s+/g, " ").trim();
   const marcado = await aviso.first().evaluate((n) => n.outerHTML);
   const direccion = new URL(pagina.url()).pathname + new URL(pagina.url()).search;
-  return { ms, servidor, redireccion, accion, texto, marcado, direccion };
+  return { ms, servidor, texto, marcado, direccion };
 }
 
 const resumen = [];
@@ -141,22 +126,20 @@ for (const superficie of SUPERFICIES) {
     const tope = i > 8 ? " [cuenta real en el tope]" : "";
     anotar(
       `${superficie.nombre} intento ${n} (${tipo})${tope}: ` +
-        `real acción ${real.accion} ms (primer byte ${real.servidor}, redirección ${real.redireccion}, pantalla ${real.ms}) «${real.texto}» ${real.direccion} | ` +
-        `inexistente acción ${nadie.accion} ms (primer byte ${nadie.servidor}, redirección ${nadie.redireccion}, pantalla ${nadie.ms}) «${nadie.texto}» ${nadie.direccion}`,
+        `real servidor ${real.servidor} ms (pantalla ${real.ms}) «${real.texto}» ${real.direccion} | ` +
+        `inexistente servidor ${nadie.servidor} ms (pantalla ${nadie.ms}) «${nadie.texto}» ${nadie.direccion}`,
     );
     exigir(real.texto === nadie.texto, `${superficie.nombre} intento ${n}: mismo texto`);
     exigir(real.marcado === nadie.marcado, `${superficie.nombre} intento ${n}: mismo marcado del aviso`);
     exigir(real.direccion === nadie.direccion, `${superficie.nombre} intento ${n}: misma dirección`);
-    exigir(real.accion >= PISO_MS && nadie.accion >= PISO_MS, `${superficie.nombre} intento ${n}: la acción tarda al menos ${PISO_MS} ms en los dos`);
-    const diferencia = Math.abs(real.accion - nadie.accion);
-    exigir(diferencia <= 100, `${superficie.nombre} intento ${n}: diferencia de ${diferencia} ms en la acción (≤ 100)`);
+    exigir(real.servidor >= PISO_MS && nadie.servidor >= PISO_MS, `${superficie.nombre} intento ${n}: el servidor tarda al menos ${PISO_MS} ms en los dos`);
+    const diferencia = Math.abs(real.servidor - nadie.servidor);
+    exigir(diferencia <= 100, `${superficie.nombre} intento ${n}: diferencia de ${diferencia} ms en el servidor (≤ 100)`);
     resumen.push({
       superficie: superficie.nombre,
       intento: i,
       contrasena: tipo,
-      accion: { real: real.accion, inexistente: nadie.accion },
-      primerByte: { real: real.servidor, inexistente: nadie.servidor },
-      redireccion: { real: real.redireccion, inexistente: nadie.redireccion },
+      servidor: { real: real.servidor, inexistente: nadie.servidor },
       pantalla: { real: real.ms, inexistente: nadie.ms },
       texto: real.texto,
     });
@@ -168,10 +151,10 @@ for (const superficie of SUPERFICIES) {
   );
   const mediana = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
   const propias = resumen.filter((r) => r.superficie === superficie.nombre);
-  const enAccion = { real: mediana(propias.map((r) => r.accion.real)), inexistente: mediana(propias.map((r) => r.accion.inexistente)) };
+  const enServidor = { real: mediana(propias.map((r) => r.servidor.real)), inexistente: mediana(propias.map((r) => r.servidor.inexistente)) };
   exigir(
-    Math.abs(enAccion.real - enAccion.inexistente) <= 20,
-    `${superficie.nombre}: mediana de la acción ${enAccion.real} ms con cuenta y ${enAccion.inexistente} ms sin cuenta (≤ 20 de diferencia)`,
+    Math.abs(enServidor.real - enServidor.inexistente) <= 20,
+    `${superficie.nombre}: mediana en el servidor ${enServidor.real} ms con cuenta y ${enServidor.inexistente} ms sin cuenta (≤ 20 de diferencia)`,
   );
   // Informativo: el tiempo en pantalla suma el pintado del navegador, que no depende de la cuenta
   // (la respuesta del servidor ya es igual en texto, marcado y tiempo).

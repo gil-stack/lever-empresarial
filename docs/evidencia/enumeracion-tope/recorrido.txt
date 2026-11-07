@@ -1,150 +1,150 @@
 OK cliente: laura@demo.test tiene cuenta y nadie@demo.test no
 OK cliente: nadie@demo.test no existe en la base
 OK cliente: laura@demo.test empieza sin fallos
-cliente intento 01 (contraseña mala): real acción 1504 ms (primer byte 1504, redirección 0, pantalla 1612) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente acción 1504 ms (primer byte 1504, redirección 0, pantalla 1610) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
+cliente intento 01 (contraseña mala): real servidor 1508 ms (pantalla 1594) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente servidor 1504 ms (pantalla 1827) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
 OK cliente intento 01: mismo texto
 OK cliente intento 01: mismo marcado del aviso
 OK cliente intento 01: misma dirección
-OK cliente intento 01: la acción tarda al menos 1500 ms en los dos
-OK cliente intento 01: diferencia de 0 ms en la acción (≤ 100)
-cliente intento 02 (contraseña mala): real acción 1504 ms (primer byte 1504, redirección 0, pantalla 1622) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente acción 1506 ms (primer byte 1506, redirección 0, pantalla 1611) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
+OK cliente intento 01: el servidor tarda al menos 1500 ms en los dos
+OK cliente intento 01: diferencia de 4 ms en el servidor (≤ 100)
+cliente intento 02 (contraseña mala): real servidor 1504 ms (pantalla 1576) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente servidor 1504 ms (pantalla 1598) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
 OK cliente intento 02: mismo texto
 OK cliente intento 02: mismo marcado del aviso
 OK cliente intento 02: misma dirección
-OK cliente intento 02: la acción tarda al menos 1500 ms en los dos
-OK cliente intento 02: diferencia de 2 ms en la acción (≤ 100)
-cliente intento 03 (contraseña mala): real acción 1505 ms (primer byte 1505, redirección 0, pantalla 1681) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente acción 1504 ms (primer byte 1504, redirección 0, pantalla 1741) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
+OK cliente intento 02: el servidor tarda al menos 1500 ms en los dos
+OK cliente intento 02: diferencia de 0 ms en el servidor (≤ 100)
+cliente intento 03 (contraseña mala): real servidor 1504 ms (pantalla 1568) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente servidor 1504 ms (pantalla 1875) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
 OK cliente intento 03: mismo texto
 OK cliente intento 03: mismo marcado del aviso
 OK cliente intento 03: misma dirección
-OK cliente intento 03: la acción tarda al menos 1500 ms en los dos
-OK cliente intento 03: diferencia de 1 ms en la acción (≤ 100)
-cliente intento 04 (contraseña mala): real acción 1504 ms (primer byte 1504, redirección 0, pantalla 1663) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente acción 1505 ms (primer byte 1505, redirección 0, pantalla 1649) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
+OK cliente intento 03: el servidor tarda al menos 1500 ms en los dos
+OK cliente intento 03: diferencia de 0 ms en el servidor (≤ 100)
+cliente intento 04 (contraseña mala): real servidor 1503 ms (pantalla 1559) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente servidor 1503 ms (pantalla 1569) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
 OK cliente intento 04: mismo texto
 OK cliente intento 04: mismo marcado del aviso
 OK cliente intento 04: misma dirección
-OK cliente intento 04: la acción tarda al menos 1500 ms en los dos
-OK cliente intento 04: diferencia de 1 ms en la acción (≤ 100)
-cliente intento 05 (contraseña mala): real acción 1503 ms (primer byte 1503, redirección 0, pantalla 1648) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente acción 1504 ms (primer byte 1504, redirección 0, pantalla 1613) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
+OK cliente intento 04: el servidor tarda al menos 1500 ms en los dos
+OK cliente intento 04: diferencia de 0 ms en el servidor (≤ 100)
+cliente intento 05 (contraseña mala): real servidor 1506 ms (pantalla 1776) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente servidor 1503 ms (pantalla 1566) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
 OK cliente intento 05: mismo texto
 OK cliente intento 05: mismo marcado del aviso
 OK cliente intento 05: misma dirección
-OK cliente intento 05: la acción tarda al menos 1500 ms en los dos
-OK cliente intento 05: diferencia de 1 ms en la acción (≤ 100)
-cliente intento 06 (contraseña mala): real acción 1509 ms (primer byte 1509, redirección 0, pantalla 1756) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente acción 1504 ms (primer byte 1504, redirección 0, pantalla 1686) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
+OK cliente intento 05: el servidor tarda al menos 1500 ms en los dos
+OK cliente intento 05: diferencia de 3 ms en el servidor (≤ 100)
+cliente intento 06 (contraseña mala): real servidor 1503 ms (pantalla 1792) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente servidor 1503 ms (pantalla 1795) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
 OK cliente intento 06: mismo texto
 OK cliente intento 06: mismo marcado del aviso
 OK cliente intento 06: misma dirección
-OK cliente intento 06: la acción tarda al menos 1500 ms en los dos
-OK cliente intento 06: diferencia de 5 ms en la acción (≤ 100)
-cliente intento 07 (contraseña mala): real acción 1507 ms (primer byte 1507, redirección 0, pantalla 1609) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente acción 1504 ms (primer byte 1504, redirección 0, pantalla 1637) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
+OK cliente intento 06: el servidor tarda al menos 1500 ms en los dos
+OK cliente intento 06: diferencia de 0 ms en el servidor (≤ 100)
+cliente intento 07 (contraseña mala): real servidor 1503 ms (pantalla 1826) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente servidor 1504 ms (pantalla 1562) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
 OK cliente intento 07: mismo texto
 OK cliente intento 07: mismo marcado del aviso
 OK cliente intento 07: misma dirección
-OK cliente intento 07: la acción tarda al menos 1500 ms en los dos
-OK cliente intento 07: diferencia de 3 ms en la acción (≤ 100)
-cliente intento 08 (contraseña mala): real acción 1512 ms (primer byte 1512, redirección 0, pantalla 1688) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente acción 1506 ms (primer byte 1506, redirección 0, pantalla 1604) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
+OK cliente intento 07: el servidor tarda al menos 1500 ms en los dos
+OK cliente intento 07: diferencia de 1 ms en el servidor (≤ 100)
+cliente intento 08 (contraseña mala): real servidor 1503 ms (pantalla 1562) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente servidor 1504 ms (pantalla 1564) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
 OK cliente intento 08: mismo texto
 OK cliente intento 08: mismo marcado del aviso
 OK cliente intento 08: misma dirección
-OK cliente intento 08: la acción tarda al menos 1500 ms en los dos
-OK cliente intento 08: diferencia de 6 ms en la acción (≤ 100)
-cliente intento 09 (contraseña mala) [cuenta real en el tope]: real acción 1505 ms (primer byte 1505, redirección 0, pantalla 1638) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente acción 1502 ms (primer byte 1502, redirección 0, pantalla 1635) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
+OK cliente intento 08: el servidor tarda al menos 1500 ms en los dos
+OK cliente intento 08: diferencia de 1 ms en el servidor (≤ 100)
+cliente intento 09 (contraseña mala) [cuenta real en el tope]: real servidor 1503 ms (pantalla 1565) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente servidor 1504 ms (pantalla 1891) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
 OK cliente intento 09: mismo texto
 OK cliente intento 09: mismo marcado del aviso
 OK cliente intento 09: misma dirección
-OK cliente intento 09: la acción tarda al menos 1500 ms en los dos
-OK cliente intento 09: diferencia de 3 ms en la acción (≤ 100)
-cliente intento 10 (contraseña mala) [cuenta real en el tope]: real acción 1504 ms (primer byte 1504, redirección 0, pantalla 1610) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente acción 1504 ms (primer byte 1504, redirección 0, pantalla 2127) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
+OK cliente intento 09: el servidor tarda al menos 1500 ms en los dos
+OK cliente intento 09: diferencia de 1 ms en el servidor (≤ 100)
+cliente intento 10 (contraseña mala) [cuenta real en el tope]: real servidor 1503 ms (pantalla 1840) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente servidor 1503 ms (pantalla 1548) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
 OK cliente intento 10: mismo texto
 OK cliente intento 10: mismo marcado del aviso
 OK cliente intento 10: misma dirección
-OK cliente intento 10: la acción tarda al menos 1500 ms en los dos
-OK cliente intento 10: diferencia de 0 ms en la acción (≤ 100)
-cliente intento 11 (contraseña CORRECTA) [cuenta real en el tope]: real acción 1506 ms (primer byte 1506, redirección 0, pantalla 1656) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente acción 1506 ms (primer byte 1506, redirección 0, pantalla 1657) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
+OK cliente intento 10: el servidor tarda al menos 1500 ms en los dos
+OK cliente intento 10: diferencia de 0 ms en el servidor (≤ 100)
+cliente intento 11 (contraseña CORRECTA) [cuenta real en el tope]: real servidor 1502 ms (pantalla 1808) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar | inexistente servidor 1502 ms (pantalla 1805) «No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /entrar
 OK cliente intento 11: mismo texto
 OK cliente intento 11: mismo marcado del aviso
 OK cliente intento 11: misma dirección
-OK cliente intento 11: la acción tarda al menos 1500 ms en los dos
-OK cliente intento 11: diferencia de 0 ms en la acción (≤ 100)
+OK cliente intento 11: el servidor tarda al menos 1500 ms en los dos
+OK cliente intento 11: diferencia de 0 ms en el servidor (≤ 100)
 OK cliente: las 22 respuestas usan el mismo texto único
-OK cliente: mediana de la acción 1505 ms con cuenta y 1504 ms sin cuenta (≤ 20 de diferencia)
-cliente: mediana en pantalla 1648 ms con cuenta y 1637 ms sin cuenta (informativo)
+OK cliente: mediana en el servidor 1503 ms con cuenta y 1504 ms sin cuenta (≤ 20 de diferencia)
+cliente: mediana en pantalla 1594 ms con cuenta y 1598 ms sin cuenta (informativo)
 OK cliente: la bitácora anota 8 fallos; los intentos 9, 10 y 11 (en el tope) no se anotan
 OK cliente: la contraseña correcta en el tope no abrió entrada
 OK operacion: op@lever.test tiene cuenta y nadie@lever.test no
 OK operacion: nadie@lever.test no existe en la base
 OK operacion: op@lever.test empieza sin fallos
-operacion intento 01 (contraseña mala): real acción 1508 ms (primer byte 1514, redirección 6, pantalla 1714) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas | inexistente acción 1509 ms (primer byte 2014, redirección 505, pantalla 2149) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas
+operacion intento 01 (contraseña mala): real servidor 1504 ms (pantalla 1825) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar | inexistente servidor 1503 ms (pantalla 1891) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar
 OK operacion intento 01: mismo texto
 OK operacion intento 01: mismo marcado del aviso
 OK operacion intento 01: misma dirección
-OK operacion intento 01: la acción tarda al menos 1500 ms en los dos
-OK operacion intento 01: diferencia de 1 ms en la acción (≤ 100)
-operacion intento 02 (contraseña mala): real acción 1504 ms (primer byte 1510, redirección 6, pantalla 1765) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas | inexistente acción 1503 ms (primer byte 2043, redirección 540, pantalla 2136) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas
+OK operacion intento 01: el servidor tarda al menos 1500 ms en los dos
+OK operacion intento 01: diferencia de 1 ms en el servidor (≤ 100)
+operacion intento 02 (contraseña mala): real servidor 1504 ms (pantalla 1577) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar | inexistente servidor 1504 ms (pantalla 1597) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar
 OK operacion intento 02: mismo texto
 OK operacion intento 02: mismo marcado del aviso
 OK operacion intento 02: misma dirección
-OK operacion intento 02: la acción tarda al menos 1500 ms en los dos
-OK operacion intento 02: diferencia de 1 ms en la acción (≤ 100)
-operacion intento 03 (contraseña mala): real acción 1509 ms (primer byte 1994, redirección 485, pantalla 2085) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas | inexistente acción 1519 ms (primer byte 1879, redirección 360, pantalla 2066) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas
+OK operacion intento 02: el servidor tarda al menos 1500 ms en los dos
+OK operacion intento 02: diferencia de 0 ms en el servidor (≤ 100)
+operacion intento 03 (contraseña mala): real servidor 1503 ms (pantalla 1853) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar | inexistente servidor 1502 ms (pantalla 1573) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar
 OK operacion intento 03: mismo texto
 OK operacion intento 03: mismo marcado del aviso
 OK operacion intento 03: misma dirección
-OK operacion intento 03: la acción tarda al menos 1500 ms en los dos
-OK operacion intento 03: diferencia de 10 ms en la acción (≤ 100)
-operacion intento 04 (contraseña mala): real acción 1508 ms (primer byte 2197, redirección 689, pantalla 2738) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas | inexistente acción 1506 ms (primer byte 2080, redirección 574, pantalla 2235) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas
+OK operacion intento 03: el servidor tarda al menos 1500 ms en los dos
+OK operacion intento 03: diferencia de 1 ms en el servidor (≤ 100)
+operacion intento 04 (contraseña mala): real servidor 1502 ms (pantalla 1584) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar | inexistente servidor 1504 ms (pantalla 1940) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar
 OK operacion intento 04: mismo texto
 OK operacion intento 04: mismo marcado del aviso
 OK operacion intento 04: misma dirección
-OK operacion intento 04: la acción tarda al menos 1500 ms en los dos
-OK operacion intento 04: diferencia de 2 ms en la acción (≤ 100)
-operacion intento 05 (contraseña mala): real acción 1508 ms (primer byte 2122, redirección 614, pantalla 2279) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas | inexistente acción 1521 ms (primer byte 1778, redirección 257, pantalla 1921) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas
+OK operacion intento 04: el servidor tarda al menos 1500 ms en los dos
+OK operacion intento 04: diferencia de 2 ms en el servidor (≤ 100)
+operacion intento 05 (contraseña mala): real servidor 1503 ms (pantalla 1586) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar | inexistente servidor 1503 ms (pantalla 1856) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar
 OK operacion intento 05: mismo texto
 OK operacion intento 05: mismo marcado del aviso
 OK operacion intento 05: misma dirección
-OK operacion intento 05: la acción tarda al menos 1500 ms en los dos
-OK operacion intento 05: diferencia de 13 ms en la acción (≤ 100)
-operacion intento 06 (contraseña mala): real acción 1505 ms (primer byte 1852, redirección 347, pantalla 2043) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas | inexistente acción 1505 ms (primer byte 1800, redirección 295, pantalla 1922) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas
+OK operacion intento 05: el servidor tarda al menos 1500 ms en los dos
+OK operacion intento 05: diferencia de 0 ms en el servidor (≤ 100)
+operacion intento 06 (contraseña mala): real servidor 1503 ms (pantalla 1563) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar | inexistente servidor 1502 ms (pantalla 1574) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar
 OK operacion intento 06: mismo texto
 OK operacion intento 06: mismo marcado del aviso
 OK operacion intento 06: misma dirección
-OK operacion intento 06: la acción tarda al menos 1500 ms en los dos
-OK operacion intento 06: diferencia de 0 ms en la acción (≤ 100)
-operacion intento 07 (contraseña mala): real acción 1505 ms (primer byte 1958, redirección 453, pantalla 2069) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas | inexistente acción 1522 ms (primer byte 1961, redirección 439, pantalla 2163) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas
+OK operacion intento 06: el servidor tarda al menos 1500 ms en los dos
+OK operacion intento 06: diferencia de 1 ms en el servidor (≤ 100)
+operacion intento 07 (contraseña mala): real servidor 1505 ms (pantalla 1595) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar | inexistente servidor 1503 ms (pantalla 1564) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar
 OK operacion intento 07: mismo texto
 OK operacion intento 07: mismo marcado del aviso
 OK operacion intento 07: misma dirección
-OK operacion intento 07: la acción tarda al menos 1500 ms en los dos
-OK operacion intento 07: diferencia de 17 ms en la acción (≤ 100)
-operacion intento 08 (contraseña mala): real acción 1505 ms (primer byte 2224, redirección 719, pantalla 2792) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas | inexistente acción 1505 ms (primer byte 2060, redirección 555, pantalla 2240) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas
+OK operacion intento 07: el servidor tarda al menos 1500 ms en los dos
+OK operacion intento 07: diferencia de 2 ms en el servidor (≤ 100)
+operacion intento 08 (contraseña mala): real servidor 1503 ms (pantalla 1562) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar | inexistente servidor 1504 ms (pantalla 1861) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar
 OK operacion intento 08: mismo texto
 OK operacion intento 08: mismo marcado del aviso
 OK operacion intento 08: misma dirección
-OK operacion intento 08: la acción tarda al menos 1500 ms en los dos
-OK operacion intento 08: diferencia de 0 ms en la acción (≤ 100)
-operacion intento 09 (contraseña mala) [cuenta real en el tope]: real acción 1504 ms (primer byte 2249, redirección 745, pantalla 2443) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas | inexistente acción 1509 ms (primer byte 1905, redirección 396, pantalla 2045) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas
+OK operacion intento 08: el servidor tarda al menos 1500 ms en los dos
+OK operacion intento 08: diferencia de 1 ms en el servidor (≤ 100)
+operacion intento 09 (contraseña mala) [cuenta real en el tope]: real servidor 1503 ms (pantalla 1565) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar | inexistente servidor 1503 ms (pantalla 1561) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar
 OK operacion intento 09: mismo texto
 OK operacion intento 09: mismo marcado del aviso
 OK operacion intento 09: misma dirección
-OK operacion intento 09: la acción tarda al menos 1500 ms en los dos
-OK operacion intento 09: diferencia de 5 ms en la acción (≤ 100)
-operacion intento 10 (contraseña mala) [cuenta real en el tope]: real acción 1505 ms (primer byte 2384, redirección 879, pantalla 2858) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas | inexistente acción 1507 ms (primer byte 1984, redirección 477, pantalla 2201) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas
+OK operacion intento 09: el servidor tarda al menos 1500 ms en los dos
+OK operacion intento 09: diferencia de 0 ms en el servidor (≤ 100)
+operacion intento 10 (contraseña mala) [cuenta real en el tope]: real servidor 1503 ms (pantalla 1885) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar | inexistente servidor 1503 ms (pantalla 1559) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar
 OK operacion intento 10: mismo texto
 OK operacion intento 10: mismo marcado del aviso
 OK operacion intento 10: misma dirección
-OK operacion intento 10: la acción tarda al menos 1500 ms en los dos
-OK operacion intento 10: diferencia de 2 ms en la acción (≤ 100)
-operacion intento 11 (contraseña CORRECTA) [cuenta real en el tope]: real acción 1503 ms (primer byte 2371, redirección 868, pantalla 2507) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas | inexistente acción 1504 ms (primer byte 2109, redirección 605, pantalla 2562) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar?aviso=credenciales_invalidas
+OK operacion intento 10: el servidor tarda al menos 1500 ms en los dos
+OK operacion intento 10: diferencia de 0 ms en el servidor (≤ 100)
+operacion intento 11 (contraseña CORRECTA) [cuenta real en el tope]: real servidor 1504 ms (pantalla 1595) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar | inexistente servidor 1504 ms (pantalla 1558) «El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.» /operacion/entrar
 OK operacion intento 11: mismo texto
 OK operacion intento 11: mismo marcado del aviso
 OK operacion intento 11: misma dirección
-OK operacion intento 11: la acción tarda al menos 1500 ms en los dos
-OK operacion intento 11: diferencia de 1 ms en la acción (≤ 100)
+OK operacion intento 11: el servidor tarda al menos 1500 ms en los dos
+OK operacion intento 11: diferencia de 0 ms en el servidor (≤ 100)
 OK operacion: las 22 respuestas usan el mismo texto único
-OK operacion: mediana de la acción 1505 ms con cuenta y 1507 ms sin cuenta (≤ 20 de diferencia)
-operacion: mediana en pantalla 2279 ms con cuenta y 2149 ms sin cuenta (informativo)
+OK operacion: mediana en el servidor 1503 ms con cuenta y 1503 ms sin cuenta (≤ 20 de diferencia)
+operacion: mediana en pantalla 1586 ms con cuenta y 1574 ms sin cuenta (informativo)
 OK operacion: la bitácora anota 8 fallos; los intentos 9, 10 y 11 (en el tope) no se anotan
 OK operacion: la contraseña correcta en el tope no abrió entrada
-OK control: op2@lever.test con su contraseña llega a /operacion/continuar en 743 ms, sin el piso
+OK control: op2@lever.test con su contraseña llega a /operacion/continuar en 407 ms, sin el piso
 OK sin errores de consola (0)
