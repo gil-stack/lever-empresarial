@@ -217,6 +217,16 @@ async function dobleClic(boton) {
   await boton.dblclick({ delay: 40 });
 }
 
+/** El servidor no emite otra invitación a menos de 2 s de la anterior (doble clic): un reenvío a propósito espera. */
+async function pasarVentanaDeDobleClic() {
+  await new Promise((r) => setTimeout(r, 2500));
+}
+
+/** Texto del aviso que quedó en la ficha tras un envío. */
+async function avisoDeLaFicha(page) {
+  return (await page.locator("#aviso-operacion").innerText()).trim();
+}
+
 /**
  * Doble clic mientras la base retiene la acción con un candado sobre la tabla que escribe: el
  * botón tiene que quedar apagado, con aria-busy y «Enviando…» (o su texto propio) hasta que
@@ -507,14 +517,15 @@ async function flujos() {
   await op.waitForURL(/aviso=invitacion_/);
   await listo(op);
   exigir(contar(`select count(*) from invitations where user_id = '${idDe(LAURA)}'`) === 1, "doble clic en «Enviar invitación» emite una sola invitación");
-  // Reenviar anula el enlace anterior y emite otro (doble clic): Laura acepta después el vigente. Con el
-  // aviso ya en pantalla el primer envío vuelve antes del segundo clic; la ficha manda la invitación que
-  // vio y el servidor no reemite otra ni manda un segundo correo.
+  // Reenviar anula el enlace anterior y emite otro (doble clic): Laura acepta después el vigente. El primer
+  // envío puede volver y refrescar la ficha antes del segundo clic; el servidor no reemite otra a menos de
+  // 2 s de la anterior ni manda un segundo correo.
   const entregasAntes = contar(`select count(*) from invitation_deliveries where company_id = '${altamarId}'`);
   // Otra pestaña con la ficha abierta desde antes: verá la invitación que este reenvío va a reemplazar.
   const otraFicha = await ctxOp.newPage();
   await otraFicha.goto(`${BASE}/operacion/clientes/${altamarId}`);
   await listo(otraFicha);
+  await pasarVentanaDeDobleClic();
   await dobleClic(op.getByRole("button", { name: "Reenviar invitación" }));
   await esperarBase(`select count(*) from invitations where user_id = '${idDe(LAURA)}'`, 2);
   await new Promise((r) => setTimeout(r, 1500));
@@ -1538,6 +1549,192 @@ async function comparacion() {
   await lamina("telefono", [`${diseno}/app-home.png`, "Diseño · app-home"], [`${c}/90-telefono-inicio-oscuro-390.webp`, "Producto · Teléfono › Inicio (Oscuro, 390)"], 430, 932);
 }
 
+// ==================================================================================
+// RONDA DEL #56: se corre sobre la base que deja la corrida completa (FASES=ronda)
+// ==================================================================================
+
+/**
+ * Distancia, en px, entre la línea base de la etiqueta y la del valor de cada renglón que va lado a
+ * lado (a lo angosto se apilan y no comparten línea). Un punto de altura cero junto al primer texto
+ * marca la línea base de esa línea; si ese texto vive en un contenedor flex o grid, el renglón se
+ * cuenta aparte como «sin medir» en lugar de darse por bueno.
+ */
+async function desfaseDeRenglones(page) {
+  return page.evaluate(() => {
+    const base = (el) => {
+      const recorrido = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+        acceptNode: (nodo) => (nodo.textContent.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP),
+      });
+      const texto = recorrido.nextNode();
+      if (!texto) return null;
+      // Dentro de flex o grid el texto suelto es un elemento anónimo: un span que lo envuelve ocupa ese mismo
+      // lugar y deja medir la línea base del texto, no la de su caja.
+      let envoltura = null;
+      if (/flex|grid/.test(getComputedStyle(texto.parentElement).display)) {
+        envoltura = document.createElement("span");
+        texto.parentNode.insertBefore(envoltura, texto);
+        envoltura.appendChild(texto);
+      }
+      const punto = document.createElement("span");
+      punto.style.cssText = "display:inline-block;width:0;height:0;vertical-align:baseline";
+      texto.parentNode.insertBefore(punto, texto);
+      const y = punto.getBoundingClientRect().bottom;
+      punto.remove();
+      envoltura?.replaceWith(texto);
+      return y;
+    };
+    const medidos = [];
+    let sinMedir = 0;
+    for (const fila of document.querySelectorAll(".renglones > div")) {
+      const dt = fila.querySelector(":scope > dt");
+      const dd = fila.querySelector(":scope > dd");
+      if (!dt || !dd || dd.getBoundingClientRect().left < dt.getBoundingClientRect().right) continue;
+      const [a, b] = [base(dt), base(dd)];
+      if (a === null || b === null) sinMedir += 1;
+      else medidos.push({ etiqueta: dt.textContent.trim().slice(0, 40), desfase: Math.round((b - a) * 10) / 10 });
+    }
+    return { medidos, sinMedir };
+  });
+}
+
+/**
+ * `aparte`: renglones cuyo desfase no viene de la regla del renglón sino de una pieza del sistema que va dentro
+ * del valor; se miden igual y quedan anotados como pendientes con su causa, fuera del Δ máximo.
+ */
+async function exigirRenglonesAlineados(page, donde, aparte = {}) {
+  for (const tema of TEMAS) {
+    await page.context().addCookies([{ name: "tema", value: tema, url: BASE }]);
+    await page.reload({ waitUntil: "networkidle" });
+    const todos = await desfaseDeRenglones(page);
+    const sinMedir = todos.sinMedir;
+    const medidos = todos.medidos.filter((m) => !(m.etiqueta in aparte));
+    for (const m of todos.medidos.filter((m) => m.etiqueta in aparte)) {
+      const nota = `${donde} (${tema}, 1440): «${m.etiqueta}» Δ ${m.desfase} px — ${aparte[m.etiqueta]}`;
+      pendientes.push(nota);
+      console.log(`PENDIENTE ${nota}`);
+    }
+    const peor = Math.max(0, ...medidos.map((m) => Math.abs(m.desfase)));
+    for (const m of medidos.filter((m) => Math.abs(m.desfase) > 0.5)) console.log(`  ${donde} ${tema}: «${m.etiqueta}» Δ ${m.desfase} px`);
+    exigir(
+      medidos.length > 0 && peor <= 0.5,
+      `${donde} (${tema}, 1440): etiqueta y valor en la misma línea base en ${medidos.length} renglones, Δ máximo ${peor} px${sinMedir ? `; ${sinMedir} sin texto que medir` : ""}`,
+    );
+  }
+  await page.context().addCookies([{ name: "tema", value: "oscuro", url: BASE }]);
+}
+
+async function ronda() {
+  const BAHIA = "Bahía Oeste";
+  const RFC_BAHIA = "BOE190101AB5";
+  const MARCO = "marco@bahiaoeste.test";
+  exigir(
+    contar(`select count(*) from companies where rfc = '${RFC_ALTAMAR}'`) === 1 && contar(`select count(*) from companies where rfc = '${RFC_BAHIA}'`) === 0,
+    `ronda: corre sobre la base de la corrida completa (Altamar existe) y ${BAHIA} todavía no`,
+  );
+  const { ctx: ctxOp, page: op } = await contexto();
+  await entrarOperacion(op, OP);
+  await irA(op, "Clientes");
+  await op.waitForURL(/\/operacion\/clientes$/);
+  await listo(op);
+  await op.getByLabel("Razón social").fill(BAHIA);
+  await op.getByLabel("RFC").fill(RFC_BAHIA);
+  await op.getByLabel("Código postal").fill("77500");
+  await op.getByRole("button", { name: "Registrar prospecto" }).click();
+  await op.waitForURL(/\/operacion\/clientes\/[0-9a-f-]{36}/);
+  const bahiaId = op.url().match(/clientes\/([0-9a-f-]{36})/)[1];
+  await op.getByRole("button", { name: "Solicitar activación" }).click();
+  await op.getByText("Activación solicitada").waitFor();
+  const { ctx: ctxOp2, page: op2 } = await contexto();
+  await entrarOperacion(op2, OP2);
+  await op2.goto(`${BASE}/operacion/aprobaciones`);
+  await listo(op2);
+  await op2.getByRole("listitem", { name: `Activación · ${BAHIA}` }).getByRole("button", { name: "Aprobar" }).click();
+  await op2.getByText("Decisión registrada").waitFor();
+  exigir(sql(`select estado from companies where id = '${bahiaId}'`) === "activa", `ronda: op2 activa ${BAHIA}`);
+  await ctxOp2.close();
+
+  // Sin ninguna invitación previa, el primer envío sale (doble clic = una invitación y un correo).
+  const ficha = `${BASE}/operacion/clientes/${bahiaId}`;
+  const invitaciones = (condicion = "true") => contar(`select count(*) from invitations where company_id = '${bahiaId}' and ${condicion}`);
+  const entregas = () => contar(`select count(*) from invitation_deliveries where company_id = '${bahiaId}'`);
+  await op.goto(ficha);
+  await listo(op);
+  exigir(invitaciones() === 0, `ronda: ${BAHIA} no tiene invitaciones antes del primer envío`);
+  await op.getByLabel("Nombre").fill("Marco Ruiz");
+  await op.getByLabel("Correo").fill(MARCO);
+  await dobleClic(op.getByRole("button", { name: "Enviar invitación" }));
+  await op.waitForURL(/aviso=invitacion_/);
+  await listo(op);
+  await new Promise((r) => setTimeout(r, 1500));
+  exigir(invitaciones() === 1 && entregas() === 1, "ronda: sin invitación previa, doble clic en «Enviar invitación» emite una sola y registra un solo correo");
+
+  // Reenviar con doble clic, y una ficha abierta desde antes que intenta reenviar sobre la invitación vieja.
+  const otraFicha = await ctxOp.newPage();
+  await otraFicha.goto(ficha);
+  await listo(otraFicha);
+  await pasarVentanaDeDobleClic();
+  await dobleClic(op.getByRole("button", { name: "Reenviar invitación" }));
+  await esperarBase(`select count(*) from invitations where company_id = '${bahiaId}'`, 2);
+  await new Promise((r) => setTimeout(r, 1500));
+  await listo(op);
+  exigir(
+    invitaciones() === 2 && invitaciones("revocada_en is not null") === 1 && invitaciones("revocada_en is null and usada_en is null") === 1 && entregas() === 2,
+    "ronda: doble clic en «Reenviar invitación» anula el enlace anterior, deja uno solo vigente y registra un solo correo más",
+  );
+  // Lo que ve quien hizo el doble clic: el aviso del envío o, si el segundo clic alcanzó a llegar, el de ya enviada.
+  const avisoTrasDobleClic = await avisoDeLaFicha(op);
+  exigir(
+    ["el correo no salió", "Ya se había enviado una invitación más reciente"].some((texto) => avisoTrasDobleClic.includes(texto)),
+    `ronda: tras el doble clic la ficha muestra un solo aviso: «${avisoTrasDobleClic}»`,
+  );
+  await captura(op, "15d-operacion-reenvio-doble-clic-oscuro-1440", { completa: false });
+  await otraFicha.getByRole("button", { name: "Reenviar invitación" }).click();
+  await otraFicha.waitForURL(/aviso=invitacion_ya_enviada/);
+  await listo(otraFicha);
+  exigir(
+    (await otraFicha.locator("#aviso-operacion [role=alert]").getByText("Ya se había enviado una invitación más reciente. El enlace vigente es el de ese último correo.").count()) === 1 &&
+      (await otraFicha.locator("#aviso-operacion [role=status]").count()) === 0 &&
+      invitaciones() === 2 && entregas() === 2,
+    "ronda: reenviar desde una ficha vieja no reemite: «Ya se había enviado una invitación más reciente…» como alerta y sin otro correo",
+  );
+  await captura(otraFicha, "15b-operacion-invitacion-ya-enviada-oscuro-1440", { completa: false });
+  await otraFicha.close();
+
+  // La ficha (con sus renglones) y una Hoja de Operación, en 3 temas × 2 anchos con contraste.
+  await op.goto(ficha);
+  await listo(op);
+  await capturarYMedirEnTodo(op, "15c-operacion-ficha-renglones", `/operacion/clientes (ficha de ${BAHIA})`);
+  await exigirRenglonesAlineados(op, `Operación › ficha de ${BAHIA}`);
+  await op.goto(`${BASE}/operacion/clientes/${estado.altamarId}`);
+  await listo(op);
+  await exigirRenglonesAlineados(op, "Operación › ficha de Altamar Logística");
+  await irA(op, "Comisiones");
+  await op.waitForURL(/\/operacion\/comisiones/);
+  await listo(op);
+  await capturarYMedirEnTodo(op, "17b-operacion-comisiones-hoja", "/operacion/comisiones (Hoja)");
+  await ctxOp.close();
+
+  // Las demás pantallas con renglones del sistema: consola de Laura y muestrario.
+  const { ctx: ctxL, page: laura } = await contexto();
+  await entrarCliente(laura, LAURA, estado.claves[LAURA] ?? CLAVE_NUEVA);
+  await laura.getByLabel("Código de la app autenticadora").fill(await codigoFresco(LAURA));
+  await laura.getByRole("button", { name: "Entrar con el código" }).click();
+  await laura.waitForURL(/\/consola|\/empresas/);
+  await listo(laura);
+  const fichaLaura = sql(`select id from employees where user_id = '${idDe(LAURA)}' limit 1`);
+  for (const [ruta, donde, aparte] of [
+    ["/consola/configuracion", "Consola › Configuración"],
+    [`/consola/personas/${fichaLaura}`, "Consola › ficha de Laura en Personas"],
+    // La línea del valor coincide con la de la etiqueta; el texto dentro de la insignia queda abajo porque
+    // .insignia (flex, align-items: center) toma su línea base del borde inferior del punto ::before.
+    ["/muestrario", "Muestrario", { Insignias: "texto dentro de .insignia: su línea base sale del punto ::before (componentes.css), fuera de la regla del renglón" }],
+  ]) {
+    await laura.goto(`${BASE}${ruta}`, { waitUntil: "networkidle" });
+    await exigirRenglonesAlineados(laura, donde, aparte);
+  }
+  await ctxL.close();
+}
+
 try {
   if (FASES.includes("flujos")) await flujos();
   if (FASES.includes("publicas")) await publicas();
@@ -1545,6 +1742,7 @@ try {
   if (FASES.includes("correos")) await correos();
   if (FASES.includes("estados")) await estados();
   if (FASES.includes("comparacion")) await comparacion();
+  if (FASES.includes("ronda")) await ronda();
   exigir(erroresDeConsola.length === 0, `sin errores de consola del navegador${erroresDeConsola.length ? `:\n  ${erroresDeConsola.join("\n  ")}` : ""}`);
 } catch (error) {
   // Para diagnosticar: cada página abierta al momento del fallo, fuera de la carpeta de evidencia.

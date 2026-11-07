@@ -93,8 +93,10 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
 
         let llamadasCorreo = 0;
         const entregar = async () => { llamadasCorreo += 1; return { entregada: true as const }; };
-        const primera = await invitarPrimerAdministrador(ana, { companyId, nombre: "Admin Uno", correo: "admin@ejemplo.mx" }, { produccion: false, entregar });
-        const segunda = await invitarPrimerAdministrador(ana, { companyId, nombre: "Admin Uno", correo: "admin@ejemplo.mx" }, { produccion: false, entregar });
+        const inicio = Date.now();
+        const alSegundo = (segundo: number) => ({ produccion: false, entregar, ahora: () => new Date(inicio + segundo * 1000) });
+        const primera = await invitarPrimerAdministrador(ana, { companyId, nombre: "Admin Uno", correo: "admin@ejemplo.mx" }, alSegundo(0));
+        const segunda = await invitarPrimerAdministrador(ana, { companyId, nombre: "Admin Uno", correo: "admin@ejemplo.mx" }, alSegundo(10));
         assert.equal(llamadasCorreo, 0);
         assert.equal(primera.entrega, "omitida_desarrollo");
         assert.equal(JSON.stringify(segunda).includes("token"), false);
@@ -108,11 +110,16 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
         // Reenviar solo reemplaza la invitación que la persona tenía en pantalla: un segundo clic sobre
         // la misma, o un primer envío cuando ya hay una, no emite otra ni manda otro correo.
         const admin = { companyId, nombre: "Admin Uno", correo: "admin@ejemplo.mx" };
-        await assert.rejects(invitarPrimerAdministrador(ana, { ...admin, vista: primera.invitationId }, { produccion: false, entregar }), /invitacion_ya_enviada/);
-        await assert.rejects(invitarPrimerAdministrador(ana, { ...admin, vista: "" }, { produccion: false, entregar }), /invitacion_ya_enviada/);
+        await assert.rejects(invitarPrimerAdministrador(ana, { ...admin, vista: primera.invitationId }, alSegundo(20)), /invitacion_ya_enviada/);
+        await assert.rejects(invitarPrimerAdministrador(ana, { ...admin, vista: "" }, alSegundo(20)), /invitacion_ya_enviada/);
         assert.equal((await leerCliente(ana, companyId))?.ultimaInvitacionId, segunda.invitationId);
-        const tercera = await invitarPrimerAdministrador(ana, { ...admin, vista: segunda.invitationId }, { produccion: false, entregar });
-        await assert.rejects(invitarPrimerAdministrador(ana, { ...admin, vista: segunda.invitationId }, { produccion: false, entregar }), /invitacion_ya_enviada/);
+        const tercera = await invitarPrimerAdministrador(ana, { ...admin, vista: segunda.invitationId }, alSegundo(20));
+        await assert.rejects(invitarPrimerAdministrador(ana, { ...admin, vista: segunda.invitationId }, alSegundo(21)), /invitacion_ya_enviada/);
+        // El segundo clic de un doble clic llega cuando la pantalla ya muestra la invitación nueva: trae la
+        // `vista` vigente, pero a un segundo de la anterior tampoco emite. Pasada la ventana, reenviar sí emite.
+        await assert.rejects(invitarPrimerAdministrador(ana, { ...admin, vista: tercera.invitationId }, alSegundo(21)), /invitacion_ya_enviada/);
+        await assert.rejects(invitarPrimerAdministrador(ana, admin, alSegundo(21)), /invitacion_ya_enviada/);
+        const cuarta = await invitarPrimerAdministrador(ana, { ...admin, vista: tercera.invitationId }, alSegundo(23));
         const trasReenviar = await conContexto({ rol: "plataforma_sofipo", userId: a, operadorId: operatorId }, (consulta) =>
           consulta.query(
             `select i.id, i.revocada_en, (select count(*)::int from invitation_deliveries d where d.invitation_id = i.id) as entregas
@@ -121,10 +128,10 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
           ),
         );
         const filas = trasReenviar.rows as Array<{ id: string; revocada_en: unknown; entregas: number }>;
-        assert.equal(filas.length, 3);
-        assert.equal(filas[2].id, tercera.invitationId);
-        assert.equal(filas[2].revocada_en, null);
-        assert.deepEqual(filas.map((fila) => fila.entregas), [1, 1, 1]);
+        assert.equal(filas.length, 4);
+        assert.equal(filas[3].id, cuarta.invitationId);
+        assert.deepEqual(filas.map((fila) => fila.revocada_en === null), [false, false, false, true]);
+        assert.deepEqual(filas.map((fila) => fila.entregas), [1, 1, 1, 1]);
 
         // Sin ninguna invitación previa, `vista` vacío emite la primera; dos envíos a la vez en ese mismo
         // estado dejan una sola invitación y una sola entrega (el otro recibe invitacion_ya_enviada).

@@ -20,14 +20,19 @@ export type ResultadoInvitacionOperacion = {
 type Dependencias = {
   entregar?: typeof entregarInvitacion;
   produccion?: boolean;
+  ahora?: () => Date;
 };
+
+/** Un doble clic dura menos de medio segundo; leer un aviso y volver a reenviar, varios segundos. */
+const VENTANA_DE_DOBLE_CLIC_MS = 2_000;
 
 /**
  * Emite o reenvía por los servicios existentes. El token nunca sale de este módulo.
  *
  * `vista` es la última invitación que la persona tenía en pantalla ("" si no había): solo se emite
- * si sigue siendo la última. Así un doble clic, o dos personas a la vez, no mandan dos correos ni
- * anulan el enlace que acaba de salir.
+ * si sigue siendo la última. Así una pestaña vieja, o dos personas a la vez, no mandan dos correos ni
+ * anulan el enlace que acaba de salir. Como la pantalla se refresca antes del segundo clic de un doble
+ * clic, además no se emite otra si la última salió hace menos de `VENTANA_DE_DOBLE_CLIC_MS`.
  */
 export async function invitarPrimerAdministrador(
   ctx: ContextoDePersonal,
@@ -38,7 +43,7 @@ export async function invitarPrimerAdministrador(
   const nombre = textoOperativo(entrada.nombre, 200);
   const correo = normalizarCorreo(typeof entrada.correo === "string" ? entrada.correo : "");
   if (!nombre || !correoValido(correo)) throw new ErrorDeDominio("invitacion_invalida");
-  const ahora = new Date();
+  const ahora = (deps.ahora ?? (() => new Date()))();
   const produccion = deps.produccion ?? process.env.NODE_ENV === "production";
   const emitida = await conContexto(basePlataforma(ctx, entrada.companyId), async (consulta) => {
     const empresa = await consulta.query("select razon_social, estado from companies where id = $1 for update", [
@@ -47,13 +52,16 @@ export async function invitarPrimerAdministrador(
     const fila = empresa.rows[0] as { razon_social?: unknown; estado?: unknown } | undefined;
     if (!fila) throw new ErrorDeDominio("cliente_ausente");
     if (fila.estado !== "activa") throw new ErrorDeDominio("cliente_no_activo");
-    if (typeof entrada.vista === "string") {
-      const ultima = await consulta.query(
-        "select id from invitations where company_id = $1 order by emitida_en desc, id desc limit 1",
-        [entrada.companyId],
-      );
-      const ultimaId = (ultima.rows[0] as { id?: unknown } | undefined)?.id;
-      if (entrada.vista !== (typeof ultimaId === "string" ? ultimaId : "")) throw new ErrorDeDominio("invitacion_ya_enviada");
+    const ultima = await consulta.query(
+      "select id, emitida_en from invitations where company_id = $1 order by emitida_en desc, id desc limit 1",
+      [entrada.companyId],
+    );
+    const previa = ultima.rows[0] as { id?: unknown; emitida_en?: unknown } | undefined;
+    if (typeof entrada.vista === "string" && entrada.vista !== (typeof previa?.id === "string" ? previa.id : "")) {
+      throw new ErrorDeDominio("invitacion_ya_enviada");
+    }
+    if (previa?.emitida_en instanceof Date && ahora.getTime() - previa.emitida_en.getTime() < VENTANA_DE_DOBLE_CLIC_MS) {
+      throw new ErrorDeDominio("invitacion_ya_enviada");
     }
     const existente = await consulta.query(
       `select m.user_id, m.estado, u.nombre, u.correo

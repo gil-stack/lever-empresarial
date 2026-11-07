@@ -5,14 +5,54 @@ Recorrido clicado de Operación SOFIPO, la entrada de cliente, la invitación, r
 - **Cómo se corrió:** Playwright headless desde node (no el navegador del MCP) contra `next build` + `next start` en 4808, sobre Postgres 17 local en 5543 recién migrado (0001-0027) y sembrado.
 - **Temas y tamaños:** Oscuro, Claro y Lever, a 1440×900 y 390×844.
 - **Script:** `scripts/evidencia/ola1b-superficies.mjs` (las plantillas de correo se renderizan con `scripts/evidencia/ola1b-correos.ts`).
-- **Salida literal de la corrida final:** `salida-recorrido.txt`.
-- **Detalle de cada comprobación:** `comprobaciones-flujos-publicas-capturas-correos-estados-comparacion.json`, con las comprobaciones, los pendientes, los errores de consola y las vistas de contraste repetidas (las tres listas, vacías).
+- **Salida literal:** `salida-recorrido.txt` (corrida completa) y `salida-ronda.txt` (repetición parcial de la ronda del #56).
+- **Detalle de cada comprobación:** `comprobaciones-flujos-publicas-capturas-correos-estados-comparacion.json` y `comprobaciones-ronda.json`, con las comprobaciones, los pendientes, los errores de consola y las vistas de contraste repetidas.
 
 Nombre de cada captura: `<paso>-<pantalla>-<tema>-<ancho>.webp` (por ejemplo `13-operacion-aprobaciones-lever-390.webp`); correos: `correo-<plantilla>-<claro|oscuro>.webp`.
 
+## Qué corrió en cada head
+
+| Head | Qué cambió | Qué corrió |
+| --- | --- | --- |
+| `d115278` | Reenviar invitación solo reemplaza la invitación que se tenía en pantalla («vista») | Corrida completa: 653 comprobaciones (abajo, **Resultado**) |
+| `5176abb` | Renglones alineados en su origen (`componentes.css`), prueba Postgres de la invitación sin previa y texto nuevo de `invitacion_ya_enviada` | Solo la prueba Postgres de Operación; su repetición visual va con el head siguiente |
+| head de este commit | Ventana de 2 s contra el doble clic en Reenviar (además de «vista») y medición de renglones | Repetición parcial (fase `ronda`, abajo) sobre el build de este código, más los gates completos del cuerpo del PR |
+
+**Por qué hubo un head más.** En la primera corrida de la fase `ronda`, sobre el build de `5176abb`, el doble clic en «Reenviar invitación» dejó 3 invitaciones (44.269 y 44.354 s, 85 ms entre clics). El primer envío terminaba y la ficha se refrescaba con la «vista» nueva antes del segundo clic, así que el segundo pasaba la guarda. En la corrida completa no se vio por cuestión de tiempos. Ahora el servidor tampoco emite otra si la última invitación de la empresa salió hace menos de 2 s, con o sin «vista». Lo cubre `tests/operacion/portal-postgres.test.ts` con reloj inyectado: con la «vista» vigente a 1 s se rechaza, sin «vista» a 1 s también, y a los 3 s emite. Con la ventana en 0, esa prueba falla.
+
+**Lo que no volvió a correr.** El paso de Reenviar de `flujos` ahora espera 2.5 s antes del doble clic (`pasarVentanaDeDobleClic`) para que el reenvío a propósito no caiga en la ventana. La corrida completa no se repitió, porque el líder pidió repetir solo lo de abajo. El mismo paso, con la misma espera, sí corrió en la fase `ronda`.
+
+## Repetición parcial: fase `ronda`
+
+`FASES=ronda`, sobre la base de la corrida completa y con el build del head de este commit: **39 comprobaciones en verde** (25 aserciones y 14 capturas), 0 errores de consola del navegador, 0 vistas de contraste repetidas y 3 pendientes (la insignia, ver **Renglones**).
+
+- **Reenvío con doble clic.** Bahía Oeste se registra y se activa con clics (op pide y op2 aprueba).
+  - Sin invitación previa, el doble clic en «Enviar invitación» deja 1 invitación y 1 correo.
+  - Pasada la ventana, el doble clic en «Reenviar invitación» deja 2 invitaciones (1 anulada y 1 vigente) y 2 correos.
+  - Quien hizo el doble clic ve «Ya se había enviado una invitación más reciente. El enlace vigente es el de ese último correo.» porque su segundo clic sí llegó al servidor y fue rechazado (`15d-operacion-reenvio-doble-clic`).
+  - Una ficha abierta antes del reenvío intenta reenviar y recibe el mismo texto como alerta (`role=alert`, sin `role=status`), sin otra invitación ni otro correo (`15b-operacion-invitacion-ya-enviada`, que reemplaza la de la corrida completa).
+- **Ficha de cliente y Hoja de Operación** en 3 temas × 1440/390, con contraste AA: `15c-operacion-ficha-renglones-*` (384 textos) y `17b-operacion-comisiones-hoja-*` (183 textos), 0 bajo AA.
+- **Renglones** medidos sobre el build (siguiente sección).
+
+## Renglones: etiqueta y valor en la misma línea base
+
+`.renglones > div` lleva `align-items: baseline` en `componentes.css` (fuera de zona, aprobado por el líder). Antes la etiqueta (0.9rem con 3 px de relleno arriba) quedaba 4 px más abajo que el valor (13.5 px).
+
+**Cómo se mide.** En cada renglón con etiqueta y valor lado a lado se inserta un punto de alto 0 justo antes del primer texto de cada uno y se toma su borde inferior, que es la línea base. Si ese texto vive dentro de un flex o un grid, se envuelve en un span que ocupa su lugar. Se mide en los 3 temas a 1440 sobre `next start`.
+
+| Pantalla | Renglones | Δ máximo |
+| --- | --- | --- |
+| Operación › ficha de Bahía Oeste | 4 | 0 px |
+| Operación › ficha de Altamar Logística | 4 | 0 px |
+| Consola › Configuración | 2 | 0 px |
+| Consola › ficha de Laura en Personas | 4 | 0 px |
+| Muestrario | 3 de 4 | 0 px |
+
+**Muestrario › «Insignias»: Δ 1.3 px, fuera de la regla del renglón.** La regla sí alinea la línea base del valor con la de la etiqueta: la base de la etiqueta (962.39) coincide con el borde inferior del punto `::before` de la primera insignia (962.40). El texto dentro de la insignia queda 1.3 px abajo porque `.insignia` es flex con `align-items: center`, así que su línea base sale de ese punto, que no tiene texto. En el muestrario la insignia va dentro de un flex (`.fila-muestra`), donde el `vertical-align: 1px` de `.insignia` no aplica; una insignia suelta en un renglón no apareció en las pantallas medidas. Corregirlo toca `.insignia` en `componentes.css`, un componente del sistema fuera de esta zona: queda en **Pendientes**.
+
 ## Resultado
 
-Corrida final de la ronda del #56, con main integrado (#52), y build y script del commit `d115278`:
+Corrida completa de la ronda del #56, con main integrado (#52), y build y script del commit `d115278`:
 
 - **653 comprobaciones en verde** y ninguna falla. La última línea de `salida-recorrido.txt` es «653 comprobaciones en verde.». Se reparten así:
   - **289 aserciones**: lo que se comprueba en la página o en la base;
@@ -22,7 +62,7 @@ Corrida final de la ronda del #56, con main integrado (#52), y build y script de
 - Las capturas están en `capturas/`; las **7 plantillas de correo**, con su HTML y su texto, en `correos/`; las láminas, junto a este README.
 - **Dobles clics:** cada envío del recorrido se oprime con doble clic y la corrida cuenta en la base que quede una sola operación: una sola fila, un solo evento, un solo código gastado, un solo correo o una sola sesión cerrada. Están en `salida-recorrido.txt` como «doble clic…» o «…una sola…».
 - **4 envíos retenidos** con un candado real de base: «Crear alerta», «Enviar el enlace», y Rechazar y Aprobar de Recuperaciones. Mientras la base retiene, el botón oprimido queda apagado y dice «Enviando…», con `aria-busy`. En Recuperaciones, el otro botón también se apaga, sin `aria-busy`, y conserva su texto.
-- **0 pendientes.**
+- **0 pendientes** en la corrida completa.
 
 ## Cómo repetirlo
 
@@ -68,6 +108,7 @@ Corrida final de la ronda del #56, con main integrado (#52), y build y script de
    - `ESTADO` guarda semillas TOTP y sesiones, por eso vive fuera del repositorio.
    - El script rechaza un `DUENO_URL` que no sea local.
    - `FASES=flujos,publicas,capturas,correos,estados,comparacion` permite correr solo una parte. `capturas`, `estados` y `comparacion` necesitan que `flujos` haya corrido antes sobre la misma base.
+   - `FASES=ronda` también corre sobre esa base y exige que la empresa de la ronda (Bahía Oeste, `BOE190101AB5`) todavía no exista.
 
 **Qué hace el script en la base como dueño** (nunca reemplaza un clic):
 - fija el token de una invitación o de un enlace de recuperación, porque en local el correo no sale;
@@ -97,7 +138,7 @@ Cada envío de la zona usa `BotonEnviar` (#51). En algunos el doble clic se hace
 | 3 | Invitación del personal hasta crear la cuenta | `30-op-invitacion`, `30-op-alta-factor`, `31-op2-*` | Doble clic en «Aceptar la invitación» deja una sola invitación usada; registra la app autenticadora y abre Operación en Resumen con un solo h1 |
 | 1 | Entrada SOFIPO con segundo factor | `10-operacion-entrar`, `11-operacion-entrar-error`, `12-operacion-segundo-factor` | Contraseña equivocada: el error queda ligado al campo (`aria-describedby`) y el correo sigue escrito. Contraseña y código TOTP con doble clic en «Entrar con el código». Al final, op entra con un código de respaldo de los que vio al registrar su app (doble clic = 1 código gastado) |
 | 1 | Operación vacía | `09a`…`09e` | Clientes «Todavía no hay clientes», Aprobaciones «Nada por decidir», Alertas «Sin alertas» y «Sin clientes», Comisiones «Sin versiones» y «Sin empresas activas», Recuperaciones «Sin solicitudes» |
-| 1 | Clientes y ficha | `15-operacion-ficha-cliente` | Doble clic en «Registrar prospecto» = 1 empresa; en «Solicitar activación» = 1 solicitud; en «Enviar invitación» = 1 invitación. Doble clic en «Reenviar invitación» anula el enlace anterior, deja uno solo vigente y registra un solo correo. Desde una ficha abierta antes del reenvío, «Reenviar invitación» no emite otra: avisa «La invitación ya había salido hace un momento…» como alerta (`15b-operacion-invitacion-ya-enviada`) y la base no cambia |
+| 1 | Clientes y ficha | `15-operacion-ficha-cliente` | Doble clic en «Registrar prospecto» = 1 empresa; en «Solicitar activación» = 1 solicitud; en «Enviar invitación» = 1 invitación. Doble clic en «Reenviar invitación» anula el enlace anterior, deja uno solo vigente y registra un solo correo. Desde una ficha abierta antes del reenvío, «Reenviar invitación» no emite otra y la base no cambia. En esta corrida (`d115278`) el aviso decía «La invitación ya había salido hace un momento…»; el texto vigente y la ventana de 2 s se comprobaron en la fase `ronda` (`15b`, `15d`) |
 | 1 | Aprobaciones | `13-operacion-aprobaciones`, `14-operacion-rechazar-dialogo` | Quien pidió la activación la ve sin botones («La pediste tú: decide otra persona.»). op2 aprueba con doble clic, que deja una sola transición a activa, y rechaza la otra con motivo desde el diálogo, que deja un solo rechazo |
 | 1 | Alertas | `16-operacion-alertas`, `16a-operacion-crear-alerta-enviando`, `16b-operacion-alerta-ya-cerrada` | Con la tabla de alertas retenida, «Crear alerta» queda apagado y dice «Enviando…». Doble clic en «Crear alerta» = 1 alerta; «Guardar responsable» la reasigna a op2; «Cerrar alerta» con motivo la cierra una vez y se anuncia como hecho (`role=status`). Otra pestaña que intenta cerrar la misma alerta recibe «La alerta ya estaba cerrada.» como alerta (`role=alert`) y la base no cambia |
 | 1 | Comisiones | `17-operacion-comisiones` | Doble clic en «Pedir autorización» = 1 versión; op2 aprueba una (queda vigente) y rechaza otra con motivo |
@@ -197,4 +238,5 @@ El «antes» es la corrida del #50 en `docs/evidencia/sistema-visual/`, que ya t
 
 ## Pendientes que encontró el recorrido (fuera de esta zona)
 
-Ninguno. La recuperación aprobada que no dejaba registrar un factor nuevo (armarPaso) se corrigió en #55, ya integrado aquí, y el recorrido la recorre completa.
+- **Texto de la insignia 1.3 px abajo de la etiqueta** en el renglón «Insignias» del muestrario (ver **Renglones**). Está en `.insignia` de `componentes.css`, un componente del sistema. Una forma de corregirlo, sin probar: `align-items: baseline` en `.insignia` y `align-self: center` en su `::before`, y revisar el `vertical-align: 1px`. No se tocó porque solo se aprobó la regla del renglón.
+- La recuperación aprobada que no dejaba registrar un factor nuevo (armarPaso) se corrigió en #55, ya integrado aquí, y el recorrido la recorre completa.
