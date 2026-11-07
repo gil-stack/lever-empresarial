@@ -5,6 +5,46 @@
   "comprobaciones": [
     {
       "ok": true,
+      "texto": "0. como en producción, una sola persona administra al personal y nadie puede darle un rol por pantalla"
+    },
+    {
+      "ok": true,
+      "texto": "0. el comando le da Originación a Ofelia"
+    },
+    {
+      "ok": true,
+      "texto": "0. correrlo dos veces no cambia nada"
+    },
+    {
+      "ok": true,
+      "texto": "0. una fila y un solo evento «rol_personal_asignado» del comando, con su motivo"
+    },
+    {
+      "ok": true,
+      "texto": "0. el comando no imprime el connection string"
+    },
+    {
+      "ok": true,
+      "texto": "0. Personal muestra a Ofelia con Originación"
+    },
+    {
+      "ok": true,
+      "texto": "0. la bitácora muestra «Asignó un rol del personal»"
+    },
+    {
+      "ok": true,
+      "texto": "0. quitarlo deja su propio evento"
+    },
+    {
+      "ok": true,
+      "texto": "0. el comando no deja al personal sin administración"
+    },
+    {
+      "ok": true,
+      "texto": "0. Ofelia vuelve a solo Administración: los flujos siguen como en producción"
+    },
+    {
+      "ok": true,
       "texto": "1. con el factor de hace 6 minutos, Personal pide «Confirma que eres tú» antes de tocar roles"
     },
     {
@@ -361,14 +401,6 @@
     },
     {
       "ok": true,
-      "texto": "9. Rosa tiene abierto el pago de Servicios Norte por autorizar"
-    },
-    {
-      "ok": true,
-      "texto": "9. Gil tiene abierta la nómina por preparar"
-    },
-    {
-      "ok": true,
       "texto": "aviso «suspension_solicitada» tras la acción"
     },
     {
@@ -393,11 +425,35 @@
     },
     {
       "ok": true,
-      "texto": "9. «Autorizar para pagar» en la página abierta: la base lo rechaza y el pago sigue por autorizar"
+      "texto": "9. el aviso de empresa suspendida se ve arriba de la consola"
     },
     {
       "ok": true,
-      "texto": "9. «Preparar nómina» en la página abierta: la base lo rechaza y no hay lote"
+      "texto": "9. Pagos sigue ofreciendo «Autorizar para pagar» a Rosa"
+    },
+    {
+      "ok": true,
+      "texto": "9. doble clic en «Autorizar para pagar»: la base lo rechaza, el pago sigue por autorizar y no hay evento"
+    },
+    {
+      "ok": true,
+      "texto": "9. Nómina sigue ofreciendo «Preparar nómina» a Gil"
+    },
+    {
+      "ok": true,
+      "texto": "9. doble clic en «Preparar nómina»: la base lo rechaza y no hay lote"
+    },
+    {
+      "ok": true,
+      "texto": "9. Personas: doble clic en «Crear área»: la base lo rechaza y no hay área"
+    },
+    {
+      "ok": true,
+      "texto": "9. Invitaciones: doble clic en «Renovar y reenviar invitación»: la base lo rechaza y no sale otra"
+    },
+    {
+      "ok": true,
+      "texto": "9. Iván no puede aceptar su invitación: la base lo rechaza y la pantalla dice que la empresa está suspendida"
     },
     {
       "ok": true,
@@ -409,11 +465,7 @@
     },
     {
       "ok": true,
-      "texto": "9. directo en la base como rol cliente, editar la política: rechazado con «empresa_suspendida»"
-    },
-    {
-      "ok": true,
-      "texto": "9. el aviso de empresa suspendida se ve arriba de la consola"
+      "texto": "9. directo en la base como rol cliente, editar un proveedor: rechazado con «empresa_suspendida»"
     },
     {
       "ok": true,

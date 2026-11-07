@@ -790,7 +790,7 @@ export const MENSAJE_RECHAZO: Record<
   },
   empresa_suspendida: {
     titulo: "La empresa está suspendida",
-    texto: "No se prepara nómina ni se hacen cambios mientras esté suspendida. Comunícate con Lever.",
+    texto: "Mientras esté suspendida no se guardan cambios en Personas ni se prepara nómina. Comunícate con Lever.",
   },
   nomina_bloqueada_lpb: {
     titulo: "La nómina quedó detenida",

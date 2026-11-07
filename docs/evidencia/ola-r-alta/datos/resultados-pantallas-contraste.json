@@ -227,6 +227,22 @@
     {
       "ok": true,
       "texto": "contraste oscuro 390: 168 textos, mínimo 6.12"
+    },
+    {
+      "ok": true,
+      "texto": "contraste claro 1440: 370 textos, mínimo 5.14"
+    },
+    {
+      "ok": true,
+      "texto": "contraste claro 390: 168 textos, mínimo 5.05"
+    },
+    {
+      "ok": true,
+      "texto": "contraste lever 1440: 370 textos, mínimo 5.00"
+    },
+    {
+      "ok": true,
+      "texto": "contraste lever 390: 168 textos, mínimo 5.89"
     }
   ]
 }

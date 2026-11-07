@@ -8,10 +8,12 @@
 // Todo pasa por clics, con la sesión SOFIPO o de cliente de cada persona. La base se toca como
 // dueña solo para: envejecer el segundo factor de Ofelia (para ver «Confirma que eres tú» sin
 // esperar 5 minutos), renovar el último uso de las sesiones sembradas, contar filas que prueban
-// que un doble clic dejó una sola operación y, en el flujo 9, intentar como rol cliente las
-// escrituras que la pantalla ya no ofrece. La fase «lumbre» de preparar.ts siembra la revisión
-// de riesgo vencida del flujo 4. Solo corre contra un Postgres local.
-import { execFileSync } from "node:child_process";
+// que un doble clic dejó una sola operación y, en el flujo 9, intentar además como rol cliente
+// las escrituras que la consola suspendida ofrece y la base rechaza. El arranque (flujo 0) corre
+// el comando de roles iniciales con la conexión de la dueña, como se hará tras el despliegue. La
+// fase «lumbre» de preparar.ts siembra la revisión de riesgo vencida del flujo 4. Solo corre
+// contra un Postgres local.
+import { execFileSync, spawnSync } from "node:child_process";
 import { createHash, createHmac } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -111,9 +113,10 @@ async function abrir(quien, { tema = "oscuro", ancho = 1440 } = {}) {
     reducedMotion: "reduce", locale: "es-MX", timezoneId: "America/Mexico_City", acceptDownloads: true,
   });
   const host = new URL(BASE).hostname;
+  // Quien no tiene sesión sembrada (Iván, que llega por su invitación) entra sin cookie.
   await ctx.addCookies([
     { name: "tema", value: tema, domain: host, path: "/" },
-    { name: "__Host-sesion", value: E.SESIONES[quien], domain: host, path: "/", httpOnly: true, secure: true, sameSite: "Lax" },
+    ...(E.SESIONES[quien] ? [{ name: "__Host-sesion", value: E.SESIONES[quien], domain: host, path: "/", httpOnly: true, secure: true, sameSite: "Lax" }] : []),
   ]);
   const p = await ctx.newPage();
   const errores = [];
@@ -201,6 +204,43 @@ const LPB_2 = `${LPB_1}\nServicios Norte Integrales,BBB020202BA2,,moral,2026-11-
 const companyIdDe = (rfc) => sql(`select id from companies where rfc = '${rfc}'`);
 
 // ---------- Flujos ----------
+/** El comando de roles iniciales (scripts/plataforma.ts personal:rol) con la conexión de la dueña de la base. */
+function comandoDeRoles(...args) {
+  const salida = spawnSync("./node_modules/.bin/tsx", ["scripts/plataforma.ts", "personal:rol", ...args], {
+    encoding: "utf8", env: { ...process.env, DATABASE_URL: "", DATABASE_URL_UNPOOLED: DUENO },
+  });
+  return { estado: salida.status, texto: `${salida.stdout}${salida.stderr}`.trim() };
+}
+
+async function flujo0() {
+  console.log("\n— Arranque: comando de roles iniciales cuando Ofelia es la única que administra al personal");
+  renovarSesiones();
+  exigir(cuenta("platform_staff_roles where rol = 'administracion_plataforma'") === 1, "0. como en producción, una sola persona administra al personal y nadie puede darle un rol por pantalla");
+  const motivo = "Arranque de la 0028 en la evidencia local: acta del consejo";
+  const eventos = (accion) => cuenta(`audit_log where accion = '${accion}' and identificador = '${E.IDS.ofelia}' and actor_tipo = 'sistema' and origen = 'comando'`);
+  const primero = comandoDeRoles("--correo", "ofelia@lever.test", "--rol", "originacion", "--motivo", motivo);
+  exigir(primero.estado === 0 && primero.texto.includes("Se asignó el rol originacion"), "0. el comando le da Originación a Ofelia", primero.texto);
+  const segundo = comandoDeRoles("--correo", "ofelia@lever.test", "--rol", "originacion", "--motivo", motivo);
+  exigir(segundo.texto.includes("ya tenía el rol originacion"), "0. correrlo dos veces no cambia nada", segundo.texto);
+  exigir(cuenta(`platform_staff_roles where user_id = '${E.IDS.ofelia}' and rol = 'originacion'`) === 1 && eventos("rol_personal_asignado") === 1, "0. una fila y un solo evento «rol_personal_asignado» del comando, con su motivo");
+  exigir(!/postgres(ql)?:\/\//.test(primero.texto + segundo.texto), "0. el comando no imprime el connection string");
+  const { nav, p } = await abrir("ofelia");
+  await ir(p, "/operacion/personal");
+  const fila = p.locator("li", { has: p.getByRole("heading", { name: "Ofelia Plataforma (tú)" }) });
+  exigir(await fila.getByText("Originación", { exact: true }).isVisible(), "0. Personal muestra a Ofelia con Originación");
+  await foto(p, "f0-personal-rol-por-comando", false);
+  await ir(p, "/operacion/bitacora");
+  exigir(await p.getByText("Asignó un rol del personal").first().isVisible(), "0. la bitácora muestra «Asignó un rol del personal»");
+  await foto(p, "f0-bitacora-rol-por-comando", false);
+  const quitado = comandoDeRoles("--correo", "ofelia@lever.test", "--rol", "originacion", "--motivo", motivo, "--quitar");
+  exigir(quitado.texto.includes("Se quitó el rol originacion") && eventos("rol_personal_retirado") === 1, "0. quitarlo deja su propio evento", quitado.texto);
+  const sinAdmin = comandoDeRoles("--correo", "ofelia@lever.test", "--rol", "administracion_plataforma", "--motivo", motivo, "--quitar");
+  exigir(sinAdmin.estado === 1 && sinAdmin.texto.includes("no se queda sin administración"), "0. el comando no deja al personal sin administración", sinAdmin.texto);
+  await ir(p, "/operacion/personal");
+  exigir(!(await fila.getByText("Originación", { exact: true }).isVisible()), "0. Ofelia vuelve a solo Administración: los flujos siguen como en producción");
+  await nav.close();
+}
+
 async function flujo1() {
   console.log("\n— Flujo 1: Administración asigna roles; el auditor no recibe Cumplimiento");
   renovarSesiones();
@@ -471,15 +511,8 @@ async function flujo7() {
 }
 
 async function flujo9() {
-  console.log("\n— Flujo 9: suspensión manual con doble firma; la consola no libera pagos ni prepara nómina");
+  console.log("\n— Flujo 9: suspensión manual con doble firma; la consola queda en solo lectura veraz");
   renovarSesiones();
-  const rosa = await abrir("rosa");
-  await ir(rosa.p, `/c/${TALLER}/consola/proveedores?pago=${PAGO_NORTE}`);
-  exigir(await rosa.p.getByRole("button", { name: "Autorizar para pagar" }).isVisible(), "9. Rosa tiene abierto el pago de Servicios Norte por autorizar");
-  const gil = await abrir("gil");
-  await ir(gil.p, `/c/${TALLER}/consola/personas/nomina`);
-  exigir(await gil.p.getByRole("button", { name: /^Preparar nómina del / }).isVisible(), "9. Gil tiene abierta la nómina por preparar");
-
   const omar = await abrir("omar");
   await ir(omar.p, `/operacion/clientes/${TALLER}`);
   await omar.p.locator("#motivo-suspension").fill("El banco corresponsal reportó operaciones que hay que revisar.");
@@ -495,27 +528,72 @@ async function flujo9() {
   exigir(sql(`select estado from companies where id = '${TALLER}'`) === "suspendida", "9. Taller del Cierre queda suspendida");
   await ana.nav.close();
 
-  await rosa.p.getByRole("button", { name: "Autorizar para pagar" }).click();
+  // Cada página se abre ya con la empresa suspendida: la consola conserva los botones de cada rol y,
+  // al usarlos, la base rechaza con su propio motivo y la pantalla lo dice (no un «sin permiso»).
+  const rosa = await abrir("rosa");
+  await ir(rosa.p, `/c/${TALLER}/consola/proveedores?pago=${PAGO_NORTE}`);
+  exigir(await rosa.p.getByText("La operación de Taller del Cierre está suspendida.").isVisible(), "9. el aviso de empresa suspendida se ve arriba de la consola");
+  const autorizar = rosa.p.getByRole("button", { name: "Autorizar para pagar" });
+  exigir(await autorizar.isVisible(), "9. Pagos sigue ofreciendo «Autorizar para pagar» a Rosa");
+  await autorizar.dblclick();
   await rosa.p.getByText("La empresa está suspendida").first().waitFor({ timeout: 20000 });
-  exigir(sql(`select estado from supplier_payment_requests where id = '${PAGO_NORTE}'`) === "por_autorizar", "9. «Autorizar para pagar» en la página abierta: la base lo rechaza y el pago sigue por autorizar");
+  exigir(
+    sql(`select estado from supplier_payment_requests where id = '${PAGO_NORTE}'`) === "por_autorizar"
+      && cuenta(`audit_log where accion = 'autorizar_pago_proveedor' and identificador = '${PAGO_NORTE}'`) === 0,
+    "9. doble clic en «Autorizar para pagar»: la base lo rechaza, el pago sigue por autorizar y no hay evento",
+  );
   await foto(rosa.p, "f9-pago-rechazado-empresa-suspendida", false);
-  await gil.p.getByRole("button", { name: /^Preparar nómina del / }).click();
+
+  const gil = await abrir("gil");
+  await ir(gil.p, `/c/${TALLER}/consola/personas/nomina`);
+  const preparar = gil.p.getByRole("button", { name: /^Preparar nómina del / });
+  exigir(await preparar.isVisible(), "9. Nómina sigue ofreciendo «Preparar nómina» a Gil");
+  await preparar.dblclick();
   await gil.p.getByText("La empresa está suspendida").first().waitFor({ timeout: 20000 });
-  exigir(cuenta(`payroll_batches where company_id = '${TALLER}'`) === 0, "9. «Preparar nómina» en la página abierta: la base lo rechaza y no hay lote");
+  exigir(cuenta(`payroll_batches where company_id = '${TALLER}'`) === 0, "9. doble clic en «Preparar nómina»: la base lo rechaza y no hay lote");
   await foto(gil.p, "f9-nomina-rechazada-empresa-suspendida", false);
+
+  await ir(gil.p, `/c/${TALLER}/consola/personas/areas`);
+  await gil.p.locator("#centroNombre").fill("Ventas");
+  await gil.p.locator("#centroPresupuesto").fill("5000.00");
+  await gil.p.getByRole("button", { name: "Crear área" }).dblclick();
+  await gil.p.getByText("La empresa está suspendida").first().waitFor({ timeout: 20000 });
+  exigir(cuenta(`cost_centers where company_id = '${TALLER}' and nombre = 'Ventas'`) === 0, "9. Personas: doble clic en «Crear área»: la base lo rechaza y no hay área");
+  await foto(gil.p, "f9-area-rechazada-empresa-suspendida", false);
+
+  const ivan = sql(`select id from employees where company_id = '${TALLER}' and nombre = 'Iván Invitado'`);
+  const invitaciones = () => cuenta(`invitations i join users u on u.id = i.user_id where i.company_id = '${TALLER}' and lower(u.correo) = 'ivan@taller.test'`);
+  const antes = invitaciones();
+  await ir(gil.p, `/c/${TALLER}/consola/personas/${ivan}`);
+  await gil.p.getByRole("button", { name: "Renovar y reenviar invitación" }).dblclick();
+  await gil.p.getByText("La empresa está suspendida").first().waitFor({ timeout: 20000 });
+  exigir(invitaciones() === antes, "9. Invitaciones: doble clic en «Renovar y reenviar invitación»: la base lo rechaza y no sale otra");
+  await foto(gil.p, "f9-invitacion-rechazada-empresa-suspendida", false);
   await gil.nav.close();
+
+  const invitado = await abrir("ivan");
+  await ir(invitado.p, `/invitacion/${E.INVITACION_IVAN}`);
+  await invitado.p.getByLabel("Contraseña nueva").fill("clave-segura-12");
+  await invitado.p.getByLabel("Repite la contraseña").fill("clave-segura-12");
+  await invitado.p.getByRole("button", { name: "Aceptar la invitación" }).dblclick();
+  await invitado.p.getByText("La empresa está suspendida y por ahora no admite cuentas nuevas").waitFor({ timeout: 20000 });
+  exigir(
+    cuenta(`invitations i join users u on u.id = i.user_id where i.company_id = '${TALLER}' and lower(u.correo) = 'ivan@taller.test' and i.usada_en is not null`) === 0
+      && cuenta(`memberships m join users u on u.id = m.user_id where m.company_id = '${TALLER}' and lower(u.correo) = 'ivan@taller.test' and m.estado = 'activa'`) === 0,
+    "9. Iván no puede aceptar su invitación: la base lo rechaza y la pantalla dice que la empresa está suspendida",
+  );
+  await foto(invitado.p, "f9-aceptar-invitacion-empresa-suspendida", false);
+  await invitado.nav.close();
 
   const directo = [
     ["liberar el pago", `update supplier_payment_requests set estado = 'listo_para_pagar', resuelto_por = '${E.IDS.rosa}', resuelto_en = now() where id = '${PAGO_NORTE}'`],
     ["preparar un lote", `insert into payroll_batches (id, company_id) values (gen_random_uuid(), '${TALLER}')`],
-    ["editar la política", `update suppliers set nombre_comercial = 'cambio' where company_id = '${TALLER}'`],
+    ["editar un proveedor", `update suppliers set nombre_comercial = 'cambio' where company_id = '${TALLER}'`],
   ];
   for (const [que, sentencia] of directo) {
     const salida = comoCliente(TALLER, que === "liberar el pago" ? E.IDS.rosa : E.IDS.gil, sentencia);
     exigir(salida.includes("empresa_suspendida"), `9. directo en la base como rol cliente, ${que}: rechazado con «empresa_suspendida»`, salida.split("\n")[0]);
   }
-  await ir(rosa.p, `/c/${TALLER}/consola/proveedores`);
-  exigir(await rosa.p.getByText("La operación de Taller del Cierre está suspendida.").isVisible(), "9. el aviso de empresa suspendida se ve arriba de la consola");
   for (const tema of TEMAS) {
     for (const ancho of ANCHOS) {
       const vista = await abrir("rosa", { tema, ancho });
@@ -753,6 +831,7 @@ async function contraste() {
 let fallo = null;
 try {
   if (FASES.includes("flujos")) {
+    await flujo0();
     await flujo1();
     await flujo2();
     await flujo3();

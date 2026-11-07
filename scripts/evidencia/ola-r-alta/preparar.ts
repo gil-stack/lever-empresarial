@@ -3,7 +3,9 @@
 //   base    Crea la base desde cero, aplica db/migrations (0001-0028) y la semilla de
 //           Pagos a proveedores (Taller del Cierre: proveedores, un pago por autorizar y las
 //           sesiones de Gil y Rosa). Da de alta, con los servicios del producto, a Marta Ruiz
-//           con nómina semanal (el lote queda por preparar). Siembra al personal SOFIPO:
+//           con nómina semanal (el lote queda por preparar) y a Iván Invitado con acceso por
+//           aceptar (su enlace va a ESTADO: el flujo 9 intenta aceptarlo con la empresa
+//           suspendida). Siembra al personal SOFIPO:
 //           Ofelia administra; Omar, Ana, Celia y Aurelio entran sin rol, porque el flujo 1
 //           se los da por pantalla. Cada quien con su app autenticadora (semilla cifrada como
 //           la guarda el producto) y una sesión SOFIPO con segundo factor.
@@ -96,6 +98,7 @@ type Estado = {
   SEMILLAS: Record<string, string>;
   IDS: Record<string, string>;
   EMPRESA_LUMBRE?: string;
+  INVITACION_IVAN: string;
 };
 
 async function faseBase(): Promise<void> {
@@ -124,6 +127,18 @@ async function faseBase(): Promise<void> {
     neto: "18500.00", frecuencia: "semanal", primerPago: hoy, destino: "clabe", clabe: "002180701150123452",
     acceso: "no", correo: "", rol: "",
   });
+  // Iván, con acceso por aceptar: en el flujo 9 la consola suspendida no renueva su invitación y él no puede aceptarla.
+  let invitacionIvan = "";
+  await darDeAltaPersona(gil, {
+    nombre: "Iván Invitado", alta: hoy, baja: "", centroId: area.id, jefeId: "", presupuesto: "", altaLlave: randomUUID(),
+    nomina: "no", acceso: "nueva", correo: "ivan@taller.test", rol: ["contador"],
+  }, {
+    entregar: async (emitida) => {
+      invitacionIvan = emitida.token;
+      return { entregada: false, codigo: "correo_no_configurado" };
+    },
+  });
+  if (!invitacionIvan) throw new Error("La invitación de Iván no quedó emitida.");
 
   const ids: Record<string, string> = { gil: "11111111-1111-4111-8111-111111111111", rosa: "22222222-2222-4222-8222-222222222222" };
   const semillas: Record<string, string> = {};
@@ -154,9 +169,10 @@ async function faseBase(): Promise<void> {
     SESIONES: sesiones,
     SEMILLAS: semillas,
     IDS: ids,
+    INVITACION_IVAN: invitacionIvan,
   };
   writeFileSync(rutaEstado, JSON.stringify(estado, null, 2), { mode: 0o600 });
-  console.log(`Base ${BASE} lista: 0001-0028, Taller, Marta con nómina y ${PERSONAL.length} personas del personal.`);
+  console.log(`Base ${BASE} lista: 0001-0028, Taller, Marta con nómina, Iván por aceptar y ${PERSONAL.length} personas del personal.`);
 }
 
 async function faseLumbre(): Promise<void> {
