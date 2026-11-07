@@ -35,6 +35,7 @@ import { aplicarArchivo, conBaseDesechable, exigirBaseDesechable, urlDeAplicacio
 import {
   almacenEnMemoria,
   armarBorrador,
+  DATOS_GENERALES,
   expedienteEnRegla,
   PDF,
   personal,
@@ -189,6 +190,22 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           await assert.rejects(enviarVersion(ori, gammaV1), /expediente_sin_representante/);
 
           ({ versionId: alfaV1 } = await armarBorrador(ori, { companyId: alfa, razonSocial: "Alfa Comercial SA de CV", rfc: "ALF150301AB1", socios: DOS_CAPAS, almacen }));
+          // Cada dato general cae en su columna (la sentencia lista las columnas en el orden de la validación).
+          const guardados = (await dueno.query(
+            `select razon_social, giro, nacionalidad, rfc, serie_efirma, domicilio_calle, domicilio_exterior, domicilio_interior,
+                    domicilio_colonia, domicilio_municipio, domicilio_entidad, domicilio_codigo_postal, domicilio_pais, telefono,
+                    correo, fecha_constitucion::text as fecha_constitucion, volumen_mensual_centavos::text as volumen
+             from kyb_versiones where id = $1`,
+            [alfaV1],
+          )).rows[0];
+          assert.deepEqual(guardados, {
+            razon_social: "Alfa Comercial SA de CV", giro: DATOS_GENERALES.giro, nacionalidad: DATOS_GENERALES.nacionalidad, rfc: "ALF150301AB1",
+            serie_efirma: DATOS_GENERALES.serieEfirma, domicilio_calle: DATOS_GENERALES.domicilioCalle, domicilio_exterior: DATOS_GENERALES.domicilioExterior,
+            domicilio_interior: null, domicilio_colonia: DATOS_GENERALES.domicilioColonia, domicilio_municipio: DATOS_GENERALES.domicilioMunicipio,
+            domicilio_entidad: DATOS_GENERALES.domicilioEntidad, domicilio_codigo_postal: DATOS_GENERALES.domicilioCodigoPostal,
+            domicilio_pais: DATOS_GENERALES.domicilioPais, telefono: DATOS_GENERALES.telefono, correo: DATOS_GENERALES.correo,
+            fecha_constitucion: DATOS_GENERALES.fechaConstitucion, volumen: "10000000",
+          });
           const previa = await leerExpediente(ori, alfa);
           assert.deepEqual(previa?.borrador?.accionistas.map((a) => [a.nombre, a.capa]), [
             ["Holding Uno SA de CV", 1], ["Mario López Paz", 2], ["Ana Díaz Mora", 2], ["Pedro Ruiz Sol", 1],
@@ -605,9 +622,11 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           assert.equal(await eventos("rol_personal_retirado"), 1);
           assert.equal(await contar("select count(*)::int as n from platform_staff_roles where user_id = $1 and rol = 'aprobacion'", [ADM]), 0);
 
-          // Con la conexión agrupada ni siquiera conecta.
+          // Con la conexión agrupada ni siquiera conecta (el host lleva -pooler, como el de Neon).
+          const urlAgrupada = new URL(urlDuena);
+          urlAgrupada.hostname = "ep-ejemplo-pooler.neon.tech";
           const agrupada = spawnSync(join(process.cwd(), "node_modules/.bin/tsx"), ["scripts/plataforma.ts", "personal:rol", "--correo", correoAdm, "--rol", "aprobacion", "--motivo", motivo], {
-            cwd: process.cwd(), encoding: "utf8", env: { ...process.env, DATABASE_URL_UNPOOLED: "postgres://u@ep-ejemplo-pooler.neon.tech/plataforma" },
+            cwd: process.cwd(), encoding: "utf8", env: { ...process.env, DATABASE_URL_UNPOOLED: urlAgrupada.toString() },
           });
           assert.equal(agrupada.status, 1);
           assert.match(agrupada.stderr, /connection string agrupado/);

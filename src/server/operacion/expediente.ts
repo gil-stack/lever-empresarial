@@ -394,6 +394,7 @@ export async function crearVersion(ctx: ContextoDePersonal, entrada: { companyId
   return id;
 }
 
+// El orden de CAMPOS_DATOS es el de los placeholders de ACTUALIZAR_DATOS ($2 en adelante).
 const CAMPOS_DATOS: Array<[keyof DatosGenerales, string, (valor: unknown) => string | number | null | undefined]> = [
   ["razonSocial", "razon_social", (v) => opcional(v, (t) => textoOperativo(t, 300))],
   ["giro", "giro", (v) => opcional(v, (t) => textoOperativo(t, 200))],
@@ -414,6 +415,13 @@ const CAMPOS_DATOS: Array<[keyof DatosGenerales, string, (valor: unknown) => str
   ["volumenMensualCentavos", "volumen_mensual_centavos", (v) => opcional(v, (t) => pesosACentavos(t))],
 ];
 
+const ACTUALIZAR_DATOS = `update kyb_versiones set
+  razon_social = $2, giro = $3, nacionalidad = $4, rfc = $5, serie_efirma = $6, domicilio_calle = $7,
+  domicilio_exterior = $8, domicilio_interior = $9, domicilio_colonia = $10, domicilio_municipio = $11,
+  domicilio_entidad = $12, domicilio_codigo_postal = $13, domicilio_pais = $14, telefono = $15, correo = $16,
+  fecha_constitucion = $17, volumen_mensual_centavos = $18
+  where id = $1 and estado = 'borrador'`;
+
 /** Guarda los datos generales del borrador. Un campo vacío queda vacío; uno mal escrito devuelve su código. */
 export async function guardarDatosGenerales(
   ctx: ContextoDePersonal,
@@ -429,8 +437,7 @@ export async function guardarDatosGenerales(
   }
   const ahora = new Date();
   await conBorrador(ctx, entrada.versionId, async (consulta, version) => {
-    const asignaciones = CAMPOS_DATOS.map(([, columna], indice) => `${columna} = $${indice + 2}`).join(", ");
-    await consulta.query(`update kyb_versiones set ${asignaciones} where id = $1 and estado = 'borrador'`, [version.id, ...valores]);
+    await consulta.query(ACTUALIZAR_DATOS, [version.id, ...valores]);
     await auditarOperacion(consulta, ctx, {
       companyId: version.companyId, accion: "expediente_datos_editados", identificador: version.id, ocurridoEn: ahora,
     });
@@ -531,13 +538,18 @@ export async function retirarDelBorrador(
 ): Promise<void> {
   exigirEnOperacion(ctx, "plataforma.expediente.capturar");
   if (!uuidValido(entrada.versionId) || !uuidValido(entrada.id)) throw new ErrorDeDominio("expediente_ausente");
-  const tabla = entrada.tipo === "representante" ? "kyb_representantes" : "kyb_accionistas";
   const ahora = new Date();
   await conBorrador(ctx, entrada.versionId, async (consulta, version) => {
-    const retirado = await consulta.query(
-      `update ${tabla} set retirado_en = $3, retirado_por = $4 where id = $1 and version_id = $2 and retirado_en is null`,
-      [entrada.id, version.id, ahora, ctx.persona.id],
-    );
+    const parametros = [entrada.id, version.id, ahora, ctx.persona.id];
+    const retirado = entrada.tipo === "representante"
+      ? await consulta.query(
+        "update kyb_representantes set retirado_en = $3, retirado_por = $4 where id = $1 and version_id = $2 and retirado_en is null",
+        parametros,
+      )
+      : await consulta.query(
+        "update kyb_accionistas set retirado_en = $3, retirado_por = $4 where id = $1 and version_id = $2 and retirado_en is null",
+        parametros,
+      );
     if (retirado.rowCount !== 1) return;
     await auditarOperacion(consulta, ctx, {
       companyId: version.companyId,
@@ -822,10 +834,9 @@ async function conBorrador(
 }
 
 async function versionEnBorrador(consulta: Consulta, versionId: string, bloquear = false): Promise<{ id: string; companyId: string }> {
-  const fila = await consulta.query(
-    `select id, company_id, estado from kyb_versiones where id = $1${bloquear ? " for update" : ""}`,
-    [versionId],
-  );
+  const fila = bloquear
+    ? await consulta.query("select id, company_id, estado from kyb_versiones where id = $1 for update", [versionId])
+    : await consulta.query("select id, company_id, estado from kyb_versiones where id = $1", [versionId]);
   const version = fila.rows[0] as { id?: unknown; company_id?: unknown; estado?: unknown } | undefined;
   if (!version) throw new ErrorDeDominio("expediente_ausente");
   if (version.estado !== "borrador") throw new ErrorDeDominio("expediente_enviado_inmutable");
