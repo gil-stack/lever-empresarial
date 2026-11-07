@@ -98,6 +98,7 @@ export async function Marco({
         lista69b,
         configuracion: true,
         telefono: false,
+        flujo: false,
       }
     : puertasDe(vista.capacidades);
   const grupos = seccionesDe(puertas, deMuestra ? null : vista.empresaId);

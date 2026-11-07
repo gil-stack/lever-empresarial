@@ -67,6 +67,7 @@ export function puertasDe(capacidades: readonly Capacidad[]): {
   lista69b: boolean;
   configuracion: boolean;
   telefono: boolean;
+  flujo: boolean;
 } {
   return {
     consola: tiene(capacidades, "cliente.consola.ver"),
@@ -78,5 +79,6 @@ export function puertasDe(capacidades: readonly Capacidad[]): {
     lista69b: tiene(capacidades, "cliente.lista69b.ver") || tiene(capacidades, "plataforma.lista69b.cargar"),
     configuracion: tiene(capacidades, "cliente.configuracion.ver"),
     telefono: tiene(capacidades, "telefono.inicio.ver"),
+    flujo: tiene(capacidades, "cliente.flujo.ver"),
   };
 }

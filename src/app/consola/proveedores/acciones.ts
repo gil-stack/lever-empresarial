@@ -62,6 +62,7 @@ export async function enviarProveedor(
           contrato: contrato.bytes && contrato.meta ? { nombre: contrato.meta.nombre, bytes: contrato.bytes } : null,
           contratoDesde: formData.get("contratoDesde"),
           contratoHasta: formData.get("contratoHasta"),
+          areaId: formData.get("areaId"),
         });
         revalidatePath("/consola/proveedores");
         revalidatePath("/consola/pendientes");
@@ -84,6 +85,9 @@ function traducir(error: unknown): EstadoAltaProveedor {
   if (!(error instanceof ErrorDeDominio)) {
     if (errorConSecreto(error)) return { tipo: "rechazado", codigo: "libro" };
     throw error;
+  }
+  if (error.codigo === "area_ajena") {
+    return { tipo: "invalido", errores: [{ campo: "areaId", mensaje: "Esa área no es de esta empresa. Elige una de la lista o deja «Sin área»." }] };
   }
   const campo = errorDeCodigo(error.codigo);
   if (campo) return { tipo: "invalido", errores: [campo] };

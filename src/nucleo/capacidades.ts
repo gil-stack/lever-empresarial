@@ -18,9 +18,9 @@ export type RolPlataforma = (typeof ROLES_PLATAFORMA)[number];
 type Regla<R> = { superficie: Superficie; roles: readonly R[] };
 
 /**
- * Finanzas es un acceso adicional, no un rol de trabajo: abre Inicio y
- * Pendientes y nada más (ni el teléfono). Una membresía no se queda solo con
- * Finanzas.
+ * Finanzas es un acceso adicional, no un rol de trabajo: abre Inicio,
+ * Pendientes y el flujo de caja (saldo, cobros, calendario y presupuestos), y
+ * nada más (ni el teléfono). Una membresía no se queda solo con Finanzas.
  */
 const DE_TRABAJO: readonly RolCliente[] = ROLES_CLIENTE.filter((rol) => rol !== "finanzas");
 const DE_CONSOLA: readonly RolCliente[] = ["administrador", "solicitante", "liberador", "contador"];
@@ -28,6 +28,10 @@ const DE_CONSOLA: readonly RolCliente[] = ["administrador", "solicitante", "libe
 const DEL_CLIENTE = {
   "cliente.consola.ver": { superficie: "cliente", roles: [...DE_CONSOLA, "finanzas"] },
   "cliente.resumen.ver": { superficie: "cliente", roles: ["administrador", "finanzas"] },
+  // Flujo de caja: quien ve el resumen lo ve; la contaduría lo lee sin editar.
+  "cliente.flujo.ver": { superficie: "cliente", roles: ["administrador", "finanzas", "contador"] },
+  // Saldo declarado, cobros esperados, obligaciones, colchón y área de un proveedor.
+  "cliente.flujo.editar": { superficie: "cliente", roles: ["administrador", "finanzas"] },
   "cliente.precio.ver": { superficie: "cliente", roles: DE_CONSOLA },
   "cliente.plan.ver": { superficie: "cliente", roles: ["administrador"] },
   "cliente.configuracion.ver": { superficie: "cliente", roles: ["administrador"] },

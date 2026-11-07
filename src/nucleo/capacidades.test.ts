@@ -21,9 +21,14 @@ describe("capacidades por superficie", () => {
     assert.equal(tiene(capacidades, "cliente.plan.ver"), true);
   });
 
-  it("finanzas abre exactamente el resumen y pendientes: sin teléfono ni permisos operativos", () => {
+  it("finanzas abre exactamente el resumen, pendientes y el flujo: sin teléfono ni permisos operativos", () => {
     const capacidades = capacidadesDe({ rolesCliente: ["finanzas"], rolesPlataforma: [] });
-    assert.deepEqual([...capacidades].sort(), ["cliente.consola.ver", "cliente.resumen.ver"]);
+    assert.deepEqual([...capacidades].sort(), [
+      "cliente.consola.ver",
+      "cliente.flujo.editar",
+      "cliente.flujo.ver",
+      "cliente.resumen.ver",
+    ]);
     for (const telefono of ["telefono.inicio.ver", "telefono.topes.ver", "telefono.facturacion.ver"] as const) {
       assert.equal(tiene(capacidades, telefono), false, telefono);
     }
@@ -34,10 +39,24 @@ describe("capacidades por superficie", () => {
     const conFinanzas = capacidadesDe({ rolesCliente: ["contador", "finanzas"], rolesPlataforma: [] });
     assert.deepEqual(
       conFinanzas.filter((capacidad) => !contador.includes(capacidad)),
-      ["cliente.resumen.ver"],
+      ["cliente.resumen.ver", "cliente.flujo.editar"],
     );
     assert.equal(tieneRolDeTrabajo(["finanzas"]), false);
     assert.equal(tieneRolDeTrabajo(["tarjetahabiente", "finanzas"]), true);
+  });
+
+  it("el flujo de caja: administración y finanzas editan, contaduría solo lee, nadie más lo abre", () => {
+    const de = (rol: Parameters<typeof capacidadesDe>[0]["rolesCliente"][number]) => capacidadesDe({ rolesCliente: [rol], rolesPlataforma: [] });
+    for (const rol of ["administrador", "finanzas"] as const) {
+      assert.equal(tiene(de(rol), "cliente.flujo.ver"), true, rol);
+      assert.equal(tiene(de(rol), "cliente.flujo.editar"), true, rol);
+    }
+    assert.equal(tiene(de("contador"), "cliente.flujo.ver"), true);
+    assert.equal(tiene(de("contador"), "cliente.flujo.editar"), false);
+    for (const rol of ["solicitante", "liberador", "tarjetahabiente"] as const) {
+      assert.equal(tiene(de(rol), "cliente.flujo.ver"), false, rol);
+      assert.equal(tiene(de(rol), "cliente.flujo.editar"), false, rol);
+    }
   });
 
   it("solicitante sigue leyéndose en membresías históricas", () => {

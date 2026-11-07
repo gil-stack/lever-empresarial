@@ -131,6 +131,27 @@ describe("adaptador de Resend", () => {
     assert.equal(`${error.message}${error.stack}`.includes(CLAVE), false);
   });
 
+  it("distingue los dos 409 de la llave de idempotencia por el name del error (doc de Resend)", async () => {
+    const casos: Array<[unknown, string]> = [
+      // La llave ya se usó con otro contenido: esa primera petición sí salió (Resend no guarda las fallidas).
+      [{ statusCode: 409, name: "invalid_idempotent_request", message: `clave ${CLAVE} usada` }, "correo_ya_enviado"],
+      // Otra petición con la misma llave sigue en curso: se puede reintentar después.
+      [{ statusCode: 409, name: "concurrent_idempotent_requests", message: "en curso" }, "correo_en_curso"],
+      // Un 409 sin el name conocido o sin JSON no se toma como enviado.
+      [{ statusCode: 409, name: "otro" }, "correo_no_disponible"],
+      ["no es json", "correo_no_disponible"],
+    ];
+    for (const [cuerpo, codigo] of casos) {
+      const enviar = enviadorResend({ apiKey: CLAVE, remitente: REMITENTE }, async () =>
+        typeof cuerpo === "string" ? new Response(cuerpo, { status: 409 }) : Response.json(cuerpo, { status: 409 }),
+      );
+      const error = await capturarAsync(() => enviar(MENSAJE));
+      assert.ok(error instanceof ErrorDeCorreo);
+      assert.equal(error.codigo, codigo);
+      assert.equal(`${error.message}${error.stack}`.includes(CLAVE), false);
+    }
+  });
+
   it("sin configuración no toca la red", () => {
     let llamadas = 0;
     const error = capturar(() =>
