@@ -340,7 +340,7 @@
 }
 
 .arco-panel-datos dt {
-  color: #7b828c;
+  color: var(--arco-suave);
   font-size: 0.68rem;
 }
 
@@ -357,7 +357,7 @@
 
 .arco-movimientos > p {
   margin: 0 0 8px;
-  color: #777f8a;
+  color: var(--arco-suave);
   font-size: 0.67rem;
   font-weight: 550;
   letter-spacing: 0.06em;
@@ -386,7 +386,7 @@
 
 .arco-movimiento small {
   margin-top: 2px;
-  color: #838a94;
+  color: var(--arco-suave);
   font-size: 0.66rem;
 }
 
@@ -434,13 +434,13 @@
 
 .arco-aprobacion small {
   margin-top: 1px;
-  color: #78818d;
+  color: var(--arco-suave);
   font-size: 0.65rem;
 }
 
 .arco-visual-nota {
   margin: 12px 0 0;
-  color: #9298a0;
+  color: var(--arco-suave);
   font-size: 0.63rem;
   text-align: center;
 }
@@ -475,7 +475,7 @@
 }
 
 .arco-franja li {
-  color: #818791;
+  color: var(--arco-suave);
   font-size: 0.7rem;
 }
 
@@ -586,7 +586,7 @@
 
 .arco-paso-numero {
   padding-top: 4px;
-  color: #7c858f;
+  color: var(--arco-suave);
   font-size: 0.62rem;
   font-variant-numeric: tabular-nums;
 }
@@ -619,7 +619,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  color: #7a828d;
+  color: var(--arco-suave);
   font-size: 0.64rem;
   font-weight: 550;
   letter-spacing: 0.08em;
@@ -656,7 +656,7 @@
 }
 
 .arco-mexico-ficha li span {
-  color: #7b838e;
+  color: var(--arco-suave);
 }
 
 .arco-mexico-ficha li strong {
@@ -666,7 +666,7 @@
 
 .arco-mexico-ficha > p {
   margin: 20px 0 0;
-  color: #9298a1;
+  color: var(--arco-suave);
   font-size: 0.62rem;
 }
 
@@ -922,7 +922,8 @@
   margin: 0;
   padding-top: 24px;
   border-top: 1px solid var(--arco-linea);
-  color: #8a9099;
+  /* #8a9099 daba 3.2:1 sobre el papel; el gris suave pasa AA. */
+  color: var(--arco-suave);
   font-size: 0.65rem;
 }
 

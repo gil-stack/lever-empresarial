@@ -1,0 +1,669 @@
+OK captura 30-op-invitacion-oscuro-1440.webp
+OK captura 30-op-invitacion-oscuro-390.webp
+OK captura 30-op-invitacion-claro-1440.webp
+OK captura 30-op-invitacion-claro-390.webp
+OK captura 30-op-invitacion-lever-1440.webp
+OK captura 30-op-invitacion-lever-390.webp
+OK op@lever.test: doble clic en «Aceptar la invitación» deja una sola invitación usada
+OK captura 30-op-alta-factor-oscuro-1440.webp
+OK captura 30-op-alta-factor-oscuro-390.webp
+OK captura 30-op-alta-factor-claro-1440.webp
+OK captura 30-op-alta-factor-claro-390.webp
+OK captura 30-op-alta-factor-lever-1440.webp
+OK captura 30-op-alta-factor-lever-390.webp
+OK op@lever.test abre Operación en Resumen con un solo h1
+OK captura 31-op2-invitacion-oscuro-1440.webp
+OK captura 31-op2-invitacion-oscuro-390.webp
+OK captura 31-op2-invitacion-claro-1440.webp
+OK captura 31-op2-invitacion-claro-390.webp
+OK captura 31-op2-invitacion-lever-1440.webp
+OK captura 31-op2-invitacion-lever-390.webp
+OK op2@lever.test: doble clic en «Aceptar la invitación» deja una sola invitación usada
+OK captura 31-op2-alta-factor-oscuro-1440.webp
+OK captura 31-op2-alta-factor-oscuro-390.webp
+OK captura 31-op2-alta-factor-claro-1440.webp
+OK captura 31-op2-alta-factor-claro-390.webp
+OK captura 31-op2-alta-factor-lever-1440.webp
+OK captura 31-op2-alta-factor-lever-390.webp
+OK op2@lever.test abre Operación en Resumen con un solo h1
+OK captura 10-operacion-entrar-oscuro-1440.webp
+OK captura 10-operacion-entrar-oscuro-390.webp
+OK captura 10-operacion-entrar-claro-1440.webp
+OK captura 10-operacion-entrar-claro-390.webp
+OK captura 10-operacion-entrar-lever-1440.webp
+OK captura 10-operacion-entrar-lever-390.webp
+OK Operación: el error de contraseña queda ligado al campo (aria-describedby)
+OK Operación: tras el error el correo sigue escrito
+OK captura 11-operacion-entrar-error-oscuro-1440.webp
+OK captura 12-operacion-segundo-factor-oscuro-1440.webp
+OK captura 12-operacion-segundo-factor-oscuro-390.webp
+OK captura 12-operacion-segundo-factor-claro-1440.webp
+OK captura 12-operacion-segundo-factor-claro-390.webp
+OK captura 12-operacion-segundo-factor-lever-1440.webp
+OK captura 12-operacion-segundo-factor-lever-390.webp
+OK op entra a Operación con contraseña y código TOTP
+OK /operacion/clientes sin datos lo dice: «Todavía no hay clientes»
+OK captura 09a-operacion-clientes-vacio-oscuro-1440.webp
+OK captura 09a-operacion-clientes-vacio-oscuro-390.webp
+OK captura 09a-operacion-clientes-vacio-claro-1440.webp
+OK captura 09a-operacion-clientes-vacio-claro-390.webp
+OK captura 09a-operacion-clientes-vacio-lever-1440.webp
+OK captura 09a-operacion-clientes-vacio-lever-390.webp
+OK /operacion/aprobaciones sin datos lo dice: «Nada por decidir»
+OK captura 09b-operacion-aprobaciones-vacio-oscuro-1440.webp
+OK captura 09b-operacion-aprobaciones-vacio-oscuro-390.webp
+OK captura 09b-operacion-aprobaciones-vacio-claro-1440.webp
+OK captura 09b-operacion-aprobaciones-vacio-claro-390.webp
+OK captura 09b-operacion-aprobaciones-vacio-lever-1440.webp
+OK captura 09b-operacion-aprobaciones-vacio-lever-390.webp
+OK /operacion/alertas sin datos lo dice: «Sin alertas»
+OK /operacion/alertas sin datos lo dice: «Sin clientes»
+OK captura 09c-operacion-alertas-vacio-oscuro-1440.webp
+OK captura 09c-operacion-alertas-vacio-oscuro-390.webp
+OK captura 09c-operacion-alertas-vacio-claro-1440.webp
+OK captura 09c-operacion-alertas-vacio-claro-390.webp
+OK captura 09c-operacion-alertas-vacio-lever-1440.webp
+OK captura 09c-operacion-alertas-vacio-lever-390.webp
+OK /operacion/comisiones sin datos lo dice: «Sin versiones»
+OK /operacion/comisiones sin datos lo dice: «Sin empresas activas»
+OK captura 09d-operacion-comisiones-vacio-oscuro-1440.webp
+OK captura 09d-operacion-comisiones-vacio-oscuro-390.webp
+OK captura 09d-operacion-comisiones-vacio-claro-1440.webp
+OK captura 09d-operacion-comisiones-vacio-claro-390.webp
+OK captura 09d-operacion-comisiones-vacio-lever-1440.webp
+OK captura 09d-operacion-comisiones-vacio-lever-390.webp
+OK /operacion/recuperaciones sin datos lo dice: «Sin solicitudes»
+OK captura 09e-operacion-recuperaciones-vacio-oscuro-1440.webp
+OK captura 09e-operacion-recuperaciones-vacio-oscuro-390.webp
+OK captura 09e-operacion-recuperaciones-vacio-claro-1440.webp
+OK captura 09e-operacion-recuperaciones-vacio-claro-390.webp
+OK captura 09e-operacion-recuperaciones-vacio-lever-1440.webp
+OK captura 09e-operacion-recuperaciones-vacio-lever-390.webp
+OK doble clic en «Registrar prospecto» deja una sola empresa
+OK doble clic en «Solicitar activación» deja una sola solicitud
+OK quien pidió la activación la ve sin botones
+OK captura 13-operacion-aprobaciones-oscuro-1440.webp
+OK captura 13-operacion-aprobaciones-oscuro-390.webp
+OK captura 13-operacion-aprobaciones-claro-1440.webp
+OK captura 13-operacion-aprobaciones-claro-390.webp
+OK captura 13-operacion-aprobaciones-lever-1440.webp
+OK captura 13-operacion-aprobaciones-lever-390.webp
+OK op2 aprueba la activación: Altamar queda activa
+OK doble clic en «Aprobar» deja una sola transición a activa
+OK captura 14-operacion-rechazar-dialogo-oscuro-1440.webp
+OK op2 rechaza con motivo desde el diálogo: una sola solicitud rechazada
+OK doble clic en «Enviar invitación» emite una sola invitación
+OK doble clic en «Reenviar invitación» anula el enlace anterior, deja uno solo vigente y registra un solo correo
+OK reenviar desde una ficha vieja no reemite: avisa que la invitación ya salió y no manda otro correo
+OK captura 15b-operacion-invitacion-ya-enviada-oscuro-1440.webp
+OK captura 15-operacion-ficha-cliente-oscuro-1440.webp
+OK captura 15-operacion-ficha-cliente-oscuro-390.webp
+OK captura 15-operacion-ficha-cliente-claro-1440.webp
+OK captura 15-operacion-ficha-cliente-claro-390.webp
+OK captura 15-operacion-ficha-cliente-lever-1440.webp
+OK captura 15-operacion-ficha-cliente-lever-390.webp
+OK mientras la base retiene operational_alerts, el botón queda apagado, con aria-busy y «Enviando…»
+OK captura 16a-operacion-crear-alerta-enviando-oscuro-1440.webp
+OK doble clic en «Crear alerta» deja una sola alerta
+OK «Guardar responsable» reasigna la alerta a op2
+OK captura 16-operacion-alertas-oscuro-1440.webp
+OK captura 16-operacion-alertas-oscuro-390.webp
+OK captura 16-operacion-alertas-claro-1440.webp
+OK captura 16-operacion-alertas-claro-390.webp
+OK captura 16-operacion-alertas-lever-1440.webp
+OK captura 16-operacion-alertas-lever-390.webp
+OK «Cerrar alerta» con motivo la cierra una vez
+OK «Alerta cerrada» se anuncia como hecho (role=status)
+OK cerrar una alerta que otra persona ya cerró se anuncia como rechazo (role=alert) y no cambia nada
+OK captura 16b-operacion-alerta-ya-cerrada-oscuro-1440.webp
+OK doble clic en «Pedir autorización» deja una sola versión
+OK op2 aprueba una comisión (queda vigente) y rechaza la otra con motivo
+OK captura 17-operacion-comisiones-oscuro-1440.webp
+OK captura 17-operacion-comisiones-oscuro-390.webp
+OK captura 17-operacion-comisiones-claro-1440.webp
+OK captura 17-operacion-comisiones-claro-390.webp
+OK captura 17-operacion-comisiones-lever-1440.webp
+OK captura 17-operacion-comisiones-lever-390.webp
+OK la Bitácora lista los eventos de este recorrido
+OK el selector de tema del lateral cambia Operación a Claro
+OK Mi perfil y seguridad abre /entrar/seguridad y «Volver a Operación» regresa
+OK /precios con sesión SOFIPO lleva a Precios dentro de Operación
+OK Precios queda marcado en la navegación de Operación
+OK captura 18-precios-sofipo-oscuro-1440.webp
+OK captura 18-precios-sofipo-oscuro-390.webp
+OK captura 18-precios-sofipo-claro-1440.webp
+OK captura 18-precios-sofipo-claro-390.webp
+OK captura 18-precios-sofipo-lever-1440.webp
+OK captura 18-precios-sofipo-lever-390.webp
+OK captura 19-precios-publicado-oscuro-1440.webp
+OK op publica la suscripción: 149900 centavos
+OK doble clic en «Publicar el monto» deja un solo evento en la bitácora
+OK captura 32-laura-invitacion-oscuro-1440.webp
+OK captura 32-laura-invitacion-oscuro-390.webp
+OK captura 32-laura-invitacion-claro-1440.webp
+OK captura 32-laura-invitacion-claro-390.webp
+OK captura 32-laura-invitacion-lever-1440.webp
+OK captura 32-laura-invitacion-lever-390.webp
+OK laura@altamar.test: doble clic en «Aceptar la invitación» deja una sola invitación usada
+OK captura 33-laura-alta-factor-oscuro-1440.webp
+OK captura 33-laura-alta-factor-oscuro-390.webp
+OK captura 33-laura-alta-factor-claro-1440.webp
+OK captura 33-laura-alta-factor-claro-390.webp
+OK captura 33-laura-alta-factor-lever-1440.webp
+OK captura 33-laura-alta-factor-lever-390.webp
+OK Laura acepta la invitación, registra su app autenticadora y entra al portal
+OK si la página se recarga con los códigos a la vista, «Ya puedes entrar.» y «Entrar al portal» abren el portal
+OK captura 20-entrar-oscuro-1440.webp
+OK captura 20-entrar-oscuro-390.webp
+OK captura 20-entrar-claro-1440.webp
+OK captura 20-entrar-claro-390.webp
+OK captura 20-entrar-lever-1440.webp
+OK captura 20-entrar-lever-390.webp
+OK Entrar: el error marca los campos con aria-invalid y aria-describedby
+OK Entrar: tras el error el correo sigue escrito
+OK captura 21-entrar-error-oscuro-1440.webp
+OK doble clic en «Continuar» abre una sola entrada
+OK captura 22-entrar-segundo-factor-oscuro-1440.webp
+OK captura 22-entrar-segundo-factor-oscuro-390.webp
+OK captura 22-entrar-segundo-factor-claro-1440.webp
+OK captura 22-entrar-segundo-factor-claro-390.webp
+OK captura 22-entrar-segundo-factor-lever-1440.webp
+OK captura 22-entrar-segundo-factor-lever-390.webp
+OK Laura entra con contraseña y código TOTP
+OK Teléfono sin ficha: lo dice y a quién pedirla
+OK captura 35-telefono-sin-ficha-oscuro-1440.webp
+OK Teléfono: un solo h1 en Inicio
+OK Topes muestra la categoría con tope y la que no tiene
+OK Pedir factura muestra el RFC de la empresa y su QR
+OK Teléfono: la barra de abajo y los accesos de Inicio llevan a Topes y Factura
+OK /precios con sesión de cliente no ofrece publicar
+OK captura 40-recuperar-oscuro-1440.webp
+OK captura 40-recuperar-oscuro-390.webp
+OK captura 40-recuperar-claro-1440.webp
+OK captura 40-recuperar-claro-390.webp
+OK captura 40-recuperar-lever-1440.webp
+OK captura 40-recuperar-lever-390.webp
+OK mientras la base retiene password_resets, el botón queda apagado, con aria-busy y «Enviando…»
+OK captura 40a-recuperar-enviando-oscuro-1440.webp
+OK doble clic en «Enviar el enlace» crea un solo enlace
+OK captura 41-recuperar-enviado-oscuro-1440.webp
+OK un correo sin cuenta recibe la misma respuesta y no crea enlace
+OK captura 42-recuperar-nueva-oscuro-1440.webp
+OK captura 42-recuperar-nueva-oscuro-390.webp
+OK captura 42-recuperar-nueva-claro-1440.webp
+OK captura 42-recuperar-nueva-claro-390.webp
+OK captura 42-recuperar-nueva-lever-1440.webp
+OK captura 42-recuperar-nueva-lever-390.webp
+OK doble clic en «Guardar la contraseña» la restablece una sola vez
+OK captura 43-recuperar-guardada-oscuro-1440.webp
+OK el enlace usado ya no sirve
+OK captura 44-recuperar-enlace-usado-oscuro-1440.webp
+OK captura 44-recuperar-enlace-usado-oscuro-390.webp
+OK captura 44-recuperar-enlace-usado-claro-1440.webp
+OK captura 44-recuperar-enlace-usado-claro-390.webp
+OK captura 44-recuperar-enlace-usado-lever-1440.webp
+OK captura 44-recuperar-enlace-usado-lever-390.webp
+OK Laura entra con la contraseña nueva y su segundo factor de siempre
+OK «Perdí el segundo factor» dice que pedir ayuda no quita nada y que el factor nuevo reemplaza a los anteriores
+OK captura 50-perdi-factor-oscuro-1440.webp
+OK captura 50-perdi-factor-oscuro-390.webp
+OK captura 50-perdi-factor-claro-1440.webp
+OK captura 50-perdi-factor-claro-390.webp
+OK captura 50-perdi-factor-lever-1440.webp
+OK captura 50-perdi-factor-lever-390.webp
+OK /entrar/continuar (perdí el segundo factor): contraste AA en 3 temas × 2 anchos (36 textos)
+OK doble clic en «Pedir recuperación» deja una sola solicitud
+OK captura 51-perdi-factor-en-revision-oscuro-1440.webp
+OK captura 51-perdi-factor-en-revision-oscuro-390.webp
+OK captura 51-perdi-factor-en-revision-claro-1440.webp
+OK captura 51-perdi-factor-en-revision-claro-390.webp
+OK captura 51-perdi-factor-en-revision-lever-1440.webp
+OK captura 51-perdi-factor-en-revision-lever-390.webp
+OK con el factor de hace 6 minutos, Recuperaciones pide «Confirma que eres tú»
+OK captura 52-recuperaciones-confirma-oscuro-1440.webp
+OK captura 52-recuperaciones-confirma-oscuro-390.webp
+OK captura 52-recuperaciones-confirma-claro-1440.webp
+OK captura 52-recuperaciones-confirma-claro-390.webp
+OK captura 52-recuperaciones-confirma-lever-1440.webp
+OK captura 52-recuperaciones-confirma-lever-390.webp
+OK captura 53-recuperaciones-solicitud-oscuro-1440.webp
+OK captura 53-recuperaciones-solicitud-oscuro-390.webp
+OK captura 53-recuperaciones-solicitud-claro-1440.webp
+OK captura 53-recuperaciones-solicitud-claro-390.webp
+OK captura 53-recuperaciones-solicitud-lever-1440.webp
+OK captura 53-recuperaciones-solicitud-lever-390.webp
+OK /operacion/recuperaciones (con solicitud): contraste AA en 3 temas × 2 anchos (129 textos)
+OK mientras la base retiene auth_recuperaciones, el botón queda apagado, con aria-busy y «Enviando…»
+OK el otro botón del formulario («Aprobar») se apaga sin aria-busy y conserva su texto
+OK captura 53a-recuperaciones-rechazando-oscuro-1440.webp
+OK op rechaza la solicitud con nota
+OK doble clic en «Rechazar» deja un solo rechazo en la bitácora
+OK la solicitud rechazada sale de la lista
+OK Enter en la nota escribe una línea y no decide: la solicitud sigue abierta
+OK el método de verificación arranca sin elegir
+OK el atajo «A» sin método no aprueba: 0 aprobaciones y la solicitud sigue abierta
+OK con el método vacío, el foco queda en el método y su error está ligado (aria-invalid, aria-describedby)
+OK captura 53b-recuperaciones-sin-metodo-oscuro-1440.webp
+OK contraste AA con el error del método a la vista (27 textos)
+OK al elegir el método, su error se va
+OK con el segundo factor de hace 6 minutos, Aprobar no aprueba: la solicitud sigue abierta y la bitácora no tiene aprobación
+OK tras el intento, Recuperaciones vuelve a pedir «Confirma que eres tú»
+OK una decisión alterada no aprueba: sin nota no decide y la solicitud sigue abierta
+OK motivo_invalido marca la nota (aria-invalid y aria-describedby al aviso), no el método
+OK verificacion_invalida marca el método, no la nota
+OK mientras la base retiene auth_recuperaciones, el botón queda apagado, con aria-busy y «Enviando…»
+OK el otro botón del formulario («Rechazar») se apaga sin aria-busy y conserva su texto
+OK op aprueba la segunda solicitud tras confirmar su identidad
+OK Recuperaciones dice qué provoca aprobar: 12 horas para registrar un factor nuevo y los anteriores dejan de servir
+OK doble clic en «Aprobar» deja una sola aprobación en la bitácora
+OK con la recuperación aprobada, la entrada ofrece registrar un factor nuevo
+OK captura 54-perdi-factor-registrar-nuevo-oscuro-1440.webp
+OK captura 54-perdi-factor-registrar-nuevo-oscuro-390.webp
+OK captura 54-perdi-factor-registrar-nuevo-claro-1440.webp
+OK captura 54-perdi-factor-registrar-nuevo-claro-390.webp
+OK captura 54-perdi-factor-registrar-nuevo-lever-1440.webp
+OK captura 54-perdi-factor-registrar-nuevo-lever-390.webp
+OK Laura entra con su app nueva: queda una sola activa y la recuperación cumplida
+OK Seguridad: «Agregar una passkey» registra una con el autenticador del navegador
+OK doble clic en «Revocar la app» quita una sola app autenticadora, sin error
+OK doble clic en «Confirmar» deja una sola app autenticadora activa, sin error
+OK con los códigos a la vista, «Volver a Seguridad» espera a que se marque que ya se guardaron
+OK captura 94a-seguridad-codigos-nuevos-oscuro-1440.webp
+OK «Generar códigos nuevos» los muestra una vez y «Volver a Seguridad» regresa a la misma página con la cuenta al día
+OK «Confirma que eres tú» con un código de respaldo: el doble clic gasta uno solo
+OK doble clic en «Revocar» quita una sola passkey, sin error
+OK Entrar con un código de respaldo: el doble clic gasta uno solo y abre el portal
+OK «Salir» del teléfono cierra esa sesión: la base la borra y /telefono ya no abre
+OK Operación: entrar con un código de respaldo gasta uno solo con doble clic
+OK «Salir» del menú de la persona cierra la sesión de Operación
+OK Landing: un solo h1
+OK Landing: el menú lleva a #producto
+OK Landing: el menú lleva a #como-funciona
+OK Landing: el menú lleva a #para-quien
+OK Landing: el menú lleva a #precios
+OK Landing: el menú lleva a #preguntas
+OK Landing: cada una de las 4 preguntas frecuentes abre y cierra con un clic
+OK 404 con su título
+OK captura 60-404-oscuro-1440.webp
+OK captura 60-404-oscuro-390.webp
+OK captura 60-404-claro-1440.webp
+OK captura 60-404-claro-390.webp
+OK captura 60-404-lever-1440.webp
+OK captura 60-404-lever-390.webp
+OK 404: «Ir al inicio» y «Entrar a mi cuenta» llevan a su destino
+OK invitación inexistente: un solo rótulo y su título
+OK captura 34-invitacion-inexistente-oscuro-1440.webp
+OK captura 34-invitacion-inexistente-oscuro-390.webp
+OK captura 34-invitacion-inexistente-claro-1440.webp
+OK captura 34-invitacion-inexistente-claro-390.webp
+OK captura 34-invitacion-inexistente-lever-1440.webp
+OK captura 34-invitacion-inexistente-lever-390.webp
+OK /: un solo h1
+OK /: todos los campos con etiqueta
+OK /: sin tabindex positivo
+OK /: el Tab recorre 23 paradas en el orden del documento
+OK /: cada parada del Tab tiene foco visible
+OK captura 70-landing-oscuro-1440.webp
+OK /entrar: un solo h1
+OK /entrar: todos los campos con etiqueta
+OK /entrar: sin tabindex positivo
+OK /entrar: el Tab recorre 8 paradas en el orden del documento
+OK /entrar: cada parada del Tab tiene foco visible
+OK captura 71-entrar-oscuro-1440.webp
+OK /operacion/entrar: un solo h1
+OK /operacion/entrar: todos los campos con etiqueta
+OK /operacion/entrar: sin tabindex positivo
+OK /operacion/entrar: el Tab recorre 7 paradas en el orden del documento
+OK /operacion/entrar: cada parada del Tab tiene foco visible
+OK captura 72-operacion-entrar-oscuro-1440.webp
+OK /recuperar: un solo h1
+OK /recuperar: todos los campos con etiqueta
+OK /recuperar: sin tabindex positivo
+OK /recuperar: el Tab recorre 6 paradas en el orden del documento
+OK /recuperar: cada parada del Tab tiene foco visible
+OK captura 73-recuperar-oscuro-1440.webp
+OK /invitacion/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: un solo h1
+OK /invitacion/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: todos los campos con etiqueta
+OK /invitacion/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: sin tabindex positivo
+OK /invitacion/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: el Tab recorre 4 paradas en el orden del documento
+OK /invitacion/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: cada parada del Tab tiene foco visible
+OK captura 74-invitacion-inexistente-oscuro-1440.webp
+OK /recuperar/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: un solo h1
+OK /recuperar/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: todos los campos con etiqueta
+OK /recuperar/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: sin tabindex positivo
+OK /recuperar/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: el Tab recorre 4 paradas en el orden del documento
+OK /recuperar/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA: cada parada del Tab tiene foco visible
+OK captura 76-recuperar-enlace-invalido-oscuro-1440.webp
+OK /esta-no-existe: un solo h1
+OK /esta-no-existe: todos los campos con etiqueta
+OK /esta-no-existe: sin tabindex positivo
+OK /esta-no-existe: el Tab recorre 5 paradas en el orden del documento
+OK /esta-no-existe: cada parada del Tab tiene foco visible
+OK captura 75-404-oscuro-1440.webp
+OK captura 70-landing-oscuro-390.webp
+OK captura 71-entrar-oscuro-390.webp
+OK captura 72-operacion-entrar-oscuro-390.webp
+OK captura 73-recuperar-oscuro-390.webp
+OK captura 74-invitacion-inexistente-oscuro-390.webp
+OK captura 76-recuperar-enlace-invalido-oscuro-390.webp
+OK captura 75-404-oscuro-390.webp
+OK captura 70-landing-claro-1440.webp
+OK captura 71-entrar-claro-1440.webp
+OK captura 72-operacion-entrar-claro-1440.webp
+OK captura 73-recuperar-claro-1440.webp
+OK captura 74-invitacion-inexistente-claro-1440.webp
+OK captura 76-recuperar-enlace-invalido-claro-1440.webp
+OK captura 75-404-claro-1440.webp
+OK captura 70-landing-claro-390.webp
+OK captura 71-entrar-claro-390.webp
+OK captura 72-operacion-entrar-claro-390.webp
+OK captura 73-recuperar-claro-390.webp
+OK captura 74-invitacion-inexistente-claro-390.webp
+OK captura 76-recuperar-enlace-invalido-claro-390.webp
+OK captura 75-404-claro-390.webp
+OK captura 70-landing-lever-1440.webp
+OK captura 71-entrar-lever-1440.webp
+OK captura 72-operacion-entrar-lever-1440.webp
+OK captura 73-recuperar-lever-1440.webp
+OK captura 74-invitacion-inexistente-lever-1440.webp
+OK captura 76-recuperar-enlace-invalido-lever-1440.webp
+OK captura 75-404-lever-1440.webp
+OK captura 70-landing-lever-390.webp
+OK captura 71-entrar-lever-390.webp
+OK captura 72-operacion-entrar-lever-390.webp
+OK captura 73-recuperar-lever-390.webp
+OK captura 74-invitacion-inexistente-lever-390.webp
+OK captura 76-recuperar-enlace-invalido-lever-390.webp
+OK captura 75-404-lever-390.webp
+OK /operacion: un solo h1
+OK /operacion: todos los campos con etiqueta
+OK /operacion: sin tabindex positivo
+OK /operacion: el Tab recorre 15 paradas en el orden del documento
+OK /operacion: cada parada del Tab tiene foco visible
+OK captura 80-operacion-resumen-oscuro-1440.webp
+OK /operacion/clientes: un solo h1
+OK /operacion/clientes: todos los campos con etiqueta
+OK /operacion/clientes: sin tabindex positivo
+OK /operacion/clientes: el Tab recorre 20 paradas en el orden del documento
+OK /operacion/clientes: cada parada del Tab tiene foco visible
+OK captura 81-operacion-clientes-oscuro-1440.webp
+OK /operacion/clientes/ee4f7ff5-7f99-4ae3-a587-dc4b973a2367: un solo h1
+OK /operacion/clientes/ee4f7ff5-7f99-4ae3-a587-dc4b973a2367: todos los campos con etiqueta
+OK /operacion/clientes/ee4f7ff5-7f99-4ae3-a587-dc4b973a2367: sin tabindex positivo
+OK /operacion/clientes/ee4f7ff5-7f99-4ae3-a587-dc4b973a2367: el Tab recorre 14 paradas en el orden del documento
+OK /operacion/clientes/ee4f7ff5-7f99-4ae3-a587-dc4b973a2367: cada parada del Tab tiene foco visible
+OK captura 82-operacion-ficha-oscuro-1440.webp
+OK /operacion/aprobaciones: un solo h1
+OK /operacion/aprobaciones: todos los campos con etiqueta
+OK /operacion/aprobaciones: sin tabindex positivo
+OK /operacion/aprobaciones: el Tab recorre 12 paradas en el orden del documento
+OK /operacion/aprobaciones: cada parada del Tab tiene foco visible
+OK captura 83-operacion-aprobaciones-oscuro-1440.webp
+OK /operacion/alertas: un solo h1
+OK /operacion/alertas: todos los campos con etiqueta
+OK /operacion/alertas: sin tabindex positivo
+OK /operacion/alertas: el Tab recorre 22 paradas en el orden del documento
+OK /operacion/alertas: cada parada del Tab tiene foco visible
+OK captura 84-operacion-alertas-oscuro-1440.webp
+OK /operacion/comisiones: un solo h1
+OK /operacion/comisiones: todos los campos con etiqueta
+OK /operacion/comisiones: sin tabindex positivo
+OK /operacion/comisiones: el Tab recorre 18 paradas en el orden del documento
+OK /operacion/comisiones: cada parada del Tab tiene foco visible
+OK captura 85-operacion-comisiones-oscuro-1440.webp
+OK /operacion/recuperaciones: un solo h1
+OK /operacion/recuperaciones: todos los campos con etiqueta
+OK /operacion/recuperaciones: sin tabindex positivo
+OK /operacion/recuperaciones: el Tab recorre 12 paradas en el orden del documento
+OK /operacion/recuperaciones: cada parada del Tab tiene foco visible
+OK captura 86-operacion-recuperaciones-oscuro-1440.webp
+OK /operacion/bitacora: un solo h1
+OK /operacion/bitacora: todos los campos con etiqueta
+OK /operacion/bitacora: sin tabindex positivo
+OK /operacion/bitacora: el Tab recorre 25 paradas en el orden del documento
+OK /operacion/bitacora: cada parada del Tab tiene foco visible
+OK captura 87-operacion-bitacora-oscuro-1440.webp
+OK /operacion/precios: un solo h1
+OK /operacion/precios: todos los campos con etiqueta
+OK /operacion/precios: sin tabindex positivo
+OK /operacion/precios: el Tab recorre 12 paradas en el orden del documento
+OK /operacion/precios: cada parada del Tab tiene foco visible
+OK captura 88-precios-sofipo-oscuro-1440.webp
+OK /entrar/seguridad: un solo h1
+OK /entrar/seguridad: todos los campos con etiqueta
+OK /entrar/seguridad: sin tabindex positivo
+OK /entrar/seguridad: el Tab recorre 8 paradas en el orden del documento
+OK /entrar/seguridad: cada parada del Tab tiene foco visible
+OK captura 89-seguridad-sofipo-oscuro-1440.webp
+OK captura 80-operacion-resumen-oscuro-390.webp
+OK captura 81-operacion-clientes-oscuro-390.webp
+OK captura 82-operacion-ficha-oscuro-390.webp
+OK captura 83-operacion-aprobaciones-oscuro-390.webp
+OK captura 84-operacion-alertas-oscuro-390.webp
+OK captura 85-operacion-comisiones-oscuro-390.webp
+OK captura 86-operacion-recuperaciones-oscuro-390.webp
+OK captura 87-operacion-bitacora-oscuro-390.webp (primeros 8000 de 18067 px)
+OK captura 88-precios-sofipo-oscuro-390.webp
+OK captura 89-seguridad-sofipo-oscuro-390.webp
+OK captura 80-operacion-resumen-claro-1440.webp
+OK captura 81-operacion-clientes-claro-1440.webp
+OK captura 82-operacion-ficha-claro-1440.webp
+OK captura 83-operacion-aprobaciones-claro-1440.webp
+OK captura 84-operacion-alertas-claro-1440.webp
+OK captura 85-operacion-comisiones-claro-1440.webp
+OK captura 86-operacion-recuperaciones-claro-1440.webp
+OK captura 87-operacion-bitacora-claro-1440.webp
+OK captura 88-precios-sofipo-claro-1440.webp
+OK captura 89-seguridad-sofipo-claro-1440.webp
+OK captura 80-operacion-resumen-claro-390.webp
+OK captura 81-operacion-clientes-claro-390.webp
+OK captura 82-operacion-ficha-claro-390.webp
+OK captura 83-operacion-aprobaciones-claro-390.webp
+OK captura 84-operacion-alertas-claro-390.webp
+OK captura 85-operacion-comisiones-claro-390.webp
+OK captura 86-operacion-recuperaciones-claro-390.webp
+OK captura 87-operacion-bitacora-claro-390.webp (primeros 8000 de 18067 px)
+OK captura 88-precios-sofipo-claro-390.webp
+OK captura 89-seguridad-sofipo-claro-390.webp
+OK captura 80-operacion-resumen-lever-1440.webp
+OK captura 81-operacion-clientes-lever-1440.webp
+OK captura 82-operacion-ficha-lever-1440.webp
+OK captura 83-operacion-aprobaciones-lever-1440.webp
+OK captura 84-operacion-alertas-lever-1440.webp
+OK captura 85-operacion-comisiones-lever-1440.webp
+OK captura 86-operacion-recuperaciones-lever-1440.webp
+OK captura 87-operacion-bitacora-lever-1440.webp
+OK captura 88-precios-sofipo-lever-1440.webp
+OK captura 89-seguridad-sofipo-lever-1440.webp
+OK captura 80-operacion-resumen-lever-390.webp
+OK captura 81-operacion-clientes-lever-390.webp
+OK captura 82-operacion-ficha-lever-390.webp
+OK captura 83-operacion-aprobaciones-lever-390.webp
+OK captura 84-operacion-alertas-lever-390.webp
+OK captura 85-operacion-comisiones-lever-390.webp
+OK captura 86-operacion-recuperaciones-lever-390.webp
+OK captura 87-operacion-bitacora-lever-390.webp (primeros 8000 de 18067 px)
+OK captura 88-precios-sofipo-lever-390.webp
+OK captura 89-seguridad-sofipo-lever-390.webp
+OK /telefono: un solo h1
+OK /telefono: todos los campos con etiqueta
+OK /telefono: sin tabindex positivo
+OK /telefono: el Tab recorre 9 paradas en el orden del documento
+OK /telefono: cada parada del Tab tiene foco visible
+OK captura 90-telefono-inicio-oscuro-1440.webp
+OK /telefono/topes: un solo h1
+OK /telefono/topes: todos los campos con etiqueta
+OK /telefono/topes: sin tabindex positivo
+OK /telefono/topes: el Tab recorre 7 paradas en el orden del documento
+OK /telefono/topes: cada parada del Tab tiene foco visible
+OK captura 91-telefono-topes-oscuro-1440.webp
+OK /telefono/facturacion: un solo h1
+OK /telefono/facturacion: todos los campos con etiqueta
+OK /telefono/facturacion: sin tabindex positivo
+OK /telefono/facturacion: el Tab recorre 7 paradas en el orden del documento
+OK /telefono/facturacion: cada parada del Tab tiene foco visible
+OK captura 92-telefono-factura-oscuro-1440.webp
+OK /precios: un solo h1
+OK /precios: todos los campos con etiqueta
+OK /precios: sin tabindex positivo
+OK /precios: el Tab recorre 17 paradas en el orden del documento
+OK /precios: cada parada del Tab tiene foco visible
+OK captura 93-precios-cliente-oscuro-1440.webp
+OK /entrar/seguridad: un solo h1
+OK /entrar/seguridad: todos los campos con etiqueta
+OK /entrar/seguridad: sin tabindex positivo
+OK /entrar/seguridad: el Tab recorre 7 paradas en el orden del documento
+OK /entrar/seguridad: cada parada del Tab tiene foco visible
+OK captura 94-seguridad-cliente-oscuro-1440.webp
+OK captura 90-telefono-inicio-oscuro-390.webp
+OK captura 91-telefono-topes-oscuro-390.webp
+OK captura 92-telefono-factura-oscuro-390.webp
+OK captura 93-precios-cliente-oscuro-390.webp
+OK captura 94-seguridad-cliente-oscuro-390.webp
+OK captura 90-telefono-inicio-claro-1440.webp
+OK captura 91-telefono-topes-claro-1440.webp
+OK captura 92-telefono-factura-claro-1440.webp
+OK captura 93-precios-cliente-claro-1440.webp
+OK captura 94-seguridad-cliente-claro-1440.webp
+OK captura 90-telefono-inicio-claro-390.webp
+OK captura 91-telefono-topes-claro-390.webp
+OK captura 92-telefono-factura-claro-390.webp
+OK captura 93-precios-cliente-claro-390.webp
+OK captura 94-seguridad-cliente-claro-390.webp
+OK captura 90-telefono-inicio-lever-1440.webp
+OK captura 91-telefono-topes-lever-1440.webp
+OK captura 92-telefono-factura-lever-1440.webp
+OK captura 93-precios-cliente-lever-1440.webp
+OK captura 94-seguridad-cliente-lever-1440.webp
+OK captura 90-telefono-inicio-lever-390.webp
+OK captura 91-telefono-topes-lever-390.webp
+OK captura 92-telefono-factura-lever-390.webp
+OK captura 93-precios-cliente-lever-390.webp
+OK captura 94-seguridad-cliente-lever-390.webp
+contraste oscuro-1440: 1283 textos, 0 bajo AA, mínimo 4.86
+contraste oscuro-390: 743 textos, 0 bajo AA, mínimo 4.86
+contraste claro-1440: 1283 textos, 0 bajo AA, mínimo 4.86
+contraste claro-390: 743 textos, 0 bajo AA, mínimo 4.81
+contraste lever-1440: 1283 textos, 0 bajo AA, mínimo 4.86
+contraste lever-390: 743 textos, 0 bajo AA, mínimo 4.86
+contraste: 0 vistas repetidas porque el texto no quedó oculto o la página se movió durante la captura
+OK contraste AA medido contra la escena en 3 temas × 2 anchos: 0 textos bajo AA
+invitacion-empresa: «Bienvenido a Altamar Logística | LEVER»
+invitacion-usuario: «Bienvenido a Altamar Logística | LEVER»
+invitacion-personal: «Bienvenido al equipo LEVER»
+recuperar-contrasena: «Cambia tu contraseña»
+aviso-seguridad: «Aprobamos registrar un segundo factor nuevo»
+aviso-clabe-nomina: «Cambió la cuenta de tu nómina»
+resumen-semanal: «Tu flujo de la semana · Altamar Logística»
+OK correo invitacion-empresa (light): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-invitacion-empresa-claro.webp
+OK correo invitacion-empresa (dark): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-invitacion-empresa-oscuro.webp
+OK correo invitacion-usuario (light): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-invitacion-usuario-claro.webp
+OK correo invitacion-usuario (dark): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-invitacion-usuario-oscuro.webp
+OK correo invitacion-personal (light): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-invitacion-personal-claro.webp
+OK correo invitacion-personal (dark): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-invitacion-personal-oscuro.webp
+OK correo recuperar-contrasena (light): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-recuperar-contrasena-claro.webp
+OK correo recuperar-contrasena (dark): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-recuperar-contrasena-oscuro.webp
+OK correo aviso-seguridad (light): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-aviso-seguridad-claro.webp
+OK correo aviso-seguridad (dark): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-aviso-seguridad-oscuro.webp
+OK correo aviso-clabe-nomina (light): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-aviso-clabe-nomina-claro.webp
+OK correo aviso-clabe-nomina (dark): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-aviso-clabe-nomina-oscuro.webp
+OK correo resumen-semanal (light): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-resumen-semanal-claro.webp
+OK correo resumen-semanal (dark): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-resumen-semanal-oscuro.webp
+OK Operación oscuro-1440: mientras carga, la página de antes sigue a la vista
+OK Operación oscuro-1440: el enlace pedido muestra su progreso
+OK Operación oscuro-1440: el enlace pedido anuncia «Cargando…» al lector de pantalla
+OK captura 96-operacion-cargando-oscuro-1440.webp
+OK Operación oscuro-1440: al llegar Clientes, el progreso del enlace se va
+OK Operación oscuro-390: mientras carga, la página de antes sigue a la vista
+OK Operación oscuro-390: el cajón se cerró al pulsar Clientes
+OK Operación oscuro-390: la barra de arriba muestra el progreso y dice «Cargando…»
+OK Operación oscuro-390: la medición mientras carga quedó firme
+OK Operación oscuro-390: contraste AA mientras carga (25 textos, mínimo 8.10)
+OK captura 96-operacion-cargando-oscuro-390.webp
+OK Operación oscuro-390: al llegar Clientes, el progreso del enlace se va
+OK Operación claro-1440: mientras carga, la página de antes sigue a la vista
+OK Operación claro-1440: el enlace pedido muestra su progreso
+OK Operación claro-1440: el enlace pedido anuncia «Cargando…» al lector de pantalla
+OK captura 96-operacion-cargando-claro-1440.webp
+OK Operación claro-1440: al llegar Clientes, el progreso del enlace se va
+OK Operación claro-390: mientras carga, la página de antes sigue a la vista
+OK Operación claro-390: el cajón se cerró al pulsar Clientes
+OK Operación claro-390: la barra de arriba muestra el progreso y dice «Cargando…»
+OK Operación claro-390: la medición mientras carga quedó firme
+OK Operación claro-390: contraste AA mientras carga (25 textos, mínimo 6.60)
+OK captura 96-operacion-cargando-claro-390.webp
+OK Operación claro-390: al llegar Clientes, el progreso del enlace se va
+OK Operación lever-1440: mientras carga, la página de antes sigue a la vista
+OK Operación lever-1440: el enlace pedido muestra su progreso
+OK Operación lever-1440: el enlace pedido anuncia «Cargando…» al lector de pantalla
+OK captura 96-operacion-cargando-lever-1440.webp
+OK Operación lever-1440: al llegar Clientes, el progreso del enlace se va
+OK Operación lever-390: mientras carga, la página de antes sigue a la vista
+OK Operación lever-390: el cajón se cerró al pulsar Clientes
+OK Operación lever-390: la barra de arriba muestra el progreso y dice «Cargando…»
+OK Operación lever-390: la medición mientras carga quedó firme
+OK Operación lever-390: contraste AA mientras carga (25 textos, mínimo 8.54)
+OK captura 96-operacion-cargando-lever-390.webp
+OK Operación lever-390: al llegar Clientes, el progreso del enlace se va
+OK Operación oscuro-1440: el error se muestra dentro del marco, con la navegación a la mano
+OK captura 97-operacion-error-oscuro-1440.webp
+OK Operación oscuro-390: el error se muestra dentro del marco, con la navegación a la mano
+OK captura 97-operacion-error-oscuro-390.webp
+OK Operación claro-1440: el error se muestra dentro del marco, con la navegación a la mano
+OK captura 97-operacion-error-claro-1440.webp
+OK Operación claro-390: el error se muestra dentro del marco, con la navegación a la mano
+OK captura 97-operacion-error-claro-390.webp
+OK Operación lever-1440: el error se muestra dentro del marco, con la navegación a la mano
+OK captura 97-operacion-error-lever-1440.webp
+OK Operación lever-390: el error se muestra dentro del marco, con la navegación a la mano
+OK captura 97-operacion-error-lever-390.webp
+OK Operación: «Reintentar» vuelve a pedir la sección y Clientes abre en cuanto la base responde
+OK Operación: 12 errores de consola esperados por el error provocado, ninguno más
+OK consola oscuro-390: el cajón se cerró al pulsar Personas
+OK consola oscuro-390: mientras carga, Pendientes sigue a la vista
+OK consola oscuro-390: la barra de arriba muestra el progreso y dice «Cargando…»
+OK consola oscuro-390: la medición mientras carga quedó firme
+OK consola oscuro-390: contraste AA mientras carga (15 textos, mínimo 6.51)
+OK captura 96b-consola-cargando-oscuro-390.webp
+OK consola oscuro-390: al llegar Personas, la barra deja de decir «Cargando…»
+OK consola claro-390: el cajón se cerró al pulsar Personas
+OK consola claro-390: mientras carga, Pendientes sigue a la vista
+OK consola claro-390: la barra de arriba muestra el progreso y dice «Cargando…»
+OK consola claro-390: la medición mientras carga quedó firme
+OK consola claro-390: contraste AA mientras carga (15 textos, mínimo 5.25)
+OK captura 96b-consola-cargando-claro-390.webp
+OK consola claro-390: al llegar Personas, la barra deja de decir «Cargando…»
+OK consola lever-390: el cajón se cerró al pulsar Personas
+OK consola lever-390: mientras carga, Pendientes sigue a la vista
+OK consola lever-390: la barra de arriba muestra el progreso y dice «Cargando…»
+OK consola lever-390: la medición mientras carga quedó firme
+OK consola lever-390: contraste AA mientras carga (15 textos, mínimo 5.55)
+OK captura 96b-consola-cargando-lever-390.webp
+OK consola lever-390: al llegar Personas, la barra deja de decir «Cargando…»
+OK Sin permiso: con sesión de cliente, /operacion/clientes lleva a la entrada de Operación
+OK captura 98-operacion-sin-permiso-oscuro-1440.webp
+OK captura 98-operacion-sin-permiso-oscuro-390.webp
+OK captura 98-operacion-sin-permiso-claro-1440.webp
+OK captura 98-operacion-sin-permiso-claro-390.webp
+OK captura 98-operacion-sin-permiso-lever-1440.webp
+OK captura 98-operacion-sin-permiso-lever-390.webp
+OK comparación aprobaciones: Diseño · plat-02-aprobaciones junto a Producto · Operación › Aprobaciones (Oscuro, 1440)
+OK comparación resumen: Diseño · plat-00-resumen junto a Producto · Operación › Resumen (Oscuro, 1440)
+OK comparación telefono: Diseño · app-home junto a Producto · Teléfono › Inicio (Oscuro, 390)
+OK sin errores de consola del navegador
+
+653 comprobaciones en verde.

@@ -1,200 +1,68 @@
-/* Superficie de personal SOFIPO. Usa los tokens compartidos, sin tocar la consola. */
+/*
+ * Operación SOFIPO usa el marco de la consola (marco.css) y los componentes del
+ * sistema (componentes.css). Aquí solo va lo que es propio de esta superficie.
+ */
 
-.operacion-marco {
-  position: relative;
-  z-index: 1;
-  min-height: 100dvh;
-  display: grid;
-  grid-template-columns: 236px minmax(0, 1fr);
-}
-
-.operacion-lateral {
-  position: sticky;
-  top: 0;
-  height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-  padding: 24px 18px;
-  border-right: 1px solid var(--linea);
-  background: var(--papel-lateral);
-}
-
-.operacion-nav {
-  display: grid;
-  gap: 4px;
-}
-
-.operacion-nav a {
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  border-radius: 8px;
-  color: var(--tinta-suave);
-  font-size: 0.9rem;
-  text-decoration: none;
-}
-
-.operacion-nav-estado {
-  width: 14px;
-  height: 14px;
-  display: grid;
-  place-items: center;
-  flex: none;
-  margin-left: auto;
-}
-
-.operacion-nav-spinner {
-  width: 12px;
-  height: 12px;
-  border: 1.5px solid var(--linea-fuerte);
-  border-top-color: currentColor;
-  border-radius: 50%;
-  animation: operacion-girar 700ms linear infinite;
-}
-
-.operacion-nav-lectura {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-@keyframes operacion-girar {
-  to { transform: rotate(360deg); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .operacion-nav-spinner {
-    animation: none;
-  }
-}
-
-.operacion-nav a:hover,
-.operacion-nav a[aria-current="page"] {
-  background: var(--realce);
-  color: var(--tinta);
-}
-
-.operacion-cuenta {
-  display: grid;
-  gap: 14px;
+/* El tema en el pie del lateral: sin el menú de Apariencia de la consola. */
+.operacion-lateral-pie {
   margin-top: auto;
-  padding-top: 18px;
-  border-top: 1px solid var(--linea);
 }
 
-.operacion-cuenta p {
-  display: grid;
-  gap: 2px;
-  font-size: 0.85rem;
+/* El lateral mide 240 px: el selector de tema va solo con texto para que no se encime. */
+.operacion-lateral-pie .selector-tema label .icono {
+  display: none;
 }
 
-/* Solo el rol bajo el nombre: los rótulos del selector de tema llevan su propio color (el activo, --tx). */
-.operacion-cuenta p span {
-  color: var(--tinta-tenue);
-  font-size: 0.75rem;
+.operacion-pagina > .saludo {
+  margin: 0 0 26px;
 }
 
-.operacion-cuenta .selector-tema label {
-  font-size: 0.75rem;
+.operacion-aviso {
+  margin-bottom: 24px;
 }
 
-.operacion-cuenta .boton-texto {
-  justify-self: start;
+.operacion-pagina > .bandeja,
+.operacion-pagina > .nota-regla {
+  margin-top: 28px;
 }
 
-.operacion-lienzo {
-  min-width: 0;
+.operacion-pagina > .operacion-confirmar + .bandeja {
+  margin-top: 24px;
+}
+
+.operacion-ficha-cabeza {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  margin-bottom: 28px;
 }
 
-.operacion-pagina {
-  width: min(1180px, calc(100% - 48px));
-  margin: 0 auto;
-  padding: 52px 0 80px;
-  container-type: inline-size;
+.operacion-ficha-cabeza .etiqueta-mono {
+  margin: 0;
 }
 
-.operacion-cabeza {
-  max-width: 760px;
-  margin-bottom: 36px;
-}
-
-.operacion-cabeza .lede {
-  margin-top: 14px;
-}
-
-.operacion-pagina > .alerta {
-  margin-top: -16px;
-}
-
-.operacion-rejilla {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-  align-items: start;
-}
-
-.operacion-rejilla-tres {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.operacion-columna {
-  display: grid;
-  gap: 20px;
-  min-width: 0;
-}
-
-.operacion-tarjeta {
-  min-width: 0;
-  padding: 24px;
-  border: 1px solid var(--linea);
-  border-radius: var(--radio);
-  background: var(--hoja);
-  box-shadow: 0 1px 2px var(--sombra);
-}
-
-.operacion-tarjeta > h2 {
-  margin-bottom: 8px;
-}
-
-.operacion-tarjeta > .lede,
-.operacion-tarjeta > .pista {
-  margin-bottom: 18px;
-}
-
-.operacion-metrica {
-  display: block;
-  margin-top: 12px;
-  font-size: 2.2rem;
-  font-weight: 350;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-}
-
+/* Lista con filete dentro de una hoja: historial, entregas, alertas. */
 .operacion-lista {
-  margin: 18px 0 0;
+  margin: 0;
   padding: 0;
-  border-top: 1px solid var(--linea);
   list-style: none;
 }
 
 .operacion-lista > li {
-  padding: 18px 0;
-  border-bottom: 1px solid var(--linea);
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
 }
 
-.operacion-lista > li:last-child {
-  border-bottom: 0;
-  padding-bottom: 0;
+.operacion-lista > li:first-child {
+  border-top: 0;
+  padding-top: 4px;
+}
+
+/* Las entregas del correo bajo el estado del administrador no se pegan a su caja. */
+.vacio + .operacion-lista,
+form + .operacion-lista {
+  margin-top: 18px;
 }
 
 .operacion-fila {
@@ -202,220 +70,222 @@
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px 20px;
+  gap: 10px 20px;
 }
 
 .operacion-fila-cuerpo {
+  flex: 1 1 240px;
   min-width: 0;
-  flex: 1 1 260px;
 }
 
-.operacion-fila h3 a {
-  text-decoration-color: var(--linea-fuerte);
-  text-underline-offset: 4px;
+.operacion-fila h3 {
+  font-size: 13.5px;
+  font-weight: 500;
 }
 
 .operacion-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 16px;
-  margin-top: 8px;
-  color: var(--tinta-tenue);
-  font-size: 0.8rem;
+  gap: 3px 18px;
+  margin-top: 6px;
+  color: var(--tx3);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .operacion-detalle {
-  margin-top: 8px;
-  color: var(--tinta-suave);
-  font-size: 0.9rem;
+  margin-top: 6px;
+  color: var(--tx2);
+  font-size: 12.5px;
+  line-height: 1.5;
   white-space: pre-wrap;
 }
 
+.operacion-mono {
+  font-family: var(--fm);
+  letter-spacing: 0.04em;
+}
+
+.operacion-sin-corte {
+  white-space: nowrap;
+}
+
+.operacion-enlace {
+  margin-top: 16px;
+}
+
+/* Reasignar y cerrar una alerta: campos chicos en línea bajo la alerta. */
 .operacion-acciones {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  align-items: end;
+  gap: 10px 18px;
+  margin-top: 14px;
 }
 
 .operacion-acciones form {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
   align-items: end;
+  gap: 8px;
 }
 
 .operacion-acciones .campo {
-  min-width: 180px;
+  min-width: 190px;
   margin: 0;
 }
 
-.operacion-acciones .campo label {
-  font-size: 0.75rem;
-}
-
-.operacion-forma {
+/* Aprobar o rechazar una recuperación desde la bandeja. */
+.operacion-decision-forma {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 18px;
+  grid-template-columns: repeat(2, minmax(150px, 190px));
+  align-items: end;
+  gap: 8px 10px;
 }
 
-.operacion-forma .acciones,
-.operacion-forma .operacion-ancho {
+.operacion-decision-forma .campo {
+  margin: 0;
+}
+
+.operacion-decision-botones {
+  display: flex;
   grid-column: 1 / -1;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
-.operacion-forma textarea {
+.operacion-pagina textarea,
+.operacion-dialogo-forma textarea {
   width: 100%;
   min-height: 96px;
-  padding: 12px 14px;
-  border: 1px solid var(--linea-fuerte);
+  padding: 11px 13px;
+  border: 1px solid var(--line2);
   border-radius: var(--radio-control);
   background: var(--campo);
   color: var(--tinta);
   font: inherit;
+  font-size: 13.5px;
+  line-height: 1.5;
   resize: vertical;
 }
 
-.operacion-tabla-envoltura {
-  overflow-x: auto;
-  border: 1px solid var(--linea);
-  border-radius: var(--radio);
-  background: var(--hoja);
+.operacion-pagina textarea:focus-visible,
+.operacion-dialogo-forma textarea:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--tx) 40%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tx) 8%, transparent);
 }
 
-.operacion-tabla {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-}
-
-.operacion-tabla th,
-.operacion-tabla td {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--linea);
-  text-align: left;
-  vertical-align: top;
-}
-
-.operacion-tabla th {
-  color: var(--tinta-tenue);
-  font-size: 0.72rem;
-  font-weight: 550;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.operacion-tabla tr:last-child td {
-  border-bottom: 0;
-}
-
-.operacion-tabla td small {
-  display: block;
-  margin-top: 4px;
-  /* La tabla va directo sobre la escena en móvil: --tinta-tenue daba 4.29 en Claro. */
-  color: var(--tinta-suave);
-}
-
-.operacion-pie {
-  margin-top: auto;
-  padding: 20px 24px;
-  border-top: 1px solid var(--linea);
-  color: var(--tinta-tenue);
-  font-size: 0.78rem;
-  text-align: center;
-}
-
-.operacion-codigos {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin: 24px 0;
-  padding: 0;
-  list-style: none;
-}
-
-.operacion-codigos li {
-  padding: 10px;
-  border: 1px solid var(--linea);
-  border-radius: 8px;
-  text-align: center;
-}
-
-@container (max-width: 800px) {
-  .operacion-rejilla,
-  .operacion-rejilla-tres {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-@container (max-width: 580px) {
-  .operacion-forma {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .operacion-tarjeta {
-    padding: 20px;
-  }
-}
-
-@media (max-width: 900px) {
-  .operacion-marco {
-    display: block;
-  }
-
-  .operacion-lateral {
-    position: static;
-    height: auto;
-    gap: 18px;
-    padding: 18px 24px;
-    border-right: 0;
-    border-bottom: 1px solid var(--linea);
-  }
-
-  .operacion-nav {
-    display: flex;
-    gap: 4px;
-    overflow-x: auto;
-    padding-bottom: 4px;
-  }
-
-  .operacion-nav a {
-    flex: none;
-  }
-
-  .operacion-cuenta {
-    grid-template-columns: minmax(150px, 1fr) auto auto;
-    align-items: center;
-    margin-top: 0;
-    padding-top: 14px;
-  }
-
-  .operacion-cuenta .selector-tema {
-    max-width: 260px;
-  }
-}
-
-/* El lateral de Operación mide ~200 px: el selector de tema va solo con texto para que no se encime. */
-.operacion-cuenta .selector-tema label .icono {
+/* El formulario del diálogo trae sus propios botones al pie; el pie vacío del diálogo no deja hueco. */
+.dialogo-pie:empty {
   display: none;
 }
 
-@media (max-width: 560px) {
-  .operacion-pagina {
-    width: min(100% - 32px, 1180px);
-    padding-top: 32px;
+/* «Confirma que eres tú» como panel sobre la escena. */
+.operacion-confirmar .confirmar-identidad h2 {
+  font-family: var(--fd);
+  font-size: 1.15rem;
+  font-weight: 400;
+}
+
+.operacion-confirmar .confirmar-identidad {
+  display: grid;
+  gap: 12px;
+  max-width: 560px;
+}
+
+.operacion-confirmar .confirmar-identidad form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+}
+
+.operacion-confirmar .confirmar-identidad .campo {
+  flex: 1 1 220px;
+  margin: 0;
+}
+
+.operacion-confirmar .arco-nota {
+  color: var(--tx2);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* Precios: los mismos renglones que ve el cliente y, debajo, publicar el monto. */
+.operacion-precios {
+  display: grid;
+  gap: 24px;
+}
+
+@container (max-width: 640px) {
+  .operacion-decision-forma {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .operacion-cuenta {
-    grid-template-columns: minmax(0, 1fr) auto;
+  .operacion-decision-botones {
+    justify-content: flex-start;
+  }
+}
+
+/*
+ * Tablas en pantallas angostas: sin columnas cortadas. Cada renglón se apila, el primer
+ * dato a todo lo ancho y los demás en dos columnas con su rótulo (`data-rotulo`).
+ * El encabezado sigue en la tabla para el lector de pantalla.
+ */
+@container (max-width: 560px) {
+  .operacion-tabla thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
-  .operacion-cuenta .selector-tema {
+  .operacion-tabla tbody,
+  .operacion-tabla td {
+    display: block;
+  }
+
+  .operacion-tabla tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .operacion-tabla tbody tr:first-child {
+    padding-top: 4px;
+  }
+
+  .operacion-tabla tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .operacion-tabla td,
+  .operacion-tabla tbody tr:hover td {
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .operacion-tabla td:first-child {
     grid-column: 1 / -1;
   }
 
-  .operacion-codigos {
-    grid-template-columns: minmax(0, 1fr);
+  .operacion-tabla td[data-rotulo]::before {
+    content: attr(data-rotulo);
+    display: block;
+    margin-bottom: 3px;
+    color: var(--tx3);
+    font-size: 11.5px;
   }
+}
+
+.operacion-error-titulo {
+  margin: 0 0 24px;
+  font-family: var(--fd);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 300;
 }

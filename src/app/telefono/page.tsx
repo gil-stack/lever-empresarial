@@ -38,7 +38,7 @@ export default async function PaginaTelefono() {
       variasEmpresas={Boolean(ctx && ctx.empresas.length > 1)}
     >
       {carga.tipo === "lista" ? (
-        ctx?.empresa ? <Inicio persona={carga.persona} empresa={ctx.empresa.razonSocial} /> : <EstadoTelefono tipo="error" />
+        ctx?.empresa ? <Inicio persona={carga.persona} empresa={ctx.empresa.razonSocial} empresaId={ctx.empresa.id} /> : <EstadoTelefono tipo="error" />
       ) : <EstadoTelefono tipo={carga.tipo} />}
     </MarcoTelefono>
   );

@@ -14,6 +14,7 @@ import {
   opcionesParaEntrarConPasskey,
   opcionesParaInscribirPasskey,
   origenDe,
+  RECHAZO_DE_CONTRASENA,
 } from "@/server/autenticacion";
 import { leerTokenEntrada } from "@/server/autenticacion/cookie";
 import { fijarCookieDeSesion } from "@/server/entrada";
@@ -21,20 +22,31 @@ import { NOMBRE_COOKIE_ENTRADA_OPERACION, NOMBRE_COOKIE_PORTAL_OPERACION } from 
 import { ErrorDeDominio, leerSesion } from "@/server/session";
 import { encabezadoDeSesion, NOMBRE_COOKIE } from "@/server/session/cookie";
 
+import type { EstadoEntrada } from "../sesion/estado";
 import type { EstadoAcceso } from "./tipos-acceso";
 
 const SOFIPO = { superficie: "sofipo" } as const;
 
-export async function entrarOperacion(formData: FormData): Promise<void> {
+const RECHAZOS_DE_ENTRADA: Record<string, string> = {
+  credenciales_invalidas: RECHAZO_DE_CONTRASENA,
+};
+
+/** El rechazo regresa en el estado, con el correo escrito: React reinicia el formulario al terminar. */
+export async function entrarOperacion(_previo: EstadoEntrada, formData: FormData): Promise<EstadoEntrada> {
+  const correo = String(formData.get("correo") ?? "").slice(0, 254);
   try {
     const resultado = await iniciarConContrasena({
-      correo: String(formData.get("correo") ?? ""),
+      correo,
       contrasena: String(formData.get("contrasena") ?? ""),
     });
-    if (resultado.tipo === "rechazo") redirect(`/operacion/entrar?aviso=${resultado.codigo}`);
+    if (resultado.tipo === "rechazo") return { tipo: "invalido", mensaje: RECHAZOS_DE_ENTRADA[resultado.codigo], correo };
     await ponerToken(NOMBRE_COOKIE_ENTRADA_OPERACION, resultado.cookie.valor, resultado.cookie.maxAge);
   } catch (error) {
-    if (error instanceof ErrorDeDominio) redirect(`/operacion/entrar?aviso=${error.codigo}`);
+    if (error instanceof ErrorDeDominio) {
+      const mensaje = RECHAZOS_DE_ENTRADA[error.codigo];
+      if (!mensaje) registrarInesperado("entrada_no_completada", error);
+      return { tipo: "invalido", mensaje: mensaje ?? "No se pudo entrar. Vuelve a intentar.", correo };
+    }
     throw error;
   }
   redirect("/operacion/continuar");
@@ -161,7 +173,10 @@ function salidaDeFactor(error: unknown): EstadoAcceso {
 }
 
 function mensajeDe(error: unknown): string {
-  if (!(error instanceof ErrorDeDominio)) return "No se pudo completar. Vuelve a intentar.";
+  if (!(error instanceof ErrorDeDominio)) {
+    registrarInesperado("factor_no_completado", error);
+    return "No se pudo completar. Vuelve a intentar.";
+  }
   const mensajes: Record<string, string> = {
     segundo_factor_invalido: "El código o la passkey no coinciden.",
     entrada_vencida: "La entrada venció. Vuelve a escribir tu contraseña.",
@@ -170,5 +185,15 @@ function mensajeDe(error: unknown): string {
     totp_no_disponible: "La app autenticadora no está disponible. Usa una passkey.",
     origen_no_permitido: "Este dominio no puede usar passkeys.",
   };
+  if (!mensajes[error.codigo]) registrarInesperado("factor_no_completado", error);
   return mensajes[error.codigo] ?? "No se pudo completar. Vuelve a intentar.";
+}
+
+/**
+ * Un rechazo sin mensaje propio llega a la persona como «Vuelve a intentar»; aquí queda su código
+ * para poder diagnosticarlo. Solo el código o el nombre del error: nada de la persona ni del factor.
+ */
+function registrarInesperado(evento: string, error: unknown): void {
+  const codigo = error instanceof ErrorDeDominio ? error.codigo : error instanceof Error && /^[A-Za-z]{1,60}$/.test(error.name) ? error.name : "desconocido";
+  console.error(JSON.stringify({ nivel: "error", origen: "operacion.entrada", evento, error: codigo }));
 }

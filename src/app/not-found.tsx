@@ -1,23 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Logotipo } from "@/components/cromo/logotipo";
+import { MarcoArco } from "@/components/entrar/marco-arco";
 
 export const metadata: Metadata = {
   title: "Página no encontrada",
   robots: { index: false, follow: false },
 };
 
-/** La página que no existe, con la marca y en español. Nunca dice si la ruta existe para otra persona. */
+/** La página que no existe, en la misma puerta que la entrada. Nunca dice si la ruta existe para otra persona. */
 export default function NoEncontrada() {
   return (
-    <main id="contenido" className="consola no-encontrada">
-      <Link href="/" className="no-encontrada-marca" aria-label="Lever Empresas, inicio">
-        <Logotipo />
-      </Link>
-      <p className="kicker">Error 404</p>
+    <MarcoArco>
+      <p className="arco-kicker">Error 404</p>
       <h1>No encontramos esta página.</h1>
-      <p className="lede">El enlace puede estar mal escrito, ya no existir o pertenecer a otra cuenta.</p>
+      <p className="arco-nota">El enlace puede estar mal escrito, ya no existir o ser de otra cuenta.</p>
       <div className="acciones">
         <Link className="boton" href="/entrar">
           Entrar a mi cuenta
@@ -26,6 +23,6 @@ export default function NoEncontrada() {
           Ir al inicio
         </Link>
       </div>
-    </main>
+    </MarcoArco>
   );
 }

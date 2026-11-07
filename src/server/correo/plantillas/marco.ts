@@ -29,6 +29,8 @@ const OSCURO = {
 } as const;
 
 const SANS = `-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif`;
+/** Títulos en Sora fina como el producto; donde el cliente de correo no la tiene, la del sistema. */
+const TITULO = `Sora, ${SANS}`;
 const MONO = `'SF Mono', ui-monospace, 'IBM Plex Mono', Menlo, Consolas, monospace`;
 const LOGO = "https://www.leverpagos.com/lever-email.png";
 
@@ -118,7 +120,7 @@ function html(asunto: string, b: Bloque): string {
 </td></tr>
 <tr><td class="hoja" style="padding:36px 32px 32px;background:${CLARO.hoja};border:1px solid ${CLARO.linea};border-radius:16px;">
 <p class="tenue" style="margin:0 0 18px;color:${CLARO.tintaTenue};font-family:${SANS};font-size:11px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;">${escapar(b.kicker)}</p>
-<h1 class="tinta" style="margin:0 0 22px;color:${CLARO.tinta};font-family:${SANS};font-size:30px;font-weight:400;line-height:1.18;letter-spacing:-0.02em;">${escapar(b.titulo)}</h1>
+<h1 class="tinta" style="margin:0 0 22px;color:${CLARO.tinta};font-family:${TITULO};font-size:30px;font-weight:300;line-height:1.18;letter-spacing:-0.02em;">${escapar(b.titulo)}</h1>
 ${parrafos}
 ${tablaDatos}
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 28px;"><tr><td class="boton" style="border-radius:10px;background:${CLARO.boton};">

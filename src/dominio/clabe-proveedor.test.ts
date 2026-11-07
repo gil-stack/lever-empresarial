@@ -123,7 +123,6 @@ describe("la migración 0014 guarda el historial y no envía dinero", () => {
 describe("la CLABE vive en la consola y no en el teléfono", () => {
   it("el historial está en proveedores y la barra no abre otra sección", () => {
     const telefono = readFileSync(new URL("../app/telefono/page.tsx", import.meta.url), "utf8");
-    const vacio = readFileSync(new URL("../components/telefono/telefono-sin-flujo.tsx", import.meta.url), "utf8");
     const menu = readFileSync(new URL("../components/cromo/secciones.ts", import.meta.url), "utf8");
     const marco = readFileSync(new URL("../components/cromo/marco.tsx", import.meta.url), "utf8");
     const telefonoMarco = marco.slice(marco.indexOf("export async function MarcoTelefono"));
@@ -137,7 +136,6 @@ describe("la CLABE vive en la consola y no en el teléfono", () => {
     assert.equal(telefono.includes("proveedores"), false);
     assert.equal(telefono.includes("69"), false);
     assert.equal(telefono.includes("MarcoTelefono"), true);
-    assert.equal(vacio.includes("CLABE"), false);
     assert.equal(telefonoMarco.includes("seccionesDe"), false);
     assert.equal(telefonoMarco.includes("proveedores"), false);
     assert.match(menu, /\/consola\/proveedores/);

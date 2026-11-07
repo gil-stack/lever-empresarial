@@ -28,7 +28,7 @@ export async function pedirEnlace(_previo: EstadoRecuperar, formData: FormData):
   return {
     tipo: "asentado",
     titulo: "Revisa tu correo",
-    mensaje: "Si ese correo tiene cuenta, te llegará un enlace. Sirve una sola vez, vence en una hora y no cambia tu segundo factor.",
+    mensaje: "Si ese correo tiene cuenta, te llega un enlace en unos minutos. Sirve una sola vez y vence en una hora.",
   };
 }
 
@@ -50,12 +50,12 @@ export async function guardarContrasena(_previo: EstadoRecuperar, formData: Form
     return {
       tipo: "invalido",
       titulo: "El enlace ya no sirve",
-      mensaje: "Pide otro. Tu segundo factor no cambió.",
+      mensaje: "Pide otro desde «¿Olvidaste tu contraseña?».",
     };
   }
   return {
     tipo: "asentado",
     titulo: "La contraseña quedó guardada",
-    mensaje: "Las sesiones anteriores se cerraron. Tu passkey y tu app autenticadora siguen. Entra con la contraseña nueva y el segundo factor.",
+    mensaje: "Cerramos todas tus sesiones. Entra con la contraseña nueva y tu segundo factor de siempre.",
   };
 }

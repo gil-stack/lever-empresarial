@@ -3,55 +3,154 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { invitarAdministradorAccion, solicitarActivacionAccion } from "@/app/operacion/acciones";
-import { etiquetaEstado, fechaHora } from "@/components/operacion/formato";
+import { errorDelCampo } from "@/components/operacion/aviso";
+import { REGIMENES, USOS_CFDI, conNombre, etiquetaEstado, fechaDia, fechaHora, motivoDeEntrega } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
-import { exigirContextoOperacion, leerCliente, listarComisiones } from "@/server/operacion";
+import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Rejilla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { textoComision } from "@/dominio/operacion";
+import { exigirContextoOperacion, leerCliente, listarComisiones } from "@/server/operacion";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Ficha de cliente · Operación" };
 
+const ENTREGAS: Record<string, string> = {
+  omitida_desarrollo: "Correo omitido en este entorno",
+  enviada: "Correo enviado",
+};
+
 export default async function FichaCliente({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aviso?: string }> }) {
   const ctx = await exigirContextoOperacion();
-  const [{ id }, aviso] = await Promise.all([params, searchParams]);
+  const [{ id }, { aviso }] = await Promise.all([params, searchParams]);
   const cliente = await leerCliente(ctx, id);
   if (!cliente) notFound();
   const comisiones = await listarComisiones(ctx, id);
   return (
-    <PaginaOperacion titulo={cliente.razonSocial} descripcion={`${cliente.rfc} · ${etiquetaEstado(cliente.estado)}. La activación se limita al uso del portal.`} aviso={aviso.aviso}>
-      <div className="operacion-rejilla">
-        <div className="operacion-columna">
-          <section className="operacion-tarjeta">
-            <div className="operacion-fila"><h2>Datos y activación</h2><span className={`insignia ${cliente.estado === "activa" ? "insignia-sello" : ""}`}>{etiquetaEstado(cliente.estado)}</span></div>
-            <dl className="renglones"><div><dt>Código postal</dt><dd>{cliente.codigoPostal}</dd></div><div><dt>Régimen fiscal</dt><dd>{cliente.regimen}</dd></div><div><dt>Uso CFDI</dt><dd>{cliente.usoCfdi}</dd></div><div><dt>Administrador</dt><dd>{cliente.administrador ?? "Todavía no invitado"}</dd></div></dl>
-            {cliente.estado === "prospecto" ? <form action={solicitarActivacionAccion}><input type="hidden" name="companyId" value={cliente.id} /><div className="acciones"><button className="boton" type="submit">Solicitar activación</button></div><p className="pista">Pasará a “en alta”. Otra persona deberá aprobarla.</p></form> : null}
-            {cliente.estado === "en_alta" ? <p className="nota-regla">Hay una solicitud pendiente. La decisión se toma en <Link href="/operacion/aprobaciones">Aprobaciones</Link>.</p> : null}
-          </section>
-          <section className="operacion-tarjeta">
-            <h2>Primer administrador</h2>
-            <p className="pista">Usa el mecanismo de invitaciones existente. Reenviar revoca el token anterior. En desarrollo no se envía correo.</p>
-            {cliente.estado === "activa" && cliente.administradorEstado !== "activa" ? (
-              <form action={invitarAdministradorAccion} className="operacion-forma">
-                <input type="hidden" name="companyId" value={cliente.id} />
-                <div className="campo"><label htmlFor="nombre">Nombre</label><input id="nombre" name="nombre" maxLength={200} defaultValue={cliente.administrador ?? ""} required /></div>
-                <div className="campo"><label htmlFor="correo">Correo</label><input id="correo" name="correo" type="email" maxLength={254} defaultValue={cliente.administradorCorreo ?? ""} required /></div>
-                <div className="acciones"><button className="boton" type="submit">{cliente.administrador ? "Reenviar invitación" : "Emitir invitación"}</button></div>
-              </form>
-            ) : <p className="vacio">{cliente.administradorEstado === "activa" ? "El primer administrador ya aceptó su invitación." : "Disponible cuando la empresa esté activa para el portal."}</p>}
-            {cliente.entregas.length > 0 ? <ul className="operacion-lista">{cliente.entregas.map((entrega) => <li key={entrega.id}><p>{entrega.estado === "omitida_desarrollo" ? "Correo omitido en desarrollo" : entrega.estado === "enviada" ? "Correo enviado" : "Entrega fallida"}</p><p className="operacion-meta">{fechaHora(entrega.registradaEn)}{entrega.detalle ? ` · ${entrega.detalle}` : ""}</p></li>)}</ul> : null}
-          </section>
-          <section className="operacion-tarjeta">
-            <h2>Historial de estados</h2>
-            <ul className="operacion-lista">{cliente.historial.map((evento) => <li key={evento.id}><p>{evento.estadoAnterior ? `${etiquetaEstado(evento.estadoAnterior)} → ` : ""}{etiquetaEstado(evento.estadoNuevo)}</p><p className="operacion-meta">{evento.actor} · {fechaHora(evento.ocurridoEn)}</p></li>)}</ul>
-          </section>
-        </div>
-        <section className="operacion-tarjeta">
-          <h2>Comisiones configuradas</h2>
-          <p className="pista">Solo reglas comerciales. Nunca cargos ni devengos.</p>
-          {comisiones.length === 0 ? <p className="vacio">Sin versiones de comisión.</p> : <ul className="operacion-lista">{comisiones.map((comision) => <li key={comision.id}><div className="operacion-fila"><h3>{comision.tipo}</h3><span className="insignia">{etiquetaEstado(comision.estado)}</span></div><p className="operacion-detalle">{textoComision(comision.tipo, comision.valor)}</p><p className="operacion-meta">Desde {comision.vigenteDesde}{comision.vigenteHasta ? ` hasta ${comision.vigenteHasta}` : ""}</p></li>)}</ul>}
-          <Link className="enlace-texto" href="/operacion/comisiones">Configurar comisiones</Link>
-        </section>
+    <PaginaOperacion
+      titulo={cliente.razonSocial}
+      aviso={aviso}
+      accion={<Link className="boton-texto" href="/operacion/clientes">← Clientes</Link>}
+    >
+      <div className="operacion-ficha-cabeza">
+        <EtiquetaMono nombre="RFC">{cliente.rfc}</EtiquetaMono>
+        <Insignia tono={cliente.estado === "activa" ? "sello" : "neutro"}>{etiquetaEstado(cliente.estado)}</Insignia>
       </div>
+      <Rejilla
+        principal={
+          <>
+            <Hoja id="datos-titulo" titulo="Datos y activación">
+              <Renglones>
+                <Renglon etiqueta="Código postal">{cliente.codigoPostal}</Renglon>
+                <Renglon etiqueta="Régimen fiscal">{conNombre(REGIMENES, cliente.regimen)}</Renglon>
+                <Renglon etiqueta="Uso CFDI">{conNombre(USOS_CFDI, cliente.usoCfdi)}</Renglon>
+                <Renglon etiqueta="Administrador">{cliente.administrador ?? "Todavía no invitado"}</Renglon>
+              </Renglones>
+              {cliente.estado === "prospecto" ? (
+                <form action={solicitarActivacionAccion}>
+                  <input type="hidden" name="companyId" value={cliente.id} />
+                  <div className="acciones">
+                    <BotonEnviar>Solicitar activación</BotonEnviar>
+                    <p>Pasa a «En alta» y la decide otra persona.</p>
+                  </div>
+                </form>
+              ) : null}
+              {cliente.estado === "en_alta" ? (
+                <NotaRegla>
+                  La activación está pendiente. Se decide en <Link href="/operacion/aprobaciones">Aprobaciones</Link>.
+                </NotaRegla>
+              ) : null}
+            </Hoja>
+            <Hoja id="historial-titulo" titulo="Historial de estados">
+              <ul className="operacion-lista">
+                {cliente.historial.map((evento) => (
+                  <li key={evento.id}>
+                    <p>
+                      {evento.estadoAnterior ? `${etiquetaEstado(evento.estadoAnterior)} → ` : ""}
+                      {etiquetaEstado(evento.estadoNuevo)}
+                    </p>
+                    <p className="operacion-meta">
+                      {evento.actor} · {fechaHora(evento.ocurridoEn)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </Hoja>
+          </>
+        }
+        lateral={
+          <>
+            <Hoja id="administrador-titulo" titulo="Primer administrador">
+              {cliente.estado === "activa" && cliente.administradorEstado !== "activa" ? (
+                <form action={invitarAdministradorAccion}>
+                  <input type="hidden" name="companyId" value={cliente.id} />
+                  <input type="hidden" name="vista" value={cliente.ultimaInvitacionId ?? ""} />
+                  <div className="campo">
+                    <label htmlFor="nombre">Nombre</label>
+                    <input id="nombre" name="nombre" maxLength={200} defaultValue={cliente.administrador ?? ""} required />
+                  </div>
+                  <div className="campo">
+                    <label htmlFor="correo">Correo</label>
+                    <input
+                      id="correo"
+                      name="correo"
+                      type="email"
+                      maxLength={254}
+                      defaultValue={cliente.administradorCorreo ?? ""}
+                      required
+                      {...errorDelCampo(aviso, "correo")}
+                    />
+                    {cliente.administrador ? <p className="pista">Reenviar anula el enlace anterior.</p> : null}
+                  </div>
+                  <div className="acciones">
+                    <BotonEnviar>{cliente.administrador ? "Reenviar invitación" : "Enviar invitación"}</BotonEnviar>
+                  </div>
+                </form>
+              ) : (
+                <Vacio titulo={cliente.administradorEstado === "activa" ? "Ya entró" : "Primero, la activación"}>
+                  {cliente.administradorEstado === "activa"
+                    ? "El primer administrador aceptó su invitación."
+                    : "La invitación se envía cuando la empresa esté activa para el portal."}
+                </Vacio>
+              )}
+              {cliente.entregas.length > 0 ? (
+                <ul className="operacion-lista">
+                  {cliente.entregas.map((entrega) => (
+                    <li key={entrega.id}>
+                      <p>{ENTREGAS[entrega.estado] ?? "El correo no salió"}</p>
+                      <p className="operacion-meta">
+                        {fechaHora(entrega.registradaEn)}
+                        {motivoDeEntrega(entrega.detalle) ? ` · ${motivoDeEntrega(entrega.detalle)}` : ""}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </Hoja>
+            <Hoja id="comisiones-titulo" titulo="Comisiones">
+              {comisiones.length === 0 ? (
+                <Vacio titulo="Sin comisiones">Se proponen en Comisiones y las autoriza otra persona.</Vacio>
+              ) : (
+                <ul className="operacion-lista">
+                  {comisiones.map((comision) => (
+                    <li key={comision.id}>
+                      <div className="operacion-fila">
+                        <p>{textoComision(comision.tipo, comision.valor)}</p>
+                        <Insignia tono={comision.estado === "vigente" ? "sello" : "neutro"}>{etiquetaEstado(comision.estado)}</Insignia>
+                      </div>
+                      <p className="operacion-meta">
+                        Desde {fechaDia(comision.vigenteDesde)}
+                        {comision.vigenteHasta ? ` hasta ${fechaDia(comision.vigenteHasta)}` : ""}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="operacion-enlace">
+                <Link className="enlace-texto" href="/operacion/comisiones">Ir a Comisiones</Link>
+              </p>
+            </Hoja>
+          </>
+        }
+      />
     </PaginaOperacion>
   );
 }

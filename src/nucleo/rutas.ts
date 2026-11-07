@@ -215,6 +215,7 @@ export const RUTAS = [
   { patron: "/operacion/comisiones", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/bitacora", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/recuperaciones", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/precios", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
 ] as const satisfies readonly Ruta[];
 
 export type PatronDeRuta = (typeof RUTAS)[number]["patron"];
