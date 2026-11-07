@@ -61,6 +61,16 @@
   },
   {
     "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "12 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
+    "detalle": "0 vez(ces)"
+  },
+  {
+    "ok": true,
     "texto": "modulos oscuro 1440 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
     "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
   },
@@ -143,6 +153,16 @@
     "ok": true,
     "texto": "modulos oscuro 390 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
     "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
+    "detalle": "0 vez(ces)"
   },
   {
     "ok": true,
@@ -231,6 +251,16 @@
   },
   {
     "ok": true,
+    "texto": "modulos claro 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "13 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
+    "detalle": "0 vez(ces)"
+  },
+  {
+    "ok": true,
     "texto": "modulos claro 1440 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
     "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
   },
@@ -313,6 +343,16 @@
     "ok": true,
     "texto": "modulos claro 390 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
     "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "10 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
+    "detalle": "0 vez(ces)"
   },
   {
     "ok": true,
@@ -401,6 +441,16 @@
   },
   {
     "ok": true,
+    "texto": "modulos lever 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "15 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
+    "detalle": "0 vez(ces)"
+  },
+  {
+    "ok": true,
     "texto": "modulos lever 1440 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
     "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
   },
@@ -483,6 +533,16 @@
     "ok": true,
     "texto": "modulos lever 390 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
     "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
+    "detalle": "0 vez(ces)"
   },
   {
     "ok": true,

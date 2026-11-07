@@ -25,26 +25,38 @@ export function FiltrosAlCambiar({ action, periodo, children }: { action: string
     // un turno y se cancela si el formulario ya salió, para que Enter navegue una sola vez. Si el monto pierde
     // el foco porque se está tocando un periodo, se espera más: el envío de ese botón lo cancela y lleva los dos.
     let pendiente: ReturnType<typeof setTimeout> | undefined;
-    let tocandoBoton = false;
+    let botonTocado: Element | null = null;
     const alTocar = (evento: PointerEvent) => {
-      tocandoBoton = evento.target instanceof Element && evento.target.closest('button[type="submit"]') !== null;
+      botonTocado = evento.target instanceof Element ? evento.target.closest('button[type="submit"]') : null;
+    };
+    // El clic del botón solo llega si se suelta encima de él; con el dedo, el «change» del monto llega después de
+    // soltar, así que la marca no se apaga ahí. Si se suelta en otra parte, o el navegador cancela el gesto para
+    // desplazar la página, se apaga: el siguiente cambio sale sin esperar.
+    const alSoltar = (evento: PointerEvent) => {
+      const encima = evento.type === "pointerup" ? document.elementFromPoint(evento.clientX, evento.clientY)?.closest('button[type="submit"]') : null;
+      if (encima !== botonTocado) botonTocado = null;
     };
     const alCambiar = () => {
       clearTimeout(pendiente);
-      pendiente = setTimeout(() => nodo.requestSubmit(), tocandoBoton ? 500 : 0);
+      pendiente = setTimeout(() => nodo.requestSubmit(), botonTocado ? 500 : 0);
     };
     const alEnviar = (evento: SubmitEvent) => {
       clearTimeout(pendiente);
-      tocandoBoton = false;
+      botonTocado = null;
       const boton = evento.submitter;
       if (boton instanceof HTMLButtonElement && boton.name === "periodo" && campoPeriodo.current) campoPeriodo.current.value = boton.value;
     };
     nodo.addEventListener("pointerdown", alTocar, true);
+    // En el documento: soltar fuera del formulario no pasa por él.
+    document.addEventListener("pointerup", alSoltar, true);
+    document.addEventListener("pointercancel", alSoltar, true);
     nodo.addEventListener("change", alCambiar);
     nodo.addEventListener("submit", alEnviar);
     return () => {
       clearTimeout(pendiente);
       nodo.removeEventListener("pointerdown", alTocar, true);
+      document.removeEventListener("pointerup", alSoltar, true);
+      document.removeEventListener("pointercancel", alSoltar, true);
       nodo.removeEventListener("change", alCambiar);
       nodo.removeEventListener("submit", alEnviar);
     };

@@ -108,6 +108,40 @@ test("Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegaci�
   expect(errores).toEqual([]);
 });
 
+test("Movimientos: bajar el ratón en «7 días» y soltarlo fuera no retrasa el siguiente filtro", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  await sesionDe(context, GIL);
+  await page.goto(`/c/${TALLER}/consola/movimientos`);
+  const navegaciones: string[] = [];
+  page.on("request", (peticion) => {
+    if (peticion.headers()["next-router-prefetch"]) return;
+    if (new URL(peticion.url()).searchParams.get("desde") === "5000") navegaciones.push(peticion.url());
+  });
+  // Cuánto tarda el formulario en salir después del «change» del monto: de inmediato, o medio segundo si espera un clic.
+  await page.locator("#movimientos-desde").evaluate((campo: HTMLInputElement) => {
+    const marcas = ((window as unknown as { marcasN4: Record<string, number> }).marcasN4 = {});
+    campo.addEventListener("change", () => (marcas.cambio = performance.now()));
+    campo.form!.addEventListener("submit", () => (marcas.envio = performance.now()));
+  });
+  const boton = await page.locator('[aria-label="Periodo"]').getByText("7 días", { exact: true }).boundingBox();
+  const titulo = await page.locator("#movimientos-mapa").boundingBox();
+  await page.mouse.move(boton!.x + boton!.width / 2, boton!.y + boton!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(titulo!.x + 20, titulo!.y + titulo!.height / 2, { steps: 5 });
+  await page.mouse.up();
+  // Sin otro toque: al monto se llega con el teclado.
+  await page.locator("#movimientos-desde").focus();
+  await page.keyboard.type("5000");
+  await page.keyboard.press("Tab");
+  await expect(page).toHaveURL(/[?&]desde=5000(&|$)/);
+  await expect(page).not.toHaveURL(/[?&]periodo=7(&|$)/);
+  const { cambio, envio } = await page.evaluate(() => (window as unknown as { marcasN4: Record<string, number> }).marcasN4);
+  expect(envio - cambio, "milisegundos entre el cambio y el envío").toBeLessThan(250);
+  await page.waitForTimeout(1000);
+  expect(navegaciones, "un cambio, una navegación").toHaveLength(1);
+  expect(errores).toEqual([]);
+});
+
 test.describe("en el teléfono", () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 

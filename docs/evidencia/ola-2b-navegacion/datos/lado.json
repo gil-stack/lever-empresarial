@@ -216,8 +216,8 @@
   },
   {
     "ok": true,
-    "texto": "lado barra de Movimientos oscuro 1440: cada control en el renglón del diseño renderizado",
-    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false}"
+    "texto": "lado barra de Movimientos oscuro 1440: cada control en el renglón del diseño renderizado (2 renglones)",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=177\",\"Póliza contable=236\"],\"ancho\":1078,\"desbordaPagina\":false}"
   },
   {
     "ok": true,
@@ -231,12 +231,42 @@
   },
   {
     "ok": true,
-    "texto": "lado barra de Movimientos oscuro 1440 con un filtro puesto: cada control en el renglón del diseño renderizado",
-    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false}"
+    "texto": "lado barra de Movimientos oscuro 1440 con un filtro puesto: cada control en el renglón del diseño renderizado (2 renglones)",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=107\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=106\",\"Excel=177\",\"Póliza contable=236\"],\"ancho\":1078,\"desbordaPagina\":false}"
   },
   {
     "ok": true,
     "texto": "lado barra de Movimientos oscuro 1440 con un filtro puesto: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra oscuro 1440 con barra de desplazamiento: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos oscuro 1440 con la barra de desplazamiento visible: los mismos 2 renglones que el diseño renderizado; Categoría cabe en el primero porque los selectores de la app miden menos",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@1\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":1063,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=177\",\"Póliza contable=236\"],\"ancho\":1063,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos oscuro 1440 con la barra de desplazamiento visible: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra oscuro 1440 con barra de desplazamiento con filtro: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos oscuro 1440 con la barra de desplazamiento visible con un filtro puesto: los mismos 2 renglones que el diseño renderizado, cada control en el suyo",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=107\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=106\",\"Excel=177\",\"Póliza contable=236\"],\"ancho\":1063,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos oscuro 1440 con la barra de desplazamiento visible con un filtro puesto: la página no se desborda a lo ancho",
     "detalle": ""
   },
   {
@@ -246,8 +276,8 @@
   },
   {
     "ok": true,
-    "texto": "lado barra de Movimientos oscuro 390: cada control en el renglón del diseño renderizado",
-    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"ancho\":324,\"desbordaPagina\":false}"
+    "texto": "lado barra de Movimientos oscuro 390: cada control en el renglón del diseño renderizado (7 renglones)",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"total\":7,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"total\":7,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=104\",\"Póliza contable=142\"],\"ancho\":324,\"desbordaPagina\":false}"
   },
   {
     "ok": true,
@@ -261,8 +291,8 @@
   },
   {
     "ok": true,
-    "texto": "lado barra de Movimientos oscuro 390 con un filtro puesto: cada control en el renglón del diseño renderizado",
-    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"ancho\":324,\"desbordaPagina\":false}"
+    "texto": "lado barra de Movimientos oscuro 390 con un filtro puesto: cada control en el renglón del diseño renderizado (8 renglones)",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"total\":8,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=107\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"total\":8,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=106\",\"Excel=104\",\"Póliza contable=142\"],\"ancho\":324,\"desbordaPagina\":false}"
   },
   {
     "ok": true,
@@ -276,8 +306,8 @@
   },
   {
     "ok": true,
-    "texto": "lado barra de Movimientos claro 1440: cada control en el renglón del diseño renderizado",
-    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false}"
+    "texto": "lado barra de Movimientos claro 1440: cada control en el renglón del diseño renderizado (2 renglones)",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=177\",\"Póliza contable=236\"],\"ancho\":1078,\"desbordaPagina\":false}"
   },
   {
     "ok": true,
@@ -291,12 +321,42 @@
   },
   {
     "ok": true,
-    "texto": "lado barra de Movimientos claro 1440 con un filtro puesto: cada control en el renglón del diseño renderizado",
-    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false}"
+    "texto": "lado barra de Movimientos claro 1440 con un filtro puesto: cada control en el renglón del diseño renderizado (2 renglones)",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=107\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=106\",\"Excel=177\",\"Póliza contable=236\"],\"ancho\":1078,\"desbordaPagina\":false}"
   },
   {
     "ok": true,
     "texto": "lado barra de Movimientos claro 1440 con un filtro puesto: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra claro 1440 con barra de desplazamiento: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos claro 1440 con la barra de desplazamiento visible: los mismos 2 renglones que el diseño renderizado; Categoría cabe en el primero porque los selectores de la app miden menos",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@1\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":1063,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=177\",\"Póliza contable=236\"],\"ancho\":1063,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos claro 1440 con la barra de desplazamiento visible: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra claro 1440 con barra de desplazamiento con filtro: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos claro 1440 con la barra de desplazamiento visible con un filtro puesto: los mismos 2 renglones que el diseño renderizado, cada control en el suyo",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=107\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=106\",\"Excel=177\",\"Póliza contable=236\"],\"ancho\":1063,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos claro 1440 con la barra de desplazamiento visible con un filtro puesto: la página no se desborda a lo ancho",
     "detalle": ""
   },
   {
@@ -306,8 +366,8 @@
   },
   {
     "ok": true,
-    "texto": "lado barra de Movimientos claro 390: cada control en el renglón del diseño renderizado",
-    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"ancho\":324,\"desbordaPagina\":false}"
+    "texto": "lado barra de Movimientos claro 390: cada control en el renglón del diseño renderizado (7 renglones)",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"total\":7,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"total\":7,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=104\",\"Póliza contable=142\"],\"ancho\":324,\"desbordaPagina\":false}"
   },
   {
     "ok": true,
@@ -321,8 +381,8 @@
   },
   {
     "ok": true,
-    "texto": "lado barra de Movimientos claro 390 con un filtro puesto: cada control en el renglón del diseño renderizado",
-    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"ancho\":324,\"desbordaPagina\":false}"
+    "texto": "lado barra de Movimientos claro 390 con un filtro puesto: cada control en el renglón del diseño renderizado (8 renglones)",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"total\":8,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=107\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"total\":8,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=106\",\"Excel=104\",\"Póliza contable=142\"],\"ancho\":324,\"desbordaPagina\":false}"
   },
   {
     "ok": true,
@@ -336,8 +396,8 @@
   },
   {
     "ok": true,
-    "texto": "lado barra de Movimientos lever 1440: cada control en el renglón del diseño renderizado",
-    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false}"
+    "texto": "lado barra de Movimientos lever 1440: cada control en el renglón del diseño renderizado (2 renglones)",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=177\",\"Póliza contable=236\"],\"ancho\":1078,\"desbordaPagina\":false}"
   },
   {
     "ok": true,
@@ -351,12 +411,42 @@
   },
   {
     "ok": true,
-    "texto": "lado barra de Movimientos lever 1440 con un filtro puesto: cada control en el renglón del diseño renderizado",
-    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false}"
+    "texto": "lado barra de Movimientos lever 1440 con un filtro puesto: cada control en el renglón del diseño renderizado (2 renglones)",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=107\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=106\",\"Excel=177\",\"Póliza contable=236\"],\"ancho\":1078,\"desbordaPagina\":false}"
   },
   {
     "ok": true,
     "texto": "lado barra de Movimientos lever 1440 con un filtro puesto: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra lever 1440 con barra de desplazamiento: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos lever 1440 con la barra de desplazamiento visible: los mismos 2 renglones que el diseño renderizado; Categoría cabe en el primero porque los selectores de la app miden menos",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@1\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":1063,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=177\",\"Póliza contable=236\"],\"ancho\":1063,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos lever 1440 con la barra de desplazamiento visible: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra lever 1440 con barra de desplazamiento con filtro: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos lever 1440 con la barra de desplazamiento visible con un filtro puesto: los mismos 2 renglones que el diseño renderizado, cada control en el suyo",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=107\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"total\":2,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=106\",\"Excel=177\",\"Póliza contable=236\"],\"ancho\":1063,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos lever 1440 con la barra de desplazamiento visible con un filtro puesto: la página no se desborda a lo ancho",
     "detalle": ""
   },
   {
@@ -366,8 +456,8 @@
   },
   {
     "ok": true,
-    "texto": "lado barra de Movimientos lever 390: cada control en el renglón del diseño renderizado",
-    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"ancho\":324,\"desbordaPagina\":false}"
+    "texto": "lado barra de Movimientos lever 390: cada control en el renglón del diseño renderizado (7 renglones)",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"total\":7,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"total\":7,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Excel=104\",\"Póliza contable=142\"],\"ancho\":324,\"desbordaPagina\":false}"
   },
   {
     "ok": true,
@@ -381,8 +471,8 @@
   },
   {
     "ok": true,
-    "texto": "lado barra de Movimientos lever 390 con un filtro puesto: cada control en el renglón del diseño renderizado",
-    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"ancho\":324,\"desbordaPagina\":false}"
+    "texto": "lado barra de Movimientos lever 390 con un filtro puesto: cada control en el renglón del diseño renderizado (8 renglones)",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"total\":8,\"anchos\":[\"Mes=148\",\"Periodo=218\",\"Persona=178\",\"Área=120\",\"Tarjeta=190\",\"Categoría=157\",\"Comprobante=146\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=107\",\"Excel=83\",\"Póliza contable=142\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"total\":8,\"anchos\":[\"Mes=123\",\"Periodo=218\",\"Persona=129\",\"Área=120\",\"Tarjeta=190\",\"Categoría=153\",\"Comprobante=136\",\"Monto desde=168\",\"Agrupar por=120\",\"Limpiar filtros=106\",\"Excel=104\",\"Póliza contable=142\"],\"ancho\":324,\"desbordaPagina\":false}"
   },
   {
     "ok": true,

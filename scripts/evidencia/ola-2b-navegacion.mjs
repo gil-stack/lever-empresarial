@@ -4,6 +4,7 @@
 //
 //   node scripts/evidencia/ola-2b-navegacion.mjs flujos      los 6 flujos clicados, con doble clic y conteo en la base
 //   node scripts/evidencia/ola-2b-navegacion.mjs lado        los 16 módulos de Altamar junto a su captura del diseño
+//   node scripts/evidencia/ola-2b-navegacion.mjs barra       solo la barra de Movimientos contra fPlat.html (también va en lado)
 //   node scripts/evidencia/ola-2b-navegacion.mjs pantallas   3 temas × 1440/390: un h1, etiquetas, consola limpia, foco
 //   node scripts/evidencia/ola-2b-navegacion.mjs modulos     Movimientos y Fiscal clicados en 3 temas × 1440/390
 //   node scripts/evidencia/ola-2b-navegacion.mjs contraste   AA de cada texto contra la escena real
@@ -81,8 +82,12 @@ function renovarSesiones() {
   sql("update sessions set ultimo_uso = now() where expires_at > now()");
 }
 
-async function abrir({ quien, tema = "oscuro", ancho = 1440, javaScript = true }) {
-  const nav = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
+async function abrir({ quien, tema = "oscuro", ancho = 1440, javaScript = true, barraVisible = false }) {
+  // Headless oculta la barra de desplazamiento; sin `--hide-scrollbars` ocupa 15 px, como en un escritorio con barras clásicas.
+  const nav = await chromium.launch({
+    args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+    ...(barraVisible ? { ignoreDefaultArgs: ["--hide-scrollbars"] } : {}),
+  });
   const movil = ancho < 600;
   const ctx = await nav.newContext({
     javaScriptEnabled: javaScript,
@@ -572,6 +577,8 @@ function medirBarra(enApp) {
   const renglon = (nodo) => fondos.findIndex((f) => Math.abs(f - nodo.getBoundingClientRect().bottom) < 6);
   return {
     renglones: controles.map((nodo) => `${nombre(nodo)}@${renglon(nodo)}`),
+    total: fondos.length,
+    anchos: controles.map((nodo) => `${nombre(nodo)}=${Math.round(nodo.getBoundingClientRect().width)}`),
     ancho: Math.round(barra.getBoundingClientRect().width),
     desbordaPagina: document.documentElement.scrollWidth > window.innerWidth,
   };
@@ -580,18 +587,19 @@ function medirBarra(enApp) {
 /**
  * La barra de Movimientos contra el diseño renderizado (fPlat.html), que manda sobre la captura plat-05:
  * cada control en el mismo renglón a 1440 y 390, en los tres temas, sin filtro y con uno puesto
- * (entonces aparece «Limpiar filtros»). Deja las dos barras lado a lado, el diseño a la izquierda.
+ * (entonces aparece «Limpiar filtros»). A 1440 también con la barra de desplazamiento visible, que
+ * quita 15 px y cambia dónde se parte el diseño. Deja las dos barras lado a lado, el diseño a la izquierda.
  */
 async function barraContraLaFuente(carpeta) {
   const fuente = `file://${resolve(DISENO, "..", "fPlat.html")}#movimientos`;
   const temaDiseno = { oscuro: "oscuro", claro: "claro", lever: "cohete" };
   for (const tema of TEMAS) {
-    for (const ancho of [1440, 390]) {
+    for (const [ancho, barraVisible] of [[1440, false], [1440, true], [390, false]]) {
       for (const conFiltro of [false, true]) {
         const tomas = [];
         const medidas = [];
         for (const enApp of [false, true]) {
-          const { nav, p, errores } = await abrir({ quien: enApp ? "laura" : null, tema, ancho });
+          const { nav, p, errores } = await abrir({ quien: enApp ? "laura" : null, tema, ancho, barraVisible });
           if (enApp) {
             await p.goto(`${BASE}${ALTAMAR}/consola/movimientos${conFiltro ? "?persona=Carlos+M%C3%A9ndez" : ""}`, { waitUntil: "networkidle" });
           } else {
@@ -606,16 +614,24 @@ async function barraContraLaFuente(carpeta) {
           await p.addStyleTag({ content: "nextjs-portal { display: none !important; }" }).catch(() => {});
           medidas.push(await p.evaluate(medirBarra, enApp));
           tomas.push(await p.locator(enApp ? ".demo-filtros" : ".mfBar").screenshot());
-          if (enApp) anotar(errores.length === 0, `lado barra ${tema} ${ancho}${conFiltro ? " con filtro" : ""}: sin errores de consola`, errores.join(" | "));
+          const caso = `${ancho}${barraVisible ? " con barra de desplazamiento" : ""}${conFiltro ? " con filtro" : ""}`;
+          if (enApp) anotar(errores.length === 0, `lado barra ${tema} ${caso}: sin errores de consola`, errores.join(" | "));
           await nav.close();
         }
         const [diseno, app] = medidas;
-        const etiqueta = `lado barra de Movimientos ${tema} ${ancho}${conFiltro ? " con un filtro puesto" : ""}`;
-        anotar(
-          Boolean(diseno && app) && JSON.stringify(app.renglones) === JSON.stringify(diseno.renglones),
-          `${etiqueta}: cada control en el renglón del diseño renderizado`,
-          `diseño ${JSON.stringify(diseno)} · app ${JSON.stringify(app)}`,
-        );
+        const etiqueta = `lado barra de Movimientos ${tema} ${ancho}${barraVisible ? " con la barra de desplazamiento visible" : ""}${conFiltro ? " con un filtro puesto" : ""}`;
+        const mismoRenglon = Boolean(diseno && app) && JSON.stringify(app.renglones) === JSON.stringify(diseno.renglones);
+        if (barraVisible) {
+          // Con 15 px menos, el diseño parte Categoría o no según el ancho de sus selectores, que miden su texto. Los de
+          // la app traen sus propios datos (un solo mes; Persona sin los proveedores de las tarjetas virtuales) y miden menos.
+          anotar(
+            Boolean(diseno && app) && app.total === diseno.total,
+            `${etiqueta}: los mismos ${diseno?.total} renglones que el diseño renderizado${mismoRenglon ? ", cada control en el suyo" : "; Categoría cabe en el primero porque los selectores de la app miden menos"}`,
+            `diseño ${JSON.stringify(diseno)} · app ${JSON.stringify(app)}`,
+          );
+        } else {
+          anotar(mismoRenglon, `${etiqueta}: cada control en el renglón del diseño renderizado (${diseno?.total} renglones)`, `diseño ${JSON.stringify(diseno)} · app ${JSON.stringify(app)}`);
+        }
         anotar(app?.desbordaPagina === false, `${etiqueta}: la página no se desborda a lo ancho`);
         if (tema === "oscuro" || ancho === 1440) {
           const [a, b] = await Promise.all(tomas.map((toma) => sharp(toma).metadata()));
@@ -623,7 +639,7 @@ async function barraContraLaFuente(carpeta) {
           await sharp({ create: { width: a.width + margen + b.width, height: Math.max(a.height, b.height), channels: 3, background: { r: 20, g: 18, b: 17 } } })
             .composite([{ input: tomas[0], left: 0, top: 0 }, { input: tomas[1], left: a.width + margen, top: 0 }])
             .webp({ quality: 80 })
-            .toFile(`${carpeta}/plat-05-barra-${tema}-${ancho}${conFiltro ? "-con-filtro" : ""}${process.env.SUFIJO_BARRA ?? ""}.webp`);
+            .toFile(`${carpeta}/plat-05-barra-${tema}-${ancho}${barraVisible ? "-con-barra" : ""}${conFiltro ? "-con-filtro" : ""}${process.env.SUFIJO_BARRA ?? ""}.webp`);
         }
       }
     }
@@ -775,6 +791,49 @@ async function modulos() {
       const conTeclado = await contar(() => p.keyboard.press("Enter"), (url) => url.searchParams.get("periodo") === "hoy" && url.searchParams.get("desde") === "4000");
       const foco = await p.evaluate(() => document.activeElement?.textContent?.trim() ?? "");
       anotar(conTeclado === 1 && (await periodoMarcado()) === "Hoy" && foco === "Hoy", `${etiqueta} Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí`, `${conTeclado} navegación(es) · foco «${foco}»`);
+      // N4: bajar el ratón en «7 días» y soltarlo fuera (en el teléfono, arrastrar el dedo) no deja esperando al siguiente cambio.
+      await abrirMovimientos();
+      await monto.evaluate((campo) => {
+        const marcas = (window.marcasN4 = {});
+        campo.addEventListener("change", () => (marcas.cambio = performance.now()));
+        campo.form.addEventListener("submit", () => (marcas.envio = performance.now()));
+      });
+      const caja7 = await periodos.getByRole("button", { name: "7 días" }).boundingBox();
+      const centro7 = { x: caja7.x + caja7.width / 2, y: caja7.y + caja7.height / 2 };
+      if (ancho < 600) {
+        const cdp = await p.context().newCDPSession(p);
+        await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [centro7] });
+        for (let paso = 1; paso <= 5; paso++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: centro7.x, y: centro7.y + 40 * paso }] });
+        await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+        await cdp.detach();
+      } else {
+        const mapa = await p.locator("#movimientos-mapa").boundingBox();
+        await p.mouse.move(centro7.x, centro7.y);
+        await p.mouse.down();
+        await p.mouse.move(mapa.x + 20, mapa.y + mapa.height / 2, { steps: 5 });
+        await p.mouse.up();
+      }
+      const trasSoltar = await contar(async () => {
+        await monto.focus();
+        await p.keyboard.type("5000");
+        await p.keyboard.press("Tab");
+      }, (url) => url.searchParams.get("desde") === "5000");
+      const { cambio, envio } = await p.evaluate(() => window.marcasN4);
+      anotar(
+        trasSoltar === 1 && envio - cambio < 250 && (await periodoMarcado()) === "Todo el mes",
+        `${etiqueta} Movimientos: ${ancho < 600 ? "arrastrar el dedo" : "soltar el ratón"} fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación`,
+        `${Math.round(envio - cambio)} ms del cambio al envío · ${trasSoltar} navegación(es) · marcado «${await periodoMarcado()}»`,
+      );
+      // El botón oculto que usa Enter no es una parada de Tab, ni de ida ni de vuelta.
+      const oculto = p.locator(".demo-filtros > button.solo-lector");
+      await oculto.evaluate((boton) => {
+        window.focoOculto = 0;
+        boton.addEventListener("focus", () => window.focoOculto++);
+      });
+      await p.locator("#movimientos-mes").focus();
+      for (const tecla of [...Array(16).fill("Tab"), ...Array(16).fill("Shift+Tab")]) await p.keyboard.press(tecla);
+      const focoOculto = await p.evaluate(() => window.focoOculto);
+      anotar((await oculto.count()) === 1 && focoOculto === 0, `${etiqueta} Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab`, `${focoOculto} vez(ces)`);
       {
         // Sin JavaScript: el botón del periodo envía el formulario con lo demás, y el periodo va una sola vez.
         const sinJs = await abrir({ quien: "laura", tema, ancho, javaScript: false });
@@ -1167,6 +1226,7 @@ const modo = process.argv[2] ?? "flujos";
 if (modo !== "caida") sesionesFrescas();
 if (modo === "flujos") await flujos();
 else if (modo === "lado") await lado();
+else if (modo === "barra") await barraContraLaFuente(`${DIR}/lado-a-lado`);
 else if (modo === "pantallas") await pantallas();
 else if (modo === "modulos") await modulos();
 else if (modo === "contraste") await contraste();
