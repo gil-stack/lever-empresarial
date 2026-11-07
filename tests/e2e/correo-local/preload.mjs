@@ -1,5 +1,6 @@
 // Proveedor de correo falso de los recorridos de navegador. Se carga en `next start`
-// con NODE_OPTIONS=--import, solo desde tests/e2e/entorno.ts. Sin E2E_CORREO_ARCHIVO no hace nada.
+// con NODE_OPTIONS=--import, solo desde tests/e2e/entorno.ts. Fuera del servidor de una
+// prueba local truena (../guarda-preload.mjs). Sin E2E_CORREO_ARCHIVO no hace nada.
 //
 // Solo intercepta POST https://api.resend.com/emails (src/server/correo/resend.ts usa el
 // fetch global): anota el mensaje en E2E_CORREO_ARCHIVO, una línea JSON por correo, y
@@ -7,6 +8,9 @@
 // correo, como Resend. Nada sale a la red; todo lo demás sigue al fetch real.
 import { appendFileSync } from "node:fs";
 
+import { exigirEntornoDePrueba } from "../guarda-preload.mjs";
+
+exigirEntornoDePrueba("El correo falso de los recorridos");
 const archivo = process.env.E2E_CORREO_ARCHIVO;
 
 if (archivo) {

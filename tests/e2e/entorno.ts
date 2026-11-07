@@ -142,6 +142,7 @@ async function levantarBlobLocal(): Promise<void> {
   process.env.BLOB_READ_WRITE_TOKEN = TOKEN_BLOB_LOCAL;
   process.env.VERCEL_BLOB_API_URL = blob.api;
   process.env.E2E_BLOB_LOCAL_URL = blob.origen;
+  process.env.E2E_BLOB_LOCAL = "1";
 }
 
 async function detenerBlobLocal(): Promise<void> {
