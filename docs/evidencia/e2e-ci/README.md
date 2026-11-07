@@ -43,10 +43,12 @@ Todas las pruebas exigen además una consola del navegador sin errores.
 | Vercel CI, 4 CPU (corrida roja provocada) | `3d1de73` | 33 de 34, falla esperada | 643 s | 9.4 min |
 | Vercel CI, 4 CPU (reversión) | `07c69c2` | 34 de 34 | 634 s | 9.3 min |
 | Vercel CI, 8 CPU | `d7856a8` | 34 de 34 | 321 s | 4.3 min |
+| Vercel CI, 8 CPU | `c967df6` | 34 de 34 | 464 s | 6.5 min |
+| Vercel CI, 8 CPU | `eddd8ef` | 34 de 34 | 431 s | 5.9 min |
 | Local (Chromium local) | `30a19c2` | 34 de 34, tres veces seguidas con base nueva | 120 s, 124 s y 126 s | 2.0 min |
 | Local (Chromium local) | `d7856a8` | 34 de 34 | 119 s | 1.9 min |
 
-Con 4 CPU, el tiempo de la tarea varió entre 424 y 643 s según la máquina que tocó. Para dejar margen bajo el tope de 12 minutos, `test:e2e` pasa a `ci:cpus:8` (la documentación vigente de Vercel CI permite hasta 32, con 2 GB por CPU). Con 8 CPU tardó 321 s. De esos, 52 s son preparación: 15 s compilando, las imágenes de Postgres y Chromium, y el arranque.
+Con 4 CPU, el tiempo de la tarea varió entre 424 y 643 s según la máquina que tocó. Para dejar margen bajo el tope de 12 minutos, `test:e2e` pasa a `ci:cpus:8` (la documentación vigente de Vercel CI permite hasta 32, con 2 GB por CPU). Con 8 CPU tardó entre 321 y 464 s en tres corridas: la máquina sigue variando, pero el peor caso medido deja más de 4 minutos de margen. En la de 321 s, 52 s fueron preparación: 15 s compilando, las imágenes de Postgres y Chromium, y el arranque.
 
 Lo que bajó el tiempo de 556 s con 22 pruebas a 424 s con 34: sin video, traza solo con el DOM, sin capturas de evidencia en CI, el tope de intentos en un solo formulario y las rutas negadas de `roles.spec.ts` pedidas sin pintar.
 
