@@ -128,6 +128,11 @@
   display: none;
 }
 
+/* Mi perfil usa las mismas tarjetas y renglones. */
+.perfil-nota {
+  margin-top: 12px;
+}
+
 /* El botón de nómina vive dentro de las acciones de la fila. */
 .aprobaciones .decision-acciones .preparar-nomina {
   display: grid;
