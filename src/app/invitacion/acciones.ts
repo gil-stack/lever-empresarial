@@ -18,6 +18,7 @@ const MENSAJES: Record<string, string> = {
   invitacion_revocada: "Esta invitación ya no sirve. Pide otra a quien te invitó.",
   invitacion_inexistente: "Este enlace no es una invitación.",
   invitacion_cerrada: "Esta invitación ya no sirve. Pide otra a quien te invitó.",
+  empresa_suspendida: "La empresa está suspendida y por ahora no admite cuentas nuevas. Comunícate con Lever.",
 };
 
 /** Guarda la contraseña y lleva a registrar o verificar el segundo factor. No abre el portal. */

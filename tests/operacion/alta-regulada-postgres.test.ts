@@ -28,6 +28,8 @@ import { cargarListaBloqueadas, listarCoincidencias, registrarReporte, resolverC
 import { cambiarRolPersonal } from "../../src/server/operacion/personal.ts";
 import { decidirCambioDeSuspension, solicitarCambioDeSuspension } from "../../src/server/operacion/suspensiones.ts";
 import { crearPagoProveedor, resolverPagoProveedor } from "../../src/server/pagos-proveedores/servicio.ts";
+import { nombrarCentro } from "../../src/server/personas/servicio.ts";
+import { cambiarAccesoFinanzas } from "../../src/server/roles/finanzas.ts";
 import { aplicarArchivo, conBaseDesechable, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
 import {
   almacenEnMemoria,
@@ -467,6 +469,15 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           )), /empresa_suspendida/);
           await assert.rejects(portal((c) => c.query("insert into payroll_batches (id, company_id) values ($1, $2)", [randomUUID(), beta])), /empresa_suspendida/);
           await assert.rejects(portal((c) => c.query("insert into cost_centers (id, company_id, nombre) values ($1, $2, 'Ventas')", [randomUUID(), beta])), /empresa_suspendida/);
+          // La consola sigue ofreciendo cada acción (el contexto conserva las capacidades de los roles) y
+          // la base la rechaza con su propio motivo, también por el servicio de Personas y de Finanzas.
+          await assert.rejects(nombrarCentro(luis, { nombre: "Ventas", presupuesto: "1000.00" }), /empresa_suspendida/);
+          assert.deepEqual(
+            await cambiarAccesoFinanzas(luis, { userId: ROSA, verFinanzas: "si" }),
+            { tipo: "rechazado", codigo: "empresa_suspendida", habilitado: false },
+          );
+          assert.equal(await contar("select count(*)::int as n from cost_centers where company_id = $1", [beta]), 0);
+          assert.equal(await contar("select count(*)::int as n from membership_roles where company_id = $1 and rol = 'finanzas'", [beta]), 0);
           await assert.rejects(
             invitarPrimerAdministrador(adm, { companyId: beta, nombre: "Admin Beta", correo: "admin-beta@ejemplo.mx", vista: "" }, { produccion: false }),
             /cliente_no_activo/,
