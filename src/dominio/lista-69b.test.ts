@@ -125,7 +125,7 @@ describe("el pago", () => {
     assert.equal(fuera.listaPermitePago, true);
     assert.equal(fuera.motivo, "fuera_del_listado");
     assert.equal(ESTA_PANTALLA_ENVIA_DINERO, false);
-    assert.match(fraseDePago69b(fuera), /no envía dinero/);
+    assert.equal(fraseDePago69b(fuera), "No aparece en la lista 69-B.");
   });
 
   it("guardar la lista no es una decisión de este módulo", () => {

@@ -1,0 +1,122 @@
+[
+  {
+    "ok": true,
+    "texto": "95-cargando oscuro 1440: la sección dice «Cargando…» y el marco se queda",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando oscuro 1440: la barra y el lateral siguen visibles",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando oscuro 1440: al llegar, se pinta Política",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "96-mesa oscuro 1440: la pestaña «Agenda» muestra su espera mientras llega la vista",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "96-mesa oscuro 1440: «Filtrar» dice «Filtrando…» mientras llega la búsqueda",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "96-mesa oscuro 1440: al llegar, la mesa queda filtrada",
+    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola/proveedores?vista=pagos&q=Servicios&estado="
+  },
+  {
+    "ok": true,
+    "texto": "96-mesa oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando claro 1440: la sección dice «Cargando…» y el marco se queda",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando claro 1440: la barra y el lateral siguen visibles",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando claro 1440: al llegar, se pinta Política",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "96-mesa claro 1440: la pestaña «Agenda» muestra su espera mientras llega la vista",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "96-mesa claro 1440: «Filtrar» dice «Filtrando…» mientras llega la búsqueda",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "96-mesa claro 1440: al llegar, la mesa queda filtrada",
+    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola/proveedores?vista=pagos&q=Servicios&estado="
+  },
+  {
+    "ok": true,
+    "texto": "96-mesa claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando lever 1440: la sección dice «Cargando…» y el marco se queda",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando lever 1440: la barra y el lateral siguen visibles",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando lever 1440: al llegar, se pinta Política",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "96-mesa lever 1440: la pestaña «Agenda» muestra su espera mientras llega la vista",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "96-mesa lever 1440: «Filtrar» dice «Filtrando…» mientras llega la búsqueda",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "96-mesa lever 1440: al llegar, la mesa queda filtrada",
+    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola/proveedores?vista=pagos&q=Servicios&estado="
+  },
+  {
+    "ok": true,
+    "texto": "96-mesa lever 1440: sin errores de consola",
+    "detalle": ""
+  }
+]

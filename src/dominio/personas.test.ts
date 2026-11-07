@@ -7,7 +7,6 @@ import { capacidadesDe, tiene, type RolCliente } from "../nucleo/capacidades.ts"
 import {
   accesoFinanzasDe,
   FRASE_CONTADOR,
-  FRASE_SIN_DISPERSION,
   decidirLiberacion,
   empresaOperable,
   erroresDeAltaPersona,
@@ -43,7 +42,6 @@ describe("dos firmas y el contador", () => {
     assert.equal(empresaOperable(1), false);
     assert.equal(empresaOperable(2), true);
     assert.equal(FRASE_CONTADOR, "El contador no tiene la acción de liberar.");
-    assert.equal(FRASE_SIN_DISPERSION, "No se dispersa dinero.");
     assert.match(lineaDeRol("contador"), /El contador no tiene la acción de liberar/);
   });
 

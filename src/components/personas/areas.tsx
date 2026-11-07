@@ -1,4 +1,4 @@
-import { CabezaPagina, Hoja, Insignia, Renglon, Renglones, Vacio } from "@/components/sistema";
+import { Hoja, Insignia, Monto, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import type { LecturaMaestro } from "@/server/personas/tipos";
 
 import { FormularioArea } from "./formulario-area";
@@ -16,11 +16,9 @@ export function AreasPersonas({
 }) {
   return (
     <>
-      <CabezaPagina kicker="Personas" titulo="Áreas y presupuestos">
-        <p className="lede">La nómina y las bolsas individuales se comparan contra la planeación mensual de cada área.</p>
-      </CabezaPagina>
+      <h1 className="solo-lector">Áreas y presupuestos</h1>
       <NavegacionPersonas actual="areas" empresaId={empresaId} />
-      <p className="nota-regla">Comprometido = nómina mensual estimada + presupuestos individuales. Es planeación, no gasto real.</p>
+      <NotaRegla>Cada área compara su presupuesto mensual contra lo comprometido: la nómina mensual estimada más los presupuestos individuales.</NotaRegla>
 
       <div className="areas-rejilla">
         {edita ? (
@@ -34,7 +32,7 @@ export function AreasPersonas({
           <Hoja key={area.id} id={`area-${area.id}`} titulo={area.nombre} className="area-tarjeta">
             <div className="area-cabeza">
               <div>
-                <p className="area-cifra">{dinero(area.presupuestoCentavos)}</p>
+                <Monto>{dinero(area.presupuestoCentavos)}</Monto>
                 <p className="pista">Presupuesto mensual</p>
               </div>
               {area.esTesoreria ? <Insignia tono="sello">Tesorería</Insignia> : <Insignia>Área</Insignia>}

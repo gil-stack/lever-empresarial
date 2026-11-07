@@ -8,15 +8,16 @@ import { hoyEnMexico } from "../../src/dominio/personas";
 const empresa = () => process.env.E2E_COMPANY_ID ?? "";
 const hoy = () => hoyEnMexico(new Date());
 const CLABE = "002180701150123452";
+// Fuera del árbol versionado (test-results está en .gitignore); E2E_CAPTURAS la cambia, igual que en Pagos a proveedores.
+const EVIDENCIA = process.env.E2E_CAPTURAS ?? "test-results/personas";
 
 async function abrir(page: Page, ruta: string): Promise<void> {
   await page.goto(`/c/${empresa()}${ruta}`);
 }
 
 async function captura(page: Page, nombre: string): Promise<void> {
-  const dir = join(process.cwd(), "docs/evidencia/personas");
-  mkdirSync(dir, { recursive: true });
-  await page.screenshot({ path: join(dir, `${nombre}.png`), fullPage: true });
+  mkdirSync(EVIDENCIA, { recursive: true });
+  await page.screenshot({ path: join(EVIDENCIA, `${nombre}.png`), fullPage: true });
 }
 
 async function iniciarAlta(page: Page, nombre: string, neto: string): Promise<void> {
@@ -105,7 +106,7 @@ test("recorrido completo de colaboradores, presupuesto, nómina, tarjeta y baja"
   await page.goto(tesoreria);
   await page.locator("#nomina-neto").fill("21000");
   await page.getByRole("button", { name: "Guardar programación" }).click();
-  await expect(page.getByText("La nómina quedó programada. No se dispersó dinero.")).toBeVisible();
+  await expect(page.getByText("La nómina quedó programada.")).toBeVisible();
 
   await abrir(page, "/consola/personas/nomina");
   const fechaBoton = await page.locator('input[name="fechaPago"]').inputValue();

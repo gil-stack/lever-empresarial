@@ -67,7 +67,7 @@ describe("recorridos de entrada y superficie", () => {
     assert.ok(pagina.indexOf("redirect(") < pagina.indexOf("leerResumenInicio(apertura.ctx"));
   });
 
-  it("Inicio consulta el resumen autorizado, Pendientes no lee tesorería y el teléfono no llama a la política completa", () => {
+  it("Inicio consulta el resumen autorizado, Pendientes no lee tesorería (del flujo, solo el faltante con permiso) y el teléfono no llama a la política completa", () => {
     const consola = readFileSync(new URL("src/app/consola/page.tsx", RAIZ), "utf8");
     const pendientes = readFileSync(new URL("src/app/consola/pendientes/page.tsx", RAIZ), "utf8");
     const telefono = [
@@ -90,7 +90,16 @@ describe("recorridos de entrada y superficie", () => {
     assert.doesNotMatch(portada, /leerCajones|leerPolitica|leerTarifa|password_hash|policy_categories|platform_pricing|subscriptions|tope_centavos/i);
     const tablas = new Set([...SQL_RESUMEN.matchAll(/\b(?:from|join)\s+([a-z_]+)/gi)].map((coincidencia) => coincidencia[1]));
     assert.deepEqual([...tablas].sort(), ["categorias", "drawers", "limites", "mensuales", "postings", "recientes"]);
-    assert.doesNotMatch(pendientes, /leerResumenInicio|leerCajones|postings|saldo/i);
+    // Pendientes no lee tesorería: ni el resumen de Inicio, ni cajones, ni el libro, ni las vistas
+    // del flujo. Del flujo solo pide la alerta de faltante (leerFaltanteParaPendientes envuelve a leerFaltante),
+    // y leerFaltante la niega sin cliente.flujo.ver.
+    assert.doesNotMatch(pendientes, /leerResumenInicio|leerCajones|postings|leerFlujoInicio|leerVistaSaldo|proyeccionCon/i);
+    assert.deepEqual(
+      [...pendientes.matchAll(/import \{([^}]*)\} from "@\/server\/flujo\/[^"]+"/g)].map((coincidencia) => coincidencia[0]),
+      ['import { leerFaltanteParaPendientes, type FaltanteDePendientes } from "@/server/flujo/servicio"'],
+    );
+    const servicioFlujo = readFileSync(new URL("src/server/flujo/servicio.ts", RAIZ), "utf8");
+    assert.match(servicioFlujo, /export async function leerFaltante\([\s\S]*?\): Promise<FaltantePendientes \| null> \{\s*if \(!puede\(ctx, "cliente\.flujo\.ver"\)\) return null;/);
     assert.match(consola, /sin_permiso\"\) notFound/);
     assert.doesNotMatch(telefono, /leerPolitica|postings|drawers|password_hash/i);
     const visibles = [

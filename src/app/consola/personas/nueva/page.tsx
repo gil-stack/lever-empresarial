@@ -7,7 +7,7 @@ import { vistaDeMarco } from "@/components/cromo/puertas";
 import { AltaColaborador } from "@/components/personas/alta";
 import { MaestroCerrado } from "@/components/personas/maestro";
 import { NavegacionPersonas } from "@/components/personas/navegacion";
-import { CabezaPagina, Vacio } from "@/components/sistema";
+import { Vacio } from "@/components/sistema";
 import { hoyEnMexico } from "@/dominio/personas";
 import { puede } from "@/nucleo/contexto";
 import { enEmpresa } from "@/nucleo/rutas";
@@ -33,17 +33,15 @@ export default async function PaginaNuevaPersona() {
   const empresaId = apertura.ctx?.empresa?.id ?? "";
   const contenido = aviso ? <MaestroCerrado aviso={aviso} /> : lectura ? (
     <>
-      <CabezaPagina kicker="Personas" titulo="Alta de colaborador">
-        <p className="lede">Un expediente completo: trabajo, presupuesto, nómina, depósito y acceso.</p>
-      </CabezaPagina>
+      <h1 className="solo-lector">Alta de colaborador</h1>
       <NavegacionPersonas actual="personas" empresaId={empresaId} />
       {lectura.areas.length === 0 ? (
-        <>
-          <Vacio titulo="Primero crea un área">El área define el centro de costo y la bolsa mensual del equipo.</Vacio>
-          <Link className="boton" href={enEmpresa(empresaId, "/consola/personas/areas")}>Crear área</Link>
-        </>
+        <Vacio titulo="Primero crea un área">
+          El área define el centro de costo y la bolsa mensual del equipo.{" "}
+          <Link className="enlace-texto" href={enEmpresa(empresaId, "/consola/personas/areas")}>Crear área</Link>
+        </Vacio>
       ) : <AltaColaborador hoy={hoyEnMexico(new Date())} areas={lectura.areas} jefes={lectura.jefes} empresaId={empresaId} altaLlave={randomUUID()} />}
     </>
   ) : <MaestroCerrado aviso="libro" />;
-  return <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)}><main id="contenido" className="consola personas-modulo">{contenido}</main></Marco>;
+  return <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)} titulo="Alta de colaborador"><main id="contenido" className="consola personas-modulo">{contenido}</main></Marco>;
 }

@@ -7,11 +7,13 @@ import { Ausencia, Aviso, CifraGrande, Insignia } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
 import { fechaConAnio, fechaCorta } from "@/dominio/flujo/fechas";
 import { cifrasDePresupuesto, ETIQUETA_ESTADO_PRESUPUESTO } from "@/dominio/flujo/presupuestos";
-import { textoAlcance, type Movimiento, type Proyeccion, type Semana } from "@/dominio/flujo/proyeccion";
+import { textoAlcance } from "@/dominio/flujo/proyeccion";
 import { horaEnMexico } from "@/dominio/reloj";
 import { enEmpresa } from "@/nucleo/rutas";
 import type { FlujoInicio } from "@/server/flujo/servicio";
 
+import { AlertaFaltante } from "./alerta-faltante";
+import { Movimientos, rango } from "./movimientos";
 import { Origen } from "./origen";
 
 /**
@@ -107,19 +109,7 @@ function Alertas({ flujo, empresaId }: { flujo: FlujoInicio; empresaId: string |
   return (
     <section className="flujo-alertas" aria-labelledby="alertas-titulo">
       <h2 id="alertas-titulo" className="solo-lector">Alertas</h2>
-      {p.faltante ? (
-        <div data-alerta="faltante">
-          <Aviso titulo={tituloFaltante(p)}>
-            <p>
-              Saldo proyectado al cierre de la semana: <strong>{formatoPesos(p.faltante.saldoFinal)}</strong>
-              {p.faltante.motivo === "colchon" ? <> (colchón: {formatoPesos(p.colchonCentavos)})</> : null}.
-            </p>
-            {p.faltante.causas.length > 0 ? (
-              <p>Lo provoca: {p.faltante.causas.map((m) => `${m.concepto} (${formatoPesos(m.centavos)})`).join(", ")}.</p>
-            ) : null}
-          </Aviso>
-        </div>
-      ) : null}
+      {p.faltante ? <AlertaFaltante faltante={p.faltante} colchonCentavos={p.colchonCentavos} /> : null}
       {presupuesto.length > 0 ? (
         <div data-alerta="presupuesto">
           <Aviso titulo={presupuesto.length === 1 ? "Un presupuesto pide atención" : `${presupuesto.length} presupuestos piden atención`}>
@@ -147,16 +137,6 @@ function Alertas({ flujo, empresaId }: { flujo: FlujoInicio; empresaId: string |
       ) : null}
     </section>
   );
-}
-
-function tituloFaltante(p: Proyeccion): string {
-  const f = p.faltante!;
-  const semana = `semana del ${fechaCorta(f.inicio)} al ${fechaCorta(f.fin)}`;
-  return f.motivo === "negativo" ? `Faltante: el saldo queda en negativo la ${semana}` : `El saldo baja del colchón la ${semana}`;
-}
-
-function rango(semana: Semana): string {
-  return `${fechaCorta(semana.inicio)} – ${fechaCorta(semana.fin)}`;
 }
 
 function ProyeccionSemanal({ flujo, empresaId }: { flujo: FlujoInicio; empresaId: string | null }) {
@@ -260,40 +240,5 @@ function Cifra({ valor, nombre, etiqueta }: { valor: number | null; nombre: stri
     <td role="cell" className={valor < 0 ? "cifra flujo-negativo" : "cifra"} data-cifra={nombre} data-etiqueta={etiqueta} data-centavos={valor}>
       {formatoPesos(valor)}
     </td>
-  );
-}
-
-function Movimientos({ semanas }: { semanas: Semana[] }) {
-  const conMovimientos = semanas.filter((semana) => semana.movimientos.length > 0);
-  if (conMovimientos.length === 0) {
-    return <p className="flujo-nota">Todavía no hay nómina, pagos, cobros ni obligaciones en estas 13 semanas.</p>;
-  }
-  return (
-    <div className="flujo-movimientos">
-      {conMovimientos.map((semana) => (
-        <details key={semana.inicio} data-movimientos={semana.inicio}>
-          <summary>{rango(semana)} · {semana.movimientos.length} {semana.movimientos.length === 1 ? "movimiento" : "movimientos"}</summary>
-          <ul>
-            {semana.movimientos.map((m) => <Renglon key={`${m.clave}-${m.atrasado ? "a" : ""}`} m={m} />)}
-          </ul>
-        </details>
-      ))}
-    </div>
-  );
-}
-
-function Renglon({ m }: { m: Movimiento }) {
-  return (
-    <li data-clave={m.clave}>
-      <span>
-        {fechaCorta(m.fecha)} · {m.concepto}
-        {m.atrasado ? <Insignia tono="aviso">{m.sinAutorizar ? "Vencido sin autorizar" : "Atrasado"}</Insignia> : null}
-        {m.cobrado ? <Insignia tono="sello">Cobrado</Insignia> : null}
-        {m.fechaOriginal ? <Insignia tono="sello">Escenario</Insignia> : null}
-      </span>
-      <strong className={m.sentido === "entrada" ? "cifra-ingreso" : "cifra-gasto"}>
-        {m.sentido === "entrada" ? "+" : "−"}{formatoPesos(m.centavos)}
-      </strong>
-    </li>
   );
 }

@@ -1,5 +1,5 @@
 import { clabeValida } from "./clabe";
-import { FRASE_ESTA_PANTALLA, FRASE_SIN_PAGO } from "./lista-69b";
+import { FRASE_FUERA_DE_LISTA, FRASE_SIN_PAGO } from "./lista-69b";
 import { horaEnMexico } from "./reloj";
 import { normalizarRfc, validarRfc } from "./rfc";
 
@@ -217,7 +217,7 @@ export function relatoDePago(decision: DecisionPago): RelatoPago {
   return {
     tono: "neutro",
     insignia: "Fuera de la lista",
-    frase: FRASE_ESTA_PANTALLA,
+    frase: FRASE_FUERA_DE_LISTA,
     detalle: `El RFC no está en el archivo del ${fechaDeArchivo(decision.fechaArchivo ?? "")}.`,
     hayBoton: false,
   };
@@ -225,7 +225,7 @@ export function relatoDePago(decision: DecisionPago): RelatoPago {
 
 export function mensajeDeAlta(decision: DecisionPago): string {
   if (decision.motivo === "fuera_de_lista") {
-    return `El proveedor quedó. ${FRASE_ESTA_PANTALLA}`;
+    return `El proveedor quedó. ${FRASE_FUERA_DE_LISTA}`;
   }
   return `El proveedor quedó. ${FRASE_SIN_PAGO}`;
 }

@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 
 type Carga =
   | { tipo: "sin_empresa" }
+  | { tipo: "sin_permiso" }
   | { tipo: "aviso"; mensaje: string }
   | { tipo: "lista"; vista: VistaLista69b };
 
@@ -33,18 +34,18 @@ export default async function PaginaLista69b({
   const carga =
     apertura.tipo === "libro"
       ? ({ tipo: "aviso", mensaje: "No se pudo consultar el listado." } as const)
-      : apertura.tipo !== "abierta" || !ctx
-        ? ({ tipo: "sin_empresa" } as const)
-        : await cargar(ctx, rfc);
+      : apertura.tipo === "sin_permiso"
+        ? ({ tipo: "sin_permiso" } as const)
+        : apertura.tipo !== "abierta" || !ctx
+          ? ({ tipo: "sin_empresa" } as const)
+          : await cargar(ctx, rfc);
 
   return (
-    <Marco actual="/consola/lista-69b" vista={vistaDeMarco(ctx)}>
+    <Marco actual="/consola/lista-69b" vista={vistaDeMarco(ctx)} titulo="Lista 69-B">
       <main id="contenido" className="pagina">
         {carga.tipo === "lista" ? (
           <>
-            <CabezaPagina kicker="Lista 69-B" titulo="Listado del artículo 69-B">
-              <p className="lede">El SAT publica este listado. El proveedor puede existir. El pago no.</p>
-            </CabezaPagina>
+            <h1 className="solo-lector">Listado del artículo 69-B</h1>
             <PanelLista69b vista={carga.vista} />
           </>
         ) : (
@@ -60,7 +61,7 @@ export default async function PaginaLista69b({
 async function cargar(ctx: ContextoDeTenant, rfc: string | null): Promise<Carga> {
   try {
     if (!puede(ctx, "cliente.lista69b.ver") && !puede(ctx, "plataforma.lista69b.cargar")) {
-      return { tipo: "sin_empresa" };
+      return { tipo: "sin_permiso" };
     }
     return { tipo: "lista", vista: await leerVista69b(ctx, rfc) };
   } catch (error) {
@@ -70,13 +71,13 @@ async function cargar(ctx: ContextoDeTenant, rfc: string | null): Promise<Carga>
 }
 
 function titulo(carga: Exclude<Carga, { tipo: "lista" }>): string {
-  if (carga.tipo === "sin_empresa") return "Todavía no hay razón social.";
+  if (carga.tipo === "sin_empresa") return "Elige una empresa.";
+  if (carga.tipo === "sin_permiso") return "Tu rol no abre la lista 69-B.";
   return "No se pudo consultar el listado.";
 }
 
 function detalle(carga: Exclude<Carga, { tipo: "lista" }>): string {
-  if (carga.tipo === "sin_empresa") {
-    return "La lista se consulta con la empresa. La SOFIPO da de alta a las empresas.";
-  }
+  if (carga.tipo === "sin_empresa") return "La lista se consulta dentro de una empresa.";
+  if (carga.tipo === "sin_permiso") return "Pide acceso a quien administra la empresa.";
   return carga.mensaje;
 }

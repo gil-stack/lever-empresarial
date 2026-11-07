@@ -27,5 +27,5 @@ export default async function PaginaLote({ params }: { params: Promise<{ loteId:
   const contenido = aviso ? <MaestroCerrado aviso={aviso} /> : apertura.ctx && lectura ? (
     <DetalleLoteNomina lectura={lectura} empresaId={apertura.ctx.empresa?.id ?? ""} />
   ) : <MaestroCerrado aviso="libro" />;
-  return <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)}><main id="contenido" className="consola personas-modulo">{contenido}</main></Marco>;
+  return <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)} titulo="Lote de nómina"><main id="contenido" className="consola personas-modulo">{contenido}</main></Marco>;
 }

@@ -1946,7 +1946,10 @@ h1 + .rfc-cuenta {
   font-size: 12px;
 }
 
+/* Posicionada para que el texto de lectores de pantalla (absoluto) de una cabecera
+   quede dentro de la caja que se desplaza y no ensanche la página en móvil. */
 .tabla-contenedor {
+  position: relative;
   overflow-x: auto;
 }
 

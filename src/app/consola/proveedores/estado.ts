@@ -8,7 +8,7 @@ export const FORMULARIO_CLABE_INICIAL: EstadoClabe = { tipo: "inicial" };
 
 export type EstadoPagoFormulario =
   | { tipo: "inicial" }
-  | { tipo: "invalido"; mensaje: string }
+  | { tipo: "invalido"; mensaje: string; /** El campo que causó el error, para ligarlo con aria-describedby. */ campo?: string }
   | { tipo: "listo"; mensaje: string; requestId?: string };
 
 export const ESTADO_PAGO_INICIAL: EstadoPagoFormulario = { tipo: "inicial" };

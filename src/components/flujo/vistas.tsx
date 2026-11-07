@@ -30,7 +30,7 @@ import { Origen } from "./origen";
 function SinLectura({ kicker, titulo }: { kicker: string; titulo: string }) {
   return (
     <CabezaPagina kicker={kicker} titulo={titulo}>
-      <p className="lede">No se pudo consultar. No se muestran cifras supuestas; vuelve a intentar.</p>
+      <p className="lede">No se pudo consultar. Vuelve a intentar.</p>
     </CabezaPagina>
   );
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { CabezaPagina, EtiquetaMono, Hoja, Insignia, Metrica, Metricas, NotaRegla, Renglon, Renglones } from "@/components/sistema";
+import { EtiquetaMono, Hoja, Insignia, Metrica, Metricas, Monto, NotaRegla, Renglon, Renglones } from "@/components/sistema";
 import { clabeVisible } from "@/dominio/clabe";
 import { accesoFinanzasDe, estaDeBaja, fechaLarga, lineaDeRoles } from "@/dominio/personas";
 import { enEmpresa } from "@/nucleo/rutas";
@@ -39,20 +39,19 @@ export function ExpedientePersona({
   const neto = persona.nomina ? dinero(persona.nomina.netoCentavos, "Reservado") : "Pendiente";
   return (
     <>
-      <Link className="enlace-texto" href={enEmpresa(empresaId, "/consola/personas")}>← Volver a Personas</Link>
-      <CabezaPagina kicker="Expediente" titulo={persona.nombre}>
-        <div className="expediente-estado">
-          <Insignia tono={estado.tono}>{estado.texto}</Insignia>
-          <span>{persona.centroNombre} · {persona.jefeNombre ? `Jefe: ${persona.jefeNombre}` : "Sin jefe"}</span>
-        </div>
-      </CabezaPagina>
-      <NavegacionPersonas actual="personas" empresaId={empresaId} />
+      <h1 className="solo-lector">{persona.nombre}</h1>
+      <div className="expediente-estado">
+        <Insignia tono={estado.tono}>{estado.texto}</Insignia>
+        <span>{persona.centroNombre} · {persona.jefeNombre ? `Jefe: ${persona.jefeNombre}` : "Sin jefe"}</span>
+        <Link className="enlace-texto" href={enEmpresa(empresaId, "/consola/personas")}>Volver al directorio</Link>
+      </div>
       <Metricas etiqueta={`Resumen de ${persona.nombre}`}>
-        <Metrica rotulo="Neto por pago">{neto}</Metrica>
-        <Metrica rotulo="Frecuencia">{persona.nomina ? frecuenciaVisible(persona.nomina.frecuencia) : "Sin configurar"}</Metrica>
-        <Metrica rotulo="Próximo pago">{persona.nomina ? fechaLarga(persona.nomina.proximoPagoEn) : "—"}</Metrica>
-        <Metrica rotulo="Presupuesto mensual">{dinero(persona.presupuestoCentavos)}</Metrica>
+        <Metrica rotulo="Neto por pago"><Monto>{neto}</Monto></Metrica>
+        <Metrica rotulo="Frecuencia"><Monto>{persona.nomina ? frecuenciaVisible(persona.nomina.frecuencia) : "Sin configurar"}</Monto></Metrica>
+        <Metrica rotulo="Próximo pago"><Monto>{persona.nomina ? fechaLarga(persona.nomina.proximoPagoEn) : "—"}</Monto></Metrica>
+        <Metrica rotulo="Presupuesto mensual"><Monto>{dinero(persona.presupuestoCentavos)}</Monto></Metrica>
       </Metricas>
+      <NavegacionPersonas actual="personas" empresaId={empresaId} />
 
       <div className="expediente-rejilla">
         <Hoja id="expediente-laboral" titulo="Datos laborales">
@@ -92,8 +91,8 @@ export function ExpedientePersona({
             {!deBaja ? <FormularioClabeNomina persona={persona} /> : null}
             <NotaRegla>Cada cambio exige tu segundo factor reciente, queda en el historial y se avisa por correo a la persona.</NotaRegla>
             {detalle.historialClabe.length > 0 ? (
-              <div className="personas-tabla-envoltura">
-                <table className="personas-tabla clabe-historial">
+              <div className="tabla-contenedor">
+                <table className="tabla personas-tabla clabe-historial">
                   <caption className="seccion-lectura">Historial de la CLABE de nómina</caption>
                   <thead><tr><th scope="col">CLABE</th><th scope="col">Desde</th><th scope="col">Hasta</th><th scope="col">Registró</th></tr></thead>
                   <tbody>

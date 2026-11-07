@@ -72,6 +72,8 @@ export type Movimiento = {
   personas?: number;
   /** La fecha real cuando el escenario la movió. */
   fechaOriginal?: string;
+  /** Nómina vista sin detalle que puede ser el neto de una sola persona: su monto no se muestra. */
+  reservado?: boolean;
 };
 
 export type SaldoDeclarado = {
@@ -363,6 +365,7 @@ function reservarNomina(movimientos: Movimiento[], semana: string): Movimiento[]
     centavos: sumarCentavos(nomina.map((movimiento) => movimiento.centavos)),
     concepto: "Nómina",
     movible: false,
+    reservado: true,
     ...(nomina.some((movimiento) => movimiento.atrasado) ? { atrasado: true } : {}),
   };
   return [...movimientos.filter((movimiento) => movimiento.tipo !== "nomina"), junta].sort(
@@ -422,7 +425,7 @@ export function proyectar(fuentes: FuentesFlujo, escenario: Escenario | null = n
   if (!opciones.detalleNomina) {
     for (const semana of semanas) semana.movimientos = reservarNomina(semana.movimientos, semana.inicio);
     for (const [indice, atrasado] of atrasados.entries()) {
-      if (nominaDeUnaPersona(atrasado)) atrasados[indice] = { ...atrasado, concepto: "Nómina", personas: undefined };
+      if (nominaDeUnaPersona(atrasado)) atrasados[indice] = { ...atrasado, concepto: "Nómina", personas: undefined, reservado: true };
     }
   }
 
@@ -508,6 +511,17 @@ export function escenarioValido(
   // Fuera de la ventana el pago desaparecería de la proyección: no es un escenario, es quitarlo.
   if (fecha < proyeccion.hoy || fecha > proyeccion.fin) return null;
   return proyeccion.movibles.some((movimiento) => movimiento.clave === clave) ? { clave, fecha } : null;
+}
+
+/**
+ * Lo que provoca un faltante, en palabras: lo usan Inicio, Pendientes y el
+ * correo de los lunes. La nómina reservada va sin monto, porque puede ser el
+ * neto de una sola persona.
+ */
+export function textoDeCausas(causas: readonly Movimiento[]): string {
+  return causas
+    .map((m) => (m.reservado ? `${m.concepto} (monto reservado)` : `${m.concepto} (${formatoPesos(m.centavos)})`))
+    .join(", ");
 }
 
 /** El alcance en palabras: lo usan Inicio y el correo de los lunes. */

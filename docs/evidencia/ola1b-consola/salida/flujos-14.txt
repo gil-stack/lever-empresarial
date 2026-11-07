@@ -1,0 +1,35 @@
+OK    flujo 14 oscuro 1440: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» y «Vuelve a intentar.» dentro del marco, sin «cifras supuestas» (no cae en consola/error.tsx) · INICIO No se pudo consultar el resumen. Vuelve a intentar. Reintentar
+OK    flujo 14 oscuro 1440: Pendientes se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas · No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas. → /c/33333333-3333-4333-8333-333333333333/consola/flujo · renglones=3
+OK    flujo 14 oscuro 1440: Pendientes sin errores de consola
+OK    flujo 14 oscuro 390: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» y «Vuelve a intentar.» dentro del marco, sin «cifras supuestas» (no cae en consola/error.tsx) · INICIO No se pudo consultar el resumen. Vuelve a intentar. Reintentar
+OK    flujo 14 oscuro 390: Pendientes se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas · No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas. → /c/33333333-3333-4333-8333-333333333333/consola/flujo · renglones=3
+OK    flujo 14 oscuro 390: Pendientes sin errores de consola
+OK    flujo 14 claro 1440: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» y «Vuelve a intentar.» dentro del marco, sin «cifras supuestas» (no cae en consola/error.tsx) · INICIO No se pudo consultar el resumen. Vuelve a intentar. Reintentar
+OK    flujo 14 claro 1440: Pendientes se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas · No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas. → /c/33333333-3333-4333-8333-333333333333/consola/flujo · renglones=3
+OK    flujo 14 claro 1440: Pendientes sin errores de consola
+OK    flujo 14 claro 390: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» y «Vuelve a intentar.» dentro del marco, sin «cifras supuestas» (no cae en consola/error.tsx) · INICIO No se pudo consultar el resumen. Vuelve a intentar. Reintentar
+OK    flujo 14 claro 390: Pendientes se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas · No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas. → /c/33333333-3333-4333-8333-333333333333/consola/flujo · renglones=3
+OK    flujo 14 claro 390: Pendientes sin errores de consola
+OK    flujo 14 lever 1440: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» y «Vuelve a intentar.» dentro del marco, sin «cifras supuestas» (no cae en consola/error.tsx) · INICIO No se pudo consultar el resumen. Vuelve a intentar. Reintentar
+OK    flujo 14 lever 1440: Pendientes se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas · No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas. → /c/33333333-3333-4333-8333-333333333333/consola/flujo · renglones=3
+OK    flujo 14 lever 1440: Pendientes sin errores de consola
+OK    flujo 14 lever 390: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» y «Vuelve a intentar.» dentro del marco, sin «cifras supuestas» (no cae en consola/error.tsx) · INICIO No se pudo consultar el resumen. Vuelve a intentar. Reintentar
+OK    flujo 14 lever 390: Pendientes se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas · No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas. → /c/33333333-3333-4333-8333-333333333333/consola/flujo · renglones=3
+OK    flujo 14 lever 390: Pendientes sin errores de consola
+OK    flujo 14: las obligaciones de prueba quedan desactivadas, con su evento en la bitácora · activas=0
+OK    flujo 14 oscuro 1440: un error al pintar Inicio cae en el error de la consola, con un solo h1, «Reintentar» a la vista y sin «datos supuestos» · h1=1 reintentar=true
+OK    flujo 14 oscuro 1440: solo quedan los errores de consola del error provocado
+OK    flujo 14 oscuro 390: un error al pintar Inicio cae en el error de la consola, con un solo h1, «Reintentar» a la vista y sin «datos supuestos» · h1=1 reintentar=true
+OK    flujo 14 oscuro 390: solo quedan los errores de consola del error provocado
+OK    flujo 14 claro 1440: un error al pintar Inicio cae en el error de la consola, con un solo h1, «Reintentar» a la vista y sin «datos supuestos» · h1=1 reintentar=true
+OK    flujo 14 claro 1440: solo quedan los errores de consola del error provocado
+OK    flujo 14 claro 390: un error al pintar Inicio cae en el error de la consola, con un solo h1, «Reintentar» a la vista y sin «datos supuestos» · h1=1 reintentar=true
+OK    flujo 14 claro 390: solo quedan los errores de consola del error provocado
+OK    flujo 14 lever 1440: un error al pintar Inicio cae en el error de la consola, con un solo h1, «Reintentar» a la vista y sin «datos supuestos» · h1=1 reintentar=true
+OK    flujo 14 lever 1440: solo quedan los errores de consola del error provocado
+OK    flujo 14 lever 390: un error al pintar Inicio cae en el error de la consola, con un solo h1, «Reintentar» a la vista y sin «datos supuestos» · h1=1 reintentar=true
+OK    flujo 14 lever 390: solo quedan los errores de consola del error provocado
+OK    flujo 14: «Reintentar» vuelve a pedir Inicio al servidor y la página abre con el saldo declarado · h1=1 → /c/33333333-3333-4333-8333-333333333333/consola
+OK    flujo 14: tras reintentar solo quedan los errores de consola del error provocado
+
+33 de 33 comprobaciones en verde.

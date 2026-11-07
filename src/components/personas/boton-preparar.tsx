@@ -4,6 +4,7 @@ import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { enviarPreparacionNomina } from "@/app/consola/personas/acciones";
+import { BotonEnviar } from "@/components/sistema";
 import { ESTADO_MAESTRO_INICIAL, fechaLarga } from "@/dominio/personas";
 import { enEmpresa } from "@/nucleo/rutas";
 
@@ -24,13 +25,13 @@ export function BotonPrepararNomina({
     if (estado.tipo === "listo" && estado.id) router.push(enEmpresa(empresaId, `/consola/personas/nomina/${estado.id}`));
   }, [empresaId, estado, router]);
   return (
-    <form action={accion} aria-busy={pendiente}>
+    <form className="preparar-nomina" action={accion} aria-busy={pendiente}>
       <input type="hidden" name="fechaPago" value={fechaPago ?? ""} />
       <AvisosFormulario estado={estado} errores={estado.tipo === "invalido" ? estado.errores : []} />
-      <button className="boton" type="submit" disabled={!habilitado || pendiente}>
-        {pendiente ? "Preparando…" : fechaPago ? `Preparar nómina del ${fechaLarga(fechaPago)}` : "Preparar nómina vencida"}
-      </button>
-      {!habilitado ? <p className="pista">Se habilita cuando llega la próxima fecha.</p> : null}
+      <BotonEnviar pendiente={pendiente} enviando="Preparando…" disabled={!habilitado} aria-describedby={habilitado ? undefined : "preparar-pista"}>
+        {fechaPago ? `Preparar nómina del ${fechaLarga(fechaPago)}` : "Preparar nómina vencida"}
+      </BotonEnviar>
+      {!habilitado ? <p className="pista" id="preparar-pista">Se habilita cuando llega la próxima fecha.</p> : null}
     </form>
   );
 }

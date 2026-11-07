@@ -285,7 +285,7 @@ try {
   await laura.getByLabel("Fecha prevista de pago").fill(fecha(6));
   await laura.getByLabel("Por qué no hay factura").fill("Carga urgente sin factura del proveedor todavía");
   await laura.getByRole("button", { name: "Revisar y solicitar" }).click();
-  await laura.getByText("El pago quedó enviado a autorización. Todavía no se mueve dinero.").waitFor();
+  await laura.getByText("El pago quedó en autorización. Otra persona lo revisa.").waitFor();
   exigir(sql(`select count(*) from supplier_payment_requests where company_id = '${empresa}' and estado = 'por_autorizar'`) === "1", "la base tiene un pago por autorizar");
 
   // Al recargar, la liberadora ve el pago por autorizar y la nómina; el contador entra a Pendientes sin el pago como tarea.

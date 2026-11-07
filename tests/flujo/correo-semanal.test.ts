@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import { GET } from "../../src/app/tareas/correo-semanal/route.ts";
 import { proyectar, textoAlcance } from "../../src/dominio/flujo/proyeccion.ts";
 import { plantillaResumenSemanal } from "../../src/server/correo/plantillas/resumen-semanal.ts";
-import { autorizada, marcarRitmo, RITMO_MS } from "../../src/server/flujo/correo-semanal.ts";
+import { autorizada, marcarRitmo, RITMO_MS, textoFaltante } from "../../src/server/flujo/correo-semanal.ts";
 
 describe("Tarea del correo semanal", () => {
   it("solo abre con el Bearer exacto de CRON_SECRET", () => {
@@ -92,6 +92,31 @@ describe("Plantilla del resumen semanal", () => {
     assert.match(correo.texto, /^Tu flujo de caja de la semana · Escuela <Alfa> & Hijos\n\nAtención: el saldo proyectado queda en -\$5,000\.00/);
     assert.match(correo.texto, /Cobros vencidos: 1 por \$3,000\.00/);
     assert.match(correo.texto, /Presupuestos: Área Operación: excedido/);
+  });
+
+  it("el faltante causado por la nómina de una sola persona no lleva su neto", () => {
+    // Saldo de $5,000 y una sola persona con $18,500 semanales: la semana del 9 queda en negativo.
+    const p = proyectar(
+      {
+        hoy: "2026-11-09",
+        saldo: { centavos: 500_000, alDia: "2026-11-08", autor: "Laura Méndez", declaradoEn: "2026-11-08T22:00:00.000Z" },
+        colchonCentavos: 0,
+        nomina: [{ netoCentavos: 1_850_000, frecuencia: "semanal", proximoPagoEn: "2026-11-13", anclaDia: 13, altaEn: "2026-01-01", bajaEn: null }],
+        lotes: [],
+        pagos: [],
+        obligaciones: [],
+        cobros: [],
+        cobrados: [],
+      },
+      null,
+      // Lo mismo que arma el correo para todos sus destinatarios.
+      { detalleNomina: false },
+    );
+    const texto = textoFaltante(p);
+    assert.equal(texto, "el saldo proyectado queda en -$13,500.00 la semana del 9 nov al 15 nov. Lo provoca: Nómina (monto reservado).");
+    const correo = plantillaResumenSemanal({ ...base, faltante: texto });
+    assert.equal(/18,500|1 persona/.test(correo.texto + correo.html), false);
+    assert.match(correo.texto, /Lo provoca: Nómina \(monto reservado\)\./);
   });
 
   it("sin saldo declarado no dice que alcanza: lo explica e invita a declararlo", () => {

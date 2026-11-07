@@ -1,4 +1,4 @@
-import { startTransition, type FormEvent } from "react";
+import { startTransition, useState, type FormEvent } from "react";
 
 /**
  * Con `<form action>`, React vacía los campos no controlados al terminar la
@@ -13,4 +13,20 @@ export function enviarSinReiniciar(accion: (datos: FormData) => void) {
     const datos = new FormData(event.currentTarget, boton);
     startTransition(() => accion(datos));
   };
+}
+
+/**
+ * Para un formulario con dos botones que envía con `enviarSinReiniciar`:
+ * `useFormStatus` no trae los datos del envío, así que el formulario recuerda
+ * qué botón se oprimió. Solo ese recibe el pendiente y dice «Enviando…»; el
+ * otro únicamente se desactiva.
+ */
+export function useEnvioConBoton(accion: (datos: FormData) => void) {
+  const [oprimido, setOprimido] = useState<string | null>(null);
+  const enviar = (event: FormEvent<HTMLFormElement>) => {
+    const boton = (event.nativeEvent as SubmitEvent).submitter;
+    setOprimido(boton instanceof HTMLButtonElement ? boton.value : null);
+    enviarSinReiniciar(accion)(event);
+  };
+  return { enviar, oprimido };
 }

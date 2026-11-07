@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { enviarPersona } from "@/app/consola/personas/acciones";
 import { enviarSinReiniciar } from "@/components/proveedores/sin-reinicio";
+import { BotonEnviar } from "@/components/sistema";
 import { clabeValida, clabeVisible } from "@/dominio/clabe";
 import { erroresDeConfiguracionNomina, mensualEstimado, type FrecuenciaNomina } from "@/dominio/nomina";
 import {
@@ -187,12 +188,12 @@ export function AltaColaborador({
           <h2 id="alta-destino">Dónde recibirá su nómina</h2>
           <div className="destino-opciones" role="radiogroup" aria-label="Destino de nómina">
             <label className={destino === "clabe" ? "destino-opcion seleccionada" : "destino-opcion"}>
-              <input id="destino" type="radio" name="destino" value="clabe" checked={destino === "clabe"} onChange={() => setDestino("clabe")} />
-              <span><strong>CLABE externa</strong><small>Depositamos a la cuenta registrada.</small></span>
+              <input id="destino" type="radio" name="destino" value="clabe" checked={destino === "clabe"} onChange={() => setDestino("clabe")} aria-describedby={mensaje("destino") ? "destino-error" : undefined} />
+              <span><strong>CLABE externa</strong><small>La nómina se registra con esta cuenta.</small></span>
             </label>
             <label className={destino === "tarjeta" ? "destino-opcion seleccionada" : "destino-opcion"}>
-              <input type="radio" name="destino" value="tarjeta" checked={destino === "tarjeta"} onChange={() => setDestino("tarjeta")} />
-              <span><strong>Tarjeta de nómina</strong><small>Registra una solicitud interna; no simula emisión.</small></span>
+              <input type="radio" name="destino" value="tarjeta" checked={destino === "tarjeta"} onChange={() => setDestino("tarjeta")} aria-describedby={mensaje("destino") ? "destino-error" : undefined} />
+              <span><strong>Tarjeta de nómina</strong><small>Queda registrada la solicitud interna de su tarjeta.</small></span>
             </label>
           </div>
           {mensaje("destino") ? <p className="error-campo" id="destino-error">{mensaje("destino")}</p> : null}
@@ -226,7 +227,7 @@ export function AltaColaborador({
               <p className="pista">Se combinan. El rol de tesorería nunca se deduce solo del área.</p>
               {ROLES_VISIBLES.map((rol, indice) => (
                 <label className="confirmacion" key={rol.valor}>
-                  <input id={indice === 0 ? "rol" : undefined} type="checkbox" name="rol" value={rol.valor} checked={roles.includes(rol.valor)} onChange={(e) => {
+                  <input id={indice === 0 ? "rol" : undefined} type="checkbox" name="rol" value={rol.valor} checked={roles.includes(rol.valor)} aria-describedby={mensaje("rol") ? "rol-error" : undefined} onChange={(e) => {
                     setRoles((actuales) => e.target.checked ? [...actuales, rol.valor] : actuales.filter((actual) => actual !== rol.valor));
                     setLocal(null);
                   }} />
@@ -238,8 +239,8 @@ export function AltaColaborador({
                 <span>Ver Inicio financiero</span>
               </label>
               {verFinanzas ? <input type="hidden" name="rol" value="finanzas" /> : null}
-              <p className="pista">Acceso adicional a su rol: entradas, salidas y movimientos del libro. No mueve dinero ni abre el teléfono.</p>
-              {mensaje("rol") ? <p className="error-campo">{mensaje("rol")}</p> : null}
+              <p className="pista">Acceso adicional a su rol para consultar entradas, salidas y movimientos del libro.</p>
+              {mensaje("rol") ? <p className="error-campo" id="rol-error">{mensaje("rol")}</p> : null}
             </fieldset>
           ) : null}
         </section>
@@ -263,10 +264,8 @@ export function AltaColaborador({
             {proyectado < 0 ? <p>Se excede por {dinero(Math.abs(proyectado))}. Puedes continuar; la decisión queda registrada.</p> : <p>Incluye nómina estimada y presupuesto individual.</p>}
           </div>
         ) : null}
-        <button className="boton" type="submit" disabled={pendiente || areas.length === 0 || !altaLlave}>
-          {pendiente ? "Guardando expediente…" : "Dar de alta colaborador"}
-        </button>
-        <p className="pista">{conNomina === "si" ? "Se guardan ficha, nómina, tarjeta e invitación juntas." : "Se guardan ficha e invitación juntas, sin nómina."} No se dispersa dinero.</p>
+        <BotonEnviar pendiente={pendiente} enviando="Guardando expediente…" disabled={areas.length === 0 || !altaLlave}>Dar de alta colaborador</BotonEnviar>
+        <p className="pista">{conNomina === "si" ? "Se guardan ficha, nómina, tarjeta e invitación juntas." : "Se guardan ficha e invitación juntas, sin nómina."}</p>
       </aside>
     </form>
   );

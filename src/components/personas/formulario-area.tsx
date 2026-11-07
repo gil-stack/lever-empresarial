@@ -3,6 +3,8 @@
 import { useActionState, useEffect, useRef } from "react";
 
 import { enviarCentro } from "@/app/consola/personas/acciones";
+import { enviarSinReiniciar } from "@/components/proveedores/sin-reinicio";
+import { BotonEnviar } from "@/components/sistema";
 import { ESTADO_MAESTRO_INICIAL, type ErrorCampo } from "@/dominio/personas";
 import type { CentroVista } from "@/dominio/personas-vista";
 
@@ -20,7 +22,8 @@ export function FormularioArea({ area }: { area?: CentroVista }) {
   }, [area, estado]);
 
   return (
-    <form ref={forma} className="formulario-pareja area-formulario" action={accion} noValidate aria-busy={pendiente}>
+    // Sin el reinicio de `<form action>`: tras un error, el campo conserva lo que se escribió.
+    <form ref={forma} className="formulario-pareja area-formulario" onSubmit={enviarSinReiniciar(accion)} noValidate aria-busy={pendiente}>
       {area ? <input type="hidden" name="centroId" value={area.id} /> : null}
       <div className="area-formulario-aviso"><AvisosFormulario estado={estado} errores={errores} prefijo={prefijo} /></div>
       <CampoFormulario id={`${prefijo}centroNombre`} etiqueta="Área" pista="También funciona como centro de costo." error={mensaje("centroNombre")}>
@@ -50,9 +53,7 @@ export function FormularioArea({ area }: { area?: CentroVista }) {
         <span>Es un área de tesorería. Sugerir acceso a la plataforma en nuevas altas.</span>
       </label>
       <div className="acciones">
-        <button className="boton" type="submit" disabled={pendiente}>
-          {pendiente ? "Guardando…" : area ? "Guardar área" : "Crear área"}
-        </button>
+        <BotonEnviar pendiente={pendiente} enviando="Guardando…">{area ? "Guardar área" : "Crear área"}</BotonEnviar>
       </div>
     </form>
   );

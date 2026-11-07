@@ -734,7 +734,29 @@ div.empresa-lateral:not(.menu-desplegable),
     width: 100%;
   }
 
+  /* El nombre y el rol no caben a la vista, pero siguen dando nombre al botón
+     para el lector de pantalla (con display: none quedaba sin nombre). */
   .cuenta .persona-datos {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* Título, acción y chip comparten la primera fila: el título cede ancho (con
+     puntos suspensivos) en vez de empujar el chip a otra fila, y el chip se compacta. */
+  .barra-espacio {
     display: none;
+  }
+
+  .barra-titulo {
+    flex: 1 1 0;
+  }
+
+  .cuenta .menu-desplegable-boton {
+    gap: 6px;
+    padding: 3px 4px;
   }
 }

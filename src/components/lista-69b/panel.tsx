@@ -50,7 +50,7 @@ function Consulta({ vista }: { vista: VistaLista69b }) {
             </p>
           ) : null}
           <p className="pista" id="rfc-proveedor-pista">
-            Doce o trece caracteres. Consultar no crea al proveedor ni envía un pago.
+            Doce o trece caracteres. La consulta usa la copia más reciente del listado.
           </p>
         </div>
         <div className="acciones">
@@ -95,8 +95,7 @@ function Carga() {
   return (
     <Hoja id="carga-69b" titulo="Guardar una copia">
       <p className="pista">
-        El servidor lee la página de contribuyentes publicados y guarda el listado completo del artículo 69-B, con
-        la fecha del archivo. Desde aquí no se sube un archivo ni se envía dinero.
+        Lever descarga del SAT el listado completo del artículo 69-B y lo guarda con la fecha del archivo.
       </p>
       <FormularioCargar />
     </Hoja>

@@ -1,247 +1,25 @@
 /* Mesa de cuentas por pagar. Sistema LEVER: precisión, aire y una sola voz de marca. */
 
 
-.pagina-proveedores .pagina-cabeza {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  max-width: none;
-  column-gap: 32px;
-}
-
-.pagina-proveedores .pagina-cabeza > .kicker,
-.pagina-proveedores .pagina-cabeza > h1,
-.pagina-proveedores .pagina-cabeza > .lede {
-  grid-column: 1;
-}
-
-.pagina-proveedores .pagina-cabeza > h1 {
-  font-family: var(--fd);
-  font-size: clamp(2rem, 3vw, 2.7rem);
-  font-weight: 300;
-  letter-spacing: -0.02em;
-}
-
-.pagina-proveedores .cabeza-acciones {
-  grid-column: 2;
-  grid-row: 1 / span 3;
-  align-self: end;
-  margin: 0 0 3px;
-}
-
-.pagina-proveedores .boton,
-.pagina-proveedores .boton-secundario,
-.pagina-nuevo-pago .boton,
-.pagina-nuevo-proveedor .boton,
-.detalle-proveedor .boton,
-.detalle-proveedor .boton-secundario {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  min-height: 36px;
-  padding: 0 16px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: none;
-}
-
 .boton-completo { width: 100%; }
 
-/* Resumen ejecutivo: cifras reales, sin gráficas de adorno. */
-.pagos-metricas {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.pago-metrica {
-  position: relative;
-  min-width: 0;
-  padding: 20px 22px 19px;
-  overflow: hidden;
-  border: 1px solid var(--linea);
-  border-radius: 13px;
-  background: var(--hoja);
-  box-shadow: 0 1px 2px var(--sombra);
-}
-
-.pago-metrica::before {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 2px;
-  background: var(--linea-fuerte);
-  content: "";
-}
-
-.pago-metrica.acento::before { background: var(--sello); }
-.pago-metrica.alerta::before { background: var(--aviso); }
-
-.pago-metrica > div {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.pago-metrica p {
-  color: var(--tinta-suave);
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.pago-metrica span,
-.pago-metrica small {
-  color: var(--tinta-tenue);
-  font-size: 0.7rem;
-}
-
-.pago-metrica strong {
-  display: block;
-  margin: 17px 0 5px;
-  overflow: hidden;
-  font-size: clamp(1.35rem, 2.1cqi, 1.85rem);
-  font-variant-numeric: tabular-nums;
-  font-weight: 450;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.pago-metrica small { font-size: 0.75rem; }
-
-/* Navegación local. */
-.proveedores-tabs {
-  display: flex;
-  gap: 30px;
-  margin-top: 38px;
-  border-bottom: 1px solid var(--linea);
-}
-
-.proveedores-tabs a {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 45px;
-  color: var(--tinta-suave);
-  font-size: 0.88rem;
-  font-weight: 550;
-  text-decoration: none;
-}
-
-.proveedores-tabs a::after {
-  position: absolute;
-  right: 0;
-  bottom: -1px;
-  left: 0;
-  height: 2px;
-  background: transparent;
-  content: "";
-}
-
-.proveedores-tabs a[aria-current="page"] { color: var(--tinta); }
-.proveedores-tabs a[aria-current="page"]::after { background: var(--sello); }
-.proveedores-tabs a span { color: var(--tinta-tenue); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
-
-.mesa-proveedores { margin-top: 20px; }
-.mesa-proveedores.con-detalle {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(330px, 390px);
-  gap: 18px;
-  align-items: start;
-}
-
-.mesa-principal { min-width: 0; }
-
-.bandeja-pagos {
-  min-width: 0;
-  overflow: hidden;
-  border: 1px solid var(--linea);
-  border-radius: 15px;
-  background: var(--hoja);
-  box-shadow: 0 1px 3px var(--sombra);
-}
-
-.bandeja-pagos .bandeja-herramientas { padding: 14px 16px; border-bottom: 1px solid var(--linea); }
-
-.buscador-pagos {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.buscador-pagos > span { margin-left: 5px; color: var(--tinta-tenue); font-size: 1.2rem; }
-.buscador-pagos input {
-  min-width: 160px;
-  flex: 1;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--tinta);
-  font-size: 0.84rem;
-}
-.buscador-pagos input:focus { outline: none; }
-.buscador-pagos select {
-  max-width: 165px;
-  min-height: 34px;
-  padding: 0 28px 0 10px;
-  border: 1px solid var(--linea);
-  border-radius: 8px;
-  background: var(--campo);
-  color: var(--tinta-suave);
-  font-size: 0.76rem;
-}
-
-.boton-filtro {
-  min-height: 34px;
-  padding: 0 13px;
-  border: 1px solid var(--linea);
-  border-radius: 8px;
-  background: var(--realce);
-  color: var(--tinta);
-  font-size: 0.76rem;
-  font-weight: 600;
-}
-.limpiar-filtro { color: var(--tinta-suave); font-size: 0.75rem; text-underline-offset: 3px; }
-
-.tabla-scroll { max-width: 100%; overflow-x: auto; }
-.tabla-pagos { width: 100%; border-collapse: collapse; font-size: 0.81rem; }
-.tabla-pagos th {
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--linea);
-  background: var(--realce);
-  color: var(--tinta-tenue);
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.035em;
-  text-align: left;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.tabla-pagos td {
-  padding: 15px 14px;
-  border-bottom: 1px solid var(--linea);
-  color: var(--tinta-suave);
-  vertical-align: middle;
-  white-space: nowrap;
-}
-.tabla-pagos tbody tr { transition: background-color 140ms ease; }
-.tabla-pagos tbody tr:hover { background: var(--realce); }
-.tabla-pagos tbody tr:last-child td { border-bottom: 0; }
-.tabla-pagos td:first-child { min-width: 180px; white-space: normal; }
-.tabla-pagos td > strong,
-.celda-proveedor > strong { display: block; max-width: 260px; color: var(--tinta); font-size: 0.82rem; font-weight: 600; line-height: 1.4; }
-.tabla-pagos td > span:not(.insignia),
-.celda-proveedor > span { display: block; margin-top: 3px; color: var(--tinta-tenue); font-size: 0.7rem; }
-.celda-proveedor { display: block; text-decoration: none; }
+/* Mesa: franja de cifras, segmentado y panel del sistema (componentes.css). Aquí solo lo propio. */
+.pagina-proveedores > .metricas { margin-top: 8px; }
+.mesa-vistas { margin-top: 36px; }
+.mesa-panel { margin-top: 18px; }
+.mesa-panel > .vacio { margin: 8px 0; }
+.buscador-pagos { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0; margin-bottom: 14px; padding: 0 2px 12px; border-bottom: 1px solid var(--line); color: var(--tx3); }
+.buscador-pagos input { flex: 1; min-width: 160px; padding: 0; border: 0; outline: 0; background: none; color: var(--tx); font: inherit; font-size: 13px; }
+.buscador-pagos:focus-within { border-bottom-color: var(--tx2); }
+.buscador-pagos input::placeholder { color: var(--tx3); }
+.buscador-pagos select { max-width: 180px; min-height: 30px; padding: 0 28px 0 10px; border: 1px solid var(--line2); border-radius: 9px; background: none; color: var(--tx2); font: inherit; font-size: 12.5px; }
+.buscador-pagos select:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+.mesa-pie { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--tx3); font-size: 12px; }
+.mesa-pie div { display: flex; gap: 16px; }
+.celda-proveedor { display: block; color: var(--tx); font-weight: 500; text-decoration: none; }
 .celda-proveedor:hover strong { color: var(--sello); }
-.celda-monto { color: var(--tinta) !important; font-variant-numeric: tabular-nums; font-weight: 550; }
 .celda-mono { font-family: var(--fuente-mono); font-size: 0.74rem; }
-.fecha-vencida { color: var(--aviso) !important; }
+.fecha-vencida { color: var(--aviso); }
 .texto-tenue { color: var(--tinta-tenue); }
 .abrir-fila {
   display: grid;
@@ -257,61 +35,12 @@
 }
 .abrir-fila:hover { border-color: var(--linea-fuerte); color: var(--sello); transform: translateX(2px); }
 
-.bandeja-pie {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 45px;
-  padding: 0 16px;
-  border-top: 1px solid var(--linea);
-  color: var(--tinta-tenue);
-  font-size: 0.72rem;
-}
-.bandeja-pie div { display: flex; gap: 16px; }
-.bandeja-pie a { color: var(--tinta-suave); text-underline-offset: 3px; }
-.bandeja-pagos > .vacio { margin: 30px; min-height: 180px; }
-
 /* Detalle: documento de trabajo, no una tarjeta más en la columna. */
-.detalle-proveedor {
-  position: sticky;
-  top: 20px;
-  min-width: 0;
-  max-height: calc(100dvh - 40px);
-  padding: 24px;
-  overflow-y: auto;
-  border: 1px solid var(--linea-fuerte);
-  border-radius: 15px;
-  background: var(--hoja);
-  box-shadow: 0 16px 40px var(--sombra);
-  animation: detalle-entra 220ms ease-out both;
-}
-
-@keyframes detalle-entra {
-  from { opacity: 0; transform: translateX(8px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-.detalle-cerrar {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  color: var(--tinta-tenue);
-  font-size: 1.3rem;
-  font-weight: 300;
-  text-decoration: none;
-}
-.detalle-cerrar:hover { background: var(--realce); color: var(--tinta); }
-.detalle-kicker { margin-bottom: 12px; color: var(--tinta-tenue); font-size: 0.68rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; }
+/* Detalle: vive dentro del panel lateral del sistema (PanelDetalle). */
+.detalle-proveedor { min-width: 0; }
 .detalle-cabeza { padding-bottom: 22px; border-bottom: 1px solid var(--linea); }
-.detalle-cabeza h2 { max-width: 90%; margin-top: 16px; font-family: var(--font-arco), var(--fuente-sans); font-size: 1.25rem; line-height: 1.35; }
-.detalle-cabeza h2 + p { margin-top: 5px; color: var(--tinta-suave); font-size: 0.8rem; }
-.detalle-monto { display: inline-block; margin-top: 20px; font-size: 2rem; font-variant-numeric: tabular-nums; font-weight: 450; letter-spacing: -0.05em; line-height: 1; }
+.detalle-cabeza > p { margin-top: 10px; color: var(--tinta-suave); font-size: 0.8rem; }
+.detalle-monto { display: inline-block; margin-top: 18px; font-family: var(--fd); font-size: 2rem; font-variant-numeric: tabular-nums; font-weight: 300; letter-spacing: -0.03em; line-height: 1; }
 .detalle-cabeza .detalle-monto + span { margin-left: 7px; color: var(--tinta-tenue); font-size: 0.7rem; }
 .detalle-proveedor .renglones { margin-top: 0; }
 .detalle-proveedor .renglones > div { grid-template-columns: minmax(95px, 0.75fr) minmax(0, 1.25fr); gap: 14px; padding: 13px 0; font-size: 0.78rem; }
@@ -356,9 +85,6 @@
 .detalle-acciones > .pista { margin-bottom: 16px; font-size: 0.73rem; }
 .detalle-acciones .acciones { margin-top: 14px; }
 .acciones-divididas { display: flex; justify-content: flex-end; gap: 8px; }
-.detalle-nota { margin-top: 24px; padding: 14px; border-left: 2px solid var(--sello); background: var(--sello-tenue); }
-.detalle-nota strong { font-size: 0.72rem; }
-.detalle-nota p { margin-top: 4px; color: var(--tinta-suave); font-size: 0.68rem; line-height: 1.5; }
 .detalle-clabe { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--linea); }
 .detalle-clabe .acciones { margin-top: 12px; }
 
@@ -394,7 +120,7 @@
 .historial-pago li p { margin-top: 6px; color: var(--tinta-suave); font-size: 0.72rem; line-height: 1.5; }
 
 /* Agenda operativa. */
-.agenda-pagos { padding: 4px 20px 16px; }
+.agenda-pagos { padding: 0 0 8px; }
 .agenda-dia { padding: 18px 0; }
 .agenda-dia + .agenda-dia { border-top: 1px solid var(--linea); }
 .agenda-fecha { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
@@ -415,46 +141,21 @@
 .agenda-linea div span { display: block; margin-top: 2px; color: var(--tinta-tenue); font-size: 0.68rem; }
 .agenda-linea > strong { font-size: 0.8rem; font-variant-numeric: tabular-nums; }
 
-.actividad-proveedores { margin-top: 18px; padding: 22px; border: 1px solid var(--linea); border-radius: 15px; background: var(--hoja); }
-.actividad-cabeza { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-.actividad-cabeza h2 { font-size: 0.88rem; }
-.actividad-cabeza span { color: var(--tinta-tenue); font-size: 0.68rem; }
+.actividad-proveedores { margin-top: 18px; }
+.pagina-proveedores > .nota-regla { margin-top: 22px; }
 .actividad-proveedores > div:last-child { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 28px; }
 .actividad-proveedores article { display: flex; gap: 10px; align-items: flex-start; }
 .actividad-punto { flex: none; width: 6px; height: 6px; margin-top: 6px; border-radius: 50%; background: var(--sello); }
 .actividad-proveedores article strong { display: block; font-size: 0.74rem; font-weight: 600; }
 .actividad-proveedores article p { margin-top: 2px; color: var(--tinta-tenue); font-size: 0.63rem; }
 
-/* Carga sin cifras inventadas. */
-.carga-cabeza { display: grid; gap: 14px; margin-bottom: 48px; }
-.carga-cabeza span { display: block; height: 14px; border-radius: 7px; background: var(--realce); }
-.carga-cabeza span:nth-child(2) { width: min(360px, 75%); height: 42px; }
-.carga-cabeza span:nth-child(3) { width: min(560px, 90%); }
-.carga-metricas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.carga-metricas div { height: 130px; border: 1px solid var(--linea); border-radius: 13px; background: var(--hoja); }
-.carga-bandeja { margin-top: 74px; padding: 22px; border: 1px solid var(--linea); border-radius: 15px; background: var(--hoja); }
-.carga-bandeja div { height: 48px; border-bottom: 1px solid var(--linea); background: var(--realce); }
-.carga-metricas div,
-.carga-bandeja div { animation: carga-pulso 1.6s ease-in-out infinite alternate; }
-@keyframes carga-pulso { from { opacity: 0.48; } to { opacity: 1; } }
-@media (max-width: 760px) { .carga-metricas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-
 /* Formularios de alta y pago. */
 .regresar { display: inline-block; margin-bottom: 28px; color: var(--tinta-suave); font-size: 0.8rem; text-decoration: none; }
 .regresar:hover { color: var(--sello); }
-.pagina-nuevo-pago .pagina-cabeza,
-.pagina-nuevo-proveedor .pagina-cabeza { max-width: 760px; }
-.pagina-nuevo-pago .pagina-cabeza h1,
-.pagina-nuevo-proveedor .pagina-cabeza h1 { font-family: var(--fd); font-size: clamp(2rem, 3.5cqi, 3rem); font-weight: 300; letter-spacing: -0.02em; }
+.pago-entrada { max-width: 64ch; margin-bottom: 22px; }
 
 .pago-formulario { max-width: 1040px; }
-.formulario-seccion {
-  padding: clamp(24px, 3.2cqi, 38px);
-  border: 1px solid var(--linea);
-  border-radius: 16px;
-  background: var(--hoja);
-  box-shadow: 0 1px 3px var(--sombra);
-}
+.formulario-seccion { padding: clamp(22px, 3cqi, 32px); }
 .formulario-seccion + .formulario-seccion { margin-top: 16px; }
 .formulario-seccion-cabeza { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 28px; }
 .formulario-seccion-cabeza > span {
@@ -469,7 +170,7 @@
   font-family: var(--fuente-mono);
   font-size: 0.65rem;
 }
-.formulario-seccion-cabeza h2 { font-family: var(--font-arco), var(--fuente-sans); font-size: 1.05rem; }
+.formulario-seccion-cabeza h2 { font-size: 14px; font-weight: 500; }
 .formulario-seccion-cabeza p { margin-top: 5px; color: var(--tinta-suave); font-size: 0.8rem; }
 .formulario-seccion .campo + .campo { margin-top: 18px; }
 .formulario-seccion input:not([type="file"]),
@@ -546,42 +247,25 @@
 .formulario-final p { margin-top: 4px; color: var(--tinta-suave); font-size: 0.75rem; }
 
 .alta-proveedor-layout { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 28px; align-items: start; }
-.alta-proveedor-forma { padding: clamp(24px, 3cqi, 38px); border: 1px solid var(--linea); border-radius: 16px; background: var(--hoja); box-shadow: 0 1px 3px var(--sombra); }
+.alta-proveedor-forma { padding: clamp(22px, 3cqi, 32px); }
 .alta-proveedor-forma .formulario-pareja { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px; }
 .alta-proveedor-forma .acciones { grid-column: 1 / -1; margin-top: 8px; }
 .alta-proveedor-guia { position: sticky; top: 24px; padding: 26px 4px; }
-.alta-proveedor-guia h2 { margin-bottom: 14px; font-family: var(--font-arco), var(--fuente-sans); font-size: 1.3rem; }
+.alta-proveedor-guia h2 { margin: 10px 0 14px; font-family: var(--fd); font-size: 1.3rem; font-weight: 300; }
 .alta-proveedor-guia > p:not(.kicker) { color: var(--tinta-suave); font-size: 0.84rem; line-height: 1.7; }
 .alta-proveedor-guia .nota-regla { margin-top: 24px; }
 .campos-fechas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .mensaje-exito { color: var(--sello-profundo); font-size: 0.75rem; }
 
 @media (max-width: 1220px) {
-  .pagos-metricas { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .mesa-proveedores.con-detalle { grid-template-columns: minmax(0, 1fr); }
-  .detalle-proveedor { position: relative; top: 0; max-height: none; }
   .cfdi-resumen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 760px) {
-  .pagina-proveedores .pagina-cabeza { grid-template-columns: minmax(0, 1fr); }
-  .pagina-proveedores .cabeza-acciones { grid-column: 1; grid-row: auto; align-self: start; margin-top: 24px; }
-  .pagos-metricas { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .pago-metrica { padding: 16px; }
-  .pago-metrica > div { display: block; }
-  .pago-metrica > div span { display: block; margin-top: 3px; }
-  .pago-metrica strong { margin-top: 14px; font-size: 1.3rem; }
-  .proveedores-tabs { gap: 22px; margin-top: 28px; }
-  .bandeja-pagos .bandeja-herramientas { padding: 12px; }
-  .buscador-pagos { flex-wrap: wrap; }
+  .mesa-vistas { margin-top: 28px; }
   .buscador-pagos input { min-width: 120px; min-height: 34px; }
   .buscador-pagos select { flex: 1; }
-  .tabla-pagos { min-width: 680px; }
-  .tabla-pagos th:last-child,
-  .tabla-pagos td:last-child { display: none; }
-  .tabla-pagos th:first-child,
-  .tabla-pagos td:first-child { position: sticky; left: 0; z-index: 1; background: var(--hoja); }
-  .tabla-pagos th:first-child { background: var(--realce); }
+  .mesa-panel .tabla { min-width: 640px; }
   .actividad-proveedores > div:last-child { grid-template-columns: minmax(0, 1fr); }
   .agenda-linea { grid-template-columns: 4px minmax(0, 1fr) auto; }
   .agenda-linea .insignia { grid-column: 2; }
@@ -592,11 +276,6 @@
 }
 
 @media (max-width: 520px) {
-  .pagina-proveedores .cabeza-acciones { display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; }
-  .pagina-proveedores .cabeza-acciones a { width: 100%; }
-  .pago-metrica p { font-size: 0.74rem; }
-  .pago-metrica small { font-size: 0.65rem; }
-  .detalle-proveedor { padding: 20px; }
   .campos-documentos,
   .selector-origen,
   .cfdi-resumen { grid-template-columns: minmax(0, 1fr); }
@@ -605,3 +284,10 @@
   .formulario-final .boton { width: 100%; }
   .agenda-fecha { align-items: flex-start; flex-direction: column; gap: 3px; }
 }
+/* Señal de espera dentro de un enlace de la mesa mientras llega la vista (useLinkStatus). */
+.espera-enlace { display: inline-flex; align-items: center; vertical-align: middle; }
+.espera-enlace .seccion-spinner { margin-left: 6px; }
+/* En la flecha redonda de cada fila, el giro rodea la flecha sin moverla. */
+.abrir-fila { position: relative; }
+.abrir-fila .espera-enlace { position: absolute; inset: 0; justify-content: center; pointer-events: none; }
+.abrir-fila .espera-enlace .seccion-spinner { width: 28px; height: 28px; margin: 0; }

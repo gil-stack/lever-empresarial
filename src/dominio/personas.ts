@@ -14,7 +14,6 @@ export type RolCuenta = RolCliente;
  */
 
 export const FRASE_CONTADOR = "El contador no tiene la acción de liberar.";
-export const FRASE_SIN_DISPERSION = "No se dispersa dinero.";
 
 export const ACCESOS = ["no", "nueva", "ya"] as const;
 export type AccesoForma = (typeof ACCESOS)[number];
@@ -604,18 +603,6 @@ const ETIQUETA_ROL: Record<RolCuenta, string> = {
 /** El nombre de un rol tal como lo lee la persona (por ejemplo, en el menú de su cuenta). */
 export function etiquetaDelRol(rol: RolCuenta): string {
   return ETIQUETA_ROL[rol];
-}
-
-export function pistaDelRol(rol: RolCuenta | ""): string {
-  if (rol === "contador") return "Ve el maestro. No tiene la acción de liberar.";
-  if (rol === "liberador") {
-    return "Puede soltar dinero. Hacen falta dos personas distintas. Hoy no se dispersa.";
-  }
-  if (rol === "administrador") return "Da de alta a las personas. Este rol no suelta dinero.";
-  if (rol === "solicitante") return "Puede pedir un pago, cuando esa pantalla exista. No lo suelta.";
-  if (rol === "finanzas") return "Ve Inicio: entradas, salidas y movimientos del libro. No abre otros módulos, ni el teléfono, ni mueve dinero.";
-  if (rol === "tarjetahabiente") return "El gasto vive en el teléfono. No abre este maestro.";
-  return "Elige el rol con el que va a entrar.";
 }
 
 export const MENSAJE_CAMPO: Record<string, ErrorCampo> = {

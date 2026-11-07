@@ -1,0 +1,1946 @@
+OK    10-pendientes oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes
+OK    10-pendientes oscuro 1440: un solo h1 · h1=1
+OK    10-pendientes oscuro 1440: campos con etiqueta
+OK    10-pendientes oscuro 1440: errores ligados a su campo
+OK    10-pendientes oscuro 1440: sin desplazamiento horizontal
+OK    10-pendientes oscuro 1440: cada cifra cabe en su celda
+OK    10-pendientes oscuro 1440: tabulación en orden del documento · 21 paradas 
+OK    10-pendientes oscuro 1440: foco visible en cada parada
+OK    10-pendientes oscuro 1440: sin errores de consola
+OK    11-pendientes-altamar oscuro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/pendientes
+OK    11-pendientes-altamar oscuro 1440: un solo h1 · h1=1
+OK    11-pendientes-altamar oscuro 1440: campos con etiqueta
+OK    11-pendientes-altamar oscuro 1440: errores ligados a su campo
+OK    11-pendientes-altamar oscuro 1440: sin desplazamiento horizontal
+OK    11-pendientes-altamar oscuro 1440: cada cifra cabe en su celda
+OK    11-pendientes-altamar oscuro 1440: tabulación en orden del documento · 22 paradas 
+OK    11-pendientes-altamar oscuro 1440: foco visible en cada parada
+OK    11-pendientes-altamar oscuro 1440: sin errores de consola
+OK    12-inicio-administrador oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola
+OK    12-inicio-administrador oscuro 1440: un solo h1 · h1=1
+OK    12-inicio-administrador oscuro 1440: campos con etiqueta
+OK    12-inicio-administrador oscuro 1440: errores ligados a su campo
+OK    12-inicio-administrador oscuro 1440: sin desplazamiento horizontal
+OK    12-inicio-administrador oscuro 1440: cada cifra cabe en su celda
+OK    12-inicio-administrador oscuro 1440: tabulación en orden del documento · 35 paradas 
+OK    12-inicio-administrador oscuro 1440: foco visible en cada parada
+OK    12-inicio-administrador oscuro 1440: sin errores de consola
+OK    13-inicio-finanzas oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola
+OK    13-inicio-finanzas oscuro 1440: un solo h1 · h1=1
+OK    13-inicio-finanzas oscuro 1440: campos con etiqueta
+OK    13-inicio-finanzas oscuro 1440: errores ligados a su campo
+OK    13-inicio-finanzas oscuro 1440: sin desplazamiento horizontal
+OK    13-inicio-finanzas oscuro 1440: cada cifra cabe en su celda
+OK    13-inicio-finanzas oscuro 1440: tabulación en orden del documento · 27 paradas 
+OK    13-inicio-finanzas oscuro 1440: foco visible en cada parada
+OK    13-inicio-finanzas oscuro 1440: sin errores de consola
+OK    14-inicio-sin-saldo oscuro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola
+OK    14-inicio-sin-saldo oscuro 1440: un solo h1 · h1=1
+OK    14-inicio-sin-saldo oscuro 1440: campos con etiqueta
+OK    14-inicio-sin-saldo oscuro 1440: errores ligados a su campo
+OK    14-inicio-sin-saldo oscuro 1440: sin desplazamiento horizontal
+OK    14-inicio-sin-saldo oscuro 1440: cada cifra cabe en su celda
+OK    14-inicio-sin-saldo oscuro 1440: tabulación en orden del documento · 21 paradas 
+OK    14-inicio-sin-saldo oscuro 1440: foco visible en cada parada
+OK    14-inicio-sin-saldo oscuro 1440: sin errores de consola
+OK    20-proveedores-pagos oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    20-proveedores-pagos oscuro 1440: un solo h1 · h1=1
+OK    20-proveedores-pagos oscuro 1440: campos con etiqueta
+OK    20-proveedores-pagos oscuro 1440: errores ligados a su campo
+OK    20-proveedores-pagos oscuro 1440: sin desplazamiento horizontal
+OK    20-proveedores-pagos oscuro 1440: cada cifra cabe en su celda
+OK    20-proveedores-pagos oscuro 1440: tabulación en orden del documento · 30 paradas 
+OK    20-proveedores-pagos oscuro 1440: foco visible en cada parada
+OK    20-proveedores-pagos oscuro 1440: sin errores de consola
+OK    21-proveedores-directorio oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    21-proveedores-directorio oscuro 1440: un solo h1 · h1=1
+OK    21-proveedores-directorio oscuro 1440: campos con etiqueta
+OK    21-proveedores-directorio oscuro 1440: errores ligados a su campo
+OK    21-proveedores-directorio oscuro 1440: sin desplazamiento horizontal
+OK    21-proveedores-directorio oscuro 1440: cada cifra cabe en su celda
+OK    21-proveedores-directorio oscuro 1440: tabulación en orden del documento · 30 paradas 
+OK    21-proveedores-directorio oscuro 1440: foco visible en cada parada
+OK    21-proveedores-directorio oscuro 1440: sin errores de consola
+OK    22-proveedores-agenda oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    22-proveedores-agenda oscuro 1440: un solo h1 · h1=1
+OK    22-proveedores-agenda oscuro 1440: campos con etiqueta
+OK    22-proveedores-agenda oscuro 1440: errores ligados a su campo
+OK    22-proveedores-agenda oscuro 1440: sin desplazamiento horizontal
+OK    22-proveedores-agenda oscuro 1440: cada cifra cabe en su celda
+OK    22-proveedores-agenda oscuro 1440: tabulación en orden del documento · 23 paradas 
+OK    22-proveedores-agenda oscuro 1440: foco visible en cada parada
+OK    22-proveedores-agenda oscuro 1440: sin errores de consola
+OK    23-proveedores-detalle-pago oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    23-proveedores-detalle-pago oscuro 1440: un solo h1 · h1=1
+OK    23-proveedores-detalle-pago oscuro 1440: campos con etiqueta
+OK    23-proveedores-detalle-pago oscuro 1440: errores ligados a su campo
+OK    23-proveedores-detalle-pago oscuro 1440: sin desplazamiento horizontal
+OK    23-proveedores-detalle-pago oscuro 1440: cada cifra cabe en su celda
+OK    23-proveedores-detalle-pago oscuro 1440: tabulación en orden del documento · 3 paradas 
+OK    23-proveedores-detalle-pago oscuro 1440: foco visible en cada parada
+OK    23-proveedores-detalle-pago oscuro 1440: sin errores de consola
+OK    24-proveedores-expediente oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    24-proveedores-expediente oscuro 1440: un solo h1 · h1=1
+OK    24-proveedores-expediente oscuro 1440: campos con etiqueta
+OK    24-proveedores-expediente oscuro 1440: errores ligados a su campo
+OK    24-proveedores-expediente oscuro 1440: sin desplazamiento horizontal
+OK    24-proveedores-expediente oscuro 1440: cada cifra cabe en su celda
+OK    24-proveedores-expediente oscuro 1440: tabulación en orden del documento · 4 paradas 
+OK    24-proveedores-expediente oscuro 1440: foco visible en cada parada
+OK    24-proveedores-expediente oscuro 1440: sin errores de consola
+OK    25-proveedores-alta oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo-proveedor
+OK    25-proveedores-alta oscuro 1440: un solo h1 · h1=1
+OK    25-proveedores-alta oscuro 1440: campos con etiqueta
+OK    25-proveedores-alta oscuro 1440: errores ligados a su campo
+OK    25-proveedores-alta oscuro 1440: sin desplazamiento horizontal
+OK    25-proveedores-alta oscuro 1440: cada cifra cabe en su celda
+OK    25-proveedores-alta oscuro 1440: tabulación en orden del documento · 30 paradas 
+OK    25-proveedores-alta oscuro 1440: foco visible en cada parada
+OK    25-proveedores-alta oscuro 1440: sin errores de consola
+OK    26-proveedores-nuevo-pago oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo
+OK    26-proveedores-nuevo-pago oscuro 1440: un solo h1 · h1=1
+OK    26-proveedores-nuevo-pago oscuro 1440: campos con etiqueta
+OK    26-proveedores-nuevo-pago oscuro 1440: errores ligados a su campo
+OK    26-proveedores-nuevo-pago oscuro 1440: sin desplazamiento horizontal
+OK    26-proveedores-nuevo-pago oscuro 1440: cada cifra cabe en su celda
+OK    26-proveedores-nuevo-pago oscuro 1440: tabulación en orden del documento · 25 paradas 
+OK    26-proveedores-nuevo-pago oscuro 1440: foco visible en cada parada
+OK    26-proveedores-nuevo-pago oscuro 1440: sin errores de consola
+OK    27-proveedores-vacio oscuro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/proveedores
+OK    27-proveedores-vacio oscuro 1440: un solo h1 · h1=1
+OK    27-proveedores-vacio oscuro 1440: campos con etiqueta
+OK    27-proveedores-vacio oscuro 1440: errores ligados a su campo
+OK    27-proveedores-vacio oscuro 1440: sin desplazamiento horizontal
+OK    27-proveedores-vacio oscuro 1440: cada cifra cabe en su celda
+OK    27-proveedores-vacio oscuro 1440: tabulación en orden del documento · 24 paradas 
+OK    27-proveedores-vacio oscuro 1440: foco visible en cada parada
+OK    27-proveedores-vacio oscuro 1440: sin errores de consola
+OK    30-personas-directorio oscuro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas
+OK    30-personas-directorio oscuro 1440: un solo h1 · h1=1
+OK    30-personas-directorio oscuro 1440: campos con etiqueta
+OK    30-personas-directorio oscuro 1440: errores ligados a su campo
+OK    30-personas-directorio oscuro 1440: sin desplazamiento horizontal
+OK    30-personas-directorio oscuro 1440: cada cifra cabe en su celda
+OK    30-personas-directorio oscuro 1440: tabulación en orden del documento · 26 paradas 
+OK    30-personas-directorio oscuro 1440: foco visible en cada parada
+OK    30-personas-directorio oscuro 1440: sin errores de consola
+OK    31-personas-alta oscuro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/nueva
+OK    31-personas-alta oscuro 1440: un solo h1 · h1=1
+OK    31-personas-alta oscuro 1440: campos con etiqueta
+OK    31-personas-alta oscuro 1440: errores ligados a su campo
+OK    31-personas-alta oscuro 1440: sin desplazamiento horizontal
+OK    31-personas-alta oscuro 1440: cada cifra cabe en su celda
+OK    31-personas-alta oscuro 1440: tabulación en orden del documento · 21 paradas 
+OK    31-personas-alta oscuro 1440: foco visible en cada parada
+OK    31-personas-alta oscuro 1440: sin errores de consola
+OK    32-personas-areas oscuro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/areas
+OK    32-personas-areas oscuro 1440: un solo h1 · h1=1
+OK    32-personas-areas oscuro 1440: campos con etiqueta
+OK    32-personas-areas oscuro 1440: errores ligados a su campo
+OK    32-personas-areas oscuro 1440: sin desplazamiento horizontal
+OK    32-personas-areas oscuro 1440: cada cifra cabe en su celda
+OK    32-personas-areas oscuro 1440: tabulación en orden del documento · 24 paradas 
+OK    32-personas-areas oscuro 1440: foco visible en cada parada
+OK    32-personas-areas oscuro 1440: sin errores de consola
+OK    33-personas-nomina oscuro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/nomina
+OK    33-personas-nomina oscuro 1440: un solo h1 · h1=1
+OK    33-personas-nomina oscuro 1440: campos con etiqueta
+OK    33-personas-nomina oscuro 1440: errores ligados a su campo
+OK    33-personas-nomina oscuro 1440: sin desplazamiento horizontal
+OK    33-personas-nomina oscuro 1440: cada cifra cabe en su celda
+OK    33-personas-nomina oscuro 1440: tabulación en orden del documento · 20 paradas 
+OK    33-personas-nomina oscuro 1440: foco visible en cada parada
+OK    33-personas-nomina oscuro 1440: sin errores de consola
+OK    34-personas-sin-permiso oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas
+OK    34-personas-sin-permiso oscuro 1440: un solo h1 · h1=1
+OK    34-personas-sin-permiso oscuro 1440: campos con etiqueta
+OK    34-personas-sin-permiso oscuro 1440: errores ligados a su campo
+OK    34-personas-sin-permiso oscuro 1440: sin desplazamiento horizontal
+OK    34-personas-sin-permiso oscuro 1440: cada cifra cabe en su celda
+OK    34-personas-sin-permiso oscuro 1440: tabulación en orden del documento · 19 paradas 
+OK    34-personas-sin-permiso oscuro 1440: foco visible en cada parada
+OK    34-personas-sin-permiso oscuro 1440: sin errores de consola
+OK    35-personas-expediente oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/d64a90a8-c660-48f0-838f-f63105d04a3e
+OK    35-personas-expediente oscuro 1440: un solo h1 · h1=1
+OK    35-personas-expediente oscuro 1440: campos con etiqueta
+OK    35-personas-expediente oscuro 1440: errores ligados a su campo
+OK    35-personas-expediente oscuro 1440: sin desplazamiento horizontal
+OK    35-personas-expediente oscuro 1440: cada cifra cabe en su celda
+OK    35-personas-expediente oscuro 1440: tabulación en orden del documento · 38 paradas 
+OK    35-personas-expediente oscuro 1440: foco visible en cada parada
+OK    35-personas-expediente oscuro 1440: sin errores de consola
+OK    36-personas-lote oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nomina/832d4f6d-eaa9-4831-affa-6bbd5bf782e3
+OK    36-personas-lote oscuro 1440: un solo h1 · h1=1
+OK    36-personas-lote oscuro 1440: campos con etiqueta
+OK    36-personas-lote oscuro 1440: errores ligados a su campo
+OK    36-personas-lote oscuro 1440: sin desplazamiento horizontal
+OK    36-personas-lote oscuro 1440: cada cifra cabe en su celda
+OK    36-personas-lote oscuro 1440: tabulación en orden del documento · 21 paradas 
+OK    36-personas-lote oscuro 1440: foco visible en cada parada
+OK    36-personas-lote oscuro 1440: sin errores de consola
+OK    37-personas-alta-con-areas oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nueva
+OK    37-personas-alta-con-areas oscuro 1440: un solo h1 · h1=1
+OK    37-personas-alta-con-areas oscuro 1440: campos con etiqueta
+OK    37-personas-alta-con-areas oscuro 1440: errores ligados a su campo
+OK    37-personas-alta-con-areas oscuro 1440: sin desplazamiento horizontal
+OK    37-personas-alta-con-areas oscuro 1440: cada cifra cabe en su celda
+OK    37-personas-alta-con-areas oscuro 1440: tabulación en orden del documento · 33 paradas 
+OK    37-personas-alta-con-areas oscuro 1440: foco visible en cada parada
+OK    37-personas-alta-con-areas oscuro 1440: sin errores de consola
+OK    40-politica oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/politica
+OK    40-politica oscuro 1440: un solo h1 · h1=1
+OK    40-politica oscuro 1440: campos con etiqueta
+OK    40-politica oscuro 1440: errores ligados a su campo
+OK    40-politica oscuro 1440: sin desplazamiento horizontal
+OK    40-politica oscuro 1440: cada cifra cabe en su celda
+OK    40-politica oscuro 1440: tabulación en orden del documento · 28 paradas 
+OK    40-politica oscuro 1440: foco visible en cada parada
+OK    40-politica oscuro 1440: sin errores de consola
+OK    41-politica-altamar oscuro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/politica
+OK    41-politica-altamar oscuro 1440: un solo h1 · h1=1
+OK    41-politica-altamar oscuro 1440: campos con etiqueta
+OK    41-politica-altamar oscuro 1440: errores ligados a su campo
+OK    41-politica-altamar oscuro 1440: sin desplazamiento horizontal
+OK    41-politica-altamar oscuro 1440: cada cifra cabe en su celda
+OK    41-politica-altamar oscuro 1440: tabulación en orden del documento · 25 paradas 
+OK    41-politica-altamar oscuro 1440: foco visible en cada parada
+OK    41-politica-altamar oscuro 1440: sin errores de consola
+OK    50-lista-69b oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b
+OK    50-lista-69b oscuro 1440: un solo h1 · h1=1
+OK    50-lista-69b oscuro 1440: campos con etiqueta
+OK    50-lista-69b oscuro 1440: errores ligados a su campo
+OK    50-lista-69b oscuro 1440: sin desplazamiento horizontal
+OK    50-lista-69b oscuro 1440: cada cifra cabe en su celda
+OK    50-lista-69b oscuro 1440: tabulación en orden del documento · 19 paradas 
+OK    50-lista-69b oscuro 1440: foco visible en cada parada
+OK    50-lista-69b oscuro 1440: sin errores de consola
+OK    51-lista-69b-sofipo oscuro 1440: responde en su ruta · 200 /consola/lista-69b
+OK    51-lista-69b-sofipo oscuro 1440: un solo h1 · h1=1
+OK    51-lista-69b-sofipo oscuro 1440: campos con etiqueta
+OK    51-lista-69b-sofipo oscuro 1440: errores ligados a su campo
+OK    51-lista-69b-sofipo oscuro 1440: sin desplazamiento horizontal
+OK    51-lista-69b-sofipo oscuro 1440: cada cifra cabe en su celda
+OK    51-lista-69b-sofipo oscuro 1440: tabulación en orden del documento · 7 paradas 
+OK    51-lista-69b-sofipo oscuro 1440: foco visible en cada parada
+OK    51-lista-69b-sofipo oscuro 1440: sin errores de consola
+OK    60-configuracion oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion
+OK    60-configuracion oscuro 1440: un solo h1 · h1=1
+OK    60-configuracion oscuro 1440: campos con etiqueta
+OK    60-configuracion oscuro 1440: errores ligados a su campo
+OK    60-configuracion oscuro 1440: sin desplazamiento horizontal
+OK    60-configuracion oscuro 1440: cada cifra cabe en su celda
+OK    60-configuracion oscuro 1440: tabulación en orden del documento · 21 paradas 
+OK    60-configuracion oscuro 1440: foco visible en cada parada
+OK    60-configuracion oscuro 1440: sin errores de consola
+OK    61-configuracion-plan oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan
+OK    61-configuracion-plan oscuro 1440: un solo h1 · h1=1
+OK    61-configuracion-plan oscuro 1440: campos con etiqueta
+OK    61-configuracion-plan oscuro 1440: errores ligados a su campo
+OK    61-configuracion-plan oscuro 1440: sin desplazamiento horizontal
+OK    61-configuracion-plan oscuro 1440: cada cifra cabe en su celda
+OK    61-configuracion-plan oscuro 1440: tabulación en orden del documento · 17 paradas 
+OK    61-configuracion-plan oscuro 1440: foco visible en cada parada
+OK    61-configuracion-plan oscuro 1440: sin errores de consola
+OK    70-poliza oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/poliza
+OK    70-poliza oscuro 1440: un solo h1 · h1=1
+OK    70-poliza oscuro 1440: campos con etiqueta
+OK    70-poliza oscuro 1440: errores ligados a su campo
+OK    70-poliza oscuro 1440: sin desplazamiento horizontal
+OK    70-poliza oscuro 1440: cada cifra cabe en su celda
+OK    70-poliza oscuro 1440: tabulación en orden del documento · 17 paradas 
+OK    70-poliza oscuro 1440: foco visible en cada parada
+OK    70-poliza oscuro 1440: sin errores de consola
+OK    80-sin-permiso-proveedores oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    80-sin-permiso-proveedores oscuro 1440: un solo h1 · h1=1
+OK    80-sin-permiso-proveedores oscuro 1440: campos con etiqueta
+OK    80-sin-permiso-proveedores oscuro 1440: errores ligados a su campo
+OK    80-sin-permiso-proveedores oscuro 1440: sin desplazamiento horizontal
+OK    80-sin-permiso-proveedores oscuro 1440: cada cifra cabe en su celda
+OK    80-sin-permiso-proveedores oscuro 1440: tabulación en orden del documento · 9 paradas 
+OK    80-sin-permiso-proveedores oscuro 1440: foco visible en cada parada
+OK    80-sin-permiso-proveedores oscuro 1440: sin errores de consola
+OK    81-sin-permiso-personas oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas
+OK    81-sin-permiso-personas oscuro 1440: un solo h1 · h1=1
+OK    81-sin-permiso-personas oscuro 1440: campos con etiqueta
+OK    81-sin-permiso-personas oscuro 1440: errores ligados a su campo
+OK    81-sin-permiso-personas oscuro 1440: sin desplazamiento horizontal
+OK    81-sin-permiso-personas oscuro 1440: cada cifra cabe en su celda
+OK    81-sin-permiso-personas oscuro 1440: tabulación en orden del documento · 9 paradas 
+OK    81-sin-permiso-personas oscuro 1440: foco visible en cada parada
+OK    81-sin-permiso-personas oscuro 1440: sin errores de consola
+OK    82-sin-permiso-politica oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/politica
+OK    82-sin-permiso-politica oscuro 1440: un solo h1 · h1=1
+OK    82-sin-permiso-politica oscuro 1440: campos con etiqueta
+OK    82-sin-permiso-politica oscuro 1440: errores ligados a su campo
+OK    82-sin-permiso-politica oscuro 1440: sin desplazamiento horizontal
+OK    82-sin-permiso-politica oscuro 1440: cada cifra cabe en su celda
+OK    82-sin-permiso-politica oscuro 1440: tabulación en orden del documento · 9 paradas 
+OK    82-sin-permiso-politica oscuro 1440: foco visible en cada parada
+OK    82-sin-permiso-politica oscuro 1440: sin errores de consola
+OK    83-sin-permiso-lista-69b oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b
+OK    83-sin-permiso-lista-69b oscuro 1440: un solo h1 · h1=1
+OK    83-sin-permiso-lista-69b oscuro 1440: campos con etiqueta
+OK    83-sin-permiso-lista-69b oscuro 1440: errores ligados a su campo
+OK    83-sin-permiso-lista-69b oscuro 1440: sin desplazamiento horizontal
+OK    83-sin-permiso-lista-69b oscuro 1440: cada cifra cabe en su celda
+OK    83-sin-permiso-lista-69b oscuro 1440: tabulación en orden del documento · 9 paradas 
+OK    83-sin-permiso-lista-69b oscuro 1440: foco visible en cada parada
+OK    83-sin-permiso-lista-69b oscuro 1440: sin errores de consola
+OK    84-sin-permiso-configuracion oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion
+OK    84-sin-permiso-configuracion oscuro 1440: un solo h1 · h1=1
+OK    84-sin-permiso-configuracion oscuro 1440: campos con etiqueta
+OK    84-sin-permiso-configuracion oscuro 1440: errores ligados a su campo
+OK    84-sin-permiso-configuracion oscuro 1440: sin desplazamiento horizontal
+OK    84-sin-permiso-configuracion oscuro 1440: cada cifra cabe en su celda
+OK    84-sin-permiso-configuracion oscuro 1440: tabulación en orden del documento · 9 paradas 
+OK    84-sin-permiso-configuracion oscuro 1440: foco visible en cada parada
+OK    84-sin-permiso-configuracion oscuro 1440: sin errores de consola
+OK    85-sin-permiso-plan oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan
+OK    85-sin-permiso-plan oscuro 1440: un solo h1 · h1=1
+OK    85-sin-permiso-plan oscuro 1440: campos con etiqueta
+OK    85-sin-permiso-plan oscuro 1440: errores ligados a su campo
+OK    85-sin-permiso-plan oscuro 1440: sin desplazamiento horizontal
+OK    85-sin-permiso-plan oscuro 1440: cada cifra cabe en su celda
+OK    85-sin-permiso-plan oscuro 1440: tabulación en orden del documento · 9 paradas 
+OK    85-sin-permiso-plan oscuro 1440: foco visible en cada parada
+OK    85-sin-permiso-plan oscuro 1440: sin errores de consola
+OK    86-sin-permiso-poliza oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/poliza
+OK    86-sin-permiso-poliza oscuro 1440: un solo h1 · h1=1
+OK    86-sin-permiso-poliza oscuro 1440: campos con etiqueta
+OK    86-sin-permiso-poliza oscuro 1440: errores ligados a su campo
+OK    86-sin-permiso-poliza oscuro 1440: sin desplazamiento horizontal
+OK    86-sin-permiso-poliza oscuro 1440: cada cifra cabe en su celda
+OK    86-sin-permiso-poliza oscuro 1440: tabulación en orden del documento · 9 paradas 
+OK    86-sin-permiso-poliza oscuro 1440: foco visible en cada parada
+OK    86-sin-permiso-poliza oscuro 1440: sin errores de consola
+OK    87-pendientes-finanzas oscuro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes
+OK    87-pendientes-finanzas oscuro 1440: un solo h1 · h1=1
+OK    87-pendientes-finanzas oscuro 1440: campos con etiqueta
+OK    87-pendientes-finanzas oscuro 1440: errores ligados a su campo
+OK    87-pendientes-finanzas oscuro 1440: sin desplazamiento horizontal
+OK    87-pendientes-finanzas oscuro 1440: cada cifra cabe en su celda
+OK    87-pendientes-finanzas oscuro 1440: tabulación en orden del documento · 11 paradas 
+OK    87-pendientes-finanzas oscuro 1440: foco visible en cada parada
+OK    87-pendientes-finanzas oscuro 1440: sin errores de consola
+OK    10-pendientes oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes
+OK    10-pendientes oscuro 390: un solo h1 · h1=1
+OK    10-pendientes oscuro 390: campos con etiqueta
+OK    10-pendientes oscuro 390: errores ligados a su campo
+OK    10-pendientes oscuro 390: sin desplazamiento horizontal
+OK    10-pendientes oscuro 390: cada cifra cabe en su celda
+OK    10-pendientes oscuro 390: tabulación en orden del documento · 9 paradas 
+OK    10-pendientes oscuro 390: foco visible en cada parada
+OK    10-pendientes oscuro 390: sin errores de consola
+OK    11-pendientes-altamar oscuro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/pendientes
+OK    11-pendientes-altamar oscuro 390: un solo h1 · h1=1
+OK    11-pendientes-altamar oscuro 390: campos con etiqueta
+OK    11-pendientes-altamar oscuro 390: errores ligados a su campo
+OK    11-pendientes-altamar oscuro 390: sin desplazamiento horizontal
+OK    11-pendientes-altamar oscuro 390: cada cifra cabe en su celda
+OK    11-pendientes-altamar oscuro 390: tabulación en orden del documento · 10 paradas 
+OK    11-pendientes-altamar oscuro 390: foco visible en cada parada
+OK    11-pendientes-altamar oscuro 390: sin errores de consola
+OK    12-inicio-administrador oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola
+OK    12-inicio-administrador oscuro 390: un solo h1 · h1=1
+OK    12-inicio-administrador oscuro 390: campos con etiqueta
+OK    12-inicio-administrador oscuro 390: errores ligados a su campo
+OK    12-inicio-administrador oscuro 390: sin desplazamiento horizontal
+OK    12-inicio-administrador oscuro 390: cada cifra cabe en su celda
+OK    12-inicio-administrador oscuro 390: tabulación en orden del documento · 23 paradas 
+OK    12-inicio-administrador oscuro 390: foco visible en cada parada
+OK    12-inicio-administrador oscuro 390: sin errores de consola
+OK    13-inicio-finanzas oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola
+OK    13-inicio-finanzas oscuro 390: un solo h1 · h1=1
+OK    13-inicio-finanzas oscuro 390: campos con etiqueta
+OK    13-inicio-finanzas oscuro 390: errores ligados a su campo
+OK    13-inicio-finanzas oscuro 390: sin desplazamiento horizontal
+OK    13-inicio-finanzas oscuro 390: cada cifra cabe en su celda
+OK    13-inicio-finanzas oscuro 390: tabulación en orden del documento · 22 paradas 
+OK    13-inicio-finanzas oscuro 390: foco visible en cada parada
+OK    13-inicio-finanzas oscuro 390: sin errores de consola
+OK    14-inicio-sin-saldo oscuro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola
+OK    14-inicio-sin-saldo oscuro 390: un solo h1 · h1=1
+OK    14-inicio-sin-saldo oscuro 390: campos con etiqueta
+OK    14-inicio-sin-saldo oscuro 390: errores ligados a su campo
+OK    14-inicio-sin-saldo oscuro 390: sin desplazamiento horizontal
+OK    14-inicio-sin-saldo oscuro 390: cada cifra cabe en su celda
+OK    14-inicio-sin-saldo oscuro 390: tabulación en orden del documento · 9 paradas 
+OK    14-inicio-sin-saldo oscuro 390: foco visible en cada parada
+OK    14-inicio-sin-saldo oscuro 390: sin errores de consola
+OK    20-proveedores-pagos oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    20-proveedores-pagos oscuro 390: un solo h1 · h1=1
+OK    20-proveedores-pagos oscuro 390: campos con etiqueta
+OK    20-proveedores-pagos oscuro 390: errores ligados a su campo
+OK    20-proveedores-pagos oscuro 390: sin desplazamiento horizontal
+OK    20-proveedores-pagos oscuro 390: cada cifra cabe en su celda
+OK    20-proveedores-pagos oscuro 390: tabulación en orden del documento · 18 paradas 
+OK    20-proveedores-pagos oscuro 390: foco visible en cada parada
+OK    20-proveedores-pagos oscuro 390: sin errores de consola
+OK    21-proveedores-directorio oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    21-proveedores-directorio oscuro 390: un solo h1 · h1=1
+OK    21-proveedores-directorio oscuro 390: campos con etiqueta
+OK    21-proveedores-directorio oscuro 390: errores ligados a su campo
+OK    21-proveedores-directorio oscuro 390: sin desplazamiento horizontal
+OK    21-proveedores-directorio oscuro 390: cada cifra cabe en su celda
+OK    21-proveedores-directorio oscuro 390: tabulación en orden del documento · 18 paradas 
+OK    21-proveedores-directorio oscuro 390: foco visible en cada parada
+OK    21-proveedores-directorio oscuro 390: sin errores de consola
+OK    22-proveedores-agenda oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    22-proveedores-agenda oscuro 390: un solo h1 · h1=1
+OK    22-proveedores-agenda oscuro 390: campos con etiqueta
+OK    22-proveedores-agenda oscuro 390: errores ligados a su campo
+OK    22-proveedores-agenda oscuro 390: sin desplazamiento horizontal
+OK    22-proveedores-agenda oscuro 390: cada cifra cabe en su celda
+OK    22-proveedores-agenda oscuro 390: tabulación en orden del documento · 11 paradas 
+OK    22-proveedores-agenda oscuro 390: foco visible en cada parada
+OK    22-proveedores-agenda oscuro 390: sin errores de consola
+OK    23-proveedores-detalle-pago oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    23-proveedores-detalle-pago oscuro 390: un solo h1 · h1=1
+OK    23-proveedores-detalle-pago oscuro 390: campos con etiqueta
+OK    23-proveedores-detalle-pago oscuro 390: errores ligados a su campo
+OK    23-proveedores-detalle-pago oscuro 390: sin desplazamiento horizontal
+OK    23-proveedores-detalle-pago oscuro 390: cada cifra cabe en su celda
+OK    23-proveedores-detalle-pago oscuro 390: tabulación en orden del documento · 3 paradas 
+OK    23-proveedores-detalle-pago oscuro 390: foco visible en cada parada
+OK    23-proveedores-detalle-pago oscuro 390: sin errores de consola
+OK    24-proveedores-expediente oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    24-proveedores-expediente oscuro 390: un solo h1 · h1=1
+OK    24-proveedores-expediente oscuro 390: campos con etiqueta
+OK    24-proveedores-expediente oscuro 390: errores ligados a su campo
+OK    24-proveedores-expediente oscuro 390: sin desplazamiento horizontal
+OK    24-proveedores-expediente oscuro 390: cada cifra cabe en su celda
+OK    24-proveedores-expediente oscuro 390: tabulación en orden del documento · 4 paradas 
+OK    24-proveedores-expediente oscuro 390: foco visible en cada parada
+OK    24-proveedores-expediente oscuro 390: sin errores de consola
+OK    25-proveedores-alta oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo-proveedor
+OK    25-proveedores-alta oscuro 390: un solo h1 · h1=1
+OK    25-proveedores-alta oscuro 390: campos con etiqueta
+OK    25-proveedores-alta oscuro 390: errores ligados a su campo
+OK    25-proveedores-alta oscuro 390: sin desplazamiento horizontal
+OK    25-proveedores-alta oscuro 390: cada cifra cabe en su celda
+OK    25-proveedores-alta oscuro 390: tabulación en orden del documento · 18 paradas 
+OK    25-proveedores-alta oscuro 390: foco visible en cada parada
+OK    25-proveedores-alta oscuro 390: sin errores de consola
+OK    26-proveedores-nuevo-pago oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo
+OK    26-proveedores-nuevo-pago oscuro 390: un solo h1 · h1=1
+OK    26-proveedores-nuevo-pago oscuro 390: campos con etiqueta
+OK    26-proveedores-nuevo-pago oscuro 390: errores ligados a su campo
+OK    26-proveedores-nuevo-pago oscuro 390: sin desplazamiento horizontal
+OK    26-proveedores-nuevo-pago oscuro 390: cada cifra cabe en su celda
+OK    26-proveedores-nuevo-pago oscuro 390: tabulación en orden del documento · 13 paradas 
+OK    26-proveedores-nuevo-pago oscuro 390: foco visible en cada parada
+OK    26-proveedores-nuevo-pago oscuro 390: sin errores de consola
+OK    27-proveedores-vacio oscuro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/proveedores
+OK    27-proveedores-vacio oscuro 390: un solo h1 · h1=1
+OK    27-proveedores-vacio oscuro 390: campos con etiqueta
+OK    27-proveedores-vacio oscuro 390: errores ligados a su campo
+OK    27-proveedores-vacio oscuro 390: sin desplazamiento horizontal
+OK    27-proveedores-vacio oscuro 390: cada cifra cabe en su celda
+OK    27-proveedores-vacio oscuro 390: tabulación en orden del documento · 12 paradas 
+OK    27-proveedores-vacio oscuro 390: foco visible en cada parada
+OK    27-proveedores-vacio oscuro 390: sin errores de consola
+OK    30-personas-directorio oscuro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas
+OK    30-personas-directorio oscuro 390: un solo h1 · h1=1
+OK    30-personas-directorio oscuro 390: campos con etiqueta
+OK    30-personas-directorio oscuro 390: errores ligados a su campo
+OK    30-personas-directorio oscuro 390: sin desplazamiento horizontal
+OK    30-personas-directorio oscuro 390: cada cifra cabe en su celda
+OK    30-personas-directorio oscuro 390: tabulación en orden del documento · 14 paradas 
+OK    30-personas-directorio oscuro 390: foco visible en cada parada
+OK    30-personas-directorio oscuro 390: sin errores de consola
+OK    31-personas-alta oscuro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/nueva
+OK    31-personas-alta oscuro 390: un solo h1 · h1=1
+OK    31-personas-alta oscuro 390: campos con etiqueta
+OK    31-personas-alta oscuro 390: errores ligados a su campo
+OK    31-personas-alta oscuro 390: sin desplazamiento horizontal
+OK    31-personas-alta oscuro 390: cada cifra cabe en su celda
+OK    31-personas-alta oscuro 390: tabulación en orden del documento · 9 paradas 
+OK    31-personas-alta oscuro 390: foco visible en cada parada
+OK    31-personas-alta oscuro 390: sin errores de consola
+OK    32-personas-areas oscuro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/areas
+OK    32-personas-areas oscuro 390: un solo h1 · h1=1
+OK    32-personas-areas oscuro 390: campos con etiqueta
+OK    32-personas-areas oscuro 390: errores ligados a su campo
+OK    32-personas-areas oscuro 390: sin desplazamiento horizontal
+OK    32-personas-areas oscuro 390: cada cifra cabe en su celda
+OK    32-personas-areas oscuro 390: tabulación en orden del documento · 12 paradas 
+OK    32-personas-areas oscuro 390: foco visible en cada parada
+OK    32-personas-areas oscuro 390: sin errores de consola
+OK    33-personas-nomina oscuro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/nomina
+OK    33-personas-nomina oscuro 390: un solo h1 · h1=1
+OK    33-personas-nomina oscuro 390: campos con etiqueta
+OK    33-personas-nomina oscuro 390: errores ligados a su campo
+OK    33-personas-nomina oscuro 390: sin desplazamiento horizontal
+OK    33-personas-nomina oscuro 390: cada cifra cabe en su celda
+OK    33-personas-nomina oscuro 390: tabulación en orden del documento · 8 paradas 
+OK    33-personas-nomina oscuro 390: foco visible en cada parada
+OK    33-personas-nomina oscuro 390: sin errores de consola
+OK    34-personas-sin-permiso oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas
+OK    34-personas-sin-permiso oscuro 390: un solo h1 · h1=1
+OK    34-personas-sin-permiso oscuro 390: campos con etiqueta
+OK    34-personas-sin-permiso oscuro 390: errores ligados a su campo
+OK    34-personas-sin-permiso oscuro 390: sin desplazamiento horizontal
+OK    34-personas-sin-permiso oscuro 390: cada cifra cabe en su celda
+OK    34-personas-sin-permiso oscuro 390: tabulación en orden del documento · 14 paradas 
+OK    34-personas-sin-permiso oscuro 390: foco visible en cada parada
+OK    34-personas-sin-permiso oscuro 390: sin errores de consola
+OK    35-personas-expediente oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/d64a90a8-c660-48f0-838f-f63105d04a3e
+OK    35-personas-expediente oscuro 390: un solo h1 · h1=1
+OK    35-personas-expediente oscuro 390: campos con etiqueta
+OK    35-personas-expediente oscuro 390: errores ligados a su campo
+OK    35-personas-expediente oscuro 390: sin desplazamiento horizontal
+OK    35-personas-expediente oscuro 390: cada cifra cabe en su celda
+OK    35-personas-expediente oscuro 390: tabulación en orden del documento · 26 paradas 
+OK    35-personas-expediente oscuro 390: foco visible en cada parada
+OK    35-personas-expediente oscuro 390: sin errores de consola
+OK    36-personas-lote oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nomina/832d4f6d-eaa9-4831-affa-6bbd5bf782e3
+OK    36-personas-lote oscuro 390: un solo h1 · h1=1
+OK    36-personas-lote oscuro 390: campos con etiqueta
+OK    36-personas-lote oscuro 390: errores ligados a su campo
+OK    36-personas-lote oscuro 390: sin desplazamiento horizontal
+OK    36-personas-lote oscuro 390: cada cifra cabe en su celda
+OK    36-personas-lote oscuro 390: tabulación en orden del documento · 9 paradas 
+OK    36-personas-lote oscuro 390: foco visible en cada parada
+OK    36-personas-lote oscuro 390: sin errores de consola
+OK    37-personas-alta-con-areas oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nueva
+OK    37-personas-alta-con-areas oscuro 390: un solo h1 · h1=1
+OK    37-personas-alta-con-areas oscuro 390: campos con etiqueta
+OK    37-personas-alta-con-areas oscuro 390: errores ligados a su campo
+OK    37-personas-alta-con-areas oscuro 390: sin desplazamiento horizontal
+OK    37-personas-alta-con-areas oscuro 390: cada cifra cabe en su celda
+OK    37-personas-alta-con-areas oscuro 390: tabulación en orden del documento · 21 paradas 
+OK    37-personas-alta-con-areas oscuro 390: foco visible en cada parada
+OK    37-personas-alta-con-areas oscuro 390: sin errores de consola
+OK    40-politica oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/politica
+OK    40-politica oscuro 390: un solo h1 · h1=1
+OK    40-politica oscuro 390: campos con etiqueta
+OK    40-politica oscuro 390: errores ligados a su campo
+OK    40-politica oscuro 390: sin desplazamiento horizontal
+OK    40-politica oscuro 390: cada cifra cabe en su celda
+OK    40-politica oscuro 390: tabulación en orden del documento · 16 paradas 
+OK    40-politica oscuro 390: foco visible en cada parada
+OK    40-politica oscuro 390: sin errores de consola
+OK    41-politica-altamar oscuro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/politica
+OK    41-politica-altamar oscuro 390: un solo h1 · h1=1
+OK    41-politica-altamar oscuro 390: campos con etiqueta
+OK    41-politica-altamar oscuro 390: errores ligados a su campo
+OK    41-politica-altamar oscuro 390: sin desplazamiento horizontal
+OK    41-politica-altamar oscuro 390: cada cifra cabe en su celda
+OK    41-politica-altamar oscuro 390: tabulación en orden del documento · 13 paradas 
+OK    41-politica-altamar oscuro 390: foco visible en cada parada
+OK    41-politica-altamar oscuro 390: sin errores de consola
+OK    50-lista-69b oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b
+OK    50-lista-69b oscuro 390: un solo h1 · h1=1
+OK    50-lista-69b oscuro 390: campos con etiqueta
+OK    50-lista-69b oscuro 390: errores ligados a su campo
+OK    50-lista-69b oscuro 390: sin desplazamiento horizontal
+OK    50-lista-69b oscuro 390: cada cifra cabe en su celda
+OK    50-lista-69b oscuro 390: tabulación en orden del documento · 7 paradas 
+OK    50-lista-69b oscuro 390: foco visible en cada parada
+OK    50-lista-69b oscuro 390: sin errores de consola
+OK    51-lista-69b-sofipo oscuro 390: responde en su ruta · 200 /consola/lista-69b
+OK    51-lista-69b-sofipo oscuro 390: un solo h1 · h1=1
+OK    51-lista-69b-sofipo oscuro 390: campos con etiqueta
+OK    51-lista-69b-sofipo oscuro 390: errores ligados a su campo
+OK    51-lista-69b-sofipo oscuro 390: sin desplazamiento horizontal
+OK    51-lista-69b-sofipo oscuro 390: cada cifra cabe en su celda
+OK    51-lista-69b-sofipo oscuro 390: tabulación en orden del documento · 7 paradas 
+OK    51-lista-69b-sofipo oscuro 390: foco visible en cada parada
+OK    51-lista-69b-sofipo oscuro 390: sin errores de consola
+OK    60-configuracion oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion
+OK    60-configuracion oscuro 390: un solo h1 · h1=1
+OK    60-configuracion oscuro 390: campos con etiqueta
+OK    60-configuracion oscuro 390: errores ligados a su campo
+OK    60-configuracion oscuro 390: sin desplazamiento horizontal
+OK    60-configuracion oscuro 390: cada cifra cabe en su celda
+OK    60-configuracion oscuro 390: tabulación en orden del documento · 9 paradas 
+OK    60-configuracion oscuro 390: foco visible en cada parada
+OK    60-configuracion oscuro 390: sin errores de consola
+OK    61-configuracion-plan oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan
+OK    61-configuracion-plan oscuro 390: un solo h1 · h1=1
+OK    61-configuracion-plan oscuro 390: campos con etiqueta
+OK    61-configuracion-plan oscuro 390: errores ligados a su campo
+OK    61-configuracion-plan oscuro 390: sin desplazamiento horizontal
+OK    61-configuracion-plan oscuro 390: cada cifra cabe en su celda
+OK    61-configuracion-plan oscuro 390: tabulación en orden del documento · 5 paradas 
+OK    61-configuracion-plan oscuro 390: foco visible en cada parada
+OK    61-configuracion-plan oscuro 390: sin errores de consola
+OK    70-poliza oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/poliza
+OK    70-poliza oscuro 390: un solo h1 · h1=1
+OK    70-poliza oscuro 390: campos con etiqueta
+OK    70-poliza oscuro 390: errores ligados a su campo
+OK    70-poliza oscuro 390: sin desplazamiento horizontal
+OK    70-poliza oscuro 390: cada cifra cabe en su celda
+OK    70-poliza oscuro 390: tabulación en orden del documento · 5 paradas 
+OK    70-poliza oscuro 390: foco visible en cada parada
+OK    70-poliza oscuro 390: sin errores de consola
+OK    80-sin-permiso-proveedores oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    80-sin-permiso-proveedores oscuro 390: un solo h1 · h1=1
+OK    80-sin-permiso-proveedores oscuro 390: campos con etiqueta
+OK    80-sin-permiso-proveedores oscuro 390: errores ligados a su campo
+OK    80-sin-permiso-proveedores oscuro 390: sin desplazamiento horizontal
+OK    80-sin-permiso-proveedores oscuro 390: cada cifra cabe en su celda
+OK    80-sin-permiso-proveedores oscuro 390: tabulación en orden del documento · 4 paradas 
+OK    80-sin-permiso-proveedores oscuro 390: foco visible en cada parada
+OK    80-sin-permiso-proveedores oscuro 390: sin errores de consola
+OK    81-sin-permiso-personas oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas
+OK    81-sin-permiso-personas oscuro 390: un solo h1 · h1=1
+OK    81-sin-permiso-personas oscuro 390: campos con etiqueta
+OK    81-sin-permiso-personas oscuro 390: errores ligados a su campo
+OK    81-sin-permiso-personas oscuro 390: sin desplazamiento horizontal
+OK    81-sin-permiso-personas oscuro 390: cada cifra cabe en su celda
+OK    81-sin-permiso-personas oscuro 390: tabulación en orden del documento · 4 paradas 
+OK    81-sin-permiso-personas oscuro 390: foco visible en cada parada
+OK    81-sin-permiso-personas oscuro 390: sin errores de consola
+OK    82-sin-permiso-politica oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/politica
+OK    82-sin-permiso-politica oscuro 390: un solo h1 · h1=1
+OK    82-sin-permiso-politica oscuro 390: campos con etiqueta
+OK    82-sin-permiso-politica oscuro 390: errores ligados a su campo
+OK    82-sin-permiso-politica oscuro 390: sin desplazamiento horizontal
+OK    82-sin-permiso-politica oscuro 390: cada cifra cabe en su celda
+OK    82-sin-permiso-politica oscuro 390: tabulación en orden del documento · 4 paradas 
+OK    82-sin-permiso-politica oscuro 390: foco visible en cada parada
+OK    82-sin-permiso-politica oscuro 390: sin errores de consola
+OK    83-sin-permiso-lista-69b oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b
+OK    83-sin-permiso-lista-69b oscuro 390: un solo h1 · h1=1
+OK    83-sin-permiso-lista-69b oscuro 390: campos con etiqueta
+OK    83-sin-permiso-lista-69b oscuro 390: errores ligados a su campo
+OK    83-sin-permiso-lista-69b oscuro 390: sin desplazamiento horizontal
+OK    83-sin-permiso-lista-69b oscuro 390: cada cifra cabe en su celda
+OK    83-sin-permiso-lista-69b oscuro 390: tabulación en orden del documento · 4 paradas 
+OK    83-sin-permiso-lista-69b oscuro 390: foco visible en cada parada
+OK    83-sin-permiso-lista-69b oscuro 390: sin errores de consola
+OK    84-sin-permiso-configuracion oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion
+OK    84-sin-permiso-configuracion oscuro 390: un solo h1 · h1=1
+OK    84-sin-permiso-configuracion oscuro 390: campos con etiqueta
+OK    84-sin-permiso-configuracion oscuro 390: errores ligados a su campo
+OK    84-sin-permiso-configuracion oscuro 390: sin desplazamiento horizontal
+OK    84-sin-permiso-configuracion oscuro 390: cada cifra cabe en su celda
+OK    84-sin-permiso-configuracion oscuro 390: tabulación en orden del documento · 4 paradas 
+OK    84-sin-permiso-configuracion oscuro 390: foco visible en cada parada
+OK    84-sin-permiso-configuracion oscuro 390: sin errores de consola
+OK    85-sin-permiso-plan oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan
+OK    85-sin-permiso-plan oscuro 390: un solo h1 · h1=1
+OK    85-sin-permiso-plan oscuro 390: campos con etiqueta
+OK    85-sin-permiso-plan oscuro 390: errores ligados a su campo
+OK    85-sin-permiso-plan oscuro 390: sin desplazamiento horizontal
+OK    85-sin-permiso-plan oscuro 390: cada cifra cabe en su celda
+OK    85-sin-permiso-plan oscuro 390: tabulación en orden del documento · 4 paradas 
+OK    85-sin-permiso-plan oscuro 390: foco visible en cada parada
+OK    85-sin-permiso-plan oscuro 390: sin errores de consola
+OK    86-sin-permiso-poliza oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/poliza
+OK    86-sin-permiso-poliza oscuro 390: un solo h1 · h1=1
+OK    86-sin-permiso-poliza oscuro 390: campos con etiqueta
+OK    86-sin-permiso-poliza oscuro 390: errores ligados a su campo
+OK    86-sin-permiso-poliza oscuro 390: sin desplazamiento horizontal
+OK    86-sin-permiso-poliza oscuro 390: cada cifra cabe en su celda
+OK    86-sin-permiso-poliza oscuro 390: tabulación en orden del documento · 4 paradas 
+OK    86-sin-permiso-poliza oscuro 390: foco visible en cada parada
+OK    86-sin-permiso-poliza oscuro 390: sin errores de consola
+OK    87-pendientes-finanzas oscuro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes
+OK    87-pendientes-finanzas oscuro 390: un solo h1 · h1=1
+OK    87-pendientes-finanzas oscuro 390: campos con etiqueta
+OK    87-pendientes-finanzas oscuro 390: errores ligados a su campo
+OK    87-pendientes-finanzas oscuro 390: sin desplazamiento horizontal
+OK    87-pendientes-finanzas oscuro 390: cada cifra cabe en su celda
+OK    87-pendientes-finanzas oscuro 390: tabulación en orden del documento · 6 paradas 
+OK    87-pendientes-finanzas oscuro 390: foco visible en cada parada
+OK    87-pendientes-finanzas oscuro 390: sin errores de consola
+OK    10-pendientes claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes
+OK    10-pendientes claro 1440: un solo h1 · h1=1
+OK    10-pendientes claro 1440: campos con etiqueta
+OK    10-pendientes claro 1440: errores ligados a su campo
+OK    10-pendientes claro 1440: sin desplazamiento horizontal
+OK    10-pendientes claro 1440: cada cifra cabe en su celda
+OK    10-pendientes claro 1440: tabulación en orden del documento · 21 paradas 
+OK    10-pendientes claro 1440: foco visible en cada parada
+OK    10-pendientes claro 1440: sin errores de consola
+OK    11-pendientes-altamar claro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/pendientes
+OK    11-pendientes-altamar claro 1440: un solo h1 · h1=1
+OK    11-pendientes-altamar claro 1440: campos con etiqueta
+OK    11-pendientes-altamar claro 1440: errores ligados a su campo
+OK    11-pendientes-altamar claro 1440: sin desplazamiento horizontal
+OK    11-pendientes-altamar claro 1440: cada cifra cabe en su celda
+OK    11-pendientes-altamar claro 1440: tabulación en orden del documento · 22 paradas 
+OK    11-pendientes-altamar claro 1440: foco visible en cada parada
+OK    11-pendientes-altamar claro 1440: sin errores de consola
+OK    12-inicio-administrador claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola
+OK    12-inicio-administrador claro 1440: un solo h1 · h1=1
+OK    12-inicio-administrador claro 1440: campos con etiqueta
+OK    12-inicio-administrador claro 1440: errores ligados a su campo
+OK    12-inicio-administrador claro 1440: sin desplazamiento horizontal
+OK    12-inicio-administrador claro 1440: cada cifra cabe en su celda
+OK    12-inicio-administrador claro 1440: tabulación en orden del documento · 35 paradas 
+OK    12-inicio-administrador claro 1440: foco visible en cada parada
+OK    12-inicio-administrador claro 1440: sin errores de consola
+OK    13-inicio-finanzas claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola
+OK    13-inicio-finanzas claro 1440: un solo h1 · h1=1
+OK    13-inicio-finanzas claro 1440: campos con etiqueta
+OK    13-inicio-finanzas claro 1440: errores ligados a su campo
+OK    13-inicio-finanzas claro 1440: sin desplazamiento horizontal
+OK    13-inicio-finanzas claro 1440: cada cifra cabe en su celda
+OK    13-inicio-finanzas claro 1440: tabulación en orden del documento · 27 paradas 
+OK    13-inicio-finanzas claro 1440: foco visible en cada parada
+OK    13-inicio-finanzas claro 1440: sin errores de consola
+OK    14-inicio-sin-saldo claro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola
+OK    14-inicio-sin-saldo claro 1440: un solo h1 · h1=1
+OK    14-inicio-sin-saldo claro 1440: campos con etiqueta
+OK    14-inicio-sin-saldo claro 1440: errores ligados a su campo
+OK    14-inicio-sin-saldo claro 1440: sin desplazamiento horizontal
+OK    14-inicio-sin-saldo claro 1440: cada cifra cabe en su celda
+OK    14-inicio-sin-saldo claro 1440: tabulación en orden del documento · 21 paradas 
+OK    14-inicio-sin-saldo claro 1440: foco visible en cada parada
+OK    14-inicio-sin-saldo claro 1440: sin errores de consola
+OK    20-proveedores-pagos claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    20-proveedores-pagos claro 1440: un solo h1 · h1=1
+OK    20-proveedores-pagos claro 1440: campos con etiqueta
+OK    20-proveedores-pagos claro 1440: errores ligados a su campo
+OK    20-proveedores-pagos claro 1440: sin desplazamiento horizontal
+OK    20-proveedores-pagos claro 1440: cada cifra cabe en su celda
+OK    20-proveedores-pagos claro 1440: tabulación en orden del documento · 30 paradas 
+OK    20-proveedores-pagos claro 1440: foco visible en cada parada
+OK    20-proveedores-pagos claro 1440: sin errores de consola
+OK    21-proveedores-directorio claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    21-proveedores-directorio claro 1440: un solo h1 · h1=1
+OK    21-proveedores-directorio claro 1440: campos con etiqueta
+OK    21-proveedores-directorio claro 1440: errores ligados a su campo
+OK    21-proveedores-directorio claro 1440: sin desplazamiento horizontal
+OK    21-proveedores-directorio claro 1440: cada cifra cabe en su celda
+OK    21-proveedores-directorio claro 1440: tabulación en orden del documento · 30 paradas 
+OK    21-proveedores-directorio claro 1440: foco visible en cada parada
+OK    21-proveedores-directorio claro 1440: sin errores de consola
+OK    22-proveedores-agenda claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    22-proveedores-agenda claro 1440: un solo h1 · h1=1
+OK    22-proveedores-agenda claro 1440: campos con etiqueta
+OK    22-proveedores-agenda claro 1440: errores ligados a su campo
+OK    22-proveedores-agenda claro 1440: sin desplazamiento horizontal
+OK    22-proveedores-agenda claro 1440: cada cifra cabe en su celda
+OK    22-proveedores-agenda claro 1440: tabulación en orden del documento · 23 paradas 
+OK    22-proveedores-agenda claro 1440: foco visible en cada parada
+OK    22-proveedores-agenda claro 1440: sin errores de consola
+OK    23-proveedores-detalle-pago claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    23-proveedores-detalle-pago claro 1440: un solo h1 · h1=1
+OK    23-proveedores-detalle-pago claro 1440: campos con etiqueta
+OK    23-proveedores-detalle-pago claro 1440: errores ligados a su campo
+OK    23-proveedores-detalle-pago claro 1440: sin desplazamiento horizontal
+OK    23-proveedores-detalle-pago claro 1440: cada cifra cabe en su celda
+OK    23-proveedores-detalle-pago claro 1440: tabulación en orden del documento · 3 paradas 
+OK    23-proveedores-detalle-pago claro 1440: foco visible en cada parada
+OK    23-proveedores-detalle-pago claro 1440: sin errores de consola
+OK    24-proveedores-expediente claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    24-proveedores-expediente claro 1440: un solo h1 · h1=1
+OK    24-proveedores-expediente claro 1440: campos con etiqueta
+OK    24-proveedores-expediente claro 1440: errores ligados a su campo
+OK    24-proveedores-expediente claro 1440: sin desplazamiento horizontal
+OK    24-proveedores-expediente claro 1440: cada cifra cabe en su celda
+OK    24-proveedores-expediente claro 1440: tabulación en orden del documento · 4 paradas 
+OK    24-proveedores-expediente claro 1440: foco visible en cada parada
+OK    24-proveedores-expediente claro 1440: sin errores de consola
+OK    25-proveedores-alta claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo-proveedor
+OK    25-proveedores-alta claro 1440: un solo h1 · h1=1
+OK    25-proveedores-alta claro 1440: campos con etiqueta
+OK    25-proveedores-alta claro 1440: errores ligados a su campo
+OK    25-proveedores-alta claro 1440: sin desplazamiento horizontal
+OK    25-proveedores-alta claro 1440: cada cifra cabe en su celda
+OK    25-proveedores-alta claro 1440: tabulación en orden del documento · 30 paradas 
+OK    25-proveedores-alta claro 1440: foco visible en cada parada
+OK    25-proveedores-alta claro 1440: sin errores de consola
+OK    26-proveedores-nuevo-pago claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo
+OK    26-proveedores-nuevo-pago claro 1440: un solo h1 · h1=1
+OK    26-proveedores-nuevo-pago claro 1440: campos con etiqueta
+OK    26-proveedores-nuevo-pago claro 1440: errores ligados a su campo
+OK    26-proveedores-nuevo-pago claro 1440: sin desplazamiento horizontal
+OK    26-proveedores-nuevo-pago claro 1440: cada cifra cabe en su celda
+OK    26-proveedores-nuevo-pago claro 1440: tabulación en orden del documento · 25 paradas 
+OK    26-proveedores-nuevo-pago claro 1440: foco visible en cada parada
+OK    26-proveedores-nuevo-pago claro 1440: sin errores de consola
+OK    27-proveedores-vacio claro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/proveedores
+OK    27-proveedores-vacio claro 1440: un solo h1 · h1=1
+OK    27-proveedores-vacio claro 1440: campos con etiqueta
+OK    27-proveedores-vacio claro 1440: errores ligados a su campo
+OK    27-proveedores-vacio claro 1440: sin desplazamiento horizontal
+OK    27-proveedores-vacio claro 1440: cada cifra cabe en su celda
+OK    27-proveedores-vacio claro 1440: tabulación en orden del documento · 24 paradas 
+OK    27-proveedores-vacio claro 1440: foco visible en cada parada
+OK    27-proveedores-vacio claro 1440: sin errores de consola
+OK    30-personas-directorio claro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas
+OK    30-personas-directorio claro 1440: un solo h1 · h1=1
+OK    30-personas-directorio claro 1440: campos con etiqueta
+OK    30-personas-directorio claro 1440: errores ligados a su campo
+OK    30-personas-directorio claro 1440: sin desplazamiento horizontal
+OK    30-personas-directorio claro 1440: cada cifra cabe en su celda
+OK    30-personas-directorio claro 1440: tabulación en orden del documento · 26 paradas 
+OK    30-personas-directorio claro 1440: foco visible en cada parada
+OK    30-personas-directorio claro 1440: sin errores de consola
+OK    31-personas-alta claro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/nueva
+OK    31-personas-alta claro 1440: un solo h1 · h1=1
+OK    31-personas-alta claro 1440: campos con etiqueta
+OK    31-personas-alta claro 1440: errores ligados a su campo
+OK    31-personas-alta claro 1440: sin desplazamiento horizontal
+OK    31-personas-alta claro 1440: cada cifra cabe en su celda
+OK    31-personas-alta claro 1440: tabulación en orden del documento · 21 paradas 
+OK    31-personas-alta claro 1440: foco visible en cada parada
+OK    31-personas-alta claro 1440: sin errores de consola
+OK    32-personas-areas claro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/areas
+OK    32-personas-areas claro 1440: un solo h1 · h1=1
+OK    32-personas-areas claro 1440: campos con etiqueta
+OK    32-personas-areas claro 1440: errores ligados a su campo
+OK    32-personas-areas claro 1440: sin desplazamiento horizontal
+OK    32-personas-areas claro 1440: cada cifra cabe en su celda
+OK    32-personas-areas claro 1440: tabulación en orden del documento · 24 paradas 
+OK    32-personas-areas claro 1440: foco visible en cada parada
+OK    32-personas-areas claro 1440: sin errores de consola
+OK    33-personas-nomina claro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/nomina
+OK    33-personas-nomina claro 1440: un solo h1 · h1=1
+OK    33-personas-nomina claro 1440: campos con etiqueta
+OK    33-personas-nomina claro 1440: errores ligados a su campo
+OK    33-personas-nomina claro 1440: sin desplazamiento horizontal
+OK    33-personas-nomina claro 1440: cada cifra cabe en su celda
+OK    33-personas-nomina claro 1440: tabulación en orden del documento · 20 paradas 
+OK    33-personas-nomina claro 1440: foco visible en cada parada
+OK    33-personas-nomina claro 1440: sin errores de consola
+OK    34-personas-sin-permiso claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas
+OK    34-personas-sin-permiso claro 1440: un solo h1 · h1=1
+OK    34-personas-sin-permiso claro 1440: campos con etiqueta
+OK    34-personas-sin-permiso claro 1440: errores ligados a su campo
+OK    34-personas-sin-permiso claro 1440: sin desplazamiento horizontal
+OK    34-personas-sin-permiso claro 1440: cada cifra cabe en su celda
+OK    34-personas-sin-permiso claro 1440: tabulación en orden del documento · 19 paradas 
+OK    34-personas-sin-permiso claro 1440: foco visible en cada parada
+OK    34-personas-sin-permiso claro 1440: sin errores de consola
+OK    35-personas-expediente claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/d64a90a8-c660-48f0-838f-f63105d04a3e
+OK    35-personas-expediente claro 1440: un solo h1 · h1=1
+OK    35-personas-expediente claro 1440: campos con etiqueta
+OK    35-personas-expediente claro 1440: errores ligados a su campo
+OK    35-personas-expediente claro 1440: sin desplazamiento horizontal
+OK    35-personas-expediente claro 1440: cada cifra cabe en su celda
+OK    35-personas-expediente claro 1440: tabulación en orden del documento · 38 paradas 
+OK    35-personas-expediente claro 1440: foco visible en cada parada
+OK    35-personas-expediente claro 1440: sin errores de consola
+OK    36-personas-lote claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nomina/832d4f6d-eaa9-4831-affa-6bbd5bf782e3
+OK    36-personas-lote claro 1440: un solo h1 · h1=1
+OK    36-personas-lote claro 1440: campos con etiqueta
+OK    36-personas-lote claro 1440: errores ligados a su campo
+OK    36-personas-lote claro 1440: sin desplazamiento horizontal
+OK    36-personas-lote claro 1440: cada cifra cabe en su celda
+OK    36-personas-lote claro 1440: tabulación en orden del documento · 21 paradas 
+OK    36-personas-lote claro 1440: foco visible en cada parada
+OK    36-personas-lote claro 1440: sin errores de consola
+OK    37-personas-alta-con-areas claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nueva
+OK    37-personas-alta-con-areas claro 1440: un solo h1 · h1=1
+OK    37-personas-alta-con-areas claro 1440: campos con etiqueta
+OK    37-personas-alta-con-areas claro 1440: errores ligados a su campo
+OK    37-personas-alta-con-areas claro 1440: sin desplazamiento horizontal
+OK    37-personas-alta-con-areas claro 1440: cada cifra cabe en su celda
+OK    37-personas-alta-con-areas claro 1440: tabulación en orden del documento · 33 paradas 
+OK    37-personas-alta-con-areas claro 1440: foco visible en cada parada
+OK    37-personas-alta-con-areas claro 1440: sin errores de consola
+OK    40-politica claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/politica
+OK    40-politica claro 1440: un solo h1 · h1=1
+OK    40-politica claro 1440: campos con etiqueta
+OK    40-politica claro 1440: errores ligados a su campo
+OK    40-politica claro 1440: sin desplazamiento horizontal
+OK    40-politica claro 1440: cada cifra cabe en su celda
+OK    40-politica claro 1440: tabulación en orden del documento · 28 paradas 
+OK    40-politica claro 1440: foco visible en cada parada
+OK    40-politica claro 1440: sin errores de consola
+OK    41-politica-altamar claro 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/politica
+OK    41-politica-altamar claro 1440: un solo h1 · h1=1
+OK    41-politica-altamar claro 1440: campos con etiqueta
+OK    41-politica-altamar claro 1440: errores ligados a su campo
+OK    41-politica-altamar claro 1440: sin desplazamiento horizontal
+OK    41-politica-altamar claro 1440: cada cifra cabe en su celda
+OK    41-politica-altamar claro 1440: tabulación en orden del documento · 25 paradas 
+OK    41-politica-altamar claro 1440: foco visible en cada parada
+OK    41-politica-altamar claro 1440: sin errores de consola
+OK    50-lista-69b claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b
+OK    50-lista-69b claro 1440: un solo h1 · h1=1
+OK    50-lista-69b claro 1440: campos con etiqueta
+OK    50-lista-69b claro 1440: errores ligados a su campo
+OK    50-lista-69b claro 1440: sin desplazamiento horizontal
+OK    50-lista-69b claro 1440: cada cifra cabe en su celda
+OK    50-lista-69b claro 1440: tabulación en orden del documento · 19 paradas 
+OK    50-lista-69b claro 1440: foco visible en cada parada
+OK    50-lista-69b claro 1440: sin errores de consola
+OK    51-lista-69b-sofipo claro 1440: responde en su ruta · 200 /consola/lista-69b
+OK    51-lista-69b-sofipo claro 1440: un solo h1 · h1=1
+OK    51-lista-69b-sofipo claro 1440: campos con etiqueta
+OK    51-lista-69b-sofipo claro 1440: errores ligados a su campo
+OK    51-lista-69b-sofipo claro 1440: sin desplazamiento horizontal
+OK    51-lista-69b-sofipo claro 1440: cada cifra cabe en su celda
+OK    51-lista-69b-sofipo claro 1440: tabulación en orden del documento · 7 paradas 
+OK    51-lista-69b-sofipo claro 1440: foco visible en cada parada
+OK    51-lista-69b-sofipo claro 1440: sin errores de consola
+OK    60-configuracion claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion
+OK    60-configuracion claro 1440: un solo h1 · h1=1
+OK    60-configuracion claro 1440: campos con etiqueta
+OK    60-configuracion claro 1440: errores ligados a su campo
+OK    60-configuracion claro 1440: sin desplazamiento horizontal
+OK    60-configuracion claro 1440: cada cifra cabe en su celda
+OK    60-configuracion claro 1440: tabulación en orden del documento · 21 paradas 
+OK    60-configuracion claro 1440: foco visible en cada parada
+OK    60-configuracion claro 1440: sin errores de consola
+OK    61-configuracion-plan claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan
+OK    61-configuracion-plan claro 1440: un solo h1 · h1=1
+OK    61-configuracion-plan claro 1440: campos con etiqueta
+OK    61-configuracion-plan claro 1440: errores ligados a su campo
+OK    61-configuracion-plan claro 1440: sin desplazamiento horizontal
+OK    61-configuracion-plan claro 1440: cada cifra cabe en su celda
+OK    61-configuracion-plan claro 1440: tabulación en orden del documento · 17 paradas 
+OK    61-configuracion-plan claro 1440: foco visible en cada parada
+OK    61-configuracion-plan claro 1440: sin errores de consola
+OK    70-poliza claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/poliza
+OK    70-poliza claro 1440: un solo h1 · h1=1
+OK    70-poliza claro 1440: campos con etiqueta
+OK    70-poliza claro 1440: errores ligados a su campo
+OK    70-poliza claro 1440: sin desplazamiento horizontal
+OK    70-poliza claro 1440: cada cifra cabe en su celda
+OK    70-poliza claro 1440: tabulación en orden del documento · 17 paradas 
+OK    70-poliza claro 1440: foco visible en cada parada
+OK    70-poliza claro 1440: sin errores de consola
+OK    80-sin-permiso-proveedores claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    80-sin-permiso-proveedores claro 1440: un solo h1 · h1=1
+OK    80-sin-permiso-proveedores claro 1440: campos con etiqueta
+OK    80-sin-permiso-proveedores claro 1440: errores ligados a su campo
+OK    80-sin-permiso-proveedores claro 1440: sin desplazamiento horizontal
+OK    80-sin-permiso-proveedores claro 1440: cada cifra cabe en su celda
+OK    80-sin-permiso-proveedores claro 1440: tabulación en orden del documento · 9 paradas 
+OK    80-sin-permiso-proveedores claro 1440: foco visible en cada parada
+OK    80-sin-permiso-proveedores claro 1440: sin errores de consola
+OK    81-sin-permiso-personas claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas
+OK    81-sin-permiso-personas claro 1440: un solo h1 · h1=1
+OK    81-sin-permiso-personas claro 1440: campos con etiqueta
+OK    81-sin-permiso-personas claro 1440: errores ligados a su campo
+OK    81-sin-permiso-personas claro 1440: sin desplazamiento horizontal
+OK    81-sin-permiso-personas claro 1440: cada cifra cabe en su celda
+OK    81-sin-permiso-personas claro 1440: tabulación en orden del documento · 9 paradas 
+OK    81-sin-permiso-personas claro 1440: foco visible en cada parada
+OK    81-sin-permiso-personas claro 1440: sin errores de consola
+OK    82-sin-permiso-politica claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/politica
+OK    82-sin-permiso-politica claro 1440: un solo h1 · h1=1
+OK    82-sin-permiso-politica claro 1440: campos con etiqueta
+OK    82-sin-permiso-politica claro 1440: errores ligados a su campo
+OK    82-sin-permiso-politica claro 1440: sin desplazamiento horizontal
+OK    82-sin-permiso-politica claro 1440: cada cifra cabe en su celda
+OK    82-sin-permiso-politica claro 1440: tabulación en orden del documento · 9 paradas 
+OK    82-sin-permiso-politica claro 1440: foco visible en cada parada
+OK    82-sin-permiso-politica claro 1440: sin errores de consola
+OK    83-sin-permiso-lista-69b claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b
+OK    83-sin-permiso-lista-69b claro 1440: un solo h1 · h1=1
+OK    83-sin-permiso-lista-69b claro 1440: campos con etiqueta
+OK    83-sin-permiso-lista-69b claro 1440: errores ligados a su campo
+OK    83-sin-permiso-lista-69b claro 1440: sin desplazamiento horizontal
+OK    83-sin-permiso-lista-69b claro 1440: cada cifra cabe en su celda
+OK    83-sin-permiso-lista-69b claro 1440: tabulación en orden del documento · 9 paradas 
+OK    83-sin-permiso-lista-69b claro 1440: foco visible en cada parada
+OK    83-sin-permiso-lista-69b claro 1440: sin errores de consola
+OK    84-sin-permiso-configuracion claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion
+OK    84-sin-permiso-configuracion claro 1440: un solo h1 · h1=1
+OK    84-sin-permiso-configuracion claro 1440: campos con etiqueta
+OK    84-sin-permiso-configuracion claro 1440: errores ligados a su campo
+OK    84-sin-permiso-configuracion claro 1440: sin desplazamiento horizontal
+OK    84-sin-permiso-configuracion claro 1440: cada cifra cabe en su celda
+OK    84-sin-permiso-configuracion claro 1440: tabulación en orden del documento · 9 paradas 
+OK    84-sin-permiso-configuracion claro 1440: foco visible en cada parada
+OK    84-sin-permiso-configuracion claro 1440: sin errores de consola
+OK    85-sin-permiso-plan claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan
+OK    85-sin-permiso-plan claro 1440: un solo h1 · h1=1
+OK    85-sin-permiso-plan claro 1440: campos con etiqueta
+OK    85-sin-permiso-plan claro 1440: errores ligados a su campo
+OK    85-sin-permiso-plan claro 1440: sin desplazamiento horizontal
+OK    85-sin-permiso-plan claro 1440: cada cifra cabe en su celda
+OK    85-sin-permiso-plan claro 1440: tabulación en orden del documento · 9 paradas 
+OK    85-sin-permiso-plan claro 1440: foco visible en cada parada
+OK    85-sin-permiso-plan claro 1440: sin errores de consola
+OK    86-sin-permiso-poliza claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/poliza
+OK    86-sin-permiso-poliza claro 1440: un solo h1 · h1=1
+OK    86-sin-permiso-poliza claro 1440: campos con etiqueta
+OK    86-sin-permiso-poliza claro 1440: errores ligados a su campo
+OK    86-sin-permiso-poliza claro 1440: sin desplazamiento horizontal
+OK    86-sin-permiso-poliza claro 1440: cada cifra cabe en su celda
+OK    86-sin-permiso-poliza claro 1440: tabulación en orden del documento · 9 paradas 
+OK    86-sin-permiso-poliza claro 1440: foco visible en cada parada
+OK    86-sin-permiso-poliza claro 1440: sin errores de consola
+OK    87-pendientes-finanzas claro 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes
+OK    87-pendientes-finanzas claro 1440: un solo h1 · h1=1
+OK    87-pendientes-finanzas claro 1440: campos con etiqueta
+OK    87-pendientes-finanzas claro 1440: errores ligados a su campo
+OK    87-pendientes-finanzas claro 1440: sin desplazamiento horizontal
+OK    87-pendientes-finanzas claro 1440: cada cifra cabe en su celda
+OK    87-pendientes-finanzas claro 1440: tabulación en orden del documento · 11 paradas 
+OK    87-pendientes-finanzas claro 1440: foco visible en cada parada
+OK    87-pendientes-finanzas claro 1440: sin errores de consola
+OK    10-pendientes claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes
+OK    10-pendientes claro 390: un solo h1 · h1=1
+OK    10-pendientes claro 390: campos con etiqueta
+OK    10-pendientes claro 390: errores ligados a su campo
+OK    10-pendientes claro 390: sin desplazamiento horizontal
+OK    10-pendientes claro 390: cada cifra cabe en su celda
+OK    10-pendientes claro 390: tabulación en orden del documento · 9 paradas 
+OK    10-pendientes claro 390: foco visible en cada parada
+OK    10-pendientes claro 390: sin errores de consola
+OK    11-pendientes-altamar claro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/pendientes
+OK    11-pendientes-altamar claro 390: un solo h1 · h1=1
+OK    11-pendientes-altamar claro 390: campos con etiqueta
+OK    11-pendientes-altamar claro 390: errores ligados a su campo
+OK    11-pendientes-altamar claro 390: sin desplazamiento horizontal
+OK    11-pendientes-altamar claro 390: cada cifra cabe en su celda
+OK    11-pendientes-altamar claro 390: tabulación en orden del documento · 10 paradas 
+OK    11-pendientes-altamar claro 390: foco visible en cada parada
+OK    11-pendientes-altamar claro 390: sin errores de consola
+OK    12-inicio-administrador claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola
+OK    12-inicio-administrador claro 390: un solo h1 · h1=1
+OK    12-inicio-administrador claro 390: campos con etiqueta
+OK    12-inicio-administrador claro 390: errores ligados a su campo
+OK    12-inicio-administrador claro 390: sin desplazamiento horizontal
+OK    12-inicio-administrador claro 390: cada cifra cabe en su celda
+OK    12-inicio-administrador claro 390: tabulación en orden del documento · 23 paradas 
+OK    12-inicio-administrador claro 390: foco visible en cada parada
+OK    12-inicio-administrador claro 390: sin errores de consola
+OK    13-inicio-finanzas claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola
+OK    13-inicio-finanzas claro 390: un solo h1 · h1=1
+OK    13-inicio-finanzas claro 390: campos con etiqueta
+OK    13-inicio-finanzas claro 390: errores ligados a su campo
+OK    13-inicio-finanzas claro 390: sin desplazamiento horizontal
+OK    13-inicio-finanzas claro 390: cada cifra cabe en su celda
+OK    13-inicio-finanzas claro 390: tabulación en orden del documento · 22 paradas 
+OK    13-inicio-finanzas claro 390: foco visible en cada parada
+OK    13-inicio-finanzas claro 390: sin errores de consola
+OK    14-inicio-sin-saldo claro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola
+OK    14-inicio-sin-saldo claro 390: un solo h1 · h1=1
+OK    14-inicio-sin-saldo claro 390: campos con etiqueta
+OK    14-inicio-sin-saldo claro 390: errores ligados a su campo
+OK    14-inicio-sin-saldo claro 390: sin desplazamiento horizontal
+OK    14-inicio-sin-saldo claro 390: cada cifra cabe en su celda
+OK    14-inicio-sin-saldo claro 390: tabulación en orden del documento · 9 paradas 
+OK    14-inicio-sin-saldo claro 390: foco visible en cada parada
+OK    14-inicio-sin-saldo claro 390: sin errores de consola
+OK    20-proveedores-pagos claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    20-proveedores-pagos claro 390: un solo h1 · h1=1
+OK    20-proveedores-pagos claro 390: campos con etiqueta
+OK    20-proveedores-pagos claro 390: errores ligados a su campo
+OK    20-proveedores-pagos claro 390: sin desplazamiento horizontal
+OK    20-proveedores-pagos claro 390: cada cifra cabe en su celda
+OK    20-proveedores-pagos claro 390: tabulación en orden del documento · 18 paradas 
+OK    20-proveedores-pagos claro 390: foco visible en cada parada
+OK    20-proveedores-pagos claro 390: sin errores de consola
+OK    21-proveedores-directorio claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    21-proveedores-directorio claro 390: un solo h1 · h1=1
+OK    21-proveedores-directorio claro 390: campos con etiqueta
+OK    21-proveedores-directorio claro 390: errores ligados a su campo
+OK    21-proveedores-directorio claro 390: sin desplazamiento horizontal
+OK    21-proveedores-directorio claro 390: cada cifra cabe en su celda
+OK    21-proveedores-directorio claro 390: tabulación en orden del documento · 18 paradas 
+OK    21-proveedores-directorio claro 390: foco visible en cada parada
+OK    21-proveedores-directorio claro 390: sin errores de consola
+OK    22-proveedores-agenda claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    22-proveedores-agenda claro 390: un solo h1 · h1=1
+OK    22-proveedores-agenda claro 390: campos con etiqueta
+OK    22-proveedores-agenda claro 390: errores ligados a su campo
+OK    22-proveedores-agenda claro 390: sin desplazamiento horizontal
+OK    22-proveedores-agenda claro 390: cada cifra cabe en su celda
+OK    22-proveedores-agenda claro 390: tabulación en orden del documento · 11 paradas 
+OK    22-proveedores-agenda claro 390: foco visible en cada parada
+OK    22-proveedores-agenda claro 390: sin errores de consola
+OK    23-proveedores-detalle-pago claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    23-proveedores-detalle-pago claro 390: un solo h1 · h1=1
+OK    23-proveedores-detalle-pago claro 390: campos con etiqueta
+OK    23-proveedores-detalle-pago claro 390: errores ligados a su campo
+OK    23-proveedores-detalle-pago claro 390: sin desplazamiento horizontal
+OK    23-proveedores-detalle-pago claro 390: cada cifra cabe en su celda
+OK    23-proveedores-detalle-pago claro 390: tabulación en orden del documento · 3 paradas 
+OK    23-proveedores-detalle-pago claro 390: foco visible en cada parada
+OK    23-proveedores-detalle-pago claro 390: sin errores de consola
+OK    24-proveedores-expediente claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    24-proveedores-expediente claro 390: un solo h1 · h1=1
+OK    24-proveedores-expediente claro 390: campos con etiqueta
+OK    24-proveedores-expediente claro 390: errores ligados a su campo
+OK    24-proveedores-expediente claro 390: sin desplazamiento horizontal
+OK    24-proveedores-expediente claro 390: cada cifra cabe en su celda
+OK    24-proveedores-expediente claro 390: tabulación en orden del documento · 4 paradas 
+OK    24-proveedores-expediente claro 390: foco visible en cada parada
+OK    24-proveedores-expediente claro 390: sin errores de consola
+OK    25-proveedores-alta claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo-proveedor
+OK    25-proveedores-alta claro 390: un solo h1 · h1=1
+OK    25-proveedores-alta claro 390: campos con etiqueta
+OK    25-proveedores-alta claro 390: errores ligados a su campo
+OK    25-proveedores-alta claro 390: sin desplazamiento horizontal
+OK    25-proveedores-alta claro 390: cada cifra cabe en su celda
+OK    25-proveedores-alta claro 390: tabulación en orden del documento · 18 paradas 
+OK    25-proveedores-alta claro 390: foco visible en cada parada
+OK    25-proveedores-alta claro 390: sin errores de consola
+OK    26-proveedores-nuevo-pago claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo
+OK    26-proveedores-nuevo-pago claro 390: un solo h1 · h1=1
+OK    26-proveedores-nuevo-pago claro 390: campos con etiqueta
+OK    26-proveedores-nuevo-pago claro 390: errores ligados a su campo
+OK    26-proveedores-nuevo-pago claro 390: sin desplazamiento horizontal
+OK    26-proveedores-nuevo-pago claro 390: cada cifra cabe en su celda
+OK    26-proveedores-nuevo-pago claro 390: tabulación en orden del documento · 13 paradas 
+OK    26-proveedores-nuevo-pago claro 390: foco visible en cada parada
+OK    26-proveedores-nuevo-pago claro 390: sin errores de consola
+OK    27-proveedores-vacio claro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/proveedores
+OK    27-proveedores-vacio claro 390: un solo h1 · h1=1
+OK    27-proveedores-vacio claro 390: campos con etiqueta
+OK    27-proveedores-vacio claro 390: errores ligados a su campo
+OK    27-proveedores-vacio claro 390: sin desplazamiento horizontal
+OK    27-proveedores-vacio claro 390: cada cifra cabe en su celda
+OK    27-proveedores-vacio claro 390: tabulación en orden del documento · 12 paradas 
+OK    27-proveedores-vacio claro 390: foco visible en cada parada
+OK    27-proveedores-vacio claro 390: sin errores de consola
+OK    30-personas-directorio claro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas
+OK    30-personas-directorio claro 390: un solo h1 · h1=1
+OK    30-personas-directorio claro 390: campos con etiqueta
+OK    30-personas-directorio claro 390: errores ligados a su campo
+OK    30-personas-directorio claro 390: sin desplazamiento horizontal
+OK    30-personas-directorio claro 390: cada cifra cabe en su celda
+OK    30-personas-directorio claro 390: tabulación en orden del documento · 14 paradas 
+OK    30-personas-directorio claro 390: foco visible en cada parada
+OK    30-personas-directorio claro 390: sin errores de consola
+OK    31-personas-alta claro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/nueva
+OK    31-personas-alta claro 390: un solo h1 · h1=1
+OK    31-personas-alta claro 390: campos con etiqueta
+OK    31-personas-alta claro 390: errores ligados a su campo
+OK    31-personas-alta claro 390: sin desplazamiento horizontal
+OK    31-personas-alta claro 390: cada cifra cabe en su celda
+OK    31-personas-alta claro 390: tabulación en orden del documento · 9 paradas 
+OK    31-personas-alta claro 390: foco visible en cada parada
+OK    31-personas-alta claro 390: sin errores de consola
+OK    32-personas-areas claro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/areas
+OK    32-personas-areas claro 390: un solo h1 · h1=1
+OK    32-personas-areas claro 390: campos con etiqueta
+OK    32-personas-areas claro 390: errores ligados a su campo
+OK    32-personas-areas claro 390: sin desplazamiento horizontal
+OK    32-personas-areas claro 390: cada cifra cabe en su celda
+OK    32-personas-areas claro 390: tabulación en orden del documento · 12 paradas 
+OK    32-personas-areas claro 390: foco visible en cada parada
+OK    32-personas-areas claro 390: sin errores de consola
+OK    33-personas-nomina claro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/nomina
+OK    33-personas-nomina claro 390: un solo h1 · h1=1
+OK    33-personas-nomina claro 390: campos con etiqueta
+OK    33-personas-nomina claro 390: errores ligados a su campo
+OK    33-personas-nomina claro 390: sin desplazamiento horizontal
+OK    33-personas-nomina claro 390: cada cifra cabe en su celda
+OK    33-personas-nomina claro 390: tabulación en orden del documento · 8 paradas 
+OK    33-personas-nomina claro 390: foco visible en cada parada
+OK    33-personas-nomina claro 390: sin errores de consola
+OK    34-personas-sin-permiso claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas
+OK    34-personas-sin-permiso claro 390: un solo h1 · h1=1
+OK    34-personas-sin-permiso claro 390: campos con etiqueta
+OK    34-personas-sin-permiso claro 390: errores ligados a su campo
+OK    34-personas-sin-permiso claro 390: sin desplazamiento horizontal
+OK    34-personas-sin-permiso claro 390: cada cifra cabe en su celda
+OK    34-personas-sin-permiso claro 390: tabulación en orden del documento · 14 paradas 
+OK    34-personas-sin-permiso claro 390: foco visible en cada parada
+OK    34-personas-sin-permiso claro 390: sin errores de consola
+OK    35-personas-expediente claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/d64a90a8-c660-48f0-838f-f63105d04a3e
+OK    35-personas-expediente claro 390: un solo h1 · h1=1
+OK    35-personas-expediente claro 390: campos con etiqueta
+OK    35-personas-expediente claro 390: errores ligados a su campo
+OK    35-personas-expediente claro 390: sin desplazamiento horizontal
+OK    35-personas-expediente claro 390: cada cifra cabe en su celda
+OK    35-personas-expediente claro 390: tabulación en orden del documento · 26 paradas 
+OK    35-personas-expediente claro 390: foco visible en cada parada
+OK    35-personas-expediente claro 390: sin errores de consola
+OK    36-personas-lote claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nomina/832d4f6d-eaa9-4831-affa-6bbd5bf782e3
+OK    36-personas-lote claro 390: un solo h1 · h1=1
+OK    36-personas-lote claro 390: campos con etiqueta
+OK    36-personas-lote claro 390: errores ligados a su campo
+OK    36-personas-lote claro 390: sin desplazamiento horizontal
+OK    36-personas-lote claro 390: cada cifra cabe en su celda
+OK    36-personas-lote claro 390: tabulación en orden del documento · 9 paradas 
+OK    36-personas-lote claro 390: foco visible en cada parada
+OK    36-personas-lote claro 390: sin errores de consola
+OK    37-personas-alta-con-areas claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nueva
+OK    37-personas-alta-con-areas claro 390: un solo h1 · h1=1
+OK    37-personas-alta-con-areas claro 390: campos con etiqueta
+OK    37-personas-alta-con-areas claro 390: errores ligados a su campo
+OK    37-personas-alta-con-areas claro 390: sin desplazamiento horizontal
+OK    37-personas-alta-con-areas claro 390: cada cifra cabe en su celda
+OK    37-personas-alta-con-areas claro 390: tabulación en orden del documento · 21 paradas 
+OK    37-personas-alta-con-areas claro 390: foco visible en cada parada
+OK    37-personas-alta-con-areas claro 390: sin errores de consola
+OK    40-politica claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/politica
+OK    40-politica claro 390: un solo h1 · h1=1
+OK    40-politica claro 390: campos con etiqueta
+OK    40-politica claro 390: errores ligados a su campo
+OK    40-politica claro 390: sin desplazamiento horizontal
+OK    40-politica claro 390: cada cifra cabe en su celda
+OK    40-politica claro 390: tabulación en orden del documento · 16 paradas 
+OK    40-politica claro 390: foco visible en cada parada
+OK    40-politica claro 390: sin errores de consola
+OK    41-politica-altamar claro 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/politica
+OK    41-politica-altamar claro 390: un solo h1 · h1=1
+OK    41-politica-altamar claro 390: campos con etiqueta
+OK    41-politica-altamar claro 390: errores ligados a su campo
+OK    41-politica-altamar claro 390: sin desplazamiento horizontal
+OK    41-politica-altamar claro 390: cada cifra cabe en su celda
+OK    41-politica-altamar claro 390: tabulación en orden del documento · 13 paradas 
+OK    41-politica-altamar claro 390: foco visible en cada parada
+OK    41-politica-altamar claro 390: sin errores de consola
+OK    50-lista-69b claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b
+OK    50-lista-69b claro 390: un solo h1 · h1=1
+OK    50-lista-69b claro 390: campos con etiqueta
+OK    50-lista-69b claro 390: errores ligados a su campo
+OK    50-lista-69b claro 390: sin desplazamiento horizontal
+OK    50-lista-69b claro 390: cada cifra cabe en su celda
+OK    50-lista-69b claro 390: tabulación en orden del documento · 7 paradas 
+OK    50-lista-69b claro 390: foco visible en cada parada
+OK    50-lista-69b claro 390: sin errores de consola
+OK    51-lista-69b-sofipo claro 390: responde en su ruta · 200 /consola/lista-69b
+OK    51-lista-69b-sofipo claro 390: un solo h1 · h1=1
+OK    51-lista-69b-sofipo claro 390: campos con etiqueta
+OK    51-lista-69b-sofipo claro 390: errores ligados a su campo
+OK    51-lista-69b-sofipo claro 390: sin desplazamiento horizontal
+OK    51-lista-69b-sofipo claro 390: cada cifra cabe en su celda
+OK    51-lista-69b-sofipo claro 390: tabulación en orden del documento · 7 paradas 
+OK    51-lista-69b-sofipo claro 390: foco visible en cada parada
+OK    51-lista-69b-sofipo claro 390: sin errores de consola
+OK    60-configuracion claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion
+OK    60-configuracion claro 390: un solo h1 · h1=1
+OK    60-configuracion claro 390: campos con etiqueta
+OK    60-configuracion claro 390: errores ligados a su campo
+OK    60-configuracion claro 390: sin desplazamiento horizontal
+OK    60-configuracion claro 390: cada cifra cabe en su celda
+OK    60-configuracion claro 390: tabulación en orden del documento · 9 paradas 
+OK    60-configuracion claro 390: foco visible en cada parada
+OK    60-configuracion claro 390: sin errores de consola
+OK    61-configuracion-plan claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan
+OK    61-configuracion-plan claro 390: un solo h1 · h1=1
+OK    61-configuracion-plan claro 390: campos con etiqueta
+OK    61-configuracion-plan claro 390: errores ligados a su campo
+OK    61-configuracion-plan claro 390: sin desplazamiento horizontal
+OK    61-configuracion-plan claro 390: cada cifra cabe en su celda
+OK    61-configuracion-plan claro 390: tabulación en orden del documento · 5 paradas 
+OK    61-configuracion-plan claro 390: foco visible en cada parada
+OK    61-configuracion-plan claro 390: sin errores de consola
+OK    70-poliza claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/poliza
+OK    70-poliza claro 390: un solo h1 · h1=1
+OK    70-poliza claro 390: campos con etiqueta
+OK    70-poliza claro 390: errores ligados a su campo
+OK    70-poliza claro 390: sin desplazamiento horizontal
+OK    70-poliza claro 390: cada cifra cabe en su celda
+OK    70-poliza claro 390: tabulación en orden del documento · 5 paradas 
+OK    70-poliza claro 390: foco visible en cada parada
+OK    70-poliza claro 390: sin errores de consola
+OK    80-sin-permiso-proveedores claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    80-sin-permiso-proveedores claro 390: un solo h1 · h1=1
+OK    80-sin-permiso-proveedores claro 390: campos con etiqueta
+OK    80-sin-permiso-proveedores claro 390: errores ligados a su campo
+OK    80-sin-permiso-proveedores claro 390: sin desplazamiento horizontal
+OK    80-sin-permiso-proveedores claro 390: cada cifra cabe en su celda
+OK    80-sin-permiso-proveedores claro 390: tabulación en orden del documento · 4 paradas 
+OK    80-sin-permiso-proveedores claro 390: foco visible en cada parada
+OK    80-sin-permiso-proveedores claro 390: sin errores de consola
+OK    81-sin-permiso-personas claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas
+OK    81-sin-permiso-personas claro 390: un solo h1 · h1=1
+OK    81-sin-permiso-personas claro 390: campos con etiqueta
+OK    81-sin-permiso-personas claro 390: errores ligados a su campo
+OK    81-sin-permiso-personas claro 390: sin desplazamiento horizontal
+OK    81-sin-permiso-personas claro 390: cada cifra cabe en su celda
+OK    81-sin-permiso-personas claro 390: tabulación en orden del documento · 4 paradas 
+OK    81-sin-permiso-personas claro 390: foco visible en cada parada
+OK    81-sin-permiso-personas claro 390: sin errores de consola
+OK    82-sin-permiso-politica claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/politica
+OK    82-sin-permiso-politica claro 390: un solo h1 · h1=1
+OK    82-sin-permiso-politica claro 390: campos con etiqueta
+OK    82-sin-permiso-politica claro 390: errores ligados a su campo
+OK    82-sin-permiso-politica claro 390: sin desplazamiento horizontal
+OK    82-sin-permiso-politica claro 390: cada cifra cabe en su celda
+OK    82-sin-permiso-politica claro 390: tabulación en orden del documento · 4 paradas 
+OK    82-sin-permiso-politica claro 390: foco visible en cada parada
+OK    82-sin-permiso-politica claro 390: sin errores de consola
+OK    83-sin-permiso-lista-69b claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b
+OK    83-sin-permiso-lista-69b claro 390: un solo h1 · h1=1
+OK    83-sin-permiso-lista-69b claro 390: campos con etiqueta
+OK    83-sin-permiso-lista-69b claro 390: errores ligados a su campo
+OK    83-sin-permiso-lista-69b claro 390: sin desplazamiento horizontal
+OK    83-sin-permiso-lista-69b claro 390: cada cifra cabe en su celda
+OK    83-sin-permiso-lista-69b claro 390: tabulación en orden del documento · 4 paradas 
+OK    83-sin-permiso-lista-69b claro 390: foco visible en cada parada
+OK    83-sin-permiso-lista-69b claro 390: sin errores de consola
+OK    84-sin-permiso-configuracion claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion
+OK    84-sin-permiso-configuracion claro 390: un solo h1 · h1=1
+OK    84-sin-permiso-configuracion claro 390: campos con etiqueta
+OK    84-sin-permiso-configuracion claro 390: errores ligados a su campo
+OK    84-sin-permiso-configuracion claro 390: sin desplazamiento horizontal
+OK    84-sin-permiso-configuracion claro 390: cada cifra cabe en su celda
+OK    84-sin-permiso-configuracion claro 390: tabulación en orden del documento · 4 paradas 
+OK    84-sin-permiso-configuracion claro 390: foco visible en cada parada
+OK    84-sin-permiso-configuracion claro 390: sin errores de consola
+OK    85-sin-permiso-plan claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan
+OK    85-sin-permiso-plan claro 390: un solo h1 · h1=1
+OK    85-sin-permiso-plan claro 390: campos con etiqueta
+OK    85-sin-permiso-plan claro 390: errores ligados a su campo
+OK    85-sin-permiso-plan claro 390: sin desplazamiento horizontal
+OK    85-sin-permiso-plan claro 390: cada cifra cabe en su celda
+OK    85-sin-permiso-plan claro 390: tabulación en orden del documento · 4 paradas 
+OK    85-sin-permiso-plan claro 390: foco visible en cada parada
+OK    85-sin-permiso-plan claro 390: sin errores de consola
+OK    86-sin-permiso-poliza claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/poliza
+OK    86-sin-permiso-poliza claro 390: un solo h1 · h1=1
+OK    86-sin-permiso-poliza claro 390: campos con etiqueta
+OK    86-sin-permiso-poliza claro 390: errores ligados a su campo
+OK    86-sin-permiso-poliza claro 390: sin desplazamiento horizontal
+OK    86-sin-permiso-poliza claro 390: cada cifra cabe en su celda
+OK    86-sin-permiso-poliza claro 390: tabulación en orden del documento · 4 paradas 
+OK    86-sin-permiso-poliza claro 390: foco visible en cada parada
+OK    86-sin-permiso-poliza claro 390: sin errores de consola
+OK    87-pendientes-finanzas claro 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes
+OK    87-pendientes-finanzas claro 390: un solo h1 · h1=1
+OK    87-pendientes-finanzas claro 390: campos con etiqueta
+OK    87-pendientes-finanzas claro 390: errores ligados a su campo
+OK    87-pendientes-finanzas claro 390: sin desplazamiento horizontal
+OK    87-pendientes-finanzas claro 390: cada cifra cabe en su celda
+OK    87-pendientes-finanzas claro 390: tabulación en orden del documento · 6 paradas 
+OK    87-pendientes-finanzas claro 390: foco visible en cada parada
+OK    87-pendientes-finanzas claro 390: sin errores de consola
+OK    10-pendientes lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes
+OK    10-pendientes lever 1440: un solo h1 · h1=1
+OK    10-pendientes lever 1440: campos con etiqueta
+OK    10-pendientes lever 1440: errores ligados a su campo
+OK    10-pendientes lever 1440: sin desplazamiento horizontal
+OK    10-pendientes lever 1440: cada cifra cabe en su celda
+OK    10-pendientes lever 1440: tabulación en orden del documento · 21 paradas 
+OK    10-pendientes lever 1440: foco visible en cada parada
+OK    10-pendientes lever 1440: sin errores de consola
+OK    11-pendientes-altamar lever 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/pendientes
+OK    11-pendientes-altamar lever 1440: un solo h1 · h1=1
+OK    11-pendientes-altamar lever 1440: campos con etiqueta
+OK    11-pendientes-altamar lever 1440: errores ligados a su campo
+OK    11-pendientes-altamar lever 1440: sin desplazamiento horizontal
+OK    11-pendientes-altamar lever 1440: cada cifra cabe en su celda
+OK    11-pendientes-altamar lever 1440: tabulación en orden del documento · 22 paradas 
+OK    11-pendientes-altamar lever 1440: foco visible en cada parada
+OK    11-pendientes-altamar lever 1440: sin errores de consola
+OK    12-inicio-administrador lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola
+OK    12-inicio-administrador lever 1440: un solo h1 · h1=1
+OK    12-inicio-administrador lever 1440: campos con etiqueta
+OK    12-inicio-administrador lever 1440: errores ligados a su campo
+OK    12-inicio-administrador lever 1440: sin desplazamiento horizontal
+OK    12-inicio-administrador lever 1440: cada cifra cabe en su celda
+OK    12-inicio-administrador lever 1440: tabulación en orden del documento · 35 paradas 
+OK    12-inicio-administrador lever 1440: foco visible en cada parada
+OK    12-inicio-administrador lever 1440: sin errores de consola
+OK    13-inicio-finanzas lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola
+OK    13-inicio-finanzas lever 1440: un solo h1 · h1=1
+OK    13-inicio-finanzas lever 1440: campos con etiqueta
+OK    13-inicio-finanzas lever 1440: errores ligados a su campo
+OK    13-inicio-finanzas lever 1440: sin desplazamiento horizontal
+OK    13-inicio-finanzas lever 1440: cada cifra cabe en su celda
+OK    13-inicio-finanzas lever 1440: tabulación en orden del documento · 27 paradas 
+OK    13-inicio-finanzas lever 1440: foco visible en cada parada
+OK    13-inicio-finanzas lever 1440: sin errores de consola
+OK    14-inicio-sin-saldo lever 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola
+OK    14-inicio-sin-saldo lever 1440: un solo h1 · h1=1
+OK    14-inicio-sin-saldo lever 1440: campos con etiqueta
+OK    14-inicio-sin-saldo lever 1440: errores ligados a su campo
+OK    14-inicio-sin-saldo lever 1440: sin desplazamiento horizontal
+OK    14-inicio-sin-saldo lever 1440: cada cifra cabe en su celda
+OK    14-inicio-sin-saldo lever 1440: tabulación en orden del documento · 21 paradas 
+OK    14-inicio-sin-saldo lever 1440: foco visible en cada parada
+OK    14-inicio-sin-saldo lever 1440: sin errores de consola
+OK    20-proveedores-pagos lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    20-proveedores-pagos lever 1440: un solo h1 · h1=1
+OK    20-proveedores-pagos lever 1440: campos con etiqueta
+OK    20-proveedores-pagos lever 1440: errores ligados a su campo
+OK    20-proveedores-pagos lever 1440: sin desplazamiento horizontal
+OK    20-proveedores-pagos lever 1440: cada cifra cabe en su celda
+OK    20-proveedores-pagos lever 1440: tabulación en orden del documento · 30 paradas 
+OK    20-proveedores-pagos lever 1440: foco visible en cada parada
+OK    20-proveedores-pagos lever 1440: sin errores de consola
+OK    21-proveedores-directorio lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    21-proveedores-directorio lever 1440: un solo h1 · h1=1
+OK    21-proveedores-directorio lever 1440: campos con etiqueta
+OK    21-proveedores-directorio lever 1440: errores ligados a su campo
+OK    21-proveedores-directorio lever 1440: sin desplazamiento horizontal
+OK    21-proveedores-directorio lever 1440: cada cifra cabe en su celda
+OK    21-proveedores-directorio lever 1440: tabulación en orden del documento · 30 paradas 
+OK    21-proveedores-directorio lever 1440: foco visible en cada parada
+OK    21-proveedores-directorio lever 1440: sin errores de consola
+OK    22-proveedores-agenda lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    22-proveedores-agenda lever 1440: un solo h1 · h1=1
+OK    22-proveedores-agenda lever 1440: campos con etiqueta
+OK    22-proveedores-agenda lever 1440: errores ligados a su campo
+OK    22-proveedores-agenda lever 1440: sin desplazamiento horizontal
+OK    22-proveedores-agenda lever 1440: cada cifra cabe en su celda
+OK    22-proveedores-agenda lever 1440: tabulación en orden del documento · 23 paradas 
+OK    22-proveedores-agenda lever 1440: foco visible en cada parada
+OK    22-proveedores-agenda lever 1440: sin errores de consola
+OK    23-proveedores-detalle-pago lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    23-proveedores-detalle-pago lever 1440: un solo h1 · h1=1
+OK    23-proveedores-detalle-pago lever 1440: campos con etiqueta
+OK    23-proveedores-detalle-pago lever 1440: errores ligados a su campo
+OK    23-proveedores-detalle-pago lever 1440: sin desplazamiento horizontal
+OK    23-proveedores-detalle-pago lever 1440: cada cifra cabe en su celda
+OK    23-proveedores-detalle-pago lever 1440: tabulación en orden del documento · 3 paradas 
+OK    23-proveedores-detalle-pago lever 1440: foco visible en cada parada
+OK    23-proveedores-detalle-pago lever 1440: sin errores de consola
+OK    24-proveedores-expediente lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    24-proveedores-expediente lever 1440: un solo h1 · h1=1
+OK    24-proveedores-expediente lever 1440: campos con etiqueta
+OK    24-proveedores-expediente lever 1440: errores ligados a su campo
+OK    24-proveedores-expediente lever 1440: sin desplazamiento horizontal
+OK    24-proveedores-expediente lever 1440: cada cifra cabe en su celda
+OK    24-proveedores-expediente lever 1440: tabulación en orden del documento · 4 paradas 
+OK    24-proveedores-expediente lever 1440: foco visible en cada parada
+OK    24-proveedores-expediente lever 1440: sin errores de consola
+OK    25-proveedores-alta lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo-proveedor
+OK    25-proveedores-alta lever 1440: un solo h1 · h1=1
+OK    25-proveedores-alta lever 1440: campos con etiqueta
+OK    25-proveedores-alta lever 1440: errores ligados a su campo
+OK    25-proveedores-alta lever 1440: sin desplazamiento horizontal
+OK    25-proveedores-alta lever 1440: cada cifra cabe en su celda
+OK    25-proveedores-alta lever 1440: tabulación en orden del documento · 30 paradas 
+OK    25-proveedores-alta lever 1440: foco visible en cada parada
+OK    25-proveedores-alta lever 1440: sin errores de consola
+OK    26-proveedores-nuevo-pago lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo
+OK    26-proveedores-nuevo-pago lever 1440: un solo h1 · h1=1
+OK    26-proveedores-nuevo-pago lever 1440: campos con etiqueta
+OK    26-proveedores-nuevo-pago lever 1440: errores ligados a su campo
+OK    26-proveedores-nuevo-pago lever 1440: sin desplazamiento horizontal
+OK    26-proveedores-nuevo-pago lever 1440: cada cifra cabe en su celda
+OK    26-proveedores-nuevo-pago lever 1440: tabulación en orden del documento · 25 paradas 
+OK    26-proveedores-nuevo-pago lever 1440: foco visible en cada parada
+OK    26-proveedores-nuevo-pago lever 1440: sin errores de consola
+OK    27-proveedores-vacio lever 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/proveedores
+OK    27-proveedores-vacio lever 1440: un solo h1 · h1=1
+OK    27-proveedores-vacio lever 1440: campos con etiqueta
+OK    27-proveedores-vacio lever 1440: errores ligados a su campo
+OK    27-proveedores-vacio lever 1440: sin desplazamiento horizontal
+OK    27-proveedores-vacio lever 1440: cada cifra cabe en su celda
+OK    27-proveedores-vacio lever 1440: tabulación en orden del documento · 24 paradas 
+OK    27-proveedores-vacio lever 1440: foco visible en cada parada
+OK    27-proveedores-vacio lever 1440: sin errores de consola
+OK    30-personas-directorio lever 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas
+OK    30-personas-directorio lever 1440: un solo h1 · h1=1
+OK    30-personas-directorio lever 1440: campos con etiqueta
+OK    30-personas-directorio lever 1440: errores ligados a su campo
+OK    30-personas-directorio lever 1440: sin desplazamiento horizontal
+OK    30-personas-directorio lever 1440: cada cifra cabe en su celda
+OK    30-personas-directorio lever 1440: tabulación en orden del documento · 26 paradas 
+OK    30-personas-directorio lever 1440: foco visible en cada parada
+OK    30-personas-directorio lever 1440: sin errores de consola
+OK    31-personas-alta lever 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/nueva
+OK    31-personas-alta lever 1440: un solo h1 · h1=1
+OK    31-personas-alta lever 1440: campos con etiqueta
+OK    31-personas-alta lever 1440: errores ligados a su campo
+OK    31-personas-alta lever 1440: sin desplazamiento horizontal
+OK    31-personas-alta lever 1440: cada cifra cabe en su celda
+OK    31-personas-alta lever 1440: tabulación en orden del documento · 21 paradas 
+OK    31-personas-alta lever 1440: foco visible en cada parada
+OK    31-personas-alta lever 1440: sin errores de consola
+OK    32-personas-areas lever 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/areas
+OK    32-personas-areas lever 1440: un solo h1 · h1=1
+OK    32-personas-areas lever 1440: campos con etiqueta
+OK    32-personas-areas lever 1440: errores ligados a su campo
+OK    32-personas-areas lever 1440: sin desplazamiento horizontal
+OK    32-personas-areas lever 1440: cada cifra cabe en su celda
+OK    32-personas-areas lever 1440: tabulación en orden del documento · 24 paradas 
+OK    32-personas-areas lever 1440: foco visible en cada parada
+OK    32-personas-areas lever 1440: sin errores de consola
+OK    33-personas-nomina lever 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/nomina
+OK    33-personas-nomina lever 1440: un solo h1 · h1=1
+OK    33-personas-nomina lever 1440: campos con etiqueta
+OK    33-personas-nomina lever 1440: errores ligados a su campo
+OK    33-personas-nomina lever 1440: sin desplazamiento horizontal
+OK    33-personas-nomina lever 1440: cada cifra cabe en su celda
+OK    33-personas-nomina lever 1440: tabulación en orden del documento · 20 paradas 
+OK    33-personas-nomina lever 1440: foco visible en cada parada
+OK    33-personas-nomina lever 1440: sin errores de consola
+OK    34-personas-sin-permiso lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas
+OK    34-personas-sin-permiso lever 1440: un solo h1 · h1=1
+OK    34-personas-sin-permiso lever 1440: campos con etiqueta
+OK    34-personas-sin-permiso lever 1440: errores ligados a su campo
+OK    34-personas-sin-permiso lever 1440: sin desplazamiento horizontal
+OK    34-personas-sin-permiso lever 1440: cada cifra cabe en su celda
+OK    34-personas-sin-permiso lever 1440: tabulación en orden del documento · 19 paradas 
+OK    34-personas-sin-permiso lever 1440: foco visible en cada parada
+OK    34-personas-sin-permiso lever 1440: sin errores de consola
+OK    35-personas-expediente lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/d64a90a8-c660-48f0-838f-f63105d04a3e
+OK    35-personas-expediente lever 1440: un solo h1 · h1=1
+OK    35-personas-expediente lever 1440: campos con etiqueta
+OK    35-personas-expediente lever 1440: errores ligados a su campo
+OK    35-personas-expediente lever 1440: sin desplazamiento horizontal
+OK    35-personas-expediente lever 1440: cada cifra cabe en su celda
+OK    35-personas-expediente lever 1440: tabulación en orden del documento · 38 paradas 
+OK    35-personas-expediente lever 1440: foco visible en cada parada
+OK    35-personas-expediente lever 1440: sin errores de consola
+OK    36-personas-lote lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nomina/832d4f6d-eaa9-4831-affa-6bbd5bf782e3
+OK    36-personas-lote lever 1440: un solo h1 · h1=1
+OK    36-personas-lote lever 1440: campos con etiqueta
+OK    36-personas-lote lever 1440: errores ligados a su campo
+OK    36-personas-lote lever 1440: sin desplazamiento horizontal
+OK    36-personas-lote lever 1440: cada cifra cabe en su celda
+OK    36-personas-lote lever 1440: tabulación en orden del documento · 21 paradas 
+OK    36-personas-lote lever 1440: foco visible en cada parada
+OK    36-personas-lote lever 1440: sin errores de consola
+OK    37-personas-alta-con-areas lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nueva
+OK    37-personas-alta-con-areas lever 1440: un solo h1 · h1=1
+OK    37-personas-alta-con-areas lever 1440: campos con etiqueta
+OK    37-personas-alta-con-areas lever 1440: errores ligados a su campo
+OK    37-personas-alta-con-areas lever 1440: sin desplazamiento horizontal
+OK    37-personas-alta-con-areas lever 1440: cada cifra cabe en su celda
+OK    37-personas-alta-con-areas lever 1440: tabulación en orden del documento · 33 paradas 
+OK    37-personas-alta-con-areas lever 1440: foco visible en cada parada
+OK    37-personas-alta-con-areas lever 1440: sin errores de consola
+OK    40-politica lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/politica
+OK    40-politica lever 1440: un solo h1 · h1=1
+OK    40-politica lever 1440: campos con etiqueta
+OK    40-politica lever 1440: errores ligados a su campo
+OK    40-politica lever 1440: sin desplazamiento horizontal
+OK    40-politica lever 1440: cada cifra cabe en su celda
+OK    40-politica lever 1440: tabulación en orden del documento · 28 paradas 
+OK    40-politica lever 1440: foco visible en cada parada
+OK    40-politica lever 1440: sin errores de consola
+OK    41-politica-altamar lever 1440: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/politica
+OK    41-politica-altamar lever 1440: un solo h1 · h1=1
+OK    41-politica-altamar lever 1440: campos con etiqueta
+OK    41-politica-altamar lever 1440: errores ligados a su campo
+OK    41-politica-altamar lever 1440: sin desplazamiento horizontal
+OK    41-politica-altamar lever 1440: cada cifra cabe en su celda
+OK    41-politica-altamar lever 1440: tabulación en orden del documento · 25 paradas 
+OK    41-politica-altamar lever 1440: foco visible en cada parada
+OK    41-politica-altamar lever 1440: sin errores de consola
+OK    50-lista-69b lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b
+OK    50-lista-69b lever 1440: un solo h1 · h1=1
+OK    50-lista-69b lever 1440: campos con etiqueta
+OK    50-lista-69b lever 1440: errores ligados a su campo
+OK    50-lista-69b lever 1440: sin desplazamiento horizontal
+OK    50-lista-69b lever 1440: cada cifra cabe en su celda
+OK    50-lista-69b lever 1440: tabulación en orden del documento · 19 paradas 
+OK    50-lista-69b lever 1440: foco visible en cada parada
+OK    50-lista-69b lever 1440: sin errores de consola
+OK    51-lista-69b-sofipo lever 1440: responde en su ruta · 200 /consola/lista-69b
+OK    51-lista-69b-sofipo lever 1440: un solo h1 · h1=1
+OK    51-lista-69b-sofipo lever 1440: campos con etiqueta
+OK    51-lista-69b-sofipo lever 1440: errores ligados a su campo
+OK    51-lista-69b-sofipo lever 1440: sin desplazamiento horizontal
+OK    51-lista-69b-sofipo lever 1440: cada cifra cabe en su celda
+OK    51-lista-69b-sofipo lever 1440: tabulación en orden del documento · 7 paradas 
+OK    51-lista-69b-sofipo lever 1440: foco visible en cada parada
+OK    51-lista-69b-sofipo lever 1440: sin errores de consola
+OK    60-configuracion lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion
+OK    60-configuracion lever 1440: un solo h1 · h1=1
+OK    60-configuracion lever 1440: campos con etiqueta
+OK    60-configuracion lever 1440: errores ligados a su campo
+OK    60-configuracion lever 1440: sin desplazamiento horizontal
+OK    60-configuracion lever 1440: cada cifra cabe en su celda
+OK    60-configuracion lever 1440: tabulación en orden del documento · 21 paradas 
+OK    60-configuracion lever 1440: foco visible en cada parada
+OK    60-configuracion lever 1440: sin errores de consola
+OK    61-configuracion-plan lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan
+OK    61-configuracion-plan lever 1440: un solo h1 · h1=1
+OK    61-configuracion-plan lever 1440: campos con etiqueta
+OK    61-configuracion-plan lever 1440: errores ligados a su campo
+OK    61-configuracion-plan lever 1440: sin desplazamiento horizontal
+OK    61-configuracion-plan lever 1440: cada cifra cabe en su celda
+OK    61-configuracion-plan lever 1440: tabulación en orden del documento · 17 paradas 
+OK    61-configuracion-plan lever 1440: foco visible en cada parada
+OK    61-configuracion-plan lever 1440: sin errores de consola
+OK    70-poliza lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/poliza
+OK    70-poliza lever 1440: un solo h1 · h1=1
+OK    70-poliza lever 1440: campos con etiqueta
+OK    70-poliza lever 1440: errores ligados a su campo
+OK    70-poliza lever 1440: sin desplazamiento horizontal
+OK    70-poliza lever 1440: cada cifra cabe en su celda
+OK    70-poliza lever 1440: tabulación en orden del documento · 17 paradas 
+OK    70-poliza lever 1440: foco visible en cada parada
+OK    70-poliza lever 1440: sin errores de consola
+OK    80-sin-permiso-proveedores lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    80-sin-permiso-proveedores lever 1440: un solo h1 · h1=1
+OK    80-sin-permiso-proveedores lever 1440: campos con etiqueta
+OK    80-sin-permiso-proveedores lever 1440: errores ligados a su campo
+OK    80-sin-permiso-proveedores lever 1440: sin desplazamiento horizontal
+OK    80-sin-permiso-proveedores lever 1440: cada cifra cabe en su celda
+OK    80-sin-permiso-proveedores lever 1440: tabulación en orden del documento · 9 paradas 
+OK    80-sin-permiso-proveedores lever 1440: foco visible en cada parada
+OK    80-sin-permiso-proveedores lever 1440: sin errores de consola
+OK    81-sin-permiso-personas lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas
+OK    81-sin-permiso-personas lever 1440: un solo h1 · h1=1
+OK    81-sin-permiso-personas lever 1440: campos con etiqueta
+OK    81-sin-permiso-personas lever 1440: errores ligados a su campo
+OK    81-sin-permiso-personas lever 1440: sin desplazamiento horizontal
+OK    81-sin-permiso-personas lever 1440: cada cifra cabe en su celda
+OK    81-sin-permiso-personas lever 1440: tabulación en orden del documento · 9 paradas 
+OK    81-sin-permiso-personas lever 1440: foco visible en cada parada
+OK    81-sin-permiso-personas lever 1440: sin errores de consola
+OK    82-sin-permiso-politica lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/politica
+OK    82-sin-permiso-politica lever 1440: un solo h1 · h1=1
+OK    82-sin-permiso-politica lever 1440: campos con etiqueta
+OK    82-sin-permiso-politica lever 1440: errores ligados a su campo
+OK    82-sin-permiso-politica lever 1440: sin desplazamiento horizontal
+OK    82-sin-permiso-politica lever 1440: cada cifra cabe en su celda
+OK    82-sin-permiso-politica lever 1440: tabulación en orden del documento · 9 paradas 
+OK    82-sin-permiso-politica lever 1440: foco visible en cada parada
+OK    82-sin-permiso-politica lever 1440: sin errores de consola
+OK    83-sin-permiso-lista-69b lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b
+OK    83-sin-permiso-lista-69b lever 1440: un solo h1 · h1=1
+OK    83-sin-permiso-lista-69b lever 1440: campos con etiqueta
+OK    83-sin-permiso-lista-69b lever 1440: errores ligados a su campo
+OK    83-sin-permiso-lista-69b lever 1440: sin desplazamiento horizontal
+OK    83-sin-permiso-lista-69b lever 1440: cada cifra cabe en su celda
+OK    83-sin-permiso-lista-69b lever 1440: tabulación en orden del documento · 9 paradas 
+OK    83-sin-permiso-lista-69b lever 1440: foco visible en cada parada
+OK    83-sin-permiso-lista-69b lever 1440: sin errores de consola
+OK    84-sin-permiso-configuracion lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion
+OK    84-sin-permiso-configuracion lever 1440: un solo h1 · h1=1
+OK    84-sin-permiso-configuracion lever 1440: campos con etiqueta
+OK    84-sin-permiso-configuracion lever 1440: errores ligados a su campo
+OK    84-sin-permiso-configuracion lever 1440: sin desplazamiento horizontal
+OK    84-sin-permiso-configuracion lever 1440: cada cifra cabe en su celda
+OK    84-sin-permiso-configuracion lever 1440: tabulación en orden del documento · 9 paradas 
+OK    84-sin-permiso-configuracion lever 1440: foco visible en cada parada
+OK    84-sin-permiso-configuracion lever 1440: sin errores de consola
+OK    85-sin-permiso-plan lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan
+OK    85-sin-permiso-plan lever 1440: un solo h1 · h1=1
+OK    85-sin-permiso-plan lever 1440: campos con etiqueta
+OK    85-sin-permiso-plan lever 1440: errores ligados a su campo
+OK    85-sin-permiso-plan lever 1440: sin desplazamiento horizontal
+OK    85-sin-permiso-plan lever 1440: cada cifra cabe en su celda
+OK    85-sin-permiso-plan lever 1440: tabulación en orden del documento · 9 paradas 
+OK    85-sin-permiso-plan lever 1440: foco visible en cada parada
+OK    85-sin-permiso-plan lever 1440: sin errores de consola
+OK    86-sin-permiso-poliza lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/poliza
+OK    86-sin-permiso-poliza lever 1440: un solo h1 · h1=1
+OK    86-sin-permiso-poliza lever 1440: campos con etiqueta
+OK    86-sin-permiso-poliza lever 1440: errores ligados a su campo
+OK    86-sin-permiso-poliza lever 1440: sin desplazamiento horizontal
+OK    86-sin-permiso-poliza lever 1440: cada cifra cabe en su celda
+OK    86-sin-permiso-poliza lever 1440: tabulación en orden del documento · 9 paradas 
+OK    86-sin-permiso-poliza lever 1440: foco visible en cada parada
+OK    86-sin-permiso-poliza lever 1440: sin errores de consola
+OK    87-pendientes-finanzas lever 1440: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes
+OK    87-pendientes-finanzas lever 1440: un solo h1 · h1=1
+OK    87-pendientes-finanzas lever 1440: campos con etiqueta
+OK    87-pendientes-finanzas lever 1440: errores ligados a su campo
+OK    87-pendientes-finanzas lever 1440: sin desplazamiento horizontal
+OK    87-pendientes-finanzas lever 1440: cada cifra cabe en su celda
+OK    87-pendientes-finanzas lever 1440: tabulación en orden del documento · 11 paradas 
+OK    87-pendientes-finanzas lever 1440: foco visible en cada parada
+OK    87-pendientes-finanzas lever 1440: sin errores de consola
+OK    10-pendientes lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes
+OK    10-pendientes lever 390: un solo h1 · h1=1
+OK    10-pendientes lever 390: campos con etiqueta
+OK    10-pendientes lever 390: errores ligados a su campo
+OK    10-pendientes lever 390: sin desplazamiento horizontal
+OK    10-pendientes lever 390: cada cifra cabe en su celda
+OK    10-pendientes lever 390: tabulación en orden del documento · 9 paradas 
+OK    10-pendientes lever 390: foco visible en cada parada
+OK    10-pendientes lever 390: sin errores de consola
+OK    11-pendientes-altamar lever 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/pendientes
+OK    11-pendientes-altamar lever 390: un solo h1 · h1=1
+OK    11-pendientes-altamar lever 390: campos con etiqueta
+OK    11-pendientes-altamar lever 390: errores ligados a su campo
+OK    11-pendientes-altamar lever 390: sin desplazamiento horizontal
+OK    11-pendientes-altamar lever 390: cada cifra cabe en su celda
+OK    11-pendientes-altamar lever 390: tabulación en orden del documento · 10 paradas 
+OK    11-pendientes-altamar lever 390: foco visible en cada parada
+OK    11-pendientes-altamar lever 390: sin errores de consola
+OK    12-inicio-administrador lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola
+OK    12-inicio-administrador lever 390: un solo h1 · h1=1
+OK    12-inicio-administrador lever 390: campos con etiqueta
+OK    12-inicio-administrador lever 390: errores ligados a su campo
+OK    12-inicio-administrador lever 390: sin desplazamiento horizontal
+OK    12-inicio-administrador lever 390: cada cifra cabe en su celda
+OK    12-inicio-administrador lever 390: tabulación en orden del documento · 23 paradas 
+OK    12-inicio-administrador lever 390: foco visible en cada parada
+OK    12-inicio-administrador lever 390: sin errores de consola
+OK    13-inicio-finanzas lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola
+OK    13-inicio-finanzas lever 390: un solo h1 · h1=1
+OK    13-inicio-finanzas lever 390: campos con etiqueta
+OK    13-inicio-finanzas lever 390: errores ligados a su campo
+OK    13-inicio-finanzas lever 390: sin desplazamiento horizontal
+OK    13-inicio-finanzas lever 390: cada cifra cabe en su celda
+OK    13-inicio-finanzas lever 390: tabulación en orden del documento · 22 paradas 
+OK    13-inicio-finanzas lever 390: foco visible en cada parada
+OK    13-inicio-finanzas lever 390: sin errores de consola
+OK    14-inicio-sin-saldo lever 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola
+OK    14-inicio-sin-saldo lever 390: un solo h1 · h1=1
+OK    14-inicio-sin-saldo lever 390: campos con etiqueta
+OK    14-inicio-sin-saldo lever 390: errores ligados a su campo
+OK    14-inicio-sin-saldo lever 390: sin desplazamiento horizontal
+OK    14-inicio-sin-saldo lever 390: cada cifra cabe en su celda
+OK    14-inicio-sin-saldo lever 390: tabulación en orden del documento · 9 paradas 
+OK    14-inicio-sin-saldo lever 390: foco visible en cada parada
+OK    14-inicio-sin-saldo lever 390: sin errores de consola
+OK    20-proveedores-pagos lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    20-proveedores-pagos lever 390: un solo h1 · h1=1
+OK    20-proveedores-pagos lever 390: campos con etiqueta
+OK    20-proveedores-pagos lever 390: errores ligados a su campo
+OK    20-proveedores-pagos lever 390: sin desplazamiento horizontal
+OK    20-proveedores-pagos lever 390: cada cifra cabe en su celda
+OK    20-proveedores-pagos lever 390: tabulación en orden del documento · 18 paradas 
+OK    20-proveedores-pagos lever 390: foco visible en cada parada
+OK    20-proveedores-pagos lever 390: sin errores de consola
+OK    21-proveedores-directorio lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    21-proveedores-directorio lever 390: un solo h1 · h1=1
+OK    21-proveedores-directorio lever 390: campos con etiqueta
+OK    21-proveedores-directorio lever 390: errores ligados a su campo
+OK    21-proveedores-directorio lever 390: sin desplazamiento horizontal
+OK    21-proveedores-directorio lever 390: cada cifra cabe en su celda
+OK    21-proveedores-directorio lever 390: tabulación en orden del documento · 18 paradas 
+OK    21-proveedores-directorio lever 390: foco visible en cada parada
+OK    21-proveedores-directorio lever 390: sin errores de consola
+OK    22-proveedores-agenda lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    22-proveedores-agenda lever 390: un solo h1 · h1=1
+OK    22-proveedores-agenda lever 390: campos con etiqueta
+OK    22-proveedores-agenda lever 390: errores ligados a su campo
+OK    22-proveedores-agenda lever 390: sin desplazamiento horizontal
+OK    22-proveedores-agenda lever 390: cada cifra cabe en su celda
+OK    22-proveedores-agenda lever 390: tabulación en orden del documento · 11 paradas 
+OK    22-proveedores-agenda lever 390: foco visible en cada parada
+OK    22-proveedores-agenda lever 390: sin errores de consola
+OK    23-proveedores-detalle-pago lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    23-proveedores-detalle-pago lever 390: un solo h1 · h1=1
+OK    23-proveedores-detalle-pago lever 390: campos con etiqueta
+OK    23-proveedores-detalle-pago lever 390: errores ligados a su campo
+OK    23-proveedores-detalle-pago lever 390: sin desplazamiento horizontal
+OK    23-proveedores-detalle-pago lever 390: cada cifra cabe en su celda
+OK    23-proveedores-detalle-pago lever 390: tabulación en orden del documento · 3 paradas 
+OK    23-proveedores-detalle-pago lever 390: foco visible en cada parada
+OK    23-proveedores-detalle-pago lever 390: sin errores de consola
+OK    24-proveedores-expediente lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    24-proveedores-expediente lever 390: un solo h1 · h1=1
+OK    24-proveedores-expediente lever 390: campos con etiqueta
+OK    24-proveedores-expediente lever 390: errores ligados a su campo
+OK    24-proveedores-expediente lever 390: sin desplazamiento horizontal
+OK    24-proveedores-expediente lever 390: cada cifra cabe en su celda
+OK    24-proveedores-expediente lever 390: tabulación en orden del documento · 4 paradas 
+OK    24-proveedores-expediente lever 390: foco visible en cada parada
+OK    24-proveedores-expediente lever 390: sin errores de consola
+OK    25-proveedores-alta lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo-proveedor
+OK    25-proveedores-alta lever 390: un solo h1 · h1=1
+OK    25-proveedores-alta lever 390: campos con etiqueta
+OK    25-proveedores-alta lever 390: errores ligados a su campo
+OK    25-proveedores-alta lever 390: sin desplazamiento horizontal
+OK    25-proveedores-alta lever 390: cada cifra cabe en su celda
+OK    25-proveedores-alta lever 390: tabulación en orden del documento · 18 paradas 
+OK    25-proveedores-alta lever 390: foco visible en cada parada
+OK    25-proveedores-alta lever 390: sin errores de consola
+OK    26-proveedores-nuevo-pago lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores/nuevo
+OK    26-proveedores-nuevo-pago lever 390: un solo h1 · h1=1
+OK    26-proveedores-nuevo-pago lever 390: campos con etiqueta
+OK    26-proveedores-nuevo-pago lever 390: errores ligados a su campo
+OK    26-proveedores-nuevo-pago lever 390: sin desplazamiento horizontal
+OK    26-proveedores-nuevo-pago lever 390: cada cifra cabe en su celda
+OK    26-proveedores-nuevo-pago lever 390: tabulación en orden del documento · 13 paradas 
+OK    26-proveedores-nuevo-pago lever 390: foco visible en cada parada
+OK    26-proveedores-nuevo-pago lever 390: sin errores de consola
+OK    27-proveedores-vacio lever 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/proveedores
+OK    27-proveedores-vacio lever 390: un solo h1 · h1=1
+OK    27-proveedores-vacio lever 390: campos con etiqueta
+OK    27-proveedores-vacio lever 390: errores ligados a su campo
+OK    27-proveedores-vacio lever 390: sin desplazamiento horizontal
+OK    27-proveedores-vacio lever 390: cada cifra cabe en su celda
+OK    27-proveedores-vacio lever 390: tabulación en orden del documento · 12 paradas 
+OK    27-proveedores-vacio lever 390: foco visible en cada parada
+OK    27-proveedores-vacio lever 390: sin errores de consola
+OK    30-personas-directorio lever 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas
+OK    30-personas-directorio lever 390: un solo h1 · h1=1
+OK    30-personas-directorio lever 390: campos con etiqueta
+OK    30-personas-directorio lever 390: errores ligados a su campo
+OK    30-personas-directorio lever 390: sin desplazamiento horizontal
+OK    30-personas-directorio lever 390: cada cifra cabe en su celda
+OK    30-personas-directorio lever 390: tabulación en orden del documento · 14 paradas 
+OK    30-personas-directorio lever 390: foco visible en cada parada
+OK    30-personas-directorio lever 390: sin errores de consola
+OK    31-personas-alta lever 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/nueva
+OK    31-personas-alta lever 390: un solo h1 · h1=1
+OK    31-personas-alta lever 390: campos con etiqueta
+OK    31-personas-alta lever 390: errores ligados a su campo
+OK    31-personas-alta lever 390: sin desplazamiento horizontal
+OK    31-personas-alta lever 390: cada cifra cabe en su celda
+OK    31-personas-alta lever 390: tabulación en orden del documento · 9 paradas 
+OK    31-personas-alta lever 390: foco visible en cada parada
+OK    31-personas-alta lever 390: sin errores de consola
+OK    32-personas-areas lever 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/areas
+OK    32-personas-areas lever 390: un solo h1 · h1=1
+OK    32-personas-areas lever 390: campos con etiqueta
+OK    32-personas-areas lever 390: errores ligados a su campo
+OK    32-personas-areas lever 390: sin desplazamiento horizontal
+OK    32-personas-areas lever 390: cada cifra cabe en su celda
+OK    32-personas-areas lever 390: tabulación en orden del documento · 12 paradas 
+OK    32-personas-areas lever 390: foco visible en cada parada
+OK    32-personas-areas lever 390: sin errores de consola
+OK    33-personas-nomina lever 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/personas/nomina
+OK    33-personas-nomina lever 390: un solo h1 · h1=1
+OK    33-personas-nomina lever 390: campos con etiqueta
+OK    33-personas-nomina lever 390: errores ligados a su campo
+OK    33-personas-nomina lever 390: sin desplazamiento horizontal
+OK    33-personas-nomina lever 390: cada cifra cabe en su celda
+OK    33-personas-nomina lever 390: tabulación en orden del documento · 8 paradas 
+OK    33-personas-nomina lever 390: foco visible en cada parada
+OK    33-personas-nomina lever 390: sin errores de consola
+OK    34-personas-sin-permiso lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas
+OK    34-personas-sin-permiso lever 390: un solo h1 · h1=1
+OK    34-personas-sin-permiso lever 390: campos con etiqueta
+OK    34-personas-sin-permiso lever 390: errores ligados a su campo
+OK    34-personas-sin-permiso lever 390: sin desplazamiento horizontal
+OK    34-personas-sin-permiso lever 390: cada cifra cabe en su celda
+OK    34-personas-sin-permiso lever 390: tabulación en orden del documento · 14 paradas 
+OK    34-personas-sin-permiso lever 390: foco visible en cada parada
+OK    34-personas-sin-permiso lever 390: sin errores de consola
+OK    35-personas-expediente lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/d64a90a8-c660-48f0-838f-f63105d04a3e
+OK    35-personas-expediente lever 390: un solo h1 · h1=1
+OK    35-personas-expediente lever 390: campos con etiqueta
+OK    35-personas-expediente lever 390: errores ligados a su campo
+OK    35-personas-expediente lever 390: sin desplazamiento horizontal
+OK    35-personas-expediente lever 390: cada cifra cabe en su celda
+OK    35-personas-expediente lever 390: tabulación en orden del documento · 26 paradas 
+OK    35-personas-expediente lever 390: foco visible en cada parada
+OK    35-personas-expediente lever 390: sin errores de consola
+OK    36-personas-lote lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nomina/832d4f6d-eaa9-4831-affa-6bbd5bf782e3
+OK    36-personas-lote lever 390: un solo h1 · h1=1
+OK    36-personas-lote lever 390: campos con etiqueta
+OK    36-personas-lote lever 390: errores ligados a su campo
+OK    36-personas-lote lever 390: sin desplazamiento horizontal
+OK    36-personas-lote lever 390: cada cifra cabe en su celda
+OK    36-personas-lote lever 390: tabulación en orden del documento · 9 paradas 
+OK    36-personas-lote lever 390: foco visible en cada parada
+OK    36-personas-lote lever 390: sin errores de consola
+OK    37-personas-alta-con-areas lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas/nueva
+OK    37-personas-alta-con-areas lever 390: un solo h1 · h1=1
+OK    37-personas-alta-con-areas lever 390: campos con etiqueta
+OK    37-personas-alta-con-areas lever 390: errores ligados a su campo
+OK    37-personas-alta-con-areas lever 390: sin desplazamiento horizontal
+OK    37-personas-alta-con-areas lever 390: cada cifra cabe en su celda
+OK    37-personas-alta-con-areas lever 390: tabulación en orden del documento · 21 paradas 
+OK    37-personas-alta-con-areas lever 390: foco visible en cada parada
+OK    37-personas-alta-con-areas lever 390: sin errores de consola
+OK    40-politica lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/politica
+OK    40-politica lever 390: un solo h1 · h1=1
+OK    40-politica lever 390: campos con etiqueta
+OK    40-politica lever 390: errores ligados a su campo
+OK    40-politica lever 390: sin desplazamiento horizontal
+OK    40-politica lever 390: cada cifra cabe en su celda
+OK    40-politica lever 390: tabulación en orden del documento · 16 paradas 
+OK    40-politica lever 390: foco visible en cada parada
+OK    40-politica lever 390: sin errores de consola
+OK    41-politica-altamar lever 390: responde en su ruta · 200 /c/c879d19b-b111-480e-8390-fad40dc8e82a/consola/politica
+OK    41-politica-altamar lever 390: un solo h1 · h1=1
+OK    41-politica-altamar lever 390: campos con etiqueta
+OK    41-politica-altamar lever 390: errores ligados a su campo
+OK    41-politica-altamar lever 390: sin desplazamiento horizontal
+OK    41-politica-altamar lever 390: cada cifra cabe en su celda
+OK    41-politica-altamar lever 390: tabulación en orden del documento · 13 paradas 
+OK    41-politica-altamar lever 390: foco visible en cada parada
+OK    41-politica-altamar lever 390: sin errores de consola
+OK    50-lista-69b lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b
+OK    50-lista-69b lever 390: un solo h1 · h1=1
+OK    50-lista-69b lever 390: campos con etiqueta
+OK    50-lista-69b lever 390: errores ligados a su campo
+OK    50-lista-69b lever 390: sin desplazamiento horizontal
+OK    50-lista-69b lever 390: cada cifra cabe en su celda
+OK    50-lista-69b lever 390: tabulación en orden del documento · 7 paradas 
+OK    50-lista-69b lever 390: foco visible en cada parada
+OK    50-lista-69b lever 390: sin errores de consola
+OK    51-lista-69b-sofipo lever 390: responde en su ruta · 200 /consola/lista-69b
+OK    51-lista-69b-sofipo lever 390: un solo h1 · h1=1
+OK    51-lista-69b-sofipo lever 390: campos con etiqueta
+OK    51-lista-69b-sofipo lever 390: errores ligados a su campo
+OK    51-lista-69b-sofipo lever 390: sin desplazamiento horizontal
+OK    51-lista-69b-sofipo lever 390: cada cifra cabe en su celda
+OK    51-lista-69b-sofipo lever 390: tabulación en orden del documento · 7 paradas 
+OK    51-lista-69b-sofipo lever 390: foco visible en cada parada
+OK    51-lista-69b-sofipo lever 390: sin errores de consola
+OK    60-configuracion lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion
+OK    60-configuracion lever 390: un solo h1 · h1=1
+OK    60-configuracion lever 390: campos con etiqueta
+OK    60-configuracion lever 390: errores ligados a su campo
+OK    60-configuracion lever 390: sin desplazamiento horizontal
+OK    60-configuracion lever 390: cada cifra cabe en su celda
+OK    60-configuracion lever 390: tabulación en orden del documento · 9 paradas 
+OK    60-configuracion lever 390: foco visible en cada parada
+OK    60-configuracion lever 390: sin errores de consola
+OK    61-configuracion-plan lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan
+OK    61-configuracion-plan lever 390: un solo h1 · h1=1
+OK    61-configuracion-plan lever 390: campos con etiqueta
+OK    61-configuracion-plan lever 390: errores ligados a su campo
+OK    61-configuracion-plan lever 390: sin desplazamiento horizontal
+OK    61-configuracion-plan lever 390: cada cifra cabe en su celda
+OK    61-configuracion-plan lever 390: tabulación en orden del documento · 5 paradas 
+OK    61-configuracion-plan lever 390: foco visible en cada parada
+OK    61-configuracion-plan lever 390: sin errores de consola
+OK    70-poliza lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/poliza
+OK    70-poliza lever 390: un solo h1 · h1=1
+OK    70-poliza lever 390: campos con etiqueta
+OK    70-poliza lever 390: errores ligados a su campo
+OK    70-poliza lever 390: sin desplazamiento horizontal
+OK    70-poliza lever 390: cada cifra cabe en su celda
+OK    70-poliza lever 390: tabulación en orden del documento · 5 paradas 
+OK    70-poliza lever 390: foco visible en cada parada
+OK    70-poliza lever 390: sin errores de consola
+OK    80-sin-permiso-proveedores lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/proveedores
+OK    80-sin-permiso-proveedores lever 390: un solo h1 · h1=1
+OK    80-sin-permiso-proveedores lever 390: campos con etiqueta
+OK    80-sin-permiso-proveedores lever 390: errores ligados a su campo
+OK    80-sin-permiso-proveedores lever 390: sin desplazamiento horizontal
+OK    80-sin-permiso-proveedores lever 390: cada cifra cabe en su celda
+OK    80-sin-permiso-proveedores lever 390: tabulación en orden del documento · 4 paradas 
+OK    80-sin-permiso-proveedores lever 390: foco visible en cada parada
+OK    80-sin-permiso-proveedores lever 390: sin errores de consola
+OK    81-sin-permiso-personas lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/personas
+OK    81-sin-permiso-personas lever 390: un solo h1 · h1=1
+OK    81-sin-permiso-personas lever 390: campos con etiqueta
+OK    81-sin-permiso-personas lever 390: errores ligados a su campo
+OK    81-sin-permiso-personas lever 390: sin desplazamiento horizontal
+OK    81-sin-permiso-personas lever 390: cada cifra cabe en su celda
+OK    81-sin-permiso-personas lever 390: tabulación en orden del documento · 4 paradas 
+OK    81-sin-permiso-personas lever 390: foco visible en cada parada
+OK    81-sin-permiso-personas lever 390: sin errores de consola
+OK    82-sin-permiso-politica lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/politica
+OK    82-sin-permiso-politica lever 390: un solo h1 · h1=1
+OK    82-sin-permiso-politica lever 390: campos con etiqueta
+OK    82-sin-permiso-politica lever 390: errores ligados a su campo
+OK    82-sin-permiso-politica lever 390: sin desplazamiento horizontal
+OK    82-sin-permiso-politica lever 390: cada cifra cabe en su celda
+OK    82-sin-permiso-politica lever 390: tabulación en orden del documento · 4 paradas 
+OK    82-sin-permiso-politica lever 390: foco visible en cada parada
+OK    82-sin-permiso-politica lever 390: sin errores de consola
+OK    83-sin-permiso-lista-69b lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/lista-69b
+OK    83-sin-permiso-lista-69b lever 390: un solo h1 · h1=1
+OK    83-sin-permiso-lista-69b lever 390: campos con etiqueta
+OK    83-sin-permiso-lista-69b lever 390: errores ligados a su campo
+OK    83-sin-permiso-lista-69b lever 390: sin desplazamiento horizontal
+OK    83-sin-permiso-lista-69b lever 390: cada cifra cabe en su celda
+OK    83-sin-permiso-lista-69b lever 390: tabulación en orden del documento · 4 paradas 
+OK    83-sin-permiso-lista-69b lever 390: foco visible en cada parada
+OK    83-sin-permiso-lista-69b lever 390: sin errores de consola
+OK    84-sin-permiso-configuracion lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion
+OK    84-sin-permiso-configuracion lever 390: un solo h1 · h1=1
+OK    84-sin-permiso-configuracion lever 390: campos con etiqueta
+OK    84-sin-permiso-configuracion lever 390: errores ligados a su campo
+OK    84-sin-permiso-configuracion lever 390: sin desplazamiento horizontal
+OK    84-sin-permiso-configuracion lever 390: cada cifra cabe en su celda
+OK    84-sin-permiso-configuracion lever 390: tabulación en orden del documento · 4 paradas 
+OK    84-sin-permiso-configuracion lever 390: foco visible en cada parada
+OK    84-sin-permiso-configuracion lever 390: sin errores de consola
+OK    85-sin-permiso-plan lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/configuracion/plan
+OK    85-sin-permiso-plan lever 390: un solo h1 · h1=1
+OK    85-sin-permiso-plan lever 390: campos con etiqueta
+OK    85-sin-permiso-plan lever 390: errores ligados a su campo
+OK    85-sin-permiso-plan lever 390: sin desplazamiento horizontal
+OK    85-sin-permiso-plan lever 390: cada cifra cabe en su celda
+OK    85-sin-permiso-plan lever 390: tabulación en orden del documento · 4 paradas 
+OK    85-sin-permiso-plan lever 390: foco visible en cada parada
+OK    85-sin-permiso-plan lever 390: sin errores de consola
+OK    86-sin-permiso-poliza lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/poliza
+OK    86-sin-permiso-poliza lever 390: un solo h1 · h1=1
+OK    86-sin-permiso-poliza lever 390: campos con etiqueta
+OK    86-sin-permiso-poliza lever 390: errores ligados a su campo
+OK    86-sin-permiso-poliza lever 390: sin desplazamiento horizontal
+OK    86-sin-permiso-poliza lever 390: cada cifra cabe en su celda
+OK    86-sin-permiso-poliza lever 390: tabulación en orden del documento · 4 paradas 
+OK    86-sin-permiso-poliza lever 390: foco visible en cada parada
+OK    86-sin-permiso-poliza lever 390: sin errores de consola
+OK    87-pendientes-finanzas lever 390: responde en su ruta · 200 /c/33333333-3333-4333-8333-333333333333/consola/pendientes
+OK    87-pendientes-finanzas lever 390: un solo h1 · h1=1
+OK    87-pendientes-finanzas lever 390: campos con etiqueta
+OK    87-pendientes-finanzas lever 390: errores ligados a su campo
+OK    87-pendientes-finanzas lever 390: sin desplazamiento horizontal
+OK    87-pendientes-finanzas lever 390: cada cifra cabe en su celda
+OK    87-pendientes-finanzas lever 390: tabulación en orden del documento · 6 paradas 
+OK    87-pendientes-finanzas lever 390: foco visible en cada parada
+OK    87-pendientes-finanzas lever 390: sin errores de consola
+
+1944 de 1944 comprobaciones en verde.
