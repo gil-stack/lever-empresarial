@@ -2,17 +2,21 @@ import { createHash, randomUUID } from "node:crypto";
 
 import { desplazar } from "../../src/dominio/flujo/fechas";
 import { hoyEnMexico } from "../../src/dominio/personas";
-import type { ContextoConEmpresa } from "../../src/nucleo/contexto";
+import type { ContextoConEmpresa, ContextoDePersonal } from "../../src/nucleo/contexto";
 import { cifrarSemilla, llaveDesde } from "../../src/server/autenticacion/cifrado";
 import { repositorioPg } from "../../src/server/autenticacion/repositorio";
 import { aBase32, pasoDe, semillaNueva } from "../../src/server/autenticacion/totp";
 import { darDeAltaEmpresa } from "../../src/server/company/servicio";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio";
+import { solicitarActivacion } from "../../src/server/operacion/activaciones";
+import { registrarProspecto } from "../../src/server/operacion/clientes";
+import { cambiarRolPersonal } from "../../src/server/operacion/personal";
 import { darDeAltaPersona, nombrarCentro } from "../../src/server/personas/servicio";
 import { contextoDePersonal, invitarAdministrador, migrarPersonalDeVariable } from "../../src/server/plataforma/servicio";
 import { leerSesion } from "../../src/server/session/servicio";
 import { resolverContexto } from "../../src/server/tenencia/resolver";
 import { ejecutar } from "../aislamiento/postgres";
+import { expedienteEnRegla, SESION_SOFIPO } from "../operacion/apoyo-alta-regulada";
 
 /**
  * Siembra de los recorridos nuevos (flujo de caja, nómina, entrada, Operación,
@@ -23,7 +27,14 @@ import { ejecutar } from "../aislamiento/postgres";
  * con el repositorio de autenticación y la llave de la corrida: la prueba
  * genera los códigos como lo haría la app autenticadora.
  *
- * Deja en el entorno E2E_ALTAMAR_ID, E2E_BAHIA_ID y E2E_SEMILLAS para los specs.
+ * El personal SOFIPO recibe los roles de la 0028 por el servicio de la pantalla
+ * Personal (una persona se los da a otra, con su evento): op1 registra
+ * prospectos y pide activaciones (Originación), op2 las decide (Aprobación) y
+ * op3 dictamina expedientes (Cumplimiento). Faro E2E queda en alta con su
+ * expediente aprobado, riesgo vigente y la activación pedida por op1: lo que
+ * exige el candado de la base para que op2 la apruebe.
+ *
+ * Deja en el entorno E2E_ALTAMAR_ID, E2E_BAHIA_ID, E2E_FARO_ID y E2E_SEMILLAS para los specs.
  */
 
 const CLAVE = "clave-segura-12";
@@ -42,7 +53,11 @@ export const CORREOS = {
   perdida: "perdida@altamar-e2e.mx",
   op1: "op1@lever-e2e.mx",
   op2: "op2@lever-e2e.mx",
+  op3: "op3@lever-e2e.mx",
 } as const;
+
+/** La empresa en alta con todo en regla que op2 aprueba en operacion.spec.ts. */
+export const FARO = { razonSocial: "Faro E2E", rfc: "FEE170505CD4" } as const;
 
 export async function sembrarRecorridos(owner: string): Promise<void> {
   const llave = llaveDesde(process.env.AUTENTICACION_LLAVE_TOTP);
@@ -184,14 +199,32 @@ export async function sembrarRecorridos(owner: string): Promise<void> {
   }, { demostracion: false });
 
   // ---------- Personal SOFIPO con contraseña y app autenticadora ----------
-  for (const correo of [CORREOS.op1, CORREOS.op2]) {
+  const ids: Record<string, string> = {};
+  for (const correo of [CORREOS.op1, CORREOS.op2, CORREOS.op3]) {
     const [migrada] = await migrarPersonalDeVariable([correo]);
     if (!migrada?.invitacion) throw new Error(`${correo} no quedó invitado como personal.`);
     const { userId } = await aceptarInvitacion({ token: migrada.invitacion.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
+    ids[correo] = userId;
     await factor(correo, userId);
   }
+  // Roles de la 0028 por el servicio de la pantalla Personal: nadie se da un rol a sí mismo.
+  const comoPersonal = async (correo: string) => (await contextoDePersonal(correo)) as ContextoDePersonal;
+  const darRol = async (quien: string, a: string, rol: "originacion" | "aprobacion" | "cumplimiento") =>
+    cambiarRolPersonal(await comoPersonal(quien), SESION_SOFIPO, { userId: ids[a], rol, quitar: false });
+  await darRol(CORREOS.op2, CORREOS.op1, "originacion");
+  await darRol(CORREOS.op1, CORREOS.op2, "aprobacion");
+  await darRol(CORREOS.op1, CORREOS.op3, "cumplimiento");
+
+  // ---------- Faro E2E: en alta con expediente aprobado, riesgo vigente y activación pedida ----------
+  // Los documentos del expediente van a un almacén en memoria: la siembra corre antes del emulador
+  // de Blob y ningún recorrido los descarga.
+  const origina = await comoPersonal(CORREOS.op1);
+  const faro = await registrarProspecto(origina, { ...FARO, codigoPostal: "64000", regimen: "601", usoCfdi: "G03" });
+  await expedienteEnRegla(origina, await comoPersonal(CORREOS.op3), { companyId: faro, ...FARO });
+  await solicitarActivacion(origina, faro);
 
   process.env.E2E_ALTAMAR_ID = altamar.id;
   process.env.E2E_BAHIA_ID = bahia.id;
+  process.env.E2E_FARO_ID = faro;
   process.env.E2E_SEMILLAS = JSON.stringify(semillas);
 }

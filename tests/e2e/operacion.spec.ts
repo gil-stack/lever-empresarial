@@ -1,11 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLAVE, codigoDeSemilla, codigoTotp, consultar, contar, dobleClic, idDe, sesionDe, vigilarConsola } from "./apoyo";
-import { CORREOS } from "./siembra";
+import { CORREOS, FARO } from "./siembra";
 
 /**
  * Operación SOFIPO: entrada con segundo factor, alta de un prospecto con la
- * activación decidida por otra persona, la recuperación del segundo factor de
+ * activación decidida por otra persona (Originación pide, Aprobación decide y
+ * el candado de la 0028 exige expediente aprobado y riesgo vigente), la
+ * recuperación del segundo factor de
  * una clienta (pedida desde /entrar, aprobada en Recuperaciones tras «Confirma
  * que eres tú» y cerrada con un factor nuevo) y la publicación del precio, que
  * exige un factor de los últimos 30 minutos. Cada envío con doble clic real y
@@ -61,12 +63,13 @@ test("entrada SOFIPO: contraseña y código; un código malo no abre y el doble 
   expect(errores).toEqual([]);
 });
 
-test("prospecto → pedir activación → la decide otra persona con factor reciente", async ({ page, context }) => {
+test("prospecto → pedir activación → el candado exige expediente; con todo en regla la decide otra persona con factor reciente", async ({ page, context }) => {
   const errores = vigilarConsola(page);
   const [op1, op2] = [await idDe(CORREOS.op1), await idDe(CORREOS.op2)];
   const empresas = () => contar("select 1 from companies where rfc = $1", [PROSPECTO.rfc]);
   expect(await empresas()).toBe(0);
 
+  // Originación registra el prospecto y pide su activación.
   await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
   await page.goto("/operacion/clientes");
   await page.getByLabel("Razón social").fill(PROSPECTO.razonSocial);
@@ -75,8 +78,11 @@ test("prospecto → pedir activación → la decide otra persona con factor reci
   const alta = await dobleClic(page.getByRole("button", { name: "Registrar prospecto" }), { esperar: /\/operacion\/clientes\/[0-9a-f-]{36}\?aviso=prospecto_registrado/ });
   expect(alta.envios).toBe(1);
   expect(await empresas()).toBe(1);
-  const [empresa] = await consultar<{ id: string; estado: string }>("select id, estado from companies where rfc = $1", [PROSPECTO.rfc]);
-  expect(empresa!.estado).toBe("prospecto");
+  const [empresa] = await consultar<{ id: string; estado: string; originada_por: string }>(
+    "select id, estado, originada_por from companies where rfc = $1",
+    [PROSPECTO.rfc],
+  );
+  expect(empresa).toMatchObject({ estado: "prospecto", originada_por: op1 });
   await expect(page.getByText("Prospecto registrado. Ya puedes solicitar su activación.")).toBeVisible();
 
   const solicitudes = () => contar("select 1 from company_activation_requests where company_id = $1", [empresa!.id]);
@@ -86,33 +92,48 @@ test("prospecto → pedir activación → la decide otra persona con factor reci
   await expect(page.getByText("Activación solicitada. La decide otra persona en Aprobaciones.")).toBeVisible();
 
   // Quien la pidió la ve, pero sin botones.
-  const decision = (p: Page) => p.locator("li.decision").filter({ hasText: `Activación · ${PROSPECTO.razonSocial}` });
+  const decision = (p: Page, razonSocial: string) => p.locator("li.decision").filter({ hasText: `Activación · ${razonSocial}` });
   await page.goto("/operacion/aprobaciones");
-  await expect(decision(page).getByText("La pediste tú: decide otra persona.")).toBeVisible();
-  await expect(decision(page).getByRole("button", { name: "Aprobar" })).toHaveCount(0);
+  await expect(decision(page, PROSPECTO.razonSocial).getByText("La pediste tú: decide otra persona.")).toBeVisible();
+  await expect(decision(page, PROSPECTO.razonSocial).getByRole("button", { name: "Aprobar" })).toHaveCount(0);
 
-  // Otra persona con el factor de hace 31 minutos: no decide y la base no cambia.
+  // Aprobación la decide, pero sin expediente aprobado la base no deja activar (candado de la 0028).
+  await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+  await page.goto("/operacion/aprobaciones");
+  await decision(page, PROSPECTO.razonSocial).getByRole("button", { name: "Aprobar" }).click();
+  await page.waitForURL(/aviso=activacion_sin_expediente_aprobado/);
+  await expect(page.getByText("La base no deja activar: falta un expediente aprobado en su versión vigente.")).toBeVisible();
+  const [sinExpediente] = await consultar<{ estado: string; solicitud: string }>(
+    `select c.estado, r.estado as solicitud from companies c
+     join company_activation_requests r on r.company_id = c.id where c.id = $1`,
+    [empresa!.id],
+  );
+  expect(sinExpediente).toEqual({ estado: "en_alta", solicitud: "pendiente" });
+
+  // Faro E2E (sembrada con expediente aprobado y riesgo vigente; la activación la pidió op1).
+  // Con el factor de hace 31 minutos, Aprobación no decide y la base no cambia.
+  const [faro] = await consultar<{ id: string; estado: string }>("select id, estado from companies where rfc = $1", [FARO.rfc]);
+  expect(faro!.estado).toBe("en_alta");
   await sesionDe(context, CORREOS.op2, { superficie: "sofipo", factorHaceMinutos: 31 });
   await page.goto("/operacion/aprobaciones");
-  await decision(page).getByRole("button", { name: "Aprobar" }).click();
+  await decision(page, FARO.razonSocial).getByRole("button", { name: "Aprobar" }).click();
   await expect(page.getByText("Para decidir, tu segundo factor debe ser de los últimos 30 minutos. Sal y vuelve a entrar.")).toBeVisible();
-  const [pendiente] = await consultar<{ estado: string }>("select estado from companies where id = $1", [empresa!.id]);
+  const [pendiente] = await consultar<{ estado: string }>("select estado from companies where id = $1", [faro!.id]);
   expect(pendiente!.estado).toBe("en_alta");
 
   // Con factor reciente, un doble clic decide una sola vez.
   await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
   await page.goto("/operacion/aprobaciones");
-  const aprobar = await dobleClic(decision(page).getByRole("button", { name: "Aprobar" }), { esperar: /aviso=decision_registrada/ });
+  const aprobar = await dobleClic(decision(page, FARO.razonSocial).getByRole("button", { name: "Aprobar" }), { esperar: /aviso=decision_registrada/ });
   expect(aprobar.envios).toBe(1);
-  const [decidida] = await consultar<{ estado: string; decided_by: string; empresa: string }>(
-    `select r.estado, r.decided_by, c.estado as empresa from company_activation_requests r
+  const [decidida] = await consultar<{ estado: string; requested_by: string; decided_by: string; empresa: string }>(
+    `select r.estado, r.requested_by, r.decided_by, c.estado as empresa from company_activation_requests r
      join companies c on c.id = r.company_id where r.company_id = $1`,
-    [empresa!.id],
+    [faro!.id],
   );
-  expect(decidida).toEqual({ estado: "aprobada", decided_by: op2, empresa: "activa" });
-  expect(decidida!.decided_by).not.toBe(op1);
-  expect(await contar("select 1 from audit_log where accion = 'activacion_aprobada' and company_id = $1", [empresa!.id])).toBe(1);
-  expect(await contar("select 1 from company_state_history where company_id = $1 and estado_nuevo = 'activa'", [empresa!.id])).toBe(1);
+  expect(decidida).toEqual({ estado: "aprobada", requested_by: op1, decided_by: op2, empresa: "activa" });
+  expect(await contar("select 1 from audit_log where accion = 'activacion_aprobada' and company_id = $1", [faro!.id])).toBe(1);
+  expect(await contar("select 1 from company_state_history where company_id = $1 and estado_nuevo = 'activa'", [faro!.id])).toBe(1);
   expect(errores).toEqual([]);
 });
 
