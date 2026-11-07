@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
-import type { FuentesFlujo } from "../../dominio/flujo/proyeccion.ts";
+import { textoDeCausas, type FuentesFlujo } from "../../dominio/flujo/proyeccion.ts";
 import { capacidadesDe, type RolCliente } from "../../nucleo/capacidades.ts";
 import type { ContextoConEmpresa, ContextoDeTenant } from "../../nucleo/contexto.ts";
 import { leerFaltante } from "./servicio.ts";
@@ -86,6 +86,9 @@ describe("faltante en Pendientes", () => {
     assert.deepEqual(conDetalle.faltante.causas.map((m) => m.concepto), ["Nómina semanal (1 persona)"]);
     assert.deepEqual(sinDetalle.faltante.causas.map((m) => m.concepto), ["Nómina"]);
     assert.equal(JSON.stringify(sinDetalle).includes("1 persona"), false);
+    // La alerta (Inicio y Pendientes) no muestra el monto de la nómina juntada: sería el neto de Marta.
+    assert.equal(textoDeCausas(conDetalle.faltante.causas), "Nómina semanal (1 persona) ($18,500.00)");
+    assert.equal(textoDeCausas(sinDetalle.faltante.causas), "Nómina (monto reservado)");
     // El saldo de la semana es el mismo: solo cambia el desglose.
     assert.equal(sinDetalle.faltante.saldoFinal, conDetalle.faltante.saldoFinal);
   });

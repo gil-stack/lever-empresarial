@@ -342,6 +342,9 @@ export type OpcionesProyeccion = {
   detalleNomina?: boolean;
 };
 
+/** Clave del renglón «Nómina» que junta la nómina de una semana sin detalle (reservarNomina). */
+const CLAVE_NOMINA_RESERVADA = "nom:semana:";
+
 /** ¿Este movimiento de nómina deja ver el neto de una sola persona? */
 export function nominaDeUnaPersona(movimiento: Pick<Movimiento, "tipo" | "personas">): boolean {
   return movimiento.tipo === "nomina" && movimiento.personas !== undefined && movimiento.personas < 2;
@@ -356,7 +359,7 @@ function reservarNomina(movimientos: Movimiento[], semana: string): Movimiento[]
   if (!movimientos.some(nominaDeUnaPersona)) return movimientos;
   const nomina = movimientos.filter((movimiento) => movimiento.tipo === "nomina");
   const junta: Movimiento = {
-    clave: `nom:semana:${semana}`,
+    clave: `${CLAVE_NOMINA_RESERVADA}${semana}`,
     tipo: "nomina",
     sentido: "salida",
     fecha: nomina.reduce((primera, movimiento) => (movimiento.fecha < primera ? movimiento.fecha : primera), nomina[0]!.fecha),
@@ -508,6 +511,16 @@ export function escenarioValido(
   // Fuera de la ventana el pago desaparecería de la proyección: no es un escenario, es quitarlo.
   if (fecha < proyeccion.hoy || fecha > proyeccion.fin) return null;
   return proyeccion.movibles.some((movimiento) => movimiento.clave === clave) ? { clave, fecha } : null;
+}
+
+/**
+ * Lo que provoca un faltante, en palabras: lo usan Inicio y Pendientes. La
+ * nómina juntada sin detalle va sin monto, porque puede ser el neto de una sola persona.
+ */
+export function textoDeCausas(causas: readonly Movimiento[]): string {
+  return causas
+    .map((m) => (m.clave.startsWith(CLAVE_NOMINA_RESERVADA) ? `${m.concepto} (monto reservado)` : `${m.concepto} (${formatoPesos(m.centavos)})`))
+    .join(", ");
 }
 
 /** El alcance en palabras: lo usan Inicio y el correo de los lunes. */

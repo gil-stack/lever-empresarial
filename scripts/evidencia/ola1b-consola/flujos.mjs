@@ -592,7 +592,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
           await p.waitForURL(/\/consola#proyeccion-titulo$/, { timeout: 20000 });
           aInicio = await p.getByRole("heading", { name: "Proyección a 13 semanas" }).isVisible();
         }
-        anotar(veFaltante && /^Faltante: el saldo queda en negativo la semana del/.test(textoPendiente) && /Saldo proyectado al cierre de la semana: -\$/.test(textoPendiente) && aInicio && !desbordaFaltante, `flujo 11 ${vista}: Pendientes muestra el faltante y «Ver la proyección» lleva a la proyección de Inicio`, `${textoPendiente.slice(0, 170)} → ${p.url().replace(BASE, "")}${desbordaFaltante ? " (desborda)" : ""}`);
+        anotar(veFaltante && /^Faltante: el saldo queda en negativo la semana del/.test(textoPendiente) && /Saldo proyectado al cierre de la semana: -\$/.test(textoPendiente) && /Nómina semanal \(1 persona\) \(\$18,500\.00\)/.test(textoPendiente) && aInicio && !desbordaFaltante, `flujo 11 ${vista}: Pendientes muestra el faltante (con la nómina desglosada para quien ve su detalle) y «Ver la proyección» lleva a la proyección de Inicio`, `${textoPendiente.slice(0, 170)} → ${p.url().replace(BASE, "")}${desbordaFaltante ? " (desborda)" : ""}`);
         await p.goto(`${BASE}${TALLER}/consola/pendientes`);
         const fila = p.locator(".pendientes-inicio li").filter({ has: p.getByRole("heading", { name: presupuesto }) });
         const visible = (await fila.count()) === 1 && (await fila.isVisible());
@@ -638,7 +638,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
         await faltante.getByRole("link", { name: "Ver la proyección", exact: true }).click();
         await p.waitForURL(/\/consola#proyeccion-titulo$/, { timeout: 20000 });
       }
-      anotar(ve && !/1 persona/.test(texto) && /\/consola#proyeccion-titulo$/.test(p.url()), "flujo 11: finanzas ve el faltante sin el neto de una sola persona y llega a la proyección", `${texto.slice(0, 170)} → ${p.url().replace(BASE, "")}`);
+      anotar(ve && /Nómina \(monto reservado\)/.test(texto) && !/1 persona|18,500/.test(texto) && /\/consola#proyeccion-titulo$/.test(p.url()), "flujo 11: finanzas ve el faltante con «Nómina (monto reservado)», sin el neto de una sola persona, y llega a la proyección", `${texto.slice(0, 220)} → ${p.url().replace(BASE, "")}`);
       anotar(errores.length === 0, "flujo 11: sin errores de consola (finanzas)", errores.join(" | "));
       await nav.close();
     }
@@ -671,7 +671,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
         await p.waitForURL(/\/consola\/flujo$/, { timeout: 20000 });
       }
       const h1 = await p.locator("h1").count();
-      anotar(ve && !/1 persona/.test(texto) && /\/consola\/flujo$/.test(p.url()) && h1 === 1, "flujo 11: la contadora ve el faltante y «Revisar saldo y alertas» la lleva a Saldo y alertas", `${texto.slice(0, 120)} → ${p.url().replace(BASE, "")}`);
+      anotar(ve && /Nómina \(monto reservado\)/.test(texto) && !/1 persona|18,500/.test(texto) && /\/consola\/flujo$/.test(p.url()) && h1 === 1, "flujo 11: la contadora ve el faltante con la nómina reservada y «Revisar saldo y alertas» la lleva a Saldo y alertas", `${texto.slice(0, 220)} → ${p.url().replace(BASE, "")}`);
       anotar(errores.length === 0, "flujo 11: sin errores de consola (contadora)", errores.join(" | "));
       await nav.close();
     }

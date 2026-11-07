@@ -5,7 +5,7 @@ import "@/estilo/flujo.css";
 import { Aviso } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
 import { fechaCorta } from "@/dominio/flujo/fechas";
-import type { Faltante } from "@/dominio/flujo/proyeccion";
+import { textoDeCausas, type Faltante } from "@/dominio/flujo/proyeccion";
 
 /**
  * La alerta de faltante de la proyección. Inicio y Pendientes pintan la misma;
@@ -28,7 +28,7 @@ export function AlertaFaltante({
           {faltante.motivo === "colchon" ? <> (colchón: {formatoPesos(colchonCentavos)})</> : null}.
         </p>
         {faltante.causas.length > 0 ? (
-          <p>Lo provoca: {faltante.causas.map((m) => `${m.concepto} (${formatoPesos(m.centavos)})`).join(", ")}.</p>
+          <p>Lo provoca: {textoDeCausas(faltante.causas)}.</p>
         ) : null}
         {enlace ? (
           <p>
