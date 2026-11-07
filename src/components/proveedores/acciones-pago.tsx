@@ -49,7 +49,7 @@ export function DecisionPago({ requestId, version, totalCentavos, puedeAutorizar
         </div>
         <div className="acciones acciones-divididas">
           <BotonEnviar className="boton-texto" name="decision" value="rechazar" pendiente={pendiente && oprimido === "rechazar"} disabled={pendiente}>Rechazar</BotonEnviar>
-          {soloRechazo ? null : <BotonEnviar name="decision" value="autorizar" pendiente={pendiente && oprimido === "autorizar"} disabled={pendiente} onClick={(evento) => evento.preventDefault()}>Autorizar para pagar</BotonEnviar>}
+          {soloRechazo ? null : <BotonEnviar name="decision" value="autorizar" pendiente={pendiente && oprimido === "autorizar"} disabled={pendiente}>Autorizar para pagar</BotonEnviar>}
         </div>
       </form>
     </div>
