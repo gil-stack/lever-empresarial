@@ -15,11 +15,13 @@ import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
 import { cerrarAlertasDeCategoria, crearAlertaEnTransaccion } from "./alertas";
 import type { Comision } from "./tipos";
+import { exigirEnOperacion } from "./permisos";
 
 export async function solicitarComision(
   ctx: ContextoDePersonal,
   entrada: { companyId: unknown; tipo: unknown; valor: unknown; vigenteDesde: unknown },
 ): Promise<string> {
+  exigirEnOperacion(ctx, "plataforma.empresa.alta");
   if (!uuidValido(entrada.companyId)) throw new ErrorDeDominio("cliente_ausente");
   let normalizada: ReturnType<typeof normalizarComision>;
   try {
@@ -76,6 +78,7 @@ export async function decidirComision(
   sesion: Pick<Sesion, "segundoFactor" | "superficie">,
   entrada: { id: unknown; aprobada: boolean; motivo?: unknown },
 ): Promise<void> {
+  exigirEnOperacion(ctx, "plataforma.empresa.alta");
   exigirAutenticacionReciente(sesion);
   if (!uuidValido(entrada.id)) throw new ErrorDeDominio("comision_ausente");
   const motivo = entrada.aprobada ? null : textoMultilinea(entrada.motivo, 500);
@@ -138,6 +141,7 @@ export async function decidirComision(
 }
 
 export async function listarComisiones(ctx: ContextoDePersonal, companyId?: string): Promise<Comision[]> {
+  exigirEnOperacion(ctx, "plataforma.operacion.ver");
   const resultado = await conContexto(basePlataforma(ctx), (consulta) =>
     consulta.query(
       `select v.id, v.company_id, c.razon_social, v.tipo, v.valor, v.moneda,

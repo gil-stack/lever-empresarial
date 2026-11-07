@@ -17,14 +17,37 @@ export const ENTIDADES = {
   comision_aprobada: "company_commissions",
   comision_rechazada: "company_commissions",
   comision_cerrada: "company_commissions",
+  // Ola R1: alta regulada. El identificador de los roles es la persona que los recibe.
+  rol_personal_asignado: "platform_staff_roles",
+  rol_personal_retirado: "platform_staff_roles",
+  expediente_version_creada: "kyb_versiones",
+  expediente_datos_editados: "kyb_versiones",
+  expediente_enviado: "kyb_versiones",
+  expediente_consultado: "companies",
+  expediente_documento_cargado: "kyb_documentos",
+  expediente_representante_agregado: "kyb_representantes",
+  expediente_representante_retirado: "kyb_representantes",
+  expediente_accionista_agregado: "kyb_accionistas",
+  expediente_accionista_retirado: "kyb_accionistas",
+  expediente_dictaminado: "kyb_dictamenes",
+  riesgo_calificado: "kyb_calificaciones_riesgo",
+  lpb_cargada: "lpb_cargas",
+  lpb_coincidencia_resuelta: "lpb_coincidencias",
+  lpb_reporte_registrado: "lpb_coincidencias",
+  suspension_solicitada: "company_suspensions",
+  reactivacion_solicitada: "company_suspensions",
+  suspension_aprobada: "company_suspensions",
+  suspension_rechazada: "company_suspensions",
+  reactivacion_aprobada: "company_suspensions",
+  reactivacion_rechazada: "company_suspensions",
 } as const;
 
 export type AccionOperacion = keyof typeof ENTIDADES;
 
 const INSERTAR = `insert into audit_log (
   id, operator_id, company_id, actor_tipo, actor_id, superficie,
-  accion, entidad, identificador, motivo, peticion_id, origen, ocurrido_en
-) values ($1, $2, $3, 'personal', $4, 'sofipo', $5, $6, $7, $8, $9, 'operacion', $10)`;
+  accion, entidad, identificador, motivo, peticion_id, origen, ocurrido_en, cambio
+) values ($1, $2, $3, 'personal', $4, 'sofipo', $5, $6, $7, $8, $9, 'operacion', $10, $11)`;
 
 /** Catálogo cerrado: ningún evento admite tokens, enlaces, correos ni datos sensibles. */
 export async function auditarOperacion(
@@ -36,6 +59,8 @@ export async function auditarOperacion(
     identificador: string;
     motivo?: string | null;
     ocurridoEn: Date;
+    /** Solo datos del catálogo (rol, resultado, grado): nunca nombres, RFC, CURP ni archivos. */
+    cambio?: Record<string, string | number | boolean> | null;
   },
 ): Promise<void> {
   const escrito = await consulta.query(INSERTAR, [
@@ -49,6 +74,7 @@ export async function auditarOperacion(
     entrada.motivo ?? null,
     ctx.peticionId,
     entrada.ocurridoEn,
+    entrada.cambio ? JSON.stringify(entrada.cambio) : null,
   ]);
   if (escrito.rowCount !== 1) throw new ErrorDeDominio("auditoria_no_disponible");
 }

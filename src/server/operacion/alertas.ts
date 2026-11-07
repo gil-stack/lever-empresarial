@@ -6,6 +6,7 @@ import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { textoMultilinea, textoOperativo, uuidValido } from "../../dominio/operacion";
 import { auditarOperacion } from "./auditar";
 import type { AlertaOperativa } from "./tipos";
+import { exigirEnOperacion } from "./permisos";
 
 export async function crearAlertaEnTransaccion(
   consulta: Consulta,
@@ -48,6 +49,7 @@ export async function crearAlertaEnTransaccion(
 }
 
 export async function listarAlertas(ctx: ContextoDePersonal, companyId?: string): Promise<AlertaOperativa[]> {
+  exigirEnOperacion(ctx, "plataforma.operacion.ver");
   const resultado = await conContexto(basePlataforma(ctx), (consulta) =>
     consulta.query(
       `select a.id, a.company_id, c.razon_social, a.categoria, a.titulo, a.detalle,
@@ -70,6 +72,7 @@ export async function crearAlerta(
   ctx: ContextoDePersonal,
   entrada: { companyId: unknown; titulo: unknown; detalle: unknown; responsableId: unknown },
 ): Promise<void> {
+  exigirEnOperacion(ctx, "plataforma.empresa.alta");
   if (!uuidValido(entrada.companyId) || !uuidValido(entrada.responsableId)) throw new ErrorDeDominio("alerta_invalida");
   const titulo = textoOperativo(entrada.titulo, 160);
   const detalle = textoMultilinea(entrada.detalle, 500);
@@ -90,6 +93,7 @@ export async function crearAlerta(
 }
 
 export async function asignarAlerta(ctx: ContextoDePersonal, id: unknown, responsableId: unknown): Promise<void> {
+  exigirEnOperacion(ctx, "plataforma.empresa.alta");
   if (!uuidValido(id) || !uuidValido(responsableId)) throw new ErrorDeDominio("alerta_invalida");
   const ahora = new Date();
   await conContexto(basePlataforma(ctx), async (consulta) => {
@@ -109,6 +113,7 @@ export async function asignarAlerta(ctx: ContextoDePersonal, id: unknown, respon
 }
 
 export async function cerrarAlerta(ctx: ContextoDePersonal, id: unknown, motivo: unknown): Promise<void> {
+  exigirEnOperacion(ctx, "plataforma.empresa.alta");
   if (!uuidValido(id)) throw new ErrorDeDominio("alerta_ausente");
   const limpio = textoMultilinea(motivo, 500);
   if (!limpio) throw new ErrorDeDominio("motivo_invalido");

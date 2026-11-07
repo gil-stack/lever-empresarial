@@ -9,6 +9,7 @@ import { entregarInvitacion } from "../invitaciones/servicio";
 import type { InvitacionEmitida } from "../invitaciones/tipos";
 import { correoValido, normalizarCorreo } from "../session/validar";
 import { auditarOperacion } from "./auditar";
+import { exigirEnOperacion } from "./permisos";
 
 export type ResultadoInvitacionOperacion = {
   invitationId: string;
@@ -39,6 +40,7 @@ export async function invitarPrimerAdministrador(
   entrada: { companyId: unknown; nombre: unknown; correo: unknown; vista?: unknown },
   deps: Dependencias = {},
 ): Promise<ResultadoInvitacionOperacion> {
+  exigirEnOperacion(ctx, "plataforma.invitacion.emitir");
   if (!uuidValido(entrada.companyId)) throw new ErrorDeDominio("cliente_ausente");
   const nombre = textoOperativo(entrada.nombre, 200);
   const correo = normalizarCorreo(typeof entrada.correo === "string" ? entrada.correo : "");

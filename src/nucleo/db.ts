@@ -216,6 +216,7 @@ export function traducirErrorDeBase(error: unknown): Error {
     const dePersonas = FRASES_DE_PERSONAS[mensaje.trim()];
     if (dePersonas) return new ErrorDeDominio(dePersonas);
     if (CODIGOS_DE_TENENCIA.has(mensaje)) return new ErrorDeDominio(mensaje);
+    if (CODIGOS_DE_ALTA_REGULADA.has(mensaje)) return new ErrorDeDominio(mensaje);
     const deProveedor = FRASES_DE_PROVEEDOR[mensaje.trim()];
     if (deProveedor) return new ErrorDeDominio(deProveedor);
     const deFlujo = FRASES_DE_FLUJO[mensaje.trim()];
@@ -276,6 +277,58 @@ function registrarErrorSinTraducir(error: unknown, codigo: string): void {
   );
 }
 
+/** Reglas de la alta regulada (0028): roles, expediente, riesgo, lista de bloqueados, suspensión y candado. */
+const CODIGOS_DE_ALTA_REGULADA = new Set([
+  "rol_propio",
+  "roles_incompatibles",
+  "sin_permiso_roles",
+  "sin_rol_para_expediente",
+  "sin_rol_para_dictaminar",
+  "sin_rol_para_calificar",
+  "sin_rol_para_lpb",
+  "sin_rol_para_suspender",
+  "sin_rol_para_aprobar",
+  "sin_rol_para_solicitar_activacion",
+  "sin_rol_para_registrar",
+  "expediente_en_revision",
+  "expediente_enviado_inmutable",
+  "expediente_rfc_distinto",
+  "expediente_sin_representante",
+  "expediente_sin_administrador",
+  "expediente_falta_documento",
+  "expediente_documento_vencido",
+  "expediente_estructura_incompleta",
+  "documento_fecha_futura",
+  "documento_sin_representante",
+  "accionista_padre_invalido",
+  "accionista_con_desglose",
+  "misma_persona_en_dictamen",
+  "dictamen_sobre_borrador",
+  "calificacion_sobre_version_vieja",
+  "calificacion_fecha_invalida",
+  "riesgo_debe_ser_alto",
+  "coincidencia_transicion_invalida",
+  "coincidencia_sigue_en_lista",
+  "reporte_ya_registrado",
+  "reporte_fecha_futura",
+  "suspension_no_aplica",
+  "reactivacion_no_aplica",
+  "reactivacion_con_coincidencia_lpb",
+  "misma_persona_en_suspension",
+  "suspension_transicion_invalida",
+  "activacion_sin_expediente_aprobado",
+  "activacion_con_documento_vencido",
+  "activacion_con_coincidencia_lpb",
+  "activacion_sin_riesgo_vigente",
+  "activacion_sin_estructura_corporativa",
+  "empresa_suspendida",
+  "pago_bloqueado_lpb",
+  "nomina_bloqueada_lpb",
+  "sin_permiso_expediente",
+  "documento_no_existe",
+  "cliente_de_baja",
+]);
+
 const CODIGOS_DE_CLABE = new Set([
   "clabe_no_se_pisa",
   "clabe_ya_cerrada",
@@ -316,6 +369,8 @@ const FRASES_DE_AUDITORIA = new Set([
   "auditoria_de_rol_ausente",
   "auditoria_de_lista_ausente",
   "audit_log solo acepta inserciones",
+  "regulado_sin_auditoria",
+  "rol_personal_sin_auditoria",
 ]);
 
 const FRASES_DE_PROVEEDOR: Readonly<Record<string, string>> = {

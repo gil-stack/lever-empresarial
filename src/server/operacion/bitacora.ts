@@ -2,9 +2,11 @@ import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
 import { conContexto } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import type { EventoBitacora } from "./tipos";
+import { exigirEnOperacion } from "./permisos";
 
 /** Proyección de solo lectura: no incluye cambio JSON ni material de autenticación. */
 export async function leerBitacora(ctx: ContextoDePersonal, companyId?: string): Promise<EventoBitacora[]> {
+  exigirEnOperacion(ctx, "plataforma.bitacora.ver");
   const resultado = await conContexto(basePlataforma(ctx), (consulta) =>
     consulta.query(
       `select a.id, a.company_id, c.razon_social,
