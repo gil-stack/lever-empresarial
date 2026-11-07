@@ -6,6 +6,8 @@
 //   DUENO_URL=postgres://postgres@127.0.0.1:5542/postgres \
 //   ./node_modules/.bin/tsx scripts/evidencia/ola1b-consola/preparar.ts
 //
+// Con CORREO_SEMANAL=1 suma Bahía Comercial, una empresa real para el correo del lunes.
+//
 // Imprime, en JSON, las variables que lee scripts/evidencia/ola1b-consola.mjs.
 // Solo acepta un Postgres en 127.0.0.1 o localhost.
 import { createHash, randomUUID } from "node:crypto";
@@ -132,6 +134,63 @@ async function principal(): Promise<void> {
     correo: "laura@lever.test",
   });
   await aceptarInvitacion({ token: invitacion.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
+
+  // Solo para la fase de correo (CORREO_SEMANAL=1): el resumen del lunes no sale a empresas de
+  // demostración (Taller y Altamar lo son), así que Bahía Comercial es una empresa real con una sola
+  // colaboradora con nómina y un saldo corto: el faltante lo provoca la nómina de una persona.
+  let correo: { EMPRESA_CORREO: string } | null = null;
+  if (process.env.CORREO_SEMANAL === "1") {
+    const bahia = await darDeAltaEmpresa(personal, {
+      rfc: "BCO190101CD2",
+      razonSocial: "Bahía Comercial",
+      codigoPostal: "06600",
+      regimen: "601",
+      usoCfdi: "G03",
+    }, { demostracion: false });
+    const invitacionBahia = await invitarAdministrador(personal, {
+      companyId: bahia.id,
+      razonSocial: bahia.razonSocial,
+      nombre: "Bruno Salas",
+      correo: "bruno@lever.test",
+    });
+    await aceptarInvitacion({ token: invitacionBahia.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
+    const brunoId = invitacionBahia.emitida.userId;
+    const sesionBruno = await leerSesion(`sesion=${sesion(url, brunoId, "cliente")}`);
+    if (!sesionBruno) throw new Error("La sesión de Bruno no abrió.");
+    const bruno = (await resolverContexto({ sesion: sesionBruno, empresaPedida: bahia.id, peticionId: null, superficie: "cliente" })).ctx;
+    const ventas = await nombrarCentro(bruno, { nombre: "Ventas", presupuesto: "200000.00" });
+    await darDeAltaPersona(bruno, {
+      nombre: "Sara Vidal",
+      alta: hoy,
+      baja: "",
+      centroId: ventas.id,
+      jefeId: "",
+      presupuesto: "3000.00",
+      altaLlave: randomUUID(),
+      neto: "18500.00",
+      frecuencia: "semanal",
+      primerPago: hoy,
+      destino: "clabe",
+      clabe: "002180701150123465",
+      acceso: "no",
+      correo: "",
+      rol: "",
+    });
+    await declararSaldo(bruno, { saldo: "10000.00", alDia: hoy, altaId: randomUUID() });
+    const finanzasBahia = randomUUID();
+    ejecutar(url, `
+      select set_config('app.user_id', '${brunoId}', false);
+      select set_config('app.company_id', '${bahia.id}', false);
+      insert into users (id, nombre, correo, password_hash)
+        values ('${finanzasBahia}', 'Felipe Finanzas', 'felipe@lever.test', '$2b$12$${"a".repeat(53)}');
+      insert into memberships (user_id, company_id, estado) values ('${finanzasBahia}', '${bahia.id}', 'activa');
+      insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, cambio)
+        select operator_id, id, 'miembro', '${brunoId}', 'cliente', 'asignar_rol', 'membership_roles', '${finanzasBahia}', '{"rol":"finanzas"}'
+        from companies where id = '${bahia.id}';
+      insert into membership_roles (user_id, company_id, rol) values ('${finanzasBahia}', '${bahia.id}', 'finanzas');
+    `);
+    correo = { EMPRESA_CORREO: bahia.id };
+  }
   await cerrarConexion();
 
   console.log(JSON.stringify({
@@ -148,6 +207,7 @@ async function principal(): Promise<void> {
     CLAVE_LAURA: CLAVE,
     SESION_OFELIA: sesion(url, personalId, "sofipo"),
     SESION_FERNANDA: sesion(url, finanzasId, "cliente"),
+    ...correo,
   }, null, 2));
 }
 

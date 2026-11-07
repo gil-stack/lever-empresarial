@@ -189,6 +189,10 @@ async function revisarAccesibilidad(p) {
 const PANTALLAS = [
   { clave: "10-pendientes", quien: "gil", ruta: `${TALLER}/consola/pendientes` },
   { clave: "11-pendientes-altamar", quien: "laura", ruta: `${ALTAMAR}/consola/pendientes` },
+  // Inicio con su flujo: con el desglose de la nómina (administrador), sin él (finanzas) y sin saldo declarado.
+  { clave: "12-inicio-administrador", quien: "gil", ruta: `${TALLER}/consola` },
+  { clave: "13-inicio-finanzas", quien: "fernanda", ruta: `${TALLER}/consola` },
+  { clave: "14-inicio-sin-saldo", quien: "laura", ruta: `${ALTAMAR}/consola` },
   { clave: "20-proveedores-pagos", quien: "gil", ruta: `${TALLER}/consola/proveedores` },
   { clave: "21-proveedores-directorio", quien: "gil", ruta: `${TALLER}/consola/proveedores?vista=proveedores` },
   { clave: "22-proveedores-agenda", quien: "gil", ruta: `${TALLER}/consola/proveedores?vista=agenda` },
@@ -589,6 +593,47 @@ export function codigoTotp(semilla, paso = Math.floor(Date.now() / 30000)) {
   return String((hmac.readUInt32BE(desplazamiento) & 0x7fffffff) % 1e6).padStart(6, "0");
 }
 
+// ---------- Correo de los lunes (proveedor falso: scripts/evidencia/flujo-de-caja-correo-falso.mjs) ----------
+// Corre la tarea real del correo semanal y guarda el correo de Taller: el faltante lo provoca, entre otras
+// salidas, la nómina de una sola persona, y ningún destinatario debe recibir su neto.
+async function correo() {
+  const archivo = process.env.CORREO_FALSO_ARCHIVO ?? "";
+  const secreto = process.env.CRON_SECRET ?? "";
+  if (!archivo || !secreto) throw new Error("El modo correo pide CORREO_FALSO_ARCHIVO y CRON_SECRET, los mismos del servidor.");
+  const leidos = () => {
+    try {
+      return readFileSync(archivo, "utf8").split("\n").filter(Boolean).map((linea) => JSON.parse(linea));
+    } catch {
+      return [];
+    }
+  };
+  const antes = leidos().length;
+  const respuesta = await fetch(`${BASE}/tareas/correo-semanal`, { headers: { authorization: `Bearer ${secreto}` } });
+  const resultado = await respuesta.json();
+  anotar(respuesta.status === 200 && resultado.fallidos === 0, "correo: la tarea del lunes responde 200 sin envíos fallidos", JSON.stringify(resultado));
+  // Taller y Altamar son de demostración y no reciben el resumen; Bahía Comercial (CORREO_SEMANAL=1 en preparar.ts) es real.
+  const recibidos = leidos().slice(antes);
+  const bahia = recibidos.filter((m) => /Bahía Comercial/.test(m.asunto));
+  anotar(bahia.length === 2 && recibidos.length === 2, "correo: solo Bahía Comercial recibe el resumen, a administración y finanzas; las empresas de demostración no", recibidos.map((m) => `${m.para} · ${m.asunto}`).join(" | "));
+  mkdirSync(`${DIR}/correo`, { recursive: true });
+  const nav = await chromium.launch();
+  for (const m of bahia) {
+    const quien = String(m.para).split("@")[0].replace(/[^a-z0-9-]/gi, "-");
+    writeFileSync(`${DIR}/correo/resumen-semanal-${quien}.html`, m.html);
+    const lineaFaltante = m.texto.split("\n").find((l) => l.startsWith("Atención:")) ?? "";
+    anotar(
+      /Lo provoca: .*Nómina \(monto reservado\)/.test(lineaFaltante) && !/18,500|1 persona/.test(m.texto + m.html),
+      `correo ${quien}: el faltante nombra «Nómina (monto reservado)» y el correo no dice 18,500 ni «1 persona»`,
+      lineaFaltante,
+    );
+    const p = await nav.newPage({ viewport: { width: 640, height: 900 }, deviceScaleFactor: 1 });
+    await p.setContent(m.html, { waitUntil: "load" });
+    await capturar(p, `${DIR}/correo/resumen-semanal-${quien}.webp`);
+    await p.close();
+  }
+  await nav.close();
+}
+
 const modo = process.argv[2] ?? "pantallas";
 if (modo === "pantallas") await pantallas(process.argv[3] ?? `${DIR}/pantallas`);
 else if (modo === "contraste") await contraste();
@@ -596,6 +641,7 @@ else if (modo === "caida") await caida(process.argv[3] ?? `${DIR}/pantallas`);
 else if (modo === "cargando") await cargando(process.argv[3] ?? `${DIR}/pantallas`);
 else if (modo === "tablas") await tablas(process.argv[3] ?? `${DIR}/tablas`);
 else if (modo === "barra") await barra(process.argv[3] ?? `${DIR}/barra`);
+else if (modo === "correo") await correo();
 else if (modo === "flujos") await (await import("./ola1b-consola/flujos.mjs")).flujos({ abrir, capturar, anotar, sql, renovarSesiones, codigoTotp, BASE, DIR, TALLER, ALTAMAR, ENTORNO });
 else throw new Error(`Modo desconocido: ${modo}`);
 

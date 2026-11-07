@@ -1,7 +1,9 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { rmSync, writeFileSync } from "node:fs";
 
-// Los 11 flujos de Ola 1B (consola) y el 12, alta de proveedor con área (#52),
-// clicados en la aplicación con Playwright headless. Cada envío se hace con
+// Los 11 flujos de Ola 1B (consola), el 12 (alta de proveedor con área, #52), el 13
+// (nómina de una sola persona en Inicio) y el 14 (faltante que no se puede calcular y
+// error de la consola), clicados en la aplicación con Playwright headless. Cada envío se hace con
 // doble clic y la base confirma que quedó una sola operación. Lo llama
 // scripts/evidencia/ola1b-consola.mjs flujos.
 
@@ -626,20 +628,21 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
 
     // Fernanda (finanzas): ve el faltante, pero sin cliente.nomina.detalle.ver la
     // nómina de una sola persona no se desglosa; va a la proyección de Inicio.
-    {
-      const { nav, p, errores } = await abrir({ quien: "fernanda", tema: "claro", ancho: 1440 });
+    for (const [tema, ancho] of [["oscuro", 1440], ["oscuro", 390], ["claro", 1440], ["claro", 390], ["lever", 1440], ["lever", 390]]) {
+      const vista = `${tema} ${ancho}`;
+      const { nav, p, errores } = await abrir({ quien: "fernanda", tema, ancho });
       await p.goto(`${BASE}${TALLER}/consola/pendientes`);
       const faltante = faltanteEn(p);
       const ve = (await faltante.count()) === 1;
       const texto = ve ? (await faltante.innerText()).replace(/\s+/g, " ") : "";
       if (ve) {
         await faltante.scrollIntoViewIfNeeded();
-        await foto(p, "11-pendiente-faltante-finanzas-claro-1440");
+        await foto(p, `11-pendiente-faltante-finanzas-${tema}-${ancho}`);
         await faltante.getByRole("link", { name: "Ver la proyección", exact: true }).click();
         await p.waitForURL(/\/consola#proyeccion-titulo$/, { timeout: 20000 });
       }
-      anotar(ve && /Nómina \(monto reservado\)/.test(texto) && !/1 persona|18,500/.test(texto) && /\/consola#proyeccion-titulo$/.test(p.url()), "flujo 11: finanzas ve el faltante con «Nómina (monto reservado)», sin el neto de una sola persona, y llega a la proyección", `${texto.slice(0, 220)} → ${p.url().replace(BASE, "")}`);
-      anotar(errores.length === 0, "flujo 11: sin errores de consola (finanzas)", errores.join(" | "));
+      anotar(ve && /Nómina \(monto reservado\)/.test(texto) && !/1 persona|18,500/.test(texto) && /\/consola#proyeccion-titulo$/.test(p.url()), `flujo 11 ${vista}: finanzas ve el faltante con «Nómina (monto reservado)», sin el neto de una sola persona, y llega a la proyección`, `${texto.slice(0, 220)} → ${p.url().replace(BASE, "")}`);
+      anotar(errores.length === 0, `flujo 11 ${vista}: sin errores de consola (finanzas)`, errores.join(" | "));
       await nav.close();
     }
 
@@ -714,6 +717,150 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
     anotar(filas === "1" && area === "Operación" && auditoria === "1", "flujo 12: doble clic deja un proveedor con el área Operación y un asiento que la nombra", `proveedores=${filas} área=${area} bitácora=${auditoria}`);
     anotar(errores.length === 0, "flujo 12: sin errores de consola", errores.join(" | "));
     await nav.close();
+  }
+
+  // ---------- 13. Nómina de una sola persona en la proyección de Inicio ----------
+  // Sin cliente.nomina.detalle.ver, el renglón juntado dice «Monto reservado» y la alerta no da el monto.
+  // Los totales de la semana no cambian (residuo conocido): se cuentan las semanas cuya salida es solo esa nómina.
+  if (corre(13)) {
+    for (const quien of ["gil", "fernanda"]) {
+      for (const tema of ["oscuro", "claro", "lever"]) {
+        for (const ancho of [1440, 390]) {
+          const vista = `${quien} ${tema} ${ancho}`;
+          const { nav, p, errores } = await abrir({ quien, tema, ancho });
+          await p.goto(`${BASE}${TALLER}/consola`);
+          await p.getByRole("heading", { name: "Proyección a 13 semanas" }).waitFor({ timeout: 20000 });
+          // Todas las semanas abiertas: el texto de los movimientos se revisa completo.
+          await p.evaluate(() => document.querySelectorAll("details[data-movimientos]").forEach((d) => { d.open = true; }));
+          const renglon = quien === "gil"
+            ? p.locator("details[data-movimientos] li").filter({ hasText: "Nómina semanal (1 persona)" }).first()
+            : p.locator("details[data-movimientos] li").filter({ has: p.locator('[data-reservado="true"]') }).first();
+          const hay = (await renglon.count()) === 1;
+          const texto = hay ? (await renglon.innerText()).replace(/\s+/g, " ") : "";
+          const movimientos = (await p.locator(".flujo-movimientos").innerText()).replace(/\s+/g, " ");
+          const alerta = (await p.locator('.flujo-alertas [data-alerta="faltante"]').innerText().catch(() => "")).replace(/\s+/g, " ");
+          const soloNomina = await p.locator('[data-cifra="salidas"][data-centavos="1850000"]').count();
+          const desborda = await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+          if (hay) {
+            await renglon.scrollIntoViewIfNeeded();
+            await foto(p, `13-inicio-nomina-${quien}-${tema}-${ancho}`);
+          }
+          if (quien === "gil") {
+            anotar(hay && /−\$18,500\.00/.test(texto) && /Nómina semanal \(1 persona\) \(\$18,500\.00\)/.test(alerta) && !desborda, `flujo 13 ${vista}: el administrador ve la nómina desglosada con su monto en los movimientos y en la alerta`, `${texto} | ${alerta.slice(0, 170)}`);
+          } else {
+            anotar(hay && /· Nómina/.test(texto) && /Monto reservado/.test(texto) && /Nómina \(monto reservado\)/.test(alerta) && !/18,500|1 persona/.test(movimientos + alerta) && !desborda, `flujo 13 ${vista}: finanzas ve «Monto reservado» en el renglón de nómina y la alerta sin monto; ningún movimiento ni alerta dice 18,500 ni «1 persona»`, `${texto} | ${alerta.slice(0, 170)} | semanas cuya columna Salidas es solo la nómina: ${soloNomina}`);
+          }
+          anotar(errores.length === 0, `flujo 13 ${vista}: sin errores de consola`, errores.join(" | "));
+          await nav.close();
+        }
+      }
+    }
+  }
+
+  // ---------- 14. Faltante que no se puede calcular y error de la consola ----------
+  // Ninguna lectura de la base llega a consola/error.tsx: conTransaccion traduce cualquier error en
+  // ErrorDeDominio y cada página lo pinta dentro del marco.
+  // (A) Dos obligaciones de 9,000,000,000,000,000 centavos en la misma fecha hacen que la suma de salidas pase
+  //     de Number.MAX_SAFE_INTEGER y la proyección lance. Inicio se queda en su propio estado dentro del marco;
+  //     Pendientes se pinta con su bandeja y el aviso de faltante no disponible, y el servidor lo registra.
+  // (B) Para ver el límite de error, error-forzado.mjs hace que dar formato a un saldo centinela lance al
+  //     pintar Inicio. Al quitar el archivo, «Reintentar» vuelve a pedir la página y abre.
+  if (corre(14)) {
+    const GIL = "11111111-1111-4111-8111-111111111111";
+    const contexto = `select set_config('app.user_id', '${GIL}', false); select set_config('app.company_id', '${EMPRESA_TALLER}', false);`;
+    // Cada escritura del flujo de caja deja su evento en la misma transacción (flujo_exige_auditoria, 0026):
+    // un -c de psql corre en una sola transacción implícita.
+    const evento = (accion, entidad, id, cambio) => `insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, cambio)
+        select operator_id, id, 'miembro', '${GIL}', 'cliente', '${accion}', '${entidad}', '${id}', '${JSON.stringify(cambio)}' from companies where id = '${EMPRESA_TALLER}';`;
+    const provocado = (e) => /Server Components render|status of 500|digest|React error #441/i.test(e);
+
+    // (A) Faltante que no se puede calcular.
+    const obligaciones = [randomUUID(), randomUUID()];
+    const dia = fecha(10);
+    sql(`${contexto}
+      ${obligaciones.map((id, i) => `insert into recurring_obligations (id, company_id, concepto, monto_centavos, frecuencia, proxima_fecha, ancla_dia, creado_por, actualizado_por)
+        values ('${id}', '${EMPRESA_TALLER}', 'Prueba de error ${i + 1}', 9000000000000000, 'mensual', '${dia}', ${Number(dia.slice(8, 10))}, '${GIL}', '${GIL}');
+      ${evento("registrar_obligacion", "recurring_obligations", id, { concepto: `Prueba de error ${i + 1}`, monto_centavos: 9000000000000000, frecuencia: "mensual", proxima_fecha: dia, area: null, proveedor: null })}`).join("\n")}`);
+    try {
+      for (const tema of ["oscuro", "claro", "lever"]) {
+        for (const ancho of [1440, 390]) {
+          const vista = `${tema} ${ancho}`;
+          const { nav, p, errores } = await abrir({ quien: "gil", tema, ancho });
+          await p.goto(`${BASE}${TALLER}/consola`);
+          await p.getByRole("heading", { level: 1, name: "No se pudo consultar el resumen." }).waitFor({ timeout: 20000 });
+          const marcoInicio = await p.locator(".barra-superior").isVisible();
+          if (ancho === 1440 || tema === "oscuro") await foto(p, `14-inicio-calculo-no-disponible-${tema}-${ancho}`);
+          anotar(marcoInicio && (await p.locator("h1").count()) === 1, `flujo 14 ${vista}: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» dentro del marco (no cae en consola/error.tsx)`);
+          const antes = errores.length;
+          await p.goto(`${BASE}${TALLER}/consola/pendientes`);
+          await p.locator(".pendientes-resumen").waitFor({ timeout: 20000 });
+          const aviso = p.locator('.flujo-alertas [data-alerta="faltante-no-disponible"]');
+          const veAviso = (await aviso.count()) === 1 && (await aviso.isVisible());
+          const textoAviso = veAviso ? (await aviso.innerText()).replace(/\s+/g, " ") : "";
+          const enlace = veAviso ? await aviso.getByRole("link", { name: "Saldo y alertas", exact: true }).getAttribute("href") : null;
+          const renglones = await p.locator(".pendientes-inicio li").count();
+          const h1Pendientes = await p.locator("h1").count();
+          if (veAviso) await aviso.scrollIntoViewIfNeeded();
+          await foto(p, `14-pendientes-faltante-no-disponible-${tema}-${ancho}`);
+          anotar(veAviso && /^No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas\.$/.test(textoAviso) && /\/consola\/flujo$/.test(enlace ?? "") && renglones > 0 && h1Pendientes === 1, `flujo 14 ${vista}: Pendientes se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas`, `${textoAviso} → ${enlace} · renglones=${renglones}`);
+          anotar(errores.length === antes, `flujo 14 ${vista}: Pendientes sin errores de consola`, errores.slice(antes).join(" | "));
+          await nav.close();
+        }
+      }
+    } finally {
+      sql(`${contexto} update recurring_obligations set activa = false, actualizado_por = '${GIL}', actualizado_en = now() where id in (${obligaciones.map((id) => `'${id}'`).join(", ")});
+        ${obligaciones.map((id) => evento("desactivar_obligacion", "recurring_obligations", id, {})).join("\n")}`);
+    }
+    const activas = sql(`select count(*) from recurring_obligations where id in (${obligaciones.map((id) => `'${id}'`).join(", ")}) and activa`);
+    anotar(activas === "0", "flujo 14: las obligaciones de prueba quedan desactivadas, con su evento en la bitácora", `activas=${activas}`);
+
+    // (B) Error al pintar Inicio: consola/error.tsx.
+    const bandera = process.env.ERROR_FORZADO_ARCHIVO ?? "";
+    if (!bandera) {
+      anotar(false, "flujo 14: el error de la consola necesita next start con error-forzado.mjs y ERROR_FORZADO_ARCHIVO");
+    } else {
+      const saldoId = randomUUID();
+      const alDia = hoyMexico();
+      sql(`${contexto}
+        insert into cash_balance_declarations (id, company_id, saldo_centavos, al_dia, declarado_por) values ('${saldoId}', '${EMPRESA_TALLER}', 4242424242, '${alDia}', '${GIL}');
+        ${evento("declarar_saldo", "cash_balance_declarations", saldoId, { saldo_centavos: 4242424242, al_dia: alDia })}`);
+      writeFileSync(bandera, "flujo 14\n");
+      let espera = null;
+      try {
+        for (const tema of ["oscuro", "claro", "lever"]) {
+          for (const ancho of [1440, 390]) {
+            const vista = `${tema} ${ancho}`;
+            const { nav, p, errores } = await abrir({ quien: "gil", tema, ancho });
+            await p.goto(`${BASE}${TALLER}/consola`);
+            await p.getByRole("heading", { level: 1, name: "No se pudo abrir esta página." }).waitFor({ timeout: 20000 });
+            const h1 = await p.locator("h1").count();
+            const reintentar = await p.getByRole("button", { name: "Reintentar" }).isVisible();
+            const cuerpo = (await p.locator("body").innerText()).replace(/\s+/g, " ");
+            const desborda = await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+            await foto(p, `14-error-consola-${tema}-${ancho}`);
+            anotar(h1 === 1 && reintentar && /Vuelve a intentar/.test(cuerpo) && !/datos supuestos/i.test(cuerpo) && !/42,424,242/.test(cuerpo) && !desborda, `flujo 14 ${vista}: un error al pintar Inicio cae en el error de la consola, con un solo h1, «Reintentar» a la vista y sin «datos supuestos»`, `h1=${h1} reintentar=${reintentar}`);
+            const ajenos = errores.filter((e) => !provocado(e));
+            anotar(ajenos.length === 0, `flujo 14 ${vista}: solo quedan los errores de consola del error provocado`, ajenos.join(" | "));
+            await nav.close();
+          }
+        }
+        // Una pestaña se queda en el error para clicar «Reintentar» cuando la página ya se puede pintar.
+        espera = await abrir({ quien: "gil", tema: "oscuro", ancho: 1440 });
+        await espera.p.goto(`${BASE}${TALLER}/consola`);
+        await espera.p.getByRole("heading", { level: 1, name: "No se pudo abrir esta página." }).waitFor({ timeout: 20000 });
+      } finally {
+        rmSync(bandera, { force: true });
+      }
+      await espera.p.getByRole("button", { name: "Reintentar" }).click();
+      await espera.p.getByRole("heading", { name: "Proyección a 13 semanas" }).waitFor({ timeout: 20000 });
+      const h1 = await espera.p.locator("h1").count();
+      const saldo = (await espera.p.locator("body").innerText()).includes("42,424,242");
+      await foto(espera.p, "14-reintentar-inicio-oscuro-1440");
+      anotar(h1 === 1 && saldo && /\/consola$/.test(espera.p.url()), "flujo 14: «Reintentar» vuelve a pedir Inicio al servidor y la página abre con el saldo declarado", `h1=${h1} → ${espera.p.url().replace(BASE, "")}`);
+      const ajenos = espera.errores.filter((e) => !provocado(e));
+      anotar(ajenos.length === 0, "flujo 14: tras reintentar solo quedan los errores de consola del error provocado", ajenos.join(" | "));
+      await espera.nav.close();
+    }
   }
 
   return { estado, hoyMexico, fecha, CLABE, CLABE_NUEVA, codigoTotp, ALTAMAR, ENTORNO };
