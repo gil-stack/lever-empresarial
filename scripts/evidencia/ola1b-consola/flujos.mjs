@@ -1,8 +1,9 @@
 import { createHash, randomUUID } from "node:crypto";
 
-// Los 11 flujos de Ola 1B (consola), clicados en la aplicación con Playwright
-// headless. Cada envío se hace con doble clic y la base confirma que quedó una
-// sola operación. Lo llama scripts/evidencia/ola1b-consola.mjs flujos.
+// Los 11 flujos de Ola 1B (consola) y el 12, alta de proveedor con área (#52),
+// clicados en la aplicación con Playwright headless. Cada envío se hace con
+// doble clic y la base confirma que quedó una sola operación. Lo llama
+// scripts/evidencia/ola1b-consola.mjs flujos.
 
 const CLABE = "002180701150123452";
 const CLABE_NUEVA = "014180655012345674";
@@ -130,6 +131,8 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
     const auditoria = sql(`select count(*) from audit_log a join suppliers s on s.id = a.identificador where s.rfc = '${rfc}' and a.accion = 'alta_proveedor'`);
     anotar(vistas.some((v) => v.disabled && v.busy === "true" && v.texto === "Enviando…"), "flujo 1: el botón se desactiva y dice «Enviando…» con aria-busy", JSON.stringify(vistas.slice(0, 3)));
     anotar(filas === "1" && clabes === "1" && auditoria === "1", "flujo 1: doble clic deja un proveedor, una CLABE y un asiento", `proveedores=${filas} clabes=${clabes} bitácora=${auditoria}`);
+    const sinArea = sql(`select count(*) from suppliers where rfc = '${rfc}' and cost_center_id is null`);
+    anotar(sinArea === "1", "flujo 1: con «Sin área» el proveedor queda sin área", `sin_area=${sinArea}`);
     anotar(errores.length === 0, "flujo 1: sin errores de consola", errores.join(" | "));
     estado.rfc = rfc;
     await nav.close();
@@ -566,6 +569,71 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
     await pendiente(gil.p, { BASE, empresa: TALLER, titulo: /categorías? sin tope escrito/, accion: "Revisar topes", destino: /\/consola\/politica/, anotar, foto, nombre: "11-pendiente-topes" });
     anotar(gil.errores.length === 0, "flujo 11: sin errores de consola (Taller)", gil.errores.join(" | "));
     await gil.nav.close();
+
+    // Alertas de #52. Pendientes lleva la de presupuesto (la nómina de Marta
+    // rebasa el tope del área Operación); la de faltante solo la pinta Inicio
+    // (src/components/flujo/inicio-flujo.tsx), con el saldo corto de preparar.ts.
+    const presupuesto = /^El presupuesto del área Operación está excedido/;
+    for (const tema of ["oscuro", "claro", "lever"]) {
+      for (const ancho of [1440, 390]) {
+        const vista = `${tema} ${ancho}`;
+        const { nav, p, errores } = await abrir({ quien: "gil", tema, ancho });
+        await p.goto(`${BASE}${TALLER}/consola/pendientes`);
+        const fila = p.locator(".pendientes-inicio li").filter({ has: p.getByRole("heading", { name: presupuesto }) });
+        const visible = (await fila.count()) === 1 && (await fila.isVisible());
+        const detalle = visible ? (await fila.innerText()).replace(/\s+/g, " ") : "";
+        const desborda = await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+        if (visible) {
+          await fila.scrollIntoViewIfNeeded();
+          await foto(p, `11-pendiente-presupuesto-${tema}-${ancho}`);
+          await fila.getByRole("link", { name: "Ver presupuestos", exact: true }).click();
+          await p.waitForURL(/\/consola\/presupuestos/, { timeout: 20000 });
+        }
+        anotar(visible && /Lleva \$[\d,.]+ de \$80,000\.00/.test(detalle) && /\/consola\/presupuestos/.test(p.url()) && !desborda, `flujo 11 ${vista}: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos`, `${detalle.slice(0, 160)} → ${p.url().replace(BASE, "")}${desborda ? " (desborda)" : ""}`);
+
+        await p.goto(`${BASE}${TALLER}/consola`);
+        const alertas = p.locator(".flujo-alertas");
+        const faltante = alertas.locator('[data-alerta="faltante"]');
+        const enPresupuesto = alertas.locator('[data-alerta="presupuesto"]');
+        const ambas = (await faltante.isVisible()) && (await enPresupuesto.isVisible());
+        const textoFaltante = ambas ? (await faltante.innerText()).replace(/\s+/g, " ") : "";
+        const textoPresupuesto = ambas ? (await enPresupuesto.innerText()).replace(/\s+/g, " ") : "";
+        const desbordaInicio = await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+        if (ambas) {
+          await alertas.scrollIntoViewIfNeeded();
+          await foto(p, `11-inicio-alertas-${tema}-${ancho}`);
+        }
+        anotar(ambas && /Saldo proyectado al cierre de la semana/.test(textoFaltante) && /Operación/.test(textoPresupuesto) && !desbordaInicio, `flujo 11 ${vista}: Inicio muestra las alertas de faltante y de presupuesto`, `${textoFaltante.slice(0, 140)} | ${textoPresupuesto.slice(0, 120)}${desbordaInicio ? " (desborda)" : ""}`);
+        anotar(errores.length === 0, `flujo 11 ${vista}: sin errores de consola en Pendientes, Presupuestos e Inicio`, errores.join(" | "));
+        await nav.close();
+      }
+    }
+  }
+
+  // ---------- 12. Alta de proveedor con área (#52) ----------
+  if (corre(12)) {
+    const { nav, p, errores } = await abrir({ quien: "gil" });
+    const rfc = `OLA061106B${String.fromCharCode(65 + Math.floor(Math.random() * 26))}${Math.floor(Math.random() * 9) + 1}`;
+    await p.goto(`${BASE}${TALLER}/consola/proveedores?vista=proveedores`);
+    await p.getByRole("link", { name: "Alta de proveedor" }).click();
+    await p.waitForURL(/nuevo-proveedor/);
+    await p.getByLabel("RFC", { exact: true }).fill(rfc);
+    await p.getByLabel("Razón social", { exact: true }).fill("Refacciones Área Doce, S.A. de C.V.");
+    await p.getByLabel("CLABE", { exact: true }).fill(CLABE_NUEVA);
+    await p.getByLabel("Área", { exact: true }).selectOption({ label: "Operación" });
+    await p.locator("#constancia").setInputFiles(PDF);
+    await foto(p, "12-alta-proveedor-area-llena");
+    const marcas = await dobleClic(p, p.getByRole("button", { name: "Dar de alta" }));
+    await p.getByText("Quedó asentado", { exact: true }).waitFor({ timeout: 30000 });
+    const vistas = await marcas();
+    await foto(p, "12-alta-proveedor-area-asentada");
+    const filas = sql(`select count(*) from suppliers where rfc = '${rfc}'`);
+    const area = sql(`select coalesce(string_agg(c.nombre, ','), '') from suppliers s join cost_centers c on c.id = s.cost_center_id and c.company_id = s.company_id where s.rfc = '${rfc}'`);
+    const auditoria = sql(`select count(*) from audit_log a join suppliers s on s.id = a.identificador where s.rfc = '${rfc}' and a.accion = 'alta_proveedor' and a.cambio->>'area' = 'Operación'`);
+    anotar(vistas.some((v) => v.disabled && v.busy === "true" && v.texto === "Enviando…"), "flujo 12: el botón se desactiva y dice «Enviando…» con aria-busy", JSON.stringify(vistas.slice(0, 3)));
+    anotar(filas === "1" && area === "Operación" && auditoria === "1", "flujo 12: doble clic deja un proveedor con el área Operación y un asiento que la nombra", `proveedores=${filas} área=${area} bitácora=${auditoria}`);
+    anotar(errores.length === 0, "flujo 12: sin errores de consola", errores.join(" | "));
+    await nav.close();
   }
 
   return { estado, hoyMexico, fecha, CLABE, CLABE_NUEVA, codigoTotp, ALTAMAR, ENTORNO };

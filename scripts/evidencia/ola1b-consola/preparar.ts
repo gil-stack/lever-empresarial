@@ -17,6 +17,7 @@ import { Client } from "pg";
 import { hoyEnMexico } from "../../../src/dominio/personas";
 import { cerrarConexion } from "../../../src/nucleo/db";
 import { darDeAltaEmpresa } from "../../../src/server/company/servicio";
+import { declararSaldo } from "../../../src/server/flujo/servicio";
 import { aceptarInvitacion } from "../../../src/server/invitaciones/servicio";
 import { prepararNomina } from "../../../src/server/nomina/servicio";
 import { darDeAltaPersona, nombrarCentro } from "../../../src/server/personas/servicio";
@@ -88,6 +89,9 @@ async function principal(): Promise<void> {
     rol: "",
   });
   const lote = await prepararNomina(gil);
+  // Saldo declarado corto: con la nómina semanal la proyección cae bajo cero e
+  // Inicio pinta la alerta de faltante junto a la de presupuesto (#52).
+  await declararSaldo(gil, { saldo: "20000.00", alDia: hoy, altaId: randomUUID() });
 
   // Fernanda solo tiene el rol de finanzas en Taller: abre Inicio y Pendientes, y
   // el resto de la consola le muestra el estado «sin permiso».

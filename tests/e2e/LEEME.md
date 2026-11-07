@@ -21,9 +21,9 @@ Al terminar, `global-teardown.ts` detiene el servidor y borra la base.
 - `E2E_PUERTO` cambia el puerto del servidor (3109).
 - `E2E_BASE_URL` cambia el origen del portal; debe coincidir con el origen de las Server Actions.
 - `CHROME_PATH` permite usar otro ejecutable de Chrome; sin ella se usa el Chromium de Playwright.
-- `E2E_CAPTURAS` cambia la carpeta de capturas de Pagos a proveedores (`test-results/pagos-proveedores`).
+- `E2E_CAPTURAS` cambia la carpeta de capturas de Pagos a proveedores (`test-results/pagos-proveedores`) y de Personas (`test-results/personas`).
 
-Las capturas de Personas se escriben en `docs/evidencia/personas/`; las de Pagos a proveedores, en `test-results/pagos-proveedores/` (la evidencia revisada de ese PR vive en `docs/evidencia/pagos-proveedores/`). Pagos a proveedores ejercita mesa, claro/oscuro, móvil, alta, CFDI, excepción, descarga privada, segunda firma, rechazo, corrección y cancelación. Ningún recorrido envía dinero ni escribe en producción.
+Las capturas de Personas se escriben en `test-results/personas/` y las de Pagos a proveedores en `test-results/pagos-proveedores/`; ninguna corrida reescribe la evidencia versionada, que vive en `docs/evidencia/personas/` y `docs/evidencia/pagos-proveedores/`. Pagos a proveedores ejercita mesa, claro/oscuro, móvil, alta, CFDI, excepción, descarga privada, segunda firma, rechazo, corrección y cancelación. Ningún recorrido envía dinero ni escribe en producción.
 
 ## Revisar la semilla de Pagos a mano
 
