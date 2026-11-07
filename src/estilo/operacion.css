@@ -289,3 +289,25 @@ form + .operacion-lista {
   font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: 300;
 }
+
+/* Ola R1: alta regulada. Insignias de rol o de estado en una fila que se dobla. */
+.operacion-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.operacion-pagina > .operacion-confirmar + .hoja,
+.operacion-pagina > .metricas + .hoja,
+.operacion-pagina > .operacion-ficha-cabeza + .hoja {
+  margin-top: 24px;
+}
+
+/* Un formulario debajo de una lista o de una pista, dentro de la misma hoja. */
+.operacion-lista + form,
+.operacion-lista + .pista,
+.pista + form,
+.vacio + form,
+.renglones + form {
+  margin-top: 18px;
+}

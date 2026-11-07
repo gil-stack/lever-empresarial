@@ -8,16 +8,26 @@ import { errorDelCampo } from "@/components/operacion/aviso";
 import { DecisionRecuperacion } from "@/components/operacion/decision-recuperacion";
 import { fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
+import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { Bandeja, NotaRegla, Vacio } from "@/components/sistema";
 import { estadoDeConfirmacion, verRecuperaciones } from "@/server/autenticacion";
 import { sesionSegura } from "@/server/entrada";
 import { exigirContextoOperacion } from "@/server/operacion";
+import { puedeEnOperacion } from "@/server/operacion/permisos";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Recuperaciones · Operación" };
 
 export default async function RecuperacionesOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
-  await exigirContextoOperacion();
+  const ctx = await exigirContextoOperacion();
+  // Desde la Ola R1 hay roles que no administran cuentas: Auditoría o Cumplimiento no aprueban recuperaciones.
+  if (!puedeEnOperacion(ctx, "plataforma.empresa.alta")) {
+    return (
+      <PaginaOperacion titulo="Recuperaciones">
+        <SinPermiso>Las recuperaciones de segundo factor las decide Administración de la plataforma.</SinPermiso>
+      </PaginaOperacion>
+    );
+  }
   const sesion = await sesionSegura();
   if (!sesion) redirect("/operacion/entrar");
   const [pendientes, confirmacion, params] = await Promise.all([

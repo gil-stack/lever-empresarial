@@ -3,7 +3,7 @@ import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
 import { conContexto } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { uuidValido } from "../../dominio/operacion";
-import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
+import { exigirFactorReciente, VIGENCIA_FACTORES_MS } from "../autenticacion/reautenticacion";
 import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
 import { exigirEnOperacion } from "./permisos";
@@ -58,7 +58,8 @@ export async function listarPersonalConRoles(ctx: ContextoDePersonal): Promise<P
 }
 
 /**
- * Asigna o quita un rol. Exige segundo factor reciente y deja el evento. La base
+ * Asigna o quita un rol. Exige el segundo factor probado hace cinco minutos o menos
+ * (como aprobar una recuperación: dar acceso es igual de delicado) y deja el evento. La base
  * rechaza darse un rol a sí mismo y juntar Cumplimiento con Auditoría u
  * Originación (50ª), aunque alguien se salte esta función.
  */
@@ -68,7 +69,7 @@ export async function cambiarRolPersonal(
   entrada: { userId: unknown; rol: unknown; quitar: boolean },
 ): Promise<void> {
   exigirEnOperacion(ctx, "plataforma.personal.administrar");
-  exigirAutenticacionReciente(sesion);
+  exigirFactorReciente(sesion, { superficie: "sofipo", vigenciaMs: VIGENCIA_FACTORES_MS });
   if (!uuidValido(entrada.userId)) throw new ErrorDeDominio("persona_ausente");
   if (!esRolPlataforma(entrada.rol)) throw new ErrorDeDominio("rol_invalido");
   const userId = entrada.userId;

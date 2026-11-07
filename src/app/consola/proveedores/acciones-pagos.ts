@@ -53,6 +53,9 @@ const MENSAJES: Record<string, string> = {
   sin_permiso_para_solicitar: "Tu rol o tu alta vigente no permiten solicitar este pago.",
   idempotencia_invalida: "La referencia de esta solicitud no es válida. Recarga el formulario para generar una nueva.",
   base_no_disponible: "No se pudo completar la operación. Inténtalo de nuevo.",
+  // Ola R1: la base rechaza el pago de una empresa suspendida o con un proveedor en la Lista de Personas Bloqueadas.
+  empresa_suspendida: "La empresa está suspendida: no se puede mover dinero ni hacer cambios. Comunícate con Lever.",
+  pago_bloqueado_lpb: "Este pago quedó detenido para revisión de cumplimiento. No se liberó; Lever te contactará.",
   auditoria_no_disponible: "No se pudo dejar constancia. La operación no se guardó.",
 };
 

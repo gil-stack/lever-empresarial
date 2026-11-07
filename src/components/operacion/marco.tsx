@@ -16,7 +16,15 @@ import { NavegacionOperacion } from "./navegacion";
  * secciones (cajón en pantallas angostas) y lienzo. La barra de arriba la pone
  * cada página (`PaginaOperacion`), con su título y su acción.
  */
-export async function MarcoOperacion({ personaId, children }: { personaId: string; children: ReactNode }) {
+export async function MarcoOperacion({
+  personaId,
+  capacidades,
+  children,
+}: {
+  personaId: string;
+  capacidades: readonly string[];
+  children: ReactNode;
+}) {
   const tema = temaDesde((await cookies()).get(COOKIE_TEMA)?.value);
   return (
     <>
@@ -32,7 +40,7 @@ export async function MarcoOperacion({ personaId, children }: { personaId: strin
           <div className="lateral-cabeza">
             <Marca />
           </div>
-          <NavegacionOperacion />
+          <NavegacionOperacion capacidades={capacidades} />
           <div className="operacion-lateral-pie">
             <SelectorTema inicial={tema} />
           </div>

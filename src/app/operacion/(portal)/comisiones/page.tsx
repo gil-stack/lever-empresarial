@@ -8,6 +8,7 @@ import { PaginaOperacion } from "@/components/operacion/pagina";
 import { BotonEnviar, Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
 import { textoComision } from "@/dominio/operacion";
 import { exigirContextoOperacion, listarClientes, listarComisiones } from "@/server/operacion";
+import { puedeEnOperacion } from "@/server/operacion/permisos";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Comisiones · Operación" };
@@ -15,6 +16,7 @@ export const metadata: Metadata = { title: "Comisiones · Operación" };
 export default async function ComisionesOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
   const ctx = await exigirContextoOperacion();
   const [clientes, versiones, params] = await Promise.all([listarClientes(ctx), listarComisiones(ctx), searchParams]);
+  const propone = puedeEnOperacion(ctx, "plataforma.empresa.alta");
   const activos = clientes.filter((cliente) => cliente.estado === "activa");
   return (
     <PaginaOperacion titulo="Comisiones" aviso={params.aviso}>
@@ -58,50 +60,52 @@ export default async function ComisionesOperacion({ searchParams }: { searchPara
           </Hoja>
         }
         lateral={
-          <Hoja id="proponer-titulo" titulo="Proponer una versión">
-            {activos.length === 0 ? (
-              <Vacio titulo="Sin empresas activas">Activa un cliente antes de configurar su tarifa.</Vacio>
-            ) : (
-              <form action={solicitarComisionAccion}>
-                <div className="campo">
-                  <label htmlFor="companyId">Empresa</label>
-                  <select id="companyId" name="companyId" required>
-                    {activos.map((cliente) => (
-                      <option key={cliente.id} value={cliente.id}>{cliente.razonSocial} · {cliente.rfc}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="campo">
-                  <label htmlFor="tipo">Tipo</label>
-                  <select id="tipo" name="tipo">
-                    <option value="fondeo">Fondeo · puntos base</option>
-                    <option value="spei">SPEI · centavos</option>
-                  </select>
-                </div>
-                <div className="campo">
-                  <label htmlFor="valor">Valor entero</label>
-                  <input
-                    id="valor"
-                    name="valor"
-                    inputMode="numeric"
-                    pattern="[0-9]+"
-                    maxLength={16}
-                    required
-                    aria-describedby={params.aviso === "comision_valor_invalido" ? "aviso-operacion valor-pista" : "valor-pista"}
-                    aria-invalid={params.aviso === "comision_valor_invalido" || undefined}
-                  />
-                  <p className="pista" id="valor-pista">250 puntos base = 2.50 %; 1500 centavos = $15.00.</p>
-                </div>
-                <div className="campo">
-                  <label htmlFor="vigenteDesde">Vigente desde</label>
-                  <input id="vigenteDesde" name="vigenteDesde" type="date" required {...errorDelCampo(params.aviso, "vigenteDesde")} />
-                </div>
-                <div className="acciones">
-                  <BotonEnviar>Pedir autorización</BotonEnviar>
-                </div>
-              </form>
-            )}
-          </Hoja>
+          propone ? (
+            <Hoja id="proponer-titulo" titulo="Proponer una versión">
+              {activos.length === 0 ? (
+                <Vacio titulo="Sin empresas activas">Activa un cliente antes de configurar su tarifa.</Vacio>
+              ) : (
+                <form action={solicitarComisionAccion}>
+                  <div className="campo">
+                    <label htmlFor="companyId">Empresa</label>
+                    <select id="companyId" name="companyId" required>
+                      {activos.map((cliente) => (
+                        <option key={cliente.id} value={cliente.id}>{cliente.razonSocial} · {cliente.rfc}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="campo">
+                    <label htmlFor="tipo">Tipo</label>
+                    <select id="tipo" name="tipo">
+                      <option value="fondeo">Fondeo · puntos base</option>
+                      <option value="spei">SPEI · centavos</option>
+                    </select>
+                  </div>
+                  <div className="campo">
+                    <label htmlFor="valor">Valor entero</label>
+                    <input
+                      id="valor"
+                      name="valor"
+                      inputMode="numeric"
+                      pattern="[0-9]+"
+                      maxLength={16}
+                      required
+                      aria-describedby={params.aviso === "comision_valor_invalido" ? "aviso-operacion valor-pista" : "valor-pista"}
+                      aria-invalid={params.aviso === "comision_valor_invalido" || undefined}
+                    />
+                    <p className="pista" id="valor-pista">250 puntos base = 2.50 %; 1500 centavos = $15.00.</p>
+                  </div>
+                  <div className="campo">
+                    <label htmlFor="vigenteDesde">Vigente desde</label>
+                    <input id="vigenteDesde" name="vigenteDesde" type="date" required {...errorDelCampo(params.aviso, "vigenteDesde")} />
+                  </div>
+                  <div className="acciones">
+                    <BotonEnviar>Pedir autorización</BotonEnviar>
+                  </div>
+                </form>
+              )}
+            </Hoja>
+          ) : undefined
         }
       />
       <NotaRegla>Una persona propone la tarifa y otra la autoriza. Hoy no genera cargos.</NotaRegla>

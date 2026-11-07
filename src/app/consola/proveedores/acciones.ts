@@ -135,6 +135,7 @@ const MENSAJES_CLABE: Record<string, string> = {
   auditoria_no_disponible: "No se pudo dejar constancia del cambio.",
   reautenticacion_requerida: "El cambio de CLABE exige un segundo factor reciente. Sal y vuelve a entrar.",
   base_no_disponible: "No se pudo guardar. El libro no respondió.",
+  empresa_suspendida: "La empresa está suspendida: no se puede mover dinero ni hacer cambios. Comunícate con Lever.",
   base_no_configurada: "No se pudo guardar. El libro no respondió.",
 };
 

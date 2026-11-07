@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { resolverRecuperacion } from "@/server/autenticacion";
 import { sesionSegura } from "@/server/entrada";
 import { exigirContextoOperacion } from "@/server/operacion";
+import { puedeEnOperacion } from "@/server/operacion/permisos";
 import { ErrorDeDominio } from "@/server/session";
 
 /**
@@ -19,7 +20,8 @@ import { ErrorDeDominio } from "@/server/session";
  */
 export async function decidirRecuperacionAccion(formData: FormData): Promise<void> {
   const aprobada = formData.get("decision") === "aprobar";
-  await exigirContextoOperacion();
+  const ctx = await exigirContextoOperacion();
+  if (!puedeEnOperacion(ctx, "plataforma.empresa.alta")) redirect("/operacion/recuperaciones?aviso=sin_permiso_operacion");
   const sesion = await sesionSegura();
   if (!sesion) redirect("/operacion/entrar");
   try {

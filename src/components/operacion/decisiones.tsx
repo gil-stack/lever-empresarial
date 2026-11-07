@@ -1,30 +1,39 @@
 import Link from "next/link";
 
 import { decidirActivacionAccion, decidirComisionAccion } from "@/app/operacion/acciones";
+import { decidirSuspensionAccion } from "@/app/operacion/acciones-alta";
 import { Bandeja, BotonEnviar, Vacio, type Decision } from "@/components/sistema";
 import { textoComision } from "@/dominio/operacion";
-import type { listarComisiones, listarSolicitudesActivacion } from "@/server/operacion";
+import type { listarComisiones, listarSolicitudesActivacion, listarSuspensionesPendientes } from "@/server/operacion";
 
 import { fechaDia, fechaHora } from "./formato";
-import { IconoActivacion, IconoComisiones } from "./iconos";
+import { IconoActivacion, IconoComisiones, IconoSuspension } from "./iconos";
 import { RechazarConMotivo } from "./rechazar";
 
 type Solicitud = Awaited<ReturnType<typeof listarSolicitudesActivacion>>[number];
 type Comision = Awaited<ReturnType<typeof listarComisiones>>[number];
+type Suspension = Awaited<ReturnType<typeof listarSuspensionesPendientes>>[number];
+
+/** Qué decide esta persona: cada tipo de decisión tiene su rol (Ola R1). */
+export type QuienDecide = { activaciones: boolean; comisiones: boolean; suspensiones: boolean };
 
 /**
- * «Necesita tu decisión» de Operación: activaciones para el portal y versiones de comisión
- * pendientes. Aprobar va directo; rechazar pide el motivo. Lo que pidió la misma persona
- * se ve, pero sin botones: lo decide otra.
+ * «Necesita tu decisión» de Operación: activaciones para el portal, versiones de comisión y
+ * suspensiones o reactivaciones pendientes. Aprobar va directo; rechazar pide el motivo. Lo que
+ * pidió la misma persona se ve, pero sin botones: lo decide otra. Sin el rol, tampoco hay botones.
  */
 export function DecisionesOperacion({
   solicitudes,
   comisiones,
+  suspensiones = [],
   personaId,
+  decide,
 }: {
   solicitudes: Solicitud[];
   comisiones: Comision[];
+  suspensiones?: Suspension[];
   personaId: string;
+  decide: QuienDecide;
 }) {
   const decisiones: Decision[] = [
     ...solicitudes.map((solicitud) => ({
@@ -40,6 +49,8 @@ export function DecisionesOperacion({
       acciones:
         solicitud.solicitadaPor === personaId ? (
           <p className="pista">La pediste tú: decide otra persona.</p>
+        ) : !decide.activaciones ? (
+          <p className="pista">La decide alguien con rol de Aprobación.</p>
         ) : (
           <Acciones
             id={solicitud.id}
@@ -57,6 +68,8 @@ export function DecisionesOperacion({
       acciones:
         comision.solicitadaPor === personaId ? (
           <p className="pista">La propusiste tú: decide otra persona.</p>
+        ) : !decide.comisiones ? (
+          <p className="pista">La autoriza Administración de la plataforma.</p>
         ) : (
           <Acciones
             id={comision.id}
@@ -65,11 +78,34 @@ export function DecisionesOperacion({
           />
         ),
     })),
+    ...suspensiones.map((suspension) => ({
+      id: suspension.id,
+      titulo: `${suspension.tipo === "suspension" ? "Suspensión" : "Reactivación"} · ${suspension.razonSocial}`,
+      icono: <IconoSuspension />,
+      detalle: (
+        <>
+          <Link href={`/operacion/clientes/${suspension.companyId}`}>{suspension.razonSocial}</Link> · {suspension.motivo}
+        </>
+      ),
+      contexto: [`Pidió ${suspension.solicitadaPor}`, fechaHora(suspension.solicitadaEn)],
+      acciones:
+        suspension.solicitadaPorId === personaId ? (
+          <p className="pista">La pediste tú: decide otra persona.</p>
+        ) : !decide.suspensiones ? (
+          <p className="pista">La decide alguien con rol de Aprobación.</p>
+        ) : (
+          <Acciones
+            id={suspension.id}
+            accion={decidirSuspensionAccion}
+            que={`la ${suspension.tipo === "suspension" ? "suspensión" : "reactivación"} de ${suspension.razonSocial}`}
+          />
+        ),
+    })),
   ];
   return (
     <Bandeja
       decisiones={decisiones}
-      vacio={<Vacio titulo="Nada por decidir">Las activaciones y las comisiones que pida otra persona aparecen aquí.</Vacio>}
+      vacio={<Vacio titulo="Nada por decidir">Las activaciones, comisiones y suspensiones que pida otra persona aparecen aquí.</Vacio>}
     />
   );
 }

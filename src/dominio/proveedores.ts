@@ -46,7 +46,8 @@ export type CodigoRechazoProveedor =
   | "libro"
   | "archivo_no_disponible"
   | "listado_ilegible"
-  | "listado_sin_fecha";
+  | "listado_sin_fecha"
+  | "empresa_suspendida";
 
 export type EstadoAltaProveedor =
   | { tipo: "inicial" }
@@ -295,6 +296,10 @@ export function releerFichas<T extends FichaReleida>(
 }
 
 export const MENSAJE_RECHAZO: Record<CodigoRechazoProveedor, { titulo: string; texto: string }> = {
+  empresa_suspendida: {
+    titulo: "La empresa está suspendida",
+    texto: "No se dan de alta proveedores mientras esté suspendida. Comunícate con Lever.",
+  },
   sin_permiso: {
     titulo: "Tu rol no da de alta",
     texto: "El administrador y quien libera anotan al proveedor. El contador lo ve.",

@@ -9,6 +9,7 @@ import {
 import type { ContextoDeTenant, EmpresaDelContexto } from "../../nucleo/contexto";
 import { conContexto } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
+import { capacidadesSegunEstado, membresiaConRoles } from "../empresa/estado";
 import type { Sesion } from "../session/tipos";
 
 export type MembresiaLeida = EmpresaDelContexto & { roles: RolCliente[] };
@@ -72,7 +73,7 @@ export async function resolverContexto(
   // SOFIPO. Si entra por /entrar, su sesión cliente no carga la 69-B, no publica
   // precio ni ve nada de la plataforma.
   const personal = sesion.superficie === "sofipo" ? pertenencia.personal : null;
-  const rolesCliente = elegida?.estado === "activa" ? elegida.roles : [];
+  const rolesCliente = membresiaConRoles(elegida?.estado) ? (elegida?.roles ?? []) : [];
   const rolesPlataforma = personal?.roles ?? [];
   const empresa: EmpresaDelContexto | null = elegida
     ? {
@@ -99,9 +100,9 @@ export async function resolverContexto(
       empresas: (pertenencia.personal ? [] : pertenencia.membresias).map((m) => ({
         id: m.id,
         razonSocial: m.razonSocial,
-        roles: m.estado === "activa" ? [...m.roles] : [],
+        roles: membresiaConRoles(m.estado) ? [...m.roles] : [],
       })),
-      capacidades: capacidadesDe({ rolesCliente, rolesPlataforma }),
+      capacidades: capacidadesSegunEstado(elegida?.estado, capacidadesDe({ rolesCliente, rolesPlataforma })),
     },
   };
 }

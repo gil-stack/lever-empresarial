@@ -30,7 +30,7 @@ import {
   type TipoDocumento,
 } from "../../dominio/operacion";
 import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
-import type { AlmacenConstancia } from "../proveedores/constancia";
+import { leerPrivado, type AlmacenConstancia } from "../proveedores/constancia";
 import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
 import { exigirEnOperacion } from "./permisos";
@@ -766,22 +766,48 @@ export async function calificarRiesgoEmpresa(
   });
 }
 
-/** La puerta de la base entrega la ruta del archivo y deja el evento de la descarga. */
+/** La puerta de la base entrega la ruta del archivo y deja el evento de la descarga (lectura auditada). */
 export async function prepararDescargaDocumento(
   ctx: ContextoDePersonal,
   documentoId: unknown,
-): Promise<{ clave: string; nombre: string; tipo: string; companyId: string }> {
+): Promise<{ clave: string; nombre: string; tipo: string; sha256: string; companyId: string }> {
   exigirEnOperacion(ctx, "plataforma.expediente.ver");
   if (!uuidValido(documentoId)) throw new ErrorDeDominio("documento_no_existe");
   const resultado = await conContexto(basePlataforma(ctx), (consulta) =>
-    consulta.query("select clave_blob, nombre_archivo, tipo_contenido, company_id from kyb_documento_para_descarga($1, $2)", [
+    consulta.query("select clave_blob, nombre_archivo, tipo_contenido, sha256, company_id from kyb_documento_para_descarga($1, $2)", [
       documentoId,
       ctx.peticionId,
     ]),
   );
   const fila = resultado.rows[0] as Record<string, unknown> | undefined;
   if (!fila) throw new ErrorDeDominio("documento_no_existe");
-  return { clave: String(fila.clave_blob), nombre: String(fila.nombre_archivo), tipo: String(fila.tipo_contenido), companyId: String(fila.company_id) };
+  return {
+    clave: String(fila.clave_blob),
+    nombre: String(fila.nombre_archivo),
+    tipo: String(fila.tipo_contenido),
+    sha256: String(fila.sha256),
+    companyId: String(fila.company_id),
+  };
+}
+
+/**
+ * Descarga un documento del expediente: deja el evento, lee el archivo privado y
+ * comprueba que su SHA-256 sea el que se guardó al cargarlo. Un archivo alterado
+ * no se entrega: se registra y la pantalla dice que no está disponible.
+ */
+export async function descargarDocumentoExpediente(
+  ctx: ContextoDePersonal,
+  documentoId: unknown,
+  deps: { leer?: (clave: string) => Promise<ReadableStream<Uint8Array>> } = {},
+): Promise<{ bytes: Uint8Array; nombre: string; tipo: string }> {
+  const documento = await prepararDescargaDocumento(ctx, documentoId);
+  const stream = await (deps.leer ?? leerPrivado)(documento.clave);
+  const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
+  if (bytes.byteLength > LIMITE_ARCHIVO || createHash("sha256").update(bytes).digest("hex") !== documento.sha256) {
+    console.error(JSON.stringify({ evento: "expediente_documento_alterado", documentoId: documentoId as string, peticionId: ctx.peticionId }));
+    throw new ErrorDeDominio("archivo_no_disponible");
+  }
+  return { bytes, nombre: documento.nombre, tipo: documento.tipo };
 }
 
 async function conBorrador(

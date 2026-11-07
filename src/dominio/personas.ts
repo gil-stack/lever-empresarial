@@ -96,7 +96,9 @@ export type CodigoRechazoPersona =
   | "lote_inconsistente"
   | "lote_inmutable"
   | "persona_identidad_inmutable"
-  | "baja_no_efectiva";
+  | "baja_no_efectiva"
+  | "empresa_suspendida"
+  | "nomina_bloqueada_lpb";
 
 export type EstadoMaestro =
   | { tipo: "inicial" }
@@ -780,6 +782,14 @@ export const MENSAJE_RECHAZO: Record<
   baja_no_efectiva: {
     titulo: "La baja todavía no es efectiva",
     texto: "El acceso se cierra el día de la baja.",
+  },
+  empresa_suspendida: {
+    titulo: "La empresa está suspendida",
+    texto: "No se prepara nómina ni se hacen cambios mientras esté suspendida. Comunícate con Lever.",
+  },
+  nomina_bloqueada_lpb: {
+    titulo: "La nómina quedó detenida",
+    texto: "Hay una revisión de cumplimiento pendiente. No se preparó el lote; Lever te contactará.",
   },
 };
 

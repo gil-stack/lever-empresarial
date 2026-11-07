@@ -18,11 +18,14 @@ import { AvisoOperacion } from "./aviso";
 export async function PaginaOperacion({
   titulo,
   aviso,
+  detalleAviso,
   accion,
   children,
 }: {
   titulo: string;
   aviso?: string;
+  /** Una línea más bajo el aviso, como el renglón del CSV que no se pudo leer. */
+  detalleAviso?: string;
   accion?: ReactNode;
   children: ReactNode;
 }) {
@@ -37,7 +40,7 @@ export async function PaginaOperacion({
       </BarraSuperior>
       <main id="contenido" className="pagina operacion-pagina">
         <h1 className="solo-lector">{titulo}</h1>
-        <AvisoOperacion codigo={aviso} />
+        <AvisoOperacion codigo={aviso} detalle={detalleAviso} />
         {children}
       </main>
     </>

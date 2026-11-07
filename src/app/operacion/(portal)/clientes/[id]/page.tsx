@@ -1,14 +1,17 @@
+import { randomUUID } from "node:crypto";
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { invitarAdministradorAccion, solicitarActivacionAccion } from "@/app/operacion/acciones";
+import { solicitarSuspensionAccion } from "@/app/operacion/acciones-alta";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { REGIMENES, USOS_CFDI, conNombre, etiquetaEstado, fechaDia, fechaHora, motivoDeEntrega } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Rejilla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { textoComision } from "@/dominio/operacion";
-import { exigirContextoOperacion, leerCliente, listarComisiones } from "@/server/operacion";
+import { exigirContextoOperacion, leerCliente, listarComisiones, listarSuspensionesDeEmpresa, puedeEnOperacion } from "@/server/operacion";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Ficha de cliente · Operación" };
@@ -23,7 +26,15 @@ export default async function FichaCliente({ params, searchParams }: { params: P
   const [{ id }, { aviso }] = await Promise.all([params, searchParams]);
   const cliente = await leerCliente(ctx, id);
   if (!cliente) notFound();
-  const comisiones = await listarComisiones(ctx, id);
+  const veExpediente = puedeEnOperacion(ctx, "plataforma.expediente.ver");
+  const [comisiones, suspensiones] = await Promise.all([
+    listarComisiones(ctx, id),
+    veExpediente ? listarSuspensionesDeEmpresa(ctx, id) : Promise.resolve([]),
+  ]);
+  const pideActivacion = puedeEnOperacion(ctx, "plataforma.activacion.solicitar");
+  const invita = puedeEnOperacion(ctx, "plataforma.invitacion.emitir");
+  const pideSuspension = puedeEnOperacion(ctx, "plataforma.suspension.solicitar");
+  const suspensionPendiente = suspensiones.find((suspension) => suspension.estado === "pendiente");
   return (
     <PaginaOperacion
       titulo={cliente.razonSocial}
@@ -44,12 +55,12 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                 <Renglon etiqueta="Uso CFDI">{conNombre(USOS_CFDI, cliente.usoCfdi)}</Renglon>
                 <Renglon etiqueta="Administrador">{cliente.administrador ?? "Todavía no invitado"}</Renglon>
               </Renglones>
-              {cliente.estado === "prospecto" ? (
+              {cliente.estado === "prospecto" && pideActivacion ? (
                 <form action={solicitarActivacionAccion}>
                   <input type="hidden" name="companyId" value={cliente.id} />
                   <div className="acciones">
                     <BotonEnviar>Solicitar activación</BotonEnviar>
-                    <p>Pasa a «En alta» y la decide otra persona.</p>
+                    <p>Pasa a «En alta» y la decide otra persona. La base solo deja activar con el expediente aprobado y el riesgo vigente.</p>
                   </div>
                 </form>
               ) : null}
@@ -57,6 +68,62 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                 <NotaRegla>
                   La activación está pendiente. Se decide en <Link href="/operacion/aprobaciones">Aprobaciones</Link>.
                 </NotaRegla>
+              ) : null}
+            </Hoja>
+            {veExpediente ? (
+              <Hoja id="expediente-titulo" titulo="Expediente y riesgo">
+                <p>Datos de la empresa, representantes, estructura accionaria, propietarios reales, documentos, dictamen y grado de riesgo.</p>
+                <p className="operacion-enlace">
+                  <Link className="enlace-texto" href={`/operacion/clientes/${cliente.id}/expediente`}>Abrir expediente</Link>
+                </p>
+                <p className="pista">Abrirlo queda en la bitácora con tu nombre y la hora.</p>
+              </Hoja>
+            ) : null}
+            <Hoja id="suspension-titulo" titulo="Suspensión">
+              {cliente.estado === "suspendida" ? (
+                <p>La empresa está suspendida: no mueve dinero, no prepara nómina, no recibe invitaciones y su gente solo puede consultar.</p>
+              ) : (
+                <p>Suspender detiene en la base todo lo que mueve dinero o escribe en la consola de la empresa.</p>
+              )}
+              {suspensionPendiente ? (
+                <NotaRegla>
+                  Hay una solicitud de {suspensionPendiente.tipo === "suspension" ? "suspensión" : "reactivación"} pendiente. Se decide en{" "}
+                  <Link href="/operacion/aprobaciones">Aprobaciones</Link>.
+                </NotaRegla>
+              ) : pideSuspension && (cliente.estado === "activa" || cliente.estado === "suspendida") ? (
+                <form action={solicitarSuspensionAccion}>
+                  <input type="hidden" name="companyId" value={cliente.id} />
+                  <input type="hidden" name="formId" value={randomUUID()} />
+                  <input type="hidden" name="tipo" value={cliente.estado === "activa" ? "suspension" : "reactivacion"} />
+                  <div className="campo">
+                    <label htmlFor="motivo-suspension">Motivo</label>
+                    <textarea id="motivo-suspension" name="motivo" maxLength={500} required {...errorDelCampo(aviso, "motivo")} />
+                  </div>
+                  <div className="acciones">
+                    <BotonEnviar>{cliente.estado === "activa" ? "Pedir suspensión" : "Pedir reactivación"}</BotonEnviar>
+                    <p>La aprueba otra persona con rol de Aprobación.</p>
+                  </div>
+                </form>
+              ) : null}
+              {suspensiones.length > 0 ? (
+                <ul className="operacion-lista">
+                  {suspensiones.map((suspension) => (
+                    <li key={suspension.id}>
+                      <div className="operacion-fila">
+                        <p>
+                          {suspension.tipo === "suspension" ? "Suspensión" : "Reactivación"}
+                          {suspension.origen === "lpb" ? " por la Lista de Personas Bloqueadas" : ""}
+                        </p>
+                        <Insignia tono={suspension.estado === "aprobada" ? "aviso" : "neutro"}>{etiquetaEstado(suspension.estado)}</Insignia>
+                      </div>
+                      <p className="operacion-meta">
+                        <span>{suspension.solicitadaPor ?? "Sistema"} · {fechaHora(suspension.solicitadaEn)}</span>
+                        {suspension.decididaPor ? <span>Decidió {suspension.decididaPor}</span> : null}
+                      </p>
+                      <p className="operacion-detalle">{suspension.motivo}</p>
+                    </li>
+                  ))}
+                </ul>
               ) : null}
             </Hoja>
             <Hoja id="historial-titulo" titulo="Historial de estados">
@@ -79,7 +146,7 @@ export default async function FichaCliente({ params, searchParams }: { params: P
         lateral={
           <>
             <Hoja id="administrador-titulo" titulo="Primer administrador">
-              {cliente.estado === "activa" && cliente.administradorEstado !== "activa" ? (
+              {cliente.estado === "activa" && cliente.administradorEstado !== "activa" && invita ? (
                 <form action={invitarAdministradorAccion}>
                   <input type="hidden" name="companyId" value={cliente.id} />
                   <input type="hidden" name="vista" value={cliente.ultimaInvitacionId ?? ""} />
@@ -105,10 +172,24 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                   </div>
                 </form>
               ) : (
-                <Vacio titulo={cliente.administradorEstado === "activa" ? "Ya entró" : "Primero, la activación"}>
+                <Vacio
+                  titulo={
+                    cliente.administradorEstado === "activa"
+                      ? "Ya entró"
+                      : cliente.estado === "activa"
+                        ? "La envía Administración"
+                        : cliente.estado === "suspendida"
+                          ? "Empresa suspendida"
+                          : "Primero, la activación"
+                  }
+                >
                   {cliente.administradorEstado === "activa"
                     ? "El primer administrador aceptó su invitación."
-                    : "La invitación se envía cuando la empresa esté activa para el portal."}
+                    : cliente.estado === "activa"
+                      ? "Las invitaciones las emite Administración de la plataforma."
+                      : cliente.estado === "suspendida"
+                        ? "Mientras esté suspendida no salen invitaciones."
+                        : "La invitación se envía cuando la empresa esté activa para el portal."}
                 </Vacio>
               )}
               {cliente.entregas.length > 0 ? (
