@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 import { Marco } from "@/components/cromo/marco";
 import { vistaDeMarco } from "@/components/cromo/puertas";
-import { FormularioPublicar } from "@/components/precios/formulario-publicar";
 import { RenglonesTarifa } from "@/components/precios/renglones";
 import { CabezaPagina } from "@/components/sistema";
-import { existePasoPublicar } from "@/dominio/precio";
 import { puede } from "@/nucleo/contexto";
 import { abrirRuta } from "@/server/entrada";
 import { leerTarifa } from "@/server/precio";
@@ -21,12 +20,9 @@ export const metadata: Metadata = {
 export default async function PaginaPrecios() {
   const apertura = await abrirRuta("/precios");
   const ctx = apertura.tipo === "libro" ? null : apertura.ctx;
+  // El personal SOFIPO ve y publica el monto dentro de Operación, con su marco y su navegación.
+  if (puede(ctx, "plataforma.precio.publicar")) redirect("/operacion/precios");
   const tarifa = await leerTarifa();
-  const publicar = existePasoPublicar({
-    esOperador: Boolean(ctx && puede(ctx, "plataforma.precio.publicar")),
-    montoPublicado: tarifa.suscripcionPublicada,
-    disponible: tarifa.disponible,
-  });
 
   return (
     <Marco actual="/precios" vista={vistaDeMarco(ctx)}>
@@ -35,7 +31,6 @@ export default async function PaginaPrecios() {
           <p className="lede">La consola muestra los mismos renglones. El monto lo publica la plataforma.</p>
         </CabezaPagina>
         <RenglonesTarifa tarifa={tarifa} />
-        {publicar ? <FormularioPublicar /> : null}
       </main>
     </Marco>
   );

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { salir } from "@/app/sesion/acciones";
 import { AcentoInicial } from "@/components/apariencia/acento-inicial";
 import { AparienciaViva } from "@/components/apariencia/viva";
+import { BotonEnviar } from "@/components/sistema/boton-enviar";
 import { enEmpresa, rutaConsola } from "@/nucleo/rutas";
 
 import { BarraSuperior } from "./barra-superior";
@@ -14,6 +15,9 @@ import {
   IconoBuscar,
   IconoEmpresas,
   IconoEntrar,
+  IconoInicio,
+  IconoPolitica,
+  IconoPoliza,
   IconoSalir,
   IconoSeguridad,
 } from "./iconos";
@@ -335,6 +339,7 @@ function inicialesDe(nombre: string): string {
 /** Teléfono protegido y de solo lectura. Los enlaces conservan la empresa elegida. */
 export async function MarcoTelefono({
   children,
+  titulo,
   actual = "/telefono",
   empresaId = null,
   personaId,
@@ -343,6 +348,8 @@ export async function MarcoTelefono({
   variasEmpresas = false,
 }: {
   children: ReactNode;
+  /** Título de la barra en las pantallas internas; Inicio lleva el logotipo, como en el diseño. */
+  titulo?: string;
   actual?: "/telefono" | "/telefono/topes" | "/telefono/facturacion";
   empresaId?: string | null;
   /** Para leer la apariencia de la persona (escena y tono). */
@@ -353,9 +360,9 @@ export async function MarcoTelefono({
 }) {
   const tema = await temaElegido();
   const secciones = [
-    { ruta: "/telefono", etiqueta: "Inicio" },
-    { ruta: "/telefono/topes", etiqueta: "Topes" },
-    { ruta: "/telefono/facturacion", etiqueta: "Facturación" },
+    { ruta: "/telefono", etiqueta: "Inicio", Icono: IconoInicio },
+    { ruta: "/telefono/topes", etiqueta: "Topes", Icono: IconoPolitica },
+    { ruta: "/telefono/facturacion", etiqueta: "Factura", Icono: IconoPoliza },
   ] as const;
   return (
     <>
@@ -365,8 +372,8 @@ export async function MarcoTelefono({
         <a className="saltar" href="#contenido">Saltar al contenido</a>
         <main id="contenido" className="superficie-telefono">
           <div className="telefono">
-            <header className="telefono-cabeza">
-              <p className="marca-app"><Logotipo linea={null} /></p>
+            <header className={titulo ? "telefono-cabeza telefono-cabeza-titulo" : "telefono-cabeza"}>
+              {titulo ? <p className="telefono-titulo">{titulo}</p> : <p className="marca-app"><Logotipo linea={null} /></p>}
               <Link href={enEmpresa(empresaId, "/consola/apariencia")} className="enlace-apariencia">
                 <IconoApariencia />
                 Apariencia
@@ -374,18 +381,18 @@ export async function MarcoTelefono({
             </header>
             <div className="telefono-cuerpo">{children}</div>
             <nav className="navegacion-app" aria-label="Teléfono">
-              {secciones.map((seccion) => (
-                <Link key={seccion.ruta} href={enEmpresa(empresaId, seccion.ruta)} aria-current={actual === seccion.ruta ? "page" : undefined}>
-                  {seccion.etiqueta}
+              {secciones.map(({ ruta, etiqueta, Icono }) => (
+                <Link key={ruta} href={enEmpresa(empresaId, ruta)} aria-current={actual === ruta ? "page" : undefined}>
+                  <Icono />
+                  {etiqueta}
                 </Link>
               ))}
             </nav>
-            <div className="enlaces-app">
+            <footer className="pie-app enlaces-app">
               {consola ? <Link href={enEmpresa(empresaId, resumen ? "/consola" : "/consola/pendientes")}>Abrir consola</Link> : null}
               {variasEmpresas ? <Link href="/empresas">Cambiar de empresa</Link> : null}
-              <form action={salir}><button type="submit">Salir</button></form>
-            </div>
-            <footer className="pie-app"><p>Consulta de solo lectura. No hay gastos, tarjetas ni movimientos de dinero en esta superficie.</p></footer>
+              <form action={salir}><BotonEnviar className="" enviando="Saliendo…">Salir</BotonEnviar></form>
+            </footer>
           </div>
         </main>
       </div>

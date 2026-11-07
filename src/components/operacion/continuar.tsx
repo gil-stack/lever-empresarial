@@ -16,14 +16,18 @@ import {
   verificarTotpOperacion,
 } from "@/app/operacion/acciones-autenticacion";
 import { ESTADO_ACCESO_INICIAL, type AltaOperacion, type PasoOperacion } from "@/app/operacion/tipos-acceso";
+import { BotonEnviar } from "@/components/sistema/boton-enviar";
 
 export function ContinuarOperacion({ paso, alta, yaInscrito = false }: { paso: PasoOperacion; alta: AltaOperacion; yaInscrito?: boolean }) {
   const [codigos, setCodigos] = useState<string[] | null>(null);
   if (codigos) return <Codigos codigos={codigos} />;
-  if (yaInscrito) return <Abrir />;
-  if (paso.paso === "inscribir") return <Inscribir alta={alta} alGuardar={setCodigos} porRecuperacion={paso.porRecuperacion} />;
+  // Inscribir se pinta también ya inscrito: al confirmar la app, la página se vuelve a pintar con
+  // yaInscrito y los códigos viven en el estado de Inscribir. Cortar antes los perdía.
+  if (paso.paso === "inscribir") {
+    return <Inscribir alta={alta} alGuardar={setCodigos} yaInscrito={yaInscrito} porRecuperacion={paso.porRecuperacion} />;
+  }
   if (paso.paso === "recuperar") {
-    return <><p className="arco-kicker">Segundo factor</p><h1>La cuenta sigue cerrada.</h1><p className="arco-nota">Otra persona del personal debe aprobar la recuperación en Operación, en Recuperaciones.</p></>;
+    return <><p className="arco-kicker">Segundo factor</p><h1>La cuenta sigue cerrada.</h1><p className="arco-nota">Otra persona del personal aprueba la recuperación en Operación, en Recuperaciones.</p></>;
   }
   return <Verificar paso={paso} />;
 }
@@ -52,20 +56,20 @@ function Verificar({ paso }: { paso: Extract<PasoOperacion, { paso: "verificar" 
     <div>
       <p className="arco-kicker">Segundo factor · Operación</p>
       <h1>Hola, {paso.nombre}.</h1>
-      <p className="arco-nota">Confirma tu identidad para abrir la superficie SOFIPO.</p>
-      {mensaje ? <div className="alerta" role="alert"><p>{mensaje}</p></div> : null}
+      <p className="arco-nota">Confirma que eres tú para abrir Operación.</p>
+      {mensaje ? <div className="alerta" role="alert" id="factor-error"><p>{mensaje}</p></div> : null}
       <div className="arco-opciones">
         {paso.passkey ? <button type="button" className="boton" onClick={conPasskey}>Entrar con passkey</button> : null}
         {paso.totp ? (
           <form action={enviarTotp}>
-            <div className="campo"><label htmlFor="codigo">Código de la app autenticadora</label><input id="codigo" name="codigo" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required /></div>
-            <button className="boton" disabled={pendienteTotp}>{pendienteTotp ? "Comprobando…" : "Entrar con el código"}</button>
+            <div className="campo"><label htmlFor="codigo">Código de la app autenticadora</label><input id="codigo" name="codigo" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required {...ligarError(totp.tipo === "error")} /></div>
+            <BotonEnviar pendiente={pendienteTotp} enviando="Comprobando…">Entrar con el código</BotonEnviar>
           </form>
         ) : null}
         {paso.respaldo ? (
           <form action={enviarRespaldo}>
-            <div className="campo"><label htmlFor="respaldo">Código de respaldo</label><input id="respaldo" name="codigo" autoComplete="off" required /></div>
-            <button className="boton-texto" disabled={pendienteRespaldo}>Usar un código de respaldo</button>
+            <div className="campo"><label htmlFor="respaldo">Código de respaldo</label><input id="respaldo" name="codigo" autoComplete="off" required {...ligarError(respaldo.tipo === "error")} /></div>
+            <BotonEnviar className="boton-texto" pendiente={pendienteRespaldo} enviando="Comprobando…">Usar un código de respaldo</BotonEnviar>
           </form>
         ) : null}
       </div>
@@ -76,15 +80,18 @@ function Verificar({ paso }: { paso: Extract<PasoOperacion, { paso: "verificar" 
 function Inscribir({
   alta,
   alGuardar,
+  yaInscrito,
   porRecuperacion,
 }: {
   alta: AltaOperacion;
   alGuardar: (codigos: string[]) => void;
+  yaInscrito: boolean;
   porRecuperacion: boolean;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [estado, registrarTotp, pendiente] = useActionState(registrarTotpOperacion, ESTADO_ACCESO_INICIAL);
   if (estado.tipo === "codigos") return <Codigos codigos={estado.codigos} />;
+  if (yaInscrito) return <ListoParaAbrir />;
 
   async function conPasskey() {
     setError(null);
@@ -107,7 +114,7 @@ function Inscribir({
       <p className="arco-kicker">{porRecuperacion ? "Recuperación aprobada · Operación" : "Primer ingreso · Operación"}</p>
       <h1>{porRecuperacion ? "Registra un factor nuevo." : "Registra tu segundo factor."}</h1>
       {porRecuperacion ? <p className="arco-nota">Al confirmarlo, tus passkeys, tu app autenticadora y tus códigos de respaldo anteriores dejan de servir y se cierran tus otras sesiones.</p> : null}
-      {mensaje ? <div className="alerta" role="alert"><p>{mensaje}</p></div> : null}
+      {mensaje ? <div className="alerta" role="alert" id="factor-error"><p>{mensaje}</p></div> : null}
       <div className="arco-opciones">
         <button type="button" className="boton" onClick={conPasskey}>Crear una passkey</button>
         {alta ? (
@@ -116,8 +123,8 @@ function Inscribir({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="arco-qr" alt="Código QR para la app autenticadora" src={alta.qr} width={196} height={196} />
             <p className="arco-semilla">{alta.semilla}</p>
-            <div className="campo"><label htmlFor="codigo-alta">Código que muestra la app</label><input id="codigo-alta" name="codigo" inputMode="numeric" maxLength={6} required /></div>
-            <button className="boton-texto" disabled={pendiente}>Confirmar el código</button>
+            <div className="campo"><label htmlFor="codigo-alta">Código que muestra la app</label><input id="codigo-alta" name="codigo" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required {...ligarError(estado.tipo === "error")} /></div>
+            <BotonEnviar className="boton-texto" pendiente={pendiente} enviando="Comprobando…">Confirmar el código</BotonEnviar>
           </form>
         ) : <p className="arco-nota">Si la app no está disponible, usa una passkey.</p>}
       </div>
@@ -131,12 +138,29 @@ function Codigos({ codigos }: { codigos: string[] }) {
       <p className="arco-kicker">Una sola vez</p>
       <h1>Guarda tus códigos de respaldo.</h1>
       <p className="arco-nota">No volverán a mostrarse. Cada uno sirve una vez.</p>
-      <ul className="operacion-codigos">{codigos.map((codigo) => <li key={codigo}><code>{codigo}</code></li>)}</ul>
+      <ul className="arco-codigos">{codigos.map((codigo) => <li key={codigo}><code>{codigo}</code></li>)}</ul>
+      <Abrir />
+    </div>
+  );
+}
+
+/** Si la página se recargó después de registrar el factor, los códigos ya no están. */
+function ListoParaAbrir() {
+  return (
+    <div>
+      <p className="arco-kicker">Segundo factor · Operación</p>
+      <h1>Ya puedes entrar.</h1>
+      <p className="arco-nota">Los códigos de respaldo se muestran una sola vez. Si no los guardaste, genera otros en «Mi perfil y seguridad».</p>
       <Abrir />
     </div>
   );
 }
 
 function Abrir() {
-  return <form action={abrirPortalOperacion}><button className="boton" type="submit">Abrir operación</button></form>;
+  return <form action={abrirPortalOperacion}><BotonEnviar>Abrir operación</BotonEnviar></form>;
+}
+
+/** El error de la tarjeta se liga al campo que lo causó. */
+function ligarError(conError: boolean) {
+  return conError ? ({ "aria-invalid": true, "aria-describedby": "factor-error" } as const) : {};
 }

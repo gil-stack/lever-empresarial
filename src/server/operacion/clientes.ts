@@ -98,7 +98,9 @@ export async function leerCliente(ctx: ContextoDePersonal, companyId: unknown): 
           where m.company_id = c.id order by m.alta_en, u.correo limit 1) as administrador_correo,
         (select m.estado from memberships m
           join membership_roles mr on mr.company_id = m.company_id and mr.user_id = m.user_id and mr.rol = 'administrador'
-          where m.company_id = c.id order by m.alta_en, m.user_id limit 1) as administrador_estado
+          where m.company_id = c.id order by m.alta_en, m.user_id limit 1) as administrador_estado,
+        (select i.id from invitations i where i.company_id = c.id
+          order by i.emitida_en desc, i.id desc limit 1) as ultima_invitacion_id
        from companies c
        left join company_activation_requests r on r.company_id = c.id and r.estado = 'pendiente'
        where c.id = $1`,
@@ -136,6 +138,10 @@ export async function leerCliente(ctx: ContextoDePersonal, companyId: unknown): 
         registradaEn: fecha(entrega.registrada_en),
         detalle: typeof entrega.detalle === "string" ? entrega.detalle : null,
       })),
+      ultimaInvitacionId:
+        typeof (fila as Record<string, unknown>).ultima_invitacion_id === "string"
+          ? String((fila as Record<string, unknown>).ultima_invitacion_id)
+          : null,
     };
   });
 }

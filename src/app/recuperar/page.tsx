@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { Marco } from "@/components/cromo/marco";
+import { MarcoArco } from "@/components/entrar/marco-arco";
 import { FormularioPedirEnlace } from "@/components/recuperar/formularios";
 
 export const runtime = "nodejs";
@@ -12,13 +12,11 @@ export const metadata: Metadata = {
 
 export default function PaginaRecuperar() {
   return (
-    <Marco actual="/entrar">
-      <main id="contenido" className="entrada">
-        <p className="kicker">Recuperar contraseña</p>
-        <h1>Te mandamos un enlace.</h1>
-        <p className="lede">El enlace sirve una sola vez y vence en una hora. Tu passkey y tu app autenticadora siguen.</p>
-        <FormularioPedirEnlace />
-      </main>
-    </Marco>
+    <MarcoArco>
+      <p className="arco-kicker">Recuperar contraseña</p>
+      <h1>Te mandamos un enlace.</h1>
+      <p className="arco-nota">Escribe el correo con el que entras. El enlace sirve una sola vez y vence en una hora.</p>
+      <FormularioPedirEnlace />
+    </MarcoArco>
   );
 }

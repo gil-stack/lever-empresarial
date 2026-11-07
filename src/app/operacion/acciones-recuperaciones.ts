@@ -12,16 +12,13 @@ import { ErrorDeDominio } from "@/server/session";
  * Aprobar o rechazar que alguien registre un segundo factor nuevo. Solo con
  * sesión SOFIPO, con el factor confirmado hace cinco minutos o menos, y nunca
  * la propia solicitud: el servicio y la base lo vuelven a exigir.
+ *
+ * Rechazar y Aprobar comparten formulario y acción: el botón oprimido manda
+ * `decision`, y así el formulario sabe cuál dice «Enviando…». Cualquier otro
+ * valor se trata como rechazo, que exige nota y no concede nada.
  */
-export async function aprobarRecuperacionAccion(formData: FormData): Promise<void> {
-  await resolver(formData, true);
-}
-
-export async function rechazarRecuperacionAccion(formData: FormData): Promise<void> {
-  await resolver(formData, false);
-}
-
-async function resolver(formData: FormData, aprobada: boolean): Promise<void> {
+export async function decidirRecuperacionAccion(formData: FormData): Promise<void> {
+  const aprobada = formData.get("decision") === "aprobar";
   await exigirContextoOperacion();
   const sesion = await sesionSegura();
   if (!sesion) redirect("/operacion/entrar");

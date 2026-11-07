@@ -124,6 +124,12 @@ h1 + .rfc-cuenta {
   padding: 20px 0;
 }
 
+/* La etiqueta (0.9rem, con 3 px de relleno arriba) sale más grande que el valor (13.5 px del cuerpo):
+   sin esto quedaba 4 px más abajo. Etiqueta y valor comparten línea base. */
+.renglones > div {
+  align-items: baseline;
+}
+
 .renglones > div + div,
 .saldos dl > div + div,
 .ficha dl > div + div {
