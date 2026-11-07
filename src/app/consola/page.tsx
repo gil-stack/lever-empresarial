@@ -23,9 +23,9 @@ export default async function PaginaConsola({ searchParams }: { searchParams: Pr
   const periodo = periodoResumen(params.periodo);
   const apertura = await abrirRuta("/consola");
   if (apertura.tipo === "sin_permiso") notFound();
-  // Marcadores viejos y /c/<empresa>: quien no ve cifras aterriza en Pendientes, no en un 404.
+  // Marcadores viejos y /c/<empresa>: quien no ve cifras aterriza en Aprobaciones, no en un 404.
   if (apertura.tipo === "abierta" && rutaConsola(apertura.ctx.capacidades) !== "/consola") {
-    redirect(enEmpresa(apertura.ctx.empresa?.id, "/consola/pendientes"));
+    redirect(enEmpresa(apertura.ctx.empresa?.id, "/consola/aprobaciones"));
   }
   const ctx = apertura.tipo === "libro" ? null : apertura.ctx;
   const carga = await cargar(apertura, periodo, params);

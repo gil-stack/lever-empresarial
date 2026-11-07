@@ -74,7 +74,9 @@ describe("lateral con los grupos del diseño", () => {
 
   it("las rutas que viven dentro de una sección la marcan como actual", () => {
     const grupos = seccionesDe(puertasDe(capacidades("administrador")), EMPRESA);
-    assert.equal(seccionActual(grupos, "/consola/pendientes")?.etiqueta, "Aprobaciones");
+    // Pendientes ya no se pinta: redirige a Aprobaciones.
+    assert.equal(seccionActual(grupos, "/consola/aprobaciones")?.etiqueta, "Aprobaciones");
+    assert.equal(seccionActual(grupos, "/consola/pendientes"), undefined);
     assert.equal(seccionActual(grupos, "/consola/lista-69b")?.etiqueta, "Fiscal");
     assert.equal(seccionActual(grupos, "/consola/poliza")?.etiqueta, "Fiscal");
     assert.equal(seccionActual(grupos, "/consola/personas")?.etiqueta, "Nómina");

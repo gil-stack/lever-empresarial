@@ -113,8 +113,8 @@ export async function Marco({
   const grupos = seccionesDe(puertas, empresaDeEnlaces);
   const mas = masDe(puertas, empresaDeEnlaces);
   const quien = deMuestra ? (persona ? { id: undefined, nombre: persona.nombre, rol: null } : null) : vista.persona;
-  // Sin cifras, la consola abre en Aprobaciones (antes Pendientes, que ahí vive).
-  const destinoConsola = deMuestra || rutaConsola(vista.capacidades) === "/consola" ? "/consola" : "/consola/aprobaciones";
+  // Sin cifras, la consola abre en Aprobaciones (antes Pendientes).
+  const destinoConsola = deMuestra ? "/consola" : rutaConsola(vista.capacidades);
   const exacta = [...grupos, ...mas].flatMap((grupo) => grupo.secciones).find((seccion) => seccion.ruta === actual);
   const tituloVisible =
     titulo ?? exacta?.etiqueta ?? TITULOS_FUERA_DEL_MENU[actual] ?? seccionActual(grupos, actual)?.etiqueta ?? "";
@@ -343,7 +343,7 @@ function Grupo({
       </p>
       <ul aria-labelledby={id}>
         {grupo.secciones.map(({ ruta, href, etiqueta, Icono, incluye }) => {
-          // El contador de una página que ahora vive dentro de otra sección (Pendientes en Aprobaciones) sube a ella.
+          // El contador de una página que vive dentro de otra sección (Personas en Nómina) sube a ella.
           const contador = contadores[ruta] ?? incluye?.map((otra) => contadores[otra]).find(Boolean);
           return (
             <li key={href}>
@@ -443,7 +443,7 @@ export async function MarcoTelefono({
               ))}
             </nav>
             <footer className="pie-app enlaces-app">
-              {consola ? <Link href={enEmpresa(empresaId, resumen ? "/consola" : "/consola/pendientes")}>Abrir consola</Link> : null}
+              {consola ? <Link href={enEmpresa(empresaId, resumen ? "/consola" : "/consola/aprobaciones")}>Abrir consola</Link> : null}
               {variasEmpresas ? <Link href="/empresas">Cambiar de empresa</Link> : null}
               <form action={salir}><BotonEnviar className="" enviando="Saliendo…">Salir</BotonEnviar></form>
             </footer>

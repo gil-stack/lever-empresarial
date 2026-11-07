@@ -29,7 +29,7 @@ export const estadoDelMarco = cache(async (): Promise<EstadoDelMarco> => {
     puede(ctx, "cliente.maestro.ver") ? liberadoresQueFaltan(ctx) : 0,
   ]);
   if (pendientes > 0) {
-    contadores["/consola/pendientes"] = {
+    contadores["/consola/aprobaciones"] = {
       valor: pendientes,
       etiqueta: pendientes === 1 ? "1 pendiente" : `${pendientes} pendientes`,
     };

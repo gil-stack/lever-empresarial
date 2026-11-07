@@ -1189,40 +1189,7 @@ h1 + .rfc-cuenta {
 }
 
 /* Pendientes reales, accesos de configuración y resumen financiero. */
-.pendientes-resumen {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 6px 10px;
-  padding: 2px 0 24px;
-  border-bottom: 1px solid var(--linea);
-}
 
-.pendientes-resumen strong {
-  font-size: 2rem;
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
-}
-
-.pendientes-resumen > span:not(.pendientes-resumen-nota) {
-  color: var(--tinta-suave);
-  font-size: 0.9rem;
-}
-
-.pendientes-resumen-nota {
-  margin-left: auto;
-  color: var(--tinta-tenue);
-  font-size: 0.8rem;
-}
-
-.pendientes-grupos {
-  display: grid;
-  gap: 24px;
-  margin-top: 24px;
-}
-
-.pendientes-grupo-cabeza,
 .inicio-seccion-cabeza {
   display: flex;
   align-items: flex-start;
@@ -1231,56 +1198,10 @@ h1 + .rfc-cuenta {
   gap: 12px 20px;
 }
 
-.pendientes-grupo-cabeza > span {
-  display: inline-grid;
-  place-items: center;
-  min-width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: var(--realce);
-  color: var(--tinta-suave);
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.pendientes-grupo-cabeza p,
 .inicio-seccion-cabeza p {
   margin-top: 5px;
   color: var(--tinta-suave);
   font-size: 0.84rem;
-}
-
-.pendientes-inicio ul {
-  margin: 18px 0 0;
-  padding: 0;
-  border-top: 1px solid var(--linea);
-  list-style: none;
-}
-
-.pendientes-inicio li {
-  display: grid;
-  grid-template-columns: 8px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 16px;
-  padding: 20px 0;
-  border-bottom: 1px solid var(--linea);
-}
-
-.pendientes-inicio li:last-child {
-  padding-bottom: 2px;
-  border-bottom: 0;
-}
-
-.pendientes-inicio h3 {
-  font-size: 0.96rem;
-  font-weight: 600;
-}
-
-.pendientes-inicio li p {
-  max-width: 72ch;
-  margin-top: 5px;
-  color: var(--tinta-suave);
-  font-size: 0.86rem;
 }
 
 .pendiente-senal {
@@ -1298,11 +1219,6 @@ h1 + .rfc-cuenta {
   background: var(--sello);
 }
 
-.pendientes-vacio {
-  margin-top: 24px;
-}
-
-.pendientes-vacio-mensaje,
 .inicio-sin-movimientos-mensaje {
   display: flex;
   align-items: center;
@@ -1313,24 +1229,11 @@ h1 + .rfc-cuenta {
   background: linear-gradient(125deg, var(--hoja), var(--ingreso-tenue));
 }
 
-.pendientes-vacio-mensaje p,
 .inicio-sin-movimientos-mensaje p {
   max-width: 68ch;
   margin-top: 6px;
   color: var(--tinta-suave);
   font-size: 0.9rem;
-}
-
-.pendiente-vacio-icono {
-  display: inline-grid;
-  flex: 0 0 auto;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--ingreso);
-  border-radius: 50%;
-  color: var(--ingreso);
-  font-size: 1.25rem;
 }
 
 .atajos-inicio {
@@ -1767,22 +1670,7 @@ h1 + .rfc-cuenta {
 }
 
 @container (max-width: 620px) {
-  .pendientes-resumen-nota {
-    width: 100%;
-    margin-left: 0;
-  }
 
-  .pendientes-inicio li {
-    grid-template-columns: 6px minmax(0, 1fr);
-    gap: 12px;
-  }
-
-  .pendientes-inicio li .boton-texto {
-    grid-column: 2;
-    justify-self: start;
-  }
-
-  .pendientes-vacio-mensaje,
   .inicio-sin-movimientos-mensaje {
     align-items: flex-start;
     padding: 20px;

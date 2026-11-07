@@ -19,8 +19,8 @@ describe("destino posterior al segundo factor", () => {
     assert.equal(destinoDeMembresia(combinada, "/telefono"), `/c/${ID}/telefono`);
   });
 
-  it("manda a quien no tiene Finanzas directamente a Pendientes", () => {
-    assert.equal(destinoDeMembresia(empresa(ID, ["contador"])), `/c/${ID}/consola/pendientes`);
+  it("manda a quien no tiene Finanzas directamente a Aprobaciones", () => {
+    assert.equal(destinoDeMembresia(empresa(ID, ["contador"])), `/c/${ID}/consola/aprobaciones`);
     assert.equal(destinoDeMembresia(empresa(ID, ["contador", "finanzas"])), `/c/${ID}/consola`);
   });
 

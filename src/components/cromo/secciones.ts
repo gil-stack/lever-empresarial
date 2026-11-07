@@ -68,7 +68,7 @@ export function seccionesDe(puertas: Puertas, empresaId: string | null): GrupoDe
   const diaria = [
     ...si(puertas.resumen, seccion("/consola", "Resumen", IconoInicio)),
     ...si(m["/consola/conciliacion"], seccion("/consola/conciliacion", "Conciliación", IconoConciliacion)),
-    ...si(m["/consola/aprobaciones"], seccion("/consola/aprobaciones", "Aprobaciones", IconoPendientes, ["/consola/pendientes"])),
+    ...si(m["/consola/aprobaciones"], seccion("/consola/aprobaciones", "Aprobaciones", IconoPendientes)),
     ...si(m["/consola/gastos"], seccion("/consola/gastos", "Gastos", IconoGastos)),
     ...si(m["/consola/tarjetas"], seccion("/consola/tarjetas", "Tarjetas", IconoTarjetas)),
     ...si(m["/consola/movimientos"], seccion("/consola/movimientos", "Movimientos", IconoMovimientos)),

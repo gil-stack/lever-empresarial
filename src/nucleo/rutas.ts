@@ -285,9 +285,12 @@ export function enEmpresa(empresaId: string | null | undefined, ruta: string): s
   return `/c/${empresaId}${ruta}`;
 }
 
-/** La consola abre cifras solo con permiso financiero; el resto aterriza en sus acciones. */
-export function rutaConsola(capacidades: readonly Capacidad[]): "/consola" | "/consola/pendientes" {
-  return tiene(capacidades, "cliente.resumen.ver") ? "/consola" : "/consola/pendientes";
+/**
+ * La consola abre cifras solo con permiso financiero; el resto aterriza en sus
+ * acciones: Aprobaciones, que desde la Ola 2b reúne lo que era Pendientes.
+ */
+export function rutaConsola(capacidades: readonly Capacidad[]): "/consola" | "/consola/aprobaciones" {
+  return tiene(capacidades, "cliente.resumen.ver") ? "/consola" : "/consola/aprobaciones";
 }
 
 function coincide(patron: string, pathname: string): boolean {

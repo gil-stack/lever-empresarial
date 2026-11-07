@@ -8,15 +8,15 @@ import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
 const RAIZ = new URL("../../", import.meta.url);
 const leer = (archivo: string) => readFileSync(new URL(archivo, RAIZ), "utf8");
 
-describe("lecturas de Inicio y Pendientes por petición", () => {
-  it("Pendientes y el contador del lateral comparten una sola lectura de la bandeja", () => {
+describe("lecturas de Inicio y Aprobaciones por petición", () => {
+  it("Aprobaciones (antes Pendientes) y el contador del lateral comparten una sola lectura de la bandeja", () => {
     const peticion = leer("src/server/inicio/peticion.ts");
     assert.match(peticion, /import "server-only"/);
     assert.match(peticion, /export const bandejaDeLaPeticion = cache\(\(ctx: ContextoDeTenant\) => leerBandejaInicio\(ctx\)\)/);
     const marco = leer("src/components/cromo/estado-marco.ts");
-    const pagina = leer("src/app/consola/pendientes/page.tsx");
+    const pagina = leer("src/app/consola/aprobaciones/page.tsx");
     assert.match(marco, /bandejaDeLaPeticion\(ctx\)/);
-    assert.match(pagina, /bandejaDeLaPeticion\(apertura\.ctx\)/);
+    assert.match(pagina, /bandejaDeLaPeticion\(ctx\)/);
     assert.doesNotMatch(marco, /leerPendientesInicio|leerBandejaInicio/);
     assert.doesNotMatch(pagina, /leerPendientesInicio|leerBandejaInicio/);
   });
