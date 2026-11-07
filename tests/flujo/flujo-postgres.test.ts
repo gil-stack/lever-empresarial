@@ -150,6 +150,22 @@ async function escenario(url: string): Promise<void> {
     altaId: altaRenta,
   }, AHORA));
   assert.ok(cobro && renta);
+  // N4: el mismo id con otros datos no es el mismo envío: se rechaza sin tocar la fila ni la bitácora.
+  const yaEnviado = codigo("formulario_ya_enviado");
+  await assert.rejects(() => declararSaldo(admin, { saldo: "100001.00", alDia: "2026-11-05", altaId: altaSaldo }, AHORA), yaEnviado);
+  await assert.rejects(() => declararSaldo(admin, { saldo: "100000.00", alDia: "2026-11-04", altaId: altaSaldo }, AHORA), yaEnviado);
+  // Los mismos datos con el id de otra persona tampoco: quien declara es parte de la alta.
+  await assert.rejects(() => declararSaldo(finanzas, { saldo: "100000.00", alDia: "2026-11-05", altaId: altaSaldo }, AHORA), yaEnviado);
+  const datosCobro = { clienteNombre: "Cliente Alfa", clienteRfc: "", concepto: "Colegiaturas de noviembre", monto: "25000.00", fechaProbable: "2026-11-20", referencia: "", altaId: altaCobro };
+  await assert.rejects(() => registrarCobro(admin, { ...datosCobro, monto: "25000.01" }, AHORA), yaEnviado);
+  await assert.rejects(() => registrarCobro(admin, { ...datosCobro, referencia: "OC-1" }, AHORA), yaEnviado);
+  const datosRenta = { concepto: "Renta del local", monto: "30000.00", frecuencia: "mensual", proximaFecha: "2026-11-15", areaId: operacion.id, altaId: altaRenta };
+  await assert.rejects(() => registrarObligacion(admin, { ...datosRenta, concepto: "Renta de la bodega" }, AHORA), yaEnviado);
+  await assert.rejects(() => registrarObligacion(admin, { ...datosRenta, areaId: "" }, AHORA), yaEnviado);
+  // Con los mismos datos responde lo mismo que la primera vez.
+  assert.equal((await declararSaldo(admin, { saldo: "100000.00", alDia: "2026-11-05", altaId: altaSaldo }, AHORA)).id, altaSaldo);
+  assert.equal((await registrarCobro(admin, datosCobro, AHORA)).id, altaCobro);
+  assert.equal((await registrarObligacion(admin, datosRenta, AHORA)).id, altaRenta);
   for (const [tabla, accion, id] of [
     ["cash_balance_declarations", "declarar_saldo", altaSaldo],
     ["expected_collections", "registrar_cobro", altaCobro],
@@ -201,6 +217,21 @@ async function escenario(url: string): Promise<void> {
     [{ concepto: "Mantenimiento facturado", monto_centavos: 100_000, frecuencia: "mensual", proxima_fecha: "2026-11-20", area: "Operación", proveedor: "Proveedor Uno" }],
   );
 
+  // N3: Proveedor Cuatro factura la renta del almacén: en noviembre trae $500 (faltan $29,500) y en diciembre la renta completa.
+  const almacen = sembrarPago(url, alfa.id, admin.persona.id, operacion.id, {
+    rfc: "DDD010101DD1", nombre: "Proveedor Cuatro", uuid: "123E4567-E89B-42D3-A456-426614174004", folio: "110", programada: "2026-11-25", total: 50_000,
+  });
+  sembrarCargoSinEventos(url, almacen.id, "2026-12-18", 3_000_000);
+  const rentaAlmacen = await registrarObligacion(admin, {
+    concepto: "Renta del almacén",
+    monto: "30000.00",
+    frecuencia: "mensual",
+    proximaFecha: "2026-11-20",
+    areaId: operacion.id,
+    proveedorId: almacen.proveedorId,
+    altaId: randomUUID(),
+  }, AHORA);
+
   // Inicio de Alfa: su saldo, su cobro, su renta, su pago y la nómina sumada por fecha. Nada de Beta.
   const flujo = await leerFlujoInicio(admin, {}, AHORA);
   assert.equal(flujo.proyeccion.saldo?.centavos, 10_000_000);
@@ -219,6 +250,48 @@ async function escenario(url: string): Promise<void> {
   // R4: noviembre ya trae el cargo de Proveedor Uno; diciembre no.
   assert.equal(movimientos.some((m) => m.clave === `obl:${facturada.id}:2026-11-20`), false);
   assert.ok(movimientos.some((m) => m.clave === `obl:${facturada.id}:2026-12-20`));
+  // N3: la renta del almacén cuenta lo que falta después de la factura del mes; con la factura completa, nada.
+  const almacenNoviembre = movimientos.find((m) => m.clave === `obl:${rentaAlmacen.id}:2026-11-20`);
+  assert.deepEqual(
+    [almacenNoviembre?.centavos, almacenNoviembre?.facturadoCentavos, almacenNoviembre?.concepto],
+    [2_950_000, 50_000, "Renta del almacén: $29,500.00 restantes (ya hay factura por $500.00)"],
+  );
+  assert.equal(movimientos.some((m) => m.clave === `obl:${rentaAlmacen.id}:2026-12-20`), false);
+  assert.equal(movimientos.find((m) => m.clave === `obl:${rentaAlmacen.id}:2027-01-20`)?.centavos, 3_000_000);
+  const calendarioAlmacen = (await leerVistaCalendario(admin, "2026-11", AHORA)).eventos.find((e) => e.clave === `obl:${rentaAlmacen.id}:2026-11-20`);
+  assert.equal(calendarioAlmacen?.concepto, "Renta del almacén: $29,500.00 restantes (ya hay factura por $500.00)");
+  assert.deepEqual(calendarioAlmacen?.detalle.find(([campo]) => campo === "Ya facturado este mes"), [
+    "Ya facturado este mes", "$500.00: cuenta en Pagos a proveedores, aquí solo lo que falta",
+  ]);
+  assert.equal((await leerVistaCalendario(admin, "2026-12", AHORA)).eventos.some((e) => e.clave === `obl:${rentaAlmacen.id}:2026-12-20`), false);
+
+  // N1: 20 cargos autorizados de antes del saldo (15 de octubre y el mismo 5 de noviembre) ya están pagados en el
+  // saldo declarado: no entran. El cargo viejo por autorizar sí, como vencido sin autorizar. Se siembran sin
+  // triggers: aquí solo se prueba la lectura.
+  const autorizados = sembrarPago(url, alfa.id, admin.persona.id, null, {
+    rfc: "CCC010101CC1", nombre: "Proveedor Tres", uuid: "123E4567-E89B-42D3-A456-426614174003", folio: "100", programada: "2026-10-15", total: 1_000_000,
+  });
+  for (let n = 1; n < 20; n++) sembrarCargoSinEventos(url, autorizados.id, n % 2 === 0 ? "2026-10-15" : "2026-11-05", 1_000_000);
+  ejecutar(url, `
+    set session_replication_role = replica;
+    insert into supplier_payment_requests (id, company_id, payable_id, supplier_clabe_id, clabe, total_centavos, programada_el, estado, solicitado_por, solicitado_en, resuelto_por, resuelto_en, creado_en)
+      select gen_random_uuid(), p.company_id, p.id, c.id, c.clabe, p.total_centavos, p.programada_el, 'listo_para_pagar', '${admin.persona.id}', now(), '${finanzas.persona.id}', now(), now()
+        from supplier_payables p join supplier_clabes c on c.supplier_id = p.supplier_id and c.company_id = p.company_id
+       where p.supplier_id = '${autorizados.proveedorId}';
+    insert into supplier_payment_requests (id, company_id, payable_id, supplier_clabe_id, clabe, total_centavos, programada_el, estado, solicitado_por, solicitado_en, creado_en)
+      select gen_random_uuid(), p.company_id, p.id, c.id, c.clabe, p.total_centavos, p.programada_el, 'por_autorizar', '${admin.persona.id}', now(), now()
+        from supplier_payables p join supplier_clabes c on c.supplier_id = p.supplier_id and c.company_id = p.company_id
+       where p.id = '${atrasado.id}';
+  `);
+  assert.equal(contar(url, `select count(*) from supplier_payment_requests where estado = 'listo_para_pagar' and payable_id in (select id from supplier_payables where supplier_id = '${autorizados.proveedorId}')`), 20);
+  const conAutorizados = await leerFlujoInicio(admin, {}, AHORA);
+  assert.deepEqual(
+    conAutorizados.proyeccion.semanas[0]?.movimientos.map((m) => [m.clave, m.atrasado, m.sinAutorizar, m.centavos]),
+    [[`cxp:${atrasado.id}`, true, true, 1_500_000]],
+  );
+  assert.equal(JSON.stringify(conAutorizados.proyeccion).includes("Proveedor Tres"), false);
+  assert.deepEqual(conAutorizados.proyeccion.alcance, flujo.proyeccion.alcance);
+  assert.equal(conAutorizados.proyeccion.semanas[12]?.saldoFinal, flujo.proyeccion.semanas[12]?.saldoFinal);
 
   // R2: un cobro que llegó después del saldo declarado entra en la semana en que llegó.
   const pronto = await registrarCobro(admin, {
@@ -316,8 +389,9 @@ async function escenario(url: string): Promise<void> {
   const presupuestos = await leerVistaPresupuestos(admin, AHORA);
   const area = presupuestos.presupuestos.areas.find((linea) => linea.id === operacion.id);
   assert.ok(area);
-  // La obligación facturada de Proveedor Uno no suma en noviembre: ese mes ya trae su cargo (R4).
-  assert.equal(area.gastoCentavos, 1_600_000 + 4_000_000 + 3_000_000);
+  // La obligación facturada de Proveedor Uno no suma en noviembre: ese mes ya trae su cargo (R4). La renta del almacén
+  // suma $29,500 y su factura de $500 entra por Proveedor Cuatro: la renta cuenta una vez (N3).
+  assert.equal(area.gastoCentavos, 1_600_000 + 4_000_000 + 3_000_000 + 50_000 + 2_950_000);
   assert.equal(area.estado, "excedido");
 
   // S1: sin permiso de ver el detalle de la nómina (contadora, finanzas) no se ve el neto de una sola persona.
@@ -339,7 +413,7 @@ async function escenario(url: string): Promise<void> {
   // R8: una persona con alta futura no suma su nómina al presupuesto del mes.
   ejecutar(url, `set session_replication_role = replica; update employees set alta_en = '2026-12-01' where company_id = '${alfa.id}' and nombre = 'Operativo Quincenal';`);
   const conAltaFutura = await leerVistaPresupuestos(admin, AHORA);
-  assert.equal(conAltaFutura.presupuestos.areas.find((linea) => linea.id === operacion.id)?.gastoCentavos, 4_000_000 + 3_000_000);
+  assert.equal(conAltaFutura.presupuestos.areas.find((linea) => linea.id === operacion.id)?.gastoCentavos, 4_000_000 + 3_000_000 + 50_000 + 2_950_000);
   ejecutar(url, `set session_replication_role = replica; update employees set alta_en = '2026-11-01' where company_id = '${alfa.id}' and nombre = 'Operativo Quincenal';`);
 
   // S2: editar una obligación deja antes y después de concepto, área y proveedor, por nombre.
@@ -370,6 +444,10 @@ async function escenario(url: string): Promise<void> {
   const altaXml = randomUUID();
   const conXml = await dosVecesYOtra(() => registrarCobroCfdi(admin, { bytes: factura(uuidFactura), fechaProbable: "2026-11-25", altaId: altaXml }, AHORA));
   assert.deepEqual(conXml.map((c) => c.id), [altaXml, altaXml, altaXml]);
+  // N4: el mismo formulario con otra factura u otra fecha se rechaza; con lo mismo, responde igual.
+  await assert.rejects(() => registrarCobroCfdi(admin, { bytes: factura("CCCCCCCC-DDDD-4EEE-8FFF-AAAAAAAAAAAA"), fechaProbable: "2026-11-25", altaId: altaXml }, AHORA), yaEnviado);
+  await assert.rejects(() => registrarCobroCfdi(admin, { bytes: factura(uuidFactura), fechaProbable: "2026-11-26", altaId: altaXml }, AHORA), yaEnviado);
+  assert.equal(contar(url, `select count(*) from expected_collections where cfdi_uuid = 'CCCCCCCC-DDDD-4EEE-8FFF-AAAAAAAAAAAA'`), 0);
   assert.equal(contar(url, `select count(*) from expected_collections where cfdi_uuid = '${uuidFactura}'`), 1);
   assert.equal(contar(url, `select count(*) from audit_log where accion = 'registrar_cobro' and identificador = '${altaXml}'`), 1);
   await assert.rejects(() => registrarCobroCfdi(admin, { bytes: factura(uuidFactura), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA), codigo("cobro_duplicado"));
@@ -460,6 +538,8 @@ async function escenario(url: string): Promise<void> {
     assert.match(m.html, /https:\/\/lever\.test\/c\/[0-9a-f-]+\/consola/);
     for (const ajeno of ["Secreto Beta", "777,777", "Taller Beta"]) assert.equal(m.html.includes(ajeno) || m.texto.includes(ajeno), false, ajeno);
     assert.equal(m.texto.includes("Confirmado por el banco"), false);
+    // N1: los 20 autorizados viejos ya están en el saldo: sumarlos daría «No alcanza esta semana».
+    assert.equal(m.texto.includes("No alcanza") || m.html.includes("No alcanza"), false);
   }
   // S1: el correo va también a quien no ve el detalle de la nómina: nunca desglosa a una sola persona.
   for (const m of enviados) assert.equal(m.texto.includes("1 persona") || m.html.includes("1 persona"), false);
@@ -622,6 +702,17 @@ function sembrarPago(url: string, empresaId: string, userId: string, areaId: str
       select operator_id, id, 'miembro', '${userId}', 'cliente', 'crear_cargo_proveedor', 'supplier_payables', '${id}', '{"origen":"cfdi","total_centavos":${total}}' from companies where id = '${empresaId}';
   `);
   return { id, proveedorId };
+}
+
+/** Otro cargo del mismo proveedor que `base`, sin triggers ni eventos: solo para probar la lectura. */
+function sembrarCargoSinEventos(url: string, base: string, programada: string, total: number): void {
+  ejecutar(url, `
+    set session_replication_role = replica;
+    insert into supplier_payables (id, company_id, supplier_id, origen, cfdi_uuid, serie, folio, referencia, total_centavos, emitida_el, vence_el, programada_el, creado_por, creado_en, actualizado_en)
+      select gen_random_uuid(), company_id, supplier_id, 'cfdi', upper(gen_random_uuid()::text), 'A', f.folio, 'A-' || f.folio, ${total}, '2026-10-01', '2026-10-15', '${programada}', creado_por, now(), now()
+        from supplier_payables, lateral (select (floor(random() * 900000) + 100000)::int::text as folio) f
+       where id = '${base}';
+  `);
 }
 
 function contar(url: string, sql: string): number {

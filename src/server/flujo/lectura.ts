@@ -15,10 +15,14 @@ export function lista(valor: unknown): Record<string, unknown>[] {
   return valor.map(registro);
 }
 
-/** Una lista JSON de textos (por ejemplo, meses YYYY-MM). */
-export function textos(valor: unknown): string[] {
-  if (!Array.isArray(valor)) throw new ErrorDeDominio("base_no_disponible");
-  return valor.map(texto);
+/** Un objeto JSON { "YYYY-MM": centavos } armado por la base. */
+export function centavosPorMes(valor: unknown): Record<string, number> {
+  return Object.fromEntries(
+    Object.entries(registro(valor)).map(([mes, total]) => {
+      if (!/^\d{4}-\d{2}$/.test(mes)) throw new ErrorDeDominio("base_no_disponible");
+      return [mes, centavos(total)];
+    }),
+  );
 }
 
 export function texto(valor: unknown): string {

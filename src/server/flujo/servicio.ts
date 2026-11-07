@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { formatoPesos } from "../../dominio/centavos";
 import { leerCfdi } from "../../dominio/cfdi";
 import {
   validarCobrado,
@@ -236,6 +237,9 @@ function eventosDe(
       if (obligacion) {
         detalle.push(["Concepto", obligacion.concepto], ["Área", obligacion.areaNombre ?? "Sin área"]);
         detalle.push(["Proveedor", obligacion.proveedorNombre ?? "Sin proveedor: si llega como factura, ya cuenta en Pagos a proveedores"]);
+        if (movimiento.facturadoCentavos) {
+          detalle.push(["Ya facturado este mes", `${formatoPesos(movimiento.facturadoCentavos)}: cuenta en Pagos a proveedores, aquí solo lo que falta`]);
+        }
       }
     } else if (movimiento.tipo === "cobro") {
       const cobro = movimiento.cobrado ? cobrados.get(id ?? "") : cobros.get(id ?? "");
@@ -344,7 +348,9 @@ function exigirValido<T>(resultado: { ok: true; valor: T } | { ok: false; errore
 /**
  * El id de una alta lo genera la página al pintar el formulario (campo oculto).
  * Un segundo envío del mismo formulario (doble clic, reintento de red) trae el
- * mismo id: la fila ya existe y se responde igual, sin otra fila ni otro evento.
+ * mismo id y los mismos datos: la fila ya existe y se responde igual, sin otra
+ * fila ni otro evento. El mismo id con otros datos se rechaza
+ * (formulario_ya_enviado): responder «quedó registrado» perdería los datos nuevos.
  */
 function exigirAltaId(valor: unknown): string {
   if (!uuidValido(valor)) throw new ErrorDeDominio("entrada_invalida");
@@ -353,15 +359,28 @@ function exigirAltaId(valor: unknown): string {
 
 type TablaDeAlta = "cash_balance_declarations" | "expected_collections" | "recurring_obligations";
 
-/** ¿La alta ya quedó? Solo cuenta si es de esta empresa (RLS y el filtro); un id ajeno no se acepta. */
-async function altaHecha(consulta: Consulta, tabla: TablaDeAlta, id: string, empresaId: string): Promise<boolean> {
-  const fila = await aplicarSentencia(consulta, `select 1 from ${tabla} where id = $1 and company_id = $2`, [id, empresaId]);
-  return fila.rows.length === 1;
+/** Lo que se compara de una alta repetida: una expresión SQL fija (del código, nunca del usuario) y el valor esperado como texto. */
+type CampoDeAlta = readonly [expresion: string, valor: string | null];
+
+/**
+ * ¿La alta con este id ya quedó? Solo cuenta si es de esta empresa (RLS y el
+ * filtro): un id ajeno no se encuentra. Si quedó con otros datos, se rechaza.
+ */
+async function altaPrevia(consulta: Consulta, tabla: TablaDeAlta, id: string, empresaId: string, campos: readonly CampoDeAlta[]): Promise<boolean> {
+  const fila = await aplicarSentencia(
+    consulta,
+    `select ${campos.map(([expresion], indice) => `${expresion} as c${indice}`).join(", ")} from ${tabla} where id = $1 and company_id = $2`,
+    [id, empresaId],
+  );
+  const previa = fila.rows[0] as Record<string, unknown> | undefined;
+  if (!previa) return false;
+  if (campos.some(([, valor], indice) => (previa[`c${indice}`] ?? null) !== valor)) throw new ErrorDeDominio("formulario_ya_enviado");
+  return true;
 }
 
-/** Después de un ON CONFLICT (id) DO NOTHING: si no insertó, la fila tiene que ser de esta empresa. */
-async function exigirAltaPropia(consulta: Consulta, tabla: TablaDeAlta, id: string, empresaId: string): Promise<void> {
-  if (!(await altaHecha(consulta, tabla, id, empresaId))) throw new ErrorDeDominio("entrada_invalida");
+/** Después de un ON CONFLICT (id) DO NOTHING: si no insertó, la fila tiene que ser de esta empresa y con los mismos datos. */
+async function exigirAltaPropia(consulta: Consulta, tabla: TablaDeAlta, id: string, empresaId: string, campos: readonly CampoDeAlta[]): Promise<void> {
+  if (!(await altaPrevia(consulta, tabla, id, empresaId, campos))) throw new ErrorDeDominio("entrada_invalida");
 }
 
 /** Pide un id nuevo para cada formulario de alta que pinta la página. */
@@ -386,7 +405,13 @@ export async function declararSaldo(
        returning id`,
       [id, c.empresa.id, valor.centavos, valor.alDia, c.persona.id],
     );
-    if (insertado.rows.length === 0) return exigirAltaPropia(consulta, "cash_balance_declarations", id, c.empresa.id);
+    if (insertado.rows.length === 0) {
+      return exigirAltaPropia(consulta, "cash_balance_declarations", id, c.empresa.id, [
+        ["saldo_centavos::text", String(valor.centavos)],
+        ["to_char(al_dia, 'YYYY-MM-DD')", valor.alDia],
+        ["declarado_por::text", c.persona.id.toLowerCase()],
+      ]);
+    }
     // El evento va después de la fila: el trigger diferido lo exige al confirmar, y un envío repetido no deja otro.
     await auditar(consulta, actorDeCliente(c), {
       accion: "declarar_saldo",
@@ -449,12 +474,28 @@ export async function cambiarCorreoSemanal(
   return activo;
 }
 
+type CobroAlta = CobroManual & { origen: "manual" | "cfdi"; cfdiUuid: string | null };
+
+function camposDeCobro(cobro: CobroAlta, personaId: string): CampoDeAlta[] {
+  return [
+    ["origen", cobro.origen],
+    ["cliente_nombre", cobro.clienteNombre],
+    ["cliente_rfc", cobro.clienteRfc],
+    ["concepto", cobro.concepto],
+    ["monto_centavos::text", String(cobro.montoCentavos)],
+    ["to_char(fecha_probable, 'YYYY-MM-DD')", cobro.fechaProbable],
+    ["referencia", cobro.referencia],
+    ["cfdi_uuid", cobro.cfdiUuid],
+    ["creado_por::text", personaId.toLowerCase()],
+  ];
+}
+
 async function insertarCobro(
   consulta: Consulta,
   c: ContextoConEmpresa,
   auditar: Auditar,
   id: string,
-  cobro: CobroManual & { origen: "manual" | "cfdi"; cfdiUuid: string | null },
+  cobro: CobroAlta,
 ): Promise<void> {
   const insertado = await aplicarSentencia(
     consulta,
@@ -466,7 +507,7 @@ async function insertarCobro(
     [id, c.empresa.id, cobro.origen, cobro.clienteNombre, cobro.clienteRfc, cobro.concepto, cobro.montoCentavos,
       cobro.fechaProbable, cobro.referencia, cobro.cfdiUuid, c.persona.id],
   );
-  if (insertado.rows.length === 0) return exigirAltaPropia(consulta, "expected_collections", id, c.empresa.id);
+  if (insertado.rows.length === 0) return exigirAltaPropia(consulta, "expected_collections", id, c.empresa.id, camposDeCobro(cobro, c.persona.id));
   await auditar(consulta, actorDeCliente(c), {
     accion: "registrar_cobro",
     identificador: id,
@@ -530,9 +571,19 @@ export async function registrarCobroCfdi(
   const concepto = conceptoEscrito === "" ? `Factura ${cfdi.referencia}` : textoLimpio(conceptoEscrito, 200);
   if (!concepto) errores.push({ campo: "conceptoXml", mensaje: "El concepto admite hasta 200 caracteres." });
   if (errores.length > 0 || !fecha.ok || !concepto) throw new ErrorDeCaptura(errores);
+  const cobro: CobroAlta = {
+    origen: "cfdi",
+    cfdiUuid: cfdi.uuid,
+    clienteNombre: cfdi.nombreReceptor.slice(0, 254),
+    clienteRfc: cfdi.rfcReceptor,
+    concepto,
+    montoCentavos: cfdi.totalCentavos,
+    fechaProbable: fecha.valor,
+    referencia: cfdi.referencia.slice(0, 120),
+  };
   await escribir(conEmpresa, deps, async (consulta, c, auditar) => {
-    // Un segundo envío del mismo formulario ya encuentra su fila: se responde igual.
-    if (await altaHecha(consulta, "expected_collections", id, c.empresa.id)) return;
+    // Un segundo envío del mismo formulario ya encuentra su fila: se responde igual (o se rechaza si trae otra factura).
+    if (await altaPrevia(consulta, "expected_collections", id, c.empresa.id, camposDeCobro(cobro, c.persona.id))) return;
     // La misma factura en otro cobro vivo: el mensaje dice en qué estado está.
     const previo = await aplicarSentencia(
       consulta,
@@ -544,16 +595,7 @@ export async function registrarCobroCfdi(
     const estado = (previo.rows[0] as { estado?: unknown } | undefined)?.estado;
     if (estado === "cobrado") throw new ErrorDeDominio("cobro_ya_cobrado");
     if (estado === "esperado") throw new ErrorDeDominio("cobro_duplicado");
-    await insertarCobro(consulta, c, auditar, id, {
-      origen: "cfdi",
-      cfdiUuid: cfdi.uuid,
-      clienteNombre: cfdi.nombreReceptor.slice(0, 254),
-      clienteRfc: cfdi.rfcReceptor,
-      concepto,
-      montoCentavos: cfdi.totalCentavos,
-      fechaProbable: fecha.valor,
-      referencia: cfdi.referencia.slice(0, 120),
-    });
+    await insertarCobro(consulta, c, auditar, id, cobro);
   });
   return { id, cliente: cfdi.nombreReceptor, montoCentavos: cfdi.totalCentavos };
 }
@@ -643,7 +685,18 @@ export async function registrarObligacion(
       [id, c.empresa.id, valor.concepto, valor.montoCentavos, valor.frecuencia, valor.proximaFecha, valor.anclaDia, valor.areaId,
         valor.proveedorId, c.persona.id],
     );
-    if (insertado.rows.length === 0) return exigirAltaPropia(consulta, "recurring_obligations", id, c.empresa.id);
+    if (insertado.rows.length === 0) {
+      return exigirAltaPropia(consulta, "recurring_obligations", id, c.empresa.id, [
+        ["concepto", valor.concepto],
+        ["monto_centavos::text", String(valor.montoCentavos)],
+        ["frecuencia", valor.frecuencia],
+        ["to_char(proxima_fecha, 'YYYY-MM-DD')", valor.proximaFecha],
+        ["ancla_dia::text", String(valor.anclaDia)],
+        ["cost_center_id::text", valor.areaId?.toLowerCase() ?? null],
+        ["supplier_id::text", valor.proveedorId?.toLowerCase() ?? null],
+        ["creado_por::text", c.persona.id.toLowerCase()],
+      ]);
+    }
     await auditar(consulta, actorDeCliente(c), {
       accion: "registrar_obligacion",
       identificador: id,

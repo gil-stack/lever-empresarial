@@ -1,3 +1,4 @@
+import { formatoPesos } from "../centavos";
 import { siguientePago, sumarCentavos, type FrecuenciaNomina } from "../nomina";
 import {
   adelantarMeses,
@@ -25,9 +26,13 @@ import {
  *   fecha programada y obligaciones recurrentes activas. Una salida posterior
  *   al corte pero anterior a esta semana sigue debiéndose: entra en la
  *   primera semana marcada como atrasada.
- * - Un cargo de proveedor sigue sin pagar mientras exista (Lever no paga): si
- *   su fecha programada quedó antes del corte, el saldo declarado no lo
- *   descontó, así que también entra en la primera semana como atrasado.
+ * - Un cargo de proveedor con fecha programada hasta el corte: si ya estaba
+ *   autorizado (listo para pagar) se da por pagado y reflejado en el saldo
+ *   declarado, porque Lever no registra el pago. Si nadie lo autorizó (por
+ *   autorizar o sin solicitud), sigue debiéndose: entra en la primera semana
+ *   como vencido sin autorizar.
+ * - Una obligación con su proveedor cuenta lo que le falta: su monto menos las
+ *   facturas vivas de ese proveedor en el mes, nunca menos de cero.
  * - Entradas: cobros esperados y lo ya cobrado después del corte (en la semana
  *   en que llegó). Un cobro esperado cuya fecha ya pasó está vencido y no se
  *   cuenta: no se proyecta dinero que ya llegó tarde.
@@ -38,6 +43,9 @@ import {
  */
 
 export const SEMANAS = 13;
+
+/** Estado del pago para el flujo: sin cancelados ni rechazados. */
+export type EstadoPagoFlujo = "por_autorizar" | "listo_para_pagar" | "sin_solicitud";
 
 export type OrigenCifra = "comprometido" | "declarado" | "banco_demo";
 
@@ -54,6 +62,10 @@ export type Movimiento = {
   /** Se puede mover en el escenario: pagos a proveedores y obligaciones. */
   movible: boolean;
   atrasado?: boolean;
+  /** Pago a proveedor que nadie ha autorizado (por autorizar o sin solicitud). */
+  sinAutorizar?: boolean;
+  /** Obligación con proveedor: lo que ese proveedor ya facturó en el mes y se descontó. */
+  facturadoCentavos?: number;
   /** Cobro ya recibido (después del corte): entra en la semana en que llegó. */
   cobrado?: boolean;
   /** Nómina: cuántas personas suma el movimiento. */
@@ -83,7 +95,7 @@ export type FuentesFlujo = {
   }[];
   lotes: readonly { id: string; fechaPago: string; totalCentavos: number; personas?: number }[];
   /** Ya sin cancelados, rechazados ni anulados. */
-  pagos: readonly { id: string; proveedor: string; referencia: string; totalCentavos: number; programadaEl: string }[];
+  pagos: readonly { id: string; proveedor: string; referencia: string; totalCentavos: number; programadaEl: string; estado: EstadoPagoFlujo }[];
   obligaciones: readonly {
     id: string;
     concepto: string;
@@ -91,8 +103,8 @@ export type FuentesFlujo = {
     frecuencia: FrecuenciaObligacion;
     proximaFecha: string;
     anclaDia: number;
-    /** Meses (YYYY-MM) en que su proveedor ya trae un cargo: ahí no se cuenta otra vez. */
-    mesesConCargo?: readonly string[];
+    /** Por mes (YYYY-MM), lo que su proveedor ya trae en cargos vivos: se descuenta de la obligación. */
+    cargosPorMes?: Readonly<Record<string, number>>;
   }[];
   /** Solo los que siguen esperados. */
   cobros: readonly { id: string; cliente: string; concepto: string; montoCentavos: number; fechaProbable: string }[];
@@ -163,13 +175,14 @@ const FRECUENCIA_NOMINA: Record<FrecuenciaNomina, string> = {
 
 /**
  * Los movimientos que cuentan para la proyección: después del corte y hasta el
- * fin de la ventana, más los cargos de proveedor con fecha anterior al corte,
- * que siguen sin pagar y van como atrasados.
+ * fin de la ventana, más los cargos de proveedor hasta el corte que nadie
+ * autorizó, que van como vencidos sin autorizar. Los autorizados hasta el
+ * corte se dan por pagados: ya están en el saldo declarado.
  */
 export function movimientosDe(fuentes: FuentesFlujo): Movimiento[] {
   const desde = desplazar(corteDe(fuentes), 1);
   const atrasados = fuentes.pagos
-    .filter((pago) => pago.programadaEl < desde)
+    .filter((pago) => pago.programadaEl < desde && pago.estado !== "listo_para_pagar")
     .map((pago) => ({ ...movimientoDePago(pago), atrasado: true }));
   return [...atrasados, ...movimientosEntre(fuentes, desde, ventanaDe(fuentes.hoy).fin)];
 }
@@ -183,7 +196,30 @@ function movimientoDePago(pago: FuentesFlujo["pagos"][number]): Movimiento {
     centavos: pago.totalCentavos,
     concepto: `${pago.proveedor} · ${pago.referencia}`,
     movible: true,
+    ...(pago.estado === "listo_para_pagar" ? {} : { sinAutorizar: true }),
   };
+}
+
+/**
+ * Lo que falta por pagar en cada fecha de una obligación con proveedor: las
+ * facturas vivas de ese proveedor en el mes se descuentan, en orden, hasta
+ * agotarse. Una renta de $30,000 con una factura de $500 cuenta $29,500; con
+ * la factura completa, nada. Lo usan la proyección, el calendario y los
+ * presupuestos.
+ */
+export function restantesDeObligacion(
+  fechas: readonly string[],
+  montoCentavos: number,
+  cargosPorMes: Readonly<Record<string, number>> = {},
+): { fecha: string; centavos: number; facturadoCentavos: number }[] {
+  const disponible = new Map(Object.entries(cargosPorMes));
+  return fechas.map((fecha) => {
+    const mes = fecha.slice(0, 7);
+    const facturas = disponible.get(mes) ?? 0;
+    const facturadoCentavos = Math.min(Math.max(facturas, 0), montoCentavos);
+    disponible.set(mes, facturas - facturadoCentavos);
+    return { fecha, centavos: montoCentavos - facturadoCentavos, facturadoCentavos };
+  });
 }
 
 /** Todos los movimientos con fecha entre `desde` y `fin` (incluidas). El calendario usa el mes. */
@@ -251,16 +287,20 @@ export function movimientosEntre(fuentes: FuentesFlujo, desde: string, fin: stri
       fin,
       (base, inicio) => adelantarObligacion(base, inicio, obligacion.frecuencia, obligacion.anclaDia),
     );
-    for (const fecha of fechas) {
-      if (obligacion.mesesConCargo?.includes(fecha.slice(0, 7))) continue;
+    for (const { fecha, centavos, facturadoCentavos } of restantesDeObligacion(fechas, obligacion.montoCentavos, obligacion.cargosPorMes)) {
+      if (centavos === 0) continue;
       movimientos.push({
         clave: `obl:${obligacion.id}:${fecha}`,
         tipo: "obligacion",
         sentido: "salida",
         fecha,
-        centavos: obligacion.montoCentavos,
-        concepto: obligacion.concepto,
+        centavos,
+        concepto:
+          facturadoCentavos > 0
+            ? `${obligacion.concepto}: ${formatoPesos(centavos)} restantes (ya hay factura por ${formatoPesos(facturadoCentavos)})`
+            : obligacion.concepto,
         movible: true,
+        ...(facturadoCentavos > 0 ? { facturadoCentavos } : {}),
       });
     }
   }
@@ -334,13 +374,19 @@ export function proyectar(fuentes: FuentesFlujo, escenario: Escenario | null = n
   const { inicio, fin } = ventanaDe(fuentes.hoy);
   const corte = corteDe(fuentes);
   const base = movimientosDe(fuentes);
-  const movibles = base.filter((movimiento) => movimiento.movible && movimiento.fecha >= fuentes.hoy);
+  // Lo que sigue por venir y lo atrasado (que va a la primera semana) se puede mover a una fecha nueva.
+  const movibles = base.filter(
+    (movimiento) => movimiento.movible && (movimiento.fecha >= fuentes.hoy || movimiento.atrasado === true || movimiento.fecha < inicio),
+  );
 
   let aplicado: Proyeccion["escenario"] = null;
   const movimientos = base.map((movimiento) => {
     if (!escenario || movimiento.clave !== escenario.clave || !movimiento.movible) return movimiento;
     aplicado = { ...escenario, concepto: movimiento.concepto };
-    return { ...movimiento, fecha: escenario.fecha, fechaOriginal: movimiento.fecha };
+    // Movido, ya no está atrasado: cuenta en la semana de su fecha nueva.
+    const movido: Movimiento = { ...movimiento, fecha: escenario.fecha, fechaOriginal: movimiento.fecha };
+    delete movido.atrasado;
+    return movido;
   });
 
   const semanas: Semana[] = Array.from({ length: SEMANAS }, (_, indice) => ({

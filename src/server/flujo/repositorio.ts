@@ -8,6 +8,7 @@ import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import {
   booleano,
   centavos,
+  centavosPorMes,
   centavosONulo,
   entero,
   fecha,
@@ -17,7 +18,6 @@ import {
   registro,
   texto,
   textoONulo,
-  textos,
   unaFila,
 } from "./lectura";
 
@@ -27,7 +27,7 @@ import {
  * Ninguna escribe.
  */
 
-export type PagoFuente = FuentesFlujo["pagos"][number] & { venceEl: string; estado: "por_autorizar" | "listo_para_pagar" | "sin_solicitud" };
+export type PagoFuente = FuentesFlujo["pagos"][number] & { venceEl: string };
 export type ObligacionFuente = FuentesFlujo["obligaciones"][number] & {
   areaId: string | null;
   areaNombre: string | null;
@@ -75,9 +75,10 @@ export async function leerSaldo(consulta: Consulta, empresaId: string): Promise<
 /**
  * Las fuentes del flujo con fecha entre $2 y $3. Pagos: sin anulados, ni
  * rechazados ni cancelados (un cargo sin solicitud todavía cuenta), y también
- * los de antes de $2: siguen sin pagar y la proyección los lleva como
- * atrasados. Cobros: los esperados por su fecha probable y los cobrados por la
- * fecha en que llegó el dinero. Nómina y obligaciones: su base, para que el
+ * los de antes de $2 con su estado: la proyección da por pagados los
+ * autorizados y lleva los no autorizados como vencidos sin autorizar.
+ * Cobros: los esperados por su fecha probable y los cobrados por la fecha en
+ * que llegó el dinero. Nómina y obligaciones: su base, para que el
  * dominio arme la serie.
  */
 export const SQL_FUENTES = `
@@ -111,13 +112,15 @@ export const SQL_FUENTES = `
         'proxima', to_char(o.proxima_fecha, 'YYYY-MM-DD'), 'ancla', o.ancla_dia,
         'area', o.cost_center_id, 'area_nombre', c.nombre,
         'proveedor_nombre', coalesce(s.nombre_comercial, s.razon_social),
-        -- Meses en que el proveedor de la obligación ya trae un cargo vivo: ahí no se cuenta otra vez.
-        'meses_con_cargo', case when o.supplier_id is null then '[]'::json else (select coalesce(json_agg(distinct to_char(p.programada_el, 'YYYY-MM')), '[]'::json)
-           from supplier_payables p
-           left join supplier_payment_requests r on r.payable_id = p.id and r.company_id = p.company_id
-          where p.company_id = $1 and p.supplier_id = o.supplier_id and p.anulado_en is null
-            and p.programada_el between date_trunc('month', $2::date)::date and $3::date
-            and coalesce(r.estado, 'por_autorizar') in ('por_autorizar', 'listo_para_pagar')) end) order by o.proxima_fecha, o.id)
+        -- Por mes, lo que el proveedor de la obligación ya trae en cargos vivos: se descuenta de la obligación.
+        'cargos_por_mes', case when o.supplier_id is null then '{}'::json else (select coalesce(json_object_agg(x.mes, x.total::text), '{}'::json)
+           from (select to_char(p.programada_el, 'YYYY-MM') as mes, sum(p.total_centavos) as total
+                   from supplier_payables p
+                   left join supplier_payment_requests r on r.payable_id = p.id and r.company_id = p.company_id
+                  where p.company_id = $1 and p.supplier_id = o.supplier_id and p.anulado_en is null
+                    and p.programada_el between date_trunc('month', $2::date)::date and $3::date
+                    and coalesce(r.estado, 'por_autorizar') in ('por_autorizar', 'listo_para_pagar')
+                  group by 1) x) end) order by o.proxima_fecha, o.id)
        from recurring_obligations o
        left join cost_centers c on c.id = o.cost_center_id and c.company_id = o.company_id
        left join suppliers s on s.id = o.supplier_id and s.company_id = o.company_id
@@ -168,7 +171,7 @@ export async function leerFuentes(consulta: Consulta, empresaId: string, desde: 
       areaId: textoONulo(o.area),
       areaNombre: textoONulo(o.area_nombre),
       proveedorNombre: textoONulo(o.proveedor_nombre),
-      mesesConCargo: textos(o.meses_con_cargo),
+      cargosPorMes: centavosPorMes(o.cargos_por_mes),
     })),
     cobros: lista(fila.cobros).map((k) => ({
       id: texto(k.id),
@@ -212,12 +215,14 @@ export const SQL_PRESUPUESTOS = `
     coalesce((select json_agg(json_build_object(
         'area', o.cost_center_id, 'monto', o.monto_centavos::text, 'frecuencia', o.frecuencia,
         'proxima', to_char(o.proxima_fecha, 'YYYY-MM-DD'), 'ancla', o.ancla_dia,
-        'meses_con_cargo', case when o.supplier_id is null then '[]'::json else (select coalesce(json_agg(distinct to_char(p.programada_el, 'YYYY-MM')), '[]'::json)
-           from supplier_payables p
-           left join supplier_payment_requests r on r.payable_id = p.id and r.company_id = p.company_id
-          where p.company_id = $1 and p.supplier_id = o.supplier_id and p.anulado_en is null
-            and p.programada_el between date_trunc('month', $2::date)::date and $3::date
-            and coalesce(r.estado, 'por_autorizar') in ('por_autorizar', 'listo_para_pagar')) end))
+        'cargos_por_mes', case when o.supplier_id is null then '{}'::json else (select coalesce(json_object_agg(x.mes, x.total::text), '{}'::json)
+           from (select to_char(p.programada_el, 'YYYY-MM') as mes, sum(p.total_centavos) as total
+                   from supplier_payables p
+                   left join supplier_payment_requests r on r.payable_id = p.id and r.company_id = p.company_id
+                  where p.company_id = $1 and p.supplier_id = o.supplier_id and p.anulado_en is null
+                    and p.programada_el between date_trunc('month', $2::date)::date and $3::date
+                    and coalesce(r.estado, 'por_autorizar') in ('por_autorizar', 'listo_para_pagar')
+                  group by 1) x) end))
        from recurring_obligations o
       where o.company_id = $1 and o.activa and o.cost_center_id is not null and o.proxima_fecha <= $3::date), '[]'::json) as obligaciones,
     coalesce((select json_agg(json_build_object(
@@ -256,7 +261,7 @@ export async function leerFuentesPresupuesto(
       frecuencia: frecuenciaObligacion(o.frecuencia),
       proximaFecha: fecha(o.proxima),
       anclaDia: entero(o.ancla),
-      mesesConCargo: textos(o.meses_con_cargo),
+      cargosPorMes: centavosPorMes(o.cargos_por_mes),
     })),
     personas: lista(fila.personas).map((p) => ({
       id: texto(p.id),

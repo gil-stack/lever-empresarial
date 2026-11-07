@@ -1,12 +1,14 @@
 import { mensualEstimado, sumarCentavos, type FrecuenciaNomina } from "../nomina";
 import { adelantarObligacion, fechasDeSerie, primeroDelMes, siguienteObligacion, ultimoDelMes, type FrecuenciaObligacion } from "./fechas";
+import { restantesDeObligacion } from "./proyeccion";
 
 /**
  * Presupuestos vivos del mes en curso (hora de México). El gasto de un área es:
  * - la nómina neta de sus personas, prorrateada al mes según su frecuencia;
  * - los pagos a proveedores del área (no rechazados ni cancelados) con fecha
  *   programada en el mes;
- * - las obligaciones recurrentes del área que caen en el mes.
+ * - las obligaciones recurrentes del área que caen en el mes, menos lo que su
+ *   proveedor ya facturó ese mes (ya cuenta en los pagos a proveedores).
  * El gasto de una persona son los pagos a proveedores que ella solicitó en el
  * mes; su nómina no cuenta contra su bolsa (son presupuestos separados).
  */
@@ -27,8 +29,8 @@ export type FuentesPresupuesto = {
     frecuencia: FrecuenciaObligacion;
     proximaFecha: string;
     anclaDia: number;
-    /** Meses (YYYY-MM) en que su proveedor ya trae un cargo: ese mes la obligación no suma otra vez. */
-    mesesConCargo?: readonly string[];
+    /** Por mes (YYYY-MM), lo que su proveedor ya trae en cargos vivos: se descuenta de la obligación. */
+    cargosPorMes?: Readonly<Record<string, number>>;
   }[];
   personas: readonly { id: string; nombre: string; areaNombre: string | null; presupuestoCentavos: number; pagosCentavos: number }[];
 };
@@ -74,15 +76,17 @@ export function calcularPresupuestos(fuentes: FuentesPresupuesto): Presupuestos 
       fuentes.obligaciones
         .filter((obligacion) => obligacion.areaId === area.id)
         .flatMap((obligacion) =>
-          fechasDeSerie(
-            obligacion.proximaFecha,
-            (fecha) => siguienteObligacion(fecha, obligacion.frecuencia, obligacion.anclaDia),
-            desde,
-            hasta,
-            (base, inicio) => adelantarObligacion(base, inicio, obligacion.frecuencia, obligacion.anclaDia),
-          )
-            .filter((fecha) => !obligacion.mesesConCargo?.includes(fecha.slice(0, 7)))
-            .map(() => obligacion.montoCentavos),
+          restantesDeObligacion(
+            fechasDeSerie(
+              obligacion.proximaFecha,
+              (fecha) => siguienteObligacion(fecha, obligacion.frecuencia, obligacion.anclaDia),
+              desde,
+              hasta,
+              (base, inicio) => adelantarObligacion(base, inicio, obligacion.frecuencia, obligacion.anclaDia),
+            ),
+            obligacion.montoCentavos,
+            obligacion.cargosPorMes,
+          ).map((ocurrencia) => ocurrencia.centavos),
         ),
     );
     const gastoCentavos = sumarCentavos([nominaCentavos, proveedoresCentavos, obligacionesCentavos]);

@@ -168,8 +168,8 @@ function ProyeccionSemanal({ flujo, empresaId }: { flujo: FlujoInicio; empresaId
         <div>
           <h2 id="proyeccion-titulo">Proyección a 13 semanas</h2>
           <p>
-            Semanas de lunes a domingo, hora del centro de México. Movimientos después del {fechaConAnio(p.corte)}; los pagos a proveedores
-            de antes que siguen sin pagar van como atrasados en la primera semana.
+            Semanas de lunes a domingo, hora del centro de México. Movimientos después del {fechaConAnio(p.corte)}. Los pagos a proveedores
+            de antes ya autorizados se dan por pagados en el saldo declarado; los vencidos sin autorizar van en la primera semana.
           </p>
         </div>
         <p className="flujo-leyenda">
@@ -287,7 +287,7 @@ function Renglon({ m }: { m: Movimiento }) {
     <li data-clave={m.clave}>
       <span>
         {fechaCorta(m.fecha)} · {m.concepto}
-        {m.atrasado ? <Insignia tono="aviso">Atrasado</Insignia> : null}
+        {m.atrasado ? <Insignia tono="aviso">{m.sinAutorizar ? "Vencido sin autorizar" : "Atrasado"}</Insignia> : null}
         {m.cobrado ? <Insignia tono="sello">Cobrado</Insignia> : null}
         {m.fechaOriginal ? <Insignia tono="sello">Escenario</Insignia> : null}
       </span>
