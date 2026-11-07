@@ -1237,7 +1237,7 @@ async function correos() {
   const dir = `${SALIDA}/correos`;
   mkdirSync(dir, { recursive: true });
   execFileSync("./node_modules/.bin/tsx", ["scripts/evidencia/ola1b-correos.ts", dir], { stdio: "inherit" });
-  const plantillas = ["invitacion-empresa", "invitacion-usuario", "invitacion-personal", "recuperar-contrasena", "aviso-seguridad", "aviso-clabe-nomina"];
+  const plantillas = ["invitacion-empresa", "invitacion-usuario", "invitacion-personal", "recuperar-contrasena", "aviso-seguridad", "aviso-clabe-nomina", "resumen-semanal"];
   for (const nombre of plantillas) {
     // En local el logo se sirve desde este mismo `next start` (public/lever-email.png), no desde producción.
     const html = readFileSync(`${dir}/${nombre}.html`, "utf8").replaceAll("https://www.leverpagos.com/lever-email.png", `${BASE}/lever-email.png`);

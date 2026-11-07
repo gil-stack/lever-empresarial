@@ -163,7 +163,7 @@ También se midió a 390 la barra móvil mientras carga, en los 3 temas, sin fal
 
 Cada plantilla se renderiza a HTML (`scripts/evidencia/ola1b-correos.ts`) y se abre con el esquema claro y con el oscuro. El logo lo sirve este mismo `next start` (`public/lever-email.png`), y en cada una se comprueba que carga, con ancho natural mayor que 0 y alt «Lever Empresas».
 
-Plantillas: `invitacion-empresa`, `invitacion-usuario`, `invitacion-personal`, `recuperar-contrasena`, `aviso-seguridad` y `aviso-clabe-nomina`. El HTML de cada una está en `correos/`.
+Plantillas: `invitacion-empresa`, `invitacion-usuario`, `invitacion-personal`, `recuperar-contrasena`, `aviso-seguridad`, `aviso-clabe-nomina` y `resumen-semanal` (la que trajo #52 para los lunes; sus cifras de ejemplo usan los mismos formateadores que el envío real). El HTML de cada una está en `correos/`.
 
 ## Comparación con el diseño
 
