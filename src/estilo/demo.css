@@ -984,7 +984,7 @@
     calc(100% - 10px) calc(50% + 1px);
 }
 
-.demo-filtros .segmentado a {
+.demo-filtros .segmentado button {
   white-space: nowrap;
 }
 

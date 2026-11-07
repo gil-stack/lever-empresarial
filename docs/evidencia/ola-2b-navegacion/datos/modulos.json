@@ -21,6 +21,51 @@
   },
   {
     "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: Tab en «Monto desde» filtra con una sola navegación",
+    "detalle": "1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: elegir en «Área» filtra con una sola navegación",
+    "detalle": "Compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: elegir en «Tarjeta» filtra con una sola navegación",
+    "detalle": "Combustible ••8833 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: elegir en «Categoría» filtra con una sola navegación",
+    "detalle": "Combustible · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: elegir en «Comprobante» filtra con una sola navegación",
+    "detalle": "Correo Lever · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: elegir en «Agrupar por» filtra con una sola navegación",
+    "detalle": "persona · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: monto y clic en «7 días» llevan los dos en una sola navegación",
+    "detalle": "1 navegación(es) · marcado «7 días» · monto 4000"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
+    "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
+    "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
+  },
+  {
+    "ok": true,
     "texto": "modulos oscuro 1440 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
     "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":88}"
   },
@@ -58,6 +103,51 @@
     "ok": true,
     "texto": "modulos oscuro 390 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
     "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: Tab en «Monto desde» filtra con una sola navegación",
+    "detalle": "1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: elegir en «Área» filtra con una sola navegación",
+    "detalle": "Compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: elegir en «Tarjeta» filtra con una sola navegación",
+    "detalle": "Combustible ••8833 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: elegir en «Categoría» filtra con una sola navegación",
+    "detalle": "Combustible · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: elegir en «Comprobante» filtra con una sola navegación",
+    "detalle": "Correo Lever · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: elegir en «Agrupar por» filtra con una sola navegación",
+    "detalle": "persona · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: monto y toque en «7 días» llevan los dos en una sola navegación",
+    "detalle": "1 navegación(es) · marcado «7 días» · monto 4000"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
+    "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
+    "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
   },
   {
     "ok": true,
@@ -101,6 +191,51 @@
   },
   {
     "ok": true,
+    "texto": "modulos claro 1440 Movimientos: Tab en «Monto desde» filtra con una sola navegación",
+    "detalle": "1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: elegir en «Área» filtra con una sola navegación",
+    "detalle": "Compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: elegir en «Tarjeta» filtra con una sola navegación",
+    "detalle": "Combustible ••8833 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: elegir en «Categoría» filtra con una sola navegación",
+    "detalle": "Combustible · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: elegir en «Comprobante» filtra con una sola navegación",
+    "detalle": "Correo Lever · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: elegir en «Agrupar por» filtra con una sola navegación",
+    "detalle": "persona · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: monto y clic en «7 días» llevan los dos en una sola navegación",
+    "detalle": "1 navegación(es) · marcado «7 días» · monto 4000"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
+    "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
+    "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
+  },
+  {
+    "ok": true,
     "texto": "modulos claro 1440 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
     "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":88}"
   },
@@ -138,6 +273,51 @@
     "ok": true,
     "texto": "modulos claro 390 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
     "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: Tab en «Monto desde» filtra con una sola navegación",
+    "detalle": "1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: elegir en «Área» filtra con una sola navegación",
+    "detalle": "Compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: elegir en «Tarjeta» filtra con una sola navegación",
+    "detalle": "Combustible ••8833 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: elegir en «Categoría» filtra con una sola navegación",
+    "detalle": "Combustible · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: elegir en «Comprobante» filtra con una sola navegación",
+    "detalle": "Correo Lever · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: elegir en «Agrupar por» filtra con una sola navegación",
+    "detalle": "persona · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: monto y toque en «7 días» llevan los dos en una sola navegación",
+    "detalle": "1 navegación(es) · marcado «7 días» · monto 4000"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
+    "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
+    "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
   },
   {
     "ok": true,
@@ -181,6 +361,51 @@
   },
   {
     "ok": true,
+    "texto": "modulos lever 1440 Movimientos: Tab en «Monto desde» filtra con una sola navegación",
+    "detalle": "1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: elegir en «Área» filtra con una sola navegación",
+    "detalle": "Compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: elegir en «Tarjeta» filtra con una sola navegación",
+    "detalle": "Combustible ••8833 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: elegir en «Categoría» filtra con una sola navegación",
+    "detalle": "Combustible · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: elegir en «Comprobante» filtra con una sola navegación",
+    "detalle": "Correo Lever · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: elegir en «Agrupar por» filtra con una sola navegación",
+    "detalle": "persona · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: monto y clic en «7 días» llevan los dos en una sola navegación",
+    "detalle": "1 navegación(es) · marcado «7 días» · monto 4000"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
+    "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
+    "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
+  },
+  {
+    "ok": true,
     "texto": "modulos lever 1440 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
     "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":88}"
   },
@@ -218,6 +443,51 @@
     "ok": true,
     "texto": "modulos lever 390 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
     "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: Tab en «Monto desde» filtra con una sola navegación",
+    "detalle": "1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: elegir en «Área» filtra con una sola navegación",
+    "detalle": "Compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: elegir en «Tarjeta» filtra con una sola navegación",
+    "detalle": "Combustible ••8833 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: elegir en «Categoría» filtra con una sola navegación",
+    "detalle": "Combustible · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: elegir en «Comprobante» filtra con una sola navegación",
+    "detalle": "Correo Lever · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: elegir en «Agrupar por» filtra con una sola navegación",
+    "detalle": "persona · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: monto y toque en «7 días» llevan los dos en una sola navegación",
+    "detalle": "1 navegación(es) · marcado «7 días» · monto 4000"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
+    "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
+    "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
   },
   {
     "ok": true,

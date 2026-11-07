@@ -107,3 +107,33 @@ test("Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegaci�
   }
   expect(errores).toEqual([]);
 });
+
+test.describe("en el teléfono", () => {
+  test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+
+  test("Movimientos: escribir el monto y tocar «7 días» lleva los dos en una sola navegación", async ({ page, context }) => {
+    const errores = vigilarConsola(page);
+    await sesionDe(context, GIL);
+    await page.goto(`/c/${TALLER}/consola/movimientos`);
+    // Sin depender de si el periodo es enlace o botón: lo que se mide es la dirección y la red.
+    const periodos = page.locator('[aria-label="Periodo"]');
+    const navegaciones: string[] = [];
+    page.on("request", (peticion) => {
+      if (peticion.headers()["next-router-prefetch"]) return;
+      const url = new URL(peticion.url());
+      if (url.pathname.endsWith("/consola/movimientos") && url.search) navegaciones.push(url.search);
+    });
+    await page.locator("#movimientos-desde").tap();
+    await page.keyboard.type("4000");
+    // Sin salir del campo: el toque en el periodo es lo que le quita el foco al monto.
+    await periodos.getByText("7 días", { exact: true }).tap();
+    await expect(page).toHaveURL(/[?&]periodo=7(&|$)/);
+    await expect(page).toHaveURL(/[?&]desde=4000(&|$)/);
+    await expect(periodos.locator('[aria-pressed="true"], [aria-current="page"]')).toHaveText("7 días");
+    await expect(page.locator("#movimientos-desde")).toHaveValue("4000");
+    // Un segundo envío saldría a más tardar medio segundo después; uno de sobra para verlo.
+    await page.waitForTimeout(1500);
+    expect(navegaciones, "un toque, una navegación").toHaveLength(1);
+    expect(errores).toEqual([]);
+  });
+});

@@ -621,7 +621,7 @@ async function modulos() {
     for (const ancho of ANCHOS) {
       const etiqueta = `modulos ${tema} ${ancho}`;
       const { nav, p, errores } = await abrir({ quien: "laura", tema, ancho });
-      // Navegaciones del formulario: las precargas de los enlaces de periodo llevan los mismos filtros y no cuentan.
+      // Navegaciones del formulario: las precargas (la de «Limpiar filtros», por ejemplo) no cuentan.
       const navegaciones = [];
       p.on("request", (r) => {
         if (!r.headers()["next-router-prefetch"] && /\/consola\/movimientos\?/.test(r.url())) navegaciones.push(r.url());
@@ -647,6 +647,71 @@ async function modulos() {
       await limpiar.click();
       await p.waitForURL((url) => url.pathname.endsWith("/consola/movimientos") && url.search === "");
       anotar((await compras()) === "34" && (await limpiar.count()) === 0, `${etiqueta} Movimientos: «Limpiar filtros» vuelve a las 34 compras`);
+      // Cada caso cuenta sus navegaciones en la red: una por acción.
+      const contar = async (accion, llegar) => {
+        navegaciones.length = 0;
+        await accion();
+        await p.waitForURL(llegar);
+        await p.waitForTimeout(800);
+        return navegaciones.length;
+      };
+      const abrirMovimientos = () => p.goto(`${BASE}${ALTAMAR}/consola/movimientos`, { waitUntil: "networkidle" });
+      const monto = p.locator("#movimientos-desde");
+      const periodos = p.getByRole("group", { name: "Periodo" });
+      const periodoMarcado = () => periodos.locator('[aria-pressed="true"]').innerText();
+      await abrirMovimientos();
+      const conTab = await contar(async () => {
+        await monto.click();
+        await p.keyboard.type("2000");
+        await p.keyboard.press("Tab");
+      }, (url) => url.searchParams.get("desde") === "2000");
+      anotar(conTab === 1, `${etiqueta} Movimientos: Tab en «Monto desde» filtra con una sola navegación`, `${conTab} navegación(es)`);
+      for (const [campo, nombre] of [["Área", "area"], ["Tarjeta", "tarjeta"], ["Categoría", "categoria"], ["Comprobante", "comprobante"], ["Agrupar por", "agrupar"]]) {
+        await abrirMovimientos();
+        const selector = p.getByLabel(campo, { exact: true });
+        const valor = await selector.locator("option").nth(1).getAttribute("value");
+        const veces = await contar(() => selector.selectOption(valor), (url) => url.searchParams.get(nombre) === valor);
+        anotar(veces === 1, `${etiqueta} Movimientos: elegir en «${campo}» filtra con una sola navegación`, `${valor} · ${veces} navegación(es)`);
+      }
+      // N3: escribir el monto y, sin salir del campo, tocar un periodo (en escritorio, un clic lento de 120 ms).
+      await abrirMovimientos();
+      const tocarPeriodo = await contar(async () => {
+        await monto.click();
+        await p.keyboard.type("4000");
+        const sieteDias = periodos.getByRole("button", { name: "7 días" });
+        if (ancho < 600) await sieteDias.tap();
+        else await sieteDias.click({ delay: 120 });
+      }, (url) => url.searchParams.get("periodo") === "7" && url.searchParams.get("desde") === "4000");
+      anotar(
+        tocarPeriodo === 1 && (await periodoMarcado()) === "7 días" && (await monto.inputValue()) === "4000",
+        `${etiqueta} Movimientos: monto y ${ancho < 600 ? "toque" : "clic"} en «7 días» llevan los dos en una sola navegación`,
+        `${tocarPeriodo} navegación(es) · marcado «${await periodoMarcado()}» · monto ${await monto.inputValue()}`,
+      );
+      await capturar(p, `${carpeta}/movimientos-periodo-${tema}-${ancho}.webp`);
+      // Con teclado: el botón «Hoy» con Enter; el monto se queda y el foco sigue en el botón.
+      await periodos.getByRole("button", { name: "Hoy" }).focus();
+      const conTeclado = await contar(() => p.keyboard.press("Enter"), (url) => url.searchParams.get("periodo") === "hoy" && url.searchParams.get("desde") === "4000");
+      const foco = await p.evaluate(() => document.activeElement?.textContent?.trim() ?? "");
+      anotar(conTeclado === 1 && (await periodoMarcado()) === "Hoy" && foco === "Hoy", `${etiqueta} Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí`, `${conTeclado} navegación(es) · foco «${foco}»`);
+      {
+        // Sin JavaScript: el botón del periodo envía el formulario con lo demás, y el periodo va una sola vez.
+        const sinJs = await abrir({ quien: "laura", tema, ancho, javaScript: false });
+        await sinJs.p.goto(`${BASE}${ALTAMAR}/consola/movimientos`);
+        await sinJs.p.getByLabel("Persona", { exact: true }).selectOption("Carlos Méndez");
+        await sinJs.p.locator("#movimientos-desde").fill("1000");
+        await sinJs.p.getByRole("group", { name: "Periodo" }).getByRole("button", { name: "7 días" }).click();
+        await sinJs.p.waitForURL((url) => url.searchParams.get("persona") === "Carlos Méndez");
+        const consulta = new URL(sinJs.p.url()).searchParams;
+        await sinJs.p.getByRole("button", { name: "Filtrar" }).click();
+        await sinJs.p.waitForLoadState();
+        const trasFiltrar = new URL(sinJs.p.url()).searchParams.getAll("periodo");
+        anotar(
+          JSON.stringify(consulta.getAll("periodo")) === '["7"]' && consulta.get("desde") === "1000" && JSON.stringify(trasFiltrar) === '["7"]',
+          `${etiqueta} Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo`,
+          `${consulta.toString()} · tras Filtrar periodo=${trasFiltrar.join(",")}`,
+        );
+        await sinJs.nav.close();
+      }
 
       await p.goto(`${BASE}${ALTAMAR}/consola/fiscal`, { waitUntil: "networkidle" });
       const caja = p.locator('section[aria-labelledby="fiscal-diot"] .tabla-contenedor');

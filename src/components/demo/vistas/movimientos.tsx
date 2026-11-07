@@ -71,17 +71,6 @@ export function filtrarCompras(compras: readonly CompraDemo[], filtros: FiltrosM
   );
 }
 
-function enlaceDePeriodo(base: string, filtros: FiltrosMovimientos, periodo: string): string {
-  const params = new URLSearchParams();
-  if (periodo !== "mes") params.set("periodo", periodo);
-  for (const campo of ["persona", "area", "tarjeta", "categoria", "comprobante", "agrupar"] as const) {
-    if (filtros[campo]) params.set(campo, filtros[campo]);
-  }
-  if (filtros.desde) params.set("desde", String(filtros.desde / 100));
-  const consulta = params.toString();
-  return consulta ? `${base}?${consulta}` : base;
-}
-
 function Selector({ id, etiqueta, nombre, valor, opciones }: { id: string; etiqueta: string; nombre: string; valor: string; opciones: readonly string[] }) {
   return (
     <div className="campo">
@@ -171,21 +160,21 @@ export function VistaMovimientos({
     <>
       <Cifras cifras={cifras} etiqueta="Movimientos en cifras" />
       <section className="hoja" aria-label="Filtros de movimientos">
-        <FiltrosAlCambiar action={base}>
+        <FiltrosAlCambiar action={base} periodo={filtros.periodo}>
           <div className="campo">
             <label htmlFor="movimientos-mes">Mes</label>
             <select id="movimientos-mes">
               <option>{MES}</option>
             </select>
           </div>
-          <nav className="segmentado" aria-label="Periodo">
+          {/* Botones del formulario, no enlaces: un toque justo después de escribir el monto lleva los dos. */}
+          <div className="segmentado" role="group" aria-label="Periodo">
             {PERIODOS.map(([valor, texto]) => (
-              <Link key={valor} href={enlaceDePeriodo(base, filtros, valor)} aria-current={filtros.periodo === valor ? "page" : undefined}>
+              <button key={valor} type="submit" name="periodo" value={valor} aria-pressed={filtros.periodo === valor}>
                 {texto}
-              </Link>
+              </button>
             ))}
-          </nav>
-          {filtros.periodo !== "mes" ? <input type="hidden" name="periodo" value={filtros.periodo} /> : null}
+          </div>
           <Selector id="movimientos-persona" etiqueta="Persona" nombre="persona" valor={filtros.persona} opciones={unicos(datos.compras, "persona")} />
           <Selector id="movimientos-area" etiqueta="Área" nombre="area" valor={filtros.area} opciones={unicos(datos.compras, "area")} />
           <Selector id="movimientos-tarjeta" etiqueta="Tarjeta" nombre="tarjeta" valor={filtros.tarjeta} opciones={unicos(datos.compras, "tarjeta")} />
@@ -209,7 +198,7 @@ export function VistaMovimientos({
           </div>
           <span className="demo-filtros-espacio" aria-hidden="true" />
           <noscript>
-            <button type="submit" className="boton-texto boton-chico">
+            <button type="submit" name="periodo" value={filtros.periodo} className="boton-texto boton-chico">
               Filtrar
             </button>
           </noscript>
