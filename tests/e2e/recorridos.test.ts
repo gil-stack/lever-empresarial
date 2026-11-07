@@ -91,11 +91,12 @@ describe("recorridos de entrada y superficie", () => {
     const tablas = new Set([...SQL_RESUMEN.matchAll(/\b(?:from|join)\s+([a-z_]+)/gi)].map((coincidencia) => coincidencia[1]));
     assert.deepEqual([...tablas].sort(), ["categorias", "drawers", "limites", "mensuales", "postings", "recientes"]);
     // Pendientes no lee tesorería: ni el resumen de Inicio, ni cajones, ni el libro, ni las vistas
-    // del flujo. Del flujo solo pide la alerta de faltante, y leerFaltante la niega sin cliente.flujo.ver.
+    // del flujo. Del flujo solo pide la alerta de faltante (leerFaltanteParaPendientes envuelve a leerFaltante),
+    // y leerFaltante la niega sin cliente.flujo.ver.
     assert.doesNotMatch(pendientes, /leerResumenInicio|leerCajones|postings|leerFlujoInicio|leerVistaSaldo|proyeccionCon/i);
     assert.deepEqual(
       [...pendientes.matchAll(/import \{([^}]*)\} from "@\/server\/flujo\/[^"]+"/g)].map((coincidencia) => coincidencia[0]),
-      ['import { leerFaltante, type FaltantePendientes } from "@/server/flujo/servicio"'],
+      ['import { leerFaltanteParaPendientes, type FaltanteDePendientes } from "@/server/flujo/servicio"'],
     );
     const servicioFlujo = readFileSync(new URL("src/server/flujo/servicio.ts", RAIZ), "utf8");
     assert.match(servicioFlujo, /export async function leerFaltante\([\s\S]*?\): Promise<FaltantePendientes \| null> \{\s*if \(!puede\(ctx, "cliente\.flujo\.ver"\)\) return null;/);

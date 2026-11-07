@@ -5,7 +5,7 @@ import { describe, it } from "node:test";
 import { textoDeCausas, type FuentesFlujo } from "../../dominio/flujo/proyeccion.ts";
 import { capacidadesDe, type RolCliente } from "../../nucleo/capacidades.ts";
 import type { ContextoConEmpresa, ContextoDeTenant } from "../../nucleo/contexto.ts";
-import { leerFaltante } from "./servicio.ts";
+import { leerFaltante, leerFaltanteParaPendientes } from "./servicio.ts";
 
 /** Viernes 6 de noviembre de 2026 en México. */
 const AHORA = () => new Date("2026-11-06T18:00:00.000Z");
@@ -93,10 +93,33 @@ describe("faltante en Pendientes", () => {
     assert.equal(sinDetalle.faltante.saldoFinal, conDetalle.faltante.saldoFinal);
   });
 
-  it("la página lee el faltante una vez por petición, junto con la bandeja", () => {
+  it("si la proyección falla, Pendientes recibe «no_disponible» y el fallo queda registrado sin el mensaje crudo", async (t) => {
+    const registro = t.mock.method(console, "error", () => {});
+    const ctx = { ...contexto("finanzas"), peticionId: "pet-1" };
+    const falla = async () => {
+      throw new Error("connect ECONNREFUSED postgres://app:secreto@db.interna:5432/lever");
+    };
+    assert.equal(await leerFaltanteParaPendientes(ctx, { ahora: AHORA, fuentes: falla }), "no_disponible");
+    assert.equal(registro.mock.callCount(), 1);
+    const linea = String(registro.mock.calls[0]?.arguments[0]);
+    assert.deepEqual(JSON.parse(linea), { evento: "pendientes.faltante_no_disponible", codigo: "Error", peticionId: "pet-1" });
+    assert.equal(/secreto|postgres|ECONNREFUSED|Taller|EKU9003173C9/.test(linea), false);
+    // Con permiso y sin falla llega el faltante; sin permiso, nada y sin leer.
+    assert.ok(await leerFaltanteParaPendientes(ctx, { ahora: AHORA, fuentes: lector(2_000_000).fuentes }));
+    const lectura = lector(2_000_000);
+    assert.equal(await leerFaltanteParaPendientes(contexto("liberador"), { ahora: AHORA, fuentes: lectura.fuentes }), null);
+    assert.deepEqual(lectura.llamadas, []);
+    assert.equal(registro.mock.callCount(), 1);
+  });
+
+  it("la página lee el faltante una vez por petición, junto con la bandeja, y la bandeja no cae si el faltante falla", () => {
     const pagina = readFileSync(new URL("../../app/consola/pendientes/page.tsx", import.meta.url), "utf8");
-    assert.match(pagina, /const faltanteDeLaPeticion = cache\(\(ctx: ContextoDeTenant\) => leerFaltante\(ctx\)\)/);
+    assert.match(pagina, /const faltanteDeLaPeticion = cache\(\(ctx: ContextoDeTenant\) => leerFaltanteParaPendientes\(ctx\)\)/);
     assert.match(pagina, /Promise\.all\(\[bandejaDeLaPeticion\(apertura\.ctx\), faltanteDeLaPeticion\(apertura\.ctx\)\]\)/);
-    assert.equal((pagina.match(/leerFaltante\(/g) ?? []).length, 1);
+    assert.equal((pagina.match(/leerFaltante(ParaPendientes)?\(/g) ?? []).length, 1);
+    // «no_disponible» pinta el aviso con su salida a Saldo y alertas.
+    assert.match(pagina, /faltante === "no_disponible"/);
+    assert.match(pagina, /titulo="No se pudo calcular si te alcanza el dinero"/);
+    assert.match(pagina, /Revisa <Link href=\{enEmpresa\(empresaId, "\/consola\/flujo"\)\}>Saldo y alertas<\/Link>\./);
   });
 });

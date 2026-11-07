@@ -153,6 +153,32 @@ export async function leerFaltante(
   return faltante ? { faltante, colchonCentavos } : null;
 }
 
+/** El faltante para Pendientes, o «no_disponible» si la proyección falló. */
+export type FaltanteDePendientes = FaltantePendientes | null | "no_disponible";
+
+/**
+ * Pendientes es la lista de trabajo: si la proyección falla, la bandeja se pinta
+ * igual y la página avisa. El fallo queda registrado con su código y la
+ * petición; nunca con el mensaje crudo, que puede traer la URL de la base.
+ */
+export async function leerFaltanteParaPendientes(
+  ctx: ContextoDeTenant | null | undefined,
+  deps?: Parameters<typeof leerFaltante>[1],
+): Promise<FaltanteDePendientes> {
+  try {
+    return await leerFaltante(ctx, deps);
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        evento: "pendientes.faltante_no_disponible",
+        codigo: error instanceof ErrorDeDominio ? error.codigo : error instanceof Error ? error.name : "desconocido",
+        peticionId: ctx?.peticionId ?? null,
+      }),
+    );
+    return "no_disponible";
+  }
+}
+
 export type VistaSaldo = {
   hoy: string;
   /** El id de la próxima declaración: un envío repetido del formulario no crea otra. */
