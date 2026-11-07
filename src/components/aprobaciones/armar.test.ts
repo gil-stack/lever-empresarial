@@ -113,8 +113,16 @@ describe("Aprobaciones usa las acciones y reglas que ya existen", () => {
     for (const campo of ["requestId", "version", "totalCentavos"]) assert.match(decision, new RegExp(`name="${campo}"`));
     assert.match(decision, /data-atajo="aprobar"/);
     assert.match(decision, /data-atajo="rechazar"/);
+    // La fila decidida se desmonta en el mismo cuadro en que llega la respuesta: un efecto en la fila
+    // nunca correría y la persona no vería «Decisión asentada». El aviso se enciende desde la acción.
+    assert.match(decision, /const resultado = await decidirPago\(previo, datos\);\s+if \(resultado\.tipo === "listo"\) \{\s+setAbierto\(false\);\s+avisar\(/);
+    assert.doesNotMatch(decision, /useEffect/);
     const vista = leer("src/components/aprobaciones/vista.tsx");
     assert.match(vista, /import \{ BotonPrepararNomina \} from "@\/components\/personas\/boton-preparar"/);
+    // Igual que la decisión: tras preparar, la fila de nómina sale de Aprobaciones; abrir el lote no puede depender de un efecto.
+    const boton = leer("src/components/personas/boton-preparar.tsx");
+    assert.match(boton, /const resultado = await enviarPreparacionNomina\(previo, datos\);\s+if \(resultado\.tipo === "listo" && resultado\.id\) router\.push\(/);
+    assert.doesNotMatch(boton, /useEffect/);
   });
 
   it("no escribe umbrales de doble firma que no existen", () => {

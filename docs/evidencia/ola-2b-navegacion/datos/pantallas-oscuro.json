@@ -1,0 +1,1497 @@
+[
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador oscuro 1440: 22 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador oscuro 1440: 32 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio oscuro 1440: 15 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial oscuro 1440: 27 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar oscuro 1440: 32 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil oscuro 1440: 27 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion oscuro 1440: 25 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos oscuro 1440: 27 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas oscuro 1440: 27 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos oscuro 1440: 37 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal oscuro 1440: 31 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta oscuro 1440: 25 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional oscuro 1440: 25 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito oscuro 1440: 25 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion oscuro 1440: 25 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes oscuro 1440: 25 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina oscuro 1440: 25 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro oscuro 1440: 25 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones oscuro 1440: 25 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos oscuro 1440: 27 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos oscuro 1440: 25 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal oscuro 1440: 28 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta oscuro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta oscuro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta oscuro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta oscuro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta oscuro 1440: 25 paradas de Tab en orden y con foco visible",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta oscuro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta oscuro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta oscuro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta oscuro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta oscuro 390: sin errores de consola",
+    "detalle": ""
+  }
+]

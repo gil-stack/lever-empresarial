@@ -32,7 +32,7 @@ export function DisponiblePronto({ producto }: { producto: ProductoDemo }) {
 export function AvisoDemostracion() {
   return (
     <p className="demo-aviso" id={ID_AVISO_DEMO}>
-      <strong>Demostración.</strong>
+      <strong>Demostración.</strong>{" "}
       <span>Datos de ejemplo de Altamar Logística. Los botones que moverían dinero o crearían algo están apagados.</span>
     </p>
   );

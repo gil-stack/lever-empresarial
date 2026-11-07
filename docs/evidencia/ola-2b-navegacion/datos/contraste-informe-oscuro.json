@@ -1,0 +1,12 @@
+{
+  "oscuro-1440": {
+    "medidos": 3275,
+    "minimo": 4.54,
+    "fallas": []
+  },
+  "oscuro-390": {
+    "medidos": 1700,
+    "minimo": 6.03,
+    "fallas": []
+  }
+}

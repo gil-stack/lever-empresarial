@@ -135,7 +135,11 @@ function centinelas() {
 async function htmlYRsc(quien, ruta) {
   const cookie = `__Host-sesion=${SESIONES[quien]}; tema=oscuro`;
   const html = await fetch(`${BASE}${ruta}`, { headers: { cookie }, redirect: "manual" });
-  const rsc = await fetch(`${BASE}${ruta}${ruta.includes("?") ? "&" : "?"}_rsc=ola2b`, { headers: { cookie, RSC: "1" }, redirect: "manual" });
+  // Next 16 valida el parámetro _rsc contra los encabezados del enrutador y redirige (307) al bueno: se sigue
+  // esa redirección a mano para conservar la cookie y el encabezado RSC.
+  let rsc = await fetch(`${BASE}${ruta}`, { headers: { cookie, RSC: "1" }, redirect: "manual" });
+  const destino = rsc.headers.get("location");
+  if (rsc.status === 307 && destino?.includes("_rsc")) rsc = await fetch(new URL(destino, BASE), { headers: { cookie, RSC: "1" }, redirect: "manual" });
   return {
     html: { estado: html.status, tipo: html.headers.get("content-type") ?? "", cuerpo: await html.text() },
     rsc: { estado: rsc.status, tipo: rsc.headers.get("content-type") ?? "", cuerpo: await rsc.text() },
@@ -231,7 +235,7 @@ async function flujos() {
       const main = document.querySelector("main");
       const botones = [...main.querySelectorAll("button")].filter((b) => b.type !== "submit");
       return {
-        aviso: /Demostración\. Datos de ejemplo de Altamar Logística/.test(main.innerText),
+        aviso: /Demostración\.\s+Datos de ejemplo de Altamar Logística/.test(main.innerText),
         encendidos: botones.filter((b) => !b.disabled).map((b) => b.textContent.trim().slice(0, 30)),
         marcas: main.querySelectorAll(".demo-marca").length,
         postForms: main.querySelectorAll('form[method="post" i]').length,
@@ -258,7 +262,7 @@ async function flujos() {
     anotar(await p.getByText("Al ritmo actual se acaba el día 24").isVisible(), "2 demo Tarjetas: clic en «Presupuestos por área» cambia la vista");
     await capturar(p, `${carpeta}/2-tarjetas-presupuestos-1440.webp`);
     await p.goto(`${BASE}${ALTAMAR}/consola/movimientos`, { waitUntil: "networkidle" });
-    await p.getByLabel("Persona").selectOption("Carlos Méndez");
+    await p.getByLabel("Persona", { exact: true }).selectOption("Carlos Méndez");
     await p.getByRole("button", { name: "Filtrar" }).click();
     await p.waitForURL(/persona=Carlos/);
     const filtrado = await p.evaluate(() => document.querySelector("main").innerText.match(/(\d+) compras? con los filtros/)?.[1] ?? null);
@@ -278,7 +282,8 @@ async function flujos() {
     const { nav, p, errores } = await abrir({ quien: "ana" });
     await p.goto(`${BASE}${TALLER}/consola/${modulo}`, { waitUntil: "networkidle" });
     const main = await p.evaluate(() => document.querySelector("main").innerText);
-    anotar(/Disponible pronto/.test(main) && !/\d/.test(main) && !/Demostración/.test(main), `3 real ${titulo}: «Disponible pronto», sin dígitos ni marca de demostración`, main.replace(/\s+/g, " ").slice(0, 120));
+    // «Lista 69-B» es el nombre del enlace real de Fiscal, no una cifra.
+    anotar(/Disponible pronto/i.test(main) && !/\d/.test(main.replaceAll("69-B", "")) && !/Demostración/.test(main), `3 real ${titulo}: «Disponible pronto», sin dígitos ni marca de demostración`, main.replace(/\s+/g, " ").slice(0, 120));
     if (modulo === "gastos" || modulo === "cuenta") await capturar(p, `${carpeta}/3-pronto-${modulo}-1440.webp`, { completa: false });
     const { html, rsc } = await htmlYRsc("ana", `${TALLER}/consola/${modulo}`);
     const enHtml = todos.filter((c) => html.cuerpo.includes(c));
@@ -412,7 +417,9 @@ async function flujos() {
     const { nav, p, errores } = await abrir({ quien: "ana" });
     await p.goto(`${BASE}${TALLER}/consola/aprobaciones`, { waitUntil: "networkidle" });
     await p.getByRole("button", { name: /Más: tu perfil y tu empresa/ }).click();
-    const opciones = await p.locator('[role="menuitem"]').allInnerTexts();
+    const menuMas = p.getByRole("menu", { name: "Más: tu perfil y tu empresa" });
+    await menuMas.getByRole("menuitem", { name: "Mi perfil" }).waitFor({ state: "visible" });
+    const opciones = await menuMas.getByRole("menuitem").allInnerTexts();
     const esperadas = ["Mi perfil", "Apariencia", "Teléfono", "Configuración", "Políticas", "Integraciones"];
     anotar(esperadas.every((o) => opciones.some((t) => t.trim() === o)), "6 «Más»: Tú (Mi perfil, Apariencia, Teléfono) y Empresa (Configuración, Políticas, Integraciones)", opciones.map((o) => o.trim()).join(", "));
     await capturar(p, `${carpeta}/6a-mas-1440.webp`, { completa: false, conFoco: true });
@@ -780,7 +787,7 @@ async function cargando() {
     await capturar(p, `${carpeta}/95-cargando-gastos-${tema}-1440.webp`, { completa: false, espera: 100 });
     anotar(visto, `95-cargando ${tema}: «Gastos» dice «Cargando…» y el marco se queda`);
     soltar();
-    const llego = await p.getByText("Demostración. Datos de ejemplo de Altamar Logística").waitFor({ timeout: 15000 }).then(() => true, () => false);
+    const llego = await p.locator(".demo-aviso", { hasText: "Datos de ejemplo de Altamar Logística" }).waitFor({ timeout: 15000 }).then(() => true, () => false);
     anotar(llego, `95-cargando ${tema}: al llegar, se pinta Gastos`);
     anotar(errores.length === 0, `95-cargando ${tema}: sin errores de consola`, errores.join(" | "));
     await nav.close();
@@ -803,7 +810,7 @@ async function caida() {
         ["90-error-aprobaciones", `${TALLER}/consola/aprobaciones`, /No se pud/],
         ["91-error-perfil", `${TALLER}/consola/perfil`, /No se pud/],
         // Sin base no se sabe si la empresa es de demostración: el módulo no pinta datos de ejemplo.
-        ["92-error-gastos", `${ALTAMAR}/consola/gastos`, /Disponible pronto/],
+        ["92-error-gastos", `${ALTAMAR}/consola/gastos`, /Disponible pronto/i],
       ]) {
         const { nav, p, errores } = await abrir({ quien: "ana", tema, ancho });
         const respuesta = await p.goto(`${BASE}${ruta}`, { waitUntil: "networkidle" });

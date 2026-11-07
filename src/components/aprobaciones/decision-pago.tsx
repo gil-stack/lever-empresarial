@@ -1,9 +1,9 @@
 "use client";
 
-import { createContext, useActionState, useContext, useEffect, useId, useState, type ReactNode } from "react";
+import { createContext, useActionState, useContext, useId, useState, type ReactNode } from "react";
 
 import { decidirPago } from "@/app/consola/proveedores/acciones-pagos";
-import { ESTADO_PAGO_INICIAL } from "@/app/consola/proveedores/estado";
+import { ESTADO_PAGO_INICIAL, type EstadoPagoFormulario } from "@/app/consola/proveedores/estado";
 import { enviarSinReiniciar, useEnvioConBoton } from "@/components/proveedores/sin-reinicio";
 import { Aviso, BotonEnviar, Dialogo } from "@/components/sistema";
 
@@ -12,7 +12,8 @@ const AvisarDecision = createContext<(texto: string) => void>(() => {});
 /**
  * Al decidir, la acción vuelve a pintar la página y la fila decidida ya no
  * está. El aviso vive aquí, fuera de las filas, para que la confirmación no se
- * vaya con ella.
+ * vaya con ella: la fila lo enciende desde la acción misma, no desde un efecto
+ * que ya no correría porque la fila se desmonta en el mismo cuadro.
  */
 export function ConAvisoDeDecision({ children }: { children: ReactNode }) {
   const [aviso, setAviso] = useState<string | null>(null);
@@ -45,18 +46,19 @@ export function DecisionPagoEnBandeja({
   proveedor: string;
   soloRechazo: boolean;
 }) {
-  const [estado, accion, pendiente] = useActionState(decidirPago, ESTADO_PAGO_INICIAL);
-  const { enviar, oprimido } = useEnvioConBoton(accion);
-  const [abierto, setAbierto] = useState(false);
   const avisar = useContext(AvisarDecision);
+  const [abierto, setAbierto] = useState(false);
+  const [estado, accion, pendiente] = useActionState(async (previo: EstadoPagoFormulario, datos: FormData) => {
+    const resultado = await decidirPago(previo, datos);
+    if (resultado.tipo === "listo") {
+      setAbierto(false);
+      avisar(`${proveedor}: ${resultado.mensaje}`);
+    }
+    return resultado;
+  }, ESTADO_PAGO_INICIAL);
+  const { enviar, oprimido } = useEnvioConBoton(accion);
   const motivo = useId();
   const error = `${motivo}-error`;
-
-  useEffect(() => {
-    if (estado.tipo !== "listo") return;
-    setAbierto(false);
-    avisar(`${proveedor}: ${estado.mensaje}`);
-  }, [avisar, estado, proveedor]);
 
   const motivoFalla = estado.tipo === "invalido" && estado.campo === "motivo";
   const ocultos = (

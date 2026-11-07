@@ -213,7 +213,18 @@ function EmpresaLateral({
   );
   if (empresas.length < 2 && mas.length === 0) return <div className="empresa-lateral">{tarjeta}</div>;
   return (
-    <MenuDesplegable clase="empresa-lateral" etiqueta="Más: tu perfil y tu empresa" disparador={tarjeta} fijo>
+    <MenuDesplegable
+      clase="empresa-lateral"
+      etiqueta="Más: tu perfil y tu empresa"
+      disparador={
+        <>
+          {/* El botón se anuncia como lo que abre; la tarjeta sola diría solo el nombre de la empresa. */}
+          <span className="solo-lector">Más: tu perfil y tu empresa. </span>
+          {tarjeta}
+        </>
+      }
+      fijo
+    >
       {mas.map((grupo) => (
         <div key={grupo.titulo} className="menu-grupo">
           <p className="menu-seccion">{grupo.titulo}</p>
