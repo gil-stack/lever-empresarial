@@ -208,5 +208,185 @@
     "ok": true,
     "texto": "lado DIOT 390: el aire entre la nota y la tabla y el alto de la cabecera son los del diseño",
     "detalle": "diseño {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true} · app {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos oscuro 1440: cada control en el renglón del diseño renderizado",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos oscuro 1440: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra oscuro 1440 con filtro: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos oscuro 1440 con un filtro puesto: cada control en el renglón del diseño renderizado",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos oscuro 1440 con un filtro puesto: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos oscuro 390: cada control en el renglón del diseño renderizado",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"ancho\":324,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos oscuro 390: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra oscuro 390 con filtro: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos oscuro 390 con un filtro puesto: cada control en el renglón del diseño renderizado",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"ancho\":324,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos oscuro 390 con un filtro puesto: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos claro 1440: cada control en el renglón del diseño renderizado",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos claro 1440: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra claro 1440 con filtro: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos claro 1440 con un filtro puesto: cada control en el renglón del diseño renderizado",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos claro 1440 con un filtro puesto: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos claro 390: cada control en el renglón del diseño renderizado",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"ancho\":324,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos claro 390: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra claro 390 con filtro: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos claro 390 con un filtro puesto: cada control en el renglón del diseño renderizado",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"ancho\":324,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos claro 390 con un filtro puesto: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos lever 1440: cada control en el renglón del diseño renderizado",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos lever 1440: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra lever 1440 con filtro: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos lever 1440 con un filtro puesto: cada control en el renglón del diseño renderizado",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@0\",\"Persona@0\",\"Área@0\",\"Tarjeta@0\",\"Categoría@0\",\"Comprobante@1\",\"Monto desde@1\",\"Agrupar por@1\",\"Limpiar filtros@1\",\"Excel@1\",\"Póliza contable@1\"],\"ancho\":1078,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos lever 1440 con un filtro puesto: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos lever 390: cada control en el renglón del diseño renderizado",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Excel@6\",\"Póliza contable@6\"],\"ancho\":324,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos lever 390: la página no se desborda a lo ancho",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra lever 390 con filtro: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos lever 390 con un filtro puesto: cada control en el renglón del diseño renderizado",
+    "detalle": "diseño {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"ancho\":324,\"desbordaPagina\":false} · app {\"renglones\":[\"Mes@0\",\"Periodo@1\",\"Persona@2\",\"Área@2\",\"Tarjeta@3\",\"Categoría@4\",\"Comprobante@4\",\"Monto desde@5\",\"Agrupar por@5\",\"Limpiar filtros@6\",\"Excel@6\",\"Póliza contable@7\"],\"ancho\":324,\"desbordaPagina\":false}"
+  },
+  {
+    "ok": true,
+    "texto": "lado barra de Movimientos lever 390 con un filtro puesto: la página no se desborda a lo ancho",
+    "detalle": ""
   }
 ]

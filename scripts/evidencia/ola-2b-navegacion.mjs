@@ -546,6 +546,88 @@ async function lado() {
     await nav.close();
   }
   await diotContraLaFuente(carpeta);
+  await barraContraLaFuente(carpeta);
+}
+
+/** Cada control de la barra de filtros con su renglón (por su borde inferior: la barra alinea al fondo), en el diseño o en la app. */
+function medirBarra(enApp) {
+  const barra = document.querySelector(enApp ? ".demo-filtros" : ".mfBar");
+  if (!barra) return null;
+  const nombre = (nodo) => {
+    if (nodo.matches(".seg, .segmentado")) return "Periodo";
+    const etiqueta = nodo.querySelector("span, label")?.textContent?.trim();
+    return (nodo.matches("label.mf, .campo") && etiqueta ? etiqueta : nodo.textContent.trim()).replace(/Demostración$/, "").trim();
+  };
+  // Fuera lo que no se ve: el botón oculto que usa Enter, el campo del periodo y los espaciadores.
+  const controles = [...barra.children].filter((nodo) => {
+    const caja = nodo.getBoundingClientRect();
+    return caja.width > 2 && caja.height > 2 && nodo.textContent.trim() !== "" && !nodo.matches('.solo-lector, [aria-hidden="true"]');
+  });
+  const fondos = [];
+  for (const nodo of controles) {
+    const fondo = nodo.getBoundingClientRect().bottom;
+    if (!fondos.some((f) => Math.abs(f - fondo) < 6)) fondos.push(fondo);
+  }
+  fondos.sort((a, b) => a - b);
+  const renglon = (nodo) => fondos.findIndex((f) => Math.abs(f - nodo.getBoundingClientRect().bottom) < 6);
+  return {
+    renglones: controles.map((nodo) => `${nombre(nodo)}@${renglon(nodo)}`),
+    ancho: Math.round(barra.getBoundingClientRect().width),
+    desbordaPagina: document.documentElement.scrollWidth > window.innerWidth,
+  };
+}
+
+/**
+ * La barra de Movimientos contra el diseño renderizado (fPlat.html), que manda sobre la captura plat-05:
+ * cada control en el mismo renglón a 1440 y 390, en los tres temas, sin filtro y con uno puesto
+ * (entonces aparece «Limpiar filtros»). Deja las dos barras lado a lado, el diseño a la izquierda.
+ */
+async function barraContraLaFuente(carpeta) {
+  const fuente = `file://${resolve(DISENO, "..", "fPlat.html")}#movimientos`;
+  const temaDiseno = { oscuro: "oscuro", claro: "claro", lever: "cohete" };
+  for (const tema of TEMAS) {
+    for (const ancho of [1440, 390]) {
+      for (const conFiltro of [false, true]) {
+        const tomas = [];
+        const medidas = [];
+        for (const enApp of [false, true]) {
+          const { nav, p, errores } = await abrir({ quien: enApp ? "laura" : null, tema, ancho });
+          if (enApp) {
+            await p.goto(`${BASE}${ALTAMAR}/consola/movimientos${conFiltro ? "?persona=Carlos+M%C3%A9ndez" : ""}`, { waitUntil: "networkidle" });
+          } else {
+            await p.goto(fuente);
+            await p.evaluate((t) => document.documentElement.setAttribute("data-theme", t), temaDiseno[tema]);
+            await p.waitForTimeout(1200);
+            if (conFiltro) {
+              await p.selectOption('select[data-mf="who"]', { index: 1 });
+              await p.waitForTimeout(500);
+            }
+          }
+          await p.addStyleTag({ content: "nextjs-portal { display: none !important; }" }).catch(() => {});
+          medidas.push(await p.evaluate(medirBarra, enApp));
+          tomas.push(await p.locator(enApp ? ".demo-filtros" : ".mfBar").screenshot());
+          if (enApp) anotar(errores.length === 0, `lado barra ${tema} ${ancho}${conFiltro ? " con filtro" : ""}: sin errores de consola`, errores.join(" | "));
+          await nav.close();
+        }
+        const [diseno, app] = medidas;
+        const etiqueta = `lado barra de Movimientos ${tema} ${ancho}${conFiltro ? " con un filtro puesto" : ""}`;
+        anotar(
+          Boolean(diseno && app) && JSON.stringify(app.renglones) === JSON.stringify(diseno.renglones),
+          `${etiqueta}: cada control en el renglón del diseño renderizado`,
+          `diseño ${JSON.stringify(diseno)} · app ${JSON.stringify(app)}`,
+        );
+        anotar(app?.desbordaPagina === false, `${etiqueta}: la página no se desborda a lo ancho`);
+        if (tema === "oscuro" || ancho === 1440) {
+          const [a, b] = await Promise.all(tomas.map((toma) => sharp(toma).metadata()));
+          const margen = 24;
+          await sharp({ create: { width: a.width + margen + b.width, height: Math.max(a.height, b.height), channels: 3, background: { r: 20, g: 18, b: 17 } } })
+            .composite([{ input: tomas[0], left: 0, top: 0 }, { input: tomas[1], left: a.width + margen, top: 0 }])
+            .webp({ quality: 80 })
+            .toFile(`${carpeta}/plat-05-barra-${tema}-${ancho}${conFiltro ? "-con-filtro" : ""}${process.env.SUFIJO_BARRA ?? ""}.webp`);
+        }
+      }
+    }
+  }
 }
 
 /** Columnas de la DIOT, si su primera columna se corta y si su caja se desplaza, en el diseño o en la app. */

@@ -995,9 +995,29 @@
   letter-spacing: 0.04em;
 }
 
-.demo-filtros-salto {
-  flex-basis: 100%;
-  height: 0;
+/* La tarjeta de mfBar en el diseño (padding:14px 16px): con el mismo ancho, cada control cae en su renglón. */
+.demo-hoja-filtros {
+  padding: 14px 16px;
+}
+
+/* En el teléfono la marca va debajo del texto, dentro del botón: así Excel y Póliza comparten renglón, como en el diseño. */
+@media (max-width: 600px) {
+  .demo-filtros [data-demo="apagado"] {
+    display: inline-grid;
+    grid-template-columns: auto auto;
+    justify-content: center;
+    column-gap: 8px;
+    row-gap: 3px;
+    padding-block: 5px;
+  }
+
+  .demo-filtros .demo-marca {
+    grid-column: 1 / -1;
+    justify-self: center;
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+  }
 }
 
 .demo-filtros-espacio {

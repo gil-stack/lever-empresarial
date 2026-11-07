@@ -159,7 +159,7 @@ export function VistaMovimientos({
   return (
     <>
       <Cifras cifras={cifras} etiqueta="Movimientos en cifras" />
-      <section className="hoja" aria-label="Filtros de movimientos">
+      <section className="hoja demo-hoja-filtros" aria-label="Filtros de movimientos">
         <FiltrosAlCambiar action={base} periodo={filtros.periodo}>
           <div className="campo">
             <label htmlFor="movimientos-mes">Mes</label>
@@ -178,8 +178,6 @@ export function VistaMovimientos({
           <Selector id="movimientos-persona" etiqueta="Persona" nombre="persona" valor={filtros.persona} opciones={unicos(datos.compras, "persona")} />
           <Selector id="movimientos-area" etiqueta="Área" nombre="area" valor={filtros.area} opciones={unicos(datos.compras, "area")} />
           <Selector id="movimientos-tarjeta" etiqueta="Tarjeta" nombre="tarjeta" valor={filtros.tarjeta} opciones={unicos(datos.compras, "tarjeta")} />
-          {/* El diseño parte la barra en dos renglones después de Tarjeta. */}
-          <span className="demo-filtros-salto" aria-hidden="true" />
           <Selector id="movimientos-categoria" etiqueta="Categoría" nombre="categoria" valor={filtros.categoria} opciones={unicos(datos.compras, "categoria")} />
           <Selector id="movimientos-comprobante" etiqueta="Comprobante" nombre="comprobante" valor={filtros.comprobante} opciones={unicos(datos.compras, "comprobante")} />
           <div className="campo">
