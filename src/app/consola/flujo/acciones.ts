@@ -56,7 +56,7 @@ function traducir(error: unknown): EstadoFlujo {
 }
 
 function refrescar(): void {
-  for (const ruta of ["/consola", "/consola/flujo", "/consola/cobros", "/consola/calendario", "/consola/presupuestos", "/consola/pendientes"]) {
+  for (const ruta of ["/consola", "/consola/flujo", "/consola/cobros", "/consola/calendario", "/consola/presupuestos", "/consola/aprobaciones"]) {
     revalidatePath(ruta);
   }
 }

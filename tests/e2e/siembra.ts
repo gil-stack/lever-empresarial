@@ -40,6 +40,7 @@ export const CORREOS = {
   entrada: "entrada@altamar-e2e.mx",
   tope: "tope@altamar-e2e.mx",
   perdida: "perdida@altamar-e2e.mx",
+  marina: "marina@arrecife-e2e.mx",
   op1: "op1@lever-e2e.mx",
   op2: "op2@lever-e2e.mx",
 } as const;
@@ -183,6 +184,16 @@ export async function sembrarRecorridos(owner: string): Promise<void> {
     rfc: "BEE190101CD2", razonSocial: "Bahía E2E", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
   }, { demostracion: false });
 
+  // ---------- Arrecife E2E: empresa real recién dada de alta, solo con su administradora ----------
+  // Sin áreas, categorías ni proveedores: aprobaciones.spec ve cómo cada pendiente de puesta
+  // en marcha sale de Aprobaciones al resolverlo en su módulo. Ningún otro spec la usa.
+  const arrecife = await darDeAltaEmpresa(personal, {
+    rfc: "AEE200202EF3", razonSocial: "Arrecife E2E", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
+  }, { demostracion: false });
+  const marina = await invitarAdministrador(personal, { companyId: arrecife.id, razonSocial: arrecife.razonSocial, nombre: "Marina Ríos", correo: CORREOS.marina });
+  await aceptarInvitacion({ token: marina.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
+  await factor(CORREOS.marina, marina.emitida.userId);
+
   // ---------- Personal SOFIPO con contraseña y app autenticadora ----------
   for (const correo of [CORREOS.op1, CORREOS.op2]) {
     const [migrada] = await migrarPersonalDeVariable([correo]);
@@ -193,5 +204,6 @@ export async function sembrarRecorridos(owner: string): Promise<void> {
 
   process.env.E2E_ALTAMAR_ID = altamar.id;
   process.env.E2E_BAHIA_ID = bahia.id;
+  process.env.E2E_ARRECIFE_ID = arrecife.id;
   process.env.E2E_SEMILLAS = JSON.stringify(semillas);
 }

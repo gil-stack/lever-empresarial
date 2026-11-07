@@ -74,6 +74,14 @@ describe("recorridos de entrada y superficie", () => {
     assert.ok(pagina.indexOf("redirect(") < pagina.indexOf("leerResumenInicio(apertura.ctx"));
   });
 
+  it("las acciones que mueven pendientes revalidan Aprobaciones y ninguna la dirección vieja de Pendientes", () => {
+    for (const archivo of ["personas", "politica", "proveedores", "flujo"]) {
+      const acciones = readFileSync(new URL(`src/app/consola/${archivo}/acciones.ts`, RAIZ), "utf8");
+      assert.match(acciones, /"\/consola\/aprobaciones"/, archivo);
+      assert.doesNotMatch(acciones, /"\/consola\/pendientes"/, archivo);
+    }
+  });
+
   it("Inicio consulta el resumen autorizado, Aprobaciones no lee tesorería (del flujo, solo el faltante con permiso) y el teléfono no llama a la política completa", () => {
     const consola = readFileSync(new URL("src/app/consola/page.tsx", RAIZ), "utf8");
     // Aprobaciones heredó la bandeja de Pendientes: la página y lo que pinta.

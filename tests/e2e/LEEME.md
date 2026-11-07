@@ -12,6 +12,7 @@
 | `operacion.spec.ts` | Entrada SOFIPO con TOTP, prospecto → activación decidida por otra persona, «Perdí el segundo factor» con «Confirma que eres tú» en Recuperaciones y publicación del precio con reautenticación. |
 | `invitacion.spec.ts` | Invitación del primer administrador desde Operación, «Reenviar invitación» con doble clic, cuenta con TOTP y recuperación de contraseña por correo. |
 | `roles.spec.ts` | Lo que cada rol ve en el lateral y en «Más», las rutas que no le abren aunque escriba la dirección y la redirección de Pendientes a Aprobaciones. |
+| `aprobaciones.spec.ts` | En Arrecife E2E (recién dada de alta), cada pendiente de puesta en marcha se resuelve en su módulo (área, categoría, proveedor con constancia, obligación de flujo de caja) y, al volver con un clic en el lateral, Aprobaciones ya no lo muestra o enciende el aviso nuevo. |
 | `demostracion.spec.ts` | Modo demostración: en la empresa real cada módulo sin proveedor dice «Disponible pronto» y ni el HTML ni la carga RSC traen cifras o nombres de ejemplo; en la de demostración, el aviso y los botones de dinero apagados. |
 | `marco.spec.ts` | Menú de la persona, buscador, Apariencia y cajón móvil. |
 

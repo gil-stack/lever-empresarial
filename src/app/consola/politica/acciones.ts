@@ -133,7 +133,7 @@ async function correr(fn: (ctx: ContextoDeTenant) => Promise<string>): Promise<E
     if (!ctx) return invalido("sesion_ausente");
     const mensaje = await fn(ctx);
     revalidatePath("/consola");
-    revalidatePath("/consola/pendientes");
+    revalidatePath("/consola/aprobaciones");
     revalidatePath("/consola/politica");
     return { tipo: "guardado", mensaje };
   } catch (error) {
