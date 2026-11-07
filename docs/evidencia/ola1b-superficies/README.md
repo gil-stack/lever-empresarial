@@ -2,24 +2,24 @@
 
 Recorrido clicado de Operación SOFIPO, la entrada de cliente, la invitación, recuperar contraseña, «Perdí el segundo factor», el teléfono, la landing, `/precios`, la 404 y las plantillas de correo.
 
-- **Cómo se corrió:** Playwright headless desde node (no el navegador del MCP) contra `next build` + `next start` en 4808, sobre Postgres 17 local en 5543 recién migrado (0001-0025) y sembrado.
+- **Cómo se corrió:** Playwright headless desde node (no el navegador del MCP) contra `next build` + `next start` en 4808, sobre Postgres 17 local en 5543 recién migrado (0001-0027) y sembrado.
 - **Temas y tamaños:** Oscuro, Claro y Lever, a 1440×900 y 390×844.
 - **Script:** `scripts/evidencia/ola1b-superficies.mjs` (las plantillas de correo se renderizan con `scripts/evidencia/ola1b-correos.ts`).
 - **Salida literal de la corrida final:** `salida-recorrido.txt`.
-- **Detalle de cada comprobación:** `comprobaciones-flujos-publicas-capturas-correos-estados-comparacion.json`, con las comprobaciones, los pendientes y los errores de consola (lista vacía).
+- **Detalle de cada comprobación:** `comprobaciones-flujos-publicas-capturas-correos-estados-comparacion.json`, con las comprobaciones, los pendientes, los errores de consola y las vistas de contraste repetidas (las tres listas, vacías).
 
 Nombre de cada captura: `<paso>-<pantalla>-<tema>-<ancho>.webp` (por ejemplo `13-operacion-aprobaciones-lever-390.webp`); correos: `correo-<plantilla>-<claro|oscuro>.webp`.
 
 ## Resultado
 
-Corrida final sobre el head `5e4cf0b` (código del build `c8d83cd`; el commit siguiente solo toca el script del recorrido):
+Corrida final con el script del head `78ed93a` contra el build de `91c2727`, el último commit que toca `src/` (los dos commits siguientes solo tocan el script del recorrido):
 
-- **601 comprobaciones en verde** y ninguna falla. La última línea de `salida-recorrido.txt` es «601 comprobaciones en verde.».
+- **628 comprobaciones en verde** y ninguna falla. La última línea de `salida-recorrido.txt` es «628 comprobaciones en verde.».
 - **0 errores de consola del navegador** en toda la corrida. En el estado de error provocado de Operación, se esperan 12 errores por el fallo que se provoca a propósito, y la corrida comprueba que no aparece ninguno más.
-- **345 capturas** (`capturas/`), **6 plantillas de correo** con su HTML y su texto (`correos/`) y **3 láminas** de comparación con el diseño.
-- **16 dobles clics** en envíos, contados en la base: cada uno deja una sola fila o un solo evento.
+- **352 capturas** (`capturas/`), **6 plantillas de correo** con su HTML y su texto (`correos/`) y **3 láminas** de comparación con el diseño.
+- **24 dobles clics** en envíos, contados en la base: cada uno deja una sola fila, un solo evento, un solo código gastado o una sola sesión cerrada.
 - **4 envíos retenidos** con un candado real de base: «Crear alerta», «Enviar el enlace», y Rechazar y Aprobar de Recuperaciones. Mientras la base retiene, el botón oprimido queda apagado y dice «Enviando…», con `aria-busy`. En Recuperaciones, el otro botón también se apaga, sin `aria-busy`, y conserva su texto.
-- **1 pendiente**, fuera de esta zona: armarPaso (ver al final).
+- **0 pendientes.**
 
 ## Cómo repetirlo
 
@@ -92,21 +92,22 @@ Cada envío de la zona usa `BotonEnviar` (#51). En algunos el doble clic se hace
 | # | Flujo | Capturas | Qué se comprobó |
 | --- | --- | --- | --- |
 | 3 | Invitación del personal hasta crear la cuenta | `30-op-invitacion`, `30-op-alta-factor`, `31-op2-*` | Doble clic en «Aceptar la invitación» deja una sola invitación usada; registra la app autenticadora y abre Operación en Resumen con un solo h1 |
-| 1 | Entrada SOFIPO con segundo factor | `10-operacion-entrar`, `11-operacion-entrar-error`, `12-operacion-segundo-factor` | Contraseña equivocada: el error queda ligado al campo (`aria-describedby`) y el correo sigue escrito. Contraseña y código TOTP con doble clic en «Entrar con el código» |
+| 1 | Entrada SOFIPO con segundo factor | `10-operacion-entrar`, `11-operacion-entrar-error`, `12-operacion-segundo-factor` | Contraseña equivocada: el error queda ligado al campo (`aria-describedby`) y el correo sigue escrito. Contraseña y código TOTP con doble clic en «Entrar con el código». Al final, op entra con un código de respaldo de los que vio al registrar su app (doble clic = 1 código gastado) |
 | 1 | Operación vacía | `09a`…`09e` | Clientes «Todavía no hay clientes», Aprobaciones «Nada por decidir», Alertas «Sin alertas» y «Sin clientes», Comisiones «Sin versiones» y «Sin empresas activas», Recuperaciones «Sin solicitudes» |
-| 1 | Clientes y ficha | `15-operacion-ficha-cliente` | Doble clic en «Registrar prospecto» = 1 empresa; en «Solicitar activación» = 1 solicitud; en «Enviar invitación» = 1 invitación |
+| 1 | Clientes y ficha | `15-operacion-ficha-cliente` | Doble clic en «Registrar prospecto» = 1 empresa; en «Solicitar activación» = 1 solicitud; en «Enviar invitación» = 1 invitación. Doble clic en «Reenviar invitación» anula el enlace anterior y deja uno solo vigente |
 | 1 | Aprobaciones | `13-operacion-aprobaciones`, `14-operacion-rechazar-dialogo` | Quien pidió la activación la ve sin botones («La pediste tú: decide otra persona.»). op2 aprueba con doble clic, que deja una sola transición a activa, y rechaza la otra con motivo desde el diálogo, que deja un solo rechazo |
 | 1 | Alertas | `16-operacion-alertas`, `16a-operacion-crear-alerta-enviando` | Con la tabla de alertas retenida, «Crear alerta» queda apagado y dice «Enviando…». Doble clic en «Crear alerta» = 1 alerta; «Guardar responsable» la reasigna a op2; «Cerrar alerta» con motivo la cierra una vez |
 | 1 | Comisiones | `17-operacion-comisiones` | Doble clic en «Pedir autorización» = 1 versión; op2 aprueba una (queda vigente) y rechaza otra con motivo |
 | 1 | Bitácora, tema y seguridad | `87-operacion-bitacora`, `89-seguridad-sofipo` | La Bitácora lista los eventos del recorrido. El selector de tema del lateral cambia Operación a Claro. «Mi perfil y seguridad» abre `/entrar/seguridad` y «Volver a Operación» regresa |
 | 1 | Precios | `18-precios-sofipo`, `19-precios-publicado` | `/precios` con sesión SOFIPO lleva a Precios dentro de Operación, marcado en la navegación. Doble clic en «Publicar el monto» deja 149 900 centavos y un solo evento en la bitácora |
-| 2 | Entrada de cliente con contraseña y TOTP | `20-entrar`, `21-entrar-error`, `22-entrar-segundo-factor` | El error marca los campos con `aria-invalid` y `aria-describedby`, y el correo sigue escrito. Doble clic en «Continuar» abre una sola entrada; Laura entra con su código |
-| 3 | Invitación del cliente | `33-laura-alta-factor`, `34-invitacion-inexistente` | Laura acepta (doble clic = 1 invitación usada), registra su app autenticadora y entra. Un enlace que no es invitación muestra un solo rótulo y su título |
-| 6 | Teléfono | `35-telefono-sin-ficha`, `90`…`92` | Sin ficha en Personas lo dice y a quién pedirla. Con ficha: un solo h1 en Inicio; Topes muestra la categoría con tope y la que no tiene; Pedir factura muestra el RFC de la empresa y su QR; la barra de abajo y los accesos de Inicio llevan a Topes y Factura |
+| 2 | Entrada de cliente con contraseña y TOTP | `20-entrar`, `21-entrar-error`, `22-entrar-segundo-factor` | El error marca los campos con `aria-invalid` y `aria-describedby`, y el correo sigue escrito. Doble clic en «Continuar» abre una sola entrada; Laura entra con su código. Más adelante entra con un código de respaldo (doble clic = 1 código gastado) |
+| 3 | Invitación del cliente | `33-laura-alta-factor`, `34-invitacion-inexistente` | Laura acepta (doble clic = 1 invitación usada) y registra su app autenticadora. Con los códigos a la vista se recarga la página: queda «Ya puedes entrar.» y «Entrar al portal» (doble clic) abre el portal. Un enlace que no es invitación muestra un solo rótulo y su título |
+| 6 | Teléfono | `35-telefono-sin-ficha`, `90`…`92` | Sin ficha en Personas lo dice y a quién pedirla. Con ficha: un solo h1 en Inicio; Topes muestra la categoría con tope y la que no tiene; Pedir factura muestra el RFC de la empresa y su QR; la barra de abajo y los accesos de Inicio llevan a Topes y Factura. «Salir» (doble clic) cierra esa sesión: la base la borra y `/telefono` ya no abre |
 | 8 | `/precios` como cliente | `93-precios-cliente` | No ofrece publicar |
 | 4 | Recuperar contraseña | `40-recuperar`, `40a-recuperar-enviando`, `41-recuperar-enviado`, `42-recuperar-nueva`, `43-recuperar-guardada`, `44-recuperar-enlace-usado` | Con la tabla de enlaces retenida, «Enviar el enlace» queda apagado y dice «Enviando…». Doble clic en «Enviar el enlace» = 1 enlace. Un correo sin cuenta recibe la misma respuesta y no crea enlace. Doble clic en «Guardar la contraseña» la restablece una vez; el enlace usado ya no sirve; Laura entra con la contraseña nueva y su segundo factor de siempre |
-| 5 | «Perdí el segundo factor» | `50-perdi-factor`, `51-perdi-factor-en-revision`, `52-recuperaciones-confirma`, `53-recuperaciones-solicitud`, `53a-recuperaciones-rechazando` | Doble clic en «Pedir recuperación» = 1 solicitud. Con el factor de hace 6 minutos, Recuperaciones pide «Confirma que eres tú». op rechaza con nota (doble clic = 1 rechazo en la bitácora) y la solicitud sale de la lista. Laura vuelve a pedir. Con la página abierta, el factor de op se envejece 6 minutos y Aprobar no aprueba: `aviso=reautenticacion_factor`, la solicitud sigue abierta, 0 `recuperacion_aprobada` en la bitácora y vuelve «Confirma que eres tú». Con el valor del botón alterado (`aprobar-sin-permiso`) tampoco aprueba: cuenta como rechazo sin nota (`motivo_invalido`) y no decide. Con factor fresco, op aprueba (doble clic = 1 aprobación en la bitácora, con op como actor). Ver **Pendientes** |
+| 5 | «Perdí el segundo factor» | `50-perdi-factor`, `51-perdi-factor-en-revision`, `52-recuperaciones-confirma`, `53-recuperaciones-solicitud`, `53a-recuperaciones-rechazando`, `54-perdi-factor-registrar-nuevo` | Doble clic en «Pedir recuperación» = 1 solicitud. Con el factor de hace 6 minutos, Recuperaciones pide «Confirma que eres tú». op rechaza con nota (doble clic = 1 rechazo en la bitácora) y la solicitud sale de la lista. Laura vuelve a pedir. Con la página abierta, el factor de op se envejece 6 minutos y Aprobar no aprueba: `aviso=reautenticacion_factor`, la solicitud sigue abierta, 0 `recuperacion_aprobada` en la bitácora y vuelve «Confirma que eres tú». Con el valor del botón alterado (`aprobar-sin-permiso`) tampoco aprueba: cuenta como rechazo sin nota (`motivo_invalido`) y no decide. Con factor fresco, op aprueba (doble clic = 1 aprobación en la bitácora, con op como actor) y la página dice qué provoca aprobar. Laura entra y la entrada ofrece «Registra un factor nuevo.» (#55): registra la app nueva y en la base queda una sola activa y la recuperación cumplida |
 | 1 | Salir | — | «Salir» del menú de la persona cierra la sesión de Operación |
+| 2 | Seguridad de la cuenta (cliente) | `94-seguridad-cliente`, `94a-seguridad-codigos-nuevos` | «Agregar una passkey» con el autenticador virtual de Chromium. Doble clic en «Revocar la app» = 1 app revocada; «Configurar la app autenticadora» y doble clic en «Confirmar» = 1 app activa. «Generar códigos nuevos»: «Volver a Seguridad» espera la casilla y regresa a la misma página con la cuenta al día. Con el factor de hace 6 minutos, «Confirma que eres tú» con un código de respaldo (doble clic = 1 código gastado). Doble clic en «Revocar» de la passkey = 1 passkey revocada. Ninguno muestra error |
 | 8 | Landing y 404 | `60-404`, `70-landing`, `75-404` | Un solo h1. Cada enlace del menú lleva a su ancla. Cada pregunta frecuente abre y cierra con un clic. «Entrar» lleva a `/entrar`. En la 404, «Ir al inicio» y «Entrar a mi cuenta» llevan a su destino |
 | 7 | Correos | `correo-*` | Ver **Correos** |
 
@@ -115,7 +116,7 @@ Cada envío de la zona usa `BotonEnviar` (#51). En algunos el doble clic se hace
 | Estado | Capturas | Cómo se provoca y qué se comprobó |
 | --- | --- | --- |
 | Vacío | `09a`…`09e` | Plataforma recién creada: cada sección dice qué falta (tabla de flujos) |
-| Cargando | `96-operacion-cargando-*` | La base sostiene un candado sobre las solicitudes de activación, que lee Clientes. Desde la Bitácora se pulsa «Clientes» y la página de antes sigue a la vista. En 1440, el enlace pedido muestra su progreso y anuncia «Cargando…» al lector de pantalla. En 390 el cajón se cierra al pulsar, y la barra de arriba muestra el progreso y «Cargando…» en un `role=status`; se mide el contraste AA en ese momento. Al soltar el candado llega Clientes y el progreso se va. Operación no tiene `loading.tsx` a propósito (f063a20, `tests/operacion/navegacion.test.ts`) |
+| Cargando | `96-operacion-cargando-*` | La base sostiene un candado sobre las solicitudes de activación, que lee Clientes. Desde la Bitácora se pulsa «Clientes» y la página de antes sigue a la vista. En 1440, el enlace pedido muestra su progreso y anuncia «Cargando…» al lector de pantalla. En 390 el cajón se cierra al pulsar, y la barra de arriba muestra el progreso y «Cargando…» en un `role=status`; con el cajón ya fuera, se mide el contraste AA en ese momento. Al soltar el candado llega Clientes y el progreso se va. Operación no tiene `loading.tsx` a propósito (f063a20, `tests/operacion/navegacion.test.ts`) |
 | Cargando en la consola (390) | `96b-consola-cargando-*-390` | Laura pulsa «Personas» en el cajón, y el navegador retiene la respuesta de esa sección hasta comprobar la barra. Pendientes sigue a la vista y la barra muestra el progreso y «Cargando…», con contraste AA. Al llegar Personas, la barra deja de decirlo |
 | Error | `97-operacion-error-*` | La base le niega a Operación la lectura de empresas. La sección lo dice dentro del marco, con la navegación a la mano, y «Reintentar» la vuelve a pedir al servidor: Clientes abre en cuanto la base responde. Los permisos quedan como estaban. Los únicos errores de consola son los del error provocado |
 | Sin permiso | `98-operacion-sin-permiso-*` | Con sesión de cliente, `/operacion/clientes` lleva a la entrada de Operación |
@@ -143,16 +144,18 @@ Se usó el método del #50:
 - se mide la página completa, bajando pantalla por pantalla;
 - el umbral es 4.5:1 para texto normal y 3:1 para texto grande.
 
+Cada vista se comprueba antes de contarla. Antes y después de la captura, la regla que oculta el texto sigue puesta y ningún elemento conserva su color, y ningún texto cambió de lugar. Una vista que no lo cumple no cuenta: se anota, se recarga la página y se repite (hasta 3 veces; a la tercera es falla). En esta corrida no hubo que repetir ninguna. La regla también apaga las transiciones, para leer el color final y no uno a medio camino.
+
 El detalle está en `contraste.json`.
 
 | Tema | Ancho | Textos medidos | Bajo AA | Mínimo |
 |---|---|---|---|---|
-| Oscuro | 1440 | 1108 | 0 | 4.86 |
-| Oscuro | 390 | 743 | 0 | 4.86 |
-| Claro | 1440 | 1108 | 0 | 4.86 |
-| Claro | 390 | 743 | 0 | 4.81 |
-| Lever | 1440 | 1108 | 0 | 4.86 |
-| Lever | 390 | 743 | 0 | 4.86 |
+| Oscuro | 1440 | 1278 | 0 | 4.86 |
+| Oscuro | 390 | 741 | 0 | 4.86 |
+| Claro | 1440 | 1278 | 0 | 4.86 |
+| Claro | 390 | 741 | 0 | 4.81 |
+| Lever | 1440 | 1278 | 0 | 4.86 |
+| Lever | 390 | 741 | 0 | 4.86 |
 
 También se midió a 390 la barra móvil mientras carga, en los 3 temas, sin fallas. En Operación se midieron 25 textos, con mínimos de 8.10 en Oscuro, 6.60 en Claro y 8.54 en Lever. En la consola se midieron 15 textos, con mínimos de 6.51, 5.25 y 5.55.
 
@@ -191,4 +194,4 @@ El «antes» es la corrida del #50 en `docs/evidencia/sistema-visual/`, que ya t
 
 ## Pendientes que encontró el recorrido (fuera de esta zona)
 
-- **La recuperación aprobada del segundo factor no deja registrar uno nuevo.** `armarPaso`, en `src/server/autenticacion/servicio.ts`, devuelve «verificar» mientras la persona conserve un factor. El recorrido lo marca como `PENDIENTE` y Laura entra con el factor que conserva. El líder lo confirmó en main y lo asignó a seguridad-cuentas en un PR aparte (`fix/recuperacion-factor-nuevo`).
+Ninguno. La recuperación aprobada que no dejaba registrar un factor nuevo (armarPaso) se corrigió en #55, ya integrado aquí, y el recorrido la recorre completa.

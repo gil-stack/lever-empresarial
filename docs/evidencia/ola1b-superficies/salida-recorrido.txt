@@ -93,6 +93,7 @@ OK doble clic en «Aprobar» deja una sola transición a activa
 OK captura 14-operacion-rechazar-dialogo-oscuro-1440.webp
 OK op2 rechaza con motivo desde el diálogo: una sola solicitud rechazada
 OK doble clic en «Enviar invitación» emite una sola invitación
+OK doble clic en «Reenviar invitación» anula el enlace anterior y deja uno solo vigente
 OK captura 15-operacion-ficha-cliente-oscuro-1440.webp
 OK captura 15-operacion-ficha-cliente-oscuro-390.webp
 OK captura 15-operacion-ficha-cliente-claro-1440.webp
@@ -146,6 +147,7 @@ OK captura 33-laura-alta-factor-claro-390.webp
 OK captura 33-laura-alta-factor-lever-1440.webp
 OK captura 33-laura-alta-factor-lever-390.webp
 OK Laura acepta la invitación, registra su app autenticadora y entra al portal
+OK si la página se recarga con los códigos a la vista, «Ya puedes entrar.» y «Entrar al portal» abren el portal
 OK captura 20-entrar-oscuro-1440.webp
 OK captura 20-entrar-oscuro-390.webp
 OK captura 20-entrar-claro-1440.webp
@@ -231,9 +233,27 @@ OK una decisión alterada no aprueba: sin nota no decide y la solicitud sigue ab
 OK mientras la base retiene auth_recuperaciones, el botón queda apagado, con aria-busy y «Enviando…»
 OK el otro botón del formulario («Rechazar») se apaga sin aria-busy y conserva su texto
 OK op aprueba la segunda solicitud tras confirmar su identidad
+OK Recuperaciones dice qué provoca aprobar: 12 horas para registrar un factor nuevo y los anteriores dejan de servir
 OK doble clic en «Aprobar» deja una sola aprobación en la bitácora
-PENDIENTE con la recuperación aprobada la entrada no ofrece registrar un factor nuevo (armarPaso, src/server/autenticacion/servicio.ts)
-OK Laura entra después de la recuperación
+OK con la recuperación aprobada, la entrada ofrece registrar un factor nuevo
+OK captura 54-perdi-factor-registrar-nuevo-oscuro-1440.webp
+OK captura 54-perdi-factor-registrar-nuevo-oscuro-390.webp
+OK captura 54-perdi-factor-registrar-nuevo-claro-1440.webp
+OK captura 54-perdi-factor-registrar-nuevo-claro-390.webp
+OK captura 54-perdi-factor-registrar-nuevo-lever-1440.webp
+OK captura 54-perdi-factor-registrar-nuevo-lever-390.webp
+OK Laura entra con su app nueva: queda una sola activa y la recuperación cumplida
+OK Seguridad: «Agregar una passkey» registra una con el autenticador del navegador
+OK doble clic en «Revocar la app» quita una sola app autenticadora, sin error
+OK doble clic en «Confirmar» deja una sola app autenticadora activa, sin error
+OK con los códigos a la vista, «Volver a Seguridad» espera a que se marque que ya se guardaron
+OK captura 94a-seguridad-codigos-nuevos-oscuro-1440.webp
+OK «Generar códigos nuevos» los muestra una vez y «Volver a Seguridad» regresa a la misma página con la cuenta al día
+OK «Confirma que eres tú» con un código de respaldo: el doble clic gasta uno solo
+OK doble clic en «Revocar» quita una sola passkey, sin error
+OK Entrar con un código de respaldo: el doble clic gasta uno solo y abre el portal
+OK «Salir» del teléfono cierra esa sesión: la base la borra y /telefono ya no abre
+OK Operación: entrar con un código de respaldo gasta uno solo con doble clic
 OK «Salir» del menú de la persona cierra la sesión de Operación
 OK Landing: un solo h1
 OK Landing: el menú lleva a #producto
@@ -346,11 +366,11 @@ OK /operacion/clientes: sin tabindex positivo
 OK /operacion/clientes: el Tab recorre 20 paradas en el orden del documento
 OK /operacion/clientes: cada parada del Tab tiene foco visible
 OK captura 81-operacion-clientes-oscuro-1440.webp
-OK /operacion/clientes/7979953f-3f54-46bd-81f9-33d4b0860db3: un solo h1
-OK /operacion/clientes/7979953f-3f54-46bd-81f9-33d4b0860db3: todos los campos con etiqueta
-OK /operacion/clientes/7979953f-3f54-46bd-81f9-33d4b0860db3: sin tabindex positivo
-OK /operacion/clientes/7979953f-3f54-46bd-81f9-33d4b0860db3: el Tab recorre 14 paradas en el orden del documento
-OK /operacion/clientes/7979953f-3f54-46bd-81f9-33d4b0860db3: cada parada del Tab tiene foco visible
+OK /operacion/clientes/ef4e1285-bed3-4e3d-bee5-9a5fef67a27c: un solo h1
+OK /operacion/clientes/ef4e1285-bed3-4e3d-bee5-9a5fef67a27c: todos los campos con etiqueta
+OK /operacion/clientes/ef4e1285-bed3-4e3d-bee5-9a5fef67a27c: sin tabindex positivo
+OK /operacion/clientes/ef4e1285-bed3-4e3d-bee5-9a5fef67a27c: el Tab recorre 14 paradas en el orden del documento
+OK /operacion/clientes/ef4e1285-bed3-4e3d-bee5-9a5fef67a27c: cada parada del Tab tiene foco visible
 OK captura 82-operacion-ficha-oscuro-1440.webp
 OK /operacion/aprobaciones: un solo h1
 OK /operacion/aprobaciones: todos los campos con etiqueta
@@ -401,7 +421,7 @@ OK captura 83-operacion-aprobaciones-oscuro-390.webp
 OK captura 84-operacion-alertas-oscuro-390.webp
 OK captura 85-operacion-comisiones-oscuro-390.webp
 OK captura 86-operacion-recuperaciones-oscuro-390.webp
-OK captura 87-operacion-bitacora-oscuro-390.webp (primeros 8000 de 14198 px)
+OK captura 87-operacion-bitacora-oscuro-390.webp (primeros 8000 de 18067 px)
 OK captura 88-precios-sofipo-oscuro-390.webp
 OK captura 89-seguridad-sofipo-oscuro-390.webp
 OK captura 80-operacion-resumen-claro-1440.webp
@@ -421,7 +441,7 @@ OK captura 83-operacion-aprobaciones-claro-390.webp
 OK captura 84-operacion-alertas-claro-390.webp
 OK captura 85-operacion-comisiones-claro-390.webp
 OK captura 86-operacion-recuperaciones-claro-390.webp
-OK captura 87-operacion-bitacora-claro-390.webp (primeros 8000 de 14198 px)
+OK captura 87-operacion-bitacora-claro-390.webp (primeros 8000 de 18067 px)
 OK captura 88-precios-sofipo-claro-390.webp
 OK captura 89-seguridad-sofipo-claro-390.webp
 OK captura 80-operacion-resumen-lever-1440.webp
@@ -441,7 +461,7 @@ OK captura 83-operacion-aprobaciones-lever-390.webp
 OK captura 84-operacion-alertas-lever-390.webp
 OK captura 85-operacion-comisiones-lever-390.webp
 OK captura 86-operacion-recuperaciones-lever-390.webp
-OK captura 87-operacion-bitacora-lever-390.webp (primeros 8000 de 14198 px)
+OK captura 87-operacion-bitacora-lever-390.webp (primeros 8000 de 18067 px)
 OK captura 88-precios-sofipo-lever-390.webp
 OK captura 89-seguridad-sofipo-lever-390.webp
 OK /telefono: un solo h1
@@ -499,12 +519,13 @@ OK captura 91-telefono-topes-lever-390.webp
 OK captura 92-telefono-factura-lever-390.webp
 OK captura 93-precios-cliente-lever-390.webp
 OK captura 94-seguridad-cliente-lever-390.webp
-contraste oscuro-1440: 1108 textos, 0 bajo AA, mínimo 4.86
-contraste oscuro-390: 743 textos, 0 bajo AA, mínimo 4.86
-contraste claro-1440: 1108 textos, 0 bajo AA, mínimo 4.86
-contraste claro-390: 743 textos, 0 bajo AA, mínimo 4.81
-contraste lever-1440: 1108 textos, 0 bajo AA, mínimo 4.86
-contraste lever-390: 743 textos, 0 bajo AA, mínimo 4.86
+contraste oscuro-1440: 1278 textos, 0 bajo AA, mínimo 4.86
+contraste oscuro-390: 741 textos, 0 bajo AA, mínimo 4.86
+contraste claro-1440: 1278 textos, 0 bajo AA, mínimo 4.86
+contraste claro-390: 741 textos, 0 bajo AA, mínimo 4.81
+contraste lever-1440: 1278 textos, 0 bajo AA, mínimo 4.86
+contraste lever-390: 741 textos, 0 bajo AA, mínimo 4.86
+contraste: 0 vistas repetidas porque el texto no quedó oculto o la página se movió durante la captura
 OK contraste AA medido contra la escena en 3 temas × 2 anchos: 0 textos bajo AA
 invitacion-empresa: «Bienvenido a Altamar Logística | LEVER»
 invitacion-usuario: «Bienvenido a Altamar Logística | LEVER»
@@ -544,6 +565,7 @@ OK Operación oscuro-1440: al llegar Clientes, el progreso del enlace se va
 OK Operación oscuro-390: mientras carga, la página de antes sigue a la vista
 OK Operación oscuro-390: el cajón se cerró al pulsar Clientes
 OK Operación oscuro-390: la barra de arriba muestra el progreso y dice «Cargando…»
+OK Operación oscuro-390: la medición mientras carga quedó firme
 OK Operación oscuro-390: contraste AA mientras carga (25 textos, mínimo 8.10)
 OK captura 96-operacion-cargando-oscuro-390.webp
 OK Operación oscuro-390: al llegar Clientes, el progreso del enlace se va
@@ -555,6 +577,7 @@ OK Operación claro-1440: al llegar Clientes, el progreso del enlace se va
 OK Operación claro-390: mientras carga, la página de antes sigue a la vista
 OK Operación claro-390: el cajón se cerró al pulsar Clientes
 OK Operación claro-390: la barra de arriba muestra el progreso y dice «Cargando…»
+OK Operación claro-390: la medición mientras carga quedó firme
 OK Operación claro-390: contraste AA mientras carga (25 textos, mínimo 6.60)
 OK captura 96-operacion-cargando-claro-390.webp
 OK Operación claro-390: al llegar Clientes, el progreso del enlace se va
@@ -566,6 +589,7 @@ OK Operación lever-1440: al llegar Clientes, el progreso del enlace se va
 OK Operación lever-390: mientras carga, la página de antes sigue a la vista
 OK Operación lever-390: el cajón se cerró al pulsar Clientes
 OK Operación lever-390: la barra de arriba muestra el progreso y dice «Cargando…»
+OK Operación lever-390: la medición mientras carga quedó firme
 OK Operación lever-390: contraste AA mientras carga (25 textos, mínimo 8.54)
 OK captura 96-operacion-cargando-lever-390.webp
 OK Operación lever-390: al llegar Clientes, el progreso del enlace se va
@@ -586,18 +610,21 @@ OK Operación: 12 errores de consola esperados por el error provocado, ninguno m
 OK consola oscuro-390: el cajón se cerró al pulsar Personas
 OK consola oscuro-390: mientras carga, Pendientes sigue a la vista
 OK consola oscuro-390: la barra de arriba muestra el progreso y dice «Cargando…»
+OK consola oscuro-390: la medición mientras carga quedó firme
 OK consola oscuro-390: contraste AA mientras carga (15 textos, mínimo 6.51)
 OK captura 96b-consola-cargando-oscuro-390.webp
 OK consola oscuro-390: al llegar Personas, la barra deja de decir «Cargando…»
 OK consola claro-390: el cajón se cerró al pulsar Personas
 OK consola claro-390: mientras carga, Pendientes sigue a la vista
 OK consola claro-390: la barra de arriba muestra el progreso y dice «Cargando…»
+OK consola claro-390: la medición mientras carga quedó firme
 OK consola claro-390: contraste AA mientras carga (15 textos, mínimo 5.25)
 OK captura 96b-consola-cargando-claro-390.webp
 OK consola claro-390: al llegar Personas, la barra deja de decir «Cargando…»
 OK consola lever-390: el cajón se cerró al pulsar Personas
 OK consola lever-390: mientras carga, Pendientes sigue a la vista
 OK consola lever-390: la barra de arriba muestra el progreso y dice «Cargando…»
+OK consola lever-390: la medición mientras carga quedó firme
 OK consola lever-390: contraste AA mientras carga (15 textos, mínimo 5.55)
 OK captura 96b-consola-cargando-lever-390.webp
 OK consola lever-390: al llegar Personas, la barra deja de decir «Cargando…»
@@ -613,4 +640,4 @@ OK comparación resumen: Diseño · plat-00-resumen junto a Producto · Operaci�
 OK comparación telefono: Diseño · app-home junto a Producto · Teléfono › Inicio (Oscuro, 390)
 OK sin errores de consola del navegador
 
-601 comprobaciones en verde.
+628 comprobaciones en verde.
