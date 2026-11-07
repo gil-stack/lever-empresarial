@@ -76,7 +76,9 @@ export default async function RecuperacionesOperacion({ searchParams }: { search
           ),
         }))}
       />
-      <NotaRegla>Nadie decide su propia solicitud.</NotaRegla>
+      <NotaRegla>
+        Al aprobar, la persona tiene 12 horas para registrar un factor nuevo; al confirmarlo, los anteriores dejan de servir. Nadie decide su propia solicitud.
+      </NotaRegla>
     </PaginaOperacion>
   );
 }

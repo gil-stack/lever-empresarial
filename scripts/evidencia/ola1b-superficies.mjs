@@ -777,6 +777,10 @@ async function flujos() {
   });
   await op.getByText("Decisión registrada").waitFor();
   exigir(contar(`select count(*) from auth_recuperaciones where user_id = '${idDe(LAURA)}' and estado = 'aprobada'`) === 1, "op aprueba la segunda solicitud tras confirmar su identidad");
+  exigir(
+    (await op.getByText("Al aprobar, la persona tiene 12 horas para registrar un factor nuevo; al confirmarlo, los anteriores dejan de servir.").count()) === 1,
+    "Recuperaciones dice qué provoca aprobar: 12 horas para registrar un factor nuevo y los anteriores dejan de servir",
+  );
   exigir(contar(`select count(*) from audit_log where accion = 'recuperacion_aprobada' and actor_id = '${idDe(OP)}'`) === 1, "doble clic en «Aprobar» deja una sola aprobación en la bitácora");
 
   const { ctx: ctxN, page: nuevo } = await contexto();
