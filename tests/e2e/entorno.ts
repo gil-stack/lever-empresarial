@@ -1,10 +1,11 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
-import { createWriteStream, mkdirSync, readdirSync } from "node:fs";
+import { createWriteStream, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Client } from "pg";
 
 import { iniciarBlobLocal, type BlobLocal } from "./blob-local/servidor";
+import { sembrarRecorridos } from "./siembra";
 
 import { hoyEnMexico } from "../../src/dominio/personas";
 import { cerrarConexion } from "../../src/nucleo/db";
@@ -23,6 +24,11 @@ const PUERTO_BLOB = Number(process.env.E2E_BLOB_PUERTO ?? "0");
 // de ahí el almacén («e2elocal»). Solo vale contra el emulador local.
 const TOKEN_BLOB_LOCAL = ["vercel", "blob", "rw", "e2elocal", "emulador"].join("_");
 const PRELOAD_BLOB = join(process.cwd(), "tests/e2e/blob-local/preload.mjs");
+// Proveedor de correo falso: los recorridos leen las invitaciones y los enlaces de recuperación que «llegan».
+const PRELOAD_CORREO = join(process.cwd(), "tests/e2e/correo-local/preload.mjs");
+const ARCHIVO_CORREO = join(process.cwd(), "test-results/correos-e2e.jsonl");
+// Solo existe en el servidor de la prueba, que nunca llama a Resend: el preload contesta por él.
+const CLAVE_CORREO_LOCAL = ["e2e", "correo", "local"].join("-");
 
 declare global {
   var __blobLocalE2E: BlobLocal | undefined;
@@ -64,6 +70,8 @@ export async function iniciarEntorno(): Promise<void> {
     process.env.E2E_SERVER_ACTIONS = "1";
     delete process.env.RESEND_API_KEY;
     delete process.env.CORREO_REMITENTE;
+    // Llave TOTP de esta corrida: la siembra cifra las semillas con ella y el servidor las lee.
+    process.env.AUTENTICACION_LLAVE_TOTP = randomBytes(32).toString("base64url");
     ejecutar(owner, `
       insert into users (id, nombre, correo, password_hash)
         values ('99999999-9999-4999-8999-999999999999', 'Personal E2E', 'personal-e2e@ejemplo.mx', '$2b$12$${"a".repeat(53)}');
@@ -99,6 +107,7 @@ export async function iniciarEntorno(): Promise<void> {
     process.env.E2E_COMPANY_ID = empresa.id;
     process.env.E2E_ADMIN_ID = invitacion.emitida.userId;
     process.env.E2E_TODAY = hoyEnMexico(new Date());
+    await sembrarRecorridos(owner);
     await cerrarConexion();
     await levantarBlobLocal();
     await levantarServidor();
@@ -144,13 +153,17 @@ async function levantarServidor(): Promise<void> {
   // Fuera de outputDir (Playwright lo vacía al empezar); el script de CI lo imprime si algo falla.
   mkdirSync(join(process.cwd(), "test-results"), { recursive: true });
   const registro = createWriteStream(join(process.cwd(), "test-results/next-e2e.log"));
+  writeFileSync(ARCHIVO_CORREO, "");
+  process.env.E2E_CORREO_ARCHIVO = ARCHIVO_CORREO;
   const servidor = spawn("npm", ["run", "start", "--", "-p", PUERTO], {
     cwd: process.cwd(),
     env: {
       ...process.env,
       NODE_ENV: "production",
-      // Solo el servidor de la prueba carga el desvío del almacén privado al emulador.
-      NODE_OPTIONS: [process.env.NODE_OPTIONS, `--import=${PRELOAD_BLOB}`].filter(Boolean).join(" "),
+      RESEND_API_KEY: CLAVE_CORREO_LOCAL,
+      CORREO_REMITENTE: "Lever E2E <no-responder@lever-e2e.mx>",
+      // Solo el servidor de la prueba carga el desvío del almacén privado al emulador y el correo falso.
+      NODE_OPTIONS: [process.env.NODE_OPTIONS, `--import=${PRELOAD_BLOB}`, `--import=${PRELOAD_CORREO}`].filter(Boolean).join(" "),
     },
     detached: true,
     stdio: ["ignore", "pipe", "pipe"],
