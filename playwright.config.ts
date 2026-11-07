@@ -14,6 +14,8 @@ export default defineConfig({
   globalSetup: "./tests/e2e/global-setup.ts",
   globalTeardown: "./tests/e2e/global-teardown.ts",
   workers: 1,
+  // Una prueba que falla a veces se arregla en su causa, no se reintenta.
+  retries: 0,
   timeout: 180_000,
   expect: { timeout: 15_000 },
   outputDir: "./test-results/e2e",

@@ -18,6 +18,11 @@
       "outputs": [],
       "tags": ["ci", "ci:cpus:4"]
     },
+    "test:e2e": {
+      "cache": false,
+      "outputs": [],
+      "tags": ["ci", "ci:cpus:4"]
+    },
     "build": {
       "outputs": [".next/**", "!.next/cache/**"],
       "tags": ["ci"]
