@@ -16,7 +16,7 @@
     "test:db": {
       "cache": false,
       "outputs": [],
-      "tags": ["ci", "ci:cpus:8"]
+      "tags": ["ci", "ci:cpus:4"]
     },
     "test:e2e": {
       "cache": false,

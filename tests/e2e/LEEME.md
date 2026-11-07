@@ -44,7 +44,7 @@ Variables:
 
 ## En Vercel CI
 
-`turbo.json` declara `test:e2e` con las etiquetas `ci` y `ci:cpus:4`, así que Vercel CI la corre en cada push junto con typecheck, lint, test, test:db, build y security. En CI:
+`turbo.json` declara `test:e2e` con las etiquetas `ci` y `ci:cpus:8`, así que Vercel CI la corre en cada push junto con typecheck, lint, test, test:db, build y security. En CI:
 
 - Postgres corre en un contenedor `postgres:17` (puerto 5553, el mismo dentro y fuera).
 - Chromium corre en la imagen oficial `mcr.microsoft.com/playwright:v<versión>-noble` con `playwright run-server` y red del anfitrión. La imagen de la tarea no trae las bibliotecas del navegador. El corredor, la siembra, el emulador y `next start` siguen en la máquina de la tarea.
