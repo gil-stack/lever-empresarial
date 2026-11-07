@@ -12,11 +12,11 @@ Nombre de cada captura: `<paso>-<pantalla>-<tema>-<ancho>.webp` (por ejemplo `13
 
 ## Resultado
 
-Corrida final con el script del head `78ed93a` contra el build de `91c2727`, el último commit que toca `src/` (los dos commits siguientes solo tocan el script del recorrido):
+Corrida final sobre el head `79c87bf`, con main integrado (#52) y build y script de ese mismo head:
 
-- **628 comprobaciones en verde** y ninguna falla. La última línea de `salida-recorrido.txt` es «628 comprobaciones en verde.».
+- **632 comprobaciones en verde** y ninguna falla. La última línea de `salida-recorrido.txt` es «632 comprobaciones en verde.».
 - **0 errores de consola del navegador** en toda la corrida. En el estado de error provocado de Operación, se esperan 12 errores por el fallo que se provoca a propósito, y la corrida comprueba que no aparece ninguno más.
-- **352 capturas** (`capturas/`), **6 plantillas de correo** con su HTML y su texto (`correos/`) y **3 láminas** de comparación con el diseño.
+- **354 capturas** (`capturas/`), **7 plantillas de correo** con su HTML y su texto (`correos/`) y **3 láminas** de comparación con el diseño.
 - **24 dobles clics** en envíos, contados en la base: cada uno deja una sola fila, un solo evento, un solo código gastado o una sola sesión cerrada.
 - **4 envíos retenidos** con un candado real de base: «Crear alerta», «Enviar el enlace», y Rechazar y Aprobar de Recuperaciones. Mientras la base retiene, el botón oprimido queda apagado y dice «Enviando…», con `aria-busy`. En Recuperaciones, el otro botón también se apaga, sin `aria-busy`, y conserva su texto.
 - **0 pendientes.**
@@ -150,12 +150,12 @@ El detalle está en `contraste.json`.
 
 | Tema | Ancho | Textos medidos | Bajo AA | Mínimo |
 |---|---|---|---|---|
-| Oscuro | 1440 | 1278 | 0 | 4.86 |
-| Oscuro | 390 | 741 | 0 | 4.86 |
-| Claro | 1440 | 1278 | 0 | 4.86 |
-| Claro | 390 | 741 | 0 | 4.81 |
-| Lever | 1440 | 1278 | 0 | 4.86 |
-| Lever | 390 | 741 | 0 | 4.86 |
+| Oscuro | 1440 | 1283 | 0 | 4.86 |
+| Oscuro | 390 | 743 | 0 | 4.86 |
+| Claro | 1440 | 1283 | 0 | 4.86 |
+| Claro | 390 | 743 | 0 | 4.81 |
+| Lever | 1440 | 1283 | 0 | 4.86 |
+| Lever | 390 | 743 | 0 | 4.86 |
 
 También se midió a 390 la barra móvil mientras carga, en los 3 temas, sin fallas. En Operación se midieron 25 textos, con mínimos de 8.10 en Oscuro, 6.60 en Claro y 8.54 en Lever. En la consola se midieron 15 textos, con mínimos de 6.51, 5.25 y 5.55.
 

@@ -366,11 +366,11 @@ OK /operacion/clientes: sin tabindex positivo
 OK /operacion/clientes: el Tab recorre 20 paradas en el orden del documento
 OK /operacion/clientes: cada parada del Tab tiene foco visible
 OK captura 81-operacion-clientes-oscuro-1440.webp
-OK /operacion/clientes/ef4e1285-bed3-4e3d-bee5-9a5fef67a27c: un solo h1
-OK /operacion/clientes/ef4e1285-bed3-4e3d-bee5-9a5fef67a27c: todos los campos con etiqueta
-OK /operacion/clientes/ef4e1285-bed3-4e3d-bee5-9a5fef67a27c: sin tabindex positivo
-OK /operacion/clientes/ef4e1285-bed3-4e3d-bee5-9a5fef67a27c: el Tab recorre 14 paradas en el orden del documento
-OK /operacion/clientes/ef4e1285-bed3-4e3d-bee5-9a5fef67a27c: cada parada del Tab tiene foco visible
+OK /operacion/clientes/46f14636-d591-471c-b9d7-946e82e0d802: un solo h1
+OK /operacion/clientes/46f14636-d591-471c-b9d7-946e82e0d802: todos los campos con etiqueta
+OK /operacion/clientes/46f14636-d591-471c-b9d7-946e82e0d802: sin tabindex positivo
+OK /operacion/clientes/46f14636-d591-471c-b9d7-946e82e0d802: el Tab recorre 14 paradas en el orden del documento
+OK /operacion/clientes/46f14636-d591-471c-b9d7-946e82e0d802: cada parada del Tab tiene foco visible
 OK captura 82-operacion-ficha-oscuro-1440.webp
 OK /operacion/aprobaciones: un solo h1
 OK /operacion/aprobaciones: todos los campos con etiqueta
@@ -485,7 +485,7 @@ OK captura 92-telefono-factura-oscuro-1440.webp
 OK /precios: un solo h1
 OK /precios: todos los campos con etiqueta
 OK /precios: sin tabindex positivo
-OK /precios: el Tab recorre 13 paradas en el orden del documento
+OK /precios: el Tab recorre 17 paradas en el orden del documento
 OK /precios: cada parada del Tab tiene foco visible
 OK captura 93-precios-cliente-oscuro-1440.webp
 OK /entrar/seguridad: un solo h1
@@ -519,12 +519,12 @@ OK captura 91-telefono-topes-lever-390.webp
 OK captura 92-telefono-factura-lever-390.webp
 OK captura 93-precios-cliente-lever-390.webp
 OK captura 94-seguridad-cliente-lever-390.webp
-contraste oscuro-1440: 1278 textos, 0 bajo AA, mínimo 4.86
-contraste oscuro-390: 741 textos, 0 bajo AA, mínimo 4.86
-contraste claro-1440: 1278 textos, 0 bajo AA, mínimo 4.86
-contraste claro-390: 741 textos, 0 bajo AA, mínimo 4.81
-contraste lever-1440: 1278 textos, 0 bajo AA, mínimo 4.86
-contraste lever-390: 741 textos, 0 bajo AA, mínimo 4.86
+contraste oscuro-1440: 1283 textos, 0 bajo AA, mínimo 4.86
+contraste oscuro-390: 743 textos, 0 bajo AA, mínimo 4.86
+contraste claro-1440: 1283 textos, 0 bajo AA, mínimo 4.86
+contraste claro-390: 743 textos, 0 bajo AA, mínimo 4.81
+contraste lever-1440: 1283 textos, 0 bajo AA, mínimo 4.86
+contraste lever-390: 743 textos, 0 bajo AA, mínimo 4.86
 contraste: 0 vistas repetidas porque el texto no quedó oculto o la página se movió durante la captura
 OK contraste AA medido contra la escena en 3 temas × 2 anchos: 0 textos bajo AA
 invitacion-empresa: «Bienvenido a Altamar Logística | LEVER»
@@ -533,6 +533,7 @@ invitacion-personal: «Bienvenido al equipo LEVER»
 recuperar-contrasena: «Cambia tu contraseña»
 aviso-seguridad: «Aprobamos registrar un segundo factor nuevo»
 aviso-clabe-nomina: «Cambió la cuenta de tu nómina»
+resumen-semanal: «Tu flujo de la semana · Altamar Logística»
 OK correo invitacion-empresa (light): el logo carga (520 px) con alt «Lever Empresas»
 OK captura correo-invitacion-empresa-claro.webp
 OK correo invitacion-empresa (dark): el logo carga (520 px) con alt «Lever Empresas»
@@ -557,6 +558,10 @@ OK correo aviso-clabe-nomina (light): el logo carga (520 px) con alt «Lever Emp
 OK captura correo-aviso-clabe-nomina-claro.webp
 OK correo aviso-clabe-nomina (dark): el logo carga (520 px) con alt «Lever Empresas»
 OK captura correo-aviso-clabe-nomina-oscuro.webp
+OK correo resumen-semanal (light): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-resumen-semanal-claro.webp
+OK correo resumen-semanal (dark): el logo carga (520 px) con alt «Lever Empresas»
+OK captura correo-resumen-semanal-oscuro.webp
 OK Operación oscuro-1440: mientras carga, la página de antes sigue a la vista
 OK Operación oscuro-1440: el enlace pedido muestra su progreso
 OK Operación oscuro-1440: el enlace pedido anuncia «Cargando…» al lector de pantalla
@@ -640,4 +645,4 @@ OK comparación resumen: Diseño · plat-00-resumen junto a Producto · Operaci�
 OK comparación telefono: Diseño · app-home junto a Producto · Teléfono › Inicio (Oscuro, 390)
 OK sin errores de consola del navegador
 
-628 comprobaciones en verde.
+632 comprobaciones en verde.
