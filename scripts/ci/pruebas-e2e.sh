@@ -55,17 +55,13 @@ esperar() {
 if [ -z "${E2E_ADMIN_URL:-}" ]; then
   version=$(node -p 'require("@playwright/test/package.json").version')
   imagen="mcr.microsoft.com/playwright:v${version}-noble"
-  # La descarga del navegador corre mientras compila Next.
+  # Las dos imágenes se descargan mientras compila Next.
+  docker pull -q postgres:17 >/dev/null &
+  descarga_pg=$!
   docker pull -q "$imagen" >/dev/null &
-  descarga=$!
-
+  descarga_navegador=$!
   docker rm -f "$pg" "$navegador" >/dev/null 2>&1 || true
   contenedores="$pg $navegador"
-  docker run -d --name "$pg" \
-    -p "127.0.0.1:${puerto_pg}:5432" \
-    -v "$PWD:/work:ro" \
-    -e POSTGRES_PASSWORD=postgres \
-    postgres:17 >/dev/null
   usuario_local=postgres
   clave_local=postgres
   export E2E_ADMIN_URL="postgres://${usuario_local}:${clave_local}@127.0.0.1:${puerto_pg}/postgres"
@@ -82,15 +78,23 @@ E2E_SERVER_ACTIONS=1 ./node_modules/.bin/next build >/dev/null
 marca "compilado"
 
 if [ "$modo" = ci ]; then
-  wait "$descarga"
-  marca "imagen del navegador lista ($imagen)"
+  wait "$descarga_pg"
+  wait "$descarga_navegador"
+  marca "imágenes listas (postgres:17 y $imagen)"
+  # Postgres escucha en el mismo puerto dentro y fuera del contenedor: el psql
+  # de la siembra corre dentro (scripts/ci/bin/psql) con la misma URL.
+  docker run -d --name "$pg" \
+    -p "127.0.0.1:${puerto_pg}:${puerto_pg}" \
+    -v "$PWD:/work:ro" \
+    -e POSTGRES_PASSWORD=postgres \
+    postgres:17 -p "$puerto_pg" >/dev/null
   # Red del anfitrión: el navegador abre http://localhost:$E2E_PUERTO como en local.
   docker run -d --name "$navegador" \
     --network host --init --ipc=host --user pwuser \
     -v "$PWD:$PWD:ro" -w "$PWD" \
     "$imagen" \
     ./node_modules/.bin/playwright run-server --port "$puerto_navegador" --host 127.0.0.1 >/dev/null
-  esperar "Postgres" "docker exec $pg pg_isready -h 127.0.0.1 -U postgres"
+  esperar "Postgres" "docker exec $pg pg_isready -h 127.0.0.1 -p $puerto_pg -U postgres"
   esperar "El navegador" "node -e \"require('net').connect($puerto_navegador, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1))\""
   export PW_TEST_CONNECT_WS_ENDPOINT="ws://127.0.0.1:${puerto_navegador}/"
   marca "Postgres y navegador listos"
