@@ -264,8 +264,12 @@ describe("contrato del libro", () => {
       readFileSync(new URL("../../components/personas/formularios.tsx", import.meta.url), "utf8"),
       readFileSync(new URL("../../app/consola/personas/acciones.ts", import.meta.url), "utf8"),
       readFileSync(new URL("../../app/consola/personas/page.tsx", import.meta.url), "utf8"),
+      readFileSync(new URL("../../components/personas/alta.tsx", import.meta.url), "utf8"),
+      readFileSync(new URL("../../components/personas/detalle.tsx", import.meta.url), "utf8"),
+      readFileSync(new URL("../../components/personas/lote.tsx", import.meta.url), "utf8"),
     ].join("\n");
     assert.doesNotMatch(ui, /<button[^>]*>\s*Liberar/);
     assert.doesNotMatch(ui, /negarLiberacion|password_hash|DATABASE_URL|\b(spei|visa)\b/i);
+    assert.match(ui, /clabeVisible/);
   });
 });
