@@ -4,7 +4,6 @@ import {
   diaAnterior,
   hoyEnMexico,
   normalizarComision,
-  textoMultilinea,
   uuidValido,
 } from "../../dominio/operacion";
 import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
@@ -15,6 +14,7 @@ import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
 import { cerrarAlertasDeCategoria, crearAlertaEnTransaccion } from "./alertas";
 import type { Comision } from "./tipos";
+import { motivoEscrito } from "./formulario";
 import { exigirEnOperacion } from "./permisos";
 
 export async function solicitarComision(
@@ -81,8 +81,7 @@ export async function decidirComision(
   exigirEnOperacion(ctx, "plataforma.empresa.alta");
   exigirAutenticacionReciente(sesion);
   if (!uuidValido(entrada.id)) throw new ErrorDeDominio("comision_ausente");
-  const motivo = entrada.aprobada ? null : textoMultilinea(entrada.motivo, 500);
-  if (!entrada.aprobada && !motivo) throw new ErrorDeDominio("motivo_invalido");
+  const motivo = entrada.aprobada ? null : motivoEscrito(entrada.motivo, 500);
   const ahora = new Date();
   await conContexto(basePlataforma(ctx), async (consulta) => {
     const actual = await bloquearComision(consulta, entrada.id as string);

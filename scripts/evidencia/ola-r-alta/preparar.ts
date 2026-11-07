@@ -18,11 +18,14 @@
 //           alta con expediente aprobado, riesgo vigente y la activación pedida (Celia la mete
 //           en la lista por pantalla y Ana intenta aprobarla); Cedro Regresión queda con su
 //           versión enviada, por dictaminar (la pista bajo «Motivo» del dictamen).
+//   arranque Base aparte, «ola_r_alta_arranque», solo con las migraciones: un operador y 0 personal,
+//           como Preview. La quinta revisión corre ahí el comando de arranque varias veces
+//           (base-N15) y abre sus enlaces contra un segundo next start (BASE_ARRANQUE).
 //
 //   ESTADO=/fuera/del/repo/ola-r-alta.json \
 //   AUTENTICACION_LLAVE_TOTP=… BLOB_READ_WRITE_TOKEN=… VERCEL_BLOB_API_URL=… \
 //   DUENO_URL=postgres://postgres@127.0.0.1:5551/postgres \
-//   ./node_modules/.bin/tsx scripts/evidencia/ola-r-alta/preparar.ts base|lumbre|ronda3
+//   ./node_modules/.bin/tsx scripts/evidencia/ola-r-alta/preparar.ts base|lumbre|ronda3|arranque
 //
 // ESTADO guarda semillas TOTP y sesiones: tiene que vivir fuera del repositorio. Nada de eso
 // se imprime. Solo acepta un Postgres en 127.0.0.1 o localhost.
@@ -104,6 +107,8 @@ type Estado = {
   IDS: Record<string, string>;
   EMPRESA_LUMBRE?: string;
   INVITACION_IVAN: string;
+  DUENO_ARRANQUE?: string;
+  DATABASE_URL_ARRANQUE?: string;
 };
 
 async function faseBase(): Promise<void> {
@@ -249,7 +254,25 @@ async function faseRonda3(): Promise<void> {
   console.log("Brisa Regresión en alta con la activación pedida; Cedro Regresión con su versión por dictaminar.");
 }
 
-(fase === "lumbre" ? faseLumbre() : fase === "ronda3" ? faseRonda3() : faseBase()).catch(async (error: unknown) => {
+async function faseArranque(): Promise<void> {
+  const estado = JSON.parse(readFileSync(rutaEstado, "utf8")) as Estado;
+  const nombre = `${BASE}_arranque`;
+  const admin = new Client({ connectionString: dueno.toString() });
+  await admin.connect();
+  await admin.query(`drop database if exists ${nombre} with (force)`);
+  await admin.query(`create database ${nombre}`);
+  await admin.end();
+  const owner = new URL(dueno.toString());
+  owner.pathname = `/${nombre}`;
+  const url = owner.toString();
+  const dir = join(process.cwd(), "db/migrations");
+  for (const archivo of readdirSync(dir).sort()) if (archivo.endsWith(".sql")) aplicarArchivo(url, join(dir, archivo));
+  writeFileSync(rutaEstado, JSON.stringify({ ...estado, DUENO_ARRANQUE: url, DATABASE_URL_ARRANQUE: urlDeAplicacion(url) }, null, 2), { mode: 0o600 });
+  console.log(`Base ${nombre} lista: 0001-0028, un operador y 0 personal.`);
+}
+
+const FASES: Record<string, () => Promise<void>> = { base: faseBase, lumbre: faseLumbre, ronda3: faseRonda3, arranque: faseArranque };
+(FASES[fase] ?? faseBase)().catch(async (error: unknown) => {
   await cerrarConexion();
   console.error(error);
   process.exitCode = 1;

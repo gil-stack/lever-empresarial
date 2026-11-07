@@ -129,8 +129,9 @@ export async function agregarAccionistaAccion(formData: FormData): Promise<void>
       pep: texto(formData, "pep") || "no",
     });
   } catch (error) {
-    // El formulario vuelve con el tipo de persona del socio rechazado.
-    return fallo(error, expediente(companyId), "#accionistas-titulo", texto(formData, "tipoPersona") === "moral" ? "&tipo=moral" : "");
+    // El formulario vuelve con el tipo de persona y la nacionalidad del socio rechazado.
+    const consulta = `${texto(formData, "tipoPersona") === "moral" ? "&tipo=moral" : ""}${texto(formData, "pais") ? "&extranjera=1" : ""}`;
+    return fallo(error, expediente(companyId), "#accionistas-titulo", consulta);
   }
   listo(expediente(companyId), "expediente_accionista_agregado", "#accionistas-titulo");
 }

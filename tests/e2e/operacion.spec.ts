@@ -179,10 +179,15 @@ test("el grado de riesgo no le dice a Originación ni a Aprobación que hay una 
   for (const correo of [CORREOS.op1, CORREOS.op2]) {
     await sesionDe(context, correo, { superficie: "sofipo" });
     await page.goto(`/operacion/clientes/${brisa!.id}/expediente`);
+    // serv-N9: solo el grado y la fecha de revisión; ningún factor (todos en cero delatarían la lista).
     await expect(riesgo).toContainText("Grado alto");
-    await expect(factor("Revisión de Cumplimiento")).toHaveText("Lo ve Cumplimiento");
-    await expect(riesgo).not.toContainText(/lista|exacta|puntaje/i);
+    await expect(riesgo).toContainText(/Revisar antes del|Revisión vencida/);
+    await expect(riesgo.locator("dl")).toHaveCount(0);
+    await expect(riesgo).toContainText("El desglose de la calificación lo ven Cumplimiento y Auditoría.");
+    await expect(riesgo).not.toContainText(/lista|exacta|puntaje|punto|actividad|zona|antigüedad/i);
     await expect(page.locator("#coincidencias-titulo")).toHaveText("Revisión de Cumplimiento");
+    // Tampoco viajan en la respuesta RSC que lleva la página.
+    expect(await page.content()).not.toMatch(/antiguedad_meses|volumen_mensual|coincidencias\\?"|exacta|puntaje/i);
   }
   await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
   await page.goto(`/operacion/clientes/${brisa!.id}/expediente`);
@@ -197,15 +202,16 @@ test("tras un rechazo del socio extranjero el formulario vuelve en «Extranjera�
   const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
   const expediente = `/operacion/clientes/${duna!.id}/expediente`;
   const socios = () => contar("select 1 from kyb_accionistas where company_id = $1", [duna!.id]);
-  const capturar = async (tipo: "fisica" | "moral", documento: string) => {
+  const capturar = async (tipo: "fisica" | "moral", documento: string, otros: { rfc?: string; capital?: string } = {}) => {
     await page.goto(expediente);
     await page.locator("#acc-tipo").selectOption(tipo);
     await page.locator("#acc-nacionalidad").selectOption("extranjera");
     await page.locator("#acc-nombre").fill(tipo === "fisica" ? "John Smith Taylor" : "Delaware Holdings LLC");
+    if (otros.rfc) await page.locator("#acc-rfc").fill(otros.rfc);
     await page.locator("#acc-pais").selectOption("US");
     await page.locator("#acc-documento").fill(documento);
     if (tipo === "fisica") await page.locator("#acc-nacimiento").fill("1980-05-01");
-    await page.locator("#acc-capital").fill("40");
+    await page.locator("#acc-capital").fill(otros.capital ?? "40");
     await page.locator("#acc-votos").fill("40");
     await page.getByRole("button", { name: "Agregar accionista" }).click();
   };
@@ -222,6 +228,19 @@ test("tras un rechazo del socio extranjero el formulario vuelve en «Extranjera�
     await expect(page.locator('label[for="acc-documento"]')).toHaveText(
       tipo === "fisica" ? "Número de pasaporte o identificación oficial" : "Número de identificación fiscal o de registro en su país",
     );
+    expect(await socios()).toBe(0);
+  }
+  // serv-N15: si lo rechazado es otro campo (el RFC opcional o el capital), también vuelve en «Extranjera».
+  for (const [tipo, otros, codigo, campo] of [
+    ["fisica", { rfc: "XX123" }, "dato_invalido_rfc", "#acc-rfc"],
+    ["moral", { capital: "abc" }, "dato_invalido_capital", "#acc-capital"],
+  ] as const) {
+    await capturar(tipo, "X12345678", otros);
+    await page.waitForURL(new RegExp(`aviso=${codigo}.*extranjera=1`));
+    await expect(page.locator("#acc-tipo")).toHaveValue(tipo);
+    await expect(page.locator("#acc-nacionalidad")).toHaveValue("extranjera");
+    await expect(page.locator("#acc-documento")).toBeVisible();
+    await expect(page.locator(campo)).toHaveAttribute("aria-invalid", "true");
     expect(await socios()).toBe(0);
   }
   await capturar("moral", "12-3456789");

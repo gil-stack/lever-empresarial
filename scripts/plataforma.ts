@@ -28,8 +28,10 @@
  * personal:migrar-variable invita a los correos de OPERADORES_PLATAFORMA como la
  * primera Administración del personal. Corre con DATABASE_URL_UNPOOLED: desde la
  * aplicación nadie sin usuario da roles (0028, platform_staff_roles_revisar). Solo
- * arranca: si el operador ya tiene Administración, activa o invitada, no invita a
- * nadie (personal_con_administracion).
+ * arranca: si el operador ya tiene Administración activa, no invita a nadie
+ * (personal_con_administracion). Si solo está invitada, otra corrida con los mismos
+ * correos emite un enlace nuevo y el anterior deja de servir; con otro correo no
+ * hace nada (arranque_con_otros_correos).
  *
  * personal:rol da o quita un rol del personal cuando nadie más administra al
  * personal (nadie se da un rol a sí mismo por pantalla). Corre con
@@ -53,7 +55,7 @@ import {
 } from "../src/server/plataforma/servicio";
 import { aceptarSuscripcion } from "../src/server/precio/servicio";
 import { darDeAltaComoDuena } from "./empresa-por-la-duena";
-import { invitarPersonalComoDuena } from "./personal-por-la-duena";
+import { invitarPersonalComoDuena, type ResultadoDelArranque } from "./personal-por-la-duena";
 
 /** Banderas de cada orden: las que llevan valor y las de sí o no. */
 const BANDERAS: Readonly<Record<string, { conValor: readonly string[]; sinValor: readonly string[] }>> = {
@@ -79,7 +81,7 @@ async function principal(argv: string[]): Promise<void> {
       return;
     }
     for (const fila of await invitarPersonalComoDuena(urlDirecta(), correos, quienCorre)) {
-      console.log(`${fila.correo}: ${fila.resultado === "invitada" ? "invitada" : "ya era personal"}`);
+      console.log(`${fila.correo}: ${RESULTADO_DEL_ARRANQUE[fila.resultado]}`);
       if (fila.invitacion) informarEntrega(fila.invitacion, Boolean(opciones["mostrar-enlace"]));
     }
     console.log("Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.");
@@ -235,9 +237,17 @@ function exigir(opciones: Record<string, string | true>, nombre: string): string
   return valor;
 }
 
+const RESULTADO_DEL_ARRANQUE: Readonly<Record<ResultadoDelArranque["resultado"], string>> = {
+  invitada: "invitada",
+  reenviada: "invitación nueva; el enlace anterior ya no sirve",
+  ya_era_personal: "ya era personal",
+};
+
 const RECHAZOS_DEL_COMANDO: Readonly<Record<string, string>> = {
   personal_con_administracion:
-    "El operador ya tiene Administración del personal, activa o invitada. Las demás personas se invitan desde la pantalla Personal.",
+    "El operador ya tiene Administración del personal activa. Las demás personas se invitan desde la pantalla Personal.",
+  arranque_con_otros_correos:
+    "El operador ya tiene Administración invitada con otros correos. Para un enlace nuevo, corre el comando con los mismos correos de la primera vez.",
   corrido_por_invalido: RECHAZOS_DE_ROL.corrido_por_invalido ?? "",
 };
 

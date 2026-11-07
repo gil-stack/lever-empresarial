@@ -110,7 +110,7 @@ export const CATALOGO = {
   publicar_precio: { entidad: "platform_pricing", cambio: ["centavos"] },
   aceptar_suscripcion: { entidad: "subscriptions", cambio: [] },
   cargar_lista_69b: { entidad: "lista_69b_snapshots", cambio: ["fecha_archivo", "contribuyentes"] },
-  emitir_invitacion: { entidad: "invitations", cambio: ["roles", "expira_en"] },
+  emitir_invitacion: { entidad: "invitations", cambio: ["roles", "expira_en", "ejecutado_por", "corrido_por"] },
   revocar_invitacion: { entidad: "invitations", cambio: [] },
   aceptar_invitacion: { entidad: "invitations", cambio: [] },
   alta_personal: { entidad: "platform_staff", cambio: ["rol", "ejecutado_por", "corrido_por"] },

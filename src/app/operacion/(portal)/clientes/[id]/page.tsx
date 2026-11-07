@@ -98,10 +98,11 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                   <input type="hidden" name="formId" value={randomUUID()} />
                   <input type="hidden" name="tipo" value={cliente.estado === "activa" ? "suspension" : "reactivacion"} />
                   <div className="campo">
-                    <label htmlFor="motivo-suspension">Motivo</label>
+                    <label htmlFor="motivo-suspension">Motivo (de 10 a 500 caracteres)</label>
                     <textarea
                       id="motivo-suspension"
                       name="motivo"
+                      minLength={10}
                       maxLength={500}
                       required
                       {...errorDelCampo(aviso, "motivo")}

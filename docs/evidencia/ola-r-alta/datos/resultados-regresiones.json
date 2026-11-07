@@ -225,11 +225,11 @@
     },
     {
       "ok": true,
-      "texto": "N9. Originación ve el grado y los demás factores; el de listas dice «Lo ve Cumplimiento», sin puntos ni puntaje"
+      "texto": "N9. Originación ve solo el grado y la fecha de revisión, sin factores ni puntaje"
     },
     {
       "ok": true,
-      "texto": "N9. Aprobación ve el grado y los demás factores; el de listas dice «Lo ve Cumplimiento», sin puntos ni puntaje"
+      "texto": "N9. Aprobación ve solo el grado y la fecha de revisión, sin factores ni puntaje"
     },
     {
       "ok": true,
@@ -258,6 +258,114 @@
     {
       "ok": true,
       "texto": "N13. el detalle de la carga va en singular"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (con-caso). Originación ve solo el grado y la fecha de revisión; ni la página ni su respuesta RSC traen los factores"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (con-caso). Aprobación ve solo el grado y la fecha de revisión; ni la página ni su respuesta RSC traen los factores"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (con-caso). Cumplimiento ve el desglose completo"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (con-caso). Auditoría ve el desglose completo"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (con-caso). Administración no abre el expediente"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (sin-caso). Originación ve solo el grado y la fecha de revisión; ni la página ni su respuesta RSC traen los factores"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (sin-caso). Aprobación ve solo el grado y la fecha de revisión; ni la página ni su respuesta RSC traen los factores"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (sin-caso). Cumplimiento ve el desglose completo"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (sin-caso). Auditoría ve el desglose completo"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (sin-caso). Administración no abre el expediente"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_rfc» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. rechazado el RFC opcional de la física extranjera, vuelve en «Extranjera» con ese campo marcado y sin socio de más"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_capital» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. rechazado el capital de la moral extranjera, vuelve en «Extranjera» con ese campo marcado y sin socio de más"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N17. con «Revisar» (7 caracteres) el navegador no envía la solicitud: el campo pide de 10 a 500"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N17. sin el mínimo del navegador, el servidor rechaza el motivo corto con el aviso ligado al campo y no queda solicitud"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. la base del arranque tiene un operador y 0 personal, como Preview"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. primera corrida: las dos quedan invitadas, el correo no sale y sin --mostrar-enlace no hay enlace"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. segunda corrida con los mismos correos y --mostrar-enlace: un enlace nuevo por persona"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. las invitaciones de la primera corrida quedan revocadas y el personal sigue siendo el mismo"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. cada enlace (los de la primera corrida y los nuevos) queda en la bitácora con quién corrió el comando y la conexión"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. un correo distinto, solo o junto a los mismos, se rechaza y no emite nada"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. otra corrida con los mismos correos vuelve a emitir"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. el enlace que reemplazó la corrida siguiente ya no sirve"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. con el enlace nuevo, primera acepta y su Administración queda activa"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. con Administración activa, el comando ya no invita ni reenvía"
     },
     {
       "ok": true,

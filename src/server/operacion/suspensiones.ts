@@ -3,12 +3,12 @@ import { randomUUID } from "node:crypto";
 import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
 import { conContexto } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
-import { textoMultilinea, uuidValido } from "../../dominio/operacion";
+import { uuidValido } from "../../dominio/operacion";
 import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
 import { exigirEnOperacion } from "./permisos";
-import { unaVezPorFormulario } from "./formulario";
+import { motivoEscrito, unaVezPorFormulario } from "./formulario";
 
 type SesionConFactor = Pick<Sesion, "segundoFactor" | "superficie">;
 
@@ -47,8 +47,7 @@ export async function solicitarCambioDeSuspension(
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
   const tipo = entrada.tipo === "reactivacion" ? "reactivacion" : entrada.tipo === "suspension" ? "suspension" : null;
   if (!tipo) throw new ErrorDeDominio("dato_invalido_tipo");
-  const motivo = textoMultilinea(entrada.motivo, 500);
-  if (!motivo) throw new ErrorDeDominio("motivo_invalido");
+  const motivo = motivoEscrito(entrada.motivo, 500);
   const ahora = new Date();
   const companyId = entrada.companyId;
   await unaVezPorFormulario(() => conContexto(basePlataforma(ctx, companyId), async (consulta) => {
@@ -88,8 +87,7 @@ export async function decidirCambioDeSuspension(
   exigirEnOperacion(ctx, "plataforma.suspension.aprobar");
   exigirAutenticacionReciente(sesion);
   if (!uuidValido(entrada.id)) throw new ErrorDeDominio("solicitud_ausente");
-  const motivo = entrada.aprobada ? null : textoMultilinea(entrada.motivo, 500);
-  if (!entrada.aprobada && !motivo) throw new ErrorDeDominio("motivo_invalido");
+  const motivo = entrada.aprobada ? null : motivoEscrito(entrada.motivo, 500);
   const ahora = new Date();
   await conContexto(basePlataforma(ctx), async (consulta) => {
     const fila = await consulta.query(

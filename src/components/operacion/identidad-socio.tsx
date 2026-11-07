@@ -15,24 +15,26 @@ function conPista(ligado: Ligado, pista: string): Ligado {
  * mexicana lleva su CURP y la moral mexicana su RFC. La extranjera lleva su país y el
  * número de su pasaporte o identificación oficial con su fecha de nacimiento (física)
  * o de su registro en su país (moral); el RFC, si lo tiene. Lo que no aplica no se
- * envía. Tras un rechazo de un dato de la extranjera, el formulario vuelve en
- * «Extranjera» con ese campo marcado.
+ * envía. Tras el rechazo de cualquier dato de un socio extranjero, el formulario
+ * vuelve en «Extranjera» (con el campo de la extranjera marcado, si fue ese).
  */
 export function IdentidadDelSocio({
   paises,
   ligados,
   tipoInicial,
+  extranjeraInicial,
   children,
 }: {
   paises: ReadonlyArray<{ codigo: string; nombre: string }>;
   ligados: { rfc: Ligado; curp: Ligado; pais: Ligado; documentoExtranjero: Ligado; fechaNacimiento: Ligado };
   tipoInicial: "fisica" | "moral";
+  extranjeraInicial: boolean;
   children: ReactNode;
 }) {
   const conError = (ligado: Ligado) => Object.keys(ligado).length > 0;
   const [tipo, setTipo] = useState<"fisica" | "moral">(tipoInicial);
   const [extranjera, setExtranjera] = useState(
-    conError(ligados.pais) || conError(ligados.documentoExtranjero) || conError(ligados.fechaNacimiento),
+    extranjeraInicial || conError(ligados.pais) || conError(ligados.documentoExtranjero) || conError(ligados.fechaNacimiento),
   );
   return (
     <>

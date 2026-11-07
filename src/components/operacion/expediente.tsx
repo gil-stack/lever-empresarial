@@ -200,12 +200,14 @@ export function FormulariosBorrador({
   companyId,
   error,
   socioRechazado = "fisica",
+  socioExtranjero = false,
 }: {
   version: VersionExpediente;
   companyId: string;
   error: ErrorDeCampo;
-  /** El tipo del socio que el servidor rechazó: el formulario vuelve con ese tipo. */
+  /** El tipo y la nacionalidad del socio que el servidor rechazó: el formulario vuelve así. */
   socioRechazado?: "fisica" | "moral";
+  socioExtranjero?: boolean;
 }) {
   const morales = version.accionistas.filter((accionista) => accionista.tipoPersona === "moral");
   const base = (
@@ -370,6 +372,7 @@ export function FormulariosBorrador({
           <IdentidadDelSocio
             paises={paisesExtranjeros()}
             tipoInicial={socioRechazado}
+            extranjeraInicial={socioExtranjero}
             ligados={{
               rfc: error("accionistas-titulo", "rfc"),
               curp: error("accionistas-titulo", "curp"),

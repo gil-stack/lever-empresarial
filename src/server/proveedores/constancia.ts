@@ -22,7 +22,10 @@ type BlobPut = (
   },
 ) => Promise<{ pathname?: string; url?: string }>;
 
-type BlobDel = (path: string, opciones: CredencialesBlob) => Promise<void>;
+type BlobDel = (path: string, opciones: CredencialesBlob & { abortSignal?: AbortSignal }) => Promise<void>;
+
+/** Lo que espera el borrado de un huérfano antes de rendirse y dejar su clave en el registro. */
+export const TOPE_BORRADO_MS = 5000;
 type BlobGet = (
   path: string,
   opciones: CredencialesBlob & { access: "private"; useCache: boolean },
@@ -54,10 +57,14 @@ export function almacenVercel(): AlmacenConstancia {
     async borrar(clave) {
       const credenciales = credencialesBlobOpcional();
       if (!credenciales) return;
+      // Si Blob no contesta, la petición no espera más del tope. AbortSignal.timeout no sirve:
+      // @vercel/blob 2.8 reintenta su TimeoutError y sigue colgada; con abort() se rinde al momento.
+      const tope = new AbortController();
+      const reloj = setTimeout(() => tope.abort(), TOPE_BORRADO_MS);
       try {
         const modulo = (await import("@vercel/blob")) as unknown as { del?: BlobDel };
         if (!modulo.del) return;
-        await modulo.del(clave, credenciales);
+        await modulo.del(clave, { ...credenciales, abortSignal: tope.signal });
       } catch (error) {
         // El huérfano no se anuncia a quien subió el archivo, pero queda su clave para borrarlo a mano.
         console.error(JSON.stringify({
@@ -65,8 +72,12 @@ export function almacenVercel(): AlmacenConstancia {
           origen: "blob.borrar",
           evento: "huerfano_sin_borrar",
           clave,
+          causa: tope.signal.aborted ? "tiempo_agotado" : "error",
+          tope_ms: TOPE_BORRADO_MS,
           error: error instanceof Error ? error.name : "desconocido",
         }));
+      } finally {
+        clearTimeout(reloj);
       }
     },
   };

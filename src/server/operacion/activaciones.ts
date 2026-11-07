@@ -3,12 +3,13 @@ import { randomUUID } from "node:crypto";
 import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
 import { conContexto, type Consulta } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
-import { textoMultilinea, uuidValido } from "../../dominio/operacion";
+import { uuidValido } from "../../dominio/operacion";
 import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
 import { cerrarAlertasDeCategoria } from "./alertas";
 import type { SolicitudActivacion } from "./tipos";
+import { motivoEscrito } from "./formulario";
 import { exigirEnOperacion } from "./permisos";
 
 export async function solicitarActivacion(ctx: ContextoDePersonal, companyId: unknown): Promise<string> {
@@ -49,8 +50,7 @@ export async function decidirActivacion(
   exigirEnOperacion(ctx, "plataforma.activacion.aprobar");
   exigirAutenticacionReciente(sesion);
   if (!uuidValido(entrada.id)) throw new ErrorDeDominio("solicitud_ausente");
-  const motivo = entrada.aprobada ? null : textoMultilinea(entrada.motivo, 500);
-  if (!entrada.aprobada && !motivo) throw new ErrorDeDominio("motivo_invalido");
+  const motivo = entrada.aprobada ? null : motivoEscrito(entrada.motivo, 500);
   const ahora = new Date();
   await conContexto(basePlataforma(ctx), async (consulta) => {
     const solicitud = await bloquearSolicitud(consulta, entrada.id as string);

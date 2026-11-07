@@ -100,8 +100,8 @@ export function Coincidencias({
                   </select>
                 </div>
                 <div className="campo">
-                  <label htmlFor={`motivo-${coincidencia.id}`}>Motivo</label>
-                  <input id={`motivo-${coincidencia.id}`} name="motivo" maxLength={1000} required />
+                  <label htmlFor={`motivo-${coincidencia.id}`}>Motivo (al menos 10 caracteres)</label>
+                  <input id={`motivo-${coincidencia.id}`} name="motivo" minLength={10} maxLength={1000} required />
                 </div>
                 <BotonEnviar className="boton-secundario">Registrar dictamen</BotonEnviar>
               </form>

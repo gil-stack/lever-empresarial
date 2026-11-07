@@ -750,7 +750,7 @@ CREATE TABLE kyb_dictamenes (
   CONSTRAINT kyb_dictamenes_una_por_version UNIQUE (version_id),
   CONSTRAINT kyb_dictamenes_resultado CHECK (resultado IN ('aprobado', 'observado', 'rechazado')),
   CONSTRAINT kyb_dictamenes_motivo CHECK (
-    texto_regulado(motivo, 1000) AND (resultado = 'aprobado' OR motivo IS NOT NULL)
+    texto_regulado(motivo, 1000) AND (resultado = 'aprobado' OR coalesce(char_length(btrim(motivo)), 0) >= 10)
   )
 );
 
@@ -1000,15 +1000,21 @@ BEGIN
   -- La misma persona capturada con dos identificadores (CURP en un camino y
   -- pasaporte en otro, o dos documentos) se partiría igual. Dos personas físicas con
   -- el mismo nombre (sin orden de palabras, acentos ni puntuación) y la misma fecha
-  -- de nacimiento (la capturada o la de su CURP) no pueden tener claves distintas.
-  -- Un nombre escrito distinto no lo detecta.
+  -- de nacimiento (la capturada o la de su CURP) no pueden tener claves distintas
+  -- si a una le falta la CURP o las dos traen la misma. Dos mexicanos homónimos
+  -- nacidos el mismo día con CURP distinta son dos personas. Un nombre escrito
+  -- distinto o una fecha capturada distinta no lo detecta.
   IF EXISTS (
+    WITH fisicas AS (
+      SELECT a.curp, kyb_persona(a.pais, a.documento_extranjero, a.curp, a.clave) AS persona,
+             lpb_normalizar(a.nombre) AS nombre, f.fecha
+      FROM kyb_accionistas a
+      CROSS JOIN LATERAL (VALUES (a.fecha_nacimiento), (kyb_fecha_de_curp(a.curp))) AS f (fecha)
+      WHERE a.version_id = p_version.id AND a.retirado_en IS NULL AND a.tipo_persona = 'fisica' AND f.fecha IS NOT NULL
+    )
     SELECT 1
-    FROM kyb_accionistas a
-    CROSS JOIN LATERAL (VALUES (a.fecha_nacimiento), (kyb_fecha_de_curp(a.curp))) AS f (fecha)
-    WHERE a.version_id = p_version.id AND a.retirado_en IS NULL AND a.tipo_persona = 'fisica' AND f.fecha IS NOT NULL
-    GROUP BY lpb_normalizar(a.nombre), f.fecha
-    HAVING count(DISTINCT kyb_persona(a.pais, a.documento_extranjero, a.curp, a.clave)) > 1
+    FROM fisicas x JOIN fisicas y ON y.nombre = x.nombre AND y.fecha = x.fecha AND y.persona <> x.persona
+    WHERE x.curp IS NULL OR y.curp IS NULL OR x.curp = y.curp
   ) THEN
     RAISE EXCEPTION 'expediente_misma_persona_dos_identificadores';
   END IF;
@@ -1558,7 +1564,16 @@ BEGIN
             HINT = 'En una transacción: ALTER TABLE lista_69b_snapshots ADD COLUMN operator_id uuid; '
                    'ALTER TABLE lista_69b_snapshots DISABLE TRIGGER lista_69b_snapshots_no_update; '
                    'UPDATE lista_69b_snapshots SET operator_id = <operador> WHERE id = <copia> (cada copia); '
-                   'ALTER TABLE lista_69b_snapshots ENABLE TRIGGER lista_69b_snapshots_no_update; '
+                   'ALTER TABLE lista_69b_snapshots ENABLE TRIGGER lista_69b_snapshots_no_update. '
+                   'Una copia que leen proveedores de empresas de dos operadores se duplica, una por operador con sus renglones, '
+                   'con la relectura apartada (si no, la copia nueva se lleva a los proveedores de todos los operadores): '
+                   'ALTER TABLE lista_69b_snapshots DISABLE TRIGGER lista_69b_relee_proveedores; '
+                   'INSERT INTO audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador) VALUES (<otro operador>, ''sistema'', ''sistema'', ''cargar_lista_69b'', ''lista_69b_snapshots'', <copia nueva>); '
+                   'SET CONSTRAINTS lista_69b_exige_auditoria IMMEDIATE; '
+                   'INSERT INTO lista_69b_snapshots (id, fecha_archivo, cargado_en, operator_id) SELECT <copia nueva>, fecha_archivo, cargado_en, <otro operador> FROM lista_69b_snapshots WHERE id = <copia>; '
+                   'ALTER TABLE lista_69b_snapshots ENABLE TRIGGER lista_69b_relee_proveedores; '
+                   'INSERT INTO lista_69b_rows (snapshot_id, rfc, situacion) SELECT <copia nueva>, rfc, situacion FROM lista_69b_rows WHERE snapshot_id = <copia>; '
+                   'UPDATE suppliers SET snapshot_id = <copia nueva> WHERE snapshot_id = <copia> AND company_id IN (SELECT id FROM companies WHERE operator_id = <otro operador>); '
                    'después vuelve a aplicar la 0028.';
   END IF;
 END;
@@ -1570,6 +1585,35 @@ ALTER TABLE lista_69b_snapshots DISABLE TRIGGER lista_69b_snapshots_no_update;
 UPDATE lista_69b_snapshots SET operator_id = (SELECT o.id FROM operators o) WHERE operator_id IS NULL;
 ALTER TABLE lista_69b_snapshots ENABLE TRIGGER lista_69b_snapshots_no_update;
 ALTER TABLE lista_69b_snapshots ALTER COLUMN operator_id SET NOT NULL;
+
+-- Cada proveedor queda leído contra una copia de su propio operador. Si una copia
+-- vieja la leían empresas de dos operadores, asignarla a uno deja a los proveedores
+-- del otro contra una copia ajena: la migración se detiene y no deja nada a medias.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM suppliers s
+    JOIN companies c ON c.id = s.company_id
+    JOIN lista_69b_snapshots l ON l.id = s.snapshot_id
+    WHERE l.operator_id <> c.operator_id
+  ) THEN
+    RAISE EXCEPTION 'lista_69b_de_otro_operador'
+      USING DETAIL = 'Hay proveedores leídos contra la copia del 69-B de otro operador.',
+            HINT = 'En una transacción. '
+                   'Una copia que leen proveedores de empresas de dos operadores se duplica, una por operador con sus renglones, '
+                   'con la relectura apartada (si no, la copia nueva se lleva a los proveedores de todos los operadores): '
+                   'ALTER TABLE lista_69b_snapshots DISABLE TRIGGER lista_69b_relee_proveedores; '
+                   'INSERT INTO audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador) VALUES (<otro operador>, ''sistema'', ''sistema'', ''cargar_lista_69b'', ''lista_69b_snapshots'', <copia nueva>); '
+                   'SET CONSTRAINTS lista_69b_exige_auditoria IMMEDIATE; '
+                   'INSERT INTO lista_69b_snapshots (id, fecha_archivo, cargado_en, operator_id) SELECT <copia nueva>, fecha_archivo, cargado_en, <otro operador> FROM lista_69b_snapshots WHERE id = <copia>; '
+                   'ALTER TABLE lista_69b_snapshots ENABLE TRIGGER lista_69b_relee_proveedores; '
+                   'INSERT INTO lista_69b_rows (snapshot_id, rfc, situacion) SELECT <copia nueva>, rfc, situacion FROM lista_69b_rows WHERE snapshot_id = <copia>; '
+                   'UPDATE suppliers SET snapshot_id = <copia nueva> WHERE snapshot_id = <copia> AND company_id IN (SELECT id FROM companies WHERE operator_id = <otro operador>); '
+                   'después vuelve a aplicar la 0028.';
+  END IF;
+END;
+$$;
+
 CREATE INDEX lista_69b_snapshots_operador_idx ON lista_69b_snapshots (operator_id, cargado_en DESC, id DESC);
 
 CREATE FUNCTION lista_69b_vigente(p_operador uuid)
@@ -1641,6 +1685,7 @@ CREATE TABLE lpb_coincidencias (
   ),
   CONSTRAINT lpb_coincidencias_textos CHECK (
     texto_regulado(sujeto_nombre, 300) AND texto_regulado(motivo_resolucion, 1000) AND texto_regulado(reporte_folio, 80)
+    AND (motivo_resolucion IS NULL OR char_length(btrim(motivo_resolucion)) >= 10)
   ),
   CONSTRAINT lpb_coincidencias_reporte CHECK (
     (reporte_folio IS NULL AND reporte_presentado_el IS NULL AND reporte_registrado_por IS NULL AND reporte_registrado_en IS NULL)
@@ -1763,7 +1808,11 @@ CREATE TABLE company_suspensions (
   CONSTRAINT company_suspensions_tipo CHECK (tipo IN ('suspension', 'reactivacion')),
   CONSTRAINT company_suspensions_origen CHECK (origen IN ('manual', 'lpb')),
   CONSTRAINT company_suspensions_estado CHECK (estado IN ('pendiente', 'aprobada', 'rechazada')),
-  CONSTRAINT company_suspensions_textos CHECK (texto_regulado(motivo, 500) AND texto_regulado(motivo_decision, 500)),
+  -- Un motivo que lee otra persona lleva al menos 10 caracteres, como el de personal_rol_por_comando.
+  CONSTRAINT company_suspensions_textos CHECK (
+    texto_regulado(motivo, 500) AND char_length(btrim(motivo)) >= 10
+    AND texto_regulado(motivo_decision, 500) AND (motivo_decision IS NULL OR char_length(btrim(motivo_decision)) >= 10)
+  ),
   -- 75ª fr. I: la coincidencia suspende de inmediato, sin firma.
   CONSTRAINT company_suspensions_lpb CHECK (
     origen = 'manual'

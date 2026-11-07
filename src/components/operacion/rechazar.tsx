@@ -36,8 +36,8 @@ export function RechazarConMotivo({
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="decision" value="rechazar" />
           <div className="campo">
-            <label htmlFor={campo}>Motivo</label>
-            <textarea id={campo} name="motivo" maxLength={500} required />
+            <label htmlFor={campo}>Motivo (de 10 a 500 caracteres)</label>
+            <textarea id={campo} name="motivo" minLength={10} maxLength={500} required />
           </div>
           <div className="dialogo-pie">
             <button type="button" className="boton-texto" onClick={() => setAbierto(false)}>

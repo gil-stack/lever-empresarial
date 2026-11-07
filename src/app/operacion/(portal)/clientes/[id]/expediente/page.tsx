@@ -50,7 +50,7 @@ export default async function ExpedienteCliente({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ aviso?: string; en?: string; tipo?: string }>;
+  searchParams: Promise<{ aviso?: string; en?: string; tipo?: string; extranjera?: string }>;
 }) {
   const ctx = await exigirContextoOperacion();
   const [{ id }, busqueda] = await Promise.all([params, searchParams]);
@@ -142,6 +142,7 @@ export default async function ExpedienteCliente({
           companyId={id}
           error={error}
           socioRechazado={busqueda.en === "accionistas-titulo" && busqueda.tipo === "moral" ? "moral" : "fisica"}
+          socioExtranjero={busqueda.en === "accionistas-titulo" && busqueda.extranjera === "1"}
         />
       ) : null}
       {borrador && !captura ? (
@@ -218,20 +219,22 @@ export default async function ExpedienteCliente({
                 {riesgo.vencida ? "Revisión vencida" : `Revisar antes del ${fechaDia(riesgo.revisarAntesDe)}`}
               </Insignia>
             </div>
-            <Renglones>
-              {/* El factor de listas lo ven Cumplimiento y Auditoría; los demás tampoco ven el puntaje, que lo delataría. */}
-              {Object.entries(riesgo.factores).map(([clave, factor]) => (
-                <Renglon key={clave} etiqueta={clave === "coincidencias" && !veLista ? "Revisión de Cumplimiento" : (FACTORES[clave] ?? clave)}>
-                  {clave === "coincidencias" && !veLista
-                    ? "Lo ve Cumplimiento"
-                    : `${valorFactor(clave, factor.valor)} · ${factor.puntos} ${factor.puntos === 1 ? "punto" : "puntos"}`}
+            {/* El desglose lo ven Cumplimiento y Auditoría: los demás reciben del servidor solo el grado y la fecha. */}
+            {riesgo.desglose ? (
+              <Renglones>
+                {Object.entries(riesgo.desglose.factores).map(([clave, factor]) => (
+                  <Renglon key={clave} etiqueta={FACTORES[clave] ?? clave}>
+                    {`${valorFactor(clave, factor.valor)} · ${factor.puntos} ${factor.puntos === 1 ? "punto" : "puntos"}`}
+                  </Renglon>
+                ))}
+                <Renglon etiqueta="Puntaje">{riesgo.desglose.puntaje}</Renglon>
+                <Renglon etiqueta="Calificó">
+                  {riesgo.desglose.calificadaPor} · {fechaDia(riesgo.desglose.calificadaEl)} · {riesgo.desglose.tipo === "alta" ? "al alta" : "periódica"}
                 </Renglon>
-              ))}
-              {veLista ? <Renglon etiqueta="Puntaje">{riesgo.puntaje}</Renglon> : null}
-              <Renglon etiqueta="Calificó">
-                {riesgo.calificadaPor} · {fechaDia(riesgo.calificadaEl)} · {riesgo.tipo === "alta" ? "al alta" : "periódica"}
-              </Renglon>
-            </Renglones>
+              </Renglones>
+            ) : (
+              <p className="pista">El desglose de la calificación lo ven Cumplimiento y Auditoría.</p>
+            )}
           </>
         ) : (
           <Vacio titulo="Sin grado de riesgo">Cumplimiento lo registra cuando la versión vigente está aprobada.</Vacio>

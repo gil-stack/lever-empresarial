@@ -4,12 +4,12 @@ import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
 import { conContexto } from "../../nucleo/db";
 import { TOPE_ARCHIVO_BYTES } from "../../dominio/archivos";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
-import { hoyEnMexico, leerListaBloqueadas, textoMultilinea, textoOperativo, uuidValido } from "../../dominio/operacion";
+import { hoyEnMexico, leerListaBloqueadas, textoOperativo, uuidValido } from "../../dominio/operacion";
 import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
 import { exigirEnOperacion } from "./permisos";
-import { unaVezPorFormulario } from "./formulario";
+import { motivoEscrito, unaVezPorFormulario } from "./formulario";
 
 type SesionConFactor = Pick<Sesion, "segundoFactor" | "superficie">;
 
@@ -211,8 +211,7 @@ export async function resolverCoincidencia(
   if (!uuidValido(entrada.id)) throw new ErrorDeDominio("coincidencia_ausente");
   const estado = entrada.estado;
   if (estado !== "confirmada" && estado !== "falso_positivo" && estado !== "fuera_de_lista") throw new ErrorDeDominio("dato_invalido_estado");
-  const motivo = textoMultilinea(entrada.motivo, 1000);
-  if (!motivo) throw new ErrorDeDominio("motivo_invalido");
+  const motivo = motivoEscrito(entrada.motivo, 1000);
   const ahora = new Date();
   await conContexto(basePlataforma(ctx), async (consulta) => {
     const fila = await consulta.query("select company_id, estado from lpb_coincidencias where id = $1 for update", [entrada.id]);

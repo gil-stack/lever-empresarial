@@ -169,11 +169,42 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
         where u.correo = 'primera@ejemplo.mx'`), [{
         estado: "invitado", rol: "administracion_plataforma", origen: "migracion_personal", ejecutado_por: true, corrido_por: "gil@ejemplo.mx",
       }]);
-      // N7: solo arranca. Con una Administración invitada (o activa), otra corrida no invita a nadie.
-      await assert.rejects(invitarPersonalComoDuena(urlDuena, ["segunda@ejemplo.mx"], "gil@ejemplo.mx"), /personal_con_administracion/);
-      await consultar(urlDuena, "update platform_staff set estado = 'activo'");
-      await assert.rejects(invitarPersonalComoDuena(urlDuena, ["tercera@ejemplo.mx"], "gil@ejemplo.mx"), /personal_con_administracion/);
+      // base-N15: la primera corrida no entregó el enlace (sin Resend ni --mostrar-enlace). Con la
+      // Administración solo invitada, un correo distinto no entra, ni solo ni junto a los mismos.
+      assert.equal(primera?.invitacion?.entrega.entregada, false);
+      const primerToken = primera!.invitacion!.emitida.token;
+      for (const correos of [["segunda@ejemplo.mx"], ["primera@ejemplo.mx", "segunda@ejemplo.mx"]]) {
+        await assert.rejects(invitarPersonalComoDuena(urlDuena, correos, "gil@ejemplo.mx"), /arranque_con_otros_correos/);
+      }
+      assert.deepEqual(await consultar(urlDuena, "select count(*)::int as n from invitations"), [{ n: 1 }]);
+      // La corrida con los mismos correos emite un enlace nuevo y revoca el anterior, en la bitácora.
+      const [reenviada] = await invitarPersonalComoDuena(urlDuena, ["Primera@Ejemplo.mx"], "otra@ejemplo.mx");
+      assert.equal(reenviada?.resultado, "reenviada");
+      const nuevoToken = reenviada!.invitacion!.emitida.token;
+      assert.notEqual(nuevoToken, primerToken);
+      const porToken = async (token: string) => (await consultar(urlDuena,
+        `select revocada_en is not null as revocada, usada_en is not null as usada from invitacion_por_token('${createHash("sha256").update(token).digest("hex")}')`))[0];
+      assert.deepEqual(await porToken(primerToken), { revocada: true, usada: false });
+      assert.deepEqual(await porToken(nuevoToken), { revocada: false, usada: false });
+      // Lo mismo que hace la aceptación (consumir): con el enlace viejo no cierra nada.
+      assert.deepEqual(await consultar(urlDuena, `
+        with cerrada as (update invitations set usada_en = now() where token_hash = '${createHash("sha256").update(primerToken).digest("hex")}'
+          and usada_en is null and revocada_en is null and expira_en > now() returning 1)
+        select count(*)::int as n from cerrada`), [{ n: 0 }]);
+      assert.deepEqual(await consultar(urlDuena, `
+        select a.cambio ->> 'corrido_por' as corrido_por, a.cambio ->> 'ejecutado_por' = session_user as ejecutado_por, a.origen
+        from audit_log a join invitations i on i.id = a.identificador
+        where a.accion = 'emitir_invitacion' and i.token_hash = '${createHash("sha256").update(nuevoToken).digest("hex")}'`), [{
+        corrido_por: "otra@ejemplo.mx", ejecutado_por: true, origen: "migracion_personal",
+      }]);
       assert.deepEqual(await consultar(urlDuena, "select count(*)::int as n from platform_staff"), [{ n: 1 }]);
+      // N7: con la Administración activa, ninguna corrida invita ni reenvía.
+      await consultar(urlDuena, "update platform_staff set estado = 'activo'");
+      for (const correos of [["tercera@ejemplo.mx"], ["primera@ejemplo.mx"]]) {
+        await assert.rejects(invitarPersonalComoDuena(urlDuena, correos, "gil@ejemplo.mx"), /personal_con_administracion/);
+      }
+      assert.deepEqual(await consultar(urlDuena, "select count(*)::int as n from platform_staff"), [{ n: 1 }]);
+      assert.deepEqual(await consultar(urlDuena, "select count(*)::int as n from invitations"), [{ n: 2 }]);
       assert.deepEqual(await consultar(urlDuena, "select count(*)::int as n from users where correo in ('segunda@ejemplo.mx', 'tercera@ejemplo.mx')"), [{ n: 0 }]);
     });
 
@@ -184,6 +215,18 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
       const varias = await invitarPersonalComoDuena(urlDuena, ["una@ejemplo.mx", "dos@ejemplo.mx"], "gil@ejemplo.mx");
       assert.deepEqual(varias.map((fila) => fila.resultado), ["invitada", "invitada"]);
       assert.deepEqual(await consultar(urlDuena, "select count(*)::int as n from platform_staff where estado = 'invitado'"), [{ n: 2 }]);
+      // base-N15: con las invitaciones ya vencidas, la misma variable las vuelve a emitir.
+      await consultar(urlDuena, `
+        begin;
+        alter table invitations disable trigger invitations_no_update;
+        update invitations set emitida_en = now() - interval '4 days', expira_en = now() - interval '1 day';
+        alter table invitations enable trigger invitations_no_update;
+        commit;`);
+      const otraVez = await invitarPersonalComoDuena(urlDuena, ["una@ejemplo.mx", "dos@ejemplo.mx"], "gil@ejemplo.mx");
+      assert.deepEqual(otraVez.map((fila) => fila.resultado), ["reenviada", "reenviada"]);
+      assert.deepEqual(await consultar(urlDuena, `
+        select count(*) filter (where revocada_en is null and expira_en > now())::int as vigentes, count(*) filter (where revocada_en is not null)::int as revocadas
+        from invitations`), [{ vigentes: 2, revocadas: 2 }]);
     });
 
     // Con dos operadores y copias sin dueño, la migración se detiene y no deja nada a medias.
@@ -216,6 +259,83 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
                   and conname = 'lista_69b_snapshots_operator_id_fkey') as llave
         from lista_69b_snapshots s`), [{ asignada: true, obligatoria: true, llave: 1 }]);
       await assert.rejects(consultar(urlDuena, "update lista_69b_snapshots set operator_id = gen_random_uuid()"), /solo acepta inserciones/);
+    });
+
+    // base-N17: una copia que leen proveedores de empresas de dos operadores. Asignarla a uno
+    // solo deja a los proveedores del otro contra una copia ajena: la 0028 se detiene. Duplicarla,
+    // una por operador con sus renglones, como dice la sugerencia, termina consistente.
+    await conBaseDesechable(urlAdmin, async (urlDuena) => {
+      hasta0027(urlDuena);
+      await consultar(urlDuena, "insert into operators (id, nombre, alta_en) values (gen_random_uuid(), 'Segundo operador', now() + interval '1 second')");
+      await copiaVieja(urlDuena);
+      const A = "(select id from operators order by alta_en limit 1)";
+      const B = "(select id from operators order by alta_en desc limit 1)";
+      await consultar(urlDuena, `
+        begin;
+        insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, operator_id, estado, demostracion) values
+          ('c5000000-0000-4000-8000-0000000000a1', 'EMA150301AB1', 'Empresa de A', '06600', '601', 'G03', ${A}, 'activa', true),
+          ('c5000000-0000-4000-8000-0000000000b1', 'EMB150301AB1', 'Empresa de B', '06600', '601', 'G03', ${B}, 'activa', true);
+        insert into audit_log (operator_id, company_id, actor_tipo, superficie, accion, entidad, identificador)
+          select c.operator_id, c.id, 'sistema', 'sistema', 'alta_empresa', 'companies', c.id from companies c;
+        insert into documents (id, company_id, clave_blob, hash_sha256, tipo, nombre_original, creado_en) values
+          ('d5000000-0000-4000-8000-0000000000a1', 'c5000000-0000-4000-8000-0000000000a1', 'demo/const-a', repeat('a', 64), 'application/pdf', 'a.pdf', now()),
+          ('d5000000-0000-4000-8000-0000000000b1', 'c5000000-0000-4000-8000-0000000000b1', 'demo/const-b', repeat('b', 64), 'application/pdf', 'b.pdf', now());
+        insert into suppliers (id, company_id, document_id, snapshot_id, rfc, razon_social, lista_fecha, lista_leida_en, boton_pago, alta_en) values
+          ('5c000000-0000-4000-8000-0000000000a1', 'c5000000-0000-4000-8000-0000000000a1', 'd5000000-0000-4000-8000-0000000000a1', '${COPIA_69B}', 'PRA010101AB1', 'Proveedor de A', current_date - 1, now(), true, now()),
+          ('5c000000-0000-4000-8000-0000000000b1', 'c5000000-0000-4000-8000-0000000000b1', 'd5000000-0000-4000-8000-0000000000b1', '${COPIA_69B}', 'PRB010101AB1', 'Proveedor de B', current_date - 1, now(), true, now());
+        insert into audit_log (operator_id, company_id, actor_tipo, superficie, accion, entidad, identificador)
+          select c.operator_id, s.company_id, 'sistema', 'sistema', 'alta_proveedor', 'suppliers', s.id from suppliers s join companies c on c.id = s.company_id;
+        insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde)
+          select md5(s.id::text)::uuid, s.company_id, s.id, '002180701150123452', true, now() from suppliers s;
+        insert into audit_log (operator_id, company_id, actor_tipo, superficie, accion, entidad, identificador)
+          select c.operator_id, sc.company_id, 'sistema', 'sistema', 'clabe_proveedor', 'supplier_clabes', sc.id from supplier_clabes sc join companies c on c.id = sc.company_id;
+        commit;`);
+      // La primera sugerencia ya dice que esa copia se duplica, una por operador con sus renglones.
+      await assert.rejects(aplicar0028(urlDuena), (error: pg.DatabaseError) => {
+        assert.match(error.message, /lista_69b_sin_operador/);
+        assert.match(error.hint ?? "", /se duplica, una por operador con sus renglones, con la relectura apartada/);
+        return true;
+      });
+      // Seguir solo la asignación (la copia a A) y volver a aplicar: se detiene sin dejar nada a medias.
+      await consultar(urlDuena, `
+        begin;
+        alter table lista_69b_snapshots add column operator_id uuid;
+        alter table lista_69b_snapshots disable trigger lista_69b_snapshots_no_update;
+        update lista_69b_snapshots set operator_id = ${A} where id = '${COPIA_69B}';
+        alter table lista_69b_snapshots enable trigger lista_69b_snapshots_no_update;
+        commit;`);
+      await assert.rejects(aplicar0028(urlDuena), (error: pg.DatabaseError) => {
+        assert.match(error.message, /lista_69b_de_otro_operador/);
+        assert.match(error.hint ?? "", /se duplica, una por operador con sus renglones, con la relectura apartada/);
+        return true;
+      });
+      assert.deepEqual(await consultar(urlDuena, `
+        select to_regclass('lpb_coincidencias') is null as sin_0028,
+               (select attnotnull from pg_attribute where attrelid = 'lista_69b_snapshots'::regclass and attname = 'operator_id') as obligatoria`),
+      [{ sin_0028: true, obligatoria: false }]);
+      // La duplicación al pie de la letra: copia nueva de B con sus renglones y su evento, y los proveedores de B a ella.
+      const copiaDeB = randomUUID();
+      await consultar(urlDuena, `
+        begin;
+        alter table lista_69b_snapshots disable trigger lista_69b_relee_proveedores;
+        insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador)
+          values (${B}, 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', '${copiaDeB}');
+        set constraints lista_69b_exige_auditoria immediate;
+        insert into lista_69b_snapshots (id, fecha_archivo, cargado_en, operator_id)
+          select '${copiaDeB}', fecha_archivo, cargado_en, ${B} from lista_69b_snapshots where id = '${COPIA_69B}';
+        alter table lista_69b_snapshots enable trigger lista_69b_relee_proveedores;
+        insert into lista_69b_rows (snapshot_id, rfc, situacion) select '${copiaDeB}', rfc, situacion from lista_69b_rows where snapshot_id = '${COPIA_69B}';
+        update suppliers set snapshot_id = '${copiaDeB}' where snapshot_id = '${COPIA_69B}' and company_id in (select id from companies where operator_id = ${B});
+        commit;`);
+      await aplicar0028(urlDuena);
+      assert.deepEqual(await consultar(urlDuena, `
+        select s.razon_social, l.operator_id = c.operator_id as copia_de_su_operador,
+               (select count(*)::int from lista_69b_rows r where r.snapshot_id = l.id) as renglones
+        from suppliers s join companies c on c.id = s.company_id join lista_69b_snapshots l on l.id = s.snapshot_id
+        order by s.razon_social`), [
+        { razon_social: "Proveedor de A", copia_de_su_operador: true, renglones: 1 },
+        { razon_social: "Proveedor de B", copia_de_su_operador: true, renglones: 1 },
+      ]);
     });
   });
 
@@ -400,6 +520,8 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           }), /misma_persona_en_dictamen/);
           await assert.rejects(crearVersion(ori, { companyId: alfa, formId: randomUUID() }), /expediente_en_revision/);
           await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: randomUUID(), resultado: "observado", motivo: "" }), /motivo_invalido/);
+          // serv-N17: observar o rechazar con un motivo de menos de 10 caracteres tampoco.
+          await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: randomUUID(), resultado: "rechazado", motivo: "Falta" }), /motivo_corto/);
           const observado = randomUUID();
           await dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: observado, resultado: "observado", motivo: "Falta el poder notarial del apoderado" });
           await dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: observado, resultado: "observado", motivo: "Falta el poder notarial del apoderado" });
@@ -432,6 +554,16 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
             [alfa],
           )).rows[0] as { tipo: string; revisar: string; version_id: string };
           assert.deepEqual(fila, { tipo: "alta", revisar: sumarMeses(hoy, 6), version_id: alfaV2 });
+          // serv-N9: quien no ve la Lista recibe del servidor solo el grado y la fecha de revisión, sin desglose.
+          for (const quien of [ori, apr]) {
+            const riesgo = (await leerExpediente(quien, alfa))?.riesgo;
+            assert.deepEqual(riesgo, { grado: "bajo", revisarAntesDe: sumarMeses(hoy, 6), vencida: false, desglose: null });
+          }
+          for (const quien of [cum, aud]) {
+            const desglose = (await leerExpediente(quien, alfa))?.riesgo?.desglose;
+            assert.deepEqual(Object.keys(desglose?.factores ?? {}).sort(), ["actividad", "antiguedad_meses", "capas", "coincidencias", "pep", "volumen_mensual_centavos", "zona"]);
+            assert.equal(desglose?.puntaje, 1);
+          }
 
           const enBandeja = async (ahora: Date) =>
             (await leerBandejaCumplimiento(cum, { ahora })).revisiones.find((r) => r.companyId === alfa)?.vencida;
@@ -552,6 +684,8 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           // El nombre solo nunca se descarta solo: lo revisa Cumplimiento con motivo.
           await assert.rejects(resolverCoincidencia(ori, SESION_SOFIPO, { id: pedro.id, estado: "falso_positivo", motivo: "x" }), /sin_permiso_operacion/);
           await assert.rejects(sofipo(CUM, (c) => c.query("insert into lpb_coincidencias (operator_id, company_id, sujeto_tipo, sujeto_clave, sujeto_nombre, lista, tipo, coincide_por, valor_coincidente, detectada_en) values ($1, $2, 'empresa', $2, 'X', 'lpb', 'posible', 'nombre', 'X', now())", [operador, alfa])), /permission denied|coincidencia_solo_sistema/);
+          // serv-N17: el motivo de la resolución lleva al menos 10 caracteres.
+          await assert.rejects(resolverCoincidencia(cum, SESION_SOFIPO, { id: pedro.id, estado: "falso_positivo", motivo: "Homónimo" }), /motivo_corto/);
           await resolverCoincidencia(cum, SESION_SOFIPO, { id: pedro.id, estado: "falso_positivo", motivo: "Homónimo: la CURP del socio es distinta" });
           await assert.rejects(registrarReporte(cum, { id: pedro.id, folio: "UIF-1", presentadoEl: hoy, avisoClienteEl: hoy }), /reporte_sin_confirmar/);
           await resolverCoincidencia(cum, SESION_SOFIPO, { id: mario.id, estado: "confirmada", motivo: "Coincide la CURP del propietario real" });
@@ -614,10 +748,27 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           }, deps), /pago_bloqueado_lpb/);
           const limpio = await pago(PROVEEDOR_LIMPIO, "2,000.00");
 
+          // serv-N17: el motivo de la solicitud lleva de 10 a 500 caracteres, en el servidor y en la base.
+          for (const corto of ["a", "  Revisar  ", "123456789"]) {
+            await assert.rejects(solicitarCambioDeSuspension(ori, { companyId: beta, formId: randomUUID(), tipo: "suspension", motivo: corto }), /motivo_corto/);
+          }
+          await assert.rejects(solicitarCambioDeSuspension(ori, { companyId: beta, formId: randomUUID(), tipo: "suspension", motivo: "x".repeat(501) }), /motivo_invalido/);
+          await assert.rejects(sofipo(ORI, async (c) => {
+            const id = randomUUID();
+            await evento(c, ORI, "suspension_solicitada", "company_suspensions", id, beta);
+            await c.query(
+              "insert into company_suspensions (id, operator_id, company_id, tipo, origen, motivo, solicitada_por, solicitada_en) values ($1, $2, $3, 'suspension', 'manual', 'Revisar', $4, now())",
+              [id, operador, beta, ORI],
+            );
+          }), /company_suspensions_textos/);
+          assert.equal(await contar("select count(*)::int as n from company_suspensions where company_id = $1", [beta]), 0);
+
           const pedida = randomUUID();
           await solicitarCambioDeSuspension(ori, { companyId: beta, formId: pedida, tipo: "suspension", motivo: "Operaciones inusuales en revisión" });
           await solicitarCambioDeSuspension(ori, { companyId: beta, formId: pedida, tipo: "suspension", motivo: "Operaciones inusuales en revisión" });
-          await assert.rejects(solicitarCambioDeSuspension(cum, { companyId: beta, formId: randomUUID(), tipo: "suspension", motivo: "Otra" }), /suspension_pendiente/);
+          await assert.rejects(solicitarCambioDeSuspension(cum, { companyId: beta, formId: randomUUID(), tipo: "suspension", motivo: "Otra solicitud de suspensión" }), /suspension_pendiente/);
+          // Rechazar la solicitud también pide un motivo de al menos 10 caracteres.
+          await assert.rejects(decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: pedida, aprobada: false, motivo: "No" }), /motivo_corto/);
           await assert.rejects(decidirCambioDeSuspension(ori, SESION_SOFIPO, { id: pedida, aprobada: true, motivo: "" }), /sin_permiso_operacion/);
           await assert.rejects(sofipo(ORI, async (c) => {
             await evento(c, ORI, "suspension_aprobada", "company_suspensions", pedida, beta);
@@ -1315,6 +1466,22 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           // Dos personas distintas con el mismo nombre y otra fecha sí se envían.
           const homonimos = await enviarCon("NCF150301AB6", "Homonimos SA de CV", partida(john("15"), john("50", { documentoExtranjero: "D98765432", fechaNacimiento: "1990-02-02" }), "HHO100101AA1"));
           await homonimos.enviar();
+          // base-N16: dos mexicanos homónimos nacidos el mismo día, con CURP distinta, son dos personas.
+          const juan = (rfc: string, curp: string, capital: string): SocioDePrueba => ({
+            nombre: "Juan Hernández García", tipoPersona: "fisica", rfc, curp, capital, votos: capital,
+          });
+          const reales = await enviarCon("NCJ150301AC1", "Homonimos Reales SA de CV",
+            partida(juan("HEGJ800101AB1", "HEGJ800101HDFRRN01", "15"), juan("HEGJ800101AB2", "HEGJ800101HJCRRN09", "50"), "HHR100101AA1"));
+          await reales.enviar();
+          // Con la misma CURP en los dos caminos (uno declarado extranjero con pasaporte) es la misma persona.
+          await assert.rejects(
+            (await enviarCon("NCK150301AC2", "Partida Misma Curp SA de CV", partida(
+              john("15", { curp: "SMTJ800501HNETYH09" }),
+              { nombre: "John Smith Taylor", tipoPersona: "fisica", rfc: "SITJ800501AB1", curp: "SMTJ800501HNETYH09", capital: "50", votos: "50" },
+              "HMC100101AA1",
+            ))).enviar(),
+            /expediente_misma_persona_dos_identificadores/,
+          );
 
           // N6: una LLC de EE. UU. con 45 %, sin RFC mexicano, se identifica con su país y su registro. Su
           // dueño final sale como propietario real.

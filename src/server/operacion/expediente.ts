@@ -37,8 +37,8 @@ import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import { leerPrivado, type AlmacenConstancia } from "../proveedores/constancia";
 import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
-import { exigirEnOperacion } from "./permisos";
-import { unaVezPorFormulario } from "./formulario";
+import { exigirEnOperacion, puedeEnOperacion } from "./permisos";
+import { motivoEscrito, unaVezPorFormulario } from "./formulario";
 
 type SesionConFactor = Pick<Sesion, "segundoFactor" | "superficie">;
 
@@ -144,17 +144,22 @@ export type VersionExpediente = {
   dictamen: Dictamen | null;
 };
 
+/**
+ * El grado y la fecha de revisión los ve todo el expediente. El desglose (factores, puntaje y
+ * quién calificó) solo Cumplimiento y Auditoría: con la coincidencia oculta, un grado alto con
+ * los demás factores en cero delataría la lista.
+ */
 export type CalificacionLeida = {
-  id: string;
-  versionId: string;
-  tipo: "alta" | "periodica";
-  puntaje: number;
   grado: Grado;
-  factores: Record<string, { valor: string | number; puntos: number }>;
-  calificadaPor: string;
-  calificadaEl: string;
   revisarAntesDe: string;
   vencida: boolean;
+  desglose: {
+    tipo: "alta" | "periodica";
+    puntaje: number;
+    factores: Record<string, { valor: string | number; puntos: number }>;
+    calificadaPor: string;
+    calificadaEl: string;
+  } | null;
 };
 
 export type Expediente = {
@@ -217,7 +222,7 @@ export async function leerExpediente(
     const borrador = borradorId ? await leerVersion(consulta, borradorId, hoy) : null;
 
     const riesgo = await consulta.query(
-      `select k.id, k.version_id, k.tipo, k.puntaje, k.grado, k.factores, k.calificada_el::text as calificada_el,
+      `select k.tipo, k.puntaje, k.grado, k.factores, k.calificada_el::text as calificada_el,
               k.revisar_antes_de::text as revisar_antes_de, u.nombre as calificada_por
        from kyb_calificaciones_riesgo k join users u on u.id = k.calificada_por
        where k.company_id = $1 order by k.calificada_en desc, k.id desc limit 1`,
@@ -234,7 +239,7 @@ export async function leerExpediente(
       versiones: lista,
       vigente,
       borrador,
-      riesgo: filaRiesgo ? calificacionLeida(filaRiesgo, hoy) : null,
+      riesgo: filaRiesgo ? calificacionLeida(filaRiesgo, hoy, puedeEnOperacion(ctx, "plataforma.cumplimiento.bandeja")) : null,
     };
   });
 }
@@ -729,8 +734,7 @@ export async function dictaminarVersion(
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
   const resultado = entrada.resultado;
   if (resultado !== "aprobado" && resultado !== "observado" && resultado !== "rechazado") throw new ErrorDeDominio("dato_invalido_resultado");
-  const motivo = resultado === "aprobado" ? opcional(entrada.motivo, (t) => textoMultilinea(t, 1000)) ?? null : textoMultilinea(entrada.motivo, 1000);
-  if (resultado !== "aprobado" && !motivo) throw new ErrorDeDominio("motivo_invalido");
+  const motivo = resultado === "aprobado" ? opcional(entrada.motivo, (t) => textoMultilinea(t, 1000)) ?? null : motivoEscrito(entrada.motivo, 1000);
   const ahora = new Date();
   await unaVezPorFormulario(() => conContexto(basePlataforma(ctx), async (consulta) => {
     const fila = await consulta.query("select company_id, estado, enviada_por from kyb_versiones where id = $1", [entrada.versionId]);
@@ -935,19 +939,21 @@ async function versionEnBorrador(consulta: Consulta, versionId: string, bloquear
   return { id: String(version.id), companyId: String(version.company_id) };
 }
 
-function calificacionLeida(fila: Record<string, unknown>, hoy: string): CalificacionLeida {
+function calificacionLeida(fila: Record<string, unknown>, hoy: string, veDesglose: boolean): CalificacionLeida {
   const revisarAntesDe = String(fila.revisar_antes_de);
   return {
-    id: String(fila.id),
-    versionId: String(fila.version_id),
-    tipo: fila.tipo === "periodica" ? "periodica" : "alta",
-    puntaje: Number(fila.puntaje),
     grado: String(fila.grado) as Grado,
-    factores: (fila.factores ?? {}) as CalificacionLeida["factores"],
-    calificadaPor: String(fila.calificada_por),
-    calificadaEl: String(fila.calificada_el),
     revisarAntesDe,
     vencida: revisionVencida(revisarAntesDe, hoy),
+    desglose: veDesglose
+      ? {
+          tipo: fila.tipo === "periodica" ? "periodica" : "alta",
+          puntaje: Number(fila.puntaje),
+          factores: (fila.factores ?? {}) as NonNullable<CalificacionLeida["desglose"]>["factores"],
+          calificadaPor: String(fila.calificada_por),
+          calificadaEl: String(fila.calificada_el),
+        }
+      : null,
   };
 }
 

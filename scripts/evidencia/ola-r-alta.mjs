@@ -54,6 +54,10 @@ function sql(consulta) {
   return execFileSync("psql", [DUENO, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1", "-c", consulta], { encoding: "utf8" }).trim();
 }
 const cuenta = (desde) => Number(sql(`select count(*) from ${desde}`));
+/** La misma consulta como dueña de otra base local (la del arranque de la quinta revisión). */
+function sqlEn(url, consulta) {
+  return execFileSync("psql", [url, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1", "-c", consulta], { encoding: "utf8" }).trim();
+}
 /** Intenta una escritura como rol cliente de una empresa; devuelve el mensaje de la base. */
 function comoCliente(companyId, userId, sentencia) {
   try {
@@ -1322,10 +1326,12 @@ async function cuartaRonda(rutaEbano) {
       exigir(texto.includes("El expediente lo consultan Originación, Aprobación, Cumplimiento y Auditoría."), "N9. Administración no abre el expediente");
     } else if (quien === "omar" || quien === "ana") {
       const riesgo = (await sesion.p.locator("section", { has: sesion.p.locator("#riesgo-titulo") }).innerText()).replace(/\s+/g, " ");
+      // serv-N9 (quinta revisión): solo el grado y la fecha de revisión, sin ningún factor.
       exigir(
-        riesgo.includes("Grado alto") && riesgo.includes("Revisión de Cumplimiento Lo ve Cumplimiento") && !/lista|exacta|puntaje/i.test(riesgo)
+        riesgo.includes("Grado alto") && riesgo.includes("El desglose de la calificación lo ven Cumplimiento y Auditoría.")
+          && !/lista|exacta|puntaje|punto|actividad|zona/i.test(riesgo)
           && (await sesion.p.locator("#coincidencias-titulo").innerText()) === "Revisión de Cumplimiento",
-        `N9. ${rol} ve el grado y los demás factores; el de listas dice «Lo ve Cumplimiento», sin puntos ni puntaje`,
+        `N9. ${rol} ve solo el grado y la fecha de revisión, sin factores ni puntaje`,
         riesgo,
       );
       await enVista(sesion.p.locator("#riesgo-titulo"));
@@ -1359,7 +1365,210 @@ async function cuartaRonda(rutaEbano) {
   exigir((await aviso(celia.p)).includes("1 renglón; 1 coincidencia nueva."), "N13. el detalle de la carga va en singular", await aviso(celia.p));
   await foto(celia.p, "n13-carga-un-renglon", false);
   await celia.nav.close();
+  await quintaRonda(rutaEbano);
+}
 
+// ---------- Quinta revisión (sobre c67424a) ----------
+const BASE_ARRANQUE = process.env.BASE_ARRANQUE ?? "http://localhost:3151";
+
+/**
+ * personal:migrar-variable contra la base del arranque (un operador y 0 personal, como Preview), sin
+ * correo: el proveedor no está, como cuando el correo no sale. El enlace es de la persona invitada: se
+ * lee de la salida para abrirlo y se omite de lo que se imprime y se guarda.
+ */
+function comandoDeArranque(correos, ...banderas) {
+  const env = { ...process.env, DATABASE_URL: "", DATABASE_URL_UNPOOLED: E.DUENO_ARRANQUE, OPERADORES_PLATAFORMA: correos, URL_APLICACION: BASE_ARRANQUE };
+  delete env.RESEND_API_KEY;
+  delete env.CORREO_REMITENTE;
+  const salida = spawnSync("./node_modules/.bin/tsx", ["scripts/plataforma.ts", "personal:migrar-variable", "--quien-corre", "evidencia@lever.test", ...banderas], {
+    encoding: "utf8", env,
+  });
+  const crudo = `${salida.stdout}${salida.stderr}`.trim();
+  const enlace = /https?:\/\/\S+\/invitacion\/([A-Za-z0-9_-]{43})/g;
+  return {
+    estado: salida.status,
+    enlaces: [...crudo.matchAll(enlace)].map((m) => m[1]),
+    texto: crudo.replace(enlace, "<enlace omitido>"),
+    orden: `OPERADORES_PLATAFORMA=${correos} tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test${banderas.length ? ` ${banderas.join(" ")}` : ""}`,
+  };
+}
+
+async function quintaRonda(rutaEbano) {
+  console.log("\n— Quinta revisión: grado sin desglose con y sin caso, socio extranjero tras otro rechazo, motivo corto y arranque sin personal");
+  renovarSesiones();
+  const brisa = companyIdDe("BRR180303CD6");
+  const lumbre = E.EMPRESA_LUMBRE;
+
+  // serv-N9: quien no ve la Lista recibe solo el grado y la fecha de revisión, con caso (Brisa) y sin caso (Lumbre).
+  const vistas = { omar: "Originación", ana: "Aprobación", celia: "Cumplimiento", aurelio: "Auditoría", ofelia: "Administración" };
+  for (const [empresa, cual] of [[brisa, "con-caso"], [lumbre, "sin-caso"]]) {
+    for (const [quien, rol] of Object.entries(vistas)) {
+      const sesion = await abrir(quien);
+      await ir(sesion.p, `/operacion/clientes/${empresa}/expediente`);
+      const hoja = sesion.p.locator("section", { has: sesion.p.locator("#riesgo-titulo") });
+      if (quien === "ofelia") {
+        const texto = (await sesion.p.locator("main").innerText()).replace(/\s+/g, " ");
+        exigir(texto.includes("El expediente lo consultan Originación, Aprobación, Cumplimiento y Auditoría."), `serv-N9 (${cual}). Administración no abre el expediente`);
+      } else {
+        const riesgo = (await hoja.innerText()).replace(/\s+/g, " ");
+        if (quien === "omar" || quien === "ana") {
+          const pagina = await sesion.p.content();
+          exigir(
+            /Grado (bajo|medio|alto)/.test(riesgo) && /Revisar antes del|Revisión vencida/.test(riesgo)
+              && riesgo.includes("El desglose de la calificación lo ven Cumplimiento y Auditoría.") && (await hoja.locator("dl").count()) === 0
+              && !/lista|exacta|puntaje|punto|actividad|zona/i.test(riesgo) && !/antiguedad_meses|volumen_mensual|coincidencias\\?"|puntaje/i.test(pagina),
+            `serv-N9 (${cual}). ${rol} ve solo el grado y la fecha de revisión; ni la página ni su respuesta RSC traen los factores`,
+            riesgo,
+          );
+        } else {
+          exigir(riesgo.includes("Coincidencias en listas") && riesgo.includes("Puntaje") && riesgo.includes("Calificó"), `serv-N9 (${cual}). ${rol} ve el desglose completo`, riesgo);
+        }
+        await enVista(sesion.p.locator("#riesgo-titulo"));
+      }
+      await foto(sesion.p, `sn9-riesgo-${cual}-${quien}`, false);
+      await sesion.nav.close();
+    }
+  }
+
+  // serv-N15: si lo rechazado es otro campo del socio extranjero (el RFC opcional o el capital), el
+  // formulario también vuelve en «Extranjera», con ese campo marcado y el tipo de persona.
+  const omar = await abrir("omar");
+  await ir(omar.p, rutaEbano);
+  const sociosEbano = () => cuenta(`kyb_accionistas a join kyb_versiones v on v.id = a.version_id where v.company_id = '${ctxEbano.id}' and v.estado = 'borrador' and a.retirado_en is null`);
+  const socios = sociosEbano();
+  for (const [tipo, nombre, rfc, capital, codigo, selector] of [
+    ["fisica", "Greta Lind Berg", "XX123", "5", "dato_invalido_rfc", "#acc-rfc"],
+    ["moral", "Nordic Holdings LLC", "", "abc", "dato_invalido_capital", "#acc-capital"],
+  ]) {
+    await omar.p.locator("#acc-tipo").selectOption(tipo);
+    await omar.p.locator("#acc-nacionalidad").selectOption("extranjera");
+    await campo(omar.p, "#acc-nombre", nombre);
+    if (rfc) await campo(omar.p, "#acc-rfc", rfc);
+    await omar.p.locator("#acc-pais").selectOption("US");
+    await campo(omar.p, "#acc-documento", "X12345678");
+    if (tipo === "fisica") await omar.p.locator("#acc-nacimiento").fill("1975-03-03");
+    await campo(omar.p, "#acc-capital", capital);
+    await campo(omar.p, "#acc-votos", "5");
+    await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar accionista" }), codigo);
+    const estado = [
+      new URL(omar.p.url()).searchParams.get("extranjera"),
+      await omar.p.locator("#acc-nacionalidad").inputValue(),
+      await omar.p.locator("#acc-tipo").inputValue(),
+      await omar.p.locator(selector).getAttribute("aria-invalid"),
+      await omar.p.locator("#acc-documento").isVisible(),
+    ].join("|");
+    exigir(
+      estado === `1|extranjera|${tipo}|true|true` && sociosEbano() === socios,
+      `serv-N15. rechazado ${selector === "#acc-rfc" ? "el RFC opcional" : "el capital"} de la ${tipo === "fisica" ? "física" : "moral"} extranjera, vuelve en «Extranjera» con ese campo marcado y sin socio de más`,
+      estado,
+    );
+    await enVista(omar.p.locator(selector));
+    await foto(omar.p, `sn15-rechazo-otro-campo-${tipo}-extranjera`, false);
+  }
+
+  // serv-N17: «Pedir suspensión» (o reactivación) con un motivo corto. El navegador no lo envía; sin
+  // ese mínimo (una petición armada a mano), el servidor lo rechaza con el aviso ligado al campo.
+  const operadorOmar = sql("select s.operator_id from platform_staff s join users u on u.id = s.user_id where u.correo = 'omar@lever.test'");
+  const empresa = sql(`select c.id from companies c where c.operator_id = '${operadorOmar}' and c.estado in ('activa', 'suspendida')
+    and not exists (select 1 from company_suspensions s where s.company_id = c.id and s.estado = 'pendiente') order by c.razon_social limit 1`);
+  const solicitudes = () => cuenta(`company_suspensions where company_id = '${empresa}'`);
+  const previas = solicitudes();
+  await ir(omar.p, `/operacion/clientes/${empresa}`);
+  const motivo = omar.p.locator("#motivo-suspension");
+  const pedir = omar.p.getByRole("button", { name: /^Pedir (suspensión|reactivación)$/ });
+  await motivo.pressSequentially("Revisar");
+  await pedir.click();
+  await omar.p.waitForTimeout(800);
+  exigir(
+    (await motivo.evaluate((nodo) => nodo.validity.tooShort)) && new URL(omar.p.url()).searchParams.get("aviso") === null && solicitudes() === previas
+      && (await omar.p.locator('label[for="motivo-suspension"]').innerText()) === "Motivo (de 10 a 500 caracteres)",
+    "serv-N17. con «Revisar» (7 caracteres) el navegador no envía la solicitud: el campo pide de 10 a 500",
+  );
+  await enVista(motivo);
+  await foto(omar.p, "sn17-motivo-corto-en-el-navegador", false);
+  await motivo.evaluate((nodo) => nodo.removeAttribute("minlength"));
+  await enviar(omar.p, pedir, "motivo_corto");
+  const ligado = [await motivo.getAttribute("aria-invalid"), await motivo.getAttribute("aria-describedby")].join("|");
+  exigir(
+    ligado.startsWith("true|") && ligado.includes("aviso-operacion") && (await aviso(omar.p)).includes("El motivo lleva al menos 10 caracteres") && solicitudes() === previas,
+    "serv-N17. sin el mínimo del navegador, el servidor rechaza el motivo corto con el aviso ligado al campo y no queda solicitud",
+    `${ligado} · ${await aviso(omar.p)}`,
+  );
+  // Página completa: el aviso arriba y el campo marcado abajo.
+  await foto(omar.p, "sn17-motivo-corto-aviso-en-el-campo");
+  await omar.nav.close();
+
+  // base-N15: el arranque de un operador sin personal. La primera corrida no entrega el enlace; la
+  // siguiente con los mismos correos emite uno nuevo y el anterior deja de servir.
+  if (!E.DUENO_ARRANQUE) throw new Error("Falta la base del arranque: corre «preparar.ts arranque» y el segundo next start (BASE_ARRANQUE).");
+  const enArranque = (consulta) => sqlEn(E.DUENO_ARRANQUE, consulta);
+  const salidas = [];
+  const correr = (correos, ...banderas) => {
+    const corrida = comandoDeArranque(correos, ...banderas);
+    salidas.push(`$ ${corrida.orden}\n${corrida.texto}\n(salida ${corrida.estado})`);
+    return corrida;
+  };
+  exigir(enArranque("select count(*) from operators") === "1" && enArranque("select count(*) from platform_staff") === "0", "base-N15. la base del arranque tiene un operador y 0 personal, como Preview");
+  const correos = "primera@lever.test,segunda@lever.test";
+  const primera = correr(correos);
+  exigir(
+    primera.estado === 0 && primera.enlaces.length === 0 && /primera@lever\.test: invitada/.test(primera.texto) && /el correo no salió/.test(primera.texto),
+    "base-N15. primera corrida: las dos quedan invitadas, el correo no sale y sin --mostrar-enlace no hay enlace",
+    primera.texto,
+  );
+  const segunda = correr(correos, "--mostrar-enlace");
+  exigir(
+    segunda.estado === 0 && segunda.enlaces.length === 2 && (segunda.texto.match(/invitación nueva; el enlace anterior ya no sirve/g) ?? []).length === 2,
+    "base-N15. segunda corrida con los mismos correos y --mostrar-enlace: un enlace nuevo por persona",
+    segunda.texto,
+  );
+  exigir(
+    enArranque("select count(*) filter (where revocada_en is not null) || '/' || count(*) filter (where revocada_en is null) from invitations") === "2/2"
+      && enArranque("select count(*) from platform_staff where estado = 'invitado'") === "2",
+    "base-N15. las invitaciones de la primera corrida quedan revocadas y el personal sigue siendo el mismo",
+  );
+  exigir(
+    enArranque(`select count(*) from audit_log where accion = 'emitir_invitacion' and cambio ->> 'corrido_por' = 'evidencia@lever.test' and cambio ->> 'ejecutado_por' = session_user`) === "4",
+    "base-N15. cada enlace (los de la primera corrida y los nuevos) queda en la bitácora con quién corrió el comando y la conexión",
+  );
+  const otro = correr("tercera@lever.test", "--mostrar-enlace");
+  const mezcla = correr("primera@lever.test,tercera@lever.test", "--mostrar-enlace");
+  exigir(
+    otro.estado === 1 && mezcla.estado === 1 && [otro, mezcla].every((r) => r.texto.includes("Administración invitada con otros correos") && r.enlaces.length === 0)
+      && enArranque("select count(*) from users where correo = 'tercera@lever.test'") === "0" && enArranque("select count(*) from invitations") === "4",
+    "base-N15. un correo distinto, solo o junto a los mismos, se rechaza y no emite nada",
+    `${otro.texto} | ${mezcla.texto}`,
+  );
+  const tercera = correr(correos, "--mostrar-enlace");
+  exigir(tercera.estado === 0 && tercera.enlaces.length === 2, "base-N15. otra corrida con los mismos correos vuelve a emitir", tercera.texto);
+  const invitada = await abrir("primera");
+  await invitada.p.goto(`${BASE_ARRANQUE}/invitacion/${segunda.enlaces[0]}`, { waitUntil: "networkidle" });
+  const vieja = (await invitada.p.locator("main").innerText()).replace(/\s+/g, " ");
+  exigir(vieja.includes("Esta invitación ya no sirve."), "base-N15. el enlace que reemplazó la corrida siguiente ya no sirve", vieja);
+  await foto(invitada.p, "sn15b-enlace-anterior-ya-no-sirve", false);
+  await invitada.p.goto(`${BASE_ARRANQUE}/invitacion/${tercera.enlaces[0]}`, { waitUntil: "networkidle" });
+  await invitada.p.getByLabel("Contraseña nueva").fill("clave-segura-12");
+  await invitada.p.getByLabel("Repite la contraseña").fill("clave-segura-12");
+  await invitada.p.getByRole("button", { name: "Aceptar la invitación" }).click();
+  await invitada.p.waitForURL((url) => !url.pathname.startsWith("/invitacion/"), { timeout: 20000 });
+  await listo(invitada.p);
+  exigir(
+    enArranque("select s.estado from platform_staff s join users u on u.id = s.user_id where u.correo = 'primera@lever.test'") === "activo",
+    "base-N15. con el enlace nuevo, primera acepta y su Administración queda activa",
+  );
+  // Llega a registrar su segundo factor: el QR y la semilla son secretos aunque la base sea desechable, se tapan.
+  await invitada.p.addStyleTag({ content: ".arco-qr { filter: blur(18px); }" });
+  await invitada.p.locator(".arco-semilla").evaluate((nodo) => { nodo.textContent = "(semilla omitida en la evidencia)"; });
+  await foto(invitada.p, "sn15b-acepta-con-el-enlace-nuevo", false);
+  await invitada.nav.close();
+  const activa = correr(correos, "--mostrar-enlace");
+  exigir(
+    activa.estado === 1 && activa.texto.includes("ya tiene Administración del personal activa") && enArranque("select count(*) from invitations") === "6",
+    "base-N15. con Administración activa, el comando ya no invita ni reenvía",
+    activa.texto,
+  );
+  mkdirSync(`${DIR}/datos`, { recursive: true });
+  writeFileSync(`${DIR}/datos/quinta-arranque.txt`, `${salidas.join("\n\n")}\n`);
 }
 
 // ---------- Orden ----------

@@ -6,13 +6,13 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r-alta
 | --- | --- | --- |
 | Flujos 0-12 | 147 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
 | Pantallas (3 temas × 1440/390) y contraste AA medido | 60 comprobaciones en verde, 0 en rojo; contraste mínimo 5.00 (Lever 1440) | `datos/resultados-pantallas-contraste.json` |
-| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña) | 65 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json` |
+| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal) | 92 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt` |
 
-Corrida del 2026-11-08 sobre el head de este PR, con los arreglos de las cuatro revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`), sobre una base migrada de cero con la 0028 final.
+Corrida del 2026-11-08 sobre el head de este PR, con los arreglos de las cinco revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`), sobre una base migrada de cero con la 0028 final. Las fases de flujos y pantallas corrieron antes de agregar el borde del `textarea` con error (`componentes.css`); ese estilo solo se ve en un motivo rechazado, que esas fases no muestran, y las regresiones corrieron con él.
 
 ## Cómo se corre
 
-Puertos de esta línea: Postgres 5551, `next start` 4811, emulador de Blob 4894. Nada toca Neon, Blob ni Resend reales: la base es un Postgres 17 local y el almacén privado es el emulador de `tests/e2e/blob-local`, que el preload desvía solo en el servidor de la prueba.
+Puertos de esta línea: Postgres 5551, `next start` 4811 (y 3151 para la base del arranque de la quinta revisión), emulador de Blob 4894. Nada toca Neon, Blob ni Resend reales: la base es un Postgres 17 local y el almacén privado es el emulador de `tests/e2e/blob-local`, que el preload desvía solo en el servidor de la prueba.
 
 1. Postgres 17 desechable en `127.0.0.1:5551` (Homebrew: `initdb` y `pg_ctl -o "-p 5551"`).
 2. Emulador de Blob en 4894: `iniciarBlobLocal(4894, <token falso del almacén «e2elocal»>)` de `tests/e2e/blob-local/servidor.ts`.
@@ -26,6 +26,7 @@ Puertos de esta línea: Postgres 5551, `next start` 4811, emulador de Blob 4894.
 5. `tsx scripts/evidencia/ola-r-alta/preparar.ts base`: migra desde cero, siembra Taller del Cierre (Gil y Rosa), Marta con nómina semanal que vence hoy, Iván con su invitación por aceptar y al personal SOFIPO (Ofelia administra; Omar, Ana, Celia y Aurelio sin rol).
 6. `next start -p 4811` con `DATABASE_URL` de la aplicación (la deja `ESTADO`), `NODE_ENV=production` y `NODE_OPTIONS=--import=tests/e2e/blob-local/preload.mjs`.
 7. `BASE=http://localhost:4811 FASES=flujos node scripts/evidencia/ola-r-alta.mjs`, después `FASES=pantallas,contraste` y al final `FASES=regresiones`, sobre la misma base. La fase `lumbre` de `preparar.ts` la llama el flujo 1. Las regresiones parten del estado que dejan los flujos y numeran sus capturas aparte (`rNN-…`).
+8. Antes de `FASES=regresiones`: `preparar.ts arranque` crea la base aparte `ola_r_alta_arranque` (solo las migraciones: un operador y 0 personal, como Preview) y deja su conexión en `ESTADO`; un segundo `next start -p 3151` con esa `DATABASE_URL` y `URL_APLICACION=http://localhost:3151` sirve sus enlaces (`BASE_ARRANQUE`). La quinta revisión corre ahí el comando de arranque.
 
 ## Reloj fijo
 
@@ -69,6 +70,8 @@ En concurrencia vale lo mismo (N5). El cierre de un caso y el cotejo de una empr
 
 La copia del 69-B es de cada operador: la carga su Administración y el cotejo, la validación de «fuera de lista», la relectura de proveedores y el portal usan la última de su operador. La copia de otro operador no coteja, no relee ni se ve aquí.
 
+Al migrar, la 0028 pasa las copias que ya existían al único operador. Con más de uno se detiene (`lista_69b_sin_operador`) y la sugerencia dice cómo asignar cada copia a mano. Una copia que leían proveedores de empresas de dos operadores se duplica, una por operador con sus renglones (con la relectura apartada mientras se inserta, para que la copia nueva no se lleve a los proveedores de todos), y los proveedores de cada operador pasan a la suya. Al final del relleno, si algún proveedor quedó leído contra la copia de otro operador, la 0028 se detiene (`lista_69b_de_otro_operador`) sin dejar nada a medias (base-N17).
+
 Ejemplo (el del flujo 5):
 
 ```csv
@@ -91,9 +94,14 @@ Lo que tiene una persona por varios caminos suma una vez (4ª fr. II c). Para es
 
 El documento se guarda en mayúsculas, sin espacios, puntos, guiones ni diagonales (de 4 a 20 letras y números). El servidor no captura a una extranjera sin su documento (y, si es física, sin su fecha); la base tampoco deja enviar la versión (`expediente_accionista_sin_identificacion`).
 
-Al enviar, la base rechaza dos personas físicas con el mismo nombre normalizado (como en la lista: sin orden de palabras, acentos ni puntuación) y la misma fecha de nacimiento (la capturada o la de su CURP, posiciones 5 a 10) que tengan identificadores distintos: `expediente_misma_persona_dos_identificadores`, con un aviso que dice qué corregir. Cubre la CURP en un camino y el pasaporte en otro, el mexicano que se declara extranjero y el extranjero con dos documentos.
+Al enviar, la base rechaza dos personas físicas con el mismo nombre normalizado (como en la lista: sin orden de palabras, acentos ni puntuación) y la misma fecha de nacimiento (la capturada o la de su CURP, posiciones 5 a 10) que tengan identificadores distintos, si a una de las dos le falta la CURP o las dos traen la misma: `expediente_misma_persona_dos_identificadores`, con un aviso que dice qué corregir. Cubre la CURP en un camino y el pasaporte en otro, el mexicano que se declara extranjero y el extranjero con dos documentos. Dos mexicanos homónimos nacidos el mismo día con CURP distinta (otra homoclave o entidad) son dos personas y se envían (base-N16).
 
-**Límite que queda.** Un nombre escrito distinto (otra grafía, un apellido de menos o un segundo nombre) no se detecta. Ese caso depende de la declaración del representante sobre los propietarios reales y de la revisión de Cumplimiento.
+**Límites que quedan.**
+
+- Un nombre escrito distinto (otra grafía, un apellido de menos o un segundo nombre) no se detecta.
+- Una fecha de nacimiento capturada distinta tampoco (base-N18): el pasaporte con un día de diferencia respecto de la fecha de la CURP no empata y la misma persona pasa como dos. Cumplimiento lo revisa al cotejar la fecha capturada contra el documento (el pasaporte o la identificación del expediente) antes de dictaminar.
+
+Esos casos dependen de la declaración del representante sobre los propietarios reales y de la revisión de Cumplimiento.
 
 El cotejo con la Lista de Personas Bloqueadas de un socio extranjero sin RFC ni CURP es por nombre (posible coincidencia): el CSV de la lista no trae documento extranjero.
 
@@ -117,7 +125,9 @@ DATABASE_URL_UNPOOLED=<conexión directa de las migraciones> OPERADORES_PLATAFOR
   npx tsx scripts/plataforma.ts personal:migrar-variable --quien-corre <tu correo> [--mostrar-enlace]
 ```
 
-Corre con la conexión de la dueña (`scripts/personal-por-la-duena.ts`): desde la aplicación nadie sin usuario da roles ni registra personal (N3). Solo arranca: invita a todos los correos de la variable en una sola corrida y, si el operador ya tiene a alguien con Administración (activo o invitado), no invita a nadie (`personal_con_administracion`, N7). Con más de un operador no adivina (`operador_ambiguo`).
+Corre con la conexión de la dueña (`scripts/personal-por-la-duena.ts`): desde la aplicación nadie sin usuario da roles ni registra personal (N3). Solo arranca: invita a todos los correos de la variable en una sola corrida y, si el operador ya tiene a alguien con Administración activa, no invita a nadie (`personal_con_administracion`, N7). Con más de un operador no adivina (`operador_ambiguo`).
+
+**Si la primera corrida no entregó el enlace (base-N15).** El correo no salió y no se pidió `--mostrar-enlace`, nadie lo guardó o la invitación venció: mientras la Administración del operador solo esté invitada (nadie activo), otra corrida con los mismos correos emite un enlace nuevo por persona y el anterior deja de servir. Un correo distinto, solo o junto a los mismos, no entra (`arranque_con_otros_correos`) y no emite nada. Es la misma transacción y el mismo candado del personal; cada enlace queda en la bitácora (`emitir_invitacion`) con `corrido_por` y `ejecutado_por`. Con Administración activa ya no reenvía: las demás personas se invitan desde la pantalla Personal. En Preview (0 personal) basta con volver a correrlo con `--mostrar-enlace`.
 
 **Quién lo corrió (N8).** `personal:migrar-variable`, `personal:rol` y `empresa:alta` exigen `--quien-corre` con el correo de la persona que los corre. La bitácora guarda ese correo (`corrido_por`) junto con `ejecutado_por = session_user`. `session_user` es la conexión, no la persona: en Neon, quien use `DATABASE_URL_UNPOOLED` es siempre la dueña de la base (`neondb_owner`), así que por sí solo no dice qué persona corrió el comando.
 
@@ -199,6 +209,35 @@ Verificación en rojo, con la suite y las e2e nuevas:
 | **N13 (P3)** «1 coincidencias nuevas» | Singular y plural en renglones y coincidencias | Captura `r34`: «1 renglón; 1 coincidencia nueva.» |
 | **N14 (P3)** El borrado del archivo huérfano fallaba en silencio | `console.error` estructurado (`origen: "blob.borrar"`, `evento: "huerfano_sin_borrar"`, la clave y la clase del error) | Revisión de código: sin red no se puede hacer fallar el borrado de Blob en el recorrido |
 
+### Quinta revisión (re-verificación sobre `c67424a`)
+
+Los revisores cerraron N2-resto, N4-N8, N10-N14 y los demás arreglos del servidor. Salieron dos P2 (serv-N9 y base-N15) y seis P3 (base-N16, base-N17, base-N18, serv-N15, serv-N16 y serv-N17). Todo va en este PR y en la misma 0028.
+
+Verificación en rojo (cada regresión falla con `c67424a`):
+
+- **Solo la 0028 de `c67424a`, servidor nuevo**: fallan 10 de 31. El relleno (base-N17: la primera sugerencia no dice que la copia compartida se duplica), N2-resto (base-N16: los homónimos reales se rechazan como la misma persona) y la suspensión (serv-N17: por SQL la base acepta «Revisar» como motivo); las demás, en cascada.
+- **Servidor de `c67424a`, base nueva**: fallan 13 de 31. El relleno (base-N15: la segunda corrida responde `personal_con_administracion` en vez de emitir un enlace nuevo), el expediente y la suspensión (serv-N17: el servidor acepta «Falta» y «Revisar», y solo los para el CHECK nuevo de la base); las demás, en cascada. `constancia-borrar.test.ts` falla con «el borrado sigue colgado» y el proceso no termina hasta que lo corta el tope de 60 s (serv-N16).
+- **Mutaciones del código nuevo** (quitar solo un arreglo): sin el aborto final del relleno, «H2 y N3» falla con «Missing expected rejection» (`lista_69b_de_otro_operador`); con el desglose para todos, «grado de riesgo» falla porque Originación recibe los factores (serv-N9); sin `abortSignal`, `constancia-borrar` falla a los 15 s.
+- **e2e con la interfaz de `c67424a`** (`page.tsx` del expediente, `expediente.ts` del servidor, `expediente.tsx`, `identidad-socio.tsx` y `acciones-alta.ts`): N9 falla porque la hoja de riesgo de Originación todavía tiene renglones (`dl`); serv-N15, porque tras rechazar el RFC opcional la dirección no trae `extranjera=1` y el formulario vuelve en «Mexicana».
+
+| Hallazgo | Arreglo | Prueba |
+| --- | --- | --- |
+| **serv-N9 (P2)** El grado seguía delatando la coincidencia: Originación veía «Grado alto» con todos los factores visibles en 0 puntos | Quien no ve la Lista recibe del servidor (`leerExpediente`) solo el grado, la fecha de revisión y si venció (`desglose: null`): sin factores, puntaje ni quién calificó, así que tampoco viajan en la respuesta RSC. La hoja dice «El desglose de la calificación lo ven Cumplimiento y Auditoría.» Cumplimiento y Auditoría ven todo | «grado de riesgo…»: Originación y Aprobación reciben solo grado y fecha; Cumplimiento y Auditoría, los 7 factores. e2e «el grado de riesgo no le dice…»: sin renglones y la página, con su RSC, sin `antiguedad_meses`, `volumen_mensual`, `"coincidencias"` ni `puntaje`. Capturas `r35`-`r44`: los 5 roles con caso (Brisa) y sin caso (Lumbre) |
+| **base-N15 (P2)** El arranque quedaba trabado si la primera corrida de `personal:migrar-variable` no entregó el enlace | Con la Administración del operador solo invitada, el comando emite un enlace nuevo a los mismos correos (`emitirToken` revoca el anterior), en la misma transacción y con el mismo candado. Un correo distinto, solo o junto a los mismos: `arranque_con_otros_correos`. Con Administración activa: `personal_con_administracion`. La reemisión deja `emitir_invitacion` con `corrido_por` y `ejecutado_por` | «H2 y N3…»: la primera corrida no entrega el enlace; otro correo se rechaza sin invitación nueva; con los mismos, enlace nuevo y el anterior revocado (la aceptación ya no lo cierra), en la bitácora con `corrido_por`; con la Administración activa, nada. Con las invitaciones vencidas, la misma variable las vuelve a emitir. Recorrido sobre una base con 0 personal: el comando seis veces, el enlace reemplazado «ya no sirve» y el nuevo se acepta. Capturas `r49`-`r50` y salida literal |
+| **base-N16 (P3)** Dos mexicanos con el mismo nombre y fecha pero CURP distinta se rechazaban como la misma persona | La regla compara pares: dispara solo si a una de las dos filas le falta la CURP o las dos traen la misma | «N2-resto y N6»: dos «Juan Hernández García» nacidos el mismo día con CURP distinta se envían; con la misma CURP en dos caminos (uno declarado extranjero), rechazada; (d) y (e) siguen rechazadas |
+| **base-N17 (P3)** Una copia del 69-B que usaban empresas de dos operadores dejaba, tras seguir la sugerencia, a los proveedores de B leídos contra la copia de A | Al final del relleno, `lista_69b_de_otro_operador` si algún proveedor queda leído contra la copia de otro operador. Las dos sugerencias dicen que esa copia se duplica, una por operador con sus renglones, con la relectura apartada al insertarla (si no, la copia nueva se lleva a los proveedores de todos los operadores) | «H2 y N3…»: con la copia compartida, la primera sugerencia ya habla de duplicarla; asignarla solo a A se detiene sin dejar nada a medias; duplicarla al pie de la letra termina con cada proveedor en la copia de su operador |
+| **base-N18 (docs)** Una fecha de nacimiento capturada distinta también evade la regla de la misma persona | README «Socio extranjero y la misma persona…»: el límite queda declarado y Cumplimiento lo revisa al cotejar la fecha capturada contra el documento | — |
+| **serv-N15 (P3)** Si se rechazaba otro campo del socio extranjero (RFC opcional, nombre o capital), el formulario volvía en «Mexicana» | La redirección lleva `&extranjera=1` cuando se envió país, como `&tipo=moral`, y el formulario arranca de ahí | e2e «tras un rechazo del socio extranjero…»: RFC opcional (física) y capital (moral) rechazados vuelven en «Extranjera» con el campo marcado. Capturas `r45`-`r46` |
+| **serv-N16 (P3)** Si Blob no responde, borrar el huérfano bloqueaba la petición más de 90 s sin registro | `del` con `abortSignal` y tope de 5 s (`TOPE_BORRADO_MS`), con `AbortController` + `setTimeout` en vez de `AbortSignal.timeout(5000)` (ver «Decisiones»). El registro estructurado sale también en el tope (`causa: "tiempo_agotado"`, `tope_ms`). Es el único `del` del código | `tests/proveedores/constancia-borrar.test.ts`: con un Blob que no contesta, se rinde en 5.1 s y deja un renglón con la clave y la causa |
+| **serv-N17 (P3)** «Pedir suspensión» aceptaba un motivo de una letra | `motivoEscrito`: de 10 caracteres al tope (500 o 1000); uno más corto, `motivo_corto` («El motivo lleva al menos 10 caracteres…»), ligado al campo. Mismo hueco en los otros motivos libres del flujo: rechazar una suspensión, una activación o una comisión (el mismo diálogo de Aprobaciones), observar o rechazar un dictamen y resolver una coincidencia. `minLength` en los campos siempre obligatorios y CHECK en la 0028 (`company_suspensions`, `kyb_dictamenes`, `lpb_coincidencias`) | «suspensión manual…»: «a», «Revisar» y 9 caracteres → `motivo_corto`; 501 → `motivo_invalido`; por SQL, `company_suspensions_textos`; rechazar con «No» → `motivo_corto`. «expediente…»: rechazar el dictamen con «Falta». «LPB…»: resolver con «Homónimo». Capturas `r47`-`r48`: el navegador no envía y, sin su mínimo, el servidor responde con el aviso en el campo |
+
+**Decisiones de la quinta revisión.**
+
+- serv-N9: además del desglose de factores, quien no ve la Lista tampoco recibe el puntaje ni quién calificó y cuándo: la instrucción fue «solo el grado y la fecha de revisión».
+- serv-N16: `AbortSignal.timeout(5000)` no corta el borrado con `@vercel/blob` 2.8.2. La doc vigente (ctx7, `/vercel/storage`) confirma `abortSignal` en `BlobCommandOptions` de `del` y que solo el `AbortError` se convierte en `BlobRequestAbortedError` sin reintento. Medido contra un servidor que no contesta: con `AbortSignal.timeout(2000)` (`TimeoutError`) la biblioteca reintenta y seguía colgado a los 40 s; con `AbortController.abort()` cortó a los 2.0 s. Por eso el tope es un `AbortController` con `setTimeout`.
+- serv-N17: el mínimo de 10 vale para todos los motivos libres que lee otra persona en el flujo (incluidos los rechazos de activación y comisión, que comparten el diálogo). Las tablas de activaciones y comisiones son de migraciones anteriores con datos: ahí el mínimo es solo del servidor y del formulario, sin CHECK nuevo. El motivo opcional de un dictamen aprobado sigue sin mínimo.
+- base-N15: se reemite solo a correos que ya son Administración invitada; un subconjunto de esos correos vale (reemite solo a esos).
+
 ## Flujo → captura → qué verifica en la base
 
 | Flujo | Captura | Qué verifica en la base |
@@ -263,13 +302,21 @@ Verificación en rojo, con la suite y las e2e nuevas:
 | N2 | `r25-n2-misma-persona-dos-identificadores` | «SMITH TAYLOR, John» con otro documento (D98765432) y la misma fecha que John Smith Taylor: se agrega, pero «Enviar versión» → `expediente_misma_persona_dos_identificadores`, con el aviso de qué corregir; la versión sigue en borrador. |
 | N10 | `r26-n10-mismo-formulario-otro-archivo` | Se guarda la estructura corporativa; con el `formId` de ese envío (una segunda pestaña) y otro archivo: «El formulario caducó. Recarga la página.» y ningún documento nuevo. |
 | N10 | `r27-n10-mismo-formulario-mismo-archivo` | El mismo `formId` con el mismo archivo: «Documento guardado» sin un documento de más. |
-| N9 | `r28-n9-riesgo-omar` | Celia registra la revisión periódica de Brisa con su caso abierto. Originación ve «Grado alto» y los demás factores; «Revisión de Cumplimiento: Lo ve Cumplimiento», sin «lista», «exacta» ni «Puntaje»; la hoja se titula «Revisión de Cumplimiento». |
+| N9 | `r28-n9-riesgo-omar` | Celia registra la revisión periódica de Brisa con su caso abierto. Originación ve solo «Grado alto» y la fecha de revisión, sin renglones (serv-N9): «El desglose de la calificación lo ven Cumplimiento y Auditoría.», sin «lista», «exacta» ni «Puntaje»; la hoja de abajo se titula «Revisión de Cumplimiento». |
 | N9 | `r29-n9-riesgo-ana` | Aprobación, igual. |
-| N9 | `r30-n9-riesgo-celia` | Cumplimiento ve «Coincidencias en listas · exacta · 3 puntos» y el puntaje. |
+| N9 | `r30-n9-riesgo-celia` | Cumplimiento ve el desglose: «Coincidencias en listas · exacta · 3 puntos», el puntaje y quién calificó. |
 | N9 | `r31-n9-riesgo-aurelio` | Auditoría, igual que Cumplimiento. |
 | N9 | `r32-n9-riesgo-ofelia` | Administración no abre el expediente. |
 | N12 | `r33-n12-dictamen-sin-motivo-pista-y-aviso` | Celia observa la versión de Cedro sin motivo: `motivo_invalido`; el motivo queda `aria-invalid` con `aria-describedby="dictamen-motivo-pista aviso-operacion"`. |
 | N13 | `r34-n13-carga-un-renglon` | Celia carga una lista de un renglón (Cedro): «1 renglón; 1 coincidencia nueva.» |
+| serv-N9 | `r35` a `r39-sn9-riesgo-con-caso-<persona>` | Brisa, con su caso abierto: Omar (Originación) y Ana (Aprobación) ven solo el grado y la fecha de revisión, sin renglones, y ni la página ni su respuesta RSC traen `antiguedad_meses`, `volumen_mensual`, `"coincidencias"` ni `puntaje`. Celia (Cumplimiento) y Aurelio (Auditoría) ven el desglose con «Coincidencias en listas», el puntaje y quién calificó. Ofelia (Administración) no abre el expediente. |
+| serv-N9 | `r40` a `r44-sn9-riesgo-sin-caso-<persona>` | Lo mismo con Distribuidora Lumbre, sin caso (revisión vencida): «Revisión vencida» y el grado, sin desglose para Originación y Aprobación. |
+| serv-N15 | `r45-sn15-rechazo-otro-campo-fisica-extranjera` | Omar agrega a Greta Lind Berg (física, Estados Unidos) con el RFC opcional «XX123»: `dato_invalido_rfc`, la dirección trae `extranjera=1` y el formulario vuelve en «Extranjera», como persona física y con el RFC marcado; ningún socio de más. |
+| serv-N15 | `r46-sn15-rechazo-otro-campo-moral-extranjera` | Nordic Holdings LLC (moral) con capital «abc»: `dato_invalido_capital`, vuelve en «Extranjera» y «Persona moral», con el capital marcado. |
+| serv-N17 | `r47-sn17-motivo-corto-en-el-navegador` | Omar escribe «Revisar» (7 caracteres) en el motivo de «Pedir suspensión» o «Pedir reactivación» (etiqueta «Motivo (de 10 a 500 caracteres)»): el navegador no envía (`tooShort`) y no hay solicitud nueva. |
+| serv-N17 | `r48-sn17-motivo-corto-aviso-en-el-campo` | Sin el mínimo del navegador (una petición armada a mano), el servidor responde `motivo_corto`: «El motivo lleva al menos 10 caracteres…», con el campo `aria-invalid` y ligado al aviso; tampoco queda solicitud. |
+| base-N15 | `r49-sn15b-enlace-anterior-ya-no-sirve` | Base aparte con un operador y 0 personal (como Preview). Primera corrida sin `--mostrar-enlace` (el correo no sale, no hay enlace); la segunda con los mismos correos emite un enlace nuevo por persona y revoca los de la primera; otro correo (solo o junto a los mismos) se rechaza; una tercera vuelve a emitir. El enlace de la segunda corrida: «Esta invitación ya no sirve.» |
+| base-N15 | `r50-sn15b-acepta-con-el-enlace-nuevo` | Con el enlace de la tercera corrida, primera@lever.test fija su contraseña, su Administración queda activa y llega a «Registra tu segundo factor» (el QR y la semilla van tapados en la captura). Una corrida más se rechaza con «ya tiene Administración del personal activa». Salida de los seis comandos, con el enlace omitido, en «Salida literal». |
 
 Las capturas `NN-pantalla-<pantalla>-<tema>-<ancho>` son la fase de pantallas: un solo h1, campos con etiqueta, sin desborde horizontal y consola limpia en Personal, Cumplimiento, Lista, Expediente, Ficha, Aprobaciones, Clientes, Bitácora y Sin permiso.
 
@@ -608,8 +655,8 @@ OK    N10. mismo formulario con otro archivo: «El formulario caducó» y ningú
 OK    aviso «expediente_documento_cargado» tras la acción
 OK    N10. mismo formulario con el mismo archivo: se da por guardado sin un documento de más
 OK    aviso «riesgo_calificado» tras la acción
-OK    N9. Originación ve el grado y los demás factores; el de listas dice «Lo ve Cumplimiento», sin puntos ni puntaje
-OK    N9. Aprobación ve el grado y los demás factores; el de listas dice «Lo ve Cumplimiento», sin puntos ni puntaje
+OK    N9. Originación ve solo el grado y la fecha de revisión, sin factores ni puntaje
+OK    N9. Aprobación ve solo el grado y la fecha de revisión, sin factores ni puntaje
 OK    N9. Cumplimiento ve el factor de listas con sus puntos
 OK    N9. Auditoría ve el factor de listas con sus puntos
 OK    N9. Administración no abre el expediente
@@ -617,9 +664,85 @@ OK    aviso «motivo_invalido» tras la acción
 OK    N12. el motivo con error anuncia la pista y el aviso
 OK    aviso «lpb_cargada» tras la acción
 OK    N13. el detalle de la carga va en singular
+
+— Quinta revisión: grado sin desglose con y sin caso, socio extranjero tras otro rechazo, motivo corto y arranque sin personal
+OK    serv-N9 (con-caso). Originación ve solo el grado y la fecha de revisión; ni la página ni su respuesta RSC traen los factores
+OK    serv-N9 (con-caso). Aprobación ve solo el grado y la fecha de revisión; ni la página ni su respuesta RSC traen los factores
+OK    serv-N9 (con-caso). Cumplimiento ve el desglose completo
+OK    serv-N9 (con-caso). Auditoría ve el desglose completo
+OK    serv-N9 (con-caso). Administración no abre el expediente
+OK    serv-N9 (sin-caso). Originación ve solo el grado y la fecha de revisión; ni la página ni su respuesta RSC traen los factores
+OK    serv-N9 (sin-caso). Aprobación ve solo el grado y la fecha de revisión; ni la página ni su respuesta RSC traen los factores
+OK    serv-N9 (sin-caso). Cumplimiento ve el desglose completo
+OK    serv-N9 (sin-caso). Auditoría ve el desglose completo
+OK    serv-N9 (sin-caso). Administración no abre el expediente
+OK    aviso «dato_invalido_rfc» tras la acción
+OK    serv-N15. rechazado el RFC opcional de la física extranjera, vuelve en «Extranjera» con ese campo marcado y sin socio de más
+OK    aviso «dato_invalido_capital» tras la acción
+OK    serv-N15. rechazado el capital de la moral extranjera, vuelve en «Extranjera» con ese campo marcado y sin socio de más
+OK    serv-N17. con «Revisar» (7 caracteres) el navegador no envía la solicitud: el campo pide de 10 a 500
+OK    aviso «motivo_corto» tras la acción
+OK    serv-N17. sin el mínimo del navegador, el servidor rechaza el motivo corto con el aviso ligado al campo y no queda solicitud
+OK    base-N15. la base del arranque tiene un operador y 0 personal, como Preview
+OK    base-N15. primera corrida: las dos quedan invitadas, el correo no sale y sin --mostrar-enlace no hay enlace
+OK    base-N15. segunda corrida con los mismos correos y --mostrar-enlace: un enlace nuevo por persona
+OK    base-N15. las invitaciones de la primera corrida quedan revocadas y el personal sigue siendo el mismo
+OK    base-N15. cada enlace (los de la primera corrida y los nuevos) queda en la bitácora con quién corrió el comando y la conexión
+OK    base-N15. un correo distinto, solo o junto a los mismos, se rechaza y no emite nada
+OK    base-N15. otra corrida con los mismos correos vuelve a emitir
+OK    base-N15. el enlace que reemplazó la corrida siguiente ya no sirve
+OK    base-N15. con el enlace nuevo, primera acepta y su Administración queda activa
+OK    base-N15. con Administración activa, el comando ya no invita ni reenvía
 OK    consola del navegador limpia en las regresiones
 
-65 comprobaciones en verde, 0 en rojo.
+92 comprobaciones en verde, 0 en rojo.
+```
+
+</details>
+
+<details>
+<summary>Comando de arranque de la quinta revisión (base con un operador y 0 personal; el enlace se omite)</summary>
+
+```text
+$ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test
+primera@lever.test: invitada
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-10T21:47:44.577Z.
+segunda@lever.test: invitada
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-10T21:47:44.585Z.
+Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
+(salida 0)
+
+$ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
+primera@lever.test: invitación nueva; el enlace anterior ya no sirve
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-10T21:47:44.733Z.
+  Entrega este enlace solo a esa persona: <enlace omitido>
+segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-10T21:47:44.736Z.
+  Entrega este enlace solo a esa persona: <enlace omitido>
+Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
+(salida 0)
+
+$ OPERADORES_PLATAFORMA=tercera@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
+No se hizo: El operador ya tiene Administración invitada con otros correos. Para un enlace nuevo, corre el comando con los mismos correos de la primera vez.
+(salida 1)
+
+$ OPERADORES_PLATAFORMA=primera@lever.test,tercera@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
+No se hizo: El operador ya tiene Administración invitada con otros correos. Para un enlace nuevo, corre el comando con los mismos correos de la primera vez.
+(salida 1)
+
+$ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
+primera@lever.test: invitación nueva; el enlace anterior ya no sirve
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-10T21:47:45.289Z.
+  Entrega este enlace solo a esa persona: <enlace omitido>
+segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-10T21:47:45.294Z.
+  Entrega este enlace solo a esa persona: <enlace omitido>
+Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
+(salida 0)
+
+$ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
+No se hizo: El operador ya tiene Administración del personal activa. Las demás personas se invitan desde la pantalla Personal.
+(salida 1)
 ```
 
 </details>
