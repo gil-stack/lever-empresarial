@@ -3,7 +3,7 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { formatoPesos } from "../../dominio/centavos";
 import { fechaConAnio, fechaCorta, lunesDe, primeroDelMes, ultimoDelMes } from "../../dominio/flujo/fechas";
 import { calcularPresupuestos, cifrasDePresupuesto, ETIQUETA_ESTADO_PRESUPUESTO, reservarNominaDeUnaPersona, type LineaPresupuesto } from "../../dominio/flujo/presupuestos";
-import { proyectar, textoAlcance, type Proyeccion } from "../../dominio/flujo/proyeccion";
+import { proyectar, textoAlcance, textoDeCausas, type Proyeccion } from "../../dominio/flujo/proyeccion";
 import { hoyEnMexico } from "../../dominio/personas";
 import { capacidadesDe, rolesLeidos, tiene } from "../../nucleo/capacidades";
 import { aplicarSentencia, comoTarea, conContexto, type Consulta, type ContextoDeBase } from "../../nucleo/db";
@@ -372,7 +372,8 @@ export async function leerDestinatarios(consulta: Consulta, empresaId: string, h
   }));
 }
 
-function textoFaltante(p: Proyeccion): string | null {
+/** El faltante en palabras. La nómina reservada va sin monto, igual que en Inicio y Pendientes. */
+export function textoFaltante(p: Proyeccion): string | null {
   const f = p.faltante;
   if (!f) return null;
   const semana = `la semana del ${fechaCorta(f.inicio)} al ${fechaCorta(f.fin)}`;
@@ -380,7 +381,7 @@ function textoFaltante(p: Proyeccion): string | null {
     f.motivo === "negativo"
       ? `el saldo proyectado queda en ${formatoPesos(f.saldoFinal)} ${semana}.`
       : `el saldo proyectado baja a ${formatoPesos(f.saldoFinal)} ${semana}, debajo de tu colchón de ${formatoPesos(p.colchonCentavos)}.`;
-  const causas = f.causas.length > 0 ? ` Lo provoca: ${f.causas.map((m) => `${m.concepto} (${formatoPesos(m.centavos)})`).join(", ")}.` : "";
+  const causas = f.causas.length > 0 ? ` Lo provoca: ${textoDeCausas(f.causas)}.` : "";
   return `${cierre}${causas}`;
 }
 

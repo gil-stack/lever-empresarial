@@ -6,7 +6,7 @@ import { hoyEnMexico } from "../personas.ts";
 import { siguienteDia17 } from "./entradas.ts";
 import { adelantarObligacion, adelantarQuincenal, fechasDeSerie, lunesDe, siguienteObligacion } from "./fechas.ts";
 import { calcularPresupuestos, cifrasDePresupuesto, estadoDe, reservarNominaDeUnaPersona } from "./presupuestos.ts";
-import { escenarioValido, proyectar, restantesDeObligacion, textoAlcance, ventanaDe, type FuentesFlujo } from "./proyeccion.ts";
+import { escenarioValido, proyectar, restantesDeObligacion, textoAlcance, textoDeCausas, ventanaDe, type FuentesFlujo } from "./proyeccion.ts";
 
 /** Reloj fijo: viernes 6 de noviembre de 2026 en México. La ventana cruza el cambio de año. */
 const HOY = "2026-11-06";
@@ -325,6 +325,28 @@ describe("proyección de 13 semanas", () => {
     assert.deepEqual(restantesDeObligacion(["2026-12-07"], 100_000), [{ fecha: "2026-12-07", centavos: 100_000, facturadoCentavos: 0 }]);
   });
 
+  it("sin permiso de detalle, la nómina atrasada de una sola persona también queda reservada", () => {
+    // Saldo al 28 de octubre: el pago semanal del 30 cae antes de la ventana y va atrasado a la primera semana.
+    const base = fuentes({
+      saldo: { centavos: 1_000_000, alDia: "2026-10-28", autor: "Laura Méndez", declaradoEn: "2026-10-28T22:00:00.000Z" },
+      nomina: [{ netoCentavos: 700_000, frecuencia: "semanal", proximoPagoEn: "2026-10-30", anclaDia: 30, altaEn: "2026-01-01", bajaEn: null }],
+      pagos: [],
+      obligaciones: [],
+      cobros: [],
+    });
+    const conDetalle = proyectar(base, null, { detalleNomina: true });
+    const sinDetalle = proyectar(base);
+    assert.deepEqual(conDetalle.atrasados.map((m) => [m.clave, m.concepto, m.reservado]), [["nom:2026-10-30", "Nómina semanal (1 persona)", undefined]]);
+    assert.equal(textoDeCausas(conDetalle.atrasados), "Nómina semanal (1 persona) ($7,000.00)");
+    // Conserva su clave, pero sin detalle va marcado: la marca, no la clave, decide que no se muestre el monto.
+    assert.deepEqual(sinDetalle.atrasados.map((m) => [m.clave, m.concepto, m.personas, m.reservado]), [["nom:2026-10-30", "Nómina", undefined, true]]);
+    assert.equal(textoDeCausas(sinDetalle.atrasados), "Nómina (monto reservado)");
+    // La primera semana junta el atrasado y el pago del 6 en un renglón reservado, y el faltante no da el neto.
+    assert.equal(sinDetalle.faltante?.semana, 0);
+    assert.equal(textoDeCausas(sinDetalle.faltante?.causas ?? []), "Nómina (monto reservado)");
+    assert.equal(textoDeCausas(conDetalle.faltante?.causas ?? []).includes("$7,000.00"), true);
+  });
+
   it("sin permiso de detalle, el neto de una sola persona no se desglosa: la semana junta su nómina en «Nómina»", () => {
     const nomina = [
       // Dos personas el 15 y una sola el 13 (semanal): la del 13 es el sueldo de alguien.
@@ -341,6 +363,11 @@ describe("proyección de 13 semanas", () => {
       ["Nómina quincenal (2 personas)", 2_500_000],
     ]);
     assert.deepEqual(semana(sinDetalle).map((m) => [m.concepto, m.centavos]), [["Nómina", 3_200_000]]);
+    // El renglón juntado va marcado y su texto no lleva monto; con detalle, nada queda reservado.
+    assert.equal(semana(sinDetalle)[0]?.reservado, true);
+    assert.equal(textoDeCausas(semana(sinDetalle)), "Nómina (monto reservado)");
+    assert.equal(semana(conDetalle).some((m) => m.reservado), false);
+    assert.equal(textoDeCausas(semana(conDetalle)), "Nómina semanal (1 persona) ($7,000.00), Nómina quincenal (2 personas) ($25,000.00)");
     // El total de la semana y el saldo no cambian.
     assert.equal(sinDetalle.semanas[1]?.salidas, conDetalle.semanas[1]?.salidas);
     assert.equal(sinDetalle.semanas[12]?.saldoFinal, conDetalle.semanas[12]?.saldoFinal);

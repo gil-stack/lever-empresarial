@@ -72,6 +72,8 @@ export type Movimiento = {
   personas?: number;
   /** La fecha real cuando el escenario la movió. */
   fechaOriginal?: string;
+  /** Nómina vista sin detalle que puede ser el neto de una sola persona: su monto no se muestra. */
+  reservado?: boolean;
 };
 
 export type SaldoDeclarado = {
@@ -342,9 +344,6 @@ export type OpcionesProyeccion = {
   detalleNomina?: boolean;
 };
 
-/** Clave del renglón «Nómina» que junta la nómina de una semana sin detalle (reservarNomina). */
-const CLAVE_NOMINA_RESERVADA = "nom:semana:";
-
 /** ¿Este movimiento de nómina deja ver el neto de una sola persona? */
 export function nominaDeUnaPersona(movimiento: Pick<Movimiento, "tipo" | "personas">): boolean {
   return movimiento.tipo === "nomina" && movimiento.personas !== undefined && movimiento.personas < 2;
@@ -359,13 +358,14 @@ function reservarNomina(movimientos: Movimiento[], semana: string): Movimiento[]
   if (!movimientos.some(nominaDeUnaPersona)) return movimientos;
   const nomina = movimientos.filter((movimiento) => movimiento.tipo === "nomina");
   const junta: Movimiento = {
-    clave: `${CLAVE_NOMINA_RESERVADA}${semana}`,
+    clave: `nom:semana:${semana}`,
     tipo: "nomina",
     sentido: "salida",
     fecha: nomina.reduce((primera, movimiento) => (movimiento.fecha < primera ? movimiento.fecha : primera), nomina[0]!.fecha),
     centavos: sumarCentavos(nomina.map((movimiento) => movimiento.centavos)),
     concepto: "Nómina",
     movible: false,
+    reservado: true,
     ...(nomina.some((movimiento) => movimiento.atrasado) ? { atrasado: true } : {}),
   };
   return [...movimientos.filter((movimiento) => movimiento.tipo !== "nomina"), junta].sort(
@@ -425,7 +425,7 @@ export function proyectar(fuentes: FuentesFlujo, escenario: Escenario | null = n
   if (!opciones.detalleNomina) {
     for (const semana of semanas) semana.movimientos = reservarNomina(semana.movimientos, semana.inicio);
     for (const [indice, atrasado] of atrasados.entries()) {
-      if (nominaDeUnaPersona(atrasado)) atrasados[indice] = { ...atrasado, concepto: "Nómina", personas: undefined };
+      if (nominaDeUnaPersona(atrasado)) atrasados[indice] = { ...atrasado, concepto: "Nómina", personas: undefined, reservado: true };
     }
   }
 
@@ -514,12 +514,13 @@ export function escenarioValido(
 }
 
 /**
- * Lo que provoca un faltante, en palabras: lo usan Inicio y Pendientes. La
- * nómina juntada sin detalle va sin monto, porque puede ser el neto de una sola persona.
+ * Lo que provoca un faltante, en palabras: lo usan Inicio, Pendientes y el
+ * correo de los lunes. La nómina reservada va sin monto, porque puede ser el
+ * neto de una sola persona.
  */
 export function textoDeCausas(causas: readonly Movimiento[]): string {
   return causas
-    .map((m) => (m.clave.startsWith(CLAVE_NOMINA_RESERVADA) ? `${m.concepto} (monto reservado)` : `${m.concepto} (${formatoPesos(m.centavos)})`))
+    .map((m) => (m.reservado ? `${m.concepto} (monto reservado)` : `${m.concepto} (${formatoPesos(m.centavos)})`))
     .join(", ");
 }
 
