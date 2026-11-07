@@ -39,6 +39,16 @@
   text-transform: uppercase;
 }
 
+/* Un botón largo con su marca cabe en la columna angosta: parte el renglón en vez de ensanchar la página. */
+.modulo-diseno button[data-demo="apagado"] {
+  flex-wrap: wrap;
+  max-width: 100%;
+  height: auto;
+  min-height: 30px;
+  white-space: normal;
+  text-align: left;
+}
+
 .modulo-diseno button:disabled,
 .modulo-diseno fieldset:disabled button {
   cursor: not-allowed;

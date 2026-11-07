@@ -1,4 +1,4 @@
-import type { PendienteInicio } from "@/dominio/inicio";
+import { accionesPendientes, type PendienteInicio } from "@/dominio/inicio";
 import type { PagoVista } from "@/dominio/pagos-vistas";
 
 /** Lo que se pudo leer de cada fuente; `null` cuando el rol no la ve o la lectura falló. */
@@ -19,7 +19,7 @@ export type Aprobaciones = {
   avisos: PendienteInicio[];
   /** El resto de la bandeja (accesos, puesta en marcha) y lo que no se pudo desplegar aquí. */
   otros: PendienteInicio[];
-  /** Los mismos pendientes que cuenta el lateral: ni uno más, ni uno menos. */
+  /** Las mismas acciones que cuenta el lateral (cada pago por autorizar es una): ni una más, ni una menos. */
   total: number;
 };
 
@@ -54,5 +54,5 @@ export function armarAprobaciones(fuentes: FuentesAprobaciones): Aprobaciones {
     }
     otros.push(pendiente);
   }
-  return { pagos, nomina, avisos, otros, total: fuentes.pendientes.length };
+  return { pagos, nomina, avisos, otros, total: accionesPendientes(fuentes.pendientes) };
 }

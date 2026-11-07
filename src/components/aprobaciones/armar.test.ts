@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
-import type { PendienteInicio } from "../../dominio/inicio";
+import { capacidadesDe } from "../../nucleo/capacidades";
+import { accionesPendientes, pendientesDeInicio, type PendienteInicio } from "../../dominio/inicio";
 import type { PagoVista } from "../../dominio/pagos-vistas";
 import { armarAprobaciones } from "./armar";
 
@@ -85,6 +86,16 @@ describe("Aprobaciones reparte la bandeja de Pendientes", () => {
     });
     assert.equal(armado.pagos?.hayMas, true);
     assert.deepEqual(armado.pagos?.pagos, []);
+  });
+
+  it("cuenta cada pago por autorizar: el lateral, Pendientes y la pestaña dicen el mismo número", () => {
+    const datos = { centros: 1, personas: 1, liberadores: 2, categorias: 1, topesSinEscribir: 0, proveedores: 1, plan: "aceptada" as const, pagosPorAutorizar: 3, nominaPorPreparar: "2026-11-15" };
+    const pendientes = pendientesDeInicio(datos, capacidadesDe({ rolesCliente: ["liberador"], rolesPlataforma: [] }));
+    assert.deepEqual(pendientes.map((p) => [p.id, p.cantidad]), [["pagos-por-autorizar", 3], ["nomina-por-preparar", undefined]]);
+    assert.equal(accionesPendientes(pendientes), 4);
+    const armado = armarAprobaciones({ pendientes, personaId: YO, pagos: { pagos: [pago("a", OTRA), pago("b", OTRA), pago("c", OTRA)], hayMas: false }, fechaNomina: "2026-11-15" });
+    assert.equal(armado.total, 4);
+    assert.equal((armado.pagos?.pagos.length ?? 0) + (armado.nomina ? 1 : 0), 4, "las filas por decidir son las mismas cuatro acciones");
   });
 
   it("sin pendientes no inventa nada", () => {

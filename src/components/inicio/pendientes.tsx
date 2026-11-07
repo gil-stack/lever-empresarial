@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { CabezaPagina } from "@/components/sistema";
-import type { PendienteInicio } from "@/dominio/inicio";
+import { accionesPendientes, type PendienteInicio } from "@/dominio/inicio";
 import { enEmpresa } from "@/nucleo/rutas";
 
 export type CargaInicio =
@@ -37,14 +37,15 @@ export function Pendientes({ carga, empresaId, alertas = null }: { carga: CargaI
     );
   }
 
+  const acciones = accionesPendientes(carga.pendientes);
   const operativos = carga.pendientes.filter((pendiente) => pendiente.area === "operacion");
   const configuracion = carga.pendientes.filter((pendiente) => pendiente.area === "configuracion");
   return (
     <div className="consola">
       <h1 className="solo-lector">Pendientes</h1>
       <div className="pendientes-resumen" aria-live="polite">
-        <strong>{carga.pendientes.length}</strong>
-        <span>{carga.pendientes.length === 1 ? "acción pendiente" : "acciones pendientes"}</span>
+        <strong>{acciones}</strong>
+        <span>{acciones === 1 ? "acción pendiente" : "acciones pendientes"}</span>
         <span className="pendientes-resumen-nota">Lo que tu rol puede atender en esta empresa.</span>
       </div>
       {alertas}
