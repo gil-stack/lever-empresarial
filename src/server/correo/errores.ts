@@ -5,6 +5,8 @@ export type CodigoCorreo =
   | "correo_rechazado"
   | "correo_destinatario_invalido"
   | "correo_limite"
+  | "correo_ya_enviado"
+  | "correo_en_curso"
   | "correo_no_disponible";
 
 /**
@@ -31,6 +33,10 @@ export function explicarErrorDeCorreo(error: ErrorDeCorreo): string {
       return "El proveedor de correo no aceptó el destinatario. Revisa la dirección.";
     case "correo_limite":
       return "El proveedor de correo pidió esperar. Intenta de nuevo en unos minutos.";
+    case "correo_ya_enviado":
+      return "Ese correo ya se había enviado antes; el proveedor no lo mandó otra vez.";
+    case "correo_en_curso":
+      return "Ese correo se está enviando en otra petición. Intenta de nuevo en unos minutos.";
     default:
       return "El proveedor de correo no respondió. Intenta de nuevo en unos minutos.";
   }

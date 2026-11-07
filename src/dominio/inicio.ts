@@ -1,4 +1,6 @@
 import { tiene, type Capacidad } from "../nucleo/capacidades";
+import { formatoPesos } from "./centavos";
+import { GASTO_RESERVADO, type LineaPresupuesto } from "./flujo/presupuestos";
 
 export type DatosInicio = {
   centros: number;
@@ -22,7 +24,8 @@ export type RutaPendiente =
   | "/consola/politica"
   | "/consola/proveedores"
   | "/consola/poliza"
-  | "/consola/configuracion/plan";
+  | "/consola/configuracion/plan"
+  | "/consola/presupuestos";
 
 export type PendienteInicio = {
   id: string;
@@ -135,6 +138,27 @@ export function pendientesDeInicio(
     });
   }
   return pendientes;
+}
+
+/** Alertas de presupuesto (flujo de caja): un pendiente por área o persona en atención o excedida. */
+export function pendientesDePresupuesto(alertas: readonly LineaPresupuesto[]): PendienteInicio[] {
+  return alertas
+    .filter((linea) => linea.estado === "atencion" || linea.estado === "excedido")
+    .map((linea) => {
+      const quien = linea.tipo === "area" ? `del área ${linea.nombre}` : `de ${linea.nombre}`;
+      const estado = linea.estado === "excedido" ? "está excedido" : "está por agotarse";
+      return {
+        id: `presupuesto-${linea.tipo}-${linea.id}`,
+        titulo: `El presupuesto ${quien} ${estado}`,
+        detalle:
+          linea.gastoCentavos === null
+            ? `Presupuesto de ${formatoPesos(linea.presupuestoCentavos ?? 0)} este mes. El gasto está reservado: ${GASTO_RESERVADO.toLowerCase()}`
+            : `Lleva ${formatoPesos(linea.gastoCentavos)} de ${formatoPesos(linea.presupuestoCentavos ?? 0)} este mes, con lo comprometido en la plataforma.`,
+        ruta: "/consola/presupuestos",
+        accion: "Ver presupuestos",
+        area: "operacion",
+      } satisfies PendienteInicio;
+    });
 }
 
 function fechaCorta(fecha: string): string {

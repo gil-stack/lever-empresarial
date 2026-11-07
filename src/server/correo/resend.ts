@@ -46,6 +46,7 @@ export function enviadorResend(config: ConfiguracionCorreo, hacerFetch: Fetch = 
       throw new ErrorDeCorreo("correo_no_disponible");
     }
 
+    if (respuesta.status === 409) throw new ErrorDeCorreo(await codigoDeConflicto(respuesta));
     if (!respuesta.ok) throw new ErrorDeCorreo(codigoPorEstado(respuesta.status));
 
     let datos: unknown;
@@ -58,6 +59,29 @@ export function enviadorResend(config: ConfiguracionCorreo, hacerFetch: Fetch = 
     if (typeof id !== "string" || id.length === 0) throw new ErrorDeCorreo("correo_no_disponible");
     return { id };
   };
+}
+
+/**
+ * Los dos 409 de la llave de idempotencia (doc de Resend, «Idempotency Keys ›
+ * Possible responses» y «Errors»), por el `name` del cuerpo de error:
+ * - `invalid_idempotent_request`: la llave ya se usó en las últimas 24 horas con
+ *   otro contenido. Resend no guarda las peticiones fallidas, así que esa
+ *   primera sí salió: el correo ya está enviado.
+ * - `concurrent_idempotent_requests`: otra petición con la misma llave sigue en
+ *   curso; se puede reintentar después.
+ * Del cuerpo solo se lee `name`; el mensaje del proveedor no se copia.
+ */
+async function codigoDeConflicto(respuesta: Response) {
+  let nombre: unknown;
+  try {
+    const datos: unknown = await respuesta.json();
+    nombre = typeof datos === "object" && datos !== null ? (datos as { name?: unknown }).name : undefined;
+  } catch {
+    nombre = undefined;
+  }
+  if (nombre === "invalid_idempotent_request") return "correo_ya_enviado" as const;
+  if (nombre === "concurrent_idempotent_requests") return "correo_en_curso" as const;
+  return "correo_no_disponible" as const;
 }
 
 function codigoPorEstado(estado: number) {

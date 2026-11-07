@@ -110,6 +110,18 @@ export async function conContexto<T>(
 }
 
 /**
+ * Solo para una tarea programada que ya se autenticó (el cron con CRON_SECRET):
+ * baja a plataforma_tarea, sin empresa ni persona en el contexto. Ese rol no lee
+ * tablas; solo ejecuta las funciones que 0026 le otorga.
+ */
+export async function comoTarea<T>(fn: (consulta: Consulta) => Promise<T>): Promise<T> {
+  return conTransaccion(async (consulta) => {
+    await consulta.query("set local role plataforma_tarea");
+    return fn(consulta);
+  });
+}
+
+/**
  * Serializa las escrituras de una empresa dentro de la transacción. Un candado
  * consultivo no pide permiso de escribir la fila de la empresa, que el rol
  * cliente no tiene. Falla si la empresa no es visible en el contexto.
@@ -174,6 +186,7 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (marca.includes("supplier_clabes_una_vigente")) return new ErrorDeDominio("clabe_ya_vigente");
     if (marca.includes("supplier_payables_cfdi")) return new ErrorDeDominio("cfdi_duplicado");
     if (marca.includes("supplier_payment_requests_idempotencia")) return new ErrorDeDominio("idempotencia_pago_duplicada");
+    if (marca.includes("expected_collections_cfdi")) return new ErrorDeDominio("cobro_duplicado");
     if (marca.includes("lista_69b")) return new ErrorDeDominio("listado_irreconocible");
     if (marca.includes("polic") || marca.includes("drawer") || marca.includes("posting")) {
       return new ErrorDeDominio("politica_invalida");
@@ -181,6 +194,9 @@ export function traducirErrorDeBase(error: unknown): Error {
   }
   if (codigo === "23503" && marca.includes("policy_persons")) {
     return new ErrorDeDominio("persona_ajena");
+  }
+  if (codigo === "23503" && (marca.includes("suppliers_area") || marca.includes("recurring_obligations_area"))) {
+    return new ErrorDeDominio("area_ajena");
   }
   if (codigo === "23514") {
     if (marca.includes("lista_69b")) return new ErrorDeDominio("listado_irreconocible");
@@ -202,6 +218,8 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (CODIGOS_DE_TENENCIA.has(mensaje)) return new ErrorDeDominio(mensaje);
     const deProveedor = FRASES_DE_PROVEEDOR[mensaje.trim()];
     if (deProveedor) return new ErrorDeDominio(deProveedor);
+    const deFlujo = FRASES_DE_FLUJO[mensaje.trim()];
+    if (deFlujo) return new ErrorDeDominio(deFlujo);
     if (FRASES_DE_AUDITORIA.has(mensaje)) return new ErrorDeDominio("auditoria_no_disponible");
   }
   if (codigo === "23514" && marca.includes("lotes_prueba_dos_firmas")) {
@@ -329,6 +347,31 @@ const FRASES_DE_PROVEEDOR: Readonly<Record<string, string>> = {
   cancelacion_no_permitida: "cancelacion_no_permitida",
   documento_relacionado_inmutable: "archivo_no_disponible",
   auditoria_pago_proveedor_ausente: "auditoria_no_disponible",
+};
+
+/** Flujo de caja (0026). */
+const FRASES_DE_FLUJO: Readonly<Record<string, string>> = {
+  sin_permiso_para_flujo: "sin_permiso",
+  saldo_declarado_no_se_pisa: "saldo_inmutable",
+  saldo_con_fecha_futura: "fecha_futura",
+  cobro_no_se_borra: "cobro_invalido",
+  cobro_no_valido: "cobro_invalido",
+  cobro_inmutable: "cobro_invalido",
+  cobro_ya_resuelto: "cobro_ya_resuelto",
+  cobro_con_fecha_futura: "fecha_futura",
+  obligacion_no_se_borra: "obligacion_invalida",
+  obligacion_no_valida: "obligacion_invalida",
+  obligacion_inmutable: "obligacion_invalida",
+  obligacion_inactiva: "obligacion_inactiva",
+  configuracion_no_se_borra: "sin_permiso",
+  configuracion_inmutable: "sin_permiso",
+  preferencia_no_se_borra: "sin_permiso",
+  envio_no_se_borra: "envio_cerrado",
+  envio_solo_del_sistema: "sin_permiso",
+  envio_no_valido: "envio_cerrado",
+  envio_ya_cerrado: "envio_cerrado",
+  auditoria_de_flujo_ausente: "auditoria_no_disponible",
+  auditoria_de_area_proveedor_ausente: "auditoria_no_disponible",
 };
 
 const CODIGOS_DE_AUTENTICACION = new Set([

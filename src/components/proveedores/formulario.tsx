@@ -18,7 +18,7 @@ import { Aviso, BotonEnviar, EtiquetaMono } from "@/components/sistema";
 
 import { enviarSinReiniciar } from "./sin-reinicio";
 
-export function FormularioProveedor() {
+export function FormularioProveedor({ areas = [] }: { areas?: readonly { id: string; nombre: string }[] }) {
   const [estado, accion, pendiente] = useActionState(enviarProveedor, ESTADO_ALTA_INICIAL);
   const [rfc, setRfc] = useState("");
   const [razonSocial, setRazonSocial] = useState("");
@@ -131,6 +131,14 @@ export function FormularioProveedor() {
       <Campo id="diasCredito" etiqueta="Días de crédito" pista="Se usa como sugerencia al programar facturas." error={mensaje("diasCredito")}>
         <input id="diasCredito" name="diasCredito" type="number" min={0} max={365} step={1} defaultValue={30} inputMode="numeric" aria-describedby={descritoPor("diasCredito", mensaje("diasCredito"))} aria-invalid={mensaje("diasCredito") ? true : undefined} />
       </Campo>
+      {areas.length > 0 ? (
+        <Campo id="areaId" etiqueta="Área" pista="Sus pagos cuentan en el presupuesto de esa área. Opcional." error={mensaje("areaId")}>
+          <select id="areaId" name="areaId" defaultValue="" aria-invalid={mensaje("areaId") ? true : undefined}>
+            <option value="">Sin área</option>
+            {areas.map((area) => <option key={area.id} value={area.id}>{area.nombre}</option>)}
+          </select>
+        </Campo>
+      ) : null}
       <Campo
         id="clabe"
         etiqueta="CLABE"

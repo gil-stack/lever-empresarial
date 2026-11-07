@@ -53,8 +53,8 @@ export const SQL = {
     insert into suppliers (
       id, company_id, document_id, snapshot_id, rfc, razon_social,
       situacion_69b, lista_fecha, lista_leida_en, boton_pago, alta_en,
-      nombre_comercial, contacto_correo, dias_credito
-    ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      nombre_comercial, contacto_correo, dias_credito, cost_center_id
+    ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
   `,
   insertarClabe: `
     insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde)
@@ -90,6 +90,11 @@ function contexto(consulta: Consulta, companyId: string): ContextoProveedores {
     async rfcOcupado(rfc) {
       const resultado = await consulta.query(SQL.rfcOcupado, [companyId, rfc]);
       return resultado.rowCount > 0;
+    },
+    async nombreDeArea(areaId) {
+      const resultado = await consulta.query("select nombre from cost_centers where company_id = $1 and id = $2", [companyId, areaId]);
+      const nombre = (resultado.rows[0] as { nombre?: unknown } | undefined)?.nombre;
+      return typeof nombre === "string" ? nombre : null;
     },
     async leerLista(rfc) {
       const snapshot = await consulta.query(SQL.snapshot, []);
@@ -139,6 +144,7 @@ function contexto(consulta: Consulta, companyId: string): ContextoProveedores {
         proveedor.nombreComercial,
         proveedor.contactoCorreo,
         proveedor.diasCredito,
+        proveedor.costCenterId,
       ]);
     },
     async insertarClabe(clabe) {

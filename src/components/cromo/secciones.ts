@@ -3,13 +3,17 @@ import type { ReactNode } from "react";
 import { enEmpresa } from "@/nucleo/rutas";
 
 import {
+  IconoCalendario,
+  IconoCobros,
   IconoConfiguracion,
+  IconoFlujo,
   IconoInicio,
   IconoLista,
   IconoPersonas,
   IconoPendientes,
   IconoPolitica,
   IconoPoliza,
+  IconoPresupuestos,
   IconoProveedores,
   IconoTelefono,
 } from "./iconos";
@@ -43,12 +47,21 @@ export function seccionesDe(puertas: ReturnType<typeof puertasDe>, empresaId: st
     ...(puertas.maestro ? [seccion("/consola/personas", "Personas", IconoPersonas)] : []),
     ...(puertas.poliza ? [seccion("/consola/poliza", "Póliza", IconoPoliza)] : []),
   ];
+  const flujo = puertas.flujo
+    ? [
+      seccion("/consola/flujo", "Saldo y alertas", IconoFlujo),
+      seccion("/consola/cobros", "Cobros", IconoCobros),
+      seccion("/consola/calendario", "Calendario", IconoCalendario),
+      seccion("/consola/presupuestos", "Presupuestos", IconoPresupuestos),
+    ]
+    : [];
   const cuenta = [
     ...(puertas.configuracion ? [seccion("/consola/configuracion", "Configuración", IconoConfiguracion)] : []),
     ...(puertas.telefono ? [seccion("/telefono", "Teléfono", IconoTelefono)] : []),
   ];
   return [
     ...(operacion.length > 0 ? [{ titulo: "Operación", secciones: operacion }] : []),
+    ...(flujo.length > 0 ? [{ titulo: "Flujo de caja", secciones: flujo }] : []),
     ...(cuenta.length > 0 ? [{ titulo: "Cuenta", secciones: cuenta }] : []),
   ];
 }
