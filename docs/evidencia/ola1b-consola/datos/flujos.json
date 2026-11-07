@@ -117,7 +117,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «Crea la primera área» aparece y «Crear área» lleva a su pantalla",
-    "detalle": "/c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/personas/areas"
+    "detalle": "/c/d76b39db-72c9-44c6-8bdc-8b2d53eda14f/consola/personas/areas"
   },
   {
     "ok": true,
@@ -142,7 +142,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «Da de alta al primer colaborador» aparece y «Dar de alta» lleva a su pantalla",
-    "detalle": "/c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/personas/nueva"
+    "detalle": "/c/d76b39db-72c9-44c6-8bdc-8b2d53eda14f/consola/personas/nueva"
   },
   {
     "ok": true,
@@ -187,7 +187,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «^Prepara el lote de nómina del » aparece y «Preparar nómina» lleva a su pantalla",
-    "detalle": "/c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/personas/nomina"
+    "detalle": "/c/d76b39db-72c9-44c6-8bdc-8b2d53eda14f/consola/personas/nomina"
   },
   {
     "ok": true,
@@ -302,22 +302,22 @@
   {
     "ok": true,
     "texto": "flujo 11: «^Falta(n)? (una|dos) personas? autorizadas? para liberar» aparece y «Revisar accesos» lleva a su pantalla",
-    "detalle": "/c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/personas"
+    "detalle": "/c/d76b39db-72c9-44c6-8bdc-8b2d53eda14f/consola/personas"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Crea la primera categoría» aparece y «Configurar política» lleva a su pantalla",
-    "detalle": "/c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/politica"
+    "detalle": "/c/d76b39db-72c9-44c6-8bdc-8b2d53eda14f/consola/politica"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Registra el primer proveedor» aparece y «Configurar proveedores» lleva a su pantalla",
-    "detalle": "/c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/proveedores"
+    "detalle": "/c/d76b39db-72c9-44c6-8bdc-8b2d53eda14f/consola/proveedores"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Revisa el plan de esta empresa» aparece y «Ver plan» lleva a su pantalla",
-    "detalle": "/c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/configuracion/plan"
+    "detalle": "/c/d76b39db-72c9-44c6-8bdc-8b2d53eda14f/consola/configuracion/plan"
   },
   {
     "ok": true,
@@ -336,6 +336,11 @@
   },
   {
     "ok": true,
+    "texto": "flujo 11 oscuro 1440: Pendientes muestra el faltante (con la nómina desglosada para quien ve su detalle) y «Ver la proyección» lleva a la proyección de Inicio",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó → /c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
+  },
+  {
+    "ok": true,
     "texto": "flujo 11 oscuro 1440: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos",
     "detalle": "El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos"
   },
@@ -348,6 +353,11 @@
     "ok": true,
     "texto": "flujo 11 oscuro 1440: sin errores de consola en Pendientes, Presupuestos e Inicio",
     "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 oscuro 390: Pendientes muestra el faltante (con la nómina desglosada para quien ve su detalle) y «Ver la proyección» lleva a la proyección de Inicio",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó → /c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
   },
   {
     "ok": true,
@@ -366,6 +376,11 @@
   },
   {
     "ok": true,
+    "texto": "flujo 11 claro 1440: Pendientes muestra el faltante (con la nómina desglosada para quien ve su detalle) y «Ver la proyección» lleva a la proyección de Inicio",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó → /c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
+  },
+  {
+    "ok": true,
     "texto": "flujo 11 claro 1440: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos",
     "detalle": "El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos"
   },
@@ -378,6 +393,11 @@
     "ok": true,
     "texto": "flujo 11 claro 1440: sin errores de consola en Pendientes, Presupuestos e Inicio",
     "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 claro 390: Pendientes muestra el faltante (con la nómina desglosada para quien ve su detalle) y «Ver la proyección» lleva a la proyección de Inicio",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó → /c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
   },
   {
     "ok": true,
@@ -396,6 +416,11 @@
   },
   {
     "ok": true,
+    "texto": "flujo 11 lever 1440: Pendientes muestra el faltante (con la nómina desglosada para quien ve su detalle) y «Ver la proyección» lleva a la proyección de Inicio",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó → /c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
+  },
+  {
+    "ok": true,
     "texto": "flujo 11 lever 1440: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos",
     "detalle": "El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos"
   },
@@ -411,6 +436,11 @@
   },
   {
     "ok": true,
+    "texto": "flujo 11 lever 390: Pendientes muestra el faltante (con la nómina desglosada para quien ve su detalle) y «Ver la proyección» lleva a la proyección de Inicio",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó → /c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
+  },
+  {
+    "ok": true,
     "texto": "flujo 11 lever 390: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos",
     "detalle": "El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos"
   },
@@ -422,6 +452,46 @@
   {
     "ok": true,
     "texto": "flujo 11 lever 390: sin errores de consola en Pendientes, Presupuestos e Inicio",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11: finanzas ve el faltante con «Nómina (monto reservado)», sin el neto de una sola persona, y llega a la proyección",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nómina (monto reservado). Ver la proyección → /c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11: sin errores de consola (finanzas)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11: la contadora ve el faltante con la nómina reservada y «Revisar saldo y alertas» la lleva a Saldo y alertas",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nómina (monto reservado). Revisar saldo y alertas → /c/33333333-3333-4333-8333-333333333333/consola/flujo"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11: sin errores de consola (contadora)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 oscuro 1440: sin cliente.flujo.ver, Rosa no ve el faltante ni la alerta de presupuesto",
+    "detalle": "alertas=0"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 oscuro 1440: sin errores de consola (liberadora)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 lever 390: sin cliente.flujo.ver, Rosa no ve el faltante ni la alerta de presupuesto",
+    "detalle": "alertas=0"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 lever 390: sin errores de consola (liberadora)",
     "detalle": ""
   },
   {

@@ -1,20 +1,40 @@
 # Ola 1B · consola: evidencia
 
-Recorrido de la zona de la consola (Pendientes, Proveedores, Personas, Política, Lista 69-B, Configuración, Plan y Póliza) ya en el sistema visual de Lever. Se hizo con Playwright headless desde node, no con el navegador del MCP, contra `next start` en el puerto 4807. El servidor se compiló con `E2E_SERVER_ACTIONS=1 E2E_PUERTO=4807`, corre sobre Postgres 17 local en el puerto 5542 y usa el emulador de Blob en el puerto 4892. La corrida es sobre el head que integra main con #52 (flujo de caja): el alta de proveedor lleva su campo de área y Pendientes e Inicio, sus alertas.
+Recorrido de la zona de la consola (Pendientes, Proveedores, Personas, Política, Lista 69-B, Configuración, Plan y Póliza) ya en el sistema visual de Lever. Se hizo con Playwright headless desde node, no con el navegador del MCP, contra `next start` en el puerto 4807. El servidor se compiló con `E2E_SERVER_ACTIONS=1 E2E_PUERTO=4807`, corre sobre Postgres 17 local en el puerto 5542 y usa el emulador de Blob en el puerto 4892. La evidencia es sobre main con #52 (flujo de caja): el alta de proveedor lleva su campo de área, y Pendientes e Inicio, sus alertas. La sección siguiente dice qué corrió en cada head.
 
 Las capturas están en WebP, en tres temas (Oscuro, Claro y Lever) y en dos tamaños: 1440×900 y 390×844 (móvil, con `isMobile`). Cada captura se llama `<clave>-<tema>-<ancho>.webp`.
 
-## Resultado de la corrida final
+## Qué corrió en cada head
+
+| Head | Código | Qué corrió ahí |
+| --- | --- | --- |
+| `73d81c7` | main (`79f0673`) con #52, antes del faltante en Pendientes | Todas las corridas: `pantallas` (33 pantallas), `contraste` completo, `cargando`, `tablas`, `barra`, `caida`, `flujos` (88 de 88) y el flujo 9 con SAT simulado |
+| `9b5ffb9` | El faltante en Pendientes (`9ad9bf9`) y la nómina reservada sin monto (`9b5ffb9`) | Build nuevo y base sembrada de nuevo. `pantallas` y `contraste` solo de Pendientes (`SOLO=10,11,87`), y los 12 flujos completos (102 de 102) |
+| `b882178` | Igual a `9b5ffb9` en `src/`. Solo cambia la guarda de `tests/e2e/recorridos.test.ts` | Gates completos: typecheck, lint, test (367 de 367), security, Postgres local y en UTC (37 de 37), e2e (11 passed) y build |
+
+Entre `73d81c7` y `b882178` el código de la aplicación cambia en cinco archivos:
+
+- `src/app/consola/pendientes/page.tsx`
+- `src/server/flujo/servicio.ts`: `leerFaltante`
+- `src/components/flujo/alerta-faltante.tsx`: nuevo
+- `src/components/flujo/inicio-flujo.tsx`: usa la misma alerta
+- `src/dominio/flujo/proyeccion.ts`: `textoDeCausas`
+
+Ninguna otra pantalla de la zona usa esas piezas (`grep -rln "alerta-faltante\|textoDeCausas\|leerFaltante" src`). Fuera de Pendientes, el cambio solo llega a la alerta de faltante de Inicio, que ahora es el mismo componente. El flujo 11 la volvió a capturar sobre `9b5ffb9` en los 3 temas a 1440 y a 390, con Gil (`11-inicio-alertas-*`). Para quien no ve el detalle de la nómina solo se clicó Pendientes. El texto compartido lo cubre `src/server/flujo/faltante.test.ts`.
+
+Las capturas `pantallas/10-*`, `pantallas/11-*` y `pantallas/87-*` y todo `flujos/` son de `9b5ffb9`. El resto de `pantallas/`, junto con `salida/pantallas.txt`, `datos/pantallas.json`, `salida/contraste.txt` y `datos/contraste.json`, es de `73d81c7`.
+
+## Resultado de cada corrida
 
 | Corrida | Qué comprueba | Resultado | Salida literal |
 | --- | --- | --- | --- |
-| `pantallas` | 33 pantallas × 3 temas × 2 tamaños. En cada una revisa: responde 200 en su propia ruta, sin redirigir; tiene un solo `h1`; todo campo tiene etiqueta; cada error está ligado a su campo con `aria-describedby`; no hay desplazamiento horizontal; cada cifra de una métrica cabe en su celda; la tabulación sigue el orden del documento; cada parada de Tab tiene foco visible; no hay errores de consola | **1782 de 1782** | `salida/pantallas.txt`, `datos/pantallas.json` |
-| `contraste` | Contraste AA de cada texto visible contra la escena real (fondo WebGL). Con un diálogo modal abierto solo se mide el diálogo, porque lo de atrás queda inerte bajo el velo | **6 de 6** (ver la tabla siguiente) | `salida/contraste.txt`, `datos/contraste.json` |
+| `pantallas` | 33 pantallas × 3 temas × 2 tamaños. En cada una revisa: responde 200 en su propia ruta, sin redirigir; tiene un solo `h1`; todo campo tiene etiqueta; cada error está ligado a su campo con `aria-describedby`; no hay desplazamiento horizontal; cada cifra de una métrica cabe en su celda; la tabulación sigue el orden del documento; cada parada de Tab tiene foco visible; no hay errores de consola | **1782 de 1782** sobre `73d81c7`. Pendientes (10, 11 y 87) sobre `9b5ffb9`: **162 de 162** | `salida/pantallas.txt`, `datos/pantallas.json`; `salida/pantallas-pendientes.txt`, `datos/pantallas-pendientes.json` |
+| `contraste` | Contraste AA de cada texto visible contra la escena real (fondo WebGL). Con un diálogo modal abierto solo se mide el diálogo, porque lo de atrás queda inerte bajo el velo | **6 de 6** sobre `73d81c7` y **6 de 6** de Pendientes sobre `9b5ffb9` (ver las tablas siguientes) | `salida/contraste.txt`, `datos/contraste.json`; `salida/contraste-pendientes.txt`, `datos/contraste-pendientes.json` |
 | `cargando` | Con la respuesta de Política detenida: la sección del lateral muestra «Cargando…» con su indicador, la barra y la página actual se quedan, y al soltar la respuesta se pinta Política. En la mesa de Proveedores, con la respuesta detenida: la pestaña Agenda muestra su giro (`useLinkStatus`) y «Filtrar» dice «Filtrando…»; al soltarla llega la vista pedida | **24 de 24** | `salida/cargando.txt` |
 | `tablas` | A 390, en 3 temas: la mesa de pagos, el detalle abierto, el directorio, el expediente abierto y la tabla del muestrario. Se clica cada «Abrir». Revisa que la página no se ensanche, tampoco con la tabla desplazada al final. Cada medida se repite sin `position: relative` en `.tabla-contenedor` para mostrar qué corrige | **21 de 21** | `salida/tablas.txt`, `tablas/` |
 | `barra` | A 390, en 3 temas, en las pantallas cuyo marco lleva acción: Proveedores (Pagos, Proveedores y Agenda) y Personas. Revisa que título, acción y chip de la persona queden en una fila y que la página no se ensanche. Clica el chip (abre su menú, que se cierra con Escape; el botón conserva el nombre de la persona para el lector) y la acción (lleva a su alta) | **39 de 39** | `salida/barra.txt`, `barra/` |
 | `caida` | Con Postgres apagado (`pg_ctl stop`), 9 pantallas × 3 temas × 2 tamaños. Cada una responde 200 en su ruta, con un solo `h1` y dentro del marco, dice «No se pudo…», no muestra cifras supuestas y no tiene errores de consola | **216 de 216** | `salida/caida.txt` |
-| `flujos` | Los 11 flujos del brief y el 12 (alta de proveedor con área, de #52), clicados con doble clic en cada envío y verificación en la base. El 11 revisa además las alertas de #52 en los 3 temas, a 1440 y a 390 | **88 de 88** | `salida/flujos.txt`, `datos/flujos.json` |
+| `flujos` | Los 11 flujos del brief y el 12 (alta de proveedor con área, de #52), clicados con doble clic en cada envío y verificación en la base. El 11 revisa además, en los 3 temas a 1440 y a 390, el faltante y el presupuesto en Pendientes con el clic a su destino, las alertas de Inicio y el caso sin permiso | **102 de 102** sobre `9b5ffb9` (88 de 88 sobre `73d81c7`) | `salida/flujos.txt`, `datos/flujos.json` |
 | `flujos` con SAT simulado | Flujo 9 con el camino feliz de la 69-B y la negativa por IP privada (ver abajo) | **5 de 5** y **3 de 3** | `salida/flujos-sat-simulado-*.txt`, `salida/sat-simulado-bitacora.txt` |
 
 Contraste por tema y tamaño:
@@ -28,11 +48,22 @@ Contraste por tema y tamaño:
 | Lever | 1440 | 1253 | 4.86 |
 | Lever | 390 | 521 | 5.39 |
 
+Contraste de Pendientes (10, 11 y 87) sobre `9b5ffb9`, con la alerta de faltante:
+
+| Tema | Ancho | Textos medidos | Contraste mínimo |
+| --- | --- | --- | --- |
+| Oscuro | 1440 | 110 | 5.27 |
+| Oscuro | 390 | 45 | 6.16 |
+| Claro | 1440 | 110 | 4.96 |
+| Claro | 390 | 45 | 4.95 |
+| Lever | 1440 | 110 | 4.85 |
+| Lever | 390 | 45 | 5.16 |
+
 ## Pantallas y estados
 
 | Clave | Quién | Estado que muestra |
 | --- | --- | --- |
-| `10-pendientes`, `11-pendientes-altamar` | Gil (Taller), Laura (Altamar) | Con pendientes; Altamar en su puesta en marcha |
+| `10-pendientes`, `11-pendientes-altamar` | Gil (Taller), Laura (Altamar) | Con pendientes; Taller con la alerta de faltante (nómina desglosada para Gil) y la de presupuesto; Altamar en su puesta en marcha |
 | `20-proveedores-pagos`, `21-proveedores-directorio`, `22-proveedores-agenda` | Gil | Mesa de pagos, directorio y agenda |
 | `23-proveedores-detalle-pago`, `24-proveedores-expediente` | Rosa, Gil | Panel lateral del pago y del expediente. A 390 el detalle se captura desplazado hasta «Rechazar» y «Autorizar para pagar» |
 | `25-proveedores-alta`, `26-proveedores-nuevo-pago` | Gil | Formularios de alta |
@@ -46,7 +77,7 @@ Contraste por tema y tamaño:
 | `50-lista-69b`, `51-lista-69b-sofipo` | Gil, Ofelia (personal SOFIPO) | Consulta de RFC y carga del listado |
 | `60-configuracion`, `61-configuracion-plan`, `70-poliza` | Gil | Configuración, plan y póliza (vacía: «Todavía no hay pólizas para exportar») |
 | `80`…`86` (`*-sin-permiso-*`) | Fernanda (solo finanzas) | **Sin permiso** en Proveedores, Personas, Política, Lista 69-B, Configuración, Plan y Póliza |
-| `87-pendientes-finanzas` | Fernanda | Pendientes con el rol de finanzas |
+| `87-pendientes-finanzas` | Fernanda | Pendientes con el rol de finanzas: la alerta de faltante dice «Nómina (monto reservado)» |
 | `90-error-*` | Gil, con la base apagada | **Error** de Pendientes, Proveedores, Personas, Nómina, Política, Lista 69-B, Configuración, Plan y Póliza |
 | `95-cargando` | Gil | **Cargando**: Política detenida mientras el lateral muestra su progreso |
 | `96-mesa-pestana-cargando`, `96-mesa-filtrar-cargando` | Gil | **Cargando** en la mesa: giro en la pestaña Agenda y «Filtrando…», con la respuesta detenida (solo 1440) |
@@ -68,7 +99,7 @@ Cada envío se hizo con **doble clic real** sobre `BotonEnviar`, y la base se co
 | 9. Lista 69-B | Ofelia da doble clic en «Guardar el listado» («Descargando…»); Gil consulta `AAA010101AAA` | Sin copia doble; la consulta responde «No aparece en la lista 69-B.» |
 | 9 con SAT simulado | Ofelia da doble clic en «Guardar el listado»; Gil consulta `PAL7202161U0` | 1 copia nueva (2026-10-31, 3 filas); el pago a ese RFC queda bloqueado. Con IP privada, 0 copias |
 | 10. Configuración y plan | Plan, Póliza, Apariencia y Seguridad desde Configuración | Cada una abre con un solo `h1` |
-| 11. Pendientes | Cada tipo de pendiente de Taller y de Altamar, con su acción clicada. Con #52, en los 3 temas a 1440 y a 390: Pendientes muestra «El presupuesto del área Operación está excedido» (la nómina de Marta rebasa los $80,000.00 del área) y «Ver presupuestos» lleva a Presupuestos; Inicio muestra las alertas de faltante y de presupuesto. La de faltante solo existe en Inicio, no en Pendientes (`src/components/flujo/inicio-flujo.tsx`) | Cada acción lleva a la pantalla que lo resuelve; ninguna vista se ensancha y la consola queda limpia (`11-pendiente-presupuesto-*`, `11-inicio-alertas-*`) |
+| 11. Pendientes | Cada tipo de pendiente de Taller y de Altamar, con su acción clicada. Con #52, Gil en los 3 temas a 1440 y a 390: Pendientes muestra el faltante de Taller con «Nómina semanal (1 persona) ($18,500.00)», y «Ver la proyección» lleva a la proyección de Inicio (`/consola#proyeccion-titulo`). Muestra también «El presupuesto del área Operación está excedido» (la nómina de Marta rebasa los $80,000.00 del área), y «Ver presupuestos» lleva a Presupuestos. Inicio muestra las dos alertas. Quien no ve el detalle de la nómina: Fernanda (finanzas, Claro 1440) ve «Nómina (monto reservado)» y llega a la proyección; una contadora creada en el flujo (Lever 390) ve lo mismo, y «Revisar saldo y alertas» la lleva a `/consola/flujo`. Caso negativo: Rosa (liberadora, sin `cliente.flujo.ver`, Oscuro 1440 y Lever 390) no ve ninguna alerta | Cada acción lleva a la pantalla que lo resuelve; ninguna vista se ensancha y la consola queda limpia (`11-pendiente-faltante-*`, `11-pendiente-sin-faltante-liberadora-*`, `11-pendiente-presupuesto-*`, `11-inicio-alertas-*`) |
 | 12. Alta de proveedor con área (#52) | «Alta de proveedor», formulario completo eligiendo el área «Operación» y doble clic en «Dar de alta» | 1 proveedor con `cost_center_id` del área Operación y 1 asiento `alta_proveedor` con `cambio.area = 'Operación'` |
 
 ### Flujo 9 con el SAT real y con «SAT simulado»
@@ -108,7 +139,7 @@ Cada comparación pone tres paneles en Oscuro a 1440: el diseño de los socios, 
    pg_ctl -D <carpeta> -o "-p 5542 -k ''" start
    ```
 
-2. **Base y sesiones.** El script crea la base `ola1b_consola`, aplica `db/migrations` y carga `tests/e2e/seed-pagos.sql` (Taller del Cierre, con Gil y Rosa). En Taller crea con los servicios del producto el área «Operación», a Marta Ruiz con nómina semanal y su lote preparado (para el expediente, el lote y el alta con áreas), y declara un saldo de $20,000.00: con la nómina semanal la proyección cae bajo cero e Inicio pinta la alerta de faltante. Después da de alta Altamar Logística con Laura, agrega a Fernanda (solo finanzas) y a Ofelia (personal SOFIPO), y deja sesiones con segundo factor:
+2. **Base y sesiones.** El script crea la base `ola1b_consola`, aplica `db/migrations` y carga `tests/e2e/seed-pagos.sql` (Taller del Cierre, con Gil y Rosa). En Taller crea con los servicios del producto el área «Operación», a Marta Ruiz con nómina semanal y su lote preparado (para el expediente, el lote y el alta con áreas), y declara un saldo de $20,000.00: con la nómina semanal la proyección cae bajo cero, e Inicio y Pendientes pintan la alerta de faltante. Después da de alta Altamar Logística con Laura, agrega a Fernanda (solo finanzas) y a Ofelia (personal SOFIPO), y deja sesiones con segundo factor:
 
    ```sh
    DUENO_URL=postgres://postgres@127.0.0.1:5542/postgres \
@@ -147,6 +178,7 @@ Cada comparación pone tres paneles en Oscuro a 1440: el diseño de los socios, 
    ```
 
    - Para correr solo algunas pantallas: `SOLO=40,41`. Para algunos temas o tamaños: `TEMAS=oscuro`, `ANCHOS=390`. Para algunos flujos: `FLUJOS=8,9`.
+   - La repetición de Pendientes sobre `9b5ffb9` fue `SOLO=10,11,87 SUFIJO=-pendientes … pantallas` y `SOLO=10,11,87 … contraste`. `SUFIJO` nombra el `datos/<corrida><SUFIJO>.json`. `contraste` siempre escribe `datos/contraste.json`, así que ese archivo se guardó aparte como `datos/contraste-pendientes.json` y el completo se repuso.
    - **Los flujos se corren justo después del paso 2.** Autorizar un pago exige un segundo factor de menos de 30 minutos, y el guion se detiene si las sesiones sembradas son más viejas.
    - Para el rechazo del flujo 6, el guion envejece el factor de Laura a 31 minutos con SQL de dueño, en la base desechable.
 
