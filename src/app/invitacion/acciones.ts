@@ -7,19 +7,7 @@ import { iniciarConContrasena } from "@/server/autenticacion";
 import { aceptarInvitacion } from "@/server/invitaciones";
 import { resolverDestinoInvitacion } from "@/server/invitaciones/destino";
 import { ErrorDeDominio } from "@/server/session";
-import type { EstadoInvitacion } from "./estado";
-
-const MENSAJES: Record<string, string> = {
-  contrasena_invalida: "La contraseña necesita al menos 10 caracteres. Si es demasiado larga, elige otra.",
-  contrasenas_distintas: "Las dos contraseñas no coinciden.",
-  credenciales_invalidas: "Esa no es tu contraseña.",
-  invitacion_usada: "Esta invitación ya se usó. Entra con tu correo.",
-  invitacion_vencida: "Esta invitación venció. Pide otra a quien te invitó.",
-  invitacion_revocada: "Esta invitación ya no sirve. Pide otra a quien te invitó.",
-  invitacion_inexistente: "Este enlace no es una invitación.",
-  invitacion_cerrada: "Esta invitación ya no sirve. Pide otra a quien te invitó.",
-  empresa_suspendida: "La empresa está suspendida y por ahora no admite cuentas nuevas. Comunícate con Lever.",
-};
+import { rechazoDeInvitacion, type EstadoInvitacion } from "./estado";
 
 /** Guarda la contraseña y lleva a registrar o verificar el segundo factor. No abre el portal. */
 export async function enviarAceptacion(_previo: EstadoInvitacion, formData: FormData): Promise<EstadoInvitacion> {
@@ -34,7 +22,12 @@ export async function enviarAceptacion(_previo: EstadoInvitacion, formData: Form
     const entrada = await iniciarConContrasena({ correo: aceptada.correo, contrasena }, { superficie: destino.superficie });
     // La contraseña se acaba de guardar: un rechazo aquí solo puede ser el tope de intentos.
     if (entrada.tipo === "rechazo") {
-      return { tipo: "invalido", mensaje: "La contraseña quedó guardada. Entra para registrar el segundo factor." };
+      return {
+        tipo: "invalido",
+        titulo: "La contraseña quedó guardada",
+        mensaje: "Entra con tu correo para registrar el segundo factor.",
+        deLaContrasena: false,
+      };
     }
     const jar = await cookies();
     jar.set(destino.cookieEntrada, entrada.cookie.valor, {
@@ -47,7 +40,7 @@ export async function enviarAceptacion(_previo: EstadoInvitacion, formData: Form
     redirect(destino.ruta);
   } catch (error) {
     if (error instanceof ErrorDeDominio) {
-      return { tipo: "invalido", mensaje: MENSAJES[error.codigo] ?? "No se pudo aceptar. Vuelve a intentar." };
+      return rechazoDeInvitacion(error.codigo);
     }
     throw error;
   }
