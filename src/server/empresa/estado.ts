@@ -1,10 +1,8 @@
-import type { Capacidad } from "../../nucleo/capacidades";
-
 /**
  * El guardia del estado de la empresa en la consola. Una empresa suspendida (75ª fr. I de las
  * disposiciones del art. 124 LACP: se suspende todo acto, operación o servicio) conserva sus
- * sesiones, pero solo para consultar: de sus capacidades quedan las de ver. La base rechaza de
- * todos modos cualquier escritura con el trigger `bloqueo_empresa_suspendida` (0028).
+ * sesiones y sus roles para consultar. Cualquier escritura la rechaza la base con el trigger
+ * `bloqueo_empresa_suspendida` (0028) y la pantalla muestra el mensaje propio de la suspensión.
  */
 export function empresaSuspendida(empresa: { estado: string } | null | undefined): boolean {
   return empresa?.estado === "suspendida";
@@ -13,9 +11,4 @@ export function empresaSuspendida(empresa: { estado: string } | null | undefined
 /** Los roles de la membresía cuentan si la empresa está activa o suspendida; en cualquier otro estado, no. */
 export function membresiaConRoles(estado: string | null | undefined): boolean {
   return estado === "activa" || estado === "suspendida";
-}
-
-/** Con la empresa suspendida, solo las capacidades de consulta (`*.ver`). */
-export function capacidadesSegunEstado<C extends Capacidad>(estado: string | null | undefined, capacidades: readonly C[]): C[] {
-  return estado === "suspendida" ? capacidades.filter((capacidad) => capacidad.endsWith(".ver")) : [...capacidades];
 }

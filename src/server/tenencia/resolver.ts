@@ -9,7 +9,7 @@ import {
 import type { ContextoDeTenant, EmpresaDelContexto } from "../../nucleo/contexto";
 import { conContexto } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
-import { capacidadesSegunEstado, membresiaConRoles } from "../empresa/estado";
+import { membresiaConRoles } from "../empresa/estado";
 import type { Sesion } from "../session/tipos";
 
 export type MembresiaLeida = EmpresaDelContexto & { roles: RolCliente[] };
@@ -102,7 +102,7 @@ export async function resolverContexto(
         razonSocial: m.razonSocial,
         roles: membresiaConRoles(m.estado) ? [...m.roles] : [],
       })),
-      capacidades: capacidadesSegunEstado(elegida?.estado, capacidadesDe({ rolesCliente, rolesPlataforma })),
+      capacidades: capacidadesDe({ rolesCliente, rolesPlataforma }),
     },
   };
 }

@@ -126,6 +126,7 @@ export type CodigoFinanzas =
   | "sin_membresia"
   | "rol_existente"
   | "ultimo_rol"
+  | "empresa_suspendida"
   | "libro";
 
 export const MENSAJE_FINANZAS: Record<CodigoFinanzas, { titulo: string; texto: string }> = {
@@ -149,6 +150,10 @@ export const MENSAJE_FINANZAS: Record<CodigoFinanzas, { titulo: string; texto: s
   ultimo_rol: {
     titulo: "No se quitó",
     texto: "Finanzas es su único rol y nadie queda sin rol. Dale primero su rol de trabajo.",
+  },
+  empresa_suspendida: {
+    titulo: "La empresa está suspendida",
+    texto: "El acceso no cambia mientras la empresa esté suspendida. Comunícate con Lever.",
   },
   libro: { titulo: "No se guardó", texto: "No se pudo confirmar el cambio. Vuelve a intentar." },
 };

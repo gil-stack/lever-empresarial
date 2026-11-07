@@ -42,6 +42,16 @@
   margin: 0;
 }
 
+/* La cabeza va sobre la escena, no sobre una hoja: la insignia lleva el panel debajo para que «Suspendida» se lea en los tres temas. */
+.operacion-ficha-cabeza .insignia {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  -webkit-backdrop-filter: blur(30px) saturate(115%);
+  backdrop-filter: blur(30px) saturate(115%);
+}
+
 /* Lista con filete dentro de una hoja: historial, entregas, alertas. */
 .operacion-lista {
   margin: 0;

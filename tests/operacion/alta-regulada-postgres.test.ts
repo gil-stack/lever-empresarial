@@ -370,6 +370,10 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           ), 1);
           const bandeja = await leerBandejaCumplimiento(cum);
           assert.ok(bandeja.coincidencias.some((k) => k.id === mario.id && k.plazoReporteHasta !== null));
+          // La bandeja dice por qué coincidió: Cumplimiento decide sin abrir otra pantalla.
+          assert.equal(bandeja.coincidencias.find((k) => k.id === pedro.id)?.coincidePor, "nombre");
+          assert.notEqual(bandeja.coincidencias.find((k) => k.id === mario.id)?.coincidePor, "nombre");
+          assert.ok(bandeja.coincidencias.find((k) => k.id === pedro.id)?.nombreEnLista);
 
           // El nombre solo nunca se descarta solo: lo revisa Cumplimiento con motivo.
           await assert.rejects(resolverCoincidencia(ori, SESION_SOFIPO, { id: pedro.id, estado: "falso_positivo", motivo: "x" }), /sin_permiso_operacion/);

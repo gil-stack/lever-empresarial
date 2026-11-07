@@ -9,6 +9,7 @@ export type BandejaCumplimiento = {
   coincidencias: Array<{
     id: string; companyId: string; razonSocial: string; sujetoTipo: string; sujetoNombre: string; tipo: "exacta" | "posible";
     estado: "pendiente" | "confirmada"; plazoReporteHasta: Date | null; vencido: boolean;
+    coincidePor: "rfc" | "curp" | "nombre"; nombreEnLista: string | null; lista: "lpb" | "69b";
   }>;
   revisiones: Array<{ companyId: string; razonSocial: string; grado: Grado; revisarAntesDe: string; vencida: boolean }>;
   sinCalificar: Array<{ companyId: string; razonSocial: string; numero: number }>;
@@ -31,8 +32,10 @@ export async function leerBandejaCumplimiento(ctx: ContextoDePersonal, opciones:
       [],
     );
     const coincidencias = await consulta.query(
-      `select k.id, k.company_id, c.razon_social, k.sujeto_tipo, k.sujeto_nombre, k.tipo, k.estado, k.plazo_reporte_hasta
+      `select k.id, k.company_id, c.razon_social, k.sujeto_tipo, k.sujeto_nombre, k.tipo, k.estado, k.plazo_reporte_hasta,
+              k.coincide_por, k.lista, p.nombre as nombre_en_lista
        from lpb_coincidencias k join companies c on c.id = k.company_id
+       left join lpb_personas p on p.id = k.lpb_persona_id
        where k.estado = 'pendiente' or (k.estado = 'confirmada' and k.reporte_folio is null)
        order by k.plazo_reporte_hasta nulls last, k.detectada_en`,
       [],
@@ -74,6 +77,9 @@ export async function leerBandejaCumplimiento(ctx: ContextoDePersonal, opciones:
           estado: fila.estado === "confirmada" ? "confirmada" : "pendiente",
           plazoReporteHasta: plazo,
           vencido: plazo !== null && plazo.getTime() < ahora.getTime(),
+          coincidePor: fila.coincide_por === "curp" ? "curp" : fila.coincide_por === "nombre" ? "nombre" : "rfc",
+          nombreEnLista: typeof fila.nombre_en_lista === "string" ? fila.nombre_en_lista : null,
+          lista: fila.lista === "69b" ? "69b" : "lpb",
         };
       }),
       revisiones: (revisiones.rows as Array<Record<string, unknown>>)
