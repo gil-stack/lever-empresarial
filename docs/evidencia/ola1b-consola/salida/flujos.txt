@@ -1,5 +1,6 @@
 OK    flujo 1: el botón se desactiva y dice «Enviando…» con aria-busy · [{"disabled":true,"busy":"true","texto":"Enviando…"},{"disabled":false,"busy":null,"texto":"Dar de alta"}]
 OK    flujo 1: doble clic deja un proveedor, una CLABE y un asiento · proveedores=1 clabes=1 bitácora=1
+OK    flujo 1: con «Sin área» el proveedor queda sin área · sin_area=1
 OK    flujo 1: sin errores de consola
 OK    flujo 2: el botón se desactiva con aria-busy mientras se guarda · [{"disabled":true,"busy":"true","texto":"Enviando…"},{"disabled":true,"busy":null,"texto":"Revisar y solicitar"}]
 OK    flujo 2: doble clic deja una cuenta por pagar, una solicitud y sus dos archivos (XML y PDF) · cargos=1 solicitudes=1 documentos=2
@@ -20,12 +21,12 @@ OK    flujo 4: sin motivo no se cancela
 OK    flujo 4: «Confirmar cancelación» se desactiva y dice «Enviando…» · [{"disabled":true,"busy":"true","texto":"Enviando…"}]
 OK    flujo 4: doble clic deja una sola cancelación con su motivo · cancelaciones=1 motivo=Se reprograma con el proveedor
 OK    flujo 4: sin errores de consola (cancelación)
-OK    flujo 11: «Crea la primera área» aparece y «Crear área» lleva a su pantalla · /c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/personas/areas
+OK    flujo 11: «Crea la primera área» aparece y «Crear área» lleva a su pantalla · /c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/personas/areas
 OK    flujo 5: tras el error, el presupuesto escrito sigue en el campo · valor=ciento cincuenta mil
 OK    flujo 5: el error del presupuesto queda ligado a su campo · aria-describedby=centroPresupuesto-pista centroPresupuesto-error
 OK    flujo 5: «Crear área» se desactiva y dice «Guardando…» · [{"disabled":true,"busy":"true","texto":"Guardando…"},{"disabled":false,"busy":null,"texto":"Crear área"}]
 OK    flujo 5: doble clic deja una sola área · áreas=1
-OK    flujo 11: «Da de alta al primer colaborador» aparece y «Dar de alta» lleva a su pantalla · /c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/personas/nueva
+OK    flujo 11: «Da de alta al primer colaborador» aparece y «Dar de alta» lleva a su pantalla · /c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/personas/nueva
 OK    flujo 5: «Dar de alta colaborador» se desactiva y dice «Guardando expediente…» · [{"disabled":true,"busy":"true","texto":"Guardando expediente…"},{"disabled":false,"busy":null,"texto":"Dar de alta colaborador"}]
 OK    flujo 5: doble clic deja una persona, una nómina y un asiento de alta · personas=1 nóminas=1 altas=1
 OK    flujo 5: sin errores de consola
@@ -34,7 +35,7 @@ OK    flujo 6: sin errores de consola (rechazo)
 OK    flujo 6: «Cambiar CLABE de nómina» se desactiva y dice «Guardando…» · [{"disabled":true,"busy":"true","texto":"Guardando…"},{"disabled":false,"busy":null,"texto":"Cambiar CLABE de nómina"}]
 OK    flujo 6: tras volver a entrar, doble clic deja un solo cambio y la anterior en el historial · vigente=014180655012345674 historial=2 cambios=1
 OK    flujo 6: sin errores de consola (cambio)
-OK    flujo 11: «^Prepara el lote de nómina del » aparece y «Preparar nómina» lleva a su pantalla · /c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/personas/nomina
+OK    flujo 11: «^Prepara el lote de nómina del » aparece y «Preparar nómina» lleva a su pantalla · /c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/personas/nomina
 OK    flujo 7: «Preparar nómina» se desactiva y dice «Preparando…» · [{"disabled":true,"busy":"true","texto":"Preparando…"},{"disabled":true,"busy":null,"texto":"Preparar nómina vencida"}]
 OK    flujo 7: doble clic deja un solo lote con su renglón · lotes=1 renglones=1 total=1250000
 OK    flujo 7: sin errores de consola
@@ -57,12 +58,33 @@ OK    flujo 10: «Póliza» abre su pantalla con un solo h1 · /c/33333333-3333-
 OK    flujo 10: «Apariencia» abre su pantalla con un solo h1 · /c/33333333-3333-4333-8333-333333333333/consola/apariencia
 OK    flujo 10: «Seguridad» abre su pantalla con un solo h1 · /entrar/seguridad
 OK    flujo 10: sin errores de consola
-OK    flujo 11: «^Falta(n)? (una|dos) personas? autorizadas? para liberar» aparece y «Revisar accesos» lleva a su pantalla · /c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/personas
-OK    flujo 11: «Crea la primera categoría» aparece y «Configurar política» lleva a su pantalla · /c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/politica
-OK    flujo 11: «Registra el primer proveedor» aparece y «Configurar proveedores» lleva a su pantalla · /c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/proveedores
-OK    flujo 11: «Revisa el plan de esta empresa» aparece y «Ver plan» lleva a su pantalla · /c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/configuracion/plan
+OK    flujo 11: «^Falta(n)? (una|dos) personas? autorizadas? para liberar» aparece y «Revisar accesos» lleva a su pantalla · /c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/personas
+OK    flujo 11: «Crea la primera categoría» aparece y «Configurar política» lleva a su pantalla · /c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/politica
+OK    flujo 11: «Registra el primer proveedor» aparece y «Configurar proveedores» lleva a su pantalla · /c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/proveedores
+OK    flujo 11: «Revisa el plan de esta empresa» aparece y «Ver plan» lleva a su pantalla · /c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/configuracion/plan
 OK    flujo 11: sin errores de consola (Altamar)
 OK    flujo 11: «categorías? sin tope escrito» aparece y «Revisar topes» lleva a su pantalla · /c/33333333-3333-4333-8333-333333333333/consola/politica
 OK    flujo 11: sin errores de consola (Taller)
+OK    flujo 11 oscuro 1440: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos · El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos
+OK    flujo 11 oscuro 1440: Inicio muestra las alertas de faltante y de presupuesto · Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveed | Un presupuesto pide atención Área Operación: excedido ($80,166.67 de $80,000.00)
+OK    flujo 11 oscuro 1440: sin errores de consola en Pendientes, Presupuestos e Inicio
+OK    flujo 11 oscuro 390: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos · El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos
+OK    flujo 11 oscuro 390: Inicio muestra las alertas de faltante y de presupuesto · Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveed | Un presupuesto pide atención Área Operación: excedido ($80,166.67 de $80,000.00)
+OK    flujo 11 oscuro 390: sin errores de consola en Pendientes, Presupuestos e Inicio
+OK    flujo 11 claro 1440: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos · El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos
+OK    flujo 11 claro 1440: Inicio muestra las alertas de faltante y de presupuesto · Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveed | Un presupuesto pide atención Área Operación: excedido ($80,166.67 de $80,000.00)
+OK    flujo 11 claro 1440: sin errores de consola en Pendientes, Presupuestos e Inicio
+OK    flujo 11 claro 390: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos · El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos
+OK    flujo 11 claro 390: Inicio muestra las alertas de faltante y de presupuesto · Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveed | Un presupuesto pide atención Área Operación: excedido ($80,166.67 de $80,000.00)
+OK    flujo 11 claro 390: sin errores de consola en Pendientes, Presupuestos e Inicio
+OK    flujo 11 lever 1440: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos · El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos
+OK    flujo 11 lever 1440: Inicio muestra las alertas de faltante y de presupuesto · Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveed | Un presupuesto pide atención Área Operación: excedido ($80,166.67 de $80,000.00)
+OK    flujo 11 lever 1440: sin errores de consola en Pendientes, Presupuestos e Inicio
+OK    flujo 11 lever 390: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos · El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos
+OK    flujo 11 lever 390: Inicio muestra las alertas de faltante y de presupuesto · Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveed | Un presupuesto pide atención Área Operación: excedido ($80,166.67 de $80,000.00)
+OK    flujo 11 lever 390: sin errores de consola en Pendientes, Presupuestos e Inicio
+OK    flujo 12: el botón se desactiva y dice «Enviando…» con aria-busy · [{"disabled":true,"busy":"true","texto":"Enviando…"},{"disabled":false,"busy":null,"texto":"Dar de alta"}]
+OK    flujo 12: doble clic deja un proveedor con el área Operación y un asiento que la nombra · proveedores=1 área=Operación bitácora=1
+OK    flujo 12: sin errores de consola
 
-66 de 66 comprobaciones en verde.
+88 de 88 comprobaciones en verde.

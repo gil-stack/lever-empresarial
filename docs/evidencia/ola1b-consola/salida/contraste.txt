@@ -1,8 +1,8 @@
-OK    contraste oscuro 1440: 1121 textos, mínimo 4.95
-OK    contraste oscuro 390: 517 textos, mínimo 6.12
-OK    contraste claro 1440: 1121 textos, mínimo 4.53
-OK    contraste claro 390: 517 textos, mínimo 4.61
-OK    contraste lever 1440: 1121 textos, mínimo 4.86
-OK    contraste lever 390: 517 textos, mínimo 5.39
+OK    contraste oscuro 1440: 1253 textos, mínimo 4.95
+OK    contraste oscuro 390: 521 textos, mínimo 6.12
+OK    contraste claro 1440: 1253 textos, mínimo 4.53
+OK    contraste claro 390: 521 textos, mínimo 4.61
+OK    contraste lever 1440: 1253 textos, mínimo 4.86
+OK    contraste lever 390: 521 textos, mínimo 5.39
 
 6 de 6 comprobaciones en verde.

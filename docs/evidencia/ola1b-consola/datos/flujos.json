@@ -11,6 +11,11 @@
   },
   {
     "ok": true,
+    "texto": "flujo 1: con «Sin área» el proveedor queda sin área",
+    "detalle": "sin_area=1"
+  },
+  {
+    "ok": true,
     "texto": "flujo 1: sin errores de consola",
     "detalle": ""
   },
@@ -112,7 +117,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «Crea la primera área» aparece y «Crear área» lleva a su pantalla",
-    "detalle": "/c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/personas/areas"
+    "detalle": "/c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/personas/areas"
   },
   {
     "ok": true,
@@ -137,7 +142,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «Da de alta al primer colaborador» aparece y «Dar de alta» lleva a su pantalla",
-    "detalle": "/c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/personas/nueva"
+    "detalle": "/c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/personas/nueva"
   },
   {
     "ok": true,
@@ -182,7 +187,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «^Prepara el lote de nómina del » aparece y «Preparar nómina» lleva a su pantalla",
-    "detalle": "/c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/personas/nomina"
+    "detalle": "/c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/personas/nomina"
   },
   {
     "ok": true,
@@ -297,22 +302,22 @@
   {
     "ok": true,
     "texto": "flujo 11: «^Falta(n)? (una|dos) personas? autorizadas? para liberar» aparece y «Revisar accesos» lleva a su pantalla",
-    "detalle": "/c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/personas"
+    "detalle": "/c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/personas"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Crea la primera categoría» aparece y «Configurar política» lleva a su pantalla",
-    "detalle": "/c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/politica"
+    "detalle": "/c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/politica"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Registra el primer proveedor» aparece y «Configurar proveedores» lleva a su pantalla",
-    "detalle": "/c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/proveedores"
+    "detalle": "/c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/proveedores"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Revisa el plan de esta empresa» aparece y «Ver plan» lleva a su pantalla",
-    "detalle": "/c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/configuracion/plan"
+    "detalle": "/c/b33880a2-ae0c-445d-9385-283ec5c183d1/consola/configuracion/plan"
   },
   {
     "ok": true,
@@ -327,6 +332,111 @@
   {
     "ok": true,
     "texto": "flujo 11: sin errores de consola (Taller)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 oscuro 1440: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos",
+    "detalle": "El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 oscuro 1440: Inicio muestra las alertas de faltante y de presupuesto",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveed | Un presupuesto pide atención Área Operación: excedido ($80,166.67 de $80,000.00)"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 oscuro 1440: sin errores de consola en Pendientes, Presupuestos e Inicio",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 oscuro 390: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos",
+    "detalle": "El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 oscuro 390: Inicio muestra las alertas de faltante y de presupuesto",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveed | Un presupuesto pide atención Área Operación: excedido ($80,166.67 de $80,000.00)"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 oscuro 390: sin errores de consola en Pendientes, Presupuestos e Inicio",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 claro 1440: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos",
+    "detalle": "El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 claro 1440: Inicio muestra las alertas de faltante y de presupuesto",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveed | Un presupuesto pide atención Área Operación: excedido ($80,166.67 de $80,000.00)"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 claro 1440: sin errores de consola en Pendientes, Presupuestos e Inicio",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 claro 390: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos",
+    "detalle": "El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 claro 390: Inicio muestra las alertas de faltante y de presupuesto",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveed | Un presupuesto pide atención Área Operación: excedido ($80,166.67 de $80,000.00)"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 claro 390: sin errores de consola en Pendientes, Presupuestos e Inicio",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 lever 1440: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos",
+    "detalle": "El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 lever 1440: Inicio muestra las alertas de faltante y de presupuesto",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveed | Un presupuesto pide atención Área Operación: excedido ($80,166.67 de $80,000.00)"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 lever 1440: sin errores de consola en Pendientes, Presupuestos e Inicio",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 lever 390: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos",
+    "detalle": "El presupuesto del área Operación está excedido Lleva $80,166.67 de $80,000.00 este mes, con lo comprometido en la plataforma. Ver presupuestos → /c/33333333-3333-4333-8333-333333333333/consola/presupuestos"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 lever 390: Inicio muestra las alertas de faltante y de presupuesto",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveed | Un presupuesto pide atención Área Operación: excedido ($80,166.67 de $80,000.00)"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 lever 390: sin errores de consola en Pendientes, Presupuestos e Inicio",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 12: el botón se desactiva y dice «Enviando…» con aria-busy",
+    "detalle": "[{\"disabled\":true,\"busy\":\"true\",\"texto\":\"Enviando…\"},{\"disabled\":false,\"busy\":null,\"texto\":\"Dar de alta\"}]"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 12: doble clic deja un proveedor con el área Operación y un asiento que la nombra",
+    "detalle": "proveedores=1 área=Operación bitácora=1"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 12: sin errores de consola",
     "detalle": ""
   }
 ]
