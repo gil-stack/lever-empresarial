@@ -945,6 +945,84 @@
   letter-spacing: -0.03em;
 }
 
+
+/* Piezas sueltas de los módulos */
+.demo-separado {
+  margin-top: 18px;
+}
+
+.demo-intro {
+  max-width: 640px;
+  color: var(--tx);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.demo-etiqueta-campo {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--tx3);
+  font-size: 12px;
+}
+
+.demo-voltear {
+  display: inline-flex;
+  transform: rotate(90deg);
+}
+
+.demo-selector {
+  height: 36px;
+  padding: 0 34px 0 14px;
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  background: none;
+  color: var(--tx);
+  font: inherit;
+  font-size: 13px;
+}
+
+.demo-limites {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.demo-limites .campo {
+  margin: 0;
+}
+
+.modulo-diseno .tabla tr.demo-fila-grupo th,
+.modulo-diseno .tabla tr.demo-fila-grupo td {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background: color-mix(in srgb, var(--tx) 3%, transparent);
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.modulo-diseno .tabla tr.demo-fila-grupo td.derecha {
+  text-align: right;
+}
+
+.demo-alerta-carga {
+  display: flex;
+  white-space: normal;
+}
+
+.demo-alerta-carga + .demo-alerta-carga {
+  margin-top: 4px;
+}
+
+.demo-mapa .demo-ciudad {
+  font-size: 5.5px;
+  letter-spacing: 0;
+}
+
+.modulo-diseno .tabla td b {
+  font-weight: 500;
+}
+
 @media (max-width: 1180px) {
   .demo-g21,
   .demo-g3 {

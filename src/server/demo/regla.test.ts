@@ -6,16 +6,8 @@ import { describe, it } from "node:test";
 import { DATOS_DEMO } from "../../dominio/demo";
 import { COMPRAS_DE_OCTUBRE } from "../../dominio/demo/movimientos";
 import { MODULOS_DEMO, PRODUCTOS } from "../../dominio/demo/productos";
+import { CIFRAS_DE_EJEMPLO, NOMBRES_DE_EJEMPLO } from "./centinelas";
 import { cargaDemo } from "./regla";
-
-/** Los nombres de ejemplo del diseño: la empresa, su gente, sus proveedores, comercios y vehículos. */
-export const NOMBRES_DE_EJEMPLO = [
-  "Altamar", "ALO180312AB1", "Daniela Ruiz", "Carlos Méndez", "Ana Torres", "Jorge Salas", "Eduardo",
-  "Pacific Packaging", "Shenzhen Hengtai", "Logística Ibérica", "Northern Fleet", "Servicios Integrales Delta",
-  "Fiesta Inn", "Empaques y Tarimas", "Grupo Comercial Delta", "Mantenimiento Industrial Lerma", "Home Depot",
-  "Office Depot", "Pemex", "Aeroméxico", "Costco", "Amazon", "Sanborns", "Lever Silver", "Grupo Norte",
-  "Expo Monterrey", "NLA-48-21", "Nissan", "Renault", "Google Workspace", "CONTPAQi", "BUK", "Santander", "BBVA",
-] as const;
 
 /** Lo que delata un dato de ejemplo: todo texto con una cifra (montos, folios, CLABE, fechas). */
 function textosDeEjemplo(valor: unknown, salida: Set<string> = new Set()): Set<string> {
@@ -58,7 +50,7 @@ describe("regla del modo demostración", () => {
     for (const modulo of MODULOS_DEMO) {
       const json = JSON.stringify(cargaDemo(REAL, modulo));
       assert.equal(/\d/.test(json), false, `${modulo} lleva un dígito: ${json}`);
-      for (const texto of [...ejemplo, ...NOMBRES_DE_EJEMPLO]) assert.equal(json.includes(texto), false, `${modulo} filtra «${texto}»`);
+      for (const texto of [...ejemplo, ...NOMBRES_DE_EJEMPLO, ...CIFRAS_DE_EJEMPLO]) assert.equal(json.includes(texto), false, `${modulo} filtra «${texto}»`);
     }
   });
 

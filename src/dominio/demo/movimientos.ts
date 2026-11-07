@@ -80,11 +80,14 @@ export const COMPRAS_DE_OCTUBRE: readonly CompraDemo[] = congelar(
 );
 
 /** Los lugares donde se usaron las tarjetas, con su dirección, como el panel «Dónde se usó». */
-export type LugarDemo = { readonly comercio: string; readonly direccion: string; readonly centavos: number; readonly compras: number; readonly x: number; readonly y: number };
+export type LugarDemo = { readonly comercio: string; readonly direccion: string; readonly centavos: number; readonly compras: number; readonly lon: number; readonly lat: number };
+export type PuntoDemo = { readonly nombre: string; readonly lon: number; readonly lat: number };
 
 export type MovimientosDemo = {
   readonly cifras: readonly CifraDemo[];
   readonly lugares: readonly LugarDemo[];
+  /** Los otros lugares del mes, solo como punto en el mapa. */
+  readonly otrosPuntos: readonly PuntoDemo[];
   readonly lugaresResumen: string;
   readonly masLugares: number;
 };
@@ -96,14 +99,19 @@ export const MOVIMIENTOS_DEMO: MovimientosDemo = congelar({
     { rotulo: "IVA acreditable", valor: "$13,381", nota: "De cargos con factura" },
     { rotulo: "Para revisar", valor: "0", nota: "0 sin comprobante · 0 rechazadas" },
   ],
-  // x, y: posición en el mapa esquemático de México (0 a 100), sin teselas externas.
+  // Longitud y latitud de cada lugar para el mapa esquemático (sin teselas externas).
   lugares: [
-    { comercio: "The Home Depot", direccion: "Periférico Sur 4690, Coyoacán, CDMX", centavos: 2244490, compras: 2, x: 57, y: 74 },
-    { comercio: "Office Depot", direccion: "Av. Insurgentes Sur 1235, Benito Juárez, CDMX", centavos: 990350, compras: 2, x: 56.5, y: 72.5 },
-    { comercio: "Pemex · Gasolinera 4512", direccion: "Av. 5 de Febrero 1203, Querétaro, Qro.", centavos: 912000, compras: 5, x: 53, y: 65 },
-    { comercio: "Aeroméxico", direccion: "Aeropuerto Internacional de la Ciudad de México, T2", centavos: 884000, compras: 2, x: 57.5, y: 72 },
-    { comercio: "Costco", direccion: "Blvd. Interlomas 5, Huixquilucan, Méx.", centavos: 873640, compras: 1, x: 55.5, y: 72.5 },
-    { comercio: "Pemex · Gasolinera 0871", direccion: "Autopista México–Querétaro km 42, Tepotzotlán, Méx.", centavos: 828000, compras: 4, x: 55.5, y: 69 },
+    { comercio: "The Home Depot", direccion: "Periférico Sur 4690, Coyoacán, CDMX", centavos: 2244490, compras: 2, lon: -99.19, lat: 19.3 },
+    { comercio: "Office Depot", direccion: "Av. Insurgentes Sur 1235, Benito Juárez, CDMX", centavos: 990350, compras: 2, lon: -99.17, lat: 19.37 },
+    { comercio: "Pemex · Gasolinera 4512", direccion: "Av. 5 de Febrero 1203, Querétaro, Qro.", centavos: 912000, compras: 5, lon: -100.39, lat: 20.59 },
+    { comercio: "Aeroméxico", direccion: "Aeropuerto Internacional de la Ciudad de México, T2", centavos: 884000, compras: 2, lon: -99.07, lat: 19.43 },
+    { comercio: "Costco", direccion: "Blvd. Interlomas 5, Huixquilucan, Méx.", centavos: 873640, compras: 1, lon: -99.27, lat: 19.4 },
+    { comercio: "Pemex · Gasolinera 0871", direccion: "Autopista México–Querétaro km 42, Tepotzotlán, Méx.", centavos: 828000, compras: 4, lon: -99.22, lat: 19.72 },
+  ],
+  otrosPuntos: [
+    { nombre: "San Pedro Garza García", lon: -100.4, lat: 25.66 },
+    { nombre: "Tlaquepaque", lon: -103.31, lat: 20.64 },
+    { nombre: "San Juan del Río", lon: -99.99, lat: 20.39 },
   ],
   lugaresResumen: "15 lugares · 5 compras en línea por $14,868",
   masLugares: 9,
