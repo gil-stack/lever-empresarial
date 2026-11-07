@@ -12,7 +12,10 @@ Las capturas están en WebP, en tres temas (Oscuro, Claro y Lever) y en dos tama
 | `9b5ffb9`, `b882178` | El faltante en Pendientes y la guarda de `recorridos.test.ts` | Pendientes y los 12 flujos; gates. Todo lo reemplaza la corrida de `ec9071e` |
 | `ec9071e` | La ronda final con main integrado (#56 en `7ad4b68`): `reservado` en la nómina de una persona (dominio, correo y tabla de Inicio), Pendientes que se pinta aunque falle el faltante, `consola/error.tsx` con `retry`, `consola-vacia.tsx` sin descargos | Build nuevo y base sembrada de nuevo, con los guiones que luego quedaron en `80612ce`. Corridas completas: `pantallas` (36 pantallas, 1944 de 1944), `contraste` (6 de 6), `cargando`, `tablas`, `barra` y `caida`. En esa primera pasada, `flujos` se detuvo en el 14 y `correo` no encontró destinatarios; los dos se arreglaron en los guiones y se repitieron en la fila siguiente |
 | `80612ce` | Igual a `ec9071e` en `src/`. Cambian solo los guiones de `scripts/evidencia` | Con el build de `ec9071e`: el flujo 14 en dos partes, la repetición completa de `flujos` (169 de 169) y `correo` con Bahía Comercial (4 de 4) |
-| head final | Igual a `ec9071e` en `src/`. Agrega esta evidencia y este README | Gates completos una vez: typecheck, lint, test, security, Postgres local y en UTC, e2e y build. La salida está en el cuerpo del PR |
+| `54e88aa` | Igual a `ec9071e` en `src/`. Agrega la evidencia de las dos filas anteriores | Gates completos: typecheck, lint, test, security, Postgres local y en UTC, e2e y build. Reemplazados por los del head final |
+| `030d809` | Inicio con el resumen caído dice solo «Vuelve a intentar.» (`src/components/inicio/resumen.tsx`), y se borra el código muerto (ver «Código borrado») | typecheck, lint y test (381 de 381) |
+| `12f4cce` | Igual a `030d809` en `src/`. El flujo 14 (A) captura Inicio en los 3 temas a 1440 y a 390 | Build nuevo de `030d809`, base sembrada de nuevo y solo el flujo 14, A y B (33 de 33). El resto de las corridas no se repitió: el código borrado no se pintaba en ninguna ruta |
+| head final | Igual a `030d809` en `src/`. Agrega este README | Gates completos una vez: typecheck, lint, test, security, Postgres local y en UTC, e2e y build. La salida está en el cuerpo del PR |
 
 Toda la carpeta es de `ec9071e` y `80612ce`, menos el flujo 9 con SAT simulado (`09s-*`, `salida/flujos-sat-simulado-*.txt`, `salida/sat-simulado-bitacora.txt`), que es de `73d81c7`. Ese flujo no se repitió porque entre `73d81c7` y `ec9071e` no cambia nada de la carga de la 69-B: `git diff --stat 73d81c7 ec9071e -- src/server/lista-69b src/app/consola/lista-69b src/components/lista-69b scripts/evidencia/ola1b-consola/sat-simulado.mjs` sale vacío.
 
@@ -28,6 +31,7 @@ Toda la carpeta es de `ec9071e` y `80612ce`, menos el flujo 9 con SAT simulado (
 | `caida` | Con Postgres apagado (`pg_ctl stop`), 9 pantallas × 3 temas × 2 tamaños. Cada una responde 200 en su ruta, con un solo `h1` y dentro del marco, dice «No se pudo…», no muestra cifras supuestas y no tiene errores de consola | **216 de 216** | `salida/caida.txt` |
 | `flujos` | Los 11 flujos del brief, el 12 (alta de proveedor con área, de #52), el 13 (nómina de una sola persona en Inicio) y el 14 (faltante que no se puede calcular y error de la consola), clicados con doble clic en cada envío y verificación en la base. El 11 revisa además, en los 3 temas a 1440 y a 390, el faltante y el presupuesto en Pendientes con el clic a su destino, para Gil y para Fernanda, las alertas de Inicio y el caso sin permiso | **169 de 169** | `salida/flujos.txt`, `datos/flujos.json`, `salida/faltante-no-disponible-bitacora.txt` |
 | `correo` | La tarea del lunes (`/tareas/correo-semanal` con `CRON_SECRET`) con el proveedor falso de Resend, sobre una base con Bahía Comercial (ver abajo) | **4 de 4** | `salida/correo.txt`, `datos/correo.json`, `correo/` |
+| `flujos`, solo el 14 | Repetición del flujo 14 (A y B) sobre el build de `030d809`, con Inicio en «Vuelve a intentar.». Reemplaza los renglones del flujo 14 de la corrida completa | **33 de 33** | `salida/flujos-14.txt`, `datos/flujos-14.json` |
 | `flujos` con SAT simulado | Flujo 9 con el camino feliz de la 69-B y la negativa por IP privada (ver abajo) | **5 de 5** y **3 de 3** | `salida/flujos-sat-simulado-*.txt`, `salida/sat-simulado-bitacora.txt` |
 
 Contraste por tema y tamaño (incluye Pendientes con la alerta de faltante e Inicio de administración, de finanzas y sin saldo):
@@ -47,7 +51,7 @@ Contraste por tema y tamaño (incluye Pendientes con la alerta de faltante e Ini
 | --- | --- | --- |
 | `12-inicio-administrador` | Gil (Taller) | Inicio con la proyección: «Nómina semanal (1 persona)» con su monto en los movimientos y en la alerta de faltante |
 | `13-inicio-finanzas` | Fernanda (solo finanzas) | Inicio sin la cifra de la nómina: el renglón dice «Monto reservado» y la alerta, «Nómina (monto reservado)» |
-| `14-inicio-sin-saldo` | Laura (Altamar) | **Inicio sin flujo**: sin saldo declarado, proyección en ceros y los pasos para empezar. `consola-vacia.tsx` no se pinta en ninguna ruta (ver «Componentes huérfanos») |
+| `14-inicio-sin-saldo` | Laura (Altamar) | **Inicio sin flujo**: sin saldo declarado, proyección en ceros y los pasos para empezar. `consola-vacia.tsx` no se pintaba en ninguna ruta y se borró (ver «Código borrado») |
 | `10-pendientes`, `11-pendientes-altamar` | Gil (Taller), Laura (Altamar) | Con pendientes; Taller con la alerta de faltante (nómina desglosada para Gil) y la de presupuesto; Altamar en su puesta en marcha |
 | `20-proveedores-pagos`, `21-proveedores-directorio`, `22-proveedores-agenda` | Gil | Mesa de pagos, directorio y agenda |
 | `23-proveedores-detalle-pago`, `24-proveedores-expediente` | Rosa, Gil | Panel lateral del pago y del expediente. A 390 el detalle se captura desplazado hasta «Rechazar» y «Autorizar para pagar» |
@@ -86,7 +90,7 @@ Cada envío se hizo con **doble clic real** sobre `BotonEnviar`, y la base se co
 | 10. Configuración y plan | Plan, Póliza, Apariencia y Seguridad desde Configuración | Cada una abre con un solo `h1` |
 | 11. Pendientes | Cada tipo de pendiente de Taller y de Altamar, con su acción clicada. Con #52, Gil en los 3 temas a 1440 y a 390: Pendientes muestra el faltante de Taller con «Nómina semanal (1 persona) ($18,500.00)», y «Ver la proyección» lleva a la proyección de Inicio (`/consola#proyeccion-titulo`). Muestra también «El presupuesto del área Operación está excedido» (la nómina de Marta rebasa los $80,000.00 del área), y «Ver presupuestos» lleva a Presupuestos. Inicio muestra las dos alertas. Quien no ve el detalle de la nómina: Fernanda (finanzas, en los 3 temas a 1440 y a 390) ve «Nómina (monto reservado)» y llega a la proyección; una contadora creada en el flujo (Lever 390) ve lo mismo, y «Revisar saldo y alertas» la lleva a `/consola/flujo`. Caso negativo: Rosa (liberadora, sin `cliente.flujo.ver`, Oscuro 1440 y Lever 390) no ve ninguna alerta | Cada acción lleva a la pantalla que lo resuelve; ninguna vista se ensancha y la consola queda limpia (`11-pendiente-faltante-*`, `11-pendiente-sin-faltante-liberadora-*`, `11-pendiente-presupuesto-*`, `11-inicio-alertas-*`) |
 | 13. Nómina de una sola persona en Inicio | Gil y Fernanda abren Inicio en los 3 temas a 1440 y a 390 y despliegan todas las semanas de «Proyección a 13 semanas» | Gil ve «Nómina semanal (1 persona)» con −$18,500.00 y la alerta desglosada. Fernanda ve «· Nómina» con «Monto reservado» y la alerta «Nómina (monto reservado)»; ni los movimientos ni la alerta dicen 18,500 ni «1 persona» (`13-inicio-nomina-*`) |
-| 14 (A). Faltante que no se puede calcular | Con SQL de dueño y su evento `registrar_obligacion` en la misma transacción, dos obligaciones de 9,000,000,000,000,000 centavos en la misma fecha: la suma pasa de `Number.MAX_SAFE_INTEGER` y la proyección lanza. Gil abre Inicio y Pendientes en los 3 temas a 1440 y a 390 | Inicio dice «No se pudo consultar el resumen.» dentro del marco: `conTransaccion` traduce cualquier error y no llega a `consola/error.tsx`. Pendientes se pinta con su bandeja y el aviso «No se pudo calcular si te alcanza el dinero. Revisa Saldo y alertas.», con enlace a `/consola/flujo`, sin errores de consola. El servidor deja 12 líneas `pendientes.faltante_no_disponible` sin datos de la empresa (`salida/faltante-no-disponible-bitacora.txt`). Las obligaciones se desactivan con `desactivar_obligacion` (`14-inicio-calculo-no-disponible-*`, `14-pendientes-faltante-no-disponible-*`) |
+| 14 (A). Faltante que no se puede calcular | Con SQL de dueño y su evento `registrar_obligacion` en la misma transacción, dos obligaciones de 9,000,000,000,000,000 centavos en la misma fecha: la suma pasa de `Number.MAX_SAFE_INTEGER` y la proyección lanza. Gil abre Inicio y Pendientes en los 3 temas a 1440 y a 390 | Inicio dice «No se pudo consultar el resumen.» y «Vuelve a intentar.» dentro del marco, sin «cifras supuestas»: `conTransaccion` traduce cualquier error y no llega a `consola/error.tsx`. Esas 6 capturas son de `12f4cce`. Pendientes se pinta con su bandeja y el aviso «No se pudo calcular si te alcanza el dinero. Revisa Saldo y alertas.», con enlace a `/consola/flujo`, sin errores de consola. El servidor deja 12 líneas `pendientes.faltante_no_disponible` sin datos de la empresa (`salida/faltante-no-disponible-bitacora.txt`). Las obligaciones se desactivan con `desactivar_obligacion` (`14-inicio-calculo-no-disponible-*`, `14-pendientes-faltante-no-disponible-*`) |
 | 14 (B). Error de la consola | Con `error-forzado.mjs` (ver abajo) y su archivo bandera, se declara un saldo centinela de $42,424,242.42 con su evento `declarar_saldo`. Gil abre Inicio en los 3 temas a 1440 y a 390; luego se quita la bandera y se clica «Reintentar» | Inicio cae en `consola/error.tsx`: un solo `h1` «No se pudo abrir esta página.», «Vuelve a intentar» y «Reintentar» a la vista, sin «datos supuestos» y sin la cifra. «Reintentar» vuelve a pedir la página al servidor (`retry`) e Inicio abre con el saldo declarado (`14-error-consola-*`, `14-reintentar-inicio-oscuro-1440`) |
 | 12. Alta de proveedor con área (#52) | «Alta de proveedor», formulario completo eligiendo el área «Operación» y doble clic en «Dar de alta» | 1 proveedor con `cost_center_id` del área Operación y 1 asiento `alta_proveedor` con `cambio.area = 'Operación'` |
 
@@ -110,7 +114,7 @@ El DNS local no resuelve los hosts del SAT: `dig omawww.sat.gob.mx` devuelve `SE
 
 ### Error de la consola (`error-forzado.mjs`)
 
-Ninguna lectura de la base llega a `src/app/consola/error.tsx`. `conTransaccion` (`src/nucleo/db.ts`) traduce cualquier error en `ErrorDeDominio`, y cada página lo pinta dentro del marco: lo muestran `caida` y el flujo 14 (A). Para ver ese límite de error en la aplicación real, el preload `scripts/evidencia/ola1b-consola/error-forzado.mjs` hace que dar formato a 42,424,242 pesos lance mientras exista `ERROR_FORZADO_ARCHIVO`. Esa cifra solo se formatea al pintar Inicio. Sin el archivo no cambia nada, y el preload vive solo en `scripts/evidencia`.
+Ninguna lectura de la base llega a `src/app/consola/error.tsx`. `conTransaccion` (`src/nucleo/db.ts`) traduce cualquier error en `ErrorDeDominio`, y cada página lo pinta dentro del marco: lo muestran `caida` y el flujo 14 (A). Para ver ese límite de error en la aplicación real, el preload `scripts/evidencia/ola1b-consola/error-forzado.mjs` hace que dar formato a 42,424,242 pesos lance mientras exista `ERROR_FORZADO_ARCHIVO`. Esa cifra solo se formatea al pintar Inicio. Sin el archivo no cambia nada, y el preload vive solo en `scripts/evidencia`: `git grep error-forzado -- src` no encuentra nada en el head.
 
 ### Correo del lunes (`correo/`)
 
@@ -132,14 +136,22 @@ La tarea corre con `RESEND_API_KEY` falsa, el proveedor falso `scripts/evidencia
 
 ### Residuo conocido de la nómina de una persona
 
-El renglón y las alertas ya no dicen el monto, pero los totales siguen como estaban, por decisión del líder:
+El renglón y las alertas ya no dicen el monto, pero los totales siguen completos. Es una decisión de Gil: «el monto se puede deducir de los saldos; decisión de Gil del 2026-11-07: ocultar el renglón, saldos completos». Queda así:
 - La columna Salidas de Inicio, en las semanas en que la nómina de una persona es la única salida, vale ese neto (`13-inicio-finanzas-*`: $18,500.00 de la semana del 16 nov en adelante).
 - En el correo, «Sale en 4 semanas» es la suma de esas semanas: $55,500.00, es decir, 3 × $18,500.00.
 - El monto también se puede despejar restando las demás salidas de la semana.
 
-### Componentes huérfanos
+### Código borrado
 
-Mi reestilo no dejó ningún componente sin uso. Un recorrido de importaciones (cierre transitivo, sin contar pruebas) da cuatro huérfanos en `src/components` sobre el head, y los cuatro ya lo eran en `81da672`, la base de la rama: `consola/consola-vacia.tsx`, `consola/relato.ts`, `proveedores/panel.tsx` y `proveedores/pantalla.tsx`. Allí había un quinto, `telefono/telefono-sin-flujo.tsx`, que #56 ya borró. No se borraron; se listan también en el cuerpo del PR. Entre ellos, `src/components/consola/consola-vacia.tsx` no se pinta en ninguna ruta desde `3e996d2`; de todos modos se le quitó el descargo de SPEI, y «emisor» y «participante» quedaron solo donde son verdad.
+El borrado entró en `030d809`, después de las corridas de `ec9071e` y `80612ce`. Ninguna de esas piezas se pintaba en una ruta, así que solo se repitió el flujo 14 (en `12f4cce`) por el cambio de Inicio. Antes de borrar, `git grep` no encontró importaciones ni lecturas con `readFileSync`, salvo las de las pruebas que se indican.
+
+| Qué se borró | Commit que lo dejó sin uso | Pruebas |
+| --- | --- | --- |
+| `src/components/consola/consola-vacia.tsx` y `src/components/consola/relato.ts` (solo lo importaba `consola-vacia.tsx`), con `relato.test.ts` | `3e996d2` «Construye el portal de clientes por rol»: `/consola` dejó de pintar `ConsolaVacia` | Se borra `relato.test.ts` |
+| `src/components/proveedores/pantalla.tsx` y `src/components/proveedores/panel.tsx` (solo lo importaba `pantalla.tsx`) | `a39d647` «feat: construye cuentas por pagar de proveedores»: `/consola/proveedores` dejó de pintar `PantallaProveedores`, que había entrado en `3a19a92` | `clabe-proveedor.test.ts` y `proveedores.test.ts` pierden solo la lectura de esos archivos |
+| La función `Maestro` de `src/components/personas/maestro.tsx`; queda `MaestroCerrado` | `9fe315e` «Convierte Personas en expediente laboral y nómina»: `/consola/personas` dejó de pintar `Maestro` | `servicio.test.ts` pierde solo la búsqueda de `FRASE_CONTADOR`, que solo estaba en `Maestro` |
+
+Los tres commits ya están en main. Al borrar `Maestro` quedaron sin uso en el producto `FormularioCentro` y `FormularioPersona` de `src/components/personas/formularios.tsx`, y `FRASE_SIN_DISPERSION` de `src/dominio/personas.ts`, que solo usa su prueba. No se borraron en esta ronda.
 
 ## Comparación con el diseño
 
@@ -213,7 +225,7 @@ Cada comparación pone tres paneles en Oscuro a 1440: el diseño de los socios, 
 
    Para la corrida negativa se repite con `SAT_SIMULADO_IP=10.0.0.5` y `SAT_SIMULADO=ip-privada`.
 
-7. **Flujo 14.** El servidor arranca además con `--import=./scripts/evidencia/ola1b-consola/error-forzado.mjs` y `ERROR_FORZADO_ARCHIVO=<fuera del repositorio>/error-forzado`. La misma variable se le pasa al guion, que crea y borra el archivo. Sin el archivo, el preload no cambia nada; por eso los flujos 1 a 14 corren juntos sobre ese servidor.
+7. **Flujo 14.** El servidor arranca además con `--import=./scripts/evidencia/ola1b-consola/error-forzado.mjs` y `ERROR_FORZADO_ARCHIVO=<fuera del repositorio>/error-forzado`. La misma variable se le pasa al guion, que crea y borra el archivo. Sin el archivo, el preload no cambia nada; por eso los flujos 1 a 14 corren juntos sobre ese servidor. Para repetir solo el 14, sobre una base recién sembrada: `FLUJOS=14 SUFIJO=-14 node scripts/evidencia/ola1b-consola.mjs flujos`.
 
 8. **Correo del lunes.** Se vuelve al paso 2 con `CORREO_SEMANAL=1`. Luego se arranca el servidor con `RESEND_API_KEY=re_falso_local`, `CORREO_REMITENTE="Lever <avisos@lever.test>"`, `CRON_SECRET` y `CORREO_FALSO_ARCHIVO` (los dos fuera del repositorio), y con `--import=./scripts/evidencia/flujo-de-caja-correo-falso.mjs`:
 
