@@ -789,7 +789,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
           await p.goto(`${BASE}${TALLER}/consola`);
           await p.getByRole("heading", { level: 1, name: "No se pudo consultar el resumen." }).waitFor({ timeout: 20000 });
           const marcoInicio = await p.locator(".barra-superior").isVisible();
-          if (ancho === 1440 || tema === "oscuro") await foto(p, `14-inicio-calculo-no-disponible-${tema}-${ancho}`);
+          await foto(p, `14-inicio-calculo-no-disponible-${tema}-${ancho}`);
           const cuerpoInicio = (await p.locator("main").first().innerText()).replace(/\s+/g, " ");
           anotar(marcoInicio && (await p.locator("h1").count()) === 1 && /Vuelve a intentar\./.test(cuerpoInicio) && !/supuest/i.test(cuerpoInicio), `flujo 14 ${vista}: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» y «Vuelve a intentar.» dentro del marco, sin «cifras supuestas» (no cae en consola/error.tsx)`, cuerpoInicio.slice(0, 160));
           const antes = errores.length;
