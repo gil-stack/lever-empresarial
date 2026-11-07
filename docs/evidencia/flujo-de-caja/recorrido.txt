@@ -18,7 +18,8 @@ OK el doble clic manda 1 acción(es) de servidor (se espera 1)
 OK doble clic en «Declarar el saldo»: mientras se envía dice «Enviando…», queda desactivado y con aria-busy
 OK segunda declaración: $150,000.00 al día de hoy, asentada (doble clic)
 OK el mismo envío repetido byte por byte (mismo id del formulario) responde igual: «El saldo quedó declarado»
-OK el formulario mandó su id (UUID 58853791-544f-450d-a788-daadc7d94491) y la página ya trae otro (7e5d490d-53f1-469d-b9d5-4bdaf53303a4) para la siguiente declaración
+OK el mismo formulario reenviado con otro saldo ($150,001.00) se rechaza: «Este formulario ya se envió con otros datos. Recarga la página para capturar uno nuevo.»
+OK el formulario mandó su id (UUID b99beea6-c8a6-40a2-9385-9a3c8481a882) y la página ya trae otro (67e2c525-4c84-46cf-b60c-f2c68b901b07) para la siguiente declaración
 OK el historial conserva las dos: $150,000.00 y $120,000.00
 OK la base tiene 2 declaraciones (append-only): cada doble clic y el reenvío idéntico dejaron una sola
 OK y 2 eventos declarar_saldo en la bitácora
@@ -29,25 +30,35 @@ OK y aclara que no es un saldo confirmado por el banco
 
 (c) Proyección de 13 semanas contra el cálculo a mano
 OK 13 semanas de lunes a domingo
-OK semana del 2026-11-02: inicial $150,000.00, entra $0.00, sale $0.00, final $150,000.00
-OK semana del 2026-11-09: inicial $150,000.00, entra $0.00, sale $55,000.00, final $95,000.00
-OK semana del 2026-11-16: inicial $95,000.00, entra $0.00, sale $45,000.00, final $50,000.00
-OK semana del 2026-11-23: inicial $50,000.00, entra $60,000.00, sale $0.00, final $110,000.00
-OK semana del 2026-11-30: inicial $110,000.00, entra $0.00, sale $38,000.00, final $72,000.00
-OK semana del 2026-12-07: inicial $72,000.00, entra $0.00, sale $0.00, final $72,000.00
-OK semana del 2026-12-14: inicial $72,000.00, entra $0.00, sale $48,000.00, final $24,000.00
-OK semana del 2026-12-21: inicial $24,000.00, entra $0.00, sale $0.00, final $24,000.00
-OK semana del 2026-12-28: inicial $24,000.00, entra $0.00, sale $38,000.00, final $-14,000.00
-OK semana del 2027-01-04: inicial $-14,000.00, entra $0.00, sale $0.00, final $-14,000.00
-OK semana del 2027-01-11: inicial $-14,000.00, entra $0.00, sale $18,000.00, final $-32,000.00
-OK semana del 2027-01-18: inicial $-32,000.00, entra $0.00, sale $30,000.00, final $-62,000.00
-OK semana del 2027-01-25: inicial $-62,000.00, entra $0.00, sale $38,000.00, final $-100,000.00
+OK semana del 2026-11-02: inicial $150,000.00, entra $0.00, sale $9,000.00, final $141,000.00
+OK semana del 2026-11-09: inicial $141,000.00, entra $0.00, sale $55,000.00, final $86,000.00
+OK semana del 2026-11-16: inicial $86,000.00, entra $0.00, sale $45,000.00, final $41,000.00
+OK semana del 2026-11-23: inicial $41,000.00, entra $60,000.00, sale $0.00, final $101,000.00
+OK semana del 2026-11-30: inicial $101,000.00, entra $0.00, sale $38,000.00, final $63,000.00
+OK semana del 2026-12-07: inicial $63,000.00, entra $0.00, sale $0.00, final $63,000.00
+OK semana del 2026-12-14: inicial $63,000.00, entra $0.00, sale $48,000.00, final $15,000.00
+OK semana del 2026-12-21: inicial $15,000.00, entra $0.00, sale $0.00, final $15,000.00
+OK semana del 2026-12-28: inicial $15,000.00, entra $0.00, sale $38,000.00, final $-23,000.00
+OK semana del 2027-01-04: inicial $-23,000.00, entra $0.00, sale $0.00, final $-23,000.00
+OK semana del 2027-01-11: inicial $-23,000.00, entra $0.00, sale $18,000.00, final $-41,000.00
+OK semana del 2027-01-18: inicial $-41,000.00, entra $0.00, sale $30,000.00, final $-71,000.00
+OK semana del 2027-01-25: inicial $-71,000.00, entra $0.00, sale $38,000.00, final $-109,000.00
 OK el cargo cancelado TN-498 ($40,000.00) no cuenta
 OK el cobro vencido de Distribuidora Sur no entra en la proyección
 OK captura c-proyeccion-13-semanas.jpg
+OK la base tiene 3 cargos autorizados de antes del saldo (TN-470 $60,000.00 del 2026-10-11, TN-475 $60,000.00 del 2026-10-21, TN-480 $60,000.00 del 2026-10-31): suman $180,000.00, más que el saldo
+OK y PC-70 ($9,000.00 del 2026-10-26) sigue por autorizar
+OK la proyección explica la regla: los autorizados de antes se dan por pagados y los vencidos sin autorizar van en la primera semana
+OK se abre la primera semana (2026-11-02) con un clic
+OK PC-70 aparece en la primera semana con la insignia «Vencido sin autorizar» (26 oct · Publicidad Creativa · PC-70Vencido sin autorizar −$9,000.00)
+OK TN-470 (autorizado) no aparece en ninguna semana: ya está pagado en el saldo declarado
+OK TN-475 (autorizado) no aparece en ninguna semana: ya está pagado en el saldo declarado
+OK TN-480 (autorizado) no aparece en ninguna semana: ya está pagado en el saldo declarado
+OK la primera semana sale $9,000.00 y cierra en $141,000.00: sin los $180,000.00 autorizados que ya se pagaron
+OK captura c2-vencido-sin-autorizar.jpg
 
 (d) Alerta de faltante
-OK la alerta marca la semana del 2026-12-28 (primera con saldo final negativo: $-14,000.00)
+OK la alerta marca la semana del 2026-12-28 (primera con saldo final negativo: $-23,000.00)
 OK y dice qué la provoca: «Nómina mensual (1 persona) ($20,000.00), Nómina quincenal (2 personas) ($18,000.00).…»
 OK captura d1-faltante.jpg
 OK se registra un cobro esperado de $150,000.00 antes del faltante
@@ -56,7 +67,7 @@ OK captura d2-sin-faltante.jpg
 OK se cancela el cobro con su motivo
 OK y la alerta regresa a la misma semana
 OK se guarda un colchón de $30,000.00
-OK con colchón la alerta se adelanta a la semana del 2026-12-14 ($24,000.00 < $30,000.00)
+OK con colchón la alerta se adelanta a la semana del 2026-12-14 ($15,000.00 < $30,000.00)
 OK captura d3-faltante-colchon.jpg
 
 (h) Escenario «¿y si muevo este pago?»
@@ -67,6 +78,11 @@ OK en la base programada_el sigue en 2026-11-12
 OK y la bitácora no tiene eventos nuevos: el escenario no escribe
 OK captura h-escenario.jpg
 OK «Quitar el escenario» regresa a la proyección real
+OK mover PC-70 (vencido, $9,000.00) al 2026-11-16 lo saca de la primera semana y lo suma a la del 2026-11-16
+OK en su semana nueva lleva «Escenario» y ya no «Vencido sin autorizar» (Escenario)
+OK y ya no está en la primera semana
+OK en la base su fecha sigue igual
+OK captura h2-escenario-vencido.jpg
 
 (e) Cobros esperados
 OK «Registrar un cobro» de la barra lleva al formulario
@@ -133,6 +149,10 @@ OK el doble clic manda 1 acción(es) de servidor (se espera 1)
 OK doble clic en «Desactivar»: el botón se ve ocupado
 OK «Desactivar» la saca del calendario y de la proyección (activa = false)
 OK con un solo evento desactivar_obligacion
+OK se registra «Mantenimiento de flotilla» ($30,000.00 al mes) facturada por Transportes del Norte, que el 2026-11-12 trae TN-501 por $25,000.00
+OK el calendario la muestra como «Mantenimiento de flotilla: $5,000.00 restantes (ya hay factura por $25,000.00)»
+OK al clicarla, el detalle dice cuánto ya está facturado ($25,000.00) y que solo cuenta lo que falta ($5,000.00)
+OK captura f3-obligacion-facturada.jpg
 
 (g) Presupuestos
 OK Operación: nómina prorrateada $36,000.00 + Transportes del Norte $25,000.00 + renta $30,000.00 = $91,000.00 de $90,000.00
@@ -160,10 +180,10 @@ OK con otro secreto: 401
 OK con el secreto: 200 {"semana":"2026-11-02","empresas":2,"enviados":2,"omitidos":0,"fallidos":0,"pendientes":0}
 OK el proveedor falso registra 4 correos: bruno@lever.test, diego@lever.test, fernanda@lever.test, laura@lever.test; la empresa de demostración (Diana) no recibe cifras de ejemplo
 OK cada persona que lo recibió queda registrada (4 entregas)
-OK el correo a laura@lever.test no desglosa la nómina de una sola persona
 OK el correo a bruno@lever.test no desglosa la nómina de una sola persona
-OK el correo a fernanda@lever.test no desglosa la nómina de una sola persona
+OK el correo a laura@lever.test no desglosa la nómina de una sola persona
 OK el correo a diego@lever.test no desglosa la nómina de una sola persona
+OK el correo a fernanda@lever.test no desglosa la nómina de una sola persona
 OK la segunda llamada de la semana no manda nada: {"semana":"2026-11-02","empresas":2,"enviados":0,"omitidos":2,"fallidos":0,"pendientes":0}
 OK el proveedor falso no tiene correos nuevos
 OK un envío por empresa y semana, enviado
@@ -176,6 +196,7 @@ OK el correo de Bahía no trae «Mayorista» de Altamar
 OK el correo de Bahía no trae «Operación» de Altamar
 OK Bahía no declaró saldo: su correo explica que sin saldo no se sabe si alcanza e invita a declararlo
 OK ni el de Altamar trae datos de Bahía ni dice «Confirmado por el banco»
+OK el de Altamar no dice «No alcanza»: los $180,000.00 autorizados de antes del saldo ya están pagados en él
 OK captura i-correo-semanal.jpg
 
 (j) Permisos
@@ -292,7 +313,7 @@ OK presupuestos lever 390: 200
 OK presupuestos lever 390: sin desplazamiento horizontal
 OK captura k-presupuestos-lever-390.jpg
 
-226 comprobaciones
+244 comprobaciones
 Consola del navegador: sin errores ni advertencias de la aplicación
 Avisos «GL Driver Message» del fondo WebGL (fuera de zona): 4
 Mensajes esperados en las páginas 404 de (j) (el 404 del documento y la precarga de estilos sin usar): 11

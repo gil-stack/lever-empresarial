@@ -490,6 +490,20 @@ function camposDeCobro(cobro: CobroAlta, personaId: string): CampoDeAlta[] {
   ];
 }
 
+/** La misma factura en otro cobro vivo de la empresa: el rechazo dice en qué estado está. Sin otro cobro vivo, no hace nada. */
+async function rechazarFacturaViva(consulta: Consulta, empresaId: string, cfdiUuid: string): Promise<void> {
+  const previo = await aplicarSentencia(
+    consulta,
+    `select estado from expected_collections
+      where company_id = $1 and cfdi_uuid = $2 and estado <> 'cancelado'
+      limit 1`,
+    [empresaId, cfdiUuid],
+  );
+  const estado = (previo.rows[0] as { estado?: unknown } | undefined)?.estado;
+  if (estado === "cobrado") throw new ErrorDeDominio("cobro_ya_cobrado");
+  if (estado === "esperado") throw new ErrorDeDominio("cobro_duplicado");
+}
+
 async function insertarCobro(
   consulta: Consulta,
   c: ContextoConEmpresa,
@@ -502,12 +516,18 @@ async function insertarCobro(
     `insert into expected_collections
        (id, company_id, origen, cliente_nombre, cliente_rfc, concepto, monto_centavos, fecha_probable, referencia, cfdi_uuid, creado_por)
      values ($1, $2, $3, $4, $5, $6, $7, $8::date, $9, $10, $11)
-     on conflict (id) do nothing
+     on conflict do nothing
      returning id`,
     [id, c.empresa.id, cobro.origen, cobro.clienteNombre, cobro.clienteRfc, cobro.concepto, cobro.montoCentavos,
       cobro.fechaProbable, cobro.referencia, cobro.cfdiUuid, c.persona.id],
   );
-  if (insertado.rows.length === 0) return exigirAltaPropia(consulta, "expected_collections", id, c.empresa.id, camposDeCobro(cobro, c.persona.id));
+  // Sin columna en ON CONFLICT: dos envíos simultáneos del mismo XML chocan con el id o con la factura viva
+  // (índice parcial), según cuál revise primero Postgres. Si no insertó, o es el mismo formulario o es otra alta de esa factura.
+  if (insertado.rows.length === 0) {
+    if (await altaPrevia(consulta, "expected_collections", id, c.empresa.id, camposDeCobro(cobro, c.persona.id))) return;
+    if (cobro.cfdiUuid) await rechazarFacturaViva(consulta, c.empresa.id, cobro.cfdiUuid);
+    throw new ErrorDeDominio("entrada_invalida");
+  }
   await auditar(consulta, actorDeCliente(c), {
     accion: "registrar_cobro",
     identificador: id,
@@ -585,16 +605,7 @@ export async function registrarCobroCfdi(
     // Un segundo envío del mismo formulario ya encuentra su fila: se responde igual (o se rechaza si trae otra factura).
     if (await altaPrevia(consulta, "expected_collections", id, c.empresa.id, camposDeCobro(cobro, c.persona.id))) return;
     // La misma factura en otro cobro vivo: el mensaje dice en qué estado está.
-    const previo = await aplicarSentencia(
-      consulta,
-      `select estado from expected_collections
-        where company_id = $1 and cfdi_uuid = $2 and estado <> 'cancelado'
-        limit 1`,
-      [c.empresa.id, cfdi.uuid],
-    );
-    const estado = (previo.rows[0] as { estado?: unknown } | undefined)?.estado;
-    if (estado === "cobrado") throw new ErrorDeDominio("cobro_ya_cobrado");
-    if (estado === "esperado") throw new ErrorDeDominio("cobro_duplicado");
+    await rechazarFacturaViva(consulta, c.empresa.id, cfdi.uuid);
     await insertarCobro(consulta, c, auditar, id, cobro);
   });
   return { id, cliente: cfdi.nombreReceptor, montoCentavos: cfdi.totalCentavos };

@@ -448,6 +448,20 @@ async function escenario(url: string): Promise<void> {
   await assert.rejects(() => registrarCobroCfdi(admin, { bytes: factura("CCCCCCCC-DDDD-4EEE-8FFF-AAAAAAAAAAAA"), fechaProbable: "2026-11-25", altaId: altaXml }, AHORA), yaEnviado);
   await assert.rejects(() => registrarCobroCfdi(admin, { bytes: factura(uuidFactura), fechaProbable: "2026-11-26", altaId: altaXml }, AHORA), yaEnviado);
   assert.equal(contar(url, `select count(*) from expected_collections where cfdi_uuid = 'CCCCCCCC-DDDD-4EEE-8FFF-AAAAAAAAAAAA'`), 0);
+  // Dos envíos simultáneos del mismo XML chocan con el id o con la factura viva, según cuál revise primero Postgres:
+  // el mismo formulario siempre responde igual; dos formularios distintos dejan uno y el otro dice que ya está registrada.
+  for (let vuelta = 0; vuelta < 12; vuelta++) {
+    const uuid = `DDDDDDDD-0000-4000-8000-${String(vuelta).padStart(12, "0")}`;
+    const alta = randomUUID();
+    const mismos = await Promise.all([0, 1].map(() => registrarCobroCfdi(admin, { bytes: factura(uuid), fechaProbable: "2026-11-25", altaId: alta }, AHORA)));
+    assert.deepEqual(mismos.map((c) => c.id), [alta, alta], `vuelta ${vuelta}`);
+    const otra = `EEEEEEEE-0000-4000-8000-${String(vuelta).padStart(12, "0")}`;
+    const distintos = await Promise.allSettled([0, 1].map(() => registrarCobroCfdi(admin, { bytes: factura(otra), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA)));
+    assert.equal(distintos.filter((r) => r.status === "fulfilled").length, 1, `vuelta ${vuelta}`);
+    const rechazo = distintos.find((r) => r.status === "rejected");
+    assert.ok(rechazo && codigo("cobro_duplicado")(rechazo.reason), `vuelta ${vuelta}: ${String(rechazo?.status === "rejected" ? rechazo.reason : "")}`);
+  }
+  assert.equal(contar(url, "select count(*) from expected_collections where cfdi_uuid like 'DDDDDDDD-%' or cfdi_uuid like 'EEEEEEEE-%'"), 24);
   assert.equal(contar(url, `select count(*) from expected_collections where cfdi_uuid = '${uuidFactura}'`), 1);
   assert.equal(contar(url, `select count(*) from audit_log where accion = 'registrar_cobro' and identificador = '${altaXml}'`), 1);
   await assert.rejects(() => registrarCobroCfdi(admin, { bytes: factura(uuidFactura), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA), codigo("cobro_duplicado"));

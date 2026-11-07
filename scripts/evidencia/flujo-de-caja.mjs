@@ -212,9 +212,18 @@ let ultimaAccion = null;
  * Manda otra vez, byte por byte, la última acción de servidor (un reintento de
  * red o un segundo envío del mismo formulario ya pintado): mismo altaId.
  */
-async function repetirUltimaAccion(pagina) {
+async function repetirUltimaAccion(pagina, cambio = null) {
   if (!ultimaAccion) throw new Error("FALLO no hay acción capturada para repetir");
-  const { url, headers, cuerpo } = ultimaAccion;
+  const { url, headers } = ultimaAccion;
+  let { cuerpo } = ultimaAccion;
+  if (cambio) {
+    // El mismo formulario ya pintado (mismo altaId) con otro valor en un campo: como una pestaña vieja que se reenvía.
+    const [campo, valor] = cambio;
+    const texto = Buffer.from(cuerpo, "base64").toString("latin1");
+    const patron = new RegExp(`(name="(?:_?\\d+_)?${campo}"\r\n\r\n)[^\r]*`);
+    if (!patron.test(texto)) throw new Error(`FALLO la acción capturada no trae el campo ${campo}`);
+    cuerpo = Buffer.from(texto.replace(patron, `$1${valor}`), "latin1").toString("base64");
+  }
   const encabezados = Object.fromEntries(Object.entries(headers).filter(([k]) => ["next-action", "content-type", "accept", "next-router-state-tree"].includes(k)));
   return pagina.evaluate(async ({ url: u, encabezados: h, cuerpo: c }) => {
     const bytes = Uint8Array.from(atob(c), (x) => x.charCodeAt(0));
@@ -249,9 +258,10 @@ async function tablaProyeccion(pagina) {
 /**
  * La proyección hecha a mano con la siembra conocida: series de nómina y renta
  * por sus reglas (quincenal 15 y fin de mes; mensual por su día), los cargos
- * de la siembra sin el cancelado (los de antes del corte, atrasados en la
- * primera semana), y el cobro que no está vencido. Semanas de
- * lunes a domingo. No usa código de la aplicación.
+ * de la siembra sin el cancelado (de los de antes del corte, los autorizados
+ * ya están pagados en el saldo y los no autorizados van vencidos en la primera
+ * semana), y el cobro que no está vencido. Semanas de lunes a domingo. No usa
+ * código de la aplicación.
  */
 function proyeccionAMano(saldo, corte, extras = []) {
   const inicio = lunesDe(HOY);
@@ -274,7 +284,7 @@ function proyeccionAMano(saldo, corte, extras = []) {
   serie("2026-11-15", quincenal, 800_000); // Beto
   serie("2026-11-30", mensual(30), 2_000_000); // Carla
   serie(desplazar(HOY, 14), mensual(Number(desplazar(HOY, 14).slice(8))), 3_000_000); // Renta
-  for (const cargo of Object.values(semillas.cargos)) if (cargo.estado !== "cancelado") movs.push({ fecha: cargo.programada, centavos: -cargo.total, cargo: true });
+  for (const cargo of Object.values(semillas.cargos)) if (cargo.estado !== "cancelado") movs.push({ fecha: cargo.programada, centavos: -cargo.total, cargo: true, estado: cargo.estado });
   movs.push({ fecha: desplazar(HOY, 19), centavos: 6_000_000 }); // Cliente Mayorista; Distribuidora Sur ya venció
   movs.push(...extras);
   const semanas = [];
@@ -282,8 +292,8 @@ function proyeccionAMano(saldo, corte, extras = []) {
   for (let i = 0; i < 13; i += 1) {
     const lunes = desplazar(inicio, i * 7);
     const domingo = desplazar(lunes, 6);
-    // Un cargo sin pagar programado antes del corte sigue debiéndose: va atrasado en la primera semana.
-    const dentro = movs.filter((m) => (i === 0 && m.cargo && m.fecha <= corte) || (m.fecha > corte && m.fecha >= (i === 0 ? "0000-00-00" : lunes) && m.fecha <= domingo));
+    // Hasta el corte, un cargo autorizado ya está en el saldo; uno sin autorizar sigue vencido en la primera semana.
+    const dentro = movs.filter((m) => (i === 0 && m.cargo && m.fecha <= corte && m.estado !== "listo_para_pagar") || (m.fecha > corte && m.fecha >= (i === 0 ? "0000-00-00" : lunes) && m.fecha <= domingo));
     const entradas = dentro.filter((m) => m.centavos > 0).reduce((s, m) => s + m.centavos, 0);
     const salidas = -dentro.filter((m) => m.centavos < 0).reduce((s, m) => s + m.centavos, 0);
     const inicial = saldoCorriente;
@@ -348,6 +358,9 @@ async function principal() {
     exigir((await enviarConDobleClic(forma, "Declarar el saldo")).asentado, "segunda declaración: $150,000.00 al día de hoy, asentada (doble clic)");
     const repetida = await repetirUltimaAccion(laura);
     exigir(repetida.estado === 200 && repetida.texto.includes("El saldo quedó declarado"), "el mismo envío repetido byte por byte (mismo id del formulario) responde igual: «El saldo quedó declarado»");
+    const otrosDatos = await repetirUltimaAccion(laura, ["saldo", "150001.00"]);
+    exigir(otrosDatos.estado === 200 && otrosDatos.texto.includes("Este formulario ya se envió con otros datos") && otrosDatos.texto.includes("Recarga la página para capturar uno nuevo."),
+      "el mismo formulario reenviado con otro saldo ($150,001.00) se rechaza: «Este formulario ya se envió con otros datos. Recarga la página para capturar uno nuevo.»");
     const idEnviado = altaIdDeUltimaAccion();
     const idEnPagina = await forma.locator('input[name="altaId"]').inputValue();
     exigir(/^[0-9a-f-]{36}$/.test(idEnviado ?? "") && idEnPagina !== idEnviado,
@@ -384,6 +397,31 @@ async function principal() {
     exigir(!movimientos.includes("TN-498"), "el cargo cancelado TN-498 ($40,000.00) no cuenta");
     exigir(!movimientos.includes("Distribuidora Sur"), "el cobro vencido de Distribuidora Sur no entra en la proyección");
     await captura(laura, "c-proyeccion-13-semanas.jpg");
+
+    // Cargos de antes del saldo: los autorizados ya están pagados en él; el que nadie autorizó sigue vencido.
+    const viejos = Object.entries(semillas.cargos).filter(([, c]) => c.programada < HOY && c.estado !== "cancelado");
+    const autorizadosViejos = viejos.filter(([, c]) => c.estado === "listo_para_pagar");
+    const [folioVencido, vencido] = viejos.find(([, c]) => c.estado === "por_autorizar");
+    const ids = autorizadosViejos.map(([, c]) => `'${c.id}'`).join(", ");
+    exigir(autorizadosViejos.length === 3 && sql(`select count(*) from supplier_payment_requests where estado = 'listo_para_pagar' and payable_id in (${ids})`) === "3",
+      `la base tiene 3 cargos autorizados de antes del saldo (${autorizadosViejos.map(([f, c]) => `${f} ${pesos(c.total)} del ${c.programada}`).join(", ")}): suman ${pesos(autorizadosViejos.reduce((t, [, c]) => t + c.total, 0))}, más que el saldo`);
+    exigir(sql(`select estado from supplier_payment_requests where payable_id = '${vencido.id}'`) === "por_autorizar", `y ${folioVencido} (${pesos(vencido.total)} del ${vencido.programada}) sigue por autorizar`);
+    const leyenda = await laura.locator("#proyeccion-titulo + p").innerText();
+    exigir(leyenda.includes("ya autorizados se dan por pagados en el saldo declarado") && leyenda.includes("los vencidos sin autorizar van en la primera semana"),
+      "la proyección explica la regla: los autorizados de antes se dan por pagados y los vencidos sin autorizar van en la primera semana");
+    const semana0 = laura.locator(`details[data-movimientos="${lunesDe(HOY)}"]`);
+    await semana0.locator("summary").click();
+    exigir(await semana0.evaluate((d) => d.open), `se abre la primera semana (${lunesDe(HOY)}) con un clic`);
+    const renglonVencido = semana0.locator(`li[data-clave="cxp:${vencido.id}"]`);
+    exigir(await renglonVencido.isVisible() && (await renglonVencido.locator(".insignia").innerText()) === "Vencido sin autorizar",
+      `${folioVencido} aparece en la primera semana con la insignia «Vencido sin autorizar» (${(await renglonVencido.innerText()).replace(/\s+/g, " ").trim()})`);
+    for (const [folio, c] of autorizadosViejos) {
+      exigir((await laura.locator(`.flujo-movimientos li[data-clave="cxp:${c.id}"]`).count()) === 0 && !movimientos.includes(folio), `${folio} (autorizado) no aparece en ninguna semana: ya está pagado en el saldo declarado`);
+    }
+    exigir(tabla[0].salidas === esperado[0].salidas && tabla[0]["saldo-final"] > 0,
+      `la primera semana sale ${pesos(tabla[0].salidas)} y cierra en ${pesos(tabla[0]["saldo-final"])}: sin los $180,000.00 autorizados que ya se pagaron`);
+    await renglonVencido.scrollIntoViewIfNeeded();
+    await captura(laura, "c2-vencido-sin-autorizar.jpg", false);
   }
 
   if (debe("d")) {
@@ -457,6 +495,29 @@ async function principal() {
     await laura.getByRole("link", { name: "Quitar el escenario" }).click();
     await laura.waitForURL((url) => !url.search.includes("mover"));
     exigir((await laura.locator('[data-escenario="activo"]').count()) === 0, "«Quitar el escenario» regresa a la proyección real");
+
+    // El vencido sin autorizar también se mueve: deja la primera semana y cuenta en su fecha nueva, sin la marca.
+    const [folioVencido, vencido] = Object.entries(semillas.cargos).find(([, c]) => c.estado === "por_autorizar" && c.programada < HOY);
+    const destino = desplazar(lunesDe(HOY), 14);
+    const sinMover = await tablaProyeccion(laura);
+    await laura.locator("#mover").selectOption(`cxp:${vencido.id}`);
+    await laura.locator("#fecha-escenario").fill(destino);
+    await laura.getByRole("button", { name: "Ver el escenario" }).click();
+    await laura.locator('[data-escenario="activo"]').waitFor();
+    const conVencido = await tablaProyeccion(laura);
+    exigir(conVencido[0].salidas === sinMover[0].salidas - vencido.total && conVencido[2].salidas === sinMover[2].salidas + vencido.total,
+      `mover ${folioVencido} (vencido, ${pesos(vencido.total)}) al ${destino} lo saca de la primera semana y lo suma a la del ${conVencido[2].semana}`);
+    const semanaDestino = laura.locator(`details[data-movimientos="${lunesDe(destino)}"]`);
+    await semanaDestino.locator("summary").click();
+    const insigniasMovido = await semanaDestino.locator(`li[data-clave="cxp:${vencido.id}"] .insignia`).allInnerTexts();
+    exigir(insigniasMovido.includes("Escenario") && !insigniasMovido.includes("Vencido sin autorizar"),
+      `en su semana nueva lleva «Escenario» y ya no «Vencido sin autorizar» (${insigniasMovido.join(", ")})`);
+    exigir((await laura.locator(`details[data-movimientos="${lunesDe(HOY)}"] li[data-clave="cxp:${vencido.id}"]`).count()) === 0, "y ya no está en la primera semana");
+    exigir(sql(`select programada_el from supplier_payables where id = '${vencido.id}'`) === vencido.programada, "en la base su fecha sigue igual");
+    await semanaDestino.scrollIntoViewIfNeeded();
+    await captura(laura, "h2-escenario-vencido.jpg", false);
+    await laura.getByRole("link", { name: "Quitar el escenario" }).click();
+    await laura.waitForURL((url) => !url.search.includes("mover"));
   }
 
   if (debe("e")) {
@@ -613,6 +674,29 @@ async function principal() {
     await laura.locator(".alerta-asentado", { hasText: "se desactivó" }).waitFor();
     exigir(sql(`select activa from recurring_obligations where concepto = 'Impuestos provisionales'`) === "f", "«Desactivar» la saca del calendario y de la proyección (activa = false)");
     exigir(sql(`select count(*) from audit_log where company_id = '${A}' and accion = 'desactivar_obligacion' and identificador::text in (select id::text from recurring_obligations where concepto = 'Impuestos provisionales')`) === "1", "con un solo evento desactivar_obligacion");
+
+    // Una obligación que factura un proveedor cuenta solo lo que falta después de sus facturas del mes.
+    const tn501 = semillas.cargos["TN-501"];
+    await laura.goto(en(A, `/consola/calendario?mes=${tn501.programada.slice(0, 7)}`));
+    const facturada = laura.locator('form[data-formulario="obligacion"]');
+    await facturada.locator('input[name="concepto"]').fill("Mantenimiento de flotilla");
+    await facturada.locator('input[name="monto"]').fill("30000.00");
+    await facturada.locator('select[name="frecuencia"]').selectOption("mensual");
+    await facturada.locator('input[name="proximaFecha"]').fill(tn501.programada);
+    await facturada.locator('select[name="proveedorId"]').selectOption({ label: "Transportes del Norte" });
+    exigir(await enviar(facturada, "Registrar la obligación"), `se registra «Mantenimiento de flotilla» ($30,000.00 al mes) facturada por Transportes del Norte, que el ${tn501.programada} trae TN-501 por ${pesos(tn501.total)}`);
+    await laura.reload();
+    const eventoFacturado = laura.locator('.flujo-mes button.flujo-evento[data-tipo="obligacion"]', { hasText: "Mantenimiento de flotilla" });
+    const textoFacturado = (await eventoFacturado.innerText()).trim();
+    exigir(textoFacturado === "Mantenimiento de flotilla: $5,000.00 restantes (ya hay factura por $25,000.00)", `el calendario la muestra como «${textoFacturado}»`);
+    await eventoFacturado.click();
+    const panelFacturado = laura.locator("dialog.panel-detalle[open]");
+    await panelFacturado.locator("[data-detalle]").waitFor();
+    const detalleFacturado = await panelFacturado.innerText();
+    exigir(detalleFacturado.includes("Ya facturado este mes") && detalleFacturado.includes("$25,000.00: cuenta en Pagos a proveedores, aquí solo lo que falta") && detalleFacturado.includes("$5,000.00"),
+      "al clicarla, el detalle dice cuánto ya está facturado ($25,000.00) y que solo cuenta lo que falta ($5,000.00)");
+    await captura(laura, "f3-obligacion-facturada.jpg", false);
+    await panelFacturado.getByRole("button").first().click();
   }
 
   if (debe("g")) {
@@ -696,6 +780,7 @@ async function principal() {
     exigir(deB.texto.includes("Sin un saldo declarado no se puede saber si el dinero alcanza") && !deB.texto.includes("alcanza para"),
       "Bahía no declaró saldo: su correo explica que sin saldo no se sabe si alcanza e invita a declararlo");
     exigir(!deA.texto.includes("Bahía") && !deA.texto.includes("Confirmado por el banco"), "ni el de Altamar trae datos de Bahía ni dice «Confirmado por el banco»");
+    exigir(!deA.texto.includes("No alcanza") && !deA.html.includes("No alcanza"), "el de Altamar no dice «No alcanza»: los $180,000.00 autorizados de antes del saldo ya están pagados en él");
     writeFileSync(join(TEMPORAL, "correo-altamar.html"), deA.html);
     const vista = await navegador.newPage({ viewport: { width: 720, height: 900 } });
     await vista.goto(`file://${join(TEMPORAL, "correo-altamar.html")}`);

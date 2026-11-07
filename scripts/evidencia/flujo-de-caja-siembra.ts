@@ -124,11 +124,18 @@ async function principal(): Promise<void> {
     { id: randomUUID(), rfc: "PCR020202BB2", razon: "Publicidad Creativa", area: ventas.id },
     { id: randomUUID(), rfc: "PCE030303CC3", razon: "Papelería Central", area: null as string | null },
   ];
+  const finMesPasado = desplazar(`${hoy.slice(0, 7)}-01`, -1);
   const cargos = [
     { id: randomUUID(), proveedor: 0, folio: "TN-501", total: 2_500_000, emitida: desplazar(hoy, -20), vence: desplazar(hoy, 9), programada: desplazar(hoy, 6), estado: "listo_para_pagar" },
     { id: randomUUID(), proveedor: 1, folio: "PC-77", total: 1_500_000, emitida: desplazar(hoy, -10), vence: desplazar(hoy, 14), programada: desplazar(hoy, 12), estado: "por_autorizar" },
     { id: randomUUID(), proveedor: 2, folio: "PA-12", total: 1_200_000, emitida: desplazar(hoy, -36), vence: desplazar(hoy, -6), programada: desplazar(hoy, 4), estado: null },
     { id: randomUUID(), proveedor: 0, folio: "TN-498", total: 4_000_000, emitida: desplazar(hoy, -15), vence: desplazar(hoy, 10), programada: desplazar(hoy, 7), estado: "cancelado" },
+    // Del mes pasado (antes de cualquier saldo de esta corrida): tres autorizados, que ya están pagados en el saldo
+    // declarado, y uno por autorizar, que sigue vencido. Del mes pasado para no mover los presupuestos del mes.
+    { id: randomUUID(), proveedor: 0, folio: "TN-470", total: 6_000_000, emitida: desplazar(finMesPasado, -40), vence: desplazar(finMesPasado, -20), programada: desplazar(finMesPasado, -20), estado: "listo_para_pagar" },
+    { id: randomUUID(), proveedor: 0, folio: "TN-475", total: 6_000_000, emitida: desplazar(finMesPasado, -30), vence: desplazar(finMesPasado, -10), programada: desplazar(finMesPasado, -10), estado: "listo_para_pagar" },
+    { id: randomUUID(), proveedor: 0, folio: "TN-480", total: 6_000_000, emitida: desplazar(finMesPasado, -20), vence: finMesPasado, programada: finMesPasado, estado: "listo_para_pagar" },
+    { id: randomUUID(), proveedor: 1, folio: "PC-70", total: 900_000, emitida: desplazar(finMesPasado, -25), vence: desplazar(finMesPasado, -5), programada: desplazar(finMesPasado, -5), estado: "por_autorizar" },
   ];
   const evento = (accion: string, entidad: string, id: string, actor: string, extra = "") =>
     `insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador${extra ? ", cambio" : ""})
