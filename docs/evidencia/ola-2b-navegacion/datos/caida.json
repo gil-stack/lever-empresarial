@@ -1,0 +1,272 @@
+[
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones oscuro 1440: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Aprobaciones No se pudieron consultar tus aprobaciones Vuelve a intentarlo en un momento. Reintentar"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil oscuro 1440: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Mi perfil No se pudo consultar tu perfil Vuelve a intentarlo en un momento. Reintentar"
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos oscuro 1440: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Gastos DISPONIBLE PRONTO Gastos Lo que gasta cada área y cada persona, al día y contra el mes anteri"
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos oscuro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones oscuro 390: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Aprobaciones No se pudieron consultar tus aprobaciones Vuelve a intentarlo en un momento. Reintentar"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil oscuro 390: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Mi perfil No se pudo consultar tu perfil Vuelve a intentarlo en un momento. Reintentar"
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos oscuro 390: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Gastos DISPONIBLE PRONTO Gastos Lo que gasta cada área y cada persona, al día y contra el mes anteri"
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos oscuro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones claro 1440: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Aprobaciones No se pudieron consultar tus aprobaciones Vuelve a intentarlo en un momento. Reintentar"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil claro 1440: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Mi perfil No se pudo consultar tu perfil Vuelve a intentarlo en un momento. Reintentar"
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos claro 1440: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Gastos DISPONIBLE PRONTO Gastos Lo que gasta cada área y cada persona, al día y contra el mes anteri"
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones claro 390: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Aprobaciones No se pudieron consultar tus aprobaciones Vuelve a intentarlo en un momento. Reintentar"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil claro 390: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Mi perfil No se pudo consultar tu perfil Vuelve a intentarlo en un momento. Reintentar"
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos claro 390: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Gastos DISPONIBLE PRONTO Gastos Lo que gasta cada área y cada persona, al día y contra el mes anteri"
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones lever 1440: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Aprobaciones No se pudieron consultar tus aprobaciones Vuelve a intentarlo en un momento. Reintentar"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil lever 1440: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Mi perfil No se pudo consultar tu perfil Vuelve a intentarlo en un momento. Reintentar"
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos lever 1440: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Gastos DISPONIBLE PRONTO Gastos Lo que gasta cada área y cada persona, al día y contra el mes anteri"
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos lever 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones lever 390: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Aprobaciones No se pudieron consultar tus aprobaciones Vuelve a intentarlo en un momento. Reintentar"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "90-error-aprobaciones lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil lever 390: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Mi perfil No se pudo consultar tu perfil Vuelve a intentarlo en un momento. Reintentar"
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "91-error-perfil lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos lever 390: dice que no se pudo (o «Disponible pronto»), sin datos",
+    "detalle": "Gastos DISPONIBLE PRONTO Gastos Lo que gasta cada área y cada persona, al día y contra el mes anteri"
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos lever 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "92-error-gastos lever 390: sin errores de consola",
+    "detalle": ""
+  }
+]

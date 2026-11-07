@@ -461,7 +461,7 @@
   },
   {
     "ok": true,
-    "texto": "3 real Conciliación: el HTML (63165 B) no trae ninguno de los 51 centinelas",
+    "texto": "3 real Conciliación: el HTML (63118 B) no trae ninguno de los 51 centinelas",
     "detalle": ""
   },
   {
@@ -481,7 +481,7 @@
   },
   {
     "ok": true,
-    "texto": "3 real Gastos: el HTML (63117 B) no trae ninguno de los 51 centinelas",
+    "texto": "3 real Gastos: el HTML (63070 B) no trae ninguno de los 51 centinelas",
     "detalle": ""
   },
   {
@@ -501,7 +501,7 @@
   },
   {
     "ok": true,
-    "texto": "3 real Tarjetas: el HTML (63137 B) no trae ninguno de los 51 centinelas",
+    "texto": "3 real Tarjetas: el HTML (63090 B) no trae ninguno de los 51 centinelas",
     "detalle": ""
   },
   {
@@ -521,7 +521,7 @@
   },
   {
     "ok": true,
-    "texto": "3 real Movimientos: el HTML (63161 B) no trae ninguno de los 51 centinelas",
+    "texto": "3 real Movimientos: el HTML (63114 B) no trae ninguno de los 51 centinelas",
     "detalle": ""
   },
   {
@@ -541,7 +541,7 @@
   },
   {
     "ok": true,
-    "texto": "3 real Fiscal: el HTML (64068 B) no trae ninguno de los 51 centinelas",
+    "texto": "3 real Fiscal: el HTML (64021 B) no trae ninguno de los 51 centinelas",
     "detalle": ""
   },
   {
@@ -561,7 +561,7 @@
   },
   {
     "ok": true,
-    "texto": "3 real Cuenta: el HTML (63111 B) no trae ninguno de los 51 centinelas",
+    "texto": "3 real Cuenta: el HTML (63064 B) no trae ninguno de los 51 centinelas",
     "detalle": ""
   },
   {
@@ -581,7 +581,7 @@
   },
   {
     "ok": true,
-    "texto": "3 real Pagos internacionales: el HTML (63263 B) no trae ninguno de los 51 centinelas",
+    "texto": "3 real Pagos internacionales: el HTML (63216 B) no trae ninguno de los 51 centinelas",
     "detalle": ""
   },
   {
@@ -601,7 +601,7 @@
   },
   {
     "ok": true,
-    "texto": "3 real Crédito: el HTML (63081 B) no trae ninguno de los 51 centinelas",
+    "texto": "3 real Crédito: el HTML (63034 B) no trae ninguno de los 51 centinelas",
     "detalle": ""
   },
   {
@@ -621,7 +621,7 @@
   },
   {
     "ok": true,
-    "texto": "3 real Inversión: el HTML (63117 B) no trae ninguno de los 51 centinelas",
+    "texto": "3 real Inversión: el HTML (63070 B) no trae ninguno de los 51 centinelas",
     "detalle": ""
   },
   {
@@ -641,7 +641,7 @@
   },
   {
     "ok": true,
-    "texto": "3 real Viajes y proyectos: el HTML (63191 B) no trae ninguno de los 51 centinelas",
+    "texto": "3 real Viajes y proyectos: el HTML (63144 B) no trae ninguno de los 51 centinelas",
     "detalle": ""
   },
   {
@@ -661,7 +661,7 @@
   },
   {
     "ok": true,
-    "texto": "3 real Gasolina: el HTML (63129 B) no trae ninguno de los 51 centinelas",
+    "texto": "3 real Gasolina: el HTML (63082 B) no trae ninguno de los 51 centinelas",
     "detalle": ""
   },
   {
@@ -681,7 +681,7 @@
   },
   {
     "ok": true,
-    "texto": "3 real Ahorro: el HTML (63123 B) no trae ninguno de los 51 centinelas",
+    "texto": "3 real Ahorro: el HTML (63076 B) no trae ninguno de los 51 centinelas",
     "detalle": ""
   },
   {
@@ -701,7 +701,7 @@
   },
   {
     "ok": true,
-    "texto": "3 real Integraciones: el HTML (63193 B) no trae ninguno de los 51 centinelas",
+    "texto": "3 real Integraciones: el HTML (63146 B) no trae ninguno de los 51 centinelas",
     "detalle": ""
   },
   {
@@ -766,8 +766,23 @@
   },
   {
     "ok": true,
-    "texto": "4 /consola/pendientes sigue viva con el mismo número y queda dentro de Aprobaciones",
-    "detalle": "pendientes=3 aprobaciones=3 lateral=Aprobaciones"
+    "texto": "4 /consola/pendientes redirige (307) a Aprobaciones",
+    "detalle": "307 → /c/33333333-3333-4333-8333-333333333333/consola/aprobaciones"
+  },
+  {
+    "ok": true,
+    "texto": "4 entrando por /consola/pendientes se llega a Aprobaciones con el mismo número",
+    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola/aprobaciones pendientes=3 lateral=Aprobaciones"
+  },
+  {
+    "ok": true,
+    "texto": "4 con poco saldo, la alerta de faltante aparece en Aprobaciones al entrar por /consola/pendientes",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 2 nov al 8 nov Saldo proyectado al cier"
+  },
+  {
+    "ok": true,
+    "texto": "4 el enlace de la alerta lleva a la proyección",
+    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
   },
   {
     "ok": true,
@@ -781,63 +796,63 @@
   },
   {
     "ok": true,
-    "texto": "5 /consola/pendientes: responde 200 y el lateral marca Aprobaciones",
-    "detalle": "200 Aprobaciones"
+    "texto": "5 /consola/pendientes: redirige a /consola/aprobaciones y el lateral marca Aprobaciones",
+    "detalle": "200 /consola/aprobaciones Aprobaciones"
   },
   {
     "ok": true,
     "texto": "5 /consola/lista-69b: responde 200 y el lateral marca Fiscal",
-    "detalle": "200 Fiscal"
+    "detalle": "200 /consola/lista-69b Fiscal"
   },
   {
     "ok": true,
     "texto": "5 /consola/poliza: responde 200 y el lateral marca Fiscal",
-    "detalle": "200 Fiscal"
+    "detalle": "200 /consola/poliza Fiscal"
   },
   {
     "ok": true,
     "texto": "5 /consola/personas: responde 200 y el lateral marca Nómina",
-    "detalle": "200 Nómina"
+    "detalle": "200 /consola/personas Nómina"
   },
   {
     "ok": true,
     "texto": "5 /consola/personas/nomina: responde 200 y el lateral marca Nómina",
-    "detalle": "200 Nómina"
+    "detalle": "200 /consola/personas/nomina Nómina"
   },
   {
     "ok": true,
     "texto": "5 /consola/flujo: responde 200 y el lateral marca Saldo y alertas",
-    "detalle": "200 Saldo y alertas"
+    "detalle": "200 /consola/flujo Saldo y alertas"
   },
   {
     "ok": true,
     "texto": "5 /consola/cobros: responde 200 y el lateral marca Cobros",
-    "detalle": "200 Cobros"
+    "detalle": "200 /consola/cobros Cobros"
   },
   {
     "ok": true,
     "texto": "5 /consola/proveedores: responde 200 y el lateral marca Proveedores",
-    "detalle": "200 Proveedores"
+    "detalle": "200 /consola/proveedores Proveedores"
   },
   {
     "ok": true,
     "texto": "5 /consola: responde 200 y el lateral marca Resumen",
-    "detalle": "200 Resumen"
+    "detalle": "200 /consola Resumen"
   },
   {
     "ok": true,
     "texto": "5 /consola/politica: responde 200 y el lateral marca nada (vive en «Más»)",
-    "detalle": "200 null"
+    "detalle": "200 /consola/politica null"
   },
   {
     "ok": true,
     "texto": "5 /consola/configuracion: responde 200 y el lateral marca nada (vive en «Más»)",
-    "detalle": "200 null"
+    "detalle": "200 /consola/configuracion null"
   },
   {
     "ok": true,
     "texto": "5 /consola/apariencia: responde 200 y el lateral marca nada (vive en «Más»)",
-    "detalle": "200 null"
+    "detalle": "200 /consola/apariencia null"
   },
   {
     "ok": true,
@@ -846,8 +861,8 @@
   },
   {
     "ok": true,
-    "texto": "5 /consola sin Resumen (contadora) lleva a Pendientes, dentro de Aprobaciones",
-    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola/pendientes"
+    "texto": "5 /consola sin Resumen (contadora) lleva a Aprobaciones",
+    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola/aprobaciones"
   },
   {
     "ok": true,
