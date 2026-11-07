@@ -19,7 +19,7 @@ OK doble clic en «Declarar el saldo»: mientras se envía dice «Enviando…»,
 OK segunda declaración: $150,000.00 al día de hoy, asentada (doble clic)
 OK el mismo envío repetido byte por byte (mismo id del formulario) responde igual: «El saldo quedó declarado»
 OK el mismo formulario reenviado con otro saldo ($150,001.00) se rechaza: «Este formulario ya se envió con otros datos. Recarga la página para capturar uno nuevo.»
-OK el formulario mandó su id (UUID b99beea6-c8a6-40a2-9385-9a3c8481a882) y la página ya trae otro (67e2c525-4c84-46cf-b60c-f2c68b901b07) para la siguiente declaración
+OK el formulario mandó su id (UUID df4beb2b-844a-4e08-a132-e9f2fefba51e) y la página ya trae otro (015ce894-fea3-4761-b3bd-179a45c98249) para la siguiente declaración
 OK el historial conserva las dos: $150,000.00 y $120,000.00
 OK la base tiene 2 declaraciones (append-only): cada doble clic y el reenvío idéntico dejaron una sola
 OK y 2 eventos declarar_saldo en la bitácora
@@ -181,9 +181,9 @@ OK con el secreto: 200 {"semana":"2026-11-02","empresas":2,"enviados":2,"omitido
 OK el proveedor falso registra 4 correos: bruno@lever.test, diego@lever.test, fernanda@lever.test, laura@lever.test; la empresa de demostración (Diana) no recibe cifras de ejemplo
 OK cada persona que lo recibió queda registrada (4 entregas)
 OK el correo a bruno@lever.test no desglosa la nómina de una sola persona
-OK el correo a laura@lever.test no desglosa la nómina de una sola persona
 OK el correo a diego@lever.test no desglosa la nómina de una sola persona
 OK el correo a fernanda@lever.test no desglosa la nómina de una sola persona
+OK el correo a laura@lever.test no desglosa la nómina de una sola persona
 OK la segunda llamada de la semana no manda nada: {"semana":"2026-11-02","empresas":2,"enviados":0,"omitidos":2,"fallidos":0,"pendientes":0}
 OK el proveedor falso no tiene correos nuevos
 OK un envío por empresa y semana, enviado
@@ -196,6 +196,9 @@ OK el correo de Bahía no trae «Mayorista» de Altamar
 OK el correo de Bahía no trae «Operación» de Altamar
 OK Bahía no declaró saldo: su correo explica que sin saldo no se sabe si alcanza e invita a declararlo
 OK ni el de Altamar trae datos de Bahía ni dice «Confirmado por el banco»
+OK el de Laura (con el permiso de detalle de nómina) trae el gasto de Ventas
+OK el de diego@lever.test (sin el permiso) no trae el gasto de Ventas, cuya nómina es solo la de Carla
+OK el de fernanda@lever.test (sin el permiso) no trae el gasto de Ventas, cuya nómina es solo la de Carla
 OK el de Altamar no dice «No alcanza»: los $180,000.00 autorizados de antes del saldo ya están pagados en él
 OK captura i-correo-semanal.jpg
 
@@ -221,6 +224,14 @@ OK Laura (administración) sí ve el detalle «(1 persona)»
 OK en el calendario de 2026-12, el pago de una sola persona dice «Monto reservado»
 OK captura j4-contador-nomina-reservada.jpg
 OK y Laura ve todos los montos
+OK el contador ve Ventas con su estado y su presupuesto, sin gasto, porcentaje ni barra: «Ventas Excedido Gasto reservado · presupuesto de $40,000.00 Solo lo ve quien puede ver el detalle de la nómina.»
+OK el contador sí ve el gasto de Operación (nómina de dos personas)
+OK finanzas ve Ventas con su estado y su presupuesto, sin gasto, porcentaje ni barra: «Ventas Excedido Gasto reservado · presupuesto de $40,000.00 Solo lo ve quien puede ver el detalle de la nómina.»
+OK finanzas sí ve el gasto de Operación (nómina de dos personas)
+OK captura j5-presupuesto-reservado.jpg
+OK en Inicio de finanzas, la alerta de Ventas dice «presupuesto de $40,000.00; el gasto está reservado»
+OK en Pendientes del contador, el presupuesto de Ventas no dice cuánto lleva
+OK Laura (con el permiso) sí ve el gasto de Ventas
 OK el formulario del saldo enviado a mano por el contador: el servidor responde «Sin permiso para cambiar el flujo»
 OK y la base no cambia
 OK un empleado sin la capacidad (tarjetahabiente) no ve /consola/flujo: 404
@@ -313,7 +324,7 @@ OK presupuestos lever 390: 200
 OK presupuestos lever 390: sin desplazamiento horizontal
 OK captura k-presupuestos-lever-390.jpg
 
-244 comprobaciones
+254 comprobaciones
 Consola del navegador: sin errores ni advertencias de la aplicación
 Avisos «GL Driver Message» del fondo WebGL (fuera de zona): 4
 Mensajes esperados en las páginas 404 de (j) (el 404 del documento y la precarga de estilos sin usar): 11
