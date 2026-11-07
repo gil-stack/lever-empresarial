@@ -314,6 +314,18 @@ async function flujo2() {
   await p.getByText("Administra la empresa (administrador único o consejo)").click();
   await enviar(p, p.getByRole("button", { name: "Agregar representante" }), "expediente_representante_agregado", { doble: true });
   exigir(cuenta(`kyb_representantes r join kyb_versiones v on v.id = r.version_id where v.company_id = '${ctxEbano.id}'`) === 1, "2. doble clic en «Agregar representante» = 1 representante");
+  // Un representante capturado por error se quita del borrador: queda marcado, con su evento, y no se borra.
+  await campo(p, "#rep-nombre", "Raúl Error Captura");
+  await campo(p, "#rep-rfc", "EOCR800101AB2");
+  await campo(p, "#rep-curp", "EOCR800101HNLRPL08");
+  await campo(p, "#rep-designado", "Captura equivocada");
+  await enviar(p, p.getByRole("button", { name: "Agregar representante" }), "expediente_representante_agregado");
+  await enviar(p, p.locator("li", { has: p.getByRole("heading", { name: "Raúl Error Captura" }) }).getByRole("button", { name: "Quitar" }), "expediente_retirado", { doble: true });
+  exigir(
+    cuenta(`kyb_representantes r join kyb_versiones v on v.id = r.version_id where v.company_id = '${ctxEbano.id}' and r.retirado_en is not null`) === 1
+      && cuenta(`audit_log where accion = 'expediente_representante_retirado' and company_id = '${ctxEbano.id}'`) === 1,
+    "2. doble clic en «Quitar» = 1 representante quitado del borrador, con un solo evento; la fila se conserva",
+  );
   for (const socio of SOCIOS) {
     if (socio.padre) await p.locator("#acc-padre").selectOption({ label: new RegExp(socio.padre.slice(0, 12)) }).catch(async () => p.locator("#acc-padre").selectOption({ index: 1 }));
     await p.locator("#acc-tipo").selectOption(socio.tipo);
@@ -325,6 +337,20 @@ async function flujo2() {
     await enviar(p, p.getByRole("button", { name: "Agregar accionista" }), "expediente_accionista_agregado", { doble: true });
   }
   exigir(cuenta(`kyb_accionistas a join kyb_versiones v on v.id = a.version_id where v.company_id = '${ctxEbano.id}'`) === 4, "2. cuatro accionistas en dos capas, sin duplicados por doble clic");
+  // Un socio capturado por error también se quita; la estructura vuelve a sumar 100 %.
+  await p.locator("#acc-tipo").selectOption("fisica");
+  await campo(p, "#acc-nombre", "Socio Capturado Por Error");
+  await campo(p, "#acc-rfc", "SCPE800101AB3");
+  await campo(p, "#acc-curp", "SCPE800101HNLPRR07");
+  await campo(p, "#acc-capital", "10");
+  await campo(p, "#acc-votos", "10");
+  await enviar(p, p.getByRole("button", { name: "Agregar accionista" }), "expediente_accionista_agregado");
+  await enviar(p, p.locator("li", { has: p.getByRole("heading", { name: "Socio Capturado Por Error" }) }).getByRole("button", { name: "Quitar" }), "expediente_retirado", { doble: true });
+  exigir(
+    cuenta(`kyb_accionistas a join kyb_versiones v on v.id = a.version_id where v.company_id = '${ctxEbano.id}' and a.retirado_en is null`) === 4
+      && cuenta(`audit_log where accion = 'expediente_accionista_retirado' and company_id = '${ctxEbano.id}'`) === 1,
+    "2. doble clic en «Quitar» = 1 socio quitado con un solo evento; quedan los cuatro de la estructura",
+  );
   const hoy = hoyMexico();
   await subirDocumento(p, { tipo: "acta_constitutiva", detalle: "Escritura 4,521, Notaría 12 de Monterrey" });
   await subirDocumento(p, { tipo: "constancia_situacion_fiscal", emitido: hoy });

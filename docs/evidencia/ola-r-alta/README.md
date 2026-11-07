@@ -4,7 +4,7 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r-alta
 
 | Fase | Resultado | Datos |
 | --- | --- | --- |
-| Flujos 0-12 | 139 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
+| Flujos 0-12 | 145 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
 | Pantallas (3 temas × 1440/390) y contraste AA medido | 60 comprobaciones en verde, 0 en rojo; contraste mínimo 5.00 (Lever 1440) | `datos/resultados-pantallas-contraste.json` |
 
 Corrida del 2026-11-07 sobre el head de este PR, con el código de la consola suspendida en solo lectura veraz (R1-P5) y el comando de roles iniciales.
@@ -84,7 +84,7 @@ Sirve cuando nadie más del personal administra al personal: nadie se da un rol 
 | 0. | `02-f0-bitacora-rol-por-comando` | La bitácora lo muestra con su motivo. Quitarlo deja `rol_personal_retirado`; quitar Administración se rechaza. La salida no imprime el connection string. |
 | 1. Asignar roles | `03-f1-personal-confirma-identidad` | Con el factor de hace 6 minutos, Personal pide «Confirma que eres tú». |
 | 1. | `04-f1-personal-roles-asignados-y-rechazo-50a` | Doble clic en «Dar …» = 1 fila y 1 evento por persona. La base rechaza Cumplimiento para el auditor y para Originación (50ª). |
-| 2. Prospecto y expediente | `05-f2-borrador-1-completo` | Doble clic = 1 empresa, 1 versión, 1 representante; 4 accionistas en dos capas; 6 documentos con SHA-256. |
+| 2. Prospecto y expediente | `05-f2-borrador-1-completo` | Doble clic = 1 empresa, 1 versión, 1 representante; 4 accionistas en dos capas; 6 documentos con SHA-256. Un representante y un socio capturados por error se quitan con doble clic en «Quitar»: la fila se conserva marcada, con un solo evento cada una, y la versión 2 no los hereda. |
 | 2. | `06-f2-version-1-enviada-propietarios-reales` | Propietarios reales calculados en `kyb_beneficiarios`: 49 % y 30 %; el de 21 % no llega al 25 %. |
 | 3. Dictamen | `07-f3-version-1-observada` | «Observado» exige motivo; doble clic = 1 dictamen sobre la versión 1. |
 | 3. | `08-f3-version-2-aprobada` | La versión 2 hereda lo de la 1 y queda aprobada; el dictamen de la 1 no cambia. |
@@ -161,11 +161,17 @@ OK    2. doble clic en «Abrir versión 1» = 1 versión
 OK    aviso «expediente_datos_guardados» tras la acción
 OK    aviso «expediente_representante_agregado» tras la acción
 OK    2. doble clic en «Agregar representante» = 1 representante
+OK    aviso «expediente_representante_agregado» tras la acción
+OK    aviso «expediente_retirado» tras la acción
+OK    2. doble clic en «Quitar» = 1 representante quitado del borrador, con un solo evento; la fila se conserva
 OK    aviso «expediente_accionista_agregado» tras la acción
 OK    aviso «expediente_accionista_agregado» tras la acción
 OK    aviso «expediente_accionista_agregado» tras la acción
 OK    aviso «expediente_accionista_agregado» tras la acción
 OK    2. cuatro accionistas en dos capas, sin duplicados por doble clic
+OK    aviso «expediente_accionista_agregado» tras la acción
+OK    aviso «expediente_retirado» tras la acción
+OK    2. doble clic en «Quitar» = 1 socio quitado con un solo evento; quedan los cuatro de la estructura
 OK    aviso «expediente_documento_cargado» tras la acción
 OK    aviso «expediente_documento_cargado» tras la acción
 OK    aviso «expediente_documento_cargado» tras la acción
@@ -283,11 +289,11 @@ OK    12. la descarga entrega el PDF guardado
 OK    12. la SHA-256 del archivo descargado coincide con la guardada en la base
 OK    12. descargar deja «expediente_documento_descargado»
 OK    12. la bitácora muestra las dos lecturas con su etiqueta
-NOTA  f12-bitacora-lecturas-auditadas: la página mide 10096 px y no cabe en una captura completa; se guarda la ventana
+NOTA  f12-bitacora-lecturas-auditadas: la página mide 10797 px y no cabe en una captura completa; se guarda la ventana
 OK    12. Auditoría ve «Sin permiso» en Personal
 OK    consola del navegador limpia en todos los flujos
 
-139 comprobaciones en verde, 0 en rojo.
+145 comprobaciones en verde, 0 en rojo.
 ```
 
 </details>
@@ -340,17 +346,17 @@ OK    pantalla clientes claro 1440: un h1, campos con etiqueta, sin desborde, co
 OK    pantalla clientes claro 390: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla clientes lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla clientes lever 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-oscuro-1440: la página mide 10622 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-oscuro-1440: la página mide 11323 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-oscuro-390: la página mide 26512 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-oscuro-390: la página mide 28226 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-claro-1440: la página mide 10622 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-claro-1440: la página mide 11323 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora claro 1440: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-claro-390: la página mide 26512 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-claro-390: la página mide 28226 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora claro 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-lever-1440: la página mide 10622 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-lever-1440: la página mide 11323 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-lever-390: la página mide 26512 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-lever-390: la página mide 28226 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora lever 390: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla sin-permiso oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla sin-permiso oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia

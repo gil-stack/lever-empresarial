@@ -153,6 +153,18 @@
     },
     {
       "ok": true,
+      "texto": "aviso «expediente_representante_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_retirado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "2. doble clic en «Quitar» = 1 representante quitado del borrador, con un solo evento; la fila se conserva"
+    },
+    {
+      "ok": true,
       "texto": "aviso «expediente_accionista_agregado» tras la acción"
     },
     {
@@ -170,6 +182,18 @@
     {
       "ok": true,
       "texto": "2. cuatro accionistas en dos capas, sin duplicados por doble clic"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_retirado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "2. doble clic en «Quitar» = 1 socio quitado con un solo evento; quedan los cuatro de la estructura"
     },
     {
       "ok": true,
