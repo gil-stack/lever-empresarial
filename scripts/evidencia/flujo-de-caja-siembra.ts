@@ -65,7 +65,7 @@ type Personal = Awaited<ReturnType<typeof contextoDePersonal>>;
 async function empresaConAdmin(personal: Personal, datos: { rfc: string; razon: string; demostracion: boolean; admin: string; correo: string }) {
   const empresa = await darDeAltaComoDuena(DUENO, personal, {
     rfc: datos.rfc, razonSocial: datos.razon, codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
-  }, { demostracion: datos.demostracion });
+  }, { demostracion: datos.demostracion, corridoPor: "evidencia@ejemplo.mx" });
   const invitado = await invitarAdministrador(personal, { companyId: empresa.id, razonSocial: empresa.razonSocial, nombre: datos.admin, correo: datos.correo });
   await aceptarInvitacion({ token: invitado.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
   return { empresa, adminId: invitado.emitida.userId, ctx: await sesionDe(invitado.emitida.userId, empresa.id) };

@@ -104,8 +104,11 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                       name="motivo"
                       maxLength={500}
                       required
-                      aria-describedby={veLista ? "motivo-suspension-pista" : undefined}
                       {...errorDelCampo(aviso, "motivo")}
+                      aria-describedby={
+                        [veLista ? "motivo-suspension-pista" : "", errorDelCampo(aviso, "motivo")["aria-describedby"]].filter(Boolean).join(" ") ||
+                        undefined
+                      }
                     />
                     {/* Quien escribe desde Cumplimiento: Originación y Aprobación leen este motivo (55ª). */}
                     {veLista ? (

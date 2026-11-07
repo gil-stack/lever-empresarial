@@ -50,13 +50,13 @@ async function escenario(url: string): Promise<void> {
     url,
     personal,
     { rfc: RFC_A, razonSocial: "Escuela Alfa Aislamiento", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" },
-    { demostracion: true },
+    { demostracion: true, corridoPor: "pruebas@ejemplo.mx" },
   );
   const beta = await darDeAltaComoDuena(
     url,
     personal,
     { rfc: RFC_B, razonSocial: "Taller Beta Aislamiento", codigoPostal: "44100", regimen: "612", usoCfdi: "G03" },
-    { demostracion: true },
+    { demostracion: true, corridoPor: "pruebas@ejemplo.mx" },
   );
 
   const primera = await invitarAdministrador(personal, {

@@ -69,11 +69,11 @@ async function medir(url: string): Promise<void> {
   const personal = await contextoDePersonal("personal-medicion@ejemplo.mx");
   const empresa = await darDeAltaComoDuena(url, personal, {
     rfc: "TCM010101AB1", razonSocial: "Carga Medición", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
-  }, { demostracion: false });
+  }, { demostracion: false, corridoPor: "evidencia@ejemplo.mx" });
   // Otra empresa con 20,000 cuentas por pagar: el volumen ajeno que RLS y los índices tienen que dejar fuera.
   const ruido = await darDeAltaComoDuena(url, personal, {
     rfc: "CABL840215RF4", razonSocial: "Otra Empresa Carga", codigoPostal: "44100", regimen: "612", usoCfdi: "G03",
-  }, { demostracion: false });
+  }, { demostracion: false, corridoPor: "evidencia@ejemplo.mx" });
   const invitado = await invitarAdministrador(personal, { companyId: empresa.id, razonSocial: empresa.razonSocial, nombre: "Admin Medición", correo: "admin-medicion@ejemplo.mx" });
   await aceptarInvitacion({ token: invitado.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
   const ctx = (await resolverContexto({ sesion: await sesion(url, invitado.emitida.userId), empresaPedida: empresa.id, peticionId: null, superficie: "cliente" })).ctx as ContextoConEmpresa;

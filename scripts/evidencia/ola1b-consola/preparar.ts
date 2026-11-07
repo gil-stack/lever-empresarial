@@ -126,7 +126,7 @@ async function principal(): Promise<void> {
     codigoPostal: "06600",
     regimen: "601",
     usoCfdi: "G03",
-  }, { demostracion: true });
+  }, { demostracion: true, corridoPor: "evidencia@ejemplo.mx" });
   const invitacion = await invitarAdministrador(personal, {
     companyId: empresa.id,
     razonSocial: empresa.razonSocial,
@@ -146,7 +146,7 @@ async function principal(): Promise<void> {
       codigoPostal: "06600",
       regimen: "601",
       usoCfdi: "G03",
-    }, { demostracion: false });
+    }, { demostracion: false, corridoPor: "evidencia@ejemplo.mx" });
     const invitacionBahia = await invitarAdministrador(personal, {
       companyId: bahia.id,
       razonSocial: bahia.razonSocial,

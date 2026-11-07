@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLAVE, codigoDeSemilla, codigoTotp, consultar, contar, dobleClic, idDe, sesionDe, vigilarConsola } from "./apoyo";
-import { BRISA, CIMA, CORREOS, FARO } from "./siembra";
+import { BRISA, CIMA, CORREOS, DUNA, FARO } from "./siembra";
 
 /**
  * Operación SOFIPO: entrada con segundo factor, alta de un prospecto con la
@@ -168,6 +168,68 @@ test("un caso abierto de Cumplimiento no se le nombra a Aprobación ni a Origina
   await expect(await sinLista()).toContainText("Cumplimiento tiene un caso abierto de esta empresa: no se puede reactivar hasta que lo resuelva.");
   expect(await contar("select 1 from company_suspensions where company_id = $1 and tipo = 'reactivacion'", [cima!.id])).toBe(0);
   expect(await estados()).toEqual(["en_alta", "suspendida"]);
+  expect(errores).toEqual([]);
+});
+
+test("el grado de riesgo no le dice a Originación ni a Aprobación que hay una coincidencia; a Cumplimiento sí", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const [brisa] = await consultar<{ id: string }>("select id from companies where rfc = $1", [BRISA.rfc]);
+  const riesgo = page.locator("section", { has: page.locator("#riesgo-titulo") });
+  const factor = (etiqueta: string) => riesgo.locator("dl > div", { has: page.locator("dt", { hasText: etiqueta }) }).locator("dd");
+  for (const correo of [CORREOS.op1, CORREOS.op2]) {
+    await sesionDe(context, correo, { superficie: "sofipo" });
+    await page.goto(`/operacion/clientes/${brisa!.id}/expediente`);
+    await expect(riesgo).toContainText("Grado alto");
+    await expect(factor("Revisión de Cumplimiento")).toHaveText("Lo ve Cumplimiento");
+    await expect(riesgo).not.toContainText(/lista|exacta|puntaje/i);
+    await expect(page.locator("#coincidencias-titulo")).toHaveText("Revisión de Cumplimiento");
+  }
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  await page.goto(`/operacion/clientes/${brisa!.id}/expediente`);
+  await expect(factor("Coincidencias en listas")).toHaveText("exacta · 3 puntos");
+  await expect(riesgo).toContainText("Puntaje");
+  await expect(page.locator("#coincidencias-titulo")).toHaveText("Coincidencias con listas");
+  expect(errores).toEqual([]);
+});
+
+test("tras un rechazo del socio extranjero el formulario vuelve en «Extranjera» con el campo marcado; la moral extranjera entra sin RFC", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
+  const expediente = `/operacion/clientes/${duna!.id}/expediente`;
+  const socios = () => contar("select 1 from kyb_accionistas where company_id = $1", [duna!.id]);
+  const capturar = async (tipo: "fisica" | "moral", documento: string) => {
+    await page.goto(expediente);
+    await page.locator("#acc-tipo").selectOption(tipo);
+    await page.locator("#acc-nacionalidad").selectOption("extranjera");
+    await page.locator("#acc-nombre").fill(tipo === "fisica" ? "John Smith Taylor" : "Delaware Holdings LLC");
+    await page.locator("#acc-pais").selectOption("US");
+    await page.locator("#acc-documento").fill(documento);
+    if (tipo === "fisica") await page.locator("#acc-nacimiento").fill("1980-05-01");
+    await page.locator("#acc-capital").fill("40");
+    await page.locator("#acc-votos").fill("40");
+    await page.getByRole("button", { name: "Agregar accionista" }).click();
+  };
+  await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  for (const tipo of ["fisica", "moral"] as const) {
+    await capturar(tipo, "A1");
+    await page.waitForURL(tipo === "moral" ? /aviso=dato_invalido_documentoExtranjero.*tipo=moral/ : /aviso=dato_invalido_documentoExtranjero/);
+    await expect(page.locator("#aviso-operacion")).toContainText("de 4 a 20 letras y números");
+    await expect(page.locator("#acc-tipo")).toHaveValue(tipo);
+    await expect(page.locator("#acc-nacionalidad")).toHaveValue("extranjera");
+    const campo = page.locator("#acc-documento");
+    await expect(campo).toHaveAttribute("aria-invalid", "true");
+    await expect(campo).toHaveAttribute("aria-describedby", "acc-documento-pista aviso-operacion");
+    await expect(page.locator('label[for="acc-documento"]')).toHaveText(
+      tipo === "fisica" ? "Número de pasaporte o identificación oficial" : "Número de identificación fiscal o de registro en su país",
+    );
+    expect(await socios()).toBe(0);
+  }
+  await capturar("moral", "12-3456789");
+  await page.waitForURL(/aviso=expediente_accionista_agregado/);
+  expect(await consultar("select rfc, pais, documento_extranjero, nacionalidad from kyb_accionistas where company_id = $1", [duna!.id])).toEqual([
+    { rfc: null, pais: "US", documento_extranjero: "123456789", nacionalidad: "Estados Unidos" },
+  ]);
+  await expect(page.locator("#accionistas-titulo").locator("..")).toContainText("Estados Unidos · registro 123456789");
   expect(errores).toEqual([]);
 });
 

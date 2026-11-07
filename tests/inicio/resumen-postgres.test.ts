@@ -59,14 +59,14 @@ async function escenario(url: string): Promise<void> {
     codigoPostal: "06600",
     regimen: "601",
     usoCfdi: "G03",
-  }, { demostracion: true });
+  }, { demostracion: true, corridoPor: "pruebas@ejemplo.mx" });
   const beta = await darDeAltaComoDuena(url, personal, {
     rfc: "CABL840215RF4",
     razonSocial: "Taller Beta Inicio",
     codigoPostal: "44100",
     regimen: "612",
     usoCfdi: "G03",
-  }, { demostracion: true });
+  }, { demostracion: true, corridoPor: "pruebas@ejemplo.mx" });
 
   const invitado = await invitarAdministrador(personal, {
     companyId: alfa.id,

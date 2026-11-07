@@ -50,7 +50,7 @@ export default async function ExpedienteCliente({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ aviso?: string; en?: string }>;
+  searchParams: Promise<{ aviso?: string; en?: string; tipo?: string }>;
 }) {
   const ctx = await exigirContextoOperacion();
   const [{ id }, busqueda] = await Promise.all([params, searchParams]);
@@ -76,6 +76,7 @@ export default async function ExpedienteCliente({
   const { vigente, borrador, riesgo } = expediente;
   const esperaDictamen = vigente !== null && vigente.dictamen === null;
   const error: ErrorDeCampo = (seccion, campo) => (busqueda.en === seccion ? errorDelCampo(busqueda.aviso, campo) : {});
+  const errorMotivo = error("dictamen-titulo", "motivo");
   const siguiente = (expediente.versiones[0]?.numero ?? 0) + 1;
 
   return (
@@ -135,7 +136,14 @@ export default async function ExpedienteCliente({
         {esperaDictamen && !borrador ? <p className="pista">La versión {vigente.numero} espera el dictamen de Cumplimiento.</p> : null}
       </Hoja>
 
-      {borrador && captura ? <FormulariosBorrador version={borrador} companyId={id} error={error} /> : null}
+      {borrador && captura ? (
+        <FormulariosBorrador
+          version={borrador}
+          companyId={id}
+          error={error}
+          socioRechazado={busqueda.en === "accionistas-titulo" && busqueda.tipo === "moral" ? "moral" : "fisica"}
+        />
+      ) : null}
       {borrador && !captura ? (
         <Hoja id="borrador-titulo" titulo={`Borrador ${borrador.numero}`}>
           <Vacio titulo="En captura">Originación está armando esta versión. Se ve completa cuando la envíe.</Vacio>
@@ -180,7 +188,13 @@ export default async function ExpedienteCliente({
                 </div>
                 <div className="campo">
                   <label htmlFor="dictamen-motivo">Motivo (obligatorio si se observa o rechaza)</label>
-                  <textarea id="dictamen-motivo" name="motivo" maxLength={1000} aria-describedby="dictamen-motivo-pista" {...error("dictamen-titulo", "motivo")} />
+                  <textarea
+                    id="dictamen-motivo"
+                    name="motivo"
+                    maxLength={1000}
+                    {...errorMotivo}
+                    aria-describedby={["dictamen-motivo-pista", errorMotivo["aria-describedby"]].filter(Boolean).join(" ")}
+                  />
                   <p id="dictamen-motivo-pista" className="pista">Originación y Aprobación leen este motivo: no menciones la Lista ni el reporte.</p>
                 </div>
                 <div className="acciones">
@@ -205,12 +219,15 @@ export default async function ExpedienteCliente({
               </Insignia>
             </div>
             <Renglones>
+              {/* El factor de listas lo ven Cumplimiento y Auditoría; los demás tampoco ven el puntaje, que lo delataría. */}
               {Object.entries(riesgo.factores).map(([clave, factor]) => (
-                <Renglon key={clave} etiqueta={FACTORES[clave] ?? clave}>
-                  {valorFactor(clave, factor.valor)} · {factor.puntos} {factor.puntos === 1 ? "punto" : "puntos"}
+                <Renglon key={clave} etiqueta={clave === "coincidencias" && !veLista ? "Revisión de Cumplimiento" : (FACTORES[clave] ?? clave)}>
+                  {clave === "coincidencias" && !veLista
+                    ? "Lo ve Cumplimiento"
+                    : `${valorFactor(clave, factor.valor)} · ${factor.puntos} ${factor.puntos === 1 ? "punto" : "puntos"}`}
                 </Renglon>
               ))}
-              <Renglon etiqueta="Puntaje">{riesgo.puntaje}</Renglon>
+              {veLista ? <Renglon etiqueta="Puntaje">{riesgo.puntaje}</Renglon> : null}
               <Renglon etiqueta="Calificó">
                 {riesgo.calificadaPor} · {fechaDia(riesgo.calificadaEl)} · {riesgo.tipo === "alta" ? "al alta" : "periódica"}
               </Renglon>
@@ -247,7 +264,7 @@ export default async function ExpedienteCliente({
         ) : null}
       </Hoja>
 
-      <Hoja id="coincidencias-titulo" titulo="Coincidencias con listas">
+      <Hoja id="coincidencias-titulo" titulo={veLista ? "Coincidencias con listas" : "Revisión de Cumplimiento"}>
         {veLista ? (
           <Coincidencias
             coincidencias={coincidencias}

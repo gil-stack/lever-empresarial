@@ -6,9 +6,9 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r-alta
 | --- | --- | --- |
 | Flujos 0-12 | 147 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
 | Pantallas (3 temas × 1440/390) y contraste AA medido | 60 comprobaciones en verde, 0 en rojo; contraste mínimo 5.00 (Lever 1440) | `datos/resultados-pantallas-contraste.json` |
-| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador) | 40 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json` |
+| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña) | 65 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json` |
 
-Corrida del 2026-11-08 sobre el head de este PR, con los arreglos de las tres revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`), sobre una base migrada de cero con la 0028 final.
+Corrida del 2026-11-08 sobre el head de este PR, con los arreglos de las cuatro revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`), sobre una base migrada de cero con la 0028 final.
 
 ## Cómo se corre
 
@@ -65,6 +65,8 @@ Al cerrar un caso (fuera de lista o falso positivo), la base anota la carga o co
 | Coincidencia exacta (RFC o CURP) «falso positivo» | No se reabre | Caso nuevo pendiente y suspensión inmediata, igual que arriba |
 | Posible por nombre «falso positivo» | No se reabre | No se reabre por el mismo nombre: Cumplimiento ya dictaminó a esa persona. Si cambia el RFC o la CURP, cuenta como exacta |
 
+En concurrencia vale lo mismo (N5). El cierre de un caso y el cotejo de una empresa toman el mismo candado (`estado_empresa:<empresa>`): si Cumplimiento cierra un caso mientras otra pestaña carga una lista nueva con la misma persona, quien llega segundo ve lo que el otro confirmó. Si el cierre fue primero, la carga nueva abre un caso nuevo; si la carga fue primero, el cierre anota la carga nueva y con ella no se reabre. Con REPEATABLE READ, el cierre y el cotejo de una empresa con un caso abierto escriben su fila: el que decidió con una foto vieja aborta y se repite.
+
 La copia del 69-B es de cada operador: la carga su Administración y el cotejo, la validación de «fuera de lista», la relectura de proveedores y el portal usan la última de su operador. La copia de otro operador no coteja, no relee ni se ve aquí.
 
 Ejemplo (el del flujo 5):
@@ -76,6 +78,25 @@ HECTOR LOZANO DIAZ,,,fisica,2026-11-02
 Comercializadora Sin Relación SA de CV,CSR010101AB1,,moral,2026-11-02
 ```
 
+## Socio extranjero y la misma persona por varios caminos
+
+Lo que tiene una persona por varios caminos suma una vez (4ª fr. II c). Para eso cada socio lleva un identificador:
+
+| Socio | Se identifica con | Suma por |
+| --- | --- | --- |
+| Persona física mexicana | CURP (obligatoria) | CURP |
+| Persona moral mexicana | RFC (obligatorio) | (no suma: se desglosa hasta personas físicas) |
+| Persona física extranjera | País (ISO 3166, no México), número de pasaporte o identificación oficial y fecha de nacimiento, siempre, aunque traiga CURP | País + documento |
+| Persona moral extranjera | País y número de identificación fiscal o de registro en su país; el RFC es opcional | (se desglosa hasta personas físicas) |
+
+El documento se guarda en mayúsculas, sin espacios, puntos, guiones ni diagonales (de 4 a 20 letras y números). El servidor no captura a una extranjera sin su documento (y, si es física, sin su fecha); la base tampoco deja enviar la versión (`expediente_accionista_sin_identificacion`).
+
+Al enviar, la base rechaza dos personas físicas con el mismo nombre normalizado (como en la lista: sin orden de palabras, acentos ni puntuación) y la misma fecha de nacimiento (la capturada o la de su CURP, posiciones 5 a 10) que tengan identificadores distintos: `expediente_misma_persona_dos_identificadores`, con un aviso que dice qué corregir. Cubre la CURP en un camino y el pasaporte en otro, el mexicano que se declara extranjero y el extranjero con dos documentos.
+
+**Límite que queda.** Un nombre escrito distinto (otra grafía, un apellido de menos o un segundo nombre) no se detecta. Ese caso depende de la declaración del representante sobre los propietarios reales y de la revisión de Cumplimiento.
+
+El cotejo con la Lista de Personas Bloqueadas de un socio extranjero sin RFC ni CURP es por nombre (posible coincidencia): el CSV de la lista no trae documento extranjero.
+
 ## Conservación de 10 años (61ª)
 
 - **Base.** Las tablas del expediente (versiones, documentos, representantes, accionistas, propietarios reales y dictámenes), las calificaciones de riesgo, las cargas y personas de la lista, las coincidencias y las suspensiones no admiten DELETE ni TRUNCATE: el trigger `conservacion_no_se_borra` (0028) los rechaza aun para la dueña de las tablas. Una versión enviada, un documento o un dictamen no se reescriben, y la bitácora (`audit_log`) solo acepta inserciones.
@@ -86,23 +107,25 @@ Comercializadora Sin Relación SA de CV,CSR010101AB1,,moral,2026-11-02
 
 ```sh
 DATABASE_URL_UNPOOLED=<conexión directa de las migraciones> \
-  npx tsx scripts/plataforma.ts personal:rol --correo <correo> --rol <rol> --motivo "<motivo>" [--quitar]
+  npx tsx scripts/plataforma.ts personal:rol --quien-corre <tu correo> --correo <correo> --rol <rol> --motivo "<motivo>" [--quitar]
 ```
 
 La primera Administración de un operador (una base nueva, como Preview, que tiene 0 personal) la invita la dueña de la base:
 
 ```sh
 DATABASE_URL_UNPOOLED=<conexión directa de las migraciones> OPERADORES_PLATAFORMA=<correos> \
-  npx tsx scripts/plataforma.ts personal:migrar-variable [--mostrar-enlace]
+  npx tsx scripts/plataforma.ts personal:migrar-variable --quien-corre <tu correo> [--mostrar-enlace]
 ```
 
-Corre con la conexión de la dueña (`scripts/personal-por-la-duena.ts`): desde la aplicación nadie sin usuario da roles ni registra personal (N3). El alta queda con `ejecutado_por = session_user`. Con más de un operador no adivina (`operador_ambiguo`).
+Corre con la conexión de la dueña (`scripts/personal-por-la-duena.ts`): desde la aplicación nadie sin usuario da roles ni registra personal (N3). Solo arranca: invita a todos los correos de la variable en una sola corrida y, si el operador ya tiene a alguien con Administración (activo o invitado), no invita a nadie (`personal_con_administracion`, N7). Con más de un operador no adivina (`operador_ambiguo`).
+
+**Quién lo corrió (N8).** `personal:migrar-variable`, `personal:rol` y `empresa:alta` exigen `--quien-corre` con el correo de la persona que los corre. La bitácora guarda ese correo (`corrido_por`) junto con `ejecutado_por = session_user`. `session_user` es la conexión, no la persona: en Neon, quien use `DATABASE_URL_UNPOOLED` es siempre la dueña de la base (`neondb_owner`), así que por sí solo no dice qué persona corrió el comando.
 
 `personal:rol` sirve cuando nadie más del personal administra al personal: nadie se da un rol a sí mismo por pantalla. La función `personal_rol_por_comando` (0028) solo la ejecuta la dueña de la base; la aplicación no puede llamarla con ningún rol. Deja el evento `rol_personal_asignado` o `rol_personal_retirado` en la bitácora, como acto del sistema con origen `comando` y el motivo escrito. Respeta la 50ª, no deja al personal sin administración y, si otra persona ya administra al personal, pide usar la pantalla Personal. El flujo 0 lo corre como se hará tras el despliegue.
 
 ## Revisión adversarial del PR: hallazgo → arreglo → prueba
 
-Cada arreglo de la base va en la 0028. Las pruebas de la base están en `tests/operacion/alta-regulada-postgres.test.ts`, en la subprueba que se nombra. Con la 0028 del head anterior (`e1a534f`), las 12 subpruebas que tocan la base fallan, y cada una falla en el hueco que describe el hallazgo. Por ejemplo, en H1 Originación sí crea una empresa activa («Missing expected rejection»), en H9 la función responde `true` por otro operador y en H11 el portal lee 27 eventos regulados. Con la 0028 final pasan las 29 subpruebas de la suite y la prueba del relleno de la 0028.
+Cada arreglo de la base va en la 0028. Las pruebas de la base están en `tests/operacion/alta-regulada-postgres.test.ts`, en la subprueba que se nombra. Con la 0028 del head anterior (`e1a534f`), las 12 subpruebas que tocan la base fallan, y cada una falla en el hueco que describe el hallazgo. Por ejemplo, en H1 Originación sí crea una empresa activa («Missing expected rejection»), en H9 la función responde `true` por otro operador y en H11 el portal lee 27 eventos regulados. Con la 0028 final pasa todo el archivo: 31 pruebas (el relleno de la 0028, la prueba principal y sus 29 subpruebas).
 
 | Hallazgo | Arreglo | Prueba |
 | --- | --- | --- |
@@ -149,6 +172,32 @@ Verificación en rojo. La suite nueva contra la 0028 de `57caa83`, con solo las 
 | **S10** Un `formId` reutilizado con otro archivo respondía éxito | El mismo formulario con otro SHA-256 → `formulario_invalido`, sin carga nueva | «LPB: carga versionada…» |
 | **S11** Cumplimiento podía nombrar la Lista en motivos que leen Originación y Aprobación | Pista bajo «Motivo» del dictamen y de la solicitud de suspensión o reactivación, solo para Cumplimiento: «Originación y Aprobación leen este motivo: no menciones la Lista ni el reporte.» | `tests/operacion/pistas.test.ts`. Capturas `r11`-`r12`: Cumplimiento la ve y Originación no |
 | **S12** El alta por la dueña no decía quién corrió el comando, y faltaba la etiqueta de la coincidencia detectada | `ejecutado_por = session_user` en `alta_empresa`; «El sistema detectó una coincidencia» en la bitácora | «S12» |
+
+### Cuarta revisión (re-verificación sobre `fd139bf`)
+
+Los revisores cerraron H1-H12, el resto de H2, el relleno de la 0028, N1, N3, F8 y los N1-N8 del servidor. Salieron cuatro P2 (N2-resto, N5, N6 y N9) y ocho P3 (N4, N7, N8 y N10-N14). Todo va en este PR y en la misma 0028.
+
+Verificación en rojo, con la suite y las e2e nuevas:
+
+- **Base y servidor de `fd139bf`** (la 0028 de `fd139bf` más solo `kyb_fecha_de_curp`, que la prueba llama directo): fallan 8 de 31. El relleno (N8: `corrido_por_invalido` no se rechaza), el comando de roles (N8: la función no recibe el correo), N2 y N2-resto (el servidor captura a la extranjera sin documento), F4 y F5 (N10: el mismo formulario con otro archivo no se rechaza), S12 y N8, y N5 (sin caso nuevo con la carga nueva).
+- **Solo la base de `fd139bf`, servidor nuevo**: fallan 5. El relleno (N4: `column "operator_id" … already exists` al volver a aplicar), el comando de roles (N8), N2-resto (la base deja enviar a la extranjera con CURP y sin documento) y N5.
+- **Mutaciones del código nuevo** (quitar solo un arreglo): sin la revisión de N7, el relleno falla en `personal_con_administracion`; sin la regla de la misma persona, N2-resto falla en `expediente_misma_persona_dos_identificadores`; con el CHECK viejo, la LLC no se captura (N6).
+- **e2e con la interfaz de `fd139bf`** (`page.tsx` del expediente, `expediente.tsx`, `identidad-socio.tsx`, `acciones-alta.ts` y `aviso.tsx`): N9 falla porque Originación lee «exacta · 3 puntos» y N11 porque el aviso es el genérico y el formulario vuelve en «Mexicana».
+
+| Hallazgo | Arreglo | Prueba |
+| --- | --- | --- |
+| **N2-resto (P2)** La misma persona capturada con dos identificadores se partía (CURP y pasaporte, mexicano declarado extranjero, dos documentos) | Con país, el documento y la fecha van siempre, aunque traiga CURP, y la extranjera suma por país + documento (`kyb_persona`). Al enviar, `expediente_misma_persona_dos_identificadores` si dos físicas comparten nombre normalizado y fecha de nacimiento (la capturada o la de la CURP, `kyb_fecha_de_curp`) con claves distintas. El servidor exige documento y fecha a la extranjera. Límite: nombres escritos distinto («Socio extranjero y la misma persona») | «N2-resto y N6»: (c) sin documento, el servidor no la captura y por SQL la base no la envía; con el mismo pasaporte y la CURP suma 30 % y es propietario real. (d) y (e) → rechazadas. Homónimos con otra fecha sí se envían. La fecha de la CURP con el siglo por la posición 17. Captura `r25` |
+| **N5 (P2)** Cerrar un caso mientras otra pestaña carga una lista con la misma persona: no se reabría y la empresa se podía reactivar | `pg_advisory_xact_lock(hashtextextended('estado_empresa:'‖empresa, 0))` al cerrar (`lpb_coincidencias_revisar`) y al inicio de `lpb_cotejar_empresa`. Para REPEATABLE READ, el cierre escribe la fila de la empresa y el cotejo también cuando la empresa tiene un caso abierto (si solo escribiera el cierre, la carga con foto vieja no chocaría) | «N5»: READ COMMITTED en los dos órdenes (caso nuevo con la carga nueva; o cierre con `cerrada_con` = la carga nueva y sin reapertura) y REPEATABLE READ en los dos órdenes (el que decidió con foto vieja aborta con `could not serialize` y, al repetirlo, queda bien) |
+| **N6 (P2)** Un socio extranjero persona moral no se podía enviar | La moral extranjera se identifica con país y número de identificación fiscal o de registro; con país el RFC es opcional (CHECK `kyb_accionistas_extranjero`, `sin_rfc` solo para la mexicana). Formulario: «Número de identificación fiscal o de registro en su país» y «RFC en México (si tiene)». En la lista se coteja por nombre | «N2-resto y N6»: una LLC de EE. UU. con 45 % se envía y su dueño final es propietario real (45 %); sin registro no se captura; la moral no lleva fecha de nacimiento. e2e «tras un rechazo del socio extranjero…»: entra sin RFC. Capturas `r23`-`r24` |
+| **N9 (P2)** El grado de riesgo les decía a Originación y Aprobación «Coincidencias en listas · exacta · 3 puntos» | Para quien no ve la Lista, el factor se llama «Revisión de Cumplimiento» y dice «Lo ve Cumplimiento», sin puntos; tampoco ve el puntaje (lo delataría por diferencia). La hoja se titula «Revisión de Cumplimiento» | e2e «el grado de riesgo no le dice…» con Originación, Aprobación y Cumplimiento. Capturas `r28`-`r32` con los 5 roles (Administración no abre el expediente) |
+| **N4 (P3)** La sugerencia del aborto del relleno no se podía seguir | `ADD COLUMN IF NOT EXISTS operator_id` y la llave foránea aparte (se quita y se vuelve a poner por nombre). La sugerencia dice cómo crear la columna, apartar el candado, asignar y volver a aplicar | «H2 y N3: la 0028 sobre una base en la 0027…»: con dos operadores, se sigue la sugerencia al pie de la letra y la 0028 aplica; queda asignada, `NOT NULL`, con su llave y el candado de solo inserción |
+| **N7 (P3)** `personal:migrar-variable` creaba Administración aunque ya la hubiera | En la misma transacción y con el candado del personal, `personal_con_administracion` si hay alguien con Administración activo o invitado. Invita a todos los correos de una vez | «H2 y N3…»: la segunda corrida con otro correo, con la primera invitada y luego activa → rechazada, sin usuarios nuevos; varios correos en la primera corrida → todos invitados. La siembra e2e arranca así al operador |
+| **N8 (P3)** `ejecutado_por = session_user` no dice qué persona corrió el comando (en Neon siempre es la dueña) | `--quien-corre <correo>` obligatorio en `personal:migrar-variable`, `personal:rol` y `empresa:alta`; se guarda en `cambio` como `corrido_por` junto a `ejecutado_por`. `personal_rol_por_comando` recibe el correo. README: `session_user` es la conexión | «roles iniciales por comando» (sin `--quien-corre`, repetido o sin formato de correo → no hace nada; con él, `corrido_por`), «H2 y N3…» y «S12 y N8». Recorrido: `personal:rol` sin `--quien-corre` y el `corrido_por` del flujo 0 |
+| **N10 (P3)** Un documento del expediente con un `formId` usado y otro archivo respondía «Documento guardado» | Se compara el SHA-256 del documento ya guardado (como `lpb.ts`): otro archivo → `formulario_invalido`, y el archivo que sobra se borra | «F4 y F5»: de entrada no sube nada; en la carrera con otro archivo, uno `ok` y otro `formulario_invalido`, 1 evento, 1 borrado que no es el de la fila. Capturas `r26`-`r27` |
+| **N11 (P3)** Tras rechazar un dato del socio extranjero, el formulario volvía en «Mexicana» sin el campo marcado | El formulario arranca en «Extranjera» si el error es de país, documento o fecha, y con el tipo de persona que se envió (`&tipo=moral`). Cada error tiene su texto | e2e «tras un rechazo del socio extranjero…» (física y moral). Capturas `r22`-`r23` |
+| **N12 (P3)** La pista del dictamen se perdía cuando el motivo tenía error | `aria-describedby` une la pista y el aviso (también en la suspensión y en el documento del socio extranjero) | `tests/operacion/pistas.test.ts`; captura `r33` (`dictamen-motivo-pista aviso-operacion`) |
+| **N13 (P3)** «1 coincidencias nuevas» | Singular y plural en renglones y coincidencias | Captura `r34`: «1 renglón; 1 coincidencia nueva.» |
+| **N14 (P3)** El borrado del archivo huérfano fallaba en silencio | `console.error` estructurado (`origen: "blob.borrar"`, `evento: "huerfano_sin_borrar"`, la clave y la clase del error) | Revisión de código: sin red no se puede hacer fallar el borrado de Blob en el recorrido |
 
 ## Flujo → captura → qué verifica en la base
 
@@ -202,12 +251,25 @@ Verificación en rojo. La suite nueva contra la 0028 de `57caa83`, con solo las 
 | S5 | `r13-s5-aprobacion-aviso-sin-la-lista` | Ana aprueba la activación de Brisa: `activacion_con_coincidencia_lpb` con «Cumplimiento tiene un caso abierto…», sin «Lista» ni «bloqueada»; Brisa sigue en alta. |
 | S5 | `r14-s5-originacion-aviso-sin-la-lista` | Omar no ve la pista. Pide reactivar a Ébano: `reactivacion_con_coincidencia_lpb` con el aviso neutro y 0 solicitudes. |
 | N2 | `r15-n2-formulario-socio-extranjero` | Con «Extranjera», el formulario pide país, pasaporte o identificación y fecha de nacimiento, y no CURP. |
-| N2 | `r16-n2-envio-sin-identificacion` | Un socio extranjero sin documento se agrega, pero el envío se detiene con `expediente_accionista_sin_identificacion` y su aviso. |
-| N2 | `r17-n2-socio-extranjero-en-el-borrador` | Se quita y se agrega con «x12-345 678»: el borrador dice «Estados Unidos · identificación X12345678 · nació el…» y la base guarda `US X12345678 1980-05-01`. |
+| N2 | `r16-n2-documento-obligatorio` | Sin documento, el clic en «Agregar accionista» no envía: el campo es obligatorio (el servidor y la base también lo exigen). |
+| N2 | `r17-n2-socio-extranjero-en-el-borrador` | Con «x12-345 678»: el borrador dice «Estados Unidos · identificación X12345678 · nació el…» y la base guarda `US X12345678 1980-05-01`. |
 | S6 | `r18-s6-bitacora-administracion-sin-eventos-de-la-lista` | La bitácora de Ofelia (Administración) no trae coincidencias, resoluciones ni suspensiones por la lista; la carga, sí. |
 | S6 | `r19-s6-bitacora-auditoria-con-eventos-de-la-lista` | La de Aurelio (Auditoría) sí trae las coincidencias detectadas. |
 | S7 | `r20-s7-contrato-pasa-del-tope` | Gil elige un contrato de 4.6 MB en «Agregar contrato»: aviso ligado al campo, 0 envíos y 0 documentos nuevos. |
-| H2 | `r21-h2-portal-consulta-la-copia-de-su-operador` | La dueña siembra otro operador con una copia más reciente que trae CSR010101AB1 en definitivo (sin red no hay SAT). El portal de Taller consulta ese RFC: «No aparece en la lista 69-B.», con la fecha de la copia de su operador. |
+| H2 | `r21-h2-portal-consulta-la-copia-de-su-operador` | La dueña siembra otro operador con una copia más reciente que trae CSR010101AB1 en definitivo (sin red no hay SAT). El portal de Taller consulta ese RFC: «No aparece en la lista 69-B.», con la fecha de la copia de su operador. Antes, con un solo operador, el recorrido corre los comandos de la dueña: `personal:rol` sin `--quien-corre` no hace nada, `personal:migrar-variable` con Administración activa no invita a nadie (N7) y el rol del flujo 0 trae `corrido_por` (N8). |
+| N11 | `r22-n11-rechazo-socio-extranjero-fisica` | Omar agrega a una persona física extranjera con documento «A1»: `dato_invalido_documentoExtranjero` con «…de 4 a 20 letras y números…». El formulario vuelve en «Persona física» y «Extranjera», con el documento `aria-invalid` y `aria-describedby="acc-documento-pista aviso-operacion"`. 0 socios nuevos. |
+| N11 | `r23-n11-rechazo-socio-extranjero-moral` | Lo mismo con Delaware Holdings LLC (moral): vuelve en «Persona moral» y «Extranjera», con «Número de identificación fiscal o de registro en su país» marcado. |
+| N6 | `r24-n6-moral-extranjera-en-el-borrador` | Con «12-3456789» y sin RFC («RFC en México (si tiene)»): el borrador dice «Estados Unidos · registro 123456789» y la base guarda `sin RFC US 123456789`. |
+| N2 | `r25-n2-misma-persona-dos-identificadores` | «SMITH TAYLOR, John» con otro documento (D98765432) y la misma fecha que John Smith Taylor: se agrega, pero «Enviar versión» → `expediente_misma_persona_dos_identificadores`, con el aviso de qué corregir; la versión sigue en borrador. |
+| N10 | `r26-n10-mismo-formulario-otro-archivo` | Se guarda la estructura corporativa; con el `formId` de ese envío (una segunda pestaña) y otro archivo: «El formulario caducó. Recarga la página.» y ningún documento nuevo. |
+| N10 | `r27-n10-mismo-formulario-mismo-archivo` | El mismo `formId` con el mismo archivo: «Documento guardado» sin un documento de más. |
+| N9 | `r28-n9-riesgo-omar` | Celia registra la revisión periódica de Brisa con su caso abierto. Originación ve «Grado alto» y los demás factores; «Revisión de Cumplimiento: Lo ve Cumplimiento», sin «lista», «exacta» ni «Puntaje»; la hoja se titula «Revisión de Cumplimiento». |
+| N9 | `r29-n9-riesgo-ana` | Aprobación, igual. |
+| N9 | `r30-n9-riesgo-celia` | Cumplimiento ve «Coincidencias en listas · exacta · 3 puntos» y el puntaje. |
+| N9 | `r31-n9-riesgo-aurelio` | Auditoría, igual que Cumplimiento. |
+| N9 | `r32-n9-riesgo-ofelia` | Administración no abre el expediente. |
+| N12 | `r33-n12-dictamen-sin-motivo-pista-y-aviso` | Celia observa la versión de Cedro sin motivo: `motivo_invalido`; el motivo queda `aria-invalid` con `aria-describedby="dictamen-motivo-pista aviso-operacion"`. |
+| N13 | `r34-n13-carga-un-renglon` | Celia carga una lista de un renglón (Cedro): «1 renglón; 1 coincidencia nueva.» |
 
 Las capturas `NN-pantalla-<pantalla>-<tema>-<ancho>` son la fase de pantallas: un solo h1, campos con etiqueta, sin desborde horizontal y consola limpia en Personal, Cumplimiento, Lista, Expediente, Ficha, Aprobaciones, Clientes, Bitácora y Sin permiso.
 
@@ -507,6 +569,9 @@ OK    F1. clic en «Cargar y cotejar»: no sale la petición y hay 0 cargas nuev
 
 — Tercera revisión: avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora, contrato y 69-B por operador
 Brisa Regresión en alta con la activación pedida; Cedro Regresión con su versión por dictaminar.
+OK    N8. personal:rol sin --quien-corre no hace nada
+OK    N7. personal:migrar-variable con Administración activa no invita a nadie
+OK    N8. el rol que dio el comando queda en la bitácora con el correo de quien lo corrió (corrido_por) además de la conexión
 OK    aviso «lpb_cargada» tras la acción
 OK    S5. la carga deja un caso abierto de Brisa Regresión, que sigue en alta
 OK    S11. bajo «Motivo» del dictamen, Cumplimiento lee la pista, ligada al campo
@@ -518,19 +583,43 @@ OK    aviso «reactivacion_con_coincidencia_lpb» tras la acción
 OK    S5. Originación ve «Cumplimiento tiene un caso abierto…», sin «Lista» ni «bloqueada»
 OK    S5. no queda solicitud de reactivación
 OK    N2. con «Extranjera» el formulario pide país, pasaporte o identificación y fecha de nacimiento, y no CURP
-OK    aviso «expediente_accionista_agregado» tras la acción
-OK    aviso «expediente_accionista_sin_identificacion» tras la acción
-OK    N2. sin documento no se envía, con su aviso en pantalla
-OK    aviso «expediente_retirado» tras la acción
+OK    N2. clic en «Agregar accionista» sin documento: el navegador no envía, el campo es obligatorio
 OK    aviso «expediente_accionista_agregado» tras la acción
 OK    N2. el socio extranjero queda en el borrador con su país, su documento normalizado y su fecha de nacimiento
 OK    S6. la bitácora de Administración no trae coincidencias, resoluciones ni suspensiones por la lista; la carga, sí
 OK    S6. Auditoría sí lee las coincidencias detectadas
 OK    S7. clic en «Guardar el contrato» con 4.6 MB: aviso ligado al campo, 0 envíos y 0 documentos nuevos
 OK    H2. el portal consulta la copia de su operador: el RFC en definitivo de otro operador no aparece y la fecha es la de su copia
+
+— Cuarta revisión: socio extranjero física y moral, misma persona, grado de riesgo por rol, formulario reusado, pistas y carga
+OK    aviso «dato_invalido_documentoExtranjero» tras la acción
+OK    N11. tras el rechazo de la persona física extranjera, el formulario vuelve en «Extranjera» con el documento marcado y su texto
+OK    aviso «dato_invalido_documentoExtranjero» tras la acción
+OK    N11. tras el rechazo de la moral extranjera, vuelve como persona moral, en «Extranjera» y con el registro marcado
+OK    N6. con «Extranjera» el RFC es opcional
+OK    aviso «expediente_accionista_agregado» tras la acción
+OK    N6. Delaware Holdings LLC queda en el borrador sin RFC, con su país y su registro normalizado
+OK    aviso «expediente_accionista_agregado» tras la acción
+OK    aviso «expediente_misma_persona_dos_identificadores» tras la acción
+OK    N2. la misma persona con dos documentos no se envía; el aviso dice qué corregir y el borrador sigue abierto
+OK    aviso «expediente_documento_cargado» tras la acción
+OK    aviso «formulario_invalido» tras la acción
+OK    N10. mismo formulario con otro archivo: «El formulario caducó» y ningún documento nuevo
+OK    aviso «expediente_documento_cargado» tras la acción
+OK    N10. mismo formulario con el mismo archivo: se da por guardado sin un documento de más
+OK    aviso «riesgo_calificado» tras la acción
+OK    N9. Originación ve el grado y los demás factores; el de listas dice «Lo ve Cumplimiento», sin puntos ni puntaje
+OK    N9. Aprobación ve el grado y los demás factores; el de listas dice «Lo ve Cumplimiento», sin puntos ni puntaje
+OK    N9. Cumplimiento ve el factor de listas con sus puntos
+OK    N9. Auditoría ve el factor de listas con sus puntos
+OK    N9. Administración no abre el expediente
+OK    aviso «motivo_invalido» tras la acción
+OK    N12. el motivo con error anuncia la pista y el aviso
+OK    aviso «lpb_cargada» tras la acción
+OK    N13. el detalle de la carga va en singular
 OK    consola del navegador limpia en las regresiones
 
-40 comprobaciones en verde, 0 en rojo.
+65 comprobaciones en verde, 0 en rojo.
 ```
 
 </details>

@@ -208,7 +208,7 @@ const companyIdDe = (rfc) => sql(`select id from companies where rfc = '${rfc}'`
 // ---------- Flujos ----------
 /** El comando de roles iniciales (scripts/plataforma.ts personal:rol) con la conexión de la dueña de la base. */
 function comandoDeRoles(...args) {
-  const salida = spawnSync("./node_modules/.bin/tsx", ["scripts/plataforma.ts", "personal:rol", ...args], {
+  const salida = spawnSync("./node_modules/.bin/tsx", ["scripts/plataforma.ts", "personal:rol", "--quien-corre", "evidencia@lever.test", ...args], {
     encoding: "utf8", env: { ...process.env, DATABASE_URL: "", DATABASE_URL_UNPOOLED: DUENO },
   });
   return { estado: salida.status, texto: `${salida.stdout}${salida.stderr}`.trim() };
@@ -1014,10 +1014,34 @@ const fraseFecha = (iso) => {
 };
 const enVista = (localizador) => localizador.evaluate((nodo) => nodo.scrollIntoView({ block: "center" }));
 
+/** N7 y N8: los comandos de la dueña exigen el correo de quien los corre y el arranque no se repite (con un solo operador). */
+function comandosDeLaDuena() {
+  const correr = (...args) => {
+    const salida = spawnSync("./node_modules/.bin/tsx", ["scripts/plataforma.ts", ...args], {
+      encoding: "utf8", env: { ...process.env, DATABASE_URL: "", DATABASE_URL_UNPOOLED: DUENO, OPERADORES_PLATAFORMA: "segunda@lever.test" },
+    });
+    return { estado: salida.status, texto: `${salida.stdout}${salida.stderr}`.trim() };
+  };
+  const sinQuien = correr("personal:rol", "--correo", "ofelia@lever.test", "--rol", "originacion", "--motivo", "Prueba sin el correo de quien corre");
+  exigir(sinQuien.estado === 1 && sinQuien.texto.includes("Falta --quien-corre"), "N8. personal:rol sin --quien-corre no hace nada", sinQuien.texto);
+  const otraVez = correr("personal:migrar-variable", "--quien-corre", "evidencia@lever.test");
+  exigir(
+    otraVez.estado === 1 && otraVez.texto.includes("ya tiene Administración del personal") && cuenta("users where correo = 'segunda@lever.test'") === 0,
+    "N7. personal:migrar-variable con Administración activa no invita a nadie",
+    otraVez.texto,
+  );
+  exigir(
+    sql(`select cambio ->> 'corrido_por' from audit_log where accion = 'rol_personal_asignado' and origen = 'comando' order by ocurrido_en limit 1`) === "evidencia@lever.test",
+    "N8. el rol que dio el comando queda en la bitácora con el correo de quien lo corrió (corrido_por) además de la conexión",
+  );
+}
+
 async function terceraRonda(rutaEbano) {
   console.log("\n— Tercera revisión: avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora, contrato y 69-B por operador");
   execFileSync("./node_modules/.bin/tsx", ["scripts/evidencia/ola-r-alta/preparar.ts", "ronda3"], { stdio: "inherit", env: process.env });
   renovarSesiones();
+  // Antes de que H2 siembre un segundo operador: con dos, el comando ni siquiera arranca (operador_ambiguo).
+  comandosDeLaDuena();
   const brisa = companyIdDe("BRR180303CD6");
   const cedro = companyIdDe("CER170404CD5");
 
@@ -1095,11 +1119,15 @@ async function terceraRonda(rutaEbano) {
   await socio(null);
   await enVista(omar.p.locator("#acc-pais"));
   await foto(omar.p, "n2-formulario-socio-extranjero", false);
-  await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar accionista" }), "expediente_accionista_agregado");
-  await enviar(omar.p, omar.p.getByRole("button", { name: /^Enviar versión/ }), "expediente_accionista_sin_identificacion");
-  exigir((await aviso(omar.p)).includes("pasaporte o identificación oficial y su fecha de nacimiento"), "N2. sin documento no se envía, con su aviso en pantalla", await aviso(omar.p));
-  await foto(omar.p, "n2-envio-sin-identificacion", false);
-  await enviar(omar.p, omar.p.locator("li", { hasText: "John Smith Taylor" }).getByRole("button", { name: "Quitar" }), "expediente_retirado");
+  // Sin documento el navegador no envía: con país, el documento es obligatorio (y el servidor y la base lo exigen).
+  await omar.p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await omar.p.getByRole("button", { name: "Agregar accionista" }).click();
+  await omar.p.waitForTimeout(800);
+  exigir(
+    new URL(omar.p.url()).searchParams.get("aviso") === null && await omar.p.locator("#acc-documento").evaluate((nodo) => nodo.validity.valueMissing),
+    "N2. clic en «Agregar accionista» sin documento: el navegador no envía, el campo es obligatorio",
+  );
+  await foto(omar.p, "n2-documento-obligatorio", false);
   await socio("x12-345 678");
   await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar accionista" }), "expediente_accionista_agregado");
   const fila = omar.p.locator("li", { hasText: "John Smith Taylor" });
@@ -1175,6 +1203,163 @@ async function terceraRonda(rutaEbano) {
   );
   await foto(gil.p, "h2-portal-consulta-la-copia-de-su-operador", false);
   await gil.nav.close();
+
+  await cuartaRonda(rutaEbano);
+}
+
+// ---------- Cuarta revisión del PR (corre al final de las regresiones) ----------
+async function cuartaRonda(rutaEbano) {
+  console.log("\n— Cuarta revisión: socio extranjero física y moral, misma persona, grado de riesgo por rol, formulario reusado, pistas y carga");
+  renovarSesiones();
+  const brisa = companyIdDe("BRR180303CD6");
+  const cedro = companyIdDe("CER170404CD5");
+  const omar = await abrir("omar");
+  await ir(omar.p, rutaEbano);
+  const socio = async ({ tipo, nombre, documento, fecha = "", capital = "5" }) => {
+    await omar.p.locator("#acc-tipo").selectOption(tipo);
+    await omar.p.locator("#acc-nacionalidad").selectOption("extranjera");
+    await campo(omar.p, "#acc-nombre", nombre);
+    await omar.p.locator("#acc-pais").selectOption("US");
+    await campo(omar.p, "#acc-documento", documento);
+    if (fecha) await omar.p.locator("#acc-nacimiento").fill(fecha);
+    await campo(omar.p, "#acc-capital", capital);
+    await campo(omar.p, "#acc-votos", capital);
+  };
+  const documentoLigado = async () => [
+    await omar.p.locator("#acc-nacionalidad").inputValue(),
+    await omar.p.locator("#acc-documento").getAttribute("aria-invalid"),
+    await omar.p.locator("#acc-documento").getAttribute("aria-describedby"),
+  ].join("|");
+
+  // N11: un documento que no es documento se rechaza y el formulario vuelve en «Extranjera», con el campo
+  // marcado, ligado a su pista y al aviso, y el texto de ese error.
+  await socio({ tipo: "fisica", nombre: "Hans Müller Weber", documento: "A1", fecha: "1975-03-03" });
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar accionista" }), "dato_invalido_documentoExtranjero");
+  exigir(
+    (await documentoLigado()) === "extranjera|true|acc-documento-pista aviso-operacion" && (await omar.p.locator("#acc-tipo").inputValue()) === "fisica"
+      && (await aviso(omar.p)).includes("de 4 a 20 letras y números"),
+    "N11. tras el rechazo de la persona física extranjera, el formulario vuelve en «Extranjera» con el documento marcado y su texto",
+    await documentoLigado(),
+  );
+  await enVista(omar.p.locator("#acc-documento"));
+  await foto(omar.p, "n11-rechazo-socio-extranjero-fisica", false);
+  await socio({ tipo: "moral", nombre: "Delaware Holdings LLC", documento: "A1" });
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar accionista" }), "dato_invalido_documentoExtranjero");
+  exigir(
+    (await documentoLigado()) === "extranjera|true|acc-documento-pista aviso-operacion" && (await omar.p.locator("#acc-tipo").inputValue()) === "moral"
+      && (await omar.p.locator('label[for="acc-documento"]').innerText()) === "Número de identificación fiscal o de registro en su país",
+    "N11. tras el rechazo de la moral extranjera, vuelve como persona moral, en «Extranjera» y con el registro marcado",
+    await documentoLigado(),
+  );
+  await enVista(omar.p.locator("#acc-documento"));
+  await foto(omar.p, "n11-rechazo-socio-extranjero-moral", false);
+
+  // N6: la moral extranjera entra sin RFC, con su país y su registro.
+  await socio({ tipo: "moral", nombre: "Delaware Holdings LLC", documento: "12-3456789" });
+  exigir((await omar.p.locator('label[for="acc-rfc"]').innerText()) === "RFC en México (si tiene)", "N6. con «Extranjera» el RFC es opcional");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar accionista" }), "expediente_accionista_agregado");
+  const llc = omar.p.locator("li", { hasText: "Delaware Holdings LLC" });
+  exigir(
+    (await llc.innerText()).includes("Estados Unidos · registro 123456789")
+      && sql(`select coalesce(a.rfc, 'sin RFC') || ' ' || a.pais || ' ' || a.documento_extranjero from kyb_accionistas a join kyb_versiones v on v.id = a.version_id
+              where v.company_id = '${ctxEbano.id}' and v.estado = 'borrador' and a.retirado_en is null and a.tipo_persona = 'moral' and a.pais is not null`) === "sin RFC US 123456789",
+    "N6. Delaware Holdings LLC queda en el borrador sin RFC, con su país y su registro normalizado",
+  );
+  await enVista(llc);
+  await foto(omar.p, "n6-moral-extranjera-en-el-borrador", false);
+
+  // N2 (e): el mismo John Smith con otro documento y la misma fecha: la base no deja enviar la versión.
+  await socio({ tipo: "fisica", nombre: "SMITH TAYLOR, John", documento: "D98765432", fecha: "1980-05-01" });
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar accionista" }), "expediente_accionista_agregado");
+  await enviar(omar.p, omar.p.getByRole("button", { name: /^Enviar versión/ }), "expediente_misma_persona_dos_identificadores");
+  exigir(
+    (await aviso(omar.p)).includes("captúralo con el mismo identificador en cada lugar donde aparece")
+      && sql(`select estado from kyb_versiones where company_id = '${ctxEbano.id}' order by numero desc limit 1`) === "borrador",
+    "N2. la misma persona con dos documentos no se envía; el aviso dice qué corregir y el borrador sigue abierto",
+    await aviso(omar.p),
+  );
+  await enVista(omar.p.locator("#aviso-operacion"));
+  await foto(omar.p, "n2-misma-persona-dos-identificadores", false);
+
+  // N10: el mismo formulario de «Guardar documento» con otro archivo no se da por guardado; con el mismo, sí (una vez).
+  const formularioDocumento = omar.p.locator("form", { has: omar.p.locator("#doc-tipo") }).locator('input[name="formId"]');
+  const reusado = await formularioDocumento.inputValue();
+  const documentosEbano = () => cuenta(`kyb_version_documentos d join kyb_versiones v on v.id = d.version_id where v.company_id = '${ctxEbano.id}' and v.estado = 'borrador'`);
+  const subir = async (titulo) => {
+    await omar.p.locator("#doc-tipo").selectOption("estructura_corporativa");
+    await omar.p.locator("#doc-archivo").setInputFiles({ name: `${titulo}.pdf`, mimeType: "application/pdf", buffer: PDF(titulo) });
+  };
+  await subir("estructura-a");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Guardar documento" }), "expediente_documento_cargado");
+  const tras = documentosEbano();
+  // Una segunda pestaña con el mismo formulario: el formId que ya usó el primer envío.
+  await formularioDocumento.evaluate((nodo, valor) => { nodo.value = valor; }, reusado);
+  await subir("estructura-b");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Guardar documento" }), "formulario_invalido");
+  exigir(documentosEbano() === tras && (await aviso(omar.p)).includes("El formulario caducó"), "N10. mismo formulario con otro archivo: «El formulario caducó» y ningún documento nuevo");
+  await enVista(omar.p.locator("#aviso-operacion"));
+  await foto(omar.p, "n10-mismo-formulario-otro-archivo", false);
+  await formularioDocumento.evaluate((nodo, valor) => { nodo.value = valor; }, reusado);
+  await subir("estructura-a");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Guardar documento" }), "expediente_documento_cargado");
+  exigir(documentosEbano() === tras, "N10. mismo formulario con el mismo archivo: se da por guardado sin un documento de más");
+  await enVista(omar.p.locator("#aviso-operacion"));
+  await foto(omar.p, "n10-mismo-formulario-mismo-archivo", false);
+  await omar.nav.close();
+
+  // N9: Cumplimiento registra la revisión periódica de Brisa con su caso abierto; cada rol abre el expediente.
+  const celia = await abrir("celia");
+  await ir(celia.p, `/operacion/clientes/${brisa}/expediente`);
+  await enviar(celia.p, celia.p.getByRole("button", { name: "Registrar revisión periódica" }), "riesgo_calificado");
+  const vistas = {
+    omar: "Originación", ana: "Aprobación", celia: "Cumplimiento", aurelio: "Auditoría", ofelia: "Administración",
+  };
+  for (const [quien, rol] of Object.entries(vistas)) {
+    const sesion = quien === "celia" ? celia : await abrir(quien);
+    await ir(sesion.p, `/operacion/clientes/${brisa}/expediente`);
+    const texto = (await sesion.p.locator("main").innerText()).replace(/\s+/g, " ");
+    if (quien === "ofelia") {
+      exigir(texto.includes("El expediente lo consultan Originación, Aprobación, Cumplimiento y Auditoría."), "N9. Administración no abre el expediente");
+    } else if (quien === "omar" || quien === "ana") {
+      const riesgo = (await sesion.p.locator("section", { has: sesion.p.locator("#riesgo-titulo") }).innerText()).replace(/\s+/g, " ");
+      exigir(
+        riesgo.includes("Grado alto") && riesgo.includes("Revisión de Cumplimiento Lo ve Cumplimiento") && !/lista|exacta|puntaje/i.test(riesgo)
+          && (await sesion.p.locator("#coincidencias-titulo").innerText()) === "Revisión de Cumplimiento",
+        `N9. ${rol} ve el grado y los demás factores; el de listas dice «Lo ve Cumplimiento», sin puntos ni puntaje`,
+        riesgo,
+      );
+      await enVista(sesion.p.locator("#riesgo-titulo"));
+    } else {
+      const riesgo = (await sesion.p.locator("section", { has: sesion.p.locator("#riesgo-titulo") }).innerText()).replace(/\s+/g, " ");
+      exigir(riesgo.includes("Coincidencias en listas exacta · 3 puntos") && riesgo.includes("Puntaje"), `N9. ${rol} ve el factor de listas con sus puntos`, riesgo);
+      await enVista(sesion.p.locator("#riesgo-titulo"));
+    }
+    await foto(sesion.p, `n9-riesgo-${quien}`, false);
+    if (quien !== "celia") await sesion.nav.close();
+  }
+
+  // N12: el dictamen sin motivo marca el campo y anuncia la pista y el aviso.
+  await ir(celia.p, `/operacion/clientes/${cedro}/expediente`);
+  await celia.p.locator("#dictamen-resultado").selectOption("observado");
+  await enviar(celia.p, celia.p.getByRole("button", { name: "Registrar dictamen" }), "motivo_invalido");
+  const motivo = celia.p.locator("#dictamen-motivo");
+  exigir(
+    (await motivo.getAttribute("aria-describedby")) === "dictamen-motivo-pista aviso-operacion" && (await motivo.getAttribute("aria-invalid")) === "true",
+    "N12. el motivo con error anuncia la pista y el aviso",
+  );
+  await enVista(motivo);
+  await foto(celia.p, "n12-dictamen-sin-motivo-pista-y-aviso", false);
+
+  // N13: la carga de un renglón dice «1 renglón; 1 coincidencia nueva.».
+  await ir(celia.p, "/operacion/lpb");
+  await celia.p.locator("#archivo").setInputFiles({
+    name: "lpb-uif-2026-11-09.csv", mimeType: "text/csv", buffer: Buffer.from("nombre,rfc,curp,tipo,fecha\nCedro Regresión SA de CV,CER170404CD5,,moral,2026-11-09"),
+  });
+  await enviar(celia.p, celia.p.getByRole("button", { name: "Cargar y cotejar" }), "lpb_cargada");
+  exigir((await aviso(celia.p)).includes("1 renglón; 1 coincidencia nueva."), "N13. el detalle de la carga va en singular", await aviso(celia.p));
+  await foto(celia.p, "n13-carga-un-renglon", false);
+  await celia.nav.close();
+
 }
 
 // ---------- Orden ----------

@@ -394,8 +394,9 @@ FOR EACH ROW EXECUTE FUNCTION personal_solo_administracion();
 -- conexión directa de las migraciones), nunca la aplicación: no se otorga a
 -- ningún rol. Deja el evento en la bitácora en la misma transacción, la 50ª
 -- sigue valiendo (platform_staff_roles_revisar corre igual) y no deja al
--- personal sin administración.
-CREATE FUNCTION personal_rol_por_comando(p_correo text, p_rol text, p_quitar boolean, p_motivo text)
+-- personal sin administración. session_user es la conexión (en Neon, siempre la
+-- dueña), no la persona: el correo de quien corre el comando va aparte.
+CREATE FUNCTION personal_rol_por_comando(p_correo text, p_rol text, p_quitar boolean, p_motivo text, p_corrido_por text)
 RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -410,6 +411,9 @@ BEGIN
   END IF;
   IF p_quitar IS NULL OR p_rol IS NULL THEN
     RAISE EXCEPTION 'rol_invalido';
+  END IF;
+  IF p_corrido_por IS NULL OR char_length(p_corrido_por) > 254 OR p_corrido_por !~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$' THEN
+    RAISE EXCEPTION 'corrido_por_invalido';
   END IF;
   IF (SELECT count(*) FROM platform_staff s JOIN users u ON u.id = s.user_id
       WHERE lower(u.correo) = lower(btrim(p_correo)) AND s.estado = 'activo') <> 1 THEN
@@ -447,14 +451,14 @@ BEGIN
     persona.operator_id, NULL, 'sistema', NULL, 'sistema',
     CASE WHEN p_quitar THEN 'rol_personal_retirado' ELSE 'rol_personal_asignado' END,
     'platform_staff_roles', persona.user_id, p_motivo, 'comando',
-    -- Quién lo corrió lo dice la base, no el motivo escrito a mano.
-    jsonb_build_object('rol', p_rol, 'ejecutado_por', session_user)
+    -- La conexión la dice la base (session_user); la persona, el correo que exige el comando.
+    jsonb_build_object('rol', p_rol, 'ejecutado_por', session_user, 'corrido_por', lower(btrim(p_corrido_por)))
   );
   RETURN true;
 END;
 $$;
 
-REVOKE ALL ON FUNCTION personal_rol_por_comando(text, text, boolean, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION personal_rol_por_comando(text, text, boolean, text, text) FROM PUBLIC;
 
 -- 2. Expediente de persona moral ----------------------------------------------
 
@@ -654,7 +658,9 @@ CREATE TABLE kyb_accionistas (
   rfc text,
   curp text,
   nacionalidad text,
-  -- Persona física extranjera sin CURP: país (ISO 3166-1), pasaporte o identificación oficial y fecha de nacimiento.
+  -- Socio extranjero: país (ISO 3166-1) y número de su pasaporte o identificación
+  -- oficial (física, con su fecha de nacimiento) o de su registro fiscal o mercantil
+  -- en su país (moral). Con país, la CURP y el RFC son opcionales.
   pais text,
   documento_extranjero text,
   fecha_nacimiento date,
@@ -682,7 +688,7 @@ CREATE TABLE kyb_accionistas (
   ),
   CONSTRAINT kyb_accionistas_extranjero CHECK (
     (pais IS NULL OR (pais ~ '^[A-Z]{2}$' AND pais <> 'MX'))
-    AND (documento_extranjero IS NULL OR (tipo_persona = 'fisica' AND pais IS NOT NULL AND documento_extranjero ~ '^[A-Z0-9]{4,20}$'))
+    AND (documento_extranjero IS NULL OR (pais IS NOT NULL AND documento_extranjero ~ '^[A-Z0-9]{4,20}$'))
     AND (fecha_nacimiento IS NULL OR (tipo_persona = 'fisica' AND pais IS NOT NULL))
   ),
   CONSTRAINT kyb_accionistas_moral CHECK (tipo_persona = 'fisica' OR (pep = 'no' AND NOT control_otros_medios)),
@@ -792,6 +798,41 @@ AS $$
   )
 $$;
 
+-- La misma persona por varios caminos suma una vez: la extranjera por su país y
+-- su documento (el envío los exige siempre que trae país, aunque tenga CURP); la
+-- mexicana por su CURP.
+CREATE FUNCTION kyb_persona(p_pais text, p_documento text, p_curp text, p_clave uuid)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$
+  SELECT coalesce('EXT:' || p_pais || ':' || p_documento, p_curp, p_clave::text)
+$$;
+
+-- La fecha de nacimiento que trae la CURP (posiciones 5 a 10, AAMMDD). La posición
+-- 17 es un dígito si nació antes de 2000 y una letra después. Una fecha imposible
+-- no es fecha.
+CREATE FUNCTION kyb_fecha_de_curp(p_curp text)
+RETURNS date
+LANGUAGE plpgsql
+IMMUTABLE
+SET search_path = public
+AS $$
+BEGIN
+  IF p_curp IS NULL THEN
+    RETURN NULL;
+  END IF;
+  RETURN make_date(
+    CASE WHEN substr(p_curp, 17, 1) ~ '[0-9]' THEN 1900 ELSE 2000 END + substr(p_curp, 5, 2)::integer,
+    substr(p_curp, 7, 2)::integer,
+    substr(p_curp, 9, 2)::integer
+  );
+EXCEPTION WHEN datetime_field_overflow THEN
+  RETURN NULL;
+END;
+$$;
+
 -- Propietarios reales de una versión (borrador o enviada).
 --   capital y votos efectivos: suma, por cada camino, del producto de las participaciones.
 --   votos controlados: los votos que el primer eslabón tiene en la empresa, cuando
@@ -833,9 +874,7 @@ AS $$
     WHERE c.tipo_persona = 'moral' AND NOT h.clave = ANY (c.camino) AND c.capa < 10
   ),
   fisicas AS (
-    -- La misma persona por varios caminos suma por su CURP o, extranjera sin CURP, por
-    -- país y documento (el envío los exige).
-    SELECT coalesce(a.curp, 'EXT:' || a.pais || ':' || a.documento_extranjero, a.clave::text) AS persona,
+    SELECT kyb_persona(a.pais, a.documento_extranjero, a.curp, a.clave) AS persona,
            (array_agg(a.clave ORDER BY a.clave::text))[1] AS clave,
            (array_agg(a.nombre ORDER BY a.clave::text))[1] AS nombre,
            max(a.rfc) AS rfc,
@@ -933,8 +972,10 @@ BEGIN
   END LOOP;
   -- 4ª fr. II c): una persona que suma por dos caminos con identificadores
   -- distintos se partiría en dos y quedaría bajo el umbral. Toda persona física
-  -- mexicana lleva CURP; la extranjera sin CURP, su país, el número de su
-  -- pasaporte o identificación oficial y su fecha de nacimiento. Toda moral, su RFC.
+  -- mexicana lleva CURP y toda moral mexicana, su RFC. El socio extranjero (con
+  -- país) lleva siempre el número de su pasaporte o identificación oficial y su
+  -- fecha de nacimiento (física) o de su registro en su país (moral), aunque traiga
+  -- CURP o RFC: se suma por país y documento (kyb_persona).
   IF EXISTS (
     SELECT 1 FROM kyb_accionistas a
     WHERE a.version_id = p_version.id AND a.retirado_en IS NULL AND a.tipo_persona = 'fisica'
@@ -944,16 +985,32 @@ BEGIN
   END IF;
   IF EXISTS (
     SELECT 1 FROM kyb_accionistas a
-    WHERE a.version_id = p_version.id AND a.retirado_en IS NULL AND a.tipo_persona = 'fisica'
-      AND a.curp IS NULL AND (a.documento_extranjero IS NULL OR a.fecha_nacimiento IS NULL)
+    WHERE a.version_id = p_version.id AND a.retirado_en IS NULL AND a.pais IS NOT NULL
+      AND (a.documento_extranjero IS NULL OR (a.tipo_persona = 'fisica' AND a.fecha_nacimiento IS NULL))
   ) THEN
     RAISE EXCEPTION 'expediente_accionista_sin_identificacion';
   END IF;
   IF EXISTS (
     SELECT 1 FROM kyb_accionistas a
-    WHERE a.version_id = p_version.id AND a.retirado_en IS NULL AND a.tipo_persona = 'moral' AND a.rfc IS NULL
+    WHERE a.version_id = p_version.id AND a.retirado_en IS NULL AND a.tipo_persona = 'moral'
+      AND a.rfc IS NULL AND a.pais IS NULL
   ) THEN
     RAISE EXCEPTION 'expediente_accionista_sin_rfc';
+  END IF;
+  -- La misma persona capturada con dos identificadores (CURP en un camino y
+  -- pasaporte en otro, o dos documentos) se partiría igual. Dos personas físicas con
+  -- el mismo nombre (sin orden de palabras, acentos ni puntuación) y la misma fecha
+  -- de nacimiento (la capturada o la de su CURP) no pueden tener claves distintas.
+  -- Un nombre escrito distinto no lo detecta.
+  IF EXISTS (
+    SELECT 1
+    FROM kyb_accionistas a
+    CROSS JOIN LATERAL (VALUES (a.fecha_nacimiento), (kyb_fecha_de_curp(a.curp))) AS f (fecha)
+    WHERE a.version_id = p_version.id AND a.retirado_en IS NULL AND a.tipo_persona = 'fisica' AND f.fecha IS NOT NULL
+    GROUP BY lpb_normalizar(a.nombre), f.fecha
+    HAVING count(DISTINCT kyb_persona(a.pais, a.documento_extranjero, a.curp, a.clave)) > 1
+  ) THEN
+    RAISE EXCEPTION 'expediente_misma_persona_dos_identificadores';
   END IF;
   -- El cálculo de propietarios y la herencia de versión llegan a la capa 10.
   -- Una cadena más larga dejaría fuera a quien está al final.
@@ -1485,8 +1542,12 @@ $$;
 -- La copia del 69-B es de cada operador: la carga su Administración y el cotejo,
 -- «fuera de lista», la relectura de proveedores y el portal leen la última de su
 -- operador. Las copias que ya existen pasan al único operador; con más de uno (o
--- ninguno) la migración no adivina y se detiene.
-ALTER TABLE lista_69b_snapshots ADD COLUMN operator_id uuid REFERENCES operators (id) ON DELETE RESTRICT;
+-- ninguno) la migración no adivina y se detiene. La columna puede existir ya: es lo
+-- que pide la sugerencia del aborto para asignar las copias a mano.
+ALTER TABLE lista_69b_snapshots ADD COLUMN IF NOT EXISTS operator_id uuid;
+ALTER TABLE lista_69b_snapshots DROP CONSTRAINT IF EXISTS lista_69b_snapshots_operator_id_fkey;
+ALTER TABLE lista_69b_snapshots ADD CONSTRAINT lista_69b_snapshots_operator_id_fkey
+  FOREIGN KEY (operator_id) REFERENCES operators (id) ON DELETE RESTRICT;
 
 DO $$
 BEGIN
@@ -1494,7 +1555,11 @@ BEGIN
     AND (SELECT count(*) FROM operators) <> 1 THEN
     RAISE EXCEPTION 'lista_69b_sin_operador'
       USING DETAIL = 'Hay copias del 69-B sin operador y la base no tiene exactamente un operador.',
-            HINT = 'Asigna cada copia a su operador (lista_69b_snapshots.operator_id) y vuelve a aplicar la 0028.';
+            HINT = 'En una transacción: ALTER TABLE lista_69b_snapshots ADD COLUMN operator_id uuid; '
+                   'ALTER TABLE lista_69b_snapshots DISABLE TRIGGER lista_69b_snapshots_no_update; '
+                   'UPDATE lista_69b_snapshots SET operator_id = <operador> WHERE id = <copia> (cada copia); '
+                   'ALTER TABLE lista_69b_snapshots ENABLE TRIGGER lista_69b_snapshots_no_update; '
+                   'después vuelve a aplicar la 0028.';
   END IF;
 END;
 $$;
@@ -1989,9 +2054,19 @@ DECLARE
   primera uuid;
   ahora timestamptz := clock_timestamp();
 BEGIN
+  -- Mismo candado que el cierre de un caso (lpb_coincidencias_revisar): quien llega
+  -- segundo lee lo que el otro confirmó. Si Cumplimiento cierra mientras se carga una
+  -- lista nueva, o el cotejo ve el caso cerrado y lo reabre con la carga nueva, o el
+  -- cierre anota la carga nueva.
+  PERFORM pg_advisory_xact_lock(hashtextextended('estado_empresa:' || p_company::text, 0));
   SELECT * INTO empresa FROM companies c WHERE c.id = p_company;
   IF empresa.id IS NULL THEN
     RETURN 0;
+  END IF;
+  -- REPEATABLE READ: con un caso abierto, escribir la fila de la empresa choca con un
+  -- cierre que la escribió después de esta foto (y el cierre, con este cotejo).
+  IF EXISTS (SELECT 1 FROM lpb_coincidencias x WHERE x.company_id = p_company AND x.estado IN ('pendiente', 'confirmada')) THEN
+    UPDATE companies SET estado = estado WHERE id = p_company;
   END IF;
   carga := lpb_carga_vigente(empresa.operator_id);
   copia := lista_69b_vigente(empresa.operator_id);
@@ -2354,6 +2429,13 @@ BEGIN
   END IF;
 
   IF NEW.estado IS DISTINCT FROM OLD.estado THEN
+    -- Cerrar toma el candado del cotejo (lpb_cotejar_empresa) antes de mirar la lista
+    -- vigente; con REPEATABLE READ, escribir la fila de la empresa aborta si un cotejo
+    -- la escribió después de esta foto.
+    IF NEW.estado IN ('falso_positivo', 'fuera_de_lista') THEN
+      PERFORM pg_advisory_xact_lock(hashtextextended('estado_empresa:' || NEW.company_id::text, 0));
+      UPDATE companies SET estado = estado WHERE id = NEW.company_id;
+    END IF;
     IF NOT (
       (OLD.estado = 'pendiente' AND NEW.estado IN ('confirmada', 'falso_positivo', 'fuera_de_lista'))
       OR (OLD.estado = 'confirmada' AND NEW.estado = 'fuera_de_lista')

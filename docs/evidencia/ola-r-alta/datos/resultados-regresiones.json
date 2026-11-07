@@ -77,6 +77,18 @@
     },
     {
       "ok": true,
+      "texto": "N8. personal:rol sin --quien-corre no hace nada"
+    },
+    {
+      "ok": true,
+      "texto": "N7. personal:migrar-variable con Administración activa no invita a nadie"
+    },
+    {
+      "ok": true,
+      "texto": "N8. el rol que dio el comando queda en la bitácora con el correo de quien lo corrió (corrido_por) además de la conexión"
+    },
+    {
+      "ok": true,
       "texto": "aviso «lpb_cargada» tras la acción"
     },
     {
@@ -121,19 +133,7 @@
     },
     {
       "ok": true,
-      "texto": "aviso «expediente_accionista_agregado» tras la acción"
-    },
-    {
-      "ok": true,
-      "texto": "aviso «expediente_accionista_sin_identificacion» tras la acción"
-    },
-    {
-      "ok": true,
-      "texto": "N2. sin documento no se envía, con su aviso en pantalla"
-    },
-    {
-      "ok": true,
-      "texto": "aviso «expediente_retirado» tras la acción"
+      "texto": "N2. clic en «Agregar accionista» sin documento: el navegador no envía, el campo es obligatorio"
     },
     {
       "ok": true,
@@ -158,6 +158,106 @@
     {
       "ok": true,
       "texto": "H2. el portal consulta la copia de su operador: el RFC en definitivo de otro operador no aparece y la fecha es la de su copia"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_documentoExtranjero» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N11. tras el rechazo de la persona física extranjera, el formulario vuelve en «Extranjera» con el documento marcado y su texto"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_documentoExtranjero» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N11. tras el rechazo de la moral extranjera, vuelve como persona moral, en «Extranjera» y con el registro marcado"
+    },
+    {
+      "ok": true,
+      "texto": "N6. con «Extranjera» el RFC es opcional"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N6. Delaware Holdings LLC queda en el borrador sin RFC, con su país y su registro normalizado"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_misma_persona_dos_identificadores» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N2. la misma persona con dos documentos no se envía; el aviso dice qué corregir y el borrador sigue abierto"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_documento_cargado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «formulario_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N10. mismo formulario con otro archivo: «El formulario caducó» y ningún documento nuevo"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_documento_cargado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N10. mismo formulario con el mismo archivo: se da por guardado sin un documento de más"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «riesgo_calificado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N9. Originación ve el grado y los demás factores; el de listas dice «Lo ve Cumplimiento», sin puntos ni puntaje"
+    },
+    {
+      "ok": true,
+      "texto": "N9. Aprobación ve el grado y los demás factores; el de listas dice «Lo ve Cumplimiento», sin puntos ni puntaje"
+    },
+    {
+      "ok": true,
+      "texto": "N9. Cumplimiento ve el factor de listas con sus puntos"
+    },
+    {
+      "ok": true,
+      "texto": "N9. Auditoría ve el factor de listas con sus puntos"
+    },
+    {
+      "ok": true,
+      "texto": "N9. Administración no abre el expediente"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N12. el motivo con error anuncia la pista y el aviso"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «lpb_cargada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N13. el detalle de la carga va en singular"
     },
     {
       "ok": true,

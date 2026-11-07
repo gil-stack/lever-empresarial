@@ -51,7 +51,9 @@ function domicilio(datos: VersionExpediente["datos"]): string {
 /** La persona extranjera sin CURP se lee por su país, su documento y su fecha de nacimiento. */
 function identidadExtranjera(accionista: Accionista): string {
   const partes = [accionista.nacionalidad ?? accionista.pais];
-  if (accionista.documentoExtranjero) partes.push(`identificación ${accionista.documentoExtranjero}`);
+  if (accionista.documentoExtranjero) {
+    partes.push(`${accionista.tipoPersona === "moral" ? "registro" : "identificación"} ${accionista.documentoExtranjero}`);
+  }
   if (accionista.fechaNacimiento) partes.push(`nació el ${fechaDia(accionista.fechaNacimiento)}`);
   return partes.join(" · ");
 }
@@ -197,10 +199,13 @@ export function FormulariosBorrador({
   version,
   companyId,
   error,
+  socioRechazado = "fisica",
 }: {
   version: VersionExpediente;
   companyId: string;
   error: ErrorDeCampo;
+  /** El tipo del socio que el servidor rechazó: el formulario vuelve con ese tipo. */
+  socioRechazado?: "fisica" | "moral";
 }) {
   const morales = version.accionistas.filter((accionista) => accionista.tipoPersona === "moral");
   const base = (
@@ -364,7 +369,9 @@ export function FormulariosBorrador({
           </div>
           <IdentidadDelSocio
             paises={paisesExtranjeros()}
+            tipoInicial={socioRechazado}
             ligados={{
+              rfc: error("accionistas-titulo", "rfc"),
               curp: error("accionistas-titulo", "curp"),
               pais: error("accionistas-titulo", "pais"),
               documentoExtranjero: error("accionistas-titulo", "documentoExtranjero"),
@@ -374,10 +381,6 @@ export function FormulariosBorrador({
             <div className="campo">
               <label htmlFor="acc-nombre">Nombre o razón social</label>
               <input id="acc-nombre" name="nombre" maxLength={300} required {...error("accionistas-titulo", "nombre")} />
-            </div>
-            <div className="campo">
-              <label htmlFor="acc-rfc">RFC</label>
-              <input id="acc-rfc" name="rfc" maxLength={13} autoCapitalize="characters" className="entrada-rfc" {...error("accionistas-titulo", "rfc")} />
             </div>
           </IdentidadDelSocio>
           <div className="campo">

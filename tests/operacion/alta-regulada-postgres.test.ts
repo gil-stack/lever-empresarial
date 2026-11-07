@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
@@ -156,16 +156,34 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
       assert.deepEqual(await consultar(urlDuena, `select (s.operator_id = o.id) as del_operador from lista_69b_snapshots s, operators o`), [{ del_operador: true }]);
       assert.deepEqual(await consultar(urlDuena, `select attnotnull from pg_attribute where attrelid = 'lista_69b_snapshots'::regclass and attname = 'operator_id'`), [{ attnotnull: true }]);
 
-      // N3: la primera Administración la invita la dueña de la base; la bitácora dice quién corrió el comando.
-      const [primera] = await invitarPersonalComoDuena(urlDuena, ["primera@ejemplo.mx"]);
+      // N3 y N8: la primera Administración la invita la dueña de la base; la bitácora guarda la
+      // conexión (session_user) y el correo de quien corrió el comando, que es obligatorio.
+      await assert.rejects(invitarPersonalComoDuena(urlDuena, ["primera@ejemplo.mx"], "gil"), /corrido_por_invalido/);
+      const [primera] = await invitarPersonalComoDuena(urlDuena, ["primera@ejemplo.mx"], "Gil@Ejemplo.mx");
       assert.equal(primera?.resultado, "invitada");
       assert.deepEqual(await consultar(urlDuena, `
-        select s.estado, r.rol, a.origen, a.cambio ->> 'ejecutado_por' = session_user as ejecutado_por
+        select s.estado, r.rol, a.origen, a.cambio ->> 'ejecutado_por' = session_user as ejecutado_por, a.cambio ->> 'corrido_por' as corrido_por
         from platform_staff s join users u on u.id = s.user_id
         join platform_staff_roles r on r.operator_id = s.operator_id and r.user_id = s.user_id
         join audit_log a on a.accion = 'alta_personal' and a.identificador = s.user_id
-        where u.correo = 'primera@ejemplo.mx'`), [{ estado: "invitado", rol: "administracion_plataforma", origen: "migracion_personal", ejecutado_por: true }]);
-      assert.deepEqual((await invitarPersonalComoDuena(urlDuena, ["primera@ejemplo.mx"])).map((fila) => fila.resultado), ["ya_era_personal"]);
+        where u.correo = 'primera@ejemplo.mx'`), [{
+        estado: "invitado", rol: "administracion_plataforma", origen: "migracion_personal", ejecutado_por: true, corrido_por: "gil@ejemplo.mx",
+      }]);
+      // N7: solo arranca. Con una Administración invitada (o activa), otra corrida no invita a nadie.
+      await assert.rejects(invitarPersonalComoDuena(urlDuena, ["segunda@ejemplo.mx"], "gil@ejemplo.mx"), /personal_con_administracion/);
+      await consultar(urlDuena, "update platform_staff set estado = 'activo'");
+      await assert.rejects(invitarPersonalComoDuena(urlDuena, ["tercera@ejemplo.mx"], "gil@ejemplo.mx"), /personal_con_administracion/);
+      assert.deepEqual(await consultar(urlDuena, "select count(*)::int as n from platform_staff"), [{ n: 1 }]);
+      assert.deepEqual(await consultar(urlDuena, "select count(*)::int as n from users where correo in ('segunda@ejemplo.mx', 'tercera@ejemplo.mx')"), [{ n: 0 }]);
+    });
+
+    // La primera corrida invita a la vez a todas las personas de la variable.
+    await conBaseDesechable(urlAdmin, async (urlDuena) => {
+      hasta0027(urlDuena);
+      await aplicar0028(urlDuena);
+      const varias = await invitarPersonalComoDuena(urlDuena, ["una@ejemplo.mx", "dos@ejemplo.mx"], "gil@ejemplo.mx");
+      assert.deepEqual(varias.map((fila) => fila.resultado), ["invitada", "invitada"]);
+      assert.deepEqual(await consultar(urlDuena, "select count(*)::int as n from platform_staff where estado = 'invitado'"), [{ n: 2 }]);
     });
 
     // Con dos operadores y copias sin dueño, la migración se detiene y no deja nada a medias.
@@ -175,6 +193,29 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
       await copiaVieja(urlDuena);
       await assert.rejects(aplicar0028(urlDuena), /lista_69b_sin_operador/);
       assert.deepEqual(await consultar(urlDuena, `select count(*)::int as n from information_schema.columns where table_name = 'lista_69b_snapshots' and column_name = 'operator_id'`), [{ n: 0 }]);
+
+      // N4: seguir la sugerencia del aborto al pie de la letra (crear la columna, apartar el
+      // candado y asignar cada copia) y volver a aplicar la 0028 funciona.
+      const c = new pg.Client({ connectionString: urlDuena });
+      await c.connect();
+      try {
+        await c.query("begin");
+        await c.query("alter table lista_69b_snapshots add column operator_id uuid");
+        await c.query("alter table lista_69b_snapshots disable trigger lista_69b_snapshots_no_update");
+        await c.query("update lista_69b_snapshots set operator_id = (select id from operators order by alta_en desc limit 1) where id = $1", [COPIA_69B]);
+        await c.query("alter table lista_69b_snapshots enable trigger lista_69b_snapshots_no_update");
+        await c.query("commit");
+      } finally {
+        await c.end();
+      }
+      await aplicar0028(urlDuena);
+      assert.deepEqual(await consultar(urlDuena, `
+        select s.operator_id = (select id from operators order by alta_en desc limit 1) as asignada,
+               (select attnotnull from pg_attribute where attrelid = 'lista_69b_snapshots'::regclass and attname = 'operator_id') as obligatoria,
+               (select count(*)::int from pg_constraint where conrelid = 'lista_69b_snapshots'::regclass and contype = 'f'
+                  and conname = 'lista_69b_snapshots_operator_id_fkey') as llave
+        from lista_69b_snapshots s`), [{ asignada: true, obligatoria: true, llave: 1 }]);
+      await assert.rejects(consultar(urlDuena, "update lista_69b_snapshots set operator_id = gen_random_uuid()"), /solo acepta inserciones/);
     });
   });
 
@@ -679,12 +720,13 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
         });
 
         await t.test("roles iniciales por comando: solo la dueña de la base, con evento y sin saltarse la 50ª", async () => {
-          const comando = (...args: string[]) => {
+          const sinQuien = (...args: string[]) => {
             const salida = spawnSync(join(process.cwd(), "node_modules/.bin/tsx"), ["scripts/plataforma.ts", "personal:rol", ...args], {
               cwd: process.cwd(), encoding: "utf8", env: { ...process.env, DATABASE_URL: "", DATABASE_URL_UNPOOLED: urlDuena },
             });
             return { estado: salida.status, texto: `${salida.stdout}${salida.stderr}`.trim() };
           };
+          const comando = (...args: string[]) => sinQuien("--quien-corre", "Gil@Ejemplo.mx", ...args);
           const correoAdm = `${ADM}@ejemplo.mx`;
           const motivo = "Arranque de la 0028: acta del consejo del 10 de noviembre";
           const eventos = (accion: string) => contar(
@@ -695,11 +737,17 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           // La aplicación no la ejecuta con ningún rol: ni el personal ni el portal ni la conexión de la app.
           for (const rol of ["plataforma_sofipo", "plataforma_cliente"] as const) {
             await assert.rejects(como(urlApp, rol, { userId: ADM, operadorId: operador }, (c) =>
-              c.query("select personal_rol_por_comando($1, 'aprobacion', false, $2)", [correoAdm, motivo])), /permission denied/);
+              c.query("select personal_rol_por_comando($1, 'aprobacion', false, $2, 'gil@ejemplo.mx')", [correoAdm, motivo])), /permission denied/);
           }
           const app = new pg.Client({ connectionString: urlApp });
           await app.connect();
-          await assert.rejects(app.query("select personal_rol_por_comando($1, 'aprobacion', false, $2)", [correoAdm, motivo]), /permission denied/);
+          await assert.rejects(app.query("select personal_rol_por_comando($1, 'aprobacion', false, $2, 'gil@ejemplo.mx')", [correoAdm, motivo]), /permission denied/);
+
+          // N8: el comando exige el correo de quien lo corre; sin él (o con uno que no es correo) no hace nada.
+          assert.match(sinQuien("--correo", correoAdm, "--rol", "aprobacion", "--motivo", motivo).texto, /Falta --quien-corre/);
+          assert.match(comando("--quien-corre", "x", "--correo", correoAdm, "--rol", "aprobacion", "--motivo", motivo).texto, /--quien-corre va una sola vez/);
+          assert.match(sinQuien("--quien-corre", "gil", "--correo", correoAdm, "--rol", "aprobacion", "--motivo", motivo).texto, /--quien-corre lleva el correo/);
+          assert.equal(await eventos("rol_personal_asignado"), 0);
           await app.end();
 
           // Adriana es la única que administra al personal: el comando le da Aprobación y deja un evento.
@@ -713,9 +761,11 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
             "select motivo, cambio, superficie, actor_id from audit_log where accion = 'rol_personal_asignado' and identificador = $1 and origen = 'comando'",
             [ADM],
           )).rows[0];
-          // F7: quién corrió el comando lo dice la base (session_user), no el motivo escrito a mano.
+          // F7 y N8: la conexión la dice la base (session_user); la persona, el correo que exige el comando.
           const sesionDuena = String((await dueno.query("select session_user as s")).rows[0].s);
-          assert.deepEqual(fila, { motivo, cambio: { rol: "aprobacion", ejecutado_por: sesionDuena }, superficie: "sistema", actor_id: null });
+          assert.deepEqual(fila, {
+            motivo, cambio: { rol: "aprobacion", ejecutado_por: sesionDuena, corrido_por: "gil@ejemplo.mx" }, superficie: "sistema", actor_id: null,
+          });
 
           // Repetirlo no duplica el rol ni el evento.
           const repetido = comando("--correo", correoAdm, "--rol", "aprobacion", "--motivo", motivo);
@@ -745,7 +795,7 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           // Con la conexión agrupada ni siquiera conecta (el host lleva -pooler, como el de Neon).
           const urlAgrupada = new URL(urlDuena);
           urlAgrupada.hostname = "ep-ejemplo-pooler.neon.tech";
-          const agrupada = spawnSync(join(process.cwd(), "node_modules/.bin/tsx"), ["scripts/plataforma.ts", "personal:rol", "--correo", correoAdm, "--rol", "aprobacion", "--motivo", motivo], {
+          const agrupada = spawnSync(join(process.cwd(), "node_modules/.bin/tsx"), ["scripts/plataforma.ts", "personal:rol", "--quien-corre", "gil@ejemplo.mx", "--correo", correoAdm, "--rol", "aprobacion", "--motivo", motivo], {
             cwd: process.cwd(), encoding: "utf8", env: { ...process.env, DATABASE_URL_UNPOOLED: urlAgrupada.toString() },
           });
           assert.equal(agrupada.status, 1);
@@ -1008,7 +1058,7 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           }), /sin_rol_de_administracion/);
           assert.equal(await contar("select count(*)::int as n from platform_staff where user_id = $1", [RITA]), 0);
           // El comando de la dueña no adivina el operador: con dos, no invita a nadie.
-          await assert.rejects(invitarPersonalComoDuena(urlDuena, [`${RITA}@ejemplo.mx`]), /operador_ambiguo/);
+          await assert.rejects(invitarPersonalComoDuena(urlDuena, [`${RITA}@ejemplo.mx`], "gil@ejemplo.mx"), /operador_ambiguo/);
           assert.equal(await contar(
             "select count(*)::int as n from platform_staff_roles where user_id in ($1, $2) and rol = 'administracion_plataforma'",
             [NUEVO, RITA],
@@ -1175,9 +1225,10 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
             { nombre: "Yolanda Ruiz Sol", motivo: "control", capital: "74.9963" },
           ]);
 
-          // Sin documento o sin fecha de nacimiento no se envía; el mexicano sin CURP tampoco.
-          await assert.rejects((await enviarCon("EXS150301AB3", "Extranjero Sin Documento SA de CV", [laura, john("40", undefined, "1980-05-01")])).enviar(), /expediente_accionista_sin_identificacion/);
-          await assert.rejects((await enviarCon("EXF150301AB4", "Extranjero Sin Fecha SA de CV", [laura, john("40", "X1234567")])).enviar(), /expediente_accionista_sin_identificacion/);
+          // Sin documento o sin fecha de nacimiento el servidor no lo captura (la base tampoco lo deja
+          // enviar: N2-resto); el mexicano sin CURP no se envía.
+          await assert.rejects(enviarCon("EXS150301AB3", "Extranjero Sin Documento SA de CV", [laura, john("40", undefined, "1980-05-01")]), /dato_invalido_documentoExtranjero/);
+          await assert.rejects(enviarCon("EXF150301AB4", "Extranjero Sin Fecha SA de CV", [laura, john("40", "X1234567")]), /dato_invalido_fechaNacimiento/);
           await assert.rejects((await enviarCon("MXS150301AB5", "Mexicano Sin Curp SA de CV", [laura, { ...laura, nombre: "Mario Paz Lira", curp: undefined, rfc: undefined, capital: "40", votos: "40" }])).enviar(), /expediente_accionista_sin_curp/);
           // México no es país extranjero, ni por el servidor ni por SQL.
           const borrador = await enviarCon("EXM150301AB6", "Extranjero Mexico SA de CV", [laura, john("40", "X1234567", "1980-05-01")]);
@@ -1186,6 +1237,114 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
             pais: "MX", documentoExtranjero: "X1234567", fechaNacimiento: "1980-05-01", capital: "1", votos: "1", controlOtrosMedios: false, pep: "no",
           }), /dato_invalido_pais/);
           await assert.rejects(dueno.query("update kyb_accionistas set pais = 'MX' where version_id = $1 and pais = 'US'", [borrador.versionId]), /kyb_accionistas_extranjero|expediente_no_se_reescribe/);
+        });
+
+        await t.test("N2-resto y N6: la misma persona con dos identificadores no se parte; la moral extranjera se identifica con país y registro", async () => {
+          const enviarCon = async (rfc: string, razonSocial: string, socios: SocioDePrueba[]) => {
+            const companyId = await prospecto(rfc, razonSocial);
+            const { versionId } = await armarBorrador(ori, { companyId, razonSocial, rfc, socios, almacen });
+            return { companyId, versionId, enviar: () => enviarVersion(ori, versionId) };
+          };
+          const propietarios = async (versionId: string) => (await dueno.query(
+            "select nombre, motivo, capital_pct::text as capital from kyb_beneficiarios where version_id = $1 order by nombre",
+            [versionId],
+          )).rows;
+          const laura: SocioDePrueba = { nombre: "Laura Gómez Ruiz", tipoPersona: "fisica", rfc: "GORL750505QW1", curp: "GORL750505MDFMZR04", capital: "55", votos: "55" };
+          const pedro: SocioDePrueba = { nombre: "Pedro Paz Ruiz", tipoPersona: "fisica", rfc: "PARP800101AB1", curp: "PARP800101HDFZZD01", capital: "50", votos: "50" };
+          // La misma persona con 15 % directo y la mitad de un holding con 30 %: suma 30 %.
+          const partida = (directo: SocioDePrueba, enHolding: SocioDePrueba, rfcHolding: string): SocioDePrueba[] => [
+            laura,
+            directo,
+            { nombre: `Holding ${rfcHolding} SA de CV`, tipoPersona: "moral", rfc: rfcHolding, capital: "30", votos: "30", hijos: [enHolding, pedro] },
+          ];
+          const john = (capital: string, extra: Partial<SocioDePrueba> = {}): SocioDePrueba => ({
+            nombre: "John Smith Taylor", tipoPersona: "fisica", pais: "US", documentoExtranjero: "X12345678", fechaNacimiento: "1980-05-01",
+            capital, votos: capital, ...extra,
+          });
+
+          // (c) Con CURP en un camino y pasaporte en otro. Con país, el documento y la fecha van siempre,
+          // aunque traiga CURP: el servidor no lo captura sin ellos y la base no lo deja enviar.
+          await assert.rejects(
+            enviarCon("NCA150301AB1", "Partida Curp SA de CV", partida(john("15"), john("50", { curp: "SMTJ800501HNETYH09", documentoExtranjero: undefined, fechaNacimiento: undefined }), "HPA100101AA1")),
+            /dato_invalido_documentoExtranjero/,
+          );
+          const porSql = await enviarCon("NCB150301AB2", "Partida Sql SA de CV", [laura, john("15"), {
+            nombre: "Holding Sql SA de CV", tipoPersona: "moral", rfc: "HSQ100101AA1", capital: "30", votos: "30", hijos: [pedro],
+          }]);
+          const holding = String((await dueno.query("select clave from kyb_accionistas where version_id = $1 and tipo_persona = 'moral'", [porSql.versionId])).rows[0].clave);
+          await sofipo(ORI, async (c) => {
+            const id = randomUUID();
+            await c.query(
+              `insert into kyb_accionistas (id, version_id, company_id, operator_id, clave, padre_clave, tipo_persona, nombre, curp, nacionalidad, pais,
+                 capital_bp, votos_bp, pep, creado_por, creado_en)
+               values ($1, $2, $3, $4, gen_random_uuid(), $5, 'fisica', 'John Smith Taylor', 'SMTJ800501HNETYH09', 'Estados Unidos', 'US', 5000, 5000, 'no', $6, now())`,
+              [id, porSql.versionId, porSql.companyId, operador, holding, ORI],
+            );
+            await evento(c, ORI, "expediente_accionista_agregado", "kyb_accionistas", id, porSql.companyId);
+          });
+          await assert.rejects(porSql.enviar(), /expediente_accionista_sin_identificacion/);
+          // Con el mismo pasaporte en los dos caminos (y la CURP en uno) suma 30 % y es propietario real.
+          const conCurp = await enviarCon("NCC150301AB3", "Partida Junta SA de CV", partida(john("15"), john("50", { curp: "SMTJ800501HNETYH09" }), "HPJ100101AA1"));
+          await conCurp.enviar();
+          assert.deepEqual(await propietarios(conCurp.versionId), [
+            { nombre: "John Smith Taylor", motivo: "capital", capital: "30.0000" },
+            { nombre: "Laura Gómez Ruiz", motivo: "control", capital: "55.0000" },
+          ]);
+
+          // La fecha de la CURP: siglo por la posición 17 y una fecha imposible no cuenta.
+          assert.deepEqual((await dueno.query(
+            `select kyb_fecha_de_curp('EARJ800101HDFTZR01')::text as antes, kyb_fecha_de_curp('EARJ050101HDFTZRA1')::text as despues,
+                    kyb_fecha_de_curp('EARJ991340HDFTZR01') as imposible`,
+          )).rows, [{ antes: "1980-01-01", despues: "2005-01-01", imposible: null }]);
+
+          // (d) Un mexicano declarado extranjero en un camino y con su CURP en otro: mismo nombre (escrito
+          // en otro orden y sin acentos) y la fecha de su CURP. La base no lo deja enviar.
+          const jorgeExtranjero: SocioDePrueba = {
+            nombre: "Jorge Eta Ruiz", tipoPersona: "fisica", pais: "US", documentoExtranjero: "567890123", fechaNacimiento: "1980-01-01", capital: "15", votos: "15",
+          };
+          const jorgeMexicano: SocioDePrueba = { nombre: "RUIZ, Jorge Etá", tipoPersona: "fisica", rfc: "EARJ800101AB1", curp: "EARJ800101HDFTZR01", capital: "50", votos: "50" };
+          await assert.rejects(
+            (await enviarCon("NCD150301AB4", "Partida Nacional SA de CV", partida(jorgeExtranjero, jorgeMexicano, "HET100101AA1"))).enviar(),
+            /expediente_misma_persona_dos_identificadores/,
+          );
+          // (e) El mismo extranjero con pasaporte en un camino e identificación nacional en otro.
+          await assert.rejects(
+            (await enviarCon("NCE150301AB5", "Partida Documentos SA de CV", partida(john("15"), john("50", { documentoExtranjero: "D98765432" }), "HDC100101AA1"))).enviar(),
+            /expediente_misma_persona_dos_identificadores/,
+          );
+          // Dos personas distintas con el mismo nombre y otra fecha sí se envían.
+          const homonimos = await enviarCon("NCF150301AB6", "Homonimos SA de CV", partida(john("15"), john("50", { documentoExtranjero: "D98765432", fechaNacimiento: "1990-02-02" }), "HHO100101AA1"));
+          await homonimos.enviar();
+
+          // N6: una LLC de EE. UU. con 45 %, sin RFC mexicano, se identifica con su país y su registro. Su
+          // dueño final sale como propietario real.
+          const llc: SocioDePrueba = {
+            nombre: "Delaware Holdings LLC", tipoPersona: "moral", pais: "US", documentoExtranjero: "12-3456789", capital: "45", votos: "45",
+            hijos: [john("100")],
+          };
+          await assert.rejects(
+            enviarCon("NCG150301AB7", "Matriz Sin Registro SA de CV", [laura, { ...llc, documentoExtranjero: undefined }]),
+            /dato_invalido_documentoExtranjero/,
+          );
+          const matriz = await enviarCon("NCH150301AB8", "Matriz Extranjera SA de CV", [laura, llc]);
+          await matriz.enviar();
+          assert.deepEqual(await propietarios(matriz.versionId), [
+            { nombre: "John Smith Taylor", motivo: "capital", capital: "45.0000" },
+            { nombre: "Laura Gómez Ruiz", motivo: "control", capital: "55.0000" },
+          ]);
+          assert.deepEqual((await dueno.query(
+            "select rfc, nacionalidad, pais, documento_extranjero, fecha_nacimiento from kyb_accionistas where version_id = $1 and tipo_persona = 'moral'",
+            [matriz.versionId],
+          )).rows, [{ rfc: null, nacionalidad: "Estados Unidos", pais: "US", documento_extranjero: "123456789", fecha_nacimiento: null }]);
+          // La moral extranjera no lleva fecha de nacimiento, ni por SQL (en un borrador).
+          const enBorrador = await enviarCon("NCI150301AB9", "Matriz Borrador SA de CV", [laura, llc]);
+          await assert.rejects(sofipo(ORI, (c) => c.query(
+            `insert into kyb_accionistas (id, version_id, company_id, operator_id, clave, tipo_persona, nombre, nacionalidad, pais,
+               documento_extranjero, fecha_nacimiento, capital_bp, votos_bp, pep, creado_por, creado_en)
+             values (gen_random_uuid(), $1, $2, $3, gen_random_uuid(), 'moral', 'Otra Holdings LLC', 'Estados Unidos', 'US', '98765432',
+               '1990-01-01', 100, 100, 'no', $4, now())`,
+            [enBorrador.versionId, enBorrador.companyId, operador, ORI],
+          )), /kyb_accionistas_extranjero/);
         });
 
         await t.test("H11: el portal no lee en la bitácora lo de Cumplimiento; que está suspendida, sí", async () => {
@@ -1291,6 +1450,43 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           assert.deepEqual(fallida.borrados, [...fallida.guardados.keys()]);
           assert.equal(fallida.borrados.length, 1);
           await assert.rejects(acta(docAlfa), /expediente_ausente/);
+
+          // N10: el mismo formulario con otro archivo no se da por guardado. De entrada no sube nada; en
+          // la carrera, el que pierde se rechaza y su archivo se borra.
+          const otroPdf = new TextEncoder().encode(`%PDF-1.4\n% otro archivo\n${"1".repeat(80)}\n%%EOF\n`);
+          const actaCon = (formId: string, bytes: Uint8Array, deps: { almacen: typeof memoria }) => cargarDocumento(ori, {
+            versionId: kappaV1, formId, tipo: "acta_constitutiva", representanteClave: "", emitidoEl: "", vigenteHasta: "",
+            detalle: "Folio mercantil 777", archivo: { nombre: "acta.pdf", bytes },
+          }, deps);
+          const deEntrada = almacenEnMemoria();
+          await assert.rejects(actaCon(documento, otroPdf, { almacen: deEntrada }), /formulario_invalido/);
+          assert.equal(deEntrada.guardados.size, 0);
+          await actaCon(documento, PDF, { almacen: deEntrada });
+          assert.equal(deEntrada.guardados.size, 0);
+          const carrera = almacenEnMemoria();
+          let enCarrera = 0;
+          let soltarCarrera = () => {};
+          const juntasCarrera = new Promise<void>((resolver) => { soltarCarrera = resolver; });
+          const conBarreraCarrera: typeof carrera = {
+            ...carrera,
+            async guardar(entrada) {
+              const guardado = await carrera.guardar(entrada);
+              enCarrera += 1;
+              if (enCarrera === 2) soltarCarrera();
+              await juntasCarrera;
+              return guardado;
+            },
+          };
+          const reusado = randomUUID();
+          assert.deepEqual(salida(await Promise.allSettled([
+            actaCon(reusado, PDF, { almacen: conBarreraCarrera }),
+            actaCon(reusado, otroPdf, { almacen: conBarreraCarrera }),
+          ])), ["formulario_invalido", "ok"]);
+          assert.equal(await eventos("expediente_documento_cargado", reusado), 1);
+          const guardadoReusado = String((await dueno.query("select clave_blob from kyb_documentos where id = $1", [reusado])).rows[0].clave_blob);
+          assert.equal(carrera.guardados.size, 2);
+          assert.equal(carrera.borrados.length, 1);
+          assert.notEqual(carrera.borrados[0], guardadoReusado);
 
           // Dictamen: con el id de otro dictamen no se da por hecho; el mismo formulario, uno; dos distintos, uno y «ya registrado».
           const aprobar = (versionId: string, formId: string) =>
@@ -1407,16 +1603,17 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           assert.ok((await porSql(CUM)) > 0);
         });
 
-        await t.test("S12: el alta por la dueña deja quién corrió el comando y la bitácora nombra la coincidencia detectada", async () => {
+        await t.test("S12 y N8: el alta por la dueña deja la conexión y el correo de quien corrió el comando; la bitácora nombra la coincidencia detectada", async () => {
           const pide = { ...adm, capacidades: capacidadesDe({ rolesCliente: [], rolesPlataforma: ["administracion_plataforma"] }) };
-          const demo = await darDeAltaComoDuena(urlDuena, pide, {
-            rfc: "DEM150301AB9", razonSocial: "Demostración Dueña SA de CV", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
-          }, { demostracion: true });
+          const alta = { rfc: "DEM150301AB9", razonSocial: "Demostración Dueña SA de CV", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" };
+          await assert.rejects(darDeAltaComoDuena(urlDuena, pide, alta, { demostracion: true, corridoPor: "" }), /corrido_por_invalido/);
+          const demo = await darDeAltaComoDuena(urlDuena, pide, alta, { demostracion: true, corridoPor: " Gil@Ejemplo.mx " });
           assert.deepEqual((await dueno.query(
-            `select cambio ->> 'ejecutado_por' = session_user as ejecutado_por, cambio ->> 'demostracion' as demostracion
+            `select cambio ->> 'ejecutado_por' = session_user as ejecutado_por, cambio ->> 'demostracion' as demostracion,
+                    cambio ->> 'corrido_por' as corrido_por
              from audit_log where accion = 'alta_empresa' and company_id = $1`,
             [demo.id],
-          )).rows, [{ ejecutado_por: true, demostracion: "true" }]);
+          )).rows, [{ ejecutado_por: true, demostracion: "true", corrido_por: "gil@ejemplo.mx" }]);
           assert.equal(etiquetaAccion("lpb_coincidencia_detectada"), "El sistema detectó una coincidencia");
         });
 
@@ -1503,6 +1700,151 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           await cargar(lista("2026-10-28", BETA_EN_LISTA));
           assert.deepEqual((await casosBeta()).map((k) => k.estado), ["fuera_de_lista", "falso_positivo", "falso_positivo", "pendiente"]);
           assert.equal((await leerCliente(ori, beta))?.estado, "suspendida");
+        });
+
+        await t.test("N5: Cumplimiento cierra un caso mientras otra pestaña carga una lista con la misma persona: o se reabre con la nueva o el cierre la anota", async () => {
+          const casos = async () => (await dueno.query(
+            `select id, estado, carga_id, cerrada_con_carga_id from lpb_coincidencias
+             where company_id = $1 and sujeto_tipo = 'empresa' and coincide_por = 'rfc' order by detectada_en`,
+            [beta],
+          )).rows as Array<{ id: string; estado: string; carga_id: string; cerrada_con_carga_id: string | null }>;
+          const pendiente = async () => {
+            const abiertos = (await casos()).filter((k) => k.estado === "pendiente");
+            assert.equal(abiertos.length, 1);
+            return abiertos[0]!;
+          };
+          const vigente = async () => String((await dueno.query("select lpb_carga_vigente($1) as id", [operador])).rows[0].id);
+          // Dos pestañas de Cumplimiento: cada una con su transacción abierta, como la de la aplicación.
+          const abrir = async (aislamiento: "read committed" | "repeatable read") => {
+            const c = new pg.Client({ connectionString: urlApp });
+            await c.connect();
+            await c.query(`begin isolation level ${aislamiento}`);
+            await c.query("set local role plataforma_sofipo");
+            await c.query("select set_config('app.user_id', $1, true), set_config('app.operator_id', $2, true)", [CUM, operador]);
+            return c;
+          };
+          const soltar = async (...conexiones: pg.Client[]) => {
+            for (const c of conexiones) {
+              await c.query("rollback").catch(() => undefined);
+              await c.end();
+            }
+          };
+          const cerrarCaso = async (c: pg.Client, id: string) => {
+            await evento(c, CUM, "lpb_coincidencia_resuelta", "lpb_coincidencias", id, beta);
+            await c.query(
+              `update lpb_coincidencias set estado = 'falso_positivo', resuelta_por = $2, resuelta_en = now(),
+                 motivo_resolucion = 'El RFC de la lista es de otra persona moral' where id = $1`,
+              [id, CUM],
+            );
+          };
+          // Lo que hace cargarListaBloqueadas, en la transacción de la pestaña.
+          const cargarEn = async (c: pg.Client, texto: string) => {
+            const id = randomUUID();
+            const renglones = texto.split("\n").slice(1).map((renglon) => renglon.split(","));
+            await c.query(
+              "insert into lpb_cargas (id, operator_id, nombre_archivo, sha256, filas, cargada_por, cargada_en) values ($1, $2, 'lpb.csv', $3, $4, $5, now())",
+              [id, operador, createHash("sha256").update(texto).digest("hex"), renglones.length, CUM],
+            );
+            for (const [nombre, rfc, curp, tipo, fecha] of renglones) {
+              await c.query(
+                `insert into lpb_personas (carga_id, operator_id, nombre, rfc, curp, tipo, fecha_publicacion)
+                 values ($1, $2, $3, nullif($4, ''), nullif($5, ''), $6, $7::date)`,
+                [id, operador, nombre, rfc, curp, tipo, fecha],
+              );
+            }
+            await evento(c, CUM, "lpb_cargada", "lpb_cargas", id);
+            return id;
+          };
+          // La otra pestaña queda esperando el candado de la empresa (o termina, si no lo hay).
+          const esperaElCandado = async (c: pg.Client) => {
+            const pid = (c as unknown as { processID: number }).processID;
+            for (let intento = 0; intento < 40; intento += 1) {
+              const fila = (await dueno.query("select wait_event_type from pg_stat_activity where pid = $1", [pid])).rows[0] as { wait_event_type?: string } | undefined;
+              if (fila?.wait_event_type === "Lock") return true;
+              await new Promise((listo) => setTimeout(listo, 50));
+            }
+            return false;
+          };
+
+          // READ COMMITTED, el cierre primero: la carga nueva espera, ve el caso cerrado con la carga
+          // anterior y abre uno nuevo con la suya.
+          const primero = await pendiente();
+          const c3 = await vigente();
+          let cierre = await abrir("read committed");
+          let carga = await abrir("read committed");
+          try {
+            await cerrarCaso(cierre, primero.id);
+            const c4 = await cargarEn(carga, lista("2026-10-29", BETA_EN_LISTA));
+            const confirmada = carga.query("commit");
+            const espero = await esperaElCandado(carga);
+            await cierre.query("commit");
+            await confirmada;
+            const despues = await casos();
+            assert.equal(despues.find((k) => k.id === primero.id)?.cerrada_con_carga_id, c3);
+            assert.deepEqual(despues.filter((k) => k.estado === "pendiente").map((k) => k.carga_id), [c4]);
+            assert.ok(espero, "el cotejo de la carga nueva esperó al cierre");
+          } finally {
+            await soltar(cierre, carga);
+          }
+
+          // READ COMMITTED, la carga primero: el cierre espera y anota la carga nueva; con esa no se reabre.
+          const segundo = await pendiente();
+          carga = await abrir("read committed");
+          cierre = await abrir("read committed");
+          try {
+            const c5 = await cargarEn(carga, lista("2026-10-30", BETA_EN_LISTA));
+            await carga.query("set constraints all immediate");
+            const cerrando = cerrarCaso(cierre, segundo.id);
+            const espero = await esperaElCandado(cierre);
+            await carga.query("commit");
+            await cerrando;
+            await cierre.query("commit");
+            const despues = await casos();
+            assert.equal(despues.find((k) => k.id === segundo.id)?.cerrada_con_carga_id, c5);
+            assert.deepEqual(despues.filter((k) => k.estado === "pendiente"), []);
+            assert.equal(Number((await dueno.query("select lpb_cotejar_empresa($1) as n", [beta])).rows[0].n), 0);
+            assert.ok(espero, "el cierre esperó al cotejo de la carga nueva");
+          } finally {
+            await soltar(cierre, carga);
+          }
+
+          // REPEATABLE READ, el cierre primero: la carga, con su foto de antes del cierre, aborta.
+          await cargar(lista("2026-10-31", BETA_EN_LISTA));
+          const tercero = await pendiente();
+          cierre = await abrir("repeatable read");
+          carga = await abrir("repeatable read");
+          try {
+            await cerrarCaso(cierre, tercero.id);
+            await cargarEn(carga, lista("2026-11-01", BETA_EN_LISTA));
+            const confirmada = carga.query("commit");
+            await esperaElCandado(carga);
+            await cierre.query("commit");
+            await assert.rejects(confirmada, /could not serialize/);
+          } finally {
+            await soltar(cierre, carga);
+          }
+          // Al repetirla, abre el caso con su carga.
+          await cargar(lista("2026-11-01", BETA_EN_LISTA));
+          assert.equal((await pendiente()).carga_id, await vigente());
+
+          // REPEATABLE READ, la carga primero: el cierre, con su foto de antes de la carga, aborta; al
+          // repetirlo anota la carga nueva.
+          const cuarto = await pendiente();
+          carga = await abrir("repeatable read");
+          cierre = await abrir("repeatable read");
+          let c8 = "";
+          try {
+            c8 = await cargarEn(carga, lista("2026-11-02", BETA_EN_LISTA));
+            await carga.query("set constraints all immediate");
+            const cerrando = cerrarCaso(cierre, cuarto.id);
+            await esperaElCandado(cierre);
+            await carga.query("commit");
+            await assert.rejects(cerrando, /could not serialize/);
+          } finally {
+            await soltar(cierre, carga);
+          }
+          await resolverCoincidencia(cum, SESION_SOFIPO, { id: cuarto.id, estado: "falso_positivo", motivo: "El RFC de la lista es de otra persona moral" });
+          assert.equal((await casos()).find((k) => k.id === cuarto.id)?.cerrada_con_carga_id, c8);
         });
 
         await t.test("H2: con su propia copia el operador sí suspende y «fuera de lista» mira la copia de su operador", async () => {

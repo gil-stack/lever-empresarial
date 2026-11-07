@@ -58,8 +58,15 @@ export function almacenVercel(): AlmacenConstancia {
         const modulo = (await import("@vercel/blob")) as unknown as { del?: BlobDel };
         if (!modulo.del) return;
         await modulo.del(clave, credenciales);
-      } catch {
-        // El PDF huérfano no se anuncia. El alta ya no está en el libro.
+      } catch (error) {
+        // El huérfano no se anuncia a quien subió el archivo, pero queda su clave para borrarlo a mano.
+        console.error(JSON.stringify({
+          nivel: "error",
+          origen: "blob.borrar",
+          evento: "huerfano_sin_borrar",
+          clave,
+          error: error instanceof Error ? error.name : "desconocido",
+        }));
       }
     },
   };

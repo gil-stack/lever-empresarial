@@ -71,7 +71,7 @@ async function escenario(url: string): Promise<void> {
     codigoPostal: "06600",
     regimen: "601",
     usoCfdi: "G03",
-  }, { demostracion: true });
+  }, { demostracion: true, corridoPor: "pruebas@ejemplo.mx" });
   const invitacion = await invitarAdministrador(personal, {
     companyId: empresa.id,
     razonSocial: empresa.razonSocial,
@@ -306,7 +306,7 @@ async function empresaCon(personal: ContextoDeTenant, url: string, rfc: string, 
     codigoPostal: "06600",
     regimen: "601",
     usoCfdi: "G03",
-  }, { demostracion: true });
+  }, { demostracion: true, corridoPor: "pruebas@ejemplo.mx" });
   const invitacion = await invitarAdministrador(personal, { companyId: empresa.id, razonSocial: razon, nombre: `Admin ${razon}`, correo });
   await aceptarInvitacion({ token: invitacion.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
   const sesion = await sesionPara(url, invitacion.emitida.userId);

@@ -73,7 +73,7 @@ async function medir(url: string): Promise<void> {
       codigoPostal: "06600",
       regimen: "601",
       usoCfdi: "G03",
-    }, { demostracion: false });
+    }, { demostracion: false, corridoPor: "evidencia@ejemplo.mx" });
     const invitado = await invitarAdministrador(personal, {
       companyId: empresa.id, razonSocial: empresa.razonSocial, nombre: `Admin ${i + 1}`, correo: `admin-${i + 1}@medicion.test`,
     });

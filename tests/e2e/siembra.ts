@@ -9,6 +9,7 @@ import { aBase32, pasoDe, semillaNueva } from "../../src/server/autenticacion/to
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio";
 import { solicitarActivacion } from "../../src/server/operacion/activaciones";
 import { registrarProspecto } from "../../src/server/operacion/clientes";
+import { calificarRiesgoEmpresa, crearVersion } from "../../src/server/operacion/expediente";
 import { cargarListaBloqueadas } from "../../src/server/operacion/lpb";
 import { cambiarRolPersonal } from "../../src/server/operacion/personal";
 import { darDeAltaPersona, nombrarCentro } from "../../src/server/personas/servicio";
@@ -16,7 +17,6 @@ import { contextoDePersonal, invitarAdministrador } from "../../src/server/plata
 import { leerSesion } from "../../src/server/session/servicio";
 import { resolverContexto } from "../../src/server/tenencia/resolver";
 import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena";
-import { invitarPersonalComoDuena } from "../../scripts/personal-por-la-duena";
 import { ejecutar } from "../aislamiento/postgres";
 import { expedienteEnRegla, SESION_SOFIPO } from "../operacion/apoyo-alta-regulada";
 
@@ -64,8 +64,13 @@ export const FARO = { razonSocial: "Faro E2E", rfc: "FEE170505CD4" } as const;
 export const BRISA = { razonSocial: "Brisa E2E", rfc: "BRE180303CD6" } as const;
 /** Activa y suspendida por una carga de la lista: Originación no la reactiva. */
 export const CIMA = { razonSocial: "Cima E2E", rfc: "CIE160606CD7" } as const;
+/** Prospecto con el borrador abierto: Originación captura socios extranjeros. */
+export const DUNA = { razonSocial: "Duna E2E", rfc: "DUE190404CD8" } as const;
 
-export async function sembrarRecorridos(owner: string): Promise<void> {
+export async function sembrarRecorridos(
+  owner: string,
+  arranque: ReadonlyArray<{ correo: string; invitacion?: { emitida: { token: string } } }>,
+): Promise<void> {
   const llave = llaveDesde(process.env.AUTENTICACION_LLAVE_TOTP);
   if (!llave) throw new Error("Falta AUTENTICACION_LLAVE_TOTP para sembrar los factores.");
   const hoy = hoyEnMexico(new Date());
@@ -112,7 +117,7 @@ export async function sembrarRecorridos(owner: string): Promise<void> {
   // ---------- Altamar E2E: cliente real (no de demostración) ----------
   const altamar = await darDeAltaComoDuena(owner, personal, {
     rfc: "AEE180312AB1", razonSocial: "Altamar E2E", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
-  }, { demostracion: false });
+  }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
   const invitada = await invitarAdministrador(personal, { companyId: altamar.id, razonSocial: altamar.razonSocial, nombre: "Laura Méndez", correo: CORREOS.laura });
   await aceptarInvitacion({ token: invitada.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
   const lauraId = invitada.emitida.userId;
@@ -202,14 +207,15 @@ export async function sembrarRecorridos(owner: string): Promise<void> {
   // ---------- Bahía E2E: empresa activa sin administrador, para la invitación desde Operación ----------
   const bahia = await darDeAltaComoDuena(owner, personal, {
     rfc: "BEE190101CD2", razonSocial: "Bahía E2E", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
-  }, { demostracion: false });
+  }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
 
   // ---------- Personal SOFIPO con contraseña y app autenticadora ----------
+  // Invitados en el arranque del operador (entorno.ts): aceptan y registran su app autenticadora.
   const ids: Record<string, string> = {};
   for (const correo of [CORREOS.op1, CORREOS.op2, CORREOS.op3]) {
-    const [migrada] = await invitarPersonalComoDuena(owner, [correo]);
-    if (!migrada?.invitacion) throw new Error(`${correo} no quedó invitado como personal.`);
-    const { userId } = await aceptarInvitacion({ token: migrada.invitacion.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
+    const invitacion = arranque.find((fila) => fila.correo === correo)?.invitacion;
+    if (!invitacion) throw new Error(`${correo} no quedó invitado como personal.`);
+    const { userId } = await aceptarInvitacion({ token: invitacion.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
     ids[correo] = userId;
     await factor(correo, userId);
   }
@@ -236,12 +242,18 @@ export async function sembrarRecorridos(owner: string): Promise<void> {
   const brisa = await registrarProspecto(origina, { ...BRISA, codigoPostal: "64000", regimen: "601", usoCfdi: "G03" });
   await expedienteEnRegla(origina, cumple, { companyId: brisa, ...BRISA });
   await solicitarActivacion(origina, brisa);
-  await darDeAltaComoDuena(owner, personal, { ...CIMA, codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
+  await darDeAltaComoDuena(owner, personal, { ...CIMA, codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
   await cargarListaBloqueadas(cumple, {
     formId: randomUUID(),
     nombreArchivo: "lpb-e2e.csv",
     texto: ["nombre,rfc,curp,tipo,fecha", `${BRISA.razonSocial},${BRISA.rfc},,moral,${hoy}`, `${CIMA.razonSocial},${CIMA.rfc},,moral,${hoy}`].join("\n"),
   });
+  // La revisión periódica de Brisa con el caso abierto: el grado sale alto por la coincidencia exacta.
+  await calificarRiesgoEmpresa(cumple, { companyId: brisa, formId: randomUUID(), actividad: "baja", zona: "baja" });
+
+  // ---------- Duna E2E: prospecto con el borrador del expediente abierto ----------
+  const duna = await registrarProspecto(origina, { ...DUNA, codigoPostal: "64000", regimen: "601", usoCfdi: "G03" });
+  await crearVersion(origina, { companyId: duna, formId: randomUUID() });
 
   process.env.E2E_ALTAMAR_ID = altamar.id;
   process.env.E2E_BAHIA_ID = bahia.id;

@@ -39,7 +39,7 @@ export default async function ListaBloqueadas({ searchParams }: { searchParams: 
     params.aviso === "lpb_renglon_invalido" && /^\d{1,6}$/.test(params.linea ?? "")
       ? `Revisa la línea ${params.linea} del archivo: nombre obligatorio, RFC de 12 o 13 caracteres, CURP de 18, tipo «fisica» o «moral» y fecha AAAA-MM-DD.`
       : params.aviso === "lpb_cargada" && /^\d+$/.test(params.filas ?? "") && /^\d+$/.test(params.coincidencias ?? "")
-        ? `${params.filas} renglones; ${params.coincidencias} coincidencias nuevas.`
+        ? `${params.filas} ${params.filas === "1" ? "renglón" : "renglones"}; ${params.coincidencias} ${params.coincidencias === "1" ? "coincidencia nueva" : "coincidencias nuevas"}.`
         : undefined;
   return (
     <PaginaOperacion titulo="Personas bloqueadas" aviso={params.aviso} detalleAviso={detalle}>

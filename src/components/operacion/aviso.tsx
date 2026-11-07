@@ -130,8 +130,14 @@ const MENSAJES: Record<string, string> = {
   personal_no_se_reescribe: "El registro del personal no cambia de persona, operador ni fecha de alta.",
   expediente_accionista_sin_curp: "Cada socio persona física mexicana lleva su CURP: con ella se suma lo que tiene por varios caminos.",
   expediente_accionista_sin_identificacion:
-    "Cada socio extranjero sin CURP lleva el número de su pasaporte o identificación oficial y su fecha de nacimiento: con ellos se suma lo que tiene por varios caminos.",
-  expediente_accionista_sin_rfc: "Cada socio persona moral lleva su RFC.",
+    "Cada socio extranjero lleva su país y el número de su pasaporte o identificación oficial con su fecha de nacimiento (persona física) o de su registro en su país (persona moral): con ellos se suma lo que tiene por varios caminos.",
+  expediente_accionista_sin_rfc: "Cada socio persona moral mexicana lleva su RFC.",
+  expediente_misma_persona_dos_identificadores:
+    "Hay dos socios con el mismo nombre y la misma fecha de nacimiento capturados con identificadores distintos (CURP, pasaporte o identificación). Si es la misma persona, quita uno y captúralo con el mismo identificador en cada lugar donde aparece.",
+  dato_invalido_pais: "Elige el país de la persona extranjera. Si es mexicana, elige «Mexicana» en la nacionalidad.",
+  dato_invalido_documentoExtranjero:
+    "Escribe el número de identificación: de 4 a 20 letras y números (los espacios, puntos y guiones se quitan solos).",
+  dato_invalido_fechaNacimiento: "Escribe la fecha de nacimiento: no puede ser futura ni anterior a 1900.",
   expediente_estructura_muy_profunda: "La cadena de socios pasa de 10 capas: el cálculo de propietarios reales no llega al final. Revísala con Cumplimiento.",
 };
 

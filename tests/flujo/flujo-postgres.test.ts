@@ -91,14 +91,14 @@ async function escenario(url: string): Promise<void> {
     codigoPostal: "06600",
     regimen: "601",
     usoCfdi: "G03",
-  }, { demostracion: false });
+  }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
   const beta = await darDeAltaComoDuena(url, personal, {
     rfc: "CABL840215RF4",
     razonSocial: "Taller Beta Flujo",
     codigoPostal: "44100",
     regimen: "612",
     usoCfdi: "G03",
-  }, { demostracion: false });
+  }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
 
   const admin = await administrador(url, personal, alfa, "admin-alfa-flujo@ejemplo.mx");
   const adminBeta = await administrador(url, personal, beta, "admin-beta-flujo@ejemplo.mx");
@@ -526,16 +526,16 @@ async function escenario(url: string): Promise<void> {
   // La tarea ve solo empresas activas con al menos un destinatario vigente.
   const empresasDeTarea = async () =>
     (await comoTarea((consulta) => consulta.query("select empresa from empresas_con_correo_semanal() as empresa"))).rows.map((fila) => String(fila.empresa)).sort();
-  const gamma = await darDeAltaComoDuena(url, personal, { rfc: "GAM010101AB2", razonSocial: "Gamma Suspendida", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
+  const gamma = await darDeAltaComoDuena(url, personal, { rfc: "GAM010101AB2", razonSocial: "Gamma Suspendida", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
   await administrador(url, personal, gamma, "admin-gamma-flujo@ejemplo.mx");
-  const delta = await darDeAltaComoDuena(url, personal, { rfc: "DEL010101AB3", razonSocial: "Delta Baja", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
+  const delta = await darDeAltaComoDuena(url, personal, { rfc: "DEL010101AB3", razonSocial: "Delta Baja", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
   const adminDelta = await administrador(url, personal, delta, "admin-delta-flujo@ejemplo.mx");
   const areaDelta = await nombrarCentro(adminDelta, { nombre: "General", presupuesto: "" }, AHORA);
   await persona(url, adminDelta, areaDelta.id, "Finanzas Delta", "finanzas-delta@ejemplo.mx", ["tarjetahabiente", "finanzas"]);
   // En Delta solo queda Finanzas como destinataria.
   await cambiarCorreoSemanal(adminDelta, { activo: "no" }, AHORA);
   // S7: una empresa de demostración tiene cifras de ejemplo: nunca entra en la lista, aunque tenga administración.
-  const epsilon = await darDeAltaComoDuena(url, personal, { rfc: "EPS010101AB4", razonSocial: "Épsilon Demostración", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: true });
+  const epsilon = await darDeAltaComoDuena(url, personal, { rfc: "EPS010101AB4", razonSocial: "Épsilon Demostración", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: true, corridoPor: "pruebas@ejemplo.mx" });
   await administrador(url, personal, epsilon, "admin-epsilon-flujo@ejemplo.mx");
   assert.deepEqual(await empresasDeTarea(), [alfa.id, beta.id, gamma.id, delta.id].sort());
   // Gamma se suspende y la persona de Finanzas de Delta queda dada de baja (sin pasar por los

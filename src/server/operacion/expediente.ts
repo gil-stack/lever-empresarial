@@ -530,17 +530,20 @@ export async function agregarAccionista(
   if (rfc === undefined) throw new ErrorDeDominio("dato_invalido_rfc");
   const curp = tipo === "fisica" ? opcional(entrada.curp, (t) => (curpValida(t.toUpperCase()) ? t.toUpperCase() : null)) : null;
   if (curp === undefined) throw new ErrorDeDominio("dato_invalido_curp");
-  // Sin país es mexicana (se identifica con su CURP). La física extranjera sin CURP
-  // trae el número de su pasaporte o identificación oficial y su fecha de nacimiento.
+  // Sin país es mexicana: la física se identifica con su CURP y la moral con su RFC.
+  // Con país, siempre con el número de su pasaporte o identificación oficial y su
+  // fecha de nacimiento (física) o de su registro en su país (moral): con ellos suma
+  // por varios caminos aunque traiga CURP o RFC.
   const pais = opcional(entrada.pais, (t) => (paisExtranjeroValido(t.toUpperCase()) ? t.toUpperCase() : null));
   if (pais === undefined) throw new ErrorDeDominio("dato_invalido_pais");
-  const extranjera = tipo === "fisica" && pais !== null;
-  const documentoExtranjero = extranjera ? opcional(entrada.documentoExtranjero, documentoExtranjeroNormalizado) : null;
-  if (documentoExtranjero === undefined) throw new ErrorDeDominio("dato_invalido_documentoExtranjero");
-  const fechaNacimiento = extranjera
+  const documentoExtranjero = pais ? opcional(entrada.documentoExtranjero, documentoExtranjeroNormalizado) : null;
+  if (documentoExtranjero === undefined || (pais && !documentoExtranjero)) throw new ErrorDeDominio("dato_invalido_documentoExtranjero");
+  const fechaNacimiento = pais && tipo === "fisica"
     ? opcional(entrada.fechaNacimiento, (t) => (/^\d{4}-\d{2}-\d{2}$/.test(t) && t >= "1900-01-01" && t <= hoyEnMexico(new Date()) ? t : null))
     : null;
-  if (fechaNacimiento === undefined) throw new ErrorDeDominio("dato_invalido_fechaNacimiento");
+  if (fechaNacimiento === undefined || (pais && tipo === "fisica" && !fechaNacimiento)) {
+    throw new ErrorDeDominio("dato_invalido_fechaNacimiento");
+  }
   const nacionalidad = pais ? nombreDePais(pais) : "Mexicana";
   const capital = porcentajeAPuntosBase(entrada.capital);
   if (capital === null) throw new ErrorDeDominio("dato_invalido_capital");
@@ -653,7 +656,7 @@ export async function cargarDocumento(
   const version = await conContexto(basePlataforma(ctx), async (consulta) => {
     const previo = await consulta.query("select id from kyb_documentos where id = $1", [id]);
     if (previo.rows.length > 0) {
-      await documentoDeLaVersion(consulta, id, entrada.versionId as string);
+      await documentoDeLaVersion(consulta, id, entrada.versionId as string, sha256);
       return null;
     }
     return versionEnBorrador(consulta, entrada.versionId as string);
@@ -676,7 +679,7 @@ export async function cargarDocumento(
         [id, ctx.personal.operadorId, enBorrador.companyId, tipo, representante, nombre, contenido.tipo, archivo.bytes.byteLength,
           sha256, guardado.clave, emitidoEl, vigenteHasta, detalle, ctx.persona.id, ahora],
       );
-      if (insertado.rowCount !== 1) return documentoDeLaVersion(consulta, id, enBorrador.id);
+      if (insertado.rowCount !== 1) return documentoDeLaVersion(consulta, id, enBorrador.id, sha256);
       await consulta.query(
         "insert into kyb_version_documentos (version_id, documento_id, company_id, operator_id) values ($1, $2, $3, $4)",
         [enBorrador.id, id, enBorrador.companyId, ctx.personal.operadorId],
@@ -908,13 +911,18 @@ async function mismoBorrador(
   if (fila.rows.length !== 1) throw new ErrorDeDominio("expediente_ausente");
 }
 
-/** Doble clic: el documento ya está en esta versión. Si no, el formulario es de otra versión o de otra empresa. */
-async function documentoDeLaVersion(consulta: Consulta, documentoId: string, versionId: string): Promise<void> {
+/**
+ * Doble clic: el documento ya está en esta versión con el mismo archivo. Si el formulario es de
+ * otra versión o de otra empresa, no está; si trae otro archivo, no se da por guardado.
+ */
+async function documentoDeLaVersion(consulta: Consulta, documentoId: string, versionId: string, sha256: string): Promise<void> {
   const fila = await consulta.query(
-    "select 1 from kyb_version_documentos where documento_id = $1 and version_id = $2",
+    `select d.sha256 from kyb_version_documentos v join kyb_documentos d on d.id = v.documento_id
+     where v.documento_id = $1 and v.version_id = $2`,
     [documentoId, versionId],
   );
   if (fila.rows.length !== 1) throw new ErrorDeDominio("expediente_ausente");
+  if ((fila.rows[0] as { sha256: string }).sha256 !== sha256) throw new ErrorDeDominio("formulario_invalido");
 }
 
 async function versionEnBorrador(consulta: Consulta, versionId: string, bloquear = false): Promise<{ id: string; companyId: string }> {

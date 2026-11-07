@@ -4,22 +4,36 @@ import { useState, type ReactNode } from "react";
 
 type Ligado = Record<string, unknown>;
 
+/** Une la pista del campo con el aviso del error: el lector de pantalla anuncia las dos. */
+function conPista(ligado: Ligado, pista: string): Ligado {
+  const delAviso = typeof ligado["aria-describedby"] === "string" ? ligado["aria-describedby"] : "";
+  return { ...ligado, "aria-describedby": [pista, delAviso].filter(Boolean).join(" ") };
+}
+
 /**
  * Tipo de persona, nacionalidad y cómo se identifica el socio. La persona física
- * mexicana lleva su CURP; la extranjera sin CURP, su país, el número de su pasaporte
- * o identificación oficial y su fecha de nacimiento. Lo que no aplica no se envía.
+ * mexicana lleva su CURP y la moral mexicana su RFC. La extranjera lleva su país y el
+ * número de su pasaporte o identificación oficial con su fecha de nacimiento (física)
+ * o de su registro en su país (moral); el RFC, si lo tiene. Lo que no aplica no se
+ * envía. Tras un rechazo de un dato de la extranjera, el formulario vuelve en
+ * «Extranjera» con ese campo marcado.
  */
 export function IdentidadDelSocio({
   paises,
   ligados,
+  tipoInicial,
   children,
 }: {
   paises: ReadonlyArray<{ codigo: string; nombre: string }>;
-  ligados: { curp: Ligado; pais: Ligado; documentoExtranjero: Ligado; fechaNacimiento: Ligado };
+  ligados: { rfc: Ligado; curp: Ligado; pais: Ligado; documentoExtranjero: Ligado; fechaNacimiento: Ligado };
+  tipoInicial: "fisica" | "moral";
   children: ReactNode;
 }) {
-  const [tipo, setTipo] = useState<"fisica" | "moral">("fisica");
-  const [extranjera, setExtranjera] = useState(false);
+  const conError = (ligado: Ligado) => Object.keys(ligado).length > 0;
+  const [tipo, setTipo] = useState<"fisica" | "moral">(tipoInicial);
+  const [extranjera, setExtranjera] = useState(
+    conError(ligados.pais) || conError(ligados.documentoExtranjero) || conError(ligados.fechaNacimiento),
+  );
   return (
     <>
       <div className="campo">
@@ -37,6 +51,10 @@ export function IdentidadDelSocio({
         </select>
       </div>
       {children}
+      <div className="campo">
+        <label htmlFor="acc-rfc">{extranjera ? "RFC en México (si tiene)" : "RFC"}</label>
+        <input id="acc-rfc" name="rfc" maxLength={13} autoCapitalize="characters" className="entrada-rfc" {...ligados.rfc} />
+      </div>
       {extranjera ? (
         <div className="campo">
           <label htmlFor="acc-pais">País</label>
@@ -58,27 +76,31 @@ export function IdentidadDelSocio({
           <input id="acc-curp" name="curp" maxLength={18} autoCapitalize="characters" {...ligados.curp} />
         </div>
       ) : null}
+      {extranjera ? (
+        <div className="campo">
+          <label htmlFor="acc-documento">
+            {tipo === "fisica" ? "Número de pasaporte o identificación oficial" : "Número de identificación fiscal o de registro en su país"}
+          </label>
+          <input
+            id="acc-documento"
+            name="documentoExtranjero"
+            maxLength={30}
+            required
+            autoCapitalize="characters"
+            {...conPista(ligados.documentoExtranjero, "acc-documento-pista")}
+          />
+          <p id="acc-documento-pista" className="pista">
+            {tipo === "fisica"
+              ? "La persona extranjera se identifica con su país, este número y su fecha de nacimiento."
+              : "La persona moral extranjera se identifica con su país y este número; el RFC es opcional."}
+          </p>
+        </div>
+      ) : null}
       {tipo === "fisica" && extranjera ? (
-        <>
-          <div className="campo">
-            <label htmlFor="acc-documento">Número de pasaporte o identificación oficial</label>
-            <input
-              id="acc-documento"
-              name="documentoExtranjero"
-              maxLength={30}
-              autoCapitalize="characters"
-              aria-describedby="acc-documento-pista"
-              {...ligados.documentoExtranjero}
-            />
-            <p id="acc-documento-pista" className="pista">
-              Sin CURP, la persona extranjera se identifica con su país, este número y su fecha de nacimiento.
-            </p>
-          </div>
-          <div className="campo">
-            <label htmlFor="acc-nacimiento">Fecha de nacimiento</label>
-            <input id="acc-nacimiento" name="fechaNacimiento" type="date" {...ligados.fechaNacimiento} />
-          </div>
-        </>
+        <div className="campo">
+          <label htmlFor="acc-nacimiento">Fecha de nacimiento</label>
+          <input id="acc-nacimiento" name="fechaNacimiento" type="date" required {...ligados.fechaNacimiento} />
+        </div>
       ) : null}
     </>
   );

@@ -129,7 +129,8 @@ export async function agregarAccionistaAccion(formData: FormData): Promise<void>
       pep: texto(formData, "pep") || "no",
     });
   } catch (error) {
-    return fallo(error, expediente(companyId), "#accionistas-titulo");
+    // El formulario vuelve con el tipo de persona del socio rechazado.
+    return fallo(error, expediente(companyId), "#accionistas-titulo", texto(formData, "tipoPersona") === "moral" ? "&tipo=moral" : "");
   }
   listo(expediente(companyId), "expediente_accionista_agregado", "#accionistas-titulo");
 }
@@ -320,9 +321,9 @@ function listo(destino: string, aviso: string, ancla = ""): never {
 }
 
 /** `en` dice qué formulario falló: la página liga el error solo a los campos de ese formulario. */
-function fallo(error: unknown, destino: string, ancla = ""): never {
+function fallo(error: unknown, destino: string, ancla = "", consulta = ""): never {
   if (error instanceof ErrorDeDominio) {
-    redirect(`${destino}?aviso=${encodeURIComponent(error.codigo)}${ancla ? `&en=${ancla.slice(1)}` : ""}${ancla}`);
+    redirect(`${destino}?aviso=${encodeURIComponent(error.codigo)}${ancla ? `&en=${ancla.slice(1)}` : ""}${consulta}${ancla}`);
   }
   throw error;
 }
