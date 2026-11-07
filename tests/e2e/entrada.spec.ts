@@ -45,15 +45,15 @@ test("entra con contraseña y código TOTP: doble clic abre una sola entrada y u
 
 type Respuesta = { servidor: number; texto: string; marcado: string; direccion: string };
 
+/** Un intento en el mismo formulario de /entrar: el rechazo deja la página donde está. */
 async function intentar(page: Page, correo: string, contrasena: string): Promise<Respuesta> {
-  await page.goto("/entrar");
   const aviso = page.locator('.alerta[role="alert"]');
-  await expect(aviso).toHaveCount(0);
   await page.getByLabel("Correo").fill(correo);
   await page.getByLabel("Contraseña", { exact: true }).fill(contrasena);
   const envio = page.waitForResponse((r) => r.request().method() === "POST");
   await page.getByRole("button", { name: "Continuar" }).click();
   const respuesta = await envio;
+  await page.waitForFunction(() => !document.querySelector('form[aria-busy="true"], button[aria-busy="true"]'));
   await expect(aviso).toBeVisible();
   // Del envío al primer byte: la acción ya terminó (sin el pintado del navegador).
   const t = respuesta.request().timing();
@@ -76,6 +76,8 @@ test("el tope de intentos no revela si el correo tiene cuenta: mismo texto y mis
   const entradasAntes = await entradas();
 
   const diferencias: number[] = [];
+  await page.goto("/entrar");
+  await expect(page.locator('.alerta[role="alert"]')).toHaveCount(0);
   // Ocho fallos llevan la cuenta real al tope; el noveno intento es con la contraseña correcta.
   for (let i = 1; i <= 9; i += 1) {
     const contrasena = i <= 8 ? MALA : CLAVE;

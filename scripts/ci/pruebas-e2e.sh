@@ -97,6 +97,8 @@ if [ "$modo" = ci ]; then
   esperar "Postgres" "docker exec $pg pg_isready -h 127.0.0.1 -p $puerto_pg -U postgres"
   esperar "El navegador" "node -e \"require('net').connect($puerto_navegador, '127.0.0.1').on('connect', () => process.exit(0)).on('error', () => process.exit(1))\""
   export PW_TEST_CONNECT_WS_ENDPOINT="ws://127.0.0.1:${puerto_navegador}/"
+  # Las capturas de evidencia no sirven en CI (la tarea no guarda archivos) y cuestan tiempo.
+  export E2E_SIN_CAPTURAS=1
   marca "Postgres y navegador listos"
 fi
 
