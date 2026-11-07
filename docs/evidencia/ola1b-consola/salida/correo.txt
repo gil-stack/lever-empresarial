@@ -1,0 +1,6 @@
+OK    correo: la tarea del lunes responde 200 sin envíos fallidos · {"semana":"2026-11-02","empresas":1,"enviados":1,"omitidos":0,"fallidos":0,"pendientes":0}
+OK    correo: solo Bahía Comercial recibe el resumen, a administración y finanzas; las empresas de demostración no · felipe@lever.test · Tu flujo de la semana · Bahía Comercial | bruno@lever.test · Tu flujo de la semana · Bahía Comercial
+OK    correo felipe: el faltante nombra «Nómina (monto reservado)» y el correo no dice 18,500 ni «1 persona» · Atención: el saldo proyectado queda en -$8,500.00 la semana del 9 nov al 15 nov. Lo provoca: Nómina (monto reservado).
+OK    correo bruno: el faltante nombra «Nómina (monto reservado)» y el correo no dice 18,500 ni «1 persona» · Atención: el saldo proyectado queda en -$8,500.00 la semana del 9 nov al 15 nov. Lo provoca: Nómina (monto reservado).
+
+4 de 4 comprobaciones en verde.

@@ -1,0 +1,12 @@
+{"evento":"pendientes.faltante_no_disponible","codigo":"Error","peticionId":"4b564819-4ac2-46cc-90a5-917f2ae8f7de"}
+{"evento":"pendientes.faltante_no_disponible","codigo":"Error","peticionId":"ac079c4d-1cb7-4365-9c16-65dfdbaf14f2"}
+{"evento":"pendientes.faltante_no_disponible","codigo":"Error","peticionId":"56753484-d817-4acc-bffe-25f73e0b7c75"}
+{"evento":"pendientes.faltante_no_disponible","codigo":"Error","peticionId":"9fe96dfb-40d5-4bbb-a16d-e196b3d31368"}
+{"evento":"pendientes.faltante_no_disponible","codigo":"Error","peticionId":"26ca88bd-3090-4f92-ae3a-6f94ce743fe3"}
+{"evento":"pendientes.faltante_no_disponible","codigo":"Error","peticionId":"4aebbba5-9dd6-4c18-8dd5-49733b328054"}
+{"evento":"pendientes.faltante_no_disponible","codigo":"Error","peticionId":"85867b9a-d5bf-4d3b-8d4f-b7ef6753a363"}
+{"evento":"pendientes.faltante_no_disponible","codigo":"Error","peticionId":"2f0c723b-8aa6-4c54-960d-2f1ebf5f13eb"}
+{"evento":"pendientes.faltante_no_disponible","codigo":"Error","peticionId":"a7b6007f-75dd-415d-b064-394b6d87d87c"}
+{"evento":"pendientes.faltante_no_disponible","codigo":"Error","peticionId":"2981d3c2-cc02-4ba5-af81-a4d39127c2cb"}
+{"evento":"pendientes.faltante_no_disponible","codigo":"Error","peticionId":"6c1ae120-6b04-4d7a-93da-b06d2fc4fa52"}
+{"evento":"pendientes.faltante_no_disponible","codigo":"Error","peticionId":"9cc6087f-3da7-46ea-97ce-7e54e3824d4e"}

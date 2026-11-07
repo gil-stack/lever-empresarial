@@ -117,7 +117,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «Crea la primera área» aparece y «Crear área» lleva a su pantalla",
-    "detalle": "/c/d76b39db-72c9-44c6-8bdc-8b2d53eda14f/consola/personas/areas"
+    "detalle": "/c/443e1527-607b-4f23-b684-587e796795db/consola/personas/areas"
   },
   {
     "ok": true,
@@ -142,7 +142,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «Da de alta al primer colaborador» aparece y «Dar de alta» lleva a su pantalla",
-    "detalle": "/c/d76b39db-72c9-44c6-8bdc-8b2d53eda14f/consola/personas/nueva"
+    "detalle": "/c/443e1527-607b-4f23-b684-587e796795db/consola/personas/nueva"
   },
   {
     "ok": true,
@@ -187,7 +187,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «^Prepara el lote de nómina del » aparece y «Preparar nómina» lleva a su pantalla",
-    "detalle": "/c/d76b39db-72c9-44c6-8bdc-8b2d53eda14f/consola/personas/nomina"
+    "detalle": "/c/443e1527-607b-4f23-b684-587e796795db/consola/personas/nomina"
   },
   {
     "ok": true,
@@ -302,22 +302,22 @@
   {
     "ok": true,
     "texto": "flujo 11: «^Falta(n)? (una|dos) personas? autorizadas? para liberar» aparece y «Revisar accesos» lleva a su pantalla",
-    "detalle": "/c/d76b39db-72c9-44c6-8bdc-8b2d53eda14f/consola/personas"
+    "detalle": "/c/443e1527-607b-4f23-b684-587e796795db/consola/personas"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Crea la primera categoría» aparece y «Configurar política» lleva a su pantalla",
-    "detalle": "/c/d76b39db-72c9-44c6-8bdc-8b2d53eda14f/consola/politica"
+    "detalle": "/c/443e1527-607b-4f23-b684-587e796795db/consola/politica"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Registra el primer proveedor» aparece y «Configurar proveedores» lleva a su pantalla",
-    "detalle": "/c/d76b39db-72c9-44c6-8bdc-8b2d53eda14f/consola/proveedores"
+    "detalle": "/c/443e1527-607b-4f23-b684-587e796795db/consola/proveedores"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Revisa el plan de esta empresa» aparece y «Ver plan» lleva a su pantalla",
-    "detalle": "/c/d76b39db-72c9-44c6-8bdc-8b2d53eda14f/consola/configuracion/plan"
+    "detalle": "/c/443e1527-607b-4f23-b684-587e796795db/consola/configuracion/plan"
   },
   {
     "ok": true,
@@ -456,12 +456,62 @@
   },
   {
     "ok": true,
-    "texto": "flujo 11: finanzas ve el faltante con «Nómina (monto reservado)», sin el neto de una sola persona, y llega a la proyección",
+    "texto": "flujo 11 oscuro 1440: finanzas ve el faltante con «Nómina (monto reservado)», sin el neto de una sola persona, y llega a la proyección",
     "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nómina (monto reservado). Ver la proyección → /c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
   },
   {
     "ok": true,
-    "texto": "flujo 11: sin errores de consola (finanzas)",
+    "texto": "flujo 11 oscuro 1440: sin errores de consola (finanzas)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 oscuro 390: finanzas ve el faltante con «Nómina (monto reservado)», sin el neto de una sola persona, y llega a la proyección",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nómina (monto reservado). Ver la proyección → /c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 oscuro 390: sin errores de consola (finanzas)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 claro 1440: finanzas ve el faltante con «Nómina (monto reservado)», sin el neto de una sola persona, y llega a la proyección",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nómina (monto reservado). Ver la proyección → /c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 claro 1440: sin errores de consola (finanzas)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 claro 390: finanzas ve el faltante con «Nómina (monto reservado)», sin el neto de una sola persona, y llega a la proyección",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nómina (monto reservado). Ver la proyección → /c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 claro 390: sin errores de consola (finanzas)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 lever 1440: finanzas ve el faltante con «Nómina (monto reservado)», sin el neto de una sola persona, y llega a la proyección",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nómina (monto reservado). Ver la proyección → /c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 lever 1440: sin errores de consola (finanzas)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 lever 390: finanzas ve el faltante con «Nómina (monto reservado)», sin el neto de una sola persona, y llega a la proyección",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nómina (monto reservado). Ver la proyección → /c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 11 lever 390: sin errores de consola (finanzas)",
     "detalle": ""
   },
   {
@@ -507,6 +557,291 @@
   {
     "ok": true,
     "texto": "flujo 12: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 gil oscuro 1440: el administrador ve la nómina desglosada con su monto en los movimientos y en la alerta",
+    "detalle": "14 nov · Nómina semanal (1 persona) −$18,500.00 | Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 gil oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 gil oscuro 390: el administrador ve la nómina desglosada con su monto en los movimientos y en la alerta",
+    "detalle": "14 nov · Nómina semanal (1 persona) −$18,500.00 | Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 gil oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 gil claro 1440: el administrador ve la nómina desglosada con su monto en los movimientos y en la alerta",
+    "detalle": "14 nov · Nómina semanal (1 persona) −$18,500.00 | Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 gil claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 gil claro 390: el administrador ve la nómina desglosada con su monto en los movimientos y en la alerta",
+    "detalle": "14 nov · Nómina semanal (1 persona) −$18,500.00 | Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 gil claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 gil lever 1440: el administrador ve la nómina desglosada con su monto en los movimientos y en la alerta",
+    "detalle": "14 nov · Nómina semanal (1 persona) −$18,500.00 | Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 gil lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 gil lever 390: el administrador ve la nómina desglosada con su monto en los movimientos y en la alerta",
+    "detalle": "14 nov · Nómina semanal (1 persona) −$18,500.00 | Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 gil lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 fernanda oscuro 1440: finanzas ve «Monto reservado» en el renglón de nómina y la alerta sin monto; ningún movimiento ni alerta dice 18,500 ni «1 persona»",
+    "detalle": "14 nov · Nómina Monto reservado | Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó | semanas cuya columna Salidas es solo la nómina: 11"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 fernanda oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 fernanda oscuro 390: finanzas ve «Monto reservado» en el renglón de nómina y la alerta sin monto; ningún movimiento ni alerta dice 18,500 ni «1 persona»",
+    "detalle": "14 nov · Nómina Monto reservado | Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó | semanas cuya columna Salidas es solo la nómina: 11"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 fernanda oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 fernanda claro 1440: finanzas ve «Monto reservado» en el renglón de nómina y la alerta sin monto; ningún movimiento ni alerta dice 18,500 ni «1 persona»",
+    "detalle": "14 nov · Nómina Monto reservado | Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó | semanas cuya columna Salidas es solo la nómina: 11"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 fernanda claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 fernanda claro 390: finanzas ve «Monto reservado» en el renglón de nómina y la alerta sin monto; ningún movimiento ni alerta dice 18,500 ni «1 persona»",
+    "detalle": "14 nov · Nómina Monto reservado | Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó | semanas cuya columna Salidas es solo la nómina: 11"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 fernanda claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 fernanda lever 1440: finanzas ve «Monto reservado» en el renglón de nómina y la alerta sin monto; ningún movimiento ni alerta dice 18,500 ni «1 persona»",
+    "detalle": "14 nov · Nómina Monto reservado | Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó | semanas cuya columna Salidas es solo la nómina: 11"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 fernanda lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 fernanda lever 390: finanzas ve «Monto reservado» en el renglón de nómina y la alerta sin monto; ningún movimiento ni alerta dice 18,500 ni «1 persona»",
+    "detalle": "14 nov · Nómina Monto reservado | Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cierre de la semana: -$46,715.00. Lo provoca: Proveedor Uno · A-81 ($48,215.00), Nó | semanas cuya columna Salidas es solo la nómina: 11"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 13 fernanda lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 oscuro 1440: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» dentro del marco (no cae en consola/error.tsx)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 oscuro 1440: Pendientes se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas",
+    "detalle": "No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas. → /c/33333333-3333-4333-8333-333333333333/consola/flujo · renglones=3"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 oscuro 1440: Pendientes sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 oscuro 390: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» dentro del marco (no cae en consola/error.tsx)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 oscuro 390: Pendientes se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas",
+    "detalle": "No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas. → /c/33333333-3333-4333-8333-333333333333/consola/flujo · renglones=3"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 oscuro 390: Pendientes sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 claro 1440: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» dentro del marco (no cae en consola/error.tsx)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 claro 1440: Pendientes se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas",
+    "detalle": "No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas. → /c/33333333-3333-4333-8333-333333333333/consola/flujo · renglones=3"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 claro 1440: Pendientes sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 claro 390: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» dentro del marco (no cae en consola/error.tsx)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 claro 390: Pendientes se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas",
+    "detalle": "No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas. → /c/33333333-3333-4333-8333-333333333333/consola/flujo · renglones=3"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 claro 390: Pendientes sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 lever 1440: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» dentro del marco (no cae en consola/error.tsx)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 lever 1440: Pendientes se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas",
+    "detalle": "No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas. → /c/33333333-3333-4333-8333-333333333333/consola/flujo · renglones=3"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 lever 1440: Pendientes sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 lever 390: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» dentro del marco (no cae en consola/error.tsx)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 lever 390: Pendientes se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas",
+    "detalle": "No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas. → /c/33333333-3333-4333-8333-333333333333/consola/flujo · renglones=3"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 lever 390: Pendientes sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14: las obligaciones de prueba quedan desactivadas, con su evento en la bitácora",
+    "detalle": "activas=0"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 oscuro 1440: un error al pintar Inicio cae en el error de la consola, con un solo h1, «Reintentar» a la vista y sin «datos supuestos»",
+    "detalle": "h1=1 reintentar=true"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 oscuro 1440: solo quedan los errores de consola del error provocado",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 oscuro 390: un error al pintar Inicio cae en el error de la consola, con un solo h1, «Reintentar» a la vista y sin «datos supuestos»",
+    "detalle": "h1=1 reintentar=true"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 oscuro 390: solo quedan los errores de consola del error provocado",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 claro 1440: un error al pintar Inicio cae en el error de la consola, con un solo h1, «Reintentar» a la vista y sin «datos supuestos»",
+    "detalle": "h1=1 reintentar=true"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 claro 1440: solo quedan los errores de consola del error provocado",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 claro 390: un error al pintar Inicio cae en el error de la consola, con un solo h1, «Reintentar» a la vista y sin «datos supuestos»",
+    "detalle": "h1=1 reintentar=true"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 claro 390: solo quedan los errores de consola del error provocado",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 lever 1440: un error al pintar Inicio cae en el error de la consola, con un solo h1, «Reintentar» a la vista y sin «datos supuestos»",
+    "detalle": "h1=1 reintentar=true"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 lever 1440: solo quedan los errores de consola del error provocado",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 lever 390: un error al pintar Inicio cae en el error de la consola, con un solo h1, «Reintentar» a la vista y sin «datos supuestos»",
+    "detalle": "h1=1 reintentar=true"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14 lever 390: solo quedan los errores de consola del error provocado",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14: «Reintentar» vuelve a pedir Inicio al servidor y la página abre con el saldo declarado",
+    "detalle": "h1=1 → /c/33333333-3333-4333-8333-333333333333/consola"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 14: tras reintentar solo quedan los errores de consola del error provocado",
     "detalle": ""
   }
 ]
