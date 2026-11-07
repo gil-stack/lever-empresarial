@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { MarcoArco } from "@/components/entrar/marco-arco";
 import { CampoContrasena } from "@/components/sistema/campo-contrasena";
+import { RECHAZO_DE_CONTRASENA } from "@/server/autenticacion";
 import { contextoOperacion } from "@/server/operacion/contexto";
 
 import { entrarOperacion } from "../acciones-autenticacion";
@@ -11,8 +12,7 @@ export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Operación SOFIPO" };
 
 const AVISOS: Record<string, string> = {
-  credenciales_invalidas: "El correo o la contraseña no coinciden.",
-  entrada_bloqueada: "Hubo demasiados intentos. Espera quince minutos.",
+  credenciales_invalidas: RECHAZO_DE_CONTRASENA,
   entrada_vencida: "La entrada venció. Vuelve a empezar.",
   entrada_agotada: "Demasiados intentos. Vuelve a escribir tu contraseña.",
 };

@@ -33,6 +33,16 @@ import { credencialDeRespuesta, webauthnReal, type AdaptadorWebauthn } from "./w
 
 const TOPE_CONTRASENA = 8;
 const VENTANA_CONTRASENA_MS = 15 * 60 * 1000;
+/**
+ * Todo rechazo de contraseña tarda al menos esto desde que llega. El correo sin
+ * cuenta no cuenta fallos y la cuenta en el tope no anota el intento: sin el
+ * piso, cada camino tardaría distinto y el tiempo diría qué correos tienen
+ * cuenta. Cubre con holgura bcrypt más la escritura del fallo.
+ */
+export const PISO_RECHAZO_MS = 1_500;
+/** Único texto para cualquier rechazo de contraseña: no dice si el correo existe ni si llegó al tope. */
+export const RECHAZO_DE_CONTRASENA =
+  "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos.";
 const TOPE_SEGUNDO_FACTOR = 5;
 const VIGENCIA_RETO_MS = 5 * 60 * 1000;
 const VIGENCIA_RECUPERACION_MS = 12 * 60 * 60 * 1000;
@@ -57,11 +67,16 @@ export type DependenciasAutenticacion = {
   superficie?: "cliente" | "sofipo" | "telefono";
   /** Aviso por correo de cada cambio de factor. Si falla, se registra y el cambio sigue. */
   avisar?: Avisar;
+  /** Espera del piso de rechazo. En la aplicación es un setTimeout. */
+  esperar?: (ms: number) => Promise<void>;
+  /** Reloj monótono para medir el piso de rechazo. */
+  ahoraMs?: () => number;
 };
 
+/** Correo inexistente, contraseña mala y cuenta en el tope dan el mismo rechazo. */
 export type ResultadoContrasena =
   | { tipo: "entrada"; cookie: CookieEntrada }
-  | { tipo: "rechazo"; codigo: "credenciales_invalidas" | "entrada_bloqueada" };
+  | { tipo: "rechazo"; codigo: "credenciales_invalidas" };
 
 type Listo = {
   repositorio: RepositorioAutenticacion;
@@ -77,15 +92,40 @@ type Listo = {
   semilla: () => Buffer;
   superficie: "cliente" | "sofipo" | "telefono";
   avisar: Avisar;
+  esperar: (ms: number) => Promise<void>;
+  ahoraMs: () => number;
 };
 
 const rellenos = new WeakMap<Hashear, Promise<string>>();
 
+/**
+ * Un rechazo no distingue el correo sin cuenta, la contraseña mala ni la cuenta
+ * en el tope: mismo resultado y mismo tiempo (PISO_RECHAZO_MS). Un error de la
+ * base también espera el piso. La entrada correcta no espera.
+ */
 export async function iniciarConContrasena(
   entrada: { correo?: string; contrasena?: string },
   deps?: DependenciasAutenticacion,
 ): Promise<ResultadoContrasena> {
   const listo = resolver(deps);
+  const inicio = listo.ahoraMs();
+  let abrio = false;
+  try {
+    const resultado = await probarContrasena(entrada, listo);
+    abrio = resultado.tipo === "entrada";
+    return resultado;
+  } finally {
+    if (!abrio) {
+      const resta = PISO_RECHAZO_MS - (listo.ahoraMs() - inicio);
+      if (resta > 0) await listo.esperar(resta);
+    }
+  }
+}
+
+async function probarContrasena(
+  entrada: { correo?: string; contrasena?: string },
+  listo: Listo,
+): Promise<ResultadoContrasena> {
   const correo = typeof entrada?.correo === "string" ? normalizarCorreo(entrada.correo) : "";
   const contrasena = typeof entrada?.contrasena === "string" ? entrada.contrasena : "";
   if (!correoValido(correo) || contrasena.length === 0) return { tipo: "rechazo", codigo: "credenciales_invalidas" };
@@ -99,7 +139,8 @@ export async function iniciarConContrasena(
       )) >= TOPE_CONTRASENA
     : false;
   const coincide = await contrasenaCoincide(contrasena, usuario?.passwordHash ?? null, listo.hashear, listo.verificar);
-  if (bloqueada) return { tipo: "rechazo", codigo: "entrada_bloqueada" };
+  // En el tope el intento no se anota: el bloqueo sigue contando desde los fallos reales.
+  if (bloqueada) return { tipo: "rechazo", codigo: "credenciales_invalidas" };
   if (!coincide || !usuario) {
     await listo.repositorio.registrarContrasenaFallida(usuario?.id ?? null, ahora);
     return { tipo: "rechazo", codigo: "credenciales_invalidas" };
@@ -579,6 +620,8 @@ function resolver(deps?: DependenciasAutenticacion): Listo {
     semilla: deps?.semilla ?? semillaNueva,
     superficie: deps?.superficie ?? "cliente",
     avisar: deps?.avisar ?? avisarPorCorreo,
+    esperar: deps?.esperar ?? ((ms) => new Promise((fin) => setTimeout(fin, ms))),
+    ahoraMs: deps?.ahoraMs ?? (() => performance.now()),
   };
 }
 
