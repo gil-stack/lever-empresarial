@@ -12,6 +12,7 @@ import { baseCliente, type ContextoConEmpresa } from "../../src/nucleo/contexto.
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
 import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
 import { ErrorDeCorreo } from "../../src/server/correo/errores.ts";
+import { enviadorResend } from "../../src/server/correo/resend.ts";
 import type { MensajeCorreo } from "../../src/server/correo/tipos.ts";
 import { enviarCorreosSemanales } from "../../src/server/flujo/correo-semanal.ts";
 import {
@@ -21,6 +22,7 @@ import {
   configurarColchon,
   declararSaldo,
   editarObligacion,
+  leerAlertasPresupuesto,
   leerFlujoInicio,
   leerVistaCalendario,
   leerVistaPresupuestos,
@@ -30,6 +32,7 @@ import {
   registrarCobroCfdi,
   registrarObligacion,
 } from "../../src/server/flujo/servicio.ts";
+import { leerPendientesInicio } from "../../src/server/inicio/servicio.ts";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio.ts";
 import { darDeAltaPersona, nombrarCentro } from "../../src/server/personas/servicio.ts";
 import { invitarAdministrador, contextoDePersonal } from "../../src/server/plataforma/servicio.ts";
@@ -409,6 +412,25 @@ async function escenario(url: string): Promise<void> {
   const presupuestosContadora = await leerVistaPresupuestos(finanzas, AHORA);
   assert.equal(presupuestosContadora.presupuestos.areas.find((linea) => linea.id === operacion.id)?.desglose, undefined);
   assert.equal(area.desglose?.nominaCentavos, 1_600_000);
+  // SEG-N1: Operación tiene la nómina de una sola persona. Sin permiso de detalle (contadora y finanzas), el gasto
+  // del área sería su neto: ni la página, ni las alertas de Inicio, ni Pendientes lo muestran. Quedan estado y presupuesto.
+  assert.equal(area.desglose?.nominaPersonas, 1);
+  for (const sinDetalle of [contador, finanzas]) {
+    const vista = await leerVistaPresupuestos(sinDetalle, AHORA);
+    const linea = vista.presupuestos.areas.find((l) => l.id === operacion.id);
+    assert.deepEqual([linea?.gastoCentavos, linea?.estado, linea?.presupuestoCentavos], [null, "excedido", 5_000_000]);
+    assert.equal(JSON.stringify(vista).includes(String(area.gastoCentavos)), false);
+    const alerta = (await leerAlertasPresupuesto(sinDetalle, "2026-11-06")).find((l) => l.id === operacion.id);
+    assert.deepEqual([alerta?.gastoCentavos, alerta?.estado], [null, "excedido"]);
+    const enInicio = (await leerFlujoInicio(sinDetalle, {}, AHORA)).presupuestos.alertas.find((l) => l.id === operacion.id);
+    assert.deepEqual([enInicio?.gastoCentavos, enInicio?.estado], [null, "excedido"]);
+    const pendiente = (await leerPendientesInicio(sinDetalle, AHORA)).find((p) => p.id === `presupuesto-area-${operacion.id}`);
+    assert.equal(pendiente?.titulo, "El presupuesto del área Operación está excedido");
+    assert.equal(pendiente?.detalle, "Presupuesto de $50,000.00 este mes. El gasto está reservado: solo lo ve quien puede ver el detalle de la nómina.");
+  }
+  // Quien sí ve el detalle (administración) sigue viendo el gasto en las alertas y en Pendientes.
+  assert.equal((await leerAlertasPresupuesto(admin, "2026-11-06")).find((l) => l.id === operacion.id)?.gastoCentavos, area.gastoCentavos);
+  assert.match((await leerPendientesInicio(admin, AHORA)).find((p) => p.id === `presupuesto-area-${operacion.id}`)?.detalle ?? "", /^Lleva \$[\d,]+\.\d\d de \$50,000\.00 este mes/);
 
   // R8: una persona con alta futura no suma su nómina al presupuesto del mes.
   ejecutar(url, `set session_replication_role = replica; update employees set alta_en = '2026-12-01' where company_id = '${alfa.id}' and nombre = 'Operativo Quincenal';`);
@@ -547,6 +569,13 @@ async function escenario(url: string): Promise<void> {
   const correosBeta = enviados.filter((m) => m.idempotencia.includes(beta.id));
   assert.deepEqual(correosAlfa.map((m) => m.para).sort(), ["admin-alfa-flujo@ejemplo.mx", "contadora-flujo@ejemplo.mx"]);
   assert.deepEqual(correosBeta.map((m) => m.para), ["admin-beta-flujo@ejemplo.mx"]);
+  // SEG-N1: la administradora ve el gasto de Operación; la contadora (sin detalle de nómina), solo estado y presupuesto.
+  const correoAdmin = correosAlfa.find((m) => m.para === "admin-alfa-flujo@ejemplo.mx");
+  const correoContadora = correosAlfa.find((m) => m.para === "contadora-flujo@ejemplo.mx");
+  const gastoEnCorreo = /Área Operación: excedido \((\$[\d,]+\.\d\d) de \$50,000\.00\)/.exec(correoAdmin?.texto ?? "")?.[1];
+  assert.ok(gastoEnCorreo, "el correo de la administradora trae el gasto de Operación");
+  assert.ok(correoContadora?.texto.includes("Área Operación: excedido (presupuesto de $50,000.00; el gasto está reservado)."));
+  assert.equal(correoContadora?.texto.includes(gastoEnCorreo) || correoContadora?.html.includes(gastoEnCorreo), false);
   for (const m of correosAlfa) {
     assert.match(m.texto, /\$90,000\.00 al 6 de noviembre de 2026/);
     assert.match(m.html, /https:\/\/lever\.test\/c\/[0-9a-f-]+\/consola/);
@@ -644,6 +673,65 @@ async function escenario(url: string): Promise<void> {
   assert.ok(registros.some((r) => r.evento === "correo_semanal_pendientes" && r.pendientes === 2));
   const siguiente = await enviarCorreosSemanales({ ...deps, ahora: () => lunes14 });
   assert.equal(siguiente.enviados, 2);
+
+  // SEG-N2: un Resend simulado con la semántica de su llave de idempotencia (doc de Resend, «Idempotency Keys ›
+  // Possible responses»): la misma llave con el mismo contenido responde lo mismo; con otro contenido, 409
+  // invalid_idempotent_request; con otra petición en curso, 409 concurrent_idempotent_requests. Pasa por enviadorResend.
+  const aceptados = new Map<string, { huella: string; id: string }>();
+  const nuevosPorLlave = new Map<string, number>();
+  const enCurso = new Set<string>();
+  const perderRespuesta = new Set<string>();
+  const resendSimulado = async (_url: string, init: RequestInit): Promise<Response> => {
+    const llave = String((init.headers as Record<string, string>)["Idempotency-Key"]);
+    const cuerpo = String(init.body);
+    const huella = createHash("sha256").update(cuerpo).digest("hex");
+    if (enCurso.has(llave)) return Response.json({ statusCode: 409, name: "concurrent_idempotent_requests", message: "en curso" }, { status: 409 });
+    const previo = aceptados.get(llave);
+    if (previo && previo.huella !== huella) return Response.json({ statusCode: 409, name: "invalid_idempotent_request", message: "otro contenido" }, { status: 409 });
+    if (!previo) nuevosPorLlave.set(llave, (nuevosPorLlave.get(llave) ?? 0) + 1);
+    const id = previo?.id ?? `re_sim_${aceptados.size + 1}`;
+    aceptados.set(llave, { huella, id });
+    // Resend lo aceptó y lo mandó, pero la respuesta no llegó (red caída): la tarea no sabe que salió.
+    if (perderRespuesta.has((JSON.parse(cuerpo) as { to: string[] }).to[0] ?? "")) throw new Error("socket hang up");
+    return Response.json({ id });
+  };
+  const conResend = { ...deps, enviador: enviadorResend({ apiKey: "re_prueba_local", remitente: "Lever Empresas <avisos@lever.test>" }, resendSimulado) };
+  const llaveContadora = (semana: string) => `correo-semanal/${alfa.id}/${semana}/${contador.persona.id}`;
+  const entregasDe = (semana: string) => contar(url, `select count(*) from weekly_digest_deliveries where semana = '${semana}' and user_id = '${contador.persona.id}'`);
+  const envioAlfa = (semana: string) =>
+    consultarJson<{ e: string; c: string | null }[]>(url, `select jsonb_agg(jsonb_build_object('e', estado, 'c', codigo)) from weekly_digest_sends where company_id = '${alfa.id}' and semana = '${semana}'`);
+
+  // 1) El correo de la contadora sale, pero la respuesta se pierde: queda sin entrega registrada y Alfa, fallida.
+  const lunes21 = new Date("2026-12-21T14:00:00.000Z");
+  perderRespuesta.add("contadora-flujo@ejemplo.mx");
+  assert.deepEqual(await enviarCorreosSemanales({ ...conResend, ahora: () => lunes21 }), { semana: "2026-12-21", empresas: 2, enviados: 1, omitidos: 0, fallidos: 1, pendientes: 0 });
+  assert.equal(nuevosPorLlave.get(llaveContadora("2026-12-21")), 1);
+  assert.equal(entregasDe("2026-12-21"), 0);
+  perderRespuesta.clear();
+  // Antes del reintento cambia el contenido (otro saldo): la misma llave ya no coincide y Resend responde 409 invalid_idempotent_request.
+  await declararSaldo(admin, { saldo: "95000.00", alDia: "2026-11-06", altaId: randomUUID() }, AHORA);
+  const entregadosAntes = contar(url, "select count(*) from audit_log where accion = 'correo_semanal_entregado'");
+  assert.deepEqual(await enviarCorreosSemanales({ ...conResend, ahora: () => lunes21 }), { semana: "2026-12-21", empresas: 2, enviados: 1, omitidos: 1, fallidos: 0, pendientes: 0 });
+  // Cuenta como entrega: se registra con su evento, Alfa queda enviada y Resend no mandó otro.
+  assert.equal(entregasDe("2026-12-21"), 1);
+  assert.equal(contar(url, "select count(*) from audit_log where accion = 'correo_semanal_entregado'"), entregadosAntes + 1);
+  assert.deepEqual(envioAlfa("2026-12-21"), [{ e: "enviado", c: null }]);
+  assert.equal(nuevosPorLlave.get(llaveContadora("2026-12-21")), 1);
+  assert.ok(registros.some((r) => r.evento === "correo_semanal_ya_enviado" && r.usuario === contador.persona.id && r.semana === "2026-12-21"));
+
+  // 2) Otra petición con la misma llave sigue en curso: 409 concurrent_idempotent_requests no cuenta como entrega.
+  const lunes28 = new Date("2026-12-28T14:00:00.000Z");
+  enCurso.add(llaveContadora("2026-12-28"));
+  assert.deepEqual(await enviarCorreosSemanales({ ...conResend, ahora: () => lunes28 }), { semana: "2026-12-28", empresas: 2, enviados: 1, omitidos: 0, fallidos: 1, pendientes: 0 });
+  assert.deepEqual(envioAlfa("2026-12-28"), [{ e: "fallido", c: "correo_en_curso" }]);
+  assert.equal(entregasDe("2026-12-28"), 0);
+  assert.equal(nuevosPorLlave.get(llaveContadora("2026-12-28")), undefined);
+  // Se deja para el siguiente reintento, que ya lo manda una vez.
+  enCurso.clear();
+  assert.deepEqual(await enviarCorreosSemanales({ ...conResend, ahora: () => lunes28 }), { semana: "2026-12-28", empresas: 2, enviados: 1, omitidos: 1, fallidos: 0, pendientes: 0 });
+  assert.equal(entregasDe("2026-12-28"), 1);
+  assert.deepEqual(envioAlfa("2026-12-28"), [{ e: "enviado", c: null }]);
+  assert.equal(nuevosPorLlave.get(llaveContadora("2026-12-28")), 1);
 
   // Sin destinatarios activos la empresa ni aparece.
   await cambiarCorreoSemanal(adminBeta, { activo: "no" }, AHORA);

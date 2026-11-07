@@ -1,3 +1,4 @@
+import { formatoPesos } from "../centavos";
 import { mensualEstimado, sumarCentavos, type FrecuenciaNomina } from "../nomina";
 import { adelantarObligacion, fechasDeSerie, primeroDelMes, siguienteObligacion, ultimoDelMes, type FrecuenciaObligacion } from "./fechas";
 import { restantesDeObligacion } from "./proyeccion";
@@ -40,7 +41,8 @@ export type LineaPresupuesto = {
   id: string;
   nombre: string;
   presupuestoCentavos: number | null;
-  gastoCentavos: number;
+  /** `null`: reservado. Sin permiso de ver el detalle de la nómina, el gasto de un área con nómina de una sola persona no se muestra. */
+  gastoCentavos: number | null;
   estado: EstadoPresupuesto;
   /** Solo en áreas: de dónde sale el gasto. `nominaPersonas` decide si se puede mostrar sin detalle de nómina. */
   desglose?: { nominaCentavos: number; nominaPersonas: number; proveedoresCentavos: number; obligacionesCentavos: number };
@@ -115,6 +117,27 @@ export function calcularPresupuestos(fuentes: FuentesPresupuesto): Presupuestos 
   return { mes: { desde, hasta }, areas, personas, alertas };
 }
 
+/**
+ * Para quien no ve el detalle de la nómina: en un área cuya nómina del mes es
+ * de una sola persona, el gasto (y su desglose) no se muestra, porque restando
+ * lo demás daría el neto de esa persona. Quedan el estado y el presupuesto. Lo
+ * usan la página de Presupuestos, las alertas de Inicio y Pendientes y el correo.
+ */
+export function reservarNominaDeUnaPersona(presupuestos: Presupuestos): Presupuestos {
+  const reservar = (linea: LineaPresupuesto): LineaPresupuesto =>
+    linea.desglose && linea.desglose.nominaPersonas === 1 ? { ...linea, gastoCentavos: null, desglose: undefined } : linea;
+  return { ...presupuestos, areas: presupuestos.areas.map(reservar), alertas: presupuestos.alertas.map(reservar) };
+}
+
+/** Las cifras de una alerta: «$X de $Y» o, con el gasto reservado, solo el presupuesto. Lo usan Inicio y el correo. */
+export function cifrasDePresupuesto(linea: Pick<LineaPresupuesto, "gastoCentavos" | "presupuestoCentavos">): string {
+  const tope = formatoPesos(linea.presupuestoCentavos ?? 0);
+  return linea.gastoCentavos === null ? `presupuesto de ${tope}; el gasto está reservado` : `${formatoPesos(linea.gastoCentavos)} de ${tope}`;
+}
+
+/** Texto para quien no puede ver el gasto: el mismo que el calendario usa para el pago de una sola persona. */
+export const GASTO_RESERVADO = "Solo lo ve quien puede ver el detalle de la nómina.";
+
 export const ETIQUETA_ESTADO_PRESUPUESTO: Record<EstadoPresupuesto, string> = {
   sin_presupuesto: "Sin presupuesto",
   en_rango: "En rango",
@@ -123,7 +146,7 @@ export const ETIQUETA_ESTADO_PRESUPUESTO: Record<EstadoPresupuesto, string> = {
 };
 
 /** El porcentaje entero que se muestra junto a la barra. */
-export function porcentaje(gasto: number, presupuesto: number | null): number | null {
-  if (presupuesto === null || presupuesto === 0) return null;
+export function porcentaje(gasto: number | null, presupuesto: number | null): number | null {
+  if (gasto === null || presupuesto === null || presupuesto === 0) return null;
   return Math.floor((gasto * 100) / presupuesto);
 }

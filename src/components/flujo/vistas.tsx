@@ -6,7 +6,7 @@ import { BarraAvance, CabezaPagina, EtiquetaMono, Hoja, Insignia, Metrica, Metri
 import { formatoPesos } from "@/dominio/centavos";
 import { ETIQUETA_FRECUENCIA } from "@/dominio/flujo/entradas";
 import { desplazar, fechaConAnio, fechaCorta, nombreDelMes, primeroDelMes, ultimoDelMes } from "@/dominio/flujo/fechas";
-import { ETIQUETA_ESTADO_PRESUPUESTO, porcentaje, type LineaPresupuesto } from "@/dominio/flujo/presupuestos";
+import { ETIQUETA_ESTADO_PRESUPUESTO, GASTO_RESERVADO, porcentaje, type LineaPresupuesto } from "@/dominio/flujo/presupuestos";
 import { horaEnMexico } from "@/dominio/reloj";
 import { enEmpresa } from "@/nucleo/rutas";
 import type { CobroVista } from "@/server/flujo/repositorio";
@@ -367,13 +367,24 @@ function LineaVista({ linea }: { linea: LineaPresupuesto }) {
         <h3>{linea.nombre}{linea.detalle ? <small className="pista"> · {linea.detalle}</small> : null}</h3>
         <Insignia tono={tono}>{ETIQUETA_ESTADO_PRESUPUESTO[linea.estado]}{pct !== null ? ` · ${pct} %` : ""}</Insignia>
       </div>
-      <p className="flujo-presupuesto-cifras">
-        <span data-cifra="gasto" data-centavos={linea.gastoCentavos}>{formatoPesos(linea.gastoCentavos)}</span>
-        {linea.presupuestoCentavos !== null ? <> de {formatoPesos(linea.presupuestoCentavos)}</> : " · sin presupuesto asignado"}
-      </p>
-      {linea.presupuestoCentavos !== null && linea.presupuestoCentavos > 0 ? (
-        <BarraAvance valor={linea.gastoCentavos} tope={linea.presupuestoCentavos} etiqueta={`Gasto de ${linea.nombre} contra su presupuesto`} />
-      ) : null}
+      {linea.gastoCentavos === null ? (
+        // Nómina de una sola persona sin permiso de detalle: el gasto sería su neto. Quedan estado y presupuesto.
+        <p className="flujo-presupuesto-cifras" data-gasto="reservado">
+          <span data-cifra="gasto">Gasto reservado</span>
+          {linea.presupuestoCentavos !== null ? <> · presupuesto de {formatoPesos(linea.presupuestoCentavos)}</> : " · sin presupuesto asignado"}
+          <small className="pista"> {GASTO_RESERVADO}</small>
+        </p>
+      ) : (
+        <>
+          <p className="flujo-presupuesto-cifras">
+            <span data-cifra="gasto" data-centavos={linea.gastoCentavos}>{formatoPesos(linea.gastoCentavos)}</span>
+            {linea.presupuestoCentavos !== null ? <> de {formatoPesos(linea.presupuestoCentavos)}</> : " · sin presupuesto asignado"}
+          </p>
+          {linea.presupuestoCentavos !== null && linea.presupuestoCentavos > 0 ? (
+            <BarraAvance valor={linea.gastoCentavos} tope={linea.presupuestoCentavos} etiqueta={`Gasto de ${linea.nombre} contra su presupuesto`} />
+          ) : null}
+        </>
+      )}
       {linea.desglose ? (
         <p className="flujo-desglose">
           Nómina {formatoPesos(linea.desglose.nominaCentavos)} · Proveedores {formatoPesos(linea.desglose.proveedoresCentavos)} · Obligaciones {formatoPesos(linea.desglose.obligacionesCentavos)}

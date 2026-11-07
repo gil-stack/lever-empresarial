@@ -6,8 +6,10 @@
 // Solo intercepta POST https://api.resend.com/emails: anota el mensaje (para,
 // asunto, llave de idempotencia, texto y html) en CORREO_FALSO_ARCHIVO y
 // responde como Resend. Respeta la llave de idempotencia igual que Resend: la
-// misma llave no anota un segundo correo. Todo lo demás sigue al fetch real. El
-// código de la aplicación no cambia.
+// misma llave con el mismo contenido responde lo mismo sin anotar otro correo, y
+// con otro contenido responde 409 `invalid_idempotent_request`. Todo lo demás
+// sigue al fetch real. El código de la aplicación no cambia.
+import { createHash } from "node:crypto";
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
 
 const ARCHIVO = process.env.CORREO_FALSO_ARCHIVO ?? "";
@@ -16,9 +18,14 @@ if (!ARCHIVO || ARCHIVO.includes("/docs/")) {
 }
 
 const original = globalThis.fetch;
-const vistas = new Set(
+const huella = (m) => createHash("sha256").update(JSON.stringify([m.para, m.asunto, m.texto, m.html])).digest("hex");
+/** Llave de idempotencia → huella del contenido con que se usó. */
+const vistas = new Map(
   existsSync(ARCHIVO)
-    ? readFileSync(ARCHIVO, "utf8").split("\n").filter(Boolean).map((linea) => JSON.parse(linea).idempotencia)
+    ? readFileSync(ARCHIVO, "utf8").split("\n").filter(Boolean).map((linea) => {
+        const m = JSON.parse(linea);
+        return [m.idempotencia, huella(m)];
+      })
     : [],
 );
 
@@ -35,12 +42,17 @@ globalThis.fetch = async function fetchConCorreoFalso(entrada, init) {
   if (url === "https://api.resend.com/emails" && (init?.method ?? "GET").toUpperCase() === "POST") {
     const cuerpo = JSON.parse(String(init.body));
     const idempotencia = encabezado(init, "Idempotency-Key");
-    if (!vistas.has(idempotencia)) {
-      vistas.add(idempotencia);
-      appendFileSync(
-        ARCHIVO,
-        `${JSON.stringify({ en: new Date().toISOString(), para: cuerpo.to, asunto: cuerpo.subject, idempotencia, texto: cuerpo.text, html: cuerpo.html })}\n`,
+    const mensaje = { para: cuerpo.to, asunto: cuerpo.subject, texto: cuerpo.text, html: cuerpo.html };
+    const previa = vistas.get(idempotencia);
+    if (previa !== undefined && previa !== huella(mensaje)) {
+      return new Response(
+        JSON.stringify({ statusCode: 409, name: "invalid_idempotent_request", message: "This idempotency key has been used with a different request body." }),
+        { status: 409, headers: { "content-type": "application/json" } },
       );
+    }
+    if (previa === undefined) {
+      vistas.set(idempotencia, huella(mensaje));
+      appendFileSync(ARCHIVO, `${JSON.stringify({ en: new Date().toISOString(), ...mensaje, idempotencia })}\n`);
     }
     return new Response(JSON.stringify({ id: `falso_${vistas.size}` }), { status: 200, headers: { "content-type": "application/json" } });
   }

@@ -2,14 +2,16 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 
 import { formatoPesos } from "../../dominio/centavos";
 import { fechaConAnio, fechaCorta, lunesDe, primeroDelMes, ultimoDelMes } from "../../dominio/flujo/fechas";
-import { calcularPresupuestos, ETIQUETA_ESTADO_PRESUPUESTO } from "../../dominio/flujo/presupuestos";
+import { calcularPresupuestos, cifrasDePresupuesto, ETIQUETA_ESTADO_PRESUPUESTO, reservarNominaDeUnaPersona, type LineaPresupuesto } from "../../dominio/flujo/presupuestos";
 import { proyectar, textoAlcance, type Proyeccion } from "../../dominio/flujo/proyeccion";
 import { hoyEnMexico } from "../../dominio/personas";
+import { capacidadesDe, rolesLeidos, tiene } from "../../nucleo/capacidades";
 import { aplicarSentencia, comoTarea, conContexto, type Consulta, type ContextoDeBase } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { enEmpresa } from "../../nucleo/rutas";
 import { auditar as auditarPorDefecto, type Actor, type Auditar } from "../bitacora/auditar";
 import { enviadorDesdeEntorno, leerUrlPublica } from "../correo";
+import { ErrorDeCorreo } from "../correo/errores";
 import { plantillaResumenSemanal } from "../correo/plantillas/resumen-semanal";
 import type { Enviador } from "../correo/tipos";
 import { booleano, lista, texto, textoONulo, unaFila } from "./lectura";
@@ -141,7 +143,8 @@ async function enviarAEmpresa(empresaId: string, paso: Paso): Promise<"enviados"
   try {
     const datos = await conContexto(apartado.base, (consulta) => leerResumen(consulta, empresaId, paso.hoy, paso.semana));
     destinatarios = datos.entregados.size;
-    const plantilla = plantillaResumenSemanal({
+    // Quien no ve el detalle de la nómina recibe los presupuestos sin el gasto de un área con nómina de una sola persona.
+    const plantillaCon = (alertas: readonly LineaPresupuesto[]) => plantillaResumenSemanal({
       razonSocial: apartado.razonSocial,
       semana: fechaConAnio(paso.semana),
       saldoDeclarado: datos.proyeccion.saldo
@@ -152,12 +155,13 @@ async function enviarAEmpresa(empresaId: string, paso: Paso): Promise<"enviados"
       alcance: textoAlcance(datos.proyeccion),
       faltante: textoFaltante(datos.proyeccion),
       cobrosVencidos: datos.cobros.vencidos > 0 ? `${datos.cobros.vencidos} por ${formatoPesos(datos.cobros.vencidosCentavos)}` : null,
-      presupuestos: datos.alertas.map(
+      presupuestos: alertas.map(
         (linea) =>
-          `${linea.tipo === "area" ? "Área" : "Persona"} ${linea.nombre}: ${ETIQUETA_ESTADO_PRESUPUESTO[linea.estado].toLowerCase()} (${formatoPesos(linea.gastoCentavos)} de ${formatoPesos(linea.presupuestoCentavos ?? 0)}).`,
+          `${linea.tipo === "area" ? "Área" : "Persona"} ${linea.nombre}: ${ETIQUETA_ESTADO_PRESUPUESTO[linea.estado].toLowerCase()} (${cifrasDePresupuesto(linea)}).`,
       ),
       enlace: `${paso.url}${enEmpresa(empresaId, "/consola")}`,
     });
+    const plantillas = { conDetalle: plantillaCon(datos.alertas.conDetalle), sinDetalle: plantillaCon(datos.alertas.sinDetalle) };
     for (const persona of datos.destinatarios) {
       // Ya lo recibió esta semana (en esta corrida o en una anterior): no se le vuelve a mandar.
       if (datos.entregados.has(persona.id)) continue;
@@ -165,15 +169,21 @@ async function enviarAEmpresa(empresaId: string, paso: Paso): Promise<"enviados"
         await paso.turno();
         await paso.enviador({
           para: persona.correo,
-          ...plantilla,
+          ...(persona.detalleNomina ? plantillas.conDetalle : plantillas.sinDetalle),
           // Segunda defensa: el proveedor descarta un repetido dentro de sus 24 horas.
           idempotencia: `correo-semanal/${empresaId}/${paso.semana}/${persona.id}`,
           etiqueta: "correo_semanal",
         });
       } catch (error) {
-        codigo ??= codigoDe(error);
-        paso.registrar({ evento: "correo_semanal_destinatario_fallido", empresa: empresaId, semana: paso.semana, usuario: persona.id, codigo: codigoDe(error) });
-        continue;
+        // La llave ya se usó con otro contenido (el contenido cambió entre el envío y este reintento): ese correo ya
+        // salió y solo faltó registrarlo. Se registra la entrega y no se reenvía. Una petición en curso (correo_en_curso)
+        // sí es fallo de esta corrida: la siguiente la vuelve a intentar.
+        if (!(error instanceof ErrorDeCorreo && error.codigo === "correo_ya_enviado")) {
+          codigo ??= codigoDe(error);
+          paso.registrar({ evento: "correo_semanal_destinatario_fallido", empresa: empresaId, semana: paso.semana, usuario: persona.id, codigo: codigoDe(error) });
+          continue;
+        }
+        paso.registrar({ evento: "correo_semanal_ya_enviado", empresa: empresaId, semana: paso.semana, usuario: persona.id });
       }
       try {
         await conContexto(apartado.base, (consulta) => registrarEntrega(consulta, apartado, paso, persona.id));
@@ -296,8 +306,9 @@ async function registrarEntrega(consulta: Consulta, apartado: Apartado, paso: Pa
 type Resumen = {
   proyeccion: Proyeccion;
   cobros: { vencidos: number; vencidosCentavos: number };
-  alertas: ReturnType<typeof calcularPresupuestos>["alertas"];
-  destinatarios: { id: string; correo: string }[];
+  /** Las alertas de presupuesto completas y, para quien no ve el detalle de la nómina, con el gasto reservado. */
+  alertas: { conDetalle: LineaPresupuesto[]; sinDetalle: LineaPresupuesto[] };
+  destinatarios: Destinatario[];
   /** Quienes ya lo recibieron esta semana. */
   entregados: Set<string>;
 };
@@ -320,7 +331,7 @@ async function leerResumen(consulta: Consulta, empresaId: string, hoy: string, s
   return {
     proyeccion: proyectar(fuentes, null, { detalleNomina: false }),
     cobros: await leerTotalesCobro(consulta, empresaId, hoy),
-    alertas: presupuestos.alertas,
+    alertas: { conDetalle: presupuestos.alertas, sinDetalle: reservarNominaDeUnaPersona(presupuestos).alertas },
     destinatarios: await leerDestinatarios(consulta, empresaId, hoy),
     entregados: new Set(lista(entregas.rows).map((fila) => texto(fila.user_id))),
   };
@@ -330,10 +341,14 @@ async function leerResumen(consulta: Consulta, empresaId: string, hoy: string, s
  * Administración y finanzas lo reciben salvo que lo apaguen; contaduría, solo si
  * lo enciende. Quien está de baja o con la membresía inactiva, no.
  */
-export async function leerDestinatarios(consulta: Consulta, empresaId: string, hoy: string): Promise<{ id: string; correo: string }[]> {
+type Destinatario = { id: string; correo: string; detalleNomina: boolean };
+
+export async function leerDestinatarios(consulta: Consulta, empresaId: string, hoy: string): Promise<Destinatario[]> {
   const resultado = await aplicarSentencia(
     consulta,
-    `select distinct u.id, u.correo
+    `select distinct u.id, u.correo,
+            -- Todos sus roles en la empresa: deciden si ve el detalle de la nómina.
+            array(select t.rol::text from membership_roles t where t.company_id = m.company_id and t.user_id = m.user_id order by t.rol) as roles
        from memberships m
        join users u on u.id = m.user_id
        join membership_roles r on r.company_id = m.company_id and r.user_id = m.user_id
@@ -347,7 +362,14 @@ export async function leerDestinatarios(consulta: Consulta, empresaId: string, h
       order by u.id`,
     [empresaId, hoy],
   );
-  return lista(resultado.rows).map((fila) => ({ id: texto(fila.id), correo: texto(fila.correo) }));
+  return lista(resultado.rows).map((fila) => ({
+    id: texto(fila.id),
+    correo: texto(fila.correo),
+    detalleNomina: tiene(
+      capacidadesDe({ rolesCliente: rolesLeidos(Array.isArray(fila.roles) ? fila.roles : []), rolesPlataforma: [] }),
+      "cliente.nomina.detalle.ver",
+    ),
+  }));
 }
 
 function textoFaltante(p: Proyeccion): string | null {

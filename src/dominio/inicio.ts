@@ -1,6 +1,6 @@
 import { tiene, type Capacidad } from "../nucleo/capacidades";
 import { formatoPesos } from "./centavos";
-import type { LineaPresupuesto } from "./flujo/presupuestos";
+import { GASTO_RESERVADO, type LineaPresupuesto } from "./flujo/presupuestos";
 
 export type DatosInicio = {
   centros: number;
@@ -148,7 +148,10 @@ export function pendientesDePresupuesto(alertas: readonly LineaPresupuesto[]): P
       return {
         id: `presupuesto-${linea.tipo}-${linea.id}`,
         titulo: `El presupuesto ${quien} ${estado}`,
-        detalle: `Lleva ${formatoPesos(linea.gastoCentavos)} de ${formatoPesos(linea.presupuestoCentavos ?? 0)} este mes, con lo comprometido en la plataforma.`,
+        detalle:
+          linea.gastoCentavos === null
+            ? `Presupuesto de ${formatoPesos(linea.presupuestoCentavos ?? 0)} este mes. El gasto está reservado: ${GASTO_RESERVADO.toLowerCase()}`
+            : `Lleva ${formatoPesos(linea.gastoCentavos)} de ${formatoPesos(linea.presupuestoCentavos ?? 0)} este mes, con lo comprometido en la plataforma.`,
         ruta: "/consola/presupuestos",
         accion: "Ver presupuestos",
         area: "operacion",

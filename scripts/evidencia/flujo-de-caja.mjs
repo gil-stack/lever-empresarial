@@ -780,6 +780,13 @@ async function principal() {
     exigir(deB.texto.includes("Sin un saldo declarado no se puede saber si el dinero alcanza") && !deB.texto.includes("alcanza para"),
       "Bahía no declaró saldo: su correo explica que sin saldo no se sabe si alcanza e invita a declararlo");
     exigir(!deA.texto.includes("Bahía") && !deA.texto.includes("Confirmado por el banco"), "ni el de Altamar trae datos de Bahía ni dice «Confirmado por el banco»");
+    const ventasConGasto = /Área Ventas: excedido \(\$[\d,]+\.\d\d de \$40,000\.00\)/;
+    exigir(ventasConGasto.test(deA.texto), "el de Laura (con el permiso de detalle de nómina) trae el gasto de Ventas");
+    for (const quien of ["diego@lever.test", "fernanda@lever.test"]) {
+      const c = correos.find((m) => m.para[0] === quien);
+      exigir(c.texto.includes("Área Ventas: excedido (presupuesto de $40,000.00; el gasto está reservado).") && !ventasConGasto.test(c.texto) && !ventasConGasto.test(c.html),
+        `el de ${quien} (sin el permiso) no trae el gasto de Ventas, cuya nómina es solo la de Carla`);
+    }
     exigir(!deA.texto.includes("No alcanza") && !deA.html.includes("No alcanza"), "el de Altamar no dice «No alcanza»: los $180,000.00 autorizados de antes del saldo ya están pagados en él");
     writeFileSync(join(TEMPORAL, "correo-altamar.html"), deA.html);
     const vista = await navegador.newPage({ viewport: { width: 720, height: 900 } });
@@ -827,6 +834,31 @@ async function principal() {
     await captura(diego, "j4-contador-nomina-reservada.jpg", false);
     await laura.goto(en(A, `/consola/calendario?mes=${siguienteMes}`));
     exigir((await laura.locator('[data-reservado="true"]').count()) === 0, "y Laura ve todos los montos");
+
+    // Ventas solo tiene la nómina de Carla: su gasto del mes sería su neto. Sin el permiso de detalle, solo estado y presupuesto.
+    const { ventas, operacion } = semillas.areas;
+    for (const [quien, pagina] of [["el contador", diego], ["finanzas", fernanda]]) {
+      await pagina.goto(en(A, "/consola/presupuestos"));
+      const tarjeta = pagina.locator(`[data-presupuesto="${ventas}"]`);
+      const textoTarjeta = (await tarjeta.innerText()).replace(/\s+/g, " ").trim();
+      exigir(await tarjeta.locator('[data-gasto="reservado"]').isVisible() && (await tarjeta.locator("[data-centavos]").count()) === 0
+        && (await tarjeta.locator('[role="meter"]').count()) === 0 && textoTarjeta.includes("presupuesto de $40,000.00") && !/\d+ %/.test(textoTarjeta)
+        && (await tarjeta.getAttribute("data-estado")) === "excedido",
+        `${quien} ve Ventas con su estado y su presupuesto, sin gasto, porcentaje ni barra: «${textoTarjeta}»`);
+      exigir((await pagina.locator(`[data-presupuesto="${operacion}"] [data-cifra="gasto"][data-centavos]`).count()) === 1, `${quien} sí ve el gasto de Operación (nómina de dos personas)`);
+    }
+    await diego.goto(en(A, "/consola/presupuestos"));
+    await diego.locator(`[data-presupuesto="${ventas}"]`).scrollIntoViewIfNeeded();
+    await captura(diego, "j5-presupuesto-reservado.jpg", false);
+    await fernanda.goto(en(A, "/consola"));
+    const alertaFinanzas = (await fernanda.locator('[data-alerta="presupuesto"]').innerText()).replace(/\s+/g, " ");
+    exigir(alertaFinanzas.includes("Área Ventas: excedido (presupuesto de $40,000.00; el gasto está reservado)"),
+      "en Inicio de finanzas, la alerta de Ventas dice «presupuesto de $40,000.00; el gasto está reservado»");
+    await diego.goto(en(A, "/consola/pendientes"));
+    exigir((await diego.locator("main").innerText()).includes("Presupuesto de $40,000.00 este mes. El gasto está reservado: solo lo ve quien puede ver el detalle de la nómina."),
+      "en Pendientes del contador, el presupuesto de Ventas no dice cuánto lleva");
+    await laura.goto(en(A, "/consola/presupuestos"));
+    exigir(Number(await laura.locator(`[data-presupuesto="${ventas}"] [data-cifra="gasto"]`).getAttribute("data-centavos")) > 0, "Laura (con el permiso) sí ve el gasto de Ventas");
 
     if (!accionSaldo) throw new Error("FALLO no se capturó la acción del saldo en (b)");
     await diego.goto(en(A, "/consola/flujo"));

@@ -5,7 +5,7 @@ import { siguientePago } from "../nomina.ts";
 import { hoyEnMexico } from "../personas.ts";
 import { siguienteDia17 } from "./entradas.ts";
 import { adelantarObligacion, adelantarQuincenal, fechasDeSerie, lunesDe, siguienteObligacion } from "./fechas.ts";
-import { calcularPresupuestos, estadoDe } from "./presupuestos.ts";
+import { calcularPresupuestos, cifrasDePresupuesto, estadoDe, reservarNominaDeUnaPersona } from "./presupuestos.ts";
 import { escenarioValido, proyectar, restantesDeObligacion, textoAlcance, ventanaDe, type FuentesFlujo } from "./proyeccion.ts";
 
 /** Reloj fijo: viernes 6 de noviembre de 2026 en México. La ventana cruza el cambio de año. */
@@ -450,6 +450,34 @@ describe("presupuestos vivos", () => {
     assert.equal(planta?.estado, "excedido");
     assert.equal(resultado.areas.find((area) => area.id === "sin")?.estado, "sin_presupuesto");
     assert.deepEqual(resultado.alertas.map((linea) => [linea.nombre, linea.estado]), [["Planta", "excedido"], ["Ventas", "atencion"]]);
+  });
+
+  it("sin detalle de nómina, el área con la nómina de una sola persona no muestra su gasto: quedan estado y presupuesto", () => {
+    const p = calcularPresupuestos({
+      hoy: "2026-11-06",
+      areas: [
+        { id: "sola", nombre: "Sola", presupuestoCentavos: 1_000_000 },
+        { id: "dos", nombre: "Dos", presupuestoCentavos: 1_000_000 },
+      ],
+      nomina: [
+        { areaId: "sola", netoCentavos: 1_200_000, frecuencia: "mensual" },
+        { areaId: "dos", netoCentavos: 500_000, frecuencia: "mensual" },
+        { areaId: "dos", netoCentavos: 600_000, frecuencia: "mensual" },
+      ],
+      pagosPorArea: [],
+      obligaciones: [],
+      personas: [{ id: "x", nombre: "Persona X", areaNombre: null, presupuestoCentavos: 100_000, pagosCentavos: 90_000 }],
+    });
+    // Con detalle: la nómina de «Sola» es el neto de su única persona.
+    assert.equal(p.areas[0]?.gastoCentavos, 1_200_000);
+    const r = reservarNominaDeUnaPersona(p);
+    assert.deepEqual([r.areas[0]?.gastoCentavos, r.areas[0]?.desglose, r.areas[0]?.estado, r.areas[0]?.presupuestoCentavos], [null, undefined, "excedido", 1_000_000]);
+    assert.equal(r.areas[1]?.gastoCentavos, 1_100_000);
+    assert.equal(r.personas[0]?.gastoCentavos, 90_000);
+    assert.deepEqual(r.alertas.map((l) => [l.nombre, l.gastoCentavos]), [["Dos", 1_100_000], ["Sola", null], ["Persona X", 90_000]]);
+    assert.equal(JSON.stringify(r.alertas).includes("1200000"), false);
+    assert.equal(cifrasDePresupuesto(r.areas[0]!), "presupuesto de $10,000.00; el gasto está reservado");
+    assert.equal(cifrasDePresupuesto(r.areas[1]!), "$11,000.00 de $10,000.00");
   });
 
   it("la obligación cuyo proveedor ya trae cargo en el mes suma al área solo lo que falta", () => {

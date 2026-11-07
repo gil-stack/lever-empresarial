@@ -6,7 +6,7 @@ import "@/estilo/flujo.css";
 import { Ausencia, Aviso, CifraGrande, Insignia } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
 import { fechaConAnio, fechaCorta } from "@/dominio/flujo/fechas";
-import { ETIQUETA_ESTADO_PRESUPUESTO } from "@/dominio/flujo/presupuestos";
+import { cifrasDePresupuesto, ETIQUETA_ESTADO_PRESUPUESTO } from "@/dominio/flujo/presupuestos";
 import { textoAlcance, type Movimiento, type Proyeccion, type Semana } from "@/dominio/flujo/proyeccion";
 import { horaEnMexico } from "@/dominio/reloj";
 import { enEmpresa } from "@/nucleo/rutas";
@@ -127,7 +127,7 @@ function Alertas({ flujo, empresaId }: { flujo: FlujoInicio; empresaId: string |
               {presupuesto.map((linea) => (
                 <li key={`${linea.tipo}-${linea.id}`}>
                   <Link href={enEmpresa(empresaId, "/consola/presupuestos")}>
-                    {linea.tipo === "area" ? "Área" : "Persona"} {linea.nombre}: {ETIQUETA_ESTADO_PRESUPUESTO[linea.estado].toLowerCase()} ({formatoPesos(linea.gastoCentavos)} de {formatoPesos(linea.presupuestoCentavos ?? 0)})
+                    {linea.tipo === "area" ? "Área" : "Persona"} {linea.nombre}: {ETIQUETA_ESTADO_PRESUPUESTO[linea.estado].toLowerCase()} ({cifrasDePresupuesto(linea)})
                   </Link>
                 </li>
               ))}

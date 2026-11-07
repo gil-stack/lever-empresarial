@@ -17,7 +17,7 @@ import {
   type ObligacionEscrita,
 } from "../../dominio/flujo/entradas";
 import { desplazar, primeroDelMes, ultimoDelMes } from "../../dominio/flujo/fechas";
-import { calcularPresupuestos, type Presupuestos } from "../../dominio/flujo/presupuestos";
+import { calcularPresupuestos, reservarNominaDeUnaPersona, type Presupuestos } from "../../dominio/flujo/presupuestos";
 import {
   corteDe,
   escenarioValido,
@@ -180,17 +180,11 @@ export type EventoCalendario = Movimiento & {
 };
 
 /**
- * Sin permiso de ver el detalle de la nómina, un área cuya nómina es de una sola
- * persona no se desglosa: su gasto se ve solo como total.
+ * Sin permiso de ver el detalle de la nómina, un área cuya nómina del mes es de
+ * una sola persona no muestra su gasto ni su desglose: solo estado y presupuesto.
  */
 function presupuestosPara(ctx: ContextoConEmpresa, presupuestos: Presupuestos): Presupuestos {
-  if (puede(ctx, "cliente.nomina.detalle.ver")) return presupuestos;
-  return {
-    ...presupuestos,
-    areas: presupuestos.areas.map((linea) =>
-      linea.desglose && linea.desglose.nominaPersonas === 1 ? { ...linea, desglose: undefined } : linea,
-    ),
-  };
+  return puede(ctx, "cliente.nomina.detalle.ver") ? presupuestos : reservarNominaDeUnaPersona(presupuestos);
 }
 
 export type VistaCalendario = {
@@ -323,7 +317,7 @@ export async function leerVistaPresupuestos(ctx: ContextoDeTenant | null | undef
 export async function leerAlertasPresupuesto(ctx: ContextoConEmpresa, hoy: string): Promise<Presupuestos["alertas"]> {
   if (!puede(ctx, "cliente.flujo.ver")) return [];
   return leerCon(ctx, async (consulta) =>
-    calcularPresupuestos(await leerFuentesPresupuesto(consulta, ctx.empresa.id, hoy, primeroDelMes(hoy), ultimoDelMes(hoy))).alertas,
+    presupuestosPara(ctx, calcularPresupuestos(await leerFuentesPresupuesto(consulta, ctx.empresa.id, hoy, primeroDelMes(hoy), ultimoDelMes(hoy)))).alertas,
   );
 }
 
