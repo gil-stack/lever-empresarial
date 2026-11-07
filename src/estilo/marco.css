@@ -639,6 +639,17 @@ div.empresa-lateral:not(.menu-desplegable),
     backdrop-filter: blur(24px) saturate(120%);
   }
 
+  /* Mientras carga la sección que se pulsó en el cajón (ya cerrado). */
+  .barra-movil-carga {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: var(--tinta-suave);
+    font-size: 12.5px;
+    white-space: nowrap;
+  }
+
   .boton-menu {
     appearance: none;
     display: inline-flex;

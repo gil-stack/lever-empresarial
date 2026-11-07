@@ -20,7 +20,7 @@ export function plantillaInvitacionPersonal(datos: DatosInvitacionPersonal): Cor
     kicker: "Bienvenido al equipo",
     titulo: `Bienvenido al equipo LEVER, ${datos.nombre}.`,
     parrafos: [
-      "Un administrador de LEVER te dio acceso al portal de operación. Desde ahí podrás trabajar con las capacidades asignadas a tu rol.",
+      "Un administrador de LEVER te dio acceso a Operación: clientes, aprobaciones, alertas, comisiones y bitácora.",
       "Para comenzar, define tu contraseña y registra tu segundo factor: una passkey o una app autenticadora. Los dos pasos protegen tu acceso.",
       "Si ya tenías una cuenta con este correo, confirma con tu contraseña y tu segundo factor actuales.",
     ],

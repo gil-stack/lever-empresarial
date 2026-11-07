@@ -30,7 +30,6 @@ describe("la consola y el teléfono", () => {
     const panel = readFileSync(new URL("src/components/lista-69b/panel.tsx", RAIZ), "utf8");
     const formulario = readFileSync(new URL("src/components/lista-69b/formulario-cargar.tsx", RAIZ), "utf8");
     const telefono = readFileSync(new URL("src/app/telefono/page.tsx", RAIZ), "utf8");
-    const sinFlujo = readFileSync(new URL("src/components/telefono/telefono-sin-flujo.tsx", RAIZ), "utf8");
     const marco = readFileSync(new URL("src/components/cromo/marco.tsx", RAIZ), "utf8");
     const telefonoMarco = marco.slice(marco.indexOf("export async function MarcoTelefono"));
     const dominio = readFileSync(new URL("src/dominio/lista-69b.ts", RAIZ), "utf8");
@@ -40,7 +39,6 @@ describe("la consola y el teléfono", () => {
     assert.equal(pagina.includes("MarcoTelefono"), false);
     assert.equal(panel.includes("MarcoTelefono"), false);
     assert.equal(telefono.includes("69"), false);
-    assert.equal(sinFlujo.includes("69"), false);
     assert.equal(telefonoMarco.includes("lista69b"), false);
     assert.equal(telefonoMarco.includes("seccionesDe"), false);
 

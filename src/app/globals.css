@@ -1039,19 +1039,3 @@
     justify-self: start;
   }
 }
-
-/* Página no encontrada */
-
-.no-encontrada {
-  display: grid;
-  gap: 16px;
-  max-width: 640px;
-}
-
-.no-encontrada-marca {
-  display: inline-flex;
-  width: fit-content;
-  margin-bottom: 24px;
-  color: var(--tinta);
-  text-decoration: none;
-}

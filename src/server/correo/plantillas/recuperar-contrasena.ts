@@ -14,7 +14,7 @@ export function plantillaRecuperarContrasena(datos: DatosRecuperarContrasena): C
     titulo: `Hola, ${datos.nombre}. Elige una contraseña nueva.`,
     parrafos: [
       "Alguien pidió cambiar la contraseña de tu cuenta. Si fuiste tú, usa el botón.",
-      "Al guardarla se cierran las sesiones que tengas abiertas en otros equipos.",
+      "Al guardarla se cierran las sesiones que tengas abiertas, en cualquier equipo.",
       "Tu segundo factor no cambia: al entrar con la contraseña nueva te lo vamos a pedir.",
     ],
     boton: { texto: "Elegir contraseña nueva", url: datos.enlace },

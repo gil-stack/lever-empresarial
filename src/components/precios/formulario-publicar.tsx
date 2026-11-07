@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { enviarPublicacion } from "@/app/precios/acciones";
 import { FORMULARIO_INICIAL } from "@/app/precios/estado";
+import { BotonEnviar } from "@/components/sistema/boton-enviar";
 
 export function FormularioPublicar() {
   const [estado, accion, pendiente] = useActionState(enviarPublicacion, FORMULARIO_INICIAL);
@@ -39,9 +40,9 @@ export function FormularioPublicar() {
           </p>
         </div>
         <div className="acciones">
-          <button type="submit" className="boton" disabled={pendiente}>
-            {pendiente ? "Publicando…" : "Publicar el monto"}
-          </button>
+          <BotonEnviar pendiente={pendiente} enviando="Publicando…">
+            Publicar el monto
+          </BotonEnviar>
         </div>
       </form>
     </section>

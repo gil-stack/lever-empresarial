@@ -37,9 +37,7 @@ export default async function PaginaEntrar({
     <MarcoArco>
       <p className="arco-kicker">Portal de clientes</p>
       <h1>Bienvenido de nuevo.</h1>
-      <p className="arco-nota">
-        Entra a la cuenta de tu empresa. Después de validar tu correo y contraseña, te pediremos un segundo factor.
-      </p>
+      <p className="arco-nota">Entra a la cuenta de tu empresa con tu correo y tu contraseña.</p>
       <FormularioEntrar siguiente={destino} aviso={aviso} />
     </MarcoArco>
   );

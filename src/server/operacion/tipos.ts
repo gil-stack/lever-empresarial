@@ -24,6 +24,8 @@ export type ClienteDetalle = ClienteResumen & {
     ocurridoEn: Date;
   }>;
   entregas: Array<{ id: string; estado: string; registradaEn: Date; detalle: string | null }>;
+  /** La última invitación emitida para la empresa: reenviar solo reemplaza la que la persona vio. */
+  ultimaInvitacionId: string | null;
 };
 
 export type SolicitudActivacion = {

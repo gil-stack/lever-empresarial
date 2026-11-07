@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useActionState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { startRegistration } from "@simplewebauthn/browser";
 import type { PublicKeyCredentialCreationOptionsJSON } from "@simplewebauthn/browser";
 
@@ -16,6 +17,7 @@ import {
   revocarPasskeyDeCuenta,
   revocarTotpDeCuenta,
 } from "@/app/entrar/acciones";
+import { BotonEnviar } from "@/components/sistema/boton-enviar";
 
 import { CodigosDeRespaldo } from "./codigos";
 import { ConfirmarIdentidad } from "./confirmar-identidad";
@@ -49,12 +51,20 @@ export function Seguridad({
   const [error, setError] = useState<string | null>(null);
   const [alta, setAlta] = useState<{ qr: string; semilla: string } | null>(null);
   const [codigos, setCodigos] = useState<string[] | null>(null);
+  const router = useRouter();
   // El servidor también puede pedirlo: el factor venció mientras la página estaba abierta.
   const [pideConfirmar, setPideConfirmar] = useState(false);
   const [confirmado, enviarCodigo, pendiente] = useActionState(confirmarTotpDeCuenta, FACTOR_INICIAL);
   const reautenticar = pideConfirmar || !confirmacion.reciente || (confirmado.tipo === "error" && confirmado.codigo === "reautenticacion_requerida");
 
-  if (codigos) return <CodigosDeRespaldo codigos={codigos} destino="/entrar/seguridad" />;
+  if (codigos) {
+    // Vuelve a esta misma página y relee cuántos códigos quedan.
+    const volver = () => {
+      setCodigos(null);
+      router.refresh();
+    };
+    return <CodigosDeRespaldo codigos={codigos} alTerminar={volver} />;
+  }
 
   function rechazo(resultado: { mensaje: string; codigo?: string }) {
     setError(resultado.mensaje);
@@ -117,7 +127,7 @@ export function Seguridad({
         />
       ) : null}
       {mensaje ? (
-        <div className="alerta" role="alert">
+        <div className="alerta" role="alert" id="seguridad-error">
           <p>{mensaje}</p>
         </div>
       ) : null}
@@ -131,9 +141,7 @@ export function Seguridad({
             </span>
             <form action={revocarPasskeyDeCuenta}>
               <input type="hidden" name="passkey" value={passkey.id} />
-              <button type="submit" className="boton-texto">
-                Revocar
-              </button>
+              <BotonEnviar className="boton-texto">Revocar</BotonEnviar>
             </form>
           </li>
         ))}
@@ -146,9 +154,7 @@ export function Seguridad({
         {totp ? (
           <form action={revocarTotpDeCuenta}>
             <p className="arco-nota">La app autenticadora está activa.</p>
-            <button type="submit" className="boton-texto">
-              Revocar la app
-            </button>
+            <BotonEnviar className="boton-texto">Revocar la app</BotonEnviar>
           </form>
         ) : (
           <button type="button" className="boton-texto" onClick={mostrarQr}>
@@ -163,11 +169,19 @@ export function Seguridad({
             <p className="arco-semilla">{alta.semilla}</p>
             <div className="campo">
               <label htmlFor="codigo-cuenta">Código que muestra la app</label>
-              <input id="codigo-cuenta" name="codigo" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required />
+              <input
+                id="codigo-cuenta"
+                name="codigo"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                required
+                {...(confirmado.tipo === "error" ? { "aria-invalid": true, "aria-describedby": "seguridad-error" } : {})}
+              />
             </div>
-            <button type="submit" className="boton" disabled={pendiente}>
-              {pendiente ? "Comprobando…" : "Confirmar"}
-            </button>
+            <BotonEnviar pendiente={pendiente} enviando="Comprobando…">
+              Confirmar
+            </BotonEnviar>
           </form>
         ) : null}
         <p className="arco-nota">Códigos de respaldo disponibles: {respaldoRestantes}.</p>

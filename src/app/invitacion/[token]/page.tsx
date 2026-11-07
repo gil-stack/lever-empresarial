@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Marco } from "@/components/cromo/marco";
+import { MarcoArco } from "@/components/entrar/marco-arco";
 import { FormularioInvitacion } from "@/components/invitacion/formulario-invitacion";
-import { CabezaPagina } from "@/components/sistema";
 import { leerInvitacion, type VistaDeInvitacion } from "@/server/invitaciones";
 import { ErrorDeDominio } from "@/server/session";
 
@@ -19,32 +18,31 @@ export default async function PaginaInvitacion({ params }: { params: Promise<{ t
   const vista = await leer(token);
 
   return (
-    <Marco actual="/invitacion">
-      <main id="contenido" className="entrada">
-        <p className="kicker">Invitación</p>
-        {vista.estado === "vigente" ? (
-          <>
-            <h1>{vista.razonSocial ? `Te invitaron a ${vista.razonSocial}.` : "Te invitaron a la plataforma."}</h1>
-            <p className="lede">
-              {vista.yaTieneContrasena
-                ? `Ya tienes cuenta como ${vista.correo}. Confirma con tu contraseña.`
-                : `Fija tu contraseña para ${vista.correo}. Nadie más la conoce.`}{" "}
-              Después verificas tu segundo factor.
-            </p>
-            <FormularioInvitacion token={token} yaTieneContrasena={vista.yaTieneContrasena} />
-          </>
-        ) : (
-          <CabezaPagina kicker="Invitación" titulo={TITULOS[vista.estado]}>
-            <p className="lede">{DETALLES[vista.estado]}</p>
-            <div className="acciones">
-              <Link className="boton" href="/entrar">
-                Entrar
-              </Link>
-            </div>
-          </CabezaPagina>
-        )}
-      </main>
-    </Marco>
+    <MarcoArco>
+      <p className="arco-kicker">Invitación</p>
+      {vista.estado === "vigente" ? (
+        <>
+          <h1>{vista.razonSocial ? `Te invitaron a ${vista.razonSocial}.` : "Te invitaron a Lever."}</h1>
+          <p className="arco-nota">
+            {vista.yaTieneContrasena
+              ? `Ya tienes cuenta como ${vista.correo}. Confirma con tu contraseña.`
+              : `Elige la contraseña de ${vista.correo}.`}{" "}
+            Después registras tu segundo factor.
+          </p>
+          <FormularioInvitacion token={token} yaTieneContrasena={vista.yaTieneContrasena} />
+        </>
+      ) : (
+        <>
+          <h1>{TITULOS[vista.estado]}</h1>
+          <p className="arco-nota">{DETALLES[vista.estado]}</p>
+          <div className="acciones">
+            <Link className="boton" href="/entrar">
+              Entrar
+            </Link>
+          </div>
+        </>
+      )}
+    </MarcoArco>
   );
 }
 
@@ -66,7 +64,7 @@ const TITULOS = {
 } as const;
 
 const DETALLES = {
-  usada: "Si ya fijaste tu contraseña, entra con tu correo.",
+  usada: "Si ya elegiste tu contraseña, entra con tu correo.",
   vencida: "Pide otra a quien te invitó. Cada enlace sirve una vez y por poco tiempo.",
   revocada: "Hay una invitación más nueva en tu correo, o pide otra a quien te invitó.",
   inexistente: "Revisa que el enlace esté completo.",

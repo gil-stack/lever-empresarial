@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { solicitarComisionAccion } from "@/app/operacion/acciones";
+import { errorDelCampo } from "@/components/operacion/aviso";
 import { etiquetaEstado, fechaDia } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
+import { BotonEnviar, Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
 import { textoComision } from "@/dominio/operacion";
 import { exigirContextoOperacion, listarClientes, listarComisiones } from "@/server/operacion";
 
@@ -15,29 +17,94 @@ export default async function ComisionesOperacion({ searchParams }: { searchPara
   const [clientes, versiones, params] = await Promise.all([listarClientes(ctx), listarComisiones(ctx), searchParams]);
   const activos = clientes.filter((cliente) => cliente.estado === "activa");
   return (
-    <PaginaOperacion titulo="Comisiones por empresa" descripcion="Fondeo se guarda en basis points enteros; SPEI en centavos MXN enteros. Las versiones no generan cargos, devengos ni facturas." aviso={params.aviso}>
-      <div className="operacion-rejilla">
-        <section className="operacion-tarjeta">
-          <h2>Proponer una versión</h2>
-          <p className="pista">Otra persona deberá autorizarla. Solo empresas activas para el portal.</p>
-          {activos.length === 0 ? <p className="vacio">Activa un cliente antes de configurar comisiones.</p> : (
-            <form action={solicitarComisionAccion} className="operacion-forma">
-              <div className="campo operacion-ancho"><label htmlFor="companyId">Empresa</label><select id="companyId" name="companyId" required>{activos.map((cliente) => <option key={cliente.id} value={cliente.id}>{cliente.razonSocial} · {cliente.rfc}</option>)}</select></div>
-              <div className="campo"><label htmlFor="tipo">Tipo</label><select id="tipo" name="tipo"><option value="fondeo">Fondeo · basis points</option><option value="spei">SPEI · centavos MXN</option></select></div>
-              <div className="campo"><label htmlFor="valor">Valor entero</label><input id="valor" name="valor" inputMode="numeric" pattern="[0-9]+" maxLength={16} required /><p className="pista">Ejemplo: 250 bp = 2.50 %; 1500 centavos = $15.00.</p></div>
-              <div className="campo"><label htmlFor="vigenteDesde">Vigente desde</label><input id="vigenteDesde" name="vigenteDesde" type="date" required /></div>
-              <div className="acciones"><button className="boton" type="submit">Solicitar autorización</button></div>
-            </form>
-          )}
-        </section>
-        <section className="operacion-tarjeta">
-          <h2>Historial de versiones</h2>
-          <p className="pista">Las vigencias autorizadas no se solapan; al sustituir una versión queda su cierre.</p>
-          {versiones.length === 0 ? <p className="vacio">No hay versiones configuradas.</p> : <ul className="operacion-lista">{versiones.map((version) => <li key={version.id}>
-            <div className="operacion-fila"><div className="operacion-fila-cuerpo"><h3><Link href={`/operacion/clientes/${version.companyId}`}>{version.razonSocial}</Link> · {version.tipo}</h3><p className="operacion-detalle">{textoComision(version.tipo, version.valor)}</p><p className="operacion-meta">Desde {fechaDia(version.vigenteDesde)}{version.vigenteHasta ? ` hasta ${fechaDia(version.vigenteHasta)}` : ""} · propuso {version.solicitante}</p></div><span className={`insignia ${version.estado === "vigente" ? "insignia-sello" : ""}`}>{etiquetaEstado(version.estado)}</span></div>
-          </li>)}</ul>}
-        </section>
-      </div>
+    <PaginaOperacion titulo="Comisiones" aviso={params.aviso}>
+      <Rejilla
+        principal={
+          <Hoja id="versiones-titulo" titulo="Versiones">
+            {versiones.length === 0 ? (
+              <Vacio titulo="Sin versiones">Propón la primera para una empresa activa.</Vacio>
+            ) : (
+              <div className="tabla-contenedor">
+                <table className="tabla operacion-tabla">
+                  <thead>
+                    <tr>
+                      <th scope="col">Empresa</th>
+                      <th scope="col">Tarifa</th>
+                      <th scope="col">Vigencia</th>
+                      <th scope="col">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {versiones.map((version) => (
+                      <tr key={version.id}>
+                        <td>
+                          <Link href={`/operacion/clientes/${version.companyId}`}>{version.razonSocial}</Link>
+                          <small>Propuso {version.solicitante}</small>
+                        </td>
+                        <td data-rotulo="Tarifa">{textoComision(version.tipo, version.valor)}</td>
+                        <td data-rotulo="Vigencia">
+                          {fechaDia(version.vigenteDesde)}
+                          {version.vigenteHasta ? <small>hasta {fechaDia(version.vigenteHasta)}</small> : null}
+                        </td>
+                        <td data-rotulo="Estado">
+                          <Insignia tono={version.estado === "vigente" ? "sello" : "neutro"}>{etiquetaEstado(version.estado)}</Insignia>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Hoja>
+        }
+        lateral={
+          <Hoja id="proponer-titulo" titulo="Proponer una versión">
+            {activos.length === 0 ? (
+              <Vacio titulo="Sin empresas activas">Activa un cliente antes de configurar su tarifa.</Vacio>
+            ) : (
+              <form action={solicitarComisionAccion}>
+                <div className="campo">
+                  <label htmlFor="companyId">Empresa</label>
+                  <select id="companyId" name="companyId" required>
+                    {activos.map((cliente) => (
+                      <option key={cliente.id} value={cliente.id}>{cliente.razonSocial} · {cliente.rfc}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="campo">
+                  <label htmlFor="tipo">Tipo</label>
+                  <select id="tipo" name="tipo">
+                    <option value="fondeo">Fondeo · puntos base</option>
+                    <option value="spei">SPEI · centavos</option>
+                  </select>
+                </div>
+                <div className="campo">
+                  <label htmlFor="valor">Valor entero</label>
+                  <input
+                    id="valor"
+                    name="valor"
+                    inputMode="numeric"
+                    pattern="[0-9]+"
+                    maxLength={16}
+                    required
+                    aria-describedby={params.aviso === "comision_valor_invalido" ? "aviso-operacion valor-pista" : "valor-pista"}
+                    aria-invalid={params.aviso === "comision_valor_invalido" || undefined}
+                  />
+                  <p className="pista" id="valor-pista">250 puntos base = 2.50 %; 1500 centavos = $15.00.</p>
+                </div>
+                <div className="campo">
+                  <label htmlFor="vigenteDesde">Vigente desde</label>
+                  <input id="vigenteDesde" name="vigenteDesde" type="date" required {...errorDelCampo(params.aviso, "vigenteDesde")} />
+                </div>
+                <div className="acciones">
+                  <BotonEnviar>Pedir autorización</BotonEnviar>
+                </div>
+              </form>
+            )}
+          </Hoja>
+        }
+      />
+      <NotaRegla>Una persona propone la tarifa y otra la autoriza. Hoy no genera cargos.</NotaRegla>
     </PaginaOperacion>
   );
 }

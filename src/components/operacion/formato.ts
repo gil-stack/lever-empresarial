@@ -22,3 +22,84 @@ export function etiquetaEstado(estado: string): string {
   };
   return etiquetas[estado] ?? estado;
 }
+
+/** Los regímenes y usos que ofrece el alta de prospecto; la ficha los muestra con su nombre. */
+export const REGIMENES = [
+  ["601", "General de ley"],
+  ["612", "Actividades empresariales"],
+  ["620", "Sociedad cooperativa"],
+  ["626", "Simplificado de confianza"],
+  ["603", "Instituciones sin fines de lucro"],
+] as const;
+
+export const USOS_CFDI = [
+  ["G03", "Gastos en general"],
+  ["S01", "Sin efectos fiscales"],
+  ["CP01", "Pagos"],
+] as const;
+
+export function conNombre(catalogo: ReadonlyArray<readonly [string, string]>, clave: string): string {
+  const nombre = catalogo.find(([valor]) => valor === clave)?.[1];
+  return nombre ? `${clave} · ${nombre}` : clave;
+}
+
+export function etiquetaCategoria(categoria: string): string {
+  const etiquetas: Record<string, string> = {
+    activacion: "Activación",
+    invitacion: "Invitación",
+    comision: "Comisión",
+    operativa: "Operativa",
+  };
+  return etiquetas[categoria] ?? categoria;
+}
+
+/** Por qué no salió un correo, en palabras; un código desconocido no se muestra. */
+export function motivoDeEntrega(detalle: string | null): string | null {
+  const motivos: Record<string, string> = {
+    correo_deshabilitado: "El correo está apagado en este entorno.",
+    correo_no_configurado: "Falta configurar el correo.",
+    correo_rechazado: "El proveedor de correo rechazó la credencial o el remitente.",
+    correo_destinatario_invalido: "El proveedor de correo no aceptó la dirección.",
+    correo_limite: "El proveedor de correo pidió esperar.",
+    correo_no_disponible: "El proveedor de correo no respondió.",
+  };
+  return detalle ? (motivos[detalle] ?? null) : null;
+}
+
+/**
+ * La acción de la bitácora en palabras. Solo las que registran Operación y la entrada;
+ * las demás se muestran con su código. La bitácora siempre enseña además el código y la tabla.
+ */
+export function etiquetaAccion(accion: string): string | null {
+  const etiquetas: Record<string, string> = {
+    entrada_contrasena: "Contraseña correcta",
+    entrada_completa: "Entró",
+    entrada_fallida: "Intento de entrada fallido",
+    salida: "Salió",
+    reautenticacion: "Confirmó su identidad",
+    totp_confirmado: "Registró su app autenticadora",
+    respaldo_generado: "Generó códigos de respaldo",
+    contrasena_restablecida: "Cambió su contraseña con el enlace",
+    recuperacion_solicitada: "Pidió recuperar el acceso",
+    recuperacion_aprobada: "Aprobó la recuperación",
+    recuperacion_rechazada: "Rechazó la recuperación",
+    emitir_invitacion: "Envió una invitación",
+    aceptar_invitacion: "Aceptó la invitación",
+    invitacion_entrega_registrada: "Anotó si salió el correo",
+    alta_personal: "Alta de personal de Operación",
+    alta_empresa: "Alta de empresa",
+    prospecto_registrado: "Registró un prospecto",
+    activacion_solicitada: "Pidió la activación",
+    activacion_aprobada: "Aprobó la activación",
+    activacion_rechazada: "Rechazó la activación",
+    comision_solicitada: "Propuso una comisión",
+    comision_aprobada: "Autorizó una comisión",
+    comision_rechazada: "Rechazó una comisión",
+    comision_cerrada: "Cerró una comisión",
+    alerta_creada: "Creó una alerta",
+    alerta_asignada: "Reasignó una alerta",
+    alerta_cerrada: "Cerró una alerta",
+    publicar_precio: "Publicó el precio",
+  };
+  return etiquetas[accion] ?? null;
+}

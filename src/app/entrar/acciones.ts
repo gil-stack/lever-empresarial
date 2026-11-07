@@ -59,16 +59,16 @@ const MENSAJES: Record<string, string> = {
 export async function enviarContrasena(previo: EstadoEntrada, formData: FormData): Promise<EstadoEntrada> {
   void previo;
   const destino = destinoSeguro(formData.get("siguiente"));
+  const correo = String(formData.get("correo") ?? "").slice(0, 254);
   try {
     const resultado = await iniciarConContrasena({
-      correo: String(formData.get("correo") ?? ""),
+      correo,
       contrasena: String(formData.get("contrasena") ?? ""),
     });
-    if (resultado.tipo === "rechazo") return { tipo: "invalido", mensaje: texto(resultado.codigo) };
+    if (resultado.tipo === "rechazo") return { tipo: "invalido", mensaje: texto(resultado.codigo), correo };
     await ponerEntrada(resultado.cookie);
   } catch (error) {
-    const estado = comoEntrada(error);
-    if (estado) return estado;
+    if (error instanceof ErrorDeDominio) return { tipo: "invalido", mensaje: texto(error.codigo), correo };
     throw error;
   }
   redirect(`/entrar/continuar?siguiente=${encodeURIComponent(destino)}`);
@@ -283,17 +283,23 @@ function errorDeFactor(error: unknown): EstadoFactor {
   throw error;
 }
 
-function comoEntrada(error: unknown): EstadoEntrada | null {
-  if (error instanceof ErrorDeDominio) return { tipo: "invalido", mensaje: texto(error.codigo) };
-  return null;
-}
-
 function texto(codigo: string): string {
+  if (!MENSAJES[codigo]) registrarInesperado(codigo);
   return MENSAJES[codigo] ?? "No se pudo completar. Vuelve a intentar.";
 }
 
 function textoDe(error: unknown): string {
-  return error instanceof ErrorDeDominio ? texto(error.codigo) : "No se pudo completar. Vuelve a intentar.";
+  if (error instanceof ErrorDeDominio) return texto(error.codigo);
+  registrarInesperado(error instanceof Error && /^[A-Za-z]{1,60}$/.test(error.name) ? error.name : "desconocido");
+  return "No se pudo completar. Vuelve a intentar.";
+}
+
+/**
+ * Un rechazo sin mensaje propio llega a la persona como «Vuelve a intentar»; aquí queda su código
+ * para poder diagnosticarlo. Solo el código o el nombre del error: nada de la persona ni del factor.
+ */
+function registrarInesperado(codigo: string): void {
+  console.error(JSON.stringify({ nivel: "error", origen: "entrar.factor", evento: "factor_no_completado", error: codigo }));
 }
 
 function codigoDe(error: unknown): string | undefined {

@@ -12,6 +12,9 @@ import {
   pedirOpcionesDeConfirmacion,
 } from "@/app/entrar/acciones-confirmacion";
 import { CONFIRMACION_INICIAL, type EstadoConfirmacion } from "@/app/entrar/estado-confirmacion";
+import { BotonEnviar } from "@/components/sistema/boton-enviar";
+
+const errorLigado = { "aria-invalid": true, "aria-describedby": "confirmar-error" } as const;
 
 /**
  * «Confirma que eres tú». Reusa la verificación de la puerta: passkey, código
@@ -77,7 +80,7 @@ export function ConfirmarIdentidad({
       <h2 id="confirmar-identidad-titulo">Confirma que eres tú</h2>
       <p className="arco-nota">{motivo}</p>
       {mensaje ? (
-        <div className="alerta" role="alert">
+        <div className="alerta" role="alert" id="confirmar-error">
           <p>{mensaje}</p>
         </div>
       ) : null}
@@ -90,22 +93,37 @@ export function ConfirmarIdentidad({
         <form action={enviarTotp}>
           <div className="campo">
             <label htmlFor="confirmar-codigo">Código de la app autenticadora</label>
-            <input id="confirmar-codigo" name="codigo" inputMode="numeric" autoComplete="one-time-code" maxLength={6} required />
+            <input
+              id="confirmar-codigo"
+              name="codigo"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              required
+              {...(conTotp.tipo === "error" ? errorLigado : {})}
+            />
           </div>
-          <button type="submit" className="boton" disabled={pendienteTotp}>
-            {pendienteTotp ? "Comprobando…" : "Confirmar con el código"}
-          </button>
+          <BotonEnviar pendiente={pendienteTotp} enviando="Comprobando…">
+            Confirmar con el código
+          </BotonEnviar>
         </form>
       ) : null}
       {respaldo ? (
         <form action={enviarRespaldo}>
           <div className="campo">
             <label htmlFor="confirmar-respaldo">Código de respaldo</label>
-            <input id="confirmar-respaldo" name="codigo" autoComplete="off" spellCheck={false} required />
+            <input
+              id="confirmar-respaldo"
+              name="codigo"
+              autoComplete="off"
+              spellCheck={false}
+              required
+              {...(conRespaldo.tipo === "error" ? errorLigado : {})}
+            />
           </div>
-          <button type="submit" className="boton-texto" disabled={pendienteRespaldo}>
+          <BotonEnviar className="boton-texto" pendiente={pendienteRespaldo} enviando="Comprobando…">
             Usar un código de respaldo
-          </button>
+          </BotonEnviar>
         </form>
       ) : null}
     </section>

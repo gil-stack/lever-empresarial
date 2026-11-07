@@ -77,6 +77,7 @@ export async function invitarAdministradorAccion(formData: FormData): Promise<vo
       companyId,
       nombre: formData.get("nombre"),
       correo: formData.get("correo"),
+      vista: formData.get("vista"),
     });
   } catch (error) {
     return fallo(error, `/operacion/clientes/${companyId}`);
