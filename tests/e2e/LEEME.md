@@ -21,6 +21,7 @@ Hace falta un Postgres local desechable (nunca `plataforma` ni una base comparti
 ```sh
 E2E_ADMIN_URL=postgres://<usuario>@127.0.0.1:<puerto>/postgres npm run test:e2e
 npm run test:e2e -- tests/e2e/nomina.spec.ts   # un solo spec
+npm run test:e2e:2                              # solo la parte 2 de 3, como en CI
 ```
 
 Sin `E2E_ADMIN_URL`, el script hace lo mismo que en CI: levanta `postgres:17` y el navegador en contenedores de Docker.
@@ -44,19 +45,21 @@ Variables:
 
 ## En Vercel CI
 
-`turbo.json` declara `test:e2e` con las etiquetas `ci` y `ci:cpus:8`, así que Vercel CI la corre en cada push junto con typecheck, lint, test, test:db, build y security. En CI:
+`turbo.json` declara tres tareas, `test:e2e:1`, `test:e2e:2` y `test:e2e:3`, con las etiquetas `ci` y `ci:cpus:4`. Vercel CI las corre en cada push en paralelo, cada una en su propia máquina, junto con typecheck, lint, test, test:db, build y security. Cada parte corre `playwright test --shard=N/3` con su propio build, su propio Postgres y su propio `next start`, y el tope de 12 minutos se mide por parte. En CI:
 
 - Postgres corre en un contenedor `postgres:17` (puerto 5553, el mismo dentro y fuera).
 - Chromium corre en la imagen oficial `mcr.microsoft.com/playwright:v<versión>-noble` con `playwright run-server` y red del anfitrión. La imagen de la tarea no trae las bibliotecas del navegador. El corredor, la siembra, el emulador y `next start` siguen en la máquina de la tarea.
-- `retries: 0`, sin video, con traza sin capturas y sin capturas de evidencia: así la tarea completa cabe en 12 minutos.
+- `retries: 0`, sin video, con traza sin capturas y sin capturas de evidencia.
+- Playwright reparte las partes por archivo (la suite no usa `fullyParallel`): un spec nuevo cae completo en una parte. Si una parte se acerca a los 12 minutos, divide el spec más largo o agrega una cuarta parte (`test:e2e:4` y `--shard=N/4` en las cuatro).
 - Si algo falla, como Vercel CI no guarda archivos de una tarea fallida, el script imprime en la salida el contexto de cada falla (árbol accesible de la página), las últimas líneas del servidor y las capturas en base64.
 
 Para revisar una corrida: `vercel ci list --git-branch <rama>` y `vercel ci logs <id> --task '//#test:e2e'`.
 
 ## Lo que sustituye a los servicios reales
 
-- **Blob** (`blob-local/`): un servidor en memoria en 127.0.0.1 que habla el protocolo de `@vercel/blob` (put, del y get privado con token). `preload.mjs` desvía en `next start` solo el host del almacén privado. La aplicación no cambia.
+- **Blob** (`blob-local/`): un servidor en memoria en 127.0.0.1 que habla el protocolo de `@vercel/blob` (put, del y get privado con token). `preload.mjs` desvía en `next start` solo el host del almacén privado. La aplicación no cambia. Además de la guarda común, solo se activa con `E2E_BLOB_LOCAL=1` y sin ningún token de un almacén real en el entorno.
 - **Correo** (`correo-local/preload.mjs`): en `next start`, un `fetch` envuelto que intercepta solo `POST https://api.resend.com/emails`, anota cada mensaje en `test-results/correos-e2e.jsonl` (una vez por llave de idempotencia, como Resend) y responde como Resend. `apoyo.ts` lee los correos (`correosPara`) y sus enlaces (`enlaceDe`).
+- **Guarda de los dos preloads** (`guarda-preload.mjs`): al cargarse, cada preload truena con error, y el proceso sale con código distinto de 0, si `VERCEL_ENV` está definido, si `NODE_ENV=production` sin `E2E_SERVER_ACTIONS=1`, o si `DATABASE_URL` no apunta a 127.0.0.1 ni a localhost. Lo revisa antes de mirar su propia variable, así que copiar el `NODE_OPTIONS` de la prueba fuera de ella no arranca nada. `guardas-preload.test.ts` lo prueba en `npm test`, y nada de `src/` importa estos archivos.
 - **App autenticadora**: la siembra registra un TOTP confirmado para cada persona con una llave aleatoria por corrida (`AUTENTICACION_LLAVE_TOTP`) y deja las semillas en `E2E_SEMILLAS`. `codigoTotp(correo)` calcula un código que el servidor acepta y que nadie ha usado: lee `ultimo_paso` de la base y, si se agotaron los tres pasos válidos, espera a que llegue uno nuevo.
 - **Sesiones**: `sesionDe(contexto, correo, { superficie, factorHaceMinutos })` abre una sesión con segundo factor como dueña de la base y la deja en la cookie `__Host-sesion`. `factorHaceMinutos` (o `envejecerFactor`) simula un factor viejo para probar «Confirma que eres tú» sin esperar 30 minutos.
 
