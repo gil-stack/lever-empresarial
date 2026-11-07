@@ -44,17 +44,32 @@ const CAMPO: Record<string, string> = {
   vigencia_solapada: "vigenteDesde",
   vigencia_en_pasado: "vigenteDesde",
   motivo_invalido: "motivo",
-  verificacion_invalida: "nota",
+  verificacion_invalida: "verificacion",
 };
 
-const EXITO = /registrad|solicitad|enviada|creada|asignada|cerrada|omitida/;
+/** Los avisos de algo que sí quedó hecho. Cualquier otro código (un rechazo o algo por revisar) se anuncia como alerta. */
+const ASENTADOS: ReadonlySet<string> = new Set([
+  "prospecto_registrado",
+  "activacion_solicitada",
+  "decision_registrada",
+  "invitacion_omitida_desarrollo",
+  "invitacion_enviada",
+  "alerta_creada",
+  "alerta_asignada",
+  "alerta_cerrada",
+  "comision_solicitada",
+]);
+
+export function tonoDelAviso(codigo: string): "asentado" | "revisar" {
+  return ASENTADOS.has(codigo) ? "asentado" : "revisar";
+}
 
 export function AvisoOperacion({ codigo }: { codigo?: string }) {
   if (!codigo) return null;
   const mensaje = MENSAJES[codigo] ?? "No se pudo completar. Revisa los datos e inténtalo de nuevo.";
   return (
     <div id={ID_AVISO} className="operacion-aviso">
-      <Aviso tono={EXITO.test(codigo) ? "asentado" : "revisar"} titulo={mensaje} />
+      <Aviso tono={tonoDelAviso(codigo)} titulo={mensaje} />
     </div>
   );
 }

@@ -244,7 +244,8 @@ function Recuperar({ nombre, solicitudAbierta }: { nombre: string; solicitudAbie
       <h1>{nombre}, la cuenta sigue cerrada.</h1>
       <p className="arco-nota">
         Si guardaste un código de respaldo, entra con él. Si no, pide ayuda: el equipo de Lever confirma que eres tú y
-        después registras uno nuevo. Los que ya tienes siguen sirviendo.
+        después registras un factor nuevo. Pedir ayuda no quita nada; al registrar el nuevo, los anteriores dejan de
+        servir.
       </p>
       {solicitudAbierta ? (
         <p className="arco-nota">Tu solicitud ya está en revisión.</p>

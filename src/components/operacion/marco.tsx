@@ -22,7 +22,7 @@ export async function MarcoOperacion({ personaId, children }: { personaId: strin
     <>
       <AcentoInicial persona={personaId} tema={tema} />
       <AparienciaViva persona={personaId} tema={tema} />
-      <div className="marco">
+      <div className="marco operacion-marco">
         <a className="saltar" href="#contenido">
           Saltar al contenido
         </a>

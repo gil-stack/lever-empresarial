@@ -178,6 +178,34 @@ async function capturarEnTodo(page, nombre) {
   await page.reload({ waitUntil: "networkidle" });
 }
 
+/**
+ * Como capturarEnTodo, y además mide el contraste AA de cada combinación. `preparar` vuelve a dejar
+ * la pantalla en el estado que se quiere ver después de cada recarga (por ejemplo, abrir una vista).
+ */
+async function capturarYMedirEnTodo(page, nombre, ruta, preparar = async () => {}) {
+  const original = page.viewportSize();
+  let medidos = 0;
+  const fallas = [];
+  for (const tema of TEMAS) {
+    await page.context().addCookies([{ name: "tema", value: tema, url: BASE }]);
+    await page.reload({ waitUntil: "networkidle" });
+    await preparar();
+    for (const ancho of ANCHOS) {
+      await page.setViewportSize({ width: ancho, height: ancho < 600 ? 844 : 900 });
+      await captura(page, `${nombre}-${tema}-${ancho}`);
+      const medida = await medirContraste(page, ruta, preparar);
+      medidos += medida.medidos;
+      fallas.push(...medida.fallas);
+    }
+  }
+  await page.context().addCookies([{ name: "tema", value: "oscuro", url: BASE }]);
+  await page.setViewportSize(original);
+  await page.reload({ waitUntil: "networkidle" });
+  await preparar();
+  for (const f of fallas) console.log(`  ${f.contraste} < ${f.umbral} · ${f.ruta} · «${f.texto}» ${f.color} sobre ${f.fondo}`);
+  exigir(fallas.length === 0, `${ruta}: contraste AA en 3 temas × 2 anchos (${medidos} textos)`);
+}
+
 async function listo(page) {
   await page.waitForLoadState("networkidle");
 }
@@ -508,10 +536,27 @@ async function flujos() {
   await op.getByText("Responsable actualizado").waitFor();
   exigir(contar(`select count(*) from operational_alerts where titulo = 'Documentos por completar' and responsable_id = '${opId2}'`) === 1, "«Guardar responsable» reasigna la alerta a op2");
   await capturarEnTodo(op, "16-operacion-alertas");
+  // Otra pestaña con la misma alerta abierta: cuando intente cerrarla, ya estará cerrada.
+  const tarde = await ctxOp.newPage();
+  await tarde.goto(`${BASE}/operacion/alertas`);
+  await listo(tarde);
+  await tarde.getByLabel("Motivo de cierre").fill("Lo cerraba yo también.");
   await op.getByLabel("Motivo de cierre").fill("Comprobante recibido por correo.");
   await dobleClic(op.getByRole("button", { name: "Cerrar alerta" }));
   await op.getByText("Alerta cerrada").waitFor();
   exigir(contar(`select count(*) from operational_alerts where titulo = 'Documentos por completar' and estado = 'cerrada'`) === 1, "«Cerrar alerta» con motivo la cierra una vez");
+  exigir((await op.locator("#aviso-operacion [role=status]").count()) === 1, "«Alerta cerrada» se anuncia como hecho (role=status)");
+  await tarde.getByRole("button", { name: "Cerrar alerta" }).click();
+  await tarde.waitForURL(/aviso=alerta_ya_cerrada/);
+  await listo(tarde);
+  exigir(
+    (await tarde.locator("#aviso-operacion [role=alert]").getByText("La alerta ya estaba cerrada.").count()) === 1 &&
+      (await tarde.locator("#aviso-operacion [role=status]").count()) === 0 &&
+      contar(`select count(*) from operational_alerts where titulo = 'Documentos por completar' and estado = 'cerrada'`) === 1,
+    "cerrar una alerta que otra persona ya cerró se anuncia como rechazo (role=alert) y no cambia nada",
+  );
+  await captura(tarde, "16b-operacion-alerta-ya-cerrada-oscuro-1440", { completa: false });
+  await tarde.close();
 
   // Comisiones: proponer (doble clic), op2 aprueba una y rechaza otra.
   const manana = new Date(Date.now() + 86_400_000).toLocaleDateString("en-CA", { timeZone: "America/Mexico_City" });
@@ -703,12 +748,17 @@ async function flujos() {
   // (5) «Perdí el segundo factor»: pedir, confirmar en Operación y aprobar; luego registrar uno nuevo.
   const { ctx: ctxP, page: perdi } = await contexto();
   await entrarCliente(perdi, LAURA, CLAVE_NUEVA);
-  await perdi.getByRole("button", { name: "Perdí el segundo factor" }).click();
-  await perdi.getByLabel("Qué pasó").waitFor();
-  for (const ancho of ANCHOS) {
-    await perdi.setViewportSize({ width: ancho, height: ancho < 600 ? 844 : 900 });
-    await captura(perdi, `50-perdi-factor-oscuro-${ancho}`);
-  }
+  const abrirPerdi = async () => {
+    await perdi.getByRole("button", { name: "Perdí el segundo factor" }).click();
+    await perdi.getByLabel("Qué pasó").waitFor();
+  };
+  await abrirPerdi();
+  exigir(
+    (await perdi.getByText("Pedir ayuda no quita nada; al registrar el nuevo, los anteriores dejan de servir.", { exact: false }).count()) === 1 &&
+      (await perdi.getByText("siguen sirviendo", { exact: false }).count()) === 0,
+    "«Perdí el segundo factor» dice que pedir ayuda no quita nada y que el factor nuevo reemplaza a los anteriores",
+  );
+  await capturarYMedirEnTodo(perdi, "50-perdi-factor", "/entrar/continuar (perdí el segundo factor)", abrirPerdi);
   await perdi.getByLabel("Qué pasó").fill("Cambié de teléfono y no pasé la app.");
   await dobleClic(perdi.getByRole("button", { name: "Pedir recuperación" }));
   await perdi.waitForURL(/aviso=recuperacion/);
@@ -726,7 +776,7 @@ async function flujos() {
   await confirma.getByLabel("Código de la app autenticadora").fill(await codigoFresco(OP));
   await confirma.getByRole("button", { name: "Confirmar con el código" }).click();
   await confirma.waitFor({ state: "detached", timeout: 15_000 });
-  await capturarEnTodo(op, "53-recuperaciones-solicitud");
+  await capturarYMedirEnTodo(op, "53-recuperaciones-solicitud", "/operacion/recuperaciones (con solicitud)");
 
   // Primero se rechaza con nota (el botón de la izquierda); Laura vuelve a pedir y entonces se aprueba.
   const primera = op.getByRole("listitem", { name: "Recuperación · Laura Méndez" });
@@ -752,13 +802,45 @@ async function flujos() {
   await listo(op);
   await confirmarSiLoPide(op, OP);
   const filaLaura = op.getByRole("listitem", { name: "Recuperación · Laura Méndez" });
-  await filaLaura.getByLabel("Cómo verificaste la identidad").selectOption("videollamada");
+  const solicitadas = () => contar(`select count(*) from auth_recuperaciones where user_id = '${idDe(LAURA)}' and estado = 'solicitada'`);
+  const aprobaciones = () => contar("select count(*) from audit_log where accion = 'recuperacion_aprobada'");
+  const rechazos = () => contar("select count(*) from audit_log where accion = 'recuperacion_rechazada'");
+
+  // Nada se decide sin elegirlo (#56). Enter en la nota escribe una línea y no envía.
+  const notaLaura = filaLaura.getByLabel("Nota (obligatoria para rechazar)");
+  await notaLaura.fill("Llamé y no contestó");
+  await notaLaura.press("Enter");
+  await op.waitForTimeout(1500);
+  exigir(
+    solicitadas() === 1 && aprobaciones() === 0 && rechazos() === 1 && !/aviso=/.test(op.url()) && (await notaLaura.inputValue()).includes("\n"),
+    "Enter en la nota escribe una línea y no decide: la solicitud sigue abierta",
+  );
+  await notaLaura.fill("");
+  // El método arranca sin elegir; el atajo «A» no aprueba y lleva el foco al método con su error.
+  const metodoLaura = filaLaura.getByLabel("Cómo verificaste la identidad");
+  exigir((await metodoLaura.inputValue()) === "", "el método de verificación arranca sin elegir");
+  await filaLaura.focus();
+  await op.keyboard.press("a");
+  await op.waitForTimeout(1500);
+  exigir(solicitadas() === 1 && aprobaciones() === 0 && !/aviso=/.test(op.url()), "el atajo «A» sin método no aprueba: 0 aprobaciones y la solicitud sigue abierta");
+  const estadoMetodo = await metodoLaura.evaluate((campo) => ({
+    enfocado: campo === document.activeElement,
+    invalido: campo.getAttribute("aria-invalid"),
+    error: document.getElementById(campo.getAttribute("aria-describedby") ?? "")?.textContent ?? "",
+  }));
+  exigir(
+    estadoMetodo.enfocado && estadoMetodo.invalido === "true" && estadoMetodo.error === "Elige cómo verificaste la identidad para aprobar.",
+    "con el método vacío, el foco queda en el método y su error está ligado (aria-invalid, aria-describedby)",
+  );
+  await captura(op, "53b-recuperaciones-sin-metodo-oscuro-1440", { completa: false });
+  const medidaSinMetodo = await medirPantalla(op, "/operacion/recuperaciones (sin método)");
+  exigir(!medidaSinMetodo.motivo && medidaSinMetodo.fallas.length === 0, `contraste AA con el error del método a la vista (${medidaSinMetodo.medidos ?? 0} textos)`);
+  await metodoLaura.selectOption("videollamada");
+  exigir((await metodoLaura.getAttribute("aria-invalid")) === null, "al elegir el método, su error se va");
 
   // Lo que el #49 exige en el servidor sigue en pie con la acción única. Con la página abierta, el
   // segundo factor de op envejece 6 minutos: aprobar no pasa, la base no cambia y vuelve a pedir
   // «Confirma que eres tú».
-  const solicitadas = () => contar(`select count(*) from auth_recuperaciones where user_id = '${idDe(LAURA)}' and estado = 'solicitada'`);
-  const aprobaciones = () => contar("select count(*) from audit_log where accion = 'recuperacion_aprobada'");
   envejecerFactor(OP, 6);
   await filaLaura.getByRole("button", { name: "Aprobar" }).click();
   await op.waitForURL(/aviso=reautenticacion_factor/);
@@ -768,11 +850,24 @@ async function flujos() {
   await confirmarSiLoPide(op, OP);
   // Un valor de decisión alterado cuenta como rechazo, que exige nota: sin nota no decide nada.
   const filaOtraVez = op.getByRole("listitem", { name: "Recuperación · Laura Méndez" });
+  await filaOtraVez.getByLabel("Cómo verificaste la identidad").selectOption("videollamada");
   await filaOtraVez.getByRole("button", { name: "Aprobar" }).evaluate((boton) => { boton.value = "aprobar-sin-permiso"; });
   await filaOtraVez.getByRole("button", { name: "Aprobar" }).click();
   await op.waitForURL(/aviso=motivo_invalido/);
   await listo(op);
-  exigir(solicitadas() === 1 && aprobaciones() === 0 && contar(`select count(*) from audit_log where accion = 'recuperacion_rechazada'`) === 1, "una decisión alterada no aprueba: sin nota no decide y la solicitud sigue abierta");
+  exigir(solicitadas() === 1 && aprobaciones() === 0 && rechazos() === 1, "una decisión alterada no aprueba: sin nota no decide y la solicitud sigue abierta");
+  const marcas = async (etiqueta) =>
+    filaOtraVez.getByLabel(etiqueta).evaluate((campo) => `${campo.getAttribute("aria-invalid")} ${campo.getAttribute("aria-describedby")}`);
+  exigir(
+    (await marcas("Nota (obligatoria para rechazar)")) === "true aviso-operacion" && (await marcas("Cómo verificaste la identidad")) === "null null",
+    "motivo_invalido marca la nota (aria-invalid y aria-describedby al aviso), no el método",
+  );
+  await op.goto(`${BASE}/operacion/recuperaciones?aviso=verificacion_invalida`);
+  await listo(op);
+  exigir(
+    (await marcas("Cómo verificaste la identidad")) === "true aviso-operacion" && (await marcas("Nota (obligatoria para rechazar)")) === "null null",
+    "verificacion_invalida marca el método, no la nota",
+  );
   await confirmarSiLoPide(op, OP);
   await filaLaura.getByLabel("Cómo verificaste la identidad").selectOption("videollamada");
   await dobleClicRetenido(op, filaLaura.getByRole("button", { name: "Aprobar" }), "auth_recuperaciones", {
@@ -971,7 +1066,7 @@ const hex = (c) => `#${c.slice(0, 3).map((v) => Math.round(v).toString(16).padSt
 const mezcla = (frente, fondo, a) => frente.map((v, i) => v * a + fondo[i] * (1 - a));
 
 /** Contraste de toda la página: se mide pantalla por pantalla bajando hasta el final (tope de 10 pantallas). */
-async function medirContraste(page, ruta) {
+async function medirContraste(page, ruta, preparar = null) {
   const total = { medidos: 0, minimo: Infinity, fallas: [] };
   const alto = await page.evaluate(() => document.documentElement.scrollHeight);
   const vista = page.viewportSize().height;
@@ -991,6 +1086,7 @@ async function medirContraste(page, ruta) {
       console.log(`REINTENTO contraste ${ruta} (${page.viewportSize().width} px, bajando ${y} px): ${parcial.motivo}; intento ${intento} de 3`);
       if (intento === 3) throw new Error(`FALLO la medición de contraste de ${ruta} no quedó firme en 3 intentos: ${parcial.motivo}`);
       await page.reload({ waitUntil: "networkidle" });
+      if (preparar) await preparar();
     }
   }
   await page.evaluate(() => window.scrollTo(0, 0));

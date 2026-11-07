@@ -4,9 +4,11 @@ import { redirect } from "next/navigation";
 import { decidirRecuperacionAccion } from "@/app/operacion/acciones-recuperaciones";
 import { ConfirmarIdentidad } from "@/components/entrar/confirmar-identidad";
 import { IconoSeguridad } from "@/components/cromo/iconos";
+import { errorDelCampo } from "@/components/operacion/aviso";
+import { DecisionRecuperacion } from "@/components/operacion/decision-recuperacion";
 import { fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
-import { Bandeja, BotonEnviar, NotaRegla, Vacio } from "@/components/sistema";
+import { Bandeja, NotaRegla, Vacio } from "@/components/sistema";
 import { estadoDeConfirmacion, verRecuperaciones } from "@/server/autenticacion";
 import { sesionSegura } from "@/server/entrada";
 import { exigirContextoOperacion } from "@/server/operacion";
@@ -23,7 +25,6 @@ export default async function RecuperacionesOperacion({ searchParams }: { search
     estadoDeConfirmacion(sesion),
     searchParams,
   ]);
-  const notaInvalida = params.aviso === "verificacion_invalida";
   return (
     <PaginaOperacion titulo="Recuperaciones" aviso={params.aviso}>
       {confirmacion.reciente ? null : (
@@ -45,34 +46,12 @@ export default async function RecuperacionesOperacion({ searchParams }: { search
           detalle: <span className="operacion-detalle">{solicitud.motivo}</span>,
           contexto: [solicitud.correo, fechaHora(solicitud.solicitadaEn)],
           acciones: (
-            <form action={decidirRecuperacionAccion} className="operacion-decision-forma">
-              <input type="hidden" name="id" value={solicitud.id} />
-              <div className="campo">
-                <label htmlFor={`verificacion-${solicitud.id}`}>Cómo verificaste la identidad</label>
-                <select id={`verificacion-${solicitud.id}`} name="verificacion" defaultValue="videollamada">
-                  <option value="videollamada">Videollamada</option>
-                  <option value="presencial">En persona</option>
-                </select>
-              </div>
-              <div className="campo">
-                <label htmlFor={`nota-${solicitud.id}`}>Nota (obligatoria para rechazar)</label>
-                <input
-                  id={`nota-${solicitud.id}`}
-                  name="nota"
-                  maxLength={500}
-                  aria-invalid={notaInvalida || undefined}
-                  aria-describedby={notaInvalida ? "aviso-operacion" : undefined}
-                />
-              </div>
-              <div className="operacion-decision-botones">
-                <BotonEnviar className="boton-texto" name="decision" value="rechazar" data-atajo="rechazar">
-                  Rechazar
-                </BotonEnviar>
-                <BotonEnviar name="decision" value="aprobar" data-atajo="aprobar">
-                  Aprobar
-                </BotonEnviar>
-              </div>
-            </form>
+            <DecisionRecuperacion
+              id={solicitud.id}
+              accion={decidirRecuperacionAccion}
+              errorMetodo={errorDelCampo(params.aviso, "verificacion")}
+              errorNota={errorDelCampo(params.aviso, "motivo")}
+            />
           ),
         }))}
       />

@@ -57,8 +57,8 @@ const INDUSTRIAS = [
 
 const PREGUNTAS = [
   {
-    pregunta: "¿La tarjeta de LEVER es de crédito?",
-    respuesta: "No. La propuesta de LEVER parte de una tarjeta recargable, prefondeada contra la cuenta de la empresa. El crédito queda fuera de esta experiencia.",
+    pregunta: "¿Qué tarjeta usa LEVER?",
+    respuesta: "Una tarjeta precargada contra la cuenta de la empresa, con los topes por categoría que define la empresa.",
   },
   {
     pregunta: "¿Cómo se comprueba un gasto?",
@@ -108,7 +108,7 @@ export default function PaginaInicio() {
               <Link href="#producto" className="arco-boton arco-boton-principal">Ver el producto <Icono nombre="flecha" /></Link>
               <a href="#como-funciona" className="arco-boton arco-boton-secundario">Cómo funciona</a>
             </div>
-            <p className="arco-hero-nota">Tarjeta recargable · Sin crédito · Control para toda la empresa</p>
+            <p className="arco-hero-nota">Tarjeta precargada · Control para toda la empresa</p>
           </div>
           <VisualHero />
         </section>
