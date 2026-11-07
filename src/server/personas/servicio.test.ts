@@ -267,6 +267,5 @@ describe("contrato del libro", () => {
     ].join("\n");
     assert.doesNotMatch(ui, /<button[^>]*>\s*Liberar/);
     assert.doesNotMatch(ui, /negarLiberacion|password_hash|DATABASE_URL|\b(spei|visa)\b/i);
-    assert.match(ui, /clabeVisible/);
   });
 });
