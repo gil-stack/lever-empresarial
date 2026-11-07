@@ -531,7 +531,7 @@ async function flujos() {
   await otraFicha.waitForURL(/aviso=invitacion_ya_enviada/);
   await listo(otraFicha);
   exigir(
-    (await otraFicha.locator("#aviso-operacion [role=alert]").getByText("La invitación ya había salido hace un momento.", { exact: false }).count()) === 1 &&
+    (await otraFicha.locator("#aviso-operacion [role=alert]").getByText("Ya se había enviado una invitación más reciente.", { exact: false }).count()) === 1 &&
       contar(`select count(*) from invitations where user_id = '${idDe(LAURA)}'`) === 2 &&
       contar(`select count(*) from invitation_deliveries where company_id = '${altamarId}'`) === entregasAntes + 1,
     "reenviar desde una ficha vieja no reemite: avisa que la invitación ya salió y no manda otro correo",

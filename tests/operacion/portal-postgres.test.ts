@@ -126,6 +126,36 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
         assert.equal(filas[2].revocada_en, null);
         assert.deepEqual(filas.map((fila) => fila.entregas), [1, 1, 1]);
 
+        // Sin ninguna invitación previa, `vista` vacío emite la primera; dos envíos a la vez en ese mismo
+        // estado dejan una sola invitación y una sola entrega (el otro recibe invitacion_ya_enviada).
+        const activa = async (rfc: string, razonSocial: string) => {
+          const id = await registrarProspecto(ana, { rfc, razonSocial, codigoPostal: "01000", regimen: "601", usoCfdi: "G03" });
+          await decidirActivacion(beto, sesionSofipo, { id: await solicitarActivacion(ana, id), aprobada: true });
+          return id;
+        };
+        const sinPrevia = await activa("CCC010101CCA", "Empresa Dos");
+        assert.equal((await leerCliente(ana, sinPrevia))?.ultimaInvitacionId, null);
+        const emitidaSinPrevia = await invitarPrimerAdministrador(
+          ana, { companyId: sinPrevia, nombre: "Admin Dos", correo: "admin2@ejemplo.mx", vista: "" }, { produccion: false, entregar },
+        );
+        assert.equal((await leerCliente(ana, sinPrevia))?.ultimaInvitacionId, emitidaSinPrevia.invitationId);
+        const simultanea = await activa("DDD010101DDA", "Empresa Tres");
+        const envios = await Promise.allSettled([1, 2].map(() => invitarPrimerAdministrador(
+          ana, { companyId: simultanea, nombre: "Admin Tres", correo: "admin3@ejemplo.mx", vista: "" }, { produccion: false, entregar },
+        )));
+        assert.deepEqual(envios.map((envio) => envio.status).sort(), ["fulfilled", "rejected"]);
+        const rechazado = envios.find((envio): envio is PromiseRejectedResult => envio.status === "rejected");
+        assert.equal((rechazado?.reason as { codigo?: unknown } | undefined)?.codigo, "invitacion_ya_enviada");
+        const porEmpresa = await conContexto({ rol: "plataforma_sofipo", userId: a, operadorId: operatorId }, (consulta) =>
+          consulta.query(
+            `select (select count(*)::int from invitations i where i.company_id = c.id) as invitaciones,
+                    (select count(*)::int from invitation_deliveries d where d.company_id = c.id) as entregas
+             from companies c where c.id = any($1::uuid[]) order by c.razon_social`,
+            [[sinPrevia, simultanea]],
+          ),
+        );
+        assert.deepEqual(porEmpresa.rows, [{ invitaciones: 1, entregas: 1 }, { invitaciones: 1, entregas: 1 }]);
+
         const hoy = hoyEnMexico(new Date());
         const despues = new Date(`${hoy}T00:00:00Z`);
         despues.setUTCDate(despues.getUTCDate() + 2);

@@ -289,9 +289,3 @@ form + .operacion-lista {
   font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: 300;
 }
-
-/* En la ficha del cliente la etiqueta del sistema (0.9rem, con 3 px de relleno arriba) sale más grande
-   que el valor (13.5 px) y quedaba 4 px más abajo: en Operación etiqueta y valor comparten línea base. */
-.operacion-marco .renglones > div {
-  align-items: baseline;
-}
