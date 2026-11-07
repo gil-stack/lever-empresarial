@@ -220,6 +220,7 @@ async function revisarCargaMovil(page, donde, ruta) {
   await carga.locator(".seccion-spinner").waitFor();
   exigir((await carga.getAttribute("role")) === "status" && (await carga.innerText()).trim() === "Cargando…" && (await carga.locator(".seccion-spinner").isVisible()), `${donde}: la barra de arriba muestra el progreso y dice «Cargando…»`);
   const medida = await medirPantalla(page, ruta);
+  exigir(!medida.motivo, `${donde}: la medición mientras carga quedó firme${medida.motivo ? ` (${medida.motivo})` : ""}`);
   exigir(medida.fallas.length === 0, `${donde}: contraste AA mientras carga (${medida.medidos} textos, mínimo ${medida.minimo.toFixed(2)})`);
 }
 
@@ -967,59 +968,97 @@ const contrasteDe = (a, b) => {
 const hex = (c) => `#${c.slice(0, 3).map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
 const mezcla = (frente, fondo, a) => frente.map((v, i) => v * a + fondo[i] * (1 - a));
 
-/** El método del #50: color calculado de cada texto contra los píxeles reales de su fondo, con el texto oculto. */
 /** Contraste de toda la página: se mide pantalla por pantalla bajando hasta el final (tope de 10 pantallas). */
 async function medirContraste(page, ruta) {
   const total = { medidos: 0, minimo: Infinity, fallas: [] };
   const alto = await page.evaluate(() => document.documentElement.scrollHeight);
   const vista = page.viewportSize().height;
   for (let y = 0, n = 0; y < alto && n < 10; y += vista, n += 1) {
-    await page.evaluate((destino) => window.scrollTo(0, destino), y);
-    await page.waitForTimeout(150);
-    const parcial = await medirPantalla(page, ruta);
-    total.medidos += parcial.medidos;
-    total.minimo = Math.min(total.minimo, parcial.minimo);
-    total.fallas.push(...parcial.fallas);
+    for (let intento = 1; ; intento += 1) {
+      await page.evaluate((destino) => window.scrollTo(0, destino), y);
+      await page.waitForTimeout(150);
+      const parcial = await medirPantalla(page, ruta);
+      if (!parcial.motivo) {
+        total.medidos += parcial.medidos;
+        total.minimo = Math.min(total.minimo, parcial.minimo);
+        total.fallas.push(...parcial.fallas);
+        break;
+      }
+      // Una captura con el texto a la vista mediría el texto contra sí mismo: no cuenta, se anota y se repite.
+      reintentosDeContraste.push({ ruta, ancho: page.viewportSize().width, desplazamiento: y, intento, motivo: parcial.motivo });
+      console.log(`REINTENTO contraste ${ruta} (${page.viewportSize().width} px, bajando ${y} px): ${parcial.motivo}; intento ${intento} de 3`);
+      if (intento === 3) throw new Error(`FALLO la medición de contraste de ${ruta} no quedó firme en 3 intentos: ${parcial.motivo}`);
+      await page.reload({ waitUntil: "networkidle" });
+    }
   }
   await page.evaluate(() => window.scrollTo(0, 0));
   return total;
 }
 
+const reintentosDeContraste = [];
+// Sin transiciones: el color transparente se lee completo, no a medio camino.
+const OCULTAR_TEXTO = "html body *, html body *::before, html body *::after { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; transition: none !important; } svg text { fill: transparent !important; }";
+const firmaDeTextos = (lista) => lista.map((t) => `${t.texto}@${Math.round(t.caja.x)},${Math.round(t.caja.y)}`).join("|");
+
+/** Corre en el navegador sobre la etiqueta de estilo: vacío si sigue puesta y deja transparente cada elemento. */
+function textoOculto(estilo) {
+  if (!estilo.isConnected) return "la etiqueta que oculta el texto ya no está en la página";
+  const visible = [...document.querySelectorAll("body *")].find((el) => getComputedStyle(el).color !== "rgba(0, 0, 0, 0)");
+  return visible ? `«${visible.tagName.toLowerCase()}.${visible.getAttribute("class") ?? ""}» conserva el color ${getComputedStyle(visible).color}` : "";
+}
+
+/**
+ * Una vista: los textos con su color, la captura con el texto oculto y la comprobación de que el texto
+ * siguió oculto y nada se movió mientras se capturaba. Si algo de eso falla, devuelve el motivo y no mide.
+ */
 async function medirPantalla(page, ruta) {
-  const textos = await page.evaluate(() => {
-    const salida = [];
-    const recorrido = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    const vistos = new Set();
-    while (recorrido.nextNode()) {
-      const nodo = recorrido.currentNode;
-      if (!nodo.textContent.trim()) continue;
-      const el = nodo.parentElement;
-      if (!el || vistos.has(el)) continue;
-      vistos.add(el);
-      if (el.closest("[aria-hidden=true], .logotipo, .solo-lector, script, style, noscript, option, [disabled], .saltar, svg, dialog:not([open])")) continue;
-      const estilo = getComputedStyle(el);
-      if (estilo.visibility === "hidden" || Number(estilo.opacity) === 0) continue;
-      // La respuesta de un <details> cerrado conserva caja pero no se pinta.
-      if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
-      const rango = document.createRange();
-      rango.selectNodeContents(nodo);
-      const r = rango.getBoundingClientRect();
-      if (r.width < 2 || r.height < 2 || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) continue;
-      // Un texto tapado (bajo la barra fija al bajar) no se ve: no se mide contra lo que lo tapa.
-      const encima = document.elementFromPoint(Math.min(innerWidth - 1, r.x + r.width / 2), Math.min(innerHeight - 1, Math.max(0, r.y + r.height / 2)));
-      if (encima && !el.contains(encima) && !encima.contains(el)) continue;
-      let opacidad = 1;
-      for (let a = el; a; a = a.parentElement) opacidad *= Number(getComputedStyle(a).opacity);
-      const n = estilo.color.match(/[\d.]+/g).map(Number);
-      const color = estilo.color.startsWith("color(") ? [n[0] * 255, n[1] * 255, n[2] * 255, n[3] ?? 1] : [n[0], n[1], n[2], n[3] ?? 1];
-      salida.push({ texto: nodo.textContent.trim().slice(0, 40), color, opacidad, tamano: parseFloat(estilo.fontSize), peso: Number(estilo.fontWeight), caja: { x: Math.max(0, r.x), y: Math.max(0, r.y), w: r.width, h: r.height } });
-    }
-    return salida;
-  });
-  const oculto = await page.addStyleTag({ content: "html body *, html body *::before, html body *::after { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; } svg text { fill: transparent !important; }" });
+  const textos = await page.evaluate(recogerTextos);
+  const oculto = await page.addStyleTag({ content: OCULTAR_TEXTO });
   await page.waitForTimeout(250);
+  const antes = await oculto.evaluate(textoOculto);
   const png = PNG.sync.read(await page.screenshot());
-  await oculto.evaluate((n) => n.remove());
+  const despues = await oculto.evaluate(textoOculto).catch((error) => `la página cambió (${error.message.split("\n")[0]})`);
+  await oculto.evaluate((n) => n.remove()).catch(() => {});
+  const quieta = firmaDeTextos(textos) === firmaDeTextos(await page.evaluate(recogerTextos));
+  const motivo = antes ? `antes de la captura ${antes}` : despues ? `durante la captura ${despues}` : quieta ? "" : "la página se movió durante la captura";
+  if (motivo) return { motivo };
+  return medirContraEscena(ruta, textos, png);
+}
+
+/** Corre en el navegador: cada texto visible de la vista con su color, opacidad acumulada, tamaño, peso y caja. */
+function recogerTextos() {
+  const salida = [];
+  const recorrido = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  const vistos = new Set();
+  while (recorrido.nextNode()) {
+    const nodo = recorrido.currentNode;
+    if (!nodo.textContent.trim()) continue;
+    const el = nodo.parentElement;
+    if (!el || vistos.has(el)) continue;
+    vistos.add(el);
+    if (el.closest("[aria-hidden=true], .logotipo, .solo-lector, script, style, noscript, option, [disabled], .saltar, svg, dialog:not([open])")) continue;
+    const estilo = getComputedStyle(el);
+    if (estilo.visibility === "hidden" || Number(estilo.opacity) === 0) continue;
+    // La respuesta de un <details> cerrado conserva caja pero no se pinta.
+    if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
+    const rango = document.createRange();
+    rango.selectNodeContents(nodo);
+    const r = rango.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2 || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) continue;
+    // Un texto tapado (bajo la barra fija al bajar) no se ve: no se mide contra lo que lo tapa.
+    const encima = document.elementFromPoint(Math.min(innerWidth - 1, r.x + r.width / 2), Math.min(innerHeight - 1, Math.max(0, r.y + r.height / 2)));
+    if (encima && !el.contains(encima) && !encima.contains(el)) continue;
+    let opacidad = 1;
+    for (let a = el; a; a = a.parentElement) opacidad *= Number(getComputedStyle(a).opacity);
+    const n = estilo.color.match(/[\d.]+/g).map(Number);
+    const color = estilo.color.startsWith("color(") ? [n[0] * 255, n[1] * 255, n[2] * 255, n[3] ?? 1] : [n[0], n[1], n[2], n[3] ?? 1];
+    salida.push({ texto: nodo.textContent.trim().slice(0, 40), color, opacidad, tamano: parseFloat(estilo.fontSize), peso: Number(estilo.fontWeight), caja: { x: Math.max(0, r.x), y: Math.max(0, r.y), w: r.width, h: r.height } });
+  }
+  return salida;
+}
+
+/** El método del #50: el color de cada texto contra los píxeles reales de su fondo en la captura con el texto oculto. */
+function medirContraEscena(ruta, textos, png) {
   const fallas = [];
   let minimo = Infinity;
   for (const t of textos) {
@@ -1181,6 +1220,7 @@ async function capturas() {
     console.log(`contraste ${clave}: ${r.medidos} textos, ${r.fallas.length} bajo AA, mínimo ${r.minimo}`);
     for (const f of r.fallas) console.log(`  ${f.contraste} < ${f.umbral} · ${f.ruta} · «${f.texto}» ${f.color} sobre ${f.fondo}`);
   }
+  console.log(`contraste: ${reintentosDeContraste.length} vistas repetidas porque el texto no quedó oculto o la página se movió durante la captura`);
   writeFileSync(`${SALIDA}/contraste.json`, JSON.stringify(contraste, null, 2));
   const bajo = Object.values(contraste).reduce((suma, r) => suma + r.fallas.length, 0);
   exigir(bajo === 0, `contraste AA medido contra la escena en 3 temas × 2 anchos: ${bajo} textos bajo AA`);
@@ -1400,7 +1440,7 @@ try {
   }
   throw error;
 } finally {
-  writeFileSync(`${SALIDA}/comprobaciones-${FASES.join("-")}.json`, JSON.stringify({ comprobaciones, pendientes, erroresDeConsola }, null, 2));
+  writeFileSync(`${SALIDA}/comprobaciones-${FASES.join("-")}.json`, JSON.stringify({ comprobaciones, pendientes, erroresDeConsola, reintentosDeContraste }, null, 2));
   await navegador.close();
   console.log(`\n${comprobaciones.length} comprobaciones en verde.`);
 }
