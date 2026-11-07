@@ -238,3 +238,149 @@ export function IconoPresupuestos() {
     </Trazo>
   );
 }
+
+/* Los íconos de las secciones del diseño (fPlat: sync, receipt, card, list, bank, globe, up, grow, plane, fuel, spark, plug). */
+
+export function IconoConciliacion() {
+  return (
+    <Trazo>
+      <path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3M18 3v4h-4M6 21v-4h4" />
+    </Trazo>
+  );
+}
+
+export function IconoGastos() {
+  return (
+    <Trazo>
+      <path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6" />
+    </Trazo>
+  );
+}
+
+export function IconoTarjetas() {
+  return (
+    <Trazo>
+      <path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 10h18M7 15h4" />
+    </Trazo>
+  );
+}
+
+export function IconoMovimientos() {
+  return (
+    <Trazo>
+      <path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />
+    </Trazo>
+  );
+}
+
+export function IconoCuenta() {
+  return (
+    <Trazo>
+      <path d="M3 10 12 4l9 6M5 10v8M9 10v8M15 10v8M19 10v8M3 20h18" />
+    </Trazo>
+  );
+}
+
+export function IconoInternacional() {
+  return (
+    <Trazo>
+      <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18" />
+    </Trazo>
+  );
+}
+
+export function IconoCredito() {
+  return (
+    <Trazo>
+      <path d="M4 17 10 11l4 4 6-7M14 8h6v6" />
+    </Trazo>
+  );
+}
+
+export function IconoInversion() {
+  return (
+    <Trazo>
+      <path d="M3 17l6-6 4 4 8-8M15 7h6v6" />
+    </Trazo>
+  );
+}
+
+export function IconoViajes() {
+  return (
+    <Trazo>
+      <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />
+    </Trazo>
+  );
+}
+
+export function IconoGasolina() {
+  return (
+    <Trazo>
+      <path d="M4 20V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v15M3 20h12M4 10h10M14 8h2a2 2 0 0 1 2 2v6a1.5 1.5 0 0 0 3 0V9l-3-3" />
+    </Trazo>
+  );
+}
+
+export function IconoAhorro() {
+  return (
+    <Trazo>
+      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" />
+    </Trazo>
+  );
+}
+
+export function IconoIntegraciones() {
+  return (
+    <Trazo>
+      <path d="M9 3v5M15 3v5M7 8h10v3a5 5 0 0 1-10 0V8zM12 16v5" />
+    </Trazo>
+  );
+}
+
+export function IconoDescargar() {
+  return (
+    <Trazo>
+      <path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" />
+    </Trazo>
+  );
+}
+
+export function IconoMas() {
+  return (
+    <Trazo>
+      <path d="M12 5v14M5 12h14" />
+    </Trazo>
+  );
+}
+
+export function IconoAlerta() {
+  return (
+    <Trazo>
+      <path d="M12 4 2 20h20zM12 10v4M12 17h.01" />
+    </Trazo>
+  );
+}
+
+export function IconoVehiculo() {
+  return (
+    <Trazo>
+      <path d="M3 6h11v10H3zM14 9h4l3 3v4h-7M7.5 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM17.5 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" />
+    </Trazo>
+  );
+}
+
+export function IconoCorreo() {
+  return (
+    <Trazo>
+      <path d="M3 6h18v12H3zM3 7l9 6 9-6" />
+    </Trazo>
+  );
+}
+
+export function IconoCopiar() {
+  return (
+    <Trazo>
+      <path d="M9 9h11v11H9zM5 15V4h11" />
+    </Trazo>
+  );
+}

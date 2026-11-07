@@ -188,6 +188,36 @@ export const RUTAS = [
     acceso: { tipo: "capacidad", alguna: ["cliente.poliza.ver"] },
     conEmpresa: true,
   },
+  // Navegación del diseño (Ola 2b). Aprobaciones abre con cualquier rol de consola, como Pendientes.
+  {
+    patron: "/consola/aprobaciones",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.consola.ver"] },
+    conEmpresa: true,
+  },
+  // El perfil es de cada persona: basta la sesión con su empresa, como Apariencia.
+  { patron: "/consola/perfil", superficie: "cliente", acceso: { tipo: "sesion" }, conEmpresa: true },
+  // Fiscal reúne la Lista 69-B y la Póliza: abre con cualquiera de las dos.
+  {
+    patron: "/consola/fiscal",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.lista69b.ver", "cliente.poliza.ver", "plataforma.lista69b.cargar"] },
+    conEmpresa: true,
+  },
+  // Módulos en demostración: datos de ejemplo solo en empresas de demostración, «Disponible
+  // pronto» en las reales. Cada uno abre con la capacidad existente más cercana a su trabajo.
+  { patron: "/consola/conciliacion", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.poliza.ver"] }, conEmpresa: true },
+  { patron: "/consola/gastos", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] }, conEmpresa: true },
+  { patron: "/consola/tarjetas", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.resumen.ver"] }, conEmpresa: true },
+  { patron: "/consola/movimientos", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] }, conEmpresa: true },
+  { patron: "/consola/cuenta", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.resumen.ver"] }, conEmpresa: true },
+  { patron: "/consola/internacional", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.proveedores.ver"] }, conEmpresa: true },
+  { patron: "/consola/credito", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.resumen.ver"] }, conEmpresa: true },
+  { patron: "/consola/inversion", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.resumen.ver"] }, conEmpresa: true },
+  { patron: "/consola/viajes", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.politica.ver"] }, conEmpresa: true },
+  { patron: "/consola/gasolina", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.politica.ver"] }, conEmpresa: true },
+  { patron: "/consola/ahorro", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] }, conEmpresa: true },
+  { patron: "/consola/integraciones", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.configuracion.ver"] }, conEmpresa: true },
   // Hasta la fase 5, el personal del operador carga la 69-B y publica el
   // precio desde estas dos rutas. El cliente solo las lee.
   {
