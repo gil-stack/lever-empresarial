@@ -26,8 +26,10 @@ import {
   proyectar,
   ventanaDe,
   type Escenario,
+  type Faltante,
   type FuentesFlujo,
   type Movimiento,
+  type OpcionesProyeccion,
   type Proyeccion,
 } from "../../dominio/flujo/proyeccion";
 import { hoyEnMexico } from "../../dominio/personas";
@@ -106,7 +108,7 @@ export async function leerFlujoInicio(
   const hoy = hoyDe(deps);
   return leerCon(conEmpresa, async (consulta) => {
     const { fuentes } = await proyeccionCon(consulta, conEmpresa.empresa.id, hoy);
-    const opciones = { detalleNomina: puede(conEmpresa, "cliente.nomina.detalle.ver") };
+    const opciones = opcionesDeProyeccion(conEmpresa);
     const real = proyectar(fuentes, null, opciones);
     const escenario: Escenario | null = pedido.mover === undefined ? null : escenarioValido(real, pedido.mover, pedido.fecha);
     const presupuestos = presupuestosPara(
@@ -121,6 +123,34 @@ export async function leerFlujoInicio(
       puedeEditar: puede(conEmpresa, "cliente.flujo.editar"),
     };
   });
+}
+
+/** Sin cliente.nomina.detalle.ver, la proyección no desglosa la nómina de una sola persona. */
+function opcionesDeProyeccion(ctx: ContextoConEmpresa): OpcionesProyeccion {
+  return { detalleNomina: puede(ctx, "cliente.nomina.detalle.ver") };
+}
+
+export type FaltantePendientes = { faltante: Faltante; colchonCentavos: number };
+
+/** Las fuentes de la proyección, leídas con el contexto de la empresa (RLS). */
+function fuentesDeEmpresa(ctx: ContextoConEmpresa, hoy: string): Promise<FuentesFlujo> {
+  return leerCon(ctx, async (consulta) => (await proyeccionCon(consulta, ctx.empresa.id, hoy)).fuentes);
+}
+
+/**
+ * El faltante que Pendientes muestra es el mismo de Inicio: mismas fuentes y
+ * misma proyección, con la nómina de una persona reservada a quien no ve su
+ * detalle. Sin cliente.flujo.ver no se lee nada. Si el dinero alcanza, no hay alerta.
+ */
+export async function leerFaltante(
+  ctx: ContextoDeTenant | null | undefined,
+  deps?: DependenciasFlujo & { fuentes?: (ctx: ContextoConEmpresa, hoy: string) => Promise<FuentesFlujo> },
+): Promise<FaltantePendientes | null> {
+  if (!puede(ctx, "cliente.flujo.ver")) return null;
+  const conEmpresa = exigir(ctx, "cliente.flujo.ver");
+  const fuentes = await (deps?.fuentes ?? fuentesDeEmpresa)(conEmpresa, hoyDe(deps));
+  const { faltante, colchonCentavos } = proyectar(fuentes, null, opcionesDeProyeccion(conEmpresa));
+  return faltante ? { faltante, colchonCentavos } : null;
 }
 
 export type VistaSaldo = {

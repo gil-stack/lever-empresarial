@@ -47,7 +47,7 @@ function renovarSesiones() {
   sql("update sessions set ultimo_uso = now() where expires_at > now()");
 }
 
-async function abrir({ quien, tema = "oscuro", ancho = 1440 }) {
+async function abrir({ quien, sesion = null, tema = "oscuro", ancho = 1440 }) {
   const nav = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
   const movil = ancho < 600;
   const ctx = await nav.newContext({
@@ -63,7 +63,8 @@ async function abrir({ quien, tema = "oscuro", ancho = 1440 }) {
   // `next start` corre en producción: la cookie lleva el prefijo __Host- (Secure, Path=/, sin Domain).
   await ctx.addCookies([
     { name: "tema", value: tema, domain: host, path: "/" },
-    ...(quien ? [{ name: "__Host-sesion", value: SESIONES[quien], domain: host, path: "/", httpOnly: true, secure: true, sameSite: "Lax" }] : []),
+    // `sesion` es una cookie sembrada en el propio flujo (por ejemplo, la contadora del flujo 11).
+    ...(quien || sesion ? [{ name: "__Host-sesion", value: sesion ?? SESIONES[quien], domain: host, path: "/", httpOnly: true, secure: true, sameSite: "Lax" }] : []),
   ]);
   const p = await ctx.newPage();
   const errores = [];

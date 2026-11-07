@@ -7,11 +7,12 @@ import { Ausencia, Aviso, CifraGrande, Insignia } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
 import { fechaConAnio, fechaCorta } from "@/dominio/flujo/fechas";
 import { cifrasDePresupuesto, ETIQUETA_ESTADO_PRESUPUESTO } from "@/dominio/flujo/presupuestos";
-import { textoAlcance, type Movimiento, type Proyeccion, type Semana } from "@/dominio/flujo/proyeccion";
+import { textoAlcance, type Movimiento, type Semana } from "@/dominio/flujo/proyeccion";
 import { horaEnMexico } from "@/dominio/reloj";
 import { enEmpresa } from "@/nucleo/rutas";
 import type { FlujoInicio } from "@/server/flujo/servicio";
 
+import { AlertaFaltante } from "./alerta-faltante";
 import { Origen } from "./origen";
 
 /**
@@ -107,19 +108,7 @@ function Alertas({ flujo, empresaId }: { flujo: FlujoInicio; empresaId: string |
   return (
     <section className="flujo-alertas" aria-labelledby="alertas-titulo">
       <h2 id="alertas-titulo" className="solo-lector">Alertas</h2>
-      {p.faltante ? (
-        <div data-alerta="faltante">
-          <Aviso titulo={tituloFaltante(p)}>
-            <p>
-              Saldo proyectado al cierre de la semana: <strong>{formatoPesos(p.faltante.saldoFinal)}</strong>
-              {p.faltante.motivo === "colchon" ? <> (colchón: {formatoPesos(p.colchonCentavos)})</> : null}.
-            </p>
-            {p.faltante.causas.length > 0 ? (
-              <p>Lo provoca: {p.faltante.causas.map((m) => `${m.concepto} (${formatoPesos(m.centavos)})`).join(", ")}.</p>
-            ) : null}
-          </Aviso>
-        </div>
-      ) : null}
+      {p.faltante ? <AlertaFaltante faltante={p.faltante} colchonCentavos={p.colchonCentavos} /> : null}
       {presupuesto.length > 0 ? (
         <div data-alerta="presupuesto">
           <Aviso titulo={presupuesto.length === 1 ? "Un presupuesto pide atención" : `${presupuesto.length} presupuestos piden atención`}>
@@ -147,12 +136,6 @@ function Alertas({ flujo, empresaId }: { flujo: FlujoInicio; empresaId: string |
       ) : null}
     </section>
   );
-}
-
-function tituloFaltante(p: Proyeccion): string {
-  const f = p.faltante!;
-  const semana = `semana del ${fechaCorta(f.inicio)} al ${fechaCorta(f.fin)}`;
-  return f.motivo === "negativo" ? `Faltante: el saldo queda en negativo la ${semana}` : `El saldo baja del colchón la ${semana}`;
 }
 
 function rango(semana: Semana): string {

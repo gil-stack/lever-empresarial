@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 
 // Los 11 flujos de Ola 1B (consola) y el 12, alta de proveedor con área (#52),
 // clicados en la aplicación con Playwright headless. Cada envío se hace con
@@ -570,14 +570,29 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
     anotar(gil.errores.length === 0, "flujo 11: sin errores de consola (Taller)", gil.errores.join(" | "));
     await gil.nav.close();
 
-    // Alertas de #52. Pendientes lleva la de presupuesto (la nómina de Marta
-    // rebasa el tope del área Operación); la de faltante solo la pinta Inicio
-    // (src/components/flujo/inicio-flujo.tsx), con el saldo corto de preparar.ts.
+    // Alertas de #52 con el saldo corto de preparar.ts. Pendientes lleva el
+    // faltante (mismo cálculo de Inicio) y la de presupuesto (la nómina de Marta
+    // rebasa el tope del área Operación); Inicio, las dos.
     const presupuesto = /^El presupuesto del área Operación está excedido/;
+    const faltanteEn = (p) => p.locator('.flujo-alertas [data-alerta="faltante"]');
     for (const tema of ["oscuro", "claro", "lever"]) {
       for (const ancho of [1440, 390]) {
         const vista = `${tema} ${ancho}`;
         const { nav, p, errores } = await abrir({ quien: "gil", tema, ancho });
+        await p.goto(`${BASE}${TALLER}/consola/pendientes`);
+        const faltantePend = faltanteEn(p);
+        const veFaltante = (await faltantePend.count()) === 1 && (await faltantePend.isVisible());
+        const textoPendiente = veFaltante ? (await faltantePend.innerText()).replace(/\s+/g, " ") : "";
+        const desbordaFaltante = await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+        let aInicio = false;
+        if (veFaltante) {
+          await faltantePend.scrollIntoViewIfNeeded();
+          await foto(p, `11-pendiente-faltante-${tema}-${ancho}`);
+          await faltantePend.getByRole("link", { name: "Ver la proyección", exact: true }).click();
+          await p.waitForURL(/\/consola#proyeccion-titulo$/, { timeout: 20000 });
+          aInicio = await p.getByRole("heading", { name: "Proyección a 13 semanas" }).isVisible();
+        }
+        anotar(veFaltante && /^Faltante: el saldo queda en negativo la semana del/.test(textoPendiente) && /Saldo proyectado al cierre de la semana: -\$/.test(textoPendiente) && aInicio && !desbordaFaltante, `flujo 11 ${vista}: Pendientes muestra el faltante y «Ver la proyección» lleva a la proyección de Inicio`, `${textoPendiente.slice(0, 170)} → ${p.url().replace(BASE, "")}${desbordaFaltante ? " (desborda)" : ""}`);
         await p.goto(`${BASE}${TALLER}/consola/pendientes`);
         const fila = p.locator(".pendientes-inicio li").filter({ has: p.getByRole("heading", { name: presupuesto }) });
         const visible = (await fila.count()) === 1 && (await fila.isVisible());
@@ -607,6 +622,71 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
         anotar(errores.length === 0, `flujo 11 ${vista}: sin errores de consola en Pendientes, Presupuestos e Inicio`, errores.join(" | "));
         await nav.close();
       }
+    }
+
+    // Fernanda (finanzas): ve el faltante, pero sin cliente.nomina.detalle.ver la
+    // nómina de una sola persona no se desglosa; va a la proyección de Inicio.
+    {
+      const { nav, p, errores } = await abrir({ quien: "fernanda", tema: "claro", ancho: 1440 });
+      await p.goto(`${BASE}${TALLER}/consola/pendientes`);
+      const faltante = faltanteEn(p);
+      const ve = (await faltante.count()) === 1;
+      const texto = ve ? (await faltante.innerText()).replace(/\s+/g, " ") : "";
+      if (ve) {
+        await faltante.scrollIntoViewIfNeeded();
+        await foto(p, "11-pendiente-faltante-finanzas-claro-1440");
+        await faltante.getByRole("link", { name: "Ver la proyección", exact: true }).click();
+        await p.waitForURL(/\/consola#proyeccion-titulo$/, { timeout: 20000 });
+      }
+      anotar(ve && !/1 persona/.test(texto) && /\/consola#proyeccion-titulo$/.test(p.url()), "flujo 11: finanzas ve el faltante sin el neto de una sola persona y llega a la proyección", `${texto.slice(0, 170)} → ${p.url().replace(BASE, "")}`);
+      anotar(errores.length === 0, "flujo 11: sin errores de consola (finanzas)", errores.join(" | "));
+      await nav.close();
+    }
+
+    // Una contadora (cliente.flujo.ver sin las cifras de Inicio): el faltante la lleva a Saldo y alertas.
+    {
+      const contadoraId = randomUUID();
+      sql(`
+        select set_config('app.user_id', '11111111-1111-4111-8111-111111111111', false);
+        select set_config('app.company_id', '${EMPRESA_TALLER}', false);
+        insert into users (id, nombre, correo, password_hash)
+          values ('${contadoraId}', 'Carmen Contadora', 'carmen-${contadoraId.slice(0, 8)}@lever.test', '$2b$12$${"a".repeat(53)}');
+        insert into memberships (user_id, company_id, estado) values ('${contadoraId}', '${EMPRESA_TALLER}', 'activa');
+        insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, cambio)
+          select operator_id, id, 'miembro', '11111111-1111-4111-8111-111111111111', 'cliente', 'asignar_rol', 'membership_roles', '${contadoraId}', '{"rol":"contador"}'
+          from companies where id = '${EMPRESA_TALLER}';
+        insert into membership_roles (user_id, company_id, rol) values ('${contadoraId}', '${EMPRESA_TALLER}', 'contador');
+      `);
+      const valor = randomBytes(32).toString("base64url");
+      reponerSesion(sql, contadoraId, valor, "cliente");
+      const { nav, p, errores } = await abrir({ sesion: valor, tema: "lever", ancho: 390 });
+      await p.goto(`${BASE}${TALLER}/consola/pendientes`);
+      const faltante = faltanteEn(p);
+      const ve = (await faltante.count()) === 1;
+      const texto = ve ? (await faltante.innerText()).replace(/\s+/g, " ") : "";
+      if (ve) {
+        await faltante.scrollIntoViewIfNeeded();
+        await foto(p, "11-pendiente-faltante-contadora-lever-390");
+        await faltante.getByRole("link", { name: "Revisar saldo y alertas", exact: true }).click();
+        await p.waitForURL(/\/consola\/flujo$/, { timeout: 20000 });
+      }
+      const h1 = await p.locator("h1").count();
+      anotar(ve && !/1 persona/.test(texto) && /\/consola\/flujo$/.test(p.url()) && h1 === 1, "flujo 11: la contadora ve el faltante y «Revisar saldo y alertas» la lleva a Saldo y alertas", `${texto.slice(0, 120)} → ${p.url().replace(BASE, "")}`);
+      anotar(errores.length === 0, "flujo 11: sin errores de consola (contadora)", errores.join(" | "));
+      await nav.close();
+    }
+
+    // Caso negativo: Rosa (liberadora, sin cliente.flujo.ver) no ve el faltante ni alertas del flujo.
+    for (const [tema, ancho] of [["oscuro", 1440], ["lever", 390]]) {
+      const { nav, p, errores } = await abrir({ quien: "rosa", tema, ancho });
+      await p.goto(`${BASE}${TALLER}/consola/pendientes`);
+      await p.locator(".pendientes-resumen").waitFor({ timeout: 20000 });
+      const alertas = await p.locator(".flujo-alertas, [data-alerta]").count();
+      const cuerpo = await p.locator("main").innerText();
+      await foto(p, `11-pendiente-sin-faltante-liberadora-${tema}-${ancho}`);
+      anotar(alertas === 0 && !/Faltante|Saldo proyectado|presupuesto del área/i.test(cuerpo), `flujo 11 ${tema} ${ancho}: sin cliente.flujo.ver, Rosa no ve el faltante ni la alerta de presupuesto`, `alertas=${alertas}`);
+      anotar(errores.length === 0, `flujo 11 ${tema} ${ancho}: sin errores de consola (liberadora)`, errores.join(" | "));
+      await nav.close();
     }
   }
 
