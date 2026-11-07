@@ -68,6 +68,10 @@ export type SocioDePrueba = {
   tipoPersona: "fisica" | "moral";
   rfc?: string;
   curp?: string;
+  /** Extranjera sin CURP: país, documento y fecha de nacimiento. */
+  pais?: string;
+  documentoExtranjero?: string;
+  fechaNacimiento?: string;
   capital: string;
   votos: string;
   pep?: "no" | "nacional" | "extranjera";
@@ -99,7 +103,8 @@ export async function armarBorrador(
       const id = randomUUID();
       await agregarAccionista(origina, {
         versionId, formId: id, padreClave: padreClave ?? "", tipoPersona: socio.tipoPersona, nombre: socio.nombre,
-        rfc: socio.rfc ?? "", curp: socio.curp ?? "", nacionalidad: "Mexicana", capital: socio.capital, votos: socio.votos,
+        rfc: socio.rfc ?? "", curp: socio.curp ?? "", pais: socio.pais ?? "", documentoExtranjero: socio.documentoExtranjero ?? "",
+        fechaNacimiento: socio.fechaNacimiento ?? "", capital: socio.capital, votos: socio.votos,
         controlOtrosMedios: false, pep: socio.pep ?? "no",
       });
       if (socio.hijos?.length) {

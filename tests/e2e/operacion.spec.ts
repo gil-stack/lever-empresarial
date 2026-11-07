@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLAVE, codigoDeSemilla, codigoTotp, consultar, contar, dobleClic, idDe, sesionDe, vigilarConsola } from "./apoyo";
-import { CORREOS, FARO } from "./siembra";
+import { BRISA, CIMA, CORREOS, FARO } from "./siembra";
 
 /**
  * Operación SOFIPO: entrada con segundo factor, alta de un prospecto con la
@@ -134,6 +134,40 @@ test("prospecto → pedir activación → el candado exige expediente; con todo 
   expect(decidida).toEqual({ estado: "aprobada", requested_by: op1, decided_by: op2, empresa: "activa" });
   expect(await contar("select 1 from audit_log where accion = 'activacion_aprobada' and company_id = $1", [faro!.id])).toBe(1);
   expect(await contar("select 1 from company_state_history where company_id = $1 and estado_nuevo = 'activa'", [faro!.id])).toBe(1);
+  expect(errores).toEqual([]);
+});
+
+test("un caso abierto de Cumplimiento no se le nombra a Aprobación ni a Originación", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const estados = async () => (await consultar<{ rfc: string; estado: string }>(
+    "select rfc, estado from companies where rfc in ($1, $2) order by rfc", [BRISA.rfc, CIMA.rfc],
+  )).map((fila) => fila.estado);
+  expect(await estados()).toEqual(["en_alta", "suspendida"]);
+  const sinLista = async () => {
+    const aviso = page.locator("#aviso-operacion");
+    await expect(aviso).toBeVisible();
+    await expect(aviso).not.toContainText(/lista/i);
+    await expect(aviso).not.toContainText(/bloquead/i);
+    return aviso;
+  };
+
+  // Aprobación intenta activar a Brisa: la base no deja y el aviso no nombra la lista.
+  await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+  await page.goto("/operacion/aprobaciones");
+  await page.locator("li.decision").filter({ hasText: `Activación · ${BRISA.razonSocial}` }).getByRole("button", { name: "Aprobar" }).click();
+  await page.waitForURL(/aviso=activacion_con_coincidencia_lpb/);
+  await expect(await sinLista()).toContainText("Cumplimiento tiene un caso abierto de esta empresa: no se puede activar hasta que lo resuelva.");
+
+  // Originación pide reactivar a Cima: tampoco se nombra la lista y no queda solicitud.
+  const [cima] = await consultar<{ id: string }>("select id from companies where rfc = $1", [CIMA.rfc]);
+  await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  await page.goto(`/operacion/clientes/${cima!.id}`);
+  await page.locator("#motivo-suspension").fill("La empresa pidió revisar su caso.");
+  await page.getByRole("button", { name: "Pedir reactivación" }).click();
+  await page.waitForURL(/aviso=reactivacion_con_coincidencia_lpb/);
+  await expect(await sinLista()).toContainText("Cumplimiento tiene un caso abierto de esta empresa: no se puede reactivar hasta que lo resuelva.");
+  expect(await contar("select 1 from company_suspensions where company_id = $1 and tipo = 'reactivacion'", [cima!.id])).toBe(0);
+  expect(await estados()).toEqual(["en_alta", "suspendida"]);
   expect(errores).toEqual([]);
 });
 

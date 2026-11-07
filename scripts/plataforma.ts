@@ -1,7 +1,7 @@
 /**
  * Comando del personal del operador, hasta que la fase 5 abra su portal.
  *
- *   npx tsx scripts/plataforma.ts personal:migrar-variable
+ *   npx tsx scripts/plataforma.ts personal:migrar-variable [--mostrar-enlace]
  *   npx tsx scripts/plataforma.ts empresa:alta --demostracion --personal <correo> --rfc <RFC> --razon <texto>
  *       --cp <12345> --regimen <601> --uso <G03> --admin-nombre <texto> --admin-correo <correo>
  *       [--mostrar-enlace]
@@ -18,6 +18,11 @@
  * aplicación no crea empresas activas: 0028, empresa_nace_prospecto). Las reales
  * se dan de alta en Operación: prospecto, expediente, riesgo, lista y activación
  * que decide otra persona.
+ *
+ * personal:migrar-variable invita a los correos de OPERADORES_PLATAFORMA como la
+ * primera Administración del personal. Corre con DATABASE_URL_UNPOOLED: desde la
+ * aplicación nadie sin usuario da roles (0028, platform_staff_roles_revisar). El
+ * alta queda en la bitácora con quién corrió el comando.
  *
  * personal:rol da o quita un rol del personal cuando nadie más administra al
  * personal (nadie se da un rol a sí mismo por pantalla). Corre con
@@ -37,11 +42,11 @@ import {
   contextoDePersonal,
   invitarAdministrador,
   leerCorreosDeVariable,
-  migrarPersonalDeVariable,
   type InvitacionDeAlta,
 } from "../src/server/plataforma/servicio";
 import { aceptarSuscripcion } from "../src/server/precio/servicio";
 import { darDeAltaComoDuena } from "./empresa-por-la-duena";
+import { invitarPersonalComoDuena } from "./personal-por-la-duena";
 
 /** Banderas de cada orden: las que llevan valor y las de sí o no. */
 const BANDERAS: Readonly<Record<string, { conValor: readonly string[]; sinValor: readonly string[] }>> = {
@@ -65,7 +70,7 @@ async function principal(argv: string[]): Promise<void> {
       console.log("OPERADORES_PLATAFORMA no trae correos. No hay nada que migrar.");
       return;
     }
-    for (const fila of await migrarPersonalDeVariable(correos)) {
+    for (const fila of await invitarPersonalComoDuena(urlDirecta(), correos)) {
       console.log(`${fila.correo}: ${fila.resultado === "invitada" ? "invitada" : "ya era personal"}`);
       if (fila.invitacion) informarEntrega(fila.invitacion, Boolean(opciones["mostrar-enlace"]));
     }

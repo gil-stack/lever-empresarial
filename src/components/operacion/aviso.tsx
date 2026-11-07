@@ -105,14 +105,15 @@ const MENSAJES: Record<string, string> = {
   suspension_pendiente: "Ya hay una solicitud de suspensión o reactivación pendiente para esta empresa.",
   suspension_no_aplica: "La empresa no está activa: no hay nada que suspender.",
   reactivacion_no_aplica: "La empresa no está suspendida.",
-  reactivacion_con_coincidencia_lpb: "La suspensión vino de la Lista de Personas Bloqueadas: primero Cumplimiento debe dictaminar «falso positivo».",
+  // Originación y Aprobación también ven estos dos: no nombran la lista (55ª).
+  reactivacion_con_coincidencia_lpb: "Cumplimiento tiene un caso abierto de esta empresa: no se puede reactivar hasta que lo resuelva.",
   misma_persona_en_suspension: "Quien pidió la suspensión o la reactivación no puede decidirla.",
   suspension_transicion_invalida: "Esa solicitud ya se decidió.",
   sin_rol_para_suspender: "Pedir una suspensión es de Originación o Cumplimiento.",
   sin_rol_para_aprobar: "Solo Aprobación decide.",
   activacion_sin_expediente_aprobado: "La base no deja activar: falta un expediente aprobado en su versión vigente.",
   activacion_con_documento_vencido: "La base no deja activar: hay un documento vencido en el expediente.",
-  activacion_con_coincidencia_lpb: "La base no deja activar: hay una coincidencia con la Lista de Personas Bloqueadas sin resolver.",
+  activacion_con_coincidencia_lpb: "Cumplimiento tiene un caso abierto de esta empresa: no se puede activar hasta que lo resuelva.",
   activacion_sin_riesgo_vigente: "La base no deja activar: falta un grado de riesgo vigente.",
   activacion_sin_estructura_corporativa: "La base no deja activar: falta desglosar la estructura accionaria hasta personas físicas.",
   sin_rol_para_solicitar_activacion: "Pedir la activación es de Originación.",
@@ -127,7 +128,9 @@ const MENSAJES: Record<string, string> = {
   sin_rol_de_administracion: "Solo Administración de la plataforma hace esto.",
   personal_propio: "Nadie cambia su propio registro del personal. Pídeselo a otra persona de Administración.",
   personal_no_se_reescribe: "El registro del personal no cambia de persona, operador ni fecha de alta.",
-  expediente_accionista_sin_curp: "Cada socio persona física lleva su CURP: con ella se suma lo que tiene por varios caminos.",
+  expediente_accionista_sin_curp: "Cada socio persona física mexicana lleva su CURP: con ella se suma lo que tiene por varios caminos.",
+  expediente_accionista_sin_identificacion:
+    "Cada socio extranjero sin CURP lleva el número de su pasaporte o identificación oficial y su fecha de nacimiento: con ellos se suma lo que tiene por varios caminos.",
   expediente_accionista_sin_rfc: "Cada socio persona moral lleva su RFC.",
   expediente_estructura_muy_profunda: "La cadena de socios pasa de 10 capas: el cálculo de propietarios reales no llega al final. Revísala con Cumplimiento.",
 };

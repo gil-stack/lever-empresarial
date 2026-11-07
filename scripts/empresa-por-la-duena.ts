@@ -40,10 +40,12 @@ export async function darDeAltaComoDuena(
       [id, validada.valor.rfc, validada.valor.razonSocial, validada.valor.codigoPostal, validada.valor.regimen,
         validada.valor.usoCfdi, personal.personal.operadorId, opciones.demostracion, personal.persona.id],
     );
+    // Quién corrió el comando lo dice la base (session_user), no quien lo pide.
     await cliente.query(
       `insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, origen, cambio)
-       values ($1, $2, 'personal', $3, 'sofipo', 'alta_empresa', 'companies', $2, 'comando', $4)`,
-      [personal.personal.operadorId, id, personal.persona.id, JSON.stringify({ demostracion: opciones.demostracion })],
+       values ($1, $2, 'personal', $3, 'sofipo', 'alta_empresa', 'companies', $2, 'comando',
+         jsonb_build_object('demostracion', $4::boolean, 'ejecutado_por', session_user))`,
+      [personal.personal.operadorId, id, personal.persona.id, opciones.demostracion],
     );
     await cliente.query("commit");
     return mapearEmpresa(insertada.rows[0]);

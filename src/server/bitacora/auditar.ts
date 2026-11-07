@@ -11,7 +11,7 @@ import { contieneMaterialProhibido } from "./material";
  * rechaza: la defensa es la forma fija del evento, no un recorrido de patrones.
  */
 export const CATALOGO = {
-  alta_empresa: { entidad: "companies", cambio: ["demostracion"] },
+  alta_empresa: { entidad: "companies", cambio: ["demostracion", "ejecutado_por"] },
   alta_centro_costo: { entidad: "cost_centers", cambio: ["presupuesto_centavos", "es_tesoreria"] },
   editar_area: {
     entidad: "cost_centers",
@@ -113,7 +113,7 @@ export const CATALOGO = {
   emitir_invitacion: { entidad: "invitations", cambio: ["roles", "expira_en"] },
   revocar_invitacion: { entidad: "invitations", cambio: [] },
   aceptar_invitacion: { entidad: "invitations", cambio: [] },
-  alta_personal: { entidad: "platform_staff", cambio: ["rol"] },
+  alta_personal: { entidad: "platform_staff", cambio: ["rol", "ejecutado_por"] },
   entrada: { entidad: "sessions", cambio: [] },
   segundo_factor: { entidad: "sessions", cambio: ["metodo"] },
   salida: { entidad: "sessions", cambio: [] },

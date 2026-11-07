@@ -99,7 +99,18 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                   <input type="hidden" name="tipo" value={cliente.estado === "activa" ? "suspension" : "reactivacion"} />
                   <div className="campo">
                     <label htmlFor="motivo-suspension">Motivo</label>
-                    <textarea id="motivo-suspension" name="motivo" maxLength={500} required {...errorDelCampo(aviso, "motivo")} />
+                    <textarea
+                      id="motivo-suspension"
+                      name="motivo"
+                      maxLength={500}
+                      required
+                      aria-describedby={veLista ? "motivo-suspension-pista" : undefined}
+                      {...errorDelCampo(aviso, "motivo")}
+                    />
+                    {/* Quien escribe desde Cumplimiento: Originación y Aprobación leen este motivo (55ª). */}
+                    {veLista ? (
+                      <p id="motivo-suspension-pista" className="pista">Originación y Aprobación leen este motivo: no menciones la Lista ni el reporte.</p>
+                    ) : null}
                   </div>
                   <div className="acciones">
                     <BotonEnviar>{cliente.estado === "activa" ? "Pedir suspensión" : "Pedir reactivación"}</BotonEnviar>

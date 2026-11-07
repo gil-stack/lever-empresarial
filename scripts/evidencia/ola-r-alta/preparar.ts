@@ -14,11 +14,15 @@
 //           dueña de la base, una calificación de riesgo de hace siete meses: la revisión
 //           periódica vence y la bandeja de Cumplimiento la muestra (flujo 4). La base solo deja
 //           a Cumplimiento calificar con la fecha de hoy; por eso esta fila la escribe la dueña.
+//   ronda3  Corre al empezar las regresiones de la tercera revisión. Brisa Regresión queda en
+//           alta con expediente aprobado, riesgo vigente y la activación pedida (Celia la mete
+//           en la lista por pantalla y Ana intenta aprobarla); Cedro Regresión queda con su
+//           versión enviada, por dictaminar (la pista bajo «Motivo» del dictamen).
 //
 //   ESTADO=/fuera/del/repo/ola-r-alta.json \
 //   AUTENTICACION_LLAVE_TOTP=… BLOB_READ_WRITE_TOKEN=… VERCEL_BLOB_API_URL=… \
 //   DUENO_URL=postgres://postgres@127.0.0.1:5551/postgres \
-//   ./node_modules/.bin/tsx scripts/evidencia/ola-r-alta/preparar.ts base|lumbre
+//   ./node_modules/.bin/tsx scripts/evidencia/ola-r-alta/preparar.ts base|lumbre|ronda3
 //
 // ESTADO guarda semillas TOTP y sesiones: tiene que vivir fuera del repositorio. Nada de eso
 // se imprime. Solo acepta un Postgres en 127.0.0.1 o localhost.
@@ -33,6 +37,7 @@ import type { ContextoDePersonal } from "../../../src/nucleo/contexto";
 import { cerrarConexion } from "../../../src/nucleo/db";
 import { cifrarSemilla } from "../../../src/server/autenticacion/cifrado";
 import { llaveTotpDesdeEntorno } from "../../../src/server/autenticacion/entorno";
+import { solicitarActivacion } from "../../../src/server/operacion/activaciones";
 import { registrarProspecto } from "../../../src/server/operacion/clientes";
 import { dictaminarVersion, enviarVersion } from "../../../src/server/operacion/expediente";
 import { darDeAltaPersona, nombrarCentro } from "../../../src/server/personas/servicio";
@@ -41,7 +46,7 @@ import { almacenVercel } from "../../../src/server/proveedores/constancia";
 import { leerSesion } from "../../../src/server/session/servicio";
 import { resolverContexto } from "../../../src/server/tenencia/resolver";
 import { aplicarArchivo, consultarJson, ejecutar, urlDeAplicacion } from "../../../tests/aislamiento/postgres";
-import { armarBorrador, SESION_SOFIPO } from "../../../tests/operacion/apoyo-alta-regulada";
+import { armarBorrador, expedienteEnRegla, SESION_SOFIPO } from "../../../tests/operacion/apoyo-alta-regulada";
 
 const BASE = "ola_r_alta";
 const TALLER = "33333333-3333-4333-8333-333333333333";
@@ -227,7 +232,24 @@ async function faseLumbre(): Promise<void> {
   console.log(`Distribuidora Lumbre lista: expediente aprobado y revisión de riesgo vencida el ${calificacion.revisarAntesDe}.`);
 }
 
-(fase === "lumbre" ? faseLumbre() : faseBase()).catch(async (error: unknown) => {
+async function faseRonda3(): Promise<void> {
+  const estado = JSON.parse(readFileSync(rutaEstado, "utf8")) as Estado;
+  process.env.DATABASE_URL = estado.DATABASE_URL;
+  const omar = (await contextoDePersonal("omar@lever.test")) as ContextoDePersonal;
+  const celia = (await contextoDePersonal("celia@lever.test")) as ContextoDePersonal;
+  const brisa = { razonSocial: "Brisa Regresión, S.A. de C.V.", rfc: "BRR180303CD6" };
+  const brisaId = await registrarProspecto(omar, { ...brisa, codigoPostal: "64000", regimen: "601", usoCfdi: "G03" });
+  await expedienteEnRegla(omar, celia, { companyId: brisaId, ...brisa });
+  await solicitarActivacion(omar, brisaId);
+  const cedro = { razonSocial: "Cedro Regresión, S.A. de C.V.", rfc: "CER170404CD5" };
+  const cedroId = await registrarProspecto(omar, { ...cedro, codigoPostal: "64000", regimen: "601", usoCfdi: "G03" });
+  const { versionId } = await armarBorrador(omar, { companyId: cedroId, ...cedro, almacen: almacenVercel() });
+  await enviarVersion(omar, versionId);
+  await cerrarConexion();
+  console.log("Brisa Regresión en alta con la activación pedida; Cedro Regresión con su versión por dictaminar.");
+}
+
+(fase === "lumbre" ? faseLumbre() : fase === "ronda3" ? faseRonda3() : faseBase()).catch(async (error: unknown) => {
   await cerrarConexion();
   console.error(error);
   process.exitCode = 1;

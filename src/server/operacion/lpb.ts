@@ -73,11 +73,15 @@ export async function cargarListaBloqueadas(
   const id = entrada.formId;
   const ahora = new Date();
   await unaVezPorFormulario(() => conContexto(basePlataforma(ctx), async (consulta) => {
-    const previa = await consulta.query("select id from lpb_cargas where id = $1 or sha256 = $2", [id, sha256]);
-    if (previa.rows.length > 0) {
-      if ((previa.rows[0] as { id: string }).id === id) return;
-      throw new ErrorDeDominio("lpb_ya_cargada");
+    const previa = await consulta.query("select id, sha256 from lpb_cargas where id = $1 or sha256 = $2", [id, sha256]);
+    const filas = previa.rows as Array<{ id: string; sha256: string }>;
+    // El segundo clic del mismo formulario con el mismo archivo ya quedó; con otro archivo no se da por hecho.
+    const mismoFormulario = filas.find((fila) => fila.id === id);
+    if (mismoFormulario) {
+      if (mismoFormulario.sha256 === sha256) return;
+      throw new ErrorDeDominio("formulario_invalido");
     }
+    if (filas.length > 0) throw new ErrorDeDominio("lpb_ya_cargada");
     await consulta.query(
       `insert into lpb_cargas (id, operator_id, nombre_archivo, sha256, filas, cargada_por, cargada_en)
        values ($1, $2, $3, $4, $5, $6, $7)`,

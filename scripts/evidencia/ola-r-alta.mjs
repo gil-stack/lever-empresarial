@@ -1001,6 +1001,180 @@ async function regresiones() {
   exigir(new URL(celiaLista.p.url()).searchParams.get("aviso") === null && cargas() === antesCargas, "F1. clic en «Cargar y cotejar»: no sale la petición y hay 0 cargas nuevas");
   await foto(celiaLista.p, "f1-lista-pasa-del-tope");
   await celiaLista.nav.close();
+
+  await terceraRonda(rutaEbano);
+}
+
+// ---------- Tercera revisión del PR (corre al final de las regresiones) ----------
+const PISTA = "Originación y Aprobación leen este motivo: no menciones la Lista ni el reporte.";
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const fraseFecha = (iso) => {
+  const [anio, mes, dia] = iso.split("-").map(Number);
+  return `${dia} de ${MESES[mes - 1]} de ${anio}`;
+};
+const enVista = (localizador) => localizador.evaluate((nodo) => nodo.scrollIntoView({ block: "center" }));
+
+async function terceraRonda(rutaEbano) {
+  console.log("\n— Tercera revisión: avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora, contrato y 69-B por operador");
+  execFileSync("./node_modules/.bin/tsx", ["scripts/evidencia/ola-r-alta/preparar.ts", "ronda3"], { stdio: "inherit", env: process.env });
+  renovarSesiones();
+  const brisa = companyIdDe("BRR180303CD6");
+  const cedro = companyIdDe("CER170404CD5");
+
+  // S5: Celia mete a Brisa (en alta, activación pedida) en una carga nueva de la lista, por pantalla.
+  const celia = await abrir("celia");
+  await ir(celia.p, "/operacion/lpb");
+  await celia.p.locator("#archivo").setInputFiles({
+    name: "lpb-uif-2026-11-08.csv", mimeType: "text/csv", buffer: Buffer.from(`${LPB_2}\nBrisa Regresión SA de CV,BRR180303CD6,,moral,2026-11-08`),
+  });
+  await enviar(celia.p, celia.p.getByRole("button", { name: "Cargar y cotejar" }), "lpb_cargada");
+  exigir(cuenta(`lpb_coincidencias where company_id = '${brisa}' and estado = 'pendiente' and sujeto_tipo = 'empresa'`) === 1, "S5. la carga deja un caso abierto de Brisa Regresión, que sigue en alta");
+  // S11: la pista bajo «Motivo» la ve Cumplimiento en el dictamen (Cedro) y en la solicitud de reactivación (Ébano).
+  await ir(celia.p, `/operacion/clientes/${cedro}/expediente`);
+  const pistaDictamen = celia.p.locator("#dictamen-motivo-pista");
+  exigir(
+    (await pistaDictamen.innerText()) === PISTA && (await celia.p.locator("#dictamen-motivo").getAttribute("aria-describedby")) === "dictamen-motivo-pista",
+    "S11. bajo «Motivo» del dictamen, Cumplimiento lee la pista, ligada al campo",
+  );
+  await enVista(pistaDictamen);
+  await foto(celia.p, "s11-pista-dictamen-cumplimiento", false);
+  await ir(celia.p, `/operacion/clientes/${ctxEbano.id}`);
+  const pistaReactivacion = celia.p.locator("#motivo-suspension-pista");
+  exigir((await pistaReactivacion.innerText()) === PISTA, "S11. bajo «Motivo» de la reactivación, Cumplimiento lee la pista");
+  await enVista(pistaReactivacion);
+  await foto(celia.p, "s11-pista-reactivacion-cumplimiento", false);
+  await celia.nav.close();
+
+  // S5: Aprobación intenta activar a Brisa: la base no deja y el aviso no nombra la lista.
+  const ana = await abrir("ana");
+  const codigoBrisa = await aprobarDecision(ana.p, "Brisa Regresión");
+  const avisoAna = await aviso(ana.p);
+  exigir(
+    codigoBrisa === "activacion_con_coincidencia_lpb"
+      && avisoAna.includes("Cumplimiento tiene un caso abierto de esta empresa: no se puede activar hasta que lo resuelva.")
+      && !/lista|bloquead/i.test(avisoAna),
+    "S5. Aprobación ve «Cumplimiento tiene un caso abierto…», sin «Lista» ni «bloqueada»",
+    avisoAna,
+  );
+  exigir(sql(`select estado from companies where id = '${brisa}'`) === "en_alta", "S5. Brisa Regresión sigue en alta");
+  await foto(ana.p, "s5-aprobacion-aviso-sin-la-lista", false);
+  await ana.nav.close();
+
+  // S5 y S11: Originación pide reactivar a Ébano: aviso sin la lista; y no ve la pista de Cumplimiento.
+  const omar = await abrir("omar");
+  await ir(omar.p, `/operacion/clientes/${ctxEbano.id}`);
+  exigir((await omar.p.locator("#motivo-suspension-pista").count()) === 0, "S11. Originación no ve la pista de Cumplimiento");
+  await omar.p.locator("#motivo-suspension").fill("La empresa pidió revisar su caso.");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Pedir reactivación" }), "reactivacion_con_coincidencia_lpb");
+  const avisoOmar = await aviso(omar.p);
+  exigir(
+    avisoOmar.includes("Cumplimiento tiene un caso abierto de esta empresa: no se puede reactivar hasta que lo resuelva.") && !/lista|bloquead/i.test(avisoOmar),
+    "S5. Originación ve «Cumplimiento tiene un caso abierto…», sin «Lista» ni «bloqueada»",
+    avisoOmar,
+  );
+  exigir(cuenta(`company_suspensions where company_id = '${ctxEbano.id}' and tipo = 'reactivacion' and estado = 'pendiente'`) === 0, "S5. no queda solicitud de reactivación");
+  await foto(omar.p, "s5-originacion-aviso-sin-la-lista", false);
+
+  // N2: socio extranjero sin CURP en el borrador de Ébano (abierto en F4).
+  await ir(omar.p, rutaEbano);
+  await omar.p.locator("#acc-nacionalidad").selectOption("extranjera");
+  exigir(
+    (await omar.p.locator("#acc-curp").count()) === 0 && await omar.p.locator("#acc-pais").isVisible()
+      && await omar.p.locator("#acc-documento").isVisible() && await omar.p.locator("#acc-nacimiento").isVisible(),
+    "N2. con «Extranjera» el formulario pide país, pasaporte o identificación y fecha de nacimiento, y no CURP",
+  );
+  const socio = async (documento) => {
+    await omar.p.locator("#acc-nacionalidad").selectOption("extranjera");
+    await omar.p.locator("#acc-pais").selectOption("US");
+    await campo(omar.p, "#acc-nombre", "John Smith Taylor");
+    if (documento) await campo(omar.p, "#acc-documento", documento);
+    await omar.p.locator("#acc-nacimiento").fill("1980-05-01");
+    await campo(omar.p, "#acc-capital", "10");
+    await campo(omar.p, "#acc-votos", "10");
+  };
+  await socio(null);
+  await enVista(omar.p.locator("#acc-pais"));
+  await foto(omar.p, "n2-formulario-socio-extranjero", false);
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar accionista" }), "expediente_accionista_agregado");
+  await enviar(omar.p, omar.p.getByRole("button", { name: /^Enviar versión/ }), "expediente_accionista_sin_identificacion");
+  exigir((await aviso(omar.p)).includes("pasaporte o identificación oficial y su fecha de nacimiento"), "N2. sin documento no se envía, con su aviso en pantalla", await aviso(omar.p));
+  await foto(omar.p, "n2-envio-sin-identificacion", false);
+  await enviar(omar.p, omar.p.locator("li", { hasText: "John Smith Taylor" }).getByRole("button", { name: "Quitar" }), "expediente_retirado");
+  await socio("x12-345 678");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar accionista" }), "expediente_accionista_agregado");
+  const fila = omar.p.locator("li", { hasText: "John Smith Taylor" });
+  exigir(
+    (await fila.innerText()).includes("Estados Unidos · identificación X12345678 · nació el")
+      && sql(`select pais || ' ' || documento_extranjero || ' ' || fecha_nacimiento from kyb_accionistas a join kyb_versiones v on v.id = a.version_id
+              where v.company_id = '${ctxEbano.id}' and v.estado = 'borrador' and a.retirado_en is null and a.curp is null`) === "US X12345678 1980-05-01",
+    "N2. el socio extranjero queda en el borrador con su país, su documento normalizado y su fecha de nacimiento",
+  );
+  await enVista(fila);
+  await foto(omar.p, "n2-socio-extranjero-en-el-borrador", false);
+  await omar.nav.close();
+
+  // S6: Administración no lee en la bitácora los eventos de la lista de una empresa; la carga sí. Auditoría los lee.
+  const ofelia = await abrir("ofelia");
+  await ir(ofelia.p, "/operacion/bitacora");
+  const deOfelia = await ofelia.p.locator("main").innerText();
+  exigir(
+    !deOfelia.includes("El sistema detectó una coincidencia") && !deOfelia.includes("Resolvió una coincidencia")
+      && !deOfelia.includes("El sistema suspendió la empresa por la lista") && deOfelia.includes("Cargó la Lista de Personas Bloqueadas"),
+    "S6. la bitácora de Administración no trae coincidencias, resoluciones ni suspensiones por la lista; la carga, sí",
+  );
+  await foto(ofelia.p, "s6-bitacora-administracion-sin-eventos-de-la-lista", false);
+  await ofelia.nav.close();
+  const aurelio = await abrir("aurelio");
+  await ir(aurelio.p, "/operacion/bitacora");
+  exigir((await aurelio.p.locator("main").innerText()).includes("El sistema detectó una coincidencia"), "S6. Auditoría sí lee las coincidencias detectadas");
+  await foto(aurelio.p, "s6-bitacora-auditoria-con-eventos-de-la-lista", false);
+  await aurelio.nav.close();
+
+  // S7: «Agregar contrato» no envía un PDF de 4.6 MB; el aviso queda ligado al campo.
+  const gil = await abrir("gil");
+  const proveedor = "44444444-4444-4444-8444-444444444441";
+  await ir(gil.p, `/c/${TALLER}/consola/proveedores?vista=proveedores&proveedor=${proveedor}`);
+  const dialogo = gil.p.getByRole("dialog");
+  await dialogo.getByText("Agregar contrato", { exact: true }).click();
+  let posts = 0;
+  gil.p.on("request", (peticion) => {
+    if (peticion.method() === "POST") posts += 1;
+  });
+  const documentos = () => cuenta(`documents where company_id = '${TALLER}'`);
+  const antesDocumentos = documentos();
+  const contrato = gil.p.locator(`#contrato-nuevo-${proveedor}`);
+  await contrato.setInputFiles({ name: "contrato-firmado.pdf", mimeType: "application/pdf", buffer: Buffer.concat([PDF("contrato"), Buffer.alloc(4_600_000)]) });
+  await dialogo.getByRole("button", { name: "Guardar el contrato" }).click();
+  await gil.p.waitForTimeout(1500);
+  exigir(
+    (await gil.p.locator(`#contrato-nuevo-${proveedor}-error`).innerText()) === "El contrato debe ser un PDF de hasta 4 MB."
+      && (await contrato.getAttribute("aria-describedby")) === `contrato-nuevo-${proveedor}-error` && posts === 0 && documentos() === antesDocumentos,
+    "S7. clic en «Guardar el contrato» con 4.6 MB: aviso ligado al campo, 0 envíos y 0 documentos nuevos",
+  );
+  await enVista(contrato);
+  await foto(gil.p, "s7-contrato-pasa-del-tope", false);
+
+  // H2: otro operador carga una copia del 69-B más reciente con un RFC en definitivo (la siembra la dueña:
+  // sin red no hay SAT). El portal de Taller consulta la copia de su operador.
+  const otro = "e0000000-0000-4000-8000-0000000000e1";
+  const copiaAjena = "e0000000-0000-4000-8000-0000000000e2";
+  sql(`begin;
+    insert into operators (id, nombre) values ('${otro}', 'Operador Ajeno');
+    insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ('${copiaAjena}', '${otro}', current_date, now());
+    insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador)
+      values ('${otro}', 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', '${copiaAjena}');
+    insert into lista_69b_rows (snapshot_id, rfc, situacion) values ('${copiaAjena}', 'CSR010101AB1', 'Definitivo');
+    commit;`);
+  const propia = sql(`select fecha_archivo::text from lista_69b_snapshots where operator_id <> '${otro}' order by cargado_en desc, id desc limit 1`);
+  await ir(gil.p, `/c/${TALLER}/consola/lista-69b?rfc=CSR010101AB1`);
+  const deGil = await gil.p.locator("main").innerText();
+  exigir(
+    deGil.includes("No aparece en la lista 69-B.") && deGil.includes(fraseFecha(propia)),
+    "H2. el portal consulta la copia de su operador: el RFC en definitivo de otro operador no aparece y la fecha es la de su copia",
+    `${fraseFecha(propia)}`,
+  );
+  await foto(gil.p, "h2-portal-consulta-la-copia-de-su-operador", false);
+  await gil.nav.close();
 }
 
 // ---------- Orden ----------

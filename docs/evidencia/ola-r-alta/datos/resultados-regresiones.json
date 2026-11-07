@@ -77,6 +77,90 @@
     },
     {
       "ok": true,
+      "texto": "aviso «lpb_cargada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "S5. la carga deja un caso abierto de Brisa Regresión, que sigue en alta"
+    },
+    {
+      "ok": true,
+      "texto": "S11. bajo «Motivo» del dictamen, Cumplimiento lee la pista, ligada al campo"
+    },
+    {
+      "ok": true,
+      "texto": "S11. bajo «Motivo» de la reactivación, Cumplimiento lee la pista"
+    },
+    {
+      "ok": true,
+      "texto": "S5. Aprobación ve «Cumplimiento tiene un caso abierto…», sin «Lista» ni «bloqueada»"
+    },
+    {
+      "ok": true,
+      "texto": "S5. Brisa Regresión sigue en alta"
+    },
+    {
+      "ok": true,
+      "texto": "S11. Originación no ve la pista de Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «reactivacion_con_coincidencia_lpb» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "S5. Originación ve «Cumplimiento tiene un caso abierto…», sin «Lista» ni «bloqueada»"
+    },
+    {
+      "ok": true,
+      "texto": "S5. no queda solicitud de reactivación"
+    },
+    {
+      "ok": true,
+      "texto": "N2. con «Extranjera» el formulario pide país, pasaporte o identificación y fecha de nacimiento, y no CURP"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_sin_identificacion» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N2. sin documento no se envía, con su aviso en pantalla"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_retirado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N2. el socio extranjero queda en el borrador con su país, su documento normalizado y su fecha de nacimiento"
+    },
+    {
+      "ok": true,
+      "texto": "S6. la bitácora de Administración no trae coincidencias, resoluciones ni suspensiones por la lista; la carga, sí"
+    },
+    {
+      "ok": true,
+      "texto": "S6. Auditoría sí lee las coincidencias detectadas"
+    },
+    {
+      "ok": true,
+      "texto": "S7. clic en «Guardar el contrato» con 4.6 MB: aviso ligado al campo, 0 envíos y 0 documentos nuevos"
+    },
+    {
+      "ok": true,
+      "texto": "H2. el portal consulta la copia de su operador: el RFC en definitivo de otro operador no aparece y la fecha es la de su copia"
+    },
+    {
+      "ok": true,
       "texto": "consola del navegador limpia en las regresiones"
     }
   ]

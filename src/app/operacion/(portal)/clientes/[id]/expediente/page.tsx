@@ -180,7 +180,8 @@ export default async function ExpedienteCliente({
                 </div>
                 <div className="campo">
                   <label htmlFor="dictamen-motivo">Motivo (obligatorio si se observa o rechaza)</label>
-                  <textarea id="dictamen-motivo" name="motivo" maxLength={1000} {...error("dictamen-titulo", "motivo")} />
+                  <textarea id="dictamen-motivo" name="motivo" maxLength={1000} aria-describedby="dictamen-motivo-pista" {...error("dictamen-titulo", "motivo")} />
+                  <p id="dictamen-motivo-pista" className="pista">Originación y Aprobación leen este motivo: no menciones la Lista ni el reporte.</p>
                 </div>
                 <div className="acciones">
                   <BotonEnviar>Registrar dictamen</BotonEnviar>

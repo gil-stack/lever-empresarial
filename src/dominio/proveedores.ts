@@ -17,6 +17,7 @@ export const PESO_MAXIMO_CONSTANCIA = TOPE_ARCHIVO_BYTES;
 /** Dos archivos en un envío comparten el tope: lo revisan el navegador y la acción. */
 export const CONSTANCIA_Y_CONTRATO = `La constancia y el contrato juntos no pueden superar ${TOPE_ARCHIVO_TEXTO}.`;
 export const XML_Y_PDF = `El XML y el PDF juntos no pueden superar ${TOPE_ARCHIVO_TEXTO}.`;
+export const CONTRATO_DEMASIADO_GRANDE = `El contrato debe ser un PDF de hasta ${TOPE_ARCHIVO_TEXTO}.`;
 const TOPE_RAZON = 254;
 const CONTROL = /[\u0000-\u001F\u007F]/;
 

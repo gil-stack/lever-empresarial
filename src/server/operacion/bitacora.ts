@@ -7,7 +7,9 @@ import { exigirEnOperacion, puedeEnOperacion } from "./permisos";
 /**
  * Proyección de solo lectura: no incluye cambio JSON ni material de autenticación. El motivo de
  * los eventos de la lista y del dictamen lo escribe Cumplimiento y puede traer nombres y el
- * porqué: solo lo leen Cumplimiento y Auditoría. Administración ve que pasó, no por qué.
+ * porqué: solo lo leen Cumplimiento y Auditoría. Administración ve que pasó, no por qué. Los
+ * eventos de la lista de una empresa ni siquiera le llegan: los filtra la base (0028,
+ * audit_log_sofipo_lectura).
  */
 export async function leerBitacora(ctx: ContextoDePersonal, companyId?: string): Promise<EventoBitacora[]> {
   exigirEnOperacion(ctx, "plataforma.bitacora.ver");

@@ -4,3 +4,4 @@ export * from "./validar";
 export * from "./expediente";
 export * from "./lpb";
 export * from "./riesgo";
+export * from "./paises";

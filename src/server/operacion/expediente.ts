@@ -7,7 +7,10 @@ import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import {
   CARGOS,
   curpValida,
+  documentoExtranjeroNormalizado,
   hoyEnMexico,
+  nombreDePais,
+  paisExtranjeroValido,
   PEPS,
   pesosACentavos,
   porcentajeAPuntosBase,
@@ -80,6 +83,9 @@ export type Accionista = {
   rfc: string | null;
   curp: string | null;
   nacionalidad: string | null;
+  pais: string | null;
+  documentoExtranjero: string | null;
+  fechaNacimiento: string | null;
   capitalBp: number;
   votosBp: number;
   controlOtrosMedios: boolean;
@@ -254,8 +260,8 @@ async function leerVersion(consulta: Consulta, versionId: string, hoy: string): 
        from kyb_accionistas h join arbol on h.version_id = $1 and h.retirado_en is null and h.padre_clave = arbol.clave
        where arbol.capa < 10
      )
-     select id, clave, padre_clave, tipo_persona, nombre, rfc, curp, nacionalidad, capital_bp, votos_bp,
-            control_otros_medios, pep, capa
+     select id, clave, padre_clave, tipo_persona, nombre, rfc, curp, nacionalidad, pais, documento_extranjero,
+            fecha_nacimiento::text as fecha_nacimiento, capital_bp, votos_bp, control_otros_medios, pep, capa
      from arbol order by orden`,
     [versionId],
   );
@@ -334,6 +340,9 @@ async function leerVersion(consulta: Consulta, versionId: string, hoy: string): 
       rfc: texto(fila.rfc),
       curp: texto(fila.curp),
       nacionalidad: texto(fila.nacionalidad),
+      pais: texto(fila.pais),
+      documentoExtranjero: texto(fila.documento_extranjero),
+      fechaNacimiento: texto(fila.fecha_nacimiento),
       capitalBp: Number(fila.capital_bp),
       votosBp: Number(fila.votos_bp),
       controlOtrosMedios: fila.control_otros_medios === true,
@@ -503,7 +512,8 @@ export async function agregarAccionista(
   ctx: ContextoDePersonal,
   entrada: {
     versionId: unknown; formId: unknown; padreClave: unknown; tipoPersona: unknown; nombre: unknown; rfc: unknown;
-    curp: unknown; nacionalidad: unknown; capital: unknown; votos: unknown; controlOtrosMedios: boolean; pep: unknown;
+    curp: unknown; pais: unknown; documentoExtranjero: unknown; fechaNacimiento: unknown; capital: unknown; votos: unknown;
+    controlOtrosMedios: boolean; pep: unknown;
   },
 ): Promise<void> {
   exigirEnOperacion(ctx, "plataforma.expediente.capturar");
@@ -520,8 +530,18 @@ export async function agregarAccionista(
   if (rfc === undefined) throw new ErrorDeDominio("dato_invalido_rfc");
   const curp = tipo === "fisica" ? opcional(entrada.curp, (t) => (curpValida(t.toUpperCase()) ? t.toUpperCase() : null)) : null;
   if (curp === undefined) throw new ErrorDeDominio("dato_invalido_curp");
-  const nacionalidad = opcional(entrada.nacionalidad, (t) => textoOperativo(t, 80));
-  if (nacionalidad === undefined) throw new ErrorDeDominio("dato_invalido_nacionalidad");
+  // Sin país es mexicana (se identifica con su CURP). La física extranjera sin CURP
+  // trae el número de su pasaporte o identificación oficial y su fecha de nacimiento.
+  const pais = opcional(entrada.pais, (t) => (paisExtranjeroValido(t.toUpperCase()) ? t.toUpperCase() : null));
+  if (pais === undefined) throw new ErrorDeDominio("dato_invalido_pais");
+  const extranjera = tipo === "fisica" && pais !== null;
+  const documentoExtranjero = extranjera ? opcional(entrada.documentoExtranjero, documentoExtranjeroNormalizado) : null;
+  if (documentoExtranjero === undefined) throw new ErrorDeDominio("dato_invalido_documentoExtranjero");
+  const fechaNacimiento = extranjera
+    ? opcional(entrada.fechaNacimiento, (t) => (/^\d{4}-\d{2}-\d{2}$/.test(t) && t >= "1900-01-01" && t <= hoyEnMexico(new Date()) ? t : null))
+    : null;
+  if (fechaNacimiento === undefined) throw new ErrorDeDominio("dato_invalido_fechaNacimiento");
+  const nacionalidad = pais ? nombreDePais(pais) : "Mexicana";
   const capital = porcentajeAPuntosBase(entrada.capital);
   if (capital === null) throw new ErrorDeDominio("dato_invalido_capital");
   const votos = porcentajeAPuntosBase(entrada.votos);
@@ -537,10 +557,11 @@ export async function agregarAccionista(
     const insertado = await consulta.query(
       `insert into kyb_accionistas (
          id, version_id, company_id, operator_id, clave, padre_clave, tipo_persona, nombre, rfc, curp, nacionalidad,
-         capital_bp, votos_bp, control_otros_medios, pep, creado_por, creado_en
-       ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) on conflict (id) do nothing`,
+         pais, documento_extranjero, fecha_nacimiento, capital_bp, votos_bp, control_otros_medios, pep, creado_por, creado_en
+       ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+       on conflict (id) do nothing`,
       [id, version.id, version.companyId, ctx.personal.operadorId, randomUUID(), padre, tipo, nombre, rfc, curp,
-        nacionalidad, capital, votos, control, pep, ctx.persona.id, ahora],
+        nacionalidad, pais, documentoExtranjero, fechaNacimiento, capital, votos, control, pep, ctx.persona.id, ahora],
     );
     if (insertado.rowCount !== 1) return mismoBorrador(consulta, "kyb_accionistas", id, version.id);
     await auditarOperacion(consulta, ctx, {
@@ -584,8 +605,9 @@ export async function retirarDelBorrador(
 /**
  * Sube un documento del expediente. El archivo va a Blob privado antes de la
  * transacción, con su SHA-256; la fila y el evento quedan juntos. Lever nunca
- * borra un archivo del expediente (61ª): si la transacción falla, el archivo se
- * queda sin referencia.
+ * borra un archivo del expediente (61ª). Solo se borra el que no llegó a serlo:
+ * si la fila no entró (otro envío del mismo formulario ganó) o la transacción
+ * falló, ese archivo no tiene referencia y no se conserva.
  */
 export async function cargarDocumento(
   ctx: ContextoDePersonal,
@@ -642,24 +664,33 @@ export async function cargarDocumento(
     bytes: archivo.bytes,
     tipo: contenido.tipo,
   });
-  await conBorrador(ctx, version.id, async (consulta, enBorrador) => {
-    const insertado = await consulta.query(
-      `insert into kyb_documentos (
-         id, operator_id, company_id, tipo, representante_clave, nombre_archivo, tipo_contenido, tamano_bytes, sha256,
-         clave_blob, emitido_el, vigente_hasta, detalle, cargado_por, cargado_en
-       ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) on conflict (id) do nothing`,
-      [id, ctx.personal.operadorId, enBorrador.companyId, tipo, representante, nombre, contenido.tipo, archivo.bytes.byteLength,
-        sha256, guardado.clave, emitidoEl, vigenteHasta, detalle, ctx.persona.id, ahora],
-    );
-    if (insertado.rowCount !== 1) return documentoDeLaVersion(consulta, id, enBorrador.id);
-    await consulta.query(
-      "insert into kyb_version_documentos (version_id, documento_id, company_id, operator_id) values ($1, $2, $3, $4)",
-      [enBorrador.id, id, enBorrador.companyId, ctx.personal.operadorId],
-    );
-    await auditarOperacion(consulta, ctx, {
-      companyId: enBorrador.companyId, accion: "expediente_documento_cargado", identificador: id, ocurridoEn: ahora, cambio: { tipo },
+  let referenciado = false;
+  try {
+    await conBorrador(ctx, version.id, async (consulta, enBorrador) => {
+      referenciado = false;
+      const insertado = await consulta.query(
+        `insert into kyb_documentos (
+           id, operator_id, company_id, tipo, representante_clave, nombre_archivo, tipo_contenido, tamano_bytes, sha256,
+           clave_blob, emitido_el, vigente_hasta, detalle, cargado_por, cargado_en
+         ) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) on conflict (id) do nothing`,
+        [id, ctx.personal.operadorId, enBorrador.companyId, tipo, representante, nombre, contenido.tipo, archivo.bytes.byteLength,
+          sha256, guardado.clave, emitidoEl, vigenteHasta, detalle, ctx.persona.id, ahora],
+      );
+      if (insertado.rowCount !== 1) return documentoDeLaVersion(consulta, id, enBorrador.id);
+      await consulta.query(
+        "insert into kyb_version_documentos (version_id, documento_id, company_id, operator_id) values ($1, $2, $3, $4)",
+        [enBorrador.id, id, enBorrador.companyId, ctx.personal.operadorId],
+      );
+      await auditarOperacion(consulta, ctx, {
+        companyId: enBorrador.companyId, accion: "expediente_documento_cargado", identificador: id, ocurridoEn: ahora, cambio: { tipo },
+      });
+      referenciado = true;
     });
-  });
+  } catch (error) {
+    await deps.almacen.borrar(guardado.clave);
+    throw error;
+  }
+  if (!referenciado) await deps.almacen.borrar(guardado.clave);
 }
 
 /** Envía el borrador: la base exige el expediente completo, calcula a los propietarios reales y coteja la lista. */

@@ -9,12 +9,14 @@ import { aBase32, pasoDe, semillaNueva } from "../../src/server/autenticacion/to
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio";
 import { solicitarActivacion } from "../../src/server/operacion/activaciones";
 import { registrarProspecto } from "../../src/server/operacion/clientes";
+import { cargarListaBloqueadas } from "../../src/server/operacion/lpb";
 import { cambiarRolPersonal } from "../../src/server/operacion/personal";
 import { darDeAltaPersona, nombrarCentro } from "../../src/server/personas/servicio";
-import { contextoDePersonal, invitarAdministrador, migrarPersonalDeVariable } from "../../src/server/plataforma/servicio";
+import { contextoDePersonal, invitarAdministrador } from "../../src/server/plataforma/servicio";
 import { leerSesion } from "../../src/server/session/servicio";
 import { resolverContexto } from "../../src/server/tenencia/resolver";
 import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena";
+import { invitarPersonalComoDuena } from "../../scripts/personal-por-la-duena";
 import { ejecutar } from "../aislamiento/postgres";
 import { expedienteEnRegla, SESION_SOFIPO } from "../operacion/apoyo-alta-regulada";
 
@@ -58,6 +60,10 @@ export const CORREOS = {
 
 /** La empresa en alta con todo en regla que op2 aprueba en operacion.spec.ts. */
 export const FARO = { razonSocial: "Faro E2E", rfc: "FEE170505CD4" } as const;
+/** En alta con la activación pedida y un caso abierto de Cumplimiento: Aprobación no la activa. */
+export const BRISA = { razonSocial: "Brisa E2E", rfc: "BRE180303CD6" } as const;
+/** Activa y suspendida por una carga de la lista: Originación no la reactiva. */
+export const CIMA = { razonSocial: "Cima E2E", rfc: "CIE160606CD7" } as const;
 
 export async function sembrarRecorridos(owner: string): Promise<void> {
   const llave = llaveDesde(process.env.AUTENTICACION_LLAVE_TOTP);
@@ -170,7 +176,7 @@ export async function sembrarRecorridos(owner: string): Promise<void> {
   ejecutar(owner, `
     begin;
     select set_config('app.user_id', '${lauraId}', false), set_config('app.company_id', '${altamar.id}', false);
-    insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values ('${lista}', date '${desplazar(hoy, -7)}', now());
+    insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) select '${lista}', operator_id, date '${desplazar(hoy, -7)}', now() from companies where id = '${altamar.id}';
     insert into lista_69b_rows (snapshot_id, rfc, situacion) values ('${lista}', 'PAL7202161U0', 'Presunto');
     insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador)
       values ((select id from operators order by alta_en limit 1), 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', '${lista}');
@@ -201,7 +207,7 @@ export async function sembrarRecorridos(owner: string): Promise<void> {
   // ---------- Personal SOFIPO con contraseña y app autenticadora ----------
   const ids: Record<string, string> = {};
   for (const correo of [CORREOS.op1, CORREOS.op2, CORREOS.op3]) {
-    const [migrada] = await migrarPersonalDeVariable([correo]);
+    const [migrada] = await invitarPersonalComoDuena(owner, [correo]);
     if (!migrada?.invitacion) throw new Error(`${correo} no quedó invitado como personal.`);
     const { userId } = await aceptarInvitacion({ token: migrada.invitacion.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
     ids[correo] = userId;
@@ -222,6 +228,20 @@ export async function sembrarRecorridos(owner: string): Promise<void> {
   const faro = await registrarProspecto(origina, { ...FARO, codigoPostal: "64000", regimen: "601", usoCfdi: "G03" });
   await expedienteEnRegla(origina, await comoPersonal(CORREOS.op3), { companyId: faro, ...FARO });
   await solicitarActivacion(origina, faro);
+
+  // ---------- Brisa y Cima E2E: un caso abierto de Cumplimiento ----------
+  // Una carga de la lista con las dos deja el caso abierto en Brisa (en alta, con la activación
+  // pedida) y suspende a Cima (activa). Originación y Aprobación lo ven sin que se nombre la lista.
+  const cumple = await comoPersonal(CORREOS.op3);
+  const brisa = await registrarProspecto(origina, { ...BRISA, codigoPostal: "64000", regimen: "601", usoCfdi: "G03" });
+  await expedienteEnRegla(origina, cumple, { companyId: brisa, ...BRISA });
+  await solicitarActivacion(origina, brisa);
+  await darDeAltaComoDuena(owner, personal, { ...CIMA, codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
+  await cargarListaBloqueadas(cumple, {
+    formId: randomUUID(),
+    nombreArchivo: "lpb-e2e.csv",
+    texto: ["nombre,rfc,curp,tipo,fecha", `${BRISA.razonSocial},${BRISA.rfc},,moral,${hoy}`, `${CIMA.razonSocial},${CIMA.rfc},,moral,${hoy}`].join("\n"),
+  });
 
   process.env.E2E_ALTAMAR_ID = altamar.id;
   process.env.E2E_BAHIA_ID = bahia.id;

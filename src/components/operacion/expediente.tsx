@@ -10,6 +10,7 @@ import {
 } from "@/app/operacion/acciones-alta";
 import { ARCHIVO_DEMASIADO_GRANDE } from "@/components/operacion/aviso";
 import { CampoArchivo } from "@/components/operacion/campo-archivo";
+import { IdentidadDelSocio } from "@/components/operacion/identidad-socio";
 import { BotonEnviar, Hoja, Insignia, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
 import {
@@ -20,6 +21,7 @@ import {
   ETIQUETA_PEP,
   PEPS,
   TIPOS_DOCUMENTO,
+  paisesExtranjeros,
   puntosBaseATexto,
 } from "@/dominio/operacion";
 import type { Accionista, VersionExpediente } from "@/server/operacion";
@@ -46,6 +48,14 @@ function domicilio(datos: VersionExpediente["datos"]): string {
 }
 
 /** Los socios en orden de cadena: cada persona moral seguida de quienes la componen. */
+/** La persona extranjera sin CURP se lee por su país, su documento y su fecha de nacimiento. */
+function identidadExtranjera(accionista: Accionista): string {
+  const partes = [accionista.nacionalidad ?? accionista.pais];
+  if (accionista.documentoExtranjero) partes.push(`identificación ${accionista.documentoExtranjero}`);
+  if (accionista.fechaNacimiento) partes.push(`nació el ${fechaDia(accionista.fechaNacimiento)}`);
+  return partes.join(" · ");
+}
+
 function enCadena(accionistas: readonly Accionista[]): Accionista[] {
   const salida: Accionista[] = [];
   const agregar = (padre: string | null) => {
@@ -117,6 +127,7 @@ export function VistaVersion({ version, companyId }: { version: VersionExpedient
                       <span>Votos {puntosBaseATexto(accionista.votosBp)}</span>
                       {accionista.capa > 1 ? <span>Capa {accionista.capa}</span> : null}
                       {accionista.controlOtrosMedios ? <span>Controla por otros medios</span> : null}
+                      {accionista.pais ? <span>{identidadExtranjera(accionista)}</span> : null}
                     </p>
                   </div>
                 </div>
@@ -322,6 +333,7 @@ export function FormulariosBorrador({
                       <span>{accionista.tipoPersona === "moral" ? "Persona moral" : "Persona física"}</span>
                       <span>Capital {puntosBaseATexto(accionista.capitalBp)}</span>
                       <span>Votos {puntosBaseATexto(accionista.votosBp)}</span>
+                      {accionista.pais ? <span>{identidadExtranjera(accionista)}</span> : null}
                     </p>
                   </div>
                   <form action={retirarDelBorradorAccion}>
@@ -350,25 +362,24 @@ export function FormulariosBorrador({
               ))}
             </select>
           </div>
-          <div className="campo">
-            <label htmlFor="acc-tipo">Tipo de persona</label>
-            <select id="acc-tipo" name="tipoPersona" defaultValue="fisica">
-              <option value="fisica">Persona física</option>
-              <option value="moral">Persona moral</option>
-            </select>
-          </div>
-          <div className="campo">
-            <label htmlFor="acc-nombre">Nombre o razón social</label>
-            <input id="acc-nombre" name="nombre" maxLength={300} required {...error("accionistas-titulo", "nombre")} />
-          </div>
-          <div className="campo">
-            <label htmlFor="acc-rfc">RFC</label>
-            <input id="acc-rfc" name="rfc" maxLength={13} autoCapitalize="characters" className="entrada-rfc" {...error("accionistas-titulo", "rfc")} />
-          </div>
-          <div className="campo">
-            <label htmlFor="acc-curp">CURP (persona física)</label>
-            <input id="acc-curp" name="curp" maxLength={18} autoCapitalize="characters" {...error("accionistas-titulo", "curp")} />
-          </div>
+          <IdentidadDelSocio
+            paises={paisesExtranjeros()}
+            ligados={{
+              curp: error("accionistas-titulo", "curp"),
+              pais: error("accionistas-titulo", "pais"),
+              documentoExtranjero: error("accionistas-titulo", "documentoExtranjero"),
+              fechaNacimiento: error("accionistas-titulo", "fechaNacimiento"),
+            }}
+          >
+            <div className="campo">
+              <label htmlFor="acc-nombre">Nombre o razón social</label>
+              <input id="acc-nombre" name="nombre" maxLength={300} required {...error("accionistas-titulo", "nombre")} />
+            </div>
+            <div className="campo">
+              <label htmlFor="acc-rfc">RFC</label>
+              <input id="acc-rfc" name="rfc" maxLength={13} autoCapitalize="characters" className="entrada-rfc" {...error("accionistas-titulo", "rfc")} />
+            </div>
+          </IdentidadDelSocio>
           <div className="campo">
             <label htmlFor="acc-capital">Capital (%)</label>
             <input id="acc-capital" name="capital" inputMode="decimal" maxLength={6} required {...error("accionistas-titulo", "capital")} />
@@ -376,10 +387,6 @@ export function FormulariosBorrador({
           <div className="campo">
             <label htmlFor="acc-votos">Votos (%)</label>
             <input id="acc-votos" name="votos" inputMode="decimal" maxLength={6} required {...error("accionistas-titulo", "votos")} />
-          </div>
-          <div className="campo">
-            <label htmlFor="acc-nacionalidad">Nacionalidad</label>
-            <input id="acc-nacionalidad" name="nacionalidad" maxLength={80} defaultValue="Mexicana" {...error("accionistas-titulo", "nacionalidad")} />
           </div>
           <div className="campo">
             <label htmlFor="acc-pep">¿Es persona expuesta políticamente?</label>

@@ -8,7 +8,9 @@ import {
   subirContrato,
 } from "@/app/consola/proveedores/acciones-pagos";
 import { ESTADO_PAGO_INICIAL } from "@/app/consola/proveedores/estado";
+import { CampoArchivo } from "@/components/operacion/campo-archivo";
 import { Aviso, BotonEnviar } from "@/components/sistema";
+import { CONTRATO_DEMASIADO_GRANDE } from "@/dominio/proveedores";
 
 import { enviarSinReiniciar, useEnvioConBoton } from "./sin-reinicio";
 
@@ -95,7 +97,11 @@ export function FormularioContrato({ supplierId }: { supplierId: string }) {
       {estado.tipo !== "inicial" ? <div id={`contrato-${supplierId}-aviso`}><Aviso tono={estado.tipo === "listo" ? "asentado" : "revisar"} titulo={estado.tipo === "listo" ? "Documento guardado" : "No se guardó"}>{estado.mensaje}</Aviso></div> : null}
       <form action={accion}>
         <input type="hidden" name="supplierId" value={supplierId} />
-        <div className="campo"><label htmlFor={`contrato-nuevo-${supplierId}`}>Contrato en PDF</label><input id={`contrato-nuevo-${supplierId}`} name="contrato" type="file" accept="application/pdf,.pdf" required {...ligado("contrato")} /></div>
+        <div className="campo">
+          <label htmlFor={`contrato-nuevo-${supplierId}`}>Contrato en PDF</label>
+          {/* Un archivo que pasa del tope no sale: la plataforma lo cortaría antes de llegar a la acción. */}
+          <CampoArchivo id={`contrato-nuevo-${supplierId}`} name="contrato" accept="application/pdf,.pdf" mensaje={CONTRATO_DEMASIADO_GRANDE} required ligado={ligado("contrato")} />
+        </div>
         <div className="formulario-pareja">
           <div className="campo"><label htmlFor={`desde-${supplierId}`}>Vigente desde</label><input id={`desde-${supplierId}`} name="vigenteDesde" type="date" /></div>
           <div className="campo"><label htmlFor={`hasta-${supplierId}`}>Vigente hasta</label><input id={`hasta-${supplierId}`} name="vigenteHasta" type="date" {...ligado("vigenteHasta")} /></div>

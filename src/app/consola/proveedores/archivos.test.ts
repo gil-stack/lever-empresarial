@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { TOPE_ARCHIVO_BYTES } from "../../../dominio/archivos";
+
 import { leerArchivoAlta, leerArchivoPago } from "./archivos";
 
 const PDF = new TextEncoder().encode(`%PDF-1.4\n${"x".repeat(80)}\n%%EOF`);
@@ -27,8 +29,8 @@ describe("archivos de los formularios de proveedores", () => {
   it("lo que no es archivo se ignora y lo que excede 4 MB no se lee", async () => {
     assert.deepEqual(await leerArchivoAlta("texto"), { meta: null, bytes: null });
     assert.equal(await leerArchivoPago(null), null);
-    const grande = { name: "grande.pdf", type: "application/pdf", size: 4_000_001, arrayBuffer: () => { throw new Error("no debe leerse"); } };
-    assert.deepEqual(await leerArchivoAlta(grande), { meta: { nombre: "grande.pdf", tipo: "application/pdf", peso: 4_000_001 }, bytes: null });
+    const grande = { name: "grande.pdf", type: "application/pdf", size: TOPE_ARCHIVO_BYTES + 1, arrayBuffer: () => { throw new Error("no debe leerse"); } };
+    assert.deepEqual(await leerArchivoAlta(grande), { meta: { nombre: "grande.pdf", tipo: "application/pdf", peso: TOPE_ARCHIVO_BYTES + 1 }, bytes: null });
     assert.deepEqual(await leerArchivoPago(grande), { nombre: "grande.pdf", bytes: new Uint8Array() });
   });
 });

@@ -234,21 +234,15 @@ BEGIN
   -- Dos asignaciones simultáneas a la misma persona no se cruzan.
   PERFORM pg_advisory_xact_lock(hashtextextended('platform_staff_roles:' || fila.operator_id::text || ':' || fila.user_id::text, 0));
 
+  -- Desde la aplicación, solo Administración y nunca a sí misma; sin usuario, nadie.
+  -- La primera Administración de un operador la da la dueña de la base
+  -- (scripts/personal-por-la-duena.ts), que no pasa por aquí.
   IF current_user = 'plataforma_sofipo' THEN
-    IF app_usuario() IS NULL THEN
-      -- Solo el alta del personal que hace el sistema desde la variable retirada:
-      -- Administración para una persona cuyo registro nace en esta transacción.
-      IF TG_OP <> 'INSERT' OR fila.rol <> 'administracion_plataforma'
-        OR NOT personal_nace_en_esta_transaccion(fila.operator_id, fila.user_id) THEN
-        RAISE EXCEPTION 'sin_permiso_roles';
-      END IF;
-    ELSE
-      IF fila.user_id = app_usuario() THEN
-        RAISE EXCEPTION 'rol_propio';
-      END IF;
-      IF NOT personal_tiene_rol(fila.operator_id, app_usuario(), ARRAY['administracion_plataforma']) THEN
-        RAISE EXCEPTION 'sin_permiso_roles';
-      END IF;
+    IF fila.user_id = app_usuario() THEN
+      RAISE EXCEPTION 'rol_propio';
+    END IF;
+    IF NOT personal_tiene_rol(fila.operator_id, app_usuario(), ARRAY['administracion_plataforma']) THEN
+      RAISE EXCEPTION 'sin_permiso_roles';
     END IF;
   END IF;
 
@@ -361,12 +355,6 @@ BEGIN
       AND NEW.usada_en IS NOT NULL AND NEW.revocada_en IS NULL THEN
       RETURN NEW;
     END IF;
-  END IF;
-  IF app_usuario() IS NULL THEN
-    IF TG_OP = 'INSERT' AND TG_TABLE_NAME IN ('platform_staff', 'invitations') THEN
-      RETURN NEW;
-    END IF;
-    RAISE EXCEPTION 'sin_rol_de_administracion';
   END IF;
   IF NOT personal_tiene_rol(app_operador(), app_usuario(), ARRAY['administracion_plataforma']) THEN
     RAISE EXCEPTION 'sin_rol_de_administracion';
@@ -666,6 +654,10 @@ CREATE TABLE kyb_accionistas (
   rfc text,
   curp text,
   nacionalidad text,
+  -- Persona física extranjera sin CURP: país (ISO 3166-1), pasaporte o identificación oficial y fecha de nacimiento.
+  pais text,
+  documento_extranjero text,
+  fecha_nacimiento date,
   capital_bp integer NOT NULL,
   votos_bp integer NOT NULL,
   control_otros_medios boolean NOT NULL DEFAULT false,
@@ -687,6 +679,11 @@ CREATE TABLE kyb_accionistas (
   ),
   CONSTRAINT kyb_accionistas_curp CHECK (
     curp IS NULL OR (tipo_persona = 'fisica' AND curp ~ '^[A-Z]{4}[0-9]{6}[HMX][A-Z]{5}[A-Z0-9][0-9]$')
+  ),
+  CONSTRAINT kyb_accionistas_extranjero CHECK (
+    (pais IS NULL OR (pais ~ '^[A-Z]{2}$' AND pais <> 'MX'))
+    AND (documento_extranjero IS NULL OR (tipo_persona = 'fisica' AND pais IS NOT NULL AND documento_extranjero ~ '^[A-Z0-9]{4,20}$'))
+    AND (fecha_nacimiento IS NULL OR (tipo_persona = 'fisica' AND pais IS NOT NULL))
   ),
   CONSTRAINT kyb_accionistas_moral CHECK (tipo_persona = 'fisica' OR (pep = 'no' AND NOT control_otros_medios)),
   -- Puntos base: 10000 = 100 %. Sin flotantes.
@@ -836,8 +833,9 @@ AS $$
     WHERE c.tipo_persona = 'moral' AND NOT h.clave = ANY (c.camino) AND c.capa < 10
   ),
   fisicas AS (
-    -- La misma persona por varios caminos suma por su CURP (el envío la exige).
-    SELECT coalesce(a.curp, a.clave::text) AS persona,
+    -- La misma persona por varios caminos suma por su CURP o, extranjera sin CURP, por
+    -- país y documento (el envío los exige).
+    SELECT coalesce(a.curp, 'EXT:' || a.pais || ':' || a.documento_extranjero, a.clave::text) AS persona,
            (array_agg(a.clave ORDER BY a.clave::text))[1] AS clave,
            (array_agg(a.nombre ORDER BY a.clave::text))[1] AS nombre,
            max(a.rfc) AS rfc,
@@ -935,12 +933,21 @@ BEGIN
   END LOOP;
   -- 4ª fr. II c): una persona que suma por dos caminos con identificadores
   -- distintos se partiría en dos y quedaría bajo el umbral. Toda persona física
-  -- lleva CURP y toda moral su RFC.
+  -- mexicana lleva CURP; la extranjera sin CURP, su país, el número de su
+  -- pasaporte o identificación oficial y su fecha de nacimiento. Toda moral, su RFC.
   IF EXISTS (
     SELECT 1 FROM kyb_accionistas a
-    WHERE a.version_id = p_version.id AND a.retirado_en IS NULL AND a.tipo_persona = 'fisica' AND a.curp IS NULL
+    WHERE a.version_id = p_version.id AND a.retirado_en IS NULL AND a.tipo_persona = 'fisica'
+      AND a.curp IS NULL AND a.pais IS NULL
   ) THEN
     RAISE EXCEPTION 'expediente_accionista_sin_curp';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM kyb_accionistas a
+    WHERE a.version_id = p_version.id AND a.retirado_en IS NULL AND a.tipo_persona = 'fisica'
+      AND a.curp IS NULL AND (a.documento_extranjero IS NULL OR a.fecha_nacimiento IS NULL)
+  ) THEN
+    RAISE EXCEPTION 'expediente_accionista_sin_identificacion';
   END IF;
   IF EXISTS (
     SELECT 1 FROM kyb_accionistas a
@@ -1234,7 +1241,8 @@ BEGIN
   -- Padres antes que hijos: el trigger exige que el padre exista.
   INSERT INTO kyb_accionistas (
     id, version_id, company_id, operator_id, clave, padre_clave, tipo_persona, nombre, rfc, curp,
-    nacionalidad, capital_bp, votos_bp, control_otros_medios, pep, creado_por, creado_en
+    nacionalidad, pais, documento_extranjero, fecha_nacimiento, capital_bp, votos_bp, control_otros_medios, pep,
+    creado_por, creado_en
   )
   WITH RECURSIVE arbol AS (
     SELECT a.*, 1 AS nivel FROM kyb_accionistas a
@@ -1245,8 +1253,8 @@ BEGIN
     WHERE arbol.nivel < 10
   )
   SELECT gen_random_uuid(), NEW.id, x.company_id, x.operator_id, x.clave, x.padre_clave, x.tipo_persona,
-         x.nombre, x.rfc, x.curp, x.nacionalidad, x.capital_bp, x.votos_bp, x.control_otros_medios, x.pep,
-         NEW.creada_por, NEW.creada_en
+         x.nombre, x.rfc, x.curp, x.nacionalidad, x.pais, x.documento_extranjero, x.fecha_nacimiento,
+         x.capital_bp, x.votos_bp, x.control_otros_medios, x.pep, NEW.creada_por, NEW.creada_en
   FROM arbol x
   ORDER BY x.nivel;
   INSERT INTO kyb_version_documentos (version_id, documento_id, company_id, operator_id)
@@ -1474,6 +1482,43 @@ AS $$
   ORDER BY c.cargada_en DESC, c.id DESC LIMIT 1
 $$;
 
+-- La copia del 69-B es de cada operador: la carga su Administración y el cotejo,
+-- «fuera de lista», la relectura de proveedores y el portal leen la última de su
+-- operador. Las copias que ya existen pasan al único operador; con más de uno (o
+-- ninguno) la migración no adivina y se detiene.
+ALTER TABLE lista_69b_snapshots ADD COLUMN operator_id uuid REFERENCES operators (id) ON DELETE RESTRICT;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM lista_69b_snapshots WHERE operator_id IS NULL)
+    AND (SELECT count(*) FROM operators) <> 1 THEN
+    RAISE EXCEPTION 'lista_69b_sin_operador'
+      USING DETAIL = 'Hay copias del 69-B sin operador y la base no tiene exactamente un operador.',
+            HINT = 'Asigna cada copia a su operador (lista_69b_snapshots.operator_id) y vuelve a aplicar la 0028.';
+  END IF;
+END;
+$$;
+
+-- La copia es de solo inserción: el candado se aparta solo para este relleno, en
+-- la misma transacción de la migración.
+ALTER TABLE lista_69b_snapshots DISABLE TRIGGER lista_69b_snapshots_no_update;
+UPDATE lista_69b_snapshots SET operator_id = (SELECT o.id FROM operators o) WHERE operator_id IS NULL;
+ALTER TABLE lista_69b_snapshots ENABLE TRIGGER lista_69b_snapshots_no_update;
+ALTER TABLE lista_69b_snapshots ALTER COLUMN operator_id SET NOT NULL;
+CREATE INDEX lista_69b_snapshots_operador_idx ON lista_69b_snapshots (operator_id, cargado_en DESC, id DESC);
+
+CREATE FUNCTION lista_69b_vigente(p_operador uuid)
+RETURNS uuid
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT s.id FROM lista_69b_snapshots s
+  WHERE s.operator_id = p_operador AND operador_del_contexto(p_operador)
+  ORDER BY s.cargado_en DESC, s.id DESC LIMIT 1
+$$;
+
 CREATE TABLE lpb_coincidencias (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   operator_id uuid NOT NULL REFERENCES operators (id) ON DELETE RESTRICT,
@@ -1501,6 +1546,9 @@ CREATE TABLE lpb_coincidencias (
   aviso_cliente_el date,
   reporte_registrado_por uuid REFERENCES users (id) ON DELETE RESTRICT,
   reporte_registrado_en timestamptz,
+  -- La carga o copia vigente cuando Cumplimiento cerró el caso: con esa misma no se reabre.
+  cerrada_con_carga_id uuid REFERENCES lpb_cargas (id) ON DELETE RESTRICT,
+  cerrada_con_snapshot_id uuid REFERENCES lista_69b_snapshots (id) ON DELETE RESTRICT,
   txid bigint NOT NULL DEFAULT txid_current(),
   CONSTRAINT lpb_coincidencias_company
     FOREIGN KEY (company_id, operator_id) REFERENCES companies (id, operator_id) ON DELETE RESTRICT,
@@ -1534,7 +1582,14 @@ CREATE TABLE lpb_coincidencias (
     OR (reporte_folio IS NOT NULL AND reporte_presentado_el IS NOT NULL AND reporte_registrado_por IS NOT NULL
       AND reporte_registrado_en IS NOT NULL AND estado IN ('confirmada', 'fuera_de_lista'))
   ),
-  CONSTRAINT lpb_coincidencias_aviso CHECK (aviso_cliente_el IS NULL OR reporte_folio IS NOT NULL)
+  CONSTRAINT lpb_coincidencias_aviso CHECK (aviso_cliente_el IS NULL OR reporte_folio IS NOT NULL),
+  CONSTRAINT lpb_coincidencias_cierre CHECK (
+    (estado IN ('pendiente', 'confirmada') AND cerrada_con_carga_id IS NULL AND cerrada_con_snapshot_id IS NULL)
+    OR (estado IN ('falso_positivo', 'fuera_de_lista') AND (
+      (lista = 'lpb' AND cerrada_con_carga_id IS NOT NULL AND cerrada_con_snapshot_id IS NULL)
+      OR (lista = '69b' AND cerrada_con_snapshot_id IS NOT NULL AND cerrada_con_carga_id IS NULL)
+    ))
+  )
 );
 
 -- Un solo caso abierto por sujeto, lista y valor. Uno cerrado no impide otro:
@@ -1939,7 +1994,7 @@ BEGIN
     RETURN 0;
   END IF;
   carga := lpb_carga_vigente(empresa.operator_id);
-  SELECT s.id INTO copia FROM lista_69b_snapshots s ORDER BY s.cargado_en DESC, s.id DESC LIMIT 1;
+  copia := lista_69b_vigente(empresa.operator_id);
   SELECT v.id INTO version FROM kyb_versiones v
   WHERE v.company_id = p_company AND v.estado = 'enviada' ORDER BY v.numero DESC LIMIT 1;
 
@@ -2002,9 +2057,11 @@ BEGIN
            CASE WHEN h.por = 'nombre' THEN NULL ELSE ahora + interval '24 hours' END
     FROM hallazgos h
     -- Un caso abierto no se duplica. Uno cerrado (fuera de lista o falso positivo)
-    -- se reabre cuando la persona aparece en una carga o copia del 69-B posterior a
-    -- la del cierre; con la misma carga, no. Una posible por nombre que Cumplimiento
-    -- descartó como falso positivo no se reabre por el mismo nombre.
+    -- se reabre solo cuando la persona aparece en una carga o copia del 69-B
+    -- posterior a la que estaba vigente al cerrarlo (cerrada_con_*): con esa misma
+    -- no, aunque se vuelva a cotejar por una versión nueva, una copia del 69-B o un
+    -- proveedor nuevo. Una posible por nombre que Cumplimiento descartó como falso
+    -- positivo no se reabre por el mismo nombre.
     WHERE NOT EXISTS (
       SELECT 1 FROM lpb_coincidencias x
       WHERE x.company_id = empresa.id AND x.sujeto_tipo = h.sujeto_tipo AND x.sujeto_clave = h.sujeto_clave
@@ -2012,8 +2069,8 @@ BEGIN
         AND (
           x.estado IN ('pendiente', 'confirmada')
           OR (x.coincide_por = 'nombre' AND x.estado = 'falso_positivo')
-          OR (h.lista = 'lpb' AND x.carga_id = carga)
-          OR (h.lista = '69b' AND x.snapshot_69b_id = copia)
+          OR (h.lista = 'lpb' AND coalesce(x.cerrada_con_carga_id, x.carga_id) = carga)
+          OR (h.lista = '69b' AND coalesce(x.cerrada_con_snapshot_id, x.snapshot_69b_id) = copia)
         )
     )
     ORDER BY h.sujeto_tipo, h.sujeto_clave, h.lista, h.por, h.valor, h.persona_id
@@ -2089,24 +2146,127 @@ AFTER INSERT ON lpb_cargas
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION lpb_cargas_cotejar();
 
--- Una copia nueva del 69-B vuelve a cotejar a las empresas del operador que la
--- carga (Administración, con su contexto). La dueña de la base, sin contexto,
--- coteja a todos.
+-- Una copia nueva del 69-B vuelve a cotejar solo a las empresas de su operador.
 CREATE FUNCTION lista_69b_cotejar_empresas()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+BEGIN
+  PERFORM lpb_cotejar_operador(NEW.operator_id);
+  RETURN NULL;
+END;
+$$;
+
+-- Releer toca solo a los proveedores de las empresas del operador de la copia.
+CREATE OR REPLACE FUNCTION releer_proveedores_69b(copia uuid, leida timestamptz)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
+  fecha date;
   operador uuid;
 BEGIN
-  FOR operador IN
-    SELECT o.id FROM operators o WHERE app_operador() IS NULL OR o.id = app_operador() ORDER BY o.id
-  LOOP
-    PERFORM lpb_cotejar_operador(operador);
-  END LOOP;
-  RETURN NULL;
+  IF NOT EXISTS (SELECT 1 FROM lista_69b_rows WHERE snapshot_id = copia) THEN
+    RAISE EXCEPTION 'copia_69b_sin_filas';
+  END IF;
+
+  SELECT s.fecha_archivo, s.operator_id
+  INTO fecha, operador
+  FROM lista_69b_snapshots AS s
+  WHERE s.id = copia;
+
+  IF fecha IS NULL OR NOT operador_del_contexto(operador) THEN
+    RAISE EXCEPTION 'copia_69b_ausente';
+  END IF;
+
+  -- El RFC que entra deja de estar fuera de la lista y el pago sigue apagado.
+  UPDATE suppliers AS s
+  SET snapshot_id = copia,
+      lista_fecha = fecha,
+      situacion_69b = pub.situacion,
+      lista_leida_en = leida,
+      boton_pago = false
+  FROM (
+    SELECT r.rfc, string_agg(r.situacion, ' · ' ORDER BY r.situacion) AS situacion
+    FROM lista_69b_rows AS r
+    WHERE r.snapshot_id = copia
+    GROUP BY r.rfc
+  ) AS pub, companies AS c
+  WHERE s.rfc = pub.rfc
+    AND c.id = s.company_id
+    AND c.operator_id = operador;
+
+  -- Quien ya tenía archivo y no aparece en esta copia queda fuera, con la fecha nueva.
+  -- Quien nunca tuvo archivo no entra aquí: la falta de archivo no abre el pago.
+  UPDATE suppliers AS s
+  SET snapshot_id = copia,
+      lista_fecha = fecha,
+      situacion_69b = NULL,
+      lista_leida_en = leida,
+      boton_pago = true
+  FROM companies AS c
+  WHERE c.id = s.company_id
+    AND c.operator_id = operador
+    AND s.snapshot_id IS NOT NULL
+    AND s.snapshot_id IS DISTINCT FROM copia
+    AND NOT EXISTS (
+      SELECT 1
+      FROM lista_69b_rows AS r
+      WHERE r.snapshot_id = copia
+        AND r.rfc = s.rfc
+    );
+END;
+$$;
+
+-- Un proveedor solo se lee contra una copia del operador de su empresa.
+CREATE OR REPLACE FUNCTION suppliers_lectura_contra_copia()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  fecha date;
+  publicada text;
+BEGIN
+  IF NEW.snapshot_id IS NULL THEN
+    IF NEW.boton_pago IS TRUE OR NEW.situacion_69b IS NOT NULL OR NEW.lista_fecha IS NOT NULL THEN
+      RAISE EXCEPTION 'lectura_sin_copia';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  SELECT s.fecha_archivo
+  INTO fecha
+  FROM lista_69b_snapshots AS s
+  JOIN companies AS c ON c.id = NEW.company_id AND c.operator_id = s.operator_id
+  WHERE s.id = NEW.snapshot_id;
+
+  IF fecha IS NULL OR fecha IS DISTINCT FROM NEW.lista_fecha THEN
+    RAISE EXCEPTION 'fecha_de_lista_distinta';
+  END IF;
+
+  SELECT string_agg(r.situacion, ' · ' ORDER BY r.situacion)
+  INTO publicada
+  FROM lista_69b_rows AS r
+  WHERE r.snapshot_id = NEW.snapshot_id
+    AND r.rfc = NEW.rfc;
+
+  IF publicada IS NOT NULL THEN
+    IF NEW.boton_pago IS TRUE THEN
+      RAISE EXCEPTION 'pago_con_rfc_publicado';
+    END IF;
+    IF NEW.situacion_69b IS DISTINCT FROM publicada THEN
+      RAISE EXCEPTION 'situacion_distinta_de_la_copia';
+    END IF;
+  ELSIF NEW.situacion_69b IS NOT NULL THEN
+    RAISE EXCEPTION 'situacion_distinta_de_la_copia';
+  END IF;
+
+  RETURN NEW;
 END;
 $$;
 
@@ -2179,10 +2339,12 @@ BEGIN
   END IF;
   IF (to_jsonb(NEW) - ARRAY[
         'estado', 'resuelta_por', 'resuelta_en', 'motivo_resolucion', 'plazo_reporte_hasta',
-        'reporte_folio', 'reporte_presentado_el', 'aviso_cliente_el', 'reporte_registrado_por', 'reporte_registrado_en'
+        'reporte_folio', 'reporte_presentado_el', 'aviso_cliente_el', 'reporte_registrado_por', 'reporte_registrado_en',
+        'cerrada_con_carga_id', 'cerrada_con_snapshot_id'
       ]) IS DISTINCT FROM (to_jsonb(OLD) - ARRAY[
         'estado', 'resuelta_por', 'resuelta_en', 'motivo_resolucion', 'plazo_reporte_hasta',
-        'reporte_folio', 'reporte_presentado_el', 'aviso_cliente_el', 'reporte_registrado_por', 'reporte_registrado_en'
+        'reporte_folio', 'reporte_presentado_el', 'aviso_cliente_el', 'reporte_registrado_por', 'reporte_registrado_en',
+        'cerrada_con_carga_id', 'cerrada_con_snapshot_id'
       ]) THEN
     RAISE EXCEPTION 'coincidencia_no_se_reescribe';
   END IF;
@@ -2216,7 +2378,7 @@ BEGIN
           RAISE EXCEPTION 'coincidencia_sigue_en_lista';
         END IF;
       ELSE
-        SELECT s.id INTO copia FROM lista_69b_snapshots s ORDER BY s.cargado_en DESC, s.id DESC LIMIT 1;
+        copia := lista_69b_vigente(NEW.operator_id);
         IF EXISTS (
           SELECT 1 FROM lista_69b_rows r
           WHERE r.snapshot_id = copia AND r.rfc = NEW.valor_coincidente AND r.situacion ILIKE 'definitivo%'
@@ -2240,6 +2402,16 @@ BEGIN
   ELSIF (NEW.resuelta_por, NEW.resuelta_en, NEW.motivo_resolucion, NEW.plazo_reporte_hasta)
     IS DISTINCT FROM (OLD.resuelta_por, OLD.resuelta_en, OLD.motivo_resolucion, OLD.plazo_reporte_hasta) THEN
     RAISE EXCEPTION 'coincidencia_no_se_reescribe';
+  END IF;
+
+  -- Al cerrar se anota la carga o copia vigente (lpb_cotejar_empresa no reabre con
+  -- esa misma). Nadie más la escribe: fuera del cierre se conserva la anterior.
+  IF NEW.estado IS DISTINCT FROM OLD.estado AND NEW.estado IN ('falso_positivo', 'fuera_de_lista') THEN
+    NEW.cerrada_con_carga_id := CASE WHEN NEW.lista = 'lpb' THEN lpb_carga_vigente(NEW.operator_id) END;
+    NEW.cerrada_con_snapshot_id := CASE WHEN NEW.lista = '69b' THEN lista_69b_vigente(NEW.operator_id) END;
+  ELSE
+    NEW.cerrada_con_carga_id := OLD.cerrada_con_carga_id;
+    NEW.cerrada_con_snapshot_id := OLD.cerrada_con_snapshot_id;
   END IF;
 
   -- El folio del reporte y la fecha del aviso se anotan una vez.
@@ -2998,6 +3170,25 @@ REVOKE ALL ON FUNCTION lpb_coincidencias_abiertas(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION lpb_coincidencias_abiertas(uuid) TO plataforma_sofipo;
 REVOKE ALL ON FUNCTION lpb_carga_vigente(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION lpb_carga_vigente(uuid) TO plataforma_sofipo;
+REVOKE ALL ON FUNCTION lista_69b_vigente(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION lista_69b_vigente(uuid) TO plataforma_sofipo;
+
+-- La copia del 69-B de un operador no la ve ni la usa otro: el personal lee y
+-- carga la de su operador; el portal, la del operador de su empresa. Los
+-- renglones siguen a su copia.
+DROP POLICY lista_69b_snapshots_lectura ON lista_69b_snapshots;
+DROP POLICY lista_69b_rows_lectura ON lista_69b_rows;
+DROP POLICY lista_69b_snapshots_sofipo ON lista_69b_snapshots;
+DROP POLICY lista_69b_rows_sofipo ON lista_69b_rows;
+CREATE POLICY lista_69b_snapshots_lectura ON lista_69b_snapshots FOR SELECT TO plataforma_cliente
+  USING (operator_id = coalesce(app_operador(), (SELECT c.operator_id FROM companies c WHERE c.id = app_empresa())));
+CREATE POLICY lista_69b_rows_lectura ON lista_69b_rows FOR SELECT TO plataforma_cliente
+  USING (EXISTS (SELECT 1 FROM lista_69b_snapshots s WHERE s.id = snapshot_id));
+CREATE POLICY lista_69b_snapshots_sofipo ON lista_69b_snapshots FOR ALL TO plataforma_sofipo
+  USING (operator_id = app_operador()) WITH CHECK (operator_id = app_operador());
+CREATE POLICY lista_69b_rows_sofipo ON lista_69b_rows FOR ALL TO plataforma_sofipo
+  USING (EXISTS (SELECT 1 FROM lista_69b_snapshots s WHERE s.id = snapshot_id))
+  WITH CHECK (EXISTS (SELECT 1 FROM lista_69b_snapshots s WHERE s.id = snapshot_id));
 
 -- El portal del cliente lee la bitácora de su empresa salvo lo de Cumplimiento:
 -- expediente, riesgo, Lista de Personas Bloqueadas y suspensiones con su motivo
@@ -3008,6 +3199,20 @@ CREATE POLICY audit_log_cliente_lectura ON audit_log FOR SELECT TO plataforma_cl
     company_id = app_empresa()
     AND entidad NOT LIKE 'kyb\_%' AND entidad NOT LIKE 'lpb\_%' AND entidad <> 'company_suspensions'
     AND accion NOT LIKE 'expediente\_%'
+  );
+
+-- En el personal, los eventos de la lista de una empresa (coincidencias, folios y
+-- la suspensión que dejan) los leen Cumplimiento y Auditoría. Administración,
+-- Originación y Aprobación no (55ª); la carga de la lista, sin empresa, sí.
+DROP POLICY audit_log_sofipo_lectura ON audit_log;
+CREATE POLICY audit_log_sofipo_lectura ON audit_log FOR SELECT TO plataforma_sofipo
+  USING (
+    operator_id = app_operador()
+    AND (
+      company_id IS NULL
+      OR NOT (accion LIKE 'lpb\_%' OR accion = 'empresa_suspendida_lpb')
+      OR (SELECT personal_tiene_rol(app_operador(), app_usuario(), ARRAY['cumplimiento', 'auditoria']))
+    )
   );
 
 REVOKE DELETE, TRUNCATE ON kyb_versiones, kyb_documentos, kyb_version_documentos, kyb_representantes,

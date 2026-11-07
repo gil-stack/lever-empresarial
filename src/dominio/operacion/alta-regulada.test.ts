@@ -11,6 +11,7 @@ import {
   vigenciaDeComprobante,
 } from "./expediente";
 import { leerListaBloqueadas, MAXIMO_RENGLONES_LPB } from "./lpb";
+import { documentoExtranjeroNormalizado, nombreDePais, PAISES, paisesExtranjeros, paisExtranjeroValido } from "./paises";
 import { calificarRiesgo, gradoDePuntaje, mesesCompletos, revisionVencida, sumarMeses, type EntradaRiesgo } from "./riesgo";
 
 const BASE: EntradaRiesgo = {
@@ -128,5 +129,24 @@ describe("validaciones del expediente (4ª fr. II)", () => {
     assert.equal(pesosACentavos("12.345"), null);
     assert.equal(vigenciaDeComprobante("2026-11-30"), "2027-02-28");
     assert.equal(vigenciaDeComprobante("2026-08-15"), "2026-11-15");
+  });
+});
+
+describe("socio extranjero sin CURP", () => {
+  it("México no es país extranjero y el país se nombra en español", () => {
+    assert.equal(paisExtranjeroValido("MX"), false);
+    assert.equal(paisExtranjeroValido("US"), true);
+    assert.equal(paisExtranjeroValido("XX"), false);
+    assert.equal(nombreDePais("US"), "Estados Unidos");
+    const extranjeros = paisesExtranjeros();
+    assert.equal(extranjeros.some((pais) => pais.codigo === "MX"), false);
+    assert.equal(extranjeros.length, PAISES.length - 1);
+  });
+
+  it("el documento se compara sin espacios, guiones ni puntos y en mayúsculas", () => {
+    assert.equal(documentoExtranjeroNormalizado("x12-345 678"), "X12345678");
+    assert.equal(documentoExtranjeroNormalizado("AB.12/34"), "AB1234");
+    assert.equal(documentoExtranjeroNormalizado("A1"), null);
+    assert.equal(documentoExtranjeroNormalizado("Ñ1234567"), null);
   });
 });

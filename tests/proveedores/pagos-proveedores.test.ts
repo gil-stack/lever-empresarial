@@ -440,7 +440,7 @@ async function esperarCandado(url: string): Promise<void> {
 }
 
 function sqlCarga(operadorId: string, copia: string, fecha: string, rfcs: string[]): string {
-  return `insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values ('${copia}', date '${fecha}', now());
+  return `insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ('${copia}', '${operadorId}', date '${fecha}', now());
     insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador)
       values ('${operadorId}', 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', '${copia}');
     insert into lista_69b_rows (snapshot_id, rfc, situacion) values ${rfcs.map((rfc) => `('${copia}', '${rfc}', 'Presunto')`).join(", ")};`;
@@ -525,7 +525,7 @@ function sembrar(url: string): string {
       values ((select id from operators order by alta_en limit 1), '${EMPRESA}', 'miembro', '${LUIS}', 'cliente', 'alta_empresa', 'companies', '${EMPRESA}');
     insert into memberships (user_id, company_id, estado) values ${personas.map(([id]) => `('${id}', '${EMPRESA}', 'activa')`).join(", ")};
     ${roles}
-    insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values ('${COPIA}', date '2026-09-30', timestamptz '2026-10-01 15:00:00+00');
+    insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ('${COPIA}', (select id from operators order by alta_en limit 1), date '2026-09-30', timestamptz '2026-10-01 15:00:00+00');
     insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador)
       values ((select id from operators order by alta_en limit 1), 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', '${COPIA}');
     insert into lista_69b_rows (snapshot_id, rfc, situacion) values ('${COPIA}', 'PAL7202161U0', 'Presunto');

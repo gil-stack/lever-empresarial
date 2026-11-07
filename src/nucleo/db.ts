@@ -296,6 +296,7 @@ const CODIGOS_DE_ALTA_REGULADA = new Set([
   "personal_no_se_reescribe",
   "expediente_con_borrador",
   "expediente_accionista_sin_curp",
+  "expediente_accionista_sin_identificacion",
   "expediente_accionista_sin_rfc",
   "expediente_estructura_muy_profunda",
   "rol_propio",

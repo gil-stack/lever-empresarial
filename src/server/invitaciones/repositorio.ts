@@ -72,6 +72,8 @@ export async function emitirEnTransaccion(
     correo: string;
     destino: Destino;
     ahora: Date;
+    /** Quién corrió el comando de la dueña de la base (session_user), para el alta del personal. */
+    ejecutadoPor?: string;
   },
 ): Promise<InvitacionEmitida> {
   const existente = await consulta.query(SQL.usuarioPorCorreo, [entrada.correo]);
@@ -109,7 +111,10 @@ export async function emitirEnTransaccion(
     await auditar(consulta, actor, {
       accion: "alta_personal",
       identificador: userId,
-      cambio: { rol: entrada.destino.roles.join(",") },
+      cambio: {
+        rol: entrada.destino.roles.join(","),
+        ...(entrada.ejecutadoPor ? { ejecutado_por: entrada.ejecutadoPor } : {}),
+      },
     });
   }
 

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -45,6 +45,9 @@ import { decidirCambioDeSuspension, solicitarCambioDeSuspension } from "../../sr
 import { crearPagoProveedor, resolverPagoProveedor } from "../../src/server/pagos-proveedores/servicio.ts";
 import { nombrarCentro } from "../../src/server/personas/servicio.ts";
 import { cambiarAccesoFinanzas } from "../../src/server/roles/finanzas.ts";
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
+import { invitarPersonalComoDuena } from "../../scripts/personal-por-la-duena.ts";
+import { etiquetaAccion } from "../../src/components/operacion/formato.ts";
 import { aplicarArchivo, conBaseDesechable, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
 import {
   almacenEnMemoria,
@@ -69,6 +72,8 @@ const MIXTO = "a0000000-0000-4000-8000-000000000006";
 const NUEVO = "a0000000-0000-4000-8000-000000000007";
 // Persona que entra al personal en la prueba de carreras.
 const RITA = "a0000000-0000-4000-8000-00000000000a";
+// Solo Administración (ADM también tiene Cumplimiento desde la prueba del comando).
+const ADA = "a0000000-0000-4000-8000-00000000000b";
 // Personal de otro operador: no ve nada del primero.
 const AJENA = "a0000000-0000-4000-8000-000000000009";
 // Personas del portal de Beta.
@@ -77,6 +82,7 @@ const ROSA = "b0000000-0000-4000-8000-000000000002";
 const PROVEEDOR_LPB = "c0000000-0000-4000-8000-000000000001";
 const PROVEEDOR_LIMPIO = "c0000000-0000-4000-8000-000000000002";
 const PROVEEDOR_TRES = "c0000000-0000-4000-8000-000000000003";
+const PROVEEDOR_CUATRO = "c0000000-0000-4000-8000-000000000004";
 const COPIA_69B = "d0000000-0000-4000-8000-000000000001";
 const CLABE = "002180701150123452";
 
@@ -92,6 +98,86 @@ const DOS_CAPAS: SocioDePrueba[] = [
 ];
 
 describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }, () => {
+  it("H2 y N3: la 0028 sobre una base en la 0027 asigna la 69-B al único operador; la primera Administración la da la dueña", async () => {
+    exigirBaseDesechable();
+    const dir = join(dirname(fileURLToPath(import.meta.url)), "../../db/migrations");
+    const hasta0027 = (url: string) => {
+      for (const archivo of readdirSync(dir).sort()) {
+        if (archivo.endsWith(".sql") && archivo < "0028") aplicarArchivo(url, join(dir, archivo));
+      }
+    };
+    const copiaVieja = async (url: string) => {
+      const c = new pg.Client({ connectionString: url });
+      await c.connect();
+      try {
+        await c.query("begin");
+        await c.query("insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values ($1, current_date - 1, now())", [COPIA_69B]);
+        await c.query(
+          `insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador)
+           values ((select id from operators order by alta_en limit 1), 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', $1)`,
+          [COPIA_69B],
+        );
+        await c.query("insert into lista_69b_rows (snapshot_id, rfc, situacion) values ($1, 'PAL7202161U0', 'Presunto')", [COPIA_69B]);
+        await c.query("commit");
+      } finally {
+        await c.end();
+      }
+    };
+    // Como db/migrate.sh: la migración entera en una transacción.
+    const aplicar0028 = async (url: string) => {
+      const c = new pg.Client({ connectionString: url });
+      await c.connect();
+      try {
+        await c.query("begin");
+        await c.query(readFileSync(join(dir, "0028_alta_regulada.sql"), "utf8"));
+        await c.query("commit");
+      } catch (error) {
+        await c.query("rollback").catch(() => undefined);
+        throw error;
+      } finally {
+        await c.end();
+      }
+    };
+    const consultar = async (url: string, sql: string) => {
+      const c = new pg.Client({ connectionString: url });
+      await c.connect();
+      try {
+        return (await c.query(sql)).rows;
+      } finally {
+        await c.end();
+      }
+    };
+
+    // Con un solo operador, la copia que ya existía pasa a él y la columna queda obligatoria.
+    await conBaseDesechable(urlAdmin, async (urlDuena) => {
+      hasta0027(urlDuena);
+      await copiaVieja(urlDuena);
+      await aplicar0028(urlDuena);
+      assert.deepEqual(await consultar(urlDuena, `select (s.operator_id = o.id) as del_operador from lista_69b_snapshots s, operators o`), [{ del_operador: true }]);
+      assert.deepEqual(await consultar(urlDuena, `select attnotnull from pg_attribute where attrelid = 'lista_69b_snapshots'::regclass and attname = 'operator_id'`), [{ attnotnull: true }]);
+
+      // N3: la primera Administración la invita la dueña de la base; la bitácora dice quién corrió el comando.
+      const [primera] = await invitarPersonalComoDuena(urlDuena, ["primera@ejemplo.mx"]);
+      assert.equal(primera?.resultado, "invitada");
+      assert.deepEqual(await consultar(urlDuena, `
+        select s.estado, r.rol, a.origen, a.cambio ->> 'ejecutado_por' = session_user as ejecutado_por
+        from platform_staff s join users u on u.id = s.user_id
+        join platform_staff_roles r on r.operator_id = s.operator_id and r.user_id = s.user_id
+        join audit_log a on a.accion = 'alta_personal' and a.identificador = s.user_id
+        where u.correo = 'primera@ejemplo.mx'`), [{ estado: "invitado", rol: "administracion_plataforma", origen: "migracion_personal", ejecutado_por: true }]);
+      assert.deepEqual((await invitarPersonalComoDuena(urlDuena, ["primera@ejemplo.mx"])).map((fila) => fila.resultado), ["ya_era_personal"]);
+    });
+
+    // Con dos operadores y copias sin dueño, la migración se detiene y no deja nada a medias.
+    await conBaseDesechable(urlAdmin, async (urlDuena) => {
+      hasta0027(urlDuena);
+      await consultar(urlDuena, "insert into operators (id, nombre) values (gen_random_uuid(), 'Segundo operador')");
+      await copiaVieja(urlDuena);
+      await assert.rejects(aplicar0028(urlDuena), /lista_69b_sin_operador/);
+      assert.deepEqual(await consultar(urlDuena, `select count(*)::int as n from information_schema.columns where table_name = 'lista_69b_snapshots' and column_name = 'operator_id'`), [{ n: 0 }]);
+    });
+  });
+
   it("roles, expediente, riesgo, LPB, suspensión, candado, RLS y lecturas auditadas", async (t) => {
     exigirBaseDesechable();
     await conBaseDesechable(urlAdmin, async (urlDuena) => {
@@ -376,6 +462,13 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           const carga = await cargarListaBloqueadas(cum, { formId, nombreArchivo: "lpb.csv", texto: csv });
           assert.equal(carga.filas, 3);
           assert.deepEqual(await cargarListaBloqueadas(cum, { formId, nombreArchivo: "lpb.csv", texto: csv }), carga);
+          // S10: el mismo formulario con otro archivo no se da por hecho ni deja otra carga.
+          const cargas = await contar("select count(*)::int as n from lpb_cargas");
+          await assert.rejects(
+            cargarListaBloqueadas(cum, { formId, nombreArchivo: "otra.csv", texto: `${csv}\nOTRA PERSONA RUIZ,,,fisica,2026-11-01` }),
+            /formulario_invalido/,
+          );
+          assert.equal(await contar("select count(*)::int as n from lpb_cargas"), cargas);
           await assert.rejects(cargarListaBloqueadas(cum, { formId: randomUUID(), nombreArchivo: "otra.csv", texto: csv }), /lpb_ya_cargada/);
           await assert.rejects(dueno.query("delete from lpb_personas"), /lista_inmutable|conservacion_no_se_borra/);
 
@@ -832,7 +925,7 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
         await t.test("H2: solo Administración escribe el personal, la 69-B, el precio, invitaciones y membresías", async () => {
           const intentos: Array<[string, (c: pg.Client) => Promise<unknown>]> = [
             ["personal", (c) => c.query("update platform_staff set estado = estado where user_id = $1", [NUEVO])],
-            ["69-B", (c) => c.query("insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values ($1, current_date, now())", [randomUUID()])],
+            ["69-B", (c) => c.query("insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ($1, $2, current_date, now())", [randomUUID(), operador])],
             ["precio", (c) => c.query("update platform_pricing set suscripcion_centavos = 100000, publicado_en = now()")],
             ["invitación", (c) => c.query("insert into invitations (id, company_id) values ($1, $2)", [randomUUID(), alfa])],
             ["membresía", (c) => c.query("insert into memberships (user_id, company_id, estado) values ($1, $2, 'activa')", [LUIS, alfa])],
@@ -847,12 +940,13 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           await sofipo(ADM, (c) => c.query("update platform_staff set estado = estado where user_id = $1", [NUEVO]));
           assert.equal(await contar("select count(*)::int as n from memberships where company_id = $1", [alfa]), 0);
 
-          // La 69-B que carga Administración de otro operador solo coteja a sus empresas: Alfa no se suspende.
+          // La 69-B es de cada operador. La que carga Administración de otro operador (con Alfa y un
+          // proveedor de Beta en definitivo) no coteja, no relee ni la ve este operador.
           await dueno.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'administracion_plataforma')", [otroOperador, AJENA]);
           const copiaAjena = randomUUID();
           await sofipo(AJENA, async (c) => {
-            await c.query("insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values ($1, current_date, now())", [copiaAjena]);
-            await c.query("insert into lista_69b_rows (snapshot_id, rfc, situacion) values ($1, 'ALF150301AB1', 'Definitivo')", [copiaAjena]);
+            await c.query("insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ($1, $2, current_date, now())", [copiaAjena, otroOperador]);
+            await c.query("insert into lista_69b_rows (snapshot_id, rfc, situacion) values ($1, 'ALF150301AB1', 'Definitivo'), ($1, 'LIM101010AB2', 'Definitivo')", [copiaAjena]);
             await c.query(
               `insert into audit_log (operator_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, origen)
                values ($1, 'personal', $2, 'sofipo', 'cargar_lista_69b', 'lista_69b_snapshots', $3, 'operacion')`,
@@ -861,10 +955,23 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           }, otroOperador);
           assert.equal((await leerCliente(ori, alfa))?.estado, "activa");
           assert.equal(await contar("select count(*)::int as n from lpb_coincidencias where snapshot_69b_id = $1", [copiaAjena]), 0);
+          assert.equal(await contar("select count(*)::int as n from suppliers where snapshot_id = $1", [copiaAjena]), 0);
+          const copias = async (leer: (fn: (c: pg.Client) => Promise<pg.QueryResult>) => Promise<pg.QueryResult>) =>
+            (await leer((c) => c.query("select id from lista_69b_snapshots order by cargado_en"))).rows.map((fila) => String(fila.id));
+          assert.deepEqual(await copias((fn) => sofipo(AJENA, fn, otroOperador)), [copiaAjena]);
+          assert.ok(!(await copias((fn) => sofipo(ADM, fn))).includes(copiaAjena));
+          assert.deepEqual(await copias(portal), [COPIA_69B]);
+          assert.equal(Number((await portal((c) => c.query("select count(*)::int as n from lista_69b_rows where snapshot_id = $1", [copiaAjena]))).rows[0].n), 0);
+          await assert.rejects(sofipo(AJENA, (c) => c.query("insert into lista_69b_rows (snapshot_id, rfc, situacion) values ($1, 'ALF150301AB1', 'Definitivo')", [COPIA_69B]), otroOperador), /row-level security/);
+          // Con la copia del otro operador como la más reciente, Cumplimiento carga su LPB: el cotejo usa la
+          // copia de su operador y Alfa sigue activa, sin casos del 69-B.
+          await cargar(lista("2026-10-25"));
+          assert.equal((await leerCliente(ori, alfa))?.estado, "activa");
+          assert.equal(await contar("select count(*)::int as n from lpb_coincidencias where lista = '69b'"), 0);
           // Una copia limpia de Administración del operador vuelve a ser la vigente para lo que sigue.
           const copiaLimpia = randomUUID();
           await sofipo(ADM, async (c) => {
-            await c.query("insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values ($1, current_date, now())", [copiaLimpia]);
+            await c.query("insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ($1, $2, current_date, now())", [copiaLimpia, operador]);
             await c.query("insert into lista_69b_rows (snapshot_id, rfc, situacion) values ($1, 'PAL7202161U0', 'Presunto')", [copiaLimpia]);
             await evento(c, ADM, "cargar_lista_69b", "lista_69b_snapshots", copiaLimpia);
           });
@@ -874,9 +981,9 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
 
         let epsilon = "";
         let epsilonV1 = "";
-        await t.test("H6, H7 y H8: la 50ª con foto vieja aborta, sin usuario solo nace Administración y un evento por cosa", async () => {
-          // H7: sin usuario solo se da Administración a quien nace invitado en esta misma transacción,
-          // aunque traiga el evento del alta del sistema.
+        await t.test("H6, H7, H8 y N3: la 50ª con foto vieja aborta, sin usuario nadie da roles y un evento por cosa", async () => {
+          // H7 y N3: sin usuario nadie da Administración ni registra personal, aunque traiga el evento
+          // del alta del sistema. La primera Administración la da la dueña de la base.
           const sinUsuario = <T>(fn: (c: pg.Client) => Promise<T>) => como(urlApp, "plataforma_sofipo", { userId: "", operadorId: operador }, fn);
           const altaDelSistema = (c: pg.Client, userId: string) => c.query(
             `insert into audit_log (operator_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, origen, cambio)
@@ -892,7 +999,16 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
             await c.query("insert into platform_staff (operator_id, user_id, estado) values ($1, $2, 'activo')", [operador, RITA]);
             await altaDelSistema(c, RITA);
             await c.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'administracion_plataforma')", [operador, RITA]);
-          }), /sin_permiso_roles/);
+          }), /sin_rol_de_administracion/);
+          // N3: tampoco a quien nace invitado en la misma transacción, que era lo que hacía la migración retirada.
+          await assert.rejects(sinUsuario(async (c) => {
+            await c.query("insert into platform_staff (operator_id, user_id, estado) values ($1, $2, 'invitado')", [operador, RITA]);
+            await altaDelSistema(c, RITA);
+            await c.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'administracion_plataforma')", [operador, RITA]);
+          }), /sin_rol_de_administracion/);
+          assert.equal(await contar("select count(*)::int as n from platform_staff where user_id = $1", [RITA]), 0);
+          // El comando de la dueña no adivina el operador: con dos, no invita a nadie.
+          await assert.rejects(invitarPersonalComoDuena(urlDuena, [`${RITA}@ejemplo.mx`]), /operador_ambiguo/);
           assert.equal(await contar(
             "select count(*)::int as n from platform_staff_roles where user_id in ($1, $2) and rol = 'administracion_plataforma'",
             [NUEVO, RITA],
@@ -1015,6 +1131,63 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           await assert.rejects((await enviarCon("PRF150301AB8", "Profunda SA de CV", cadena)).enviar(), /expediente_estructura_muy_profunda/);
         });
 
+        await t.test("N2: el socio extranjero sin CURP se identifica con país, documento y fecha de nacimiento y suma una vez", async () => {
+          const enviarCon = async (rfc: string, razonSocial: string, socios: SocioDePrueba[]) => {
+            const companyId = await prospecto(rfc, razonSocial);
+            const { versionId } = await armarBorrador(ori, { companyId, razonSocial, rfc, socios, almacen });
+            return { versionId, enviar: () => enviarVersion(ori, versionId) };
+          };
+          const propietarios = async (versionId: string) => (await dueno.query(
+            "select nombre, motivo, capital_pct::text as capital from kyb_beneficiarios where version_id = $1 order by nombre",
+            [versionId],
+          )).rows;
+          const john = (capital: string, documento?: string, fecha?: string): SocioDePrueba => ({
+            nombre: "John Smith Taylor", tipoPersona: "fisica", pais: "US", documentoExtranjero: documento, fechaNacimiento: fecha, capital, votos: capital,
+          });
+          const laura: SocioDePrueba = { nombre: "Laura Gómez Ruiz", tipoPersona: "fisica", rfc: "GORL750505QW1", curp: "GORL750505MDFMZR04", capital: "60", votos: "60" };
+
+          // Con 40 % directo, sin CURP pero con su pasaporte y fecha de nacimiento, se envía y es propietario real.
+          const directo = await enviarCon("EXD150301AB1", "Extranjero Directo SA de CV", [laura, john("40", "X1234567", "1980-05-01")]);
+          await directo.enviar();
+          assert.deepEqual(await propietarios(directo.versionId), [
+            { nombre: "John Smith Taylor", motivo: "capital", capital: "40.0000" },
+            { nombre: "Laura Gómez Ruiz", motivo: "control", capital: "60.0000" },
+          ]);
+          assert.deepEqual((await dueno.query(
+            "select nacionalidad, pais, documento_extranjero, fecha_nacimiento::text as nacimiento from kyb_accionistas where version_id = $1 and curp is null",
+            [directo.versionId],
+          )).rows, [{ nacionalidad: "Estados Unidos", pais: "US", documento_extranjero: "X1234567", nacimiento: "1980-05-01" }]);
+
+          // El mismo documento por dos caminos (escrito distinto) suma una vez: 12.5 % + 87.5 % × 14.29 % = 25.0038 %.
+          const dosCaminos = await enviarCon("EXC150301AB2", "Extranjero Caminos SA de CV", [
+            john("12.5", "x12-345 678", "1980-05-01"),
+            {
+              nombre: "Holding Dos SA de CV", tipoPersona: "moral", rfc: "HDO100101AA2", capital: "87.5", votos: "87.5",
+              hijos: [
+                { nombre: "Yolanda Ruiz Sol", tipoPersona: "fisica", rfc: "RUSY750101AB6", curp: "RUSY750101MDFZLL06", capital: "85.71", votos: "85.71" },
+                john("14.29", "X12345678", "1980-05-01"),
+              ],
+            },
+          ]);
+          await dosCaminos.enviar();
+          assert.deepEqual(await propietarios(dosCaminos.versionId), [
+            { nombre: "John Smith Taylor", motivo: "capital", capital: "25.0038" },
+            { nombre: "Yolanda Ruiz Sol", motivo: "control", capital: "74.9963" },
+          ]);
+
+          // Sin documento o sin fecha de nacimiento no se envía; el mexicano sin CURP tampoco.
+          await assert.rejects((await enviarCon("EXS150301AB3", "Extranjero Sin Documento SA de CV", [laura, john("40", undefined, "1980-05-01")])).enviar(), /expediente_accionista_sin_identificacion/);
+          await assert.rejects((await enviarCon("EXF150301AB4", "Extranjero Sin Fecha SA de CV", [laura, john("40", "X1234567")])).enviar(), /expediente_accionista_sin_identificacion/);
+          await assert.rejects((await enviarCon("MXS150301AB5", "Mexicano Sin Curp SA de CV", [laura, { ...laura, nombre: "Mario Paz Lira", curp: undefined, rfc: undefined, capital: "40", votos: "40" }])).enviar(), /expediente_accionista_sin_curp/);
+          // México no es país extranjero, ni por el servidor ni por SQL.
+          const borrador = await enviarCon("EXM150301AB6", "Extranjero Mexico SA de CV", [laura, john("40", "X1234567", "1980-05-01")]);
+          await assert.rejects(agregarAccionista(ori, {
+            versionId: borrador.versionId, formId: randomUUID(), padreClave: "", tipoPersona: "fisica", nombre: "Ana Ruiz", rfc: "", curp: "",
+            pais: "MX", documentoExtranjero: "X1234567", fechaNacimiento: "1980-05-01", capital: "1", votos: "1", controlOtrosMedios: false, pep: "no",
+          }), /dato_invalido_pais/);
+          await assert.rejects(dueno.query("update kyb_accionistas set pais = 'MX' where version_id = $1 and pais = 'US'", [borrador.versionId]), /kyb_accionistas_extranjero|expediente_no_se_reescribe/);
+        });
+
         await t.test("H11: el portal no lee en la bitácora lo de Cumplimiento; que está suspendida, sí", async () => {
           const vistos = (await portal((c) => c.query(
             `select count(*) filter (where entidad like 'kyb\\_%' or entidad like 'lpb\\_%' or entidad = 'company_suspensions'
@@ -1072,7 +1245,8 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
 
           const accionista = (formId: string) => agregarAccionista(ori, {
             versionId: kappaV1, formId, padreClave: "", tipoPersona: "fisica", nombre: "Laura Gómez Ruiz", rfc: "GORL750505QW1",
-            curp: "GORL750505MDFMZR04", nacionalidad: "Mexicana", capital: "100", votos: "100", controlOtrosMedios: false, pep: "no",
+            curp: "GORL750505MDFMZR04", pais: "", documentoExtranjero: "", fechaNacimiento: "", capital: "100", votos: "100",
+            controlOtrosMedios: false, pep: "no",
           });
           const socio = randomUUID();
           assert.deepEqual(salida(await ambos(() => accionista(socio))), ["ok", "ok"]);
@@ -1080,14 +1254,42 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           assert.equal(await eventos("expediente_accionista_agregado", socio), 1);
           await assert.rejects(accionista(socioAlfa), /expediente_ausente/);
 
-          const acta = (formId: string) => cargarDocumento(ori, {
+          const acta = (formId: string, deps = { almacen }) => cargarDocumento(ori, {
             versionId: kappaV1, formId, tipo: "acta_constitutiva", representanteClave: "", emitidoEl: "", vigenteHasta: "",
             detalle: "Folio mercantil 777", archivo: { nombre: "acta.pdf", bytes: PDF },
-          }, { almacen });
+          }, deps);
+          // Las dos subidas llegan a Blob antes de que cualquiera escriba la fila: el doble envío es simultáneo de verdad.
+          const memoria = almacenEnMemoria();
+          let llegadas = 0;
+          let soltar = () => {};
+          const juntas = new Promise<void>((resolver) => { soltar = resolver; });
+          const conBarrera: typeof memoria = {
+            ...memoria,
+            async guardar(entrada) {
+              const guardado = await memoria.guardar(entrada);
+              llegadas += 1;
+              if (llegadas === 2) soltar();
+              await juntas;
+              return guardado;
+            },
+          };
           const documento = randomUUID();
-          assert.deepEqual(salida(await ambos(() => acta(documento))), ["ok", "ok"]);
+          assert.deepEqual(salida(await ambos(() => acta(documento, { almacen: conBarrera }))), ["ok", "ok"]);
           assert.equal(await contar("select count(*)::int as n from kyb_version_documentos where version_id = $1", [kappaV1]), 1);
           assert.equal(await eventos("expediente_documento_cargado", documento), 1);
+          // S9: el archivo del envío que perdió no tiene fila: se borra; el de la fila se conserva.
+          const conservado = String((await dueno.query("select clave_blob from kyb_documentos where id = $1", [documento])).rows[0].clave_blob);
+          assert.equal(memoria.guardados.size, 2);
+          assert.equal(memoria.borrados.length, 1);
+          assert.notEqual(memoria.borrados[0], conservado);
+          // Si la transacción falla después de subir (representante que no es de la versión), el archivo también se borra.
+          const fallida = almacenEnMemoria();
+          await assert.rejects(cargarDocumento(ori, {
+            versionId: kappaV1, formId: randomUUID(), tipo: "identificacion_representante", representanteClave: randomUUID(), emitidoEl: "",
+            vigenteHasta: "2030-01-01", detalle: "", archivo: { nombre: "ine.pdf", bytes: PDF },
+          }, { almacen: fallida }), /documento_sin_representante/);
+          assert.deepEqual(fallida.borrados, [...fallida.guardados.keys()]);
+          assert.equal(fallida.borrados.length, 1);
           await assert.rejects(acta(docAlfa), /expediente_ausente/);
 
           // Dictamen: con el id de otro dictamen no se da por hecho; el mismo formulario, uno; dos distintos, uno y «ya registrado».
@@ -1182,6 +1384,42 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           assert.ok(deAuditoria.includes("Homónimo: la CURP del socio es distinta"));
         });
 
+        await t.test("S6: en la bitácora del personal, los eventos de la lista de una empresa solo los leen Cumplimiento y Auditoría", async () => {
+          await dueno.query("insert into users (id, nombre, correo) values ($1, 'Ada Administración', $2)", [ADA, `${ADA}@ejemplo.mx`]);
+          await dueno.query("insert into platform_staff (operator_id, user_id, estado) values ($1, $2, 'activo')", [operador, ADA]);
+          await dueno.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'administracion_plataforma')", [operador, ADA]);
+          const ada = personal(operador, ADA, ["administracion_plataforma"]);
+          const deLaLista = (e: { companyId: string | null; accion: string }) =>
+            e.companyId !== null && (e.accion.startsWith("lpb_") || e.accion === "empresa_suspendida_lpb");
+          const deAda = await leerBitacora(ada);
+          assert.equal(deAda.filter(deLaLista).length, 0);
+          assert.equal((await leerBitacora(ada, beta)).filter(deLaLista).length, 0);
+          // La carga de la lista, sin empresa, sí la ve; y lo demás de la empresa también.
+          assert.ok(deAda.some((e) => e.accion === "lpb_cargada" && e.companyId === null));
+          assert.ok((await leerBitacora(ada, beta)).some((e) => e.accion === "suspension_aprobada" || e.accion === "reactivacion_aprobada"));
+          assert.ok((await leerBitacora(aud)).filter(deLaLista).length > 0);
+          // Por SQL directo, igual: es la política de la base.
+          const porSql = (userId: string) => sofipo(userId, async (c) => Number((await c.query(
+            "select count(*)::int as n from audit_log where company_id is not null and (accion like 'lpb\\_%' or accion = 'empresa_suspendida_lpb')",
+          )).rows[0].n));
+          assert.equal(await porSql(ADA), 0);
+          assert.ok((await porSql(AUD)) > 0);
+          assert.ok((await porSql(CUM)) > 0);
+        });
+
+        await t.test("S12: el alta por la dueña deja quién corrió el comando y la bitácora nombra la coincidencia detectada", async () => {
+          const pide = { ...adm, capacidades: capacidadesDe({ rolesCliente: [], rolesPlataforma: ["administracion_plataforma"] }) };
+          const demo = await darDeAltaComoDuena(urlDuena, pide, {
+            rfc: "DEM150301AB9", razonSocial: "Demostración Dueña SA de CV", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
+          }, { demostracion: true });
+          assert.deepEqual((await dueno.query(
+            `select cambio ->> 'ejecutado_por' = session_user as ejecutado_por, cambio ->> 'demostracion' as demostracion
+             from audit_log where accion = 'alta_empresa' and company_id = $1`,
+            [demo.id],
+          )).rows, [{ ejecutado_por: true, demostracion: "true" }]);
+          assert.equal(etiquetaAccion("lpb_coincidencia_detectada"), "El sistema detectó una coincidencia");
+        });
+
         await t.test("F9: sin el rol no se lee el archivo; uno que pasa del tope tampoco", async () => {
           const espiado = (contenido: BlobPart[], nombre: string) => {
             const archivo = new File(contenido, nombre);
@@ -1214,6 +1452,87 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           await cargar(lista("2026-10-27", BETA_EN_LISTA, "RIOS PEREZ ROSA,,,fisica"));
           const representantes = (await listarCoincidencias(cum, { companyId: beta })).filter((k) => k.sujetoTipo === "representante");
           assert.deepEqual(representantes.map((k) => [k.sujetoNombre, k.tipo, k.coincidePor, k.estado]), [["Rosa Pérez Ríos", "posible", "nombre", "pendiente"]]);
+        });
+
+        await t.test("N1: el falso positivo exacto resuelto con una carga posterior no se reabre con esa misma; con la siguiente, sí", async () => {
+          const casosBeta = async () => (await dueno.query(
+            "select id, estado, cerrada_con_carga_id from lpb_coincidencias where company_id = $1 and sujeto_tipo = 'empresa' and coincide_por = 'rfc' order by detectada_en",
+            [beta],
+          )).rows as Array<{ id: string; estado: string; cerrada_con_carga_id: string | null }>;
+          const total = () => contar("select count(*)::int as n from lpb_coincidencias where company_id = $1", [beta]);
+          const vigente = async () => String((await dueno.query("select lpb_carga_vigente($1) as id", [operador])).rows[0].id);
+          // Detectada con la carga del 24 de octubre (C1); la del 27 (C2, vigente) también la trae.
+          const abierta = (await casosBeta()).at(-1)!;
+          assert.equal(abierta.estado, "pendiente");
+          const c2 = await vigente();
+          assert.notEqual(String((await dueno.query("select carga_id from lpb_coincidencias where id = $1", [abierta.id])).rows[0].carga_id), c2);
+          await resolverCoincidencia(cum, SESION_SOFIPO, { id: abierta.id, estado: "falso_positivo", motivo: "El RFC de la lista del 27 de octubre es de otra persona moral" });
+          const rosa = (await listarCoincidencias(cum, { companyId: beta })).find((k) => k.sujetoTipo === "representante" && k.estado === "pendiente");
+          await resolverCoincidencia(cum, SESION_SOFIPO, { id: rosa!.id, estado: "falso_positivo", motivo: "Homónimo: la CURP de la representante es distinta" });
+          const reactivar = randomUUID();
+          await solicitarCambioDeSuspension(cum, { companyId: beta, formId: reactivar, tipo: "reactivacion", motivo: "Dictamen de falso positivo" });
+          await decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: reactivar, aprobada: true, motivo: "" });
+          assert.equal((await leerCliente(ori, beta))?.estado, "activa");
+          const antes = await total();
+
+          // Con C2 vigente nada lo reabre: ni otro cotejo, ni un proveedor nuevo, ni una copia del 69-B, ni una versión nueva.
+          assert.equal(Number((await dueno.query("select lpb_cotejar_empresa($1) as n", [beta])).rows[0].n), 0);
+          await dueno.query("begin");
+          try {
+            await sembrarProveedor(dueno, beta, operador, PROVEEDOR_CUATRO, "CUA101010AB4", "Proveedor Cuatro SA");
+            await dueno.query("commit");
+          } catch (error) {
+            await dueno.query("rollback");
+            throw error;
+          }
+          const otraCopia = randomUUID();
+          await sofipo(ADM, async (c) => {
+            await c.query("insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ($1, $2, current_date, now())", [otraCopia, operador]);
+            await c.query("insert into lista_69b_rows (snapshot_id, rfc, situacion) values ($1, 'PAL7202161U0', 'Presunto')", [otraCopia]);
+            await evento(c, ADM, "cargar_lista_69b", "lista_69b_snapshots", otraCopia);
+          });
+          const betaV2 = randomUUID();
+          await crearVersion(ori, { companyId: beta, formId: betaV2 });
+          await enviarVersion(ori, betaV2);
+          assert.equal(await total(), antes);
+          assert.equal((await leerCliente(ori, beta))?.estado, "activa");
+          // Se cerró con la carga que estaba vigente (C2): con esa no se reabre.
+          assert.equal((await casosBeta()).find((k) => k.id === abierta.id)?.cerrada_con_carga_id, c2);
+
+          // C3 con la empresa: caso nuevo y suspensión inmediata.
+          await cargar(lista("2026-10-28", BETA_EN_LISTA));
+          assert.deepEqual((await casosBeta()).map((k) => k.estado), ["fuera_de_lista", "falso_positivo", "falso_positivo", "pendiente"]);
+          assert.equal((await leerCliente(ori, beta))?.estado, "suspendida");
+        });
+
+        await t.test("H2: con su propia copia el operador sí suspende y «fuera de lista» mira la copia de su operador", async () => {
+          const propia = randomUUID();
+          await sofipo(ADM, async (c) => {
+            await c.query("insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ($1, $2, current_date, now())", [propia, operador]);
+            await c.query("insert into lista_69b_rows (snapshot_id, rfc, situacion) values ($1, 'ALF150301AB1', 'Definitivo')", [propia]);
+            await evento(c, ADM, "cargar_lista_69b", "lista_69b_snapshots", propia);
+          });
+          assert.equal((await leerCliente(ori, alfa))?.estado, "suspendida");
+          const caso = (await dueno.query(
+            "select id from lpb_coincidencias where company_id = $1 and lista = '69b' and snapshot_69b_id = $2 and estado = 'pendiente'",
+            [alfa, propia],
+          )).rows[0] as { id: string } | undefined;
+          assert.ok(caso);
+          // Otro operador carga una copia más reciente sin Alfa: la de este operador la sigue trayendo.
+          const ajenaSinAlfa = randomUUID();
+          await sofipo(AJENA, async (c) => {
+            await c.query("insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ($1, $2, current_date, now())", [ajenaSinAlfa, otroOperador]);
+            await c.query("insert into lista_69b_rows (snapshot_id, rfc, situacion) values ($1, 'PAL7202161U0', 'Presunto')", [ajenaSinAlfa]);
+            await c.query(
+              `insert into audit_log (operator_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, origen)
+               values ($1, 'personal', $2, 'sofipo', 'cargar_lista_69b', 'lista_69b_snapshots', $3, 'operacion')`,
+              [otroOperador, AJENA, ajenaSinAlfa],
+            );
+          }, otroOperador);
+          await assert.rejects(
+            resolverCoincidencia(cum, SESION_SOFIPO, { id: caso.id, estado: "fuera_de_lista", motivo: "Ya no aparece en el 69-B" }),
+            /coincidencia_sigue_en_lista/,
+          );
         });
       } finally {
         await dueno.end();
@@ -1276,7 +1595,7 @@ async function sembrarPortal(dueno: pg.Client, companyId: string, operadorId: st
         await dueno.query("insert into membership_roles (user_id, company_id, rol) values ($1, $2, $3)", [id, companyId, rol]);
       }
     }
-    await dueno.query("insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values ($1, current_date - 1, now())", [COPIA_69B]);
+    await dueno.query("insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ($1, $2, current_date - 1, now())", [COPIA_69B, operadorId]);
     await dueno.query(
       `insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador)
        values ($1, 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', $2)`,

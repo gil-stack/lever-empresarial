@@ -115,6 +115,7 @@ export function etiquetaAccion(accion: string): string | null {
     expediente_dictaminado: "Dictaminó el expediente",
     riesgo_calificado: "Calificó el grado de riesgo",
     lpb_cargada: "Cargó la Lista de Personas Bloqueadas",
+    lpb_coincidencia_detectada: "El sistema detectó una coincidencia",
     lpb_coincidencia_resuelta: "Resolvió una coincidencia",
     lpb_reporte_registrado: "Anotó el folio del reporte",
     empresa_suspendida_lpb: "El sistema suspendió la empresa por la lista",
