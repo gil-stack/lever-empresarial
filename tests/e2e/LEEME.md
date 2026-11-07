@@ -9,7 +9,7 @@
 | `nomina.spec.ts` | Alta con nómina, cambio de CLABE de nómina con reautenticación y preparación del lote vencido, todo con doble clic. |
 | `flujo-de-caja.spec.ts` | Saldo declarado, cobro manual y con XML, obligación recurrente, presupuesto al 80 y al 100 %, «mover pago», faltante en Inicio y Pendientes y «Monto reservado» para Finanzas. |
 | `entrada.spec.ts` | Entrada de cliente con contraseña y TOTP. El tope de intentos no revela si el correo tiene cuenta: mismo texto, marcado, dirección y tiempo. |
-| `operacion.spec.ts` | Entrada SOFIPO con TOTP, prospecto → activación decidida por otra persona, «Perdí el segundo factor» con «Confirma que eres tú» en Recuperaciones y publicación del precio con reautenticación. |
+| `operacion.spec.ts` | Entrada SOFIPO con TOTP; prospecto registrado y activación pedida por Originación: sin expediente aprobado la base no deja activar, y Faro E2E (en regla) la aprueba otra persona con Aprobación y factor reciente; «Perdí el segundo factor» con «Confirma que eres tú» en Recuperaciones y publicación del precio con reautenticación. |
 | `invitacion.spec.ts` | Invitación del primer administrador desde Operación, «Reenviar invitación» con doble clic, cuenta con TOTP y recuperación de contraseña por correo. |
 | `roles.spec.ts` | Lo que cada rol ve en el lateral y las rutas que no le abren aunque escriba la dirección. |
 | `marco.spec.ts` | Menú de la persona, buscador, Apariencia y cajón móvil. |
@@ -30,7 +30,7 @@ Sin `E2E_ADMIN_URL`, el script hace lo mismo que en CI: levanta `postgres:17` y 
 
 1. crea una base con nombre aleatorio y le aplica todas las migraciones;
 2. carga `seed-pagos.sql` (Taller del Cierre con las sesiones de Gil y Rosa) y la empresa de Personas;
-3. siembra Altamar E2E, Bahía E2E y dos personas de Operación (`siembra.ts`);
+3. siembra Altamar E2E, Bahía E2E, tres personas de Operación con los roles de la 0028 y Faro E2E (`siembra.ts`). Los roles se dan con el servicio de la pantalla Personal, una persona a otra: op1 Originación (registra prospectos y pide activaciones), op2 Aprobación (las decide) y op3 Cumplimiento (dictamina expedientes); las tres conservan Administración. Faro E2E queda en alta con expediente aprobado por op3, riesgo vigente y la activación pedida por op1, lo que exige el candado de la base para que op2 la apruebe; sus documentos van a un almacén en memoria porque la siembra corre antes del emulador de Blob;
 4. levanta el emulador de Blob y `next start` en `E2E_PUERTO`, con el correo falso precargado.
 
 Al terminar, `global-teardown.ts` detiene el servidor y el emulador y borra la base. En la máquina de desarrollo la suite completa tarda unos 2 minutos.
