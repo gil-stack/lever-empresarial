@@ -55,9 +55,30 @@ describe("pendientes de la portada", () => {
     let consultas = 0;
     const pendientes = await leerPendientesInicio(ctx(["contador"]), {
       repositorio: { async leer() { consultas += 1; return datos; } },
+      alertasPresupuesto: async () => [],
     });
     assert.deepEqual(pendientes, []);
     assert.equal(consultas, 0);
+  });
+
+  it("las alertas de presupuesto llegan a quien ve el flujo, también a contaduría, y a nadie más", async () => {
+    const alerta = {
+      tipo: "area" as const,
+      id: "77777777-7777-4777-8777-777777777777",
+      nombre: "Ventas",
+      presupuestoCentavos: 10_000_000,
+      gastoCentavos: 10_000_000,
+      estado: "excedido" as const,
+    };
+    let lecturas = 0;
+    const leer = async () => { lecturas += 1; return [alerta]; };
+    const contador = await leerPendientesInicio(ctx(["contador"]), { repositorio: { async leer() { return datos; } }, alertasPresupuesto: leer });
+    assert.deepEqual(contador.map((p) => [p.id, p.titulo, p.ruta]), [
+      ["presupuesto-area-77777777-7777-4777-8777-777777777777", "El presupuesto del área Ventas está excedido", "/consola/presupuestos"],
+    ]);
+    const solicitante = await leerPendientesInicio(ctx(["solicitante"]), { repositorio: { async leer() { return datos; } }, alertasPresupuesto: leer });
+    assert.equal(solicitante.some((p) => p.id.startsWith("presupuesto-")), false);
+    assert.equal(lecturas, 1);
   });
 });
 

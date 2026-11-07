@@ -1,0 +1,152 @@
+import { formatoPesos } from "../centavos";
+import { mensualEstimado, sumarCentavos, type FrecuenciaNomina } from "../nomina";
+import { adelantarObligacion, fechasDeSerie, primeroDelMes, siguienteObligacion, ultimoDelMes, type FrecuenciaObligacion } from "./fechas";
+import { restantesDeObligacion } from "./proyeccion";
+
+/**
+ * Presupuestos vivos del mes en curso (hora de México). El gasto de un área es:
+ * - la nómina neta de sus personas, prorrateada al mes según su frecuencia;
+ * - los pagos a proveedores del área (no rechazados ni cancelados) con fecha
+ *   programada en el mes;
+ * - las obligaciones recurrentes del área que caen en el mes, menos lo que su
+ *   proveedor ya facturó ese mes (ya cuenta en los pagos a proveedores).
+ * El gasto de una persona son los pagos a proveedores que ella solicitó en el
+ * mes; su nómina no cuenta contra su bolsa (son presupuestos separados).
+ */
+
+export const UMBRAL_ATENCION = 0.8;
+
+export type EstadoPresupuesto = "sin_presupuesto" | "en_rango" | "atencion" | "excedido";
+
+export type FuentesPresupuesto = {
+  hoy: string;
+  areas: readonly { id: string; nombre: string; presupuestoCentavos: number | null }[];
+  nomina: readonly { areaId: string | null; netoCentavos: number; frecuencia: FrecuenciaNomina }[];
+  /** Suma del mes por área, ya filtrada por estado y fecha programada. */
+  pagosPorArea: readonly { areaId: string; centavos: number }[];
+  obligaciones: readonly {
+    areaId: string | null;
+    montoCentavos: number;
+    frecuencia: FrecuenciaObligacion;
+    proximaFecha: string;
+    anclaDia: number;
+    /** Por mes (YYYY-MM), lo que su proveedor ya trae en cargos vivos: se descuenta de la obligación. */
+    cargosPorMes?: Readonly<Record<string, number>>;
+  }[];
+  personas: readonly { id: string; nombre: string; areaNombre: string | null; presupuestoCentavos: number; pagosCentavos: number }[];
+};
+
+export type LineaPresupuesto = {
+  tipo: "area" | "persona";
+  id: string;
+  nombre: string;
+  presupuestoCentavos: number | null;
+  /** `null`: reservado. Sin permiso de ver el detalle de la nómina, el gasto de un área con nómina de una sola persona no se muestra. */
+  gastoCentavos: number | null;
+  estado: EstadoPresupuesto;
+  /** Solo en áreas: de dónde sale el gasto. `nominaPersonas` decide si se puede mostrar sin detalle de nómina. */
+  desglose?: { nominaCentavos: number; nominaPersonas: number; proveedoresCentavos: number; obligacionesCentavos: number };
+  detalle?: string | null;
+};
+
+export type Presupuestos = {
+  mes: { desde: string; hasta: string };
+  areas: LineaPresupuesto[];
+  personas: LineaPresupuesto[];
+  alertas: LineaPresupuesto[];
+};
+
+export function estadoDe(gasto: number, presupuesto: number | null): EstadoPresupuesto {
+  if (presupuesto === null) return "sin_presupuesto";
+  if (presupuesto === 0) return gasto > 0 ? "excedido" : "en_rango";
+  if (gasto >= presupuesto) return "excedido";
+  // Entero: el 80 % exacto ya es atención, sin errores de punto flotante.
+  if (gasto * 10 >= presupuesto * 8) return "atencion";
+  return "en_rango";
+}
+
+export function calcularPresupuestos(fuentes: FuentesPresupuesto): Presupuestos {
+  const desde = primeroDelMes(fuentes.hoy);
+  const hasta = ultimoDelMes(fuentes.hoy);
+  const areas = fuentes.areas.map((area) => {
+    const nominaDelArea = fuentes.nomina.filter((perfil) => perfil.areaId === area.id);
+    const nominaCentavos = sumarCentavos(nominaDelArea.map((perfil) => mensualEstimado(perfil.netoCentavos, perfil.frecuencia)));
+    const proveedoresCentavos = sumarCentavos(
+      fuentes.pagosPorArea.filter((pago) => pago.areaId === area.id).map((pago) => pago.centavos),
+    );
+    const obligacionesCentavos = sumarCentavos(
+      fuentes.obligaciones
+        .filter((obligacion) => obligacion.areaId === area.id)
+        .flatMap((obligacion) =>
+          restantesDeObligacion(
+            fechasDeSerie(
+              obligacion.proximaFecha,
+              (fecha) => siguienteObligacion(fecha, obligacion.frecuencia, obligacion.anclaDia),
+              desde,
+              hasta,
+              (base, inicio) => adelantarObligacion(base, inicio, obligacion.frecuencia, obligacion.anclaDia),
+            ),
+            obligacion.montoCentavos,
+            obligacion.cargosPorMes,
+          ).map((ocurrencia) => ocurrencia.centavos),
+        ),
+    );
+    const gastoCentavos = sumarCentavos([nominaCentavos, proveedoresCentavos, obligacionesCentavos]);
+    return {
+      tipo: "area",
+      id: area.id,
+      nombre: area.nombre,
+      presupuestoCentavos: area.presupuestoCentavos,
+      gastoCentavos,
+      estado: estadoDe(gastoCentavos, area.presupuestoCentavos),
+      desglose: { nominaCentavos, nominaPersonas: nominaDelArea.length, proveedoresCentavos, obligacionesCentavos },
+    } satisfies LineaPresupuesto;
+  });
+  const personas = fuentes.personas.map((persona) => ({
+    tipo: "persona",
+    id: persona.id,
+    nombre: persona.nombre,
+    presupuestoCentavos: persona.presupuestoCentavos,
+    gastoCentavos: persona.pagosCentavos,
+    estado: estadoDe(persona.pagosCentavos, persona.presupuestoCentavos),
+    detalle: persona.areaNombre,
+  }) satisfies LineaPresupuesto);
+  const alertas = [...areas, ...personas]
+    .filter((linea) => linea.estado === "atencion" || linea.estado === "excedido")
+    .sort((a, b) => (a.estado === b.estado ? a.nombre.localeCompare(b.nombre, "es") : a.estado === "excedido" ? -1 : 1));
+  return { mes: { desde, hasta }, areas, personas, alertas };
+}
+
+/**
+ * Para quien no ve el detalle de la nómina: en un área cuya nómina del mes es
+ * de una sola persona, el gasto (y su desglose) no se muestra, porque restando
+ * lo demás daría el neto de esa persona. Quedan el estado y el presupuesto. Lo
+ * usan la página de Presupuestos, las alertas de Inicio y Pendientes y el correo.
+ */
+export function reservarNominaDeUnaPersona(presupuestos: Presupuestos): Presupuestos {
+  const reservar = (linea: LineaPresupuesto): LineaPresupuesto =>
+    linea.desglose && linea.desglose.nominaPersonas === 1 ? { ...linea, gastoCentavos: null, desglose: undefined } : linea;
+  return { ...presupuestos, areas: presupuestos.areas.map(reservar), alertas: presupuestos.alertas.map(reservar) };
+}
+
+/** Las cifras de una alerta: «$X de $Y» o, con el gasto reservado, solo el presupuesto. Lo usan Inicio y el correo. */
+export function cifrasDePresupuesto(linea: Pick<LineaPresupuesto, "gastoCentavos" | "presupuestoCentavos">): string {
+  const tope = formatoPesos(linea.presupuestoCentavos ?? 0);
+  return linea.gastoCentavos === null ? `presupuesto de ${tope}; el gasto está reservado` : `${formatoPesos(linea.gastoCentavos)} de ${tope}`;
+}
+
+/** Texto para quien no puede ver el gasto: el mismo que el calendario usa para el pago de una sola persona. */
+export const GASTO_RESERVADO = "Solo lo ve quien puede ver el detalle de la nómina.";
+
+export const ETIQUETA_ESTADO_PRESUPUESTO: Record<EstadoPresupuesto, string> = {
+  sin_presupuesto: "Sin presupuesto",
+  en_rango: "En rango",
+  atencion: "Atención",
+  excedido: "Excedido",
+};
+
+/** El porcentaje entero que se muestra junto a la barra. */
+export function porcentaje(gasto: number | null, presupuesto: number | null): number | null {
+  if (gasto === null || presupuesto === null || presupuesto === 0) return null;
+  return Math.floor((gasto * 100) / presupuesto);
+}

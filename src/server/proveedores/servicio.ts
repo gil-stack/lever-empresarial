@@ -35,6 +35,8 @@ export type EntradaAltaProveedor = {
   contrato?: { nombre: string; bytes: Uint8Array } | null;
   contratoDesde?: unknown;
   contratoHasta?: unknown;
+  /** Área opcional del proveedor (flujo de caja): sus pagos suman al presupuesto de esa área. */
+  areaId?: unknown;
 };
 
 export async function leerProveedores(
@@ -110,6 +112,7 @@ export async function darDeAltaProveedor(
         nombreComercial: preparado.nombreComercial,
         contactoCorreo: preparado.contactoCorreo,
         diasCredito: preparado.diasCredito,
+        costCenterId: preparado.areaId,
         altaEn: ahora,
       });
       const clabeId = randomUUID();
@@ -119,7 +122,14 @@ export async function darDeAltaProveedor(
         clabe: preparado.clabe,
         desde: ahora,
       });
-      await listo.auditar(ctx.consulta, actor, { accion: "alta_proveedor", identificador: proveedorId });
+      // El área inicial queda en el evento del alta, por nombre (quien da de alta puede elegirla).
+      const area = preparado.areaId ? await ctx.nombreDeArea(preparado.areaId) : null;
+      if (preparado.areaId && area === null) throw new ErrorDeDominio("area_ajena");
+      await listo.auditar(ctx.consulta, actor, {
+        accion: "alta_proveedor",
+        identificador: proveedorId,
+        ...(area ? { cambio: { area } } : {}),
+      });
       await listo.auditar(ctx.consulta, actor, { accion: "clabe_proveedor", identificador: clabeId });
       if (contrato && preparado.contrato) {
         await ctx.insertarDocumento({
@@ -159,6 +169,7 @@ function prepararEntrada(entrada: EntradaAltaProveedor): {
   contrato: { nombre: string; bytes: Uint8Array } | null;
   contratoDesde: string | null;
   contratoHasta: string | null;
+  areaId: string | null;
 } {
   if (typeof entrada.rfc !== "string") throw new ErrorDeDominio("rfc_vacio");
   const motivo = validarRfc(entrada.rfc);
@@ -202,8 +213,17 @@ function prepararEntrada(entrada: EntradaAltaProveedor): {
 
   return {
     rfc, razonSocial, clabe: clabe.clabe, nombre: constancia.nombre, bytes: constancia.bytes,
-    nombreComercial, contactoCorreo: correo, diasCredito, contrato, contratoDesde, contratoHasta,
+    nombreComercial, contactoCorreo: correo, diasCredito, contrato, contratoDesde, contratoHasta, areaId: areaDeAlta(entrada.areaId),
   };
+}
+
+/** Vacío es «sin área». El área tiene que ser de la empresa: la llave (área, empresa) lo exige en la base. */
+function areaDeAlta(valor: unknown): string | null {
+  if (valor === undefined || valor === null || valor === "") return null;
+  if (typeof valor !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(valor)) {
+    throw new ErrorDeDominio("area_ajena");
+  }
+  return valor.toLowerCase();
 }
 
 function errorDeRazon(razon: string): string | null {

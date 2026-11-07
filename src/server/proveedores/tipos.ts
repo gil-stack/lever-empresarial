@@ -31,6 +31,8 @@ export type ProveedorNuevo = {
   nombreComercial: string | null;
   contactoCorreo: string | null;
   diasCredito: number;
+  /** Área opcional para Presupuestos. */
+  costCenterId: string | null;
   altaEn: Date;
 };
 
@@ -49,6 +51,8 @@ export type ContextoProveedores = {
   insertarDocumento(documento: DocumentoNuevo): Promise<void>;
   insertarProveedor(proveedor: ProveedorNuevo): Promise<void>;
   insertarClabe(clabe: ClabeNueva): Promise<void>;
+  /** El nombre del área de esta empresa, o null si no es suya. */
+  nombreDeArea(areaId: string): Promise<string | null>;
   vincularContrato(documentoId: string, supplierId: string, vigenteDesde: string | null, vigenteHasta: string | null, creadoEn: Date): Promise<void>;
 };
 

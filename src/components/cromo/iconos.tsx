@@ -206,3 +206,35 @@ export function IconoCompra() {
     </Trazo>
   );
 }
+
+export function IconoFlujo() {
+  return (
+    <Trazo>
+      <path d="M3 17l5-5 4 4 8-9M15 7h5v5" />
+    </Trazo>
+  );
+}
+
+export function IconoCobros() {
+  return (
+    <Trazo>
+      <path d="M12 3v18M17 7.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.8 5 3.5 5 1.6 5 3.5-2.2 3-5 3-5-1.1-5-3" />
+    </Trazo>
+  );
+}
+
+export function IconoCalendario() {
+  return (
+    <Trazo>
+      <path d="M4 6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM4 10h16M8 3v4M16 3v4" />
+    </Trazo>
+  );
+}
+
+export function IconoPresupuestos() {
+  return (
+    <Trazo>
+      <path d="M12 3a9 9 0 1 0 9 9h-9zM15 3.5A9 9 0 0 1 20.5 9H15z" />
+    </Trazo>
+  );
+}
