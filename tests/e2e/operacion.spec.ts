@@ -36,8 +36,11 @@ async function salirDeOperacion(page: Page): Promise<void> {
 test("entrada SOFIPO: contraseña y código; un código malo no abre y el doble clic abre una sola sesión", async ({ page }) => {
   const errores = vigilarConsola(page);
   const op1 = await idDe(CORREOS.op1);
-  const sesiones = () => contar("select 1 from sessions where user_id = $1 and superficie = 'sofipo'", [op1]);
+  // Entrar puede cerrar sesiones viejas de la misma persona: se cuentan las que nacen en esta prueba.
+  const desde = (await consultar<{ desde: string }>("select now()::text as desde"))[0]!.desde;
+  const sesiones = () => contar("select 1 from sessions where user_id = $1 and superficie = 'sofipo' and creada_en >= $2::timestamptz", [op1, desde]);
   const antes = await sesiones();
+  expect(antes).toBe(0);
 
   await page.goto("/operacion/entrar");
   await page.getByLabel("Correo").fill(CORREOS.op1);
