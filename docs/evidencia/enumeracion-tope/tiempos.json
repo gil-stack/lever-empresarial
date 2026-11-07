@@ -1,0 +1,310 @@
+[
+  {
+    "superficie": "cliente",
+    "intento": 1,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1508,
+      "inexistente": 1504
+    },
+    "pantalla": {
+      "real": 1594,
+      "inexistente": 1827
+    },
+    "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "cliente",
+    "intento": 2,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1504,
+      "inexistente": 1504
+    },
+    "pantalla": {
+      "real": 1576,
+      "inexistente": 1598
+    },
+    "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "cliente",
+    "intento": 3,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1504,
+      "inexistente": 1504
+    },
+    "pantalla": {
+      "real": 1568,
+      "inexistente": 1875
+    },
+    "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "cliente",
+    "intento": 4,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1503
+    },
+    "pantalla": {
+      "real": 1559,
+      "inexistente": 1569
+    },
+    "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "cliente",
+    "intento": 5,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1506,
+      "inexistente": 1503
+    },
+    "pantalla": {
+      "real": 1776,
+      "inexistente": 1566
+    },
+    "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "cliente",
+    "intento": 6,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1503
+    },
+    "pantalla": {
+      "real": 1792,
+      "inexistente": 1795
+    },
+    "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "cliente",
+    "intento": 7,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1504
+    },
+    "pantalla": {
+      "real": 1826,
+      "inexistente": 1562
+    },
+    "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "cliente",
+    "intento": 8,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1504
+    },
+    "pantalla": {
+      "real": 1562,
+      "inexistente": 1564
+    },
+    "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "cliente",
+    "intento": 9,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1504
+    },
+    "pantalla": {
+      "real": 1565,
+      "inexistente": 1891
+    },
+    "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "cliente",
+    "intento": 10,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1503
+    },
+    "pantalla": {
+      "real": 1840,
+      "inexistente": 1548
+    },
+    "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "cliente",
+    "intento": 11,
+    "contrasena": "contraseña CORRECTA",
+    "servidor": {
+      "real": 1502,
+      "inexistente": 1502
+    },
+    "pantalla": {
+      "real": 1808,
+      "inexistente": 1805
+    },
+    "texto": "No se pudo entrar El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "operacion",
+    "intento": 1,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1504,
+      "inexistente": 1503
+    },
+    "pantalla": {
+      "real": 1825,
+      "inexistente": 1891
+    },
+    "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "operacion",
+    "intento": 2,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1504,
+      "inexistente": 1504
+    },
+    "pantalla": {
+      "real": 1577,
+      "inexistente": 1597
+    },
+    "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "operacion",
+    "intento": 3,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1502
+    },
+    "pantalla": {
+      "real": 1853,
+      "inexistente": 1573
+    },
+    "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "operacion",
+    "intento": 4,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1502,
+      "inexistente": 1504
+    },
+    "pantalla": {
+      "real": 1584,
+      "inexistente": 1940
+    },
+    "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "operacion",
+    "intento": 5,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1503
+    },
+    "pantalla": {
+      "real": 1586,
+      "inexistente": 1856
+    },
+    "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "operacion",
+    "intento": 6,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1502
+    },
+    "pantalla": {
+      "real": 1563,
+      "inexistente": 1574
+    },
+    "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "operacion",
+    "intento": 7,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1505,
+      "inexistente": 1503
+    },
+    "pantalla": {
+      "real": 1595,
+      "inexistente": 1564
+    },
+    "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "operacion",
+    "intento": 8,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1504
+    },
+    "pantalla": {
+      "real": 1562,
+      "inexistente": 1861
+    },
+    "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "operacion",
+    "intento": 9,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1503
+    },
+    "pantalla": {
+      "real": 1565,
+      "inexistente": 1561
+    },
+    "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "operacion",
+    "intento": 10,
+    "contrasena": "contraseña mala",
+    "servidor": {
+      "real": 1503,
+      "inexistente": 1503
+    },
+    "pantalla": {
+      "real": 1885,
+      "inexistente": 1559
+    },
+    "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  },
+  {
+    "superficie": "operacion",
+    "intento": 11,
+    "contrasena": "contraseña CORRECTA",
+    "servidor": {
+      "real": 1504,
+      "inexistente": 1504
+    },
+    "pantalla": {
+      "real": 1595,
+      "inexistente": 1558
+    },
+    "texto": "El correo o la contraseña no coinciden. Si fallaste varias veces, espera quince minutos."
+  }
+]

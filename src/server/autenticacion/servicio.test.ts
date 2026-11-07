@@ -27,6 +27,7 @@ import {
   opcionesParaInscribirPasskey,
   opcionesPasskeyDeSesion,
   pedirRecuperacion,
+  PISO_RECHAZO_MS,
   prepararTotp,
   prepararTotpDeSesion,
   quitarPasskey,
@@ -94,8 +95,11 @@ describe("entrar con segundo factor", () => {
       );
     }
     const bloqueada = await iniciarConContrasena({ correo: "ana@ejemplo.mx", contrasena: CLAVE }, deps);
-    assert.deepEqual(bloqueada, { tipo: "rechazo", codigo: "entrada_bloqueada" });
+    assert.deepEqual(bloqueada, { tipo: "rechazo", codigo: "credenciales_invalidas" });
     assert.equal(repo.entradas.length, 0);
+    // El intento en el tope no se anota: la bitácora queda con los ocho fallos reales.
+    assert.equal(repo.fallos.length, 8);
+    assert.equal(repo.eventos.filter((e) => e === "entrada_fallida").length, 8);
   });
 
   it("inscribe TOTP, no guarda la semilla ni los códigos, y el código no sirve dos veces", async () => {
@@ -628,6 +632,108 @@ function origen() {
   return { rpID: "localhost", origen: "http://localhost:3000" };
 }
 
+describe("el tope de contraseña no revela qué correos tienen cuenta", () => {
+  const MALA = "otra-clave-99";
+  const RECHAZO = { tipo: "rechazo", codigo: "credenciales_invalidas" };
+
+  async function enElTope(repo: Memoria, deps: ReturnType<typeof base>) {
+    for (let i = 0; i < 8; i += 1) await iniciarConContrasena({ correo: "ana@ejemplo.mx", contrasena: MALA }, deps);
+    assert.equal(repo.fallos.filter((id) => id === repo.ana.id).length, 8);
+  }
+
+  it("cuenta en el tope, contraseña mala y correo inexistente responden exactamente lo mismo", async () => {
+    const libre = memoria();
+    const malaSinTope = await iniciarConContrasena({ correo: "ana@ejemplo.mx", contrasena: MALA }, base(libre));
+
+    const repo = memoria();
+    const deps = base(repo);
+    await enElTope(repo, deps);
+    const topeConMala = await iniciarConContrasena({ correo: "ana@ejemplo.mx", contrasena: MALA }, deps);
+    const topeConCorrecta = await iniciarConContrasena({ correo: "ana@ejemplo.mx", contrasena: CLAVE }, deps);
+    const inexistente = await iniciarConContrasena({ correo: "nadie@ejemplo.mx", contrasena: MALA }, deps);
+    const inexistenteTrasNueve = await (async () => {
+      for (let i = 0; i < 8; i += 1) await iniciarConContrasena({ correo: "nadie@ejemplo.mx", contrasena: MALA }, deps);
+      return iniciarConContrasena({ correo: "nadie@ejemplo.mx", contrasena: MALA }, deps);
+    })();
+
+    for (const resultado of [malaSinTope, topeConMala, topeConCorrecta, inexistente, inexistenteTrasNueve]) {
+      assert.deepEqual(resultado, RECHAZO);
+    }
+  });
+
+  it("los tres rechazos terminan en el mismo instante aunque su trabajo tarde distinto", async () => {
+    const duraciones: Record<string, number> = {};
+    for (const caso of ["tope", "mala", "inexistente"] as const) {
+      const repo = memoria();
+      if (caso === "tope") for (let i = 0; i < 8; i += 1) repo.fallos.push(repo.ana.id);
+      let reloj = 0;
+      const real = repo.repo;
+      // Costos simulados: la escritura del fallo solo ocurre en «mala» e «inexistente»
+      // y el conteo de fallos solo con cuenta real.
+      const repositorio: RepositorioAutenticacion = {
+        ...real,
+        buscarUsuarioPorCorreo: async (correo) => {
+          reloj += 4;
+          return real.buscarUsuarioPorCorreo(correo);
+        },
+        contarFallosContrasena: async (userId, desde) => {
+          reloj += 3;
+          return real.contarFallosContrasena(userId, desde);
+        },
+        registrarContrasenaFallida: async (userId, ahora) => {
+          reloj += 25;
+          return real.registrarContrasenaFallida(userId, ahora);
+        },
+      };
+      const deps = {
+        ...base(repo),
+        repositorio,
+        verificar: async (plana: string, hash: string) => {
+          reloj += 200;
+          return hash === `hash:${plana}`;
+        },
+        ahoraMs: () => reloj,
+        esperar: async (ms: number) => {
+          reloj += ms;
+        },
+      };
+      const correo = caso === "inexistente" ? "nadie@ejemplo.mx" : "ana@ejemplo.mx";
+      assert.deepEqual(await iniciarConContrasena({ correo, contrasena: MALA }, deps), RECHAZO);
+      duraciones[caso] = reloj;
+    }
+    assert.deepEqual(duraciones, { tope: PISO_RECHAZO_MS, mala: PISO_RECHAZO_MS, inexistente: PISO_RECHAZO_MS });
+  });
+
+  it("la entrada correcta no espera el piso", async () => {
+    const repo = memoria();
+    const esperas: number[] = [];
+    const deps = { ...base(repo), esperar: async (ms: number) => void esperas.push(ms) };
+    assert.equal((await iniciarConContrasena({ correo: "ana@ejemplo.mx", contrasena: CLAVE }, deps)).tipo, "entrada");
+    assert.deepEqual(esperas, []);
+  });
+
+  it("el correo mal escrito y el error de la base también esperan el piso completo", async () => {
+    const repo = memoria();
+    const esperas: number[] = [];
+    const reloj = { ahoraMs: () => 0, esperar: async (ms: number) => void esperas.push(ms) };
+    assert.deepEqual(
+      await iniciarConContrasena({ correo: "no-es-correo", contrasena: CLAVE }, { ...base(repo), ...reloj }),
+      RECHAZO,
+    );
+    const caida: RepositorioAutenticacion = {
+      ...repo.repo,
+      buscarUsuarioPorCorreo: async () => {
+        throw new ErrorDeDominio("base_no_disponible");
+      },
+    };
+    await assert.rejects(
+      iniciarConContrasena({ correo: "ana@ejemplo.mx", contrasena: CLAVE }, { ...base(repo), ...reloj, repositorio: caida }),
+      (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "base_no_disponible",
+    );
+    assert.deepEqual(esperas, [PISO_RECHAZO_MS, PISO_RECHAZO_MS]);
+  });
+});
+
 async function entrarHasta(deps: ReturnType<typeof base>): Promise<string> {
   const inicio = await iniciarConContrasena({ correo: "ana@ejemplo.mx", contrasena: CLAVE }, deps);
   if (inicio.tipo !== "entrada") throw new Error(inicio.codigo);
@@ -686,6 +792,8 @@ function base(repo: Memoria, verificar?: (plana: string, hash: string) => Promis
     llaveTotp: LLAVE,
     operadores: new Set(["operador@arco.mx"]),
     semilla: () => SEMILLA,
+    // El piso de rechazo se prueba aparte, con su propio reloj.
+    esperar: async () => {},
   };
 }
 
@@ -726,7 +834,8 @@ class Memoria {
     passwordHash: `hash:${CLAVE}`,
   };
   entradas: EntradaMem[] = [];
-  fallos: Date[] = [];
+  /** Persona de cada contraseña fallida; null cuando el correo no tiene cuenta. */
+  fallos: (string | null)[] = [];
   passkeys: (PasskeyGuardada & { revocado: boolean })[] = [];
   totp: (TotpGuardado & { revocado: boolean })[] = [];
   respaldos: RespaldoMem[] = [];
@@ -754,8 +863,8 @@ class Memoria {
         this.entradas.push({ ...entrada, intentos: 0, consumida: false });
         this.eventos.push("entrada_contrasena");
       },
-      registrarContrasenaFallida: async () => {
-        this.fallos.push(AHORA);
+      registrarContrasenaFallida: async (userId) => {
+        this.fallos.push(userId);
         this.eventos.push("entrada_fallida");
       },
       leerEntrada: async (tokenHash) => {
@@ -764,8 +873,8 @@ class Memoria {
           ? { id: entrada.id, userId: entrada.userId, venceEn: entrada.venceEn, intentosFallidos: entrada.intentos }
           : null;
       },
-      contarFallosContrasena: async () => {
-        return this.fallos.length;
+      contarFallosContrasena: async (userId) => {
+        return this.fallos.filter((id) => id === userId).length;
       },
       apartarIntentoDeEntrada: async (entradaId) => {
         const entrada = this.entradas.find((e) => e.id === entradaId && !e.consumida && e.intentos < 5);

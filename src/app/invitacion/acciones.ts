@@ -31,8 +31,9 @@ export async function enviarAceptacion(_previo: EstadoInvitacion, formData: Form
     });
     const destino = resolverDestinoInvitacion(aceptada.companyId);
     const entrada = await iniciarConContrasena({ correo: aceptada.correo, contrasena }, { superficie: destino.superficie });
+    // La contraseña se acaba de guardar: un rechazo aquí solo puede ser el tope de intentos.
     if (entrada.tipo === "rechazo") {
-      return { tipo: "invalido", mensaje: MENSAJES[entrada.codigo] ?? "La contraseña quedó guardada. Entra para registrar el segundo factor." };
+      return { tipo: "invalido", mensaje: "La contraseña quedó guardada. Entra para registrar el segundo factor." };
     }
     const jar = await cookies();
     jar.set(destino.cookieEntrada, entrada.cookie.valor, {

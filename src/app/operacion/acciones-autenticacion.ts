@@ -14,6 +14,7 @@ import {
   opcionesParaEntrarConPasskey,
   opcionesParaInscribirPasskey,
   origenDe,
+  RECHAZO_DE_CONTRASENA,
 } from "@/server/autenticacion";
 import { leerTokenEntrada } from "@/server/autenticacion/cookie";
 import { fijarCookieDeSesion } from "@/server/entrada";
@@ -27,8 +28,7 @@ import type { EstadoAcceso } from "./tipos-acceso";
 const SOFIPO = { superficie: "sofipo" } as const;
 
 const RECHAZOS_DE_ENTRADA: Record<string, string> = {
-  credenciales_invalidas: "El correo o la contraseña no coinciden.",
-  entrada_bloqueada: "Hubo demasiados intentos. Espera quince minutos.",
+  credenciales_invalidas: RECHAZO_DE_CONTRASENA,
 };
 
 /** El rechazo regresa en el estado, con el correo escrito: React reinicia el formulario al terminar. */

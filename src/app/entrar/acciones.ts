@@ -25,6 +25,7 @@ import {
   prepararTotpDeSesion,
   quitarPasskey,
   quitarTotp,
+  RECHAZO_DE_CONTRASENA,
   rutaDeDestino,
 } from "@/server/autenticacion";
 import { leerTokenEntrada, NOMBRE_COOKIE_PORTAL, type CookieEntrada } from "@/server/autenticacion/cookie";
@@ -36,8 +37,7 @@ import type { EstadoFactor } from "./estado";
 import type { EstadoEntrada } from "../sesion/estado";
 
 const MENSAJES: Record<string, string> = {
-  credenciales_invalidas: "El correo o la contraseña no coinciden.",
-  entrada_bloqueada: "Hubo demasiados intentos. Espera quince minutos y vuelve a intentar.",
+  credenciales_invalidas: RECHAZO_DE_CONTRASENA,
   entrada_vencida: "Esa entrada venció. Vuelve a escribir tu contraseña.",
   entrada_agotada: "Demasiados intentos. Vuelve a escribir tu contraseña.",
   segundo_factor_invalido: "Ese código no coincide. Vuelve a intentar.",

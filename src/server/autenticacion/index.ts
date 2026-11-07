@@ -27,6 +27,7 @@ export {
   prepararTotpDeSesion,
   quitarPasskey,
   quitarTotp,
+  RECHAZO_DE_CONTRASENA,
   resolverRecuperacion,
   verFactores,
   verRecuperaciones,
