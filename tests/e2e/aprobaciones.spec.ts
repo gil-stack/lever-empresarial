@@ -96,7 +96,7 @@ test("Aprobaciones se refresca al volver por el lateral tras una acción en Pers
 test("con el rechazo abierto, A y R no deciden el pago; con el foco en la fila, A lo autoriza una sola vez", async ({ page, context }) => {
   const errores = vigilarConsola(page);
   await sesionDe(context, "rosa-pagos@ejemplo.mx");
-  const PAGO = "88888888-8888-4888-8888-888888888884";
+  const PAGO = "88888888-8888-4888-8888-888888888889";
   const estado = async () =>
     (await consultar<{ estado: string }>("select estado from supplier_payment_requests where id = $1", [PAGO]))[0]?.estado;
   const eventos = (accion: string) => contar("select 1 from audit_log where accion = $1 and identificador = $2", [accion, PAGO]);
