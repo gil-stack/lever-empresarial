@@ -1,6 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 
+import { consultar, contar, dobleClic } from "./apoyo";
+
 const EMPRESA = "33333333-3333-4333-8333-333333333333";
 const BASE = `/c/${EMPRESA}/consola/proveedores`;
 const GIL = "a".repeat(43);
@@ -21,6 +23,7 @@ async function entrar(page: Page, token = GIL) {
 }
 
 async function captura(page: Page, nombre: string) {
+  if (process.env.E2E_SIN_CAPTURAS) return;
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   });
@@ -95,8 +98,13 @@ test("alta, factura, excepción, descarga y autorización con otra persona", asy
   await page.getByLabel("CLABE", { exact: true }).fill("002180701150123452");
   await page.locator("#constancia").setInputFiles("tests/e2e/fixtures/soporte-prueba.pdf");
   await page.locator("#contrato").setInputFiles("tests/e2e/fixtures/soporte-prueba.pdf");
-  await page.getByRole("button", { name: "Dar de alta" }).click();
+  // Doble clic real: un solo envío, un proveedor, una CLABE y un evento de alta.
+  const alta = await dobleClic(page.getByRole("button", { name: "Dar de alta" }));
+  expect(alta.envios).toBe(1);
   await expect(page.getByText("Quedó asentado", { exact: true })).toBeVisible();
+  expect(await contar("select 1 from suppliers where company_id = $1 and rfc = $2", [EMPRESA, rfc])).toBe(1);
+  expect(await contar("select 1 from supplier_clabes c join suppliers s on s.id = c.supplier_id where s.rfc = $1", [rfc])).toBe(1);
+  expect(await contar("select 1 from audit_log a join suppliers s on s.id = a.identificador where a.accion = 'alta_proveedor' and s.rfc = $1", [rfc])).toBe(1);
   await captura(page, "07-alta-proveedor");
 
   await page.goto(`${BASE}/nuevo`);
@@ -107,8 +115,15 @@ test("alta, factura, excepción, descarga y autorización con otra persona", asy
   await page.getByLabel("Vencimiento", { exact: true }).fill(fecha(20));
   await page.getByLabel("Fecha prevista de pago").fill(fecha(5));
   await captura(page, "08-nuevo-pago-cfdi");
-  await page.getByRole("button", { name: "Revisar y solicitar" }).click();
+  const UUID_CFDI = "123e4567-e89b-42d3-a456-426614174998";
+  const solicitudCfdi = await dobleClic(page.getByRole("button", { name: "Revisar y solicitar" }));
+  expect(solicitudCfdi.envios).toBe(1);
   await expect(page.getByText("El pago quedó en autorización. Otra persona lo revisa.")).toBeVisible();
+  expect(await contar("select 1 from supplier_payables where company_id = $1 and upper(cfdi_uuid) = upper($2)", [EMPRESA, UUID_CFDI])).toBe(1);
+  expect(await contar(
+    "select 1 from supplier_payment_requests r join supplier_payables p on p.id = r.payable_id where upper(p.cfdi_uuid) = upper($1)",
+    [UUID_CFDI],
+  )).toBe(1);
   const detalleCfdi = await page.getByRole("link", { name: "Ver el detalle del pago" }).getAttribute("href");
   expect(detalleCfdi).toBeTruthy();
 
@@ -134,16 +149,25 @@ test("alta, factura, excepción, descarga y autorización con otra persona", asy
   await page.getByLabel("Fecha prevista de pago").fill(fecha(6));
   await page.getByLabel("Por qué no hay factura").fill("Trabajo excepcional aprobado por dirección general");
   await captura(page, "09-nuevo-pago-excepcion");
-  await page.getByRole("button", { name: "Revisar y solicitar" }).click();
+  const solicitudExcepcion = await dobleClic(page.getByRole("button", { name: "Revisar y solicitar" }));
+  expect(solicitudExcepcion.envios).toBe(1);
   await expect(page.getByText("El pago quedó en autorización. Otra persona lo revisa.")).toBeVisible();
+  const deDelta = "select r.id, r.estado, r.solicitado_por, r.resuelto_por from supplier_payment_requests r join supplier_payables p on p.id = r.payable_id join suppliers s on s.id = p.supplier_id where s.rfc = $1";
+  expect(await contar(deDelta, [rfc])).toBe(1);
   await expect(page.getByRole("button", { name: "Revisar y solicitar" })).toBeDisabled();
   const detalleExcepcion = await page.getByRole("link", { name: "Ver el detalle del pago" }).getAttribute("href");
   expect(detalleExcepcion).toBeTruthy();
 
   await entrar(page, ROSA);
   await page.goto(detalleExcepcion!);
-  await page.getByRole("button", { name: "Autorizar para pagar" }).click();
+  const autorizar = await dobleClic(page.getByRole("button", { name: "Autorizar para pagar" }));
+  expect(autorizar.envios).toBe(1);
   await expect(page.locator(".detalle-cabeza").getByText("Listo para pagar", { exact: true })).toBeVisible();
+  const [autorizada] = await consultar<{ id: string; estado: string; solicitado_por: string; resuelto_por: string | null }>(deDelta, [rfc]);
+  expect(autorizada!.estado).toBe("listo_para_pagar");
+  expect(autorizada!.resuelto_por).toBeTruthy();
+  expect(autorizada!.resuelto_por).not.toBe(autorizada!.solicitado_por);
+  expect(await contar("select 1 from supplier_payment_request_history where request_id = $1 and estado_nuevo = 'listo_para_pagar'", [autorizada!.id])).toBe(1);
   await captura(page, "10-autorizacion-segunda-persona");
 });
 

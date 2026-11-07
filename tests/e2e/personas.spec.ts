@@ -16,6 +16,7 @@ async function abrir(page: Page, ruta: string): Promise<void> {
 }
 
 async function captura(page: Page, nombre: string): Promise<void> {
+  if (process.env.E2E_SIN_CAPTURAS) return;
   mkdirSync(EVIDENCIA, { recursive: true });
   await page.screenshot({ path: join(EVIDENCIA, `${nombre}.png`), fullPage: true });
 }

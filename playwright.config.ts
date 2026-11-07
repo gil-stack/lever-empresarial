@@ -7,6 +7,9 @@ import { defineConfig } from "@playwright/test";
 // proveedores y levanta `next start` en E2E_PUERTO (3109 por omisión).
 const puerto = process.env.E2E_PUERTO ?? "3109";
 const origen = process.env.E2E_BASE_URL ?? `http://localhost:${puerto}`;
+// En CI el navegador vive en un contenedor y cada cuadro viaja por el socket:
+// la traza guarda el DOM de cada paso, sin la película de capturas.
+const remoto = Boolean(process.env.PW_TEST_CONNECT_WS_ENDPOINT);
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -14,6 +17,8 @@ export default defineConfig({
   globalSetup: "./tests/e2e/global-setup.ts",
   globalTeardown: "./tests/e2e/global-teardown.ts",
   workers: 1,
+  // Una prueba que falla a veces se arregla en su causa, no se reintenta.
+  retries: 0,
   timeout: 180_000,
   expect: { timeout: 15_000 },
   outputDir: "./test-results/e2e",
@@ -22,8 +27,8 @@ export default defineConfig({
     baseURL: origen,
     viewport: { width: 1440, height: 1000 },
     screenshot: "only-on-failure",
-    trace: "retain-on-failure",
-    video: "retain-on-failure",
+    trace: remoto ? { mode: "retain-on-failure", screenshots: false, snapshots: true, sources: false } : "retain-on-failure",
+    video: "off",
     ...(process.env.CHROME_PATH ? { launchOptions: { executablePath: process.env.CHROME_PATH } } : {}),
   },
 });
