@@ -105,6 +105,27 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
         assert.notEqual((invitaciones.rows[0] as { revocada_en: unknown }).revocada_en, null);
         assert.equal((invitaciones.rows[1] as { revocada_en: unknown }).revocada_en, null);
 
+        // Reenviar solo reemplaza la invitación que la persona tenía en pantalla: un segundo clic sobre
+        // la misma, o un primer envío cuando ya hay una, no emite otra ni manda otro correo.
+        const admin = { companyId, nombre: "Admin Uno", correo: "admin@ejemplo.mx" };
+        await assert.rejects(invitarPrimerAdministrador(ana, { ...admin, vista: primera.invitationId }, { produccion: false, entregar }), /invitacion_ya_enviada/);
+        await assert.rejects(invitarPrimerAdministrador(ana, { ...admin, vista: "" }, { produccion: false, entregar }), /invitacion_ya_enviada/);
+        assert.equal((await leerCliente(ana, companyId))?.ultimaInvitacionId, segunda.invitationId);
+        const tercera = await invitarPrimerAdministrador(ana, { ...admin, vista: segunda.invitationId }, { produccion: false, entregar });
+        await assert.rejects(invitarPrimerAdministrador(ana, { ...admin, vista: segunda.invitationId }, { produccion: false, entregar }), /invitacion_ya_enviada/);
+        const trasReenviar = await conContexto({ rol: "plataforma_sofipo", userId: a, operadorId: operatorId }, (consulta) =>
+          consulta.query(
+            `select i.id, i.revocada_en, (select count(*)::int from invitation_deliveries d where d.invitation_id = i.id) as entregas
+             from invitations i where i.company_id = $1 order by i.emitida_en`,
+            [companyId],
+          ),
+        );
+        const filas = trasReenviar.rows as Array<{ id: string; revocada_en: unknown; entregas: number }>;
+        assert.equal(filas.length, 3);
+        assert.equal(filas[2].id, tercera.invitationId);
+        assert.equal(filas[2].revocada_en, null);
+        assert.deepEqual(filas.map((fila) => fila.entregas), [1, 1, 1]);
+
         const hoy = hoyEnMexico(new Date());
         const despues = new Date(`${hoy}T00:00:00Z`);
         despues.setUTCDate(despues.getUTCDate() + 2);

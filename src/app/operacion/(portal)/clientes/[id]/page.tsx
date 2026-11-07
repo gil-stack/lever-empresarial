@@ -82,6 +82,7 @@ export default async function FichaCliente({ params, searchParams }: { params: P
               {cliente.estado === "activa" && cliente.administradorEstado !== "activa" ? (
                 <form action={invitarAdministradorAccion}>
                   <input type="hidden" name="companyId" value={cliente.id} />
+                  <input type="hidden" name="vista" value={cliente.ultimaInvitacionId ?? ""} />
                   <div className="campo">
                     <label htmlFor="nombre">Nombre</label>
                     <input id="nombre" name="nombre" maxLength={200} defaultValue={cliente.administrador ?? ""} required />

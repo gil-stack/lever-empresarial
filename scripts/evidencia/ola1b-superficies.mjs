@@ -507,7 +507,14 @@ async function flujos() {
   await op.waitForURL(/aviso=invitacion_/);
   await listo(op);
   exigir(contar(`select count(*) from invitations where user_id = '${idDe(LAURA)}'`) === 1, "doble clic en «Enviar invitación» emite una sola invitación");
-  // Reenviar anula el enlace anterior y emite otro (doble clic): Laura acepta después el vigente.
+  // Reenviar anula el enlace anterior y emite otro (doble clic): Laura acepta después el vigente. Con el
+  // aviso ya en pantalla el primer envío vuelve antes del segundo clic; la ficha manda la invitación que
+  // vio y el servidor no reemite otra ni manda un segundo correo.
+  const entregasAntes = contar(`select count(*) from invitation_deliveries where company_id = '${altamarId}'`);
+  // Otra pestaña con la ficha abierta desde antes: verá la invitación que este reenvío va a reemplazar.
+  const otraFicha = await ctxOp.newPage();
+  await otraFicha.goto(`${BASE}/operacion/clientes/${altamarId}`);
+  await listo(otraFicha);
   await dobleClic(op.getByRole("button", { name: "Reenviar invitación" }));
   await esperarBase(`select count(*) from invitations where user_id = '${idDe(LAURA)}'`, 2);
   await new Promise((r) => setTimeout(r, 1500));
@@ -515,9 +522,22 @@ async function flujos() {
   exigir(
     contar(`select count(*) from invitations where user_id = '${idDe(LAURA)}'`) === 2 &&
       contar(`select count(*) from invitations where user_id = '${idDe(LAURA)}' and revocada_en is not null`) === 1 &&
-      contar(`select count(*) from invitations where user_id = '${idDe(LAURA)}' and revocada_en is null and usada_en is null`) === 1,
-    "doble clic en «Reenviar invitación» anula el enlace anterior y deja uno solo vigente",
+      contar(`select count(*) from invitations where user_id = '${idDe(LAURA)}' and revocada_en is null and usada_en is null`) === 1 &&
+      contar(`select count(*) from invitation_deliveries where company_id = '${altamarId}'`) === entregasAntes + 1,
+    "doble clic en «Reenviar invitación» anula el enlace anterior, deja uno solo vigente y registra un solo correo",
   );
+  // La pestaña vieja reenvía sobre una invitación que ya cambió: no emite otra ni manda otro correo.
+  await otraFicha.getByRole("button", { name: "Reenviar invitación" }).click();
+  await otraFicha.waitForURL(/aviso=invitacion_ya_enviada/);
+  await listo(otraFicha);
+  exigir(
+    (await otraFicha.locator("#aviso-operacion [role=alert]").getByText("La invitación ya había salido hace un momento.", { exact: false }).count()) === 1 &&
+      contar(`select count(*) from invitations where user_id = '${idDe(LAURA)}'`) === 2 &&
+      contar(`select count(*) from invitation_deliveries where company_id = '${altamarId}'`) === entregasAntes + 1,
+    "reenviar desde una ficha vieja no reemite: avisa que la invitación ya salió y no manda otro correo",
+  );
+  await captura(otraFicha, "15b-operacion-invitacion-ya-enviada-oscuro-1440", { completa: false });
+  await otraFicha.close();
   await capturarEnTodo(op, "15-operacion-ficha-cliente");
 
   // Alertas: crear (doble clic), reasignar y cerrar con motivo.

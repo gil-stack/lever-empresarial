@@ -9,6 +9,7 @@ const MENSAJES: Record<string, string> = {
   invitacion_omitida_desarrollo: "Invitación emitida. En este entorno el correo no sale; el enlace anterior ya no sirve.",
   invitacion_enviada: "Invitación enviada. El enlace anterior ya no sirve.",
   invitacion_fallida: "La invitación quedó emitida, pero el correo no salió. Puedes reenviarla.",
+  invitacion_ya_enviada: "La invitación ya había salido hace un momento. El enlace vigente es el último que se envió.",
   alerta_creada: "Alerta creada con su responsable.",
   alerta_asignada: "Responsable actualizado.",
   alerta_cerrada: "Alerta cerrada con su motivo.",
