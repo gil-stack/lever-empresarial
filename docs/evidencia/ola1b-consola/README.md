@@ -15,7 +15,9 @@ Las capturas están en WebP, en tres temas (Oscuro, Claro y Lever) y en dos tama
 | `54e88aa` | Igual a `ec9071e` en `src/`. Agrega la evidencia de las dos filas anteriores | Gates completos: typecheck, lint, test, security, Postgres local y en UTC, e2e y build. Reemplazados por los del head final |
 | `030d809` | Inicio con el resumen caído dice solo «Vuelve a intentar.» (`src/components/inicio/resumen.tsx`), y se borra el código muerto (ver «Código borrado») | typecheck, lint y test (381 de 381) |
 | `12f4cce` | Igual a `030d809` en `src/`. El flujo 14 (A) captura Inicio en los 3 temas a 1440 y a 390 | Build nuevo de `030d809`, base sembrada de nuevo y solo el flujo 14, A y B (33 de 33). El resto de las corridas no se repitió: el código borrado no se pintaba en ninguna ruta |
-| head final | Igual a `030d809` en `src/`. Agrega este README | Gates completos una vez: typecheck, lint, test, security, Postgres local y en UTC, e2e y build. La salida está en el cuerpo del PR |
+| `de7ee5e` | Igual a `030d809` en `src/`. Agrega el README | Gates completos, reemplazados por los del head final |
+| `2dd2045` | Borra los huérfanos que dejó `Maestro` y quita el descargo de `src/components/flujo/vistas.tsx:33` (ver «Código borrado») | typecheck, lint y test (381 de 381). No se repitieron corridas visuales: es código sin uso y un texto de error |
+| head final | Igual a `2dd2045` en `src/`. Agrega este README | Gates completos una vez: typecheck, lint, test, security, Postgres local y en UTC, e2e y build. La salida está en el cuerpo del PR |
 
 Toda la carpeta es de `ec9071e` y `80612ce`, menos el flujo 9 con SAT simulado (`09s-*`, `salida/flujos-sat-simulado-*.txt`, `salida/sat-simulado-bitacora.txt`), que es de `73d81c7`. Ese flujo no se repitió porque entre `73d81c7` y `ec9071e` no cambia nada de la carga de la 69-B: `git diff --stat 73d81c7 ec9071e -- src/server/lista-69b src/app/consola/lista-69b src/components/lista-69b scripts/evidencia/ola1b-consola/sat-simulado.mjs` sale vacío.
 
@@ -151,7 +153,9 @@ El borrado entró en `030d809`, después de las corridas de `ec9071e` y `80612ce
 | `src/components/proveedores/pantalla.tsx` y `src/components/proveedores/panel.tsx` (solo lo importaba `pantalla.tsx`) | `a39d647` «feat: construye cuentas por pagar de proveedores»: `/consola/proveedores` dejó de pintar `PantallaProveedores`, que había entrado en `3a19a92` | `clabe-proveedor.test.ts` y `proveedores.test.ts` pierden solo la lectura de esos archivos |
 | La función `Maestro` de `src/components/personas/maestro.tsx`; queda `MaestroCerrado` | `9fe315e` «Convierte Personas en expediente laboral y nómina»: `/consola/personas` dejó de pintar `Maestro` | `servicio.test.ts` pierde solo la búsqueda de `FRASE_CONTADOR`, que solo estaba en `Maestro` |
 
-Los tres commits ya están en main. Al borrar `Maestro` quedaron sin uso en el producto `FormularioCentro` y `FormularioPersona` de `src/components/personas/formularios.tsx`, y `FRASE_SIN_DISPERSION` de `src/dominio/personas.ts`, que solo usa su prueba. No se borraron en esta ronda.
+Los tres commits ya están en main. Después, en `2dd2045`:
+- **Huérfanos que dejó el borrado de `Maestro`:** salen `FormularioCentro` y `FormularioPersona` de `src/components/personas/formularios.tsx`, con `Avisos`, que solo ellos usaban. De `src/dominio/personas.ts` salen `FRASE_SIN_DISPERSION` y `pistaDelRol`, que solo usaba `FormularioPersona`. Antes de borrar, `git grep` no encontró otras referencias. Las pruebas pierden solo la igualdad de `FRASE_SIN_DISPERSION` (`personas.test.ts`) y la búsqueda de `clabeVisible` (`servicio.test.ts`), que solo estaba en `FormularioPersona`.
+- **Saldo y alertas sin lectura** (`src/components/flujo/vistas.tsx:33`): pasa de «No se pudo consultar. No se muestran cifras supuestas; vuelve a intentar.» a «No se pudo consultar. Vuelve a intentar.».
 
 ## Comparación con el diseño
 
