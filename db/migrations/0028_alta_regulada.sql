@@ -203,6 +203,72 @@ FOR EACH ROW EXECUTE FUNCTION platform_staff_roles_exige_evento();
 
 GRANT DELETE ON platform_staff_roles TO plataforma_sofipo;
 
+-- Roles iniciales por comando (`scripts/plataforma.ts personal:rol`). Cuando
+-- nadie más del personal administra al personal, la pantalla no alcanza: nadie
+-- se da un rol a sí mismo. Esta puerta la ejecuta solo la dueña de la base (la
+-- conexión directa de las migraciones), nunca la aplicación: no se otorga a
+-- ningún rol. Deja el evento en la bitácora en la misma transacción, la 50ª
+-- sigue valiendo (platform_staff_roles_revisar corre igual) y no deja al
+-- personal sin administración.
+CREATE FUNCTION personal_rol_por_comando(p_correo text, p_rol text, p_quitar boolean, p_motivo text)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  persona platform_staff%ROWTYPE;
+  cambiados integer;
+BEGIN
+  IF p_motivo IS NULL OR NOT texto_regulado(p_motivo, 500) OR char_length(p_motivo) < 10 THEN
+    RAISE EXCEPTION 'motivo_invalido';
+  END IF;
+  IF p_quitar IS NULL OR p_rol IS NULL THEN
+    RAISE EXCEPTION 'rol_invalido';
+  END IF;
+  IF (SELECT count(*) FROM platform_staff s JOIN users u ON u.id = s.user_id
+      WHERE lower(u.correo) = lower(btrim(p_correo)) AND s.estado = 'activo') <> 1 THEN
+    RAISE EXCEPTION 'persona_ausente';
+  END IF;
+  SELECT s.* INTO persona FROM platform_staff s JOIN users u ON u.id = s.user_id
+  WHERE lower(u.correo) = lower(btrim(p_correo)) AND s.estado = 'activo';
+  PERFORM pg_advisory_xact_lock(hashtextextended('platform_staff_roles:' || persona.operator_id::text, 0));
+  IF EXISTS (
+    SELECT 1 FROM platform_staff s
+    JOIN platform_staff_roles r ON r.operator_id = s.operator_id AND r.user_id = s.user_id
+    WHERE s.operator_id = persona.operator_id AND s.user_id <> persona.user_id
+      AND s.estado = 'activo' AND r.rol = 'administracion_plataforma'
+  ) THEN
+    RAISE EXCEPTION 'rol_por_pantalla';
+  END IF;
+  IF p_quitar AND p_rol = 'administracion_plataforma' THEN
+    RAISE EXCEPTION 'personal_sin_administracion';
+  END IF;
+  IF p_quitar THEN
+    DELETE FROM platform_staff_roles
+    WHERE operator_id = persona.operator_id AND user_id = persona.user_id AND rol = p_rol;
+  ELSE
+    INSERT INTO platform_staff_roles (operator_id, user_id, rol)
+    VALUES (persona.operator_id, persona.user_id, p_rol)
+    ON CONFLICT ON CONSTRAINT platform_staff_roles_pkey DO NOTHING;
+  END IF;
+  GET DIAGNOSTICS cambiados = ROW_COUNT;
+  IF cambiados = 0 THEN
+    RETURN false;
+  END IF;
+  INSERT INTO audit_log (
+    operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, motivo, origen, cambio
+  ) VALUES (
+    persona.operator_id, NULL, 'sistema', NULL, 'sistema',
+    CASE WHEN p_quitar THEN 'rol_personal_retirado' ELSE 'rol_personal_asignado' END,
+    'platform_staff_roles', persona.user_id, p_motivo, 'comando', jsonb_build_object('rol', p_rol)
+  );
+  RETURN true;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION personal_rol_por_comando(text, text, boolean, text) FROM PUBLIC;
+
 -- 2. Expediente de persona moral ----------------------------------------------
 
 -- Cada envío es una versión nueva. El borrador se edita; la enviada no cambia.

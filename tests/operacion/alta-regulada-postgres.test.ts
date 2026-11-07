@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -540,6 +541,76 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           await assert.rejects(sofipo(AJENA, (c) => c.query("select * from kyb_documento_para_descarga($1, null)", [documento]), otroOperador), /documento_no_existe|sin_permiso_expediente/);
 
           assert.deepEqual(almacen.borrados, []);
+        });
+
+        await t.test("roles iniciales por comando: solo la dueña de la base, con evento y sin saltarse la 50ª", async () => {
+          const comando = (...args: string[]) => {
+            const salida = spawnSync(join(process.cwd(), "node_modules/.bin/tsx"), ["scripts/plataforma.ts", "personal:rol", ...args], {
+              cwd: process.cwd(), encoding: "utf8", env: { ...process.env, DATABASE_URL: "", DATABASE_URL_UNPOOLED: urlDuena },
+            });
+            return { estado: salida.status, texto: `${salida.stdout}${salida.stderr}`.trim() };
+          };
+          const correoAdm = `${ADM}@ejemplo.mx`;
+          const motivo = "Arranque de la 0028: acta del consejo del 10 de noviembre";
+          const eventos = (accion: string) => contar(
+            "select count(*)::int as n from audit_log where accion = $1 and identificador = $2 and actor_tipo = 'sistema' and origen = 'comando'",
+            [accion, ADM],
+          );
+
+          // La aplicación no la ejecuta con ningún rol: ni el personal ni el portal ni la conexión de la app.
+          for (const rol of ["plataforma_sofipo", "plataforma_cliente"] as const) {
+            await assert.rejects(como(urlApp, rol, { userId: ADM, operadorId: operador }, (c) =>
+              c.query("select personal_rol_por_comando($1, 'aprobacion', false, $2)", [correoAdm, motivo])), /permission denied/);
+          }
+          const app = new pg.Client({ connectionString: urlApp });
+          await app.connect();
+          await assert.rejects(app.query("select personal_rol_por_comando($1, 'aprobacion', false, $2)", [correoAdm, motivo]), /permission denied/);
+          await app.end();
+
+          // Adriana es la única que administra al personal: el comando le da Aprobación y deja un evento.
+          const asignado = comando("--correo", correoAdm.toUpperCase(), "--rol", "aprobacion", "--motivo", motivo);
+          assert.equal(asignado.estado, 0, asignado.texto);
+          assert.match(asignado.texto, /Se asignó el rol aprobacion/);
+          assert.doesNotMatch(asignado.texto, /postgres(ql)?:\/\//);
+          assert.equal(await contar("select count(*)::int as n from platform_staff_roles where user_id = $1 and rol = 'aprobacion'", [ADM]), 1);
+          assert.equal(await eventos("rol_personal_asignado"), 1);
+          const fila = (await dueno.query(
+            "select motivo, cambio, superficie, actor_id from audit_log where accion = 'rol_personal_asignado' and identificador = $1 and origen = 'comando'",
+            [ADM],
+          )).rows[0];
+          assert.deepEqual(fila, { motivo, cambio: { rol: "aprobacion" }, superficie: "sistema", actor_id: null });
+
+          // Repetirlo no duplica el rol ni el evento.
+          const repetido = comando("--correo", correoAdm, "--rol", "aprobacion", "--motivo", motivo);
+          assert.match(repetido.texto, /ya tenía el rol aprobacion/);
+          assert.equal(await eventos("rol_personal_asignado"), 1);
+
+          // Con otra persona que administra al personal, el rol se da por pantalla.
+          const porPantalla = comando("--correo", `${NUEVO}@ejemplo.mx`, "--rol", "auditoria", "--motivo", motivo);
+          assert.equal(porPantalla.estado, 1);
+          assert.match(porPantalla.texto, /pantalla Personal/);
+
+          // La 50ª sigue valiendo, no deja al personal sin administración y el motivo es obligatorio.
+          assert.equal(comando("--correo", correoAdm, "--rol", "cumplimiento", "--motivo", motivo).estado, 0);
+          const incompatible = comando("--correo", correoAdm, "--rol", "auditoria", "--motivo", motivo);
+          assert.match(incompatible.texto, /Cumplimiento no se junta con Auditoría/);
+          assert.match(comando("--correo", correoAdm, "--rol", "administracion_plataforma", "--motivo", motivo, "--quitar").texto, /no se queda sin administración/);
+          assert.match(comando("--correo", correoAdm, "--rol", "aprobacion", "--motivo", "corto").texto, /de 10 a 500 caracteres/);
+          assert.match(comando("--correo", "nadie@ejemplo.mx", "--rol", "aprobacion", "--motivo", motivo).texto, /No hay una persona activa/);
+          assert.equal(await contar("select count(*)::int as n from platform_staff_roles where user_id = $1 and rol = 'auditoria'", [ADM]), 0);
+
+          // Quitar deja su propio evento.
+          const quitado = comando("--correo", correoAdm, "--rol", "aprobacion", "--motivo", motivo, "--quitar");
+          assert.match(quitado.texto, /Se quitó el rol aprobacion/);
+          assert.equal(await eventos("rol_personal_retirado"), 1);
+          assert.equal(await contar("select count(*)::int as n from platform_staff_roles where user_id = $1 and rol = 'aprobacion'", [ADM]), 0);
+
+          // Con la conexión agrupada ni siquiera conecta.
+          const agrupada = spawnSync(join(process.cwd(), "node_modules/.bin/tsx"), ["scripts/plataforma.ts", "personal:rol", "--correo", correoAdm, "--rol", "aprobacion", "--motivo", motivo], {
+            cwd: process.cwd(), encoding: "utf8", env: { ...process.env, DATABASE_URL_UNPOOLED: "postgres://u@ep-ejemplo-pooler.neon.tech/plataforma" },
+          });
+          assert.equal(agrupada.status, 1);
+          assert.match(agrupada.stderr, /connection string agrupado/);
         });
       } finally {
         await dueno.end();
