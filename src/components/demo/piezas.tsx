@@ -1,7 +1,7 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 import { BarraAvance } from "@/components/sistema";
-import type { AccionDemo, CifraDemo, EstadoDemo } from "@/dominio/demo/tipos";
+import type { AccionDemo, CifraDemo, EstadoDemo, RangoDemo } from "@/dominio/demo/tipos";
 
 /** El id de la línea que explica la demostración: cada botón apagado la nombra. */
 export const ID_AVISO_DEMO = "demo-aviso";
@@ -172,6 +172,25 @@ export function InterruptorApagado({ etiqueta, encendido }: { etiqueta: string; 
       aria-label={`${etiqueta} (demostración)`}
       aria-describedby={ID_AVISO_DEMO}
       disabled
+    />
+  );
+}
+
+/** El deslizador de monto del diseño, quieto en la demostración: se ve dónde está el monto, no se mueve. */
+export function DeslizadorApagado({ etiqueta, valorCentavos, rango }: { etiqueta: string; valorCentavos: number; rango: RangoDemo }) {
+  const avance = ((valorCentavos - rango.minimoCentavos) / (rango.maximoCentavos - rango.minimoCentavos)) * 100;
+  return (
+    <input
+      type="range"
+      className="demo-deslizador"
+      min={rango.minimoCentavos / 100}
+      max={rango.maximoCentavos / 100}
+      step={rango.pasoCentavos / 100}
+      defaultValue={valorCentavos / 100}
+      aria-label={`${etiqueta} (demostración)`}
+      aria-describedby={ID_AVISO_DEMO}
+      disabled
+      style={{ "--avance": `${avance.toFixed(2)}%` } as CSSProperties}
     />
   );
 }

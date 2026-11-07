@@ -1,4 +1,4 @@
-import { congelar, type CifraDemo } from "./tipos";
+import { congelar, type CifraDemo, type RangoDemo } from "./tipos";
 
 export type PlazoDemo = { readonly dias: string; readonly tasa: string };
 export type InversionVivaDemo = { readonly titulo: string; readonly vence: string; readonly rendimiento: string };
@@ -8,6 +8,8 @@ export type InversionDemo = {
   readonly plazos: readonly PlazoDemo[];
   readonly elegido: number;
   readonly montoCentavos: number;
+  /** El rango del deslizador del diseño (#ivR: de 10,000 a lo disponible en la cuenta). */
+  readonly rango: RangoDemo;
   readonly recibes: string;
   readonly recibesCentavos: number;
   readonly rendimientoCentavos: number;
@@ -33,6 +35,7 @@ export const INVERSION_DEMO: InversionDemo = congelar({
   ],
   elegido: 1,
   montoCentavos: 30000000,
+  rango: { minimoCentavos: 1000000, maximoCentavos: 128456040, pasoCentavos: 1000000 },
   recibes: "Recibes el 21 ene 2027",
   recibesCentavos: 30773500,
   rendimientoCentavos: 773500,

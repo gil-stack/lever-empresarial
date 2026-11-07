@@ -113,7 +113,7 @@ function Mapa({ datos }: { datos: MovimientosDemo }) {
     <svg viewBox="0 0 200 120" role="img" aria-label="Mapa esquemático de México con los lugares donde se usaron las tarjetas">
       <polygon className="demo-tierra" points={contorno(PENINSULA)} strokeWidth={0.4} />
       <polygon className="demo-tierra" points={contorno(CONTINENTE)} strokeWidth={0.4} />
-      <text x={78} y={50} textAnchor="middle">
+      <text x={62} y={64} textAnchor="middle">
         MÉXICO
       </text>
       {CIUDADES.map(([nombre, lon, lat]) => (
@@ -166,7 +166,7 @@ export function VistaMovimientos({
       <Cifras cifras={cifras} etiqueta="Movimientos en cifras" />
       <section className="hoja" aria-label="Filtros de movimientos">
         <form className="demo-filtros" action={base} method="get">
-          <div className="campo">
+          <div className="campo demo-campo-periodo">
             <span className="demo-etiqueta-campo" id="movimientos-periodo">
               Periodo
             </span>

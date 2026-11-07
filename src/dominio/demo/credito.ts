@@ -1,4 +1,4 @@
-import { congelar, type AccionDemo, type CifraDemo, type EstadoDemo } from "./tipos";
+import { congelar, type AccionDemo, type CifraDemo, type EstadoDemo, type RangoDemo } from "./tipos";
 
 export type UsoDeLineaDemo = { readonly titulo: string; readonly detalle: string; readonly porDefinir?: boolean; readonly accion: AccionDemo };
 export type PagoProgramadoDemo = { readonly fecha: string; readonly concepto: string; readonly capitalCentavos: number; readonly interesesCentavos: number; readonly totalCentavos: number; readonly estado: EstadoDemo };
@@ -8,6 +8,8 @@ export type CreditoDemo = {
   readonly usos: readonly UsoDeLineaDemo[];
   readonly simulador: {
     readonly montoCentavos: number;
+    /** El rango del deslizador del diseño (#smR: 50,000 a 3,000,000). */
+    readonly rango: RangoDemo;
     readonly plazos: readonly string[];
     readonly elegido: number;
     readonly mensualCentavos: number;
@@ -35,6 +37,7 @@ export const CREDITO_DEMO: CreditoDemo = congelar({
   ],
   simulador: {
     montoCentavos: 50000000,
+    rango: { minimoCentavos: 5000000, maximoCentavos: 300000000, pasoCentavos: 5000000 },
     plazos: ["6 meses", "12 meses", "18 meses", "24 meses"],
     elegido: 1,
     mensualCentavos: 4727980,

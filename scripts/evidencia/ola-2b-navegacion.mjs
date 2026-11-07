@@ -362,11 +362,28 @@ async function flujos() {
     const historial = await ana.p.evaluate(() => document.querySelector("main").innerText);
     anotar(/Autorizado para pagar/.test(historial) && /Rechazado/.test(historial) && /Lotes de nómina preparados/.test(historial), "4 Historial: muestra la autorización, el rechazo y el lote", "");
     await capturar(ana.p, `${carpeta}/4f-historial-1440.webp`);
-    // Pendientes sigue viva con los mismos pendientes y el lateral la marca dentro de Aprobaciones.
+    // Pendientes se unió con Aprobaciones: la dirección vieja llega aquí con los mismos pendientes.
+    const vieja = await fetch(`${BASE}${TALLER}/consola/pendientes`, { headers: { cookie: `__Host-sesion=${SESIONES.ana}` }, redirect: "manual" });
+    anotar(vieja.status === 307 && vieja.headers.get("location") === `${TALLER}/consola/aprobaciones`, "4 /consola/pendientes redirige (307) a Aprobaciones", `${vieja.status} → ${vieja.headers.get("location")}`);
     await ana.p.goto(`${BASE}${TALLER}/consola/pendientes`, { waitUntil: "networkidle" });
-    const resumen = await ana.p.evaluate(() => document.querySelector(".pendientes-resumen strong")?.textContent ?? null);
+    const resumen = await ana.p.evaluate(() => document.querySelector(".aprobaciones-vistas a")?.textContent.match(/· (\d+)/)?.[1] ?? null);
     const marcado = (await leerLateral(ana.p)).find((l) => l.actual)?.texto;
-    anotar(resumen === segmentoDespues && marcado === "Aprobaciones", "4 /consola/pendientes sigue viva con el mismo número y queda dentro de Aprobaciones", `pendientes=${resumen} aprobaciones=${segmentoDespues} lateral=${marcado}`);
+    anotar(new URL(ana.p.url()).pathname === `${TALLER}/consola/aprobaciones` && resumen === segmentoDespues && marcado === "Aprobaciones", "4 entrando por /consola/pendientes se llega a Aprobaciones con el mismo número", `${new URL(ana.p.url()).pathname} pendientes=${resumen} lateral=${marcado}`);
+    // La alerta de faltante tampoco se pierde: con poco saldo declarado (con clics), aparece al entrar por la dirección vieja.
+    await ana.p.goto(`${BASE}${TALLER}/consola/flujo`, { waitUntil: "networkidle" });
+    const formaSaldo = ana.p.locator('form[data-formulario="saldo"]');
+    await formaSaldo.locator("#saldo").fill("1000.00");
+    await formaSaldo.locator("#alDia").fill(new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City" }).format(new Date()));
+    await formaSaldo.getByRole("button", { name: "Declarar el saldo" }).click();
+    await formaSaldo.locator(".alerta-asentado").waitFor({ timeout: 15000 });
+    await ana.p.goto(`${BASE}${TALLER}/consola/pendientes`, { waitUntil: "networkidle" });
+    const faltante = ana.p.locator('[data-alerta="faltante"]');
+    const conFaltante = await faltante.waitFor({ timeout: 10000 }).then(() => true, () => false);
+    anotar(conFaltante && new URL(ana.p.url()).pathname === `${TALLER}/consola/aprobaciones`, "4 con poco saldo, la alerta de faltante aparece en Aprobaciones al entrar por /consola/pendientes", conFaltante ? (await faltante.innerText()).replace(/\s+/g, " ").slice(0, 90) : "sin alerta");
+    await capturar(ana.p, `${carpeta}/4g-faltante-en-aprobaciones-1440.webp`);
+    await faltante.getByRole("link").first().click();
+    await ana.p.waitForURL(/\/consola(#proyeccion-titulo)?$|\/consola\/flujo$/, { timeout: 15000 }).catch(() => {});
+    anotar(/\/consola(\/flujo)?$/.test(new URL(ana.p.url()).pathname), "4 el enlace de la alerta lleva a la proyección", ana.p.url().replace(BASE, ""));
     anotar(ana.errores.length === 0, "4 Ana: sin errores de consola", ana.errores.join(" | "));
     await ana.nav.close();
 
@@ -397,14 +414,16 @@ async function flujos() {
     for (const [, ruta, seccion] of viejas) {
       const r = await p.goto(`${BASE}${TALLER}${ruta}`, { waitUntil: "networkidle" });
       const marcado = (await leerLateral(p)).find((l) => l.actual)?.texto ?? null;
-      anotar(r?.status() === 200 && marcado === seccion, `5 ${ruta}: responde 200 y el lateral marca ${seccion ?? "nada (vive en «Más»)"}`, `${r?.status()} ${marcado}`);
+      const llega = new URL(p.url()).pathname.replace(TALLER, "");
+      const destino = ruta === "/consola/pendientes" ? "/consola/aprobaciones" : ruta;
+      anotar(r?.status() === 200 && llega === destino && marcado === seccion, `5 ${ruta}: ${destino === ruta ? "responde 200" : `redirige a ${destino}`} y el lateral marca ${seccion ?? "nada (vive en «Más»)"}`, `${r?.status()} ${llega} ${marcado}`);
     }
     anotar(errores.length === 0, "5 rutas viejas: sin errores de consola", errores.join(" | "));
     await nav.close();
-    // Sin Resumen (contadora), /consola sigue llevando a Pendientes.
+    // Sin Resumen (contadora), /consola lleva a Aprobaciones.
     const carla = await abrir({ quien: "carla" });
     await carla.p.goto(`${BASE}${TALLER}/consola`, { waitUntil: "networkidle" });
-    anotar(new URL(carla.p.url()).pathname === `${TALLER}/consola/pendientes`, "5 /consola sin Resumen (contadora) lleva a Pendientes, dentro de Aprobaciones", new URL(carla.p.url()).pathname);
+    anotar(new URL(carla.p.url()).pathname === `${TALLER}/consola/aprobaciones`, "5 /consola sin Resumen (contadora) lleva a Aprobaciones", new URL(carla.p.url()).pathname);
     // Una sección que el rol no abre da 404 aunque se escriba la dirección.
     const r = await carla.p.goto(`${BASE}${TALLER}/consola/tarjetas`, { waitUntil: "networkidle" });
     anotar(r?.status() === 404, "5 sin permiso: la contadora no abre Tarjetas escribiendo la dirección (404)", `${r?.status()}`);
@@ -448,7 +467,9 @@ async function flujos() {
 const LADO = [
   ["plat-00-resumen.png", "/consola", "Resumen"],
   ["plat-01-conciliacio-n.png", "/consola/conciliacion", "Conciliación"],
-  ["plat-02-aprobaciones.png", "/consola/aprobaciones", "Aprobaciones"],
+  // Las solicitudes del diseño (saldo con crédito, aumento de límite, reembolsos) no existen como acciones:
+  // se compara con la bandeja real de Taller del Cierre que ve la liberadora (corre antes de los flujos).
+  ["plat-02-aprobaciones.png", "/consola/aprobaciones", "Aprobaciones", "rosa", "taller"],
   ["plat-03-gastos.png", "/consola/gastos", "Gastos"],
   ["plat-04-tarjetas.png", "/consola/tarjetas", "Tarjetas"],
   ["plat-05-movimientos.png", "/consola/movimientos", "Movimientos"],
@@ -468,9 +489,9 @@ async function lado() {
   if (!DISENO) throw new Error("DISENO tiene que apuntar a la carpeta de capturas del diseño.");
   const carpeta = `${DIR}/lado-a-lado`;
   mkdirSync(carpeta, { recursive: true });
-  for (const [archivo, ruta, titulo] of LADO) {
-    const { nav, p, errores } = await abrir({ quien: "laura", tema: "oscuro" });
-    const respuesta = await p.goto(`${BASE}${ALTAMAR}${ruta}`, { waitUntil: "networkidle" });
+  for (const [archivo, ruta, titulo, quien = "laura", empresa = "altamar"] of LADO) {
+    const { nav, p, errores } = await abrir({ quien, tema: "oscuro" });
+    const respuesta = await p.goto(`${BASE}${empresa === "taller" ? TALLER : ALTAMAR}${ruta}`, { waitUntil: "networkidle" });
     await p.waitForFunction(() => ["quieto", "lento", "sin-motor"].includes(document.querySelector(".escena-fondo canvas")?.dataset.estado ?? ""), null, { timeout: 20000 }).catch(() => {});
     await p.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
     await p.waitForTimeout(600);
@@ -482,7 +503,7 @@ async function lado() {
       .webp({ quality: 80 })
       .toFile(`${carpeta}/${archivo.replace(".png", "")}.webp`);
     const tituloBarra = await p.evaluate(() => document.querySelector(".barra-titulo")?.textContent?.trim() ?? "");
-    anotar(respuesta?.status() === 200 && tituloBarra === titulo, `lado ${archivo}: ${titulo} abre en Altamar con su título en la barra`, `${respuesta?.status()} «${tituloBarra}»`);
+    anotar(respuesta?.status() === 200 && tituloBarra === titulo, `lado ${archivo}: ${titulo} abre en ${empresa === "taller" ? "Taller del Cierre" : "Altamar"} con su título en la barra`, `${respuesta?.status()} «${tituloBarra}»`);
     anotar(errores.length === 0, `lado ${archivo}: sin errores de consola`, errores.join(" | "));
     await nav.close();
   }

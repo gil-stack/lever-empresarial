@@ -71,6 +71,11 @@
   padding: 0;
 }
 
+/* Sin la sangría de 40 px que el navegador le da a <dd>: la nota va alineada con su cifra, como en el diseño. */
+.modulo-diseno dd {
+  margin-inline-start: 0;
+}
+
 /* Fila de cifras clave (.grid.g4 > .card.kpi) */
 .demo-cifras {
   display: grid;
@@ -264,10 +269,62 @@
 
 .demo-li-acciones {
   display: flex;
-  flex: none;
+  flex: 0 1 auto;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
+  /* Con la marca «Demostración» los botones crecen: se parten ellos, no la descripción. */
+  max-width: 48%;
+}
+
+/* Desglose del simulador de Crédito (.kv del diseño): rótulo chico y cifra en negritas */
+.modulo-diseno .renglones-dinero {
+  margin-top: 16px;
+}
+
+.modulo-diseno .renglones-dinero > div {
+  padding: 12px 0;
+}
+
+.modulo-diseno .renglones-dinero dt {
+  color: var(--tx2);
+  font-size: 12.5px;
+  font-weight: 400;
+}
+
+.modulo-diseno .renglones-dinero dd {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Deslizador de monto (input range del diseño), apagado en la demostración */
+.demo-deslizador {
+  display: block;
+  width: 100%;
+  height: 4px;
+  margin: 16px 0 20px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--acc) var(--avance), var(--line2) var(--avance));
+  appearance: none;
+  opacity: 1;
+}
+
+.demo-deslizador::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--acc);
+  appearance: none;
+}
+
+.demo-deslizador::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--acc);
 }
 
 .demo-li-cifra {
@@ -895,6 +952,14 @@
 
 .demo-filtros .campo {
   margin: 0;
+}
+
+.demo-filtros .demo-campo-periodo {
+  grid-column: span 2;
+}
+
+.demo-filtros .segmentado a {
+  white-space: nowrap;
 }
 
 .demo-filtros-acciones {

@@ -1,7 +1,7 @@
 import { IconoCredito, IconoCuenta, IconoDescargar } from "@/components/cromo/iconos";
 import type { CreditoDemo } from "@/dominio/demo/credito";
 
-import { Accion, Cifras, Estado, ID_AVISO_DEMO, pesos, Renglon, Tarjeta } from "../piezas";
+import { Accion, Cifras, DeslizadorApagado, Estado, ID_AVISO_DEMO, pesos, Renglon, Tarjeta } from "../piezas";
 
 const ICONOS = [<IconoCuenta key="cuenta" />, <IconoCredito key="credito" />, <IconoDescargar key="descargar" />];
 
@@ -40,6 +40,7 @@ export function VistaCredito({ datos }: { datos: CreditoDemo }) {
           <p className="demo-tenue">
             Monto · <b>{pesos(simulador.montoCentavos)}</b>
           </p>
+          <DeslizadorApagado etiqueta="Monto" valorCentavos={simulador.montoCentavos} rango={simulador.rango} />
           <fieldset disabled aria-describedby={ID_AVISO_DEMO}>
             <legend className="demo-etiqueta-campo">Plazo</legend>
             <div className="demo-chips">

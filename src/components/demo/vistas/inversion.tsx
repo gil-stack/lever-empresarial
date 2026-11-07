@@ -1,7 +1,7 @@
 import { IconoInversion } from "@/components/cromo/iconos";
 import type { InversionDemo } from "@/dominio/demo/inversion";
 
-import { Accion, Cifras, ID_AVISO_DEMO, InterruptorApagado, pesos, pesosRedondos, Renglon, Tarjeta } from "../piezas";
+import { Accion, Cifras, DeslizadorApagado, ID_AVISO_DEMO, InterruptorApagado, pesos, pesosRedondos, Renglon, Tarjeta } from "../piezas";
 
 /** plat-12: invertir a plazo fijo y las inversiones vivas. */
 export function VistaInversion({ datos }: { datos: InversionDemo }) {
@@ -23,6 +23,7 @@ export function VistaInversion({ datos }: { datos: InversionDemo }) {
           </fieldset>
           <p className="demo-tenue demo-separado">Monto</p>
           <p className="demo-saldo">{pesosRedondos(datos.montoCentavos)}</p>
+          <DeslizadorApagado etiqueta="Monto a invertir" valorCentavos={datos.montoCentavos} rango={datos.rango} />
           <dl className="demo-desglose">
             <div>
               <dt>

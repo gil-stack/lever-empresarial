@@ -21,6 +21,9 @@ export type CifraDemo = {
 export type EstadoDemo = { readonly texto: string; readonly tono: "acento" | "aviso" | "peligro" | "tenue" | "azul" };
 
 /** Una acción que en el diseño mueve dinero o crea algo: en la demostración va apagada. */
+/** El rango de un deslizador de monto (`input type="range"` del diseño). */
+export type RangoDemo = { readonly minimoCentavos: number; readonly maximoCentavos: number; readonly pasoCentavos: number };
+
 export type AccionDemo = { readonly etiqueta: string; readonly tipo: "principal" | "secundaria" | "fantasma" };
 
 /** Congela un objeto y todo lo que contiene: los datos de ejemplo son de solo lectura. */
