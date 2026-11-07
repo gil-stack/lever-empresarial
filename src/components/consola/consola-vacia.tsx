@@ -92,14 +92,14 @@ function TarjetaYClabe() {
     <Hoja className="saldos" id="saldos-titulo" titulo="Tarjeta y CLABE">
       <Renglones>
         <Renglon etiqueta="Límite de la tarjeta">
-          <Frase>El emisor todavía no lo aplica.</Frase>
+          <Frase>Todavía no hay tarjetas emitidas desde Lever.</Frase>
         </Renglon>
         <Renglon etiqueta="Saldo de la CLABE">
-          <Frase>Sin consulta al participante.</Frase>
+          <Frase>Lever todavía no lo consulta.</Frase>
         </Renglon>
       </Renglones>
       <p className="nota-saldos">
-        La tarjeta es recargable y prefondeada. Estas dos cifras no se suman entre sí ni con el libro.
+        La tarjeta es recargable y prefondeada.
       </p>
     </Hoja>
   );
@@ -153,7 +153,7 @@ function CifrasDelLibro({ cajones }: { cajones: CargaCajones }) {
           </Metrica>
         ))}
       </Metricas>
-      <p className="edad resumen-edad">{vista.edad} Desde aquí no se dispersa ni se envía un SPEI.</p>
+      <p className="edad resumen-edad">{vista.edad}</p>
     </section>
   );
 }
