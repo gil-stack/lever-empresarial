@@ -109,7 +109,8 @@
 
 .demo-cifra small {
   display: block;
-  color: var(--tx3);
+  /* Va directo sobre la escena: en claro, --tx3 queda en 4.4:1 sobre sus zonas grises; --tx2 pasa. */
+  color: light-dark(var(--tx2), var(--tx3));
   font-size: 12px;
   line-height: 1.6;
 }
@@ -287,7 +288,8 @@
 .demo-enlace {
   display: inline-block;
   margin-top: 4px;
-  color: var(--acc);
+  /* --sello: el coral oscurecido para texto en tema claro (el --acc puro da 4.1:1 sobre la tarjeta). */
+  color: var(--sello);
   font-size: 12px;
   text-decoration: none;
 }
@@ -426,8 +428,9 @@
   letter-spacing: 0.02em;
 }
 
+/* Abonos: --sello es el coral legible como texto en claro (4.0:1 con --acc); en oscuro y Lever es el mismo --acc. */
 .demo-positivo {
-  color: var(--acc);
+  color: var(--sello);
 }
 
 .demo-tenue {

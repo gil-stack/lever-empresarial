@@ -625,11 +625,19 @@ async function contraste() {
         await p.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
         const alto = await p.evaluate(() => document.documentElement.scrollHeight);
         // Se mide pantalla por pantalla bajando por la página: cada texto contra lo que tiene detrás.
-        for (let y = 0; y < alto; y += ancho < 600 ? 800 : 860) {
+        // El paso es menor que la ventana menos la barra fija de arriba: ningún texto queda sin medir.
+        for (let y = 0; y < alto; y += ancho < 600 ? 640 : 760) {
           await p.evaluate((destino) => window.scrollTo(0, destino), y);
           await p.waitForTimeout(250);
-          const textos = await p.evaluate(() => {
+          // Si algo se movió entre la medición y la captura (una imagen que termina de cargar, la barra
+          // que cambia al desplazarse), cada texto quedaría contra un fondo ajeno: se repite el paso.
+          let textos;
+          let png;
+          let pngNormal;
+          for (let intento = 1; ; intento += 1) {
+          textos = await p.evaluate(() => {
             const salida = [];
+            window.__medidos = [];
             const recorrido = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
             const vistos = new Set();
             while (recorrido.nextNode()) {
@@ -652,18 +660,63 @@ async function contraste() {
                 recortado = (caja.width < 2 || caja.height < 2) && getComputedStyle(a).overflow !== "visible";
               }
               if (recortado) continue;
+              // Solo cuenta la parte que se ve: una tabla que se desplaza de lado recorta lo que queda fuera de su caja.
+              let vis = { l: r.left, t: r.top, r: r.right, b: r.bottom };
+              for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+                const e = getComputedStyle(a);
+                if (e.overflowX === "visible" && e.overflowY === "visible") continue;
+                const c = a.getBoundingClientRect();
+                vis = { l: Math.max(vis.l, c.left), t: Math.max(vis.t, c.top), r: Math.min(vis.r, c.right), b: Math.min(vis.b, c.bottom) };
+              }
+              if (vis.r - vis.l < 2 || vis.b - vis.t < 2) continue;
+              // Lo que pasa por debajo de la barra superior (fija al desplazarse) no se ve: no se mide contra ella.
+              const medio = (vis.t + vis.b) / 2;
+              const tapado = [(vis.l + vis.r) / 2, vis.l + 1, vis.r - 1].every((px) => {
+                const encima = document.elementFromPoint(px, medio);
+                return encima && !el.contains(encima) && !encima.contains(el);
+              });
+              if (tapado) {
+                const encima = document.elementFromPoint((vis.l + vis.r) / 2, medio);
+                (window.__tapados ??= []).push(`${nodo.textContent.trim().slice(0, 24)} ⟵ ${encima.tagName.toLowerCase()}.${String(encima.className).trim().split(/\s+/).join(".")}`);
+                continue;
+              }
               let opacidad = 1;
               for (let a = el; a; a = a.parentElement) opacidad *= Number(getComputedStyle(a).opacity);
               const n = estilo.color.match(/[\d.]+/g).map(Number);
               const color = estilo.color.startsWith("color(") ? [n[0] * 255, n[1] * 255, n[2] * 255, n[3] ?? 1] : [n[0], n[1], n[2], n[3] ?? 1];
-              salida.push({ texto: nodo.textContent.trim().slice(0, 40), color, opacidad, tamano: parseFloat(estilo.fontSize), peso: Number(estilo.fontWeight), caja: { x: Math.max(0, r.x), y: Math.max(0, r.y), w: r.width, h: r.height } });
+              const donde = [el, el.parentElement, el.parentElement?.parentElement].filter(Boolean).map((n) => `${n.tagName.toLowerCase()}${typeof n.className === "string" && n.className ? `.${n.className.trim().split(/\s+/).join(".")}` : ""}`).join(" < ");
+              salida.push({ donde, texto: nodo.textContent.trim().slice(0, 40), color, opacidad, tamano: parseFloat(estilo.fontSize), peso: Number(estilo.fontWeight), caja: { x: Math.max(0, vis.l), y: Math.max(0, vis.t), w: vis.r - vis.l, h: vis.b - vis.t }, origen: [r.x, r.y] });
+              window.__medidos.push(nodo);
             }
             return salida;
           });
           const oculto = await p.addStyleTag({ content: "html body *, html body *::before, html body *::after { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; } svg text { fill: transparent !important; }" });
           await p.waitForTimeout(150);
-          const png = PNG.sync.read(await p.screenshot());
+          await p.evaluate(() => new Promise((listo) => requestAnimationFrame(() => requestAnimationFrame(listo))));
+          png = PNG.sync.read(await p.screenshot());
+          const despues = await p.evaluate(() => window.__medidos.map((n) => {
+            const g = document.createRange();
+            g.selectNodeContents(n);
+            const r = g.getBoundingClientRect();
+            return [r.x, r.y];
+          }));
           await oculto.evaluate((n) => n.remove());
+          if (process.env.DEPURAR) {
+            pngNormal = PNG.sync.read(await p.screenshot());
+            const tapados = await p.evaluate(() => window.__tapados?.splice(0) ?? []);
+            if (tapados.length) console.log(`TAPADOS ${pantalla.clave} ${ancho} y=${y}: ${tapados.join(" | ")}`);
+          }
+          const quieto = despues.length === textos.length && despues.every(([dx, dy], i) => Math.abs(dx - textos[i].origen[0]) <= 1 && Math.abs(dy - textos[i].origen[1]) <= 1);
+          // Con el equipo cargado la captura a veces sale antes de pintar el texto transparente: si en el
+          // centro de varios textos aparece su propio color, la captura todavía tiene letras y se repite.
+          const conLetras = textos.filter((t) => {
+            const k = (Math.min(png.height - 1, Math.round(t.caja.y + t.caja.h / 2)) * png.width + Math.min(png.width - 1, Math.round(t.caja.x + t.caja.w / 2))) * 4;
+            return Math.abs(png.data[k] - t.color[0]) + Math.abs(png.data[k + 1] - t.color[1]) + Math.abs(png.data[k + 2] - t.color[2]) < 12;
+          }).length;
+          if (quieto && conLetras <= 3) break;
+          if (intento === 3) throw new Error(`${pantalla.clave} ${tema} ${ancho}: la captura no se estabilizó en y=${y} (quieto=${quieto}, con letras=${conLetras})`);
+          await p.waitForTimeout(500);
+          }
           for (const t of textos) {
             const alfa = t.color[3] * t.opacidad;
             let peor = Infinity;
@@ -685,7 +738,16 @@ async function contraste() {
             const umbral = t.tamano >= 24 || (t.tamano >= 18.66 && t.peso >= 600) ? 3 : 4.5;
             medidos += 1;
             minimo = Math.min(minimo, peor);
-            if (peor < umbral) fallas.push({ pantalla: pantalla.clave, texto: t.texto, color: hex(t.color), alfa: Number(alfa.toFixed(2)), fondo: hex(fondoPeor), contraste: Number(peor.toFixed(2)), umbral });
+            if (peor < umbral && process.env.DEPURAR) {
+              const recorte = new PNG({ width: Math.round(w) + 40, height: Math.round(h) + 40 });
+              PNG.bitblt(png, recorte, Math.max(0, Math.round(x) - 20), Math.max(0, Math.round(arriba) - 20), Math.min(Math.round(w) + 40, png.width - Math.max(0, Math.round(x) - 20)), Math.min(Math.round(h) + 40, png.height - Math.max(0, Math.round(arriba) - 20)), 0, 0);
+              mkdirSync(process.env.DEPURAR, { recursive: true });
+              writeFileSync(`${process.env.DEPURAR}/${pantalla.clave}-${ancho}-${Math.round(arriba + y)}.png`, PNG.sync.write(recorte));
+              const normal = new PNG({ width: recorte.width, height: recorte.height });
+              PNG.bitblt(pngNormal, normal, Math.max(0, Math.round(x) - 20), Math.max(0, Math.round(arriba) - 20), Math.min(Math.round(w) + 40, png.width - Math.max(0, Math.round(x) - 20)), Math.min(Math.round(h) + 40, png.height - Math.max(0, Math.round(arriba) - 20)), 0, 0);
+              writeFileSync(`${process.env.DEPURAR}/${pantalla.clave}-${ancho}-${Math.round(arriba + y)}-normal.png`, PNG.sync.write(normal));
+            }
+            if (peor < umbral) fallas.push({ pantalla: pantalla.clave, donde: t.donde, y: Math.round(t.caja.y + y), texto: t.texto, color: hex(t.color), alfa: Number(alfa.toFixed(2)), fondo: hex(fondoPeor), contraste: Number(peor.toFixed(2)), umbral });
           }
         }
         await nav.close();
@@ -695,7 +757,7 @@ async function contraste() {
     }
   }
   mkdirSync(`${DIR}/datos`, { recursive: true });
-  writeFileSync(`${DIR}/datos/contraste.json`, JSON.stringify(informe, null, 2));
+  writeFileSync(`${DIR}/datos/contraste-informe${process.env.SUFIJO ?? ""}.json`, JSON.stringify(informe, null, 2));
 }
 
 // ---------- Cargando: la sección nueva dice «Cargando…» y el marco se queda ----------
