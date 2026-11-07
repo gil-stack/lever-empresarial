@@ -16,12 +16,12 @@
     "test:db": {
       "cache": false,
       "outputs": [],
-      "tags": ["ci", "ci:cpus:4"]
+      "tags": ["ci", "ci:cpus:8"]
     },
     "test:e2e": {
       "cache": false,
       "outputs": [],
-      "tags": ["ci", "ci:cpus:4"]
+      "tags": ["ci", "ci:cpus:8"]
     },
     "build": {
       "outputs": [".next/**", "!.next/cache/**"],
