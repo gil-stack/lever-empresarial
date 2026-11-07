@@ -219,6 +219,8 @@ async function revisarCargaMovil(page, donde, ruta) {
   const carga = page.locator(".barra-movil-carga");
   await carga.locator(".seccion-spinner").waitFor();
   exigir((await carga.getAttribute("role")) === "status" && (await carga.innerText()).trim() === "Cargando…" && (await carga.locator(".seccion-spinner").isVisible()), `${donde}: la barra de arriba muestra el progreso y dice «Cargando…»`);
+  // El cajón tarda 0,22 s en salir: se mide la pantalla que queda, no el cajón a medio camino.
+  await page.locator("#lateral").waitFor({ state: "hidden" });
   const medida = await medirPantalla(page, ruta);
   exigir(!medida.motivo, `${donde}: la medición mientras carga quedó firme${medida.motivo ? ` (${medida.motivo})` : ""}`);
   exigir(medida.fallas.length === 0, `${donde}: contraste AA mientras carga (${medida.medidos} textos, mínimo ${medida.minimo.toFixed(2)})`);
@@ -998,7 +1000,7 @@ async function medirContraste(page, ruta) {
 const reintentosDeContraste = [];
 // Sin transiciones: el color transparente se lee completo, no a medio camino.
 const OCULTAR_TEXTO = "html body *, html body *::before, html body *::after { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; transition: none !important; } svg text { fill: transparent !important; }";
-const firmaDeTextos = (lista) => lista.map((t) => `${t.texto}@${Math.round(t.caja.x)},${Math.round(t.caja.y)}`).join("|");
+const firmaDeTexto = (t) => `«${t.texto}» en ${Math.round(t.caja.x)},${Math.round(t.caja.y)}`;
 
 /** Corre en el navegador sobre la etiqueta de estilo: vacío si sigue puesta y deja transparente cada elemento. */
 function textoOculto(estilo) {
@@ -1019,8 +1021,9 @@ async function medirPantalla(page, ruta) {
   const png = PNG.sync.read(await page.screenshot());
   const despues = await oculto.evaluate(textoOculto).catch((error) => `la página cambió (${error.message.split("\n")[0]})`);
   await oculto.evaluate((n) => n.remove()).catch(() => {});
-  const quieta = firmaDeTextos(textos) === firmaDeTextos(await page.evaluate(recogerTextos));
-  const motivo = antes ? `antes de la captura ${antes}` : despues ? `durante la captura ${despues}` : quieta ? "" : "la página se movió durante la captura";
+  const [previas, posteriores] = [textos.map(firmaDeTexto), (await page.evaluate(recogerTextos)).map(firmaDeTexto)];
+  const cambio = previas.length !== posteriores.length ? `${previas.length} → ${posteriores.length} textos` : previas.map((f, i) => (f === posteriores[i] ? "" : `${f} → ${posteriores[i]}`)).find(Boolean);
+  const motivo = antes ? `antes de la captura ${antes}` : despues ? `durante la captura ${despues}` : cambio ? `la página se movió durante la captura (${cambio})` : "";
   if (motivo) return { motivo };
   return medirContraEscena(ruta, textos, png);
 }
