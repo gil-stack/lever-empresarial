@@ -1,4 +1,5 @@
 import { clabeValida } from "./clabe";
+import { TOPE_ARCHIVO_BYTES, TOPE_ARCHIVO_TEXTO } from "./archivos";
 import { FRASE_FUERA_DE_LISTA, FRASE_SIN_PAGO } from "./lista-69b";
 import { horaEnMexico } from "./reloj";
 import { normalizarRfc, validarRfc } from "./rfc";
@@ -12,7 +13,10 @@ import { normalizarRfc, validarRfc } from "./rfc";
  * el proveedor puede existir y el pago no. Esta fase no envía un SPEI.
  */
 
-export const PESO_MAXIMO_CONSTANCIA = 8_000_000;
+export const PESO_MAXIMO_CONSTANCIA = TOPE_ARCHIVO_BYTES;
+/** Dos archivos en un envío comparten el tope: lo revisan el navegador y la acción. */
+export const CONSTANCIA_Y_CONTRATO = `La constancia y el contrato juntos no pueden superar ${TOPE_ARCHIVO_TEXTO}.`;
+export const XML_Y_PDF = `El XML y el PDF juntos no pueden superar ${TOPE_ARCHIVO_TEXTO}.`;
 const TOPE_RAZON = 254;
 const CONTROL = /[\u0000-\u001F\u007F]/;
 
@@ -145,7 +149,7 @@ const CAMPO_DE_CODIGO: Readonly<Record<string, ErrorCampoProveedor>> = {
   clabe_invalida: { campo: "clabe", mensaje: "La CLABE no cierra con el dígito. No se guarda." },
   constancia_ausente: { campo: "constancia", mensaje: "Falta la constancia de situación fiscal." },
   constancia_tipo: { campo: "constancia", mensaje: "La constancia tiene que ser un PDF." },
-  constancia_peso: { campo: "constancia", mensaje: "Ese PDF pesa de más. No se guardó." },
+  constancia_peso: { campo: "constancia", mensaje: `Ese PDF pasa de ${TOPE_ARCHIVO_TEXTO}. No se guardó.` },
   constancia_vacia: { campo: "constancia", mensaje: "Ese PDF está vacío." },
   proveedor_duplicado: { campo: "rfc", mensaje: "Ese RFC ya es un proveedor. No entra otra vez." },
   nombre_comercial_invalido: { campo: "nombreComercial", mensaje: "Revisa el nombre comercial." },
@@ -160,7 +164,7 @@ export function errorDeCodigo(codigo: string): ErrorCampoProveedor | null {
 
 export function mensajeConstancia(codigo: CodigoConstancia): string {
   if (codigo === "constancia_ausente") return "Falta la constancia de situación fiscal.";
-  if (codigo === "constancia_peso") return "Ese PDF pesa de más. No se guardó.";
+  if (codigo === "constancia_peso") return `Ese PDF pasa de ${TOPE_ARCHIVO_TEXTO}. No se guardó.`;
   if (codigo === "constancia_vacia") return "Ese PDF está vacío.";
   return "La constancia tiene que ser un PDF.";
 }

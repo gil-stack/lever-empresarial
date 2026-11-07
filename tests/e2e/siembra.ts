@@ -6,7 +6,6 @@ import type { ContextoConEmpresa, ContextoDePersonal } from "../../src/nucleo/co
 import { cifrarSemilla, llaveDesde } from "../../src/server/autenticacion/cifrado";
 import { repositorioPg } from "../../src/server/autenticacion/repositorio";
 import { aBase32, pasoDe, semillaNueva } from "../../src/server/autenticacion/totp";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio";
 import { solicitarActivacion } from "../../src/server/operacion/activaciones";
 import { registrarProspecto } from "../../src/server/operacion/clientes";
@@ -15,6 +14,7 @@ import { darDeAltaPersona, nombrarCentro } from "../../src/server/personas/servi
 import { contextoDePersonal, invitarAdministrador, migrarPersonalDeVariable } from "../../src/server/plataforma/servicio";
 import { leerSesion } from "../../src/server/session/servicio";
 import { resolverContexto } from "../../src/server/tenencia/resolver";
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena";
 import { ejecutar } from "../aislamiento/postgres";
 import { expedienteEnRegla, SESION_SOFIPO } from "../operacion/apoyo-alta-regulada";
 
@@ -104,7 +104,7 @@ export async function sembrarRecorridos(owner: string): Promise<void> {
   }
 
   // ---------- Altamar E2E: cliente real (no de demostración) ----------
-  const altamar = await darDeAltaEmpresa(personal, {
+  const altamar = await darDeAltaComoDuena(owner, personal, {
     rfc: "AEE180312AB1", razonSocial: "Altamar E2E", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
   }, { demostracion: false });
   const invitada = await invitarAdministrador(personal, { companyId: altamar.id, razonSocial: altamar.razonSocial, nombre: "Laura Méndez", correo: CORREOS.laura });
@@ -194,7 +194,7 @@ export async function sembrarRecorridos(owner: string): Promise<void> {
     commit;`);
 
   // ---------- Bahía E2E: empresa activa sin administrador, para la invitación desde Operación ----------
-  const bahia = await darDeAltaEmpresa(personal, {
+  const bahia = await darDeAltaComoDuena(owner, personal, {
     rfc: "BEE190101CD2", razonSocial: "Bahía E2E", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
   }, { demostracion: false });
 

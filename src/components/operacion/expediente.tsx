@@ -8,7 +8,10 @@ import {
   guardarDatosAccion,
   retirarDelBorradorAccion,
 } from "@/app/operacion/acciones-alta";
+import { ARCHIVO_DEMASIADO_GRANDE } from "@/components/operacion/aviso";
+import { CampoArchivo } from "@/components/operacion/campo-archivo";
 import { BotonEnviar, Hoja, Insignia, Renglon, Renglones, Vacio } from "@/components/sistema";
+import { TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
 import {
   CARGOS,
   ETIQUETA_CARGO,
@@ -460,8 +463,15 @@ export function FormulariosBorrador({
             <input id="doc-detalle" name="detalle" maxLength={300} {...error("documentos-titulo", "detalle")} />
           </div>
           <div className="campo operacion-ancho">
-            <label htmlFor="doc-archivo">Archivo (PDF, PNG o JPG, hasta 10 MB)</label>
-            <input id="doc-archivo" name="archivo" type="file" accept="application/pdf,image/png,image/jpeg" required {...error("documentos-titulo", "archivo")} />
+            <label htmlFor="doc-archivo">Archivo (PDF, PNG o JPG, hasta {TOPE_ARCHIVO_TEXTO})</label>
+            <CampoArchivo
+              id="doc-archivo"
+              name="archivo"
+              accept="application/pdf,image/png,image/jpeg"
+              mensaje={ARCHIVO_DEMASIADO_GRANDE}
+              required
+              ligado={error("documentos-titulo", "archivo")}
+            />
           </div>
           <div className="acciones operacion-ancho">
             <BotonEnviar>Guardar documento</BotonEnviar>

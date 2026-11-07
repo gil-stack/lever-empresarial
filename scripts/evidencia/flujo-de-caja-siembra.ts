@@ -19,7 +19,7 @@ import { randomUUID } from "node:crypto";
 import { desplazar } from "../../src/dominio/flujo/fechas";
 import { hoyEnMexico } from "../../src/dominio/personas";
 import { cerrarConexion } from "../../src/nucleo/db";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio";
+import { darDeAltaComoDuena } from "../empresa-por-la-duena";
 import { registrarCobro, registrarObligacion } from "../../src/server/flujo/servicio";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio";
 import { darDeAltaPersona, nombrarCentro } from "../../src/server/personas/servicio";
@@ -63,7 +63,7 @@ async function sesionDe(userId: string, empresaId: string): Promise<ContextoConE
 type Personal = Awaited<ReturnType<typeof contextoDePersonal>>;
 
 async function empresaConAdmin(personal: Personal, datos: { rfc: string; razon: string; demostracion: boolean; admin: string; correo: string }) {
-  const empresa = await darDeAltaEmpresa(personal, {
+  const empresa = await darDeAltaComoDuena(DUENO, personal, {
     rfc: datos.rfc, razonSocial: datos.razon, codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
   }, { demostracion: datos.demostracion });
   const invitado = await invitarAdministrador(personal, { companyId: empresa.id, razonSocial: empresa.razonSocial, nombre: datos.admin, correo: datos.correo });

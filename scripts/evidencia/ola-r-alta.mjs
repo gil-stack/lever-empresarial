@@ -3,7 +3,7 @@
 // docs/evidencia/ola-r-alta/README.md.
 //
 //   ESTADO=/fuera/del/repo/ola-r-alta.json BASE=http://localhost:4811 \
-//   [FASES=flujos,pantallas,contraste] node scripts/evidencia/ola-r-alta.mjs
+//   [FASES=flujos,pantallas,contraste,regresiones] node scripts/evidencia/ola-r-alta.mjs
 //
 // Todo pasa por clics, con la sesión SOFIPO o de cliente de cada persona. La base se toca como
 // dueña solo para: envejecer el segundo factor de Ofelia (para ver «Confirma que eres tú» sin
@@ -134,9 +134,11 @@ async function listo(p) {
   await p.waitForLoadState("networkidle");
 }
 let numero = 0;
+// La fase de regresiones numera aparte («r01-…») para no pisar las capturas de los flujos.
+let prefijo = "";
 async function foto(p, nombre, completa = true) {
   numero += 1;
-  const ruta = `${DIR}/capturas/${String(numero).padStart(2, "0")}-${nombre}.webp`;
+  const ruta = `${DIR}/capturas/${prefijo}${String(numero).padStart(2, "0")}-${nombre}.webp`;
   mkdirSync(`${DIR}/capturas`, { recursive: true });
   await p.addStyleTag({ content: "nextjs-portal { display: none !important; }" }).catch(() => {});
   await p.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur()).catch(() => {});
@@ -865,6 +867,142 @@ async function contraste() {
   writeFileSync(`${DIR}/datos/contraste.json`, JSON.stringify(informe, null, 2));
 }
 
+// ---------- Regresiones de la revisión del PR: lo que cambió en pantalla (corre después de los flujos) ----------
+const PAGO_UNO = "88888888-8888-4888-8888-888888888881";
+async function regresiones() {
+  console.log("\n— Regresiones: pago que regresa, doble envío en dos pestañas, aviso de tamaño y lo que ve cada rol");
+  prefijo = "r";
+  numero = 0;
+  renovarSesiones();
+
+  // H12: la suspensión del flujo 9 regresó a «por autorizar» el pago que Rosa había autorizado; tras reactivar se vuelve a autorizar.
+  exigir(sql(`select estado from supplier_payment_requests where id = '${PAGO_UNO}'`) === "por_autorizar", "H12. el pago que estaba listo para pagar regresó a «por autorizar» al suspender a Taller (flujo 9)");
+  exigir(
+    sql(`select count(*) || ' · ' || max(motivo) from audit_log where accion = 'regresar_pago_proveedor' and identificador = '${PAGO_UNO}' and actor_tipo = 'sistema'`)
+      === "1 · La empresa quedó suspendida. La autorización anterior se retiró.",
+    "H12. un solo evento del sistema, con el motivo",
+  );
+  const rosa = await abrir("rosa");
+  await ir(rosa.p, `/c/${TALLER}/consola/proveedores?pago=${PAGO_UNO}`);
+  exigir(await rosa.p.getByText("La empresa quedó suspendida. La autorización anterior se retiró.").first().isVisible(), "H12. el historial del pago dice por qué regresó");
+  exigir(await rosa.p.locator(".detalle-cabeza").getByText("Por autorizar", { exact: true }).isVisible(), "H12. la cabeza del pago dice «Por autorizar»");
+  await foto(rosa.p, "h12-pago-regresa-por-autorizar", false);
+  const autorizaciones = () => cuenta(`audit_log where accion = 'autorizar_pago_proveedor' and identificador = '${PAGO_UNO}'`);
+  const antes = autorizaciones();
+  await rosa.p.getByRole("button", { name: "Autorizar para pagar" }).dblclick();
+  await rosa.p.locator(".detalle-cabeza").getByText("Listo para pagar", { exact: true }).waitFor({ timeout: 20000 });
+  exigir(
+    sql(`select estado from supplier_payment_requests where id = '${PAGO_UNO}'`) === "listo_para_pagar" && autorizaciones() === antes + 1,
+    "H12. con Taller reactivada, doble clic en «Autorizar para pagar» = una autorización nueva",
+  );
+  await foto(rosa.p, "h12-pago-autorizado-de-nuevo", false);
+  await rosa.nav.close();
+
+  // F4: dos pestañas abren versión del expediente al mismo tiempo: una versión, y la otra pestaña dice por qué.
+  const rutaEbano = `/operacion/clientes/${ctxEbano.id}/expediente`;
+  const versiones = () => cuenta(`kyb_versiones where company_id = '${ctxEbano.id}'`);
+  const antesVersiones = versiones();
+  const omar = await abrir("omar");
+  const otra = await omar.p.context().newPage();
+  await Promise.all([ir(omar.p, rutaEbano), ir(otra, rutaEbano)]);
+  const [primera, segunda] = await Promise.all([omar.p, otra].map(async (pagina) => {
+    await pagina.getByRole("button", { name: /^Abrir versión/ }).click();
+    return esperarAviso(pagina);
+  }));
+  exigir(
+    [primera, segunda].sort().join(" ") === "expediente_con_borrador expediente_version_creada" && versiones() === antesVersiones + 1,
+    "F4. dos pestañas a la vez: una versión nueva; la otra pestaña dice «Ya hay un borrador abierto», no «base no disponible»",
+    `${primera}, ${segunda}`,
+  );
+  const tarde = primera === "expediente_con_borrador" ? omar.p : otra;
+  exigir((await aviso(tarde)).includes("Ya hay un borrador abierto"), "F4. el aviso de la pestaña que llegó tarde", await aviso(tarde));
+  await foto(tarde, "f4-doble-envio-dos-pestanas");
+  await otra.close();
+
+  // F1: un PDF de 4.6 MB no sale del navegador; el aviso queda ligado al campo y no hay fila nueva.
+  const documentos = () => cuenta(`kyb_documentos where company_id = '${ctxEbano.id}'`);
+  const antesDocumentos = documentos();
+  await ir(omar.p, rutaEbano);
+  const pesado = Buffer.concat([PDF("pesado"), Buffer.alloc(4_600_000 - PDF("pesado").length)]);
+  await omar.p.locator("#doc-tipo").selectOption("acta_constitutiva");
+  await campo(omar.p, "#doc-detalle", "Folio mercantil 4321");
+  await omar.p.locator("#doc-archivo").setInputFiles({ name: "acta-escaneada.pdf", mimeType: "application/pdf", buffer: pesado });
+  const avisoDocumento = omar.p.locator("#doc-archivo-error");
+  exigir(
+    (await avisoDocumento.innerText()) === "El archivo pasa de 4 MB. Sube uno más ligero."
+      && (await omar.p.locator("#doc-archivo").getAttribute("aria-describedby")) === "doc-archivo-error",
+    "F1. al elegir el PDF de 4.6 MB aparece el aviso, ligado al campo, antes de enviar",
+  );
+  await omar.p.getByRole("button", { name: "Guardar documento" }).click();
+  await omar.p.waitForTimeout(1500);
+  exigir(new URL(omar.p.url()).searchParams.get("aviso") === null && documentos() === antesDocumentos, "F1. clic en «Guardar documento»: no sale la petición y hay 0 filas nuevas");
+  // Captura de la ventana en el campo: la página completa repetiría la barra lateral fija a media altura.
+  await omar.p.locator("#doc-archivo").evaluate((nodo) => nodo.scrollIntoView({ block: "center" }));
+  await foto(omar.p, "f1-documento-pasa-del-tope", false);
+
+  // F8: Originación ve «En revisión de Cumplimiento», sin folio, plazo, nombre en la lista ni motivos.
+  const folio = "UIF-24H-2026-000123";
+  const motivoCumplimiento = "RFC y nombre idénticos a la persona de la lista de la UIF.";
+  exigir(await omar.p.getByText("En revisión de Cumplimiento", { exact: true }).isVisible() && await omar.p.getByText("El detalle lo ven Cumplimiento y Auditoría.").isVisible(), "F8. Originación ve en el expediente «En revisión de Cumplimiento»");
+  exigir(!(await omar.p.content()).includes(folio) && !(await omar.p.content()).includes(motivoCumplimiento), "F8. Originación no ve el folio ni el motivo de Cumplimiento");
+  await omar.p.getByText("El detalle lo ven Cumplimiento y Auditoría.").evaluate((nodo) => nodo.scrollIntoView({ block: "center" }));
+  await foto(omar.p, "f8-originacion-ve-en-revision", false);
+  await ir(omar.p, `/operacion/clientes/${ctxEbano.id}`);
+  exigir(
+    await omar.p.getByText("en revisión de Cumplimiento").first().isVisible()
+      && !(await omar.p.content()).includes("Coincidencia con la Lista de Personas Bloqueadas"),
+    "F8. en la ficha, Originación ve la suspensión «en revisión de Cumplimiento», sin el motivo",
+  );
+  await foto(omar.p, "f8-ficha-originacion-sin-motivo");
+  await omar.nav.close();
+  const celia = await abrir("celia");
+  await ir(celia.p, rutaEbano);
+  exigir((await celia.p.content()).includes(folio), "F8. Cumplimiento ve el detalle del caso con su folio");
+  await foto(celia.p, "f8-cumplimiento-ve-el-detalle");
+  await celia.nav.close();
+
+  // F8: en la bitácora, Administración ve que pasó, no por qué; Auditoría ve el motivo.
+  const motivoHector = "La persona de la lista tiene otra fecha de nacimiento";
+  const ofelia = await abrir("ofelia");
+  await ir(ofelia.p, "/operacion/bitacora");
+  exigir(!(await ofelia.p.content()).includes(motivoHector) && !(await ofelia.p.content()).includes(motivoCumplimiento), "F8. Administración no lee en la bitácora los motivos de la lista");
+  await foto(ofelia.p, "f8-bitacora-administracion-sin-motivo", false);
+  await ofelia.nav.close();
+  const aurelio = await abrir("aurelio");
+  await ir(aurelio.p, "/operacion/bitacora");
+  exigir((await aurelio.p.content()).includes(motivoHector), "F8. Auditoría sí lee el motivo de Cumplimiento");
+  await foto(aurelio.p, "f8-bitacora-auditoria-con-motivo", false);
+
+  // F2: la descarga del expediente llega con su política aislada (sandbox) en la aplicación real.
+  await ir(aurelio.p, rutaEbano);
+  const href = await aurelio.p.locator('a[href*="/expediente/documento/"]').first().getAttribute("href");
+  const descargas = () => cuenta(`audit_log where accion = 'expediente_documento_descargado' and actor_id = '${E.IDS.aurelio}'`);
+  const antesDescargas = descargas();
+  const respuesta = await aurelio.p.request.get(`${BASE}${href}`);
+  exigir(
+    respuesta.status() === 200 && respuesta.headers()["content-security-policy"] === "sandbox; default-src 'none'; frame-ancestors 'none'"
+      && descargas() === antesDescargas + 1,
+    "F2. la descarga del expediente llega con «sandbox; default-src 'none'» y deja su evento",
+    respuesta.headers()["content-security-policy"],
+  );
+  await aurelio.nav.close();
+
+  // F1: la lista de más de 4 MB tampoco sale del navegador.
+  const cargas = () => cuenta("lpb_cargas");
+  const antesCargas = cargas();
+  const celiaLista = await abrir("celia");
+  await ir(celiaLista.p, "/operacion/lpb");
+  const renglon = "Persona De Relleno Sin Relacion,,,fisica,2026-11-02\n";
+  const listaPesada = Buffer.from(`nombre,rfc,curp,tipo,fecha\n${renglon.repeat(Math.ceil(4_600_000 / renglon.length))}`);
+  await celiaLista.p.locator("#archivo").setInputFiles({ name: "lpb-pesada.csv", mimeType: "text/csv", buffer: listaPesada });
+  exigir((await celiaLista.p.locator("#archivo-error").innerText()).includes("4 MB"), "F1. al elegir la lista de 4.6 MB aparece el aviso ligado al campo");
+  await celiaLista.p.getByRole("button", { name: "Cargar y cotejar" }).click();
+  await celiaLista.p.waitForTimeout(1500);
+  exigir(new URL(celiaLista.p.url()).searchParams.get("aviso") === null && cargas() === antesCargas, "F1. clic en «Cargar y cotejar»: no sale la petición y hay 0 cargas nuevas");
+  await foto(celiaLista.p, "f1-lista-pasa-del-tope");
+  await celiaLista.nav.close();
+}
+
 // ---------- Orden ----------
 let fallo = null;
 try {
@@ -890,6 +1028,11 @@ try {
   }
   if (FASES.includes("pantallas")) await pantallas();
   if (FASES.includes("contraste")) await contraste();
+  if (FASES.includes("regresiones")) {
+    await regresiones();
+    const sucios = abiertos.flatMap((a) => a.errores.map((e) => `${a.quien}: ${e}`));
+    exigir(sucios.length === 0, "consola del navegador limpia en las regresiones", sucios.slice(0, 5).join(" | "));
+  }
 } catch (error) {
   fallo = error;
   console.error(error.message);

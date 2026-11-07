@@ -13,7 +13,13 @@ import { PaginaOperacion } from "@/components/operacion/pagina";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { ETIQUETA_GRADO, ETIQUETA_NIVEL, ETIQUETA_RESULTADO } from "@/dominio/operacion";
-import { exigirContextoOperacion, leerExpediente, listarCoincidencias, puedeEnOperacion } from "@/server/operacion";
+import {
+  enRevisionDeCumplimiento,
+  exigirContextoOperacion,
+  leerExpediente,
+  listarCoincidencias,
+  puedeEnOperacion,
+} from "@/server/operacion";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Expediente · Operación" };
@@ -57,7 +63,12 @@ export default async function ExpedienteCliente({
   }
   const expediente = await leerExpediente(ctx, id);
   if (!expediente) notFound();
-  const coincidencias = await listarCoincidencias(ctx, { companyId: id });
+  // El detalle de la lista lo ven Cumplimiento y Auditoría; los demás, solo si hay revisión abierta.
+  const veLista = puedeEnOperacion(ctx, "plataforma.cumplimiento.bandeja");
+  const [coincidencias, enRevision] = await Promise.all([
+    veLista ? listarCoincidencias(ctx, { companyId: id }) : Promise.resolve([]),
+    veLista ? Promise.resolve(false) : enRevisionDeCumplimiento(ctx, id),
+  ]);
   const captura = puedeEnOperacion(ctx, "plataforma.expediente.capturar");
   const dictamina = puedeEnOperacion(ctx, "plataforma.expediente.dictaminar");
   const califica = puedeEnOperacion(ctx, "plataforma.riesgo.calificar");
@@ -236,13 +247,22 @@ export default async function ExpedienteCliente({
       </Hoja>
 
       <Hoja id="coincidencias-titulo" titulo="Coincidencias con listas">
-        <Coincidencias
-          coincidencias={coincidencias}
-          resuelve={resuelve}
-          desde="lpb"
-          ahora={new Date()}
-          vacio="Ni la empresa, ni sus representantes, accionistas o propietarios reales, ni sus proveedores aparecen en la lista vigente."
-        />
+        {veLista ? (
+          <Coincidencias
+            coincidencias={coincidencias}
+            resuelve={resuelve}
+            desde="lpb"
+            ahora={new Date()}
+            vacio="Ni la empresa, ni sus representantes, accionistas o propietarios reales, ni sus proveedores aparecen en la lista vigente."
+          />
+        ) : enRevision ? (
+          <div className="operacion-ficha-cabeza">
+            <Insignia tono="aviso">En revisión de Cumplimiento</Insignia>
+            <p className="pista">El detalle lo ven Cumplimiento y Auditoría.</p>
+          </div>
+        ) : (
+          <Vacio titulo="Sin revisión abierta">Cumplimiento no tiene un caso abierto de esta empresa.</Vacio>
+        )}
       </Hoja>
 
       <NotaRegla>

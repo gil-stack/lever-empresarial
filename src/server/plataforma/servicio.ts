@@ -4,8 +4,6 @@ import { basePlataforma, exigirPersonal, type ContextoDeTenant } from "../../nuc
 import { conContexto } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { actorDePersonal, type Actor } from "../bitacora/auditar";
-import { darDeAltaEmpresa } from "../company/servicio";
-import type { AltaEmpresaEntrada, Empresa } from "../company/tipos";
 import { emitirEnTransaccion } from "../invitaciones/repositorio";
 import { entregarInvitacion } from "../invitaciones/servicio";
 import type { InvitacionEmitida, ResultadoDeEntrega } from "../invitaciones/tipos";
@@ -47,21 +45,6 @@ export async function contextoDePersonal(correo: string): Promise<ContextoDeTena
   );
   if (!ctx.personal) throw new ErrorDeDominio("no_es_operador");
   return { ...ctx, segundoFactor: "comando" };
-}
-
-/** Alta de la empresa y, en otro acto, la invitación a su primer administrador. */
-export async function darDeAltaClienteConAdministrador(
-  ctx: ContextoDeTenant | null | undefined,
-  entrada: {
-    empresa: AltaEmpresaEntrada;
-    demostracion: boolean;
-    administrador: { nombre: string; correo: string };
-  },
-): Promise<{ empresa: Empresa; invitacion: InvitacionDeAlta }> {
-  exigirPersonal(ctx, "plataforma.empresa.alta");
-  const empresa = await darDeAltaEmpresa(ctx, entrada.empresa, { demostracion: entrada.demostracion });
-  const invitacion = await invitarAdministrador(ctx, { companyId: empresa.id, razonSocial: empresa.razonSocial, ...entrada.administrador });
-  return { empresa, invitacion };
 }
 
 export async function invitarAdministrador(

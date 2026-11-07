@@ -8,6 +8,7 @@ import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
 import { exigirEnOperacion } from "./permisos";
+import { unaVezPorFormulario } from "./formulario";
 
 type SesionConFactor = Pick<Sesion, "segundoFactor" | "superficie">;
 
@@ -49,9 +50,14 @@ export async function solicitarCambioDeSuspension(
   const motivo = textoMultilinea(entrada.motivo, 500);
   if (!motivo) throw new ErrorDeDominio("motivo_invalido");
   const ahora = new Date();
-  await conContexto(basePlataforma(ctx, entrada.companyId), async (consulta) => {
-    const previa = await consulta.query("select id from company_suspensions where id = $1", [entrada.formId]);
-    if (previa.rows.length > 0) return;
+  const companyId = entrada.companyId;
+  await unaVezPorFormulario(() => conContexto(basePlataforma(ctx, companyId), async (consulta) => {
+    // Un segundo clic encuentra su solicitud; un formulario de otra empresa no vale.
+    const previa = await consulta.query("select company_id from company_suspensions where id = $1", [entrada.formId]);
+    if (previa.rows.length > 0) {
+      if ((previa.rows[0] as { company_id: string }).company_id === companyId) return;
+      throw new ErrorDeDominio("formulario_invalido");
+    }
     const abierta = await consulta.query("select id from company_suspensions where company_id = $1 and estado = 'pendiente'", [entrada.companyId]);
     if (abierta.rows.length > 0) throw new ErrorDeDominio("suspension_pendiente");
     await consulta.query(
@@ -66,7 +72,7 @@ export async function solicitarCambioDeSuspension(
       motivo,
       ocurridoEn: ahora,
     });
-  });
+  }), "formulario_invalido");
 }
 
 /**

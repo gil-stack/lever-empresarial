@@ -18,7 +18,7 @@ import { Client } from "pg";
 
 import { hoyEnMexico } from "../../../src/dominio/personas";
 import { cerrarConexion } from "../../../src/nucleo/db";
-import { darDeAltaEmpresa } from "../../../src/server/company/servicio";
+import { darDeAltaComoDuena } from "../../empresa-por-la-duena";
 import { declararSaldo } from "../../../src/server/flujo/servicio";
 import { aceptarInvitacion } from "../../../src/server/invitaciones/servicio";
 import { prepararNomina } from "../../../src/server/nomina/servicio";
@@ -120,7 +120,7 @@ async function principal(): Promise<void> {
       values ((select id from operators order by alta_en limit 1), '${personalId}', 'administracion_plataforma');
   `);
   const personal = await contextoDePersonal("ofelia@lever.test");
-  const empresa = await darDeAltaEmpresa(personal, {
+  const empresa = await darDeAltaComoDuena(url, personal, {
     rfc: "ALO180312AB1",
     razonSocial: "Altamar Logística",
     codigoPostal: "06600",
@@ -140,7 +140,7 @@ async function principal(): Promise<void> {
   // colaboradora con nómina y un saldo corto: el faltante lo provoca la nómina de una persona.
   let correo: { EMPRESA_CORREO: string } | null = null;
   if (process.env.CORREO_SEMANAL === "1") {
-    const bahia = await darDeAltaEmpresa(personal, {
+    const bahia = await darDeAltaComoDuena(url, personal, {
       rfc: "BCO190101CD2",
       razonSocial: "Bahía Comercial",
       codigoPostal: "06600",

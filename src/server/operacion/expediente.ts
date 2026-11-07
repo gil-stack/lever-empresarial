@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 
 import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
 import { conContexto, type Consulta } from "../../nucleo/db";
+import { TOPE_ARCHIVO_BYTES } from "../../dominio/archivos";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import {
   CARGOS,
@@ -34,6 +35,7 @@ import { leerPrivado, type AlmacenConstancia } from "../proveedores/constancia";
 import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
 import { exigirEnOperacion } from "./permisos";
+import { unaVezPorFormulario } from "./formulario";
 
 type SesionConFactor = Pick<Sesion, "segundoFactor" | "superficie">;
 
@@ -157,7 +159,19 @@ export type Expediente = {
   riesgo: CalificacionLeida | null;
 };
 
-const LIMITE_ARCHIVO = 10 * 1024 * 1024;
+const LIMITE_ARCHIVO = TOPE_ARCHIVO_BYTES;
+
+/**
+ * Los bytes del archivo subido, leídos solo si el rol captura expedientes y si caben en el
+ * tope: quien no puede capturar no hace que el servidor lea ni valide el archivo.
+ */
+export async function archivoDeDocumento(ctx: ContextoDePersonal, archivo: unknown): Promise<{ nombre: string; bytes: Uint8Array } | null> {
+  exigirEnOperacion(ctx, "plataforma.expediente.capturar");
+  // Un campo de archivo vacío llega como File sin nombre ni bytes: es «falta el archivo», no un PDF.
+  if (!(archivo instanceof File) || archivo.size === 0) return null;
+  if (archivo.size > LIMITE_ARCHIVO) throw new ErrorDeDominio("archivo_demasiado_grande");
+  return { nombre: archivo.name, bytes: new Uint8Array(await archivo.arrayBuffer()) };
+}
 
 /**
  * Abre el expediente. La lectura deja su evento en la bitácora en la misma
@@ -371,9 +385,13 @@ export async function crearVersion(ctx: ContextoDePersonal, entrada: { companyId
   const companyId = entrada.companyId;
   const id = entrada.formId;
   const ahora = new Date();
-  await conContexto(basePlataforma(ctx, companyId), async (consulta) => {
+  await unaVezPorFormulario(() => conContexto(basePlataforma(ctx, companyId), async (consulta) => {
+    // Un segundo clic encuentra su versión; un formulario de otra empresa no vale.
     const previa = await consulta.query("select company_id from kyb_versiones where id = $1", [id]);
-    if (previa.rows.length > 0) return;
+    if (previa.rows.length > 0) {
+      if ((previa.rows[0] as { company_id: string }).company_id === companyId) return;
+      throw new ErrorDeDominio("expediente_ausente");
+    }
     const borrador = await consulta.query("select id from kyb_versiones where company_id = $1 and estado = 'borrador'", [companyId]);
     if (borrador.rows.length > 0) throw new ErrorDeDominio("expediente_con_borrador");
     const empresa = await consulta.query("select razon_social, rfc from companies where id = $1", [companyId]);
@@ -390,7 +408,7 @@ export async function crearVersion(ctx: ContextoDePersonal, entrada: { companyId
     await auditarOperacion(consulta, ctx, {
       companyId, accion: "expediente_version_creada", identificador: id, ocurridoEn: ahora, cambio: { numero },
     });
-  });
+  }));
   return id;
 }
 
@@ -474,7 +492,7 @@ export async function agregarRepresentante(
       [id, version.id, version.companyId, ctx.personal.operadorId, randomUUID(), nombre, rfc, curp, entrada.cargo,
         entrada.esAdministrador, designadoPor, entrada.pep, ctx.persona.id, ahora],
     );
-    if (insertado.rowCount !== 1) return;
+    if (insertado.rowCount !== 1) return mismoBorrador(consulta, "kyb_representantes", id, version.id);
     await auditarOperacion(consulta, ctx, {
       companyId: version.companyId, accion: "expediente_representante_agregado", identificador: id, ocurridoEn: ahora,
     });
@@ -524,7 +542,7 @@ export async function agregarAccionista(
       [id, version.id, version.companyId, ctx.personal.operadorId, randomUUID(), padre, tipo, nombre, rfc, curp,
         nacionalidad, capital, votos, control, pep, ctx.persona.id, ahora],
     );
-    if (insertado.rowCount !== 1) return;
+    if (insertado.rowCount !== 1) return mismoBorrador(consulta, "kyb_accionistas", id, version.id);
     await auditarOperacion(consulta, ctx, {
       companyId: version.companyId, accion: "expediente_accionista_agregado", identificador: id, ocurridoEn: ahora,
     });
@@ -550,7 +568,10 @@ export async function retirarDelBorrador(
         "update kyb_accionistas set retirado_en = $3, retirado_por = $4 where id = $1 and version_id = $2 and retirado_en is null",
         parametros,
       );
-    if (retirado.rowCount !== 1) return;
+    // Un segundo clic lo encuentra ya retirado; un id de otra versión no se da por hecho.
+    if (retirado.rowCount !== 1) {
+      return mismoBorrador(consulta, entrada.tipo === "representante" ? "kyb_representantes" : "kyb_accionistas", entrada.id as string, version.id);
+    }
     await auditarOperacion(consulta, ctx, {
       companyId: version.companyId,
       accion: entrada.tipo === "representante" ? "expediente_representante_retirado" : "expediente_accionista_retirado",
@@ -609,7 +630,10 @@ export async function cargarDocumento(
   // Un doble clic no sube dos veces lo que ya quedó guardado.
   const version = await conContexto(basePlataforma(ctx), async (consulta) => {
     const previo = await consulta.query("select id from kyb_documentos where id = $1", [id]);
-    if (previo.rows.length > 0) return null;
+    if (previo.rows.length > 0) {
+      await documentoDeLaVersion(consulta, id, entrada.versionId as string);
+      return null;
+    }
     return versionEnBorrador(consulta, entrada.versionId as string);
   });
   if (!version) return;
@@ -627,7 +651,7 @@ export async function cargarDocumento(
       [id, ctx.personal.operadorId, enBorrador.companyId, tipo, representante, nombre, contenido.tipo, archivo.bytes.byteLength,
         sha256, guardado.clave, emitidoEl, vigenteHasta, detalle, ctx.persona.id, ahora],
     );
-    if (insertado.rowCount !== 1) return;
+    if (insertado.rowCount !== 1) return documentoDeLaVersion(consulta, id, enBorrador.id);
     await consulta.query(
       "insert into kyb_version_documentos (version_id, documento_id, company_id, operator_id) values ($1, $2, $3, $4)",
       [enBorrador.id, id, enBorrador.companyId, ctx.personal.operadorId],
@@ -674,7 +698,7 @@ export async function dictaminarVersion(
   const motivo = resultado === "aprobado" ? opcional(entrada.motivo, (t) => textoMultilinea(t, 1000)) ?? null : textoMultilinea(entrada.motivo, 1000);
   if (resultado !== "aprobado" && !motivo) throw new ErrorDeDominio("motivo_invalido");
   const ahora = new Date();
-  await conContexto(basePlataforma(ctx), async (consulta) => {
+  await unaVezPorFormulario(() => conContexto(basePlataforma(ctx), async (consulta) => {
     const fila = await consulta.query("select company_id, estado, enviada_por from kyb_versiones where id = $1", [entrada.versionId]);
     const version = fila.rows[0] as { company_id?: unknown; estado?: unknown; enviada_por?: unknown } | undefined;
     if (!version) throw new ErrorDeDominio("expediente_ausente");
@@ -694,7 +718,7 @@ export async function dictaminarVersion(
       companyId: String(version.company_id), accion: "expediente_dictaminado", identificador: entrada.formId as string,
       motivo, ocurridoEn: ahora, cambio: { resultado },
     });
-  });
+  }));
 }
 
 /**
@@ -716,10 +740,11 @@ export async function calificarRiesgoEmpresa(
   const ahora = deps.ahora?.() ?? new Date();
   const hoy = hoyEnMexico(ahora);
   const companyId = entrada.companyId;
-  return conContexto(basePlataforma(ctx, companyId), async (consulta) => {
-    const previa = await consulta.query("select grado, puntaje from kyb_calificaciones_riesgo where id = $1", [entrada.formId]);
+  return unaVezPorFormulario(() => conContexto(basePlataforma(ctx, companyId), async (consulta) => {
+    const previa = await consulta.query("select grado, puntaje, company_id from kyb_calificaciones_riesgo where id = $1", [entrada.formId]);
     if (previa.rows.length > 0) {
-      const fila = previa.rows[0] as { grado: Grado; puntaje: number };
+      const fila = previa.rows[0] as { grado: Grado; puntaje: number; company_id: string };
+      if (fila.company_id !== companyId) throw new ErrorDeDominio("expediente_ausente");
       return { grado: fila.grado, puntaje: Number(fila.puntaje) };
     }
     const version = await consulta.query(
@@ -775,19 +800,24 @@ export async function calificarRiesgoEmpresa(
       cambio: { grado: calificacion.grado, puntaje: calificacion.puntaje },
     });
     return { grado: calificacion.grado, puntaje: calificacion.puntaje };
-  });
+  }));
 }
 
-/** La puerta de la base entrega la ruta del archivo y deja el evento de la descarga (lectura auditada). */
+/**
+ * La puerta de la base entrega la ruta del archivo y deja el evento de la descarga (lectura auditada).
+ * El documento tiene que ser de la empresa de la dirección: si no, no hay evento ni archivo.
+ */
 export async function prepararDescargaDocumento(
   ctx: ContextoDePersonal,
+  companyId: unknown,
   documentoId: unknown,
 ): Promise<{ clave: string; nombre: string; tipo: string; sha256: string; companyId: string }> {
   exigirEnOperacion(ctx, "plataforma.expediente.ver");
-  if (!uuidValido(documentoId)) throw new ErrorDeDominio("documento_no_existe");
+  if (!uuidValido(companyId) || !uuidValido(documentoId)) throw new ErrorDeDominio("documento_no_existe");
   const resultado = await conContexto(basePlataforma(ctx), (consulta) =>
-    consulta.query("select clave_blob, nombre_archivo, tipo_contenido, sha256, company_id from kyb_documento_para_descarga($1, $2)", [
+    consulta.query("select clave_blob, nombre_archivo, tipo_contenido, sha256, company_id from kyb_documento_para_descarga($1, $2, $3)", [
       documentoId,
+      companyId,
       ctx.peticionId,
     ]),
   );
@@ -809,10 +839,11 @@ export async function prepararDescargaDocumento(
  */
 export async function descargarDocumentoExpediente(
   ctx: ContextoDePersonal,
+  companyId: unknown,
   documentoId: unknown,
   deps: { leer?: (clave: string) => Promise<ReadableStream<Uint8Array>> } = {},
 ): Promise<{ bytes: Uint8Array; nombre: string; tipo: string }> {
-  const documento = await prepararDescargaDocumento(ctx, documentoId);
+  const documento = await prepararDescargaDocumento(ctx, companyId, documentoId);
   const stream = await (deps.leer ?? leerPrivado)(documento.clave);
   const bytes = new Uint8Array(await new Response(stream).arrayBuffer());
   if (bytes.byteLength > LIMITE_ARCHIVO || createHash("sha256").update(bytes).digest("hex") !== documento.sha256) {
@@ -831,6 +862,28 @@ async function conBorrador(
     const version = await versionEnBorrador(consulta, versionId, true);
     await fn(consulta, version);
   });
+}
+
+/** Doble clic: la fila ya está en este borrador. Si no, el id es de otra versión o de otra empresa. */
+async function mismoBorrador(
+  consulta: Consulta,
+  tabla: "kyb_representantes" | "kyb_accionistas",
+  id: string,
+  versionId: string,
+): Promise<void> {
+  const fila = tabla === "kyb_representantes"
+    ? await consulta.query("select 1 from kyb_representantes where id = $1 and version_id = $2", [id, versionId])
+    : await consulta.query("select 1 from kyb_accionistas where id = $1 and version_id = $2", [id, versionId]);
+  if (fila.rows.length !== 1) throw new ErrorDeDominio("expediente_ausente");
+}
+
+/** Doble clic: el documento ya está en esta versión. Si no, el formulario es de otra versión o de otra empresa. */
+async function documentoDeLaVersion(consulta: Consulta, documentoId: string, versionId: string): Promise<void> {
+  const fila = await consulta.query(
+    "select 1 from kyb_version_documentos where documento_id = $1 and version_id = $2",
+    [documentoId, versionId],
+  );
+  if (fila.rows.length !== 1) throw new ErrorDeDominio("expediente_ausente");
 }
 
 async function versionEnBorrador(consulta: Consulta, versionId: string, bloquear = false): Promise<{ id: string; companyId: string }> {

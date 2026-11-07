@@ -2,12 +2,14 @@ import { createHash } from "node:crypto";
 
 import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
 import { conContexto } from "../../nucleo/db";
+import { TOPE_ARCHIVO_BYTES } from "../../dominio/archivos";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { hoyEnMexico, leerListaBloqueadas, textoMultilinea, textoOperativo, uuidValido } from "../../dominio/operacion";
 import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
 import { exigirEnOperacion } from "./permisos";
+import { unaVezPorFormulario } from "./formulario";
 
 type SesionConFactor = Pick<Sesion, "segundoFactor" | "superficie">;
 
@@ -36,6 +38,23 @@ export type CoincidenciaLpb = {
 };
 
 /**
+ * El archivo de la lista, leído solo por quien puede cargarla: el rol se revisa antes de leer un
+ * byte. Un renglón malo vuelve con su línea para corregir el archivo.
+ */
+export async function leerArchivoDeLista(
+  ctx: ContextoDePersonal,
+  archivo: unknown,
+): Promise<{ ok: true; nombre: string; texto: string } | { ok: false; codigo: string; linea?: number }> {
+  exigirEnOperacion(ctx, "plataforma.lpb.cargar");
+  if (!(archivo instanceof File) || archivo.size === 0) return { ok: false, codigo: "lpb_vacia" };
+  if (archivo.size > TOPE_ARCHIVO_BYTES) return { ok: false, codigo: "lpb_demasiado_grande" };
+  const texto = await archivo.text();
+  const lectura = leerListaBloqueadas(texto);
+  if (!lectura.ok) return { ok: false, codigo: lectura.codigo, ...(lectura.linea !== undefined ? { linea: lectura.linea } : {}) };
+  return { ok: true, nombre: archivo.name, texto };
+}
+
+/**
  * Carga una lista completa. La base coteja al confirmar la transacción a todas
  * las empresas del operador, sus expedientes y sus proveedores (73ª). Una
  * coincidencia exacta de la empresa, un representante o un propietario real
@@ -53,7 +72,7 @@ export async function cargarListaBloqueadas(
   const sha256 = createHash("sha256").update(entrada.texto).digest("hex");
   const id = entrada.formId;
   const ahora = new Date();
-  await conContexto(basePlataforma(ctx), async (consulta) => {
+  await unaVezPorFormulario(() => conContexto(basePlataforma(ctx), async (consulta) => {
     const previa = await consulta.query("select id from lpb_cargas where id = $1 or sha256 = $2", [id, sha256]);
     if (previa.rows.length > 0) {
       if ((previa.rows[0] as { id: string }).id === id) return;
@@ -81,7 +100,7 @@ export async function cargarListaBloqueadas(
     await auditarOperacion(consulta, ctx, {
       companyId: null, accion: "lpb_cargada", identificador: id, ocurridoEn: ahora, cambio: { filas: lectura.renglones.length },
     });
-  });
+  }), "formulario_invalido");
   const contadas = await conContexto(basePlataforma(ctx), (consulta) =>
     consulta.query("select count(*)::int as total from lpb_coincidencias where carga_id = $1", [id]),
   );
@@ -111,11 +130,16 @@ export async function listarCargas(ctx: ContextoDePersonal): Promise<CargaLpb[]>
   }));
 }
 
+/**
+ * El detalle (nombre en la lista, plazo, folio y motivos) lo ven Cumplimiento y Auditoría.
+ * Quien habla con el cliente (Originación) o decide (Aprobación) solo sabe si la empresa está
+ * en revisión de Cumplimiento: así no se alerta al cliente (55ª fr. I).
+ */
 export async function listarCoincidencias(
   ctx: ContextoDePersonal,
   filtro: { companyId?: string; soloAbiertas?: boolean } = {},
 ): Promise<CoincidenciaLpb[]> {
-  exigirEnOperacion(ctx, "plataforma.expediente.ver");
+  exigirEnOperacion(ctx, "plataforma.cumplimiento.bandeja");
   if (filtro.companyId !== undefined && !uuidValido(filtro.companyId)) return [];
   const resultado = await conContexto(basePlataforma(ctx), (consulta) =>
     consulta.query(
@@ -153,6 +177,19 @@ export async function listarCoincidencias(
     reportePresentadoEl: typeof fila.presentado_texto === "string" ? fila.presentado_texto : null,
     avisoClienteEl: typeof fila.aviso_texto === "string" ? fila.aviso_texto : null,
   }));
+}
+
+/** ¿La empresa tiene un caso abierto con la lista? Sin detalle: lo que ven Originación y Aprobación. */
+export async function enRevisionDeCumplimiento(ctx: ContextoDePersonal, companyId: unknown): Promise<boolean> {
+  exigirEnOperacion(ctx, "plataforma.expediente.ver");
+  if (!uuidValido(companyId)) return false;
+  const resultado = await conContexto(basePlataforma(ctx), (consulta) =>
+    consulta.query(
+      "select exists (select 1 from lpb_coincidencias where company_id = $1 and estado in ('pendiente', 'confirmada')) as abierta",
+      [companyId],
+    ),
+  );
+  return (resultado.rows[0] as { abierta?: unknown } | undefined)?.abierta === true;
 }
 
 /**

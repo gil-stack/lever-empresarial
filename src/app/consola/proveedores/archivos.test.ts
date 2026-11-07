@@ -24,11 +24,11 @@ describe("archivos de los formularios de proveedores", () => {
     assert.deepEqual(pago?.bytes, PDF);
   });
 
-  it("lo que no es archivo se ignora y lo que excede 8 MB no se lee", async () => {
+  it("lo que no es archivo se ignora y lo que excede 4 MB no se lee", async () => {
     assert.deepEqual(await leerArchivoAlta("texto"), { meta: null, bytes: null });
     assert.equal(await leerArchivoPago(null), null);
-    const grande = { name: "grande.pdf", type: "application/pdf", size: 8_000_001, arrayBuffer: () => { throw new Error("no debe leerse"); } };
-    assert.deepEqual(await leerArchivoAlta(grande), { meta: { nombre: "grande.pdf", tipo: "application/pdf", peso: 8_000_001 }, bytes: null });
+    const grande = { name: "grande.pdf", type: "application/pdf", size: 4_000_001, arrayBuffer: () => { throw new Error("no debe leerse"); } };
+    assert.deepEqual(await leerArchivoAlta(grande), { meta: { nombre: "grande.pdf", tipo: "application/pdf", peso: 4_000_001 }, bytes: null });
     assert.deepEqual(await leerArchivoPago(grande), { nombre: "grande.pdf", bytes: new Uint8Array() });
   });
 });

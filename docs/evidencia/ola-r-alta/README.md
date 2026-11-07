@@ -6,8 +6,9 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r-alta
 | --- | --- | --- |
 | Flujos 0-12 | 147 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
 | Pantallas (3 temas × 1440/390) y contraste AA medido | 60 comprobaciones en verde, 0 en rojo; contraste mínimo 5.00 (Lever 1440) | `datos/resultados-pantallas-contraste.json` |
+| Regresiones de la revisión del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada) | 19 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json` |
 
-Corrida del 2026-11-07 sobre el head de este PR, con el código de la consola suspendida en solo lectura veraz (R1-P5) y el comando de roles iniciales.
+Corrida del 2026-11-07 sobre el head de este PR, ya con los arreglos de la revisión adversarial (H1-H12 de la base, F1-F9 del servidor), sobre una base migrada de cero con la 0028 final.
 
 ## Cómo se corre
 
@@ -24,7 +25,7 @@ Puertos de esta línea: Postgres 5551, `next start` 4811, emulador de Blob 4894.
 4. `next build`.
 5. `tsx scripts/evidencia/ola-r-alta/preparar.ts base`: migra desde cero, siembra Taller del Cierre (Gil y Rosa), Marta con nómina semanal que vence hoy, Iván con su invitación por aceptar y al personal SOFIPO (Ofelia administra; Omar, Ana, Celia y Aurelio sin rol).
 6. `next start -p 4811` con `DATABASE_URL` de la aplicación (la deja `ESTADO`), `NODE_ENV=production` y `NODE_OPTIONS=--import=tests/e2e/blob-local/preload.mjs`.
-7. `BASE=http://localhost:4811 FASES=flujos node scripts/evidencia/ola-r-alta.mjs` y después `FASES=pantallas,contraste` sobre la misma base. La fase `lumbre` de `preparar.ts` la llama el flujo 1.
+7. `BASE=http://localhost:4811 FASES=flujos node scripts/evidencia/ola-r-alta.mjs`, después `FASES=pantallas,contraste` y al final `FASES=regresiones`, sobre la misma base. La fase `lumbre` de `preparar.ts` la llama el flujo 1. Las regresiones parten del estado que dejan los flujos y numeran sus capturas aparte (`rNN-…`).
 
 ## Reloj fijo
 
@@ -48,9 +49,21 @@ Lo carga Cumplimiento en Operación → Lista de Personas Bloqueadas. Cada archi
 | `fecha` | No | `AAAA-MM-DD`: fecha de publicación o de notificación. |
 
 - El encabezado es exactamente `nombre,rfc,curp,tipo,fecha`. Se acepta UTF-8 con o sin BOM, fin de línea LF o CRLF y campos entre comillas dobles (`""` dentro de comillas es una comilla).
-- Hasta 50,000 renglones. Un renglón inválido rechaza el archivo completo y la pantalla dice qué línea revisar; no queda carga.
+- Hasta 50,000 renglones y 4 MB. Un archivo más pesado no sale del navegador: el aviso queda en el campo. Un renglón inválido rechaza el archivo completo y la pantalla dice qué línea revisar; no queda carga.
 - Al cargar se cotejan todas las empresas del operador: la empresa, sus representantes, accionistas y propietarios reales del expediente vigente, y sus proveedores.
-- RFC o CURP idéntico es **coincidencia**. El mismo nombre normalizado (sin acentos, mayúsculas, puntuación ni orden de palabras) es **posible coincidencia**, que revisa Cumplimiento y nunca se descarta sola. Los EFOS definitivos de la Lista 69-B también cuentan como coincidencia.
+- RFC o CURP idéntico es **coincidencia**. El mismo nombre normalizado es **posible coincidencia**, que revisa Cumplimiento y nunca se descarta sola. Normalizar es: mayúsculas, sin acentos (también letras fuera del español, como ø, con `unaccent`), sin punto, coma ni apóstrofo («S.A. de C.V.» = «SA DE CV», «O'Brien» = «OBRIEN») y sin importar el orden de las palabras («RIOS PEREZ ROSA» = «Rosa Pérez Ríos»). Los EFOS definitivos de la Lista 69-B también cuentan como coincidencia.
+
+### Cuándo se reabre un caso cerrado
+
+Solo puede haber un caso abierto (pendiente o confirmado) por sujeto, lista y valor. Un caso cerrado no impide otro:
+
+| Caso cerrado | Misma carga (o copia del 69-B) | Carga o copia posterior con la misma persona |
+| --- | --- | --- |
+| Coincidencia exacta (RFC o CURP) «fuera de lista» | No se reabre | Caso nuevo pendiente y, si es la empresa, un representante o un propietario real, suspensión inmediata |
+| Coincidencia exacta (RFC o CURP) «falso positivo» | No se reabre | Caso nuevo pendiente y suspensión inmediata, igual que arriba |
+| Posible por nombre «falso positivo» | No se reabre | No se reabre por el mismo nombre: Cumplimiento ya dictaminó a esa persona. Si cambia el RFC o la CURP, cuenta como exacta |
+
+La 69-B la carga Administración y solo coteja a las empresas de su operador. La dueña de la base, sin contexto, coteja a todos.
 
 Ejemplo (el del flujo 5):
 
@@ -75,6 +88,35 @@ DATABASE_URL_UNPOOLED=<conexión directa de las migraciones> \
 ```
 
 Sirve cuando nadie más del personal administra al personal: nadie se da un rol a sí mismo por pantalla. La función `personal_rol_por_comando` (0028) solo la ejecuta la dueña de la base; la aplicación no puede llamarla con ningún rol. Deja el evento `rol_personal_asignado` o `rol_personal_retirado` en la bitácora, como acto del sistema con origen `comando` y el motivo escrito. Respeta la 50ª, no deja al personal sin administración y, si otra persona ya administra al personal, pide usar la pantalla Personal. El flujo 0 lo corre como se hará tras el despliegue.
+
+## Revisión adversarial del PR: hallazgo → arreglo → prueba
+
+Cada arreglo de la base va en la 0028. Las pruebas de la base están en `tests/operacion/alta-regulada-postgres.test.ts`, en la subprueba que se nombra. Con la 0028 del head anterior (`e1a534f`), las 12 subpruebas que tocan la base fallan, y cada una falla en el hueco que describe el hallazgo. Por ejemplo, en H1 Originación sí crea una empresa activa («Missing expected rejection»), en H9 la función responde `true` por otro operador y en H11 el portal lee 27 eventos regulados. Con la 0028 final pasan las 22.
+
+| Hallazgo | Arreglo | Prueba |
+| --- | --- | --- |
+| **H1 (P0)** La app podía insertar una empresa `activa`, `en_alta`, `suspendida`, `baja` o de demostración | `companies_alta_por_rol`: para los roles de la app toda empresa nace `prospecto` y real (`empresa_nace_prospecto`). El servidor ya no tiene `darDeAltaEmpresa`. `empresa:alta` (solo `--demostracion`) y las siembras crean como dueña (`scripts/empresa-por-la-duena.ts`) | «H1»: Originación y Administración, cinco estados y demostración, con su evento `alta_empresa` → `empresa_nace_prospecto`, 0 filas. `tests/puerta-alta.test.ts`: el único insert de `src/` es el prospecto |
+| **H2** Personal, 69-B, precio, invitaciones y membresías los escribía cualquier rol | `personal_solo_administracion` en las siete tablas; nadie cambia su propio registro (`personal_propio`), salvo quien acepta su invitación. La 69-B solo coteja al operador de quien la carga | «H2»: Originación, Aprobación, Cumplimiento y Auditoría → `sin_rol_de_administracion`; fila propia → `personal_propio`; la 69-B de Administración de otro operador con el RFC de Alfa no la suspende |
+| **H3** La unicidad no dejaba reabrir un caso cerrado | Índice único parcial solo sobre casos abiertos; el cotejo reabre según la tabla «Cuándo se reabre un caso cerrado» | «H3 y H6»: escenario A (fuera de lista → carga nueva → caso y suspensión), escenario B (falso positivo exacto: misma carga no, nueva sí), nómina y pago rechazados, posible por nombre con un solo caso |
+| **H4** El nombre dependía del orden y la puntuación dejaba espacios | `lpb_normalizar`: palabras en orden `COLLATE "C"`, quita `.`, `,` y `'`, `unaccent` con diccionario explícito (`lpb_sin_acentos`, IMMUTABLE); la columna generada se recrea | «H4»: «RIOS PEREZ ROSA» es posible coincidencia con la representante Rosa Pérez Ríos en una carga real; «S.A. de C.V.»; «Søren O'Brien Ødegård» |
+| **H5** Un propietario real con CURP en un camino y solo RFC en otro se partía | `kyb_exigir_completo` exige CURP a toda física y RFC a toda moral; el cálculo agrupa por CURP | «H5 y H10»: sin CURP → `expediente_accionista_sin_curp`; sin RFC → `expediente_accionista_sin_rfc`; Ximena suma 25.0038 % por capital |
+| **H6** En REPEATABLE READ la 50ª y la reactivación decidían con foto vieja | La 50ª escribe la fila de la persona antes de leer sus roles; la decisión de suspensión escribe la fila de la empresa antes de leer los casos; el cotejo con casos nuevos escribe la fila de la empresa. Es un UPDATE sin cambio: `FOR UPDATE` no aborta en REPEATABLE READ (probado en Postgres 17) | «H6, H7 y H8» (50ª) y «H3 y H6» (reactivación contra la carga nueva) → `could not serialize access due to concurrent update` |
+| **H7** Sin usuario se daba Administración a personal existente | Solo a un registro que nace invitado en la misma transacción (`personal_nace_en_esta_transaccion`) | «H6, H7 y H8»: con el evento del alta del sistema, a Nora (ya existe) y a Rita (nace `activo`) → `sin_permiso_roles` |
+| **H8** Los eventos de otra empresa, entidad o rol contaban | Evento con empresa, acción, entidad e id exactos; un evento por rol con el rol en `cambio`; `alta_personal` solo para quien nace en la transacción | «H6, H7 y H8»: dictamen con evento de otra empresa o entidad → `regulado_sin_auditoria`; alta para persona existente, un evento para dos roles, dos roles en un texto, otra entidad → `rol_personal_sin_auditoria` |
+| **H9** Las funciones del sistema respondían por otro operador o sin contexto | `operador_del_contexto`: la dueña (por `session_user`) o el operador del contexto; responde `false`, nunca NULL. La usan `personal_tiene_rol`, `lpb_carga_vigente` y `lpb_coincidencias_abiertas` | «H9»: otro operador y sin contexto → `false`/`null`; la dueña sí responde. La suite encontró que sin contexto respondía NULL, y `IF NOT NULL` no lanza la excepción: se cerró con `coalesce` |
+| **H10** Más de 10 capas pasaban como completas | `expediente_estructura_muy_profunda` al enviar | «H5 y H10»: 11 capas (10 morales y la dueña final) → rechazado |
+| **H11** El portal leía los eventos de Cumplimiento | `audit_log_cliente_lectura` excluye `kyb_%`, `lpb_%`, `company_suspensions` y `expediente_%` | «H11»: el portal cuenta 0 eventos regulados y sigue viendo `suspendida` |
+| **H12** Lo autorizado seguía «listo para pagar» tras suspender | `pagos_listos_regresan`: al suspender regresa todo; si la lista frena a un proveedor, solo lo de ese proveedor. Un evento del sistema por pago con su motivo; el historial lo muestra | «H12» (versión + 1, evento, solo el proveedor en la lista, se reautoriza tras reactivar) y capturas `r01`-`r02` |
+| **F3** La descarga aceptaba otra empresa en la dirección | `kyb_documento_para_descarga(documento, empresa, petición)` filtra por empresa antes del evento | «RLS entre operadores…»: otra empresa → `documento_no_existe`, sin evento |
+| **F7** El evento del comando no decía quién lo corrió | `cambio->>'ejecutado_por' = session_user` | «roles iniciales por comando» |
+| **F1** Sin tope real: Vercel corta en 4.5 MB | `TOPE_ARCHIVO_BYTES` (4 MB, `src/dominio/archivos.ts`) citado por etiqueta, avisos y proveedores; `CampoArchivo` revisa en el navegador con el aviso ligado al campo; `bodySizeLimit: "4.5mb"`; proveedores suman constancia y contrato, XML y PDF | `src/dominio/archivos.test.ts`; e2e «limita archivos combinados» (0 proveedores); capturas `r04` y `r10` (0 filas) |
+| **F2** La descarga del expediente perdía su `sandbox` | La ruta entra a la excepción de CSP de `next.config.ts` | `archivos.test.ts`; e2e «la descarga del expediente llega aislada»; recorrido: 200 con `sandbox; default-src 'none'` y su evento |
+| **F4** Un doble envío simultáneo respondía «base no disponible» | Los índices únicos dicen su código (`expediente_con_borrador`, `dictamen_ya_registrado`, `suspension_pendiente`, `lpb_ya_cargada`); la llave primaria repetida se repite una vez y sale como el primero; «base no disponible» tiene su texto. La suite encontró que `kyb_versiones_revisar` le respondía `expediente_numero_invalido` a la segunda pestaña: ahora es «ya hay borrador» | «F4 y F5»: `Promise.allSettled` en ocho servicios → 1 fila y 1 evento, nunca `base_no_disponible`; captura `r03` (dos pestañas) |
+| **F5** La idempotencia aceptaba un id de otra empresa o versión | Solo vale con la misma empresa y versión; si no, `expediente_ausente` (suspensiones: `formulario_invalido`) | «F4 y F5»: versión, representante, accionista, retiro, documento, dictamen, riesgo y suspensión; el representante ajeno sigue activo |
+| **F6** El comando adivinaba banderas | Bandera repetida, con valor en una de sí o no, o desconocida es error; `empresa:alta` exige `--demostracion` | «F6»: `spawnSync`, salida 1, sin cambios en roles, empresas ni eventos |
+| **F8** Originación y Aprobación veían el detalle de Cumplimiento | Solo Cumplimiento y Auditoría ven folio, plazo, nombre en la lista y motivos; los demás ven «En revisión de Cumplimiento». En la bitácora, Administración no ve los motivos de la lista ni del dictamen. El motivo del dictamen sigue a la vista de Originación en el expediente: lo necesita para corregir una versión observada | «F8» y capturas `r05`-`r09` |
+| **F9** El servidor leía el archivo antes de revisar el rol | La capacidad se revisa antes de leer, en la lista y en los documentos | «F9»: sin rol, el archivo no se lee; uno de más de 4 MB tampoco |
+| **invitaciones.ts:56** | Con la empresa suspendida, el aviso dice «empresa_suspendida» | «suspensión manual…» y flujo 7 |
 
 ## Flujo → captura → qué verifica en la base
 
@@ -108,6 +150,21 @@ Sirve cuando nadie más del personal administra al personal: nadie se da un rol 
 | 11. | `31-f11-pago-bloqueado-proveedor-en-lista` | Doble clic en «Autorizar para pagar»: el pago sigue `por_autorizar`; el mensaje no revela la lista. |
 | 12. Lectura auditada | `32-f12-bitacora-lecturas-auditadas` | Abrir el expediente deja `expediente_consultado`; descargar deja `expediente_documento_descargado` y la SHA-256 coincide. |
 | 12. | `33-f12-sin-permiso-personal` | Auditoría ve «Sin permiso» en Personal. |
+
+### Regresiones (`FASES=regresiones`)
+
+| Hallazgo | Captura | Qué verifica en la base |
+| --- | --- | --- |
+| H12 | `r01-h12-pago-regresa-por-autorizar` | El pago que Rosa autorizó antes del flujo 9 regresó a `por_autorizar` al suspender a Taller: 1 evento del sistema `regresar_pago_proveedor` con «La empresa quedó suspendida. La autorización anterior se retiró.», que el historial muestra. |
+| H12 | `r02-h12-pago-autorizado-de-nuevo` | Con Taller reactivada, doble clic en «Autorizar para pagar» = 1 autorización nueva; queda `listo_para_pagar`. |
+| F4 | `r03-f4-doble-envio-dos-pestanas` | Dos pestañas abren versión a la vez: 1 versión nueva; la otra pestaña dice «Ya hay un borrador abierto», no «base no disponible». |
+| F1 | `r04-f1-documento-pasa-del-tope` | Al elegir un PDF de 4.6 MB aparece el aviso ligado al campo; el clic en «Guardar documento» no envía y hay 0 filas nuevas en `kyb_documentos`. |
+| F8 | `r05-f8-originacion-ve-en-revision` | Originación ve «En revisión de Cumplimiento»; la página no trae el folio ni el motivo de Cumplimiento. |
+| F8 | `r06-f8-ficha-originacion-sin-motivo` | En la ficha, la suspensión dice «en revisión de Cumplimiento», sin el motivo de la lista. |
+| F8 | `r07-f8-cumplimiento-ve-el-detalle` | Cumplimiento ve el caso con su folio. |
+| F8 | `r08-f8-bitacora-administracion-sin-motivo` | La bitácora de Administración no trae los motivos de la lista. |
+| F8 | `r09-f8-bitacora-auditoria-con-motivo` | La de Auditoría sí. Después, la descarga del expediente responde 200 con `sandbox; default-src 'none'; frame-ancestors 'none'` y deja su evento (F2). |
+| F1 | `r10-f1-lista-pasa-del-tope` | Una lista de 4.6 MB: aviso en el campo, el clic no envía y hay 0 cargas nuevas. |
 
 Las capturas `NN-pantalla-<pantalla>-<tema>-<ancho>` son la fase de pantallas: un solo h1, campos con etiqueta, sin desborde horizontal y consola limpia en Personal, Cumplimiento, Lista, Expediente, Ficha, Aprobaciones, Clientes, Bitácora y Sin permiso.
 
@@ -291,7 +348,7 @@ OK    12. la descarga entrega el PDF guardado
 OK    12. la SHA-256 del archivo descargado coincide con la guardada en la base
 OK    12. descargar deja «expediente_documento_descargado»
 OK    12. la bitácora muestra las dos lecturas con su etiqueta
-NOTA  f12-bitacora-lecturas-auditadas: la página mide 10797 px y no cabe en una captura completa; se guarda la ventana
+NOTA  f12-bitacora-lecturas-auditadas: la página mide 10882 px y no cabe en una captura completa; se guarda la ventana
 OK    12. Auditoría ve «Sin permiso» en Personal
 OK    consola del navegador limpia en todos los flujos
 
@@ -348,17 +405,17 @@ OK    pantalla clientes claro 1440: un h1, campos con etiqueta, sin desborde, co
 OK    pantalla clientes claro 390: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla clientes lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla clientes lever 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-oscuro-1440: la página mide 11323 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-oscuro-1440: la página mide 11409 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-oscuro-390: la página mide 28226 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-oscuro-390: la página mide 28435 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-claro-1440: la página mide 11323 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-claro-1440: la página mide 11409 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora claro 1440: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-claro-390: la página mide 28226 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-claro-390: la página mide 28435 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora claro 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-lever-1440: la página mide 11323 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-lever-1440: la página mide 11409 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-lever-390: la página mide 28226 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-lever-390: la página mide 28435 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora lever 390: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla sin-permiso oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla sin-permiso oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia
@@ -376,6 +433,37 @@ OK    contraste lever 1440: 370 textos, mínimo 5.00
 OK    contraste lever 390: 168 textos, mínimo 5.89
 
 60 comprobaciones en verde, 0 en rojo.
+```
+
+</details>
+
+<details>
+<summary>Regresiones (<code>FASES=regresiones</code>)</summary>
+
+```text
+
+— Regresiones: pago que regresa, doble envío en dos pestañas, aviso de tamaño y lo que ve cada rol
+OK    H12. el pago que estaba listo para pagar regresó a «por autorizar» al suspender a Taller (flujo 9)
+OK    H12. un solo evento del sistema, con el motivo
+OK    H12. el historial del pago dice por qué regresó
+OK    H12. la cabeza del pago dice «Por autorizar»
+OK    H12. con Taller reactivada, doble clic en «Autorizar para pagar» = una autorización nueva
+OK    F4. dos pestañas a la vez: una versión nueva; la otra pestaña dice «Ya hay un borrador abierto», no «base no disponible»
+OK    F4. el aviso de la pestaña que llegó tarde
+OK    F1. al elegir el PDF de 4.6 MB aparece el aviso, ligado al campo, antes de enviar
+OK    F1. clic en «Guardar documento»: no sale la petición y hay 0 filas nuevas
+OK    F8. Originación ve en el expediente «En revisión de Cumplimiento»
+OK    F8. Originación no ve el folio ni el motivo de Cumplimiento
+OK    F8. en la ficha, Originación ve la suspensión «en revisión de Cumplimiento», sin el motivo
+OK    F8. Cumplimiento ve el detalle del caso con su folio
+OK    F8. Administración no lee en la bitácora los motivos de la lista
+OK    F8. Auditoría sí lee el motivo de Cumplimiento
+OK    F2. la descarga del expediente llega con «sandbox; default-src 'none'» y deja su evento
+OK    F1. al elegir la lista de 4.6 MB aparece el aviso ligado al campo
+OK    F1. clic en «Cargar y cotejar»: no sale la petición y hay 0 cargas nuevas
+OK    consola del navegador limpia en las regresiones
+
+19 comprobaciones en verde, 0 en rojo.
 ```
 
 </details>

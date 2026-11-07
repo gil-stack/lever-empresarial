@@ -10,7 +10,7 @@ import pg from "pg";
 import { cerrarConexion, comoTarea, conContexto } from "../../src/nucleo/db.ts";
 import { baseCliente, type ContextoConEmpresa } from "../../src/nucleo/contexto.ts";
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
 import { ErrorDeCorreo } from "../../src/server/correo/errores.ts";
 import { enviadorResend } from "../../src/server/correo/resend.ts";
 import type { MensajeCorreo } from "../../src/server/correo/tipos.ts";
@@ -85,14 +85,14 @@ async function escenario(url: string): Promise<void> {
   sembrarPersonal(url);
   const personal = await contextoDePersonal("personal-flujo@ejemplo.mx");
   // Alfa y Beta son clientes reales (la tarea del correo solo escribe a empresas reales).
-  const alfa = await darDeAltaEmpresa(personal, {
+  const alfa = await darDeAltaComoDuena(url, personal, {
     rfc: "TCM010101AB1",
     razonSocial: "Escuela Alfa Flujo",
     codigoPostal: "06600",
     regimen: "601",
     usoCfdi: "G03",
   }, { demostracion: false });
-  const beta = await darDeAltaEmpresa(personal, {
+  const beta = await darDeAltaComoDuena(url, personal, {
     rfc: "CABL840215RF4",
     razonSocial: "Taller Beta Flujo",
     codigoPostal: "44100",
@@ -526,16 +526,16 @@ async function escenario(url: string): Promise<void> {
   // La tarea ve solo empresas activas con al menos un destinatario vigente.
   const empresasDeTarea = async () =>
     (await comoTarea((consulta) => consulta.query("select empresa from empresas_con_correo_semanal() as empresa"))).rows.map((fila) => String(fila.empresa)).sort();
-  const gamma = await darDeAltaEmpresa(personal, { rfc: "GAM010101AB2", razonSocial: "Gamma Suspendida", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
+  const gamma = await darDeAltaComoDuena(url, personal, { rfc: "GAM010101AB2", razonSocial: "Gamma Suspendida", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
   await administrador(url, personal, gamma, "admin-gamma-flujo@ejemplo.mx");
-  const delta = await darDeAltaEmpresa(personal, { rfc: "DEL010101AB3", razonSocial: "Delta Baja", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
+  const delta = await darDeAltaComoDuena(url, personal, { rfc: "DEL010101AB3", razonSocial: "Delta Baja", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
   const adminDelta = await administrador(url, personal, delta, "admin-delta-flujo@ejemplo.mx");
   const areaDelta = await nombrarCentro(adminDelta, { nombre: "General", presupuesto: "" }, AHORA);
   await persona(url, adminDelta, areaDelta.id, "Finanzas Delta", "finanzas-delta@ejemplo.mx", ["tarjetahabiente", "finanzas"]);
   // En Delta solo queda Finanzas como destinataria.
   await cambiarCorreoSemanal(adminDelta, { activo: "no" }, AHORA);
   // S7: una empresa de demostración tiene cifras de ejemplo: nunca entra en la lista, aunque tenga administración.
-  const epsilon = await darDeAltaEmpresa(personal, { rfc: "EPS010101AB4", razonSocial: "Épsilon Demostración", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: true });
+  const epsilon = await darDeAltaComoDuena(url, personal, { rfc: "EPS010101AB4", razonSocial: "Épsilon Demostración", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: true });
   await administrador(url, personal, epsilon, "admin-epsilon-flujo@ejemplo.mx");
   assert.deepEqual(await empresasDeTarea(), [alfa.id, beta.id, gamma.id, delta.id].sort());
   // Gamma se suspende y la persona de Finanzas de Delta queda dada de baja (sin pasar por los

@@ -1,6 +1,11 @@
 import { Aviso } from "@/components/sistema";
+import { TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
 
 const ID_AVISO = "aviso-operacion";
+
+/** El mismo texto lo muestra el navegador antes de enviar (CampoArchivo) y la pantalla si lo rechaza el servidor. */
+export const ARCHIVO_DEMASIADO_GRANDE = `El archivo pasa de ${TOPE_ARCHIVO_TEXTO}. Sube uno más ligero.`;
+export const LISTA_DEMASIADO_GRANDE = `La lista pasa del tope de 50 000 renglones o ${TOPE_ARCHIVO_TEXTO}.`;
 
 const MENSAJES: Record<string, string> = {
   prospecto_registrado: "Prospecto registrado. Ya puedes solicitar su activación.",
@@ -70,7 +75,7 @@ const MENSAJES: Record<string, string> = {
   accionista_con_desglose: "Ese socio tiene accionistas debajo: quítalos primero.",
   archivo_no_disponible: "No se pudo guardar o leer el archivo. Inténtalo de nuevo.",
   archivo_no_admitido: "Sube un PDF, PNG o JPG legible.",
-  archivo_demasiado_grande: "El archivo pasa de 10 MB.",
+  archivo_demasiado_grande: ARCHIVO_DEMASIADO_GRANDE,
   misma_persona_en_dictamen: "Quien armó o envió la versión no puede dictaminarla.",
   dictamen_sobre_borrador: "Solo se dictamina una versión enviada.",
   dictamen_ya_registrado: "Esa versión ya tiene dictamen.",
@@ -84,7 +89,7 @@ const MENSAJES: Record<string, string> = {
   lpb_vacia: "El archivo no trae renglones.",
   lpb_encabezado_invalido: "El encabezado debe ser exactamente: nombre,rfc,curp,tipo,fecha.",
   lpb_renglon_invalido: "Hay un renglón mal formado.",
-  lpb_demasiado_grande: "La lista pasa del tope de 50 000 renglones o 6 MB.",
+  lpb_demasiado_grande: LISTA_DEMASIADO_GRANDE,
   lpb_ya_cargada: "Esa misma lista ya se había cargado.",
   sin_rol_para_lpb: "Solo Cumplimiento carga la lista y resuelve coincidencias.",
   coincidencia_resuelta: "Coincidencia resuelta con su motivo.",
@@ -115,6 +120,16 @@ const MENSAJES: Record<string, string> = {
   empresa_suspendida: "La empresa está suspendida: no se puede mover dinero ni cambiar nada hasta que se reactive.",
   cliente_de_baja: "La empresa está dada de baja.",
   formulario_invalido: "El formulario caducó. Recarga la página.",
+  // Revisión del PR #59.
+  base_no_disponible: "La base no respondió. No se aplicó ningún cambio; vuelve a intentar.",
+  auditoria_no_disponible: "No se pudo dejar el registro en la bitácora, así que el cambio no se aplicó.",
+  empresa_nace_prospecto: "Desde Operación una empresa nace como prospecto y se activa con su expediente.",
+  sin_rol_de_administracion: "Solo Administración de la plataforma hace esto.",
+  personal_propio: "Nadie cambia su propio registro del personal. Pídeselo a otra persona de Administración.",
+  personal_no_se_reescribe: "El registro del personal no cambia de persona, operador ni fecha de alta.",
+  expediente_accionista_sin_curp: "Cada socio persona física lleva su CURP: con ella se suma lo que tiene por varios caminos.",
+  expediente_accionista_sin_rfc: "Cada socio persona moral lleva su RFC.",
+  expediente_estructura_muy_profunda: "La cadena de socios pasa de 10 capas: el cálculo de propietarios reales no llega al final. Revísala con Cumplimiento.",
 };
 
 /** El campo que causó cada error: el aviso se liga a ese campo con aria-describedby. */

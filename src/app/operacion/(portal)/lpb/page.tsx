@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 
 import { cargarListaAccion } from "@/app/operacion/acciones-alta";
-import { errorDelCampo } from "@/components/operacion/aviso";
+import { errorDelCampo, LISTA_DEMASIADO_GRANDE } from "@/components/operacion/aviso";
+import { CampoArchivo } from "@/components/operacion/campo-archivo";
 import { Coincidencias } from "@/components/operacion/coincidencias";
 import { fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
@@ -66,13 +67,13 @@ export default async function ListaBloqueadas({ searchParams }: { searchParams: 
                   <input type="hidden" name="formId" value={randomUUID()} />
                   <div className="campo">
                     <label htmlFor="archivo">Archivo CSV</label>
-                    <input
+                    <CampoArchivo
                       id="archivo"
                       name="archivo"
-                      type="file"
                       accept=".csv,text/csv"
+                      mensaje={LISTA_DEMASIADO_GRANDE}
                       required
-                      {...errorDelCampo(params.aviso, "archivo")}
+                      ligado={errorDelCampo(params.aviso, "archivo")}
                     />
                   </div>
                   <div className="acciones">

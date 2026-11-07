@@ -1,0 +1,83 @@
+{
+  "fases": [
+    "regresiones"
+  ],
+  "comprobaciones": [
+    {
+      "ok": true,
+      "texto": "H12. el pago que estaba listo para pagar regresó a «por autorizar» al suspender a Taller (flujo 9)"
+    },
+    {
+      "ok": true,
+      "texto": "H12. un solo evento del sistema, con el motivo"
+    },
+    {
+      "ok": true,
+      "texto": "H12. el historial del pago dice por qué regresó"
+    },
+    {
+      "ok": true,
+      "texto": "H12. la cabeza del pago dice «Por autorizar»"
+    },
+    {
+      "ok": true,
+      "texto": "H12. con Taller reactivada, doble clic en «Autorizar para pagar» = una autorización nueva"
+    },
+    {
+      "ok": true,
+      "texto": "F4. dos pestañas a la vez: una versión nueva; la otra pestaña dice «Ya hay un borrador abierto», no «base no disponible»"
+    },
+    {
+      "ok": true,
+      "texto": "F4. el aviso de la pestaña que llegó tarde"
+    },
+    {
+      "ok": true,
+      "texto": "F1. al elegir el PDF de 4.6 MB aparece el aviso, ligado al campo, antes de enviar"
+    },
+    {
+      "ok": true,
+      "texto": "F1. clic en «Guardar documento»: no sale la petición y hay 0 filas nuevas"
+    },
+    {
+      "ok": true,
+      "texto": "F8. Originación ve en el expediente «En revisión de Cumplimiento»"
+    },
+    {
+      "ok": true,
+      "texto": "F8. Originación no ve el folio ni el motivo de Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "F8. en la ficha, Originación ve la suspensión «en revisión de Cumplimiento», sin el motivo"
+    },
+    {
+      "ok": true,
+      "texto": "F8. Cumplimiento ve el detalle del caso con su folio"
+    },
+    {
+      "ok": true,
+      "texto": "F8. Administración no lee en la bitácora los motivos de la lista"
+    },
+    {
+      "ok": true,
+      "texto": "F8. Auditoría sí lee el motivo de Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "F2. la descarga del expediente llega con «sandbox; default-src 'none'» y deja su evento"
+    },
+    {
+      "ok": true,
+      "texto": "F1. al elegir la lista de 4.6 MB aparece el aviso ligado al campo"
+    },
+    {
+      "ok": true,
+      "texto": "F1. clic en «Cargar y cotejar»: no sale la petición y hay 0 cargas nuevas"
+    },
+    {
+      "ok": true,
+      "texto": "consola del navegador limpia en las regresiones"
+    }
+  ]
+}

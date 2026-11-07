@@ -19,7 +19,7 @@ import { performance } from "node:perf_hooks";
 
 import { cerrarConexion } from "../../src/nucleo/db";
 import type { ContextoConEmpresa } from "../../src/nucleo/contexto";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio";
+import { darDeAltaComoDuena } from "../empresa-por-la-duena";
 import { CONCURRENCIA, enviarCorreosSemanales, PRESUPUESTO_MS, RITMO_MS } from "../../src/server/flujo/correo-semanal";
 import { declararSaldo, registrarCobro, registrarObligacion } from "../../src/server/flujo/servicio";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio";
@@ -67,7 +67,7 @@ async function medir(url: string): Promise<void> {
   const letra = (n: number) => String.fromCharCode(65 + n);
   const inicioAltas = performance.now();
   for (let i = 0; i < EMPRESAS; i += 1) {
-    const empresa = await darDeAltaEmpresa(personal, {
+    const empresa = await darDeAltaComoDuena(url, personal, {
       rfc: `E${letra(i % 26)}${letra(Math.floor(i / 26))}010101AB${i % 10}`,
       razonSocial: `Empresa Medición ${i + 1}`,
       codigoPostal: "06600",

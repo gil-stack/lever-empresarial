@@ -234,3 +234,18 @@ test("publicar el precio exige factor de los últimos 30 minutos; tras volver a 
   expect(await publicaciones()).toBe(antes + 1);
   expect(errores).toEqual([]);
 });
+
+test("la descarga del expediente llega aislada (sandbox) y la pantalla del expediente conserva la política general", async ({ page, context }) => {
+  const [faro] = await consultar<{ id: string }>("select id from companies where rfc = $1", [FARO.rfc]);
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  // Un documento que no es de la empresa: 404 sin evento, pero la política de next.config ya aplica a la ruta.
+  const descargas = () => contar("select 1 from audit_log where company_id = $1 and accion = 'expediente_documento_descargado'", [faro!.id]);
+  const antes = await descargas();
+  const descarga = await page.request.get(`/operacion/clientes/${faro!.id}/expediente/documento/${crypto.randomUUID()}`);
+  expect(descarga.status()).toBe(404);
+  expect(descarga.headers()["content-security-policy"]).toBe("sandbox; default-src 'none'; frame-ancestors 'none'");
+  expect(await descargas()).toBe(antes);
+  const pantalla = await page.request.get(`/operacion/clientes/${faro!.id}/expediente`);
+  expect(pantalla.status()).toBe(200);
+  expect(pantalla.headers()["content-security-policy"]).toBe("frame-ancestors 'none'");
+});

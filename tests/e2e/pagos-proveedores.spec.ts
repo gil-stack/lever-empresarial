@@ -230,11 +230,13 @@ test("limita archivos combinados y no ofrece cambiar CLABE a un liberador", asyn
   await page.getByLabel("RFC", { exact: true }).fill("EEE050505EA5");
   await page.getByLabel("Razón social", { exact: true }).fill("Archivos Grandes");
   await page.getByLabel("CLABE", { exact: true }).fill("002180701150123452");
-  const grande = Buffer.concat([Buffer.from("%PDF-"), Buffer.alloc(4_500_000)]);
+  // Cada uno cabe en el tope de 4 MB, pero juntos no: el navegador lo frena antes de enviar.
+  const grande = Buffer.concat([Buffer.from("%PDF-"), Buffer.alloc(2_500_000)]);
   await page.locator("#constancia").setInputFiles({ name: "constancia-grande.pdf", mimeType: "application/pdf", buffer: grande });
   await page.locator("#contrato").setInputFiles({ name: "contrato-grande.pdf", mimeType: "application/pdf", buffer: grande });
   await page.getByRole("button", { name: "Dar de alta" }).click();
-  await expect(page.locator("#contrato-error")).toHaveText("La constancia y el contrato juntos no pueden superar 8 MB.");
+  await expect(page.locator("#contrato-error")).toHaveText("La constancia y el contrato juntos no pueden superar 4 MB.");
+  expect(await contar("select 1 from suppliers where rfc = $1", ["EEE050505EA5"])).toBe(0);
 });
 
 test("rechazo, corrección y cancelación conservan el historial", async ({ page }) => {

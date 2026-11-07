@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { enEmpresa } from "@/nucleo/rutas";
+import { TOPE_ARCHIVO_BYTES, TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
+import { XML_Y_PDF } from "@/dominio/proveedores";
 
 import type { CfdiLeido } from "@/dominio/cfdi";
 import {
@@ -34,8 +36,8 @@ const MENSAJES: Record<string, string> = {
   referencia_invalida: "Escribe una referencia de entre 1 y 120 caracteres.",
   motivo_invalido: "Explica el motivo con al menos 10 caracteres. Al rechazar o cancelar bastan 5.",
   archivo_ausente: "Carga todos los archivos requeridos antes de continuar.",
-  archivo_no_disponible: "El archivo no es válido o no está disponible. Usa PDF legible de hasta 8 MB.",
-  archivos_peso_total: "El XML y el PDF juntos no pueden superar 8 MB.",
+  archivo_no_disponible: `El archivo no es válido o no está disponible. Usa PDF legible de hasta ${TOPE_ARCHIVO_TEXTO}.`,
+  archivos_peso_total: XML_Y_PDF,
   cfdi_invalido: "El XML no es legible o contiene una estructura no permitida.",
   cfdi_codificacion: "El XML debe venir codificado en UTF-8.",
   cfdi_contenido_no_permitido: "El XML trae HTML, SVG, scripts u hojas de estilo, que un CFDI no lleva. Sube el XML original que timbró el SAT.",
@@ -101,7 +103,7 @@ export async function enviarPago(
 ): Promise<EstadoPagoFormulario> {
   try {
     const [xml, pdf] = await Promise.all([leerArchivoPago(formData.get("xml")), leerArchivoPago(formData.get("pdf"))]);
-    if ((xml?.bytes.byteLength ?? 0) + (pdf?.bytes.byteLength ?? 0) > 8_000_000) throw new ErrorDeDominio("archivos_peso_total");
+    if ((xml?.bytes.byteLength ?? 0) + (pdf?.bytes.byteLength ?? 0) > TOPE_ARCHIVO_BYTES) throw new ErrorDeDominio("archivos_peso_total");
     const creado = await crearPagoProveedor(await contextoDeAccion(), entrada(formData, xml, pdf));
     revalidatePath("/consola/proveedores");
     return { tipo: "listo", mensaje: creado.existente ? "La solicitud ya existía. No se duplicó el pago." : "El pago quedó en autorización. Otra persona lo revisa.", requestId: creado.requestId };

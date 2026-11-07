@@ -46,23 +46,64 @@ AS $$
   )
 $$;
 
--- Nombre comparable: sin acentos, sin puntuación, mayúsculas y un solo espacio.
--- translate antes de upper: upper() de un carácter no ASCII depende del locale.
+-- unaccent es extensión confiable: la dueña de la base la instala sin superusuario.
+CREATE EXTENSION IF NOT EXISTS unaccent WITH SCHEMA public;
+
+-- unaccent() es STABLE porque busca su diccionario en el search_path. Con el
+-- diccionario explícito el resultado ya no depende de la sesión y sirve en una
+-- columna generada.
+CREATE FUNCTION lpb_sin_acentos(p_texto text)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+PARALLEL SAFE
+STRICT
+AS $$ SELECT public.unaccent('public.unaccent'::regdictionary, p_texto) $$;
+
+-- Nombre comparable: sin acentos (también ø, å, ł…), mayúsculas, sin puntuación y
+-- con las palabras en orden. Punto, coma y apóstrofo se quitan sin dejar espacio
+-- para que «S.A. de C.V.» empate con «SA DE CV»; lo demás separa palabras.
+-- El orden de las palabras va en COLLATE "C" para no depender del locale.
 CREATE FUNCTION lpb_normalizar(p_nombre text)
 RETURNS text
 LANGUAGE sql
 IMMUTABLE
 PARALLEL SAFE
 AS $$
-  SELECT nullif(btrim(regexp_replace(regexp_replace(
-    upper(translate(coalesce(p_nombre, ''),
-      'áàäâãéèëêíìïîóòöôõúùüûñçÁÀÄÂÃÉÈËÊÍÌÏÎÓÒÖÔÕÚÙÜÛÑÇ',
-      'aaaaaeeeeiiiiooooouuuuncAAAAAEEEEIIIIOOOOOUUUUNC')),
-    '[^A-Z0-9 ]', ' ', 'g'), '\s+', ' ', 'g')), '')
+  SELECT nullif(array_to_string(ARRAY(
+    SELECT palabra
+    FROM unnest(string_to_array(btrim(regexp_replace(regexp_replace(
+      upper(lpb_sin_acentos(coalesce(p_nombre, ''))),
+      '[.,'']', '', 'g'), '[^A-Z0-9]+', ' ', 'g')), ' ')) AS palabra
+    WHERE palabra <> ''
+    ORDER BY palabra COLLATE "C"
+  ), ' '), '')
 $$;
 
 COMMENT ON FUNCTION lpb_normalizar(text) IS
   'Nombre para cotejar contra la Lista de Personas Bloqueadas. Igualdad de nombre normalizado es solo «posible coincidencia».';
+
+-- ¿El operador por el que se pregunta es el del contexto? La aplicación solo
+-- pregunta por el suyo: el del personal (app.operator_id) o, en el portal, el de
+-- su empresa. Sin contexto, no. La dueña de la base (migraciones y comandos) no
+-- tiene contexto y entra con el mismo rol dueño de estas funciones. Responde false,
+-- nunca NULL: «IF NOT personal_tiene_rol(...)» con NULL no lanzaría la excepción.
+CREATE FUNCTION operador_del_contexto(p_operador uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT coalesce(
+    session_user = current_user
+      OR p_operador = app_operador()
+      OR (app_operador() IS NULL AND p_operador = (SELECT c.operator_id FROM companies c WHERE c.id = app_empresa())),
+    false
+  )
+$$;
+
+REVOKE ALL ON FUNCTION operador_del_contexto(uuid) FROM PUBLIC;
 
 -- ¿La persona del personal tiene alguno de estos roles en su operador?
 CREATE FUNCTION personal_tiene_rol(p_operador uuid, p_user uuid, p_roles text[])
@@ -72,7 +113,7 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS (
+  SELECT operador_del_contexto(p_operador) AND EXISTS (
     SELECT 1
     FROM platform_staff s
     JOIN platform_staff_roles r ON r.operator_id = s.operator_id AND r.user_id = s.user_id
@@ -82,6 +123,67 @@ $$;
 
 REVOKE ALL ON FUNCTION personal_tiene_rol(uuid, uuid, text[]) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION personal_tiene_rol(uuid, uuid, text[]) TO plataforma_sofipo;
+
+-- REPEATABLE READ: quien decide con la foto del inicio de su transacción tiene
+-- que chocar con quien ya cambió lo que decide. FOR UPDATE no alcanza: una fila
+-- que la otra transacción solo bloqueó no la aborta. Un UPDATE sin cambio sí
+-- («could not serialize access due to concurrent update»); en READ COMMITTED
+-- solo espera. La 50ª escribe así la fila de la persona antes de leer sus roles.
+CREATE FUNCTION personal_bloquear_fila(p_operador uuid, p_user uuid)
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  UPDATE platform_staff SET estado = estado WHERE operator_id = p_operador AND user_id = p_user
+$$;
+
+REVOKE ALL ON FUNCTION personal_bloquear_fila(uuid, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION personal_bloquear_fila(uuid, uuid) TO plataforma_sofipo;
+
+-- ¿El registro de esta persona en el personal nace en esta transacción? Invitada
+-- y con alta_en de ahora (now() es el inicio de la transacción; nadie reescribe
+-- alta_en). xmin no sirve: personal_bloquear_fila también lo renueva.
+CREATE FUNCTION personal_nace_en_esta_transaccion(p_operador uuid, p_user uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM platform_staff s
+    WHERE s.operator_id = p_operador AND s.user_id = p_user AND s.estado = 'invitado' AND s.alta_en = now()
+  )
+$$;
+
+REVOKE ALL ON FUNCTION personal_nace_en_esta_transaccion(uuid, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION personal_nace_en_esta_transaccion(uuid, uuid) TO plataforma_sofipo;
+
+-- El evento de un rol: misma acción, persona, operador, sin empresa, la entidad
+-- del catálogo y el rol en «cambio», en esta transacción. El alta del personal
+-- nombra sus roles en un solo evento (entidad platform_staff).
+CREATE FUNCTION personal_rol_tiene_evento(p_accion text, p_operador uuid, p_user uuid, p_rol text)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM audit_log a
+    WHERE a.accion = p_accion AND a.identificador = p_user AND a.operator_id = p_operador
+      AND a.company_id IS NULL AND a.txid = txid_current()
+      AND a.entidad = CASE p_accion WHEN 'alta_personal' THEN 'platform_staff' ELSE 'platform_staff_roles' END
+      AND CASE p_accion
+            WHEN 'alta_personal' THEN p_rol = ANY (string_to_array(a.cambio ->> 'rol', ','))
+            ELSE a.cambio ->> 'rol' = p_rol
+          END
+  )
+$$;
+
+REVOKE ALL ON FUNCTION personal_rol_tiene_evento(text, uuid, uuid, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION personal_rol_tiene_evento(text, uuid, uuid, text) TO plataforma_sofipo;
 
 -- 61ª: el expediente y sus constancias se conservan. Nada se borra ni se trunca.
 CREATE FUNCTION conservacion_no_se_borra()
@@ -134,8 +236,10 @@ BEGIN
 
   IF current_user = 'plataforma_sofipo' THEN
     IF app_usuario() IS NULL THEN
-      -- Solo el alta del personal que hace el sistema desde la variable retirada.
-      IF TG_OP <> 'INSERT' OR fila.rol <> 'administracion_plataforma' THEN
+      -- Solo el alta del personal que hace el sistema desde la variable retirada:
+      -- Administración para una persona cuyo registro nace en esta transacción.
+      IF TG_OP <> 'INSERT' OR fila.rol <> 'administracion_plataforma'
+        OR NOT personal_nace_en_esta_transaccion(fila.operator_id, fila.user_id) THEN
         RAISE EXCEPTION 'sin_permiso_roles';
       END IF;
     ELSE
@@ -149,6 +253,7 @@ BEGIN
   END IF;
 
   IF TG_OP = 'INSERT' THEN
+    PERFORM personal_bloquear_fila(NEW.operator_id, NEW.user_id);
     IF NEW.rol = 'cumplimiento' AND EXISTS (
       SELECT 1 FROM platform_staff_roles r
       WHERE r.operator_id = NEW.operator_id AND r.user_id = NEW.user_id AND r.rol IN ('auditoria', 'originacion')
@@ -174,7 +279,8 @@ CREATE TRIGGER platform_staff_roles_no_truncate
 BEFORE TRUNCATE ON platform_staff_roles
 FOR EACH STATEMENT EXECUTE FUNCTION platform_staff_roles_revisar();
 
--- La transacción que asigna o quita un rol deja su evento.
+-- La transacción que asigna o quita un rol deja su evento: uno por rol, con el
+-- rol en «cambio». El evento del alta solo cubre a quien nace en esta transacción.
 CREATE FUNCTION platform_staff_roles_exige_evento()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -185,11 +291,15 @@ BEGIN
     RETURN NULL;
   END IF;
   IF TG_OP = 'INSERT' AND NOT (
-    auth_exige_evento('rol_personal_asignado', NEW.user_id) OR auth_exige_evento('alta_personal', NEW.user_id)
+    personal_rol_tiene_evento('rol_personal_asignado', NEW.operator_id, NEW.user_id, NEW.rol)
+    OR (
+      personal_rol_tiene_evento('alta_personal', NEW.operator_id, NEW.user_id, NEW.rol)
+      AND personal_nace_en_esta_transaccion(NEW.operator_id, NEW.user_id)
+    )
   ) THEN
     RAISE EXCEPTION 'rol_personal_sin_auditoria';
   END IF;
-  IF TG_OP = 'DELETE' AND NOT auth_exige_evento('rol_personal_retirado', OLD.user_id) THEN
+  IF TG_OP = 'DELETE' AND NOT personal_rol_tiene_evento('rol_personal_retirado', OLD.operator_id, OLD.user_id, OLD.rol) THEN
     RAISE EXCEPTION 'rol_personal_sin_auditoria';
   END IF;
   RETURN NULL;
@@ -202,6 +312,93 @@ DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION platform_staff_roles_exige_evento();
 
 GRANT DELETE ON platform_staff_roles TO plataforma_sofipo;
+
+-- Antes de esta ola todo el personal era Administración, y las políticas de la
+-- 0018 dan escritura al rol del personal sin mirar su rol. Ahora hay roles de solo
+-- lectura (Auditoría) y de otras áreas: el personal, la 69-B, el precio y las
+-- invitaciones y membresías que emite el personal los escribe solo Administración,
+-- como en capacidades.ts. Nadie cambia su propio registro del personal, salvo
+-- quien acepta su invitación (invitado → activo, con la invitación cerrada en esta
+-- misma transacción). Sin usuario solo entra el alta que hace el sistema desde la
+-- variable retirada: registro del personal e invitación nuevos.
+CREATE FUNCTION personal_solo_administracion()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  IF current_user <> 'plataforma_sofipo' THEN
+    IF TG_OP = 'DELETE' THEN
+      RETURN OLD;
+    END IF;
+    RETURN NEW;
+  END IF;
+  -- Los IF van anidados por tabla y operación: PL/pgSQL prepara cada campo de NEW
+  -- y OLD que nombra una condición, aunque el AND no llegue a evaluarlo.
+  IF TG_TABLE_NAME = 'platform_staff' AND TG_OP <> 'INSERT' THEN
+    IF TG_OP = 'UPDATE' THEN
+      IF NEW.operator_id IS DISTINCT FROM OLD.operator_id OR NEW.user_id IS DISTINCT FROM OLD.user_id
+        OR NEW.alta_en IS DISTINCT FROM OLD.alta_en THEN
+        RAISE EXCEPTION 'personal_no_se_reescribe';
+      END IF;
+    END IF;
+    IF OLD.user_id = app_usuario() THEN
+      IF TG_OP = 'UPDATE' THEN
+        IF OLD.estado = 'invitado' AND NEW.estado = 'activo' AND EXISTS (
+          SELECT 1 FROM invitations i
+          WHERE i.operator_id = OLD.operator_id AND i.user_id = OLD.user_id AND i.company_id IS NULL
+            AND i.usada_en IS NOT NULL AND i.xmin = pg_current_xact_id()::xid
+        ) THEN
+          RETURN NEW;
+        END IF;
+      END IF;
+      RAISE EXCEPTION 'personal_propio';
+    END IF;
+  END IF;
+  -- Quien acepta su invitación del personal la cierra él mismo.
+  IF TG_TABLE_NAME = 'invitations' AND TG_OP = 'UPDATE' THEN
+    IF OLD.user_id = app_usuario() AND OLD.company_id IS NULL AND OLD.usada_en IS NULL
+      AND NEW.usada_en IS NOT NULL AND NEW.revocada_en IS NULL THEN
+      RETURN NEW;
+    END IF;
+  END IF;
+  IF app_usuario() IS NULL THEN
+    IF TG_OP = 'INSERT' AND TG_TABLE_NAME IN ('platform_staff', 'invitations') THEN
+      RETURN NEW;
+    END IF;
+    RAISE EXCEPTION 'sin_rol_de_administracion';
+  END IF;
+  IF NOT personal_tiene_rol(app_operador(), app_usuario(), ARRAY['administracion_plataforma']) THEN
+    RAISE EXCEPTION 'sin_rol_de_administracion';
+  END IF;
+  IF TG_OP = 'DELETE' THEN
+    RETURN OLD;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER personal_solo_administracion
+BEFORE INSERT OR UPDATE OR DELETE ON platform_staff
+FOR EACH ROW EXECUTE FUNCTION personal_solo_administracion();
+CREATE TRIGGER personal_solo_administracion
+BEFORE INSERT ON lista_69b_snapshots
+FOR EACH ROW EXECUTE FUNCTION personal_solo_administracion();
+CREATE TRIGGER personal_solo_administracion
+BEFORE INSERT ON lista_69b_rows
+FOR EACH ROW EXECUTE FUNCTION personal_solo_administracion();
+CREATE TRIGGER personal_solo_administracion
+BEFORE INSERT OR UPDATE ON platform_pricing
+FOR EACH ROW EXECUTE FUNCTION personal_solo_administracion();
+CREATE TRIGGER personal_solo_administracion
+BEFORE INSERT OR UPDATE ON invitations
+FOR EACH ROW EXECUTE FUNCTION personal_solo_administracion();
+CREATE TRIGGER personal_solo_administracion
+BEFORE INSERT OR UPDATE OR DELETE ON memberships
+FOR EACH ROW EXECUTE FUNCTION personal_solo_administracion();
+CREATE TRIGGER personal_solo_administracion
+BEFORE INSERT OR UPDATE OR DELETE ON membership_roles
+FOR EACH ROW EXECUTE FUNCTION personal_solo_administracion();
 
 -- Roles iniciales por comando (`scripts/plataforma.ts personal:rol`). Cuando
 -- nadie más del personal administra al personal, la pantalla no alcanza: nadie
@@ -261,7 +458,9 @@ BEGIN
   ) VALUES (
     persona.operator_id, NULL, 'sistema', NULL, 'sistema',
     CASE WHEN p_quitar THEN 'rol_personal_retirado' ELSE 'rol_personal_asignado' END,
-    'platform_staff_roles', persona.user_id, p_motivo, 'comando', jsonb_build_object('rol', p_rol)
+    'platform_staff_roles', persona.user_id, p_motivo, 'comando',
+    -- Quién lo corrió lo dice la base, no el motivo escrito a mano.
+    jsonb_build_object('rol', p_rol, 'ejecutado_por', session_user)
   );
   RETURN true;
 END;
@@ -637,7 +836,8 @@ AS $$
     WHERE c.tipo_persona = 'moral' AND NOT h.clave = ANY (c.camino) AND c.capa < 10
   ),
   fisicas AS (
-    SELECT coalesce(a.curp, a.rfc, a.clave::text) AS persona,
+    -- La misma persona por varios caminos suma por su CURP (el envío la exige).
+    SELECT coalesce(a.curp, a.clave::text) AS persona,
            (array_agg(a.clave ORDER BY a.clave::text))[1] AS clave,
            (array_agg(a.nombre ORDER BY a.clave::text))[1] AS nombre,
            max(a.rfc) AS rfc,
@@ -733,6 +933,38 @@ BEGIN
       RAISE EXCEPTION 'expediente_documento_vencido';
     END IF;
   END LOOP;
+  -- 4ª fr. II c): una persona que suma por dos caminos con identificadores
+  -- distintos se partiría en dos y quedaría bajo el umbral. Toda persona física
+  -- lleva CURP y toda moral su RFC.
+  IF EXISTS (
+    SELECT 1 FROM kyb_accionistas a
+    WHERE a.version_id = p_version.id AND a.retirado_en IS NULL AND a.tipo_persona = 'fisica' AND a.curp IS NULL
+  ) THEN
+    RAISE EXCEPTION 'expediente_accionista_sin_curp';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM kyb_accionistas a
+    WHERE a.version_id = p_version.id AND a.retirado_en IS NULL AND a.tipo_persona = 'moral' AND a.rfc IS NULL
+  ) THEN
+    RAISE EXCEPTION 'expediente_accionista_sin_rfc';
+  END IF;
+  -- El cálculo de propietarios y la herencia de versión llegan a la capa 10.
+  -- Una cadena más larga dejaría fuera a quien está al final.
+  IF EXISTS (
+    WITH RECURSIVE arbol AS (
+      SELECT a.clave, 1 AS capa
+      FROM kyb_accionistas a
+      WHERE a.version_id = p_version.id AND a.retirado_en IS NULL AND a.padre_clave IS NULL
+      UNION ALL
+      SELECT h.clave, arbol.capa + 1
+      FROM arbol
+      JOIN kyb_accionistas h ON h.version_id = p_version.id AND h.retirado_en IS NULL AND h.padre_clave = arbol.clave
+      WHERE arbol.capa <= 10
+    )
+    SELECT 1 FROM arbol WHERE arbol.capa > 10
+  ) THEN
+    RAISE EXCEPTION 'expediente_estructura_muy_profunda';
+  END IF;
   IF NOT kyb_estructura_completa(p_version.id) THEN
     RAISE EXCEPTION 'expediente_estructura_incompleta';
   END IF;
@@ -774,6 +1006,15 @@ BEGIN
 
   IF TG_OP = 'INSERT' THEN
     PERFORM pg_advisory_xact_lock(hashtextextended('kyb:' || NEW.company_id::text, 0));
+    -- Doble envío simultáneo: quien esperó el candado ya ve la versión del otro. Con el
+    -- mismo formulario responde la llave primaria (la aplicación lo repite y sale como el
+    -- primero); con otro, ya hay un borrador.
+    IF EXISTS (SELECT 1 FROM kyb_versiones v WHERE v.id = NEW.id) THEN
+      RETURN NEW;
+    END IF;
+    IF EXISTS (SELECT 1 FROM kyb_versiones v WHERE v.company_id = NEW.company_id AND v.estado = 'borrador') THEN
+      RAISE EXCEPTION 'expediente_con_borrador';
+    END IF;
     IF NEW.estado <> 'borrador' OR NEW.enviada_por IS NOT NULL THEN
       RAISE EXCEPTION 'expediente_nace_borrador';
     END IF;
@@ -1228,7 +1469,9 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT c.id FROM lpb_cargas c WHERE c.operator_id = p_operador ORDER BY c.cargada_en DESC, c.id DESC LIMIT 1
+  SELECT c.id FROM lpb_cargas c
+  WHERE c.operator_id = p_operador AND operador_del_contexto(p_operador)
+  ORDER BY c.cargada_en DESC, c.id DESC LIMIT 1
 $$;
 
 CREATE TABLE lpb_coincidencias (
@@ -1261,7 +1504,6 @@ CREATE TABLE lpb_coincidencias (
   txid bigint NOT NULL DEFAULT txid_current(),
   CONSTRAINT lpb_coincidencias_company
     FOREIGN KEY (company_id, operator_id) REFERENCES companies (id, operator_id) ON DELETE RESTRICT,
-  CONSTRAINT lpb_coincidencias_unica UNIQUE (company_id, sujeto_tipo, sujeto_clave, lista, coincide_por, valor_coincidente),
   CONSTRAINT lpb_coincidencias_sujeto CHECK (
     sujeto_tipo IN ('empresa', 'representante', 'accionista', 'beneficiario', 'contraparte')
   ),
@@ -1295,6 +1537,13 @@ CREATE TABLE lpb_coincidencias (
   CONSTRAINT lpb_coincidencias_aviso CHECK (aviso_cliente_el IS NULL OR reporte_folio IS NOT NULL)
 );
 
+-- Un solo caso abierto por sujeto, lista y valor. Uno cerrado no impide otro:
+-- quien vuelve a aparecer en una carga nueva reabre su caso (lpb_cotejar_empresa).
+CREATE UNIQUE INDEX lpb_coincidencias_abierta_unica
+  ON lpb_coincidencias (company_id, sujeto_tipo, sujeto_clave, lista, coincide_por, valor_coincidente)
+  WHERE estado IN ('pendiente', 'confirmada');
+CREATE INDEX lpb_coincidencias_sujeto_idx
+  ON lpb_coincidencias (company_id, sujeto_tipo, sujeto_clave, lista, coincide_por, valor_coincidente);
 CREATE INDEX lpb_coincidencias_company_idx ON lpb_coincidencias (company_id, estado);
 CREATE INDEX lpb_coincidencias_operador_idx ON lpb_coincidencias (operator_id, estado, detectada_en);
 
@@ -1317,8 +1566,8 @@ AS $$
   SELECT EXISTS (
     SELECT 1 FROM lpb_coincidencias c
     WHERE c.company_id = p_company AND c.sujeto_tipo <> 'contraparte' AND c.estado IN ('pendiente', 'confirmada')
-      -- El personal solo pregunta por empresas de su operador.
-      AND c.operator_id = coalesce(app_operador(), c.operator_id)
+      -- El personal solo pregunta por empresas de su operador; sin contexto, por ninguna.
+      AND operador_del_contexto(c.operator_id)
   )
 $$;
 
@@ -1483,6 +1732,9 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'sin_rol_para_aprobar';
   END IF;
+  -- REPEATABLE READ: la decisión escribe la fila de la empresa antes de leer los
+  -- casos abiertos; si un cotejo ya la escribió después de su foto, aborta.
+  UPDATE companies SET estado = estado WHERE id = NEW.company_id;
   IF NEW.estado = 'aprobada' AND NEW.tipo = 'reactivacion' AND lpb_coincidencias_abiertas(NEW.company_id) THEN
     RAISE EXCEPTION 'reactivacion_con_coincidencia_lpb';
   END IF;
@@ -1575,7 +1827,7 @@ BEGIN
       WHERE h.company_id = NEW.id AND h.estado_anterior IS NULL
         AND h.estado_nuevo = 'prospecto' AND h.actor_id = app_usuario()
         AND h.txid = txid_current()
-    ) OR NOT auth_exige_evento('prospecto_registrado', NEW.id) THEN
+    ) OR NOT bitacora_tiene_evento(NEW.id, 'prospecto_registrado', 'companies', NEW.id) THEN
       RAISE EXCEPTION 'prospecto_sin_origen_transaccional';
     END IF;
   ELSIF TG_OP = 'UPDATE' AND NEW.estado IS DISTINCT FROM OLD.estado
@@ -1588,10 +1840,11 @@ BEGIN
         AND s.estado = 'aprobada'
         AND s.tipo = CASE NEW.estado WHEN 'suspendida' THEN 'suspension' ELSE 'reactivacion' END
         AND (
-          (s.origen = 'lpb' AND h.actor_id IS NULL AND auth_exige_evento('empresa_suspendida_lpb', s.id))
+          (s.origen = 'lpb' AND h.actor_id IS NULL
+            AND bitacora_tiene_evento(NEW.id, 'empresa_suspendida_lpb', 'company_suspensions', s.id))
           OR (
             s.origen = 'manual' AND h.actor_id = app_usuario() AND h.actor_id = s.decidida_por
-            AND auth_exige_evento(s.tipo || '_aprobada', s.id)
+            AND bitacora_tiene_evento(NEW.id, s.tipo || '_aprobada', 'company_suspensions', s.id)
           )
         )
     ) THEN
@@ -1614,7 +1867,7 @@ BEGIN
       SELECT 1 FROM company_state_history h
       WHERE h.company_id = NEW.id AND h.estado_anterior = OLD.estado
         AND h.estado_nuevo = NEW.estado AND h.txid = txid_current()
-        AND auth_exige_evento(accion, h.request_id)
+        AND bitacora_tiene_evento(NEW.id, accion, 'company_activation_requests', h.request_id)
     ) THEN
       RAISE EXCEPTION 'estado_operativo_sin_transaccion';
     END IF;
@@ -1748,8 +2001,24 @@ BEGIN
            h.por, h.valor, ahora,
            CASE WHEN h.por = 'nombre' THEN NULL ELSE ahora + interval '24 hours' END
     FROM hallazgos h
+    -- Un caso abierto no se duplica. Uno cerrado (fuera de lista o falso positivo)
+    -- se reabre cuando la persona aparece en una carga o copia del 69-B posterior a
+    -- la del cierre; con la misma carga, no. Una posible por nombre que Cumplimiento
+    -- descartó como falso positivo no se reabre por el mismo nombre.
+    WHERE NOT EXISTS (
+      SELECT 1 FROM lpb_coincidencias x
+      WHERE x.company_id = empresa.id AND x.sujeto_tipo = h.sujeto_tipo AND x.sujeto_clave = h.sujeto_clave
+        AND x.lista = h.lista AND x.coincide_por = h.por AND x.valor_coincidente = h.valor
+        AND (
+          x.estado IN ('pendiente', 'confirmada')
+          OR (x.coincide_por = 'nombre' AND x.estado = 'falso_positivo')
+          OR (h.lista = 'lpb' AND x.carga_id = carga)
+          OR (h.lista = '69b' AND x.snapshot_69b_id = copia)
+        )
+    )
     ORDER BY h.sujeto_tipo, h.sujeto_clave, h.lista, h.por, h.valor, h.persona_id
-    ON CONFLICT ON CONSTRAINT lpb_coincidencias_unica DO NOTHING
+    ON CONFLICT (company_id, sujeto_tipo, sujeto_clave, lista, coincide_por, valor_coincidente)
+      WHERE estado IN ('pendiente', 'confirmada') DO NOTHING
     RETURNING id, sujeto_tipo, tipo
   LOOP
     nuevas := nuevas + 1;
@@ -1767,6 +2036,13 @@ BEGIN
   -- 75ª fr. I: con coincidencia de la empresa, un representante o un propietario real, se suspende de inmediato.
   IF primera IS NOT NULL THEN
     PERFORM lpb_suspender(p_company, primera);
+  END IF;
+  IF nuevas > 0 THEN
+    -- Lo que ya estaba autorizado y ahora frena la lista regresa a «por autorizar».
+    PERFORM pagos_listos_regresan(p_company, false);
+    -- Quien decide con una foto vieja (REPEATABLE READ) choca con esta escritura
+    -- al cambiar el estado de la empresa: activar o reactivar no pasa sin ver el caso nuevo.
+    UPDATE companies SET estado = estado WHERE id = p_company;
   END IF;
   RETURN nuevas;
 END;
@@ -1813,7 +2089,9 @@ AFTER INSERT ON lpb_cargas
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION lpb_cargas_cotejar();
 
--- Una copia nueva del 69-B vuelve a cotejar a todas las empresas.
+-- Una copia nueva del 69-B vuelve a cotejar a las empresas del operador que la
+-- carga (Administración, con su contexto). La dueña de la base, sin contexto,
+-- coteja a todos.
 CREATE FUNCTION lista_69b_cotejar_empresas()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -1823,7 +2101,9 @@ AS $$
 DECLARE
   operador uuid;
 BEGIN
-  FOR operador IN SELECT o.id FROM operators o ORDER BY o.id LOOP
+  FOR operador IN
+    SELECT o.id FROM operators o WHERE app_operador() IS NULL OR o.id = app_operador() ORDER BY o.id
+  LOOP
     PERFORM lpb_cotejar_operador(operador);
   END LOOP;
   RETURN NULL;
@@ -2063,6 +2343,178 @@ $$;
 
 REVOKE ALL ON FUNCTION lpb_bloquea_empresa(uuid) FROM PUBLIC;
 
+-- Lo que ya estaba «listo para pagar» no conserva una autorización que ya no
+-- vale. Al suspender la empresa regresa todo; cuando la lista frena el pago a un
+-- proveedor (la empresa, un propietario real o la contraparte), regresa lo de ese
+-- proveedor. Pasa en la misma transacción, con un evento por solicitud. Tras
+-- reactivar, el liberador vuelve a autorizar. El texto no menciona la lista.
+CREATE FUNCTION pagos_listos_regresan(p_company uuid, p_todos boolean)
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  regresado record;
+  total integer := 0;
+  motivo text := CASE WHEN p_todos
+    THEN 'La empresa quedó suspendida. La autorización anterior se retiró.'
+    ELSE 'Este pago quedó detenido para revisión de cumplimiento. La autorización anterior se retiró.' END;
+BEGIN
+  FOR regresado IN
+    UPDATE supplier_payment_requests AS r
+    SET estado = 'por_autorizar', resuelto_por = NULL, resuelto_en = NULL, motivo_resolucion = NULL,
+        version = r.version + 1
+    FROM supplier_payables AS p
+    WHERE p.company_id = r.company_id AND p.id = r.payable_id
+      AND r.company_id = p_company AND r.estado = 'listo_para_pagar'
+      AND (p_todos OR lpb_bloquea_pago(p_company, p.supplier_id))
+    RETURNING r.id
+  LOOP
+    total := total + 1;
+    INSERT INTO audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, motivo)
+    SELECT c.operator_id, p_company, 'sistema', NULL, 'sistema', 'regresar_pago_proveedor',
+           'supplier_payment_requests', regresado.id, motivo
+    FROM companies c WHERE c.id = p_company;
+  END LOOP;
+  RETURN total;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION pagos_listos_regresan(uuid, boolean) FROM PUBLIC;
+
+-- Suspender (por la lista o con doble firma) regresa lo autorizado.
+CREATE FUNCTION companies_suspendida_regresa_pagos()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  PERFORM pagos_listos_regresan(NEW.id, true);
+  RETURN NULL;
+END;
+$$;
+
+CREATE TRIGGER companies_suspendida_regresa_pagos
+AFTER UPDATE OF estado ON companies
+FOR EACH ROW WHEN (OLD.estado = 'activa' AND NEW.estado = 'suspendida')
+EXECUTE FUNCTION companies_suspendida_regresa_pagos();
+
+-- El regreso de «listo para pagar» acepta también estas causas (0022 solo
+-- conocía la CLABE cerrada y el proveedor bloqueado o inactivo).
+CREATE OR REPLACE FUNCTION supplier_payment_requests_revisar()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  cargo supplier_payables%ROWTYPE;
+  proveedor suppliers%ROWTYPE;
+  vigente supplier_clabes%ROWTYPE;
+  validar_instruccion boolean := false;
+  instruccion_igual boolean;
+BEGIN
+  IF TG_OP = 'DELETE' OR TG_OP = 'TRUNCATE' THEN
+    RAISE EXCEPTION 'pago_proveedor_no_se_borra';
+  END IF;
+
+  IF TG_OP = 'INSERT' THEN
+    validar_instruccion := true;
+    IF NEW.estado <> 'por_autorizar' OR NEW.version <> 1 OR NEW.solicitado_por IS DISTINCT FROM app_usuario()
+      OR NOT cliente_tiene_rol_operativo(NEW.company_id, NEW.solicitado_por, ARRAY['administrador','liberador','solicitante']) THEN
+      RAISE EXCEPTION 'sin_permiso_para_solicitar';
+    END IF;
+  ELSE
+    IF NEW.id IS DISTINCT FROM OLD.id OR NEW.company_id IS DISTINCT FROM OLD.company_id
+      OR NEW.payable_id IS DISTINCT FROM OLD.payable_id OR NEW.creado_en IS DISTINCT FROM OLD.creado_en
+      OR NEW.client_request_id IS DISTINCT FROM OLD.client_request_id THEN
+      RAISE EXCEPTION 'pago_proveedor_inmutable';
+    END IF;
+    instruccion_igual := (NEW.solicitado_por, NEW.solicitado_en, NEW.supplier_clabe_id, NEW.clabe,
+        NEW.total_centavos, NEW.programada_el)
+      IS NOT DISTINCT FROM (OLD.solicitado_por, OLD.solicitado_en, OLD.supplier_clabe_id, OLD.clabe,
+        OLD.total_centavos, OLD.programada_el);
+
+    IF OLD.estado = 'por_autorizar' AND NEW.estado IN ('listo_para_pagar', 'rechazado') THEN
+      validar_instruccion := NEW.estado = 'listo_para_pagar';
+      IF NEW.resuelto_por IS DISTINCT FROM app_usuario() OR NEW.resuelto_por = OLD.solicitado_por
+        OR NOT cliente_tiene_rol_operativo(NEW.company_id, NEW.resuelto_por, ARRAY['liberador']) THEN
+        RAISE EXCEPTION 'sin_permiso_para_liberar';
+      END IF;
+      IF NOT instruccion_igual OR NEW.version IS DISTINCT FROM OLD.version THEN
+        RAISE EXCEPTION 'pago_proveedor_inmutable';
+      END IF;
+    ELSIF OLD.estado IN ('por_autorizar', 'rechazado') AND NEW.estado = 'cancelado' THEN
+      IF NEW.resuelto_por IS DISTINCT FROM app_usuario() OR NEW.resuelto_por IS DISTINCT FROM OLD.solicitado_por
+        OR NOT cliente_tiene_rol_operativo(NEW.company_id, NEW.resuelto_por, ARRAY['administrador','liberador','solicitante']) THEN
+        RAISE EXCEPTION 'cancelacion_no_permitida';
+      END IF;
+      IF NOT instruccion_igual OR NEW.version IS DISTINCT FROM OLD.version THEN
+        RAISE EXCEPTION 'pago_proveedor_inmutable';
+      END IF;
+    ELSIF OLD.estado = 'listo_para_pagar' AND NEW.estado = 'cancelado' THEN
+      IF NEW.resuelto_por IS DISTINCT FROM app_usuario()
+        OR NOT cliente_tiene_rol_operativo(NEW.company_id, NEW.resuelto_por, ARRAY['liberador','administrador']) THEN
+        RAISE EXCEPTION 'cancelacion_no_permitida';
+      END IF;
+      IF NOT instruccion_igual OR NEW.version IS DISTINCT FROM OLD.version THEN
+        RAISE EXCEPTION 'pago_proveedor_inmutable';
+      END IF;
+    ELSIF OLD.estado = 'listo_para_pagar' AND NEW.estado = 'por_autorizar' THEN
+      IF NOT instruccion_igual OR NEW.version IS DISTINCT FROM OLD.version + 1 THEN
+        RAISE EXCEPTION 'pago_proveedor_inmutable';
+      END IF;
+      SELECT * INTO cargo FROM supplier_payables WHERE company_id = NEW.company_id AND id = NEW.payable_id;
+      SELECT * INTO proveedor FROM suppliers WHERE company_id = cargo.company_id AND id = cargo.supplier_id;
+      SELECT * INTO vigente FROM supplier_clabes
+        WHERE company_id = NEW.company_id AND id = NEW.supplier_clabe_id AND vigente_hasta IS NULL;
+      -- 0028: la empresa suspendida o la lista de por medio también retiran la
+      -- autorización. Eso lo hace solo el sistema (pagos_listos_regresan), nunca el
+      -- portal ni el personal: con su rol la lista ni se consulta.
+      -- IF anidados: Postgres revisa el permiso de lpb_bloquea_pago al preparar la condición.
+      IF vigente.id IS NOT NULL AND proveedor.activo AND proveedor.boton_pago THEN
+        IF current_user IN ('plataforma_cliente', 'plataforma_sofipo') THEN
+          RAISE EXCEPTION 'pago_proveedor_regreso_sin_causa';
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM companies c WHERE c.id = NEW.company_id AND c.estado IN ('suspendida', 'baja')) THEN
+          IF NOT lpb_bloquea_pago(NEW.company_id, proveedor.id) THEN
+            RAISE EXCEPTION 'pago_proveedor_regreso_sin_causa';
+          END IF;
+        END IF;
+      END IF;
+    ELSIF OLD.estado = 'rechazado' AND NEW.estado = 'por_autorizar' THEN
+      validar_instruccion := true;
+      IF NEW.solicitado_por IS DISTINCT FROM OLD.solicitado_por
+        OR NEW.solicitado_por IS DISTINCT FROM app_usuario()
+        OR NOT cliente_tiene_rol_operativo(NEW.company_id, NEW.solicitado_por, ARRAY['administrador','liberador','solicitante'])
+        OR NEW.version <> OLD.version + 1 THEN
+        RAISE EXCEPTION 'sin_permiso_para_solicitar';
+      END IF;
+    ELSE
+      RAISE EXCEPTION 'pago_proveedor_transicion_invalida';
+    END IF;
+  END IF;
+
+  IF validar_instruccion THEN
+    SELECT * INTO cargo FROM supplier_payables
+      WHERE company_id = NEW.company_id AND id = NEW.payable_id FOR SHARE;
+    SELECT * INTO proveedor FROM suppliers
+      WHERE company_id = cargo.company_id AND id = cargo.supplier_id FOR SHARE;
+    SELECT * INTO vigente FROM supplier_clabes
+      WHERE company_id = NEW.company_id AND id = NEW.supplier_clabe_id AND vigente_hasta IS NULL FOR SHARE;
+    IF cargo.id IS NULL OR proveedor.id IS NULL OR vigente.id IS NULL OR cargo.anulado_en IS NOT NULL
+      OR NOT proveedor.activo OR NOT proveedor.boton_pago
+      OR NEW.total_centavos <> cargo.total_centavos OR NEW.programada_el <> cargo.programada_el
+      OR NEW.clabe <> vigente.clabe OR cliente_liberadores_operativos(NEW.company_id) < 2 THEN
+      RAISE EXCEPTION 'pago_proveedor_no_autorizable';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
 -- Liberar un pago a proveedor: con la empresa suspendida o con la lista de por
 -- medio, la base no deja pasar a «listo para pagar», venga de donde venga.
 CREATE FUNCTION supplier_payment_requests_lpb()
@@ -2286,13 +2738,20 @@ CREATE TRIGGER company_activation_requests_roles
 BEFORE INSERT OR UPDATE ON company_activation_requests
 FOR EACH ROW EXECUTE FUNCTION company_activation_requests_roles();
 
--- Registrar prospectos: Originación o la administración.
+-- Registrar prospectos: Originación o la administración. Desde la aplicación
+-- una empresa solo nace prospecto y real: llega a activa por el candado de
+-- arriba (expediente, riesgo, lista y dos personas). Las empresas de
+-- demostración y las de las pruebas las crea la dueña de la base.
 CREATE FUNCTION companies_alta_por_rol()
 RETURNS trigger
 LANGUAGE plpgsql
 SET search_path = public
 AS $$
 BEGIN
+  IF current_user IN ('plataforma_sofipo', 'plataforma_cliente', 'plataforma_tarea', 'plataforma_app')
+    AND (NEW.estado IS DISTINCT FROM 'prospecto' OR NEW.demostracion IS DISTINCT FROM false) THEN
+    RAISE EXCEPTION 'empresa_nace_prospecto';
+  END IF;
   IF current_user = 'plataforma_sofipo' AND app_usuario() IS NOT NULL
     AND NOT personal_tiene_rol(NEW.operator_id, app_usuario(), ARRAY['originacion', 'administracion_plataforma']) THEN
     RAISE EXCEPTION 'sin_rol_para_registrar';
@@ -2308,8 +2767,9 @@ FOR EACH ROW EXECUTE FUNCTION companies_alta_por_rol();
 -- 7. Descarga auditada ----------------------------------------------------------
 
 -- El personal no lee la ruta del archivo: esta puerta la entrega y deja el evento
--- de quién, cuándo y qué en la misma transacción.
-CREATE FUNCTION kyb_documento_para_descarga(p_documento uuid, p_peticion uuid)
+-- de quién, cuándo y qué en la misma transacción. El documento tiene que ser de la
+-- empresa que dice la dirección: si no, no hay evento ni archivo.
+CREATE FUNCTION kyb_documento_para_descarga(p_documento uuid, p_company uuid, p_peticion uuid)
 RETURNS TABLE (clave_blob text, nombre_archivo text, tipo_contenido text, sha256 text, company_id uuid)
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -2322,7 +2782,8 @@ BEGIN
     OR NOT personal_tiene_rol(app_operador(), app_usuario(), ARRAY['originacion', 'aprobacion', 'cumplimiento', 'auditoria']) THEN
     RAISE EXCEPTION 'sin_permiso_expediente';
   END IF;
-  SELECT * INTO documento FROM kyb_documentos d WHERE d.id = p_documento AND d.operator_id = app_operador();
+  SELECT * INTO documento FROM kyb_documentos d
+  WHERE d.id = p_documento AND d.company_id = p_company AND d.operator_id = app_operador();
   IF documento.id IS NULL THEN
     RAISE EXCEPTION 'documento_no_existe';
   END IF;
@@ -2337,8 +2798,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION kyb_documento_para_descarga(uuid, uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION kyb_documento_para_descarga(uuid, uuid) TO plataforma_sofipo;
+REVOKE ALL ON FUNCTION kyb_documento_para_descarga(uuid, uuid, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION kyb_documento_para_descarga(uuid, uuid, uuid) TO plataforma_sofipo;
 
 -- Rastro obligatorio de cada escritura del personal o del sistema --------------
 
@@ -2349,61 +2810,70 @@ SET search_path = public
 AS $$
 DECLARE
   ok boolean;
+  empresa uuid;
 BEGIN
   IF current_user NOT IN ('plataforma_sofipo', 'plataforma_cliente') THEN
     RETURN NULL;
   END IF;
+  -- El evento tiene que ser de esta empresa y de esta entidad (o de la que la
+  -- explica, como la versión para sus renglones heredados). lpb_cargas no es de
+  -- ninguna empresa.
+  IF TG_TABLE_NAME <> 'lpb_cargas' THEN
+    empresa := NEW.company_id;
+  END IF;
   CASE TG_TABLE_NAME
     WHEN 'kyb_versiones' THEN
       IF TG_OP = 'INSERT' THEN
-        ok := auth_exige_evento('expediente_version_creada', NEW.id);
+        ok := bitacora_tiene_evento(empresa, 'expediente_version_creada', 'kyb_versiones', NEW.id);
       ELSIF NEW.estado = 'enviada' AND OLD.estado = 'borrador' THEN
-        ok := auth_exige_evento('expediente_enviado', NEW.id);
+        ok := bitacora_tiene_evento(empresa, 'expediente_enviado', 'kyb_versiones', NEW.id);
       ELSE
-        ok := auth_exige_evento('expediente_datos_editados', NEW.id) OR auth_exige_evento('expediente_version_creada', NEW.id);
+        ok := bitacora_tiene_evento(empresa, 'expediente_datos_editados', 'kyb_versiones', NEW.id)
+          OR bitacora_tiene_evento(empresa, 'expediente_version_creada', 'kyb_versiones', NEW.id);
       END IF;
     WHEN 'kyb_documentos' THEN
-      ok := auth_exige_evento('expediente_documento_cargado', NEW.id);
+      ok := bitacora_tiene_evento(empresa, 'expediente_documento_cargado', 'kyb_documentos', NEW.id);
     WHEN 'kyb_version_documentos' THEN
-      ok := auth_exige_evento('expediente_documento_cargado', NEW.documento_id)
-        OR auth_exige_evento('expediente_version_creada', NEW.version_id);
+      ok := bitacora_tiene_evento(empresa, 'expediente_documento_cargado', 'kyb_documentos', NEW.documento_id)
+        OR bitacora_tiene_evento(empresa, 'expediente_version_creada', 'kyb_versiones', NEW.version_id);
     WHEN 'kyb_representantes' THEN
       IF TG_OP = 'INSERT' THEN
-        ok := auth_exige_evento('expediente_representante_agregado', NEW.id)
-          OR auth_exige_evento('expediente_version_creada', NEW.version_id);
+        ok := bitacora_tiene_evento(empresa, 'expediente_representante_agregado', 'kyb_representantes', NEW.id)
+          OR bitacora_tiene_evento(empresa, 'expediente_version_creada', 'kyb_versiones', NEW.version_id);
       ELSE
-        ok := auth_exige_evento('expediente_representante_retirado', NEW.id);
+        ok := bitacora_tiene_evento(empresa, 'expediente_representante_retirado', 'kyb_representantes', NEW.id);
       END IF;
     WHEN 'kyb_accionistas' THEN
       IF TG_OP = 'INSERT' THEN
-        ok := auth_exige_evento('expediente_accionista_agregado', NEW.id)
-          OR auth_exige_evento('expediente_version_creada', NEW.version_id);
+        ok := bitacora_tiene_evento(empresa, 'expediente_accionista_agregado', 'kyb_accionistas', NEW.id)
+          OR bitacora_tiene_evento(empresa, 'expediente_version_creada', 'kyb_versiones', NEW.version_id);
       ELSE
-        ok := auth_exige_evento('expediente_accionista_retirado', NEW.id);
+        ok := bitacora_tiene_evento(empresa, 'expediente_accionista_retirado', 'kyb_accionistas', NEW.id);
       END IF;
     WHEN 'kyb_beneficiarios' THEN
-      ok := auth_exige_evento('expediente_enviado', NEW.version_id);
+      ok := bitacora_tiene_evento(empresa, 'expediente_enviado', 'kyb_versiones', NEW.version_id);
     WHEN 'kyb_dictamenes' THEN
-      ok := auth_exige_evento('expediente_dictaminado', NEW.id);
+      ok := bitacora_tiene_evento(empresa, 'expediente_dictaminado', 'kyb_dictamenes', NEW.id);
     WHEN 'kyb_calificaciones_riesgo' THEN
-      ok := auth_exige_evento('riesgo_calificado', NEW.id);
+      ok := bitacora_tiene_evento(empresa, 'riesgo_calificado', 'kyb_calificaciones_riesgo', NEW.id);
     WHEN 'lpb_cargas' THEN
-      ok := auth_exige_evento('lpb_cargada', NEW.id);
+      ok := bitacora_tiene_evento(NULL, 'lpb_cargada', 'lpb_cargas', NEW.id);
     WHEN 'lpb_coincidencias' THEN
       IF TG_OP = 'INSERT' THEN
-        ok := auth_exige_evento('lpb_coincidencia_detectada', NEW.id);
+        ok := bitacora_tiene_evento(empresa, 'lpb_coincidencia_detectada', 'lpb_coincidencias', NEW.id);
       ELSIF NEW.estado IS DISTINCT FROM OLD.estado THEN
-        ok := auth_exige_evento('lpb_coincidencia_resuelta', NEW.id);
+        ok := bitacora_tiene_evento(empresa, 'lpb_coincidencia_resuelta', 'lpb_coincidencias', NEW.id);
       ELSE
-        ok := auth_exige_evento('lpb_reporte_registrado', NEW.id);
+        ok := bitacora_tiene_evento(empresa, 'lpb_reporte_registrado', 'lpb_coincidencias', NEW.id);
       END IF;
     WHEN 'company_suspensions' THEN
       IF TG_OP = 'INSERT' THEN
-        ok := auth_exige_evento(
-          CASE WHEN NEW.origen = 'lpb' THEN 'empresa_suspendida_lpb' ELSE NEW.tipo || '_solicitada' END, NEW.id
+        ok := bitacora_tiene_evento(
+          empresa, CASE WHEN NEW.origen = 'lpb' THEN 'empresa_suspendida_lpb' ELSE NEW.tipo || '_solicitada' END,
+          'company_suspensions', NEW.id
         );
       ELSE
-        ok := auth_exige_evento(NEW.tipo || '_' || NEW.estado, NEW.id);
+        ok := bitacora_tiene_evento(empresa, NEW.tipo || '_' || NEW.estado, 'company_suspensions', NEW.id);
       END IF;
     ELSE
       ok := false;
@@ -2414,6 +2884,10 @@ BEGIN
   RETURN NULL;
 END;
 $$;
+
+-- regulado_exige_evento corre con el rol del personal. bitacora_tiene_evento solo
+-- mira eventos de la transacción en curso: no expone la bitácora.
+GRANT EXECUTE ON FUNCTION bitacora_tiene_evento(uuid, text, text, uuid) TO plataforma_sofipo;
 
 CREATE CONSTRAINT TRIGGER kyb_versiones_exige_evento AFTER INSERT OR UPDATE ON kyb_versiones
 DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION regulado_exige_evento();
@@ -2524,6 +2998,17 @@ REVOKE ALL ON FUNCTION lpb_coincidencias_abiertas(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION lpb_coincidencias_abiertas(uuid) TO plataforma_sofipo;
 REVOKE ALL ON FUNCTION lpb_carga_vigente(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION lpb_carga_vigente(uuid) TO plataforma_sofipo;
+
+-- El portal del cliente lee la bitácora de su empresa salvo lo de Cumplimiento:
+-- expediente, riesgo, Lista de Personas Bloqueadas y suspensiones con su motivo
+-- (55ª: no se alerta al cliente). Que está suspendida lo ve en el estado de su empresa.
+DROP POLICY audit_log_cliente_lectura ON audit_log;
+CREATE POLICY audit_log_cliente_lectura ON audit_log FOR SELECT TO plataforma_cliente
+  USING (
+    company_id = app_empresa()
+    AND entidad NOT LIKE 'kyb\_%' AND entidad NOT LIKE 'lpb\_%' AND entidad <> 'company_suspensions'
+    AND accion NOT LIKE 'expediente\_%'
+  );
 
 REVOKE DELETE, TRUNCATE ON kyb_versiones, kyb_documentos, kyb_version_documentos, kyb_representantes,
   kyb_accionistas, kyb_beneficiarios, kyb_dictamenes, kyb_calificaciones_riesgo, lpb_cargas, lpb_personas,

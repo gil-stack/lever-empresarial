@@ -27,6 +27,8 @@ export default async function FichaCliente({ params, searchParams }: { params: P
   const cliente = await leerCliente(ctx, id);
   if (!cliente) notFound();
   const veExpediente = puedeEnOperacion(ctx, "plataforma.expediente.ver");
+  // Que la suspensión vino de la lista lo ven Cumplimiento y Auditoría (55ª fr. I).
+  const veLista = puedeEnOperacion(ctx, "plataforma.cumplimiento.bandeja");
   const [comisiones, suspensiones] = await Promise.all([
     listarComisiones(ctx, id),
     veExpediente ? listarSuspensionesDeEmpresa(ctx, id) : Promise.resolve([]),
@@ -112,7 +114,7 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                       <div className="operacion-fila">
                         <p>
                           {suspension.tipo === "suspension" ? "Suspensión" : "Reactivación"}
-                          {suspension.origen === "lpb" ? " por la Lista de Personas Bloqueadas" : ""}
+                          {suspension.origen === "lpb" ? (veLista ? " por la Lista de Personas Bloqueadas" : " en revisión de Cumplimiento") : ""}
                         </p>
                         <Insignia tono={suspension.estado === "aprobada" ? "aviso" : "neutro"}>{etiquetaEstado(suspension.estado)}</Insignia>
                       </div>
@@ -120,7 +122,7 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                         <span>{suspension.solicitadaPor ?? "Sistema"} · {fechaHora(suspension.solicitadaEn)}</span>
                         {suspension.decididaPor ? <span>Decidió {suspension.decididaPor}</span> : null}
                       </p>
-                      <p className="operacion-detalle">{suspension.motivo}</p>
+                      {suspension.origen === "lpb" && !veLista ? null : <p className="operacion-detalle">{suspension.motivo}</p>}
                     </li>
                   ))}
                 </ul>

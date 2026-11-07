@@ -16,8 +16,12 @@ const nextConfig: NextConfig = {
         ],
       },
       // Va después de la regla general: la última que coincide gana, y sin esta
-      // la descarga perdería su política aislada.
-      ...["/consola/proveedores/documento/:id", "/c/:empresa/consola/proveedores/documento/:id"].map((source) => ({
+      // la descarga perdería su política aislada (sandbox).
+      ...[
+        "/consola/proveedores/documento/:id",
+        "/c/:empresa/consola/proveedores/documento/:id",
+        "/operacion/clientes/:id/expediente/documento/:documentoId",
+      ].map((source) => ({
         source,
         headers: [{ key: "Content-Security-Policy", value: POLITICA_DESCARGA }],
       })),
@@ -26,7 +30,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["pg", "bcryptjs"],
   experimental: {
     serverActions: {
-      bodySizeLimit: "10mb",
+      // Vercel corta el cuerpo en 4.5 MB (413 antes de la acción). Con el mismo límite,
+      // local y e2e fallan igual que producción; los archivos topan en 4 MB (src/dominio/archivos.ts).
+      bodySizeLimit: "4.5mb",
       // Solo para la prueba de navegador local. Nunca un origen opaco («null»):
       // aceptarlo abriría las acciones a iframes con sandbox y a file://.
       allowedOrigins: process.env.E2E_SERVER_ACTIONS === "1"

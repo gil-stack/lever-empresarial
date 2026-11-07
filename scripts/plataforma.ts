@@ -2,16 +2,22 @@
  * Comando del personal del operador, hasta que la fase 5 abra su portal.
  *
  *   npx tsx scripts/plataforma.ts personal:migrar-variable
- *   npx tsx scripts/plataforma.ts empresa:alta --personal <correo> --rfc <RFC> --razon <texto>
+ *   npx tsx scripts/plataforma.ts empresa:alta --demostracion --personal <correo> --rfc <RFC> --razon <texto>
  *       --cp <12345> --regimen <601> --uso <G03> --admin-nombre <texto> --admin-correo <correo>
- *       [--demostracion] [--mostrar-enlace]
+ *       [--mostrar-enlace]
  *   npx tsx scripts/plataforma.ts suscripcion:aceptar --personal <correo> --empresa <uuid>
  *   npx tsx scripts/plataforma.ts personal:rol --correo <correo> --rol <rol> --motivo <texto> [--quitar]
  *
  * Lee DATABASE_URL y no la imprime. Cada acto queda en la bitácora con el
  * personal que lo hizo y el origen «comando». El enlace de una invitación es
  * de un solo uso y es de la persona invitada: solo se imprime con
- * --mostrar-enlace, cuando el correo no salió.
+ * --mostrar-enlace, cuando el correo no salió. Cada orden acepta solo sus
+ * banderas, una vez cada una; las de sí o no (--quitar, --demostracion) no llevan valor.
+ *
+ * empresa:alta crea solo empresas de demostración, con DATABASE_URL_UNPOOLED (la
+ * aplicación no crea empresas activas: 0028, empresa_nace_prospecto). Las reales
+ * se dan de alta en Operación: prospecto, expediente, riesgo, lista y activación
+ * que decide otra persona.
  *
  * personal:rol da o quita un rol del personal cuando nadie más administra al
  * personal (nadie se da un rol a sí mismo por pantalla). Corre con
@@ -29,16 +35,30 @@ import { ErrorDeDominio } from "../src/nucleo/error-de-dominio";
 import { enlaceDeInvitacion, urlPublica } from "../src/server/invitaciones/correo";
 import {
   contextoDePersonal,
-  darDeAltaClienteConAdministrador,
+  invitarAdministrador,
   leerCorreosDeVariable,
   migrarPersonalDeVariable,
   type InvitacionDeAlta,
 } from "../src/server/plataforma/servicio";
 import { aceptarSuscripcion } from "../src/server/precio/servicio";
+import { darDeAltaComoDuena } from "./empresa-por-la-duena";
+
+/** Banderas de cada orden: las que llevan valor y las de sí o no. */
+const BANDERAS: Readonly<Record<string, { conValor: readonly string[]; sinValor: readonly string[] }>> = {
+  "personal:migrar-variable": { conValor: [], sinValor: ["mostrar-enlace"] },
+  "empresa:alta": {
+    conValor: ["personal", "rfc", "razon", "cp", "regimen", "uso", "admin-nombre", "admin-correo"],
+    sinValor: ["demostracion", "mostrar-enlace"],
+  },
+  "suscripcion:aceptar": { conValor: ["personal", "empresa"], sinValor: [] },
+  "personal:rol": { conValor: ["correo", "rol", "motivo"], sinValor: ["quitar"] },
+};
 
 async function principal(argv: string[]): Promise<void> {
-  const [orden, ...resto] = argv;
-  const opciones = leerOpciones(resto);
+  const [orden = "", ...resto] = argv;
+  const banderas = BANDERAS[orden];
+  if (!banderas) throw new Error("Orden desconocida. Usa personal:migrar-variable, empresa:alta, suscripcion:aceptar o personal:rol.");
+  const opciones = leerOpciones(orden, resto, banderas);
   if (orden === "personal:migrar-variable") {
     const correos = leerCorreosDeVariable(process.env.OPERADORES_PLATAFORMA);
     if (correos.length === 0) {
@@ -53,19 +73,27 @@ async function principal(argv: string[]): Promise<void> {
     return;
   }
   if (orden === "empresa:alta") {
+    if (opciones.demostracion !== true) {
+      throw new Error(
+        "Este comando solo crea empresas de demostración (--demostracion). Las reales se dan de alta en Operación: " +
+          "prospecto, expediente, riesgo, lista y activación que decide otra persona.",
+      );
+    }
     const ctx = await contextoDePersonal(exigir(opciones, "personal"));
-    const { empresa, invitacion } = await darDeAltaClienteConAdministrador(ctx, {
-      empresa: {
-        rfc: exigir(opciones, "rfc"),
-        razonSocial: exigir(opciones, "razon"),
-        codigoPostal: exigir(opciones, "cp"),
-        regimen: exigir(opciones, "regimen"),
-        usoCfdi: exigir(opciones, "uso"),
-      },
-      demostracion: Boolean(opciones.demostracion),
-      administrador: { nombre: exigir(opciones, "admin-nombre"), correo: exigir(opciones, "admin-correo") },
+    const empresa = await darDeAltaComoDuena(urlDirecta(), ctx, {
+      rfc: exigir(opciones, "rfc"),
+      razonSocial: exigir(opciones, "razon"),
+      codigoPostal: exigir(opciones, "cp"),
+      regimen: exigir(opciones, "regimen"),
+      usoCfdi: exigir(opciones, "uso"),
+    }, { demostracion: true });
+    const invitacion = await invitarAdministrador(ctx, {
+      companyId: empresa.id,
+      razonSocial: empresa.razonSocial,
+      nombre: exigir(opciones, "admin-nombre"),
+      correo: exigir(opciones, "admin-correo"),
     });
-    console.log(`Empresa ${empresa.razonSocial} (${empresa.rfc}) dada de alta: ${empresa.id}`);
+    console.log(`Empresa de demostración ${empresa.razonSocial} (${empresa.rfc}) dada de alta: ${empresa.id}`);
     informarEntrega(invitacion, Boolean(opciones["mostrar-enlace"]));
     return;
   }
@@ -79,13 +107,12 @@ async function principal(argv: string[]): Promise<void> {
     const correo = exigir(opciones, "correo");
     const rol = exigir(opciones, "rol");
     if (!esRolPlataforma(rol)) throw new Error(`Rol desconocido. Usa uno de: ${ROLES_PLATAFORMA.join(", ")}.`);
-    const quitar = Boolean(opciones.quitar);
+    const quitar = opciones.quitar === true;
     const cambio = await rolPorComando({ correo, rol, quitar, motivo: exigir(opciones, "motivo") });
     if (cambio) console.log(`${quitar ? "Se quitó" : "Se asignó"} el rol ${rol} a ${correo}. Quedó en la bitácora como acto del comando.`);
     else console.log(`${correo} ${quitar ? "no tenía" : "ya tenía"} el rol ${rol}. No cambió nada.`);
     return;
   }
-  throw new Error("Orden desconocida. Usa personal:migrar-variable, empresa:alta, suscripcion:aceptar o personal:rol.");
 }
 
 const RECHAZOS_DE_ROL: Readonly<Record<string, string>> = {
@@ -156,18 +183,32 @@ function informarEntrega(invitacion: InvitacionDeAlta, mostrarEnlace: boolean): 
   }
 }
 
-function leerOpciones(args: string[]): Record<string, string | true> {
+/**
+ * Una bandera de sí o no con un valor detrás («--quitar no») es un error, no un sí. Una
+ * bandera repetida o que la orden no conoce también: nada se elige en silencio.
+ */
+function leerOpciones(
+  orden: string,
+  args: string[],
+  banderas: { conValor: readonly string[]; sinValor: readonly string[] },
+): Record<string, string | true> {
   const opciones: Record<string, string | true> = {};
   for (let i = 0; i < args.length; i += 1) {
     const actual = args[i] ?? "";
     if (!actual.startsWith("--")) throw new Error(`Argumento inesperado: ${actual}`);
     const nombre = actual.slice(2);
+    if (nombre in opciones) throw new Error(`--${nombre} va una sola vez.`);
     const siguiente = args[i + 1];
-    if (siguiente === undefined || siguiente.startsWith("--")) {
+    const traeValor = siguiente !== undefined && !siguiente.startsWith("--");
+    if (banderas.sinValor.includes(nombre)) {
+      if (traeValor) throw new Error(`--${nombre} no lleva valor.`);
       opciones[nombre] = true;
-    } else {
+    } else if (banderas.conValor.includes(nombre)) {
+      if (!traeValor) throw new Error(`Falta el valor de --${nombre}.`);
       opciones[nombre] = siguiente;
       i += 1;
+    } else {
+      throw new Error(`${orden} no conoce --${nombre}.`);
     }
   }
   return opciones;

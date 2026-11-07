@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { cerrarConexion } from "../../src/nucleo/db.ts";
 import { configurarNomina, leerLoteNomina, leerNomina, prepararNomina } from "../../src/server/nomina/servicio.ts";
 import { leerPendientesInicio } from "../../src/server/inicio/servicio.ts";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio.ts";
 import { hoyEnMexico } from "../../src/dominio/personas.ts";
 import type { ContextoDeTenant } from "../../src/nucleo/contexto.ts";
@@ -65,7 +65,7 @@ test("colaboradores, nómina, tarjetas y lotes conservan tenant, idempotencia y 
 async function escenario(url: string): Promise<void> {
   sembrarPersonal(url);
   const personal = await contextoDePersonal("personal-colaboradores@ejemplo.mx");
-  const empresa = await darDeAltaEmpresa(personal, {
+  const empresa = await darDeAltaComoDuena(url, personal, {
     rfc: "TCM010101AB1",
     razonSocial: "Escuela Colaboradores",
     codigoPostal: "06600",
@@ -300,7 +300,7 @@ function eventos(url: string, accion: string, identificador: string): Array<{ ac
 }
 
 async function empresaCon(personal: ContextoDeTenant, url: string, rfc: string, razon: string, correo: string) {
-  const empresa = await darDeAltaEmpresa(personal, {
+  const empresa = await darDeAltaComoDuena(url, personal, {
     rfc,
     razonSocial: razon,
     codigoPostal: "06600",

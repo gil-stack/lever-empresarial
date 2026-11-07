@@ -3,11 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { leerListaBloqueadas } from "@/dominio/operacion";
 import { sesionSegura } from "@/server/entrada";
 import {
   agregarAccionista,
   agregarRepresentante,
+  archivoDeDocumento,
   calificarRiesgoEmpresa,
   cambiarRolPersonal,
   cargarDocumento,
@@ -18,6 +18,7 @@ import {
   enviarVersion,
   exigirContextoOperacion,
   guardarDatosGenerales,
+  leerArchivoDeLista,
   registrarReporte,
   resolverCoincidencia,
   retirarDelBorrador,
@@ -51,9 +52,6 @@ const CAMPOS_DATOS = [
   "fechaConstitucion",
   "volumenMensualCentavos",
 ] as const;
-
-/** La lista más grande que se acepta: 50 000 renglones de unos 100 caracteres. */
-const LIMITE_CSV = 6 * 1024 * 1024;
 
 function expediente(companyId: string): string {
   return `/operacion/clientes/${encodeURIComponent(companyId)}/expediente`;
@@ -149,11 +147,9 @@ export async function retirarDelBorradorAccion(formData: FormData): Promise<void
 export async function cargarDocumentoAccion(formData: FormData): Promise<void> {
   const ctx = await exigirContextoOperacion();
   const companyId = texto(formData, "companyId");
-  const archivo = formData.get("archivo");
   try {
-    // Un campo de archivo vacío llega como File sin nombre ni bytes: es «falta el archivo», no un PDF.
-    const subido =
-      archivo instanceof File && archivo.size > 0 ? { nombre: archivo.name, bytes: new Uint8Array(await archivo.arrayBuffer()) } : null;
+    // El rol y el tope se revisan antes de leer el archivo.
+    const subido = await archivoDeDocumento(ctx, formData.get("archivo"));
     await cargarDocumento(
       ctx,
       {
@@ -250,19 +246,20 @@ export async function decidirSuspensionAccion(formData: FormData): Promise<void>
 
 export async function cargarListaAccion(formData: FormData): Promise<void> {
   const ctx = await exigirContextoOperacion();
-  const archivo = formData.get("archivo");
-  if (!(archivo instanceof File) || archivo.size === 0) redirect("/operacion/lpb?aviso=lpb_vacia");
-  if (archivo.size > LIMITE_CSV) redirect("/operacion/lpb?aviso=lpb_demasiado_grande");
-  const contenido = await archivo.text();
-  // La línea del renglón malo ayuda a corregir el archivo; el servidor vuelve a leerlo completo.
-  const lectura = leerListaBloqueadas(contenido);
-  if (!lectura.ok) {
-    const linea = "linea" in lectura ? `&linea=${lectura.linea}` : "";
-    redirect(`/operacion/lpb?aviso=${encodeURIComponent(lectura.codigo)}${linea}`);
+  // El rol se revisa antes de leer el archivo. La línea del renglón malo ayuda a corregirlo.
+  let archivo: Awaited<ReturnType<typeof leerArchivoDeLista>>;
+  try {
+    archivo = await leerArchivoDeLista(ctx, formData.get("archivo"));
+  } catch (error) {
+    return fallo(error, "/operacion/lpb");
+  }
+  if (!archivo.ok) {
+    const linea = archivo.linea !== undefined ? `&linea=${archivo.linea}` : "";
+    redirect(`/operacion/lpb?aviso=${encodeURIComponent(archivo.codigo)}${linea}`);
   }
   let resultado: Awaited<ReturnType<typeof cargarListaBloqueadas>>;
   try {
-    resultado = await cargarListaBloqueadas(ctx, { formId: formData.get("formId"), nombreArchivo: archivo.name, texto: contenido });
+    resultado = await cargarListaBloqueadas(ctx, { formId: formData.get("formId"), nombreArchivo: archivo.nombre, texto: archivo.texto });
   } catch (error) {
     return fallo(error, "/operacion/lpb");
   }

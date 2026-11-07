@@ -53,6 +53,8 @@ export async function invitarPrimerAdministrador(
     ]);
     const fila = empresa.rows[0] as { razon_social?: unknown; estado?: unknown } | undefined;
     if (!fila) throw new ErrorDeDominio("cliente_ausente");
+    // Desde una ficha abierta antes de la suspensión, el aviso dice el motivo real.
+    if (fila.estado === "suspendida") throw new ErrorDeDominio("empresa_suspendida");
     if (fila.estado !== "activa") throw new ErrorDeDominio("cliente_no_activo");
     const ultima = await consulta.query(
       "select id, emitida_en from invitations where company_id = $1 order by emitida_en desc, id desc limit 1",

@@ -5,7 +5,9 @@ import { useActionState, useEffect, useRef, useState, type FormEvent, type React
 import { enviarProveedor } from "@/app/consola/proveedores/acciones";
 import { FRASE_INSTITUCION_PENDIENTE, institucionTradicional } from "@/dominio/clabe-proveedor";
 import { clabeValida, clabeVisible } from "@/dominio/clabe";
+import { TOPE_ARCHIVO_BYTES } from "@/dominio/archivos";
 import {
+  CONSTANCIA_Y_CONTRATO,
   erroresDeAltaProveedor,
   ESTADO_ALTA_INICIAL,
   MENSAJE_RECHAZO,
@@ -57,9 +59,13 @@ export function FormularioProveedor({ areas = [] }: { areas?: readonly { id: str
     : null;
 
   function alEnviar(event: FormEvent<HTMLFormElement>) {
-    const entrada = new FormData(event.currentTarget).get("constancia");
-    const archivo = metaDe(entrada);
+    const datos = new FormData(event.currentTarget);
+    const archivo = metaDe(datos.get("constancia"));
     const encontrados = erroresDeAltaProveedor({ rfc, razonSocial, clabe, archivo });
+    // Constancia y contrato viajan juntos: el tope es de los dos.
+    if (encontrados.length === 0 && (archivo?.peso ?? 0) + (metaDe(datos.get("contrato"))?.peso ?? 0) > TOPE_ARCHIVO_BYTES) {
+      encontrados.push({ campo: "contrato", mensaje: CONSTANCIA_Y_CONTRATO });
+    }
     if (encontrados.length > 0) {
       event.preventDefault();
       setLocal(encontrados);

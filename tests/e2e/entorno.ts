@@ -4,12 +4,12 @@ import { createWriteStream, mkdirSync, readdirSync, writeFileSync } from "node:f
 import { join } from "node:path";
 import { Client } from "pg";
 
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena";
 import { iniciarBlobLocal, type BlobLocal } from "./blob-local/servidor";
 import { sembrarRecorridos } from "./siembra";
 
 import { hoyEnMexico } from "../../src/dominio/personas";
 import { cerrarConexion } from "../../src/nucleo/db";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio";
 import { contextoDePersonal, invitarAdministrador } from "../../src/server/plataforma/servicio";
 import { aplicarArchivo, ejecutar, urlDeAplicacion } from "../aislamiento/postgres";
@@ -81,7 +81,7 @@ export async function iniciarEntorno(): Promise<void> {
         values ((select id from operators order by alta_en limit 1), '99999999-9999-4999-8999-999999999999', 'administracion_plataforma');
     `);
     const personal = await contextoDePersonal("personal-e2e@ejemplo.mx");
-    const empresa = await darDeAltaEmpresa(personal, {
+    const empresa = await darDeAltaComoDuena(owner, personal, {
       rfc: "TCM010101AB1",
       razonSocial: "Empresa Personas E2E",
       codigoPostal: "06600",

@@ -2,23 +2,30 @@ import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
 import { conContexto } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import type { EventoBitacora } from "./tipos";
-import { exigirEnOperacion } from "./permisos";
+import { exigirEnOperacion, puedeEnOperacion } from "./permisos";
 
-/** Proyección de solo lectura: no incluye cambio JSON ni material de autenticación. */
+/**
+ * Proyección de solo lectura: no incluye cambio JSON ni material de autenticación. El motivo de
+ * los eventos de la lista y del dictamen lo escribe Cumplimiento y puede traer nombres y el
+ * porqué: solo lo leen Cumplimiento y Auditoría. Administración ve que pasó, no por qué.
+ */
 export async function leerBitacora(ctx: ContextoDePersonal, companyId?: string): Promise<EventoBitacora[]> {
   exigirEnOperacion(ctx, "plataforma.bitacora.ver");
+  const veMotivosDeCumplimiento = puedeEnOperacion(ctx, "plataforma.cumplimiento.bandeja");
   const resultado = await conContexto(basePlataforma(ctx), (consulta) =>
     consulta.query(
       `select a.id, a.company_id, c.razon_social,
         coalesce(u.nombre, case a.actor_tipo when 'sistema' then 'Sistema' else 'Aviso externo' end) as actor,
-        a.accion, a.entidad, a.identificador, a.motivo, a.ocurrido_en
+        a.accion, a.entidad, a.identificador,
+        case when $2 or not (a.accion like 'lpb\\_%' or a.accion = 'expediente_dictaminado') then a.motivo end as motivo,
+        a.ocurrido_en
        from audit_log a
        left join companies c on c.id = a.company_id
        left join users u on u.id = a.actor_id
        where ($1::uuid is null or a.company_id = $1)
        order by a.ocurrido_en desc, a.id desc
        limit 400`,
-      [companyId ?? null],
+      [companyId ?? null, veMotivosDeCumplimiento],
     ),
   );
   return (resultado.rows as Array<Record<string, unknown>>).map((fila) => ({

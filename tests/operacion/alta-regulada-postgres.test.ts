@@ -8,24 +8,38 @@ import { fileURLToPath } from "node:url";
 
 import pg from "pg";
 
+import { TOPE_ARCHIVO_BYTES } from "../../src/dominio/archivos.ts";
 import { hoyEnMexico } from "../../src/dominio/operacion/comisiones.ts";
 import { sumarMeses } from "../../src/dominio/operacion/riesgo.ts";
 import { capacidadesDe, type RolCliente } from "../../src/nucleo/capacidades.ts";
 import type { ContextoDeTenant } from "../../src/nucleo/contexto.ts";
 import { cerrarConexion } from "../../src/nucleo/db.ts";
 import { decidirActivacion, solicitarActivacion } from "../../src/server/operacion/activaciones.ts";
+import { leerBitacora } from "../../src/server/operacion/bitacora.ts";
 import { leerCliente, registrarProspecto } from "../../src/server/operacion/clientes.ts";
 import { leerBandejaCumplimiento } from "../../src/server/operacion/cumplimiento.ts";
 import {
+  agregarAccionista,
+  agregarRepresentante,
+  archivoDeDocumento,
   calificarRiesgoEmpresa,
+  cargarDocumento,
   crearVersion,
   dictaminarVersion,
   enviarVersion,
   leerExpediente,
   prepararDescargaDocumento,
+  retirarDelBorrador,
 } from "../../src/server/operacion/expediente.ts";
 import { invitarPrimerAdministrador } from "../../src/server/operacion/invitaciones.ts";
-import { cargarListaBloqueadas, listarCoincidencias, registrarReporte, resolverCoincidencia } from "../../src/server/operacion/lpb.ts";
+import {
+  cargarListaBloqueadas,
+  enRevisionDeCumplimiento,
+  leerArchivoDeLista,
+  listarCoincidencias,
+  registrarReporte,
+  resolverCoincidencia,
+} from "../../src/server/operacion/lpb.ts";
 import { cambiarRolPersonal } from "../../src/server/operacion/personal.ts";
 import { decidirCambioDeSuspension, solicitarCambioDeSuspension } from "../../src/server/operacion/suspensiones.ts";
 import { crearPagoProveedor, resolverPagoProveedor } from "../../src/server/pagos-proveedores/servicio.ts";
@@ -53,6 +67,8 @@ const CUM = "a0000000-0000-4000-8000-000000000004";
 const AUD = "a0000000-0000-4000-8000-000000000005";
 const MIXTO = "a0000000-0000-4000-8000-000000000006";
 const NUEVO = "a0000000-0000-4000-8000-000000000007";
+// Persona que entra al personal en la prueba de carreras.
+const RITA = "a0000000-0000-4000-8000-00000000000a";
 // Personal de otro operador: no ve nada del primero.
 const AJENA = "a0000000-0000-4000-8000-000000000009";
 // Personas del portal de Beta.
@@ -60,6 +76,7 @@ const LUIS = "b0000000-0000-4000-8000-000000000001";
 const ROSA = "b0000000-0000-4000-8000-000000000002";
 const PROVEEDOR_LPB = "c0000000-0000-4000-8000-000000000001";
 const PROVEEDOR_LIMPIO = "c0000000-0000-4000-8000-000000000002";
+const PROVEEDOR_TRES = "c0000000-0000-4000-8000-000000000003";
 const COPIA_69B = "d0000000-0000-4000-8000-000000000001";
 const CLABE = "002180701150123452";
 
@@ -118,11 +135,14 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
       const hoy = hoyEnMexico(new Date());
       const sofipo = <T>(userId: string, fn: (c: pg.Client) => Promise<T>, op = operador) =>
         como(urlApp, "plataforma_sofipo", { userId, operadorId: op }, fn);
-      const evento = (c: pg.Client, userId: string, accion: string, entidad: string, identificador: string, companyId: string | null = null) =>
+      const evento = (
+        c: pg.Client, userId: string, accion: string, entidad: string, identificador: string, companyId: string | null = null,
+        cambio: Record<string, string> | null = null,
+      ) =>
         c.query(
-          `insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, origen)
-           values ($1, $2, 'personal', $3, 'sofipo', $4, $5, $6, 'operacion')`,
-          [operador, companyId, userId, accion, entidad, identificador],
+          `insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, origen, cambio)
+           values ($1, $2, 'personal', $3, 'sofipo', $4, $5, $6, 'operacion', $7)`,
+          [operador, companyId, userId, accion, entidad, identificador, cambio ? JSON.stringify(cambio) : null],
         );
       const contar = async (sql: string, params: unknown[] = []) => Number((await dueno.query(sql, params)).rows[0].n);
       const prospecto = (rfc: string, razonSocial: string) =>
@@ -147,11 +167,11 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
 
           // SQL directo: la base repite cada regla aunque alguien se salte el servicio.
           await assert.rejects(sofipo(CUM, async (c) => {
-            await evento(c, CUM, "rol_personal_asignado", "platform_staff_roles", NUEVO);
+            await evento(c, CUM, "rol_personal_asignado", "platform_staff_roles", NUEVO, null, { rol: "originacion" });
             await c.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'originacion')", [operador, NUEVO]);
           }), /sin_permiso_roles/);
           await assert.rejects(sofipo(ADM, async (c) => {
-            await evento(c, ADM, "rol_personal_asignado", "platform_staff_roles", ADM);
+            await evento(c, ADM, "rol_personal_asignado", "platform_staff_roles", ADM, null, { rol: "auditoria" });
             await c.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'auditoria')", [operador, ADM]);
           }), /rol_propio/);
           // Sin su evento en la misma transacción, la asignación no se guarda (trigger diferido, corre con el rol del portal).
@@ -163,7 +183,7 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           // Dos asignaciones incompatibles a la vez: el candado por persona deja pasar una sola.
           const dos = await Promise.allSettled(["cumplimiento", "auditoria"].map((rol) =>
             sofipo(ADM, async (c) => {
-              await evento(c, ADM, "rol_personal_asignado", "platform_staff_roles", NUEVO);
+              await evento(c, ADM, "rol_personal_asignado", "platform_staff_roles", NUEVO, null, { rol });
               await c.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, $3)", [operador, NUEVO, rol]);
             }),
           ));
@@ -498,7 +518,7 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           assert.equal(await contar("select count(*)::int as n from membership_roles where company_id = $1 and rol = 'finanzas'", [beta]), 0);
           await assert.rejects(
             invitarPrimerAdministrador(adm, { companyId: beta, nombre: "Admin Beta", correo: "admin-beta@ejemplo.mx", vista: "" }, { produccion: false }),
-            /cliente_no_activo/,
+            /empresa_suspendida/,
           );
           // Y si alguien se salta el servicio, la base tampoco emite la invitación.
           await assert.rejects(sofipo(ADM, (c) => c.query("insert into invitations (id, company_id) values ($1, $2)", [randomUUID(), beta])), /empresa_suspendida/);
@@ -546,16 +566,21 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           assert.equal(await contar("select count(*)::int as n from audit_log where accion = 'expediente_consultado' and actor_id = $1", [AUD]), antes + 1);
 
           const documento = String((await dueno.query("select id from kyb_documentos where company_id = $1 and tipo = 'acta_constitutiva' limit 1", [alfa])).rows[0].id);
-          const descarga = await prepararDescargaDocumento(aud, documento);
+          const descarga = await prepararDescargaDocumento(aud, alfa, documento);
           assert.match(descarga.clave, new RegExp(`^expedientes/${alfa}/`));
           assert.ok(almacen.guardados.has(descarga.clave));
-          assert.equal(await contar(
+          const descargas = () => contar(
             "select count(*)::int as n from audit_log where accion = 'expediente_documento_descargado' and identificador = $1 and actor_id = $2",
             [documento, AUD],
-          ), 1);
-          await assert.rejects(prepararDescargaDocumento(adm, documento), /sin_permiso_operacion/);
-          await assert.rejects(sofipo(ADM, (c) => c.query("select * from kyb_documento_para_descarga($1, null)", [documento])), /sin_permiso_expediente/);
-          await assert.rejects(sofipo(AJENA, (c) => c.query("select * from kyb_documento_para_descarga($1, null)", [documento]), otroOperador), /documento_no_existe|sin_permiso_expediente/);
+          );
+          assert.equal(await descargas(), 1);
+          // F3: con otra empresa en la dirección no hay archivo ni evento.
+          await assert.rejects(prepararDescargaDocumento(aud, beta, documento), /documento_no_existe/);
+          await assert.rejects(sofipo(AUD, (c) => c.query("select * from kyb_documento_para_descarga($1, $2, null)", [documento, beta])), /documento_no_existe/);
+          assert.equal(await descargas(), 1);
+          await assert.rejects(prepararDescargaDocumento(adm, alfa, documento), /sin_permiso_operacion/);
+          await assert.rejects(sofipo(ADM, (c) => c.query("select * from kyb_documento_para_descarga($1, $2, null)", [documento, alfa])), /sin_permiso_expediente/);
+          await assert.rejects(sofipo(AJENA, (c) => c.query("select * from kyb_documento_para_descarga($1, $2, null)", [documento, alfa]), otroOperador), /documento_no_existe|sin_permiso_expediente/);
 
           assert.deepEqual(almacen.borrados, []);
         });
@@ -595,7 +620,9 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
             "select motivo, cambio, superficie, actor_id from audit_log where accion = 'rol_personal_asignado' and identificador = $1 and origen = 'comando'",
             [ADM],
           )).rows[0];
-          assert.deepEqual(fila, { motivo, cambio: { rol: "aprobacion" }, superficie: "sistema", actor_id: null });
+          // F7: quién corrió el comando lo dice la base (session_user), no el motivo escrito a mano.
+          const sesionDuena = String((await dueno.query("select session_user as s")).rows[0].s);
+          assert.deepEqual(fila, { motivo, cambio: { rol: "aprobacion", ejecutado_por: sesionDuena }, superficie: "sistema", actor_id: null });
 
           // Repetirlo no duplica el rol ni el evento.
           const repetido = comando("--correo", correoAdm, "--rol", "aprobacion", "--motivo", motivo);
@@ -630,6 +657,563 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           });
           assert.equal(agrupada.status, 1);
           assert.match(agrupada.stderr, /connection string agrupado/);
+        });
+
+        // ---------- Regresiones de la revisión adversarial del PR (H1-H12, F4-F9) ----------
+        const depsPagos = { almacen: almacenEnMemoria(), ahora: () => new Date() };
+        const luis = cliente(LUIS, ["administrador", "liberador"], beta, operador);
+        const rosa = cliente(ROSA, ["liberador"], beta, operador);
+        const sesionCliente = { superficie: "cliente" as const, segundoFactor: { metodo: "totp" as const, en: new Date() } };
+        const portal = <T>(fn: (c: pg.Client) => Promise<T>) => como(urlApp, "plataforma_cliente", { userId: ROSA, companyId: beta }, fn);
+        // La solicitud de pago más reciente de un proveedor de Beta y los regresos que dejó el sistema.
+        const solicitud = async (supplierId: string) => (await dueno.query(
+          `select r.id, r.estado, r.version, r.total_centavos::int as total from supplier_payment_requests r
+           join supplier_payables p on p.company_id = r.company_id and p.id = r.payable_id
+           where r.company_id = $1 and p.supplier_id = $2 order by r.creado_en desc limit 1`,
+          [beta, supplierId],
+        )).rows[0] as { id: string; estado: string; version: number; total: number };
+        const regresos = async (id: string) => (await dueno.query(
+          "select actor_tipo, motivo from audit_log where accion = 'regresar_pago_proveedor' and identificador = $1 order by ocurrido_en",
+          [id],
+        )).rows;
+        // Cada carga cambia la fecha: el mismo archivo no se carga dos veces (lpb_ya_cargada).
+        const lista = (fecha: string, ...extra: string[]) => [
+          "nombre,rfc,curp,tipo,fecha",
+          `PEDRO RUIZ SOL,,,fisica,${fecha}`,
+          `Proveedor Bloqueado SA,PBL101010AB1,,moral,${fecha}`,
+          `Proveedor Tres SA,TRE101010AB3,,moral,${fecha}`,
+          ...extra.map((renglon) => `${renglon},${fecha}`),
+        ].join("\n");
+        const BETA_EN_LISTA = "Beta Logística SA de CV,BET150301AB2,,moral";
+        const cargar = (texto: string) => cargarListaBloqueadas(cum, { formId: randomUUID(), nombreArchivo: "lpb.csv", texto });
+        // Una transacción en REPEATABLE READ que toma su foto al abrir, como una conexión que decide con datos viejos.
+        const abrirRepetible = async (userId: string): Promise<pg.Client> => {
+          const c = new pg.Client({ connectionString: urlApp });
+          await c.connect();
+          await c.query("begin isolation level repeatable read");
+          await c.query("set local role plataforma_sofipo");
+          await c.query("select set_config('app.user_id', $1, true), set_config('app.operator_id', $2, true)", [userId, operador]);
+          return c;
+        };
+        const cerrar = async (c: pg.Client) => {
+          await c.query("rollback").catch(() => undefined);
+          await c.end();
+        };
+
+        await t.test("H1: desde la aplicación una empresa solo nace prospecto y real", async () => {
+          // Con su evento de alta en la misma transacción, como lo intentaría alguien que se salta el servicio.
+          const directa = (userId: string, estado: string, demostracion: boolean) => sofipo(userId, async (c) => {
+            const id = randomUUID();
+            await c.query(
+              `insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, alta_at, operator_id, estado, demostracion, originada_por)
+               values ($1, 'DIR150301AB9', 'Directa SA de CV', '06600', '601', 'G03', now(), $2, $3, $4, $5)`,
+              [id, operador, estado, demostracion, userId],
+            );
+            await evento(c, userId, "alta_empresa", "companies", id, id);
+          });
+          for (const userId of [ORI, ADM]) {
+            for (const [estado, demostracion] of [["activa", false], ["en_alta", false], ["suspendida", false], ["baja", false], ["prospecto", true]] as const) {
+              await assert.rejects(directa(userId, estado, demostracion), /empresa_nace_prospecto/, `${userId} ${estado} ${demostracion}`);
+            }
+          }
+          assert.equal(await contar("select count(*)::int as n from companies where rfc = 'DIR150301AB9'"), 0);
+        });
+
+        await t.test("H12: lo autorizado regresa a «por autorizar» al suspender o cuando la contraparte entra a la lista", async () => {
+          const limpio = await solicitud(PROVEEDOR_LIMPIO);
+          assert.equal(limpio.estado, "listo_para_pagar");
+          const suspender = randomUUID();
+          await solicitarCambioDeSuspension(ori, { companyId: beta, formId: suspender, tipo: "suspension", motivo: "Revisión de operaciones del trimestre" });
+          await decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: suspender, aprobada: true, motivo: "" });
+          assert.deepEqual(await solicitud(PROVEEDOR_LIMPIO), { ...limpio, estado: "por_autorizar", version: limpio.version + 1 });
+          assert.deepEqual(await regresos(limpio.id), [{ actor_tipo: "sistema", motivo: "La empresa quedó suspendida. La autorización anterior se retiró." }]);
+          const otraVez = { requestId: limpio.id, decision: "autorizar" as const, version: limpio.version + 1, totalCentavos: limpio.total };
+          await assert.rejects(resolverPagoProveedor(rosa, sesionCliente, otraVez, depsPagos), /empresa_suspendida/);
+          // Tras reactivar, el liberador lo vuelve a autorizar sobre la versión nueva.
+          const reactivar = randomUUID();
+          await solicitarCambioDeSuspension(cum, { companyId: beta, formId: reactivar, tipo: "reactivacion", motivo: "Revisión concluida sin hallazgos" });
+          await decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: reactivar, aprobada: true, motivo: "" });
+          await resolverPagoProveedor(rosa, sesionCliente, otraVez, depsPagos);
+          assert.equal((await solicitud(PROVEEDOR_LIMPIO)).estado, "listo_para_pagar");
+
+          // Si la contraparte entra a la lista, regresa solo lo de ese proveedor y la empresa sigue activa.
+          await dueno.query("begin");
+          try {
+            await sembrarProveedor(dueno, beta, operador, PROVEEDOR_TRES, "TRE101010AB3", "Proveedor Tres SA");
+            await dueno.query("commit");
+          } catch (error) {
+            await dueno.query("rollback");
+            throw error;
+          }
+          const tres = await crearPagoProveedor(luis, {
+            clientRequestId: randomUUID(), supplierId: PROVEEDOR_TRES, origen: "excepcion", pdf: { nombre: "soporte.pdf", bytes: PDF },
+            monto: "3,000.00", referencia: "Servicio de prueba", emitidaEl: hoy, venceEl: sumarMeses(hoy, 1), programadaEl: sumarMeses(hoy, 1),
+            motivoExcepcion: "Servicio urgente autorizado por dirección",
+          }, depsPagos);
+          await resolverPagoProveedor(rosa, sesionCliente, { requestId: tres.requestId, decision: "autorizar", version: 1, totalCentavos: 300000 }, depsPagos);
+          const autorizado = await solicitud(PROVEEDOR_TRES);
+          assert.equal(autorizado.estado, "listo_para_pagar");
+          await cargar(lista("2026-10-20"));
+          assert.deepEqual(await solicitud(PROVEEDOR_TRES), { ...autorizado, estado: "por_autorizar", version: autorizado.version + 1 });
+          assert.deepEqual(await regresos(tres.requestId), [
+            { actor_tipo: "sistema", motivo: "Este pago quedó detenido para revisión de cumplimiento. La autorización anterior se retiró." },
+          ]);
+          assert.equal((await solicitud(PROVEEDOR_LIMPIO)).estado, "listo_para_pagar");
+          assert.equal((await leerCliente(ori, beta))?.estado, "activa");
+          await assert.rejects(resolverPagoProveedor(rosa, sesionCliente, {
+            requestId: tres.requestId, decision: "autorizar", version: autorizado.version + 1, totalCentavos: 300000,
+          }, depsPagos), /pago_bloqueado_lpb/);
+        });
+
+        await t.test("H3 y H6: un caso cerrado se reabre con una carga nueva y no con la misma; la reactivación con foto vieja aborta", async () => {
+          const casos = async () => (await dueno.query(
+            "select id, estado from lpb_coincidencias where company_id = $1 and sujeto_tipo = 'empresa' and coincide_por = 'rfc' order by detectada_en",
+            [beta],
+          )).rows as Array<{ id: string; estado: string }>;
+          const estadoBeta = async () => (await leerCliente(ori, beta))?.estado;
+
+          // Escenario A: fuera de lista y de vuelta en una carga posterior → caso nuevo y suspensión inmediata.
+          await cargar(lista("2026-10-21", BETA_EN_LISTA));
+          assert.equal(await estadoBeta(), "suspendida");
+          const [primero] = await casos();
+          assert.equal(primero?.estado, "pendiente");
+          await cargar(lista("2026-10-22"));
+          await resolverCoincidencia(cum, SESION_SOFIPO, { id: primero!.id, estado: "fuera_de_lista", motivo: "Ya no aparece en la lista del 22 de octubre" });
+          const reactivar = randomUUID();
+          await solicitarCambioDeSuspension(cum, { companyId: beta, formId: reactivar, tipo: "reactivacion", motivo: "La empresa salió de la lista" });
+          await decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: reactivar, aprobada: true, motivo: "" });
+          assert.equal(await estadoBeta(), "activa");
+          await cargar(lista("2026-10-23", BETA_EN_LISTA));
+          assert.deepEqual((await casos()).map((k) => k.estado), ["fuera_de_lista", "pendiente"]);
+          assert.equal(await estadoBeta(), "suspendida");
+          assert.equal(await contar("select count(*)::int as n from company_suspensions where company_id = $1 and origen = 'lpb'", [beta]), 2);
+          // Con el caso abierto no sale nómina ni pago.
+          await assert.rejects(portal((c) => c.query("insert into payroll_batches (id, company_id) values ($1, $2)", [randomUUID(), beta])), /empresa_suspendida/);
+          const limpio = await solicitud(PROVEEDOR_LIMPIO);
+          assert.equal(limpio.estado, "por_autorizar");
+          await assert.rejects(resolverPagoProveedor(rosa, sesionCliente, {
+            requestId: limpio.id, decision: "autorizar", version: limpio.version, totalCentavos: limpio.total,
+          }, depsPagos), /empresa_suspendida/);
+
+          // Escenario B: falso positivo exacto. Con la misma carga no se reabre.
+          const segundo = (await casos())[1]!;
+          await resolverCoincidencia(cum, SESION_SOFIPO, { id: segundo.id, estado: "falso_positivo", motivo: "El RFC de la lista es de otra persona moral" });
+          assert.equal(Number((await dueno.query("select lpb_cotejar_empresa($1) as n", [beta])).rows[0].n), 0);
+          assert.equal((await casos()).length, 2);
+
+          // H6: Aprobación decide la reactivación con su foto de antes del cotejo de una carga nueva: la base la aborta.
+          const pedida = randomUUID();
+          await solicitarCambioDeSuspension(cum, { companyId: beta, formId: pedida, tipo: "reactivacion", motivo: "Dictamen de falso positivo" });
+          const vieja = await abrirRepetible(APR);
+          try {
+            await vieja.query("select count(*) from lpb_coincidencias where company_id = $1", [beta]);
+            await cargar(lista("2026-10-24", BETA_EN_LISTA));
+            // La decisión misma escribe la fila de la empresa antes de leer los casos abiertos: ahí aborta.
+            await assert.rejects(
+              vieja.query("update company_suspensions set estado = 'aprobada', decidida_por = $2, decidida_en = now() where id = $1", [pedida, APR]),
+              /could not serialize/,
+            );
+          } finally {
+            await cerrar(vieja);
+          }
+          // Con una carga nueva el falso positivo exacto sí se reabre.
+          assert.deepEqual((await casos()).map((k) => k.estado), ["fuera_de_lista", "falso_positivo", "pendiente"]);
+          assert.equal(await estadoBeta(), "suspendida");
+          await assert.rejects(decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: pedida, aprobada: true, motivo: "" }), /reactivacion_con_coincidencia_lpb/);
+          await decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: pedida, aprobada: false, motivo: "Volvió a aparecer en la lista del 24 de octubre" });
+
+          // Una posible por nombre descartada como falso positivo no se reabre, aunque el nombre siga en cada carga.
+          assert.equal(await contar(
+            "select count(*)::int as n from lpb_coincidencias where company_id = $1 and coincide_por = 'nombre' and valor_coincidente = 'PEDRO RUIZ SOL'",
+            [alfa],
+          ), 1);
+        });
+
+        await t.test("H2: solo Administración escribe el personal, la 69-B, el precio, invitaciones y membresías", async () => {
+          const intentos: Array<[string, (c: pg.Client) => Promise<unknown>]> = [
+            ["personal", (c) => c.query("update platform_staff set estado = estado where user_id = $1", [NUEVO])],
+            ["69-B", (c) => c.query("insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values ($1, current_date, now())", [randomUUID()])],
+            ["precio", (c) => c.query("update platform_pricing set suscripcion_centavos = 100000, publicado_en = now()")],
+            ["invitación", (c) => c.query("insert into invitations (id, company_id) values ($1, $2)", [randomUUID(), alfa])],
+            ["membresía", (c) => c.query("insert into memberships (user_id, company_id, estado) values ($1, $2, 'activa')", [LUIS, alfa])],
+          ];
+          for (const userId of [ORI, APR, CUM, AUD]) {
+            for (const [que, intento] of intentos) await assert.rejects(sofipo(userId, intento), /sin_rol_de_administracion/, `${userId}: ${que}`);
+          }
+          // Nadie cambia su propio registro del personal, tampoco Administración; a otra persona, Administración sí.
+          for (const userId of [ADM, AUD]) {
+            await assert.rejects(sofipo(userId, (c) => c.query("update platform_staff set estado = estado where user_id = $1", [userId])), /personal_propio/);
+          }
+          await sofipo(ADM, (c) => c.query("update platform_staff set estado = estado where user_id = $1", [NUEVO]));
+          assert.equal(await contar("select count(*)::int as n from memberships where company_id = $1", [alfa]), 0);
+
+          // La 69-B que carga Administración de otro operador solo coteja a sus empresas: Alfa no se suspende.
+          await dueno.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'administracion_plataforma')", [otroOperador, AJENA]);
+          const copiaAjena = randomUUID();
+          await sofipo(AJENA, async (c) => {
+            await c.query("insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values ($1, current_date, now())", [copiaAjena]);
+            await c.query("insert into lista_69b_rows (snapshot_id, rfc, situacion) values ($1, 'ALF150301AB1', 'Definitivo')", [copiaAjena]);
+            await c.query(
+              `insert into audit_log (operator_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, origen)
+               values ($1, 'personal', $2, 'sofipo', 'cargar_lista_69b', 'lista_69b_snapshots', $3, 'operacion')`,
+              [otroOperador, AJENA, copiaAjena],
+            );
+          }, otroOperador);
+          assert.equal((await leerCliente(ori, alfa))?.estado, "activa");
+          assert.equal(await contar("select count(*)::int as n from lpb_coincidencias where snapshot_69b_id = $1", [copiaAjena]), 0);
+          // Una copia limpia de Administración del operador vuelve a ser la vigente para lo que sigue.
+          const copiaLimpia = randomUUID();
+          await sofipo(ADM, async (c) => {
+            await c.query("insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values ($1, current_date, now())", [copiaLimpia]);
+            await c.query("insert into lista_69b_rows (snapshot_id, rfc, situacion) values ($1, 'PAL7202161U0', 'Presunto')", [copiaLimpia]);
+            await evento(c, ADM, "cargar_lista_69b", "lista_69b_snapshots", copiaLimpia);
+          });
+          assert.equal((await leerCliente(ori, alfa))?.estado, "activa");
+          assert.equal(await contar("select count(*)::int as n from lpb_coincidencias where lista = '69b'"), 0);
+        });
+
+        let epsilon = "";
+        let epsilonV1 = "";
+        await t.test("H6, H7 y H8: la 50ª con foto vieja aborta, sin usuario solo nace Administración y un evento por cosa", async () => {
+          // H7: sin usuario solo se da Administración a quien nace invitado en esta misma transacción,
+          // aunque traiga el evento del alta del sistema.
+          const sinUsuario = <T>(fn: (c: pg.Client) => Promise<T>) => como(urlApp, "plataforma_sofipo", { userId: "", operadorId: operador }, fn);
+          const altaDelSistema = (c: pg.Client, userId: string) => c.query(
+            `insert into audit_log (operator_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, origen, cambio)
+             values ($1, 'sistema', null, 'sistema', 'alta_personal', 'platform_staff', $2, 'operacion', '{"rol": "administracion_plataforma"}')`,
+            [operador, userId],
+          );
+          await assert.rejects(sinUsuario(async (c) => {
+            await altaDelSistema(c, NUEVO);
+            await c.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'administracion_plataforma')", [operador, NUEVO]);
+          }), /sin_permiso_roles/);
+          await dueno.query("insert into users (id, nombre, correo) values ($1, 'Rita Rápida', $2)", [RITA, `${RITA}@ejemplo.mx`]);
+          await assert.rejects(sinUsuario(async (c) => {
+            await c.query("insert into platform_staff (operator_id, user_id, estado) values ($1, $2, 'activo')", [operador, RITA]);
+            await altaDelSistema(c, RITA);
+            await c.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'administracion_plataforma')", [operador, RITA]);
+          }), /sin_permiso_roles/);
+          assert.equal(await contar(
+            "select count(*)::int as n from platform_staff_roles where user_id in ($1, $2) and rol = 'administracion_plataforma'",
+            [NUEVO, RITA],
+          ), 0);
+
+          // H8: el evento del alta solo cubre a quien nace en esta transacción; cada rol lleva el suyo, con su entidad.
+          const asignar = (eventos: Array<[string, string, string]>, roles: string[]) => sofipo(ADM, async (c) => {
+            for (const [accion, entidad, rol] of eventos) await evento(c, ADM, accion, entidad, NUEVO, null, { rol });
+            for (const rol of roles) await c.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, $3)", [operador, NUEVO, rol]);
+          });
+          await assert.rejects(asignar([["alta_personal", "platform_staff", "aprobacion"]], ["aprobacion"]), /rol_personal_sin_auditoria/);
+          await assert.rejects(asignar([["rol_personal_asignado", "platform_staff_roles", "aprobacion"]], ["aprobacion", "administracion_plataforma"]), /rol_personal_sin_auditoria/);
+          await assert.rejects(asignar([["rol_personal_asignado", "platform_staff_roles", "aprobacion,administracion_plataforma"]], ["aprobacion"]), /rol_personal_sin_auditoria/);
+          await assert.rejects(asignar([["rol_personal_asignado", "platform_staff", "aprobacion"]], ["aprobacion"]), /rol_personal_sin_auditoria/);
+          assert.equal(await contar(
+            "select count(*)::int as n from platform_staff_roles where user_id = $1 and rol in ('aprobacion', 'administracion_plataforma')",
+            [NUEVO],
+          ), 0);
+
+          // H8: el evento del dictamen tiene que ser de la misma empresa y de la misma entidad.
+          epsilon = await prospecto("EPS150301AB5", "Épsilon Agro SA de CV");
+          ({ versionId: epsilonV1 } = await armarBorrador(ori, { companyId: epsilon, razonSocial: "Épsilon Agro SA de CV", rfc: "EPS150301AB5", almacen }));
+          await enviarVersion(ori, epsilonV1);
+          const dictamenConEvento = (empresaDelEvento: string, entidad: string) => sofipo(CUM, async (c) => {
+            const id = randomUUID();
+            await evento(c, CUM, "expediente_dictaminado", entidad, id, empresaDelEvento);
+            await c.query(
+              `insert into kyb_dictamenes (id, version_id, company_id, operator_id, resultado, dictaminado_por, dictaminado_en)
+               values ($1, $2, $3, $4, 'aprobado', $5, now())`,
+              [id, epsilonV1, epsilon, operador, CUM],
+            );
+          });
+          await assert.rejects(dictamenConEvento(alfa, "kyb_dictamenes"), /regulado_sin_auditoria/);
+          await assert.rejects(dictamenConEvento(epsilon, "kyb_versiones"), /regulado_sin_auditoria/);
+          assert.equal(await contar("select count(*)::int as n from kyb_dictamenes where version_id = $1", [epsilonV1]), 0);
+
+          // H6: en REPEATABLE READ la segunda asignación decide con una foto vieja de los roles: la base la aborta.
+          await dueno.query("insert into platform_staff (operator_id, user_id, estado) values ($1, $2, 'activo')", [operador, RITA]);
+          const vieja = await abrirRepetible(ADM);
+          try {
+            await vieja.query("select count(*) from platform_staff_roles where user_id = $1", [RITA]);
+            await sofipo(ADM, async (c) => {
+              await evento(c, ADM, "rol_personal_asignado", "platform_staff_roles", RITA, null, { rol: "cumplimiento" });
+              await c.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'cumplimiento')", [operador, RITA]);
+            });
+            await evento(vieja, ADM, "rol_personal_asignado", "platform_staff_roles", RITA, null, { rol: "auditoria" });
+            await assert.rejects(
+              vieja.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'auditoria')", [operador, RITA]),
+              /could not serialize/,
+            );
+          } finally {
+            await cerrar(vieja);
+          }
+          assert.deepEqual((await dueno.query("select rol from platform_staff_roles where user_id = $1", [RITA])).rows, [{ rol: "cumplimiento" }]);
+        });
+
+        await t.test("H9: las funciones del sistema no responden por otro operador ni sin contexto", async () => {
+          const responde = async (userId: string, op: string, sql: string, params: unknown[]) =>
+            (await sofipo(userId, (c) => c.query(sql, params), op)).rows[0].r as unknown;
+          const tieneRol = "select personal_tiene_rol($1, $2, array['administracion_plataforma']) as r";
+          assert.equal(await responde(ADM, operador, tieneRol, [operador, ADM]), true);
+          assert.equal(await responde(AJENA, otroOperador, tieneRol, [operador, ADM]), false);
+          assert.equal(await responde("", "", tieneRol, [operador, ADM]), false);
+          const carga = "select lpb_carga_vigente($1) as r";
+          assert.ok(await responde(CUM, operador, carga, [operador]));
+          assert.equal(await responde(AJENA, otroOperador, carga, [operador]), null);
+          assert.equal(await responde("", "", carga, [operador]), null);
+          const abiertas = "select lpb_coincidencias_abiertas($1) as r";
+          assert.equal(await responde(CUM, operador, abiertas, [beta]), true);
+          assert.equal(await responde(AJENA, otroOperador, abiertas, [beta]), false);
+          assert.equal(await responde("", "", abiertas, [beta]), false);
+          // La dueña de la base (migraciones y comandos) responde sin contexto.
+          assert.equal((await dueno.query(abiertas, [beta])).rows[0].r, true);
+        });
+
+        let ximena = "";
+        let ximenaV1 = "";
+        await t.test("H5 y H10: CURP y RFC obligatorios al enviar, suma por CURP y estructura de hasta 10 capas", async () => {
+          const enviarCon = async (rfc: string, razonSocial: string, socios: SocioDePrueba[]) => {
+            const companyId = await prospecto(rfc, razonSocial);
+            const { versionId } = await armarBorrador(ori, { companyId, razonSocial, rfc, socios, almacen });
+            return { companyId, versionId, enviar: () => enviarVersion(ori, versionId) };
+          };
+          // Ximena tiene 12.5 % directo y 87.5 % × 14.29 % por Holding Dos.
+          const caminos = (segundaCurp?: string): SocioDePrueba[] => [
+            { nombre: "Ximena Torres Paz", tipoPersona: "fisica", rfc: "TOPX800101AB4", curp: "TOPX800101MDFRZM05", capital: "12.5", votos: "12.5" },
+            {
+              nombre: "Holding Dos SA de CV", tipoPersona: "moral", rfc: "HDO100101AA2", capital: "87.5", votos: "87.5",
+              hijos: [
+                { nombre: "Yolanda Ruiz Sol", tipoPersona: "fisica", rfc: "RUSY750101AB6", curp: "RUSY750101MDFZLL06", capital: "85.71", votos: "85.71" },
+                { nombre: "Ximena Torres Paz", tipoPersona: "fisica", rfc: "TOPX800101AB4", curp: segundaCurp, capital: "14.29", votos: "14.29" },
+              ],
+            },
+          ];
+          // Con solo el RFC en el segundo camino se partía en dos y quedaba fuera de los propietarios reales.
+          await assert.rejects((await enviarCon("SCU150301AB5", "Sin Curp SA de CV", caminos())).enviar(), /expediente_accionista_sin_curp/);
+          await assert.rejects((await enviarCon("SRF150301AB6", "Sin Rfc SA de CV", [{
+            nombre: "Holding Sin RFC SA de CV", tipoPersona: "moral", capital: "100", votos: "100",
+            hijos: [{ nombre: "Laura Gómez Ruiz", tipoPersona: "fisica", rfc: "GORL750505QW1", curp: "GORL750505MDFMZR04", capital: "100", votos: "100" }],
+          }])).enviar(), /expediente_accionista_sin_rfc/);
+          // Con su CURP en los dos caminos suma 25.0038 %: propietaria real por capital.
+          const conCurp = await enviarCon("XIM150301AB7", "Ximena Inversiones SA de CV", caminos("TOPX800101MDFRZM05"));
+          await conCurp.enviar();
+          ({ companyId: ximena, versionId: ximenaV1 } = conCurp);
+          assert.deepEqual((await dueno.query(
+            "select nombre, motivo, capital_pct::text as capital, capas from kyb_beneficiarios where version_id = $1 order by nombre",
+            [ximenaV1],
+          )).rows, [
+            { nombre: "Ximena Torres Paz", motivo: "capital", capital: "25.0038", capas: 2 },
+            { nombre: "Yolanda Ruiz Sol", motivo: "control", capital: "74.9963", capas: 2 },
+          ]);
+
+          // H10: once capas (diez morales y la dueña final). Antes pasaba como completa y la dueña quedaba fuera del cálculo.
+          let cadena: SocioDePrueba[] = [
+            { nombre: "Dulce Final Nava", tipoPersona: "fisica", rfc: "FINA700101AB7", curp: "FINA700101MDFNVL07", capital: "100", votos: "100" },
+          ];
+          for (let capa = 10; capa >= 1; capa -= 1) {
+            cadena = [{ nombre: `Capa ${capa} SA de CV`, tipoPersona: "moral", rfc: `CAP1001${String(capa).padStart(2, "0")}AA1`, capital: "100", votos: "100", hijos: cadena }];
+          }
+          await assert.rejects((await enviarCon("PRF150301AB8", "Profunda SA de CV", cadena)).enviar(), /expediente_estructura_muy_profunda/);
+        });
+
+        await t.test("H11: el portal no lee en la bitácora lo de Cumplimiento; que está suspendida, sí", async () => {
+          const vistos = (await portal((c) => c.query(
+            `select count(*) filter (where entidad like 'kyb\\_%' or entidad like 'lpb\\_%' or entidad = 'company_suspensions'
+                                     or accion like 'expediente\\_%')::int as regulados,
+                    count(*)::int as total
+             from audit_log`,
+          ))).rows[0] as { regulados: number; total: number };
+          assert.equal(vistos.regulados, 0);
+          assert.ok(vistos.total > 0);
+          assert.ok(await contar(
+            `select count(*)::int as n from audit_log
+             where company_id = $1 and (entidad like 'kyb\\_%' or entidad like 'lpb\\_%' or entidad = 'company_suspensions')`,
+            [beta],
+          ) > 0);
+          assert.equal((await portal((c) => c.query("select estado from companies where id = $1", [beta]))).rows[0].estado, "suspendida");
+        });
+
+        await t.test("F4 y F5: un doble envío simultáneo deja una fila y un evento; un formulario ajeno no se da por hecho", async () => {
+          const ambos = <T>(fn: () => Promise<T>) => Promise.allSettled([fn(), fn()]);
+          const salida = (resultados: PromiseSettledResult<unknown>[]) => resultados
+            .map((r) => (r.status === "fulfilled" ? "ok" : String((r.reason as { codigo?: string }).codigo ?? r.reason)))
+            .sort();
+          const eventos = (accion: string, id: string) =>
+            contar("select count(*)::int as n from audit_log where accion = $1 and identificador = $2", [accion, id]);
+          const deAlfa = async (sql: string) => String((await dueno.query(sql, [alfaV2])).rows[0].id);
+          const repAlfa = await deAlfa("select id from kyb_representantes where version_id = $1 limit 1");
+          const socioAlfa = await deAlfa("select id from kyb_accionistas where version_id = $1 limit 1");
+          const docAlfa = await deAlfa("select documento_id as id from kyb_version_documentos where version_id = $1 limit 1");
+          const dictamenAlfa = await deAlfa("select id from kyb_dictamenes where version_id = $1");
+          const riesgoAlfa = await deAlfa("select id from kyb_calificaciones_riesgo where version_id = $1 limit 1");
+
+          // Versión: el mismo formulario en dos pestañas crea una; dos formularios distintos, una y «ya hay borrador».
+          const kappa = await prospecto("KAP150301AB9", "Kappa Textil SA de CV");
+          const kappaV1 = randomUUID();
+          assert.deepEqual(salida(await ambos(() => crearVersion(ori, { companyId: kappa, formId: kappaV1 }))), ["ok", "ok"]);
+          assert.equal(await contar("select count(*)::int as n from kyb_versiones where company_id = $1", [kappa]), 1);
+          assert.equal(await eventos("expediente_version_creada", kappaV1), 1);
+          await assert.rejects(crearVersion(ori, { companyId: kappa, formId: alfaV2 }), /expediente_ausente/);
+          const lambda = await prospecto("LAM150301AB1", "Lambda Metales SA de CV");
+          assert.deepEqual(salida(await ambos(() => crearVersion(ori, { companyId: lambda, formId: randomUUID() }))), ["expediente_con_borrador", "ok"]);
+          assert.equal(await contar("select count(*)::int as n from kyb_versiones where company_id = $1", [lambda]), 1);
+
+          // Representante, accionista y documento: una fila y un evento; con el id de otra versión, «expediente ausente».
+          const representante = (formId: string) => agregarRepresentante(ori, {
+            versionId: kappaV1, formId, nombre: "Rosa Pérez Ríos", rfc: "PERR800101AB1", curp: "PERR800101MDFRSS09",
+            cargo: "administrador_unico", esAdministrador: true, designadoPor: "Asamblea constitutiva", pep: "no",
+          });
+          const rep = randomUUID();
+          assert.deepEqual(salida(await ambos(() => representante(rep))), ["ok", "ok"]);
+          assert.equal(await contar("select count(*)::int as n from kyb_representantes where version_id = $1", [kappaV1]), 1);
+          assert.equal(await eventos("expediente_representante_agregado", rep), 1);
+          await assert.rejects(representante(repAlfa), /expediente_ausente/);
+          await assert.rejects(retirarDelBorrador(ori, { versionId: kappaV1, id: repAlfa, tipo: "representante" }), /expediente_ausente/);
+          assert.equal(await contar("select count(*)::int as n from kyb_representantes where id = $1 and retirado_en is null", [repAlfa]), 1);
+
+          const accionista = (formId: string) => agregarAccionista(ori, {
+            versionId: kappaV1, formId, padreClave: "", tipoPersona: "fisica", nombre: "Laura Gómez Ruiz", rfc: "GORL750505QW1",
+            curp: "GORL750505MDFMZR04", nacionalidad: "Mexicana", capital: "100", votos: "100", controlOtrosMedios: false, pep: "no",
+          });
+          const socio = randomUUID();
+          assert.deepEqual(salida(await ambos(() => accionista(socio))), ["ok", "ok"]);
+          assert.equal(await contar("select count(*)::int as n from kyb_accionistas where version_id = $1", [kappaV1]), 1);
+          assert.equal(await eventos("expediente_accionista_agregado", socio), 1);
+          await assert.rejects(accionista(socioAlfa), /expediente_ausente/);
+
+          const acta = (formId: string) => cargarDocumento(ori, {
+            versionId: kappaV1, formId, tipo: "acta_constitutiva", representanteClave: "", emitidoEl: "", vigenteHasta: "",
+            detalle: "Folio mercantil 777", archivo: { nombre: "acta.pdf", bytes: PDF },
+          }, { almacen });
+          const documento = randomUUID();
+          assert.deepEqual(salida(await ambos(() => acta(documento))), ["ok", "ok"]);
+          assert.equal(await contar("select count(*)::int as n from kyb_version_documentos where version_id = $1", [kappaV1]), 1);
+          assert.equal(await eventos("expediente_documento_cargado", documento), 1);
+          await assert.rejects(acta(docAlfa), /expediente_ausente/);
+
+          // Dictamen: con el id de otro dictamen no se da por hecho; el mismo formulario, uno; dos distintos, uno y «ya registrado».
+          const aprobar = (versionId: string, formId: string) =>
+            dictaminarVersion(cum, SESION_SOFIPO, { versionId, formId, resultado: "aprobado", motivo: "" });
+          await assert.rejects(aprobar(ximenaV1, dictamenAlfa), /expediente_ausente/);
+          const dictamen = randomUUID();
+          assert.deepEqual(salida(await ambos(() => aprobar(ximenaV1, dictamen))), ["ok", "ok"]);
+          assert.equal(await contar("select count(*)::int as n from kyb_dictamenes where version_id = $1", [ximenaV1]), 1);
+          assert.equal(await eventos("expediente_dictaminado", dictamen), 1);
+          assert.deepEqual(salida(await ambos(() => aprobar(epsilonV1, randomUUID()))), ["dictamen_ya_registrado", "ok"]);
+          assert.equal(await contar("select count(*)::int as n from kyb_dictamenes where version_id = $1", [epsilonV1]), 1);
+
+          // Riesgo: con el id de la calificación de otra empresa no se da por hecho; el mismo formulario, una.
+          const calificar = (formId: string) => calificarRiesgoEmpresa(cum, { companyId: ximena, formId, actividad: "baja", zona: "baja" });
+          await assert.rejects(calificar(riesgoAlfa), /expediente_ausente/);
+          const riesgo = randomUUID();
+          assert.deepEqual(salida(await ambos(() => calificar(riesgo))), ["ok", "ok"]);
+          assert.equal(await contar("select count(*)::int as n from kyb_calificaciones_riesgo where company_id = $1", [ximena]), 1);
+          assert.equal(await eventos("riesgo_calificado", riesgo), 1);
+
+          // Lista: el mismo formulario, una carga; el mismo archivo con otro formulario, «ya cargada».
+          const carga = randomUUID();
+          const texto = lista("2026-10-25", BETA_EN_LISTA);
+          assert.deepEqual(salida(await ambos(() => cargarListaBloqueadas(cum, { formId: carga, nombreArchivo: "lpb.csv", texto }))), ["ok", "ok"]);
+          assert.equal(await eventos("lpb_cargada", carga), 1);
+          const otroTexto = lista("2026-10-26", BETA_EN_LISTA);
+          assert.deepEqual(
+            salida(await ambos(() => cargarListaBloqueadas(cum, { formId: randomUUID(), nombreArchivo: "lpb.csv", texto: otroTexto }))),
+            ["lpb_ya_cargada", "ok"],
+          );
+
+          // Suspensión: el mismo formulario, una solicitud; dos distintos, una y «ya hay una pendiente»; uno ajeno, rechazado.
+          const pedir = (formId: string) =>
+            solicitarCambioDeSuspension(ori, { companyId: alfa, formId, tipo: "suspension", motivo: "Revisión por doble envío" });
+          const suspension = randomUUID();
+          assert.deepEqual(salida(await ambos(() => pedir(suspension))), ["ok", "ok"]);
+          assert.equal(await eventos("suspension_solicitada", suspension), 1);
+          await decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: suspension, aprobada: false, motivo: "Era una prueba de doble envío" });
+          assert.deepEqual(salida(await ambos(() => pedir(randomUUID()))), ["ok", "suspension_pendiente"]);
+          const abierta = String((await dueno.query("select id from company_suspensions where company_id = $1 and estado = 'pendiente'", [alfa])).rows[0].id);
+          await decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: abierta, aprobada: false, motivo: "Era una prueba de doble envío" });
+          const deBeta = String((await dueno.query("select id from company_suspensions where company_id = $1 and origen = 'manual' limit 1", [beta])).rows[0].id);
+          await assert.rejects(pedir(deBeta), /formulario_invalido/);
+          assert.equal((await leerCliente(ori, alfa))?.estado, "activa");
+        });
+
+        await t.test("F6: el comando no adivina banderas: repetida, con valor en una de sí o no, desconocida o sin --demostracion", async () => {
+          const correr = (...args: string[]) => {
+            const salida = spawnSync(join(process.cwd(), "node_modules/.bin/tsx"), ["scripts/plataforma.ts", ...args], {
+              cwd: process.cwd(), encoding: "utf8", env: { ...process.env, DATABASE_URL: "", DATABASE_URL_UNPOOLED: urlDuena },
+            });
+            return { estado: salida.status, texto: `${salida.stdout}${salida.stderr}`.trim() };
+          };
+          const correoAdm = `${ADM}@ejemplo.mx`;
+          const motivo = "Arranque de la 0028: acta del consejo del 10 de noviembre";
+          const huella = () => contar(
+            `select (select count(*) from platform_staff_roles) + (select count(*) from companies)
+                  + (select count(*) from audit_log where accion like 'rol_personal_%' or accion = 'alta_empresa') as n`,
+          );
+          const antes = await huella();
+          const casos: Array<[string[], RegExp]> = [
+            [["personal:rol", "--correo", correoAdm, "--rol", "aprobacion", "--motivo", motivo, "--quitar", "no"], /--quitar no lleva valor/],
+            [["personal:rol", "--correo", correoAdm, "--rol", "aprobacion", "--motivo", motivo, "--motivo", "Otro motivo distinto"], /--motivo va una sola vez/],
+            [["personal:rol", "--correo", correoAdm, "--rol", "aprobacion", "--motivo", motivo, "--forzar"], /personal:rol no conoce --forzar/],
+            [
+              ["empresa:alta", "--personal", correoAdm, "--rfc", "CMD150301AB2", "--razon", "Por Comando SA", "--cp", "06600", "--regimen", "601", "--uso", "G03"],
+              /solo crea empresas de demostración/,
+            ],
+          ];
+          for (const [args, mensaje] of casos) {
+            const resultado = correr(...args);
+            assert.equal(resultado.estado, 1, resultado.texto);
+            assert.match(resultado.texto, mensaje);
+          }
+          assert.equal(await huella(), antes);
+        });
+
+        await t.test("F8: Originación y Aprobación ven «en revisión de Cumplimiento» sin detalle; Administración no lee esos motivos", async () => {
+          for (const ctx of [ori, apr, adm]) await assert.rejects(listarCoincidencias(ctx, { companyId: beta }), /sin_permiso_operacion/);
+          assert.equal(await enRevisionDeCumplimiento(ori, beta), true);
+          assert.equal(await enRevisionDeCumplimiento(apr, beta), true);
+          assert.equal(await enRevisionDeCumplimiento(ori, alfa), false);
+          assert.ok((await listarCoincidencias(aud, { companyId: beta })).length > 0);
+          const motivos = async (ctx: typeof adm) => (await leerBitacora(ctx, alfa))
+            .filter((e) => e.accion === "expediente_dictaminado" || e.accion.startsWith("lpb_"))
+            .map((e) => e.motivo)
+            .filter((m) => m !== null);
+          assert.deepEqual(await motivos(adm), []);
+          const deAuditoria = await motivos(aud);
+          assert.ok(deAuditoria.includes("Falta el poder notarial del apoderado"));
+          assert.ok(deAuditoria.includes("Homónimo: la CURP del socio es distinta"));
+        });
+
+        await t.test("F9: sin el rol no se lee el archivo; uno que pasa del tope tampoco", async () => {
+          const espiado = (contenido: BlobPart[], nombre: string) => {
+            const archivo = new File(contenido, nombre);
+            let leido = false;
+            Object.assign(archivo, {
+              arrayBuffer: async () => { leido = true; return new ArrayBuffer(0); },
+              text: async () => { leido = true; return ""; },
+            });
+            return { archivo, leido: () => leido };
+          };
+          const csv = espiado(["nombre;rfc\nx;y"], "lpb.csv");
+          await assert.rejects(leerArchivoDeLista(aud, csv.archivo), /sin_permiso_operacion/);
+          const pdf = espiado([PDF], "acta.pdf");
+          await assert.rejects(archivoDeDocumento(aud, pdf.archivo), /sin_permiso_operacion/);
+          const grande = espiado([new Uint8Array(TOPE_ARCHIVO_BYTES + 1)], "grande.pdf");
+          await assert.rejects(archivoDeDocumento(ori, grande.archivo), /archivo_demasiado_grande/);
+          const grandeCsv = espiado([new Uint8Array(TOPE_ARCHIVO_BYTES + 1)], "grande.csv");
+          assert.deepEqual(await leerArchivoDeLista(cum, grandeCsv.archivo), { ok: false, codigo: "lpb_demasiado_grande" });
+          assert.deepEqual([csv.leido(), pdf.leido(), grande.leido(), grandeCsv.leido()], [false, false, false, false]);
+          // Con el rol y dentro del tope, se lee.
+          assert.deepEqual(await archivoDeDocumento(ori, new File([PDF], "acta.pdf")), { nombre: "acta.pdf", bytes: PDF });
+        });
+
+        await t.test("H4: el nombre se compara sin orden de palabras, sin puntuación y sin letras fuera de la tabla", async () => {
+          const normal = async (nombre: string) => String((await dueno.query("select lpb_normalizar($1) as r", [nombre])).rows[0].r);
+          assert.equal(await normal("RIOS PEREZ ROSA"), await normal("Rosa Pérez Ríos"));
+          assert.equal(await normal("Grupo S.A. de C.V."), await normal("GRUPO SA DE CV"));
+          assert.equal(await normal("Søren O'Brien Ødegård"), "OBRIEN ODEGARD SOREN");
+          // En una carga, «RIOS PEREZ ROSA» es posible coincidencia con la representante Rosa Pérez Ríos.
+          await cargar(lista("2026-10-27", BETA_EN_LISTA, "RIOS PEREZ ROSA,,,fisica"));
+          const representantes = (await listarCoincidencias(cum, { companyId: beta })).filter((k) => k.sujetoTipo === "representante");
+          assert.deepEqual(representantes.map((k) => [k.sujetoNombre, k.tipo, k.coincidePor, k.estado]), [["Rosa Pérez Ríos", "posible", "nombre", "pendiente"]]);
         });
       } finally {
         await dueno.end();
@@ -703,38 +1287,41 @@ async function sembrarPortal(dueno: pg.Client, companyId: string, operadorId: st
       [PROVEEDOR_LPB, "PBL101010AB1", "Proveedor Bloqueado SA"],
       [PROVEEDOR_LIMPIO, "LIM101010AB2", "Proveedor Limpio SA"],
     ];
-    for (const [id, rfc, nombre] of proveedores) {
-      const documento = randomUUID();
-      const clabeId = randomUUID();
-      await dueno.query(
-        `insert into documents (id, company_id, clave_blob, hash_sha256, tipo, nombre_original, creado_en)
-         values ($1, $2, $3, $4, 'application/pdf', 'constancia.pdf', now())`,
-        [documento, companyId, `constancias/${id}`, "a".repeat(64)],
-      );
-      await dueno.query(
-        `insert into suppliers (id, company_id, document_id, snapshot_id, rfc, razon_social, lista_fecha, lista_leida_en, boton_pago, alta_en)
-         values ($1, $2, $3, $4, $5, $6, current_date - 1, now(), true, now())`,
-        [id, companyId, documento, COPIA_69B, rfc, nombre],
-      );
-      await dueno.query(
-        `insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
-         values ($1, $2, 'miembro', $3, 'cliente', 'alta_proveedor', 'suppliers', $4)`,
-        [operadorId, companyId, LUIS, id],
-      );
-      await dueno.query(
-        `insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde)
-         values ($1, $2, $3, $4, true, now() - interval '1 day')`,
-        [clabeId, companyId, id, CLABE],
-      );
-      await dueno.query(
-        `insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
-         values ($1, $2, 'miembro', $3, 'cliente', 'clabe_proveedor', 'supplier_clabes', $4)`,
-        [operadorId, companyId, LUIS, clabeId],
-      );
-    }
+    for (const [id, rfc, nombre] of proveedores) await sembrarProveedor(dueno, companyId, operadorId, id, rfc, nombre);
     await dueno.query("commit");
   } catch (error) {
     await dueno.query("rollback");
     throw error;
   }
+}
+
+/** Un proveedor con constancia, CLABE y sus eventos, dentro de la transacción abierta de la dueña. */
+async function sembrarProveedor(dueno: pg.Client, companyId: string, operadorId: string, id: string, rfc: string, nombre: string): Promise<void> {
+  const documento = randomUUID();
+  const clabeId = randomUUID();
+  await dueno.query(
+    `insert into documents (id, company_id, clave_blob, hash_sha256, tipo, nombre_original, creado_en)
+     values ($1, $2, $3, $4, 'application/pdf', 'constancia.pdf', now())`,
+    [documento, companyId, `constancias/${id}`, "a".repeat(64)],
+  );
+  await dueno.query(
+    `insert into suppliers (id, company_id, document_id, snapshot_id, rfc, razon_social, lista_fecha, lista_leida_en, boton_pago, alta_en)
+     values ($1, $2, $3, $4, $5, $6, current_date - 1, now(), true, now())`,
+    [id, companyId, documento, COPIA_69B, rfc, nombre],
+  );
+  await dueno.query(
+    `insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+     values ($1, $2, 'miembro', $3, 'cliente', 'alta_proveedor', 'suppliers', $4)`,
+    [operadorId, companyId, LUIS, id],
+  );
+  await dueno.query(
+    `insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde)
+     values ($1, $2, $3, $4, true, now() - interval '1 day')`,
+    [clabeId, companyId, id, CLABE],
+  );
+  await dueno.query(
+    `insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+     values ($1, $2, 'miembro', $3, 'cliente', 'clabe_proveedor', 'supplier_clabes', $4)`,
+    [operadorId, companyId, LUIS, clabeId],
+  );
 }

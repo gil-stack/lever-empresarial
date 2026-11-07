@@ -168,6 +168,13 @@ export function traducirErrorDeBase(error: unknown): Error {
   const marca = `${campo(error, "constraint")} ${campo(error, "table")}`.toLowerCase();
   if (codigo === "42501") return new ErrorDeDominio("sin_permiso");
   if (codigo === "23505") {
+    // Alta regulada: un doble envío concurrente. Otro formulario sobre lo mismo dice su motivo;
+    // el mismo formulario (llave primaria repetida) se repite una vez y sale como el primero.
+    if (marca.includes("kyb_versiones_un_borrador")) return new ErrorDeDominio("expediente_con_borrador");
+    if (marca.includes("kyb_dictamenes_una_por_version")) return new ErrorDeDominio("dictamen_ya_registrado");
+    if (marca.includes("company_suspensions_una_pendiente")) return new ErrorDeDominio("suspension_pendiente");
+    if (marca.includes("lpb_cargas_archivo_unico")) return new ErrorDeDominio("lpb_ya_cargada");
+    if (FORMULARIOS_REGULADOS.test(marca)) return new ErrorDeDominio("formulario_ya_aplicado");
     if (marca.includes("auth_passkeys")) return new ErrorDeDominio("passkey_duplicada");
     if (marca.includes("auth_totp")) return new ErrorDeDominio("totp_duplicado");
     if (marca.includes("auth_recuperaciones")) return new ErrorDeDominio("recuperacion_abierta");
@@ -277,8 +284,20 @@ function registrarErrorSinTraducir(error: unknown, codigo: string): void {
   );
 }
 
+/** Llave primaria de las tablas reguladas: su id es el del formulario que la crea. */
+const FORMULARIOS_REGULADOS =
+  /^(kyb_versiones|kyb_documentos|kyb_representantes|kyb_accionistas|kyb_dictamenes|kyb_calificaciones_riesgo|lpb_cargas|company_suspensions)_pkey /;
+
 /** Reglas de la alta regulada (0028): roles, expediente, riesgo, lista de bloqueados, suspensión y candado. */
 const CODIGOS_DE_ALTA_REGULADA = new Set([
+  "empresa_nace_prospecto",
+  "sin_rol_de_administracion",
+  "personal_propio",
+  "personal_no_se_reescribe",
+  "expediente_con_borrador",
+  "expediente_accionista_sin_curp",
+  "expediente_accionista_sin_rfc",
+  "expediente_estructura_muy_profunda",
   "rol_propio",
   "roles_incompatibles",
   "sin_permiso_roles",

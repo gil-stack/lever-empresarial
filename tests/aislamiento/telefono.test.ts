@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { tiene } from "../../src/nucleo/capacidades.ts";
 import { cerrarConexion } from "../../src/nucleo/db.ts";
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
 import { leerPendientesInicio } from "../../src/server/inicio/servicio.ts";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio.ts";
 import { darDeAltaPersona, nombrarCentro, registrarBaja } from "../../src/server/personas/servicio.ts";
@@ -50,14 +50,14 @@ describe("teléfono y tenencia en Postgres", { skip: urlAdmin.length === 0 }, ()
 async function escenario(url: string): Promise<void> {
   sembrarPersonal(url);
   const personal = await contextoDePersonal("personal-telefono@ejemplo.mx");
-  const alfa = await darDeAltaEmpresa(personal, {
+  const alfa = await darDeAltaComoDuena(url, personal, {
     rfc: "TCM010101AB1",
     razonSocial: "Escuela Alfa Teléfono",
     codigoPostal: "06600",
     regimen: "601",
     usoCfdi: "G03",
   }, { demostracion: true });
-  const beta = await darDeAltaEmpresa(personal, {
+  const beta = await darDeAltaComoDuena(url, personal, {
     rfc: "CABL840215RF4",
     razonSocial: "Taller Beta Ajeno",
     codigoPostal: "44100",
