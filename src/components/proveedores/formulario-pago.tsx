@@ -46,6 +46,13 @@ export function FormularioPago({
     ? enEmpresa(empresaId, `/consola/proveedores?pago=${estado.requestId}`)
     : null;
 
+  // El aviso de error se liga al campo que lo causó.
+  function ligado(campo: string, ...pistas: (string | null)[]) {
+    const causa = estado.tipo === "invalido" && estado.campo === campo;
+    const ids = [...pistas.filter((pista): pista is string => Boolean(pista)), ...(causa ? ["pago-error"] : [])];
+    return { "aria-invalid": causa || undefined, "aria-describedby": ids.length > 0 ? ids.join(" ") : undefined };
+  }
+
   function cambiarProveedor(id: string) {
     setSupplierId(id);
     const elegido = proveedores.find((actual) => actual.id === id);
@@ -60,7 +67,7 @@ export function FormularioPago({
       {edicion ? <input type="hidden" name="requestId" value={edicion.id} /> : null}
       <input type="hidden" name="origen" value={origen} />
       {edicion ? <input type="hidden" name="supplierId" value={supplierId} /> : null}
-      {estado.tipo === "invalido" ? <Aviso titulo="No se guardó"><p>{estado.mensaje}</p></Aviso> : null}
+      {estado.tipo === "invalido" ? <div id="pago-error"><Aviso titulo="No se guardó"><p>{estado.mensaje}</p></Aviso></div> : null}
       {estado.tipo === "listo" ? (
         <Aviso tono="asentado" titulo="Quedó en autorización">
           <p>{estado.mensaje}</p>
@@ -72,7 +79,7 @@ export function FormularioPago({
         <div className="formulario-seccion-cabeza"><span>01</span><div><h2 id="pago-proveedor-titulo">Proveedor y origen</h2><p>A quién se paga y con qué comprobante.</p></div></div>
         <div className="campo">
           <label htmlFor="supplierId">Proveedor</label>
-          <select id="supplierId" name={edicion ? undefined : "supplierId"} value={supplierId} disabled={Boolean(edicion)} required aria-describedby={proveedor ? "supplierId-pista" : undefined} onChange={(event) => cambiarProveedor(event.target.value)}>
+          <select id="supplierId" name={edicion ? undefined : "supplierId"} value={supplierId} disabled={Boolean(edicion)} required {...ligado("supplierId", proveedor ? "supplierId-pista" : null)} onChange={(event) => cambiarProveedor(event.target.value)}>
             <option value="">Selecciona un proveedor</option>
             {proveedores.map((actual) => (
               <option key={actual.id} value={actual.id} disabled={!actual.activo || !actual.botonPago}>
@@ -98,7 +105,7 @@ export function FormularioPago({
           <div className="campos-documentos">
             <label className="soltar-archivo" htmlFor="xml">
               <span className="soltar-archivo-icono">XML</span><strong>Factura electrónica</strong><span>{inspeccionando ? "Leyendo y validando…" : "Seleccionar archivo .xml"}</span>
-              <input id="xml" name="xml" type="file" accept=".xml,application/xml,text/xml" required aria-invalid={lectura.tipo === "invalido" || undefined} aria-describedby={lectura.tipo === "invalido" ? "xml-error" : undefined} onChange={(event) => {
+              <input id="xml" name="xml" type="file" accept=".xml,application/xml,text/xml" required {...(lectura.tipo === "invalido" ? { "aria-invalid": true, "aria-describedby": "xml-error" } : ligado("xml"))} onChange={(event) => {
                 const archivo = event.target.files?.[0];
                 if (!archivo) return;
                 const datos = new FormData(); datos.set("xml", archivo); startTransition(() => inspeccionar(datos));
@@ -106,21 +113,21 @@ export function FormularioPago({
             </label>
             <label className="soltar-archivo" htmlFor="pdf">
               <span className="soltar-archivo-icono">PDF</span><strong>Representación impresa</strong><span>Seleccionar archivo .pdf</span>
-              <input id="pdf" name="pdf" type="file" accept="application/pdf,.pdf" required />
+              <input id="pdf" name="pdf" type="file" accept="application/pdf,.pdf" required {...ligado("pdf")} />
             </label>
           </div>
         ) : null}
         {origen === "excepcion" && !edicion ? (
           <label className="soltar-archivo" htmlFor="pdf">
             <span className="soltar-archivo-icono">PDF</span><strong>Evidencia de la obligación</strong><span>Contrato, estado de cuenta u otro soporte</span>
-            <input id="pdf" name="pdf" type="file" accept="application/pdf,.pdf" required />
+            <input id="pdf" name="pdf" type="file" accept="application/pdf,.pdf" required {...ligado("pdf")} />
           </label>
         ) : null}
         {edicion ? <p className="nota-edicion">Los documentos originales se conservan. Esta corrección no los reemplaza.</p> : null}
         {edicion?.origen === "excepcion" ? (
           <label className="soltar-archivo" htmlFor="pdf">
             <span className="soltar-archivo-icono">PDF</span><strong>Evidencia nueva</strong><span>Obligatoria si cambias el importe</span>
-            <input id="pdf" name="pdf" type="file" accept="application/pdf,.pdf" />
+            <input id="pdf" name="pdf" type="file" accept="application/pdf,.pdf" {...ligado("pdf")} />
           </label>
         ) : null}
         {lectura.tipo === "invalido" ? <p className="error-campo" id="xml-error" role="alert">{lectura.mensaje}</p> : null}
@@ -138,16 +145,16 @@ export function FormularioPago({
         <div className="formulario-seccion-cabeza"><span>03</span><div><h2 id="pago-condiciones-titulo">Importe y fechas</h2><p>El vencimiento y la fecha prevista responden a preguntas distintas.</p></div></div>
         {origen === "excepcion" ? (
           <div className="formulario-pareja">
-            <div className="campo"><label htmlFor="monto">Importe MXN</label><input id="monto" name="monto" inputMode="decimal" placeholder="0.00" defaultValue={edicion ? (edicion.totalCentavos / 100).toFixed(2) : ""} required aria-describedby="monto-pista" /><p className="pista" id="monto-pista">Pesos con centavos.</p></div>
-            <div className="campo"><label htmlFor="referencia">Referencia</label><input id="referencia" name="referencia" maxLength={120} defaultValue={edicion?.referencia} required aria-describedby="referencia-pista" /><p className="pista" id="referencia-pista">Contrato, servicio o folio interno.</p></div>
+            <div className="campo"><label htmlFor="monto">Importe MXN</label><input id="monto" name="monto" inputMode="decimal" placeholder="0.00" defaultValue={edicion ? (edicion.totalCentavos / 100).toFixed(2) : ""} required {...ligado("monto", "monto-pista")} /><p className="pista" id="monto-pista">Pesos con centavos.</p></div>
+            <div className="campo"><label htmlFor="referencia">Referencia</label><input id="referencia" name="referencia" maxLength={120} defaultValue={edicion?.referencia} required {...ligado("referencia", "referencia-pista")} /><p className="pista" id="referencia-pista">Contrato, servicio o folio interno.</p></div>
           </div>
         ) : null}
         <div className="formulario-tres">
-          {origen === "excepcion" ? <div className="campo"><label htmlFor="emitidaEl">Fecha de la obligación</label><input id="emitidaEl" name="emitidaEl" type="date" value={fechas.emitidaEl} required onChange={(event) => setFechas({ ...fechas, emitidaEl: event.target.value })} /></div> : null}
-          <div className="campo"><label htmlFor="venceEl">Vencimiento</label><input id="venceEl" name="venceEl" type="date" value={fechas.venceEl} required onChange={(event) => setFechas({ ...fechas, venceEl: event.target.value })} /></div>
-          <div className="campo"><label htmlFor="programadaEl">Fecha prevista de pago</label><input id="programadaEl" name="programadaEl" type="date" min={hoy} value={fechas.programadaEl} required onChange={(event) => setFechas({ ...fechas, programadaEl: event.target.value })} /></div>
+          {origen === "excepcion" ? <div className="campo"><label htmlFor="emitidaEl">Fecha de la obligación</label><input id="emitidaEl" name="emitidaEl" type="date" value={fechas.emitidaEl} required {...ligado("emitidaEl")} onChange={(event) => setFechas({ ...fechas, emitidaEl: event.target.value })} /></div> : null}
+          <div className="campo"><label htmlFor="venceEl">Vencimiento</label><input id="venceEl" name="venceEl" type="date" value={fechas.venceEl} required {...ligado("venceEl")} onChange={(event) => setFechas({ ...fechas, venceEl: event.target.value })} /></div>
+          <div className="campo"><label htmlFor="programadaEl">Fecha prevista de pago</label><input id="programadaEl" name="programadaEl" type="date" min={hoy} value={fechas.programadaEl} required {...ligado("programadaEl")} onChange={(event) => setFechas({ ...fechas, programadaEl: event.target.value })} /></div>
         </div>
-        {origen === "excepcion" ? <div className="campo"><label htmlFor="motivoExcepcion">Por qué no hay factura</label><textarea id="motivoExcepcion" name="motivoExcepcion" rows={4} minLength={10} maxLength={500} defaultValue={edicion?.motivoExcepcion ?? ""} required aria-describedby="motivoExcepcion-pista" /><p className="pista" id="motivoExcepcion-pista">Quien autorice también lo lee.</p></div> : null}
+        {origen === "excepcion" ? <div className="campo"><label htmlFor="motivoExcepcion">Por qué no hay factura</label><textarea id="motivoExcepcion" name="motivoExcepcion" rows={4} minLength={10} maxLength={500} defaultValue={edicion?.motivoExcepcion ?? ""} required {...ligado("motivoExcepcion", "motivoExcepcion-pista")} /><p className="pista" id="motivoExcepcion-pista">Quien autorice también lo lee.</p></div> : null}
       </section>
 
       <div className="formulario-final">

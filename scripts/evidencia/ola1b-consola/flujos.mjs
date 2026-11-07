@@ -32,6 +32,38 @@ function reponerSesion(sql, userId, valor, superficie) {
   `);
 }
 
+/**
+ * Doble clic en un botón de un formulario con varios botones de envío. Cada
+ * cambio guarda el estado de TODOS los botones del formulario (valor, texto,
+ * disabled, aria-busy), para comprobar que solo el oprimido anuncia que envía.
+ */
+async function dobleClicEnFormulario(p, boton) {
+  await boton.evaluate((el) => new Promise((resolver) => {
+    const forma = el.closest("form");
+    const vistas = [];
+    const foto = () => vistas.push([...forma.querySelectorAll("button[type=submit]")].map((b) => ({ valor: b.value, texto: b.textContent.trim(), disabled: b.disabled, busy: b.getAttribute("aria-busy") })));
+    const observador = new MutationObserver(foto);
+    observador.observe(forma, { attributes: true, childList: true, subtree: true, characterData: true });
+    window.__marcasFormulario = () => {
+      observador.disconnect();
+      return vistas;
+    };
+    resolver(true);
+  }));
+  await boton.dblclick();
+  await p.waitForTimeout(150);
+  return async () => p.evaluate(() => (window.__marcasFormulario ? window.__marcasFormulario() : []));
+}
+
+/** Solo el botón `valor` dijo `enviando` con aria-busy; los demás se desactivaron sin anunciarlo. */
+function soloElOprimido(vistas, valor, enviando) {
+  const anuncia = vistas.some((foto) => foto.some((b) => b.valor === valor && b.disabled && b.busy === "true" && b.texto === enviando));
+  const otros = vistas.flat().filter((b) => b.valor !== valor);
+  const otrosCallan = otros.every((b) => b.busy !== "true" && !/…$/.test(b.texto));
+  const otrosEsperan = vistas.some((foto) => foto.some((b) => b.valor === valor && b.busy === "true") && foto.filter((b) => b.valor !== valor).every((b) => b.disabled));
+  return { ok: anuncia && otrosCallan && otrosEsperan && otros.length > 0, anuncia, otrosCallan, otrosEsperan };
+}
+
 /** Un pendiente aparece en Pendientes y su acción lleva a la pantalla que lo resuelve. */
 async function pendiente(p, { BASE, empresa, titulo, accion, destino, anotar, foto, nombre }) {
   await p.goto(`${BASE}${empresa}/consola/pendientes`);
@@ -150,15 +182,15 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
     const panel = p.getByRole("dialog");
     await panel.getByRole("button", { name: "Autorizar para pagar" }).waitFor();
     await foto(p, "03-autorizacion-antes");
-    const marcas = await dobleClic(p, panel.getByRole("button", { name: "Autorizar para pagar" }));
+    const marcas = await dobleClicEnFormulario(p, panel.getByRole("button", { name: "Autorizar para pagar" }));
     await panel.locator(".detalle-cabeza").getByText("Listo para pagar", { exact: true }).waitFor({ timeout: 30000 });
     const vistas = await marcas();
     await foto(p, "03-autorizacion-listo");
     const estadoBase = sql(`select estado from supplier_payment_requests where id = '${id}'`);
     const autorizaciones = sql(`select count(*) from audit_log where identificador = '${id}' and accion = 'autorizar_pago_proveedor'`);
-    const rechazo = vistas.find((v) => v.texto === "Rechazar");
-    anotar(vistas.some((v) => v.disabled && v.busy === "true" && v.texto === "Enviando…"), "flujo 3: «Autorizar para pagar» se desactiva y dice «Enviando…»", JSON.stringify(vistas.slice(0, 3)));
-    anotar(!rechazo || rechazo.busy !== "true", "flujo 3: «Rechazar» no anuncia que envía cuando se oprimió «Autorizar»");
+    const decision = soloElOprimido(vistas, "autorizar", "Enviando…");
+    anotar(decision.anuncia, "flujo 3: «Autorizar para pagar» se desactiva y dice «Enviando…»", JSON.stringify(vistas.slice(0, 2)));
+    anotar(decision.ok, "flujo 3: «Rechazar» se desactiva sin decir «Enviando…» mientras se autoriza (se observan los dos botones)", JSON.stringify(decision));
     anotar(estadoBase === "listo_para_pagar" && autorizaciones === "1", "flujo 3: doble clic de otra persona deja una sola autorización", `estado=${estadoBase} autorizaciones=${autorizaciones}`);
     anotar(errores.length === 0, "flujo 3: sin errores de consola", errores.join(" | "));
     estado.listo = id;
@@ -172,13 +204,23 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
       const { nav, p, errores } = await abrir({ quien: "rosa" });
       await p.goto(`${BASE}${TALLER}/consola/proveedores?pago=${pendiente}`);
       const panel = p.getByRole("dialog");
-      await panel.getByLabel("Motivo al rechazar").fill("La fecha no coincide con el contrato");
-      const marcas = await dobleClic(p, panel.getByRole("button", { name: "Rechazar", exact: true }));
+      const motivo = panel.getByLabel("Motivo al rechazar");
+      // Sin motivo: el error queda ligado al campo del motivo y el pago no cambia.
+      await panel.getByRole("button", { name: "Rechazar", exact: true }).click();
+      await panel.getByRole("alert").first().waitFor({ timeout: 20000 });
+      const avisoId = await panel.locator("[id$='-aviso']").first().getAttribute("id");
+      const describe = (await motivo.getAttribute("aria-describedby")) ?? "";
+      await foto(p, "04-rechazo-sin-motivo");
+      anotar(describe.split(" ").includes(avisoId) && (await motivo.getAttribute("aria-invalid")) === "true" && sql(`select count(*) from audit_log where identificador = '${pendiente}' and accion = 'rechazar_pago_proveedor'`) === "0", "flujo 4: rechazar sin motivo no rechaza y el error queda ligado al campo del motivo", `aria-describedby=${describe}`);
+      await motivo.fill("La fecha no coincide con el contrato");
+      const marcas = await dobleClicEnFormulario(p, panel.getByRole("button", { name: "Rechazar", exact: true }));
       await panel.locator(".detalle-cabeza").getByText("Rechazado", { exact: true }).waitFor({ timeout: 30000 });
       const vistas = await marcas();
       await foto(p, "04-rechazo-con-motivo");
       const rechazos = sql(`select count(*) from audit_log where identificador = '${pendiente}' and accion = 'rechazar_pago_proveedor'`);
-      anotar(vistas.some((v) => v.busy === "true" && v.texto === "Enviando…"), "flujo 4: «Rechazar» se desactiva y dice «Enviando…»", JSON.stringify(vistas.slice(0, 3)));
+      const decision = soloElOprimido(vistas, "rechazar", "Enviando…");
+      anotar(decision.anuncia, "flujo 4: «Rechazar» se desactiva y dice «Enviando…»", JSON.stringify(vistas.slice(0, 2)));
+      anotar(decision.ok, "flujo 4: «Autorizar para pagar» se desactiva sin decir «Enviando…» mientras se rechaza", JSON.stringify(decision));
       anotar(rechazos === "1", "flujo 4: doble clic deja un solo rechazo con su motivo", `rechazos=${rechazos}`);
       anotar(errores.length === 0, "flujo 4: sin errores de consola (rechazo)", errores.join(" | "));
       await nav.close();
@@ -383,6 +425,22 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
     const creadas = sql(`select count(*) from policy_categories where company_id = '${EMPRESA_TALLER}' and nombre = '${nombre}'`);
     anotar(vistasCategoria.some((v) => v.disabled && v.busy === "true"), "flujo 8: «Agregar categoría» se desactiva mientras guarda", JSON.stringify(vistasCategoria.slice(0, 3)));
     anotar(creadas === "1" && (await categorias.getByLabel("Nombre", { exact: true }).inputValue()) === "", "flujo 8: doble clic crea una sola categoría y la forma queda lista para otra", `categorías=${creadas}`);
+    // Umbral: un formulario con dos botones. Al quitarlo, solo «Quitar el umbral» dice «Quitando…».
+    const umbral = p.locator("section").filter({ has: p.getByRole("heading", { name: "Umbral de proveedores" }) });
+    if ((await umbral.getByRole("button", { name: "Quitar el umbral" }).count()) === 0) {
+      await umbral.getByLabel("Umbral en pesos, con centavos").fill("25000.00");
+      await umbral.getByRole("button", { name: "Escribir umbral" }).click();
+      await umbral.getByRole("button", { name: "Quitar el umbral" }).waitFor({ timeout: 20000 });
+    }
+    const escrito = sql(`select coalesce(umbral_proveedores_centavos::text, 'sin monto') from policies where company_id = '${EMPRESA_TALLER}'`);
+    const marcasUmbral = await dobleClicEnFormulario(p, umbral.getByRole("button", { name: "Quitar el umbral" }));
+    await umbral.getByText("La empresa todavía no escribe el umbral de proveedores.").waitFor({ timeout: 20000 });
+    const vistasUmbral = await marcasUmbral();
+    await foto(p, "08-politica-umbral-quitado");
+    const quitado = sql(`select coalesce(umbral_proveedores_centavos::text, 'sin monto') from policies where company_id = '${EMPRESA_TALLER}'`);
+    const umbralSolo = soloElOprimido(vistasUmbral, "quitar", "Quitando…");
+    anotar(umbralSolo.ok, "flujo 8: al quitar el umbral solo «Quitar el umbral» dice «Quitando…»; «Escribir umbral» se desactiva sin anunciarlo", JSON.stringify(umbralSolo));
+    anotar(escrito !== "sin monto" && quitado === "sin monto", "flujo 8: el umbral escrito se quita con el doble clic", `antes=${escrito} después=${quitado}`);
     anotar(errores.length === 0, "flujo 8: sin errores de consola", errores.join(" | "));
     await nav.close();
   }

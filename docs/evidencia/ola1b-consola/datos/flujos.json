@@ -47,12 +47,12 @@
   {
     "ok": true,
     "texto": "flujo 3: «Autorizar para pagar» se desactiva y dice «Enviando…»",
-    "detalle": "[{\"disabled\":true,\"busy\":\"true\",\"texto\":\"Enviando…\"}]"
+    "detalle": "[[{\"valor\":\"rechazar\",\"texto\":\"Rechazar\",\"disabled\":true,\"busy\":null},{\"valor\":\"autorizar\",\"texto\":\"Enviando…\",\"disabled\":true,\"busy\":\"true\"}]]"
   },
   {
     "ok": true,
-    "texto": "flujo 3: «Rechazar» no anuncia que envía cuando se oprimió «Autorizar»",
-    "detalle": ""
+    "texto": "flujo 3: «Rechazar» se desactiva sin decir «Enviando…» mientras se autoriza (se observan los dos botones)",
+    "detalle": "{\"ok\":true,\"anuncia\":true,\"otrosCallan\":true,\"otrosEsperan\":true}"
   },
   {
     "ok": true,
@@ -66,8 +66,18 @@
   },
   {
     "ok": true,
+    "texto": "flujo 4: rechazar sin motivo no rechaza y el error queda ligado al campo del motivo",
+    "detalle": "aria-describedby=motivo-88888888-8888-4888-8888-888888888882-pista decision-88888888-8888-4888-8888-888888888882-aviso"
+  },
+  {
+    "ok": true,
     "texto": "flujo 4: «Rechazar» se desactiva y dice «Enviando…»",
-    "detalle": "[{\"disabled\":true,\"busy\":\"true\",\"texto\":\"Enviando…\"}]"
+    "detalle": "[[{\"valor\":\"rechazar\",\"texto\":\"Enviando…\",\"disabled\":true,\"busy\":\"true\"},{\"valor\":\"autorizar\",\"texto\":\"Autorizar para pagar\",\"disabled\":true,\"busy\":null}]]"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 4: «Autorizar para pagar» se desactiva sin decir «Enviando…» mientras se rechaza",
+    "detalle": "{\"ok\":true,\"anuncia\":true,\"otrosCallan\":true,\"otrosEsperan\":true}"
   },
   {
     "ok": true,
@@ -102,7 +112,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «Crea la primera área» aparece y «Crear área» lleva a su pantalla",
-    "detalle": "/c/1a5fc231-c306-4b8f-9ff4-ad86fd1e2744/consola/personas/areas"
+    "detalle": "/c/b74680db-47bc-430f-809f-6b98bca5f3d9/consola/personas/areas"
   },
   {
     "ok": true,
@@ -127,7 +137,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «Da de alta al primer colaborador» aparece y «Dar de alta» lleva a su pantalla",
-    "detalle": "/c/1a5fc231-c306-4b8f-9ff4-ad86fd1e2744/consola/personas/nueva"
+    "detalle": "/c/b74680db-47bc-430f-809f-6b98bca5f3d9/consola/personas/nueva"
   },
   {
     "ok": true,
@@ -172,7 +182,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «^Prepara el lote de nómina del » aparece y «Preparar nómina» lleva a su pantalla",
-    "detalle": "/c/1a5fc231-c306-4b8f-9ff4-ad86fd1e2744/consola/personas/nomina"
+    "detalle": "/c/b74680db-47bc-430f-809f-6b98bca5f3d9/consola/personas/nomina"
   },
   {
     "ok": true,
@@ -218,6 +228,16 @@
     "ok": true,
     "texto": "flujo 8: doble clic crea una sola categoría y la forma queda lista para otra",
     "detalle": "categorías=1"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 8: al quitar el umbral solo «Quitar el umbral» dice «Quitando…»; «Escribir umbral» se desactiva sin anunciarlo",
+    "detalle": "{\"ok\":true,\"anuncia\":true,\"otrosCallan\":true,\"otrosEsperan\":true}"
+  },
+  {
+    "ok": true,
+    "texto": "flujo 8: el umbral escrito se quita con el doble clic",
+    "detalle": "antes=2500000 después=sin monto"
   },
   {
     "ok": true,
@@ -277,22 +297,22 @@
   {
     "ok": true,
     "texto": "flujo 11: «^Falta(n)? (una|dos) personas? autorizadas? para liberar» aparece y «Revisar accesos» lleva a su pantalla",
-    "detalle": "/c/1a5fc231-c306-4b8f-9ff4-ad86fd1e2744/consola/personas"
+    "detalle": "/c/b74680db-47bc-430f-809f-6b98bca5f3d9/consola/personas"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Crea la primera categoría» aparece y «Configurar política» lleva a su pantalla",
-    "detalle": "/c/1a5fc231-c306-4b8f-9ff4-ad86fd1e2744/consola/politica"
+    "detalle": "/c/b74680db-47bc-430f-809f-6b98bca5f3d9/consola/politica"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Registra el primer proveedor» aparece y «Configurar proveedores» lleva a su pantalla",
-    "detalle": "/c/1a5fc231-c306-4b8f-9ff4-ad86fd1e2744/consola/proveedores"
+    "detalle": "/c/b74680db-47bc-430f-809f-6b98bca5f3d9/consola/proveedores"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Revisa el plan de esta empresa» aparece y «Ver plan» lleva a su pantalla",
-    "detalle": "/c/1a5fc231-c306-4b8f-9ff4-ad86fd1e2744/consola/configuracion/plan"
+    "detalle": "/c/b74680db-47bc-430f-809f-6b98bca5f3d9/consola/configuracion/plan"
   },
   {
     "ok": true,

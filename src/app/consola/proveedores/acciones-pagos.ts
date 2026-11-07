@@ -56,6 +56,27 @@ const MENSAJES: Record<string, string> = {
   auditoria_no_disponible: "No se pudo dejar constancia. La operación no se guardó.",
 };
 
+/** El campo que corrige cada error en la solicitud de pago; los formularios lo ligan con aria-describedby. */
+const CAMPO_DEL_ERROR: Record<string, string> = {
+  proveedor_ausente: "supplierId",
+  cfdi_emisor_distinto: "supplierId",
+  monto_invalido: "monto",
+  referencia_invalida: "referencia",
+  fecha_invalida: "venceEl",
+  fecha_pasada: "programadaEl",
+  motivo_invalido: "motivoExcepcion",
+  archivo_no_disponible: "pdf",
+  archivos_peso_total: "pdf",
+  evidencia_requerida: "pdf",
+  cfdi_invalido: "xml",
+  cfdi_codificacion: "xml",
+  cfdi_contenido_no_permitido: "xml",
+  cfdi_no_es_ingreso_mxn: "xml",
+  cfdi_datos_incompletos: "xml",
+  cfdi_receptor_distinto: "xml",
+  cfdi_duplicado: "xml",
+};
+
 export type EstadoLecturaCfdi = { tipo: "inicial" } | { tipo: "listo"; cfdi: CfdiLeido } | { tipo: "invalido"; mensaje: string };
 
 export async function prellenarCfdi(
@@ -82,7 +103,7 @@ export async function enviarPago(
     revalidatePath("/consola/proveedores");
     return { tipo: "listo", mensaje: creado.existente ? "La solicitud ya existía. No se duplicó el pago." : "El pago quedó en autorización. Otra persona lo revisa.", requestId: creado.requestId };
   } catch (error) {
-    return { tipo: "invalido", mensaje: traducir(error) };
+    return invalido(error);
   }
 }
 
@@ -99,7 +120,7 @@ export async function reenviarPago(
     if (!ctx?.empresa) throw new ErrorDeDominio("sin_empresa");
     redirect(enEmpresa(ctx.empresa.id, `/consola/proveedores?pago=${requestId}`));
   } catch (error) {
-    return { tipo: "invalido", mensaje: traducir(error) };
+    return invalido(error);
   }
 }
 
@@ -123,7 +144,7 @@ export async function decidirPago(
       requestId: texto(formData, "requestId"),
     };
   } catch (error) {
-    return { tipo: "invalido", mensaje: traducir(error) };
+    return invalido(error, { motivo_invalido: "motivo" });
   }
 }
 
@@ -154,7 +175,7 @@ export async function subirContrato(
     revalidatePath("/consola/proveedores");
     return { tipo: "listo", mensaje: "El contrato quedó guardado como documento privado." };
   } catch (error) {
-    return { tipo: "invalido", mensaje: traducir(error) };
+    return invalido(error, { archivo_ausente: "contrato", archivo_no_disponible: "contrato", fecha_invalida: "vigenteHasta" });
   }
 }
 
@@ -171,6 +192,14 @@ function entrada(formData: FormData, xml: ArchivoPago, pdf: ArchivoPago) {
 function texto(formData: FormData, campo: string): string {
   const valor = formData.get(campo);
   return typeof valor === "string" ? valor : "";
+}
+
+/** El error traducido y, cuando nace de un campo, ese campo (los de esta acción mandan sobre los generales). */
+function invalido(error: unknown, propios: Record<string, string> = {}): EstadoPagoFormulario {
+  const mensaje = traducir(error);
+  const codigo = error instanceof ErrorDeDominio ? error.codigo : null;
+  const campo = codigo ? (propios[codigo] ?? CAMPO_DEL_ERROR[codigo]) : undefined;
+  return campo ? { tipo: "invalido", mensaje, campo } : { tipo: "invalido", mensaje };
 }
 
 function traducir(error: unknown): string {

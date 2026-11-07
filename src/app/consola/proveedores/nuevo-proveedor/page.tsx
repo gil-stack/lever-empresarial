@@ -29,7 +29,7 @@ export default async function NuevoProveedor() {
         <p className="kicker">Antes del primer pago</p>
         <h2 id="alta-guia-titulo">La constancia identifica al proveedor.</h2>
         <p>La CLABE se valida antes de guardar y cada cambio posterior deja historial. Después puedes agregar más contratos desde su expediente.</p>
-        <NotaRegla>Si el RFC aparece en la lista 69-B, el expediente se guarda y el pago queda bloqueado.</NotaRegla>
+        <NotaRegla>Mientras el RFC aparezca en la 69-B o no haya listado vigente, el pago queda bloqueado.</NotaRegla>
       </aside>
     </div>
   </main></Marco>;

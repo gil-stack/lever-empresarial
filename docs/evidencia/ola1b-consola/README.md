@@ -8,23 +8,25 @@ Las capturas están en WebP, en tres temas (Oscuro, Claro y Lever) y en dos tama
 
 | Corrida | Qué comprueba | Resultado | Salida literal |
 | --- | --- | --- | --- |
-| `pantallas` | 30 pantallas × 3 temas × 2 tamaños. En cada una revisa: responde 200 en su propia ruta, sin redirigir; tiene un solo `h1`; todo campo tiene etiqueta; cada error está ligado a su campo con `aria-describedby`; no hay desplazamiento horizontal; la tabulación sigue el orden del documento; cada parada de Tab tiene foco visible; no hay errores de consola | **1440 de 1440** | `salida/pantallas.txt`, `datos/pantallas.json` |
+| `pantallas` | 33 pantallas × 3 temas × 2 tamaños. En cada una revisa: responde 200 en su propia ruta, sin redirigir; tiene un solo `h1`; todo campo tiene etiqueta; cada error está ligado a su campo con `aria-describedby`; no hay desplazamiento horizontal; cada cifra de una métrica cabe en su celda; la tabulación sigue el orden del documento; cada parada de Tab tiene foco visible; no hay errores de consola | **1782 de 1782** | `salida/pantallas.txt`, `datos/pantallas.json` |
 | `contraste` | Contraste AA de cada texto visible contra la escena real (fondo WebGL). Con un diálogo modal abierto solo se mide el diálogo, porque lo de atrás queda inerte bajo el velo | **6 de 6** (ver la tabla siguiente) | `salida/contraste.txt`, `datos/contraste.json` |
-| `cargando` | Con la respuesta de Política detenida: la sección del lateral muestra «Cargando…» con su indicador, la barra y la página actual se quedan, y al soltar la respuesta se pinta Política | **12 de 12** | `salida/cargando.txt` |
+| `cargando` | Con la respuesta de Política detenida: la sección del lateral muestra «Cargando…» con su indicador, la barra y la página actual se quedan, y al soltar la respuesta se pinta Política. En la mesa de Proveedores, con la respuesta detenida: la pestaña Agenda muestra su giro (`useLinkStatus`) y «Filtrar» dice «Filtrando…»; al soltarla llega la vista pedida | **24 de 24** | `salida/cargando.txt` |
+| `tablas` | A 390, en 3 temas: la mesa de pagos, el detalle abierto, el directorio, el expediente abierto y la tabla del muestrario. Se clica cada «Abrir». Revisa que la página no se ensanche, tampoco con la tabla desplazada al final. Cada medida se repite sin `position: relative` en `.tabla-contenedor` para mostrar qué corrige | **21 de 21** | `salida/tablas.txt`, `tablas/` |
+| `barra` | A 390, en 3 temas, en las pantallas cuyo marco lleva acción: Proveedores (Pagos, Proveedores y Agenda) y Personas. Revisa que título, acción y chip de la persona queden en una fila y que la página no se ensanche. Clica el chip (abre su menú, que se cierra con Escape; el botón conserva el nombre de la persona para el lector) y la acción (lleva a su alta) | **39 de 39** | `salida/barra.txt`, `barra/` |
 | `caida` | Con Postgres apagado (`pg_ctl stop`), 9 pantallas × 3 temas × 2 tamaños. Cada una responde 200 en su ruta, con un solo `h1` y dentro del marco, dice «No se pudo…», no muestra cifras supuestas y no tiene errores de consola | **216 de 216** | `salida/caida.txt` |
-| `flujos` | Los 11 flujos clicados, con doble clic en cada envío y verificación en la base | **62 de 62** | `salida/flujos.txt`, `datos/flujos.json` |
+| `flujos` | Los 11 flujos clicados, con doble clic en cada envío y verificación en la base | **66 de 66** | `salida/flujos.txt`, `datos/flujos.json` |
 | `flujos` con SAT simulado | Flujo 9 con el camino feliz de la 69-B y la negativa por IP privada (ver abajo) | **5 de 5** y **3 de 3** | `salida/flujos-sat-simulado-*.txt`, `salida/sat-simulado-bitacora.txt` |
 
 Contraste por tema y tamaño:
 
 | Tema | Ancho | Textos medidos | Contraste mínimo |
 | --- | --- | --- | --- |
-| Oscuro | 1440 | 961 | 4.95 |
-| Oscuro | 390 | 461 | 6.12 |
-| Claro | 1440 | 961 | 4.96 |
-| Claro | 390 | 461 | 4.55 |
-| Lever | 1440 | 961 | 4.86 |
-| Lever | 390 | 461 | 5.36 |
+| Oscuro | 1440 | 1121 | 4.95 |
+| Oscuro | 390 | 517 | 6.12 |
+| Claro | 1440 | 1121 | 4.53 |
+| Claro | 390 | 517 | 4.61 |
+| Lever | 1440 | 1121 | 4.86 |
+| Lever | 390 | 517 | 5.39 |
 
 ## Pantallas y estados
 
@@ -32,10 +34,13 @@ Contraste por tema y tamaño:
 | --- | --- | --- |
 | `10-pendientes`, `11-pendientes-altamar` | Gil (Taller), Laura (Altamar) | Con pendientes; Altamar en su puesta en marcha |
 | `20-proveedores-pagos`, `21-proveedores-directorio`, `22-proveedores-agenda` | Gil | Mesa de pagos, directorio y agenda |
-| `23-proveedores-detalle-pago`, `24-proveedores-expediente` | Rosa, Gil | Panel lateral del pago y del expediente |
+| `23-proveedores-detalle-pago`, `24-proveedores-expediente` | Rosa, Gil | Panel lateral del pago y del expediente. A 390 el detalle se captura desplazado hasta «Rechazar» y «Autorizar para pagar» |
 | `25-proveedores-alta`, `26-proveedores-nuevo-pago` | Gil | Formularios de alta |
 | `27-proveedores-vacio` | Laura | **Vacío**: Altamar sin pagos ni proveedores |
 | `30`…`33` (Personas) | Laura | Directorio, alta, áreas y nómina, todos vacíos al empezar |
+| `35-personas-expediente` | Gil (Taller) | Expediente de Marta Ruiz: área Operación, nómina semanal y CLABE |
+| `36-personas-lote` | Gil (Taller) | Lote de nómina preparado con su renglón |
+| `37-personas-alta-con-areas` | Gil (Taller) | Alta de colaborador en una empresa con áreas |
 | `34-personas-sin-permiso` | Rosa (liberadora) | **Sin permiso** |
 | `40-politica`, `41-politica-altamar` | Gil, Laura | Política con datos y política recién creada («Todavía no hay personas») |
 | `50-lista-69b`, `51-lista-69b-sofipo` | Gil, Ofelia (personal SOFIPO) | Consulta de RFC y carga del listado |
@@ -44,6 +49,7 @@ Contraste por tema y tamaño:
 | `87-pendientes-finanzas` | Fernanda | Pendientes con el rol de finanzas |
 | `90-error-*` | Gil, con la base apagada | **Error** de Pendientes, Proveedores, Personas, Nómina, Política, Lista 69-B, Configuración, Plan y Póliza |
 | `95-cargando` | Gil | **Cargando**: Política detenida mientras el lateral muestra su progreso |
+| `96-mesa-pestana-cargando`, `96-mesa-filtrar-cargando` | Gil | **Cargando** en la mesa: giro en la pestaña Agenda y «Filtrando…», con la respuesta detenida (solo 1440) |
 
 ## Flujos clicados (`flujos/`)
 
@@ -53,12 +59,12 @@ Cada envío se hizo con **doble clic real** sobre `BotonEnviar`, y la base se co
 | --- | --- | --- |
 | 1. Alta de proveedor con CLABE | «Alta de proveedor», formulario completo y doble clic en «Dar de alta». El botón se desactiva y dice «Enviando…» con `aria-busy` | 1 proveedor, 1 CLABE, 1 asiento en la bitácora |
 | 2. Cuenta por pagar con XML | Se carga el XML y el PDF, y doble clic en «Revisar y solicitar» | 1 cuenta por pagar, 1 solicitud y 2 documentos; el XML se descarga del almacén privado (HTTP 200); quien solicita no puede autorizar |
-| 3. Autorización por un segundo liberador | Rosa abre el pago desde Pendientes («Revisar pagos») y da doble clic en «Autorizar para pagar» | Estado `listo_para_pagar` con 1 autorización; «Rechazar» no anuncia que envía |
-| 4. Rechazo y cancelación con motivo | Doble clic en «Rechazar» con su motivo; sin motivo no se cancela; doble clic en «Confirmar cancelación» | 1 rechazo y 1 cancelación con el motivo «Se reprograma con el proveedor» |
+| 3. Autorización por un segundo liberador | Rosa abre el pago desde Pendientes («Revisar pagos») y da doble clic en «Autorizar para pagar» | Estado `listo_para_pagar` con 1 autorización. Un `MutationObserver` sobre el formulario registra los dos botones en cada cambio: solo «Autorizar para pagar» dice «Enviando…» con `aria-busy`; «Rechazar» queda desactivado y sin anunciar |
+| 4. Rechazo y cancelación con motivo | «Rechazar» sin motivo: el motivo queda `aria-invalid` y ligado al aviso con `aria-describedby`. Luego doble clic en «Rechazar» con su motivo (solo él anuncia «Enviando…»); sin motivo no se cancela; doble clic en «Confirmar cancelación» | 0 rechazos sin motivo; 1 rechazo y 1 cancelación con el motivo «Se reprograma con el proveedor» |
 | 5. Alta de colaborador con nómina | Desde Pendientes: «Crear área», con un presupuesto inválido (el texto se queda y el error se liga al campo) y luego doble clic; después «Dar de alta» y doble clic en «Dar de alta colaborador» | 1 área; 1 persona, 1 nómina y 1 asiento `alta_persona` |
 | 6. Cambio de CLABE de nómina | Con el segundo factor de hace 31 minutos, el cambio pide «Confirma que eres tú» y la CLABE no cambia. Luego se vuelve a entrar con contraseña y TOTP, y doble clic en «Cambiar CLABE de nómina» | CLABE vigente nueva, historial con 2 y 1 asiento `cambiar_clabe_nomina` |
 | 7. Preparar el lote de nómina | Desde Pendientes, «Preparar nómina» y doble clic | 1 lote con 1 renglón, total 1,250,000 centavos |
-| 8. Editar la política | Plazo «muchos»: el valor se queda y el error queda ligado al campo. Luego plazo válido con doble clic y categoría nueva con doble clic | 1 asiento `editar_politica`; 1 categoría, y la forma queda vacía para la siguiente |
+| 8. Editar la política | Plazo «muchos»: el valor se queda y el error queda ligado al campo. Luego plazo válido con doble clic y categoría nueva con doble clic. Al final se escribe un umbral y se da doble clic en «Quitar el umbral»: solo ese botón dice «Quitando…» | 1 asiento `editar_politica`; 1 categoría, y la forma queda vacía para la siguiente; `umbral_proveedores_centavos` pasa de un monto a `NULL` |
 | 9. Lista 69-B | Ofelia da doble clic en «Guardar el listado» («Descargando…»); Gil consulta `AAA010101AAA` | Sin copia doble; la consulta responde «No aparece en la lista 69-B.» |
 | 9 con SAT simulado | Ofelia da doble clic en «Guardar el listado»; Gil consulta `PAL7202161U0` | 1 copia nueva (2026-10-31, 3 filas); el pago a ese RFC queda bloqueado. Con IP privada, 0 copias |
 | 10. Configuración y plan | Plan, Póliza, Apariencia y Seguridad desde Configuración | Cada una abre con un solo `h1` |
@@ -101,7 +107,7 @@ Cada comparación pone tres paneles en Oscuro a 1440: el diseño de los socios, 
    pg_ctl -D <carpeta> -o "-p 5542 -k ''" start
    ```
 
-2. **Base y sesiones.** El script crea la base `ola1b_consola`, aplica `db/migrations` y carga `tests/e2e/seed-pagos.sql` (Taller del Cierre, con Gil y Rosa). Después da de alta Altamar Logística con Laura usando los servicios del producto, agrega a Fernanda (solo finanzas) y a Ofelia (personal SOFIPO), y deja sesiones con segundo factor:
+2. **Base y sesiones.** El script crea la base `ola1b_consola`, aplica `db/migrations` y carga `tests/e2e/seed-pagos.sql` (Taller del Cierre, con Gil y Rosa). En Taller crea con los servicios del producto el área «Operación», a Marta Ruiz con nómina semanal y su lote preparado (para el expediente, el lote y el alta con áreas). Después da de alta Altamar Logística con Laura, agrega a Fernanda (solo finanzas) y a Ofelia (personal SOFIPO), y deja sesiones con segundo factor:
 
    ```sh
    DUENO_URL=postgres://postgres@127.0.0.1:5542/postgres \
@@ -132,6 +138,8 @@ Cada comparación pone tres paneles en Oscuro a 1440: el diseño de los socios, 
    node scripts/evidencia/ola1b-consola.mjs pantallas
    node scripts/evidencia/ola1b-consola.mjs contraste
    node scripts/evidencia/ola1b-consola.mjs cargando
+   node scripts/evidencia/ola1b-consola.mjs tablas
+   node scripts/evidencia/ola1b-consola.mjs barra
    node scripts/evidencia/ola1b-consola.mjs caida
    node scripts/evidencia/ola1b-consola.mjs flujos
    DISENO=<carpeta con plat-*.png> node scripts/evidencia/ola1b-consola/comparar.mjs

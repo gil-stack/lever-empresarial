@@ -2,13 +2,25 @@ OK    95-cargando oscuro 1440: la sección dice «Cargando…» y el marco se qu
 OK    95-cargando oscuro 1440: la barra y el lateral siguen visibles
 OK    95-cargando oscuro 1440: al llegar, se pinta Política
 OK    95-cargando oscuro 1440: sin errores de consola
+OK    96-mesa oscuro 1440: la pestaña «Agenda» muestra su espera mientras llega la vista
+OK    96-mesa oscuro 1440: «Filtrar» dice «Filtrando…» mientras llega la búsqueda
+OK    96-mesa oscuro 1440: al llegar, la mesa queda filtrada · /c/33333333-3333-4333-8333-333333333333/consola/proveedores?vista=pagos&q=Servicios&estado=
+OK    96-mesa oscuro 1440: sin errores de consola
 OK    95-cargando claro 1440: la sección dice «Cargando…» y el marco se queda
 OK    95-cargando claro 1440: la barra y el lateral siguen visibles
 OK    95-cargando claro 1440: al llegar, se pinta Política
 OK    95-cargando claro 1440: sin errores de consola
+OK    96-mesa claro 1440: la pestaña «Agenda» muestra su espera mientras llega la vista
+OK    96-mesa claro 1440: «Filtrar» dice «Filtrando…» mientras llega la búsqueda
+OK    96-mesa claro 1440: al llegar, la mesa queda filtrada · /c/33333333-3333-4333-8333-333333333333/consola/proveedores?vista=pagos&q=Servicios&estado=
+OK    96-mesa claro 1440: sin errores de consola
 OK    95-cargando lever 1440: la sección dice «Cargando…» y el marco se queda
 OK    95-cargando lever 1440: la barra y el lateral siguen visibles
 OK    95-cargando lever 1440: al llegar, se pinta Política
 OK    95-cargando lever 1440: sin errores de consola
+OK    96-mesa lever 1440: la pestaña «Agenda» muestra su espera mientras llega la vista
+OK    96-mesa lever 1440: «Filtrar» dice «Filtrando…» mientras llega la búsqueda
+OK    96-mesa lever 1440: al llegar, la mesa queda filtrada · /c/33333333-3333-4333-8333-333333333333/consola/proveedores?vista=pagos&q=Servicios&estado=
+OK    96-mesa lever 1440: sin errores de consola
 
-12 de 12 comprobaciones en verde.
+24 de 24 comprobaciones en verde.

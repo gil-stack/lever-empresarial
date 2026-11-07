@@ -1,0 +1,197 @@
+[
+  {
+    "ok": true,
+    "texto": "barra proveedores-pagos oscuro 390: «Proveedores», acción y chip en una fila",
+    "detalle": "título completo=sí · alto de la barra=112px · desborde=0px"
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-pagos oscuro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-pagos oscuro 390: «Nuevo pago» lleva a /consola/proveedores/nuevo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-directorio oscuro 390: «Proveedores», acción y chip en una fila",
+    "detalle": "título completo=sí · alto de la barra=112px · desborde=0px"
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-directorio oscuro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-directorio oscuro 390: «Nuevo pago» lleva a /consola/proveedores/nuevo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-agenda oscuro 390: «Proveedores», acción y chip en una fila",
+    "detalle": "título completo=sí · alto de la barra=112px · desborde=0px"
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-agenda oscuro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-agenda oscuro 390: «Nuevo pago» lleva a /consola/proveedores/nuevo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra personas-directorio oscuro 390: «Personas», acción y chip en una fila",
+    "detalle": "título completo=sí · alto de la barra=112px · desborde=0px"
+  },
+  {
+    "ok": true,
+    "texto": "barra personas-directorio oscuro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra personas-directorio oscuro 390: «Dar de alta» lleva a /consola/personas/nueva",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-pagos claro 390: «Proveedores», acción y chip en una fila",
+    "detalle": "título completo=sí · alto de la barra=112px · desborde=0px"
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-pagos claro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-pagos claro 390: «Nuevo pago» lleva a /consola/proveedores/nuevo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-directorio claro 390: «Proveedores», acción y chip en una fila",
+    "detalle": "título completo=sí · alto de la barra=112px · desborde=0px"
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-directorio claro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-directorio claro 390: «Nuevo pago» lleva a /consola/proveedores/nuevo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-agenda claro 390: «Proveedores», acción y chip en una fila",
+    "detalle": "título completo=sí · alto de la barra=112px · desborde=0px"
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-agenda claro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-agenda claro 390: «Nuevo pago» lleva a /consola/proveedores/nuevo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra personas-directorio claro 390: «Personas», acción y chip en una fila",
+    "detalle": "título completo=sí · alto de la barra=112px · desborde=0px"
+  },
+  {
+    "ok": true,
+    "texto": "barra personas-directorio claro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra personas-directorio claro 390: «Dar de alta» lleva a /consola/personas/nueva",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-pagos lever 390: «Proveedores», acción y chip en una fila",
+    "detalle": "título completo=sí · alto de la barra=112px · desborde=0px"
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-pagos lever 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-pagos lever 390: «Nuevo pago» lleva a /consola/proveedores/nuevo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-directorio lever 390: «Proveedores», acción y chip en una fila",
+    "detalle": "título completo=sí · alto de la barra=112px · desborde=0px"
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-directorio lever 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-directorio lever 390: «Nuevo pago» lleva a /consola/proveedores/nuevo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-agenda lever 390: «Proveedores», acción y chip en una fila",
+    "detalle": "título completo=sí · alto de la barra=112px · desborde=0px"
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-agenda lever 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra proveedores-agenda lever 390: «Nuevo pago» lleva a /consola/proveedores/nuevo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra personas-directorio lever 390: «Personas», acción y chip en una fila",
+    "detalle": "título completo=sí · alto de la barra=112px · desborde=0px"
+  },
+  {
+    "ok": true,
+    "texto": "barra personas-directorio lever 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra personas-directorio lever 390: «Dar de alta» lleva a /consola/personas/nueva",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "barra lever 390: sin errores de consola",
+    "detalle": ""
+  }
+]

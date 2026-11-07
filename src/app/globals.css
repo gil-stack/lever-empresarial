@@ -532,6 +532,12 @@
   margin: 0;
 }
 
+/* Una fecha larga («13 de noviembre de 2026») no cabe en media columna a 390:
+   en Personas la cifra baja de renglón en vez de montarse sobre la celda vecina. */
+.personas-modulo .metrica .monto {
+  white-space: normal;
+}
+
 /* Las vistas de Personas usan el segmentado del sistema; aquí solo su lugar. */
 .personas-navegacion {
   max-width: 100%;

@@ -7,6 +7,8 @@
 //   node scripts/evidencia/ola1b-consola.mjs contraste              AA de cada texto contra la escena real
 //   node scripts/evidencia/ola1b-consola.mjs caida [carpeta]       con el Postgres apagado: el error de cada pantalla
 //   node scripts/evidencia/ola1b-consola.mjs cargando [carpeta]    el «Cargando…» de la sección mientras llega la página
+//   node scripts/evidencia/ola1b-consola.mjs tablas [carpeta]      tablas con texto oculto a 390: la página no se ensancha
+//   node scripts/evidencia/ola1b-consola.mjs barra [carpeta]       barra a 390 con acción: título, acción y chip en una fila
 //
 // Solo corre contra un Postgres local (DUENO_URL en 127.0.0.1 o localhost).
 import { execFileSync } from "node:child_process";
@@ -170,7 +172,16 @@ async function revisarAccesibilidad(p) {
       const ligado = document.querySelector(`[aria-describedby~="${CSS.escape(error.id)}"]`);
       if (!ligado) erroresSueltos.push(error.id);
     }
-    return { h1, sinNombre, erroresSueltos };
+    // Una cifra que no cabe se monta sobre la celda vecina: el texto de cada métrica queda dentro de su caja.
+    const cifrasEncimadas = [];
+    for (const metrica of document.querySelectorAll(".metrica")) {
+      const caja = metrica.getBoundingClientRect();
+      const rango = document.createRange();
+      rango.selectNodeContents(metrica);
+      const texto = rango.getBoundingClientRect();
+      if (texto.right > caja.right + 1 || texto.left < caja.left - 1) cifrasEncimadas.push((metrica.querySelector(".rotulo")?.textContent ?? "").trim());
+    }
+    return { h1, sinNombre, erroresSueltos, cifrasEncimadas };
   });
 }
 
@@ -180,7 +191,8 @@ const PANTALLAS = [
   { clave: "20-proveedores-pagos", quien: "gil", ruta: `${TALLER}/consola/proveedores` },
   { clave: "21-proveedores-directorio", quien: "gil", ruta: `${TALLER}/consola/proveedores?vista=proveedores` },
   { clave: "22-proveedores-agenda", quien: "gil", ruta: `${TALLER}/consola/proveedores?vista=agenda` },
-  { clave: "23-proveedores-detalle-pago", quien: "rosa", ruta: `${TALLER}/consola/proveedores?pago=88888888-8888-4888-8888-888888888882` },
+  // En móvil el detalle se captura desplazado hasta sus botones de decisión.
+  { clave: "23-proveedores-detalle-pago", quien: "rosa", ruta: `${TALLER}/consola/proveedores?pago=88888888-8888-4888-8888-888888888882`, enMovilHasta: "Autorizar para pagar" },
   { clave: "24-proveedores-expediente", quien: "gil", ruta: `${TALLER}/consola/proveedores?vista=proveedores&proveedor=44444444-4444-4444-8444-444444444441` },
   { clave: "25-proveedores-alta", quien: "gil", ruta: `${TALLER}/consola/proveedores/nuevo-proveedor` },
   { clave: "26-proveedores-nuevo-pago", quien: "gil", ruta: `${TALLER}/consola/proveedores/nuevo` },
@@ -190,6 +202,10 @@ const PANTALLAS = [
   { clave: "32-personas-areas", quien: "laura", ruta: `${ALTAMAR}/consola/personas/areas` },
   { clave: "33-personas-nomina", quien: "laura", ruta: `${ALTAMAR}/consola/personas/nomina` },
   { clave: "34-personas-sin-permiso", quien: "rosa", ruta: `${TALLER}/consola/personas` },
+  // Taller con datos (preparar.ts): expediente de una colaboradora, su lote y el alta con áreas.
+  { clave: "35-personas-expediente", quien: "gil", ruta: `${TALLER}/consola/personas/${ENTORNO.PERSONA_TALLER}` },
+  { clave: "36-personas-lote", quien: "gil", ruta: `${TALLER}/consola/personas/nomina/${ENTORNO.LOTE_TALLER}` },
+  { clave: "37-personas-alta-con-areas", quien: "gil", ruta: `${TALLER}/consola/personas/nueva` },
   { clave: "40-politica", quien: "gil", ruta: `${TALLER}/consola/politica` },
   { clave: "41-politica-altamar", quien: "laura", ruta: `${ALTAMAR}/consola/politica` },
   { clave: "50-lista-69b", quien: "gil", ruta: `${TALLER}/consola/lista-69b` },
@@ -218,7 +234,12 @@ async function pantallas(carpeta) {
         if (solo && !solo.some((s) => pantalla.clave.startsWith(s))) continue;
         const { nav, p, errores } = await abrir({ quien: pantalla.quien, tema, ancho });
         const respuesta = await p.goto(`${BASE}${pantalla.ruta}`, { waitUntil: "networkidle" });
-        await capturar(p, `${carpeta}/${pantalla.clave}-${tema}-${ancho}.webp`);
+        if (pantalla.enMovilHasta && ancho < 600) {
+          await p.getByRole("button", { name: pantalla.enMovilHasta }).scrollIntoViewIfNeeded();
+          await capturar(p, `${carpeta}/${pantalla.clave}-${tema}-${ancho}.webp`, { completa: false });
+        } else {
+          await capturar(p, `${carpeta}/${pantalla.clave}-${tema}-${ancho}.webp`);
+        }
         const a11y = await revisarAccesibilidad(p);
         // En móvil, innerWidth crece con el contenido que se sale; clientWidth es el ancho del dispositivo.
         const desborda = await p.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
@@ -228,6 +249,7 @@ async function pantallas(carpeta) {
         anotar(a11y.sinNombre.length === 0, `${etiqueta}: campos con etiqueta`, a11y.sinNombre.join(","));
         anotar(a11y.erroresSueltos.length === 0, `${etiqueta}: errores ligados a su campo`, a11y.erroresSueltos.join(","));
         anotar(!desborda, `${etiqueta}: sin desplazamiento horizontal`);
+        anotar(a11y.cifrasEncimadas.length === 0, `${etiqueta}: cada cifra cabe en su celda`, a11y.cifrasEncimadas.join(","));
         const foco = await revisarFoco(p);
         anotar(foco.positivos.length === 0 && foco.fueraDeOrden.length === 0, `${etiqueta}: tabulación en orden del documento`, `${foco.paradas} paradas ${[...foco.positivos, ...foco.fueraDeOrden].join(",")}`);
         anotar(foco.sinIndicador.length === 0 && foco.invisibles.length === 0, `${etiqueta}: foco visible en cada parada`, [...foco.sinIndicador, ...foco.invisibles].join(","));
@@ -300,6 +322,158 @@ async function cargando(carpeta) {
     anotar(llego, `95-cargando ${tema} 1440: al llegar, se pinta Política`);
     anotar(errores.length === 0, `95-cargando ${tema} 1440: sin errores de consola`, errores.join(" | "));
     await nav.close();
+
+    // La mesa de proveedores: la pestaña y el filtro muestran su espera mientras llega la vista.
+    const mesa = await abrir({ quien: "gil", tema, ancho: 1440 });
+    let soltarMesa;
+    const esperaMesa = new Promise((listo) => {
+      soltarMesa = listo;
+    });
+    await mesa.p.route((url) => url.pathname.endsWith("/consola/proveedores") && (url.searchParams.get("vista") === "agenda" || url.searchParams.has("q")), async (ruta) => {
+      await esperaMesa;
+      await ruta.continue().catch(() => {});
+    });
+    await mesa.p.goto(`${BASE}${TALLER}/consola/proveedores`, { waitUntil: "load" });
+    await mesa.p.getByRole("heading", { name: "Facturas y obligaciones" }).waitFor();
+    await mesa.p.locator(".mesa-vistas").getByRole("link", { name: /^Agenda/ }).click();
+    const giraPestana = await mesa.p.locator(".mesa-vistas .seccion-spinner").waitFor({ timeout: 8000 }).then(() => true, () => false);
+    await capturar(mesa.p, `${carpeta}/96-mesa-pestana-cargando-${tema}-1440.webp`, { completa: false, espera: 100 });
+    anotar(giraPestana, `96-mesa ${tema} 1440: la pestaña «Agenda» muestra su espera mientras llega la vista`);
+    soltarMesa();
+    await mesa.p.getByRole("heading", { name: "Agenda de pagos" }).waitFor({ timeout: 15000 });
+    let soltarFiltro;
+    const esperaFiltro = new Promise((listo) => {
+      soltarFiltro = listo;
+    });
+    await mesa.p.unroute(() => true).catch(() => {});
+    await mesa.p.route((url) => url.pathname.endsWith("/consola/proveedores") && url.searchParams.has("q"), async (ruta) => {
+      await esperaFiltro;
+      await ruta.continue().catch(() => {});
+    });
+    await mesa.p.locator(".mesa-vistas").getByRole("link", { name: /^Pagos/ }).click();
+    await mesa.p.getByRole("heading", { name: "Facturas y obligaciones" }).waitFor({ timeout: 15000 });
+    // El marco también tiene un buscador («Buscar persona»): se usa el de la mesa.
+    await mesa.p.locator(".buscador-pagos").getByRole("searchbox").fill("Servicios");
+    await mesa.p.getByRole("button", { name: "Filtrar" }).click();
+    const filtrando = await mesa.p.getByRole("button", { name: "Filtrando…" }).waitFor({ timeout: 8000 }).then(() => true, () => false);
+    await capturar(mesa.p, `${carpeta}/96-mesa-filtrar-cargando-${tema}-1440.webp`, { completa: false, espera: 100 });
+    anotar(filtrando, `96-mesa ${tema} 1440: «Filtrar» dice «Filtrando…» mientras llega la búsqueda`);
+    soltarFiltro();
+    const filtro = await mesa.p.waitForURL(/q=Servicios/, { timeout: 15000 }).then(() => true, () => false);
+    anotar(filtro, `96-mesa ${tema} 1440: al llegar, la mesa queda filtrada`, mesa.p.url().replace(BASE, ""));
+    anotar(mesa.errores.length === 0, `96-mesa ${tema} 1440: sin errores de consola`, mesa.errores.join(" | "));
+    await mesa.nav.close();
+  }
+}
+
+// ---------- Tablas con texto oculto a 390: la página no se ensancha ----------
+// `.tabla-contenedor` está posicionada (componentes.css): el `.solo-lector` absoluto de una
+// cabecera se queda en la caja que se desplaza. Cada medida se repite quitando esa regla
+// para mostrar qué corrige.
+async function tablas(carpeta) {
+  const medir = (p) => p.evaluate(() => {
+    const raiz = document.documentElement;
+    const desborde = () => Math.max(0, raiz.scrollWidth - raiz.clientWidth);
+    const con = desborde();
+    const prueba = document.createElement("style");
+    prueba.textContent = ".tabla-contenedor { position: static !important; }";
+    document.head.append(prueba);
+    const sin = desborde();
+    prueba.remove();
+    const cajas = [...document.querySelectorAll(".tabla-contenedor")];
+    for (const caja of cajas) caja.scrollLeft = caja.scrollWidth;
+    const alFinal = desborde();
+    for (const caja of cajas) caja.scrollLeft = 0;
+    return { con, sin, alFinal, tablas: cajas.length };
+  });
+  for (const tema of TEMAS) {
+    renovarSesiones();
+    const revisar = async (p, clave, texto) => {
+      const m = await medir(p);
+      await capturar(p, `${carpeta}/${clave}-${tema}-390.webp`, { completa: false });
+      anotar(m.tablas > 0 && m.con === 0 && m.alFinal === 0, `${clave} ${tema} 390: ${texto} sin ensanchar la página`, `tablas=${m.tablas} desborde=${m.con}px · con la tabla desplazada=${m.alFinal}px · sin position:relative=${m.sin}px`);
+    };
+    {
+      const { nav, p, errores } = await abrir({ quien: "gil", tema, ancho: 390 });
+      await p.goto(`${BASE}${TALLER}/consola/proveedores`, { waitUntil: "networkidle" });
+      await revisar(p, "tablas-proveedores-pagos", "la mesa de pagos");
+      await p.locator(".abrir-fila").first().click();
+      await p.getByRole("dialog").waitFor();
+      await revisar(p, "tablas-proveedores-detalle", "el detalle del pago abierto sobre la mesa");
+      await p.getByRole("dialog").getByRole("button", { name: "Cerrar" }).click();
+      await p.locator(".mesa-vistas").getByRole("link", { name: /^Proveedores/ }).click();
+      await p.waitForURL(/vista=proveedores/);
+      await revisar(p, "tablas-proveedores-directorio", "el directorio de proveedores");
+      await p.locator(".abrir-fila").first().click();
+      await p.getByRole("dialog").waitFor();
+      await revisar(p, "tablas-proveedores-expediente", "el expediente abierto sobre el directorio");
+      anotar(errores.length === 0, `tablas proveedores ${tema} 390: sin errores de consola`, errores.join(" | "));
+      await nav.close();
+    }
+    {
+      const { nav, p, errores } = await abrir({ quien: null, tema, ancho: 390 });
+      await p.goto(`${BASE}/muestrario`, { waitUntil: "networkidle" });
+      await p.locator(".tabla-contenedor").first().scrollIntoViewIfNeeded();
+      await revisar(p, "tablas-muestrario", "la tabla del muestrario");
+      anotar(errores.length === 0, `tablas muestrario ${tema} 390: sin errores de consola`, errores.join(" | "));
+      await nav.close();
+    }
+  }
+}
+
+// ---------- Barra superior a 390 con acción: título, acción y chip en una fila ----------
+// Las pantallas cuyo Marco lleva acción (Proveedores en sus tres vistas y Personas). Se mide
+// que el chip de la persona quede en la misma fila que la acción, que la página no se
+// ensanche y se clican el chip (abre y cierra su menú) y la acción (lleva a su alta).
+async function barra(carpeta) {
+  const medir = (p) => p.evaluate(() => {
+    const caja = (sel) => document.querySelector(sel)?.getBoundingClientRect();
+    const titulo = document.querySelector(".barra-titulo");
+    const accion = caja(".barra-superior > .boton");
+    const chip = caja(".barra-superior .cuenta .menu-desplegable-boton");
+    const centro = (r) => r.top + r.height / 2;
+    return {
+      titulo: titulo?.textContent ?? "",
+      tituloCompleto: titulo ? titulo.scrollWidth <= titulo.clientWidth : false,
+      unaFila: Boolean(accion && chip) && Math.abs(centro(accion) - centro(chip)) < 4,
+      chipDentro: Boolean(chip) && chip.right <= window.innerWidth,
+      desborde: Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth),
+      alto: Math.round(caja(".barra-superior")?.height ?? 0),
+    };
+  });
+  const VISTAS = [
+    { clave: "proveedores-pagos", ruta: `${TALLER}/consola/proveedores`, accion: "Nuevo pago", destino: /\/consola\/proveedores\/nuevo/ },
+    { clave: "proveedores-directorio", ruta: `${TALLER}/consola/proveedores`, pestana: /^Proveedores/, espera: /vista=proveedores/, accion: "Nuevo pago", destino: /\/consola\/proveedores\/nuevo/ },
+    { clave: "proveedores-agenda", ruta: `${TALLER}/consola/proveedores`, pestana: /^Agenda/, espera: /vista=agenda/, accion: "Nuevo pago", destino: /\/consola\/proveedores\/nuevo/ },
+    { clave: "personas-directorio", ruta: `${TALLER}/consola/personas`, accion: "Dar de alta", destino: /\/consola\/personas\/nueva/ },
+  ];
+  for (const tema of TEMAS) {
+    renovarSesiones();
+    const { nav, p, errores } = await abrir({ quien: "gil", tema, ancho: 390 });
+    for (const vista of VISTAS) {
+      await p.goto(`${BASE}${vista.ruta}`, { waitUntil: "networkidle" });
+      if (vista.pestana) {
+        await p.locator(".mesa-vistas").getByRole("link", { name: vista.pestana }).click();
+        await p.waitForURL(vista.espera);
+        await p.waitForLoadState("networkidle");
+      }
+      const m = await medir(p);
+      await capturar(p, `${carpeta}/barra-${vista.clave}-${tema}-390.webp`, { completa: false });
+      anotar(m.unaFila && m.chipDentro && m.desborde === 0, `barra ${vista.clave} ${tema} 390: «${m.titulo}», acción y chip en una fila`, `título completo=${m.tituloCompleto ? "sí" : "no (puntos suspensivos)"} · alto de la barra=${m.alto}px · desborde=${m.desborde}px`);
+      // El chip conserva su nombre accesible (el de la persona) aunque a 390 solo se vean las iniciales.
+      const chip = p.locator(".cuenta .menu-desplegable-boton");
+      const nombre = (await chip.locator(".persona-nombre").textContent()) ?? "";
+      const conNombre = nombre.length > 2 && (await p.getByRole("button", { name: nombre }).and(chip).count()) === 1;
+      await chip.click();
+      const abierto = await p.getByRole("menu", { name: "Tu cuenta" }).isVisible();
+      await p.keyboard.press("Escape");
+      const cerrado = (await chip.getAttribute("aria-expanded")) === "false";
+      anotar(conNombre && abierto && cerrado, `barra ${vista.clave} ${tema} 390: el chip «${nombre}» abre su menú y Escape lo cierra`);
+      await Promise.all([p.waitForURL(vista.destino), p.locator(".barra-superior > .boton", { hasText: vista.accion }).click()]);
+      anotar(true, `barra ${vista.clave} ${tema} 390: «${vista.accion}» lleva a ${new URL(p.url()).pathname.replace(/\/c\/[^/]+/, "")}`);
+    }
+    anotar(errores.length === 0, `barra ${tema} 390: sin errores de consola`, errores.join(" | "));
+    await nav.close();
   }
 }
 
@@ -349,6 +523,13 @@ async function contraste() {
             rango.selectNodeContents(nodo);
             const r = rango.getBoundingClientRect();
             if (r.width < 2 || r.height < 2 || r.bottom < 0 || r.top > innerHeight || r.right < 0 || r.left > innerWidth) continue;
+            // Oculto solo a la vista (caja de 1 px que recorta, como el nombre del chip a 390): no se pinta.
+            let recortado = false;
+            for (let a = el; a && !recortado; a = a.parentElement) {
+              const caja = a.getBoundingClientRect();
+              recortado = (caja.width < 2 || caja.height < 2) && getComputedStyle(a).overflow !== "visible";
+            }
+            if (recortado) continue;
             let opacidad = 1;
             for (let a = el; a; a = a.parentElement) opacidad *= Number(getComputedStyle(a).opacity);
             const n = estilo.color.match(/[\d.]+/g).map(Number);
@@ -412,6 +593,8 @@ if (modo === "pantallas") await pantallas(process.argv[3] ?? `${DIR}/pantallas`)
 else if (modo === "contraste") await contraste();
 else if (modo === "caida") await caida(process.argv[3] ?? `${DIR}/pantallas`);
 else if (modo === "cargando") await cargando(process.argv[3] ?? `${DIR}/pantallas`);
+else if (modo === "tablas") await tablas(process.argv[3] ?? `${DIR}/tablas`);
+else if (modo === "barra") await barra(process.argv[3] ?? `${DIR}/barra`);
 else if (modo === "flujos") await (await import("./ola1b-consola/flujos.mjs")).flujos({ abrir, capturar, anotar, sql, renovarSesiones, codigoTotp, BASE, DIR, TALLER, ALTAMAR, ENTORNO });
 else throw new Error(`Modo desconocido: ${modo}`);
 

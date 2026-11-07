@@ -7,8 +7,6 @@
 .pagina-proveedores > .metricas { margin-top: 8px; }
 .mesa-vistas { margin-top: 36px; }
 .mesa-panel { margin-top: 18px; }
-/* La tabla se desplaza dentro de su caja; con la caja posicionada, el texto para lectores de pantalla de la cabecera (absoluto) no ensancha la página en móvil. */
-.mesa-panel .tabla-contenedor { position: relative; }
 .mesa-panel > .vacio { margin: 8px 0; }
 .buscador-pagos { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0; margin-bottom: 14px; padding: 0 2px 12px; border-bottom: 1px solid var(--line); color: var(--tx3); }
 .buscador-pagos input { flex: 1; min-width: 160px; padding: 0; border: 0; outline: 0; background: none; color: var(--tx); font: inherit; font-size: 13px; }
@@ -286,3 +284,10 @@
   .formulario-final .boton { width: 100%; }
   .agenda-fecha { align-items: flex-start; flex-direction: column; gap: 3px; }
 }
+/* Señal de espera dentro de un enlace de la mesa mientras llega la vista (useLinkStatus). */
+.espera-enlace { display: inline-flex; align-items: center; vertical-align: middle; }
+.espera-enlace .seccion-spinner { margin-left: 6px; }
+/* En la flecha redonda de cada fila, el giro rodea la flecha sin moverla. */
+.abrir-fila { position: relative; }
+.abrir-fila .espera-enlace { position: absolute; inset: 0; justify-content: center; pointer-events: none; }
+.abrir-fila .espera-enlace .seccion-spinner { width: 28px; height: 28px; margin: 0; }

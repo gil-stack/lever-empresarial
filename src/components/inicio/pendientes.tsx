@@ -69,7 +69,10 @@ function Grupo({ id, titulo, detalle, pendientes, empresaId }: { id: string; tit
           <h2 id={`pendientes-${id}`}>{titulo}</h2>
           <p>{detalle}</p>
         </div>
-        <span aria-label={`${pendientes.length} ${pendientes.length === 1 ? "pendiente" : "pendientes"}`}>{pendientes.length}</span>
+        <span>
+          <span aria-hidden="true">{pendientes.length}</span>
+          <span className="solo-lector">{`${pendientes.length} ${pendientes.length === 1 ? "pendiente" : "pendientes"}`}</span>
+        </span>
       </header>
       <ul>
         {pendientes.map((pendiente) => (

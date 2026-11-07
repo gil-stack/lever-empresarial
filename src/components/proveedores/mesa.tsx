@@ -1,10 +1,12 @@
+import Form from "next/form";
 import Link from "next/link";
 
 import { IconoBuscar } from "@/components/cromo/iconos";
 import { Cancelacion, DecisionPago, FormularioContrato } from "./acciones-pago";
 import { DetalleEnPanel } from "./detalle-panel";
+import { EsperaEnlace } from "./espera-enlace";
 import { FormularioCambio } from "./formulario-cambio";
-import { EtiquetaMono, Insignia, Metrica, Metricas, Monto, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
+import { BotonEnviar, EtiquetaMono, Insignia, Metrica, Metricas, Monto, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { formatoPesos, formatoPesosGrande } from "@/dominio/centavos";
 import { clabeVisible } from "@/dominio/clabe";
 import { institucionTradicional, FRASE_INSTITUCION_PENDIENTE } from "@/dominio/clabe-proveedor";
@@ -76,6 +78,7 @@ export function MesaProveedores({
         {(["pagos", "proveedores", "agenda"] as const).map((actual) => (
           <Link key={actual} href={href(`/consola/proveedores?vista=${actual}`)} aria-current={vista === actual ? "page" : undefined}>
             {actual === "pagos" ? `Pagos · ${metricas.porAutorizar.cantidad + metricas.listos.cantidad}` : actual === "proveedores" ? `Proveedores · ${lectura.proveedores.length}` : "Agenda"}
+            <EsperaEnlace />
           </Link>
         ))}
       </nav>
@@ -90,7 +93,7 @@ export function MesaProveedores({
           )}
         </div>
         {vista !== "agenda" ? (
-          <form className="buscador-pagos" role="search" action={href("/consola/proveedores")}>
+          <Form className="buscador-pagos" role="search" action={href("/consola/proveedores")}>
             <input type="hidden" name="vista" value={vista} />
             <label className="solo-lector" htmlFor="buscar-pagos">Buscar</label>
             <IconoBuscar />
@@ -101,9 +104,9 @@ export function MesaProveedores({
                 {ESTADOS_PAGO.map((actual) => <option key={actual} value={actual}>{ETIQUETA_ESTADO[actual]}</option>)}
               </select>
             ) : null}
-            <button type="submit" className="boton-texto boton-chico">Filtrar</button>
-            {q || estado ? <Link href={href(`/consola/proveedores?vista=${vista}`)} className="enlace-texto">Limpiar</Link> : null}
-          </form>
+            <BotonEnviar className="boton-texto boton-chico" enviando="Filtrando…">Filtrar</BotonEnviar>
+            {q || estado ? <Link href={href(`/consola/proveedores?vista=${vista}`)} className="enlace-texto">Limpiar<EsperaEnlace /></Link> : null}
+          </Form>
         ) : null}
         {vista === "pagos" ? <TablaPagos pagos={lectura.pagos} base={base} href={href} hoy={hoy} /> : null}
         {vista === "proveedores" ? <TablaProveedores proveedores={lectura.proveedores} pagos={lectura.pagos} base={base} href={href} /> : null}
@@ -117,8 +120,8 @@ export function MesaProveedores({
                 : `${operaciones(lectura.pagos.filter(enAgenda).length)} por pagar`}
           </span>
           <div>
-            {lectura.pagina > 1 ? <Link className="enlace-texto" href={href(`${base}&pagina=${lectura.pagina - 1}`)}>Anterior</Link> : null}
-            {lectura.hayMas ? <Link className="enlace-texto" href={href(`${base}&pagina=${lectura.pagina + 1}`)}>Siguiente</Link> : null}
+            {lectura.pagina > 1 ? <Link className="enlace-texto" href={href(`${base}&pagina=${lectura.pagina - 1}`)}>Anterior<EsperaEnlace /></Link> : null}
+            {lectura.hayMas ? <Link className="enlace-texto" href={href(`${base}&pagina=${lectura.pagina + 1}`)}>Siguiente<EsperaEnlace /></Link> : null}
           </div>
         </div>
       </section>
@@ -154,12 +157,12 @@ function TablaPagos({ pagos, base, href, hoy }: { pagos: PagoVista[]; base: stri
         <thead><tr><th scope="col">Proveedor</th><th scope="col" className="cifra">Importe</th><th scope="col">Vence</th><th scope="col">Fecha prevista</th><th scope="col">Estado</th><th scope="col"><span className="solo-lector">Abrir</span></th></tr></thead>
         <tbody>{pagos.map((pago) => (
           <tr key={pago.id}>
-            <td><Link className="celda-proveedor" href={href(`${base}&pago=${pago.id}`)}><strong>{pago.proveedor}</strong></Link><small>{pago.referencia}{pago.origen === "excepcion" ? " · Excepción" : ""}</small></td>
+            <td><Link className="celda-proveedor" href={href(`${base}&pago=${pago.id}`)}><strong>{pago.proveedor}</strong><EsperaEnlace /></Link><small>{pago.referencia}{pago.origen === "excepcion" ? " · Excepción" : ""}</small></td>
             <td className="cifra">{formatoPesos(pago.totalCentavos)}</td>
             <td className={pago.venceEl < hoy && pago.estado !== "cancelado" ? "fecha-vencida" : undefined}>{fechaLegible(pago.venceEl)}</td>
             <td>{fechaLegible(pago.programadaEl)}</td>
             <td><Insignia tono={tonoEstado(pago.estado)}>{ETIQUETA_ESTADO[pago.estado]}</Insignia></td>
-            <td className="derecha"><Link className="abrir-fila" href={href(`${base}&pago=${pago.id}`)} aria-label={`Abrir pago de ${pago.proveedor}`}>→</Link></td>
+            <td className="derecha"><Link className="abrir-fila" href={href(`${base}&pago=${pago.id}`)} aria-label={`Abrir pago de ${pago.proveedor}`}>→<EsperaEnlace /></Link></td>
           </tr>
         ))}</tbody>
       </table>
@@ -177,12 +180,12 @@ function TablaProveedores({ proveedores, pagos, base, href }: { proveedores: Pro
           const pendientes = pagos.filter((pago) => pago.supplierId === proveedor.id && pago.estado === "por_autorizar").length;
           return (
             <tr key={proveedor.id}>
-              <td><Link className="celda-proveedor" href={href(`${base}&proveedor=${proveedor.id}`)}><strong>{proveedor.razonSocial}</strong></Link><small className="celda-mono">{proveedor.nombreComercial ?? proveedor.rfc}</small></td>
+              <td><Link className="celda-proveedor" href={href(`${base}&proveedor=${proveedor.id}`)}><strong>{proveedor.razonSocial}</strong><EsperaEnlace /></Link><small className="celda-mono">{proveedor.nombreComercial ?? proveedor.rfc}</small></td>
               <td>{proveedor.contactoCorreo ?? <span className="texto-tenue">Sin correo</span>}</td>
               <td className="celda-mono">•••• {proveedor.clabeFinal}</td>
               <td>{proveedor.diasCredito} días{pendientes ? <small>{pendientes} por autorizar</small> : null}</td>
               <td><Insignia tono={!proveedor.activo || !proveedor.botonPago ? "aviso" : "sello"}>{!proveedor.activo ? "Inactivo" : proveedor.botonPago ? "Habilitado" : "Revisar"}</Insignia></td>
-              <td className="derecha"><Link className="abrir-fila" href={href(`${base}&proveedor=${proveedor.id}`)} aria-label={`Abrir expediente de ${proveedor.razonSocial}`}>→</Link></td>
+              <td className="derecha"><Link className="abrir-fila" href={href(`${base}&proveedor=${proveedor.id}`)} aria-label={`Abrir expediente de ${proveedor.razonSocial}`}>→<EsperaEnlace /></Link></td>
             </tr>
           );
         })}</tbody>
@@ -199,7 +202,7 @@ function Agenda({ pagos, base, href, hoy }: { pagos: PagoVista[]; base: string; 
   return <div className="agenda-pagos">{[...grupos].map(([fecha, lineas]) => <section key={fecha} className="agenda-dia" aria-label={fechaLegible(fecha)}>
     <div className="agenda-fecha"><p>{fechaLegible(fecha)}</p><span>{lineas.length} {lineas.length === 1 ? "pago" : "pagos"} · {formatoPesosGrande(lineas.reduce((total, pago) => total + BigInt(pago.totalCentavos), BigInt(0)))}</span></div>
     {lineas.map((pago) => <Link key={pago.id} href={href(`${base}&pago=${pago.id}`)} className="agenda-linea">
-      <span className="agenda-marca" aria-hidden="true" /><div><strong>{pago.proveedor}</strong><span>{pago.referencia} · {pago.venceEl < hoy ? "Vencido" : `Vence ${fechaLegible(pago.venceEl)}`}</span></div>
+      <span className="agenda-marca" aria-hidden="true" /><div><strong>{pago.proveedor}<EsperaEnlace /></strong><span>{pago.referencia} · {pago.venceEl < hoy ? "Vencido" : `Vence ${fechaLegible(pago.venceEl)}`}</span></div>
       <strong>{formatoPesos(pago.totalCentavos)}</strong><Insignia tono={tonoEstado(pago.estado)}>{ETIQUETA_ESTADO[pago.estado]}</Insignia>
     </Link>)}
   </section>)}</div>;

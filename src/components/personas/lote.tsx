@@ -58,7 +58,7 @@ export function DetalleLoteNomina({
           <p className="lede">Tu rol ve el total del lote. El neto y el destino de cada persona los ve quien prepara o autoriza la nómina.</p>
         )}
       </section>
-      <NotaRegla>Los importes y destinos quedaron congelados al preparar el lote; editar un expediente no los cambia. La dispersión de la nómina todavía no sale desde Lever.</NotaRegla>
+      <NotaRegla>Los importes y destinos quedaron congelados al preparar el lote; editar un expediente no los cambia. La dispersión de la nómina todavía no sale desde Lever y no se ha emitido ninguna tarjeta.</NotaRegla>
     </>
   );
 }

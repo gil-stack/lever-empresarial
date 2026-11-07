@@ -12,7 +12,7 @@ import {
   guardarUmbral,
 } from "@/app/consola/politica/acciones";
 import { FORMULARIO_INICIAL, type EstadoFormulario } from "@/app/consola/politica/estado";
-import { enviarSinReiniciar } from "@/components/proveedores/sin-reinicio";
+import { enviarSinReiniciar, useEnvioConBoton } from "@/components/proveedores/sin-reinicio";
 import { BotonEnviar } from "@/components/sistema";
 
 // Los formularios envían sin el reinicio de `<form action>`: tras un error, el
@@ -59,9 +59,10 @@ export function FormularioPlazo({ dias, vencidos }: { dias: number; vencidos: nu
 
 export function FormularioUmbral({ escrito }: { escrito: boolean }) {
   const [estado, accion, pendiente] = useActionState(guardarUmbral, FORMULARIO_INICIAL);
+  const { enviar, oprimido } = useEnvioConBoton(accion);
   const aviso = "aviso-umbral";
   return (
-    <form className="politica-forma" onSubmit={enviarSinReiniciar(accion)} noValidate aria-busy={pendiente}>
+    <form className="politica-forma" onSubmit={enviar} noValidate aria-busy={pendiente}>
       <Aviso id={aviso} estado={estado} />
       <div className="campo">
         <label htmlFor="umbral-proveedores">Umbral en pesos, con centavos</label>
@@ -78,9 +79,9 @@ export function FormularioUmbral({ escrito }: { escrito: boolean }) {
         </p>
       </div>
       <div className="acciones">
-        <BotonEnviar name="intencion" value="escribir" pendiente={pendiente} enviando="Guardando…">Escribir umbral</BotonEnviar>
+        <BotonEnviar name="intencion" value="escribir" pendiente={pendiente && oprimido === "escribir"} disabled={pendiente} enviando="Guardando…">Escribir umbral</BotonEnviar>
         {escrito ? (
-          <BotonEnviar className="boton-texto" name="intencion" value="quitar" pendiente={pendiente} enviando="Quitando…">
+          <BotonEnviar className="boton-texto" name="intencion" value="quitar" pendiente={pendiente && oprimido === "quitar"} disabled={pendiente} enviando="Quitando…">
             Quitar el umbral
           </BotonEnviar>
         ) : null}
@@ -101,11 +102,12 @@ export function FormularioPersona({
   propio: boolean;
 }) {
   const [estado, accion, pendiente] = useActionState(guardarPoliticaPersona, FORMULARIO_INICIAL);
+  const { enviar, oprimido } = useEnvioConBoton(accion);
   const diasId = `dias-${personaId}`;
   const vencidosId = `vencidos-${personaId}`;
   const aviso = `aviso-${personaId}`;
   return (
-    <form className="politica-forma" onSubmit={enviarSinReiniciar(accion)} noValidate aria-busy={pendiente}>
+    <form className="politica-forma" onSubmit={enviar} noValidate aria-busy={pendiente}>
       <Aviso id={aviso} estado={estado} />
       <input type="hidden" name="personaId" value={personaId} />
       <div className="campo">
@@ -135,9 +137,9 @@ export function FormularioPersona({
         />
       </div>
       <div className="acciones">
-        <BotonEnviar name="intencion" value="escribir" pendiente={pendiente} enviando="Guardando…">Guardar para esta persona</BotonEnviar>
+        <BotonEnviar name="intencion" value="escribir" pendiente={pendiente && oprimido === "escribir"} disabled={pendiente} enviando="Guardando…">Guardar para esta persona</BotonEnviar>
         {propio ? (
-          <BotonEnviar className="boton-texto" name="intencion" value="quitar" pendiente={pendiente} enviando="Guardando…">
+          <BotonEnviar className="boton-texto" name="intencion" value="quitar" pendiente={pendiente && oprimido === "quitar"} disabled={pendiente} enviando="Guardando…">
             Volver al plazo de la empresa
           </BotonEnviar>
         ) : null}

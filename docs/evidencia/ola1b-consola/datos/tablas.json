@@ -1,0 +1,107 @@
+[
+  {
+    "ok": true,
+    "texto": "tablas-proveedores-pagos oscuro 390: la mesa de pagos sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=248px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas-proveedores-detalle oscuro 390: el detalle del pago abierto sobre la mesa sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=248px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas-proveedores-directorio oscuro 390: el directorio de proveedores sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=248px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas-proveedores-expediente oscuro 390: el expediente abierto sobre el directorio sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=248px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas proveedores oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "tablas-muestrario oscuro 390: la tabla del muestrario sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=100px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas muestrario oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "tablas-proveedores-pagos claro 390: la mesa de pagos sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=248px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas-proveedores-detalle claro 390: el detalle del pago abierto sobre la mesa sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=248px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas-proveedores-directorio claro 390: el directorio de proveedores sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=248px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas-proveedores-expediente claro 390: el expediente abierto sobre el directorio sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=248px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas proveedores claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "tablas-muestrario claro 390: la tabla del muestrario sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=100px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas muestrario claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "tablas-proveedores-pagos lever 390: la mesa de pagos sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=248px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas-proveedores-detalle lever 390: el detalle del pago abierto sobre la mesa sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=248px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas-proveedores-directorio lever 390: el directorio de proveedores sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=248px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas-proveedores-expediente lever 390: el expediente abierto sobre el directorio sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=248px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas proveedores lever 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "tablas-muestrario lever 390: la tabla del muestrario sin ensanchar la página",
+    "detalle": "tablas=1 desborde=0px · con la tabla desplazada=0px · sin position:relative=100px"
+  },
+  {
+    "ok": true,
+    "texto": "tablas muestrario lever 390: sin errores de consola",
+    "detalle": ""
+  }
+]

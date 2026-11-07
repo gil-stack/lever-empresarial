@@ -1,0 +1,41 @@
+OK    barra proveedores-pagos oscuro 390: «Proveedores», acción y chip en una fila · título completo=sí · alto de la barra=112px · desborde=0px
+OK    barra proveedores-pagos oscuro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra
+OK    barra proveedores-pagos oscuro 390: «Nuevo pago» lleva a /consola/proveedores/nuevo
+OK    barra proveedores-directorio oscuro 390: «Proveedores», acción y chip en una fila · título completo=sí · alto de la barra=112px · desborde=0px
+OK    barra proveedores-directorio oscuro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra
+OK    barra proveedores-directorio oscuro 390: «Nuevo pago» lleva a /consola/proveedores/nuevo
+OK    barra proveedores-agenda oscuro 390: «Proveedores», acción y chip en una fila · título completo=sí · alto de la barra=112px · desborde=0px
+OK    barra proveedores-agenda oscuro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra
+OK    barra proveedores-agenda oscuro 390: «Nuevo pago» lleva a /consola/proveedores/nuevo
+OK    barra personas-directorio oscuro 390: «Personas», acción y chip en una fila · título completo=sí · alto de la barra=112px · desborde=0px
+OK    barra personas-directorio oscuro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra
+OK    barra personas-directorio oscuro 390: «Dar de alta» lleva a /consola/personas/nueva
+OK    barra oscuro 390: sin errores de consola
+OK    barra proveedores-pagos claro 390: «Proveedores», acción y chip en una fila · título completo=sí · alto de la barra=112px · desborde=0px
+OK    barra proveedores-pagos claro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra
+OK    barra proveedores-pagos claro 390: «Nuevo pago» lleva a /consola/proveedores/nuevo
+OK    barra proveedores-directorio claro 390: «Proveedores», acción y chip en una fila · título completo=sí · alto de la barra=112px · desborde=0px
+OK    barra proveedores-directorio claro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra
+OK    barra proveedores-directorio claro 390: «Nuevo pago» lleva a /consola/proveedores/nuevo
+OK    barra proveedores-agenda claro 390: «Proveedores», acción y chip en una fila · título completo=sí · alto de la barra=112px · desborde=0px
+OK    barra proveedores-agenda claro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra
+OK    barra proveedores-agenda claro 390: «Nuevo pago» lleva a /consola/proveedores/nuevo
+OK    barra personas-directorio claro 390: «Personas», acción y chip en una fila · título completo=sí · alto de la barra=112px · desborde=0px
+OK    barra personas-directorio claro 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra
+OK    barra personas-directorio claro 390: «Dar de alta» lleva a /consola/personas/nueva
+OK    barra claro 390: sin errores de consola
+OK    barra proveedores-pagos lever 390: «Proveedores», acción y chip en una fila · título completo=sí · alto de la barra=112px · desborde=0px
+OK    barra proveedores-pagos lever 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra
+OK    barra proveedores-pagos lever 390: «Nuevo pago» lleva a /consola/proveedores/nuevo
+OK    barra proveedores-directorio lever 390: «Proveedores», acción y chip en una fila · título completo=sí · alto de la barra=112px · desborde=0px
+OK    barra proveedores-directorio lever 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra
+OK    barra proveedores-directorio lever 390: «Nuevo pago» lleva a /consola/proveedores/nuevo
+OK    barra proveedores-agenda lever 390: «Proveedores», acción y chip en una fila · título completo=sí · alto de la barra=112px · desborde=0px
+OK    barra proveedores-agenda lever 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra
+OK    barra proveedores-agenda lever 390: «Nuevo pago» lleva a /consola/proveedores/nuevo
+OK    barra personas-directorio lever 390: «Personas», acción y chip en una fila · título completo=sí · alto de la barra=112px · desborde=0px
+OK    barra personas-directorio lever 390: el chip «Gil Villarreal» abre su menú y Escape lo cierra
+OK    barra personas-directorio lever 390: «Dar de alta» lleva a /consola/personas/nueva
+OK    barra lever 390: sin errores de consola
+
+39 de 39 comprobaciones en verde.

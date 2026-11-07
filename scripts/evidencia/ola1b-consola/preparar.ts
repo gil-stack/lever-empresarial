@@ -14,10 +14,15 @@ import { join } from "node:path";
 
 import { Client } from "pg";
 
+import { hoyEnMexico } from "../../../src/dominio/personas";
 import { cerrarConexion } from "../../../src/nucleo/db";
 import { darDeAltaEmpresa } from "../../../src/server/company/servicio";
 import { aceptarInvitacion } from "../../../src/server/invitaciones/servicio";
+import { prepararNomina } from "../../../src/server/nomina/servicio";
+import { darDeAltaPersona, nombrarCentro } from "../../../src/server/personas/servicio";
 import { contextoDePersonal, invitarAdministrador } from "../../../src/server/plataforma/servicio";
+import { leerSesion } from "../../../src/server/session/servicio";
+import { resolverContexto } from "../../../src/server/tenencia/resolver";
 import { aplicarArchivo, ejecutar, urlDeAplicacion } from "../../../tests/aislamiento/postgres";
 
 const BASE = "ola1b_consola";
@@ -56,6 +61,33 @@ async function principal(): Promise<void> {
   // Taller del Cierre: proveedores, cargos, 69-B y las sesiones de Gil (administrador y liberador) y Rosa (liberadora).
   aplicarArchivo(url, join(process.cwd(), "tests/e2e/seed-pagos.sql"));
   process.env.DATABASE_URL = urlDeAplicacion(url);
+
+  // Taller con un área, una colaboradora con nómina y su lote preparado: el
+  // expediente, el lote y el alta con áreas se ven con datos, no vacíos.
+  const sesionGil = await leerSesion(`sesion=${"a".repeat(43)}`);
+  if (!sesionGil) throw new Error("La sesión sembrada de Gil no abrió.");
+  const gil = (await resolverContexto({ sesion: sesionGil, empresaPedida: "33333333-3333-4333-8333-333333333333", peticionId: null, superficie: "cliente" })).ctx;
+  const hoy = hoyEnMexico(new Date());
+  const operacion = await nombrarCentro(gil, { nombre: "Operación", presupuesto: "80000.00" });
+  const marta = await darDeAltaPersona(gil, {
+    nombre: "Marta Ruiz",
+    alta: hoy,
+    baja: "",
+    centroId: operacion.id,
+    jefeId: "",
+    presupuesto: "3000.00",
+    altaLlave: randomUUID(),
+    neto: "18500.00",
+    // Semanal: el primer pago puede ser hoy (la quincena exige día 15 o fin de mes) y el lote ya vence.
+    frecuencia: "semanal",
+    primerPago: hoy,
+    destino: "clabe",
+    clabe: "002180701150123452",
+    acceso: "no",
+    correo: "",
+    rol: "",
+  });
+  const lote = await prepararNomina(gil);
 
   // Fernanda solo tiene el rol de finanzas en Taller: abre Inicio y Pendientes, y
   // el resto de la consola le muestra el estado «sin permiso».
@@ -102,6 +134,8 @@ async function principal(): Promise<void> {
     DUENO_URL: url,
     DATABASE_URL: process.env.DATABASE_URL,
     EMPRESA_TALLER: "33333333-3333-4333-8333-333333333333",
+    PERSONA_TALLER: marta.id,
+    LOTE_TALLER: lote.id,
     SESION_GIL: "a".repeat(43),
     SESION_ROSA: "b".repeat(43),
     EMPRESA_ALTAMAR: empresa.id,

@@ -189,11 +189,11 @@ export function AltaColaborador({
           <div className="destino-opciones" role="radiogroup" aria-label="Destino de nómina">
             <label className={destino === "clabe" ? "destino-opcion seleccionada" : "destino-opcion"}>
               <input id="destino" type="radio" name="destino" value="clabe" checked={destino === "clabe"} onChange={() => setDestino("clabe")} aria-describedby={mensaje("destino") ? "destino-error" : undefined} />
-              <span><strong>CLABE externa</strong><small>Depositamos a la cuenta registrada.</small></span>
+              <span><strong>CLABE externa</strong><small>La nómina se registra con esta cuenta.</small></span>
             </label>
             <label className={destino === "tarjeta" ? "destino-opcion seleccionada" : "destino-opcion"}>
               <input type="radio" name="destino" value="tarjeta" checked={destino === "tarjeta"} onChange={() => setDestino("tarjeta")} aria-describedby={mensaje("destino") ? "destino-error" : undefined} />
-              <span><strong>Tarjeta de nómina</strong><small>Queda registrada la solicitud de su tarjeta.</small></span>
+              <span><strong>Tarjeta de nómina</strong><small>Queda registrada la solicitud interna de su tarjeta.</small></span>
             </label>
           </div>
           {mensaje("destino") ? <p className="error-campo" id="destino-error">{mensaje("destino")}</p> : null}
