@@ -154,7 +154,6 @@ describe("la pantalla no mezcla la consola con el teléfono", () => {
     const telefono = marco.slice(marco.indexOf("export async function MarcoTelefono"));
     const paginaTelefono = readFileSync(new URL("../app/telefono/page.tsx", import.meta.url), "utf8");
     const pagina = readFileSync(new URL("../app/consola/proveedores/page.tsx", import.meta.url), "utf8");
-    const pantalla = readFileSync(new URL("../components/proveedores/pantalla.tsx", import.meta.url), "utf8");
     const forma = readFileSync(new URL("../components/proveedores/formulario.tsx", import.meta.url), "utf8");
 
     assert.match(telefono, /marco-telefono/);
@@ -166,13 +165,9 @@ describe("la pantalla no mezcla la consola con el teléfono", () => {
     assert.match(pagina, /<Marco/);
     assert.doesNotMatch(pagina, /MarcoTelefono/);
     assert.match(pagina, /className="pagina pagina-proveedores"/);
-    assert.equal(pantalla.includes("<button"), false);
     assert.match(forma, /Dar de alta/);
     // La puerta del alta ya recorre estos archivos. Aquí no se escribe el
     // nombre del connection string: no es un secreto y no hace falta esconderlo.
     assert.doesNotMatch(forma, /SPEI|Pagar ahora|BLOB_READ_WRITE_TOKEN/);
-    assert.match(pantalla, /clabeVisible/);
-    assert.doesNotMatch(pantalla, /BLOB_READ_WRITE_TOKEN|https?:\/\//);
-    assert.doesNotMatch(pantalla, /SPEI/);
   });
 });

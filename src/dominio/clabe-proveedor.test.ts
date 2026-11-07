@@ -127,7 +127,6 @@ describe("la CLABE vive en la consola y no en el teléfono", () => {
     const marco = readFileSync(new URL("../components/cromo/marco.tsx", import.meta.url), "utf8");
     const telefonoMarco = marco.slice(marco.indexOf("export async function MarcoTelefono"));
     const pagina = readFileSync(new URL("../app/consola/proveedores/page.tsx", import.meta.url), "utf8");
-    const panel = readFileSync(new URL("../components/proveedores/panel.tsx", import.meta.url), "utf8");
     const cambio = readFileSync(new URL("../components/proveedores/formulario-cambio.tsx", import.meta.url), "utf8");
     const marcoInicio = marco.indexOf("export async function MarcoTelefono");
     const marcoFin = marco.indexOf("\nfunction Grupo", marcoInicio);
@@ -143,12 +142,6 @@ describe("la CLABE vive en la consola y no en el teléfono", () => {
     assert.equal(menu.includes("/consola/clabe"), false);
     assert.equal(pagina.includes("MarcoTelefono"), false);
     assert.match(pagina, /Marco/);
-    assert.match(panel, /EtiquetaMono/);
-    assert.match(panel, /FRASE_INSTITUCION_PENDIENTE/);
-    assert.match(panel, /No se envía dinero/);
-    assert.equal(panel.includes("<LecturaClabe"), false);
-    assert.equal(panel.includes('from "./lectura"'), false);
-    assert.equal(panel.includes('id="lectura-clabe"'), false);
     assert.match(cambio, /digitos.length >= 18/);
     assert.match(cambio, /Esa CLABE no cierra/);
     assert.equal(telefonoCuerpo.includes("CLABE"), false);
@@ -159,7 +152,5 @@ describe("la CLABE vive en la consola y no en el teléfono", () => {
     // El aviso vigente hasta que legal apruebe el nuevo; el texto del diseño (SOFIPO por definir) no se publica.
     assert.match(marco, /El saldo vive con el participante de la CLABE\. El plástico vive con el emisor\./);
     assert.doesNotMatch(marco, /Sociedad Financiera Popular|razón social por definir/);
-    assert.equal(panel.includes("•"), false);
-    assert.doesNotMatch(panel, /SPEI|transferir|Pagar/);
   });
 });

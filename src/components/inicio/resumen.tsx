@@ -30,7 +30,7 @@ export function Resumen({ carga, empresaId, atajos }: { carga: CargaResumen; emp
         <header className="pagina-cabeza">
           <p className="kicker">Inicio</p>
           <h1>{sinEmpresa ? "Todavía no hay una empresa activa." : "No se pudo consultar el resumen."}</h1>
-          <p className="lede">{sinEmpresa ? "Pide una invitación a quien administra la empresa." : "No se muestran cifras supuestas. Vuelve a intentar."}</p>
+          <p className="lede">{sinEmpresa ? "Pide una invitación a quien administra la empresa." : "Vuelve a intentar."}</p>
         </header>
         {!sinEmpresa ? <div className="acciones"><Link className="boton" href={enEmpresa(empresaId, "/consola")}>Reintentar</Link></div> : null}
       </div>
