@@ -112,7 +112,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «Crea la primera área» aparece y «Crear área» lleva a su pantalla",
-    "detalle": "/c/b74680db-47bc-430f-809f-6b98bca5f3d9/consola/personas/areas"
+    "detalle": "/c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/personas/areas"
   },
   {
     "ok": true,
@@ -137,7 +137,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «Da de alta al primer colaborador» aparece y «Dar de alta» lleva a su pantalla",
-    "detalle": "/c/b74680db-47bc-430f-809f-6b98bca5f3d9/consola/personas/nueva"
+    "detalle": "/c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/personas/nueva"
   },
   {
     "ok": true,
@@ -182,7 +182,7 @@
   {
     "ok": true,
     "texto": "flujo 11: «^Prepara el lote de nómina del » aparece y «Preparar nómina» lleva a su pantalla",
-    "detalle": "/c/b74680db-47bc-430f-809f-6b98bca5f3d9/consola/personas/nomina"
+    "detalle": "/c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/personas/nomina"
   },
   {
     "ok": true,
@@ -297,22 +297,22 @@
   {
     "ok": true,
     "texto": "flujo 11: «^Falta(n)? (una|dos) personas? autorizadas? para liberar» aparece y «Revisar accesos» lleva a su pantalla",
-    "detalle": "/c/b74680db-47bc-430f-809f-6b98bca5f3d9/consola/personas"
+    "detalle": "/c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/personas"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Crea la primera categoría» aparece y «Configurar política» lleva a su pantalla",
-    "detalle": "/c/b74680db-47bc-430f-809f-6b98bca5f3d9/consola/politica"
+    "detalle": "/c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/politica"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Registra el primer proveedor» aparece y «Configurar proveedores» lleva a su pantalla",
-    "detalle": "/c/b74680db-47bc-430f-809f-6b98bca5f3d9/consola/proveedores"
+    "detalle": "/c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/proveedores"
   },
   {
     "ok": true,
     "texto": "flujo 11: «Revisa el plan de esta empresa» aparece y «Ver plan» lleva a su pantalla",
-    "detalle": "/c/b74680db-47bc-430f-809f-6b98bca5f3d9/consola/configuracion/plan"
+    "detalle": "/c/f3773bcd-2deb-4b7e-abcb-d7df0bfa9745/consola/configuracion/plan"
   },
   {
     "ok": true,
