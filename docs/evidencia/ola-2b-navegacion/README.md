@@ -5,12 +5,13 @@ Recorrido con Playwright headless propio (`scripts/evidencia/ola-2b-navegacion.m
 - **Taller del Cierre**, empresa **real** (`demostracion = false`): la semilla de Pagos a proveedores con tres pagos por autorizar que pidió Gil (uno es E-12, el de la prueba de atajos de los e2e), una nómina semanal vencida y sin lote, y una persona por rol (Ana administradora, Fernanda finanzas, Carla contadora, Rosa liberadora, Sergio solicitante).
 - **Altamar Logística**, empresa de **demostración**, dada de alta por el personal del operador, con Laura (administradora) y Daniela (solicitante).
 
-Corrida final del 2026-11-07 sobre el head del PR, en este orden: `lado`, `pantallas` (3 temas), `contraste` (3 temas), `cargando`, `flujos` y `caida`. Los flujos mueven datos de la base local, por eso van después de las capturas que necesitan los pagos por autorizar.
+Corrida final del 2026-11-08 sobre el head del PR, en este orden: `lado`, `modulos`, `pantallas` (3 temas), `contraste` (3 temas), `cargando`, `flujos` y `caida`. Los flujos mueven datos de la base local, por eso van después de las capturas que necesitan los pagos por autorizar.
 
 | Modo | Qué revisa | Resultado |
 | --- | --- | --- |
 | `flujos` | Los flujos 1-6 del brief, clicados, con doble clic y conteo en la base | **185 de 185** |
-| `lado` | Los 16 módulos junto a su captura del diseño (`lado-a-lado/`) | **32 de 32** |
+| `lado` | Los 16 módulos junto a su captura del diseño, y la DIOT de Fiscal medida contra la fuente del diseño a 1440 y 390 (`lado-a-lado/`) | **42 de 42** |
+| `modulos` | Movimientos y Fiscal clicados en Claro, Oscuro y Lever, a 1440 y 390: elegir una persona y escribir un monto con Enter filtran con una sola navegación cada uno, «Limpiar filtros» vuelve a las 34 compras, al desplazar la DIOT se ve la columna IVA y «Lista 69-B» deja el lateral en Fiscal (`modulos/`) | **48 de 48** |
 | `pantallas` | 27 pantallas nuevas en Claro, Oscuro y Lever, a 1440 y 390: responde 200, un solo h1, campos y botones con nombre, errores ligados al campo, sin desplazamiento horizontal, consola limpia y, en Oscuro 1440, cada parada de Tab en orden y con foco visible | **851 de 851** |
 | `contraste` | AA de cada texto contra la escena real (método del #50) | Oscuro 4.70 / 5.09 · Claro 4.97 / 4.50 · Lever 4.62 / 5.13 (mínimo a 1440 / 390, sobre 4.5) |
 | `cargando` | «Cargando…» de una sección nueva mientras llega la página, con el marco quieto | **9 de 9** |
@@ -44,7 +45,9 @@ A la izquierda la captura del diseño (`plat-00…15`), a la derecha la pantalla
 - **Marca «Demostración»** en cada botón que movería dinero o crearía algo: hace los botones más anchos que en el diseño (Cuenta, Conciliación).
 - **Aprobaciones** se compara con la bandeja real de Taller del Cierre vista por la liberadora. Las solicitudes del diseño (saldo con crédito, aumento de límite, reembolsos, tarjeta adicional) no existen como acciones, y la regla «arriba de $50,000.00 se requiere una segunda aprobación» tampoco: no se inventan reglas de dinero ni umbrales, así que la bandeja pinta lo que sí aplica (pagos a proveedores por autorizar y nómina por preparar).
 - **Fiscal** agrega arriba los enlaces a la Lista 69-B y la Póliza reales, que ahora viven dentro de Fiscal.
-- **Movimientos**: la barra de filtros es la `mfBar` del diseño, en su orden: Mes, periodo, Persona, Área y Tarjeta arriba; Categoría, Comprobante, Monto desde, Agrupar por, Excel y Póliza contable abajo, y «Limpiar filtros» solo con un filtro puesto. Filtra en cuanto cambia un campo, como el diseño. El botón «Filtrar» solo existe sin JavaScript (va en `<noscript>`): el filtro es un formulario GET que también funciona así, y el flujo 2 lo prueba con JavaScript apagado. El selector Mes trae solo octubre porque los datos de ejemplo son de un mes. La marca «Demostración» de Excel y Póliza va más compacta en esta barra para que quepan en el segundo renglón. El mapa es esquemático (SVG propio), sin teselas de un tercero.
+- **DIOT de Fiscal**: lleva las tres columnas de la fuente del diseño (`fPlat.script0.js`): Proveedor, Pagado sin IVA e IVA. La captura del diseño no enseña IVA porque su primera columna no se corta (`.tbl td:first-child`) y la tabla se desplaza a lo ancho dentro de `.tblWrap`. La app hace lo mismo, así que a 1440 la columna IVA también queda tras el desplazamiento. `lado` compara la app con la fuente a 1440 y 390: columnas, proveedor sin corte, caja que se desplaza, aire entre la nota y la tabla y alto de la cabecera. `plat-06-fiscal-diot-1440` y `-390` ponen las dos tarjetas desplazadas hasta el final, el diseño a la izquierda.
+- **Tablas de demostración**: como `.tbl` del diseño, la primera columna no se corta y las cabeceras de cifras sí se parten. Las dos reglas valen para todas; hoy solo cambian la DIOT y, a 390, las cabeceras de Tarjetas, que el diseño también parte.
+- **Movimientos**: la barra de filtros es la `mfBar` del diseño, en su orden: Mes, periodo, Persona, Área y Tarjeta arriba; Categoría, Comprobante, Monto desde, Agrupar por, Excel y Póliza contable abajo, y «Limpiar filtros» solo con un filtro puesto. Filtra en cuanto cambia un campo, como el diseño. El botón «Filtrar» solo existe sin JavaScript (va en `<noscript>`): el filtro es un formulario GET que también funciona así, y el flujo 2 lo prueba con JavaScript apagado. El selector Mes trae solo octubre porque los datos de ejemplo son de un mes. La marca «Demostración» de Excel y Póliza va más compacta en esta barra para que quepan en el segundo renglón. Enter en «Monto desde» filtra con una sola navegación, igual que salir con Tab. El mapa es esquemático (SVG propio), sin teselas de un tercero.
 - **Resumen, Proveedores y Nómina** son los módulos reales con los datos de Altamar, no los del prototipo.
 
 ## Atajos de teclado desde un diálogo (`atajos/`)
@@ -55,6 +58,12 @@ La revisión del PR encontró que, con el diálogo «Rechazar» abierto y el foc
 - **Operación**: `atajos/operacion.spec.ts.txt`, un spec temporal que no se sube a `operacion.spec.ts`. Sin el arreglo, A en «Cancelar» del rechazo de una activación **activó la empresa**; con el arreglo, ninguna tecla envía nada y el control positivo aprueba una vez.
 - La salida cruda de las cuatro corridas (sin y con el arreglo, en los dos portales) está en `atajos/salida.txt`.
 
+## Re-verificación de b38728e (R1, N1 y N2)
+
+- **R1 · DIOT**: la columna IVA había salido por una comparación contra la captura del diseño y no contra su fuente. Regresó con su dato, y la tabla se comporta como la del diseño (sección anterior).
+- **N1 · puertas**: `src/nucleo/capacidades.test.ts` afirma también quién abre Fiscal: administrador, solicitante, liberador y contador; no finanzas ni tarjetahabiente. Si su puerta abre además con el flujo de caja, la prueba falla (`datos/mutacion-fiscal.txt`).
+- **N2 · Enter en «Monto desde»**: navegaba dos veces, porque el «change» enviaba el formulario y el navegador lo volvía a enviar con Enter. El envío del «change» ahora espera un turno y se cancela si el formulario ya salió. `tests/e2e/demostracion.spec.ts` cuenta una navegación con Enter y una con Tab, sin contar las precargas de los enlaces de periodo. Sin el arreglo falla con dos navegaciones (`datos/enter-monto.txt`).
+
 ## Correr el recorrido
 
 ```sh
@@ -62,7 +71,8 @@ La revisión del PR encontró que, con el diálogo «Rechazar» abierto y el foc
 DUENO_URL=postgres://postgres@127.0.0.1:5552/postgres ./node_modules/.bin/tsx scripts/evidencia/ola-2b/preparar.ts > test-results/ola-2b/entorno.json
 E2E_SERVER_ACTIONS=1 E2E_PUERTO=4812 ./node_modules/.bin/next build
 DATABASE_URL=<la de entorno.json> E2E_SERVER_ACTIONS=1 E2E_PUERTO=4812 ./node_modules/.bin/next start -p 4812 -H 127.0.0.1
-DISENO=<carpeta de capturas del diseño> node scripts/evidencia/ola-2b-navegacion.mjs lado
+DISENO=<carpeta de capturas del diseño> node scripts/evidencia/ola-2b-navegacion.mjs lado   # fPlat.html va junto a esa carpeta
+node scripts/evidencia/ola-2b-navegacion.mjs modulos
 TEMAS=oscuro SUFIJO=-oscuro node scripts/evidencia/ola-2b-navegacion.mjs pantallas   # y claro, lever
 TEMAS=oscuro SUFIJO=-oscuro node scripts/evidencia/ola-2b-navegacion.mjs contraste   # y claro, lever
 node scripts/evidencia/ola-2b-navegacion.mjs cargando

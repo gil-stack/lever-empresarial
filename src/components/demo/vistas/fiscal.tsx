@@ -64,7 +64,7 @@ export function VistaFiscal({ datos, empresaId }: { datos: FiscalDemo; empresaId
           }
           acciones={<Accion accion={{ etiqueta: "Descargar", tipo: "secundaria" }} icono={<IconoDescargar />} />}
         >
-          <p className="demo-tenue">IVA pagado a cada proveedor, armado con las facturas que ya están en Lever. Tu contador la revisa y la presenta.</p>
+          <p className="demo-tenue demo-antes-de-tabla">IVA pagado a cada proveedor, armado con las facturas que ya están en Lever. Tu contador la revisa y la presenta.</p>
           <div className="tabla-contenedor">
             <table className="tabla">
               <thead>
@@ -73,16 +73,20 @@ export function VistaFiscal({ datos, empresaId }: { datos: FiscalDemo; empresaId
                   <th scope="col" className="derecha">
                     Pagado sin IVA
                   </th>
+                  <th scope="col" className="derecha">
+                    IVA
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {datos.diot.map((renglon) => (
                   <tr key={renglon.rfc}>
                     <td>
-                      {renglon.proveedor}
+                      <b>{renglon.proveedor}</b>
                       <small className="demo-mono">{renglon.rfc}</small>
                     </td>
                     <td className="derecha">{pesos(renglon.sinIvaCentavos)}</td>
+                    <td className="derecha">{pesos(renglon.ivaCentavos)}</td>
                   </tr>
                 ))}
               </tbody>

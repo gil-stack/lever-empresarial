@@ -158,5 +158,55 @@
     "ok": true,
     "texto": "lado plat-15-ahorro.png: sin errores de consola",
     "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado DIOT 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado DIOT 1440: las columnas son las de la fuente del diseño (Proveedor, Pagado sin IVA, IVA)",
+    "detalle": "diseño {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true} · app {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true}"
+  },
+  {
+    "ok": true,
+    "texto": "lado DIOT 1440: el proveedor no se corta, como en el diseño",
+    "detalle": "diseño {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true} · app {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true}"
+  },
+  {
+    "ok": true,
+    "texto": "lado DIOT 1440: la tabla se desplaza a lo ancho, como en el diseño",
+    "detalle": "diseño {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true} · app {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true}"
+  },
+  {
+    "ok": true,
+    "texto": "lado DIOT 1440: el aire entre la nota y la tabla y el alto de la cabecera son los del diseño",
+    "detalle": "diseño {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true} · app {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true}"
+  },
+  {
+    "ok": true,
+    "texto": "lado DIOT 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "lado DIOT 390: las columnas son las de la fuente del diseño (Proveedor, Pagado sin IVA, IVA)",
+    "detalle": "diseño {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true} · app {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true}"
+  },
+  {
+    "ok": true,
+    "texto": "lado DIOT 390: el proveedor no se corta, como en el diseño",
+    "detalle": "diseño {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true} · app {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true}"
+  },
+  {
+    "ok": true,
+    "texto": "lado DIOT 390: la tabla se desplaza a lo ancho, como en el diseño",
+    "detalle": "diseño {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true} · app {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true}"
+  },
+  {
+    "ok": true,
+    "texto": "lado DIOT 390: el aire entre la nota y la tabla y el alto de la cabecera son los del diseño",
+    "detalle": "diseño {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true} · app {\"columnas\":[\"Proveedor\",\"Pagado sin IVA\",\"IVA\"],\"aireAntesDeTabla\":10,\"altoCabecera\":46,\"renglones\":10,\"primeraSinCorte\":true,\"desplaza\":true,\"desborda\":true}"
   }
 ]

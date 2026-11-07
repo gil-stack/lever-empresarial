@@ -494,6 +494,11 @@
   color: var(--tx3);
 }
 
+/* La nota de la DIOT (diseño: margin:-4px 0 10px): sube hacia el título y deja aire antes de la tabla. */
+.demo-antes-de-tabla {
+  margin: -4px 0 10px;
+}
+
 .demo-nota-fina {
   max-width: 820px;
   margin: 20px 2px 0;
@@ -1128,6 +1133,16 @@
 
 .modulo-diseno .tabla td b {
   font-weight: 500;
+}
+
+/* Como .tbl del diseño: la primera columna no se corta y las cabeceras de cifras sí (su .r solo prohíbe el corte en td).
+   Si la tabla no cabe, se desplaza dentro de .tabla-contenedor. */
+.modulo-diseno .tabla td:first-child {
+  white-space: nowrap;
+}
+
+.modulo-diseno .tabla th.derecha {
+  white-space: normal;
 }
 
 @media (max-width: 1180px) {

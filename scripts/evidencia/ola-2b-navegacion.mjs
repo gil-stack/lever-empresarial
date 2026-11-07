@@ -5,6 +5,7 @@
 //   node scripts/evidencia/ola-2b-navegacion.mjs flujos      los 6 flujos clicados, con doble clic y conteo en la base
 //   node scripts/evidencia/ola-2b-navegacion.mjs lado        los 16 módulos de Altamar junto a su captura del diseño
 //   node scripts/evidencia/ola-2b-navegacion.mjs pantallas   3 temas × 1440/390: un h1, etiquetas, consola limpia, foco
+//   node scripts/evidencia/ola-2b-navegacion.mjs modulos     Movimientos y Fiscal clicados en 3 temas × 1440/390
 //   node scripts/evidencia/ola-2b-navegacion.mjs contraste   AA de cada texto contra la escena real
 //   node scripts/evidencia/ola-2b-navegacion.mjs cargando    «Cargando…» de una sección nueva mientras llega la página
 //   node scripts/evidencia/ola-2b-navegacion.mjs caida       con el Postgres apagado: el error de cada pantalla nueva
@@ -14,6 +15,7 @@ import { execFileSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { resolve } from "node:path";
 
 const requerir = createRequire(`${process.cwd()}/package.json`);
 const { chromium } = requerir("playwright");
@@ -543,6 +545,136 @@ async function lado() {
     anotar(errores.length === 0, `lado ${archivo}: sin errores de consola`, errores.join(" | "));
     await nav.close();
   }
+  await diotContraLaFuente(carpeta);
+}
+
+/** Columnas de la DIOT, si su primera columna se corta y si su caja se desplaza, en el diseño o en la app. */
+function medirDiot(enApp) {
+  const tarjeta = enApp
+    ? document.querySelector('section[aria-labelledby="fiscal-diot"]')
+    : [...document.querySelectorAll("h3")].find((h) => /DIOT/.test(h.textContent ?? ""))?.closest(".card");
+  const caja = tarjeta?.querySelector(enApp ? ".tabla-contenedor" : ".tblWrap");
+  if (!tarjeta || !caja) return null;
+  const nombres = [...tarjeta.querySelectorAll("tbody td:first-child b")];
+  const cabeceras = [...tarjeta.querySelectorAll("thead th")];
+  return {
+    columnas: cabeceras.map((th) => th.textContent?.trim() ?? ""),
+    aireAntesDeTabla: Math.round(cabeceras[0].getBoundingClientRect().top - tarjeta.querySelector("p").getBoundingClientRect().bottom),
+    altoCabecera: Math.round(cabeceras[0].getBoundingClientRect().height),
+    renglones: nombres.length,
+    primeraSinCorte: nombres.length > 0 && nombres.every((b) => b.getClientRects().length === 1),
+    desplaza: getComputedStyle(caja).overflowX === "auto",
+    desborda: caja.scrollWidth > caja.clientWidth,
+  };
+}
+
+/**
+ * La DIOT se mide contra la fuente del diseño (fPlat.html, junto a la carpeta de capturas) y no solo contra su
+ * captura: ahí la primera columna no se corta y la columna IVA queda tras un desplazamiento horizontal, así que
+ * la imagen no la enseña. Deja las dos tarjetas desplazadas hasta el final, lado a lado, para que se vea IVA.
+ */
+async function diotContraLaFuente(carpeta) {
+  const fuente = `file://${resolve(DISENO, "..", "fPlat.html")}#fiscal`;
+  for (const ancho of [1440, 390]) {
+    const tomas = [];
+    const medidas = [];
+    for (const enApp of [false, true]) {
+      const { nav, p, errores } = await abrir({ quien: enApp ? "laura" : null, ancho });
+      await p.goto(enApp ? `${BASE}${ALTAMAR}/consola/fiscal` : fuente, { waitUntil: "networkidle" });
+      await p.waitForTimeout(enApp ? 600 : 1500);
+      const medida = await p.evaluate(medirDiot, enApp);
+      medidas.push(medida);
+      const tarjeta = enApp ? p.locator('section[aria-labelledby="fiscal-diot"]') : p.locator(".card").filter({ has: p.locator("h3", { hasText: "DIOT" }) });
+      await tarjeta.evaluate((nodo) => {
+        const caja = nodo.querySelector(".tabla-contenedor, .tblWrap");
+        if (caja) caja.scrollLeft = caja.scrollWidth;
+      });
+      await p.addStyleTag({ content: "nextjs-portal { display: none !important; }" }).catch(() => {});
+      tomas.push(await tarjeta.screenshot());
+      if (enApp) anotar(errores.length === 0, `lado DIOT ${ancho}: sin errores de consola`, errores.join(" | "));
+      await nav.close();
+    }
+    const [diseno, app] = medidas;
+    const detalle = `diseño ${JSON.stringify(diseno)} · app ${JSON.stringify(app)}`;
+    anotar(Boolean(diseno && app) && JSON.stringify(app.columnas) === JSON.stringify(diseno.columnas), `lado DIOT ${ancho}: las columnas son las de la fuente del diseño (${diseno?.columnas.join(", ")})`, detalle);
+    anotar(Boolean(app?.primeraSinCorte && diseno?.primeraSinCorte), `lado DIOT ${ancho}: el proveedor no se corta, como en el diseño`, detalle);
+    anotar(Boolean(app?.desplaza && diseno?.desplaza), `lado DIOT ${ancho}: la tabla se desplaza a lo ancho, como en el diseño`, detalle);
+    anotar(
+      app?.aireAntesDeTabla === diseno?.aireAntesDeTabla && app?.altoCabecera === diseno?.altoCabecera,
+      `lado DIOT ${ancho}: el aire entre la nota y la tabla y el alto de la cabecera son los del diseño`,
+      detalle,
+    );
+    const [a, b] = await Promise.all(tomas.map((toma) => sharp(toma).metadata()));
+    const margen = 24;
+    await sharp({ create: { width: a.width + margen + b.width, height: Math.max(a.height, b.height), channels: 3, background: { r: 20, g: 18, b: 17 } } })
+      .composite([{ input: tomas[0], left: 0, top: 0 }, { input: tomas[1], left: a.width + margen, top: 0 }])
+      .webp({ quality: 80 })
+      .toFile(`${carpeta}/plat-06-fiscal-diot-${ancho}.webp`);
+  }
+}
+
+// ---------- Movimientos y Fiscal clicados en 3 temas × 1440/390 ----------
+async function modulos() {
+  const carpeta = `${DIR}/modulos`;
+  mkdirSync(carpeta, { recursive: true });
+  for (const tema of TEMAS) {
+    for (const ancho of ANCHOS) {
+      const etiqueta = `modulos ${tema} ${ancho}`;
+      const { nav, p, errores } = await abrir({ quien: "laura", tema, ancho });
+      // Navegaciones del formulario: las precargas de los enlaces de periodo llevan los mismos filtros y no cuentan.
+      const navegaciones = [];
+      p.on("request", (r) => {
+        if (!r.headers()["next-router-prefetch"] && /\/consola\/movimientos\?/.test(r.url())) navegaciones.push(r.url());
+      });
+      const compras = () => p.evaluate(() => document.querySelector("main").innerText.match(/(\d+) compras? con los filtros/)?.[1] ?? null);
+      const limpiar = p.getByRole("link", { name: "Limpiar filtros" });
+      await p.goto(`${BASE}${ALTAMAR}/consola/movimientos`, { waitUntil: "networkidle" });
+      anotar((await compras()) === "34" && (await limpiar.count()) === 0, `${etiqueta} Movimientos: abre con las 34 compras y sin «Limpiar filtros»`);
+      await p.getByLabel("Persona", { exact: true }).selectOption("Carlos Méndez");
+      await p.waitForURL(/persona=Carlos/);
+      await p.waitForFunction(() => !/\b34 compras con los filtros/.test(document.querySelector("main")?.innerText ?? ""));
+      const deCarlos = await compras();
+      anotar(Number(deCarlos) < 34 && navegaciones.length === 1, `${etiqueta} Movimientos: elegir a Carlos Méndez filtra solo, con una navegación`, `${deCarlos} de 34 · ${navegaciones.length} navegación(es)`);
+      navegaciones.length = 0;
+      await p.locator("#movimientos-desde").click();
+      await p.keyboard.type("1000");
+      await p.keyboard.press("Enter");
+      await p.waitForURL(/desde=1000/);
+      await p.waitForTimeout(800);
+      const conMonto = await compras();
+      anotar(navegaciones.length === 1 && Number(conMonto) <= Number(deCarlos), `${etiqueta} Movimientos: Enter en «Monto desde» filtra con una sola navegación`, `${conMonto} compras · ${navegaciones.length} navegación(es)`);
+      await capturar(p, `${carpeta}/movimientos-filtrado-${tema}-${ancho}.webp`);
+      await limpiar.click();
+      await p.waitForURL((url) => url.pathname.endsWith("/consola/movimientos") && url.search === "");
+      anotar((await compras()) === "34" && (await limpiar.count()) === 0, `${etiqueta} Movimientos: «Limpiar filtros» vuelve a las 34 compras`);
+
+      await p.goto(`${BASE}${ALTAMAR}/consola/fiscal`, { waitUntil: "networkidle" });
+      const caja = p.locator('section[aria-labelledby="fiscal-diot"] .tabla-contenedor');
+      await caja.scrollIntoViewIfNeeded();
+      await caja.evaluate((nodo) => {
+        nodo.scrollLeft = nodo.scrollWidth;
+      });
+      const iva = await caja.evaluate((nodo) => {
+        const ultima = [...nodo.querySelectorAll("thead th")].at(-1);
+        const a = nodo.getBoundingClientRect();
+        const b = ultima.getBoundingClientRect();
+        return { texto: ultima.textContent.trim(), adentro: b.left >= a.left - 1 && b.right <= a.right + 1, desplazado: nodo.scrollLeft };
+      });
+      anotar(iva.texto === "IVA" && iva.adentro, `${etiqueta} Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA`, JSON.stringify(iva));
+      // La captura de página completa sale descuadrada si la ventana está desplazada; la tabla conserva su desplazamiento.
+      await p.evaluate(() => window.scrollTo(0, 0));
+      await capturar(p, `${carpeta}/fiscal-diot-${tema}-${ancho}.webp`);
+      await p.getByRole("link", { name: "Lista 69-B" }).click();
+      await p.waitForURL(/\/consola\/lista-69b/);
+      const marcado = (await leerLateral(p)).find((l) => l.actual)?.texto;
+      anotar(marcado === "Fiscal", `${etiqueta} Fiscal: «Lista 69-B» abre la lista real y el lateral sigue en Fiscal`, marcado);
+      await p.goBack();
+      await p.waitForURL(/\/consola\/fiscal$/);
+      anotar(await p.getByRole("columnheader", { name: "IVA", exact: true }).count() === 1, `${etiqueta} Fiscal: al volver, la DIOT sigue con sus tres columnas`);
+      anotar(errores.length === 0, `${etiqueta}: sin errores de consola`, errores.join(" | "));
+      await nav.close();
+    }
+  }
 }
 
 // ---------- Pantallas nuevas en 3 temas × 1440/390 ----------
@@ -889,6 +1021,7 @@ if (modo !== "caida") sesionesFrescas();
 if (modo === "flujos") await flujos();
 else if (modo === "lado") await lado();
 else if (modo === "pantallas") await pantallas();
+else if (modo === "modulos") await modulos();
 else if (modo === "contraste") await contraste();
 else if (modo === "cargando") await cargando();
 else if (modo === "caida") {

@@ -14,9 +14,21 @@ export function FiltrosAlCambiar({ action, children }: { action: string; childre
     const nodo = forma.current;
     if (!nodo) return;
     // El «change» nativo llega al elegir en un selector y al salir del monto (o con Enter), no en cada tecla.
-    const enviar = () => nodo.requestSubmit();
-    nodo.addEventListener("change", enviar);
-    return () => nodo.removeEventListener("change", enviar);
+    // Con Enter el navegador también envía el formulario justo después del «change»: el envío se aplaza
+    // un turno y se cancela si el formulario ya salió, para que Enter navegue una sola vez.
+    let pendiente: ReturnType<typeof setTimeout> | undefined;
+    const alCambiar = () => {
+      clearTimeout(pendiente);
+      pendiente = setTimeout(() => nodo.requestSubmit());
+    };
+    const alEnviar = () => clearTimeout(pendiente);
+    nodo.addEventListener("change", alCambiar);
+    nodo.addEventListener("submit", alEnviar);
+    return () => {
+      clearTimeout(pendiente);
+      nodo.removeEventListener("change", alCambiar);
+      nodo.removeEventListener("submit", alEnviar);
+    };
   }, []);
   return (
     <Form ref={forma} className="demo-filtros" action={action} scroll={false}>

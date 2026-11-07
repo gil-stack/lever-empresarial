@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { capacidadesDe, rolesLeidos, superficieDe, tiene, tieneRolDeTrabajo, type RolCliente } from "./capacidades.ts";
+import { capacidadesDe, ROLES_CLIENTE, rolesLeidos, superficieDe, tiene, tieneRolDeTrabajo, type RolCliente } from "./capacidades.ts";
 import { rutaDe } from "./rutas.ts";
 
 describe("capacidades por superficie", () => {
@@ -75,6 +75,12 @@ describe("capacidades por superficie", () => {
     assert.deepEqual(abre("liberador"), ["internacional", "viajes", "gasolina"]);
     assert.deepEqual(abre("solicitante"), ["internacional", "viajes", "gasolina"]);
     assert.deepEqual(abre("tarjetahabiente"), []);
+    const abreFiscal = (rol: RolCliente) => {
+      const acceso = rutaDe("/consola/fiscal")?.acceso;
+      const capacidades = capacidadesDe({ rolesCliente: [rol], rolesPlataforma: [] });
+      return acceso?.tipo === "capacidad" && acceso.alguna.some((capacidad) => tiene(capacidades, capacidad));
+    };
+    assert.deepEqual(ROLES_CLIENTE.filter(abreFiscal), ["administrador", "solicitante", "liberador", "contador"]);
   });
 
   it("solicitante sigue leyéndose en membresías históricas", () => {

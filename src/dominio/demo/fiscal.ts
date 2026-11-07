@@ -1,7 +1,7 @@
 import { congelar, type CifraDemo } from "./tipos";
 
 export type AlertaFiscalDemo = { readonly titulo: string; readonly detalle: string; readonly grave: boolean; readonly enlace: string };
-export type RenglonDiotDemo = { readonly proveedor: string; readonly rfc: string; readonly sinIvaCentavos: number };
+export type RenglonDiotDemo = { readonly proveedor: string; readonly rfc: string; readonly sinIvaCentavos: number; readonly ivaCentavos: number };
 
 export type FiscalDemo = {
   readonly cifras: readonly CifraDemo[];
@@ -22,15 +22,15 @@ export const FISCAL_DEMO: FiscalDemo = congelar({
     { titulo: "Uso del CFDI equivocado", grave: false, enlace: "Ver el gasto", detalle: "La factura de Amazon México del 8 oct viene con uso «S01 Sin efectos fiscales». Pide que la reemitan con «G03 Gastos en general»." },
   ],
   diot: [
-    { proveedor: "Llantas y Servicios Bajío, S.A. de C.V.", rfc: "LSB120415HG7", sinIvaCentavos: 3560000 },
-    { proveedor: "Home Depot México, S. de R.L. de C.V.", rfc: "HOM070621KF2", sinIvaCentavos: 1934905 },
-    { proveedor: "Office Depot de México, S.A. de C.V.", rfc: "OFF011228UM5", sinIvaCentavos: 853750 },
-    { proveedor: "Estación de Servicio 4512, S.A. de C.V.", rfc: "EST060513RK4", sinIvaCentavos: 786207 },
-    { proveedor: "Aerovías de México, S.A. de C.V.", rfc: "AER051011MT0", sinIvaCentavos: 762069 },
-    { proveedor: "Costco de México, S.A. de C.V.", rfc: "COS061111BT1", sinIvaCentavos: 753138 },
-    { proveedor: "Servicios Comerciales Amazon México, S. de R.L. de C.V.", rfc: "SER040901PU8", sinIvaCentavos: 752172 },
-    { proveedor: "Estación de Servicio 0871, S.A. de C.V.", rfc: "EST960104KC3", sinIvaCentavos: 713793 },
-    { proveedor: "Distribuidora Liverpool, S.A. de C.V.", rfc: "DIS920919NC5", sinIvaCentavos: 507759 },
-    { proveedor: "Hotel Safi Royal Valle, S.A. de C.V.", rfc: "HOT110419YE6", sinIvaCentavos: 337931 },
+    { proveedor: "Llantas y Servicios Bajío, S.A. de C.V.", rfc: "LSB120415HG7", sinIvaCentavos: 3560000, ivaCentavos: 569600 },
+    { proveedor: "Home Depot México, S. de R.L. de C.V.", rfc: "HOM070621KF2", sinIvaCentavos: 1934905, ivaCentavos: 309585 },
+    { proveedor: "Office Depot de México, S.A. de C.V.", rfc: "OFF011228UM5", sinIvaCentavos: 853750, ivaCentavos: 136600 },
+    { proveedor: "Estación de Servicio 4512, S.A. de C.V.", rfc: "EST060513RK4", sinIvaCentavos: 786207, ivaCentavos: 125793 },
+    { proveedor: "Aerovías de México, S.A. de C.V.", rfc: "AER051011MT0", sinIvaCentavos: 762069, ivaCentavos: 121931 },
+    { proveedor: "Costco de México, S.A. de C.V.", rfc: "COS061111BT1", sinIvaCentavos: 753138, ivaCentavos: 120502 },
+    { proveedor: "Servicios Comerciales Amazon México, S. de R.L. de C.V.", rfc: "SER040901PU8", sinIvaCentavos: 752172, ivaCentavos: 120348 },
+    { proveedor: "Estación de Servicio 0871, S.A. de C.V.", rfc: "EST960104KC3", sinIvaCentavos: 713793, ivaCentavos: 114207 },
+    { proveedor: "Distribuidora Liverpool, S.A. de C.V.", rfc: "DIS920919NC5", sinIvaCentavos: 507759, ivaCentavos: 81241 },
+    { proveedor: "Hotel Safi Royal Valle, S.A. de C.V.", rfc: "HOT110419YE6", sinIvaCentavos: 337931, ivaCentavos: 54069 },
   ],
 });

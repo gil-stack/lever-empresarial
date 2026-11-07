@@ -32,6 +32,8 @@ type Regla<R> = { superficie: Superficie; roles: readonly R[] };
  *   y proyectos, Gasolina y Ahorro;
  * - liberador y solicitante: Pagos internacionales, Viajes y proyectos y Gasolina;
  * - tarjetahabiente: ninguno.
+ * Fiscal abre con la Lista 69-B o la Póliza que guarda dentro: administrador,
+ * contador, liberador y solicitante, no finanzas ni tarjetahabiente.
  */
 const DE_TRABAJO: readonly RolCliente[] = ROLES_CLIENTE.filter((rol) => rol !== "finanzas");
 const DE_CONSOLA: readonly RolCliente[] = ["administrador", "solicitante", "liberador", "contador"];

@@ -1,4 +1,4 @@
-import { expect, test, type APIResponse, type BrowserContext } from "@playwright/test";
+import { expect, test, type APIResponse, type BrowserContext, type Request } from "@playwright/test";
 
 import { MODULOS_DEMO, PRODUCTOS } from "../../src/dominio/demo/productos";
 import { CIFRAS_DE_EJEMPLO, NOMBRES_DE_EJEMPLO } from "../../src/server/demo/centinelas";
@@ -78,5 +78,32 @@ test("empresa de demostración: cada módulo pinta el aviso y los datos de ejemp
   const encendidos = await page.locator("#contenido button:not([disabled])").evaluateAll((botones) =>
     botones.map((boton) => boton.textContent?.trim() ?? ""));
   expect(encendidos).toEqual([]);
+  expect(errores).toEqual([]);
+});
+
+test("Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegación cada uno", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  await sesionDe(context, GIL);
+  for (const [tecla, monto] of [["Enter", "2000"], ["Tab", "3000"]] as const) {
+    await page.goto(`/c/${TALLER}/consola/movimientos`);
+    await expect(page.getByRole("link", { name: "Limpiar filtros" })).toHaveCount(0);
+    const navegaciones: string[] = [];
+    // Los enlaces de periodo llevan el mismo monto y Next los precarga: esas no son navegaciones.
+    const contar = (peticion: Request) => {
+      if (peticion.headers()["next-router-prefetch"]) return;
+      if (new URL(peticion.url()).searchParams.get("desde") === monto) navegaciones.push(`${peticion.method()} ${peticion.url()}`);
+    };
+    page.on("request", contar);
+    // Teclas reales: el «change» del monto sale al oprimir Enter o al salir con Tab, no con fill.
+    await page.locator("#movimientos-desde").click();
+    await page.keyboard.type(monto);
+    await page.keyboard.press(tecla);
+    await expect(page).toHaveURL(new RegExp(`[?&]desde=${monto}(&|$)`));
+    await expect(page.getByRole("link", { name: "Limpiar filtros" })).toBeVisible();
+    // Un envío repetido saldría en el mismo turno; un segundo da tiempo de sobra a que aparezca.
+    await page.waitForTimeout(1000);
+    page.off("request", contar);
+    expect(navegaciones, `${tecla} en «Monto desde»`).toHaveLength(1);
+  }
   expect(errores).toEqual([]);
 });

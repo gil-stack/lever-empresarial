@@ -1,0 +1,242 @@
+[
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: abre con las 34 compras y sin «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: elegir a Carlos Méndez filtra solo, con una navegación",
+    "detalle": "13 de 34 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: Enter en «Monto desde» filtra con una sola navegación",
+    "detalle": "9 compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
+    "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":88}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Fiscal: «Lista 69-B» abre la lista real y el lateral sigue en Fiscal",
+    "detalle": "Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Fiscal: al volver, la DIOT sigue con sus tres columnas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: abre con las 34 compras y sin «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: elegir a Carlos Méndez filtra solo, con una navegación",
+    "detalle": "13 de 34 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: Enter en «Monto desde» filtra con una sola navegación",
+    "detalle": "9 compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
+    "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":277}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Fiscal: «Lista 69-B» abre la lista real y el lateral sigue en Fiscal",
+    "detalle": "Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Fiscal: al volver, la DIOT sigue con sus tres columnas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: abre con las 34 compras y sin «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: elegir a Carlos Méndez filtra solo, con una navegación",
+    "detalle": "13 de 34 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: Enter en «Monto desde» filtra con una sola navegación",
+    "detalle": "9 compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
+    "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":88}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Fiscal: «Lista 69-B» abre la lista real y el lateral sigue en Fiscal",
+    "detalle": "Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Fiscal: al volver, la DIOT sigue con sus tres columnas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: abre con las 34 compras y sin «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: elegir a Carlos Méndez filtra solo, con una navegación",
+    "detalle": "13 de 34 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: Enter en «Monto desde» filtra con una sola navegación",
+    "detalle": "9 compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
+    "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":277}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Fiscal: «Lista 69-B» abre la lista real y el lateral sigue en Fiscal",
+    "detalle": "Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Fiscal: al volver, la DIOT sigue con sus tres columnas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: abre con las 34 compras y sin «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: elegir a Carlos Méndez filtra solo, con una navegación",
+    "detalle": "13 de 34 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: Enter en «Monto desde» filtra con una sola navegación",
+    "detalle": "9 compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
+    "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":88}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Fiscal: «Lista 69-B» abre la lista real y el lateral sigue en Fiscal",
+    "detalle": "Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Fiscal: al volver, la DIOT sigue con sus tres columnas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: abre con las 34 compras y sin «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: elegir a Carlos Méndez filtra solo, con una navegación",
+    "detalle": "13 de 34 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: Enter en «Monto desde» filtra con una sola navegación",
+    "detalle": "9 compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
+    "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":277}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Fiscal: «Lista 69-B» abre la lista real y el lateral sigue en Fiscal",
+    "detalle": "Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Fiscal: al volver, la DIOT sigue con sus tres columnas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390: sin errores de consola",
+    "detalle": ""
+  }
+]
