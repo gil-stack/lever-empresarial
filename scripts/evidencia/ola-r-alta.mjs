@@ -599,14 +599,26 @@ async function flujo9() {
 
   const invitado = await abrir("ivan");
   await ir(invitado.p, `/invitacion/${E.INVITACION_IVAN}`);
+  const marcadas = () => invitado.p.locator('#contrasena[aria-invalid="true"], #confirmacion[aria-invalid="true"]').count();
+  // Un error de lo escrito sí marca los campos de contraseña.
+  await invitado.p.getByLabel("Contraseña nueva").fill("clave-segura-12");
+  await invitado.p.getByLabel("Repite la contraseña").fill("clave-segura-13");
+  await invitado.p.getByRole("button", { name: "Aceptar la invitación" }).click();
+  await invitado.p.getByText("Las dos contraseñas no coinciden.").waitFor({ timeout: 20000 });
+  exigir(await marcadas() === 2, "9. con contraseñas distintas, el aviso marca los dos campos de contraseña");
+  // Con la empresa suspendida, el aviso dice el motivo real y no culpa a la contraseña.
   await invitado.p.getByLabel("Contraseña nueva").fill("clave-segura-12");
   await invitado.p.getByLabel("Repite la contraseña").fill("clave-segura-12");
   await invitado.p.getByRole("button", { name: "Aceptar la invitación" }).dblclick();
-  await invitado.p.getByText("La empresa está suspendida y por ahora no admite cuentas nuevas").waitFor({ timeout: 20000 });
+  await invitado.p.getByRole("alert").getByText("La empresa está suspendida", { exact: true }).waitFor({ timeout: 20000 });
   exigir(
     cuenta(`invitations i join users u on u.id = i.user_id where i.company_id = '${TALLER}' and lower(u.correo) = 'ivan@taller.test' and i.usada_en is not null`) === 0
       && cuenta(`memberships m join users u on u.id = m.user_id where m.company_id = '${TALLER}' and lower(u.correo) = 'ivan@taller.test' and m.estado = 'activa'`) === 0,
     "9. Iván no puede aceptar su invitación: la base lo rechaza y la pantalla dice que la empresa está suspendida",
+  );
+  exigir(
+    await marcadas() === 0 && await invitado.p.getByText("Por ahora no admite cuentas nuevas. Comunícate con Lever.").isVisible(),
+    "9. el aviso de la suspensión no marca los campos de contraseña: el motivo es la empresa, no lo escrito",
   );
   await foto(invitado.p, "f9-aceptar-invitacion-empresa-suspendida", false);
   await invitado.nav.close();

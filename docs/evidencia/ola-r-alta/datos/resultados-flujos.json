@@ -477,7 +477,15 @@
     },
     {
       "ok": true,
+      "texto": "9. con contraseñas distintas, el aviso marca los dos campos de contraseña"
+    },
+    {
+      "ok": true,
       "texto": "9. Iván no puede aceptar su invitación: la base lo rechaza y la pantalla dice que la empresa está suspendida"
+    },
+    {
+      "ok": true,
+      "texto": "9. el aviso de la suspensión no marca los campos de contraseña: el motivo es la empresa, no lo escrito"
     },
     {
       "ok": true,

@@ -4,7 +4,7 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r-alta
 
 | Fase | Resultado | Datos |
 | --- | --- | --- |
-| Flujos 0-12 | 145 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
+| Flujos 0-12 | 147 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
 | Pantallas (3 temas × 1440/390) y contraste AA medido | 60 comprobaciones en verde, 0 en rojo; contraste mínimo 5.00 (Lever 1440) | `datos/resultados-pantallas-contraste.json` |
 
 Corrida del 2026-11-07 sobre el head de este PR, con el código de la consola suspendida en solo lectura veraz (R1-P5) y el comando de roles iniciales.
@@ -100,7 +100,7 @@ Sirve cuando nadie más del personal administra al personal: nadie se da un rol 
 | 9. | `18-f9-nomina-rechazada-empresa-suspendida` | «Preparar nómina» visible; doble clic: 0 lotes en `payroll_batches`. |
 | 9. | `19-f9-area-rechazada-empresa-suspendida` | Personas: doble clic en «Crear área»: 0 áreas nuevas en `cost_centers`. |
 | 9. | `20-f9-invitacion-rechazada-empresa-suspendida` | Doble clic en «Renovar y reenviar invitación»: el número de invitaciones de Iván no cambia. |
-| 9. | `21-f9-aceptar-invitacion-empresa-suspendida` | Iván no puede aceptar: la invitación sigue sin usar y no hay membresía activa; la pantalla dice que la empresa está suspendida. Además, como rol cliente directo en la base, liberar, preparar lote y editar un proveedor se rechazan con `empresa_suspendida`. |
+| 9. | `21-f9-aceptar-invitacion-empresa-suspendida` | Con contraseñas distintas el aviso marca los dos campos. Con la empresa suspendida, Iván no puede aceptar: la invitación sigue sin usar y no hay membresía activa; el aviso se titula «La empresa está suspendida» y no marca los campos de contraseña. Además, como rol cliente directo en la base, liberar, preparar lote y editar un proveedor se rechazan con `empresa_suspendida`. |
 | 9. | `22` a `27-f9-consola-aviso-suspendida-<tema>-<ancho>` | El aviso de empresa suspendida en Oscuro, Claro y Lever, a 1440 y 390. |
 | 10. Reactivar | `28-f10-reactivacion-bloqueada-por-lpb` | Suspendida por la lista y con coincidencia confirmada, no se pide la reactivación: 0 solicitudes. |
 | 10. | `29-f10-reactivacion-aprobada` | Doble clic = 1 solicitud; otra persona aprueba; el historial guarda suspender y reactivar; la nómina se prepara otra vez (1 lote). |
@@ -258,7 +258,9 @@ OK    9. Nómina sigue ofreciendo «Preparar nómina» a Gil
 OK    9. doble clic en «Preparar nómina»: la base lo rechaza y no hay lote
 OK    9. Personas: doble clic en «Crear área»: la base lo rechaza y no hay área
 OK    9. Invitaciones: doble clic en «Renovar y reenviar invitación»: la base lo rechaza y no sale otra
+OK    9. con contraseñas distintas, el aviso marca los dos campos de contraseña
 OK    9. Iván no puede aceptar su invitación: la base lo rechaza y la pantalla dice que la empresa está suspendida
+OK    9. el aviso de la suspensión no marca los campos de contraseña: el motivo es la empresa, no lo escrito
 OK    9. directo en la base como rol cliente, liberar el pago: rechazado con «empresa_suspendida»
 OK    9. directo en la base como rol cliente, preparar un lote: rechazado con «empresa_suspendida»
 OK    9. directo en la base como rol cliente, editar un proveedor: rechazado con «empresa_suspendida»
@@ -293,7 +295,7 @@ NOTA  f12-bitacora-lecturas-auditadas: la página mide 10797 px y no cabe en una
 OK    12. Auditoría ve «Sin permiso» en Personal
 OK    consola del navegador limpia en todos los flujos
 
-145 comprobaciones en verde, 0 en rojo.
+147 comprobaciones en verde, 0 en rojo.
 ```
 
 </details>
