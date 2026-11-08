@@ -194,7 +194,7 @@ export function VistaMovimientos({
           <Selector id="movimientos-comprobante" etiqueta="Comprobante" nombre="comprobante" valor={filtros.comprobante} opciones={unicos(datos.compras, "comprobante")} />
           <div className="campo">
             <label htmlFor="movimientos-desde">Monto desde</label>
-            <input id="movimientos-desde" name="desde" type="number" min="0" step="1" inputMode="decimal" placeholder="$0" defaultValue={filtros.desde ? filtros.desde / 100 : undefined} />
+            <input id="movimientos-desde" name="desde" type="number" min="0" step="any" inputMode="decimal" placeholder="$0" defaultValue={filtros.desde ? filtros.desde / 100 : undefined} />
           </div>
           <div className="campo">
             <label htmlFor="movimientos-agrupar">Agrupar por</label>

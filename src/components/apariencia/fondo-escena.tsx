@@ -27,10 +27,11 @@ const CUADROS_POR_VENTANA = 60;
 const DIBUJO_LENTO_MS = 12;
 const INTERVALO_LENTO_MS = 1000 / 40;
 /**
- * Un solo dibujo que bloquea más que una tarea larga delata un equipo que pinta sin GPU (una máquina virtual, un
- * escritorio remoto): el fondo se queda quieto en ese momento, sin esperar el calentamiento ni la ventana.
+ * Un solo dibujo así delata un equipo que pinta sin GPU (una máquina virtual, un escritorio remoto): el fondo se queda
+ * quieto en ese momento, sin esperar el calentamiento ni la ventana. Con el pintado del cuadro encima, un dibujo de
+ * unos 32 ms ya deja un cuadro de más de 50 ms; con GPU, el más caro medido sin cambiar de tamaño es de 10 ms.
  */
-const DIBUJO_BLOQUEANTE_MS = 50;
+const DIBUJO_BLOQUEANTE_MS = 25;
 /** En `sessionStorage`: recargar la página no vuelve a medir. */
 const RECUERDO_LENTO = "lever-fondo-lento";
 
@@ -101,6 +102,8 @@ export function FondoEscena({
     let raf = 0;
     let visible = true;
     let sucio = true;
+    /** Si el último dibujo cambió el tamaño del lienzo (y con él, el del motor): reservarlo cuesta aparte. */
+    let redimensionado = false;
     let n = 0;
     let cuadros = 0;
     let msDibujando = 0;
@@ -131,7 +134,8 @@ export function FondoEscena({
     const dibujar = (tiempo: number) => {
       if (!motor) return 0;
       const [ancho, alto] = medida();
-      if (lienzo.width !== ancho || lienzo.height !== alto) {
+      redimensionado = lienzo.width !== ancho || lienzo.height !== alto;
+      if (redimensionado) {
         lienzo.width = ancho;
         lienzo.height = alto;
       }
@@ -223,10 +227,11 @@ export function FondoEscena({
       luz[1] += (destinoY - luz[1]) * 0.07;
       n += 1;
       if (sucio || n % SALTO === 0) {
-        // La primera pintura también compila el shader: no dice cuánto cuesta pintar en este equipo.
+        // La primera pintura también compila el shader, y la que cambia de tamaño reserva otra vez el lienzo: ninguna
+        // de las dos dice cuánto cuesta pintar en este equipo (con GPU, crecer a 2560×1600 a DPR 2 tomó 30 ms).
         const primera = cuadros === 0;
         const ms = dibujar(t);
-        if (!primera && ms > DIBUJO_BLOQUEANTE_MS) {
+        if (!primera && !redimensionado && ms > DIBUJO_BLOQUEANTE_MS) {
           // Sin otra pintura, que bloquearía igual: la escena se queda en este cuadro y la luz vuelve al reposo
           // para cuando haya que repintarla quieta (otro tema o tamaño).
           recordarEquipoLento();

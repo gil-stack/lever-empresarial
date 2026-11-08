@@ -1,4 +1,4 @@
-import { expect, test, type APIResponse, type BrowserContext, type Request } from "@playwright/test";
+import { expect, test, type APIResponse, type BrowserContext, type Locator, type Page, type Request } from "@playwright/test";
 
 import { MODULOS_DEMO, PRODUCTOS } from "../../src/dominio/demo/productos";
 import { CIFRAS_DE_EJEMPLO, NOMBRES_DE_EJEMPLO } from "../../src/server/demo/centinelas";
@@ -295,6 +295,62 @@ test("Movimientos: un monto a medias que aún no es número no se borra cuando l
     await page.unrouteAll();
   }
   expect(errores).toEqual([]);
+});
+
+test("Movimientos: un monto con decimales o negativo no bloquea los filtros", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  await sesionDe(context, GIL);
+  const ruta = `/c/${TALLER}/consola/movimientos`;
+  const area = page.getByLabel("Área", { exact: true });
+  const monto = page.locator("#movimientos-desde");
+  const consulta = () => new URL(page.url()).searchParams;
+  await page.goto(ruta);
+  const unArea = (await area.locator("option").nth(1).getAttribute("value"))!;
+  // Con decimales, como invita el teclado decimal del teléfono, o negativo: filtra, y el filtro siguiente también.
+  for (const [escrito, tecla] of [["1500.50", "Tab"], ["12.5", "Enter"], ["-5", "Tab"]] as const) {
+    await page.goto(ruta);
+    await monto.click();
+    await page.keyboard.type(escrito);
+    await page.keyboard.press(tecla);
+    await expect.poll(() => consulta().get("desde"), `«${escrito}» y ${tecla} filtran`).toBe(escrito);
+    await area.selectOption(unArea);
+    await expect.poll(() => consulta().get("area"), `después de «${escrito}», Área filtra`).toBe(unArea);
+  }
+  // Llegado en la dirección: el monto con decimales no detiene el filtro siguiente.
+  await page.goto(`${ruta}?desde=100.5`);
+  await expect(monto).toHaveValue("100.5");
+  await area.selectOption(unArea);
+  await expect.poll(() => consulta().get("area"), "con ?desde=100.5 en la dirección, Área filtra").toBe(unArea);
+  expect(consulta().get("desde")).toBe("100.5");
+  expect(errores).toEqual([]);
+});
+
+/** Escribir el monto y tocar el enlace a la sección en la que ya se está: el monto se aplica y el campo dice lo mismo que la dirección. */
+async function montoYMismaSeccion(page: Page, context: BrowserContext, tocar: (enlace: Locator) => Promise<void>) {
+  const errores = vigilarConsola(page);
+  await sesionDe(context, GIL);
+  await page.goto(`/c/${TALLER}/consola/movimientos`);
+  const monto = page.locator("#movimientos-desde");
+  await monto.click();
+  await page.keyboard.type("4000");
+  await tocar(page.getByRole("navigation", { name: "Secciones" }).getByRole("link", { name: "Movimientos", exact: true }));
+  // Un envío aplazado saldría en el siguiente turno; un segundo y medio de sobra para que se note.
+  await page.waitForTimeout(1500);
+  expect(new URL(page.url()).searchParams.get("desde"), "la dirección lleva el monto escrito").toBe("4000");
+  await expect(monto, "el campo dice lo mismo que la dirección").toHaveValue("4000");
+  expect(errores).toEqual([]);
+}
+
+test("Movimientos: escribir el monto y hacer clic en «Movimientos» del lateral aplica el monto", async ({ page, context }) => {
+  await montoYMismaSeccion(page, context, (enlace) => enlace.click());
+});
+
+test.describe("en la tableta", () => {
+  test.use({ viewport: { width: 1180, height: 820 }, hasTouch: true });
+
+  test("Movimientos: escribir el monto y tocar «Movimientos» del lateral aplica el monto", async ({ page, context }) => {
+    await montoYMismaSeccion(page, context, (enlace) => enlace.tap());
+  });
 });
 
 test.describe("en el teléfono", () => {

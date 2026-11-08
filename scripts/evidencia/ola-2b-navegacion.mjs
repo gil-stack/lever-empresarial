@@ -8,7 +8,7 @@
 //   node scripts/evidencia/ola-2b-navegacion.mjs pantallas   3 temas × 1440/390: un h1, etiquetas, consola limpia, foco
 //   node scripts/evidencia/ola-2b-navegacion.mjs modulos     Movimientos y Fiscal clicados en 3 temas × 1440/390
 //   node scripts/evidencia/ola-2b-navegacion.mjs limpiar     solo «Limpiar filtros», «Atrás» y «Adelante» de Movimientos (también va en modulos)
-//   node scripts/evidencia/ola-2b-navegacion.mjs fondo       el fondo animado con movimiento: sin GPU se queda quieto y lo recuerda; con GPU, igual que antes
+//   node scripts/evidencia/ola-2b-navegacion.mjs fondo       el fondo con movimiento a DPR 1 y 2: sin GPU, a lo más un cuadro largo; con GPU, igual que antes
 //   node scripts/evidencia/ola-2b-navegacion.mjs contraste   AA de cada texto contra la escena real
 //   node scripts/evidencia/ola-2b-navegacion.mjs cargando    «Cargando…» de una sección nueva mientras llega la página
 //   node scripts/evidencia/ola-2b-navegacion.mjs caida       con el Postgres apagado: el error de cada pantalla nueva
@@ -999,6 +999,46 @@ async function modulos() {
         anotar(aMedias && completo === "1e3", `${etiqueta} Movimientos: «1e» a medio escribir sigue en el monto cuando llega el filtro de Área, y con «3» queda «1e3»`, `entrada a medias=${aMedias} · valor «${completo}»`);
         await p.unrouteAll();
       }
+      // N10: un monto con decimales (el teclado del teléfono es decimal) filtra, y no detiene el filtro siguiente.
+      {
+        const area = p.getByLabel("Área", { exact: true });
+        const unArea = await area.locator("option").nth(1).getAttribute("value");
+        await abrirMovimientos();
+        const conDecimales = await contar(async () => {
+          if (ancho < 600) await monto.tap();
+          else await monto.click();
+          await p.keyboard.type("1500.50");
+          await p.keyboard.press("Tab");
+        }, (url) => url.searchParams.get("desde") === "1500.50");
+        const siguiente = await contar(() => area.selectOption(unArea), (url) => url.searchParams.get("area") === unArea);
+        anotar(conDecimales === 1 && siguiente === 1, `${etiqueta} Movimientos: «1500.50» y Tab filtran con una navegación, y Área después también`, `${conDecimales} y ${siguiente} navegación(es) · ${new URL(p.url()).search}`);
+        await capturar(p, `${carpeta}/movimientos-decimales-${tema}-${ancho}.webp`);
+        await p.goto(`${BASE}${ALTAMAR}/consola/movimientos?desde=100.5`, { waitUntil: "networkidle" });
+        const desdeLaDireccion = await contar(() => area.selectOption(unArea), (url) => url.searchParams.get("area") === unArea);
+        anotar(desdeLaDireccion === 1 && new URL(p.url()).searchParams.get("desde") === "100.5", `${etiqueta} Movimientos: con ?desde=100.5 en la dirección, Área filtra y conserva el monto`, `${desdeLaDireccion} navegación(es) · ${new URL(p.url()).search}`);
+      }
+      // N11: «4000» y el enlace a esta misma sección (el lateral a 1440; en el teléfono, por el cajón): el campo y la
+      // dirección dicen lo mismo.
+      {
+        await abrirMovimientos();
+        if (ancho < 600) await monto.tap();
+        else await monto.click();
+        await p.keyboard.type("4000");
+        if (ancho < 600) {
+          await p.getByRole("button", { name: "Secciones" }).tap();
+          await p.locator("#lateral").getByRole("link", { name: "Movimientos", exact: true }).tap();
+        } else {
+          await p.getByRole("navigation", { name: "Secciones" }).getByRole("link", { name: "Movimientos", exact: true }).click();
+        }
+        await p.waitForTimeout(1500);
+        const enDireccion = new URL(p.url()).searchParams.get("desde") ?? "";
+        const enCampo = await monto.inputValue();
+        anotar(
+          enDireccion === enCampo && (ancho < 600 || enCampo === "4000"),
+          `${etiqueta} Movimientos: «4000» y ${ancho < 600 ? "«Movimientos» en el cajón" : "clic sin pausa en «Movimientos» del lateral"}: el monto del campo es el de la dirección`,
+          `dirección «${enDireccion}» · campo «${enCampo}»`,
+        );
+      }
       // El botón oculto que usa Enter no es una parada de Tab, ni de ida ni de vuelta.
       const oculto = p.locator(".demo-filtros > button.solo-lector");
       await oculto.evaluate((boton) => {
@@ -1092,10 +1132,11 @@ async function fondo() {
   const lienzoDe = (p) => p.locator(".escena-fondo canvas").first();
   const leer = (p) => lienzoDe(p).evaluate((lienzo) => ({ ...lienzo.dataset }));
   for (const tema of TEMAS) {
-    for (const ancho of ANCHOS) {
-      // Sin GPU (SwiftShader) y a DPR 2, como una máquina virtual o un escritorio remoto: cada pintura cuesta cientos de ms.
-      const etiqueta = `fondo sin GPU ${tema} ${ancho}`;
-      const { nav, p, errores } = await abrir({ quien: "laura", tema, ancho, movimiento: true, dpr: 2 });
+    for (const [ancho, dpr] of ANCHOS.flatMap((a) => [[a, 1], [a, 2]])) {
+      // Sin GPU (SwiftShader), como una máquina virtual o un escritorio remoto: a 1440 y DPR 1 cada dibujo cuesta unos
+      // 47 ms y su cuadro pasa de 50; a DPR 2, cientos de ms.
+      const etiqueta = `fondo sin GPU ${tema} ${ancho} DPR ${dpr}`;
+      const { nav, p, errores } = await abrir({ quien: "laura", tema, ancho, movimiento: true, dpr });
       await registrarCuadros(p);
       await p.goto(`${BASE}${ALTAMAR}/consola/movimientos`, { waitUntil: "networkidle" });
       await p.waitForFunction(() => {
@@ -1110,8 +1151,8 @@ async function fondo() {
         return extension ? String(gl.getParameter(extension.UNMASKED_RENDERER_WEBGL)) : "sin extensión";
       });
       anotar(
-        carga.archivos > 0 && carga.estado === "lento" && carga.largos.length <= 1,
-        `${etiqueta}: tras la primera pintura, a lo más un cuadro largo del fondo y se queda quieto`,
+        carga.archivos > 0 && carga.largos.length <= 1 && (carga.largos.length === 0 || carga.estado === "lento"),
+        `${etiqueta}: tras la primera pintura, a lo más un cuadro largo del fondo; si lo hubo, se queda quieto`,
         `${pintor} · estado ${carga.estado} · pinturas ${carga.cuadros} (${carga.ms} ms en promedio, con la primera) · cuadros largos tras la primera ${JSON.stringify(carga.largos)} ms`,
       );
       // Con el fondo quieto la barra responde: elegir a Carlos Méndez filtra con una navegación.
@@ -1119,23 +1160,23 @@ async function fondo() {
       await p.getByLabel("Persona", { exact: true }).selectOption("Carlos Méndez");
       await p.waitForURL(/persona=Carlos/);
       anotar(true, `${etiqueta}: elegir a Carlos Méndez filtra`, `${Date.now() - inicio} ms hasta la dirección nueva`);
-      await capturar(p, `${carpeta}/fondo-sin-gpu-movimientos-${tema}-${ancho}.webp`, { completa: false });
+      await capturar(p, `${carpeta}/fondo-sin-gpu-movimientos-${tema}-${ancho}${dpr === 1 ? "-dpr1" : ""}.webp`, { completa: false });
       await p.reload({ waitUntil: "networkidle" });
       await p.waitForFunction(() => Boolean(document.querySelector(".escena-fondo canvas")?.dataset.cuadros), null, { timeout: 60000 });
       await p.waitForTimeout(2000);
       const recarga = { ...(await leer(p)), ...(await cuadrosLargosDelFondo(p)) };
       anotar(
-        recarga.estado === "lento" && recarga.cuadros === "1" && recarga.largos.length === 0,
-        `${etiqueta}: al recargar, el fondo ya no mide: pinta una vez, quieto, sin cuadros largos`,
+        recarga.largos.length === 0 && (carga.estado !== "lento" || (recarga.estado === "lento" && recarga.cuadros === "1")),
+        `${etiqueta}: al recargar, sin cuadros largos del fondo; si se había quedado quieto, pinta una vez, quieto`,
         `estado ${recarga.estado} · pinturas ${recarga.cuadros} · cuadros largos ${JSON.stringify(recarga.largos)} · sesión ${await p.evaluate(() => sessionStorage.getItem("lever-fondo-lento"))}`,
       );
       anotar(errores.length === 0, `${etiqueta}: sin errores de consola`, errores.join(" | "));
       await nav.close();
     }
     // Con la GPU de la Mac: el fondo se mueve como antes, sin cuadros largos.
-    {
-      const etiqueta = `fondo con GPU ${tema} 1440`;
-      const { nav, p, errores } = await abrir({ quien: "laura", tema, ancho: 1440, movimiento: true, dpr: 2, gpu: true });
+    for (const dpr of [1, 2]) {
+      const etiqueta = `fondo con GPU ${tema} 1440 DPR ${dpr}`;
+      const { nav, p, errores } = await abrir({ quien: "laura", tema, ancho: 1440, movimiento: true, dpr, gpu: true });
       await registrarCuadros(p);
       await p.goto(`${BASE}${ALTAMAR}/consola/movimientos`, { waitUntil: "networkidle" });
       await p.waitForFunction(() => Boolean(document.querySelector(".escena-fondo canvas")?.dataset.cuadros), null, { timeout: 60000 });
@@ -1152,7 +1193,7 @@ async function fondo() {
         `${etiqueta}: el fondo sigue vivo, unas 20 pinturas por segundo y sin cuadros largos`,
         `${renderer} · estado ${datos.estado} · ${Number(datos.cuadros) - antes} pinturas en 5 s · ${datos.ms} ms por pintura · cuadros largos ${JSON.stringify(datos.largos)}`,
       );
-      await capturar(p, `${carpeta}/fondo-gpu-movimientos-${tema}-1440.webp`, { completa: false });
+      await capturar(p, `${carpeta}/fondo-gpu-movimientos-${tema}-1440${dpr === 1 ? "-dpr1" : ""}.webp`, { completa: false });
       anotar(errores.length === 0, `${etiqueta}: sin errores de consola`, errores.join(" | "));
       await nav.close();
     }

@@ -53,11 +53,12 @@ export function FiltrosAlCambiar({
       botonTocado = null;
     };
     // Un enlace que lleva a otra página gana: con el dedo, su clic llega antes que el envío aplazado del monto, y ese
-    // envío navegaría después, de vuelta a los filtros. Un enlace que abre otra pestaña deja salir el envío.
+    // envío navegaría después, de vuelta a los filtros. Un enlace que abre otra pestaña, o que lleva a esta misma
+    // dirección (la dirección no cambia y los campos no se pondrían como ella), deja salir el envío.
     const alHacerClic = (evento: MouseEvent) => {
       const enlace = evento.target instanceof Element ? evento.target.closest("a[href]") : null;
-      if (!enlace || evento.button !== 0 || evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.altKey) return;
-      if (enlace.getAttribute("target") === "_blank" || enlace.getAttribute("href")?.startsWith("#")) return;
+      if (!(enlace instanceof HTMLAnchorElement) || evento.button !== 0 || evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.altKey) return;
+      if (enlace.target === "_blank" || enlace.getAttribute("href")?.startsWith("#") || enlace.href === location.href) return;
       clearTimeout(pendiente);
     };
     const alCambiar = () => {
@@ -110,7 +111,9 @@ export function FiltrosAlCambiar({
     aplicados.current = nuevos;
   }, [deLaDireccion]);
   return (
-    <Form ref={forma} className="demo-filtros" action={action} scroll={false}>
+    // Sin validación del navegador: un monto con decimales de más o negativo bloquearía este envío y los siguientes. El
+    // servidor ignora un monto que no es número o no es positivo, y redondea a centavos.
+    <Form ref={forma} className="demo-filtros" action={action} scroll={false} noValidate>
       {/* El primer botón de envío es el que usa Enter: conserva el periodo actual en lugar de tomar «Hoy». */}
       <button type="submit" name="periodo" value={periodo} className="solo-lector" tabIndex={-1} aria-hidden="true">
         Filtrar

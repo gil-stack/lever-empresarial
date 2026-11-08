@@ -5,14 +5,14 @@ Recorrido con Playwright headless propio (`scripts/evidencia/ola-2b-navegacion.m
 - **Taller del Cierre**, empresa **real** (`demostracion = false`): la semilla de Pagos a proveedores con tres pagos por autorizar que pidió Gil (uno es E-12, el de la prueba de atajos de los e2e), una nómina semanal vencida y sin lote, y una persona por rol (Ana administradora, Fernanda finanzas, Carla contadora, Rosa liberadora, Sergio solicitante).
 - **Altamar Logística**, empresa de **demostración**, dada de alta por el personal del operador, con Laura (administradora) y Daniela (solicitante).
 
-Corrida final del 2026-11-08 sobre el head del PR, en este orden: `lado`, `modulos`, `pantallas` (3 temas), `contraste` (3 temas), `cargando`, `flujos` y `caida`. Los flujos mueven datos de la base local, por eso van después de las capturas que necesitan los pagos por autorizar. En la ronda de `16c4265` se repitieron `modulos` y el modo nuevo `fondo`. Lo demás no cambió: esta ronda toca la barra de Movimientos y el fondo animado, y el recorrido abre el navegador con «reducir movimiento», con el que el fondo pinta igual que antes (sección «Ronda de 16c4265»).
+Corrida final del 2026-11-08 sobre el head del PR, en este orden: `lado`, `modulos`, `pantallas` (3 temas), `contraste` (3 temas), `cargando`, `flujos` y `caida`. Los flujos mueven datos de la base local, por eso van después de las capturas que necesitan los pagos por autorizar. En las rondas de `16c4265` y `a7b92d6` se repitieron `modulos` y el modo nuevo `fondo`. Lo demás no cambió: esta ronda toca la barra de Movimientos y el fondo animado, y el recorrido abre el navegador con «reducir movimiento», con el que el fondo pinta igual que antes (sección «Ronda de 16c4265»).
 
 | Modo | Qué revisa | Resultado |
 | --- | --- | --- |
 | `flujos` | Los flujos 1-6 del brief, clicados, con doble clic y conteo en la base | **185 de 185** |
 | `lado` | Los 16 módulos junto a su captura del diseño; la DIOT de Fiscal medida contra la fuente del diseño a 1440 y 390; y la barra de filtros de Movimientos contra el diseño renderizado, control por control, en Claro, Oscuro y Lever, a 1440 (con la barra de desplazamiento oculta y visible) y a 390, sin y con un filtro puesto (`lado-a-lado/`) | **96 de 96** |
-| `modulos` | Movimientos y Fiscal clicados en Claro, Oscuro y Lever, a 1440 y 390, contando las navegaciones en la red: cada selector, Enter y Tab en el monto, monto y toque (390) o clic lento (1440) en «7 días», Enter en el periodo «Hoy» y 5000 y Tab tras soltar el ratón o arrastrar el dedo fuera de «7 días», o tras un clic derecho, central o Ctrl + clic de macOS en él (1440), dan una navegación cada uno, estos últimos sin esperar; «Limpiar filtros» deja Persona, el monto y «Agrupar por» vacíos, filtrados a mano o llegados en la dirección, «Atrás» y «Adelante» los ponen como dice la dirección y el filtro siguiente no arrastra los de antes; «4000» en el monto y un toque (390) o clic sin pausa (1440) en «Limpiar filtros» o en el logotipo se quedan en el enlace; «1e» a medio escribir sigue en el monto cuando llega otro filtro; el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab; sin JavaScript el periodo lleva lo demás y «Filtrar» lo conserva; «Limpiar filtros» vuelve a las 34 compras, al desplazar la DIOT se ve la columna IVA y «Lista 69-B» deja el lateral en Fiscal (`modulos/`) | **171 de 171** |
-| `fondo` | El fondo animado con movimiento, en Movimientos, en Claro, Oscuro y Lever. Sin GPU (Chromium headless tal cual, como Vercel CI), a 1440 y 390 con DPR 2: tras la primera pintura, a lo más un cuadro largo del fondo, se queda quieto, la barra filtra y, al recargar, pinta una vez sin cuadros largos. Con la GPU de la Mac (Metal) a 1440: sigue vivo, con unas 20 pinturas por segundo y sin cuadros largos (`fondo/`) | **30 de 30** |
+| `modulos` | Movimientos y Fiscal clicados en Claro, Oscuro y Lever, a 1440 y 390, contando las navegaciones en la red: cada selector, Enter y Tab en el monto, monto y toque (390) o clic lento (1440) en «7 días», Enter en el periodo «Hoy» y 5000 y Tab tras soltar el ratón o arrastrar el dedo fuera de «7 días», o tras un clic derecho, central o Ctrl + clic de macOS en él (1440), dan una navegación cada uno, estos últimos sin esperar; «Limpiar filtros» deja Persona, el monto y «Agrupar por» vacíos, filtrados a mano o llegados en la dirección, «Atrás» y «Adelante» los ponen como dice la dirección y el filtro siguiente no arrastra los de antes; «4000» en el monto y un toque (390) o clic sin pausa (1440) en «Limpiar filtros» o en el logotipo se quedan en el enlace; «1e» a medio escribir sigue en el monto cuando llega otro filtro; «1500.50» y Tab filtran y el filtro siguiente también, igual con `?desde=100.5` en la dirección; «4000» y el enlace a esta misma sección dejan el campo igual que la dirección; el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab; sin JavaScript el periodo lleva lo demás y «Filtrar» lo conserva; «Limpiar filtros» vuelve a las 34 compras, al desplazar la DIOT se ve la columna IVA y «Lista 69-B» deja el lateral en Fiscal (`modulos/`) | **189 de 189** |
+| `fondo` | El fondo animado con movimiento, en Movimientos, en Claro, Oscuro y Lever. Sin GPU (Chromium headless tal cual, como Vercel CI), a 1440 y 390 con DPR 1 y 2: tras la primera pintura, a lo más un cuadro largo del fondo y, si lo hubo, se queda quieto; la barra filtra y, al recargar, no hay cuadros largos (si se quedó quieto, pinta una vez). Con la GPU de la Mac (Metal) a 1440, DPR 1 y 2: sigue vivo, con unas 20 pinturas por segundo y sin cuadros largos (`fondo/`) | **60 de 60** |
 | `pantallas` | 27 pantallas nuevas en Claro, Oscuro y Lever, a 1440 y 390: responde 200, un solo h1, campos y botones con nombre, errores ligados al campo, sin desplazamiento horizontal, consola limpia y, en Oscuro 1440, cada parada de Tab en orden y con foco visible | **851 de 851** |
 | `contraste` | AA de cada texto contra la escena real (método del #50) | Oscuro 4.70 / 5.09 · Claro 4.97 / 4.50 · Lever 4.62 / 5.13 (mínimo a 1440 / 390, sobre 4.5) |
 | `cargando` | «Cargando…» de una sección nueva mientras llega la página, con el marco quieto | **9 de 9** |
@@ -109,15 +109,40 @@ Chromium sin ventana con la GPU de la Mac (`--use-angle=metal`, «ANGLE Metal Re
 
 Capturas: `fondo/fondo-gpu-reloj-5s-{antes,despues}.webp`, `fondo/fondo-gpu-carga-{antes,despues}.webp`, `fondo/fondo-sin-gpu-carga-{antes,despues}.webp` y `fondo/fondo-gpu-reducir-{antes,despues}.webp`. El modo `fondo` del recorrido lo repite en Movimientos en los tres temas (`fondo/fondo-{sin-gpu,gpu}-movimientos-*.webp`). Con el pintor `--use-angle=swiftshader` que usan los demás modos, cada pintura cuesta menos de 50 ms: ese es el caso moderado, que sigue resolviendo la regla de promedio.
 
+## Ronda de a7b92d6: el fondo a DPR 1, decimales y el enlace a la misma sección
+
+| Hallazgo | Arreglo | Prueba (falla en `a7b92d6`, pasa con el arreglo) |
+| --- | --- | --- |
+| **líder-N7, resto · P3** · sin GPU a DPR 1 cada dibujo cuesta de 46 a 48 ms, justo bajo el umbral de 50, y su cuadro pasa de 50 con el pintado. El fondo animaba hasta la ventana de 80 cuadros | `fondo-escena.tsx`: el umbral baja a **25 ms**, y el dibujo que cambia el tamaño del lienzo (lo reserva otra vez) no cuenta, igual que la primera pintura | `marco.spec.ts`: la prueba real corre a DPR 1 y 2 a 1440×900 y cuenta los cuadros de más de 50 ms con cualquier script del fondo; en `a7b92d6` da 21 a DPR 1. Más dos pruebas que no dependen de la máquina: con cada dibujo emulado en 40 ms, se queda quieto en la 2.ª pintura (en `a7b92d6`, 28 pinturas); y en un equipo rápido, un dibujo de 60 ms al cambiar de tamaño no lo deja quieto (en `a7b92d6` y en una mutación sin la excepción: «lento») |
+| **N10 · P3** (de `cf80667`) · un monto con decimales («1500.50», «12.5» o `?desde=100.5`) dejaba el formulario inválido por `step="1"`, y la validación del navegador bloqueaba ese filtro y todos los siguientes; con «-5» pasaba igual por `min="0"` | `movimientos.tsx`: `step="any"`. `filtros-al-cambiar.tsx`: el formulario de filtros va sin validación del navegador (`noValidate`); el servidor ignora un monto que no es número o no es positivo, y redondea a centavos | Prueba nueva: «1500.50» + Tab, «12.5» + Enter y «-5» + Tab filtran, y Área filtra después; con `?desde=100.5` en la dirección, Área filtra. En `a7b92d6`: «1500.50» y Tab no navegan |
+| **N11 · P3** · «4000» y un toque (o clic sin pausa) en «Movimientos» del lateral, estando en Movimientos sin consulta: se cancelaba el envío, la dirección no cambiaba y el campo decía 4000 con las 34 compras | `filtros-al-cambiar.tsx`: un enlace a la misma dirección no cancela el envío pendiente; el monto se aplica | Pruebas nuevas en escritorio (clic) y en una tableta táctil de 1180×820 (toque): la dirección y el campo dicen 4000. En `a7b92d6`, la dirección no lleva el monto |
+
+**El umbral, medido** (`datos/n7-umbral.txt`). Para medir, reconstruí cada dibujo a partir de `data-cuadros` y `data-ms` del lienzo, en Resumen a 1440×900:
+
+| Pintor | Dibujo tras la primera pintura | Cuadro |
+| --- | --- | --- |
+| Sin GPU (Vercel CI), DPR 1 | 46-48 ms (máximo 50.5) | 51-65 ms: todos largos |
+| Sin GPU, DPR 2 | 160-357 ms | largo |
+| GPU Metal, DPR 1 y 2 | 0.1-0.5 ms; con 20 cambios de tamaño, hasta 10.8 ms | sin cuadros largos |
+
+- **Por qué 25 ms:** el pintado del cuadro le suma de 3 a 18 ms al dibujo, así que uno de unos 32 ms ya da un cuadro de más de 50. 25 ms decide antes de ese punto y deja 2.5 veces de margen sobre el dibujo más caro con GPU.
+- **El falso positivo que salió al medir:** al principio, el dibujo que crece la ventana a 2560×1600 con GPU a DPR 2 costó 29.8 ms y dejó el fondo quieto. Por eso el dibujo que cambia el tamaño no cuenta.
+- **Con el arreglo:**
+  - Con GPU, 5 corridas de carga y recarga, con 20 cambios de tamaño: el fondo sigue «vivo» y hay 0 cuadros largos.
+  - Sin GPU, a DPR 1 y 2: se queda quieto en la 2.ª pintura, con 1 cuadro largo.
+
+Salida cruda de las pruebas en `a7b92d6` y con los arreglos: `datos/revision-a7b92d6.txt`. Capturas: `modulos/movimientos-decimales-*` y `fondo/fondo-{sin-gpu,gpu}-movimientos-*-dpr1.webp`.
+
 ## Pendiente al cambiar de cuenta
 
 | Punto | Estado | Gates que se corrieron |
 | --- | --- | --- |
 | **N6** y **N5** (`fb27af5`) | **Hecho** | Los de `fb27af5`: typecheck 0, lint 0, `npm test` 456/456, Postgres 38/38, `test:e2e` 42/42, build 0, security en verde y el recorrido completo |
-| **CI rojo**, **N5-resto**, **N6-resto**, **N7**, **N8** y **N9** | **Hecho** en el commit que agrega esta sección | typecheck 0, lint 0, `npm test` 457/457, Postgres en serie 38/38 (0 omitidas), `test:e2e` en sus tres partes 18 + 14 + 13 = 45/45, build 0 y security en verde. Recorrido: `modulos` 171/171 y `fondo` 30/30. Cada prueba nueva falla en `16c4265` |
+| **CI rojo**, **N5-resto**, **N6-resto**, **N7**, **N8** y **N9** | **Hecho** en `a7b92d6`; Vercel CI en verde (9 de 9) | typecheck 0, lint 0, `npm test` 457/457, Postgres en serie 38/38, `test:e2e` 45/45, build 0 y security en verde. Recorrido: `modulos` 171/171 y `fondo` 30/30. Cada prueba nueva falla en `16c4265` |
+| **líder-N7 a DPR 1**, **N10** y **N11** | **Hecho** en el commit que agrega esta fila | typecheck 0, lint 0, `npm test` 457/457, Postgres en serie 38/38 (0 omitidas), `test:e2e` en sus tres partes 21 + 13 + 17 = 51/51, build 0 y security en verde. Recorrido: `modulos` 189/189 y `fondo` 60/60. Cada prueba nueva falla en `a7b92d6` |
 
 Falta:
-- **Vercel CI:** el del commit que agrega esta sección; su estado terminal va en el PR.
+- **Vercel CI:** el del commit que agrega la última fila; su estado terminal va en el PR.
 - **Revisión:** el revisor no ha re-verificado esta ronda.
 - **Merge:** el PR no se ha fusionado.
 

@@ -1,152 +1,302 @@
 [
   {
     "ok": true,
-    "texto": "fondo sin GPU oscuro 1440: tras la primera pintura, a lo más un cuadro largo del fondo y se queda quieto",
-    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 2 (312.10 ms en promedio, con la primera) · cuadros largos tras la primera [166] ms"
+    "texto": "fondo sin GPU oscuro 1440 DPR 1: tras la primera pintura, a lo más un cuadro largo del fondo; si lo hubo, se queda quieto",
+    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 2 (192.85 ms en promedio, con la primera) · cuadros largos tras la primera [] ms"
   },
   {
     "ok": true,
-    "texto": "fondo sin GPU oscuro 1440: elegir a Carlos Méndez filtra",
-    "detalle": "24 ms hasta la dirección nueva"
+    "texto": "fondo sin GPU oscuro 1440 DPR 1: elegir a Carlos Méndez filtra",
+    "detalle": "22 ms hasta la dirección nueva"
   },
   {
     "ok": true,
-    "texto": "fondo sin GPU oscuro 1440: al recargar, el fondo ya no mide: pinta una vez, quieto, sin cuadros largos",
+    "texto": "fondo sin GPU oscuro 1440 DPR 1: al recargar, sin cuadros largos del fondo; si se había quedado quieto, pinta una vez, quieto",
     "detalle": "estado lento · pinturas 1 · cuadros largos [] · sesión 1"
   },
   {
     "ok": true,
-    "texto": "fondo sin GPU oscuro 1440: sin errores de consola",
+    "texto": "fondo sin GPU oscuro 1440 DPR 1: sin errores de consola",
     "detalle": ""
   },
   {
     "ok": true,
-    "texto": "fondo sin GPU oscuro 390: tras la primera pintura, a lo más un cuadro largo del fondo y se queda quieto",
-    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 28 (57.08 ms en promedio, con la primera) · cuadros largos tras la primera [] ms"
+    "texto": "fondo sin GPU oscuro 1440 DPR 2: tras la primera pintura, a lo más un cuadro largo del fondo; si lo hubo, se queda quieto",
+    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 2 (357.80 ms en promedio, con la primera) · cuadros largos tras la primera [253] ms"
   },
   {
     "ok": true,
-    "texto": "fondo sin GPU oscuro 390: elegir a Carlos Méndez filtra",
-    "detalle": "21 ms hasta la dirección nueva"
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU oscuro 390: al recargar, el fondo ya no mide: pinta una vez, quieto, sin cuadros largos",
-    "detalle": "estado lento · pinturas 1 · cuadros largos [] · sesión 1"
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU oscuro 390: sin errores de consola",
-    "detalle": ""
-  },
-  {
-    "ok": true,
-    "texto": "fondo con GPU oscuro 1440: el fondo sigue vivo, unas 20 pinturas por segundo y sin cuadros largos",
-    "detalle": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version) · estado vivo · 100 pinturas en 5 s · 0.22 ms por pintura · cuadros largos []"
-  },
-  {
-    "ok": true,
-    "texto": "fondo con GPU oscuro 1440: sin errores de consola",
-    "detalle": ""
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU claro 1440: tras la primera pintura, a lo más un cuadro largo del fondo y se queda quieto",
-    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 2 (373.40 ms en promedio, con la primera) · cuadros largos tras la primera [262] ms"
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU claro 1440: elegir a Carlos Méndez filtra",
-    "detalle": "23 ms hasta la dirección nueva"
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU claro 1440: al recargar, el fondo ya no mide: pinta una vez, quieto, sin cuadros largos",
-    "detalle": "estado lento · pinturas 1 · cuadros largos [] · sesión 1"
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU claro 1440: sin errores de consola",
-    "detalle": ""
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU claro 390: tras la primera pintura, a lo más un cuadro largo del fondo y se queda quieto",
-    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 28 (55.43 ms en promedio, con la primera) · cuadros largos tras la primera [] ms"
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU claro 390: elegir a Carlos Méndez filtra",
-    "detalle": "19 ms hasta la dirección nueva"
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU claro 390: al recargar, el fondo ya no mide: pinta una vez, quieto, sin cuadros largos",
-    "detalle": "estado lento · pinturas 1 · cuadros largos [] · sesión 1"
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU claro 390: sin errores de consola",
-    "detalle": ""
-  },
-  {
-    "ok": true,
-    "texto": "fondo con GPU claro 1440: el fondo sigue vivo, unas 20 pinturas por segundo y sin cuadros largos",
-    "detalle": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version) · estado vivo · 100 pinturas en 5 s · 0.28 ms por pintura · cuadros largos []"
-  },
-  {
-    "ok": true,
-    "texto": "fondo con GPU claro 1440: sin errores de consola",
-    "detalle": ""
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU lever 1440: tras la primera pintura, a lo más un cuadro largo del fondo y se queda quieto",
-    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 2 (362.70 ms en promedio, con la primera) · cuadros largos tras la primera [243] ms"
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU lever 1440: elegir a Carlos Méndez filtra",
-    "detalle": "24 ms hasta la dirección nueva"
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU lever 1440: al recargar, el fondo ya no mide: pinta una vez, quieto, sin cuadros largos",
-    "detalle": "estado lento · pinturas 1 · cuadros largos [] · sesión 1"
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU lever 1440: sin errores de consola",
-    "detalle": ""
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU lever 390: tras la primera pintura, a lo más un cuadro largo del fondo y se queda quieto",
-    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 4 (113.92 ms en promedio, con la primera) · cuadros largos tras la primera [56] ms"
-  },
-  {
-    "ok": true,
-    "texto": "fondo sin GPU lever 390: elegir a Carlos Méndez filtra",
+    "texto": "fondo sin GPU oscuro 1440 DPR 2: elegir a Carlos Méndez filtra",
     "detalle": "25 ms hasta la dirección nueva"
   },
   {
     "ok": true,
-    "texto": "fondo sin GPU lever 390: al recargar, el fondo ya no mide: pinta una vez, quieto, sin cuadros largos",
+    "texto": "fondo sin GPU oscuro 1440 DPR 2: al recargar, sin cuadros largos del fondo; si se había quedado quieto, pinta una vez, quieto",
     "detalle": "estado lento · pinturas 1 · cuadros largos [] · sesión 1"
   },
   {
     "ok": true,
-    "texto": "fondo sin GPU lever 390: sin errores de consola",
+    "texto": "fondo sin GPU oscuro 1440 DPR 2: sin errores de consola",
     "detalle": ""
   },
   {
     "ok": true,
-    "texto": "fondo con GPU lever 1440: el fondo sigue vivo, unas 20 pinturas por segundo y sin cuadros largos",
-    "detalle": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version) · estado vivo · 100 pinturas en 5 s · 0.29 ms por pintura · cuadros largos []"
+    "texto": "fondo sin GPU oscuro 390 DPR 1: tras la primera pintura, a lo más un cuadro largo del fondo; si lo hubo, se queda quieto",
+    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado vivo · pinturas 55 (16.96 ms en promedio, con la primera) · cuadros largos tras la primera [] ms"
   },
   {
     "ok": true,
-    "texto": "fondo con GPU lever 1440: sin errores de consola",
+    "texto": "fondo sin GPU oscuro 390 DPR 1: elegir a Carlos Méndez filtra",
+    "detalle": "19 ms hasta la dirección nueva"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU oscuro 390 DPR 1: al recargar, sin cuadros largos del fondo; si se había quedado quieto, pinta una vez, quieto",
+    "detalle": "estado vivo · pinturas 55 · cuadros largos [] · sesión null"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU oscuro 390 DPR 1: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU oscuro 390 DPR 2: tras la primera pintura, a lo más un cuadro largo del fondo; si lo hubo, se queda quieto",
+    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 2 (235.40 ms en promedio, con la primera) · cuadros largos tras la primera [124] ms"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU oscuro 390 DPR 2: elegir a Carlos Méndez filtra",
+    "detalle": "22 ms hasta la dirección nueva"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU oscuro 390 DPR 2: al recargar, sin cuadros largos del fondo; si se había quedado quieto, pinta una vez, quieto",
+    "detalle": "estado lento · pinturas 1 · cuadros largos [] · sesión 1"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU oscuro 390 DPR 2: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo con GPU oscuro 1440 DPR 1: el fondo sigue vivo, unas 20 pinturas por segundo y sin cuadros largos",
+    "detalle": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version) · estado vivo · 100 pinturas en 5 s · 0.35 ms por pintura · cuadros largos []"
+  },
+  {
+    "ok": true,
+    "texto": "fondo con GPU oscuro 1440 DPR 1: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo con GPU oscuro 1440 DPR 2: el fondo sigue vivo, unas 20 pinturas por segundo y sin cuadros largos",
+    "detalle": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version) · estado vivo · 100 pinturas en 5 s · 0.22 ms por pintura · cuadros largos []"
+  },
+  {
+    "ok": true,
+    "texto": "fondo con GPU oscuro 1440 DPR 2: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 1440 DPR 1: tras la primera pintura, a lo más un cuadro largo del fondo; si lo hubo, se queda quieto",
+    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 2 (199.10 ms en promedio, con la primera) · cuadros largos tras la primera [] ms"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 1440 DPR 1: elegir a Carlos Méndez filtra",
+    "detalle": "22 ms hasta la dirección nueva"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 1440 DPR 1: al recargar, sin cuadros largos del fondo; si se había quedado quieto, pinta una vez, quieto",
+    "detalle": "estado lento · pinturas 1 · cuadros largos [] · sesión 1"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 1440 DPR 1: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 1440 DPR 2: tras la primera pintura, a lo más un cuadro largo del fondo; si lo hubo, se queda quieto",
+    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 2 (314.70 ms en promedio, con la primera) · cuadros largos tras la primera [197] ms"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 1440 DPR 2: elegir a Carlos Méndez filtra",
+    "detalle": "25 ms hasta la dirección nueva"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 1440 DPR 2: al recargar, sin cuadros largos del fondo; si se había quedado quieto, pinta una vez, quieto",
+    "detalle": "estado lento · pinturas 1 · cuadros largos [] · sesión 1"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 1440 DPR 2: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 390 DPR 1: tras la primera pintura, a lo más un cuadro largo del fondo; si lo hubo, se queda quieto",
+    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado vivo · pinturas 55 (16.92 ms en promedio, con la primera) · cuadros largos tras la primera [] ms"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 390 DPR 1: elegir a Carlos Méndez filtra",
+    "detalle": "19 ms hasta la dirección nueva"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 390 DPR 1: al recargar, sin cuadros largos del fondo; si se había quedado quieto, pinta una vez, quieto",
+    "detalle": "estado vivo · pinturas 56 · cuadros largos [] · sesión null"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 390 DPR 1: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 390 DPR 2: tras la primera pintura, a lo más un cuadro largo del fondo; si lo hubo, se queda quieto",
+    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 2 (186.10 ms en promedio, con la primera) · cuadros largos tras la primera [] ms"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 390 DPR 2: elegir a Carlos Méndez filtra",
+    "detalle": "20 ms hasta la dirección nueva"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 390 DPR 2: al recargar, sin cuadros largos del fondo; si se había quedado quieto, pinta una vez, quieto",
+    "detalle": "estado lento · pinturas 1 · cuadros largos [] · sesión 1"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU claro 390 DPR 2: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo con GPU claro 1440 DPR 1: el fondo sigue vivo, unas 20 pinturas por segundo y sin cuadros largos",
+    "detalle": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version) · estado vivo · 100 pinturas en 5 s · 0.26 ms por pintura · cuadros largos []"
+  },
+  {
+    "ok": true,
+    "texto": "fondo con GPU claro 1440 DPR 1: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo con GPU claro 1440 DPR 2: el fondo sigue vivo, unas 20 pinturas por segundo y sin cuadros largos",
+    "detalle": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version) · estado vivo · 100 pinturas en 5 s · 0.23 ms por pintura · cuadros largos []"
+  },
+  {
+    "ok": true,
+    "texto": "fondo con GPU claro 1440 DPR 2: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 1440 DPR 1: tras la primera pintura, a lo más un cuadro largo del fondo; si lo hubo, se queda quieto",
+    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 2 (200.80 ms en promedio, con la primera) · cuadros largos tras la primera [] ms"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 1440 DPR 1: elegir a Carlos Méndez filtra",
+    "detalle": "28 ms hasta la dirección nueva"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 1440 DPR 1: al recargar, sin cuadros largos del fondo; si se había quedado quieto, pinta una vez, quieto",
+    "detalle": "estado lento · pinturas 1 · cuadros largos [] · sesión 1"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 1440 DPR 1: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 1440 DPR 2: tras la primera pintura, a lo más un cuadro largo del fondo; si lo hubo, se queda quieto",
+    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 2 (369.00 ms en promedio, con la primera) · cuadros largos tras la primera [261] ms"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 1440 DPR 2: elegir a Carlos Méndez filtra",
+    "detalle": "32 ms hasta la dirección nueva"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 1440 DPR 2: al recargar, sin cuadros largos del fondo; si se había quedado quieto, pinta una vez, quieto",
+    "detalle": "estado lento · pinturas 1 · cuadros largos [] · sesión 1"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 1440 DPR 2: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 390 DPR 1: tras la primera pintura, a lo más un cuadro largo del fondo; si lo hubo, se queda quieto",
+    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado vivo · pinturas 55 (17.52 ms en promedio, con la primera) · cuadros largos tras la primera [] ms"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 390 DPR 1: elegir a Carlos Méndez filtra",
+    "detalle": "19 ms hasta la dirección nueva"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 390 DPR 1: al recargar, sin cuadros largos del fondo; si se había quedado quieto, pinta una vez, quieto",
+    "detalle": "estado vivo · pinturas 55 · cuadros largos [] · sesión null"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 390 DPR 1: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 390 DPR 2: tras la primera pintura, a lo más un cuadro largo del fondo; si lo hubo, se queda quieto",
+    "detalle": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver) · estado lento · pinturas 2 (210.00 ms en promedio, con la primera) · cuadros largos tras la primera [] ms"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 390 DPR 2: elegir a Carlos Méndez filtra",
+    "detalle": "21 ms hasta la dirección nueva"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 390 DPR 2: al recargar, sin cuadros largos del fondo; si se había quedado quieto, pinta una vez, quieto",
+    "detalle": "estado lento · pinturas 1 · cuadros largos [] · sesión 1"
+  },
+  {
+    "ok": true,
+    "texto": "fondo sin GPU lever 390 DPR 2: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo con GPU lever 1440 DPR 1: el fondo sigue vivo, unas 20 pinturas por segundo y sin cuadros largos",
+    "detalle": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version) · estado vivo · 100 pinturas en 5 s · 0.24 ms por pintura · cuadros largos []"
+  },
+  {
+    "ok": true,
+    "texto": "fondo con GPU lever 1440 DPR 1: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "fondo con GPU lever 1440 DPR 2: el fondo sigue vivo, unas 20 pinturas por segundo y sin cuadros largos",
+    "detalle": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version) · estado vivo · 101 pinturas en 5 s · 0.32 ms por pintura · cuadros largos []"
+  },
+  {
+    "ok": true,
+    "texto": "fondo con GPU lever 1440 DPR 2: sin errores de consola",
     "detalle": ""
   }
 ]

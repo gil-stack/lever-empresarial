@@ -67,7 +67,7 @@
   {
     "ok": true,
     "texto": "modulos oscuro 1440 Movimientos: el clic derecho en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "13 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "12 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
@@ -77,7 +77,7 @@
   {
     "ok": true,
     "texto": "modulos oscuro 1440 Movimientos: Ctrl + clic de macOS en «7 días» (menú contextual) no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "14 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
@@ -93,6 +93,21 @@
     "ok": true,
     "texto": "modulos oscuro 1440 Movimientos: «1e» a medio escribir sigue en el monto cuando llega el filtro de Área, y con «3» queda «1e3»",
     "detalle": "entrada a medias=true · valor «1e3»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «1500.50» y Tab filtran con una navegación, y Área después también",
+    "detalle": "1 y 1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=1500.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: con ?desde=100.5 en la dirección, Área filtra y conserva el monto",
+    "detalle": "1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=100.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «4000» y clic sin pausa en «Movimientos» del lateral: el monto del campo es el de la dirección",
+    "detalle": "dirección «4000» · campo «4000»"
   },
   {
     "ok": true,
@@ -212,7 +227,7 @@
   {
     "ok": true,
     "texto": "modulos oscuro 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "8 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
@@ -228,6 +243,21 @@
     "ok": true,
     "texto": "modulos oscuro 390 Movimientos: «1e» a medio escribir sigue en el monto cuando llega el filtro de Área, y con «3» queda «1e3»",
     "detalle": "entrada a medias=true · valor «1e3»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «1500.50» y Tab filtran con una navegación, y Área después también",
+    "detalle": "1 y 1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=1500.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: con ?desde=100.5 en la dirección, Área filtra y conserva el monto",
+    "detalle": "1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=100.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «4000» y «Movimientos» en el cajón: el monto del campo es el de la dirección",
+    "detalle": "dirección «» · campo «»"
   },
   {
     "ok": true,
@@ -347,22 +377,22 @@
   {
     "ok": true,
     "texto": "modulos claro 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
-  },
-  {
-    "ok": true,
-    "texto": "modulos claro 1440 Movimientos: el clic derecho en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "8 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
-  },
-  {
-    "ok": true,
-    "texto": "modulos claro 1440 Movimientos: el clic central en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
     "detalle": "10 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
+    "texto": "modulos claro 1440 Movimientos: el clic derecho en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "5 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: el clic central en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "14 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
     "texto": "modulos claro 1440 Movimientos: Ctrl + clic de macOS en «7 días» (menú contextual) no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "1 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "12 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
@@ -378,6 +408,21 @@
     "ok": true,
     "texto": "modulos claro 1440 Movimientos: «1e» a medio escribir sigue en el monto cuando llega el filtro de Área, y con «3» queda «1e3»",
     "detalle": "entrada a medias=true · valor «1e3»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «1500.50» y Tab filtran con una navegación, y Área después también",
+    "detalle": "1 y 1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=1500.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: con ?desde=100.5 en la dirección, Área filtra y conserva el monto",
+    "detalle": "1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=100.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «4000» y clic sin pausa en «Movimientos» del lateral: el monto del campo es el de la dirección",
+    "detalle": "dirección «4000» · campo «4000»"
   },
   {
     "ok": true,
@@ -516,6 +561,21 @@
   },
   {
     "ok": true,
+    "texto": "modulos claro 390 Movimientos: «1500.50» y Tab filtran con una navegación, y Área después también",
+    "detalle": "1 y 1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=1500.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: con ?desde=100.5 en la dirección, Área filtra y conserva el monto",
+    "detalle": "1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=100.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «4000» y «Movimientos» en el cajón: el monto del campo es el de la dirección",
+    "detalle": "dirección «» · campo «»"
+  },
+  {
+    "ok": true,
     "texto": "modulos claro 390 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
     "detalle": "0 vez(ces)"
   },
@@ -632,22 +692,22 @@
   {
     "ok": true,
     "texto": "modulos lever 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "6 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "10 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
     "texto": "modulos lever 1440 Movimientos: el clic derecho en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "9 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "7 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
     "texto": "modulos lever 1440 Movimientos: el clic central en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "4 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "6 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
     "texto": "modulos lever 1440 Movimientos: Ctrl + clic de macOS en «7 días» (menú contextual) no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "10 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "19 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
@@ -663,6 +723,21 @@
     "ok": true,
     "texto": "modulos lever 1440 Movimientos: «1e» a medio escribir sigue en el monto cuando llega el filtro de Área, y con «3» queda «1e3»",
     "detalle": "entrada a medias=true · valor «1e3»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «1500.50» y Tab filtran con una navegación, y Área después también",
+    "detalle": "1 y 1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=1500.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: con ?desde=100.5 en la dirección, Área filtra y conserva el monto",
+    "detalle": "1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=100.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «4000» y clic sin pausa en «Movimientos» del lateral: el monto del campo es el de la dirección",
+    "detalle": "dirección «4000» · campo «4000»"
   },
   {
     "ok": true,
@@ -798,6 +873,21 @@
     "ok": true,
     "texto": "modulos lever 390 Movimientos: «1e» a medio escribir sigue en el monto cuando llega el filtro de Área, y con «3» queda «1e3»",
     "detalle": "entrada a medias=true · valor «1e3»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «1500.50» y Tab filtran con una navegación, y Área después también",
+    "detalle": "1 y 1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=1500.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: con ?desde=100.5 en la dirección, Área filtra y conserva el monto",
+    "detalle": "1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=100.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «4000» y «Movimientos» en el cajón: el monto del campo es el de la dirección",
+    "detalle": "dirección «» · campo «»"
   },
   {
     "ok": true,
