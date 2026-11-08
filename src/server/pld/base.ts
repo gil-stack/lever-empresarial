@@ -47,6 +47,7 @@ export const CODIGOS_PLD = new Set([
   "sesion_no_existe",
   "sesion_sin_quorum",
   "propuesta_no_vigente",
+  "propuesta_posterior_a_la_sesion",
   "voto_de_ausente",
   "suplente_con_titular_presente",
   "acuse_fecha_futura",

@@ -52,6 +52,7 @@ import {
   registrarPropuesta,
   registrarReportePld,
   registrarSesion,
+  propuestasPorVotar,
   registrarVoto,
   sumarAlertaAlCaso,
   TIPOS_DE_OPERACION,
@@ -510,6 +511,12 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           // Con quórum: los cuatro titulares. Empate completo: decide el presidente.
           assert.deepEqual(await registrarSesion(cum, { formId: S2, celebradaEl: hoy, presentes: [P, S, I1, I2], auditorPresente: false }), { quorum: true });
           await assert.rejects(registrarVoto(cum, { formId: randomUUID(), sesionId: S2, propuestaId: propuestaVieja, integranteId: P, voto: "a_favor" }), /propuesta_no_vigente/);
+          // Una sesión de ayer no vota la propuesta registrada hoy: el dictamen tomaría una fecha anterior a ella (40ª).
+          const ayerSesion = randomUUID();
+          assert.deepEqual(await registrarSesion(cum, { formId: ayerSesion, celebradaEl: sumarDias(hoy, -1), presentes: [P, S, I1, I2], auditorPresente: false }), { quorum: true });
+          await assert.rejects(registrarVoto(cum, { formId: randomUUID(), sesionId: ayerSesion, propuestaId: propuestaX, integranteId: P, voto: "a_favor" }), /propuesta_posterior_a_la_sesion/);
+          // La pantalla de la sesión filtra con la fecha de registro en la Ciudad de México.
+          assert.equal((await propuestasPorVotar(cum)).find((p) => p.propuestaId === propuestaX)?.registradaEl, hoy);
           const votar = (integranteId: string, voto: string, sesionId = S2, propuestaId = propuestaX) =>
             registrarVoto(cum, { formId: randomUUID(), sesionId, propuestaId, integranteId, voto });
           await votar(S, "a_favor");

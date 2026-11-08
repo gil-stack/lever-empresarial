@@ -110,6 +110,7 @@ export const MENSAJES_PLD: Record<string, string> = {
   voto_ya_registrado: "Ese integrante ya votó esta propuesta.",
   suplente_con_titular_presente: "El suplente solo vota cuando falta su titular.",
   propuesta_no_vigente: "Se vota la propuesta vigente del caso, la más reciente.",
+  propuesta_posterior_a_la_sesion: "La propuesta se registró después del día de esta sesión: se vota en una sesión de ese día o posterior.",
   acta_ya_cargada: "La sesión ya tiene su acta firmada.",
   dato_invalido_modo: "Elige quién dictamina.",
   dato_invalido_oficialId: "Elige al Oficial de Cumplimiento.",

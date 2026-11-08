@@ -480,14 +480,23 @@ export async function registrarVoto(
   }), "formulario_invalido");
 }
 
-export type PropuestaPorVotar = { casoId: string; razonSocial: string | null; propuestaId: string; propuesta: Propuesta; justificacion: string };
+export type PropuestaPorVotar = {
+  casoId: string;
+  razonSocial: string | null;
+  propuestaId: string;
+  propuesta: Propuesta;
+  justificacion: string;
+  /** Día de registro en la Ciudad de México: una sesión anterior no la vota. */
+  registradaEl: string;
+};
 
 /** Casos sin dictamen con su propuesta vigente: lo que el Comité puede votar en una sesión (48ª). */
 export async function propuestasPorVotar(ctx: ContextoDePersonal): Promise<PropuestaPorVotar[]> {
   exigirEnOperacion(ctx, "plataforma.pld.ver");
   return conPld(ctx, null, async (consulta) => {
     const filas = (await consulta.query(
-      `select k.id as caso_id, c.razon_social, p.id as propuesta_id, p.propuesta, p.justificacion
+      `select k.id as caso_id, c.razon_social, p.id as propuesta_id, p.propuesta, p.justificacion,
+              pld_fecha_mx(p.registrado_en)::text as registrada_el
        from pld_casos k
        left join companies c on c.id = k.company_id
        join lateral (select x.* from pld_propuestas x where x.caso_id = k.id order by x.registrado_en desc, x.id desc limit 1) p on true
@@ -501,6 +510,7 @@ export async function propuestasPorVotar(ctx: ContextoDePersonal): Promise<Propu
       propuestaId: String(fila.propuesta_id),
       propuesta: fila.propuesta as Propuesta,
       justificacion: String(fila.justificacion),
+      registradaEl: dia(fila.registrada_el),
     }));
   });
 }

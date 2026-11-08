@@ -1604,6 +1604,11 @@ BEGIN
   IF propuesta.id <> (SELECT p.id FROM pld_propuestas p WHERE p.caso_id = caso.id ORDER BY p.registrado_en DESC, p.id DESC LIMIT 1) THEN
     RAISE EXCEPTION 'propuesta_no_vigente';
   END IF;
+  -- Una sesión no vota lo que aún no existía el día en que se celebró: el dictamen
+  -- toma la fecha de la sesión (40ª) y no puede ser anterior a la propuesta.
+  IF pld_fecha_mx(propuesta.registrado_en) > sesion.celebrada_el THEN
+    RAISE EXCEPTION 'propuesta_posterior_a_la_sesion';
+  END IF;
   IF NOT NEW.integrante_id = ANY (sesion.presentes) THEN
     RAISE EXCEPTION 'voto_de_ausente';
   END IF;

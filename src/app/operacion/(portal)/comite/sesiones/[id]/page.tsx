@@ -49,14 +49,15 @@ export default async function SesionComite({
   const porId = new Map(comite.integrantes.map((integrante) => [integrante.id, integrante]));
   const presentes = sesion.presentes.map((presente) => porId.get(presente)).filter((i): i is NonNullable<typeof i> => i !== undefined);
   const presidente = sesion.presidenteId ? porId.get(sesion.presidenteId) : undefined;
-  // Las votaciones de esta sesión más las propuestas vigentes que aún no se votan aquí.
+  // Las votaciones de esta sesión más las propuestas vigentes que aún no se votan aquí y que ya
+  // existían el día de la sesión (la base rechaza votar una posterior).
   const votadas = new Set(votaciones.map((v) => v.propuestaId));
   const temas: Array<{ casoId: string; propuestaId: string; propuesta: Propuesta; razonSocial: string | null; abierta: boolean }> = [
     ...votaciones.map((v) => {
       const pendiente = porVotar.find((p) => p.propuestaId === v.propuestaId);
       return { casoId: v.casoId, propuestaId: v.propuestaId, propuesta: v.propuesta, razonSocial: pendiente?.razonSocial ?? null, abierta: pendiente !== undefined };
     }),
-    ...porVotar.filter((p) => !votadas.has(p.propuestaId)).map((p) => ({ ...p, abierta: true })),
+    ...porVotar.filter((p) => !votadas.has(p.propuestaId) && p.registradaEl <= sesion.celebradaEl).map((p) => ({ ...p, abierta: true })),
   ];
 
   return (
