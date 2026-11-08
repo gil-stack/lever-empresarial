@@ -1,5 +1,5 @@
 import { leerCentavosEscritos } from "./centavos";
-import { CONTROL, sinControles } from "./control";
+import { INVISIBLE, sinControles } from "./control";
 import { fechaDeCalendario } from "./operacion/validar";
 
 export const ESTADOS_PAGO = ["por_autorizar", "listo_para_pagar", "rechazado", "cancelado"] as const;
@@ -82,7 +82,7 @@ export function correoOpcional(valor: unknown): string | null | "invalido" {
   if (valor === null || valor === undefined || valor === "") return null;
   if (typeof valor !== "string") return "invalido";
   const limpio = valor.trim().toLowerCase();
-  return limpio.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(limpio) && !CONTROL.test(limpio) ? limpio : "invalido";
+  return limpio.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(limpio) && !INVISIBLE.test(limpio) ? limpio : "invalido";
 }
 
 export function uuidPago(valor: unknown): valor is string {

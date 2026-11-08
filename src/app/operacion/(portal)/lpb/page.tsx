@@ -15,7 +15,7 @@ import { exigirContextoOperacion, listarCargas, listarCoincidencias, puedeEnOper
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Personas bloqueadas · Operación" };
 
-type Busqueda = { aviso?: string; linea?: string; filas?: string; coincidencias?: string };
+type Busqueda = { aviso?: string; en?: string; linea?: string; filas?: string; coincidencias?: string };
 
 /**
  * La Lista de Personas Bloqueadas (74ª y 75ª). Cumplimiento sube la lista completa que le
@@ -51,6 +51,8 @@ export default async function ListaBloqueadas({ searchParams }: { searchParams: 
               resuelve={resuelve}
               desde="lpb"
               ahora={ahora}
+              aviso={params.aviso}
+              en={params.en}
               vacio="Al cargar la lista, la base coteja empresas, representantes, accionistas, propietarios reales y proveedores."
             />
           </Hoja>

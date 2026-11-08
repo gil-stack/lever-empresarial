@@ -15,7 +15,7 @@ import { hoyEnMexico } from "../../src/dominio/operacion/comisiones.ts";
 import { sumarMeses } from "../../src/dominio/operacion/riesgo.ts";
 import { capacidadesDe, type RolCliente } from "../../src/nucleo/capacidades.ts";
 import type { ContextoDeTenant } from "../../src/nucleo/contexto.ts";
-import { cerrarConexion } from "../../src/nucleo/db.ts";
+import { cerrarConexion, type Consulta } from "../../src/nucleo/db.ts";
 import { decidirActivacion, solicitarActivacion } from "../../src/server/operacion/activaciones.ts";
 import { leerBitacora } from "../../src/server/operacion/bitacora.ts";
 import { leerCliente, registrarProspecto } from "../../src/server/operacion/clientes.ts";
@@ -310,8 +310,8 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           ('d5000000-0000-4000-8000-0000000000a1', 'c5000000-0000-4000-8000-0000000000a1', 'demo/const-a', repeat('a', 64), 'application/pdf', 'a.pdf', now()),
           ('d5000000-0000-4000-8000-0000000000b1', 'c5000000-0000-4000-8000-0000000000b1', 'demo/const-b', repeat('b', 64), 'application/pdf', 'b.pdf', now());
         insert into suppliers (id, company_id, document_id, snapshot_id, rfc, razon_social, lista_fecha, lista_leida_en, boton_pago, alta_en) values
-          ('5c000000-0000-4000-8000-0000000000a1', 'c5000000-0000-4000-8000-0000000000a1', 'd5000000-0000-4000-8000-0000000000a1', '${COPIA_69B}', 'PRA010101AB1', 'Proveedor de A', current_date - 1, now(), true, now()),
-          ('5c000000-0000-4000-8000-0000000000b1', 'c5000000-0000-4000-8000-0000000000b1', 'd5000000-0000-4000-8000-0000000000b1', '${COPIA_69B}', 'PRB010101AB1', 'Proveedor de B', current_date - 1, now(), true, now());
+          ('5c000000-0000-4000-8000-0000000000a1', 'c5000000-0000-4000-8000-0000000000a1', 'd5000000-0000-4000-8000-0000000000a1', '${COPIA_69B}', 'PRA010101AB1', 'Proveedor de A', (select fecha_archivo from lista_69b_snapshots where id = '${COPIA_69B}'), now(), true, now()),
+          ('5c000000-0000-4000-8000-0000000000b1', 'c5000000-0000-4000-8000-0000000000b1', 'd5000000-0000-4000-8000-0000000000b1', '${COPIA_69B}', 'PRB010101AB1', 'Proveedor de B', (select fecha_archivo from lista_69b_snapshots where id = '${COPIA_69B}'), now(), true, now());
         insert into audit_log (operator_id, company_id, actor_tipo, superficie, accion, entidad, identificador)
           select c.operator_id, s.company_id, 'sistema', 'sistema', 'alta_proveedor', 'suppliers', s.id from suppliers s join companies c on c.id = s.company_id;
         insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde)
@@ -727,11 +727,12 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           // bar-4: la fecha de presentación o del aviso que no existe en el calendario se rechaza en su campo.
           await assert.rejects(registrarReporte(cum, { id: mario.id, folio: "UIF-2026-0001", presentadoEl: "2026-02-30", avisoClienteEl: hoy }), /dato_invalido_presentadoEl/);
           await assert.rejects(registrarReporte(cum, { id: mario.id, folio: "UIF-2026-0001", presentadoEl: hoy, avisoClienteEl: "0000-01-01" }), /dato_invalido_avisoClienteEl/);
-          // Regla 1: el folio del reporte es un identificador. Con un control invisible (U+0085, o un tabulador) se
-          // rechaza en su campo y no se guarda nada; ni se limpia ni llega a la base (antes, el CHECK
-          // `lpb_coincidencias_textos` respondía «La base no respondió»; en 98224e0 se guardaba sin él).
-          for (const folio of ["UIF-2026-\u00850001", "UIF-2026\t0001"]) {
-            await assert.rejects(registrarReporte(cum, { id: mario.id, folio, presentadoEl: hoy, avisoClienteEl: hoy }), /dato_invalido_folio/);
+          // Regla 1: el folio del reporte es un identificador. Con un carácter invisible (U+0085, un tabulador o, desde
+          // serv-nuevo-5, un Cf como U+2060 o U+200B) se rechaza en su campo con su propio aviso y no se guarda nada; ni
+          // se limpia ni llega a la base (antes, el CHECK `lpb_coincidencias_textos` respondía «La base no respondió»;
+          // en 98224e0 se guardaba sin él; en b2db0b5 el U+2060 se guardaba).
+          for (const folio of ["UIF-2026-\u00850001", "UIF-2026\t0001", "UIF-2026-\u20600001", "UIF\u200b-2026-0001"]) {
+            await assert.rejects(registrarReporte(cum, { id: mario.id, folio, presentadoEl: hoy, avisoClienteEl: hoy }), /invisible_folio/, JSON.stringify(folio));
           }
           assert.equal((await dueno.query("select reporte_folio from lpb_coincidencias where id = $1", [mario.id])).rows[0]?.reporte_folio, null);
           await registrarReporte(cum, { id: mario.id, folio: "UIF-2026-0001", presentadoEl: hoy, avisoClienteEl: hoy });
@@ -1602,6 +1603,36 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           assert.equal(await contar("select count(*)::int as n from kyb_versiones where company_id = $1", [kappa]), 1);
           assert.equal(await eventos("expediente_version_creada", kappaV1), 1);
           await assert.rejects(crearVersion(ori, { companyId: kappa, formId: alfaV2 }), /expediente_ausente/);
+          // La carrera del Vercel CI de b2db0b5, en el peor orden y siempre: la segunda pestaña hace su primera
+          // lectura, la primera confirma ahí mismo y la segunda sigue. Con dos lecturas (por id y por borrador), la
+          // segunda veía el borrador recién confirmado sin haber visto su id y respondía «ya hay borrador».
+          const conOtraPestana = (otra: () => Promise<unknown>) => {
+            let pendiente: (() => Promise<unknown>) | null = otra;
+            return (consulta: Consulta): Consulta => ({
+              query: async (sql, params) => {
+                const resultado = await consulta.query(sql, params);
+                // Tras la primera lectura de la transacción (la del formulario), la otra pestaña corre y confirma.
+                if (pendiente) {
+                  const correr = pendiente;
+                  pendiente = null;
+                  await correr();
+                }
+                return resultado;
+              },
+            });
+          };
+          const mu = await prospecto("MUP150301AB2", "Mu Papelera SA de CV");
+          const muV1 = randomUUID();
+          assert.equal(await crearVersion(ori, { companyId: mu, formId: muV1 }, conOtraPestana(() => crearVersion(ori, { companyId: mu, formId: muV1 }))), muV1);
+          assert.equal(await contar("select count(*)::int as n from kyb_versiones where company_id = $1", [mu]), 1);
+          assert.equal(await eventos("expediente_version_creada", muV1), 1);
+          // Un formulario distinto en el mismo orden sigue siendo «ya hay borrador», y queda una sola versión.
+          const nu = await prospecto("NUP150301AB3", "Nu Papelera SA de CV");
+          await assert.rejects(
+            crearVersion(ori, { companyId: nu, formId: randomUUID() }, conOtraPestana(() => crearVersion(ori, { companyId: nu, formId: randomUUID() }))),
+            /expediente_con_borrador/,
+          );
+          assert.equal(await contar("select count(*)::int as n from kyb_versiones where company_id = $1", [nu]), 1);
           const lambda = await prospecto("LAM150301AB1", "Lambda Metales SA de CV");
           assert.deepEqual(salida(await ambos(() => crearVersion(ori, { companyId: lambda, formId: randomUUID() }))), ["expediente_con_borrador", "ok"]);
           assert.equal(await contar("select count(*)::int as n from kyb_versiones where company_id = $1", [lambda]), 1);
@@ -1689,6 +1720,8 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           // razón social del alta se rechaza en su campo; antes pasaba el servidor y el CHECK de `companies` lo
           // rechazaba con «La base no respondió». (En los textos libres se quita: serv-nuevo-1, en el reporte.)
           await assert.rejects(registrarProspecto(ori, { rfc: "CTL010101AB1", razonSocial: "Empresa \u0093Control\u0094", codigoPostal: "01000", regimen: "601", usoCfdi: "G03" }), /razon_social_control/);
+          // serv-nuevo-5: un carácter de formato (U+2060, unión de palabras) también; en b2db0b5 se guardaba.
+          await assert.rejects(registrarProspecto(ori, { rfc: "CTL010101AB1", razonSocial: "Empresa\u2060Control SA", codigoPostal: "01000", regimen: "601", usoCfdi: "G03" }), /razon_social_control/);
           // bar-5: el correo con un carácter de control, o que en minúsculas pasa de 254 («İ» se vuelve dos), se
           // rechaza en su campo (antes, el CHECK `kyb_versiones_correo` respondía «La base no respondió»).
           await assert.rejects(guardarDatosGenerales(ori, { versionId: kappaV1, datos: { ...DATOS_GENERALES, correo: "con\u0001tacto@lab.mx" } }), /dato_invalido_correo/);
@@ -1776,6 +1809,20 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           assert.deepEqual(salida(await ambos(() => pedir(randomUUID()))), ["ok", "suspension_pendiente"]);
           const abierta = String((await dueno.query("select id from company_suspensions where company_id = $1 and estado = 'pendiente'", [alfa])).rows[0].id);
           await decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: abierta, aprobada: false, motivo: "Era una prueba de doble envío" });
+          // La misma carrera que la versión, en el peor orden: la otra pestaña del mismo formulario confirma justo
+          // después de la primera lectura. Con dos lecturas (por id y por pendiente), respondía «ya hay una pendiente».
+          const forzada = randomUUID();
+          await solicitarCambioDeSuspension(ori, { companyId: alfa, formId: forzada, tipo: "suspension", motivo: "Revisión por doble envío" }, conOtraPestana(() => pedir(forzada)));
+          assert.equal(await contar("select count(*)::int as n from company_suspensions where company_id = $1 and estado = 'pendiente'", [alfa]), 1);
+          assert.equal(await eventos("suspension_solicitada", forzada), 1);
+          await decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: forzada, aprobada: false, motivo: "Era una prueba de doble envío" });
+          // Un formulario distinto en el mismo orden sigue siendo «ya hay una pendiente».
+          await assert.rejects(
+            solicitarCambioDeSuspension(ori, { companyId: alfa, formId: randomUUID(), tipo: "suspension", motivo: "Revisión por doble envío" }, conOtraPestana(() => pedir(randomUUID()))),
+            /suspension_pendiente/,
+          );
+          const otraPestana = String((await dueno.query("select id from company_suspensions where company_id = $1 and estado = 'pendiente'", [alfa])).rows[0].id);
+          await decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: otraPestana, aprobada: false, motivo: "Era una prueba de doble envío" });
           const deBeta = String((await dueno.query("select id from company_suspensions where company_id = $1 and origen = 'manual' limit 1", [beta])).rows[0].id);
           await assert.rejects(pedir(deBeta), /formulario_invalido/);
           assert.equal((await leerCliente(ori, alfa))?.estado, "activa");
@@ -1841,7 +1888,8 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           // La carga de la lista, sin empresa, sí la ve; y lo demás de la empresa también.
           assert.ok(deAda.some((e) => e.accion === "lpb_cargada" && e.companyId === null));
           assert.ok((await leerBitacora(ada, beta)).some((e) => e.accion === "suspension_aprobada" || e.accion === "reactivacion_aprobada"));
-          assert.ok((await leerBitacora(aud)).filter(deLaLista).length > 0);
+          // Por empresa: la bitácora general trae los 400 eventos más recientes y los de la lista ya pueden quedar atrás.
+          assert.ok((await leerBitacora(aud, beta)).filter(deLaLista).length > 0);
           // Por SQL directo, igual: es la política de la base.
           const porSql = (userId: string) => sofipo(userId, async (c) => Number((await c.query(
             "select count(*)::int as n from audit_log where company_id is not null and (accion like 'lpb\\_%' or accion = 'empresa_suspendida_lpb')",
@@ -2144,27 +2192,57 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           const representante = (nombre: string) => agregarRepresentante(ori, {
             versionId, formId: randomUUID(), nombre, rfc: "", curp: "", cargo: "apoderado", esAdministrador: false, designadoPor: "", pep: "no",
           });
-          // Regla 1: una identidad con cualquier control se rechaza en su campo, también el tabulador; no se limpia.
-          for (const nombre of ["Pedro\u000bRuiz Sol", "Luis\u0085Gómez Paz", "Juan\u0085Pérez López", "Eva Ruiz\u0096Sol", "O\u0092Brien Sol", "Ana\tRuiz Sol", "Iván\u000cSol", "Iván\u001fSol", "Iván\u0001Sol"]) {
-            await assert.rejects(socio(nombre), /dato_invalido_nombre/, `socio ${JSON.stringify(nombre)}`);
-            await assert.rejects(representante(nombre), /dato_invalido_nombre/, `representante ${JSON.stringify(nombre)}`);
+          // Regla 1: una identidad con cualquier carácter invisible se rechaza en su campo con su propio aviso
+          // («invisible_nombre»), también el tabulador; no se limpia. serv-nuevo-5: también los Cf (U+00AD en un
+          // representante, U+200B en un socio, U+2060, U+FEFF, U+200E), que en b2db0b5 se guardaban.
+          for (const nombre of [
+            "Pedro\u000bRuiz Sol", "Luis\u0085Gómez Paz", "Juan\u0085Pérez López", "Eva Ruiz\u0096Sol", "O\u0092Brien Sol", "Ana\tRuiz Sol", "Iván\u000cSol", "Iván\u001fSol", "Iván\u0001Sol",
+            "Pedro\u00adRuiz Sol", "Ana\u200bRuiz Sol", "Luis\u2060Ruiz Sol", "Eva\ufeffRuiz Sol", "Iván\u200eSol",
+          ]) {
+            await assert.rejects(socio(nombre), /invisible_nombre/, `socio ${JSON.stringify(nombre)}`);
+            await assert.rejects(representante(nombre), /invisible_nombre/, `representante ${JSON.stringify(nombre)}`);
+          }
+          // Un nombre mal formado sin invisibles conserva el error de formato.
+          await assert.rejects(representante("   "), /dato_invalido_nombre/);
+          // base-N25: el documento del socio extranjero con un carácter invisible se rechaza en su campo; en b2db0b5
+          // «X123\t4567» se guardaba como X1234567, otro número del que se escribió.
+          for (const documento of ["X123\t4567", "X123\u000b4567", "X123\r4567", "X123\u200b4567"]) {
+            await assert.rejects(
+              agregarAccionista(ori, {
+                versionId, formId: randomUUID(), padreClave: "", tipoPersona: "fisica", nombre: "Mia Ruiz Sol", rfc: "", curp: "",
+                pais: "US", documentoExtranjero: documento, fechaNacimiento: "1981-02-02", capital: "0", votos: "0", controlOtrosMedios: true, pep: "no",
+              }),
+              /dato_invalido_documentoExtranjero/,
+              JSON.stringify(documento),
+            );
           }
           const nombres = async (tabla: "kyb_accionistas" | "kyb_representantes") =>
             (await dueno.query(`select nombre from ${tabla} where version_id = $1 order by nombre`, [versionId])).rows.map((r) => String(r.nombre));
           assert.deepEqual(await nombres("kyb_accionistas"), ["Ana Ruiz Sol", "Eva Ruiz Sol", "Luis Ruiz Sol", "Pedro Ruiz Sol"]);
           assert.deepEqual(await nombres("kyb_representantes"), ["Rosa Pérez Ríos"]);
 
-          // La razón social del expediente también es una identidad: con U+0085 se rechaza en su campo.
-          await assert.rejects(
-            guardarDatosGenerales(ori, { versionId, datos: { ...DATOS_GENERALES, razonSocial: "Laboratorio\u0085Cotejo SA de CV", rfc } }),
-            /dato_invalido_razonSocial/,
-          );
+          // La razón social del expediente también es una identidad: con U+0085 (o un Cf como U+FEFF, que en b2db0b5 se
+          // guardaba) se rechaza en su campo con su propio aviso.
+          for (const razonSocial of ["Laboratorio\u0085Cotejo SA de CV", "Laboratorio\ufeffCotejo SA de CV", "Laboratorio Cotejo\u00ad SA de CV"]) {
+            await assert.rejects(
+              guardarDatosGenerales(ori, { versionId, datos: { ...DATOS_GENERALES, razonSocial, rfc } }),
+              /invisible_razonSocial/,
+              JSON.stringify(razonSocial),
+            );
+          }
           // En el giro, que es texto libre, el NEL entre dos palabras se vuelve un espacio (serv-nuevo-4).
           await guardarDatosGenerales(ori, { versionId, datos: { ...DATOS_GENERALES, razonSocial: "Laboratorio Cotejo SA de CV", rfc, giro: "Distribución\u0085de abarrotes" } });
           const datos = (await dueno.query("select razon_social, giro from kyb_versiones where id = $1", [versionId])).rows[0];
           assert.deepEqual([datos?.razon_social, datos?.giro], ["Laboratorio Cotejo SA de CV", "Distribución de abarrotes"]);
 
           await enviarVersion(ori, versionId);
+          // base-N24: un renglón de la Lista con un tabulador (o un guion suave, o un U+200B) en el nombre se rechaza; en
+          // b2db0b5 se juntaban los espacios antes de revisar y «EVA\tRUIZ SOL» se guardaba como «EVA RUIZ SOL».
+          const cargasAntes = (await dueno.query("select count(*)::int as n from lpb_cargas")).rows[0]?.n;
+          for (const renglon of ["EVA\tRUIZ SOL,,,fisica", "EVA\u00adRUIZ SOL,,,fisica", "EVA RUIZ\u200bSOL,,,fisica"]) {
+            await assert.rejects(cargar(lista("2026-11-02", BETA_EN_LISTA, renglon)), /lpb_renglon_invalido/, JSON.stringify(renglon));
+          }
+          assert.equal((await dueno.query("select count(*)::int as n from lpb_cargas")).rows[0]?.n, cargasAntes);
           await cargar(lista("2026-11-02", BETA_EN_LISTA, "ANA RUIZ SOL,,,fisica", "PEDRO RUIZ SOL,,,fisica", "LUIS RUIZ SOL,,,fisica", "EVA RUIZ SOL,,,fisica"));
           const coincidencias = (await listarCoincidencias(cum, { companyId })).map((k) => [k.sujetoNombre, k.tipo, k.coincidePor]).sort();
           assert.deepEqual(coincidencias, [
@@ -2173,6 +2251,12 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
             ["Luis Ruiz Sol", "posible", "nombre"],
             ["Pedro Ruiz Sol", "posible", "nombre"],
           ]);
+          // serv-nuevo-5 no amplía los textos libres: un motivo con un emoji compuesto (unido con U+200D) se guarda tal cual.
+          const ana = (await listarCoincidencias(cum, { companyId })).find((k) => k.sujetoNombre === "Ana Ruiz Sol");
+          assert.ok(ana);
+          const motivo = "Homónimo: revisado con la familia 👨‍👩‍👧 completa";
+          await resolverCoincidencia(cum, SESION_SOFIPO, { id: ana.id, estado: "falso_positivo", motivo });
+          assert.equal((await dueno.query("select motivo_resolucion from lpb_coincidencias where id = $1", [ana.id])).rows[0]?.motivo_resolucion, motivo);
         });
       } finally {
         await dueno.end();
@@ -2265,7 +2349,7 @@ async function sembrarProveedor(dueno: pg.Client, companyId: string, operadorId:
   );
   await dueno.query(
     `insert into suppliers (id, company_id, document_id, snapshot_id, rfc, razon_social, lista_fecha, lista_leida_en, boton_pago, alta_en)
-     values ($1, $2, $3, $4, $5, $6, current_date - 1, now(), true, now())`,
+     values ($1, $2, $3, $4, $5, $6, (select fecha_archivo from lista_69b_snapshots where id = $4), now(), true, now())`,
     [id, companyId, documento, COPIA_69B, rfc, nombre],
   );
   await dueno.query(

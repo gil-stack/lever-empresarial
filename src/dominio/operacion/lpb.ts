@@ -1,4 +1,4 @@
-import { CONTROL } from "../control";
+import { INVISIBLE } from "../control";
 import { fechaDeCalendario } from "./validar";
 
 /**
@@ -46,12 +46,15 @@ export function leerListaBloqueadas(texto: string): LecturaLpb {
     const valores = campos(lineas[indice] ?? "");
     if (!valores || valores.length !== ENCABEZADO.length) return { ok: false, codigo: "lpb_renglon_invalido", linea };
     const [nombreCrudo, rfcCrudo, curpCrudo, tipoCrudo, fechaCruda] = valores.map((valor) => valor.trim());
+    // El nombre se coteja letra por letra: con un carácter invisible (un tabulador, un U+00AD, un U+200B) el renglón se
+    // rechaza antes de juntar los espacios, que lo volverían otro nombre («EVA\tRUIZ SOL» no es «EVA RUIZ SOL»).
+    if (INVISIBLE.test(nombreCrudo ?? "")) return { ok: false, codigo: "lpb_renglon_invalido", linea };
     const nombre = (nombreCrudo ?? "").replace(/\s+/g, " ");
     const tipo = normalizarTipo(tipoCrudo ?? "");
     const rfc = rfcCrudo ? rfcCrudo.toUpperCase() : null;
     const curp = curpCrudo ? curpCrudo.toUpperCase() : null;
     const fecha = fechaCruda ? fechaCruda : null;
-    if (nombre.length === 0 || nombre.length > 300 || CONTROL.test(nombre) || !tipo) {
+    if (nombre.length === 0 || nombre.length > 300 || !tipo) {
       return { ok: false, codigo: "lpb_renglon_invalido", linea };
     }
     if (rfc && !(tipo === "moral" ? RFC_MORAL : RFC_FISICA).test(rfc)) return { ok: false, codigo: "lpb_renglon_invalido", linea };

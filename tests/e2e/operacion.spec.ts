@@ -294,6 +294,88 @@ test("tras un rechazo del socio extranjero el formulario vuelve con todo lo capt
   expect(errores).toEqual([]);
 });
 
+// Una identidad con un carácter invisible (lo que deja copiar y pegar) se ve bien en pantalla: el aviso dice qué pasó,
+// marca el campo y le da el foco. Un nombre mal formado sin invisibles conserva el aviso de formato. El formulario
+// de representante, como el de socio, vuelve con lo capturado y sin datos personales en la dirección (P3).
+test("un nombre con un carácter invisible da su propio aviso; el formulario de representante conserva lo capturado", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
+  const expediente = `/operacion/clientes/${duna!.id}/expediente`;
+  const socios = () => contar("select 1 from kyb_accionistas where company_id = $1", [duna!.id]);
+  const representantes = () => contar("select 1 from kyb_representantes where company_id = $1", [duna!.id]);
+  const INVISIBLE = "El nombre trae un carácter invisible, algo común al copiar y pegar. Escríbelo de nuevo a mano.";
+  const FORMATO = "Revisa el campo marcado: el dato no tiene el formato esperado.";
+  await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  const [sociosAntes, representantesAntes] = [await socios(), await representantes()];
+
+  // Socio persona física mexicana con «Juan\u0085Pérez López».
+  await page.goto(expediente);
+  for (const [nombre, aviso] of [["Juan\u0085Pérez López", INVISIBLE], ["Ana\u200bRuiz Sol", INVISIBLE], ["   ", FORMATO]] as const) {
+    await page.locator("#acc-tipo").selectOption("fisica");
+    await page.locator("#acc-nombre").fill(nombre);
+    await page.locator("#acc-curp").fill("GORL750505MDFMZR04");
+    await page.locator("#acc-capital").fill("10");
+    await page.locator("#acc-votos").fill("10");
+    await page.getByRole("button", { name: "Agregar accionista" }).click();
+    await expect(page.locator("#aviso-accionista")).toHaveText(aviso);
+    await expect(page.locator("#acc-nombre")).toHaveAttribute("aria-invalid", "true");
+    await expect(page.locator("#acc-nombre")).toHaveAttribute("aria-describedby", "aviso-accionista");
+    await expect(page.locator("#acc-nombre")).toBeFocused();
+    await expect(page.locator("#acc-nombre")).toHaveValue(nombre);
+    await expect(page.locator("#acc-curp")).toHaveValue("GORL750505MDFMZR04");
+    expect(new URL(page.url()).search).toBe("");
+  }
+  expect(await socios()).toBe(sociosAntes);
+
+  // Representante: el mismo aviso, y vuelve con todo lo capturado (antes recargaba la página y lo perdía).
+  const capturado = { rfc: "RUSP800101AB1", curp: "RUSP800101HDFZLD09", cargo: "apoderado", pep: "no", designadoPor: "Asamblea del 3 de marzo" };
+  await page.locator("#rep-nombre").fill("Pedro\u00adRuiz Sol");
+  await page.locator("#rep-rfc").fill(capturado.rfc);
+  await page.locator("#rep-curp").fill(capturado.curp);
+  await page.locator("#rep-cargo").selectOption(capturado.cargo);
+  await page.locator("#rep-pep").selectOption(capturado.pep);
+  await page.locator("#rep-designado").fill(capturado.designadoPor);
+  await page.locator('input[name="esAdministrador"]').check();
+  const sigueCapturado = async (nombre: string, curp = capturado.curp) => {
+    await expect(page.locator("#rep-nombre")).toHaveValue(nombre);
+    await expect(page.locator("#rep-rfc")).toHaveValue(capturado.rfc);
+    await expect(page.locator("#rep-curp")).toHaveValue(curp);
+    await expect(page.locator("#rep-cargo")).toHaveValue(capturado.cargo);
+    await expect(page.locator("#rep-pep")).toHaveValue(capturado.pep);
+    await expect(page.locator("#rep-designado")).toHaveValue(capturado.designadoPor);
+    await expect(page.locator('input[name="esAdministrador"]')).toBeChecked();
+    expect(new URL(page.url()).search).toBe("");
+    expect(await representantes()).toBe(representantesAntes);
+  };
+  await page.getByRole("button", { name: "Agregar representante" }).click();
+  await expect(page.locator("#aviso-representante")).toHaveText(INVISIBLE);
+  await expect(page.locator("#rep-nombre")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator("#rep-nombre")).toHaveAttribute("aria-describedby", "aviso-representante");
+  await expect(page.locator("#rep-nombre")).toBeFocused();
+  await sigueCapturado("Pedro\u00adRuiz Sol");
+
+  // Se corrige el nombre y falla la CURP: el aviso de formato marca la CURP y todo lo demás sigue ahí.
+  await page.locator("#rep-nombre").fill("Pedro Ruiz Sol");
+  await page.locator("#rep-curp").fill("XX");
+  await page.getByRole("button", { name: "Agregar representante" }).click();
+  await expect(page.locator("#aviso-representante")).toHaveText(FORMATO);
+  await expect(page.locator("#rep-curp")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator("#rep-curp")).toBeFocused();
+  await expect(page.locator("#rep-nombre")).not.toHaveAttribute("aria-invalid", "true");
+  await sigueCapturado("Pedro Ruiz Sol", "XX");
+
+  // Corregido en el mismo formulario, entra una sola vez.
+  await page.locator("#rep-curp").fill(capturado.curp);
+  await page.getByRole("button", { name: "Agregar representante" }).click();
+  await page.waitForURL(/aviso=expediente_representante_agregado/);
+  expect(await representantes()).toBe(representantesAntes + 1);
+  expect(await consultar("select nombre, rfc, curp, cargo, es_administrador, designado_por from kyb_representantes where company_id = $1 and nombre = $2", [duna!.id, "Pedro Ruiz Sol"])).toEqual([
+    { nombre: "Pedro Ruiz Sol", rfc: capturado.rfc, curp: capturado.curp, cargo: "apoderado", es_administrador: true, designado_por: capturado.designadoPor },
+  ]);
+  await expect(page.locator("#rep-nombre")).toHaveValue("");
+  expect(errores).toEqual([]);
+});
+
 test("«Perdí el segundo factor»: Recuperaciones pide «Confirma que eres tú», otra persona aprueba y la clienta registra un factor nuevo", async ({ page, context }) => {
   const errores = vigilarConsola(page);
   const paula = await idDe(CORREOS.perdida);

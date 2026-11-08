@@ -1,5 +1,12 @@
 import { textoMultilinea } from "../../dominio/operacion";
+import type { Consulta } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
+
+/**
+ * Envuelve la transacción de la escritura de un formulario. En producción no hace nada; la prueba de la carrera
+ * de dos pestañas la usa para que la otra pestaña confirme justo después de la primera lectura.
+ */
+export type EnvolturaDeTransaccion = (consulta: Consulta) => Consulta;
 
 /** Lo mínimo de un motivo que queda en la bitácora y lee otra persona, como el de personal:rol. */
 export const MOTIVO_MINIMO = 10;

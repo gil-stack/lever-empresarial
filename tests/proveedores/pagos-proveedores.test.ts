@@ -307,7 +307,13 @@ test("cuentas por pagar contra Postgres: personas, versiones, CLABE, 69-B, SQL d
         );
         await assert.rejects(
           () => agregarContratoProveedor(luis, { supplierId: PROVEEDOR, pdf: { nombre: "contrato.pdf", bytes: PDF }, vigenteDesde: "2026-11-01", vigenteHasta: "2026-13-01" }, deps),
-          conCodigo("fecha_invalida"),
+          conCodigo("fecha_hasta_invalida"),
+        );
+        // P3: «Vigente hasta» tiene su propio código y texto (antes reutilizaba «fecha_invalida», cuyo texto habla de
+        // la emisión y el vencimiento de un pago), también cuando queda antes de «Vigente desde».
+        await assert.rejects(
+          () => agregarContratoProveedor(luis, { supplierId: PROVEEDOR, pdf: { nombre: "contrato.pdf", bytes: PDF }, vigenteDesde: "2026-11-01", vigenteHasta: "2026-10-31" }, deps),
+          conCodigo("fecha_hasta_invalida"),
         );
         assert.deepEqual([cargos(), documentos()], [cargosAntes, documentosAntes]);
         // El de cancelar pide 5: «ok 😀» son 4.

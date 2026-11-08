@@ -196,6 +196,16 @@ async function rechazarSocio(p) {
   await listo(p);
   return (await nuevo.innerText()).replace(/\s+/g, " ").trim();
 }
+/** «Agregar representante» rechazado: como el del socio, vuelve sin recargar con su propio aviso y lo capturado. */
+async function rechazarRepresentante(p) {
+  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.locator("#aviso-representante").evaluate((nodo) => { nodo.dataset.anterior = "1"; }).catch(() => {});
+  await p.getByRole("button", { name: "Agregar representante" }).click();
+  const nuevo = p.locator("#aviso-representante:not([data-anterior])");
+  await nuevo.waitFor({ timeout: 20000 });
+  await listo(p);
+  return (await nuevo.innerText()).replace(/\s+/g, " ").trim();
+}
 const PDF = (titulo) => Buffer.from(`%PDF-1.4\n% ${titulo}\n1 0 obj << /Type /Catalog >> endobj\n${"0".repeat(64)}\n%%EOF\n`);
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 
@@ -1988,11 +1998,11 @@ async function septimaRonda(rutaEbano) {
   const representantes = () => cuenta(`kyb_representantes where version_id = ${borrador} and retirado_en is null`);
   const repsAntes = representantes();
   await campo(omar.p, "#rep-nombre", "Pedro\u000bRuiz Sol");
-  await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar representante" }), "dato_invalido_nombre");
+  const textoRep = await rechazarRepresentante(omar.p);
   exigir(
-    (await marcado(omar.p, "#rep-nombre")) && representantes() === repsAntes && !(await aviso(omar.p)).includes("no respondió"),
+    (await marcado(omar.p, "#rep-nombre")) && representantes() === repsAntes && textoRep.includes("carácter invisible"),
     "base-N23. el representante «Pedro\\u000bRuiz Sol» se rechaza en su campo y no se guarda (antes, «PedroRuiz Sol»)",
-    await aviso(omar.p),
+    textoRep,
   );
   await enVista(omar.p.locator("#rep-nombre"));
   await foto(omar.p, "n23-representante-con-control", false);
@@ -2024,7 +2034,7 @@ async function septimaRonda(rutaEbano) {
   await ir(omar.p, rutaEbano);
   const razonAntes = sql(`select razon_social from kyb_versiones where id = ${borrador}`);
   await campo(omar.p, "#dato-razonSocial", "Grupo Ébano\u0085Industrial, S.A. de C.V.");
-  await enviar(omar.p, omar.p.getByRole("button", { name: "Guardar datos" }), "dato_invalido_razonSocial");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Guardar datos" }), "invisible_razonSocial");
   exigir(
     (await marcado(omar.p, "#dato-razonSocial")) && sql(`select razon_social from kyb_versiones where id = ${borrador}`) === razonAntes,
     "base-N23. la razón social del expediente con U+0085 se rechaza en su campo y no cambia",
@@ -2164,6 +2174,238 @@ async function septimaRonda(rutaEbano) {
   await gil.p.unroute("**/*");
   await enVista(obligacion);
   await foto(gil.p, "p3-excepcion-fecha-de-la-obligacion", false);
+  await gil.nav.close();
+  await octavaRonda(rutaEbano);
+}
+
+/**
+ * Re-verificación sobre b2db0b5. serv-nuevo-5: las identidades rechazan también los caracteres de formato (Cf); el
+ * aviso del carácter invisible es propio, marca el campo y le da el foco; el formulario de representante conserva lo
+ * capturado; base-N24 (renglón de la Lista con tabulador), base-N25 (documento extranjero con tabulador) y el
+ * contrato con «Vigente hasta» que tiene su propio aviso.
+ */
+async function octavaRonda(rutaEbano) {
+  console.log("\n— Octava revisión: caracteres invisibles con su propio aviso, representante que conserva lo capturado, Lista y documento extranjero");
+  renovarSesiones();
+  const INVISIBLE_NOMBRE = "El nombre trae un carácter invisible, algo común al copiar y pegar. Escríbelo de nuevo a mano.";
+  const FORMATO = "Revisa el campo marcado: el dato no tiene el formato esperado.";
+  const marcado = async (p, selector) => (await p.locator(selector).getAttribute("aria-invalid")) === "true";
+  const enFoco = (p) => p.evaluate(() => document.activeElement?.id ?? "");
+  const sinDatosEnDireccion = (p) => new URL(p.url()).search === "";
+  const omar = await abrir("omar");
+  const borrador = `(select id from kyb_versiones where company_id = '${ctxEbano.id}' and estado = 'borrador')`;
+  const socios = () => cuenta(`kyb_accionistas where version_id = ${borrador} and retirado_en is null`);
+  const representantes = () => cuenta(`kyb_representantes where version_id = ${borrador} and retirado_en is null`);
+
+  // Aviso propio: el socio «Juan\u0085Pérez López» (persona física mexicana) dice qué pasó, marca el nombre y le da el foco.
+  await ir(omar.p, rutaEbano);
+  const sociosAntes = socios();
+  const capturarSocio = async (nombre) => {
+    await omar.p.locator("#acc-tipo").selectOption("fisica");
+    await omar.p.locator("#acc-nacionalidad").selectOption("mexicana");
+    await campo(omar.p, "#acc-nombre", nombre);
+    await campo(omar.p, "#acc-curp", "PELJ800101HNLRPN07");
+    await campo(omar.p, "#acc-capital", "1");
+    await campo(omar.p, "#acc-votos", "1");
+    return rechazarSocio(omar.p);
+  };
+  const textoJuan = await capturarSocio("Juan\u0085Pérez López");
+  exigir(
+    textoJuan === INVISIBLE_NOMBRE && (await marcado(omar.p, "#acc-nombre")) && (await enFoco(omar.p)) === "acc-nombre"
+      && (await omar.p.locator("#acc-nombre").inputValue()) === "Juan\u0085Pérez López" && sinDatosEnDireccion(omar.p) && socios() === sociosAntes,
+    "aviso propio. el socio «Juan\\u0085Pérez López»: «El nombre trae un carácter invisible…», nombre marcado y con el foco, sin socio",
+    textoJuan,
+  );
+  await enVista(omar.p.locator("#aviso-accionista"));
+  await foto(omar.p, "r8-socio-caracter-invisible", false);
+  // serv-nuevo-5: un Cf (U+200B) también, y un nombre mal formado sin invisibles conserva el aviso de formato.
+  const textoAna = await capturarSocio("Ana\u200bRuiz Sol");
+  exigir(textoAna === INVISIBLE_NOMBRE && socios() === sociosAntes, "serv-nuevo-5. el socio «Ana\\u200bRuiz Sol» (espacio de ancho cero): el mismo aviso y sin socio", textoAna);
+  const textoBlanco = await capturarSocio("   ");
+  exigir(
+    textoBlanco === FORMATO && (await marcado(omar.p, "#acc-nombre")) && (await enFoco(omar.p)) === "acc-nombre",
+    "aviso propio. un nombre en blanco, sin invisibles, conserva «Revisa el campo marcado: el dato no tiene el formato esperado.»",
+    textoBlanco,
+  );
+  await enVista(omar.p.locator("#aviso-accionista"));
+  await foto(omar.p, "r8-socio-nombre-con-formato", false);
+
+  // P3: el formulario de representante conserva lo capturado tras el rechazo (antes recargaba y lo perdía).
+  await ir(omar.p, rutaEbano);
+  const repsAntes = representantes();
+  const REP = { rfc: "RUSP800101AB1", curp: "RUSP800101HDFZLD09", cargo: "apoderado", pep: "no", designado: "Poder notarial 4512" };
+  await campo(omar.p, "#rep-nombre", "Pedro\u00adRuiz Sol");
+  await campo(omar.p, "#rep-rfc", REP.rfc);
+  await campo(omar.p, "#rep-curp", REP.curp);
+  await omar.p.locator("#rep-cargo").selectOption(REP.cargo);
+  await omar.p.locator("#rep-pep").selectOption(REP.pep);
+  await campo(omar.p, "#rep-designado", REP.designado);
+  await omar.p.locator('input[name="esAdministrador"]').check();
+  const conservado = async (curp = REP.curp) =>
+    (await omar.p.locator("#rep-rfc").inputValue()) === REP.rfc && (await omar.p.locator("#rep-curp").inputValue()) === curp
+    && (await omar.p.locator("#rep-cargo").inputValue()) === REP.cargo && (await omar.p.locator("#rep-pep").inputValue()) === REP.pep
+    && (await omar.p.locator("#rep-designado").inputValue()) === REP.designado && (await omar.p.locator('input[name="esAdministrador"]').isChecked())
+    && sinDatosEnDireccion(omar.p) && representantes() === repsAntes;
+  const textoPedro = await rechazarRepresentante(omar.p);
+  exigir(
+    textoPedro === INVISIBLE_NOMBRE && (await marcado(omar.p, "#rep-nombre")) && (await enFoco(omar.p)) === "rep-nombre"
+      && (await omar.p.locator("#rep-nombre").inputValue()) === "Pedro\u00adRuiz Sol" && (await conservado()),
+    "P3 y serv-nuevo-5. el representante «Pedro\\u00adRuiz Sol» (guion suave): aviso propio, nombre marcado y con el foco, y vuelve con RFC, CURP, cargo, PEP, quién lo designó y «Administra»",
+    textoPedro,
+  );
+  await enVista(omar.p.locator("#aviso-representante"));
+  await foto(omar.p, "r8-representante-conserva-lo-capturado", false);
+  await campo(omar.p, "#rep-nombre", "Pedro Ruiz Sol");
+  await campo(omar.p, "#rep-curp", "XX");
+  const textoCurp = await rechazarRepresentante(omar.p);
+  exigir(
+    textoCurp === FORMATO && (await marcado(omar.p, "#rep-curp")) && !(await marcado(omar.p, "#rep-nombre")) && (await enFoco(omar.p)) === "rep-curp"
+      && (await omar.p.locator("#rep-nombre").inputValue()) === "Pedro Ruiz Sol" && (await conservado("XX")),
+    "P3. con la CURP «XX» el aviso de formato marca la CURP y todo lo demás sigue capturado",
+    textoCurp,
+  );
+  await campo(omar.p, "#rep-curp", REP.curp);
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar representante" }), "expediente_representante_agregado", { doble: true });
+  exigir(
+    representantes() === repsAntes + 1
+      && sql(`select concat_ws('|', rfc, curp, cargo, es_administrador, designado_por) from kyb_representantes where version_id = ${borrador} and nombre = 'Pedro Ruiz Sol' and retirado_en is null`)
+        === [REP.rfc, REP.curp, REP.cargo, "t", REP.designado].join("|"),
+    "P3. corregido en el mismo formulario, doble clic en «Agregar representante» = un representante con todo lo capturado",
+  );
+  await enVista(omar.p.locator("#representantes-titulo"));
+  await foto(omar.p, "r8-representante-agregado", false);
+
+  // serv-nuevo-5: la razón social del expediente con U+FEFF tiene su propio aviso, con el campo marcado y el foco.
+  await ir(omar.p, rutaEbano);
+  const razonAntes = sql(`select razon_social from kyb_versiones where id = ${borrador}`);
+  await campo(omar.p, "#dato-razonSocial", "Grupo Ébano\ufeffIndustrial, S.A. de C.V.");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Guardar datos" }), "invisible_razonSocial");
+  exigir(
+    (await aviso(omar.p)) === "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano."
+      && (await marcado(omar.p, "#dato-razonSocial")) && (await enFoco(omar.p)) === "dato-razonSocial"
+      && sql(`select razon_social from kyb_versiones where id = ${borrador}`) === razonAntes,
+    "serv-nuevo-5. la razón social del expediente con U+FEFF: aviso propio, campo marcado y con el foco, y no cambia",
+    await aviso(omar.p),
+  );
+  await enVista(omar.p.locator("#dato-razonSocial"));
+  await foto(omar.p, "r8-razon-social-caracter-invisible", false);
+
+  // base-N25: el documento del socio extranjero con un tabulador se rechaza (antes «X123\t4567» quedaba X1234567).
+  await ir(omar.p, rutaEbano);
+  await omar.p.locator("#acc-tipo").selectOption("fisica");
+  await omar.p.locator("#acc-nacionalidad").selectOption("extranjera");
+  await campo(omar.p, "#acc-nombre", "Mia Larsson Berg");
+  await omar.p.locator("#acc-pais").selectOption("SE");
+  await campo(omar.p, "#acc-documento", "X123\t4567");
+  await omar.p.locator("#acc-nacimiento").fill("1984-03-03");
+  await campo(omar.p, "#acc-capital", "1");
+  await campo(omar.p, "#acc-votos", "1");
+  const textoDoc = await rechazarSocio(omar.p);
+  exigir(
+    textoDoc.includes("de 4 a 20 letras y números") && (await marcado(omar.p, "#acc-documento")) && socios() === sociosAntes
+      && cuenta(`kyb_accionistas where documento_extranjero = 'X1234567'`) === 0,
+    "base-N25. el documento extranjero «X123\\t4567» se rechaza en su campo; no se guarda X1234567",
+    textoDoc,
+  );
+  await enVista(omar.p.locator("#aviso-accionista"));
+  await foto(omar.p, "r8-documento-extranjero-con-tabulador", false);
+
+  // serv-nuevo-5: la razón social del alta con U+2060 (unión de palabras), con su aviso.
+  await ir(omar.p, "/operacion/clientes");
+  await campo(omar.p, "#razonSocial", "Empresa\u2060Dos SA de CV");
+  await campo(omar.p, "#rfc", "EDO010101AB1");
+  await campo(omar.p, "#codigoPostal", "06600");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Registrar prospecto" }), "razon_social_control");
+  exigir(
+    (await marcado(omar.p, "#razonSocial")) && (await enFoco(omar.p)) === "razonSocial" && cuenta(`companies where rfc = 'EDO010101AB1'`) === 0,
+    "serv-nuevo-5. la razón social del alta con U+2060: su aviso, campo marcado y con el foco, sin empresa",
+    await aviso(omar.p),
+  );
+  await enVista(omar.p.locator("#razonSocial"));
+  await foto(omar.p, "r8-prospecto-razon-social-u2060", false);
+  await omar.nav.close();
+
+  // Cumplimiento: la Lista con «EVA\tRUIZ SOL» (base-N24) y el folio con U+2060; el motivo con un emoji compuesto se guarda.
+  const celia = await abrir("celia");
+  await ir(celia.p, "/operacion/lpb");
+  const cargasAntes = cuenta("lpb_cargas");
+  await celia.p.locator("#archivo").setInputFiles({
+    name: "lpb-con-tabulador.csv", mimeType: "text/csv", buffer: Buffer.from(`${LPB_2}\nEVA\tRUIZ SOL,,,fisica,2026-11-06\n`),
+  });
+  await enviar(celia.p, celia.p.getByRole("button", { name: "Cargar y cotejar" }), "lpb_renglon_invalido");
+  const lineaEva = LPB_2.split("\n").length + 1;
+  exigir(
+    (await aviso(celia.p)).includes(`línea ${lineaEva}`) && cuenta("lpb_cargas") === cargasAntes && cuenta("lpb_personas where nombre ilike 'eva%ruiz%sol'") === 0,
+    `base-N24. la Lista con «EVA\\tRUIZ SOL» se rechaza en la línea ${lineaEva} y no deja carga (antes se guardaba «EVA RUIZ SOL»)`,
+    await aviso(celia.p),
+  );
+  await foto(celia.p, "r8-lista-con-tabulador", false);
+  await ir(celia.p, "/operacion/cumplimiento");
+  // Una empresa de las regresiones (Brisa o Cedro) que la Lista encontró por su RFC y sigue pendiente.
+  const caso = sql(`select id from lpb_coincidencias where estado = 'pendiente' and tipo = 'exacta' and sujeto_tipo = 'empresa' order by detectada_en limit 1`);
+  exigir(Boolean(caso), "octava. hay una coincidencia pendiente para confirmar y anotar su folio");
+  const motivoEmoji = "Coincide el RFC; lo revisó la familia 👨‍👩‍👧 de Cumplimiento";
+  const fila = celia.p.locator(`li:has([id="resolucion-${caso}"])`);
+  await fila.locator(`[id="resolucion-${caso}"]`).selectOption("confirmada");
+  await fila.locator(`[id="motivo-${caso}"]`).fill(motivoEmoji);
+  await enviar(celia.p, fila.getByRole("button", { name: "Registrar dictamen" }), "coincidencia_resuelta");
+  exigir(
+    sql(`select motivo_resolucion from lpb_coincidencias where id = '${caso}'`) === motivoEmoji,
+    "serv-nuevo-5. el motivo con un emoji compuesto (U+200D) se guarda tal cual: los textos libres no cambian",
+  );
+  const conFolio = celia.p.locator(`li:has([id="folio-${caso}"])`);
+  await conFolio.locator(`[id="folio-${caso}"]`).fill("UIF-2026-\u20600007");
+  await conFolio.locator(`[id="presentado-${caso}"]`).fill(hoyMexico());
+  await enviar(celia.p, conFolio.getByRole("button", { name: "Anotar folio" }), "invisible_folio");
+  exigir(
+    (await aviso(celia.p)) === "El folio trae un carácter invisible, algo común al copiar y pegar. Escríbelo de nuevo a mano."
+      && (await marcado(celia.p, `[id="folio-${caso}"]`)) && (await enFoco(celia.p)) === `folio-${caso}`
+      && sql(`select coalesce(reporte_folio, '') from lpb_coincidencias where id = '${caso}'`) === "",
+    "serv-nuevo-5. el folio «UIF-2026-\\u20600007»: aviso propio, el folio de esa coincidencia marcado y con el foco, sin folio guardado",
+    await aviso(celia.p),
+  );
+  await enVista(celia.p.locator(`[id="folio-${caso}"]`));
+  await foto(celia.p, "r8-folio-caracter-invisible", false);
+  await celia.nav.close();
+
+  // P3: el contrato con «Vigente hasta» antes de «Vigente desde» tiene su propio aviso y marca «Vigente hasta».
+  const gil = await abrir("gil");
+  const proveedor = "44444444-4444-4444-8444-444444444441";
+  const documentos = () => cuenta(`documents where company_id = '${TALLER}'`);
+  const docsAntes = documentos();
+  await ir(gil.p, `/c/${TALLER}/consola/proveedores?vista=proveedores&proveedor=${proveedor}`);
+  const dialogo = gil.p.getByRole("dialog");
+  await dialogo.getByText("Agregar contrato", { exact: true }).click();
+  await gil.p.locator(`#contrato-nuevo-${proveedor}`).setInputFiles({ name: "contrato-octava.pdf", mimeType: "application/pdf", buffer: PDF("contrato-octava") });
+  await gil.p.locator(`#desde-${proveedor}`).fill("2026-11-01");
+  await gil.p.locator(`#hasta-${proveedor}`).fill("2026-10-31");
+  await dialogo.getByRole("button", { name: "Guardar el contrato" }).click();
+  await gil.p.locator(`#hasta-${proveedor}[aria-invalid="true"]`).waitFor({ timeout: 20000 });
+  const textoContrato = (await gil.p.locator(`#contrato-${proveedor}-aviso`).innerText()).replace(/\s+/g, " ").trim();
+  exigir(
+    textoContrato.includes("Revisa «Vigente hasta»: debe existir en el calendario y no puede ser anterior a «Vigente desde».")
+      && !textoContrato.includes("emisión") && !(await marcado(gil.p, `#desde-${proveedor}`)) && documentos() === docsAntes,
+    "P3. el contrato con «Vigente hasta» antes de «Vigente desde»: su propio aviso (no el de la emisión del pago), «Vigente hasta» marcado y sin documento",
+    textoContrato,
+  );
+  await enVista(gil.p.locator(`#hasta-${proveedor}`));
+  await foto(gil.p, "r8-contrato-vigente-hasta", false);
+
+  // serv-nuevo-5: el alta del proveedor con U+FEFF en la razón social dice que trae un carácter invisible.
+  await ir(gil.p, `/c/${TALLER}/consola/proveedores/nuevo-proveedor`);
+  await gil.p.locator("#rfc").fill("EKU9003173C9");
+  await gil.p.locator("#razonSocial").fill("Escuela\ufeffKemper Urgate");
+  await gil.p.getByRole("button", { name: "Dar de alta" }).click();
+  await gil.p.locator('#razonSocial[aria-invalid="true"]').waitFor({ timeout: 20000 });
+  const textoProveedor = (await gil.p.locator("form.alta-formulario").innerText()).replace(/\s+/g, " ");
+  exigir(
+    textoProveedor.includes("La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano.")
+      && cuenta(`suppliers where company_id = '${TALLER}' and rfc = 'EKU9003173C9'`) === 0,
+    "serv-nuevo-5. el alta del proveedor con U+FEFF en la razón social: su aviso, campo marcado y sin proveedor",
+    textoProveedor.slice(0, 240),
+  );
+  await enVista(gil.p.locator("#razonSocial"));
+  await foto(gil.p, "r8-proveedor-razon-social-ufeff", false);
   await gil.nav.close();
 }
 

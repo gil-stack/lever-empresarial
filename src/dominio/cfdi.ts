@@ -1,7 +1,7 @@
 import { XMLParser, XMLValidator } from "fast-xml-parser";
 
 import { leerCentavosEscritos } from "./centavos";
-import { CONTROL, sinControles } from "./control";
+import { CONTROL, INVISIBLE, sinControles } from "./control";
 
 export const PESO_MAXIMO_XML = 2_000_000;
 
@@ -64,11 +64,11 @@ export function leerCfdi(bytes: Uint8Array): ResultadoCfdi {
     const serie = textoOpcional(raiz["@_Serie"], 40);
     const folio = textoOpcional(raiz["@_Folio"], 40);
     // Lo que se guarda cabe en los CHECK de la base: el RFC receptor con su forma (`cliente_rfc`), la serie y el
-    // folio sin caracteres de control (una referencia como «&#x9;») y el total hasta 9e15 centavos.
+    // folio sin caracteres invisibles (una referencia como «&#x9;» o «&#x200B;») y el total hasta 9e15 centavos.
     if (
       !/^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/.test(uuid) ||
       !rfcEmisor || !/^[A-Z&Ñ]{3,4}[0-9]{6}[A-Z0-9]{3}$/.test(rfcReceptor) || !nombreEmisor || !nombreReceptor ||
-      [serie, folio].some((valor) => valor !== null && CONTROL.test(valor)) ||
+      [serie, folio].some((valor) => valor !== null && INVISIBLE.test(valor)) ||
       total.tipo !== "centavos" || total.centavos <= 0 || total.centavos > 9_000_000_000_000_000 || !fechaCfdi(fecha)
     ) {
       return { ok: false, codigo: "cfdi_datos_incompletos" };

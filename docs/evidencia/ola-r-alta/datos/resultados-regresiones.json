@@ -445,7 +445,7 @@
     },
     {
       "ok": true,
-      "texto": "serv-N16. Blob responde 503 al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro"
+      "texto": "serv-N16. Blob responde 503 al borrar el huérfano: la página vuelve en 5.3 s (tope de 5 s más la página), sin documento, y la clave queda en el registro"
     },
     {
       "ok": true,
@@ -517,10 +517,6 @@
     },
     {
       "ok": true,
-      "texto": "aviso «dato_invalido_nombre» tras la acción"
-    },
-    {
-      "ok": true,
       "texto": "base-N23. el representante «Pedro\\u000bRuiz Sol» se rechaza en su campo y no se guarda (antes, «PedroRuiz Sol»)"
     },
     {
@@ -529,7 +525,7 @@
     },
     {
       "ok": true,
-      "texto": "aviso «dato_invalido_razonSocial» tras la acción"
+      "texto": "aviso «invisible_razonSocial» tras la acción"
     },
     {
       "ok": true,
@@ -578,6 +574,90 @@
     {
       "ok": true,
       "texto": "P3 bar-10. excepción con «Fecha de la obligación» 0000-01-01: el aviso marca esa fecha, no el vencimiento, y no hay pago"
+    },
+    {
+      "ok": true,
+      "texto": "aviso propio. el socio «Juan\\u0085Pérez López»: «El nombre trae un carácter invisible…», nombre marcado y con el foco, sin socio"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-5. el socio «Ana\\u200bRuiz Sol» (espacio de ancho cero): el mismo aviso y sin socio"
+    },
+    {
+      "ok": true,
+      "texto": "aviso propio. un nombre en blanco, sin invisibles, conserva «Revisa el campo marcado: el dato no tiene el formato esperado.»"
+    },
+    {
+      "ok": true,
+      "texto": "P3 y serv-nuevo-5. el representante «Pedro\\u00adRuiz Sol» (guion suave): aviso propio, nombre marcado y con el foco, y vuelve con RFC, CURP, cargo, PEP, quién lo designó y «Administra»"
+    },
+    {
+      "ok": true,
+      "texto": "P3. con la CURP «XX» el aviso de formato marca la CURP y todo lo demás sigue capturado"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_representante_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "P3. corregido en el mismo formulario, doble clic en «Agregar representante» = un representante con todo lo capturado"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «invisible_razonSocial» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-5. la razón social del expediente con U+FEFF: aviso propio, campo marcado y con el foco, y no cambia"
+    },
+    {
+      "ok": true,
+      "texto": "base-N25. el documento extranjero «X123\\t4567» se rechaza en su campo; no se guarda X1234567"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «razon_social_control» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-5. la razón social del alta con U+2060: su aviso, campo marcado y con el foco, sin empresa"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «lpb_renglon_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "base-N24. la Lista con «EVA\\tRUIZ SOL» se rechaza en la línea 6 y no deja carga (antes se guardaba «EVA RUIZ SOL»)"
+    },
+    {
+      "ok": true,
+      "texto": "octava. hay una coincidencia pendiente para confirmar y anotar su folio"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «coincidencia_resuelta» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-5. el motivo con un emoji compuesto (U+200D) se guarda tal cual: los textos libres no cambian"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «invisible_folio» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-5. el folio «UIF-2026-\\u20600007»: aviso propio, el folio de esa coincidencia marcado y con el foco, sin folio guardado"
+    },
+    {
+      "ok": true,
+      "texto": "P3. el contrato con «Vigente hasta» antes de «Vigente desde»: su propio aviso (no el de la emisión del pago), «Vigente hasta» marcado y sin documento"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-5. el alta del proveedor con U+FEFF en la razón social: su aviso, campo marcado y sin proveedor"
     },
     {
       "ok": true,

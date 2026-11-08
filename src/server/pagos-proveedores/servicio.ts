@@ -318,7 +318,7 @@ export async function agregarContratoProveedor(
   const hasta = fechaOpcional(entrada.vigenteHasta);
   // «Vigente desde» que no existe marca su campo; «hasta» que no existe o queda antes de «desde», el suyo.
   if (entrada.vigenteDesde && !desde) throw new ErrorDeDominio("fecha_desde_invalida");
-  if ((entrada.vigenteHasta && !hasta) || (desde && hasta && hasta < desde)) throw new ErrorDeDominio("fecha_invalida");
+  if ((entrada.vigenteHasta && !hasta) || (desde && hasta && hasta < desde)) throw new ErrorDeDominio("fecha_hasta_invalida");
   const listo = resolver(deps);
   const ahora = listo.ahora();
   const existe = await listo.repositorio.conEmpresa(conEmpresa, async (tx) => Boolean(await tx.proveedor(supplierId)));

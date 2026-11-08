@@ -1,3 +1,5 @@
+import { INVISIBLE } from "../control";
+
 /**
  * Países ISO 3166-1 alfa-2. El socio extranjero sin CURP se identifica por su país
  * y el número de su pasaporte o identificación oficial: con un código cerrado, la
@@ -30,8 +32,13 @@ export function paisExtranjeroValido(codigo: string): boolean {
   return codigo !== "MX" && PAISES.includes(codigo);
 }
 
-/** El número del pasaporte o de la identificación, sin espacios, guiones ni puntos y en mayúsculas. */
+/**
+ * El número del pasaporte o de la identificación, sin espacios, guiones ni puntos y en mayúsculas. Es un
+ * identificador: con un carácter invisible (un tabulador, un salto o un U+200B) se rechaza, no se borra, para no
+ * guardar un número distinto del que se escribió («X123\t4567» no es X1234567).
+ */
 export function documentoExtranjeroNormalizado(texto: string): string | null {
+  if (INVISIBLE.test(texto.trim())) return null;
   const limpio = texto.toUpperCase().replace(/[\s.\-/]/gu, "");
   return /^[A-Z0-9]{4,20}$/u.test(limpio) ? limpio : null;
 }
