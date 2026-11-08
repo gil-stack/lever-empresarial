@@ -62,7 +62,7 @@
   {
     "ok": true,
     "texto": "modulos oscuro 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "13 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
@@ -72,12 +72,12 @@
   {
     "ok": true,
     "texto": "modulos oscuro 1440 Movimientos: el clic central en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "10 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
     "texto": "modulos oscuro 1440 Movimientos: Ctrl + clic de macOS en «7 días» (menú contextual) no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "14 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "7 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
@@ -107,6 +107,21 @@
   {
     "ok": true,
     "texto": "modulos oscuro 1440 Movimientos: «4000» y clic sin pausa en «Movimientos» del lateral: el monto del campo es el de la dirección",
+    "detalle": "dirección «4000» · campo «4000»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «-5» y Tab no filtran y el campo queda vacío, como lo aplicado",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: ?desde=1e308 no filtra y el campo queda vacío",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «4000» y clic en un enlace absoluto a #movimientos-mapa aplican el monto",
     "detalle": "dirección «4000» · campo «4000»"
   },
   {
@@ -227,7 +242,7 @@
   {
     "ok": true,
     "texto": "modulos oscuro 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "12 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
@@ -258,6 +273,21 @@
     "ok": true,
     "texto": "modulos oscuro 390 Movimientos: «4000» y «Movimientos» en el cajón: el monto del campo es el de la dirección",
     "detalle": "dirección «» · campo «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «-5» y Tab no filtran y el campo queda vacío, como lo aplicado",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: ?desde=1e308 no filtra y el campo queda vacío",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «4000» y un toque en un enlace absoluto a #movimientos-mapa aplican el monto",
+    "detalle": "dirección «4000» · campo «4000»"
   },
   {
     "ok": true,
@@ -377,22 +407,22 @@
   {
     "ok": true,
     "texto": "modulos claro 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "10 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "13 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
     "texto": "modulos claro 1440 Movimientos: el clic derecho en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "5 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "12 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
     "texto": "modulos claro 1440 Movimientos: el clic central en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "14 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
     "texto": "modulos claro 1440 Movimientos: Ctrl + clic de macOS en «7 días» (menú contextual) no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "12 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "16 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
@@ -422,6 +452,21 @@
   {
     "ok": true,
     "texto": "modulos claro 1440 Movimientos: «4000» y clic sin pausa en «Movimientos» del lateral: el monto del campo es el de la dirección",
+    "detalle": "dirección «4000» · campo «4000»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «-5» y Tab no filtran y el campo queda vacío, como lo aplicado",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: ?desde=1e308 no filtra y el campo queda vacío",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «4000» y clic en un enlace absoluto a #movimientos-mapa aplican el monto",
     "detalle": "dirección «4000» · campo «4000»"
   },
   {
@@ -542,7 +587,7 @@
   {
     "ok": true,
     "texto": "modulos claro 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "12 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
@@ -573,6 +618,21 @@
     "ok": true,
     "texto": "modulos claro 390 Movimientos: «4000» y «Movimientos» en el cajón: el monto del campo es el de la dirección",
     "detalle": "dirección «» · campo «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «-5» y Tab no filtran y el campo queda vacío, como lo aplicado",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: ?desde=1e308 no filtra y el campo queda vacío",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «4000» y un toque en un enlace absoluto a #movimientos-mapa aplican el monto",
+    "detalle": "dirección «4000» · campo «4000»"
   },
   {
     "ok": true,
@@ -692,22 +752,22 @@
   {
     "ok": true,
     "texto": "modulos lever 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "10 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "13 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
     "texto": "modulos lever 1440 Movimientos: el clic derecho en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "7 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
     "texto": "modulos lever 1440 Movimientos: el clic central en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "6 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "5 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
     "texto": "modulos lever 1440 Movimientos: Ctrl + clic de macOS en «7 días» (menú contextual) no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "19 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "15 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
@@ -737,6 +797,21 @@
   {
     "ok": true,
     "texto": "modulos lever 1440 Movimientos: «4000» y clic sin pausa en «Movimientos» del lateral: el monto del campo es el de la dirección",
+    "detalle": "dirección «4000» · campo «4000»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «-5» y Tab no filtran y el campo queda vacío, como lo aplicado",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: ?desde=1e308 no filtra y el campo queda vacío",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «4000» y clic en un enlace absoluto a #movimientos-mapa aplican el monto",
     "detalle": "dirección «4000» · campo «4000»"
   },
   {
@@ -857,7 +932,7 @@
   {
     "ok": true,
     "texto": "modulos lever 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "13 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
@@ -888,6 +963,21 @@
     "ok": true,
     "texto": "modulos lever 390 Movimientos: «4000» y «Movimientos» en el cajón: el monto del campo es el de la dirección",
     "detalle": "dirección «» · campo «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «-5» y Tab no filtran y el campo queda vacío, como lo aplicado",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: ?desde=1e308 no filtra y el campo queda vacío",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «4000» y un toque en un enlace absoluto a #movimientos-mapa aplican el monto",
+    "detalle": "dirección «4000» · campo «4000»"
   },
   {
     "ok": true,

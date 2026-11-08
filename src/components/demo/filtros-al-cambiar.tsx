@@ -15,12 +15,15 @@ export function FiltrosAlCambiar({
   action,
   periodo,
   valores,
+  enviados,
   children,
 }: {
   action: string;
   periodo: string;
   /** Lo que dice la dirección para cada campo con nombre, ya leído por el servidor. */
   valores: Record<string, string>;
+  /** Lo que la dirección lleva tal cual para esos campos: lo que se envió, antes de leerlo. */
+  enviados: Record<string, string>;
   children: ReactNode;
 }) {
   const forma = useRef<HTMLFormElement>(null);
@@ -54,11 +57,11 @@ export function FiltrosAlCambiar({
     };
     // Un enlace que lleva a otra página gana: con el dedo, su clic llega antes que el envío aplazado del monto, y ese
     // envío navegaría después, de vuelta a los filtros. Un enlace que abre otra pestaña, o que lleva a esta misma
-    // dirección (la dirección no cambia y los campos no se pondrían como ella), deja salir el envío.
+    // página, con o sin ancla (la dirección no cambia y los campos no se pondrían como ella), deja salir el envío.
     const alHacerClic = (evento: MouseEvent) => {
       const enlace = evento.target instanceof Element ? evento.target.closest("a[href]") : null;
       if (!(enlace instanceof HTMLAnchorElement) || evento.button !== 0 || evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.altKey) return;
-      if (enlace.target === "_blank" || enlace.getAttribute("href")?.startsWith("#") || enlace.href === location.href) return;
+      if (enlace.target === "_blank" || enlace.href.split("#")[0] === location.href.split("#")[0]) return;
       clearTimeout(pendiente);
     };
     const alCambiar = () => {
@@ -91,21 +94,24 @@ export function FiltrosAlCambiar({
     };
   }, []);
   // Los campos siguen a la dirección: al limpiar, con «Atrás» o «Adelante». El formulario no se vuelve a montar al
-  // navegar, y React no aplica un `defaultValue` nuevo a un selector ya montado ni a un campo que ya se editó.
-  const deLaDireccion = JSON.stringify(valores);
+  // navegar, y React no aplica un `defaultValue` nuevo a un selector ya montado ni a un campo que ya se editó. También
+  // cuando solo cambia lo enviado: un monto que el servidor ignora («-5») no cambia lo aplicado, y el campo lo dice.
+  const deLaDireccion = JSON.stringify([valores, enviados]);
   const aplicados = useRef(valores);
   useEffect(() => {
     const nodo = forma.current;
     if (!nodo) return;
-    const nuevos = JSON.parse(deLaDireccion) as Record<string, string>;
+    const [nuevos, enLaDireccion] = JSON.parse(deLaDireccion) as Record<string, string>[];
     for (const [nombre, valor] of Object.entries(nuevos)) {
       const campo = nodo.elements.namedItem(nombre);
       if (!(campo instanceof HTMLInputElement || campo instanceof HTMLSelectElement)) continue;
-      // Lo que se está escribiendo y aún no sale se queda: la navegación que llega salió antes de escribirlo. Un monto a
-      // medias que aún no es número («1e», «-») vale «», como el aplicado, pero el campo lo marca como entrada inválida.
+      // Lo que se está escribiendo y aún no sale se queda: la navegación que llega salió antes de escribirlo. Lo que ya
+      // salió (lo lleva la dirección) no. Un monto a medias que aún no es número («1e», «-») vale «», como el aplicado,
+      // pero el campo lo marca como entrada inválida.
       const escribiendo =
         campo === document.activeElement &&
-        (campo.value !== aplicados.current[nombre] || (campo instanceof HTMLInputElement && campo.validity.badInput));
+        ((campo instanceof HTMLInputElement && campo.validity.badInput) ||
+          (campo.value !== aplicados.current[nombre] && campo.value !== enLaDireccion[nombre]));
       if (!escribiendo) campo.value = valor;
     }
     aplicados.current = nuevos;

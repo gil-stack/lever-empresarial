@@ -73,6 +73,14 @@ describe("módulos de demostración en el servidor", () => {
     assert.equal(leerFiltros(COMPRAS_DE_OCTUBRE, { agrupar: "persona" }).agrupar, "persona");
   });
 
+  it("Movimientos ignora un monto negativo o que no cabe en centavos", () => {
+    assert.equal(leerFiltros(COMPRAS_DE_OCTUBRE, { desde: "-5" }).desde, 0);
+    // 1e308 es un número finito, pero en centavos ya no: filtraría todo.
+    assert.equal(leerFiltros(COMPRAS_DE_OCTUBRE, { desde: "1e308" }).desde, 0);
+    assert.match(pintar(true, "movimientos", { desde: "1e308" }), /34 compras con los filtros/);
+    assert.equal(leerFiltros(COMPRAS_DE_OCTUBRE, { desde: "1500.50" }).desde, 150050);
+  });
+
   it("Movimientos ignora valores de filtro que no existen", () => {
     const html = pintar(true, "movimientos", { persona: "<script>", agrupar: "otra" });
     assert.match(html, /34 compras con los filtros/);

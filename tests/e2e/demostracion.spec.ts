@@ -325,6 +325,51 @@ test("Movimientos: un monto con decimales o negativo no bloquea los filtros", as
   expect(errores).toEqual([]);
 });
 
+test("Movimientos: un monto que el filtro ignora (negativo o que no cabe) deja el campo vacío, como lo aplicado", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  await sesionDe(context, GIL);
+  const ruta = `/c/${TALLER}/consola/movimientos`;
+  const monto = page.locator("#movimientos-desde");
+  const consulta = () => new URL(page.url()).searchParams;
+  // Con Tab el campo ya no tiene el foco; con Enter lo conserva, pero el monto ya salió: los dos dicen lo aplicado.
+  for (const tecla of ["Tab", "Enter"] as const) {
+    await page.goto(ruta);
+    await monto.click();
+    await page.keyboard.type("-5");
+    await page.keyboard.press(tecla);
+    await expect.poll(() => consulta().get("desde"), `«-5» y ${tecla} navegan`).toBe("-5");
+    await expect(monto, `después de «-5» y ${tecla}, el campo dice lo aplicado`).toHaveValue("");
+    await expect(page.getByText("34 compras con los filtros")).toBeVisible();
+  }
+  // 1e308 es número, pero no cabe en centavos: se ignora como un monto vacío.
+  await page.goto(`${ruta}?desde=1e308`);
+  await expect(monto).toHaveValue("");
+  await expect(page.getByText("34 compras con los filtros"), "?desde=1e308 no filtra").toBeVisible();
+  expect(errores).toEqual([]);
+});
+
+test("Movimientos: escribir el monto y hacer clic en un enlace a un ancla de esta página aplica el monto", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  await sesionDe(context, GIL);
+  await page.goto(`/c/${TALLER}/consola/movimientos`);
+  // Con la dirección completa y un ancla: el navegador solo desplaza la página, no navega.
+  await page.evaluate(() => {
+    const enlace = document.createElement("a");
+    enlace.href = `${location.href.split("#")[0]}#movimientos-mapa`;
+    enlace.textContent = "Ir al mapa";
+    enlace.style.cssText = "position: fixed; top: 0; left: 0; z-index: 9999; padding: 8px; background: white";
+    document.body.append(enlace);
+  });
+  const monto = page.locator("#movimientos-desde");
+  await monto.click();
+  await page.keyboard.type("4000");
+  await page.getByRole("link", { name: "Ir al mapa" }).click();
+  await page.waitForTimeout(1500);
+  expect(new URL(page.url()).searchParams.get("desde"), "la dirección lleva el monto escrito").toBe("4000");
+  await expect(monto).toHaveValue("4000");
+  expect(errores).toEqual([]);
+});
+
 /** Escribir el monto y tocar el enlace a la sección en la que ya se está: el monto se aplica y el campo dice lo mismo que la dirección. */
 async function montoYMismaSeccion(page: Page, context: BrowserContext, tocar: (enlace: Locator) => Promise<void>) {
   const errores = vigilarConsola(page);

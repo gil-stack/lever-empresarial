@@ -52,7 +52,8 @@ export function leerFiltros(compras: readonly CompraDemo[], params: Record<strin
     tarjeta: elegir(params.tarjeta, unicos(compras, "tarjeta")),
     categoria: elegir(params.categoria, unicos(compras, "categoria")),
     comprobante: elegir(params.comprobante, unicos(compras, "comprobante")),
-    desde: Number.isFinite(desde) && desde > 0 ? Math.round(desde * 100) : 0,
+    // En centavos: un número como 1e308 cabe en pesos, pero no en centavos.
+    desde: Number.isFinite(desde * 100) && desde > 0 ? Math.round(desde * 100) : 0,
     agrupar: (AGRUPAR.map(([valor]) => valor) as readonly string[]).includes(params.agrupar ?? "") ? ((params.agrupar ?? "") as Agrupar) : "",
   };
 }
@@ -156,6 +157,15 @@ export function VistaMovimientos({
     const llave = grupoDe(compra, filtros.agrupar);
     grupos.set(llave, [...(grupos.get(llave) ?? []), compra]);
   }
+  const valores = {
+    persona: filtros.persona,
+    area: filtros.area,
+    tarjeta: filtros.tarjeta,
+    categoria: filtros.categoria,
+    comprobante: filtros.comprobante,
+    desde: filtros.desde ? String(filtros.desde / 100) : "",
+    agrupar: filtros.agrupar,
+  };
   return (
     <>
       <Cifras cifras={cifras} etiqueta="Movimientos en cifras" />
@@ -163,15 +173,8 @@ export function VistaMovimientos({
         <FiltrosAlCambiar
           action={base}
           periodo={filtros.periodo}
-          valores={{
-            persona: filtros.persona,
-            area: filtros.area,
-            tarjeta: filtros.tarjeta,
-            categoria: filtros.categoria,
-            comprobante: filtros.comprobante,
-            desde: filtros.desde ? String(filtros.desde / 100) : "",
-            agrupar: filtros.agrupar,
-          }}
+          valores={valores}
+          enviados={Object.fromEntries(Object.keys(valores).map((nombre) => [nombre, params[nombre] ?? ""]))}
         >
           <div className="campo">
             <label htmlFor="movimientos-mes">Mes</label>

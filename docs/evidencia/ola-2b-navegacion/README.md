@@ -133,13 +133,37 @@ Capturas: `fondo/fondo-gpu-reloj-5s-{antes,despues}.webp`, `fondo/fondo-gpu-carg
 
 Salida cruda de las pruebas en `a7b92d6` y con los arreglos: `datos/revision-a7b92d6.txt`. Capturas: `modulos/movimientos-decimales-*` y `fondo/fondo-{sin-gpu,gpu}-movimientos-*-dpr1.webp`.
 
+## Ronda de b84bf8a: una sola regla para el fondo, el monto que se ignora y el ancla
+
+| Hallazgo | Arreglo | Prueba (falla en `b84bf8a`, pasa con el arreglo) |
+| --- | --- | --- |
+| **líder-N7, hueco** · la excepción del dibujo que cambia de tamaño dejaba sin medir todo dibujo con otro tamaño: sin GPU, con el lienzo cambiando en cada cuadro, el fondo nunca decidía (149 cuadros largos) | `fondo-escena.tsx`: una sola regla en lugar de las dos excepciones (primera pintura y cambio de tamaño). Un espejo del búfer del motor, que solo crece, dice si el dibujo lo agranda; ese dibujo no se mide, y a lo más uno seguido. El primero crea el búfer y compila el shader, así que el segundo siempre se mide. Un cambio de tamaño que no agranda el búfer se mide | Matriz nueva en `marco.spec.ts`: {sin GPU, GPU rápida} × {DPR 1, DPR 2} × {estable, cambio de tamaño en cada cuadro, el búfer crece una vez, tarea ajena de 800 ms, arrastrar la ventana}, con el estado final, las pinturas, los cuadros largos y lo guardado. En `b84bf8a` fallan «cambio de tamaño en cada cuadro» y «arrastrar» sin GPU, a DPR 1 y 2 |
+| **N12** · un hueco de la página (una tarea ajena de 800 ms, la laptop dormida) subía el promedio de la ventana a más de 25 ms entre cuadros: el fondo se quedaba quieto y lo guardaba en `sessionStorage` para toda la sesión, aun con GPU | La regla del ritmo descarta los intervalos de más de 250 ms, y su decisión dura solo esta carga: solo se guarda la decisión por el costo medido del dibujo | Matriz, «tarea ajena de 800 ms» con GPU: en `b84bf8a`, «lento» y guardado con 0.2 ms por dibujo, a DPR 1 y 2 |
+| **N13** · quieto, cada cambio de tamaño repintaba en el momento: sin GPU, arrastrar la ventana costaba un dibujo de decenas a cientos de ms por cuadro | Quieto, un solo repintado 180 ms después del último cambio, y ninguno si el tamaño final es el de antes. Un cambio de apariencia (tema, tono) repinta en el momento, como antes | Matriz, «cambio de tamaño en cada cuadro» y «arrastrar» sin GPU: a lo más 3 pinturas y 2 cuadros largos |
+| **N14** · «-5» + Tab dejaba «-5» en el campo aunque el filtro lo ignora: lo aplicado no cambiaba, así que los campos no se ponían como la dirección. `?desde=1e308` no mostraba ninguna compra (en centavos es `Infinity`) | `movimientos.tsx`: `Number.isFinite(desde * 100)`. `filtros-al-cambiar.tsx`: los campos también se ponen como la dirección cuando solo cambia lo enviado, y lo que ya salió en la dirección no cuenta como «escribiendo»; así, «-5» + Enter, con el foco en el campo, también lo deja vacío | Unitaria en `vista.test.ts` (en `b84bf8a`, `Infinity`). e2e: «-5» + Tab y «-5» + Enter dejan el campo vacío con las 34 compras, y `?desde=1e308` da 34 compras. En `b84bf8a`, el campo dice «-5» |
+| **N11-latente** · un enlace con la dirección completa a un ancla de esta página (`…/movimientos#movimientos-mapa`) cancelaba el monto: solo se reconocía la dirección exacta o un `href` que empieza con «#» | `filtros-al-cambiar.tsx`: se compara la dirección sin el ancla | e2e nuevo: «4000» y clic en ese enlace aplican el monto. En `b84bf8a`, la dirección queda sin `desde` |
+
+**Con pintores reales** (`datos/n7-regla.txt`). Siete escenarios con cambios reales del tamaño de la ventana: estable, cambio de tamaño en cada cuadro, maximizar, tarea ajena de 800 ms, arrastrar agrandando, arrastrar encogiendo y de regreso, y congelar 3 s.
+
+| Pintor | DPR 1 y 2 | Dibujo |
+| --- | --- | --- |
+| GPU Metal (Apple M5 Pro) | 14/14 «vivo», nada guardado, 0 cuadros largos | El más caro tras el primero: 12.1 ms, arrastrando para agrandar a DPR 2 (búfer de unos 4352×2686) |
+| Sin GPU (SwiftShader, como Vercel CI) | 14/14 quieto en el 2.º dibujo y guardado; con cambios de tamaño, a lo más un repintado al soltar y 2 cuadros largos | El que decide: 28-44 ms a DPR 1 y 95-158 ms a DPR 2 |
+
+- **La emulación de la matriz** (`datos/n7-ruido-swiftshader.txt`): en headless, copiar la escena desde WebGL espera a SwiftShader. Salen dibujos sueltos de 5 a 13 ms al azar, y alguno de más de 25 ms; además, agrandar el búfer de WebGL cuesta de 20 a 50 ms. Por eso la emulación no copia la escena, y sus escenarios no pasan de 48 px salvo el que hace crecer el búfer: el costo es solo el emulado. Así pasa 60/60 en tres repeticiones.
+- **Dormir la laptop:** congelar la página por CDP (`Page.setWebLifecycleState`) no surte efecto ni en headless ni en Chromium completo, así que el hueco se emula con la tarea de 800 ms. En headless, el ritmo de cuadros se queda en 16.7 ms aun con la CPU limitada 6×, así que la regla del ritmo no se dispara sola en CI (`datos/ritmo-headless.txt`).
+- **Borde aceptado:** si el búfer crece justo en el segundo dibujo (a unos 33 ms del primero) y crecer tarda más de 25 ms, ese dibujo se mide y el fondo se queda quieto. Es la consecuencia de «a lo más uno seguido». Para que pase, la ventana tiene que crecer en esos 33 ms, y el crecimiento más caro medido con GPU fue de 30 ms.
+
+Salida cruda de las pruebas en `b84bf8a`: `datos/revision-b84bf8a.txt`. Capturas: `modulos/movimientos-negativo-*` y `fondo/fondo-arrastre-*`.
+
 ## Pendiente al cambiar de cuenta
 
 | Punto | Estado | Gates que se corrieron |
 | --- | --- | --- |
 | **N6** y **N5** (`fb27af5`) | **Hecho** | Los de `fb27af5`: typecheck 0, lint 0, `npm test` 456/456, Postgres 38/38, `test:e2e` 42/42, build 0, security en verde y el recorrido completo |
 | **CI rojo**, **N5-resto**, **N6-resto**, **N7**, **N8** y **N9** | **Hecho** en `a7b92d6`; Vercel CI en verde (9 de 9) | typecheck 0, lint 0, `npm test` 457/457, Postgres en serie 38/38, `test:e2e` 45/45, build 0 y security en verde. Recorrido: `modulos` 171/171 y `fondo` 30/30. Cada prueba nueva falla en `16c4265` |
-| **líder-N7 a DPR 1**, **N10** y **N11** | **Hecho** en el commit que agrega esta fila | typecheck 0, lint 0, `npm test` 457/457, Postgres en serie 38/38 (0 omitidas), `test:e2e` en sus tres partes 21 + 13 + 17 = 51/51, build 0 y security en verde. Recorrido: `modulos` 189/189 y `fondo` 60/60. Cada prueba nueva falla en `a7b92d6` |
+| **líder-N7 a DPR 1**, **N10** y **N11** | **Hecho** en `b84bf8a`; Vercel CI en verde (9 de 9) | typecheck 0, lint 0, `npm test` 457/457, Postgres en serie 38/38 (0 omitidas), `test:e2e` en sus tres partes 21 + 13 + 17 = 51/51, build 0 y security en verde. Recorrido: `modulos` 189/189 y `fondo` 60/60. Cada prueba nueva falla en `a7b92d6` |
+| **líder-N7 (hueco)**, **N12**, **N13**, **N14** y **N11-latente** | **Hecho** en el commit que agrega esta fila | typecheck 0, lint 0, `npm test` 458/458, Postgres en serie 38/38, `test:e2e` en sus tres partes 25 + 27 + 20 = 72/72, build 0 y security en verde. Recorrido: `modulos` 207/207 y `fondo` 68/68. Cada prueba nueva falla en `b84bf8a` |
 
 Falta:
 - **Vercel CI:** el del commit que agrega la última fila; su estado terminal va en el PR.

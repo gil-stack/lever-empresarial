@@ -8,7 +8,7 @@
 //   node scripts/evidencia/ola-2b-navegacion.mjs pantallas   3 temas × 1440/390: un h1, etiquetas, consola limpia, foco
 //   node scripts/evidencia/ola-2b-navegacion.mjs modulos     Movimientos y Fiscal clicados en 3 temas × 1440/390
 //   node scripts/evidencia/ola-2b-navegacion.mjs limpiar     solo «Limpiar filtros», «Atrás» y «Adelante» de Movimientos (también va en modulos)
-//   node scripts/evidencia/ola-2b-navegacion.mjs fondo       el fondo con movimiento a DPR 1 y 2: sin GPU, a lo más un cuadro largo; con GPU, igual que antes
+//   node scripts/evidencia/ola-2b-navegacion.mjs fondo       el fondo con movimiento a DPR 1 y 2: sin GPU, a lo más un cuadro largo; con GPU, igual que antes; arrastre y tarea ajena
 //   node scripts/evidencia/ola-2b-navegacion.mjs contraste   AA de cada texto contra la escena real
 //   node scripts/evidencia/ola-2b-navegacion.mjs cargando    «Cargando…» de una sección nueva mientras llega la página
 //   node scripts/evidencia/ola-2b-navegacion.mjs caida       con el Postgres apagado: el error de cada pantalla nueva
@@ -1039,6 +1039,45 @@ async function modulos() {
           `dirección «${enDireccion}» · campo «${enCampo}»`,
         );
       }
+      // N14: un monto que el filtro ignora (negativo, o 1e308, que no cabe en centavos) deja el campo vacío, como lo
+      // aplicado, y las 34 compras.
+      {
+        await abrirMovimientos();
+        if (ancho < 600) await monto.tap();
+        else await monto.click();
+        await p.keyboard.type("-5");
+        await p.keyboard.press("Tab");
+        await p.waitForURL((url) => url.searchParams.get("desde") === "-5");
+        await p.waitForTimeout(500);
+        const negativo = { campo: await monto.inputValue(), compras: await compras() };
+        anotar(negativo.campo === "" && negativo.compras === "34", `${etiqueta} Movimientos: «-5» y Tab no filtran y el campo queda vacío, como lo aplicado`, JSON.stringify(negativo));
+        await capturar(p, `${carpeta}/movimientos-negativo-${tema}-${ancho}.webp`);
+        await p.goto(`${BASE}${ALTAMAR}/consola/movimientos?desde=1e308`, { waitUntil: "networkidle" });
+        const enorme = { campo: await monto.inputValue(), compras: await compras() };
+        anotar(enorme.campo === "" && enorme.compras === "34", `${etiqueta} Movimientos: ?desde=1e308 no filtra y el campo queda vacío`, JSON.stringify(enorme));
+      }
+      // N11-latente: «4000» y un enlace con la dirección completa a un ancla de esta página: el navegador solo
+      // desplaza la página, y el monto se aplica.
+      {
+        await abrirMovimientos();
+        await p.evaluate(() => {
+          const enlace = document.createElement("a");
+          enlace.href = `${location.href.split("#")[0]}#movimientos-mapa`;
+          enlace.textContent = "Ir al mapa";
+          enlace.style.cssText = "position: fixed; top: 0; left: 0; z-index: 9999; padding: 8px; background: white; color: black";
+          document.body.append(enlace);
+        });
+        if (ancho < 600) await monto.tap();
+        else await monto.click();
+        await p.keyboard.type("4000");
+        const ancla = p.getByRole("link", { name: "Ir al mapa" });
+        if (ancho < 600) await ancla.tap();
+        else await ancla.click();
+        await p.waitForTimeout(1500);
+        const enDireccion = new URL(p.url()).searchParams.get("desde") ?? "";
+        const enCampo = await monto.inputValue();
+        anotar(enDireccion === "4000" && enCampo === "4000", `${etiqueta} Movimientos: «4000» y ${ancho < 600 ? "un toque" : "clic"} en un enlace absoluto a #movimientos-mapa aplican el monto`, `dirección «${enDireccion}» · campo «${enCampo}»`);
+      }
       // El botón oculto que usa Enter no es una parada de Tab, ni de ida ni de vuelta.
       const oculto = p.locator(".demo-filtros > button.solo-lector");
       await oculto.evaluate((boton) => {
@@ -1194,6 +1233,44 @@ async function fondo() {
         `${renderer} · estado ${datos.estado} · ${Number(datos.cuadros) - antes} pinturas en 5 s · ${datos.ms} ms por pintura · cuadros largos ${JSON.stringify(datos.largos)}`,
       );
       await capturar(p, `${carpeta}/fondo-gpu-movimientos-${tema}-1440${dpr === 1 ? "-dpr1" : ""}.webp`, { completa: false });
+      anotar(errores.length === 0, `${etiqueta}: sin errores de consola`, errores.join(" | "));
+      await nav.close();
+    }
+  }
+  // Arrastrar la ventana (la agranda 20 pasos y la regresa 10, cada 30 ms) y luego una tarea ajena de 800 ms, con el
+  // pintor de verdad. Sin GPU: quieto desde el segundo dibujo, guardado, y a lo más un repintado al soltar. Con GPU:
+  // sigue vivo y no guarda nada.
+  for (const gpu of [false, true]) {
+    for (const dpr of [1, 2]) {
+      const etiqueta = `fondo ${gpu ? "con" : "sin"} GPU, arrastre y tarea ajena, ${TEMAS[0]} 1440 DPR ${dpr}`;
+      const { nav, p, errores } = await abrir({ quien: "laura", tema: TEMAS[0], ancho: 1440, movimiento: true, dpr, gpu });
+      await registrarCuadros(p);
+      await p.goto(`${BASE}${ALTAMAR}/consola/movimientos`, { waitUntil: "networkidle" });
+      await p.waitForFunction(() => Boolean(document.querySelector(".escena-fondo canvas")?.dataset.cuadros), null, { timeout: 60000 });
+      await p.waitForTimeout(500);
+      for (let i = 1; i <= 30; i++) {
+        const paso = i <= 20 ? i : 40 - i;
+        await p.setViewportSize({ width: 1440 + paso * 40, height: 900 + paso * 25 });
+        await p.waitForTimeout(30);
+      }
+      await p.waitForTimeout(1500);
+      await p.evaluate(() => {
+        const hasta = performance.now() + 800;
+        while (performance.now() < hasta);
+      });
+      await p.waitForTimeout(2500);
+      const datos = { ...(await leer(p)), ...(await cuadrosLargosDelFondo(p)), guardado: await p.evaluate(() => sessionStorage.getItem("lever-fondo-lento")) };
+      const detalle = `estado ${datos.estado} · pinturas ${datos.cuadros} · guardado ${datos.guardado} · cuadros largos tras la primera ${JSON.stringify(datos.largos)} ms`;
+      if (gpu) {
+        anotar(datos.estado === "vivo" && datos.guardado === null && datos.largos.length === 0, `${etiqueta}: sigue vivo, sin cuadros largos y sin guardar nada`, detalle);
+      } else {
+        anotar(
+          datos.estado === "lento" && datos.guardado === "1" && Number(datos.cuadros) <= 3 && datos.largos.length <= 2,
+          `${etiqueta}: quieto desde el segundo dibujo, guardado, y a lo más un repintado al soltar`,
+          detalle,
+        );
+      }
+      await capturar(p, `${carpeta}/fondo-arrastre-${gpu ? "gpu" : "sin-gpu"}-${TEMAS[0]}-dpr${dpr}.webp`, { completa: false });
       anotar(errores.length === 0, `${etiqueta}: sin errores de consola`, errores.join(" | "));
       await nav.close();
     }
