@@ -12,7 +12,7 @@ import { exigirEnOperacion } from "../operacion/permisos";
 import { leerPrivado, type AlmacenConstancia } from "../proveedores/constancia";
 import type { Sesion as SesionConFactor } from "../session/tipos";
 import { auditarPld } from "./auditar";
-import { conPld, dia, diaOpcional, fecha, rechazarControl } from "./base";
+import { conPld, dia, diaOpcional, fecha, rechazarInvisible } from "./base";
 import { archivoDelFormulario } from "./casos";
 
 export type ModoDictamen = { modo: "comite" | "oficial"; oficialId: string | null; oficial: string | null };
@@ -253,14 +253,14 @@ function leerIntegrante(entrada: EntradaIntegrante, hoy: string) {
   if (!uuidValido(entrada.id)) throw new ErrorDeDominio("formulario_invalido");
   const texto = (valor: unknown, maximo: number, campo: string) => {
     // Área y cargo van tal cual en el aviso de la 49ª: con un control se rechazan, no se vuelven espacio.
-    rechazarControl(valor, `dato_invalido_${campo}`);
+    rechazarInvisible(valor, campo);
     const limpio = textoOperativo(valor, maximo);
     if (!limpio) throw new ErrorDeDominio(`dato_invalido_${campo}`);
     return limpio.toLocaleUpperCase("es-MX");
   };
   const nombre = (valor: unknown, campo: string, vacio?: string) => {
     // Una identidad: con un control se rechaza; nombreParaSiti lo volvería un espacio.
-    rechazarControl(valor, `dato_invalido_${campo}`);
+    rechazarInvisible(valor, campo);
     const limpio = typeof valor === "string" ? nombreParaSiti(valor) : "";
     if (!limpio && vacio) return vacio;
     if (!limpio || limpio.length > 80) throw new ErrorDeDominio(`dato_invalido_${campo}`);
@@ -361,10 +361,10 @@ export async function registrarAuditor(
   exigirEnOperacion(ctx, "plataforma.pld.comite");
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
   const ahora = deps.ahora?.() ?? new Date();
-  rechazarControl(entrada.nombre, "dato_invalido_nombre");
+  rechazarInvisible(entrada.nombre, "nombre");
   const nombre = textoOperativo(entrada.nombre, 200);
   if (!nombre) throw new ErrorDeDominio("dato_invalido_nombre");
-  rechazarControl(entrada.cargoEntidad, "dato_invalido_cargoEntidad");
+  rechazarInvisible(entrada.cargoEntidad, "cargoEntidad");
   const cargo = textoOperativo(entrada.cargoEntidad, 120);
   if (!cargo) throw new ErrorDeDominio("dato_invalido_cargoEntidad");
   const designado = typeof entrada.designadoEl === "string" ? entrada.designadoEl : "";
@@ -387,7 +387,7 @@ export async function registrarComunicacion(
 ): Promise<void> {
   exigirEnOperacion(ctx, "plataforma.pld.comite");
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
-  rechazarControl(entrada.folio, "dato_invalido_folio");
+  rechazarInvisible(entrada.folio, "folio");
   const folio = textoOperativo(entrada.folio, 40);
   if (!folio) throw new ErrorDeDominio("dato_invalido_folio");
   const recibido = leerFechaHora(entrada.recibidoEn);

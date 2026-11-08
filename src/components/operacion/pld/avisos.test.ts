@@ -39,8 +39,13 @@ describe("avisos de PLD dentro de aviso.tsx", () => {
     }
     const html = renderToStaticMarkup(createElement(AvisoOperacion, { codigo: "perfil_declarado" }));
     assert.match(html, /Perfil transaccional registrado/);
-    assert.deepEqual(errorDelCampo("folio_repetido", "folio"), { "aria-invalid": true, "aria-describedby": "aviso-operacion" });
-    assert.deepEqual(errorDelCampo("dato_invalido_pagosMonto", "pagosMonto"), { "aria-invalid": true, "aria-describedby": "aviso-operacion" });
+    assert.deepEqual(errorDelCampo("folio_repetido", "folio"), { "aria-invalid": true, "aria-describedby": "aviso-operacion", autoFocus: true });
+    assert.deepEqual(errorDelCampo("dato_invalido_pagosMonto", "pagosMonto"), { "aria-invalid": true, "aria-describedby": "aviso-operacion", autoFocus: true });
+    // Las identidades del Comité con un carácter invisible tienen su aviso y marcan su campo.
+    for (const campo of ["nombres", "primerApellido", "segundoApellido", "area", "cargoEntidad"]) {
+      assert.match(renderToStaticMarkup(createElement(AvisoOperacion, { codigo: `invisible_${campo}` })), /trae un carácter invisible/, campo);
+      assert.deepEqual(errorDelCampo(`invisible_${campo}`, campo), { "aria-invalid": true, "aria-describedby": "aviso-operacion", autoFocus: true }, campo);
+    }
   });
 
   it("lo que leen Originación, Aprobación o Administración no habla de alertas, casos ni análisis (55ª)", () => {

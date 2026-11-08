@@ -1,4 +1,4 @@
-import { CONTROL } from "../../dominio/control";
+import { INVISIBLE } from "../../dominio/control";
 import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
 import { conContexto, type Consulta } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
@@ -185,12 +185,13 @@ export function diaOpcional(valor: unknown): string | null {
 }
 
 /**
- * Un identificador o una identidad (folio de un acuse del SITI, nombres del Comité y del auditor):
- * con un control invisible se rechaza con el error de su campo, no se limpia. Los textos libres
- * (aviso, notas, motivos) sí lo vuelven un espacio con `sinControles`.
+ * Un identificador o una identidad (folio de un acuse del SITI; nombres, área y cargo del Comité y
+ * del auditor, que van tal cual en el aviso de la 49ª): con un carácter invisible (`INVISIBLE`: control
+ * o de formato, como U+200B) se rechaza con `invisible_<campo>`, no se limpia. Los textos libres
+ * (aviso, notas, motivos) sí vuelven un espacio cada control con `sinControles`.
  */
-export function rechazarControl(valor: unknown, codigo: string): void {
-  if (typeof valor === "string" && CONTROL.test(valor.trim())) throw new ErrorDeDominio(codigo);
+export function rechazarInvisible(valor: unknown, campo: string): void {
+  if (typeof valor === "string" && INVISIBLE.test(valor.trim())) throw new ErrorDeDominio(`invisible_${campo}`);
 }
 
 export function textoONulo(valor: unknown): string | null {
