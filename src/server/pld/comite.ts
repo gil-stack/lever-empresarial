@@ -473,6 +473,31 @@ export async function registrarVoto(
   }), "formulario_invalido");
 }
 
+export type PropuestaPorVotar = { casoId: string; razonSocial: string | null; propuestaId: string; propuesta: Propuesta; justificacion: string };
+
+/** Casos sin dictamen con su propuesta vigente: lo que el Comité puede votar en una sesión (48ª). */
+export async function propuestasPorVotar(ctx: ContextoDePersonal): Promise<PropuestaPorVotar[]> {
+  exigirEnOperacion(ctx, "plataforma.pld.ver");
+  return conPld(ctx, null, async (consulta) => {
+    const filas = (await consulta.query(
+      `select k.id as caso_id, c.razon_social, p.id as propuesta_id, p.propuesta, p.justificacion
+       from pld_casos k
+       left join companies c on c.id = k.company_id
+       join lateral (select x.* from pld_propuestas x where x.caso_id = k.id order by x.registrado_en desc, x.id desc limit 1) p on true
+       where k.operator_id = $1 and not exists (select 1 from pld_dictamenes d where d.caso_id = k.id)
+       order by k.registrado_en`,
+      [ctx.personal.operadorId],
+    )).rows as Array<Record<string, unknown>>;
+    return filas.map((fila) => ({
+      casoId: String(fila.caso_id),
+      razonSocial: typeof fila.razon_social === "string" ? fila.razon_social : null,
+      propuestaId: String(fila.propuesta_id),
+      propuesta: fila.propuesta as Propuesta,
+      justificacion: String(fila.justificacion),
+    }));
+  });
+}
+
 export type Votacion = {
   sesionId: string;
   propuestaId: string;
