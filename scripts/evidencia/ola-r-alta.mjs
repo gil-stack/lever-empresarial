@@ -474,6 +474,17 @@ let fichaVieja = null;
 async function flujo8b() {
   console.log("\n— Flujo 8 (b): con todo en regla, otra persona aprueba la activación");
   renovarSesiones();
+  // 0030 (Ola R2): el candado también exige el perfil transaccional (25ª). Originación lo declara por clic.
+  const omar = await abrir("omar");
+  await ir(omar.p, `/operacion/clientes/${ctxEbano.id}/expediente#perfil-titulo`);
+  await omar.p.locator("#perfil-pagos-monto").fill("400,000.00");
+  await omar.p.locator("#perfil-pagos-operaciones").fill("60");
+  await omar.p.locator("#perfil-nomina-monto").fill("250,000.00");
+  await omar.p.locator("#perfil-nomina-operaciones").fill("2");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Registrar perfil" }), "perfil_declarado", { doble: true });
+  exigir(cuenta(`pld_perfiles where company_id = '${ctxEbano.id}'`) === 1, "8. doble clic en «Registrar perfil» = 1 perfil transaccional de Grupo Ébano");
+  await foto(omar.p, "f8-perfil-transaccional-de-ebano");
+  await omar.nav.close();
   const ana = await abrir("ana");
   const codigo = await aprobarDecision(ana.p, "Grupo Ébano");
   exigir(codigo === "decision_registrada", "8. Aprobación aprueba y la base deja pasar en_alta → activa", codigo);

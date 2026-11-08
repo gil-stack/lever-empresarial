@@ -13,6 +13,7 @@
 | `invitacion.spec.ts` | Invitación del primer administrador desde Operación, «Reenviar invitación» con doble clic, cuenta con TOTP y recuperación de contraseña por correo. |
 | `roles.spec.ts` | Lo que cada rol ve en el lateral y las rutas que no le abren aunque escriba la dirección. |
 | `marco.spec.ts` | Menú de la persona, buscador, Apariencia y cajón móvil. |
+| `pld.spec.ts` | PLD (Ola R2): Originación declara el perfil transaccional de un prospecto y Aprobación lo ve sin alertas ni casos; un aviso del personal que menciona a op2 llega a Cumplimiento, que abre el caso y agrega una nota, y op2 no ve el menú ni la pantalla de PLD. Todo con doble clic y conteo en la base. |
 
 ## Correr en local
 
