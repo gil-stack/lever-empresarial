@@ -477,18 +477,23 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [presidente, { ...secretario, cargo: "PRESIDENTE" }, oficial] }), /comite_presidente_unico/);
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [presidente, secretario, oficial, integrante(PS, "PRESIDENTE", "SUPLENTE", "Pablo", { suplenteDe: randomUUID() })] }), /comite_suplente_sin_titular/);
           await assert.rejects(registrarIntegrantes(aud, { integrantes: [presidente, secretario, oficial] }), /sin_permiso_operacion/);
+          // base-N23: los nombres son identidad; con un control se rechazan, no se vuelven espacio.
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, nombres: "Pedro\u0085Pablo" }, secretario, oficial] }), /dato_invalido_nombres/);
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, primerApellido: "Ruiz\tSoto" }, secretario, oficial] }), /dato_invalido_primerApellido/);
           assert.equal(await contar("select count(*)::int as n from pld_comite_integrantes"), 0);
           await registrarIntegrantes(cum, { integrantes: [presidente, secretario, oficial, vocal, integrante(PS, "PRESIDENTE", "SUPLENTE", "Pablo", { suplenteDe: P })] });
           assert.deepEqual(await uno("select nombres, primer_apellido, segundo_apellido, area from pld_comite_integrantes where id = $1", [P]),
             { nombres: "JOSE MARIA", primer_apellido: "NUÑEZ", segundo_apellido: "PEÑA", area: "DIRECCIÓN GENERAL" });
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [integrante(randomUUID(), "PRESIDENTE", "SUPLENTE", "Pedro", { suplenteDe: P })] }), /comite_un_suplente_por_titular/);
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [], sustituye: { integranteId: I2, sustituidoEl: sumarDias(designado, -1), motivo: "Sustitución de prueba" } }), /comite_sustitucion_antes_de_designacion/);
+          await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor\u000bInterno", cargoEntidad: "Auditor", designadoEl: designado }), /dato_invalido_nombre/);
           await registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor", designadoEl: designado });
 
           // 49ª: comunicación al SITI con su folio; repetido o ajeno, no.
           const ayer = `${sumarDias(hoy, -1)}T10:00`;
           await registrarComunicacion(cum, { formId: randomUUID(), folio: "SITI-0001", recibidoEn: ayer, integrantes: [P, S, I1, I2, PS], bajas: [] });
           await assert.rejects(registrarComunicacion(cum, { formId: randomUUID(), folio: "SITI-0001", recibidoEn: ayer, integrantes: [P], bajas: [] }), /folio_repetido/);
+          await assert.rejects(registrarComunicacion(cum, { formId: randomUUID(), folio: "SITI\t0009", recibidoEn: ayer, integrantes: [P], bajas: [] }), /dato_invalido_folio/);
           await assert.rejects(registrarComunicacion(cum, { formId: randomUUID(), folio: "SITI-0002", recibidoEn: ayer, integrantes: [randomUUID()], bajas: [] }), /comunicacion_cubre_ajenos/);
           await assert.rejects(registrarComunicacion(cum, { formId: randomUUID(), folio: "SITI-0003", recibidoEn: `${sumarDias(hoy, 2)}T10:00`, integrantes: [P], bajas: [] }), /acuse_fecha_futura|dato_invalido/);
 
@@ -551,6 +556,7 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
 
           // Reporte: el acuse del SITI, inmutable y uno por caso; tipo 2 = Inusual.
           const recibido = haceMinutos(5);
+          await assert.rejects(registrarReportePld(cum, { formId: randomUUID(), casoId: casoX, folio: "UIF-2026\u00850001", periodo: hoy.replaceAll("-", ""), recibidoEn: recibido, registros: "1" }), /dato_invalido_folio/);
           assert.deepEqual(await registrarReportePld(cum, { formId: randomUUID(), casoId: casoX, folio: "UIF-2026-0001", periodo: hoy.replaceAll("-", ""), recibidoEn: recibido, registros: "1" }), { fueraDePlazo: false });
           await assert.rejects(registrarReportePld(cum, { formId: randomUUID(), casoId: casoX, folio: "UIF-2026-0002", periodo: hoy.replaceAll("-", ""), recibidoEn: recibido, registros: "1" }), /reporte_pld_ya_registrado/);
           assert.equal((await uno<{ tipo_reporte: string }>("select tipo_reporte from pld_reportes where caso_id = $1", [casoX])).tipo_reporte, "2");
@@ -653,6 +659,7 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.equal(archivo.texto, archivo.texto.toUpperCase());
           await assert.rejects(archivoRelevantes(cum, "202610"), /periodo_invalido/);
           const recibido = `${sumarDias(hoy, -1)}T09:30`;
+          await assert.rejects(registrarPeriodico(cum, { formId: randomUUID(), reporte: "36", periodo: "202609", folio: "SITI-R\u001f0001", recibidoEn: recibido, registros: "1" }), /dato_invalido_folio/);
           await registrarPeriodico(cum, { formId: randomUUID(), reporte: "36", periodo: "202609", folio: "SITI-R-0001", recibidoEn: recibido, registros: "1" });
           await assert.rejects(registrarPeriodico(cum, { formId: randomUUID(), reporte: "36", periodo: "202609", folio: "SITI-R-0002", recibidoEn: recibido, registros: "1" }), /periodico_ya_registrado/);
           assert.equal((await uno<{ archivo_sha256: string }>("select archivo_sha256 from pld_periodicos where reporte = '36' and periodo = '202609'")).archivo_sha256, archivo.sha256);

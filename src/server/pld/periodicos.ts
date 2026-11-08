@@ -18,7 +18,7 @@ import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { unaVezPorFormulario } from "../operacion/formulario";
 import { exigirEnOperacion } from "../operacion/permisos";
 import { auditarPld } from "./auditar";
-import { conPld, dia, fecha } from "./base";
+import { conPld, dia, fecha, rechazarControl } from "./base";
 import { leerFechaHora } from "./comite";
 
 /**
@@ -245,6 +245,7 @@ export async function registrarPeriodico(
   let recibido: Date | null = null;
   let registros = 0;
   if (entrada.reporte === "36") {
+    rechazarControl(entrada.folio, "dato_invalido_folio");
     folio = textoOperativo(entrada.folio, 40);
     if (!folio) throw new ErrorDeDominio("dato_invalido_folio");
     recibido = leerFechaHora(entrada.recibidoEn);

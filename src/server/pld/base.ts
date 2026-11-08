@@ -1,3 +1,4 @@
+import { CONTROL } from "../../dominio/control";
 import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
 import { conContexto, type Consulta } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
@@ -177,6 +178,15 @@ export function dia(valor: unknown): string {
 
 export function diaOpcional(valor: unknown): string | null {
   return valor === null || valor === undefined ? null : dia(valor);
+}
+
+/**
+ * Un identificador o una identidad (folio de un acuse del SITI, nombres del Comité y del auditor):
+ * con un control invisible se rechaza con el error de su campo, no se limpia. Los textos libres
+ * (aviso, notas, motivos) sí lo vuelven un espacio con `sinControles`.
+ */
+export function rechazarControl(valor: unknown, codigo: string): void {
+  if (typeof valor === "string" && CONTROL.test(valor.trim())) throw new ErrorDeDominio(codigo);
 }
 
 export function textoONulo(valor: unknown): string | null {

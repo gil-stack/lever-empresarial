@@ -10,7 +10,7 @@ import { motivoEscrito, unaVezPorFormulario } from "../operacion/formulario";
 import { exigirEnOperacion } from "../operacion/permisos";
 import { leerPrivado, type AlmacenConstancia } from "../proveedores/constancia";
 import { auditarPld } from "./auditar";
-import { conPld, dia, diaOpcional, fecha } from "./base";
+import { conPld, dia, diaOpcional, fecha, rechazarControl } from "./base";
 import { archivoDelFormulario } from "./casos";
 
 export type ModoDictamen = { modo: "comite" | "oficial"; oficialId: string | null; oficial: string | null };
@@ -252,6 +252,8 @@ function leerIntegrante(entrada: EntradaIntegrante, hoy: string) {
     return limpio.toLocaleUpperCase("es-MX");
   };
   const nombre = (valor: unknown, campo: string, vacio?: string) => {
+    // Una identidad: con un control se rechaza; nombreParaSiti lo volvería un espacio.
+    rechazarControl(valor, `dato_invalido_${campo}`);
     const limpio = typeof valor === "string" ? nombreParaSiti(valor) : "";
     if (!limpio && vacio) return vacio;
     if (!limpio || limpio.length > 80) throw new ErrorDeDominio(`dato_invalido_${campo}`);
@@ -352,6 +354,7 @@ export async function registrarAuditor(
   exigirEnOperacion(ctx, "plataforma.pld.comite");
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
   const ahora = deps.ahora?.() ?? new Date();
+  rechazarControl(entrada.nombre, "dato_invalido_nombre");
   const nombre = textoOperativo(entrada.nombre, 200);
   if (!nombre) throw new ErrorDeDominio("dato_invalido_nombre");
   const cargo = textoOperativo(entrada.cargoEntidad, 120);
@@ -376,6 +379,7 @@ export async function registrarComunicacion(
 ): Promise<void> {
   exigirEnOperacion(ctx, "plataforma.pld.comite");
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
+  rechazarControl(entrada.folio, "dato_invalido_folio");
   const folio = textoOperativo(entrada.folio, 40);
   if (!folio) throw new ErrorDeDominio("dato_invalido_folio");
   const recibido = leerFechaHora(entrada.recibidoEn);

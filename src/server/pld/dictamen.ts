@@ -9,7 +9,7 @@ import { motivoEscrito, unaVezPorFormulario } from "../operacion/formulario";
 import { exigirEnOperacion } from "../operacion/permisos";
 import type { Sesion as SesionConFactor } from "../session/tipos";
 import { auditarPld } from "./auditar";
-import { conPld } from "./base";
+import { conPld, rechazarControl } from "./base";
 import { leerFechaHora } from "./comite";
 import { leerCaso } from "./casos";
 import { leerEntidad } from "./periodicos";
@@ -91,6 +91,7 @@ export async function registrarReportePld(
   exigirEnOperacion(ctx, "plataforma.pld.reportar");
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
   if (!uuidValido(entrada.casoId)) throw new ErrorDeDominio("caso_no_existe");
+  rechazarControl(entrada.folio, "dato_invalido_folio");
   const folio = textoOperativo(entrada.folio, 40);
   if (!folio) throw new ErrorDeDominio("dato_invalido_folio");
   const periodo = typeof entrada.periodo === "string" ? entrada.periodo.trim() : "";
