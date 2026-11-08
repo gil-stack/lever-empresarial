@@ -1,4 +1,5 @@
 import { textoOperativo, uuidValido } from "../../dominio/operacion";
+import { hoyEnMexico } from "../../dominio/operacion/comisiones";
 import { PROPUESTAS, REGLA, type Propuesta } from "../../dominio/pld/etiquetas";
 import { renglonInusual } from "../../dominio/pld/layout41";
 import type { ContextoDePersonal } from "../../nucleo/contexto";
@@ -12,6 +13,21 @@ import { conPld } from "./base";
 import { leerFechaHora } from "./comite";
 import { leerCaso } from "./casos";
 import { leerEntidad } from "./periodicos";
+
+/** Las sesiones con quórum en las que la propuesta quedó aprobada (48ª): de ahí sale un dictamen por Comité. */
+export async function sesionesQueAprobaron(ctx: ContextoDePersonal, propuestaId: unknown): Promise<Array<{ id: string; celebradaEl: string }>> {
+  exigirEnOperacion(ctx, "plataforma.pld.ver");
+  if (!uuidValido(propuestaId)) return [];
+  return conPld(ctx, null, async (consulta) => {
+    const filas = await consulta.query(
+      `select s.id, s.celebrada_el::text as celebrada_el from pld_sesiones s
+       where s.operator_id = $1 and s.quorum and pld_resultado_votacion(s.id, $2) = 'aprobada'
+       order by s.celebrada_el desc, s.registrado_en desc`,
+      [ctx.personal.operadorId, propuestaId],
+    );
+    return (filas.rows as Array<{ id: string; celebrada_el: string }>).map((fila) => ({ id: String(fila.id), celebradaEl: String(fila.celebrada_el) }));
+  });
+}
 
 /**
  * 40ª, 45ª y 48ª: el dictamen del caso. Con Comité, sale de una sesión válida en
@@ -119,10 +135,11 @@ export async function contenidoDelReporte(ctx: ContextoDePersonal, casoId: unkno
   const entidad = await leerEntidad(ctx);
   const tipo: "2" | "3" = caso.dictamen.resultado === "reportar_inusual" ? "2" : "3";
   const periodo = caso.dictamen.dictaminadoEl.replace(/-/g, "");
-  const fechas = caso.alertas.map((a) => a.creadaEn.toISOString().slice(0, 10)).sort();
+  // Fechas en la Ciudad de México, como los plazos.
+  const fechas = caso.alertas.map((a) => hoyEnMexico(a.creadaEn)).sort();
   const descripcion = [
     caso.razonSocial ? `CLIENTE: ${caso.razonSocial}` : "SIN CLIENTE RELACIONADO",
-    ...caso.alertas.map((a) => `ALERTA ${REGLA[a.regla].titulo} DEL ${a.creadaEn.toISOString().slice(0, 10)} (${a.disposicion})`),
+    ...caso.alertas.map((a) => `ALERTA ${REGLA[a.regla].titulo} DEL ${hoyEnMexico(a.creadaEn)} (${a.disposicion})`),
     fechas.length ? `PERIODO DE LAS OPERACIONES: ${fechas[0]} A ${fechas[fechas.length - 1]}` : "",
   ].filter(Boolean).join(". ");
   return {
