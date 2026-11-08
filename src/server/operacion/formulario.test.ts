@@ -21,8 +21,9 @@ describe("motivo escrito", () => {
     assert.throws(() => motivoEscrito("abc\r\n\r\n\r\n\r\ndef", 500), /motivo_corto/);
     assert.equal(textoMultilinea("Seguimiento\r\noperativo", 500), "Seguimiento operativo");
     assert.doesNotMatch(textoMultilinea("uno\rdos\nтри\tcuatro", 500) ?? "", /[\u0000-\u001f\u007f]/);
-    // serv-nuevo-1: los demás controles invisibles se quitan al limpiar.
-    assert.equal(textoMultilinea("con\u0007campana", 500), "concampana");
+    // serv-nuevo-4: cualquier otro control invisible vale un espacio (no pega palabras) y se juntan los espacios.
+    assert.equal(textoMultilinea("con\u0007campana", 500), "con campana");
+    assert.equal(textoMultilinea("Falta  la \u0085 constancia", 500), "Falta la constancia");
     assert.equal(textoMultilinea("\r\n\t ", 500), null);
   });
 });

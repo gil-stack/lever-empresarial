@@ -30,6 +30,14 @@ const MENSAJES: Record<string, string> = {
   cliente_no_activo: "Primero activa la empresa para el portal.",
   administrador_existente: "La empresa ya tiene un administrador activo.",
   alerta_ya_cerrada: "La alerta ya estaba cerrada.",
+  // Alta del prospecto: cada rechazo dice qué falla y marca su campo.
+  rfc_invalido: "Ese RFC no tiene la forma de un RFC: 12 caracteres si es persona moral o 13 si es física.",
+  rfc_generico: "Ese es un RFC genérico (público en general o extranjero). Escribe el RFC de la empresa.",
+  razon_social_invalida: "Escribe la razón social con letras o números, hasta 254 caracteres.",
+  razon_social_control: "La razón social trae un carácter invisible que no se puede guardar. Escríbela de nuevo.",
+  codigo_postal_invalido: "Ese código postal no existe. Escribe los 5 dígitos del domicilio fiscal.",
+  regimen_invalido: "Ese régimen fiscal no corresponde al tipo de persona del RFC.",
+  uso_cfdi_invalido: "Ese uso de CFDI no corresponde al régimen ni al tipo de persona.",
   solicitud_ya_decidida: "Esa solicitud ya se decidió.",
   comision_ya_decidida: "Esa versión ya se decidió.",
   rfc_duplicado: "Ese RFC ya está registrado.",
@@ -169,6 +177,13 @@ const CAMPO: Record<string, string> = {
   documento_sin_representante: "representanteClave",
   accionista_padre_invalido: "padreClave",
   expediente_rfc_distinto: "rfc",
+  rfc_invalido: "rfc",
+  rfc_generico: "rfc",
+  razon_social_invalida: "razonSocial",
+  razon_social_control: "razonSocial",
+  codigo_postal_invalido: "codigoPostal",
+  regimen_invalido: "regimen",
+  uso_cfdi_invalido: "usoCfdi",
   ...CAMPO_PLD,
 };
 

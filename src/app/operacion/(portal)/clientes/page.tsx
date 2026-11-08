@@ -59,7 +59,7 @@ export default async function ClientesOperacion({ searchParams }: { searchParams
               <form action={registrarProspectoAccion} className="formulario-pareja operacion-forma">
                 <div className="campo operacion-ancho">
                   <label htmlFor="razonSocial">Razón social</label>
-                  <input id="razonSocial" name="razonSocial" maxLength={254} required />
+                  <input id="razonSocial" name="razonSocial" maxLength={254} required {...errorDelCampo(params.aviso, "razonSocial")} />
                 </div>
                 <div className="campo">
                   <label htmlFor="rfc">RFC</label>
@@ -67,11 +67,11 @@ export default async function ClientesOperacion({ searchParams }: { searchParams
                 </div>
                 <div className="campo">
                   <label htmlFor="codigoPostal">Código postal</label>
-                  <input id="codigoPostal" name="codigoPostal" inputMode="numeric" minLength={5} maxLength={5} required />
+                  <input id="codigoPostal" name="codigoPostal" inputMode="numeric" minLength={5} maxLength={5} required {...errorDelCampo(params.aviso, "codigoPostal")} />
                 </div>
                 <div className="campo">
                   <label htmlFor="regimen">Régimen fiscal</label>
-                  <select id="regimen" name="regimen" defaultValue="601" required>
+                  <select id="regimen" name="regimen" defaultValue="601" required {...errorDelCampo(params.aviso, "regimen")}>
                     {REGIMENES.map(([valor, nombre]) => (
                       <option key={valor} value={valor}>
                         {valor} · {nombre}
@@ -81,7 +81,7 @@ export default async function ClientesOperacion({ searchParams }: { searchParams
                 </div>
                 <div className="campo">
                   <label htmlFor="usoCfdi">Uso CFDI</label>
-                  <select id="usoCfdi" name="usoCfdi" defaultValue="G03" required>
+                  <select id="usoCfdi" name="usoCfdi" defaultValue="G03" required {...errorDelCampo(params.aviso, "usoCfdi")}>
                     {USOS_CFDI.map(([valor, nombre]) => (
                       <option key={valor} value={valor}>
                         {valor} · {nombre}

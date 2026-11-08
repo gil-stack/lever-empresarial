@@ -314,6 +314,11 @@ export function normalizarCentro(valor: unknown): string | null {
   return nombre;
 }
 
+/** Un nombre con un control invisible no se limpia: se rechaza con su propio aviso (es una identidad). */
+function conControl(valor: unknown): boolean {
+  return typeof valor === "string" && CONTROL.test(valor);
+}
+
 export function normalizarCorreoPersona(valor: unknown): string {
   return typeof valor === "string" ? valor.trim().toLowerCase() : "";
 }
@@ -432,7 +437,8 @@ function armarAlta(
   void hoy; // Las contrataciones futuras sí son válidas; el primer pago valida su propia fecha.
   const errores: Hallazgo[] = [];
   const nombre = normalizarNombrePersona(entrada.nombre);
-  if (!nombre) errores.push({ codigo: "nombre_invalido", campo: "nombre" });
+  if (conControl(entrada.nombre)) errores.push({ codigo: "nombre_control", campo: "nombre" });
+  else if (!nombre) errores.push({ codigo: "nombre_invalido", campo: "nombre" });
 
   const altaEn = fechaValida(entrada.alta);
   if (!altaEn) errores.push({ codigo: "fecha_invalida", campo: "alta" });
@@ -517,6 +523,7 @@ export function validarCentro(entrada: {
   esTesoreria?: unknown;
 }): ResultadoCentro {
   const nombre = normalizarCentro(entrada.nombre);
+  if (conControl(entrada.nombre)) return { ok: false, codigo: "centro_nombre_control" };
   if (!nombre) return { ok: false, codigo: "centro_nombre_invalido" };
   const monto = leerCentavosEscritos(typeof entrada.presupuesto === "string" ? entrada.presupuesto : "");
   if (monto.tipo === "invalido") return { ok: false, codigo: "centro_presupuesto_invalido" };
@@ -536,7 +543,7 @@ export type CentroValido = {
 
 type ResultadoCentro =
   | ({ ok: true } & CentroValido)
-  | { ok: false; codigo: "centro_nombre_invalido" | "centro_presupuesto_invalido" };
+  | { ok: false; codigo: "centro_nombre_invalido" | "centro_nombre_control" | "centro_presupuesto_invalido" };
 
 export function validarBaja(entrada: { personaId?: unknown; baja?: unknown }): ResultadoBaja {
   const personaId = typeof entrada.personaId === "string" ? entrada.personaId.trim() : "";
@@ -614,11 +621,13 @@ export function etiquetaDelRol(rol: RolCuenta): string {
 
 export const MENSAJE_CAMPO: Record<string, ErrorCampo> = {
   nombre_invalido: { campo: "nombre", mensaje: "Escribe el nombre de la persona." },
+  nombre_control: { campo: "nombre", mensaje: "El nombre trae un carácter invisible que no se puede guardar. Escríbelo de nuevo." },
   fecha_invalida: { campo: "alta", mensaje: "Esa fecha no existe." },
   alta_futura: { campo: "alta", mensaje: "La fecha de alta no puede ser posterior a hoy." },
   baja_anterior: { campo: "baja", mensaje: "La baja no puede ser anterior al alta." },
   centro_invalido: { campo: "centro", mensaje: "Elige un centro de costo de esta empresa." },
   centro_nombre_invalido: { campo: "centroNombre", mensaje: "Escribe el nombre del área." },
+  centro_nombre_control: { campo: "centroNombre", mensaje: "El nombre del área trae un carácter invisible que no se puede guardar. Escríbelo de nuevo." },
   centro_presupuesto_invalido: { campo: "centroPresupuesto", mensaje: "Escribe un presupuesto mensual válido." },
   presupuesto_invalido: { campo: "presupuesto", mensaje: "Escribe un presupuesto mensual válido o déjalo vacío." },
   destino_invalido: { campo: "destino", mensaje: "Elige CLABE externa o tarjeta de nómina." },

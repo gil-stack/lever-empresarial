@@ -1,5 +1,5 @@
 import { leerCentavosEscritos } from "./centavos";
-import { sinControles } from "./control";
+import { CONTROL, sinControles } from "./control";
 import { fechaDeCalendario } from "./operacion/validar";
 
 export const ESTADOS_PAGO = ["por_autorizar", "listo_para_pagar", "rechazado", "cancelado"] as const;
@@ -10,6 +10,8 @@ export type ErrorPago =
   | "proveedor_ausente"
   | "monto_invalido"
   | "fecha_invalida"
+  | "fecha_emision_invalida"
+  | "fecha_programada_invalida"
   | "fecha_pasada"
   | "referencia_invalida"
   | "motivo_invalido"
@@ -80,7 +82,7 @@ export function correoOpcional(valor: unknown): string | null | "invalido" {
   if (valor === null || valor === undefined || valor === "") return null;
   if (typeof valor !== "string") return "invalido";
   const limpio = valor.trim().toLowerCase();
-  return limpio.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(limpio) ? limpio : "invalido";
+  return limpio.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(limpio) && !CONTROL.test(limpio) ? limpio : "invalido";
 }
 
 export function uuidPago(valor: unknown): valor is string {
@@ -88,10 +90,10 @@ export function uuidPago(valor: unknown): valor is string {
 }
 
 export function validarFechasPago(entrada: { emitidaEl: unknown; venceEl: unknown; programadaEl: unknown; hoy: string }): ErrorPago | null {
-  if (!fechaValida(entrada.emitidaEl) || !fechaValida(entrada.venceEl) || !fechaValida(entrada.programadaEl)) {
-    return "fecha_invalida";
-  }
-  if (entrada.venceEl < entrada.emitidaEl) return "fecha_invalida";
+  // Cada fecha mala dice cuál es, para marcar su campo: la de la obligación, el vencimiento o la prevista de pago.
+  if (!fechaValida(entrada.emitidaEl)) return "fecha_emision_invalida";
+  if (!fechaValida(entrada.venceEl) || entrada.venceEl < entrada.emitidaEl) return "fecha_invalida";
+  if (!fechaValida(entrada.programadaEl)) return "fecha_programada_invalida";
   if (entrada.programadaEl < entrada.hoy) return "fecha_pasada";
   return null;
 }

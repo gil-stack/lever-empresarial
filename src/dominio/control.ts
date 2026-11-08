@@ -5,15 +5,22 @@
  */
 export const CONTROL = /[\u0000-\u001f\u007f-\u009f]/;
 
-/** Igual, pero deja el tabulador y los saltos de línea de un `textarea`, que se juntan en un espacio antes de guardar. */
-export const CONTROL_SALVO_RENGLONES = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/;
+/** Las comillas de Windows-1252 leídas como C1 (U+0091 a U+0094) valen la comilla que eran. */
+const COMILLAS: Record<string, string> = { "\u0091": "'", "\u0092": "'", "\u0093": '"', "\u0094": '"' };
 
 /**
- * Un texto libre (nombre, concepto, referencia, motivo) sin sus controles invisibles, salvo el tabulador y los
- * saltos de línea, que cada validador junta en un espacio. Lo pegado con un control funciona sin un aviso falso
- * de longitud y la base nunca lo recibe. Los identificadores (RFC, CURP, correo, CLABE) no pasan por aquí:
- * con un control, su forma no es válida.
+ * Un texto libre (motivo, giro, concepto, nota, nombre del cliente de un cobro, nombre del CFDI que no se coteja)
+ * sin sus controles invisibles. Cada control vale un espacio, para no pegar dos palabras («Comercializadora» y
+ * «Uno»), salvo las comillas de Windows-1252 mal decodificadas: U+0091 y U+0092 valen «'» («O'Brien») y U+0093 y
+ * U+0094 valen «"». Después junta los espacios y recorta. La base nunca recibe el control.
+ *
+ * Las identidades y los identificadores no pasan por aquí: los nombres que se cotejan contra la Lista o el 69-B
+ * (representantes, socios, razón social, proveedores), RFC, CURP, correo, CLABE, folios y áreas rechazan
+ * cualquier control con el error de su campo. Un dato de identidad queda como lo escribió la persona.
  */
 export function sinControles(texto: string): string {
-  return texto.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/g, "");
+  return texto
+    .replace(/[\u0000-\u001f\u007f-\u009f]/g, (control) => COMILLAS[control] ?? " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }

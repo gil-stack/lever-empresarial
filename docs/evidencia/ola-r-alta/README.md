@@ -6,9 +6,9 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r-alta
 | --- | --- | --- |
 | Flujos 0-12 | 147 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
 | Pantallas (3 temas × 1440/390) y contraste AA medido | 60 comprobaciones en verde, 0 en rojo; contraste mínimo 5.00 (Lever 1440) | `datos/resultados-pantallas-contraste.json` |
-| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;») | 129 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
+| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;»; el representante, el socio y la razón social con un control, el giro y el cobro con el control como espacio, el RFC con tabulador, el alta y el área con su aviso y las fechas de Pagos en su campo) | 145 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
 
-Corrida del 2026-11-08 sobre el head de este PR, con los arreglos de las seis revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`), sobre una base migrada de cero con la 0028 final. Las tres fases corrieron sobre el código final de la sexta revisión.
+Corrida del 2026-11-09 sobre el head de este PR, con los arreglos de las siete revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`), sobre una base migrada de cero con la 0028 final. Las tres fases corrieron sobre el código final de la séptima revisión.
 
 ## Cómo se corre
 
@@ -282,10 +282,55 @@ Verificación en rojo. Cada regresión se corrió contra `701bc25`: un árbol ap
 
 - base-N20: además de contar caracteres, los CHECK de motivo se traducen a `motivo_corto`. Si el servidor y la base vuelven a diferir, la persona lee el aviso del campo y no «La base no respondió».
 - sexta-N1: los renglones se juntan en el servidor; la base sigue sin admitir saltos de línea y la 0028 no cambia.
-- bar-3 y serv-nuevo-1 (decisión del líder): los textos libres quitan los controles. Son los motivos, conceptos, referencias y detalles de Operación, pagos y flujo, y los nombres del CFDI. Los identificadores los rechazan: RFC, CURP, la serie y el folio del CFDI, la razón social del alta, los nombres de personas y áreas, el renglón de la Lista y el nombre de un PDF privado. `server/correo/configuracion.ts` conserva su regla: valida una variable de entorno que no llega a la base.
+- bar-3 y serv-nuevo-1 (decisión del líder; la séptima revisión la cambia, ver abajo): los textos libres quitan los controles. Son los motivos, conceptos, referencias y detalles de Operación, pagos y flujo, y los nombres del CFDI. Los identificadores los rechazan: RFC, CURP, la serie y el folio del CFDI, la razón social del alta, los nombres de personas y áreas, el renglón de la Lista y el nombre de un PDF privado. `server/correo/configuracion.ts` conserva su regla: valida una variable de entorno que no llega a la base.
 - bar-8: el RFC emisor no se revisa por forma: no se guarda y ya se compara con el de la empresa.
 - bar-9: las referencias se decodifican a mano. Con `processEntities: true`, `fast-xml-parser` también expande las entidades del DOCTYPE (doc vigente por ctx7).
 - líder-N3: solo los cambios de `rechazarFacturaViva` del #60, idénticos; los de `transaccion?` no.
+
+### Séptima revisión (re-verificación sobre `98224e0`)
+
+Los dos revisores cerraron base-N21, base-N22, bar-10 y serv-nuevo-1 a serv-nuevo-3. Encontraron el mismo hallazgo por los dos lados: base-N23 (base) y serv-nuevo-4 (servidor), un P2 que bloquea el merge. Además salieron dos P3 de avisos. Todo va en este PR. **La 0028 no cambia.**
+
+El problema venía de serv-nuevo-1. `sinControles` borraba el control sin dejar nada en su lugar, y los nombres de los representantes y los socios, la razón social del expediente, los nombres del cobro y el del CFDI pasaban por ahí. Un control entre dos palabras las pegaba («PedroRuiz Sol»), y la Lista, cotejada por nombre (`lpb_normalizar`), ya no encontraba a la persona. Con 4 socios extranjeros sin RFC ni CURP, el nombre es su única llave, y salía 1 coincidencia de 4. Por decisión del líder, la regla queda así:
+
+1. **Identidades e identificadores: rechazar, nunca transformar.** Con cualquier control, también un tabulador, se rechazan con el error de su campo. Solo se recortan los espacios de las orillas, como siempre.
+   - Nombres que entran a un cotejo: representantes y socios (`dato_invalido_nombre`) y la razón social del expediente (`dato_invalido_razonSocial`). La razón social del alta y la de los proveedores ya rechazaban.
+   - El folio del reporte a la UIF (`dato_invalido_folio`) y el teléfono del expediente.
+   - RFC del alta, del proveedor y del cobro manual, y la CLABE. Al normalizar se quitaban los espacios, y con ellos el tabulador, U+000B y U+000C: un RFC con un tabulador dentro se aceptaba.
+   - El correo de contacto del proveedor, que aceptaba U+0085 o U+001F dentro.
+   - CURP, el correo de Personas y el del expediente, la serie de la e.firma, las áreas, los nombres de Personas y el renglón de la Lista ya rechazaban.
+2. **Textos libres** (motivos, giro, concepto, notas, nombre del cliente del cobro, nombre del CFDI que no se coteja): cada control vale un espacio. U+0091 y U+0092 valen `'`, y U+0093 y U+0094 valen `"`: son las comillas de Windows-1252 mal decodificadas. Después se juntan los espacios y se recorta. `textoMultilinea` también junta los espacios dobles.
+
+Verificación en rojo. Las pruebas nuevas, corridas con el código de `98224e0` (árbol aparte), fallan así:
+
+- **Unitarias**, 6 pruebas:
+  - `fecha_invalida` en lugar de `fecha_emision_invalida`;
+  - «ComercializadoraUno»;
+  - `razon_social_invalida` en lugar de `razon_social_control`;
+  - el RFC con un tabulador se acepta;
+  - `centro_nombre_invalido` en lugar de `centro_nombre_control`;
+  - «concampana».
+- **Postgres**, 8 pruebas:
+  - base-N23: «Missing expected rejection: socio "Pedro\u000bRuiz Sol"»;
+  - el folio con U+0085 se acepta;
+  - `razon_social_control`;
+  - `fecha_emision_invalida`;
+  - «ComercializadoraUno» en el cobro desde el XML.
+
+| Hallazgo | Arreglo | Prueba |
+| --- | --- | --- |
+| **base-N23 = serv-nuevo-4 (P2)** Un control entre dos palabras se borraba y las pegaba. El cotejo por nombre contra la Lista perdía a la persona sin aviso (1 de 4 en vivo); el giro quedaba «Distribuciónde abarrotes» | Regla 1: `conControl` en `expediente.ts` (nombres, razón social y teléfono), el folio en `lpb.ts`, `validarRfcDeAlta` (`src/domain/rfc.ts`), el RFC del cobro (`entradas.ts`), `normalizarClabe` y `correoOpcional`. Regla 2: `sinControles` (`src/dominio/control.ts`). Auditados los sujetos de `lpb_cotejar_empresa`: la empresa, los beneficiarios (salen de los socios), los representantes, los socios y las contrapartes. Solo los representantes y los socios pasaban por `sinControles`. `CONTROL_SALVO_RENGLONES` se retira: quedó sin uso | Postgres «base-N23: un control entre dos palabras…». Nueve nombres con control (U+000B, U+0085, U+0096, U+0092, tabulador, U+000C, U+001F y U+0001) dan `dato_invalido_nombre` como socio y como representante. Los 4 socios extranjeros limpios dan 4 posibles por nombre. La razón social del expediente con U+0085 se rechaza y el giro con NEL se guarda con espacio. «LPB…»: el folio con U+0085 o con tabulador da `dato_invalido_folio`, sin guardar nada. Flujo: «Comercializadora&#x85;Uno», sin el salto que antes ponía el espacio, queda «Comercializadora Uno». `control.test.ts`: textos libres (también «O\u0092Brien» → «O'Brien») e identificadores (RFC, CLABE, correo y RFC del cobro con 6 controles). Capturas `r73` a `r80` |
+| **P3 bar-10** Con la fecha forzada, el aviso marcaba «Vigente hasta» o el vencimiento aunque la fecha mala fuera otra | `validarFechasPago` devuelve un código por fecha: `fecha_emision_invalida` (fecha de la obligación), `fecha_invalida` (vencimiento) y `fecha_programada_invalida`. El contrato da `fecha_desde_invalida`. Cada código tiene su mensaje y su campo, y «Vigente desde» se liga al aviso | `cfdi.test.ts` «las fechas del pago existen…», con un caso por fecha. Pagos: el contrato con «Vigente desde» 2026-02-30 y con «Vigente hasta» 2026-13-01. Recorrido con la fecha forzada (una petición armada). Capturas `r82` y `r83` |
+| **P3** El área con un control daba «Escribe el nombre del área.», y la razón social del alta el aviso genérico, sin campo marcado | `centro_nombre_control` («El nombre del área trae un carácter invisible…») y, por ser el mismo caso, `nombre_control` en Personas. En el alta, `razon_social_control`. Los demás rechazos del alta (`rfc_invalido`, `rfc_generico`, `razon_social_invalida`, `codigo_postal_invalido`, `regimen_invalido` y `uso_cfdi_invalido`) daban el aviso genérico, ya en `main`: ahora cada uno tiene su mensaje y marca su campo | `control.test.ts`. Postgres «F4 y F5…»: la razón social con U+0093/U+0094 da `razon_social_control`. Recorrido: el alta con U+0085 y con el código postal 17000, y el área «Ventas\u0085Norte». Capturas `r77`, `r78` y `r81` |
+
+**Decisiones de la séptima revisión.**
+
+- Los nombres y la razón social del expediente, el folio y los identificadores solo recortan los espacios de las orillas (también un tabulador o un salto), como el RFC y la CURP. Un control dentro se rechaza, también un tabulador: «Ana\tRuiz Sol» da `dato_invalido_nombre`. La razón social del alta, las áreas y los nombres de Personas, que ya rechazaban sin recortar, siguen rechazando también un tabulador en la orilla.
+- El folio del reporte a la UIF pasa a ser un identificador. La prueba de serv-nuevo-1, que lo guardaba limpio, ahora espera el rechazo.
+- `nombre_control` en Personas no lo pidió el líder. Es el mismo caso que el área, y antes el aviso decía «Escribe el nombre de la persona.».
+- Siguen igual:
+  - El nombre del archivo de una constancia (`nombreLimpio`) sigue quitando los controles: es un nombre de archivo, no una identidad, y no se coteja.
+  - El alta de un proveedor sigue marcando «contrato» cuando falla su vigencia.
 
 ## Flujo → captura → qué verifica en la base
 
@@ -384,6 +429,17 @@ Verificación en rojo. Cada regresión se corrió contra `701bc25`: un árbol ap
 | bar-9 | `r70-bar9-cobro-xml-ampersand` | Un XML con «PEREZ &amp;&#x85; ASOCIADOS»: el cobro se registra, la base guarda «PEREZ & ASOCIADOS» (sin el control, serv-nuevo-1) y la lista lo muestra así. |
 | líder-N2 | `r71-lider2-pago-excepcion-motivo-emoji` | Un pago por excepción con «Revisar 😀» (pasa el mínimo de 10 del navegador): «No se guardó» con el aviso del motivo en el campo y ningún pago. |
 | líder-N2 | `r72-lider2-pago-excepcion-en-autorizacion` | Con «Pago 😀 ya!» (10 caracteres) queda en autorización y la base guarda 10 caracteres. |
+| base-N23 | `r73-n23-representante-con-control` | Omar agrega a «Pedro\u000bRuiz Sol» como representante de Ébano: `dato_invalido_nombre` con el campo marcado y ningún representante de más (antes se guardaba «PedroRuiz Sol»). |
+| base-N23 | `r74-n23-socio-con-control` | El socio extranjero «Luis\u0085Gómez Paz» (Suecia, sin RFC ni CURP): `dato_invalido_nombre` en su campo; el formulario conserva país, documento y fecha, y no hay socio de más. |
+| base-N23 | `r75-n23-razon-social-expediente-con-control` | La razón social del expediente con U+0085: `dato_invalido_razonSocial` en su campo y la guardada no cambia. |
+| serv-nuevo-4 | `r76-sn4-giro-con-nel-guardado` | El giro «Distribución\u0085de abarrotes» se guarda «Distribución de abarrotes» (antes, «Distribuciónde abarrotes»). |
+| P3 | `r77-p3-prospecto-razon-social-con-control` | Alta del prospecto con «Empresa\u0085Uno SA de CV»: «La razón social trae un carácter invisible que no se puede guardar.», con el campo marcado y sin empresa (antes, «No se pudo completar…» sin campo). |
+| P3 | `r78-p3-prospecto-codigo-postal` | Con el código postal 17000: «Ese código postal no existe…», con el campo marcado. Ya pasaba en `main`: el alta solo marcaba el RFC, y ni eso con su código. |
+| serv-nuevo-4 | `r79-sn4-cobro-con-control-vale-espacio` | Gil registra un cobro manual a «Comercializadora\u0085Uno» por «Servicio\u000bde la séptima revisión»: la base guarda «Comercializadora Uno» y «Servicio de la séptima revisión». |
+| Regla 1 | `r80-regla1-cobro-rfc-con-tabulador` | El RFC «EKU900317\t3C9» se rechaza en su campo y no hay cobro (antes, normalizar borraba el tabulador y se aceptaba). |
+| P3 | `r81-p3-area-con-control` | El área «Ventas\u0085Norte»: «El nombre del área trae un carácter invisible…» en su campo y ningún área (antes, «Escribe el nombre del área.»). |
+| P3 bar-10 | `r82-p3-contrato-vigente-desde` | Contrato con «Vigente desde» 2026-02-30 (petición armada: se escribe una fecha válida y se cambia en la petición que sale): «Esa fecha de «Vigente desde» no existe…» y el campo marcado es «Vigente desde», no «Vigente hasta»; ningún documento. |
+| P3 bar-10 | `r83-p3-excepcion-fecha-de-la-obligacion` | Pago por excepción con «Fecha de la obligación» 0000-01-01 (petición armada): el aviso marca esa fecha y no el vencimiento; ningún pago. |
 
 Las capturas `NN-pantalla-<pantalla>-<tema>-<ancho>` son la fase de pantallas: un solo h1, campos con etiqueta, sin desborde horizontal y consola limpia en Personal, Cumplimiento, Lista, Expediente, Ficha, Aprobaciones, Clientes, Bitácora y Sin permiso.
 
@@ -427,7 +483,7 @@ OK    1. la base no dejó a Aurelio con Cumplimiento
 OK    aviso «roles_incompatibles» tras la acción
 OK    1. tampoco Originación con Cumplimiento (Omar)
 OK    1. la fila de Ofelia no tiene botones: nadie se da roles a sí mismo
-Distribuidora Lumbre lista: expediente aprobado y revisión de riesgo vencida el 2026-10-07.
+Distribuidora Lumbre lista: expediente aprobado y revisión de riesgo vencida el 2026-10-08.
 
 — Flujo 2: Originación registra el prospecto y arma el expediente (2 capas, propietarios reales calculados)
 OK    aviso «prospecto_registrado» tras la acción
@@ -799,9 +855,27 @@ OK    líder-N2. hay un proveedor para el pago por excepción
 OK    líder-N2. «Revisar 😀» pasa el mínimo de 10 del navegador
 OK    líder-N2. pago por excepción con «Revisar 😀»: «No se guardó» con el aviso del motivo, sin pago (antes, el CHECK lo rechazaba con un error genérico)
 OK    líder-N2. con «Pago 😀 ya!» (10 caracteres) queda en autorización y la base guarda 10 caracteres
+
+— Séptima revisión: identidades con un control, textos libres con espacio y avisos en su campo
+OK    aviso «dato_invalido_nombre» tras la acción
+OK    base-N23. el representante «Pedro\u000bRuiz Sol» se rechaza en su campo y no se guarda (antes, «PedroRuiz Sol»)
+OK    base-N23. el socio extranjero «Luis\u0085Gómez Paz» se rechaza en su campo, sin socio de más y con lo capturado
+OK    aviso «dato_invalido_razonSocial» tras la acción
+OK    base-N23. la razón social del expediente con U+0085 se rechaza en su campo y no cambia
+OK    aviso «expediente_datos_guardados» tras la acción
+OK    serv-nuevo-4. el giro «Distribución\u0085de abarrotes» se guarda «Distribución de abarrotes»
+OK    aviso «razon_social_control» tras la acción
+OK    P3. la razón social del alta con U+0085: «trae un carácter invisible», con el campo marcado y sin empresa
+OK    aviso «codigo_postal_invalido» tras la acción
+OK    P3. el código postal 17000 del alta: su aviso, con el campo marcado y sin empresa
+OK    serv-nuevo-4. cobro con «Comercializadora\u0085Uno» y «Servicio\u000bde la séptima revisión»: se guardan con espacio
+OK    regla 1. el RFC «EKU900317\t3C9» del cobro se rechaza en su campo y no hay cobro (antes, el tabulador se borraba)
+OK    P3. el área «Ventas\u0085Norte»: «trae un carácter invisible» en su campo y sin área
+OK    P3 bar-10. contrato con «Vigente desde» 2026-02-30: el aviso marca «Vigente desde» y no hay documento
+OK    P3 bar-10. excepción con «Fecha de la obligación» 0000-01-01: el aviso marca esa fecha, no el vencimiento, y no hay pago
 OK    consola del navegador limpia en las regresiones
 
-129 comprobaciones en verde, 0 en rojo.
+145 comprobaciones en verde, 0 en rojo.
 ```
 
 </details>
@@ -812,18 +886,18 @@ OK    consola del navegador limpia en las regresiones
 ```text
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test
 primera@lever.test: invitada
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T03:19:18.330Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T16:23:46.924Z.
 segunda@lever.test: invitada
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T03:19:18.341Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T16:23:47.332Z.
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)
 
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
 primera@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T03:19:18.528Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T16:23:48.430Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T03:19:18.532Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T16:23:48.644Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)
@@ -838,10 +912,10 @@ No se hizo: El operador ya tiene Administración invitada con otros correos. Par
 
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
 primera@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T03:19:19.185Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T16:23:50.376Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T03:19:19.190Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T16:23:50.452Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)

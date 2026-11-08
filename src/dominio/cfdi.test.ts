@@ -147,6 +147,13 @@ describe("bar-10: las fechas del pago existen en el calendario", () => {
     assert.equal(fechaValida("0000-01-01"), false);
     assert.equal(fechaValida("2026-02-30"), false);
     assert.equal(fechaValida("2024-02-29"), true);
-    assert.equal(validarFechasPago({ emitidaEl: "0000-01-01", venceEl: "2026-11-30", programadaEl: "2026-11-30", hoy: "2026-11-08" }), "fecha_invalida");
+    // Cada fecha mala dice cuál es, para que el aviso marque su campo (antes todas eran «fecha_invalida» en el vencimiento).
+    const fechas = { emitidaEl: "2026-11-01", venceEl: "2026-11-30", programadaEl: "2026-11-30", hoy: "2026-11-08" };
+    assert.equal(validarFechasPago({ ...fechas, emitidaEl: "0000-01-01" }), "fecha_emision_invalida");
+    assert.equal(validarFechasPago({ ...fechas, venceEl: "2026-02-30" }), "fecha_invalida");
+    assert.equal(validarFechasPago({ ...fechas, venceEl: "2026-10-31" }), "fecha_invalida");
+    assert.equal(validarFechasPago({ ...fechas, programadaEl: "2026-13-01" }), "fecha_programada_invalida");
+    assert.equal(validarFechasPago({ ...fechas, programadaEl: "2026-11-07" }), "fecha_pasada");
+    assert.equal(validarFechasPago(fechas), null);
   });
 });
