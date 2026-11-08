@@ -10,6 +10,7 @@ import { Coincidencias } from "@/components/operacion/coincidencias";
 import { FormulariosBorrador, VistaVersion, type ErrorDeCampo } from "@/components/operacion/expediente";
 import { etiquetaEstado, fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
+import { PerfilTransaccional } from "@/components/operacion/pld/perfil";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { ETIQUETA_GRADO, ETIQUETA_NIVEL, ETIQUETA_RESULTADO } from "@/dominio/operacion";
@@ -264,6 +265,8 @@ export default async function ExpedienteCliente({
           </form>
         ) : null}
       </Hoja>
+
+      <PerfilTransaccional ctx={ctx} companyId={id} estado={expediente.empresa.estado} aviso={busqueda.aviso} en={busqueda.en} />
 
       <Hoja id="coincidencias-titulo" titulo={veLista ? "Coincidencias con listas" : "Revisión de Cumplimiento"}>
         {veLista ? (

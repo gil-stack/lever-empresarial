@@ -1,6 +1,8 @@
 import { Aviso } from "@/components/sistema";
 import { TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
 
+import { ASENTADOS_PLD, CAMPO_PLD, MENSAJES_PLD } from "./pld/avisos";
+
 const ID_AVISO = "aviso-operacion";
 
 /** El mismo texto lo muestra el navegador antes de enviar (CampoArchivo) y la pantalla si lo rechaza el servidor. */
@@ -142,6 +144,7 @@ const MENSAJES: Record<string, string> = {
     "Escribe el número de identificación: de 4 a 20 letras y números (los espacios, puntos y guiones se quitan solos).",
   dato_invalido_fechaNacimiento: "Escribe la fecha de nacimiento: no puede ser futura ni anterior a 1900.",
   expediente_estructura_muy_profunda: "La cadena de socios pasa de 10 capas: el cálculo de propietarios reales no llega al final. Revísala con Cumplimiento.",
+  ...MENSAJES_PLD,
 };
 
 /** El campo que causó cada error: el aviso se liga a ese campo con aria-describedby. */
@@ -166,6 +169,7 @@ const CAMPO: Record<string, string> = {
   documento_sin_representante: "representanteClave",
   accionista_padre_invalido: "padreClave",
   expediente_rfc_distinto: "rfc",
+  ...CAMPO_PLD,
 };
 
 /** Los avisos de algo que sí quedó hecho. Cualquier otro código (un rechazo o algo por revisar) se anuncia como alerta. */
@@ -195,6 +199,7 @@ const ASENTADOS: ReadonlySet<string> = new Set([
   "reporte_registrado",
   "suspension_solicitada",
   "reactivacion_solicitada",
+  ...ASENTADOS_PLD,
 ]);
 
 export function tonoDelAviso(codigo: string): "asentado" | "revisar" {
