@@ -69,6 +69,18 @@ La revisión del PR encontró que, con el diálogo «Rechazar» abierto y el foc
 - **N5 · clic derecho o central en un periodo**: bajaba y soltaba encima del mismo botón sin hacer clic, así que la marca se quedaba puesta y el siguiente cambio esperaba 500 ms. Ahora solo el botón principal la pone. `demostracion.spec.ts` repite la prueba de N4 con clic derecho y central: con `9b883b5` el clic derecho da 517 ms y con el arreglo sale de inmediato (`datos/limpiar-y-clics.txt`).
 - **N6 · «Limpiar filtros» dejaba los campos con los valores viejos** (desde `b38728e`): la tabla volvía a las 34 compras, pero Persona seguía diciendo el nombre de antes y el monto escrito se quedaba, y el filtro siguiente volvía a mandarlos. El formulario no se vuelve a montar al navegar, y React no aplica un `defaultValue` nuevo a un selector ya montado ni a un campo editado. Ahora los campos siguen a la dirección al limpiar, con «Atrás» y con «Adelante»; lo que se está escribiendo y aún no sale se queda. `demostracion.spec.ts` lo prueba con filtros puestos a mano y llegados en la dirección, con «Atrás», con «Adelante» y con el filtro siguiente. Además retiene una navegación mientras se escribe el monto, y comprueba que lo escrito no se borra. Con `9b883b5` falla: Persona se queda en «Ana Torres» (`datos/limpiar-y-clics.txt`). Capturas en `modulos/movimientos-limpiar-{antes,despues}-*`: las que terminan en `-sin-arreglo` son de `9b883b5`, con «Carlos Méndez» y 100 tras limpiar.
 
+## Pendiente al cambiar de cuenta
+
+| Punto | Estado | Gates que se corrieron |
+| --- | --- | --- |
+| **N6** · «Limpiar filtros» dejaba los campos con los valores viejos | **Hecho** en `fb27af5` | Contra `fb27af5`: typecheck 0, lint 0, `npm test` 456/456, Postgres 38/38, `test:e2e` completo 42/42, build 0 y security en verde. La prueba e2e nueva falla con `9b883b5`. Recorrido completo: modulos 150/150, lado 96/96, pantallas 851/851, contraste con los mismos mínimos, cargando 9/9, flujos 185/185 y caída 54/54. |
+| **N5** · el clic derecho o central en un periodo dejaba la marca puesta | **Hecho** en `fb27af5` | Los mismos de N6. El caso de clic derecho falla con `9b883b5` (517 ms). |
+
+Falta:
+- **Vercel CI:** no se esperó el de `fb27af5` ni el del commit que agrega esta sección. El último CI terminal es el de `9b883b5`, en verde con 9 tareas.
+- **Revisión:** el revisor no ha re-verificado `fb27af5` (N5 y N6).
+- **Merge:** el PR no se ha fusionado.
+
 ## Correr el recorrido
 
 ```sh
