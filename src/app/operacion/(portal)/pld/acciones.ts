@@ -195,7 +195,7 @@ export async function dictaminarCasoAccion(formData: FormData): Promise<void> {
       propuestaId: texto(formData, "propuestaId"), resultado: texto(formData, "resultado"), justificacion: texto(formData, "justificacion"),
     }));
   } catch (error) {
-    if (error instanceof ErrorDeDominio && error.codigo === "reautenticacion_requerida") redirect(`${caso(casoId)}?aviso=reautenticacion_factor#dictamen-titulo`);
+    if (error instanceof ErrorDeDominio && error.codigo === "reautenticacion_requerida") redirect(`${caso(casoId)}?aviso=pld_dictamen_reautenticacion&en=dictamen-titulo#dictamen-titulo`);
     return fallo(error, caso(casoId), "#dictamen-titulo");
   }
   listo(caso(casoId), fueraDePlazo ? "pld_dictamen_fuera_de_plazo" : "pld_dictamen_registrado", "#dictamen-titulo");

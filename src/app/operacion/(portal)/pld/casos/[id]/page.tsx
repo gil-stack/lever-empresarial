@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import {
   agregarNotaAccion,
@@ -13,6 +13,7 @@ import {
   registrarReportePldAccion,
   sumarAlertaAccion,
 } from "@/app/operacion/(portal)/pld/acciones";
+import { ConfirmarIdentidad } from "@/components/entrar/confirmar-identidad";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { CampoArchivo } from "@/components/operacion/campo-archivo";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
@@ -22,6 +23,9 @@ import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
 import { PROPUESTA, PROPUESTAS, REGLA, TIPO_AVISO, type TipoAviso } from "@/dominio/pld";
+import { estadoDeConfirmacion } from "@/server/autenticacion";
+import { factorReciente, VIGENCIA_AUTORIZACION_MS } from "@/server/autenticacion/reautenticacion";
+import { sesionSegura } from "@/server/entrada";
 import { exigirContextoOperacion, puedeEnOperacion } from "@/server/operacion";
 import { ahoraPld, leerCaso, leerModoDictamen, sesionesQueAprobaron } from "@/server/pld";
 
@@ -60,6 +64,13 @@ export default async function CasoPld({
   const vigente = caso.propuestas[0] ?? null;
   const sesiones = modo.modo === "comite" && vigente && !caso.dictamen ? await sesionesQueAprobaron(ctx, vigente.id) : [];
   const abierto = caso.dictamen === null;
+  // El dictamen exige el segundo factor de los últimos 30 minutos, como las demás decisiones de Operación.
+  let confirmacion: Awaited<ReturnType<typeof estadoDeConfirmacion>> | null = null;
+  if (dictamina && abierto) {
+    const sesion = await sesionSegura();
+    if (!sesion) redirect("/operacion/entrar");
+    if (!factorReciente(sesion, { superficie: "sofipo", vigenciaMs: VIGENCIA_AUTORIZACION_MS })) confirmacion = await estadoDeConfirmacion(sesion);
+  }
   const error = (seccion: string, campo: string) => (busqueda.en === seccion ? errorDelCampo(busqueda.aviso, campo) : {});
   const titulo = `Caso · ${caso.razonSocial ?? "aviso sin empresa"}`;
 
@@ -316,6 +327,16 @@ export default async function CasoPld({
       </Hoja>
 
       <Hoja id="dictamen-titulo" titulo="Dictamen">
+        {confirmacion ? (
+          <div className="panel operacion-confirmar">
+            <ConfirmarIdentidad
+              passkey={confirmacion.passkey}
+              totp={confirmacion.totp}
+              respaldo={confirmacion.respaldo}
+              motivo="Antes de registrar el dictamen, prueba tu segundo factor. Vale treinta minutos."
+            />
+          </div>
+        ) : null}
         {caso.dictamen ? (
           <Renglones>
             <Renglon etiqueta="Resultado">{PROPUESTA[caso.dictamen.resultado]}</Renglon>
@@ -352,7 +373,7 @@ export default async function CasoPld({
               </div>
               <div className="acciones">
                 <BotonEnviar>Registrar dictamen</BotonEnviar>
-                <p>{caso.fueraDePlazo ? "Pasaron los 60 días: se registra igual, marcado «fuera de plazo»." : "Pide tu segundo factor si pasó más de 15 minutos."}</p>
+                <p>{caso.fueraDePlazo ? "Pasaron los 60 días: se registra igual, marcado «fuera de plazo»." : "Exige tu segundo factor de los últimos 30 minutos."}</p>
               </div>
             </form>
           ) : (
@@ -390,7 +411,7 @@ export default async function CasoPld({
             </div>
             <div className="acciones">
               <BotonEnviar>Registrar dictamen</BotonEnviar>
-              <p>{caso.fueraDePlazo ? "Pasaron los 60 días: se registra igual, marcado «fuera de plazo»." : "Pide tu segundo factor si pasó más de 15 minutos."}</p>
+              <p>{caso.fueraDePlazo ? "Pasaron los 60 días: se registra igual, marcado «fuera de plazo»." : "Exige tu segundo factor de los últimos 30 minutos."}</p>
             </div>
           </form>
         )}
