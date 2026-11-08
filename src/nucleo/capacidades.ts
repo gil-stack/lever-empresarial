@@ -91,6 +91,17 @@ const DE_LA_PLATAFORMA = {
   "plataforma.suspension.solicitar": { superficie: "sofipo", roles: ["originacion", "cumplimiento"] },
   "plataforma.suspension.aprobar": { superficie: "sofipo", roles: ["aprobacion"] },
   "plataforma.bitacora.ver": { superficie: "sofipo", roles: ["administracion_plataforma", "cumplimiento", "auditoria"] },
+  // Ola R2: PLD. Lo sensible lo ven Cumplimiento y Auditoría (55ª); avisar al área de Cumplimiento lo puede todo el personal (60ª).
+  "plataforma.pld.ver": { superficie: "sofipo", roles: ["cumplimiento", "auditoria"] },
+  "plataforma.pld.analizar": { superficie: "sofipo", roles: ["cumplimiento"] },
+  "plataforma.pld.comite": { superficie: "sofipo", roles: ["cumplimiento"] },
+  "plataforma.pld.dictaminar": { superficie: "sofipo", roles: ["cumplimiento"] },
+  "plataforma.pld.reportar": { superficie: "sofipo", roles: ["cumplimiento"] },
+  "plataforma.pld.aviso.emitir": {
+    superficie: "sofipo",
+    roles: ["administracion_plataforma", "originacion", "aprobacion", "cumplimiento", "auditoria"],
+  },
+  "plataforma.pld.manifiesto": { superficie: "sofipo", roles: ["cumplimiento", "auditoria"] },
 } as const satisfies Record<string, Regla<RolPlataforma>>;
 
 export type CapacidadCliente = keyof typeof DEL_CLIENTE;

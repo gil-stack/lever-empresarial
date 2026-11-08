@@ -904,6 +904,7 @@ BEGIN
   VALUES (
     NEW.operator_id, NEW.company_id, 'aviso_manual',
     CASE NEW.tipo WHEN 'posible_inusual' THEN '40ª y 60ª, último párrafo' ELSE '45ª y 60ª, último párrafo' END,
+    NEW.id,
     jsonb_build_object('tipo', NEW.tipo)
   )
   RETURNING id INTO nueva;
@@ -2116,7 +2117,8 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM companies c WHERE c.id = p_company AND c.operator_id = app_operador()) THEN
     RAISE EXCEPTION 'cliente_ausente';
   END IF;
-  IF p_limite IS NULL OR p_limite < 1 OR p_limite > 2000 THEN
+  -- Una página es de 2,000 documentos; el servidor pide uno más para saber si hay otra.
+  IF p_limite IS NULL OR p_limite < 1 OR p_limite > 2001 THEN
     RAISE EXCEPTION 'periodo_invalido';
   END IF;
   RETURN QUERY

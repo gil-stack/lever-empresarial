@@ -117,6 +117,8 @@ const MENSAJES: Record<string, string> = {
   activacion_con_coincidencia_lpb: "Cumplimiento tiene un caso abierto de esta empresa: no se puede activar hasta que lo resuelva.",
   activacion_sin_riesgo_vigente: "La base no deja activar: falta un grado de riesgo vigente.",
   activacion_sin_estructura_corporativa: "La base no deja activar: falta desglosar la estructura accionaria hasta personas físicas.",
+  activacion_sin_perfil_transaccional:
+    "La base no deja activar: falta el perfil transaccional declarado (montos y número de operaciones estimados al mes).",
   sin_rol_para_solicitar_activacion: "Pedir la activación es de Originación.",
   sin_rol_para_registrar: "Registrar prospectos es de Originación.",
   empresa_suspendida: "La empresa está suspendida: no se puede mover dinero ni cambiar nada hasta que se reactive.",
