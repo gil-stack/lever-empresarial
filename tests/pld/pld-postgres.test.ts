@@ -17,7 +17,7 @@ import { decidirActivacion, solicitarActivacion } from "../../src/server/operaci
 import { leerCliente, registrarProspecto } from "../../src/server/operacion/clientes.ts";
 import { calificarRiesgoEmpresa, dictaminarVersion, enviarVersion } from "../../src/server/operacion/expediente.ts";
 import { decidirCambioDeSuspension, solicitarCambioDeSuspension } from "../../src/server/operacion/suspensiones.ts";
-import { crearPagoProveedor, resolverPagoProveedor } from "../../src/server/pagos-proveedores/servicio.ts";
+import { cancelarPagoProveedor, crearPagoProveedor, resolverPagoProveedor } from "../../src/server/pagos-proveedores/servicio.ts";
 import {
   abrirCaso,
   actaEnPdf,
@@ -291,23 +291,33 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
             motivoExcepcion: "Servicio urgente autorizado por dirección",
           }, deps);
           // Pedido y sin liberar: todavía no es una operación.
-          const grande = await pago("12,000.00");
+          const primero = await pago("6,000.00");
           assert.equal(await contar("select count(*)::int as n from pld_operaciones where company_id = $1", [beta]), 0);
-          await resolverPagoProveedor(rosa, sesionCliente, { requestId: grande.requestId, decision: "autorizar", version: 1, totalCentavos: 1200000 }, deps);
-          // Liberado: una operación, una alerta «excede el perfil» y el pago sigue listo para pagar.
-          assert.deepEqual(await uno("select tipo, monto_centavos::text as monto, clabe from pld_operaciones where origen_id = $1", [grande.requestId]),
-            { tipo: "pago_proveedor", monto: "1200000", clabe: CLABE });
-          assert.equal((await uno<{ estado: string }>("select estado from supplier_payment_requests where id = $1", [grande.requestId])).estado, "listo_para_pagar");
+          await resolverPagoProveedor(rosa, sesionCliente, { requestId: primero.requestId, decision: "autorizar", version: 1, totalCentavos: 600000 }, deps);
+          // Liberado: una operación, sin alerta (6,000.00 de 10,000.00 declarados).
+          assert.deepEqual(await uno("select tipo, monto_centavos::text as monto, clabe from pld_operaciones where origen_id = $1", [primero.requestId]),
+            { tipo: "pago_proveedor", monto: "600000", clabe: CLABE });
+          // Cancelado después: la operación se queda y sigue contando (2ª fr. XXIX: «pretenda realizar»).
+          await cancelarPagoProveedor(luis, { requestId: primero.requestId, motivo: "El proveedor pidió reprogramar" }, deps);
+          assert.equal((await uno<{ estado: string }>("select estado from supplier_payment_requests where id = $1", [primero.requestId])).estado, "cancelado");
+          assert.equal(await contar("select count(*)::int as n from pld_operaciones where company_id = $1", [beta]), 1);
+          assert.equal(await contar("select count(*)::int as n from pld_alertas where company_id = $1", [beta]), 0);
+          // El segundo de 6,000.00 cruza el perfil solo porque el cancelado cuenta: alerta y el pago sigue listo para pagar.
+          const segundo = await pago("6,000.00");
+          await resolverPagoProveedor(rosa, sesionCliente, { requestId: segundo.requestId, decision: "autorizar", version: 1, totalCentavos: 600000 }, deps);
+          assert.equal((await uno<{ estado: string }>("select estado from supplier_payment_requests where id = $1", [segundo.requestId])).estado, "listo_para_pagar");
           const alertas = await listarAlertasPld(cum);
           const excede = alertas.find((a) => a.companyId === beta && a.regla === "excede_perfil");
           assert.ok(excede);
           alertaBeta = excede.id;
           assert.equal(excede.observado.incluye_canceladas, true);
           assert.equal(excede.observado.declarado_centavos, 1000000);
+          assert.equal(excede.observado.suma_mes_centavos, 1200000);
           assert.equal(excede.venceEl > hoy, true);
+          assert.equal((await uno<{ origen_id: string }>("select o.origen_id from pld_alertas a join pld_operaciones o on o.id = a.operacion_id where a.id = $1", [alertaBeta])).origen_id, segundo.requestId);
           // Repetir la autorización no duplica la operación ni la alerta.
-          await assert.rejects(resolverPagoProveedor(rosa, sesionCliente, { requestId: grande.requestId, decision: "autorizar", version: 1, totalCentavos: 1200000 }, deps));
-          assert.equal(await contar("select count(*)::int as n from pld_operaciones where company_id = $1", [beta]), 1);
+          await assert.rejects(resolverPagoProveedor(rosa, sesionCliente, { requestId: segundo.requestId, decision: "autorizar", version: 1, totalCentavos: 600000 }, deps));
+          assert.equal(await contar("select count(*)::int as n from pld_operaciones where company_id = $1", [beta]), 2);
           assert.equal(await contar("select count(*)::int as n from pld_alertas where company_id = $1 and regla = 'excede_perfil'", [beta]), 1);
           assert.equal(await contar("select count(*)::int as n from audit_log where accion = 'pld_alerta_generada' and identificador = $1 and actor_tipo = 'sistema'", [alertaBeta]), 1);
 
@@ -751,7 +761,7 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           }
           assert.equal(lineas[0]?.manifiesto, "conservacion-61a");
           const conteos = new Map(lineas.filter((l) => "tabla" in l).map((l) => [String(l.tabla), Number(l.filas)]));
-          assert.equal(conteos.get("pld_operaciones"), 2);
+          assert.equal(conteos.get("pld_operaciones"), 3);
           assert.ok((conteos.get("supplier_payment_requests") ?? 0) >= 1);
           assert.ok(lineas.some((l) => l.origen === "pld_documentos" && l.sha256 === createHash("sha256").update(PDF).digest("hex")));
           assert.deepEqual(lineas.at(-1), { fin_de_pagina: 1, documentos: lineas.filter((l) => "documento" in l).length, siguiente: null });

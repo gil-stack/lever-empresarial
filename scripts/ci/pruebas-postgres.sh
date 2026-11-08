@@ -65,7 +65,8 @@ unset DATABASE_URL
   tests/personas/colaboradores-postgres.test.ts \
   tests/inicio/resumen-postgres.test.ts \
   tests/flujo/flujo-postgres.test.ts \
-  tests/pld/pld-postgres.test.ts
+  tests/pld/pld-postgres.test.ts \
+  tests/pld/reglas-postgres.test.ts
 estado=$?
 limpiar
 trap - EXIT
