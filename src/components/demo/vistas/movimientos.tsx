@@ -160,7 +160,19 @@ export function VistaMovimientos({
     <>
       <Cifras cifras={cifras} etiqueta="Movimientos en cifras" />
       <section className="hoja demo-hoja-filtros" aria-label="Filtros de movimientos">
-        <FiltrosAlCambiar action={base} periodo={filtros.periodo}>
+        <FiltrosAlCambiar
+          action={base}
+          periodo={filtros.periodo}
+          valores={{
+            persona: filtros.persona,
+            area: filtros.area,
+            tarjeta: filtros.tarjeta,
+            categoria: filtros.categoria,
+            comprobante: filtros.comprobante,
+            desde: filtros.desde ? String(filtros.desde / 100) : "",
+            agrupar: filtros.agrupar,
+          }}
+        >
           <div className="campo">
             <label htmlFor="movimientos-mes">Mes</label>
             <select id="movimientos-mes">

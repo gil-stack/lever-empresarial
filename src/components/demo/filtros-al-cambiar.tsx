@@ -11,7 +11,18 @@ const sinSuscripcion = () => () => {};
  * botón que la vista pone en `<noscript>`. Los periodos son botones de este formulario: un
  * toque lleva el periodo y el monto recién escrito en la misma navegación.
  */
-export function FiltrosAlCambiar({ action, periodo, children }: { action: string; periodo: string; children: ReactNode }) {
+export function FiltrosAlCambiar({
+  action,
+  periodo,
+  valores,
+  children,
+}: {
+  action: string;
+  periodo: string;
+  /** Lo que dice la dirección para cada campo con nombre, ya leído por el servidor. */
+  valores: Record<string, string>;
+  children: ReactNode;
+}) {
   const forma = useRef<HTMLFormElement>(null);
   const campoPeriodo = useRef<HTMLInputElement>(null);
   // Sin JavaScript el navegador manda el botón que envía (un periodo o «Filtrar», que lleva el actual) y este campo
@@ -27,7 +38,8 @@ export function FiltrosAlCambiar({ action, periodo, children }: { action: string
     let pendiente: ReturnType<typeof setTimeout> | undefined;
     let botonTocado: Element | null = null;
     const alTocar = (evento: PointerEvent) => {
-      botonTocado = evento.target instanceof Element ? evento.target.closest('button[type="submit"]') : null;
+      // Solo el botón principal hace clic: con el derecho o el central no llega ningún envío que esperar.
+      botonTocado = evento.button === 0 && evento.target instanceof Element ? evento.target.closest('button[type="submit"]') : null;
     };
     // El clic del botón solo llega si se suelta encima de él; con el dedo, el «change» del monto llega después de
     // soltar, así que la marca no se apaga ahí. Si se suelta en otra parte, o el navegador cancela el gesto para
@@ -61,6 +73,23 @@ export function FiltrosAlCambiar({ action, periodo, children }: { action: string
       nodo.removeEventListener("submit", alEnviar);
     };
   }, []);
+  // Los campos siguen a la dirección: al limpiar, con «Atrás» o «Adelante». El formulario no se vuelve a montar al
+  // navegar, y React no aplica un `defaultValue` nuevo a un selector ya montado ni a un campo que ya se editó.
+  const deLaDireccion = JSON.stringify(valores);
+  const aplicados = useRef(valores);
+  useEffect(() => {
+    const nodo = forma.current;
+    if (!nodo) return;
+    const nuevos = JSON.parse(deLaDireccion) as Record<string, string>;
+    for (const [nombre, valor] of Object.entries(nuevos)) {
+      const campo = nodo.elements.namedItem(nombre);
+      if (!(campo instanceof HTMLInputElement || campo instanceof HTMLSelectElement)) continue;
+      // Lo que se está escribiendo y aún no sale se queda: la navegación que llega salió antes de escribirlo.
+      const escribiendo = campo === document.activeElement && campo.value !== aplicados.current[nombre];
+      if (!escribiendo) campo.value = valor;
+    }
+    aplicados.current = nuevos;
+  }, [deLaDireccion]);
   return (
     <Form ref={forma} className="demo-filtros" action={action} scroll={false}>
       {/* El primer botón de envío es el que usa Enter: conserva el periodo actual en lugar de tomar «Hoy». */}

@@ -7,6 +7,7 @@
 //   node scripts/evidencia/ola-2b-navegacion.mjs barra       solo la barra de Movimientos contra fPlat.html (también va en lado)
 //   node scripts/evidencia/ola-2b-navegacion.mjs pantallas   3 temas × 1440/390: un h1, etiquetas, consola limpia, foco
 //   node scripts/evidencia/ola-2b-navegacion.mjs modulos     Movimientos y Fiscal clicados en 3 temas × 1440/390
+//   node scripts/evidencia/ola-2b-navegacion.mjs limpiar     solo «Limpiar filtros», «Atrás» y «Adelante» de Movimientos (también va en modulos)
 //   node scripts/evidencia/ola-2b-navegacion.mjs contraste   AA de cada texto contra la escena real
 //   node scripts/evidencia/ola-2b-navegacion.mjs cargando    «Cargando…» de una sección nueva mientras llega la página
 //   node scripts/evidencia/ola-2b-navegacion.mjs caida       con el Postgres apagado: el error de cada pantalla nueva
@@ -622,8 +623,9 @@ async function barraContraLaFuente(carpeta) {
         const etiqueta = `lado barra de Movimientos ${tema} ${ancho}${barraVisible ? " con la barra de desplazamiento visible" : ""}${conFiltro ? " con un filtro puesto" : ""}`;
         const mismoRenglon = Boolean(diseno && app) && JSON.stringify(app.renglones) === JSON.stringify(diseno.renglones);
         if (barraVisible) {
-          // Con 15 px menos, el diseño parte Categoría o no según el ancho de sus selectores, que miden su texto. Los de
-          // la app traen sus propios datos (un solo mes; Persona sin los proveedores de las tarjetas virtuales) y miden menos.
+          // Con 15 px menos, el diseño parte Categoría o no según el ancho de sus selectores. Los de la app miden menos: traen
+          // sus propios datos (un solo mes; Persona sin los proveedores de las tarjetas virtuales) y su caja, con flecha propia
+          // en lugar de la del sistema, es unos 4 px más angosta con el mismo texto.
           anotar(
             Boolean(diseno && app) && app.total === diseno.total,
             `${etiqueta}: los mismos ${diseno?.total} renglones que el diseño renderizado${mismoRenglon ? ", cada control en el suyo" : "; Categoría cabe en el primero porque los selectores de la app miden menos"}`,
@@ -712,6 +714,79 @@ async function diotContraLaFuente(carpeta) {
 }
 
 // ---------- Movimientos y Fiscal clicados en 3 temas × 1440/390 ----------
+/**
+ * N6: «Limpiar filtros», «Atrás» y «Adelante» dejan los campos como dice la dirección, y el filtro siguiente no
+ * arrastra la persona ni el monto de antes. Fotografía la página con los filtros puestos y tras limpiar.
+ */
+async function revisarLimpiar({ p, etiqueta, carpeta, tema, ancho }) {
+  const sufijo = process.env.SUFIJO_LIMPIAR ?? "";
+  const navegaciones = [];
+  const contarPeticion = (r) => {
+    if (!r.headers()["next-router-prefetch"] && /\/consola\/movimientos\?/.test(r.url())) navegaciones.push(r.url());
+  };
+  p.on("request", contarPeticion);
+  const persona = p.getByLabel("Persona", { exact: true });
+  const area = p.getByLabel("Área", { exact: true });
+  const monto = p.locator("#movimientos-desde");
+  const limpiar = p.getByRole("link", { name: "Limpiar filtros" });
+  const campos = async () => ({ persona: await persona.inputValue(), monto: await monto.inputValue() });
+  const consulta = () => new URL(p.url()).searchParams;
+  const sinConsulta = (url) => url.pathname.endsWith("/consola/movimientos") && url.search === "";
+  await p.goto(`${BASE}${ALTAMAR}/consola/movimientos`, { waitUntil: "networkidle" });
+  await persona.selectOption("Carlos Méndez");
+  await p.waitForURL(/persona=Carlos/);
+  await monto.click();
+  await p.keyboard.type("100");
+  await p.keyboard.press("Enter");
+  await p.waitForURL(/desde=100/);
+  await capturar(p, `${carpeta}/movimientos-limpiar-antes-${tema}-${ancho}${sufijo}.webp`);
+  await limpiar.click();
+  await p.waitForURL(sinConsulta);
+  await p.waitForTimeout(500);
+  const trasLimpiar = await campos();
+  await capturar(p, `${carpeta}/movimientos-limpiar-despues-${tema}-${ancho}${sufijo}.webp`);
+  anotar(trasLimpiar.persona === "" && trasLimpiar.monto === "", `${etiqueta} Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona y el monto vacíos`, JSON.stringify(trasLimpiar));
+  await p.goBack();
+  await p.waitForURL(/desde=100/);
+  await p.waitForTimeout(500);
+  const conAtras = await campos();
+  anotar(conAtras.persona === "Carlos Méndez" && conAtras.monto === "100", `${etiqueta} Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona y el monto de la dirección`, JSON.stringify(conAtras));
+  await p.goForward();
+  await p.waitForURL(sinConsulta);
+  await p.waitForTimeout(500);
+  const conAdelante = await campos();
+  anotar(conAdelante.persona === "" && conAdelante.monto === "", `${etiqueta} Movimientos: «Adelante» deja otra vez los campos vacíos`, JSON.stringify(conAdelante));
+  navegaciones.length = 0;
+  const unArea = await area.locator("option").nth(1).getAttribute("value");
+  await area.selectOption(unArea);
+  await p.waitForURL((url) => url.searchParams.get("area") === unArea);
+  await p.waitForTimeout(800);
+  anotar(
+    navegaciones.length === 1 && !consulta().get("persona") && !consulta().get("desde"),
+    `${etiqueta} Movimientos: el filtro siguiente (Área) va solo, sin la persona ni el monto de antes, con una navegación`,
+    `${navegaciones.length} navegación(es) · persona «${consulta().get("persona") ?? ""}» · desde «${consulta().get("desde") ?? ""}»`,
+  );
+  await p.goto(`${BASE}${ALTAMAR}/consola/movimientos?persona=Carlos+M%C3%A9ndez&desde=100`, { waitUntil: "networkidle" });
+  await limpiar.click();
+  await p.waitForURL(sinConsulta);
+  await p.waitForTimeout(500);
+  const desdeLaDireccion = await campos();
+  anotar(desdeLaDireccion.persona === "" && desdeLaDireccion.monto === "", `${etiqueta} Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos`, JSON.stringify(desdeLaDireccion));
+  p.off("request", contarPeticion);
+}
+
+/** Solo N6, en los temas y anchos pedidos: también fotografía el código de antes del arreglo (SUFIJO_LIMPIAR). */
+async function limpiarFiltros() {
+  for (const tema of TEMAS) {
+    for (const ancho of ANCHOS) {
+      const { nav, p, errores } = await abrir({ quien: "laura", tema, ancho });
+      await revisarLimpiar({ p, etiqueta: `limpiar ${tema} ${ancho}`, carpeta: `${DIR}/modulos`, tema, ancho });
+      anotar(errores.length === 0, `limpiar ${tema} ${ancho}: sin errores de consola`, errores.join(" | "));
+      await nav.close();
+    }
+  }
+}
+
 async function modulos() {
   const carpeta = `${DIR}/modulos`;
   mkdirSync(carpeta, { recursive: true });
@@ -791,13 +866,21 @@ async function modulos() {
       const conTeclado = await contar(() => p.keyboard.press("Enter"), (url) => url.searchParams.get("periodo") === "hoy" && url.searchParams.get("desde") === "4000");
       const foco = await p.evaluate(() => document.activeElement?.textContent?.trim() ?? "");
       anotar(conTeclado === 1 && (await periodoMarcado()) === "Hoy" && foco === "Hoy", `${etiqueta} Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí`, `${conTeclado} navegación(es) · foco «${foco}»`);
+      // Cuánto tarda el formulario en salir después del «change» del monto: de inmediato, o medio segundo si espera un clic.
+      const marcarEnvio = () =>
+        monto.evaluate((campo) => {
+          const marcas = (window.marcasN4 = {});
+          campo.addEventListener("change", () => (marcas.cambio = performance.now()));
+          campo.form.addEventListener("submit", () => (marcas.envio = performance.now()));
+        });
+      const cincoMilYTab = async () => {
+        await monto.focus();
+        await p.keyboard.type("5000");
+        await p.keyboard.press("Tab");
+      };
       // N4: bajar el ratón en «7 días» y soltarlo fuera (en el teléfono, arrastrar el dedo) no deja esperando al siguiente cambio.
       await abrirMovimientos();
-      await monto.evaluate((campo) => {
-        const marcas = (window.marcasN4 = {});
-        campo.addEventListener("change", () => (marcas.cambio = performance.now()));
-        campo.form.addEventListener("submit", () => (marcas.envio = performance.now()));
-      });
+      await marcarEnvio();
       const caja7 = await periodos.getByRole("button", { name: "7 días" }).boundingBox();
       const centro7 = { x: caja7.x + caja7.width / 2, y: caja7.y + caja7.height / 2 };
       if (ancho < 600) {
@@ -813,17 +896,30 @@ async function modulos() {
         await p.mouse.move(mapa.x + 20, mapa.y + mapa.height / 2, { steps: 5 });
         await p.mouse.up();
       }
-      const trasSoltar = await contar(async () => {
-        await monto.focus();
-        await p.keyboard.type("5000");
-        await p.keyboard.press("Tab");
-      }, (url) => url.searchParams.get("desde") === "5000");
+      const trasSoltar = await contar(cincoMilYTab, (url) => url.searchParams.get("desde") === "5000");
       const { cambio, envio } = await p.evaluate(() => window.marcasN4);
       anotar(
         trasSoltar === 1 && envio - cambio < 250 && (await periodoMarcado()) === "Todo el mes",
         `${etiqueta} Movimientos: ${ancho < 600 ? "arrastrar el dedo" : "soltar el ratón"} fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación`,
         `${Math.round(envio - cambio)} ms del cambio al envío · ${trasSoltar} navegación(es) · marcado «${await periodoMarcado()}»`,
       );
+      if (ancho >= 600) {
+        // N5: el clic derecho o el central en «7 días» no hacen clic: el siguiente cambio sale sin esperar.
+        for (const boton of ["right", "middle"]) {
+          await abrirMovimientos();
+          await marcarEnvio();
+          await p.mouse.move(centro7.x, centro7.y);
+          await p.mouse.down({ button: boton });
+          await p.mouse.up({ button: boton });
+          const veces = await contar(cincoMilYTab, (url) => url.searchParams.get("desde") === "5000");
+          const marcas = await p.evaluate(() => window.marcasN4);
+          anotar(
+            veces === 1 && marcas.envio - marcas.cambio < 250 && (await periodoMarcado()) === "Todo el mes",
+            `${etiqueta} Movimientos: el clic ${boton === "right" ? "derecho" : "central"} en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación`,
+            `${Math.round(marcas.envio - marcas.cambio)} ms del cambio al envío · ${veces} navegación(es) · marcado «${await periodoMarcado()}»`,
+          );
+        }
+      }
       // El botón oculto que usa Enter no es una parada de Tab, ni de ida ni de vuelta.
       const oculto = p.locator(".demo-filtros > button.solo-lector");
       await oculto.evaluate((boton) => {
@@ -834,6 +930,7 @@ async function modulos() {
       for (const tecla of [...Array(16).fill("Tab"), ...Array(16).fill("Shift+Tab")]) await p.keyboard.press(tecla);
       const focoOculto = await p.evaluate(() => window.focoOculto);
       anotar((await oculto.count()) === 1 && focoOculto === 0, `${etiqueta} Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab`, `${focoOculto} vez(ces)`);
+      await revisarLimpiar({ p, etiqueta, carpeta, tema, ancho });
       {
         // Sin JavaScript: el botón del periodo envía el formulario con lo demás, y el periodo va una sola vez.
         const sinJs = await abrir({ quien: "laura", tema, ancho, javaScript: false });
@@ -1229,6 +1326,7 @@ else if (modo === "lado") await lado();
 else if (modo === "barra") await barraContraLaFuente(`${DIR}/lado-a-lado`);
 else if (modo === "pantallas") await pantallas();
 else if (modo === "modulos") await modulos();
+else if (modo === "limpiar") await limpiarFiltros();
 else if (modo === "contraste") await contraste();
 else if (modo === "cargando") await cargando();
 else if (modo === "caida") {

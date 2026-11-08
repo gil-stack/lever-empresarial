@@ -108,37 +108,131 @@ test("Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegaci�
   expect(errores).toEqual([]);
 });
 
-test("Movimientos: bajar el ratón en «7 días» y soltarlo fuera no retrasa el siguiente filtro", async ({ page, context }) => {
+test("Movimientos: un gesto del ratón en «7 días» que no lo elige no retrasa el siguiente filtro", async ({ page, context }) => {
   const errores = vigilarConsola(page);
   await sesionDe(context, GIL);
-  await page.goto(`/c/${TALLER}/consola/movimientos`);
-  const navegaciones: string[] = [];
-  page.on("request", (peticion) => {
-    if (peticion.headers()["next-router-prefetch"]) return;
-    if (new URL(peticion.url()).searchParams.get("desde") === "5000") navegaciones.push(peticion.url());
-  });
-  // Cuánto tarda el formulario en salir después del «change» del monto: de inmediato, o medio segundo si espera un clic.
-  await page.locator("#movimientos-desde").evaluate((campo: HTMLInputElement) => {
-    const marcas = ((window as unknown as { marcasN4: Record<string, number> }).marcasN4 = {});
-    campo.addEventListener("change", () => (marcas.cambio = performance.now()));
-    campo.form!.addEventListener("submit", () => (marcas.envio = performance.now()));
-  });
-  const boton = await page.locator('[aria-label="Periodo"]').getByText("7 días", { exact: true }).boundingBox();
-  const titulo = await page.locator("#movimientos-mapa").boundingBox();
-  await page.mouse.move(boton!.x + boton!.width / 2, boton!.y + boton!.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(titulo!.x + 20, titulo!.y + titulo!.height / 2, { steps: 5 });
-  await page.mouse.up();
-  // Sin otro toque: al monto se llega con el teclado.
-  await page.locator("#movimientos-desde").focus();
-  await page.keyboard.type("5000");
-  await page.keyboard.press("Tab");
-  await expect(page).toHaveURL(/[?&]desde=5000(&|$)/);
-  await expect(page).not.toHaveURL(/[?&]periodo=7(&|$)/);
-  const { cambio, envio } = await page.evaluate(() => (window as unknown as { marcasN4: Record<string, number> }).marcasN4);
-  expect(envio - cambio, "milisegundos entre el cambio y el envío").toBeLessThan(250);
-  await page.waitForTimeout(1000);
-  expect(navegaciones, "un cambio, una navegación").toHaveLength(1);
+  // Ninguno de estos gestos hace clic en el periodo: soltar fuera, clic derecho y clic central.
+  const gestos: [string, (centro: { x: number; y: number }) => Promise<void>][] = [
+    [
+      "bajar en «7 días» y soltar fuera",
+      async (centro) => {
+        const titulo = await page.locator("#movimientos-mapa").boundingBox();
+        await page.mouse.move(centro.x, centro.y);
+        await page.mouse.down();
+        await page.mouse.move(titulo!.x + 20, titulo!.y + titulo!.height / 2, { steps: 5 });
+        await page.mouse.up();
+      },
+    ],
+    ...(["right", "middle"] as const).map((boton): [string, (centro: { x: number; y: number }) => Promise<void>] => [
+      `clic ${boton === "right" ? "derecho" : "central"} en «7 días»`,
+      async (centro) => {
+        await page.mouse.move(centro.x, centro.y);
+        await page.mouse.down({ button: boton });
+        await page.mouse.up({ button: boton });
+      },
+    ]),
+  ];
+  for (const [gesto, hacer] of gestos) {
+    await page.goto(`/c/${TALLER}/consola/movimientos`);
+    const navegaciones: string[] = [];
+    const contar = (peticion: Request) => {
+      if (peticion.headers()["next-router-prefetch"]) return;
+      if (new URL(peticion.url()).searchParams.get("desde") === "5000") navegaciones.push(peticion.url());
+    };
+    page.on("request", contar);
+    // Cuánto tarda el formulario en salir después del «change» del monto: de inmediato, o medio segundo si espera un clic.
+    await page.locator("#movimientos-desde").evaluate((campo: HTMLInputElement) => {
+      const marcas = ((window as unknown as { marcasN4: Record<string, number> }).marcasN4 = {});
+      campo.addEventListener("change", () => (marcas.cambio = performance.now()));
+      campo.form!.addEventListener("submit", () => (marcas.envio = performance.now()));
+    });
+    const boton = await page.locator('[aria-label="Periodo"]').getByText("7 días", { exact: true }).boundingBox();
+    await hacer({ x: boton!.x + boton!.width / 2, y: boton!.y + boton!.height / 2 });
+    // Sin otro toque: al monto se llega con el teclado.
+    await page.locator("#movimientos-desde").focus();
+    await page.keyboard.type("5000");
+    await page.keyboard.press("Tab");
+    await expect(page, gesto).toHaveURL(/[?&]desde=5000(&|$)/);
+    await expect(page, gesto).not.toHaveURL(/[?&]periodo=7(&|$)/);
+    const { cambio, envio } = await page.evaluate(() => (window as unknown as { marcasN4: Record<string, number> }).marcasN4);
+    expect(envio - cambio, `${gesto}: milisegundos entre el cambio y el envío`).toBeLessThan(250);
+    await page.waitForTimeout(1000);
+    page.off("request", contar);
+    expect(navegaciones, `${gesto}: un cambio, una navegación`).toHaveLength(1);
+  }
+  expect(errores).toEqual([]);
+});
+
+test("Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los campos como dice la dirección", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  await sesionDe(context, GIL);
+  const ruta = `/c/${TALLER}/consola/movimientos`;
+  const persona = page.getByLabel("Persona", { exact: true });
+  const area = page.getByLabel("Área", { exact: true });
+  const monto = page.locator("#movimientos-desde");
+  const limpiar = page.getByRole("link", { name: "Limpiar filtros" });
+  const consulta = () => new URL(page.url()).searchParams;
+  await page.goto(ruta);
+  const alguien = (await persona.locator("option").nth(1).getAttribute("value"))!;
+  const unArea = (await area.locator("option").nth(1).getAttribute("value"))!;
+  /** Después de limpiar, otro filtro solo lleva lo suyo: ni la persona ni el monto de antes. */
+  const elSiguienteVaSolo = async (desde: string) => {
+    await expect(persona, `${desde}: Persona vacía`).toHaveValue("");
+    await expect(monto, `${desde}: monto vacío`).toHaveValue("");
+    await area.selectOption(unArea);
+    await expect.poll(() => consulta().get("area")).toBe(unArea);
+    expect(consulta().get("persona") ?? "", `${desde}: el filtro siguiente no arrastra la persona`).toBe("");
+    expect(consulta().get("desde") ?? "", `${desde}: el filtro siguiente no arrastra el monto`).toBe("");
+  };
+
+  // A mano: persona con el selector y monto con Enter.
+  await persona.selectOption(alguien);
+  await expect.poll(() => consulta().get("persona")).toBe(alguien);
+  await monto.click();
+  await page.keyboard.type("100");
+  await page.keyboard.press("Enter");
+  await expect.poll(() => consulta().get("desde")).toBe("100");
+  await limpiar.click();
+  await expect.poll(() => new URL(page.url()).search).toBe("");
+  await expect(persona, "tras limpiar: Persona vacía").toHaveValue("");
+  await expect(monto, "tras limpiar: monto vacío").toHaveValue("");
+  // «Atrás» vuelve a la persona y el monto; «Adelante», a la lista sin filtros.
+  await page.goBack();
+  await expect.poll(() => consulta().get("desde")).toBe("100");
+  await expect(persona, "con «Atrás»: la persona de la dirección").toHaveValue(alguien);
+  await expect(monto, "con «Atrás»: el monto de la dirección").toHaveValue("100");
+  await page.goForward();
+  await expect.poll(() => new URL(page.url()).search).toBe("");
+  await elSiguienteVaSolo("a mano");
+
+  // Desde la dirección: los filtros llegan en la URL.
+  await page.goto(`${ruta}?persona=${encodeURIComponent(alguien)}&desde=100`);
+  await expect(persona).toHaveValue(alguien);
+  await expect(monto).toHaveValue("100");
+  await limpiar.click();
+  await expect.poll(() => new URL(page.url()).search).toBe("");
+  await elSiguienteVaSolo("desde la dirección");
+
+  // Lo que se escribe mientras llega otra navegación no se borra: se retiene la respuesta y se escribe el monto.
+  await page.goto(ruta);
+  let soltar = () => {};
+  const retenida = new Promise<void>((listo) => (soltar = listo));
+  await page.route(
+    (url) => url.searchParams.get("persona") === alguien,
+    async (peticion) => {
+      await retenida;
+      await peticion.continue();
+    },
+  );
+  await persona.selectOption(alguien);
+  await monto.click();
+  await page.keyboard.type("250");
+  soltar();
+  await expect.poll(() => consulta().get("persona")).toBe(alguien);
+  await expect(persona).toHaveValue(alguien);
+  await page.waitForTimeout(500);
+  await expect(monto, "el monto que se estaba escribiendo sigue ahí").toHaveValue("250");
+  await page.unrouteAll();
   expect(errores).toEqual([]);
 });
 

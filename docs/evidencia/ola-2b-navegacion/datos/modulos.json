@@ -66,8 +66,43 @@
   },
   {
     "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: el clic derecho en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "18 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: el clic central en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "12 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
     "texto": "modulos oscuro 1440 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
     "detalle": "0 vez(ces)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona y el monto vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona y el monto de la dirección",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «Adelante» deja otra vez los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: el filtro siguiente (Área) va solo, sin la persona ni el monto de antes, con una navegación",
+    "detalle": "1 navegación(es) · persona «» · desde «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
   },
   {
     "ok": true,
@@ -166,6 +201,31 @@
   },
   {
     "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona y el monto vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona y el monto de la dirección",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «Adelante» deja otra vez los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: el filtro siguiente (Área) va solo, sin la persona ni el monto de antes, con una navegación",
+    "detalle": "1 navegación(es) · persona «» · desde «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
     "texto": "modulos oscuro 390 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
     "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
   },
@@ -252,12 +312,47 @@
   {
     "ok": true,
     "texto": "modulos claro 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "12 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: el clic derecho en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
     "detalle": "13 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: el clic central en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
     "texto": "modulos claro 1440 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
     "detalle": "0 vez(ces)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona y el monto vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona y el monto de la dirección",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «Adelante» deja otra vez los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: el filtro siguiente (Área) va solo, sin la persona ni el monto de antes, con una navegación",
+    "detalle": "1 navegación(es) · persona «» · desde «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
   },
   {
     "ok": true,
@@ -347,12 +442,37 @@
   {
     "ok": true,
     "texto": "modulos claro 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "10 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "12 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
     "texto": "modulos claro 390 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
     "detalle": "0 vez(ces)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona y el monto vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona y el monto de la dirección",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «Adelante» deja otra vez los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: el filtro siguiente (Área) va solo, sin la persona ni el monto de antes, con una navegación",
+    "detalle": "1 navegación(es) · persona «» · desde «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
   },
   {
     "ok": true,
@@ -442,12 +562,47 @@
   {
     "ok": true,
     "texto": "modulos lever 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "15 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "13 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: el clic derecho en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "12 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: el clic central en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "9 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
     "texto": "modulos lever 1440 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
     "detalle": "0 vez(ces)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona y el monto vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona y el monto de la dirección",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «Adelante» deja otra vez los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: el filtro siguiente (Área) va solo, sin la persona ni el monto de antes, con una navegación",
+    "detalle": "1 navegación(es) · persona «» · desde «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
   },
   {
     "ok": true,
@@ -537,12 +692,37 @@
   {
     "ok": true,
     "texto": "modulos lever 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
-    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+    "detalle": "10 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
   },
   {
     "ok": true,
     "texto": "modulos lever 390 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
     "detalle": "0 vez(ces)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona y el monto vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona y el monto de la dirección",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «Adelante» deja otra vez los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: el filtro siguiente (Área) va solo, sin la persona ni el monto de antes, con una navegación",
+    "detalle": "1 navegación(es) · persona «» · desde «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\"}"
   },
   {
     "ok": true,

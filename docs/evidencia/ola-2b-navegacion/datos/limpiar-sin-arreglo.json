@@ -1,0 +1,62 @@
+[
+  {
+    "ok": false,
+    "texto": "limpiar oscuro 1440 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona y el monto vacíos",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\"}"
+  },
+  {
+    "ok": true,
+    "texto": "limpiar oscuro 1440 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona y el monto de la dirección",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\"}"
+  },
+  {
+    "ok": false,
+    "texto": "limpiar oscuro 1440 Movimientos: «Adelante» deja otra vez los campos vacíos",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\"}"
+  },
+  {
+    "ok": false,
+    "texto": "limpiar oscuro 1440 Movimientos: el filtro siguiente (Área) va solo, sin la persona ni el monto de antes, con una navegación",
+    "detalle": "1 navegación(es) · persona «Carlos Méndez» · desde «100»"
+  },
+  {
+    "ok": false,
+    "texto": "limpiar oscuro 1440 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "limpiar oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": false,
+    "texto": "limpiar oscuro 390 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona y el monto vacíos",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\"}"
+  },
+  {
+    "ok": true,
+    "texto": "limpiar oscuro 390 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona y el monto de la dirección",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\"}"
+  },
+  {
+    "ok": false,
+    "texto": "limpiar oscuro 390 Movimientos: «Adelante» deja otra vez los campos vacíos",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\"}"
+  },
+  {
+    "ok": false,
+    "texto": "limpiar oscuro 390 Movimientos: el filtro siguiente (Área) va solo, sin la persona ni el monto de antes, con una navegación",
+    "detalle": "1 navegación(es) · persona «Carlos Méndez» · desde «100»"
+  },
+  {
+    "ok": false,
+    "texto": "limpiar oscuro 390 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "limpiar oscuro 390: sin errores de consola",
+    "detalle": ""
+  }
+]
