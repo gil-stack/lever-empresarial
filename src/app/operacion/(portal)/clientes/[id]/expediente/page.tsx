@@ -50,7 +50,7 @@ export default async function ExpedienteCliente({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ aviso?: string; en?: string; tipo?: string; extranjera?: string }>;
+  searchParams: Promise<{ aviso?: string; en?: string }>;
 }) {
   const ctx = await exigirContextoOperacion();
   const [{ id }, busqueda] = await Promise.all([params, searchParams]);
@@ -141,8 +141,6 @@ export default async function ExpedienteCliente({
           version={borrador}
           companyId={id}
           error={error}
-          socioRechazado={busqueda.en === "accionistas-titulo" && busqueda.tipo === "moral" ? "moral" : "fisica"}
-          socioExtranjero={busqueda.en === "accionistas-titulo" && busqueda.extranjera === "1"}
         />
       ) : null}
       {borrador && !captura ? (

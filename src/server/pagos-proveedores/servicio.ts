@@ -3,6 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { leerCfdi, validarPdfPrivado, type CfdiLeido } from "../../dominio/cfdi";
 import {
   fechaEnMexico,
+  fechaValida,
   montoEscrito,
   textoPago,
   uuidPago,
@@ -18,6 +19,7 @@ import type { Sesion } from "../session/tipos";
 import { repositorioPg } from "./repositorio";
 import type { PagoVista, ProveedorPago, VersionPagoVista } from "../../dominio/pagos-vistas";
 import type { CargoNuevo, ContextoPagos, FiltrosPagos, LecturaPagosProveedores, RepositorioPagos } from "./tipos";
+import { CONTROL } from "../../dominio/control";
 
 export type ArchivoPago = { nombre: string; bytes: Uint8Array } | null;
 export type EntradaPago = {
@@ -423,7 +425,7 @@ async function subir(
   entrada: { archivo: { nombre: string; bytes: Uint8Array }; tipo: Subido["tipo"]; carpeta: string },
 ): Promise<Subido> {
   const nombre = entrada.archivo.nombre.replaceAll("\\", "/").split("/").pop()?.trim() ?? "";
-  if (!nombre || nombre.length > 180 || /[\u0000-\u001f\u007f]/.test(nombre)) throw new ErrorDeDominio("archivo_no_disponible");
+  if (!nombre || nombre.length > 180 || CONTROL.test(nombre)) throw new ErrorDeDominio("archivo_no_disponible");
   const documentoId = listo.id();
   const mime = entrada.tipo === "xml" ? "application/xml" : "application/pdf";
   const propuesta = `${ctx.empresa.operadorId}/${ctx.empresa.id}/${entrada.carpeta}/${documentoId}`;
@@ -466,7 +468,7 @@ function fechaDeEntrada(valor: unknown, original?: string): string {
 }
 
 function fechaOpcional(valor: unknown): string | null {
-  return typeof valor === "string" && /^\d{4}-\d{2}-\d{2}$/.test(valor) ? valor : null;
+  return fechaValida(valor) ? valor : null;
 }
 
 function resolver(deps?: DependenciasPagos) {

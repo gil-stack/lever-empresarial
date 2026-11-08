@@ -22,6 +22,7 @@ import {
   configurarColchon,
   declararSaldo,
   editarObligacion,
+  ErrorDeCaptura,
   leerAlertasPresupuesto,
   leerFlujoInicio,
   leerVistaCalendario,
@@ -492,7 +493,49 @@ async function escenario(url: string): Promise<void> {
   // Cancelado, la misma factura se puede volver a registrar.
   const otraFactura = "BBBBBBBB-CCCC-4DDD-8EEE-FFFFFFFFFFFF";
   const sustituida = await registrarCobroCfdi(admin, { bytes: factura(otraFactura), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA);
-  await cancelarCobro(admin, { id: sustituida.id, motivo: "Factura sustituida" }, AHORA);
+  // líder-N2: «ok 😀» son 4 caracteres (5 unidades UTF-16): antes pasaba el dominio y el CHECK
+  // `motivo_cancelacion` (5 a 500) lo rechazaba con un error genérico. Con 5 caracteres y su emoji, entra.
+  await assert.rejects(() => cancelarCobro(admin, { id: sustituida.id, motivo: "ok 😀" }, AHORA), (error: unknown) => error instanceof ErrorDeCaptura);
+  await cancelarCobro(admin, { id: sustituida.id, motivo: "ok 😀!" }, AHORA);
+  assert.equal(contar(url, `select char_length(motivo_cancelacion) from expected_collections where id = '${sustituida.id}'`), 5);
+  // bar-9 y bar-8: el nombre con «&amp;» se guarda con «&», y una referencia que da un carácter de control
+  // (&#x85;) se rechaza como XML incompleto en su campo, no como «La base no respondió».
+  const conNombre = (uuid: string, nombre: string) => new TextEncoder().encode(new TextDecoder().decode(factura(uuid)).replace('Nombre="Comercializadora Uno"', `Nombre="${nombre}"`));
+  const ampersand = await registrarCobroCfdi(admin, { bytes: conNombre("FFFFFFFF-0000-4000-8000-000000000001", "PEREZ &amp; ASOCIADOS"), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA);
+  assert.equal(ampersand.cliente, "PEREZ & ASOCIADOS");
+  assert.equal(consultarJson<string[]>(url, `select json_agg(cliente_nombre) from expected_collections where id = '${ampersand.id}'`)[0], "PEREZ & ASOCIADOS");
+  await cancelarCobro(admin, { id: ampersand.id, motivo: "Prueba del nombre con ampersand" }, AHORA);
+  // Con la serie, un identificador, la referencia que da un control («&#x9;») se rechaza como XML incompleto en su
+  // campo. serv-nuevo-3 y serv-nuevo-1: en el nombre, un texto libre, el salto literal vale un espacio (XML 1.0
+  // §3.3.3) y el control de una referencia («&#x85;») se quita.
+  const conSerie = (uuid: string, serie: string) => new TextEncoder().encode(new TextDecoder().decode(factura(uuid)).replace('Serie="F"', `Serie="${serie}"`));
+  await assert.rejects(
+    () => registrarCobroCfdi(admin, { bytes: conSerie("FFFFFFFF-0000-4000-8000-000000000002", "F&#x9;1"), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA),
+    (error: unknown) => error instanceof ErrorDeCaptura && error.errores.some((e) => e.campo === "xml"),
+  );
+  const partido = await registrarCobroCfdi(admin, { bytes: conNombre("FFFFFFFF-0000-4000-8000-000000000004", "Comercializadora\n&#x85;Uno"), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA);
+  assert.equal(consultarJson<string[]>(url, `select json_agg(cliente_nombre) from expected_collections where id = '${partido.id}'`)[0], "Comercializadora Uno");
+  await cancelarCobro(admin, { id: partido.id, motivo: "Prueba del nombre partido" }, AHORA);
+  // serv-nuevo-2: una entidad sin declarar («&x;») vuelve mal formado el XML: «El archivo no es un XML de CFDI válido.».
+  await assert.rejects(
+    () => registrarCobroCfdi(admin, { bytes: conNombre("FFFFFFFF-0000-4000-8000-000000000003", "Cliente &x; Lab"), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA),
+    (error: unknown) => error instanceof ErrorDeCaptura && error.errores.some((e) => e.campo === "xml" && e.mensaje === "El archivo no es un XML de CFDI válido."),
+  );
+  // bar-1: el RFC del cliente escrito con guion o espacio se guarda como se validó, sin separadores (antes, el
+  // servidor lo validaba normalizado y guardaba lo escrito, y el CHECK `expected_collections_rfc` lo rechazaba).
+  for (const [escrito, alta] of [["EKU900317-3C9", randomUUID()], ["eku900317 3c9", randomUUID()]] as const) {
+    const conGuion = await registrarCobro(admin, { clienteNombre: "Cliente con guion", clienteRfc: escrito, concepto: "Asesoría", monto: "100.00", fechaProbable: "2026-11-20", referencia: "", altaId: alta }, AHORA);
+    assert.equal(consultarJson<string[]>(url, `select json_agg(cliente_rfc) from expected_collections where id = '${conGuion.id}'`)[0], "EKU9003173C9");
+    await cancelarCobro(admin, { id: conGuion.id, motivo: "Prueba del RFC con guion" }, AHORA);
+  }
+  // base-N21: lo escrito que no queda en un RFC («-», « - - ») es error de su campo, no un RFC vacío que la base rechaza.
+  // serv-nuevo-1: en un identificador el control invisible no se quita: es error de forma.
+  for (const escrito of ["-", " - - ", "EKU900317\u00853C9"]) {
+    await assert.rejects(
+      () => registrarCobro(admin, { clienteNombre: "Cliente sin RFC", clienteRfc: escrito, concepto: "Asesoría", monto: "100.00", fechaProbable: "2026-11-20", referencia: "", altaId: randomUUID() }, AHORA),
+      (error: unknown) => error instanceof ErrorDeCaptura && error.errores.some((e) => e.campo === "clienteRfc"),
+    );
+  }
   await registrarCobroCfdi(admin, { bytes: factura(otraFactura), fechaProbable: "2026-11-26", altaId: randomUUID() }, AHORA);
 
   // Correo semanal ----------------------------------------------------------------

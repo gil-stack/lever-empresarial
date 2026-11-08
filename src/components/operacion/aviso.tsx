@@ -199,14 +199,15 @@ export function tonoDelAviso(codigo: string): "asentado" | "revisar" {
   return ASENTADOS.has(codigo) ? "asentado" : "revisar";
 }
 
-export function AvisoOperacion({ codigo, detalle }: { codigo?: string; detalle?: string }) {
+/** `id` es para el formulario que muestra su propio aviso sin recargar la página (y no repite el de la página). */
+export function AvisoOperacion({ codigo, detalle, id = ID_AVISO }: { codigo?: string | null; detalle?: string; id?: string }) {
   if (!codigo) return null;
   const mensaje =
     MENSAJES[codigo] ??
     (codigo.startsWith("dato_invalido_") ? "Revisa el campo marcado: el dato no tiene el formato esperado." : null) ??
     "No se pudo completar. Revisa los datos e inténtalo de nuevo.";
   return (
-    <div id={ID_AVISO} className="operacion-aviso">
+    <div id={id} className="operacion-aviso">
       <Aviso tono={tonoDelAviso(codigo)} titulo={mensaje}>
         {detalle ? <p>{detalle}</p> : null}
       </Aviso>
@@ -214,8 +215,11 @@ export function AvisoOperacion({ codigo, detalle }: { codigo?: string; detalle?:
   );
 }
 
-/** Marca un campo como inválido y lo liga al aviso cuando el error de la página es suyo. `dato_invalido_<campo>` es de ese campo. */
-export function errorDelCampo(codigo: string | undefined, campo: string) {
+/**
+ * Marca un campo como inválido y lo liga al aviso cuando el error es suyo. `dato_invalido_<campo>` es de
+ * ese campo. Un formulario que muestra su propio aviso (sin recargar la página) pasa el id de ese aviso.
+ */
+export function errorDelCampo(codigo: string | null | undefined, campo: string, idAviso = ID_AVISO) {
   if (!codigo || (CAMPO[codigo] ?? codigo.replace(/^dato_invalido_/, "")) !== campo) return {};
-  return { "aria-invalid": true, "aria-describedby": ID_AVISO } as const;
+  return { "aria-invalid": true, "aria-describedby": idAviso } as const;
 }

@@ -4,6 +4,7 @@ import type { ContextoConEmpresa, ContextoDePersonal, ContextoDeTenant } from ".
 import type { Consulta } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { contieneMaterialProhibido } from "./material";
+import { CONTROL } from "../../dominio/control";
 
 /**
  * La única función que escribe la bitácora. Cada acción viene de un catálogo
@@ -232,7 +233,7 @@ export function preparar(actor: Actor, hecho: Hecho): unknown[] {
   }
   if (actor.origen !== null && !ORIGEN.test(actor.origen)) throw new ErrorDeDominio("auditoria_no_disponible");
   const motivo = hecho.motivo?.trim() ? hecho.motivo.trim() : null;
-  if (motivo && (motivo.length > 500 || /[\u0000-\u001f\u007f]/.test(motivo) || contieneMaterialProhibido(motivo))) {
+  if (motivo && (motivo.length > 500 || CONTROL.test(motivo) || contieneMaterialProhibido(motivo))) {
     throw new ErrorDeDominio("auditoria_no_disponible");
   }
   const cambio = cambioPermitido(regla.cambio, hecho.cambio ?? null);

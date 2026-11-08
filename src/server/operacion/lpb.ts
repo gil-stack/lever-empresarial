@@ -4,7 +4,7 @@ import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
 import { conContexto } from "../../nucleo/db";
 import { TOPE_ARCHIVO_BYTES } from "../../dominio/archivos";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
-import { hoyEnMexico, leerListaBloqueadas, textoOperativo, uuidValido } from "../../dominio/operacion";
+import { fechaDeCalendario, hoyEnMexico, leerListaBloqueadas, textoOperativo, uuidValido } from "../../dominio/operacion";
 import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
@@ -243,13 +243,13 @@ export async function registrarReporte(
   const folio = textoOperativo(entrada.folio, 80);
   if (!folio) throw new ErrorDeDominio("dato_invalido_folio");
   const hoy = hoyEnMexico(new Date());
-  const presentadoEl = typeof entrada.presentadoEl === "string" && /^\d{4}-\d{2}-\d{2}$/.test(entrada.presentadoEl) && entrada.presentadoEl <= hoy
+  const presentadoEl = typeof entrada.presentadoEl === "string" && fechaDeCalendario(entrada.presentadoEl) && entrada.presentadoEl <= hoy
     ? entrada.presentadoEl
     : null;
   if (!presentadoEl) throw new ErrorDeDominio("dato_invalido_presentadoEl");
   const aviso = entrada.avisoClienteEl === "" || entrada.avisoClienteEl === null || entrada.avisoClienteEl === undefined
     ? null
-    : typeof entrada.avisoClienteEl === "string" && /^\d{4}-\d{2}-\d{2}$/.test(entrada.avisoClienteEl) && entrada.avisoClienteEl <= hoy
+    : typeof entrada.avisoClienteEl === "string" && fechaDeCalendario(entrada.avisoClienteEl) && entrada.avisoClienteEl <= hoy
       ? entrada.avisoClienteEl
       : undefined;
   if (aviso === undefined) throw new ErrorDeDominio("dato_invalido_avisoClienteEl");

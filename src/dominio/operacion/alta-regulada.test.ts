@@ -94,6 +94,8 @@ describe("CSV de la Lista de Personas Bloqueadas", () => {
       "Persona,ABC,,fisica,",
       "Empresa SA,,LOPM700101HDFPZR01,moral,",
       "Persona,,,fisica,2026-02-30",
+      // bar-4: el año 0 no existe en el tipo `date` de la base (antes tumbaba toda la carga con 22008).
+      "Persona,,,fisica,0000-01-01",
       ",,,fisica,",
       "\"Sin cerrar,,,fisica,",
       "Persona,,,fisica",

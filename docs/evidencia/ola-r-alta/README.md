@@ -6,16 +6,16 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r-alta
 | --- | --- | --- |
 | Flujos 0-12 | 147 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
 | Pantallas (3 temas × 1440/390) y contraste AA medido | 60 comprobaciones en verde, 0 en rojo; contraste mínimo 5.00 (Lever 1440) | `datos/resultados-pantallas-contraste.json` |
-| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal) | 92 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt` |
+| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;») | 129 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
 
-Corrida del 2026-11-08 sobre el head de este PR, con los arreglos de las cinco revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`), sobre una base migrada de cero con la 0028 final. Las fases de flujos y pantallas corrieron antes de agregar el borde del `textarea` con error (`componentes.css`); ese estilo solo se ve en un motivo rechazado, que esas fases no muestran, y las regresiones corrieron con él.
+Corrida del 2026-11-08 sobre el head de este PR, con los arreglos de las seis revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`), sobre una base migrada de cero con la 0028 final. Las tres fases corrieron sobre el código final de la sexta revisión.
 
 ## Cómo se corre
 
 Puertos de esta línea: Postgres 5551, `next start` 4811 (y 3151 para la base del arranque de la quinta revisión), emulador de Blob 4894. Nada toca Neon, Blob ni Resend reales: la base es un Postgres 17 local y el almacén privado es el emulador de `tests/e2e/blob-local`, que el preload desvía solo en el servidor de la prueba.
 
 1. Postgres 17 desechable en `127.0.0.1:5551` (Homebrew: `initdb` y `pg_ctl -o "-p 5551"`).
-2. Emulador de Blob en 4894: `iniciarBlobLocal(4894, <token falso del almacén «e2elocal»>)` de `tests/e2e/blob-local/servidor.ts`.
+2. Emulador de Blob en 4894: `iniciarBlobLocal(4894, <token falso del almacén «e2elocal»>)` de `tests/e2e/blob-local/servidor.ts`. La sexta revisión le pide con `POST /simular` que el borrado responda 503 o no responda, y lo regresa a la normalidad.
 3. Variables (sin valores reales, todos locales):
    - `ESTADO`: archivo fuera del repositorio. Guarda semillas TOTP, sesiones y el enlace de una invitación; nada de eso se imprime.
    - `DUENO_URL`: el Postgres administrador local; `preparar.ts` crea ahí la base `ola_r_alta`.
@@ -100,6 +100,7 @@ Al enviar, la base rechaza dos personas físicas con el mismo nombre normalizado
 
 - Un nombre escrito distinto (otra grafía, un apellido de menos o un segundo nombre) no se detecta.
 - Una fecha de nacimiento capturada distinta tampoco (base-N18): el pasaporte con un día de diferencia respecto de la fecha de la CURP no empata y la misma persona pasa como dos. Cumplimiento lo revisa al cotejar la fecha capturada contra el documento (el pasaporte o la identificación del expediente) antes de dictaminar.
+- Una CURP alterada o inventada tampoco (base-N19). La regla confía en la CURP: si la misma persona aparece dos veces con CURP distintas (una con un carácter cambiado o inventada), la toma por dos mexicanos homónimos nacidos el mismo día y no la junta. La excepción no se limita a mexicanos, porque volvería a rechazar homónimos extranjeros reales. Cumplimiento coteja la CURP contra el documento de identidad o contra RENAPO antes de dictaminar.
 
 Esos casos dependen de la declaración del representante sobre los propietarios reales y de la revisión de Cumplimiento.
 
@@ -129,7 +130,7 @@ Corre con la conexión de la dueña (`scripts/personal-por-la-duena.ts`): desde 
 
 **Si la primera corrida no entregó el enlace (base-N15).** El correo no salió y no se pidió `--mostrar-enlace`, nadie lo guardó o la invitación venció: mientras la Administración del operador solo esté invitada (nadie activo), otra corrida con los mismos correos emite un enlace nuevo por persona y el anterior deja de servir. Un correo distinto, solo o junto a los mismos, no entra (`arranque_con_otros_correos`) y no emite nada. Es la misma transacción y el mismo candado del personal; cada enlace queda en la bitácora (`emitir_invitacion`) con `corrido_por` y `ejecutado_por`. Con Administración activa ya no reenvía: las demás personas se invitan desde la pantalla Personal. En Preview (0 personal) basta con volver a correrlo con `--mostrar-enlace`.
 
-**Quién lo corrió (N8).** `personal:migrar-variable`, `personal:rol` y `empresa:alta` exigen `--quien-corre` con el correo de la persona que los corre. La bitácora guarda ese correo (`corrido_por`) junto con `ejecutado_por = session_user`. `session_user` es la conexión, no la persona: en Neon, quien use `DATABASE_URL_UNPOOLED` es siempre la dueña de la base (`neondb_owner`), así que por sí solo no dice qué persona corrió el comando.
+**Quién lo corrió (N8).** `personal:migrar-variable`, `personal:rol` y `empresa:alta` exigen `--quien-corre` con el correo de la persona que los corre. La bitácora guarda ese correo (`corrido_por`) junto con `ejecutado_por = session_user`. `session_user` es la conexión, no la persona: en Neon, quien use `DATABASE_URL_UNPOOLED` es siempre la dueña de la base (`plataforma_owner` en este proyecto), así que por sí solo no dice qué persona corrió el comando.
 
 `personal:rol` sirve cuando nadie más del personal administra al personal: nadie se da un rol a sí mismo por pantalla. La función `personal_rol_por_comando` (0028) solo la ejecuta la dueña de la base; la aplicación no puede llamarla con ningún rol. Deja el evento `rol_personal_asignado` o `rol_personal_retirado` en la bitácora, como acto del sistema con origen `comando` y el motivo escrito. Respeta la 50ª, no deja al personal sin administración y, si otra persona ya administra al personal, pide usar la pantalla Personal. El flujo 0 lo corre como se hará tras el despliegue.
 
@@ -238,6 +239,54 @@ Verificación en rojo (cada regresión falla con `c67424a`):
 - serv-N17: el mínimo de 10 vale para todos los motivos libres que lee otra persona en el flujo (incluidos los rechazos de activación y comisión, que comparten el diálogo). Las tablas de activaciones y comisiones son de migraciones anteriores con datos: ahí el mínimo es solo del servidor y del formulario, sin CHECK nuevo. El motivo opcional de un dictamen aprobado sigue sin mínimo.
 - base-N15: se reemite solo a correos que ya son Administración invitada; un subconjunto de esos correos vale (reemite solo a esos).
 
+### Sexta revisión (re-verificación sobre `701bc25`)
+
+Los revisores cerraron serv-N9, base-N15 a base-N18 y serv-N15 a serv-N17. Quedaban base-N19, base-N20 (= serv-N18), y el resto de serv-N15 y serv-N16. Salieron también un hallazgo propio (sexta-N1), tres del líder (líder-N1 a líder-N3) y un barrido de los mismos patrones en el resto del PR (bar-1 a bar-10). Sus arreglos abrieron cinco más: base-N21, base-N22 y serv-nuevo-1 a serv-nuevo-3. Todo va en este PR. La 0028 solo cambia en un comentario (base-N19).
+
+Verificación en rojo. Cada regresión se corrió contra `701bc25`: un árbol aparte con el código de ese commit y las pruebas nuevas; para la base, una variante por cambio.
+
+- **Unitarias**: fallan base-N20 («Revisar 😀» pasa el mínimo), sexta-N1, líder-N2, bar-3 a bar-10, serv-nuevo-2 y serv-nuevo-3. En serv-N16-resto el borrado vuelve a los 10.6 s con el 503 y a los 9.9 s con la conexión rechazada, con un tope de 5 s.
+- **Postgres**: cada cambio falla solo, y con el error de la base que describe su hallazgo. base-N20 espera `motivo_corto` y recibe el CHECK 23514; bar-1 choca con `expected_collections_rfc`; bar-2, con `kyb_documentos_vigencia`; bar-3, con `kyb_versiones_textos`; bar-5, con `kyb_versiones_correo`; bar-4 da 22008 con el 30 de febrero o el año 0. En el portal fallan «Revisar 😀» y los renglones con CRLF.
+- **e2e con la interfaz de `701bc25`**: fallan las dos pruebas cambiadas. En una, el diálogo de Aprobaciones se cierra y pierde el motivo; en la otra, el socio extranjero vuelve sin lo capturado.
+- **bar-3**: con la regla vieja pasan 32 de los 64 controles que rechaza la base (U+0080 a U+009F).
+- **base-N21, base-N22 y serv-nuevo-1 a serv-nuevo-3** salieron del código nuevo de esta ronda: sus pruebas fallan con la versión anterior de ese código. Por ejemplo, en base-N21 el RFC «-» llega a la base y vuelve con 23514.
+- **líder-N3**: la ventana es rara. En `701bc25`, `flujo-postgres` dio 0 fallas en 30 corridas en reposo y 0 en 30 con 18 núcleos ocupados; con el arreglo, 0 en 30. La falla se vio una vez. Por eso el arreglo se trae idéntico al del #60 y no lleva una prueba propia.
+
+| Hallazgo | Arreglo | Prueba |
+| --- | --- | --- |
+| **base-N20 = serv-N18 (P2)** `motivoEscrito` contaba unidades UTF-16. «Revisar 😀» son 10 unidades: pasaba el navegador y el servidor, pero la base cuenta 9 caracteres (`char_length`) y el CHECK respondía «La base no respondió». Además, en Aprobaciones el diálogo de «Rechazar» se cerraba y el motivo se perdía | Cuenta caracteres (`[...texto].length`). `traducirErrorDeBase` traduce a `motivo_corto` los CHECK de motivo (`company_suspensions_textos`, `lpb_coincidencias_textos` y `kyb_dictamenes_motivo`). «Rechazar» (activación, comisión y suspensión) pasa por `rechazarConMotivoAccion` con `useActionState`: si el motivo no pasa, el diálogo sigue abierto con lo escrito, el aviso ligado al campo y el foco en él | `formulario.test.ts` «cuenta caracteres». `db.test.ts`: los tres CHECK dan `motivo_corto`. Postgres: suspensión, dictamen y caso de la Lista con «Revisar 😀» → `motivo_corto`; activación y comisión en `portal-postgres`. e2e «prospecto → pedir activación…» con el diálogo. Capturas `r51` a `r55` |
+| **base-N19 (docs)** Una CURP alterada o inventada evade la regla de la misma persona | README «Límites que quedan» y un comentario sobre la regla en la 0028: la regla confía en la CURP, y Cumplimiento la coteja contra la identificación o RENAPO antes de dictaminar | — |
+| **serv-N15-resto (P3)** Tras rechazar un dato del socio extranjero, el formulario volvía en «Extranjera» pero vacío. Devolver lo capturado por la dirección habría puesto datos personales en la URL | `agregarAccionistaAccion` pasa a `useActionState` (`formulario-accionista.tsx`): ante un rechazo, el servidor devuelve lo capturado (`CAMPOS_SOCIO`) y el aviso, sin redirigir. El formulario se vuelve a montar con todo, el campo marcado y el foco en él. La dirección ya no lleva `extranjera=1` ni `tipo=moral` | e2e «tras un rechazo del socio extranjero el formulario vuelve con todo lo capturado…». Recorrido: RFC «XX», nombre en blanco y capital «abc», en física y en moral; vuelve con país, documento, fecha, nombre y porcentajes, sin datos en la dirección; corregido, entra. Capturas `r56` a `r62` |
+| **serv-N16-resto (P3)** Con Blob respondiendo 503 o rechazando la conexión, el borrado del huérfano tardaba unos 10 s. `@vercel/blob` 2.8 reintenta con espera creciente y solo nota el `abort()` al empezar el siguiente intento | El borrado compite con el reloj (`Promise.race` contra el tope de 5 s). Al agotarse, aborta y sigue; el registro sale con `causa: "tiempo_agotado"`. `Promise.race` maneja la promesa que pierde, así que no queda un rechazo sin atender | `constancia-borrar.test.ts` con 200, sin respuesta, conexión rechazada y 503: vuelve dentro del tope, deja su registro y ningún reloj colgado. Recorrido: el emulador simula el 503 y la falta de respuesta (`POST /simular`), y un documento con un representante ajeno hace que la fila no entre. La página vuelve en 5.1 s en los dos casos, sin documento y con la clave en el registro (`datos/sexta-huerfanos.json`). Capturas `r63` y `r64` |
+| **sexta-N1 (P2, propio)** Un motivo escrito con Enter (el navegador manda CRLF) pasaba el servidor y la base lo rechazaba: ningún texto de la 0028 admite saltos de línea | `textoMultilinea` y `motivoEscrito` juntan los renglones en uno, con un espacio, y miden lo que se guarda | `formulario.test.ts` «junta los renglones…». Postgres: motivos con CRLF; en `portal-postgres`, el detalle de una alerta queda «Seguimiento operativo». Recorrido: el motivo con Enter entra y se guarda en un renglón |
+| **líder-N1 (docs)** README: la dueña en Neon no es `neondb_owner` | «`plataforma_owner` en este proyecto» | — |
+| **líder-N2 (P3)** `textoPago` (pagos) y `textoLimpio` (flujo) contaban unidades UTF-16: «Revisar 😀» como excepción y «ok 😀» al cancelar un cobro pasaban el servidor, y la base los rechazaba con un error genérico | Cuentan caracteres, en el mínimo y en el máximo | `conteo-de-caracteres.test.ts`. Pagos: «los motivos cuentan caracteres como la base…». Flujo: cancelar con «ok 😀». Capturas `r68`, `r71` y `r72` |
+| **líder-N3 (P3)** `rechazarFacturaViva` podía tomar la fila de su propia alta como «otro cobro vivo» si el primer envío confirmaba entre `altaPrevia` y la lectura | `and id <> $3` y el id de la alta, copiado byte por byte del mismo arreglo del #60 (`3b14c89`), sin los cambios de `transaccion?` | Las 90 corridas de arriba |
+| **bar-1 (P2)** El cobro manual guardaba el RFC como se escribió («EKU900317-3C9») y el CHECK `expected_collections_rfc` lo rechazaba | Se guarda el RFC normalizado, el mismo que se valida | `entradas.test.ts`. Flujo: queda «EKU9003173C9». Captura `r67` |
+| **bar-2 (P2)** Un documento del expediente con «Vigente hasta» antes de «Emitido el» subía el archivo y el CHECK respondía «La base no respondió» | `dato_invalido_vigenteHasta` antes de subir nada, con el campo marcado | Postgres «expediente…»: rechazado sin subir el archivo ni dejar fila. Recorrido: el poder de Ébano del 1 de octubre que vence el 30 de septiembre, sin documento nuevo. Captura `r65` |
+| **bar-3 (P3)** Catorce validadores tenían su propia regla de controles sin C1 (U+0080 a U+009F); el `[[:cntrl:]]` de la base (`pg_c_utf8`) sí los incluye | `src/dominio/control.ts`: una sola `CONTROL` (C0, DEL y C1), `CONTROL_SALVO_RENGLONES` y `sinControles`, en los catorce validadores y en `lista-69b.ts` | Postgres «caracteres de control…»: `CONTROL` coincide con `[[:cntrl:]] COLLATE "pg_c_utf8"` de U+0001 a U+FFFF. `control.test.ts`. Razón social del alta con U+0093 → `razon_social_invalida` |
+| **bar-4 (P3)** Las fechas del #59 se validaban solo por su forma: el 30 de febrero o el año 0 llegaban a la base (22008) | `fechaDeCalendario`: año ≥ 1, meses y días reales y bisiestos. Aplica a la emisión, la vigencia, la constitución, el nacimiento, lo presentado, el aviso al cliente y la fecha del CSV de la Lista | `formulario.test.ts` «fecha de calendario». `alta-regulada.test.ts`: CSV con 0000-01-01. Postgres, una variante por fecha |
+| **bar-5 (P3)** El correo del expediente se medía antes de pasarlo a minúsculas y no revisaba controles | Minúsculas primero, `!CONTROL` y `[...correo].length <= 254` | Postgres «expediente…»: un control y un correo con «İ» que en minúsculas pasa de 254 → `dato_invalido_correo`, sin llegar al CHECK `kyb_versiones_correo` |
+| **bar-6 (P3)** El nombre de la constancia, cortado a 180, podía terminar en espacio (CHECK `documents_nombre_presente`) | Quita controles, corta y vuelve a recortar | `proveedores.test.ts` |
+| **bar-7 (P3)** Un total del CFDI o un monto de pago de más de 9e15 centavos pasaba el servidor | Tope de 9e15, el del CHECK | `cfdi.test.ts`: el total y «el monto escrito de un pago cabe en la base» |
+| **bar-8 (P3)** El RFC receptor del CFDI no se revisaba y la serie y el folio guardaban controles («&#x9;» literal) | El RFC receptor con la forma de un RFC; la serie y el folio con un control → `cfdi_datos_incompletos` | `cfdi.test.ts`. Flujo: serie `&#x9;` rechazada. Captura `r69` |
+| **bar-9 (P3)** Con `processEntities: false`, «&amp;» quedaba literal en los nombres («PEREZ &amp; ASOCIADOS») | `decodificarReferencias` en una sola pasada (las cinco predefinidas y las numéricas), sin expandir el DOCTYPE. `&amp;amp;` da `&amp;` | `cfdi.test.ts`. Flujo: la base guarda «PEREZ & ASOCIADOS». Captura `r70` |
+| **bar-10 (P3)** Las fechas del contrato y de la obligación de un pago aceptaban días que no existen | `fechaValida` con `fechaDeCalendario` → `fecha_invalida` | `cfdi.test.ts` «las fechas del pago existen en el calendario». Pagos: `agregarContratoProveedor` con una fecha imposible |
+| **base-N21 (P2, regresión de bar-1)** Un RFC «-» o « - - » quedaba vacío al normalizarse y llegaba así a la base, que respondía «La base no respondió» | Vacío al escribirse → sin RFC. Lo escrito que no queda en un RFC → error en su campo | `entradas.test.ts`. Flujo: «-», « - - » y un RFC con U+0085. Captura `r66` |
+| **base-N22 (P3)** El máximo de `textoMultilinea` y `textoOperativo` contaba unidades UTF-16: rechazaba textos que la base sí acepta | Cuenta caracteres | `formulario.test.ts`: 260 emojis caben en un motivo de 500 y 151 en un texto de 300 |
+| **serv-nuevo-1 (P3)** Tras bar-3, un control invisible pegado en un texto libre rechazaba todo el formulario | Los textos libres quitan los controles al limpiar; los identificadores los siguen rechazando (ver «Decisiones») | `control.test.ts`. Postgres: un folio con U+0085 se guarda limpio. Flujo: un nombre partido con `&#x85;` queda «Comercializadora Uno» |
+| **serv-nuevo-2 (P3)** Una entidad sin declarar en el CFDI («&x;») se guardaba literal | `referencia_no_declarada` → «El archivo no es un XML de CFDI válido.» | `cfdi.test.ts` «referencias de entidad». Flujo |
+| **serv-nuevo-3 (P3, regresión de bar-8)** Un tab o un salto de línea literal en un atributo se rechazaba como control | Valen un espacio, como manda XML 1.0 §3.3.3. Escrito como referencia (`&#x9;`), el control sigue rechazándose en la serie | `cfdi.test.ts` «los saltos literales valen un espacio…» |
+
+**Decisiones de la sexta revisión.**
+
+- base-N20: además de contar caracteres, los CHECK de motivo se traducen a `motivo_corto`. Si el servidor y la base vuelven a diferir, la persona lee el aviso del campo y no «La base no respondió».
+- sexta-N1: los renglones se juntan en el servidor; la base sigue sin admitir saltos de línea y la 0028 no cambia.
+- bar-3 y serv-nuevo-1 (decisión del líder): los textos libres quitan los controles. Son los motivos, conceptos, referencias y detalles de Operación, pagos y flujo, y los nombres del CFDI. Los identificadores los rechazan: RFC, CURP, la serie y el folio del CFDI, la razón social del alta, los nombres de personas y áreas, el renglón de la Lista y el nombre de un PDF privado. `server/correo/configuracion.ts` conserva su regla: valida una variable de entorno que no llega a la base.
+- bar-8: el RFC emisor no se revisa por forma: no se guarda y ya se compara con el de la empresa.
+- bar-9: las referencias se decodifican a mano. Con `processEntities: true`, `fast-xml-parser` también expande las entidades del DOCTYPE (doc vigente por ctx7).
+- líder-N3: solo los cambios de `rechazarFacturaViva` del #60, idénticos; los de `transaccion?` no.
+
 ## Flujo → captura → qué verifica en la base
 
 | Flujo | Captura | Qué verifica en la base |
@@ -317,6 +366,24 @@ Verificación en rojo (cada regresión falla con `c67424a`):
 | serv-N17 | `r48-sn17-motivo-corto-aviso-en-el-campo` | Sin el mínimo del navegador (una petición armada a mano), el servidor responde `motivo_corto`: «El motivo lleva al menos 10 caracteres…», con el campo `aria-invalid` y ligado al aviso; tampoco queda solicitud. |
 | base-N15 | `r49-sn15b-enlace-anterior-ya-no-sirve` | Base aparte con un operador y 0 personal (como Preview). Primera corrida sin `--mostrar-enlace` (el correo no sale, no hay enlace); la segunda con los mismos correos emite un enlace nuevo por persona y revoca los de la primera; otro correo (solo o junto a los mismos) se rechaza; una tercera vuelve a emitir. El enlace de la segunda corrida: «Esta invitación ya no sirve.» |
 | base-N15 | `r50-sn15b-acepta-con-el-enlace-nuevo` | Con el enlace de la tercera corrida, primera@lever.test fija su contraseña, su Administración queda activa y llega a «Registra tu segundo factor» (el QR y la semilla van tapados en la captura). Una corrida más se rechaza con «ya tiene Administración del personal activa». Salida de los seis comandos, con el enlace omitido, en «Salida literal». |
+| serv-N18 | `r51-sn18-suspension-motivo-emoji` | En la ficha de una empresa activa, Omar pide la suspensión con «Revisar 😀» (10 unidades UTF-16: el navegador la deja pasar). El servidor responde `motivo_corto` con «El motivo lleva al menos 10 caracteres» en el campo, no «La base no respondió», y no queda solicitud. Con 10 caracteres o más (y su emoji) entra; escrito con Enter, se guarda en un renglón (sexta-N1). |
+| serv-N18 | `r52-sn18-aprobaciones-dialogo-motivo-emoji` | Ana rechaza esa solicitud en Aprobaciones con «Revisar 😀»: el diálogo sigue abierto con lo escrito, el aviso ligado al campo y el foco en él; la solicitud sigue pendiente. |
+| serv-N18 | `r53-sn18-aprobaciones-rechazo-registrado` | Corregido en el mismo diálogo, el rechazo queda con su motivo («decision_registrada»). |
+| serv-N18 | `r54-sn18-dictamen-motivo-emoji` | Celia observa un dictamen con «Revisar 😀»: `motivo_corto` en el campo y ningún dictamen. |
+| serv-N18 | `r55-sn18-caso-lpb-motivo-emoji` | Celia resuelve un caso de la Lista con «Revisar 😀»: `motivo_corto` y el caso sigue abierto. |
+| serv-N15-resto | `r56` a `r58-sn15r-fisica-<campo>-conserva-lo-capturado` | Omar agrega a una física extranjera con el RFC «XX», con el nombre en blanco y con el capital «abc». Cada vez vuelve con país, documento, fecha, nombre y porcentajes, con el campo marcado y el foco en él; la dirección no trae datos del socio y no hay socio de más. |
+| serv-N15-resto | `r59` a `r61-sn15r-moral-<campo>-conserva-lo-capturado` | Lo mismo con una moral extranjera: vuelve con país, registro, nombre y porcentajes. |
+| serv-N15-resto | `r62-sn15r-corregido-entra` | Corregido el capital en el mismo formulario, la moral extranjera entra («expediente_accionista_agregado») y el formulario queda limpio. |
+| serv-N16-resto | `r63-sn16r-blob-503-vuelve-al-tope` | El emulador responde 503 al borrar. Un documento con un representante de otro expediente sube el archivo y la fila no entra (`documento_sin_representante`). La página vuelve en 5.1 s, sin documento, y el registro `huerfano_sin_borrar` trae la clave con `causa: "tiempo_agotado"` (`datos/sexta-huerfanos.json`). |
+| serv-N16-resto | `r64-sn16r-blob-sin_respuesta-vuelve-al-tope` | Lo mismo con un Blob que no responde: 5.1 s. Después, el borrado vuelve a la normalidad. |
+| bar-2 | `r65-bar2-documento-vigencia-antes-de-emision` | Un poder de Ébano emitido el 1 de octubre y «Vigente hasta» el 30 de septiembre: `dato_invalido_vigenteHasta` con el campo marcado, sin documento nuevo y sin «La base no respondió». |
+| base-N21 | `r66-baseN21-cobro-rfc-de-guiones` | Gil registra un cobro manual con el RFC « - - »: «Ese RFC no tiene la forma de un RFC. Déjalo vacío si no lo tienes.» en su campo, con lo demás capturado, y ningún cobro. |
+| bar-1 | `r67-bar1-cobro-rfc-con-guion-registrado` | Con «EKU900317-3C9», el cobro queda registrado y la base guarda «EKU9003173C9» (antes, «La base no respondió»). |
+| líder-N2 | `r68-lider2-cancelar-cobro-motivo-emoji` | Cancelar ese cobro con «ok 😀»: «Explica el motivo en al menos 5 caracteres» en el campo y el cobro sigue esperado. Con «ok 😀!» (5 caracteres) se cancela y la base guarda 5 caracteres. |
+| bar-8 | `r69-bar8-xml-con-control-rechazado` | Un XML con «&#x9;» en la serie: «Al XML le faltan datos…» en el campo y ningún cobro (antes se guardaba). |
+| bar-9 | `r70-bar9-cobro-xml-ampersand` | Un XML con «PEREZ &amp;&#x85; ASOCIADOS»: el cobro se registra, la base guarda «PEREZ & ASOCIADOS» (sin el control, serv-nuevo-1) y la lista lo muestra así. |
+| líder-N2 | `r71-lider2-pago-excepcion-motivo-emoji` | Un pago por excepción con «Revisar 😀» (pasa el mínimo de 10 del navegador): «No se guardó» con el aviso del motivo en el campo y ningún pago. |
+| líder-N2 | `r72-lider2-pago-excepcion-en-autorizacion` | Con «Pago 😀 ya!» (10 caracteres) queda en autorización y la base guarda 10 caracteres. |
 
 Las capturas `NN-pantalla-<pantalla>-<tema>-<ancho>` son la fase de pantallas: un solo h1, campos con etiqueta, sin desborde horizontal y consola limpia en Personal, Cumplimiento, Lista, Expediente, Ficha, Aprobaciones, Clientes, Bitácora y Sin permiso.
 
@@ -639,9 +706,7 @@ OK    S7. clic en «Guardar el contrato» con 4.6 MB: aviso ligado al campo, 0 e
 OK    H2. el portal consulta la copia de su operador: el RFC en definitivo de otro operador no aparece y la fecha es la de su copia
 
 — Cuarta revisión: socio extranjero física y moral, misma persona, grado de riesgo por rol, formulario reusado, pistas y carga
-OK    aviso «dato_invalido_documentoExtranjero» tras la acción
 OK    N11. tras el rechazo de la persona física extranjera, el formulario vuelve en «Extranjera» con el documento marcado y su texto
-OK    aviso «dato_invalido_documentoExtranjero» tras la acción
 OK    N11. tras el rechazo de la moral extranjera, vuelve como persona moral, en «Extranjera» y con el registro marcado
 OK    N6. con «Extranjera» el RFC es opcional
 OK    aviso «expediente_accionista_agregado» tras la acción
@@ -676,10 +741,8 @@ OK    serv-N9 (sin-caso). Aprobación ve solo el grado y la fecha de revisión; 
 OK    serv-N9 (sin-caso). Cumplimiento ve el desglose completo
 OK    serv-N9 (sin-caso). Auditoría ve el desglose completo
 OK    serv-N9 (sin-caso). Administración no abre el expediente
-OK    aviso «dato_invalido_rfc» tras la acción
-OK    serv-N15. rechazado el RFC opcional de la física extranjera, vuelve en «Extranjera» con ese campo marcado y sin socio de más
-OK    aviso «dato_invalido_capital» tras la acción
-OK    serv-N15. rechazado el capital de la moral extranjera, vuelve en «Extranjera» con ese campo marcado y sin socio de más
+OK    serv-N15. rechazado el RFC opcional de la física extranjera (dato_invalido_rfc), vuelve en «Extranjera» con ese campo marcado y sin socio de más
+OK    serv-N15. rechazado el capital de la moral extranjera (dato_invalido_capital), vuelve en «Extranjera» con ese campo marcado y sin socio de más
 OK    serv-N17. con «Revisar» (7 caracteres) el navegador no envía la solicitud: el campo pide de 10 a 500
 OK    aviso «motivo_corto» tras la acción
 OK    serv-N17. sin el mínimo del navegador, el servidor rechaza el motivo corto con el aviso ligado al campo y no queda solicitud
@@ -693,9 +756,52 @@ OK    base-N15. otra corrida con los mismos correos vuelve a emitir
 OK    base-N15. el enlace que reemplazó la corrida siguiente ya no sirve
 OK    base-N15. con el enlace nuevo, primera acepta y su Administración queda activa
 OK    base-N15. con Administración activa, el comando ya no invita ni reenvía
+
+— Sexta revisión: motivo con emoji, socio extranjero que conserva lo capturado y borrado con Blob caído
+OK    serv-N18. «Revisar 😀» pasa el mínimo de 10 del navegador (cuenta unidades UTF-16)
+OK    aviso «motivo_corto» tras la acción
+OK    serv-N18. suspensión con «Revisar 😀»: «El motivo lleva al menos 10 caracteres» en el campo, no «La base no respondió», y no queda solicitud
+OK    serv-N18. con un motivo de 10 o más caracteres (y su emoji) la solicitud entra
+OK    sexta-N1. el motivo escrito con Enter entra y se guarda en un renglón
+OK    serv-N18. Aprobaciones: el diálogo sigue abierto con «Revisar 😀», el aviso ligado al campo y el foco en él; la solicitud sigue pendiente
+OK    aviso «decision_registrada» tras la acción
+OK    serv-N18. corregido en el mismo diálogo, el rechazo queda con su motivo
+OK    aviso «motivo_corto» tras la acción
+OK    serv-N18. dictamen observado con «Revisar 😀»: «motivo_corto» en el campo y ningún dictamen
+OK    aviso «motivo_corto» tras la acción
+OK    serv-N18. caso de la Lista con «Revisar 😀»: «motivo_corto» y el caso sigue abierto
+OK    serv-N15. el RFC «XX» de la física extranjera: vuelve con país, documento, fecha, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección
+OK    serv-N15. el nombre en blanco de la física extranjera: vuelve con país, documento, fecha, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección
+OK    serv-N15. el capital «abc» de la física extranjera: vuelve con país, documento, fecha, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección
+OK    serv-N15. el RFC «XX» de la moral extranjera: vuelve con país, documento, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección
+OK    serv-N15. el nombre en blanco de la moral extranjera: vuelve con país, documento, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección
+OK    serv-N15. el capital «abc» de la moral extranjera: vuelve con país, documento, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección
+OK    aviso «expediente_accionista_agregado» tras la acción
+OK    serv-N15. corregido el capital en el mismo formulario, la moral extranjera entra y el formulario queda limpio
+OK    emulador de Blob: borrado «503»
+OK    aviso «documento_sin_representante» tras la acción
+OK    emulador de Blob: borrado «normal»
+OK    serv-N16. Blob responde 503 al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro
+OK    emulador de Blob: borrado «sin_respuesta»
+OK    aviso «documento_sin_representante» tras la acción
+OK    emulador de Blob: borrado «normal»
+OK    serv-N16. Blob no responde al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro
+OK    aviso «dato_invalido_vigenteHasta» tras la acción
+OK    bar-2. «Vigente hasta» 30 sep antes de «Emitido el» 1 oct: el campo queda marcado, sin documento nuevo y sin «La base no respondió»
+OK    base-N21. cobro manual con el RFC « - - »: «Ese RFC no tiene la forma de un RFC» en su campo y sin cobro
+OK    bar-1. cobro manual con el RFC «EKU900317-3C9»: queda registrado con «EKU9003173C9» (antes, «La base no respondió»)
+OK    líder-N2. cancelar con «ok 😀»: «Explica el motivo en al menos 5 caracteres» en el campo y el cobro sigue esperado
+OK    líder-N2. con «ok 😀!» (5 caracteres) el cobro se cancela y la base guarda 5 caracteres
+OK    bar-8. XML con «&#x9;» en la serie: «Al XML le faltan datos» en el campo, sin cobro (antes se guardaba «&#x9;» literal)
+OK    bar-9. XML con «PEREZ &amp;&#x85; ASOCIADOS»: el cobro se registra y la base guarda «PEREZ & ASOCIADOS» (sin el control)
+OK    bar-9. la lista de cobros muestra «PEREZ & ASOCIADOS»
+OK    líder-N2. hay un proveedor para el pago por excepción
+OK    líder-N2. «Revisar 😀» pasa el mínimo de 10 del navegador
+OK    líder-N2. pago por excepción con «Revisar 😀»: «No se guardó» con el aviso del motivo, sin pago (antes, el CHECK lo rechazaba con un error genérico)
+OK    líder-N2. con «Pago 😀 ya!» (10 caracteres) queda en autorización y la base guarda 10 caracteres
 OK    consola del navegador limpia en las regresiones
 
-92 comprobaciones en verde, 0 en rojo.
+129 comprobaciones en verde, 0 en rojo.
 ```
 
 </details>
@@ -706,18 +812,18 @@ OK    consola del navegador limpia en las regresiones
 ```text
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test
 primera@lever.test: invitada
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-10T21:47:44.577Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T03:19:18.330Z.
 segunda@lever.test: invitada
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-10T21:47:44.585Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T03:19:18.341Z.
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)
 
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
 primera@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-10T21:47:44.733Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T03:19:18.528Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-10T21:47:44.736Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T03:19:18.532Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)
@@ -732,10 +838,10 @@ No se hizo: El operador ya tiene Administración invitada con otros correos. Par
 
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
 primera@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-10T21:47:45.289Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T03:19:19.185Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-10T21:47:45.294Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T03:19:19.190Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)

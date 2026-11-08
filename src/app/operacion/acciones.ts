@@ -10,6 +10,7 @@ import {
   cerrarAlerta,
   crearAlerta,
   decidirActivacion,
+  decidirCambioDeSuspension,
   decidirComision,
   exigirContextoOperacion,
   invitarPrimerAdministrador,
@@ -151,6 +152,35 @@ export async function decidirComisionAccion(formData: FormData): Promise<void> {
       motivo: formData.get("motivo"),
     });
   } catch (error) {
+    return fallo(error, "/operacion/aprobaciones");
+  }
+  actualizar();
+  redirect("/operacion/aprobaciones?aviso=decision_registrada");
+}
+
+/** Lo que vuelve al diálogo de «Rechazar» cuando el motivo no pasa: lo escrito y el aviso del campo. */
+export type EstadoDelRechazo = { aviso: string | null; motivo: string; vuelta: number };
+
+const RECHAZAR = { activacion: decidirActivacion, comision: decidirComision, suspension: decidirCambioDeSuspension };
+
+/**
+ * «Rechazar» desde Aprobaciones. Si el motivo no pasa (corto o vacío), el diálogo vuelve abierto con lo
+ * escrito y el aviso ligado al campo, en lugar de cerrarse y perder el texto. Cualquier otro error, o el
+ * rechazo asentado, vuelve a la página como antes.
+ */
+export async function rechazarConMotivoAccion(previo: EstadoDelRechazo, formData: FormData): Promise<EstadoDelRechazo> {
+  const ctx = await exigirContextoOperacion();
+  const sesion = await sesionSegura();
+  if (!sesion) redirect("/operacion/entrar");
+  const tipo = formData.get("tipo");
+  const motivo = formData.get("motivo");
+  try {
+    if (tipo !== "activacion" && tipo !== "comision" && tipo !== "suspension") throw new ErrorDeDominio("dato_invalido_tipo");
+    await RECHAZAR[tipo](ctx, sesion, { id: formData.get("id"), aprobada: false, motivo });
+  } catch (error) {
+    if (error instanceof ErrorDeDominio && (error.codigo === "motivo_corto" || error.codigo === "motivo_invalido")) {
+      return { aviso: error.codigo, motivo: typeof motivo === "string" ? motivo : "", vuelta: previo.vuelta + 1 };
+    }
     return fallo(error, "/operacion/aprobaciones");
   }
   actualizar();

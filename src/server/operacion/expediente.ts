@@ -11,6 +11,7 @@ import {
   hoyEnMexico,
   nombreDePais,
   paisExtranjeroValido,
+  fechaDeCalendario,
   PEPS,
   pesosACentavos,
   porcentajeAPuntosBase,
@@ -33,6 +34,7 @@ import {
   type PepDeclarada,
   type TipoDocumento,
 } from "../../dominio/operacion";
+import { CONTROL } from "../../dominio/control";
 import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import { leerPrivado, type AlmacenConstancia } from "../proveedores/constancia";
 import type { Sesion } from "../session/tipos";
@@ -442,8 +444,12 @@ const CAMPOS_DATOS: Array<[keyof DatosGenerales, string, (valor: unknown) => str
   ["domicilioCodigoPostal", "domicilio_codigo_postal", (v) => opcional(v, (t) => (/^\d{5}$/.test(t) ? t : null))],
   ["domicilioPais", "domicilio_pais", (v) => opcional(v, (t) => textoOperativo(t, 80))],
   ["telefono", "telefono", (v) => opcional(v, (t) => { const solo = t.replace(/[\s()+-]/g, ""); return /^\d{10,15}$/.test(solo) ? solo : null; })],
-  ["correo", "correo", (v) => opcional(v, (t) => (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t) && t.length <= 254 ? t.toLowerCase() : null))],
-  ["fechaConstitucion", "fecha_constitucion", (v) => opcional(v, (t) => (/^\d{4}-\d{2}-\d{2}$/.test(t) && t <= hoyEnMexico(new Date()) ? t : null))],
+  // En minúsculas antes de medir («İ» crece) y sin caracteres de control, como el CHECK `kyb_versiones_correo`.
+  ["correo", "correo", (v) => opcional(v, (t) => {
+    const correo = t.toLowerCase();
+    return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo) && !CONTROL.test(correo) && [...correo].length <= 254 ? correo : null;
+  })],
+  ["fechaConstitucion", "fecha_constitucion", (v) => opcional(v, (t) => (fechaDeCalendario(t) && t <= hoyEnMexico(new Date()) ? t : null))],
   ["volumenMensualCentavos", "volumen_mensual_centavos", (v) => opcional(v, (t) => pesosACentavos(t))],
 ];
 
@@ -544,7 +550,7 @@ export async function agregarAccionista(
   const documentoExtranjero = pais ? opcional(entrada.documentoExtranjero, documentoExtranjeroNormalizado) : null;
   if (documentoExtranjero === undefined || (pais && !documentoExtranjero)) throw new ErrorDeDominio("dato_invalido_documentoExtranjero");
   const fechaNacimiento = pais && tipo === "fisica"
-    ? opcional(entrada.fechaNacimiento, (t) => (/^\d{4}-\d{2}-\d{2}$/.test(t) && t >= "1900-01-01" && t <= hoyEnMexico(new Date()) ? t : null))
+    ? opcional(entrada.fechaNacimiento, (t) => (fechaDeCalendario(t) && t >= "1900-01-01" && t <= hoyEnMexico(new Date()) ? t : null))
     : null;
   if (fechaNacimiento === undefined || (pais && tipo === "fisica" && !fechaNacimiento)) {
     throw new ErrorDeDominio("dato_invalido_fechaNacimiento");
@@ -632,15 +638,17 @@ export async function cargarDocumento(
   const tipo = entrada.tipo as TipoDocumento;
   const ahora = deps.ahora?.() ?? new Date();
   const hoy = hoyEnMexico(ahora);
-  const emitidoEl = opcional(entrada.emitidoEl, (t) => (/^\d{4}-\d{2}-\d{2}$/.test(t) && t <= hoy ? t : null));
+  const emitidoEl = opcional(entrada.emitidoEl, (t) => (fechaDeCalendario(t) && t <= hoy ? t : null));
   if (emitidoEl === undefined) throw new ErrorDeDominio("dato_invalido_emitidoEl");
-  let vigenteHasta = opcional(entrada.vigenteHasta, (t) => (/^\d{4}-\d{2}-\d{2}$/.test(t) ? t : null));
+  let vigenteHasta = opcional(entrada.vigenteHasta, (t) => (fechaDeCalendario(t) ? t : null));
   if (vigenteHasta === undefined) throw new ErrorDeDominio("dato_invalido_vigenteHasta");
   if (tipo === "comprobante_domicilio") {
     if (!emitidoEl) throw new ErrorDeDominio("dato_invalido_emitidoEl");
     vigenteHasta = vigenciaDeComprobante(emitidoEl);
   }
   if (tipo === "identificacion_representante" && !vigenteHasta) throw new ErrorDeDominio("dato_invalido_vigenteHasta");
+  // La vigencia no termina antes de la emisión (CHECK `kyb_documentos_vigencia`): se avisa en el campo antes de subir nada.
+  if (emitidoEl && vigenteHasta && vigenteHasta < emitidoEl) throw new ErrorDeDominio("dato_invalido_vigenteHasta");
   const detalle = opcional(entrada.detalle, (t) => textoOperativo(t, 300));
   if (detalle === undefined || (tipo === "acta_constitutiva" && !detalle)) throw new ErrorDeDominio("dato_invalido_detalle");
   const representante = tipo === "identificacion_representante" || tipo === "poder"

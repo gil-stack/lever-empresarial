@@ -3,6 +3,7 @@ import { TOPE_ARCHIVO_BYTES, TOPE_ARCHIVO_TEXTO } from "./archivos";
 import { FRASE_FUERA_DE_LISTA, FRASE_SIN_PAGO } from "./lista-69b";
 import { horaEnMexico } from "./reloj";
 import { normalizarRfc, validarRfc } from "./rfc";
+import { CONTROL } from "./control";
 
 /**
  * Alta de proveedor en la consola de finanzas.
@@ -19,7 +20,6 @@ export const CONSTANCIA_Y_CONTRATO = `La constancia y el contrato juntos no pued
 export const XML_Y_PDF = `El XML y el PDF juntos no pueden superar ${TOPE_ARCHIVO_TEXTO}.`;
 export const CONTRATO_DEMASIADO_GRANDE = `El contrato debe ser un PDF de hasta ${TOPE_ARCHIVO_TEXTO}.`;
 const TOPE_RAZON = 254;
-const CONTROL = /[\u0000-\u001F\u007F]/;
 
 const MESES = [
   "enero",
@@ -377,7 +377,8 @@ function motivoArchivo(archivo: { nombre: string; tipo: string; peso: number } |
 
 function nombreLimpio(nombre: string): string {
   const base = nombre.split(/[/\\]/).pop() ?? "";
-  const limpio = base.replace(/[\u0000-\u001F\u007F]/g, "").trim().slice(0, 180);
+  // Se recorta también después del corte: el CHECK `documents_nombre_presente` pide `btrim`.
+  const limpio = base.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim().slice(0, 180).trim();
   return limpio.length > 0 ? limpio : "constancia.pdf";
 }
 

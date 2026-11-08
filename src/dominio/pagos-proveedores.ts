@@ -1,4 +1,6 @@
 import { leerCentavosEscritos } from "./centavos";
+import { sinControles } from "./control";
+import { fechaDeCalendario } from "./operacion/validar";
 
 export const ESTADOS_PAGO = ["por_autorizar", "listo_para_pagar", "rechazado", "cancelado"] as const;
 export type EstadoPago = (typeof ESTADOS_PAGO)[number];
@@ -37,10 +39,9 @@ export function fechaEnMexico(ahora = new Date()): string {
   return `${tomar("year")}-${tomar("month")}-${tomar("day")}`;
 }
 
+/** Una fecha que existe en el calendario, del año 1 en adelante, como el tipo `date` de la base (sin 22008). */
 export function fechaValida(valor: unknown): valor is string {
-  if (typeof valor !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
-  const fecha = new Date(`${valor}T00:00:00.000Z`);
-  return !Number.isNaN(fecha.getTime()) && fecha.toISOString().slice(0, 10) === valor;
+  return typeof valor === "string" && fechaDeCalendario(valor);
 }
 
 export function sumarDias(fecha: string, dias: number): string {
@@ -62,13 +63,16 @@ export function fechaLegible(fecha: string): string {
 
 export function montoEscrito(valor: unknown): number | null {
   const leido = leerCentavosEscritos(valor);
-  return leido.tipo === "centavos" && leido.centavos > 0 ? leido.centavos : null;
+  // Hasta 9e15 centavos, como el CHECK `supplier_payables_total`.
+  return leido.tipo === "centavos" && leido.centavos > 0 && leido.centavos <= 9_000_000_000_000_000 ? leido.centavos : null;
 }
 
 export function textoPago(valor: unknown, maximo: number, minimo = 1): string | null {
   if (typeof valor !== "string") return null;
-  const limpio = valor.trim().replace(/\s+/g, " ");
-  if (limpio.length < minimo || limpio.length > maximo || /[\u0000-\u001f\u007f]/.test(limpio)) return null;
+  // Sin controles invisibles (se quitan, no se rechazan) y en caracteres, como char_length («Revisar 😀» son 9).
+  const limpio = sinControles(valor).trim().replace(/\s+/g, " ");
+  const largo = [...limpio].length;
+  if (largo < minimo || largo > maximo) return null;
   return limpio;
 }
 

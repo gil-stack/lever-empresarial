@@ -1,8 +1,8 @@
 import { validarRfcDeAlta } from "../../domain/rfc";
 import { regimenAplica, tipoDePersona, usoAplica } from "./catalogos";
 import type { AltaEmpresaEntrada, EmpresaNormalizada } from "./tipos";
+import { CONTROL } from "../../dominio/control";
 
-const CONTROL = /[\u0000-\u001F\u007F]/;
 
 export type CodigoAlta =
   | "rfc_invalido"

@@ -1003,7 +1003,10 @@ BEGIN
   -- de nacimiento (la capturada o la de su CURP) no pueden tener claves distintas
   -- si a una le falta la CURP o las dos traen la misma. Dos mexicanos homónimos
   -- nacidos el mismo día con CURP distinta son dos personas. Un nombre escrito
-  -- distinto o una fecha capturada distinta no lo detecta.
+  -- distinto o una fecha capturada distinta no lo detecta. Una CURP alterada o
+  -- inventada tampoco: la regla confía en la CURP y toma a la misma persona por dos
+  -- homónimos. Cumplimiento coteja la CURP contra el documento o RENAPO antes de
+  -- dictaminar.
   IF EXISTS (
     WITH fisicas AS (
       SELECT a.curp, kyb_persona(a.pais, a.documento_extranjero, a.curp, a.clave) AS persona,

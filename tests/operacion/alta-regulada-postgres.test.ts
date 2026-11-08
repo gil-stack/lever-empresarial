@@ -8,6 +8,8 @@ import { fileURLToPath } from "node:url";
 
 import pg from "pg";
 
+import { CONTROL, CONTROL_SALVO_RENGLONES } from "../../src/dominio/control.ts";
+
 import { TOPE_ARCHIVO_BYTES } from "../../src/dominio/archivos.ts";
 import { hoyEnMexico } from "../../src/dominio/operacion/comisiones.ts";
 import { sumarMeses } from "../../src/dominio/operacion/riesgo.ts";
@@ -27,6 +29,7 @@ import {
   crearVersion,
   dictaminarVersion,
   enviarVersion,
+  guardarDatosGenerales,
   leerExpediente,
   prepararDescargaDocumento,
   retirarDelBorrador,
@@ -96,6 +99,35 @@ const DOS_CAPAS: SocioDePrueba[] = [
   },
   { nombre: "Pedro Ruiz Sol", tipoPersona: "fisica", rfc: "RUSP800303AB3", curp: "RUSP800303HDFZLD03", capital: "40", votos: "40" },
 ];
+
+// bar-3: la constante de control del servidor es exactamente lo que la base cuenta como `[[:cntrl:]]` con el
+// proveedor builtin C.UTF-8 de Neon (`pg_c_utf8`, fijado aquí para no depender del locale de la base de prueba
+// ni del de CI), en todo el plano básico sin sustitutos. Antes el servidor solo filtraba C0 y DEL, y la base
+// también rechaza C1 (U+0080 a U+009F).
+describe("caracteres de control: el servidor y la base cuentan lo mismo", { skip: urlAdmin.length === 0 }, () => {
+  it("CONTROL coincide con [[:cntrl:]] de pg_c_utf8 de U+0001 a U+FFFF; CONTROL_SALVO_RENGLONES deja tab, LF y CR", async () => {
+    const c = new pg.Client({ connectionString: urlAdmin });
+    await c.connect();
+    try {
+      const base = (await c.query<{ cp: number[] }>(
+        `select coalesce(array_agg(cp order by cp), '{}') as cp from generate_series(1, 65535) as cp
+          where (cp < 55296 or cp > 57343) and (chr(cp) collate "pg_c_utf8") ~ '[[:cntrl:]]'`,
+      )).rows[0]!.cp;
+      const servidor: number[] = [];
+      const salvoRenglones: number[] = [];
+      for (let cp = 1; cp <= 0xffff; cp++) {
+        if (cp >= 0xd800 && cp <= 0xdfff) continue;
+        if (CONTROL.test(String.fromCodePoint(cp))) servidor.push(cp);
+        if (CONTROL_SALVO_RENGLONES.test(String.fromCodePoint(cp))) salvoRenglones.push(cp);
+      }
+      assert.deepEqual(servidor, base);
+      assert.deepEqual(salvoRenglones, base.filter((cp) => cp !== 9 && cp !== 10 && cp !== 13));
+      assert.ok(base.includes(0x85) && base.includes(0x93) && !base.includes(0x2028) && !base.includes(0xa0));
+    } finally {
+      await c.end();
+    }
+  });
+});
 
 describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }, () => {
   it("H2 y N3: la 0028 sobre una base en la 0027 asigna la 69-B al único operador; la primera Administración la da la dueña", async () => {
@@ -522,9 +554,12 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: randomUUID(), resultado: "observado", motivo: "" }), /motivo_invalido/);
           // serv-N17: observar o rechazar con un motivo de menos de 10 caracteres tampoco.
           await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: randomUUID(), resultado: "rechazado", motivo: "Falta" }), /motivo_corto/);
+          // serv-N18: el mínimo cuenta caracteres como el CHECK, no unidades UTF-16: «Revisar 😀» son 9.
+          await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: randomUUID(), resultado: "observado", motivo: "Revisar 😀" }), /motivo_corto/);
           const observado = randomUUID();
-          await dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: observado, resultado: "observado", motivo: "Falta el poder notarial del apoderado" });
-          await dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: observado, resultado: "observado", motivo: "Falta el poder notarial del apoderado" });
+          await dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: observado, resultado: "observado", motivo: "Falta el poder notarial\ndel apoderado" });
+          await dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: observado, resultado: "observado", motivo: "Falta el poder notarial\ndel apoderado" });
+          assert.equal((await dueno.query("select motivo from kyb_dictamenes where id = $1", [observado])).rows[0]?.motivo, "Falta el poder notarial del apoderado");
           await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: randomUUID(), resultado: "aprobado", motivo: "" }), /dictamen_ya_registrado/);
 
           // La versión nueva hereda socios, representantes y documentos; se envía y se aprueba.
@@ -686,10 +721,19 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           await assert.rejects(sofipo(CUM, (c) => c.query("insert into lpb_coincidencias (operator_id, company_id, sujeto_tipo, sujeto_clave, sujeto_nombre, lista, tipo, coincide_por, valor_coincidente, detectada_en) values ($1, $2, 'empresa', $2, 'X', 'lpb', 'posible', 'nombre', 'X', now())", [operador, alfa])), /permission denied|coincidencia_solo_sistema/);
           // serv-N17: el motivo de la resolución lleva al menos 10 caracteres.
           await assert.rejects(resolverCoincidencia(cum, SESION_SOFIPO, { id: pedro.id, estado: "falso_positivo", motivo: "Homónimo" }), /motivo_corto/);
-          await resolverCoincidencia(cum, SESION_SOFIPO, { id: pedro.id, estado: "falso_positivo", motivo: "Homónimo: la CURP del socio es distinta" });
+          await assert.rejects(resolverCoincidencia(cum, SESION_SOFIPO, { id: pedro.id, estado: "falso_positivo", motivo: "Revisar 😀" }), /motivo_corto/);
+          // En dos renglones y con un tabulador: se guarda en un renglón (la base no acepta saltos de línea).
+          await resolverCoincidencia(cum, SESION_SOFIPO, { id: pedro.id, estado: "falso_positivo", motivo: "Homónimo:\r\n\tla CURP del socio es distinta" });
+          assert.equal((await dueno.query("select motivo_resolucion from lpb_coincidencias where id = $1", [pedro.id])).rows[0]?.motivo_resolucion, "Homónimo: la CURP del socio es distinta");
           await assert.rejects(registrarReporte(cum, { id: pedro.id, folio: "UIF-1", presentadoEl: hoy, avisoClienteEl: hoy }), /reporte_sin_confirmar/);
           await resolverCoincidencia(cum, SESION_SOFIPO, { id: mario.id, estado: "confirmada", motivo: "Coincide la CURP del propietario real" });
-          await registrarReporte(cum, { id: mario.id, folio: "UIF-2026-0001", presentadoEl: hoy, avisoClienteEl: hoy });
+          // bar-4: la fecha de presentación o del aviso que no existe en el calendario se rechaza en su campo.
+          await assert.rejects(registrarReporte(cum, { id: mario.id, folio: "UIF-2026-0001", presentadoEl: "2026-02-30", avisoClienteEl: hoy }), /dato_invalido_presentadoEl/);
+          await assert.rejects(registrarReporte(cum, { id: mario.id, folio: "UIF-2026-0001", presentadoEl: hoy, avisoClienteEl: "0000-01-01" }), /dato_invalido_avisoClienteEl/);
+          // serv-nuevo-1: el folio pegado con un control invisible (U+0085) se guarda sin él; antes, `textoOperativo`
+          // dejaba pasar el C1 y el CHECK `lpb_coincidencias_textos` respondía «La base no respondió».
+          await registrarReporte(cum, { id: mario.id, folio: "UIF-2026-\u00850001", presentadoEl: hoy, avisoClienteEl: hoy });
+          assert.equal((await dueno.query("select reporte_folio from lpb_coincidencias where id = $1", [mario.id])).rows[0]?.reporte_folio, "UIF-2026-0001");
           await assert.rejects(registrarReporte(cum, { id: mario.id, folio: "UIF-2026-0002", presentadoEl: hoy, avisoClienteEl: hoy }), /reporte_ya_registrado/);
 
           // Con coincidencia exacta abierta el grado es alto, aunque alguien intente otro por SQL.
@@ -749,7 +793,7 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           const limpio = await pago(PROVEEDOR_LIMPIO, "2,000.00");
 
           // serv-N17: el motivo de la solicitud lleva de 10 a 500 caracteres, en el servidor y en la base.
-          for (const corto of ["a", "  Revisar  ", "123456789"]) {
+          for (const corto of ["a", "  Revisar  ", "123456789", "Revisar 😀", "ok 👍👍👍👍"]) {
             await assert.rejects(solicitarCambioDeSuspension(ori, { companyId: beta, formId: randomUUID(), tipo: "suspension", motivo: corto }), /motivo_corto/);
           }
           await assert.rejects(solicitarCambioDeSuspension(ori, { companyId: beta, formId: randomUUID(), tipo: "suspension", motivo: "x".repeat(501) }), /motivo_invalido/);
@@ -764,11 +808,15 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           assert.equal(await contar("select count(*)::int as n from company_suspensions where company_id = $1", [beta]), 0);
 
           const pedida = randomUUID();
-          await solicitarCambioDeSuspension(ori, { companyId: beta, formId: pedida, tipo: "suspension", motivo: "Operaciones inusuales en revisión" });
-          await solicitarCambioDeSuspension(ori, { companyId: beta, formId: pedida, tipo: "suspension", motivo: "Operaciones inusuales en revisión" });
+          // El motivo escrito en dos renglones (el navegador manda CRLF) entra en uno: la base no guarda
+          // saltos de línea en los motivos. Antes, el servidor lo aceptaba y la base lo rechazaba.
+          await solicitarCambioDeSuspension(ori, { companyId: beta, formId: pedida, tipo: "suspension", motivo: "Operaciones inusuales\r\n\r\n en revisión" });
+          await solicitarCambioDeSuspension(ori, { companyId: beta, formId: pedida, tipo: "suspension", motivo: "Operaciones inusuales\r\n\r\n en revisión" });
+          assert.equal((await dueno.query("select motivo from company_suspensions where id = $1", [pedida])).rows[0]?.motivo, "Operaciones inusuales en revisión");
           await assert.rejects(solicitarCambioDeSuspension(cum, { companyId: beta, formId: randomUUID(), tipo: "suspension", motivo: "Otra solicitud de suspensión" }), /suspension_pendiente/);
           // Rechazar la solicitud también pide un motivo de al menos 10 caracteres.
           await assert.rejects(decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: pedida, aprobada: false, motivo: "No" }), /motivo_corto/);
+          await assert.rejects(decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: pedida, aprobada: false, motivo: "Revisar 😀" }), /motivo_corto/);
           await assert.rejects(decidirCambioDeSuspension(ori, SESION_SOFIPO, { id: pedida, aprobada: true, motivo: "" }), /sin_permiso_operacion/);
           await assert.rejects(sofipo(ORI, async (c) => {
             await evento(c, ORI, "suspension_aprobada", "company_suspensions", pedida, beta);
@@ -1616,6 +1664,37 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           }, { almacen: fallida }), /documento_sin_representante/);
           assert.deepEqual(fallida.borrados, [...fallida.guardados.keys()]);
           assert.equal(fallida.borrados.length, 1);
+          // bar-2: «Vigente hasta» antes de «Emitido el» se rechaza en su campo antes de subir nada (antes, el
+          // archivo subía y el CHECK `kyb_documentos_vigencia` respondía «La base no respondió»). bar-4: una fecha
+          // que no existe en el calendario, o del año 0, también se rechaza en su campo (antes, 22008 de la base).
+          const claveRep = String((await dueno.query("select clave from kyb_representantes where id = $1", [rep])).rows[0].clave);
+          const conFechas = almacenEnMemoria();
+          const identificacion = (emitidoEl: string, vigenteHasta: string) => cargarDocumento(ori, {
+            versionId: kappaV1, formId: randomUUID(), tipo: "identificacion_representante", representanteClave: claveRep, emitidoEl,
+            vigenteHasta, detalle: "", archivo: { nombre: "ine.pdf", bytes: PDF },
+          }, { almacen: conFechas });
+          const documentosKappa = () => contar("select count(*)::int as n from kyb_documentos where company_id = (select company_id from kyb_versiones where id = $1)", [kappaV1]);
+          const antesDeFechas = await documentosKappa();
+          await assert.rejects(identificacion("2026-10-01", "2026-09-30"), /dato_invalido_vigenteHasta/);
+          await assert.rejects(identificacion("", "2026-02-30"), /dato_invalido_vigenteHasta/);
+          await assert.rejects(identificacion("", "0000-01-01"), /dato_invalido_vigenteHasta/);
+          await assert.rejects(identificacion("2026-02-30", "2031-12-31"), /dato_invalido_emitidoEl/);
+          assert.equal(conFechas.guardados.size, 0);
+          assert.equal(await documentosKappa(), antesDeFechas);
+          // bar-4: constitución y nacimiento del socio extranjero con fechas imposibles.
+          await assert.rejects(guardarDatosGenerales(ori, { versionId: kappaV1, datos: { ...DATOS_GENERALES, fechaConstitucion: "2020-02-30" } }), /dato_invalido_fechaConstitucion/);
+          // bar-3: un control C1 (U+0085, o las comillas U+0093/U+0094 de un Windows-1252 mal decodificado) en la
+          // razón social del alta se rechaza en su campo; antes pasaba el servidor y el CHECK de `companies` lo
+          // rechazaba con «La base no respondió». (En los textos libres se quita: serv-nuevo-1, en el reporte.)
+          await assert.rejects(registrarProspecto(ori, { rfc: "CTL010101AB1", razonSocial: "Empresa \u0093Control\u0094", codigoPostal: "01000", regimen: "601", usoCfdi: "G03" }), /razon_social_invalida/);
+          // bar-5: el correo con un carácter de control, o que en minúsculas pasa de 254 («İ» se vuelve dos), se
+          // rechaza en su campo (antes, el CHECK `kyb_versiones_correo` respondía «La base no respondió»).
+          await assert.rejects(guardarDatosGenerales(ori, { versionId: kappaV1, datos: { ...DATOS_GENERALES, correo: "con\u0001tacto@lab.mx" } }), /dato_invalido_correo/);
+          await assert.rejects(guardarDatosGenerales(ori, { versionId: kappaV1, datos: { ...DATOS_GENERALES, correo: `İ${"a".repeat(246)}@lab.mx` } }), /dato_invalido_correo/);
+          await assert.rejects(agregarAccionista(ori, {
+            versionId: kappaV1, formId: randomUUID(), padreClave: "", tipoPersona: "fisica", nombre: "John Smith Taylor", rfc: "", curp: "",
+            pais: "US", documentoExtranjero: "X12345678", fechaNacimiento: "1980-02-30", capital: "0", votos: "0", controlOtrosMedios: true, pep: "no",
+          }), /dato_invalido_fechaNacimiento/);
           await assert.rejects(acta(docAlfa), /expediente_ausente/);
 
           // N10: el mismo formulario con otro archivo no se da por guardado. De entrada no sube nada; en

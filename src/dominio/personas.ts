@@ -1,6 +1,7 @@
 import { capacidadesDe, ROLES_CLIENTE, rolesLeidos, tiene, tieneRolDeTrabajo, type RolCliente } from "../nucleo/capacidades";
 import { leerCentavosEscritos } from "./centavos";
 import { clabeValida } from "./clabe";
+import { CONTROL } from "./control";
 
 export const ROLES_DE_CUENTA = ROLES_CLIENTE;
 
@@ -19,7 +20,6 @@ export const ACCESOS = ["no", "nueva", "ya"] as const;
 export type AccesoForma = (typeof ACCESOS)[number];
 
 const CORREO = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
-const CONTROL = /[\u0000-\u001F\u007F]/;
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 

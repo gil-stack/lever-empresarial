@@ -54,6 +54,7 @@ export function DecisionesOperacion({
         ) : (
           <Acciones
             id={solicitud.id}
+            tipo="activacion"
             accion={decidirActivacionAccion}
             que={`la activación de ${solicitud.razonSocial}`}
           />
@@ -73,6 +74,7 @@ export function DecisionesOperacion({
         ) : (
           <Acciones
             id={comision.id}
+            tipo="comision"
             accion={decidirComisionAccion}
             que={`la comisión de ${comision.tipo} de ${comision.razonSocial}`}
           />
@@ -96,6 +98,7 @@ export function DecisionesOperacion({
         ) : (
           <Acciones
             id={suspension.id}
+            tipo="suspension"
             accion={decidirSuspensionAccion}
             que={`la ${suspension.tipo === "suspension" ? "suspensión" : "reactivación"} de ${suspension.razonSocial}`}
           />
@@ -110,10 +113,20 @@ export function DecisionesOperacion({
   );
 }
 
-function Acciones({ id, accion, que }: { id: string; accion: (formData: FormData) => Promise<void>; que: string }) {
+function Acciones({
+  id,
+  tipo,
+  accion,
+  que,
+}: {
+  id: string;
+  tipo: "activacion" | "comision" | "suspension";
+  accion: (formData: FormData) => Promise<void>;
+  que: string;
+}) {
   return (
     <>
-      <RechazarConMotivo id={id} accion={accion} que={que} />
+      <RechazarConMotivo id={id} tipo={tipo} que={que} />
       <form action={accion}>
         <input type="hidden" name="id" value={id} />
         <input type="hidden" name="decision" value="aprobar" />

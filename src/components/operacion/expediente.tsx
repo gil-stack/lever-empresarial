@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 
 import {
-  agregarAccionistaAccion,
   agregarRepresentanteAccion,
   cargarDocumentoAccion,
   enviarVersionAccion,
@@ -10,7 +9,7 @@ import {
 } from "@/app/operacion/acciones-alta";
 import { ARCHIVO_DEMASIADO_GRANDE } from "@/components/operacion/aviso";
 import { CampoArchivo } from "@/components/operacion/campo-archivo";
-import { IdentidadDelSocio } from "@/components/operacion/identidad-socio";
+import { FormularioAccionista } from "@/components/operacion/formulario-accionista";
 import { BotonEnviar, Hoja, Insignia, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
 import {
@@ -199,17 +198,14 @@ export function FormulariosBorrador({
   version,
   companyId,
   error,
-  socioRechazado = "fisica",
-  socioExtranjero = false,
 }: {
   version: VersionExpediente;
   companyId: string;
   error: ErrorDeCampo;
-  /** El tipo y la nacionalidad del socio que el servidor rechazó: el formulario vuelve así. */
-  socioRechazado?: "fisica" | "moral";
-  socioExtranjero?: boolean;
 }) {
   const morales = version.accionistas.filter((accionista) => accionista.tipoPersona === "moral");
+  // Cada vista nueva del borrador trae un formulario nuevo; tras un rechazo sigue el mismo (no se aplicó).
+  const formAccionista = randomUUID();
   const base = (
     <>
       <input type="hidden" name="companyId" value={companyId} />
@@ -355,63 +351,14 @@ export function FormulariosBorrador({
           </ul>
         )}
         <p className="pista">{version.estructuraCompleta ? "La estructura suma 100 % y llega hasta personas físicas." : "Cada nivel debe sumar 100 % y cada persona moral desglosarse."}</p>
-        <form action={agregarAccionistaAccion} className="formulario-pareja operacion-forma">
-          {base}
-          <input type="hidden" name="formId" value={randomUUID()} />
-          <div className="campo operacion-ancho">
-            <label htmlFor="acc-padre">Es socio de</label>
-            <select id="acc-padre" name="padreClave" defaultValue="" {...error("accionistas-titulo", "padreClave")}>
-              <option value="">La empresa (socio directo)</option>
-              {morales.map((moral) => (
-                <option key={moral.clave} value={moral.clave}>
-                  {moral.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-          <IdentidadDelSocio
-            paises={paisesExtranjeros()}
-            tipoInicial={socioRechazado}
-            extranjeraInicial={socioExtranjero}
-            ligados={{
-              rfc: error("accionistas-titulo", "rfc"),
-              curp: error("accionistas-titulo", "curp"),
-              pais: error("accionistas-titulo", "pais"),
-              documentoExtranjero: error("accionistas-titulo", "documentoExtranjero"),
-              fechaNacimiento: error("accionistas-titulo", "fechaNacimiento"),
-            }}
-          >
-            <div className="campo">
-              <label htmlFor="acc-nombre">Nombre o razón social</label>
-              <input id="acc-nombre" name="nombre" maxLength={300} required {...error("accionistas-titulo", "nombre")} />
-            </div>
-          </IdentidadDelSocio>
-          <div className="campo">
-            <label htmlFor="acc-capital">Capital (%)</label>
-            <input id="acc-capital" name="capital" inputMode="decimal" maxLength={6} required {...error("accionistas-titulo", "capital")} />
-          </div>
-          <div className="campo">
-            <label htmlFor="acc-votos">Votos (%)</label>
-            <input id="acc-votos" name="votos" inputMode="decimal" maxLength={6} required {...error("accionistas-titulo", "votos")} />
-          </div>
-          <div className="campo">
-            <label htmlFor="acc-pep">¿Es persona expuesta políticamente?</label>
-            <select id="acc-pep" name="pep" defaultValue="no" {...error("accionistas-titulo", "pep")}>
-              {PEPS.map((pep) => (
-                <option key={pep} value={pep}>
-                  {ETIQUETA_PEP[pep]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <label className="confirmacion operacion-ancho">
-            <input name="controlOtrosMedios" type="checkbox" value="si" />
-            <span>Controla la empresa por otros medios (contrato, poder, parentesco)</span>
-          </label>
-          <div className="acciones operacion-ancho">
-            <BotonEnviar>Agregar accionista</BotonEnviar>
-          </div>
-        </form>
+        <FormularioAccionista
+          key={formAccionista}
+          companyId={companyId}
+          versionId={version.id}
+          formId={formAccionista}
+          morales={morales.map((moral) => ({ clave: moral.clave, nombre: moral.nombre }))}
+          paises={paisesExtranjeros()}
+        />
       </Hoja>
 
       <Hoja id="documentos-titulo" titulo="Documentos del borrador">

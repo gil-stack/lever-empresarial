@@ -108,7 +108,26 @@ export async function agregarRepresentanteAccion(formData: FormData): Promise<vo
   listo(expediente(companyId), "expediente_representante_agregado", "#representantes-titulo");
 }
 
-export async function agregarAccionistaAccion(formData: FormData): Promise<void> {
+/** Lo que vuelve al formulario del accionista cuando el servidor rechaza el socio: lo capturado y el aviso. */
+export type EstadoDelSocio = { aviso: string | null; valores: Record<string, string>; vuelta: number };
+
+const CAMPOS_SOCIO = [
+  "padreClave",
+  "tipoPersona",
+  "nacionalidad",
+  "nombre",
+  "rfc",
+  "curp",
+  "pais",
+  "documentoExtranjero",
+  "fechaNacimiento",
+  "capital",
+  "votos",
+  "pep",
+  "controlOtrosMedios",
+] as const;
+
+export async function agregarAccionistaAccion(previo: EstadoDelSocio, formData: FormData): Promise<EstadoDelSocio> {
   const ctx = await exigirContextoOperacion();
   const companyId = texto(formData, "companyId");
   try {
@@ -129,9 +148,11 @@ export async function agregarAccionistaAccion(formData: FormData): Promise<void>
       pep: texto(formData, "pep") || "no",
     });
   } catch (error) {
-    // El formulario vuelve con el tipo de persona y la nacionalidad del socio rechazado.
-    const consulta = `${texto(formData, "tipoPersona") === "moral" ? "&tipo=moral" : ""}${texto(formData, "pais") ? "&extranjera=1" : ""}`;
-    return fallo(error, expediente(companyId), "#accionistas-titulo", consulta);
+    // El formulario vuelve con todo lo capturado y sin recargar: ningún dato del socio va en la dirección.
+    if (error instanceof ErrorDeDominio) {
+      return { aviso: error.codigo, valores: Object.fromEntries(CAMPOS_SOCIO.map((campo) => [campo, texto(formData, campo)])), vuelta: previo.vuelta + 1 };
+    }
+    throw error;
   }
   listo(expediente(companyId), "expediente_accionista_agregado", "#accionistas-titulo");
 }
@@ -322,9 +343,9 @@ function listo(destino: string, aviso: string, ancla = ""): never {
 }
 
 /** `en` dice qué formulario falló: la página liga el error solo a los campos de ese formulario. */
-function fallo(error: unknown, destino: string, ancla = "", consulta = ""): never {
+function fallo(error: unknown, destino: string, ancla = ""): never {
   if (error instanceof ErrorDeDominio) {
-    redirect(`${destino}?aviso=${encodeURIComponent(error.codigo)}${ancla ? `&en=${ancla.slice(1)}` : ""}${consulta}${ancla}`);
+    redirect(`${destino}?aviso=${encodeURIComponent(error.codigo)}${ancla ? `&en=${ancla.slice(1)}` : ""}${ancla}`);
   }
   throw error;
 }

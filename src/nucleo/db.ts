@@ -206,6 +206,9 @@ export function traducirErrorDeBase(error: unknown): Error {
     return new ErrorDeDominio("area_ajena");
   }
   if (codigo === "23514") {
+    // El servidor valida esos motivos antes y como la base (motivoEscrito: cuenta caracteres y los guarda
+    // en un renglón); si aun así la base los rechaza, se avisa del mínimo del motivo, no «la base no respondió».
+    if (/company_suspensions_textos|lpb_coincidencias_textos|kyb_dictamenes_motivo/.test(marca)) return new ErrorDeDominio("motivo_corto");
     if (marca.includes("lista_69b")) return new ErrorDeDominio("listado_irreconocible");
     if (marca.includes("clabe")) return new ErrorDeDominio("clabe_invalida");
     if (marca.includes("baja")) return new ErrorDeDominio("baja_anterior");

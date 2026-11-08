@@ -78,6 +78,20 @@ describe("error de base sin traducir", () => {
     assert.doesNotMatch(registros[1] ?? "", /laura|4111/);
   });
 
+  // base-N20: si la base rechaza el mínimo de 10 del motivo, la persona ve «motivo_corto», no «la base no respondió».
+  it("los CHECK del motivo regulado se traducen a motivo_corto", () => {
+    for (const [constraint, table] of [
+      ["company_suspensions_textos", "company_suspensions"],
+      ["lpb_coincidencias_textos", "lpb_coincidencias"],
+      ["kyb_dictamenes_motivo", "kyb_dictamenes"],
+    ]) {
+      const traducido = traducirErrorDeBase(errorPg({ code: "23514", constraint, table }));
+      assert.ok(traducido instanceof ErrorDeDominio);
+      assert.equal(traducido.message, "motivo_corto");
+    }
+    assert.equal(registros.length, 0);
+  });
+
   it("lo que sí se traduce no deja registro", () => {
     assert.equal(traducirErrorDeBase(errorPg({ code: "42501" })).message, "sin_permiso");
     const propio = new ErrorDeDominio("entrada_vencida");

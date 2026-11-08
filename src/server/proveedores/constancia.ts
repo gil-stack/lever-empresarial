@@ -57,14 +57,25 @@ export function almacenVercel(): AlmacenConstancia {
     async borrar(clave) {
       const credenciales = credencialesBlobOpcional();
       if (!credenciales) return;
-      // Si Blob no contesta, la petición no espera más del tope. AbortSignal.timeout no sirve:
-      // @vercel/blob 2.8 reintenta su TimeoutError y sigue colgada; con abort() se rinde al momento.
+      // La petición no espera a Blob más del tope: el borrado compite con el reloj. @vercel/blob 2.8
+      // reintenta hasta 10 veces, con espera creciente (1-2 s, 2-4 s, 4-8 s…), la conexión rechazada, el
+      // 503 y su propio TimeoutError (por eso AbortSignal.timeout no sirve), y el abort() solo lo nota al
+      // empezar el siguiente intento. Tras el abort no sale otra petición: la espera que la biblioteca
+      // tenga pendiente termina sola en segundos con su intento ya abortado.
       const tope = new AbortController();
-      const reloj = setTimeout(() => tope.abort(), TOPE_BORRADO_MS);
-      try {
+      let reloj: ReturnType<typeof setTimeout> | undefined;
+      const agotado = new Promise<never>((_, rechazar) => {
+        reloj = setTimeout(() => {
+          tope.abort();
+          rechazar(new Error("tiempo_agotado"));
+        }, TOPE_BORRADO_MS);
+      });
+      const borrado = (async () => {
         const modulo = (await import("@vercel/blob")) as unknown as { del?: BlobDel };
-        if (!modulo.del) return;
-        await modulo.del(clave, { ...credenciales, abortSignal: tope.signal });
+        if (modulo.del) await modulo.del(clave, { ...credenciales, abortSignal: tope.signal });
+      })();
+      try {
+        await Promise.race([borrado, agotado]);
       } catch (error) {
         // El huérfano no se anuncia a quien subió el archivo, pero queda su clave para borrarlo a mano.
         console.error(JSON.stringify({

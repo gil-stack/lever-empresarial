@@ -110,6 +110,27 @@ test("prospecto → pedir activación → el candado exige expediente; con todo 
   );
   expect(sinExpediente).toEqual({ estado: "en_alta", solicitud: "pendiente" });
 
+  // serv-N18: «Revisar 😀» son 9 caracteres (10 unidades UTF-16: el navegador lo deja pasar). El servidor lo
+  // rechaza y el diálogo sigue abierto con lo escrito, el aviso ligado al campo y el foco en él; corregido, rechaza.
+  await page.goto("/operacion/aprobaciones");
+  await decision(page, PROSPECTO.razonSocial).getByRole("button", { name: "Rechazar" }).click();
+  const dialogo = page.getByRole("dialog", { name: "Rechazar" });
+  const motivo = dialogo.getByLabel("Motivo (de 10 a 500 caracteres)");
+  await motivo.fill("Revisar 😀");
+  await dialogo.getByRole("button", { name: "Rechazar" }).click();
+  await expect(dialogo.getByText("El motivo lleva al menos 10 caracteres")).toBeVisible();
+  await expect(motivo).toHaveValue("Revisar 😀");
+  await expect(motivo).toHaveAttribute("aria-invalid", "true");
+  await expect(dialogo.locator(`[id="${await motivo.getAttribute("aria-describedby")}"]`)).toContainText("al menos 10 caracteres");
+  await expect(motivo).toBeFocused();
+  expect(new URL(page.url()).search).toBe("");
+  expect(await solicitudes()).toBe(1);
+  expect((await consultar<{ estado: string }>("select estado from company_activation_requests where company_id = $1", [empresa!.id]))[0]?.estado).toBe("pendiente");
+  await motivo.fill("Falta el expediente aprobado de la empresa");
+  await dialogo.getByRole("button", { name: "Rechazar" }).click();
+  await page.waitForURL(/aviso=decision_registrada/);
+  expect((await consultar<{ estado: string }>("select estado from company_activation_requests where company_id = $1", [empresa!.id]))[0]?.estado).toBe("rechazada");
+
   // Faro E2E (sembrada con expediente aprobado y riesgo vigente; la activación la pidió op1).
   // Con el factor de hace 31 minutos, Aprobación no decide y la base no cambia.
   const [faro] = await consultar<{ id: string; estado: string }>("select id, estado from companies where rfc = $1", [FARO.rfc]);
@@ -197,16 +218,18 @@ test("el grado de riesgo no le dice a Originación ni a Aprobación que hay una 
   expect(errores).toEqual([]);
 });
 
-test("tras un rechazo del socio extranjero el formulario vuelve en «Extranjera» con el campo marcado; la moral extranjera entra sin RFC", async ({ page, context }) => {
+test("tras un rechazo del socio extranjero el formulario vuelve con todo lo capturado y el campo marcado; la moral extranjera entra sin RFC", async ({ page, context }) => {
   const errores = vigilarConsola(page);
   const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
   const expediente = `/operacion/clientes/${duna!.id}/expediente`;
   const socios = () => contar("select 1 from kyb_accionistas where company_id = $1", [duna!.id]);
-  const capturar = async (tipo: "fisica" | "moral", documento: string, otros: { rfc?: string; capital?: string } = {}) => {
+  type Otros = { rfc?: string; capital?: string; nombre?: string };
+  const nombreDe = (tipo: "fisica" | "moral", otros: Otros) => otros.nombre ?? (tipo === "fisica" ? "John Smith Taylor" : "Delaware Holdings LLC");
+  const capturar = async (tipo: "fisica" | "moral", documento: string, otros: Otros = {}) => {
     await page.goto(expediente);
     await page.locator("#acc-tipo").selectOption(tipo);
     await page.locator("#acc-nacionalidad").selectOption("extranjera");
-    await page.locator("#acc-nombre").fill(tipo === "fisica" ? "John Smith Taylor" : "Delaware Holdings LLC");
+    await page.locator("#acc-nombre").fill(nombreDe(tipo, otros));
     if (otros.rfc) await page.locator("#acc-rfc").fill(otros.rfc);
     await page.locator("#acc-pais").selectOption("US");
     await page.locator("#acc-documento").fill(documento);
@@ -215,40 +238,59 @@ test("tras un rechazo del socio extranjero el formulario vuelve en «Extranjera�
     await page.locator("#acc-votos").fill("40");
     await page.getByRole("button", { name: "Agregar accionista" }).click();
   };
+  // serv-N15: vuelve sin recargar, con todo lo capturado, y ningún dato del socio pasa por la dirección.
+  const sigueCapturado = async (tipo: "fisica" | "moral", documento: string, otros: Otros = {}) => {
+    await expect(page.locator("#acc-tipo")).toHaveValue(tipo);
+    await expect(page.locator("#acc-nacionalidad")).toHaveValue("extranjera");
+    await expect(page.locator("#acc-pais")).toHaveValue("US");
+    await expect(page.locator("#acc-documento")).toHaveValue(documento);
+    if (tipo === "fisica") await expect(page.locator("#acc-nacimiento")).toHaveValue("1980-05-01");
+    await expect(page.locator("#acc-nombre")).toHaveValue(nombreDe(tipo, otros));
+    await expect(page.locator("#acc-rfc")).toHaveValue(otros.rfc ?? "");
+    await expect(page.locator("#acc-capital")).toHaveValue(otros.capital ?? "40");
+    await expect(page.locator("#acc-votos")).toHaveValue("40");
+    expect(new URL(page.url()).search).toBe("");
+    expect(await socios()).toBe(0);
+  };
   await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
   for (const tipo of ["fisica", "moral"] as const) {
     await capturar(tipo, "A1");
-    await page.waitForURL(tipo === "moral" ? /aviso=dato_invalido_documentoExtranjero.*tipo=moral/ : /aviso=dato_invalido_documentoExtranjero/);
-    await expect(page.locator("#aviso-operacion")).toContainText("de 4 a 20 letras y números");
-    await expect(page.locator("#acc-tipo")).toHaveValue(tipo);
-    await expect(page.locator("#acc-nacionalidad")).toHaveValue("extranjera");
+    await expect(page.locator("#aviso-accionista")).toContainText("de 4 a 20 letras y números");
     const campo = page.locator("#acc-documento");
     await expect(campo).toHaveAttribute("aria-invalid", "true");
-    await expect(campo).toHaveAttribute("aria-describedby", "acc-documento-pista aviso-operacion");
+    await expect(campo).toHaveAttribute("aria-describedby", "acc-documento-pista aviso-accionista");
+    await expect(campo).toBeFocused();
     await expect(page.locator('label[for="acc-documento"]')).toHaveText(
       tipo === "fisica" ? "Número de pasaporte o identificación oficial" : "Número de identificación fiscal o de registro en su país",
     );
-    expect(await socios()).toBe(0);
+    await sigueCapturado(tipo, "A1");
   }
-  // serv-N15: si lo rechazado es otro campo (el RFC opcional o el capital), también vuelve en «Extranjera».
-  for (const [tipo, otros, codigo, campo] of [
-    ["fisica", { rfc: "XX123" }, "dato_invalido_rfc", "#acc-rfc"],
-    ["moral", { capital: "abc" }, "dato_invalido_capital", "#acc-capital"],
-  ] as const) {
-    await capturar(tipo, "X12345678", otros);
-    await page.waitForURL(new RegExp(`aviso=${codigo}.*extranjera=1`));
-    await expect(page.locator("#acc-tipo")).toHaveValue(tipo);
-    await expect(page.locator("#acc-nacionalidad")).toHaveValue("extranjera");
-    await expect(page.locator("#acc-documento")).toBeVisible();
-    await expect(page.locator(campo)).toHaveAttribute("aria-invalid", "true");
-    expect(await socios()).toBe(0);
+  // serv-N15: los seis rechazos de la revisión (RFC «XX», nombre en blanco y capital «abc», en física y en
+  // moral extranjera) vuelven con país, documento, fecha, nombre y porcentajes.
+  for (const tipo of ["fisica", "moral"] as const) {
+    for (const [otros, campo] of [
+      [{ rfc: "XX" }, "#acc-rfc"],
+      [{ nombre: "   " }, "#acc-nombre"],
+      [{ capital: "abc" }, "#acc-capital"],
+    ] as const) {
+      await capturar(tipo, "12-3456789", otros);
+      await expect(page.locator("#aviso-accionista")).toBeVisible();
+      await expect(page.locator(campo)).toHaveAttribute("aria-invalid", "true");
+      await expect(page.locator(campo)).toHaveAttribute("aria-describedby", "aviso-accionista");
+      await expect(page.locator(campo)).toBeFocused();
+      await sigueCapturado(tipo, "12-3456789", otros);
+    }
   }
-  await capturar("moral", "12-3456789");
+  // El último rechazo (capital «abc» de la moral) se corrige en el mismo formulario y entra.
+  await page.locator("#acc-capital").fill("40");
+  await page.getByRole("button", { name: "Agregar accionista" }).click();
   await page.waitForURL(/aviso=expediente_accionista_agregado/);
   expect(await consultar("select rfc, pais, documento_extranjero, nacionalidad from kyb_accionistas where company_id = $1", [duna!.id])).toEqual([
     { rfc: null, pais: "US", documento_extranjero: "123456789", nacionalidad: "Estados Unidos" },
   ]);
   await expect(page.locator("#accionistas-titulo").locator("..")).toContainText("Estados Unidos · registro 123456789");
+  await expect(page.locator("#aviso-accionista")).toHaveCount(0);
+  await expect(page.locator("#acc-nombre")).toHaveValue("");
   expect(errores).toEqual([]);
 });
 

@@ -4,11 +4,15 @@ import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 /** Lo mínimo de un motivo que queda en la bitácora y lee otra persona, como el de personal:rol. */
 export const MOTIVO_MINIMO = 10;
 
-/** El motivo escrito, de 10 caracteres al tope: uno más corto no explica nada («motivo_corto»). */
+/**
+ * El motivo escrito, de 10 caracteres al tope: uno más corto no explica nada («motivo_corto»).
+ * Cuenta caracteres, como `char_length` en los CHECK de la 0028, no unidades UTF-16: «Revisar 😀»
+ * son 9 y no pasa.
+ */
 export function motivoEscrito(valor: unknown, maximo: number): string {
   const limpio = textoMultilinea(valor, maximo);
   if (!limpio) throw new ErrorDeDominio("motivo_invalido");
-  if (limpio.length < MOTIVO_MINIMO) throw new ErrorDeDominio("motivo_corto");
+  if ([...limpio].length < MOTIVO_MINIMO) throw new ErrorDeDominio("motivo_corto");
   return limpio;
 }
 

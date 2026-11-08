@@ -161,7 +161,8 @@ async function foto(p, nombre, completa = true) {
   return ruta;
 }
 async function aviso(p) {
-  const caja = p.locator(".operacion-aviso");
+  // El de la página: el formulario del accionista y el diálogo de «Rechazar» traen el suyo, con otro id.
+  const caja = p.locator("#aviso-operacion");
   return (await caja.count()) ? (await caja.innerText()).replace(/\s+/g, " ").trim() : "";
 }
 /**
@@ -181,6 +182,19 @@ async function esperarAviso(p, codigo) {
   const obtenido = new URL(p.url()).searchParams.get("aviso");
   if (codigo) exigir(obtenido === codigo, `aviso «${codigo}» tras la acción`, `llegó «${obtenido}»: ${await aviso(p)}`);
   return obtenido;
+}
+/**
+ * «Agregar accionista» rechazado: el formulario vuelve sin recargar con su propio aviso. Marca el aviso
+ * anterior (si lo hay) para esperar al nuevo, y devuelve su texto.
+ */
+async function rechazarSocio(p) {
+  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.locator("#aviso-accionista").evaluate((nodo) => { nodo.dataset.anterior = "1"; }).catch(() => {});
+  await p.getByRole("button", { name: "Agregar accionista" }).click();
+  const nuevo = p.locator("#aviso-accionista:not([data-anterior])");
+  await nuevo.waitFor({ timeout: 20000 });
+  await listo(p);
+  return (await nuevo.innerText()).replace(/\s+/g, " ").trim();
 }
 const PDF = (titulo) => Buffer.from(`%PDF-1.4\n% ${titulo}\n1 0 obj << /Type /Catalog >> endobj\n${"0".repeat(64)}\n%%EOF\n`);
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -1238,19 +1252,19 @@ async function cuartaRonda(rutaEbano) {
   // N11: un documento que no es documento se rechaza y el formulario vuelve en «Extranjera», con el campo
   // marcado, ligado a su pista y al aviso, y el texto de ese error.
   await socio({ tipo: "fisica", nombre: "Hans Müller Weber", documento: "A1", fecha: "1975-03-03" });
-  await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar accionista" }), "dato_invalido_documentoExtranjero");
+  const textoN11 = await rechazarSocio(omar.p);
   exigir(
-    (await documentoLigado()) === "extranjera|true|acc-documento-pista aviso-operacion" && (await omar.p.locator("#acc-tipo").inputValue()) === "fisica"
-      && (await aviso(omar.p)).includes("de 4 a 20 letras y números"),
+    (await documentoLigado()) === "extranjera|true|acc-documento-pista aviso-accionista" && (await omar.p.locator("#acc-tipo").inputValue()) === "fisica"
+      && textoN11.includes("de 4 a 20 letras y números"),
     "N11. tras el rechazo de la persona física extranjera, el formulario vuelve en «Extranjera» con el documento marcado y su texto",
     await documentoLigado(),
   );
   await enVista(omar.p.locator("#acc-documento"));
   await foto(omar.p, "n11-rechazo-socio-extranjero-fisica", false);
   await socio({ tipo: "moral", nombre: "Delaware Holdings LLC", documento: "A1" });
-  await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar accionista" }), "dato_invalido_documentoExtranjero");
+  await rechazarSocio(omar.p);
   exigir(
-    (await documentoLigado()) === "extranjera|true|acc-documento-pista aviso-operacion" && (await omar.p.locator("#acc-tipo").inputValue()) === "moral"
+    (await documentoLigado()) === "extranjera|true|acc-documento-pista aviso-accionista" && (await omar.p.locator("#acc-tipo").inputValue()) === "moral"
       && (await omar.p.locator('label[for="acc-documento"]').innerText()) === "Número de identificación fiscal o de registro en su país",
     "N11. tras el rechazo de la moral extranjera, vuelve como persona moral, en «Extranjera» y con el registro marcado",
     await documentoLigado(),
@@ -1443,23 +1457,24 @@ async function quintaRonda(rutaEbano) {
     await omar.p.locator("#acc-tipo").selectOption(tipo);
     await omar.p.locator("#acc-nacionalidad").selectOption("extranjera");
     await campo(omar.p, "#acc-nombre", nombre);
-    if (rfc) await campo(omar.p, "#acc-rfc", rfc);
+    // Siempre se escribe (vacío para la moral): tras un rechazo, el formulario conserva lo capturado (serv-N15).
+    await campo(omar.p, "#acc-rfc", rfc);
     await omar.p.locator("#acc-pais").selectOption("US");
     await campo(omar.p, "#acc-documento", "X12345678");
     if (tipo === "fisica") await omar.p.locator("#acc-nacimiento").fill("1975-03-03");
     await campo(omar.p, "#acc-capital", capital);
     await campo(omar.p, "#acc-votos", "5");
-    await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar accionista" }), codigo);
+    await rechazarSocio(omar.p);
     const estado = [
-      new URL(omar.p.url()).searchParams.get("extranjera"),
+      new URL(omar.p.url()).search === "" ? "sin-consulta" : new URL(omar.p.url()).search,
       await omar.p.locator("#acc-nacionalidad").inputValue(),
       await omar.p.locator("#acc-tipo").inputValue(),
       await omar.p.locator(selector).getAttribute("aria-invalid"),
       await omar.p.locator("#acc-documento").isVisible(),
     ].join("|");
     exigir(
-      estado === `1|extranjera|${tipo}|true|true` && sociosEbano() === socios,
-      `serv-N15. rechazado ${selector === "#acc-rfc" ? "el RFC opcional" : "el capital"} de la ${tipo === "fisica" ? "física" : "moral"} extranjera, vuelve en «Extranjera» con ese campo marcado y sin socio de más`,
+      estado === `sin-consulta|extranjera|${tipo}|true|true` && sociosEbano() === socios,
+      `serv-N15. rechazado ${selector === "#acc-rfc" ? "el RFC opcional" : "el capital"} de la ${tipo === "fisica" ? "física" : "moral"} extranjera (${codigo}), vuelve en «Extranjera» con ese campo marcado y sin socio de más`,
       estado,
     );
     await enVista(omar.p.locator(selector));
@@ -1569,6 +1584,379 @@ async function quintaRonda(rutaEbano) {
   );
   mkdirSync(`${DIR}/datos`, { recursive: true });
   writeFileSync(`${DIR}/datos/quinta-arranque.txt`, `${salidas.join("\n\n")}\n`);
+  await sextaRonda(rutaEbano);
+}
+
+// ---------- Sexta revisión (sobre 701bc25) ----------
+/** 9 caracteres y 10 unidades UTF-16: el mínimo del navegador (minLength) lo deja pasar. */
+const EMOJI = "Revisar 😀";
+const REGISTRO_SERVIDOR = process.env.REGISTRO_SERVIDOR ?? "";
+
+/** El emulador de Blob con del() caído («503», «sin_respuesta») o de vuelta («normal»). */
+async function blobBorrado(borrado) {
+  const respuesta = await fetch(`${process.env.E2E_BLOB_LOCAL_URL}/simular`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`, "content-type": "application/json" },
+    body: JSON.stringify({ borrado }),
+  });
+  exigir(respuesta.ok, `emulador de Blob: borrado «${borrado}»`);
+}
+
+async function sextaRonda(rutaEbano) {
+  console.log("\n— Sexta revisión: motivo con emoji, socio extranjero que conserva lo capturado y borrado con Blob caído");
+  if (!REGISTRO_SERVIDOR) throw new Error("Falta REGISTRO_SERVIDOR: la salida del next start de 4811, para leer el registro del huérfano.");
+  renovarSesiones();
+
+  // serv-N18 · suspensión: «Revisar 😀» pasa el navegador; el servidor cuenta 9 caracteres y responde
+  // «motivo_corto» con el aviso en el campo (antes, el CHECK de la base lo rechazaba: «La base no respondió»).
+  const omar = await abrir("omar");
+  const operadorOmar = sql("select s.operator_id from platform_staff s join users u on u.id = s.user_id where u.correo = 'omar@lever.test'");
+  // Una empresa activa: una suspendida con caso de la Lista pediría reactivación, que la base niega por el caso.
+  const empresa = sql(`select c.id from companies c where c.operator_id = '${operadorOmar}' and c.estado = 'activa'
+    and not exists (select 1 from company_suspensions s where s.company_id = c.id and s.estado = 'pendiente') order by c.razon_social limit 1`);
+  const razonSocial = sql(`select razon_social from companies where id = '${empresa}'`);
+  const solicitudes = () => cuenta(`company_suspensions where company_id = '${empresa}'`);
+  const previas = solicitudes();
+  await ir(omar.p, `/operacion/clientes/${empresa}`);
+  const motivo = omar.p.locator("#motivo-suspension");
+  const pedir = omar.p.getByRole("button", { name: /^Pedir (suspensión|reactivación)$/ });
+  await campo(omar.p, "#motivo-suspension", EMOJI);
+  exigir(!(await motivo.evaluate((nodo) => nodo.validity.tooShort)), "serv-N18. «Revisar 😀» pasa el mínimo de 10 del navegador (cuenta unidades UTF-16)");
+  await enviar(omar.p, pedir, "motivo_corto");
+  exigir(
+    (await motivo.getAttribute("aria-invalid")) === "true" && (await aviso(omar.p)).includes("El motivo lleva al menos 10 caracteres") && solicitudes() === previas,
+    "serv-N18. suspensión con «Revisar 😀»: «El motivo lleva al menos 10 caracteres» en el campo, no «La base no respondió», y no queda solicitud",
+    await aviso(omar.p),
+  );
+  await foto(omar.p, "sn18-suspension-motivo-emoji");
+  // sexta-N1: escrito en dos renglones (Enter en el textarea): entra y se guarda en uno. Antes, «La base no respondió».
+  await campo(omar.p, "#motivo-suspension", "Operaciones inusuales\nen revisión 🔎");
+  const pedida = await enviar(omar.p, pedir, null);
+  exigir(/^(suspension|reactivacion)_solicitada$/.test(pedida) && solicitudes() === previas + 1, "serv-N18. con un motivo de 10 o más caracteres (y su emoji) la solicitud entra", pedida);
+  exigir(
+    sql(`select motivo from company_suspensions where company_id = '${empresa}' order by solicitada_en desc limit 1`) === "Operaciones inusuales en revisión 🔎",
+    "sexta-N1. el motivo escrito con Enter entra y se guarda en un renglón",
+  );
+  await omar.nav.close();
+
+  // serv-N18 · Aprobaciones: «Rechazar» con «Revisar 😀». El diálogo sigue abierto con lo escrito, el aviso
+  // ligado al campo y el foco en él (antes se cerraba y el texto se perdía); corregido, rechaza.
+  const ana = await abrir("ana");
+  await ir(ana.p, "/operacion/aprobaciones");
+  const fila = ana.p.locator("li.decision").filter({ hasText: razonSocial }).filter({ hasText: /Suspensión|Reactivación/ });
+  await fila.getByRole("button", { name: "Rechazar" }).click();
+  const dialogo = ana.p.getByRole("dialog", { name: "Rechazar" });
+  const texto = dialogo.getByLabel("Motivo (de 10 a 500 caracteres)");
+  await texto.fill(EMOJI);
+  await dialogo.getByRole("button", { name: "Rechazar" }).click();
+  await dialogo.locator(".operacion-aviso").waitFor({ timeout: 20000 });
+  const ligado = await texto.getAttribute("aria-describedby");
+  const enDialogo = [
+    await dialogo.isVisible(),
+    await texto.inputValue(),
+    await texto.getAttribute("aria-invalid"),
+    (await dialogo.locator(`[id="${ligado}"]`).innerText()).includes("El motivo lleva al menos 10 caracteres"),
+    await texto.evaluate((nodo) => nodo === document.activeElement),
+    new URL(ana.p.url()).searchParams.get("aviso"),
+  ].join("|");
+  const pendiente = () => sql(`select estado from company_suspensions where company_id = '${empresa}' order by solicitada_en desc limit 1`);
+  exigir(
+    enDialogo === `true|${EMOJI}|true|true|true|` && pendiente() === "pendiente",
+    "serv-N18. Aprobaciones: el diálogo sigue abierto con «Revisar 😀», el aviso ligado al campo y el foco en él; la solicitud sigue pendiente",
+    enDialogo,
+  );
+  await foto(ana.p, "sn18-aprobaciones-dialogo-motivo-emoji", false);
+  // sexta-N1: la corrección también lleva Enter; se guarda en un renglón.
+  await texto.fill("El cliente aclaró la operación\ncon su estado de cuenta");
+  await enviar(ana.p, dialogo.getByRole("button", { name: "Rechazar" }), "decision_registrada");
+  exigir(
+    pendiente() === "rechazada"
+      && sql(`select motivo_decision from company_suspensions where company_id = '${empresa}' order by solicitada_en desc limit 1`) === "El cliente aclaró la operación con su estado de cuenta",
+    "serv-N18. corregido en el mismo diálogo, el rechazo queda con su motivo",
+  );
+  await foto(ana.p, "sn18-aprobaciones-rechazo-registrado", false);
+  await ana.nav.close();
+
+  // serv-N18 · dictamen y caso de la Lista (Cumplimiento): «Revisar 😀» responde «motivo_corto».
+  const celia = await abrir("celia");
+  const cedro = companyIdDe("CER170404CD5");
+  const dictamenes = () => cuenta(`kyb_dictamenes where company_id = '${cedro}'`);
+  const antes = dictamenes();
+  await ir(celia.p, `/operacion/clientes/${cedro}/expediente`);
+  await celia.p.locator("#dictamen-resultado").selectOption("observado");
+  await campo(celia.p, "#dictamen-motivo", EMOJI);
+  // Cedro también tiene un caso de la Lista abierto, con su propio «Registrar dictamen»: el del expediente es el del motivo.
+  await enviar(celia.p, celia.p.locator("form", { has: celia.p.locator("#dictamen-motivo") }).getByRole("button", { name: "Registrar dictamen" }), "motivo_corto");
+  exigir(
+    (await celia.p.locator("#dictamen-motivo").getAttribute("aria-invalid")) === "true" && (await aviso(celia.p)).includes("El motivo lleva al menos 10 caracteres") && dictamenes() === antes,
+    "serv-N18. dictamen observado con «Revisar 😀»: «motivo_corto» en el campo y ningún dictamen",
+    await aviso(celia.p),
+  );
+  await enVista(celia.p.locator("#dictamen-titulo"));
+  await foto(celia.p, "sn18-dictamen-motivo-emoji", false);
+  const caso = sql(`select id from lpb_coincidencias where company_id = '${cedro}' and estado = 'pendiente' limit 1`);
+  await ir(celia.p, "/operacion/lpb");
+  await celia.p.locator(`[id="resolucion-${caso}"]`).selectOption("falso_positivo");
+  await campo(celia.p, `[id="motivo-${caso}"]`, EMOJI);
+  await enviar(celia.p, celia.p.locator("form", { has: celia.p.locator(`[id="motivo-${caso}"]`) }).getByRole("button", { name: "Registrar dictamen" }), "motivo_corto");
+  exigir(
+    (await aviso(celia.p)).includes("El motivo lleva al menos 10 caracteres") && sql(`select estado from lpb_coincidencias where id = '${caso}'`) === "pendiente",
+    "serv-N18. caso de la Lista con «Revisar 😀»: «motivo_corto» y el caso sigue abierto",
+    await aviso(celia.p),
+  );
+  await foto(celia.p, "sn18-caso-lpb-motivo-emoji", false);
+  await celia.nav.close();
+
+  // serv-N15: los seis rechazos de la revisión (RFC «XX», nombre en blanco y capital «abc», en física y en
+  // moral extranjera) vuelven sin recargar con todo lo capturado; ningún dato del socio va en la dirección.
+  const omar2 = await abrir("omar");
+  await ir(omar2.p, rutaEbano);
+  const sociosEbano = () => cuenta(`kyb_accionistas a join kyb_versiones v on v.id = a.version_id where v.company_id = '${ctxEbano.id}' and v.estado = 'borrador' and a.retirado_en is null`);
+  const socios = sociosEbano();
+  const capturado = async () => {
+    const valores = {};
+    for (const [clave, selector] of Object.entries({ tipo: "#acc-tipo", nacionalidad: "#acc-nacionalidad", pais: "#acc-pais", documento: "#acc-documento", nombre: "#acc-nombre", rfc: "#acc-rfc", capital: "#acc-capital", votos: "#acc-votos", pep: "#acc-pep" })) {
+      valores[clave] = await omar2.p.locator(selector).inputValue();
+    }
+    if (valores.tipo === "fisica") valores.nacimiento = await omar2.p.locator("#acc-nacimiento").inputValue();
+    valores.control = await omar2.p.locator('input[name="controlOtrosMedios"]').isChecked();
+    return valores;
+  };
+  let ultimo = null;
+  for (const tipo of ["fisica", "moral"]) {
+    for (const [cual, cambio, selector] of [
+      ["el RFC «XX»", { rfc: "XX" }, "#acc-rfc"],
+      ["el nombre en blanco", { nombre: "   " }, "#acc-nombre"],
+      ["el capital «abc»", { capital: "abc" }, "#acc-capital"],
+    ]) {
+      const esperado = {
+        tipo, nacionalidad: "extranjera", pais: "SE", documento: "SE-884213", nombre: tipo === "fisica" ? "Ingrid Lind Berg" : "Nordic Capital AB",
+        rfc: "", capital: "2.5", votos: "2.5", pep: "no", ...cambio, ...(tipo === "fisica" ? { nacimiento: "1979-04-12" } : {}), control: tipo === "moral",
+      };
+      await omar2.p.locator("#acc-tipo").selectOption(tipo);
+      await omar2.p.locator("#acc-nacionalidad").selectOption("extranjera");
+      await campo(omar2.p, "#acc-nombre", esperado.nombre);
+      await campo(omar2.p, "#acc-rfc", esperado.rfc);
+      await omar2.p.locator("#acc-pais").selectOption(esperado.pais);
+      await campo(omar2.p, "#acc-documento", esperado.documento);
+      if (tipo === "fisica") await omar2.p.locator("#acc-nacimiento").fill(esperado.nacimiento);
+      await campo(omar2.p, "#acc-capital", esperado.capital);
+      await campo(omar2.p, "#acc-votos", esperado.votos);
+      await omar2.p.locator('input[name="controlOtrosMedios"]').setChecked(esperado.control);
+      const textoAviso = await rechazarSocio(omar2.p);
+      const obtenido = await capturado();
+      const marca = [await omar2.p.locator(selector).getAttribute("aria-invalid"), await omar2.p.locator(selector).getAttribute("aria-describedby"), await omar2.p.locator(selector).evaluate((nodo) => nodo === document.activeElement)].join("|");
+      exigir(
+        JSON.stringify(obtenido) === JSON.stringify(esperado) && marca === "true|aviso-accionista|true" && new URL(omar2.p.url()).search === "" && sociosEbano() === socios,
+        `serv-N15. ${cual} de la ${tipo === "fisica" ? "física" : "moral"} extranjera: vuelve con país, documento, ${tipo === "fisica" ? "fecha, " : ""}nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección`,
+        `${JSON.stringify(obtenido)} · ${marca} · ${textoAviso}`,
+      );
+      await enVista(omar2.p.locator("#aviso-accionista"));
+      await foto(omar2.p, `sn15r-${tipo}-${selector.slice(5)}-conserva-lo-capturado`, false);
+      ultimo = esperado;
+    }
+  }
+  // El último (capital «abc» de la moral) se corrige en el mismo formulario y entra; el formulario queda limpio.
+  await campo(omar2.p, "#acc-capital", "2.5");
+  await enviar(omar2.p, omar2.p.getByRole("button", { name: "Agregar accionista" }), "expediente_accionista_agregado");
+  exigir(
+    sociosEbano() === socios + 1 && sql(`select a.pais || '|' || a.documento_extranjero from kyb_accionistas a join kyb_versiones v on v.id = a.version_id where v.company_id = '${ctxEbano.id}' and v.estado = 'borrador' and a.nombre = '${ultimo.nombre}'`) === "SE|SE884213"
+      && (await omar2.p.locator("#aviso-accionista").count()) === 0 && (await omar2.p.locator("#acc-nombre").inputValue()) === "",
+    "serv-N15. corregido el capital en el mismo formulario, la moral extranjera entra y el formulario queda limpio",
+  );
+  await enVista(omar2.p.locator("#accionistas-titulo"));
+  await foto(omar2.p, "sn15r-corregido-entra", false);
+
+  // serv-N16: con Blob caído para del() (503 o sin respuesta), el envío que deja un huérfano vuelve dentro del
+  // tope de 5 s y deja la clave en el registro. El huérfano se provoca con un representante que no es de la
+  // versión (una petición armada a mano: la página solo ofrece los suyos): el archivo sube, la fila no entra
+  // (`documento_sin_representante`) y el servidor intenta borrarlo. Con un formulario ya usado y otro archivo no
+  // sirve: el servidor lo rechaza antes de subir (N10).
+  const registro = () => readFileSync(REGISTRO_SERVIDOR, "utf8").split("\n").filter((renglon) => renglon.includes('"huerfano_sin_borrar"')).map((renglon) => JSON.parse(renglon.slice(renglon.indexOf("{"))));
+  const huerfanos = [];
+  for (const borrado of ["503", "sin_respuesta"]) {
+    await ir(omar2.p, rutaEbano);
+    const previos = registro().length;
+    const documentosAntes = cuenta(`kyb_documentos where company_id = '${ctxEbano.id}'`);
+    await blobBorrado(borrado);
+    await omar2.p.locator("#doc-tipo").selectOption("identificacion_representante");
+    await omar2.p.locator("#doc-representante").evaluate((select) => {
+      const ajeno = document.createElement("option");
+      ajeno.value = crypto.randomUUID();
+      ajeno.textContent = "Representante de otra versión";
+      select.append(ajeno);
+      select.value = ajeno.value;
+    });
+    await omar2.p.locator("#doc-vigente").fill("2031-12-31");
+    await omar2.p.locator("#doc-archivo").setInputFiles({ name: `ine-sexta-${borrado}.pdf`, mimeType: "application/pdf", buffer: PDF(`ine-sexta-${borrado}`) });
+    const inicio = Date.now();
+    await enviar(omar2.p, omar2.p.getByRole("button", { name: "Guardar documento" }), "documento_sin_representante");
+    const tardo = Date.now() - inicio;
+    await blobBorrado("normal");
+    const nuevos = registro().slice(previos);
+    exigir(
+      tardo >= 4500 && tardo <= 6500 && nuevos.length === 1 && nuevos[0].causa === "tiempo_agotado" && nuevos[0].tope_ms === 5000
+        && cuenta(`kyb_documentos where company_id = '${ctxEbano.id}'`) === documentosAntes,
+      `serv-N16. Blob ${borrado === "503" ? "responde 503" : "no responde"} al borrar el huérfano: la página vuelve en ${(tardo / 1000).toFixed(1)} s (tope de 5 s más la página), sin documento, y la clave queda en el registro`,
+      `${tardo} ms · ${JSON.stringify(nuevos)}`,
+    );
+    huerfanos.push({ blob: borrado, segundos_hasta_la_pagina: Number((tardo / 1000).toFixed(2)), registro: nuevos[0] });
+    await enVista(omar2.p.locator("#aviso-operacion"));
+    await foto(omar2.p, `sn16r-blob-${borrado}-vuelve-al-tope`, false);
+  }
+  writeFileSync(`${DIR}/datos/sexta-huerfanos.json`, `${JSON.stringify(huerfanos, null, 2)}\n`);
+
+  // bar-2: un documento con «Vigente hasta» antes de «Emitido el» vuelve con el campo marcado, sin documento
+  // nuevo (antes subía el archivo y el CHECK de la base respondía «La base no respondió»). Los días que no existen
+  // en el calendario (bar-4) no se pueden teclear en un campo de fecha: los cubren las pruebas de la base.
+  await ir(omar2.p, rutaEbano);
+  const documentosEbano = () => cuenta(`kyb_documentos where company_id = '${ctxEbano.id}'`);
+  const docsAntes = documentosEbano();
+  await omar2.p.locator("#doc-tipo").selectOption("poder");
+  await omar2.p.locator("#doc-emitido").fill("2026-10-01");
+  await omar2.p.locator("#doc-vigente").fill("2026-09-30");
+  await omar2.p.locator("#doc-archivo").setInputFiles({ name: "poder-sexta.pdf", mimeType: "application/pdf", buffer: PDF("poder-sexta") });
+  await enviar(omar2.p, omar2.p.getByRole("button", { name: "Guardar documento" }), "dato_invalido_vigenteHasta");
+  exigir(
+    (await omar2.p.locator("#doc-vigente").getAttribute("aria-invalid")) === "true" && documentosEbano() === docsAntes && !(await aviso(omar2.p)).includes("La base no respondió"),
+    "bar-2. «Vigente hasta» 30 sep antes de «Emitido el» 1 oct: el campo queda marcado, sin documento nuevo y sin «La base no respondió»",
+    await aviso(omar2.p),
+  );
+  await enVista(omar2.p.locator("#doc-vigente"));
+  await foto(omar2.p, "bar2-documento-vigencia-antes-de-emision", false);
+  await omar2.nav.close();
+
+  // Consola de Taller del Cierre (Gil, Administración).
+  const gil = await abrir("gil");
+  const resultadoFlujo = async (forma) => {
+    await forma.locator(".alerta-asentado, .alerta-revisar, .error-campo").first().waitFor({ timeout: 20000 });
+    await listo(gil.p);
+    return (await forma.locator(".alerta-asentado").count()) > 0;
+  };
+
+  // bar-1: el RFC del cliente escrito con guion (13 caracteres, cabe en el campo) se guarda sin el guion.
+  await ir(gil.p, `/c/${TALLER}/consola/cobros`);
+  const cobro = gil.p.locator('form[data-formulario="cobro"]');
+  // base-N21: un RFC de puros guiones es error de su campo, no «La base no respondió».
+  await cobro.locator("#clienteNombre").fill("Cliente sin RFC");
+  await cobro.locator("#clienteRfc").fill(" - - ");
+  await cobro.locator("#concepto").fill("Asesoría sin RFC");
+  await cobro.locator("#monto").fill("100.00");
+  await cobro.getByRole("button", { name: "Registrar el cobro" }).click();
+  const asentadoGuiones = await resultadoFlujo(cobro);
+  const textoGuiones = (await cobro.innerText()).replace(/\s+/g, " ");
+  exigir(
+    !asentadoGuiones && textoGuiones.includes("no tiene la forma de un RFC") && (await cobro.locator("#clienteRfc").getAttribute("aria-invalid")) === "true"
+      && cuenta(`expected_collections where company_id = '${TALLER}' and concepto = 'Asesoría sin RFC'`) === 0,
+    "base-N21. cobro manual con el RFC « - - »: «Ese RFC no tiene la forma de un RFC» en su campo y sin cobro",
+    textoGuiones.slice(0, 200),
+  );
+  await foto(gil.p, "baseN21-cobro-rfc-de-guiones", false);
+  await ir(gil.p, `/c/${TALLER}/consola/cobros`);
+  await cobro.locator("#clienteNombre").fill("Cliente con guion");
+  await cobro.locator("#clienteRfc").fill("EKU900317-3C9");
+  await cobro.locator("#concepto").fill("Asesoría de la sexta revisión");
+  await cobro.locator("#monto").fill("1500.00");
+  await cobro.getByRole("button", { name: "Registrar el cobro" }).click();
+  exigir(
+    (await resultadoFlujo(cobro)) && sql(`select cliente_rfc from expected_collections where company_id = '${TALLER}' and concepto = 'Asesoría de la sexta revisión'`) === "EKU9003173C9",
+    "bar-1. cobro manual con el RFC «EKU900317-3C9»: queda registrado con «EKU9003173C9» (antes, «La base no respondió»)",
+  );
+  await foto(gil.p, "bar1-cobro-rfc-con-guion-registrado", false);
+
+  // líder-N2: cancelar ese cobro con «ok 😀» (4 caracteres, 5 unidades UTF-16): el servidor lo rechaza en el campo;
+  // con «ok 😀!» se cancela. Antes, el dominio lo aceptaba y la base respondía «La base no respondió».
+  await ir(gil.p, `/c/${TALLER}/consola/cobros`);
+  const filaCobro = gil.p.locator("tr[data-cobro]", { hasText: "Asesoría de la sexta revisión" });
+  await filaCobro.getByRole("button", { name: "Cancelar" }).click();
+  const dialogoCobro = gil.p.locator("dialog.dialogo[open]");
+  const formaCancelar = dialogoCobro.locator("form.flujo-resolver");
+  await dialogoCobro.locator('input[name="motivo"]').fill("ok 😀");
+  await dialogoCobro.getByRole("button", { name: "Cancelar el cobro" }).click();
+  await resultadoFlujo(formaCancelar);
+  const textoCancelar = (await dialogoCobro.innerText()).replace(/\s+/g, " ");
+  exigir(
+    textoCancelar.includes("al menos 5 caracteres") && !textoCancelar.includes("no respondió")
+      && sql(`select estado from expected_collections where company_id = '${TALLER}' and concepto = 'Asesoría de la sexta revisión'`) === "esperado",
+    "líder-N2. cancelar con «ok 😀»: «Explica el motivo en al menos 5 caracteres» en el campo y el cobro sigue esperado",
+    textoCancelar.slice(0, 200),
+  );
+  await foto(gil.p, "lider2-cancelar-cobro-motivo-emoji", false);
+  await dialogoCobro.locator('input[name="motivo"]').fill("ok 😀!");
+  await dialogoCobro.getByRole("button", { name: "Cancelar el cobro" }).click();
+  await gil.p.locator(".alerta-asentado", { hasText: "cancelado" }).first().waitFor({ timeout: 20000 });
+  exigir(
+    sql(`select estado || '|' || char_length(motivo_cancelacion) from expected_collections where company_id = '${TALLER}' and concepto = 'Asesoría de la sexta revisión'`) === "cancelado|5",
+    "líder-N2. con «ok 😀!» (5 caracteres) el cobro se cancela y la base guarda 5 caracteres",
+  );
+
+  // bar-9 y bar-8: cobro desde el XML de una factura emitida por Taller con «&amp;» en el nombre del receptor:
+  // se guarda con «&». Con «&#x9;» en la serie (un control escrito como referencia), «Al XML le faltan datos» en el
+  // campo. serv-nuevo-1/3: en el nombre, «&#x85;» se quita.
+  const rfcTaller = sql(`select rfc from companies where id = '${TALLER}'`);
+  const xml = (uuid, nombre, serie = "S") => Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital" Version="4.0" Fecha="2026-11-02T10:00:00" TipoDeComprobante="I" Moneda="MXN" Total="3480.00" Serie="${serie}" Folio="6">
+  <cfdi:Emisor Rfc="${rfcTaller}" Nombre="Taller del Cierre" RegimenFiscal="601" />
+  <cfdi:Receptor Rfc="PAS120101AB2" Nombre="${nombre}" DomicilioFiscalReceptor="06600" RegimenFiscalReceptor="601" UsoCFDI="G03" />
+  <cfdi:Complemento><tfd:TimbreFiscalDigital UUID="${uuid}" /></cfdi:Complemento>
+</cfdi:Comprobante>`);
+  const conXml = gil.p.locator('form[data-formulario="cobro-xml"]');
+  await ir(gil.p, `/c/${TALLER}/consola/cobros`);
+  await conXml.locator("#xml").setInputFiles({ name: "control.xml", mimeType: "text/xml", buffer: xml("6A6A6A6A-0000-4000-8000-000000000085", "PEREZ ASOCIADOS", "S&#x9;1") });
+  await conXml.getByRole("button", { name: "Registrar con el XML" }).click();
+  const asentadoControl = await resultadoFlujo(conXml);
+  const textoControl = (await conXml.innerText()).replace(/\s+/g, " ");
+  exigir(
+    !asentadoControl && textoControl.includes("faltan datos") && cuenta(`expected_collections where cfdi_uuid = '6A6A6A6A-0000-4000-8000-000000000085'`) === 0,
+    "bar-8. XML con «&#x9;» en la serie: «Al XML le faltan datos» en el campo, sin cobro (antes se guardaba «&#x9;» literal)",
+    textoControl.slice(0, 200),
+  );
+  await foto(gil.p, "bar8-xml-con-control-rechazado", false);
+  await ir(gil.p, `/c/${TALLER}/consola/cobros`);
+  await conXml.locator("#xml").setInputFiles({ name: "ampersand.xml", mimeType: "text/xml", buffer: xml("6A6A6A6A-0000-4000-8000-000000000026", "PEREZ &amp;&#x85; ASOCIADOS") });
+  await conXml.getByRole("button", { name: "Registrar con el XML" }).click();
+  exigir(
+    (await resultadoFlujo(conXml)) && sql(`select cliente_nombre from expected_collections where cfdi_uuid = '6A6A6A6A-0000-4000-8000-000000000026'`) === "PEREZ & ASOCIADOS",
+    "bar-9. XML con «PEREZ &amp;&#x85; ASOCIADOS»: el cobro se registra y la base guarda «PEREZ & ASOCIADOS» (sin el control)",
+  );
+  await ir(gil.p, `/c/${TALLER}/consola/cobros`);
+  exigir(await gil.p.locator("tr[data-cobro]", { hasText: "PEREZ & ASOCIADOS" }).first().isVisible(), "bar-9. la lista de cobros muestra «PEREZ & ASOCIADOS»");
+  await enVista(gil.p.locator("tr[data-cobro]", { hasText: "PEREZ & ASOCIADOS" }).first());
+  await foto(gil.p, "bar9-cobro-xml-ampersand", false);
+
+  // líder-N2: pago por excepción con el motivo «Revisar 😀» (9 caracteres, 10 unidades UTF-16: el navegador lo
+  // deja pasar). El servidor responde en el formulario; con «Pago 😀 ya!» (10 caracteres) queda en autorización.
+  await ir(gil.p, `/c/${TALLER}/consola/proveedores/nuevo`);
+  const opciones = await gil.p.locator("#supplierId option").evaluateAll((nodos) => nodos.map((nodo) => ({ valor: nodo.value, texto: nodo.textContent ?? "" })));
+  const elegido = opciones.find((opcion) => opcion.valor && !/Norte/i.test(opcion.texto));
+  exigir(Boolean(elegido), "líder-N2. hay un proveedor para el pago por excepción", JSON.stringify(opciones));
+  await gil.p.locator("#supplierId").selectOption(elegido.valor);
+  await gil.p.getByRole("button", { name: /Excepción/ }).click();
+  await gil.p.locator("#pdf").setInputFiles({ name: "soporte-sexta.pdf", mimeType: "application/pdf", buffer: PDF("soporte-sexta") });
+  await gil.p.locator("#monto").fill("1250.00");
+  await gil.p.locator("#referencia").fill("Servicio extraordinario de la sexta revisión");
+  await gil.p.locator("#motivoExcepcion").fill("Revisar 😀");
+  exigir(!(await gil.p.locator("#motivoExcepcion").evaluate((nodo) => nodo.validity.tooShort)), "líder-N2. «Revisar 😀» pasa el mínimo de 10 del navegador");
+  const pagosAntes = cuenta(`supplier_payables where company_id = '${TALLER}' and referencia = 'Servicio extraordinario de la sexta revisión'`);
+  await gil.p.getByRole("button", { name: "Revisar y solicitar" }).click();
+  await gil.p.locator("#pago-error").waitFor({ timeout: 20000 });
+  const errorPago = (await gil.p.locator("#pago-error").innerText()).replace(/\s+/g, " ");
+  exigir(
+    !errorPago.includes("no respondió") && cuenta(`supplier_payables where company_id = '${TALLER}' and referencia = 'Servicio extraordinario de la sexta revisión'`) === pagosAntes,
+    "líder-N2. pago por excepción con «Revisar 😀»: «No se guardó» con el aviso del motivo, sin pago (antes, el CHECK lo rechazaba con un error genérico)",
+    errorPago,
+  );
+  await enVista(gil.p.locator("#motivoExcepcion"));
+  await foto(gil.p, "lider2-pago-excepcion-motivo-emoji", false);
+  await gil.p.locator("#motivoExcepcion").fill("Pago 😀 ya!");
+  await gil.p.getByRole("button", { name: "Revisar y solicitar" }).click();
+  await gil.p.getByText("Quedó en autorización").first().waitFor({ timeout: 20000 });
+  exigir(
+    sql(`select char_length(motivo_excepcion) from supplier_payables where company_id = '${TALLER}' and referencia = 'Servicio extraordinario de la sexta revisión'`) === "10",
+    "líder-N2. con «Pago 😀 ya!» (10 caracteres) queda en autorización y la base guarda 10 caracteres",
+  );
+  await foto(gil.p, "lider2-pago-excepcion-en-autorizacion", false);
+  await gil.nav.close();
 }
 
 // ---------- Orden ----------

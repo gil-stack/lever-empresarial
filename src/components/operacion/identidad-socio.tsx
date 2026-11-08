@@ -15,27 +15,21 @@ function conPista(ligado: Ligado, pista: string): Ligado {
  * mexicana lleva su CURP y la moral mexicana su RFC. La extranjera lleva su país y el
  * número de su pasaporte o identificación oficial con su fecha de nacimiento (física)
  * o de su registro en su país (moral); el RFC, si lo tiene. Lo que no aplica no se
- * envía. Tras el rechazo de cualquier dato de un socio extranjero, el formulario
- * vuelve en «Extranjera» (con el campo de la extranjera marcado, si fue ese).
+ * envía. Tras un rechazo vuelve con lo capturado (`inicial`).
  */
 export function IdentidadDelSocio({
   paises,
   ligados,
-  tipoInicial,
-  extranjeraInicial,
+  inicial,
   children,
 }: {
   paises: ReadonlyArray<{ codigo: string; nombre: string }>;
   ligados: { rfc: Ligado; curp: Ligado; pais: Ligado; documentoExtranjero: Ligado; fechaNacimiento: Ligado };
-  tipoInicial: "fisica" | "moral";
-  extranjeraInicial: boolean;
+  inicial: Readonly<Record<string, string>>;
   children: ReactNode;
 }) {
-  const conError = (ligado: Ligado) => Object.keys(ligado).length > 0;
-  const [tipo, setTipo] = useState<"fisica" | "moral">(tipoInicial);
-  const [extranjera, setExtranjera] = useState(
-    extranjeraInicial || conError(ligados.pais) || conError(ligados.documentoExtranjero) || conError(ligados.fechaNacimiento),
-  );
+  const [tipo, setTipo] = useState<"fisica" | "moral">(inicial.tipoPersona === "moral" ? "moral" : "fisica");
+  const [extranjera, setExtranjera] = useState(inicial.nacionalidad === "extranjera");
   return (
     <>
       <div className="campo">
@@ -47,7 +41,7 @@ export function IdentidadDelSocio({
       </div>
       <div className="campo">
         <label htmlFor="acc-nacionalidad">Nacionalidad</label>
-        <select id="acc-nacionalidad" value={extranjera ? "extranjera" : "mexicana"} onChange={(evento) => setExtranjera(evento.target.value === "extranjera")}>
+        <select id="acc-nacionalidad" name="nacionalidad" value={extranjera ? "extranjera" : "mexicana"} onChange={(evento) => setExtranjera(evento.target.value === "extranjera")}>
           <option value="mexicana">Mexicana</option>
           <option value="extranjera">Extranjera</option>
         </select>
@@ -55,12 +49,12 @@ export function IdentidadDelSocio({
       {children}
       <div className="campo">
         <label htmlFor="acc-rfc">{extranjera ? "RFC en México (si tiene)" : "RFC"}</label>
-        <input id="acc-rfc" name="rfc" maxLength={13} autoCapitalize="characters" className="entrada-rfc" {...ligados.rfc} />
+        <input id="acc-rfc" name="rfc" maxLength={13} autoCapitalize="characters" className="entrada-rfc" defaultValue={inicial.rfc} {...ligados.rfc} />
       </div>
       {extranjera ? (
         <div className="campo">
           <label htmlFor="acc-pais">País</label>
-          <select id="acc-pais" name="pais" required defaultValue="" {...ligados.pais}>
+          <select id="acc-pais" name="pais" required defaultValue={inicial.pais ?? ""} {...ligados.pais}>
             <option value="" disabled>
               Elige el país
             </option>
@@ -75,7 +69,7 @@ export function IdentidadDelSocio({
       {tipo === "fisica" && !extranjera ? (
         <div className="campo">
           <label htmlFor="acc-curp">CURP</label>
-          <input id="acc-curp" name="curp" maxLength={18} autoCapitalize="characters" {...ligados.curp} />
+          <input id="acc-curp" name="curp" maxLength={18} autoCapitalize="characters" defaultValue={inicial.curp} {...ligados.curp} />
         </div>
       ) : null}
       {extranjera ? (
@@ -89,6 +83,7 @@ export function IdentidadDelSocio({
             maxLength={30}
             required
             autoCapitalize="characters"
+            defaultValue={inicial.documentoExtranjero}
             {...conPista(ligados.documentoExtranjero, "acc-documento-pista")}
           />
           <p id="acc-documento-pista" className="pista">
@@ -101,7 +96,7 @@ export function IdentidadDelSocio({
       {tipo === "fisica" && extranjera ? (
         <div className="campo">
           <label htmlFor="acc-nacimiento">Fecha de nacimiento</label>
-          <input id="acc-nacimiento" name="fechaNacimiento" type="date" required {...ligados.fechaNacimiento} />
+          <input id="acc-nacimiento" name="fechaNacimiento" type="date" required defaultValue={inicial.fechaNacimiento} {...ligados.fechaNacimiento} />
         </div>
       ) : null}
     </>

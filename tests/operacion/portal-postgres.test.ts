@@ -106,6 +106,8 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
         const mixta = await registrarProspecto(ana, { rfc: "MIX010101MXA", razonSocial: "Empresa Mixta", codigoPostal: "01000", regimen: "601", usoCfdi: "G03" });
         const pedidaPorBeto = await solicitarActivacion(beto, mixta);
         await assert.rejects(decidirActivacion(beto, sesionSofipo, { id: pedidaPorBeto, aprobada: true }), /misma_persona_en_activacion/);
+        // serv-N18: el motivo del rechazo cuenta caracteres, no unidades UTF-16: «Revisar 😀» son 9.
+        await assert.rejects(decidirActivacion(beto, sesionSofipo, { id: solicitudId, aprobada: false, motivo: "Revisar 😀" }), /motivo_corto/);
         await decidirActivacion(beto, sesionSofipo, { id: solicitudId, aprobada: true });
         assert.equal((await leerCliente(ana, companyId))?.estado, "activa");
         assert.ok((await listarAlertas(ana, companyId)).every((alerta) => alerta.estado === "cerrada"));
@@ -189,6 +191,7 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
         const vigenteDespues = despues.toISOString().slice(0, 10);
         const comisionId = await solicitarComision(ana, { companyId, tipo: "fondeo", valor: "250", vigenteDesde: hoy });
         await assert.rejects(decidirComision(ana, sesionSofipo, { id: comisionId, aprobada: true }), /misma_persona_en_comision/);
+        await assert.rejects(decidirComision(beto, sesionSofipo, { id: comisionId, aprobada: false, motivo: "Revisar 😀" }), /motivo_corto/);
         await decidirComision(beto, sesionSofipo, { id: comisionId, aprobada: true });
         const segundaComision = await solicitarComision(ana, { companyId, tipo: "fondeo", valor: "300", vigenteDesde: vigenteDespues });
         await decidirComision(beto, sesionSofipo, { id: segundaComision, aprobada: true });
@@ -208,11 +211,14 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
           /base_no_disponible|comision_sin_auditoria|company_commissions_sin_solape/,
         );
 
-        await crearAlerta(ana, { companyId, titulo: "Revisar datos", detalle: "Seguimiento operativo", responsableId: a });
+        // El detalle y el motivo escritos en varios renglones (el navegador manda CRLF) se guardan en uno:
+        // la base no acepta saltos de línea. Antes, el servidor los aceptaba y la base los rechazaba.
+        await crearAlerta(ana, { companyId, titulo: "Revisar datos", detalle: "Seguimiento\r\noperativo", responsableId: a });
         const abierta = (await listarAlertas(ana, companyId)).find((alerta) => alerta.titulo === "Revisar datos");
         assert.ok(abierta);
+        assert.equal(abierta.detalle, "Seguimiento operativo");
         await asignarAlerta(ana, abierta.id, b);
-        await cerrarAlerta(beto, abierta.id, "Datos revisados");
+        await cerrarAlerta(beto, abierta.id, "Datos\n\trevisados");
         assert.equal((await listarAlertas(ana, companyId)).find((alerta) => alerta.id === abierta.id)?.motivoCierre, "Datos revisados");
         await assert.rejects(cerrarAlerta(beto, abierta.id, "Otra vez"), /alerta_ya_cerrada/);
 

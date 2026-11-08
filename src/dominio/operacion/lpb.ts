@@ -1,3 +1,6 @@
+import { CONTROL } from "../control";
+import { fechaDeCalendario } from "./validar";
+
 /**
  * Lectura del CSV de la Lista de Personas Bloqueadas que carga Cumplimiento.
  *
@@ -48,12 +51,12 @@ export function leerListaBloqueadas(texto: string): LecturaLpb {
     const rfc = rfcCrudo ? rfcCrudo.toUpperCase() : null;
     const curp = curpCrudo ? curpCrudo.toUpperCase() : null;
     const fecha = fechaCruda ? fechaCruda : null;
-    if (nombre.length === 0 || nombre.length > 300 || /[\u0000-\u001f\u007f]/.test(nombre) || !tipo) {
+    if (nombre.length === 0 || nombre.length > 300 || CONTROL.test(nombre) || !tipo) {
       return { ok: false, codigo: "lpb_renglon_invalido", linea };
     }
     if (rfc && !(tipo === "moral" ? RFC_MORAL : RFC_FISICA).test(rfc)) return { ok: false, codigo: "lpb_renglon_invalido", linea };
     if (curp && (tipo !== "fisica" || !CURP.test(curp))) return { ok: false, codigo: "lpb_renglon_invalido", linea };
-    if (fecha && !fechaValida(fecha)) return { ok: false, codigo: "lpb_renglon_invalido", linea };
+    if (fecha && !fechaDeCalendario(fecha)) return { ok: false, codigo: "lpb_renglon_invalido", linea };
     renglones.push({ nombre, rfc, curp, tipo, fecha });
   }
   return { ok: true, renglones };
@@ -64,12 +67,6 @@ function normalizarTipo(valor: string): "fisica" | "moral" | null {
   if (limpio === "fisica") return "fisica";
   if (limpio === "moral") return "moral";
   return null;
-}
-
-function fechaValida(fecha: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return false;
-  const fechaDate = new Date(`${fecha}T00:00:00Z`);
-  return !Number.isNaN(fechaDate.getTime()) && fechaDate.toISOString().slice(0, 10) === fecha;
 }
 
 /** Campos de una línea CSV con comillas dobles; `null` si las comillas no cierran. */

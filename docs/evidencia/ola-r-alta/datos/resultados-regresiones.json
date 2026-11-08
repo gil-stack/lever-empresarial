@@ -161,15 +161,7 @@
     },
     {
       "ok": true,
-      "texto": "aviso «dato_invalido_documentoExtranjero» tras la acción"
-    },
-    {
-      "ok": true,
       "texto": "N11. tras el rechazo de la persona física extranjera, el formulario vuelve en «Extranjera» con el documento marcado y su texto"
-    },
-    {
-      "ok": true,
-      "texto": "aviso «dato_invalido_documentoExtranjero» tras la acción"
     },
     {
       "ok": true,
@@ -301,19 +293,11 @@
     },
     {
       "ok": true,
-      "texto": "aviso «dato_invalido_rfc» tras la acción"
+      "texto": "serv-N15. rechazado el RFC opcional de la física extranjera (dato_invalido_rfc), vuelve en «Extranjera» con ese campo marcado y sin socio de más"
     },
     {
       "ok": true,
-      "texto": "serv-N15. rechazado el RFC opcional de la física extranjera, vuelve en «Extranjera» con ese campo marcado y sin socio de más"
-    },
-    {
-      "ok": true,
-      "texto": "aviso «dato_invalido_capital» tras la acción"
-    },
-    {
-      "ok": true,
-      "texto": "serv-N15. rechazado el capital de la moral extranjera, vuelve en «Extranjera» con ese campo marcado y sin socio de más"
+      "texto": "serv-N15. rechazado el capital de la moral extranjera (dato_invalido_capital), vuelve en «Extranjera» con ese campo marcado y sin socio de más"
     },
     {
       "ok": true,
@@ -366,6 +350,170 @@
     {
       "ok": true,
       "texto": "base-N15. con Administración activa, el comando ya no invita ni reenvía"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N18. «Revisar 😀» pasa el mínimo de 10 del navegador (cuenta unidades UTF-16)"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N18. suspensión con «Revisar 😀»: «El motivo lleva al menos 10 caracteres» en el campo, no «La base no respondió», y no queda solicitud"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N18. con un motivo de 10 o más caracteres (y su emoji) la solicitud entra"
+    },
+    {
+      "ok": true,
+      "texto": "sexta-N1. el motivo escrito con Enter entra y se guarda en un renglón"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N18. Aprobaciones: el diálogo sigue abierto con «Revisar 😀», el aviso ligado al campo y el foco en él; la solicitud sigue pendiente"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «decision_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N18. corregido en el mismo diálogo, el rechazo queda con su motivo"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N18. dictamen observado con «Revisar 😀»: «motivo_corto» en el campo y ningún dictamen"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N18. caso de la Lista con «Revisar 😀»: «motivo_corto» y el caso sigue abierto"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. el RFC «XX» de la física extranjera: vuelve con país, documento, fecha, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. el nombre en blanco de la física extranjera: vuelve con país, documento, fecha, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. el capital «abc» de la física extranjera: vuelve con país, documento, fecha, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. el RFC «XX» de la moral extranjera: vuelve con país, documento, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. el nombre en blanco de la moral extranjera: vuelve con país, documento, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. el capital «abc» de la moral extranjera: vuelve con país, documento, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. corregido el capital en el mismo formulario, la moral extranjera entra y el formulario queda limpio"
+    },
+    {
+      "ok": true,
+      "texto": "emulador de Blob: borrado «503»"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «documento_sin_representante» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "emulador de Blob: borrado «normal»"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N16. Blob responde 503 al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro"
+    },
+    {
+      "ok": true,
+      "texto": "emulador de Blob: borrado «sin_respuesta»"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «documento_sin_representante» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "emulador de Blob: borrado «normal»"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N16. Blob no responde al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_vigenteHasta» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "bar-2. «Vigente hasta» 30 sep antes de «Emitido el» 1 oct: el campo queda marcado, sin documento nuevo y sin «La base no respondió»"
+    },
+    {
+      "ok": true,
+      "texto": "base-N21. cobro manual con el RFC « - - »: «Ese RFC no tiene la forma de un RFC» en su campo y sin cobro"
+    },
+    {
+      "ok": true,
+      "texto": "bar-1. cobro manual con el RFC «EKU900317-3C9»: queda registrado con «EKU9003173C9» (antes, «La base no respondió»)"
+    },
+    {
+      "ok": true,
+      "texto": "líder-N2. cancelar con «ok 😀»: «Explica el motivo en al menos 5 caracteres» en el campo y el cobro sigue esperado"
+    },
+    {
+      "ok": true,
+      "texto": "líder-N2. con «ok 😀!» (5 caracteres) el cobro se cancela y la base guarda 5 caracteres"
+    },
+    {
+      "ok": true,
+      "texto": "bar-8. XML con «&#x9;» en la serie: «Al XML le faltan datos» en el campo, sin cobro (antes se guardaba «&#x9;» literal)"
+    },
+    {
+      "ok": true,
+      "texto": "bar-9. XML con «PEREZ &amp;&#x85; ASOCIADOS»: el cobro se registra y la base guarda «PEREZ & ASOCIADOS» (sin el control)"
+    },
+    {
+      "ok": true,
+      "texto": "bar-9. la lista de cobros muestra «PEREZ & ASOCIADOS»"
+    },
+    {
+      "ok": true,
+      "texto": "líder-N2. hay un proveedor para el pago por excepción"
+    },
+    {
+      "ok": true,
+      "texto": "líder-N2. «Revisar 😀» pasa el mínimo de 10 del navegador"
+    },
+    {
+      "ok": true,
+      "texto": "líder-N2. pago por excepción con «Revisar 😀»: «No se guardó» con el aviso del motivo, sin pago (antes, el CHECK lo rechazaba con un error genérico)"
+    },
+    {
+      "ok": true,
+      "texto": "líder-N2. con «Pago 😀 ya!» (10 caracteres) queda en autorización y la base guarda 10 caracteres"
     },
     {
       "ok": true,
