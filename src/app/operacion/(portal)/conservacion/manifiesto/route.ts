@@ -1,0 +1,59 @@
+import { errorConSecreto } from "@/server/entrada";
+import { contextoOperacion } from "@/server/operacion";
+import { POLITICA_DESCARGA } from "@/server/pagos-proveedores/descarga";
+import { manifiestoDeConservacion } from "@/server/pld";
+import { ErrorDeDominio } from "@/server/session";
+
+export const runtime = "nodejs";
+
+/**
+ * 61ª: el manifiesto de conservación de una empresa en un periodo, en streaming
+ * (NDJSON) y por páginas de 2,000 documentos, para no pasar los 4.5 MB de una
+ * respuesta. Cada página deja su evento en la bitácora antes de salir.
+ */
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const volver = (aviso: string) => Response.redirect(new URL(`/operacion/conservacion?aviso=${encodeURIComponent(aviso)}&en=manifiesto-titulo#manifiesto-titulo`, request.url), 303);
+  try {
+    const ctx = await contextoOperacion();
+    if (!ctx) return new Response("No disponible", { status: 404, headers: { "Cache-Control": "private, no-store" } });
+    const companyId = url.searchParams.get("companyId") ?? "";
+    const desde = url.searchParams.get("desde") ?? "";
+    const hasta = url.searchParams.get("hasta") ?? "";
+    const pagina = Number(url.searchParams.get("pagina") ?? "1");
+    const despuesEn = url.searchParams.get("despuesEn");
+    const despuesId = url.searchParams.get("despuesId");
+    const cursor = despuesEn && despuesId && !Number.isNaN(Date.parse(despuesEn)) ? { despuesEn: new Date(despuesEn), despuesId } : null;
+    const lineas = manifiestoDeConservacion(ctx, { companyId, desde, hasta, pagina: Number.isInteger(pagina) && pagina >= 1 ? pagina : 1, cursor });
+    // La primera línea sale antes de responder: un permiso o un periodo inválido vuelven a la pantalla con su aviso.
+    const primera = await lineas.next();
+    const codificador = new TextEncoder();
+    const cuerpo = new ReadableStream<Uint8Array>({
+      start(control) {
+        if (!primera.done) control.enqueue(codificador.encode(primera.value));
+      },
+      async pull(control) {
+        const siguiente = await lineas.next();
+        if (siguiente.done) control.close();
+        else control.enqueue(codificador.encode(siguiente.value));
+      },
+      async cancel() {
+        await lineas.return(undefined);
+      },
+    });
+    const nombre = `manifiesto-conservacion-${desde}-${hasta}-pagina-${pagina}.ndjson`;
+    return new Response(cuerpo, {
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(nombre)}`,
+        "Content-Security-Policy": POLITICA_DESCARGA,
+        "X-Content-Type-Options": "nosniff",
+        "Cache-Control": "private, no-store",
+      },
+    });
+  } catch (error) {
+    if (error instanceof ErrorDeDominio) return volver(error.codigo);
+    if (errorConSecreto(error)) return volver("base_no_disponible");
+    throw error;
+  }
+}
