@@ -480,6 +480,9 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           // base-N23: los nombres son identidad; con un control se rechazan, no se vuelven espacio.
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, nombres: "Pedro\u0085Pablo" }, secretario, oficial] }), /dato_invalido_nombres/);
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, primerApellido: "Ruiz\tSoto" }, secretario, oficial] }), /dato_invalido_primerApellido/);
+          // Área y cargo van tal cual en el aviso de la 49ª: también rechazan.
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, area: "Dirección\u0085General" }, secretario, oficial] }), /dato_invalido_area/);
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, cargoEntidad: "Director\u000bGeneral" }, secretario, oficial] }), /dato_invalido_cargoEntidad/);
           assert.equal(await contar("select count(*)::int as n from pld_comite_integrantes"), 0);
           await registrarIntegrantes(cum, { integrantes: [presidente, secretario, oficial, vocal, integrante(PS, "PRESIDENTE", "SUPLENTE", "Pablo", { suplenteDe: P })] });
           assert.deepEqual(await uno("select nombres, primer_apellido, segundo_apellido, area from pld_comite_integrantes where id = $1", [P]),
@@ -487,6 +490,7 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [integrante(randomUUID(), "PRESIDENTE", "SUPLENTE", "Pedro", { suplenteDe: P })] }), /comite_un_suplente_por_titular/);
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [], sustituye: { integranteId: I2, sustituidoEl: sumarDias(designado, -1), motivo: "Sustitución de prueba" } }), /comite_sustitucion_antes_de_designacion/);
           await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor\u000bInterno", cargoEntidad: "Auditor", designadoEl: designado }), /dato_invalido_nombre/);
+          await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor\u0085interno", designadoEl: designado }), /dato_invalido_cargoEntidad/);
           await registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor", designadoEl: designado });
 
           // 49ª: comunicación al SITI con su folio; repetido o ajeno, no.

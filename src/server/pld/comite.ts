@@ -247,6 +247,8 @@ export type EntradaIntegrante = {
 function leerIntegrante(entrada: EntradaIntegrante, hoy: string) {
   if (!uuidValido(entrada.id)) throw new ErrorDeDominio("formulario_invalido");
   const texto = (valor: unknown, maximo: number, campo: string) => {
+    // Área y cargo van tal cual en el aviso de la 49ª: con un control se rechazan, no se vuelven espacio.
+    rechazarControl(valor, `dato_invalido_${campo}`);
     const limpio = textoOperativo(valor, maximo);
     if (!limpio) throw new ErrorDeDominio(`dato_invalido_${campo}`);
     return limpio.toLocaleUpperCase("es-MX");
@@ -357,6 +359,7 @@ export async function registrarAuditor(
   rechazarControl(entrada.nombre, "dato_invalido_nombre");
   const nombre = textoOperativo(entrada.nombre, 200);
   if (!nombre) throw new ErrorDeDominio("dato_invalido_nombre");
+  rechazarControl(entrada.cargoEntidad, "dato_invalido_cargoEntidad");
   const cargo = textoOperativo(entrada.cargoEntidad, 120);
   if (!cargo) throw new ErrorDeDominio("dato_invalido_cargoEntidad");
   const designado = typeof entrada.designadoEl === "string" ? entrada.designadoEl : "";
