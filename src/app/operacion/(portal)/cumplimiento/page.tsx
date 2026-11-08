@@ -4,10 +4,12 @@ import Link from "next/link";
 import { Coincidencias } from "@/components/operacion/coincidencias";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
+import { BandejaDePld } from "@/components/operacion/pld/bandeja";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { Hoja, Insignia, Metrica, Metricas, Monto, NotaRegla, Vacio } from "@/components/sistema";
 import { ETIQUETA_GRADO } from "@/dominio/operacion";
 import { exigirContextoOperacion, leerBandejaCumplimiento, puedeEnOperacion } from "@/server/operacion";
+import { ahoraPld, leerBandejaPld } from "@/server/pld";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Cumplimiento · Operación" };
@@ -32,6 +34,8 @@ export default async function CumplimientoOperacion({ searchParams }: { searchPa
   const resuelve = puedeEnOperacion(ctx, "plataforma.lpb.resolver");
   const vencidas = bandeja.revisiones.filter((revision) => revision.vencida);
   const urgentes = bandeja.coincidencias.filter((coincidencia) => coincidencia.estado === "confirmada");
+  // Ola R2: lo de PLD, con el «hoy» del reloj de PLD (fijo solo en las pruebas).
+  const pld = puedeEnOperacion(ctx, "plataforma.pld.ver") ? await leerBandejaPld(ctx, { ahora: ahoraPld() }) : null;
   return (
     <PaginaOperacion titulo="Cumplimiento" aviso={params.aviso}>
       <Metricas etiqueta="Bandeja de Cumplimiento">
@@ -117,6 +121,7 @@ export default async function CumplimientoOperacion({ searchParams }: { searchPa
           </ul>
         )}
       </Hoja>
+      {pld ? <BandejaDePld bandeja={pld} /> : null}
       <NotaRegla>
         Lever no transmite reportes a la UIF: registra la coincidencia, el plazo de 24 horas, quién la atendió y el folio que
         Cumplimiento presentó por su propia vía.
