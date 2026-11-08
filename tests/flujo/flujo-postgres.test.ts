@@ -513,7 +513,8 @@ async function escenario(url: string): Promise<void> {
     () => registrarCobroCfdi(admin, { bytes: conSerie("FFFFFFFF-0000-4000-8000-000000000002", "F&#x9;1"), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA),
     (error: unknown) => error instanceof ErrorDeCaptura && error.errores.some((e) => e.campo === "xml"),
   );
-  const partido = await registrarCobroCfdi(admin, { bytes: conNombre("FFFFFFFF-0000-4000-8000-000000000004", "Comercializadora\n&#x85;Uno"), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA);
+  // serv-nuevo-4: el control solo, entre dos palabras (sin el salto que antes ponía el espacio), vale un espacio.
+  const partido = await registrarCobroCfdi(admin, { bytes: conNombre("FFFFFFFF-0000-4000-8000-000000000004", "Comercializadora&#x85;Uno"), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA);
   assert.equal(consultarJson<string[]>(url, `select json_agg(cliente_nombre) from expected_collections where id = '${partido.id}'`)[0], "Comercializadora Uno");
   await cancelarCobro(admin, { id: partido.id, motivo: "Prueba del nombre partido" }, AHORA);
   // serv-nuevo-2: una entidad sin declarar («&x;») vuelve mal formado el XML: «El archivo no es un XML de CFDI válido.».

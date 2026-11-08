@@ -2,7 +2,7 @@ import { leerCentavosEscritos } from "../centavos";
 import { fechaValida } from "../personas";
 import { normalizarRfc, validarRfc } from "../rfc";
 import { FRECUENCIAS_OBLIGACION, type FrecuenciaObligacion } from "./fechas";
-import { sinControles } from "../control";
+import { CONTROL, sinControles } from "../control";
 
 /**
  * Lo que la persona escribe en los formularios del flujo, ya validado. Los
@@ -76,7 +76,8 @@ export function validarCobroManual(entrada: Record<string, unknown>): Resultado<
   // Se guarda lo que se valida: sin espacios ni guiones, como pide el CHECK de la base. Lo escrito que no
   // queda en un RFC (solo guiones o espacios, por ejemplo) es error de su campo.
   const clienteRfc = rfcEscrito === "" ? null : normalizarRfc(rfcEscrito);
-  if (clienteRfc !== null && validarRfc(clienteRfc) !== null) errores.push({ campo: "clienteRfc", mensaje: "Ese RFC no tiene la forma de un RFC. Déjalo vacío si no lo tienes." });
+  // Con un control dentro (un tabulador también) se rechaza: normalizar lo borraría.
+  if (clienteRfc !== null && (CONTROL.test(rfcEscrito) || validarRfc(clienteRfc) !== null)) errores.push({ campo: "clienteRfc", mensaje: "Ese RFC no tiene la forma de un RFC. Déjalo vacío si no lo tienes." });
   const concepto = textoLimpio(entrada.concepto, 200);
   if (!concepto) errores.push({ campo: "concepto", mensaje: "Escribe el concepto del cobro." });
   const montoCentavos = montoPositivo(entrada.monto);

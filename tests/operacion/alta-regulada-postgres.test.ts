@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 import pg from "pg";
 
-import { CONTROL, CONTROL_SALVO_RENGLONES } from "../../src/dominio/control.ts";
+import { CONTROL } from "../../src/dominio/control.ts";
 
 import { TOPE_ARCHIVO_BYTES } from "../../src/dominio/archivos.ts";
 import { hoyEnMexico } from "../../src/dominio/operacion/comisiones.ts";
@@ -105,7 +105,7 @@ const DOS_CAPAS: SocioDePrueba[] = [
 // ni del de CI), en todo el plano básico sin sustitutos. Antes el servidor solo filtraba C0 y DEL, y la base
 // también rechaza C1 (U+0080 a U+009F).
 describe("caracteres de control: el servidor y la base cuentan lo mismo", { skip: urlAdmin.length === 0 }, () => {
-  it("CONTROL coincide con [[:cntrl:]] de pg_c_utf8 de U+0001 a U+FFFF; CONTROL_SALVO_RENGLONES deja tab, LF y CR", async () => {
+  it("CONTROL coincide con [[:cntrl:]] de pg_c_utf8 de U+0001 a U+FFFF", async () => {
     const c = new pg.Client({ connectionString: urlAdmin });
     await c.connect();
     try {
@@ -114,14 +114,11 @@ describe("caracteres de control: el servidor y la base cuentan lo mismo", { skip
           where (cp < 55296 or cp > 57343) and (chr(cp) collate "pg_c_utf8") ~ '[[:cntrl:]]'`,
       )).rows[0]!.cp;
       const servidor: number[] = [];
-      const salvoRenglones: number[] = [];
       for (let cp = 1; cp <= 0xffff; cp++) {
         if (cp >= 0xd800 && cp <= 0xdfff) continue;
         if (CONTROL.test(String.fromCodePoint(cp))) servidor.push(cp);
-        if (CONTROL_SALVO_RENGLONES.test(String.fromCodePoint(cp))) salvoRenglones.push(cp);
       }
       assert.deepEqual(servidor, base);
-      assert.deepEqual(salvoRenglones, base.filter((cp) => cp !== 9 && cp !== 10 && cp !== 13));
       assert.ok(base.includes(0x85) && base.includes(0x93) && !base.includes(0x2028) && !base.includes(0xa0));
     } finally {
       await c.end();
@@ -730,9 +727,14 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           // bar-4: la fecha de presentación o del aviso que no existe en el calendario se rechaza en su campo.
           await assert.rejects(registrarReporte(cum, { id: mario.id, folio: "UIF-2026-0001", presentadoEl: "2026-02-30", avisoClienteEl: hoy }), /dato_invalido_presentadoEl/);
           await assert.rejects(registrarReporte(cum, { id: mario.id, folio: "UIF-2026-0001", presentadoEl: hoy, avisoClienteEl: "0000-01-01" }), /dato_invalido_avisoClienteEl/);
-          // serv-nuevo-1: el folio pegado con un control invisible (U+0085) se guarda sin él; antes, `textoOperativo`
-          // dejaba pasar el C1 y el CHECK `lpb_coincidencias_textos` respondía «La base no respondió».
-          await registrarReporte(cum, { id: mario.id, folio: "UIF-2026-\u00850001", presentadoEl: hoy, avisoClienteEl: hoy });
+          // Regla 1: el folio del reporte es un identificador. Con un control invisible (U+0085, o un tabulador) se
+          // rechaza en su campo y no se guarda nada; ni se limpia ni llega a la base (antes, el CHECK
+          // `lpb_coincidencias_textos` respondía «La base no respondió»; en 98224e0 se guardaba sin él).
+          for (const folio of ["UIF-2026-\u00850001", "UIF-2026\t0001"]) {
+            await assert.rejects(registrarReporte(cum, { id: mario.id, folio, presentadoEl: hoy, avisoClienteEl: hoy }), /dato_invalido_folio/);
+          }
+          assert.equal((await dueno.query("select reporte_folio from lpb_coincidencias where id = $1", [mario.id])).rows[0]?.reporte_folio, null);
+          await registrarReporte(cum, { id: mario.id, folio: "UIF-2026-0001", presentadoEl: hoy, avisoClienteEl: hoy });
           assert.equal((await dueno.query("select reporte_folio from lpb_coincidencias where id = $1", [mario.id])).rows[0]?.reporte_folio, "UIF-2026-0001");
           await assert.rejects(registrarReporte(cum, { id: mario.id, folio: "UIF-2026-0002", presentadoEl: hoy, avisoClienteEl: hoy }), /reporte_ya_registrado/);
 
@@ -1686,7 +1688,7 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           // bar-3: un control C1 (U+0085, o las comillas U+0093/U+0094 de un Windows-1252 mal decodificado) en la
           // razón social del alta se rechaza en su campo; antes pasaba el servidor y el CHECK de `companies` lo
           // rechazaba con «La base no respondió». (En los textos libres se quita: serv-nuevo-1, en el reporte.)
-          await assert.rejects(registrarProspecto(ori, { rfc: "CTL010101AB1", razonSocial: "Empresa \u0093Control\u0094", codigoPostal: "01000", regimen: "601", usoCfdi: "G03" }), /razon_social_invalida/);
+          await assert.rejects(registrarProspecto(ori, { rfc: "CTL010101AB1", razonSocial: "Empresa \u0093Control\u0094", codigoPostal: "01000", regimen: "601", usoCfdi: "G03" }), /razon_social_control/);
           // bar-5: el correo con un carácter de control, o que en minúsculas pasa de 254 («İ» se vuelve dos), se
           // rechaza en su campo (antes, el CHECK `kyb_versiones_correo` respondía «La base no respondió»).
           await assert.rejects(guardarDatosGenerales(ori, { versionId: kappaV1, datos: { ...DATOS_GENERALES, correo: "con\u0001tacto@lab.mx" } }), /dato_invalido_correo/);
@@ -2121,6 +2123,56 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
             resolverCoincidencia(cum, SESION_SOFIPO, { id: caso.id, estado: "fuera_de_lista", motivo: "Ya no aparece en el 69-B" }),
             /coincidencia_sigue_en_lista/,
           );
+        });
+
+        await t.test("base-N23: un control entre dos palabras no pega el nombre que se coteja contra la Lista ni el giro", async () => {
+          // Cuatro socios extranjeros sin RFC ni CURP: el nombre es su única llave contra la Lista. Antes, el control
+          // se borraba sin dejar espacio («PedroRuiz Sol») y la Lista con el nombre bien escrito ya no lo encontraba.
+          const extranjero = (nombre: string, documento: string): SocioDePrueba => ({
+            nombre, tipoPersona: "fisica", pais: "US", documentoExtranjero: documento, fechaNacimiento: "1980-01-01", capital: "25", votos: "25",
+          });
+          const rfc = "LCO010101AB3";
+          const companyId = await prospecto(rfc, "Laboratorio Cotejo SA de CV");
+          const { versionId } = await armarBorrador(ori, {
+            companyId, razonSocial: "Laboratorio Cotejo SA de CV", rfc, almacen,
+            socios: [extranjero("Ana Ruiz Sol", "X1234567"), extranjero("Pedro Ruiz Sol", "X1234568"), extranjero("Luis Ruiz Sol", "X1234569"), extranjero("Eva Ruiz Sol", "X1234560")],
+          });
+          const socio = (nombre: string) => agregarAccionista(ori, {
+            versionId, formId: randomUUID(), padreClave: "", tipoPersona: "fisica", nombre, rfc: "", curp: "",
+            pais: "US", documentoExtranjero: "Z7654321", fechaNacimiento: "1981-02-02", capital: "0", votos: "0", controlOtrosMedios: true, pep: "no",
+          });
+          const representante = (nombre: string) => agregarRepresentante(ori, {
+            versionId, formId: randomUUID(), nombre, rfc: "", curp: "", cargo: "apoderado", esAdministrador: false, designadoPor: "", pep: "no",
+          });
+          // Regla 1: una identidad con cualquier control se rechaza en su campo, también el tabulador; no se limpia.
+          for (const nombre of ["Pedro\u000bRuiz Sol", "Luis\u0085Gómez Paz", "Juan\u0085Pérez López", "Eva Ruiz\u0096Sol", "O\u0092Brien Sol", "Ana\tRuiz Sol", "Iván\u000cSol", "Iván\u001fSol", "Iván\u0001Sol"]) {
+            await assert.rejects(socio(nombre), /dato_invalido_nombre/, `socio ${JSON.stringify(nombre)}`);
+            await assert.rejects(representante(nombre), /dato_invalido_nombre/, `representante ${JSON.stringify(nombre)}`);
+          }
+          const nombres = async (tabla: "kyb_accionistas" | "kyb_representantes") =>
+            (await dueno.query(`select nombre from ${tabla} where version_id = $1 order by nombre`, [versionId])).rows.map((r) => String(r.nombre));
+          assert.deepEqual(await nombres("kyb_accionistas"), ["Ana Ruiz Sol", "Eva Ruiz Sol", "Luis Ruiz Sol", "Pedro Ruiz Sol"]);
+          assert.deepEqual(await nombres("kyb_representantes"), ["Rosa Pérez Ríos"]);
+
+          // La razón social del expediente también es una identidad: con U+0085 se rechaza en su campo.
+          await assert.rejects(
+            guardarDatosGenerales(ori, { versionId, datos: { ...DATOS_GENERALES, razonSocial: "Laboratorio\u0085Cotejo SA de CV", rfc } }),
+            /dato_invalido_razonSocial/,
+          );
+          // En el giro, que es texto libre, el NEL entre dos palabras se vuelve un espacio (serv-nuevo-4).
+          await guardarDatosGenerales(ori, { versionId, datos: { ...DATOS_GENERALES, razonSocial: "Laboratorio Cotejo SA de CV", rfc, giro: "Distribución\u0085de abarrotes" } });
+          const datos = (await dueno.query("select razon_social, giro from kyb_versiones where id = $1", [versionId])).rows[0];
+          assert.deepEqual([datos?.razon_social, datos?.giro], ["Laboratorio Cotejo SA de CV", "Distribución de abarrotes"]);
+
+          await enviarVersion(ori, versionId);
+          await cargar(lista("2026-11-02", BETA_EN_LISTA, "ANA RUIZ SOL,,,fisica", "PEDRO RUIZ SOL,,,fisica", "LUIS RUIZ SOL,,,fisica", "EVA RUIZ SOL,,,fisica"));
+          const coincidencias = (await listarCoincidencias(cum, { companyId })).map((k) => [k.sujetoNombre, k.tipo, k.coincidePor]).sort();
+          assert.deepEqual(coincidencias, [
+            ["Ana Ruiz Sol", "posible", "nombre"],
+            ["Eva Ruiz Sol", "posible", "nombre"],
+            ["Luis Ruiz Sol", "posible", "nombre"],
+            ["Pedro Ruiz Sol", "posible", "nombre"],
+          ]);
         });
       } finally {
         await dueno.end();

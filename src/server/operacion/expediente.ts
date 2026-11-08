@@ -430,7 +430,8 @@ export async function crearVersion(ctx: ContextoDePersonal, entrada: { companyId
 
 // El orden de CAMPOS_DATOS es el de los placeholders de ACTUALIZAR_DATOS ($2 en adelante).
 const CAMPOS_DATOS: Array<[keyof DatosGenerales, string, (valor: unknown) => string | number | null | undefined]> = [
-  ["razonSocial", "razon_social", (v) => opcional(v, (t) => textoOperativo(t, 300))],
+  // La razón social es una identidad: con un control se rechaza en su campo, no se limpia (ver `conControl`).
+  ["razonSocial", "razon_social", (v) => opcional(v, (t) => (conControl(t) ? null : textoOperativo(t, 300)))],
   ["giro", "giro", (v) => opcional(v, (t) => textoOperativo(t, 200))],
   ["nacionalidad", "nacionalidad", (v) => opcional(v, (t) => textoOperativo(t, 80))],
   ["rfc", "rfc", (v) => opcional(v, (t) => (rfcMoralValido(t.toUpperCase()) ? t.toUpperCase() : null))],
@@ -443,7 +444,7 @@ const CAMPOS_DATOS: Array<[keyof DatosGenerales, string, (valor: unknown) => str
   ["domicilioEntidad", "domicilio_entidad", (v) => opcional(v, (t) => textoOperativo(t, 80))],
   ["domicilioCodigoPostal", "domicilio_codigo_postal", (v) => opcional(v, (t) => (/^\d{5}$/.test(t) ? t : null))],
   ["domicilioPais", "domicilio_pais", (v) => opcional(v, (t) => textoOperativo(t, 80))],
-  ["telefono", "telefono", (v) => opcional(v, (t) => { const solo = t.replace(/[\s()+-]/g, ""); return /^\d{10,15}$/.test(solo) ? solo : null; })],
+  ["telefono", "telefono", (v) => opcional(v, (t) => { const solo = t.replace(/[\s()+-]/g, ""); return !conControl(t) && /^\d{10,15}$/.test(solo) ? solo : null; })],
   // En minúsculas antes de medir («İ» crece) y sin caracteres de control, como el CHECK `kyb_versiones_correo`.
   ["correo", "correo", (v) => opcional(v, (t) => {
     const correo = t.toLowerCase();
@@ -492,6 +493,7 @@ export async function agregarRepresentante(
   exigirEnOperacion(ctx, "plataforma.expediente.capturar");
   if (!uuidValido(entrada.versionId)) throw new ErrorDeDominio("expediente_ausente");
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
+  if (conControl(entrada.nombre)) throw new ErrorDeDominio("dato_invalido_nombre");
   const nombre = textoOperativo(entrada.nombre, 200);
   if (!nombre) throw new ErrorDeDominio("dato_invalido_nombre");
   const rfc = opcional(entrada.rfc, (t) => (rfcFisicaValido(t.toUpperCase()) ? t.toUpperCase() : null));
@@ -532,6 +534,7 @@ export async function agregarAccionista(
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
   const tipo = entrada.tipoPersona === "moral" ? "moral" : entrada.tipoPersona === "fisica" ? "fisica" : null;
   if (!tipo) throw new ErrorDeDominio("dato_invalido_tipoPersona");
+  if (conControl(entrada.nombre)) throw new ErrorDeDominio("dato_invalido_nombre");
   const nombre = textoOperativo(entrada.nombre, 300);
   if (!nombre) throw new ErrorDeDominio("dato_invalido_nombre");
   const rfc = opcional(entrada.rfc, (t) => {
@@ -973,6 +976,17 @@ function tipoDeContenido(bytes: Uint8Array): { tipo: string; extension: string }
   if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return { tipo: "image/png", extension: "png" };
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return { tipo: "image/jpeg", extension: "jpg" };
   return null;
+}
+
+/**
+ * Una identidad (el nombre de un representante o de un socio, la razón social) se coteja contra la Lista por
+ * nombre (`lpb_normalizar`); para un extranjero sin RFC ni CURP es la única llave. Con un control invisible
+ * no se limpia ni se transforma: se rechaza en su campo, como el renglón de la Lista, los proveedores y los
+ * nombres de Personas. Borrado, pegaría dos palabras («PedroRuiz Sol») y la Lista ya no lo encontraría. Solo
+ * se recortan los espacios de las orillas, como en el RFC o la CURP.
+ */
+function conControl(valor: unknown): boolean {
+  return typeof valor === "string" && CONTROL.test(valor.trim());
 }
 
 /** Vacío → null; inválido → undefined; válido → el valor limpio. */

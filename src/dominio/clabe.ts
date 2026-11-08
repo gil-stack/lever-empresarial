@@ -10,15 +10,17 @@
  * guarda. Los 18 dígitos se conservan completos: no es un PAN.
  */
 
+import { CONTROL } from "./control";
+
 export const PESOS_CLABE = [3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7, 1, 3, 7] as const;
 
 export type ClabeResultado =
   | { ok: true; clabe: string }
   | { ok: false; codigo: "clabe_invalida" };
 
-/** Quita espacios y guiones. Cualquier otro carácter que no sea dígito no entra. */
+/** Quita espacios y guiones. Cualquier otro carácter que no sea dígito no entra, ni un control (un tabulador tampoco). */
 export function normalizarClabe(valor: unknown): string | null {
-  if (typeof valor !== "string") return null;
+  if (typeof valor !== "string" || CONTROL.test(valor.trim())) return null;
   const limpia = valor.trim().replace(/[\s-]/g, "");
   if (!/^[0-9]{18}$/.test(limpia)) return null;
   return limpia;

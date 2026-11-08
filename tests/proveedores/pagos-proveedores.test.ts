@@ -291,17 +291,22 @@ test("cuentas por pagar contra Postgres: personas, versiones, CLABE, 69-B, SQL d
           "Trabajo urgente autorizado ya",
         );
         await cancelarPagoProveedor(sofia, { requestId: conControl.requestId, motivo: "Prueba del control invisible" }, deps);
-        // bar-10: una fecha que no existe en el calendario (o del año 0) se rechaza como «fecha_invalida», sin
-        // filas (antes llegaba a la base y respondía 22008 sin traducir).
+        // bar-10: una fecha que no existe en el calendario (o del año 0) se rechaza sin filas (antes llegaba a la
+        // base y respondía 22008 sin traducir), y con el código de su campo para marcarlo (P3: antes todas eran
+        // «fecha_invalida» y el aviso marcaba el vencimiento o «Vigente hasta»).
         const cargos = () => consultarJson<number[]>(url, "select json_agg(n) from (select count(*)::int as n from supplier_payables) t")[0];
         const documentos = () => consultarJson<number[]>(url, "select json_agg(n) from (select count(*)::int as n from supplier_documents) t")[0];
         const [cargosAntes, documentosAntes] = [cargos(), documentos()];
         await assert.rejects(
           () => crearPagoProveedor(sofia, { ...excepcion("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae4"), emitidaEl: "0000-01-01" }, deps),
-          conCodigo("fecha_invalida"),
+          conCodigo("fecha_emision_invalida"),
         );
         await assert.rejects(
           () => agregarContratoProveedor(luis, { supplierId: PROVEEDOR, pdf: { nombre: "contrato.pdf", bytes: PDF }, vigenteDesde: "2026-02-30", vigenteHasta: "" }, deps),
+          conCodigo("fecha_desde_invalida"),
+        );
+        await assert.rejects(
+          () => agregarContratoProveedor(luis, { supplierId: PROVEEDOR, pdf: { nombre: "contrato.pdf", bytes: PDF }, vigenteDesde: "2026-11-01", vigenteHasta: "2026-13-01" }, deps),
           conCodigo("fecha_invalida"),
         );
         assert.deepEqual([cargos(), documentos()], [cargosAntes, documentosAntes]);

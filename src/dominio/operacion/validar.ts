@@ -28,11 +28,11 @@ export function textoOperativo(valor: unknown, maximo: number): string | null {
 
 /**
  * Lo escrito en un `textarea` (motivos y detalles). Se acepta en varios renglones, pero se guarda en uno:
- * los CHECK de la base (`[[:cntrl:]]` y `texto_regulado`) no aceptan saltos de línea ni tabuladores. Los
- * demás controles invisibles se quitan (`sinControles`).
+ * los CHECK de la base (`[[:cntrl:]]` y `texto_regulado`) no aceptan saltos de línea ni tabuladores.
+ * `sinControles` vuelve un espacio cada salto y cada control invisible, y junta los espacios.
  */
 export function textoMultilinea(valor: unknown, maximo: number): string | null {
   if (typeof valor !== "string") return null;
-  const limpio = sinControles(valor).trim().replace(/\s*[\t\n\r]\s*/g, " ");
+  const limpio = sinControles(valor);
   return limpio.length > 0 && [...limpio].length <= maximo ? limpio : null;
 }

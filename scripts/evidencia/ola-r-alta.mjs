@@ -1957,6 +1957,214 @@ async function sextaRonda(rutaEbano) {
   );
   await foto(gil.p, "lider2-pago-excepcion-en-autorizacion", false);
   await gil.nav.close();
+  await septimaRonda(rutaEbano);
+}
+
+/**
+ * Re-verificación sobre 98224e0. base-N23 y serv-nuevo-4: una identidad (nombre de representante o socio, razón
+ * social) con un control invisible se rechaza en su campo, y en los textos libres el control vale un espacio.
+ * P3: el área y la razón social del alta dan su error de forma, y cada fecha mala de Pagos marca su campo.
+ */
+async function septimaRonda(rutaEbano) {
+  console.log("\n— Séptima revisión: identidades con un control, textos libres con espacio y avisos en su campo");
+  renovarSesiones();
+  const omar = await abrir("omar");
+  const marcado = async (p, selector) => (await p.locator(selector).getAttribute("aria-invalid")) === "true";
+  // Una petición armada, como la del revisor: el campo de fecha no deja escribir un día que no existe. Se escribe
+  // una fecha válida y única y, en la petición de la acción que sale del navegador, se cambia por la imposible.
+  const armarFecha = async (p, real, forzada) => {
+    await p.route("**/*", async (ruta) => {
+      const peticion = ruta.request();
+      const cuerpo = peticion.method() === "POST" && peticion.headers()["next-action"] ? peticion.postDataBuffer()?.toString("latin1") ?? "" : "";
+      if (!cuerpo.includes(real)) return ruta.fallback();
+      await ruta.continue({ postData: Buffer.from(cuerpo.split(real).join(forzada), "latin1") });
+    });
+  };
+
+  // base-N23: el representante «Pedro<U+000B>Ruiz Sol» se rechaza en su campo (antes se guardaba «PedroRuiz Sol» y
+  // la Lista con el nombre bien escrito ya no lo encontraba).
+  await ir(omar.p, rutaEbano);
+  const borrador = `(select id from kyb_versiones where company_id = '${ctxEbano.id}' and estado = 'borrador')`;
+  const representantes = () => cuenta(`kyb_representantes where version_id = ${borrador} and retirado_en is null`);
+  const repsAntes = representantes();
+  await campo(omar.p, "#rep-nombre", "Pedro\u000bRuiz Sol");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Agregar representante" }), "dato_invalido_nombre");
+  exigir(
+    (await marcado(omar.p, "#rep-nombre")) && representantes() === repsAntes && !(await aviso(omar.p)).includes("no respondió"),
+    "base-N23. el representante «Pedro\\u000bRuiz Sol» se rechaza en su campo y no se guarda (antes, «PedroRuiz Sol»)",
+    await aviso(omar.p),
+  );
+  await enVista(omar.p.locator("#rep-nombre"));
+  await foto(omar.p, "n23-representante-con-control", false);
+
+  // base-N23: el socio extranjero «Luis<U+0085>Gómez Paz» (sin RFC ni CURP: el nombre es su llave contra la Lista)
+  // se rechaza en su campo y el formulario conserva lo capturado.
+  await ir(omar.p, rutaEbano);
+  const socios = () => cuenta(`kyb_accionistas where version_id = ${borrador} and retirado_en is null`);
+  const sociosAntes = socios();
+  await omar.p.locator("#acc-tipo").selectOption("fisica");
+  await omar.p.locator("#acc-nacionalidad").selectOption("extranjera");
+  await campo(omar.p, "#acc-nombre", "Luis\u0085Gómez Paz");
+  await omar.p.locator("#acc-pais").selectOption("SE");
+  await campo(omar.p, "#acc-documento", "SE-771020");
+  await omar.p.locator("#acc-nacimiento").fill("1981-02-02");
+  await campo(omar.p, "#acc-capital", "1");
+  await campo(omar.p, "#acc-votos", "1");
+  const textoSocio = await rechazarSocio(omar.p);
+  exigir(
+    (await marcado(omar.p, "#acc-nombre")) && socios() === sociosAntes && (await omar.p.locator("#acc-documento").inputValue()) === "SE-771020",
+    "base-N23. el socio extranjero «Luis\\u0085Gómez Paz» se rechaza en su campo, sin socio de más y con lo capturado",
+    textoSocio,
+  );
+  await enVista(omar.p.locator("#aviso-accionista"));
+  await foto(omar.p, "n23-socio-con-control", false);
+
+  // La razón social del expediente también es una identidad: con U+0085 se rechaza en su campo. El giro es texto
+  // libre: el NEL entre dos palabras se guarda como un espacio (serv-nuevo-4; antes, «Distribuciónde abarrotes»).
+  await ir(omar.p, rutaEbano);
+  const razonAntes = sql(`select razon_social from kyb_versiones where id = ${borrador}`);
+  await campo(omar.p, "#dato-razonSocial", "Grupo Ébano\u0085Industrial, S.A. de C.V.");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Guardar datos" }), "dato_invalido_razonSocial");
+  exigir(
+    (await marcado(omar.p, "#dato-razonSocial")) && sql(`select razon_social from kyb_versiones where id = ${borrador}`) === razonAntes,
+    "base-N23. la razón social del expediente con U+0085 se rechaza en su campo y no cambia",
+    await aviso(omar.p),
+  );
+  await enVista(omar.p.locator("#dato-razonSocial"));
+  await foto(omar.p, "n23-razon-social-expediente-con-control", false);
+  await ir(omar.p, rutaEbano);
+  await campo(omar.p, "#dato-giro", "Distribución\u0085de abarrotes");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Guardar datos" }), "expediente_datos_guardados");
+  exigir(
+    sql(`select giro from kyb_versiones where id = ${borrador}`) === "Distribución de abarrotes",
+    "serv-nuevo-4. el giro «Distribución\\u0085de abarrotes» se guarda «Distribución de abarrotes»",
+  );
+  await enVista(omar.p.locator("#dato-giro"));
+  await foto(omar.p, "sn4-giro-con-nel-guardado", false);
+
+  // P3: el alta del prospecto dice qué falla y marca el campo (antes, «No se pudo completar…» sin campo).
+  await ir(omar.p, "/operacion/clientes");
+  const prospectos = () => cuenta(`companies where rfc = 'EUN010101AB1'`);
+  await campo(omar.p, "#razonSocial", "Empresa\u0085Uno SA de CV");
+  await campo(omar.p, "#rfc", "EUN010101AB1");
+  await campo(omar.p, "#codigoPostal", "06600");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Registrar prospecto" }), "razon_social_control");
+  exigir(
+    (await marcado(omar.p, "#razonSocial")) && (await aviso(omar.p)).includes("carácter invisible") && prospectos() === 0,
+    "P3. la razón social del alta con U+0085: «trae un carácter invisible», con el campo marcado y sin empresa",
+    await aviso(omar.p),
+  );
+  await enVista(omar.p.locator("#razonSocial"));
+  await foto(omar.p, "p3-prospecto-razon-social-con-control", false);
+  await campo(omar.p, "#razonSocial", "Empresa Uno SA de CV");
+  await campo(omar.p, "#rfc", "EUN010101AB1");
+  await campo(omar.p, "#codigoPostal", "17000");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Registrar prospecto" }), "codigo_postal_invalido");
+  exigir(
+    (await marcado(omar.p, "#codigoPostal")) && (await aviso(omar.p)).includes("código postal") && prospectos() === 0,
+    "P3. el código postal 17000 del alta: su aviso, con el campo marcado y sin empresa",
+    await aviso(omar.p),
+  );
+  await foto(omar.p, "p3-prospecto-codigo-postal", false);
+  await omar.nav.close();
+
+  // Consola de Taller (Gil).
+  const gil = await abrir("gil");
+  const resultadoFlujo = async (forma) => {
+    await forma.locator(".alerta-asentado, .alerta-revisar, .error-campo").first().waitFor({ timeout: 20000 });
+    await listo(gil.p);
+    return (await forma.locator(".alerta-asentado").count()) > 0;
+  };
+  // serv-nuevo-4: en el cobro manual, el nombre del cliente y el concepto son texto libre: el control vale un
+  // espacio. Regla 1: el RFC con un tabulador dentro se rechaza en su campo (antes se borraba y se aceptaba).
+  await ir(gil.p, `/c/${TALLER}/consola/cobros`);
+  const cobro = gil.p.locator('form[data-formulario="cobro"]');
+  await cobro.locator("#clienteNombre").fill("Comercializadora\u0085Uno");
+  await cobro.locator("#concepto").fill("Servicio\u000bde la séptima revisión");
+  await cobro.locator("#monto").fill("200.00");
+  await cobro.getByRole("button", { name: "Registrar el cobro" }).click();
+  exigir(
+    (await resultadoFlujo(cobro)) && sql(`select cliente_nombre from expected_collections where company_id = '${TALLER}' and concepto = 'Servicio de la séptima revisión'`) === "Comercializadora Uno",
+    "serv-nuevo-4. cobro con «Comercializadora\\u0085Uno» y «Servicio\\u000bde la séptima revisión»: se guardan con espacio",
+  );
+  await ir(gil.p, `/c/${TALLER}/consola/cobros`);
+  await enVista(gil.p.locator("tr[data-cobro]", { hasText: "Comercializadora Uno" }).first());
+  await foto(gil.p, "sn4-cobro-con-control-vale-espacio", false);
+  await ir(gil.p, `/c/${TALLER}/consola/cobros`);
+  await cobro.locator("#clienteNombre").fill("Cliente con tabulador");
+  await cobro.locator("#clienteRfc").fill("EKU900317\t3C9");
+  await cobro.locator("#concepto").fill("Asesoría con tabulador");
+  await cobro.locator("#monto").fill("100.00");
+  await cobro.getByRole("button", { name: "Registrar el cobro" }).click();
+  const asentadoTab = await resultadoFlujo(cobro);
+  exigir(
+    !asentadoTab && (await marcado(cobro, "#clienteRfc")) && cuenta(`expected_collections where company_id = '${TALLER}' and concepto = 'Asesoría con tabulador'`) === 0,
+    "regla 1. el RFC «EKU900317\\t3C9» del cobro se rechaza en su campo y no hay cobro (antes, el tabulador se borraba)",
+    (await cobro.innerText()).replace(/\s+/g, " ").slice(0, 200),
+  );
+  await foto(gil.p, "regla1-cobro-rfc-con-tabulador", false);
+
+  // P3: el área con un control dice que trae un carácter invisible y marca su campo (antes, «Escribe el nombre del área.»).
+  await ir(gil.p, `/c/${TALLER}/consola/personas/areas`);
+  await gil.p.locator("#centroNombre").fill("Ventas\u0085Norte");
+  await gil.p.getByRole("button", { name: "Crear área" }).click();
+  await gil.p.getByText("carácter invisible").first().waitFor({ timeout: 20000 });
+  exigir(
+    (await marcado(gil.p, "#centroNombre")) && cuenta(`cost_centers where company_id = '${TALLER}' and nombre like 'Ventas%Norte'`) === 0,
+    "P3. el área «Ventas\\u0085Norte»: «trae un carácter invisible» en su campo y sin área",
+  );
+  await foto(gil.p, "p3-area-con-control", false);
+
+  // P3 bar-10: con la fecha forzada (una petición armada: el campo de fecha no deja escribirla), cada aviso marca
+  // su campo. «Vigente desde» 2026-02-30 marca «Vigente desde», no «Vigente hasta».
+  const proveedor = "44444444-4444-4444-8444-444444444441";
+  const documentos = () => cuenta(`documents where company_id = '${TALLER}'`);
+  const docsAntes = documentos();
+  await ir(gil.p, `/c/${TALLER}/consola/proveedores?vista=proveedores&proveedor=${proveedor}`);
+  const dialogo = gil.p.getByRole("dialog");
+  await dialogo.getByText("Agregar contrato", { exact: true }).click();
+  await gil.p.locator(`#contrato-nuevo-${proveedor}`).setInputFiles({ name: "contrato-septima.pdf", mimeType: "application/pdf", buffer: PDF("contrato-septima") });
+  const desde = gil.p.locator(`#desde-${proveedor}`);
+  await desde.fill("2026-10-17");
+  await armarFecha(gil.p, "2026-10-17", "2026-02-30");
+  await dialogo.getByRole("button", { name: "Guardar el contrato" }).click();
+  await gil.p.locator(`#desde-${proveedor}[aria-invalid="true"]`).waitFor({ timeout: 20000 });
+  exigir(
+    !(await marcado(gil.p, `#hasta-${proveedor}`)) && documentos() === docsAntes
+      && (await gil.p.locator(`#contrato-${proveedor}-aviso`).innerText()).includes("Vigente desde"),
+    "P3 bar-10. contrato con «Vigente desde» 2026-02-30: el aviso marca «Vigente desde» y no hay documento",
+    (await dialogo.innerText()).replace(/\s+/g, " ").slice(0, 200),
+  );
+  await gil.p.unroute("**/*");
+  await enVista(desde);
+  await foto(gil.p, "p3-contrato-vigente-desde", false);
+
+  // Pago por excepción con «Fecha de la obligación» 0000-01-01: el aviso marca esa fecha, no el vencimiento.
+  await ir(gil.p, `/c/${TALLER}/consola/proveedores/nuevo`);
+  const opciones = await gil.p.locator("#supplierId option").evaluateAll((nodos) => nodos.map((nodo) => ({ valor: nodo.value, texto: nodo.textContent ?? "" })));
+  const elegido = opciones.find((opcion) => opcion.valor && !/Norte/i.test(opcion.texto));
+  await gil.p.locator("#supplierId").selectOption(elegido.valor);
+  await gil.p.getByRole("button", { name: /Excepción/ }).click();
+  await gil.p.locator("#pdf").setInputFiles({ name: "soporte-septima.pdf", mimeType: "application/pdf", buffer: PDF("soporte-septima") });
+  await gil.p.locator("#monto").fill("900.00");
+  await gil.p.locator("#referencia").fill("Servicio de la séptima revisión");
+  await gil.p.locator("#motivoExcepcion").fill("Anticipo sin factura del mes");
+  const obligacion = gil.p.locator("#emitidaEl");
+  await obligacion.fill("2026-10-19");
+  await armarFecha(gil.p, "2026-10-19", "0000-01-01");
+  const pagosAntes = cuenta(`supplier_payables where company_id = '${TALLER}' and referencia = 'Servicio de la séptima revisión'`);
+  await gil.p.getByRole("button", { name: "Revisar y solicitar" }).click();
+  await gil.p.locator("#pago-error").waitFor({ timeout: 20000 });
+  exigir(
+    (await marcado(gil.p, "#emitidaEl")) && !(await marcado(gil.p, "#venceEl"))
+      && cuenta(`supplier_payables where company_id = '${TALLER}' and referencia = 'Servicio de la séptima revisión'`) === pagosAntes,
+    "P3 bar-10. excepción con «Fecha de la obligación» 0000-01-01: el aviso marca esa fecha, no el vencimiento, y no hay pago",
+    (await gil.p.locator("#pago-error").innerText()).replace(/\s+/g, " "),
+  );
+  await gil.p.unroute("**/*");
+  await enVista(obligacion);
+  await foto(gil.p, "p3-excepcion-fecha-de-la-obligacion", false);
+  await gil.nav.close();
 }
 
 // ---------- Orden ----------

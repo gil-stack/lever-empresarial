@@ -316,9 +316,9 @@ export async function agregarContratoProveedor(
   if (!validarPdfPrivado(pdf.nombre, pdf.bytes).ok) throw new ErrorDeDominio("archivo_no_disponible");
   const desde = fechaOpcional(entrada.vigenteDesde);
   const hasta = fechaOpcional(entrada.vigenteHasta);
-  if ((desde && hasta && hasta < desde) || entrada.vigenteDesde && !desde || entrada.vigenteHasta && !hasta) {
-    throw new ErrorDeDominio("fecha_invalida");
-  }
+  // «Vigente desde» que no existe marca su campo; «hasta» que no existe o queda antes de «desde», el suyo.
+  if (entrada.vigenteDesde && !desde) throw new ErrorDeDominio("fecha_desde_invalida");
+  if ((entrada.vigenteHasta && !hasta) || (desde && hasta && hasta < desde)) throw new ErrorDeDominio("fecha_invalida");
   const listo = resolver(deps);
   const ahora = listo.ahora();
   const existe = await listo.repositorio.conEmpresa(conEmpresa, async (tx) => Boolean(await tx.proveedor(supplierId)));

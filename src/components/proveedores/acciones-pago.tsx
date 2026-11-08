@@ -103,7 +103,7 @@ export function FormularioContrato({ supplierId }: { supplierId: string }) {
           <CampoArchivo id={`contrato-nuevo-${supplierId}`} name="contrato" accept="application/pdf,.pdf" mensaje={CONTRATO_DEMASIADO_GRANDE} required ligado={ligado("contrato")} />
         </div>
         <div className="formulario-pareja">
-          <div className="campo"><label htmlFor={`desde-${supplierId}`}>Vigente desde</label><input id={`desde-${supplierId}`} name="vigenteDesde" type="date" /></div>
+          <div className="campo"><label htmlFor={`desde-${supplierId}`}>Vigente desde</label><input id={`desde-${supplierId}`} name="vigenteDesde" type="date" {...ligado("vigenteDesde")} /></div>
           <div className="campo"><label htmlFor={`hasta-${supplierId}`}>Vigente hasta</label><input id={`hasta-${supplierId}`} name="vigenteHasta" type="date" {...ligado("vigenteHasta")} /></div>
         </div>
         <BotonEnviar className="boton-texto" pendiente={pendiente}>Guardar el contrato</BotonEnviar>

@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
 import { conContexto } from "../../nucleo/db";
 import { TOPE_ARCHIVO_BYTES } from "../../dominio/archivos";
+import { CONTROL } from "../../dominio/control";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { fechaDeCalendario, hoyEnMexico, leerListaBloqueadas, textoOperativo, uuidValido } from "../../dominio/operacion";
 import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
@@ -240,6 +241,8 @@ export async function registrarReporte(
 ): Promise<void> {
   exigirEnOperacion(ctx, "plataforma.lpb.resolver");
   if (!uuidValido(entrada.id)) throw new ErrorDeDominio("coincidencia_ausente");
+  // El folio del reporte a la UIF es un identificador: con un control se rechaza, no se limpia.
+  if (typeof entrada.folio === "string" && CONTROL.test(entrada.folio.trim())) throw new ErrorDeDominio("dato_invalido_folio");
   const folio = textoOperativo(entrada.folio, 80);
   if (!folio) throw new ErrorDeDominio("dato_invalido_folio");
   const hoy = hoyEnMexico(new Date());

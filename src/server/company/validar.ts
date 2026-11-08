@@ -8,6 +8,7 @@ export type CodigoAlta =
   | "rfc_invalido"
   | "rfc_generico"
   | "razon_social_invalida"
+  | "razon_social_control"
   | "codigo_postal_invalido"
   | "regimen_invalido"
   | "uso_cfdi_invalido";
@@ -22,6 +23,8 @@ export function validarAlta(entrada: Partial<AltaEmpresaEntrada> | null | undefi
     return { ok: false, codigo: rfc.error === "generico" ? "rfc_generico" : "rfc_invalido" };
   }
 
+  // Una identidad con un control invisible se rechaza con su propio aviso, no se limpia.
+  if (typeof entrada?.razonSocial === "string" && CONTROL.test(entrada.razonSocial)) return { ok: false, codigo: "razon_social_control" };
   const razonSocial = normalizarRazon(entrada?.razonSocial);
   if (!razonSocial) return { ok: false, codigo: "razon_social_invalida" };
 
