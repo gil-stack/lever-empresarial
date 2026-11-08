@@ -6,9 +6,12 @@ import { validarAlta } from "../server/company/validar.ts";
 import { validarPdfPrivado } from "./cfdi.ts";
 import { clabeValida } from "./clabe.ts";
 import { textoLimpio, validarCobroManual } from "./flujo/entradas.ts";
+import { INVISIBLE } from "./control.ts";
 import { leerListaBloqueadas } from "./operacion/lpb.ts";
+import { documentoExtranjeroNormalizado } from "./operacion/paises.ts";
 import { textoMultilinea, textoOperativo } from "./operacion/validar.ts";
 import { correoOpcional, textoPago } from "./pagos-proveedores.ts";
+import { erroresDeAltaProveedor } from "./proveedores.ts";
 import { MENSAJE_CAMPO, normalizarCentro, normalizarNombrePersona, validarAltaPersona, validarCentro } from "./personas.ts";
 import { validarRfc } from "./rfc.ts";
 
@@ -87,5 +90,58 @@ describe("las identidades y los identificadores rechazan cualquier control", () 
     assert.equal(MENSAJE_CAMPO.nombre_control?.campo, "nombre");
     const persona = validarAltaPersona({ nombre: "Ana\u0085Ruiz", alta: "2026-11-01" }, "2026-11-08");
     assert.deepEqual(persona.ok ? null : [persona.codigo, persona.campo], ["nombre_control", "nombre"]);
+  });
+});
+
+// serv-nuevo-5: los caracteres de formato (Cf) tampoco se ven y cambian la identidad igual que un control: el guion
+// suave U+00AD, el espacio de ancho cero U+200B, la unión de palabras U+2060, el U+FEFF y la marca de dirección
+// U+200E. Antes solo se rechazaban los Cc (`CONTROL`) y «Ana\u200bRuiz» se guardaba y no coincidía con la Lista.
+describe("las identidades rechazan también los caracteres de formato (Cf)", () => {
+  const formato = ["\u00ad", "\u200b", "\u2060", "\ufeff", "\u200e", "\u200d"];
+
+  it("INVISIBLE es Cc más Cf; un espacio duro o una letra con acento no lo son", () => {
+    for (const c of [...formato, "\u0009", "\u0085", "\u0000", "\u009f"]) assert.equal(INVISIBLE.test(`a${c}b`), true, JSON.stringify(c));
+    for (const texto of ["José Pérez Núñez", "Ana\u00a0Ruiz", "O'Brien", "Müller & Söhne"]) assert.equal(INVISIBLE.test(texto), false, texto);
+  });
+
+  it("razón social del alta, proveedor, persona, área, RFC, CLABE, correo y RFC del cobro", () => {
+    for (const c of formato) {
+      const etiqueta = JSON.stringify(c);
+      assert.deepEqual(validarAlta({ rfc: "EKU9003173C9", razonSocial: `Escuela${c}Kemper`, codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }), { ok: false, codigo: "razon_social_control" }, etiqueta);
+      const proveedor = erroresDeAltaProveedor({ rfc: "EKU9003173C9", razonSocial: `Proveedor${c}Uno`, clabe: "002180701150123453", archivo: null });
+      assert.equal(proveedor.find((error) => error.campo === "razonSocial")?.mensaje, "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano.", etiqueta);
+      assert.equal(normalizarNombrePersona(`Ana${c}Ruiz`), null, etiqueta);
+      assert.deepEqual(validarCentro({ nombre: `Ventas${c}Norte`, presupuesto: "" }), { ok: false, codigo: "centro_nombre_control" }, etiqueta);
+      assert.equal(validarRfcDeAlta(`EKU900317${c}3C9`).ok, false, etiqueta);
+      assert.deepEqual(clabeValida(`0021800${c}12345678906`), { ok: false, codigo: "clabe_invalida" }, etiqueta);
+      assert.equal(correoOpcional(`ana${c}@lab.mx`), "invalido", etiqueta);
+      const cobro = validarCobroManual({ clienteNombre: "Cliente", clienteRfc: `EKU900317${c}3C9`, concepto: "Servicio", monto: "100", fechaProbable: "2026-11-30" });
+      assert.equal(cobro.ok, false, etiqueta);
+    }
+  });
+
+  it("un texto libre conserva el emoji compuesto con U+200D (no se amplía CONTROL)", () => {
+    const motivo = "Revisado con la familia 👨‍👩‍👧 completa";
+    assert.equal(textoOperativo(motivo, 300), motivo);
+    assert.equal(textoMultilinea(motivo, 500), motivo);
+    assert.equal(textoPago(motivo, 500, 10), motivo);
+  });
+
+  // base-N24: el renglón de la Lista juntaba los espacios antes de buscar el control, así que «EVA\tRUIZ SOL» se
+  // guardaba como «EVA RUIZ SOL». Ahora el nombre crudo se revisa primero.
+  it("el renglón de la Lista con un tabulador o un carácter de formato en el nombre se rechaza", () => {
+    for (const nombre of ["EVA\tRUIZ SOL", "EVA\u00adRUIZ SOL", "EVA RUIZ\u200bSOL", "EVA\u000bRUIZ SOL"]) {
+      assert.deepEqual(leerListaBloqueadas(`nombre,rfc,curp,tipo,fecha\nBien,,,fisica,\n${nombre},,,fisica,`), { ok: false, codigo: "lpb_renglon_invalido", linea: 3 }, JSON.stringify(nombre));
+    }
+    const bien = leerListaBloqueadas("nombre,rfc,curp,tipo,fecha\n  EVA   RUIZ SOL\t,,,fisica,");
+    assert.deepEqual(bien.ok ? bien.renglones.map((r) => r.nombre) : bien, ["EVA RUIZ SOL"]);
+  });
+
+  // base-N25: el documento extranjero quitaba el tabulador, el salto y el U+000B (`\s`) y guardaba otro número.
+  it("el documento extranjero con un carácter invisible se rechaza; los espacios, puntos y guiones se quitan", () => {
+    for (const documento of ["X123\t4567", "X123\n4567", "X123\u000b4567", "X123\u000c4567", "X123\r4567", "X123\u200b4567", "X123\u00ad4567"]) {
+      assert.equal(documentoExtranjeroNormalizado(documento), null, JSON.stringify(documento));
+    }
+    assert.equal(documentoExtranjeroNormalizado(" x123 45.6-7 "), "X1234567");
   });
 });

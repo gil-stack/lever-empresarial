@@ -34,13 +34,13 @@ import {
   type PepDeclarada,
   type TipoDocumento,
 } from "../../dominio/operacion";
-import { CONTROL } from "../../dominio/control";
+import { INVISIBLE } from "../../dominio/control";
 import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import { leerPrivado, type AlmacenConstancia } from "../proveedores/constancia";
 import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
 import { exigirEnOperacion, puedeEnOperacion } from "./permisos";
-import { motivoEscrito, unaVezPorFormulario } from "./formulario";
+import { motivoEscrito, unaVezPorFormulario, type EnvolturaDeTransaccion } from "./formulario";
 
 type SesionConFactor = Pick<Sesion, "segundoFactor" | "superficie">;
 
@@ -394,22 +394,34 @@ async function leerVersion(consulta: Consulta, versionId: string, hoy: string): 
 }
 
 /** Abre un borrador. El primero parte de la razón social y el RFC de la empresa; los siguientes, de la versión anterior. */
-export async function crearVersion(ctx: ContextoDePersonal, entrada: { companyId: unknown; formId: unknown }): Promise<string> {
+export async function crearVersion(
+  ctx: ContextoDePersonal,
+  entrada: { companyId: unknown; formId: unknown },
+  envolver: EnvolturaDeTransaccion = (consulta) => consulta,
+): Promise<string> {
   exigirEnOperacion(ctx, "plataforma.expediente.capturar");
   if (!uuidValido(entrada.companyId)) throw new ErrorDeDominio("cliente_ausente");
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
   const companyId = entrada.companyId;
   const id = entrada.formId;
   const ahora = new Date();
-  await unaVezPorFormulario(() => conContexto(basePlataforma(ctx, companyId), async (consulta) => {
-    // Un segundo clic encuentra su versión; un formulario de otra empresa no vale.
-    const previa = await consulta.query("select company_id from kyb_versiones where id = $1", [id]);
-    if (previa.rows.length > 0) {
-      if ((previa.rows[0] as { company_id: string }).company_id === companyId) return;
+  await unaVezPorFormulario(() => conContexto(basePlataforma(ctx, companyId), async (transaccion) => {
+    const consulta = envolver(transaccion);
+    // El formulario y el borrador de la empresa en una sola lectura, con la misma foto. Un segundo clic encuentra
+    // su versión; un formulario de otra empresa no vale. Con dos lecturas, si la otra pestaña del mismo formulario
+    // confirmaba entre ellas, la segunda veía su borrador sin haber visto su id y respondía «ya hay borrador»
+    // (Vercel CI de b2db0b5). Si confirma después de esta lectura, el insert choca con la llave y se repite.
+    const vistas = await consulta.query(
+      "select id, company_id from kyb_versiones where id = $1 or (company_id = $2 and estado = 'borrador')",
+      [id, companyId],
+    );
+    const filas = vistas.rows as Array<{ id: string; company_id: string }>;
+    const propia = filas.find((fila) => fila.id === id);
+    if (propia) {
+      if (propia.company_id === companyId) return;
       throw new ErrorDeDominio("expediente_ausente");
     }
-    const borrador = await consulta.query("select id from kyb_versiones where company_id = $1 and estado = 'borrador'", [companyId]);
-    if (borrador.rows.length > 0) throw new ErrorDeDominio("expediente_con_borrador");
+    if (filas.length > 0) throw new ErrorDeDominio("expediente_con_borrador");
     const empresa = await consulta.query("select razon_social, rfc from companies where id = $1", [companyId]);
     const filaEmpresa = empresa.rows[0] as { razon_social?: unknown; rfc?: unknown } | undefined;
     if (!filaEmpresa) throw new ErrorDeDominio("cliente_ausente");
@@ -430,8 +442,8 @@ export async function crearVersion(ctx: ContextoDePersonal, entrada: { companyId
 
 // El orden de CAMPOS_DATOS es el de los placeholders de ACTUALIZAR_DATOS ($2 en adelante).
 const CAMPOS_DATOS: Array<[keyof DatosGenerales, string, (valor: unknown) => string | number | null | undefined]> = [
-  // La razón social es una identidad: con un control se rechaza en su campo, no se limpia (ver `conControl`).
-  ["razonSocial", "razon_social", (v) => opcional(v, (t) => (conControl(t) ? null : textoOperativo(t, 300)))],
+  // La razón social es una identidad: con un carácter invisible se rechaza antes, con su propio aviso (ver `guardarDatosGenerales`).
+  ["razonSocial", "razon_social", (v) => opcional(v, (t) => textoOperativo(t, 300))],
   ["giro", "giro", (v) => opcional(v, (t) => textoOperativo(t, 200))],
   ["nacionalidad", "nacionalidad", (v) => opcional(v, (t) => textoOperativo(t, 80))],
   ["rfc", "rfc", (v) => opcional(v, (t) => (rfcMoralValido(t.toUpperCase()) ? t.toUpperCase() : null))],
@@ -444,11 +456,11 @@ const CAMPOS_DATOS: Array<[keyof DatosGenerales, string, (valor: unknown) => str
   ["domicilioEntidad", "domicilio_entidad", (v) => opcional(v, (t) => textoOperativo(t, 80))],
   ["domicilioCodigoPostal", "domicilio_codigo_postal", (v) => opcional(v, (t) => (/^\d{5}$/.test(t) ? t : null))],
   ["domicilioPais", "domicilio_pais", (v) => opcional(v, (t) => textoOperativo(t, 80))],
-  ["telefono", "telefono", (v) => opcional(v, (t) => { const solo = t.replace(/[\s()+-]/g, ""); return !conControl(t) && /^\d{10,15}$/.test(solo) ? solo : null; })],
+  ["telefono", "telefono", (v) => opcional(v, (t) => { const solo = t.replace(/[\s()+-]/g, ""); return !conInvisible(t) && /^\d{10,15}$/.test(solo) ? solo : null; })],
   // En minúsculas antes de medir («İ» crece) y sin caracteres de control, como el CHECK `kyb_versiones_correo`.
   ["correo", "correo", (v) => opcional(v, (t) => {
     const correo = t.toLowerCase();
-    return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo) && !CONTROL.test(correo) && [...correo].length <= 254 ? correo : null;
+    return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo) && !INVISIBLE.test(correo) && [...correo].length <= 254 ? correo : null;
   })],
   ["fechaConstitucion", "fecha_constitucion", (v) => opcional(v, (t) => (fechaDeCalendario(t) && t <= hoyEnMexico(new Date()) ? t : null))],
   ["volumenMensualCentavos", "volumen_mensual_centavos", (v) => opcional(v, (t) => pesosACentavos(t))],
@@ -468,6 +480,7 @@ export async function guardarDatosGenerales(
 ): Promise<void> {
   exigirEnOperacion(ctx, "plataforma.expediente.capturar");
   if (!uuidValido(entrada.versionId)) throw new ErrorDeDominio("expediente_ausente");
+  if (conInvisible(entrada.datos.razonSocial)) throw new ErrorDeDominio("invisible_razonSocial");
   const valores: Array<string | number | null> = [];
   for (const [clave, , validar] of CAMPOS_DATOS) {
     const valor = validar(entrada.datos[clave]);
@@ -493,7 +506,7 @@ export async function agregarRepresentante(
   exigirEnOperacion(ctx, "plataforma.expediente.capturar");
   if (!uuidValido(entrada.versionId)) throw new ErrorDeDominio("expediente_ausente");
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
-  if (conControl(entrada.nombre)) throw new ErrorDeDominio("dato_invalido_nombre");
+  if (conInvisible(entrada.nombre)) throw new ErrorDeDominio("invisible_nombre");
   const nombre = textoOperativo(entrada.nombre, 200);
   if (!nombre) throw new ErrorDeDominio("dato_invalido_nombre");
   const rfc = opcional(entrada.rfc, (t) => (rfcFisicaValido(t.toUpperCase()) ? t.toUpperCase() : null));
@@ -534,7 +547,7 @@ export async function agregarAccionista(
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
   const tipo = entrada.tipoPersona === "moral" ? "moral" : entrada.tipoPersona === "fisica" ? "fisica" : null;
   if (!tipo) throw new ErrorDeDominio("dato_invalido_tipoPersona");
-  if (conControl(entrada.nombre)) throw new ErrorDeDominio("dato_invalido_nombre");
+  if (conInvisible(entrada.nombre)) throw new ErrorDeDominio("invisible_nombre");
   const nombre = textoOperativo(entrada.nombre, 300);
   if (!nombre) throw new ErrorDeDominio("dato_invalido_nombre");
   const rfc = opcional(entrada.rfc, (t) => {
@@ -980,13 +993,14 @@ function tipoDeContenido(bytes: Uint8Array): { tipo: string; extension: string }
 
 /**
  * Una identidad (el nombre de un representante o de un socio, la razón social) se coteja contra la Lista por
- * nombre (`lpb_normalizar`); para un extranjero sin RFC ni CURP es la única llave. Con un control invisible
- * no se limpia ni se transforma: se rechaza en su campo, como el renglón de la Lista, los proveedores y los
+ * nombre (`lpb_normalizar`); para un extranjero sin RFC ni CURP es la única llave. Con un carácter invisible
+ * (`INVISIBLE`: un control o uno de formato como U+200B) no se limpia ni se transforma: se rechaza en su campo con
+ * su propio aviso (`invisible_<campo>`), como el renglón de la Lista, los proveedores y los
  * nombres de Personas. Borrado, pegaría dos palabras («PedroRuiz Sol») y la Lista ya no lo encontraría. Solo
  * se recortan los espacios de las orillas, como en el RFC o la CURP.
  */
-function conControl(valor: unknown): boolean {
-  return typeof valor === "string" && CONTROL.test(valor.trim());
+function conInvisible(valor: unknown): boolean {
+  return typeof valor === "string" && INVISIBLE.test(valor.trim());
 }
 
 /** Vacío → null; inválido → undefined; válido → el valor limpio. */

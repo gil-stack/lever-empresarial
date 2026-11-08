@@ -34,7 +34,7 @@ const MENSAJES: Record<string, string> = {
   rfc_invalido: "Ese RFC no tiene la forma de un RFC: 12 caracteres si es persona moral o 13 si es física.",
   rfc_generico: "Ese es un RFC genérico (público en general o extranjero). Escribe el RFC de la empresa.",
   razon_social_invalida: "Escribe la razón social con letras o números, hasta 254 caracteres.",
-  razon_social_control: "La razón social trae un carácter invisible que no se puede guardar. Escríbela de nuevo.",
+  razon_social_control: "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano.",
   codigo_postal_invalido: "Ese código postal no existe. Escribe los 5 dígitos del domicilio fiscal.",
   regimen_invalido: "Ese régimen fiscal no corresponde al tipo de persona del RFC.",
   uso_cfdi_invalido: "Ese uso de CFDI no corresponde al régimen ni al tipo de persona.",
@@ -151,6 +151,10 @@ const MENSAJES: Record<string, string> = {
   dato_invalido_documentoExtranjero:
     "Escribe el número de identificación: de 4 a 20 letras y números (los espacios, puntos y guiones se quitan solos).",
   dato_invalido_fechaNacimiento: "Escribe la fecha de nacimiento: no puede ser futura ni anterior a 1900.",
+  // Una identidad con un carácter invisible (`INVISIBLE`): se ve bien en pantalla, así que el aviso dice qué pasó.
+  invisible_nombre: "El nombre trae un carácter invisible, algo común al copiar y pegar. Escríbelo de nuevo a mano.",
+  invisible_razonSocial: "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano.",
+  invisible_folio: "El folio trae un carácter invisible, algo común al copiar y pegar. Escríbelo de nuevo a mano.",
   expediente_estructura_muy_profunda: "La cadena de socios pasa de 10 capas: el cálculo de propietarios reales no llega al final. Revísala con Cumplimiento.",
   ...MENSAJES_PLD,
 };
@@ -238,10 +242,11 @@ export function AvisoOperacion({ codigo, detalle, id = ID_AVISO }: { codigo?: st
 }
 
 /**
- * Marca un campo como inválido y lo liga al aviso cuando el error es suyo. `dato_invalido_<campo>` es de
- * ese campo. Un formulario que muestra su propio aviso (sin recargar la página) pasa el id de ese aviso.
+ * Marca un campo como inválido, lo liga al aviso y le da el foco cuando el error es suyo. `dato_invalido_<campo>`
+ * e `invisible_<campo>` son de ese campo. Un formulario que muestra su propio aviso (sin recargar la página) pasa
+ * el id de ese aviso.
  */
 export function errorDelCampo(codigo: string | null | undefined, campo: string, idAviso = ID_AVISO) {
-  if (!codigo || (CAMPO[codigo] ?? codigo.replace(/^dato_invalido_/, "")) !== campo) return {};
-  return { "aria-invalid": true, "aria-describedby": idAviso } as const;
+  if (!codigo || (CAMPO[codigo] ?? codigo.replace(/^(dato_invalido|invisible)_/, "")) !== campo) return {};
+  return { "aria-invalid": true, "aria-describedby": idAviso, autoFocus: true } as const;
 }

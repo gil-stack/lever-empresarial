@@ -6,9 +6,9 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r-alta
 | --- | --- | --- |
 | Flujos 0-12 | 147 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
 | Pantallas (3 temas × 1440/390) y contraste AA medido | 60 comprobaciones en verde, 0 en rojo; contraste mínimo 5.00 (Lever 1440) | `datos/resultados-pantallas-contraste.json` |
-| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;»; el representante, el socio y la razón social con un control, el giro y el cobro con el control como espacio, el RFC con tabulador, el alta y el área con su aviso y las fechas de Pagos en su campo) | 145 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
+| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;»; el representante, el socio y la razón social con un control, el giro y el cobro con el control como espacio, el RFC con tabulador, el alta y el área con su aviso y las fechas de Pagos en su campo; el aviso propio del carácter invisible en el socio, el representante, las razones sociales y el folio, el representante que conserva lo capturado, el documento extranjero y la Lista con tabulador, el motivo con un emoji compuesto y el contrato con «Vigente hasta») | 165 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
 
-Corrida del 2026-11-09 sobre el head de este PR, con los arreglos de las siete revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`), sobre una base migrada de cero con la 0028 final. Las tres fases corrieron sobre el código final de la séptima revisión.
+Corrida del 2026-11-09 sobre el head de este PR, con los arreglos de las ocho revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`; la carrera de F4 y F5 del CI, serv-nuevo-5, base-N24, base-N25, el aviso propio del carácter invisible y dos P3 de la re-verificación sobre `b2db0b5`), sobre una base migrada de cero con la 0028 final. Las tres fases corrieron sobre el código final de la octava revisión.
 
 ## Cómo se corre
 
@@ -105,6 +105,8 @@ Al enviar, la base rechaza dos personas físicas con el mismo nombre normalizado
 Esos casos dependen de la declaración del representante sobre los propietarios reales y de la revisión de Cumplimiento.
 
 El cotejo con la Lista de Personas Bloqueadas de un socio extranjero sin RFC ni CURP es por nombre (posible coincidencia): el CSV de la lista no trae documento extranjero.
+
+**Homoglifos (límite que queda).** Una letra de otro alfabeto que se ve igual, como la «а» cirílica (U+0430) en lugar de la «a» latina, no es un carácter invisible: pasa la regla de las identidades y el cotejo por nombre no junta ese nombre con el de la Lista. Lo revisa Cumplimiento contra el documento de identidad. El RFC y la CURP, que solo admiten letras latinas y dígitos, siguen siendo la llave fuerte. Está anotado también en el comentario de `INVISIBLE` (`src/dominio/control.ts`).
 
 ## Conservación de 10 años (61ª)
 
@@ -332,6 +334,110 @@ Verificación en rojo. Las pruebas nuevas, corridas con el código de `98224e0` 
   - El nombre del archivo de una constancia (`nombreLimpio`) sigue quitando los controles: es un nombre de archivo, no una identidad, y no se coteja.
   - El alta de un proveedor sigue marcando «contrato» cuando falla su vigencia.
 
+### Octava revisión (re-verificación sobre `b2db0b5`)
+
+El CI de `b2db0b5` salió rojo en la suite de Postgres, en F4 y F5. Los revisores encontraron además:
+
+- un P2 del servidor (serv-nuevo-5);
+- dos P3 de la base (base-N24 y base-N25);
+- dos P3 de pantalla;
+- un límite que se documenta: los homoglifos.
+
+El líder pidió también el aviso propio del carácter invisible. Todo va en este PR. **La 0028 no cambia.**
+
+**La carrera de F4 y F5.**
+
+- **Causa.** `crearVersion` leía primero su propio id y después buscaba un borrador abierto, en dos sentencias. En READ COMMITTED cada sentencia toma su propia foto. Si la otra pestaña confirmaba entre las dos lecturas, la primera no veía la fila propia y la segunda sí veía el borrador. La misma acción respondía entonces `expediente_con_borrador` en lugar de darse por hecha. `solicitarCambioDeSuspension` tenía el mismo patrón y respondía `suspension_pendiente`.
+- **Arreglo.** Una sola sentencia, `where id = $1 or (company_id = $2 and estado = …)`, que ve un solo estado.
+- **Auditoría.** Ningún otro servicio que lee por id y por estado tiene el patrón:
+  - la carga de la Lista lee en una sola sentencia;
+  - el dictamen, en una sola lectura por `version_id`;
+  - la calificación no tiene índice por estado;
+  - los representantes y los socios usan `on conflict` y `mismoBorrador`;
+  - los documentos leen antes por id y usan `on conflict`.
+- **Prueba determinista.** `crearVersion` y `solicitarCambioDeSuspension` reciben una envoltura de la transacción (`EnvolturaDeTransaccion`, en `formulario.ts`). Con ella, la prueba corre la otra pestaña completa justo después de la primera lectura. Con el código de `b2db0b5` falla siempre: con `expediente_con_borrador` en la versión y con `suspension_pendiente` en la suspensión.
+
+Corridas seguidas de la suite completa `alta-regulada-postgres.test.ts` contra el Postgres 5551. «Con carga» son 18 procesos `yes`, uno por núcleo.
+
+| Código | Condición | Corridas | Fallas de F4 y F5 | Otras fallas |
+| --- | --- | --- | --- | --- |
+| `b2db0b5` | en reposo | 50 | 0 | 0 |
+| `b2db0b5` | con carga | 50 | 0 | 1 (H12, en la corrida 22) |
+| final | en reposo | 50 | 0 | 0 |
+| final | con carga | 50 | 0 | 0 |
+
+En local, la carrera no salió en 100 corridas del código viejo. La ventana entre las dos sentencias es de milisegundos, y en CI coincidió. Por eso la prueba la fuerza en vez de esperarla.
+
+**La falla de H12 en la corrida 22.** No venía de la carrera.
+
+- **Causa.** La base de prueba usa la zona de la máquina (+07), y la corrida cruzó la medianoche: 01:00:05 en +08 son 00:00:05 en +07. La copia del 69-B se sembró con `current_date - 1` antes de medianoche, y el proveedor de H12 volvió a calcular `current_date - 1` después. El disparador `suppliers_lectura_contra_copia` rechazó la fecha distinta con `fecha_de_lista_distinta`.
+- **Arreglo.** En la prueba, los proveedores toman la fecha de la copia (`select fecha_archivo … where id = $4`). Ninguna otra siembra calcula la fecha dos veces: las demás usan fechas fijas.
+
+**serv-nuevo-5: lo invisible, no solo los controles.**
+
+- **Regla.** `INVISIBLE = /[\p{Cc}\p{Cf}]/u`, en `control.ts`, junta los controles y los caracteres de formato: U+00AD, de U+200B a U+200F, U+2060, U+FEFF y los demás Cf. No se ven, pero cambian la identidad.
+- **Dónde se usa.** En todos los rechazos de la regla 1:
+  - los nombres de representantes y socios;
+  - la razón social del expediente, la del alta y la de los proveedores;
+  - el folio;
+  - el RFC del alta, el del proveedor y el del cobro;
+  - la CLABE, los correos y el teléfono;
+  - la serie y el folio del CFDI;
+  - los nombres y las áreas de Personas;
+  - el renglón de la Lista y el documento extranjero.
+- **Lo que no cambia.** `CONTROL` sigue siendo lo que la base cuenta como `[[:cntrl:]]`, y los textos libres siguen igual: un motivo con un emoji compuesto (unido con U+200D) se guarda tal cual.
+
+**Aviso propio del carácter invisible.**
+
+- **Textos.** Un nombre, una razón social o un folio con un carácter invisible tiene su propio código y su propio texto:
+  - `invisible_nombre`: «El nombre trae un carácter invisible, algo común al copiar y pegar. Escríbelo de nuevo a mano.»;
+  - `invisible_razonSocial`: «La razón social trae…»;
+  - `invisible_folio`: «El folio trae…».
+- **Las otras razones sociales.** La del alta (`razon_social_control`) y la del proveedor (`razon_control`) usan el mismo texto.
+- **Campo y foco.** `errorDelCampo` liga `invisible_<campo>` a su campo y le da el foco.
+- **El folio.** El folio de la coincidencia rechazada queda marcado. En la dirección solo va el id de la coincidencia.
+- **Formato.** Un nombre mal formado sin invisibles conserva «Revisa el campo marcado: el dato no tiene el formato esperado.».
+
+**Verificación en rojo.** Las pruebas nuevas, corridas contra el código de `b2db0b5`, fallan así:
+
+- **Unitarias**, 5 pruebas:
+  - `errorDelCampo` no daba el foco;
+  - `invisible_nombre` mostraba «No se pudo completar…»;
+  - `validarAlta` aceptaba «Escuela­Kemper»;
+  - la Lista aceptaba «EVA\tRUIZ SOL»;
+  - el documento «X123\t4567» quedaba X1234567.
+- **Postgres.** F4 y F5 forzadas fallan con `expediente_con_borrador`. Para ver cada caso nuevo, el código propio se aceptó igual que el viejo. Así, `b2db0b5` acepta:
+  - el folio «UIF-2026-⁠0001»;
+  - el socio «Pedro­Ruiz Sol»;
+  - el documento «X123\t4567»;
+  - la razón social «Laboratorio﻿Cotejo SA de CV»;
+  - la Lista con «EVA\tRUIZ SOL».
+- **Pagos.** «Vigente hasta» 2026-13-01 y 2026-10-31 daban `fecha_invalida`.
+- **e2e:**
+  - el socio «Juan\u0085Pérez López» mostraba «Revisa el campo marcado: el dato no tiene el formato esperado.»;
+  - sin la parte del socio, el representante recargaba la página y no había `#aviso-representante`.
+
+| Hallazgo | Arreglo | Prueba |
+| --- | --- | --- |
+| **CI de `b2db0b5`: F4 y F5** El mismo formulario, enviado en dos pestañas, respondía `expediente_con_borrador` en una de ellas | `crearVersion` y `solicitarCambioDeSuspension` leen en una sola sentencia y reciben una envoltura de la transacción para la prueba | Postgres «F4 y F5…» con la otra pestaña forzada entre lecturas. Versión: el mismo formulario da ok, 1 versión y 1 evento; uno ajeno da `expediente_con_borrador`. Suspensión: el mismo da 1 pendiente y 1 evento; uno ajeno da `suspension_pendiente`. Más las 50 + 50 corridas de arriba |
+| **H12 intermitente** Fallaba si la corrida cruzaba la medianoche | La siembra toma la fecha de la copia del 69-B | Las 100 corridas sobre el código final, sin falla |
+| **serv-nuevo-5 (P2)** Un carácter de formato (U+00AD, U+200B, U+2060, U+FEFF) pasaba los rechazos de identidad y se guardaba | `INVISIBLE` (Cc + Cf) en todos los rechazos de la regla 1; los textos libres no cambian | `control.test.ts` «las identidades rechazan también los caracteres de formato (Cf)»: 6 Cf en `validarAlta`, proveedor, persona, área, RFC, CLABE, correo y RFC del cobro, y el motivo con un emoji compuesto, aceptado. Postgres: 5 Cf dan `invisible_nombre` como socio y como representante; la razón social con U+FEFF o U+00AD, el folio con U+2060 o U+200B y el alta con U+2060 se rechazan, y el motivo con el emoji se guarda tal cual. Capturas `r84`, `r86`, `r88`, `r90`, `r92` y `r94` |
+| **Aviso propio (líder)** Con un carácter invisible, el aviso decía que el formato estaba mal y el nombre se veía bien | `invisible_nombre`, `invisible_razonSocial` e `invisible_folio`, cada uno con su texto; campo marcado y con el foco | `aviso.test.ts` y la e2e «un nombre con un carácter invisible da su propio aviso…». Capturas `r84`, `r85`, `r88` y `r92` |
+| **base-N24 (P3)** La Lista juntaba los espacios antes de buscar el control, y «EVA\tRUIZ SOL» se guardaba «EVA RUIZ SOL» | `leerListaBloqueadas` revisa `INVISIBLE` en el nombre crudo antes de juntar los espacios | `control.test.ts` y Postgres «base-N23…»: con tabulador, U+00AD o U+200B, `lpb_renglon_invalido` y ninguna carga. Captura `r91` |
+| **base-N25 (P3)** El documento extranjero borraba el tabulador, el salto, U+000B, U+000C y U+000D, y «X123\t4567» quedaba X1234567 | `documentoExtranjeroNormalizado` rechaza con `INVISIBLE` | `control.test.ts` y Postgres «base-N23…»: con tabulador, U+000B, `\r` o U+200B, `dato_invalido_documentoExtranjero`. Captura `r89` |
+| **P3** El contrato con «Vigente hasta» inválido reutilizaba `fecha_invalida`, cuyo texto habla de la emisión y el vencimiento de un pago | `fecha_hasta_invalida`, con su texto y el campo «Vigente hasta», también cuando queda antes de «Vigente desde» | Pagos: 2026-13-01 y 2026-10-31. Captura `r93` |
+| **P3** El formulario de representante perdía lo capturado tras un rechazo | `FormularioRepresentante` con `useActionState`, como el del socio, sin datos en la dirección | La e2e de arriba. Capturas `r86` y `r87` |
+| **Límite de homoglifos (docs)** Una «а» cirílica no la detecta el cotejo por nombre | «Homoglifos» en este README y en el comentario de `INVISIBLE` | — |
+
+**Decisiones de la octava revisión.**
+
+- **Aviso propio en las razones sociales.** El texto propio se usa también en la razón social del alta y en la del proveedor, que ya tenían un código de control. Así, la misma persona ve el mismo aviso en las tres pantallas.
+- **Los identificadores conservan el aviso de su campo.** El teléfono, el RFC, la CLABE y el correo con un carácter invisible siguen con el aviso de formato de su campo: solo admiten letras y dígitos, y ese aviso ya dice qué escribir.
+- **El foco en todas las pantallas.** `errorDelCampo` da el foco (`autoFocus`) en todas las pantallas de Operación que marcan un campo, no solo en estas cuatro. Es como ya se portaba el formulario del socio.
+- **El folio vuelve vacío.** El formulario del folio recarga, como antes. La dirección solo lleva el id de la coincidencia, nunca el folio.
+- **Las orillas.** En las orillas se sigue recortando como siempre. JavaScript recorta también U+FEFF, así que «﻿Proveedor» entra como «Proveedor»: el carácter no se guarda.
+- **Siguen con `CONTROL`.** El nombre de un archivo y el de una categoría del presupuesto no son identidades ni se cotejan.
+
 ## Flujo → captura → qué verifica en la base
 
 | Flujo | Captura | Qué verifica en la base |
@@ -429,17 +535,28 @@ Verificación en rojo. Las pruebas nuevas, corridas con el código de `98224e0` 
 | bar-9 | `r70-bar9-cobro-xml-ampersand` | Un XML con «PEREZ &amp;&#x85; ASOCIADOS»: el cobro se registra, la base guarda «PEREZ & ASOCIADOS» (sin el control, serv-nuevo-1) y la lista lo muestra así. |
 | líder-N2 | `r71-lider2-pago-excepcion-motivo-emoji` | Un pago por excepción con «Revisar 😀» (pasa el mínimo de 10 del navegador): «No se guardó» con el aviso del motivo en el campo y ningún pago. |
 | líder-N2 | `r72-lider2-pago-excepcion-en-autorizacion` | Con «Pago 😀 ya!» (10 caracteres) queda en autorización y la base guarda 10 caracteres. |
-| base-N23 | `r73-n23-representante-con-control` | Omar agrega a «Pedro\u000bRuiz Sol» como representante de Ébano: `dato_invalido_nombre` con el campo marcado y ningún representante de más (antes se guardaba «PedroRuiz Sol»). |
-| base-N23 | `r74-n23-socio-con-control` | El socio extranjero «Luis\u0085Gómez Paz» (Suecia, sin RFC ni CURP): `dato_invalido_nombre` en su campo; el formulario conserva país, documento y fecha, y no hay socio de más. |
-| base-N23 | `r75-n23-razon-social-expediente-con-control` | La razón social del expediente con U+0085: `dato_invalido_razonSocial` en su campo y la guardada no cambia. |
+| base-N23 | `r73-n23-representante-con-control` | Omar agrega a «Pedro\u000bRuiz Sol» como representante de Ébano: el aviso del carácter invisible (desde la octava revisión, sin recargar) con el campo marcado y ningún representante de más (antes se guardaba «PedroRuiz Sol»). |
+| base-N23 | `r74-n23-socio-con-control` | El socio extranjero «Luis\u0085Gómez Paz» (Suecia, sin RFC ni CURP): el aviso del carácter invisible en su campo; el formulario conserva país, documento y fecha, y no hay socio de más. |
+| base-N23 | `r75-n23-razon-social-expediente-con-control` | La razón social del expediente con U+0085: `invisible_razonSocial` (desde la octava revisión) en su campo y la guardada no cambia. |
 | serv-nuevo-4 | `r76-sn4-giro-con-nel-guardado` | El giro «Distribución\u0085de abarrotes» se guarda «Distribución de abarrotes» (antes, «Distribuciónde abarrotes»). |
-| P3 | `r77-p3-prospecto-razon-social-con-control` | Alta del prospecto con «Empresa\u0085Uno SA de CV»: «La razón social trae un carácter invisible que no se puede guardar.», con el campo marcado y sin empresa (antes, «No se pudo completar…» sin campo). |
+| P3 | `r77-p3-prospecto-razon-social-con-control` | Alta del prospecto con «Empresa\u0085Uno SA de CV»: «La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano.», con el campo marcado y sin empresa (antes, «No se pudo completar…» sin campo). |
 | P3 | `r78-p3-prospecto-codigo-postal` | Con el código postal 17000: «Ese código postal no existe…», con el campo marcado. Ya pasaba en `main`: el alta solo marcaba el RFC, y ni eso con su código. |
 | serv-nuevo-4 | `r79-sn4-cobro-con-control-vale-espacio` | Gil registra un cobro manual a «Comercializadora\u0085Uno» por «Servicio\u000bde la séptima revisión»: la base guarda «Comercializadora Uno» y «Servicio de la séptima revisión». |
 | Regla 1 | `r80-regla1-cobro-rfc-con-tabulador` | El RFC «EKU900317\t3C9» se rechaza en su campo y no hay cobro (antes, normalizar borraba el tabulador y se aceptaba). |
 | P3 | `r81-p3-area-con-control` | El área «Ventas\u0085Norte»: «El nombre del área trae un carácter invisible…» en su campo y ningún área (antes, «Escribe el nombre del área.»). |
 | P3 bar-10 | `r82-p3-contrato-vigente-desde` | Contrato con «Vigente desde» 2026-02-30 (petición armada: se escribe una fecha válida y se cambia en la petición que sale): «Esa fecha de «Vigente desde» no existe…» y el campo marcado es «Vigente desde», no «Vigente hasta»; ningún documento. |
 | P3 bar-10 | `r83-p3-excepcion-fecha-de-la-obligacion` | Pago por excepción con «Fecha de la obligación» 0000-01-01 (petición armada): el aviso marca esa fecha y no el vencimiento; ningún pago. |
+| Aviso propio | `r84-r8-socio-caracter-invisible` | Omar agrega al socio mexicano «Juan\u0085Pérez López»: «El nombre trae un carácter invisible, algo común al copiar y pegar. Escríbelo de nuevo a mano.», con el nombre marcado y con el foco, lo capturado sigue ahí, la dirección va sin datos y no hay socio. Con «Ana​Ruiz Sol» (espacio de ancho cero, serv-nuevo-5), el mismo aviso. |
+| Aviso propio | `r85-r8-socio-nombre-con-formato` | Un nombre en blanco, sin invisibles, conserva «Revisa el campo marcado: el dato no tiene el formato esperado.», con el nombre marcado y el foco. |
+| P3 y serv-nuevo-5 | `r86-r8-representante-conserva-lo-capturado` | El representante «Pedro­Ruiz Sol» (guion suave): el aviso propio con el nombre marcado y el foco. El formulario vuelve sin recargar con RFC, CURP, cargo, PEP, quién lo designó y «Administra la empresa» (antes recargaba y lo perdía). Con la CURP «XX», el aviso de formato marca la CURP y lo demás sigue ahí. |
+| P3 | `r87-r8-representante-agregado` | Corregido en el mismo formulario, doble clic en «Agregar representante»: un representante con todo lo capturado. |
+| serv-nuevo-5 | `r88-r8-razon-social-caracter-invisible` | La razón social del expediente con U+FEFF: «La razón social trae un carácter invisible…», con el campo marcado y con el foco al volver la página; la guardada no cambia. |
+| base-N25 | `r89-r8-documento-extranjero-con-tabulador` | El socio extranjero con el documento «X123\t4567»: el aviso del documento en su campo y ningún socio (antes se guardaba X1234567). |
+| serv-nuevo-5 | `r90-r8-prospecto-razon-social-u2060` | El alta con «Empresa⁠Dos SA de CV» (unión de palabras): `razon_social_control`, con el campo marcado y con el foco, sin empresa. |
+| base-N24 | `r91-r8-lista-con-tabulador` | Celia carga la Lista con un renglón «EVA\tRUIZ SOL»: «Revisa la línea 6…» y ninguna carga (antes se guardaba «EVA RUIZ SOL»). |
+| serv-nuevo-5 | `r92-r8-folio-caracter-invisible` | Celia confirma la coincidencia de Brisa con un motivo que trae un emoji compuesto (👨‍👩‍👧, U+200D), y se guarda tal cual. El folio «UIF-2026-⁠0007»: «El folio trae un carácter invisible…», con el folio de esa coincidencia marcado y con el foco, y ningún folio guardado. |
+| P3 | `r93-r8-contrato-vigente-hasta` | Contrato con «Vigente hasta» 2026-10-31 y «Vigente desde» 2026-11-01: «Revisa «Vigente hasta»: debe existir en el calendario y no puede ser anterior a «Vigente desde».», con «Vigente hasta» marcado y ningún documento (antes, el texto de la emisión y el vencimiento de un pago). |
+| serv-nuevo-5 | `r94-r8-proveedor-razon-social-ufeff` | El alta de un proveedor con «Escuela﻿Kemper Urgate»: «La razón social trae un carácter invisible…» en su campo y ningún proveedor. |
 
 Las capturas `NN-pantalla-<pantalla>-<tema>-<ancho>` son la fase de pantallas: un solo h1, campos con etiqueta, sin desborde horizontal y consola limpia en Personal, Cumplimiento, Lista, Expediente, Ficha, Aprobaciones, Clientes, Bitácora y Sin permiso.
 
@@ -837,7 +954,7 @@ OK    serv-N15. corregido el capital en el mismo formulario, la moral extranjera
 OK    emulador de Blob: borrado «503»
 OK    aviso «documento_sin_representante» tras la acción
 OK    emulador de Blob: borrado «normal»
-OK    serv-N16. Blob responde 503 al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro
+OK    serv-N16. Blob responde 503 al borrar el huérfano: la página vuelve en 5.3 s (tope de 5 s más la página), sin documento, y la clave queda en el registro
 OK    emulador de Blob: borrado «sin_respuesta»
 OK    aviso «documento_sin_representante» tras la acción
 OK    emulador de Blob: borrado «normal»
@@ -857,10 +974,9 @@ OK    líder-N2. pago por excepción con «Revisar 😀»: «No se guardó» con
 OK    líder-N2. con «Pago 😀 ya!» (10 caracteres) queda en autorización y la base guarda 10 caracteres
 
 — Séptima revisión: identidades con un control, textos libres con espacio y avisos en su campo
-OK    aviso «dato_invalido_nombre» tras la acción
 OK    base-N23. el representante «Pedro\u000bRuiz Sol» se rechaza en su campo y no se guarda (antes, «PedroRuiz Sol»)
 OK    base-N23. el socio extranjero «Luis\u0085Gómez Paz» se rechaza en su campo, sin socio de más y con lo capturado
-OK    aviso «dato_invalido_razonSocial» tras la acción
+OK    aviso «invisible_razonSocial» tras la acción
 OK    base-N23. la razón social del expediente con U+0085 se rechaza en su campo y no cambia
 OK    aviso «expediente_datos_guardados» tras la acción
 OK    serv-nuevo-4. el giro «Distribución\u0085de abarrotes» se guarda «Distribución de abarrotes»
@@ -873,9 +989,32 @@ OK    regla 1. el RFC «EKU900317\t3C9» del cobro se rechaza en su campo y no h
 OK    P3. el área «Ventas\u0085Norte»: «trae un carácter invisible» en su campo y sin área
 OK    P3 bar-10. contrato con «Vigente desde» 2026-02-30: el aviso marca «Vigente desde» y no hay documento
 OK    P3 bar-10. excepción con «Fecha de la obligación» 0000-01-01: el aviso marca esa fecha, no el vencimiento, y no hay pago
+
+— Octava revisión: caracteres invisibles con su propio aviso, representante que conserva lo capturado, Lista y documento extranjero
+OK    aviso propio. el socio «Juan\u0085Pérez López»: «El nombre trae un carácter invisible…», nombre marcado y con el foco, sin socio
+OK    serv-nuevo-5. el socio «Ana\u200bRuiz Sol» (espacio de ancho cero): el mismo aviso y sin socio
+OK    aviso propio. un nombre en blanco, sin invisibles, conserva «Revisa el campo marcado: el dato no tiene el formato esperado.»
+OK    P3 y serv-nuevo-5. el representante «Pedro\u00adRuiz Sol» (guion suave): aviso propio, nombre marcado y con el foco, y vuelve con RFC, CURP, cargo, PEP, quién lo designó y «Administra»
+OK    P3. con la CURP «XX» el aviso de formato marca la CURP y todo lo demás sigue capturado
+OK    aviso «expediente_representante_agregado» tras la acción
+OK    P3. corregido en el mismo formulario, doble clic en «Agregar representante» = un representante con todo lo capturado
+OK    aviso «invisible_razonSocial» tras la acción
+OK    serv-nuevo-5. la razón social del expediente con U+FEFF: aviso propio, campo marcado y con el foco, y no cambia
+OK    base-N25. el documento extranjero «X123\t4567» se rechaza en su campo; no se guarda X1234567
+OK    aviso «razon_social_control» tras la acción
+OK    serv-nuevo-5. la razón social del alta con U+2060: su aviso, campo marcado y con el foco, sin empresa
+OK    aviso «lpb_renglon_invalido» tras la acción
+OK    base-N24. la Lista con «EVA\tRUIZ SOL» se rechaza en la línea 6 y no deja carga (antes se guardaba «EVA RUIZ SOL»)
+OK    octava. hay una coincidencia pendiente para confirmar y anotar su folio
+OK    aviso «coincidencia_resuelta» tras la acción
+OK    serv-nuevo-5. el motivo con un emoji compuesto (U+200D) se guarda tal cual: los textos libres no cambian
+OK    aviso «invisible_folio» tras la acción
+OK    serv-nuevo-5. el folio «UIF-2026-\u20600007»: aviso propio, el folio de esa coincidencia marcado y con el foco, sin folio guardado
+OK    P3. el contrato con «Vigente hasta» antes de «Vigente desde»: su propio aviso (no el de la emisión del pago), «Vigente hasta» marcado y sin documento
+OK    serv-nuevo-5. el alta del proveedor con U+FEFF en la razón social: su aviso, campo marcado y sin proveedor
 OK    consola del navegador limpia en las regresiones
 
-145 comprobaciones en verde, 0 en rojo.
+165 comprobaciones en verde, 0 en rojo.
 ```
 
 </details>
@@ -886,18 +1025,18 @@ OK    consola del navegador limpia en las regresiones
 ```text
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test
 primera@lever.test: invitada
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T16:23:46.924Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T17:56:28.496Z.
 segunda@lever.test: invitada
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T16:23:47.332Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T17:56:28.503Z.
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)
 
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
 primera@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T16:23:48.430Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T17:56:28.628Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T16:23:48.644Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T17:56:28.631Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)
@@ -912,10 +1051,10 @@ No se hizo: El operador ya tiene Administración invitada con otros correos. Par
 
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
 primera@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T16:23:50.376Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T17:56:29.072Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T16:23:50.452Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T17:56:29.075Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)

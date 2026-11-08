@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 
 import {
-  agregarRepresentanteAccion,
   cargarDocumentoAccion,
   enviarVersionAccion,
   guardarDatosAccion,
@@ -10,15 +9,14 @@ import {
 import { ARCHIVO_DEMASIADO_GRANDE } from "@/components/operacion/aviso";
 import { CampoArchivo } from "@/components/operacion/campo-archivo";
 import { FormularioAccionista } from "@/components/operacion/formulario-accionista";
+import { FormularioRepresentante } from "@/components/operacion/formulario-representante";
 import { BotonEnviar, Hoja, Insignia, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
 import {
-  CARGOS,
   ETIQUETA_CARGO,
   ETIQUETA_DOCUMENTO,
   ETIQUETA_MOTIVO_BENEFICIARIO,
   ETIQUETA_PEP,
-  PEPS,
   TIPOS_DOCUMENTO,
   paisesExtranjeros,
   puntosBaseATexto,
@@ -206,6 +204,7 @@ export function FormulariosBorrador({
   const morales = version.accionistas.filter((accionista) => accionista.tipoPersona === "moral");
   // Cada vista nueva del borrador trae un formulario nuevo; tras un rechazo sigue el mismo (no se aplicó).
   const formAccionista = randomUUID();
+  const formRepresentante = randomUUID();
   const base = (
     <>
       <input type="hidden" name="companyId" value={companyId} />
@@ -273,53 +272,7 @@ export function FormulariosBorrador({
             ))}
           </ul>
         )}
-        <form action={agregarRepresentanteAccion} className="formulario-pareja operacion-forma">
-          {base}
-          <input type="hidden" name="formId" value={randomUUID()} />
-          <div className="campo operacion-ancho">
-            <label htmlFor="rep-nombre">Nombre completo</label>
-            <input id="rep-nombre" name="nombre" maxLength={300} required {...error("representantes-titulo", "nombre")} />
-          </div>
-          <div className="campo">
-            <label htmlFor="rep-rfc">RFC</label>
-            <input id="rep-rfc" name="rfc" maxLength={13} autoCapitalize="characters" className="entrada-rfc" {...error("representantes-titulo", "rfc")} />
-          </div>
-          <div className="campo">
-            <label htmlFor="rep-curp">CURP</label>
-            <input id="rep-curp" name="curp" maxLength={18} autoCapitalize="characters" {...error("representantes-titulo", "curp")} />
-          </div>
-          <div className="campo">
-            <label htmlFor="rep-cargo">Cargo</label>
-            <select id="rep-cargo" name="cargo" defaultValue="administrador_unico" {...error("representantes-titulo", "cargo")}>
-              {CARGOS.map((cargo) => (
-                <option key={cargo} value={cargo}>
-                  {ETIQUETA_CARGO[cargo]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="campo">
-            <label htmlFor="rep-pep">¿Es persona expuesta políticamente?</label>
-            <select id="rep-pep" name="pep" defaultValue="no" {...error("representantes-titulo", "pep")}>
-              {PEPS.map((pep) => (
-                <option key={pep} value={pep}>
-                  {ETIQUETA_PEP[pep]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="campo operacion-ancho">
-            <label htmlFor="rep-designado">Designado por</label>
-            <input id="rep-designado" name="designadoPor" maxLength={300} placeholder="Asamblea, poder notarial…" {...error("representantes-titulo", "designadoPor")} />
-          </div>
-          <label className="confirmacion operacion-ancho">
-            <input name="esAdministrador" type="checkbox" value="si" />
-            <span>Administra la empresa (administrador único o consejo)</span>
-          </label>
-          <div className="acciones operacion-ancho">
-            <BotonEnviar>Agregar representante</BotonEnviar>
-          </div>
-        </form>
+        <FormularioRepresentante key={formRepresentante} companyId={companyId} versionId={version.id} formId={formRepresentante} />
       </Hoja>
 
       <Hoja id="accionistas-titulo" titulo="Estructura accionaria">

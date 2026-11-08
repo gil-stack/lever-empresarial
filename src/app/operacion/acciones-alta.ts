@@ -87,7 +87,12 @@ export async function guardarDatosAccion(formData: FormData): Promise<void> {
   listo(expediente(companyId), "expediente_datos_guardados", "#datos-titulo");
 }
 
-export async function agregarRepresentanteAccion(formData: FormData): Promise<void> {
+/** Lo que vuelve al formulario del representante cuando el servidor lo rechaza: lo capturado y el aviso. */
+export type EstadoDelRepresentante = { aviso: string | null; valores: Record<string, string>; vuelta: number };
+
+const CAMPOS_REPRESENTANTE = ["nombre", "rfc", "curp", "cargo", "pep", "designadoPor", "esAdministrador"] as const;
+
+export async function agregarRepresentanteAccion(previo: EstadoDelRepresentante, formData: FormData): Promise<EstadoDelRepresentante> {
   const ctx = await exigirContextoOperacion();
   const companyId = texto(formData, "companyId");
   try {
@@ -103,7 +108,11 @@ export async function agregarRepresentanteAccion(formData: FormData): Promise<vo
       pep: texto(formData, "pep"),
     });
   } catch (error) {
-    return fallo(error, expediente(companyId), "#representantes-titulo");
+    // Como el del socio: vuelve con lo capturado y sin recargar; ningún dato del representante va en la dirección.
+    if (error instanceof ErrorDeDominio) {
+      return { aviso: error.codigo, valores: Object.fromEntries(CAMPOS_REPRESENTANTE.map((campo) => [campo, texto(formData, campo)])), vuelta: previo.vuelta + 1 };
+    }
+    throw error;
   }
   listo(expediente(companyId), "expediente_representante_agregado", "#representantes-titulo");
 }
@@ -316,7 +325,9 @@ export async function registrarReporteAccion(formData: FormData): Promise<void> 
       avisoClienteEl: texto(formData, "avisoClienteEl"),
     });
   } catch (error) {
-    return fallo(error, destino);
+    // El aviso marca el folio de esa coincidencia y le da el foco; en la dirección solo va su id.
+    const id = texto(formData, "id");
+    return fallo(error, destino, /^[0-9a-f-]{36}$/i.test(id) ? `#folio-${id}` : "");
   }
   listo(destino, "reporte_registrado");
 }

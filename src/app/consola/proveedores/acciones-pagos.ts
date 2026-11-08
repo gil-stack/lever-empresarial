@@ -35,6 +35,7 @@ const MENSAJES: Record<string, string> = {
   fecha_emision_invalida: "Esa fecha de la obligación no existe en el calendario.",
   fecha_programada_invalida: "Esa fecha prevista de pago no existe en el calendario.",
   fecha_desde_invalida: "Esa fecha de «Vigente desde» no existe en el calendario.",
+  fecha_hasta_invalida: "Revisa «Vigente hasta»: debe existir en el calendario y no puede ser anterior a «Vigente desde».",
   fecha_pasada: "La fecha prevista de pago no puede estar en el pasado.",
   referencia_invalida: "Escribe una referencia de entre 1 y 120 caracteres.",
   motivo_invalido: "Explica el motivo con al menos 10 caracteres. Al rechazar o cancelar bastan 5.",
@@ -74,6 +75,7 @@ const CAMPO_DEL_ERROR: Record<string, string> = {
   fecha_emision_invalida: "emitidaEl",
   fecha_programada_invalida: "programadaEl",
   fecha_desde_invalida: "vigenteDesde",
+  fecha_hasta_invalida: "vigenteHasta",
   fecha_pasada: "programadaEl",
   motivo_invalido: "motivoExcepcion",
   archivo_no_disponible: "pdf",
@@ -186,7 +188,7 @@ export async function subirContrato(
     revalidatePath("/consola/proveedores");
     return { tipo: "listo", mensaje: "El contrato quedó guardado como documento privado." };
   } catch (error) {
-    return invalido(error, { archivo_ausente: "contrato", archivo_no_disponible: "contrato", fecha_invalida: "vigenteHasta" });
+    return invalido(error, { archivo_ausente: "contrato", archivo_no_disponible: "contrato" });
   }
 }
 

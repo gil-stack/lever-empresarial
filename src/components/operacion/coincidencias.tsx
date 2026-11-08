@@ -4,6 +4,7 @@ import { registrarReporteAccion, resolverCoincidenciaAccion } from "@/app/operac
 import { BotonEnviar, Insignia, Vacio } from "@/components/sistema";
 import { ETIQUETA_ESTADO_COINCIDENCIA, ETIQUETA_SUJETO } from "@/dominio/operacion";
 
+import { errorDelCampo } from "./aviso";
 import { fechaHora } from "./formato";
 
 export type CoincidenciaVista = {
@@ -36,12 +37,17 @@ export function Coincidencias({
   desde,
   ahora,
   vacio,
+  aviso,
+  en,
 }: {
   coincidencias: CoincidenciaVista[];
   resuelve: boolean;
   desde: "cumplimiento" | "lpb";
   ahora: Date;
   vacio: string;
+  /** El aviso del último envío y el campo que lo causó (`folio-<id>`): marca el folio de esa coincidencia. */
+  aviso?: string;
+  en?: string;
 }) {
   if (coincidencias.length === 0) return <Vacio titulo="Sin coincidencias abiertas">{vacio}</Vacio>;
   return (
@@ -112,7 +118,13 @@ export function Coincidencias({
                 <input type="hidden" name="desde" value={desde} />
                 <div className="campo">
                   <label htmlFor={`folio-${coincidencia.id}`}>Folio del reporte a la UIF</label>
-                  <input id={`folio-${coincidencia.id}`} name="folio" maxLength={80} required />
+                  <input
+                    id={`folio-${coincidencia.id}`}
+                    name="folio"
+                    maxLength={80}
+                    required
+                    {...(en === `folio-${coincidencia.id}` ? errorDelCampo(aviso, "folio") : {})}
+                  />
                 </div>
                 <div className="campo">
                   <label htmlFor={`presentado-${coincidencia.id}`}>Presentado el</label>

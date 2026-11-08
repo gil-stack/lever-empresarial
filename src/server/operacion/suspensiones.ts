@@ -8,7 +8,7 @@ import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import type { Sesion } from "../session/tipos";
 import { auditarOperacion } from "./auditar";
 import { exigirEnOperacion } from "./permisos";
-import { motivoEscrito, unaVezPorFormulario } from "./formulario";
+import { motivoEscrito, unaVezPorFormulario, type EnvolturaDeTransaccion } from "./formulario";
 
 type SesionConFactor = Pick<Sesion, "segundoFactor" | "superficie">;
 
@@ -41,6 +41,7 @@ export type SuspensionLeida = {
 export async function solicitarCambioDeSuspension(
   ctx: ContextoDePersonal,
   entrada: { companyId: unknown; formId: unknown; tipo: unknown; motivo: unknown },
+  envolver: EnvolturaDeTransaccion = (consulta) => consulta,
 ): Promise<void> {
   exigirEnOperacion(ctx, "plataforma.suspension.solicitar");
   if (!uuidValido(entrada.companyId)) throw new ErrorDeDominio("cliente_ausente");
@@ -50,15 +51,23 @@ export async function solicitarCambioDeSuspension(
   const motivo = motivoEscrito(entrada.motivo, 500);
   const ahora = new Date();
   const companyId = entrada.companyId;
-  await unaVezPorFormulario(() => conContexto(basePlataforma(ctx, companyId), async (consulta) => {
-    // Un segundo clic encuentra su solicitud; un formulario de otra empresa no vale.
-    const previa = await consulta.query("select company_id from company_suspensions where id = $1", [entrada.formId]);
-    if (previa.rows.length > 0) {
-      if ((previa.rows[0] as { company_id: string }).company_id === companyId) return;
+  await unaVezPorFormulario(() => conContexto(basePlataforma(ctx, companyId), async (transaccion) => {
+    const consulta = envolver(transaccion);
+    // El formulario y la solicitud pendiente de la empresa en una sola lectura, con la misma foto (como
+    // `crearVersion`). Un segundo clic encuentra su solicitud; un formulario de otra empresa no vale. Con dos
+    // lecturas, si la otra pestaña del mismo formulario confirmaba entre ellas, la segunda veía su solicitud como
+    // «ya hay una pendiente». Si confirma después de esta lectura, el insert choca con la llave y se repite.
+    const vistas = await consulta.query(
+      "select id, company_id from company_suspensions where id = $1 or (company_id = $2 and estado = 'pendiente')",
+      [entrada.formId, entrada.companyId],
+    );
+    const filas = vistas.rows as Array<{ id: string; company_id: string }>;
+    const propia = filas.find((fila) => fila.id === entrada.formId);
+    if (propia) {
+      if (propia.company_id === companyId) return;
       throw new ErrorDeDominio("formulario_invalido");
     }
-    const abierta = await consulta.query("select id from company_suspensions where company_id = $1 and estado = 'pendiente'", [entrada.companyId]);
-    if (abierta.rows.length > 0) throw new ErrorDeDominio("suspension_pendiente");
+    if (filas.length > 0) throw new ErrorDeDominio("suspension_pendiente");
     await consulta.query(
       `insert into company_suspensions (id, operator_id, company_id, tipo, origen, motivo, solicitada_por, solicitada_en)
        values ($1, $2, $3, $4, 'manual', $5, $6, $7)`,

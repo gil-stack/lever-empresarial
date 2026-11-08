@@ -11,7 +11,7 @@
  * homoclave; esta fase pide el patrón, y el SAT ha emitido RFC que no lo cumplen.
  */
 
-import { CONTROL } from "../dominio/control";
+import { INVISIBLE } from "../dominio/control";
 
 export type TipoDeRfc = "moral" | "fisica";
 
@@ -73,9 +73,9 @@ export function normalizarRfcDeAlta(valor: string): string {
  */
 export function validarRfcDeAlta(entrada: unknown): ResultadoRfcDeAlta {
   if (typeof entrada !== "string") return { ok: false, error: "vacio" };
-  // Un identificador con un control dentro (tabulador, U+000B, U+0085…) se rechaza: `normalizarRfcDeAlta`
+  // Un identificador con un carácter invisible dentro (tabulador, U+000B, U+0085, U+200B…) se rechaza: `normalizarRfcDeAlta`
   // quita los espacios y borraría el tabulador, y el RFC quedaría distinto de lo que se escribió.
-  if (CONTROL.test(entrada.trim())) return { ok: false, error: "patron" };
+  if (INVISIBLE.test(entrada.trim())) return { ok: false, error: "patron" };
   const rfc = normalizarRfcDeAlta(entrada);
   if (rfc.length === 0) return { ok: false, error: "vacio" };
   if (RFC_GENERICO.has(rfc)) return { ok: false, error: "generico" };

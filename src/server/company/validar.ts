@@ -1,7 +1,7 @@
 import { validarRfcDeAlta } from "../../domain/rfc";
 import { regimenAplica, tipoDePersona, usoAplica } from "./catalogos";
 import type { AltaEmpresaEntrada, EmpresaNormalizada } from "./tipos";
-import { CONTROL } from "../../dominio/control";
+import { INVISIBLE } from "../../dominio/control";
 
 
 export type CodigoAlta =
@@ -24,7 +24,7 @@ export function validarAlta(entrada: Partial<AltaEmpresaEntrada> | null | undefi
   }
 
   // Una identidad con un control invisible se rechaza con su propio aviso, no se limpia.
-  if (typeof entrada?.razonSocial === "string" && CONTROL.test(entrada.razonSocial)) return { ok: false, codigo: "razon_social_control" };
+  if (typeof entrada?.razonSocial === "string" && INVISIBLE.test(entrada.razonSocial)) return { ok: false, codigo: "razon_social_control" };
   const razonSocial = normalizarRazon(entrada?.razonSocial);
   if (!razonSocial) return { ok: false, codigo: "razon_social_invalida" };
 
@@ -42,7 +42,7 @@ export function validarAlta(entrada: Partial<AltaEmpresaEntrada> | null | undefi
 }
 
 function normalizarRazon(valor: unknown): string | null {
-  if (typeof valor !== "string" || CONTROL.test(valor)) return null;
+  if (typeof valor !== "string" || INVISIBLE.test(valor)) return null;
   const razon = valor.normalize("NFKC").trim().replace(/\s+/g, " ");
   if (razon.length < 1 || razon.length > 254) return null;
   if (!/[\p{L}\p{N}]/u.test(razon)) return null;

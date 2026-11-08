@@ -1,7 +1,7 @@
 import { capacidadesDe, ROLES_CLIENTE, rolesLeidos, tiene, tieneRolDeTrabajo, type RolCliente } from "../nucleo/capacidades";
 import { leerCentavosEscritos } from "./centavos";
 import { clabeValida } from "./clabe";
-import { CONTROL } from "./control";
+import { INVISIBLE } from "./control";
 
 export const ROLES_DE_CUENTA = ROLES_CLIENTE;
 
@@ -299,7 +299,7 @@ export function accesoFinanzasDe(
 }
 
 export function normalizarNombrePersona(valor: unknown): string | null {
-  if (typeof valor !== "string" || CONTROL.test(valor)) return null;
+  if (typeof valor !== "string" || INVISIBLE.test(valor)) return null;
   const nombre = valor.normalize("NFKC").trim().replace(/\s+/g, " ");
   if (nombre.length < 1 || nombre.length > 120) return null;
   if (!/[\p{L}\p{N}]/u.test(nombre)) return null;
@@ -307,7 +307,7 @@ export function normalizarNombrePersona(valor: unknown): string | null {
 }
 
 export function normalizarCentro(valor: unknown): string | null {
-  if (typeof valor !== "string" || CONTROL.test(valor)) return null;
+  if (typeof valor !== "string" || INVISIBLE.test(valor)) return null;
   const nombre = valor.normalize("NFKC").trim().replace(/\s+/g, " ");
   if (nombre.length < 1 || nombre.length > 80) return null;
   if (!/[\p{L}\p{N}]/u.test(nombre)) return null;
@@ -316,7 +316,7 @@ export function normalizarCentro(valor: unknown): string | null {
 
 /** Un nombre con un control invisible no se limpia: se rechaza con su propio aviso (es una identidad). */
 function conControl(valor: unknown): boolean {
-  return typeof valor === "string" && CONTROL.test(valor);
+  return typeof valor === "string" && INVISIBLE.test(valor);
 }
 
 export function normalizarCorreoPersona(valor: unknown): string {

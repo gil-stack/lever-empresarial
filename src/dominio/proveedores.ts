@@ -3,7 +3,7 @@ import { TOPE_ARCHIVO_BYTES, TOPE_ARCHIVO_TEXTO } from "./archivos";
 import { FRASE_FUERA_DE_LISTA, FRASE_SIN_PAGO } from "./lista-69b";
 import { horaEnMexico } from "./reloj";
 import { normalizarRfc, validarRfc } from "./rfc";
-import { CONTROL } from "./control";
+import { INVISIBLE } from "./control";
 
 /**
  * Alta de proveedor en la consola de finanzas.
@@ -145,7 +145,7 @@ const CAMPO_DE_CODIGO: Readonly<Record<string, ErrorCampoProveedor>> = {
   rfc_patron: { campo: "rfc", mensaje: "Ese RFC no tiene el patrón del SAT." },
   rfc_generico: { campo: "rfc", mensaje: "Ese RFC no es de un proveedor." },
   razon_vacia: { campo: "razonSocial", mensaje: "Escribe la razón social." },
-  razon_control: { campo: "razonSocial", mensaje: "La razón social tiene un carácter que no se puede guardar." },
+  razon_control: { campo: "razonSocial", mensaje: "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano." },
   razon_larga: { campo: "razonSocial", mensaje: "La razón social no cabe." },
   clabe_invalida: { campo: "clabe", mensaje: "La CLABE no cierra con el dígito. No se guarda." },
   constancia_ausente: { campo: "constancia", mensaje: "Falta la constancia de situación fiscal." },
@@ -353,7 +353,7 @@ function motivoRazon(valor: unknown): ErrorCampoProveedor | null {
   if (typeof valor !== "string") return errorDeCodigo("razon_vacia");
   const razon = valor.trim();
   if (razon.length === 0) return errorDeCodigo("razon_vacia");
-  if (CONTROL.test(razon)) return errorDeCodigo("razon_control");
+  if (INVISIBLE.test(razon)) return errorDeCodigo("razon_control");
   if (razon.length > TOPE_RAZON) return errorDeCodigo("razon_larga");
   return null;
 }
