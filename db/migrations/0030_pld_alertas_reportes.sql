@@ -1906,6 +1906,10 @@ BEGIN
   IF NEW.recibido_en > now() THEN
     RAISE EXCEPTION 'acuse_fecha_futura';
   END IF;
+  -- El reporte se presenta después de decidir reportarlo, nunca antes.
+  IF pld_fecha_mx(NEW.recibido_en) < dictamen.dictaminado_el THEN
+    RAISE EXCEPTION 'acuse_antes_del_dictamen';
+  END IF;
   NEW.fuera_de_plazo := CASE
     WHEN dictamen.reporte_vence_en IS NOT NULL THEN NEW.recibido_en > dictamen.reporte_vence_en
     ELSE pld_fecha_mx(NEW.recibido_en) > dictamen.reporte_vence_el
@@ -1970,9 +1974,18 @@ RETURNS trigger
 LANGUAGE plpgsql
 SET search_path = public
 AS $$
+DECLARE
+  fin date := (to_date(NEW.periodo, 'YYYYMM') + interval '1 month - 1 day')::date;
 BEGIN
+  -- Un periodo se reporta cuando ya cerró: el trimestre o el mes completo.
+  IF hoy_mexico() <= fin THEN
+    RAISE EXCEPTION 'periodo_sin_cerrar';
+  END IF;
   IF NEW.recibido_en IS NOT NULL AND NEW.recibido_en > now() THEN
     RAISE EXCEPTION 'acuse_fecha_futura';
+  END IF;
+  IF NEW.recibido_en IS NOT NULL AND pld_fecha_mx(NEW.recibido_en) <= fin THEN
+    RAISE EXCEPTION 'acuse_antes_del_cierre';
   END IF;
   RETURN NEW;
 END;

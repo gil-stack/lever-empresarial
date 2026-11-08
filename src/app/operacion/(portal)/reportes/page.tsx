@@ -37,6 +37,12 @@ export default async function ReportesRegulatorios({ searchParams }: { searchPar
   const error = (seccion: string, campo: string) => (params.en === seccion ? errorDelCampo(params.aviso, campo) : {});
   const faltaCalendario = periodicos.map((p) => p.faltaCalendario).find((anio): anio is number => anio !== null) ?? null;
   const ancla = (p: Periodico) => `reporte-${p.reporte}-${p.periodo}`;
+  // El acuse es posterior al cierre del periodo: desde el primer día del mes siguiente.
+  const desdeCierre = (p: Periodico) => {
+    const anio = Number(p.periodo.slice(0, 4));
+    const mes = Number(p.periodo.slice(4));
+    return mes === 12 ? `${anio + 1}-01-01T00:00` : `${anio}-${String(mes + 1).padStart(2, "0")}-01T00:00`;
+  };
 
   const tarjeta = (periodico: Periodico) => (
     <li key={ancla(periodico)} id={ancla(periodico)}>
@@ -79,7 +85,7 @@ export default async function ReportesRegulatorios({ searchParams }: { searchPar
                   </div>
                   <div className="campo">
                     <label htmlFor={`${ancla(periodico)}-recibido`}>Fecha y hora de recepción</label>
-                    <input id={`${ancla(periodico)}-recibido`} name="recibidoEn" type="datetime-local" required max={ahoraEnMexicoParaCampo(new Date())} {...error(ancla(periodico), "recibidoEn")} />
+                    <input id={`${ancla(periodico)}-recibido`} name="recibidoEn" type="datetime-local" required min={desdeCierre(periodico)} max={ahoraEnMexicoParaCampo(new Date())} {...error(ancla(periodico), "recibidoEn")} />
                   </div>
                   <div className="campo">
                     <label htmlFor={`${ancla(periodico)}-registros`}>Número de registros</label>

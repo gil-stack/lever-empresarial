@@ -567,6 +567,8 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
 
           // Reporte: el acuse del SITI, inmutable y uno por caso; tipo 2 = Inusual.
           const recibido = haceMinutos(5);
+          // El acuse no puede ser anterior al dictamen (la sesión de hoy).
+          await assert.rejects(registrarReportePld(cum, { formId: randomUUID(), casoId: casoX, folio: "UIF-2026-0000", periodo: hoy.replaceAll("-", ""), recibidoEn: `${sumarDias(hoy, -1)}T10:00`, registros: "1" }), /acuse_antes_del_dictamen/);
           await assert.rejects(registrarReportePld(cum, { formId: randomUUID(), casoId: casoX, folio: "UIF-2026\u00850001", periodo: hoy.replaceAll("-", ""), recibidoEn: recibido, registros: "1" }), /dato_invalido_folio/);
           assert.deepEqual(await registrarReportePld(cum, { formId: randomUUID(), casoId: casoX, folio: "UIF-2026-0001", periodo: hoy.replaceAll("-", ""), recibidoEn: recibido, registros: "1" }), { fueraDePlazo: false });
           await assert.rejects(registrarReportePld(cum, { formId: randomUUID(), casoId: casoX, folio: "UIF-2026-0002", periodo: hoy.replaceAll("-", ""), recibidoEn: recibido, registros: "1" }), /reporte_pld_ya_registrado/);
@@ -613,8 +615,9 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.equal(leidoZ?.fueraDePlazo, true);
           assert.deepEqual(await oficial(casoZ, "reportar_interna"), { fueraDePlazo: true });
           const ayer = `${sumarDias(hoy, -1)}T10:00`;
-          // El acuse de ayer es anterior al dictamen de hoy, pero su plazo es el de 3 días hábiles: a tiempo.
-          assert.deepEqual(await registrarReportePld(cum, { formId: randomUUID(), casoId: casoZ, folio: "UIF-Z", periodo: hoy.replaceAll("-", ""), recibidoEn: ayer, registros: "1" }), { fueraDePlazo: false });
+          // El acuse de ayer es anterior al dictamen de hoy: la base lo rechaza. El de hoy a las 00:00 entra a tiempo.
+          await assert.rejects(registrarReportePld(cum, { formId: randomUUID(), casoId: casoZ, folio: "UIF-Z", periodo: hoy.replaceAll("-", ""), recibidoEn: ayer, registros: "1" }), /acuse_antes_del_dictamen/);
+          assert.deepEqual(await registrarReportePld(cum, { formId: randomUUID(), casoId: casoZ, folio: "UIF-Z", periodo: hoy.replaceAll("-", ""), recibidoEn: `${hoy}T00:00`, registros: "1" }), { fueraDePlazo: false });
           assert.equal((await uno<{ tipo_reporte: string }>("select tipo_reporte from pld_reportes where caso_id = $1", [casoZ])).tipo_reporte, "3");
 
           // 44ª: con la marca de 24 horas, el plazo es de 24 horas desde que se conoce; se simulan 30 (venció hace 6).
@@ -671,6 +674,9 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await assert.rejects(archivoRelevantes(cum, "202610"), /periodo_invalido/);
           const recibido = `${sumarDias(hoy, -1)}T09:30`;
           await assert.rejects(registrarPeriodico(cum, { formId: randomUUID(), reporte: "36", periodo: "202609", folio: "SITI-R\u001f0001", recibidoEn: recibido, registros: "1" }), /dato_invalido_folio/);
+          // Un periodo se reporta ya cerrado, y su acuse es posterior al cierre.
+          await assert.rejects(registrarPeriodico(cum, { formId: randomUUID(), reporte: "38", periodo: hoy.slice(0, 7).replace("-", ""), folio: "", recibidoEn: "", registros: "" }), /periodo_sin_cerrar/);
+          await assert.rejects(registrarPeriodico(cum, { formId: randomUUID(), reporte: "36", periodo: "202606", folio: "SITI-R-0000", recibidoEn: "2026-06-30T10:00", registros: "1" }), /acuse_antes_del_cierre/);
           await registrarPeriodico(cum, { formId: randomUUID(), reporte: "36", periodo: "202609", folio: "SITI-R-0001", recibidoEn: recibido, registros: "1" });
           await assert.rejects(registrarPeriodico(cum, { formId: randomUUID(), reporte: "36", periodo: "202609", folio: "SITI-R-0002", recibidoEn: recibido, registros: "1" }), /periodico_ya_registrado/);
           assert.equal((await uno<{ archivo_sha256: string }>("select archivo_sha256 from pld_periodicos where reporte = '36' and periodo = '202609'")).archivo_sha256, archivo.sha256);

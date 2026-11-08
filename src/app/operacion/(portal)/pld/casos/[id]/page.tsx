@@ -454,7 +454,7 @@ export default async function CasoPld({
               </div>
               <div className="campo">
                 <label htmlFor="reporte-recibido">Fecha y hora de recepción (Ciudad de México)</label>
-                <input id="reporte-recibido" name="recibidoEn" type="datetime-local" required max={ahoraEnMexicoParaCampo(new Date())} {...error("reporte-titulo", "recibidoEn")} />
+                <input id="reporte-recibido" name="recibidoEn" type="datetime-local" required min={`${caso.dictamen.dictaminadoEl}T00:00`} max={ahoraEnMexicoParaCampo(new Date())} {...error("reporte-titulo", "recibidoEn")} />
               </div>
               <div className="campo">
                 <label htmlFor="reporte-registros">Número de registros</label>
