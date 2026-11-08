@@ -3,10 +3,12 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "node:test";
 
+import { COMPRAS_DE_OCTUBRE } from "../../dominio/demo/movimientos";
 import { MODULOS_DEMO, PRODUCTOS } from "../../dominio/demo/productos";
 import { CIFRAS_DE_EJEMPLO, NOMBRES_DE_EJEMPLO } from "../../server/demo/centinelas";
 import { cargaDemo } from "../../server/demo/regla";
 import { VistaDemo, type CargaDemoCualquiera } from "./vista";
+import { leerFiltros } from "./vistas/movimientos";
 
 const EMPRESA = "33333333-3333-4333-8333-333333333333";
 
@@ -61,6 +63,14 @@ describe("módulos de demostración en el servidor", () => {
     assert.match(html, /5 compras con los filtros/);
     assert.equal(html.includes("Uber"), false);
     assert.ok(html.includes("AutoZone"));
+  });
+
+  it("Movimientos: sin «agrupar» en la dirección, el filtro dice «Sin agrupar» y llega así a los campos", () => {
+    const filtros = leerFiltros(COMPRAS_DE_OCTUBRE, {});
+    assert.equal(filtros.agrupar, "");
+    // Los campos siguen a la dirección con estos valores serializados: una llave sin valor no llegaría a «Agrupar por».
+    assert.equal(JSON.parse(JSON.stringify(filtros)).agrupar, "");
+    assert.equal(leerFiltros(COMPRAS_DE_OCTUBRE, { agrupar: "persona" }).agrupar, "persona");
   });
 
   it("Movimientos ignora valores de filtro que no existen", () => {

@@ -48,6 +48,18 @@ export function FiltrosAlCambiar({
       const encima = evento.type === "pointerup" ? document.elementFromPoint(evento.clientX, evento.clientY)?.closest('button[type="submit"]') : null;
       if (encima !== botonTocado) botonTocado = null;
     };
+    // El menú contextual tampoco hace clic: en macOS, Ctrl + clic llega con el botón principal y abre el menú.
+    const alAbrirMenu = () => {
+      botonTocado = null;
+    };
+    // Un enlace que lleva a otra página gana: con el dedo, su clic llega antes que el envío aplazado del monto, y ese
+    // envío navegaría después, de vuelta a los filtros. Un enlace que abre otra pestaña deja salir el envío.
+    const alHacerClic = (evento: MouseEvent) => {
+      const enlace = evento.target instanceof Element ? evento.target.closest("a[href]") : null;
+      if (!enlace || evento.button !== 0 || evento.metaKey || evento.ctrlKey || evento.shiftKey || evento.altKey) return;
+      if (enlace.getAttribute("target") === "_blank" || enlace.getAttribute("href")?.startsWith("#")) return;
+      clearTimeout(pendiente);
+    };
     const alCambiar = () => {
       clearTimeout(pendiente);
       pendiente = setTimeout(() => nodo.requestSubmit(), botonTocado ? 500 : 0);
@@ -59,16 +71,20 @@ export function FiltrosAlCambiar({
       if (boton instanceof HTMLButtonElement && boton.name === "periodo" && campoPeriodo.current) campoPeriodo.current.value = boton.value;
     };
     nodo.addEventListener("pointerdown", alTocar, true);
-    // En el documento: soltar fuera del formulario no pasa por él.
+    nodo.addEventListener("contextmenu", alAbrirMenu, true);
+    // En el documento: soltar fuera del formulario no pasa por él, ni los enlaces de fuera.
     document.addEventListener("pointerup", alSoltar, true);
     document.addEventListener("pointercancel", alSoltar, true);
+    document.addEventListener("click", alHacerClic, true);
     nodo.addEventListener("change", alCambiar);
     nodo.addEventListener("submit", alEnviar);
     return () => {
       clearTimeout(pendiente);
       nodo.removeEventListener("pointerdown", alTocar, true);
+      nodo.removeEventListener("contextmenu", alAbrirMenu, true);
       document.removeEventListener("pointerup", alSoltar, true);
       document.removeEventListener("pointercancel", alSoltar, true);
+      document.removeEventListener("click", alHacerClic, true);
       nodo.removeEventListener("change", alCambiar);
       nodo.removeEventListener("submit", alEnviar);
     };
@@ -84,8 +100,11 @@ export function FiltrosAlCambiar({
     for (const [nombre, valor] of Object.entries(nuevos)) {
       const campo = nodo.elements.namedItem(nombre);
       if (!(campo instanceof HTMLInputElement || campo instanceof HTMLSelectElement)) continue;
-      // Lo que se está escribiendo y aún no sale se queda: la navegación que llega salió antes de escribirlo.
-      const escribiendo = campo === document.activeElement && campo.value !== aplicados.current[nombre];
+      // Lo que se está escribiendo y aún no sale se queda: la navegación que llega salió antes de escribirlo. Un monto a
+      // medias que aún no es número («1e», «-») vale «», como el aplicado, pero el campo lo marca como entrada inválida.
+      const escribiendo =
+        campo === document.activeElement &&
+        (campo.value !== aplicados.current[nombre] || (campo instanceof HTMLInputElement && campo.validity.badInput));
       if (!escribiendo) campo.value = valor;
     }
     aplicados.current = nuevos;

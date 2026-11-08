@@ -8,6 +8,7 @@
 //   node scripts/evidencia/ola-2b-navegacion.mjs pantallas   3 temas × 1440/390: un h1, etiquetas, consola limpia, foco
 //   node scripts/evidencia/ola-2b-navegacion.mjs modulos     Movimientos y Fiscal clicados en 3 temas × 1440/390
 //   node scripts/evidencia/ola-2b-navegacion.mjs limpiar     solo «Limpiar filtros», «Atrás» y «Adelante» de Movimientos (también va en modulos)
+//   node scripts/evidencia/ola-2b-navegacion.mjs fondo       el fondo animado con movimiento: sin GPU se queda quieto y lo recuerda; con GPU, igual que antes
 //   node scripts/evidencia/ola-2b-navegacion.mjs contraste   AA de cada texto contra la escena real
 //   node scripts/evidencia/ola-2b-navegacion.mjs cargando    «Cargando…» de una sección nueva mientras llega la página
 //   node scripts/evidencia/ola-2b-navegacion.mjs caida       con el Postgres apagado: el error de cada pantalla nueva
@@ -83,10 +84,13 @@ function renovarSesiones() {
   sql("update sessions set ultimo_uso = now() where expires_at > now()");
 }
 
-async function abrir({ quien, tema = "oscuro", ancho = 1440, javaScript = true, barraVisible = false }) {
+async function abrir({ quien, tema = "oscuro", ancho = 1440, javaScript = true, barraVisible = false, movimiento = false, dpr = 1, gpu = false }) {
   // Headless oculta la barra de desplazamiento; sin `--hide-scrollbars` ocupa 15 px, como en un escritorio con barras clásicas.
+  // Con `gpu`, el Chromium completo sin ventana pinta con la GPU de la Mac (Metal). Con movimiento y sin GPU, el
+  // headless tal cual, como Vercel CI y los e2e: WebGL por la CPU con su pintor predeterminado, cientos de ms por cuadro.
   const nav = await chromium.launch({
-    args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
+    ...(gpu ? { channel: "chromium" } : {}),
+    args: gpu ? ["--enable-gpu", "--use-angle=metal", "--ignore-gpu-blocklist"] : movimiento ? [] : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
     ...(barraVisible ? { ignoreDefaultArgs: ["--hide-scrollbars"] } : {}),
   });
   const movil = ancho < 600;
@@ -95,8 +99,8 @@ async function abrir({ quien, tema = "oscuro", ancho = 1440, javaScript = true, 
     viewport: { width: ancho, height: movil ? 844 : 900 },
     isMobile: movil,
     hasTouch: movil,
-    deviceScaleFactor: 1,
-    reducedMotion: "reduce",
+    deviceScaleFactor: dpr,
+    reducedMotion: movimiento ? "no-preference" : "reduce",
     locale: "es-MX",
     timezoneId: "America/Mexico_City",
   });
@@ -728,13 +732,16 @@ async function revisarLimpiar({ p, etiqueta, carpeta, tema, ancho }) {
   const persona = p.getByLabel("Persona", { exact: true });
   const area = p.getByLabel("Área", { exact: true });
   const monto = p.locator("#movimientos-desde");
+  const agrupar = p.getByLabel("Agrupar por", { exact: true });
   const limpiar = p.getByRole("link", { name: "Limpiar filtros" });
-  const campos = async () => ({ persona: await persona.inputValue(), monto: await monto.inputValue() });
+  const campos = async () => ({ persona: await persona.inputValue(), monto: await monto.inputValue(), agrupar: await agrupar.inputValue() });
   const consulta = () => new URL(p.url()).searchParams;
   const sinConsulta = (url) => url.pathname.endsWith("/consola/movimientos") && url.search === "";
   await p.goto(`${BASE}${ALTAMAR}/consola/movimientos`, { waitUntil: "networkidle" });
   await persona.selectOption("Carlos Méndez");
   await p.waitForURL(/persona=Carlos/);
+  await agrupar.selectOption("persona");
+  await p.waitForURL(/agrupar=persona/);
   await monto.click();
   await p.keyboard.type("100");
   await p.keyboard.press("Enter");
@@ -745,33 +752,33 @@ async function revisarLimpiar({ p, etiqueta, carpeta, tema, ancho }) {
   await p.waitForTimeout(500);
   const trasLimpiar = await campos();
   await capturar(p, `${carpeta}/movimientos-limpiar-despues-${tema}-${ancho}${sufijo}.webp`);
-  anotar(trasLimpiar.persona === "" && trasLimpiar.monto === "", `${etiqueta} Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona y el monto vacíos`, JSON.stringify(trasLimpiar));
+  anotar(trasLimpiar.persona === "" && trasLimpiar.monto === "" && trasLimpiar.agrupar === "", `${etiqueta} Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona, el monto y «Agrupar por» vacíos`, JSON.stringify(trasLimpiar));
   await p.goBack();
   await p.waitForURL(/desde=100/);
   await p.waitForTimeout(500);
   const conAtras = await campos();
-  anotar(conAtras.persona === "Carlos Méndez" && conAtras.monto === "100", `${etiqueta} Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona y el monto de la dirección`, JSON.stringify(conAtras));
+  anotar(conAtras.persona === "Carlos Méndez" && conAtras.monto === "100" && conAtras.agrupar === "persona", `${etiqueta} Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona, el monto y la agrupación de la dirección`, JSON.stringify(conAtras));
   await p.goForward();
   await p.waitForURL(sinConsulta);
   await p.waitForTimeout(500);
   const conAdelante = await campos();
-  anotar(conAdelante.persona === "" && conAdelante.monto === "", `${etiqueta} Movimientos: «Adelante» deja otra vez los campos vacíos`, JSON.stringify(conAdelante));
+  anotar(conAdelante.persona === "" && conAdelante.monto === "" && conAdelante.agrupar === "", `${etiqueta} Movimientos: «Adelante» deja otra vez los campos vacíos`, JSON.stringify(conAdelante));
   navegaciones.length = 0;
   const unArea = await area.locator("option").nth(1).getAttribute("value");
   await area.selectOption(unArea);
   await p.waitForURL((url) => url.searchParams.get("area") === unArea);
   await p.waitForTimeout(800);
   anotar(
-    navegaciones.length === 1 && !consulta().get("persona") && !consulta().get("desde"),
-    `${etiqueta} Movimientos: el filtro siguiente (Área) va solo, sin la persona ni el monto de antes, con una navegación`,
-    `${navegaciones.length} navegación(es) · persona «${consulta().get("persona") ?? ""}» · desde «${consulta().get("desde") ?? ""}»`,
+    navegaciones.length === 1 && !consulta().get("persona") && !consulta().get("desde") && !consulta().get("agrupar"),
+    `${etiqueta} Movimientos: el filtro siguiente (Área) va solo, sin la persona, el monto ni la agrupación de antes, con una navegación`,
+    `${navegaciones.length} navegación(es) · persona «${consulta().get("persona") ?? ""}» · desde «${consulta().get("desde") ?? ""}» · agrupar «${consulta().get("agrupar") ?? ""}»`,
   );
-  await p.goto(`${BASE}${ALTAMAR}/consola/movimientos?persona=Carlos+M%C3%A9ndez&desde=100`, { waitUntil: "networkidle" });
+  await p.goto(`${BASE}${ALTAMAR}/consola/movimientos?persona=Carlos+M%C3%A9ndez&desde=100&agrupar=persona`, { waitUntil: "networkidle" });
   await limpiar.click();
   await p.waitForURL(sinConsulta);
   await p.waitForTimeout(500);
   const desdeLaDireccion = await campos();
-  anotar(desdeLaDireccion.persona === "" && desdeLaDireccion.monto === "", `${etiqueta} Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos`, JSON.stringify(desdeLaDireccion));
+  anotar(desdeLaDireccion.persona === "" && desdeLaDireccion.monto === "" && desdeLaDireccion.agrupar === "", `${etiqueta} Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos`, JSON.stringify(desdeLaDireccion));
   p.off("request", contarPeticion);
 }
 
@@ -919,6 +926,78 @@ async function modulos() {
             `${Math.round(marcas.envio - marcas.cambio)} ms del cambio al envío · ${veces} navegación(es) · marcado «${await periodoMarcado()}»`,
           );
         }
+        // N5, resto: Ctrl + clic de macOS abre el menú contextual sin hacer clic. Los eventos que manda Chromium en
+        // macOS, despachados en la página para que pase igual en cualquier sistema.
+        await abrirMovimientos();
+        await marcarEnvio();
+        await periodos.getByRole("button", { name: "7 días" }).evaluate((boton, { x, y }) => {
+          const comun = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, button: 0, ctrlKey: true };
+          boton.dispatchEvent(new PointerEvent("pointerdown", { ...comun, buttons: 1, pointerType: "mouse", isPrimary: true }));
+          boton.dispatchEvent(new MouseEvent("contextmenu", { ...comun, buttons: 1 }));
+          boton.dispatchEvent(new PointerEvent("pointerup", { ...comun, buttons: 0, pointerType: "mouse", isPrimary: true }));
+        }, centro7);
+        const conCtrl = await contar(cincoMilYTab, (url) => url.searchParams.get("desde") === "5000");
+        const marcasCtrl = await p.evaluate(() => window.marcasN4);
+        anotar(
+          conCtrl === 1 && marcasCtrl.envio - marcasCtrl.cambio < 250 && (await periodoMarcado()) === "Todo el mes",
+          `${etiqueta} Movimientos: Ctrl + clic de macOS en «7 días» (menú contextual) no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación`,
+          `${Math.round(marcasCtrl.envio - marcasCtrl.cambio)} ms del cambio al envío · ${conCtrl} navegación(es) · marcado «${await periodoMarcado()}»`,
+        );
+      }
+      // N8: escribir el monto y tocar un enlace (en escritorio, un clic sin pausa): gana el enlace y el envío del
+      // monto no lo pisa después.
+      for (const [enlace, inicio, llego, localizar, captura] of [
+        [
+          "«Limpiar filtros»",
+          `${ALTAMAR}/consola/movimientos?persona=Carlos+M%C3%A9ndez`,
+          (url) => url.pathname.endsWith("/consola/movimientos") && url.search === "",
+          () => p.getByRole("link", { name: "Limpiar filtros" }),
+          "movimientos-limpiar-con-monto",
+        ],
+        ["el logotipo (ir a Resumen)", `${ALTAMAR}/consola/movimientos`, (url) => url.pathname.endsWith("/consola"), () => p.getByRole("link", { name: "Lever Empresas, ir a Resumen" }).filter({ visible: true }).first(), null],
+      ]) {
+        await p.goto(`${BASE}${inicio}`, { waitUntil: "networkidle" });
+        if (ancho < 600) await monto.tap();
+        else await monto.click();
+        await p.keyboard.type("4000");
+        if (ancho < 600) await localizar().tap();
+        else await localizar().click();
+        await p.waitForTimeout(1500);
+        const final = new URL(p.url());
+        const campos = final.pathname.endsWith("/consola/movimientos") ? { persona: await p.getByLabel("Persona", { exact: true }).inputValue(), monto: await monto.inputValue() } : null;
+        anotar(
+          llego(final) && (!campos || (campos.persona === "" && campos.monto === "")),
+          `${etiqueta} Movimientos: «4000» en el monto y ${ancho < 600 ? "toque" : "clic sin pausa"} en ${enlace}: se queda en el enlace, sin el monto`,
+          `${final.pathname.replace(/^\/c\/[^/]+/, "")}${final.search}${campos ? ` · ${JSON.stringify(campos)}` : ""}`,
+        );
+        if (captura) await capturar(p, `${carpeta}/${captura}-${tema}-${ancho}.webp`);
+      }
+      // N9: un monto a medias que aún no es número («1e» de 1e3) no se borra cuando llega otra navegación.
+      {
+        await abrirMovimientos();
+        const area = p.getByLabel("Área", { exact: true });
+        const unArea = await area.locator("option").nth(1).getAttribute("value");
+        let soltar = () => {};
+        const retenida = new Promise((listo) => (soltar = listo));
+        await p.route(
+          (url) => url.searchParams.get("area") === unArea,
+          async (peticion) => {
+            await retenida;
+            await peticion.continue();
+          },
+        );
+        await area.selectOption(unArea);
+        if (ancho < 600) await monto.tap();
+        else await monto.click();
+        await p.keyboard.type("1e");
+        soltar();
+        await p.waitForURL((url) => url.searchParams.get("area") === unArea);
+        await p.waitForTimeout(500);
+        const aMedias = await monto.evaluate((campo) => campo.validity.badInput);
+        await p.keyboard.type("3");
+        const completo = await monto.inputValue();
+        anotar(aMedias && completo === "1e3", `${etiqueta} Movimientos: «1e» a medio escribir sigue en el monto cuando llega el filtro de Área, y con «3» queda «1e3»`, `entrada a medias=${aMedias} · valor «${completo}»`);
+        await p.unrouteAll();
       }
       // El botón oculto que usa Enter no es una parada de Tab, ni de ida ni de vuelta.
       const oculto = p.locator(".demo-filtros > button.solo-lector");
@@ -974,6 +1053,106 @@ async function modulos() {
       await p.goBack();
       await p.waitForURL(/\/consola\/fiscal$/);
       anotar(await p.getByRole("columnheader", { name: "IVA", exact: true }).count() === 1, `${etiqueta} Fiscal: al volver, la DIOT sigue con sus tres columnas`);
+      anotar(errores.length === 0, `${etiqueta}: sin errores de consola`, errores.join(" | "));
+      await nav.close();
+    }
+  }
+}
+
+// ---------- N7: el fondo animado con movimiento, con y sin GPU ----------
+/** Registra los Long Animation Frames y el momento de la primera pintura del fondo; va antes de cargar la página. */
+async function registrarCuadros(p) {
+  await p.addInitScript(() => {
+    window.cuadrosLargos = [];
+    new PerformanceObserver((lista) => window.cuadrosLargos.push(...lista.getEntries())).observe({ type: "long-animation-frame", buffered: true });
+    new MutationObserver(() => {
+      if (window.primeraPintura === undefined && document.querySelector(".escena-fondo canvas[data-cuadros]")) window.primeraPintura = performance.now();
+    }).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-cuadros"] });
+  });
+}
+
+/** Cuadros de más de 50 ms en que el código del fondo bloqueó más de 50 ms, después de su primera pintura. */
+function cuadrosLargosDelFondo(p) {
+  return p.evaluate(async () => {
+    const delFondo = new Set();
+    for (const recurso of performance.getEntriesByType("resource")) {
+      if (recurso.initiatorType === "script" && (await (await fetch(recurso.name)).text()).includes("No se pudo cargar el fondo animado")) delFondo.add(recurso.name);
+    }
+    const largos = window.cuadrosLargos
+      .filter((cuadro) => cuadro.startTime > (window.primeraPintura ?? Infinity))
+      .flatMap((cuadro) => cuadro.scripts.filter((script) => delFondo.has(script.sourceURL)).map((script) => Math.round(script.duration)))
+      .filter((ms) => ms > 50);
+    return { archivos: delFondo.size, largos };
+  });
+}
+
+async function fondo() {
+  const carpeta = `${DIR}/fondo`;
+  mkdirSync(carpeta, { recursive: true });
+  const lienzoDe = (p) => p.locator(".escena-fondo canvas").first();
+  const leer = (p) => lienzoDe(p).evaluate((lienzo) => ({ ...lienzo.dataset }));
+  for (const tema of TEMAS) {
+    for (const ancho of ANCHOS) {
+      // Sin GPU (SwiftShader) y a DPR 2, como una máquina virtual o un escritorio remoto: cada pintura cuesta cientos de ms.
+      const etiqueta = `fondo sin GPU ${tema} ${ancho}`;
+      const { nav, p, errores } = await abrir({ quien: "laura", tema, ancho, movimiento: true, dpr: 2 });
+      await registrarCuadros(p);
+      await p.goto(`${BASE}${ALTAMAR}/consola/movimientos`, { waitUntil: "networkidle" });
+      await p.waitForFunction(() => {
+        const datos = document.querySelector(".escena-fondo canvas")?.dataset;
+        return datos?.estado === "lento" || Number(datos?.cuadros ?? 0) >= 4;
+      }, null, { timeout: 60000 });
+      await p.waitForTimeout(2000);
+      const carga = { ...(await leer(p)), ...(await cuadrosLargosDelFondo(p)) };
+      const pintor = await p.evaluate(() => {
+        const gl = document.createElement("canvas").getContext("webgl2");
+        const extension = gl?.getExtension("WEBGL_debug_renderer_info");
+        return extension ? String(gl.getParameter(extension.UNMASKED_RENDERER_WEBGL)) : "sin extensión";
+      });
+      anotar(
+        carga.archivos > 0 && carga.estado === "lento" && carga.largos.length <= 1,
+        `${etiqueta}: tras la primera pintura, a lo más un cuadro largo del fondo y se queda quieto`,
+        `${pintor} · estado ${carga.estado} · pinturas ${carga.cuadros} (${carga.ms} ms en promedio, con la primera) · cuadros largos tras la primera ${JSON.stringify(carga.largos)} ms`,
+      );
+      // Con el fondo quieto la barra responde: elegir a Carlos Méndez filtra con una navegación.
+      const inicio = Date.now();
+      await p.getByLabel("Persona", { exact: true }).selectOption("Carlos Méndez");
+      await p.waitForURL(/persona=Carlos/);
+      anotar(true, `${etiqueta}: elegir a Carlos Méndez filtra`, `${Date.now() - inicio} ms hasta la dirección nueva`);
+      await capturar(p, `${carpeta}/fondo-sin-gpu-movimientos-${tema}-${ancho}.webp`, { completa: false });
+      await p.reload({ waitUntil: "networkidle" });
+      await p.waitForFunction(() => Boolean(document.querySelector(".escena-fondo canvas")?.dataset.cuadros), null, { timeout: 60000 });
+      await p.waitForTimeout(2000);
+      const recarga = { ...(await leer(p)), ...(await cuadrosLargosDelFondo(p)) };
+      anotar(
+        recarga.estado === "lento" && recarga.cuadros === "1" && recarga.largos.length === 0,
+        `${etiqueta}: al recargar, el fondo ya no mide: pinta una vez, quieto, sin cuadros largos`,
+        `estado ${recarga.estado} · pinturas ${recarga.cuadros} · cuadros largos ${JSON.stringify(recarga.largos)} · sesión ${await p.evaluate(() => sessionStorage.getItem("lever-fondo-lento"))}`,
+      );
+      anotar(errores.length === 0, `${etiqueta}: sin errores de consola`, errores.join(" | "));
+      await nav.close();
+    }
+    // Con la GPU de la Mac: el fondo se mueve como antes, sin cuadros largos.
+    {
+      const etiqueta = `fondo con GPU ${tema} 1440`;
+      const { nav, p, errores } = await abrir({ quien: "laura", tema, ancho: 1440, movimiento: true, dpr: 2, gpu: true });
+      await registrarCuadros(p);
+      await p.goto(`${BASE}${ALTAMAR}/consola/movimientos`, { waitUntil: "networkidle" });
+      await p.waitForFunction(() => Boolean(document.querySelector(".escena-fondo canvas")?.dataset.cuadros), null, { timeout: 60000 });
+      const antes = Number((await leer(p)).cuadros);
+      await p.waitForTimeout(5000);
+      const datos = { ...(await leer(p)), ...(await cuadrosLargosDelFondo(p)) };
+      const renderer = await p.evaluate(() => {
+        const gl = document.createElement("canvas").getContext("webgl2");
+        const extension = gl?.getExtension("WEBGL_debug_renderer_info");
+        return extension ? String(gl.getParameter(extension.UNMASKED_RENDERER_WEBGL)) : "sin extensión";
+      });
+      anotar(
+        datos.estado === "vivo" && Number(datos.cuadros) - antes >= 60 && datos.largos.length === 0,
+        `${etiqueta}: el fondo sigue vivo, unas 20 pinturas por segundo y sin cuadros largos`,
+        `${renderer} · estado ${datos.estado} · ${Number(datos.cuadros) - antes} pinturas en 5 s · ${datos.ms} ms por pintura · cuadros largos ${JSON.stringify(datos.largos)}`,
+      );
+      await capturar(p, `${carpeta}/fondo-gpu-movimientos-${tema}-1440.webp`, { completa: false });
       anotar(errores.length === 0, `${etiqueta}: sin errores de consola`, errores.join(" | "));
       await nav.close();
     }
@@ -1327,6 +1506,7 @@ else if (modo === "barra") await barraContraLaFuente(`${DIR}/lado-a-lado`);
 else if (modo === "pantallas") await pantallas();
 else if (modo === "modulos") await modulos();
 else if (modo === "limpiar") await limpiarFiltros();
+else if (modo === "fondo") await fondo();
 else if (modo === "contraste") await contraste();
 else if (modo === "cargando") await cargando();
 else if (modo === "caida") {

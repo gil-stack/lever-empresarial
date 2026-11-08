@@ -65,6 +65,68 @@ test.describe("marco de la consola en escritorio", () => {
   });
 });
 
+/** Lo que este archivo necesita de un Long Animation Frame (el DOM de TypeScript aún no lo trae). */
+interface CuadroLargo {
+  startTime: number;
+  scripts: { sourceURL: string; duration: number }[];
+}
+
+/** Los cuadros de más de 50 ms en que el fondo bloqueó más de 50 ms, después de su primera pintura. */
+async function cuadrosLargosDelFondo(page: Page): Promise<{ archivos: number; cuadros: number }> {
+  return page.evaluate(async () => {
+    const registro = window as unknown as { cuadrosLargos: CuadroLargo[]; primeraPintura?: number };
+    // El archivo del bucle del fondo es el que trae su aviso de error.
+    const delFondo = new Set<string>();
+    for (const recurso of performance.getEntriesByType("resource") as PerformanceResourceTiming[]) {
+      if (recurso.initiatorType !== "script") continue;
+      if ((await (await fetch(recurso.name)).text()).includes("No se pudo cargar el fondo animado")) delFondo.add(recurso.name);
+    }
+    const primera = registro.primeraPintura ?? Infinity;
+    const cuadros = registro.cuadrosLargos.filter(
+      (cuadro) => cuadro.startTime > primera && cuadro.scripts.some((script) => delFondo.has(script.sourceURL) && script.duration > 50),
+    ).length;
+    return { archivos: delFondo.size, cuadros };
+  });
+}
+
+test.describe("fondo animado en un navegador sin GPU", () => {
+  // Chromium headless pinta WebGL con la CPU: a DPR 2 cada cuadro del fondo bloquea cientos de ms, como en una
+  // máquina virtual, un escritorio remoto o una laptop sin aceleración.
+  test.use({ deviceScaleFactor: 2 });
+
+  test("tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar", async ({ page }) => {
+    await page.addInitScript(() => {
+      const registro = window as unknown as { cuadrosLargos: unknown[]; primeraPintura?: number };
+      registro.cuadrosLargos = [];
+      new PerformanceObserver((lista) => registro.cuadrosLargos.push(...lista.getEntries())).observe({ type: "long-animation-frame", buffered: true });
+      new MutationObserver(() => {
+        if (registro.primeraPintura === undefined && document.querySelector("canvas.escena-lienzo[data-cuadros]")) registro.primeraPintura = performance.now();
+      }).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-cuadros"] });
+    });
+    await entrar(page);
+    await page.goto(INICIO);
+    const lienzo = page.locator("canvas.escena-lienzo");
+    await expect(lienzo).toHaveAttribute("data-cuadros", /\d/, { timeout: 60_000 });
+    // Hasta que el fondo decide quedarse quieto o pinta tres cuadros más; luego dos segundos por si sigue.
+    await expect
+      .poll(async () => (await lienzo.getAttribute("data-estado")) === "lento" || Number(await lienzo.getAttribute("data-cuadros")) >= 4, { timeout: 60_000 })
+      .toBe(true);
+    await page.waitForTimeout(2000);
+    const primeraCarga = await cuadrosLargosDelFondo(page);
+    expect(primeraCarga.archivos, "el archivo del fondo se encontró").toBeGreaterThan(0);
+    expect(primeraCarga.cuadros, "cuadros largos del fondo después de su primera pintura").toBeLessThanOrEqual(1);
+    await expect(lienzo).toHaveAttribute("data-estado", "lento");
+
+    // En la siguiente carga completa ya no vuelve a medir: pinta una vez, quieto.
+    await page.reload();
+    await expect(lienzo).toHaveAttribute("data-cuadros", /\d/, { timeout: 60_000 });
+    await page.waitForTimeout(2000);
+    await expect(lienzo).toHaveAttribute("data-estado", "lento");
+    await expect(lienzo).toHaveAttribute("data-cuadros", "1");
+    expect((await cuadrosLargosDelFondo(page)).cuadros, "cuadros largos del fondo al recargar").toBe(0);
+  });
+});
+
 test.describe("cajón móvil", () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 

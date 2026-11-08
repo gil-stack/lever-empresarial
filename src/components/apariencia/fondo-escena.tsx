@@ -26,9 +26,33 @@ const CUADROS_DE_CALENTAMIENTO = 20;
 const CUADROS_POR_VENTANA = 60;
 const DIBUJO_LENTO_MS = 12;
 const INTERVALO_LENTO_MS = 1000 / 40;
+/**
+ * Un solo dibujo que bloquea más que una tarea larga delata un equipo que pinta sin GPU (una máquina virtual, un
+ * escritorio remoto): el fondo se queda quieto en ese momento, sin esperar el calentamiento ni la ventana.
+ */
+const DIBUJO_BLOQUEANTE_MS = 50;
+/** En `sessionStorage`: recargar la página no vuelve a medir. */
+const RECUERDO_LENTO = "lever-fondo-lento";
 
-/** Una vez que el equipo resultó lento, el fondo se queda quieto en toda la sesión. */
+/** Una vez que el equipo resultó lento, el fondo se queda quieto en toda la sesión del navegador. */
 let equipoLento = false;
+
+function recordarEquipoLento() {
+  equipoLento = true;
+  try {
+    sessionStorage.setItem(RECUERDO_LENTO, "1");
+  } catch {
+    // Sin almacenamiento la decisión dura lo que dure esta carga.
+  }
+}
+
+function equipoLentoRecordado(): boolean {
+  try {
+    return sessionStorage.getItem(RECUERDO_LENTO) === "1";
+  } catch {
+    return false;
+  }
+}
 
 export interface PropsFondoEscena {
   escena: ClaveEscena;
@@ -69,6 +93,7 @@ export function FondoEscena({
     if (!lienzo || !contexto) return;
 
     const reducir = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (!equipoLento) equipoLento = equipoLentoRecordado();
     const luz: [number, number] = [...LUZ_EN_REPOSO];
     const cursor: [number, number] = [...LUZ_EN_REPOSO];
     let motor: Motor | null = null;
@@ -185,7 +210,7 @@ export function FondoEscena({
       raf = 0;
       if (!activo || document.hidden || !visible || quieto()) return;
       if (midiendoEsLento(ts)) {
-        equipoLento = true;
+        recordarEquipoLento();
         actualizar();
         return;
       }
@@ -198,7 +223,18 @@ export function FondoEscena({
       luz[1] += (destinoY - luz[1]) * 0.07;
       n += 1;
       if (sucio || n % SALTO === 0) {
+        // La primera pintura también compila el shader: no dice cuánto cuesta pintar en este equipo.
+        const primera = cuadros === 0;
         const ms = dibujar(t);
+        if (!primera && ms > DIBUJO_BLOQUEANTE_MS) {
+          // Sin otra pintura, que bloquearía igual: la escena se queda en este cuadro y la luz vuelve al reposo
+          // para cuando haya que repintarla quieta (otro tema o tamaño).
+          recordarEquipoLento();
+          luz[0] = LUZ_EN_REPOSO[0];
+          luz[1] = LUZ_EN_REPOSO[1];
+          fijarEstado("lento");
+          return;
+        }
         if (calentados >= CUADROS_DE_CALENTAMIENTO) {
           ventanaDibujos += 1;
           ventanaMsDibujo += ms;

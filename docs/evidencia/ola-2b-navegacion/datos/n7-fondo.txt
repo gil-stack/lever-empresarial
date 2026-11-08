@@ -1,0 +1,53 @@
+# N7 · el fondo animado sin GPU (líder-N7)
+
+Chromium de Playwright a 1440×1000 y DPR 2, next build + next start, Resumen de Taller del Cierre. «gpu» = Chromium sin ventana con la GPU de esta Mac (--use-angle=metal). «sin» = Chromium headless, que pinta WebGL con la CPU (SwiftShader), como Vercel CI, una máquina virtual o un escritorio remoto.
+pinturasEn5s = pinturas del fondo en los 5 s después de la primera; cuadrosLargosDelFondoMas50 = Long Animation Frames de más de 50 ms en que el código del fondo bloqueó más de 50 ms, después de su primera pintura.
+
+## Mediciones (test-results/fondo/fondo.jsonl, crudo)
+{"etiqueta":"antes","modo":"gpu","vuelta":"primera carga","estado":"vivo","gpu":"si","pinturaPromedioMs":"0.49","pinturasEn5s":102,"segundos":5.097,"renderer":"ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version)","sessionStorage":"{}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":0,"scriptMasLargoDelFondoMs":0}}
+{"etiqueta":"antes","modo":"gpu","vuelta":"recarga","estado":"vivo","gpu":"si","pinturaPromedioMs":"0.18","pinturasEn5s":101,"segundos":5.017,"renderer":"ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version)","sessionStorage":"{}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":0,"scriptMasLargoDelFondoMs":0}}
+{"etiqueta":"antes","modo":"gpu","vuelta":"reloj 5 s","estado":"vivo","pinturas":"105","ruta":"test-results/fondo/fondo-gpu-antes-reloj-5s.png"}
+{"etiqueta":"antes","modo":"sin","vuelta":"primera carga","estado":"vivo","gpu":"si","pinturaPromedioMs":"631.07","pinturasEn5s":10,"segundos":6.108,"renderer":"ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)","sessionStorage":"{}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":10,"scriptMasLargoDelFondoMs":776}}
+{"etiqueta":"antes","modo":"sin","vuelta":"recarga","estado":"vivo","gpu":"si","pinturaPromedioMs":"475.32","pinturasEn5s":11,"segundos":5.473,"renderer":"ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)","sessionStorage":"{}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":12,"scriptMasLargoDelFondoMs":512}}
+{"etiqueta":"antes","modo":"sin","vuelta":"reloj 5 s","estado":"vivo","pinturas":"105","ruta":"test-results/fondo/fondo-sin-antes-reloj-5s.png"}
+{"etiqueta":"antes2","modo":"gpu","vuelta":"reloj 5 s","estado":"vivo","pinturas":"105","ruta":"test-results/fondo/fondo-gpu-antes2-reloj-5s.png"}
+{"etiqueta":"despues","modo":"gpu","vuelta":"primera carga","estado":"vivo","gpu":"si","pinturaPromedioMs":"0.32","pinturasEn5s":101,"segundos":5.032,"renderer":"ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version)","sessionStorage":"{}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":0,"scriptMasLargoDelFondoMs":0}}
+{"etiqueta":"despues","modo":"gpu","vuelta":"recarga","estado":"vivo","gpu":"si","pinturaPromedioMs":"0.16","pinturasEn5s":100,"segundos":5.029,"renderer":"ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version)","sessionStorage":"{}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":0,"scriptMasLargoDelFondoMs":0}}
+{"etiqueta":"despues","modo":"gpu","vuelta":"reloj 5 s","estado":"vivo","pinturas":"105","ruta":"test-results/fondo/fondo-gpu-despues-reloj-5s.png"}
+{"etiqueta":"despues","modo":"sin","vuelta":"primera carga","estado":"lento","gpu":"si","pinturaPromedioMs":"579.20","pinturasEn5s":0,"segundos":5.023,"renderer":"ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)","sessionStorage":"{\"lever-fondo-lento\":\"1\"}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":1,"scriptMasLargoDelFondoMs":468}}
+{"etiqueta":"despues","modo":"sin","vuelta":"recarga","estado":"lento","gpu":"si","pinturaPromedioMs":"698.10","pinturasEn5s":0,"segundos":5.023,"renderer":"ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)","sessionStorage":"{\"lever-fondo-lento\":\"1\"}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":0,"scriptMasLargoDelFondoMs":0}}
+{"etiqueta":"despues","modo":"sin","vuelta":"reloj 5 s","estado":"vivo","pinturas":"105","ruta":"test-results/fondo/fondo-sin-despues-reloj-5s.png"}
+{"etiqueta":"despues","modo":"gpu","reducir":true,"vuelta":"primera carga","estado":"quieto","gpu":"si","pinturaPromedioMs":"16.90","pinturasEn5s":0,"segundos":5.019,"renderer":"ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version)","sessionStorage":"{}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":0,"scriptMasLargoDelFondoMs":0}}
+{"etiqueta":"despues","modo":"gpu","reducir":true,"vuelta":"recarga","estado":"quieto","gpu":"si","pinturaPromedioMs":"11.80","pinturasEn5s":0,"segundos":5.019,"renderer":"ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version)","sessionStorage":"{}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":0,"scriptMasLargoDelFondoMs":0}}
+{"etiqueta":"despues","modo":"sin","reducir":true,"vuelta":"primera carga","estado":"quieto","gpu":"si","pinturaPromedioMs":"475.50","pinturasEn5s":0,"segundos":5.021,"renderer":"ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)","sessionStorage":"{}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":0,"scriptMasLargoDelFondoMs":0}}
+{"etiqueta":"despues","modo":"sin","reducir":true,"vuelta":"recarga","estado":"quieto","gpu":"si","pinturaPromedioMs":"533.10","pinturasEn5s":0,"segundos":5.019,"renderer":"ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)","sessionStorage":"{}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":0,"scriptMasLargoDelFondoMs":0}}
+{"etiqueta":"antes","modo":"gpu","reducir":true,"vuelta":"primera carga","estado":"quieto","gpu":"si","pinturaPromedioMs":"15.90","pinturasEn5s":0,"segundos":5.019,"renderer":"ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version)","sessionStorage":"{}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":0,"scriptMasLargoDelFondoMs":0}}
+{"etiqueta":"antes","modo":"gpu","reducir":true,"vuelta":"recarga","estado":"quieto","gpu":"si","pinturaPromedioMs":"11.10","pinturasEn5s":0,"segundos":5.017,"renderer":"ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Pro, Unspecified Version)","sessionStorage":"{}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":0,"scriptMasLargoDelFondoMs":0}}
+{"etiqueta":"antes","modo":"sin","reducir":true,"vuelta":"primera carga","estado":"quieto","gpu":"si","pinturaPromedioMs":"501.20","pinturasEn5s":0,"segundos":5.023,"renderer":"ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)","sessionStorage":"{}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":0,"scriptMasLargoDelFondoMs":0}}
+{"etiqueta":"antes","modo":"sin","reducir":true,"vuelta":"recarga","estado":"quieto","gpu":"si","pinturaPromedioMs":"441.60","pinturasEn5s":0,"segundos":5.018,"renderer":"ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)","sessionStorage":"{}","fondoTrasPrimera":{"cuadrosLargosDelFondoMas50":0,"scriptMasLargoDelFondoMs":0}}
+
+## Capturas con el reloj de la página detenido y avanzado 5 s exactos (mismo cuadro antes y después)
+4ab593d35f7775c640b5ef6f4b2bec79284991914437e2b729e46ec671fe5215  fondo-gpu-antes-reloj-5s.png
+4ab593d35f7775c640b5ef6f4b2bec79284991914437e2b729e46ec671fe5215  fondo-gpu-antes2-reloj-5s.png
+4ab593d35f7775c640b5ef6f4b2bec79284991914437e2b729e46ec671fe5215  fondo-gpu-despues-reloj-5s.png
+718ad7c1e433f7e22ea9c8826f4b949b6d47cc5d0085641b7918790c992a2212  fondo-sin-antes-reloj-5s.png
+718ad7c1e433f7e22ea9c8826f4b949b6d47cc5d0085641b7918790c992a2212  fondo-sin-despues-reloj-5s.png
+f7ffdeed91d9f41f776b0d3ad60cfef9c91cbe045b49435f603edeb426561d2d  fondo-gpu-reducir-antes-carga.png
+f7ffdeed91d9f41f776b0d3ad60cfef9c91cbe045b49435f603edeb426561d2d  fondo-gpu-reducir-antes-recarga.png
+f7ffdeed91d9f41f776b0d3ad60cfef9c91cbe045b49435f603edeb426561d2d  fondo-gpu-reducir-despues-carga.png
+f7ffdeed91d9f41f776b0d3ad60cfef9c91cbe045b49435f603edeb426561d2d  fondo-gpu-reducir-despues-recarga.png
+456e54ff11a9e36079159dfc476264a924310bf5ebe92c3acc46fd37c21b03e1  fondo-sin-reducir-antes-carga.png
+456e54ff11a9e36079159dfc476264a924310bf5ebe92c3acc46fd37c21b03e1  fondo-sin-reducir-antes-recarga.png
+456e54ff11a9e36079159dfc476264a924310bf5ebe92c3acc46fd37c21b03e1  fondo-sin-reducir-despues-carga.png
+456e54ff11a9e36079159dfc476264a924310bf5ebe92c3acc46fd37c21b03e1  fondo-sin-reducir-despues-recarga.png
+
+## Regresión e2e (marco.spec.ts, «fondo animado en un navegador sin GPU»)
+### En 16c4265
+    Error: cuadros largos del fondo después de su primera pintura
+    Expected: <= 1
+    Received:    9
+    test-results/e2e/marco-fondo-animado-en-un--37b75-o-y-lo-recuerda-al-recargar/test-failed-1.png
+  1 failed
+### Con el arreglo
+[12/13] tests/e2e/marco.spec.ts:97:7 › fondo animado en un navegador sin GPU › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar
+  13 passed (46.1s)

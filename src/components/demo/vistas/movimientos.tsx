@@ -53,7 +53,7 @@ export function leerFiltros(compras: readonly CompraDemo[], params: Record<strin
     categoria: elegir(params.categoria, unicos(compras, "categoria")),
     comprobante: elegir(params.comprobante, unicos(compras, "comprobante")),
     desde: Number.isFinite(desde) && desde > 0 ? Math.round(desde * 100) : 0,
-    agrupar: (AGRUPAR.map(([valor]) => valor) as readonly string[]).includes(params.agrupar ?? "") ? (params.agrupar as Agrupar) : "",
+    agrupar: (AGRUPAR.map(([valor]) => valor) as readonly string[]).includes(params.agrupar ?? "") ? ((params.agrupar ?? "") as Agrupar) : "",
   };
 }
 

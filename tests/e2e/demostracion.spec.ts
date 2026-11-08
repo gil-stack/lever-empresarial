@@ -131,7 +131,24 @@ test("Movimientos: un gesto del ratón en «7 días» que no lo elige no retrasa
         await page.mouse.up({ button: boton });
       },
     ]),
+    [
+      "Ctrl + clic de macOS en «7 días»",
+      async (centro) => {
+        // Lo que manda Chromium en macOS, que lo convierte en menú contextual: botón principal con Ctrl, menú y
+        // soltar encima, sin clic. Con eventos de la página para que pase igual en Linux, donde Ctrl + clic sí hace clic.
+        await page.locator('[aria-label="Periodo"]').getByText("7 días", { exact: true }).evaluate((boton, { x, y }) => {
+          const comun = { bubbles: true, cancelable: true, composed: true, clientX: x, clientY: y, button: 0, ctrlKey: true };
+          boton.dispatchEvent(new PointerEvent("pointerdown", { ...comun, buttons: 1, pointerType: "mouse", isPrimary: true }));
+          boton.dispatchEvent(new MouseEvent("contextmenu", { ...comun, buttons: 1 }));
+          boton.dispatchEvent(new PointerEvent("pointerup", { ...comun, buttons: 0, pointerType: "mouse", isPrimary: true }));
+        }, centro);
+      },
+    ],
   ];
+  // Se mide con el reloj de la página, que la prueba detiene antes del «change» y avanza a mano: cuenta lo que el
+  // formulario decide esperar (nada, o 500 ms si espera el clic de un periodo) y no lo que tarda la máquina. Con el
+  // reloj real, en Vercel CI cada cuadro del fondo animado, pintado sin GPU, ocupa el hilo principal unos 800 ms.
+  await page.clock.install();
   for (const [gesto, hacer] of gestos) {
     await page.goto(`/c/${TALLER}/consola/movimientos`);
     const navegaciones: string[] = [];
@@ -140,22 +157,23 @@ test("Movimientos: un gesto del ratón en «7 días» que no lo elige no retrasa
       if (new URL(peticion.url()).searchParams.get("desde") === "5000") navegaciones.push(peticion.url());
     };
     page.on("request", contar);
-    // Cuánto tarda el formulario en salir después del «change» del monto: de inmediato, o medio segundo si espera un clic.
     await page.locator("#movimientos-desde").evaluate((campo: HTMLInputElement) => {
-      const marcas = ((window as unknown as { marcasN4: Record<string, number> }).marcasN4 = {});
-      campo.addEventListener("change", () => (marcas.cambio = performance.now()));
-      campo.form!.addEventListener("submit", () => (marcas.envio = performance.now()));
+      campo.form!.addEventListener("submit", () => ((window as unknown as { envioN4: boolean }).envioN4 = true));
     });
     const boton = await page.locator('[aria-label="Periodo"]').getByText("7 días", { exact: true }).boundingBox();
     await hacer({ x: boton!.x + boton!.width / 2, y: boton!.y + boton!.height / 2 });
     // Sin otro toque: al monto se llega con el teclado.
     await page.locator("#movimientos-desde").focus();
     await page.keyboard.type("5000");
+    await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1000);
     await page.keyboard.press("Tab");
+    // 100 ms del reloj de la página: sale el envío inmediato, no el que espera 500 ms un clic que no llega.
+    await page.clock.runFor(100);
+    const salio = await page.evaluate(() => (window as unknown as { envioN4?: boolean }).envioN4 === true);
+    expect(salio, `${gesto}: el formulario sale en los primeros 100 ms del reloj de la página`).toBe(true);
+    await page.clock.resume();
     await expect(page, gesto).toHaveURL(/[?&]desde=5000(&|$)/);
     await expect(page, gesto).not.toHaveURL(/[?&]periodo=7(&|$)/);
-    const { cambio, envio } = await page.evaluate(() => (window as unknown as { marcasN4: Record<string, number> }).marcasN4);
-    expect(envio - cambio, `${gesto}: milisegundos entre el cambio y el envío`).toBeLessThan(250);
     await page.waitForTimeout(1000);
     page.off("request", contar);
     expect(navegaciones, `${gesto}: un cambio, una navegación`).toHaveLength(1);
@@ -169,25 +187,30 @@ test("Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los camp
   const ruta = `/c/${TALLER}/consola/movimientos`;
   const persona = page.getByLabel("Persona", { exact: true });
   const area = page.getByLabel("Área", { exact: true });
+  const agrupar = page.getByLabel("Agrupar por", { exact: true });
   const monto = page.locator("#movimientos-desde");
   const limpiar = page.getByRole("link", { name: "Limpiar filtros" });
   const consulta = () => new URL(page.url()).searchParams;
   await page.goto(ruta);
   const alguien = (await persona.locator("option").nth(1).getAttribute("value"))!;
   const unArea = (await area.locator("option").nth(1).getAttribute("value"))!;
-  /** Después de limpiar, otro filtro solo lleva lo suyo: ni la persona ni el monto de antes. */
+  /** Después de limpiar, otro filtro solo lleva lo suyo: ni la persona, ni el monto, ni la agrupación de antes. */
   const elSiguienteVaSolo = async (desde: string) => {
     await expect(persona, `${desde}: Persona vacía`).toHaveValue("");
     await expect(monto, `${desde}: monto vacío`).toHaveValue("");
+    await expect(agrupar, `${desde}: sin agrupar`).toHaveValue("");
     await area.selectOption(unArea);
     await expect.poll(() => consulta().get("area")).toBe(unArea);
     expect(consulta().get("persona") ?? "", `${desde}: el filtro siguiente no arrastra la persona`).toBe("");
     expect(consulta().get("desde") ?? "", `${desde}: el filtro siguiente no arrastra el monto`).toBe("");
+    expect(consulta().get("agrupar") ?? "", `${desde}: el filtro siguiente no arrastra la agrupación`).toBe("");
   };
 
-  // A mano: persona con el selector y monto con Enter.
+  // A mano: persona y agrupación con sus selectores, y monto con Enter.
   await persona.selectOption(alguien);
   await expect.poll(() => consulta().get("persona")).toBe(alguien);
+  await agrupar.selectOption("persona");
+  await expect.poll(() => consulta().get("agrupar")).toBe("persona");
   await monto.click();
   await page.keyboard.type("100");
   await page.keyboard.press("Enter");
@@ -196,19 +219,22 @@ test("Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los camp
   await expect.poll(() => new URL(page.url()).search).toBe("");
   await expect(persona, "tras limpiar: Persona vacía").toHaveValue("");
   await expect(monto, "tras limpiar: monto vacío").toHaveValue("");
-  // «Atrás» vuelve a la persona y el monto; «Adelante», a la lista sin filtros.
+  await expect(agrupar, "tras limpiar: sin agrupar").toHaveValue("");
+  // «Atrás» vuelve a la persona, el monto y la agrupación; «Adelante», a la lista sin filtros.
   await page.goBack();
   await expect.poll(() => consulta().get("desde")).toBe("100");
   await expect(persona, "con «Atrás»: la persona de la dirección").toHaveValue(alguien);
   await expect(monto, "con «Atrás»: el monto de la dirección").toHaveValue("100");
+  await expect(agrupar, "con «Atrás»: la agrupación de la dirección").toHaveValue("persona");
   await page.goForward();
   await expect.poll(() => new URL(page.url()).search).toBe("");
   await elSiguienteVaSolo("a mano");
 
   // Desde la dirección: los filtros llegan en la URL.
-  await page.goto(`${ruta}?persona=${encodeURIComponent(alguien)}&desde=100`);
+  await page.goto(`${ruta}?persona=${encodeURIComponent(alguien)}&desde=100&agrupar=persona`);
   await expect(persona).toHaveValue(alguien);
   await expect(monto).toHaveValue("100");
+  await expect(agrupar).toHaveValue("persona");
   await limpiar.click();
   await expect.poll(() => new URL(page.url()).search).toBe("");
   await elSiguienteVaSolo("desde la dirección");
@@ -233,6 +259,41 @@ test("Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los camp
   await page.waitForTimeout(500);
   await expect(monto, "el monto que se estaba escribiendo sigue ahí").toHaveValue("250");
   await page.unrouteAll();
+  expect(errores).toEqual([]);
+});
+
+test("Movimientos: un monto a medias que aún no es número no se borra cuando llega otra navegación", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  await sesionDe(context, GIL);
+  const ruta = `/c/${TALLER}/consola/movimientos`;
+  const area = page.getByLabel("Área", { exact: true });
+  const monto = page.locator("#movimientos-desde");
+  const consulta = () => new URL(page.url()).searchParams;
+  await page.goto(ruta);
+  const unArea = (await area.locator("option").nth(1).getAttribute("value"))!;
+  // «1e» (de 1e3) o el signo «-»: el campo aún no tiene número, así que su valor es «», igual que el aplicado.
+  for (const [aMedias, resto, completo] of [["1e", "3", "1e3"], ["-", "5", "-5"]] as const) {
+    await page.goto(ruta);
+    let soltarArea = () => {};
+    const retenidaArea = new Promise<void>((listo) => (soltarArea = listo));
+    await page.route(
+      (url) => url.searchParams.get("area") === unArea,
+      async (peticion) => {
+        await retenidaArea;
+        await peticion.continue();
+      },
+    );
+    await area.selectOption(unArea);
+    await monto.click();
+    await page.keyboard.type(aMedias);
+    soltarArea();
+    await expect.poll(() => consulta().get("area")).toBe(unArea);
+    await page.waitForTimeout(500);
+    expect(await monto.evaluate((campo: HTMLInputElement) => campo.validity.badInput), `«${aMedias}» sigue en el campo`).toBe(true);
+    await page.keyboard.type(resto);
+    await expect(monto, `«${aMedias}» y luego «${resto}»`).toHaveValue(completo);
+    await page.unrouteAll();
+  }
   expect(errores).toEqual([]);
 });
 
@@ -262,6 +323,40 @@ test.describe("en el teléfono", () => {
     // Un segundo envío saldría a más tardar medio segundo después; uno de sobra para verlo.
     await page.waitForTimeout(1500);
     expect(navegaciones, "un toque, una navegación").toHaveLength(1);
+    expect(errores).toEqual([]);
+  });
+
+  test("Movimientos: escribir el monto y tocar un enlace lleva al enlace, sin que el monto lo pise después", async ({ page, context }) => {
+    const errores = vigilarConsola(page);
+    await sesionDe(context, GIL);
+    const ruta = `/c/${TALLER}/consola/movimientos`;
+    await page.goto(ruta);
+    const alguien = (await page.getByLabel("Persona", { exact: true }).locator("option").nth(1).getAttribute("value"))!;
+    // El toque llega de un jalón: el monto pierde el foco, su envío se aplaza un turno y el clic del enlace va antes.
+    const casos: [string, string, () => Promise<void>, RegExp][] = [
+      [
+        "«Limpiar filtros»",
+        `${ruta}?persona=${encodeURIComponent(alguien)}`,
+        () => page.getByRole("link", { name: "Limpiar filtros" }).tap(),
+        new RegExp(`/c/${TALLER}/consola/movimientos$`),
+      ],
+      [
+        "el logotipo (ir a Resumen)",
+        ruta,
+        () => page.getByRole("link", { name: "Lever Empresas, ir a Resumen" }).filter({ visible: true }).first().tap(),
+        new RegExp(`/c/${TALLER}/consola$`),
+      ],
+    ];
+    for (const [enlace, desde, tocar, destino] of casos) {
+      await page.goto(desde);
+      await page.locator("#movimientos-desde").tap();
+      await page.keyboard.type("4000");
+      await tocar();
+      // Un envío aplazado saldría en el siguiente turno; un segundo y medio de sobra para que se note.
+      await page.waitForTimeout(1500);
+      await expect.soft(page, `monto y toque en ${enlace}: se queda en el enlace`).toHaveURL(destino);
+    }
+    await expect(page.getByLabel("Persona", { exact: true })).toHaveCount(0);
     expect(errores).toEqual([]);
   });
 });
