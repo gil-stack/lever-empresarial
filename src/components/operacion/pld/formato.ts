@@ -35,7 +35,7 @@ export function resumenDeAlerta(alerta: Pick<AlertaPld, "regla" | "observado" | 
         o.lote_sobre_perfil === true ? `el lote supera los ${pesos(o.declarado_nomina_centavos)} de nómina declarados al mes` : null,
         o.personas_sobre_promedio === true ? `${numero(o.personas)} personas contra un tope de ${numero(o.tope_personas).toLocaleString("es-MX", { maximumFractionDigits: 1 })}` : null,
       ].filter(Boolean);
-      return `Lote de ${pesos(o.monto_centavos)} con ${numero(o.personas)} personas: ${razones.join(" y ")}.${grado}`;
+      return `Lote de ${pesos(o.monto_centavos)} con ${numero(o.personas)} ${numero(o.personas) === 1 ? "persona" : "personas"}: ${razones.join(" y ")}.${grado}`;
     }
     case "aviso_manual":
       return TIPO_AVISO[(o.tipo as TipoAviso) ?? "posible_inusual"] ?? "Aviso del personal";

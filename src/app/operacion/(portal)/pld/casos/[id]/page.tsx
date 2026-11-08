@@ -145,7 +145,7 @@ export default async function CasoPld({
                     <span>Recibido {fechaHora(aviso.recibidoEn)}</span>
                     <span>Folio {aviso.id.slice(0, 8).toUpperCase()}</span>
                   </p>
-                  <p className="operacion-sin-corte">{aviso.descripcion}</p>
+                  <p className="operacion-detalle">{aviso.descripcion}</p>
                 </div>
               </li>
             ))}
@@ -193,7 +193,7 @@ export default async function CasoPld({
             {caso.notas.map((nota) => (
               <li key={nota.id}>
                 <div className="operacion-fila-cuerpo">
-                  <p className="operacion-sin-corte">{nota.texto}</p>
+                  <p className="operacion-detalle">{nota.texto}</p>
                   <p className="operacion-meta">
                     <span>{nota.autor}</span>
                     <span>{fechaHora(nota.en)}</span>
@@ -275,7 +275,7 @@ export default async function CasoPld({
                 <div className="operacion-fila">
                   <div className="operacion-fila-cuerpo">
                     <h3>{PROPUESTA[propuesta.propuesta]}</h3>
-                    <p className="operacion-sin-corte">{propuesta.justificacion}</p>
+                    <p className="operacion-detalle">{propuesta.justificacion}</p>
                     <p className="operacion-meta">
                       <span>{propuesta.autor}</span>
                       <span>{fechaHora(propuesta.en)}</span>

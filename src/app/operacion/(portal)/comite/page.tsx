@@ -325,7 +325,9 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
               ))}
             </ul>
             <h3>Lo que el Oficial captura en el SITI</h3>
-            <pre className="operacion-mono operacion-sin-corte">{contenidoParaSiti(paraSiti)}</pre>
+            <div className="tabla-contenedor">
+              <pre className="operacion-mono">{contenidoParaSiti(paraSiti)}</pre>
+            </div>
             <p className="pista">Los 14 campos del instructivo de la CNBV, en el orden del layout. Lever no lo transmite.</p>
           </>
         )}
