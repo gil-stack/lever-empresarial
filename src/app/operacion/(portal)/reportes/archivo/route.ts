@@ -36,6 +36,9 @@ export async function GET(request: Request) {
     if (error instanceof ErrorDeDominio && error.codigo === "falta_clave_entidad") {
       return Response.redirect(new URL("/operacion/reportes?aviso=falta_clave_entidad#entidad-titulo", request.url), 303);
     }
+    if (error instanceof ErrorDeDominio && error.codigo === "periodo_sin_cerrar") {
+      return Response.redirect(new URL("/operacion/reportes?aviso=periodo_sin_cerrar", request.url), 303);
+    }
     if (error instanceof ErrorDeDominio || errorConSecreto(error)) return noDisponible();
     throw error;
   }

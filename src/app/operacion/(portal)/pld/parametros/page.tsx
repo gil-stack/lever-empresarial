@@ -7,6 +7,7 @@ import { cambiarParametrosAccion } from "@/app/operacion/(portal)/pld/acciones";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
+import { ConfirmarParaDecidir } from "@/components/operacion/pld/confirmar";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { BotonEnviar, Hoja, Insignia, NotaRegla, Renglon, Renglones } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
@@ -82,6 +83,7 @@ export default async function ParametrosPld({ searchParams }: { searchParams: Pr
 
       {cambia ? (
         <Hoja id="parametros-titulo" titulo="Cambiar parámetros">
+          <ConfirmarParaDecidir motivo="Antes de cambiar los parámetros de las alertas, prueba tu segundo factor. Vale 30 minutos." />
           <form action={cambiarParametrosAccion} className="formulario-pareja operacion-forma">
             <input type="hidden" name="formId" value={randomUUID()} />
             <div className="campo">

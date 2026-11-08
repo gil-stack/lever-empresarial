@@ -2,9 +2,11 @@ import { leerCentavosEscritos } from "../../dominio/centavos";
 import { uuidValido } from "../../dominio/operacion";
 import type { ContextoDePersonal } from "../../nucleo/contexto";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
+import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import { motivoEscrito, unaVezPorFormulario } from "../operacion/formulario";
 import { exigirEnOperacion } from "../operacion/permisos";
 import { auditarPld } from "./auditar";
+import type { Sesion } from "../session/tipos";
 import { conPld, fecha } from "./base";
 
 export type ParametrosPld = {
@@ -68,6 +70,7 @@ function entero(valor: unknown, campo: string, minimo: number, maximo: number): 
 /** Cumplimiento cambia los parámetros con motivo y bitácora (54ª). Cada cambio es una versión nueva. */
 export async function cambiarParametros(
   ctx: ContextoDePersonal,
+  sesion: Pick<Sesion, "segundoFactor" | "superficie">,
   entrada: {
     formId: unknown; atipicoK: unknown; atipicoHistorialMinimo: unknown; fraccionN: unknown; fraccionVentanaDias: unknown;
     fraccionUmbral: unknown; nominaPersonasPct: unknown; factorGradoAlto: unknown; motivo: unknown;
@@ -75,6 +78,8 @@ export async function cambiarParametros(
   deps: { ahora?: () => Date } = {},
 ): Promise<void> {
   exigirEnOperacion(ctx, "plataforma.pld.analizar");
+  // Cambiar cómo se detecta es una decisión: segundo factor de los últimos 30 minutos.
+  exigirAutenticacionReciente(sesion);
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
   const umbral = leerCentavosEscritos(entrada.fraccionUmbral);
   if (umbral.tipo !== "centavos" || umbral.centavos < 100) throw new ErrorDeDominio("dato_invalido_fraccionUmbral");

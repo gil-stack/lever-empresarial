@@ -6,9 +6,11 @@ import { pdfDeTexto, type RenglonPdf } from "../../dominio/pld/pdf";
 import { semestreDe } from "../../dominio/pld/plazos";
 import type { ContextoDePersonal } from "../../nucleo/contexto";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
+import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import { motivoEscrito, unaVezPorFormulario } from "../operacion/formulario";
 import { exigirEnOperacion } from "../operacion/permisos";
 import { leerPrivado, type AlmacenConstancia } from "../proveedores/constancia";
+import type { Sesion as SesionConFactor } from "../session/tipos";
 import { auditarPld } from "./auditar";
 import { conPld, dia, diaOpcional, fecha, rechazarControl } from "./base";
 import { archivoDelFormulario } from "./casos";
@@ -49,10 +51,13 @@ export async function personalDeCumplimiento(ctx: ContextoDePersonal): Promise<A
  */
 export async function cambiarModoDictamen(
   ctx: ContextoDePersonal,
+  sesion: Pick<SesionConFactor, "segundoFactor" | "superficie">,
   entrada: { formId: unknown; modo: unknown; oficialId: unknown; motivo: unknown },
   deps: { ahora?: () => Date } = {},
 ): Promise<void> {
   exigirEnOperacion(ctx, "plataforma.pld.comite");
+  // Cambiar quién dictamina es una decisión: segundo factor de los últimos 30 minutos.
+  exigirAutenticacionReciente(sesion);
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
   if (entrada.modo !== "comite" && entrada.modo !== "oficial") throw new ErrorDeDominio("dato_invalido_modo");
   const oficial = entrada.modo === "oficial" ? entrada.oficialId : null;

@@ -81,6 +81,8 @@ export type Periodico = {
   nombre: string;
   vence: string;
   estado: "registrado" | "por_vencer" | "vencido";
+  /** El periodo ya cerró: solo entonces se genera su archivo y se registra (la base lo exige). */
+  cerrado: boolean;
   /** Días hábiles que quedan hasta el vencimiento (0 si ya pasó). */
   diasHabiles: number;
   registro: { folio: string | null; recibidoEn: Date | null; sha256: string; registradoEn: Date } | null;
@@ -141,6 +143,7 @@ export async function leerPeriodicos(ctx: ContextoDePersonal, opciones: { ahora?
         nombre: plazo.reporte === "36" ? `Relevantes de ${nombreTrimestre(plazo.periodo)}` : `Transferencias internacionales de ${nombreMes(plazo.periodo)}`,
         vence: plazo.vence,
         estado: registro ? "registrado" : plazo.vence < hoy ? "vencido" : "por_vencer",
+        cerrado: hoy >= mesSiguiente(plazo.periodo),
         diasHabiles: plazo.diasHabiles,
         registro: registro
           ? {
@@ -174,9 +177,11 @@ async function operacionesDeTipos(consulta: Consulta, operador: string, tipos: r
 export async function archivoRelevantes(ctx: ContextoDePersonal, periodo: unknown, deps: { ahora?: () => Date } = {}): Promise<{ texto: string; sha256: string; nombre: string }> {
   exigirEnOperacion(ctx, "plataforma.pld.ver");
   if (typeof periodo !== "string" || !/^20\d{2}(03|06|09|12)$/.test(periodo)) throw new ErrorDeDominio("periodo_invalido");
+  const ahora = deps.ahora?.() ?? new Date();
+  // Un trimestre abierto no se reporta: el archivo saldría incompleto.
+  if (hoyEnMexico(ahora) < mesSiguiente(periodo)) throw new ErrorDeDominio("periodo_sin_cerrar");
   const entidad = await leerEntidad(ctx);
   if (!entidad) throw new ErrorDeDominio("falta_clave_entidad");
-  const ahora = deps.ahora?.() ?? new Date();
   // El trimestre va del primer día de su primer mes al primer día del mes siguiente a su último mes.
   const inicio = `${periodo.slice(0, 4)}-${String(Number(periodo.slice(4, 6)) - 2).padStart(2, "0")}-01`;
   const hasta = mesSiguiente(periodo);
@@ -207,6 +212,7 @@ export async function constanciaInternacionales(
   exigirEnOperacion(ctx, "plataforma.pld.ver");
   if (typeof periodo !== "string" || !/^20\d{2}(0[1-9]|1[0-2])$/.test(periodo)) throw new ErrorDeDominio("periodo_invalido");
   const ahora = deps.ahora?.() ?? new Date();
+  if (hoyEnMexico(ahora) < mesSiguiente(periodo)) throw new ErrorDeDominio("periodo_sin_cerrar");
   const total = await conPld(ctx, null, async (consulta) => {
     const cuenta = await operacionesDeTipos(consulta, ctx.personal.operadorId, TIPOS_INTERNACIONALES, inicioDelPeriodo(periodo), mesSiguiente(periodo));
     await auditarPld(consulta, ctx, {

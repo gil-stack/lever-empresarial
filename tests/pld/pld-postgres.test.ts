@@ -592,8 +592,11 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           const casoZ = await aviso("Alerta que se atendió tarde, fuera de los sesenta días.");
           const casoW = await aviso("Información de recursos posiblemente ilícitos.");
 
-          await assert.rejects(cambiarModoDictamen(cum, { formId: randomUUID(), modo: "oficial", oficialId: AUD, motivo: "Menos de 25 personas al servicio" }), /oficial_sin_rol_de_cumplimiento/);
-          await cambiarModoDictamen(cum, { formId: randomUUID(), modo: "oficial", oficialId: CUM, motivo: "Menos de 25 personas al servicio" });
+          // Cambiar quién dictamina es una decisión: con el factor de hace 31 minutos, la base ni se toca.
+          const factorViejo = { superficie: "sofipo" as const, segundoFactor: { metodo: "totp" as const, en: new Date(Date.now() - 31 * 60_000) } };
+          await assert.rejects(cambiarModoDictamen(cum, factorViejo, { formId: randomUUID(), modo: "oficial", oficialId: CUM, motivo: "Menos de 25 personas al servicio" }), /reautenticacion_requerida/);
+          await assert.rejects(cambiarModoDictamen(cum, SESION_SOFIPO, { formId: randomUUID(), modo: "oficial", oficialId: AUD, motivo: "Menos de 25 personas al servicio" }), /oficial_sin_rol_de_cumplimiento/);
+          await cambiarModoDictamen(cum, SESION_SOFIPO, { formId: randomUUID(), modo: "oficial", oficialId: CUM, motivo: "Menos de 25 personas al servicio" });
           await assert.rejects(registrarSesion(cum, { formId: randomUUID(), celebradaEl: hoy, presentes: [P, S, I1], auditorPresente: false }), /modo_oficial_sin_sesiones/);
           await registrarPropuesta(cum, { casoId: casoY, formId: randomUUID(), propuesta: "no_reportar", justificacion: "El cliente explicó el cambio con contrato" });
           const propuestaY = String((await uno("select id from pld_propuestas where caso_id = $1", [casoY])).id);
@@ -633,7 +636,7 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.deepEqual(await registrarReportePld(cum, { formId: randomUUID(), casoId: casoW, folio: "UIF-W", periodo: hoy.replaceAll("-", ""), recibidoEn: haceMinutos(60), registros: "1" }), { fueraDePlazo: true });
           await assert.rejects(marcarVeinticuatroHoras(cum, { casoId: casoY, motivo: "Marca después del dictamen" }), /caso_ya_dictaminado/);
           // De vuelta al Comité.
-          await cambiarModoDictamen(cum, { formId: randomUUID(), modo: "comite", oficialId: "", motivo: "Ya son más de 25 personas" });
+          await cambiarModoDictamen(cum, SESION_SOFIPO, { formId: randomUUID(), modo: "comite", oficialId: "", motivo: "Ya son más de 25 personas" });
         });
 
         await t.test("días hábiles: los dos instrumentos de 2026 con criterio conservador y «falta el calendario» en 2027", async () => {
@@ -704,11 +707,16 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
         await t.test("parámetros versionados: los cambia Cumplimiento con motivo; la fila inicial queda", async () => {
           const iniciales = await leerParametros(aud);
           assert.equal(iniciales.numero, 0);
-          await assert.rejects(cambiarParametros(aud, {
+          await assert.rejects(cambiarParametros(aud, SESION_SOFIPO, {
             formId: randomUUID(), atipicoK: "4", atipicoHistorialMinimo: "10", fraccionN: "3", fraccionVentanaDias: "7", fraccionUmbral: "100,000.00",
             nominaPersonasPct: "25", factorGradoAlto: "0.8", motivo: "Ajuste del Manual de Cumplimiento",
           }), /sin_permiso_operacion/);
-          await cambiarParametros(cum, {
+          // Cambiar los parámetros es una decisión: con el factor de hace 31 minutos se rechaza.
+          await assert.rejects(cambiarParametros(cum, { superficie: "sofipo", segundoFactor: { metodo: "totp", en: new Date(Date.now() - 31 * 60_000) } }, {
+            formId: randomUUID(), atipicoK: "4", atipicoHistorialMinimo: "10", fraccionN: "3", fraccionVentanaDias: "7", fraccionUmbral: "100,000.00",
+            nominaPersonasPct: "25", factorGradoAlto: "0.8", motivo: "Ajuste del Manual de Cumplimiento",
+          }), /reautenticacion_requerida/);
+          await cambiarParametros(cum, SESION_SOFIPO, {
             formId: randomUUID(), atipicoK: "4", atipicoHistorialMinimo: "10", fraccionN: "3", fraccionVentanaDias: "7", fraccionUmbral: "100,000.00",
             nominaPersonasPct: "25", factorGradoAlto: "0.8", motivo: "Ajuste del Manual de Cumplimiento",
           });

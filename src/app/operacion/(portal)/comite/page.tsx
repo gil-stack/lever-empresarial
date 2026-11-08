@@ -13,6 +13,7 @@ import {
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
+import { ConfirmarParaDecidir } from "@/components/operacion/pld/confirmar";
 import { ahoraEnMexicoParaCampo } from "@/components/operacion/pld/formato";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
@@ -66,6 +67,7 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
           Con menos de 25 personas al servicio de la SOFIPO no hay Comité obligatorio y sus funciones las ejerce el Oficial de Cumplimiento. En ese modo no
           hay sesiones: el Oficial dictamina cada caso con justificación y corren los mismos plazos.
         </p>
+        {administra ? <ConfirmarParaDecidir motivo="Antes de cambiar quién dictamina, prueba tu segundo factor. Vale 30 minutos." /> : null}
         {administra ? (
           <form action={cambiarModoAccion} className="formulario-pareja operacion-forma">
             <input type="hidden" name="formId" value={randomUUID()} />

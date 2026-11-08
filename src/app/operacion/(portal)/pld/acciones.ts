@@ -67,6 +67,11 @@ async function sesionConFactor() {
   return sesion;
 }
 
+/** Las decisiones de PLD piden el segundo factor de los últimos 30 minutos; la pantalla ofrece confirmarlo. */
+function siPideFactor(error: unknown, ruta: string, ancla: string): void {
+  if (error instanceof ErrorDeDominio && error.codigo === "reautenticacion_requerida") redirect(`${ruta}?aviso=pld_reautenticacion${ancla}`);
+}
+
 // Perfil transaccional y evaluación semestral (en el expediente).
 
 export async function declararPerfilAccion(formData: FormData): Promise<void> {
@@ -195,7 +200,7 @@ export async function dictaminarCasoAccion(formData: FormData): Promise<void> {
       propuestaId: texto(formData, "propuestaId"), resultado: texto(formData, "resultado"), justificacion: texto(formData, "justificacion"),
     }));
   } catch (error) {
-    if (error instanceof ErrorDeDominio && error.codigo === "reautenticacion_requerida") redirect(`${caso(casoId)}?aviso=pld_dictamen_reautenticacion&en=dictamen-titulo#dictamen-titulo`);
+    siPideFactor(error, caso(casoId), "#dictamen-titulo");
     return fallo(error, caso(casoId), "#dictamen-titulo");
   }
   listo(caso(casoId), fueraDePlazo ? "pld_dictamen_fuera_de_plazo" : "pld_dictamen_registrado", "#dictamen-titulo");
@@ -218,13 +223,15 @@ export async function registrarReportePldAccion(formData: FormData): Promise<voi
 
 export async function cambiarParametrosAccion(formData: FormData): Promise<void> {
   const ctx = await exigirContextoOperacion();
+  const sesion = await sesionConFactor();
   try {
-    await cambiarParametros(ctx, {
+    await cambiarParametros(ctx, sesion, {
       formId: formData.get("formId"), atipicoK: texto(formData, "atipicoK"), atipicoHistorialMinimo: texto(formData, "atipicoHistorialMinimo"),
       fraccionN: texto(formData, "fraccionN"), fraccionVentanaDias: texto(formData, "fraccionVentanaDias"), fraccionUmbral: texto(formData, "fraccionUmbral"),
       nominaPersonasPct: texto(formData, "nominaPersonasPct"), factorGradoAlto: texto(formData, "factorGradoAlto"), motivo: texto(formData, "motivo"),
     });
   } catch (error) {
+    siPideFactor(error, "/operacion/pld/parametros", "#parametros-titulo");
     return fallo(error, "/operacion/pld/parametros", "#parametros-titulo");
   }
   listo("/operacion/pld/parametros", "pld_parametros_cambiados");
@@ -234,9 +241,11 @@ export async function cambiarParametrosAccion(formData: FormData): Promise<void>
 
 export async function cambiarModoAccion(formData: FormData): Promise<void> {
   const ctx = await exigirContextoOperacion();
+  const sesion = await sesionConFactor();
   try {
-    await cambiarModoDictamen(ctx, { formId: formData.get("formId"), modo: texto(formData, "modo"), oficialId: texto(formData, "oficialId"), motivo: texto(formData, "motivo") });
+    await cambiarModoDictamen(ctx, sesion, { formId: formData.get("formId"), modo: texto(formData, "modo"), oficialId: texto(formData, "oficialId"), motivo: texto(formData, "motivo") });
   } catch (error) {
+    siPideFactor(error, "/operacion/comite", "#modo-titulo");
     return fallo(error, "/operacion/comite", "#modo-titulo");
   }
   listo("/operacion/comite", "pld_modo_cambiado", "#modo-titulo");

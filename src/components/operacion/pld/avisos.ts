@@ -138,7 +138,7 @@ export const MENSAJES_PLD: Record<string, string> = {
   // Dictamen y reporte (40ª, 44ª, 45ª).
   pld_dictamen_registrado: "Dictamen registrado.",
   pld_dictamen_fuera_de_plazo: "Dictamen registrado fuera de plazo: quedó marcado así y no se puede cambiar.",
-  pld_dictamen_reautenticacion: "Confirma que eres tú con tu segundo factor antes de registrar el dictamen. Vale treinta minutos.",
+  pld_reautenticacion: "Confirma que eres tú con tu segundo factor: las decisiones de PLD lo piden de los últimos 30 minutos.",
   pld_reporte_registrado: "Acuse del reporte registrado. No se puede modificar.",
   pld_reporte_fuera_de_plazo: "Acuse registrado fuera de plazo: quedó marcado así.",
   dictamen_en_otro_modo: "El dictamen va por la vía que está vigente: Comité u Oficial de Cumplimiento.",

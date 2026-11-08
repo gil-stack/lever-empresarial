@@ -53,11 +53,15 @@ export default async function ReportesRegulatorios({ searchParams }: { searchPar
             <span>Vence el {fechaDia(periodico.vence)}</span>
             {periodico.estado !== "registrado" ? <span>{plazoEnDiasHabiles(periodico.diasHabiles, periodico.estado === "vencido")}</span> : null}
           </p>
-          <p>
-            <a className="boton-texto" href={`/operacion/reportes/archivo?reporte=${periodico.reporte}&periodo=${periodico.periodo}`}>
-              {periodico.reporte === "36" ? "Descargar el archivo de 41 columnas" : "Descargar la constancia interna"}
-            </a>
-          </p>
+          {periodico.cerrado ? (
+            <p>
+              <a className="boton-texto" href={`/operacion/reportes/archivo?reporte=${periodico.reporte}&periodo=${periodico.periodo}`}>
+                {periodico.reporte === "36" ? "Descargar el archivo de 41 columnas" : "Descargar la constancia interna"}
+              </a>
+            </p>
+          ) : (
+            <p className="pista">El periodo aún no cierra: el archivo y su registro se habilitan desde el día siguiente a su último día.</p>
+          )}
           {periodico.reporte === "36" ? (
             <p className="pista">Borrador según el layout del DOF; el Oficial confirma la mecánica del reporte vacío en el SITI.</p>
           ) : (
@@ -72,7 +76,7 @@ export default async function ReportesRegulatorios({ searchParams }: { searchPar
                 <EtiquetaMono nombre="SHA-256">{periodico.registro.sha256.slice(0, 16)}…</EtiquetaMono>
               </Renglon>
             </Renglones>
-          ) : reporta ? (
+          ) : reporta && periodico.cerrado ? (
             <form action={registrarPeriodicoAccion} className="formulario-pareja operacion-forma">
               <input type="hidden" name="formId" value={randomUUID()} />
               <input type="hidden" name="reporte" value={periodico.reporte} />
