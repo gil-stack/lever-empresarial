@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 import pg from "pg";
 
+import { INVISIBLE } from "../../src/dominio/control.ts";
 import { hoyEnMexico } from "../../src/dominio/operacion/comisiones.ts";
 import { sumarMeses } from "../../src/dominio/operacion/riesgo.ts";
 import { COLUMNAS } from "../../src/dominio/pld/layout41.ts";
@@ -608,6 +609,23 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor", rfc: AUDITOR.rfc, curp: vocal.curp, designadoEl: designado }), /comite_auditor_integrante/);
           assert.equal(await contar("select count(*)::int as n from pld_comite_auditores"), 0);
           await registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor", ...AUDITOR, designadoEl: designado });
+          // r2-base-N14: la base rechaza en folios, área, cargo y auditor los mismos invisibles que el servidor (INVISIBLE),
+          // aunque el dato llegue sin pasar por él. La clase explícita de pld_sin_invisibles es la de INVISIBLE en todo Unicode.
+          const deJs: number[] = [];
+          for (let n = 1; n <= 0x10ffff; n++) if ((n < 0xd800 || n > 0xdfff) && INVISIBLE.test(String.fromCodePoint(n))) deJs.push(n);
+          const deLaBase = (await dueno.query("select n from (select generate_series(1, 55295) union all select generate_series(57344, 1114111)) as g (n) where not pld_sin_invisibles(chr(n)) order by n"))
+            .rows.map((r) => Number(r.n));
+          assert.deepEqual(deLaBase, deJs);
+          for (const invisible of ["\u00ad", "\u200b", "\u2060", "\ufeff", "\u202e", "\u3164", "\ufe0f", "\u180b", "\u{E0100}"]) {
+            await assert.rejects(dueno.query(
+              "insert into pld_comite_auditores (id, operator_id, nombre, cargo_entidad, rfc, curp, designado_el, registrado_por) values ($1, $2, $3, 'Auditor', $4, $5, $6, $7)",
+              [randomUUID(), operador, `Auditor${invisible}Interno`, "AUIX690101AB1", "AUIX690101HDFRXXA1", designado, CUM],
+            ), /pld_comite_auditores_textos/, JSON.stringify(invisible));
+            await assert.rejects(dueno.query(
+              "insert into pld_comite_comunicaciones (id, operator_id, folio, recibido_en, integrantes, bajas, registrado_por) values ($1, $2, $3, now(), $4, '{}', $5)",
+              [randomUUID(), operador, `SITI${invisible}0009`, [P], CUM],
+            ), /pld_comite_comunicaciones_folio/, JSON.stringify(invisible));
+          }
           // Y al revés: el auditor vigente no se registra como integrante.
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [integrante(randomUUID(), "INTEGRANTE", "TITULAR", "Aurelio", { ...AUDITOR })] }), /comite_auditor_integrante/);
 

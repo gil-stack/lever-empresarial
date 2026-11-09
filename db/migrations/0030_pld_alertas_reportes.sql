@@ -43,6 +43,19 @@ AS $$ SELECT (p_momento AT TIME ZONE 'America/Mexico_City')::date $$;
 
 COMMENT ON FUNCTION pld_fecha_mx(timestamptz) IS 'Fecha calendario en la Ciudad de México de un instante. Los meses y plazos de PLD se miden con ella.';
 
+-- r2-base-N14: lo que una identidad o un folio de PLD no admite, igual que INVISIBLE
+-- de src/dominio/control.ts: controles (Cc), formato (Cf) y Default_Ignorable_Code_Point.
+-- Postgres no tiene \p{}: la clase va explícita, generada desde el mismo INVISIBLE
+-- (Unicode 17.0), y tests/pld/pld-postgres.test.ts compara las dos en todo Unicode.
+CREATE FUNCTION pld_sin_invisibles(p_texto text)
+RETURNS boolean
+LANGUAGE sql
+IMMUTABLE
+PARALLEL SAFE
+AS $$
+  SELECT p_texto IS NULL OR p_texto !~ '[\u0001-\u001F\u007F-\u009F\u00AD\u034F\u0600-\u0605\u061C\u06DD\u070F\u0890-\u0891\u08E2\u115F-\u1160\u17B4-\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0\uFFF0-\uFFFB\U000110BD\U000110CD\U00013430-\U0001343F\U0001BCA0-\U0001BCA3\U0001D173-\U0001D17A\U000E0000-\U000E0FFF]'
+$$;
+
 -- ¿La persona del contexto tiene alguno de estos roles en su operador? Nunca NULL.
 CREATE FUNCTION pld_rol(p_roles text[])
 RETURNS boolean
@@ -1458,8 +1471,10 @@ CREATE TABLE pld_comite_integrantes (
   CONSTRAINT pld_comite_integrantes_cargo CHECK (cargo IN ('PRESIDENTE', 'SECRETARIO', 'INTEGRANTE')),
   CONSTRAINT pld_comite_integrantes_titularidad CHECK (titularidad IN ('TITULAR', 'SUPLENTE')),
   CONSTRAINT pld_comite_integrantes_suplente CHECK ((titularidad = 'SUPLENTE') = (suplente_de IS NOT NULL)),
-  CONSTRAINT pld_comite_integrantes_area CHECK (texto_regulado(area, 120) AND area = upper(area)),
-  CONSTRAINT pld_comite_integrantes_cargo_entidad CHECK (texto_regulado(cargo_entidad, 120) AND cargo_entidad = upper(cargo_entidad)),
+  CONSTRAINT pld_comite_integrantes_area CHECK (texto_regulado(area, 120) AND area = upper(area) AND pld_sin_invisibles(area)),
+  CONSTRAINT pld_comite_integrantes_cargo_entidad CHECK (
+    texto_regulado(cargo_entidad, 120) AND cargo_entidad = upper(cargo_entidad) AND pld_sin_invisibles(cargo_entidad)
+  ),
   CONSTRAINT pld_comite_integrantes_nombres CHECK (
     nombres ~ '^[A-ZÑ]+( [A-ZÑ]+)*$' AND char_length(nombres) <= 80
     AND primer_apellido ~ '^[A-ZÑ]+( [A-ZÑ]+)*$' AND char_length(primer_apellido) <= 80
@@ -1652,7 +1667,9 @@ CREATE TABLE pld_comite_auditores (
   designado_el date NOT NULL,
   registrado_por uuid NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
   registrado_en timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT pld_comite_auditores_textos CHECK (texto_regulado(nombre, 200) AND texto_regulado(cargo_entidad, 120)),
+  CONSTRAINT pld_comite_auditores_textos CHECK (
+    texto_regulado(nombre, 200) AND texto_regulado(cargo_entidad, 120) AND pld_sin_invisibles(nombre) AND pld_sin_invisibles(cargo_entidad)
+  ),
   CONSTRAINT pld_comite_auditores_rfc CHECK (rfc ~ '^[A-Z&Ñ]{4}[0-9]{6}[A-Z0-9]{3}$'),
   CONSTRAINT pld_comite_auditores_curp CHECK (curp ~ '^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$')
 );
@@ -1669,7 +1686,7 @@ CREATE TABLE pld_comite_comunicaciones (
   bajas uuid[] NOT NULL,
   registrado_por uuid NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
   registrado_en timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT pld_comite_comunicaciones_folio CHECK (texto_regulado(folio, 40)),
+  CONSTRAINT pld_comite_comunicaciones_folio CHECK (texto_regulado(folio, 40) AND pld_sin_invisibles(folio)),
   CONSTRAINT pld_comite_comunicaciones_folio_unico UNIQUE (operator_id, folio),
   CONSTRAINT pld_comite_comunicaciones_cubre CHECK (cardinality(integrantes) + cardinality(bajas) >= 1)
 );
@@ -2127,7 +2144,7 @@ CREATE TABLE pld_reportes (
   registrado_en timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT pld_reportes_uno_por_caso UNIQUE (caso_id),
   CONSTRAINT pld_reportes_tipo CHECK (tipo_reporte IN ('2', '3')),
-  CONSTRAINT pld_reportes_folio CHECK (texto_regulado(folio, 40)),
+  CONSTRAINT pld_reportes_folio CHECK (texto_regulado(folio, 40) AND pld_sin_invisibles(folio)),
   CONSTRAINT pld_reportes_periodo CHECK (periodo ~ '^[0-9]{8}$'),
   CONSTRAINT pld_reportes_registros CHECK (registros BETWEEN 1 AND 100000)
 );
@@ -2217,7 +2234,7 @@ CREATE TABLE pld_periodicos (
   CONSTRAINT pld_periodicos_sha256 CHECK (archivo_sha256 ~ '^[0-9a-f]{64}$'),
   CONSTRAINT pld_periodicos_registros CHECK (registros BETWEEN 0 AND 100000),
   CONSTRAINT pld_periodicos_acuse CHECK (
-    (reporte = '36' AND folio IS NOT NULL AND texto_regulado(folio, 40) AND recibido_en IS NOT NULL)
+    (reporte = '36' AND folio IS NOT NULL AND texto_regulado(folio, 40) AND pld_sin_invisibles(folio) AND recibido_en IS NOT NULL)
     OR (reporte = '38' AND folio IS NULL AND recibido_en IS NULL)
   )
 );
