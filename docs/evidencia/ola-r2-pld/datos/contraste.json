@@ -1,0 +1,32 @@
+{
+  "oscuro-1440": {
+    "medidos": 100,
+    "minimo": 7.49,
+    "fallas": []
+  },
+  "oscuro-390": {
+    "medidos": 100,
+    "minimo": 8.15,
+    "fallas": []
+  },
+  "claro-1440": {
+    "medidos": 100,
+    "minimo": 5.72,
+    "fallas": []
+  },
+  "claro-390": {
+    "medidos": 100,
+    "minimo": 5.12,
+    "fallas": []
+  },
+  "lever-1440": {
+    "medidos": 100,
+    "minimo": 6.82,
+    "fallas": []
+  },
+  "lever-390": {
+    "medidos": 100,
+    "minimo": 6.73,
+    "fallas": []
+  }
+}

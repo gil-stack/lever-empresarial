@@ -634,7 +634,7 @@ async function flujo8() {
   exigir(cuenta(`pld_reportes where caso_id = '${ids.casoAviso}'`) === 1, "8. doble clic en «Registrar acuse» = 1 acuse");
   exigir(sql(`select folio || ' ' || tipo_reporte || ' ' || fuera_de_plazo from pld_reportes where caso_id = '${ids.casoAviso}'`) === "UIF-2026-000123 3 false", "8. folio y acuse registrados a tiempo, tipo 3 (interna preocupante)");
   exigir((await hoja(p, "reporte-titulo").innerText()).includes("A tiempo"), "8. la pantalla dice «A tiempo»");
-  const borrador = await descargar(p, () => p.getByRole("link", { name: "Descargar el borrador con el layout de 41 columnas" }).click());
+  const borrador = await descargar(p, () => p.getByRole("link", { name: "Descargar el borrador del reporte" }).click());
   const renglones = borrador.bytes.toString("utf8").split("\r\n").filter(Boolean);
   exigir(renglones.length >= 1 && renglones.every((r) => (r.match(/;/g) ?? []).length === 41), "8. el borrador del reporte trae renglones de 41 columnas", renglones[0]?.slice(0, 120));
   await foto(p, "f8-acuse-registrado-a-tiempo");

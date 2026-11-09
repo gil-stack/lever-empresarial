@@ -1,0 +1,34 @@
+{
+  "fases": [
+    "contraste"
+  ],
+  "segundos": 221,
+  "verdes": 6,
+  "rojos": 0,
+  "resultados": [
+    {
+      "ok": true,
+      "texto": "contraste oscuro 1440: 100 textos, mínimo 7.49"
+    },
+    {
+      "ok": true,
+      "texto": "contraste oscuro 390: 100 textos, mínimo 8.15"
+    },
+    {
+      "ok": true,
+      "texto": "contraste claro 1440: 100 textos, mínimo 5.72"
+    },
+    {
+      "ok": true,
+      "texto": "contraste claro 390: 100 textos, mínimo 5.12"
+    },
+    {
+      "ok": true,
+      "texto": "contraste lever 1440: 100 textos, mínimo 6.82"
+    },
+    {
+      "ok": true,
+      "texto": "contraste lever 390: 100 textos, mínimo 6.73"
+    }
+  ]
+}

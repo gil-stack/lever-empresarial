@@ -408,7 +408,7 @@ export default async function CasoPld({
           </Renglones>
           <p>
             <a className="boton-texto" href={`/operacion/pld/casos/${caso.id}/reporte`}>
-              Descargar el borrador con el layout de 41 columnas
+              Descargar el borrador del reporte
             </a>
           </p>
           <p className="pista">Borrador según el layout del DOF. El Oficial completa las columnas con los catálogos de la CNBV y lo presenta en el SITI.</p>

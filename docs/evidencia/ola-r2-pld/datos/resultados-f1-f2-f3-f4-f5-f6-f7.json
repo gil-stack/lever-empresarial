@@ -1,0 +1,444 @@
+{
+  "fases": [
+    "f1",
+    "f2",
+    "f3",
+    "f4",
+    "f5",
+    "f6",
+    "f7"
+  ],
+  "segundos": 97,
+  "verdes": 107,
+  "rojos": 0,
+  "resultados": [
+    {
+      "ok": true,
+      "texto": "1. la base rechaza activar a Nogal: falta el perfil transaccional"
+    },
+    {
+      "ok": true,
+      "texto": "1. Aprobación ve el mensaje del candado"
+    },
+    {
+      "ok": true,
+      "texto": "1. Nogal sigue en alta"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Ana"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «perfil_declarado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "1. doble clic en «Registrar perfil» = 1 perfil"
+    },
+    {
+      "ok": true,
+      "texto": "1. un solo evento «expediente_perfil_declarado»"
+    },
+    {
+      "ok": true,
+      "texto": "1. montos en centavos: $250,000.00 y $90,000.00"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Omar"
+    },
+    {
+      "ok": true,
+      "texto": "1. con el perfil, Aprobación (otra persona) aprueba la activación"
+    },
+    {
+      "ok": true,
+      "texto": "1. Nogal queda activa"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Ana"
+    },
+    {
+      "ok": true,
+      "texto": "2. el pago N-204 queda listo para pagar: la alerta no lo bloquea"
+    },
+    {
+      "ok": true,
+      "texto": "2. doble clic en «Autorizar para pagar» = 1 autorización"
+    },
+    {
+      "ok": true,
+      "texto": "2. una alerta «excede_perfil»: el mes suma $60,905.00 contra $50,000.00 declarados"
+    },
+    {
+      "ok": true,
+      "texto": "2. la consola del cliente (HTML y RSC) no menciona nada de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Rosa"
+    },
+    {
+      "ok": true,
+      "texto": "2. /c/33333333-3333-4333-8333-333333333333/consola: nada de PLD para el cliente"
+    },
+    {
+      "ok": true,
+      "texto": "2. /c/33333333-3333-4333-8333-333333333333/consola/proveedores: nada de PLD para el cliente"
+    },
+    {
+      "ok": true,
+      "texto": "2. /c/33333333-3333-4333-8333-333333333333/consola/pendientes: nada de PLD para el cliente"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Gil"
+    },
+    {
+      "ok": true,
+      "texto": "2. Cumplimiento ve «Excede el perfil · Taller del Cierre»"
+    },
+    {
+      "ok": true,
+      "texto": "2. con sus días restantes: «Quedan 60 días»"
+    },
+    {
+      "ok": true,
+      "texto": "2. con la suma del mes contra el perfil"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Rosa"
+    },
+    {
+      "ok": true,
+      "texto": "3. una alerta «fraccionamiento»: 3 instrucciones a la misma CLABE suman $105,905.00"
+    },
+    {
+      "ok": true,
+      "texto": "3. el perfil ya estaba cruzado este mes: no hay una segunda «Excede el perfil»"
+    },
+    {
+      "ok": true,
+      "texto": "3. Cumplimiento ve «Fraccionamiento · Taller del Cierre» con sus días"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    },
+    {
+      "ok": true,
+      "texto": "4. doble clic en «Preparar nómina» = 1 lote"
+    },
+    {
+      "ok": true,
+      "texto": "4. la nómina del cliente no menciona nada de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Gil"
+    },
+    {
+      "ok": true,
+      "texto": "4. una alerta «nomina_atipica»: el lote de $18,500.00 pasa los $15,000.00 declarados"
+    },
+    {
+      "ok": true,
+      "texto": "4. Cumplimiento ve «Nómina atípica · Taller del Cierre»"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_aviso_emitido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "5. doble clic en «Enviar aviso» = 1 aviso"
+    },
+    {
+      "ok": true,
+      "texto": "5. quien avisa ve su acuse con el folio E8912576"
+    },
+    {
+      "ok": true,
+      "texto": "5. el acuse no repite el texto del aviso"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Omar"
+    },
+    {
+      "ok": true,
+      "texto": "5. Cumplimiento ve la alerta «Aviso del personal · Taller del Cierre»"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    },
+    {
+      "ok": true,
+      "texto": "5. la persona mencionada (Aurelio, Auditoría) no ve la alerta"
+    },
+    {
+      "ok": true,
+      "texto": "5. ni el evento en su bitácora"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Aurelio"
+    },
+    {
+      "ok": true,
+      "texto": "5. la bitácora de Administración no muestra el aviso"
+    },
+    {
+      "ok": true,
+      "texto": "5. el evento existe en la base: solo está oculto"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Ofelia"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_aviso_emitido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Ana"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_caso_abierto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "6. doble clic en «Abrir caso» = 1 caso"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_alerta_sumada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_alerta_sumada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_alerta_sumada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "6. la serie de Taller va en un solo caso: el perfil de pagos y de nómina, el fraccionamiento y la nómina atípica"
+    },
+    {
+      "ok": true,
+      "texto": "6. el aviso del personal queda fuera, para su propio caso"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_nota_agregada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "6. doble clic en «Agregar nota» = 1 nota"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_documento_cargado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "6. doble clic en «Subir documento» = 1 documento"
+    },
+    {
+      "ok": true,
+      "texto": "6. el documento se descarga igual a como se subió (misma huella)"
+    },
+    {
+      "ok": true,
+      "texto": "6. la descarga deja su evento en la bitácora"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_propuesta_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "6. doble clic en «Registrar propuesta» = 1 propuesta"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «comite_presidente_unico» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. la validación rechaza un segundo presidente titular y no guarda a nadie"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «comite_minimo_tres_titulares» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. la validación rechaza menos de tres titulares y no guarda a nadie"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «comite_sin_oficial» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. la validación rechaza la falta del Oficial y no guarda a nadie"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_integrantes_registrados» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. doble clic en «Registrar en el Comité» = 5 integrantes, una vez"
+    },
+    {
+      "ok": true,
+      "texto": "7. 15 días hábiles desde el 28-oct saltan el 2 y el 16 de noviembre: 20-nov"
+    },
+    {
+      "ok": true,
+      "texto": "7. cada designación con su pendiente 49ª: «Comunicar a más tardar el 20 nov 2026»"
+    },
+    {
+      "ok": true,
+      "texto": "7. lo que el Oficial captura en el SITI está a la vista, en mayúsculas sin acentos"
+    },
+    {
+      "ok": true,
+      "texto": "7. la bandeja de Cumplimiento lista las designaciones por comunicar"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_auditor_registrado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. doble clic en «Registrar auditor» = 1 auditor (no es integrante)"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_comunicacion_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. doble clic en «Registrar comunicación» = 1 acuse"
+    },
+    {
+      "ok": true,
+      "texto": "7. con el acuse, las cinco designaciones quedan comunicadas"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_caso_abierto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_propuesta_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. dos de cuatro titulares: la sesión queda «sin quórum»"
+    },
+    {
+      "ok": true,
+      "texto": "7. la sesión sin quórum lo dice y no ofrece votar"
+    },
+    {
+      "ok": true,
+      "texto": "7. ni un botón de voto"
+    },
+    {
+      "ok": true,
+      "texto": "7. doble clic en «Registrar sesión» = 1 sesión"
+    },
+    {
+      "ok": true,
+      "texto": "7. cuatro de cuatro titulares: sesión con quórum (doble clic = 1 sesión más)"
+    },
+    {
+      "ok": true,
+      "texto": "7. el auditor asiste con voz y sin voto"
+    },
+    {
+      "ok": true,
+      "texto": "7. doble clic en cada voto = 4 votos, uno por integrante"
+    },
+    {
+      "ok": true,
+      "texto": "7. empate 2-2: decide el presidente, la propuesta queda aprobada"
+    },
+    {
+      "ok": true,
+      "texto": "7. la pantalla dice «Aprobada»"
+    },
+    {
+      "ok": true,
+      "texto": "7. Lever genera el acta en PDF"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_acta_cargada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. doble clic en «Subir acta firmada» = 1 acta"
+    },
+    {
+      "ok": true,
+      "texto": "7. con el factor de hace 31 minutos, el dictamen pide «Confirma que eres tú»"
+    },
+    {
+      "ok": true,
+      "texto": "7. Celia confirmó con su app autenticadora"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_dictamen_registrado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. doble clic en «Registrar dictamen» = 1 dictamen"
+    },
+    {
+      "ok": true,
+      "texto": "7. dictamen del día de la sesión; el reporte vence a 3 días hábiles (2026-11-11)"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_dictamen_registrado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. el otro caso queda «no reportar», con justificación y sin plazo de reporte"
+    },
+    {
+      "ok": true,
+      "texto": "7. un «no reportar» no ofrece reporte al SITI"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    }
+  ]
+}
