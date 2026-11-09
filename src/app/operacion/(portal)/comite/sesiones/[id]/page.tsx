@@ -52,12 +52,14 @@ export default async function SesionComite({
   // Las votaciones de esta sesión más las propuestas vigentes que aún no se votan aquí y que ya
   // existían el día de la sesión (la base rechaza votar una posterior).
   const votadas = new Set(votaciones.map((v) => v.propuestaId));
+  // r2-fix-N1 (48ª): el acta firmada cierra la sesión; lo que falte por votar va en una sesión nueva.
+  const cerrada = sesion.acta !== null;
   const temas: Array<{ casoId: string; propuestaId: string; propuesta: Propuesta; razonSocial: string | null; abierta: boolean }> = [
     ...votaciones.map((v) => {
       const pendiente = porVotar.find((p) => p.propuestaId === v.propuestaId);
       return { casoId: v.casoId, propuestaId: v.propuestaId, propuesta: v.propuesta, razonSocial: pendiente?.razonSocial ?? null, abierta: pendiente !== undefined };
     }),
-    ...porVotar.filter((p) => !votadas.has(p.propuestaId) && p.registradaEl <= sesion.celebradaEl).map((p) => ({ ...p, abierta: true })),
+    ...(cerrada ? [] : porVotar.filter((p) => !votadas.has(p.propuestaId) && p.registradaEl <= sesion.celebradaEl).map((p) => ({ ...p, abierta: true }))),
   ];
 
   return (
@@ -87,6 +89,7 @@ export default async function SesionComite({
       </Hoja>
 
       <Hoja id="votaciones-titulo" titulo="Votaciones">
+        {cerrada && sesion.quorum ? <p className="pista">El acta firmada cerró la sesión: lo que falte por votar va en una sesión nueva.</p> : null}
         {!sesion.quorum ? (
           <Vacio titulo="Sin votaciones">Sin la mayoría de los miembros la sesión no es válida para votar.</Vacio>
         ) : temas.length === 0 ? (
@@ -125,7 +128,7 @@ export default async function SesionComite({
                               <Insignia tono={voto === "a_favor" ? "sello" : "aviso"}>{voto === "a_favor" ? "A favor" : "En contra"}</Insignia>
                             ) : titularPresente ? (
                               <p className="pista">Su titular está presente: no vota.</p>
-                            ) : administra && tema.abierta ? (
+                            ) : administra && tema.abierta && !cerrada ? (
                               <form action={registrarVotoAccion} className="operacion-decision-botones">
                                 <input type="hidden" name="sesionId" value={sesion.id} />
                                 <input type="hidden" name="propuestaId" value={tema.propuestaId} />

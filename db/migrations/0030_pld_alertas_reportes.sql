@@ -1228,6 +1228,10 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+  -- r2-fix-N2: el candado del personal de Cumplimiento del operador, el mismo que
+  -- toma una suspensión, una baja o el retiro del rol. La consulta de abajo ve lo
+  -- que la otra transacción confirmó mientras esta esperaba.
+  PERFORM pg_advisory_xact_lock(hashtextextended('pld_analistas:' || NEW.operator_id::text, 0));
   IF NOT EXISTS (
     SELECT 1
     FROM platform_staff s
@@ -2000,6 +2004,12 @@ BEGIN
   END IF;
   -- r2-base-N9: el candado del caso antes de revisar el dictamen y la propuesta vigente.
   PERFORM pg_advisory_xact_lock(hashtextextended('pld_caso:' || caso.id::text, 0));
+  -- r2-fix-N1 (48ª): el acta firmada cierra la sesión; un voto posterior no estaría en
+  -- ella. Con el candado de la sesión, como la carga del acta: no se cruzan.
+  PERFORM pg_advisory_xact_lock(hashtextextended('pld_sesion:' || sesion.id::text, 0));
+  IF EXISTS (SELECT 1 FROM pld_actas a WHERE a.sesion_id = sesion.id) THEN
+    RAISE EXCEPTION 'sesion_con_acta';
+  END IF;
   NEW.caso_id := caso.id;
   NEW.operator_id := sesion.operator_id;
   NEW.company_id := caso.company_id;
@@ -2107,10 +2117,14 @@ DECLARE
   sesion pld_sesiones%ROWTYPE;
 BEGIN
   IF TG_TABLE_NAME = 'pld_actas' THEN
+    -- r2-fix-N1: la sesión que votó un caso que excluye a quien sube no existe para
+    -- esa persona (su RLS la oculta): sesion_no_existe, como una inexistente.
     SELECT * INTO sesion FROM pld_sesiones s WHERE s.id = NEW.sesion_id;
     IF sesion.id IS NULL THEN
       RAISE EXCEPTION 'sesion_no_existe';
     END IF;
+    -- El candado de la sesión, como los votos: el acta llega con la votación completa.
+    PERFORM pg_advisory_xact_lock(hashtextextended('pld_sesion:' || sesion.id::text, 0));
     NEW.operator_id := sesion.operator_id;
   END IF;
   IF current_user = 'plataforma_sofipo' THEN
@@ -2489,10 +2503,26 @@ $$;
 REVOKE ALL ON FUNCTION pld_documento_para_descarga(uuid, uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION pld_documento_para_descarga(uuid, uuid) TO plataforma_sofipo;
 
--- ¿La sesión votó un caso que excluye a la persona del contexto (60ª)? El acta
--- nombra cada caso votado, su empresa y los votos: quien no ve el caso no ve el
--- acta, ni su renglón ni su huella. Lee los votos por encima de su RLS, que ya
--- los oculta a esa persona.
+-- Las sesiones que votaron un caso que excluye a la persona del contexto (60ª). El
+-- acta nombra cada caso votado, su empresa y los votos: para esa persona la sesión
+-- no existe (r2-fix-N1). No la lee, no genera ni sube su acta, no vota en ella y
+-- recibe lo mismo que con una sesión inexistente. Lee los votos por encima de su
+-- RLS, que ya los oculta a esa persona. Un solo conjunto por consulta (r2-base-N10).
+CREATE FUNCTION pld_sesiones_que_me_excluyen()
+RETURNS uuid[]
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT coalesce(array_agg(DISTINCT v.sesion_id), '{}')
+  FROM pld_votos v
+  WHERE v.caso_id = ANY ((SELECT pld_casos_que_me_excluyen())::uuid[])
+$$;
+
+REVOKE ALL ON FUNCTION pld_sesiones_que_me_excluyen() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION pld_sesiones_que_me_excluyen() TO plataforma_sofipo;
+
 CREATE FUNCTION pld_sesion_me_excluye(p_sesion uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -2500,11 +2530,30 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS (SELECT 1 FROM pld_votos v WHERE v.sesion_id = p_sesion AND v.caso_id = ANY ((SELECT pld_casos_que_me_excluyen())::uuid[]))
+  SELECT p_sesion = ANY (pld_sesiones_que_me_excluyen())
 $$;
 
 REVOKE ALL ON FUNCTION pld_sesion_me_excluye(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION pld_sesion_me_excluye(uuid) TO plataforma_sofipo;
+
+-- r2-fix-N1 (47ª): la sesión mensual y la regla de suplentes cuentan todas las
+-- sesiones del operador, también la que la persona del contexto no ve por un aviso
+-- que la excluye. Solo fecha, quórum y presentes: ni la sesión, ni sus votos, ni su
+-- acta. Cumplimiento y Auditoría, como la lectura de pld_sesiones.
+CREATE FUNCTION pld_sesiones_para_reglas()
+RETURNS TABLE (celebrada_el date, quorum boolean, presentes uuid[], registrado_en timestamptz)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT s.celebrada_el, s.quorum, s.presentes, s.registrado_en
+  FROM pld_sesiones s
+  WHERE s.operator_id = app_operador() AND pld_rol(ARRAY['cumplimiento', 'auditoria'])
+$$;
+
+REVOKE ALL ON FUNCTION pld_sesiones_para_reglas() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION pld_sesiones_para_reglas() TO plataforma_sofipo;
 
 CREATE FUNCTION pld_acta_para_descarga(p_acta uuid, p_peticion uuid)
 RETURNS TABLE (clave_blob text, nombre_archivo text, tipo_contenido text, sha256 text)
@@ -2530,6 +2579,104 @@ $$;
 
 REVOKE ALL ON FUNCTION pld_acta_para_descarga(uuid, uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION pld_acta_para_descarga(uuid, uuid) TO plataforma_sofipo;
+
+-- r2-fix-N2 (40ª y 60ª): ningún aviso abierto se queda sin quien lo analice. Lo que
+-- r2-base-N4 revisa al emitir el aviso, aquí se revisa al cambiar al personal: una
+-- suspensión, una baja o el retiro del rol de Cumplimiento que dejaría un aviso
+-- abierto sin nadie de Cumplimiento activo que pueda verlo se rechaza. Abierto: sin
+-- caso, con su caso sin dictamen o, si se reporta, sin el acuse del reporte. Si el
+-- aviso ya va en un caso, cuentan las exclusiones de todos los avisos del caso.
+CREATE FUNCTION pld_aviso_sin_analista(p_operador uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  WITH avisos AS (
+    SELECT x.aviso_id, ca.caso_id
+    FROM pld_alertas x
+    LEFT JOIN pld_caso_alertas ca ON ca.alerta_id = x.id
+    WHERE x.operator_id = p_operador AND x.aviso_id IS NOT NULL
+  ), abiertos AS (
+    SELECT a.aviso_id, a.caso_id
+    FROM avisos a
+    LEFT JOIN pld_dictamenes d ON d.caso_id = a.caso_id
+    WHERE d.id IS NULL
+       OR (d.resultado <> 'no_reportar' AND NOT EXISTS (SELECT 1 FROM pld_reportes r WHERE r.caso_id = a.caso_id))
+  )
+  SELECT EXISTS (
+    SELECT 1
+    FROM abiertos u
+    WHERE NOT EXISTS (
+      SELECT 1
+      FROM platform_staff s
+      JOIN platform_staff_roles r ON r.operator_id = s.operator_id AND r.user_id = s.user_id
+      WHERE s.operator_id = p_operador AND s.estado = 'activo' AND r.rol = 'cumplimiento'
+        AND NOT EXISTS (
+          SELECT 1
+          FROM pld_aviso_excluidos e
+          JOIN avisos b ON b.aviso_id = e.aviso_id
+          WHERE e.user_id = s.user_id AND (b.aviso_id = u.aviso_id OR b.caso_id = u.caso_id)
+        )
+    )
+  )
+$$;
+
+REVOKE ALL ON FUNCTION pld_aviso_sin_analista(uuid) FROM PUBLIC;
+
+-- Al final de la transacción: quien da de alta a otra persona de Cumplimiento y
+-- retira a la anterior en la misma transacción puede hacerlo. Con el candado del
+-- personal de Cumplimiento del operador, el mismo del aviso con exclusiones
+-- (base-N4) y de la alerta de un aviso que se suma a un caso: si corren a la vez,
+-- la segunda en confirmar ve a la primera y se rechaza.
+CREATE FUNCTION pld_personal_deja_analista()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  operador uuid;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    -- pld_caso_alertas: solo la alerta de un aviso cambia a quién excluye el caso.
+    IF NOT EXISTS (SELECT 1 FROM pld_alertas x WHERE x.id = NEW.alerta_id AND x.aviso_id IS NOT NULL) THEN
+      RETURN NULL;
+    END IF;
+    operador := NEW.operator_id;
+  ELSE
+    operador := OLD.operator_id;
+  END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('pld_analistas:' || operador::text, 0));
+  IF pld_aviso_sin_analista(operador) THEN
+    RAISE EXCEPTION 'aviso_sin_analista';
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION pld_personal_deja_analista() FROM PUBLIC;
+
+CREATE CONSTRAINT TRIGGER pld_personal_suspendido_deja_analista
+AFTER UPDATE OF estado ON platform_staff
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW WHEN (OLD.estado = 'activo' AND NEW.estado IS DISTINCT FROM 'activo')
+EXECUTE FUNCTION pld_personal_deja_analista();
+CREATE CONSTRAINT TRIGGER pld_personal_baja_deja_analista
+AFTER DELETE ON platform_staff
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW WHEN (OLD.estado = 'activo')
+EXECUTE FUNCTION pld_personal_deja_analista();
+CREATE CONSTRAINT TRIGGER pld_rol_retirado_deja_analista
+AFTER DELETE ON platform_staff_roles
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW WHEN (OLD.rol = 'cumplimiento')
+EXECUTE FUNCTION pld_personal_deja_analista();
+CREATE CONSTRAINT TRIGGER pld_serie_deja_analista
+AFTER INSERT ON pld_caso_alertas
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION pld_personal_deja_analista();
 
 -- 61ª: manifiesto de conservación por empresa y periodo. Conteos de las tablas
 -- que registran operaciones, el expediente y lo de PLD, y la huella y la ruta de
@@ -2882,7 +3029,7 @@ BEGIN
   END LOOP;
   FOREACH tabla IN ARRAY ARRAY[
     'pld_evaluaciones', 'pld_modo_dictamen', 'pld_comite_integrantes', 'pld_comite_bajas', 'pld_comite_auditores',
-    'pld_comite_comunicaciones', 'pld_sesiones', 'pld_entidad', 'pld_periodicos'
+    'pld_comite_comunicaciones', 'pld_entidad', 'pld_periodicos'
   ] LOOP
     EXECUTE format(
       'CREATE POLICY %I ON %I FOR SELECT TO plataforma_sofipo USING ('
@@ -2898,10 +3045,19 @@ BEGIN
 END;
 $$;
 
-CREATE POLICY pld_actas_lectura ON pld_actas FOR SELECT TO plataforma_sofipo
-  USING (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento', 'auditoria'])) AND NOT pld_sesion_me_excluye(sesion_id));
-CREATE POLICY pld_actas_escritura ON pld_actas FOR INSERT TO plataforma_sofipo
+-- r2-fix-N1 (60ª): la sesión que votó un caso que excluye a la persona del contexto,
+-- y su acta, no existen para ella: no las lee ni escribe en ellas.
+CREATE POLICY pld_sesiones_lectura ON pld_sesiones FOR SELECT TO plataforma_sofipo
+  USING (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento', 'auditoria']))
+    AND NOT (id = ANY ((SELECT pld_sesiones_que_me_excluyen())::uuid[])));
+CREATE POLICY pld_sesiones_escritura ON pld_sesiones FOR INSERT TO plataforma_sofipo
   WITH CHECK (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento'])));
+CREATE POLICY pld_actas_lectura ON pld_actas FOR SELECT TO plataforma_sofipo
+  USING (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento', 'auditoria']))
+    AND NOT (sesion_id = ANY ((SELECT pld_sesiones_que_me_excluyen())::uuid[])));
+CREATE POLICY pld_actas_escritura ON pld_actas FOR INSERT TO plataforma_sofipo
+  WITH CHECK (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento']))
+    AND NOT (sesion_id = ANY ((SELECT pld_sesiones_que_me_excluyen())::uuid[])));
 
 GRANT SELECT ON pld_calendarios, pld_dias_inhabiles, pld_operaciones, pld_alertas TO plataforma_sofipo;
 GRANT SELECT, INSERT ON pld_perfiles, pld_perfil_propuestas, pld_perfil_resoluciones, pld_evaluaciones, pld_parametros, pld_avisos, pld_casos, pld_caso_alertas,
@@ -2948,6 +3104,8 @@ AS $$
     UNION ALL SELECT x.id FROM pld_votos x WHERE x.caso_id IN (SELECT c.id FROM casos c)
     UNION ALL SELECT x.id FROM pld_dictamenes x WHERE x.caso_id IN (SELECT c.id FROM casos c)
     UNION ALL SELECT x.id FROM pld_reportes x WHERE x.caso_id IN (SELECT c.id FROM casos c)
+    -- r2-fix-N1: el registro de la sesión que votó el caso tampoco se le muestra.
+    UNION ALL SELECT unnest(pld_sesiones_que_me_excluyen())
     UNION ALL SELECT a.id FROM pld_actas a WHERE EXISTS (
       SELECT 1 FROM pld_votos v WHERE v.sesion_id = a.sesion_id AND v.caso_id IN (SELECT c.id FROM casos c)
     )

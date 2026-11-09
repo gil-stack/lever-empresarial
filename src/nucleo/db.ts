@@ -349,6 +349,8 @@ const CODIGOS_DE_ALTA_REGULADA = new Set([
   "activacion_sin_estructura_corporativa",
   // 0030 (Ola R2): el candado también exige el perfil transaccional declarado.
   "activacion_sin_perfil_transaccional",
+  // 0030 (r2-fix-N2): el cambio de personal dejaría un aviso de PLD sin quien lo analice.
+  "aviso_sin_analista",
   "empresa_suspendida",
   "pago_bloqueado_lpb",
   "nomina_bloqueada_lpb",

@@ -12,7 +12,7 @@
 // (tests/pld/reloj-preload.mjs) solo cambia el «hoy» con que se leen los plazos. Solo corre contra un
 // Postgres local.
 import { execFileSync } from "node:child_process";
-import { createHash, createHmac } from "node:crypto";
+import { createHash, createHmac, randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 
@@ -36,7 +36,7 @@ const ANCHOS = [1440, 390];
 const TALLER = E.EMPRESA_TALLER;
 const NOGAL = E.EMPRESA_NOGAL;
 const COBRE = E.EMPRESA_COBRE;
-const NOMBRES = { ofelia: "Ofelia Plataforma", omar: "Omar Originación", ana: "Ana Aprobación", celia: "Celia Cumplimiento", aurelio: "Aurelio Auditoría" };
+const NOMBRES = { ofelia: "Ofelia Plataforma", omar: "Omar Originación", ana: "Ana Aprobación", celia: "Celia Cumplimiento", aurelio: "Aurelio Auditoría", ciro: "Ciro Cumplimiento" };
 const PERSONAL = ["ofelia", "omar", "ana", "celia", "aurelio"];
 const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 if (hoy() < "2026-11-06" || hoy() > "2026-12-31") throw new Error("Las fechas del flujo 8 (sesión del 30-oct, 2-nov inhábil) suponen que hoy es entre el 6-nov y el 31-dic de 2026.");
@@ -1313,8 +1313,104 @@ async function contraste() {
   writeFileSync(`${DIR}/datos/contraste.json`, JSON.stringify(informe, null, 2));
 }
 
+async function flujo15() {
+  console.log("\n— Flujo 15: la persona excluida no ve ni escribe la sesión que votó su caso (r2-fix-N1); nadie deja un aviso sin analista (r2-fix-N2)");
+  reloj(null);
+  renovarSesiones();
+  // Omar avisa sobre Ciro, la otra persona de Cumplimiento. Celia analiza y el Comité vota sin que Ciro lo vea (60ª).
+  await cerrar(await emitirAviso("omar", {
+    tipo: "posible_interna_preocupante", empresa: "Cobre Antiguo", descripcion: "El analista pidió cerrar una alerta de Cobre sin revisarla.", mencionada: NOMBRES.ciro,
+  }), "Omar");
+  const celia = await abrir("celia");
+  const { p } = celia;
+  // El flujo 9 dejó dictaminando al Oficial: Celia regresa al Comité para registrar sesiones.
+  factor(E.IDS.celia, 0);
+  await ir(p, "/operacion/comite#modo-titulo");
+  await p.getByRole("radio", { name: "El Comité" }).check();
+  await p.locator("#modo-motivo").fill("Regresa el Comité para dictaminar el aviso sobre Ciro.");
+  await enviar(p, p.getByRole("button", { name: "Guardar quién dictamina" }), "pld_modo_cambiado");
+  ids.casoCiro = await abrirCaso(p, "Aviso del personal · Cobre Antiguo");
+  await proponer(p, "reportar_interna", "El analista pidió cerrar una alerta sin revisarla: se reporta como interna preocupante.");
+  const oculta = await registrarSesion(p, hoy(), [SIT.presidente, SIT.secretario, SIT.oficial, SIT.vocal]);
+  ids.sesionOculta = oculta.id;
+  await votar(p, "Cobre Antiguo", [[SIT.presidente, "a_favor"], [SIT.secretario, "a_favor"], [SIT.oficial, "a_favor"], [SIT.vocal, "a_favor"]]);
+  exigir(cuenta(`pld_votos where sesion_id = '${oculta.id}'`) === 4, "15. el Comité votó el caso del aviso sobre Ciro (4 votos)");
+  // Otra sesión de hoy, sin ese caso: Ciro sí la ve, con su formulario del acta.
+  const visible = await registrarSesion(p, hoy(), [SIT.presidente, SIT.secretario, SIT.oficial]);
+  exigir(visible.aviso === "pld_sesion_registrada", "15. Celia registra otra sesión de hoy, sin el caso", visible.aviso);
+
+  const ciro = await abrir("ciro");
+  const c = ciro.p;
+  await ir(c, "/operacion/comite#sesiones-titulo");
+  const enlace = (id) => hoja(c, "sesiones-titulo").locator(`a[href="/operacion/comite/sesiones/${id}"]`);
+  exigir((await enlace(oculta.id).count()) === 0 && (await enlace(visible.id).count()) === 1, "15. Ciro ve la sesión sin su caso y no la que lo votó");
+  await foto(c, "f15-ciro-no-ve-la-sesion-de-su-caso");
+  // Lo mismo que con una sesión que no existe: la página y el acta en PDF.
+  const inexistente = randomUUID();
+  const estado = async (ruta) => (await c.goto(`${BASE}${ruta}`, { waitUntil: "load" }))?.status();
+  exigir((await estado(`/operacion/comite/sesiones/${oculta.id}`)) === 404 && (await estado(`/operacion/comite/sesiones/${inexistente}`)) === 404,
+    "15. la página de la sesión oculta le responde 404, como una inexistente");
+  await foto(c, "f15-ciro-sesion-oculta-404");
+  const pdfOculto = await c.goto(`${BASE}/operacion/comite/sesiones/${oculta.id}/acta`);
+  const pdfOcultoTexto = await pdfOculto.text();
+  const pdfInexistente = await c.goto(`${BASE}/operacion/comite/sesiones/${inexistente}/acta`);
+  exigir(pdfOculto.status() === 404 && pdfOcultoTexto === "Acta no disponible" && pdfInexistente.status() === 404 && (await pdfInexistente.text()) === pdfOcultoTexto,
+    "15. ni genera su acta: «Acta no disponible», igual que con una sesión inexistente", `${pdfOculto.status()} ${pdfOcultoTexto}`);
+  // Ni la sube: el formulario de la sesión que sí ve, apuntado a la oculta, da lo mismo que apuntado a una inexistente.
+  const subirA = async (sesionId) => {
+    await ir(c, `/operacion/comite/sesiones/${visible.id}#acta-titulo`);
+    await hoja(c, "acta-titulo").locator('input[name="sesionId"]').evaluate((nodo, id) => { nodo.value = id; }, sesionId);
+    await c.locator("#acta-archivo").setInputFiles({ name: "acta-sin-el-caso.pdf", mimeType: "application/pdf", buffer: PDF("Acta sin el caso") });
+    return enviar(c, c.getByRole("button", { name: "Subir acta firmada" }), null);
+  };
+  const subirOculta = await subirA(oculta.id);
+  const estadoOculta = await c.evaluate(() => document.title);
+  const subirInexistente = await subirA(inexistente);
+  exigir(subirOculta === "sesion_no_existe" && subirInexistente === "sesion_no_existe" && estadoOculta === (await c.evaluate(() => document.title)),
+    "15. subir un acta a la sesión oculta: sesion_no_existe y la misma página que con una inexistente", `${subirOculta} / ${subirInexistente}`);
+  exigir(cuenta(`pld_actas where sesion_id = '${oculta.id}'`) === 0, "15. y no quedó ninguna acta en la sesión oculta");
+  await foto(c, "f15-ciro-no-sube-el-acta");
+
+  // Celia sí: el acta que genera nombra el caso y la sube completa.
+  await ir(p, `/operacion/comite/sesiones/${oculta.id}#acta-titulo`);
+  const completa = await descargar(p, () => p.getByRole("link", { name: "Descargar el acta en PDF para firmar" }).click());
+  exigir(completa.bytes.toString("latin1").includes("interna preocupante"), "15. el acta que genera Celia nombra el caso votado");
+  await p.locator("#acta-archivo").setInputFiles({ name: "acta-completa.pdf", mimeType: "application/pdf", buffer: completa.bytes });
+  await enviar(p, p.getByRole("button", { name: "Subir acta firmada" }), "pld_acta_cargada", { doble: true });
+  exigir(sql(`select count(*) || ' ' || min(registrado_por::text) from pld_actas where sesion_id = '${oculta.id}'`) === `1 ${E.IDS.celia}`, "15. Celia sube el acta completa (doble clic = 1 acta)");
+  exigir(await p.getByText("El acta firmada cerró la sesión").isVisible() && (await p.getByRole("button", { name: /vota a favor/ }).count()) === 0,
+    "15. con el acta, la sesión ya no ofrece votar (48ª)");
+  await foto(p, "f15-celia-sube-el-acta-completa");
+  // Con el acta ya cargada, Ciro sigue sin saberlo: sesion_no_existe, no «ya tiene acta».
+  exigir((await subirA(oculta.id)) === "sesion_no_existe", "15. con el acta ya cargada, Ciro sigue recibiendo sesion_no_existe");
+  // Los 404 de la consola de Ciro son las visitas de arriba a la sesión oculta y a la inexistente; nada más.
+  const de404 = ciro.errores.filter((e) => /status of 404 \(Not Found\)/.test(e));
+  ciro.errores.splice(0, ciro.errores.length, ...ciro.errores.filter((e) => !de404.includes(e)));
+  anotar(`15. la consola de Ciro solo trae los ${de404.length} avisos de 404 de esas visitas`);
+  await cerrar(ciro, "Ciro");
+  await cerrar(celia, "Celia");
+
+  // r2-fix-N2: el aviso sobre Ciro sigue abierto (su caso no tiene dictamen) y solo Celia puede analizarlo.
+  factor(E.IDS.ofelia, 0);
+  const ofelia = await abrir("ofelia");
+  const o = ofelia.p;
+  await ir(o, "/operacion/personal");
+  await enviar(o, o.getByRole("group", { name: `Roles de ${NOMBRES.celia}` }).getByRole("button", { name: "Quitar Cumplimiento", exact: true }), "aviso_sin_analista", { doble: true });
+  exigir((await aviso(o)).includes("Antes da de alta a otra persona de Cumplimiento: un aviso del personal quedaría sin quien lo analice."),
+    "15. Personal lo explica: «Antes da de alta a otra persona de Cumplimiento…»", await aviso(o));
+  exigir(cuenta(`platform_staff_roles where user_id = '${E.IDS.celia}' and rol = 'cumplimiento'`) === 1
+    && cuenta(`audit_log where accion = 'rol_personal_retirado' and identificador = '${E.IDS.celia}'`) === 0, "15. Celia conserva Cumplimiento y no queda evento");
+  await foto(o, "f15-personal-no-deja-el-aviso-sin-analista");
+  // A Ciro sí se le puede quitar: Celia sigue para todo lo abierto. Y se le devuelve.
+  await enviar(o, o.getByRole("group", { name: `Roles de ${NOMBRES.ciro}` }).getByRole("button", { name: "Quitar Cumplimiento", exact: true }), "rol_retirado", { doble: true });
+  exigir(cuenta(`platform_staff_roles where user_id = '${E.IDS.ciro}' and rol = 'cumplimiento'`) === 0, "15. a Ciro sí se le quita Cumplimiento: Celia analiza lo abierto");
+  await enviar(o, o.getByRole("group", { name: `Roles de ${NOMBRES.ciro}` }).getByRole("button", { name: "Dar Cumplimiento", exact: true }), "rol_asignado", { doble: true });
+  exigir(cuenta(`platform_staff_roles where user_id = '${E.IDS.ciro}' and rol = 'cumplimiento'`) === 1, "15. y se le devuelve");
+  await cerrar(ofelia, "Ofelia");
+}
+
 // ---------- Corrida ----------
-const FLUJOS = { f1: flujo1, f2: flujo2, f3: flujo3, f4: flujo4, f5: flujo5, f6: flujo6, f7: flujo7, f8: flujo8, f9: flujo9, f10: flujo10, f11: flujo11, f12: flujo12, f13: flujo13, f14: flujo14 };
+const FLUJOS = { f1: flujo1, f2: flujo2, f3: flujo3, f4: flujo4, f5: flujo5, f6: flujo6, f7: flujo7, f8: flujo8, f9: flujo9, f10: flujo10, f11: flujo11, f12: flujo12, f13: flujo13, f14: flujo14, f15: flujo15 };
 const IDS_GUARDADOS = `${RUTA_ESTADO}.ids.json`;
 let fallo = null;
 const inicio = Date.now();

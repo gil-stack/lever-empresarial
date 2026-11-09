@@ -54,6 +54,7 @@ export const CODIGOS_PLD = new Set([
   "sesion_auditor_invalido",
   "sesion_no_existe",
   "sesion_sin_quorum",
+  "sesion_con_acta",
   "propuesta_no_vigente",
   "propuesta_posterior_a_la_sesion",
   "acuse_antes_del_dictamen",

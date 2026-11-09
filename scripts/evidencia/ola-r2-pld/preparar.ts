@@ -66,6 +66,8 @@ const PERSONAL = [
   { clave: "ana", nombre: "Ana Aprobación", correo: "ana@lever.test", roles: ["aprobacion"] },
   { clave: "celia", nombre: "Celia Cumplimiento", correo: "celia@lever.test", roles: ["cumplimiento"] },
   { clave: "aurelio", nombre: "Aurelio Auditoría", correo: "aurelio@lever.test", roles: ["auditoria"] },
+  // r2-fix-N1/N2 (flujo 15): la otra persona de Cumplimiento, a la que menciona un aviso.
+  { clave: "ciro", nombre: "Ciro Cumplimiento", correo: "ciro@lever.test", roles: ["cumplimiento"] },
 ] as const;
 
 function base32(bytes: Uint8Array): string {

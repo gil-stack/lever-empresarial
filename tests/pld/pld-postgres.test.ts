@@ -17,6 +17,7 @@ import { cerrarConexion } from "../../src/nucleo/db.ts";
 import { decidirActivacion, solicitarActivacion } from "../../src/server/operacion/activaciones.ts";
 import { leerCliente, registrarProspecto } from "../../src/server/operacion/clientes.ts";
 import { calificarRiesgoEmpresa, dictaminarVersion, enviarVersion } from "../../src/server/operacion/expediente.ts";
+import { cambiarRolPersonal } from "../../src/server/operacion/personal.ts";
 import { decidirCambioDeSuspension, solicitarCambioDeSuspension } from "../../src/server/operacion/suspensiones.ts";
 import { cancelarPagoProveedor, crearPagoProveedor, editarYReenviarPago, resolverPagoProveedor } from "../../src/server/pagos-proveedores/servicio.ts";
 import { cambiarClabeProveedor } from "../../src/server/proveedores/servicio-clabes.ts";
@@ -80,6 +81,8 @@ const APR = "e0000000-0000-4000-8000-000000000003";
 const CUM = "e0000000-0000-4000-8000-000000000004";
 const CUM2 = "e0000000-0000-4000-8000-000000000005";
 const AUD = "e0000000-0000-4000-8000-000000000006";
+// Tercera persona de Cumplimiento: llega en las pruebas de r2-fix-N2.
+const CUM3 = "e0000000-0000-4000-8000-000000000007";
 // Cumplimiento de otro operador: no ve nada del primero.
 const AJENA = "e0000000-0000-4000-8000-000000000009";
 // Personas del portal de Beta.
@@ -778,8 +781,28 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await registrarPropuesta(cum, { casoId: casoConfidencial, formId: randomUUID(), propuesta: "reportar_interna", justificacion: "Instrucción de borrar un expediente" });
           const propuestaConfidencial = String((await uno("select id from pld_propuestas where caso_id = $1", [casoConfidencial])).id);
           for (const quien of [PS, S, I1]) await votar(quien, "a_favor", S3, propuestaConfidencial);
+          // r2-fix-N1 (60ª): para CUM2 la sesión que votó el caso oculto no existe. No genera su acta (saldría «No se
+          // votaron casos») ni la sube como firmada antes que Cumplimiento: recibe lo mismo que con una sesión inexistente.
+          const actaDeCum2 = (sesionId: string) =>
+            cargarActaFirmada(cum2, { formId: randomUUID(), sesionId, archivo: { nombre: "acta-sin-el-caso.pdf", bytes: PDF } }, { almacen });
+          for (const sesion of [S3, randomUUID()]) {
+            await assert.rejects(actaEnPdf(cum2, sesion), /sesion_no_existe/);
+            await assert.rejects(actaDeCum2(sesion), /sesion_no_existe/);
+          }
+          await assert.rejects(sofipo(CUM2, (c) => c.query(
+            "insert into pld_actas (id, sesion_id, operator_id, nombre_archivo, tipo_contenido, tamano_bytes, sha256, clave_blob, registrado_por) values ($1, $2, $3, 'a.pdf', 'application/pdf', 1, $4, 'x', $5)",
+            [randomUUID(), S3, operador, "0".repeat(64), CUM2],
+          )), /sesion_no_existe/);
+          assert.equal(await contar("select count(*)::int as n from pld_actas where sesion_id = $1", [S3]), 0);
+          // Cumplimiento sí la ve: el acta que genera menciona el caso y la sube completa.
+          assert.match(Buffer.from((await actaEnPdf(cum, S3)).bytes).toString("latin1"), /interna preocupante/);
           const actaConfidencial = randomUUID();
           await cargarActaFirmada(cum, { formId: actaConfidencial, sesionId: S3, archivo: { nombre: "acta-firmada.pdf", bytes: PDF } }, { almacen });
+          // Con el acta ya cargada, CUM2 tampoco lo sabe: sesion_no_existe, no acta_ya_cargada.
+          await assert.rejects(actaDeCum2(S3), /sesion_no_existe/);
+          // No vota en ella; y el acta firmada cierra la sesión (48ª): lo que falte va en una sesión nueva.
+          await assert.rejects(registrarVoto(cum2, { formId: randomUUID(), sesionId: S3, propuestaId: propuestaX, integranteId: S, voto: "a_favor" }), /sesion_no_existe/);
+          await assert.rejects(votar(PS, "en_contra", S3), /sesion_con_acta/);
           await assert.rejects(descargarActa(cum2, actaConfidencial, { leer: leerDelAlmacen }), /documento_no_existe/);
           await descargarActa(cum, actaConfidencial, { leer: leerDelAlmacen });
           await descargarActa(cum2, acta, { leer: leerDelAlmacen });
@@ -789,7 +812,13 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           }));
           assert.deepEqual(await verActa(CUM2), { acta: 0, eventos: 0 });
           assert.deepEqual(await verActa(CUM), { acta: 1, eventos: 2 });
-          assert.equal((await leerComite(cum2)).sesiones.find((s) => s.id === S3)?.acta, null);
+          // r2-fix-N1: ni la sesión ni su evento.
+          assert.equal((await leerComite(cum2)).sesiones.find((s) => s.id === S3), undefined);
+          assert.ok((await leerComite(cum)).sesiones.find((s) => s.id === S3));
+          const eventosDeLaSesion = (userId: string) => sofipo(userId, async (c) =>
+            Number((await c.query("select count(*)::int as n from audit_log where identificador = $1", [S3])).rows[0].n));
+          assert.equal(await eventosDeLaSesion(CUM2), 0);
+          assert.ok((await eventosDeLaSesion(CUM)) >= 1);
           assert.equal((await leerComite(cum)).sesiones.find((s) => s.id === S3)?.acta?.id, actaConfidencial);
           // Tampoco por la función del plazo: ni la persona excluida ni otro operador lo obtienen con el id.
           const plazo = (userId: string, op = operador) => sofipo(userId, async (c) => (await c.query("select pld_caso_vence($1)::text as d", [casoConfidencial])).rows[0].d as string | null, op);
@@ -813,7 +842,7 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
             { resultado: "reportar_inusual", el: hoy, reporte: esperado, fuera_de_plazo: false });
           // Dictaminado, el caso ya no cambia.
           await assert.rejects(registrarPropuesta(cum, { casoId: casoX, formId: randomUUID(), propuesta: "no_reportar", justificacion: "Cambio tardío de opinión" }), /caso_ya_dictaminado/);
-          await assert.rejects(votar(I1, "a_favor", S3), /caso_ya_dictaminado/);
+          await assert.rejects(votar(I1, "a_favor", ayerSesion), /caso_ya_dictaminado/);
 
           // Reporte: el acuse del SITI, inmutable y uno por caso; tipo 2 = Inusual.
           const recibido = haceMinutos(5);
@@ -1210,6 +1239,161 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await assert.rejects(async () => {
             for await (const _ of manifiestoDeConservacion(ajena, { companyId: beta, desde, hasta: hoy, pagina: 1, cursor: null })) void _;
           }, /cliente_ausente/);
+        });
+
+        await t.test("sesión oculta (r2-fix-N1): la regla mensual (47ª) la cuenta aunque la persona excluida no la vea", async () => {
+          const acuse = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_interna_preocupante", companyId: beta, mencionada: CUM2, superior: "", descripcion: "La analista pidió adelantar una sesión sin motivo." });
+          const casoOculto = await abrirCaso(cum, { formId: randomUUID(), alertaId: String((await uno("select id from pld_alertas where aviso_id = $1", [acuse.id])).id) });
+          await registrarPropuesta(cum, { casoId: casoOculto, formId: randomUUID(), propuesta: "no_reportar", justificacion: "Sin elementos para reportar" });
+          const propuesta = String((await uno("select id from pld_propuestas where caso_id = $1", [casoOculto])).id);
+          // La única sesión del mes siguiente vota el caso oculto. La registra la dueña: la aplicación no acepta fechas futuras.
+          const [anio, mes] = hoy.split("-").map(Number) as [number, number];
+          const mesMas = (k: number) => new Date(Date.UTC(anio, mes - 1 + k, 15, 18)).toISOString().slice(0, 7);
+          const oculta = randomUUID();
+          await dueno.query("insert into pld_sesiones (id, operator_id, celebrada_el, presentes, registrado_por) values ($1, $2, $3, $4::uuid[], $5)", [
+            oculta, operador, `${mesMas(1)}-15`, [P, S, I1], CUM,
+          ]);
+          for (const quien of [P, S, I1]) {
+            await dueno.query(
+              "insert into pld_votos (id, operator_id, sesion_id, caso_id, propuesta_id, integrante_id, voto, registrado_por) values ($1, $2, $3, $4, $5, $6, 'a_favor', $7)",
+              [randomUUID(), operador, oculta, casoOculto, propuesta, quien, CUM],
+            );
+          }
+          assert.equal((await uno<{ q: boolean }>("select quorum as q from pld_sesiones where id = $1", [oculta])).q, true);
+          assert.equal((await leerComite(cum2)).sesiones.some((s) => s.id === oculta), false);
+          assert.equal((await leerComite(cum)).sesiones.some((s) => s.id === oculta), true);
+          const enElMes = { ahora: new Date(`${mesMas(1)}-20T18:00:00Z`) };
+          const enDosMeses = { ahora: new Date(`${mesMas(2)}-15T18:00:00Z`) };
+          for (const [quien, ctx] of [["CUM", cum], ["CUM2", cum2]] as const) {
+            assert.equal((await leerComite(ctx, enElMes)).sesionDelMes, true, quien);
+            assert.equal((await leerBandejaPld(ctx, enElMes)).sesionDelMesPendiente, false, quien);
+            assert.deepEqual((await leerComite(ctx, enDosMeses)).mesesSinSesion, [], quien);
+            assert.deepEqual((await leerBandejaPld(ctx, enDosMeses)).mesesSinSesion, [], quien);
+          }
+        });
+
+        await t.test("personal (r2-fix-N2): ningún cambio deja un aviso abierto sin quien lo analice; con candado común contra el aviso", async () => {
+          const sinAnalista = /aviso_sin_analista/;
+          const tieneRol = async (userId: string) =>
+            contar("select count(*)::int as n from platform_staff_roles where operator_id = $1 and user_id = $2 and rol = 'cumplimiento'", [operador, userId]);
+          const estado = async (userId: string) =>
+            (await uno<{ e: string }>("select estado as e from platform_staff where operator_id = $1 and user_id = $2", [operador, userId])).e;
+          const quitarRol = (userId: string) => cambiarRolPersonal(adm, SESION_SOFIPO, { userId, rol: "cumplimiento", quitar: true });
+          const darRol = (userId: string) => cambiarRolPersonal(adm, SESION_SOFIPO, { userId, rol: "cumplimiento", quitar: false });
+          const alertaDe = async (avisoId: string) => String((await uno("select id from pld_alertas where aviso_id = $1", [avisoId])).id);
+          const enTransaccion = async (sentencias: Array<[string, unknown[]]>) => {
+            const c = new pg.Client({ connectionString: urlDuena });
+            await c.connect();
+            try {
+              await c.query("begin");
+              for (const [sql, params] of sentencias) await c.query(sql, params);
+              await c.query("commit");
+            } catch (error) {
+              await c.query("rollback").catch(() => undefined);
+              throw error;
+            } finally {
+              await c.end();
+            }
+          };
+
+          // Los avisos que excluyen a CUM2 siguen abiertos (sin dictamen): solo CUM los analiza. Ni Administración desde
+          // la pantalla de Personal ni la dueña le quitan el rol, la suspenden o la dan de baja; nada cambia.
+          await assert.rejects(quitarRol(CUM), sinAnalista);
+          await assert.rejects(dueno.query("update platform_staff set estado = 'suspendido' where operator_id = $1 and user_id = $2", [operador, CUM]), sinAnalista);
+          await assert.rejects(enTransaccion([
+            ["delete from platform_staff_roles where operator_id = $1 and user_id = $2", [operador, CUM]],
+            ["delete from platform_staff where operator_id = $1 and user_id = $2", [operador, CUM]],
+          ]), sinAnalista);
+          assert.equal(await tieneRol(CUM), 1);
+          assert.equal(await estado(CUM), "activo");
+          assert.equal(await contar("select count(*)::int as n from audit_log where accion = 'rol_personal_retirado' and identificador = $1", [CUM]), 0);
+
+          // Abierto hasta el acuse: un aviso que excluye a CUM depende de CUM2 mientras su caso no tiene dictamen y
+          // mientras el dictamen «reportar» no tiene acuse del SITI.
+          const contraCum = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_interna_preocupante", companyId: beta, mencionada: CUM, superior: "", descripcion: "La oficial pidió no reportar a un cliente." });
+          await assert.rejects(quitarRol(CUM2), sinAnalista);
+          const casoContraCum = await abrirCaso(cum2, { formId: randomUUID(), alertaId: await alertaDe(contraCum.id) });
+          await registrarPropuesta(cum2, { casoId: casoContraCum, formId: randomUUID(), propuesta: "reportar_inusual", justificacion: "Instrucción de no reportar sin motivo" });
+          const propuesta = String((await uno("select id from pld_propuestas where caso_id = $1", [casoContraCum])).id);
+          const sesion = randomUUID();
+          await registrarSesion(cum2, { formId: sesion, celebradaEl: hoy, presentes: [P, S, I1], auditorPresente: false });
+          for (const quien of [P, S, I1]) await registrarVoto(cum2, { formId: randomUUID(), sesionId: sesion, propuestaId: propuesta, integranteId: quien, voto: "a_favor" });
+          await dictaminarCaso(cum2, SESION_SOFIPO, { formId: randomUUID(), casoId: casoContraCum, via: "comite", sesionId: sesion, propuestaId: propuesta, resultado: "", justificacion: "Votación del Comité" });
+          await assert.rejects(quitarRol(CUM2), sinAnalista);
+          await registrarReportePld(cum2, { formId: randomUUID(), casoId: casoContraCum, folio: "UIF-2026-0101", periodo: hoy.replaceAll("-", ""), recibidoEn: haceMinutos(2), registros: "1" });
+          await quitarRol(CUM2);
+          assert.equal(await tieneRol(CUM2), 0);
+          await darRol(CUM2);
+
+          // Carrera 1: la suspensión de CUM2 sin confirmar y un aviso que excluye a CUM. El aviso confirma primero (CUM2
+          // seguía activa); al confirmar, la suspensión toma el candado, ve el aviso y se rechaza.
+          const a = new pg.Client({ connectionString: urlDuena });
+          await a.connect();
+          try {
+            await a.query("begin");
+            await a.query("update platform_staff set estado = 'suspendido' where operator_id = $1 and user_id = $2", [operador, CUM2]);
+            await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_interna_preocupante", companyId: beta, mencionada: CUM, superior: "", descripcion: "La oficial pidió borrar una alerta." });
+            await assert.rejects(a.query("commit"), sinAnalista);
+          } finally {
+            await a.end();
+          }
+          assert.equal(await estado(CUM2), "activo");
+
+          // Quien da de alta a otra persona de Cumplimiento y le quita el rol a la anterior en la misma transacción, sí.
+          await enTransaccion([
+            ["insert into users (id, nombre, correo) values ($1, 'Celia Cumplimiento', $2)", [CUM3, `${CUM3}@ejemplo.mx`]],
+            ["insert into platform_staff (operator_id, user_id, estado) values ($1, $2, 'activo')", [operador, CUM3]],
+            ["insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'cumplimiento')", [operador, CUM3]],
+            ["delete from platform_staff_roles where operator_id = $1 and user_id = $2 and rol = 'cumplimiento'", [operador, CUM]],
+          ]);
+          assert.equal(await tieneRol(CUM), 0);
+          await darRol(CUM);
+          const cum3 = personal(operador, CUM3, ["cumplimiento"]);
+
+          // Las otras dos carreras: la suspensión ya revisó y tiene el candado (SET CONSTRAINTS … IMMEDIATE); lo que
+          // llega después espera, ve la suspensión al confirmarse y se rechaza.
+          const esperaElCandado = async (pendiente: Promise<unknown>) => {
+            let termino = false;
+            pendiente.then(() => (termino = true), () => (termino = true));
+            for (let i = 0; i < 100 && !termino; i++) {
+              if ((await contar("select count(*)::int as n from pg_locks where locktype = 'advisory' and not granted")) > 0) return true;
+              await new Promise((listo) => setTimeout(listo, 50));
+            }
+            return false;
+          };
+          const suspendidaConCandado = async (userId: string, despues: () => Promise<unknown>, rechazo: RegExp) => {
+            const b = new pg.Client({ connectionString: urlDuena });
+            await b.connect();
+            try {
+              await b.query("begin");
+              await b.query("update platform_staff set estado = 'suspendido' where operator_id = $1 and user_id = $2", [operador, userId]);
+              await b.query("set constraints pld_personal_suspendido_deja_analista immediate");
+              const pendiente = despues();
+              const espero = await esperaElCandado(pendiente);
+              await b.query("commit");
+              await assert.rejects(pendiente, rechazo);
+              assert.equal(espero, true, "lo que llega después espera el candado");
+            } finally {
+              await b.end();
+            }
+          };
+          // Carrera 2: CUM2 suspendida contra un aviso que excluye a CUM y a CUM3.
+          const avisoTarde = randomUUID();
+          await suspendidaConCandado(CUM2, () => emitirAviso(apr, {
+            formId: avisoTarde, tipo: "posible_interna_preocupante", companyId: beta, mencionada: CUM, superior: CUM3, descripcion: "La oficial y su jefa pidieron borrar una alerta.",
+          }), /aviso_sin_cumplimiento/);
+          assert.equal(await contar("select count(*)::int as n from pld_avisos where id = $1", [avisoTarde]), 0);
+          await dueno.query("update platform_staff set estado = 'activo' where operator_id = $1 and user_id = $2", [operador, CUM2]);
+
+          // Carrera 3: sumar a un caso la alerta de otro aviso junta sus exclusiones. El caso de un aviso que excluye a
+          // CUM2 más la alerta de uno que excluye a CUM solo lo analiza CUM3; si la suspenden mientras suma, no se suma.
+          const contraCum2 = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_interna_preocupante", companyId: beta, mencionada: CUM2, superior: "", descripcion: "La analista pidió cerrar un caso sin revisar." });
+          const casoDeCum3 = await abrirCaso(cum3, { formId: randomUUID(), alertaId: await alertaDe(contraCum2.id) });
+          const otroContraCum = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_interna_preocupante", companyId: beta, mencionada: CUM, superior: "", descripcion: "La oficial pidió cambiar un dictamen." });
+          const alertaContraCum = await alertaDe(otroContraCum.id);
+          await suspendidaConCandado(CUM3, () => sumarAlertaAlCaso(cum3, { casoId: casoDeCum3, alertaId: alertaContraCum }), sinAnalista);
+          assert.equal(await contar("select count(*)::int as n from pld_caso_alertas where alerta_id = $1", [alertaContraCum]), 0);
+          assert.equal(await estado(CUM3), "suspendido");
         });
       } finally {
         await cerrarConexion();

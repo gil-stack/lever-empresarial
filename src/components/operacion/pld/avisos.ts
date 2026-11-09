@@ -65,6 +65,8 @@ export const MENSAJES_PLD: Record<string, string> = {
   exclusion_propia: "No puedes excluirte a ti misma o a ti mismo del aviso.",
   exclusion_fuera_del_personal: "Solo se puede excluir a personas del personal de la SOFIPO.",
   exclusion_fuera_del_aviso: "Las exclusiones se marcan al enviar el aviso, no después.",
+  // r2-fix-N2: en la pantalla de Personal. No nombra el aviso: Administración no ve PLD (55ª).
+  aviso_sin_analista: "Antes da de alta a otra persona de Cumplimiento: un aviso del personal quedaría sin quien lo analice.",
   aviso_sin_cumplimiento:
     "Con estas exclusiones nadie de Cumplimiento podría analizar el aviso. Revisa a quién excluyes; si las dos personas deben quedar fuera, avísalo como indique el Manual de Cumplimiento.",
   exclusion_repetida: "Esa persona ya estaba excluida del aviso.",
@@ -130,6 +132,8 @@ export const MENSAJES_PLD: Record<string, string> = {
   acuse_antes_del_cierre: "El acuse es anterior al cierre del periodo: revisa la fecha y hora de recepción.",
   propuesta_posterior_a_la_sesion: "La propuesta se registró después del día de esta sesión: se vota en una sesión de ese día o posterior.",
   acta_ya_cargada: "La sesión ya tiene su acta firmada.",
+  // r2-fix-N1 (48ª): el acta firmada cierra la sesión.
+  sesion_con_acta: "Esta sesión ya tiene su acta firmada: lo que falte por votar va en una sesión nueva.",
   dato_invalido_modo: "Elige quién dictamina.",
   dato_invalido_oficialId: "Elige al Oficial de Cumplimiento.",
   dato_invalido_integrantes: "Captura al menos un integrante o elige a quién se sustituye.",
