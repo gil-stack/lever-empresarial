@@ -21,15 +21,26 @@ export const NOMBRE_COLUMNA: Readonly<Record<number, string>> = {
 export const LEYENDA_24_HORAS = "REPORTE DE 24 HORAS";
 
 /**
+ * r2-base-N16: un texto que empieza con «=», «+», «-», «@», tabulador o retorno de carro se vuelve fórmula al
+ * abrir el archivo en una hoja de cálculo. Al exportar se le antepone un espacio; lo capturado no cambia y al
+ * capturar no se rechaza nada. Vale para cada campo de los archivos que se descargan (41 columnas y manifiesto).
+ */
+export function sinInicioDeFormula(valor: string): string {
+  return /^[=+\-@\t\r]/.test(valor) ? ` ${valor}` : valor;
+}
+
+/**
  * Un campo del layout: sin «;» (es el separador), sin saltos de línea y en
  * mayúsculas. El Anexo pide evitar el separador dentro de los textos.
  */
 export function campo41(valor: string): string {
-  return valor
-    .replace(/[;\r\n\t]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLocaleUpperCase("es-MX");
+  return sinInicioDeFormula(
+    valor
+      .replace(/[;\r\n\t]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLocaleUpperCase("es-MX"),
+  );
 }
 
 /** Un renglón: 41 campos, cada uno terminado con «;». Un campo vacío deja los «;» seguidos. */

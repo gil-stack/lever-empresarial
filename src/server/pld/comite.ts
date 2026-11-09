@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 
 import { fechaDeCalendario, hoyEnMexico, textoOperativo, uuidValido } from "../../dominio/operacion";
-import { CARGOS_COMITE, nombreParaSiti, type CargoComite, PROPUESTA, type Propuesta } from "../../dominio/pld/etiquetas";
+import { CARGOS_COMITE, nombreParaSiti, textoParaSiti, type CargoComite, PROPUESTA, type Propuesta } from "../../dominio/pld/etiquetas";
 import { pdfDeTexto, type RenglonPdf } from "../../dominio/pld/pdf";
 import { semestreDe } from "../../dominio/pld/plazos";
 import type { ContextoDePersonal } from "../../nucleo/contexto";
@@ -715,7 +715,7 @@ export function contenidoParaSiti(integrantes: readonly Integrante[]): string {
   ].join("|");
   const renglones = integrantes.map((i) =>
     [
-      i.area, i.cargo, i.titularidad, i.nombres, i.primerApellido, i.segundoApellido, i.rfc, i.curp, i.cargoEntidad,
+      textoParaSiti(i.area), i.cargo, i.titularidad, i.nombres, i.primerApellido, i.segundoApellido, i.rfc, i.curp, textoParaSiti(i.cargoEntidad),
       i.esOficial ? "SI" : "NO", fechaSiti(i.designadoEl), i.vigente ? "SI" : "NO", i.sustituidoEl ? fechaSiti(i.sustituidoEl) : "",
       i.certificado ?? "",
     ].join("|"),

@@ -1,4 +1,5 @@
 import { fechaDeCalendario, uuidValido } from "../../dominio/operacion";
+import { sinInicioDeFormula } from "../../dominio/pld/layout41";
 import type { ContextoDePersonal } from "../../nucleo/contexto";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { exigirEnOperacion } from "../operacion/permisos";
@@ -56,7 +57,8 @@ export async function* manifiestoDeConservacion(
       documento: String(documento.id),
       origen: String(documento.origen),
       cargado_en: fecha(documento.cargado_en).toISOString(),
-      nombre: String(documento.nombre_archivo),
+      // r2-base-N16: el nombre del archivo es texto libre; no abre como fórmula.
+      nombre: sinInicioDeFormula(String(documento.nombre_archivo)),
       sha256: String(documento.sha256),
       ruta: String(documento.clave_blob),
       bytes: Number(documento.tamano_bytes),

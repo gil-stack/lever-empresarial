@@ -59,6 +59,15 @@ export const CARGO_COMITE: Record<CargoComite, string> = {
   INTEGRANTE: "Integrante",
 };
 
+/**
+ * Área y cargo en la entidad para el SITI (instructivo de la CNBV, Apéndice A: «letras mayúsculas, sin acentos y
+ * sin abreviaturas»). Solo en la salida para el SITI; en pantalla se ven como se capturaron (r2-base-N15). Como en
+ * los nombres, la Ñ se conserva: es letra, no acento.
+ */
+export function textoParaSiti(valor: string): string {
+  return valor.normalize("NFD").replace(/(?!\u0303)[\u0300-\u036f]/g, "").normalize("NFC").toLocaleUpperCase("es-MX");
+}
+
 /** Nombres para el layout del Comité: mayúsculas y sin acentos (instructivo de la CNBV, Apéndice A). */
 export function nombreParaSiti(valor: string): string {
   return valor

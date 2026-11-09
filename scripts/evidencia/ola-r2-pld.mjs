@@ -516,7 +516,10 @@ async function flujo7() {
   exigir(vence === "2026-11-20", "7. 15 días hábiles desde el 28-oct saltan el 2 y el 16 de noviembre: 20-nov", vence);
   const comunicaciones = await hoja(p, "comunicaciones-titulo").innerText();
   exigir((comunicaciones.match(new RegExp(`Comunicar a más tardar el ${fechaDia(vence)}`, "g")) ?? []).length === 5, `7. cada designación con su pendiente 49ª: «Comunicar a más tardar el ${fechaDia(vence)}»`, comunicaciones.slice(0, 300));
-  exigir((await hoja(p, "comunicaciones-titulo").locator("pre").innerText()).includes("RAMOS"), "7. lo que el Oficial captura en el SITI está a la vista, en mayúsculas sin acentos");
+  const paraSiti = await hoja(p, "comunicaciones-titulo").locator("pre").innerText();
+  exigir(paraSiti.includes("RAMOS"), "7. lo que el Oficial captura en el SITI está a la vista, en mayúsculas sin acentos");
+  // r2-base-N15: área y cargo también sin acentos para el SITI; en la tabla se ven como se capturaron.
+  exigir(paraSiti.includes("DIRECCION GENERAL|") && !/[ÁÉÍÓÚÜ]/.test(paraSiti), "7. área y cargo sin acentos en lo que se captura en el SITI", paraSiti.slice(0, 300));
   await foto(p, "f7-integrantes-y-aviso-49a");
   await ir(p, "/operacion/cumplimiento#pld-comite-titulo");
   exigir((await hoja(p, "pld-comite-titulo").innerText()).includes(`Designación de ${SIT.presidente}`), "7. la bandeja de Cumplimiento lista las designaciones por comunicar");

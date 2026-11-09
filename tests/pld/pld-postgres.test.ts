@@ -29,6 +29,7 @@ import {
   cambiarParametros,
   cargarActaFirmada,
   cargarDocumentoPld,
+  contenidoParaSiti,
   constanciaInternacionales,
   declararPerfil,
   descargarActa,
@@ -599,6 +600,11 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.deepEqual(await uno("select nombres, primer_apellido, segundo_apellido, area from pld_comite_integrantes where id = $1", [P]),
             { nombres: "JOSE MARIA", primer_apellido: "NUÑEZ", segundo_apellido: "PEÑA", area: "DIRECCIÓN GENERAL" });
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [integrante(randomUUID(), "PRESIDENTE", "SUPLENTE", "Pedro", { suplenteDe: P })] }), /comite_un_suplente_por_titular/);
+          // r2-base-N15: en pantalla, área y cargo con acentos; en lo que se captura en el SITI, sin ellos (la Ñ se queda).
+          const paraSiti = contenidoParaSiti((await leerComite(cum)).integrantes);
+          assert.match(paraSiti, /\nDIRECCION GENERAL\|PRESIDENTE\|TITULAR\|JOSE MARIA\|NUÑEZ\|PEÑA\|/);
+          assert.doesNotMatch(paraSiti, /[ÁÉÍÓÚÜáéíóúü]/);
+          assert.equal((await leerComite(cum)).integrantes.find((i) => i.id === P)?.area, "DIRECCIÓN GENERAL");
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [], sustituye: { integranteId: I2, sustituidoEl: sumarDias(designado, -1), motivo: "Sustitución de prueba" } }), /comite_sustitucion_antes_de_designacion/);
           await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor\u2060Interno", cargoEntidad: "Auditor", ...AUDITOR, designadoEl: designado }), /invisible_nombre/);
           await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor\u0085interno", ...AUDITOR, designadoEl: designado }), /invisible_cargoEntidad/);
@@ -1075,6 +1081,14 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
             }
             return mapa;
           };
+          // r2-base-N16: el nombre de un archivo es texto libre; en el manifiesto no abre como fórmula.
+          await cargarDocumentoPld(cum, { casoId: casoX, formId: randomUUID(), archivo: { nombre: "=HIPERVINCULO(1).pdf", bytes: PDF } }, { almacen });
+          const nombres: string[] = [];
+          for await (const linea of manifiestoDeConservacion(cum, { companyId: beta, desde, hasta: hoy, pagina: 1, cursor: null })) {
+            const l = JSON.parse(linea) as Record<string, unknown>;
+            if (typeof l.nombre === "string") nombres.push(l.nombre);
+          }
+          assert.ok(nombres.includes(" =HIPERVINCULO(1).pdf"), JSON.stringify(nombres));
           const deCum2 = await conteosDe(cum2);
           const tablasConExclusion = ["pld_alertas", "pld_avisos", "pld_casos", "pld_notas", "pld_documentos", "pld_propuestas", "pld_dictamenes", "pld_reportes", "audit_log"];
           for (const tabla of tablasConExclusion.filter((t) => deCum2.has(t))) {
