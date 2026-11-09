@@ -1,32 +1,32 @@
 {
   "oscuro-1440": {
-    "medidos": 370,
+    "medidos": 381,
     "minimo": 5.08,
     "fallas": []
   },
   "oscuro-390": {
-    "medidos": 168,
-    "minimo": 6.12,
+    "medidos": 162,
+    "minimo": 6.23,
     "fallas": []
   },
   "claro-1440": {
-    "medidos": 370,
+    "medidos": 384,
     "minimo": 5.14,
     "fallas": []
   },
   "claro-390": {
-    "medidos": 168,
+    "medidos": 162,
     "minimo": 5.05,
     "fallas": []
   },
   "lever-1440": {
-    "medidos": 370,
+    "medidos": 387,
     "minimo": 5,
     "fallas": []
   },
   "lever-390": {
-    "medidos": 168,
-    "minimo": 5.89,
+    "medidos": 162,
+    "minimo": 5.91,
     "fallas": []
   }
 }

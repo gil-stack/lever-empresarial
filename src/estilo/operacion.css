@@ -116,6 +116,16 @@ form + .operacion-lista {
   letter-spacing: 0.04em;
 }
 
+/* Un valor largo sin espacios (el SHA-256 de un documento, el nombre de un archivo, un folio, una acción con guiones
+   bajos de la bitácora o un motivo con una dirección pegada) se parte donde haga falta en lugar de ensanchar la
+   página: a 390 px, el expediente con documentos medía 533. «anywhere» también deja encoger la caja flexible. */
+.operacion-fila-cuerpo,
+.operacion-meta,
+.operacion-detalle,
+.operacion-mono {
+  overflow-wrap: anywhere;
+}
+
 .operacion-sin-corte {
   white-space: nowrap;
 }

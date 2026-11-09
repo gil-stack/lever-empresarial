@@ -495,6 +495,93 @@ test("con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca sol
   expect(errores).toEqual([]);
 });
 
+test("una clave repetida en la dirección (?aviso=a&aviso=b) no tumba ninguna página de Operación", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const [brisa] = await consultar<{ id: string }>("select id from companies where rfc = $1", [BRISA.rfc]);
+  const paginas = [
+    "/operacion/alertas", "/operacion/aprobaciones", "/operacion/clientes", `/operacion/clientes/${brisa!.id}`,
+    `/operacion/clientes/${brisa!.id}/expediente`, "/operacion/comisiones", "/operacion/cumplimiento", "/operacion/lpb",
+    "/operacion/personal", "/operacion/recuperaciones",
+  ];
+  const abrir = async (ruta: string) => {
+    const respuesta = await page.goto(ruta);
+    expect(respuesta?.status(), ruta).toBe(200);
+    await expect(page.locator("h1"), ruta).toBeVisible();
+  };
+  // Aprobación (con Administración) y Cumplimiento: entre las dos abren todas, cada una con su permiso.
+  for (const correo of [CORREOS.op2, CORREOS.op3]) {
+    await sesionDe(context, correo, { superficie: "sofipo" });
+    for (const ruta of paginas) await abrir(`${ruta}?aviso=a&aviso=b&en=x&en=y`);
+  }
+  // El detalle de lo que falta con `faltan` repetido: queda el aviso general, sin detalle.
+  await abrir(`/operacion/clientes/${brisa!.id}/expediente?aviso=expediente_datos_incompletos&faltan=giro&faltan=domicilio`);
+  await expect(page.locator("#aviso-operacion")).toHaveText("Faltan datos generales para enviar la versión. Revisa «Datos generales».");
+  // La Lista con su detalle repetido y la entrada sin sesión.
+  await abrir("/operacion/lpb?aviso=lpb_cargada&filas=1&filas=2&coincidencias=0");
+  await context.clearCookies();
+  await abrir("/operacion/entrar?aviso=a&aviso=b");
+  expect(errores).toEqual([]);
+});
+
+test.describe("sin JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  // serv-nuevo-7: con Referrer-Policy: no-referrer, el envío nativo de un formulario lleva «Origin: null» y Next
+  // rechaza la acción con un 500. Pasa sin JavaScript y al hacer clic antes de que la página hidrate.
+  test("sin JavaScript los formularios responden: el alta vuelve con su aviso (303) y las dos entradas dan el suyo", async ({ page, context }) => {
+    const post = () => page.waitForResponse((respuesta) => respuesta.request().method() === "POST");
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    await page.goto("/operacion/clientes");
+    await page.getByLabel("Razón social").fill("Sin Script\u0085Uno SA de CV");
+    await page.getByLabel("RFC").fill("SSU010101AB1");
+    await page.getByLabel("Código postal").fill("06600");
+    const [alta] = await Promise.all([post(), page.getByRole("button", { name: "Registrar prospecto" }).click()]);
+    // La causa: con «no-referrer» el navegador manda «Origin: null» en el envío nativo del formulario.
+    expect(await alta.request().headerValue("origin")).toBe(new URL(alta.url()).origin);
+    expect(alta.status()).toBe(303);
+    await page.waitForURL(/aviso=razon_social_control/);
+    await expect(page.locator("#aviso-operacion")).toContainText("La razón social trae un carácter invisible");
+    expect(await contar("select 1 from companies where rfc = $1", ["SSU010101AB1"])).toBe(0);
+
+    // La entrada de Operación y la del portal del cliente, sin sesión: la contraseña equivocada da su aviso ahí mismo.
+    await context.clearCookies();
+    for (const ruta of ["/operacion/entrar", "/entrar"]) {
+      await page.goto(ruta);
+      await page.getByLabel("Correo").fill("nadie-sin-script@lever-e2e.mx");
+      await page.getByLabel("Contraseña", { exact: true }).fill("no-es-la-clave-1");
+      const [entrada] = await Promise.all([post(), page.getByRole("button", { name: "Continuar" }).click()]);
+      expect(await entrada.request().headerValue("origin"), ruta).toBe(new URL(entrada.url()).origin);
+      expect(entrada.status(), ruta).toBe(200);
+      await expect(page.locator("#entrar-error"), ruta).toContainText("El correo o la contraseña no coinciden.");
+    }
+  });
+
+  // Décima revisión: el aviso de un campo volvía con «#datos-titulo» y, al cargar la página completa, el navegador
+  // descarta el autofocus cuando hay fragmento. Sin fragmento, el campo queda marcado y con el foco.
+  test("sin JavaScript, el rechazo de un campo del expediente vuelve sin fragmento y con el foco en el campo", async ({ page, context }) => {
+    const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
+    const razonSocial = () => consultar<{ razon_social: string | null }>("select razon_social from kyb_versiones where company_id = $1 and estado = 'borrador'", [duna!.id]);
+    const antes = await razonSocial();
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    await page.goto(`/operacion/clientes/${duna!.id}/expediente`);
+    await page.locator("#dato-razonSocial").fill("Duna\u200bComercial SA de CV");
+    const [guardado] = await Promise.all([
+      page.waitForResponse((respuesta) => respuesta.request().method() === "POST"),
+      page.getByRole("button", { name: "Guardar datos" }).click(),
+    ]);
+    expect(guardado.status()).toBe(303);
+    await page.waitForURL(/aviso=invisible_razonSocial&en=datos-titulo/);
+    const campo = page.locator("#dato-razonSocial");
+    await expect(campo).toHaveAttribute("aria-invalid", "true");
+    await expect(campo).toHaveAttribute("aria-describedby", "aviso-operacion");
+    await expect(page.locator("#dato-razonSocial:focus")).toHaveCount(1);
+    expect(new URL(page.url()).hash).toBe("");
+    expect(await razonSocial()).toEqual(antes);
+    // El foco desplazó la página: sin JavaScript nadie marca la barra superior, que lleva su fondo para no encimarse.
+    await expect(page.locator(".barra-superior")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  });
+});
+
 test("publicar el precio exige factor de los últimos 30 minutos; tras volver a entrar, doble clic publica una vez", async ({ page, context }) => {
   const errores = vigilarConsola(page);
   const precio = async () => (await consultar<{ centavos: string | null }>("select suscripcion_centavos::text as centavos from platform_pricing where singleton"))[0]?.centavos ?? null;

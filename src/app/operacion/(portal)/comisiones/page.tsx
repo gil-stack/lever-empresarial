@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { solicitarComisionAccion } from "@/app/operacion/acciones";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { etiquetaEstado, fechaDia } from "@/components/operacion/formato";
@@ -13,9 +14,9 @@ import { puedeEnOperacion } from "@/server/operacion/permisos";
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Comisiones · Operación" };
 
-export default async function ComisionesOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
+export default async function ComisionesOperacion({ searchParams }: { searchParams: Parametros<"aviso"> }) {
   const ctx = await exigirContextoOperacion();
-  const [clientes, versiones, params] = await Promise.all([listarClientes(ctx), listarComisiones(ctx), searchParams]);
+  const [clientes, versiones, params] = await Promise.all([listarClientes(ctx), listarComisiones(ctx), soloTexto(searchParams)]);
   const propone = puedeEnOperacion(ctx, "plataforma.empresa.alta");
   const activos = clientes.filter((cliente) => cliente.estado === "activa");
   return (

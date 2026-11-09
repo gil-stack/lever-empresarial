@@ -245,6 +245,15 @@ export function AvisoOperacion({ codigo, detalle, id = ID_AVISO }: { codigo?: st
 }
 
 /**
+ * Si el error es de un campo: `errorDelCampo` lo marca y le da el foco. La acción que redirige con ese aviso no pone
+ * fragmento (`#seccion`) en la dirección: con un destino de fragmento, el navegador descarta el `autofocus` al cargar
+ * la página completa (sin JavaScript o al recargar) y el foco no llega.
+ */
+export function avisoDeCampo(codigo: string): boolean {
+  return Object.hasOwn(CAMPO, codigo) || /^(dato_invalido|invisible)_/.test(codigo);
+}
+
+/**
  * Marca un campo como inválido, lo liga al aviso y le da el foco cuando el error es suyo. `dato_invalido_<campo>`
  * e `invisible_<campo>` son de ese campo. Un formulario que muestra su propio aviso (sin recargar la página) pasa
  * el id de ese aviso.

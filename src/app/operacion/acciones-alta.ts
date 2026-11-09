@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { avisoDeCampo } from "@/components/operacion/aviso";
 import { sesionSegura } from "@/server/entrada";
 import {
   agregarAccionista,
@@ -366,7 +367,10 @@ function listo(destino: string, aviso: string, ancla = ""): never {
 /** `en` dice qué formulario falló: la página liga el error solo a los campos de ese formulario. */
 function fallo(error: unknown, destino: string, ancla = ""): never {
   if (error instanceof ErrorDeDominio) {
-    redirect(`${destino}?aviso=${encodeURIComponent(error.codigo)}${ancla ? `&en=${ancla.slice(1)}` : ""}${ancla}`);
+    // Si el aviso es de un campo, va sin fragmento: con `#ancla`, el navegador no le da el foco al cargar la página
+    // completa (sin JavaScript); el foco lleva la página al campo.
+    const fragmento = avisoDeCampo(error.codigo) ? "" : ancla;
+    redirect(`${destino}?aviso=${encodeURIComponent(error.codigo)}${ancla ? `&en=${ancla.slice(1)}` : ""}${fragmento}`);
   }
   throw error;
 }

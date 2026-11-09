@@ -12,7 +12,10 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
           { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "no-referrer" },
+          // same-origin, no no-referrer: con no-referrer el navegador manda «Origin: null» al enviar un formulario sin
+          // JavaScript (o antes de que la página hidrate) y Next rechaza la acción de servidor con un 500. same-origin
+          // sigue sin mandar la dirección a otros sitios, así que un enlace con token no sale de aquí.
+          { key: "Referrer-Policy", value: "same-origin" },
         ],
       },
       // Va después de la regla general: la última que coincide gana, y sin esta

@@ -26,6 +26,23 @@ describe("motivo escrito", () => {
     assert.equal(textoMultilinea("Falta  la \u0085 constancia", 500), "Falta la constancia");
     assert.equal(textoMultilinea("\r\n\t ", 500), null);
   });
+
+  // Décima revisión: un texto sin nada que se vea (solo Default_Ignorable_Code_Point y espacios) está vacío, y el
+  // mínimo del motivo cuenta lo que se ve. La base acepta 10 U+3164 (char_length 10); el servidor es más estricto.
+  it("un texto hecho solo de invisibles está vacío y el mínimo cuenta lo que se ve", () => {
+    for (const vacio of ["ㅤ", "ㅤ".repeat(10), "​⁠﻿", " ᅟ ﾠ ", "᠋឴\u{e0100}"]) {
+      assert.equal(textoOperativo(vacio, 300), null, JSON.stringify(vacio));
+      assert.equal(textoMultilinea(vacio, 500), null, JSON.stringify(vacio));
+      assert.throws(() => motivoEscrito(vacio, 500), /motivo_invalido/, JSON.stringify(vacio));
+    }
+    // Diez caracteres en la base, siete que se ven.
+    assert.throws(() => motivoEscrito("Revisarㅤㅤㅤ", 500), /motivo_corto/);
+    // El emoji con su selector o unido con U+200D, en un texto con contenido, se queda tal cual.
+    assert.equal(motivoEscrito("Gracias por el apoyo ❤️", 500), "Gracias por el apoyo ❤️");
+    assert.equal(motivoEscrito("Lo revisó la familia 👨‍👩‍👧", 500), "Lo revisó la familia 👨‍👩‍👧");
+    assert.equal(textoOperativo("Abarrotes ❤️", 200), "Abarrotes ❤️");
+    assert.equal(textoOperativo("❤️", 200), "❤️");
+  });
 });
 
 // bar-4: las fechas del expediente y de la Lista existen en el calendario y son del año 1 en adelante, como

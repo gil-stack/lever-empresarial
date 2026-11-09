@@ -4,6 +4,8 @@
  * para devolver un error ligado al campo.
  */
 
+import { tieneAlgoVisible } from "../control";
+
 export const RFC_MORAL = /^[A-Z&Ñ]{3}[0-9]{6}[A-Z0-9]{3}$/;
 export const RFC_FISICA = /^[A-Z&Ñ]{4}[0-9]{6}[A-Z0-9]{3}$/;
 export const CURP = /^[A-Z]{4}[0-9]{6}[HMX][A-Z]{5}[A-Z0-9][0-9]$/;
@@ -144,7 +146,8 @@ export const DATOS_PARA_ENVIAR = [
 
 /** Las claves de los datos que le faltan a una versión para enviarse, en el orden del formulario. */
 export function datosQueFaltan(fila: Readonly<Record<string, unknown>>): string[] {
-  return DATOS_PARA_ENVIAR.filter((dato) => dato.columnas.some((columna) => fila[columna] === null || fila[columna] === undefined)).map((dato) => dato.clave);
+  const falta = (valor: unknown) => valor === null || valor === undefined || (typeof valor === "string" && !tieneAlgoVisible(valor));
+  return DATOS_PARA_ENVIAR.filter((dato) => dato.columnas.some((columna) => falta(fila[columna]))).map((dato) => dato.clave);
 }
 
 /** «Falta el giro.» o «Faltan el giro y el domicilio.»; null si ninguna clave es conocida (llega por la dirección). */

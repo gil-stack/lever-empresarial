@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { DecisionesOperacion } from "@/components/operacion/decisiones";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { NotaRegla } from "@/components/sistema";
@@ -14,13 +15,13 @@ import {
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Aprobaciones · Operación" };
 
-export default async function AprobacionesOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
+export default async function AprobacionesOperacion({ searchParams }: { searchParams: Parametros<"aviso"> }) {
   const ctx = await exigirContextoOperacion();
   const [solicitudes, versiones, suspensiones, params] = await Promise.all([
     listarSolicitudesActivacion(ctx),
     listarComisiones(ctx),
     listarSuspensionesPendientes(ctx),
-    searchParams,
+    soloTexto(searchParams),
   ]);
   const comisiones = versiones.filter((version) => version.estado === "pendiente");
   const decide = {

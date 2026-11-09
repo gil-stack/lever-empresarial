@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { calificarRiesgoAccion, crearVersionAccion, dictaminarAccion } from "@/app/operacion/acciones-alta";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { Coincidencias } from "@/components/operacion/coincidencias";
@@ -51,10 +52,10 @@ export default async function ExpedienteCliente({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ aviso?: string; en?: string; faltan?: string }>;
+  searchParams: Parametros<"aviso" | "en" | "faltan">;
 }) {
   const ctx = await exigirContextoOperacion();
-  const [{ id }, busqueda] = await Promise.all([params, searchParams]);
+  const [{ id }, busqueda] = await Promise.all([params, soloTexto(searchParams)]);
   if (!puedeEnOperacion(ctx, "plataforma.expediente.ver")) {
     return (
       <PaginaOperacion titulo="Expediente">

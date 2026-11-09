@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { invitarAdministradorAccion, solicitarActivacionAccion } from "@/app/operacion/acciones";
 import { solicitarSuspensionAccion } from "@/app/operacion/acciones-alta";
 import { errorDelCampo } from "@/components/operacion/aviso";
@@ -21,9 +22,9 @@ const ENTREGAS: Record<string, string> = {
   enviada: "Correo enviado",
 };
 
-export default async function FichaCliente({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ aviso?: string }> }) {
+export default async function FichaCliente({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Parametros<"aviso"> }) {
   const ctx = await exigirContextoOperacion();
-  const [{ id }, { aviso }] = await Promise.all([params, searchParams]);
+  const [{ id }, { aviso }] = await Promise.all([params, soloTexto(searchParams)]);
   const cliente = await leerCliente(ctx, id);
   if (!cliente) notFound();
   const veExpediente = puedeEnOperacion(ctx, "plataforma.expediente.ver");

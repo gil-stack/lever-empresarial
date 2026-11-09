@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { cambiarRolAccion } from "@/app/operacion/acciones-alta";
 import { ConfirmarIdentidad } from "@/components/entrar/confirmar-identidad";
 import { PaginaOperacion } from "@/components/operacion/pagina";
@@ -27,7 +28,7 @@ const ESTADO_PERSONAL: Record<string, string> = { invitado: "Invitado", activo: 
  * del art. 124 LACP: Cumplimiento no se junta con Auditoría ni con Originación, y nadie se da
  * roles a sí mismo. La base lo vuelve a exigir con su trigger aunque alguien se salte esta pantalla.
  */
-export default async function PersonalOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
+export default async function PersonalOperacion({ searchParams }: { searchParams: Parametros<"aviso"> }) {
   const ctx = await exigirContextoOperacion();
   if (!puedeEnOperacion(ctx, "plataforma.personal.administrar")) {
     return (
@@ -38,7 +39,7 @@ export default async function PersonalOperacion({ searchParams }: { searchParams
   }
   const sesion = await sesionSegura();
   if (!sesion) redirect("/operacion/entrar");
-  const [personas, confirmacion, params] = await Promise.all([listarPersonalConRoles(ctx), estadoDeConfirmacion(sesion), searchParams]);
+  const [personas, confirmacion, params] = await Promise.all([listarPersonalConRoles(ctx), estadoDeConfirmacion(sesion), soloTexto(searchParams)]);
   return (
     <PaginaOperacion titulo="Personal" aviso={params.aviso}>
       {confirmacion.reciente ? null : (

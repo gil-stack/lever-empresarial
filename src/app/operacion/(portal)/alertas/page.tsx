@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { asignarAlertaAccion, cerrarAlertaAccion, crearAlertaAccion } from "@/app/operacion/acciones";
 import { etiquetaCategoria, etiquetaEstado, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
@@ -11,9 +12,9 @@ import { puedeEnOperacion } from "@/server/operacion/permisos";
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Alertas · Operación" };
 
-export default async function AlertasOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
+export default async function AlertasOperacion({ searchParams }: { searchParams: Parametros<"aviso"> }) {
   const ctx = await exigirContextoOperacion();
-  const [alertas, clientes, personal, params] = await Promise.all([listarAlertas(ctx), listarClientes(ctx), listarPersonal(ctx), searchParams]);
+  const [alertas, clientes, personal, params] = await Promise.all([listarAlertas(ctx), listarClientes(ctx), listarPersonal(ctx), soloTexto(searchParams)]);
   const gestiona = puedeEnOperacion(ctx, "plataforma.empresa.alta");
   const abiertas = alertas.filter((alerta) => alerta.estado === "abierta").length;
   const seguimiento = alertas.length === 0 ? "Seguimiento" : `Seguimiento · ${abiertas} ${abiertas === 1 ? "abierta" : "abiertas"} de ${alertas.length}`;

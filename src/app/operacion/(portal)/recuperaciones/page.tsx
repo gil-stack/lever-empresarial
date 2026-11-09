@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { decidirRecuperacionAccion } from "@/app/operacion/acciones-recuperaciones";
 import { ConfirmarIdentidad } from "@/components/entrar/confirmar-identidad";
 import { IconoSeguridad } from "@/components/cromo/iconos";
@@ -18,7 +19,7 @@ import { puedeEnOperacion } from "@/server/operacion/permisos";
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Recuperaciones · Operación" };
 
-export default async function RecuperacionesOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string; en?: string }> }) {
+export default async function RecuperacionesOperacion({ searchParams }: { searchParams: Parametros<"aviso" | "en"> }) {
   const ctx = await exigirContextoOperacion();
   // Desde la Ola R1 hay roles que no administran cuentas: Auditoría o Cumplimiento no aprueban recuperaciones.
   if (!puedeEnOperacion(ctx, "plataforma.empresa.alta")) {
@@ -33,7 +34,7 @@ export default async function RecuperacionesOperacion({ searchParams }: { search
   const [pendientes, confirmacion, params] = await Promise.all([
     verRecuperaciones(sesion),
     estadoDeConfirmacion(sesion),
-    searchParams,
+    soloTexto(searchParams),
   ]);
   return (
     <PaginaOperacion titulo="Recuperaciones" aviso={params.aviso}>

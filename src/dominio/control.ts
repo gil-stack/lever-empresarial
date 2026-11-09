@@ -23,6 +23,23 @@ export const CONTROL = /[\u0000-\u001f\u007f-\u009f]/;
  */
 export const INVISIBLE = /[\p{Cc}\p{Cf}\p{Default_Ignorable_Code_Point}]/u;
 
+/**
+ * Si un texto libre tiene algo que se ve: descontando los espacios, los controles y lo que Unicode marca para no
+ * dibujarse (`\p{Default_Ignorable_Code_Point}`). «\u3164» o diez U+3164 no tienen nada y cuentan como vacío; «❤️» sí
+ * tiene: el corazón se ve aunque lleve el selector U+FE0F.
+ */
+export function tieneAlgoVisible(texto: string): boolean {
+  return /[^\s\p{Cc}\p{Default_Ignorable_Code_Point}]/u.test(texto);
+}
+
+/**
+ * Cuántos caracteres de un texto se ven: no cuentan los de `\p{Default_Ignorable_Code_Point}` (U+3164, U+200B,
+ * U+200D, U+FE0F…). Los espacios sí, como en `char_length`. «Revisar» con tres U+3164 son 10 para la base y 7 aquí.
+ */
+export function caracteresVisibles(texto: string): number {
+  return [...texto.replace(/\p{Default_Ignorable_Code_Point}/gu, "")].length;
+}
+
 /** Las comillas de Windows-1252 leídas como C1 (U+0091 a U+0094) valen la comilla que eran. */
 const COMILLAS: Record<string, string> = { "\u0091": "'", "\u0092": "'", "\u0093": '"', "\u0094": '"' };
 

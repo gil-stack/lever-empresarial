@@ -48,6 +48,16 @@ describe("tope de archivos", () => {
     assert.match(html, /type="file"/);
     assert.doesNotMatch(html, /role="alert"/);
   });
+
+  // Décima revisión: con el error del archivo que devolvió el servidor, el control marcado recibe también el foco.
+  it("el error del servidor marca el campo de archivo, lo liga al aviso y le da el foco", () => {
+    const ligado = { "aria-invalid": true, "aria-describedby": "aviso-operacion", autoFocus: true };
+    const html = renderToStaticMarkup(createElement(CampoArchivo, { id: "doc-archivo", name: "archivo", accept: ".pdf", mensaje: ARCHIVO_DEMASIADO_GRANDE, ligado }));
+    assert.match(html, /aria-invalid="true"/);
+    assert.match(html, /aria-describedby="aviso-operacion"/);
+    assert.match(html, /autofocus=""/);
+    assert.doesNotMatch(renderToStaticMarkup(createElement(CampoArchivo, { id: "doc-archivo", name: "archivo", accept: ".pdf", mensaje: ARCHIVO_DEMASIADO_GRANDE })), /autofocus/);
+  });
 });
 
 describe("política de descarga", () => {
