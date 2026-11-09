@@ -229,7 +229,8 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
               ))}
             </ul>
             <h3>Lo que el Oficial captura en el SITI</h3>
-            <div className="tabla-contenedor">
+            {/* r2-serv-N11: desplazable a 390 px; con el teclado también (Tab llega, las flechas lo recorren). */}
+            <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Contenido para el SITI">
               <pre className="operacion-mono">{contenidoParaSiti(paraSiti)}</pre>
             </div>
             <p className="pista">Los 14 campos del instructivo de la CNBV, en el orden del layout. Lever no lo transmite.</p>
