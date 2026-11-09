@@ -29,6 +29,7 @@ export const CODIGOS_PLD = new Set([
   "caso_ya_dictaminado",
   "alerta_no_existe",
   "serie_de_otra_empresa",
+  "serie_con_persona_excluida",
   "sin_rol_para_comite",
   "oficial_sin_rol_de_cumplimiento",
   "comite_fecha_futura",

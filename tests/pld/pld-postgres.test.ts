@@ -440,6 +440,37 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
             alertas: (await c.query("select count(*)::int as n from pld_alertas where aviso_id = $1", [formAviso])).rows[0].n,
           })), { avisos: 0, casos: 0, alertas: 0 });
 
+          // r2-base-N3: una alerta hermana del caso confidencial tampoco se ve. Verla «sin caso» y que abrirle
+          // uno responda «ya está en un caso» delataba el caso oculto; lo mismo el texto de su aviso.
+          const hermano = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_inusual", companyId: beta, mencionada: "", superior: "", descripcion: "Proveedor nuevo con pagos del mismo monto." });
+          const alertaHermana = String((await uno("select id from pld_alertas where aviso_id = $1", [hermano.id])).id);
+          assert.ok((await listarAlertasPld(cum2)).some((a) => a.id === alertaHermana), "antes de sumarse al caso, la ve");
+          await sumarAlertaAlCaso(cum, { casoId: casoConfidencial, alertaId: alertaHermana });
+          assert.equal((await listarAlertasPld(cum2)).some((a) => a.id === alertaHermana), false);
+          await assert.rejects(abrirCaso(cum2, { formId: randomUUID(), alertaId: alertaHermana }), /alerta_no_existe/);
+          const verHermana = (userId: string) => sofipo(userId, async (c) => ({
+            alertas: (await c.query("select count(*)::int as n from pld_alertas where id = $1", [alertaHermana])).rows[0].n,
+            avisos: (await c.query("select count(*)::int as n from pld_avisos where id = $1", [hermano.id])).rows[0].n,
+            eventos: (await c.query("select count(*)::int as n from audit_log where identificador = $1 or identificador = $2", [alertaHermana, hermano.id])).rows[0].n,
+          }));
+          assert.deepEqual(await verHermana(CUM2), { alertas: 0, avisos: 0, eventos: 0 });
+          const deCumplimiento = await verHermana(CUM);
+          assert.equal(deCumplimiento.alertas, 1);
+          assert.equal(deCumplimiento.avisos, 1);
+          assert.ok(deCumplimiento.eventos >= 2);
+
+          // r2-base-N3: el caso en que ya trabajó CUM2 no recibe un aviso que la excluye: le desaparecería a media
+          // análisis. El aviso abre su propio caso.
+          const propio = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_inusual", companyId: beta, mencionada: "", superior: "", descripcion: "Cambio de domicilio fiscal sin aviso." });
+          const casoDeCum2 = await abrirCaso(cum2, { formId: randomUUID(), alertaId: String((await uno("select id from pld_alertas where aviso_id = $1", [propio.id])).id) });
+          await agregarNota(cum2, { casoId: casoDeCum2, formId: randomUUID(), texto: "Revisando el domicilio con el SAT." });
+          const contraCum2 = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_interna_preocupante", companyId: beta, mencionada: CUM2, superior: "", descripcion: "La analista pidió no revisar este cliente." });
+          const alertaContraCum2 = String((await uno("select id from pld_alertas where aviso_id = $1", [contraCum2.id])).id);
+          await assert.rejects(sumarAlertaAlCaso(cum, { casoId: casoDeCum2, alertaId: alertaContraCum2 }), /serie_con_persona_excluida/);
+          assert.ok(await leerCaso(cum2, casoDeCum2));
+          await agregarNota(cum2, { casoId: casoDeCum2, formId: randomUUID(), texto: "Sigue el análisis." });
+          await abrirCaso(cum, { formId: randomUUID(), alertaId: alertaContraCum2 });
+
           // Las exclusiones las marca quien avisa, en la misma transacción, y solo a otras personas del personal.
           await assert.rejects(emitirAviso(apr, { ...entrada, formId: randomUUID(), mencionada: APR, superior: "" }), /exclusion_propia/);
           await assert.rejects(emitirAviso(apr, { ...entrada, formId: randomUUID(), mencionada: LUIS, superior: "" }), /exclusion_fuera_del_personal/);
@@ -849,8 +880,10 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.ok(cumplimiento.perfiles > 0 && cumplimiento.alertas > 0 && cumplimiento.avisos > 0 && cumplimiento.casos > 0 && cumplimiento.comite > 0 && cumplimiento.operaciones > 0);
           assert.deepEqual(await conteos(AUD), cumplimiento);
           const excluida = await conteos(CUM2);
-          assert.equal(excluida.avisos, cumplimiento.avisos - 1);
-          assert.equal(excluida.casos, cumplimiento.casos - 1);
+          // El confidencial, su aviso hermano y el aviso contra CUM2 (r2-base-N3), con sus dos casos.
+          assert.equal(excluida.avisos, cumplimiento.avisos - 3);
+          assert.equal(excluida.casos, cumplimiento.casos - 2);
+          assert.equal(excluida.alertas, cumplimiento.alertas - 3);
           assert.deepEqual(await conteos(ORI), { perfiles: cumplimiento.perfiles, alertas: 0, avisos: 1, casos: 0, comite: 0, operaciones: 0 });
           assert.deepEqual(await conteos(APR), { perfiles: cumplimiento.perfiles, alertas: 0, avisos: await contar("select count(*)::int as n from pld_avisos where registrado_por = $1", [APR]), casos: 0, comite: 0, operaciones: 0 });
           assert.deepEqual(await conteos(ADM), { perfiles: 0, alertas: 0, avisos: 0, casos: 0, comite: 0, operaciones: 0 });
@@ -881,6 +914,24 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.ok(lineas.some((l) => l.origen === "pld_documentos" && l.sha256 === createHash("sha256").update(PDF).digest("hex")));
           assert.deepEqual(lineas.at(-1), { fin_de_pagina: 1, documentos: lineas.filter((l) => "documento" in l).length, siguiente: null });
           assert.equal(await contar("select count(*)::int as n from audit_log where accion = 'pld_manifiesto_descargado' and company_id = $1 and actor_id = $2", [beta, AUD]), 1);
+          // r2-base-N3: cada conteo de la persona excluida es el que su RLS le deja ver; no deduce el caso por la diferencia.
+          const conteosDe = async (ctx: ContextoDePersonal) => {
+            const mapa = new Map<string, number>();
+            for await (const linea of manifiestoDeConservacion(ctx, { companyId: beta, desde, hasta: hoy, pagina: 1, cursor: null })) {
+              const l = JSON.parse(linea) as Record<string, unknown>;
+              if ("tabla" in l) mapa.set(String(l.tabla), Number(l.filas));
+            }
+            return mapa;
+          };
+          const deCum2 = await conteosDe(cum2);
+          const tablasConExclusion = ["pld_alertas", "pld_avisos", "pld_casos", "pld_notas", "pld_documentos", "pld_propuestas", "pld_dictamenes", "pld_reportes", "audit_log"];
+          for (const tabla of tablasConExclusion.filter((t) => deCum2.has(t))) {
+            const visibles = await sofipo(CUM2, async (c) => Number((await c.query(`select count(*)::int as n from ${tabla} where company_id = $1`, [beta])).rows[0].n));
+            assert.equal(deCum2.get(tabla), visibles, tabla);
+          }
+          const deCum = await conteosDe(cum);
+          assert.ok(deCum2.get("pld_alertas")! < deCum.get("pld_alertas")!);
+          assert.ok(deCum2.get("pld_casos")! < deCum.get("pld_casos")!);
           await assert.rejects(async () => {
             for await (const _ of manifiestoDeConservacion(ori, { companyId: beta, desde, hasta: hoy, pagina: 1, cursor: null })) void _;
           }, /sin_permiso_operacion/);
