@@ -2679,25 +2679,6 @@ $$;
 REVOKE ALL ON FUNCTION pld_voto_choca(uuid, uuid, uuid), pld_sesion_excluye_a(uuid, uuid), pld_serie_choca(uuid, uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION pld_voto_choca(uuid, uuid, uuid), pld_sesion_excluye_a(uuid, uuid), pld_serie_choca(uuid, uuid) TO plataforma_sofipo;
 
--- r2-fix-N1 (47ª): la sesión mensual y la regla de suplentes cuentan todas las
--- sesiones del operador, también la que la persona del contexto no ve por un aviso
--- que la excluye. Solo fecha, quórum y presentes: ni la sesión, ni sus votos, ni su
--- acta. Cumplimiento y Auditoría, como la lectura de pld_sesiones.
-CREATE FUNCTION pld_sesiones_para_reglas()
-RETURNS TABLE (celebrada_el date, quorum boolean, presentes uuid[], registrado_en timestamptz)
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT s.celebrada_el, s.quorum, s.presentes, s.registrado_en
-  FROM pld_sesiones s
-  WHERE s.operator_id = app_operador() AND pld_rol(ARRAY['cumplimiento', 'auditoria'])
-$$;
-
-REVOKE ALL ON FUNCTION pld_sesiones_para_reglas() FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION pld_sesiones_para_reglas() TO plataforma_sofipo;
-
 CREATE FUNCTION pld_acta_para_descarga(p_acta uuid, p_peticion uuid)
 RETURNS TABLE (clave_blob text, nombre_archivo text, tipo_contenido text, sha256 text)
 LANGUAGE plpgsql

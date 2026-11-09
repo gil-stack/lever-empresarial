@@ -203,18 +203,12 @@ export async function leerComite(ctx: ContextoDePersonal, opciones: { ahora?: Da
       auditorPresente: typeof fila.auditor_id === "string",
       acta: typeof fila.acta_id === "string" ? { id: fila.acta_id, nombre: String(fila.nombre_archivo), sha256: String(fila.sha256) } : null,
     }));
-    // r2-fix-N1 (47ª): las reglas del Comité cuentan todas las sesiones, también la que esta persona no ve por un
-    // aviso que la excluye (60ª). De esas solo llegan fecha, quórum y presentes.
-    const paraReglas = ((await consulta.query(
-      "select celebrada_el::text as celebrada, quorum, presentes from pld_sesiones_para_reglas() order by celebrada_el, registrado_en",
-    )).rows as Array<Record<string, unknown>>).map((fila) => ({
-      celebradaEl: dia(fila.celebrada),
-      quorum: fila.quorum === true,
-      presentes: (fila.presentes as string[]) ?? [],
-    }));
+    // 47ª (decisión del líder, r2-fix2): lo que se muestra cuenta solo las sesiones que esta persona ve. Si la única
+    // sesión del mes le está oculta por un aviso que la excluye (60ª), ve «falta», igual que si no la hubiera.
+    const cronologicas = [...sesiones].reverse();
     // 47ª: el suplente representa a su titular a lo más en dos sesiones no continuas por semestre.
     const semestre = semestreDe(hoy);
-    const delSemestre = paraReglas.filter((s) => s.celebradaEl >= semestre.inicio && s.celebradaEl <= semestre.fin);
+    const delSemestre = cronologicas.filter((s) => s.celebradaEl >= semestre.inicio && s.celebradaEl <= semestre.fin);
     const avisosSuplentes = integrantes
       .filter((i) => i.titularidad === "SUPLENTE")
       .map((suplente) => {
@@ -240,8 +234,8 @@ export async function leerComite(ctx: ContextoDePersonal, opciones: { ahora?: Da
            order by x.registrado_en desc, x.id desc limit 1
          ), 'comite') = 'comite'
          and not exists (
-           select 1 from pld_sesiones_para_reglas() s
-           where s.quorum and s.celebrada_el >= m.mes::date and s.celebrada_el < (m.mes + interval '1 month')::date
+           select 1 from pld_sesiones s
+           where s.operator_id = $1 and s.quorum and s.celebrada_el >= m.mes::date and s.celebrada_el < (m.mes + interval '1 month')::date
          )
        order by 1`,
       [ctx.personal.operadorId, hoy],
@@ -259,7 +253,7 @@ export async function leerComite(ctx: ContextoDePersonal, opciones: { ahora?: Da
       })),
       sesiones,
       avisosSuplentes,
-      sesionDelMes: paraReglas.some((s) => s.quorum && s.celebradaEl.slice(0, 7) === mes),
+      sesionDelMes: cronologicas.some((s) => s.quorum && s.celebradaEl.slice(0, 7) === mes),
       mesesSinSesion,
     };
   });

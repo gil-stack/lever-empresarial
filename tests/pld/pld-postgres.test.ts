@@ -1251,7 +1251,7 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           }, /cliente_ausente/);
         });
 
-        await t.test("sesión oculta (r2-fix-N1): la regla mensual (47ª) la cuenta aunque la persona excluida no la vea", async () => {
+        await t.test("sesión oculta (47ª, decisión del líder): quien no la ve ve «falta»; quien la ve, «sí»; ninguna regla de la base la cuenta a escondidas", async () => {
           const acuse = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_interna_preocupante", companyId: beta, mencionada: CUM2, superior: "", descripcion: "La analista pidió adelantar una sesión sin motivo." });
           const casoOculto = await abrirCaso(cum, { formId: randomUUID(), alertaId: String((await uno("select id from pld_alertas where aviso_id = $1", [acuse.id])).id) });
           await registrarPropuesta(cum, { casoId: casoOculto, formId: randomUUID(), propuesta: "no_reportar", justificacion: "Sin elementos para reportar" });
@@ -1274,12 +1274,18 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.equal((await leerComite(cum)).sesiones.some((s) => s.id === oculta), true);
           const enElMes = { ahora: new Date(`${mesMas(1)}-20T18:00:00Z`) };
           const enDosMeses = { ahora: new Date(`${mesMas(2)}-15T18:00:00Z`) };
-          for (const [quien, ctx] of [["CUM", cum], ["CUM2", cum2]] as const) {
-            assert.equal((await leerComite(ctx, enElMes)).sesionDelMes, true, quien);
-            assert.equal((await leerBandejaPld(ctx, enElMes)).sesionDelMesPendiente, false, quien);
-            assert.deepEqual((await leerComite(ctx, enDosMeses)).mesesSinSesion, [], quien);
-            assert.deepEqual((await leerBandejaPld(ctx, enDosMeses)).mesesSinSesion, [], quien);
-          }
+          // CUM ve la sesión: «sí», y el mes no queda sin sesión con quórum. Es lo que dice la regla con todas las sesiones.
+          assert.equal((await leerComite(cum, enElMes)).sesionDelMes, true);
+          assert.equal((await leerBandejaPld(cum, enElMes)).sesionDelMesPendiente, false);
+          assert.deepEqual((await leerComite(cum, enDosMeses)).mesesSinSesion, []);
+          assert.deepEqual((await leerBandejaPld(cum, enDosMeses)).mesesSinSesion, []);
+          // CUM2 no la ve: «falta», igual que si no la hubiera, sin deducir que hay algo oculto.
+          assert.equal((await leerComite(cum2, enElMes)).sesionDelMes, false);
+          assert.equal((await leerBandejaPld(cum2, enElMes)).sesionDelMesPendiente, true);
+          assert.deepEqual((await leerComite(cum2, enDosMeses)).mesesSinSesion, [mesMas(1)]);
+          assert.deepEqual((await leerBandejaPld(cum2, enDosMeses)).mesesSinSesion, [mesMas(1)]);
+          // Ya no hay una función que le entregue a la persona excluida la fecha y los presentes de la sesión oculta.
+          assert.equal((await uno<{ f: string | null }>("select to_regprocedure('pld_sesiones_para_reglas()')::text as f")).f, null);
         });
 
         await t.test("subidas (r2-serv-N15): lo que no queda en la base se borra del almacén", async () => {
