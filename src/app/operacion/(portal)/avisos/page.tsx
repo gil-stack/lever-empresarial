@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import type { Metadata } from "next";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { FormularioAviso } from "@/components/operacion/pld/formularios-de-texto";
@@ -19,9 +20,9 @@ export const metadata: Metadata = { title: "Avisar a Cumplimiento · Operación"
  * Cumplimiento de forma confidencial. Quien avisa ve solo su acuse; la persona
  * mencionada y el superior que marque no ven el aviso, aunque tengan Cumplimiento.
  */
-export default async function AvisosOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string; en?: string }> }) {
+export default async function AvisosOperacion({ searchParams }: { searchParams: Parametros<"aviso" | "en"> }) {
   const ctx = await exigirContextoOperacion();
-  const params = await searchParams;
+  const params = await soloTexto(searchParams);
   if (!puedeEnOperacion(ctx, "plataforma.pld.aviso.emitir")) {
     return (
       <PaginaOperacion titulo="Avisar a Cumplimiento">

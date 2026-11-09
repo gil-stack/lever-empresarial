@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { contar, dobleClic, idDe, sesionDe, vigilarConsola } from "./apoyo";
+import { consultar, contar, dobleClic, idDe, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS } from "./siembra";
 
 /**
@@ -85,4 +85,45 @@ test("aviso del personal: confidencial; Cumplimiento abre el caso y agrega una n
   await expect(page.locator("#sin-permiso-titulo")).toBeVisible();
   await expect(page.locator("main")).not.toContainText(CEIBA.razonSocial);
   expect(errores).toEqual([]);
+});
+
+// Décima ronda del #59: una clave repetida (?aviso=a&aviso=b) llega como lista; las páginas de PLD la descartan
+// (soloTexto) en lugar de tumbarse con un 500.
+test("una clave repetida en la dirección no tumba ninguna página de PLD", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const [caso] = await consultar<{ id: string }>("select id from pld_casos where company_id = $1", [ceiba]);
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  for (const ruta of [
+    "/operacion/pld", "/operacion/pld/parametros", `/operacion/pld/casos/${caso!.id}`, "/operacion/avisos", "/operacion/comite",
+    "/operacion/reportes", "/operacion/conservacion", "/operacion/cumplimiento",
+  ]) {
+    const respuesta = await page.goto(`${ruta}?aviso=a&aviso=b&en=x&en=y`);
+    expect(respuesta?.status(), ruta).toBe(200);
+    await expect(page.locator("h1"), ruta).toBeVisible();
+  }
+  expect(errores).toEqual([]);
+});
+
+test.describe("sin JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  // Con Referrer-Policy: same-origin (décima ronda del #59) el envío nativo lleva su Origin y la acción de PLD
+  // responde: 303 con su aviso y la nota en la base.
+  test("sin JavaScript, agregar una nota al caso responde 303 con su aviso", async ({ page, context }) => {
+    const [caso] = await consultar<{ id: string }>("select id from pld_casos where company_id = $1", [ceiba]);
+    const notas = () => contar("select 1 from pld_notas where caso_id = $1", [caso!.id]);
+    const antes = await notas();
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.goto(`/operacion/pld/casos/${caso!.id}`);
+    await page.locator("#nota-texto").fill("El representante entregó el contrato con el tercero; sigue el análisis.");
+    const [envio] = await Promise.all([
+      page.waitForResponse((respuesta) => respuesta.request().method() === "POST"),
+      page.getByRole("button", { name: "Agregar nota" }).click(),
+    ]);
+    expect(await envio.request().headerValue("origin")).toBe(new URL(envio.url()).origin);
+    expect(envio.status()).toBe(303);
+    await page.waitForURL(/aviso=pld_nota_agregada/);
+    await expect(page.locator("#aviso-operacion")).toContainText("Nota agregada al análisis.");
+    expect(await notas()).toBe(antes + 1);
+  });
 });

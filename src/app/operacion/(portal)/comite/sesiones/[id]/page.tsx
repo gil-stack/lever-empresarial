@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { cargarActaAccion, registrarVotoAccion } from "@/app/operacion/(portal)/pld/acciones";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { CampoArchivo } from "@/components/operacion/campo-archivo";
@@ -30,10 +31,10 @@ export default async function SesionComite({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ aviso?: string; en?: string }>;
+  searchParams: Parametros<"aviso" | "en">;
 }) {
   const ctx = await exigirContextoOperacion();
-  const [{ id }, busqueda] = await Promise.all([params, searchParams]);
+  const [{ id }, busqueda] = await Promise.all([params, soloTexto(searchParams)]);
   if (!puedeEnOperacion(ctx, "plataforma.pld.ver")) {
     return (
       <PaginaOperacion titulo="Sesión del Comité">

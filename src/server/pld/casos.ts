@@ -455,17 +455,27 @@ export async function cargarDocumentoPld(
     bytes: archivo.bytes,
     tipo: contenido.tipo,
   });
-  await unaVezPorFormulario(() => conPld(ctx, null, async (consulta) => {
-    const previo = await consulta.query("select 1 from pld_documentos where id = $1", [id]);
-    if (previo.rows.length > 0) return;
-    const companyId = await empresaDelCaso(consulta, entrada.casoId as string);
-    await consulta.query(
-      `insert into pld_documentos (id, caso_id, operator_id, nombre_archivo, tipo_contenido, tamano_bytes, sha256, clave_blob, registrado_por)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [id, entrada.casoId, ctx.personal.operadorId, nombre, contenido.tipo, archivo.bytes.byteLength, sha256, guardado.clave, ctx.persona.id],
-    );
-    await auditarPld(consulta, ctx, { companyId, accion: "pld_documento_cargado", identificador: id, ocurridoEn: ahora, cambio: { tipo: contenido.tipo } });
-  }), "caso_no_existe");
+  // r2-serv-N15: como el acta, lo subido que no queda en la base se borra (INSERT fallido o doble clic).
+  let referenciado = false;
+  try {
+    await unaVezPorFormulario(() => conPld(ctx, null, async (consulta) => {
+      referenciado = false;
+      const previo = await consulta.query("select 1 from pld_documentos where id = $1", [id]);
+      if (previo.rows.length > 0) return;
+      const companyId = await empresaDelCaso(consulta, entrada.casoId as string);
+      await consulta.query(
+        `insert into pld_documentos (id, caso_id, operator_id, nombre_archivo, tipo_contenido, tamano_bytes, sha256, clave_blob, registrado_por)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [id, entrada.casoId, ctx.personal.operadorId, nombre, contenido.tipo, archivo.bytes.byteLength, sha256, guardado.clave, ctx.persona.id],
+      );
+      await auditarPld(consulta, ctx, { companyId, accion: "pld_documento_cargado", identificador: id, ocurridoEn: ahora, cambio: { tipo: contenido.tipo } });
+      referenciado = true;
+    }), "caso_no_existe");
+  } catch (error) {
+    await deps.almacen.borrar(guardado.clave);
+    throw error;
+  }
+  if (!referenciado) await deps.almacen.borrar(guardado.clave);
 }
 
 /** Descarga auditada: la base deja el evento y entrega la ruta; el archivo se compara con su SHA-256. */

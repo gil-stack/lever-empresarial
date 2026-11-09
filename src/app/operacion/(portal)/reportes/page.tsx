@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import type { Metadata } from "next";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { registrarEntidadAccion, registrarPeriodicoAccion } from "@/app/operacion/(portal)/pld/acciones";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
@@ -21,9 +22,9 @@ export const metadata: Metadata = { title: "Reportes regulatorios · Operación"
  * 38ª (mensual). El contenido sale de los datos y los plazos se cuentan en días
  * hábiles al leer. Lever no transmite: Cumplimiento registra cada envío.
  */
-export default async function ReportesRegulatorios({ searchParams }: { searchParams: Promise<{ aviso?: string; en?: string }> }) {
+export default async function ReportesRegulatorios({ searchParams }: { searchParams: Parametros<"aviso" | "en"> }) {
   const ctx = await exigirContextoOperacion();
-  const params = await searchParams;
+  const params = await soloTexto(searchParams);
   if (!puedeEnOperacion(ctx, "plataforma.pld.ver")) {
     return (
       <PaginaOperacion titulo="Reportes regulatorios">

@@ -11,6 +11,7 @@ import {
   registrarReportePldAccion,
   sumarAlertaAccion,
 } from "@/app/operacion/(portal)/pld/acciones";
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { CampoArchivo } from "@/components/operacion/campo-archivo";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
@@ -39,10 +40,10 @@ export default async function CasoPld({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ aviso?: string; en?: string }>;
+  searchParams: Parametros<"aviso" | "en">;
 }) {
   const ctx = await exigirContextoOperacion();
-  const [{ id }, busqueda] = await Promise.all([params, searchParams]);
+  const [{ id }, busqueda] = await Promise.all([params, soloTexto(searchParams)]);
   if (!puedeEnOperacion(ctx, "plataforma.pld.ver")) {
     return (
       <PaginaOperacion titulo="Caso PLD">

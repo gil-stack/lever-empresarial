@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
@@ -16,9 +17,9 @@ export const metadata: Metadata = { title: "Conservación · Operación" };
  * se borran (la base lo impide). Aquí Cumplimiento y Auditoría descargan un
  * manifiesto verificable por empresa y periodo; cada descarga queda en la bitácora.
  */
-export default async function ConservacionOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string; en?: string }> }) {
+export default async function ConservacionOperacion({ searchParams }: { searchParams: Parametros<"aviso" | "en"> }) {
   const ctx = await exigirContextoOperacion();
-  const params = await searchParams;
+  const params = await soloTexto(searchParams);
   if (!puedeEnOperacion(ctx, "plataforma.pld.manifiesto")) {
     return (
       <PaginaOperacion titulo="Conservación">

@@ -228,8 +228,13 @@ export async function dictaminarCasoAccion(previo: EstadoDelFormulario, formData
       propuestaId: texto(formData, "propuestaId"), resultado: texto(formData, "resultado"), justificacion: texto(formData, "justificacion"),
     }));
   } catch (error) {
-    // Sin el segundo factor reciente, la página lo pide (redirige); cualquier otro rechazo vuelve con lo capturado.
-    siPideFactor(error, caso(casoId), "#dictamen-titulo");
+    // r2-serv-N17: si el segundo factor venció mientras escribía, no se redirige (la justificación se perdía). Vuelve
+    // con lo capturado y la página se vuelve a leer, ya con «Confirma que eres tú» arriba del formulario; al confirmar,
+    // router.refresh conserva el texto. Nada del caso va en la dirección.
+    if (error instanceof ErrorDeDominio && error.codigo === "reautenticacion_requerida") {
+      revalidatePath(caso(casoId));
+      return rechazado(new ErrorDeDominio("pld_reautenticacion"), previo, formData, ["resultado", "sesionId", "justificacion"]);
+    }
     return rechazado(error, previo, formData, ["resultado", "sesionId", "justificacion"]);
   }
   listo(caso(casoId), fueraDePlazo ? "pld_dictamen_fuera_de_plazo" : "pld_dictamen_registrado", "#dictamen-titulo");

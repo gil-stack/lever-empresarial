@@ -9,6 +9,7 @@ import {
   registrarComunicacionAccion,
   registrarSesionAccion,
 } from "@/app/operacion/(portal)/pld/acciones";
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
@@ -34,9 +35,9 @@ const RENGLONES = 5;
  * avisos de integración por comunicar en 15 días hábiles y las sesiones (47ª, 48ª).
  * Lo administra Cumplimiento; Auditoría lo consulta.
  */
-export default async function ComiteOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string; en?: string }> }) {
+export default async function ComiteOperacion({ searchParams }: { searchParams: Parametros<"aviso" | "en"> }) {
   const ctx = await exigirContextoOperacion();
-  const params = await searchParams;
+  const params = await soloTexto(searchParams);
   if (!puedeEnOperacion(ctx, "plataforma.pld.ver")) {
     return (
       <PaginaOperacion titulo="Comité">

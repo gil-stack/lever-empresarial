@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { cambiarParametrosAccion } from "@/app/operacion/(portal)/pld/acciones";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { fechaHora } from "@/components/operacion/formato";
@@ -32,9 +33,9 @@ const ETIQUETAS: Array<[string, string]> = [
  * su fuente y están por confirmar con el Manual de Cumplimiento. Cumplimiento los
  * cambia con motivo; Auditoría los consulta.
  */
-export default async function ParametrosPld({ searchParams }: { searchParams: Promise<{ aviso?: string; en?: string }> }) {
+export default async function ParametrosPld({ searchParams }: { searchParams: Parametros<"aviso" | "en"> }) {
   const ctx = await exigirContextoOperacion();
-  const params = await searchParams;
+  const params = await soloTexto(searchParams);
   if (!puedeEnOperacion(ctx, "plataforma.pld.ver")) {
     return (
       <PaginaOperacion titulo="Parámetros de PLD">

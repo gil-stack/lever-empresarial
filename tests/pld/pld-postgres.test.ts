@@ -665,11 +665,18 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           // r2-base-N5: la misma persona (RFC o CURP) no ocupa dos lugares; valdría por varios titulares.
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [presidente, { ...secretario, rfc: presidente.rfc }, oficial] }), /comite_persona_repetida/);
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [presidente, secretario, { ...oficial, curp: presidente.curp }] }), /comite_persona_repetida/);
+          // r2-serv-N16: la misma persona en los renglones 2 y 4 se marca en el 4, la segunda aparición, por RFC o por CURP.
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [presidente, secretario, oficial, { ...vocal, rfc: secretario.rfc }] }), delRenglon("comite_persona_repetida", 3));
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [presidente, secretario, oficial, { ...vocal, curp: secretario.curp }] }), delRenglon("comite_persona_repetida", 3));
           assert.equal(await contar("select count(*)::int as n from pld_comite_integrantes"), 0);
           await registrarIntegrantes(cum, { integrantes: [presidente, secretario, oficial, vocal, integrante(PS, "PRESIDENTE", "SUPLENTE", "Pablo", { suplenteDe: P })] });
           assert.deepEqual(await uno("select nombres, primer_apellido, segundo_apellido, area from pld_comite_integrantes where id = $1", [P]),
             { nombres: "JOSE MARIA", primer_apellido: "NUÑEZ", segundo_apellido: "PEÑA", area: "DIRECCIÓN GENERAL" });
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [integrante(randomUUID(), "PRESIDENTE", "SUPLENTE", "Pedro", { suplenteDe: P })] }), /comite_un_suplente_por_titular/);
+          // r2-serv-N16: con quien ya está en el Comité, se marca el renglón que la repite (la base lo rechaza sin renglón).
+          await assert.rejects(registrarIntegrantes(cum, {
+            integrantes: [integrante(randomUUID(), "INTEGRANTE", "TITULAR", "Nuevo"), integrante(randomUUID(), "INTEGRANTE", "TITULAR", "Repite", { rfc: vocal.rfc })],
+          }), delRenglon("comite_persona_repetida", 1));
           // r2-base-N15: en pantalla, área y cargo con acentos; en lo que se captura en el SITI, sin ellos (la Ñ se queda).
           const paraSiti = contenidoParaSiti((await leerComite(cum)).integrantes);
           assert.match(paraSiti, /\nDIRECCION GENERAL\|PRESIDENTE\|TITULAR\|JOSE MARIA\|NUÑEZ\|PEÑA\|/);
@@ -785,10 +792,13 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           // votaron casos») ni la sube como firmada antes que Cumplimiento: recibe lo mismo que con una sesión inexistente.
           const actaDeCum2 = (sesionId: string) =>
             cargarActaFirmada(cum2, { formId: randomUUID(), sesionId, archivo: { nombre: "acta-sin-el-caso.pdf", bytes: PDF } }, { almacen });
+          const subidosAntes = almacen.guardados.size;
           for (const sesion of [S3, randomUUID()]) {
             await assert.rejects(actaEnPdf(cum2, sesion), /sesion_no_existe/);
             await assert.rejects(actaDeCum2(sesion), /sesion_no_existe/);
           }
+          // r2-serv-N15: la sesión y la exclusión se revisan antes de subir: nada llegó al almacén.
+          assert.equal(almacen.guardados.size, subidosAntes);
           await assert.rejects(sofipo(CUM2, (c) => c.query(
             "insert into pld_actas (id, sesion_id, operator_id, nombre_archivo, tipo_contenido, tamano_bytes, sha256, clave_blob, registrado_por) values ($1, $2, $3, 'a.pdf', 'application/pdf', 1, $4, 'x', $5)",
             [randomUUID(), S3, operador, "0".repeat(64), CUM2],
@@ -1270,6 +1280,49 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
             assert.deepEqual((await leerComite(ctx, enDosMeses)).mesesSinSesion, [], quien);
             assert.deepEqual((await leerBandejaPld(ctx, enDosMeses)).mesesSinSesion, [], quien);
           }
+        });
+
+        await t.test("subidas (r2-serv-N15): lo que no queda en la base se borra del almacén", async () => {
+          const almacenDeLaPrueba = almacenEnMemoria();
+          // Otra persona sube el acta mientras esta sube su archivo: el INSERT falla y lo subido se borra.
+          const sesion = randomUUID();
+          await registrarSesion(cum, { formId: sesion, celebradaEl: hoy, presentes: [P, S, I1], auditorPresente: false });
+          const enCarrera = {
+            ...almacenDeLaPrueba,
+            guardar: async (archivo: { clave: string; bytes: Uint8Array; tipo: string }) => {
+              await dueno.query(
+                "insert into pld_actas (id, sesion_id, operator_id, nombre_archivo, tipo_contenido, tamano_bytes, sha256, clave_blob, registrado_por) values ($1, $2, $3, 'otra.pdf', 'application/pdf', 1, $4, 'otra', $5)",
+                [randomUUID(), sesion, operador, "0".repeat(64), CUM],
+              );
+              return almacenDeLaPrueba.guardar(archivo);
+            },
+          };
+          await assert.rejects(cargarActaFirmada(cum, { formId: randomUUID(), sesionId: sesion, archivo: { nombre: "acta.pdf", bytes: PDF } }, { almacen: enCarrera }), /acta_ya_cargada/);
+          assert.equal(almacenDeLaPrueba.guardados.size, 1);
+          assert.deepEqual(almacenDeLaPrueba.borrados, [...almacenDeLaPrueba.guardados.keys()]);
+
+          // Doble clic: queda una sola fila y solo su archivo; la otra copia, si se subió, se borra.
+          const dobleClic = async (subir: (a: ReturnType<typeof almacenEnMemoria>) => Promise<void>, referenciada: () => Promise<string>) => {
+            const almacenado = almacenEnMemoria();
+            await Promise.all([subir(almacenado), subir(almacenado)]);
+            const clave = await referenciada();
+            const vivos = [...almacenado.guardados.keys()].filter((k) => !almacenado.borrados.includes(k));
+            assert.deepEqual(vivos, [clave]);
+          };
+          const otraSesion = randomUUID();
+          await registrarSesion(cum, { formId: otraSesion, celebradaEl: hoy, presentes: [P, S, I1], auditorPresente: false });
+          const acta = randomUUID();
+          await dobleClic(
+            (a) => cargarActaFirmada(cum, { formId: acta, sesionId: otraSesion, archivo: { nombre: "acta.pdf", bytes: PDF } }, { almacen: a }),
+            async () => (await uno<{ c: string }>("select clave_blob as c from pld_actas where id = $1", [acta])).c,
+          );
+          const acuse = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_inusual", companyId: beta, mencionada: "", superior: "", descripcion: "Depósitos repetidos sin soporte." });
+          const caso = await abrirCaso(cum, { formId: randomUUID(), alertaId: String((await uno("select id from pld_alertas where aviso_id = $1", [acuse.id])).id) });
+          const documento = randomUUID();
+          await dobleClic(
+            (a) => cargarDocumentoPld(cum, { casoId: caso, formId: documento, archivo: { nombre: "soporte.pdf", bytes: PDF } }, { almacen: a }),
+            async () => (await uno<{ c: string }>("select clave_blob as c from pld_documentos where id = $1", [documento])).c,
+          );
         });
 
         await t.test("personal (r2-fix-N2): ningún cambio deja un aviso abierto sin quien lo analice; con candado común contra el aviso", async () => {

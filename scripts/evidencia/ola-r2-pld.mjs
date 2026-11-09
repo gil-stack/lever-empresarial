@@ -628,6 +628,15 @@ async function flujo7() {
   exigir(invisible.marcado && invisible.foco && (await p.locator("#integrante-nombres-0").getAttribute("aria-invalid")) === null,
     "7. el invisible del renglón 2 marca ese nombre con el foco, no el del renglón 1", JSON.stringify(invisible));
   await foto(p, "f7-integrantes-invisible-en-el-renglon-2");
+  // r2-serv-N16: la misma persona en los renglones 2 y 4 se marca en el 4, la segunda aparición; no el RFC del 1.
+  await ir(p, "/operacion/comite#integrantes-titulo");
+  await llenarIntegrantes(p, [presidente, secretario, oficial, { ...vocal, rfc: secretario.rfc }, suplente]);
+  const repetida = await rechazarIntegrantes(p, "#integrante-rfc-3");
+  exigir(repetida.marcado && repetida.foco && (await p.locator("#integrante-rfc-0").getAttribute("aria-invalid")) === null
+    && (await p.locator("#integrante-rfc-1").getAttribute("aria-invalid")) === null && repetida.aviso.length > 0,
+    "7. la persona repetida en los renglones 2 y 4 marca el RFC del 4 con el foco, no el del 1 ni el del 2", JSON.stringify(repetida));
+  exigir(cuenta("pld_comite_integrantes") === 0, "7. y no guarda a nadie");
+  await foto(p, "f7-integrantes-persona-repetida-en-el-renglon-4");
   await ir(p, "/operacion/comite#integrantes-titulo");
   await llenarIntegrantes(p, [presidente, secretario, oficial, vocal, suplente]);
   await enviar(p, p.getByRole("button", { name: "Registrar en el Comité" }), "pld_integrantes_registrados", { doble: true });
@@ -757,6 +766,22 @@ async function flujo7() {
   await foto(p, "f7-dictamen-pide-confirmar");
   await confirmarIdentidad(p, "celia");
   anotar("7. Celia confirmó con su app autenticadora");
+  // r2-serv-N17: el factor vence mientras escribe. Al enviar, la página pide «Confirma que eres tú» y la justificación
+  // sigue escrita, sin nada en la dirección; al confirmar, también.
+  const escrita = "El Comité aprobó reportar la serie: lo escribí antes de que venciera el factor.";
+  await p.locator("#dictamen-justificacion").fill(escrita);
+  factor(E.IDS.celia, 31);
+  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.getByRole("button", { name: "Registrar dictamen" }).click();
+  await p.getByRole("region", { name: "Confirma que eres tú" }).waitFor({ timeout: 20000 });
+  await listo(p);
+  exigir((await p.locator("#dictamen-justificacion").inputValue()) === escrita && !new URL(p.url()).searchParams.has("aviso")
+    && !decodeURIComponent(p.url()).includes("escribí") && cuenta(`pld_dictamenes where caso_id = '${ids.casoTaller}'`) === 0
+    && (await p.getByText("las decisiones de PLD lo piden de los últimos 30 minutos").isVisible()),
+    "7. el factor venció mientras escribía: pide «Confirma que eres tú», la justificación sigue escrita y nada va en la dirección", p.url());
+  await foto(p, "f7-dictamen-factor-vencido-conserva-el-texto");
+  await confirmarIdentidad(p, "celia");
+  exigir((await p.locator("#dictamen-justificacion").inputValue()) === escrita, "7. al confirmar, la justificación sigue escrita");
   // r2-serv-N14: el dictamen rechazado tampoco pierde lo escrito.
   const escueta = "Ver \u{1F9FE}\u{1F9FE}\u{1F9FE}\u{1F9FE}";
   await p.locator("#dictamen-justificacion").fill(escueta);

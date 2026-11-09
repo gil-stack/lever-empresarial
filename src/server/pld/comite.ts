@@ -363,6 +363,11 @@ export async function registrarIntegrantes(
       throw error;
     }
   });
+  // r2-serv-N16: la misma persona (RFC o CURP) en dos renglones se marca en la segunda aparición.
+  const repetidaEn = (personas: Array<{ rfc: string; curp: string }>) =>
+    nuevos.findIndex((n, renglon) => personas.some((p, i) => (personas !== nuevos || i < renglon) && (p.rfc === n.rfc || p.curp === n.curp)));
+  const entreRenglones = repetidaEn(nuevos);
+  if (entreRenglones >= 0) throw new ErrorDeIntegrante("comite_persona_repetida", entreRenglones);
   let baja: { integranteId: string; sustituidoEl: string; motivo: string } | null = null;
   if (entrada.sustituye) {
     if (!uuidValido(entrada.sustituye.integranteId)) throw new ErrorDeDominio("comite_integrante_no_existe");
@@ -386,6 +391,13 @@ export async function registrarIntegrantes(
       await auditarPld(consulta, ctx, {
         companyId: null, accion: "pld_comite_integrante_sustituido", identificador: baja.integranteId, motivo: baja.motivo, ocurridoEn: ahora,
       });
+    }
+    // r2-serv-N16: y la que ya está en el Comité, en el renglón que la repite (la base lo rechaza sin renglón).
+    if (nuevos.length > 0) {
+      const vigentes = (await consulta.query("select rfc, curp from pld_comite_vigentes($1, 'infinity'::date)", [ctx.personal.operadorId]))
+        .rows as Array<{ rfc: string; curp: string }>;
+      const contraVigentes = repetidaEn(vigentes);
+      if (contraVigentes >= 0) throw new ErrorDeIntegrante("comite_persona_repetida", contraVigentes);
     }
     for (const n of nuevos) {
       await consulta.query(
@@ -699,15 +711,26 @@ export async function cargarActaFirmada(
     bytes: archivo.bytes,
     tipo: contenido.tipo,
   });
-  await unaVezPorFormulario(() => conPld(ctx, null, async (consulta) => {
-    if ((await consulta.query("select 1 from pld_actas where id = $1", [entrada.formId])).rows.length > 0) return;
-    await consulta.query(
-      `insert into pld_actas (id, sesion_id, operator_id, nombre_archivo, tipo_contenido, tamano_bytes, sha256, clave_blob, registrado_por)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [entrada.formId, entrada.sesionId, ctx.personal.operadorId, nombre, contenido.tipo, archivo.bytes.byteLength, sha256, guardado.clave, ctx.persona.id],
-    );
-    await auditarPld(consulta, ctx, { companyId: null, accion: "pld_acta_cargada", identificador: entrada.formId as string, ocurridoEn: ahora });
-  }), "formulario_invalido");
+  // r2-serv-N15: lo subido que no queda en la base (el INSERT falló o un doble clic ya la registró) se borra, como en
+  // el expediente del #59. La sesión y la exclusión (60ª) ya se revisaron arriba, antes de subir nada.
+  let referenciado = false;
+  try {
+    await unaVezPorFormulario(() => conPld(ctx, null, async (consulta) => {
+      referenciado = false;
+      if ((await consulta.query("select 1 from pld_actas where id = $1", [entrada.formId])).rows.length > 0) return;
+      await consulta.query(
+        `insert into pld_actas (id, sesion_id, operator_id, nombre_archivo, tipo_contenido, tamano_bytes, sha256, clave_blob, registrado_por)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [entrada.formId, entrada.sesionId, ctx.personal.operadorId, nombre, contenido.tipo, archivo.bytes.byteLength, sha256, guardado.clave, ctx.persona.id],
+      );
+      await auditarPld(consulta, ctx, { companyId: null, accion: "pld_acta_cargada", identificador: entrada.formId as string, ocurridoEn: ahora });
+      referenciado = true;
+    }), "formulario_invalido");
+  } catch (error) {
+    await deps.almacen.borrar(guardado.clave);
+    throw error;
+  }
+  if (!referenciado) await deps.almacen.borrar(guardado.clave);
 }
 
 export async function descargarActa(

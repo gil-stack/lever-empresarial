@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { abrirCasoAccion } from "@/app/operacion/(portal)/pld/acciones";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
@@ -21,9 +22,9 @@ export const metadata: Metadata = { title: "Alertas PLD · Operación" };
  * Cumplimiento y Auditoría; Auditoría consulta sin botones. Los días que quedan se
  * cuentan al leer con la fecha de hoy en la Ciudad de México (40ª: 60 días naturales).
  */
-export default async function AlertasPld({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
+export default async function AlertasPld({ searchParams }: { searchParams: Parametros<"aviso"> }) {
   const ctx = await exigirContextoOperacion();
-  const params = await searchParams;
+  const params = await soloTexto(searchParams);
   if (!puedeEnOperacion(ctx, "plataforma.pld.ver")) {
     return (
       <PaginaOperacion titulo="Alertas PLD">
