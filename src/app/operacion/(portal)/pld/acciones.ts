@@ -69,11 +69,6 @@ async function sesionConFactor() {
   return sesion;
 }
 
-/** Las decisiones de PLD piden el segundo factor de los últimos 30 minutos; la pantalla ofrece confirmarlo. */
-function siPideFactor(error: unknown, ruta: string, ancla: string): void {
-  if (error instanceof ErrorDeDominio && error.codigo === "reautenticacion_requerida") redirect(`${ruta}?aviso=pld_reautenticacion${ancla}`);
-}
-
 // Perfil transaccional y evaluación semestral (en el expediente).
 
 export async function declararPerfilAccion(formData: FormData): Promise<void> {
@@ -133,6 +128,20 @@ export type EstadoDelFormulario = { aviso: string | null; valores: Record<string
 function rechazado(error: unknown, previo: EstadoDelFormulario, formData: FormData, campos: readonly string[]): EstadoDelFormulario {
   if (!(error instanceof ErrorDeDominio)) throw error;
   return { aviso: error.codigo, valores: Object.fromEntries(campos.map((campo) => [campo, texto(formData, campo)])), vuelta: previo.vuelta + 1 };
+}
+
+/**
+ * Las decisiones de PLD (dictamen, parámetros y quién dictamina) piden el segundo factor de los últimos 30 minutos.
+ * r2-serv-N17: si venció mientras escribía, no se redirige (se perdía lo capturado). Vuelve con lo capturado y la
+ * página se vuelve a leer, ya con «Confirma que eres tú» arriba del formulario; al confirmar, router.refresh conserva
+ * lo escrito. Nada va en la dirección.
+ */
+function rechazadoODecidir(error: unknown, previo: EstadoDelFormulario, formData: FormData, campos: readonly string[], ruta: string): EstadoDelFormulario {
+  if (error instanceof ErrorDeDominio && error.codigo === "reautenticacion_requerida") {
+    revalidatePath(ruta);
+    return rechazado(new ErrorDeDominio("pld_reautenticacion"), previo, formData, campos);
+  }
+  return rechazado(error, previo, formData, campos);
 }
 
 export async function emitirAvisoAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
@@ -228,14 +237,7 @@ export async function dictaminarCasoAccion(previo: EstadoDelFormulario, formData
       propuestaId: texto(formData, "propuestaId"), resultado: texto(formData, "resultado"), justificacion: texto(formData, "justificacion"),
     }));
   } catch (error) {
-    // r2-serv-N17: si el segundo factor venció mientras escribía, no se redirige (la justificación se perdía). Vuelve
-    // con lo capturado y la página se vuelve a leer, ya con «Confirma que eres tú» arriba del formulario; al confirmar,
-    // router.refresh conserva el texto. Nada del caso va en la dirección.
-    if (error instanceof ErrorDeDominio && error.codigo === "reautenticacion_requerida") {
-      revalidatePath(caso(casoId));
-      return rechazado(new ErrorDeDominio("pld_reautenticacion"), previo, formData, ["resultado", "sesionId", "justificacion"]);
-    }
-    return rechazado(error, previo, formData, ["resultado", "sesionId", "justificacion"]);
+    return rechazadoODecidir(error, previo, formData, ["resultado", "sesionId", "justificacion"], caso(casoId));
   }
   listo(caso(casoId), fueraDePlazo ? "pld_dictamen_fuera_de_plazo" : "pld_dictamen_registrado", "#dictamen-titulo");
 }
@@ -255,7 +257,11 @@ export async function registrarReportePldAccion(formData: FormData): Promise<voi
   listo(caso(casoId), fueraDePlazo ? "pld_reporte_fuera_de_plazo" : "pld_reporte_registrado", "#reporte-titulo");
 }
 
-export async function cambiarParametrosAccion(formData: FormData): Promise<void> {
+const CAMPOS_PARAMETROS = [
+  "atipicoK", "atipicoHistorialMinimo", "fraccionN", "fraccionVentanaDias", "fraccionUmbral", "nominaPersonasPct", "factorGradoAlto", "motivo",
+] as const;
+
+export async function cambiarParametrosAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const sesion = await sesionConFactor();
   try {
@@ -265,22 +271,20 @@ export async function cambiarParametrosAccion(formData: FormData): Promise<void>
       nominaPersonasPct: texto(formData, "nominaPersonasPct"), factorGradoAlto: texto(formData, "factorGradoAlto"), motivo: texto(formData, "motivo"),
     });
   } catch (error) {
-    siPideFactor(error, "/operacion/pld/parametros", "#parametros-titulo");
-    return fallo(error, "/operacion/pld/parametros", "#parametros-titulo");
+    return rechazadoODecidir(error, previo, formData, CAMPOS_PARAMETROS, "/operacion/pld/parametros");
   }
   listo("/operacion/pld/parametros", "pld_parametros_cambiados");
 }
 
 // Comité.
 
-export async function cambiarModoAccion(formData: FormData): Promise<void> {
+export async function cambiarModoAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const sesion = await sesionConFactor();
   try {
     await cambiarModoDictamen(ctx, sesion, { formId: formData.get("formId"), modo: texto(formData, "modo"), oficialId: texto(formData, "oficialId"), motivo: texto(formData, "motivo") });
   } catch (error) {
-    siPideFactor(error, "/operacion/comite", "#modo-titulo");
-    return fallo(error, "/operacion/comite", "#modo-titulo");
+    return rechazadoODecidir(error, previo, formData, ["modo", "oficialId", "motivo"], "/operacion/comite");
   }
   listo("/operacion/comite", "pld_modo_cambiado", "#modo-titulo");
 }

@@ -59,7 +59,7 @@ export const MENSAJES_PLD: Record<string, string> = {
   // Aviso del personal (54ª fr. VIII, 60ª).
   pld_aviso_emitido: "Aviso enviado a Cumplimiento. Tu acuse queda abajo con su folio.",
   sin_permiso_para_avisar: "Solo el personal activo de la SOFIPO puede enviar este aviso.",
-  dato_invalido_descripcion: "Describe lo que viste en al menos 20 caracteres.",
+  dato_invalido_descripcion: "Describe lo que viste en al menos 20 caracteres que se vean.",
   dato_invalido_mencionada: "Elige a la persona de la lista o deja el campo vacío.",
   dato_invalido_superior: "Elige a tu superior de la lista, o deja el campo vacío. No puede ser la misma persona mencionada.",
   exclusion_propia: "No puedes excluirte a ti misma o a ti mismo del aviso.",
@@ -89,7 +89,7 @@ export const MENSAJES_PLD: Record<string, string> = {
   caso_ya_marcado_24h: "El caso ya estaba marcado como de 24 horas.",
   serie_de_otra_empresa: "Solo se suman alertas de la misma empresa: una serie va en un solo reporte por cliente.",
   serie_con_persona_excluida: "Esta alerta viene de un aviso que no puede ver alguien que ya trabajó en este caso. Ábrele un caso aparte.",
-  dato_invalido_texto: "Escribe la nota.",
+  dato_invalido_texto: "Escribe la nota, con al menos 2 caracteres que se vean.",
   dato_invalido_propuesta: "Elige la propuesta: reportar como inusual, como interna preocupante o no reportar.",
 
   // Quién dictamina, Comité y sesiones (46ª-49ª).
@@ -134,6 +134,8 @@ export const MENSAJES_PLD: Record<string, string> = {
   acta_ya_cargada: "La sesión ya tiene su acta firmada.",
   // r2-fix-N1 (48ª): el acta firmada cierra la sesión.
   sesion_con_acta: "Esta sesión ya tiene su acta firmada: lo que falte por votar va en una sesión nueva.",
+  // r2-fix2-N2 (60ª): no dice a quién excluye el caso ni quién trabaja en la sesión.
+  sesion_con_persona_excluida: "Este caso se vota en una sesión aparte: registra otra sesión para votarlo.",
   dato_invalido_modo: "Elige quién dictamina.",
   dato_invalido_oficialId: "Elige al Oficial de Cumplimiento.",
   dato_invalido_integrantes: "Captura al menos un integrante o elige a quién se sustituye.",

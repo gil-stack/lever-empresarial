@@ -479,6 +479,12 @@ async function flujo5() {
   exigir((await omar0.p.locator("#aviso-tipo").inputValue()) === "posible_inusual" && (await omar0.p.locator("#aviso-empresa").inputValue()) === taller, "5. y el tipo y la empresa elegidos");
   exigir(avisoCorto.limpia && cuenta("pld_avisos") === antes, "5. sin texto ni aviso en la dirección, y sin guardar nada");
   await foto(omar0.p, "f5-aviso-rechazado-conserva-el-texto");
+  // r2-fix2-N1: «Revisar» con 13 U+3164 son 20 para el navegador y 7 que se ven; el servidor lo rechaza.
+  const relleno = `Revisar${"ㅤ".repeat(13)}`;
+  await omar0.p.locator("#aviso-descripcion").fill(relleno);
+  const avisoInvisible = await rechazoConservaElTexto(omar0.p, "Enviar aviso", "#aviso-descripcion", relleno);
+  exigir(avisoInvisible.marcado && avisoInvisible.foco && avisoInvisible.conserva && avisoInvisible.limpia && cuenta("pld_avisos") === antes,
+    "5. «Revisar» con 13 caracteres invisibles no llega a 20 que se vean: se rechaza, marcado y con el foco, sin guardar nada", JSON.stringify(avisoInvisible));
   await cerrar(omar0, "Omar");
   const omar = await emitirAviso("omar", {
     tipo: "posible_interna_preocupante", empresa: "Taller del Cierre", mencionada: NOMBRES.aurelio,
@@ -562,6 +568,11 @@ async function flujo6() {
   exigir(cuenta(`pld_caso_alertas where caso_id = '${ids.casoTaller}'`) === 4, "6. la serie de Taller va en un solo caso: el perfil de pagos y de nómina, el fraccionamiento y la nómina atípica");
   exigir((await p.locator("li", { has: p.locator("h4", { hasText: "Aviso del personal" }) }).count()) === 1, "6. el aviso del personal queda fuera, para su propio caso");
 
+  // r2-fix2-N1: «a» con un U+3164 es una sola letra que se ve; la nota pide dos.
+  await p.locator("#nota-texto").fill("aㅤ");
+  await enviar(p, p.getByRole("button", { name: "Agregar nota" }), "dato_invalido_texto");
+  exigir(cuenta(`pld_notas where caso_id = '${ids.casoTaller}'`) === 0 && (await p.locator('#nota-texto[aria-invalid="true"]').count()) === 1,
+    "6. la nota «a» con un carácter invisible se rechaza, con el campo marcado");
   await p.locator("#nota-texto").fill("Los tres pagos van al mismo proveedor y la nómina subió con una sola persona. Pido el contrato de suministro.");
   await enviar(p, p.getByRole("button", { name: "Agregar nota" }), "pld_nota_agregada", { doble: true });
   exigir(cuenta(`pld_notas where caso_id = '${ids.casoTaller}'`) === 1, "6. doble clic en «Agregar nota» = 1 nota");
@@ -1356,6 +1367,18 @@ async function flujo15() {
   await enviar(p, p.getByRole("button", { name: "Guardar quién dictamina" }), "pld_modo_cambiado");
   ids.casoCiro = await abrirCaso(p, "Aviso del personal · Cobre Antiguo");
   await proponer(p, "reportar_interna", "El analista pidió cerrar una alerta sin revisarla: se reporta como interna preocupante.");
+  // r2-fix2-N2: Ciro registra una sesión de hoy. El caso del aviso sobre Ciro no se vota ahí: la sesión le
+  // desaparecería. Celia lo vota en una sesión aparte; el aviso no dice a quién excluye.
+  const ciro0 = await abrir("ciro");
+  const deCiro = await registrarSesion(ciro0.p, hoy(), [SIT.presidente, SIT.secretario, SIT.oficial, SIT.vocal]);
+  await cerrar(ciro0, "Ciro");
+  await ir(p, `/operacion/comite/sesiones/${deCiro.id}`);
+  const temaCiro = p.locator("li", { has: p.locator("h3", { hasText: "Cobre Antiguo" }) }).first();
+  await enviar(p, temaCiro.getByRole("button", { name: `${SIT.presidente} vota a favor` }), "sesion_con_persona_excluida", { doble: true });
+  const avisoAparte = await aviso(p);
+  exigir(avisoAparte.includes("Este caso se vota en una sesión aparte") && !avisoAparte.includes(NOMBRES.ciro) && cuenta(`pld_votos where sesion_id = '${deCiro.id}'`) === 0,
+    "15. el caso del aviso sobre Ciro no se vota en la sesión que registró Ciro: «Este caso se vota en una sesión aparte», sin decir a quién excluye", avisoAparte);
+  await foto(p, "f15-caso-oculto-en-sesion-aparte");
   const oculta = await registrarSesion(p, hoy(), [SIT.presidente, SIT.secretario, SIT.oficial, SIT.vocal]);
   ids.sesionOculta = oculta.id;
   await votar(p, "Cobre Antiguo", [[SIT.presidente, "a_favor"], [SIT.secretario, "a_favor"], [SIT.oficial, "a_favor"], [SIT.vocal, "a_favor"]]);
@@ -1369,6 +1392,7 @@ async function flujo15() {
   await ir(c, "/operacion/comite#sesiones-titulo");
   const enlace = (id) => hoja(c, "sesiones-titulo").locator(`a[href="/operacion/comite/sesiones/${id}"]`);
   exigir((await enlace(oculta.id).count()) === 0 && (await enlace(visible.id).count()) === 1, "15. Ciro ve la sesión sin su caso y no la que lo votó");
+  exigir((await enlace(deCiro.id).count()) === 1, "15. y sigue viendo la sesión que él registró (r2-fix2-N2)");
   await foto(c, "f15-ciro-no-ve-la-sesion-de-su-caso");
   // Lo mismo que con una sesión que no existe: la página y el acta en PDF.
   const inexistente = randomUUID();
@@ -1434,8 +1458,101 @@ async function flujo15() {
   await cerrar(ofelia, "Ofelia");
 }
 
+/** Lo que un formulario tiene escrito, campo por campo (selector → valor). */
+async function escrito(p, campos) {
+  return Object.fromEntries(await Promise.all(Object.keys(campos).map(async (campo) => [campo, await p.locator(campo).inputValue()])));
+}
+const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+async function flujo16() {
+  console.log("\n— Flujo 16: parámetros y «quién dictamina» rechazados, o con el factor vencido, conservan lo capturado");
+  reloj(null);
+  renovarSesiones();
+  const celia = await abrir("celia");
+  const { p } = celia;
+
+  // Parámetros: el factor vence mientras Celia escribe la versión nueva.
+  factor(E.IDS.celia, 31);
+  await ir(p, "/operacion/pld/parametros#parametros-titulo");
+  exigir(await p.getByRole("region", { name: "Confirma que eres tú" }).isVisible(), "16. cambiar parámetros pide «Confirma que eres tú»");
+  await confirmarIdentidad(p, "celia");
+  const versiones = cuenta("pld_parametros");
+  const nuevos = {
+    "#parametros-k": "4.50", "#parametros-historial": "12", "#parametros-n": "4", "#parametros-ventana": "10", "#parametros-umbral": "80000.00",
+    "#parametros-pct": "30", "#parametros-factor": "0.75", "#parametros-motivo": "El Manual de Cumplimiento fija 4.5 veces la mediana y un umbral de $80,000.",
+  };
+  for (const [campo, valor] of Object.entries(nuevos)) await p.locator(campo).fill(valor);
+  factor(E.IDS.celia, 31);
+  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.getByRole("button", { name: "Guardar versión nueva" }).click();
+  await p.getByRole("region", { name: "Confirma que eres tú" }).waitFor({ timeout: 20000 });
+  await listo(p);
+  const limpia = () => !new URL(p.url()).searchParams.has("aviso") && !decodeURIComponent(p.url()).includes("Manual");
+  exigir(igual(await escrito(p, nuevos), nuevos) && limpia() && cuenta("pld_parametros") === versiones
+    && (await p.getByText("las decisiones de PLD lo piden de los últimos 30 minutos").isVisible()),
+    "16. el factor venció mientras escribía: pide «Confirma que eres tú», los 7 valores y el motivo siguen y nada va en la dirección", JSON.stringify(await escrito(p, nuevos)));
+  await foto(p, "f16-parametros-factor-vencido-conserva-lo-capturado");
+  await confirmarIdentidad(p, "celia");
+  exigir(igual(await escrito(p, nuevos), nuevos), "16. al confirmar, lo capturado sigue");
+  // Un umbral de 50 centavos se rechaza: queda marcado y con el foco, y lo demás sigue escrito.
+  await p.locator("#parametros-umbral").fill("0.50");
+  const umbral = await rechazoConservaElTexto(p, "Guardar versión nueva", "#parametros-umbral", "0.50");
+  exigir(umbral.marcado && umbral.foco && umbral.conserva && umbral.limpia && igual(await escrito(p, nuevos), { ...nuevos, "#parametros-umbral": "0.50" })
+    && cuenta("pld_parametros") === versiones, "16. el umbral rechazado queda marcado y con el foco; los otros valores y el motivo siguen, sin nada en la dirección ni en la base", JSON.stringify(umbral));
+  await foto(p, "f16-parametros-rechazados-conservan-lo-capturado");
+  await p.locator("#parametros-umbral").fill("80000.00");
+  await enviar(p, p.getByRole("button", { name: "Guardar versión nueva" }), "pld_parametros_cambiados", { doble: true });
+  exigir(cuenta("pld_parametros") === versiones + 1, "16. doble clic en «Guardar versión nueva» = 1 versión");
+  exigir(sql("select atipico_k || ' ' || fraccion_umbral_centavos || ' ' || factor_grado_alto from pld_parametros order by registrado_en desc limit 1") === "4.50 8000000 0.75",
+    "16. la versión nueva guarda lo capturado", sql("select atipico_k || ' ' || fraccion_umbral_centavos || ' ' || factor_grado_alto from pld_parametros order by registrado_en desc limit 1"));
+
+  // Quién dictamina: lo mismo con el modo, la persona y el motivo.
+  factor(E.IDS.celia, 31);
+  await ir(p, "/operacion/comite#modo-titulo");
+  await confirmarIdentidad(p, "celia");
+  const cambios = cuenta("pld_modo_dictamen");
+  const oficial = await p.locator("#modo-oficial option", { hasText: NOMBRES.celia }).first().getAttribute("value");
+  const motivo = "El Comité no se reúne este mes: dictamina el Oficial mientras tanto.";
+  await p.getByRole("radio", { name: "El Oficial de Cumplimiento" }).check();
+  await p.locator("#modo-oficial").selectOption(oficial);
+  await p.locator("#modo-motivo").fill(motivo);
+  const modo = async () => ({
+    oficial: await p.getByRole("radio", { name: "El Oficial de Cumplimiento" }).isChecked(), persona: await p.locator("#modo-oficial").inputValue(),
+    motivo: await p.locator("#modo-motivo").inputValue(),
+  });
+  factor(E.IDS.celia, 31);
+  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.getByRole("button", { name: "Guardar quién dictamina" }).click();
+  await p.getByRole("region", { name: "Confirma que eres tú" }).waitFor({ timeout: 20000 });
+  await listo(p);
+  exigir(igual(await modo(), { oficial: true, persona: oficial, motivo }) && !new URL(p.url()).searchParams.has("aviso") && cuenta("pld_modo_dictamen") === cambios,
+    "16. «quién dictamina» con el factor vencido: pide confirmar y siguen el modo, la persona y el motivo", JSON.stringify(await modo()));
+  await foto(p, "f16-quien-dictamina-factor-vencido-conserva-lo-capturado");
+  await confirmarIdentidad(p, "celia");
+  exigir(igual(await modo(), { oficial: true, persona: oficial, motivo }), "16. al confirmar, siguen");
+  // Oficial sin persona: se rechaza, la persona queda marcada y con el foco, y el motivo sigue.
+  await p.locator("#modo-oficial").selectOption("");
+  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.getByRole("button", { name: "Guardar quién dictamina" }).click();
+  const marcada = await p.locator('#modo-oficial[aria-invalid="true"]').waitFor({ timeout: 20000 }).then(() => true, () => false);
+  await listo(p);
+  const enfocada = await p.waitForFunction(() => document.activeElement?.id === "modo-oficial", null, { timeout: 5000 }).then(() => true, () => false);
+  exigir(marcada && enfocada && igual(await modo(), { oficial: true, persona: "", motivo }) && !new URL(p.url()).searchParams.has("aviso") && cuenta("pld_modo_dictamen") === cambios,
+    "16. el Oficial sin persona se rechaza: la persona queda marcada y con el foco, y el modo y el motivo siguen", JSON.stringify({ marcada, enfocada, ...(await modo()) }));
+  await foto(p, "f16-quien-dictamina-rechazado-conserva-lo-capturado");
+  await p.locator("#modo-oficial").selectOption(oficial);
+  await enviar(p, p.getByRole("button", { name: "Guardar quién dictamina" }), "pld_modo_cambiado", { doble: true });
+  exigir(cuenta("pld_modo_dictamen") === cambios + 1, "16. doble clic en «Guardar quién dictamina» = 1 cambio");
+  // De vuelta al Comité, para que las pantallas lo muestren con sus sesiones.
+  await p.getByRole("radio", { name: "El Comité" }).check();
+  await p.locator("#modo-motivo").fill("Se reúne otra vez el Comité: regresa a dictaminar.");
+  await enviar(p, p.getByRole("button", { name: "Guardar quién dictamina" }), "pld_modo_cambiado");
+  exigir(sql("select modo from pld_modo_dictamen order by registrado_en desc limit 1") === "comite", "16. y regresa al Comité");
+  await cerrar(celia, "Celia");
+}
+
 // ---------- Corrida ----------
-const FLUJOS = { f1: flujo1, f2: flujo2, f3: flujo3, f4: flujo4, f5: flujo5, f6: flujo6, f7: flujo7, f8: flujo8, f9: flujo9, f10: flujo10, f11: flujo11, f12: flujo12, f13: flujo13, f14: flujo14, f15: flujo15 };
+const FLUJOS = { f1: flujo1, f2: flujo2, f3: flujo3, f4: flujo4, f5: flujo5, f6: flujo6, f7: flujo7, f8: flujo8, f9: flujo9, f10: flujo10, f11: flujo11, f12: flujo12, f13: flujo13, f14: flujo14, f15: flujo15, f16: flujo16 };
 const IDS_GUARDADOS = `${RUTA_ESTADO}.ids.json`;
 let fallo = null;
 const inicio = Date.now();

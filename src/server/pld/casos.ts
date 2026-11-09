@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 
 import { TOPE_ARCHIVO_BYTES } from "../../dominio/archivos";
+import { caracteresVisibles } from "../../dominio/control";
 import { hoyEnMexico, textoMultilinea, textoOperativo, uuidValido } from "../../dominio/operacion";
 import { PROPUESTAS, REGLAS, type Propuesta, type Regla } from "../../dominio/pld/etiquetas";
 import { diasNaturales } from "../../dominio/pld/plazos";
@@ -339,7 +340,8 @@ export async function agregarNota(
   if (!uuidValido(entrada.casoId)) throw new ErrorDeDominio("caso_no_existe");
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
   const texto = textoMultilinea(entrada.texto, 4000);
-  if (!texto || [...texto].length < 2) throw new ErrorDeDominio("dato_invalido_texto");
+  // r2-fix2-N1: cuentan los caracteres que se ven; «a» con U+3164 es uno.
+  if (!texto || caracteresVisibles(texto) < 2) throw new ErrorDeDominio("dato_invalido_texto");
   const ahora = deps.ahora?.() ?? new Date();
   await unaVezPorFormulario(() => conPld(ctx, null, async (consulta) => {
     const previo = await consulta.query("select caso_id from pld_notas where id = $1", [entrada.formId]);

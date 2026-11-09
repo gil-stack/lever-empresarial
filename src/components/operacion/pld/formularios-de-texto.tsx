@@ -3,6 +3,8 @@
 import { useActionState, useEffect, useRef } from "react";
 
 import {
+  cambiarModoAccion,
+  cambiarParametrosAccion,
   dictaminarCasoAccion,
   emitirAvisoAccion,
   registrarPropuestaAccion,
@@ -15,8 +17,9 @@ import { PROPUESTA, PROPUESTAS, TIPO_AVISO, TIPOS_AVISO } from "@/dominio/pld/et
 const SIN_AVISO: EstadoDelFormulario = { aviso: null, valores: {}, vuelta: 0 };
 
 /**
- * r2-serv-N14: un aviso, una propuesta o un dictamen rechazados vuelven sin recargar con lo capturado, el aviso arriba
- * y el foco en el campo marcado; el texto nunca pasa por la dirección. La clave `vuelta` vuelve a montar los campos.
+ * r2-serv-N14: un aviso, una propuesta, un dictamen, los parámetros o «quién dictamina» rechazados vuelven sin recargar
+ * con lo capturado, el aviso arriba y el foco en el campo marcado; el texto nunca pasa por la dirección. También si el
+ * segundo factor venció mientras se escribía (r2-serv-N17). La clave `vuelta` vuelve a montar los campos.
  */
 function useConservaLoCapturado(accion: (previo: EstadoDelFormulario, datos: FormData) => Promise<EstadoDelFormulario>, idAviso: string) {
   const [estado, enviar] = useActionState(accion, SIN_AVISO);
@@ -220,6 +223,89 @@ export function FormularioDictamen({
       <div className="acciones">
         <BotonEnviar>Registrar dictamen</BotonEnviar>
         <p>{pista}</p>
+      </div>
+    </form>
+  );
+}
+
+/** Los parámetros de las reglas de alerta (54ª): una versión nueva con su motivo. */
+export function FormularioParametros({ formId, iniciales }: { formId: string; iniciales: Record<string, string> }) {
+  const { estado, enviar, forma, valor, ligado, aviso } = useConservaLoCapturado(cambiarParametrosAccion, "aviso-parametros");
+  const numero = (id: string, campo: string, etiqueta: string, modo: "decimal" | "numeric") => (
+    <div className="campo">
+      <label htmlFor={id}>{etiqueta}</label>
+      <input id={id} name={campo} inputMode={modo} required defaultValue={valor(campo, iniciales[campo])} {...ligado(campo)} />
+    </div>
+  );
+  return (
+    <form key={estado.vuelta} ref={forma} action={enviar} className="formulario-pareja operacion-forma">
+      <input type="hidden" name="formId" value={formId} />
+      {aviso ? <div className="operacion-ancho">{aviso}</div> : null}
+      {numero("parametros-k", "atipicoK", "Monto atípico: veces la mediana (1 a 100)", "decimal")}
+      {numero("parametros-historial", "atipicoHistorialMinimo", "Monto atípico: operaciones previas mínimas", "numeric")}
+      {numero("parametros-n", "fraccionN", "Fraccionamiento: instrucciones mínimas (2 a 100)", "numeric")}
+      {numero("parametros-ventana", "fraccionVentanaDias", "Fraccionamiento: ventana en días (1 a 90)", "numeric")}
+      {numero("parametros-umbral", "fraccionUmbral", "Fraccionamiento: umbral en pesos", "decimal")}
+      {numero("parametros-pct", "nominaPersonasPct", "Nómina atípica: aumento de personas en %", "decimal")}
+      {numero("parametros-factor", "factorGradoAlto", "Grado alto: factor (más de 0 y hasta 1)", "decimal")}
+      <div className="campo operacion-ancho">
+        <label htmlFor="parametros-motivo">Motivo del cambio</label>
+        <textarea id="parametros-motivo" name="motivo" required minLength={10} maxLength={500} defaultValue={valor("motivo")} {...ligado("motivo")} />
+      </div>
+      <div className="acciones operacion-ancho">
+        <BotonEnviar>Guardar versión nueva</BotonEnviar>
+        <p>La versión anterior no cambia. Las alertas ya generadas guardan los valores con que se calcularon.</p>
+      </div>
+    </form>
+  );
+}
+
+/** Quién dictamina (47ª, último párrafo): el Comité o el Oficial de Cumplimiento, con motivo. */
+export function FormularioModo({
+  formId,
+  modo,
+  oficialId,
+  personas,
+}: {
+  formId: string;
+  modo: string;
+  oficialId: string;
+  personas: Array<{ id: string; nombre: string }>;
+}) {
+  const { estado, enviar, forma, valor, ligado, aviso } = useConservaLoCapturado(cambiarModoAccion, "aviso-modo");
+  const elegido = valor("modo", modo);
+  return (
+    <form key={estado.vuelta} ref={forma} action={enviar} className="formulario-pareja operacion-forma">
+      <input type="hidden" name="formId" value={formId} />
+      {aviso ? <div className="operacion-ancho">{aviso}</div> : null}
+      <fieldset className="opciones">
+        <legend>Dictamina</legend>
+        <label className="confirmacion">
+          <input type="radio" name="modo" value="comite" defaultChecked={elegido === "comite"} />
+          <span>El Comité</span>
+        </label>
+        <label className="confirmacion">
+          <input type="radio" name="modo" value="oficial" defaultChecked={elegido === "oficial"} />
+          <span>El Oficial de Cumplimiento</span>
+        </label>
+      </fieldset>
+      <div className="campo">
+        <label htmlFor="modo-oficial">Oficial de Cumplimiento (si dictamina el Oficial)</label>
+        <select id="modo-oficial" name="oficialId" defaultValue={valor("oficialId", oficialId)} {...ligado("oficialId")}>
+          <option value="">Elige a una persona de Cumplimiento</option>
+          {personas.map((persona) => (
+            <option key={persona.id} value={persona.id}>
+              {persona.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="campo operacion-ancho">
+        <label htmlFor="modo-motivo">Motivo del cambio</label>
+        <textarea id="modo-motivo" name="motivo" required minLength={10} maxLength={500} defaultValue={valor("motivo")} {...ligado("motivo")} />
+      </div>
+      <div className="acciones operacion-ancho">
+        <BotonEnviar>Guardar quién dictamina</BotonEnviar>
       </div>
     </form>
   );

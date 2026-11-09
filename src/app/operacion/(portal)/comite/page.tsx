@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import {
-  cambiarModoAccion,
   registrarAuditorAccion,
   registrarComunicacionAccion,
   registrarSesionAccion,
@@ -15,6 +14,7 @@ import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { ConfirmarParaDecidir } from "@/components/operacion/pld/confirmar";
 import { FormularioIntegrantes } from "@/components/operacion/pld/formulario-integrantes";
+import { FormularioModo } from "@/components/operacion/pld/formularios-de-texto";
 import { ahoraEnMexicoParaCampo } from "@/components/operacion/pld/formato";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
@@ -72,38 +72,7 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
         </p>
         {administra ? <ConfirmarParaDecidir motivo="Antes de cambiar quién dictamina, prueba tu segundo factor. Vale 30 minutos." /> : null}
         {administra ? (
-          <form action={cambiarModoAccion} className="formulario-pareja operacion-forma">
-            <input type="hidden" name="formId" value={randomUUID()} />
-            <fieldset className="opciones">
-              <legend>Dictamina</legend>
-              <label className="confirmacion">
-                <input type="radio" name="modo" value="comite" defaultChecked={modo.modo === "comite"} />
-                <span>El Comité</span>
-              </label>
-              <label className="confirmacion">
-                <input type="radio" name="modo" value="oficial" defaultChecked={modo.modo === "oficial"} />
-                <span>El Oficial de Cumplimiento</span>
-              </label>
-            </fieldset>
-            <div className="campo">
-              <label htmlFor="modo-oficial">Oficial de Cumplimiento (si dictamina el Oficial)</label>
-              <select id="modo-oficial" name="oficialId" defaultValue={modo.oficialId ?? ""} {...error("modo-titulo", "oficialId")}>
-                <option value="">Elige a una persona de Cumplimiento</option>
-                {deCumplimiento.map((persona) => (
-                  <option key={persona.id} value={persona.id}>
-                    {persona.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="campo operacion-ancho">
-              <label htmlFor="modo-motivo">Motivo del cambio</label>
-              <textarea id="modo-motivo" name="motivo" required minLength={10} maxLength={500} {...error("modo-titulo", "motivo")} />
-            </div>
-            <div className="acciones operacion-ancho">
-              <BotonEnviar>Guardar quién dictamina</BotonEnviar>
-            </div>
-          </form>
+          <FormularioModo formId={randomUUID()} modo={modo.modo} oficialId={modo.oficialId ?? ""} personas={deCumplimiento} />
         ) : null}
       </Hoja>
 

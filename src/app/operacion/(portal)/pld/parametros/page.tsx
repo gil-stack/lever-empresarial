@@ -4,13 +4,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
-import { cambiarParametrosAccion } from "@/app/operacion/(portal)/pld/acciones";
-import { errorDelCampo } from "@/components/operacion/aviso";
 import { fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { ConfirmarParaDecidir } from "@/components/operacion/pld/confirmar";
+import { FormularioParametros } from "@/components/operacion/pld/formularios-de-texto";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
-import { BotonEnviar, Hoja, Insignia, NotaRegla, Renglon, Renglones } from "@/components/sistema";
+import { Hoja, Insignia, NotaRegla, Renglon, Renglones } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
 import { exigirContextoOperacion, puedeEnOperacion } from "@/server/operacion";
 import { leerParametros } from "@/server/pld";
@@ -33,7 +32,7 @@ const ETIQUETAS: Array<[string, string]> = [
  * su fuente y están por confirmar con el Manual de Cumplimiento. Cumplimiento los
  * cambia con motivo; Auditoría los consulta.
  */
-export default async function ParametrosPld({ searchParams }: { searchParams: Parametros<"aviso" | "en"> }) {
+export default async function ParametrosPld({ searchParams }: { searchParams: Parametros<"aviso"> }) {
   const ctx = await exigirContextoOperacion();
   const params = await soloTexto(searchParams);
   if (!puedeEnOperacion(ctx, "plataforma.pld.ver")) {
@@ -45,7 +44,6 @@ export default async function ParametrosPld({ searchParams }: { searchParams: Pa
   }
   const p = await leerParametros(ctx);
   const cambia = puedeEnOperacion(ctx, "plataforma.pld.analizar");
-  const error = (campo: string) => (params.en === "parametros-titulo" ? errorDelCampo(params.aviso, campo) : {});
   const valores: Record<string, string> = {
     atipico_k: `${p.atipicoK} veces`,
     atipico_historial_minimo: `${p.atipicoHistorialMinimo} operaciones`,
@@ -85,45 +83,18 @@ export default async function ParametrosPld({ searchParams }: { searchParams: Pa
       {cambia ? (
         <Hoja id="parametros-titulo" titulo="Cambiar parámetros">
           <ConfirmarParaDecidir motivo="Antes de cambiar los parámetros de las alertas, prueba tu segundo factor. Vale 30 minutos." />
-          <form action={cambiarParametrosAccion} className="formulario-pareja operacion-forma">
-            <input type="hidden" name="formId" value={randomUUID()} />
-            <div className="campo">
-              <label htmlFor="parametros-k">Monto atípico: veces la mediana (1 a 100)</label>
-              <input id="parametros-k" name="atipicoK" inputMode="decimal" required defaultValue={p.atipicoK} {...error("atipicoK")} />
-            </div>
-            <div className="campo">
-              <label htmlFor="parametros-historial">Monto atípico: operaciones previas mínimas</label>
-              <input id="parametros-historial" name="atipicoHistorialMinimo" inputMode="numeric" required defaultValue={String(p.atipicoHistorialMinimo)} {...error("atipicoHistorialMinimo")} />
-            </div>
-            <div className="campo">
-              <label htmlFor="parametros-n">Fraccionamiento: instrucciones mínimas (2 a 100)</label>
-              <input id="parametros-n" name="fraccionN" inputMode="numeric" required defaultValue={String(p.fraccionN)} {...error("fraccionN")} />
-            </div>
-            <div className="campo">
-              <label htmlFor="parametros-ventana">Fraccionamiento: ventana en días (1 a 90)</label>
-              <input id="parametros-ventana" name="fraccionVentanaDias" inputMode="numeric" required defaultValue={String(p.fraccionVentanaDias)} {...error("fraccionVentanaDias")} />
-            </div>
-            <div className="campo">
-              <label htmlFor="parametros-umbral">Fraccionamiento: umbral en pesos</label>
-              <input id="parametros-umbral" name="fraccionUmbral" inputMode="decimal" required defaultValue={(p.fraccionUmbralCentavos / 100).toFixed(2)} {...error("fraccionUmbral")} />
-            </div>
-            <div className="campo">
-              <label htmlFor="parametros-pct">Nómina atípica: aumento de personas en %</label>
-              <input id="parametros-pct" name="nominaPersonasPct" inputMode="decimal" required defaultValue={p.nominaPersonasPct} {...error("nominaPersonasPct")} />
-            </div>
-            <div className="campo">
-              <label htmlFor="parametros-factor">Grado alto: factor (más de 0 y hasta 1)</label>
-              <input id="parametros-factor" name="factorGradoAlto" inputMode="decimal" required defaultValue={p.factorGradoAlto} {...error("factorGradoAlto")} />
-            </div>
-            <div className="campo operacion-ancho">
-              <label htmlFor="parametros-motivo">Motivo del cambio</label>
-              <textarea id="parametros-motivo" name="motivo" required minLength={10} maxLength={500} {...error("motivo")} />
-            </div>
-            <div className="acciones operacion-ancho">
-              <BotonEnviar>Guardar versión nueva</BotonEnviar>
-              <p>La versión anterior no cambia. Las alertas ya generadas guardan los valores con que se calcularon.</p>
-            </div>
-          </form>
+          <FormularioParametros
+            formId={randomUUID()}
+            iniciales={{
+              atipicoK: p.atipicoK,
+              atipicoHistorialMinimo: String(p.atipicoHistorialMinimo),
+              fraccionN: String(p.fraccionN),
+              fraccionVentanaDias: String(p.fraccionVentanaDias),
+              fraccionUmbral: (p.fraccionUmbralCentavos / 100).toFixed(2),
+              nominaPersonasPct: p.nominaPersonasPct,
+              factorGradoAlto: p.factorGradoAlto,
+            }}
+          />
         </Hoja>
       ) : null}
 

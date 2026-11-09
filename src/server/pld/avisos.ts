@@ -1,3 +1,4 @@
+import { caracteresVisibles } from "../../dominio/control";
 import { textoMultilinea, uuidValido } from "../../dominio/operacion";
 import { TIPOS_AVISO, type TipoAviso } from "../../dominio/pld/etiquetas";
 import type { ContextoDePersonal } from "../../nucleo/contexto";
@@ -44,7 +45,8 @@ export async function emitirAviso(
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
   if (!(TIPOS_AVISO as readonly unknown[]).includes(entrada.tipo)) throw new ErrorDeDominio("dato_invalido_tipo");
   const descripcion = textoMultilinea(entrada.descripcion, 4000);
-  if (!descripcion || [...descripcion].length < 20) throw new ErrorDeDominio("dato_invalido_descripcion");
+  // r2-fix2-N1: cuentan los caracteres que se ven, como en motivoEscrito; «Revisar» con 13 U+3164 son 7.
+  if (!descripcion || caracteresVisibles(descripcion) < 20) throw new ErrorDeDominio("dato_invalido_descripcion");
   const companyId = entrada.companyId === "" || entrada.companyId === undefined || entrada.companyId === null ? null : entrada.companyId;
   if (companyId !== null && !uuidValido(companyId)) throw new ErrorDeDominio("dato_invalido_companyId");
   const excluir = (valor: unknown, campo: string): string | null => {

@@ -1448,6 +1448,159 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.equal(await contar("select count(*)::int as n from pld_caso_alertas where alerta_id = $1", [alertaContraCum]), 0);
           assert.equal(await estado(CUM3), "suspendido");
         });
+
+        await t.test("sesión con persona excluida (r2-fix2-N2): ningún caso entra a una sesión de alguien a quien excluye", async () => {
+          const conExcluida = /sesion_con_persona_excluida/;
+          const alertaDe = async (avisoId: string) => String((await uno("select id from pld_alertas where aviso_id = $1", [avisoId])).id);
+          const casoCon = async (quien: typeof cum, mencionada: string, descripcion: string) => {
+            const acuse = await emitirAviso(apr, { formId: randomUUID(), tipo: mencionada ? "posible_interna_preocupante" : "posible_inusual", companyId: beta, mencionada, superior: "", descripcion });
+            const caso = await abrirCaso(quien, { formId: randomUUID(), alertaId: await alertaDe(acuse.id) });
+            await registrarPropuesta(quien, { casoId: caso, formId: randomUUID(), propuesta: "no_reportar", justificacion: "El cliente explicó los pagos con contrato" });
+            return { caso, propuesta: String((await uno("select id from pld_propuestas where caso_id = $1", [caso])).id) };
+          };
+          const normal = (quien: typeof cum) => casoCon(quien, "", "Pagos repetidos al mismo proveedor en pocos días.");
+          const contraCum2 = () => casoCon(cum, CUM2, "La analista pidió cerrar una alerta sin revisarla.");
+          const sesionDe = async (quien: typeof cum) => {
+            const id = randomUUID();
+            await registrarSesion(quien, { formId: id, celebradaEl: hoy, presentes: [P, S, I1], auditorPresente: false });
+            return id;
+          };
+          const votar = (quien: typeof cum, sesionId: string, propuestaId: string, integranteId = P) =>
+            registrarVoto(quien, { formId: randomUUID(), sesionId, propuestaId, integranteId, voto: "a_favor" });
+          const votarTodos = async (quien: typeof cum, sesionId: string, propuestaId: string) => {
+            for (const i of [P, S, I1]) await votar(quien, sesionId, propuestaId, i);
+          };
+          const laVe = async (ctx: typeof cum, sesionId: string) => (await leerComite(ctx)).sesiones.some((s) => s.id === sesionId);
+          const dictaminar = (ctx: typeof cum, casoId: string, sesionId: string, propuestaId: string) =>
+            dictaminarCaso(ctx, SESION_SOFIPO, { formId: randomUUID(), casoId, via: "comite", sesionId, propuestaId, resultado: "", justificacion: "Votación del Comité" });
+          const votos = (sesionId: string, casoId: string) => contar("select count(*)::int as n from pld_votos where sesion_id = $1 and caso_id = $2", [sesionId, casoId]);
+
+          // La sonda del revisor: CUM2 registra una sesión y vota su caso. CUM no vota ahí el caso que excluye a CUM2:
+          // va a una sesión aparte. CUM2 sigue viendo su sesión y dictamina su caso con ella.
+          const deCum2 = await normal(cum2);
+          const oculto = await contraCum2();
+          const suya = await sesionDe(cum2);
+          await votarTodos(cum2, suya, deCum2.propuesta);
+          await assert.rejects(votar(cum, suya, oculto.propuesta), conExcluida);
+          assert.equal(await votos(suya, oculto.caso), 0);
+          assert.equal(await laVe(cum2, suya), true);
+          await dictaminar(cum2, deCum2.caso, suya, deCum2.propuesta);
+          const aparte = await sesionDe(cum);
+          await votarTodos(cum, aparte, oculto.propuesta);
+          assert.equal(await laVe(cum2, aparte), false);
+
+          // Al revés: la sesión aparte ya votó el caso que excluye a CUM2; el caso de CUM2 no se vota ahí, porque esa
+          // sesión no existe para ella.
+          const otroDeCum2 = await normal(cum2);
+          await assert.rejects(votar(cum, aparte, otroDeCum2.propuesta), conExcluida);
+          await assert.rejects(votar(cum2, aparte, otroDeCum2.propuesta), /sesion_no_existe/);
+
+          // Por la serie: CUM2 registró la sesión y CUM votó ahí su propio caso. Sumarle a ese caso un aviso que excluye
+          // a CUM2 la sacaría de su sesión: se rechaza.
+          const deCum = await normal(cum);
+          const deCum2Registrada = await sesionDe(cum2);
+          await votar(cum, deCum2Registrada, deCum.propuesta);
+          const avisoTarde = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_interna_preocupante", companyId: beta, mencionada: CUM2, superior: "", descripcion: "La analista pidió borrar una nota del caso." });
+          const alertaTarde = await alertaDe(avisoTarde.id);
+          await assert.rejects(sumarAlertaAlCaso(cum, { casoId: deCum.caso, alertaId: alertaTarde }), /serie_con_persona_excluida/);
+          assert.equal(await laVe(cum2, deCum2Registrada), true);
+
+          // Las carreras: lo que deja a CUM2 en una sesión y lo que la oculta comparten el candado de la sesión. A toma el
+          // candado y no confirma; B espera, ve lo que A confirmó y se rechaza.
+          const esperaElCandado = async (pendiente: Promise<unknown>) => {
+            let termino = false;
+            pendiente.then(() => (termino = true), () => (termino = true));
+            for (let i = 0; i < 100 && !termino; i++) {
+              if ((await contar("select count(*)::int as n from pg_locks where locktype = 'advisory' and not granted")) > 0) return true;
+              await new Promise((listo) => setTimeout(listo, 50));
+            }
+            return false;
+          };
+          const votoCrudo = (c: pg.Client, sesionId: string, caso: { caso: string; propuesta: string }, userId: string) =>
+            c.query(
+              "insert into pld_votos (id, operator_id, sesion_id, caso_id, propuesta_id, integrante_id, voto, registrado_por) values ($1, $2, $3, $4, $5, $6, 'a_favor', $7)",
+              [randomUUID(), operador, sesionId, caso.caso, caso.propuesta, P, userId],
+            );
+          const carrera = async (primero: (a: pg.Client) => Promise<unknown>, despues: () => Promise<unknown>, rechazo: RegExp) => {
+            const a = new pg.Client({ connectionString: urlDuena });
+            await a.connect();
+            try {
+              await a.query("begin");
+              await primero(a);
+              const pendiente = despues();
+              const espero = await esperaElCandado(pendiente);
+              await a.query("commit");
+              await assert.rejects(pendiente, rechazo);
+              assert.equal(espero, true, "lo que llega después espera el candado de la sesión");
+            } finally {
+              await a.query("rollback").catch(() => undefined);
+              await a.end();
+            }
+          };
+          const otro = () => new pg.Client({ connectionString: urlDuena });
+          const enOtra = async (fn: (c: pg.Client) => Promise<unknown>) => {
+            const c = otro();
+            await c.connect();
+            try {
+              return await fn(c);
+            } finally {
+              await c.end();
+            }
+          };
+          // 1. CUM vota el caso oculto; CUM2 vota el suyo en la misma sesión: para ella ya no existe.
+          const s1 = await sesionDe(cum);
+          const c1 = await normal(cum2);
+          await carrera((a) => votoCrudo(a, s1, oculto, CUM), () => enOtra((b) => votoCrudo(b, s1, c1, CUM2)), /sesion_no_existe/);
+          // 2. Al revés: CUM2 vota primero; el caso oculto ya no entra.
+          const s2 = await sesionDe(cum);
+          const c2 = await normal(cum2);
+          await carrera((a) => votoCrudo(a, s2, c2, CUM2), () => enOtra((b) => votoCrudo(b, s2, oculto, CUM)), conExcluida);
+          // 3. CUM2 vota en una sesión mientras CUM suma a otro caso de esa sesión un aviso que la excluye.
+          const s3 = await sesionDe(cum);
+          const c3 = await normal(cum);
+          await votar(cum, s3, c3.propuesta);
+          const c3DeCum2 = await normal(cum2);
+          const aviso3 = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_interna_preocupante", companyId: beta, mencionada: CUM2, superior: "", descripcion: "La analista pidió cerrar otra alerta sin revisarla." });
+          const alerta3 = await alertaDe(aviso3.id);
+          await carrera((a) => votoCrudo(a, s3, c3DeCum2, CUM2), () => sumarAlertaAlCaso(cum, { casoId: c3.caso, alertaId: alerta3 }), /serie_con_persona_excluida/);
+          // 4. CUM vota el caso oculto mientras CUM2 dictamina, con esa sesión, un caso que no trabajó.
+          const s4 = await sesionDe(cum);
+          const c4 = await normal(cum);
+          await votarTodos(cum, s4, c4.propuesta);
+          const oculto4 = await contraCum2();
+          await carrera((a) => votoCrudo(a, s4, oculto4, CUM), () => dictaminar(cum2, c4.caso, s4, c4.propuesta), /sesion_no_existe/);
+          // 5. CUM vota el caso oculto mientras CUM2 sube el acta de esa sesión: no queda acta y lo subido se borra.
+          const s5 = await sesionDe(cum);
+          const c5 = await normal(cum);
+          await votarTodos(cum, s5, c5.propuesta);
+          const oculto5 = await contraCum2();
+          const almacenado = almacenEnMemoria();
+          await carrera(
+            (a) => votoCrudo(a, s5, oculto5, CUM),
+            () => cargarActaFirmada(cum2, { formId: randomUUID(), sesionId: s5, archivo: { nombre: "acta.pdf", bytes: PDF } }, { almacen: almacenado }),
+            /sesion_no_existe/,
+          );
+          assert.equal(await contar("select count(*)::int as n from pld_actas where sesion_id = $1", [s5]), 0);
+          assert.deepEqual([...almacenado.guardados.keys()].filter((k) => !almacenado.borrados.includes(k)), []);
+        });
+
+        await t.test("texto visible (r2-fix2-N1): la descripción del aviso y la nota cuentan solo lo que se ve", async () => {
+          const relleno = (n: number) => "ㅤ".repeat(n);
+          const aviso = (descripcion: string) =>
+            emitirAviso(apr, { formId: randomUUID(), tipo: "posible_inusual", companyId: beta, mencionada: "", superior: "", descripcion });
+          const avisos = () => contar("select count(*)::int as n from pld_avisos");
+          const antes = await avisos();
+          await assert.rejects(aviso(`Revisar${relleno(13)}`), /dato_invalido_descripcion/);
+          await assert.rejects(aviso(`${"x".repeat(19)}${relleno(1)}`), /dato_invalido_descripcion/);
+          assert.equal(await avisos(), antes);
+          const acuse = await aviso("x".repeat(20));
+          const caso = await abrirCaso(cum, { formId: randomUUID(), alertaId: String((await uno("select id from pld_alertas where aviso_id = $1", [acuse.id])).id) });
+          const notas = () => contar("select count(*)::int as n from pld_notas where caso_id = $1", [caso]);
+          await assert.rejects(agregarNota(cum, { casoId: caso, formId: randomUUID(), texto: `a${relleno(1)}` }), /dato_invalido_texto/);
+          assert.equal(await notas(), 0);
+          await agregarNota(cum, { casoId: caso, formId: randomUUID(), texto: "ok" });
+          assert.equal(await notas(), 1);
+        });
       } finally {
         await cerrarConexion();
         await dueno.end();

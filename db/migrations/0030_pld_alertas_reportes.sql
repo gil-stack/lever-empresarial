@@ -1504,6 +1504,7 @@ AS $$
 DECLARE
   caso pld_casos%ROWTYPE;
   alerta pld_alertas%ROWTYPE;
+  votada uuid;
 BEGIN
   -- r2-base-N9: el candado del caso, el mismo que toman los votos y el dictamen.
   -- Lo que llega mientras se dictamina espera y ve el dictamen (caso_ya_dictaminado).
@@ -1535,19 +1536,16 @@ BEGIN
     END IF;
     -- 60ª (r2-base-N3): el aviso que excluye a alguien que ya trabajó en este caso
     -- no se suma: el caso le desaparecería a media análisis. Abre su propio caso.
-    IF alerta.aviso_id IS NOT NULL AND EXISTS (
-      SELECT 1 FROM pld_aviso_excluidos e
-      WHERE e.aviso_id = alerta.aviso_id AND e.user_id IN (
-        SELECT caso.registrado_por
-        UNION ALL SELECT x.registrado_por FROM pld_caso_alertas x WHERE x.caso_id = caso.id
-        UNION ALL SELECT x.registrado_por FROM pld_notas x WHERE x.caso_id = caso.id
-        UNION ALL SELECT x.registrado_por FROM pld_documentos x WHERE x.caso_id = caso.id
-        UNION ALL SELECT x.registrado_por FROM pld_propuestas x WHERE x.caso_id = caso.id
-        UNION ALL SELECT x.registrado_por FROM pld_casos_24h x WHERE x.caso_id = caso.id
-        UNION ALL SELECT x.registrado_por FROM pld_votos x WHERE x.caso_id = caso.id
-      )
-    ) THEN
-      RAISE EXCEPTION 'serie_con_persona_excluida';
+    -- r2-fix2-N2: tampoco si excluye a alguien de una sesión que ya votó el caso: la
+    -- sesión le desaparecería. Con los candados de esas sesiones, en orden, como los
+    -- votos, el acta y el dictamen: lo que llegue a ellas mientras tanto espera.
+    IF alerta.aviso_id IS NOT NULL THEN
+      FOR votada IN SELECT DISTINCT v.sesion_id FROM pld_votos v WHERE v.caso_id = caso.id ORDER BY 1 LOOP
+        PERFORM pg_advisory_xact_lock(hashtextextended('pld_sesion:' || votada::text, 0));
+      END LOOP;
+      IF pld_serie_choca(caso.id, alerta.aviso_id) THEN
+        RAISE EXCEPTION 'serie_con_persona_excluida';
+      END IF;
     END IF;
   END IF;
   RETURN NEW;
@@ -1989,6 +1987,7 @@ DECLARE
   integrante pld_comite_integrantes%ROWTYPE;
   propuesta pld_propuestas%ROWTYPE;
   caso pld_casos%ROWTYPE;
+  choque text;
 BEGIN
   SELECT * INTO sesion FROM pld_sesiones s WHERE s.id = NEW.sesion_id;
   IF sesion.id IS NULL THEN
@@ -2009,6 +2008,13 @@ BEGIN
   PERFORM pg_advisory_xact_lock(hashtextextended('pld_sesion:' || sesion.id::text, 0));
   IF EXISTS (SELECT 1 FROM pld_actas a WHERE a.sesion_id = sesion.id) THEN
     RAISE EXCEPTION 'sesion_con_acta';
+  END IF;
+  -- r2-fix2-N2 (60ª): ningún caso entra a una sesión de alguien a quien excluye. Con el
+  -- candado de la sesión: otro voto, el acta, el dictamen o la suma de un aviso a la
+  -- serie esperan y lo ven.
+  choque := pld_voto_choca(sesion.id, caso.id, NEW.registrado_por);
+  IF choque IS NOT NULL THEN
+    RAISE EXCEPTION '%', choque;
   END IF;
   NEW.caso_id := caso.id;
   NEW.operator_id := sesion.operator_id;
@@ -2125,6 +2131,11 @@ BEGIN
     END IF;
     -- El candado de la sesión, como los votos: el acta llega con la votación completa.
     PERFORM pg_advisory_xact_lock(hashtextextended('pld_sesion:' || sesion.id::text, 0));
+    -- r2-fix2-N2: un voto que la ocultó mientras esperaba el candado ya está confirmado;
+    -- la RLS de esta sentencia se leyó antes de esperarlo.
+    IF pld_sesion_excluye_a(sesion.id, NEW.registrado_por) THEN
+      RAISE EXCEPTION 'sesion_no_existe';
+    END IF;
     NEW.operator_id := sesion.operator_id;
   END IF;
   IF current_user = 'plataforma_sofipo' THEN
@@ -2273,7 +2284,17 @@ BEGIN
     END IF;
   ELSE
     SELECT * INTO sesion FROM pld_sesiones s WHERE s.id = NEW.sesion_id AND s.operator_id = caso.operator_id;
-    IF sesion.id IS NULL OR NOT sesion.quorum THEN
+    -- r2-fix2-N2: la sesión que no ve quien dictamina no existe para esa persona, como
+    -- con el acta (r2-fix-N1). Con el candado de la sesión, como los votos y el acta: un
+    -- voto que la oculta mientras tanto ya está confirmado al revisar.
+    IF sesion.id IS NULL THEN
+      RAISE EXCEPTION 'sesion_no_existe';
+    END IF;
+    PERFORM pg_advisory_xact_lock(hashtextextended('pld_sesion:' || sesion.id::text, 0));
+    IF pld_sesion_excluye_a(sesion.id, NEW.registrado_por) THEN
+      RAISE EXCEPTION 'sesion_no_existe';
+    END IF;
+    IF NOT sesion.quorum THEN
       RAISE EXCEPTION 'sesion_sin_quorum';
     END IF;
     SELECT * INTO propuesta FROM pld_propuestas p WHERE p.id = NEW.propuesta_id AND p.caso_id = caso.id;
@@ -2535,6 +2556,128 @@ $$;
 
 REVOKE ALL ON FUNCTION pld_sesion_me_excluye(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION pld_sesion_me_excluye(uuid) TO plataforma_sofipo;
+
+-- r2-fix2-N2 (60ª): una sesión es de quien la registró, votó en ella, subió su acta,
+-- dictaminó con ella o trabaja en alguno de los casos que votó. Un caso que excluye a
+-- cualquiera de esas personas no entra a la sesión, ni por un voto ni por sumarle un
+-- aviso a un caso que ya votó: la sesión le desaparecería con su trabajo (r2-fix-N1),
+-- como el caso en r2-base-N3. Ese caso se vota en una sesión aparte. Leen por encima
+-- de la RLS y no se dan a nadie: solo las usan las funciones de abajo, que devuelven
+-- un código o un sí/no y nunca a quién excluye cada caso.
+CREATE FUNCTION pld_personas_del_caso(p_caso uuid)
+RETURNS uuid[]
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT coalesce(array_agg(DISTINCT z.u), '{}')
+  FROM (
+    SELECT c.registrado_por FROM pld_casos c WHERE c.id = p_caso
+    UNION ALL SELECT x.registrado_por FROM pld_caso_alertas x WHERE x.caso_id = p_caso
+    UNION ALL SELECT x.registrado_por FROM pld_notas x WHERE x.caso_id = p_caso
+    UNION ALL SELECT x.registrado_por FROM pld_documentos x WHERE x.caso_id = p_caso
+    UNION ALL SELECT x.registrado_por FROM pld_propuestas x WHERE x.caso_id = p_caso
+    UNION ALL SELECT x.registrado_por FROM pld_casos_24h x WHERE x.caso_id = p_caso
+    UNION ALL SELECT x.registrado_por FROM pld_votos x WHERE x.caso_id = p_caso
+  ) z(u)
+$$;
+
+CREATE FUNCTION pld_excluidos_del_caso(p_caso uuid)
+RETURNS uuid[]
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT coalesce(array_agg(DISTINCT e.user_id), '{}')
+  FROM pld_caso_alertas ca
+  JOIN pld_alertas x ON x.id = ca.alerta_id
+  JOIN pld_aviso_excluidos e ON e.aviso_id = x.aviso_id
+  WHERE ca.caso_id = p_caso
+$$;
+
+CREATE FUNCTION pld_personas_de_la_sesion(p_sesion uuid)
+RETURNS uuid[]
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT coalesce(array_agg(DISTINCT z.u), '{}')
+  FROM (
+    SELECT s.registrado_por FROM pld_sesiones s WHERE s.id = p_sesion
+    UNION ALL SELECT a.registrado_por FROM pld_actas a WHERE a.sesion_id = p_sesion
+    UNION ALL SELECT d.registrado_por FROM pld_dictamenes d WHERE d.sesion_id = p_sesion
+    UNION ALL SELECT unnest(pld_personas_del_caso(v.caso_id)) FROM (SELECT DISTINCT caso_id FROM pld_votos WHERE sesion_id = p_sesion) v
+  ) z(u)
+$$;
+
+CREATE FUNCTION pld_excluidos_de_la_sesion(p_sesion uuid)
+RETURNS uuid[]
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT coalesce(array_agg(DISTINCT z.u), '{}')
+  FROM (SELECT unnest(pld_excluidos_del_caso(v.caso_id)) FROM (SELECT DISTINCT caso_id FROM pld_votos WHERE sesion_id = p_sesion) v) z(u)
+$$;
+
+REVOKE ALL ON FUNCTION pld_personas_del_caso(uuid), pld_excluidos_del_caso(uuid), pld_personas_de_la_sesion(uuid),
+  pld_excluidos_de_la_sesion(uuid) FROM PUBLIC;
+
+-- Un voto de p_caso en p_sesion por p_persona. Con los candados del caso y de la
+-- sesión ya tomados. sesion_no_existe si la sesión ya votó un caso que excluye a quien
+-- vota (para esa persona no existe, r2-fix-N1); sesion_con_persona_excluida si el caso
+-- excluye a alguien de la sesión, o si la sesión ya votó un caso que excluye a quien
+-- trabaja en éste.
+CREATE FUNCTION pld_voto_choca(p_sesion uuid, p_caso uuid, p_persona uuid)
+RETURNS text
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT CASE
+    WHEN p_persona = ANY (pld_excluidos_de_la_sesion(p_sesion)) THEN 'sesion_no_existe'
+    WHEN (pld_personas_de_la_sesion(p_sesion) || pld_personas_del_caso(p_caso) || p_persona)
+      && (pld_excluidos_de_la_sesion(p_sesion) || pld_excluidos_del_caso(p_caso)) THEN 'sesion_con_persona_excluida'
+  END
+$$;
+
+-- La sesión ya votó un caso que excluye a p_persona: para ella no existe. Para el acta
+-- y el dictamen, ya con el candado de la sesión (su RLS se evaluó antes de esperarlo).
+CREATE FUNCTION pld_sesion_excluye_a(p_sesion uuid, p_persona uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT p_persona = ANY (pld_excluidos_de_la_sesion(p_sesion))
+$$;
+
+-- Sumar a p_caso la alerta del aviso p_aviso: choca si el aviso excluye a alguien del
+-- caso (r2-base-N3) o de una sesión que ya votó el caso. Con los candados del caso y de
+-- esas sesiones ya tomados.
+CREATE FUNCTION pld_serie_choca(p_caso uuid, p_aviso uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT (SELECT coalesce(array_agg(e.user_id), '{}') FROM pld_aviso_excluidos e WHERE e.aviso_id = p_aviso)
+    && (pld_personas_del_caso(p_caso) || coalesce((
+      SELECT array_agg(z.u) FROM (
+        SELECT unnest(pld_personas_de_la_sesion(v.sesion_id)) FROM (SELECT DISTINCT sesion_id FROM pld_votos WHERE caso_id = p_caso) v
+      ) z(u)
+    ), '{}'))
+$$;
+
+REVOKE ALL ON FUNCTION pld_voto_choca(uuid, uuid, uuid), pld_sesion_excluye_a(uuid, uuid), pld_serie_choca(uuid, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION pld_voto_choca(uuid, uuid, uuid), pld_sesion_excluye_a(uuid, uuid), pld_serie_choca(uuid, uuid) TO plataforma_sofipo;
 
 -- r2-fix-N1 (47ª): la sesión mensual y la regla de suplentes cuentan todas las
 -- sesiones del operador, también la que la persona del contexto no ve por un aviso
