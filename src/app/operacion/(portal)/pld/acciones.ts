@@ -28,6 +28,7 @@ import {
   registrarReportePld,
   registrarSesion,
   registrarVoto,
+  resolverPropuestaDePerfil,
   sumarAlertaAlCaso,
 } from "@/server/pld";
 import { almacenVercel } from "@/server/proveedores/constancia";
@@ -77,15 +78,30 @@ function siPideFactor(error: unknown, ruta: string, ancla: string): void {
 export async function declararPerfilAccion(formData: FormData): Promise<void> {
   const ctx = await exigirContextoOperacion();
   const companyId = texto(formData, "companyId");
+  let resultado: "declarado" | "propuesto";
   try {
-    await declararPerfil(ctx, {
+    resultado = await declararPerfil(ctx, {
       companyId, formId: formData.get("formId"), pagosMonto: texto(formData, "pagosMonto"), pagosOperaciones: texto(formData, "pagosOperaciones"),
       nominaMonto: texto(formData, "nominaMonto"), nominaOperaciones: texto(formData, "nominaOperaciones"), motivo: texto(formData, "motivo"),
     });
   } catch (error) {
     return fallo(error, expediente(companyId), "#perfil-titulo");
   }
-  listo(expediente(companyId), "perfil_declarado", "#perfil-titulo");
+  listo(expediente(companyId), resultado === "propuesto" ? "perfil_propuesto" : "perfil_declarado", "#perfil-titulo");
+}
+
+export async function resolverPropuestaDePerfilAccion(formData: FormData): Promise<void> {
+  const ctx = await exigirContextoOperacion();
+  const companyId = texto(formData, "companyId");
+  let decision: "aprobada" | "rechazada";
+  try {
+    decision = await resolverPropuestaDePerfil(ctx, {
+      companyId, propuestaId: texto(formData, "propuestaId"), decision: texto(formData, "decision"), motivo: texto(formData, "motivo"),
+    });
+  } catch (error) {
+    return fallo(error, expediente(companyId), "#perfil-titulo");
+  }
+  listo(expediente(companyId), decision === "aprobada" ? "perfil_aprobado" : "perfil_rechazado", "#perfil-titulo");
 }
 
 export async function registrarEvaluacionAccion(formData: FormData): Promise<void> {

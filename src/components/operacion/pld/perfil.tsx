@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { declararPerfilAccion, registrarEvaluacionAccion } from "@/app/operacion/(portal)/pld/acciones";
+import { declararPerfilAccion, registrarEvaluacionAccion, resolverPropuestaDePerfilAccion } from "@/app/operacion/(portal)/pld/acciones";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { BotonEnviar, Hoja, Insignia, Renglon, Renglones, Vacio } from "@/components/sistema";
@@ -8,7 +8,7 @@ import { formatoPesos } from "@/dominio/centavos";
 import { ETIQUETA_GRADO } from "@/dominio/operacion";
 import type { ContextoDePersonal } from "@/nucleo/contexto";
 import { puedeEnOperacion } from "@/server/operacion";
-import { leerEvaluaciones, leerPerfiles, type PerfilTransaccional as Perfil } from "@/server/pld";
+import { leerEvaluaciones, leerPerfiles, leerPropuestasDePerfil, type PerfilTransaccional as Perfil } from "@/server/pld";
 
 const centavosATexto = (centavos: number) => (centavos / 100).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -32,9 +32,15 @@ export async function PerfilTransaccional({
 }) {
   const perfiles = await leerPerfiles(ctx, companyId);
   const vigente = perfiles[0] ?? null;
-  const captura = puedeEnOperacion(ctx, "plataforma.expediente.capturar") && estado !== "baja";
+  // r2-base-N18: con la empresa activa o suspendida, lo que captura Originación es una propuesta para Cumplimiento.
+  const propone = estado === "activa" || estado === "suspendida";
+  const propuestas = await leerPropuestasDePerfil(ctx, companyId);
+  const pendiente = propuestas.find((p) => p.resolucion === null) ?? null;
+  const ultimaResuelta = propuestas.find((p) => p.resolucion !== null) ?? null;
+  const captura = puedeEnOperacion(ctx, "plataforma.expediente.capturar") && estado !== "baja" && !(propone && pendiente);
   const veEvaluaciones = puedeEnOperacion(ctx, "plataforma.pld.ver");
   const evalua = puedeEnOperacion(ctx, "plataforma.riesgo.calificar") && estado !== "baja";
+  const resuelve = puedeEnOperacion(ctx, "plataforma.riesgo.calificar");
   const evaluaciones = veEvaluaciones ? await leerEvaluaciones(ctx, companyId) : [];
   const error = (seccion: string, campo: string) => (en === seccion ? errorDelCampo(aviso, campo) : {});
 
@@ -82,6 +88,44 @@ export async function PerfilTransaccional({
             Originación captura cuánto estima mover la empresa cada mes. Sin perfil la empresa no se puede activar.
           </Vacio>
         )}
+        {pendiente ? (
+          <div className="operacion-ficha">
+            <div className="operacion-ficha-cabeza">
+              <Insignia tono="aviso">Propuesta pendiente de Cumplimiento</Insignia>
+              <p className="pista">El perfil vigente no cambia hasta que Cumplimiento la apruebe.</p>
+            </div>
+            <Renglones>
+              <Renglon etiqueta="Pagos propuestos">
+                {formatoPesos(pendiente.pagosMontoMensualCentavos)} al mes · {pendiente.pagosOperacionesMensuales} {pendiente.pagosOperacionesMensuales === 1 ? "pago" : "pagos"}
+              </Renglon>
+              <Renglon etiqueta="Nómina propuesta">
+                {formatoPesos(pendiente.nominaMontoMensualCentavos)} al mes · {pendiente.nominaOperacionesMensuales} {pendiente.nominaOperacionesMensuales === 1 ? "lote" : "lotes"}
+              </Renglon>
+              <Renglon etiqueta="Motivo">{pendiente.motivo}</Renglon>
+              <Renglon etiqueta="Propuso">{pendiente.propuestaPor} · {fechaHora(pendiente.propuestaEn)}</Renglon>
+            </Renglones>
+            {resuelve ? (
+              <form action={resolverPropuestaDePerfilAccion} className="formulario-pareja operacion-forma">
+                <input type="hidden" name="companyId" value={companyId} />
+                <input type="hidden" name="propuestaId" value={pendiente.id} />
+                <div className="campo operacion-ancho">
+                  <label htmlFor="perfil-resolucion-motivo">Por qué la apruebas o la rechazas</label>
+                  <textarea id="perfil-resolucion-motivo" name="motivo" required minLength={10} maxLength={1000} {...error("perfil-titulo", "motivo")} />
+                </div>
+                <div className="acciones operacion-ancho">
+                  <BotonEnviar name="decision" value="aprobada">Aprobar el cambio</BotonEnviar>
+                  <BotonEnviar name="decision" value="rechazada" className="boton boton-secundario">Rechazar</BotonEnviar>
+                </div>
+              </form>
+            ) : null}
+          </div>
+        ) : null}
+        {!pendiente && ultimaResuelta?.resolucion ? (
+          <p className="pista">
+            Última propuesta de Originación: {ultimaResuelta.resolucion.decision === "aprobada" ? "aprobada" : "rechazada"} por {ultimaResuelta.resolucion.por} el{" "}
+            {fechaHora(ultimaResuelta.resolucion.en)}. {ultimaResuelta.resolucion.motivo}
+          </p>
+        ) : null}
         {captura ? (
           <form action={declararPerfilAccion} className="formulario-pareja operacion-forma">
             <input type="hidden" name="companyId" value={companyId} />
@@ -106,7 +150,7 @@ export async function PerfilTransaccional({
               <input id="perfil-nomina-operaciones" name="nominaOperaciones" inputMode="numeric" required autoComplete="off"
                 defaultValue={vigente ? String(vigente.nominaOperacionesMensuales) : ""} {...error("perfil-titulo", "nominaOperaciones")} />
             </div>
-            {vigente ? (
+            {vigente || propone ? (
               <div className="campo operacion-ancho">
                 <label htmlFor="perfil-motivo">Motivo del cambio</label>
                 <textarea id="perfil-motivo" name="motivo" required minLength={10} maxLength={1000} {...error("perfil-titulo", "motivo")} />
@@ -115,8 +159,14 @@ export async function PerfilTransaccional({
               <input type="hidden" name="motivo" value="" />
             )}
             <div className="acciones operacion-ancho">
-              <BotonEnviar>{vigente ? "Registrar cambio de perfil" : "Registrar perfil"}</BotonEnviar>
-              <p>{vigente ? "La versión actual no cambia: queda la nueva como vigente." : "Lo que la empresa declara que moverá como máximo cada mes."}</p>
+              <BotonEnviar>{propone ? "Proponer el cambio a Cumplimiento" : vigente ? "Registrar cambio de perfil" : "Registrar perfil"}</BotonEnviar>
+              <p>
+                {propone
+                  ? "La empresa ya opera: el perfil vigente no cambia hasta que Cumplimiento apruebe la propuesta."
+                  : vigente
+                    ? "La versión actual no cambia: queda la nueva como vigente."
+                    : "Lo que la empresa declara que moverá como máximo cada mes."}
+              </p>
             </div>
           </form>
         ) : null}
@@ -194,5 +244,7 @@ export async function PerfilTransaccional({
 }
 
 function origen(perfil: Perfil): string {
-  return perfil.origen === "evaluacion" ? "cambiado en la evaluación de Cumplimiento" : "declarado por Originación";
+  if (perfil.origen === "evaluacion") return "cambiado en la evaluación de Cumplimiento";
+  if (perfil.origen === "aprobacion") return "propuesto por Originación y aprobado por Cumplimiento";
+  return "declarado por Originación";
 }

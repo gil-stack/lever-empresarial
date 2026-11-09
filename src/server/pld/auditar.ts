@@ -12,6 +12,9 @@ import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
  */
 export const ENTIDADES_PLD = {
   expediente_perfil_declarado: "pld_perfiles",
+  expediente_perfil_propuesto: "pld_perfil_propuestas",
+  expediente_perfil_aprobado: "pld_perfil_propuestas",
+  expediente_perfil_rechazado: "pld_perfil_propuestas",
   pld_perfil_actualizado: "pld_perfiles",
   pld_evaluacion_registrada: "pld_evaluaciones",
   pld_parametros_cambiados: "pld_parametros",

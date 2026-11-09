@@ -44,6 +44,7 @@ import {
   leerParametros,
   leerPerfiles,
   leerPeriodicos,
+  leerPropuestasDePerfil,
   listarAlertasPld,
   manifiestoDeConservacion,
   marcarVeinticuatroHoras,
@@ -59,6 +60,7 @@ import {
   registrarSesion,
   propuestasPorVotar,
   registrarVoto,
+  resolverPropuestaDePerfil,
   sumarAlertaAlCaso,
   TIPOS_DE_OPERACION,
   TIPOS_EN_EFECTIVO,
@@ -240,9 +242,67 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
         });
 
         await t.test("perfil versionado y evaluaciones semestrales (27ª)", async () => {
-          // Beta declara su perfil ya activa: 10,000.00 al mes en pagos y 5,000.00 en nómina.
-          await declararPerfil(ori, { companyId: beta, formId: randomUUID(), pagosMonto: "10,000.00", pagosOperaciones: "10", nominaMonto: "5,000.00", nominaOperaciones: "2", motivo: "" });
+          // r2-base-N18: Beta ya opera. Originación no escribe el perfil vigente: propone, y Cumplimiento aprueba.
+          // Ni por SQL directo como el personal (con su evento en la bitácora) se cuela una declaración.
+          await assert.rejects(sofipo(ORI, async (c) => {
+            const id = randomUUID();
+            await eventoPersonal(c, ORI, "expediente_perfil_declarado", "pld_perfiles", id, beta);
+            await c.query(
+              `insert into pld_perfiles (id, operator_id, company_id, origen, pagos_monto_mensual_centavos, pagos_operaciones_mensuales,
+                 nomina_monto_mensual_centavos, nomina_operaciones_mensuales, registrado_por)
+               values ($1, $2, $3, 'declaracion', 99900000, 1, 1, 1, $4)`,
+              [id, operador, beta, ORI],
+            );
+          }), /perfil_requiere_aprobacion/);
+          assert.equal(await contar("select count(*)::int as n from pld_perfiles where company_id = $1", [beta]), 0);
+          const pesos = { pagosMonto: "10,000.00", pagosOperaciones: "10", nominaMonto: "5,000.00", nominaOperaciones: "2" };
+          await assert.rejects(declararPerfil(ori, { companyId: beta, formId: randomUUID(), ...pesos, motivo: "" }), /motivo_invalido/);
+          const propuesta = randomUUID();
+          const motivoPropuesta = "Perfil del cliente que operaba antes del registro de perfiles";
+          assert.equal(await declararPerfil(ori, { companyId: beta, formId: propuesta, ...pesos, motivo: motivoPropuesta }), "propuesto");
+          assert.equal(await declararPerfil(ori, { companyId: beta, formId: propuesta, ...pesos, motivo: motivoPropuesta }), "propuesto");
+          assert.equal(await contar("select count(*)::int as n from pld_perfil_propuestas where company_id = $1", [beta]), 1);
+          assert.equal(await contar("select count(*)::int as n from audit_log where accion = 'expediente_perfil_propuesto' and identificador = $1", [propuesta]), 1);
+          assert.equal((await leerPerfiles(apr, beta)).length, 0, "la propuesta no es el perfil vigente");
+          assert.deepEqual((await leerBandejaPld(cum)).propuestasDePerfil.map((x) => x.propuestaId), [propuesta]);
+          // Una a la vez, y sólo Cumplimiento resuelve.
+          await assert.rejects(declararPerfil(ori, { companyId: beta, formId: randomUUID(), ...pesos, pagosMonto: "90,000.00", motivo: "Otra propuesta encima" }), /propuesta_de_perfil_pendiente/);
+          const resolver = (ctx: ContextoDePersonal, decision: string, propuestaId = propuesta) =>
+            resolverPropuestaDePerfil(ctx, { companyId: beta, propuestaId, decision, motivo: "Corresponde al giro y a lo que ya mueve" });
+          await assert.rejects(resolver(ori, "aprobada"), /sin_permiso_operacion/);
+          await assert.rejects(resolver(apr, "aprobada"), /sin_permiso_operacion/);
+          await assert.rejects(resolver(cum, "quizas"), /dato_invalido_decision/);
+          // Aprobada: la versión vigente lleva los montos de la propuesta, aunque por SQL se manden otros.
+          assert.equal(await resolver(cum, "aprobada"), "aprobada");
+          assert.equal(await resolver(cum, "aprobada"), "aprobada", "doble clic de la misma decisión");
+          await assert.rejects(resolver(cum, "rechazada"), /propuesta_de_perfil_no_pendiente/);
+          assert.deepEqual(await uno(
+            `select p.numero, p.origen, p.pagos_monto_mensual_centavos::text as pagos, p.nomina_monto_mensual_centavos::text as nomina, p.motivo, r.decision
+             from pld_perfiles p join pld_perfil_resoluciones r on r.perfil_id = p.id where p.company_id = $1`, [beta]),
+            { numero: 1, origen: "aprobacion", pagos: "1000000", nomina: "500000", motivo: motivoPropuesta, decision: "aprobada" });
+          for (const accion of ["expediente_perfil_aprobado", "pld_perfil_actualizado"]) {
+            assert.equal(await contar("select count(*)::int as n from audit_log where accion = $1 and company_id = $2", [accion, beta]), 1, accion);
+          }
           assert.equal((await leerPerfiles(apr, beta)).length, 1);
+          // Rechazada: el vigente no cambia; la regla «Excede el perfil» (abajo) sigue con los 10,000.00 aprobados.
+          const segunda = randomUUID();
+          await declararPerfil(ori, { companyId: beta, formId: segunda, ...pesos, pagosMonto: "500,000.00", motivo: "La empresa dice que crecerá mucho" });
+          await assert.rejects(sofipo(CUM, async (c) => {
+            const id = randomUUID();
+            await eventoPersonal(c, CUM, "pld_perfil_actualizado", "pld_perfiles", id, beta);
+            await c.query(
+              `insert into pld_perfiles (id, operator_id, company_id, origen, propuesta_id, pagos_monto_mensual_centavos, pagos_operaciones_mensuales,
+                 nomina_monto_mensual_centavos, nomina_operaciones_mensuales, registrado_por)
+               values ($1, $2, $3, 'aprobacion', $4, 1, 1, 1, 1, $5)`,
+              [id, operador, beta, segunda, CUM],
+            );
+          }), /propuesta_de_perfil_no_pendiente/, "una versión aprobada sin la resolución en la misma transacción no queda");
+          assert.equal(await resolver(cum, "rechazada", segunda), "rechazada");
+          assert.equal(await contar("select count(*)::int as n from pld_perfiles where company_id = $1", [beta]), 1);
+          const [ultima, primera] = await leerPropuestasDePerfil(apr, beta);
+          assert.equal(ultima?.resolucion?.decision, "rechazada");
+          assert.equal(primera?.resolucion?.decision, "aprobada");
+          assert.deepEqual((await leerBandejaPld(cum)).propuestasDePerfil, []);
           await assert.rejects(leerPerfiles(adm, beta), /sin_permiso_operacion/);
 
           // Elegible a los seis meses de la celebración; antes, no hay pendiente.
@@ -1016,7 +1076,7 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.ok(await contar("select count(*)::int as n from payroll_batch_items") > 0);
 
           const tablasPld = (await dueno.query("select tablename from pg_tables where schemaname = 'public' and tablename like 'pld\\_%' order by 1")).rows.map((r) => String(r.tablename));
-          assert.equal(tablasPld.length, 27);
+          assert.equal(tablasPld.length, 29);
           for (const tabla of tablasPld) {
             await assert.rejects(dueno.query(`truncate ${tabla} cascade`), /conservacion_no_se_borra/);
             if (await contar(`select count(*)::int as n from ${tabla}`) > 0) {

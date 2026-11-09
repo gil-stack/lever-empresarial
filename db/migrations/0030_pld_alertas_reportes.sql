@@ -322,6 +322,34 @@ GRANT EXECUTE ON FUNCTION pld_celebracion_contrato(uuid) TO plataforma_sofipo;
 -- que declara el Cliente, por tipo de operación. Cada declaración es una versión;
 -- vale la de número más alto. La captura Originación; Cumplimiento la cambia al
 -- evaluar (27ª).
+-- r2-base-N18 (decisión del líder): con la empresa activa o suspendida, el
+-- cambio de perfil que pide Originación es una propuesta. El umbral
+-- vigente no cambia hasta que Cumplimiento la aprueba: el perfil es contra lo que
+-- vigila Cumplimiento y la 50ª separa esas áreas. En alta, Originación declara.
+CREATE TABLE pld_perfil_propuestas (
+  id uuid PRIMARY KEY,
+  operator_id uuid NOT NULL REFERENCES operators (id) ON DELETE RESTRICT,
+  company_id uuid NOT NULL,
+  pagos_monto_mensual_centavos bigint NOT NULL,
+  pagos_operaciones_mensuales integer NOT NULL,
+  nomina_monto_mensual_centavos bigint NOT NULL,
+  nomina_operaciones_mensuales integer NOT NULL,
+  motivo text NOT NULL,
+  registrado_por uuid NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  registrado_en timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT pld_perfil_propuestas_company FOREIGN KEY (company_id, operator_id) REFERENCES companies (id, operator_id) ON DELETE RESTRICT,
+  CONSTRAINT pld_perfil_propuestas_montos CHECK (
+    pagos_monto_mensual_centavos BETWEEN 0 AND 9007199254740991
+    AND nomina_monto_mensual_centavos BETWEEN 0 AND 9007199254740991
+  ),
+  CONSTRAINT pld_perfil_propuestas_operaciones CHECK (
+    pagos_operaciones_mensuales BETWEEN 0 AND 1000000 AND nomina_operaciones_mensuales BETWEEN 0 AND 1000000
+  ),
+  CONSTRAINT pld_perfil_propuestas_motivo CHECK (texto_regulado(motivo, 1000) AND char_length(motivo) >= 10)
+);
+
+CREATE INDEX pld_perfil_propuestas_company_idx ON pld_perfil_propuestas (company_id, registrado_en DESC);
+
 CREATE TABLE pld_perfiles (
   id uuid PRIMARY KEY,
   operator_id uuid NOT NULL REFERENCES operators (id) ON DELETE RESTRICT,
@@ -333,12 +361,16 @@ CREATE TABLE pld_perfiles (
   nomina_monto_mensual_centavos bigint NOT NULL,
   nomina_operaciones_mensuales integer NOT NULL,
   motivo text,
+  -- La propuesta de Originación que Cumplimiento aprobó (origen «aprobacion»).
+  propuesta_id uuid REFERENCES pld_perfil_propuestas (id) ON DELETE RESTRICT,
   registrado_por uuid NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
   registrado_en timestamptz NOT NULL DEFAULT now(),
   txid bigint NOT NULL DEFAULT txid_current(),
   CONSTRAINT pld_perfiles_company FOREIGN KEY (company_id, operator_id) REFERENCES companies (id, operator_id) ON DELETE RESTRICT,
   CONSTRAINT pld_perfiles_numero_unico UNIQUE (company_id, numero),
-  CONSTRAINT pld_perfiles_origen CHECK (origen IN ('declaracion', 'evaluacion')),
+  CONSTRAINT pld_perfiles_propuesta_unica UNIQUE (propuesta_id),
+  CONSTRAINT pld_perfiles_origen CHECK (origen IN ('declaracion', 'evaluacion', 'aprobacion')),
+  CONSTRAINT pld_perfiles_propuesta CHECK ((origen = 'aprobacion') = (propuesta_id IS NOT NULL)),
   CONSTRAINT pld_perfiles_montos CHECK (
     pagos_monto_mensual_centavos BETWEEN 0 AND 9007199254740991
     AND nomina_monto_mensual_centavos BETWEEN 0 AND 9007199254740991
@@ -361,6 +393,7 @@ SET search_path = public
 AS $$
 DECLARE
   estado_empresa text;
+  propuesta pld_perfil_propuestas%ROWTYPE;
 BEGIN
   PERFORM pg_advisory_xact_lock(hashtextextended('pld_perfiles:' || NEW.company_id::text, 0));
   SELECT c.estado INTO estado_empresa FROM companies c WHERE c.id = NEW.company_id;
@@ -369,6 +402,24 @@ BEGIN
   END IF;
   IF estado_empresa = 'baja' THEN
     RAISE EXCEPTION 'cliente_de_baja';
+  END IF;
+  -- r2-base-N18: con la empresa activa o suspendida, Originación no declara: propone
+  -- (pld_perfil_propuestas). De prospecto a en alta, declara como siempre. La dueña
+  -- (migraciones y semillas) no pasa por aquí.
+  IF NEW.origen = 'declaracion' AND estado_empresa IN ('activa', 'suspendida') AND current_user = 'plataforma_sofipo' THEN
+    RAISE EXCEPTION 'perfil_requiere_aprobacion';
+  END IF;
+  -- La versión aprobada lleva los montos y el motivo de la propuesta pendiente, no otros.
+  IF NEW.origen = 'aprobacion' THEN
+    SELECT * INTO propuesta FROM pld_perfil_propuestas x WHERE x.id = NEW.propuesta_id AND x.company_id = NEW.company_id;
+    IF propuesta.id IS NULL OR EXISTS (SELECT 1 FROM pld_perfil_resoluciones r WHERE r.propuesta_id = propuesta.id) THEN
+      RAISE EXCEPTION 'propuesta_de_perfil_no_pendiente';
+    END IF;
+    NEW.pagos_monto_mensual_centavos := propuesta.pagos_monto_mensual_centavos;
+    NEW.pagos_operaciones_mensuales := propuesta.pagos_operaciones_mensuales;
+    NEW.nomina_monto_mensual_centavos := propuesta.nomina_monto_mensual_centavos;
+    NEW.nomina_operaciones_mensuales := propuesta.nomina_operaciones_mensuales;
+    NEW.motivo := propuesta.motivo;
   END IF;
   NEW.numero := coalesce((SELECT max(p.numero) FROM pld_perfiles p WHERE p.company_id = NEW.company_id), 0) + 1;
   -- Cambiar un perfil declarado se explica (la primera declaración no).
@@ -382,7 +433,7 @@ BEGIN
     IF NEW.origen = 'declaracion' AND NOT personal_tiene_rol(NEW.operator_id, NEW.registrado_por, ARRAY['originacion']) THEN
       RAISE EXCEPTION 'sin_rol_para_perfil';
     END IF;
-    IF NEW.origen = 'evaluacion' AND NOT personal_tiene_rol(NEW.operator_id, NEW.registrado_por, ARRAY['cumplimiento']) THEN
+    IF NEW.origen IN ('evaluacion', 'aprobacion') AND NOT personal_tiene_rol(NEW.operator_id, NEW.registrado_por, ARRAY['cumplimiento']) THEN
       RAISE EXCEPTION 'sin_rol_para_evaluar';
     END IF;
     NEW.registrado_en := now();
@@ -394,6 +445,123 @@ $$;
 CREATE TRIGGER pld_perfiles_revisar
 BEFORE INSERT ON pld_perfiles
 FOR EACH ROW EXECUTE FUNCTION pld_perfiles_revisar();
+
+-- Cumplimiento resuelve cada propuesta una vez: la aprueba (y la versión aprobada
+-- queda como vigente en la misma transacción) o la rechaza con su motivo.
+CREATE TABLE pld_perfil_resoluciones (
+  propuesta_id uuid PRIMARY KEY REFERENCES pld_perfil_propuestas (id) ON DELETE RESTRICT,
+  operator_id uuid NOT NULL REFERENCES operators (id) ON DELETE RESTRICT,
+  company_id uuid NOT NULL,
+  decision text NOT NULL,
+  perfil_id uuid REFERENCES pld_perfiles (id) ON DELETE RESTRICT,
+  motivo text NOT NULL,
+  registrado_por uuid NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
+  registrado_en timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT pld_perfil_resoluciones_decision CHECK (decision IN ('aprobada', 'rechazada')),
+  CONSTRAINT pld_perfil_resoluciones_perfil CHECK ((decision = 'aprobada') = (perfil_id IS NOT NULL)),
+  CONSTRAINT pld_perfil_resoluciones_motivo CHECK (texto_regulado(motivo, 1000) AND char_length(motivo) >= 10)
+);
+
+CREATE FUNCTION pld_perfil_propuestas_revisar()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  estado_empresa text;
+BEGIN
+  PERFORM pg_advisory_xact_lock(hashtextextended('pld_perfiles:' || NEW.company_id::text, 0));
+  SELECT c.estado INTO estado_empresa FROM companies c WHERE c.id = NEW.company_id;
+  IF estado_empresa IS NULL THEN
+    RAISE EXCEPTION 'cliente_ausente';
+  END IF;
+  IF estado_empresa = 'baja' THEN
+    RAISE EXCEPTION 'cliente_de_baja';
+  END IF;
+  -- Antes de activar no hay propuesta: Originación declara el perfil.
+  IF estado_empresa NOT IN ('activa', 'suspendida') THEN
+    RAISE EXCEPTION 'perfil_se_declara_en_alta';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pld_perfil_propuestas x
+    WHERE x.company_id = NEW.company_id AND NOT EXISTS (SELECT 1 FROM pld_perfil_resoluciones r WHERE r.propuesta_id = x.id)
+  ) THEN
+    RAISE EXCEPTION 'propuesta_de_perfil_pendiente';
+  END IF;
+  IF current_user = 'plataforma_sofipo' THEN
+    IF NEW.registrado_por IS DISTINCT FROM app_usuario() OR NEW.operator_id IS DISTINCT FROM app_operador()
+      OR NOT personal_tiene_rol(NEW.operator_id, NEW.registrado_por, ARRAY['originacion']) THEN
+      RAISE EXCEPTION 'sin_rol_para_perfil';
+    END IF;
+    NEW.registrado_en := now();
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER pld_perfil_propuestas_revisar
+BEFORE INSERT ON pld_perfil_propuestas
+FOR EACH ROW EXECUTE FUNCTION pld_perfil_propuestas_revisar();
+
+CREATE FUNCTION pld_perfil_resoluciones_revisar()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+DECLARE
+  propuesta pld_perfil_propuestas%ROWTYPE;
+BEGIN
+  SELECT * INTO propuesta FROM pld_perfil_propuestas x WHERE x.id = NEW.propuesta_id;
+  IF propuesta.id IS NULL THEN
+    RAISE EXCEPTION 'propuesta_de_perfil_no_pendiente';
+  END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('pld_perfiles:' || propuesta.company_id::text, 0));
+  IF EXISTS (SELECT 1 FROM pld_perfil_resoluciones r WHERE r.propuesta_id = propuesta.id) THEN
+    RAISE EXCEPTION 'propuesta_de_perfil_no_pendiente';
+  END IF;
+  NEW.operator_id := propuesta.operator_id;
+  NEW.company_id := propuesta.company_id;
+  IF current_user = 'plataforma_sofipo' THEN
+    IF NEW.registrado_por IS DISTINCT FROM app_usuario() OR NEW.operator_id IS DISTINCT FROM app_operador()
+      OR NOT personal_tiene_rol(NEW.operator_id, NEW.registrado_por, ARRAY['cumplimiento']) THEN
+      RAISE EXCEPTION 'sin_rol_para_evaluar';
+    END IF;
+    NEW.registrado_en := now();
+  END IF;
+  -- Aprobada: la versión con esta propuesta ya está escrita en la transacción.
+  IF NEW.decision = 'aprobada' AND NOT EXISTS (
+    SELECT 1 FROM pld_perfiles p WHERE p.id = NEW.perfil_id AND p.propuesta_id = propuesta.id
+  ) THEN
+    RAISE EXCEPTION 'propuesta_de_perfil_no_pendiente';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER pld_perfil_resoluciones_revisar
+BEFORE INSERT ON pld_perfil_resoluciones
+FOR EACH ROW EXECUTE FUNCTION pld_perfil_resoluciones_revisar();
+
+-- Una versión aprobada sin su resolución no queda: al cerrar la transacción se revisa.
+CREATE FUNCTION pld_perfil_aprobado_con_resolucion()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.origen = 'aprobacion' AND NOT EXISTS (
+    SELECT 1 FROM pld_perfil_resoluciones r WHERE r.propuesta_id = NEW.propuesta_id AND r.decision = 'aprobada' AND r.perfil_id = NEW.id
+  ) THEN
+    RAISE EXCEPTION 'propuesta_de_perfil_no_pendiente';
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+CREATE CONSTRAINT TRIGGER pld_perfil_aprobado_con_resolucion
+AFTER INSERT ON pld_perfiles
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION pld_perfil_aprobado_con_resolucion();
 
 -- 27ª: «al menos, dos evaluaciones por año calendario» del perfil transaccional
 -- y del grado de riesgo. Una evaluación queda en el semestre de su fecha. Mantiene
@@ -2396,6 +2564,8 @@ BEGIN
   UNION ALL SELECT 'kyb_documentos', count(*) FROM kyb_documentos x WHERE x.company_id = p_company AND x.cargado_en >= desde AND x.cargado_en < hasta
   UNION ALL SELECT 'kyb_calificaciones_riesgo', count(*) FROM kyb_calificaciones_riesgo x WHERE x.company_id = p_company AND x.calificada_en >= desde AND x.calificada_en < hasta
   UNION ALL SELECT 'pld_perfiles', count(*) FROM pld_perfiles x WHERE x.company_id = p_company AND x.registrado_en >= desde AND x.registrado_en < hasta
+  UNION ALL SELECT 'pld_perfil_propuestas', count(*) FROM pld_perfil_propuestas x WHERE x.company_id = p_company AND x.registrado_en >= desde AND x.registrado_en < hasta
+  UNION ALL SELECT 'pld_perfil_resoluciones', count(*) FROM pld_perfil_resoluciones x WHERE x.company_id = p_company AND x.registrado_en >= desde AND x.registrado_en < hasta
   UNION ALL SELECT 'pld_evaluaciones', count(*) FROM pld_evaluaciones x WHERE x.company_id = p_company AND x.registrado_en >= desde AND x.registrado_en < hasta
   UNION ALL SELECT 'pld_operaciones', count(*) FROM pld_operaciones x WHERE x.company_id = p_company AND x.ocurrida_en >= desde AND x.ocurrida_en < hasta
   -- Lo de PLD con el mismo filtro de exclusión que su política (60ª, r2-base-N3):
@@ -2555,8 +2725,8 @@ DECLARE
   tabla text;
 BEGIN
   FOREACH tabla IN ARRAY ARRAY[
-    'pld_calendarios', 'pld_dias_inhabiles', 'pld_perfiles', 'pld_evaluaciones', 'pld_parametros', 'pld_operaciones',
-    'pld_avisos', 'pld_aviso_excluidos', 'pld_alertas', 'pld_casos', 'pld_caso_alertas', 'pld_casos_24h', 'pld_notas',
+    'pld_calendarios', 'pld_dias_inhabiles', 'pld_perfil_propuestas', 'pld_perfiles', 'pld_perfil_resoluciones',
+    'pld_evaluaciones', 'pld_parametros', 'pld_operaciones', 'pld_avisos', 'pld_aviso_excluidos', 'pld_alertas', 'pld_casos', 'pld_caso_alertas', 'pld_casos_24h', 'pld_notas',
     'pld_documentos', 'pld_propuestas', 'pld_modo_dictamen', 'pld_comite_integrantes', 'pld_comite_bajas',
     'pld_comite_auditores', 'pld_comite_comunicaciones', 'pld_sesiones', 'pld_votos', 'pld_actas', 'pld_dictamenes',
     'pld_reportes', 'pld_entidad', 'pld_periodicos'
@@ -2577,6 +2747,10 @@ END;
 $$;
 
 -- Bitácora obligatoria de cada escritura del personal.
+CREATE CONSTRAINT TRIGGER pld_perfil_propuestas_exige_evento AFTER INSERT ON pld_perfil_propuestas
+DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION pld_exige_evento('expediente_perfil_propuesto', '', '');
+CREATE CONSTRAINT TRIGGER pld_perfil_resoluciones_exige_evento AFTER INSERT ON pld_perfil_resoluciones
+DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION pld_exige_evento('', 'pld_perfil_propuestas', 'propuesta_id');
 CREATE CONSTRAINT TRIGGER pld_perfiles_exige_evento AFTER INSERT ON pld_perfiles
 DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION pld_exige_evento('', '', '');
 CREATE CONSTRAINT TRIGGER pld_evaluaciones_exige_evento AFTER INSERT ON pld_evaluaciones
@@ -2633,6 +2807,14 @@ CREATE POLICY pld_perfiles_lectura ON pld_perfiles FOR SELECT TO plataforma_sofi
   USING (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['originacion', 'aprobacion', 'cumplimiento', 'auditoria'])));
 CREATE POLICY pld_perfiles_escritura ON pld_perfiles FOR INSERT TO plataforma_sofipo
   WITH CHECK (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['originacion', 'cumplimiento'])));
+CREATE POLICY pld_perfil_propuestas_lectura ON pld_perfil_propuestas FOR SELECT TO plataforma_sofipo
+  USING (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['originacion', 'aprobacion', 'cumplimiento', 'auditoria'])));
+CREATE POLICY pld_perfil_propuestas_escritura ON pld_perfil_propuestas FOR INSERT TO plataforma_sofipo
+  WITH CHECK (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['originacion'])));
+CREATE POLICY pld_perfil_resoluciones_lectura ON pld_perfil_resoluciones FOR SELECT TO plataforma_sofipo
+  USING (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['originacion', 'aprobacion', 'cumplimiento', 'auditoria'])));
+CREATE POLICY pld_perfil_resoluciones_escritura ON pld_perfil_resoluciones FOR INSERT TO plataforma_sofipo
+  WITH CHECK (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento'])));
 
 CREATE POLICY pld_parametros_lectura ON pld_parametros FOR SELECT TO plataforma_sofipo
   USING ((operator_id = app_operador() OR operator_id IS NULL) AND (SELECT pld_rol(ARRAY['cumplimiento', 'auditoria'])));
@@ -2709,7 +2891,7 @@ CREATE POLICY pld_actas_escritura ON pld_actas FOR INSERT TO plataforma_sofipo
   WITH CHECK (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento'])));
 
 GRANT SELECT ON pld_calendarios, pld_dias_inhabiles, pld_operaciones, pld_alertas TO plataforma_sofipo;
-GRANT SELECT, INSERT ON pld_perfiles, pld_evaluaciones, pld_parametros, pld_avisos, pld_casos, pld_caso_alertas,
+GRANT SELECT, INSERT ON pld_perfiles, pld_perfil_propuestas, pld_perfil_resoluciones, pld_evaluaciones, pld_parametros, pld_avisos, pld_casos, pld_caso_alertas,
   pld_casos_24h, pld_notas, pld_propuestas, pld_modo_dictamen, pld_comite_integrantes, pld_comite_bajas,
   pld_comite_auditores, pld_comite_comunicaciones, pld_sesiones, pld_votos, pld_dictamenes, pld_reportes,
   pld_entidad, pld_periodicos TO plataforma_sofipo;

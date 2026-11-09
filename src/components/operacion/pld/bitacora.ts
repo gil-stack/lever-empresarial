@@ -6,7 +6,10 @@ import type { AccionPld } from "@/server/pld/auditar";
  */
 export const ETIQUETAS_PLD: Record<AccionPld | "pld_alerta_generada" | "pld_documento_descargado" | "pld_acta_descargada" | "pld_manifiesto_descargado", string> = {
   expediente_perfil_declarado: "Declaró el perfil transaccional",
-  pld_perfil_actualizado: "Actualizó el perfil por una evaluación",
+  expediente_perfil_propuesto: "Propuso un cambio de perfil transaccional a Cumplimiento",
+  expediente_perfil_aprobado: "Aprobó el cambio de perfil propuesto",
+  expediente_perfil_rechazado: "Rechazó el cambio de perfil propuesto",
+  pld_perfil_actualizado: "Actualizó el perfil vigente",
   pld_evaluacion_registrada: "Registró la evaluación semestral",
   pld_parametros_cambiados: "Cambió los parámetros de las alertas",
   pld_alerta_generada: "El sistema generó una alerta PLD",

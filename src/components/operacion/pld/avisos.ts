@@ -7,6 +7,10 @@
 /** Lo que pueden leer personas fuera de Cumplimiento y Auditoría: el perfil y el aviso del personal. */
 export const VISIBLES_FUERA_DE_CUMPLIMIENTO = [
   "perfil_declarado",
+  "perfil_propuesto",
+  "perfil_requiere_aprobacion",
+  "perfil_se_declara_en_alta",
+  "propuesta_de_perfil_pendiente",
   "pld_aviso_emitido",
   "cliente_ausente",
   "dato_invalido_pagosMonto",
@@ -28,6 +32,14 @@ export const VISIBLES_FUERA_DE_CUMPLIMIENTO = [
 export const MENSAJES_PLD: Record<string, string> = {
   // Perfil transaccional y evaluaciones (25ª-27ª).
   perfil_declarado: "Perfil transaccional registrado. Desde ahora es el vigente de la empresa.",
+  perfil_propuesto: "Propuesta enviada a Cumplimiento. El perfil vigente no cambia hasta que la apruebe.",
+  perfil_requiere_aprobacion: "La empresa ya opera: el cambio de perfil va como propuesta a Cumplimiento. Envíalo de nuevo.",
+  perfil_se_declara_en_alta: "Antes de activar la empresa, el perfil se declara directamente.",
+  propuesta_de_perfil_pendiente: "Ya hay una propuesta de cambio pendiente de Cumplimiento. Espera su resolución.",
+  propuesta_de_perfil_no_pendiente: "Esa propuesta ya se resolvió.",
+  perfil_aprobado: "Cambio aprobado. Desde ahora es el perfil vigente de la empresa.",
+  perfil_rechazado: "Propuesta rechazada. El perfil vigente no cambia.",
+  dato_invalido_decision: "Elige si apruebas o rechazas la propuesta.",
   evaluacion_registrada: "Evaluación semestral registrada.",
   cliente_ausente: "No encontramos esa empresa.",
   sin_rol_para_perfil: "El perfil transaccional lo declara Originación.",
@@ -201,6 +213,9 @@ export const CAMPO_PLD: Record<string, string> = {
 /** Los que dicen que algo quedó hecho; los demás se anuncian como algo por revisar. */
 export const ASENTADOS_PLD = [
   "perfil_declarado",
+  "perfil_propuesto",
+  "perfil_aprobado",
+  "perfil_rechazado",
   "evaluacion_registrada",
   "pld_aviso_emitido",
   "pld_caso_abierto",

@@ -3,7 +3,7 @@
 //   Crea la base «ola_r2_pld» desde cero, aplica db/migrations (0001-0030) y la semilla de Pagos a
 //   proveedores (Taller del Cierre: tres proveedores con la misma CLABE, el pago A-81 ya autorizado y
 //   el N-204 por autorizar, sesiones de Gil y Rosa). Con los servicios del producto:
-//   - Taller declara su perfil transaccional (Omar): pagos $50,000.00 al mes y nómina $15,000.00.
+//   - Taller (activa) con perfil transaccional que Omar propone y Celia aprueba: pagos $50,000.00 al mes y nómina $15,000.00.
 //     El A-81 ($48,215.00) ya cuenta en el mes; al autorizar el N-204 la suma cruza el perfil (flujo 2).
 //   - Un tercer pago por autorizar a la misma CLABE, $45,000.00: con él son tres instrucciones de
 //     menos de $100,000.00 que suman más (fraccionamiento, flujo 3).
@@ -37,7 +37,7 @@ import { decidirActivacion, solicitarActivacion } from "../../../src/server/oper
 import { registrarProspecto } from "../../../src/server/operacion/clientes";
 import { calificarRiesgoEmpresa, dictaminarVersion, enviarVersion } from "../../../src/server/operacion/expediente";
 import { darDeAltaPersona, nombrarCentro } from "../../../src/server/personas/servicio";
-import { declararPerfil } from "../../../src/server/pld/perfil";
+import { declararPerfil, resolverPropuestaDePerfil } from "../../../src/server/pld/perfil";
 import { contextoDePersonal } from "../../../src/server/plataforma/servicio";
 import { almacenVercel } from "../../../src/server/proveedores/constancia";
 import { leerSesion } from "../../../src/server/session/servicio";
@@ -131,9 +131,15 @@ async function preparar(): Promise<void> {
   const celia = (await contextoDePersonal("celia@lever.test")) as ContextoDePersonal;
   const almacen = almacenVercel();
 
-  // Taller: perfil declarado, tercer pago por autorizar a la misma CLABE y Marta con nómina semanal.
+  // Taller: perfil vigente, tercer pago por autorizar a la misma CLABE y Marta con nómina semanal. Taller ya
+  // está activa: Originación propone el perfil y Cumplimiento lo aprueba (r2-base-N18).
+  const propuestaTaller = randomUUID();
   await declararPerfil(omar, {
-    companyId: TALLER, formId: randomUUID(), pagosMonto: "50000", pagosOperaciones: "10", nominaMonto: "15000", nominaOperaciones: "4", motivo: "",
+    companyId: TALLER, formId: propuestaTaller, pagosMonto: "50000", pagosOperaciones: "10", nominaMonto: "15000", nominaOperaciones: "4",
+    motivo: "Perfil del cliente que operaba antes del registro de perfiles.",
+  });
+  await resolverPropuestaDePerfil(celia, {
+    companyId: TALLER, propuestaId: propuestaTaller, decision: "aprobada", motivo: "Corresponde al giro y a lo que la empresa ya mueve.",
   });
   ejecutar(url, `
     begin;

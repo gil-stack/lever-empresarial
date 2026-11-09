@@ -39,6 +39,8 @@ export type BandejaPld = {
   comunicacionesComite: ComunicacionPendiente[];
   sesionDelMesPendiente: boolean;
   mesesSinSesion: string[];
+  /** r2-base-N18: cambios de perfil que propuso Originación con la empresa activa, por resolver. */
+  propuestasDePerfil: Array<{ propuestaId: string; companyId: string; razonSocial: string; propuestaEn: Date }>;
   faltaClaveEntidad: boolean;
   faltaCalendario: number | null;
   modo: "comite" | "oficial";
@@ -62,7 +64,14 @@ export async function leerBandejaPld(ctx: ContextoDePersonal, opciones: { ahora?
     await leerModoDictamen(ctx),
     await leerEntidad(ctx),
   ];
-  const { casosAbiertos, porReportar, faltaCalendarioHoy } = await conPld(ctx, null, async (consulta) => {
+  const { casosAbiertos, porReportar, faltaCalendarioHoy, propuestasDePerfil } = await conPld(ctx, null, async (consulta) => {
+    const propuestas = (await consulta.query(
+      `select x.id, x.company_id, c.razon_social, x.registrado_en
+       from pld_perfil_propuestas x join companies c on c.id = x.company_id
+       where not exists (select 1 from pld_perfil_resoluciones r where r.propuesta_id = x.id)
+       order by x.registrado_en`,
+      [],
+    )).rows as Array<Record<string, unknown>>;
     const casos = (await consulta.query(
       `select k.id, c.razon_social, pld_caso_vence(k.id)::text as vence_el, m.registrado_en as marca_en,
               (select count(*) from pld_caso_alertas ca where ca.caso_id = k.id)::int as alertas,
@@ -112,6 +121,9 @@ export async function leerBandejaPld(ctx: ContextoDePersonal, opciones: { ahora?
         };
       }),
       faltaCalendarioHoy: calendario.cargado ? null : Number(hoy.slice(0, 4)),
+      propuestasDePerfil: propuestas.map((fila) => ({
+        propuestaId: String(fila.id), companyId: String(fila.company_id), razonSocial: String(fila.razon_social), propuestaEn: fecha(fila.registrado_en),
+      })),
     };
   });
   const faltaPeriodicos = periodicos.map((p) => p.faltaCalendario).filter((anio): anio is number => anio !== null);
@@ -125,6 +137,7 @@ export async function leerBandejaPld(ctx: ContextoDePersonal, opciones: { ahora?
     comunicacionesComite: modo.modo === "comite" ? comite.pendientes : [],
     sesionDelMesPendiente: modo.modo === "comite" && !comite.sesionDelMes,
     mesesSinSesion: comite.mesesSinSesion,
+    propuestasDePerfil,
     faltaClaveEntidad: entidad === null,
     faltaCalendario,
     modo: modo.modo,

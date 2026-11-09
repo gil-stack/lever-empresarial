@@ -304,6 +304,34 @@ async function flujo1() {
   exigir(sql(`select estado from companies where id = '${NOGAL}'`) === "activa", "1. Nogal queda activa");
   await foto(ana2.p, "f1-activacion-aprobada");
   await cerrar(ana2, "Ana");
+
+  // r2-base-N18: ya activa, lo que captura Originación es una propuesta; el vigente cambia cuando Cumplimiento la aprueba.
+  const omar2 = await abrir("omar");
+  await ir(omar2.p, `/operacion/clientes/${NOGAL}/expediente#perfil-titulo`);
+  await omar2.p.locator("#perfil-pagos-monto").fill("400,000.00");
+  await omar2.p.locator("#perfil-motivo").fill("Abrió una segunda sucursal y paga a más proveedores.");
+  await enviar(omar2.p, omar2.p.getByRole("button", { name: "Proponer el cambio a Cumplimiento" }), "perfil_propuesto", { doble: true });
+  exigir(cuenta(`pld_perfil_propuestas where company_id = '${NOGAL}'`) === 1, "1. doble clic en «Proponer el cambio» = 1 propuesta");
+  exigir(cuenta(`pld_perfiles where company_id = '${NOGAL}'`) === 1, "1. la propuesta no cambia el perfil vigente");
+  exigir(cuenta(`audit_log where accion = 'expediente_perfil_propuesto' and company_id = '${NOGAL}'`) === 1, "1. un evento «expediente_perfil_propuesto»");
+  exigir(await omar2.p.getByText("Propuesta pendiente de Cumplimiento").isVisible(), "1. Originación ve la propuesta pendiente");
+  exigir((await omar2.p.getByRole("button", { name: "Aprobar el cambio" }).count()) === 0, "1. Originación no ve «Aprobar el cambio»");
+  await foto(omar2.p, "f1-perfil-propuesto");
+  await cerrar(omar2, "Omar");
+
+  const celia = await abrir("celia");
+  await ir(celia.p, "/operacion/cumplimiento");
+  exigir((await fila(celia.p, "Nogal Comercial").filter({ hasText: "Por resolver" }).count()) === 1, "1. la bandeja de Cumplimiento lista la propuesta de Nogal");
+  await ir(celia.p, `/operacion/clientes/${NOGAL}/expediente#perfil-titulo`);
+  await celia.p.locator("#perfil-resolucion-motivo").fill("Revisé las facturas de la nueva sucursal: corresponde al giro.");
+  await enviar(celia.p, celia.p.getByRole("button", { name: "Aprobar el cambio" }), "perfil_aprobado", { doble: true });
+  exigir(cuenta(`pld_perfil_resoluciones where company_id = '${NOGAL}'`) === 1, "1. doble clic en «Aprobar el cambio» = 1 resolución");
+  exigir(sql(`select numero || ' ' || origen || ' ' || pagos_monto_mensual_centavos from pld_perfiles where company_id = '${NOGAL}' order by numero desc limit 1`) === "2 aprobacion 40000000",
+    "1. el vigente es la versión 2, aprobada, con $400,000.00 de pagos");
+  exigir(cuenta(`audit_log where accion = 'expediente_perfil_aprobado' and company_id = '${NOGAL}'`) === 1, "1. un evento «expediente_perfil_aprobado»");
+  exigir((await hoja(celia.p, "perfil-titulo").innerText()).includes("propuesto por Originación y aprobado por Cumplimiento"), "1. el expediente dice de dónde viene la versión vigente");
+  await foto(celia.p, "f1-perfil-aprobado");
+  await cerrar(celia, "Celia");
 }
 
 async function autorizarPago(pago) {

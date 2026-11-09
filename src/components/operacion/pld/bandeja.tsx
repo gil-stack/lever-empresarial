@@ -29,8 +29,8 @@ export function BandejaDePld({ bandeja }: { bandeja: BandejaPld }) {
         <Metrica rotulo="Reportes periódicos" nota="Por vencer o vencidos">
           <Monto>{periodicos.length}</Monto>
         </Metrica>
-        <Metrica rotulo="Evaluaciones" nota="Semestrales pendientes">
-          <Monto>{bandeja.evaluaciones.length}</Monto>
+        <Metrica rotulo="Evaluaciones" nota="Semestrales y cambios de perfil">
+          <Monto>{bandeja.evaluaciones.length + bandeja.propuestasDePerfil.length}</Monto>
         </Metrica>
       </Metricas>
 
@@ -122,6 +122,25 @@ export function BandejaDePld({ bandeja }: { bandeja: BandejaPld }) {
       </Hoja>
 
       <Hoja id="pld-evaluaciones-titulo" titulo="Evaluaciones semestrales">
+        {bandeja.propuestasDePerfil.length > 0 ? (
+          <ul className="operacion-lista">
+            {bandeja.propuestasDePerfil.map((propuesta) => (
+              <li key={propuesta.propuestaId}>
+                <div className="operacion-fila">
+                  <div className="operacion-fila-cuerpo">
+                    <h3>
+                      <Link href={`/operacion/clientes/${propuesta.companyId}/expediente#perfil-titulo`}>{propuesta.razonSocial}</Link>
+                    </h3>
+                    <p className="operacion-meta">
+                      <span>Originación propuso cambiar el perfil transaccional el {fechaHora(propuesta.propuestaEn)}</span>
+                    </p>
+                  </div>
+                  <Insignia tono="aviso">Por resolver</Insignia>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {bandeja.evaluaciones.length === 0 ? (
           <Vacio titulo="Sin evaluaciones pendientes">Cada cliente con seis meses o más desde su contrato se evalúa una vez por semestre.</Vacio>
         ) : (
