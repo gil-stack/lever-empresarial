@@ -3,7 +3,8 @@
 import { useActionState, useEffect, useRef } from "react";
 
 import { registrarIntegrantesAccion, type EstadoDeIntegrantes } from "@/app/operacion/(portal)/pld/acciones";
-import { AvisoOperacion, errorDelCampo } from "@/components/operacion/aviso";
+import { AvisoOperacion, errorDelCampo, textoDelAviso } from "@/components/operacion/aviso";
+import { MensajeJuntoAlCampo } from "@/components/operacion/mensaje-junto-al-campo";
 import { BotonEnviar } from "@/components/sistema";
 import { CARGO_COMITE, CARGOS_COMITE } from "@/dominio/pld/etiquetas";
 
@@ -46,7 +47,10 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
   const primerCapturado = ids.findIndex((_, i) => valor(`nombres-${i}`).trim() !== "");
   const delAviso = (campo: string) =>
     estado.aviso !== null && (CAMPO_DE_INTEGRACION[estado.aviso] === campo || Object.keys(errorDelCampo(estado.aviso, campo)).length > 0);
-  const marca = { "aria-invalid": true, "aria-describedby": ID_AVISO } as const;
+  // El campo marcado lo describe su mensaje, junto a él; el aviso de arriba queda como resumen (onceava ronda del #59).
+  const marca = { "aria-invalid": true, "aria-describedby": `${ID_AVISO}-campo` } as const;
+  const mensajeDe = (marcado: object) =>
+    "aria-invalid" in marcado && estado.aviso ? <MensajeJuntoAlCampo id={`${ID_AVISO}-campo`} texto={textoDelAviso(estado.aviso)} /> : null;
   /** El campo de un renglón: el del aviso en el renglón que falló, o en el primero capturado si es de la integración. */
   const ligado = (campo: string, i: number) => (delAviso(campo) && (estado.renglon ?? Math.max(primerCapturado, 0)) === i ? marca : {});
   /** Los campos de la sustitución, que no son de un renglón. */
@@ -60,12 +64,15 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
         titulares, al menos tres titulares, un suplente por titular como máximo y al Oficial como integrante.
       </p>
       {ids.map((id, i) => (
-        <fieldset key={id} className="formulario-pareja">
+        // La clave es el renglón, no su id: el id cambia cada vez que la página se vuelve a leer y el renglón se montaría
+        // de nuevo en blanco (onceava ronda del #59).
+        <fieldset key={i} className="formulario-pareja">
           <legend>Persona {i + 1}</legend>
           <input type="hidden" name={`id-${i}`} value={id} />
           <div className="campo">
             <label htmlFor={`integrante-nombres-${i}`}>Nombre(s)</label>
             <input id={`integrante-nombres-${i}`} name={`nombres-${i}`} maxLength={80} autoComplete="off" defaultValue={valor(`nombres-${i}`)} {...ligado("nombres", i)} />
+            {mensajeDe(ligado("nombres", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-primer-${i}`}>Primer apellido</label>
@@ -77,6 +84,7 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor(`primerApellido-${i}`)}
               {...ligado("primerApellido", i)}
             />
+            {mensajeDe(ligado("primerApellido", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-segundo-${i}`}>Segundo apellido (si tiene)</label>
@@ -88,6 +96,7 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor(`segundoApellido-${i}`)}
               {...ligado("segundoApellido", i)}
             />
+            {mensajeDe(ligado("segundoApellido", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-cargo-${i}`}>Cargo en el Comité</label>
@@ -98,6 +107,7 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
                 </option>
               ))}
             </select>
+            {mensajeDe(ligado("cargo", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-titularidad-${i}`}>Titular o suplente</label>
@@ -105,6 +115,7 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               <option value="TITULAR">Titular</option>
               <option value="SUPLENTE">Suplente</option>
             </select>
+            {mensajeDe(ligado("titularidad", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-suplente-${i}`}>Suplente de (si es suplente)</label>
@@ -121,6 +132,7 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
                 </option>
               ))}
             </select>
+            {mensajeDe(ligado("suplenteDe", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-rfc-${i}`}>RFC con homoclave</label>
@@ -133,6 +145,7 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor(`rfc-${i}`)}
               {...ligado("rfc", i)}
             />
+            {mensajeDe(ligado("rfc", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-curp-${i}`}>CURP</label>
@@ -145,10 +158,12 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor(`curp-${i}`)}
               {...ligado("curp", i)}
             />
+            {mensajeDe(ligado("curp", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-area-${i}`}>Área de la entidad</label>
             <input id={`integrante-area-${i}`} name={`area-${i}`} maxLength={120} autoComplete="off" defaultValue={valor(`area-${i}`)} {...ligado("area", i)} />
+            {mensajeDe(ligado("area", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-cargo-entidad-${i}`}>Cargo en la entidad</label>
@@ -160,6 +175,7 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor(`cargoEntidad-${i}`)}
               {...ligado("cargoEntidad", i)}
             />
+            {mensajeDe(ligado("cargoEntidad", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-designado-${i}`}>Fecha de designación</label>
@@ -171,6 +187,7 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor(`designadoEl-${i}`) || hoy}
               {...ligado("designadoEl", i)}
             />
+            {mensajeDe(ligado("designadoEl", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-certificado-${i}`}>Número de certificado (si tiene)</label>
@@ -182,11 +199,13 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor(`certificado-${i}`)}
               {...ligado("certificado", i)}
             />
+            {mensajeDe(ligado("certificado", i))}
           </div>
           <label className="confirmacion">
             <input type="checkbox" name={`esOficial-${i}`} value="si" defaultChecked={valor(`esOficial-${i}`) === "si"} {...ligado("esOficial", i)} />
             <span>Es el Oficial de Cumplimiento</span>
           </label>
+          {mensajeDe(ligado("esOficial", i))}
         </fieldset>
       ))}
       {vigentes.length > 0 ? (
@@ -202,6 +221,7 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
                 </option>
               ))}
             </select>
+            {mensajeDe(ligadoFuera("sustituye"))}
           </div>
           <div className="campo">
             <label htmlFor="integrante-sustituido">Fecha de sustitución</label>
@@ -213,10 +233,12 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor("sustituidoEl") || hoy}
               {...ligadoFuera("sustituidoEl")}
             />
+            {mensajeDe(ligadoFuera("sustituidoEl"))}
           </div>
           <div className="campo operacion-ancho">
             <label htmlFor="integrante-motivo">Motivo de la sustitución</label>
             <textarea id="integrante-motivo" name="motivo" maxLength={500} defaultValue={valor("motivo")} {...ligadoFuera("motivo")} />
+            {mensajeDe(ligadoFuera("motivo"))}
           </div>
         </fieldset>
       ) : null}

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { avisoDeCampo } from "@/components/operacion/aviso";
 import { sesionSegura } from "@/server/entrada";
 import { exigirContextoOperacion } from "@/server/operacion";
 import {
@@ -54,7 +55,10 @@ function listo(destino: string, aviso: string, ancla = ""): never {
 /** `en` dice qué formulario falló: la página liga el error solo a los campos de ese formulario. */
 function fallo(error: unknown, destino: string, ancla = ""): never {
   if (error instanceof ErrorDeDominio) {
-    redirect(`${destino}?aviso=${encodeURIComponent(error.codigo)}${ancla ? `&en=${ancla.slice(1)}` : ""}${ancla}`);
+    // r2-serv-N19: si el aviso es de un campo, va sin fragmento, como en acciones-alta.ts: con `#ancla`, el navegador
+    // descarta el autofocus al cargar la página completa (sin JavaScript o al recargar) y el foco se queda en el body.
+    const fragmento = avisoDeCampo(error.codigo) ? "" : ancla;
+    redirect(`${destino}?aviso=${encodeURIComponent(error.codigo)}${ancla ? `&en=${ancla.slice(1)}` : ""}${fragmento}`);
   }
   throw error;
 }

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { declararPerfilAccion, registrarEvaluacionAccion, resolverPropuestaDePerfilAccion } from "@/app/operacion/(portal)/pld/acciones";
-import { errorDelCampo } from "@/components/operacion/aviso";
+import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { BotonEnviar, Hoja, Insignia, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
@@ -43,6 +43,7 @@ export async function PerfilTransaccional({
   const resuelve = puedeEnOperacion(ctx, "plataforma.riesgo.calificar");
   const evaluaciones = veEvaluaciones ? await leerEvaluaciones(ctx, companyId) : [];
   const error = (seccion: string, campo: string) => (en === seccion ? errorDelCampo(aviso, campo) : {});
+  const mensaje = (seccion: string, campo: string) => (en === seccion ? <MensajeDelCampo codigo={aviso} campo={campo} /> : null);
 
   return (
     <>
@@ -111,6 +112,7 @@ export async function PerfilTransaccional({
                 <div className="campo operacion-ancho">
                   <label htmlFor="perfil-resolucion-motivo">Por qué la apruebas o la rechazas</label>
                   <textarea id="perfil-resolucion-motivo" name="motivo" required minLength={10} maxLength={1000} {...error("perfil-titulo", "motivo")} />
+                  {mensaje("perfil-titulo", "motivo")}
                 </div>
                 <div className="acciones operacion-ancho">
                   <BotonEnviar name="decision" value="aprobada">Aprobar el cambio</BotonEnviar>
@@ -134,26 +136,31 @@ export async function PerfilTransaccional({
               <label htmlFor="perfil-pagos-monto">Pagos a proveedores: monto máximo al mes (pesos)</label>
               <input id="perfil-pagos-monto" name="pagosMonto" inputMode="decimal" required autoComplete="off"
                 defaultValue={vigente ? centavosATexto(vigente.pagosMontoMensualCentavos) : ""} {...error("perfil-titulo", "pagosMonto")} />
+              {mensaje("perfil-titulo", "pagosMonto")}
             </div>
             <div className="campo">
               <label htmlFor="perfil-pagos-operaciones">Pagos a proveedores: número de pagos al mes</label>
               <input id="perfil-pagos-operaciones" name="pagosOperaciones" inputMode="numeric" required autoComplete="off"
                 defaultValue={vigente ? String(vigente.pagosOperacionesMensuales) : ""} {...error("perfil-titulo", "pagosOperaciones")} />
+              {mensaje("perfil-titulo", "pagosOperaciones")}
             </div>
             <div className="campo">
               <label htmlFor="perfil-nomina-monto">Nómina: monto máximo al mes (pesos)</label>
               <input id="perfil-nomina-monto" name="nominaMonto" inputMode="decimal" required autoComplete="off"
                 defaultValue={vigente ? centavosATexto(vigente.nominaMontoMensualCentavos) : ""} {...error("perfil-titulo", "nominaMonto")} />
+              {mensaje("perfil-titulo", "nominaMonto")}
             </div>
             <div className="campo">
               <label htmlFor="perfil-nomina-operaciones">Nómina: número de lotes al mes</label>
               <input id="perfil-nomina-operaciones" name="nominaOperaciones" inputMode="numeric" required autoComplete="off"
                 defaultValue={vigente ? String(vigente.nominaOperacionesMensuales) : ""} {...error("perfil-titulo", "nominaOperaciones")} />
+              {mensaje("perfil-titulo", "nominaOperaciones")}
             </div>
             {vigente || propone ? (
               <div className="campo operacion-ancho">
                 <label htmlFor="perfil-motivo">Motivo del cambio</label>
                 <textarea id="perfil-motivo" name="motivo" required minLength={10} maxLength={1000} {...error("perfil-titulo", "motivo")} />
+                {mensaje("perfil-titulo", "motivo")}
               </div>
             ) : (
               <input type="hidden" name="motivo" value="" />
@@ -212,26 +219,32 @@ export async function PerfilTransaccional({
                   <input type="radio" name="perfil" value="cambia" />
                   <span>Cambia: registro los montos nuevos</span>
                 </label>
+                {mensaje("evaluacion-titulo", "perfil")}
               </fieldset>
               <div className="campo">
                 <label htmlFor="evaluacion-pagos-monto">Pagos: monto máximo al mes (si cambia)</label>
                 <input id="evaluacion-pagos-monto" name="pagosMonto" inputMode="decimal" autoComplete="off" defaultValue={centavosATexto(vigente.pagosMontoMensualCentavos)} {...error("evaluacion-titulo", "pagosMonto")} />
+                {mensaje("evaluacion-titulo", "pagosMonto")}
               </div>
               <div className="campo">
                 <label htmlFor="evaluacion-pagos-operaciones">Pagos: número al mes (si cambia)</label>
                 <input id="evaluacion-pagos-operaciones" name="pagosOperaciones" inputMode="numeric" autoComplete="off" defaultValue={String(vigente.pagosOperacionesMensuales)} {...error("evaluacion-titulo", "pagosOperaciones")} />
+                {mensaje("evaluacion-titulo", "pagosOperaciones")}
               </div>
               <div className="campo">
                 <label htmlFor="evaluacion-nomina-monto">Nómina: monto máximo al mes (si cambia)</label>
                 <input id="evaluacion-nomina-monto" name="nominaMonto" inputMode="decimal" autoComplete="off" defaultValue={centavosATexto(vigente.nominaMontoMensualCentavos)} {...error("evaluacion-titulo", "nominaMonto")} />
+                {mensaje("evaluacion-titulo", "nominaMonto")}
               </div>
               <div className="campo">
                 <label htmlFor="evaluacion-nomina-operaciones">Nómina: lotes al mes (si cambia)</label>
                 <input id="evaluacion-nomina-operaciones" name="nominaOperaciones" inputMode="numeric" autoComplete="off" defaultValue={String(vigente.nominaOperacionesMensuales)} {...error("evaluacion-titulo", "nominaOperaciones")} />
+                {mensaje("evaluacion-titulo", "nominaOperaciones")}
               </div>
               <div className="campo operacion-ancho">
                 <label htmlFor="evaluacion-justificacion">Qué revisaste y por qué</label>
                 <textarea id="evaluacion-justificacion" name="justificacion" required minLength={10} maxLength={2000} {...error("evaluacion-titulo", "motivo")} />
+                {mensaje("evaluacion-titulo", "motivo")}
               </div>
               <div className="acciones operacion-ancho">
                 <BotonEnviar>Registrar evaluación</BotonEnviar>

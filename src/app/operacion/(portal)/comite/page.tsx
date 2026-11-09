@@ -9,7 +9,7 @@ import {
   registrarSesionAccion,
 } from "@/app/operacion/(portal)/pld/acciones";
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
-import { errorDelCampo } from "@/components/operacion/aviso";
+import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { ConfirmarParaDecidir } from "@/components/operacion/pld/confirmar";
@@ -50,6 +50,7 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
   const [comite, modo, deCumplimiento] = await Promise.all([leerComite(ctx, { ahora }), leerModoDictamen(ctx), personalDeCumplimiento(ctx)]);
   const administra = puedeEnOperacion(ctx, "plataforma.pld.comite");
   const error = (seccion: string, campo: string) => (params.en === seccion ? errorDelCampo(params.aviso, campo) : {});
+  const mensaje = (seccion: string, campo: string) => (params.en === seccion ? <MensajeDelCampo codigo={params.aviso} campo={campo} /> : null);
   const sinPresentes: { "aria-invalid"?: true; "aria-describedby"?: string; autoFocus?: true } = error("sesiones-titulo", "presentes");
   const vigentes = comite.integrantes.filter((integrante) => integrante.vigente);
   const titulares = vigentes.filter((integrante) => integrante.titularidad === "TITULAR");
@@ -155,22 +156,27 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
             <div className="campo">
               <label htmlFor="auditor-nombre">Nombre</label>
               <input id="auditor-nombre" name="nombre" required maxLength={200} autoComplete="off" {...error("auditor-titulo", "nombre")} />
+              {mensaje("auditor-titulo", "nombre")}
             </div>
             <div className="campo">
               <label htmlFor="auditor-cargo">Cargo en la entidad</label>
               <input id="auditor-cargo" name="cargoEntidad" required maxLength={120} autoComplete="off" {...error("auditor-titulo", "cargoEntidad")} />
+              {mensaje("auditor-titulo", "cargoEntidad")}
             </div>
             <div className="campo">
               <label htmlFor="auditor-rfc">RFC con homoclave</label>
               <input id="auditor-rfc" name="rfc" required maxLength={13} autoComplete="off" className="operacion-mono" {...error("auditor-titulo", "rfc")} />
+              {mensaje("auditor-titulo", "rfc")}
             </div>
             <div className="campo">
               <label htmlFor="auditor-curp">CURP</label>
               <input id="auditor-curp" name="curp" required maxLength={18} autoComplete="off" className="operacion-mono" {...error("auditor-titulo", "curp")} />
+              {mensaje("auditor-titulo", "curp")}
             </div>
             <div className="campo">
               <label htmlFor="auditor-designado">Fecha de designación</label>
               <input id="auditor-designado" name="designadoEl" type="date" required max={hoy} defaultValue={hoy} {...error("auditor-titulo", "designadoEl")} />
+              {mensaje("auditor-titulo", "designadoEl")}
             </div>
             <div className="acciones operacion-ancho">
               <BotonEnviar>{comite.auditor ? "Registrar otro auditor" : "Registrar auditor"}</BotonEnviar>
@@ -214,10 +220,12 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
             <div className="campo">
               <label htmlFor="comunicacion-folio">Folio del acuse del SITI</label>
               <input id="comunicacion-folio" name="folio" required maxLength={40} autoComplete="off" {...error("comunicaciones-titulo", "folio")} />
+              {mensaje("comunicaciones-titulo", "folio")}
             </div>
             <div className="campo">
               <label htmlFor="comunicacion-recibido">Fecha y hora de recepción</label>
               <input id="comunicacion-recibido" name="recibidoEn" type="datetime-local" required max={ahoraEnMexicoParaCampo(new Date())} {...error("comunicaciones-titulo", "recibidoEn")} />
+              {mensaje("comunicaciones-titulo", "recibidoEn")}
             </div>
             <fieldset className="opciones operacion-ancho">
               <legend>Qué cubre</legend>
@@ -311,6 +319,7 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
             <div className="campo">
               <label htmlFor="sesion-fecha">Fecha de la sesión</label>
               <input id="sesion-fecha" name="celebradaEl" type="date" required max={hoy} defaultValue={hoy} {...error("sesiones-titulo", "celebradaEl")} />
+              {mensaje("sesiones-titulo", "celebradaEl")}
             </div>
             {/* r2-serv-N6: el fieldset no recibe el foco; con el aviso, lo toma la primera casilla. */}
             <fieldset className="opciones operacion-ancho" aria-invalid={sinPresentes["aria-invalid"]} aria-describedby={sinPresentes["aria-describedby"]}>
@@ -330,6 +339,7 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
                   <span>{comite.auditor.nombre} · auditor, con voz y sin voto</span>
                 </label>
               ) : null}
+              {mensaje("sesiones-titulo", "presentes")}
             </fieldset>
             <div className="acciones operacion-ancho">
               <BotonEnviar>Registrar sesión</BotonEnviar>

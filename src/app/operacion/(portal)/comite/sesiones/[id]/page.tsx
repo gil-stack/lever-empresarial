@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { cargarActaAccion, registrarVotoAccion } from "@/app/operacion/(portal)/pld/acciones";
-import { errorDelCampo } from "@/components/operacion/aviso";
+import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { CampoArchivo } from "@/components/operacion/campo-archivo";
 import { fechaDia } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
@@ -47,6 +47,7 @@ export default async function SesionComite({
   if (!sesion) notFound();
   const administra = puedeEnOperacion(ctx, "plataforma.pld.comite");
   const error = (seccion: string, campo: string) => (busqueda.en === seccion ? errorDelCampo(busqueda.aviso, campo) : {});
+  const mensaje = (seccion: string, campo: string) => (busqueda.en === seccion ? <MensajeDelCampo codigo={busqueda.aviso} campo={campo} /> : null);
   const porId = new Map(comite.integrantes.map((integrante) => [integrante.id, integrante]));
   const presentes = sesion.presentes.map((presente) => porId.get(presente)).filter((i): i is NonNullable<typeof i> => i !== undefined);
   const presidente = sesion.presidenteId ? porId.get(sesion.presidenteId) : undefined;
@@ -186,6 +187,7 @@ export default async function SesionComite({
                 mensaje={`El archivo pasa de ${TOPE_ARCHIVO_TEXTO}. Sube uno más ligero.`}
                 required
                 ligado={error("acta-titulo", "archivo")}
+                mensajeDelServidor={mensaje("acta-titulo", "archivo")}
               />
             </div>
             <div className="acciones">

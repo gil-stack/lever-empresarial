@@ -126,4 +126,69 @@ test.describe("sin JavaScript", () => {
     await expect(page.locator("#aviso-operacion")).toContainText("Nota agregada al análisis.");
     expect(await notas()).toBe(antes + 1);
   });
+
+  // r2-serv-N19: el aviso de un campo vuelve sin fragmento, como en el alta del #59. Con «#entidad-titulo» en la
+  // dirección, el navegador descarta el autofocus al cargar la página completa y el foco se queda en el body.
+  test("sin JavaScript, el rechazo de un campo de PLD vuelve sin fragmento, con el foco y su mensaje junto al campo: clave CASFIM, nota y RFC del auditor, a 1440 y 390", async ({ page, context }) => {
+    const [caso] = await consultar<{ id: string }>("select id from pld_casos where company_id = $1", [ceiba]);
+    const generico = "Revisa el campo marcado: el dato no tiene el formato esperado.";
+    const rechazos = [
+      {
+        ruta: "/operacion/reportes", campo: "#entidad-casfim", boton: /^Registrar claves/, url: /aviso=dato_invalido_claveCasfim&en=entidad-titulo/, texto: generico,
+        conteo: () => contar("select 1 from pld_entidad"),
+        // El navegador no deja enviar algo fuera del patrón de 6 dígitos; sin el patrón, rechaza el servidor.
+        llenar: async () => {
+          await page.locator("#entidad-casfim").evaluate((campo) => campo.removeAttribute("pattern"));
+          await page.locator("#entidad-casfim").fill("12345");
+          await page.locator("#entidad-supervisor").fill("123456");
+        },
+      },
+      {
+        ruta: `/operacion/pld/casos/${caso!.id}`, campo: "#nota-texto", boton: "Agregar nota", url: /aviso=dato_invalido_texto&en=notas-titulo/,
+        texto: "Escribe la nota, con al menos 2 caracteres que se vean.",
+        conteo: () => contar("select 1 from pld_notas where caso_id = $1", [caso!.id]),
+        llenar: () => page.locator("#nota-texto").fill("aㅤ"),
+      },
+      {
+        ruta: "/operacion/comite", campo: "#auditor-rfc", boton: /^Registrar (otro )?auditor$/, url: /aviso=dato_invalido_rfc&en=auditor-titulo/, texto: generico,
+        conteo: () => contar("select 1 from pld_comite_auditores"),
+        llenar: async () => {
+          await page.locator("#auditor-nombre").fill("Auditora Sin Script");
+          await page.locator("#auditor-cargo").fill("Auditora interna");
+          await page.locator("#auditor-rfc").fill("ASS9001");
+          await page.locator("#auditor-curp").fill("ASSA900101MDFLRN09");
+        },
+      },
+    ];
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    for (const ancho of [1440, 390]) {
+      await page.setViewportSize({ width: ancho, height: ancho < 600 ? 844 : 900 });
+      for (const rechazo of rechazos) {
+        const donde = `${rechazo.campo} ${ancho}`;
+        const antes = await rechazo.conteo();
+        await page.goto(rechazo.ruta);
+        await rechazo.llenar();
+        const [envio] = await Promise.all([
+          page.waitForResponse((respuesta) => respuesta.request().method() === "POST"),
+          page.getByRole("button", { name: rechazo.boton }).click(),
+        ]);
+        expect(envio.status(), donde).toBe(303);
+        await page.waitForURL(rechazo.url);
+        expect(new URL(page.url()).hash, donde).toBe("");
+        const control = page.locator(rechazo.campo);
+        await expect(page.locator(`${rechazo.campo}:focus`), donde).toHaveCount(1);
+        await expect(control, donde).toHaveAttribute("aria-invalid", "true");
+        await expect(control, donde).toHaveAttribute("aria-describedby", /(^| )aviso-operacion-campo$/);
+        const mensaje = page.locator('[id="aviso-operacion-campo"]');
+        await expect(mensaje, donde).toHaveText(rechazo.texto);
+        // Sin JavaScript nadie desplaza la página: el foco la lleva al campo y el mensaje va justo debajo, a la vista.
+        const [cajaCampo, cajaMensaje] = [(await control.boundingBox())!, (await mensaje.boundingBox())!];
+        const separacion = cajaMensaje.y - (cajaCampo.y + cajaCampo.height);
+        expect(separacion, donde).toBeGreaterThanOrEqual(0);
+        expect(separacion, donde).toBeLessThanOrEqual(24);
+        expect(cajaMensaje.y + cajaMensaje.height, donde).toBeLessThanOrEqual(page.viewportSize()!.height);
+        expect(await rechazo.conteo(), donde).toBe(antes);
+      }
+    }
+  });
 });

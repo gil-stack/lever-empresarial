@@ -10,7 +10,7 @@ import {
   registrarPropuestaAccion,
   type EstadoDelFormulario,
 } from "@/app/operacion/(portal)/pld/acciones";
-import { AvisoOperacion, errorDelCampo } from "@/components/operacion/aviso";
+import { AvisoOperacion, errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { BotonEnviar } from "@/components/sistema";
 import { PROPUESTA, PROPUESTAS, TIPO_AVISO, TIPOS_AVISO } from "@/dominio/pld/etiquetas";
 
@@ -33,6 +33,7 @@ function useConservaLoCapturado(accion: (previo: EstadoDelFormulario, datos: For
     forma,
     valor: (campo: string, inicial = "") => (estado.vuelta ? (estado.valores[campo] ?? inicial) : inicial),
     ligado: (campo: string) => errorDelCampo(estado.aviso, campo, idAviso),
+    mensaje: (campo: string) => <MensajeDelCampo codigo={estado.aviso} campo={campo} idAviso={idAviso} />,
     aviso: estado.aviso ? <AvisoOperacion codigo={estado.aviso} id={idAviso} /> : null,
   };
 }
@@ -47,7 +48,7 @@ export function FormularioAviso({
   clientes: Array<{ id: string; razonSocial: string }>;
   personas: Array<{ id: string; nombre: string }>;
 }) {
-  const { estado, enviar, forma, valor, ligado, aviso } = useConservaLoCapturado(emitirAvisoAccion, "aviso-nuevo");
+  const { estado, enviar, forma, valor, ligado, mensaje, aviso } = useConservaLoCapturado(emitirAvisoAccion, "aviso-nuevo");
   return (
     <form key={estado.vuelta} ref={forma} action={enviar} className="formulario-pareja operacion-forma">
       <input type="hidden" name="formId" value={formId} />
@@ -64,6 +65,7 @@ export function FormularioAviso({
             </option>
           ))}
         </select>
+        {mensaje("tipo")}
       </div>
       <div className="campo">
         <label htmlFor="aviso-empresa">Empresa (si aplica)</label>
@@ -75,10 +77,12 @@ export function FormularioAviso({
             </option>
           ))}
         </select>
+        {mensaje("companyId")}
       </div>
       <div className="campo operacion-ancho">
         <label htmlFor="aviso-descripcion">Qué viste, cuándo y quién estuvo involucrado</label>
         <textarea id="aviso-descripcion" name="descripcion" required minLength={20} maxLength={4000} defaultValue={valor("descripcion")} {...ligado("descripcion")} />
+        {mensaje("descripcion")}
       </div>
       <div className="campo">
         <label htmlFor="aviso-mencionada">Persona del personal mencionada (si aplica)</label>
@@ -90,6 +94,7 @@ export function FormularioAviso({
             </option>
           ))}
         </select>
+        {mensaje("mencionada")}
       </div>
       <div className="campo">
         <label htmlFor="aviso-superior">Tu superior jerárquico (si no debe enterarse)</label>
@@ -101,6 +106,7 @@ export function FormularioAviso({
             </option>
           ))}
         </select>
+        {mensaje("superior")}
       </div>
       <div className="acciones operacion-ancho">
         <BotonEnviar>Enviar aviso</BotonEnviar>
@@ -112,7 +118,7 @@ export function FormularioAviso({
 
 /** La propuesta de quien analiza el caso: reportar o no, con su justificación. */
 export function FormularioPropuesta({ casoId, formId, pista }: { casoId: string; formId: string; pista: string }) {
-  const { estado, enviar, forma, valor, ligado, aviso } = useConservaLoCapturado(registrarPropuestaAccion, "aviso-propuesta");
+  const { estado, enviar, forma, valor, ligado, mensaje, aviso } = useConservaLoCapturado(registrarPropuestaAccion, "aviso-propuesta");
   return (
     <form key={estado.vuelta} ref={forma} action={enviar} className="operacion-forma">
       <input type="hidden" name="casoId" value={casoId} />
@@ -130,6 +136,7 @@ export function FormularioPropuesta({ casoId, formId, pista }: { casoId: string;
             </option>
           ))}
         </select>
+        {mensaje("propuesta")}
       </div>
       <div className="campo">
         <label htmlFor="propuesta-justificacion">Justificación</label>
@@ -142,6 +149,7 @@ export function FormularioPropuesta({ casoId, formId, pista }: { casoId: string;
           defaultValue={valor("justificacion")}
           {...ligado("motivo")}
         />
+        {mensaje("motivo")}
       </div>
       <div className="acciones">
         <BotonEnviar>Registrar propuesta</BotonEnviar>
@@ -168,7 +176,7 @@ export function FormularioDictamen({
   oficial?: { resultadoInicial: string };
   comite?: { propuestaId: string; resultado: string; sesiones: Array<{ id: string; etiqueta: string }> };
 }) {
-  const { estado, enviar, forma, valor, ligado, aviso } = useConservaLoCapturado(dictaminarCasoAccion, "aviso-dictamen");
+  const { estado, enviar, forma, valor, ligado, mensaje, aviso } = useConservaLoCapturado(dictaminarCasoAccion, "aviso-dictamen");
   return (
     <form key={estado.vuelta} ref={forma} action={enviar} className="operacion-forma">
       <input type="hidden" name="casoId" value={casoId} />
@@ -191,6 +199,7 @@ export function FormularioDictamen({
                 </option>
               ))}
             </select>
+            {mensaje("sesionId")}
           </div>
         </>
       ) : (
@@ -206,6 +215,7 @@ export function FormularioDictamen({
               </option>
             ))}
           </select>
+          {mensaje("resultado")}
         </div>
       )}
       <div className="campo">
@@ -219,6 +229,7 @@ export function FormularioDictamen({
           defaultValue={valor("justificacion")}
           {...ligado("motivo")}
         />
+        {mensaje("motivo")}
       </div>
       <div className="acciones">
         <BotonEnviar>Registrar dictamen</BotonEnviar>
@@ -230,11 +241,12 @@ export function FormularioDictamen({
 
 /** Los parámetros de las reglas de alerta (54ª): una versión nueva con su motivo. */
 export function FormularioParametros({ formId, iniciales }: { formId: string; iniciales: Record<string, string> }) {
-  const { estado, enviar, forma, valor, ligado, aviso } = useConservaLoCapturado(cambiarParametrosAccion, "aviso-parametros");
+  const { estado, enviar, forma, valor, ligado, mensaje, aviso } = useConservaLoCapturado(cambiarParametrosAccion, "aviso-parametros");
   const numero = (id: string, campo: string, etiqueta: string, modo: "decimal" | "numeric") => (
     <div className="campo">
       <label htmlFor={id}>{etiqueta}</label>
       <input id={id} name={campo} inputMode={modo} required defaultValue={valor(campo, iniciales[campo])} {...ligado(campo)} />
+      {mensaje(campo)}
     </div>
   );
   return (
@@ -251,6 +263,7 @@ export function FormularioParametros({ formId, iniciales }: { formId: string; in
       <div className="campo operacion-ancho">
         <label htmlFor="parametros-motivo">Motivo del cambio</label>
         <textarea id="parametros-motivo" name="motivo" required minLength={10} maxLength={500} defaultValue={valor("motivo")} {...ligado("motivo")} />
+        {mensaje("motivo")}
       </div>
       <div className="acciones operacion-ancho">
         <BotonEnviar>Guardar versión nueva</BotonEnviar>
@@ -272,7 +285,7 @@ export function FormularioModo({
   oficialId: string;
   personas: Array<{ id: string; nombre: string }>;
 }) {
-  const { estado, enviar, forma, valor, ligado, aviso } = useConservaLoCapturado(cambiarModoAccion, "aviso-modo");
+  const { estado, enviar, forma, valor, ligado, mensaje, aviso } = useConservaLoCapturado(cambiarModoAccion, "aviso-modo");
   const elegido = valor("modo", modo);
   return (
     <form key={estado.vuelta} ref={forma} action={enviar} className="formulario-pareja operacion-forma">
@@ -299,10 +312,12 @@ export function FormularioModo({
             </option>
           ))}
         </select>
+        {mensaje("oficialId")}
       </div>
       <div className="campo operacion-ancho">
         <label htmlFor="modo-motivo">Motivo del cambio</label>
         <textarea id="modo-motivo" name="motivo" required minLength={10} maxLength={500} defaultValue={valor("motivo")} {...ligado("motivo")} />
+        {mensaje("motivo")}
       </div>
       <div className="acciones operacion-ancho">
         <BotonEnviar>Guardar quién dictamina</BotonEnviar>

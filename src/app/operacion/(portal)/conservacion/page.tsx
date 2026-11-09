@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
-import { errorDelCampo } from "@/components/operacion/aviso";
+import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { Hoja, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
@@ -31,6 +31,7 @@ export default async function ConservacionOperacion({ searchParams }: { searchPa
   const hoy = hoyEnMexico(ahoraPld());
   const haceUnAnio = `${Number(hoy.slice(0, 4)) - 1}${hoy.slice(4)}`;
   const error = (campo: string) => (params.en === "manifiesto-titulo" ? errorDelCampo(params.aviso, campo) : {});
+  const mensaje = (campo: string) => (params.en === "manifiesto-titulo" ? <MensajeDelCampo codigo={params.aviso} campo={campo} /> : null);
 
   return (
     <PaginaOperacion titulo="Conservación" aviso={params.aviso}>
@@ -55,10 +56,12 @@ export default async function ConservacionOperacion({ searchParams }: { searchPa
                   </option>
                 ))}
               </select>
+              {mensaje("companyId")}
             </div>
             <div className="campo">
               <label htmlFor="manifiesto-desde">Desde</label>
               <input id="manifiesto-desde" name="desde" type="date" required defaultValue={haceUnAnio} max={hoy} {...error("periodo")} />
+              {mensaje("periodo")}
             </div>
             <div className="campo">
               <label htmlFor="manifiesto-hasta">Hasta</label>

@@ -230,7 +230,7 @@ export function tonoDelAviso(codigo: string): "asentado" | "revisar" {
 }
 
 /** El texto de un aviso: el mismo arriba (el resumen) y junto al campo. */
-function textoDelAviso(codigo: string): string {
+export function textoDelAviso(codigo: string): string {
   return (
     MENSAJES[codigo] ??
     (codigo.startsWith("dato_invalido_") ? "Revisa el campo marcado: el dato no tiene el formato esperado." : null) ??

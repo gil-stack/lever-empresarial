@@ -12,7 +12,7 @@ import {
   sumarAlertaAccion,
 } from "@/app/operacion/(portal)/pld/acciones";
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
-import { errorDelCampo } from "@/components/operacion/aviso";
+import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { CampoArchivo } from "@/components/operacion/campo-archivo";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
@@ -62,6 +62,7 @@ export default async function CasoPld({
   const sesiones = modo.modo === "comite" && vigente && !caso.dictamen ? await sesionesQueAprobaron(ctx, vigente.id) : [];
   const abierto = caso.dictamen === null;
   const error = (seccion: string, campo: string) => (busqueda.en === seccion ? errorDelCampo(busqueda.aviso, campo) : {});
+  const mensaje = (seccion: string, campo: string) => (busqueda.en === seccion ? <MensajeDelCampo codigo={busqueda.aviso} campo={campo} /> : null);
   const titulo = `Caso · ${caso.razonSocial ?? "aviso sin empresa"}`;
 
   return (
@@ -174,6 +175,7 @@ export default async function CasoPld({
                 <div className="campo">
                   <label htmlFor="plazo-motivo">Si hay información de que los recursos pueden venir de actividades ilícitas: qué se sabe</label>
                   <textarea id="plazo-motivo" name="motivo" required minLength={10} maxLength={1000} {...error("plazo-titulo", "motivo")} />
+                  {mensaje("plazo-titulo", "motivo")}
                 </div>
                 <div className="acciones">
                   <BotonEnviar>Marcar como reporte de 24 horas</BotonEnviar>
@@ -210,6 +212,7 @@ export default async function CasoPld({
             <div className="campo">
               <label htmlFor="nota-texto">Nota</label>
               <textarea id="nota-texto" name="texto" required maxLength={4000} {...error("notas-titulo", "texto")} />
+              {mensaje("notas-titulo", "texto")}
             </div>
             <div className="acciones">
               <BotonEnviar>Agregar nota</BotonEnviar>
@@ -255,6 +258,7 @@ export default async function CasoPld({
                 mensaje={`El archivo pasa de ${TOPE_ARCHIVO_TEXTO}. Sube uno más ligero.`}
                 required
                 ligado={error("documentos-titulo", "archivo")}
+                mensajeDelServidor={mensaje("documentos-titulo", "archivo")}
               />
             </div>
             <div className="acciones">
@@ -365,18 +369,22 @@ export default async function CasoPld({
               <div className="campo">
                 <label htmlFor="reporte-folio">Folio del acuse</label>
                 <input id="reporte-folio" name="folio" required maxLength={40} autoComplete="off" {...error("reporte-titulo", "folio")} />
+                {mensaje("reporte-titulo", "folio")}
               </div>
               <div className="campo">
                 <label htmlFor="reporte-periodo">Periodo (AAAAMMDD)</label>
                 <input id="reporte-periodo" name="periodo" required inputMode="numeric" pattern="[0-9]{8}" defaultValue={caso.dictamen.dictaminadoEl.replace(/-/g, "")} {...error("reporte-titulo", "periodo")} />
+                {mensaje("reporte-titulo", "periodo")}
               </div>
               <div className="campo">
                 <label htmlFor="reporte-recibido">Fecha y hora de recepción (Ciudad de México)</label>
                 <input id="reporte-recibido" name="recibidoEn" type="datetime-local" required min={`${caso.dictamen.dictaminadoEl}T00:00`} max={ahoraEnMexicoParaCampo(new Date())} {...error("reporte-titulo", "recibidoEn")} />
+                {mensaje("reporte-titulo", "recibidoEn")}
               </div>
               <div className="campo">
                 <label htmlFor="reporte-registros">Número de registros</label>
                 <input id="reporte-registros" name="registros" required inputMode="numeric" defaultValue="1" {...error("reporte-titulo", "registros")} />
+                {mensaje("reporte-titulo", "registros")}
               </div>
               <div className="acciones operacion-ancho">
                 <BotonEnviar>Registrar acuse</BotonEnviar>
