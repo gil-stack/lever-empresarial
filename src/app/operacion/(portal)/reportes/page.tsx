@@ -148,7 +148,7 @@ export default async function ReportesRegulatorios({ searchParams }: { searchPar
             </div>
             <div className="campo">
               <label htmlFor="entidad-supervisor">Clave CASFIM del órgano supervisor (6 dígitos)</label>
-              <input id="entidad-supervisor" name="claveOrganoSupervisor" required inputMode="numeric" pattern="[0-9]{6}" defaultValue={entidad?.claveOrganoSupervisor ?? ""} {...error("entidad-titulo", "claveCasfim")} />
+              <input id="entidad-supervisor" name="claveOrganoSupervisor" required inputMode="numeric" pattern="[0-9]{6}" defaultValue={entidad?.claveOrganoSupervisor ?? ""} {...error("entidad-titulo", "claveOrganoSupervisor")} />
             </div>
             <div className="acciones operacion-ancho">
               <BotonEnviar>{entidad ? "Registrar claves nuevas" : "Registrar claves"}</BotonEnviar>

@@ -213,19 +213,19 @@ export async function PerfilTransaccional({
               </fieldset>
               <div className="campo">
                 <label htmlFor="evaluacion-pagos-monto">Pagos: monto máximo al mes (si cambia)</label>
-                <input id="evaluacion-pagos-monto" name="pagosMonto" inputMode="decimal" autoComplete="off" defaultValue={centavosATexto(vigente.pagosMontoMensualCentavos)} />
+                <input id="evaluacion-pagos-monto" name="pagosMonto" inputMode="decimal" autoComplete="off" defaultValue={centavosATexto(vigente.pagosMontoMensualCentavos)} {...error("evaluacion-titulo", "pagosMonto")} />
               </div>
               <div className="campo">
                 <label htmlFor="evaluacion-pagos-operaciones">Pagos: número al mes (si cambia)</label>
-                <input id="evaluacion-pagos-operaciones" name="pagosOperaciones" inputMode="numeric" autoComplete="off" defaultValue={String(vigente.pagosOperacionesMensuales)} />
+                <input id="evaluacion-pagos-operaciones" name="pagosOperaciones" inputMode="numeric" autoComplete="off" defaultValue={String(vigente.pagosOperacionesMensuales)} {...error("evaluacion-titulo", "pagosOperaciones")} />
               </div>
               <div className="campo">
                 <label htmlFor="evaluacion-nomina-monto">Nómina: monto máximo al mes (si cambia)</label>
-                <input id="evaluacion-nomina-monto" name="nominaMonto" inputMode="decimal" autoComplete="off" defaultValue={centavosATexto(vigente.nominaMontoMensualCentavos)} />
+                <input id="evaluacion-nomina-monto" name="nominaMonto" inputMode="decimal" autoComplete="off" defaultValue={centavosATexto(vigente.nominaMontoMensualCentavos)} {...error("evaluacion-titulo", "nominaMonto")} />
               </div>
               <div className="campo">
                 <label htmlFor="evaluacion-nomina-operaciones">Nómina: lotes al mes (si cambia)</label>
-                <input id="evaluacion-nomina-operaciones" name="nominaOperaciones" inputMode="numeric" autoComplete="off" defaultValue={String(vigente.nominaOperacionesMensuales)} />
+                <input id="evaluacion-nomina-operaciones" name="nominaOperaciones" inputMode="numeric" autoComplete="off" defaultValue={String(vigente.nominaOperacionesMensuales)} {...error("evaluacion-titulo", "nominaOperaciones")} />
               </div>
               <div className="campo operacion-ancho">
                 <label htmlFor="evaluacion-justificacion">Qué revisaste y por qué</label>

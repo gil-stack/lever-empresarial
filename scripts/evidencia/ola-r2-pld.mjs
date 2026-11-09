@@ -58,6 +58,11 @@ function sql(consulta, url = DUENO) {
   return execFileSync("psql", [url, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1", "-c", consulta], { encoding: "utf8" }).trim();
 }
 const cuenta = (desde) => Number(sql(`select count(*) from ${desde}`));
+/** El campo que nombra el aviso queda marcado y con el foco (r2-serv-N6). */
+async function marcadoConFoco(p, selector) {
+  const campo = p.locator(selector);
+  return (await campo.getAttribute("aria-invalid")) === "true" && (await campo.evaluate((nodo) => nodo === document.activeElement));
+}
 /** Cómo dice la pantalla los días hábiles que quedan (r2-serv-N12: uno va en singular). */
 const habiles = (n) => (n === 1 ? "Queda 1 día hábil" : `Quedan ${n} días hábiles`);
 const OPERADOR = sql("select id from operators order by alta_en limit 1");
@@ -603,6 +608,14 @@ async function flujo7() {
   ids.casoCobre = await abrirCaso(p, "Aviso del personal · Cobre Antiguo");
   await proponer(p, "no_reportar", "Cobre explicó por escrito el cambio de banco y presentó el contrato de la cuenta nueva.");
 
+  // r2-serv-N6: sin presentes, el aviso marca el grupo y el foco cae en la primera casilla (el grupo no lo recibe).
+  await ir(p, "/operacion/comite#sesiones-titulo");
+  await enviar(p, p.getByRole("button", { name: "Registrar sesión" }), "sesion_presentes_invalidos");
+  const primera = hoja(p, "sesiones-titulo").locator('input[name="presentes"]').first();
+  exigir(await primera.evaluate((nodo) => nodo === document.activeElement), "7. sesión sin presentes: el foco queda en la primera casilla");
+  exigir((await hoja(p, "sesiones-titulo").locator("fieldset").getAttribute("aria-invalid")) === "true", "7. y el grupo «Presentes» queda marcado");
+  exigir(cuenta("pld_sesiones") === 0, "7. y no se registró la sesión");
+  await foto(p, "f7-sesion-sin-presentes");
   const s1 = await registrarSesion(p, hoy(), [SIT.presidente, SIT.secretario], { auditor: true });
   exigir(s1.aviso === "pld_sesion_sin_quorum", "7. dos de cuatro titulares: la sesión queda «sin quórum»", s1.aviso);
   exigir(await p.getByText("Sin quórum: no admite votos").isVisible(), "7. la sesión sin quórum lo dice y no ofrece votar");
@@ -786,6 +799,15 @@ async function flujo10() {
   await p.waitForURL((url) => url.searchParams.get("aviso") === "falta_clave_entidad", { timeout: 20000 });
   anotar("10. sin la clave, el archivo no se genera y la pantalla lo dice");
   await ir(p, "/operacion/reportes#entidad-titulo");
+  // r2-serv-N6: si el servidor rechaza la clave del órgano supervisor, ese campo queda marcado y con el foco
+  // (el navegador ya pide 6 dígitos; se quita el patrón para que decida el servidor).
+  await p.locator("#entidad-casfim").fill("060201");
+  await p.locator("#entidad-supervisor").evaluate((campo) => campo.removeAttribute("pattern"));
+  await p.locator("#entidad-supervisor").fill("12");
+  await enviar(p, p.getByRole("button", { name: "Registrar claves" }), "dato_invalido_claveOrganoSupervisor");
+  exigir(await marcadoConFoco(p, "#entidad-supervisor"), "10. la clave del órgano supervisor rechazada queda marcada y con el foco");
+  exigir((await p.locator("#entidad-casfim").getAttribute("aria-invalid")) === null, "10. y la CASFIM de la entidad no se marca");
+  await foto(p, "f10-clave-del-supervisor-marcada");
   await p.locator("#entidad-casfim").fill("060201");
   await p.locator("#entidad-supervisor").fill("001002");
   await enviar(p, p.getByRole("button", { name: "Registrar claves" }), "pld_entidad_registrada", { doble: true });
@@ -845,6 +867,14 @@ async function flujo12() {
   await foto(p, "f12-evaluacion-semestral-pendiente");
   await item.getByRole("link", { name: "Cobre Antiguo, S.A. de C.V." }).click();
   await listo(p);
+  // r2-serv-N6: «Cambia» con un monto que no es número: el servidor lo rechaza y marca ese monto, con el foco.
+  await p.getByLabel("Cambia: registro los montos nuevos").check();
+  await p.locator("#evaluacion-pagos-monto").fill("trescientos mil");
+  await p.locator("#evaluacion-justificacion").fill("Creció la operación con proveedores nuevos este semestre.");
+  await enviar(p, p.getByRole("button", { name: "Registrar evaluación" }), "dato_invalido_pagosMonto");
+  exigir(await marcadoConFoco(p, "#evaluacion-pagos-monto"), "12. el monto rechazado de la evaluación queda marcado y con el foco");
+  exigir(cuenta(`pld_evaluaciones where company_id = '${COBRE}'`) === 0, "12. y no se registró nada");
+  await foto(p, "f12-monto-de-la-evaluacion-marcado");
   await p.getByLabel("Se mantiene").check();
   await p.locator("#evaluacion-justificacion").fill("Revisé los pagos y la nómina del semestre: corresponden al perfil declarado y al giro.");
   await enviar(p, p.getByRole("button", { name: "Registrar evaluación" }), "evaluacion_registrada", { doble: true });

@@ -49,6 +49,7 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
   const [comite, modo, deCumplimiento] = await Promise.all([leerComite(ctx, { ahora }), leerModoDictamen(ctx), personalDeCumplimiento(ctx)]);
   const administra = puedeEnOperacion(ctx, "plataforma.pld.comite");
   const error = (seccion: string, campo: string) => (params.en === seccion ? errorDelCampo(params.aviso, campo) : {});
+  const sinPresentes: { "aria-invalid"?: true; "aria-describedby"?: string; autoFocus?: true } = error("sesiones-titulo", "presentes");
   const vigentes = comite.integrantes.filter((integrante) => integrante.vigente);
   const titulares = vigentes.filter((integrante) => integrante.titularidad === "TITULAR");
   const anteriores = comite.integrantes.filter((integrante) => !integrante.vigente);
@@ -442,11 +443,13 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
               <label htmlFor="sesion-fecha">Fecha de la sesión</label>
               <input id="sesion-fecha" name="celebradaEl" type="date" required max={hoy} defaultValue={hoy} {...error("sesiones-titulo", "celebradaEl")} />
             </div>
-            <fieldset className="campo operacion-ancho" {...error("sesiones-titulo", "presentes")}>
+            {/* r2-serv-N6: el fieldset no recibe el foco; con el aviso, lo toma la primera casilla. */}
+            <fieldset className="campo operacion-ancho" aria-invalid={sinPresentes["aria-invalid"]} aria-describedby={sinPresentes["aria-describedby"]}>
               <legend>Presentes</legend>
-              {vigentes.map((integrante) => (
+              {vigentes.map((integrante, indice) => (
                 <label key={integrante.id}>
-                  <input type="checkbox" name="presentes" value={integrante.id} /> {nombreDeIntegrante(integrante)} · {CARGO_COMITE[integrante.cargo]}
+                  <input type="checkbox" name="presentes" value={integrante.id} autoFocus={indice === 0 && sinPresentes.autoFocus === true} />{" "}
+                  {nombreDeIntegrante(integrante)} · {CARGO_COMITE[integrante.cargo]}
                   {integrante.titularidad === "SUPLENTE" ? " (suplente)" : ""}
                 </label>
               ))}
