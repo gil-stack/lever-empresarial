@@ -1152,7 +1152,63 @@ CREATE TABLE pld_propuestas (
 
 CREATE INDEX pld_propuestas_caso_idx ON pld_propuestas (caso_id, registrado_en DESC);
 
--- ¿El caso tiene una alerta de un aviso que excluye a la persona del contexto (60ª)?
+-- 60ª: lo que la persona del contexto no ve por un aviso que la excluye (como
+-- persona mencionada o como superior de quien avisa):
+--   · los casos con una alerta de ese aviso;
+--   · las alertas de ese aviso y las demás alertas de esos casos (r2-base-N3: verla
+--     «sin caso» y no poder abrirle uno delataba el caso);
+--   · el aviso mismo y los avisos cuyas alertas quedaron en esos casos.
+-- Cada función devuelve el conjunto completo. Las políticas lo leen como
+-- (SELECT …), que Postgres calcula una sola vez por consulta (InitPlan), y no una
+-- función por renglón (r2-base-N10: 2.2 s con 19,000 alertas analizadas). Sin
+-- exclusiones, cada una es una búsqueda vacía en pld_aviso_excluidos_persona.
+CREATE INDEX pld_aviso_excluidos_persona ON pld_aviso_excluidos (user_id, aviso_id);
+
+CREATE FUNCTION pld_casos_que_me_excluyen()
+RETURNS uuid[]
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT coalesce(array_agg(DISTINCT ca.caso_id), '{}')
+  FROM pld_aviso_excluidos e
+  JOIN pld_alertas x ON x.aviso_id = e.aviso_id
+  JOIN pld_caso_alertas ca ON ca.alerta_id = x.id
+  WHERE e.user_id = app_usuario()
+$$;
+
+CREATE FUNCTION pld_alertas_que_me_excluyen()
+RETURNS uuid[]
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT coalesce(array_agg(DISTINCT z.id), '{}')
+  FROM (
+    SELECT x.id FROM pld_aviso_excluidos e JOIN pld_alertas x ON x.aviso_id = e.aviso_id WHERE e.user_id = app_usuario()
+    UNION ALL
+    SELECT ca.alerta_id FROM pld_caso_alertas ca WHERE ca.caso_id = ANY ((SELECT pld_casos_que_me_excluyen())::uuid[])
+  ) AS z
+$$;
+
+CREATE FUNCTION pld_avisos_que_me_excluyen()
+RETURNS uuid[]
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT coalesce(array_agg(DISTINCT z.aviso_id), '{}')
+  FROM (
+    SELECT e.aviso_id FROM pld_aviso_excluidos e WHERE e.user_id = app_usuario()
+    UNION ALL
+    SELECT a.aviso_id FROM pld_alertas a WHERE a.aviso_id IS NOT NULL AND a.id = ANY ((SELECT pld_alertas_que_me_excluyen())::uuid[])
+  ) AS z
+$$;
+
+-- Para una sola fila (descargas, disparadores, plazo del caso).
 CREATE FUNCTION pld_caso_me_excluye(p_caso uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -1160,22 +1216,9 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM pld_caso_alertas ca
-    JOIN pld_alertas a ON a.id = ca.alerta_id
-    JOIN pld_aviso_excluidos e ON e.aviso_id = a.aviso_id
-    WHERE ca.caso_id = p_caso AND e.user_id = app_usuario()
-  )
+  SELECT p_caso = ANY (pld_casos_que_me_excluyen())
 $$;
 
-REVOKE ALL ON FUNCTION pld_caso_me_excluye(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION pld_caso_me_excluye(uuid) TO plataforma_sofipo;
-
--- ¿La alerta es de un aviso que excluye a la persona del contexto, o está en el
--- mismo caso que una alerta así (60ª, r2-base-N3)? Una alerta hermana del caso
--- confidencial tampoco se ve: verla «sin caso» y no poder abrirle uno lo delata.
--- Empieza por las exclusiones de la persona: sin ninguna, es una búsqueda vacía.
 CREATE FUNCTION pld_alerta_me_excluye(p_alerta uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -1183,26 +1226,9 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM pld_aviso_excluidos e
-    JOIN pld_alertas x ON x.aviso_id = e.aviso_id
-    WHERE e.user_id = app_usuario()
-      AND (
-        x.id = p_alerta
-        OR EXISTS (
-          SELECT 1 FROM pld_caso_alertas cx JOIN pld_caso_alertas ca ON ca.caso_id = cx.caso_id
-          WHERE cx.alerta_id = x.id AND ca.alerta_id = p_alerta
-        )
-      )
-  )
+  SELECT p_alerta = ANY (pld_alertas_que_me_excluyen())
 $$;
 
-REVOKE ALL ON FUNCTION pld_alerta_me_excluye(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION pld_alerta_me_excluye(uuid) TO plataforma_sofipo;
-
--- ¿El aviso excluye a la persona del contexto, o su alerta quedó en un caso que
--- la excluye? El texto de un aviso hermano del caso confidencial tampoco se ve.
 CREATE FUNCTION pld_aviso_me_excluye(p_aviso uuid)
 RETURNS boolean
 LANGUAGE sql
@@ -1210,12 +1236,13 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS (SELECT 1 FROM pld_aviso_excluidos e WHERE e.aviso_id = p_aviso AND e.user_id = app_usuario())
-    OR EXISTS (SELECT 1 FROM pld_alertas a WHERE a.aviso_id = p_aviso AND pld_alerta_me_excluye(a.id))
+  SELECT p_aviso = ANY (pld_avisos_que_me_excluyen())
 $$;
 
-REVOKE ALL ON FUNCTION pld_aviso_me_excluye(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION pld_aviso_me_excluye(uuid) TO plataforma_sofipo;
+REVOKE ALL ON FUNCTION pld_casos_que_me_excluyen(), pld_alertas_que_me_excluyen(), pld_avisos_que_me_excluyen(),
+  pld_caso_me_excluye(uuid), pld_alerta_me_excluye(uuid), pld_aviso_me_excluye(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION pld_casos_que_me_excluyen(), pld_alertas_que_me_excluyen(), pld_avisos_que_me_excluyen(),
+  pld_caso_me_excluye(uuid), pld_alerta_me_excluye(uuid), pld_aviso_me_excluye(uuid) TO plataforma_sofipo;
 
 -- Plazo del caso: 60 días naturales desde la alerta más antigua («lo que ocurra primero», 40ª).
 CREATE FUNCTION pld_caso_vence(p_caso uuid)
@@ -2269,7 +2296,7 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT EXISTS (SELECT 1 FROM pld_votos v WHERE v.sesion_id = p_sesion AND pld_caso_me_excluye(v.caso_id))
+  SELECT EXISTS (SELECT 1 FROM pld_votos v WHERE v.sesion_id = p_sesion AND v.caso_id = ANY ((SELECT pld_casos_que_me_excluyen())::uuid[]))
 $$;
 
 REVOKE ALL ON FUNCTION pld_sesion_me_excluye(uuid) FROM PUBLIC;
@@ -2313,10 +2340,17 @@ DECLARE
   empresa companies%ROWTYPE;
   desde timestamptz := (p_desde::timestamp AT TIME ZONE 'America/Mexico_City');
   hasta timestamptz := ((p_hasta + 1)::timestamp AT TIME ZONE 'America/Mexico_City');
+  -- 60ª: lo que excluye a quien pide, una sola vez (r2-base-N3 y N10).
+  casos_ocultos uuid[];
+  alertas_ocultas uuid[];
+  ids_ocultos uuid[];
 BEGIN
   IF NOT pld_rol(ARRAY['cumplimiento', 'auditoria']) THEN
     RAISE EXCEPTION 'sin_rol_para_pld';
   END IF;
+  casos_ocultos := pld_casos_que_me_excluyen();
+  alertas_ocultas := pld_alertas_que_me_excluyen();
+  ids_ocultos := pld_ids_que_me_excluyen();
   SELECT * INTO empresa FROM companies c WHERE c.id = p_company AND c.operator_id = app_operador();
   IF empresa.id IS NULL THEN
     RAISE EXCEPTION 'cliente_ausente';
@@ -2344,21 +2378,21 @@ BEGIN
   -- Lo de PLD con el mismo filtro de exclusión que su política (60ª, r2-base-N3):
   -- la persona excluida no deduce el caso por la diferencia de conteos.
   UNION ALL SELECT 'pld_alertas', count(*) FROM pld_alertas x WHERE x.company_id = p_company AND x.creada_en >= desde AND x.creada_en < hasta
-    AND NOT pld_alerta_me_excluye(x.id)
+    AND NOT (x.id = ANY (alertas_ocultas))
   UNION ALL SELECT 'pld_casos', count(*) FROM pld_casos x WHERE x.company_id = p_company AND x.registrado_en >= desde AND x.registrado_en < hasta
-    AND NOT pld_caso_me_excluye(x.id)
+    AND NOT (x.id = ANY (casos_ocultos))
   UNION ALL SELECT 'pld_notas', count(*) FROM pld_notas x WHERE x.company_id = p_company AND x.registrado_en >= desde AND x.registrado_en < hasta
-    AND NOT pld_caso_me_excluye(x.caso_id)
+    AND NOT (x.caso_id = ANY (casos_ocultos))
   UNION ALL SELECT 'pld_documentos', count(*) FROM pld_documentos x WHERE x.company_id = p_company AND x.registrado_en >= desde AND x.registrado_en < hasta
-    AND NOT pld_caso_me_excluye(x.caso_id)
+    AND NOT (x.caso_id = ANY (casos_ocultos))
   UNION ALL SELECT 'pld_propuestas', count(*) FROM pld_propuestas x WHERE x.company_id = p_company AND x.registrado_en >= desde AND x.registrado_en < hasta
-    AND NOT pld_caso_me_excluye(x.caso_id)
+    AND NOT (x.caso_id = ANY (casos_ocultos))
   UNION ALL SELECT 'pld_dictamenes', count(*) FROM pld_dictamenes x WHERE x.company_id = p_company AND x.registrado_en >= desde AND x.registrado_en < hasta
-    AND NOT pld_caso_me_excluye(x.caso_id)
+    AND NOT (x.caso_id = ANY (casos_ocultos))
   UNION ALL SELECT 'pld_reportes', count(*) FROM pld_reportes x WHERE x.company_id = p_company AND x.registrado_en >= desde AND x.registrado_en < hasta
-    AND NOT pld_caso_me_excluye(x.caso_id)
+    AND NOT (x.caso_id = ANY (casos_ocultos))
   UNION ALL SELECT 'audit_log', count(*) FROM audit_log x WHERE x.company_id = p_company AND x.ocurrido_en >= desde AND x.ocurrido_en < hasta
-    AND CASE WHEN x.accion LIKE 'pld\_%' THEN NOT pld_evento_me_excluye(x.entidad, x.identificador) ELSE true END;
+    AND NOT (x.accion LIKE 'pld\_%' AND coalesce(x.identificador = ANY (ids_ocultos), false));
 END;
 $$;
 
@@ -2394,7 +2428,7 @@ BEGIN
     UNION ALL
     SELECT 'pld_documentos'::text, p.id, p.registrado_en, p.nombre_archivo, p.sha256, p.clave_blob, p.tamano_bytes
     FROM pld_documentos p WHERE p.company_id = p_company AND p.registrado_en >= desde AND p.registrado_en < hasta
-      AND NOT pld_caso_me_excluye(p.caso_id)
+      AND NOT (p.caso_id = ANY ((SELECT pld_casos_que_me_excluyen())::uuid[]))
   ) AS d
   WHERE p_despues_en IS NULL OR (d.cargado_en, d.id) > (p_despues_en, p_despues_id)
   ORDER BY d.cargado_en, d.id
@@ -2588,24 +2622,24 @@ CREATE POLICY pld_operaciones_lectura ON pld_operaciones FOR SELECT TO plataform
 CREATE POLICY pld_avisos_lectura ON pld_avisos FOR SELECT TO plataforma_sofipo
   USING (
     operator_id = app_operador()
-    AND (registrado_por = app_usuario() OR ((SELECT pld_rol(ARRAY['cumplimiento', 'auditoria'])) AND NOT pld_aviso_me_excluye(id)))
+    AND (registrado_por = app_usuario() OR ((SELECT pld_rol(ARRAY['cumplimiento', 'auditoria'])) AND NOT (id = ANY ((SELECT pld_avisos_que_me_excluyen())::uuid[]))))
   );
 CREATE POLICY pld_avisos_escritura ON pld_avisos FOR INSERT TO plataforma_sofipo
   WITH CHECK (operator_id = app_operador() AND registrado_por = app_usuario());
 
 CREATE POLICY pld_aviso_excluidos_lectura ON pld_aviso_excluidos FOR SELECT TO plataforma_sofipo
-  USING (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento', 'auditoria'])) AND NOT pld_aviso_me_excluye(aviso_id));
+  USING (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento', 'auditoria'])) AND NOT (aviso_id = ANY ((SELECT pld_avisos_que_me_excluyen())::uuid[])));
 CREATE POLICY pld_aviso_excluidos_escritura ON pld_aviso_excluidos FOR INSERT TO plataforma_sofipo
   WITH CHECK (operator_id = app_operador());
 
 CREATE POLICY pld_alertas_lectura ON pld_alertas FOR SELECT TO plataforma_sofipo
   USING (
     operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento', 'auditoria']))
-    AND NOT pld_alerta_me_excluye(id)
+    AND NOT (id = ANY ((SELECT pld_alertas_que_me_excluyen())::uuid[]))
   );
 
 CREATE POLICY pld_casos_lectura ON pld_casos FOR SELECT TO plataforma_sofipo
-  USING (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento', 'auditoria'])) AND NOT pld_caso_me_excluye(id));
+  USING (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento', 'auditoria'])) AND NOT (id = ANY ((SELECT pld_casos_que_me_excluyen())::uuid[])));
 CREATE POLICY pld_casos_escritura ON pld_casos FOR INSERT TO plataforma_sofipo
   WITH CHECK (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento'])));
 
@@ -2619,12 +2653,12 @@ BEGIN
   ] LOOP
     EXECUTE format(
       'CREATE POLICY %I ON %I FOR SELECT TO plataforma_sofipo USING ('
-      'operator_id = app_operador() AND (SELECT pld_rol(ARRAY[''cumplimiento'', ''auditoria''])) AND NOT pld_caso_me_excluye(caso_id))',
+      'operator_id = app_operador() AND (SELECT pld_rol(ARRAY[''cumplimiento'', ''auditoria''])) AND NOT (caso_id = ANY ((SELECT pld_casos_que_me_excluyen())::uuid[])))',
       tabla || '_lectura', tabla
     );
     EXECUTE format(
       'CREATE POLICY %I ON %I FOR INSERT TO plataforma_sofipo WITH CHECK ('
-      'operator_id = app_operador() AND (SELECT pld_rol(ARRAY[''cumplimiento''])) AND NOT pld_caso_me_excluye(caso_id))',
+      'operator_id = app_operador() AND (SELECT pld_rol(ARRAY[''cumplimiento''])) AND NOT (caso_id = ANY ((SELECT pld_casos_que_me_excluyen())::uuid[])))',
       tabla || '_escritura', tabla
     );
   END LOOP;
@@ -2671,31 +2705,36 @@ GRANT EXECUTE ON FUNCTION pld_dia_inhabil(date), pld_calendario_cargado(integer)
   pld_dia_habil_del_mes(date, integer), pld_ultimo_dia_habil(date), pld_dias_habiles_entre(date, date),
   pld_comite_vigentes(uuid, date) TO plataforma_sofipo;
 
--- ¿Un evento de la bitácora es de algo que excluye a la persona del contexto (60ª)?
-CREATE FUNCTION pld_evento_me_excluye(p_entidad text, p_identificador uuid)
-RETURNS boolean
+-- Los identificadores de lo que excluye a la persona del contexto (60ª) y de lo que
+-- cuelga de esos casos, para la bitácora y el manifiesto: el evento de algo que no
+-- ve tampoco se le muestra. Un solo conjunto por consulta (r2-base-N10).
+CREATE FUNCTION pld_ids_que_me_excluyen()
+RETURNS uuid[]
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT coalesce(CASE p_entidad
-    WHEN 'pld_avisos' THEN pld_aviso_me_excluye(p_identificador)
-    WHEN 'pld_alertas' THEN pld_alerta_me_excluye(p_identificador)
-    WHEN 'pld_casos' THEN pld_caso_me_excluye(p_identificador)
-    WHEN 'pld_notas' THEN pld_caso_me_excluye((SELECT x.caso_id FROM pld_notas x WHERE x.id = p_identificador))
-    WHEN 'pld_documentos' THEN pld_caso_me_excluye((SELECT x.caso_id FROM pld_documentos x WHERE x.id = p_identificador))
-    WHEN 'pld_propuestas' THEN pld_caso_me_excluye((SELECT x.caso_id FROM pld_propuestas x WHERE x.id = p_identificador))
-    WHEN 'pld_votos' THEN pld_caso_me_excluye((SELECT x.caso_id FROM pld_votos x WHERE x.id = p_identificador))
-    WHEN 'pld_dictamenes' THEN pld_caso_me_excluye((SELECT x.caso_id FROM pld_dictamenes x WHERE x.id = p_identificador))
-    WHEN 'pld_reportes' THEN pld_caso_me_excluye((SELECT x.caso_id FROM pld_reportes x WHERE x.id = p_identificador))
-    WHEN 'pld_actas' THEN pld_sesion_me_excluye((SELECT x.sesion_id FROM pld_actas x WHERE x.id = p_identificador))
-    ELSE false
-  END, false)
+  WITH casos AS (SELECT unnest(pld_casos_que_me_excluyen()) AS id)
+  SELECT coalesce(array_agg(z.id), '{}')
+  FROM (
+    SELECT unnest(pld_avisos_que_me_excluyen())
+    UNION ALL SELECT unnest(pld_alertas_que_me_excluyen())
+    UNION ALL SELECT c.id FROM casos c
+    UNION ALL SELECT x.id FROM pld_notas x WHERE x.caso_id IN (SELECT c.id FROM casos c)
+    UNION ALL SELECT x.id FROM pld_documentos x WHERE x.caso_id IN (SELECT c.id FROM casos c)
+    UNION ALL SELECT x.id FROM pld_propuestas x WHERE x.caso_id IN (SELECT c.id FROM casos c)
+    UNION ALL SELECT x.id FROM pld_votos x WHERE x.caso_id IN (SELECT c.id FROM casos c)
+    UNION ALL SELECT x.id FROM pld_dictamenes x WHERE x.caso_id IN (SELECT c.id FROM casos c)
+    UNION ALL SELECT x.id FROM pld_reportes x WHERE x.caso_id IN (SELECT c.id FROM casos c)
+    UNION ALL SELECT a.id FROM pld_actas a WHERE EXISTS (
+      SELECT 1 FROM pld_votos v WHERE v.sesion_id = a.sesion_id AND v.caso_id IN (SELECT c.id FROM casos c)
+    )
+  ) AS z(id)
 $$;
 
-REVOKE ALL ON FUNCTION pld_evento_me_excluye(text, uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION pld_evento_me_excluye(text, uuid) TO plataforma_sofipo;
+REVOKE ALL ON FUNCTION pld_ids_que_me_excluyen() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION pld_ids_que_me_excluyen() TO plataforma_sofipo;
 
 -- El portal del cliente no lee nada de PLD en su bitácora (55ª), además de lo que ya ocultaba la 0028.
 DROP POLICY audit_log_cliente_lectura ON audit_log;
@@ -2718,7 +2757,7 @@ CREATE POLICY audit_log_sofipo_lectura ON audit_log FOR SELECT TO plataforma_sof
       (
         accion LIKE 'pld\_%'
         AND (SELECT pld_rol(ARRAY['cumplimiento', 'auditoria']))
-        AND NOT pld_evento_me_excluye(entidad, identificador)
+        AND NOT coalesce(identificador = ANY ((SELECT pld_ids_que_me_excluyen())::uuid[]), false)
       )
       OR (
         accion NOT LIKE 'pld\_%'

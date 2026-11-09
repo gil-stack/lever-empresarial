@@ -30,18 +30,39 @@ export type AlertaPld = {
   avisoId: string | null;
 };
 
-// Tres sentencias completas, sin armar texto: la revisión de seguridad solo acepta SQL literal.
-// $1: solo las alertas sin caso.
+// Sentencias completas, sin armar texto: la revisión de seguridad solo acepta SQL literal.
+// r2-base-N10: primero se eligen las alertas (su filtro, su orden y su límite) y después se unen la empresa y la
+// operación; con la unión primero, Postgres recorría companies por cada alerta (2.4 s con 20,000). Ordenar por
+// creada_en es ordenar por vence_el (la fecha de creada_en más 60 días) y usa pld_alertas_operador_idx.
+/** Las 500 alertas sin caso más antiguas: las que vencen primero. */
+export const LEER_ALERTAS_SIN_CASO = `
+  select a.id, a.regla, a.disposicion, a.company_id, c.razon_social, a.observado, a.creada_en, a.vence_el::text as vence_el,
+         o.tipo as tipo_operacion, null::uuid as caso_id, a.aviso_id
+  from (
+    select x.id, x.regla, x.disposicion, x.company_id, x.observado, x.creada_en, x.vence_el, x.operacion_id, x.aviso_id
+    from pld_alertas x
+    where not exists (select 1 from pld_caso_alertas y where y.alerta_id = x.id)
+    order by x.creada_en, x.id
+    limit 500
+  ) a
+  left join companies c on c.id = a.company_id
+  left join pld_operaciones o on o.id = a.operacion_id
+  order by a.creada_en, a.id`;
+
+/** Las 500 alertas más antiguas, con su caso si lo tienen. */
 const LEER_ALERTAS = `
   select a.id, a.regla, a.disposicion, a.company_id, c.razon_social, a.observado, a.creada_en, a.vence_el::text as vence_el,
          o.tipo as tipo_operacion, ca.caso_id, a.aviso_id
-  from pld_alertas a
+  from (
+    select x.id, x.regla, x.disposicion, x.company_id, x.observado, x.creada_en, x.vence_el, x.operacion_id, x.aviso_id
+    from pld_alertas x
+    order by x.creada_en, x.id
+    limit 500
+  ) a
   left join companies c on c.id = a.company_id
   left join pld_operaciones o on o.id = a.operacion_id
   left join pld_caso_alertas ca on ca.alerta_id = a.id
-  where (not $1::boolean or ca.caso_id is null)
-  order by a.vence_el, a.creada_en
-  limit 500`;
+  order by a.creada_en, a.id`;
 
 const LEER_ALERTAS_DEL_CASO = `
   select a.id, a.regla, a.disposicion, a.company_id, c.razon_social, a.observado, a.creada_en, a.vence_el::text as vence_el,
@@ -53,16 +74,21 @@ const LEER_ALERTAS_DEL_CASO = `
   where ca.caso_id = $1
   order by a.creada_en`;
 
-// Las alertas sin caso de la misma empresa, que se pueden sumar a la serie (40ª).
-const LEER_ALERTAS_SUMABLES = `
+// Las 500 alertas sin caso más antiguas de la misma empresa, que se pueden sumar a la serie (40ª).
+export const LEER_ALERTAS_SUMABLES = `
   select a.id, a.regla, a.disposicion, a.company_id, c.razon_social, a.observado, a.creada_en, a.vence_el::text as vence_el,
-         o.tipo as tipo_operacion, ca.caso_id, a.aviso_id
-  from pld_alertas a
+         o.tipo as tipo_operacion, null::uuid as caso_id, a.aviso_id
+  from (
+    select x.id, x.regla, x.disposicion, x.company_id, x.observado, x.creada_en, x.vence_el, x.operacion_id, x.aviso_id
+    from pld_alertas x
+    where (x.company_id = $1 or (x.company_id is null and $1::uuid is null))
+      and not exists (select 1 from pld_caso_alertas y where y.alerta_id = x.id)
+    order by x.creada_en, x.id
+    limit 500
+  ) a
   left join companies c on c.id = a.company_id
   left join pld_operaciones o on o.id = a.operacion_id
-  left join pld_caso_alertas ca on ca.alerta_id = a.id
-  where ca.caso_id is null and a.company_id is not distinct from $1
-  order by a.creada_en`;
+  order by a.creada_en, a.id`;
 
 function aAlerta(fila: Record<string, unknown>, hoy: string): AlertaPld {
   const venceEl = dia(fila.vence_el);
@@ -89,10 +115,7 @@ export async function listarAlertasPld(ctx: ContextoDePersonal, opciones: { ahor
   exigirEnOperacion(ctx, "plataforma.pld.ver");
   const hoy = hoyEnMexico(opciones.ahora ?? new Date());
   return conPld(ctx, null, async (consulta) => {
-    const filas = await consulta.query(
-      LEER_ALERTAS,
-      [opciones.soloSinCaso === true],
-    );
+    const filas = opciones.soloSinCaso === true ? await consulta.query(LEER_ALERTAS_SIN_CASO) : await consulta.query(LEER_ALERTAS);
     return (filas.rows as Array<Record<string, unknown>>).map((fila) => aAlerta(fila, hoy));
   });
 }

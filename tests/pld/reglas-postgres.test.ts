@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 
 import { cerrarConexion } from "../../src/nucleo/db.ts";
+import { emitirAviso, LEER_ALERTAS_SIN_CASO, listarAlertasPld } from "../../src/server/pld/index.ts";
 import { registrarProspecto } from "../../src/server/operacion/clientes.ts";
 import { calificarRiesgoEmpresa, dictaminarVersion, enviarVersion } from "../../src/server/operacion/expediente.ts";
 import { aplicarArchivo, conBaseDesechable, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
@@ -17,6 +18,7 @@ const urlAdmin = process.env.AISLAMIENTO_DATABASE_URL?.trim() ?? "";
 const MIGRACIONES = join(dirname(fileURLToPath(import.meta.url)), "../../db/migrations");
 const ORI = "e1000000-0000-4000-8000-000000000002";
 const CUM = "e1000000-0000-4000-8000-000000000004";
+const CUM2 = "e1000000-0000-4000-8000-000000000005";
 const CLABE = "002180701150123452";
 const OTRA_CLABE = "012180001234567897";
 
@@ -31,7 +33,9 @@ describe("reglas de PLD (0030): cada frontera y su costo", { skip: urlAdmin.leng
       const dueno = new pg.Client({ connectionString: urlDuena });
       await dueno.connect();
       const operador = String((await dueno.query("select id from operators order by alta_en limit 1")).rows[0].id);
-      for (const [id, nombre, rol] of [[ORI, "Óscar Originación", "originacion"], [CUM, "Carmen Cumplimiento", "cumplimiento"]] as const) {
+      for (const [id, nombre, rol] of [
+        [ORI, "Óscar Originación", "originacion"], [CUM, "Carmen Cumplimiento", "cumplimiento"], [CUM2, "Ciro Cumplimiento", "cumplimiento"],
+      ] as const) {
         await dueno.query("insert into users (id, nombre, correo) values ($1, $2, $3)", [id, nombre, `${id}@ejemplo.mx`]);
         await dueno.query("insert into platform_staff (operator_id, user_id, estado) values ($1, $2, 'activo')", [operador, id]);
         await dueno.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, $3)", [operador, id, rol]);
@@ -40,6 +44,8 @@ describe("reglas de PLD (0030): cada frontera y su costo", { skip: urlAdmin.leng
       await cerrarConexion();
       const ori = personal(operador, ORI, ["originacion"]);
       const cum = personal(operador, CUM, ["cumplimiento"]);
+      const cum2 = personal(operador, CUM2, ["cumplimiento"]);
+      const urlApp = process.env.DATABASE_URL;
 
       let siguiente = 0;
       const perfil = async (companyId: string, pagos: number, nomina: number) => {
@@ -362,6 +368,89 @@ describe("reglas de PLD (0030): cada frontera y su costo", { skip: urlAdmin.leng
           // r2-base-N11: la suma del mes y la mediana se leen solo del índice, sin ir a la tabla.
           assert.match(planes.excede_perfil, /Index Only Scan using pld_operaciones_mes_idx/);
           assert.match(planes.monto_atipico, /Index Only Scan using pld_operaciones_tiempo_idx/);
+        });
+
+        await t.test("bandeja con 20,000 alertas (r2-base-N10): elige las 500 primero y después une; p95 ≤ 100 ms", async () => {
+          // El escenario de la revisión: unas 500 empresas (con la unión primero, Postgres recorría companies por cada alerta).
+          for (let n = 0; n < 480; n++) await empresa();
+          // 20,000 alertas sin caso sobre las operaciones ya cargadas (unas 62,000 de 21 empresas), en los últimos 59 días.
+          await dueno.query(
+            `insert into pld_alertas (operator_id, company_id, regla, disposicion, operacion_id, observado, creada_en)
+             select o.operator_id, o.company_id, 'monto_atipico', '41ª fr. III', o.id, '{}'::jsonb,
+                    now() - ((o.n % 59) * interval '1 day') - (o.n * interval '1 second')
+             from (select x.*, row_number() over (order by x.id) as n from pld_operaciones x
+                   where not exists (select 1 from pld_alertas a where a.operacion_id = x.id and a.regla = 'monto_atipico')) as o
+             where o.n <= 20000`,
+          );
+          // Una persona de Cumplimiento con una exclusión: un aviso que la menciona.
+          const empresaDelAviso = String((await dueno.query("select company_id from pld_alertas where company_id is not null limit 1")).rows[0].company_id);
+          await emitirAviso(ori, { formId: randomUUID(), tipo: "posible_interna_preocupante", companyId: empresaDelAviso, mencionada: CUM2, superior: "", descripcion: "La analista pidió no revisar este cliente." });
+          await dueno.query("vacuum analyze pld_alertas, companies");
+          assert.ok(Number((await dueno.query("select count(*)::int as n from pld_alertas")).rows[0].n) >= 20_000);
+          assert.ok(Number((await dueno.query("select count(*)::int as n from companies")).rows[0].n) >= 500);
+
+          const medir = async (ctx: typeof cum) => {
+            const tiempos: number[] = [];
+            for (let i = 0; i < 30; i++) {
+              const inicio = performance.now();
+              const lista = await listarAlertasPld(ctx, { soloSinCaso: true });
+              tiempos.push(performance.now() - inicio);
+              assert.equal(lista.length, 500);
+            }
+            tiempos.sort((a, b) => a - b);
+            return { p50: tiempos[14]!, p95: tiempos[28]! };
+          };
+          const explicar = async (userId: string) => {
+            const c = new pg.Client({ connectionString: urlApp });
+            await c.connect();
+            try {
+              await c.query("begin");
+              await c.query("set local role plataforma_sofipo");
+              await c.query("select set_config('app.user_id', $1, true), set_config('app.operator_id', $2, true)", [userId, operador]);
+              const plan = (await c.query(`explain (analyze, format json) ${LEER_ALERTAS_SIN_CASO}`)).rows[0]["QUERY PLAN"][0] as { "Execution Time": number };
+              const texto = (await c.query(`explain (analyze, costs off, timing off, summary on) ${LEER_ALERTAS_SIN_CASO}`)).rows.map((r) => String(r["QUERY PLAN"])).join("\n");
+              await c.query("rollback");
+              return { ms: plan["Execution Time"], texto };
+            } finally {
+              await c.end();
+            }
+          };
+          const sinExclusiones = { ...(await medir(cum)), explain: await explicar(CUM) };
+          const conExclusion = { ...(await medir(cum2)), explain: await explicar(CUM2) };
+          console.log(`BANDEJA_PLD ${JSON.stringify({ sinExclusiones, conExclusion })}`);
+          assert.ok(sinExclusiones.p95 <= 100, `p95 = ${sinExclusiones.p95.toFixed(1)} ms`);
+          assert.ok(conExclusion.p95 <= 100, `p95 con exclusión = ${conExclusion.p95.toFixed(1)} ms`);
+          assert.doesNotMatch(sinExclusiones.explain.texto, /Seq Scan on companies/);
+          // Con la unión primero tardaba 40-47 ms en esta base (2.4 s en la de la revisión); eligiendo primero, 2-3 ms.
+          assert.ok(sinExclusiones.explain.ms <= 20, `ejecución = ${sinExclusiones.explain.ms} ms`);
+          assert.ok(conExclusion.explain.ms <= 20, `ejecución con exclusión = ${conExclusion.explain.ms} ms`);
+
+          // Lo que pasa con los años (61ª: nada se borra): casi todas las alertas viejas ya están analizadas en un caso.
+          // Las 19,000 más antiguas van a un caso por empresa; la bandeja sigue leyendo las 500 sin caso más antiguas.
+          await dueno.query("begin");
+          await dueno.query(
+            `create temporary table analizadas on commit drop as
+             select x.id, x.company_id from pld_alertas x
+             where x.aviso_id is null and not exists (select 1 from pld_caso_alertas y where y.alerta_id = x.id)
+             order by x.creada_en, x.id limit 19000`,
+          );
+          await dueno.query(
+            `insert into pld_casos (id, operator_id, company_id, registrado_por)
+             select gen_random_uuid(), $1, e.company_id, $2 from (select distinct company_id from analizadas) e`,
+            [operador, CUM],
+          );
+          await dueno.query(
+            `insert into pld_caso_alertas (caso_id, alerta_id, operator_id, registrado_por)
+             select k.id, a.id, $1, $2 from analizadas a
+             join pld_casos k on k.company_id = a.company_id and k.registrado_en = now()`,
+            [operador, CUM],
+          );
+          await dueno.query("commit");
+          await dueno.query("vacuum analyze pld_alertas, pld_caso_alertas, pld_casos");
+          const conCasos = { cum: { ...(await medir(cum)), explain: await explicar(CUM) }, cum2: { ...(await medir(cum2)), explain: await explicar(CUM2) } };
+          console.log(`BANDEJA_PLD_CON_CASOS ${JSON.stringify(conCasos)}`);
+          assert.ok(conCasos.cum.p95 <= 100, `p95 con 19,000 en casos = ${conCasos.cum.p95.toFixed(1)} ms`);
+          assert.ok(conCasos.cum2.p95 <= 100, `p95 con 19,000 en casos y una exclusión = ${conCasos.cum2.p95.toFixed(1)} ms`);
         });
       } finally {
         await cerrarConexion();
