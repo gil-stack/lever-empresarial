@@ -58,6 +58,8 @@ function sql(consulta, url = DUENO) {
   return execFileSync("psql", [url, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1", "-c", consulta], { encoding: "utf8" }).trim();
 }
 const cuenta = (desde) => Number(sql(`select count(*) from ${desde}`));
+/** Cómo dice la pantalla los días hábiles que quedan (r2-serv-N12: uno va en singular). */
+const habiles = (n) => (n === 1 ? "Queda 1 día hábil" : `Quedan ${n} días hábiles`);
 const OPERADOR = sql("select id from operators order by alta_en limit 1");
 /** Lo que una persona del personal ve con su RLS: el rol de la aplicación y su contexto, como lo fija el servidor. */
 function cuentaComo(userId, desde) {
@@ -693,7 +695,7 @@ async function flujo8() {
   await ir(p, "/operacion/cumplimiento#pld-reportar-titulo");
   const quedan = habilesEntre("2026-11-03", "2026-11-05");
   const item = hoja(p, "pld-reportar-titulo").locator("li", { hasText: "Taller del Cierre" }).filter({ hasText: "operación interna preocupante" });
-  exigir((await item.innerText()).includes(`Quedan ${quedan} días hábiles`), `8. con el reloj en el martes 3-nov, la bandeja dice «Quedan ${quedan} días hábiles»`, await item.innerText().catch(() => ""));
+  exigir((await item.innerText()).includes(habiles(quedan)), `8. con el reloj en el martes 3-nov, la bandeja dice «${habiles(quedan)}»`, await item.innerText().catch(() => ""));
   await foto(p, "f8-bandeja-reloj-3-nov-quedan-2-habiles");
   await ir(p, `/operacion/pld/casos/${ids.casoAviso}#reporte-titulo`);
   exigir((await hoja(p, "reporte-titulo").innerText()).includes(`${fechaDia("2026-11-05")} (3 días hábiles)`), "8. el caso dice que el reporte vence el 5-nov (3 días hábiles)");
@@ -808,7 +810,7 @@ async function flujo11() {
   const tarjeta = p.locator("#reporte-38-202610");
   const texto = await tarjeta.innerText();
   const quedan = habilesEntre(hoy(), vence);
-  exigir(texto.includes(`Vence el ${fechaDia(vence)}`) && texto.includes(`Quedan ${quedan} ${quedan === 1 ? "día hábil" : "días hábiles"}`), `11. octubre vence el ${fechaDia(vence)} y quedan ${quedan} días hábiles`, texto);
+  exigir(texto.includes(`Vence el ${fechaDia(vence)}`) && texto.includes(habiles(quedan)), `11. octubre vence el ${fechaDia(vence)}: «${habiles(quedan)}»`, texto);
   const constancia = await descargar(p, () => tarjeta.getByRole("link", { name: "Descargar la constancia interna" }).click());
   exigir(constancia.bytes.toString("utf8").includes("Transferencias internacionales enviadas o recibidas en el mes: 0."), "11. la constancia de octubre va en ceros");
   await enviar(p, tarjeta.getByRole("button", { name: "Registrar constancia" }), "pld_periodico_registrado", { doble: true });
@@ -873,6 +875,8 @@ async function flujo13() {
   writeFileSync(`${DIR}/datos/manifiesto-taller.ndjson`, manifiesto.bytes);
   await ir(p, "/operacion/bitacora");
   exigir((await p.content()).includes("Descargó el manifiesto de conservación"), "13. Cumplimiento ve el evento en la bitácora");
+  const eventos = await p.locator("main").innerText();
+  exigir(eventos.includes("Consultó un caso de análisis"), "13. la bitácora dice «Consultó un caso de análisis» al leerlo, no «Abrió» (r2-serv-N12)");
   await foto(p, "f13-bitacora-con-el-manifiesto");
   // r2-serv-N8: en next start, cada ruta de descarga de PLD llega con la política aislada (sandbox), no con la general.
   const otro = "00000000-0000-4000-8000-000000000000";

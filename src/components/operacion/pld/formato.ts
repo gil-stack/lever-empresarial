@@ -9,14 +9,14 @@ const pesos = (valor: unknown): string => formatoPesos(Math.round(numero(valor))
 export function plazoEnDias(diasRestantes: number): string {
   if (diasRestantes < 0) return `Fuera de plazo: venció hace ${-diasRestantes} ${-diasRestantes === 1 ? "día" : "días"}`;
   if (diasRestantes === 0) return "Vence hoy";
-  return `Quedan ${diasRestantes} ${diasRestantes === 1 ? "día" : "días"}`;
+  return diasRestantes === 1 ? "Queda 1 día" : `Quedan ${diasRestantes} días`;
 }
 
 /** Días hábiles que quedan (los fines de semana y los inhábiles no cuentan). */
 export function plazoEnDiasHabiles(dias: number, vencido: boolean): string {
   if (vencido) return "Fuera de plazo";
   if (dias === 0) return "Vence hoy";
-  return `Quedan ${dias} ${dias === 1 ? "día hábil" : "días hábiles"}`;
+  return dias === 1 ? "Queda 1 día hábil" : `Quedan ${dias} días hábiles`;
 }
 
 /** Lo que vio la regla contra su parámetro, en una frase. */

@@ -17,7 +17,7 @@ export const ETIQUETAS_PLD: Record<AccionPld | "pld_alerta_generada" | "pld_docu
   pld_caso_abierto: "Abrió un caso de análisis",
   pld_caso_alerta_agregada: "Sumó una alerta al caso",
   pld_caso_24_horas: "Marcó el caso como reporte de 24 horas",
-  pld_caso_consultado: "Abrió un caso de análisis",
+  pld_caso_consultado: "Consultó un caso de análisis",
   pld_nota_agregada: "Agregó una nota al caso",
   pld_documento_cargado: "Cargó un documento al caso",
   pld_documento_descargado: "Descargó un documento del caso",
