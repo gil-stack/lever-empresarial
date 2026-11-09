@@ -19,6 +19,7 @@ export const VISIBLES_FUERA_DE_CUMPLIMIENTO = [
   "exclusion_propia",
   "exclusion_fuera_del_personal",
   "exclusion_fuera_del_aviso",
+  "aviso_sin_cumplimiento",
   "sin_rol_para_perfil",
   "sin_permiso_para_avisar",
   "formulario_ya_aplicado",
@@ -52,6 +53,8 @@ export const MENSAJES_PLD: Record<string, string> = {
   exclusion_propia: "No puedes excluirte a ti misma o a ti mismo del aviso.",
   exclusion_fuera_del_personal: "Solo se puede excluir a personas del personal de la SOFIPO.",
   exclusion_fuera_del_aviso: "Las exclusiones se marcan al enviar el aviso, no después.",
+  aviso_sin_cumplimiento:
+    "Con estas exclusiones nadie de Cumplimiento podría analizar el aviso. Revisa a quién excluyes; si las dos personas deben quedar fuera, avísalo como indique el Manual de Cumplimiento.",
   exclusion_repetida: "Esa persona ya estaba excluida del aviso.",
   aviso_no_existe: "No encontramos ese aviso.",
 
@@ -175,6 +178,7 @@ export const MENSAJES_PLD: Record<string, string> = {
 export const CAMPO_PLD: Record<string, string> = {
   exclusion_propia: "mencionada",
   exclusion_fuera_del_personal: "mencionada",
+  aviso_sin_cumplimiento: "superior",
   folio_repetido: "folio",
   acuse_fecha_futura: "recibidoEn",
   acuse_antes_del_dictamen: "recibidoEn",

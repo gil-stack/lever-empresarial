@@ -1003,6 +1003,12 @@ BEGIN
     RAISE EXCEPTION 'aviso_no_existe';
   END IF;
   NEW.operator_id := aviso.operator_id;
+  -- Esta función es SECURITY DEFINER: current_user es la dueña. El rol que fijó la
+  -- aplicación con SET ROLE sigue en el ajuste «role». Con el rol del personal y sin
+  -- persona en el contexto, nadie avisa: se rechaza (r2-base-N17).
+  IF current_setting('role') = 'plataforma_sofipo' AND app_usuario() IS NULL THEN
+    RAISE EXCEPTION 'exclusion_fuera_del_aviso';
+  END IF;
   -- Desde la aplicación (hay persona en el contexto): solo quien avisa, en la misma transacción.
   IF app_usuario() IS NOT NULL THEN
     IF aviso.registrado_por IS DISTINCT FROM app_usuario() OR aviso.registrado_en <> now()
@@ -1023,6 +1029,35 @@ $$;
 CREATE TRIGGER pld_aviso_excluidos_revisar
 BEFORE INSERT ON pld_aviso_excluidos
 FOR EACH ROW EXECUTE FUNCTION pld_aviso_excluidos_revisar();
+
+-- r2-base-N4: un aviso no excluye a todo Cumplimiento activo. Nadie lo analizaría y
+-- los 60 días correrían en silencio (40ª). Al final de la transacción, con todas
+-- las exclusiones del aviso ya escritas. A quién se escala cuando la persona
+-- señalada es el Oficial lo define el Manual de Cumplimiento (pendiente de Gil).
+CREATE FUNCTION pld_aviso_con_cumplimiento()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM platform_staff s
+    JOIN platform_staff_roles r ON r.operator_id = s.operator_id AND r.user_id = s.user_id
+    WHERE s.operator_id = NEW.operator_id AND s.estado = 'activo' AND r.rol = 'cumplimiento'
+      AND NOT EXISTS (SELECT 1 FROM pld_aviso_excluidos e WHERE e.aviso_id = NEW.aviso_id AND e.user_id = s.user_id)
+  ) THEN
+    RAISE EXCEPTION 'aviso_sin_cumplimiento';
+  END IF;
+  RETURN NULL;
+END;
+$$;
+
+CREATE CONSTRAINT TRIGGER pld_aviso_con_cumplimiento
+AFTER INSERT ON pld_aviso_excluidos
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION pld_aviso_con_cumplimiento();
 
 -- 7. Casos y análisis ---------------------------------------------------------------
 

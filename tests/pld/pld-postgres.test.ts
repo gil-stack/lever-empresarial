@@ -479,6 +479,16 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           )), /exclusion_fuera_del_aviso/);
           await assert.rejects(emitirAviso(adm, { ...entrada, formId: randomUUID(), descripcion: "corto" }), /dato_invalido_descripcion/);
           await assert.rejects(emitirAviso(ajena, { ...entrada, formId: randomUUID(), mencionada: "", superior: "" }), /dato_invalido_companyId/);
+          // r2-base-N4: excluir a las dos personas de Cumplimiento dejaría el aviso sin quien lo analice; no se guarda nada.
+          const sinCumplimiento = randomUUID();
+          await assert.rejects(emitirAviso(apr, { ...entrada, formId: sinCumplimiento, mencionada: CUM, superior: CUM2 }), /aviso_sin_cumplimiento/);
+          assert.equal(await contar("select count(*)::int as n from pld_avisos where id = $1", [sinCumplimiento]), 0);
+          assert.equal(await contar("select count(*)::int as n from pld_aviso_excluidos where aviso_id = $1", [sinCumplimiento]), 0);
+          // r2-base-N17: con el rol del personal y sin persona en el contexto, nadie agrega una exclusión a un aviso viejo.
+          await assert.rejects(como(urlApp, "plataforma_sofipo", { userId: "", operadorId: operador }, (c) => c.query(
+            "insert into pld_aviso_excluidos (aviso_id, user_id, operator_id, motivo) values ($1, $2, $3, 'superior')", [formAviso, AUD, operador],
+          )), /exclusion_fuera_del_aviso/);
+          assert.equal(await contar("select count(*)::int as n from pld_aviso_excluidos where aviso_id = $1", [formAviso]), 2);
         });
 
         let casoX = "";
