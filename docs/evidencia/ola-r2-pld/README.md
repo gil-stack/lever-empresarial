@@ -11,7 +11,7 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r2-pld
 | Contraste AA medido (455 textos por tema a 1440 y 168 a 390) | 6 en verde; mínimo 4.96 (Lever 1440), Claro 5.01, Oscuro 5.06 | `datos/resultados-contraste.json`, `datos/contraste.json` |
 | R1 completo con la 0030 (`scripts/evidencia/ola-r-alta.mjs`) | flujos 149, pantallas y contraste 60, regresiones 209: todo en verde, con los disparadores nuevos del personal | `r1/` |
 | Sondas del revisor del #61 (las de 18d04ab, más `sonda-n2-acta` y N4), vueltas a correr en eec7396 | Todas del lado seguro | `sondas/LEEME.md` |
-| `EXPLAIN ANALYZE` de las reglas con 10,000 instrucciones en el mes | p95 6.87 ms (criterio ≤ 25 ms), medido en 18d04ab; las reglas no cambiaron después | «Desempeño» y `explain-reglas.txt` |
+| `EXPLAIN ANALYZE` de las reglas con 10,000 instrucciones en el mes | p95 6.87 ms (criterio ≤ 25 ms), medido con el código de 4147745 (el mismo de 18d04ab); las reglas no cambiaron después | «Desempeño» y `explain-reglas.txt` |
 
 Las capturas están en `capturas/`. Cada corrida numera las suyas desde 01: `NN-fX-…` para los flujos y `NN-pantalla-<pantalla>-<tema>-<ancho>` para las pantallas.
 
