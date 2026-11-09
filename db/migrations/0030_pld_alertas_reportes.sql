@@ -1225,9 +1225,12 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  -- Del operador del contexto y nunca de un caso que excluye a quien pregunta (60ª).
+  -- Con el rol del personal, solo del operador del contexto y nunca de un caso que
+  -- excluye a quien pregunta (60ª). El ajuste «role» es el que fijó SET ROLE: esta
+  -- función es SECURITY DEFINER y current_user es la dueña.
   SELECT min(a.vence_el) FROM pld_caso_alertas ca JOIN pld_alertas a ON a.id = ca.alerta_id
-  WHERE ca.caso_id = p_caso AND a.operator_id = app_operador() AND NOT pld_caso_me_excluye(p_caso)
+  WHERE ca.caso_id = p_caso AND NOT pld_caso_me_excluye(p_caso)
+    AND (current_setting('role') <> 'plataforma_sofipo' OR a.operator_id = app_operador())
 $$;
 
 REVOKE ALL ON FUNCTION pld_caso_vence(uuid) FROM PUBLIC;
@@ -1284,6 +1287,9 @@ DECLARE
   caso pld_casos%ROWTYPE;
   alerta pld_alertas%ROWTYPE;
 BEGIN
+  -- r2-base-N9: el candado del caso, el mismo que toman los votos y el dictamen.
+  -- Lo que llega mientras se dictamina espera y ve el dictamen (caso_ya_dictaminado).
+  PERFORM pg_advisory_xact_lock(hashtextextended('pld_caso:' || NEW.caso_id::text, 0));
   SELECT * INTO caso FROM pld_casos c WHERE c.id = NEW.caso_id;
   IF caso.id IS NULL THEN
     RAISE EXCEPTION 'caso_no_existe';
@@ -1762,6 +1768,8 @@ BEGIN
   IF propuesta.id IS NULL OR caso.id IS NULL THEN
     RAISE EXCEPTION 'caso_no_existe';
   END IF;
+  -- r2-base-N9: el candado del caso antes de revisar el dictamen y la propuesta vigente.
+  PERFORM pg_advisory_xact_lock(hashtextextended('pld_caso:' || caso.id::text, 0));
   NEW.caso_id := caso.id;
   NEW.operator_id := sesion.operator_id;
   NEW.company_id := caso.company_id;
@@ -1992,6 +2000,9 @@ DECLARE
   propuesta pld_propuestas%ROWTYPE;
   marca pld_casos_24h%ROWTYPE;
 BEGIN
+  -- r2-base-N9: el candado del caso; las alertas, propuestas, marcas y votos que
+  -- lleguen mientras tanto esperan y ven este dictamen.
+  PERFORM pg_advisory_xact_lock(hashtextextended('pld_caso:' || NEW.caso_id::text, 0));
   SELECT * INTO caso FROM pld_casos c WHERE c.id = NEW.caso_id;
   IF caso.id IS NULL THEN
     RAISE EXCEPTION 'caso_no_existe';

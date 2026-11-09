@@ -818,6 +818,60 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.deepEqual((await leerComite(cum)).mesesSinSesion, []);
         });
 
+        await t.test("carrera (r2-base-N9): lo que llega a un caso mientras se dictamina espera y ve el dictamen", async () => {
+          const casoDe = async (descripcion: string) => {
+            const acuse = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_inusual", companyId: beta, mencionada: "", superior: "", descripcion });
+            const alerta = String((await uno("select id from pld_alertas where aviso_id = $1", [acuse.id])).id);
+            return { alerta, caso: await abrirCaso(cum, { formId: randomUUID(), alertaId: alerta }) };
+          };
+          const { caso } = await casoDe("Transferencias a un tercero sin relación aparente.");
+          const acuseB = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_inusual", companyId: beta, mencionada: "", superior: "", descripcion: "El mismo tercero recibe pagos de otra cuenta." });
+          const alertaB = String((await uno("select id from pld_alertas where aviso_id = $1", [acuseB.id])).id);
+          await registrarPropuesta(cum, { casoId: caso, formId: randomUUID(), propuesta: "no_reportar", justificacion: "El cliente acreditó la relación comercial" });
+          const propuesta = String((await uno("select id from pld_propuestas where caso_id = $1", [caso])).id);
+          const sesion = randomUUID();
+          await registrarSesion(cum, { formId: sesion, celebradaEl: hoy, presentes: [P, S, I1], auditorPresente: false });
+          for (const quien of [P, S]) await registrarVoto(cum, { formId: randomUUID(), sesionId: sesion, propuestaId: propuesta, integranteId: quien, voto: "a_favor" });
+
+          const a = new pg.Client({ connectionString: urlDuena });
+          const b = [0, 1, 2].map(() => new pg.Client({ connectionString: urlDuena }));
+          await a.connect();
+          for (const c of b) await c.connect();
+          const esperar = (ms: number) => new Promise((listo) => setTimeout(listo, ms));
+          const resultado = (promesa: Promise<unknown>) => promesa.then(() => "aceptado", (error: Error) => error.message);
+          try {
+            // A dictamina y no confirma todavía; mientras, llegan una alerta de la serie, una propuesta nueva y un voto.
+            await a.query("begin");
+            await a.query(
+              `insert into pld_dictamenes (id, caso_id, operator_id, resultado, justificacion, via, sesion_id, propuesta_id, registrado_por)
+               values ($1, $2, $3, 'no_reportar', 'Votación del Comité', 'comite', $4, $5, $6)`,
+              [randomUUID(), caso, operador, sesion, propuesta, CUM],
+            );
+            for (const c of b) await c.query("begin");
+            const pendientes = [
+              resultado(b[0]!.query("insert into pld_caso_alertas (caso_id, alerta_id, operator_id, registrado_por) values ($1, $2, $3, $4)", [caso, alertaB, operador, CUM2])),
+              resultado(b[1]!.query(
+                "insert into pld_propuestas (id, caso_id, operator_id, propuesta, justificacion, registrado_por) values ($1, $2, $3, 'reportar_inusual', 'Cambio de opinión tardío', $4)",
+                [randomUUID(), caso, operador, CUM2],
+              )),
+              resultado(b[2]!.query(
+                "insert into pld_votos (id, sesion_id, caso_id, propuesta_id, integrante_id, voto, operator_id, registrado_por) values ($1, $2, $3, $4, $5, 'en_contra', $6, $7)",
+                [randomUUID(), sesion, caso, propuesta, I1, operador, CUM2],
+              )),
+            ];
+            await esperar(300);
+            await a.query("commit");
+            assert.deepEqual(await Promise.all(pendientes), ["caso_ya_dictaminado", "caso_ya_dictaminado", "caso_ya_dictaminado"]);
+          } finally {
+            for (const c of b) await c.query("rollback").catch(() => undefined);
+            await a.end();
+            for (const c of b) await c.end();
+          }
+          // La alerta B sigue sin caso: la bandeja la muestra para analizarla.
+          assert.equal(await contar("select count(*)::int as n from pld_caso_alertas where alerta_id = $1", [alertaB]), 0);
+          assert.ok((await listarAlertasPld(cum)).some((x) => x.id === alertaB));
+        });
+
         await t.test("días hábiles: los dos instrumentos de 2026 con criterio conservador y «falta el calendario» en 2027", async () => {
           assert.deepEqual(await uno(`select
               pld_sumar_dias_habiles('2026-10-30', 3)::text as tras_30_oct,
