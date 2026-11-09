@@ -137,29 +137,20 @@ export function traducirPld(error: unknown): unknown {
   return error;
 }
 
-function traductora(consulta: Consulta): Consulta {
-  return {
-    query: async (sql, params) => {
-      try {
-        return await consulta.query(sql, params);
-      } catch (error) {
-        throw traducirPld(error);
-      }
-    },
-  };
-}
-
 /**
  * Una transacción de PLD como el personal del operador. Al final corre las reglas
  * diferidas de la 0030 (bitácora obligatoria, integración del Comité, caso con
  * alerta) dentro de la traducción, para que su rechazo llegue con su código.
  */
 export async function conPld<T>(ctx: ContextoDePersonal, companyId: string | null, fn: (consulta: Consulta) => Promise<T>): Promise<T> {
-  return conContexto(basePlataforma(ctx, companyId), async (cruda) => {
-    const consulta = traductora(cruda);
-    const resultado = await fn(consulta);
-    await consulta.query("set constraints all immediate");
-    return resultado;
+  return conContexto(basePlataforma(ctx, companyId), async (consulta) => {
+    try {
+      const resultado = await fn(consulta);
+      await consulta.query("set constraints all immediate");
+      return resultado;
+    } catch (error) {
+      throw traducirPld(error);
+    }
   });
 }
 

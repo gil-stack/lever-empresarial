@@ -30,13 +30,39 @@ export type AlertaPld = {
   avisoId: string | null;
 };
 
+// Tres sentencias completas, sin armar texto: la revisión de seguridad solo acepta SQL literal.
+// $1: solo las alertas sin caso.
 const LEER_ALERTAS = `
   select a.id, a.regla, a.disposicion, a.company_id, c.razon_social, a.observado, a.creada_en, a.vence_el::text as vence_el,
          o.tipo as tipo_operacion, ca.caso_id, a.aviso_id
   from pld_alertas a
   left join companies c on c.id = a.company_id
   left join pld_operaciones o on o.id = a.operacion_id
-  left join pld_caso_alertas ca on ca.alerta_id = a.id`;
+  left join pld_caso_alertas ca on ca.alerta_id = a.id
+  where (not $1::boolean or ca.caso_id is null)
+  order by a.vence_el, a.creada_en
+  limit 500`;
+
+const LEER_ALERTAS_DEL_CASO = `
+  select a.id, a.regla, a.disposicion, a.company_id, c.razon_social, a.observado, a.creada_en, a.vence_el::text as vence_el,
+         o.tipo as tipo_operacion, ca.caso_id, a.aviso_id
+  from pld_alertas a
+  left join companies c on c.id = a.company_id
+  left join pld_operaciones o on o.id = a.operacion_id
+  join pld_caso_alertas ca on ca.alerta_id = a.id
+  where ca.caso_id = $1
+  order by a.creada_en`;
+
+// Las alertas sin caso de la misma empresa, que se pueden sumar a la serie (40ª).
+const LEER_ALERTAS_SUMABLES = `
+  select a.id, a.regla, a.disposicion, a.company_id, c.razon_social, a.observado, a.creada_en, a.vence_el::text as vence_el,
+         o.tipo as tipo_operacion, ca.caso_id, a.aviso_id
+  from pld_alertas a
+  left join companies c on c.id = a.company_id
+  left join pld_operaciones o on o.id = a.operacion_id
+  left join pld_caso_alertas ca on ca.alerta_id = a.id
+  where ca.caso_id is null and a.company_id is not distinct from $1
+  order by a.creada_en`;
 
 function aAlerta(fila: Record<string, unknown>, hoy: string): AlertaPld {
   const venceEl = dia(fila.vence_el);
@@ -64,8 +90,8 @@ export async function listarAlertasPld(ctx: ContextoDePersonal, opciones: { ahor
   const hoy = hoyEnMexico(opciones.ahora ?? new Date());
   return conPld(ctx, null, async (consulta) => {
     const filas = await consulta.query(
-      `${LEER_ALERTAS} ${opciones.soloSinCaso ? "where ca.caso_id is null" : ""} order by a.vence_el, a.creada_en limit 500`,
-      [],
+      LEER_ALERTAS,
+      [opciones.soloSinCaso === true],
     );
     return (filas.rows as Array<Record<string, unknown>>).map((fila) => aAlerta(fila, hoy));
   });
@@ -119,7 +145,7 @@ export async function leerCaso(ctx: ContextoDePersonal, casoId: unknown, opcione
     if (!filaCaso) return null;
     const companyId = typeof filaCaso.company_id === "string" ? filaCaso.company_id : null;
     await auditarPld(consulta, ctx, { companyId, accion: "pld_caso_consultado", identificador: casoId, ocurridoEn: new Date() });
-    const alertas = (await consulta.query(`${LEER_ALERTAS} where ca.caso_id = $1 order by a.creada_en`, [casoId])).rows as Array<Record<string, unknown>>;
+    const alertas = (await consulta.query(LEER_ALERTAS_DEL_CASO, [casoId])).rows as Array<Record<string, unknown>>;
     const avisos = (await consulta.query(
       `select v.id, v.tipo, v.descripcion, v.registrado_en from pld_avisos v
        join pld_alertas a on a.aviso_id = v.id join pld_caso_alertas ca on ca.alerta_id = a.id where ca.caso_id = $1`,
@@ -156,7 +182,7 @@ export async function leerCaso(ctx: ContextoDePersonal, casoId: unknown, opcione
     const sumables = dictamen
       ? []
       : ((await consulta.query(
-          `${LEER_ALERTAS} where ca.caso_id is null and a.company_id is not distinct from $1 order by a.creada_en`,
+          LEER_ALERTAS_SUMABLES,
           [companyId],
         )).rows as Array<Record<string, unknown>>);
     const venceEn = marca ? new Date(fecha(marca.registrado_en).getTime() + 24 * 3_600_000) : null;
