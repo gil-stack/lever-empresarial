@@ -7,9 +7,7 @@ import { notFound } from "next/navigation";
 import {
   agregarNotaAccion,
   cargarDocumentoPldAccion,
-  dictaminarCasoAccion,
   marcarVeinticuatroHorasAccion,
-  registrarPropuestaAccion,
   registrarReportePldAccion,
   sumarAlertaAccion,
 } from "@/app/operacion/(portal)/pld/acciones";
@@ -18,11 +16,12 @@ import { CampoArchivo } from "@/components/operacion/campo-archivo";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { ConfirmarParaDecidir } from "@/components/operacion/pld/confirmar";
+import { FormularioDictamen, FormularioPropuesta } from "@/components/operacion/pld/formularios-de-texto";
 import { ahoraEnMexicoParaCampo, plazoEnDias, resumenDeAlerta } from "@/components/operacion/pld/formato";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
-import { PROPUESTA, PROPUESTAS, REGLA, TIPO_AVISO, type TipoAviso } from "@/dominio/pld";
+import { PROPUESTA, REGLA, TIPO_AVISO, type TipoAviso } from "@/dominio/pld";
 import { exigirContextoOperacion, puedeEnOperacion } from "@/server/operacion";
 import { ahoraPld, leerCaso, leerModoDictamen, sesionesQueAprobaron } from "@/server/pld";
 
@@ -288,31 +287,11 @@ export default async function CasoPld({
           </ul>
         )}
         {abierto && analiza ? (
-          <form action={registrarPropuestaAccion} className="operacion-forma">
-            <input type="hidden" name="casoId" value={caso.id} />
-            <input type="hidden" name="formId" value={randomUUID()} />
-            <div className="campo">
-              <label htmlFor="propuesta-propuesta">Propuesta</label>
-              <select id="propuesta-propuesta" name="propuesta" required defaultValue="" {...error("propuesta-titulo", "propuesta")}>
-                <option value="" disabled>
-                  Elige una
-                </option>
-                {PROPUESTAS.map((propuesta) => (
-                  <option key={propuesta} value={propuesta}>
-                    {PROPUESTA[propuesta]}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="campo">
-              <label htmlFor="propuesta-justificacion">Justificación</label>
-              <textarea id="propuesta-justificacion" name="justificacion" required minLength={10} maxLength={4000} {...error("propuesta-titulo", "motivo")} />
-            </div>
-            <div className="acciones">
-              <BotonEnviar>Registrar propuesta</BotonEnviar>
-              <p>{modo.modo === "comite" ? "El Comité vota la propuesta vigente en una sesión." : "El Oficial de Cumplimiento dictamina con su justificación."}</p>
-            </div>
-          </form>
+          <FormularioPropuesta
+            casoId={caso.id}
+            formId={randomUUID()}
+            pista={modo.modo === "comite" ? "El Comité vota la propuesta vigente en una sesión." : "El Oficial de Cumplimiento dictamina con su justificación."}
+          />
         ) : null}
       </Hoja>
 
@@ -331,32 +310,7 @@ export default async function CasoPld({
           <Vacio titulo="Sin dictamen">Lo registra Cumplimiento.</Vacio>
         ) : modo.modo === "oficial" ? (
           ctx.persona.id === modo.oficialId ? (
-            <form action={dictaminarCasoAccion} className="operacion-forma">
-              <input type="hidden" name="casoId" value={caso.id} />
-              <input type="hidden" name="formId" value={randomUUID()} />
-              <input type="hidden" name="via" value="oficial" />
-              <div className="campo">
-                <label htmlFor="dictamen-resultado">Resultado</label>
-                <select id="dictamen-resultado" name="resultado" required defaultValue={vigente?.propuesta ?? ""} {...error("dictamen-titulo", "resultado")}>
-                  <option value="" disabled>
-                    Elige uno
-                  </option>
-                  {PROPUESTAS.map((propuesta) => (
-                    <option key={propuesta} value={propuesta}>
-                      {PROPUESTA[propuesta]}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="campo">
-                <label htmlFor="dictamen-justificacion">Justificación</label>
-                <textarea id="dictamen-justificacion" name="justificacion" required minLength={10} maxLength={4000} {...error("dictamen-titulo", "motivo")} />
-              </div>
-              <div className="acciones">
-                <BotonEnviar>Registrar dictamen</BotonEnviar>
-                <p>{caso.fueraDePlazo ? "Pasaron los 60 días: se registra igual, marcado «fuera de plazo»." : "Exige tu segundo factor de los últimos 30 minutos."}</p>
-              </div>
-            </form>
+            <FormularioDictamen casoId={caso.id} formId={randomUUID()} pista={caso.fueraDePlazo ? "Pasaron los 60 días: se registra igual, marcado «fuera de plazo»." : "Exige tu segundo factor de los últimos 30 minutos."} oficial={{ resultadoInicial: vigente?.propuesta ?? "" }} />
           ) : (
             <Vacio titulo="Dictamina el Oficial de Cumplimiento">{modo.oficial ? `${modo.oficial} registra el dictamen de este caso.` : "Falta designar al Oficial en Comité."}</Vacio>
           )
@@ -367,34 +321,16 @@ export default async function CasoPld({
             La propuesta vigente se vota en una sesión del Comité con quórum. <Link href="/operacion/comite#sesiones-titulo">Ir a Comité</Link>
           </Vacio>
         ) : (
-          <form action={dictaminarCasoAccion} className="operacion-forma">
-            <input type="hidden" name="casoId" value={caso.id} />
-            <input type="hidden" name="formId" value={randomUUID()} />
-            <input type="hidden" name="via" value="comite" />
-            <input type="hidden" name="propuestaId" value={vigente.id} />
-            <input type="hidden" name="resultado" value="" />
-            <p>
-              Resultado: <strong>{PROPUESTA[vigente.propuesta]}</strong>, como lo aprobó el Comité. La fecha del dictamen es la de la sesión.
-            </p>
-            <div className="campo">
-              <label htmlFor="dictamen-sesion">Sesión</label>
-              <select id="dictamen-sesion" name="sesionId" required defaultValue={sesiones[0]!.id} {...error("dictamen-titulo", "sesionId")}>
-                {sesiones.map((sesion) => (
-                  <option key={sesion.id} value={sesion.id}>
-                    Sesión del {fechaDia(sesion.celebradaEl)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="campo">
-              <label htmlFor="dictamen-justificacion">Justificación</label>
-              <textarea id="dictamen-justificacion" name="justificacion" required minLength={10} maxLength={4000} {...error("dictamen-titulo", "motivo")} />
-            </div>
-            <div className="acciones">
-              <BotonEnviar>Registrar dictamen</BotonEnviar>
-              <p>{caso.fueraDePlazo ? "Pasaron los 60 días: se registra igual, marcado «fuera de plazo»." : "Exige tu segundo factor de los últimos 30 minutos."}</p>
-            </div>
-          </form>
+          <FormularioDictamen
+            casoId={caso.id}
+            formId={randomUUID()}
+            pista={caso.fueraDePlazo ? "Pasaron los 60 días: se registra igual, marcado «fuera de plazo»." : "Exige tu segundo factor de los últimos 30 minutos."}
+            comite={{
+              propuestaId: vigente.id,
+              resultado: PROPUESTA[vigente.propuesta],
+              sesiones: sesiones.map((sesion) => ({ id: sesion.id, etiqueta: `Sesión del ${fechaDia(sesion.celebradaEl)}` })),
+            }}
+          />
         )}
       </Hoja>
 

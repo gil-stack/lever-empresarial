@@ -460,6 +460,20 @@ async function flujo5() {
   console.log("\n— Flujo 5: aviso del personal que menciona a otra persona; confidencial (60ª)");
   renovarSesiones();
   const antes = cuenta("pld_avisos");
+  // r2-serv-N14: 16 caracteres con emoji pasan el mínimo de 20 del navegador; el servidor lo rechaza y el aviso no se pierde.
+  const omar0 = await abrir("omar");
+  await ir(omar0.p, "/operacion/avisos");
+  await omar0.p.locator("#aviso-tipo").selectOption("posible_inusual");
+  const taller = await omar0.p.locator("#aviso-empresa option", { hasText: "Taller del Cierre" }).first().getAttribute("value");
+  await omar0.p.locator("#aviso-empresa").selectOption(taller);
+  const corta = "Pago raro: \u{1F9FE}\u{1F9FE}\u{1F9FE}\u{1F9FE}\u{1F9FE}";
+  await omar0.p.locator("#aviso-descripcion").fill(corta);
+  const avisoCorto = await rechazoConservaElTexto(omar0.p, "Enviar aviso", "#aviso-descripcion", corta);
+  exigir(avisoCorto.marcado && avisoCorto.foco && avisoCorto.conserva, "5. el aviso rechazado conserva la descripción, marcada y con el foco", JSON.stringify(avisoCorto));
+  exigir((await omar0.p.locator("#aviso-tipo").inputValue()) === "posible_inusual" && (await omar0.p.locator("#aviso-empresa").inputValue()) === taller, "5. y el tipo y la empresa elegidos");
+  exigir(avisoCorto.limpia && cuenta("pld_avisos") === antes, "5. sin texto ni aviso en la dirección, y sin guardar nada");
+  await foto(omar0.p, "f5-aviso-rechazado-conserva-el-texto");
+  await cerrar(omar0, "Omar");
   const omar = await emitirAviso("omar", {
     tipo: "posible_interna_preocupante", empresa: "Taller del Cierre", mencionada: NOMBRES.aurelio,
     descripcion: "El 4 de noviembre vi que alguien de Auditoría pidió por teléfono los datos de los pagos de Taller del Cierre fuera del sistema.",
@@ -507,6 +521,20 @@ async function abrirCaso(p, texto, detalle = "") {
   return new URL(p.url()).pathname.split("/").pop();
 }
 
+/**
+ * r2-serv-N14: un texto que el navegador deja pasar (cuenta el emoji como dos) y el servidor rechaza vuelve sin
+ * recargar con lo capturado, el campo marcado y con el foco; ni el texto ni el aviso pasan por la dirección.
+ */
+async function rechazoConservaElTexto(p, boton, campo, texto) {
+  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.getByRole("button", { name: boton }).click();
+  const marcado = await p.locator(`${campo}[aria-invalid="true"]`).waitFor({ timeout: 20000 }).then(() => true, () => false);
+  await listo(p);
+  const foco = await p.waitForFunction((selector) => document.activeElement === document.querySelector(selector), campo, { timeout: 5000 }).then(() => true, () => false);
+  const url = new URL(p.url());
+  return { marcado, foco, conserva: (await p.locator(campo).inputValue()) === texto, limpia: !url.searchParams.has("aviso") && !decodeURIComponent(url.href).includes(texto.slice(0, 3)) };
+}
+
 async function proponer(p, propuesta, justificacion) {
   await p.locator("#propuesta-propuesta").selectOption(propuesta);
   await p.locator("#propuesta-justificacion").fill(justificacion);
@@ -540,6 +568,14 @@ async function flujo6() {
   exigir(sha256(bajado.bytes) === sha256(soporte), "6. el documento se descarga igual a como se subió (misma huella)");
   exigir(cuenta(`audit_log where accion = 'pld_documento_descargado'`) === 1, "6. la descarga deja su evento en la bitácora");
 
+  // r2-serv-N14: 7 caracteres con emoji pasan el mínimo de 10 del navegador; el servidor la rechaza y vuelve con lo capturado.
+  await p.locator("#propuesta-propuesta").selectOption("reportar_inusual");
+  const breve = "Ver \u{1F9FE}\u{1F9FE}\u{1F9FE}";
+  await p.locator("#propuesta-justificacion").fill(breve);
+  const propuestaCorta = await rechazoConservaElTexto(p, "Registrar propuesta", "#propuesta-justificacion", breve);
+  exigir(propuestaCorta.marcado && propuestaCorta.foco && propuestaCorta.conserva && propuestaCorta.limpia, "6. la propuesta rechazada conserva su justificación, marcada y con el foco, sin nada en la dirección", JSON.stringify(propuestaCorta));
+  exigir((await p.locator("#propuesta-propuesta").inputValue()) === "reportar_inusual" && cuenta(`pld_propuestas where caso_id = '${ids.casoTaller}'`) === 0, "6. con la propuesta elegida y sin guardar nada");
+  await foto(p, "f6-propuesta-rechazada-conserva-el-texto");
   await proponer(p, "reportar_inusual", "Fraccionamiento al mismo proveedor y nómina fuera del perfil sin justificación documental.");
   exigir(cuenta(`pld_propuestas where caso_id = '${ids.casoTaller}'`) === 1, "6. doble clic en «Registrar propuesta» = 1 propuesta");
   await foto(p, "f6-caso-con-nota-documento-y-propuesta");
@@ -693,6 +729,13 @@ async function flujo7() {
   await foto(p, "f7-dictamen-pide-confirmar");
   await confirmarIdentidad(p, "celia");
   anotar("7. Celia confirmó con su app autenticadora");
+  // r2-serv-N14: el dictamen rechazado tampoco pierde lo escrito.
+  const escueta = "Ver \u{1F9FE}\u{1F9FE}\u{1F9FE}\u{1F9FE}";
+  await p.locator("#dictamen-justificacion").fill(escueta);
+  const dictamenCorto = await rechazoConservaElTexto(p, "Registrar dictamen", "#dictamen-justificacion", escueta);
+  exigir(dictamenCorto.marcado && dictamenCorto.foco && dictamenCorto.conserva && dictamenCorto.limpia && cuenta(`pld_dictamenes where caso_id = '${ids.casoTaller}'`) === 0,
+    "7. el dictamen rechazado conserva su justificación, marcada y con el foco, sin nada en la dirección ni en la base", JSON.stringify(dictamenCorto));
+  await foto(p, "f7-dictamen-rechazado-conserva-el-texto");
   await p.locator("#dictamen-justificacion").fill("El Comité aprobó reportar la serie como operación inusual en la sesión de hoy.");
   await enviar(p, p.getByRole("button", { name: "Registrar dictamen" }), "pld_dictamen_registrado", { doble: true });
   exigir(cuenta(`pld_dictamenes where caso_id = '${ids.casoTaller}'`) === 1, "7. doble clic en «Registrar dictamen» = 1 dictamen");

@@ -2,13 +2,12 @@ import { randomUUID } from "node:crypto";
 
 import type { Metadata } from "next";
 
-import { emitirAvisoAccion } from "@/app/operacion/(portal)/pld/acciones";
-import { errorDelCampo } from "@/components/operacion/aviso";
 import { fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
+import { FormularioAviso } from "@/components/operacion/pld/formularios-de-texto";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
-import { BotonEnviar, EtiquetaMono, Hoja, NotaRegla, Vacio } from "@/components/sistema";
-import { TIPO_AVISO, TIPOS_AVISO } from "@/dominio/pld";
+import { EtiquetaMono, Hoja, NotaRegla, Vacio } from "@/components/sistema";
+import { TIPO_AVISO } from "@/dominio/pld";
 import { exigirContextoOperacion, listarClientes, puedeEnOperacion } from "@/server/operacion";
 import { misAcuses, personalParaExcluir } from "@/server/pld";
 
@@ -35,7 +34,6 @@ export default async function AvisosOperacion({ searchParams }: { searchParams: 
     personalParaExcluir(ctx),
     puedeEnOperacion(ctx, "plataforma.operacion.ver") ? listarClientes(ctx) : Promise.resolve([]),
   ]);
-  const error = (campo: string) => (params.en === "aviso-titulo" ? errorDelCampo(params.aviso, campo) : {});
 
   return (
     <PaginaOperacion titulo="Avisar a Cumplimiento" aviso={params.aviso}>
@@ -44,63 +42,11 @@ export default async function AvisosOperacion({ searchParams }: { searchParams: 
           Si viste algo que podría ser una operación inusual de un cliente, o una conducta preocupante de alguien de la SOFIPO, avísale a
           Cumplimiento. Solo Cumplimiento y Auditoría lo leen; tú ves tu acuse con su folio.
         </p>
-        <form action={emitirAvisoAccion} className="formulario-pareja operacion-forma">
-          <input type="hidden" name="formId" value={randomUUID()} />
-          <div className="campo">
-            <label htmlFor="aviso-tipo">De qué se trata</label>
-            <select id="aviso-tipo" name="tipo" required defaultValue="" {...error("tipo")}>
-              <option value="" disabled>
-                Elige uno
-              </option>
-              {TIPOS_AVISO.map((tipo) => (
-                <option key={tipo} value={tipo}>
-                  {TIPO_AVISO[tipo]}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="campo">
-            <label htmlFor="aviso-empresa">Empresa (si aplica)</label>
-            <select id="aviso-empresa" name="companyId" defaultValue="" {...error("companyId")}>
-              <option value="">Ninguna en particular</option>
-              {clientes.map((cliente) => (
-                <option key={cliente.id} value={cliente.id}>
-                  {cliente.razonSocial}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="campo operacion-ancho">
-            <label htmlFor="aviso-descripcion">Qué viste, cuándo y quién estuvo involucrado</label>
-            <textarea id="aviso-descripcion" name="descripcion" required minLength={20} maxLength={4000} {...error("descripcion")} />
-          </div>
-          <div className="campo">
-            <label htmlFor="aviso-mencionada">Persona del personal mencionada (si aplica)</label>
-            <select id="aviso-mencionada" name="mencionada" defaultValue="" {...error("mencionada")}>
-              <option value="">Nadie del personal</option>
-              {personas.map((persona) => (
-                <option key={persona.id} value={persona.id}>
-                  {persona.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="campo">
-            <label htmlFor="aviso-superior">Tu superior jerárquico (si no debe enterarse)</label>
-            <select id="aviso-superior" name="superior" defaultValue="" {...error("superior")}>
-              <option value="">No marcar a nadie</option>
-              {personas.map((persona) => (
-                <option key={persona.id} value={persona.id}>
-                  {persona.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="acciones operacion-ancho">
-            <BotonEnviar>Enviar aviso</BotonEnviar>
-            <p>Las personas que marques no podrán ver este aviso, aunque tengan el rol de Cumplimiento.</p>
-          </div>
-        </form>
+        <FormularioAviso
+          formId={randomUUID()}
+          clientes={clientes.map((cliente) => ({ id: cliente.id, razonSocial: cliente.razonSocial }))}
+          personas={personas.map((persona) => ({ id: persona.id, nombre: persona.nombre }))}
+        />
       </Hoja>
 
       <Hoja id="acuses-titulo" titulo="Tus acuses">

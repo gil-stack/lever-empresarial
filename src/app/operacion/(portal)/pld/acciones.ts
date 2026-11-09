@@ -124,7 +124,18 @@ export async function registrarEvaluacionAccion(formData: FormData): Promise<voi
 
 // Aviso del personal.
 
-export async function emitirAvisoAccion(formData: FormData): Promise<void> {
+/**
+ * Lo que vuelve a un formulario de texto libre (aviso, propuesta, dictamen) cuando el servidor lo rechaza: el aviso
+ * y lo capturado, sin recargar y sin pasar por la dirección (r2-serv-N14).
+ */
+export type EstadoDelFormulario = { aviso: string | null; valores: Record<string, string>; vuelta: number };
+
+function rechazado(error: unknown, previo: EstadoDelFormulario, formData: FormData, campos: readonly string[]): EstadoDelFormulario {
+  if (!(error instanceof ErrorDeDominio)) throw error;
+  return { aviso: error.codigo, valores: Object.fromEntries(campos.map((campo) => [campo, texto(formData, campo)])), vuelta: previo.vuelta + 1 };
+}
+
+export async function emitirAvisoAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   try {
     await emitirAviso(ctx, {
@@ -132,7 +143,7 @@ export async function emitirAvisoAccion(formData: FormData): Promise<void> {
       companyId: texto(formData, "companyId"), mencionada: texto(formData, "mencionada"), superior: texto(formData, "superior"),
     });
   } catch (error) {
-    return fallo(error, "/operacion/avisos", "#aviso-titulo");
+    return rechazado(error, previo, formData, ["tipo", "companyId", "descripcion", "mencionada", "superior"]);
   }
   listo("/operacion/avisos", "pld_aviso_emitido", "#acuses-titulo");
 }
@@ -184,13 +195,13 @@ export async function cargarDocumentoPldAccion(formData: FormData): Promise<void
   listo(caso(casoId), "pld_documento_cargado", "#documentos-titulo");
 }
 
-export async function registrarPropuestaAccion(formData: FormData): Promise<void> {
+export async function registrarPropuestaAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const casoId = texto(formData, "casoId");
   try {
     await registrarPropuesta(ctx, { casoId, formId: formData.get("formId"), propuesta: texto(formData, "propuesta"), justificacion: texto(formData, "justificacion") });
   } catch (error) {
-    return fallo(error, caso(casoId), "#propuesta-titulo");
+    return rechazado(error, previo, formData, ["propuesta", "justificacion"]);
   }
   listo(caso(casoId), "pld_propuesta_registrada", "#propuesta-titulo");
 }
@@ -206,7 +217,7 @@ export async function marcarVeinticuatroHorasAccion(formData: FormData): Promise
   listo(caso(casoId), "pld_caso_24_horas", "#plazo-titulo");
 }
 
-export async function dictaminarCasoAccion(formData: FormData): Promise<void> {
+export async function dictaminarCasoAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const sesion = await sesionConFactor();
   const casoId = texto(formData, "casoId");
@@ -217,8 +228,9 @@ export async function dictaminarCasoAccion(formData: FormData): Promise<void> {
       propuestaId: texto(formData, "propuestaId"), resultado: texto(formData, "resultado"), justificacion: texto(formData, "justificacion"),
     }));
   } catch (error) {
+    // Sin el segundo factor reciente, la página lo pide (redirige); cualquier otro rechazo vuelve con lo capturado.
     siPideFactor(error, caso(casoId), "#dictamen-titulo");
-    return fallo(error, caso(casoId), "#dictamen-titulo");
+    return rechazado(error, previo, formData, ["resultado", "sesionId", "justificacion"]);
   }
   listo(caso(casoId), fueraDePlazo ? "pld_dictamen_fuera_de_plazo" : "pld_dictamen_registrado", "#dictamen-titulo");
 }
