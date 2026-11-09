@@ -73,13 +73,15 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
         {administra ? (
           <form action={cambiarModoAccion} className="formulario-pareja operacion-forma">
             <input type="hidden" name="formId" value={randomUUID()} />
-            <fieldset className="campo">
+            <fieldset className="opciones">
               <legend>Dictamina</legend>
-              <label>
-                <input type="radio" name="modo" value="comite" defaultChecked={modo.modo === "comite"} /> El Comité
+              <label className="confirmacion">
+                <input type="radio" name="modo" value="comite" defaultChecked={modo.modo === "comite"} />
+                <span>El Comité</span>
               </label>
-              <label>
-                <input type="radio" name="modo" value="oficial" defaultChecked={modo.modo === "oficial"} /> El Oficial de Cumplimiento
+              <label className="confirmacion">
+                <input type="radio" name="modo" value="oficial" defaultChecked={modo.modo === "oficial"} />
+                <span>El Oficial de Cumplimiento</span>
               </label>
             </fieldset>
             <div className="campo">
@@ -126,16 +128,16 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
                       {nombreDeIntegrante(integrante)}
                       {integrante.esOficial ? <Insignia tono="sello">Oficial</Insignia> : null}
                     </td>
-                    <td>
+                    <td data-rotulo="Cargo">
                       {CARGO_COMITE[integrante.cargo]} · {integrante.titularidad === "TITULAR" ? "titular" : `suplente de ${porId.get(integrante.suplenteDe ?? "") ? nombreDeIntegrante(porId.get(integrante.suplenteDe!)!) : "su titular"}`}
                     </td>
-                    <td>
+                    <td data-rotulo="Área y cargo en la entidad">
                       {integrante.area} · {integrante.cargoEntidad}
                     </td>
-                    <td className="operacion-mono">
+                    <td data-rotulo="RFC · CURP" className="operacion-mono">
                       {integrante.rfc} · {integrante.curp}
                     </td>
-                    <td>{fechaDia(integrante.designadoEl)}</td>
+                    <td data-rotulo="Designado">{fechaDia(integrante.designadoEl)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -247,16 +249,18 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
               <label htmlFor="comunicacion-recibido">Fecha y hora de recepción</label>
               <input id="comunicacion-recibido" name="recibidoEn" type="datetime-local" required max={ahoraEnMexicoParaCampo(new Date())} {...error("comunicaciones-titulo", "recibidoEn")} />
             </div>
-            <fieldset className="campo operacion-ancho">
+            <fieldset className="opciones operacion-ancho">
               <legend>Qué cubre</legend>
               {pendientesDeDesignacion.map((p) => (
-                <label key={`d-${p.integranteId}`}>
-                  <input type="checkbox" name="integrantes" value={p.integranteId} defaultChecked /> Designación de {p.nombre}
+                <label key={`d-${p.integranteId}`} className="confirmacion">
+                  <input type="checkbox" name="integrantes" value={p.integranteId} defaultChecked />
+                  <span>Designación de {p.nombre}</span>
                 </label>
               ))}
               {pendientesDeBaja.map((p) => (
-                <label key={`b-${p.integranteId}`}>
-                  <input type="checkbox" name="bajas" value={p.integranteId} defaultChecked /> Baja de {p.nombre}
+                <label key={`b-${p.integranteId}`} className="confirmacion">
+                  <input type="checkbox" name="bajas" value={p.integranteId} defaultChecked />
+                  <span>Baja de {p.nombre}</span>
                 </label>
               ))}
             </fieldset>
@@ -339,18 +343,21 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
               <input id="sesion-fecha" name="celebradaEl" type="date" required max={hoy} defaultValue={hoy} {...error("sesiones-titulo", "celebradaEl")} />
             </div>
             {/* r2-serv-N6: el fieldset no recibe el foco; con el aviso, lo toma la primera casilla. */}
-            <fieldset className="campo operacion-ancho" aria-invalid={sinPresentes["aria-invalid"]} aria-describedby={sinPresentes["aria-describedby"]}>
+            <fieldset className="opciones operacion-ancho" aria-invalid={sinPresentes["aria-invalid"]} aria-describedby={sinPresentes["aria-describedby"]}>
               <legend>Presentes</legend>
               {vigentes.map((integrante, indice) => (
-                <label key={integrante.id}>
-                  <input type="checkbox" name="presentes" value={integrante.id} autoFocus={indice === 0 && sinPresentes.autoFocus === true} />{" "}
-                  {nombreDeIntegrante(integrante)} · {CARGO_COMITE[integrante.cargo]}
-                  {integrante.titularidad === "SUPLENTE" ? " (suplente)" : ""}
+                <label key={integrante.id} className="confirmacion">
+                  <input type="checkbox" name="presentes" value={integrante.id} autoFocus={indice === 0 && sinPresentes.autoFocus === true} />
+                  <span>
+                    {nombreDeIntegrante(integrante)} · {CARGO_COMITE[integrante.cargo]}
+                    {integrante.titularidad === "SUPLENTE" ? " (suplente)" : ""}
+                  </span>
                 </label>
               ))}
               {comite.auditor ? (
-                <label>
-                  <input type="checkbox" name="auditorPresente" value="si" /> {comite.auditor.nombre} · auditor, con voz y sin voto
+                <label className="confirmacion">
+                  <input type="checkbox" name="auditorPresente" value="si" />
+                  <span>{comite.auditor.nombre} · auditor, con voz y sin voto</span>
                 </label>
               ) : null}
             </fieldset>

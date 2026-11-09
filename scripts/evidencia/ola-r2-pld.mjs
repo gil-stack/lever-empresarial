@@ -168,7 +168,13 @@ async function cerrar({ nav, errores }, quien) {
   exigir(errores.length === 0, `consola limpia en la sesión de ${quien}`, errores.join(" | "));
 }
 async function ir(p, ruta) {
-  return p.goto(`${BASE}${ruta}`, { waitUntil: "networkidle" });
+  // En la misma página, goto solo mueve el ancla y conserva lo que dejó un rechazo sin recarga (r2-serv-N1/N14):
+  // se recarga para partir de la página del servidor.
+  const actual = new URL(p.url());
+  const destino = new URL(`${BASE}${ruta}`);
+  const respuesta = await p.goto(destino.href, { waitUntil: "networkidle" });
+  if (actual.origin + actual.pathname + actual.search !== destino.origin + destino.pathname + destino.search) return respuesta;
+  return p.reload({ waitUntil: "networkidle" });
 }
 async function listo(p) {
   await p.waitForLoadState("networkidle");
@@ -649,6 +655,8 @@ async function flujo7() {
     return region ? region.scrollWidth > region.clientWidth : false;
   });
   for (let i = 0; i < 8; i++) await movil.p.keyboard.press("ArrowRight");
+  // El desplazamiento con el teclado es animado: se espera a que avance.
+  await movil.p.waitForFunction(() => (document.activeElement?.scrollLeft ?? 0) > 0, null, { timeout: 5000 }).catch(() => {});
   const recorrido = await movil.p.evaluate(() => document.activeElement?.scrollLeft ?? 0);
   exigir(desplazable && recorrido > 0, "7. y las flechas la recorren (se desplaza a la derecha)", String(recorrido));
   const a11ySiti = await axe(movil.p);
@@ -1031,13 +1039,14 @@ async function flujo13() {
   const filas = (bytes) => Object.fromEntries(bytes.toString("utf8").trim().split("\n").map((l) => JSON.parse(l)).filter((l) => "tabla" in l).map((l) => [l.tabla, Number(l.filas)]));
   const deAurelio = filas(suyo.bytes);
   const deCelia = filas(manifiesto.bytes);
-  for (const tabla of ["pld_alertas", "pld_avisos", "pld_casos", "pld_notas", "pld_documentos", "pld_propuestas", "pld_dictamenes", "pld_reportes"]) {
-    if (!(tabla in deAurelio)) continue;
+  // El manifiesto cuenta por empresa: el aviso entra por su alerta y su caso.
+  for (const tabla of ["pld_alertas", "pld_casos", "pld_notas", "pld_documentos", "pld_propuestas", "pld_dictamenes", "pld_reportes"]) {
+    exigir(tabla in deAurelio, `13. el manifiesto de Aurelio trae ${tabla}`);
     const visibles = cuentaComo(E.IDS.aurelio, `${tabla} where company_id = '${TALLER}'`);
     exigir(deAurelio[tabla] === visibles, `13. manifiesto de Aurelio: ${tabla} cuenta lo que su RLS le deja ver (${visibles})`, String(deAurelio[tabla]));
   }
-  exigir(deAurelio.pld_avisos < deCelia.pld_avisos && deAurelio.pld_alertas < deCelia.pld_alertas,
-    "13. Aurelio no cuenta el aviso que lo menciona ni su alerta", JSON.stringify({ aurelio: deAurelio, celia: deCelia }));
+  exigir(deAurelio.pld_alertas < deCelia.pld_alertas && deAurelio.pld_casos < deCelia.pld_casos,
+    "13. Aurelio no cuenta la alerta del aviso que lo menciona ni su caso", JSON.stringify({ aurelio: deAurelio, celia: deCelia }));
   writeFileSync(`${DIR}/datos/manifiesto-taller-aurelio.ndjson`, suyo.bytes);
   await cerrar(aurelio, "Aurelio");
 }
@@ -1152,8 +1161,20 @@ async function revisarPagina(p) {
       const etiqueta = (control.id && document.querySelector(`label[for="${CSS.escape(control.id)}"]`)) || control.closest("label");
       if (!(control.getAttribute("aria-label") || control.getAttribute("aria-labelledby") || etiqueta)) sinNombre.push(control.name || control.id);
     }
+    // Las cajas cuyo contenido se sale de ellas (las más internas): un control o un texto que no cabe en su caja.
+    // Lo recortado a propósito para el lector de pantalla (el encabezado de una tabla angosta) no cuenta.
+    const recortado = (e) => {
+      for (let a = e; a; a = a.parentElement) if (getComputedStyle(a).clipPath !== "none" || getComputedStyle(a).clip !== "auto") return true;
+      return false;
+    };
+    const desbordan = [...document.querySelectorAll("body *")].filter(
+      (e) => e.clientWidth > 0 && e.scrollWidth > e.clientWidth + 1 && getComputedStyle(e).overflowX === "visible" && !recortado(e),
+    );
+    const cajas = desbordan
+      .filter((e) => !desbordan.some((otra) => otra !== e && e.contains(otra)))
+      .map((e) => `${[e.tagName.toLowerCase(), ...e.classList].join(".")}: ${(e.textContent ?? "").trim().slice(0, 40)}`);
     // En móvil, un texto que no corta línea ensancha el viewport: innerWidth deja de ser el ancho pedido.
-    return { h1, sinNombre, desborde: document.documentElement.scrollWidth - window.innerWidth, ventana: window.innerWidth };
+    return { h1, sinNombre, desborde: document.documentElement.scrollWidth - window.innerWidth, ventana: window.innerWidth, cajas };
   });
 }
 
@@ -1181,8 +1202,11 @@ async function pantallas() {
         const revision = await revisarPagina(p);
         const a11y = await axe(p);
         // El expediente es del #59: su huella SHA-256 completa (expediente.tsx:180) desborda a 390 px y la arregla el #59.
-        const desbordeDel59 = pantalla.clave === "expediente" && ancho === 390 && revision.desborde > 1;
-        if (desbordeDel59) anotar(`pantalla expediente ${tema} 390: desborde de ${revision.desborde} px del #59 (expediente.tsx:180), en curso`);
+        // Solo cuenta como del #59 si las únicas cajas desbordadas son esas huellas; en móvil ensancha el viewport.
+        const delSha = (caja) => /^p\.operacion-meta\.operacion-mono: SHA-256 /.test(caja);
+        const ajenas = revision.cajas.filter((caja) => !(pantalla.clave === "expediente" && delSha(caja)));
+        const desbordeDel59 = pantalla.clave === "expediente" && ancho === 390 && (revision.desborde > 1 || revision.ventana > ancho) && revision.cajas.length > 0 && ajenas.length === 0;
+        if (desbordeDel59) anotar(`pantalla expediente ${tema} 390: la huella SHA-256 ensancha la página a ${revision.ventana + revision.desborde} px, del #59 (expediente.tsx:180), en curso`);
         if (a11y.armazon.length > 0) anotar(`pantalla ${pantalla.clave} ${tema} ${ancho}: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)`);
         await foto(p, `pantalla-${pantalla.clave}-${tema}-${ancho}`);
         await nav.close();
@@ -1190,6 +1214,7 @@ async function pantallas() {
         exigir(revision.h1 === 1 && revision.sinNombre.length === 0 && (revision.desborde <= 1 || desbordeDel59) && (revision.ventana === ancho || desbordeDel59) && errores.length === 0,
           `pantalla ${pantalla.clave} ${tema} ${ancho}: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia`,
           JSON.stringify({ ...revision, errores }));
+        exigir(ajenas.length === 0, `pantalla ${pantalla.clave} ${tema} ${ancho}: ningún control ni texto se sale de su caja`, JSON.stringify(ajenas));
         exigir(a11y.propias.length === 0, `pantalla ${pantalla.clave} ${tema} ${ancho}: axe sin violaciones de R2`, JSON.stringify(a11y.propias));
       }
     }

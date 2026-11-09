@@ -183,12 +183,10 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               {...ligado("certificado", i)}
             />
           </div>
-          <div className="campo">
-            <label>
-              <input type="checkbox" name={`esOficial-${i}`} value="si" defaultChecked={valor(`esOficial-${i}`) === "si"} {...ligado("esOficial", i)} /> Es el
-              Oficial de Cumplimiento
-            </label>
-          </div>
+          <label className="confirmacion">
+            <input type="checkbox" name={`esOficial-${i}`} value="si" defaultChecked={valor(`esOficial-${i}`) === "si"} {...ligado("esOficial", i)} />
+            <span>Es el Oficial de Cumplimiento</span>
+          </label>
         </fieldset>
       ))}
       {vigentes.length > 0 ? (

@@ -202,13 +202,15 @@ export async function PerfilTransaccional({
             <form action={registrarEvaluacionAccion} className="formulario-pareja operacion-forma">
               <input type="hidden" name="companyId" value={companyId} />
               <input type="hidden" name="formId" value={randomUUID()} />
-              <fieldset className="campo operacion-ancho" {...error("evaluacion-titulo", "perfil")}>
+              <fieldset className="opciones operacion-ancho" {...error("evaluacion-titulo", "perfil")}>
                 <legend>El perfil transaccional</legend>
-                <label>
-                  <input type="radio" name="perfil" value="mantiene" defaultChecked /> Se mantiene
+                <label className="confirmacion">
+                  <input type="radio" name="perfil" value="mantiene" defaultChecked />
+                  <span>Se mantiene</span>
                 </label>
-                <label>
-                  <input type="radio" name="perfil" value="cambia" /> Cambia: registro los montos nuevos
+                <label className="confirmacion">
+                  <input type="radio" name="perfil" value="cambia" />
+                  <span>Cambia: registro los montos nuevos</span>
                 </label>
               </fieldset>
               <div className="campo">

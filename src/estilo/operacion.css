@@ -291,6 +291,11 @@ form + .operacion-lista {
     color: var(--tx3);
     font-size: 11.5px;
   }
+
+  /* Una clave larga (CURP, RFC) corta donde haga falta antes que invadir la otra columna. */
+  .operacion-tabla td.operacion-mono {
+    overflow-wrap: anywhere;
+  }
 }
 
 .operacion-error-titulo {
