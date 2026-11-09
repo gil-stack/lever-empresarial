@@ -1158,7 +1158,9 @@ STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT min(a.vence_el) FROM pld_caso_alertas ca JOIN pld_alertas a ON a.id = ca.alerta_id WHERE ca.caso_id = p_caso
+  -- Del operador del contexto y nunca de un caso que excluye a quien pregunta (60ª).
+  SELECT min(a.vence_el) FROM pld_caso_alertas ca JOIN pld_alertas a ON a.id = ca.alerta_id
+  WHERE ca.caso_id = p_caso AND a.operator_id = app_operador() AND NOT pld_caso_me_excluye(p_caso)
 $$;
 
 REVOKE ALL ON FUNCTION pld_caso_vence(uuid) FROM PUBLIC;
@@ -2107,6 +2109,23 @@ $$;
 REVOKE ALL ON FUNCTION pld_documento_para_descarga(uuid, uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION pld_documento_para_descarga(uuid, uuid) TO plataforma_sofipo;
 
+-- ¿La sesión votó un caso que excluye a la persona del contexto (60ª)? El acta
+-- nombra cada caso votado, su empresa y los votos: quien no ve el caso no ve el
+-- acta, ni su renglón ni su huella. Lee los votos por encima de su RLS, que ya
+-- los oculta a esa persona.
+CREATE FUNCTION pld_sesion_me_excluye(p_sesion uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (SELECT 1 FROM pld_votos v WHERE v.sesion_id = p_sesion AND pld_caso_me_excluye(v.caso_id))
+$$;
+
+REVOKE ALL ON FUNCTION pld_sesion_me_excluye(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION pld_sesion_me_excluye(uuid) TO plataforma_sofipo;
+
 CREATE FUNCTION pld_acta_para_descarga(p_acta uuid, p_peticion uuid)
 RETURNS TABLE (clave_blob text, nombre_archivo text, tipo_contenido text, sha256 text)
 LANGUAGE plpgsql
@@ -2120,7 +2139,7 @@ BEGIN
     RAISE EXCEPTION 'sin_rol_para_pld';
   END IF;
   SELECT * INTO acta FROM pld_actas a WHERE a.id = p_acta AND a.operator_id = app_operador();
-  IF acta.id IS NULL THEN
+  IF acta.id IS NULL OR pld_sesion_me_excluye(acta.sesion_id) THEN
     RAISE EXCEPTION 'documento_no_existe';
   END IF;
   INSERT INTO audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, peticion_id, origen)
@@ -2452,7 +2471,7 @@ BEGIN
   END LOOP;
   FOREACH tabla IN ARRAY ARRAY[
     'pld_evaluaciones', 'pld_modo_dictamen', 'pld_comite_integrantes', 'pld_comite_bajas', 'pld_comite_auditores',
-    'pld_comite_comunicaciones', 'pld_sesiones', 'pld_actas', 'pld_entidad', 'pld_periodicos'
+    'pld_comite_comunicaciones', 'pld_sesiones', 'pld_entidad', 'pld_periodicos'
   ] LOOP
     EXECUTE format(
       'CREATE POLICY %I ON %I FOR SELECT TO plataforma_sofipo USING ('
@@ -2467,6 +2486,11 @@ BEGIN
   END LOOP;
 END;
 $$;
+
+CREATE POLICY pld_actas_lectura ON pld_actas FOR SELECT TO plataforma_sofipo
+  USING (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento', 'auditoria'])) AND NOT pld_sesion_me_excluye(sesion_id));
+CREATE POLICY pld_actas_escritura ON pld_actas FOR INSERT TO plataforma_sofipo
+  WITH CHECK (operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento'])));
 
 GRANT SELECT ON pld_calendarios, pld_dias_inhabiles, pld_operaciones, pld_alertas TO plataforma_sofipo;
 GRANT SELECT, INSERT ON pld_perfiles, pld_evaluaciones, pld_parametros, pld_avisos, pld_casos, pld_caso_alertas,
@@ -2508,6 +2532,7 @@ AS $$
     WHEN 'pld_votos' THEN pld_caso_me_excluye((SELECT x.caso_id FROM pld_votos x WHERE x.id = p_identificador))
     WHEN 'pld_dictamenes' THEN pld_caso_me_excluye((SELECT x.caso_id FROM pld_dictamenes x WHERE x.id = p_identificador))
     WHEN 'pld_reportes' THEN pld_caso_me_excluye((SELECT x.caso_id FROM pld_reportes x WHERE x.id = p_identificador))
+    WHEN 'pld_actas' THEN pld_sesion_me_excluye((SELECT x.sesion_id FROM pld_actas x WHERE x.id = p_identificador))
     ELSE false
   END, false)
 $$;

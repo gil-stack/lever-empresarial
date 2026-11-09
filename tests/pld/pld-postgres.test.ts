@@ -36,6 +36,7 @@ import {
   emitirAviso,
   type EntradaIntegrante,
   leerCaso,
+  leerComite,
   leerEvaluacionesPendientes,
   leerParametros,
   leerPerfiles,
@@ -605,6 +606,29 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await assert.rejects(cargarActaFirmada(cum, { formId: randomUUID(), sesionId: S2, archivo: { nombre: "otra.pdf", bytes: PDF } }, { almacen }), /acta_ya_cargada/);
           await descargarActa(aud, acta, { leer: leerDelAlmacen });
           assert.equal(await contar("select count(*)::int as n from audit_log where accion = 'pld_acta_descargada' and identificador = $1", [acta]), 1);
+          // r2-base-N2 (60ª): el acta nombra cada caso votado, su empresa y los votos. Si la sesión votó el caso
+          // confidencial, la persona excluida no la descarga ni ve su renglón, su huella o su evento.
+          await registrarPropuesta(cum, { casoId: casoConfidencial, formId: randomUUID(), propuesta: "reportar_interna", justificacion: "Instrucción de borrar un expediente" });
+          const propuestaConfidencial = String((await uno("select id from pld_propuestas where caso_id = $1", [casoConfidencial])).id);
+          for (const quien of [PS, S, I1]) await votar(quien, "a_favor", S3, propuestaConfidencial);
+          const actaConfidencial = randomUUID();
+          await cargarActaFirmada(cum, { formId: actaConfidencial, sesionId: S3, archivo: { nombre: "acta-firmada.pdf", bytes: PDF } }, { almacen });
+          await assert.rejects(descargarActa(cum2, actaConfidencial, { leer: leerDelAlmacen }), /documento_no_existe/);
+          await descargarActa(cum, actaConfidencial, { leer: leerDelAlmacen });
+          await descargarActa(cum2, acta, { leer: leerDelAlmacen });
+          const verActa = (userId: string) => sofipo(userId, async (c) => ({
+            acta: Number((await c.query("select count(*)::int as n from pld_actas where id = $1", [actaConfidencial])).rows[0].n),
+            eventos: Number((await c.query("select count(*)::int as n from audit_log where entidad = 'pld_actas' and identificador = $1", [actaConfidencial])).rows[0].n),
+          }));
+          assert.deepEqual(await verActa(CUM2), { acta: 0, eventos: 0 });
+          assert.deepEqual(await verActa(CUM), { acta: 1, eventos: 2 });
+          assert.equal((await leerComite(cum2)).sesiones.find((s) => s.id === S3)?.acta, null);
+          assert.equal((await leerComite(cum)).sesiones.find((s) => s.id === S3)?.acta?.id, actaConfidencial);
+          // Tampoco por la función del plazo: ni la persona excluida ni otro operador lo obtienen con el id.
+          const plazo = (userId: string, op = operador) => sofipo(userId, async (c) => (await c.query("select pld_caso_vence($1)::text as d", [casoConfidencial])).rows[0].d as string | null, op);
+          assert.ok(await plazo(CUM));
+          assert.equal(await plazo(CUM2), null);
+          assert.equal(await plazo(AJENA, otroOperador), null);
 
           // Dictamen por Comité: el resultado es la propuesta aprobada y la fecha la de la sesión (40ª).
           await assert.rejects(dictaminarCaso(cum, { superficie: "sofipo", segundoFactor: { metodo: "totp", en: new Date(Date.now() - 3_600_000) } }, {
