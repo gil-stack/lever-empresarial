@@ -484,6 +484,11 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           // Área y cargo van tal cual en el aviso de la 49ª: también rechazan.
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, area: "Dirección\u00adGeneral" }, secretario, oficial] }), /invisible_area/);
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, cargoEntidad: "Director\u000bGeneral" }, secretario, oficial] }), /invisible_cargoEntidad/);
+          // Default_Ignorable_Code_Point (novena revisión del #59): relleno hangul y selectores de variación.
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, nombres: "Rodr\u3164iguez" }, secretario, oficial] }), /invisible_nombres/);
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, segundoApellido: "Pe\ufe0fna" }, secretario, oficial] }), /invisible_segundoApellido/);
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, area: "Direcci\u180bon General" }, secretario, oficial] }), /invisible_area/);
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, primerApellido: "Ruiz\u{E0100}" }, secretario, oficial] }), /invisible_primerApellido/);
           assert.equal(await contar("select count(*)::int as n from pld_comite_integrantes"), 0);
           await registrarIntegrantes(cum, { integrantes: [presidente, secretario, oficial, vocal, integrante(PS, "PRESIDENTE", "SUPLENTE", "Pablo", { suplenteDe: P })] });
           assert.deepEqual(await uno("select nombres, primer_apellido, segundo_apellido, area from pld_comite_integrantes where id = $1", [P]),
@@ -492,6 +497,7 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [], sustituye: { integranteId: I2, sustituidoEl: sumarDias(designado, -1), motivo: "Sustitución de prueba" } }), /comite_sustitucion_antes_de_designacion/);
           await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor\u2060Interno", cargoEntidad: "Auditor", designadoEl: designado }), /invisible_nombre/);
           await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor\u0085interno", designadoEl: designado }), /invisible_cargoEntidad/);
+          await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor\ufe0fInterno", cargoEntidad: "Auditor", designadoEl: designado }), /invisible_nombre/);
           await registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor", designadoEl: designado });
 
           // 49ª: comunicación al SITI con su folio; repetido o ajeno, no.
@@ -499,6 +505,7 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await registrarComunicacion(cum, { formId: randomUUID(), folio: "SITI-0001", recibidoEn: ayer, integrantes: [P, S, I1, I2, PS], bajas: [] });
           await assert.rejects(registrarComunicacion(cum, { formId: randomUUID(), folio: "SITI-0001", recibidoEn: ayer, integrantes: [P], bajas: [] }), /folio_repetido/);
           await assert.rejects(registrarComunicacion(cum, { formId: randomUUID(), folio: "SITI\t0009", recibidoEn: ayer, integrantes: [P], bajas: [] }), /invisible_folio/);
+          await assert.rejects(registrarComunicacion(cum, { formId: randomUUID(), folio: "SITI\u31640009", recibidoEn: ayer, integrantes: [P], bajas: [] }), /invisible_folio/);
           await assert.rejects(registrarComunicacion(cum, { formId: randomUUID(), folio: "SITI-0002", recibidoEn: ayer, integrantes: [randomUUID()], bajas: [] }), /comunicacion_cubre_ajenos/);
           await assert.rejects(registrarComunicacion(cum, { formId: randomUUID(), folio: "SITI-0003", recibidoEn: `${sumarDias(hoy, 2)}T10:00`, integrantes: [P], bajas: [] }), /acuse_fecha_futura|dato_invalido/);
 

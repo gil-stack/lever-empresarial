@@ -59,7 +59,8 @@ describe("avisos de PLD dentro de aviso.tsx", () => {
         if (entrada.isDirectory()) {
           if (entrada.name !== "pld") recorrer(ruta);
         } else if (/\.tsx?$/.test(entrada.name) && !entrada.name.endsWith(".test.ts")) {
-          for (const m of readFileSync(join(raiz, ruta), "utf8").matchAll(/ErrorDeDominio\("([a-zA-Z0-9_]+)"\)/g)) lanzados.add(m[1]!);
+          // `new ErrorDeDominio("…")` y el `super("…")` de las clases que la extienden.
+          for (const m of readFileSync(join(raiz, ruta), "utf8").matchAll(/(?:ErrorDeDominio|super)\("([a-z][a-zA-Z0-9_]+)"\)/g)) lanzados.add(m[1]!);
         }
       }
     };
@@ -67,7 +68,10 @@ describe("avisos de PLD dentro de aviso.tsx", () => {
     for (const archivo of readdirSync(join(raiz, "db/migrations")).filter((a) => a.endsWith(".sql") && !a.startsWith("0030"))) {
       for (const m of readFileSync(join(raiz, "db/migrations", archivo), "utf8").matchAll(/raise exception '([a-zA-Z0-9_]+)'/gi)) lanzados.add(m[1]!);
     }
-    assert.ok(lanzados.has("dato_invalido_curp") && lanzados.has("conservacion_no_se_borra"), "la búsqueda encuentra los códigos del expediente y de 0028");
+    assert.ok(
+      lanzados.has("dato_invalido_curp") && lanzados.has("expediente_datos_incompletos") && lanzados.has("conservacion_no_se_borra"),
+      "la búsqueda encuentra los códigos del expediente (también los de una subclase) y de 0028",
+    );
     assert.deepEqual(Object.keys(MENSAJES_PLD).filter((codigo) => lanzados.has(codigo)).sort(), ["cliente_ausente", "conservacion_no_se_borra", "formulario_ya_aplicado"]);
   });
 
