@@ -1165,6 +1165,27 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           const deCum = await conteosDe(cum);
           assert.ok(deCum2.get("pld_alertas")! < deCum.get("pld_alertas")!);
           assert.ok(deCum2.get("pld_casos")! < deCum.get("pld_casos")!);
+          // r2-serv-N3: igual para Auditoría, que sí descarga el manifiesto. Un aviso la menciona, Cumplimiento abre su
+          // caso y le agrega una nota: el manifiesto de AUD no cambia (es lo que su RLS le deja ver) y el de Cumplimiento sí.
+          const audAntes = await conteosDe(aud);
+          const contraAud = await emitirAviso(ori, {
+            formId: randomUUID(), tipo: "posible_interna_preocupante", companyId: beta, mencionada: AUD, superior: "",
+            descripcion: "El auditor pidió copia del expediente sin una revisión programada.",
+          });
+          const casoContraAud = await abrirCaso(cum, { formId: randomUUID(), alertaId: String((await uno("select id from pld_alertas where aviso_id = $1", [contraAud.id])).id) });
+          await agregarNota(cum, { casoId: casoContraAud, formId: randomUUID(), texto: "Se revisan los accesos del auditor al expediente." });
+          const audDespues = await conteosDe(aud);
+          for (const tabla of tablasConExclusion.filter((t) => audDespues.has(t))) {
+            const visibles = await sofipo(AUD, async (c) => Number((await c.query(`select count(*)::int as n from ${tabla} where company_id = $1`, [beta])).rows[0].n));
+            assert.equal(audDespues.get(tabla), visibles, `AUD ${tabla}`);
+            // audit_log sí sube: la descarga del manifiesto de AUD es su propio evento.
+            if (tabla !== "audit_log") assert.equal(audDespues.get(tabla), audAntes.get(tabla), `AUD no ve el caso nuevo en ${tabla}`);
+          }
+          assert.equal(audDespues.get("audit_log"), audAntes.get("audit_log")! + 1, "AUD solo ve su propia descarga");
+          const deCumDespues = await conteosDe(cum);
+          assert.equal(deCumDespues.get("pld_alertas"), deCum.get("pld_alertas")! + 1);
+          assert.equal(deCumDespues.get("pld_casos"), deCum.get("pld_casos")! + 1);
+          assert.equal(deCumDespues.get("pld_notas"), deCum.get("pld_notas")! + 1);
           await assert.rejects(async () => {
             for await (const _ of manifiestoDeConservacion(ori, { companyId: beta, desde, hasta: hoy, pagina: 1, cursor: null })) void _;
           }, /sin_permiso_operacion/);

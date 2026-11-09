@@ -58,6 +58,14 @@ function sql(consulta, url = DUENO) {
   return execFileSync("psql", [url, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1", "-c", consulta], { encoding: "utf8" }).trim();
 }
 const cuenta = (desde) => Number(sql(`select count(*) from ${desde}`));
+const OPERADOR = sql("select id from operators order by alta_en limit 1");
+/** Lo que una persona del personal ve con su RLS: el rol de la aplicación y su contexto, como lo fija el servidor. */
+function cuentaComo(userId, desde) {
+  const salida = sql(`begin; set local role plataforma_sofipo;
+    select set_config('app.company_id', '', true), set_config('app.user_id', '${userId}', true), set_config('app.operator_id', '${OPERADOR}', true);
+    select count(*) from ${desde}; commit;`);
+  return Number(salida.split("\n").at(-1));
+}
 /** Una sentencia que la base debe rechazar; devuelve el mensaje. */
 function rechazo(url, sentencia) {
   try {
@@ -857,6 +865,25 @@ async function flujo13() {
   exigir((await p.content()).includes("Descargó el manifiesto de conservación"), "13. Cumplimiento ve el evento en la bitácora");
   await foto(p, "f13-bitacora-con-el-manifiesto");
   await cerrar(celia, "Celia");
+
+  // r2-serv-N3 (60ª): Aurelio, mencionado en el aviso del flujo 5, baja el mismo manifiesto. Cada conteo de PLD es lo
+  // que su RLS le deja ver: por la diferencia con el total no se entera del aviso ni de su caso.
+  const aurelio = await abrir("aurelio");
+  await ir(aurelio.p, "/operacion/conservacion");
+  await aurelio.p.locator("#manifiesto-empresa").selectOption(valor);
+  const suyo = await descargar(aurelio.p, () => aurelio.p.getByRole("button", { name: "Descargar manifiesto" }).click());
+  const filas = (bytes) => Object.fromEntries(bytes.toString("utf8").trim().split("\n").map((l) => JSON.parse(l)).filter((l) => "tabla" in l).map((l) => [l.tabla, Number(l.filas)]));
+  const deAurelio = filas(suyo.bytes);
+  const deCelia = filas(manifiesto.bytes);
+  for (const tabla of ["pld_alertas", "pld_avisos", "pld_casos", "pld_notas", "pld_documentos", "pld_propuestas", "pld_dictamenes", "pld_reportes"]) {
+    if (!(tabla in deAurelio)) continue;
+    const visibles = cuentaComo(E.IDS.aurelio, `${tabla} where company_id = '${TALLER}'`);
+    exigir(deAurelio[tabla] === visibles, `13. manifiesto de Aurelio: ${tabla} cuenta lo que su RLS le deja ver (${visibles})`, String(deAurelio[tabla]));
+  }
+  exigir(deAurelio.pld_avisos < deCelia.pld_avisos && deAurelio.pld_alertas < deCelia.pld_alertas,
+    "13. Aurelio no cuenta el aviso que lo menciona ni su alerta", JSON.stringify({ aurelio: deAurelio, celia: deCelia }));
+  writeFileSync(`${DIR}/datos/manifiesto-taller-aurelio.ndjson`, suyo.bytes);
+  await cerrar(aurelio, "Aurelio");
 }
 
 async function flujo14() {
