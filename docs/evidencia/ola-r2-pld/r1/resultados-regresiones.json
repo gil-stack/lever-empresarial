@@ -745,6 +745,98 @@
     },
     {
       "ok": true,
+      "texto": "serv-nuevo-7. con JavaScript, la entrada de Operación con la contraseña equivocada: 200, su Origin y su aviso"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-7. sin JavaScript, la entrada de Operación con la contraseña equivocada: 200, su Origin y su aviso"
+    },
+    {
+      "ok": true,
+      "texto": "textos invisibles. con JavaScript, el giro «\\u3164» se guarda vacío y «Enviar versión 1» dice «Falta el giro.»; sigue en borrador y sin evento"
+    },
+    {
+      "ok": true,
+      "texto": "textos invisibles. sin JavaScript, el giro «\\u3164» se guarda vacío y «Enviar versión 1» dice «Falta el giro.»; sigue en borrador y sin evento"
+    },
+    {
+      "ok": true,
+      "texto": "textos invisibles. con JavaScript, el dictamen observado con «Revisar» y tres U+3164 (10 para la base, 7 que se ven): motivo_corto en el motivo y sin dictamen"
+    },
+    {
+      "ok": true,
+      "texto": "textos invisibles. sin JavaScript, el dictamen observado con doce U+3164: motivo_invalido en el motivo y sin dictamen"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. con JavaScript, /operacion/clientes/<novena>/expediente?aviso=a&aviso=b&en=x&en=y responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. con JavaScript, /operacion/clientes?aviso=a&aviso=b responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. con JavaScript, /operacion/clientes/<novena>?aviso=a&aviso=b responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. con JavaScript, /operacion/clientes/<novena>/expediente?aviso=expediente_datos_incompletos&faltan=giro&faltan=domicilio responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. con JavaScript, con «faltan» repetido queda el aviso general, sin detalle"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. sin JavaScript, /operacion/clientes/<novena>/expediente?aviso=a&aviso=b&en=x&en=y responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. sin JavaScript, /operacion/clientes?aviso=a&aviso=b responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. sin JavaScript, /operacion/clientes/<novena>?aviso=a&aviso=b responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. sin JavaScript, /operacion/clientes/<novena>/expediente?aviso=expediente_datos_incompletos&faltan=giro&faltan=domicilio responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. sin JavaScript, con «faltan» repetido queda el aviso general, sin detalle"
+    },
+    {
+      "ok": true,
+      "texto": "campo de archivo. sin JavaScript, archivo_demasiado_grande: aviso, el control del archivo marcado, ligado al aviso y con el foco; ningún documento"
+    },
+    {
+      "ok": true,
+      "texto": "campo de archivo. con JavaScript, archivo_no_admitido: aviso, el control del archivo marcado, ligado al aviso y con el foco; ningún documento"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_documento_cargado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "desborde. con JavaScript, en el expediente de Ébano (7 SHA-256) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)"
+    },
+    {
+      "ok": true,
+      "texto": "desborde. con JavaScript, en el expediente de Laboratorio Novena (el nombre de archivo de 136 caracteres) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)"
+    },
+    {
+      "ok": true,
+      "texto": "desborde. sin JavaScript, en el expediente de Ébano (7 SHA-256) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)"
+    },
+    {
+      "ok": true,
+      "texto": "desborde. sin JavaScript, en el expediente de Laboratorio Novena (el nombre de archivo de 136 caracteres) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)"
+    },
+    {
+      "ok": true,
       "texto": "consola del navegador limpia en las regresiones"
     }
   ]

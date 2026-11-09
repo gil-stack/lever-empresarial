@@ -1,0 +1,122 @@
+{
+  "fases": [
+    "f15"
+  ],
+  "segundos": 27,
+  "verdes": 28,
+  "rojos": 0,
+  "resultados": [
+    {
+      "ok": true,
+      "texto": "aviso «pld_aviso_emitido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Omar"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_modo_cambiado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_caso_abierto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_propuesta_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "15. el Comité votó el caso del aviso sobre Ciro (4 votos)"
+    },
+    {
+      "ok": true,
+      "texto": "15. Celia registra otra sesión de hoy, sin el caso"
+    },
+    {
+      "ok": true,
+      "texto": "15. Ciro ve la sesión sin su caso y no la que lo votó"
+    },
+    {
+      "ok": true,
+      "texto": "15. la página de la sesión oculta le responde 404, como una inexistente"
+    },
+    {
+      "ok": true,
+      "texto": "15. ni genera su acta: «Acta no disponible», igual que con una sesión inexistente"
+    },
+    {
+      "ok": true,
+      "texto": "15. subir un acta a la sesión oculta: sesion_no_existe y la misma página que con una inexistente"
+    },
+    {
+      "ok": true,
+      "texto": "15. y no quedó ninguna acta en la sesión oculta"
+    },
+    {
+      "ok": true,
+      "texto": "15. el acta que genera Celia nombra el caso votado"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_acta_cargada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "15. Celia sube el acta completa (doble clic = 1 acta)"
+    },
+    {
+      "ok": true,
+      "texto": "15. con el acta, la sesión ya no ofrece votar (48ª)"
+    },
+    {
+      "ok": true,
+      "texto": "15. con el acta ya cargada, Ciro sigue recibiendo sesion_no_existe"
+    },
+    {
+      "ok": true,
+      "texto": "15. la consola de Ciro solo trae los 4 avisos de 404 de esas visitas"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Ciro"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «aviso_sin_analista» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "15. Personal lo explica: «Antes da de alta a otra persona de Cumplimiento…»"
+    },
+    {
+      "ok": true,
+      "texto": "15. Celia conserva Cumplimiento y no queda evento"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «rol_retirado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "15. a Ciro sí se le quita Cumplimiento: Celia analiza lo abierto"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «rol_asignado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "15. y se le devuelve"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Ofelia"
+    }
+  ]
+}

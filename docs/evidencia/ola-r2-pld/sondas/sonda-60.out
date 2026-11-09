@@ -11,7 +11,7 @@
     /F1 10 Tf 1 0 0 1 56 619 Tm (Asistió el auditor Aurelio Auditoría, con voz y sin voto \(47ª\).) Tj
     /F1 10 Tf 1 0 0 1 56 606 Tm () Tj
     /F2 10 Tf 1 0 0 1 56 593 Tm (Resoluciones) Tj
-    /F2 10 Tf 1 0 0 1 56 580 Tm (Caso 1DD4B6CD \(Beta Logística SA de CV\)) Tj
+    /F2 10 Tf 1 0 0 1 56 580 Tm (Caso B226A0E1 \(Beta Logística SA de CV\)) Tj
     /F1 10 Tf 1 0 0 1 56 567 Tm (Propuesta: Reportar como operación interna preocupante.) Tj
     /F1 10 Tf 1 0 0 1 56 554 Tm (JOSE MARIA NUÑEZ PEÑA: a favor) Tj
     /F1 10 Tf 1 0 0 1 56 541 Tm (SARA NUÑEZ PEÑA: a favor) Tj
@@ -27,7 +27,7 @@
     /F1 10 Tf 1 0 0 1 56 411 Tm (CNBV.) Tj
     /F1 8 Tf 1 0 0 1 56 28 Tm (Página 1 de 1) Tj
 == B. La misma acta generada por CUM2 (excluida) — resoluciones
-    ¿menciona el caso? false · ¿«No se votaron casos»? true
+    actaEnPdf(CUM2) → error: sesion_no_existe
 == C. Lo que la pantalla de Alertas le muestra a CUM2 y lo que pasa si abre el caso
    alertas «sin caso» que ve CUM2: [ 'excede_perfil caso=null' ]
    abrirCaso(CUM2, alerta de la regla) → error: alerta_no_existe
@@ -38,5 +38,18 @@
    después de que CUM suma el aviso: CUM2 lee su caso → true
    CUM2 agrega otra nota a «su» caso → ok: undefined
 == E. Un aviso que excluye a toda Cumplimiento (CUM mencionada, CUM2 como superior)
-   ORI emite el aviso que excluye a CUM y a CUM2 → error: aviso_sin_cumplimiento
-   avisos guardados: 3 → 3
+src/server/pld/base.ts:145
+  if (codigo === "P0001" && CODIGOS_PLD.has(mensaje)) return new ErrorDeDominio(mensaje);
+                                                             ^
+
+ErrorDeDominio: aviso_sin_cumplimiento
+    at traducirPld (src/server/pld/base.ts:145:62)
+    at <anonymous> (src/server/pld/base.ts:169:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async conTransaccion (src/nucleo/db.ts:146:23)
+    at async unaVezPorFormulario (src/server/operacion/formulario.ts:37:12)
+    at async <anonymous> (<sondas>/sonda-60.mts:57:20) {
+  codigo: 'aviso_sin_cumplimiento'
+}
+
+Node.js v26.7.0

@@ -7,7 +7,7 @@
   {
     monto: '100000',
     clabe: '002180701150990012',
-    ocurrida_en: 2026-11-09T19:38:43.897Z
+    ocurrida_en: 2026-11-09T22:41:47.040Z
   }
 ] | alertas: []
 2. el cliente cambia la CLABE → { tipo: 'cambiada', pagosRegresados: 1, avisosEnviados: 0 } | {
@@ -38,12 +38,12 @@
   {
     monto: '100000',
     clabe: '002180701150990012',
-    ocurrida_en: 2026-11-09T19:38:43.897Z
+    ocurrida_en: 2026-11-09T22:41:47.040Z
   },
   {
     monto: '90000000',
     clabe: '002180701150990025',
-    ocurrida_en: 2026-11-09T19:38:43.913Z
+    ocurrida_en: 2026-11-09T22:41:47.116Z
   }
 ]
    alertas de Gamma (perfil $100,000.00/mes en pagos): [ { regla: 'excede_perfil', suma: '90000000' } ]

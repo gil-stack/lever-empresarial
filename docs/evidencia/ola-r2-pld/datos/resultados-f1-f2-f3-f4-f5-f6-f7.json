@@ -8,8 +8,8 @@
     "f6",
     "f7"
   ],
-  "segundos": 112,
-  "verdes": 157,
+  "segundos": 141,
+  "verdes": 161,
   "rojos": 0,
   "resultados": [
     {
@@ -238,7 +238,7 @@
     },
     {
       "ok": true,
-      "texto": "5. quien avisa ve su acuse con el folio D8EDA61B"
+      "texto": "5. quien avisa ve su acuse con el folio 78AE1786"
     },
     {
       "ok": true,
@@ -430,6 +430,14 @@
     },
     {
       "ok": true,
+      "texto": "7. la persona repetida en los renglones 2 y 4 marca el RFC del 4 con el foco, no el del 1 ni el del 2"
+    },
+    {
+      "ok": true,
+      "texto": "7. y no guarda a nadie"
+    },
+    {
+      "ok": true,
       "texto": "aviso «pld_integrantes_registrados» tras la acción"
     },
     {
@@ -607,6 +615,14 @@
     {
       "ok": true,
       "texto": "7. Celia confirmó con su app autenticadora"
+    },
+    {
+      "ok": true,
+      "texto": "7. el factor venció mientras escribía: pide «Confirma que eres tú», la justificación sigue escrita y nada va en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "7. al confirmar, la justificación sigue escrita"
     },
     {
       "ok": true,
