@@ -21,6 +21,13 @@ const nextConfig: NextConfig = {
         "/consola/proveedores/documento/:id",
         "/c/:empresa/consola/proveedores/documento/:id",
         "/operacion/clientes/:id/expediente/documento/:documentoId",
+        // Las descargas de PLD (Ola R2).
+        "/operacion/pld/casos/:id/documento/:documentoId",
+        "/operacion/pld/casos/:id/reporte",
+        "/operacion/comite/sesiones/:id/acta",
+        "/operacion/comite/actas/:actaId",
+        "/operacion/reportes/archivo",
+        "/operacion/conservacion/manifiesto",
       ].map((source) => ({
         source,
         headers: [{ key: "Content-Security-Policy", value: POLITICA_DESCARGA }],

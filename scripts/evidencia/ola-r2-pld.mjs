@@ -874,6 +874,14 @@ async function flujo13() {
   await ir(p, "/operacion/bitacora");
   exigir((await p.content()).includes("Descargó el manifiesto de conservación"), "13. Cumplimiento ve el evento en la bitácora");
   await foto(p, "f13-bitacora-con-el-manifiesto");
+  // r2-serv-N8: en next start, cada ruta de descarga de PLD llega con la política aislada (sandbox), no con la general.
+  const otro = "00000000-0000-4000-8000-000000000000";
+  for (const ruta of [`/operacion/pld/casos/${otro}/documento/${otro}`, `/operacion/pld/casos/${otro}/reporte`, `/operacion/comite/sesiones/${otro}/acta`,
+    `/operacion/comite/actas/${otro}`, "/operacion/reportes/archivo", "/operacion/conservacion/manifiesto"]) {
+    const respuesta = await p.request.get(new URL(ruta, BASE).toString(), { maxRedirects: 0 });
+    const politica = respuesta.headers()["content-security-policy"] ?? "";
+    exigir(/\bsandbox\b/.test(politica) && politica.includes("default-src 'none'"), `13. ${ruta.replace(otro, ":id").replace(otro, ":id")} responde con la política aislada`, politica);
+  }
   await cerrar(celia, "Celia");
 
   // r2-serv-N3 (60ª): Aurelio, mencionado en el aviso del flujo 5, baja el mismo manifiesto. Cada conteo de PLD es lo
