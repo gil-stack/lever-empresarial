@@ -673,6 +673,10 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           // r2-base-N5 (47ª): el auditor no forma parte del Comité, ni con el RFC ni con la CURP de un integrante vigente.
           await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor", rfc: vocal.rfc, curp: AUDITOR.curp, designadoEl: designado }), /comite_auditor_integrante/);
           await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor", rfc: AUDITOR.rfc, curp: vocal.curp, designadoEl: designado }), /comite_auditor_integrante/);
+          // r2-serv-N2: ni con el nombre de un integrante vigente, aunque cambien acentos, mayúsculas u orden de las palabras.
+          for (const nombre of ["Iván Núñez Peña", "IVAN NUNEZ PENA", "Peña Núñez, Iván"]) {
+            await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre, cargoEntidad: "Auditor", ...AUDITOR, designadoEl: designado }), /comite_auditor_integrante/, nombre);
+          }
           assert.equal(await contar("select count(*)::int as n from pld_comite_auditores"), 0);
           await registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor", ...AUDITOR, designadoEl: designado });
           // r2-base-N14: la base rechaza en folios, área, cargo y auditor los mismos invisibles que el servidor (INVISIBLE),
@@ -694,6 +698,9 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           }
           // Y al revés: el auditor vigente no se registra como integrante.
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [integrante(randomUUID(), "INTEGRANTE", "TITULAR", "Aurelio", { ...AUDITOR })] }), /comite_auditor_integrante/);
+          await assert.rejects(registrarIntegrantes(cum, {
+            integrantes: [integrante(randomUUID(), "INTEGRANTE", "TITULAR", "Interno", { primerApellido: "Auditor", segundoApellido: "" })],
+          }), /comite_auditor_integrante/, "con el nombre del auditor y otro RFC");
 
           // 49ª: comunicación al SITI con su folio; repetido o ajeno, no.
           const ayer = `${sumarDias(hoy, -1)}T10:00`;

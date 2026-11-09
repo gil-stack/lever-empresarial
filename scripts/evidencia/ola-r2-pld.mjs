@@ -565,6 +565,15 @@ async function flujo7() {
   exigir((await p.locator("#auditor-rfc").getAttribute("aria-describedby")) !== null, "7. el aviso queda ligado al campo RFC del auditor");
   exigir(cuenta("pld_comite_auditores") === 0, "7. el auditor rechazado no se guardó");
   await foto(p, "f7-auditor-con-rfc-de-integrante");
+  // r2-serv-N2: con el nombre de un integrante vigente (sin acentos y en otro orden) y RFC/CURP propios, tampoco.
+  await p.locator("#auditor-nombre").fill("garza solis, Ivan");
+  await p.locator("#auditor-cargo").fill("Auditor interno");
+  await p.locator("#auditor-rfc").fill("GASX820404AB9");
+  await p.locator("#auditor-curp").fill("GASX820404HNLRLVA9");
+  await p.locator("#auditor-designado").fill(DESIGNADO);
+  await enviar(p, p.getByRole("button", { name: "Registrar auditor" }), "comite_auditor_integrante");
+  exigir(cuenta("pld_comite_auditores") === 0, "7. el auditor con el nombre de un integrante vigente se rechaza y no se guarda");
+  await foto(p, "f7-auditor-con-nombre-de-integrante");
   await p.locator("#auditor-nombre").fill("Raquel Espinosa Lara");
   await p.locator("#auditor-cargo").fill("Auditora interna");
   await p.locator("#auditor-rfc").fill("ESLR780606AB6");

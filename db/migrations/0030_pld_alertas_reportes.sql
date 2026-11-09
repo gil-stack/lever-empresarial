@@ -1678,6 +1678,16 @@ AS $$
     AND NOT EXISTS (SELECT 1 FROM pld_comite_bajas b WHERE b.integrante_id = i.id AND b.sustituido_el <= p_dia)
 $$;
 
+-- r2-serv-N2 (47ª): el nombre completo de un integrante, comparable con el del auditor
+-- (lpb_normalizar de la 0028: sin acentos, mayúsculas y las palabras en orden). «XXXX»
+-- es el segundo apellido de quien no lo tiene, no un nombre.
+CREATE FUNCTION pld_nombre_de_integrante(i pld_comite_integrantes)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE
+SET search_path = public
+AS $$ SELECT lpb_normalizar(concat_ws(' ', i.nombres, i.primer_apellido, nullif(i.segundo_apellido, 'XXXX'))) $$;
+
 CREATE FUNCTION pld_comite_integrantes_revisar()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -1764,6 +1774,7 @@ DECLARE
   vigentes integer;
   auditor_rfc text;
   auditor_curp text;
+  auditor_nombre text;
 BEGIN
   SELECT count(*) INTO vigentes FROM pld_comite_vigentes(operador, 'infinity'::date);
   IF vigentes = 0 THEN
@@ -1801,10 +1812,11 @@ BEGIN
     RAISE EXCEPTION 'comite_persona_repetida';
   END IF;
   -- 47ª: el auditor interno no forma parte del Comité; el vigente es el último registrado.
-  SELECT a.rfc, a.curp INTO auditor_rfc, auditor_curp
+  SELECT a.rfc, a.curp, a.nombre INTO auditor_rfc, auditor_curp, auditor_nombre
   FROM pld_comite_auditores a WHERE a.operator_id = operador ORDER BY a.registrado_en DESC, a.id DESC LIMIT 1;
   IF auditor_rfc IS NOT NULL AND EXISTS (
-    SELECT 1 FROM pld_comite_vigentes(operador, 'infinity'::date) v WHERE v.rfc = auditor_rfc OR v.curp = auditor_curp
+    SELECT 1 FROM pld_comite_vigentes(operador, 'infinity'::date) v
+    WHERE v.rfc = auditor_rfc OR v.curp = auditor_curp OR pld_nombre_de_integrante(v) = lpb_normalizar(auditor_nombre)
   ) THEN
     RAISE EXCEPTION 'comite_auditor_integrante';
   END IF;
@@ -2131,7 +2143,8 @@ AS $$
 BEGIN
   PERFORM pg_advisory_xact_lock(hashtextextended('pld_comite:' || NEW.operator_id::text, 0));
   IF EXISTS (
-    SELECT 1 FROM pld_comite_vigentes(NEW.operator_id, 'infinity'::date) v WHERE v.rfc = NEW.rfc OR v.curp = NEW.curp
+    SELECT 1 FROM pld_comite_vigentes(NEW.operator_id, 'infinity'::date) v
+    WHERE v.rfc = NEW.rfc OR v.curp = NEW.curp OR pld_nombre_de_integrante(v) = lpb_normalizar(NEW.nombre)
   ) THEN
     RAISE EXCEPTION 'comite_auditor_integrante';
   END IF;
