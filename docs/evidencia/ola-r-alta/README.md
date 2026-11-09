@@ -6,9 +6,9 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r-alta
 | --- | --- | --- |
 | Flujos 0-12 | 147 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
 | Pantallas (3 temas × 1440/390) y contraste AA medido | 60 comprobaciones en verde, 0 en rojo; contraste mínimo 5.00 (Lever 1440) | `datos/resultados-pantallas-contraste.json` |
-| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;»; el representante, el socio y la razón social con un control, el giro y el cobro con el control como espacio, el RFC con tabulador, el alta y el área con su aviso y las fechas de Pagos en su campo; el aviso propio del carácter invisible en el socio, el representante, las razones sociales y el folio, el representante que conserva lo capturado, el documento extranjero y la Lista con tabulador, el motivo con un emoji compuesto y el contrato con «Vigente hasta»; el representante con un relleno hangul, el envío sin giro ni domicilio, las fechas del folio en su campo y la recuperación marcada en su tarjeta) | 186 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
+| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;»; el representante, el socio y la razón social con un control, el giro y el cobro con el control como espacio, el RFC con tabulador, el alta y el área con su aviso y las fechas de Pagos en su campo; el aviso propio del carácter invisible en el socio, el representante, las razones sociales y el folio, el representante que conserva lo capturado, el documento extranjero y la Lista con tabulador, el motivo con un emoji compuesto y el contrato con «Vigente hasta»; el representante con un relleno hangul, el envío sin giro ni domicilio, las fechas del folio en su campo y la recuperación marcada en su tarjeta; sin JavaScript la entrada, el giro, el dictamen y el archivo, las claves repetidas en la dirección, el foco del archivo rechazado y los valores largos a 390) | 209 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
 
-Corrida del 2026-11-09 sobre el head de este PR, con los arreglos de las nueve revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`; la carrera de F4 y F5 del CI, serv-nuevo-5, base-N24, base-N25, el aviso propio del carácter invisible y dos P3 de la re-verificación sobre `b2db0b5`; la bomba de fechas de `test:db`, base-N26, base-N27, serv-nuevo-6b y serv-nuevo-6d de la re-verificación sobre `a75d5e4`), sobre una base migrada de cero con la 0028 final. Las tres fases corrieron sobre el código final de la novena revisión.
+Corrida del 2026-11-09 sobre el head de este PR, con los arreglos de las diez revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`; la carrera de F4 y F5 del CI, serv-nuevo-5, base-N24, base-N25, el aviso propio del carácter invisible y dos P3 de la re-verificación sobre `b2db0b5`; la bomba de fechas de `test:db`, base-N26, base-N27, serv-nuevo-6b y serv-nuevo-6d de la re-verificación sobre `a75d5e4`; N5 del CI, base-N28, serv-nuevo-7, los textos que no se ven, el JSDoc, dos reglas de axe, el campo de archivo y el desborde a 390 de la re-verificación sobre `32e49b8`), sobre una base migrada de cero con la 0028 final. Las tres fases corrieron sobre el código final de la décima revisión.
 
 ## Cómo se corre
 
@@ -30,6 +30,7 @@ Puertos de esta línea: Postgres 5551, `next start` 4811 (y 3151 para la base de
 6. `next start -p 4811` con `DATABASE_URL` de la aplicación (la deja `ESTADO`), `NODE_ENV=production` y `NODE_OPTIONS=--import=tests/e2e/blob-local/preload.mjs`. Su salida va a un archivo: es el `REGISTRO_SERVIDOR` de las regresiones.
 7. `BASE=http://localhost:4811 FASES=flujos node scripts/evidencia/ola-r-alta.mjs`, después `FASES=pantallas,contraste` y al final `FASES=regresiones` con `REGISTRO_SERVIDOR` y `BASE_ARRANQUE`, sobre la misma base. Las regresiones tardan más de 10 minutos. La fase `lumbre` de `preparar.ts` la llama el flujo 1. Las regresiones parten del estado que dejan los flujos y numeran sus capturas aparte (`rNN-…`).
 8. Antes de `FASES=regresiones`: `preparar.ts arranque` crea la base aparte `ola_r_alta_arranque` (solo las migraciones: un operador y 0 personal, como Preview) y deja su conexión en `ESTADO`; un segundo `next start -p 3151` con esa `DATABASE_URL` y `URL_APLICACION=http://localhost:3151` sirve sus enlaces (`BASE_ARRANQUE`). La quinta revisión corre ahí el comando de arranque.
+9. Con el mismo `next start` de 4811: `ESTADO=… BASE=http://localhost:4811 node scripts/evidencia/ola-r-alta/axe.mjs`. Corre las dos reglas de axe de la décima revisión con los 5 roles, a 1440 y 390, e imprime lo que oye un lector del logotipo y de la bandeja.
 
 ## Reloj fijo
 
@@ -540,6 +541,140 @@ Cada corrida imprime los tres relojes al empezar. La salida cruda está en `dato
 - **El aviso de lo que falta lo arma la página.** La acción manda solo las claves (`faltan=giro,domicilio`), y la página las convierte en palabras con `fraseDeLoQueFalta`. Las claves desconocidas se ignoran; si no se reconoce ninguna, queda solo el aviso general.
 - **Un solo `en` en Recuperaciones.** Solo un id con forma de uuid llega a la dirección. Con cualquier otro valor no se marca nada.
 
+### Décima revisión (re-verificación sobre `32e49b8`)
+
+El CI de `32e49b8` cayó en N5. Los revisores cerraron la bomba de fechas, N26, N27, 6a, 6b y 6d, y encontraron además:
+
+- base-N28: una clave repetida en la dirección;
+- serv-nuevo-7 (P2), que viene de main y ya estaba en producción;
+- los textos obligatorios hechos solo de invisibles (P3);
+- el JSDoc de `enviarVersion`;
+- dos reglas de axe que vienen de main;
+- el desborde del SHA-256 a 390;
+- el campo de archivo que no recibía el foco.
+
+El recorrido sin JavaScript de esta ronda encontró dos más, que también van aquí:
+
+- el fragmento de la dirección (`#documentos-titulo`) le quitaba el foco al campo con error;
+- sin JavaScript, la barra superior quedaba transparente y se encimaba con el contenido (viene de main).
+
+Todo va en este PR. **La 0028 no cambia.**
+
+**CI de `32e49b8`: N5 en `test:db`.** La suite de Postgres cayó 78/80 en N5 (cierre de un caso mientras otra pestaña carga la Lista), con `could not serialize access due to concurrent update` (40001). El `where` era `UPDATE companies … ← lpb_cotejar_empresa ← lpb_cotejar_operador ← lpb_cargas_cotejar`. La prueba no cambió en esta ronda y pasó en el CI de `a75d5e4`.
+
+- **Causa.** Las cuatro fases de N5 crean la promesa de la pestaña que espera el candado, hacen otros `await` y la revisan después. En las dos fases de REPEATABLE READ esa promesa debe rechazarse con 40001, y es lo que pasó: es la fase «el cierre primero», donde la carga aborta en su `commit`. Si el error de la carga llega por su socket antes que la respuesta del `commit` del cierre, la promesa se rechaza sin manejo. Node lo reporta como rechazo sin manejar y node:test lo cuenta como falla de la prueba en curso. Depende del orden en que llegan las respuestas de dos sockets; por eso salió en el CI y no en local.
+- **No es un hallazgo de producto.** Ese 40001 solo sale con REPEATABLE READ o SERIALIZABLE: en READ COMMITTED, PostgreSQL espera y vuelve a evaluar la fila. Las dos fases de READ COMMITTED pasaron igual en las corridas.
+- **Rojo determinista.** `yaRespondio` espera a que la otra pestaña termine su sentencia en la base (`pg_stat_activity.state` deja de ser `active`) y a que el cliente la lea. Así fuerza el orden del CI. Con el patrón viejo y ese orden, N5 falla en 3 de 3 corridas con el error del CI, el mismo `where` y `GetTupleForTrigger` (`datos/n5-rojo-fase3-orden-del-ci.txt`). Con la fase 3 arreglada, la fase 4 cae igual (2 de 2), ahora por el camino del cierre: `lpb_coincidencias_revisar` (`datos/n5-rojo-fase4-orden-del-ci.txt`).
+- **Arreglo.** Las promesas que deben abortar nacen dentro de `assert.rejects`. Las que deben salir bien nacen con `enEspera`, que engancha su manejo al crearlas sin tragarse el error del `await` de abajo. `yaRespondio` se queda en las cuatro fases: la prueba corre siempre con el orden que tumbó el CI.
+- **Barrido.** En las suites de Postgres solo N5 creaba promesas que se esperaban más tarde. H3/H6 (`:1162`), H6/H7 (`:1315`) y F4/F5 ya enganchan el rechazo al crear la promesa. Fuera de la zona, `tests/proveedores/pagos-proveedores.test.ts:364` tiene el mismo patrón en un `commit` que debe salir bien: si fallara, la prueba caería igual, solo que con otro reporte.
+- **Validación.** Corridas seguidas de la suite completa `alta-regulada-postgres.test.ts` con los 18 núcleos ocupados (18 procesos `yes`): 100 corridas y 0 fallas (`datos/n5-100-corridas-con-carga.txt`). El revisor del servidor llegó al mismo arreglo, con una demora fija de 200 ms como mutación. Después, la suite de Postgres completa: 80/80.
+
+**base-N28: una clave repetida en la dirección.**
+
+- **Causa.** Next entrega una lista (`string[]`) cuando una clave se repite: `?aviso=a&aviso=b`. Con una lista, `codigo.startsWith` (`aviso.tsx`) tumbaba cualquier página de Operación con un 500. `faltan.split` hacía lo mismo en el expediente.
+- **Arreglo.** Las 11 páginas de Operación que leen `searchParams` pasan por `soloTexto` (`src/app/operacion/busqueda.ts`): cada clave queda como texto, o fuera. El tipo `Parametros<…>` declara `string | string[]`, así que TypeScript obliga a pasar por ahí. Una clave repetida se descarta, como si no viniera.
+
+**serv-nuevo-7 (P2): sin JavaScript, las acciones daban 500. Ya estaba en producción desde `c9ee947`.**
+
+- **Causa.** `next.config.ts` ponía `Referrer-Policy: no-referrer` en todo el sitio. Según el estándar Fetch, el envío nativo de un formulario (un POST en modo `navigate`) con esa política lleva `Origin: null`, y Next rechaza la acción de servidor con un 500. Pasa sin JavaScript y al hacer clic antes de que la página hidrate. Con la página hidratada no pasa: la acción sale por `fetch` (modo `cors`) y lleva el origen real.
+- **Arreglo.**
+  - `Referrer-Policy: same-origin` en todo el sitio. Sigue sin mandar la dirección a otros sitios, así que un enlace con token no sale de aquí.
+  - La página de la invitación ponía `referrer: "no-referrer"` en su metadata, y la etiqueta `<meta>` le gana al encabezado: también pasa a `same-origin`.
+  - No queda otra regla con `no-referrer`.
+- **Rojo.** En la e2e sin JavaScript, el `Origin` del POST llega como `"null"` y la respuesta es 500. Pasa en el alta de un prospecto en Operación y al aceptar la invitación (`datos/e2e-rojo-origen-null-32e49b8.txt`).
+
+**Textos que no se ven.**
+
+- **Causa.**
+  - Un giro de puro U+3164 contaba como capturado: `datosQueFaltan` solo miraba `null`.
+  - Diez U+3164 pasaban como motivo: el mínimo contaba puntos de código.
+- **Arreglo.**
+  - `tieneAlgoVisible` y `caracteresVisibles` (`control.ts`). Un texto sin nada que se vea (descontando espacios, controles y `\p{Default_Ignorable_Code_Point}`) está vacío:
+    - `textoOperativo` y `textoMultilinea` devuelven `null`;
+    - los textos libres opcionales del expediente se guardan vacíos (`libre`): giro, nacionalidad, domicilio, quién designó y el detalle del documento;
+    - `datosQueFaltan` los cuenta como faltantes.
+  - `motivoEscrito` cuenta solo lo que se ve: diez U+3164 dan `motivo_invalido`, y «Revisar» con tres U+3164 dan `motivo_corto`. Para la base son 10 caracteres y aquí son 7. El servidor es más estricto que la base, nunca al revés.
+- **Lo que no cambia.**
+  - `CONTROL` sigue igual.
+  - Las identidades y los identificadores conservan el aviso de su campo: `INVISIBLE` se revisa antes.
+  - El emoji con U+FE0F o unido con U+200D se queda tal cual en un texto con contenido («❤️» sí se ve).
+
+**El JSDoc de `enviarVersion`** quedó encima de `ExpedienteIncompleto`; vuelve a su función.
+
+**Dos reglas de axe que vienen de main.**
+
+- **`aria-prohibited-attr`.** `.bandeja-cuenta` era un `<span>` sin rol con `aria-label`. Un lector puede ignorarlo y el número es `aria-hidden`, así que nadie oía cuántas decisiones hay pendientes. Ahora lleva dentro `<span className="solo-lector">N pendientes</span>`, sin coma: el título es flexible, y con la coma Chrome leía «Necesita tu decisión , 1 pendiente». Probé cuatro formas en Chromium con la consulta exacta de Playwright, y solo sin la coma el nombre queda limpio: «Necesita tu decisión 1 pendiente». Solo cambian las líneas del contador (90-97) de `bandeja.tsx`.
+- **`label-content-name-mismatch` (WCAG 2.5.3).** El enlace del logotipo de Operación tenía un `aria-label` que no contenía el texto visible.
+  - Ahora el logotipo va dentro de un `<span aria-hidden="true">` y el nombre lo lleva un solo texto `solo-lector`: «Lever Operación SOFIPO, ir al resumen».
+  - Con el texto suelto junto al logotipo, que es flexible, el nombre quedaba con un espacio antes de la coma.
+  - `cromo/logotipo.tsx` no cambia.
+- **Verificación** (`scripts/evidencia/ola-r-alta/axe.mjs`: las dos reglas, 13 pantallas × 5 roles × 1440 y 390):
+  - **axe.** `32e49b8` da 22 y 130 (`datos/axe-32e49b8.txt`); el final, 0 y 0 (`datos/axe-final.txt`).
+  - **Lector** (consulta exacta de Playwright, `getByRole` con `exact`): el enlace del logotipo se llama «Lever Operación SOFIPO, ir al resumen» en las 130 vistas, y cada título de la bandeja se llama «Necesita tu decisión N pendiente(s)».
+  - **Píxeles.** La zona del logotipo es idéntica: 3 temas × 2 anchos, 143×33 y 0 bytes distintos entre `32e49b8` y el final (`datos/logotipo-pixeles.txt`).
+
+**El campo de archivo no recibía el foco.** `CampoArchivo` pasaba `aria-invalid` y `aria-describedby` del error del servidor a su `input`, pero no `autoFocus`. Un archivo rechazado (tamaño, tipo o sin archivo) dejaba el campo marcado sin el foco. Ahora el `input` recibe también `autoFocus`. React lo emite como `autofocus` en el HTML.
+
+**El fragmento de la dirección le quitaba el foco al campo (hallado en el recorrido sin JavaScript).**
+
+- **Causa.** Con `autoFocus` en su lugar, el recorrido sin JavaScript seguía sin foco: atributos bien, foco en 0. Las acciones del expediente redirigían con `?aviso=…&en=documentos-titulo#documentos-titulo`. Al cargar la página completa con un destino de fragmento, el navegador descarta el `autofocus` (estándar HTML: con un fragmento destino, no se procesan los candidatos de autofocus). La sonda lo probó en Chromium con la misma página: con `#documentos-titulo`, foco 0 con JavaScript y sin él; sin el fragmento, foco 1 (`datos/foco-con-fragmento.txt`). Con JavaScript no se notaba en el uso normal: tras la acción, la navegación es del lado del cliente y React da el foco.
+- **Afectaba a todos los avisos de campo del expediente,** no solo al archivo: datos generales, documentos, dictamen, grado de riesgo, suspensión y el folio de Coincidencias, siempre que la página cargue completa (sin JavaScript o al recargar).
+- **Arreglo.** `avisoDeCampo(codigo)` (`aviso.tsx`) dice si el aviso es de un campo: los mismos códigos que marca `errorDelCampo`. Si lo es, `fallo` (`acciones-alta.ts`) redirige sin el fragmento; `en=` se queda, así que el aviso y el campo marcado siguen en su sección, y el foco lleva la página al campo. Los avisos que no son de un campo conservan su fragmento. Revisé cada sección: todo código de campo que puede salir de sus acciones tiene su campo en esa sección.
+- **Prueba.** Unitaria: `avisoDeCampo` coincide con `errorDelCampo` y descarta los avisos generales y las claves del prototipo. e2e sin JavaScript: Omar guarda la razón social de Duna con un U+200B; vuelve con 303, el campo marcado, ligado, con el foco y sin fragmento, y la base sin cambios. En rojo, con el `fallo` de `32e49b8`: foco 0 de 1 (`datos/e2e-rojo-foco-con-fragmento.txt`). En el recorrido, el archivo de 4 MiB sin JavaScript (`r106`).
+
+**Sin JavaScript, la barra superior se encimaba con el contenido (hallado en el recorrido; viene de main, `0a1fb4f`).**
+
+- **Causa.** `.barra-superior` es fija (`sticky`) y solo toma su fondo con `[data-desplazada]`, que pone `cromo/barra-superior.tsx` con JavaScript al desplazarse. Sin JavaScript, el título de la página quedaba transparente encima de la sección (la primera captura de `r106` lo mostró).
+- **Arreglo.** En `marco.css`, `@media (scripting: none)` le da a la barra el mismo fondo, desenfoque y sombra. Con JavaScript no cambia nada: esa regla no aplica. Una sonda confirmó que Chromium activa `scripting: none` con JavaScript apagado.
+- **Prueba.** La misma e2e sin JavaScript exige que la barra tenga fondo después de que el foco desplazó la página. En rojo, con el `marco.css` de `32e49b8`: `rgba(0, 0, 0, 0)` (`datos/e2e-rojo-barra-sin-js.txt`). Capturas sin JavaScript con la barra: `r102`, `r104` y `r106` (`r100` es la entrada, que no tiene barra).
+
+**El SHA-256 ensanchaba la página a 390.**
+
+- **Causa.** El SHA-256 de cada documento (64 caracteres sin espacios) no tenía dónde partirse. El expediente de Ébano medía 533 px a 390.
+- **Por qué no lo vio la fase de pantallas.** Medía contra `window.innerWidth`, y en un teléfono (`isMobile`) la ventana de diseño crece hasta el ancho del contenido.
+- **Arreglo.** `overflow-wrap: anywhere` en `.operacion-fila-cuerpo`, `.operacion-meta`, `.operacion-detalle` y `.operacion-mono`, en `operacion.css` (`tokens.css` no cambia). Así se parten también el nombre de un archivo, el folio, la acción con guiones bajos de la bitácora o un motivo con una dirección pegada. La fase de pantallas ahora mide contra el ancho pedido.
+- **Prueba.** El recorrido sube a Laboratorio Novena un acta con un nombre de 136 caracteres sin espacios. A 390, con y sin JavaScript, la orilla derecha de cada SHA-256 y de cada nombre de archivo queda dentro de 390, en Ébano y en Novena. Se mide con las cajas de Playwright, que sirven también sin JavaScript.
+
+**Verificación en rojo.** Las pruebas nuevas, corridas contra el código de `32e49b8`, fallan así:
+
+- **N5:** con el orden del CI forzado, 3 de 3 en la fase 3 y 2 de 2 en la fase 4.
+- **Unitarias:**
+  - «un dato hecho solo de invisibles falta»: el resultado es `[]`, se esperaba `['giro', 'domicilio']`;
+  - `textoOperativo("\u3164")` devolvía `'\u3164'`.
+- **Postgres:** el dictamen observado con diez U+3164 se acepta («Missing expected rejection»), y lo demás cae en cascada.
+- **e2e:**
+  - la clave repetida da 500 en `/operacion/alertas`;
+  - sin JavaScript, el alta de Operación y la invitación llevan `Origin: "null"` y dan 500. La prueba se detiene en el alta, antes de las entradas.
+- **axe:** 22 y 130.
+- **Desborde:** el expediente de Ébano mide 533 a 390.
+- **Campo de archivo:** en `archivos.test.ts`, el `input` no trae `autofocus`.
+- **Fragmento:** en la e2e sin JavaScript, foco 0 de 1 en la razón social.
+- **Barra superior:** en la misma e2e, fondo `rgba(0, 0, 0, 0)`.
+
+| Hallazgo | Arreglo | Prueba |
+| --- | --- | --- |
+| **CI de `32e49b8`: N5** El 40001 esperado de REPEATABLE READ llegaba antes que su manejo y node:test lo contaba como falla | Las promesas nacen con su manejo: `assert.rejects` o `enEspera`. `yaRespondio` fuerza el orden del CI en las cuatro fases | Rojo determinista: 3/3 y 2/2. 100 corridas con 18 núcleos ocupados y 0 fallas. `test:db` completo: 80/80 |
+| **base-N28 (P3)** `?aviso=a&aviso=b` y `?faltan=a&faltan=b` daban 500 | `soloTexto` en las 11 páginas que leen `searchParams` | `busqueda.test.ts`. e2e «una clave repetida…»: 10 pantallas con dos roles, `faltan` repetido con el aviso general, la Lista y la entrada. Recorrido con y sin JavaScript. Captura `r105` |
+| **serv-nuevo-7 (P2, en producción)** Sin JavaScript, `Origin: null` y 500 en toda acción de servidor | `Referrer-Policy: same-origin`, también en la metadata de la invitación | e2e «sin JavaScript…»: el alta da 303 con su aviso y las dos entradas dan 200 con el suyo, todo con su `Origin`. La invitación sin JavaScript da 200 con «Las dos contraseñas no coinciden.». Recorrido: la entrada, el giro y el dictamen sin JavaScript. Capturas `r100`, `r102` y `r104` |
+| **Textos que no se ven (P3)** Un giro de puro U+3164 contaba como capturado; diez U+3164 pasaban como motivo | `tieneAlgoVisible` y `caracteresVisibles`; `libre` en los textos opcionales del expediente; `motivoEscrito` cuenta lo que se ve | `formulario.test.ts`, `alta-regulada.test.ts` y Postgres (dictamen, suspensión y 6d). Recorrido con y sin JavaScript. Capturas `r101`-`r104` |
+| **JSDoc (P3)** `enviarVersion` perdió su descripción | Vuelve a su función | — |
+| **axe `aria-prohibited-attr`** `.bandeja-cuenta` con `aria-label` en un `<span>` sin rol | Texto `solo-lector` dentro | axe: 22 a 0. Lector: «Necesita tu decisión 1 pendiente», sin el espacio antes de la coma que leía Chrome |
+| **axe `label-content-name-mismatch`** El nombre del logotipo no contenía su texto visible | Logotipo en `aria-hidden` y un solo texto `solo-lector` | axe: 130 a 0. Lector: «Lever Operación SOFIPO, ir al resumen». Píxeles idénticos en 3 temas × 2 anchos |
+| **Campo de archivo** Un archivo rechazado por el servidor dejaba el control marcado sin el foco | `CampoArchivo` pasa también `autoFocus` | `archivos.test.ts`. Recorrido: sin JavaScript, un PDF de 4 MiB y 64 KiB; con JavaScript, un «PDF» que no lo es. Las dos veces da su aviso, el control marcado, ligado al aviso y con el foco, y ningún documento. Capturas `r106` y `r107` |
+| **Fragmento que quita el foco (hallado en el recorrido)** Con `#seccion` en la dirección, el navegador descarta el `autofocus` al cargar la página completa | `avisoDeCampo`; `fallo` redirige sin fragmento cuando el aviso es de un campo y conserva `en=` | Unitaria en `aviso.test.ts`. e2e sin JavaScript: la razón social con U+200B vuelve marcada, con el foco y sin fragmento; en rojo, foco 0. Recorrido: `r106` |
+| **Barra superior sin JavaScript (hallada en el recorrido, viene de main)** Transparente y encimada con el contenido al desplazarse | `@media (scripting: none)` con el fondo de la barra desplazada | La misma e2e: la barra con fondo; en rojo, `rgba(0, 0, 0, 0)`. Capturas sin JavaScript `r102`, `r104` y `r106` |
+| **Desborde a 390** El SHA-256 ensanchaba el expediente a 533 px | `overflow-wrap: anywhere` en las clases de Operación; la fase de pantallas mide contra el ancho pedido | Recorrido: en Ébano (sus SHA-256) y en el borrador de Novena (un nombre de archivo de 136 caracteres), todo queda dentro de 390, con y sin JavaScript. Capturas `r108` y `r109` |
+
+**Decisiones de la décima revisión.**
+
+- **Los identificadores conservan su aviso.** Un RFC, un teléfono o un correo hecho de invisibles sigue dando el aviso de formato de su campo, como decidió la octava revisión. Solo los textos libres cuentan como vacíos.
+- **Un texto libre opcional sin nada que se vea se guarda vacío.** No se rechaza al guardar. Al enviar, el aviso dice «Falta el giro.», que es lo que ve la persona: el campo se ve vacío.
+- **La invitación con `same-origin`.** Como el resto del sitio, el enlace con el token no sale a otros sitios. Antes, con `no-referrer`, aceptar la invitación sin JavaScript daba 500.
+- **Un aviso de campo vuelve sin fragmento.** Lleva la página al campo con el foco, no al título de la sección. El aviso sigue en su sección (`en=`).
+- **La barra superior sin JavaScript lleva siempre su fondo.** Con JavaScript sigue transparente arriba y con fondo al desplazarse.
+- **El recorrido sin JavaScript no corre código en la página.** Con JavaScript apagado, `page.evaluate` y `addStyleTag` de Playwright no terminan nunca, y la primera corrida se colgó ahí. Esas pasadas usan solo selectores (`:focus`), cajas y `scrollIntoViewIfNeeded`.
+- **axe va como script de evidencia, no en la e2e.** `axe-core` llega con `eslint-config-next` (vía `eslint-plugin-jsx-a11y`), no como dependencia propia. La e2e no depende de él.
+
 ## Flujo → captura → qué verifica en la base
 
 | Flujo | Captura | Qué verifica en la base |
@@ -664,6 +799,16 @@ Cada corrida imprime los tres relojes al empezar. La salida cruda está en `dato
 | serv-nuevo-6b | `r97-r9-folio-fecha-presentado-imposible` | Celia anota el folio de Brisa con «Presentado el» 2026-02-30 (petición armada): «Revisa la fecha de presentación del reporte…», con `en=presentado-<id>`. Solo «Presentado el» queda marcado y con el foco, no el folio, y no se guarda folio. La captura muestra el aviso y el campo juntos. |
 | serv-nuevo-6b | `r98-r9-folio-fecha-aviso-imposible` | Lo mismo con «Aviso por escrito al cliente» 2026-13-01: «Revisa la fecha del aviso al cliente… Déjala vacía si aún no avisas.». Solo ese campo queda marcado y con el foco, y no se guarda folio. |
 | base-N27 | `r99-r9-recuperacion-nota-en-su-tarjeta` | Hay tres recuperaciones pendientes: Gil, Rosa y Aurelio. Ofelia confirma su identidad y rechaza sin nota la de en medio, la de Rosa: `en` es el id de Rosa y solo su nota queda marcada y con el foco; las tres siguen pendientes. Con su nota, las tres se rechazan. |
+| serv-nuevo-7 | `r100-r10-sin-js-entrada-operacion` | Sin JavaScript, la entrada de Operación con una contraseña equivocada: el POST lleva su `Origin` y responde 200 con «El correo o la contraseña no coinciden…». Antes, con `no-referrer`, llevaba `Origin: null` y daba 500. Con JavaScript, lo mismo. |
+| Textos que no se ven | `r101-r10-giro-invisible-con-js` | Omar guarda los datos de Laboratorio Novena con el giro «\u3164» y el domicilio completo: el giro queda vacío. «Enviar versión 1»: «Falta el giro. Captura ese dato en «Datos generales» y vuelve a enviar.»; sigue en borrador y sin evento. |
+| serv-nuevo-7 y textos que no se ven | `r102-r10-giro-invisible-sin-js` | Lo mismo sin JavaScript: guardar y enviar responden 303 con su `Origin` y el mismo aviso. |
+| Textos que no se ven | `r103-r10-dictamen-motivo-invisible-con-js` | Celia observa el expediente de Cedro con «Revisar» y tres U+3164 (10 para la base, 7 que se ven): «El motivo lleva al menos 10 caracteres…» en el motivo marcado y ningún dictamen. |
+| serv-nuevo-7 y textos que no se ven | `r104-r10-dictamen-motivo-invisible-sin-js` | Sin JavaScript, con doce U+3164: 303, «Escribe un motivo breve y claro.» en el motivo marcado y ningún dictamen. |
+| base-N28 | `r105-r10-clave-repetida-en-la-direccion` | Con y sin JavaScript, el expediente y la ficha de Novena y Clientes con `?aviso=a&aviso=b&en=x&en=y` responden 200 con su página. Con `faltan=giro&faltan=domicilio`, queda el aviso general sin detalle. Antes, 500. |
+| Campo de archivo y fragmento | `r106-r10-archivo-de-mas-de-4-mib-sin-js` | Sin JavaScript (sin la revisión del navegador), Omar sube a Novena un PDF de 4 MiB y 64 KiB: 303 a la dirección sin fragmento, «El archivo pasa de 4 MB. Sube uno más ligero.», el control del archivo marcado, ligado al aviso y con el foco; ningún documento. Captura de página completa: el aviso va arriba y el campo, en su sección. La barra superior lleva su fondo. |
+| Campo de archivo | `r107-r10-archivo-no-admitido-con-js` | Con JavaScript, un «PDF» que no lo es: «Sube un PDF, PNG o JPG legible.», el control del archivo marcado y con el foco (antes, marcado sin foco). Página completa; la captura quita el foco antes de tomarla, como todas las del recorrido con JavaScript. |
+| Desborde a 390 | `r108-r10-sha-a-390-ebano` | El expediente de Ébano a 390 con sus documentos: cada SHA-256 se parte dentro de su renglón y su orilla queda dentro de 390 (antes, la página medía 533). Con y sin JavaScript. |
+| Desborde a 390 | `r109-r10-nombre-largo-a-390-novena` | El borrador de Laboratorio Novena con un acta de nombre de 136 caracteres sin espacios: el nombre se parte y queda dentro de 390, con y sin JavaScript. En el borrador, la lista muestra el nombre; el SHA-256 aparece en las versiones enviadas, como en Ébano. |
 
 Las capturas `NN-pantalla-<pantalla>-<tema>-<ancho>` son la fase de pantallas: un solo h1, campos con etiqueta, sin desborde horizontal y consola limpia en Personal, Cumplimiento, Lista, Expediente, Ficha, Aprobaciones, Clientes, Bitácora y Sin permiso.
 
@@ -847,7 +992,7 @@ OK    12. la descarga entrega el PDF guardado
 OK    12. la SHA-256 del archivo descargado coincide con la guardada en la base
 OK    12. descargar deja «expediente_documento_descargado»
 OK    12. la bitácora muestra las dos lecturas con su etiqueta
-NOTA  f12-bitacora-lecturas-auditadas: la página mide 10882 px y no cabe en una captura completa; se guarda la ventana
+NOTA  f12-bitacora-lecturas-auditadas: la página mide 10123 px y no cabe en una captura completa; se guarda la ventana
 OK    12. Auditoría ve «Sin permiso» en Personal
 OK    consola del navegador limpia en todos los flujos
 
@@ -904,17 +1049,17 @@ OK    pantalla clientes claro 1440: un h1, campos con etiqueta, sin desborde, co
 OK    pantalla clientes claro 390: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla clientes lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla clientes lever 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-oscuro-1440: la página mide 11409 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-oscuro-1440: la página mide 10532 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-oscuro-390: la página mide 28494 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-oscuro-390: la página mide 29444 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-claro-1440: la página mide 11409 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-claro-1440: la página mide 10532 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora claro 1440: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-claro-390: la página mide 28494 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-claro-390: la página mide 29444 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora claro 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-lever-1440: la página mide 11409 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-lever-1440: la página mide 10532 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-lever-390: la página mide 28494 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-lever-390: la página mide 29444 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora lever 390: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla sin-permiso oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla sin-permiso oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia
@@ -924,12 +1069,12 @@ OK    pantalla sin-permiso lever 1440: un h1, campos con etiqueta, sin desborde,
 OK    pantalla sin-permiso lever 390: un h1, campos con etiqueta, sin desborde, consola limpia
 
 — Contraste AA por texto
-OK    contraste oscuro 1440: 370 textos, mínimo 5.08
-OK    contraste oscuro 390: 168 textos, mínimo 6.12
-OK    contraste claro 1440: 370 textos, mínimo 5.14
-OK    contraste claro 390: 168 textos, mínimo 5.05
-OK    contraste lever 1440: 370 textos, mínimo 5.00
-OK    contraste lever 390: 168 textos, mínimo 5.89
+OK    contraste oscuro 1440: 381 textos, mínimo 5.08
+OK    contraste oscuro 390: 162 textos, mínimo 6.23
+OK    contraste claro 1440: 384 textos, mínimo 5.14
+OK    contraste claro 390: 162 textos, mínimo 5.05
+OK    contraste lever 1440: 387 textos, mínimo 5.00
+OK    contraste lever 390: 162 textos, mínimo 5.91
 
 60 comprobaciones en verde, 0 en rojo.
 ```
@@ -1065,7 +1210,7 @@ OK    serv-N16. Blob responde 503 al borrar el huérfano: la página vuelve en 5
 OK    emulador de Blob: borrado «sin_respuesta»
 OK    aviso «documento_sin_representante» tras la acción
 OK    emulador de Blob: borrado «normal»
-OK    serv-N16. Blob no responde al borrar el huérfano: la página vuelve en 5.2 s (tope de 5 s más la página), sin documento, y la clave queda en el registro
+OK    serv-N16. Blob no responde al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro
 OK    aviso «dato_invalido_vigenteHasta» tras la acción
 OK    bar-2. «Vigente hasta» 30 sep antes de «Emitido el» 1 oct: el campo queda marcado, sin documento nuevo y sin «La base no respondió»
 OK    base-N21. cobro manual con el RFC « - - »: «Ese RFC no tiene la forma de un RFC» en su campo y sin cobro
@@ -1142,9 +1287,34 @@ OK    aviso «decision_registrada» tras la acción
 OK    aviso «decision_registrada» tras la acción
 OK    aviso «decision_registrada» tras la acción
 OK    base-N27. con su nota, las tres se rechazan: ninguna queda abierta
+
+— Décima revisión: sin JavaScript, claves repetidas en la dirección, textos que no se ven y valores largos a 390
+OK    serv-nuevo-7. con JavaScript, la entrada de Operación con la contraseña equivocada: 200, su Origin y su aviso
+OK    serv-nuevo-7. sin JavaScript, la entrada de Operación con la contraseña equivocada: 200, su Origin y su aviso
+OK    textos invisibles. con JavaScript, el giro «\u3164» se guarda vacío y «Enviar versión 1» dice «Falta el giro.»; sigue en borrador y sin evento
+OK    textos invisibles. sin JavaScript, el giro «\u3164» se guarda vacío y «Enviar versión 1» dice «Falta el giro.»; sigue en borrador y sin evento
+OK    textos invisibles. con JavaScript, el dictamen observado con «Revisar» y tres U+3164 (10 para la base, 7 que se ven): motivo_corto en el motivo y sin dictamen
+OK    textos invisibles. sin JavaScript, el dictamen observado con doce U+3164: motivo_invalido en el motivo y sin dictamen
+OK    base-N28. con JavaScript, /operacion/clientes/<novena>/expediente?aviso=a&aviso=b&en=x&en=y responde 200 con su página
+OK    base-N28. con JavaScript, /operacion/clientes?aviso=a&aviso=b responde 200 con su página
+OK    base-N28. con JavaScript, /operacion/clientes/<novena>?aviso=a&aviso=b responde 200 con su página
+OK    base-N28. con JavaScript, /operacion/clientes/<novena>/expediente?aviso=expediente_datos_incompletos&faltan=giro&faltan=domicilio responde 200 con su página
+OK    base-N28. con JavaScript, con «faltan» repetido queda el aviso general, sin detalle
+OK    base-N28. sin JavaScript, /operacion/clientes/<novena>/expediente?aviso=a&aviso=b&en=x&en=y responde 200 con su página
+OK    base-N28. sin JavaScript, /operacion/clientes?aviso=a&aviso=b responde 200 con su página
+OK    base-N28. sin JavaScript, /operacion/clientes/<novena>?aviso=a&aviso=b responde 200 con su página
+OK    base-N28. sin JavaScript, /operacion/clientes/<novena>/expediente?aviso=expediente_datos_incompletos&faltan=giro&faltan=domicilio responde 200 con su página
+OK    base-N28. sin JavaScript, con «faltan» repetido queda el aviso general, sin detalle
+OK    campo de archivo. sin JavaScript, archivo_demasiado_grande: aviso, el control del archivo marcado, ligado al aviso y con el foco; ningún documento
+OK    campo de archivo. con JavaScript, archivo_no_admitido: aviso, el control del archivo marcado, ligado al aviso y con el foco; ningún documento
+OK    aviso «expediente_documento_cargado» tras la acción
+OK    desborde. con JavaScript, en el expediente de Ébano (7 SHA-256) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)
+OK    desborde. con JavaScript, en el expediente de Laboratorio Novena (el nombre de archivo de 136 caracteres) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)
+OK    desborde. sin JavaScript, en el expediente de Ébano (7 SHA-256) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)
+OK    desborde. sin JavaScript, en el expediente de Laboratorio Novena (el nombre de archivo de 136 caracteres) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)
 OK    consola del navegador limpia en las regresiones
 
-186 comprobaciones en verde, 0 en rojo.
+209 comprobaciones en verde, 0 en rojo.
 ```
 
 </details>
@@ -1155,18 +1325,18 @@ OK    consola del navegador limpia en las regresiones
 ```text
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test
 primera@lever.test: invitada
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T17:19:39.669Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T21:41:14.225Z.
 segunda@lever.test: invitada
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T17:19:39.678Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T21:41:14.231Z.
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)
 
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
 primera@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T17:19:39.826Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T21:41:14.353Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T17:19:39.831Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T21:41:14.356Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)
@@ -1181,10 +1351,10 @@ No se hizo: El operador ya tiene Administración invitada con otros correos. Par
 
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
 primera@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T17:19:40.390Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T21:41:14.778Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T17:19:40.394Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T21:41:14.781Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)

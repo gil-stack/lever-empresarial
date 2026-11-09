@@ -35,7 +35,7 @@ import {
   type PepDeclarada,
   type TipoDocumento,
 } from "../../dominio/operacion";
-import { INVISIBLE } from "../../dominio/control";
+import { INVISIBLE, tieneAlgoVisible } from "../../dominio/control";
 import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
 import { leerPrivado, type AlmacenConstancia } from "../proveedores/constancia";
 import type { Sesion } from "../session/tipos";
@@ -445,18 +445,18 @@ export async function crearVersion(
 const CAMPOS_DATOS: Array<[keyof DatosGenerales, string, (valor: unknown) => string | number | null | undefined]> = [
   // La razón social es una identidad: con un carácter invisible se rechaza antes, con su propio aviso (ver `guardarDatosGenerales`).
   ["razonSocial", "razon_social", (v) => opcional(v, (t) => textoOperativo(t, 300))],
-  ["giro", "giro", (v) => opcional(v, (t) => textoOperativo(t, 200))],
-  ["nacionalidad", "nacionalidad", (v) => opcional(v, (t) => textoOperativo(t, 80))],
+  ["giro", "giro", (v) => libre(v, 200)],
+  ["nacionalidad", "nacionalidad", (v) => libre(v, 80)],
   ["rfc", "rfc", (v) => opcional(v, (t) => (rfcMoralValido(t.toUpperCase()) ? t.toUpperCase() : null))],
   ["serieEfirma", "serie_efirma", (v) => opcional(v, (t) => (SERIE_EFIRMA.test(t) ? t : null))],
-  ["domicilioCalle", "domicilio_calle", (v) => opcional(v, (t) => textoOperativo(t, 200))],
-  ["domicilioExterior", "domicilio_exterior", (v) => opcional(v, (t) => textoOperativo(t, 40))],
-  ["domicilioInterior", "domicilio_interior", (v) => opcional(v, (t) => textoOperativo(t, 40))],
-  ["domicilioColonia", "domicilio_colonia", (v) => opcional(v, (t) => textoOperativo(t, 120))],
-  ["domicilioMunicipio", "domicilio_municipio", (v) => opcional(v, (t) => textoOperativo(t, 120))],
-  ["domicilioEntidad", "domicilio_entidad", (v) => opcional(v, (t) => textoOperativo(t, 80))],
+  ["domicilioCalle", "domicilio_calle", (v) => libre(v, 200)],
+  ["domicilioExterior", "domicilio_exterior", (v) => libre(v, 40)],
+  ["domicilioInterior", "domicilio_interior", (v) => libre(v, 40)],
+  ["domicilioColonia", "domicilio_colonia", (v) => libre(v, 120)],
+  ["domicilioMunicipio", "domicilio_municipio", (v) => libre(v, 120)],
+  ["domicilioEntidad", "domicilio_entidad", (v) => libre(v, 80)],
   ["domicilioCodigoPostal", "domicilio_codigo_postal", (v) => opcional(v, (t) => (/^\d{5}$/.test(t) ? t : null))],
-  ["domicilioPais", "domicilio_pais", (v) => opcional(v, (t) => textoOperativo(t, 80))],
+  ["domicilioPais", "domicilio_pais", (v) => libre(v, 80)],
   ["telefono", "telefono", (v) => opcional(v, (t) => { const solo = t.replace(/[\s()+-]/g, ""); return !conInvisible(t) && /^\d{10,15}$/.test(solo) ? solo : null; })],
   // En minúsculas antes de medir («İ» crece) y sin caracteres de control, como el CHECK `kyb_versiones_correo`.
   ["correo", "correo", (v) => opcional(v, (t) => {
@@ -516,7 +516,7 @@ export async function agregarRepresentante(
   if (curp === undefined) throw new ErrorDeDominio("dato_invalido_curp");
   if (!(CARGOS as readonly unknown[]).includes(entrada.cargo)) throw new ErrorDeDominio("dato_invalido_cargo");
   if (!(PEPS as readonly unknown[]).includes(entrada.pep)) throw new ErrorDeDominio("dato_invalido_pep");
-  const designadoPor = opcional(entrada.designadoPor, (t) => textoOperativo(t, 300));
+  const designadoPor = libre(entrada.designadoPor, 300);
   if (designadoPor === undefined) throw new ErrorDeDominio("dato_invalido_designadoPor");
   const id = entrada.formId;
   const ahora = new Date();
@@ -666,7 +666,7 @@ export async function cargarDocumento(
   if (tipo === "identificacion_representante" && !vigenteHasta) throw new ErrorDeDominio("dato_invalido_vigenteHasta");
   // La vigencia no termina antes de la emisión (CHECK `kyb_documentos_vigencia`): se avisa en el campo antes de subir nada.
   if (emitidoEl && vigenteHasta && vigenteHasta < emitidoEl) throw new ErrorDeDominio("dato_invalido_vigenteHasta");
-  const detalle = opcional(entrada.detalle, (t) => textoOperativo(t, 300));
+  const detalle = libre(entrada.detalle, 300);
   if (detalle === undefined || (tipo === "acta_constitutiva" && !detalle)) throw new ErrorDeDominio("dato_invalido_detalle");
   const representante = tipo === "identificacion_representante" || tipo === "poder"
     ? (entrada.representanteClave === "" ? null : entrada.representanteClave)
@@ -726,7 +726,6 @@ export async function cargarDocumento(
   if (!referenciado) await deps.almacen.borrar(guardado.clave);
 }
 
-/** Envía el borrador: la base exige el expediente completo, calcula a los propietarios reales y coteja la lista. */
 /** Una versión que no se puede enviar porque le faltan datos generales. `faltan` son claves de `DATOS_PARA_ENVIAR`. */
 export class ExpedienteIncompleto extends ErrorDeDominio {
   constructor(readonly faltan: readonly string[]) {
@@ -734,6 +733,7 @@ export class ExpedienteIncompleto extends ErrorDeDominio {
   }
 }
 
+/** Envía el borrador: la base exige el expediente completo, calcula a los propietarios reales y coteja la lista. */
 export async function enviarVersion(ctx: ContextoDePersonal, versionId: unknown): Promise<void> {
   exigirEnOperacion(ctx, "plataforma.expediente.capturar");
   if (!uuidValido(versionId)) throw new ErrorDeDominio("expediente_ausente");
@@ -1020,6 +1020,16 @@ function tipoDeContenido(bytes: Uint8Array): { tipo: string; extension: string }
  */
 function conInvisible(valor: unknown): boolean {
   return typeof valor === "string" && INVISIBLE.test(valor.trim());
+}
+
+/**
+ * Un texto libre opcional (giro, domicilio, quién designó, detalle): sin nada que se vea («\u3164») cuenta como vacío y
+ * queda null, así que al enviar «falta». Las identidades y los identificadores no pasan por aquí: con un invisible
+ * conservan el aviso de su campo.
+ */
+function libre(valor: unknown, maximo: number): string | null | undefined {
+  if (typeof valor === "string" && !tieneAlgoVisible(valor)) return null;
+  return opcional(valor, (texto) => textoOperativo(texto, maximo));
 }
 
 /** Vacío → null; inválido → undefined; válido → el valor limpio. */

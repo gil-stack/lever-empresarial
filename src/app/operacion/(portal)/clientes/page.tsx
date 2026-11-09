@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { registrarProspectoAccion } from "@/app/operacion/acciones";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { REGIMENES, USOS_CFDI, etiquetaEstado } from "@/components/operacion/formato";
@@ -12,9 +13,9 @@ import { puedeEnOperacion } from "@/server/operacion/permisos";
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Clientes · Operación" };
 
-export default async function ClientesOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
+export default async function ClientesOperacion({ searchParams }: { searchParams: Parametros<"aviso"> }) {
   const ctx = await exigirContextoOperacion();
-  const [clientes, params] = await Promise.all([listarClientes(ctx), searchParams]);
+  const [clientes, params] = await Promise.all([listarClientes(ctx), soloTexto(searchParams)]);
   const registra = puedeEnOperacion(ctx, "plataforma.prospecto.registrar");
   return (
     <PaginaOperacion titulo="Clientes" aviso={params.aviso}>

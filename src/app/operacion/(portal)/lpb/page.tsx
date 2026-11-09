@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import type { Metadata } from "next";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { cargarListaAccion } from "@/app/operacion/acciones-alta";
 import { errorDelCampo, LISTA_DEMASIADO_GRANDE } from "@/components/operacion/aviso";
 import { CampoArchivo } from "@/components/operacion/campo-archivo";
@@ -22,7 +23,7 @@ type Busqueda = { aviso?: string; en?: string; linea?: string; filas?: string; c
  * notifica la UIF en el formato documentado; cada carga se guarda aparte y no se borra. La base
  * coteja al confirmar la carga, al dar de alta y antes de liberar un pago o preparar una nómina.
  */
-export default async function ListaBloqueadas({ searchParams }: { searchParams: Promise<Busqueda> }) {
+export default async function ListaBloqueadas({ searchParams }: { searchParams: Parametros<keyof Busqueda> }) {
   const ctx = await exigirContextoOperacion();
   if (!puedeEnOperacion(ctx, "plataforma.cumplimiento.bandeja")) {
     return (
@@ -32,7 +33,7 @@ export default async function ListaBloqueadas({ searchParams }: { searchParams: 
     );
   }
   const ahora = new Date();
-  const [cargas, coincidencias, params] = await Promise.all([listarCargas(ctx), listarCoincidencias(ctx), searchParams]);
+  const [cargas, coincidencias, params] = await Promise.all([listarCargas(ctx), listarCoincidencias(ctx), soloTexto(searchParams)]);
   const carga = puedeEnOperacion(ctx, "plataforma.lpb.cargar");
   const resuelve = puedeEnOperacion(ctx, "plataforma.lpb.resolver");
   const detalle =

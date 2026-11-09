@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { Coincidencias } from "@/components/operacion/coincidencias";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
@@ -18,7 +19,7 @@ export const metadata: Metadata = { title: "Cumplimiento · Operación" };
  * aprobados sin grado de riesgo. «Vencida» se calcula al leer con la fecha de hoy en México.
  * Auditoría la consulta sin botones.
  */
-export default async function CumplimientoOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string; en?: string }> }) {
+export default async function CumplimientoOperacion({ searchParams }: { searchParams: Parametros<"aviso" | "en"> }) {
   const ctx = await exigirContextoOperacion();
   if (!puedeEnOperacion(ctx, "plataforma.cumplimiento.bandeja")) {
     return (
@@ -28,7 +29,7 @@ export default async function CumplimientoOperacion({ searchParams }: { searchPa
     );
   }
   const ahora = new Date();
-  const [bandeja, params] = await Promise.all([leerBandejaCumplimiento(ctx, { ahora }), searchParams]);
+  const [bandeja, params] = await Promise.all([leerBandejaCumplimiento(ctx, { ahora }), soloTexto(searchParams)]);
   const resuelve = puedeEnOperacion(ctx, "plataforma.lpb.resolver");
   const vencidas = bandeja.revisiones.filter((revision) => revision.vencida);
   const urgentes = bandeja.coincidencias.filter((coincidencia) => coincidencia.estado === "confirmada");

@@ -1,4 +1,4 @@
-import { sinControles } from "../control";
+import { sinControles, tieneAlgoVisible } from "../control";
 
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -22,8 +22,8 @@ export function fechaDeCalendario(valor: string): boolean {
 export function textoOperativo(valor: unknown, maximo: number): string | null {
   if (typeof valor !== "string") return null;
   const limpio = sinControles(valor).trim().replace(/\s+/g, " ");
-  // Caracteres, no unidades UTF-16, como `char_length` en los CHECK.
-  return limpio.length > 0 && [...limpio].length <= maximo ? limpio : null;
+  // Caracteres, no unidades UTF-16, como `char_length` en los CHECK. Sin nada que se vea, está vacío.
+  return tieneAlgoVisible(limpio) && [...limpio].length <= maximo ? limpio : null;
 }
 
 /**
@@ -34,5 +34,5 @@ export function textoOperativo(valor: unknown, maximo: number): string | null {
 export function textoMultilinea(valor: unknown, maximo: number): string | null {
   if (typeof valor !== "string") return null;
   const limpio = sinControles(valor);
-  return limpio.length > 0 && [...limpio].length <= maximo ? limpio : null;
+  return tieneAlgoVisible(limpio) && [...limpio].length <= maximo ? limpio : null;
 }

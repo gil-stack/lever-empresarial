@@ -1,0 +1,7 @@
+claro-1440.png: 143×33 vs 143×33 · bytes distintos 0
+claro-390.png: 143×33 vs 143×33 · bytes distintos 0
+lever-1440.png: 143×33 vs 143×33 · bytes distintos 0
+lever-390.png: 143×33 vs 143×33 · bytes distintos 0
+oscuro-1440.png: 143×33 vs 143×33 · bytes distintos 0
+oscuro-390.png: 143×33 vs 143×33 · bytes distintos 0
+idénticas píxel a píxel

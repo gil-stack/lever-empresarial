@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "node:test";
 
-import { AvisoOperacion, errorDelCampo, tonoDelAviso } from "./aviso.tsx";
+import { AvisoOperacion, avisoDeCampo, errorDelCampo, tonoDelAviso } from "./aviso.tsx";
 
 describe("aviso de Operación", () => {
   it("solo lo que quedó hecho se anuncia como asentado", () => {
@@ -44,6 +44,24 @@ describe("aviso de Operación", () => {
     for (const [codigo, campo] of [["invisible_nombre", "nombre"], ["invisible_razonSocial", "razonSocial"], ["invisible_folio", "folio"]] as const) {
       assert.deepEqual(errorDelCampo(codigo, campo, "aviso-representante"), { "aria-invalid": true, "aria-describedby": "aviso-representante", autoFocus: true }, codigo);
       assert.deepEqual(errorDelCampo(codigo, "rfc"), {}, codigo);
+    }
+  });
+
+  // Décima revisión: la acción quita el fragmento solo si el aviso es de un campo (con «#…», el navegador descarta el
+  // autofocus al cargar la página completa). Coincide con los códigos que `errorDelCampo` marca.
+  it("avisoDeCampo dice qué avisos son de un campo, los mismos que marca errorDelCampo", () => {
+    for (const [codigo, campo] of [
+      ["archivo_demasiado_grande", "archivo"],
+      ["archivo_no_admitido", "archivo"],
+      ["motivo_corto", "motivo"],
+      ["dato_invalido_presentadoEl", "presentadoEl"],
+      ["invisible_razonSocial", "razonSocial"],
+    ] as const) {
+      assert.equal(avisoDeCampo(codigo), true, codigo);
+      assert.equal(errorDelCampo(codigo, campo).autoFocus, true, codigo);
+    }
+    for (const codigo of ["expediente_datos_incompletos", "expediente_ausente", "expediente_documento_cargado", "toString", "constructor", ""]) {
+      assert.equal(avisoDeCampo(codigo), false, codigo);
     }
   });
 });

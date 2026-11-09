@@ -222,27 +222,27 @@
     },
     {
       "ok": true,
-      "texto": "contraste oscuro 1440: 370 textos, mínimo 5.08"
+      "texto": "contraste oscuro 1440: 381 textos, mínimo 5.08"
     },
     {
       "ok": true,
-      "texto": "contraste oscuro 390: 168 textos, mínimo 6.12"
+      "texto": "contraste oscuro 390: 162 textos, mínimo 6.23"
     },
     {
       "ok": true,
-      "texto": "contraste claro 1440: 370 textos, mínimo 5.14"
+      "texto": "contraste claro 1440: 384 textos, mínimo 5.14"
     },
     {
       "ok": true,
-      "texto": "contraste claro 390: 168 textos, mínimo 5.05"
+      "texto": "contraste claro 390: 162 textos, mínimo 5.05"
     },
     {
       "ok": true,
-      "texto": "contraste lever 1440: 370 textos, mínimo 5.00"
+      "texto": "contraste lever 1440: 387 textos, mínimo 5.00"
     },
     {
       "ok": true,
-      "texto": "contraste lever 390: 168 textos, mínimo 5.89"
+      "texto": "contraste lever 390: 162 textos, mínimo 5.91"
     }
   ]
 }

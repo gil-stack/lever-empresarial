@@ -109,11 +109,11 @@ async function totp(quien) {
 
 // ---------- Navegador ----------
 const abiertos = [];
-async function abrir(quien, { tema = "oscuro", ancho = 1440 } = {}) {
+async function abrir(quien, { tema = "oscuro", ancho = 1440, js = true } = {}) {
   const nav = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
   const movil = ancho < 600;
   const ctx = await nav.newContext({
-    viewport: { width: ancho, height: movil ? 844 : 900 }, isMobile: movil, hasTouch: movil, deviceScaleFactor: 1,
+    viewport: { width: ancho, height: movil ? 844 : 900 }, isMobile: movil, hasTouch: movil, deviceScaleFactor: 1, javaScriptEnabled: js,
     reducedMotion: "reduce", locale: "es-MX", timezoneId: "America/Mexico_City", acceptDownloads: true,
   });
   const host = new URL(BASE).hostname;
@@ -123,6 +123,9 @@ async function abrir(quien, { tema = "oscuro", ancho = 1440 } = {}) {
     ...(E.SESIONES[quien] ? [{ name: "__Host-sesion", value: E.SESIONES[quien], domain: host, path: "/", httpOnly: true, secure: true, sameSite: "Lax" }] : []),
   ]);
   const p = await ctx.newPage();
+  // Sin JavaScript, `page.evaluate` y `addStyleTag` (mundo principal de la página) no terminan nunca: `foto` y la
+  // ronda que recorre sin JavaScript usan solo lo que Playwright resuelve por su lado (selectores, cajas, scroll).
+  p.sinScript = !js;
   const errores = [];
   p.on("pageerror", (e) => errores.push(`pageerror ${e.message}`));
   p.on("console", (m) => {
@@ -144,8 +147,10 @@ async function foto(p, nombre, completa = true) {
   numero += 1;
   const ruta = `${DIR}/capturas/${prefijo}${String(numero).padStart(2, "0")}-${nombre}.webp`;
   mkdirSync(`${DIR}/capturas`, { recursive: true });
-  await p.addStyleTag({ content: "nextjs-portal { display: none !important; }" }).catch(() => {});
-  await p.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur()).catch(() => {});
+  if (!p.sinScript) {
+    await p.addStyleTag({ content: "nextjs-portal { display: none !important; }" }).catch(() => {});
+    await p.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur()).catch(() => {});
+  }
   await p.waitForTimeout(350);
   let imagen;
   try {
@@ -770,8 +775,10 @@ const PANTALLAS = () => [
   { clave: "sin-permiso", quien: "aurelio", ruta: "/operacion/personal" },
 ];
 
-async function revisarPagina(p) {
-  return p.evaluate(() => {
+// El desborde se mide contra el ancho pedido, no contra `innerWidth`: en un teléfono (isMobile) la ventana de diseño
+// crece hasta el ancho del contenido, y un expediente de 533 px a 390 daba «sin desborde» (décima revisión).
+async function revisarPagina(p, ancho) {
+  return p.evaluate((ancho) => {
     const h1 = document.querySelectorAll("h1").length;
     const sinNombre = [];
     for (const control of document.querySelectorAll("input:not([type=hidden]), select, textarea")) {
@@ -779,8 +786,8 @@ async function revisarPagina(p) {
       const etiqueta = (control.id && document.querySelector(`label[for="${CSS.escape(control.id)}"]`)) || control.closest("label");
       if (!(control.getAttribute("aria-label") || control.getAttribute("aria-labelledby") || etiqueta)) sinNombre.push(control.name || control.id);
     }
-    return { h1, sinNombre, desborde: document.documentElement.scrollWidth - window.innerWidth };
-  });
+    return { h1, sinNombre, desborde: document.documentElement.scrollWidth - ancho };
+  }, ancho);
 }
 
 async function pantallas() {
@@ -791,7 +798,7 @@ async function pantallas() {
         renovarSesiones();
         const { nav, p, errores } = await abrir(pantalla.quien, { tema, ancho });
         await ir(p, pantalla.ruta);
-        const revision = await revisarPagina(p);
+        const revision = await revisarPagina(p, ancho);
         await foto(p, `pantalla-${pantalla.clave}-${tema}-${ancho}`);
         exigir(revision.h1 === 1 && revision.sinNombre.length === 0 && revision.desborde <= 1 && errores.length === 0,
           `pantalla ${pantalla.clave} ${tema} ${ancho}: un h1, campos con etiqueta, sin desborde, consola limpia`,
@@ -2555,6 +2562,185 @@ async function novenaRonda(rutaEbano) {
     "base-N27. con su nota, las tres se rechazan: ninguna queda abierta",
   );
   await ofelia.nav.close();
+  await decimaRonda(rutaEbano);
+}
+
+/**
+ * Re-verificación sobre 32e49b8. serv-nuevo-7: sin JavaScript (o antes de que la página hidrate) los formularios mandan
+ * su Origin y la acción responde (antes, «Origin: null» y un 500). base-N28: una clave repetida en la dirección no tumba
+ * la página. Los textos que no se ven cuentan como vacíos. Los valores largos sin espacios no ensanchan la página a
+ * 390. Cada flujo, con JavaScript y sin él.
+ */
+async function decimaRonda(rutaEbano) {
+  console.log("\n— Décima revisión: sin JavaScript, claves repetidas en la dirección, textos que no se ven y valores largos a 390");
+  renovarSesiones();
+  const conOSin = (js) => (js ? "con" : "sin");
+  const marcado = async (p, selector) => (await p.locator(selector).getAttribute("aria-invalid")) === "true";
+  // Envía con un clic real y devuelve la respuesta del POST: sin JavaScript es el envío nativo del formulario.
+  const enviarYResponder = async (p, boton) => (await Promise.all([p.waitForResponse((r) => r.request().method() === "POST"), boton.click()]))[0];
+  const conSuOrigen = async (respuesta) => (await respuesta.request().headerValue("origin")) === new URL(respuesta.url()).origin;
+  const avisoEs = (p, codigo) => p.waitForURL((url) => url.searchParams.get("aviso") === codigo, { timeout: 20000 }).then(() => listo(p));
+
+  // serv-nuevo-7: la entrada de Operación con una contraseña equivocada da su aviso, no un 500.
+  for (const js of [true, false]) {
+    const visita = await abrir("visita", { js });
+    await ir(visita.p, "/operacion/entrar");
+    await visita.p.getByLabel("Correo").fill("nadie-decima@lever.test");
+    await visita.p.getByLabel("Contraseña", { exact: true }).fill("no-es-la-clave-1");
+    const respuesta = await enviarYResponder(visita.p, visita.p.getByRole("button", { name: "Continuar" }));
+    await visita.p.locator("#entrar-error").waitFor({ timeout: 20000 });
+    const texto = (await visita.p.locator("#entrar-error").innerText()).replace(/\s+/g, " ").trim();
+    exigir(
+      respuesta.status() === 200 && (await conSuOrigen(respuesta)) && texto.includes("El correo o la contraseña no coinciden."),
+      `serv-nuevo-7. ${conOSin(js)} JavaScript, la entrada de Operación con la contraseña equivocada: ${respuesta.status()}, su Origin y su aviso`,
+      `${respuesta.status()} ${texto}`,
+    );
+    if (!js) await foto(visita.p, "r10-sin-js-entrada-operacion", false);
+    await visita.nav.close();
+  }
+
+  // Un texto que no se ve cuenta como vacío: el giro de Laboratorio Novena con U+3164 se guarda vacío y al enviar falta.
+  const novena = companyIdDe("NOV150301AB1");
+  const borradorNovena = `(select id from kyb_versiones where company_id = '${novena}' and estado = 'borrador')`;
+  for (const js of [true, false]) {
+    const omar = await abrir("omar", { js });
+    await ir(omar.p, `/operacion/clientes/${novena}/expediente`);
+    await campo(omar.p, "#dato-giro", "ㅤ");
+    for (const [nombre, valor] of Object.entries(DATOS).filter(([nombre]) => nombre.startsWith("domicilio"))) await campo(omar.p, `#dato-${nombre}`, valor);
+    const guardado = await enviarYResponder(omar.p, omar.p.getByRole("button", { name: "Guardar datos" }));
+    await avisoEs(omar.p, "expediente_datos_guardados");
+    const giro = sql(`select coalesce(giro, '(vacío)') from kyb_versiones where id = ${borradorNovena}`);
+    const envio = await enviarYResponder(omar.p, omar.p.getByRole("button", { name: "Enviar versión 1" }));
+    await avisoEs(omar.p, "expediente_datos_incompletos");
+    const texto = await aviso(omar.p);
+    exigir(
+      giro === "(vacío)" && texto.includes("Falta el giro. Captura ese dato en «Datos generales» y vuelve a enviar.")
+        && sql(`select estado from kyb_versiones where id = ${borradorNovena}`) === "borrador"
+        && cuenta(`audit_log where accion = 'expediente_enviado' and company_id = '${novena}'`) === 0
+        && (await conSuOrigen(guardado)) && (await conSuOrigen(envio)) && (js || (guardado.status() === 303 && envio.status() === 303)),
+      `textos invisibles. ${conOSin(js)} JavaScript, el giro «\\u3164» se guarda vacío y «Enviar versión 1» dice «Falta el giro.»; sigue en borrador y sin evento`,
+      `${giro} · ${guardado.status()}/${envio.status()} · ${texto}`,
+    );
+    await omar.p.locator("#aviso-operacion").scrollIntoViewIfNeeded();
+    await foto(omar.p, `r10-giro-invisible-${conOSin(js)}-js`, false);
+    await omar.nav.close();
+  }
+
+  // Un motivo de puros invisibles no es un motivo: el dictamen de Cedro (por dictaminar) observado con U+3164.
+  const cedro = companyIdDe("CER170404CD5");
+  const dictamenes = () => cuenta(`kyb_dictamenes d join kyb_versiones v on v.id = d.version_id where v.company_id = '${cedro}'`);
+  for (const [js, motivo, codigo, texto] of [
+    [true, "Revisarㅤㅤㅤ", "motivo_corto", "El motivo lleva al menos 10 caracteres"],
+    [false, "ㅤ".repeat(12), "motivo_invalido", "Escribe un motivo breve y claro."],
+  ]) {
+    const celia = await abrir("celia", { js });
+    await ir(celia.p, `/operacion/clientes/${cedro}/expediente`);
+    const antes = dictamenes();
+    await celia.p.locator("#dictamen-resultado").selectOption("observado");
+    await campo(celia.p, "#dictamen-motivo", motivo);
+    const respuesta = await enviarYResponder(celia.p, celia.p.locator("form:has(#dictamen-motivo)").getByRole("button", { name: "Registrar dictamen" }));
+    await avisoEs(celia.p, codigo);
+    exigir(
+      (await aviso(celia.p)).includes(texto) && (await marcado(celia.p, "#dictamen-motivo")) && dictamenes() === antes
+        && (await conSuOrigen(respuesta)) && (js || respuesta.status() === 303),
+      `textos invisibles. ${conOSin(js)} JavaScript, el dictamen observado con ${js ? "«Revisar» y tres U+3164 (10 para la base, 7 que se ven)" : "doce U+3164"}: ${codigo} en el motivo y sin dictamen`,
+      await aviso(celia.p),
+    );
+    await celia.p.locator("#dictamen-motivo").scrollIntoViewIfNeeded();
+    await foto(celia.p, `r10-dictamen-motivo-invisible-${conOSin(js)}-js`, false);
+    await celia.nav.close();
+  }
+
+  // base-N28: una clave repetida en la dirección no tumba la página; el detalle de lo que falta no se arma con una lista.
+  for (const js of [true, false]) {
+    const omar = await abrir("omar", { js });
+    for (const ruta of [
+      `/operacion/clientes/${novena}/expediente?aviso=a&aviso=b&en=x&en=y`,
+      "/operacion/clientes?aviso=a&aviso=b",
+      `/operacion/clientes/${novena}?aviso=a&aviso=b`,
+      `/operacion/clientes/${novena}/expediente?aviso=expediente_datos_incompletos&faltan=giro&faltan=domicilio`,
+    ]) {
+      const respuesta = await omar.p.goto(`${BASE}${ruta}`, { waitUntil: "networkidle" });
+      exigir(
+        respuesta?.status() === 200 && (await omar.p.locator("h1").count()) === 1,
+        `base-N28. ${conOSin(js)} JavaScript, ${ruta.replaceAll(novena, "<novena>")} responde 200 con su página`,
+        String(respuesta?.status()),
+      );
+    }
+    exigir(
+      (await aviso(omar.p)) === "Faltan datos generales para enviar la versión. Revisa «Datos generales».",
+      `base-N28. ${conOSin(js)} JavaScript, con «faltan» repetido queda el aviso general, sin detalle`,
+      await aviso(omar.p),
+    );
+    if (js) await foto(omar.p, "r10-clave-repetida-en-la-direccion", false);
+    await omar.nav.close();
+  }
+
+  // El error del archivo que devuelve el servidor marca el control y le da el foco. Sin JavaScript no hay revisión
+  // del tamaño en el navegador: un PDF de 4 MiB y 64 KiB llega al servidor (archivo_demasiado_grande). Con JavaScript,
+  // el navegador frena ese archivo, así que el servidor rechaza uno que no es PDF (archivo_no_admitido).
+  const documentosNovena = () => cuenta(`kyb_documentos where company_id = '${novena}'`);
+  for (const [js, archivo, codigo, texto] of [
+    [false, { name: "acta-pesada.pdf", mimeType: "application/pdf", buffer: Buffer.concat([PDF("acta-pesada"), Buffer.alloc(4 * 1024 * 1024 + 64 * 1024, 0x20)]) },
+      "archivo_demasiado_grande", "El archivo pasa de 4 MB. Sube uno más ligero."],
+    [true, { name: "acta-falsa.pdf", mimeType: "application/pdf", buffer: Buffer.from("esto no es un PDF") }, "archivo_no_admitido", "Sube un PDF, PNG o JPG legible."],
+  ]) {
+    const omar = await abrir("omar", { js });
+    await ir(omar.p, `/operacion/clientes/${novena}/expediente`);
+    const antes = documentosNovena();
+    await omar.p.locator("#doc-tipo").selectOption("acta_constitutiva");
+    await campo(omar.p, "#doc-detalle", "Escritura 7,310, Notaría 4 de Monterrey");
+    await omar.p.locator("#doc-archivo").setInputFiles(archivo);
+    const respuesta = await enviarYResponder(omar.p, omar.p.getByRole("button", { name: "Guardar documento" }));
+    await avisoEs(omar.p, codigo);
+    const control = omar.p.locator("#doc-archivo");
+    exigir(
+      (await aviso(omar.p)).includes(texto) && (await control.getAttribute("aria-invalid")) === "true"
+        && (await control.getAttribute("aria-describedby")) === "aviso-operacion" && (await omar.p.locator("#doc-archivo:focus").count()) === 1
+        && documentosNovena() === antes && (await conSuOrigen(respuesta)) && (js || respuesta.status() === 303),
+      `campo de archivo. ${conOSin(js)} JavaScript, ${codigo}: aviso, el control del archivo marcado, ligado al aviso y con el foco; ningún documento`,
+      await aviso(omar.p),
+    );
+    // Página completa: el aviso de Operación va arriba de la página y el campo, en su sección. Antes se sube al
+    // título (el foco no cambia): con la página desplazada, la captura completa pinta la barra y el lateral a media página.
+    await omar.p.locator("h1").scrollIntoViewIfNeeded();
+    await foto(omar.p, `r10-archivo-${codigo === "archivo_demasiado_grande" ? "de-mas-de-4-mib-sin-js" : "no-admitido-con-js"}`);
+    await omar.nav.close();
+  }
+
+  // Valores largos sin espacios a 390: el SHA-256 de cada documento y un archivo de 136 caracteres sin espacios.
+  // Ébano tiene versiones enviadas (con su SHA-256); Novena está en borrador, donde la lista muestra el nombre del archivo.
+  const NOMBRE_LARGO = `${"ActaConstitutivaLaboratorioNovena".repeat(4)}.pdf`;
+  const cargaLarga = await abrir("omar");
+  await ir(cargaLarga.p, `/operacion/clientes/${novena}/expediente`);
+  await cargaLarga.p.locator("#doc-tipo").selectOption("acta_constitutiva");
+  await campo(cargaLarga.p, "#doc-detalle", "Escritura 7,310, Notaría 4 de Monterrey");
+  await cargaLarga.p.locator("#doc-archivo").setInputFiles({
+    name: NOMBRE_LARGO, mimeType: "application/pdf", buffer: PDF("acta-novena-nombre-largo"),
+  });
+  await enviar(cargaLarga.p, cargaLarga.p.getByRole("button", { name: "Guardar documento" }), "expediente_documento_cargado");
+  await cargaLarga.nav.close();
+  for (const js of [true, false]) {
+    for (const [nombre, ruta] of [["Ébano", rutaEbano], ["Laboratorio Novena", `/operacion/clientes/${novena}/expediente`]]) {
+      const telefono = await abrir("omar", { ancho: 390, js });
+      await ir(telefono.p, ruta);
+      // La orilla derecha de cada SHA-256 y de cada nombre de archivo (con isMobile la ventana crece con el contenido).
+      const cajas = await Promise.all((await telefono.p.locator("p.operacion-mono, .operacion-meta span").all()).map((l) => l.boundingBox()));
+      const mide = Math.round(Math.max(...cajas.filter(Boolean).map((caja) => caja.x + caja.width)));
+      const largo = nombre === "Ébano" ? telefono.p.locator("p.operacion-mono") : telefono.p.locator(".operacion-meta span", { hasText: NOMBRE_LARGO });
+      const cuantos = await largo.count();
+      exigir(
+        mide <= 390 && cuantos > 0,
+        `desborde. ${conOSin(js)} JavaScript, en el expediente de ${nombre} (${nombre === "Ébano" ? `${cuantos} SHA-256` : "el nombre de archivo de 136 caracteres"}) la orilla de los SHA-256 y los nombres de archivo llega a ${mide} px de 390 (antes, 533)`,
+        `${mide} px, ${cuantos}`,
+      );
+      if (js) {
+        await largo.last().scrollIntoViewIfNeeded();
+        await foto(telefono.p, `r10-${nombre === "Ébano" ? "sha-a-390-ebano" : "nombre-largo-a-390-novena"}`, false);
+      }
+      await telefono.nav.close();
+    }
+  }
 }
 
 // ---------- Orden ----------

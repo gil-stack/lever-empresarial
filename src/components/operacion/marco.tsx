@@ -53,8 +53,13 @@ export async function MarcoOperacion({
 
 function Marca() {
   return (
-    <Link href="/operacion" className="marca" aria-label="Lever Operación SOFIPO, ir al resumen">
-      <Logotipo linea="Operación SOFIPO" />
+    <Link href="/operacion" className="marca">
+      {/* El nombre lo lleva un solo texto para el lector: el logotipo es flexible y, junto a otro texto, el nombre
+          quedaba «Lever Operación SOFIPO , ir al resumen». Sin aria-label, el nombre contiene lo que se ve (WCAG 2.5.3). */}
+      <span aria-hidden="true">
+        <Logotipo linea="Operación SOFIPO" />
+      </span>
+      <span className="solo-lector">Lever Operación SOFIPO, ir al resumen</span>
     </Link>
   );
 }

@@ -557,6 +557,9 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: randomUUID(), resultado: "rechazado", motivo: "Falta" }), /motivo_corto/);
           // serv-N18: el mínimo cuenta caracteres como el CHECK, no unidades UTF-16: «Revisar 😀» son 9.
           await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: randomUUID(), resultado: "observado", motivo: "Revisar 😀" }), /motivo_corto/);
+          // Décima revisión: el mínimo cuenta lo que se ve. Diez U+3164 pasan el CHECK de la base, pero no son un motivo.
+          await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: randomUUID(), resultado: "observado", motivo: "\u3164".repeat(10) }), /motivo_invalido/);
+          await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: randomUUID(), resultado: "rechazado", motivo: "Revisar\u3164\u3164\u3164" }), /motivo_corto/);
           const observado = randomUUID();
           await dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: observado, resultado: "observado", motivo: "Falta el poder notarial\ndel apoderado" });
           await dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: observado, resultado: "observado", motivo: "Falta el poder notarial\ndel apoderado" });
@@ -800,9 +803,10 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           const limpio = await pago(PROVEEDOR_LIMPIO, "2,000.00");
 
           // serv-N17: el motivo de la solicitud lleva de 10 a 500 caracteres, en el servidor y en la base.
-          for (const corto of ["a", "  Revisar  ", "123456789", "Revisar 😀", "ok 👍👍👍👍"]) {
+          for (const corto of ["a", "  Revisar  ", "123456789", "Revisar 😀", "ok 👍👍👍👍", "Revisar\u3164\u3164\u3164", "Revisar\u200b\u200b\u200b"]) {
             await assert.rejects(solicitarCambioDeSuspension(ori, { companyId: beta, formId: randomUUID(), tipo: "suspension", motivo: corto }), /motivo_corto/);
           }
+          await assert.rejects(solicitarCambioDeSuspension(ori, { companyId: beta, formId: randomUUID(), tipo: "suspension", motivo: "\u3164".repeat(12) }), /motivo_invalido/);
           await assert.rejects(solicitarCambioDeSuspension(ori, { companyId: beta, formId: randomUUID(), tipo: "suspension", motivo: "x".repeat(501) }), /motivo_invalido/);
           await assert.rejects(sofipo(ORI, async (c) => {
             const id = randomUUID();
@@ -2065,6 +2069,26 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
             }
             return false;
           };
+          // Una promesa que se revisa después de otros `await` lleva su manejo desde que nace: si la base responde
+          // antes (el orden de los sockets no está fijo), su rechazo no queda «sin manejar» y node:test no lo cuenta
+          // como falla de la prueba. Las que deben abortar nacen dentro de `assert.rejects`; las que deben salir bien,
+          // con `enEspera`, y el `await` de más abajo sigue viendo su error.
+          const enEspera = <T>(promesa: Promise<T>): Promise<T> => {
+            promesa.catch(() => undefined);
+            return promesa;
+          };
+          // La otra pestaña ya respondió: la base terminó su sentencia (su error, si lo hubo, ya salió por el socket) y
+          // el cliente ya lo leyó. Fuerza el orden con el que cayó el CI de 32e49b8: la respuesta de la pestaña que
+          // esperaba llega antes que el `await` que la revisa.
+          const yaRespondio = async (c: pg.Client) => {
+            const pid = (c as unknown as { processID: number }).processID;
+            for (let intento = 0; intento < 40; intento += 1) {
+              const fila = (await dueno.query("select state from pg_stat_activity where pid = $1", [pid])).rows[0] as { state?: string } | undefined;
+              if (fila?.state !== "active") break;
+              await new Promise((listo) => setTimeout(listo, 25));
+            }
+            await dueno.query("select 1");
+          };
 
           // READ COMMITTED, el cierre primero: la carga nueva espera, ve el caso cerrado con la carga
           // anterior y abre uno nuevo con la suya.
@@ -2075,9 +2099,10 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           try {
             await cerrarCaso(cierre, primero.id);
             const c4 = await cargarEn(carga, lista("2026-10-29", BETA_EN_LISTA));
-            const confirmada = carga.query("commit");
+            const confirmada = enEspera(carga.query("commit"));
             const espero = await esperaElCandado(carga);
             await cierre.query("commit");
+            await yaRespondio(carga);
             await confirmada;
             const despues = await casos();
             assert.equal(despues.find((k) => k.id === primero.id)?.cerrada_con_carga_id, c3);
@@ -2094,9 +2119,10 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           try {
             const c5 = await cargarEn(carga, lista("2026-10-30", BETA_EN_LISTA));
             await carga.query("set constraints all immediate");
-            const cerrando = cerrarCaso(cierre, segundo.id);
+            const cerrando = enEspera(cerrarCaso(cierre, segundo.id));
             const espero = await esperaElCandado(cierre);
             await carga.query("commit");
+            await yaRespondio(cierre);
             await cerrando;
             await cierre.query("commit");
             const despues = await casos();
@@ -2116,10 +2142,11 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           try {
             await cerrarCaso(cierre, tercero.id);
             await cargarEn(carga, lista("2026-11-01", BETA_EN_LISTA));
-            const confirmada = carga.query("commit");
+            const aborta = assert.rejects(carga.query("commit"), /could not serialize/);
             await esperaElCandado(carga);
             await cierre.query("commit");
-            await assert.rejects(confirmada, /could not serialize/);
+            await yaRespondio(carga);
+            await aborta;
           } finally {
             await soltar(cierre, carga);
           }
@@ -2136,10 +2163,11 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           try {
             c8 = await cargarEn(carga, lista("2026-11-02", BETA_EN_LISTA));
             await carga.query("set constraints all immediate");
-            const cerrando = cerrarCaso(cierre, cuarto.id);
+            const aborta = assert.rejects(cerrarCaso(cierre, cuarto.id), /could not serialize/);
             await esperaElCandado(cierre);
             await carga.query("commit");
-            await assert.rejects(cerrando, /could not serialize/);
+            await yaRespondio(cierre);
+            await aborta;
           } finally {
             await soltar(cierre, carga);
           }
@@ -2282,6 +2310,14 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
             assert.deepEqual(error.faltan, ["giro", "domicilio"]);
             return true;
           });
+          assert.deepEqual([await estado(), await eventos()], ["borrador", 0]);
+          // Décima revisión: un giro de puro U+3164 (y una colonia de U+200B) se guarda como vacío y también falta.
+          await guardarDatosGenerales(ori, { versionId, datos: { ...DATOS_GENERALES, razonSocial, rfc, giro: "\u3164", domicilioColonia: "\u200b\u3164" } });
+          assert.deepEqual(
+            (await dueno.query("select giro, domicilio_colonia from kyb_versiones where id = $1", [versionId])).rows[0],
+            { giro: null, domicilio_colonia: null },
+          );
+          await assert.rejects(enviarVersion(ori, versionId), (error: unknown) => error instanceof ExpedienteIncompleto && error.faltan.join() === "giro,domicilio");
           assert.deepEqual([await estado(), await eventos()], ["borrador", 0]);
           // Con los datos completos, la misma versión se envía.
           await guardarDatosGenerales(ori, { versionId, datos: { ...DATOS_GENERALES, razonSocial, rfc } });

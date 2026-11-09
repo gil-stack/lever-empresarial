@@ -156,6 +156,11 @@ describe("lo que le falta a una versión para enviarse", () => {
       "Faltan el giro, el RFC y el correo. Captura esos datos en «Datos generales» y vuelve a enviar.",
     );
   });
+  // Décima revisión: un dato guardado sin nada que se vea (un giro de puro U+3164) cuenta como vacío.
+  it("un dato hecho solo de invisibles falta, como si estuviera vacío", () => {
+    assert.deepEqual(datosQueFaltan({ ...completa, giro: "ㅤ", domicilio_colonia: " ​ " }), ["giro", "domicilio"]);
+    assert.deepEqual(datosQueFaltan({ ...completa, giro: "Abarrotes ❤️" }), []);
+  });
   it("una clave desconocida que llega por la dirección no se muestra", () => {
     assert.equal(fraseDeLoQueFalta(["<script>", ""]), null);
     assert.equal(fraseDeLoQueFalta(["giro", "otra"]), "Falta el giro. Captura ese dato en «Datos generales» y vuelve a enviar.");
