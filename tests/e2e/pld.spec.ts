@@ -127,37 +127,32 @@ test.describe("sin JavaScript", () => {
     expect(await notas()).toBe(antes + 1);
   });
 
-  // r2-serv-N19: el aviso de un campo vuelve sin fragmento, como en el alta del #59. Con «#entidad-titulo» en la
-  // dirección, el navegador descarta el autofocus al cargar la página completa y el foco se queda en el body.
-  test("sin JavaScript, el rechazo de un campo de PLD vuelve sin fragmento, con el foco y su mensaje junto al campo: clave CASFIM, nota y RFC del auditor, a 1440 y 390", async ({ page, context }) => {
+  // Inventario de la ronda 12: un rechazo de PLD ya no redirige. Sin JavaScript, el servidor pinta la misma página con
+  // lo escrito, el campo marcado con el foco (autofocus, sin fragmento: r2-serv-N19) y su mensaje justo debajo. Nada de
+  // lo escrito ni el aviso pasan por la dirección.
+  test("sin JavaScript, un rechazo de PLD conserva lo escrito, con el foco y su mensaje junto al campo: clave CASFIM, nota y RFC del auditor, a 1440 y 390", async ({ page, context }) => {
     const [caso] = await consultar<{ id: string }>("select id from pld_casos where company_id = $1", [ceiba]);
     const generico = "Revisa el campo marcado: el dato no tiene el formato esperado.";
     const rechazos = [
       {
-        ruta: "/operacion/reportes", campo: "#entidad-casfim", boton: /^Registrar claves/, url: /aviso=dato_invalido_claveCasfim&en=entidad-titulo/, texto: generico,
+        ruta: "/operacion/reportes", campo: "#entidad-casfim", boton: /^Registrar claves/, idMensaje: "aviso-entidad-campo", texto: generico,
+        escrito: { "#entidad-casfim": "12345", "#entidad-supervisor": "123456" },
         conteo: () => contar("select 1 from pld_entidad"),
         // El navegador no deja enviar algo fuera del patrón de 6 dígitos; sin el patrón, rechaza el servidor.
-        llenar: async () => {
-          await page.locator("#entidad-casfim").evaluate((campo) => campo.removeAttribute("pattern"));
-          await page.locator("#entidad-casfim").fill("12345");
-          await page.locator("#entidad-supervisor").fill("123456");
-        },
+        antes: () => page.locator("#entidad-casfim").evaluate((campo) => campo.removeAttribute("pattern")),
       },
       {
-        ruta: `/operacion/pld/casos/${caso!.id}`, campo: "#nota-texto", boton: "Agregar nota", url: /aviso=dato_invalido_texto&en=notas-titulo/,
+        ruta: `/operacion/pld/casos/${caso!.id}`, campo: "#nota-texto", boton: "Agregar nota", idMensaje: "aviso-nota-campo",
         texto: "Escribe la nota, con al menos 2 caracteres que se vean.",
+        escrito: { "#nota-texto": "a\u3164" },
         conteo: () => contar("select 1 from pld_notas where caso_id = $1", [caso!.id]),
-        llenar: () => page.locator("#nota-texto").fill("aㅤ"),
+        antes: async () => {},
       },
       {
-        ruta: "/operacion/comite", campo: "#auditor-rfc", boton: /^Registrar (otro )?auditor$/, url: /aviso=dato_invalido_rfc&en=auditor-titulo/, texto: generico,
+        ruta: "/operacion/comite", campo: "#auditor-rfc", boton: /^Registrar (otro )?auditor$/, idMensaje: "aviso-auditor-campo", texto: generico,
+        escrito: { "#auditor-nombre": "Auditora Sin Script", "#auditor-cargo": "Auditora interna", "#auditor-rfc": "ASS9001", "#auditor-curp": "ASSA900101MDFLRN09" },
         conteo: () => contar("select 1 from pld_comite_auditores"),
-        llenar: async () => {
-          await page.locator("#auditor-nombre").fill("Auditora Sin Script");
-          await page.locator("#auditor-cargo").fill("Auditora interna");
-          await page.locator("#auditor-rfc").fill("ASS9001");
-          await page.locator("#auditor-curp").fill("ASSA900101MDFLRN09");
-        },
+        antes: async () => {},
       },
     ];
     await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
@@ -167,19 +162,22 @@ test.describe("sin JavaScript", () => {
         const donde = `${rechazo.campo} ${ancho}`;
         const antes = await rechazo.conteo();
         await page.goto(rechazo.ruta);
-        await rechazo.llenar();
+        await rechazo.antes();
+        for (const [selector, valor] of Object.entries(rechazo.escrito)) await page.locator(selector).fill(valor);
         const [envio] = await Promise.all([
           page.waitForResponse((respuesta) => respuesta.request().method() === "POST"),
           page.getByRole("button", { name: rechazo.boton }).click(),
         ]);
-        expect(envio.status(), donde).toBe(303);
-        await page.waitForURL(rechazo.url);
-        expect(new URL(page.url()).hash, donde).toBe("");
+        expect(envio.status(), donde).toBe(200);
+        await page.waitForLoadState();
+        const url = new URL(page.url());
+        expect(url.pathname + url.search + url.hash, donde).toBe(rechazo.ruta);
+        for (const [selector, valor] of Object.entries(rechazo.escrito)) await expect(page.locator(selector), `${donde} ${selector}`).toHaveValue(valor);
         const control = page.locator(rechazo.campo);
         await expect(page.locator(`${rechazo.campo}:focus`), donde).toHaveCount(1);
         await expect(control, donde).toHaveAttribute("aria-invalid", "true");
-        await expect(control, donde).toHaveAttribute("aria-describedby", /(^| )aviso-operacion-campo$/);
-        const mensaje = page.locator('[id="aviso-operacion-campo"]');
+        await expect(control, donde).toHaveAttribute("aria-describedby", new RegExp(`(^| )${rechazo.idMensaje}$`));
+        const mensaje = page.locator(`[id="${rechazo.idMensaje}"]`);
         await expect(mensaje, donde).toHaveText(rechazo.texto);
         // Sin JavaScript nadie desplaza la página: el foco la lleva al campo y el mensaje va justo debajo, a la vista.
         const [cajaCampo, cajaMensaje] = [(await control.boundingBox())!, (await mensaje.boundingBox())!];
@@ -190,5 +188,30 @@ test.describe("sin JavaScript", () => {
         expect(await rechazo.conteo(), donde).toBe(antes);
       }
     }
+  });
+
+  // El manifiesto es una descarga (GET): un periodo rechazado vuelve a Conservación con la empresa y las fechas que se
+  // eligieron, sin fragmento (r2-serv-N19) y con el foco en «Desde».
+  test("sin JavaScript, el manifiesto con un periodo al revés vuelve con lo elegido, sin fragmento y con el foco en el periodo", async ({ page, context }) => {
+    const descargas = () => contar("select 1 from audit_log where accion = 'pld_manifiesto_descargado'");
+    const antes = await descargas();
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.goto("/operacion/conservacion");
+    await page.locator("#manifiesto-empresa").selectOption(ceiba);
+    await page.locator("#manifiesto-desde").fill("2026-03-01");
+    await page.locator("#manifiesto-hasta").fill("2026-02-01");
+    const [envio] = await Promise.all([
+      page.waitForResponse((respuesta) => respuesta.url().includes("/operacion/conservacion/manifiesto")),
+      page.getByRole("button", { name: "Descargar manifiesto" }).click(),
+    ]);
+    expect(envio.status()).toBe(303);
+    await page.waitForURL(/\/operacion\/conservacion\?aviso=periodo_invalido/);
+    expect(new URL(page.url()).hash).toBe("");
+    await expect(page.locator("#manifiesto-empresa")).toHaveValue(ceiba);
+    await expect(page.locator("#manifiesto-desde")).toHaveValue("2026-03-01");
+    await expect(page.locator("#manifiesto-hasta")).toHaveValue("2026-02-01");
+    await expect(page.locator("#manifiesto-desde:focus")).toHaveCount(1);
+    await expect(page.locator('[id="aviso-operacion-campo"]')).toHaveText("Revisa el periodo.");
+    expect(await descargas()).toBe(antes);
   });
 });

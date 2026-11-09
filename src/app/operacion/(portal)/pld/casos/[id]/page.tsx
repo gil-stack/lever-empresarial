@@ -4,19 +4,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import {
-  agregarNotaAccion,
-  cargarDocumentoPldAccion,
-  marcarVeinticuatroHorasAccion,
-  registrarReportePldAccion,
-  sumarAlertaAccion,
-} from "@/app/operacion/(portal)/pld/acciones";
+import { cargarDocumentoPldAccion, sumarAlertaAccion } from "@/app/operacion/(portal)/pld/acciones";
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { CampoArchivo } from "@/components/operacion/campo-archivo";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { ConfirmarParaDecidir } from "@/components/operacion/pld/confirmar";
+import { FormularioAcuseDelCaso, FormularioNota, FormularioVeinticuatroHoras } from "@/components/operacion/pld/formularios-del-caso";
 import { FormularioDictamen, FormularioPropuesta } from "@/components/operacion/pld/formularios-de-texto";
 import { ahoraEnMexicoParaCampo, plazoEnDias, resumenDeAlerta } from "@/components/operacion/pld/formato";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
@@ -170,18 +165,7 @@ export default async function CasoPld({
               {caso.venceEl ? `El dictamen vence el ${fechaDia(caso.venceEl)}: 60 días naturales desde la alerta más antigua.` : "Sin plazo calculado."}
             </p>
             {abierto && analiza ? (
-              <form action={marcarVeinticuatroHorasAccion} className="operacion-forma">
-                <input type="hidden" name="casoId" value={caso.id} />
-                <div className="campo">
-                  <label htmlFor="plazo-motivo">Si hay información de que los recursos pueden venir de actividades ilícitas: qué se sabe</label>
-                  <textarea id="plazo-motivo" name="motivo" required minLength={10} maxLength={1000} {...error("plazo-titulo", "motivo")} />
-                  {mensaje("plazo-titulo", "motivo")}
-                </div>
-                <div className="acciones">
-                  <BotonEnviar>Marcar como reporte de 24 horas</BotonEnviar>
-                  <p>Desde esta marca, el reporte vence en 24 horas y lleva la leyenda «Reporte de 24 horas».</p>
-                </div>
-              </form>
+              <FormularioVeinticuatroHoras casoId={caso.id} />
             ) : null}
           </>
         )}
@@ -206,18 +190,7 @@ export default async function CasoPld({
           </ul>
         )}
         {analiza ? (
-          <form action={agregarNotaAccion} className="operacion-forma">
-            <input type="hidden" name="casoId" value={caso.id} />
-            <input type="hidden" name="formId" value={randomUUID()} />
-            <div className="campo">
-              <label htmlFor="nota-texto">Nota</label>
-              <textarea id="nota-texto" name="texto" required maxLength={4000} {...error("notas-titulo", "texto")} />
-              {mensaje("notas-titulo", "texto")}
-            </div>
-            <div className="acciones">
-              <BotonEnviar>Agregar nota</BotonEnviar>
-            </div>
-          </form>
+          <FormularioNota casoId={caso.id} formId={randomUUID()} />
         ) : null}
       </Hoja>
 
@@ -363,34 +336,13 @@ export default async function CasoPld({
               <Renglon etiqueta="Plazo">{caso.reporte.fueraDePlazo ? "Fuera de plazo" : "A tiempo"}</Renglon>
             </Renglones>
           ) : reporta ? (
-            <form action={registrarReportePldAccion} className="formulario-pareja operacion-forma">
-              <input type="hidden" name="casoId" value={caso.id} />
-              <input type="hidden" name="formId" value={randomUUID()} />
-              <div className="campo">
-                <label htmlFor="reporte-folio">Folio del acuse</label>
-                <input id="reporte-folio" name="folio" required maxLength={40} autoComplete="off" {...error("reporte-titulo", "folio")} />
-                {mensaje("reporte-titulo", "folio")}
-              </div>
-              <div className="campo">
-                <label htmlFor="reporte-periodo">Periodo (AAAAMMDD)</label>
-                <input id="reporte-periodo" name="periodo" required inputMode="numeric" pattern="[0-9]{8}" defaultValue={caso.dictamen.dictaminadoEl.replace(/-/g, "")} {...error("reporte-titulo", "periodo")} />
-                {mensaje("reporte-titulo", "periodo")}
-              </div>
-              <div className="campo">
-                <label htmlFor="reporte-recibido">Fecha y hora de recepción (Ciudad de México)</label>
-                <input id="reporte-recibido" name="recibidoEn" type="datetime-local" required min={`${caso.dictamen.dictaminadoEl}T00:00`} max={ahoraEnMexicoParaCampo(new Date())} {...error("reporte-titulo", "recibidoEn")} />
-                {mensaje("reporte-titulo", "recibidoEn")}
-              </div>
-              <div className="campo">
-                <label htmlFor="reporte-registros">Número de registros</label>
-                <input id="reporte-registros" name="registros" required inputMode="numeric" defaultValue="1" {...error("reporte-titulo", "registros")} />
-                {mensaje("reporte-titulo", "registros")}
-              </div>
-              <div className="acciones operacion-ancho">
-                <BotonEnviar>Registrar acuse</BotonEnviar>
-                <p>El acuse no se puede modificar después, igual que en el SITI.</p>
-              </div>
-            </form>
+            <FormularioAcuseDelCaso
+              casoId={caso.id}
+              formId={randomUUID()}
+              periodo={caso.dictamen.dictaminadoEl.replace(/-/g, "")}
+              recibidoDesde={`${caso.dictamen.dictaminadoEl}T00:00`}
+              recibidoHasta={ahoraEnMexicoParaCampo(new Date())}
+            />
           ) : (
             <Vacio titulo="Sin acuse">Lo registra Cumplimiento cuando el Oficial presenta el reporte.</Vacio>
           )}

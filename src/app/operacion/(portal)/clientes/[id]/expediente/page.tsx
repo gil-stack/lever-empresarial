@@ -274,7 +274,7 @@ export default async function ExpedienteCliente({
         ) : null}
       </Hoja>
 
-      <PerfilTransaccional ctx={ctx} companyId={id} estado={expediente.empresa.estado} aviso={busqueda.aviso} en={busqueda.en} />
+      <PerfilTransaccional ctx={ctx} companyId={id} estado={expediente.empresa.estado} />
 
       <Hoja id="coincidencias-titulo" titulo={veLista ? "Coincidencias con listas" : "Revisión de Cumplimiento"}>
         {veLista ? (

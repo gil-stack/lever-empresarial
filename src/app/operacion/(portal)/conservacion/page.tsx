@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Conservación · Operación" };
  * se borran (la base lo impide). Aquí Cumplimiento y Auditoría descargan un
  * manifiesto verificable por empresa y periodo; cada descarga queda en la bitácora.
  */
-export default async function ConservacionOperacion({ searchParams }: { searchParams: Parametros<"aviso" | "en"> }) {
+export default async function ConservacionOperacion({ searchParams }: { searchParams: Parametros<"aviso" | "en" | "companyId" | "desde" | "hasta" | "pagina" | "despuesEn" | "despuesId"> }) {
   const ctx = await exigirContextoOperacion();
   const params = await soloTexto(searchParams);
   if (!puedeEnOperacion(ctx, "plataforma.pld.manifiesto")) {
@@ -46,7 +46,7 @@ export default async function ConservacionOperacion({ searchParams }: { searchPa
           <form method="get" action="/operacion/conservacion/manifiesto" className="formulario-pareja operacion-forma">
             <div className="campo operacion-ancho">
               <label htmlFor="manifiesto-empresa">Empresa</label>
-              <select id="manifiesto-empresa" name="companyId" required defaultValue="" {...error("companyId")}>
+              <select id="manifiesto-empresa" name="companyId" required defaultValue={clientes.some((cliente) => cliente.id === params.companyId) ? params.companyId : ""} {...error("companyId")}>
                 <option value="" disabled>
                   Elige una
                 </option>
@@ -60,14 +60,14 @@ export default async function ConservacionOperacion({ searchParams }: { searchPa
             </div>
             <div className="campo">
               <label htmlFor="manifiesto-desde">Desde</label>
-              <input id="manifiesto-desde" name="desde" type="date" required defaultValue={haceUnAnio} max={hoy} {...error("periodo")} />
+              <input id="manifiesto-desde" name="desde" type="date" required defaultValue={params.desde ?? haceUnAnio} max={hoy} {...error("periodo")} />
               {mensaje("periodo")}
             </div>
             <div className="campo">
               <label htmlFor="manifiesto-hasta">Hasta</label>
-              <input id="manifiesto-hasta" name="hasta" type="date" required defaultValue={hoy} max={hoy} {...error("periodo")} />
+              <input id="manifiesto-hasta" name="hasta" type="date" required defaultValue={params.hasta ?? hoy} max={hoy} {...error("periodo")} />
             </div>
-            <details className="operacion-detalle operacion-ancho">
+            <details className="operacion-detalle operacion-ancho" open={Boolean(params.despuesEn || params.despuesId || (params.pagina && params.pagina !== "1"))}>
               <summary>Continuar un manifiesto de varias páginas</summary>
               <p className="pista">
                 Cada página trae hasta {DOCUMENTOS_POR_PAGINA.toLocaleString("es-MX")} documentos. Si la última línea del archivo dice «siguiente», copia aquí
@@ -76,15 +76,15 @@ export default async function ConservacionOperacion({ searchParams }: { searchPa
               <div className="formulario-pareja">
                 <div className="campo">
                   <label htmlFor="manifiesto-pagina">Página</label>
-                  <input id="manifiesto-pagina" name="pagina" inputMode="numeric" defaultValue="1" />
+                  <input id="manifiesto-pagina" name="pagina" inputMode="numeric" defaultValue={params.pagina ?? "1"} />
                 </div>
                 <div className="campo">
                   <label htmlFor="manifiesto-despues-en">Después de (fecha y hora)</label>
-                  <input id="manifiesto-despues-en" name="despuesEn" autoComplete="off" />
+                  <input id="manifiesto-despues-en" name="despuesEn" autoComplete="off" defaultValue={params.despuesEn ?? ""} />
                 </div>
                 <div className="campo">
                   <label htmlFor="manifiesto-despues-id">Después del documento</label>
-                  <input id="manifiesto-despues-id" name="despuesId" autoComplete="off" className="operacion-mono" />
+                  <input id="manifiesto-despues-id" name="despuesId" autoComplete="off" className="operacion-mono" defaultValue={params.despuesId ?? ""} />
                 </div>
               </div>
             </details>

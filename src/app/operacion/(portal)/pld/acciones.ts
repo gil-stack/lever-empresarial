@@ -75,7 +75,7 @@ async function sesionConFactor() {
 
 // Perfil transaccional y evaluación semestral (en el expediente).
 
-export async function declararPerfilAccion(formData: FormData): Promise<void> {
+export async function declararPerfilAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const companyId = texto(formData, "companyId");
   let resultado: "declarado" | "propuesto";
@@ -85,12 +85,12 @@ export async function declararPerfilAccion(formData: FormData): Promise<void> {
       nominaMonto: texto(formData, "nominaMonto"), nominaOperaciones: texto(formData, "nominaOperaciones"), motivo: texto(formData, "motivo"),
     });
   } catch (error) {
-    return fallo(error, expediente(companyId), "#perfil-titulo");
+    return rechazado(error, previo, formData, ["pagosMonto", "pagosOperaciones", "nominaMonto", "nominaOperaciones", "motivo"]);
   }
   listo(expediente(companyId), resultado === "propuesto" ? "perfil_propuesto" : "perfil_declarado", "#perfil-titulo");
 }
 
-export async function resolverPropuestaDePerfilAccion(formData: FormData): Promise<void> {
+export async function resolverPropuestaDePerfilAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const companyId = texto(formData, "companyId");
   let decision: "aprobada" | "rechazada";
@@ -99,12 +99,12 @@ export async function resolverPropuestaDePerfilAccion(formData: FormData): Promi
       companyId, propuestaId: texto(formData, "propuestaId"), decision: texto(formData, "decision"), motivo: texto(formData, "motivo"),
     });
   } catch (error) {
-    return fallo(error, expediente(companyId), "#perfil-titulo");
+    return rechazado(error, previo, formData, ["motivo"]);
   }
   listo(expediente(companyId), decision === "aprobada" ? "perfil_aprobado" : "perfil_rechazado", "#perfil-titulo");
 }
 
-export async function registrarEvaluacionAccion(formData: FormData): Promise<void> {
+export async function registrarEvaluacionAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const companyId = texto(formData, "companyId");
   const perfil = texto(formData, "perfil");
@@ -116,7 +116,7 @@ export async function registrarEvaluacionAccion(formData: FormData): Promise<voi
         : {}),
     });
   } catch (error) {
-    return fallo(error, expediente(companyId), "#evaluacion-titulo");
+    return rechazado(error, previo, formData, ["perfil", "pagosMonto", "pagosOperaciones", "nominaMonto", "nominaOperaciones", "justificacion"]);
   }
   listo(expediente(companyId), "evaluacion_registrada", "#evaluacion-titulo");
 }
@@ -124,14 +124,17 @@ export async function registrarEvaluacionAccion(formData: FormData): Promise<voi
 // Aviso del personal.
 
 /**
- * Lo que vuelve a un formulario de texto libre (aviso, propuesta, dictamen) cuando el servidor lo rechaza: el aviso
- * y lo capturado, sin recargar y sin pasar por la dirección (r2-serv-N14).
+ * Lo que vuelve a un formulario de PLD cuando el servidor lo rechaza: el aviso y lo capturado, sin recargar y sin pasar
+ * por la dirección (r2-serv-N14 y el inventario de la ronda 12). Las casillas (`listas`) vuelven como sus valores
+ * marcados separados por comas: son identificadores o «si».
  */
 export type EstadoDelFormulario = { aviso: string | null; valores: Record<string, string>; vuelta: number };
 
-function rechazado(error: unknown, previo: EstadoDelFormulario, formData: FormData, campos: readonly string[]): EstadoDelFormulario {
+function rechazado(error: unknown, previo: EstadoDelFormulario, formData: FormData, campos: readonly string[], listas: readonly string[] = []): EstadoDelFormulario {
   if (!(error instanceof ErrorDeDominio)) throw error;
-  return { aviso: error.codigo, valores: Object.fromEntries(campos.map((campo) => [campo, texto(formData, campo)])), vuelta: previo.vuelta + 1 };
+  const valores = Object.fromEntries(campos.map((campo) => [campo, texto(formData, campo)]));
+  for (const lista of listas) valores[lista] = formData.getAll(lista).filter((valor) => typeof valor === "string").join(",");
+  return { aviso: error.codigo, valores, vuelta: previo.vuelta + 1 };
 }
 
 /**
@@ -185,13 +188,13 @@ export async function sumarAlertaAccion(formData: FormData): Promise<void> {
   listo(caso(casoId), "pld_alerta_sumada", "#alertas-titulo");
 }
 
-export async function agregarNotaAccion(formData: FormData): Promise<void> {
+export async function agregarNotaAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const casoId = texto(formData, "casoId");
   try {
     await agregarNota(ctx, { casoId, formId: formData.get("formId"), texto: texto(formData, "texto") });
   } catch (error) {
-    return fallo(error, caso(casoId), "#notas-titulo");
+    return rechazado(error, previo, formData, ["texto"]);
   }
   listo(caso(casoId), "pld_nota_agregada", "#notas-titulo");
 }
@@ -219,13 +222,13 @@ export async function registrarPropuestaAccion(previo: EstadoDelFormulario, form
   listo(caso(casoId), "pld_propuesta_registrada", "#propuesta-titulo");
 }
 
-export async function marcarVeinticuatroHorasAccion(formData: FormData): Promise<void> {
+export async function marcarVeinticuatroHorasAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const casoId = texto(formData, "casoId");
   try {
     await marcarVeinticuatroHoras(ctx, { casoId, motivo: texto(formData, "motivo") });
   } catch (error) {
-    return fallo(error, caso(casoId), "#plazo-titulo");
+    return rechazado(error, previo, formData, ["motivo"]);
   }
   listo(caso(casoId), "pld_caso_24_horas", "#plazo-titulo");
 }
@@ -246,7 +249,7 @@ export async function dictaminarCasoAccion(previo: EstadoDelFormulario, formData
   listo(caso(casoId), fueraDePlazo ? "pld_dictamen_fuera_de_plazo" : "pld_dictamen_registrado", "#dictamen-titulo");
 }
 
-export async function registrarReportePldAccion(formData: FormData): Promise<void> {
+export async function registrarReportePldAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const casoId = texto(formData, "casoId");
   let fueraDePlazo = false;
@@ -256,7 +259,7 @@ export async function registrarReportePldAccion(formData: FormData): Promise<voi
       recibidoEn: texto(formData, "recibidoEn"), registros: texto(formData, "registros"),
     }));
   } catch (error) {
-    return fallo(error, caso(casoId), "#reporte-titulo");
+    return rechazado(error, previo, formData, ["folio", "periodo", "recibidoEn", "registros"]);
   }
   listo(caso(casoId), fueraDePlazo ? "pld_reporte_fuera_de_plazo" : "pld_reporte_registrado", "#reporte-titulo");
 }
@@ -340,7 +343,7 @@ export async function registrarIntegrantesAccion(previo: EstadoDeIntegrantes, fo
   listo("/operacion/comite", "pld_integrantes_registrados", "#comunicaciones-titulo");
 }
 
-export async function registrarAuditorAccion(formData: FormData): Promise<void> {
+export async function registrarAuditorAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   try {
     await registrarAuditor(ctx, {
@@ -348,12 +351,12 @@ export async function registrarAuditorAccion(formData: FormData): Promise<void> 
       rfc: texto(formData, "rfc"), curp: texto(formData, "curp"), designadoEl: texto(formData, "designadoEl"),
     });
   } catch (error) {
-    return fallo(error, "/operacion/comite", "#auditor-titulo");
+    return rechazado(error, previo, formData, ["nombre", "cargoEntidad", "rfc", "curp", "designadoEl"]);
   }
   listo("/operacion/comite", "pld_auditor_registrado", "#auditor-titulo");
 }
 
-export async function registrarComunicacionAccion(formData: FormData): Promise<void> {
+export async function registrarComunicacionAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   try {
     await registrarComunicacion(ctx, {
@@ -361,12 +364,12 @@ export async function registrarComunicacionAccion(formData: FormData): Promise<v
       integrantes: formData.getAll("integrantes"), bajas: formData.getAll("bajas"),
     });
   } catch (error) {
-    return fallo(error, "/operacion/comite", "#comunicaciones-titulo");
+    return rechazado(error, previo, formData, ["folio", "recibidoEn"], ["integrantes", "bajas"]);
   }
   listo("/operacion/comite", "pld_comunicacion_registrada", "#comunicaciones-titulo");
 }
 
-export async function registrarSesionAccion(formData: FormData): Promise<void> {
+export async function registrarSesionAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const sesionId = texto(formData, "formId");
   let quorum = false;
@@ -375,7 +378,7 @@ export async function registrarSesionAccion(formData: FormData): Promise<void> {
       formId: sesionId, celebradaEl: texto(formData, "celebradaEl"), presentes: formData.getAll("presentes"), auditorPresente: texto(formData, "auditorPresente"),
     }));
   } catch (error) {
-    return fallo(error, "/operacion/comite", "#sesiones-titulo");
+    return rechazado(error, previo, formData, ["celebradaEl"], ["presentes", "auditorPresente"]);
   }
   listo(sesionComite(sesionId), quorum ? "pld_sesion_registrada" : "pld_sesion_sin_quorum");
 }
@@ -407,17 +410,17 @@ export async function cargarActaAccion(formData: FormData): Promise<void> {
 
 // Reportes periódicos y clave de la entidad.
 
-export async function registrarEntidadAccion(formData: FormData): Promise<void> {
+export async function registrarEntidadAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   try {
     await registrarEntidad(ctx, { formId: formData.get("formId"), claveCasfim: texto(formData, "claveCasfim"), claveOrganoSupervisor: texto(formData, "claveOrganoSupervisor") });
   } catch (error) {
-    return fallo(error, "/operacion/reportes", "#entidad-titulo");
+    return rechazado(error, previo, formData, ["claveCasfim", "claveOrganoSupervisor"]);
   }
   listo("/operacion/reportes", "pld_entidad_registrada", "#entidad-titulo");
 }
 
-export async function registrarPeriodicoAccion(formData: FormData): Promise<void> {
+export async function registrarPeriodicoAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const ancla = `#reporte-${texto(formData, "reporte")}-${texto(formData, "periodo")}`.replace(/[^#a-z0-9-]/gi, "");
   try {
@@ -426,7 +429,7 @@ export async function registrarPeriodicoAccion(formData: FormData): Promise<void
       recibidoEn: texto(formData, "recibidoEn"), registros: texto(formData, "registros"),
     });
   } catch (error) {
-    return fallo(error, "/operacion/reportes", ancla);
+    return rechazado(error, previo, formData, ["folio", "recibidoEn", "registros"]);
   }
   listo("/operacion/reportes", "pld_periodico_registrado", ancla);
 }

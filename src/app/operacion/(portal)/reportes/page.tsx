@@ -3,13 +3,12 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
-import { registrarEntidadAccion, registrarPeriodicoAccion } from "@/app/operacion/(portal)/pld/acciones";
-import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { ahoraEnMexicoParaCampo, plazoEnDiasHabiles } from "@/components/operacion/pld/formato";
+import { FormularioEntidad, FormularioPeriodico } from "@/components/operacion/pld/formularios-de-reportes";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
-import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
+import { EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { exigirContextoOperacion, puedeEnOperacion } from "@/server/operacion";
 import { ahoraPld, leerEntidad, leerPeriodicos, type Periodico } from "@/server/pld";
 
@@ -35,8 +34,6 @@ export default async function ReportesRegulatorios({ searchParams }: { searchPar
   const ahora = ahoraPld();
   const [entidad, periodicos] = await Promise.all([leerEntidad(ctx), leerPeriodicos(ctx, { ahora })]);
   const reporta = puedeEnOperacion(ctx, "plataforma.pld.reportar");
-  const error = (seccion: string, campo: string) => (params.en === seccion ? errorDelCampo(params.aviso, campo) : {});
-  const mensaje = (seccion: string, campo: string) => (params.en === seccion ? <MensajeDelCampo codigo={params.aviso} campo={campo} /> : null);
   const faltaCalendario = periodicos.map((p) => p.faltaCalendario).find((anio): anio is number => anio !== null) ?? null;
   const ancla = (p: Periodico) => `reporte-${p.reporte}-${p.periodo}`;
   // El acuse es posterior al cierre del periodo: desde el primer día del mes siguiente.
@@ -79,40 +76,14 @@ export default async function ReportesRegulatorios({ searchParams }: { searchPar
               </Renglon>
             </Renglones>
           ) : reporta && periodico.cerrado ? (
-            <form action={registrarPeriodicoAccion} className="formulario-pareja operacion-forma">
-              <input type="hidden" name="formId" value={randomUUID()} />
-              <input type="hidden" name="reporte" value={periodico.reporte} />
-              <input type="hidden" name="periodo" value={periodico.periodo} />
-              {periodico.reporte === "36" ? (
-                <>
-                  <div className="campo">
-                    <label htmlFor={`${ancla(periodico)}-folio`}>Folio del acuse del SITI</label>
-                    <input id={`${ancla(periodico)}-folio`} name="folio" required maxLength={40} autoComplete="off" {...error(ancla(periodico), "folio")} />
-                    {mensaje(ancla(periodico), "folio")}
-                  </div>
-                  <div className="campo">
-                    <label htmlFor={`${ancla(periodico)}-recibido`}>Fecha y hora de recepción</label>
-                    <input id={`${ancla(periodico)}-recibido`} name="recibidoEn" type="datetime-local" required min={desdeCierre(periodico)} max={ahoraEnMexicoParaCampo(new Date())} {...error(ancla(periodico), "recibidoEn")} />
-                    {mensaje(ancla(periodico), "recibidoEn")}
-                  </div>
-                  <div className="campo">
-                    <label htmlFor={`${ancla(periodico)}-registros`}>Número de registros</label>
-                    <input id={`${ancla(periodico)}-registros`} name="registros" required inputMode="numeric" defaultValue="1" {...error(ancla(periodico), "registros")} />
-                    {mensaje(ancla(periodico), "registros")}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <input type="hidden" name="folio" value="" />
-                  <input type="hidden" name="recibidoEn" value="" />
-                  <input type="hidden" name="registros" value="" />
-                </>
-              )}
-              <div className="acciones operacion-ancho">
-                <BotonEnviar>{periodico.reporte === "36" ? "Registrar envío" : "Registrar constancia"}</BotonEnviar>
-                <p>Se guarda con la huella del archivo que generó Lever. No se puede modificar.</p>
-              </div>
-            </form>
+            <FormularioPeriodico
+              formId={randomUUID()}
+              reporte={periodico.reporte}
+              periodo={periodico.periodo}
+              base={ancla(periodico)}
+              recibidoDesde={desdeCierre(periodico)}
+              recibidoHasta={ahoraEnMexicoParaCampo(new Date())}
+            />
           ) : null}
         </div>
         <Insignia tono={periodico.estado === "registrado" ? "sello" : periodico.estado === "vencido" ? "aviso" : "neutro"}>
@@ -145,23 +116,12 @@ export default async function ReportesRegulatorios({ searchParams }: { searchPar
           </div>
         )}
         {reporta ? (
-          <form action={registrarEntidadAccion} className="formulario-pareja operacion-forma">
-            <input type="hidden" name="formId" value={randomUUID()} />
-            <div className="campo">
-              <label htmlFor="entidad-casfim">Clave CASFIM de la entidad (6 dígitos)</label>
-              <input id="entidad-casfim" name="claveCasfim" required inputMode="numeric" pattern="[0-9]{6}" defaultValue={entidad?.claveCasfim ?? ""} {...error("entidad-titulo", "claveCasfim")} />
-              {mensaje("entidad-titulo", "claveCasfim")}
-            </div>
-            <div className="campo">
-              <label htmlFor="entidad-supervisor">Clave CASFIM del órgano supervisor (6 dígitos)</label>
-              <input id="entidad-supervisor" name="claveOrganoSupervisor" required inputMode="numeric" pattern="[0-9]{6}" defaultValue={entidad?.claveOrganoSupervisor ?? ""} {...error("entidad-titulo", "claveOrganoSupervisor")} />
-              {mensaje("entidad-titulo", "claveOrganoSupervisor")}
-            </div>
-            <div className="acciones operacion-ancho">
-              <BotonEnviar>{entidad ? "Registrar claves nuevas" : "Registrar claves"}</BotonEnviar>
-              <p>La clave de acceso al SITI es personal del Oficial de Cumplimiento: Lever no la pide ni la guarda.</p>
-            </div>
-          </form>
+          <FormularioEntidad
+            formId={randomUUID()}
+            casfim={entidad?.claveCasfim ?? ""}
+            supervisor={entidad?.claveOrganoSupervisor ?? ""}
+            nuevas={entidad !== null}
+          />
         ) : null}
       </Hoja>
 

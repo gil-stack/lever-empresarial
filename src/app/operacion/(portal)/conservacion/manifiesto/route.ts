@@ -1,3 +1,4 @@
+import { avisoDeCampo } from "@/components/operacion/aviso";
 import { errorConSecreto } from "@/server/entrada";
 import { contextoOperacion } from "@/server/operacion";
 import { POLITICA_DESCARGA } from "@/server/pagos-proveedores/descarga";
@@ -6,6 +7,8 @@ import { ErrorDeDominio } from "@/server/session";
 
 export const runtime = "nodejs";
 
+const CAMPOS = ["companyId", "desde", "hasta", "pagina", "despuesEn", "despuesId"] as const;
+
 /**
  * 61ª: el manifiesto de conservación de una empresa en un periodo, en streaming
  * (NDJSON) y por páginas de 2,000 documentos, para no pasar los 4.5 MB de una
@@ -13,7 +16,19 @@ export const runtime = "nodejs";
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const volver = (aviso: string) => Response.redirect(new URL(`/operacion/conservacion?aviso=${encodeURIComponent(aviso)}&en=manifiesto-titulo#manifiesto-titulo`, request.url), 303);
+  // Inventario de la ronda 12: vuelve con lo que se eligió (ya venía en esta dirección: empresa, fechas, página y cursor).
+  // r2-serv-N19: sin fragmento si el aviso es de un campo, para que el navegador no descarte el autofocus.
+  const volver = (aviso: string) => {
+    const regreso = new URL("/operacion/conservacion", request.url);
+    regreso.searchParams.set("aviso", aviso);
+    regreso.searchParams.set("en", "manifiesto-titulo");
+    for (const campo of CAMPOS) {
+      const valor = url.searchParams.get(campo);
+      if (valor) regreso.searchParams.set(campo, valor);
+    }
+    if (!avisoDeCampo(aviso)) regreso.hash = "manifiesto-titulo";
+    return Response.redirect(regreso, 303);
+  };
   try {
     const ctx = await contextoOperacion();
     if (!ctx) return new Response("No disponible", { status: 404, headers: { "Cache-Control": "private, no-store" } });

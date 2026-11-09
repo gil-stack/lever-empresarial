@@ -3,21 +3,16 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import {
-  registrarAuditorAccion,
-  registrarComunicacionAccion,
-  registrarSesionAccion,
-} from "@/app/operacion/(portal)/pld/acciones";
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
-import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { ConfirmarParaDecidir } from "@/components/operacion/pld/confirmar";
 import { FormularioIntegrantes } from "@/components/operacion/pld/formulario-integrantes";
+import { FormularioAuditor, FormularioComunicacion, FormularioSesion } from "@/components/operacion/pld/formularios-del-comite";
 import { FormularioModo } from "@/components/operacion/pld/formularios-de-texto";
 import { ahoraEnMexicoParaCampo } from "@/components/operacion/pld/formato";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
-import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
+import { EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { nombreDelMes } from "@/dominio/flujo/fechas";
 import { hoyEnMexico } from "@/dominio/operacion/comisiones";
 import { CARGO_COMITE } from "@/dominio/pld";
@@ -49,9 +44,6 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
   const hoy = hoyEnMexico(ahora);
   const [comite, modo, deCumplimiento] = await Promise.all([leerComite(ctx, { ahora }), leerModoDictamen(ctx), personalDeCumplimiento(ctx)]);
   const administra = puedeEnOperacion(ctx, "plataforma.pld.comite");
-  const error = (seccion: string, campo: string) => (params.en === seccion ? errorDelCampo(params.aviso, campo) : {});
-  const mensaje = (seccion: string, campo: string) => (params.en === seccion ? <MensajeDelCampo codigo={params.aviso} campo={campo} /> : null);
-  const sinPresentes: { "aria-invalid"?: true; "aria-describedby"?: string; autoFocus?: true } = error("sesiones-titulo", "presentes");
   const vigentes = comite.integrantes.filter((integrante) => integrante.vigente);
   const titulares = vigentes.filter((integrante) => integrante.titularidad === "TITULAR");
   const anteriores = comite.integrantes.filter((integrante) => !integrante.vigente);
@@ -151,37 +143,7 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
           <Vacio titulo="Sin auditor registrado">Asiste a las sesiones con voz y sin voto; no es integrante ni cuenta para el quórum.</Vacio>
         )}
         {administra ? (
-          <form action={registrarAuditorAccion} className="formulario-pareja operacion-forma">
-            <input type="hidden" name="formId" value={randomUUID()} />
-            <div className="campo">
-              <label htmlFor="auditor-nombre">Nombre</label>
-              <input id="auditor-nombre" name="nombre" required maxLength={200} autoComplete="off" {...error("auditor-titulo", "nombre")} />
-              {mensaje("auditor-titulo", "nombre")}
-            </div>
-            <div className="campo">
-              <label htmlFor="auditor-cargo">Cargo en la entidad</label>
-              <input id="auditor-cargo" name="cargoEntidad" required maxLength={120} autoComplete="off" {...error("auditor-titulo", "cargoEntidad")} />
-              {mensaje("auditor-titulo", "cargoEntidad")}
-            </div>
-            <div className="campo">
-              <label htmlFor="auditor-rfc">RFC con homoclave</label>
-              <input id="auditor-rfc" name="rfc" required maxLength={13} autoComplete="off" className="operacion-mono" {...error("auditor-titulo", "rfc")} />
-              {mensaje("auditor-titulo", "rfc")}
-            </div>
-            <div className="campo">
-              <label htmlFor="auditor-curp">CURP</label>
-              <input id="auditor-curp" name="curp" required maxLength={18} autoComplete="off" className="operacion-mono" {...error("auditor-titulo", "curp")} />
-              {mensaje("auditor-titulo", "curp")}
-            </div>
-            <div className="campo">
-              <label htmlFor="auditor-designado">Fecha de designación</label>
-              <input id="auditor-designado" name="designadoEl" type="date" required max={hoy} defaultValue={hoy} {...error("auditor-titulo", "designadoEl")} />
-              {mensaje("auditor-titulo", "designadoEl")}
-            </div>
-            <div className="acciones operacion-ancho">
-              <BotonEnviar>{comite.auditor ? "Registrar otro auditor" : "Registrar auditor"}</BotonEnviar>
-            </div>
-          </form>
+          <FormularioAuditor formId={randomUUID()} hoy={hoy} otro={comite.auditor !== null} />
         ) : null}
       </Hoja>
 
@@ -215,37 +177,12 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
           </>
         )}
         {administra && comite.pendientes.length > 0 ? (
-          <form action={registrarComunicacionAccion} className="formulario-pareja operacion-forma">
-            <input type="hidden" name="formId" value={randomUUID()} />
-            <div className="campo">
-              <label htmlFor="comunicacion-folio">Folio del acuse del SITI</label>
-              <input id="comunicacion-folio" name="folio" required maxLength={40} autoComplete="off" {...error("comunicaciones-titulo", "folio")} />
-              {mensaje("comunicaciones-titulo", "folio")}
-            </div>
-            <div className="campo">
-              <label htmlFor="comunicacion-recibido">Fecha y hora de recepción</label>
-              <input id="comunicacion-recibido" name="recibidoEn" type="datetime-local" required max={ahoraEnMexicoParaCampo(new Date())} {...error("comunicaciones-titulo", "recibidoEn")} />
-              {mensaje("comunicaciones-titulo", "recibidoEn")}
-            </div>
-            <fieldset className="opciones operacion-ancho">
-              <legend>Qué cubre</legend>
-              {pendientesDeDesignacion.map((p) => (
-                <label key={`d-${p.integranteId}`} className="confirmacion">
-                  <input type="checkbox" name="integrantes" value={p.integranteId} defaultChecked />
-                  <span>Designación de {p.nombre}</span>
-                </label>
-              ))}
-              {pendientesDeBaja.map((p) => (
-                <label key={`b-${p.integranteId}`} className="confirmacion">
-                  <input type="checkbox" name="bajas" value={p.integranteId} defaultChecked />
-                  <span>Baja de {p.nombre}</span>
-                </label>
-              ))}
-            </fieldset>
-            <div className="acciones operacion-ancho">
-              <BotonEnviar>Registrar comunicación</BotonEnviar>
-            </div>
-          </form>
+          <FormularioComunicacion
+            formId={randomUUID()}
+            recibidoHasta={ahoraEnMexicoParaCampo(new Date())}
+            designaciones={pendientesDeDesignacion.map((p) => ({ integranteId: p.integranteId, nombre: p.nombre }))}
+            bajas={pendientesDeBaja.map((p) => ({ integranteId: p.integranteId, nombre: p.nombre }))}
+          />
         ) : null}
         {comite.comunicaciones.length > 0 ? (
           <details className="operacion-detalle">
@@ -314,38 +251,15 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
           </ul>
         )}
         {modo.modo === "comite" && administra && vigentes.length > 0 ? (
-          <form action={registrarSesionAccion} className="formulario-pareja operacion-forma">
-            <input type="hidden" name="formId" value={randomUUID()} />
-            <div className="campo">
-              <label htmlFor="sesion-fecha">Fecha de la sesión</label>
-              <input id="sesion-fecha" name="celebradaEl" type="date" required max={hoy} defaultValue={hoy} {...error("sesiones-titulo", "celebradaEl")} />
-              {mensaje("sesiones-titulo", "celebradaEl")}
-            </div>
-            {/* r2-serv-N6: el fieldset no recibe el foco; con el aviso, lo toma la primera casilla. */}
-            <fieldset className="opciones operacion-ancho" aria-invalid={sinPresentes["aria-invalid"]} aria-describedby={sinPresentes["aria-describedby"]}>
-              <legend>Presentes</legend>
-              {vigentes.map((integrante, indice) => (
-                <label key={integrante.id} className="confirmacion">
-                  <input type="checkbox" name="presentes" value={integrante.id} autoFocus={indice === 0 && sinPresentes.autoFocus === true} />
-                  <span>
-                    {nombreDeIntegrante(integrante)} · {CARGO_COMITE[integrante.cargo]}
-                    {integrante.titularidad === "SUPLENTE" ? " (suplente)" : ""}
-                  </span>
-                </label>
-              ))}
-              {comite.auditor ? (
-                <label className="confirmacion">
-                  <input type="checkbox" name="auditorPresente" value="si" />
-                  <span>{comite.auditor.nombre} · auditor, con voz y sin voto</span>
-                </label>
-              ) : null}
-              {mensaje("sesiones-titulo", "presentes")}
-            </fieldset>
-            <div className="acciones operacion-ancho">
-              <BotonEnviar>Registrar sesión</BotonEnviar>
-              <p>Sin la mayoría de los miembros, queda registrada «sin quórum» y no admite votos.</p>
-            </div>
-          </form>
+          <FormularioSesion
+            formId={randomUUID()}
+            hoy={hoy}
+            integrantes={vigentes.map((integrante) => ({
+              id: integrante.id,
+              etiqueta: `${nombreDeIntegrante(integrante)} · ${CARGO_COMITE[integrante.cargo]}${integrante.titularidad === "SUPLENTE" ? " (suplente)" : ""}`,
+            }))}
+            auditor={comite.auditor?.nombre ?? null}
+          />
         ) : null}
       </Hoja>
 

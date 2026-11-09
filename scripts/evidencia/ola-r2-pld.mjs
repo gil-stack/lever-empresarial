@@ -320,6 +320,15 @@ async function flujo1() {
   await omar.p.locator("#perfil-pagos-operaciones").fill("30");
   await omar.p.locator("#perfil-nomina-monto").fill("90000");
   await omar.p.locator("#perfil-nomina-operaciones").fill("2");
+  // Inventario de la ronda 12: un monto que no es número se rechaza sin recargar y los cuatro valores siguen ahí.
+  await omar.p.locator("#perfil-nomina-monto").fill("noventa mil");
+  const perfilRechazado = await rechazoEnFormulario(omar.p, omar.p.getByRole("button", { name: "Registrar perfil" }), "#perfil-nomina-monto", "aviso-perfil", {
+    "#perfil-pagos-monto": "250,000.00", "#perfil-pagos-operaciones": "30", "#perfil-nomina-monto": "noventa mil", "#perfil-nomina-operaciones": "2",
+  });
+  exigir(sinRecarga(perfilRechazado) && cuenta(`pld_perfiles where company_id = '${NOGAL}'`) === 0,
+    "1. un monto de nómina que no es número se rechaza sin recargar: queda marcado, con el foco, y los cuatro valores siguen", JSON.stringify(perfilRechazado));
+  await foto(omar.p, "f1-perfil-rechazado-conserva-lo-capturado");
+  await omar.p.locator("#perfil-nomina-monto").fill("90000");
   await enviar(omar.p, omar.p.getByRole("button", { name: "Registrar perfil" }), "perfil_declarado", { doble: true });
   exigir(cuenta(`pld_perfiles where company_id = '${NOGAL}'`) === 1, "1. doble clic en «Registrar perfil» = 1 perfil");
   exigir(cuenta(`audit_log where accion = 'expediente_perfil_declarado' and company_id = '${NOGAL}'`) === 1, "1. un solo evento «expediente_perfil_declarado»");
@@ -356,6 +365,13 @@ async function flujo1() {
   await ir(celia.p, "/operacion/cumplimiento");
   exigir((await fila(celia.p, "Nogal Comercial").filter({ hasText: "Por resolver" }).count()) === 1, "1. la bandeja de Cumplimiento lista la propuesta de Nogal");
   await ir(celia.p, `/operacion/clientes/${NOGAL}/expediente#perfil-titulo`);
+  // Inventario de la ronda 12: «Revisar» con tres U+3164 pasa el mínimo del navegador (10) y el servidor cuenta 7 que se ven.
+  await celia.p.locator("#perfil-resolucion-motivo").fill("Revisarㅤㅤㅤ");
+  const resolucionRechazada = await rechazoEnFormulario(celia.p, celia.p.getByRole("button", { name: "Aprobar el cambio" }), "#perfil-resolucion-motivo", "aviso-resolucion", {
+    "#perfil-resolucion-motivo": "Revisarㅤㅤㅤ",
+  });
+  exigir(sinRecarga(resolucionRechazada) && resolucionRechazada.aviso.includes("al menos 10 caracteres") && cuenta(`pld_perfil_resoluciones where company_id = '${NOGAL}'`) === 0,
+    "1. un motivo que no llega a 10 caracteres visibles se rechaza sin recargar y sigue escrito", JSON.stringify(resolucionRechazada));
   await celia.p.locator("#perfil-resolucion-motivo").fill("Revisé las facturas de la nueva sucursal: corresponde al giro.");
   await enviar(celia.p, celia.p.getByRole("button", { name: "Aprobar el cambio" }), "perfil_aprobado", { doble: true });
   exigir(cuenta(`pld_perfil_resoluciones where company_id = '${NOGAL}'`) === 1, "1. doble clic en «Aprobar el cambio» = 1 resolución");
@@ -547,6 +563,31 @@ async function rechazoConservaElTexto(p, boton, campo, texto) {
   return { marcado, foco, conserva: (await p.locator(campo).inputValue()) === texto, limpia: !url.searchParams.has("aviso") && !decodeURIComponent(url.href).includes(texto.slice(0, 3)) };
 }
 
+/**
+ * Inventario de la ronda 12: un formulario de PLD rechazado vuelve sin recargar, con el aviso en el formulario
+ * (`idAviso`), el campo marcado y con el foco (en un grupo, su primer control) y lo escrito en `valores` (texto, o
+ * true/false para casillas y opciones). La dirección no cambia: ni el aviso ni lo escrito pasan por ella.
+ */
+async function rechazoEnFormulario(p, boton, campo, idAviso, valores = {}) {
+  const antes = p.url();
+  await boton.click();
+  const marcado = await p.locator(`${campo}[aria-invalid="true"]`).waitFor({ timeout: 20000 }).then(() => true, () => false);
+  await listo(p);
+  const foco = await p.waitForFunction((selector) => {
+    const nodo = document.querySelector(selector);
+    return nodo !== null && (nodo === document.activeElement || (nodo instanceof HTMLFieldSetElement && nodo.contains(document.activeElement)));
+  }, campo, { timeout: 5000 }).then(() => true, () => false);
+  const distintos = [];
+  for (const [selector, esperado] of Object.entries(valores)) {
+    const nodo = p.locator(selector);
+    const obtenido = typeof esperado === "boolean" ? await nodo.isChecked() : await nodo.inputValue();
+    if (obtenido !== esperado) distintos.push(`${selector}: ${JSON.stringify(obtenido)}`);
+  }
+  const avisoDelFormulario = (await p.locator(`#${idAviso}`).innerText().catch(() => "")).replace(/\s+/g, " ").trim();
+  return { marcado, foco, conserva: distintos.length === 0, distintos, limpia: p.url() === antes, aviso: avisoDelFormulario };
+}
+const sinRecarga = (r) => r.marcado && r.foco && r.conserva && r.limpia;
+
 async function proponer(p, propuesta, justificacion) {
   await p.locator("#propuesta-propuesta").selectOption(propuesta);
   await p.locator("#propuesta-justificacion").fill(justificacion);
@@ -570,9 +611,9 @@ async function flujo6() {
 
   // r2-fix2-N1: «a» con un U+3164 es una sola letra que se ve; la nota pide dos.
   await p.locator("#nota-texto").fill("aㅤ");
-  await enviar(p, p.getByRole("button", { name: "Agregar nota" }), "dato_invalido_texto");
-  exigir(cuenta(`pld_notas where caso_id = '${ids.casoTaller}'`) === 0 && (await p.locator('#nota-texto[aria-invalid="true"]').count()) === 1,
-    "6. la nota «a» con un carácter invisible se rechaza, con el campo marcado");
+  const notaRechazada = await rechazoEnFormulario(p, p.getByRole("button", { name: "Agregar nota" }), "#nota-texto", "aviso-nota", { "#nota-texto": "aㅤ" });
+  exigir(cuenta(`pld_notas where caso_id = '${ids.casoTaller}'`) === 0 && sinRecarga(notaRechazada),
+    "6. la nota «a» con un carácter invisible se rechaza sin recargar: el campo marcado, con el foco y el texto como se escribió", JSON.stringify(notaRechazada));
   await p.locator("#nota-texto").fill("Los tres pagos van al mismo proveedor y la nómina subió con una sola persona. Pido el contrato de suministro.");
   await enviar(p, p.getByRole("button", { name: "Agregar nota" }), "pld_nota_agregada", { doble: true });
   exigir(cuenta(`pld_notas where caso_id = '${ids.casoTaller}'`) === 1, "6. doble clic en «Agregar nota» = 1 nota");
@@ -694,8 +735,11 @@ async function flujo7() {
   await p.locator("#auditor-rfc").fill(INTEGRANTES.vocal.rfc);
   await p.locator("#auditor-curp").fill("ESLR780606MDFSRQA6");
   await p.locator("#auditor-designado").fill(DESIGNADO);
-  await enviar(p, p.getByRole("button", { name: "Registrar auditor" }), "comite_auditor_integrante");
-  exigir((await aviso(p)).includes("El auditor interno no puede ser integrante del Comité"), "7. el auditor con el RFC de un integrante se rechaza con su aviso", await aviso(p));
+  const auditorConRfc = await rechazoEnFormulario(p, p.getByRole("button", { name: "Registrar auditor" }), "#auditor-rfc", "aviso-auditor", {
+    "#auditor-nombre": "Raquel Espinosa Lara", "#auditor-cargo": "Auditora interna", "#auditor-rfc": INTEGRANTES.vocal.rfc, "#auditor-curp": "ESLR780606MDFSRQA6", "#auditor-designado": DESIGNADO,
+  });
+  exigir(auditorConRfc.aviso.includes("El auditor interno no puede ser integrante del Comité") && sinRecarga(auditorConRfc),
+    "7. el auditor con el RFC de un integrante se rechaza con su aviso, sin recargar: el RFC marcado y con el foco, y los cinco datos siguen", JSON.stringify(auditorConRfc));
   exigir((await p.locator("#auditor-rfc").getAttribute("aria-describedby")) !== null, "7. el aviso queda ligado al campo RFC del auditor");
   exigir(cuenta("pld_comite_auditores") === 0, "7. el auditor rechazado no se guardó");
   await foto(p, "f7-auditor-con-rfc-de-integrante");
@@ -705,8 +749,11 @@ async function flujo7() {
   await p.locator("#auditor-rfc").fill("GASX820404AB9");
   await p.locator("#auditor-curp").fill("GASX820404HNLRLVA9");
   await p.locator("#auditor-designado").fill(DESIGNADO);
-  await enviar(p, p.getByRole("button", { name: "Registrar auditor" }), "comite_auditor_integrante");
-  exigir(cuenta("pld_comite_auditores") === 0, "7. el auditor con el nombre de un integrante vigente se rechaza y no se guarda");
+  const auditorConNombre = await rechazoEnFormulario(p, p.getByRole("button", { name: "Registrar auditor" }), "#auditor-rfc", "aviso-auditor", {
+    "#auditor-nombre": "garza solis, Ivan", "#auditor-rfc": "GASX820404AB9", "#auditor-curp": "GASX820404HNLRLVA9",
+  });
+  exigir(cuenta("pld_comite_auditores") === 0 && auditorConNombre.aviso.includes("El auditor interno no puede ser integrante del Comité") && sinRecarga(auditorConNombre),
+    "7. el auditor con el nombre de un integrante vigente se rechaza sin recargar, no se guarda y lo escrito sigue", JSON.stringify(auditorConNombre));
   await foto(p, "f7-auditor-con-nombre-de-integrante");
   await p.locator("#auditor-nombre").fill("Raquel Espinosa Lara");
   await p.locator("#auditor-cargo").fill("Auditora interna");
@@ -717,8 +764,21 @@ async function flujo7() {
   exigir(cuenta("pld_comite_auditores") === 1, "7. doble clic en «Registrar auditor» = 1 auditor (no es integrante)");
 
   await ir(p, "/operacion/comite#comunicaciones-titulo");
-  await p.locator("#comunicacion-folio").fill("SITI-INT-2026-0001");
+  // Inventario de la ronda 12: un folio con un carácter invisible se rechaza sin recargar; el folio, la fecha y las
+  // casillas (una desmarcada) siguen como estaban.
+  const primeraDesignacion = 'input[name="integrantes"] >> nth=0';
+  const segundaDesignacion = 'input[name="integrantes"] >> nth=1';
+  await p.locator("#comunicacion-folio").fill("SITI-INT\u200b-2026-0001");
   await p.locator("#comunicacion-recibido").fill(`${hoy()}T09:00`);
+  await p.locator(primeraDesignacion).uncheck();
+  const comunicacionRechazada = await rechazoEnFormulario(p, p.getByRole("button", { name: "Registrar comunicación" }), "#comunicacion-folio", "aviso-comunicacion", {
+    "#comunicacion-folio": "SITI-INT\u200b-2026-0001", "#comunicacion-recibido": `${hoy()}T09:00`, [primeraDesignacion]: false, [segundaDesignacion]: true,
+  });
+  exigir(sinRecarga(comunicacionRechazada) && cuenta("pld_comite_comunicaciones") === 0,
+    "7. el folio con un carácter invisible se rechaza sin recargar: queda marcado, y el folio, la fecha y las casillas siguen como estaban", JSON.stringify(comunicacionRechazada));
+  await foto(p, "f7-comunicacion-rechazada-conserva-las-casillas");
+  await p.locator(primeraDesignacion).check();
+  await p.locator("#comunicacion-folio").fill("SITI-INT-2026-0001");
   await enviar(p, p.getByRole("button", { name: "Registrar comunicación" }), "pld_comunicacion_registrada", { doble: true });
   exigir(cuenta("pld_comite_comunicaciones") === 1, "7. doble clic en «Registrar comunicación» = 1 acuse");
   exigir((await hoja(p, "comunicaciones-titulo").innerText()).includes("Nada por comunicar"), "7. con el acuse, las cinco designaciones quedan comunicadas");
@@ -729,7 +789,11 @@ async function flujo7() {
 
   // r2-serv-N6: sin presentes, el aviso marca el grupo y el foco cae en la primera casilla (el grupo no lo recibe).
   await ir(p, "/operacion/comite#sesiones-titulo");
-  await enviar(p, p.getByRole("button", { name: "Registrar sesión" }), "sesion_presentes_invalidos");
+  await p.locator('input[name="auditorPresente"]').check();
+  const sinPresentes = await rechazoEnFormulario(p, p.getByRole("button", { name: "Registrar sesión" }), "#sesion-presentes", "aviso-sesion", {
+    "#sesion-fecha": hoy(), 'input[name="auditorPresente"]': true,
+  });
+  exigir(sinRecarga(sinPresentes), "7. sesión sin presentes: se rechaza sin recargar, y la fecha y la casilla del auditor siguen", JSON.stringify(sinPresentes));
   const primera = hoja(p, "sesiones-titulo").locator('input[name="presentes"]').first();
   exigir(await primera.evaluate((nodo) => nodo === document.activeElement), "7. sesión sin presentes: el foco queda en la primera casilla");
   exigir((await hoja(p, "sesiones-titulo").locator("fieldset").getAttribute("aria-invalid")) === "true", "7. y el grupo «Presentes» queda marcado");
@@ -854,10 +918,17 @@ async function flujo8() {
   await foto(p, "f8-bandeja-reloj-3-nov-quedan-2-habiles");
   await ir(p, `/operacion/pld/casos/${ids.casoAviso}#reporte-titulo`);
   exigir((await hoja(p, "reporte-titulo").innerText()).includes(`${fechaDia("2026-11-05")} (3 días hábiles)`), "8. el caso dice que el reporte vence el 5-nov (3 días hábiles)");
-  await p.locator("#reporte-folio").fill("UIF-2026-000123");
+  // Inventario de la ronda 12: un folio con un carácter invisible se rechaza sin recargar; periodo, fecha y registros siguen.
+  await p.locator("#reporte-folio").fill("UIF-2026\u200b-000123");
   await p.locator("#reporte-periodo").fill("20261104");
   await p.locator("#reporte-recibido").fill("2026-11-04T10:00");
   await p.locator("#reporte-registros").fill("1");
+  const acuseRechazado = await rechazoEnFormulario(p, p.getByRole("button", { name: "Registrar acuse" }), "#reporte-folio", "aviso-acuse", {
+    "#reporte-folio": "UIF-2026\u200b-000123", "#reporte-periodo": "20261104", "#reporte-recibido": "2026-11-04T10:00", "#reporte-registros": "1",
+  });
+  exigir(sinRecarga(acuseRechazado) && cuenta(`pld_reportes where caso_id = '${ids.casoAviso}'`) === 0,
+    "8. el folio del acuse con un carácter invisible se rechaza sin recargar: queda marcado, y periodo, fecha y registros siguen", JSON.stringify(acuseRechazado));
+  await p.locator("#reporte-folio").fill("UIF-2026-000123");
   await enviar(p, p.getByRole("button", { name: "Registrar acuse" }), "pld_reporte_registrado", { doble: true });
   exigir(cuenta(`pld_reportes where caso_id = '${ids.casoAviso}'`) === 1, "8. doble clic en «Registrar acuse» = 1 acuse");
   exigir(sql(`select folio || ' ' || tipo_reporte || ' ' || fuera_de_plazo from pld_reportes where caso_id = '${ids.casoAviso}'`) === "UIF-2026-000123 3 false", "8. folio y acuse registrados a tiempo, tipo 3 (interna preocupante)");
@@ -946,8 +1017,11 @@ async function flujo10() {
   await p.locator("#entidad-casfim").fill("060201");
   await p.locator("#entidad-supervisor").evaluate((campo) => campo.removeAttribute("pattern"));
   await p.locator("#entidad-supervisor").fill("12");
-  await enviar(p, p.getByRole("button", { name: "Registrar claves" }), "dato_invalido_claveOrganoSupervisor");
-  exigir(await marcadoConFoco(p, "#entidad-supervisor"), "10. la clave del órgano supervisor rechazada queda marcada y con el foco");
+  const claveRechazada = await rechazoEnFormulario(p, p.getByRole("button", { name: "Registrar claves" }), "#entidad-supervisor", "aviso-entidad", {
+    "#entidad-casfim": "060201", "#entidad-supervisor": "12",
+  });
+  exigir(sinRecarga(claveRechazada) && await marcadoConFoco(p, "#entidad-supervisor"),
+    "10. la clave del órgano supervisor rechazada queda marcada y con el foco, sin recargar y con las dos claves como se escribieron", JSON.stringify(claveRechazada));
   exigir((await p.locator("#entidad-casfim").getAttribute("aria-invalid")) === null, "10. y la CASFIM de la entidad no se marca");
   await foto(p, "f10-clave-del-supervisor-marcada");
   await p.locator("#entidad-casfim").fill("060201");
@@ -957,9 +1031,16 @@ async function flujo10() {
   const archivo = await descargar(p, () => p.locator("#reporte-36-202609").getByRole("link", { name: "Descargar el archivo de 41 columnas" }).click());
   const renglon = archivo.bytes.toString("utf8");
   exigir(renglon === `1;202609;;001002;060201;${";".repeat(36)}\r\n`, "10. el archivo del trimestre jul-sep es el reporte vacío: 41 columnas, llenas la 1, 2, 4 y 5", JSON.stringify(renglon));
-  await p.locator("#reporte-36-202609-folio").fill("SITI-REL-2026-09");
+  // Inventario de la ronda 12: un folio con un carácter invisible se rechaza sin recargar; la fecha y los registros siguen.
+  await p.locator("#reporte-36-202609-folio").fill("SITI-REL\u200b-2026-09");
   await p.locator("#reporte-36-202609-recibido").fill("2026-10-09T11:30");
   await p.locator("#reporte-36-202609-registros").fill("1");
+  const envioRechazado = await rechazoEnFormulario(p, p.locator("#reporte-36-202609").getByRole("button", { name: "Registrar envío" }), "#reporte-36-202609-folio", "aviso-reporte-36-202609", {
+    "#reporte-36-202609-folio": "SITI-REL\u200b-2026-09", "#reporte-36-202609-recibido": "2026-10-09T11:30", "#reporte-36-202609-registros": "1",
+  });
+  exigir(sinRecarga(envioRechazado) && cuenta("pld_periodicos where reporte = '36' and periodo = '202609'") === 0,
+    "10. el folio del envío con un carácter invisible se rechaza sin recargar: queda marcado, y la fecha y los registros siguen", JSON.stringify(envioRechazado));
+  await p.locator("#reporte-36-202609-folio").fill("SITI-REL-2026-09");
   await enviar(p, p.locator("#reporte-36-202609").getByRole("button", { name: "Registrar envío" }), "pld_periodico_registrado", { doble: true });
   exigir(sql("select folio || ' ' || archivo_sha256 from pld_periodicos where reporte = '36' and periodo = '202609'") === `SITI-REL-2026-09 ${sha256(archivo.bytes)}`, "10. doble clic en «Registrar envío» = 1 acuse con la huella del archivo descargado");
   exigir((await p.locator("#reporte-36-202609").innerText()).includes("Registrado"), "10. la tarjeta queda «Registrado»");
@@ -1013,8 +1094,12 @@ async function flujo12() {
   await p.getByLabel("Cambia: registro los montos nuevos").check();
   await p.locator("#evaluacion-pagos-monto").fill("trescientos mil");
   await p.locator("#evaluacion-justificacion").fill("Creció la operación con proveedores nuevos este semestre.");
-  await enviar(p, p.getByRole("button", { name: "Registrar evaluación" }), "dato_invalido_pagosMonto");
-  exigir(await marcadoConFoco(p, "#evaluacion-pagos-monto"), "12. el monto rechazado de la evaluación queda marcado y con el foco");
+  const evaluacionRechazada = await rechazoEnFormulario(p, p.getByRole("button", { name: "Registrar evaluación" }), "#evaluacion-pagos-monto", "aviso-evaluacion", {
+    "#evaluacion-pagos-monto": "trescientos mil", "#evaluacion-justificacion": "Creció la operación con proveedores nuevos este semestre.",
+    'input[name="perfil"][value="cambia"]': true,
+  });
+  exigir(sinRecarga(evaluacionRechazada) && await marcadoConFoco(p, "#evaluacion-pagos-monto"),
+    "12. el monto rechazado de la evaluación queda marcado y con el foco, sin recargar: «Cambia», el monto y la justificación siguen", JSON.stringify(evaluacionRechazada));
   exigir(cuenta(`pld_evaluaciones where company_id = '${COBRE}'`) === 0, "12. y no se registró nada");
   await foto(p, "f12-monto-de-la-evaluacion-marcado");
   await p.getByLabel("Se mantiene").check();
@@ -1548,6 +1633,23 @@ async function flujo16() {
   await p.locator("#modo-motivo").fill("Se reúne otra vez el Comité: regresa a dictaminar.");
   await enviar(p, p.getByRole("button", { name: "Guardar quién dictamina" }), "pld_modo_cambiado");
   exigir(sql("select modo from pld_modo_dictamen order by registrado_en desc limit 1") === "comite", "16. y regresa al Comité");
+
+  // Inventario de la ronda 12: «Marcar como reporte de 24 horas» en el caso del aviso sobre Ciro, que sigue sin dictamen.
+  // «Revisar» con tres U+3164 pasa el mínimo del navegador (10) y el servidor cuenta 7 que se ven: vuelve sin recargar.
+  const abierto = sql(`select c.id from pld_casos c join pld_caso_alertas ca on ca.caso_id = c.id join pld_alertas a on a.id = ca.alerta_id
+    join pld_aviso_excluidos e on e.aviso_id = a.aviso_id where e.user_id = '${E.IDS.ciro}'
+    and not exists (select 1 from pld_dictamenes d where d.caso_id = c.id) limit 1`);
+  exigir(/^[0-9a-f-]{36}$/.test(abierto), "16. el caso del aviso sobre Ciro sigue abierto", abierto);
+  await ir(p, `/operacion/pld/casos/${abierto}#plazo-titulo`);
+  await p.locator("#plazo-motivo").fill("Revisarㅤㅤㅤ");
+  const plazoRechazado = await rechazoEnFormulario(p, p.getByRole("button", { name: "Marcar como reporte de 24 horas" }), "#plazo-motivo", "aviso-plazo", { "#plazo-motivo": "Revisarㅤㅤㅤ" });
+  exigir(sinRecarga(plazoRechazado) && cuenta(`pld_casos_24h where caso_id = '${abierto}'`) === 0,
+    "16. un motivo de 24 horas con 7 caracteres visibles se rechaza sin recargar: queda marcado, con el foco y como se escribió", JSON.stringify(plazoRechazado));
+  await foto(p, "f16-24-horas-rechazado-conserva-el-motivo");
+  await p.locator("#plazo-motivo").fill("La persona del aviso tiene acceso a la cuenta del tercero que recibió los pagos.");
+  await enviar(p, p.getByRole("button", { name: "Marcar como reporte de 24 horas" }), "pld_caso_24_horas", { doble: true });
+  exigir(cuenta(`pld_casos_24h where caso_id = '${abierto}'`) === 1 && (await hoja(p, "plazo-titulo").innerText()).includes("Marcado como de 24 horas"),
+    "16. doble clic en «Marcar como reporte de 24 horas» = 1 marca, y el caso lo dice");
   await cerrar(celia, "Celia");
 }
 
