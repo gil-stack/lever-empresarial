@@ -166,7 +166,7 @@ export default async function SesionComite({
               <a href={`/operacion/comite/actas/${sesion.acta.id}`}>{sesion.acta.nombre}</a>
             </Renglon>
             <Renglon etiqueta="Huella SHA-256">
-              <EtiquetaMono nombre="SHA-256">{sesion.acta.sha256}</EtiquetaMono>
+              <EtiquetaMono nombre="SHA-256">{sesion.acta.sha256.slice(0, 16)}…</EtiquetaMono>
             </Renglon>
           </Renglones>
         ) : administra ? (
