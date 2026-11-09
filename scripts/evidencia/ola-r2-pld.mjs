@@ -525,6 +525,19 @@ async function flujo7() {
   await ir(p, "/operacion/comite#auditor-titulo");
   await p.locator("#auditor-nombre").fill("Raquel Espinosa Lara");
   await p.locator("#auditor-cargo").fill("Auditora interna");
+  // r2-base-N5 (47ª): con el RFC de un integrante vigente, la base lo rechaza y el aviso queda en el campo.
+  await p.locator("#auditor-rfc").fill(INTEGRANTES.vocal.rfc);
+  await p.locator("#auditor-curp").fill("ESLR780606MDFSRQA6");
+  await p.locator("#auditor-designado").fill(DESIGNADO);
+  await enviar(p, p.getByRole("button", { name: "Registrar auditor" }), "comite_auditor_integrante");
+  exigir((await aviso(p)).includes("El auditor interno no puede ser integrante del Comité"), "7. el auditor con el RFC de un integrante se rechaza con su aviso", await aviso(p));
+  exigir((await p.locator("#auditor-rfc").getAttribute("aria-describedby")) !== null, "7. el aviso queda ligado al campo RFC del auditor");
+  exigir(cuenta("pld_comite_auditores") === 0, "7. el auditor rechazado no se guardó");
+  await foto(p, "f7-auditor-con-rfc-de-integrante");
+  await p.locator("#auditor-nombre").fill("Raquel Espinosa Lara");
+  await p.locator("#auditor-cargo").fill("Auditora interna");
+  await p.locator("#auditor-rfc").fill("ESLR780606AB6");
+  await p.locator("#auditor-curp").fill("ESLR780606MDFSRQA6");
   await p.locator("#auditor-designado").fill(DESIGNADO);
   await enviar(p, p.getByRole("button", { name: "Registrar auditor" }), "pld_auditor_registrado", { doble: true });
   exigir(cuenta("pld_comite_auditores") === 1, "7. doble clic en «Registrar auditor» = 1 auditor (no es integrante)");

@@ -281,7 +281,10 @@ export async function registrarIntegrantesAccion(formData: FormData): Promise<vo
 export async function registrarAuditorAccion(formData: FormData): Promise<void> {
   const ctx = await exigirContextoOperacion();
   try {
-    await registrarAuditor(ctx, { formId: formData.get("formId"), nombre: texto(formData, "nombre"), cargoEntidad: texto(formData, "cargoEntidad"), designadoEl: texto(formData, "designadoEl") });
+    await registrarAuditor(ctx, {
+      formId: formData.get("formId"), nombre: texto(formData, "nombre"), cargoEntidad: texto(formData, "cargoEntidad"),
+      rfc: texto(formData, "rfc"), curp: texto(formData, "curp"), designadoEl: texto(formData, "designadoEl"),
+    });
   } catch (error) {
     return fallo(error, "/operacion/comite", "#auditor-titulo");
   }

@@ -96,6 +96,8 @@ export const MENSAJES_PLD: Record<string, string> = {
   comite_un_suplente_por_titular: "Cada titular tiene como máximo un suplente.",
   comite_suplente_sin_titular: "Un suplente necesita a su titular vigente, con el mismo cargo.",
   comite_sin_oficial: "El Oficial de Cumplimiento tiene que ser integrante del Comité: marca a uno solo.",
+  comite_persona_repetida: "Una misma persona (mismo RFC o misma CURP) solo ocupa un lugar en el Comité.",
+  comite_auditor_integrante: "El auditor interno no puede ser integrante del Comité: asiste con voz y sin voto. Revisa el RFC y la CURP.",
   comite_fecha_futura: "La fecha no puede ser futura.",
   comite_sustitucion_antes_de_designacion: "La fecha de sustitución va después de la de designación.",
   comite_integrante_no_existe: "No encontramos a ese integrante.",
@@ -191,6 +193,8 @@ export const CAMPO_PLD: Record<string, string> = {
   sesion_fecha_futura: "celebradaEl",
   sesion_presentes_invalidos: "presentes",
   oficial_sin_rol_de_cumplimiento: "oficialId",
+  comite_persona_repetida: "rfc",
+  comite_auditor_integrante: "rfc",
   evaluacion_sin_perfil_nuevo: "perfil",
 };
 

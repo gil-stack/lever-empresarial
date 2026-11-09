@@ -355,7 +355,7 @@ export async function registrarIntegrantes(
 
 export async function registrarAuditor(
   ctx: ContextoDePersonal,
-  entrada: { formId: unknown; nombre: unknown; cargoEntidad: unknown; designadoEl: unknown },
+  entrada: { formId: unknown; nombre: unknown; cargoEntidad: unknown; rfc: unknown; curp: unknown; designadoEl: unknown },
   deps: { ahora?: () => Date } = {},
 ): Promise<void> {
   exigirEnOperacion(ctx, "plataforma.pld.comite");
@@ -367,13 +367,18 @@ export async function registrarAuditor(
   rechazarInvisible(entrada.cargoEntidad, "cargoEntidad");
   const cargo = textoOperativo(entrada.cargoEntidad, 120);
   if (!cargo) throw new ErrorDeDominio("dato_invalido_cargoEntidad");
+  // 47ª (r2-base-N5): con RFC y CURP la base compara al auditor con los integrantes.
+  const rfc = typeof entrada.rfc === "string" ? entrada.rfc.trim().toUpperCase() : "";
+  if (!/^[A-Z&Ñ]{4}[0-9]{6}[A-Z0-9]{3}$/.test(rfc)) throw new ErrorDeDominio("dato_invalido_rfc");
+  const curp = typeof entrada.curp === "string" ? entrada.curp.trim().toUpperCase() : "";
+  if (!/^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$/.test(curp)) throw new ErrorDeDominio("dato_invalido_curp");
   const designado = typeof entrada.designadoEl === "string" ? entrada.designadoEl : "";
   if (!fechaDeCalendario(designado) || designado > hoyEnMexico(ahora)) throw new ErrorDeDominio("dato_invalido_designadoEl");
   await unaVezPorFormulario(() => conPld(ctx, null, async (consulta) => {
     if ((await consulta.query("select 1 from pld_comite_auditores where id = $1", [entrada.formId])).rows.length > 0) return;
     await consulta.query(
-      "insert into pld_comite_auditores (id, operator_id, nombre, cargo_entidad, designado_el, registrado_por) values ($1, $2, $3, $4, $5, $6)",
-      [entrada.formId, ctx.personal.operadorId, nombre, cargo, designado, ctx.persona.id],
+      "insert into pld_comite_auditores (id, operator_id, nombre, cargo_entidad, rfc, curp, designado_el, registrado_por) values ($1, $2, $3, $4, $5, $6, $7, $8)",
+      [entrada.formId, ctx.personal.operadorId, nombre, cargo, rfc, curp, designado, ctx.persona.id],
     );
     await auditarPld(consulta, ctx, { companyId: null, accion: "pld_comite_auditor_designado", identificador: entrada.formId as string, ocurridoEn: ahora });
   }), "formulario_invalido");

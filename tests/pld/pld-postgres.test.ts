@@ -551,10 +551,16 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
         const haceMinutos = (minutos: number) => enMexico(new Date(Date.now() - minutos * 60_000));
         const sumarDias = (dia: string, dias: number) => new Date(Date.parse(`${dia}T12:00:00Z`) + dias * 86_400_000).toISOString().slice(0, 10);
         const designado = sumarDias(hoy, -30);
-        const integrante = (id: string, cargo: string, titularidad: string, nombres: string, extra: Partial<EntradaIntegrante> = {}): EntradaIntegrante => ({
-          id, area: "Dirección General", cargo, titularidad, suplenteDe: "", nombres, primerApellido: "Núñez", segundoApellido: "Peña",
-          rfc: "NUPJ700101AB1", curp: "NUPJ700101HDFRXXA1", cargoEntidad: "Director", esOficial: false, designadoEl: designado, certificado: "", ...extra,
-        });
+        // Cada persona con su RFC y su CURP: una misma persona ocupa un solo lugar (r2-base-N5).
+        let personasDelComite = 0;
+        const integrante = (id: string, cargo: string, titularidad: string, nombres: string, extra: Partial<EntradaIntegrante> = {}): EntradaIntegrante => {
+          const n = String(++personasDelComite).padStart(2, "0");
+          return {
+            id, area: "Dirección General", cargo, titularidad, suplenteDe: "", nombres, primerApellido: "Núñez", segundoApellido: "Peña",
+            rfc: `NUPJ7001${n}AB1`, curp: `NUPJ7001${n}HDFRXXA1`, cargoEntidad: "Director", esOficial: false, designadoEl: designado, certificado: "", ...extra,
+          };
+        };
+        const AUDITOR = { rfc: "AUIN690101AB1", curp: "AUIN690101HDFRXXA1" };
         const P = randomUUID();
         const S = randomUUID();
         const I1 = randomUUID();
@@ -583,16 +589,26 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, segundoApellido: "Pe\ufe0fna" }, secretario, oficial] }), /invisible_segundoApellido/);
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, area: "Direcci\u180bon General" }, secretario, oficial] }), /invisible_area/);
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, primerApellido: "Ruiz\u{E0100}" }, secretario, oficial] }), /invisible_primerApellido/);
+          // r2-base-N5: la misma persona (RFC o CURP) no ocupa dos lugares; valdría por varios titulares.
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [presidente, { ...secretario, rfc: presidente.rfc }, oficial] }), /comite_persona_repetida/);
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [presidente, secretario, { ...oficial, curp: presidente.curp }] }), /comite_persona_repetida/);
           assert.equal(await contar("select count(*)::int as n from pld_comite_integrantes"), 0);
           await registrarIntegrantes(cum, { integrantes: [presidente, secretario, oficial, vocal, integrante(PS, "PRESIDENTE", "SUPLENTE", "Pablo", { suplenteDe: P })] });
           assert.deepEqual(await uno("select nombres, primer_apellido, segundo_apellido, area from pld_comite_integrantes where id = $1", [P]),
             { nombres: "JOSE MARIA", primer_apellido: "NUÑEZ", segundo_apellido: "PEÑA", area: "DIRECCIÓN GENERAL" });
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [integrante(randomUUID(), "PRESIDENTE", "SUPLENTE", "Pedro", { suplenteDe: P })] }), /comite_un_suplente_por_titular/);
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [], sustituye: { integranteId: I2, sustituidoEl: sumarDias(designado, -1), motivo: "Sustitución de prueba" } }), /comite_sustitucion_antes_de_designacion/);
-          await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor\u2060Interno", cargoEntidad: "Auditor", designadoEl: designado }), /invisible_nombre/);
-          await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor\u0085interno", designadoEl: designado }), /invisible_cargoEntidad/);
-          await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor\ufe0fInterno", cargoEntidad: "Auditor", designadoEl: designado }), /invisible_nombre/);
-          await registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor", designadoEl: designado });
+          await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor\u2060Interno", cargoEntidad: "Auditor", ...AUDITOR, designadoEl: designado }), /invisible_nombre/);
+          await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor\u0085interno", ...AUDITOR, designadoEl: designado }), /invisible_cargoEntidad/);
+          await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor\ufe0fInterno", cargoEntidad: "Auditor", ...AUDITOR, designadoEl: designado }), /invisible_nombre/);
+          await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor", rfc: "AUIN69", curp: AUDITOR.curp, designadoEl: designado }), /dato_invalido_rfc/);
+          // r2-base-N5 (47ª): el auditor no forma parte del Comité, ni con el RFC ni con la CURP de un integrante vigente.
+          await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor", rfc: vocal.rfc, curp: AUDITOR.curp, designadoEl: designado }), /comite_auditor_integrante/);
+          await assert.rejects(registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor", rfc: AUDITOR.rfc, curp: vocal.curp, designadoEl: designado }), /comite_auditor_integrante/);
+          assert.equal(await contar("select count(*)::int as n from pld_comite_auditores"), 0);
+          await registrarAuditor(cum, { formId: randomUUID(), nombre: "Auditor Interno", cargoEntidad: "Auditor", ...AUDITOR, designadoEl: designado });
+          // Y al revés: el auditor vigente no se registra como integrante.
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [integrante(randomUUID(), "INTEGRANTE", "TITULAR", "Aurelio", { ...AUDITOR })] }), /comite_auditor_integrante/);
 
           // 49ª: comunicación al SITI con su folio; repetido o ajeno, no.
           const ayer = `${sumarDias(hoy, -1)}T10:00`;

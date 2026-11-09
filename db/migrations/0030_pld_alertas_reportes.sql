@@ -1540,6 +1540,8 @@ AS $$
 DECLARE
   operador uuid := NEW.operator_id;
   vigentes integer;
+  auditor_rfc text;
+  auditor_curp text;
 BEGIN
   SELECT count(*) INTO vigentes FROM pld_comite_vigentes(operador, 'infinity'::date);
   IF vigentes = 0 THEN
@@ -1570,6 +1572,20 @@ BEGIN
   IF (SELECT count(*) FROM pld_comite_vigentes(operador, 'infinity'::date) v WHERE v.es_oficial) <> 1 THEN
     RAISE EXCEPTION 'comite_sin_oficial';
   END IF;
+  -- r2-base-N5: una persona ocupa un solo lugar. Con el mismo RFC o la misma CURP
+  -- valdría por varios titulares y haría quórum sola.
+  IF EXISTS (SELECT 1 FROM pld_comite_vigentes(operador, 'infinity'::date) v GROUP BY v.rfc HAVING count(*) > 1)
+    OR EXISTS (SELECT 1 FROM pld_comite_vigentes(operador, 'infinity'::date) v GROUP BY v.curp HAVING count(*) > 1) THEN
+    RAISE EXCEPTION 'comite_persona_repetida';
+  END IF;
+  -- 47ª: el auditor interno no forma parte del Comité; el vigente es el último registrado.
+  SELECT a.rfc, a.curp INTO auditor_rfc, auditor_curp
+  FROM pld_comite_auditores a WHERE a.operator_id = operador ORDER BY a.registrado_en DESC, a.id DESC LIMIT 1;
+  IF auditor_rfc IS NOT NULL AND EXISTS (
+    SELECT 1 FROM pld_comite_vigentes(operador, 'infinity'::date) v WHERE v.rfc = auditor_rfc OR v.curp = auditor_curp
+  ) THEN
+    RAISE EXCEPTION 'comite_auditor_integrante';
+  END IF;
   RETURN NULL;
 END;
 $$;
@@ -1591,10 +1607,15 @@ CREATE TABLE pld_comite_auditores (
   operator_id uuid NOT NULL REFERENCES operators (id) ON DELETE RESTRICT,
   nombre text NOT NULL,
   cargo_entidad text NOT NULL,
+  -- Con qué compararlo contra los integrantes: el auditor no es integrante (r2-base-N5).
+  rfc text NOT NULL,
+  curp text NOT NULL,
   designado_el date NOT NULL,
   registrado_por uuid NOT NULL REFERENCES users (id) ON DELETE RESTRICT,
   registrado_en timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT pld_comite_auditores_textos CHECK (texto_regulado(nombre, 200) AND texto_regulado(cargo_entidad, 120))
+  CONSTRAINT pld_comite_auditores_textos CHECK (texto_regulado(nombre, 200) AND texto_regulado(cargo_entidad, 120)),
+  CONSTRAINT pld_comite_auditores_rfc CHECK (rfc ~ '^[A-Z&Ñ]{4}[0-9]{6}[A-Z0-9]{3}$'),
+  CONSTRAINT pld_comite_auditores_curp CHECK (curp ~ '^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$')
 );
 
 -- 49ª: la designación, adición o sustitución se comunica «dentro de los quince días
@@ -1871,6 +1892,30 @@ FOR EACH ROW EXECUTE FUNCTION pld_operador_revisar();
 CREATE TRIGGER pld_comite_auditores_revisar
 BEFORE INSERT ON pld_comite_auditores
 FOR EACH ROW EXECUTE FUNCTION pld_operador_revisar();
+
+-- 47ª (r2-base-N5): el auditor no es un integrante vigente. Con el candado del
+-- Comité, como las altas y bajas: una alta en curso termina antes de comparar.
+-- Corre después de pld_comite_auditores_revisar (orden alfabético), ya con el
+-- operador revisado.
+CREATE FUNCTION pld_comite_auditores_sin_integrante()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  PERFORM pg_advisory_xact_lock(hashtextextended('pld_comite:' || NEW.operator_id::text, 0));
+  IF EXISTS (
+    SELECT 1 FROM pld_comite_vigentes(NEW.operator_id, 'infinity'::date) v WHERE v.rfc = NEW.rfc OR v.curp = NEW.curp
+  ) THEN
+    RAISE EXCEPTION 'comite_auditor_integrante';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER pld_comite_auditores_sin_integrante
+BEFORE INSERT ON pld_comite_auditores
+FOR EACH ROW EXECUTE FUNCTION pld_comite_auditores_sin_integrante();
 
 CREATE FUNCTION pld_comite_comunicaciones_revisar()
 RETURNS trigger

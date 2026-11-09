@@ -210,7 +210,7 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
                 </div>
                 <div className="campo">
                   <label htmlFor={`integrante-rfc-${i}`}>RFC con homoclave</label>
-                  <input id={`integrante-rfc-${i}`} name={`rfc-${i}`} maxLength={13} autoComplete="off" className="operacion-mono" />
+                  <input id={`integrante-rfc-${i}`} name={`rfc-${i}`} maxLength={13} autoComplete="off" className="operacion-mono" {...(i === 0 ? error("integrantes-titulo", "rfc") : {})} />
                 </div>
                 <div className="campo">
                   <label htmlFor={`integrante-curp-${i}`}>CURP</label>
@@ -291,6 +291,14 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
             <div className="campo">
               <label htmlFor="auditor-cargo">Cargo en la entidad</label>
               <input id="auditor-cargo" name="cargoEntidad" required maxLength={120} autoComplete="off" {...error("auditor-titulo", "cargoEntidad")} />
+            </div>
+            <div className="campo">
+              <label htmlFor="auditor-rfc">RFC con homoclave</label>
+              <input id="auditor-rfc" name="rfc" required maxLength={13} autoComplete="off" className="operacion-mono" {...error("auditor-titulo", "rfc")} />
+            </div>
+            <div className="campo">
+              <label htmlFor="auditor-curp">CURP</label>
+              <input id="auditor-curp" name="curp" required maxLength={18} autoComplete="off" className="operacion-mono" {...error("auditor-titulo", "curp")} />
             </div>
             <div className="campo">
               <label htmlFor="auditor-designado">Fecha de designación</label>
