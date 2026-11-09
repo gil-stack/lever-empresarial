@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -46,6 +46,29 @@ describe("avisos de PLD dentro de aviso.tsx", () => {
       assert.match(renderToStaticMarkup(createElement(AvisoOperacion, { codigo: `invisible_${campo}` })), /trae un carácter invisible/, campo);
       assert.deepEqual(errorDelCampo(`invisible_${campo}`, campo), { "aria-invalid": true, "aria-describedby": "aviso-operacion", autoFocus: true }, campo);
     }
+  });
+
+  // Un código que el resto del producto también lanza (expediente, LPB, suspensiones…) no lleva texto de PLD:
+  // el aviso de PLD se vería en esas pantallas. Solo se comparten los que significan lo mismo en todas.
+  it("ningún aviso de PLD cambia el de un código que lanza otra pantalla", () => {
+    const raiz = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
+    const lanzados = new Set<string>();
+    const recorrer = (dir: string) => {
+      for (const entrada of readdirSync(join(raiz, dir), { withFileTypes: true })) {
+        const ruta = `${dir}/${entrada.name}`;
+        if (entrada.isDirectory()) {
+          if (entrada.name !== "pld") recorrer(ruta);
+        } else if (/\.tsx?$/.test(entrada.name) && !entrada.name.endsWith(".test.ts")) {
+          for (const m of readFileSync(join(raiz, ruta), "utf8").matchAll(/ErrorDeDominio\("([a-zA-Z0-9_]+)"\)/g)) lanzados.add(m[1]!);
+        }
+      }
+    };
+    recorrer("src");
+    for (const archivo of readdirSync(join(raiz, "db/migrations")).filter((a) => a.endsWith(".sql") && !a.startsWith("0030"))) {
+      for (const m of readFileSync(join(raiz, "db/migrations", archivo), "utf8").matchAll(/raise exception '([a-zA-Z0-9_]+)'/gi)) lanzados.add(m[1]!);
+    }
+    assert.ok(lanzados.has("dato_invalido_curp") && lanzados.has("conservacion_no_se_borra"), "la búsqueda encuentra los códigos del expediente y de 0028");
+    assert.deepEqual(Object.keys(MENSAJES_PLD).filter((codigo) => lanzados.has(codigo)).sort(), ["cliente_ausente", "conservacion_no_se_borra", "formulario_ya_aplicado"]);
   });
 
   it("lo que leen Originación, Aprobación o Administración no habla de alertas, casos ni análisis (55ª)", () => {
