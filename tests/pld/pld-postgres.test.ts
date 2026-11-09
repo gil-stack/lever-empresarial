@@ -755,6 +755,17 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await assert.rejects(cargarActaFirmada(cum, { formId: randomUUID(), sesionId: S2, archivo: { nombre: "otra.pdf", bytes: PDF } }, { almacen }), /acta_ya_cargada/);
           await descargarActa(aud, acta, { leer: leerDelAlmacen });
           assert.equal(await contar("select count(*)::int as n from audit_log where accion = 'pld_acta_descargada' and identificador = $1", [acta]), 1);
+          // r2-serv-N5: la etiqueta dice «PDF, JPG o PNG»: un escaneo en imagen se acepta y guarda el tipo de sus bytes.
+          const PNG = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0x0d, 0x49, 0x48, 0x44, 0x52]);
+          const JPG = Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46, 0x49, 0x46, 0, 1]);
+          await assert.rejects(cargarActaFirmada(cum, { formId: randomUUID(), sesionId: S4, archivo: { nombre: "acta.gif", bytes: Uint8Array.from([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]) } }, { almacen }), /archivo_no_admitido/);
+          for (const [sesion, nombre, bytes, tipo] of [[S4, "acta-escaneada.png", PNG, "image/png"], [S1, "acta-escaneada.jpg", JPG, "image/jpeg"]] as const) {
+            const id = randomUUID();
+            await cargarActaFirmada(cum, { formId: id, sesionId: sesion, archivo: { nombre, bytes } }, { almacen });
+            assert.equal((await uno<{ tipo: string }>("select tipo_contenido as tipo from pld_actas where id = $1", [id])).tipo, tipo);
+            const bajada = await descargarActa(aud, id, { leer: leerDelAlmacen });
+            assert.deepEqual({ tipo: bajada.tipo, nombre: bajada.nombre, bytes: [...bajada.bytes] }, { tipo, nombre, bytes: [...bytes] });
+          }
           // r2-base-N2 (60ª): el acta nombra cada caso votado, su empresa y los votos. Si la sesión votó el caso
           // confidencial, la persona excluida no la descarga ni ve su renglón, su huella o su evento.
           await registrarPropuesta(cum, { casoId: casoConfidencial, formId: randomUUID(), propuesta: "reportar_interna", justificacion: "Instrucción de borrar un expediente" });

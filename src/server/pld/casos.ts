@@ -402,7 +402,8 @@ export async function marcarVeinticuatroHoras(
 
 const LIMITE_DOCUMENTO = TOPE_ARCHIVO_BYTES;
 
-function tipoDeContenido(bytes: Uint8Array): { tipo: string; extension: string } | null {
+/** El tipo por la firma de los primeros bytes, no por el nombre ni por lo que diga el navegador. */
+export function tipoDeContenido(bytes: Uint8Array): { tipo: string; extension: string } | null {
   if (bytes.length >= 5 && bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46 && bytes[4] === 0x2d) {
     return { tipo: "application/pdf", extension: "pdf" };
   }

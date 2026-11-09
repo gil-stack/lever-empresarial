@@ -625,6 +625,16 @@ async function flujo7() {
   await enviar(p, p.getByRole("button", { name: "Subir acta firmada" }), "pld_acta_cargada", { doble: true });
   exigir(cuenta(`pld_actas where sesion_id = '${s2.id}'`) === 1, "7. doble clic en «Subir acta firmada» = 1 acta");
   await foto(p, "f7-acta-firmada");
+  // r2-serv-N5: la etiqueta dice «PDF, JPG o PNG»; el acta escaneada en PNG de la sesión sin quórum se acepta y baja como PNG.
+  await ir(p, `/operacion/comite/sesiones/${s1.id}`);
+  const png = Buffer.from("89504e470d0a1a0a0000000d4948445200000001000000010806000000", "hex");
+  await p.locator("#acta-archivo").setInputFiles({ name: "acta-sin-quorum.png", mimeType: "image/png", buffer: png });
+  await enviar(p, p.getByRole("button", { name: "Subir acta firmada" }), "pld_acta_cargada");
+  exigir(sql(`select tipo_contenido from pld_actas where sesion_id = '${s1.id}'`) === "image/png", "7. el acta en PNG queda con su tipo, image/png");
+  const escaneada = await descargar(p, () => p.getByRole("link", { name: "acta-sin-quorum.png" }).click());
+  exigir(escaneada.bytes.equals(png), "7. y se descarga igual, byte por byte");
+  await foto(p, "f7-acta-firmada-en-png");
+  await ir(p, `/operacion/comite/sesiones/${s2.id}`);
 
   // Dictamen del Comité: el factor de Celia tiene 31 minutos y la página pide confirmarlo.
   factor(E.IDS.celia, 31);

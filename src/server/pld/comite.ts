@@ -13,7 +13,7 @@ import { leerPrivado, type AlmacenConstancia } from "../proveedores/constancia";
 import type { Sesion as SesionConFactor } from "../session/tipos";
 import { auditarPld } from "./auditar";
 import { conPld, dia, diaOpcional, fecha, rechazarInvisible } from "./base";
-import { archivoDelFormulario } from "./casos";
+import { archivoDelFormulario, tipoDeContenido } from "./casos";
 
 export type ModoDictamen = { modo: "comite" | "oficial"; oficialId: string | null; oficial: string | null };
 
@@ -650,10 +650,11 @@ export async function cargarActaFirmada(
   const archivo = entrada.archivo;
   if (!archivo || archivo.bytes.byteLength === 0) throw new ErrorDeDominio("dato_invalido_archivo");
   if (archivo.bytes.byteLength > 4 * 1024 * 1024) throw new ErrorDeDominio("archivo_demasiado_grande");
-  const pdf = archivo.bytes[0] === 0x25 && archivo.bytes[1] === 0x50 && archivo.bytes[2] === 0x44 && archivo.bytes[3] === 0x46;
-  if (!pdf) throw new ErrorDeDominio("archivo_no_admitido");
+  // r2-serv-N5: PDF, PNG o JPG, como dice la etiqueta; se guarda el tipo que dicen los bytes.
+  const contenido = tipoDeContenido(archivo.bytes);
+  if (!contenido) throw new ErrorDeDominio("archivo_no_admitido");
   const sha256 = createHash("sha256").update(archivo.bytes).digest("hex");
-  const nombre = textoOperativo(archivo.nombre.replace(/[\\/]/g, "_"), 200) ?? "acta-firmada.pdf";
+  const nombre = textoOperativo(archivo.nombre.replace(/[\\/]/g, "_"), 200) ?? `acta-firmada.${contenido.extension}`;
   const ahora = deps.ahora?.() ?? new Date();
   const yaEsta = await conPld(ctx, null, async (consulta) => {
     if ((await consulta.query("select 1 from pld_actas where id = $1", [entrada.formId])).rows.length > 0) return true;
@@ -667,16 +668,16 @@ export async function cargarActaFirmada(
   });
   if (yaEsta) return;
   const guardado = await deps.almacen.guardar({
-    clave: `pld/${ctx.personal.operadorId}/actas/${entrada.sesionId as string}-${randomUUID().slice(0, 8)}.pdf`,
+    clave: `pld/${ctx.personal.operadorId}/actas/${entrada.sesionId as string}-${randomUUID().slice(0, 8)}.${contenido.extension}`,
     bytes: archivo.bytes,
-    tipo: "application/pdf",
+    tipo: contenido.tipo,
   });
   await unaVezPorFormulario(() => conPld(ctx, null, async (consulta) => {
     if ((await consulta.query("select 1 from pld_actas where id = $1", [entrada.formId])).rows.length > 0) return;
     await consulta.query(
       `insert into pld_actas (id, sesion_id, operator_id, nombre_archivo, tipo_contenido, tamano_bytes, sha256, clave_blob, registrado_por)
-       values ($1, $2, $3, $4, 'application/pdf', $5, $6, $7, $8)`,
-      [entrada.formId, entrada.sesionId, ctx.personal.operadorId, nombre, archivo.bytes.byteLength, sha256, guardado.clave, ctx.persona.id],
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [entrada.formId, entrada.sesionId, ctx.personal.operadorId, nombre, contenido.tipo, archivo.bytes.byteLength, sha256, guardado.clave, ctx.persona.id],
     );
     await auditarPld(consulta, ctx, { companyId: null, accion: "pld_acta_cargada", identificador: entrada.formId as string, ocurridoEn: ahora });
   }), "formulario_invalido");
