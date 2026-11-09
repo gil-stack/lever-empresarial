@@ -4,8 +4,8 @@ import { registrarReporteAccion, resolverCoincidenciaAccion } from "@/app/operac
 import { BotonEnviar, Insignia, Vacio } from "@/components/sistema";
 import { ETIQUETA_ESTADO_COINCIDENCIA, ETIQUETA_SUJETO } from "@/dominio/operacion";
 
-import { errorDelCampo } from "./aviso";
 import { fechaHora } from "./formato";
+import { FormularioFolio } from "./formulario-folio";
 
 export type CoincidenciaVista = {
   id: string;
@@ -45,7 +45,7 @@ export function Coincidencias({
   desde: "cumplimiento" | "lpb";
   ahora: Date;
   vacio: string;
-  /** El aviso del último envío y el campo que lo causó (`folio-<id>`): marca el folio de esa coincidencia. */
+  /** El aviso del último envío y el campo que lo causó (`folio-<id>`, `presentado-<id>` o `aviso-<id>`): marca ese campo. */
   aviso?: string;
   en?: string;
 }) {
@@ -113,29 +113,7 @@ export function Coincidencias({
               </form>
             ) : null}
             {resuelve && coincidencia.estado === "confirmada" && !coincidencia.reporteFolio ? (
-              <form action={registrarReporteAccion} className="operacion-acciones">
-                <input type="hidden" name="id" value={coincidencia.id} />
-                <input type="hidden" name="desde" value={desde} />
-                <div className="campo">
-                  <label htmlFor={`folio-${coincidencia.id}`}>Folio del reporte a la UIF</label>
-                  <input
-                    id={`folio-${coincidencia.id}`}
-                    name="folio"
-                    maxLength={80}
-                    required
-                    {...(en === `folio-${coincidencia.id}` ? errorDelCampo(aviso, "folio") : {})}
-                  />
-                </div>
-                <div className="campo">
-                  <label htmlFor={`presentado-${coincidencia.id}`}>Presentado el</label>
-                  <input id={`presentado-${coincidencia.id}`} name="presentadoEl" type="date" required />
-                </div>
-                <div className="campo">
-                  <label htmlFor={`aviso-${coincidencia.id}`}>Aviso por escrito al cliente</label>
-                  <input id={`aviso-${coincidencia.id}`} name="avisoClienteEl" type="date" />
-                </div>
-                <BotonEnviar className="boton-secundario">Anotar folio</BotonEnviar>
-              </form>
+              <FormularioFolio id={coincidencia.id} desde={desde} accion={registrarReporteAccion} aviso={aviso} en={en} />
             ) : null}
           </li>
         );

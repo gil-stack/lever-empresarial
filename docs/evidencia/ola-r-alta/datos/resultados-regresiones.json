@@ -445,7 +445,7 @@
     },
     {
       "ok": true,
-      "texto": "serv-N16. Blob responde 503 al borrar el huérfano: la página vuelve en 5.3 s (tope de 5 s más la página), sin documento, y la clave queda en el registro"
+      "texto": "serv-N16. Blob responde 503 al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro"
     },
     {
       "ok": true,
@@ -461,7 +461,7 @@
     },
     {
       "ok": true,
-      "texto": "serv-N16. Blob no responde al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro"
+      "texto": "serv-N16. Blob no responde al borrar el huérfano: la página vuelve en 5.2 s (tope de 5 s más la página), sin documento, y la clave queda en el registro"
     },
     {
       "ok": true,
@@ -658,6 +658,90 @@
     {
       "ok": true,
       "texto": "serv-nuevo-5. el alta del proveedor con U+FEFF en la razón social: su aviso, campo marcado y sin proveedor"
+    },
+    {
+      "ok": true,
+      "texto": "base-N26. el representante «Luis Rodr\\u3164íguez» (relleno hangul): aviso propio, nombre marcado y con el foco, sin representante"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «prospecto_registrado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_version_creada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_datos_guardados» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_datos_incompletos» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-6d. enviar sin giro ni domicilio: «Faltan el giro y el domicilio…», la versión sigue en borrador y sin evento «expediente_enviado»"
+    },
+    {
+      "ok": true,
+      "texto": "novena. hay una coincidencia confirmada sin folio para anotarlo"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_presentadoEl» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-6b. «Presentado el» 2026-02-30: su aviso, solo ese campo marcado y con el foco (no el folio), sin folio guardado"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-6b. la captura muestra el aviso y «presentado» marcado"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_avisoClienteEl» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-6b. «Aviso al cliente» 2026-13-01: su aviso, solo ese campo marcado y con el foco (no el folio), sin folio guardado"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-6b. la captura muestra el aviso y «aviso» marcado"
+    },
+    {
+      "ok": true,
+      "texto": "base-N27. tres recuperaciones pendientes en la bandeja"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "base-N27. rechazar sin nota la recuperación de en medio: «en» es su id y solo su nota queda marcada y con el foco; las tres siguen pendientes"
+    },
+    {
+      "ok": true,
+      "texto": "base-N27. la captura muestra el aviso y la nota marcada de la tarjeta de en medio"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «decision_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «decision_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «decision_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "base-N27. con su nota, las tres se rechazan: ninguna queda abierta"
     },
     {
       "ok": true,

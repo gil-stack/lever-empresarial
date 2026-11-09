@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { expect, test, type Page } from "@playwright/test";
 
 import { CLAVE, codigoDeSemilla, codigoTotp, consultar, contar, dobleClic, idDe, sesionDe, vigilarConsola } from "./apoyo";
@@ -443,6 +445,53 @@ test("«Perdí el segundo factor»: Recuperaciones pide «Confirma que eres tú�
   expect(await contar("select 1 from auth_totp where id = $1 and revocado_en is not null", [totpViejo!.id])).toBe(1);
   expect(await contar("select 1 from auth_totp where user_id = $1 and confirmado_en is not null and revocado_en is null", [paula])).toBe(1);
   expect(await contar("select 1 from auth_recuperaciones where user_id = $1 and cumplida_en is not null", [paula])).toBe(1);
+  expect(errores).toEqual([]);
+});
+
+// base-N27: con varias solicitudes pendientes, el error de una marca y enfoca solo su tarjeta. Antes la página marcaba
+// el campo en todas, y con el foco del aviso las tres notas pedían el foco.
+test("con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca solo la nota de esa tarjeta", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const personas = [CORREOS.diego, CORREOS.sol, CORREOS.ernesto];
+  const ids: string[] = [];
+  for (const correo of personas) {
+    const id = randomUUID();
+    // La solicitud y su evento en una sola sentencia: la base exige el rastro en la misma transacción.
+    await consultar(
+      `with r as (
+         insert into auth_recuperaciones (id, user_id, solicitada_en, motivo) values ($1, $2, now(), 'Cambié de teléfono y perdí la app.')
+         returning id, user_id
+       )
+       insert into audit_log (id, operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, ocurrido_en)
+       select gen_random_uuid(), (select id from operators order by alta_en limit 1), null, 'miembro', r.user_id, 'cliente',
+         'recuperacion_solicitada', 'auth_recuperaciones', r.id, now()
+       from r`,
+      [id, await idDe(correo)],
+    );
+    ids.push(id);
+  }
+  await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+  await page.goto("/operacion/recuperaciones");
+  const tarjeta = (correo: string) => page.locator("li.decision").filter({ hasText: correo });
+  const nota = (indice: number) => page.locator(`[id="nota-${ids[indice]}"]`);
+  for (const correo of personas) await expect(tarjeta(correo)).toBeVisible();
+
+  await tarjeta(CORREOS.sol).getByRole("button", { name: "Rechazar" }).click();
+  await page.waitForURL(/aviso=motivo_invalido/);
+  expect(new URL(page.url()).searchParams.get("en")).toBe(ids[1]);
+  await expect(nota(1)).toHaveAttribute("aria-invalid", "true");
+  await expect(nota(1)).toHaveAttribute("aria-describedby", "aviso-operacion");
+  await expect(nota(1)).toBeFocused();
+  await expect(page.locator('[aria-invalid="true"]')).toHaveCount(1);
+  for (const indice of [0, 2]) await expect(nota(indice)).not.toHaveAttribute("aria-invalid", "true");
+
+  // Con su nota, cada una se rechaza; ninguna queda abierta para las demás pruebas.
+  for (const [indice, correo] of personas.entries()) {
+    await nota(indice).fill("No se pudo confirmar la identidad por videollamada.");
+    await tarjeta(correo).getByRole("button", { name: "Rechazar" }).click();
+    await expect(tarjeta(correo)).toHaveCount(0);
+  }
+  expect(await contar("select 1 from auth_recuperaciones where id = any($1::uuid[]) and estado = 'rechazada'", [ids])).toBe(3);
   expect(errores).toEqual([]);
 });
 

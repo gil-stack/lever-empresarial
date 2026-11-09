@@ -1975,21 +1975,24 @@ async function sextaRonda(rutaEbano) {
  * social) con un control invisible se rechaza en su campo, y en los textos libres el control vale un espacio.
  * P3: el área y la razón social del alta dan su error de forma, y cada fecha mala de Pagos marca su campo.
  */
+/**
+ * Una petición armada, como la del revisor: el campo de fecha no deja escribir un día que no existe. Se escribe una
+ * fecha válida y única y, en la petición de la acción que sale del navegador, se cambia por la imposible.
+ */
+async function armarFecha(p, real, forzada) {
+  await p.route("**/*", async (ruta) => {
+    const peticion = ruta.request();
+    const cuerpo = peticion.method() === "POST" && peticion.headers()["next-action"] ? peticion.postDataBuffer()?.toString("latin1") ?? "" : "";
+    if (!cuerpo.includes(real)) return ruta.fallback();
+    await ruta.continue({ postData: Buffer.from(cuerpo.split(real).join(forzada), "latin1") });
+  });
+}
+
 async function septimaRonda(rutaEbano) {
   console.log("\n— Séptima revisión: identidades con un control, textos libres con espacio y avisos en su campo");
   renovarSesiones();
   const omar = await abrir("omar");
   const marcado = async (p, selector) => (await p.locator(selector).getAttribute("aria-invalid")) === "true";
-  // Una petición armada, como la del revisor: el campo de fecha no deja escribir un día que no existe. Se escribe
-  // una fecha válida y única y, en la petición de la acción que sale del navegador, se cambia por la imposible.
-  const armarFecha = async (p, real, forzada) => {
-    await p.route("**/*", async (ruta) => {
-      const peticion = ruta.request();
-      const cuerpo = peticion.method() === "POST" && peticion.headers()["next-action"] ? peticion.postDataBuffer()?.toString("latin1") ?? "" : "";
-      if (!cuerpo.includes(real)) return ruta.fallback();
-      await ruta.continue({ postData: Buffer.from(cuerpo.split(real).join(forzada), "latin1") });
-    });
-  };
 
   // base-N23: el representante «Pedro<U+000B>Ruiz Sol» se rechaza en su campo (antes se guardaba «PedroRuiz Sol» y
   // la Lista con el nombre bien escrito ya no lo encontraba).
@@ -2407,6 +2410,151 @@ async function octavaRonda(rutaEbano) {
   await enVista(gil.p.locator("#razonSocial"));
   await foto(gil.p, "r8-proveedor-razon-social-ufeff", false);
   await gil.nav.close();
+  await novenaRonda(rutaEbano);
+}
+
+/**
+ * Re-verificación sobre a75d5e4. base-N26: los demás invisibles de Unicode (Default_Ignorable_Code_Point); base-N27:
+ * con varias recuperaciones, el aviso marca la tarjeta que falló; serv-nuevo-6b: las fechas del folio marcan su campo;
+ * serv-nuevo-6d: enviar una versión sin datos generales dice qué falta.
+ */
+async function novenaRonda(rutaEbano) {
+  console.log("\n— Novena revisión: invisibles de Unicode, recuperación en su tarjeta, fechas del folio y envío sin datos generales");
+  renovarSesiones();
+  const marcado = async (p, selector) => (await p.locator(selector).getAttribute("aria-invalid")) === "true";
+  const enFoco = (p) => p.evaluate(() => document.activeElement?.id ?? "");
+  const marcados = (p) => p.locator('[aria-invalid="true"]').count();
+  // La captura lleva el aviso de la página y el campo marcado juntos: se sube al inicio y se comprueba que los dos se ven.
+  const avisoYCampo = async (p, selector) => {
+    await p.evaluate(() => window.scrollTo(0, 0));
+    const alto = p.viewportSize().height;
+    const cajas = await Promise.all(["#aviso-operacion", selector].map((s) => p.locator(s).boundingBox()));
+    return cajas.every((caja) => caja && caja.y >= 0 && caja.y + caja.height <= alto);
+  };
+
+  // base-N26: el representante «Luis Rodr<U+3164>íguez» (relleno hangul, no es Cc ni Cf) tiene el aviso propio.
+  const omar = await abrir("omar");
+  await ir(omar.p, rutaEbano);
+  const borrador = `(select id from kyb_versiones where company_id = '${ctxEbano.id}' and estado = 'borrador')`;
+  const representantes = () => cuenta(`kyb_representantes where version_id = ${borrador} and retirado_en is null`);
+  const repsAntes = representantes();
+  await campo(omar.p, "#rep-nombre", "Luis Rodrㅤíguez");
+  await campo(omar.p, "#rep-rfc", "ROLU800101AB1");
+  await campo(omar.p, "#rep-curp", "ROLU800101HDFDSS09");
+  await omar.p.locator("#rep-cargo").selectOption("apoderado");
+  await omar.p.locator("#rep-pep").selectOption("no");
+  await campo(omar.p, "#rep-designado", "Poder notarial 7781");
+  const textoLuis = await rechazarRepresentante(omar.p);
+  exigir(
+    textoLuis === "El nombre trae un carácter invisible, algo común al copiar y pegar. Escríbelo de nuevo a mano."
+      && (await marcado(omar.p, "#rep-nombre")) && (await enFoco(omar.p)) === "rep-nombre" && representantes() === repsAntes,
+    "base-N26. el representante «Luis Rodr\\u3164íguez» (relleno hangul): aviso propio, nombre marcado y con el foco, sin representante",
+    textoLuis,
+  );
+  await enVista(omar.p.locator("#aviso-representante"));
+  await foto(omar.p, "r9-representante-relleno-hangul", false);
+
+  // serv-nuevo-6d: un prospecto nuevo con datos generales sin giro ni domicilio. Enviar dice qué falta (antes, «La
+  // base no respondió» por el CHECK kyb_versiones_forma); la versión sigue en borrador y sin evento.
+  const NOVENA = { razonSocial: "Laboratorio Novena, S.A. de C.V.", rfc: "NOV150301AB1" };
+  await ir(omar.p, "/operacion/clientes");
+  await omar.p.getByLabel("Razón social").fill(NOVENA.razonSocial);
+  await omar.p.getByLabel("RFC").fill(NOVENA.rfc);
+  await omar.p.getByLabel("Código postal").fill("06600");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Registrar prospecto" }), "prospecto_registrado");
+  const idNovena = companyIdDe(NOVENA.rfc);
+  await ir(omar.p, `/operacion/clientes/${idNovena}/expediente`);
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Abrir versión 1" }), "expediente_version_creada");
+  await campo(omar.p, "#dato-razonSocial", NOVENA.razonSocial);
+  await campo(omar.p, "#dato-rfc", NOVENA.rfc);
+  const sinGiroNiDomicilio = Object.entries(DATOS).filter(([nombre]) => nombre !== "giro" && !nombre.startsWith("domicilio"));
+  for (const [nombre, valor] of sinGiroNiDomicilio) await campo(omar.p, `#dato-${nombre}`, valor);
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Guardar datos" }), "expediente_datos_guardados");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Enviar versión 1" }), "expediente_datos_incompletos");
+  const textoFaltan = await aviso(omar.p);
+  exigir(
+    textoFaltan.includes("Faltan el giro y el domicilio. Captura esos datos en «Datos generales» y vuelve a enviar.")
+      && !textoFaltan.includes("La base no respondió") && new URL(omar.p.url()).searchParams.get("en") === "enviar-titulo"
+      && sql(`select estado from kyb_versiones where company_id = '${idNovena}'`) === "borrador"
+      && cuenta(`audit_log where accion = 'expediente_enviado' and company_id = '${idNovena}'`) === 0,
+    "serv-nuevo-6d. enviar sin giro ni domicilio: «Faltan el giro y el domicilio…», la versión sigue en borrador y sin evento «expediente_enviado»",
+    textoFaltan,
+  );
+  await enVista(omar.p.locator("#aviso-operacion"));
+  await foto(omar.p, "r9-enviar-sin-giro-ni-domicilio", false);
+  await omar.nav.close();
+
+  // serv-nuevo-6b: las fechas del folio de una coincidencia confirmada marcan su propio campo, no el folio.
+  const celia = await abrir("celia");
+  const caso = sql(`select id from lpb_coincidencias where estado = 'confirmada' and reporte_folio is null order by resuelta_en desc limit 1`);
+  exigir(Boolean(caso), "novena. hay una coincidencia confirmada sin folio para anotarlo");
+  const folioGuardado = () => sql(`select coalesce(reporte_folio, '') from lpb_coincidencias where id = '${caso}'`);
+  for (const [nombre, codigo, real, forzada, texto] of [
+    ["presentado", "dato_invalido_presentadoEl", hoyMexico(), "2026-02-30", "Revisa la fecha de presentación del reporte: debe existir en el calendario y no puede ser futura."],
+    ["aviso", "dato_invalido_avisoClienteEl", hoyMexico(-1), "2026-13-01", "Revisa la fecha del aviso al cliente: debe existir en el calendario y no puede ser futura. Déjala vacía si aún no avisas."],
+  ]) {
+    await ir(celia.p, "/operacion/cumplimiento");
+    const fila = celia.p.locator(`li:has([id="folio-${caso}"])`);
+    await fila.locator(`[id="folio-${caso}"]`).fill("UIF-2026-0009");
+    // La fecha de presentación siempre va; la del aviso al cliente solo en el segundo intento.
+    await fila.locator(`[id="presentado-${caso}"]`).fill(nombre === "presentado" ? real : hoyMexico());
+    if (nombre === "aviso") await fila.locator(`[id="aviso-${caso}"]`).fill(real);
+    await armarFecha(celia.p, real, forzada);
+    await enviar(celia.p, fila.getByRole("button", { name: "Anotar folio" }), codigo);
+    await celia.p.unroute("**/*");
+    exigir(
+      (await aviso(celia.p)) === texto && new URL(celia.p.url()).searchParams.get("en") === `${nombre}-${caso}`
+        && (await marcado(celia.p, `[id="${nombre}-${caso}"]`)) && (await enFoco(celia.p)) === `${nombre}-${caso}`
+        && !(await marcado(celia.p, `[id="folio-${caso}"]`)) && (await marcados(celia.p)) === 1 && folioGuardado() === "",
+      `serv-nuevo-6b. «${nombre === "presentado" ? "Presentado el" : "Aviso al cliente"}» ${forzada}: su aviso, solo ese campo marcado y con el foco (no el folio), sin folio guardado`,
+      await aviso(celia.p),
+    );
+    exigir(await avisoYCampo(celia.p, `[id="${nombre}-${caso}"]`), `serv-nuevo-6b. la captura muestra el aviso y «${nombre}» marcado`);
+    await foto(celia.p, `r9-folio-fecha-${nombre}-imposible`, false);
+  }
+  await celia.nav.close();
+
+  // base-N27: con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca solo la nota de esa tarjeta.
+  const quienes = ["gil", "rosa", "aurelio"];
+  const correos = quienes.map((quien) => sql(`select correo from users where id = '${E.IDS[quien]}'`));
+  const ids = quienes.map((quien) => sql(`with r as (
+      insert into auth_recuperaciones (id, user_id, solicitada_en, motivo) values (gen_random_uuid(), '${E.IDS[quien]}', now(), 'Cambié de teléfono y perdí la app.')
+      returning id, user_id
+    )
+    insert into audit_log (id, operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, ocurrido_en)
+    select gen_random_uuid(), (select id from operators order by alta_en limit 1), null, 'miembro', r.user_id, 'cliente',
+      'recuperacion_solicitada', 'auth_recuperaciones', r.id, now()
+    from r returning identificador`));
+  const ofelia = await abrir("ofelia");
+  envejecerFactor(E.IDS.ofelia, 6);
+  await ir(ofelia.p, "/operacion/recuperaciones");
+  const confirma = ofelia.p.getByRole("region", { name: "Confirma que eres tú" });
+  await confirma.getByLabel("Código de la app autenticadora").fill(await totp("ofelia"));
+  await confirma.getByRole("button", { name: "Confirmar con el código" }).click();
+  await confirma.waitFor({ state: "detached", timeout: 20000 });
+  await listo(ofelia.p);
+  const tarjeta = (correo) => ofelia.p.locator("li.decision").filter({ hasText: correo });
+  const nota = (indice) => `[id="nota-${ids[indice]}"]`;
+  exigir((await Promise.all(correos.map((correo) => tarjeta(correo).count()))).every((n) => n === 1), "base-N27. tres recuperaciones pendientes en la bandeja");
+  await enviar(ofelia.p, tarjeta(correos[1]).getByRole("button", { name: "Rechazar" }), "motivo_invalido");
+  exigir(
+    new URL(ofelia.p.url()).searchParams.get("en") === ids[1] && (await marcado(ofelia.p, nota(1))) && (await enFoco(ofelia.p)) === `nota-${ids[1]}`
+      && !(await marcado(ofelia.p, nota(0))) && !(await marcado(ofelia.p, nota(2))) && (await marcados(ofelia.p)) === 1
+      && cuenta(`auth_recuperaciones where id in ('${ids.join("','")}') and estado = 'solicitada'`) === 3,
+    "base-N27. rechazar sin nota la recuperación de en medio: «en» es su id y solo su nota queda marcada y con el foco; las tres siguen pendientes",
+    await aviso(ofelia.p),
+  );
+  exigir(await avisoYCampo(ofelia.p, nota(1)), "base-N27. la captura muestra el aviso y la nota marcada de la tarjeta de en medio");
+  await foto(ofelia.p, "r9-recuperacion-nota-en-su-tarjeta", false);
+  for (const [indice, correo] of correos.entries()) {
+    await ofelia.p.locator(nota(indice)).fill("No se pudo confirmar la identidad por videollamada.");
+    await enviar(ofelia.p, tarjeta(correo).getByRole("button", { name: "Rechazar" }), "decision_registrada");
+  }
+  exigir(
+    cuenta(`auth_recuperaciones where id in ('${ids.join("','")}') and estado = 'rechazada'`) === 3,
+    "base-N27. con su nota, las tres se rechazan: ninguna queda abierta",
+  );
+  await ofelia.nav.close();
 }
 
 // ---------- Orden ----------

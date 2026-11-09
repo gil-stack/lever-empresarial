@@ -12,7 +12,7 @@ import { etiquetaEstado, fechaDia, fechaHora } from "@/components/operacion/form
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
-import { ETIQUETA_GRADO, ETIQUETA_NIVEL, ETIQUETA_RESULTADO } from "@/dominio/operacion";
+import { ETIQUETA_GRADO, ETIQUETA_NIVEL, ETIQUETA_RESULTADO, fraseDeLoQueFalta } from "@/dominio/operacion";
 import {
   enRevisionDeCumplimiento,
   exigirContextoOperacion,
@@ -50,7 +50,7 @@ export default async function ExpedienteCliente({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ aviso?: string; en?: string }>;
+  searchParams: Promise<{ aviso?: string; en?: string; faltan?: string }>;
 }) {
   const ctx = await exigirContextoOperacion();
   const [{ id }, busqueda] = await Promise.all([params, searchParams]);
@@ -83,6 +83,7 @@ export default async function ExpedienteCliente({
     <PaginaOperacion
       titulo={`Expediente · ${expediente.empresa.razonSocial}`}
       aviso={busqueda.aviso}
+      detalleAviso={busqueda.aviso === "expediente_datos_incompletos" ? (fraseDeLoQueFalta((busqueda.faltan ?? "").split(",")) ?? undefined) : undefined}
       accion={
         <Link className="boton-texto" href={`/operacion/clientes/${id}`}>
           ← Ficha

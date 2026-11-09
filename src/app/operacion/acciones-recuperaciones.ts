@@ -34,7 +34,10 @@ export async function decidirRecuperacionAccion(formData: FormData): Promise<voi
   } catch (error) {
     if (error instanceof ErrorDeDominio) {
       const aviso = error.codigo === "reautenticacion_requerida" ? "reautenticacion_factor" : error.codigo;
-      redirect(`/operacion/recuperaciones?aviso=${encodeURIComponent(aviso)}`);
+      // Con varias solicitudes pendientes, el aviso marca y enfoca solo la tarjeta que se envió: va su id, nada más.
+      const id = formData.get("id");
+      const en = typeof id === "string" && /^[0-9a-f-]{36}$/i.test(id) ? `&en=${id}` : "";
+      redirect(`/operacion/recuperaciones?aviso=${encodeURIComponent(aviso)}${en}`);
     }
     throw error;
   }

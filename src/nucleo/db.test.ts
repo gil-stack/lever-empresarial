@@ -92,6 +92,15 @@ describe("error de base sin traducir", () => {
     assert.equal(registros.length, 0);
   });
 
+  // serv-nuevo-6d: enviar una versión sin todos los datos generales daba 23514 sin traducir («La base no respondió»).
+  // El servidor lo revisa antes; si aun así llega a la base, se avisa que faltan datos.
+  it("el CHECK de la forma de la versión se traduce a expediente_datos_incompletos", () => {
+    const traducido = traducirErrorDeBase(errorPg({ code: "23514", constraint: "kyb_versiones_forma", table: "kyb_versiones" }));
+    assert.ok(traducido instanceof ErrorDeDominio);
+    assert.equal(traducido.message, "expediente_datos_incompletos");
+    assert.equal(registros.length, 0);
+  });
+
   it("lo que sí se traduce no deja registro", () => {
     assert.equal(traducirErrorDeBase(errorPg({ code: "42501" })).message, "sin_permiso");
     const propio = new ErrorDeDominio("entrada_vencida");

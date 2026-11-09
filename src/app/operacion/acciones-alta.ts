@@ -17,6 +17,7 @@ import {
   dictaminarVersion,
   enviarVersion,
   exigirContextoOperacion,
+  ExpedienteIncompleto,
   guardarDatosGenerales,
   leerArchivoDeLista,
   registrarReporte,
@@ -210,6 +211,10 @@ export async function enviarVersionAccion(formData: FormData): Promise<void> {
   try {
     await enviarVersion(ctx, formData.get("versionId"));
   } catch (error) {
+    // Lo que falta viaja como claves conocidas (giro, domicilio…), nunca como datos de la empresa.
+    if (error instanceof ExpedienteIncompleto) {
+      redirect(`${expediente(companyId)}?aviso=${error.codigo}&faltan=${error.faltan.join(",")}&en=enviar-titulo#enviar-titulo`);
+    }
     return fallo(error, expediente(companyId), "#enviar-titulo");
   }
   listo(expediente(companyId), "expediente_enviado");
@@ -314,6 +319,9 @@ export async function resolverCoincidenciaAccion(formData: FormData): Promise<vo
   listo(destino, "coincidencia_resuelta");
 }
 
+/** El campo del formulario del folio que corresponde a cada rechazo de una fecha (el id del campo es `<campo>-<id>`). */
+const CAMPO_DEL_REPORTE: Record<string, string> = { dato_invalido_presentadoEl: "presentado", dato_invalido_avisoClienteEl: "aviso" };
+
 export async function registrarReporteAccion(formData: FormData): Promise<void> {
   const ctx = await exigirContextoOperacion();
   const destino = formData.get("desde") === "cumplimiento" ? "/operacion/cumplimiento" : "/operacion/lpb";
@@ -325,9 +333,11 @@ export async function registrarReporteAccion(formData: FormData): Promise<void> 
       avisoClienteEl: texto(formData, "avisoClienteEl"),
     });
   } catch (error) {
-    // El aviso marca el folio de esa coincidencia y le da el foco; en la dirección solo va su id.
+    // El aviso marca el campo que falló (el folio o una de las dos fechas) de esa coincidencia y le da el foco; en la
+    // dirección solo va el campo y el id de la coincidencia.
     const id = texto(formData, "id");
-    return fallo(error, destino, /^[0-9a-f-]{36}$/i.test(id) ? `#folio-${id}` : "");
+    const campo = error instanceof ErrorDeDominio ? (CAMPO_DEL_REPORTE[error.codigo] ?? "folio") : "folio";
+    return fallo(error, destino, /^[0-9a-f-]{36}$/i.test(id) ? `#${campo}-${id}` : "");
   }
   listo(destino, "reporte_registrado");
 }
