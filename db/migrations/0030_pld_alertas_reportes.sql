@@ -262,16 +262,22 @@ END;
 $$;
 
 -- Días hábiles en (p_desde, p_hasta]: lo que queda de un plazo. Cero si ya pasó.
+-- Con enteros: generate_series de fechas con intervalo pasa por timestamptz y, con
+-- un huso que cambia de horario a medianoche, se salta un día (r2-base-N13). El
+-- tope es el de pld_sumar_dias_habiles: ningún plazo de PLD pasa de un año (N12).
 CREATE FUNCTION pld_dias_habiles_entre(p_desde date, p_hasta date)
 RETURNS integer
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT count(*)::integer
-  FROM generate_series(p_desde + 1, p_hasta, interval '1 day') AS g (dia)
-  WHERE NOT pld_dia_inhabil(g.dia::date)
+BEGIN
+  IF p_desde IS NULL OR p_hasta IS NULL OR p_hasta - p_desde > 366 THEN
+    RAISE EXCEPTION 'pld_dias_habiles_invalidos';
+  END IF;
+  RETURN (SELECT count(*)::integer FROM generate_series(1, p_hasta - p_desde) AS k WHERE NOT pld_dia_inhabil(p_desde + k));
+END;
 $$;
 
 -- 2. Celebración del contrato ----------------------------------------------------
@@ -2701,6 +2707,9 @@ GRANT SELECT (
 ) ON pld_actas TO plataforma_sofipo;
 GRANT INSERT ON pld_actas TO plataforma_sofipo;
 
+-- r2-base-N12: como las demás SECURITY DEFINER, nadie más que el personal las ejecuta.
+REVOKE ALL ON FUNCTION pld_dia_inhabil(date), pld_calendario_cargado(integer), pld_sumar_dias_habiles(date, integer),
+  pld_dia_habil_del_mes(date, integer), pld_ultimo_dia_habil(date), pld_dias_habiles_entre(date, date) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION pld_dia_inhabil(date), pld_calendario_cargado(integer), pld_sumar_dias_habiles(date, integer),
   pld_dia_habil_del_mes(date, integer), pld_ultimo_dia_habil(date), pld_dias_habiles_entre(date, date),
   pld_comite_vigentes(uuid, date) TO plataforma_sofipo;

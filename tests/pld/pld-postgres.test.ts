@@ -886,6 +886,21 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
             tras_30_oct: "2026-11-05", tras_13_nov: "2026-11-19", enero: "2026-01-15", octubre: "2026-10-14", la_38_de_octubre: "2026-11-24",
             revolucion: true, navidad: false, cinco_de_mayo: false, entre: 6, c2026: true, c2027: false,
           });
+          // r2-base-N13: el conteo no depende del huso de la sesión (con fechas por timestamptz, Santiago daba 251 y 20).
+          for (const huso of ["UTC", "America/Mexico_City", "America/Santiago", "America/Havana", "Pacific/Apia", "Asia/Singapore"]) {
+            await dueno.query(`set timezone to '${huso}'`);
+            assert.deepEqual(await uno("select pld_dias_habiles_entre('2025-12-31', '2026-12-31') as anio, pld_dias_habiles_entre('2026-08-31', '2026-09-30') as septiembre"),
+              { anio: 252, septiembre: 21 }, huso);
+          }
+          await dueno.query("reset timezone");
+          // r2-base-N12: con un tope, como pld_sumar_dias_habiles; y solo el personal las ejecuta.
+          await assert.rejects(dueno.query("select pld_dias_habiles_entre('2026-01-01', '3026-01-01')"), /pld_dias_habiles_invalidos/);
+          for (const funcion of [
+            "pld_dia_inhabil('2026-11-02')", "pld_calendario_cargado(2026)", "pld_sumar_dias_habiles('2026-11-02', 3)",
+            "pld_dia_habil_del_mes('2026-11-01', 3)", "pld_ultimo_dia_habil('2026-11-01')", "pld_dias_habiles_entre('2026-11-01', '2026-11-30')",
+          ]) {
+            await assert.rejects(como(urlApp, "plataforma_cliente", { userId: LUIS, companyId: beta }, (c) => c.query(`select ${funcion}`)), /permission denied for function/, funcion);
+          }
           const enero2027 = await leerPeriodicos(cum, { ahora: new Date("2027-01-20T18:00:00Z") });
           assert.ok(enero2027.some((p) => p.faltaCalendario === 2027));
           const hoyMismo = await leerPeriodicos(cum);
