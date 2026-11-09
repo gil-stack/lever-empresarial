@@ -17,6 +17,7 @@ import { ConfirmarParaDecidir } from "@/components/operacion/pld/confirmar";
 import { ahoraEnMexicoParaCampo } from "@/components/operacion/pld/formato";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
+import { nombreDelMes } from "@/dominio/flujo/fechas";
 import { hoyEnMexico } from "@/dominio/operacion/comisiones";
 import { CARGO_COMITE, CARGOS_COMITE } from "@/dominio/pld";
 import { exigirContextoOperacion, puedeEnOperacion } from "@/server/operacion";
@@ -391,6 +392,11 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
               <Insignia tono={comite.sesionDelMes ? "sello" : "aviso"}>{comite.sesionDelMes ? "Sesión del mes registrada" : "Sesión del mes pendiente"}</Insignia>
               <p className="pista">El Comité sesiona al menos una vez al mes, con la mayoría de sus miembros.</p>
             </div>
+            {comite.mesesSinSesion.length > 0 ? (
+              <p>
+                <Insignia tono="aviso">Sin sesión con quórum</Insignia> {comite.mesesSinSesion.map((mes) => nombreDelMes(`${mes}-01`)).join(", ")}.
+              </p>
+            ) : null}
             {comite.avisosSuplentes.length > 0 ? (
               <ul className="operacion-lista">
                 {comite.avisosSuplentes.map((aviso) => (

@@ -2042,6 +2042,16 @@ BEGIN
   ELSE
     NEW.vence_el := pld_caso_vence(caso.id);
     NEW.fuera_de_plazo := NEW.dictaminado_el > NEW.vence_el;
+    -- r2-base-N6 (40ª): la fecha de la sesión manda para el dictamen y los 3 días
+    -- hábiles, pero si la sesión o sus votos se registraron en Lever después del
+    -- vencimiento, el dictamen queda marcado: una sesión con fecha atrasada no
+    -- esconde el incumplimiento.
+    IF NEW.via = 'comite' AND (
+      pld_fecha_mx(sesion.registrado_en) > NEW.vence_el
+      OR pld_fecha_mx((SELECT max(v.registrado_en) FROM pld_votos v WHERE v.sesion_id = sesion.id AND v.propuesta_id = propuesta.id)) > NEW.vence_el
+    ) THEN
+      NEW.fuera_de_plazo := true;
+    END IF;
     IF NEW.resultado <> 'no_reportar' THEN
       NEW.reporte_vence_el := pld_sumar_dias_habiles(NEW.dictaminado_el, 3);
     END IF;

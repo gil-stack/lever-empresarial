@@ -113,6 +113,8 @@ export type Comite = {
   /** Suplentes que pasan de dos sesiones en el semestre o asisten a dos seguidas (47ª). */
   avisosSuplentes: Array<{ integranteId: string; nombre: string; sesiones: number; seguidas: boolean }>;
   sesionDelMes: boolean;
+  /** Meses cerrados sin sesión con quórum mientras dictaminaba el Comité (AAAA-MM), desde el mes siguiente a la primera designación. */
+  mesesSinSesion: string[];
 };
 
 export type Sesion = {
@@ -214,6 +216,27 @@ export async function leerComite(ctx: ContextoDePersonal, opciones: { ahora?: Da
       })
       .filter((aviso) => aviso.sesiones > 2 || aviso.seguidas);
     const mes = hoy.slice(0, 7);
+    // r2-base-N6: un mes pasado sin sesión con quórum no se pierde de vista. Cuenta
+    // el modo de dictamen vigente al cierre de cada mes.
+    const mesesSinSesion = ((await consulta.query(
+      `select to_char(m.mes, 'YYYY-MM') as mes
+       from generate_series(
+         (select (date_trunc('month', min(i.designado_el)) + interval '1 month')::date from pld_comite_integrantes i where i.operator_id = $1),
+         (date_trunc('month', $2::date) - interval '1 month')::date,
+         interval '1 month'
+       ) as m(mes)
+       where coalesce((
+           select x.modo from pld_modo_dictamen x
+           where x.operator_id = $1 and pld_fecha_mx(x.registrado_en) < (m.mes + interval '1 month')::date
+           order by x.registrado_en desc, x.id desc limit 1
+         ), 'comite') = 'comite'
+         and not exists (
+           select 1 from pld_sesiones s
+           where s.operator_id = $1 and s.quorum and s.celebrada_el >= m.mes::date and s.celebrada_el < (m.mes + interval '1 month')::date
+         )
+       order by 1`,
+      [ctx.personal.operadorId, hoy],
+    )).rows as Array<{ mes: string }>).map((fila) => fila.mes);
     return {
       integrantes,
       auditor: auditor
@@ -228,6 +251,7 @@ export async function leerComite(ctx: ContextoDePersonal, opciones: { ahora?: Da
       sesiones,
       avisosSuplentes,
       sesionDelMes: sesiones.some((s) => s.quorum && s.celebradaEl.slice(0, 7) === mes),
+      mesesSinSesion,
     };
   });
 }

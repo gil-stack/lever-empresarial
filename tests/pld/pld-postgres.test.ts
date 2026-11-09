@@ -36,6 +36,7 @@ import {
   emitirAviso,
   type EntradaIntegrante,
   leerCaso,
+  leerBandejaPld,
   leerComite,
   leerEvaluacionesPendientes,
   leerParametros,
@@ -777,6 +778,44 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await assert.rejects(marcarVeinticuatroHoras(cum, { casoId: casoY, motivo: "Marca después del dictamen" }), /caso_ya_dictaminado/);
           // De vuelta al Comité.
           await cambiarModoDictamen(cum, SESION_SOFIPO, { formId: randomUUID(), modo: "comite", oficialId: "", motivo: "Ya son más de 25 personas" });
+        });
+
+        await t.test("sesión con fecha atrasada (r2-base-N6): el dictamen registrado tarde queda marcado; los meses sin sesión se listan", async () => {
+          const acuse = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_inusual", companyId: beta, mencionada: "", superior: "", descripcion: "Depósitos fraccionados al cierre del mes." });
+          const alerta = String((await uno("select id from pld_alertas where aviso_id = $1", [acuse.id])).id);
+          const casoV = await abrirCaso(cum, { formId: randomUUID(), alertaId: alerta });
+          await registrarPropuesta(cum, { casoId: casoV, formId: randomUUID(), propuesta: "reportar_inusual", justificacion: "Depósitos sin soporte documental" });
+          const propuestaV = String((await uno("select id from pld_propuestas where caso_id = $1", [casoV])).id);
+          // La alerta tiene 61 días (venció ayer) y la propuesta 30; se simula el paso del tiempo como en el README.
+          await dueno.query("alter table pld_alertas disable trigger pld_alertas_inmutable");
+          await dueno.query("update pld_alertas set creada_en = now() - interval '61 days' where id = $1", [alerta]);
+          await dueno.query("alter table pld_alertas enable trigger pld_alertas_inmutable");
+          await dueno.query("alter table pld_propuestas disable trigger pld_propuestas_inmutable");
+          await dueno.query("update pld_propuestas set registrado_en = now() - interval '30 days' where id = $1", [propuestaV]);
+          await dueno.query("alter table pld_propuestas enable trigger pld_propuestas_inmutable");
+          // Hoy se registra una sesión «celebrada» hace 18 días, antes del vencimiento, y sus votos.
+          const atrasada = randomUUID();
+          assert.deepEqual(await registrarSesion(cum, { formId: atrasada, celebradaEl: sumarDias(hoy, -18), presentes: [P, S, I1], auditorPresente: false }), { quorum: true });
+          for (const quien of [P, S, I1]) await registrarVoto(cum, { formId: randomUUID(), sesionId: atrasada, propuestaId: propuestaV, integranteId: quien, voto: "a_favor" });
+          assert.deepEqual(await dictaminarCaso(cum, SESION_SOFIPO, {
+            formId: randomUUID(), casoId: casoV, via: "comite", sesionId: atrasada, propuestaId: propuestaV, resultado: "", justificacion: "Votación del Comité",
+          }), { fueraDePlazo: true });
+          // La fecha de la sesión sigue mandando para el dictamen y los 3 días hábiles del reporte.
+          const d = await uno<{ el: string; vence: string; fuera: boolean; reporte: string }>(
+            "select dictaminado_el::text as el, vence_el::text as vence, fuera_de_plazo as fuera, reporte_vence_el::text as reporte from pld_dictamenes where caso_id = $1", [casoV],
+          );
+          assert.equal(d.el, sumarDias(hoy, -18));
+          assert.ok(d.el <= d.vence, "la fecha de la sesión es anterior al vencimiento");
+          assert.equal(d.fuera, true);
+          assert.equal(d.reporte, (await uno<{ r: string }>("select pld_sumar_dias_habiles($1::date, 3)::text as r", [d.el])).r);
+
+          // Nota del N6: un mes cerrado sin sesión con quórum queda a la vista, en el Comité y en la bandeja.
+          const [anio, mes] = hoy.split("-").map(Number) as [number, number];
+          const mesMas = (k: number) => new Date(Date.UTC(anio, mes - 1 + k, 15, 18)).toISOString().slice(0, 7);
+          const enDosMeses = new Date(`${mesMas(2)}-15T18:00:00Z`);
+          assert.deepEqual((await leerComite(cum, { ahora: enDosMeses })).mesesSinSesion, [mesMas(1)]);
+          assert.deepEqual((await leerBandejaPld(cum, { ahora: enDosMeses })).mesesSinSesion, [mesMas(1)]);
+          assert.deepEqual((await leerComite(cum)).mesesSinSesion, []);
         });
 
         await t.test("días hábiles: los dos instrumentos de 2026 con criterio conservador y «falta el calendario» en 2027", async () => {

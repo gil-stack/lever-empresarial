@@ -3,6 +3,7 @@ import Link from "next/link";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { plazoEnDias, plazoEnDiasHabiles } from "@/components/operacion/pld/formato";
 import { Hoja, Insignia, Metrica, Metricas, Monto, Vacio } from "@/components/sistema";
+import { nombreDelMes } from "@/dominio/flujo/fechas";
 import { PROPUESTA, REGLA } from "@/dominio/pld";
 import type { BandejaPld } from "@/server/pld";
 
@@ -14,7 +15,8 @@ import type { BandejaPld } from "@/server/pld";
  */
 export function BandejaDePld({ bandeja }: { bandeja: BandejaPld }) {
   const periodicos = bandeja.periodicos.filter((p) => p.estado !== "registrado");
-  const comite = bandeja.comunicacionesComite.length + (bandeja.modo === "comite" && bandeja.sesionDelMesPendiente ? 1 : 0);
+  const comite =
+    bandeja.comunicacionesComite.length + bandeja.mesesSinSesion.length + (bandeja.modo === "comite" && bandeja.sesionDelMesPendiente ? 1 : 0);
   return (
     <>
       <Metricas etiqueta="PLD">
@@ -163,6 +165,19 @@ export function BandejaDePld({ bandeja }: { bandeja: BandejaPld }) {
                 </div>
               </li>
             ) : null}
+            {bandeja.mesesSinSesion.map((mes) => (
+              <li key={`sin-sesion-${mes}`}>
+                <div className="operacion-fila">
+                  <div className="operacion-fila-cuerpo">
+                    <h3>
+                      <Link href="/operacion/comite#sesiones-titulo">Sin sesión con quórum en {nombreDelMes(`${mes}-01`).toLocaleLowerCase("es-MX")}</Link>
+                    </h3>
+                    <p className="operacion-meta">Ese mes el Comité no sesionó con la mayoría de sus miembros.</p>
+                  </div>
+                  <Insignia tono="aviso">Sin sesión</Insignia>
+                </div>
+              </li>
+            ))}
             {bandeja.comunicacionesComite.map((pendiente) => (
               <li key={`${pendiente.tipo}-${pendiente.integranteId}`}>
                 <div className="operacion-fila">

@@ -38,6 +38,7 @@ export type BandejaPld = {
   evaluaciones: EvaluacionPendiente[];
   comunicacionesComite: ComunicacionPendiente[];
   sesionDelMesPendiente: boolean;
+  mesesSinSesion: string[];
   faltaClaveEntidad: boolean;
   faltaCalendario: number | null;
   modo: "comite" | "oficial";
@@ -123,6 +124,7 @@ export async function leerBandejaPld(ctx: ContextoDePersonal, opciones: { ahora?
     evaluaciones,
     comunicacionesComite: modo.modo === "comite" ? comite.pendientes : [],
     sesionDelMesPendiente: modo.modo === "comite" && !comite.sesionDelMes,
+    mesesSinSesion: comite.mesesSinSesion,
     faltaClaveEntidad: entidad === null,
     faltaCalendario,
     modo: modo.modo,
