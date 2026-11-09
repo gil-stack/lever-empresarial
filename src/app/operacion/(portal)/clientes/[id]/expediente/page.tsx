@@ -6,9 +6,9 @@ import { notFound } from "next/navigation";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { calificarRiesgoAccion, crearVersionAccion, dictaminarAccion } from "@/app/operacion/acciones-alta";
-import { errorDelCampo } from "@/components/operacion/aviso";
+import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { Coincidencias } from "@/components/operacion/coincidencias";
-import { FormulariosBorrador, VistaVersion, type ErrorDeCampo } from "@/components/operacion/expediente";
+import { FormulariosBorrador, VistaVersion, type ErrorDeCampo, type MensajeDeCampo } from "@/components/operacion/expediente";
 import { etiquetaEstado, fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { PerfilTransaccional } from "@/components/operacion/pld/perfil";
@@ -78,6 +78,7 @@ export default async function ExpedienteCliente({
   const { vigente, borrador, riesgo } = expediente;
   const esperaDictamen = vigente !== null && vigente.dictamen === null;
   const error: ErrorDeCampo = (seccion, campo) => (busqueda.en === seccion ? errorDelCampo(busqueda.aviso, campo) : {});
+  const mensaje: MensajeDeCampo = (seccion, campo) => (busqueda.en === seccion ? <MensajeDelCampo codigo={busqueda.aviso} campo={campo} /> : null);
   const errorMotivo = error("dictamen-titulo", "motivo");
   const siguiente = (expediente.versiones[0]?.numero ?? 0) + 1;
 
@@ -144,6 +145,7 @@ export default async function ExpedienteCliente({
           version={borrador}
           companyId={id}
           error={error}
+          mensaje={mensaje}
         />
       ) : null}
       {borrador && !captura ? (
@@ -187,6 +189,7 @@ export default async function ExpedienteCliente({
                     <option value="observado">Observado: hay que corregir</option>
                     <option value="rechazado">Rechazado</option>
                   </select>
+                  {mensaje("dictamen-titulo", "resultado")}
                 </div>
                 <div className="campo">
                   <label htmlFor="dictamen-motivo">Motivo (obligatorio si se observa o rechaza)</label>
@@ -197,6 +200,7 @@ export default async function ExpedienteCliente({
                     {...errorMotivo}
                     aria-describedby={["dictamen-motivo-pista", errorMotivo["aria-describedby"]].filter(Boolean).join(" ")}
                   />
+                  {mensaje("dictamen-titulo", "motivo")}
                   <p id="dictamen-motivo-pista" className="pista">Originación y Aprobación leen este motivo: no menciones la Lista ni el reporte.</p>
                 </div>
                 <div className="acciones">
@@ -251,6 +255,7 @@ export default async function ExpedienteCliente({
                 <option value="media">Media</option>
                 <option value="alta">Alta</option>
               </select>
+              {mensaje("riesgo-titulo", "actividad")}
             </div>
             <div className="campo">
               <label htmlFor="riesgo-zona">Riesgo de la zona geográfica</label>
@@ -259,6 +264,7 @@ export default async function ExpedienteCliente({
                 <option value="media">Media</option>
                 <option value="alta">Alta</option>
               </select>
+              {mensaje("riesgo-titulo", "zona")}
             </div>
             <div className="acciones operacion-ancho">
               <BotonEnviar>{riesgo ? "Registrar revisión periódica" : "Registrar grado al alta"}</BotonEnviar>

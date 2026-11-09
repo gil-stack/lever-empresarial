@@ -1,6 +1,7 @@
 import { Aviso } from "@/components/sistema";
 import { TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
 
+import { MensajeJuntoAlCampo } from "./mensaje-junto-al-campo";
 import { ASENTADOS_PLD, CAMPO_PLD, MENSAJES_PLD } from "./pld/avisos";
 
 const ID_AVISO = "aviso-operacion";
@@ -228,13 +229,19 @@ export function tonoDelAviso(codigo: string): "asentado" | "revisar" {
   return ASENTADOS.has(codigo) ? "asentado" : "revisar";
 }
 
+/** El texto de un aviso: el mismo arriba (el resumen) y junto al campo. */
+function textoDelAviso(codigo: string): string {
+  return (
+    MENSAJES[codigo] ??
+    (codigo.startsWith("dato_invalido_") ? "Revisa el campo marcado: el dato no tiene el formato esperado." : null) ??
+    "No se pudo completar. Revisa los datos e inténtalo de nuevo."
+  );
+}
+
 /** `id` es para el formulario que muestra su propio aviso sin recargar la página (y no repite el de la página). */
 export function AvisoOperacion({ codigo, detalle, id = ID_AVISO }: { codigo?: string | null; detalle?: string; id?: string }) {
   if (!codigo) return null;
-  const mensaje =
-    MENSAJES[codigo] ??
-    (codigo.startsWith("dato_invalido_") ? "Revisa el campo marcado: el dato no tiene el formato esperado." : null) ??
-    "No se pudo completar. Revisa los datos e inténtalo de nuevo.";
+  const mensaje = textoDelAviso(codigo);
   return (
     <div id={id} className="operacion-aviso">
       <Aviso tono={tonoDelAviso(codigo)} titulo={mensaje}>
@@ -254,11 +261,26 @@ export function avisoDeCampo(codigo: string): boolean {
 }
 
 /**
- * Marca un campo como inválido, lo liga al aviso y le da el foco cuando el error es suyo. `dato_invalido_<campo>`
+ * Marca un campo como inválido, lo liga a su mensaje (`MensajeDelCampo`) y le da el foco cuando el error es suyo. `dato_invalido_<campo>`
  * e `invisible_<campo>` son de ese campo. Un formulario que muestra su propio aviso (sin recargar la página) pasa
  * el id de ese aviso.
  */
 export function errorDelCampo(codigo: string | null | undefined, campo: string, idAviso = ID_AVISO) {
-  if (!codigo || (CAMPO[codigo] ?? codigo.replace(/^(dato_invalido|invisible)_/, "")) !== campo) return {};
-  return { "aria-invalid": true, "aria-describedby": idAviso, autoFocus: true } as const;
+  if (!esDelCampo(codigo, campo)) return {};
+  return { "aria-invalid": true, "aria-describedby": `${idAviso}-campo`, autoFocus: true } as const;
+}
+
+/**
+ * El texto del error junto al campo que lo causó, justo después del control; el aviso de arriba queda como resumen.
+ * Es la descripción que `errorDelCampo` le pone al campo, así que el lector la oye una vez, al llegar al campo. Sin
+ * error no pinta nada. Cada página (o formulario con su propio aviso) marca un solo campo a la vez: el id no se repite.
+ */
+export function MensajeDelCampo({ codigo, campo, idAviso = ID_AVISO }: { codigo: string | null | undefined; campo: string; idAviso?: string }) {
+  if (!esDelCampo(codigo, campo)) return null;
+  return <MensajeJuntoAlCampo id={`${idAviso}-campo`} texto={textoDelAviso(codigo)} />;
+}
+
+function esDelCampo(codigo: string | null | undefined, campo: string): codigo is string {
+  if (!codigo) return false;
+  return (CAMPO[codigo] ?? codigo.replace(/^(dato_invalido|invisible)_/, "")) === campo;
 }

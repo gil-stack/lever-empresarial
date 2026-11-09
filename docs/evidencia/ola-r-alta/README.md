@@ -6,9 +6,9 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r-alta
 | --- | --- | --- |
 | Flujos 0-12 | 147 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
 | Pantallas (3 temas × 1440/390) y contraste AA medido | 60 comprobaciones en verde, 0 en rojo; contraste mínimo 5.00 (Lever 1440) | `datos/resultados-pantallas-contraste.json` |
-| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;»; el representante, el socio y la razón social con un control, el giro y el cobro con el control como espacio, el RFC con tabulador, el alta y el área con su aviso y las fechas de Pagos en su campo; el aviso propio del carácter invisible en el socio, el representante, las razones sociales y el folio, el representante que conserva lo capturado, el documento extranjero y la Lista con tabulador, el motivo con un emoji compuesto y el contrato con «Vigente hasta»; el representante con un relleno hangul, el envío sin giro ni domicilio, las fechas del folio en su campo y la recuperación marcada en su tarjeta; sin JavaScript la entrada, el giro, el dictamen y el archivo, las claves repetidas en la dirección, el foco del archivo rechazado y los valores largos a 390) | 209 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
+| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;»; el representante, el socio y la razón social con un control, el giro y el cobro con el control como espacio, el RFC con tabulador, el alta y el área con su aviso y las fechas de Pagos en su campo; el aviso propio del carácter invisible en el socio, el representante, las razones sociales y el folio, el representante que conserva lo capturado, el documento extranjero y la Lista con tabulador, el motivo con un emoji compuesto y el contrato con «Vigente hasta»; el representante con un relleno hangul, el envío sin giro ni domicilio, las fechas del folio en su campo y la recuperación marcada en su tarjeta; sin JavaScript la entrada, el giro, el dictamen y el archivo, las claves repetidas en la dirección, el foco del archivo rechazado y los valores largos a 390; el mensaje del error junto al campo, el representante sin JavaScript y el motivo de la coincidencia, y en cada aviso un solo campo marcado) | 215 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
 
-Corrida del 2026-11-09 sobre el head de este PR, con los arreglos de las diez revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`; la carrera de F4 y F5 del CI, serv-nuevo-5, base-N24, base-N25, el aviso propio del carácter invisible y dos P3 de la re-verificación sobre `b2db0b5`; la bomba de fechas de `test:db`, base-N26, base-N27, serv-nuevo-6b y serv-nuevo-6d de la re-verificación sobre `a75d5e4`; N5 del CI, base-N28, serv-nuevo-7, los textos que no se ven, el JSDoc, dos reglas de axe, el campo de archivo y el desborde a 390 de la re-verificación sobre `32e49b8`), sobre una base migrada de cero con la 0028 final. Las tres fases corrieron sobre el código final de la décima revisión.
+Corrida del 2026-11-09 sobre el head de este PR, con los arreglos de las once revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`; la carrera de F4 y F5 del CI, serv-nuevo-5, base-N24, base-N25, el aviso propio del carácter invisible y dos P3 de la re-verificación sobre `b2db0b5`; la bomba de fechas de `test:db`, base-N26, base-N27, serv-nuevo-6b y serv-nuevo-6d de la re-verificación sobre `a75d5e4`; N5 del CI, base-N28, serv-nuevo-7, los textos que no se ven, el JSDoc, dos reglas de axe, el campo de archivo y el desborde a 390 de la re-verificación sobre `32e49b8`; el mensaje junto al campo, el P2 de los formularios sin JavaScript, el motivo de la coincidencia, U+2800 y los Cf, y la nota del dictamen aprobado de la re-verificación sobre `edefd2e`), sobre una base migrada de cero con la 0028 final. Las tres fases corrieron sobre el código final de la onceava revisión.
 
 ## Cómo se corre
 
@@ -675,6 +675,104 @@ Todo va en este PR. **La 0028 no cambia.**
 - **El recorrido sin JavaScript no corre código en la página.** Con JavaScript apagado, `page.evaluate` y `addStyleTag` de Playwright no terminan nunca, y la primera corrida se colgó ahí. Esas pasadas usan solo selectores (`:focus`), cajas y `scrollIntoViewIfNeeded`.
 - **axe va como script de evidencia, no en la e2e.** `axe-core` llega con `eslint-config-next` (vía `eslint-plugin-jsx-a11y`), no como dependencia propia. La e2e no depende de él.
 
+### Onceava revisión (re-verificación sobre `edefd2e`)
+
+El revisor de la base y el de pantalla cerraron `edefd2e` sin bloqueos de su delta. La sesión líder pidió el mensaje del error junto al campo, y los revisores encontraron:
+
+- un P2: sin JavaScript, «Agregar representante» y «Agregar accionista» volvían en blanco;
+- tres P3: el motivo de la coincidencia sin ligar, U+2800 y los Cf visibles, y la nota del dictamen aprobado;
+- el textarea de la suspensión con el foco, pero asomado al pie.
+
+Todo va en este PR. **La 0028 no cambia.**
+
+**El texto del error, junto al campo con el foco.**
+
+- **Lo que pasaba** (`datos/mensaje-junto-al-campo-antes.txt`, medido con la e2e sobre el código de `edefd2e`):
+  - **Con JavaScript, el campo quedaba fuera de la pantalla.** Después de la acción, el campo de archivo de los documentos tenía el foco en y=3119 de 900 (a 1440) y en 4950 de 844 (a 390). Solo se veía el aviso de arriba. Next sube la página al terminar de navegar: su `InnerScrollHandler` es un `useLayoutEffect` del segmento, corre después del autofocus y deja el foco donde está. Con JavaScript no había prueba que lo viera: `toBeFocused` no mira si el campo se ve.
+  - **El socio con el foco en Capital.** El aviso de su formulario va arriba del formulario: quedaba en −32 (a 1440) y en −452 (a 390), fuera de la vista.
+  - **Sin JavaScript, los documentos.** El campo quedaba a la vista y el aviso, arriba, en −2587.
+- **Arreglo, en un solo lugar.**
+  - `MensajeDelCampo` (`aviso.tsx`) usa la misma condición que `errorDelCampo` y el mismo texto que el aviso. Va justo después del control: `<p id="<idAviso>-campo" class="error-campo">`. Es el estilo de error de campo que ya usan Personas, Proveedores y Flujo, así que no hay CSS nuevo. Sin error no pinta nada.
+  - `errorDelCampo` apunta `aria-describedby` a ese mensaje. El aviso de arriba queda como resumen y deja de ser la descripción del campo: el lector oye el texto una vez, al llegar al campo.
+  - `MensajeJuntoAlCampo` (`mensaje-junto-al-campo.tsx`, de cliente) cubre el caso con JavaScript. Si el campo que describe tiene el foco y no se ve junto con su mensaje, lo centra en un `useEffect`, que corre después del de Next. Sin JavaScript, el autofocus ya lleva la página al campo.
+  - Son 16 archivos de producto. Además de `aviso.tsx` y `mensaje-junto-al-campo.tsx` (nuevo):
+    - el alta, la ficha, Comisiones y la Lista;
+    - el expediente (página y componente), el campo de archivo, el folio y las coincidencias;
+    - Recuperaciones (página y tarjeta);
+    - el representante, el accionista con su identidad y el diálogo de rechazo.
+
+    Ningún formulario de Operación que usa `errorDelCampo` queda fuera.
+  - **Nunca dos campos marcados.** Cada página, o cada formulario con su propio aviso, marca un solo campo, así que el id del mensaje no se repite. La e2e lo exige en cada caso. El recorrido lo revisa en cada aviso de Operación: en los 71 avisos de las regresiones hubo 43 campos marcados, cada uno con su mensaje único junto a él.
+- **Después** (`datos/mensaje-junto-al-campo-despues.txt`). A 1440 y 390, con JavaScript y sin él, el mensaje queda justo debajo del campo (de 8 a 14 px) y a la vista:
+  - los documentos, en 478 de 900;
+  - el socio a 390 con JavaScript, en 259-297 de 844;
+  - la suspensión, en 511-550 de 900, donde el revisor la vio asomada en y=943;
+  - la nota de la tercera tarjeta de Recuperaciones, a 390 sin JavaScript, en 547-567.
+- **Sin error no cambia nada** (`datos/sin-error-sin-cambios.txt`). Comparé 10 pantallas con formularios × 1440 y 390, con el build de `edefd2e` y con el final, sobre la misma base.
+  - **DOM normalizado:** idéntico en 20 de 20 vistas.
+  - **Píxeles:** idénticos en 11 de las 12 capturas que el mismo build repite igual. La duodécima difiere en la franja del canvas fijo del fondo, con la misma cifra que da un solo build contra sí mismo; su DOM es idéntico.
+  - **CSS:** la ronda no cambia ninguno.
+- **Rojo** (`datos/e2e-rojo-mensaje-junto-al-campo.txt`):
+  - contra `edefd2e`, el campo nombra el aviso de arriba;
+  - con el mensaje nuevo pero sin centrar, el campo queda en y=3119 y el mensaje, fuera de la vista.
+- **Probado y descartado:** devolver el foco al repetir el mismo error desde la misma dirección. La e2e repite el error, y el foco llega igual sin esa línea.
+
+**P2 (revisor de pantalla): sin JavaScript, «Agregar representante» y «Agregar accionista» volvían en blanco.**
+
+- **Causa.** `key={randomUUID()}` en `expediente.tsx`: la clave cambiaba en cada vista. Sin JavaScript, React le devuelve el estado de la acción solo al formulario con la misma clave. Por eso volvía con 200, sin aviso, sin marca y sin lo capturado. Pasaba también con un clic antes de hidratar.
+- **Arreglo.** La clave es `${version.id}-${cuántos hay}` y cambia solo cuando entra uno: con JavaScript, tras agregar, el formulario empieza en blanco; tras un rechazo es el mismo formulario. No quedan otras claves aleatorias en formularios con `useActionState`.
+- **Prueba.**
+  - e2e sin JavaScript de los dos formularios con un U+200B en el nombre: su aviso, el campo marcado y con el foco, su mensaje a la vista y lo capturado de vuelta, sin nada en la base.
+  - Recorrido: `r114`.
+  - Rojo: en la medida «antes», el socio sin JavaScript no llegó a medirse, porque el formulario volvió en blanco.
+
+**P3 (revisor de pantalla): el motivo de la coincidencia no se ligaba a su campo.**
+
+- **Causa.** `resolverCoincidenciaAccion` llamaba a `fallo` sin ancla y `Coincidencias` no usaba `errorDelCampo`: sin `en=`, sin marca y con el foco en BODY.
+- **Arreglo.** La acción manda `en=motivo-<id>`, o `resolucion-<id>` si el error es del dictamen. `Coincidencias` marca ese campo y pone su mensaje junto a él, como el folio.
+- **Prueba.** Recorrido con JavaScript a 1440 y sin JavaScript a 390: `en=motivo-<caso>`, sin fragmento, el campo marcado y con el foco, y el caso sigue abierto. Capturas `r110` y `r111`.
+
+**P3 (revisor de la base): U+2800 y 32 Cf que no son Default_Ignorable contaban como visibles.**
+
+- **Arreglo.** `tieneAlgoVisible` y `caracteresVisibles` descuentan `\p{Cf}` y U+2800.
+- **Prueba.**
+  - Unitarias con U+2800, U+FFF9, U+0600, U+06DD, U+110BD y U+13430.
+  - Postgres: un dictamen «observado» con diez U+2800 o diez U+FFF9 da `motivo_invalido`. Un giro de diez U+2800 y una colonia «U+FFF9 U+0600» se guardan vacíos.
+  - Rojo: el dictamen con diez U+2800 se asentaba (`datos/rojo-u2800-y-nota-del-aprobado.txt`, línea 564).
+
+**P3 (revisor de la base): un dictamen «aprobado» con una nota inválida se asentaba sin nota.**
+
+- **Causa.** Viene de `07b5e8c`. `opcional(...) ?? null` convertía una nota inválida en `null`, por ejemplo una de más de 1,000 caracteres armada a mano.
+- **Arreglo.** Una nota sin nada que se vea queda vacía; una inválida da `motivo_invalido`, y el aviso marca el motivo.
+- **Prueba.** Postgres con la petición armada a mano:
+  - 1,001 caracteres dan `motivo_invalido` y ningún dictamen;
+  - «U+2800 U+3164» deja el aprobado con el motivo vacío.
+  - Rojo: con 1,001 caracteres se asentaba (línea 584).
+
+**Documentado, sin cambio: un archivo de más de 4.5 MB sin JavaScript.** Sin JavaScript no hay revisión de tamaño en el navegador. Un archivo de más de 4.5 MB lo corta la plataforma de Vercel con un 413 antes de llegar a la acción, así que la pantalla es la de la plataforma y no el aviso. `bodySizeLimit` no cambia. Entre 4 MiB y 4.5 MB, el servidor da su aviso (`r106`).
+
+| Hallazgo | Arreglo | Prueba |
+| --- | --- | --- |
+| **Mensaje junto al campo (sesión líder)** El texto del error quedaba arriba de la página o del formulario. Con JavaScript, además, Next subía la página después del autofocus y el campo con el foco quedaba fuera de la pantalla | `MensajeDelCampo` justo después de cada control marcado, como su `aria-describedby`; el aviso de arriba queda como resumen. `MensajeJuntoAlCampo` centra el campo con JavaScript. 16 archivos | e2e con y sin JavaScript, a 1440 y 390: documentos (dos veces el mismo error), socio, reactivación y la tercera tarjeta de Recuperaciones; nunca dos campos marcados. Unitarias. Recorrido: 71 avisos y 43 campos, cada uno con su mensaje. Capturas `r112` y `r113`. Rojo: el campo en y=3119 |
+| **P2 sin JavaScript: representante y accionista en blanco** | Clave estable: `${version.id}-${cuántos hay}` | e2e sin JavaScript de los dos con un invisible: aviso, marca, foco, mensaje y lo capturado. `r114` |
+| **P3 motivo de la coincidencia** Sin `en=`, sin marca y con el foco en BODY | `en=motivo-<id>` o `resolucion-<id>`; `errorDelCampo` y su mensaje en `Coincidencias` | Recorrido con y sin JavaScript. `r110` y `r111` |
+| **P3 U+2800 y 32 Cf visibles** | `\p{Cf}` y U+2800 fuera de lo que se ve | Unitarias y Postgres. Rojo: el dictamen con diez U+2800 se asentaba |
+| **P3 nota del dictamen aprobado** Una nota inválida se asentaba como vacía | Sin nada visible, vacía; inválida, `motivo_invalido` | Postgres con la petición armada. Rojo: se asentaba |
+| **Suspensión asomada (y=943 de 1000)** | El mismo mensaje junto al campo; con JavaScript se centra | e2e con y sin JavaScript, a 1440 y 390: el mensaje en 511-550 de 900 |
+| **Más de 4.5 MB sin JavaScript** | Sin cambio: la plataforma corta con 413 | Documentado |
+
+**Verificación en rojo.** Las pruebas nuevas, corridas contra el código de `edefd2e`, fallan así:
+
+- **e2e:** el campo nombra el aviso de arriba; sin centrar, el campo queda en y=3119; sin JavaScript, el socio vuelve en blanco.
+- **Unitarias:** `textoOperativo` devolvía diez U+2800 tal cual; `datosQueFaltan` no veía faltar el giro de U+2800.
+- **Postgres:** el dictamen «observado» con diez U+2800 y el «aprobado» con 1,001 caracteres se asentaban.
+
+**Decisiones de la onceava revisión.**
+
+- **El mensaje junto al campo repite el texto del aviso.** Es el patrón de resumen arriba y mensaje en el campo. El lector lo oye una vez, porque solo el mensaje junto al campo es su descripción.
+- **El mensaje va después del control, no entre la etiqueta y el control.** Así, en los formularios de dos columnas, las etiquetas y los controles de un renglón siguen alineados. En la tarjeta de una coincidencia con error, el motivo baja a su propio renglón por el largo del mensaje, y eso solo pasa con error.
+- **La clave del formulario cuenta lo que hay, no la vista.** Con JavaScript, tras agregar uno, el formulario empieza en blanco, igual que antes.
+
 ## Flujo → captura → qué verifica en la base
 
 | Flujo | Captura | Qué verifica en la base |
@@ -809,6 +907,11 @@ Todo va en este PR. **La 0028 no cambia.**
 | Campo de archivo | `r107-r10-archivo-no-admitido-con-js` | Con JavaScript, un «PDF» que no lo es: «Sube un PDF, PNG o JPG legible.», el control del archivo marcado y con el foco (antes, marcado sin foco). Página completa; la captura quita el foco antes de tomarla, como todas las del recorrido con JavaScript. |
 | Desborde a 390 | `r108-r10-sha-a-390-ebano` | El expediente de Ébano a 390 con sus documentos: cada SHA-256 se parte dentro de su renglón y su orilla queda dentro de 390 (antes, la página medía 533). Con y sin JavaScript. |
 | Desborde a 390 | `r109-r10-nombre-largo-a-390-novena` | El borrador de Laboratorio Novena con un acta de nombre de 136 caracteres sin espacios: el nombre se parte y queda dentro de 390, con y sin JavaScript. En el borrador, la lista muestra el nombre; el SHA-256 aparece en las versiones enviadas, como en Ébano. |
+| P3 coincidencia | `r110-r11-coincidencia-motivo-con-js-1440` | Celia dictamina la coincidencia de Cedro con «Revisar 😀» en el motivo, con JavaScript: `en=motivo-<caso>`, sin fragmento; el motivo marcado y con el foco, y «El motivo lleva al menos 10 caracteres…» justo debajo; el aviso de arriba queda como resumen; el caso sigue abierto. |
+| P3 coincidencia | `r111-r11-coincidencia-motivo-sin-js-390` | Lo mismo sin JavaScript, a 390. |
+| Mensaje junto al campo | `r112-r11-documento-sin-js-390` | Sin JavaScript a 390, un «PDF» que no lo es en el borrador de Laboratorio Novena: «Sube un PDF, PNG o JPG legible.» justo debajo del control, que tiene el foco; ningún documento. |
+| Mensaje junto al campo | `r113-r11-socio-capital-con-js-390` | Con JavaScript a 390, un capital «abc»: el mensaje justo debajo de Capital, que tiene el foco y conserva «abc». Antes, el aviso del formulario quedaba en −452, fuera de la vista. |
+| P2 sin JavaScript | `r114-r11-representante-invisible-sin-js` | Sin JavaScript, «Agregar representante» con un U+200B en el nombre: 200 con su aviso, el nombre marcado y con el foco, su mensaje junto a él y todo lo capturado de vuelta. Antes volvía en blanco. |
 
 Las capturas `NN-pantalla-<pantalla>-<tema>-<ancho>` son la fase de pantallas: un solo h1, campos con etiqueta, sin desborde horizontal y consola limpia en Personal, Cumplimiento, Lista, Expediente, Ficha, Aprobaciones, Clientes, Bitácora y Sin permiso.
 
@@ -1312,9 +1415,17 @@ OK    desborde. con JavaScript, en el expediente de Ébano (7 SHA-256) la orilla
 OK    desborde. con JavaScript, en el expediente de Laboratorio Novena (el nombre de archivo de 136 caracteres) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)
 OK    desborde. sin JavaScript, en el expediente de Ébano (7 SHA-256) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)
 OK    desborde. sin JavaScript, en el expediente de Laboratorio Novena (el nombre de archivo de 136 caracteres) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)
+
+— Onceava revisión: el mensaje del error junto al campo, los formularios del expediente sin JavaScript y el motivo de la coincidencia
+OK    P3 coincidencia. con JavaScript a 1440, «Revisar 😀» en el motivo: en=motivo-<caso>, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto
+OK    P3 coincidencia. sin JavaScript a 390, «Revisar 😀» en el motivo: en=motivo-<caso>, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto
+OK    mensaje junto al campo. sin JavaScript a 390, un «PDF» que no lo es: «Sube un PDF, PNG o JPG legible.» justo debajo del control, que tiene el foco; el aviso de arriba queda como resumen; ningún documento
+OK    mensaje junto al campo. con JavaScript a 390, el capital «abc» del socio: el mensaje justo debajo de Capital, que tiene el foco y conserva lo capturado; ningún socio
+OK    P2 sin JavaScript. «Agregar representante» con un U+200B en el nombre: 200 con su aviso, el nombre marcado, con el foco y su mensaje junto a él, y todo lo capturado de vuelta; ningún representante
+OK    onceava revisión: en los 71 avisos de las regresiones nunca hubo dos campos marcados; 43 campos marcados, cada uno con su mensaje único junto a él
 OK    consola del navegador limpia en las regresiones
 
-209 comprobaciones en verde, 0 en rojo.
+215 comprobaciones en verde, 0 en rojo.
 ```
 
 </details>
@@ -1325,18 +1436,18 @@ OK    consola del navegador limpia en las regresiones
 ```text
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test
 primera@lever.test: invitada
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T21:41:14.225Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T22:51:46.934Z.
 segunda@lever.test: invitada
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T21:41:14.231Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T22:51:46.940Z.
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)
 
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
 primera@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T21:41:14.353Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T22:51:47.071Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T21:41:14.356Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T22:51:47.074Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)
@@ -1351,10 +1462,10 @@ No se hizo: El operador ya tiene Administración invitada con otros correos. Par
 
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
 primera@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T21:41:14.778Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T22:51:47.553Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T21:41:14.781Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T22:51:47.557Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)

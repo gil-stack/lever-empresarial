@@ -160,6 +160,8 @@ describe("lo que le falta a una versión para enviarse", () => {
   it("un dato hecho solo de invisibles falta, como si estuviera vacío", () => {
     assert.deepEqual(datosQueFaltan({ ...completa, giro: "ㅤ", domicilio_colonia: " ​ " }), ["giro", "domicilio"]);
     assert.deepEqual(datosQueFaltan({ ...completa, giro: "Abarrotes ❤️" }), []);
+    // Onceava revisión: diez U+2800 (Braille en blanco) o un carácter de formato que no es Default_Ignorable, tampoco.
+    assert.deepEqual(datosQueFaltan({ ...completa, giro: "\u2800".repeat(10), domicilio_colonia: "\ufff9" }), ["giro", "domicilio"]);
   });
   it("una clave desconocida que llega por la dirección no se muestra", () => {
     assert.equal(fraseDeLoQueFalta(["<script>", ""]), null);

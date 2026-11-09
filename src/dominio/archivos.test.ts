@@ -7,7 +7,7 @@ import { describe, it } from "node:test";
 import bytes from "next/dist/compiled/bytes";
 
 import nextConfig from "../../next.config.ts";
-import { ARCHIVO_DEMASIADO_GRANDE, LISTA_DEMASIADO_GRANDE } from "../components/operacion/aviso.tsx";
+import { ARCHIVO_DEMASIADO_GRANDE, LISTA_DEMASIADO_GRANDE, MensajeDelCampo } from "../components/operacion/aviso.tsx";
 import { CampoArchivo } from "../components/operacion/campo-archivo.tsx";
 import { POLITICA_DESCARGA } from "../server/pagos-proveedores/descarga.ts";
 import { TOPE_ARCHIVO_BYTES, TOPE_ARCHIVO_TEXTO } from "./archivos.ts";
@@ -50,12 +50,15 @@ describe("tope de archivos", () => {
   });
 
   // Décima revisión: con el error del archivo que devolvió el servidor, el control marcado recibe también el foco.
-  it("el error del servidor marca el campo de archivo, lo liga al aviso y le da el foco", () => {
-    const ligado = { "aria-invalid": true, "aria-describedby": "aviso-operacion", autoFocus: true };
-    const html = renderToStaticMarkup(createElement(CampoArchivo, { id: "doc-archivo", name: "archivo", accept: ".pdf", mensaje: ARCHIVO_DEMASIADO_GRANDE, ligado }));
+  // Onceava: el mensaje del servidor va junto al control y es su descripción.
+  it("el error del servidor marca el campo de archivo, lo liga a su mensaje junto a él y le da el foco", () => {
+    const ligado = { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo", autoFocus: true };
+    const mensajeDelServidor = createElement(MensajeDelCampo, { codigo: "archivo_no_admitido", campo: "archivo" });
+    const html = renderToStaticMarkup(createElement(CampoArchivo, { id: "doc-archivo", name: "archivo", accept: ".pdf", mensaje: ARCHIVO_DEMASIADO_GRANDE, ligado, mensajeDelServidor }));
     assert.match(html, /aria-invalid="true"/);
-    assert.match(html, /aria-describedby="aviso-operacion"/);
+    assert.match(html, /aria-describedby="aviso-operacion-campo"/);
     assert.match(html, /autofocus=""/);
+    assert.match(html, /<input[^>]*type="file"[^>]*\/><p id="aviso-operacion-campo" class="error-campo">Sube un PDF, PNG o JPG legible\.<\/p>$/);
     assert.doesNotMatch(renderToStaticMarkup(createElement(CampoArchivo, { id: "doc-archivo", name: "archivo", accept: ".pdf", mensaje: ARCHIVO_DEMASIADO_GRANDE })), /autofocus/);
   });
 });

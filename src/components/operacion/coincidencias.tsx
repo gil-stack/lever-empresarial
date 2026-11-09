@@ -4,6 +4,7 @@ import { registrarReporteAccion, resolverCoincidenciaAccion } from "@/app/operac
 import { BotonEnviar, Insignia, Vacio } from "@/components/sistema";
 import { ETIQUETA_ESTADO_COINCIDENCIA, ETIQUETA_SUJETO } from "@/dominio/operacion";
 
+import { errorDelCampo, MensajeDelCampo } from "./aviso";
 import { fechaHora } from "./formato";
 import { FormularioFolio } from "./formulario-folio";
 
@@ -45,7 +46,10 @@ export function Coincidencias({
   desde: "cumplimiento" | "lpb";
   ahora: Date;
   vacio: string;
-  /** El aviso del último envío y el campo que lo causó (`folio-<id>`, `presentado-<id>` o `aviso-<id>`): marca ese campo. */
+  /**
+   * El aviso del último envío y el campo que lo causó (`resolucion-<id>`, `motivo-<id>`, `folio-<id>`, `presentado-<id>`
+   * o `aviso-<id>`): marca ese campo y pone su mensaje junto a él.
+   */
   aviso?: string;
   en?: string;
 }) {
@@ -54,6 +58,7 @@ export function Coincidencias({
     <ul className="operacion-lista">
       {coincidencias.map((coincidencia) => {
         const vencido = coincidencia.plazoReporteHasta !== null && coincidencia.plazoReporteHasta.getTime() < ahora.getTime();
+        const suyo = (nombre: string) => en === `${nombre}-${coincidencia.id}`;
         return (
           <li key={coincidencia.id}>
             <div className="operacion-fila">
@@ -96,7 +101,7 @@ export function Coincidencias({
                 <input type="hidden" name="desde" value={desde} />
                 <div className="campo">
                   <label htmlFor={`resolucion-${coincidencia.id}`}>Dictamen</label>
-                  <select id={`resolucion-${coincidencia.id}`} name="estado" required defaultValue="">
+                  <select id={`resolucion-${coincidencia.id}`} name="estado" required defaultValue="" {...(suyo("resolucion") ? errorDelCampo(aviso, "estado") : {})}>
                     <option value="" disabled>
                       Elige uno
                     </option>
@@ -104,10 +109,19 @@ export function Coincidencias({
                     <option value="falso_positivo">Falso positivo: es otra persona</option>
                     <option value="fuera_de_lista">Ya no está en la lista vigente</option>
                   </select>
+                  {suyo("resolucion") ? <MensajeDelCampo codigo={aviso} campo="estado" /> : null}
                 </div>
                 <div className="campo">
                   <label htmlFor={`motivo-${coincidencia.id}`}>Motivo (al menos 10 caracteres)</label>
-                  <input id={`motivo-${coincidencia.id}`} name="motivo" minLength={10} maxLength={1000} required />
+                  <input
+                    id={`motivo-${coincidencia.id}`}
+                    name="motivo"
+                    minLength={10}
+                    maxLength={1000}
+                    required
+                    {...(suyo("motivo") ? errorDelCampo(aviso, "motivo") : {})}
+                  />
+                  {suyo("motivo") ? <MensajeDelCampo codigo={aviso} campo="motivo" /> : null}
                 </div>
                 <BotonEnviar className="boton-secundario">Registrar dictamen</BotonEnviar>
               </form>

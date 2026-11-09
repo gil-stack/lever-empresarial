@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { cargarListaAccion } from "@/app/operacion/acciones-alta";
-import { errorDelCampo, LISTA_DEMASIADO_GRANDE } from "@/components/operacion/aviso";
+import { errorDelCampo, LISTA_DEMASIADO_GRANDE, MensajeDelCampo } from "@/components/operacion/aviso";
 import { CampoArchivo } from "@/components/operacion/campo-archivo";
 import { Coincidencias } from "@/components/operacion/coincidencias";
 import { fechaHora } from "@/components/operacion/formato";
@@ -77,6 +77,7 @@ export default async function ListaBloqueadas({ searchParams }: { searchParams: 
                       mensaje={LISTA_DEMASIADO_GRANDE}
                       required
                       ligado={errorDelCampo(params.aviso, "archivo")}
+                      mensajeDelServidor={<MensajeDelCampo codigo={params.aviso} campo="archivo" />}
                     />
                   </div>
                   <div className="acciones">

@@ -31,6 +31,108 @@ async function entrarAOperacion(page: Page, correo: string): Promise<void> {
   await page.waitForURL(/\/operacion$/);
 }
 
+/**
+ * Onceava revisión: el texto del error está a la vista junto al campo con foco, sin desplazarse. El campo tiene el foco
+ * y apunta al mensaje (`aria-describedby`), el mensaje va justo debajo, dentro de la ventana y fuera de las barras
+ * fijas, y en la página hay un solo campo marcado. Mide con las cajas de Playwright, que sirven también sin JavaScript;
+ * antes de exigir, imprime la medida («MEDIDA …») con lo que el campo nombra como su descripción.
+ */
+async function mensajeJunto(page: Page, campo: string, texto: string, idMensaje = "aviso-operacion-campo"): Promise<void> {
+  const control = page.locator(campo);
+  await expect(page.locator(`${campo}:focus`)).toHaveCount(1);
+  const descrito = ((await control.getAttribute("aria-describedby")) ?? "").split(" ").filter(Boolean).at(-1) ?? "";
+  const alto = page.viewportSize()!.height;
+  let tapa = 0;
+  for (const barra of [".barra-movil", ".barra-superior"]) {
+    const caja = (await page.locator(barra).count()) ? await page.locator(barra).first().boundingBox() : null;
+    if (caja && caja.y <= 1 && caja.height > 0) tapa = Math.max(tapa, caja.y + caja.height);
+  }
+  const cajaCampo = (await control.boundingBox())!;
+  const cajaMensaje = descrito ? await page.locator(`[id="${descrito}"]`).first().boundingBox() : null;
+  const visible = cajaMensaje !== null && cajaMensaje.y >= tapa && cajaMensaje.y + cajaMensaje.height <= alto;
+  const redondo = (caja: { y: number; height: number } | null) => (caja ? { arriba: Math.round(caja.y), abajo: Math.round(caja.y + caja.height) } : null);
+  console.log(`MEDIDA ${campo} ${page.viewportSize()!.width}: ${JSON.stringify({ descrito, campo: redondo(cajaCampo), mensaje: redondo(cajaMensaje), barras: Math.round(tapa), ventana: alto, visible })}`);
+  await expect(control).toHaveAttribute("aria-describedby", new RegExp(`(^| )${idMensaje}$`));
+  await expect(page.locator(`[id="${idMensaje}"]`)).toHaveCount(1);
+  await expect(page.locator(`[id="${idMensaje}"]`)).toHaveText(texto);
+  await expect(page.locator('[aria-invalid="true"]')).toHaveCount(1);
+  expect(visible).toBe(true);
+  // Justo debajo del control: entre su orilla de abajo y el mensaje no cabe otro campo.
+  const separacion = cajaMensaje!.y - (cajaCampo.y + cajaCampo.height);
+  expect(separacion).toBeGreaterThanOrEqual(0);
+  expect(separacion).toBeLessThanOrEqual(24);
+}
+
+/**
+ * El expediente de Duna rechaza un «PDF» que no lo es (documentos) y un capital «abc» del socio (accionistas); la ficha
+ * de Cima, un motivo de reactivación de 9 caracteres («Revisar 😀», 10 unidades UTF-16: el navegador lo deja pasar).
+ */
+async function errorDeDocumentoYDeSocio(page: Page, ancho: number): Promise<void> {
+  const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
+  const documentos = () => contar("select 1 from kyb_documentos where company_id = $1", [duna!.id]);
+  const socios = () => contar("select 1 from kyb_accionistas where company_id = $1", [duna!.id]);
+  const [documentosAntes, sociosAntes] = [await documentos(), await socios()];
+  await page.setViewportSize({ width: ancho, height: ancho < 600 ? 844 : 900 });
+  await page.goto(`/operacion/clientes/${duna!.id}/expediente`);
+  await page.locator("#doc-tipo").selectOption("acta_constitutiva");
+  await page.locator("#doc-detalle").fill("Escritura 1,204, Notaría 9 de Monterrey");
+  await page.locator("#doc-archivo").setInputFiles({ name: "acta-falsa.pdf", mimeType: "application/pdf", buffer: Buffer.from("esto no es un PDF") });
+  await page.getByRole("button", { name: "Guardar documento" }).click();
+  await page.waitForURL(/aviso=archivo_no_admitido/);
+  await mensajeJunto(page, "#doc-archivo", "Sube un PDF, PNG o JPG legible.");
+  // El mismo error otra vez, desde la misma dirección: con JavaScript la página no se vuelve a montar.
+  await page.locator("#doc-detalle").fill("Escritura 1,204, Notaría 9 de Monterrey");
+  await page.locator("#doc-archivo").setInputFiles({ name: "acta-falsa-2.pdf", mimeType: "application/pdf", buffer: Buffer.from("tampoco es un PDF") });
+  await page.getByRole("button", { name: "Guardar documento" }).click();
+  await page.waitForLoadState("networkidle");
+  await expect(page).toHaveURL(/aviso=archivo_no_admitido&en=documentos-titulo$/);
+  await mensajeJunto(page, "#doc-archivo", "Sube un PDF, PNG o JPG legible.");
+
+  await page.goto(`/operacion/clientes/${duna!.id}/expediente`);
+  await page.locator("#acc-tipo").selectOption("fisica");
+  await page.locator("#acc-nombre").fill("Lucía Garza Peña");
+  await page.locator("#acc-curp").fill("GORL750505MDFMZR04");
+  await page.locator("#acc-capital").fill("abc");
+  await page.locator("#acc-votos").fill("10");
+  await page.getByRole("button", { name: "Agregar accionista" }).click();
+  await expect(page.locator("#aviso-accionista")).toBeVisible();
+  await mensajeJunto(page, "#acc-capital", "Revisa el campo marcado: el dato no tiene el formato esperado.", "aviso-accionista-campo");
+  await expect(page.locator("#acc-capital")).toHaveValue("abc");
+  expect([await documentos(), await socios()]).toEqual([documentosAntes, sociosAntes]);
+
+  // El revisor vio el textarea de la suspensión con el foco pero asomado al pie (y=943 de 1000).
+  const [cima] = await consultar<{ id: string }>("select id from companies where rfc = $1", [CIMA.rfc]);
+  const solicitudes = () => contar("select 1 from company_suspensions where company_id = $1", [cima!.id]);
+  const solicitudesAntes = await solicitudes();
+  await page.goto(`/operacion/clientes/${cima!.id}`);
+  await page.locator("#motivo-suspension").fill("Revisar 😀");
+  await page.getByRole("button", { name: "Pedir reactivación" }).click();
+  await page.waitForURL(/aviso=motivo_corto/);
+  await mensajeJunto(page, "#motivo-suspension", "El motivo lleva al menos 10 caracteres: explica por qué en una frase. Queda en la bitácora y lo lee otra persona.");
+  expect(await solicitudes()).toBe(solicitudesAntes);
+}
+
+/** Tres recuperaciones pendientes con su evento en la bitácora (la base exige el rastro en la misma transacción). */
+async function recuperacionesPendientes(personas: readonly string[]): Promise<string[]> {
+  const ids: string[] = [];
+  for (const correo of personas) {
+    const id = randomUUID();
+    await consultar(
+      `with r as (
+         insert into auth_recuperaciones (id, user_id, solicitada_en, motivo) values ($1, $2, now(), 'Cambié de teléfono y perdí la app.')
+         returning id, user_id
+       )
+       insert into audit_log (id, operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, ocurrido_en)
+       select gen_random_uuid(), (select id from operators order by alta_en limit 1), null, 'miembro', r.user_id, 'cliente',
+         'recuperacion_solicitada', 'auth_recuperaciones', r.id, now()
+       from r`,
+      [id, await idDe(correo)],
+    );
+    ids.push(id);
+  }
+  return ids;
+}
+
 async function salirDeOperacion(page: Page): Promise<void> {
   await page.locator(".cuenta .menu-desplegable-boton").click();
   await page.getByRole("menuitem", { name: "Salir" }).click();
@@ -120,9 +222,11 @@ test("prospecto → pedir activación → el candado exige expediente; con todo 
   const motivo = dialogo.getByLabel("Motivo (de 10 a 500 caracteres)");
   await motivo.fill("Revisar 😀");
   await dialogo.getByRole("button", { name: "Rechazar" }).click();
-  await expect(dialogo.getByText("El motivo lleva al menos 10 caracteres")).toBeVisible();
+  // El resumen arriba del diálogo y el mismo texto junto al campo, que es su descripción (onceava revisión).
+  await expect(dialogo.locator(".operacion-aviso")).toContainText("El motivo lleva al menos 10 caracteres");
   await expect(motivo).toHaveValue("Revisar 😀");
   await expect(motivo).toHaveAttribute("aria-invalid", "true");
+  await expect(motivo).toHaveAttribute("aria-describedby", /-aviso-campo$/);
   await expect(dialogo.locator(`[id="${await motivo.getAttribute("aria-describedby")}"]`)).toContainText("al menos 10 caracteres");
   await expect(motivo).toBeFocused();
   expect(new URL(page.url()).search).toBe("");
@@ -260,7 +364,7 @@ test("tras un rechazo del socio extranjero el formulario vuelve con todo lo capt
     await expect(page.locator("#aviso-accionista")).toContainText("de 4 a 20 letras y números");
     const campo = page.locator("#acc-documento");
     await expect(campo).toHaveAttribute("aria-invalid", "true");
-    await expect(campo).toHaveAttribute("aria-describedby", "acc-documento-pista aviso-accionista");
+    await expect(campo).toHaveAttribute("aria-describedby", "acc-documento-pista aviso-accionista-campo");
     await expect(campo).toBeFocused();
     await expect(page.locator('label[for="acc-documento"]')).toHaveText(
       tipo === "fisica" ? "Número de pasaporte o identificación oficial" : "Número de identificación fiscal o de registro en su país",
@@ -278,7 +382,7 @@ test("tras un rechazo del socio extranjero el formulario vuelve con todo lo capt
       await capturar(tipo, "12-3456789", otros);
       await expect(page.locator("#aviso-accionista")).toBeVisible();
       await expect(page.locator(campo)).toHaveAttribute("aria-invalid", "true");
-      await expect(page.locator(campo)).toHaveAttribute("aria-describedby", "aviso-accionista");
+      await expect(page.locator(campo)).toHaveAttribute("aria-describedby", "aviso-accionista-campo");
       await expect(page.locator(campo)).toBeFocused();
       await sigueCapturado(tipo, "12-3456789", otros);
     }
@@ -321,7 +425,7 @@ test("un nombre con un carácter invisible da su propio aviso; el formulario de 
     await page.getByRole("button", { name: "Agregar accionista" }).click();
     await expect(page.locator("#aviso-accionista")).toHaveText(aviso);
     await expect(page.locator("#acc-nombre")).toHaveAttribute("aria-invalid", "true");
-    await expect(page.locator("#acc-nombre")).toHaveAttribute("aria-describedby", "aviso-accionista");
+    await expect(page.locator("#acc-nombre")).toHaveAttribute("aria-describedby", "aviso-accionista-campo");
     await expect(page.locator("#acc-nombre")).toBeFocused();
     await expect(page.locator("#acc-nombre")).toHaveValue(nombre);
     await expect(page.locator("#acc-curp")).toHaveValue("GORL750505MDFMZR04");
@@ -352,7 +456,7 @@ test("un nombre con un carácter invisible da su propio aviso; el formulario de 
   await page.getByRole("button", { name: "Agregar representante" }).click();
   await expect(page.locator("#aviso-representante")).toHaveText(INVISIBLE);
   await expect(page.locator("#rep-nombre")).toHaveAttribute("aria-invalid", "true");
-  await expect(page.locator("#rep-nombre")).toHaveAttribute("aria-describedby", "aviso-representante");
+  await expect(page.locator("#rep-nombre")).toHaveAttribute("aria-describedby", "aviso-representante-campo");
   await expect(page.locator("#rep-nombre")).toBeFocused();
   await sigueCapturado("Pedro\u00adRuiz Sol");
 
@@ -450,26 +554,17 @@ test("«Perdí el segundo factor»: Recuperaciones pide «Confirma que eres tú�
 
 // base-N27: con varias solicitudes pendientes, el error de una marca y enfoca solo su tarjeta. Antes la página marcaba
 // el campo en todas, y con el foco del aviso las tres notas pedían el foco.
+test("el mensaje del error queda a la vista junto al campo con foco: un documento y un socio del expediente y el motivo de una reactivación, a 1440 y 390", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  for (const ancho of [1440, 390]) await errorDeDocumentoYDeSocio(page, ancho);
+  expect(errores).toEqual([]);
+});
+
 test("con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca solo la nota de esa tarjeta", async ({ page, context }) => {
   const errores = vigilarConsola(page);
   const personas = [CORREOS.diego, CORREOS.sol, CORREOS.ernesto];
-  const ids: string[] = [];
-  for (const correo of personas) {
-    const id = randomUUID();
-    // La solicitud y su evento en una sola sentencia: la base exige el rastro en la misma transacción.
-    await consultar(
-      `with r as (
-         insert into auth_recuperaciones (id, user_id, solicitada_en, motivo) values ($1, $2, now(), 'Cambié de teléfono y perdí la app.')
-         returning id, user_id
-       )
-       insert into audit_log (id, operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, ocurrido_en)
-       select gen_random_uuid(), (select id from operators order by alta_en limit 1), null, 'miembro', r.user_id, 'cliente',
-         'recuperacion_solicitada', 'auth_recuperaciones', r.id, now()
-       from r`,
-      [id, await idDe(correo)],
-    );
-    ids.push(id);
-  }
+  const ids = await recuperacionesPendientes(personas);
   await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
   await page.goto("/operacion/recuperaciones");
   const tarjeta = (correo: string) => page.locator("li.decision").filter({ hasText: correo });
@@ -480,10 +575,11 @@ test("con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca sol
   await page.waitForURL(/aviso=motivo_invalido/);
   expect(new URL(page.url()).searchParams.get("en")).toBe(ids[1]);
   await expect(nota(1)).toHaveAttribute("aria-invalid", "true");
-  await expect(nota(1)).toHaveAttribute("aria-describedby", "aviso-operacion");
+  await expect(nota(1)).toHaveAttribute("aria-describedby", "aviso-operacion-campo");
   await expect(nota(1)).toBeFocused();
   await expect(page.locator('[aria-invalid="true"]')).toHaveCount(1);
   for (const indice of [0, 2]) await expect(nota(indice)).not.toHaveAttribute("aria-invalid", "true");
+  await mensajeJunto(page, `[id="nota-${ids[1]}"]`, "Escribe un motivo breve y claro.");
 
   // Con su nota, cada una se rechaza; ninguna queda abierta para las demás pruebas.
   for (const [indice, correo] of personas.entries()) {
@@ -558,6 +654,80 @@ test.describe("sin JavaScript", () => {
 
   // Décima revisión: el aviso de un campo volvía con «#datos-titulo» y, al cargar la página completa, el navegador
   // descarta el autofocus cuando hay fragmento. Sin fragmento, el campo queda marcado y con el foco.
+  test("sin JavaScript, el mensaje del error queda a la vista junto al campo con foco: documento, socio, motivo de reactivación y la nota de una recuperación, a 1440 y 390", async ({ page, context }) => {
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    for (const ancho of [1440, 390]) await errorDeDocumentoYDeSocio(page, ancho);
+
+    // La tercera de tres tarjetas de Recuperaciones, a 390: la nota queda lejos del aviso de arriba.
+    const personas = [CORREOS.diego, CORREOS.sol, CORREOS.ernesto];
+    const ids = await recuperacionesPendientes(personas);
+    await context.clearCookies();
+    await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/operacion/recuperaciones");
+    const tarjeta = (correo: string) => page.locator("li.decision").filter({ hasText: correo });
+    await tarjeta(CORREOS.ernesto).getByRole("button", { name: "Rechazar" }).click();
+    await page.waitForURL(/aviso=motivo_invalido/);
+    await mensajeJunto(page, `[id="nota-${ids[2]}"]`, "Escribe un motivo breve y claro.");
+    // Con su nota, cada una se rechaza; ninguna queda abierta para las demás pruebas.
+    for (const [indice, correo] of personas.entries()) {
+      await page.locator(`[id="nota-${ids[indice]}"]`).fill("No se pudo confirmar la identidad por videollamada.");
+      await tarjeta(correo).getByRole("button", { name: "Rechazar" }).click();
+      await expect(tarjeta(correo)).toHaveCount(0);
+    }
+    expect(await contar("select 1 from auth_recuperaciones where id = any($1::uuid[]) and estado = 'rechazada'", [ids])).toBe(3);
+  });
+
+  // P2 del revisor de pantalla: con una clave nueva en cada vista, React tiraba el estado que devuelve la acción y el
+  // formulario volvía en blanco (200, sin aviso, sin marca y sin lo capturado). Pasa también con un clic antes de hidratar.
+  test("sin JavaScript, «Agregar representante» y «Agregar accionista» con un invisible vuelven con su aviso, el campo marcado, el foco y lo capturado", async ({ page, context }) => {
+    const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
+    const representantes = () => contar("select 1 from kyb_representantes where company_id = $1", [duna!.id]);
+    const socios = () => contar("select 1 from kyb_accionistas where company_id = $1", [duna!.id]);
+    const [representantesAntes, sociosAntes] = [await representantes(), await socios()];
+    const INVISIBLE = "El nombre trae un carácter invisible, algo común al copiar y pegar. Escríbelo de nuevo a mano.";
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    await page.goto(`/operacion/clientes/${duna!.id}/expediente`);
+
+    const capturado = { rfc: "RUSP800101AB1", curp: "RUSP800101HDFZLD09", cargo: "apoderado", pep: "no", designadoPor: "Asamblea del 3 de marzo" };
+    await page.locator("#rep-nombre").fill("Pedro\u200bRuiz Sol");
+    await page.locator("#rep-rfc").fill(capturado.rfc);
+    await page.locator("#rep-curp").fill(capturado.curp);
+    await page.locator("#rep-cargo").selectOption(capturado.cargo);
+    await page.locator("#rep-pep").selectOption(capturado.pep);
+    await page.locator("#rep-designado").fill(capturado.designadoPor);
+    await page.locator('input[name="esAdministrador"]').check();
+    const [representante] = await Promise.all([
+      page.waitForResponse((respuesta) => respuesta.request().method() === "POST"),
+      page.getByRole("button", { name: "Agregar representante" }).click(),
+    ]);
+    expect(representante.status()).toBe(200);
+    await expect(page.locator("#aviso-representante")).toHaveText(INVISIBLE);
+    await expect(page.locator("#rep-nombre")).toHaveAttribute("aria-invalid", "true");
+    await mensajeJunto(page, "#rep-nombre", INVISIBLE, "aviso-representante-campo");
+    await expect(page.locator("#rep-nombre")).toHaveValue("Pedro\u200bRuiz Sol");
+    await expect(page.locator("#rep-rfc")).toHaveValue(capturado.rfc);
+    await expect(page.locator("#rep-curp")).toHaveValue(capturado.curp);
+    await expect(page.locator("#rep-cargo")).toHaveValue(capturado.cargo);
+    await expect(page.locator("#rep-designado")).toHaveValue(capturado.designadoPor);
+    await expect(page.locator('input[name="esAdministrador"]')).toBeChecked();
+
+    await page.goto(`/operacion/clientes/${duna!.id}/expediente`);
+    await page.locator("#acc-tipo").selectOption("fisica");
+    await page.locator("#acc-nombre").fill("Ana\u200bRuiz Sol");
+    await page.locator("#acc-curp").fill("GORL750505MDFMZR04");
+    await page.locator("#acc-capital").fill("10");
+    await page.locator("#acc-votos").fill("15");
+    await page.getByRole("button", { name: "Agregar accionista" }).click();
+    await expect(page.locator("#aviso-accionista")).toHaveText(INVISIBLE);
+    await mensajeJunto(page, "#acc-nombre", INVISIBLE, "aviso-accionista-campo");
+    await expect(page.locator("#acc-nombre")).toHaveValue("Ana\u200bRuiz Sol");
+    await expect(page.locator("#acc-curp")).toHaveValue("GORL750505MDFMZR04");
+    await expect(page.locator("#acc-capital")).toHaveValue("10");
+    await expect(page.locator("#acc-votos")).toHaveValue("15");
+    expect([await representantes(), await socios()]).toEqual([representantesAntes, sociosAntes]);
+  });
+
   test("sin JavaScript, el rechazo de un campo del expediente vuelve sin fragmento y con el foco en el campo", async ({ page, context }) => {
     const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
     const razonSocial = () => consultar<{ razon_social: string | null }>("select razon_social from kyb_versiones where company_id = $1 and estado = 'borrador'", [duna!.id]);
@@ -573,7 +743,7 @@ test.describe("sin JavaScript", () => {
     await page.waitForURL(/aviso=invisible_razonSocial&en=datos-titulo/);
     const campo = page.locator("#dato-razonSocial");
     await expect(campo).toHaveAttribute("aria-invalid", "true");
-    await expect(campo).toHaveAttribute("aria-describedby", "aviso-operacion");
+    await expect(campo).toHaveAttribute("aria-describedby", "aviso-operacion-campo");
     await expect(page.locator("#dato-razonSocial:focus")).toHaveCount(1);
     expect(new URL(page.url()).hash).toBe("");
     expect(await razonSocial()).toEqual(antes);

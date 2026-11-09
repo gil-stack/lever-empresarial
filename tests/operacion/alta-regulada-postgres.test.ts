@@ -561,6 +561,9 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           // Décima revisión: el mínimo cuenta lo que se ve. Diez U+3164 pasan el CHECK de la base, pero no son un motivo.
           await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: randomUUID(), resultado: "observado", motivo: "\u3164".repeat(10) }), /motivo_invalido/);
           await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: randomUUID(), resultado: "rechazado", motivo: "Revisar\u3164\u3164\u3164" }), /motivo_corto/);
+          // Onceava revisión: diez U+2800 (Braille en blanco) tampoco son un motivo, ni diez U+FFF9 (Cf que no es Default_Ignorable).
+          await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: randomUUID(), resultado: "observado", motivo: "\u2800".repeat(10) }), /motivo_invalido/);
+          await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: randomUUID(), resultado: "observado", motivo: "\ufff9".repeat(10) }), /motivo_invalido/);
           const observado = randomUUID();
           await dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: observado, resultado: "observado", motivo: "Falta el poder notarial\ndel apoderado" });
           await dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV1, formId: observado, resultado: "observado", motivo: "Falta el poder notarial\ndel apoderado" });
@@ -576,7 +579,15 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           assert.equal(borrador?.representantes.length, 1);
           assert.equal(borrador?.documentos.length, 6);
           await enviarVersion(ori, alfaV2);
-          await dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV2, formId: randomUUID(), resultado: "aprobado", motivo: "" });
+          // Onceava revisión: la nota del aprobado es opcional, pero una inválida (1,001 caracteres, armada a mano: el
+          // textarea corta en 1,000) se avisa y no deja dictamen; antes se asentaba el aprobado sin nota y sin avisar.
+          const dictamenes = async () => (await dueno.query("select count(*)::int as n from kyb_dictamenes where version_id = $1", [alfaV2])).rows[0].n as number;
+          await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV2, formId: randomUUID(), resultado: "aprobado", motivo: "x".repeat(1001) }), /motivo_invalido/);
+          assert.equal(await dictamenes(), 0);
+          // Una nota sin nada que se vea queda vacía y el aprobado se asienta.
+          const aprobado = randomUUID();
+          await dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV2, formId: aprobado, resultado: "aprobado", motivo: "\u2800\u3164 " });
+          assert.equal((await dueno.query("select motivo from kyb_dictamenes where id = $1", [aprobado])).rows[0]?.motivo, null);
           const leido = await leerExpediente(aud, alfa);
           assert.equal(leido?.vigente?.numero, 2);
           assert.equal(leido?.vigente?.dictamen?.resultado, "aprobado");
@@ -2322,6 +2333,12 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           );
           await assert.rejects(enviarVersion(ori, versionId), (error: unknown) => error instanceof ExpedienteIncompleto && error.faltan.join() === "giro,domicilio");
           assert.deepEqual([await estado(), await eventos()], ["borrador", 0]);
+          // Onceava revisión: diez U+2800 y un Cf que no es Default_Ignorable también se guardan vacíos.
+          await guardarDatosGenerales(ori, { versionId, datos: { ...DATOS_GENERALES, razonSocial, rfc, giro: "\u2800".repeat(10), domicilioColonia: "\ufff9\u0600" } });
+          assert.deepEqual(
+            (await dueno.query("select giro, domicilio_colonia from kyb_versiones where id = $1", [versionId])).rows[0],
+            { giro: null, domicilio_colonia: null },
+          );
           // Con los datos completos, la misma versión se envía.
           await guardarDatosGenerales(ori, { versionId, datos: { ...DATOS_GENERALES, razonSocial, rfc } });
           await enviarVersion(ori, versionId);

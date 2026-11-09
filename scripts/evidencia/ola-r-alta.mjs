@@ -180,10 +180,34 @@ async function enviar(p, boton, codigo, { doble = false } = {}) {
   return esperarAviso(p, codigo);
 }
 
+/**
+ * Onceava revisión: tras cada aviso, nunca hay dos campos marcados. Cada mensaje junto al campo («…-campo») es único y
+ * lo nombra un solo control, y no hay controles marcados sin su mensaje. Usa selectores y atributos (sirve también sin
+ * JavaScript); cuenta los avisos revisados y la fase de regresiones lo resume en una comprobación.
+ */
+const camposRevisados = { avisos: 0, marcados: 0 };
+async function unSoloCampo(p) {
+  // Solo Operación: el portal del cliente tiene sus propios mensajes de error («…-error»).
+  if (!new URL(p.url()).pathname.startsWith("/operacion")) return;
+  const ids = await Promise.all((await p.locator('.error-campo[id$="-campo"]').all()).map((nodo) => nodo.getAttribute("id")));
+  const marcados = await p.locator('[aria-invalid="true"]').count();
+  const fallas = [];
+  if (new Set(ids).size !== ids.length) fallas.push(`ids repetidos: ${ids.join(", ")}`);
+  for (const id of ids) {
+    const descritos = await p.locator(`[aria-describedby~="${id}"]`).count();
+    if (descritos !== 1) fallas.push(`${id} lo nombran ${descritos} controles`);
+  }
+  if (marcados !== ids.length) fallas.push(`${marcados} controles marcados y ${ids.length} mensajes`);
+  if (fallas.length) exigir(false, `un solo campo marcado por aviso en ${p.url().replace(BASE, "")}`, fallas.join(" · "));
+  camposRevisados.avisos += 1;
+  camposRevisados.marcados += marcados;
+}
+
 /** Espera la redirección de una acción de Operación y devuelve el código del aviso. */
 async function esperarAviso(p, codigo) {
   await p.waitForURL((url) => url.searchParams.get("aviso") !== null, { timeout: 20000 });
   await listo(p);
+  await unSoloCampo(p);
   const obtenido = new URL(p.url()).searchParams.get("aviso");
   if (codigo) exigir(obtenido === codigo, `aviso «${codigo}» tras la acción`, `llegó «${obtenido}»: ${await aviso(p)}`);
   return obtenido;
@@ -199,6 +223,7 @@ async function rechazarSocio(p) {
   const nuevo = p.locator("#aviso-accionista:not([data-anterior])");
   await nuevo.waitFor({ timeout: 20000 });
   await listo(p);
+  await unSoloCampo(p);
   return (await nuevo.innerText()).replace(/\s+/g, " ").trim();
 }
 /** «Agregar representante» rechazado: como el del socio, vuelve sin recargar con su propio aviso y lo capturado. */
@@ -209,6 +234,7 @@ async function rechazarRepresentante(p) {
   const nuevo = p.locator("#aviso-representante:not([data-anterior])");
   await nuevo.waitFor({ timeout: 20000 });
   await listo(p);
+  await unSoloCampo(p);
   return (await nuevo.innerText()).replace(/\s+/g, " ").trim();
 }
 const PDF = (titulo) => Buffer.from(`%PDF-1.4\n% ${titulo}\n1 0 obj << /Type /Catalog >> endobj\n${"0".repeat(64)}\n%%EOF\n`);
@@ -1282,7 +1308,7 @@ async function cuartaRonda(rutaEbano) {
   await socio({ tipo: "fisica", nombre: "Hans Müller Weber", documento: "A1", fecha: "1975-03-03" });
   const textoN11 = await rechazarSocio(omar.p);
   exigir(
-    (await documentoLigado()) === "extranjera|true|acc-documento-pista aviso-accionista" && (await omar.p.locator("#acc-tipo").inputValue()) === "fisica"
+    (await documentoLigado()) === "extranjera|true|acc-documento-pista aviso-accionista-campo" && (await omar.p.locator("#acc-tipo").inputValue()) === "fisica"
       && textoN11.includes("de 4 a 20 letras y números"),
     "N11. tras el rechazo de la persona física extranjera, el formulario vuelve en «Extranjera» con el documento marcado y su texto",
     await documentoLigado(),
@@ -1292,7 +1318,7 @@ async function cuartaRonda(rutaEbano) {
   await socio({ tipo: "moral", nombre: "Delaware Holdings LLC", documento: "A1" });
   await rechazarSocio(omar.p);
   exigir(
-    (await documentoLigado()) === "extranjera|true|acc-documento-pista aviso-accionista" && (await omar.p.locator("#acc-tipo").inputValue()) === "moral"
+    (await documentoLigado()) === "extranjera|true|acc-documento-pista aviso-accionista-campo" && (await omar.p.locator("#acc-tipo").inputValue()) === "moral"
       && (await omar.p.locator('label[for="acc-documento"]').innerText()) === "Número de identificación fiscal o de registro en su país",
     "N11. tras el rechazo de la moral extranjera, vuelve como persona moral, en «Extranjera» y con el registro marcado",
     await documentoLigado(),
@@ -1392,7 +1418,7 @@ async function cuartaRonda(rutaEbano) {
   await enviar(celia.p, celia.p.getByRole("button", { name: "Registrar dictamen" }), "motivo_invalido");
   const motivo = celia.p.locator("#dictamen-motivo");
   exigir(
-    (await motivo.getAttribute("aria-describedby")) === "dictamen-motivo-pista aviso-operacion" && (await motivo.getAttribute("aria-invalid")) === "true",
+    (await motivo.getAttribute("aria-describedby")) === "dictamen-motivo-pista aviso-operacion-campo" && (await motivo.getAttribute("aria-invalid")) === "true",
     "N12. el motivo con error anuncia la pista y el aviso",
   );
   await enVista(motivo);
@@ -1775,7 +1801,7 @@ async function sextaRonda(rutaEbano) {
       const obtenido = await capturado();
       const marca = [await omar2.p.locator(selector).getAttribute("aria-invalid"), await omar2.p.locator(selector).getAttribute("aria-describedby"), await omar2.p.locator(selector).evaluate((nodo) => nodo === document.activeElement)].join("|");
       exigir(
-        JSON.stringify(obtenido) === JSON.stringify(esperado) && marca === "true|aviso-accionista|true" && new URL(omar2.p.url()).search === "" && sociosEbano() === socios,
+        JSON.stringify(obtenido) === JSON.stringify(esperado) && marca === "true|aviso-accionista-campo|true" && new URL(omar2.p.url()).search === "" && sociosEbano() === socios,
         `serv-N15. ${cual} de la ${tipo === "fisica" ? "física" : "moral"} extranjera: vuelve con país, documento, ${tipo === "fisica" ? "fecha, " : ""}nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección`,
         `${JSON.stringify(obtenido)} · ${marca} · ${textoAviso}`,
       );
@@ -2574,6 +2600,7 @@ async function novenaRonda(rutaEbano) {
   );
   await ofelia.nav.close();
   await decimaRonda(rutaEbano);
+  await onceavaRonda();
 }
 
 /**
@@ -2707,7 +2734,7 @@ async function decimaRonda(rutaEbano) {
     const control = omar.p.locator("#doc-archivo");
     exigir(
       (await aviso(omar.p)).includes(texto) && (await control.getAttribute("aria-invalid")) === "true"
-        && (await control.getAttribute("aria-describedby")) === "aviso-operacion" && (await omar.p.locator("#doc-archivo:focus").count()) === 1
+        && (await control.getAttribute("aria-describedby")) === "aviso-operacion-campo" && (await omar.p.locator("#doc-archivo:focus").count()) === 1
         && documentosNovena() === antes && (await conSuOrigen(respuesta)) && (js || respuesta.status() === 303),
       `campo de archivo. ${conOSin(js)} JavaScript, ${codigo}: aviso, el control del archivo marcado, ligado al aviso y con el foco; ningún documento`,
       await aviso(omar.p),
@@ -2754,6 +2781,138 @@ async function decimaRonda(rutaEbano) {
   }
 }
 
+/**
+ * Re-verificación sobre edefd2e. El texto del error va junto al campo con el foco, a la vista sin desplazarse, con
+ * JavaScript y sin él (el aviso de arriba queda como resumen). Sin JavaScript, «Agregar representante» y «Agregar
+ * accionista» vuelven con su aviso y lo capturado. El motivo de una coincidencia se liga a su campo.
+ */
+async function onceavaRonda() {
+  console.log("\n— Onceava revisión: el mensaje del error junto al campo, los formularios del expediente sin JavaScript y el motivo de la coincidencia");
+  renovarSesiones();
+  const conOSin = (js) => (js ? "con" : "sin");
+  const avisoEs = (p, codigo) => p.waitForURL((url) => url.searchParams.get("aviso") === codigo, { timeout: 20000 }).then(() => listo(p));
+  // El campo tiene el foco y nombra al mensaje; el mensaje va justo debajo, dentro de la ventana y fuera de las barras
+  // fijas. Con cajas y selectores, que sirven también sin JavaScript.
+  const juntoAlCampo = async (p, selector, idMensaje = "aviso-operacion-campo") => {
+    const control = p.locator(selector);
+    const mensaje = p.locator(`[id="${idMensaje}"]`);
+    const foco = await p.locator(`${selector}:focus`).count();
+    const nombra = ((await control.getAttribute("aria-describedby")) ?? "").split(" ").includes(idMensaje);
+    let tapa = 0;
+    for (const barra of [".barra-movil", ".barra-superior"]) {
+      const caja = (await p.locator(barra).count()) ? await p.locator(barra).first().boundingBox() : null;
+      if (caja && caja.y <= 1 && caja.height > 0) tapa = Math.max(tapa, caja.y + caja.height);
+    }
+    const cajaCampo = await control.boundingBox();
+    const cajaMensaje = (await mensaje.count()) === 1 ? await mensaje.boundingBox() : null;
+    const alto = p.viewportSize().height;
+    const separacion = cajaMensaje && cajaCampo ? Math.round(cajaMensaje.y - (cajaCampo.y + cajaCampo.height)) : null;
+    const visible = cajaMensaje !== null && cajaMensaje.y >= tapa && cajaMensaje.y + cajaMensaje.height <= alto;
+    await unSoloCampo(p);
+    return {
+      ok: foco === 1 && nombra && visible && separacion !== null && separacion >= 0 && separacion <= 24,
+      detalle: JSON.stringify({ foco, nombra, campo: cajaCampo && Math.round(cajaCampo.y), mensaje: cajaMensaje && Math.round(cajaMensaje.y), separacion, barras: Math.round(tapa), ventana: alto }),
+    };
+  };
+
+  // P3 del revisor de pantalla: el motivo de la coincidencia (la de Cedro, que sigue abierta) se liga a su campo.
+  const cedro = companyIdDe("CER170404CD5");
+  const caso = sql(`select id from lpb_coincidencias where company_id = '${cedro}' and estado = 'pendiente' limit 1`);
+  for (const [js, ancho] of [[true, 1440], [false, 390]]) {
+    const celia = await abrir("celia", { js, ancho });
+    await ir(celia.p, "/operacion/lpb");
+    await celia.p.locator(`[id="resolucion-${caso}"]`).selectOption("falso_positivo");
+    await campo(celia.p, `[id="motivo-${caso}"]`, EMOJI);
+    await celia.p.locator("form", { has: celia.p.locator(`[id="motivo-${caso}"]`) }).getByRole("button", { name: "Registrar dictamen" }).click();
+    await avisoEs(celia.p, "motivo_corto");
+    const direccion = new URL(celia.p.url());
+    const junto = await juntoAlCampo(celia.p, `[id="motivo-${caso}"]`);
+    exigir(
+      direccion.searchParams.get("en") === `motivo-${caso}` && direccion.hash === "" && junto.ok
+        && (await celia.p.locator(`[id="motivo-${caso}"]`).getAttribute("aria-invalid")) === "true"
+        && sql(`select estado from lpb_coincidencias where id = '${caso}'`) === "pendiente",
+      `P3 coincidencia. ${conOSin(js)} JavaScript a ${ancho}, «Revisar 😀» en el motivo: en=motivo-<caso>, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto`,
+      junto.detalle,
+    );
+    await foto(celia.p, `r11-coincidencia-motivo-${conOSin(js)}-js-${ancho}`, false);
+    await celia.nav.close();
+  }
+
+  // El mensaje junto al campo: un «PDF» que no lo es, sin JavaScript a 390, en el borrador de Laboratorio Novena.
+  const novena = companyIdDe("NOV150301AB1");
+  const expedienteNovena = `/operacion/clientes/${novena}/expediente`;
+  const documentos = () => cuenta(`kyb_documentos where company_id = '${novena}'`);
+  const socios = () => cuenta(`kyb_accionistas a join kyb_versiones v on v.id = a.version_id where v.company_id = '${novena}' and a.retirado_en is null`);
+  const representantes = () => cuenta(`kyb_representantes r join kyb_versiones v on v.id = r.version_id where v.company_id = '${novena}' and r.retirado_en is null`);
+  {
+    const omar = await abrir("omar", { js: false, ancho: 390 });
+    await ir(omar.p, expedienteNovena);
+    const antes = documentos();
+    await omar.p.locator("#doc-tipo").selectOption("acta_constitutiva");
+    await campo(omar.p, "#doc-detalle", "Escritura 7,310, Notaría 4 de Monterrey");
+    await omar.p.locator("#doc-archivo").setInputFiles({ name: "acta-falsa.pdf", mimeType: "application/pdf", buffer: Buffer.from("esto no es un PDF") });
+    await omar.p.getByRole("button", { name: "Guardar documento" }).click();
+    await avisoEs(omar.p, "archivo_no_admitido");
+    const junto = await juntoAlCampo(omar.p, "#doc-archivo");
+    exigir(
+      junto.ok && (await omar.p.locator("#aviso-operacion-campo").innerText()) === "Sube un PDF, PNG o JPG legible." && documentos() === antes,
+      "mensaje junto al campo. sin JavaScript a 390, un «PDF» que no lo es: «Sube un PDF, PNG o JPG legible.» justo debajo del control, que tiene el foco; el aviso de arriba queda como resumen; ningún documento",
+      junto.detalle,
+    );
+    await foto(omar.p, "r11-documento-sin-js-390", false);
+    await omar.nav.close();
+  }
+
+  // El socio con un capital «abc», con JavaScript a 390: antes, el aviso del formulario quedaba arriba, fuera de la vista.
+  {
+    const omar = await abrir("omar", { ancho: 390 });
+    await ir(omar.p, expedienteNovena);
+    const antes = socios();
+    await omar.p.locator("#acc-tipo").selectOption("fisica");
+    await campo(omar.p, "#acc-nombre", "Lucía Garza Peña");
+    await campo(omar.p, "#acc-curp", "GORL750505MDFMZR04");
+    await campo(omar.p, "#acc-capital", "abc");
+    await campo(omar.p, "#acc-votos", "10");
+    const texto = await rechazarSocio(omar.p);
+    const junto = await juntoAlCampo(omar.p, "#acc-capital", "aviso-accionista-campo");
+    exigir(
+      junto.ok && texto === "Revisa el campo marcado: el dato no tiene el formato esperado." && (await omar.p.locator("#acc-capital").inputValue()) === "abc" && socios() === antes,
+      "mensaje junto al campo. con JavaScript a 390, el capital «abc» del socio: el mensaje justo debajo de Capital, que tiene el foco y conserva lo capturado; ningún socio",
+      `${junto.detalle} · ${texto}`,
+    );
+    await foto(omar.p, "r11-socio-capital-con-js-390", false);
+    await omar.nav.close();
+  }
+
+  // P2 del revisor de pantalla: sin JavaScript, «Agregar representante» con un invisible volvía en blanco (200, sin aviso,
+  // sin marca y sin lo capturado). Con la clave estable, React le devuelve su estado.
+  {
+    const omar = await abrir("omar", { js: false });
+    await ir(omar.p, expedienteNovena);
+    const antes = representantes();
+    await campo(omar.p, "#rep-nombre", "Pedro​Ruiz Sol");
+    await campo(omar.p, "#rep-rfc", "RUSP800101AB1");
+    await campo(omar.p, "#rep-curp", "RUSP800101HDFZLD09");
+    await omar.p.locator("#rep-cargo").selectOption("apoderado");
+    await campo(omar.p, "#rep-designado", "Asamblea del 3 de marzo");
+    const [respuesta] = await Promise.all([
+      omar.p.waitForResponse((r) => r.request().method() === "POST"),
+      omar.p.getByRole("button", { name: "Agregar representante" }).click(),
+    ]);
+    await omar.p.locator("#aviso-representante").waitFor({ timeout: 20000 });
+    await listo(omar.p);
+    const junto = await juntoAlCampo(omar.p, "#rep-nombre", "aviso-representante-campo");
+    const capturado = [await omar.p.locator("#rep-nombre").inputValue(), await omar.p.locator("#rep-curp").inputValue(), await omar.p.locator("#rep-designado").inputValue()];
+    exigir(
+      respuesta.status() === 200 && junto.ok && JSON.stringify(capturado) === JSON.stringify(["Pedro​Ruiz Sol", "RUSP800101HDFZLD09", "Asamblea del 3 de marzo"]) && representantes() === antes,
+      "P2 sin JavaScript. «Agregar representante» con un U+200B en el nombre: 200 con su aviso, el nombre marcado, con el foco y su mensaje junto a él, y todo lo capturado de vuelta; ningún representante",
+      `${respuesta.status()} · ${junto.detalle} · ${JSON.stringify(capturado)}`,
+    );
+    await foto(omar.p, "r11-representante-invisible-sin-js", false);
+    await omar.nav.close();
+  }
+}
+
 // ---------- Orden ----------
 let fallo = null;
 try {
@@ -2781,6 +2940,10 @@ try {
   if (FASES.includes("contraste")) await contraste();
   if (FASES.includes("regresiones")) {
     await regresiones();
+    exigir(
+      camposRevisados.avisos > 0,
+      `onceava revisión: en los ${camposRevisados.avisos} avisos de las regresiones nunca hubo dos campos marcados; ${camposRevisados.marcados} campos marcados, cada uno con su mensaje único junto a él`,
+    );
     const sucios = abiertos.flatMap((a) => a.errores.map((e) => `${a.quien}: ${e}`));
     exigir(sucios.length === 0, "consola del navegador limpia en las regresiones", sucios.slice(0, 5).join(" | "));
   }

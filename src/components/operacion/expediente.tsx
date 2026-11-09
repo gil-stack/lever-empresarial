@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 
+import type { ReactNode } from "react";
+
 import {
   cargarDocumentoAccion,
   enviarVersionAccion,
@@ -27,6 +29,8 @@ import { fechaDia, fechaHora } from "./formato";
 
 /** Liga un campo al aviso solo si el error vino de ese formulario. */
 export type ErrorDeCampo = (seccion: string, campo: string) => Record<string, unknown>;
+/** El mensaje del error junto al campo de esa sección (`MensajeDelCampo`), o nada. */
+export type MensajeDeCampo = (seccion: string, campo: string) => ReactNode;
 
 function pesos(centavos: number | null): string {
   return centavos === null ? "" : (centavos / 100).toFixed(2);
@@ -196,15 +200,22 @@ export function FormulariosBorrador({
   version,
   companyId,
   error,
+  mensaje,
 }: {
   version: VersionExpediente;
   companyId: string;
   error: ErrorDeCampo;
+  mensaje: MensajeDeCampo;
 }) {
   const morales = version.accionistas.filter((accionista) => accionista.tipoPersona === "moral");
   // Cada vista nueva del borrador trae un formulario nuevo; tras un rechazo sigue el mismo (no se aplicó).
   const formAccionista = randomUUID();
   const formRepresentante = randomUUID();
+  // La clave de cada formulario cambia solo cuando entra uno: tras agregarlo empieza en blanco, y tras un rechazo es el
+  // mismo formulario. Sin JavaScript eso importa: React le devuelve el estado de la acción (aviso y lo capturado) solo
+  // al formulario con la misma clave; con una clave nueva en cada vista volvía en blanco.
+  const claveRepresentante = `${version.id}-${version.representantes.length}`;
+  const claveAccionista = `${version.id}-${version.accionistas.length}`;
   const base = (
     <>
       <input type="hidden" name="companyId" value={companyId} />
@@ -216,6 +227,7 @@ export function FormulariosBorrador({
     <div className="campo">
       <label htmlFor={`dato-${nombre}`}>{etiqueta}</label>
       <input id={`dato-${nombre}`} name={nombre} defaultValue={valor ?? ""} {...extra} {...error("datos-titulo", nombre)} />
+      {mensaje("datos-titulo", nombre)}
     </div>
   );
   return (
@@ -272,7 +284,7 @@ export function FormulariosBorrador({
             ))}
           </ul>
         )}
-        <FormularioRepresentante key={formRepresentante} companyId={companyId} versionId={version.id} formId={formRepresentante} />
+        <FormularioRepresentante key={claveRepresentante} companyId={companyId} versionId={version.id} formId={formRepresentante} />
       </Hoja>
 
       <Hoja id="accionistas-titulo" titulo="Estructura accionaria">
@@ -305,7 +317,7 @@ export function FormulariosBorrador({
         )}
         <p className="pista">{version.estructuraCompleta ? "La estructura suma 100 % y llega hasta personas físicas." : "Cada nivel debe sumar 100 % y cada persona moral desglosarse."}</p>
         <FormularioAccionista
-          key={formAccionista}
+          key={claveAccionista}
           companyId={companyId}
           versionId={version.id}
           formId={formAccionista}
@@ -351,6 +363,7 @@ export function FormulariosBorrador({
                 </option>
               ))}
             </select>
+            {mensaje("documentos-titulo", "tipo")}
           </div>
           <div className="campo">
             <label htmlFor="doc-representante">Representante (solo identificación y poder)</label>
@@ -362,18 +375,22 @@ export function FormulariosBorrador({
                 </option>
               ))}
             </select>
+            {mensaje("documentos-titulo", "representanteClave")}
           </div>
           <div className="campo">
             <label htmlFor="doc-emitido">Emitido el</label>
             <input id="doc-emitido" name="emitidoEl" type="date" {...error("documentos-titulo", "emitidoEl")} />
+            {mensaje("documentos-titulo", "emitidoEl")}
           </div>
           <div className="campo">
             <label htmlFor="doc-vigente">Vigente hasta</label>
             <input id="doc-vigente" name="vigenteHasta" type="date" {...error("documentos-titulo", "vigenteHasta")} />
+            {mensaje("documentos-titulo", "vigenteHasta")}
           </div>
           <div className="campo operacion-ancho">
             <label htmlFor="doc-detalle">Detalle (folio mercantil, notaría…)</label>
             <input id="doc-detalle" name="detalle" maxLength={300} {...error("documentos-titulo", "detalle")} />
+            {mensaje("documentos-titulo", "detalle")}
           </div>
           <div className="campo operacion-ancho">
             <label htmlFor="doc-archivo">Archivo (PDF, PNG o JPG, hasta {TOPE_ARCHIVO_TEXTO})</label>
@@ -384,6 +401,7 @@ export function FormulariosBorrador({
               mensaje={ARCHIVO_DEMASIADO_GRANDE}
               required
               ligado={error("documentos-titulo", "archivo")}
+              mensajeDelServidor={mensaje("documentos-titulo", "archivo")}
             />
           </div>
           <div className="acciones operacion-ancho">

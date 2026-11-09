@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { registrarProspectoAccion } from "@/app/operacion/acciones";
-import { errorDelCampo } from "@/components/operacion/aviso";
+import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { REGIMENES, USOS_CFDI, etiquetaEstado } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { BotonEnviar, Hoja, Insignia, Rejilla, Vacio } from "@/components/sistema";
@@ -61,14 +61,17 @@ export default async function ClientesOperacion({ searchParams }: { searchParams
                 <div className="campo operacion-ancho">
                   <label htmlFor="razonSocial">Razón social</label>
                   <input id="razonSocial" name="razonSocial" maxLength={254} required {...errorDelCampo(params.aviso, "razonSocial")} />
+                  <MensajeDelCampo codigo={params.aviso} campo="razonSocial" />
                 </div>
                 <div className="campo">
                   <label htmlFor="rfc">RFC</label>
                   <input className="entrada-rfc" id="rfc" name="rfc" minLength={12} maxLength={13} autoCapitalize="characters" required {...errorDelCampo(params.aviso, "rfc")} />
+                  <MensajeDelCampo codigo={params.aviso} campo="rfc" />
                 </div>
                 <div className="campo">
                   <label htmlFor="codigoPostal">Código postal</label>
                   <input id="codigoPostal" name="codigoPostal" inputMode="numeric" minLength={5} maxLength={5} required {...errorDelCampo(params.aviso, "codigoPostal")} />
+                  <MensajeDelCampo codigo={params.aviso} campo="codigoPostal" />
                 </div>
                 <div className="campo">
                   <label htmlFor="regimen">Régimen fiscal</label>
@@ -79,6 +82,7 @@ export default async function ClientesOperacion({ searchParams }: { searchParams
                       </option>
                     ))}
                   </select>
+                  <MensajeDelCampo codigo={params.aviso} campo="regimen" />
                 </div>
                 <div className="campo">
                   <label htmlFor="usoCfdi">Uso CFDI</label>
@@ -89,6 +93,7 @@ export default async function ClientesOperacion({ searchParams }: { searchParams
                       </option>
                     ))}
                   </select>
+                  <MensajeDelCampo codigo={params.aviso} campo="usoCfdi" />
                 </div>
                 <div className="acciones">
                   <BotonEnviar>Registrar prospecto</BotonEnviar>

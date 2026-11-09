@@ -3,7 +3,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "node:test";
 
-import { AvisoOperacion, avisoDeCampo, errorDelCampo, tonoDelAviso } from "./aviso.tsx";
+import { AvisoOperacion, avisoDeCampo, errorDelCampo, MensajeDelCampo, tonoDelAviso } from "./aviso.tsx";
 
 describe("aviso de Operación", () => {
   it("solo lo que quedó hecho se anuncia como asentado", () => {
@@ -22,9 +22,9 @@ describe("aviso de Operación", () => {
   });
 
   it("cada error de Recuperaciones marca su propio campo", () => {
-    assert.deepEqual(errorDelCampo("motivo_invalido", "motivo"), { "aria-invalid": true, "aria-describedby": "aviso-operacion", autoFocus: true });
+    assert.deepEqual(errorDelCampo("motivo_invalido", "motivo"), { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo", autoFocus: true });
     assert.deepEqual(errorDelCampo("motivo_invalido", "verificacion"), {});
-    assert.deepEqual(errorDelCampo("verificacion_invalida", "verificacion"), { "aria-invalid": true, "aria-describedby": "aviso-operacion", autoFocus: true });
+    assert.deepEqual(errorDelCampo("verificacion_invalida", "verificacion"), { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo", autoFocus: true });
     assert.deepEqual(errorDelCampo("verificacion_invalida", "motivo"), {});
   });
 
@@ -42,7 +42,7 @@ describe("aviso de Operación", () => {
     assert.match(texto("dato_invalido_nombre"), /Revisa el campo marcado: el dato no tiene el formato esperado\./);
     assert.doesNotMatch(texto("dato_invalido_nombre"), /invisible/);
     for (const [codigo, campo] of [["invisible_nombre", "nombre"], ["invisible_razonSocial", "razonSocial"], ["invisible_folio", "folio"]] as const) {
-      assert.deepEqual(errorDelCampo(codigo, campo, "aviso-representante"), { "aria-invalid": true, "aria-describedby": "aviso-representante", autoFocus: true }, codigo);
+      assert.deepEqual(errorDelCampo(codigo, campo, "aviso-representante"), { "aria-invalid": true, "aria-describedby": "aviso-representante-campo", autoFocus: true }, codigo);
       assert.deepEqual(errorDelCampo(codigo, "rfc"), {}, codigo);
     }
   });
@@ -62,6 +62,27 @@ describe("aviso de Operación", () => {
     }
     for (const codigo of ["expediente_datos_incompletos", "expediente_ausente", "expediente_documento_cargado", "toString", "constructor", ""]) {
       assert.equal(avisoDeCampo(codigo), false, codigo);
+    }
+  });
+
+  // Onceava revisión: el texto del error va junto al campo y es su descripción; el aviso de arriba queda como resumen.
+  it("MensajeDelCampo pinta junto al campo el mismo texto del aviso, con el id que nombra errorDelCampo; sin error, nada", () => {
+    const pintar = (codigo: string | null, campo: string, idAviso?: string) =>
+      renderToStaticMarkup(createElement(MensajeDelCampo, { codigo, campo, ...(idAviso ? { idAviso } : {}) }));
+    for (const [codigo, campo, texto] of [
+      ["archivo_no_admitido", "archivo", "Sube un PDF, PNG o JPG legible."],
+      ["motivo_invalido", "motivo", "Escribe un motivo breve y claro."],
+      ["dato_invalido_capital", "capital", "Revisa el campo marcado: el dato no tiene el formato esperado."],
+      ["invisible_razonSocial", "razonSocial", "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano."],
+    ] as const) {
+      assert.equal(pintar(codigo, campo), `<p id="aviso-operacion-campo" class="error-campo">${texto}</p>`, codigo);
+      assert.ok(renderToStaticMarkup(createElement(AvisoOperacion, { codigo })).includes(texto), codigo);
+      assert.equal(errorDelCampo(codigo, campo)["aria-describedby"], "aviso-operacion-campo", codigo);
+    }
+    assert.match(pintar("dato_invalido_capital", "capital", "aviso-accionista"), /^<p id="aviso-accionista-campo"/);
+    // Otro campo, un aviso general o ninguno: no pinta nada (sin error, la página no cambia).
+    for (const [codigo, campo] of [["dato_invalido_capital", "votos"], ["expediente_datos_incompletos", "giro"], [null, "archivo"], ["toString", "toString"]] as const) {
+      assert.equal(pintar(codigo, campo), "", `${codigo} ${campo}`);
     }
   });
 });
