@@ -752,7 +752,13 @@ async function flujo9() {
   await p.locator("#modo-motivo").fill("La SOFIPO tiene menos de 25 personas a su servicio: dictamina el Oficial.");
   await enviar(p, p.getByRole("button", { name: "Guardar quién dictamina" }), "pld_modo_cambiado", { doble: true });
   exigir(cuenta("pld_modo_dictamen") === 1, "9. doble clic en «Guardar quién dictamina» = 1 cambio");
-  exigir(await p.getByText("Dictamina el Oficial de Cumplimiento: en este modo no hay sesiones del Comité.").isVisible(), "9. en modo Oficial no hay sesiones");
+  // r2-serv-N13 (61ª): en modo Oficial no se registran sesiones nuevas, pero el historial y sus actas siguen a la vista.
+  const sesiones = hoja(p, "sesiones-titulo");
+  exigir(await p.getByText("Dictamina el Oficial de Cumplimiento: no se registran sesiones nuevas.").isVisible(), "9. en modo Oficial no se registran sesiones nuevas");
+  exigir((await p.getByRole("button", { name: "Registrar sesión" }).count()) === 0, "9. ni aparece «Registrar sesión»");
+  const enLista = await sesiones.getByRole("link", { name: /^Sesión del / }).count();
+  exigir(enLista === cuenta("pld_sesiones") && enLista >= 2, `9. el historial sigue a la vista: ${enLista} sesiones con su enlace`, String(enLista));
+  exigir((await sesiones.innerText()).includes("Acta firmada cargada"), "9. con sus actas firmadas");
   await foto(p, "f9-modo-oficial");
 
   ids.casoNogal = await abrirCaso(p, "Aviso del personal · Nogal Comercial");

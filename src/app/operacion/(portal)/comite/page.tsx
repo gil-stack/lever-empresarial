@@ -384,8 +384,9 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
       </Hoja>
 
       <Hoja id="sesiones-titulo" titulo="Sesiones">
+        {/* r2-serv-N13 (61ª): en modo Oficial no se registran sesiones nuevas, pero el historial y sus actas siguen a la vista. */}
         {modo.modo === "oficial" ? (
-          <Vacio titulo="Sin sesiones">Dictamina el Oficial de Cumplimiento: en este modo no hay sesiones del Comité.</Vacio>
+          <p className="pista">Dictamina el Oficial de Cumplimiento: no se registran sesiones nuevas. Las anteriores y sus actas quedan para consulta.</p>
         ) : (
           <>
             <div className="operacion-ficha-cabeza">
@@ -406,59 +407,61 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
                 ))}
               </ul>
             ) : null}
-            {comite.sesiones.length === 0 ? (
-              <Vacio titulo="Sin sesiones registradas">Registra cada sesión con su fecha y quiénes estuvieron presentes.</Vacio>
-            ) : (
-              <ul className="operacion-lista">
-                {comite.sesiones.map((sesion) => (
-                  <li key={sesion.id}>
-                    <div className="operacion-fila">
-                      <div className="operacion-fila-cuerpo">
-                        <h3>
-                          <Link href={`/operacion/comite/sesiones/${sesion.id}`}>Sesión del {fechaDia(sesion.celebradaEl)}</Link>
-                        </h3>
-                        <p className="operacion-meta">
-                          <span>
-                            {sesion.representados} de {sesion.miembros} miembros
-                          </span>
-                          <span>{sesion.acta ? "Acta firmada cargada" : "Sin acta firmada"}</span>
-                        </p>
-                      </div>
-                      <Insignia tono={sesion.quorum ? "sello" : "aviso"}>{sesion.quorum ? "Con quórum" : "Sin quórum"}</Insignia>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {administra && vigentes.length > 0 ? (
-              <form action={registrarSesionAccion} className="formulario-pareja operacion-forma">
-                <input type="hidden" name="formId" value={randomUUID()} />
-                <div className="campo">
-                  <label htmlFor="sesion-fecha">Fecha de la sesión</label>
-                  <input id="sesion-fecha" name="celebradaEl" type="date" required max={hoy} defaultValue={hoy} {...error("sesiones-titulo", "celebradaEl")} />
-                </div>
-                <fieldset className="campo operacion-ancho" {...error("sesiones-titulo", "presentes")}>
-                  <legend>Presentes</legend>
-                  {vigentes.map((integrante) => (
-                    <label key={integrante.id}>
-                      <input type="checkbox" name="presentes" value={integrante.id} /> {nombreDeIntegrante(integrante)} · {CARGO_COMITE[integrante.cargo]}
-                      {integrante.titularidad === "SUPLENTE" ? " (suplente)" : ""}
-                    </label>
-                  ))}
-                  {comite.auditor ? (
-                    <label>
-                      <input type="checkbox" name="auditorPresente" value="si" /> {comite.auditor.nombre} · auditor, con voz y sin voto
-                    </label>
-                  ) : null}
-                </fieldset>
-                <div className="acciones operacion-ancho">
-                  <BotonEnviar>Registrar sesión</BotonEnviar>
-                  <p>Sin la mayoría de los miembros, queda registrada «sin quórum» y no admite votos.</p>
-                </div>
-              </form>
-            ) : null}
           </>
         )}
+        {comite.sesiones.length === 0 ? (
+          <Vacio titulo="Sin sesiones registradas">
+            {modo.modo === "oficial" ? "El Comité no registró sesiones." : "Registra cada sesión con su fecha y quiénes estuvieron presentes."}
+          </Vacio>
+        ) : (
+          <ul className="operacion-lista">
+            {comite.sesiones.map((sesion) => (
+              <li key={sesion.id}>
+                <div className="operacion-fila">
+                  <div className="operacion-fila-cuerpo">
+                    <h3>
+                      <Link href={`/operacion/comite/sesiones/${sesion.id}`}>Sesión del {fechaDia(sesion.celebradaEl)}</Link>
+                    </h3>
+                    <p className="operacion-meta">
+                      <span>
+                        {sesion.representados} de {sesion.miembros} miembros
+                      </span>
+                      <span>{sesion.acta ? "Acta firmada cargada" : "Sin acta firmada"}</span>
+                    </p>
+                  </div>
+                  <Insignia tono={sesion.quorum ? "sello" : "aviso"}>{sesion.quorum ? "Con quórum" : "Sin quórum"}</Insignia>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {modo.modo === "comite" && administra && vigentes.length > 0 ? (
+          <form action={registrarSesionAccion} className="formulario-pareja operacion-forma">
+            <input type="hidden" name="formId" value={randomUUID()} />
+            <div className="campo">
+              <label htmlFor="sesion-fecha">Fecha de la sesión</label>
+              <input id="sesion-fecha" name="celebradaEl" type="date" required max={hoy} defaultValue={hoy} {...error("sesiones-titulo", "celebradaEl")} />
+            </div>
+            <fieldset className="campo operacion-ancho" {...error("sesiones-titulo", "presentes")}>
+              <legend>Presentes</legend>
+              {vigentes.map((integrante) => (
+                <label key={integrante.id}>
+                  <input type="checkbox" name="presentes" value={integrante.id} /> {nombreDeIntegrante(integrante)} · {CARGO_COMITE[integrante.cargo]}
+                  {integrante.titularidad === "SUPLENTE" ? " (suplente)" : ""}
+                </label>
+              ))}
+              {comite.auditor ? (
+                <label>
+                  <input type="checkbox" name="auditorPresente" value="si" /> {comite.auditor.nombre} · auditor, con voz y sin voto
+                </label>
+              ) : null}
+            </fieldset>
+            <div className="acciones operacion-ancho">
+              <BotonEnviar>Registrar sesión</BotonEnviar>
+              <p>Sin la mayoría de los miembros, queda registrada «sin quórum» y no admite votos.</p>
+            </div>
+          </form>
+        ) : null}
       </Hoja>
 
       <NotaRegla>El auditor interno participa con voz y sin voto: no es integrante, no cuenta para el quórum y no se comunica en el aviso de la 49ª.</NotaRegla>
