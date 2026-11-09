@@ -10,6 +10,7 @@
 //   node scripts/evidencia/ola-2b-navegacion.mjs limpiar     solo «Limpiar filtros», «Atrás» y «Adelante» de Movimientos (también va en modulos)
 //   node scripts/evidencia/ola-2b-navegacion.mjs fondo       el fondo con movimiento a DPR 1 y 2: sin GPU, a lo más un cuadro largo; con GPU, igual que antes; arrastre y tarea ajena
 //   node scripts/evidencia/ola-2b-navegacion.mjs contraste   AA de cada texto contra la escena real
+//   node scripts/evidencia/ola-2b-navegacion.mjs axe         label-content-name-mismatch (WCAG 2.5.3) y region en 0; el logotipo lleva a Resumen o a Aprobaciones
 //   node scripts/evidencia/ola-2b-navegacion.mjs cargando    «Cargando…» de una sección nueva mientras llega la página
 //   node scripts/evidencia/ola-2b-navegacion.mjs caida       con el Postgres apagado: el error de cada pantalla nueva
 //
@@ -1395,6 +1396,65 @@ async function pantallas() {
 }
 
 // ---------- Contraste AA contra la escena real (método del #50) ----------
+// ---------- axe: el nombre del enlace del logotipo contiene lo que muestra (WCAG 2.5.3), y todo va en un landmark ----------
+// axe-core viene con eslint-plugin-jsx-a11y. `label-content-name-mismatch` es experimental en axe 4: se enciende aquí.
+const REGLA_NOMBRE = "label-content-name-mismatch";
+const REGLAS_EN_CERO = [REGLA_NOMBRE, "region"];
+const PANTALLAS_AXE = [
+  { clave: "01-resumen", quien: "laura", ruta: `${ALTAMAR}/consola` },
+  ...PANTALLAS,
+  { clave: "50-recuperar", quien: null, ruta: "/recuperar" },
+  { clave: "51-portada", quien: null, ruta: "/" },
+];
+
+async function revisarAxe() {
+  const { source } = requerir("axe-core");
+  const carpeta = `${DIR}/logotipo`;
+  mkdirSync(carpeta, { recursive: true });
+  for (const tema of TEMAS) {
+    for (const ancho of ANCHOS) {
+      renovarSesiones();
+      for (const pantalla of PANTALLAS_AXE) {
+        const { nav, p } = await abrir({ quien: pantalla.quien, tema, ancho });
+        await p.goto(`${BASE}${pantalla.ruta}`, { waitUntil: "networkidle" });
+        // Por evaluate y no con una etiqueta <script>: así no depende de la CSP de la página.
+        await p.evaluate(source);
+        const violaciones = await p.evaluate(async (regla) => {
+          const resultado = await window.axe.run(document, { rules: { [regla]: { enabled: true } } });
+          return resultado.violations.map((v) => ({ id: v.id, nodos: v.nodes.map((n) => n.target.join(" ")) }));
+        }, REGLA_NOMBRE);
+        const enCero = violaciones.filter((v) => REGLAS_EN_CERO.includes(v.id));
+        const otras = violaciones.filter((v) => !REGLAS_EN_CERO.includes(v.id)).map((v) => `${v.id} (${v.nodos.length})`);
+        anotar(
+          enCero.length === 0,
+          `axe ${pantalla.clave} ${tema} ${ancho}: ${REGLAS_EN_CERO.join(" y ")} en 0`,
+          enCero.length ? enCero.map((v) => `${v.id}: ${v.nodos.join(" | ")}`).join(" · ") : `otras reglas: ${otras.join(", ") || "ninguna"}`,
+        );
+        await nav.close();
+      }
+      // El logotipo lleva a Resumen (Laura, administradora) o a Aprobaciones (Rosa, liberadora, que no ve Resumen).
+      for (const [quien, desde, destino, nombre] of [
+        ["laura", `${ALTAMAR}/consola/movimientos`, `${ALTAMAR}/consola`, "Lever Empresas, ir a Resumen"],
+        ["rosa", `${TALLER}/consola/fiscal`, `${TALLER}/consola/aprobaciones`, "Lever Empresas, ir a Aprobaciones"],
+      ]) {
+        const { nav, p, errores } = await abrir({ quien, tema, ancho });
+        await p.goto(`${BASE}${desde}`, { waitUntil: "networkidle" });
+        const marca = p.getByRole("link", { name: nombre, exact: true }).filter({ visible: true });
+        const encontrado = await marca.count();
+        const etiquetaAria = encontrado ? await marca.first().getAttribute("aria-label") : "sin enlace";
+        if (ancho < 600) await marca.first().tap();
+        else await marca.first().click();
+        await p.waitForURL((url) => url.pathname === destino);
+        await p.waitForLoadState("networkidle");
+        anotar(encontrado === 1 && etiquetaAria === null, `logotipo ${quien} ${tema} ${ancho}: «${nombre}», sin aria-label, lleva a ${destino.split("/").pop()}`, `${encontrado} enlace(s) visibles · aria-label ${etiquetaAria}`);
+        await capturar(p, `${carpeta}/logotipo-${quien}-${tema}-${ancho}.webp`, { completa: false });
+        anotar(errores.length === 0, `logotipo ${quien} ${tema} ${ancho}: sin errores de consola`, errores.join(" | "));
+        await nav.close();
+      }
+    }
+  }
+}
+
 const lineal = (c) => (c / 255 <= 0.03928 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4);
 const luminancia = ([r, g, b]) => 0.2126 * lineal(r) + 0.7152 * lineal(g) + 0.0722 * lineal(b);
 const razon = (a, b) => {
@@ -1626,6 +1686,7 @@ else if (modo === "modulos") await modulos();
 else if (modo === "limpiar") await limpiarFiltros();
 else if (modo === "fondo") await fondo();
 else if (modo === "contraste") await contraste();
+else if (modo === "axe") await revisarAxe();
 else if (modo === "cargando") await cargando();
 else if (modo === "caida") {
   Object.assign(SESIONES, JSON.parse(readFileSync(SESIONES_CAIDA, "utf8")));

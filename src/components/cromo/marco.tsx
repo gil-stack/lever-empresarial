@@ -174,8 +174,9 @@ export async function Marco({
             )}
           </BarraSuperior>
           {children}
-          {/* En pantallas angostas el lateral es un cajón: el aviso regulatorio no se esconde ahí, va al final de la página. */}
-          <p className="pie-movil">{PIE_REGULATORIO}</p>
+          {/* En pantallas angostas el lateral es un cajón: el aviso regulatorio no se esconde ahí, va al final de la página,
+              como su pie. */}
+          <footer className="pie-movil">{PIE_REGULATORIO}</footer>
         </div>
       </div>
     </>
@@ -367,13 +368,13 @@ function Grupo({
 }
 
 function Marca({ empresaId = null, destino }: { empresaId?: string | null; destino: "/consola" | "/consola/aprobaciones" }) {
+  // El nombre sale del contenido, en un solo texto para el lector de pantalla que empieza con lo que se ve («Lever
+  // Empresas»). Un `aria-label` en el enlace no contendría el texto visible (WCAG 2.5.3), y el texto junto al logotipo
+  // con su propio nombre dejaría un espacio antes de la coma («Lever Empresas , ir a…»).
   return (
-    <Link
-      href={enEmpresa(empresaId, destino)}
-      className="marca"
-      aria-label={`Lever Empresas, ir a ${destino === "/consola" ? "Resumen" : "Aprobaciones"}`}
-    >
-      <Logotipo />
+    <Link href={enEmpresa(empresaId, destino)} className="marca">
+      <Logotipo decorativo />
+      <span className="solo-lector">Lever Empresas, ir a {destino === "/consola" ? "Resumen" : "Aprobaciones"}</span>
     </Link>
   );
 }

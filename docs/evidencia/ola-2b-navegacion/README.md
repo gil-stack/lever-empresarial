@@ -156,6 +156,20 @@ Salida cruda de las pruebas en `a7b92d6` y con los arreglos: `datos/revision-a7b
 
 Salida cruda de las pruebas en `b84bf8a`: `datos/revision-b84bf8a.txt`. Capturas: `modulos/movimientos-negativo-*` y `fondo/fondo-arrastre-*`.
 
+## Ronda de ef484dd: el nombre del logotipo y los landmarks del teléfono (axe)
+
+| Hallazgo | Arreglo | Prueba (falla en `ef484dd`, pasa con el arreglo) |
+| --- | --- | --- |
+| **axe `label-content-name-mismatch` (WCAG 2.5.3)** · el enlace del logotipo llevaba `aria-label` («Lever Empresas, ir a Resumen»), y su texto visible («lever» y la línea, pegados) no aparecía tal cual en ese nombre. Salía en el portal (`Marca` de `cromo/marco.tsx`), en Recuperar y Entrar (`entrar/marco-arco.tsx`) y en la portada (`src/app/page.tsx`) | Sin `aria-label`: el enlace se nombra con su contenido. `Logotipo` tiene un parámetro nuevo, `decorativo` (queda `aria-hidden`), y junto a él va un solo texto solo para el lector de pantalla: «Lever Empresas, ir a Resumen» (o «… Aprobaciones»), o «Lever Empresas, inicio». No sirve dejar el logotipo con su propio nombre y poner «, ir a…» junto a él: como el logotipo es flex, Chrome (CDP) y Playwright calculan «Lever Empresas **,** ir a Resumen», con un espacio antes de la coma. Así, el nombre queda idéntico al de antes | `accesibilidad.spec.ts`: en el portal a 1440 y 390, el enlace no lleva `aria-label`, se llama «Lever Empresas, ir a Resumen» y lleva a Resumen; con Rosa (liberadora), «… ir a Aprobaciones» y lleva a Aprobaciones. En la portada y en Recuperar, «Lever Empresas, inicio». En `ef484dd` falla: «sin aria-label» |
+| **axe `region` a 390** · en el teléfono, la barra de arriba (logotipo, «Cargando…» y «Secciones») y el aviso regulatorio del final quedaban fuera de todo landmark | `cromo/lateral-movil.tsx` (compartido con Operación): la barra es `<nav aria-label="Menú">`. No es un `header`, porque el portal ya tiene su banner (`header.barra-superior`) y habría dos. `cromo/marco.tsx`: el aviso va en `<footer className="pie-movil">`; con `p { margin: 0 }` global se ve igual | `accesibilidad.spec.ts`: a 390, la navegación «Menú» lleva el logotipo y «Secciones», y el pie lleva el aviso; a 1440 no se ven. En Operación, la misma barra es «Menú». En `ef484dd` no existe «Menú» |
+
+- **axe 4.14** (`node scripts/evidencia/ola-2b-navegacion.mjs axe`, con `label-content-name-mismatch` encendida): 26 pantallas (Resumen, Aprobaciones, Perfil, los módulos de demostración, «Disponible pronto», Recuperar y la portada) a 1440 y 390. En `ef484dd`, 52/52 combinaciones con `label-content-name-mismatch` y 22 con `region` (`datos/axe-antes-ef484dd.json`). Con el arreglo, las dos en 0 (`datos/axe.json`, 60/60). El marco de Operación a 390 queda con `region` en 0 (`datos/axe-region-marco.txt`).
+- **Nada visual cambia:** la zona del logotipo y las páginas completas del portal y de Operación, a 390 y 1440, son idénticas píxel a píxel antes y después (diferencia máxima 0).
+- **Navegación con el logotipo** (`logotipo/`): Laura llega a Resumen y Rosa a Aprobaciones, con clic a 1440 y toque a 390.
+- **Ya estaban en `ef484dd` y no son de este cambio** (verificado contra su build): `aria-prohibited-attr` en `.bandeja-cuenta` y `label-content-name-mismatch` en el logotipo de Operación, que corrige el #59; `scrollable-region-focusable` en `.tabla-contenedor`, que va en la ronda en que se integre main después del #59, en todos los archivos del árbol integrado.
+- **`accesibilidad.spec.ts` es un archivo aparte** para que `test:e2e` siga repartido: sin `fullyParallel`, Playwright reparte por archivo, y con las 5 pruebas dentro de `marco.spec.ts` el reparto quedaba 57/0/20. Ahora queda 28/29/20.
+- **`test:db` en 36/38 desde el 2026-11-10:** `flujo-postgres.test.ts` y `colaboradores-postgres.test.ts` emiten la invitación con un reloj fijo (2026-11-05/06 a las 18:00), y la base la vence 72 horas después con su propio reloj: `invitacion_vencida`. El código de esas pruebas es el de `ef484dd`, que pasó 38/38 el 2026-11-08. El #59 lo corrige en esos dos archivos (`emitirConHoraReal`); el #60 no los toca para no chocar en el merge, y vuelve a 38/38 al integrar main.
+
 ## Pendiente al cambiar de cuenta
 
 | Punto | Estado | Gates que se corrieron |
@@ -163,12 +177,15 @@ Salida cruda de las pruebas en `b84bf8a`: `datos/revision-b84bf8a.txt`. Capturas
 | **N6** y **N5** (`fb27af5`) | **Hecho** | Los de `fb27af5`: typecheck 0, lint 0, `npm test` 456/456, Postgres 38/38, `test:e2e` 42/42, build 0, security en verde y el recorrido completo |
 | **CI rojo**, **N5-resto**, **N6-resto**, **N7**, **N8** y **N9** | **Hecho** en `a7b92d6`; Vercel CI en verde (9 de 9) | typecheck 0, lint 0, `npm test` 457/457, Postgres en serie 38/38, `test:e2e` 45/45, build 0 y security en verde. Recorrido: `modulos` 171/171 y `fondo` 30/30. Cada prueba nueva falla en `16c4265` |
 | **líder-N7 a DPR 1**, **N10** y **N11** | **Hecho** en `b84bf8a`; Vercel CI en verde (9 de 9) | typecheck 0, lint 0, `npm test` 457/457, Postgres en serie 38/38 (0 omitidas), `test:e2e` en sus tres partes 21 + 13 + 17 = 51/51, build 0 y security en verde. Recorrido: `modulos` 189/189 y `fondo` 60/60. Cada prueba nueva falla en `a7b92d6` |
-| **líder-N7 (hueco)**, **N12**, **N13**, **N14** y **N11-latente** | **Hecho** en el commit que agrega esta fila | typecheck 0, lint 0, `npm test` 458/458, Postgres en serie 38/38, `test:e2e` en sus tres partes 25 + 27 + 20 = 72/72, build 0 y security en verde. Recorrido: `modulos` 207/207 y `fondo` 68/68. Cada prueba nueva falla en `b84bf8a` |
+| **líder-N7 (hueco)**, **N12**, **N13**, **N14** y **N11-latente** | **Hecho** en `ef484dd`; Vercel CI en verde (9 de 9) | typecheck 0, lint 0, `npm test` 458/458, Postgres en serie 38/38, `test:e2e` en sus tres partes 25 + 27 + 20 = 72/72, build 0 y security en verde. Recorrido: `modulos` 207/207 y `fondo` 68/68. Cada prueba nueva falla en `b84bf8a` |
+| **axe: nombre del logotipo (WCAG 2.5.3)** y **`region` del teléfono** | **Hecho** en el commit que agrega esta fila | typecheck 0, lint 0, `npm test` 458/458, Postgres en serie 36/38 (los 2 de la bomba de tiempo de main, que corrige el #59), `test:e2e` 28 + 29 + 20 = 77/77, build 0 y security en verde. Recorrido: `axe` 60/60. Cada prueba nueva falla en `ef484dd` |
+| **axe `scrollable-region-focusable`** (`.tabla-contenedor`) | **Pendiente:** va en la ronda en que se integre main después del #59 | — |
 
 Falta:
-- **Vercel CI:** el del commit que agrega la última fila; su estado terminal va en el PR.
+- **Vercel CI:** el del commit que agrega la fila del logotipo; su estado terminal va en el PR. Se espera `test:db` en rojo solo por la bomba de tiempo de main, hasta integrar main después del #59.
+- **Integrar main después del #59**, con `scrollable-region-focusable` en esa misma ronda.
 - **Revisión:** el revisor no ha re-verificado esta ronda.
-- **Merge:** el PR no se ha fusionado.
+- **Merge:** el PR no se ha fusionado; va después del #59.
 
 ## Correr el recorrido
 
@@ -181,6 +198,7 @@ DISENO=<carpeta de capturas del diseño> node scripts/evidencia/ola-2b-navegacio
 node scripts/evidencia/ola-2b-navegacion.mjs modulos
 node scripts/evidencia/ola-2b-navegacion.mjs limpiar     # solo N6 (va también en modulos); SUFIJO_LIMPIAR nombra sus capturas
 node scripts/evidencia/ola-2b-navegacion.mjs fondo       # el fondo con movimiento, sin GPU y con la GPU de la Mac
+TEMAS=oscuro node scripts/evidencia/ola-2b-navegacion.mjs axe   # axe 4.14: nombre del logotipo y region en 0; el logotipo lleva a su sección
 TEMAS=oscuro SUFIJO=-oscuro node scripts/evidencia/ola-2b-navegacion.mjs pantallas   # y claro, lever
 TEMAS=oscuro SUFIJO=-oscuro node scripts/evidencia/ola-2b-navegacion.mjs contraste   # y claro, lever
 node scripts/evidencia/ola-2b-navegacion.mjs cargando

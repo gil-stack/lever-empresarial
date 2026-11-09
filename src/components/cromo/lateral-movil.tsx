@@ -85,7 +85,9 @@ export function LateralMovil({ marca, children }: { marca: ReactNode; children: 
 
   return (
     <>
-      <div className="barra-movil">
+      {/* Navegación y no encabezado: la página ya tiene su banner (la barra de arriba del contenido). Así el logotipo y
+          «Secciones» quedan dentro de un landmark. */}
+      <nav className="barra-movil" aria-label="Menú">
         {marca}
         <span className="barra-movil-carga" role="status">
           {cargando > 0 ? (
@@ -106,7 +108,7 @@ export function LateralMovil({ marca, children }: { marca: ReactNode; children: 
           {abierto ? <IconoCerrar /> : <IconoMenu />}
           <span>{abierto ? "Cerrar" : "Secciones"}</span>
         </button>
-      </div>
+      </nav>
       <aside
         ref={cajon}
         id="lateral"
