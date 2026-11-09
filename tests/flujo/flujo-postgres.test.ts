@@ -34,6 +34,7 @@ import {
   registrarObligacion,
 } from "../../src/server/flujo/servicio.ts";
 import { leerPendientesInicio } from "../../src/server/inicio/servicio.ts";
+import { emitirEnTransaccion } from "../../src/server/invitaciones/repositorio.ts";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio.ts";
 import { darDeAltaPersona, nombrarCentro } from "../../src/server/personas/servicio.ts";
 import { invitarAdministrador, contextoDePersonal } from "../../src/server/plataforma/servicio.ts";
@@ -48,6 +49,11 @@ const CLAVE = "clave-segura-12";
 /** Reloj fijo: viernes 6 de noviembre de 2026 en México. Nada depende del día en que corre la prueba. */
 const VIERNES = new Date("2026-11-06T18:00:00.000Z");
 const AHORA = { ahora: () => VIERNES };
+/**
+ * La invitación la vence la base con su propio reloj (`expira_en > now()` al aceptarla). Se emite con la hora real
+ * aunque el alta fije su fecha: emitida con el reloj fijo, vencía 72 horas después de esa fecha y la prueba estallaba.
+ */
+const emitirConHoraReal: typeof emitirEnTransaccion = (consulta, actor, entrada) => emitirEnTransaccion(consulta, actor, { ...entrada, ahora: new Date() });
 const TABLAS = [
   "cash_balance_declarations",
   "expected_collections",
@@ -797,6 +803,7 @@ async function persona(url: string, admin: ContextoConEmpresa, centroId: string,
     nomina: "no", clabe: CLABE, acceso: "nueva", correo, rol,
   }, {
     ...AHORA,
+    emitir: emitirConHoraReal,
     entregar: async (emitida) => {
       token = emitida.token;
       return { entregada: false, codigo: "correo_no_configurado" };

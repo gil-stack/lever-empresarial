@@ -6,9 +6,9 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r-alta
 | --- | --- | --- |
 | Flujos 0-12 | 147 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
 | Pantallas (3 temas × 1440/390) y contraste AA medido | 60 comprobaciones en verde, 0 en rojo; contraste mínimo 5.00 (Lever 1440) | `datos/resultados-pantallas-contraste.json` |
-| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;»; el representante, el socio y la razón social con un control, el giro y el cobro con el control como espacio, el RFC con tabulador, el alta y el área con su aviso y las fechas de Pagos en su campo; el aviso propio del carácter invisible en el socio, el representante, las razones sociales y el folio, el representante que conserva lo capturado, el documento extranjero y la Lista con tabulador, el motivo con un emoji compuesto y el contrato con «Vigente hasta») | 165 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
+| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;»; el representante, el socio y la razón social con un control, el giro y el cobro con el control como espacio, el RFC con tabulador, el alta y el área con su aviso y las fechas de Pagos en su campo; el aviso propio del carácter invisible en el socio, el representante, las razones sociales y el folio, el representante que conserva lo capturado, el documento extranjero y la Lista con tabulador, el motivo con un emoji compuesto y el contrato con «Vigente hasta»; el representante con un relleno hangul, el envío sin giro ni domicilio, las fechas del folio en su campo y la recuperación marcada en su tarjeta) | 186 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
 
-Corrida del 2026-11-09 sobre el head de este PR, con los arreglos de las ocho revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`; la carrera de F4 y F5 del CI, serv-nuevo-5, base-N24, base-N25, el aviso propio del carácter invisible y dos P3 de la re-verificación sobre `b2db0b5`), sobre una base migrada de cero con la 0028 final. Las tres fases corrieron sobre el código final de la octava revisión.
+Corrida del 2026-11-09 sobre el head de este PR, con los arreglos de las nueve revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`; la carrera de F4 y F5 del CI, serv-nuevo-5, base-N24, base-N25, el aviso propio del carácter invisible y dos P3 de la re-verificación sobre `b2db0b5`; la bomba de fechas de `test:db`, base-N26, base-N27, serv-nuevo-6b y serv-nuevo-6d de la re-verificación sobre `a75d5e4`), sobre una base migrada de cero con la 0028 final. Las tres fases corrieron sobre el código final de la novena revisión.
 
 ## Cómo se corre
 
@@ -16,16 +16,19 @@ Puertos de esta línea: Postgres 5551, `next start` 4811 (y 3151 para la base de
 
 1. Postgres 17 desechable en `127.0.0.1:5551` (Homebrew: `initdb` y `pg_ctl -o "-p 5551"`).
 2. Emulador de Blob en 4894: `iniciarBlobLocal(4894, <token falso del almacén «e2elocal»>)` de `tests/e2e/blob-local/servidor.ts`. La sexta revisión le pide con `POST /simular` que el borrado responda 503 o no responda, y lo regresa a la normalidad.
+   - **Va encendido antes de `preparar.ts`.** Cada fase revisa el `/salud` del emulador con un tope de 3 segundos. Si no responde, termina con salida 1 y «El emulador de Blob no responde en …». Antes se colgaba sin salida, porque la subida de `@vercel/blob` reintenta en silencio.
 3. Variables (sin valores reales, todos locales):
    - `ESTADO`: archivo fuera del repositorio. Guarda semillas TOTP, sesiones y el enlace de una invitación; nada de eso se imprime.
    - `DUENO_URL`: el Postgres administrador local; `preparar.ts` crea ahí la base `ola_r_alta`.
    - `AUTENTICACION_LLAVE_TOTP` (32 bytes en base64url), la misma para `preparar.ts` y para `next start`.
    - `AUTENTICACION_DOMINIOS=localhost`, `URL_APLICACION=http://localhost:4811`, `E2E_SERVER_ACTIONS=1`.
    - `BLOB_READ_WRITE_TOKEN` (el falso del emulador), `VERCEL_BLOB_API_URL`, `E2E_BLOB_LOCAL_URL` y `E2E_BLOB_LOCAL=1`.
+   - `REGISTRO_SERVIDOR`, solo para `FASES=regresiones`: el archivo con la salida del `next start` de 4811. La sexta revisión lee ahí el registro `huerfano_sin_borrar`. Sin la variable, las regresiones se detienen con «Falta REGISTRO_SERVIDOR…».
+   - `BASE_ARRANQUE`, solo para `FASES=regresiones`: la dirección del segundo `next start` (paso 8).
 4. `next build`.
 5. `tsx scripts/evidencia/ola-r-alta/preparar.ts base`: migra desde cero, siembra Taller del Cierre (Gil y Rosa), Marta con nómina semanal que vence hoy, Iván con su invitación por aceptar y al personal SOFIPO (Ofelia administra; Omar, Ana, Celia y Aurelio sin rol).
-6. `next start -p 4811` con `DATABASE_URL` de la aplicación (la deja `ESTADO`), `NODE_ENV=production` y `NODE_OPTIONS=--import=tests/e2e/blob-local/preload.mjs`.
-7. `BASE=http://localhost:4811 FASES=flujos node scripts/evidencia/ola-r-alta.mjs`, después `FASES=pantallas,contraste` y al final `FASES=regresiones`, sobre la misma base. La fase `lumbre` de `preparar.ts` la llama el flujo 1. Las regresiones parten del estado que dejan los flujos y numeran sus capturas aparte (`rNN-…`).
+6. `next start -p 4811` con `DATABASE_URL` de la aplicación (la deja `ESTADO`), `NODE_ENV=production` y `NODE_OPTIONS=--import=tests/e2e/blob-local/preload.mjs`. Su salida va a un archivo: es el `REGISTRO_SERVIDOR` de las regresiones.
+7. `BASE=http://localhost:4811 FASES=flujos node scripts/evidencia/ola-r-alta.mjs`, después `FASES=pantallas,contraste` y al final `FASES=regresiones` con `REGISTRO_SERVIDOR` y `BASE_ARRANQUE`, sobre la misma base. Las regresiones tardan más de 10 minutos. La fase `lumbre` de `preparar.ts` la llama el flujo 1. Las regresiones parten del estado que dejan los flujos y numeran sus capturas aparte (`rNN-…`).
 8. Antes de `FASES=regresiones`: `preparar.ts arranque` crea la base aparte `ola_r_alta_arranque` (solo las migraciones: un operador y 0 personal, como Preview) y deja su conexión en `ESTADO`; un segundo `next start -p 3151` con esa `DATABASE_URL` y `URL_APLICACION=http://localhost:3151` sirve sus enlaces (`BASE_ARRANQUE`). La quinta revisión corre ahí el comando de arranque.
 
 ## Reloj fijo
@@ -438,6 +441,105 @@ En local, la carrera no salió en 100 corridas del código viejo. La ventana ent
 - **Las orillas.** En las orillas se sigue recortando como siempre. JavaScript recorta también U+FEFF, así que «﻿Proveedor» entra como «Proveedor»: el carácter no se guarda.
 - **Siguen con `CONTROL`.** El nombre de un archivo y el de una categoría del presupuesto no son identidades ni se cotejan.
 
+### Novena revisión (re-verificación sobre `a75d5e4`)
+
+El líder pidió cinco puntos en un solo push:
+
+- la bomba de fechas de la suite de Postgres, que también revienta en main;
+- base-N26: los demás invisibles de Unicode;
+- base-N27: Recuperaciones con varias solicitudes;
+- serv-nuevo-6b: las fechas del folio en su campo;
+- serv-nuevo-6d: enviar una versión sin datos generales.
+
+**La 0028 no cambia.**
+
+**La bomba de fechas de `test:db`.**
+
+- **Causa.** `colaboradores-postgres.test.ts` y `flujo-postgres.test.ts` fijan la fecha del alta (2026-11-05T18:00Z) y con esa misma fecha emitían la invitación, así que `expira_en` quedaba en esa fecha más 72 horas. La aceptación la vence la base con su propio reloj: `consumir` hace `update invitations … where … expira_en > now()`. Desde el 2026-11-08T18:00Z las dos suites fallaban:
+  - «separa empresas…» y «colaboradores, nómina…» con `invitacion_vencida`;
+  - «calendario y lotes» con `primer_pago_invalido`, porque la persona invitada no llegaba a existir.
+- **Arreglo.** Las pruebas emiten la invitación con la hora real (`emitirConHoraReal`, que llama a `emitirEnTransaccion` con `ahora: new Date()`). La fecha de negocio del alta, la nómina y el calendario sigue fija. El código de la aplicación no cambia: en producción, emitir y aceptar ya usan el reloj real.
+- **Por qué no aceptar con el mismo reloj fijo.** Fue la primera propuesta. Seguía fallando a +30 días con `invitacion_cerrada`: el `estadoDe` de JavaScript daba la invitación por vigente, pero el `update` de la base, con `now()`, no la consumía.
+- **Barrido.** Cinco suites de Postgres aceptan invitaciones: `aislamiento`, `telefono`, `resumen-postgres`, `colaboradores-postgres` y `flujo-postgres`. Solo las dos últimas emitían con el reloj fijo. `resumen-postgres` usa su fecha fija solo para leer el resumen.
+
+**Los tres relojes adelantados.** La suite de Postgres completa (los 17 archivos de `test:db`, una prueba a la vez) corrió con tres relojes adelantados:
+
+- **Postgres.** El binario se lanza directo con `faketime -f +30d postgres -D <datos> -p 5551`, sin `pg_ctl`: `pg_ctl` pasa por `/bin/sh` y macOS le quita `DYLD_*`.
+- **Node.** El proceso de las pruebas corre como `faketime -f +30d <node> node_modules/tsx/dist/cli.mjs --test --test-concurrency=1 <archivos>`.
+- **Los hijos de `.bin/tsx`.** Son los `spawnSync` de `alta-regulada-postgres.test.ts`. Durante la corrida, el enlace `.bin/tsx` se cambia por un lanzador con el `node` de Homebrew en el shebang, en lugar de `/usr/bin/env node`. Al salir se restauran el enlace y el Postgres con el reloj real.
+
+Cada corrida imprime los tres relojes al empezar. La salida cruda está en `datos/reloj-30-dias-a75d5e4.txt`, `datos/reloj-30-dias-final.txt` y `datos/reloj-365-dias-final.txt`.
+
+| Código | Adelanto | Postgres `now()` | Node `new Date()` | Hijo por `.bin/tsx` | Resultado |
+| --- | --- | --- | --- | --- | --- |
+| `a75d5e4` | +30 días | 2026-12-09 23:20:57+07 | 2026-12-09T16:20:57Z | 2026-12-09T16:20:57Z | 76/79: las 3 de arriba |
+| final | +30 días | 2026-12-09 23:16:21+07 | 2026-12-09T16:16:21Z | 2026-12-09T16:16:21Z | 80/80 |
+| final | +365 días | 2027-11-09 23:22:36+07 | 2027-11-09T16:22:36Z | 2027-11-09T16:22:36Z | 80/80 |
+
+**base-N26: los demás invisibles de Unicode.**
+
+- **Regla.** `INVISIBLE` suma `\p{Default_Ignorable_Code_Point}` a los controles y a los caracteres de formato. Entran:
+  - los rellenos hangul U+3164, U+115F y U+FFA0;
+  - los selectores de variación U+FE0F, U+180B y U+E0100;
+  - la vocal muda jemer U+17B4.
+- **Por qué importa.** Un nombre con uno se ve igual en pantalla, pero `lpb_normalizar` parte la palabra donde está: «Rodrㅤíguez» da «IGUEZ RODR» y ya no coincide con la Lista ni con el 69-B. Entre palabras, en cambio, «Ana​Ruiz» sí da «ANA RUIZ»; solo dentro de una palabra se rompe.
+- **Lo que no cambia.** Los textos libres siguen aceptando el emoji con U+FE0F («❤️») y el compuesto con U+200D. Las letras de otros alfabetos no son invisibles: «Łukasz Żółć», «李小龍» y «محمد» pasan.
+
+**base-N27: Recuperaciones con varias solicitudes.**
+
+- **Causa.** Con varias solicitudes pendientes, el aviso de un rechazo sin nota marcaba la nota de todas las tarjetas, y el foco no caía en la que se envió.
+- **Arreglo.** La acción agrega `&en=<id>` a la dirección, solo si el id tiene forma de uuid. La página liga el aviso solo a la tarjeta con ese id.
+
+**serv-nuevo-6b: las fechas del folio en su campo.**
+
+- **Causa.** En Coincidencias, una fecha de presentación o de aviso al cliente imposible marcaba el folio con un texto genérico.
+- **Arreglo.**
+  - `registrarReporteAccion` manda el campo que falló en `en=<campo>-<id>`: `presentado` o `aviso`, y si no, `folio`.
+  - `FormularioFolio` marca y enfoca solo ese campo. Es un componente aparte de `coincidencias.tsx` para poder renderizarlo en la prueba unitaria, porque `coincidencias.tsx` importa `server-only`.
+  - Las dos fechas tienen su propio texto: «Revisa la fecha de presentación del reporte…» y «Revisa la fecha del aviso al cliente… Déjala vacía si aún no avisas.».
+
+**serv-nuevo-6d: enviar sin datos generales.**
+
+- **Causa.** El CHECK `kyb_versiones_forma` rechazaba el `update` con 23514, y `traducirErrorDeBase` lo convertía en `base_no_disponible`: «La base no respondió…».
+- **Arreglo.**
+  - `enviarVersion` lee con `for update` las columnas que exige el CHECK (`DATOS_PARA_ENVIAR`, en `dominio/operacion/expediente.ts`). Si falta alguna, lanza `ExpedienteIncompleto` (`expediente_datos_incompletos`) con la lista, antes del `update` y sin evento.
+  - La página dice qué falta en palabras: «Faltan el giro y el domicilio. Captura esos datos en «Datos generales» y vuelve a enviar.».
+  - En la dirección viajan solo las claves de lo que falta, nunca un dato.
+  - `traducirErrorDeBase` también traduce el nombre del CHECK al mismo código, por si otro camino llega a la base.
+- **Columnas escritas a mano.** La revisión de seguridad marcó la lista de columnas interpolada en el `select`, así que va escrita literal. Si una columna faltara en esa lista, contaría como dato faltante y la versión completa no se enviaría. Lo cubre la prueba de Postgres.
+
+**Verificación en rojo.** Las pruebas nuevas, corridas contra el código de `a75d5e4`, fallan así:
+
+- **Unitarias**, 9 pruebas:
+  - los dos textos de las fechas daban «Revisa el campo marcado…»;
+  - `INVISIBLE` no reconocía U+3164;
+  - `validarAlta` aceptaba «EscuelaᅟKemper»;
+  - la Lista aceptaba «EVA RODRㅤIGUEZ»;
+  - `FormularioFolio` no existía;
+  - las tres de `datosQueFaltan`;
+  - el CHECK de la forma se traducía a `base_no_disponible`.
+- **Postgres:**
+  - «Missing expected rejection: socio "Luis Rodrㅤíguez"»;
+  - serv-nuevo-6d: sin la clase, el envío da `base_no_disponible`.
+- **e2e de Recuperaciones:** `en` llegaba vacío. Sin esa comprobación, la nota de la tarjeta enviada no tenía el foco.
+- **Reloj:** 76/79 con los tres relojes a +30 días (tabla de arriba).
+
+| Hallazgo | Arreglo | Prueba |
+| --- | --- | --- |
+| **Bomba de fechas (CI y main)** Desde el 2026-11-08T18:00Z, «separa empresas…» y «colaboradores, nómina…» daban `invitacion_vencida`, y «calendario y lotes» daba `primer_pago_invalido` | Las pruebas emiten con la hora real (`emitirConHoraReal`); la fecha de negocio sigue fija | La suite de Postgres con los tres relojes adelantados: `a75d5e4` 76/79 a +30 días; el final, 80/80 a +30 y a +365 días. `datos/reloj-*-dias-*.txt` |
+| **base-N26** U+3164, U+115F, U+FFA0, U+FE0F, U+180B, U+E0100 o U+17B4 pasaban los rechazos de identidad | `INVISIBLE` con `\p{Default_Ignorable_Code_Point}` | `control.test.ts`: los 7 en las identidades, «❤️» aceptado en un motivo, «Łukasz Żółć», «李小龍» y «محمد» aceptados, y la Lista con «EVA RODRㅤIGUEZ» y «EVA RUIZ️ SOL» rechazada. Postgres «base-N23…»: los 7 como socio y representante, la razón social y la Lista. Captura `r95` |
+| **base-N27** Con varias recuperaciones, el rechazo sin nota marcaba todas las notas | `&en=<id>`; la página liga el aviso solo a esa tarjeta | e2e «con tres recuperaciones pendientes…»: `en` es el id de la de en medio; solo su nota queda marcada, con `aria-describedby` y el foco; después se rechazan las tres. Captura `r99` |
+| **serv-nuevo-6b** Una fecha imposible del reporte marcaba el folio | `en=presentado-<id>` o `en=aviso-<id>`; `FormularioFolio` marca y enfoca solo ese campo; un texto por fecha | `formulario-folio.test.ts` con cada código y con otro id; `aviso.test.ts` con los dos textos. Capturas `r97` y `r98` |
+| **serv-nuevo-6d** Enviar una versión sin giro o sin domicilio decía «La base no respondió» | `ExpedienteIncompleto` antes del `update`, con la lista; el aviso dice qué falta; el CHECK también se traduce | `alta-regulada.test.ts` «lo que le falta a una versión para enviarse» (3); `db.test.ts`; Postgres «serv-nuevo-6d…»: faltan `giro` y `domicilio`, sigue en borrador y sin evento, y completa se envía con 1 evento. Captura `r96` |
+| **Pedido del líder (lo encontró R2)** Con el emulador de Blob apagado, `preparar.ts` se colgaba sin salida, y «Cómo se corre» no nombraba `REGISTRO_SERVIDOR` | `preparar.ts` revisa el `/salud` del emulador con un tope de 3 segundos antes de cada fase. «Cómo se corre» pide el emulador antes de preparar y nombra `REGISTRO_SERVIDOR` y `BASE_ARRANQUE` | Corrido a mano, sin tocar ninguna base: con el puerto cerrado termina en 0.7 s con salida 1; con un servidor que acepta y no responde, en 3.3 s («sin respuesta en 3 segundos»); sin `VERCEL_BLOB_API_URL`, «Falta VERCEL_BLOB_API_URL…». Con el emulador encendido, la revisión pasa y la fase sigue |
+
+**Decisiones de la novena revisión.**
+
+- **El arreglo de la bomba está en las pruebas.** La aplicación siempre emite y acepta con el reloj real. Solo las pruebas mezclaban la fecha fija con el `now()` de la base.
+- **El CHECK sigue siendo la última barrera.** La revisión en el servicio da el aviso claro, y el CHECK de la 0028 no cambia.
+- **El aviso de lo que falta lo arma la página.** La acción manda solo las claves (`faltan=giro,domicilio`), y la página las convierte en palabras con `fraseDeLoQueFalta`. Las claves desconocidas se ignoran; si no se reconoce ninguna, queda solo el aviso general.
+- **Un solo `en` en Recuperaciones.** Solo un id con forma de uuid llega a la dirección. Con cualquier otro valor no se marca nada.
+
 ## Flujo → captura → qué verifica en la base
 
 | Flujo | Captura | Qué verifica en la base |
@@ -557,6 +659,11 @@ En local, la carrera no salió en 100 corridas del código viejo. La ventana ent
 | serv-nuevo-5 | `r92-r8-folio-caracter-invisible` | Celia confirma la coincidencia de Brisa con un motivo que trae un emoji compuesto (👨‍👩‍👧, U+200D), y se guarda tal cual. El folio «UIF-2026-⁠0007»: «El folio trae un carácter invisible…», con el folio de esa coincidencia marcado y con el foco, y ningún folio guardado. |
 | P3 | `r93-r8-contrato-vigente-hasta` | Contrato con «Vigente hasta» 2026-10-31 y «Vigente desde» 2026-11-01: «Revisa «Vigente hasta»: debe existir en el calendario y no puede ser anterior a «Vigente desde».», con «Vigente hasta» marcado y ningún documento (antes, el texto de la emisión y el vencimiento de un pago). |
 | serv-nuevo-5 | `r94-r8-proveedor-razon-social-ufeff` | El alta de un proveedor con «Escuela﻿Kemper Urgate»: «La razón social trae un carácter invisible…» en su campo y ningún proveedor. |
+| base-N26 | `r95-r9-representante-relleno-hangul` | Omar agrega al representante «Luis Rodrㅤíguez» (relleno hangul, que no es Cc ni Cf): «El nombre trae un carácter invisible…», con el nombre marcado y con el foco, y ningún representante de más (antes se guardaba y la Lista lo partía en «IGUEZ RODR»). |
+| serv-nuevo-6d | `r96-r9-enviar-sin-giro-ni-domicilio` | Omar registra a Laboratorio Novena, abre la versión 1 y guarda los datos generales sin giro ni domicilio. «Enviar versión 1»: «Faltan datos generales para enviar la versión…» y «Faltan el giro y el domicilio. Captura esos datos en «Datos generales» y vuelve a enviar.», con `en=enviar-titulo`. La versión sigue en borrador y no hay evento `expediente_enviado` (antes, «La base no respondió…»). |
+| serv-nuevo-6b | `r97-r9-folio-fecha-presentado-imposible` | Celia anota el folio de Brisa con «Presentado el» 2026-02-30 (petición armada): «Revisa la fecha de presentación del reporte…», con `en=presentado-<id>`. Solo «Presentado el» queda marcado y con el foco, no el folio, y no se guarda folio. La captura muestra el aviso y el campo juntos. |
+| serv-nuevo-6b | `r98-r9-folio-fecha-aviso-imposible` | Lo mismo con «Aviso por escrito al cliente» 2026-13-01: «Revisa la fecha del aviso al cliente… Déjala vacía si aún no avisas.». Solo ese campo queda marcado y con el foco, y no se guarda folio. |
+| base-N27 | `r99-r9-recuperacion-nota-en-su-tarjeta` | Hay tres recuperaciones pendientes: Gil, Rosa y Aurelio. Ofelia confirma su identidad y rechaza sin nota la de en medio, la de Rosa: `en` es el id de Rosa y solo su nota queda marcada y con el foco; las tres siguen pendientes. Con su nota, las tres se rechazan. |
 
 Las capturas `NN-pantalla-<pantalla>-<tema>-<ancho>` son la fase de pantallas: un solo h1, campos con etiqueta, sin desborde horizontal y consola limpia en Personal, Cumplimiento, Lista, Expediente, Ficha, Aprobaciones, Clientes, Bitácora y Sin permiso.
 
@@ -600,7 +707,7 @@ OK    1. la base no dejó a Aurelio con Cumplimiento
 OK    aviso «roles_incompatibles» tras la acción
 OK    1. tampoco Originación con Cumplimiento (Omar)
 OK    1. la fila de Ofelia no tiene botones: nadie se da roles a sí mismo
-Distribuidora Lumbre lista: expediente aprobado y revisión de riesgo vencida el 2026-10-08.
+Distribuidora Lumbre lista: expediente aprobado y revisión de riesgo vencida el 2026-10-09.
 
 — Flujo 2: Originación registra el prospecto y arma el expediente (2 capas, propietarios reales calculados)
 OK    aviso «prospecto_registrado» tras la acción
@@ -954,11 +1061,11 @@ OK    serv-N15. corregido el capital en el mismo formulario, la moral extranjera
 OK    emulador de Blob: borrado «503»
 OK    aviso «documento_sin_representante» tras la acción
 OK    emulador de Blob: borrado «normal»
-OK    serv-N16. Blob responde 503 al borrar el huérfano: la página vuelve en 5.3 s (tope de 5 s más la página), sin documento, y la clave queda en el registro
+OK    serv-N16. Blob responde 503 al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro
 OK    emulador de Blob: borrado «sin_respuesta»
 OK    aviso «documento_sin_representante» tras la acción
 OK    emulador de Blob: borrado «normal»
-OK    serv-N16. Blob no responde al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro
+OK    serv-N16. Blob no responde al borrar el huérfano: la página vuelve en 5.2 s (tope de 5 s más la página), sin documento, y la clave queda en el registro
 OK    aviso «dato_invalido_vigenteHasta» tras la acción
 OK    bar-2. «Vigente hasta» 30 sep antes de «Emitido el» 1 oct: el campo queda marcado, sin documento nuevo y sin «La base no respondió»
 OK    base-N21. cobro manual con el RFC « - - »: «Ese RFC no tiene la forma de un RFC» en su campo y sin cobro
@@ -1012,9 +1119,32 @@ OK    aviso «invisible_folio» tras la acción
 OK    serv-nuevo-5. el folio «UIF-2026-\u20600007»: aviso propio, el folio de esa coincidencia marcado y con el foco, sin folio guardado
 OK    P3. el contrato con «Vigente hasta» antes de «Vigente desde»: su propio aviso (no el de la emisión del pago), «Vigente hasta» marcado y sin documento
 OK    serv-nuevo-5. el alta del proveedor con U+FEFF en la razón social: su aviso, campo marcado y sin proveedor
+
+— Novena revisión: invisibles de Unicode, recuperación en su tarjeta, fechas del folio y envío sin datos generales
+OK    base-N26. el representante «Luis Rodr\u3164íguez» (relleno hangul): aviso propio, nombre marcado y con el foco, sin representante
+OK    aviso «prospecto_registrado» tras la acción
+OK    aviso «expediente_version_creada» tras la acción
+OK    aviso «expediente_datos_guardados» tras la acción
+OK    aviso «expediente_datos_incompletos» tras la acción
+OK    serv-nuevo-6d. enviar sin giro ni domicilio: «Faltan el giro y el domicilio…», la versión sigue en borrador y sin evento «expediente_enviado»
+OK    novena. hay una coincidencia confirmada sin folio para anotarlo
+OK    aviso «dato_invalido_presentadoEl» tras la acción
+OK    serv-nuevo-6b. «Presentado el» 2026-02-30: su aviso, solo ese campo marcado y con el foco (no el folio), sin folio guardado
+OK    serv-nuevo-6b. la captura muestra el aviso y «presentado» marcado
+OK    aviso «dato_invalido_avisoClienteEl» tras la acción
+OK    serv-nuevo-6b. «Aviso al cliente» 2026-13-01: su aviso, solo ese campo marcado y con el foco (no el folio), sin folio guardado
+OK    serv-nuevo-6b. la captura muestra el aviso y «aviso» marcado
+OK    base-N27. tres recuperaciones pendientes en la bandeja
+OK    aviso «motivo_invalido» tras la acción
+OK    base-N27. rechazar sin nota la recuperación de en medio: «en» es su id y solo su nota queda marcada y con el foco; las tres siguen pendientes
+OK    base-N27. la captura muestra el aviso y la nota marcada de la tarjeta de en medio
+OK    aviso «decision_registrada» tras la acción
+OK    aviso «decision_registrada» tras la acción
+OK    aviso «decision_registrada» tras la acción
+OK    base-N27. con su nota, las tres se rechazan: ninguna queda abierta
 OK    consola del navegador limpia en las regresiones
 
-165 comprobaciones en verde, 0 en rojo.
+186 comprobaciones en verde, 0 en rojo.
 ```
 
 </details>
@@ -1025,18 +1155,18 @@ OK    consola del navegador limpia en las regresiones
 ```text
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test
 primera@lever.test: invitada
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T17:56:28.496Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T17:19:39.669Z.
 segunda@lever.test: invitada
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T17:56:28.503Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T17:19:39.678Z.
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)
 
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
 primera@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T17:56:28.628Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T17:19:39.826Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T17:56:28.631Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T17:19:39.831Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)
@@ -1051,10 +1181,10 @@ No se hizo: El operador ya tiene Administración invitada con otros correos. Par
 
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
 primera@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T17:56:29.072Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T17:19:40.390Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-11T17:56:29.075Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-12T17:19:40.394Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)

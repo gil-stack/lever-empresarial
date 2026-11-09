@@ -36,6 +36,9 @@ describe("aviso de Operación", () => {
     assert.match(texto("invisible_razonSocial"), /La razón social trae un carácter invisible, algo común al copiar y pegar\. Escríbela de nuevo a mano\./);
     assert.match(texto("invisible_folio"), /El folio trae un carácter invisible, algo común al copiar y pegar\. Escríbelo de nuevo a mano\./);
     assert.match(texto("razon_social_control"), /La razón social trae un carácter invisible/);
+    // serv-nuevo-6b: cada fecha del reporte dice cuál revisar.
+    assert.match(texto("dato_invalido_presentadoEl"), /Revisa la fecha de presentación del reporte/);
+    assert.match(texto("dato_invalido_avisoClienteEl"), /Revisa la fecha del aviso al cliente/);
     assert.match(texto("dato_invalido_nombre"), /Revisa el campo marcado: el dato no tiene el formato esperado\./);
     assert.doesNotMatch(texto("dato_invalido_nombre"), /invisible/);
     for (const [codigo, campo] of [["invisible_nombre", "nombre"], ["invisible_razonSocial", "razonSocial"], ["invisible_folio", "folio"]] as const) {

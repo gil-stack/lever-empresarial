@@ -7,6 +7,7 @@ import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import {
   CARGOS,
   curpValida,
+  datosQueFaltan,
   documentoExtranjeroNormalizado,
   hoyEnMexico,
   nombreDePais,
@@ -726,16 +727,34 @@ export async function cargarDocumento(
 }
 
 /** Envía el borrador: la base exige el expediente completo, calcula a los propietarios reales y coteja la lista. */
+/** Una versión que no se puede enviar porque le faltan datos generales. `faltan` son claves de `DATOS_PARA_ENVIAR`. */
+export class ExpedienteIncompleto extends ErrorDeDominio {
+  constructor(readonly faltan: readonly string[]) {
+    super("expediente_datos_incompletos");
+  }
+}
+
 export async function enviarVersion(ctx: ContextoDePersonal, versionId: unknown): Promise<void> {
   exigirEnOperacion(ctx, "plataforma.expediente.capturar");
   if (!uuidValido(versionId)) throw new ErrorDeDominio("expediente_ausente");
   const ahora = new Date();
   await conContexto(basePlataforma(ctx), async (consulta) => {
-    const fila = await consulta.query("select company_id, estado from kyb_versiones where id = $1 for update", [versionId]);
-    const version = fila.rows[0] as { company_id?: unknown; estado?: unknown } | undefined;
+    // Las columnas de `DATOS_PARA_ENVIAR`, las que exige el CHECK `kyb_versiones_forma`. Una que faltara aquí contaría
+    // como dato faltante y la versión completa no se enviaría (lo cubre la prueba de Postgres).
+    const fila = await consulta.query(
+      `select company_id, estado, razon_social, giro, nacionalidad, rfc, serie_efirma, domicilio_calle, domicilio_exterior,
+              domicilio_colonia, domicilio_municipio, domicilio_entidad, domicilio_codigo_postal, domicilio_pais, telefono,
+              correo, fecha_constitucion, volumen_mensual_centavos
+         from kyb_versiones where id = $1 for update`,
+      [versionId],
+    );
+    const version = fila.rows[0] as ({ company_id?: unknown; estado?: unknown } & Record<string, unknown>) | undefined;
     if (!version) throw new ErrorDeDominio("expediente_ausente");
     // Un segundo clic encuentra la versión ya enviada: no es un error.
     if (version.estado === "enviada") return;
+    // Lo que el CHECK `kyb_versiones_forma` exige, revisado antes: el aviso dice qué falta en vez de «La base no respondió».
+    const faltan = datosQueFaltan(version);
+    if (faltan.length > 0) throw new ExpedienteIncompleto(faltan);
     await consulta.query(
       "update kyb_versiones set estado = 'enviada', enviada_por = $2, enviada_en = $3 where id = $1 and estado = 'borrador'",
       [versionId, ctx.persona.id, ahora],

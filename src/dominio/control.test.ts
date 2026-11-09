@@ -95,13 +95,17 @@ describe("las identidades y los identificadores rechazan cualquier control", () 
 
 // serv-nuevo-5: los caracteres de formato (Cf) tampoco se ven y cambian la identidad igual que un control: el guion
 // suave U+00AD, el espacio de ancho cero U+200B, la unión de palabras U+2060, el U+FEFF y la marca de dirección
-// U+200E. Antes solo se rechazaban los Cc (`CONTROL`) y «Ana\u200bRuiz» se guardaba y no coincidía con la Lista.
-describe("las identidades rechazan también los caracteres de formato (Cf)", () => {
-  const formato = ["\u00ad", "\u200b", "\u2060", "\ufeff", "\u200e", "\u200d"];
+// U+200E. Antes solo se rechazaban los Cc (`CONTROL`). Entre dos palabras no cambiaban el cotejo («Ana\u200bRuiz» da
+// «ANA RUIZ» en `lpb_normalizar`), pero dentro de una palabra la partían: «Ro\u200bdríguez» da «DRIGUEZ RO».
+// base-N26: lo mismo con los invisibles de otras categorías (Default_Ignorable_Code_Point): el relleno hangul U+3164,
+// U+115F y U+FFA0, los selectores de variación U+FE0F, U+180B y U+E0100 y la vocal muda jemer U+17B4. Antes pasaban;
+// «Rodr\u3164íguez» daba «IGUEZ RODR» y el socio no coincidía con la Lista.
+describe("las identidades rechazan también los caracteres de formato (Cf) y los demás invisibles", () => {
+  const formato = ["\u00ad", "\u200b", "\u2060", "\ufeff", "\u200e", "\u200d", "\u3164", "\ufe0f", "\u180b", "\u17b4", "\u115f", "\uffa0", "\u{e0100}"];
 
-  it("INVISIBLE es Cc más Cf; un espacio duro o una letra con acento no lo son", () => {
+  it("INVISIBLE es Cc, Cf y los demás invisibles; un espacio duro, una letra con acento u otro alfabeto no lo son", () => {
     for (const c of [...formato, "\u0009", "\u0085", "\u0000", "\u009f"]) assert.equal(INVISIBLE.test(`a${c}b`), true, JSON.stringify(c));
-    for (const texto of ["José Pérez Núñez", "Ana\u00a0Ruiz", "O'Brien", "Müller & Söhne"]) assert.equal(INVISIBLE.test(texto), false, texto);
+    for (const texto of ["José Pérez Núñez", "Ana\u00a0Ruiz", "O'Brien", "Müller & Söhne", "Łukasz Żółć", "李小龍", "محمد"]) assert.equal(INVISIBLE.test(texto), false, texto);
   });
 
   it("razón social del alta, proveedor, persona, área, RFC, CLABE, correo y RFC del cobro", () => {
@@ -120,17 +124,18 @@ describe("las identidades rechazan también los caracteres de formato (Cf)", () 
     }
   });
 
-  it("un texto libre conserva el emoji compuesto con U+200D (no se amplía CONTROL)", () => {
-    const motivo = "Revisado con la familia 👨‍👩‍👧 completa";
-    assert.equal(textoOperativo(motivo, 300), motivo);
-    assert.equal(textoMultilinea(motivo, 500), motivo);
-    assert.equal(textoPago(motivo, 500, 10), motivo);
+  it("un texto libre conserva el emoji compuesto con U+200D y el selector U+FE0F (no se amplía CONTROL)", () => {
+    for (const motivo of ["Revisado con la familia 👨‍👩‍👧 completa", "Gracias por el apoyo ❤️ del equipo"]) {
+      assert.equal(textoOperativo(motivo, 300), motivo);
+      assert.equal(textoMultilinea(motivo, 500), motivo);
+      assert.equal(textoPago(motivo, 500, 10), motivo);
+    }
   });
 
   // base-N24: el renglón de la Lista juntaba los espacios antes de buscar el control, así que «EVA\tRUIZ SOL» se
   // guardaba como «EVA RUIZ SOL». Ahora el nombre crudo se revisa primero.
   it("el renglón de la Lista con un tabulador o un carácter de formato en el nombre se rechaza", () => {
-    for (const nombre of ["EVA\tRUIZ SOL", "EVA\u00adRUIZ SOL", "EVA RUIZ\u200bSOL", "EVA\u000bRUIZ SOL"]) {
+    for (const nombre of ["EVA\tRUIZ SOL", "EVA\u00adRUIZ SOL", "EVA RUIZ\u200bSOL", "EVA\u000bRUIZ SOL", "EVA RODR\u3164IGUEZ", "EVA RUIZ\ufe0f SOL"]) {
       assert.deepEqual(leerListaBloqueadas(`nombre,rfc,curp,tipo,fecha\nBien,,,fisica,\n${nombre},,,fisica,`), { ok: false, codigo: "lpb_renglon_invalido", linea: 3 }, JSON.stringify(nombre));
     }
     const bien = leerListaBloqueadas("nombre,rfc,curp,tipo,fecha\n  EVA   RUIZ SOL\t,,,fisica,");

@@ -6,19 +6,22 @@
 export const CONTROL = /[\u0000-\u001f\u007f-\u009f]/;
 
 /**
- * Lo que una identidad o un identificador no admite: los controles (Cc, lo mismo que `CONTROL`) y los caracteres
- * de formato (Cf), que no se ven pero cambian el texto: el guion suave U+00AD, el espacio de ancho cero U+200B,
- * las marcas de dirección U+200E y U+200F, la unión de palabras U+2060 o el U+FEFF. Un nombre con uno se ve igual
- * en pantalla, pero no coincide letra por letra con la Lista ni con el 69-B. Suelen llegar al copiar y pegar.
+ * Lo que una identidad o un identificador no admite: lo que no se ve pero cambia el texto. Son los controles (Cc, lo
+ * mismo que `CONTROL`), los caracteres de formato (Cf: el guion suave U+00AD, el espacio de ancho cero U+200B, las
+ * marcas de dirección U+200E y U+200F, la unión de palabras U+2060, el U+FEFF) y los demás que Unicode marca para
+ * no dibujarse (Default_Ignorable_Code_Point, en otras categorías): el relleno hangul U+3164, U+115F y U+FFA0, los
+ * selectores de variación U+FE0F, U+180B y U+E0100 y la vocal muda jemer U+17B4. Un nombre con uno se ve igual en
+ * pantalla, pero `lpb_normalizar` parte la palabra donde está («Rodr\u3164íguez» da «IGUEZ RODR») y ya no coincide
+ * con la Lista ni con el 69-B. Suelen llegar al copiar y pegar.
  *
- * Los textos libres no usan esta regla (ver `sinControles`): un motivo con un emoji compuesto (unido con U+200D) se
- * acepta tal cual.
+ * Los textos libres no usan esta regla (ver `sinControles`): un motivo con un emoji compuesto (unido con U+200D) o con
+ * el selector de emoji U+FE0F («❤️») se acepta tal cual.
  *
  * Límite que queda: un homoglifo no es invisible. Una «а» cirílica (U+0430) en lugar de la «a» latina pasa esta
  * regla y el cotejo por nombre no la junta con la persona de la Lista. Lo revisa Cumplimiento contra el documento
  * de identidad, y el RFC o la CURP (que solo admiten letras y dígitos latinos) siguen siendo la llave fuerte.
  */
-export const INVISIBLE = /[\p{Cc}\p{Cf}]/u;
+export const INVISIBLE = /[\p{Cc}\p{Cf}\p{Default_Ignorable_Code_Point}]/u;
 
 /** Las comillas de Windows-1252 leídas como C1 (U+0091 a U+0094) valen la comilla que eran. */
 const COMILLAS: Record<string, string> = { "\u0091": "'", "\u0092": "'", "\u0093": '"', "\u0094": '"' };

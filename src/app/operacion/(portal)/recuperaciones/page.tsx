@@ -18,7 +18,7 @@ import { puedeEnOperacion } from "@/server/operacion/permisos";
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Recuperaciones · Operación" };
 
-export default async function RecuperacionesOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
+export default async function RecuperacionesOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string; en?: string }> }) {
   const ctx = await exigirContextoOperacion();
   // Desde la Ola R1 hay roles que no administran cuentas: Auditoría o Cumplimiento no aprueban recuperaciones.
   if (!puedeEnOperacion(ctx, "plataforma.empresa.alta")) {
@@ -59,8 +59,8 @@ export default async function RecuperacionesOperacion({ searchParams }: { search
             <DecisionRecuperacion
               id={solicitud.id}
               accion={decidirRecuperacionAccion}
-              errorMetodo={errorDelCampo(params.aviso, "verificacion")}
-              errorNota={errorDelCampo(params.aviso, "motivo")}
+              errorMetodo={params.en === solicitud.id ? errorDelCampo(params.aviso, "verificacion") : {}}
+              errorNota={params.en === solicitud.id ? errorDelCampo(params.aviso, "motivo") : {}}
             />
           ),
         }))}

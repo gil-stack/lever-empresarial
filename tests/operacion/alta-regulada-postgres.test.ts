@@ -29,6 +29,7 @@ import {
   crearVersion,
   dictaminarVersion,
   enviarVersion,
+  ExpedienteIncompleto,
   guardarDatosGenerales,
   leerExpediente,
   prepararDescargaDocumento,
@@ -480,10 +481,13 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           alfa = await prospecto("ALF150301AB1", "Alfa Comercial SA de CV");
           await assert.rejects(registrarProspecto(cum, { rfc: "XXX150301AB1", razonSocial: "X", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }), /sin_permiso_operacion/);
 
-          // Un borrador incompleto no se envía: la base dice qué falta.
+          // Un borrador incompleto no se envía y el aviso dice qué falta. Sin datos generales, eso primero (serv-nuevo-6d:
+          // antes del update, para no caer en el CHECK sin traducir); con ellos, la base exige el representante.
           const gamma = await prospecto("GAM150301AB3", "Gamma Servicios SA de CV");
           const gammaV1 = randomUUID();
           await crearVersion(ori, { companyId: gamma, formId: gammaV1 });
+          await assert.rejects(enviarVersion(ori, gammaV1), /expediente_datos_incompletos/);
+          await guardarDatosGenerales(ori, { versionId: gammaV1, datos: { ...DATOS_GENERALES, razonSocial: "Gamma Servicios SA de CV", rfc: "GAM150301AB3" } });
           await assert.rejects(enviarVersion(ori, gammaV1), /expediente_sin_representante/);
 
           ({ versionId: alfaV1 } = await armarBorrador(ori, { companyId: alfa, razonSocial: "Alfa Comercial SA de CV", rfc: "ALF150301AB1", socios: DOS_CAPAS, almacen }));
@@ -2197,10 +2201,13 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           });
           // Regla 1: una identidad con cualquier carácter invisible se rechaza en su campo con su propio aviso
           // («invisible_nombre»), también el tabulador; no se limpia. serv-nuevo-5: también los Cf (U+00AD en un
-          // representante, U+200B en un socio, U+2060, U+FEFF, U+200E), que en b2db0b5 se guardaban.
+          // representante, U+200B en un socio, U+2060, U+FEFF, U+200E), que en b2db0b5 se guardaban. base-N26: también los
+          // invisibles de otras categorías (U+3164, U+FE0F, U+180B, U+17B4, U+115F, U+FFA0, U+E0100), que en a75d5e4 se
+          // guardaban: «Rodr\u3164íguez» parte el apellido en `lpb_normalizar` («IGUEZ RODR») y no coincide con la Lista.
           for (const nombre of [
             "Pedro\u000bRuiz Sol", "Luis\u0085Gómez Paz", "Juan\u0085Pérez López", "Eva Ruiz\u0096Sol", "O\u0092Brien Sol", "Ana\tRuiz Sol", "Iván\u000cSol", "Iván\u001fSol", "Iván\u0001Sol",
             "Pedro\u00adRuiz Sol", "Ana\u200bRuiz Sol", "Luis\u2060Ruiz Sol", "Eva\ufeffRuiz Sol", "Iván\u200eSol",
+            "Luis Rodr\u3164íguez", "Eva Ruiz\ufe0fSol", "Iván\u180bSol", "Ana\u17b4Ruiz Sol", "Pedro\u115fRuiz Sol", "Rosa\uffa0Ríos", "Juan\u{e0100}Pérez López",
           ]) {
             await assert.rejects(socio(nombre), /invisible_nombre/, `socio ${JSON.stringify(nombre)}`);
             await assert.rejects(representante(nombre), /invisible_nombre/, `representante ${JSON.stringify(nombre)}`);
@@ -2226,7 +2233,7 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
 
           // La razón social del expediente también es una identidad: con U+0085 (o un Cf como U+FEFF, que en b2db0b5 se
           // guardaba) se rechaza en su campo con su propio aviso.
-          for (const razonSocial of ["Laboratorio\u0085Cotejo SA de CV", "Laboratorio\ufeffCotejo SA de CV", "Laboratorio Cotejo\u00ad SA de CV"]) {
+          for (const razonSocial of ["Laboratorio\u0085Cotejo SA de CV", "Laboratorio\ufeffCotejo SA de CV", "Laboratorio Cotejo\u00ad SA de CV", "Labora\u3164torio Cotejo SA de CV"]) {
             await assert.rejects(
               guardarDatosGenerales(ori, { versionId, datos: { ...DATOS_GENERALES, razonSocial, rfc } }),
               /invisible_razonSocial/,
@@ -2242,7 +2249,7 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           // base-N24: un renglón de la Lista con un tabulador (o un guion suave, o un U+200B) en el nombre se rechaza; en
           // b2db0b5 se juntaban los espacios antes de revisar y «EVA\tRUIZ SOL» se guardaba como «EVA RUIZ SOL».
           const cargasAntes = (await dueno.query("select count(*)::int as n from lpb_cargas")).rows[0]?.n;
-          for (const renglon of ["EVA\tRUIZ SOL,,,fisica", "EVA\u00adRUIZ SOL,,,fisica", "EVA RUIZ\u200bSOL,,,fisica"]) {
+          for (const renglon of ["EVA\tRUIZ SOL,,,fisica", "EVA\u00adRUIZ SOL,,,fisica", "EVA RUIZ\u200bSOL,,,fisica", "EVA RODR\u3164IGUEZ,,,fisica"]) {
             await assert.rejects(cargar(lista("2026-11-02", BETA_EN_LISTA, renglon)), /lpb_renglon_invalido/, JSON.stringify(renglon));
           }
           assert.equal((await dueno.query("select count(*)::int as n from lpb_cargas")).rows[0]?.n, cargasAntes);
@@ -2260,6 +2267,29 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           const motivo = "Homónimo: revisado con la familia 👨‍👩‍👧 completa";
           await resolverCoincidencia(cum, SESION_SOFIPO, { id: ana.id, estado: "falso_positivo", motivo });
           assert.equal((await dueno.query("select motivo_resolucion from lpb_coincidencias where id = $1", [ana.id])).rows[0]?.motivo_resolucion, motivo);
+        });
+
+        await t.test("serv-nuevo-6d: enviar sin giro ni domicilio dice qué falta; la versión sigue en borrador y sin evento", async () => {
+          // Antes, el CHECK `kyb_versiones_forma` respondía 23514 sin traducir y la pantalla decía «La base no respondió».
+          const rfc = "INC150301AB5";
+          const razonSocial = "Incompleta Comercial SA de CV";
+          const companyId = await prospecto(rfc, razonSocial);
+          const { versionId } = await armarBorrador(ori, { companyId, razonSocial, rfc, almacen });
+          await guardarDatosGenerales(ori, { versionId, datos: { ...DATOS_GENERALES, razonSocial, rfc, giro: "", domicilioCalle: "", domicilioColonia: "" } });
+          const estado = async () => String((await dueno.query("select estado from kyb_versiones where id = $1", [versionId])).rows[0]?.estado);
+          const eventos = async () =>
+            Number((await dueno.query("select count(*)::int as n from audit_log where accion = 'expediente_enviado' and identificador = $1", [versionId])).rows[0]?.n);
+          await assert.rejects(enviarVersion(ori, versionId), (error: unknown) => {
+            assert.ok(error instanceof ExpedienteIncompleto);
+            assert.equal(error.codigo, "expediente_datos_incompletos");
+            assert.deepEqual(error.faltan, ["giro", "domicilio"]);
+            return true;
+          });
+          assert.deepEqual([await estado(), await eventos()], ["borrador", 0]);
+          // Con los datos completos, la misma versión se envía.
+          await guardarDatosGenerales(ori, { versionId, datos: { ...DATOS_GENERALES, razonSocial, rfc } });
+          await enviarVersion(ori, versionId);
+          assert.deepEqual([await estado(), await eventos()], ["enviada", 1]);
         });
       } finally {
         await dueno.end();

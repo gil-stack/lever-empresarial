@@ -3,6 +3,8 @@ import { describe, it } from "node:test";
 
 import {
   curpValida,
+  datosQueFaltan,
+  fraseDeLoQueFalta,
   pesosACentavos,
   porcentajeAPuntosBase,
   puntosBaseATexto,
@@ -131,6 +133,32 @@ describe("validaciones del expediente (4ª fr. II)", () => {
     assert.equal(pesosACentavos("12.345"), null);
     assert.equal(vigenciaDeComprobante("2026-11-30"), "2027-02-28");
     assert.equal(vigenciaDeComprobante("2026-08-15"), "2026-11-15");
+  });
+});
+
+// serv-nuevo-6d: lo que exige el CHECK `kyb_versiones_forma` para enviar, dicho en llano.
+describe("lo que le falta a una versión para enviarse", () => {
+  const completa = {
+    razon_social: "Ébano SA", giro: "Abarrotes", nacionalidad: "Mexicana", rfc: "GEI150301AB1", serie_efirma: "00001000000500000001",
+    domicilio_calle: "Reforma", domicilio_exterior: "100", domicilio_colonia: "Juárez", domicilio_municipio: "Cuauhtémoc",
+    domicilio_entidad: "CDMX", domicilio_codigo_postal: "06600", domicilio_pais: "México", telefono: "5512345678",
+    correo: "contacto@ebano.mx", fecha_constitucion: "2015-03-01", volumen_mensual_centavos: 150000000,
+  };
+  it("con todo capturado no falta nada; el número interior es opcional", () => {
+    assert.deepEqual(datosQueFaltan(completa), []);
+  });
+  it("cada parte del domicilio cuenta como «el domicilio», una vez", () => {
+    assert.deepEqual(datosQueFaltan({ ...completa, giro: null, domicilio_calle: null, domicilio_colonia: null }), ["giro", "domicilio"]);
+    assert.equal(fraseDeLoQueFalta(["giro", "domicilio"]), "Faltan el giro y el domicilio. Captura esos datos en «Datos generales» y vuelve a enviar.");
+    assert.equal(fraseDeLoQueFalta(["telefono"]), "Falta el teléfono. Captura ese dato en «Datos generales» y vuelve a enviar.");
+    assert.equal(
+      fraseDeLoQueFalta(["giro", "rfc", "correo"]),
+      "Faltan el giro, el RFC y el correo. Captura esos datos en «Datos generales» y vuelve a enviar.",
+    );
+  });
+  it("una clave desconocida que llega por la dirección no se muestra", () => {
+    assert.equal(fraseDeLoQueFalta(["<script>", ""]), null);
+    assert.equal(fraseDeLoQueFalta(["giro", "otra"]), "Falta el giro. Captura ese dato en «Datos generales» y vuelve a enviar.");
   });
 });
 

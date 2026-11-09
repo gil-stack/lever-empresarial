@@ -119,3 +119,39 @@ export function vigenciaDeComprobante(emitidoEl: string): string {
   const ultimo = new Date(Date.UTC(anioNuevo, mesNuevo, 0)).getUTCDate();
   return `${anioNuevo}-${String(mesNuevo).padStart(2, "0")}-${String(Math.min(dia, ultimo)).padStart(2, "0")}`;
 }
+
+/**
+ * Lo que la base exige para enviar una versión (CHECK `kyb_versiones_forma`), agrupado como lo ve Originación: cada
+ * dato con su etiqueta y las columnas que lo forman. El número interior es opcional; las demás partes del domicilio,
+ * no.
+ */
+export const DATOS_PARA_ENVIAR = [
+  { clave: "razonSocial", etiqueta: "la razón social", columnas: ["razon_social"] },
+  { clave: "giro", etiqueta: "el giro", columnas: ["giro"] },
+  { clave: "nacionalidad", etiqueta: "la nacionalidad", columnas: ["nacionalidad"] },
+  { clave: "rfc", etiqueta: "el RFC", columnas: ["rfc"] },
+  { clave: "serieEfirma", etiqueta: "la serie de la e.firma", columnas: ["serie_efirma"] },
+  {
+    clave: "domicilio",
+    etiqueta: "el domicilio",
+    columnas: ["domicilio_calle", "domicilio_exterior", "domicilio_colonia", "domicilio_municipio", "domicilio_entidad", "domicilio_codigo_postal", "domicilio_pais"],
+  },
+  { clave: "telefono", etiqueta: "el teléfono", columnas: ["telefono"] },
+  { clave: "correo", etiqueta: "el correo", columnas: ["correo"] },
+  { clave: "fechaConstitucion", etiqueta: "la fecha de constitución", columnas: ["fecha_constitucion"] },
+  { clave: "volumenMensual", etiqueta: "el volumen mensual esperado", columnas: ["volumen_mensual_centavos"] },
+] as const;
+
+/** Las claves de los datos que le faltan a una versión para enviarse, en el orden del formulario. */
+export function datosQueFaltan(fila: Readonly<Record<string, unknown>>): string[] {
+  return DATOS_PARA_ENVIAR.filter((dato) => dato.columnas.some((columna) => fila[columna] === null || fila[columna] === undefined)).map((dato) => dato.clave);
+}
+
+/** «Falta el giro.» o «Faltan el giro y el domicilio.»; null si ninguna clave es conocida (llega por la dirección). */
+export function fraseDeLoQueFalta(claves: readonly string[]): string | null {
+  const etiquetas = DATOS_PARA_ENVIAR.filter((dato) => claves.includes(dato.clave)).map((dato) => dato.etiqueta);
+  if (etiquetas.length === 0) return null;
+  const lista = etiquetas.length === 1 ? etiquetas[0] : `${etiquetas.slice(0, -1).join(", ")} y ${etiquetas[etiquetas.length - 1]}`;
+  const uno = etiquetas.length === 1;
+  return `${uno ? "Falta" : "Faltan"} ${lista}. Captura ${uno ? "ese dato" : "esos datos"} en «Datos generales» y vuelve a enviar.`;
+}

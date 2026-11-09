@@ -28,7 +28,8 @@
 //   ./node_modules/.bin/tsx scripts/evidencia/ola-r-alta/preparar.ts base|lumbre|ronda3|arranque
 //
 // ESTADO guarda semillas TOTP y sesiones: tiene que vivir fuera del repositorio. Nada de eso
-// se imprime. Solo acepta un Postgres en 127.0.0.1 o localhost.
+// se imprime. Solo acepta un Postgres en 127.0.0.1 o localhost. El emulador de Blob va encendido
+// antes: cada fase revisa su /salud y, si no responde en 3 segundos, termina con un mensaje.
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -271,8 +272,30 @@ async function faseArranque(): Promise<void> {
   console.log(`Base ${nombre} lista: 0001-0028, un operador y 0 personal.`);
 }
 
+/**
+ * El recorrido guarda documentos en el emulador de Blob (lumbre y ronda3 desde aquí, los flujos por next start). Sin
+ * él, la subida de @vercel/blob reintenta en silencio y la fase se cuelga sin salida. Por eso se revisa `/salud` antes de
+ * tocar la base, con un tope de 3 segundos (AbortController: con @vercel/blob, AbortSignal.timeout no corta).
+ */
+async function exigirBlob(): Promise<void> {
+  const api = process.env.VERCEL_BLOB_API_URL ?? "";
+  if (!api) throw new Error("Falta VERCEL_BLOB_API_URL: la dirección del emulador de Blob, por ejemplo http://127.0.0.1:4894/api/blob.");
+  const salud = `${new URL(api).origin}/salud`;
+  const corte = new AbortController();
+  const tope = setTimeout(() => corte.abort(), 3000);
+  try {
+    const respuesta = await fetch(salud, { signal: corte.signal });
+    if (!respuesta.ok) throw new Error(`respondió ${respuesta.status}`);
+  } catch (error) {
+    const causa = corte.signal.aborted ? "sin respuesta en 3 segundos" : error instanceof Error ? error.message : String(error);
+    throw new Error(`El emulador de Blob no responde en ${salud} (${causa}). Enciéndelo antes de preparar: iniciarBlobLocal de tests/e2e/blob-local/servidor.ts.`);
+  } finally {
+    clearTimeout(tope);
+  }
+}
+
 const FASES: Record<string, () => Promise<void>> = { base: faseBase, lumbre: faseLumbre, ronda3: faseRonda3, arranque: faseArranque };
-(FASES[fase] ?? faseBase)().catch(async (error: unknown) => {
+exigirBlob().then(FASES[fase] ?? faseBase).catch(async (error: unknown) => {
   await cerrarConexion();
   console.error(error);
   process.exitCode = 1;
