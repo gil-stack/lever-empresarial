@@ -837,6 +837,30 @@
     },
     {
       "ok": true,
+      "texto": "P3 coincidencia. con JavaScript a 1440, «Revisar 😀» en el motivo: en=motivo-<caso>, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto"
+    },
+    {
+      "ok": true,
+      "texto": "P3 coincidencia. sin JavaScript a 390, «Revisar 😀» en el motivo: en=motivo-<caso>, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto"
+    },
+    {
+      "ok": true,
+      "texto": "mensaje junto al campo. sin JavaScript a 390, un «PDF» que no lo es: «Sube un PDF, PNG o JPG legible.» justo debajo del control, que tiene el foco; el aviso de arriba queda como resumen; ningún documento"
+    },
+    {
+      "ok": true,
+      "texto": "mensaje junto al campo. con JavaScript a 390, el capital «abc» del socio: el mensaje justo debajo de Capital, que tiene el foco y conserva lo capturado; ningún socio"
+    },
+    {
+      "ok": true,
+      "texto": "P2 sin JavaScript. «Agregar representante» con un U+200B en el nombre: 200 con su aviso, el nombre marcado, con el foco y su mensaje junto a él, y todo lo capturado de vuelta; ningún representante"
+    },
+    {
+      "ok": true,
+      "texto": "onceava revisión: en los 71 avisos de las regresiones nunca hubo dos campos marcados; 43 campos marcados, cada uno con su mensaje único junto a él"
+    },
+    {
+      "ok": true,
       "texto": "consola del navegador limpia en las regresiones"
     }
   ]

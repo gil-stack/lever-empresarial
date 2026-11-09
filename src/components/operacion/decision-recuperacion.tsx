@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
 
 import { BotonEnviar } from "@/components/sistema";
 
@@ -17,12 +17,17 @@ export function DecisionRecuperacion({
   accion,
   errorMetodo,
   errorNota,
+  mensajeMetodo = null,
+  mensajeNota = null,
 }: {
   id: string;
   accion: (datos: FormData) => Promise<void>;
   /** El error que el servidor devolvió para el método o la nota, ligado al aviso de la página. */
   errorMetodo: ErrorDeCampo;
   errorNota: ErrorDeCampo;
+  /** El mensaje de ese error junto a su campo (MensajeDelCampo). */
+  mensajeMetodo?: ReactNode;
+  mensajeNota?: ReactNode;
 }) {
   const metodo = useRef<HTMLSelectElement>(null);
   const [sinMetodo, setSinMetodo] = useState(false);
@@ -62,11 +67,14 @@ export function DecisionRecuperacion({
           <p id={idError} className="error-campo">
             Elige cómo verificaste la identidad para aprobar.
           </p>
-        ) : null}
+        ) : (
+          mensajeMetodo
+        )}
       </div>
       <div className="campo">
         <label htmlFor={`nota-${id}`}>Nota (obligatoria para rechazar)</label>
         <textarea id={`nota-${id}`} name="nota" maxLength={500} rows={2} {...errorNota} />
+        {mensajeNota}
       </div>
       <div className="operacion-decision-botones">
         <BotonEnviar className="boton-texto" name="decision" value="rechazar" data-atajo="rechazar" formNoValidate>

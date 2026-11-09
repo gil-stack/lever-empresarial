@@ -5,7 +5,7 @@ import { useActionState, useEffect, useId, useState } from "react";
 import { rechazarConMotivoAccion, type EstadoDelRechazo } from "@/app/operacion/acciones";
 import { BotonEnviar, Dialogo } from "@/components/sistema";
 
-import { AvisoOperacion, errorDelCampo } from "./aviso";
+import { AvisoOperacion, errorDelCampo, MensajeDelCampo } from "./aviso";
 
 const SIN_AVISO: EstadoDelRechazo = { aviso: null, motivo: "", vuelta: 0 };
 
@@ -59,6 +59,7 @@ export function RechazarConMotivo({
               defaultValue={estado.motivo}
               {...errorDelCampo(estado.aviso, "motivo", aviso)}
             />
+            <MensajeDelCampo codigo={estado.aviso} campo="motivo" idAviso={aviso} />
           </div>
           <div className="dialogo-pie">
             <button type="button" className="boton-texto" onClick={() => setAbierto(false)}>

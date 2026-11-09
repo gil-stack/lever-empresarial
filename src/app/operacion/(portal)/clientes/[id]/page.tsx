@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { invitarAdministradorAccion, solicitarActivacionAccion } from "@/app/operacion/acciones";
 import { solicitarSuspensionAccion } from "@/app/operacion/acciones-alta";
-import { errorDelCampo } from "@/components/operacion/aviso";
+import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { REGIMENES, USOS_CFDI, conNombre, etiquetaEstado, fechaDia, fechaHora, motivoDeEntrega } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Rejilla, Renglon, Renglones, Vacio } from "@/components/sistema";
@@ -112,6 +112,7 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                         undefined
                       }
                     />
+                    <MensajeDelCampo codigo={aviso} campo="motivo" />
                     {/* Quien escribe desde Cumplimiento: Originación y Aprobación leen este motivo (55ª). */}
                     {veLista ? (
                       <p id="motivo-suspension-pista" className="pista">Originación y Aprobación leen este motivo: no menciones la Lista ni el reporte.</p>
@@ -183,6 +184,7 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                       required
                       {...errorDelCampo(aviso, "correo")}
                     />
+                    <MensajeDelCampo codigo={aviso} campo="correo" />
                     {cliente.administrador ? <p className="pista">Reenviar anula el enlace anterior.</p> : null}
                   </div>
                   <div className="acciones">

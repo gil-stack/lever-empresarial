@@ -20,11 +20,14 @@ function conPista(ligado: Ligado, pista: string): Ligado {
 export function IdentidadDelSocio({
   paises,
   ligados,
+  mensajes,
   inicial,
   children,
 }: {
   paises: ReadonlyArray<{ codigo: string; nombre: string }>;
   ligados: { rfc: Ligado; curp: Ligado; pais: Ligado; documentoExtranjero: Ligado; fechaNacimiento: Ligado };
+  /** El mensaje del error junto a cada campo (MensajeDelCampo), o nada. */
+  mensajes: { rfc: ReactNode; curp: ReactNode; pais: ReactNode; documentoExtranjero: ReactNode; fechaNacimiento: ReactNode };
   inicial: Readonly<Record<string, string>>;
   children: ReactNode;
 }) {
@@ -50,6 +53,7 @@ export function IdentidadDelSocio({
       <div className="campo">
         <label htmlFor="acc-rfc">{extranjera ? "RFC en México (si tiene)" : "RFC"}</label>
         <input id="acc-rfc" name="rfc" maxLength={13} autoCapitalize="characters" className="entrada-rfc" defaultValue={inicial.rfc} {...ligados.rfc} />
+        {mensajes.rfc}
       </div>
       {extranjera ? (
         <div className="campo">
@@ -64,12 +68,14 @@ export function IdentidadDelSocio({
               </option>
             ))}
           </select>
+          {mensajes.pais}
         </div>
       ) : null}
       {tipo === "fisica" && !extranjera ? (
         <div className="campo">
           <label htmlFor="acc-curp">CURP</label>
           <input id="acc-curp" name="curp" maxLength={18} autoCapitalize="characters" defaultValue={inicial.curp} {...ligados.curp} />
+          {mensajes.curp}
         </div>
       ) : null}
       {extranjera ? (
@@ -86,6 +92,7 @@ export function IdentidadDelSocio({
             defaultValue={inicial.documentoExtranjero}
             {...conPista(ligados.documentoExtranjero, "acc-documento-pista")}
           />
+          {mensajes.documentoExtranjero}
           <p id="acc-documento-pista" className="pista">
             {tipo === "fisica"
               ? "La persona extranjera se identifica con su país, este número y su fecha de nacimiento."
@@ -97,6 +104,7 @@ export function IdentidadDelSocio({
         <div className="campo">
           <label htmlFor="acc-nacimiento">Fecha de nacimiento</label>
           <input id="acc-nacimiento" name="fechaNacimiento" type="date" required defaultValue={inicial.fechaNacimiento} {...ligados.fechaNacimiento} />
+          {mensajes.fechaNacimiento}
         </div>
       ) : null}
     </>

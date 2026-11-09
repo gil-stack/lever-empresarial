@@ -37,6 +37,15 @@ describe("motivo escrito", () => {
     }
     // Diez caracteres en la base, siete que se ven.
     assert.throws(() => motivoEscrito("Revisarㅤㅤㅤ", 500), /motivo_corto/);
+    // Onceava revisión: el Braille en blanco (U+2800) y los 32 de formato (Cf) que no son Default_Ignorable no se ven.
+    for (const vacio of ["\u2800".repeat(10), "\ufff9".repeat(10), "\u0600\u06dd\u{110bd}\u{13430}", " \u2800 \ufffa "]) {
+      assert.equal(textoOperativo(vacio, 300), null, JSON.stringify(vacio));
+      assert.equal(textoMultilinea(vacio, 500), null, JSON.stringify(vacio));
+      assert.throws(() => motivoEscrito(vacio, 500), /motivo_invalido/, JSON.stringify(vacio));
+    }
+    assert.throws(() => motivoEscrito("Revisar\u2800\u2800\u2800", 500), /motivo_corto/);
+    assert.throws(() => motivoEscrito("Revisar\ufff9\u0600\u06dd", 500), /motivo_corto/);
+    assert.equal(motivoEscrito("Revisar el poder\u2800", 500), "Revisar el poder\u2800");
     // El emoji con su selector o unido con U+200D, en un texto con contenido, se queda tal cual.
     assert.equal(motivoEscrito("Gracias por el apoyo ❤️", 500), "Gracias por el apoyo ❤️");
     assert.equal(motivoEscrito("Lo revisó la familia 👨‍👩‍👧", 500), "Lo revisó la familia 👨‍👩‍👧");

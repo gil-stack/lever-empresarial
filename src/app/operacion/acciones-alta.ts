@@ -315,7 +315,10 @@ export async function resolverCoincidenciaAccion(formData: FormData): Promise<vo
   try {
     await resolverCoincidencia(ctx, sesion, { id: formData.get("id"), estado: texto(formData, "estado"), motivo: texto(formData, "motivo") });
   } catch (error) {
-    return fallo(error, destino);
+    // El aviso marca el campo que falló de esa coincidencia (el dictamen o el motivo) y le da el foco, como el folio.
+    const id = texto(formData, "id");
+    const campo = error instanceof ErrorDeDominio && error.codigo === "dato_invalido_estado" ? "resolucion" : "motivo";
+    return fallo(error, destino, /^[0-9a-f-]{36}$/i.test(id) ? `#${campo}-${id}` : "");
   }
   listo(destino, "coincidencia_resuelta");
 }

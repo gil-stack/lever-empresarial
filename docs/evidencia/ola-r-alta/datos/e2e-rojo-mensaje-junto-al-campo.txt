@@ -1,0 +1,17 @@
+# Rojo de la e2e «…junto al campo con foco…» contra el código de edefd2e: el campo nombra el aviso de arriba, no un mensaje junto a él.
+
+MEDIDA #doc-archivo 1440: {"descrito":"aviso-operacion","campo":{"arriba":3119,"abajo":3159},"mensaje":{"arriba":102,"abajo":158},"barras":84,"ventana":900,"visible":true}
+  ✘  1 tests/e2e/operacion.spec.ts:534:5 › el mensaje del error queda a la vista junto al campo con foco: un documento y un socio del expediente, a 1440 y 390 (16.2s)
+    Error: expect(locator).toHaveAttribute(expected) failed
+    Expected pattern: /(^| )aviso-operacion-campo$/
+    Received string:  "aviso-operacion"
+      54 |   console.log(`MEDIDA ${campo} ${page.viewportSize()!.width}: ${JSON.stringify({ descrito, campo: redondo(cajaCampo), mensaje: redondo(cajaMensaje), barras: Math.round(tapa), ventana: alto, visible })}`);
+
+# Rojo con el mensaje nuevo pero sin centrar el campo (MensajeJuntoAlCampo sin scrollIntoView): con JavaScript, Next sube la página después del autofocus.
+
+MEDIDA #doc-archivo 1440: {"descrito":"aviso-operacion-campo","campo":{"arriba":3119,"abajo":3159},"mensaje":{"arriba":3167,"abajo":3186},"barras":84,"ventana":900,"visible":false}
+  ✘  1 tests/e2e/operacion.spec.ts:543:5 › el mensaje del error queda a la vista junto al campo con foco: un documento y un socio del expediente, a 1440 y 390 (1.3s)
+    Error: expect(received).toBe(expected) // Object.is equality
+    Expected: true
+    Received: false
+    > 59 |   expect(visible).toBe(true);

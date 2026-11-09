@@ -6,7 +6,7 @@ import { agregarRepresentanteAccion, type EstadoDelRepresentante } from "@/app/o
 import { BotonEnviar } from "@/components/sistema";
 import { CARGOS, ETIQUETA_CARGO, ETIQUETA_PEP, PEPS } from "@/dominio/operacion";
 
-import { AvisoOperacion, errorDelCampo } from "./aviso";
+import { AvisoOperacion, errorDelCampo, MensajeDelCampo } from "./aviso";
 
 const ID_AVISO = "aviso-representante";
 const SIN_AVISO: EstadoDelRepresentante = { aviso: null, valores: {}, vuelta: 0 };
@@ -25,6 +25,7 @@ export function FormularioRepresentante({ companyId, versionId, formId }: { comp
   }, [estado.vuelta]);
   const valor = (campo: string) => estado.valores[campo] ?? "";
   const ligado = (campo: string) => errorDelCampo(estado.aviso, campo, ID_AVISO);
+  const mensaje = (campo: string) => <MensajeDelCampo codigo={estado.aviso} campo={campo} idAviso={ID_AVISO} />;
   return (
     <form key={estado.vuelta} ref={forma} action={accion} className="formulario-pareja operacion-forma">
       <input type="hidden" name="companyId" value={companyId} />
@@ -38,14 +39,17 @@ export function FormularioRepresentante({ companyId, versionId, formId }: { comp
       <div className="campo operacion-ancho">
         <label htmlFor="rep-nombre">Nombre completo</label>
         <input id="rep-nombre" name="nombre" maxLength={300} required defaultValue={valor("nombre")} {...ligado("nombre")} />
+        {mensaje("nombre")}
       </div>
       <div className="campo">
         <label htmlFor="rep-rfc">RFC</label>
         <input id="rep-rfc" name="rfc" maxLength={13} autoCapitalize="characters" className="entrada-rfc" defaultValue={valor("rfc")} {...ligado("rfc")} />
+        {mensaje("rfc")}
       </div>
       <div className="campo">
         <label htmlFor="rep-curp">CURP</label>
         <input id="rep-curp" name="curp" maxLength={18} autoCapitalize="characters" defaultValue={valor("curp")} {...ligado("curp")} />
+        {mensaje("curp")}
       </div>
       <div className="campo">
         <label htmlFor="rep-cargo">Cargo</label>
@@ -56,6 +60,7 @@ export function FormularioRepresentante({ companyId, versionId, formId }: { comp
             </option>
           ))}
         </select>
+        {mensaje("cargo")}
       </div>
       <div className="campo">
         <label htmlFor="rep-pep">¿Es persona expuesta políticamente?</label>
@@ -66,6 +71,7 @@ export function FormularioRepresentante({ companyId, versionId, formId }: { comp
             </option>
           ))}
         </select>
+        {mensaje("pep")}
       </div>
       <div className="campo operacion-ancho">
         <label htmlFor="rep-designado">Designado por</label>
@@ -77,6 +83,7 @@ export function FormularioRepresentante({ companyId, versionId, formId }: { comp
           defaultValue={valor("designadoPor")}
           {...ligado("designadoPor")}
         />
+        {mensaje("designadoPor")}
       </div>
       <label className="confirmacion operacion-ancho">
         <input name="esAdministrador" type="checkbox" value="si" defaultChecked={valor("esAdministrador") === "si"} />

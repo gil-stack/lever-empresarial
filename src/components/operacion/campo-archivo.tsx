@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { TOPE_ARCHIVO_BYTES } from "@/dominio/archivos";
 
@@ -16,14 +16,16 @@ export function CampoArchivo({
   mensaje,
   required = false,
   ligado = {},
+  mensajeDelServidor = null,
 }: {
   id: string;
   name: string;
   accept: string;
   mensaje: string;
   required?: boolean;
-  /** El error que devolvió el servidor para este campo (errorDelCampo). */
+  /** El error que devolvió el servidor para este campo (errorDelCampo) y su mensaje (MensajeDelCampo). */
   ligado?: Record<string, unknown>;
+  mensajeDelServidor?: ReactNode;
 }) {
   const [excede, setExcede] = useState(false);
   const delServidor = typeof ligado["aria-describedby"] === "string" ? ligado["aria-describedby"] : undefined;
@@ -46,11 +48,14 @@ export function CampoArchivo({
           setExcede(grande);
         }}
       />
+      {/* El archivo que elige ahora reemplaza al que rechazó el servidor: queda un solo mensaje. */}
       {excede ? (
         <p id={`${id}-error`} className="error-campo" role="alert">
           {mensaje}
         </p>
-      ) : null}
+      ) : (
+        mensajeDelServidor
+      )}
     </>
   );
 }

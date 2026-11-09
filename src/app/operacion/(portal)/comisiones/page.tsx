@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { solicitarComisionAccion } from "@/app/operacion/acciones";
-import { errorDelCampo } from "@/components/operacion/aviso";
+import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { etiquetaEstado, fechaDia } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { BotonEnviar, Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
@@ -99,6 +99,7 @@ export default async function ComisionesOperacion({ searchParams }: { searchPara
                   <div className="campo">
                     <label htmlFor="vigenteDesde">Vigente desde</label>
                     <input id="vigenteDesde" name="vigenteDesde" type="date" required {...errorDelCampo(params.aviso, "vigenteDesde")} />
+                    <MensajeDelCampo codigo={params.aviso} campo="vigenteDesde" />
                   </div>
                   <div className="acciones">
                     <BotonEnviar>Pedir autorización</BotonEnviar>
