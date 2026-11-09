@@ -255,6 +255,18 @@ async function llenarIntegrantes(p, filas) {
   }
 }
 
+/**
+ * r2-serv-N1: el formulario de integrantes no recarga. El rechazo vuelve con su aviso, lo capturado y el campo
+ * que lo causó marcado y con el foco; nada va en la dirección.
+ */
+async function rechazarIntegrantes(p, campo) {
+  await p.getByRole("button", { name: "Registrar en el Comité" }).click();
+  const marcado = await p.locator(`${campo}[aria-invalid="true"]`).waitFor({ timeout: 20000 }).then(() => true, () => false);
+  await listo(p);
+  const foco = await p.waitForFunction((selector) => document.activeElement === document.querySelector(selector), campo, { timeout: 5000 }).then(() => true, () => false);
+  return { marcado, foco, aviso: await p.locator("#aviso-integrantes").innerText().catch(() => ""), url: p.url() };
+}
+
 async function registrarSesion(p, fecha, presentes, { auditor = false } = {}) {
   await ir(p, "/operacion/comite#sesiones-titulo");
   await p.locator("#sesion-fecha").fill(fecha);
@@ -540,17 +552,40 @@ async function flujo7() {
   const celia = await abrir("celia");
   const { p } = celia;
   const { presidente, secretario, oficial, vocal, suplente } = INTEGRANTES;
-  for (const [filas, codigo, texto] of [
-    [[presidente, { ...secretario, cargo: "PRESIDENTE" }, oficial], "comite_presidente_unico", "un segundo presidente titular"],
-    [[presidente, { ...secretario, oficial: true }], "comite_minimo_tres_titulares", "menos de tres titulares"],
-    [[presidente, secretario, vocal], "comite_sin_oficial", "la falta del Oficial"],
+  // Los rechazos de la integración completa se marcan en el campo que los resuelve del primer renglón (r2-serv-N1).
+  for (const [filas, campo, mensaje, texto] of [
+    [[presidente, { ...secretario, cargo: "PRESIDENTE" }, oficial], "#integrante-cargo-0", "presidente", "un segundo presidente titular"],
+    [[presidente, { ...secretario, oficial: true }], "#integrante-cargo-0", "tres", "menos de tres titulares"],
+    [[presidente, secretario, vocal], 'input[name="esOficial-0"]', "Oficial", "la falta del Oficial"],
   ]) {
     await ir(p, "/operacion/comite#integrantes-titulo");
     await llenarIntegrantes(p, filas);
-    await enviar(p, p.getByRole("button", { name: "Registrar en el Comité" }), codigo);
-    exigir(cuenta("pld_comite_integrantes") === 0, `7. la validación rechaza ${texto} y no guarda a nadie`);
+    const rechazo = await rechazarIntegrantes(p, campo);
+    exigir(rechazo.marcado && rechazo.foco && rechazo.aviso.includes(mensaje), `7. la validación rechaza ${texto}: aviso, ${campo} marcado y con el foco`, JSON.stringify(rechazo));
+    exigir(cuenta("pld_comite_integrantes") === 0, `7. y no guarda a nadie (${texto})`);
   }
   await foto(p, "f7-integrantes-validacion-sin-oficial");
+  // r2-serv-N1: RFC malo en el renglón 3 de 5. Se marca ese RFC, con el foco; los 5 renglones vuelven con lo capturado.
+  await ir(p, "/operacion/comite#integrantes-titulo");
+  await llenarIntegrantes(p, [presidente, secretario, { ...oficial, rfc: "MOVC80" }, vocal, suplente]);
+  const rfcMalo = await rechazarIntegrantes(p, "#integrante-rfc-2");
+  exigir(rfcMalo.marcado && rfcMalo.foco, "7. RFC malo en el renglón 3: ese RFC queda marcado y con el foco", JSON.stringify(rfcMalo));
+  const conservado = [
+    ["#integrante-nombres-0", presidente.nombres], ["#integrante-rfc-2", "MOVC80"], ["#integrante-area-3", vocal.area], ["#integrante-rfc-4", suplente.rfc],
+    ["#integrante-cargo-1", secretario.cargo], ["#integrante-designado-4", DESIGNADO],
+  ];
+  for (const [campo, esperado] of conservado) exigir((await p.locator(campo).inputValue()) === esperado, `7. ${campo} conserva lo capturado`, await p.locator(campo).inputValue());
+  exigir(await p.locator('input[name="esOficial-2"]').isChecked(), "7. y la casilla «Es el Oficial» del renglón 3");
+  exigir(!/aviso=|RALP|MOVC|Pedro|Sof/.test(rfcMalo.url), "7. ningún dato capturado ni el aviso pasan por la dirección", rfcMalo.url);
+  exigir(cuenta("pld_comite_integrantes") === 0, "7. el RFC malo no deja guardar a nadie");
+  await foto(p, "f7-integrantes-rfc-malo-en-el-renglon-3");
+  // Un carácter invisible en el nombre del renglón 2 marca ese nombre, no el del renglón 1.
+  await p.locator("#integrante-rfc-2").fill(oficial.rfc);
+  await p.locator("#integrante-nombres-1").fill("Sofía\u200b");
+  const invisible = await rechazarIntegrantes(p, "#integrante-nombres-1");
+  exigir(invisible.marcado && invisible.foco && (await p.locator("#integrante-nombres-0").getAttribute("aria-invalid")) === null,
+    "7. el invisible del renglón 2 marca ese nombre con el foco, no el del renglón 1", JSON.stringify(invisible));
+  await foto(p, "f7-integrantes-invisible-en-el-renglon-2");
   await ir(p, "/operacion/comite#integrantes-titulo");
   await llenarIntegrantes(p, [presidente, secretario, oficial, vocal, suplente]);
   await enviar(p, p.getByRole("button", { name: "Registrar en el Comité" }), "pld_integrantes_registrados", { doble: true });

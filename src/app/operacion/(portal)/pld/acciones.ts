@@ -17,6 +17,7 @@ import {
   dictaminarCaso,
   emitirAviso,
   type EntradaIntegrante,
+  ErrorDeIntegrante,
   marcarVeinticuatroHoras,
   registrarAuditor,
   registrarComunicacion,
@@ -267,14 +268,27 @@ export async function cambiarModoAccion(formData: FormData): Promise<void> {
   listo("/operacion/comite", "pld_modo_cambiado", "#modo-titulo");
 }
 
+/**
+ * Lo que vuelve al formulario de integrantes cuando el servidor lo rechaza: el aviso, el renglón del formulario
+ * que lo causó (null si es de la integración completa o de la sustitución) y lo capturado. Nada va en la dirección.
+ */
+export type EstadoDeIntegrantes = { aviso: string | null; renglon: number | null; valores: Record<string, string>; vuelta: number };
+
+const CAMPOS_INTEGRANTE = [
+  "nombres", "primerApellido", "segundoApellido", "cargo", "titularidad", "suplenteDe", "rfc", "curp", "area", "cargoEntidad",
+  "designadoEl", "certificado", "esOficial",
+] as const;
+
 /** Los renglones con nombre son integrantes; los vacíos se ignoran. Toda la integración va en una transacción. */
-export async function registrarIntegrantesAccion(formData: FormData): Promise<void> {
+export async function registrarIntegrantesAccion(previo: EstadoDeIntegrantes, formData: FormData): Promise<EstadoDeIntegrantes> {
   const ctx = await exigirContextoOperacion();
-  const renglones = Number(texto(formData, "renglones")) || 0;
+  const renglones = Math.min(Number(texto(formData, "renglones")) || 0, 12);
   const integrantes: EntradaIntegrante[] = [];
-  for (let i = 0; i < Math.min(renglones, 12); i++) {
+  const delFormulario: number[] = [];
+  for (let i = 0; i < renglones; i++) {
     const campo = (nombre: string) => texto(formData, `${nombre}-${i}`);
     if (!campo("nombres").trim()) continue;
+    delFormulario.push(i);
     integrantes.push({
       id: campo("id"), area: campo("area"), cargo: campo("cargo"), titularidad: campo("titularidad"), suplenteDe: campo("suplenteDe"),
       nombres: campo("nombres"), primerApellido: campo("primerApellido"), segundoApellido: campo("segundoApellido"), rfc: campo("rfc"),
@@ -289,7 +303,14 @@ export async function registrarIntegrantesAccion(formData: FormData): Promise<vo
       sustituye: sustituido ? { integranteId: sustituido, sustituidoEl: texto(formData, "sustituidoEl"), motivo: texto(formData, "motivo") } : null,
     });
   } catch (error) {
-    return fallo(error, "/operacion/comite", "#integrantes-titulo");
+    // r2-serv-N1: vuelve sin recargar, con lo capturado de los 5 renglones y el renglón que falló.
+    if (error instanceof ErrorDeDominio) {
+      const valores: Record<string, string> = { sustituye: sustituido, sustituidoEl: texto(formData, "sustituidoEl"), motivo: texto(formData, "motivo") };
+      for (let i = 0; i < renglones; i++) for (const campo of CAMPOS_INTEGRANTE) valores[`${campo}-${i}`] = texto(formData, `${campo}-${i}`);
+      const renglon = error instanceof ErrorDeIntegrante ? (delFormulario[error.renglon] ?? null) : null;
+      return { aviso: error.codigo, renglon, valores, vuelta: previo.vuelta + 1 };
+    }
+    throw error;
   }
   listo("/operacion/comite", "pld_integrantes_registrados", "#comunicaciones-titulo");
 }

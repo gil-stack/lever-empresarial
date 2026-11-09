@@ -37,6 +37,7 @@ import {
   dictaminarCaso,
   emitirAviso,
   type EntradaIntegrante,
+  ErrorDeIntegrante,
   leerCaso,
   leerBandejaPld,
   leerComite,
@@ -643,6 +644,12 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await assert.rejects(registrarIntegrantes(aud, { integrantes: [presidente, secretario, oficial] }), /sin_permiso_operacion/);
           // base-N23: los nombres son identidad; con un carácter invisible (control o de formato) se rechazan, no se vuelven espacio.
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, nombres: "Pedro\u200bPablo" }, secretario, oficial] }), /invisible_nombres/);
+          // r2-serv-N1: el rechazo de un renglón dice cuál fue (la pantalla marca ese campo, no el del primero).
+          const delRenglon = (codigo: string, renglon: number) => (error: unknown) =>
+            error instanceof ErrorDeIntegrante && error.codigo === codigo && error.renglon === renglon;
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [presidente, { ...secretario, nombres: "Sara\u200b" }, oficial] }), delRenglon("invisible_nombres", 1));
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [presidente, secretario, { ...oficial, rfc: "MAL" }] }), delRenglon("dato_invalido_rfc", 2));
+          await assert.rejects(registrarIntegrantes(cum, { integrantes: [presidente, { ...secretario, designadoEl: sumarDias(hoy, 1) }, oficial] }), delRenglon("dato_invalido_designadoEl", 1));
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, primerApellido: "Ruiz\tSoto" }, secretario, oficial] }), /invisible_primerApellido/);
           // Área y cargo van tal cual en el aviso de la 49ª: también rechazan.
           await assert.rejects(registrarIntegrantes(cum, { integrantes: [{ ...presidente, area: "Dirección\u00adGeneral" }, secretario, oficial] }), /invisible_area/);

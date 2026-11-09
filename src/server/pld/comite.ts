@@ -326,6 +326,16 @@ function leerIntegrante(entrada: EntradaIntegrante, hoy: string) {
  * va completa) y, si se pide, la baja de quien sustituyen. La base revisa al
  * cerrar la transacción que la integración vigente cumpla la 47ª y el instructivo.
  */
+/** Un dato inválido en un renglón del formulario de integrantes: el código y su posición en `integrantes`. */
+export class ErrorDeIntegrante extends ErrorDeDominio {
+  readonly renglon: number;
+
+  constructor(codigo: string, renglon: number) {
+    super(codigo);
+    this.renglon = renglon;
+  }
+}
+
 export async function registrarIntegrantes(
   ctx: ContextoDePersonal,
   entrada: { integrantes: EntradaIntegrante[]; sustituye?: { integranteId: unknown; sustituidoEl: unknown; motivo: unknown } | null },
@@ -335,7 +345,15 @@ export async function registrarIntegrantes(
   const ahora = deps.ahora?.() ?? new Date();
   const hoy = hoyEnMexico(ahora);
   if (entrada.integrantes.length === 0 && !entrada.sustituye) throw new ErrorDeDominio("dato_invalido_integrantes");
-  const nuevos = entrada.integrantes.map((integrante) => leerIntegrante(integrante, hoy));
+  // r2-serv-N1: el rechazo de un renglón dice cuál fue, para marcar su campo y no el del primero.
+  const nuevos = entrada.integrantes.map((integrante, renglon) => {
+    try {
+      return leerIntegrante(integrante, hoy);
+    } catch (error) {
+      if (error instanceof ErrorDeDominio) throw new ErrorDeIntegrante(error.codigo, renglon);
+      throw error;
+    }
+  });
   let baja: { integranteId: string; sustituidoEl: string; motivo: string } | null = null;
   if (entrada.sustituye) {
     if (!uuidValido(entrada.sustituye.integranteId)) throw new ErrorDeDominio("comite_integrante_no_existe");

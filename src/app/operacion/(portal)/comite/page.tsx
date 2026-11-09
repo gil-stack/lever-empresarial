@@ -7,19 +7,19 @@ import {
   cambiarModoAccion,
   registrarAuditorAccion,
   registrarComunicacionAccion,
-  registrarIntegrantesAccion,
   registrarSesionAccion,
 } from "@/app/operacion/(portal)/pld/acciones";
 import { errorDelCampo } from "@/components/operacion/aviso";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { ConfirmarParaDecidir } from "@/components/operacion/pld/confirmar";
+import { FormularioIntegrantes } from "@/components/operacion/pld/formulario-integrantes";
 import { ahoraEnMexicoParaCampo } from "@/components/operacion/pld/formato";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { nombreDelMes } from "@/dominio/flujo/fechas";
 import { hoyEnMexico } from "@/dominio/operacion/comisiones";
-import { CARGO_COMITE, CARGOS_COMITE } from "@/dominio/pld";
+import { CARGO_COMITE } from "@/dominio/pld";
 import { exigirContextoOperacion, puedeEnOperacion } from "@/server/operacion";
 import { ahoraPld, contenidoParaSiti, leerComite, leerModoDictamen, nombreDeIntegrante, personalDeCumplimiento } from "@/server/pld";
 
@@ -155,121 +155,15 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
           </details>
         ) : null}
         {administra ? (
-          <form action={registrarIntegrantesAccion} className="operacion-forma">
-            <input type="hidden" name="renglones" value={RENGLONES} />
-            <p>
-              Llena un renglón por persona; los vacíos no se guardan. Todo va junto: la base revisa al final que quede un solo presidente y un solo
-              secretario titulares, al menos tres titulares, un suplente por titular como máximo y al Oficial como integrante.
-            </p>
-            {ids.map((id, i) => (
-              <fieldset key={id} className="formulario-pareja">
-                <legend>Persona {i + 1}</legend>
-                <input type="hidden" name={`id-${i}`} value={id} />
-                <div className="campo">
-                  <label htmlFor={`integrante-nombres-${i}`}>Nombre(s)</label>
-                  <input id={`integrante-nombres-${i}`} name={`nombres-${i}`} maxLength={80} autoComplete="off" {...(i === 0 ? error("integrantes-titulo", "nombres") : {})} />
-                </div>
-                <div className="campo">
-                  <label htmlFor={`integrante-primer-${i}`}>Primer apellido</label>
-                  <input id={`integrante-primer-${i}`} name={`primerApellido-${i}`} maxLength={80} autoComplete="off" />
-                </div>
-                <div className="campo">
-                  <label htmlFor={`integrante-segundo-${i}`}>Segundo apellido (si tiene)</label>
-                  <input id={`integrante-segundo-${i}`} name={`segundoApellido-${i}`} maxLength={80} autoComplete="off" />
-                </div>
-                <div className="campo">
-                  <label htmlFor={`integrante-cargo-${i}`}>Cargo en el Comité</label>
-                  <select id={`integrante-cargo-${i}`} name={`cargo-${i}`} defaultValue="INTEGRANTE">
-                    {CARGOS_COMITE.map((cargo) => (
-                      <option key={cargo} value={cargo}>
-                        {CARGO_COMITE[cargo]}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="campo">
-                  <label htmlFor={`integrante-titularidad-${i}`}>Titular o suplente</label>
-                  <select id={`integrante-titularidad-${i}`} name={`titularidad-${i}`} defaultValue="TITULAR">
-                    <option value="TITULAR">Titular</option>
-                    <option value="SUPLENTE">Suplente</option>
-                  </select>
-                </div>
-                <div className="campo">
-                  <label htmlFor={`integrante-suplente-${i}`}>Suplente de (si es suplente)</label>
-                  <select id={`integrante-suplente-${i}`} name={`suplenteDe-${i}`} defaultValue="">
-                    <option value="">No aplica</option>
-                    {titulares.map((titular) => (
-                      <option key={titular.id} value={titular.id}>
-                        {nombreDeIntegrante(titular)} ({CARGO_COMITE[titular.cargo]})
-                      </option>
-                    ))}
-                    {ids.slice(0, i).map((anterior, j) => (
-                      <option key={anterior} value={anterior}>
-                        La persona {j + 1} de este formulario
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="campo">
-                  <label htmlFor={`integrante-rfc-${i}`}>RFC con homoclave</label>
-                  <input id={`integrante-rfc-${i}`} name={`rfc-${i}`} maxLength={13} autoComplete="off" className="operacion-mono" {...(i === 0 ? error("integrantes-titulo", "rfc") : {})} />
-                </div>
-                <div className="campo">
-                  <label htmlFor={`integrante-curp-${i}`}>CURP</label>
-                  <input id={`integrante-curp-${i}`} name={`curp-${i}`} maxLength={18} autoComplete="off" className="operacion-mono" />
-                </div>
-                <div className="campo">
-                  <label htmlFor={`integrante-area-${i}`}>Área de la entidad</label>
-                  <input id={`integrante-area-${i}`} name={`area-${i}`} maxLength={120} autoComplete="off" />
-                </div>
-                <div className="campo">
-                  <label htmlFor={`integrante-cargo-entidad-${i}`}>Cargo en la entidad</label>
-                  <input id={`integrante-cargo-entidad-${i}`} name={`cargoEntidad-${i}`} maxLength={120} autoComplete="off" />
-                </div>
-                <div className="campo">
-                  <label htmlFor={`integrante-designado-${i}`}>Fecha de designación</label>
-                  <input id={`integrante-designado-${i}`} name={`designadoEl-${i}`} type="date" max={hoy} defaultValue={hoy} {...(i === 0 ? error("integrantes-titulo", "designadoEl") : {})} />
-                </div>
-                <div className="campo">
-                  <label htmlFor={`integrante-certificado-${i}`}>Número de certificado (si tiene)</label>
-                  <input id={`integrante-certificado-${i}`} name={`certificado-${i}`} maxLength={22} autoComplete="off" />
-                </div>
-                <div className="campo">
-                  <label>
-                    <input type="checkbox" name={`esOficial-${i}`} value="si" /> Es el Oficial de Cumplimiento
-                  </label>
-                </div>
-              </fieldset>
-            ))}
-            {vigentes.length > 0 ? (
-              <fieldset className="formulario-pareja">
-                <legend>Sustitución (si alguien deja el Comité)</legend>
-                <div className="campo">
-                  <label htmlFor="integrante-sustituye">Sustituye a</label>
-                  <select id="integrante-sustituye" name="sustituye" defaultValue="">
-                    <option value="">Nadie</option>
-                    {vigentes.map((integrante) => (
-                      <option key={integrante.id} value={integrante.id}>
-                        {nombreDeIntegrante(integrante)} ({CARGO_COMITE[integrante.cargo]}, {integrante.titularidad === "TITULAR" ? "titular" : "suplente"})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="campo">
-                  <label htmlFor="integrante-sustituido">Fecha de sustitución</label>
-                  <input id="integrante-sustituido" name="sustituidoEl" type="date" max={hoy} defaultValue={hoy} {...error("integrantes-titulo", "sustituidoEl")} />
-                </div>
-                <div className="campo operacion-ancho">
-                  <label htmlFor="integrante-motivo">Motivo de la sustitución</label>
-                  <textarea id="integrante-motivo" name="motivo" maxLength={500} {...error("integrantes-titulo", "motivo")} />
-                </div>
-              </fieldset>
-            ) : null}
-            <div className="acciones">
-              <BotonEnviar>Registrar en el Comité</BotonEnviar>
-              <p>Los nombres se guardan en mayúsculas y sin acentos, como los pide el SITI.</p>
-            </div>
-          </form>
+          <FormularioIntegrantes
+            ids={ids}
+            hoy={hoy}
+            titulares={titulares.map((titular) => ({ id: titular.id, etiqueta: `${nombreDeIntegrante(titular)} (${CARGO_COMITE[titular.cargo]})` }))}
+            vigentes={vigentes.map((integrante) => ({
+              id: integrante.id,
+              etiqueta: `${nombreDeIntegrante(integrante)} (${CARGO_COMITE[integrante.cargo]}, ${integrante.titularidad === "TITULAR" ? "titular" : "suplente"})`,
+            }))}
+          />
         ) : null}
       </Hoja>
 
