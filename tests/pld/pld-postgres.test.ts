@@ -1598,11 +1598,14 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           const antes = await avisos();
           await assert.rejects(aviso(`Revisar${relleno(13)}`), /dato_invalido_descripcion/);
           await assert.rejects(aviso(`${"x".repeat(19)}${relleno(1)}`), /dato_invalido_descripcion/);
+          // Onceava ronda del #59: el patrón Braille en blanco (U+2800) tampoco se ve.
+          await assert.rejects(aviso(`Revisar${"\u2800".repeat(13)}`), /dato_invalido_descripcion/);
           assert.equal(await avisos(), antes);
           const acuse = await aviso("x".repeat(20));
           const caso = await abrirCaso(cum, { formId: randomUUID(), alertaId: String((await uno("select id from pld_alertas where aviso_id = $1", [acuse.id])).id) });
           const notas = () => contar("select count(*)::int as n from pld_notas where caso_id = $1", [caso]);
           await assert.rejects(agregarNota(cum, { casoId: caso, formId: randomUUID(), texto: `a${relleno(1)}` }), /dato_invalido_texto/);
+          await assert.rejects(agregarNota(cum, { casoId: caso, formId: randomUUID(), texto: "a\u2800" }), /dato_invalido_texto/);
           assert.equal(await notas(), 0);
           await agregarNota(cum, { casoId: caso, formId: randomUUID(), texto: "ok" });
           assert.equal(await notas(), 1);
