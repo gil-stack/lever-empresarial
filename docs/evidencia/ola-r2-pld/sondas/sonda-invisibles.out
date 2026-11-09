@@ -1,0 +1,15 @@
+carácter | servidor: folio del reporte · folio de la 49ª · área · cargo · nombre del auditor · nombres | base: texto_regulado(folio,40) · área (texto_regulado+upper) · nombres (patrón)
+TAB    | invisible_folio · invisible_folio · invisible_area · invisible_cargoEntidad · invisible_nombre · invisible_nombres | rechaza · rechaza · rechaza | CHECK del head: rechaza · rechaza
+U+0085 | invisible_folio · invisible_folio · invisible_area · invisible_cargoEntidad · invisible_nombre · invisible_nombres | rechaza · rechaza · rechaza | CHECK del head: rechaza · rechaza
+U+00AD | invisible_folio · invisible_folio · invisible_area · invisible_cargoEntidad · invisible_nombre · invisible_nombres | ACEPTA · ACEPTA · rechaza | CHECK del head: rechaza · rechaza
+U+200B | invisible_folio · invisible_folio · invisible_area · invisible_cargoEntidad · invisible_nombre · invisible_nombres | ACEPTA · ACEPTA · rechaza | CHECK del head: rechaza · rechaza
+U+2060 | invisible_folio · invisible_folio · invisible_area · invisible_cargoEntidad · invisible_nombre · invisible_nombres | ACEPTA · ACEPTA · rechaza | CHECK del head: rechaza · rechaza
+U+FEFF | invisible_folio · invisible_folio · invisible_area · invisible_cargoEntidad · invisible_nombre · invisible_nombres | ACEPTA · ACEPTA · rechaza | CHECK del head: rechaza · rechaza
+U+202E | invisible_folio · invisible_folio · invisible_area · invisible_cargoEntidad · invisible_nombre · invisible_nombres | ACEPTA · ACEPTA · rechaza | CHECK del head: rechaza · rechaza
+U+3164 | invisible_folio · invisible_folio · invisible_area · invisible_cargoEntidad · invisible_nombre · invisible_nombres | ACEPTA · ACEPTA · rechaza | CHECK del head: rechaza · rechaza
+U+FE0F | invisible_folio · invisible_folio · invisible_area · invisible_cargoEntidad · invisible_nombre · invisible_nombres | ACEPTA · ACEPTA · rechaza | CHECK del head: rechaza · rechaza
+U+180B | invisible_folio · invisible_folio · invisible_area · invisible_cargoEntidad · invisible_nombre · invisible_nombres | ACEPTA · ACEPTA · rechaza | CHECK del head: rechaza · rechaza
+U+034F | invisible_folio · invisible_folio · invisible_area · invisible_cargoEntidad · invisible_nombre · invisible_nombres | ACEPTA · ACEPTA · rechaza | CHECK del head: rechaza · rechaza
+U+115F | invisible_folio · invisible_folio · invisible_area · invisible_cargoEntidad · invisible_nombre · invisible_nombres | ACEPTA · ACEPTA · rechaza | CHECK del head: rechaza · rechaza
+U+FFA0 | invisible_folio · invisible_folio · invisible_area · invisible_cargoEntidad · invisible_nombre · invisible_nombres | ACEPTA · ACEPTA · rechaza | CHECK del head: rechaza · rechaza
+integrantes que quedaron registrados por la sonda: ver pld_comite_integrantes con nombres RAUL

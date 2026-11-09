@@ -8,8 +8,8 @@
     "f13",
     "f14"
   ],
-  "segundos": 134,
-  "verdes": 165,
+  "segundos": 118,
+  "verdes": 197,
   "rojos": 0,
   "resultados": [
     {
@@ -86,11 +86,11 @@
     },
     {
       "ok": true,
-      "texto": "9. la dueña envejeció la alerta de Nogal 61 días: generada el 2026-09-08, vence el 2026-11-07"
+      "texto": "9. la dueña envejeció la alerta de Nogal 61 días: generada el 2026-09-09, vence el 2026-11-08"
     },
     {
       "ok": true,
-      "texto": "9. con el reloj en el día 60 (2026-11-07): «Vence hoy»"
+      "texto": "9. con el reloj en el día 60 (2026-11-08): «Vence hoy»"
     },
     {
       "ok": true,
@@ -110,7 +110,19 @@
     },
     {
       "ok": true,
-      "texto": "9. en modo Oficial no hay sesiones"
+      "texto": "9. en modo Oficial no se registran sesiones nuevas"
+    },
+    {
+      "ok": true,
+      "texto": "9. ni aparece «Registrar sesión»"
+    },
+    {
+      "ok": true,
+      "texto": "9. el historial sigue a la vista: 3 sesiones con su enlace"
+    },
+    {
+      "ok": true,
+      "texto": "9. con sus actas firmadas"
     },
     {
       "ok": true,
@@ -143,6 +155,18 @@
     {
       "ok": true,
       "texto": "10. sin la clave, el archivo no se genera y la pantalla lo dice"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_claveOrganoSupervisor» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "10. la clave del órgano supervisor rechazada queda marcada y con el foco"
+    },
+    {
+      "ok": true,
+      "texto": "10. y la CASFIM de la entidad no se marca"
     },
     {
       "ok": true,
@@ -186,7 +210,7 @@
     },
     {
       "ok": true,
-      "texto": "11. octubre vence el 24 nov 2026 y quedan 11 días hábiles"
+      "texto": "11. octubre vence el 24 nov 2026: «Quedan 10 días hábiles»"
     },
     {
       "ok": true,
@@ -215,6 +239,18 @@
     {
       "ok": true,
       "texto": "12. Cobre (contrato de hace siete meses) aparece con su evaluación del semestre pendiente"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_pagosMonto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "12. el monto rechazado de la evaluación queda marcado y con el foco"
+    },
+    {
+      "ok": true,
+      "texto": "12. y no se registró nada"
     },
     {
       "ok": true,
@@ -266,7 +302,99 @@
     },
     {
       "ok": true,
+      "texto": "13. la bitácora dice «Consultó un caso de análisis» al leerlo, no «Abrió» (r2-serv-N12)"
+    },
+    {
+      "ok": true,
+      "texto": "13. /operacion/pld/casos/:id/documento/:id responde con la política aislada"
+    },
+    {
+      "ok": true,
+      "texto": "13. /operacion/pld/casos/:id/reporte responde con la política aislada"
+    },
+    {
+      "ok": true,
+      "texto": "13. /operacion/comite/sesiones/:id/acta responde con la política aislada"
+    },
+    {
+      "ok": true,
+      "texto": "13. /operacion/comite/actas/:id responde con la política aislada"
+    },
+    {
+      "ok": true,
+      "texto": "13. /operacion/reportes/archivo responde con la política aislada"
+    },
+    {
+      "ok": true,
+      "texto": "13. /operacion/conservacion/manifiesto responde con la política aislada"
+    },
+    {
+      "ok": true,
       "texto": "consola limpia en la sesión de Celia"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto de Aurelio trae pld_alertas"
+    },
+    {
+      "ok": true,
+      "texto": "13. manifiesto de Aurelio: pld_alertas cuenta lo que su RLS le deja ver (4)"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto de Aurelio trae pld_casos"
+    },
+    {
+      "ok": true,
+      "texto": "13. manifiesto de Aurelio: pld_casos cuenta lo que su RLS le deja ver (1)"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto de Aurelio trae pld_notas"
+    },
+    {
+      "ok": true,
+      "texto": "13. manifiesto de Aurelio: pld_notas cuenta lo que su RLS le deja ver (1)"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto de Aurelio trae pld_documentos"
+    },
+    {
+      "ok": true,
+      "texto": "13. manifiesto de Aurelio: pld_documentos cuenta lo que su RLS le deja ver (1)"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto de Aurelio trae pld_propuestas"
+    },
+    {
+      "ok": true,
+      "texto": "13. manifiesto de Aurelio: pld_propuestas cuenta lo que su RLS le deja ver (1)"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto de Aurelio trae pld_dictamenes"
+    },
+    {
+      "ok": true,
+      "texto": "13. manifiesto de Aurelio: pld_dictamenes cuenta lo que su RLS le deja ver (1)"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto de Aurelio trae pld_reportes"
+    },
+    {
+      "ok": true,
+      "texto": "13. manifiesto de Aurelio: pld_reportes cuenta lo que su RLS le deja ver (0)"
+    },
+    {
+      "ok": true,
+      "texto": "13. Aurelio no cuenta la alerta del aviso que lo menciona ni su caso"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Aurelio"
     },
     {
       "ok": true,
@@ -298,7 +426,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Ofelia Plataforma no ve /operacion/pld/casos/9ecc05ce-6989-40dd-ae91-be6a8ba82796 ni un dato de PLD"
+      "texto": "14. Ofelia Plataforma no ve /operacion/pld/casos/aa153129-ba4e-46a6-b4f3-4b56923807af ni un dato de PLD"
     },
     {
       "ok": true,
@@ -306,7 +434,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Ofelia Plataforma no ve /operacion/comite/sesiones/fa13dc98-b80d-4d42-8628-553466bd272f ni un dato de PLD"
+      "texto": "14. Ofelia Plataforma no ve /operacion/comite/sesiones/94605bc9-fcb6-4693-9c74-9e6e06980f8b ni un dato de PLD"
     },
     {
       "ok": true,
@@ -362,7 +490,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Omar Originación no ve /operacion/pld/casos/9ecc05ce-6989-40dd-ae91-be6a8ba82796 ni un dato de PLD"
+      "texto": "14. Omar Originación no ve /operacion/pld/casos/aa153129-ba4e-46a6-b4f3-4b56923807af ni un dato de PLD"
     },
     {
       "ok": true,
@@ -370,7 +498,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Omar Originación no ve /operacion/comite/sesiones/fa13dc98-b80d-4d42-8628-553466bd272f ni un dato de PLD"
+      "texto": "14. Omar Originación no ve /operacion/comite/sesiones/94605bc9-fcb6-4693-9c74-9e6e06980f8b ni un dato de PLD"
     },
     {
       "ok": true,
@@ -426,7 +554,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Ana Aprobación no ve /operacion/pld/casos/9ecc05ce-6989-40dd-ae91-be6a8ba82796 ni un dato de PLD"
+      "texto": "14. Ana Aprobación no ve /operacion/pld/casos/aa153129-ba4e-46a6-b4f3-4b56923807af ni un dato de PLD"
     },
     {
       "ok": true,
@@ -434,7 +562,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Ana Aprobación no ve /operacion/comite/sesiones/fa13dc98-b80d-4d42-8628-553466bd272f ni un dato de PLD"
+      "texto": "14. Ana Aprobación no ve /operacion/comite/sesiones/94605bc9-fcb6-4693-9c74-9e6e06980f8b ni un dato de PLD"
     },
     {
       "ok": true,
@@ -498,7 +626,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Celia Cumplimiento ve /operacion/pld/casos/9ecc05ce-6989-40dd-ae91-be6a8ba82796"
+      "texto": "14. Celia Cumplimiento ve /operacion/pld/casos/aa153129-ba4e-46a6-b4f3-4b56923807af"
     },
     {
       "ok": true,
@@ -506,7 +634,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Celia Cumplimiento ve /operacion/comite/sesiones/fa13dc98-b80d-4d42-8628-553466bd272f"
+      "texto": "14. Celia Cumplimiento ve /operacion/comite/sesiones/94605bc9-fcb6-4693-9c74-9e6e06980f8b"
     },
     {
       "ok": true,
@@ -562,7 +690,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Aurelio Auditoría ve /operacion/pld/casos/9ecc05ce-6989-40dd-ae91-be6a8ba82796"
+      "texto": "14. Aurelio Auditoría ve /operacion/pld/casos/aa153129-ba4e-46a6-b4f3-4b56923807af"
     },
     {
       "ok": true,
@@ -570,7 +698,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Aurelio Auditoría ve /operacion/comite/sesiones/fa13dc98-b80d-4d42-8628-553466bd272f"
+      "texto": "14. Aurelio Auditoría ve /operacion/comite/sesiones/94605bc9-fcb6-4693-9c74-9e6e06980f8b"
     },
     {
       "ok": true,

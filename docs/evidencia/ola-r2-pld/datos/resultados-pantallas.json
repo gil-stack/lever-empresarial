@@ -2,13 +2,29 @@
   "fases": [
     "pantallas"
   ],
-  "segundos": 202,
-  "verdes": 60,
+  "segundos": 208,
+  "verdes": 243,
   "rojos": 0,
   "resultados": [
     {
       "ok": true,
+      "texto": "pantalla cumplimiento oscuro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla cumplimiento oscuro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento oscuro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento oscuro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento oscuro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -16,7 +32,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla cumplimiento oscuro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento oscuro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento claro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla cumplimiento claro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento claro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento claro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento claro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -24,7 +64,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla cumplimiento claro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento claro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento lever 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla cumplimiento lever 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento lever 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento lever 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento lever 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -32,7 +96,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla cumplimiento lever 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento lever 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld oscuro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla pld oscuro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld oscuro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld oscuro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld oscuro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -40,7 +128,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla pld oscuro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld oscuro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld claro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla pld claro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld claro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld claro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld claro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -48,7 +160,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla pld claro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld claro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld lever 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla pld lever 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld lever 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld lever 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld lever 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -56,7 +192,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla pld lever 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla pld lever 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso oscuro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla caso oscuro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso oscuro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso oscuro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso oscuro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -64,7 +224,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla caso oscuro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso oscuro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso claro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla caso claro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso claro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso claro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso claro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -72,7 +256,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla caso claro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso claro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso lever 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla caso lever 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso lever 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso lever 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso lever 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -80,7 +288,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla caso lever 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla caso lever 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros oscuro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla parametros oscuro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros oscuro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros oscuro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros oscuro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -88,7 +320,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla parametros oscuro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros oscuro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros claro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla parametros claro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros claro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros claro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros claro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -96,7 +352,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla parametros claro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros claro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros lever 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla parametros lever 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros lever 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros lever 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros lever 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -104,7 +384,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla parametros lever 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla parametros lever 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite oscuro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla comite oscuro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite oscuro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite oscuro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite oscuro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -112,7 +416,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla comite oscuro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite oscuro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite claro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla comite claro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite claro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite claro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite claro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -120,7 +448,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla comite claro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite claro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite lever 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla comite lever 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite lever 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite lever 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite lever 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -128,7 +480,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla comite lever 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla comite lever 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion oscuro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla sesion oscuro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion oscuro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion oscuro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion oscuro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -136,7 +512,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla sesion oscuro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion oscuro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion claro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla sesion claro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion claro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion claro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion claro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -144,7 +544,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla sesion claro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion claro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion lever 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla sesion lever 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion lever 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion lever 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion lever 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -152,7 +576,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla sesion lever 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sesion lever 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes oscuro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla reportes oscuro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes oscuro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes oscuro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes oscuro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -160,7 +608,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla reportes oscuro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes oscuro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes claro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla reportes claro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes claro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes claro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes claro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -168,7 +640,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla reportes claro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes claro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes lever 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla reportes lever 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes lever 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes lever 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes lever 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -176,7 +672,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla reportes lever 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla reportes lever 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion oscuro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla conservacion oscuro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion oscuro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion oscuro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion oscuro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -184,7 +704,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla conservacion oscuro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion oscuro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion claro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla conservacion claro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion claro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion claro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion claro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -192,7 +736,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla conservacion claro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion claro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion lever 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla conservacion lever 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion lever 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion lever 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion lever 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -200,7 +768,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla conservacion lever 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla conservacion lever 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos oscuro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla avisos oscuro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos oscuro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos oscuro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos oscuro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -208,7 +800,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla avisos oscuro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos oscuro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos claro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla avisos claro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos claro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos claro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos claro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -216,7 +832,31 @@
     },
     {
       "ok": true,
+      "texto": "pantalla avisos claro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos claro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos lever 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla avisos lever 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos lever 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos lever 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos lever 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -224,7 +864,35 @@
     },
     {
       "ok": true,
+      "texto": "pantalla avisos lever 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla avisos lever 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente oscuro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla expediente oscuro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente oscuro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente oscuro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente oscuro 390: la huella SHA-256 ensancha la página a 533 px, del #59 (expediente.tsx:180), en curso"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente oscuro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -232,7 +900,35 @@
     },
     {
       "ok": true,
+      "texto": "pantalla expediente oscuro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente oscuro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente claro 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla expediente claro 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente claro 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente claro 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente claro 390: la huella SHA-256 ensancha la página a 533 px, del #59 (expediente.tsx:180), en curso"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente claro 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
     },
     {
       "ok": true,
@@ -240,11 +936,47 @@
     },
     {
       "ok": true,
+      "texto": "pantalla expediente claro 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente claro 390: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente lever 1440: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla expediente lever 1440: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
     },
     {
       "ok": true,
+      "texto": "pantalla expediente lever 1440: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente lever 1440: axe sin violaciones de R2"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente lever 390: la huella SHA-256 ensancha la página a 533 px, del #59 (expediente.tsx:180), en curso"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente lever 390: axe label-content-name-mismatch en .marca, del armazón (fuera de R2)"
+    },
+    {
+      "ok": true,
       "texto": "pantalla expediente lever 390: un h1, campos con etiqueta, sin desborde ni viewport ensanchado, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente lever 390: ningún control ni texto se sale de su caja"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente lever 390: axe sin violaciones de R2"
     }
   ]
 }

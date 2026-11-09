@@ -8,8 +8,8 @@
     "f6",
     "f7"
   ],
-  "segundos": 97,
-  "verdes": 107,
+  "segundos": 112,
+  "verdes": 157,
   "rojos": 0,
   "resultados": [
     {
@@ -59,6 +59,62 @@
     {
       "ok": true,
       "texto": "consola limpia en la sesión de Ana"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «perfil_propuesto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "1. doble clic en «Proponer el cambio» = 1 propuesta"
+    },
+    {
+      "ok": true,
+      "texto": "1. la propuesta no cambia el perfil vigente"
+    },
+    {
+      "ok": true,
+      "texto": "1. un evento «expediente_perfil_propuesto»"
+    },
+    {
+      "ok": true,
+      "texto": "1. Originación ve la propuesta pendiente"
+    },
+    {
+      "ok": true,
+      "texto": "1. Originación no ve «Aprobar el cambio»"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Omar"
+    },
+    {
+      "ok": true,
+      "texto": "1. la bandeja de Cumplimiento lista la propuesta de Nogal"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «perfil_aprobado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "1. doble clic en «Aprobar el cambio» = 1 resolución"
+    },
+    {
+      "ok": true,
+      "texto": "1. el vigente es la versión 2, aprobada, con $400,000.00 de pagos"
+    },
+    {
+      "ok": true,
+      "texto": "1. un evento «expediente_perfil_aprobado»"
+    },
+    {
+      "ok": true,
+      "texto": "1. el expediente dice de dónde viene la versión vigente"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
     },
     {
       "ok": true,
@@ -158,6 +214,22 @@
     },
     {
       "ok": true,
+      "texto": "5. el aviso rechazado conserva la descripción, marcada y con el foco"
+    },
+    {
+      "ok": true,
+      "texto": "5. y el tipo y la empresa elegidos"
+    },
+    {
+      "ok": true,
+      "texto": "5. sin texto ni aviso en la dirección, y sin guardar nada"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Omar"
+    },
+    {
+      "ok": true,
       "texto": "aviso «pld_aviso_emitido» tras la acción"
     },
     {
@@ -166,7 +238,7 @@
     },
     {
       "ok": true,
-      "texto": "5. quien avisa ve su acuse con el folio E8912576"
+      "texto": "5. quien avisa ve su acuse con el folio D8EDA61B"
     },
     {
       "ok": true,
@@ -270,6 +342,14 @@
     },
     {
       "ok": true,
+      "texto": "6. la propuesta rechazada conserva su justificación, marcada y con el foco, sin nada en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "6. con la propuesta elegida y sin guardar nada"
+    },
+    {
+      "ok": true,
       "texto": "aviso «pld_propuesta_registrada» tras la acción"
     },
     {
@@ -282,27 +362,71 @@
     },
     {
       "ok": true,
-      "texto": "aviso «comite_presidente_unico» tras la acción"
+      "texto": "7. la validación rechaza un segundo presidente titular: aviso, #integrante-cargo-0 marcado y con el foco"
     },
     {
       "ok": true,
-      "texto": "7. la validación rechaza un segundo presidente titular y no guarda a nadie"
+      "texto": "7. y no guarda a nadie (un segundo presidente titular)"
     },
     {
       "ok": true,
-      "texto": "aviso «comite_minimo_tres_titulares» tras la acción"
+      "texto": "7. la validación rechaza menos de tres titulares: aviso, #integrante-cargo-0 marcado y con el foco"
     },
     {
       "ok": true,
-      "texto": "7. la validación rechaza menos de tres titulares y no guarda a nadie"
+      "texto": "7. y no guarda a nadie (menos de tres titulares)"
     },
     {
       "ok": true,
-      "texto": "aviso «comite_sin_oficial» tras la acción"
+      "texto": "7. la validación rechaza la falta del Oficial: aviso, input[name=\"esOficial-0\"] marcado y con el foco"
     },
     {
       "ok": true,
-      "texto": "7. la validación rechaza la falta del Oficial y no guarda a nadie"
+      "texto": "7. y no guarda a nadie (la falta del Oficial)"
+    },
+    {
+      "ok": true,
+      "texto": "7. RFC malo en el renglón 3: ese RFC queda marcado y con el foco"
+    },
+    {
+      "ok": true,
+      "texto": "7. #integrante-nombres-0 conserva lo capturado"
+    },
+    {
+      "ok": true,
+      "texto": "7. #integrante-rfc-2 conserva lo capturado"
+    },
+    {
+      "ok": true,
+      "texto": "7. #integrante-area-3 conserva lo capturado"
+    },
+    {
+      "ok": true,
+      "texto": "7. #integrante-rfc-4 conserva lo capturado"
+    },
+    {
+      "ok": true,
+      "texto": "7. #integrante-cargo-1 conserva lo capturado"
+    },
+    {
+      "ok": true,
+      "texto": "7. #integrante-designado-4 conserva lo capturado"
+    },
+    {
+      "ok": true,
+      "texto": "7. y la casilla «Es el Oficial» del renglón 3"
+    },
+    {
+      "ok": true,
+      "texto": "7. ningún dato capturado ni el aviso pasan por la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "7. el RFC malo no deja guardar a nadie"
+    },
+    {
+      "ok": true,
+      "texto": "7. el invisible del renglón 2 marca ese nombre con el foco, no el del renglón 1"
     },
     {
       "ok": true,
@@ -326,7 +450,51 @@
     },
     {
       "ok": true,
+      "texto": "7. área y cargo sin acentos en lo que se captura en el SITI"
+    },
+    {
+      "ok": true,
+      "texto": "7. a 390 px, Tab llega a la región «Contenido para el SITI»"
+    },
+    {
+      "ok": true,
+      "texto": "7. y las flechas la recorren (se desplaza a la derecha)"
+    },
+    {
+      "ok": true,
+      "texto": "7. axe a 390 px: sin «scrollable-region-focusable»"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia 390"
+    },
+    {
+      "ok": true,
       "texto": "7. la bandeja de Cumplimiento lista las designaciones por comunicar"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «comite_auditor_integrante» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. el auditor con el RFC de un integrante se rechaza con su aviso"
+    },
+    {
+      "ok": true,
+      "texto": "7. el aviso queda ligado al campo RFC del auditor"
+    },
+    {
+      "ok": true,
+      "texto": "7. el auditor rechazado no se guardó"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «comite_auditor_integrante» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. el auditor con el nombre de un integrante vigente se rechaza y no se guarda"
     },
     {
       "ok": true,
@@ -355,6 +523,22 @@
     {
       "ok": true,
       "texto": "aviso «pld_propuesta_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «sesion_presentes_invalidos» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. sesión sin presentes: el foco queda en la primera casilla"
+    },
+    {
+      "ok": true,
+      "texto": "7. y el grupo «Presentes» queda marcado"
+    },
+    {
+      "ok": true,
+      "texto": "7. y no se registró la sesión"
     },
     {
       "ok": true,
@@ -406,11 +590,27 @@
     },
     {
       "ok": true,
+      "texto": "aviso «pld_acta_cargada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. el acta en PNG queda con su tipo, image/png"
+    },
+    {
+      "ok": true,
+      "texto": "7. y se descarga igual, byte por byte"
+    },
+    {
+      "ok": true,
       "texto": "7. con el factor de hace 31 minutos, el dictamen pide «Confirma que eres tú»"
     },
     {
       "ok": true,
       "texto": "7. Celia confirmó con su app autenticadora"
+    },
+    {
+      "ok": true,
+      "texto": "7. el dictamen rechazado conserva su justificación, marcada y con el foco, sin nada en la dirección ni en la base"
     },
     {
       "ok": true,
@@ -422,7 +622,7 @@
     },
     {
       "ok": true,
-      "texto": "7. dictamen del día de la sesión; el reporte vence a 3 días hábiles (2026-11-11)"
+      "texto": "7. dictamen del día de la sesión; el reporte vence a 3 días hábiles (2026-11-12)"
     },
     {
       "ok": true,

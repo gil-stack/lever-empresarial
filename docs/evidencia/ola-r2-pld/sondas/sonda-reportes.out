@@ -1,0 +1,14 @@
+== 36ª: archivo relevantes-202609.txt sha256 dfbd6399e671c2bc786c8cba99810d4d8ef224ff36ebe5387955951d0efdfeaa
+   renglón: 41 «;» · termina en «;»: true · bytes UTF-8: 60 · no-ASCII: ""
+   llenas: {"1":"1","2":"202609","4":"001002","5":"012345"}
+   campos que empiezan con = + - @: []
+== 40ª/45ª: borrador del caso 1dd4b6cd tipo 3 periodo 20261109
+   renglón: 41 «;» · termina en «;»: true · bytes UTF-8: 316 · no-ASCII: "ÍªÁÚÓÉ"
+   llenas: {"1":"3","2":"20261109","3":"000001","4":"001002","5":"012345","34":"00","40":"CLIENTE: BETA LOGÍSTICA SA DE CV. ALERTA EXCEDE EL PERFIL DEL 2026-11-09 (27ª, PÁRRAFO TERCERO). ALERTA AVISO DEL PERSONAL DEL 2026-11-09 (45ª Y 60ª, ÚLTIMO PÁRRAFO). PERIODO DE LAS OPERACIONES: 2026-11-09 A 2026-11-09","41":"VOTACIÓN DEL COMITÉ"}
+   campos que empiezan con = + - @: []
+== justificación del dictamen que empieza con «=» o «@» (texto del personal) y razón social con «;»
+   renglón: 41 «;» · termina en «;»: true · bytes UTF-8: 138 · no-ASCII: ""
+   llenas: {"1":"2","2":"20261109","3":"000001","4":"001002","5":"012345","34":"00","40":"REPORTE DE 24 HORAS. CLIENTE: ACME S.A.","41":" =HYPERLINK(\"HTTP://X\" \"VER\")"}
+   campos que empiezan con = + - @: []
+   campo41('@SUMA(1+1)') = " @SUMA(1+1)" · campo41('-2+3') = " -2+3"
+== 38ª: constancia {"texto":"CONSTANCIA INTERNA. NO ES UN REPORTE PRESENTADO A LA AUTORIDAD.\r\nDisposición 38ª de las DCG del artículo 124 de la LACP: transferencias internacionales de fondos por USD 1,000 o más.\r\nMes: octubre de 2026.\r\nTransferencias internacionales enviadas o recibidas en el mes: 0.\r\nNo hay formato oficial público para sociedades financieras populares; el Oficial de Cumplimiento confirma en

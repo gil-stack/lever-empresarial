@@ -1,0 +1,32 @@
+== acta firmada de la sesión que dictaminó el caso oculto
+AUD (superior excluido):
+psql:<sondas>/excluidos.sql:7: ERROR:  documento_no_existe
+CUM2 (persona excluida):
+psql:<sondas>/excluidos.sql:11: ERROR:  documento_no_existe
+== conteos del manifiesto de Beta: AUD contra CUM
+ quien |     tabla      | filas 
+-------+----------------+-------
+ AUD   | pld_alertas    |     4
+ AUD   | pld_casos      |     2
+ AUD   | pld_notas      |     2
+ AUD   | pld_documentos |     0
+ AUD   | pld_propuestas |     2
+ AUD   | pld_dictamenes |     0
+(6 rows)
+
+ quien |     tabla      | filas 
+-------+----------------+-------
+ CUM   | pld_alertas    |     6
+ CUM   | pld_casos      |     3
+ CUM   | pld_notas      |     3
+ CUM   | pld_documentos |     1
+ CUM   | pld_propuestas |     3
+ CUM   | pld_dictamenes |     1
+(6 rows)
+
+== CUM2 ve la alerta hermana «sin caso» e intenta abrirle caso
+ regla | en_caso_visible 
+-------+-----------------
+(0 rows)
+
+psql:<sondas>/excluidos.sql:26: ERROR:  alerta_no_existe

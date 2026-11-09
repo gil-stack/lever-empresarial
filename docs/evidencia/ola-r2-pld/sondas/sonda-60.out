@@ -1,0 +1,42 @@
+== A. El acta que Lever genera para CUM (la que se firma y se sube) — texto
+    /F2 10 Tf 1 0 0 1 56 736 Tm (Acta de la sesión del Comité de Comunicación y Control) Tj
+    /F1 10 Tf 1 0 0 1 56 723 Tm (Fecha de la sesión: 2026-11-09) Tj
+    /F1 10 Tf 1 0 0 1 56 710 Tm (Quórum: sí \(4 de 4 miembros presentes o representados; se requiere la mayoría, 47ª\).) Tj
+    /F1 10 Tf 1 0 0 1 56 697 Tm () Tj
+    /F2 10 Tf 1 0 0 1 56 684 Tm (Presentes) Tj
+    /F1 10 Tf 1 0 0 1 56 671 Tm (JOSE MARIA NUÑEZ PEÑA — PRESIDENTE TITULAR) Tj
+    /F1 10 Tf 1 0 0 1 56 658 Tm (SARA NUÑEZ PEÑA — SECRETARIO TITULAR) Tj
+    /F1 10 Tf 1 0 0 1 56 645 Tm (IVONNE NUÑEZ PEÑA — INTEGRANTE TITULAR, Oficial de Cumplimiento) Tj
+    /F1 10 Tf 1 0 0 1 56 632 Tm (IVAN NUÑEZ PEÑA — INTEGRANTE TITULAR) Tj
+    /F1 10 Tf 1 0 0 1 56 619 Tm (Asistió el auditor Aurelio Auditoría, con voz y sin voto \(47ª\).) Tj
+    /F1 10 Tf 1 0 0 1 56 606 Tm () Tj
+    /F2 10 Tf 1 0 0 1 56 593 Tm (Resoluciones) Tj
+    /F2 10 Tf 1 0 0 1 56 580 Tm (Caso 1DD4B6CD \(Beta Logística SA de CV\)) Tj
+    /F1 10 Tf 1 0 0 1 56 567 Tm (Propuesta: Reportar como operación interna preocupante.) Tj
+    /F1 10 Tf 1 0 0 1 56 554 Tm (JOSE MARIA NUÑEZ PEÑA: a favor) Tj
+    /F1 10 Tf 1 0 0 1 56 541 Tm (SARA NUÑEZ PEÑA: a favor) Tj
+    /F1 10 Tf 1 0 0 1 56 528 Tm (IVONNE NUÑEZ PEÑA: a favor) Tj
+    /F1 10 Tf 1 0 0 1 56 515 Tm (IVAN NUÑEZ PEÑA: en contra) Tj
+    /F1 10 Tf 1 0 0 1 56 502 Tm (Resultado: aprobada. Las justificaciones por caso se conservan resguardadas en Lever \(48ª\).) Tj
+    /F1 10 Tf 1 0 0 1 56 489 Tm () Tj
+    /F2 10 Tf 1 0 0 1 56 476 Tm (Firmas \(48ª: presidente y secretario, o sus suplentes\)) Tj
+    /F1 10 Tf 1 0 0 1 56 463 Tm (Presidente: ____________________________) Tj
+    /F1 10 Tf 1 0 0 1 56 450 Tm (Secretario: ____________________________) Tj
+    /F1 10 Tf 1 0 0 1 56 437 Tm () Tj
+    /F1 10 Tf 1 0 0 1 56 424 Tm (Lever generó esta acta con lo registrado en la plataforma. No la transmite a la UIF ni a la) Tj
+    /F1 10 Tf 1 0 0 1 56 411 Tm (CNBV.) Tj
+    /F1 8 Tf 1 0 0 1 56 28 Tm (Página 1 de 1) Tj
+== B. La misma acta generada por CUM2 (excluida) — resoluciones
+    ¿menciona el caso? false · ¿«No se votaron casos»? true
+== C. Lo que la pantalla de Alertas le muestra a CUM2 y lo que pasa si abre el caso
+   alertas «sin caso» que ve CUM2: [ 'excede_perfil caso=null' ]
+   abrirCaso(CUM2, alerta de la regla) → error: alerta_no_existe
+   bandeja de CUM2: ["excede_perfil"]
+== D. Un caso que CUM2 ya trabajaba desaparece cuando CUM le suma un aviso que la excluye
+   antes: CUM2 lee su caso → true
+   CUM suma al caso de CUM2 el aviso que la excluye → error: serie_con_persona_excluida
+   después de que CUM suma el aviso: CUM2 lee su caso → true
+   CUM2 agrega otra nota a «su» caso → ok: undefined
+== E. Un aviso que excluye a toda Cumplimiento (CUM mencionada, CUM2 como superior)
+   ORI emite el aviso que excluye a CUM y a CUM2 → error: aviso_sin_cumplimiento
+   avisos guardados: 3 → 3

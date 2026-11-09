@@ -1,0 +1,25 @@
+== 50ª: roles incompatibles siguen vigentes con la 0030
+   dueña: 4 + auditoria → roles_incompatibles
+   dueña: 4 + originacion → roles_incompatibles
+   dueña: 6 + cumplimiento → roles_incompatibles
+   dueña: 2 + cumplimiento → roles_incompatibles
+== 47ª: el auditor registrado (pld_comite_auditores) también como INTEGRANTE TITULAR
+   auditor vigente: { nombre: 'Aurelio Auditoría', cargo_entidad: 'Auditor interno' }
+   registrarIntegrantes(auditor como INTEGRANTE TITULAR) → error: comite_auditor_integrante
+   integrantes vigentes: [
+  'JOSE MARIA NUÑEZ (DIRECCIÓN GENERAL/DIRECTOR) PRESIDENTE TITULAR',
+  'SARA NUÑEZ (DIRECCIÓN GENERAL/DIRECTOR) SECRETARIO TITULAR',
+  'IVONNE NUÑEZ (DIRECCIÓN GENERAL/DIRECTOR) INTEGRANTE TITULAR',
+  'IVAN NUÑEZ (DIRECCIÓN GENERAL/DIRECTOR) INTEGRANTE TITULAR',
+  'PABLO NUÑEZ (DIRECCIÓN GENERAL/DIRECTOR) PRESIDENTE SUPLENTE'
+]
+== El auditor-integrante cuenta para el quórum y vota
+   caso sin dictamen para votar: 25c98a95-bbbf-4298-b5ee-90f4340f20c1
+   sesión con P, S y el auditor-integrante → error: sesion_presentes_invalidos
+   la base calcula: undefined
+   voto del auditor-integrante → error: sesion_no_existe
+== El «Oficial» integrante del Comité y el Oficial de Lever (modo oficial) no están ligados
+   integrante con es_oficial: [
+  { nombres: 'IVONNE', primer_apellido: 'NUÑEZ', rfc: 'NUPJ700103AB1' }
+]
+   personal con cumplimiento: [ 'Carmen Cumplimiento', 'Ciro Cumplimiento' ]

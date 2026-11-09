@@ -1,15 +1,16 @@
 # Evidencia de la Ola R2: alertas PLD, reportes regulatorios y conservación de 10 años
 
-Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r2-pld.mjs`) contra `next build` + `next start`, sobre una base recién migrada (0001-0030) y sembrada por `scripts/evidencia/ola-r2-pld/preparar.ts`. Cada envío se hace con doble clic y la base confirma que quedó una sola operación. Corrida del 2026-11-09 (hora de la Ciudad de México) desde cero, sin capturas ni datos previos.
+Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r2-pld.mjs`) contra `next build` + `next start`, sobre una base recién migrada (0001-0030) y sembrada por `scripts/evidencia/ola-r2-pld/preparar.ts`. Cada envío se hace con doble clic y la base confirma que quedó una sola operación. Corrida del 2026-11-10 (hora de la Ciudad de México) desde cero, sin capturas ni datos previos, con el código de 4147745.
 
 | Fase | Resultado | Datos |
 | --- | --- | --- |
-| Flujos 1-7 | 107 comprobaciones en verde, 0 en rojo, consola limpia (97 s) | `datos/resultados-f1-f2-f3-f4-f5-f6-f7.json` |
-| Flujos 8-14 | 165 comprobaciones en verde, 0 en rojo, consola limpia (134 s) | `datos/resultados-f8-f9-f10-f11-f12-f13-f14.json`, `datos/matriz-visibilidad.json`, `datos/manifiesto-taller.ndjson` |
-| Pantallas: 10 pantallas × 3 temas × 1440/390 | 60 en verde: un solo h1, cada campo con etiqueta, sin desborde, el viewport de 390 no se ensancha, consola limpia | `datos/resultados-pantallas.json` |
-| Contraste AA medido (100 textos por tema y ancho) | 6 en verde; mínimo 5.12 (Claro 390), Oscuro 7.49, Lever 6.73 | `datos/resultados-contraste.json`, `datos/contraste.json` |
-| R1 completo con la 0030 (`scripts/evidencia/ola-r-alta.mjs`) | flujos 149, pantallas y contraste 60, regresiones 165: todo en verde | `r1/` |
-| `EXPLAIN ANALYZE` de las reglas con 10,000 instrucciones | p95 3.513 ms (criterio ≤ 25 ms) | `explain-reglas.txt` |
+| Flujos 1-7 | 157 comprobaciones en verde, 0 en rojo, consola limpia (112 s) | `datos/resultados-f1-f2-f3-f4-f5-f6-f7.json` |
+| Flujos 8-14 | 197 comprobaciones en verde, 0 en rojo, consola limpia (118 s) | `datos/resultados-f8-f9-f10-f11-f12-f13-f14.json`, `datos/matriz-visibilidad.json`, `datos/manifiesto-taller.ndjson`, `datos/manifiesto-taller-aurelio.ndjson` |
+| Pantallas: 10 pantallas × 3 temas × 1440/390 | 243 en verde: un solo h1, cada campo con etiqueta, ningún control ni texto fuera de su caja, el viewport de 390 no se ensancha, axe sin violaciones de R2, consola limpia. El expediente a 390 se anota aparte: lo ensancha la huella SHA-256 del #59 | `datos/resultados-pantallas.json` |
+| Contraste AA medido (447 textos por tema a 1440 y 172 a 390) | 6 en verde; mínimo 4.96 (Lever 1440), Claro 5.01, Oscuro 5.06 | `datos/resultados-contraste.json`, `datos/contraste.json` |
+| R1 completo con la 0030 (`scripts/evidencia/ola-r-alta.mjs`) | flujos 149, pantallas y contraste 60, regresiones 186: todo en verde | `r1/` |
+| Sondas del revisor del #61, vueltas a correr | Cada hallazgo de base que prueban queda cerrado | `sondas/LEEME.md` |
+| `EXPLAIN ANALYZE` de las reglas con 10,000 instrucciones en el mes | p95 6.87 ms (criterio ≤ 25 ms) | «Desempeño» y `explain-reglas.txt` |
 
 Las capturas están en `capturas/`. Cada corrida numera las suyas desde 01: `NN-fX-…` para los flujos y `NN-pantalla-<pantalla>-<tema>-<ancho>` para las pantallas.
 
@@ -131,13 +132,22 @@ Viven en `pld_parametros` (`0030:491`), versionados y de solo inserción. Cumpli
 
 ## Desempeño
 
-`tests/pld/reglas-postgres.test.ts` siembra 10,000 instrucciones de una empresa en el mes y mide con `EXPLAIN ANALYZE` lo que las reglas le agregan a registrar una más (el disparador `pld_operaciones_evaluar`). Fueron 200 muestras: **p50 2.277 ms, p95 3.513 ms, p99 3.837 ms y máximo 3.912 ms**, contra un criterio de p95 ≤ 25 ms. «Excede el perfil» y «fraccionamiento» usan índices (`pld_operaciones_mes_idx`, `pld_operaciones_clabe_idx`). La mediana de «monto atípico» recorre las operaciones de 6 meses de la empresa (2 ms con 10,200 renglones). Los planes completos están en `explain-reglas.txt`.
+Medido en la corrida de `test:db` del 2026-11-10, con el código de 4147745, en Postgres 17 local.
+
+- **Reglas (r2-base-N11).** `tests/pld/reglas-postgres.test.ts` siembra 10,000 instrucciones de una empresa en el mes, el escenario del brief, y mide con `EXPLAIN ANALYZE` lo que las reglas le agregan a registrar una más (el disparador `pld_operaciones_evaluar`). Fueron 200 muestras: **p50 6.053 ms, p95 6.869 ms, p99 9.016 ms y máximo 9.319 ms**, contra un criterio de p95 ≤ 25 ms. «Excede el perfil» y «fraccionamiento» usan sus índices (`pld_operaciones_mes_idx`, `pld_operaciones_clabe_idx`). «Monto atípico» ya no recorre la tabla: lee solo el índice `pld_operaciones_tiempo_idx` (11,961 renglones en 2.25 ms). Las tres sumas descartan la versión que una corrección reemplazó (r2-base-N1). Los planes completos están en `explain-reglas.txt`.
+- **Bandeja de alertas (r2-base-N10).** Con 20,000 alertas, la consulta elige primero las 500 que se muestran y después une. Sin casos: p50 2.08 ms y p95 3.50 ms; con una persona excluida, p95 2.92 ms. Con 19,500 alertas ya en casos, el peor caso para el anti-join: CUM p95 16.6 ms y CUM2 p95 18.4 ms. El criterio es p95 ≤ 100 ms. Antes del arreglo, la misma consulta tardaba 2,358 ms.
+- **Exclusión de la 60ª.** Las políticas evalúan una sola vez por consulta la lista de lo que excluye a quien lee (un InitPlan con `(SELECT f())::uuid[]`), no una función por renglón.
 
 ## Decisiones
 
 - **Una alerta no bloquea la operación.** El único bloqueo es el de la LPB del #59. Nunca se avisa al cliente: la consola del cliente no muestra nada de PLD, ni en el HTML ni en la carga RSC (flujo 2).
 - **Doble alerta de nómina.** Un lote que pasa el monto mensual declarado de nómina dispara «Excede el perfil» (27ª, por tipo) y «Nómina atípica» (41ª fr. II y III, el lote contra el perfil), como pide el brief. Son dos disposiciones distintas. En el flujo 6 el caso de Taller junta las 4 alertas de la serie.
-- **Las canceladas cuentan.** `pld_operaciones` registra cada instrucción una sola vez: la primera vez que se libera un pago o se prepara un lote, aunque después se cancele o regrese a revisión. El cliente ya la pretendió realizar (2ª fr. XXIX, `0030:551`). Por eso las sumas de «Excede el perfil» y de «Fraccionamiento» incluyen instrucciones canceladas, y la alerta lo dice: «Incluye instrucciones canceladas.» (`src/components/operacion/pld/formato.ts:28` y `:32`).
+- **Las canceladas cuentan.** `pld_operaciones` registra cada instrucción una sola vez: la primera vez que se libera un pago o se prepara un lote, aunque después se cancele o regrese a revisión. Si el pago regresa, se corrige el monto o la CLABE y se libera otra vez, la versión nueva entra como otra instrucción que **reemplaza** a la anterior (r2-base-N1): las reglas la evalúan y las sumas cuentan solo la vigente. Liberar otra vez sin cambiar monto ni CLABE no agrega nada. El cliente ya la pretendió realizar (2ª fr. XXIX, `0030:551`). Por eso las sumas de «Excede el perfil» y de «Fraccionamiento» incluyen instrucciones canceladas, y la alerta lo dice: «Incluye instrucciones canceladas.» (`src/components/operacion/pld/formato.ts:28` y `:32`).
+- **El perfil de una empresa activa (r2-base-N18, decisión del líder).** En alta, Originación declara el perfil directo, como antes. Ya activa, el cambio de Originación queda como propuesta y solo se aplica cuando Cumplimiento lo aprueba; Cumplimiento también puede rechazarlo con motivo. Cada paso deja su evento en la bitácora y la bandeja de Cumplimiento cuenta las propuestas pendientes (flujo 1).
+- **Siempre hay alguien de Cumplimiento que ve un aviso (r2-base-N4).** Un aviso que excluiría a todas las personas activas de Cumplimiento se rechaza (`aviso_sin_cumplimiento`); el texto de quien avisa vuelve con lo capturado.
+- **La fecha de la sesión manda, y el registro tardío también cuenta (r2-base-N6).** Un dictamen queda «fuera de plazo» si la sesión fue después del vencimiento o si se registró después. La pantalla del Comité lista los meses cerrados sin sesión con quórum mientras dictamina el Comité (40ª).
+- **El SITI recibe área y cargo sin acentos (r2-base-N15, decisión del líder).** En el aviso de la 49ª, área y cargo salen en mayúsculas y sin acentos con `unaccent`; la Ñ se queda. En pantalla se ven como se capturaron. Los nombres ya iban así.
+- **Ningún texto libre sale como fórmula (r2-base-N16, decisión del líder).** Nada se rechaza al capturar. Al exportar, un campo de texto libre que empieza con `=`, `+`, `-`, `@`, tabulador o retorno de carro lleva un espacio antes: las 41 columnas, la constancia de la 38ª, el reporte de 24 horas y el manifiesto. Los archivos siguen en UTF-8; **la codificación que acepta el SITI la confirma el Oficial de Cumplimiento.**
 - **La nómina se evalúa al final de la transacción.** El disparador del lote es diferido (`0030:863`): corre cuando el lote ya tiene a todas sus personas.
 - **Internas preocupantes (45ª).** En Lever el personal de la SOFIPO no ejecuta operaciones de clientes, así que la circunstancia II no tiene regla automática. Van por aviso manual (54ª VIII y 60ª), que puede emitir cualquier persona del personal.
 - **Jerarquía.** Lever no modela quién es superior de quién: quien emite el aviso puede marcar a su superior como excluido, con el mismo mecanismo que la persona mencionada.
@@ -178,22 +188,77 @@ El **manifiesto de conservación** (Operación → Conservación) lo descargan C
 
 | Flujo | Qué se comprobó con clics | Capturas |
 | --- | --- | --- |
-| 1. Perfil transaccional | Activar Nogal sin perfil: la base lo rechaza. Omar declara el perfil (doble clic = 1 perfil). Ana aprueba la activación | `01-f1`, `02-f1`, `03-f1` |
-| 2. Excede el perfil | El pago se autoriza sin bloqueo; aparece «Excede el perfil» con sus días restantes; la consola del cliente (HTML y RSC) no muestra nada de PLD | `04-f2` a `06-f2` |
-| 3. Fraccionamiento | Tres instrucciones bajo el umbral a la misma CLABE en 7 días: alerta | `07-f3` |
-| 4. Nómina atípica | Se prepara la nómina de Marta (doble clic = 1 lote): $18,500.00 contra $15,000.00 declarados; alerta «Nómina atípica» y la nómina del cliente no dice nada | `08-f4`, `09-f4` |
-| 5. Aviso manual | Omar avisa (doble clic = 1 aviso) y menciona a Aurelio, de Auditoría: Celia lo ve; Aurelio no lo ve, ni en su bitácora; Omar ve su acuse con folio y sin el texto; la bitácora de Administración no lo muestra, aunque el evento existe | `10-f5` a `13-f5` |
-| 6. Análisis | Nota, documento de soporte (doble clic = 1 documento, con SHA-256) y propuesta | `14-f6` |
-| 7. Comité | La validación rechaza un segundo presidente, menos de 3 titulares y la falta del Oficial sin guardar a nadie; 5 integrantes (doble clic = una vez) con su aviso de la 49ª al 20-nov (15 días hábiles sin el 2 ni el 16); auditor aparte; sesión sin quórum sin botones de voto; sesión con quórum, empate 2-2 que decide el presidente; acta en PDF y firmada; el dictamen con factor de hace 31 minutos pide «Confirma que eres tú»; el otro caso «no reportar» sin reporte | `15-f7` a `22-f7` |
+| 1. Perfil transaccional | Activar Nogal sin perfil: la base lo rechaza. Omar declara el perfil (doble clic = 1 perfil) y Ana aprueba la activación. Ya activa, Omar propone un cambio (doble clic = 1 propuesta) que no toca el vigente; la bandeja de Cumplimiento lo lista, Omar no ve «Aprobar el cambio» y Celia lo aprueba (doble clic = 1 resolución), cada paso con su evento (r2-base-N18) | `01-f1` a `05-f1` |
+| 2. Excede el perfil | El pago se autoriza sin bloqueo; aparece «Excede el perfil» con sus días restantes; la consola del cliente (HTML y RSC) no muestra nada de PLD | `06-f2` a `08-f2` |
+| 3. Fraccionamiento | Tres instrucciones bajo el umbral a la misma CLABE en 7 días: alerta | `09-f3` |
+| 4. Nómina atípica | Se prepara la nómina de Marta (doble clic = 1 lote): $18,500.00 contra $15,000.00 declarados; alerta «Nómina atípica» y la nómina del cliente no dice nada | `10-f4`, `11-f4` |
+| 5. Aviso manual | Un aviso que el servidor rechaza vuelve sin recargar con la descripción, marcada y con el foco, sin texto en la dirección (r2-serv-N14). Omar avisa (doble clic = 1 aviso) y menciona a Aurelio, de Auditoría: Celia lo ve; Aurelio no lo ve, ni en su bitácora; Omar ve su acuse con folio y sin el texto; la bitácora de Administración no lo muestra, aunque el evento existe | `12-f5` a `16-f5` |
+| 6. Análisis | Nota, documento de soporte (doble clic = 1 documento, con SHA-256) y propuesta. La propuesta rechazada conserva su justificación (r2-serv-N14) | `17-f6`, `18-f6` |
+| 7. Comité | La validación rechaza un segundo presidente, menos de 3 titulares y la falta del Oficial, con el campo marcado y el foco, sin guardar a nadie. Un RFC malo en el renglón 3 y un invisible en el renglón 2 marcan su campo; los 5 renglones vuelven con lo capturado (r2-serv-N1). 5 integrantes (doble clic = una vez) con su aviso de la 49ª al 20-nov (15 días hábiles sin el 2 ni el 16), sin acentos para el SITI (r2-base-N15); a 390 px el bloque del SITI se alcanza con Tab y se recorre con las flechas (r2-serv-N11). El auditor con el RFC o con el nombre de un integrante se rechaza (r2-base-N5, r2-serv-N2). Sesión sin presentes con el foco en la primera casilla (r2-serv-N6); sesión sin quórum sin botones de voto; empate 2-2 que decide el presidente; acta en PDF y firmada, también en PNG (r2-serv-N5); el dictamen con factor de hace 31 minutos pide «Confirma que eres tú»; el dictamen rechazado conserva su justificación (r2-serv-N14); el otro caso «no reportar» sin reporte | `19-f7` a `34-f7` |
 | 8. Plazo de 3 días hábiles | Sesión del viernes 30-oct; con el 2-nov inhábil el reporte vence el 5-nov (cálculo aparte); con el reloj en el 3-nov la bandeja dice «Quedan 2 días hábiles»; acuse a tiempo (doble clic = 1); borrador de 41 columnas | `01-f8`, `02-f8` |
-| 9. Fuera de plazo | Día 60: «Vence hoy»; día 61: «Fuera de plazo»; modo Oficial con factor; el Oficial dictamina sin sesión y la base lo marca | `03-f9` a `05-f9` |
-| 10. Relevantes (36ª) | Sin clave CASFIM la bandeja lo dice y no hay archivo; con clave, el archivo de jul-sep en ceros (41 columnas, llenas 1, 2, 4 y 5); acuse con la huella del archivo; la 37ª «sin formato oficial para SOFIPO»; el trimestre en curso no ofrece archivo | `06-f10`, `07-f10` |
-| 11. Constancia 38ª | Octubre vence el 24-nov (15 días hábiles sin el 2 ni el 16 de noviembre); constancia en ceros; con el reloj en el 4-ene-2027, «Falta el calendario 2027» en reportes y en la bandeja | `08-f11` a `10-f11` |
-| 12. Evaluación semestral | Cobre (contrato de hace siete meses) aparece pendiente; Celia la registra (doble clic = 1) y el pendiente desaparece | `11-f12`, `12-f12` |
-| 13. Conservación | DELETE y TRUNCATE rechazados como aplicación (sin permiso) y como dueña (`conservacion_no_se_borra`); manifiesto con el conteo de pagos y la huella de cada documento, y su evento en la bitácora | `13-f13` |
-| 14. Visibilidad | Los 5 roles en cada pantalla nueva, en avisos y en la bitácora; el cliente va a la entrada SOFIPO; Aprobación ve el perfil sin nada de PLD; Auditoría no encuentra el caso que lo menciona | `14-f14` a `20-f14`, `datos/matriz-visibilidad.json` |
+| 9. Fuera de plazo | Día 60: «Vence hoy»; día 61: «Fuera de plazo»; modo Oficial con factor. En modo Oficial no hay «Registrar sesión», pero el historial de 3 sesiones y sus actas firmadas sigue a la vista (r2-serv-N13). El Oficial dictamina sin sesión y la base lo marca | `03-f9` a `05-f9` |
+| 10. Relevantes (36ª) | Sin clave CASFIM la bandeja lo dice y no hay archivo; la clave del órgano supervisor rechazada queda marcada y con el foco (r2-serv-N6); con clave, el archivo de jul-sep en ceros (41 columnas, llenas 1, 2, 4 y 5); acuse con la huella del archivo; la 37ª «sin formato oficial para SOFIPO»; el trimestre en curso no ofrece archivo | `06-f10` a `08-f10` |
+| 11. Constancia 38ª | Octubre vence el 24-nov (15 días hábiles sin el 2 ni el 16 de noviembre); constancia en ceros; con el reloj en el 4-ene-2027, «Falta el calendario 2027» en reportes y en la bandeja | `09-f11` a `11-f11` |
+| 12. Evaluación semestral | Cobre (contrato de hace siete meses) aparece pendiente; un monto rechazado queda marcado y con el foco (r2-serv-N6); Celia la registra (doble clic = 1) y el pendiente desaparece | `12-f12` a `14-f12` |
+| 13. Conservación | DELETE y TRUNCATE rechazados como aplicación (sin permiso) y como dueña (`conservacion_no_se_borra`); manifiesto con el conteo de pagos y la huella de cada documento, y su evento en la bitácora, que dice «Consultó un caso de análisis» al leerlo (r2-serv-N12). Las 6 descargas de PLD responden con la política aislada en `next start` (r2-serv-N8). Aurelio, mencionado en el aviso, baja el manifiesto: cada conteo es lo que su RLS le deja ver, sin la alerta ni el caso del aviso (r2-serv-N3) | `15-f13`, `datos/manifiesto-taller-aurelio.ndjson` |
+| 14. Visibilidad | Los 5 roles en cada pantalla nueva, en avisos y en la bitácora; el cliente va a la entrada SOFIPO; Aprobación ve el perfil sin nada de PLD; Auditoría no encuentra el caso que lo menciona | `16-f14` a `22-f14`, `datos/matriz-visibilidad.json` |
 
 Las 10 pantallas de la fase de pantallas son: bandeja de Cumplimiento, Alertas PLD, caso, parámetros, Comité, sesión, reportes, conservación, avisos y expediente (perfil).
+
+## Revisión del #61: hallazgo → arreglo → prueba
+
+La revisión de base (r2-base-N1 a N19) y la de servidor (r2-serv-N1 a N14) se hicieron contra 94303bc. Cada prueba de base y de servidor de esta tabla se vio en rojo contra 94303bc, o con el arreglo quitado, y en verde con el arreglo. Lo que es solo de pantalla se prueba con clics en el recorrido. Las sondas del revisor, vueltas a correr, están en `sondas/` con su `LEEME.md`.
+
+Archivos de prueba: `pld-postgres` y `reglas-postgres` son `tests/pld/*.test.ts`; `pld.test` es `src/dominio/pld/pld.test.ts`.
+
+### Base
+
+| Hallazgo | Arreglo | Prueba | Recorrido o sonda |
+| --- | --- | --- | --- |
+| **N1 (P1)** Un pago corregido y liberado otra vez no pasaba por las reglas | `pld_operaciones` con `instruccion` y `reemplaza`: si cambió el monto o la CLABE, la versión nueva entra, se evalúa y reemplaza a la anterior en las sumas | `pld-postgres` «reenvío (r2-base-N1)…» | `sondas/sonda-reenvio.out` |
+| **N2 (P1)** El acta firmada revelaba el caso a la persona excluida y al superior (60ª) | `pld_acta_para_descarga` y la política de `pld_actas` niegan con `documento_no_existe` si la sesión votó un caso que excluye a quien pide; el acta generada omite esos casos | `pld-postgres` «Comité: integración (47ª)…» | `sonda-60.out` A y B, `excluidos.out` |
+| **N3 (P2)** 60ª: la alerta del caso oculto, el caso que desaparece y los conteos | `pld_alerta_me_excluye` en la política de alertas; `serie_con_persona_excluida` al sumar a un caso un aviso que excluye a quien ya lo trabaja; el manifiesto cuenta con el mismo filtro | `pld-postgres` «RLS cruzada…», «aviso del personal…», «manifiesto de conservación…» | `sonda-60.out` C y D, `excluidos.out` |
+| **N4 (P2)** Un aviso podía excluir a todo Cumplimiento | Disparador diferido `aviso_sin_cumplimiento` | `pld-postgres` «aviso del personal…» | `sonda-60.out` E |
+| **N5 (P2)** El auditor votaba y daba quórum; integrantes con el mismo RFC | RFC y CURP del auditor; `comite_persona_repetida` y `comite_auditor_integrante` en base y servidor, con aviso en el campo | `pld-postgres` «Comité…» y «análisis…» | `sonda-50.out`; flujo 7 |
+| **N6 (P2)** Un dictamen de sesión fechada atrás salía a tiempo | `fuera_de_plazo` también por la fecha de registro de la sesión; los meses cerrados sin sesión con quórum se listan | `pld-postgres` «sesión con fecha atrasada (r2-base-N6)…» | `sonda-sesion-atrasada.out` |
+| **N7 (P2)** Suma sobre un límite que bajó a mitad de mes y 0 alertas | Una alerta por empresa, tipo y mes con `NOT EXISTS` | `reglas-postgres` «excede el perfil (r2-base-N7)…» | `sonda-limite-exclusion.out` |
+| **N8 (P2)** Carrera de reloj: la liberación que empezó antes no veía a la otra | `BEFORE INSERT` con el candado de la empresa y `ocurrida_en := clock_timestamp()` | `reglas-postgres` «carrera de reloj (r2-base-N8)…» | `sonda-carreras.out` C1 y C2 |
+| **N9 (P2)** Una alerta entraba al caso mientras se dictaminaba | Candado por caso en lo que se agrega al caso (alertas, notas, documentos, propuestas, marca de 24 horas), en los votos y en el dictamen | `pld-postgres` «carrera (r2-base-N9)…» | `sonda-carreras.out` C3 |
+| **N10 (P2)** Bandeja de 2,358 ms con 20,000 alertas | `NOT EXISTS` y `limit` antes de unir (`casos.ts`) | `reglas-postgres` «bandeja con 20,000 alertas (r2-base-N10)…», p95 ≤ 100 ms | «Desempeño» |
+| **N11 (P3)** «Monto atípico» recorría la tabla; el escenario medido no era el del brief | Recorrido solo de índice; se mide con 10,000 instrucciones en el mes | `reglas-postgres` «costo: con 10,000 instrucciones en el mes…» | `explain-reglas.txt` |
+| **N12 (P3)** El cliente podía ejecutar los cálculos de días hábiles sin tope | `REVOKE` a PUBLIC en los 6 definers y tope de rango | `pld-postgres` «días hábiles…» | |
+| **N13 (P3)** 251 contra 252 días hábiles según el huso | `pld_dias_habiles_entre` con serie de enteros | `pld-postgres` «días hábiles…» | |
+| **N14 (P3)** Los CHECK de folios, área y cargo aceptaban invisibles | `pld_sin_invisibles` en esos CHECK y en la identidad del auditor | `pld-postgres` «Comité…» | `sonda-invisibles.out` |
+| **N15 (P3)** «DIRECCIÓN GENERAL» con acento para el SITI | Decisión del líder: `unaccent` en la salida; la Ñ se queda; en pantalla, con acentos | `pld.test` «r2-base-N15…»; `pld-postgres` «Comité…» | flujo 7 |
+| **N16 (P3)** La columna 41 podía empezar con `=HYPERLINK(…)` | Decisión del líder: al exportar, espacio antes de `=`, `+`, `-`, `@`, tabulador o retorno de carro en todo texto libre; nada se rechaza al capturar | `pld.test` «r2-base-N16…»; `pld-postgres` «manifiesto…» | `sonda-reportes.out` |
+| **N17 (P3)** Una exclusión sin persona en el contexto se aceptaba | Con el rol sofipo, `pld_aviso_excluidos_revisar` exige `app_usuario` (`exclusion_fuera_del_aviso`) | `pld-postgres` «aviso del personal…» | `sonda-limite-exclusion.out` |
+| **N18 (P3)** Originación cambiaba el perfil de una empresa activa sin aprobación | Decisión del líder: ya activa, propuesta que Cumplimiento aprueba o rechaza, con evento | `pld-postgres` «perfil versionado y evaluaciones semestrales (27ª)» | flujo 1 |
+| **N19 (P3)** «PEÑA ? PRESIDENTE» en el acta | `—`, `–`, comillas tipográficas, viñeta, `…` y `€` a sus bytes de WinAnsi (`pdf.ts`) | `pld.test` «r2-base-N19…» | flujo 7 (acta) |
+
+### Servidor
+
+| Hallazgo | Arreglo | Prueba | Recorrido o sonda |
+| --- | --- | --- | --- |
+| **serv-N1 (P2)** Los errores de los renglones 2 a 5 de integrantes no marcaban su campo y se perdía lo capturado | `FormularioIntegrantes` con `useActionState`; `ErrorDeIntegrante` lleva el renglón; la acción devuelve el renglón y lo capturado, sin datos personales en la dirección | `pld-postgres` «Comité…» (renglón de cada error) | flujo 7: RFC malo en el renglón 3, invisible en el 2, los 5 renglones de vuelta |
+| **serv-N2 (P2)** El auditor podía llevar el nombre de un integrante vigente | `pld_nombre_de_integrante` con `lpb_normalizar` en `pld_comite_validar` y en el registro del auditor | `pld-postgres` «Comité…» («Iván Núñez Peña», «IVAN NUNEZ PENA», «Peña Núñez, Iván» y al revés) | flujo 7; límite en `sondas/LEEME.md` |
+| **serv-N3 (P2)** El manifiesto le contaba a la persona excluida lo que no puede ver | El arreglo de base-N3, probado también con Auditoría excluida | `pld-postgres` «manifiesto…» | flujo 13 (Aurelio); `excluidos.out` |
+| **serv-N4 (P2, fuera de R2)** Sin JavaScript ningún formulario se envía (`Referrer-Policy: no-referrer` → `Origin: null`) | No va en este PR: lo decide el líder y llega con la décima ronda del #59 (`next.config.ts:15`). Al integrarla se conservan los dos cambios del archivo | | |
+| **serv-N5 (P3)** El acta firmada solo aceptaba PDF | `tipoDeContenido` reconoce PDF, PNG y JPEG por sus bytes; se guarda el tipo detectado | `pld-postgres` «Comité…» (PNG, JPG y GIF rechazado) | flujo 7: acta en PNG |
+| **serv-N6 (P3)** Campos sin marca o sin foco | Clave del órgano supervisor, montos de la evaluación y foco en la primera casilla de presentes. `campo-archivo.tsx` es del #59 y no se toca | Solo pantalla | flujos 7, 10 y 12 |
+| **serv-N7 (P3)** «?» en el PDF del acta | Es base-N19 | | |
+| **serv-N8 (P3)** Las 6 descargas de PLD perdían la política aislada | Las 6 rutas en la excepción de `next.config.ts` | `src/server/pld/descargas.test.ts` | flujo 13: las 6 en `next start` |
+| **serv-N9 (P3)** Fórmula en la columna 41 | Es base-N16 | | |
+| **serv-N10 (P3)** La sesión desbordaba a 390 px | Ya en 7ba925e | | pantallas: «sesión» a 390 sin desborde |
+| **serv-N11 (P3)** El bloque del SITI no se alcanzaba con el teclado | `tabIndex={0}`, `role="region"` y `aria-label` en cada `.tabla-contenedor` de R2 | Solo pantalla | flujo 7: Tab y flechas a 390; axe sin `scrollable-region-focusable` |
+| **serv-N12 (P3)** «Quedan 1 día»; «Abrió un caso» también al consultarlo | Singulares y «Consultó un caso de análisis» | `src/components/operacion/pld/formato.test.ts` | flujo 13 |
+| **serv-N13 (P3)** En modo Oficial se ocultaba el historial de sesiones | Solo se oculta «Registrar sesión» | Solo pantalla | flujo 9 |
+| **serv-N14 (P3)** El aviso, la propuesta y el dictamen rechazados volvían vacíos | `formularios-de-texto.tsx` con `useActionState`: vuelven con lo capturado, marcados y con el foco, sin texto en la dirección | Solo pantalla | flujos 5, 6 y 7 |
+
+### Hallado en el recorrido de cierre
+
+| Hallazgo | Arreglo | Prueba |
+| --- | --- | --- |
+| Las casillas y opciones de R2 heredaban el estilo de un campo de texto (casilla de 40 px y el texto abajo); la CURP invadía la otra columna de la tabla de integrantes a 390 px | 4147745: `fieldset.opciones` con `label.confirmacion`; `data-rotulo` en la tabla y corte de claves largas en celdas mono angostas | Pantallas: «ningún control ni texto se sale de su caja», en rojo antes en Comité 390 y en la evaluación del expediente |
 
 ## Lo que falta y su dueño
 
@@ -209,6 +274,10 @@ Las 10 pantallas de la fase de pantallas son: bandeja de Cumplimiento, Alertas P
 | El destino de la exportación de 10 años | Gil con el Oficial de Cumplimiento |
 | La transmisión por el SITI PLD | El Oficial, a mano: Lever no transmite a la UIF ni a la CNBV |
 | La celebración del contrato (hoy: primera activación aprobada) | Gil |
+| Integrantes del Comité extranjeros sin CURP: hoy no se aceptan (r2-base-N15) | Gil |
+| La codificación del archivo que acepta el SITI (hoy UTF-8, r2-base-N16) | Oficial de Cumplimiento |
+| Formularios sin JavaScript: `Referrer-Policy: no-referrer` manda `Origin: null` y Next rechaza la acción (r2-serv-N4, en todo el producto) | El líder, con la décima ronda del #59 |
+| La huella SHA-256 completa del expediente ensancha la página a 533 px en 390 (`expediente.tsx:180`) | El #59, en curso |
 
 ## Lo que confirma Gil antes de publicar
 
@@ -224,3 +293,6 @@ Las 10 pantallas de la fase de pantallas son: bandeja de Cumplimiento, Alertas P
 10. El dictamen, los parámetros y «quién dictamina» piden el segundo factor de los últimos 30 minutos; los registros (acuse, integrantes, votos, propuesta y notas), no.
 11. La celebración del contrato es la primera activación aprobada.
 12. Un lote de nómina que pasa el perfil da dos alertas («Excede el perfil» y «Nómina atípica»).
+13. Con la empresa ya activa, un cambio de perfil de Originación es una propuesta hasta que Cumplimiento la aprueba.
+14. Por ahora no se aceptan integrantes del Comité sin CURP (extranjeros).
+15. Al exportar, un texto libre que empieza como fórmula lleva un espacio antes; nada se rechaza al capturar.
