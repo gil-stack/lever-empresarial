@@ -17,7 +17,8 @@ import { decidirActivacion, solicitarActivacion } from "../../src/server/operaci
 import { leerCliente, registrarProspecto } from "../../src/server/operacion/clientes.ts";
 import { calificarRiesgoEmpresa, dictaminarVersion, enviarVersion } from "../../src/server/operacion/expediente.ts";
 import { decidirCambioDeSuspension, solicitarCambioDeSuspension } from "../../src/server/operacion/suspensiones.ts";
-import { cancelarPagoProveedor, crearPagoProveedor, resolverPagoProveedor } from "../../src/server/pagos-proveedores/servicio.ts";
+import { cancelarPagoProveedor, crearPagoProveedor, editarYReenviarPago, resolverPagoProveedor } from "../../src/server/pagos-proveedores/servicio.ts";
+import { cambiarClabeProveedor } from "../../src/server/proveedores/servicio-clabes.ts";
 import {
   abrirCaso,
   actaEnPdf,
@@ -339,6 +340,57 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.ok(await contar("select count(*)::int as n from audit_log where company_id = $1 and accion like 'pld%'", [beta]) > 0);
           await assert.rejects(como(urlApp, "plataforma_cliente", { userId: LUIS, companyId: beta }, (c) => c.query("select count(*) from pld_alertas")), /permission denied/);
           await assert.rejects(como(urlApp, "plataforma_cliente", { userId: LUIS, companyId: beta }, (c) => c.query("select count(*) from pld_perfiles")), /permission denied/);
+        });
+
+        await t.test("reenvío (r2-base-N1): un pago corregido y liberado otra vez se evalúa con su instrucción y cuenta una vez", async () => {
+          // La secuencia del revisor, con los servicios del portal: liberar $1,000.00, el cliente cambia la CLABE (el pago
+          // regresa), se rechaza, se corrige a $900,000.00 a la CLABE nueva y se libera otra vez. Perfil: $100,000.00 al mes.
+          const gamma = randomUUID();
+          const ids = { proveedor: "f1000000-0000-4000-8000-000000000002", copia: "f2000000-0000-4000-8000-000000000002" };
+          const CLABE_NUEVA = "002180701150990025";
+          await dueno.query("begin");
+          await dueno.query(
+            `insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, operator_id, estado, demostracion)
+             values ($1, 'GAM150301AB3', 'Gamma Servicios SA de CV', '06600', '601', 'G03', $2, 'en_alta', false)`,
+            [gamma, operador],
+          );
+          await dueno.query(
+            "insert into audit_log (operator_id, company_id, actor_tipo, superficie, accion, entidad, identificador) values ($1, $2, 'sistema', 'sistema', 'alta_empresa', 'companies', $2)",
+            [operador, gamma],
+          );
+          await dueno.query("commit");
+          await declararPerfil(ori, { companyId: gamma, formId: randomUUID(), pagosMonto: "100,000.00", pagosOperaciones: "10", nominaMonto: "5,000.00", nominaOperaciones: "2", motivo: "" });
+          await dueno.query("begin; set local session_replication_role = replica; update companies set estado = 'activa' where id = $1; commit;".replace("$1", `'${gamma}'`));
+          await sembrarPortal(dueno, gamma, operador, ids);
+          const deps = { almacen: almacenEnMemoria(), ahora: () => new Date() };
+          const luis = cliente(LUIS, ["administrador", "liberador"], gamma, operador);
+          const rosa = cliente(ROSA, ["liberador"], gamma, operador);
+          const sesionCliente = { superficie: "cliente" as const, segundoFactor: { metodo: "totp" as const, en: new Date() } };
+          const instruccion = { supplierId: ids.proveedor, origen: "excepcion" as const, emitidaEl: hoy, venceEl: sumarMeses(hoy, 1), programadaEl: sumarMeses(hoy, 1),
+            motivoExcepcion: "Servicio urgente autorizado por dirección" };
+          const operaciones = async (requestId: string) => (await dueno.query(
+            "select * , monto_centavos::text as monto from pld_operaciones where origen_id = $1 order by ocurrida_en", [requestId])).rows;
+          const pago = await crearPagoProveedor(luis, { ...instruccion, clientRequestId: randomUUID(), pdf: { nombre: "soporte.pdf", bytes: PDF }, monto: "1,000.00", referencia: "Servicio menor" }, deps);
+          await resolverPagoProveedor(rosa, sesionCliente, { requestId: pago.requestId, decision: "autorizar", version: 1, totalCentavos: 100000 }, deps);
+          const cambio = await cambiarClabeProveedor(luis, { supplierId: ids.proveedor, clabe: CLABE_NUEVA }, sesionCliente, { avisar: async () => 0 } as never);
+          assert.equal((cambio as { pagosRegresados?: number }).pagosRegresados, 1);
+          // Regresar con la misma instrucción no la registra otra vez.
+          assert.equal((await operaciones(pago.requestId)).length, 1);
+          await resolverPagoProveedor(rosa, sesionCliente, { requestId: pago.requestId, decision: "rechazar", motivo: "Corregir el importe", version: 2, totalCentavos: 100000 }, deps);
+          await editarYReenviarPago(luis, pago.requestId, { ...instruccion, pdf: { nombre: "evidencia-nueva.pdf", bytes: PDF }, monto: "900,000.00", referencia: "Servicio mayor" } as never, deps);
+          await resolverPagoProveedor(rosa, sesionCliente, { requestId: pago.requestId, decision: "autorizar", version: 3, totalCentavos: 90000000 }, deps);
+          // La instrucción nueva se evaluó y el pago cuenta una vez: 900,000.00, no 901,000.00.
+          const excede = (await listarAlertasPld(cum)).find((a) => a.companyId === gamma && a.regla === "excede_perfil");
+          assert.ok(excede, "la instrucción corregida alerta");
+          assert.equal(excede.observado.suma_mes_centavos, 90000000);
+          const ops = await operaciones(pago.requestId);
+          assert.deepEqual(ops.map(({ instruccion: n, monto, clabe, reemplaza }) => ({ n, monto, clabe, reemplaza })), [
+            { n: 1, monto: "100000", clabe: CLABE, reemplaza: null },
+            { n: 3, monto: "90000000", clabe: CLABE_NUEVA, reemplaza: ops[0]!.id },
+          ]);
+          assert.equal(excede.observado.instruccion, 3);
+          assert.equal(excede.observado.reemplaza_monto_centavos, 100000);
+          assert.equal(excede.observado.reemplaza_clabe, CLABE);
         });
 
         let casoConfidencial = "";
@@ -857,7 +909,10 @@ function cliente(userId: string, roles: RolCliente[], companyId: string, operado
 }
 
 /** El portal de Beta: Luis pide y Rosa autoriza (la base pide dos liberadores), con un proveedor y su CLABE. */
-async function sembrarPortal(dueno: pg.Client, companyId: string, operadorId: string): Promise<void> {
+async function sembrarPortal(
+  dueno: pg.Client, companyId: string, operadorId: string,
+  ids: { proveedor: string; copia: string } = { proveedor: PROVEEDOR, copia: COPIA_69B },
+): Promise<void> {
   await dueno.query("begin");
   try {
     for (const [id, roles] of [[LUIS, ["administrador", "liberador"]], [ROSA, ["liberador"]]] as const) {
@@ -871,30 +926,30 @@ async function sembrarPortal(dueno: pg.Client, companyId: string, operadorId: st
         await dueno.query("insert into membership_roles (user_id, company_id, rol) values ($1, $2, $3)", [id, companyId, rol]);
       }
     }
-    await dueno.query("insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ($1, $2, current_date - 1, now())", [COPIA_69B, operadorId]);
+    await dueno.query("insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ($1, $2, current_date - 1, now())", [ids.copia, operadorId]);
     await dueno.query(
       "insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador) values ($1, 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', $2)",
-      [operadorId, COPIA_69B],
+      [operadorId, ids.copia],
     );
-    await dueno.query("insert into lista_69b_rows (snapshot_id, rfc, situacion) values ($1, 'PAL7202161U0', 'Presunto')", [COPIA_69B]);
+    await dueno.query("insert into lista_69b_rows (snapshot_id, rfc, situacion) values ($1, 'PAL7202161U0', 'Presunto')", [ids.copia]);
     const documento = randomUUID();
     const clabeId = randomUUID();
     await dueno.query(
       "insert into documents (id, company_id, clave_blob, hash_sha256, tipo, nombre_original, creado_en) values ($1, $2, $3, $4, 'application/pdf', 'constancia.pdf', now())",
-      [documento, companyId, `constancias/${PROVEEDOR}`, "a".repeat(64)],
+      [documento, companyId, `constancias/${ids.proveedor}`, "a".repeat(64)],
     );
     await dueno.query(
       `insert into suppliers (id, company_id, document_id, snapshot_id, rfc, razon_social, lista_fecha, lista_leida_en, boton_pago, alta_en)
        values ($1, $2, $3, $4, 'LIM101010AB2', 'Proveedor Limpio SA', current_date - 1, now(), true, now())`,
-      [PROVEEDOR, companyId, documento, COPIA_69B],
+      [ids.proveedor, companyId, documento, ids.copia],
     );
     await dueno.query(
       "insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador) values ($1, $2, 'miembro', $3, 'cliente', 'alta_proveedor', 'suppliers', $4)",
-      [operadorId, companyId, LUIS, PROVEEDOR],
+      [operadorId, companyId, LUIS, ids.proveedor],
     );
     await dueno.query(
       "insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde) values ($1, $2, $3, $4, true, now() - interval '1 day')",
-      [clabeId, companyId, PROVEEDOR, CLABE],
+      [clabeId, companyId, ids.proveedor, CLABE],
     );
     await dueno.query(
       "insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador) values ($1, $2, 'miembro', $3, 'cliente', 'clabe_proveedor', 'supplier_clabes', $4)",

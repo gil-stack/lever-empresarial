@@ -550,9 +550,13 @@ REVOKE ALL ON FUNCTION pld_parametros_vigentes(uuid) FROM PUBLIC;
 
 -- 2ª fr. XXIX: Operación Inusual es la que el Cliente «realice o pretenda
 -- realizar». Hoy Lever no mueve dinero: un pago termina en una instrucción
--- liberada y la nómina en un lote preparado. Cada uno entra aquí una sola vez, la
--- primera vez que se libera o se prepara, aunque después se cancele o regrese a
--- revisión: el cliente ya lo pretendió. Cuando llegue SPEI se agrega un disparador
+-- liberada y la nómina en un lote preparado. Cada instrucción entra aquí al
+-- liberarse o prepararse, aunque después se cancele o regrese a revisión: el
+-- cliente ya la pretendió. Si un pago regresa, se corrige (otro monto u otra CLABE)
+-- y se vuelve a liberar, la instrucción nueva entra con su número (`instruccion`) y
+-- `reemplaza` a la anterior: las reglas la evalúan y los acumulados cuentan solo la
+-- vigente de cada pago, sin contarlo dos veces (r2-base-N1). Regresar con la misma
+-- instrucción no la vuelve a registrar. Cuando llegue SPEI se agrega un disparador
 -- que escriba aquí la operación ejecutada; las reglas no cambian.
 CREATE TABLE pld_operaciones (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -561,13 +565,17 @@ CREATE TABLE pld_operaciones (
   tipo text NOT NULL,
   origen_tabla text NOT NULL,
   origen_id uuid NOT NULL,
+  instruccion integer NOT NULL DEFAULT 1,
+  reemplaza uuid REFERENCES pld_operaciones (id) ON DELETE RESTRICT,
   monto_centavos bigint NOT NULL,
   clabe text,
   personas integer,
-  ocurrida_en timestamptz NOT NULL DEFAULT now(),
+  -- Sin valor por omisión: la pone pld_operaciones_antes con el candado ya tomado (r2-base-N8).
+  ocurrida_en timestamptz NOT NULL,
   mes date GENERATED ALWAYS AS (date_trunc('month', ocurrida_en AT TIME ZONE 'America/Mexico_City')::date) STORED,
   CONSTRAINT pld_operaciones_company FOREIGN KEY (company_id, operator_id) REFERENCES companies (id, operator_id) ON DELETE RESTRICT,
-  CONSTRAINT pld_operaciones_origen_unico UNIQUE (origen_tabla, origen_id),
+  CONSTRAINT pld_operaciones_instruccion_unica UNIQUE (origen_tabla, origen_id, instruccion),
+  CONSTRAINT pld_operaciones_instruccion CHECK (instruccion >= 1 AND (reemplaza IS NULL OR tipo = 'pago_proveedor')),
   -- Solo canales nacionales y sin efectivo. Un tipo nuevo (efectivo, internacional)
   -- obliga a revisar los reportes de la 36ª, 37ª y 38ª: la prueba de los reportes
   -- periódicos lee esta lista y truena si cambia.
@@ -581,12 +589,37 @@ CREATE TABLE pld_operaciones (
   CONSTRAINT pld_operaciones_personas CHECK ((tipo = 'nomina') = (personas IS NOT NULL) AND (personas IS NULL OR personas > 0))
 );
 
-CREATE INDEX pld_operaciones_mes_idx ON pld_operaciones (company_id, tipo, mes) INCLUDE (monto_centavos);
-CREATE INDEX pld_operaciones_tiempo_idx ON pld_operaciones (company_id, tipo, ocurrida_en) INCLUDE (monto_centavos, personas);
-CREATE INDEX pld_operaciones_clabe_idx ON pld_operaciones (company_id, clabe, ocurrida_en) INCLUDE (monto_centavos) WHERE clabe IS NOT NULL;
+-- Con `id` en INCLUDE las reglas leen solo el índice, también al excluir la operación
+-- propia y las reemplazadas (r2-base-N11).
+CREATE INDEX pld_operaciones_mes_idx ON pld_operaciones (company_id, tipo, mes) INCLUDE (monto_centavos, id);
+CREATE INDEX pld_operaciones_tiempo_idx ON pld_operaciones (company_id, tipo, ocurrida_en) INCLUDE (monto_centavos, personas, id);
+CREATE INDEX pld_operaciones_clabe_idx ON pld_operaciones (company_id, clabe, ocurrida_en) INCLUDE (monto_centavos, id) WHERE clabe IS NOT NULL;
+-- Una instrucción se reemplaza a lo más una vez; los reemplazos son pocos y el índice, chico.
+CREATE UNIQUE INDEX pld_operaciones_reemplazada ON pld_operaciones (reemplaza) WHERE reemplaza IS NOT NULL;
 
 COMMENT ON TABLE pld_operaciones IS
-  'Operaciones que vigilan las reglas de PLD: instrucciones liberadas y lotes preparados (2ª XXIX). Incluye las que después se cancelaron. Solo inserción.';
+  'Operaciones que vigilan las reglas de PLD: instrucciones liberadas y lotes preparados (2ª XXIX). Incluye las que después se cancelaron. Una corrección liberada otra vez reemplaza a la anterior. Solo inserción.';
+
+-- r2-base-N8: el candado de la empresa y la hora van antes de escribir. Con la hora de
+-- inicio de la transacción (now()), una liberación que empezó antes pero llegaba después
+-- al candado quedaba fuera de las ventanas de la otra, y la otra tampoco la había visto.
+-- Con el candado tomado aquí y clock_timestamp(), por empresa el orden de las horas es el
+-- orden en que se confirman. Una hora explícita (las pruebas de frontera) se respeta.
+CREATE FUNCTION pld_operaciones_antes()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  PERFORM pg_advisory_xact_lock(hashtextextended('pld_operaciones:' || NEW.company_id::text, 0));
+  NEW.ocurrida_en := coalesce(NEW.ocurrida_en, clock_timestamp());
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER pld_operaciones_antes
+BEFORE INSERT ON pld_operaciones
+FOR EACH ROW EXECUTE FUNCTION pld_operaciones_antes();
 
 -- Avisos del personal (sección 6): se crean antes de las alertas porque una alerta puede venir de un aviso.
 CREATE TABLE pld_avisos (
@@ -647,6 +680,8 @@ CREATE UNIQUE INDEX pld_alertas_regla_operacion ON pld_alertas (regla, operacion
 CREATE UNIQUE INDEX pld_alertas_un_aviso ON pld_alertas (aviso_id) WHERE aviso_id IS NOT NULL;
 CREATE INDEX pld_alertas_operador_idx ON pld_alertas (operator_id, creada_en);
 CREATE INDEX pld_alertas_company_idx ON pld_alertas (company_id, creada_en);
+-- Una «Excede el perfil» por empresa, tipo y mes (r2-base-N7).
+CREATE INDEX pld_alertas_excede_mes ON pld_alertas (company_id, (observado ->> 'operacion'), (observado ->> 'mes')) WHERE regla = 'excede_perfil';
 
 COMMENT ON TABLE pld_alertas IS
   'Alertas de PLD (54ª): confidenciales (55ª). No son operational_alerts y no bloquean la operación. Solo inserción.';
@@ -706,9 +741,11 @@ DECLARE
   sobre_perfil boolean := false;
   sobre_personas boolean := false;
   base jsonb;
+  anterior pld_operaciones%ROWTYPE;
+  previa boolean := false;
 BEGIN
-  -- Una empresa a la vez: dos liberaciones simultáneas no cruzan un umbral sin verse.
-  PERFORM pg_advisory_xact_lock(hashtextextended('pld_operaciones:' || NEW.company_id::text, 0));
+  -- El candado de la empresa ya lo tomó pld_operaciones_antes (r2-base-N8): dos
+  -- liberaciones simultáneas no cruzan un umbral sin verse.
   p := pld_parametros_vigentes(NEW.operator_id);
   SELECT * INTO perfil FROM pld_perfiles x WHERE x.company_id = NEW.company_id ORDER BY x.numero DESC LIMIT 1;
   SELECT r.grado INTO grado FROM kyb_calificaciones_riesgo r
@@ -718,18 +755,33 @@ BEGIN
     'operacion', NEW.tipo, 'monto_centavos', NEW.monto_centavos, 'grado', coalesce(grado, 'sin_calificar'),
     'factor_grado', factor, 'parametros_numero', p.numero
   );
+  -- Una corrección liberada otra vez (r2-base-N1): la alerta dice qué instrucción reemplaza.
+  IF NEW.reemplaza IS NOT NULL THEN
+    SELECT * INTO anterior FROM pld_operaciones x WHERE x.id = NEW.reemplaza;
+    base := base || jsonb_build_object(
+      'instruccion', NEW.instruccion, 'reemplaza_monto_centavos', anterior.monto_centavos, 'reemplaza_clabe', anterior.clabe
+    );
+  END IF;
 
   -- Excede el perfil (27ª, tercer párrafo: alertas sobre cambios de comportamiento
   -- contra el perfil transaccional). La suma del mes calendario en la Ciudad de
-  -- México, por tipo, incluidas las instrucciones canceladas, cruza el monto máximo
-  -- mensual declarado. Alerta la operación que lo cruza: una por mes y tipo.
+  -- México, por tipo, incluidas las instrucciones canceladas, supera el monto máximo
+  -- mensual declarado. Una alerta por empresa, tipo y mes: la da la primera operación
+  -- que encuentra la suma arriba, también si el límite bajó a mitad de mes (un perfil
+  -- nuevo o el grado alto) con la suma ya arriba (r2-base-N7). Cada pago cuenta una vez,
+  -- con su instrucción vigente.
   IF perfil.id IS NOT NULL THEN
     declarado := CASE WHEN NEW.tipo = 'pago_proveedor' THEN perfil.pagos_monto_mensual_centavos ELSE perfil.nomina_monto_mensual_centavos END;
     limite := declarado * factor;
     SELECT coalesce(sum(o.monto_centavos), 0) INTO suma
     FROM pld_operaciones o
-    WHERE o.company_id = NEW.company_id AND o.tipo = NEW.tipo AND o.mes = NEW.mes;
-    IF suma > limite AND suma - NEW.monto_centavos <= limite THEN
+    WHERE o.company_id = NEW.company_id AND o.tipo = NEW.tipo AND o.mes = NEW.mes
+      AND NOT EXISTS (SELECT 1 FROM pld_operaciones r WHERE r.reemplaza = o.id);
+    IF suma > limite AND NOT EXISTS (
+      SELECT 1 FROM pld_alertas a
+      WHERE a.company_id = NEW.company_id AND a.regla = 'excede_perfil'
+        AND a.observado ->> 'operacion' = NEW.tipo AND a.observado ->> 'mes' = to_char(NEW.mes, 'YYYY-MM')
+    ) THEN
       PERFORM pld_alertar(NEW, p.id, 'excede_perfil', '27ª, párrafo tercero', base || jsonb_build_object(
         'mes', to_char(NEW.mes, 'YYYY-MM'), 'suma_mes_centavos', suma, 'declarado_centavos', declarado,
         'limite_centavos', limite, 'perfil_numero', perfil.numero, 'incluye_canceladas', true
@@ -743,7 +795,8 @@ BEGIN
   SELECT count(*) INTO historial
   FROM pld_operaciones o
   WHERE o.company_id = NEW.company_id AND o.tipo = NEW.tipo AND o.id <> NEW.id
-    AND o.ocurrida_en > NEW.ocurrida_en - interval '6 months' AND o.ocurrida_en <= NEW.ocurrida_en;
+    AND o.ocurrida_en > NEW.ocurrida_en - interval '6 months' AND o.ocurrida_en <= NEW.ocurrida_en
+    AND NOT EXISTS (SELECT 1 FROM pld_operaciones r WHERE r.reemplaza = o.id);
   IF historial >= p.atipico_historial_minimo THEN
     SELECT avg(x.monto) INTO mediana
     FROM (
@@ -751,6 +804,7 @@ BEGIN
       FROM pld_operaciones o
       WHERE o.company_id = NEW.company_id AND o.tipo = NEW.tipo AND o.id <> NEW.id
         AND o.ocurrida_en > NEW.ocurrida_en - interval '6 months' AND o.ocurrida_en <= NEW.ocurrida_en
+        AND NOT EXISTS (SELECT 1 FROM pld_operaciones r WHERE r.reemplaza = o.id)
       ORDER BY o.monto_centavos
       LIMIT 2 - historial % 2 OFFSET (historial - 1) / 2
     ) AS x;
@@ -773,9 +827,14 @@ BEGIN
       FROM pld_operaciones o
       WHERE o.company_id = NEW.company_id AND o.tipo = 'pago_proveedor' AND o.clabe = NEW.clabe
         AND o.ocurrida_en > NEW.ocurrida_en - make_interval(days => p.fraccion_ventana_dias)
-        AND o.ocurrida_en <= NEW.ocurrida_en AND o.monto_centavos < umbral;
+        AND o.ocurrida_en <= NEW.ocurrida_en AND o.monto_centavos < umbral
+        AND NOT EXISTS (SELECT 1 FROM pld_operaciones r WHERE r.reemplaza = o.id);
+      -- Lo que había antes de esta operación: sin ella y, si reemplaza a otra, con la reemplazada.
+      previa := anterior.id IS NOT NULL AND anterior.clabe = NEW.clabe AND anterior.monto_centavos < umbral
+        AND anterior.ocurrida_en > NEW.ocurrida_en - make_interval(days => p.fraccion_ventana_dias);
       IF cuenta >= p.fraccion_n AND suma_ventana > umbral
-        AND NOT (cuenta - 1 >= p.fraccion_n AND suma_ventana - NEW.monto_centavos > umbral) THEN
+        AND NOT (cuenta - 1 + previa::int >= p.fraccion_n
+                 AND suma_ventana - NEW.monto_centavos + CASE WHEN previa THEN anterior.monto_centavos ELSE 0 END > umbral) THEN
         PERFORM pld_alertar(NEW, p.id, 'fraccionamiento', '41ª, fracción VIII', base || jsonb_build_object(
           'clabe', NEW.clabe, 'instrucciones', cuenta, 'suma_centavos', suma_ventana, 'umbral_centavos', umbral,
           'n', p.fraccion_n, 'ventana_dias', p.fraccion_ventana_dias
@@ -823,11 +882,21 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
+DECLARE
+  vigente pld_operaciones%ROWTYPE;
 BEGIN
-  INSERT INTO pld_operaciones (operator_id, company_id, tipo, origen_tabla, origen_id, monto_centavos, clabe)
-  SELECT c.operator_id, NEW.company_id, 'pago_proveedor', 'supplier_payment_requests', NEW.id, NEW.total_centavos, NEW.clabe
-  FROM companies c WHERE c.id = NEW.company_id
-  ON CONFLICT (origen_tabla, origen_id) DO NOTHING;
+  -- r2-base-N1: un pago que regresa, se corrige y se libera otra vez entra con su
+  -- instrucción nueva; si regresa con la misma (monto y CLABE), ya está registrado.
+  SELECT o.* INTO vigente FROM pld_operaciones o
+  WHERE o.origen_tabla = 'supplier_payment_requests' AND o.origen_id = NEW.id
+  ORDER BY o.instruccion DESC LIMIT 1;
+  IF vigente.id IS NOT NULL AND vigente.monto_centavos = NEW.total_centavos AND vigente.clabe = NEW.clabe THEN
+    RETURN NULL;
+  END IF;
+  INSERT INTO pld_operaciones (operator_id, company_id, tipo, origen_tabla, origen_id, instruccion, reemplaza, monto_centavos, clabe)
+  SELECT c.operator_id, NEW.company_id, 'pago_proveedor', 'supplier_payment_requests', NEW.id,
+         greatest(NEW.version, coalesce(vigente.instruccion, 0) + 1), vigente.id, NEW.total_centavos, NEW.clabe
+  FROM companies c WHERE c.id = NEW.company_id;
   RETURN NULL;
 END;
 $$;
@@ -855,7 +924,7 @@ BEGIN
   INSERT INTO pld_operaciones (operator_id, company_id, tipo, origen_tabla, origen_id, monto_centavos, personas)
   SELECT c.operator_id, NEW.company_id, 'nomina', 'payroll_batches', NEW.id, NEW.total_centavos, personas
   FROM companies c WHERE c.id = NEW.company_id
-  ON CONFLICT (origen_tabla, origen_id) DO NOTHING;
+  ON CONFLICT (origen_tabla, origen_id, instruccion) DO NOTHING;
   RETURN NULL;
 END;
 $$;
