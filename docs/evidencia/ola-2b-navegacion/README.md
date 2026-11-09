@@ -166,9 +166,25 @@ Salida cruda de las pruebas en `b84bf8a`: `datos/revision-b84bf8a.txt`. Capturas
 - **axe 4.14** (`node scripts/evidencia/ola-2b-navegacion.mjs axe`, con `label-content-name-mismatch` encendida): 26 pantallas (Resumen, Aprobaciones, Perfil, los módulos de demostración, «Disponible pronto», Recuperar y la portada) a 1440 y 390. En `ef484dd`, 52/52 combinaciones con `label-content-name-mismatch` y 22 con `region` (`datos/axe-antes-ef484dd.json`). Con el arreglo, las dos en 0 (`datos/axe.json`, 60/60). El marco de Operación a 390 queda con `region` en 0 (`datos/axe-region-marco.txt`).
 - **Nada visual cambia:** la zona del logotipo y las páginas completas del portal y de Operación, a 390 y 1440, son idénticas píxel a píxel antes y después (diferencia máxima 0).
 - **Navegación con el logotipo** (`logotipo/`): Laura llega a Resumen y Rosa a Aprobaciones, con clic a 1440 y toque a 390.
-- **Ya estaban en `ef484dd` y no son de este cambio** (verificado contra su build): `aria-prohibited-attr` en `.bandeja-cuenta` y `label-content-name-mismatch` en el logotipo de Operación, que corrige el #59; `scrollable-region-focusable` en `.tabla-contenedor`, que va en la ronda en que se integre main después del #59, en todos los archivos del árbol integrado.
+- **Ya estaban en `ef484dd` y no son de este cambio** (verificado contra su build): `aria-prohibited-attr` en `.bandeja-cuenta` y `label-content-name-mismatch` en el logotipo de Operación. Van en la décima ronda del #59, aún sin empujar: su head `32e49b8` todavía trae los dos `aria-label` (verificado con la API). Se verifican al integrar main. `scrollable-region-focusable` en `.tabla-contenedor`: los de los archivos nuevos del #60 se arreglan en la ronda siguiente (N17); los de main y Operación, en la ronda de integrar main.
 - **`accesibilidad.spec.ts` es un archivo aparte** para que `test:e2e` siga repartido: sin `fullyParallel`, Playwright reparte por archivo, y con las 5 pruebas dentro de `marco.spec.ts` el reparto quedaba 57/0/20. Ahora queda 28/29/20.
 - **`test:db` en 36/38 desde el 2026-11-10:** `flujo-postgres.test.ts` y `colaboradores-postgres.test.ts` emiten la invitación con un reloj fijo (2026-11-05/06 a las 18:00), y la base la vence 72 horas después con su propio reloj: `invitacion_vencida`. El código de esas pruebas es el de `ef484dd`, que pasó 38/38 el 2026-11-08. El #59 lo corrige en esos dos archivos (`emitirConHoraReal`); el #60 no los toca para no chocar en el merge, y vuelve a 38/38 al integrar main.
+
+## Ronda de 10ebaeb: las tablas que se desplazan (N17) y el comentario del logotipo (N18)
+
+| Hallazgo | Arreglo | Prueba (falla en `10ebaeb`, pasa con el arreglo) |
+| --- | --- | --- |
+| **N17 · axe `scrollable-region-focusable`** · una tabla que no cabe se desplaza dentro de `.tabla-contenedor`, y ahí no había nada enfocable: el teclado no llegaba a ella, y Safari no llegaba ni con Tab ni con Alt+Tab. En Fiscal a 1440 la DIOT oculta columnas (585 contra 497 px) | En los 10 contenedores de los archivos nuevos del #60 (8 vistas de demostración y los 2 del historial de Aprobaciones): `tabIndex={0}`, `role="region"` y `aria-label="Tabla de …"`. El nombre no repite el título: la sección que contiene la tabla ya se llama así, y dos regiones con el mismo nombre activarían `landmark-unique`. El foco usa el `:focus-visible` de siempre | `accesibilidad.spec.ts`: cada tabla de las 8 vistas es una región con nombre y `tabindex=0`; en Fiscal a 1440, Tab desde el texto de antes llega a la DIOT, que no cabe, y ArrowRight la desplaza. En `10ebaeb` no hay región |
+| **N18** · el comentario de `accesibilidad.spec.ts` decía que el logotipo es `role="img"`, y desde `10ebaeb` va `decorativo` (`aria-hidden`) | El comentario dice cómo se nombra ahora el enlace | — |
+
+- **axe 4.14** (modo `axe` del recorrido): `scrollable-region-focusable` y `landmark-unique` se suman a las reglas que tienen que dar 0, junto a la del logotipo y `region`. Dan 0 en las 26 pantallas × 1440/390 (`datos/axe.json`). En `10ebaeb`, `scrollable-region-focusable` salía en 9 de ellas (`datos/axe-antes-10ebaeb.json`).
+- **Teclado, 40 de 40** (`datos/axe.json`, «teclado …»): 10 tablas × 1440/390. En Chromium llega con Tab; en WebKit 27.2 (Safari), con Tab y con Alt+Tab. Cuando la tabla no cabe, las flechas la desplazan en los dos. A 1440 solo la DIOT no cabe; a 390, ninguna.
+  - En WebKit, la primera flecha tras el foco no desplaza y las siguientes desplazan con animación (0, 28 y 40 px a 390). Por eso la revisión aprieta una flecha cada 150 ms, como una persona.
+  - Las capturas del foco en Fiscal están en `tablas/`.
+- **WebKit en el recorrido:** WebKit no manda la cookie de sesión (`__Host-`, Secure) por `http://127.0.0.1`, como sí hace Chromium, y tampoco respeta una cabecera Cookie puesta con `route.continue`. En WebKit, cada petición sale desde Playwright con la sesión (`route.fetch`).
+- **La tabla de lotes** solo se pinta con un lote preparado, así que `axe` corre después de `flujos`. Esta vez corrí `flujos` con `DIR` en una carpeta temporal, para no reescribir sus capturas: pasó 185/185, así que Aprobaciones sigue igual, y dejó el lote que prepara el flujo 4.
+- **Las paradas de Tab nuevas no rompen el orden:** `pantallas` (oscuro, 1440/390, en carpeta temporal) da 299/299, con «paradas de Tab en orden y con foco visible» en cada pantalla; Fiscal tiene 32 paradas y el historial de Aprobaciones, 34.
+- Los `.tabla-contenedor` de main y de Operación (13 archivos) van en la ronda en que se integre main después del #59.
 
 ## Pendiente al cambiar de cuenta
 
@@ -178,12 +194,13 @@ Salida cruda de las pruebas en `b84bf8a`: `datos/revision-b84bf8a.txt`. Capturas
 | **CI rojo**, **N5-resto**, **N6-resto**, **N7**, **N8** y **N9** | **Hecho** en `a7b92d6`; Vercel CI en verde (9 de 9) | typecheck 0, lint 0, `npm test` 457/457, Postgres en serie 38/38, `test:e2e` 45/45, build 0 y security en verde. Recorrido: `modulos` 171/171 y `fondo` 30/30. Cada prueba nueva falla en `16c4265` |
 | **líder-N7 a DPR 1**, **N10** y **N11** | **Hecho** en `b84bf8a`; Vercel CI en verde (9 de 9) | typecheck 0, lint 0, `npm test` 457/457, Postgres en serie 38/38 (0 omitidas), `test:e2e` en sus tres partes 21 + 13 + 17 = 51/51, build 0 y security en verde. Recorrido: `modulos` 189/189 y `fondo` 60/60. Cada prueba nueva falla en `a7b92d6` |
 | **líder-N7 (hueco)**, **N12**, **N13**, **N14** y **N11-latente** | **Hecho** en `ef484dd`; Vercel CI en verde (9 de 9) | typecheck 0, lint 0, `npm test` 458/458, Postgres en serie 38/38, `test:e2e` en sus tres partes 25 + 27 + 20 = 72/72, build 0 y security en verde. Recorrido: `modulos` 207/207 y `fondo` 68/68. Cada prueba nueva falla en `b84bf8a` |
-| **axe: nombre del logotipo (WCAG 2.5.3)** y **`region` del teléfono** | **Hecho** en el commit que agrega esta fila | typecheck 0, lint 0, `npm test` 458/458, Postgres en serie 36/38 (los 2 de la bomba de tiempo de main, que corrige el #59), `test:e2e` 28 + 29 + 20 = 77/77, build 0 y security en verde. Recorrido: `axe` 60/60. Cada prueba nueva falla en `ef484dd` |
-| **axe `scrollable-region-focusable`** (`.tabla-contenedor`) | **Pendiente:** va en la ronda en que se integre main después del #59 | — |
+| **axe: nombre del logotipo (WCAG 2.5.3)** y **`region` del teléfono** | **Hecho** en `10ebaeb`; Vercel CI 8 de 9 (`test:db`, por la bomba de tiempo de main) | typecheck 0, lint 0, `npm test` 458/458, Postgres en serie 36/38 (los 2 de la bomba de tiempo de main, que corrige el #59), `test:e2e` 28 + 29 + 20 = 77/77, build 0 y security en verde. Recorrido: `axe` 60/60. Cada prueba nueva falla en `ef484dd` |
+| **N17** (`scrollable-region-focusable` en los archivos nuevos del #60) y **N18** | **Hecho** en el commit que agrega esta fila | typecheck 0, lint 0, `npm test` 458/458, Postgres en serie 36/38 (la bomba de tiempo de main), `test:e2e` en sus tres partes 30 + 29 + 20 = 79/79, build 0 y security en verde. Recorrido: `axe` 140/140 (con el teclado en Chromium y WebKit) y `flujos` 185/185. Cada prueba nueva falla en `10ebaeb` |
+| **`scrollable-region-focusable` en main y Operación** (13 archivos) | **Pendiente:** va en la ronda en que se integre main después del #59 | — |
 
 Falta:
-- **Vercel CI:** el del commit que agrega la fila del logotipo; su estado terminal va en el PR. Se espera `test:db` en rojo solo por la bomba de tiempo de main, hasta integrar main después del #59.
-- **Integrar main después del #59**, con `scrollable-region-focusable` en esa misma ronda.
+- **Vercel CI:** el del commit que agrega la fila de N17; su estado terminal va en el PR. Se espera `test:db` en rojo solo por la bomba de tiempo de main, hasta integrar main después del #59.
+- **Integrar main después del #59**, con `scrollable-region-focusable` de main y Operación en esa misma ronda. El logotipo de Operación y `.bandeja-cuenta` van en la décima ronda del #59, aún sin empujar, y se verifican al integrar.
 - **Revisión:** el revisor no ha re-verificado esta ronda.
 - **Merge:** el PR no se ha fusionado; va después del #59.
 
@@ -198,11 +215,11 @@ DISENO=<carpeta de capturas del diseño> node scripts/evidencia/ola-2b-navegacio
 node scripts/evidencia/ola-2b-navegacion.mjs modulos
 node scripts/evidencia/ola-2b-navegacion.mjs limpiar     # solo N6 (va también en modulos); SUFIJO_LIMPIAR nombra sus capturas
 node scripts/evidencia/ola-2b-navegacion.mjs fondo       # el fondo con movimiento, sin GPU y con la GPU de la Mac
-TEMAS=oscuro node scripts/evidencia/ola-2b-navegacion.mjs axe   # axe 4.14: nombre del logotipo y region en 0; el logotipo lleva a su sección
 TEMAS=oscuro SUFIJO=-oscuro node scripts/evidencia/ola-2b-navegacion.mjs pantallas   # y claro, lever
 TEMAS=oscuro SUFIJO=-oscuro node scripts/evidencia/ola-2b-navegacion.mjs contraste   # y claro, lever
 node scripts/evidencia/ola-2b-navegacion.mjs cargando
 node scripts/evidencia/ola-2b-navegacion.mjs flujos      # mueve datos: va al final
+TEMAS=oscuro node scripts/evidencia/ola-2b-navegacion.mjs axe   # después de flujos (necesita su lote preparado): axe 4.14 y teclado en Chromium y WebKit
 node scripts/evidencia/ola-2b-navegacion.mjs sesiones    # y luego, con Postgres apagado:
 node scripts/evidencia/ola-2b-navegacion.mjs caida
 ```

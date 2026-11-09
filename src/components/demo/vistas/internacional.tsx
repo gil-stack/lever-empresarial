@@ -78,7 +78,7 @@ export function VistaInternacional({ datos }: { datos: InternacionalDemo }) {
         </Tarjeta>
       </div>
       <Tarjeta id="internacional-enviados" titulo="Pagos enviados" nota="Con su factura y el comprobante del banco">
-        <div className="tabla-contenedor">
+        <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de pagos enviados">
           <table className="tabla">
             <thead>
               <tr>

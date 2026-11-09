@@ -65,7 +65,7 @@ export function VistaFiscal({ datos, empresaId }: { datos: FiscalDemo; empresaId
           acciones={<Accion accion={{ etiqueta: "Descargar", tipo: "secundaria" }} icono={<IconoDescargar />} />}
         >
           <p className="demo-tenue demo-antes-de-tabla">IVA pagado a cada proveedor, armado con las facturas que ya están en Lever. Tu contador la revisa y la presenta.</p>
-          <div className="tabla-contenedor">
+          <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de la DIOT de octubre">
             <table className="tabla">
               <thead>
                 <tr>

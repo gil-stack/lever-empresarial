@@ -10,7 +10,7 @@
 //   node scripts/evidencia/ola-2b-navegacion.mjs limpiar     solo «Limpiar filtros», «Atrás» y «Adelante» de Movimientos (también va en modulos)
 //   node scripts/evidencia/ola-2b-navegacion.mjs fondo       el fondo con movimiento a DPR 1 y 2: sin GPU, a lo más un cuadro largo; con GPU, igual que antes; arrastre y tarea ajena
 //   node scripts/evidencia/ola-2b-navegacion.mjs contraste   AA de cada texto contra la escena real
-//   node scripts/evidencia/ola-2b-navegacion.mjs axe         label-content-name-mismatch (WCAG 2.5.3) y region en 0; el logotipo lleva a Resumen o a Aprobaciones
+//   node scripts/evidencia/ola-2b-navegacion.mjs axe         nombre del logotipo, region, tablas enfocables y landmark-unique en 0; logotipo y tablas con teclado (Chromium y WebKit)
 //   node scripts/evidencia/ola-2b-navegacion.mjs cargando    «Cargando…» de una sección nueva mientras llega la página
 //   node scripts/evidencia/ola-2b-navegacion.mjs caida       con el Postgres apagado: el error de cada pantalla nueva
 //
@@ -22,7 +22,7 @@ import { createRequire } from "node:module";
 import { resolve } from "node:path";
 
 const requerir = createRequire(`${process.cwd()}/package.json`);
-const { chromium } = requerir("playwright");
+const { chromium, webkit } = requerir("playwright");
 const sharp = requerir("sharp");
 const { PNG } = requerir("pngjs");
 
@@ -85,11 +85,12 @@ function renovarSesiones() {
   sql("update sessions set ultimo_uso = now() where expires_at > now()");
 }
 
-async function abrir({ quien, tema = "oscuro", ancho = 1440, javaScript = true, barraVisible = false, movimiento = false, dpr = 1, gpu = false }) {
+async function abrir({ quien, tema = "oscuro", ancho = 1440, javaScript = true, barraVisible = false, movimiento = false, dpr = 1, gpu = false, motor = "chromium" }) {
   // Headless oculta la barra de desplazamiento; sin `--hide-scrollbars` ocupa 15 px, como en un escritorio con barras clásicas.
   // Con `gpu`, el Chromium completo sin ventana pinta con la GPU de la Mac (Metal). Con movimiento y sin GPU, el
   // headless tal cual, como Vercel CI y los e2e: WebGL por la CPU con su pintor predeterminado, cientos de ms por cuadro.
-  const nav = await chromium.launch({
+  // Con `motor: "webkit"`, el WebKit de Playwright (el de Safari), sin las opciones de Chromium.
+  const nav = motor === "webkit" ? await webkit.launch() : await chromium.launch({
     ...(gpu ? { channel: "chromium" } : {}),
     args: gpu ? ["--enable-gpu", "--use-angle=metal", "--ignore-gpu-blocklist"] : movimiento ? [] : ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
     ...(barraVisible ? { ignoreDefaultArgs: ["--hide-scrollbars"] } : {}),
@@ -111,6 +112,12 @@ async function abrir({ quien, tema = "oscuro", ancho = 1440, javaScript = true, 
     { name: "tema", value: tema, domain: host, path: "/" },
     ...(quien ? [{ name: "__Host-sesion", value: SESIONES[quien], domain: host, path: "/", httpOnly: true, secure: true, sameSite: "Lax" }] : []),
   ]);
+  // WebKit no manda una cookie Secure por http://127.0.0.1 (Chromium sí: lo trata como origen seguro), y tampoco respeta
+  // una cabecera Cookie puesta con route.continue. Cada petición sale desde Playwright con la sesión y vuelve tal cual.
+  if (motor === "webkit" && quien) {
+    const galleta = `tema=${tema}; __Host-sesion=${SESIONES[quien]}`;
+    await ctx.route("**/*", async (ruta) => ruta.fulfill({ response: await ruta.fetch({ headers: { ...ruta.request().headers(), cookie: galleta } }) }));
+  }
   const p = await ctx.newPage();
   const errores = [];
   p.on("pageerror", (e) => errores.push(`pageerror ${e.message}`));
@@ -1399,7 +1406,83 @@ async function pantallas() {
 // ---------- axe: el nombre del enlace del logotipo contiene lo que muestra (WCAG 2.5.3), y todo va en un landmark ----------
 // axe-core viene con eslint-plugin-jsx-a11y. `label-content-name-mismatch` es experimental en axe 4: se enciende aquí.
 const REGLA_NOMBRE = "label-content-name-mismatch";
-const REGLAS_EN_CERO = [REGLA_NOMBRE, "region"];
+const REGLAS_EN_CERO = [REGLA_NOMBRE, "region", "scrollable-region-focusable", "landmark-unique"];
+/** N17: las tablas de los archivos del #60, cada una en su región «Tabla de …» con parada de Tab. */
+const TABLAS_CON_TECLADO = [
+  ...[
+    ["conciliacion", "Tabla de lo conciliado recientemente"],
+    ["tarjetas", "Tabla de todas las tarjetas"],
+    ["movimientos", "Tabla de compras de octubre"],
+    ["fiscal", "Tabla de la DIOT de octubre"],
+    ["cuenta", "Tabla de movimientos de la cuenta"],
+    ["internacional", "Tabla de pagos enviados"],
+    ["credito", "Tabla de pagos programados"],
+    ["gasolina", "Tabla de cargas de gasolina"],
+  ].map(([modulo, nombre]) => ({ clave: modulo, quien: "laura", ruta: `${ALTAMAR}/consola/${modulo}`, nombre })),
+  { clave: "aprobaciones-pagos", quien: "ana", ruta: `${TALLER}/consola/aprobaciones?vista=historial`, nombre: "Tabla de decisiones de pagos a proveedores" },
+  { clave: "aprobaciones-lotes", quien: "ana", ruta: `${TALLER}/consola/aprobaciones?vista=historial`, nombre: "Tabla de lotes de nómina preparados" },
+];
+
+/**
+ * Cada tabla se alcanza con el teclado: desde un punto justo antes de ella (un ancla temporal con tabindex=-1), la tecla
+ * lleva el foco a su región; si no cabe, las flechas la desplazan. Chromium con Tab; WebKit (Safari) con Tab y con Alt+Tab:
+ * Safari, de fábrica, con Tab solo recorre campos de texto y con Alt+Tab todo lo demás.
+ */
+async function revisarTeclado(carpeta) {
+  for (const motor of ["chromium", "webkit"]) {
+    for (const ancho of ANCHOS) {
+      for (const tabla of TABLAS_CON_TECLADO) {
+        const { nav, p, errores } = await abrir({ quien: tabla.quien, ancho, motor });
+        await p.goto(`${BASE}${tabla.ruta}`, { waitUntil: "networkidle" });
+        const region = p.getByRole("region", { name: tabla.nombre, exact: true });
+        const etiqueta = `teclado ${motor} ${ancho} ${tabla.clave}`;
+        if ((await region.count()) !== 1) {
+          anotar(false, `${etiqueta}: la región «${tabla.nombre}» existe`, `${await region.count()} regiones`);
+          await nav.close();
+          continue;
+        }
+        const desborda = await region.evaluate((nodo) => nodo.scrollWidth > nodo.clientWidth + 1);
+        const resultados = [];
+        for (const tecla of motor === "webkit" ? ["Tab", "Alt+Tab"] : ["Tab"]) {
+          await region.evaluate((nodo) => {
+            nodo.scrollLeft = 0;
+            const ancla = document.createElement("span");
+            ancla.tabIndex = -1;
+            ancla.dataset.anclaTeclado = "";
+            nodo.before(ancla);
+            ancla.focus();
+          });
+          await p.keyboard.press(tecla);
+          const llega = await region.evaluate((nodo) => document.activeElement === nodo);
+          let desplaza = null;
+          if (llega && desborda) {
+            // Al paso de una persona: WebKit ignora la primera flecha tras el foco y anima cada desplazamiento, así que
+            // varias flechas seguidas sin pausa no se suman.
+            for (let i = 0; i < 4; i += 1) {
+              await p.keyboard.press("ArrowRight");
+              await p.waitForTimeout(150);
+            }
+            desplaza = false;
+            for (let i = 0; i < 10 && !desplaza; i += 1) {
+              desplaza = (await region.evaluate((nodo) => nodo.scrollLeft)) > 0;
+              if (!desplaza) await p.waitForTimeout(150);
+            }
+          }
+          await p.evaluate(() => document.querySelectorAll("[data-ancla-teclado]").forEach((nodo) => nodo.remove()));
+          resultados.push({ tecla, llega, desplaza });
+        }
+        const ok = resultados.every((r) => r.llega && (!desborda || r.desplaza));
+        anotar(ok, `${etiqueta}: ${resultados.map((r) => r.tecla).join(" y ")} llega${desborda ? " y las flechas desplazan (no cabe)" : " (cabe)"}`, JSON.stringify({ desborda, resultados }));
+        if (tabla.clave === "fiscal") {
+          await region.focus();
+          await capturar(p, `${carpeta}/tabla-foco-fiscal-${motor}-${ancho}.webp`, { completa: false, conFoco: true });
+        }
+        anotar(errores.length === 0, `${etiqueta}: sin errores de consola`, errores.join(" | "));
+        await nav.close();
+      }
+    }
+  }
+}
 const PANTALLAS_AXE = [
   { clave: "01-resumen", quien: "laura", ruta: `${ALTAMAR}/consola` },
   ...PANTALLAS,
@@ -1453,6 +1536,8 @@ async function revisarAxe() {
       }
     }
   }
+  renovarSesiones();
+  await revisarTeclado(`${DIR}/tablas`);
 }
 
 const lineal = (c) => (c / 255 <= 0.03928 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4);

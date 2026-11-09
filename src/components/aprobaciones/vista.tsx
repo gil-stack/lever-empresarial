@@ -299,7 +299,7 @@ function Historial({ historial, empresaId }: { historial: HistorialAprobaciones 
             <h2 id="aprobaciones-historial-pagos">Decisiones de pagos a proveedores</h2>
             <small>Las más recientes · el historial completo vive en cada pago</small>
           </header>
-          <div className="tabla-contenedor">
+          <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de decisiones de pagos a proveedores">
             <table className="tabla">
               <thead>
                 <tr>
@@ -335,7 +335,7 @@ function Historial({ historial, empresaId }: { historial: HistorialAprobaciones 
             <h2 id="aprobaciones-historial-lotes">Lotes de nómina preparados</h2>
             <small>Importes y destinos congelados al preparar</small>
           </header>
-          <div className="tabla-contenedor">
+          <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de lotes de nómina preparados">
             <table className="tabla">
               <thead>
                 <tr>

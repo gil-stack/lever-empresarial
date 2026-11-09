@@ -74,7 +74,7 @@ export function VistaConciliacion({ datos }: { datos: ConciliacionDemo }) {
         titulo="Conciliado recientemente"
         acciones={<Accion accion={{ etiqueta: "Póliza contable", tipo: "secundaria" }} />}
       >
-        <div className="tabla-contenedor">
+        <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de lo conciliado recientemente">
           <table className="tabla">
             <thead>
               <tr>

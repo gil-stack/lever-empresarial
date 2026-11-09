@@ -258,7 +258,7 @@ export function VistaMovimientos({
         {compras.length === 0 ? (
           <p className="demo-tenue">Ninguna compra coincide con los filtros.</p>
         ) : (
-          <div className="tabla-contenedor">
+          <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de compras de octubre">
             <table className="tabla">
               <thead>
                 <tr>

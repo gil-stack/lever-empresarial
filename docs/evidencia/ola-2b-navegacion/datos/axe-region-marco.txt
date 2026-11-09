@@ -1,7 +1,9 @@
 # axe 4.14 en el marco (portal: Movimientos de Taller del Cierre; Operación: Clientes) a 390 y 1440, antes y después de meter la barra
 # del teléfono en <nav aria-label="Menú"> y el aviso regulatorio en <footer>. «Antes» = ef484dd con el arreglo del logotipo.
-# Lo que queda: scrollable-region-focusable (.tabla-contenedor) va en la ronda de integrar main después del #59, y
-# label-content-name-mismatch del logotipo de Operación lo corrige el #59 (src/components/operacion/marco.tsx).
+# Lo que queda: scrollable-region-focusable (.tabla-contenedor) va en la ronda de integrar main después del #59 (los de los
+# archivos nuevos del #60 se arreglaron en N17), y label-content-name-mismatch del logotipo de Operación
+# (src/components/operacion/marco.tsx) va en la décima ronda del #59, aún sin empujar: su head 32e49b8 todavía trae el
+# aria-label. Se verifica al integrar main.
 ## Antes
 {"donde":"portal","ancho":390,"violaciones":[{"id":"region","nodos":[".barra-movil > .marca > .solo-lector",".pie-movil"]},{"id":"scrollable-region-focusable","nodos":[".tabla-contenedor"]}]}
 {"donde":"operacion","ancho":390,"violaciones":[{"id":"label-content-name-mismatch","nodos":[".barra-movil > .marca[href$=\"operacion\"]"]},{"id":"region","nodos":[".barra-movil > .marca[href$=\"operacion\"]"]}]}

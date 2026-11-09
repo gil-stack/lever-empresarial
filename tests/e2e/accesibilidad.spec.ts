@@ -13,8 +13,8 @@ const TALLER = "33333333-3333-4333-8333-333333333333";
 const GIL = "gil-pagos@ejemplo.mx";
 
 // WCAG 2.5.3 (axe: label-content-name-mismatch): con `aria-label` en el enlace, su nombre no contenía el texto visible del
-// logotipo («lever» y su línea, pegados). El enlace se nombra con su contenido: el logotipo (role="img", «Lever Empresas») y
-// un texto solo para el lector de pantalla.
+// logotipo («lever» y su línea, pegados). El enlace se nombra con su contenido: el logotipo va `decorativo` (aria-hidden) y
+// un solo texto para el lector de pantalla lo nombra, empezando por lo que se ve («Lever Empresas, ir a Resumen»).
 test.describe("el enlace del logotipo se nombra con lo que muestra", () => {
   for (const [donde, ventana] of [
     ["escritorio", { width: 1440, height: 900 }],
@@ -75,5 +75,46 @@ test.describe("en el teléfono, la barra de arriba y el pie van en su landmark",
     await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
     await page.goto("/operacion/clientes");
     await expect(page.getByRole("navigation", { name: "Menú", exact: true }).getByRole("button", { name: "Secciones" })).toBeVisible();
+  });
+});
+
+// N17 (axe: scrollable-region-focusable): una tabla que no cabe se desplaza dentro de su contenedor, y sin nada enfocable ahí
+// el teclado no llegaba a ella (en Safari, ni con Tab ni con Alt+Tab). Cada contenedor es una región con nombre y parada de
+// Tab. El nombre es «Tabla de …»: la sección que la contiene ya lleva el título, y dos regiones con el mismo nombre chocan.
+const TABLAS_DEMO = [
+  ["conciliacion", "Tabla de lo conciliado recientemente"],
+  ["tarjetas", "Tabla de todas las tarjetas"],
+  ["movimientos", "Tabla de compras de octubre"],
+  ["fiscal", "Tabla de la DIOT de octubre"],
+  ["cuenta", "Tabla de movimientos de la cuenta"],
+  ["internacional", "Tabla de pagos enviados"],
+  ["credito", "Tabla de pagos programados"],
+  ["gasolina", "Tabla de cargas de gasolina"],
+] as const;
+
+test.describe("las tablas que se desplazan se alcanzan con el teclado", () => {
+  test("cada tabla de las vistas de demostración es una región con nombre y parada de Tab", async ({ page, context }) => {
+    await sesionDe(context, GIL);
+    for (const [modulo, nombre] of TABLAS_DEMO) {
+      await page.goto(`/c/${TALLER}/consola/${modulo}`);
+      const tabla = page.getByRole("region", { name: nombre, exact: true });
+      await expect(tabla, modulo).toHaveAttribute("tabindex", "0");
+      await expect(tabla.locator("table"), modulo).toHaveCount(1);
+    }
+  });
+
+  test("Fiscal a 1440: Tab llega a la DIOT, que no cabe, y las flechas la desplazan", async ({ page, context }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await sesionDe(context, GIL);
+    await page.goto(`/c/${TALLER}/consola/fiscal`);
+    const diot = page.getByRole("region", { name: "Tabla de la DIOT de octubre", exact: true });
+    await expect(diot).toBeVisible();
+    expect(await diot.evaluate((nodo) => nodo.scrollWidth > nodo.clientWidth), "la DIOT no cabe a 1440").toBe(true);
+    // El clic en el texto de antes de la tabla deja ahí el punto de partida del Tab, como lo haría una persona.
+    await page.locator('section[aria-labelledby="fiscal-diot"] .demo-antes-de-tabla').click();
+    await page.keyboard.press("Tab");
+    await expect(diot).toBeFocused();
+    for (let i = 0; i < 5; i += 1) await page.keyboard.press("ArrowRight");
+    await expect.poll(() => diot.evaluate((nodo) => nodo.scrollLeft), "ArrowRight desplaza la tabla").toBeGreaterThan(0);
   });
 });

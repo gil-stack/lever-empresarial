@@ -86,7 +86,7 @@ export function VistaTarjetas({
         <Accion accion={{ etiqueta: "Nueva tarjeta", tipo: "principal" }} chico={false} icono={<IconoMas />} />
       </div>
       <section className="hoja" aria-label="Todas las tarjetas">
-        <div className="tabla-contenedor">
+        <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de todas las tarjetas">
           <table className="tabla">
             <thead>
               <tr>

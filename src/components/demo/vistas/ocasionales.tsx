@@ -126,7 +126,7 @@ export function VistaGasolina({ datos }: { datos: GasolinaDemo }) {
         </Tarjeta>
       </div>
       <Tarjeta id="gasolina-cargas" titulo="Cargas" nota={datos.alertasDelMes}>
-        <div className="tabla-contenedor">
+        <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de cargas de gasolina">
           <table className="tabla">
             <thead>
               <tr>

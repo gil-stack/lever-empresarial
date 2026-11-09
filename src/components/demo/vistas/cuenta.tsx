@@ -35,7 +35,7 @@ export function VistaCuenta({ datos }: { datos: CuentaDemo }) {
       </div>
       <h2 className="demo-titulo-seccion">Movimientos de la cuenta</h2>
       <section className="hoja" aria-label="Movimientos de la cuenta">
-        <div className="tabla-contenedor">
+        <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de movimientos de la cuenta">
           <table className="tabla">
             <thead>
               <tr>

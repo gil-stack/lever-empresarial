@@ -71,7 +71,7 @@ export function VistaCredito({ datos }: { datos: CreditoDemo }) {
       </div>
       <h2 className="demo-titulo-seccion">Pagos programados</h2>
       <section className="hoja" aria-label="Pagos programados">
-        <div className="tabla-contenedor">
+        <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de pagos programados">
           <table className="tabla">
             <thead>
               <tr>
