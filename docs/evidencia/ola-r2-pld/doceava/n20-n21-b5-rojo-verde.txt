@@ -1,0 +1,87 @@
+e2e de la doceava del #59 en PLD (tests/e2e/pld.spec.ts) — rojo por mutación y verde, sobre el merge 1e4b14b + 56f6aa1
+Cada rojo aplica una mutación que deshace un arreglo, corre la e2e completa de PLD (serial) y restaura el archivo.
+Postgres 17 desechable en 5553, e2e en 3153, Blob en 4896. Fecha: 2026-11-10 16:01 +08.
+
+== r1 · regla de un solo aviso vigente (useAvisoVigente del #59) en los formularios de PLD
+   mutación: formularios-de-texto.tsx  const vigente = useAvisoVigente(estado, forma)  →  const vigente = estado.aviso
+  ✘   9 tests/e2e/pld.spec.ts:396:5 › r2-serv-N20 con JavaScript: tras agregar una nota, la propuesta rechazada quita el aviso de la nota y deja el foco en su campo (16.7s)
+    Error: el aviso de la propuesta se descarta
+    Expected: 0
+    Received: 1
+  1 failed
+  7 did not run
+  8 passed (40.6s)
+
+== r1b · N20 con JavaScript como estaba antes: sin aviso vigente y sin la cookie del rechazado del #59
+   mutaciones: la de r1 + acciones.ts rechazado() sin rechazadoEnOperacion (sin cookie ni refresh)
+  ✘   9 tests/e2e/pld.spec.ts:396:5 › r2-serv-N20 con JavaScript: tras agregar una nota, la propuesta rechazada quita el aviso de la nota y deja el foco en su campo (16.5s)
+    Error: con JavaScript: el aviso de la nota ya no va arriba
+    Expected: 0
+    Received: 1
+  1 failed
+  7 did not run
+  8 passed (46.4s)
+
+== r2 · N20 sin JavaScript con el fragmento de antes en listo() (pld_nota_agregada#notas-titulo); se excluye la prueba con JS
+  ✘   9 tests/e2e/pld.spec.ts:426:7 › doceava del #59 sin JavaScript, antes de cambiar quién dictamina › r2-serv-N20 sin JavaScript: tras agregar una nota, la propuesta rechazada no pinta el aviso de la nota y deja el foco en su c
+    Error: sin JavaScript: foco en la justificación
+    Expected: 1
+    Received: 0
+  1 failed
+  6 did not run
+  8 passed (48.5s)
+
+== r3a · B5 sin sufijo: envio-sin-script.ts idDeAncla devuelve el id tal cual; se excluye la prueba de B (perfil, ya en fix3/b-enlace-foco.txt)
+  ✘  10 tests/e2e/pld.spec.ts:442:7 › doceava del #59 sin JavaScript, antes de cambiar quién dictamina › B5 sin JavaScript: llegando por #evaluacion-titulo, #sesiones-titulo, #comunicaciones-titulo y #reporte-<r>-<p>, el rechazo d
+    Error: evaluacion-titulo: foco en el campo rechazado
+    Expected: 1
+    Received: 0
+  1 failed
+  5 did not run
+  9 passed (45.1s)
+
+== r3b · B5 #reporte-titulo sin sufijo; se excluyen B y la de los cuatro destinos
+  ✘  13 tests/e2e/pld.spec.ts:578:7 › doceava del #59 sin JavaScript, con el Oficial dictaminando › B5 sin JavaScript: llegando por #reporte-titulo, el acuse rechazado deja el foco en el folio (15.3s)
+    Error: foco en el folio
+    Expected: 1
+    Received: 0
+  1 failed
+  1 did not run
+  12 passed (50.2s)
+
+== r4a · N21 con JavaScript: rechazado() de PLD sin la cookie del #59
+  ✘  13 tests/e2e/pld.spec.ts:539:5 › r2-serv-N21 con JavaScript: el dictamen y la constancia 38ª que otra pestaña ya registró se rechazan con el aviso arriba (17.0s)
+    Error: dictamen con JavaScript
+    Expected: visible
+    Error: element(s) not found
+  1 failed
+  3 did not run
+  12 passed (44.6s)
+
+== r4b · N21 sin JavaScript: la misma mutación; se excluye la prueba con JS
+  ✘  13 tests/e2e/pld.spec.ts:559:7 › doceava del #59 sin JavaScript, con el Oficial dictaminando › r2-serv-N21 sin JavaScript: el dictamen y la constancia 38ª que otra pestaña ya registró se rechazan con el aviso arriba (15.6s)
+    Error: dictamen sin JavaScript
+    Expected: visible
+    Error: element(s) not found
+  1 failed
+  2 did not run
+  12 passed (41.5s)
+
+== verde · sin mutaciones
+  ✓   1 tests/e2e/pld.spec.ts:19:5 › perfil transaccional: Originación lo declara con doble clic y Aprobación lo ve sin alertas ni casos (2.3s)
+  ✓   2 tests/e2e/pld.spec.ts:49:5 › aviso del personal: confidencial; Cumplimiento abre el caso y agrega una nota; Aprobación no ve PLD (2.8s)
+  ✓   3 tests/e2e/pld.spec.ts:92:5 › una clave repetida en la dirección no tumba ninguna página de PLD (4.1s)
+  ✓   4 tests/e2e/pld.spec.ts:112:7 › sin JavaScript › sin JavaScript, agregar una nota al caso responde 303 con su aviso (331ms)
+  ✓   5 tests/e2e/pld.spec.ts:133:7 › sin JavaScript › sin JavaScript, un rechazo de PLD conserva lo escrito, con el foco y su mensaje junto al campo: clave CASFIM, nota y RFC del auditor, a 1440 y 390 (1.3s)
+  ✓   6 tests/e2e/pld.spec.ts:195:7 › sin JavaScript › sin JavaScript, el manifiesto con un periodo al revés vuelve con lo elegido, sin fragmento y con el foco en el periodo (361ms)
+  ✓   7 tests/e2e/pld.spec.ts:221:7 › sin JavaScript › sin JavaScript, quien entra al perfil por un enlace de la bandeja y ve su formulario rechazado tiene el foco en el campo (916ms)
+  ✓   8 tests/e2e/pld.spec.ts:283:5 › Comité: un caso con reserva no se vota en la sesión de un caso sin reserva, y la pantalla no dice por qué (5.1s)
+  ✓   9 tests/e2e/pld.spec.ts:396:5 › r2-serv-N20 con JavaScript: tras agregar una nota, la propuesta rechazada quita el aviso de la nota y deja el foco en su campo (1.3s)
+  ✓  10 tests/e2e/pld.spec.ts:426:7 › doceava del #59 sin JavaScript, antes de cambiar quién dictamina › r2-serv-N20 sin JavaScript: tras agregar una nota, la propuesta rechazada no pinta el aviso de la nota y deja el foco en su c
+  ✓  11 tests/e2e/pld.spec.ts:442:7 › doceava del #59 sin JavaScript, antes de cambiar quién dictamina › B5 sin JavaScript: llegando por #evaluacion-titulo, #sesiones-titulo, #comunicaciones-titulo y #reporte-<r>-<p>, el rechazo d
+  ✓  12 tests/e2e/pld.spec.ts:529:5 › quién dictamina: Cumplimiento elige al Oficial para los dictámenes que siguen (969ms)
+  ✓  13 tests/e2e/pld.spec.ts:539:5 › r2-serv-N21 con JavaScript: el dictamen y la constancia 38ª que otra pestaña ya registró se rechazan con el aviso arriba (3.2s)
+  ✓  14 tests/e2e/pld.spec.ts:559:7 › doceava del #59 sin JavaScript, con el Oficial dictaminando › r2-serv-N21 sin JavaScript: el dictamen y la constancia 38ª que otra pestaña ya registró se rechazan con el aviso arriba (690ms)
+  ✓  15 tests/e2e/pld.spec.ts:578:7 › doceava del #59 sin JavaScript, con el Oficial dictaminando › B5 sin JavaScript: llegando por #reporte-titulo, el acuse rechazado deja el foco en el folio (271ms)
+  ✓  16 tests/e2e/pld.spec.ts:595:5 › B5 con JavaScript: cada enlace con fragmento de PLD lleva a su sección, sin sufijo (4.5s)
+  16 passed (35.9s)

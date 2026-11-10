@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
+import { idDeAncla } from "@/components/operacion/envio-sin-script";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { ConfirmarParaDecidir } from "@/components/operacion/pld/confirmar";
@@ -52,6 +53,9 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
   const pendientesDeBaja = comite.pendientes.filter((p) => p.tipo === "baja");
   const paraSiti = comite.pendientes.map((p) => porId.get(p.integranteId)).filter((i): i is NonNullable<typeof i> => i !== undefined);
   const ids = Array.from({ length: RENGLONES }, () => randomUUID());
+  // B5: destinos de enlaces con fragmento (bandeja y Comité). En la respuesta a un envío sin JavaScript llevan sufijo
+  // (idDeAncla del #59): el fragmento de la dirección ya no coincide y el foco llega al campo rechazado.
+  const [anclaComunicaciones, anclaSesiones] = await Promise.all([idDeAncla("comunicaciones-titulo"), idDeAncla("sesiones-titulo")]);
 
   return (
     <PaginaOperacion titulo="Comité" aviso={params.aviso}>
@@ -147,7 +151,7 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
         ) : null}
       </Hoja>
 
-      <Hoja id="comunicaciones-titulo" titulo="Avisos de integración al SITI">
+      <Hoja id={anclaComunicaciones} titulo="Avisos de integración al SITI">
         {comite.pendientes.length === 0 ? (
           <Vacio titulo="Nada por comunicar">Cada designación, adición o sustitución se comunica en el SITI dentro de 15 días hábiles.</Vacio>
         ) : (
@@ -198,7 +202,7 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
         ) : null}
       </Hoja>
 
-      <Hoja id="sesiones-titulo" titulo="Sesiones">
+      <Hoja id={anclaSesiones} titulo="Sesiones">
         {/* r2-serv-N13 (61ª): en modo Oficial no se registran sesiones nuevas, pero el historial y sus actas siguen a la vista. */}
         {modo.modo === "oficial" ? (
           <p className="pista">Dictamina el Oficial de Cumplimiento: no se registran sesiones nuevas. Las anteriores y sus actas quedan para consulta.</p>

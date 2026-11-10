@@ -1,0 +1,70 @@
+# B · El enlace de la bandeja al perfil y el foco sin JavaScript (pedido del líder sobre d556957)
+# e2e: tests/e2e/pld.spec.ts, «sin JavaScript, quien entra al perfil por un enlace de la bandeja…»
+
+## Rojo con el enlace de d556957 (/expediente#perfil-titulo)
+
+Running 1 test using 1 worker
+
+  ✘  1 tests/e2e/pld.spec.ts:221:7 › sin JavaScript › sin JavaScript, quien entra al perfil por un enlace de la bandeja y ve su formulario rechazado tiene el foco en el campo (15.6s)
+
+
+  1) tests/e2e/pld.spec.ts:221:7 › sin JavaScript › sin JavaScript, quien entra al perfil por un enlace de la bandeja y ve su formulario rechazado tiene el foco en el campo 
+
+    Error: foco en el monto rechazado
+
+    expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('#perfil-nomina-monto:focus')
+    Expected: 1
+    Received: 0
+    Timeout:  15000ms
+
+    Call log:
+      - foco en el monto rechazado locator('#perfil-nomina-monto:focus') with timeout 15000ms
+      - waiting for locator('#perfil-nomina-monto:focus')
+        34 × locator resolved to 0 elements
+           - unexpected value "0"
+
+
+      254 |     await expect(page.locator("#perfil-nomina-monto")).toHaveValue("noventa mil");
+      255 |     await expect(page.locator("#perfil-nomina-monto")).toHaveAttribute("aria-invalid", "true");
+    > 256 |     await expect(page.locator("#perfil-nomina-monto:focus"), "foco en el monto rechazado").toHaveCount(1);
+          |                                                                                            ^
+      257 |     expect(await contar("select 1 from pld_perfil_propuestas where company_id = $1", [empresa])).toBe(0);
+      258 |
+      259 |     // Con la propuesta, Cumplimiento entra por «Por resolver» y su resolución se rechaza: el foco va al motivo.
+
+## Verde con los dos enlaces sin el fragmento (cambio de prueba, revertido)
+
+Running 1 test using 1 worker
+
+  ✓  1 tests/e2e/pld.spec.ts:221:7 › sin JavaScript › sin JavaScript, quien entra al perfil por un enlace de la bandeja y ve su formulario rechazado tiene el foco en el campo (730ms)
+
+  1 passed (6.0s)
+[e2e] recorridos terminados con estado 0 · 10 s
+
+## Dónde queda el perfil sin fragmento (expediente completo de Cobre y uno corto de Taller; y del título en px)
+1440 Cobre {
+  perfil: 3403,
+  evaluacion: 3708,
+  total: 4632,
+  pantallas: 3.781111111111111,
+}
+1440 Taller {
+  perfil: 636,
+  evaluacion: 1033,
+  total: 2006,
+  pantallas: 0.7066666666666667,
+}
+390 Cobre {
+  perfil: 4794,
+  evaluacion: 5207,
+  total: 6596,
+  pantallas: 5.680094786729858,
+}
+390 Taller {
+  perfil: 733,
+  evaluacion: 1364,
+  total: 2798,
+  pantallas: 0.8684834123222749,
+}

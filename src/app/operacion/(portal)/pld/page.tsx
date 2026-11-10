@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { abrirCasoAccion } from "@/app/operacion/(portal)/pld/acciones";
+import { idDeAncla } from "@/components/operacion/envio-sin-script";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { plazoEnDias, resumenDeAlerta } from "@/components/operacion/pld/formato";
@@ -36,6 +37,9 @@ export default async function AlertasPld({ searchParams }: { searchParams: Param
   const bandeja = await leerBandejaPld(ctx, { ahora });
   const analiza = puedeEnOperacion(ctx, "plataforma.pld.analizar");
   const fuera = bandeja.alertasSinCaso.filter((alerta) => alerta.fueraDePlazo).length + bandeja.casosAbiertos.filter((caso) => caso.fueraDePlazo).length;
+  // B5: destinos de enlaces con fragmento (bandeja y Comité). En la respuesta a un envío sin JavaScript llevan sufijo
+  // (idDeAncla del #59): el fragmento de la dirección ya no coincide y el foco llega al campo rechazado.
+  const anclaAlertas = await idDeAncla("alertas-titulo");
 
   return (
     <PaginaOperacion
@@ -59,7 +63,7 @@ export default async function AlertasPld({ searchParams }: { searchParams: Param
         </Metrica>
       </Metricas>
 
-      <Hoja id="alertas-titulo" titulo="Alertas por analizar">
+      <Hoja id={anclaAlertas} titulo="Alertas por analizar">
         {bandeja.alertasSinCaso.length === 0 ? (
           <Vacio titulo="Sin alertas por analizar">Cuando una regla o un aviso del personal genere una alerta, aparece aquí con sus días.</Vacio>
         ) : (

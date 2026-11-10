@@ -8,6 +8,7 @@ import { cargarDocumentoPldAccion, sumarAlertaAccion } from "@/app/operacion/(po
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { CampoArchivo } from "@/components/operacion/campo-archivo";
+import { idDeAncla } from "@/components/operacion/envio-sin-script";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { ConfirmarParaDecidir } from "@/components/operacion/pld/confirmar";
@@ -59,6 +60,9 @@ export default async function CasoPld({
   const error = (seccion: string, campo: string) => (busqueda.en === seccion ? errorDelCampo(busqueda.aviso, campo) : {});
   const mensaje = (seccion: string, campo: string) => (busqueda.en === seccion ? <MensajeDelCampo codigo={busqueda.aviso} campo={campo} /> : null);
   const titulo = `Caso · ${caso.razonSocial ?? "aviso sin empresa"}`;
+  // B5: destinos de enlaces con fragmento (bandeja y Comité). En la respuesta a un envío sin JavaScript llevan sufijo
+  // (idDeAncla del #59): el fragmento de la dirección ya no coincide y el foco llega al campo rechazado.
+  const [anclaAlertas, anclaReporte] = await Promise.all([idDeAncla("alertas-titulo"), idDeAncla("reporte-titulo")]);
 
   return (
     <PaginaOperacion
@@ -87,7 +91,7 @@ export default async function CasoPld({
         <p className="pista">Abierto por {caso.abiertoPor} · {fechaHora(caso.abiertoEn)}</p>
       </div>
 
-      <Hoja id="alertas-titulo" titulo="Alertas del caso">
+      <Hoja id={anclaAlertas} titulo="Alertas del caso">
         <ul className="operacion-lista">
           {caso.alertas.map((alerta) => (
             <li key={alerta.id}>
@@ -313,7 +317,7 @@ export default async function CasoPld({
       </Hoja>
 
       {caso.dictamen && caso.dictamen.resultado !== "no_reportar" ? (
-        <Hoja id="reporte-titulo" titulo="Reporte al SITI">
+        <Hoja id={anclaReporte} titulo="Reporte al SITI">
           <Renglones>
             <Renglon etiqueta="Tipo">{caso.dictamen.resultado === "reportar_inusual" ? "2 · Operación inusual" : "3 · Operación interna preocupante"}</Renglon>
             <Renglon etiqueta="Vence">

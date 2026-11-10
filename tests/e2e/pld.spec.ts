@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import { consultar, contar, dobleClic, idDe, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS } from "./siembra";
@@ -214,6 +214,67 @@ test.describe("sin JavaScript", () => {
     await expect(page.locator('[id="aviso-operacion-campo"]')).toHaveText("Revisa el periodo.");
     expect(await descargas()).toBe(antes);
   });
+
+  // B (25ª): la bandeja de Cumplimiento enlaza al perfil del expediente. Sin JavaScript, quien entra por ese enlace y ve
+  // rechazado el formulario del perfil recibe el foco en el campo: un fragmento que siga en la dirección haría que el
+  // navegador vaya a ese id y descarte el autofocus (el mecanismo de F2 del #59).
+  test("sin JavaScript, quien entra al perfil por un enlace de la bandeja y ve su formulario rechazado tiene el foco en el campo", async ({ page, context }) => {
+    const [fresno] = await consultar<{ id: string }>(
+      `with alta as (
+         insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, operator_id, estado, demostracion)
+         values (gen_random_uuid(), 'FPE200303AB5', 'Fresno PLD E2E', '06600', '601', 'G03', (select id from operators order by alta_en limit 1), 'activa', false)
+         returning id, operator_id)
+       insert into audit_log (operator_id, company_id, actor_tipo, superficie, accion, entidad, identificador)
+       select operator_id, id, 'sistema', 'sistema', 'alta_empresa', 'companies', id from alta returning company_id as id`,
+    );
+    const empresa = fresno!.id;
+    const enviarRechazado = async (boton: string) => {
+      const [envio] = await Promise.all([
+        page.waitForResponse((respuesta) => respuesta.request().method() === "POST"),
+        page.getByRole("button", { name: boton }).click(),
+      ]);
+      expect(envio.status(), boton).toBe(200);
+      await page.waitForLoadState();
+    };
+
+    // Empresa activa sin perfil: Cumplimiento la ve en la bandeja; Originación entra por ese enlace y propone.
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.goto("/operacion/cumplimiento");
+    const sinPerfil = page.locator('section[aria-labelledby="pld-sin-perfil-titulo"]').getByRole("link", { name: "Fresno PLD E2E" });
+    const enlace = await sinPerfil.getAttribute("href");
+    expect(enlace).toMatch(new RegExp(`^/operacion/clientes/${empresa}/expediente`));
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    await page.goto(enlace!);
+    await page.locator("#perfil-pagos-monto").fill("80,000.00");
+    await page.locator("#perfil-pagos-operaciones").fill("8");
+    await page.locator("#perfil-nomina-monto").fill("noventa mil");
+    await page.locator("#perfil-nomina-operaciones").fill("2");
+    await page.locator("#perfil-motivo").fill("Cliente que operaba antes del registro de perfiles.");
+    await enviarRechazado("Proponer el cambio a Cumplimiento");
+    await expect(page.locator("#perfil-nomina-monto")).toHaveValue("noventa mil");
+    await expect(page.locator("#perfil-nomina-monto")).toHaveAttribute("aria-invalid", "true");
+    await expect(page.locator("#perfil-nomina-monto:focus"), "foco en el monto rechazado").toHaveCount(1);
+    expect(await contar("select 1 from pld_perfil_propuestas where company_id = $1", [empresa])).toBe(0);
+
+    // Con la propuesta, Cumplimiento entra por «Por resolver» y su resolución se rechaza: el foco va al motivo.
+    await page.locator("#perfil-nomina-monto").fill("90,000.00");
+    const [propuesta] = await Promise.all([
+      page.waitForResponse((respuesta) => respuesta.request().method() === "POST"),
+      page.getByRole("button", { name: "Proponer el cambio a Cumplimiento" }).click(),
+    ]);
+    expect(propuesta.status()).toBe(303);
+    expect(await contar("select 1 from pld_perfil_propuestas where company_id = $1", [empresa])).toBe(1);
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.goto("/operacion/cumplimiento");
+    await page.locator("li", { hasText: "Por resolver" }).getByRole("link", { name: "Fresno PLD E2E" }).click();
+    await page.waitForURL(new RegExp(`/operacion/clientes/${empresa}/expediente`));
+    // «Revisar» con tres U+3164 pasa el mínimo del navegador (10) y el servidor cuenta 7 que se ven.
+    await page.locator("#perfil-resolucion-motivo").fill("Revisar\u3164\u3164\u3164");
+    await enviarRechazado("Aprobar el cambio");
+    await expect(page.locator("#perfil-resolucion-motivo")).toHaveAttribute("aria-invalid", "true");
+    await expect(page.locator("#perfil-resolucion-motivo:focus"), "foco en el motivo rechazado").toHaveCount(1);
+    expect(await contar("select 1 from pld_perfil_resoluciones where company_id = $1", [empresa])).toBe(0);
+  });
 });
 
 // r2-fix3-N3 (60ª): un caso cuyo aviso excluye a alguien del personal se vota en su propia sesión del Comité. En la
@@ -284,5 +345,277 @@ test("Comité: un caso con reserva no se vota en la sesión de un caso sin reser
   const [mencionada] = await consultar<{ nombre: string }>("select nombre from users where correo = $1", [CORREOS.op2]);
   await expect(page.locator("#aviso-operacion")).not.toContainText(mencionada!.nombre);
   expect(await votos(conReserva!.id)).toBe(0);
+  expect(errores).toEqual([]);
+});
+
+// ── Doceava del #59 en PLD: r2-serv-N20 (sin fragmento y sin el aviso viejo), r2-serv-N21 (rechazo sin formulario) y B5
+// (destinos de fragmento con sufijo en la respuesta a un envío sin JavaScript).
+
+/** Fecha y hora de Ciudad de México para un campo datetime-local, un minuto antes de ahora (el máximo es «ahora»). */
+function ahoraParaCampo(): string {
+  const partes = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(new Date(Date.now() - 60_000));
+  const de = (tipo: string) => partes.find((parte) => parte.type === tipo)!.value;
+  return `${de("year")}-${de("month")}-${de("day")}T${de("hour")}:${de("minute")}`;
+}
+
+function mananaEnMexico(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(Date.now() + 86_400_000));
+}
+
+/** Los casos de Ceiba sin dictamen, del más viejo al más nuevo. */
+async function casosAbiertos(): Promise<string[]> {
+  const filas = await consultar<{ id: string }>(
+    "select c.id from pld_casos c where c.company_id = $1 and not exists (select 1 from pld_dictamenes d where d.caso_id = c.id) order by c.registrado_en, c.id",
+    [ceiba],
+  );
+  return filas.map((fila) => fila.id);
+}
+
+/** Envía y espera la respuesta del POST (sin JavaScript: 200 si se rechaza, 303 si se aplica). */
+async function enviarPost(page: Page, boton: Locator): Promise<number> {
+  const [respuesta] = await Promise.all([page.waitForResponse((r) => r.request().method() === "POST"), boton.click()]);
+  await page.waitForLoadState();
+  return respuesta.status();
+}
+
+/** Lo que N20 revisa tras el rechazo de la propuesta: sin el aviso de la nota arriba, el foco en su campo y su aviso. */
+async function propuestaRechazadaSinAvisoViejo(page: Page, donde: string) {
+  await expect(page.locator("#propuesta-justificacion"), donde).toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator("#propuesta-justificacion:focus"), `${donde}: foco en la justificación`).toHaveCount(1);
+  await expect(page.locator("#aviso-propuesta"), donde).toBeVisible();
+  await expect(page.locator("#aviso-operacion"), `${donde}: el aviso de la nota ya no va arriba`).toHaveCount(0);
+  await expect(page.locator("#aviso-rechazo"), `${donde}: el formulario muestra su aviso`).toBeHidden();
+  expect(new URL(page.url()).hash, donde).toBe("");
+}
+
+// r2-serv-N20: una nota que se agrega deja su aviso arriba; si después la propuesta (otra tarjeta) se rechaza, ese aviso
+// ya no aplica y el foco va al campo rechazado. Rojo con el `listo` de antes (fragmento #notas-titulo) y sin el aviso
+// vigente del #59 en los formularios de PLD.
+test("r2-serv-N20 con JavaScript: tras agregar una nota, la propuesta rechazada quita el aviso de la nota y deja el foco en su campo", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const [caso] = await casosAbiertos();
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  await page.goto(`/operacion/pld/casos/${caso}`);
+  await page.locator("#nota-texto").fill("Antes de proponer, el contrato con el tercero ya está en el expediente.");
+  await page.getByRole("button", { name: "Agregar nota" }).click();
+  await page.waitForURL(/aviso=pld_nota_agregada/);
+  expect(new URL(page.url()).hash).toBe("");
+  await expect(page.locator("#aviso-operacion")).toContainText("Nota agregada al análisis.");
+  await page.locator("#propuesta-propuesta").selectOption("no_reportar");
+  // «Revisar» con tres U+3164 pasa el mínimo del navegador (10) y el servidor cuenta 7 que se ven.
+  await page.locator("#propuesta-justificacion").fill("Revisarㅤㅤㅤ");
+  await page.getByRole("button", { name: "Registrar propuesta" }).click();
+  await propuestaRechazadaSinAvisoViejo(page, "con JavaScript");
+  // Un solo campo marcado a la vez (regla del #59, useAvisoVigente): si ahora se rechaza la nota, el aviso de la
+  // propuesta se descarta y lo escrito en ella se queda.
+  await page.locator("#nota-texto").fill("aㅤ");
+  await page.getByRole("button", { name: "Agregar nota" }).click();
+  await expect(page.locator("#nota-texto")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator("#nota-texto:focus")).toHaveCount(1);
+  await expect(page.locator("#aviso-propuesta"), "el aviso de la propuesta se descarta").toHaveCount(0);
+  await expect(page.locator("#propuesta-justificacion")).not.toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator("#propuesta-justificacion")).toHaveValue("Revisarㅤㅤㅤ");
+  expect(errores).toEqual([]);
+});
+
+test.describe("doceava del #59 sin JavaScript, antes de cambiar quién dictamina", () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("r2-serv-N20 sin JavaScript: tras agregar una nota, la propuesta rechazada no pinta el aviso de la nota y deja el foco en su campo", async ({ page, context }) => {
+    const [caso] = await casosAbiertos();
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.goto(`/operacion/pld/casos/${caso}`);
+    await page.locator("#nota-texto").fill("Segunda nota antes de proponer, sin JavaScript.");
+    expect(await enviarPost(page, page.getByRole("button", { name: "Agregar nota" }))).toBe(303);
+    await page.waitForURL(/aviso=pld_nota_agregada/);
+    await expect(page.locator("#aviso-operacion")).toContainText("Nota agregada al análisis.");
+    await page.locator("#propuesta-propuesta").selectOption("no_reportar");
+    await page.locator("#propuesta-justificacion").fill("Revisarㅤㅤㅤ");
+    expect(await enviarPost(page, page.getByRole("button", { name: "Registrar propuesta" }))).toBe(200);
+    await propuestaRechazadaSinAvisoViejo(page, "sin JavaScript");
+  });
+
+  // B5: quien llega por un enlace con fragmento (bandeja, Comité) y ve su formulario rechazado recibe el foco en el
+  // campo. La página que responde al envío pinta el destino con sufijo (idDeAncla del #59): el fragmento no coincide.
+  test("B5 sin JavaScript: llegando por #evaluacion-titulo, #sesiones-titulo, #comunicaciones-titulo y #reporte-<r>-<p>, el rechazo deja el foco en su campo", async ({ page, context }) => {
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.goto("/operacion/reportes");
+    // Sin las claves de la entidad, el acuse de la 36ª se rechaza por eso (falta_clave_entidad) y no por su folio.
+    await page.locator("#entidad-casfim").fill("123456");
+    await page.locator("#entidad-supervisor").fill("654321");
+    expect(await enviarPost(page, page.getByRole("button", { name: /^Registrar claves/ }))).toBe(303);
+    await page.waitForURL(/aviso=pld_entidad_registrada/);
+    const periodico = page.locator("li", { has: page.getByRole("button", { name: "Registrar envío" }) }).first();
+    const anclaPeriodico = (await periodico.getAttribute("id"))!;
+    expect(anclaPeriodico).toMatch(/^reporte-36-\d{6}$/);
+    const destinos = [
+      {
+        ruta: `/operacion/clientes/${ceiba}/expediente`, ancla: "evaluacion-titulo", campo: "#evaluacion-justificacion", boton: page.getByRole("button", { name: "Registrar evaluación" }),
+        llenar: async () => {
+          await page.locator('input[name="perfil"][value="mantiene"]').check();
+          await page.locator("#evaluacion-justificacion").fill("Revisarㅤㅤㅤ");
+        },
+      },
+      {
+        ruta: "/operacion/comite", ancla: "sesiones-titulo", campo: "#sesion-fecha", boton: page.getByRole("button", { name: "Registrar sesión" }),
+        llenar: async () => {
+          // El navegador no deja una fecha futura (max); sin el máximo, la rechaza el servidor.
+          await page.locator("#sesion-fecha").evaluate((campo) => campo.removeAttribute("max"));
+          await page.locator("#sesion-fecha").fill(mananaEnMexico());
+          await page.locator('input[name="presentes"]').first().check();
+        },
+      },
+      {
+        ruta: "/operacion/comite", ancla: "comunicaciones-titulo", campo: "#comunicacion-folio", boton: page.getByRole("button", { name: "Registrar comunicación" }),
+        llenar: async () => {
+          await page.locator("#comunicacion-folio").fill("SITI​2026");
+          await page.locator("#comunicacion-recibido").fill(ahoraParaCampo());
+        },
+      },
+      {
+        ruta: "/operacion/reportes", ancla: anclaPeriodico, campo: `[id="${anclaPeriodico}-folio"]`,
+        boton: page.locator(`[id="${anclaPeriodico}"]`).getByRole("button", { name: "Registrar envío" }),
+        llenar: async () => {
+          await page.locator(`[id="${anclaPeriodico}-folio"]`).fill("REL​2026");
+          await page.locator(`[id="${anclaPeriodico}-recibido"]`).fill(ahoraParaCampo());
+        },
+      },
+    ];
+    for (const destino of destinos) {
+      await page.goto(`${destino.ruta}#${destino.ancla}`);
+      await destino.llenar();
+      expect(await enviarPost(page, destino.boton), destino.ancla).toBe(200);
+      await expect(page.locator(`${destino.campo}:focus`), `${destino.ancla}: foco en el campo rechazado`).toHaveCount(1);
+      await expect(page.locator(destino.campo), destino.ancla).toHaveAttribute("aria-invalid", "true");
+      await expect(page.locator(`[id="${destino.ancla}"]`), `${destino.ancla}: el destino lleva sufijo`).toHaveCount(0);
+      const ids = await page.locator(`[id^="${destino.ancla}-"]`).evaluateAll((nodos) => nodos.map((nodo) => nodo.id));
+      expect(ids.some((id) => new RegExp(`^${destino.ancla}-[0-9a-f]{8}$`).test(id)), `${destino.ancla}: ${ids.join(", ")}`).toBe(true);
+    }
+  });
+});
+
+// r2-serv-N21: si otra pestaña ya registró el dictamen o el periódico, el formulario deja de pintarse y su aviso se iría
+// con él. El rechazo va en la cookie de `rechazado` (#59) y la página lo pinta arriba (#aviso-rechazo).
+async function rechazoSinFormulario(page: Page, texto: RegExp, donde: string) {
+  await expect(page.locator("#aviso-rechazo"), donde).toBeVisible();
+  await expect(page.locator("#aviso-rechazo"), donde).toContainText(texto);
+}
+
+async function dictamenEnDosPestanas(page: Page, otra: Page, caso: string, resultado: string, enviar: (pestana: Page) => Promise<void>) {
+  for (const pestana of [page, otra]) {
+    await pestana.goto(`/operacion/pld/casos/${caso}`);
+    await pestana.locator("#dictamen-resultado").selectOption(resultado);
+    await pestana.locator("#dictamen-justificacion").fill("Los pagos al tercero no corresponden al giro declarado por la empresa.");
+  }
+  await enviar(otra);
+  await otra.waitForURL(/aviso=pld_dictamen_registrado/);
+  await enviar(page);
+}
+
+async function constanciaEnDosPestanas(page: Page, otra: Page, enviar: (pestana: Page, boton: Locator) => Promise<void>): Promise<string> {
+  await page.goto("/operacion/reportes");
+  const ancla = (await page.locator("li", { has: page.getByRole("button", { name: "Registrar constancia" }) }).first().getAttribute("id"))!;
+  expect(ancla).toMatch(/^reporte-38-\d{6}$/);
+  await otra.goto("/operacion/reportes");
+  await enviar(otra, otra.locator(`[id="${ancla}"]`).getByRole("button", { name: "Registrar constancia" }));
+  await otra.waitForURL(/aviso=pld_periodico_registrado/);
+  await enviar(page, page.locator(`[id="${ancla}"]`).getByRole("button", { name: "Registrar constancia" }));
+  return ancla;
+}
+
+// Para dictaminar sin sesión del Comité: quien dictamina pasa a ser el Oficial de Cumplimiento (op3).
+test("quién dictamina: Cumplimiento elige al Oficial para los dictámenes que siguen", async ({ page, context }) => {
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  await page.goto("/operacion/comite");
+  await page.locator('input[name="modo"][value="oficial"]').check();
+  await page.locator("#modo-oficial").selectOption(await idDe(CORREOS.op3));
+  await page.locator("#modo-motivo").fill("El Oficial dictamina mientras el Comité termina de integrarse.");
+  await page.getByRole("button", { name: "Guardar quién dictamina" }).click();
+  await page.waitForURL(/aviso=pld_modo_cambiado/);
+});
+
+test("r2-serv-N21 con JavaScript: el dictamen y la constancia 38ª que otra pestaña ya registró se rechazan con el aviso arriba", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  const [caso] = await casosAbiertos();
+  const otra = await context.newPage();
+  await dictamenEnDosPestanas(page, otra, caso!, "reportar_inusual", (pestana) => pestana.getByRole("button", { name: "Registrar dictamen" }).click());
+  await rechazoSinFormulario(page, /El caso ya tiene dictamen/, "dictamen con JavaScript");
+  await expect(page.locator("#dictamen-justificacion")).toHaveCount(0);
+  expect(await contar("select 1 from pld_dictamenes where caso_id = $1", [caso])).toBe(1);
+
+  const ancla = await constanciaEnDosPestanas(page, otra, (_pestana, boton) => boton.click());
+  await rechazoSinFormulario(page, /Ese reporte ya tiene su envío registrado/, "38ª con JavaScript");
+  await expect(page.locator(`[id="${ancla}"]`).getByRole("button", { name: "Registrar constancia" })).toHaveCount(0);
+  await otra.close();
+  expect(errores).toEqual([]);
+});
+
+test.describe("doceava del #59 sin JavaScript, con el Oficial dictaminando", () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("r2-serv-N21 sin JavaScript: el dictamen y la constancia 38ª que otra pestaña ya registró se rechazan con el aviso arriba", async ({ page, context }) => {
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    const [caso] = await casosAbiertos();
+    const otra = await context.newPage();
+    const estados: number[] = [];
+    const enviar = async (pestana: Page, boton: Locator) => { estados.push(await enviarPost(pestana, boton)); };
+    await dictamenEnDosPestanas(page, otra, caso!, "reportar_inusual", (pestana) => enviar(pestana, pestana.getByRole("button", { name: "Registrar dictamen" })));
+    expect(estados).toEqual([303, 200]);
+    await rechazoSinFormulario(page, /El caso ya tiene dictamen/, "dictamen sin JavaScript");
+    await expect(page.locator("#dictamen-justificacion")).toHaveCount(0);
+    expect(await contar("select 1 from pld_dictamenes where caso_id = $1", [caso])).toBe(1);
+
+    estados.length = 0;
+    await constanciaEnDosPestanas(page, otra, enviar);
+    expect(estados).toEqual([303, 200]);
+    await rechazoSinFormulario(page, /Ese reporte ya tiene su envío registrado/, "38ª sin JavaScript");
+    await otra.close();
+  });
+
+  test("B5 sin JavaScript: llegando por #reporte-titulo, el acuse rechazado deja el foco en el folio", async ({ page, context }) => {
+    const [conReporte] = await consultar<{ id: string }>(
+      "select c.id from pld_casos c join pld_dictamenes d on d.caso_id = c.id where c.company_id = $1 and d.resultado = 'reportar_inusual' order by d.caso_id limit 1",
+      [ceiba],
+    );
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.goto(`/operacion/pld/casos/${conReporte!.id}#reporte-titulo`);
+    await page.locator("#reporte-folio").fill("SITI​0001");
+    await page.locator("#reporte-recibido").fill(ahoraParaCampo());
+    expect(await enviarPost(page, page.getByRole("button", { name: "Registrar acuse" }))).toBe(200);
+    await expect(page.locator("#reporte-folio:focus"), "foco en el folio").toHaveCount(1);
+    await expect(page.locator('[id="reporte-titulo"]')).toHaveCount(0);
+    expect(await page.locator('[id^="reporte-titulo-"]').evaluateAll((nodos) => nodos.map((nodo) => nodo.id))).toEqual([expect.stringMatching(/^reporte-titulo-[0-9a-f]{8}$/)]);
+  });
+});
+
+// B5 con JavaScript: los destinos van sin sufijo y cada enlace con fragmento sigue llevando a su sección.
+test("B5 con JavaScript: cada enlace con fragmento de PLD lleva a su sección, sin sufijo", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const [conReporte] = await consultar<{ id: string }>(
+    "select c.id from pld_casos c join pld_dictamenes d on d.caso_id = c.id where c.company_id = $1 and d.resultado = 'reportar_inusual' order by d.caso_id limit 1",
+    [ceiba],
+  );
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/operacion/reportes");
+  const periodico = (await page.locator("li", { has: page.getByRole("button", { name: "Registrar envío" }) }).first().getAttribute("id"))!;
+  for (const [ruta, ancla] of [
+    [`/operacion/clientes/${ceiba}/expediente`, "perfil-titulo"],
+    [`/operacion/clientes/${ceiba}/expediente`, "evaluacion-titulo"],
+    [`/operacion/pld/casos/${conReporte!.id}`, "reporte-titulo"],
+    ["/operacion/reportes", periodico],
+    ["/operacion/comite", "sesiones-titulo"],
+    ["/operacion/comite", "comunicaciones-titulo"],
+    ["/operacion/pld", "alertas-titulo"],
+  ] as const) {
+    await page.goto("/operacion");
+    await page.goto(`${ruta}#${ancla}`);
+    const destino = page.locator(`[id="${ancla}"]`);
+    await expect(destino, ancla).toHaveCount(1);
+    await expect(destino, ancla).toBeInViewport();
+  }
   expect(errores).toEqual([]);
 });

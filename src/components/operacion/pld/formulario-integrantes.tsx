@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef } from "react";
 
 import { registrarIntegrantesAccion, type EstadoDeIntegrantes } from "@/app/operacion/(portal)/pld/acciones";
 import { AvisoOperacion, errorDelCampo, textoDelAviso } from "@/components/operacion/aviso";
+import { useAvisoVigente } from "@/components/operacion/formulario-con-aviso";
 import { MensajeJuntoAlCampo } from "@/components/operacion/mensaje-junto-al-campo";
 import { BotonEnviar } from "@/components/sistema";
 import { CARGO_COMITE, CARGOS_COMITE } from "@/dominio/pld/etiquetas";
@@ -40,17 +41,19 @@ type Opcion = { id: string; etiqueta: string };
 export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: string[]; hoy: string; titulares: Opcion[]; vigentes: Opcion[] }) {
   const [estado, accion] = useActionState(registrarIntegrantesAccion, SIN_AVISO);
   const forma = useRef<HTMLFormElement>(null);
+  // r2-serv-N20: el aviso vigente del #59 (oculta el del envío anterior; se descarta si se envía otro formulario).
+  const aviso = useAvisoVigente(estado, forma);
   useEffect(() => {
     if (estado.vuelta) forma.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
   }, [estado.vuelta]);
   const valor = (campo: string) => estado.valores[campo] ?? "";
   const primerCapturado = ids.findIndex((_, i) => valor(`nombres-${i}`).trim() !== "");
   const delAviso = (campo: string) =>
-    estado.aviso !== null && (CAMPO_DE_INTEGRACION[estado.aviso] === campo || Object.keys(errorDelCampo(estado.aviso, campo)).length > 0);
+    aviso !== null && (CAMPO_DE_INTEGRACION[aviso] === campo || Object.keys(errorDelCampo(aviso, campo)).length > 0);
   // El campo marcado lo describe su mensaje, junto a él; el aviso de arriba queda como resumen (onceava ronda del #59).
   const marca = { "aria-invalid": true, "aria-describedby": `${ID_AVISO}-campo` } as const;
   const mensajeDe = (marcado: object) =>
-    "aria-invalid" in marcado && estado.aviso ? <MensajeJuntoAlCampo id={`${ID_AVISO}-campo`} texto={textoDelAviso(estado.aviso)} /> : null;
+    "aria-invalid" in marcado && aviso ? <MensajeJuntoAlCampo id={`${ID_AVISO}-campo`} texto={textoDelAviso(aviso)} /> : null;
   /** El campo de un renglón: el del aviso en el renglón que falló, o en el primero capturado si es de la integración. */
   const ligado = (campo: string, i: number) => (delAviso(campo) && (estado.renglon ?? Math.max(primerCapturado, 0)) === i ? marca : {});
   /** Los campos de la sustitución, que no son de un renglón. */
@@ -58,7 +61,7 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
   return (
     <form key={estado.vuelta} ref={forma} action={accion} className="operacion-forma">
       <input type="hidden" name="renglones" value={ids.length} />
-      {estado.aviso ? <AvisoOperacion codigo={estado.aviso} id={ID_AVISO} /> : null}
+      {aviso ? <AvisoOperacion codigo={aviso} id={ID_AVISO} /> : null}
       <p>
         Llena un renglón por persona; los vacíos no se guardan. Todo va junto: la base revisa al final que quede un solo presidente y un solo secretario
         titulares, al menos tres titulares, un suplente por titular como máximo y al Oficial como integrante.

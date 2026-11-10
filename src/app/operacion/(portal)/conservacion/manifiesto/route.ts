@@ -1,4 +1,3 @@
-import { avisoDeCampo } from "@/components/operacion/aviso";
 import { errorConSecreto } from "@/server/entrada";
 import { contextoOperacion } from "@/server/operacion";
 import { POLITICA_DESCARGA } from "@/server/pagos-proveedores/descarga";
@@ -17,7 +16,7 @@ const CAMPOS = ["companyId", "desde", "hasta", "pagina", "despuesEn", "despuesId
 export async function GET(request: Request) {
   const url = new URL(request.url);
   // Inventario de la ronda 12: vuelve con lo que se eligió (ya venía en esta dirección: empresa, fechas, página y cursor).
-  // r2-serv-N19: sin fragmento si el aviso es de un campo, para que el navegador no descarte el autofocus.
+  // r2-serv-N20: sin fragmento, como toda dirección de Operación: con él, el navegador descarta el autofocus del campo.
   const volver = (aviso: string) => {
     const regreso = new URL("/operacion/conservacion", request.url);
     regreso.searchParams.set("aviso", aviso);
@@ -26,7 +25,6 @@ export async function GET(request: Request) {
       const valor = url.searchParams.get(campo);
       if (valor) regreso.searchParams.set(campo, valor);
     }
-    if (!avisoDeCampo(aviso)) regreso.hash = "manifiesto-titulo";
     return Response.redirect(regreso, 303);
   };
   try {

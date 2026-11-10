@@ -11,6 +11,7 @@ import {
   type EstadoDelFormulario,
 } from "@/app/operacion/(portal)/pld/acciones";
 import { AvisoOperacion, errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
+import { useAvisoVigente } from "@/components/operacion/formulario-con-aviso";
 import { BotonEnviar } from "@/components/sistema";
 import { PROPUESTA, PROPUESTAS, TIPO_AVISO, TIPOS_AVISO } from "@/dominio/pld/etiquetas";
 
@@ -21,10 +22,13 @@ const SIN_AVISO: EstadoDelFormulario = { aviso: null, valores: {}, vuelta: 0 };
  * campo marcado; el texto nunca pasa por la dirección. También si el segundo factor venció mientras se escribía
  * (r2-serv-N17). La clave `vuelta` vuelve a montar los campos. Sin JavaScript, el servidor pinta el formulario con el
  * mismo estado: por eso lo capturado va en `defaultValue`/`defaultChecked` y no en un efecto.
+ * r2-serv-N20: el aviso vigente es el de `useAvisoVigente` del #59: un rechazo oculta el aviso del envío anterior de
+ * arriba de la página (`ResumenDelEnvio`) y, al enviarse otro formulario de la página, el de este se descarta.
  */
 export function useConservaLoCapturado(accion: (previo: EstadoDelFormulario, datos: FormData) => Promise<EstadoDelFormulario>, idAviso: string) {
   const [estado, enviar] = useActionState(accion, SIN_AVISO);
   const forma = useRef<HTMLFormElement>(null);
+  const vigente = useAvisoVigente(estado, forma);
   useEffect(() => {
     if (!estado.vuelta) return;
     // Un grupo de casillas marcado (fieldset) no recibe el foco: lo toma su primer control.
@@ -38,9 +42,9 @@ export function useConservaLoCapturado(accion: (previo: EstadoDelFormulario, dat
     valor: (campo: string, inicial = "") => (estado.vuelta ? (estado.valores[campo] ?? inicial) : inicial),
     /** Una casilla de un grupo: tras un rechazo, marcada si venía marcada. */
     marcada: (campo: string, valor: string, inicial: boolean) => (estado.vuelta ? (estado.valores[campo] ?? "").split(",").includes(valor) : inicial),
-    ligado: (campo: string) => errorDelCampo(estado.aviso, campo, idAviso),
-    mensaje: (campo: string) => <MensajeDelCampo codigo={estado.aviso} campo={campo} idAviso={idAviso} />,
-    aviso: estado.aviso ? <AvisoOperacion codigo={estado.aviso} id={idAviso} /> : null,
+    ligado: (campo: string) => errorDelCampo(vigente, campo, idAviso),
+    mensaje: (campo: string) => <MensajeDelCampo codigo={vigente} campo={campo} idAviso={idAviso} />,
+    aviso: vigente ? <AvisoOperacion codigo={vigente} id={idAviso} /> : null,
   };
 }
 

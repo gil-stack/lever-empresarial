@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
+import { idDeAncla } from "@/components/operacion/envio-sin-script";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { ahoraEnMexicoParaCampo, plazoEnDiasHabiles } from "@/components/operacion/pld/formato";
@@ -36,6 +37,9 @@ export default async function ReportesRegulatorios({ searchParams }: { searchPar
   const reporta = puedeEnOperacion(ctx, "plataforma.pld.reportar");
   const faltaCalendario = periodicos.map((p) => p.faltaCalendario).find((anio): anio is number => anio !== null) ?? null;
   const ancla = (p: Periodico) => `reporte-${p.reporte}-${p.periodo}`;
+  // B5: la bandeja enlaza a cada periódico con #reporte-<r>-<p>. En la respuesta a un envío sin JavaScript el destino
+  // lleva sufijo (idDeAncla del #59): el fragmento ya no coincide y el foco llega al campo rechazado.
+  const destinos = new Map(await Promise.all(periodicos.map(async (p) => [ancla(p), await idDeAncla(ancla(p))] as const)));
   // El acuse es posterior al cierre del periodo: desde el primer día del mes siguiente.
   const desdeCierre = (p: Periodico) => {
     const anio = Number(p.periodo.slice(0, 4));
@@ -44,7 +48,7 @@ export default async function ReportesRegulatorios({ searchParams }: { searchPar
   };
 
   const tarjeta = (periodico: Periodico) => (
-    <li key={ancla(periodico)} id={ancla(periodico)}>
+    <li key={ancla(periodico)} id={destinos.get(ancla(periodico))}>
       <div className="operacion-fila">
         <div className="operacion-fila-cuerpo">
           <h3>{periodico.nombre}</h3>

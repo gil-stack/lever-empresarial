@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 
+import { idDeAncla } from "@/components/operacion/envio-sin-script";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { FormularioEvaluacion, FormularioPerfil, FormularioResolverPropuesta } from "@/components/operacion/pld/formularios-del-perfil";
 import { Hoja, Insignia, Renglon, Renglones, Vacio } from "@/components/sistema";
@@ -44,10 +45,13 @@ export async function PerfilTransaccional({
   const evalua = puedeEnOperacion(ctx, "plataforma.riesgo.calificar") && estado !== "baja";
   const resuelve = puedeEnOperacion(ctx, "plataforma.riesgo.calificar");
   const evaluaciones = veEvaluaciones ? await leerEvaluaciones(ctx, companyId) : [];
+  // B5: la bandeja enlaza aquí con #perfil-titulo y #evaluacion-titulo. En la respuesta a un envío sin JavaScript los
+  // destinos llevan sufijo (idDeAncla del #59): el fragmento ya no coincide y el foco llega al campo rechazado.
+  const [anclaPerfil, anclaEvaluacion] = await Promise.all([idDeAncla("perfil-titulo"), idDeAncla("evaluacion-titulo")]);
 
   return (
     <>
-      <Hoja id="perfil-titulo" titulo="Perfil transaccional">
+      <Hoja id={anclaPerfil} titulo="Perfil transaccional">
         {vigente ? (
           <>
             <Renglones>
@@ -137,7 +141,7 @@ export async function PerfilTransaccional({
       </Hoja>
 
       {veEvaluaciones ? (
-        <Hoja id="evaluacion-titulo" titulo="Evaluación semestral">
+        <Hoja id={anclaEvaluacion} titulo="Evaluación semestral">
           {evaluaciones.length === 0 ? (
             <Vacio titulo="Sin evaluaciones">Cumplimiento evalúa el perfil y el grado de riesgo dos veces al año, una por semestre.</Vacio>
           ) : (

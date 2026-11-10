@@ -34,4 +34,21 @@ describe("redirecciones de Operación", () => {
       assert.doesNotMatch(fuente, /(listo|fallo)\([^;]*"#[a-z-]+"/, nombre);
     }
   });
+
+  // r2-serv-N20: lo mismo en PLD (acciones y rutas que redirigen), también si el fragmento lo arma un ayudante: ningún
+  // texto de esos archivos empieza con «#» ni toca `.hash`. Los comentarios no cuentan.
+  it("ninguna acción ni ruta de PLD redirige con #sección, ni armada por un ayudante", () => {
+    const portal = new URL("src/app/operacion/(portal)/", RAIZ);
+    const archivos = (readdirSync(portal, { recursive: true }) as string[])
+      .filter((ruta) => /\.tsx?$/.test(ruta) && !/\.test\.tsx?$/.test(ruta))
+      .map((ruta) => ({ ruta, fuente: readFileSync(new URL(ruta, portal), "utf8") }))
+      .filter(({ fuente }) => /\bredirect\(|Response\.redirect\(/.test(fuente));
+    const rutas = archivos.map(({ ruta }) => ruta);
+    for (const esperada of ["pld/acciones.ts", "conservacion/manifiesto/route.ts", "reportes/archivo/route.ts"]) assert.ok(rutas.includes(esperada), esperada);
+    for (const { ruta, fuente } of archivos) {
+      const sinComentarios = fuente.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+      assert.doesNotMatch(sinComentarios, /["'`]#/, ruta);
+      assert.doesNotMatch(sinComentarios, /\.hash\b/, ruta);
+    }
+  });
 });
