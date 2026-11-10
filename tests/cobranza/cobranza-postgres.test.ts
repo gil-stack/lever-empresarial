@@ -11,7 +11,7 @@ import type { ContextoConEmpresa } from "../../src/nucleo/contexto.ts";
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
 import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
 import type { MensajeCorreo } from "../../src/server/correo/tipos.ts";
-import { atenderAviso, asegurarClabeDeCliente, firmar, registrarCuentaFintoc, type ClabeFintoc, type ClienteFintoc, type ConfigFintoc } from "../../src/server/cobranza/fintoc.ts";
+import { atenderAviso, asegurarClabeDeCliente, firmar, leerAvisosSinDestino, registrarCuentaFintoc, type ClabeFintoc, type ClienteFintoc, type ConfigFintoc } from "../../src/server/cobranza/fintoc.ts";
 import { confirmarEstadoDeCuenta, leerVistaEstadoDeCuenta, prepararEstadoDeCuenta } from "../../src/server/cobranza/estado-cuenta.ts";
 import { leerPaginaDelPagador, pedirSinRecordatorios } from "../../src/server/cobranza/pagador.ts";
 import {
@@ -310,6 +310,10 @@ async function escenario(url: string): Promise<void> {
   assert.equal(contar(url, "select count(*) from collection_unrouted_events where proveedor = 'fintoc' and cuenta_id = 'acc_Ajena' and cuenta_numero_id = 'acno_NoExiste' and monto_centavos = 100"), 1);
   assert.ok(lineas.length > 0);
   for (const linea of lineas) assert.doesNotMatch(linea, /acc_Ajena|acno_NoExiste|evt_|tr_|"monto|Cliente con CLABE/);
+  // El personal lo ve con avisos:sin-destino; una empresa no.
+  const sinDestino = await leerAvisosSinDestino(personal, 10);
+  assert.deepEqual(sinDestino.map((a) => [a.tipo, a.cuentaId, a.cuentaNumeroId, a.montoCentavos]), [["transfer.inbound.succeeded", "acc_Ajena", "acno_NoExiste", 100]]);
+  await assert.rejects(() => leerAvisosSinDestino(admin, 10), codigo("no_es_operador"));
 
   // 11. Estado de cuenta (Beta): la primera vez se empatan columnas; el abono con referencia se aplica,
   // el que no se identifica va a «Por conciliar», el marcado se descarta, y volver a subirlo no duplica nada.

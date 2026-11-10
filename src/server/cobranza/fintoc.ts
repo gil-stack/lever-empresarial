@@ -312,6 +312,48 @@ export async function registrarCuentaFintoc(
   });
 }
 
+export type AvisoSinDestino = {
+  eventoId: string;
+  tipo: string;
+  transferenciaId: string;
+  cuentaId: string;
+  cuentaNumeroId: string;
+  montoCentavos: number;
+  recibidoEl: string;
+  referencia: string | null;
+  recibidoEn: string;
+};
+
+/**
+ * Los avisos de Fintoc que no llegaron a ninguna empresa ni a ningún pago
+ * (r63-N7), los más recientes primero. Solo el personal de administración de
+ * la plataforma; la base lo vuelve a revisar (cobranza_avisos_sin_destino).
+ */
+export async function leerAvisosSinDestino(ctx: ContextoDeTenant | null | undefined, limite = 50): Promise<AvisoSinDestino[]> {
+  const personal = exigirPersonal(ctx, "plataforma.empresa.alta");
+  const tope = Number.isInteger(limite) ? Math.min(Math.max(limite, 1), 500) : 50;
+  return conContexto(basePlataforma(personal), async (consulta) => {
+    const r = await aplicarSentencia(
+      consulta,
+      `select evento_id, tipo, transferencia_id, cuenta_id, cuenta_numero_id, monto_centavos::text as monto,
+              to_char(recibido_el, 'YYYY-MM-DD') as recibido_el, referencia, recibido_en::text as recibido_en
+         from cobranza_avisos_sin_destino($1)`,
+      [tope],
+    );
+    return r.rows.map(registro).map((f) => ({
+      eventoId: texto(f.evento_id),
+      tipo: texto(f.tipo),
+      transferenciaId: texto(f.transferencia_id),
+      cuentaId: texto(f.cuenta_id),
+      cuentaNumeroId: texto(f.cuenta_numero_id),
+      montoCentavos: centavos(f.monto),
+      recibidoEl: texto(f.recibido_el),
+      referencia: textoONulo(f.referencia),
+      recibidoEn: texto(f.recibido_en),
+    }));
+  });
+}
+
 // CLABE de un cliente ------------------------------------------------------------------
 
 export type ClabeDeCliente = { clabe: string; recuperada: boolean; nueva: boolean };
