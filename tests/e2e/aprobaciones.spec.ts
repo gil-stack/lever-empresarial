@@ -146,3 +146,63 @@ test("con el rechazo abierto, A y R no deciden el pago; con el foco en la fila, 
   expect(await eventos("rechazar_pago_proveedor")).toBe(0);
   expect(errores).toEqual([]);
 });
+
+// Sin JavaScript (o antes de que la página hidrate), «Rechazar» era un botón con onClick y no abría nada, y «Autorizar»
+// era un formulario sin acción: mandaba el pago, la versión y el importe en la dirección (GET) y no decidía. Los pagos
+// E-13 y E-14 de Taller del Cierre (tests/e2e/seed-pagos.sql) son solo para estas pruebas.
+test.describe("sin JavaScript se decide desde la bandeja", () => {
+  test.use({ javaScriptEnabled: false });
+  const BANDEJA = "/c/33333333-3333-4333-8333-333333333333/consola/aprobaciones";
+  const leer = async (pago: string) =>
+    (await consultar<{ estado: string; motivo_resolucion: string | null }>(
+      "select estado, motivo_resolucion from supplier_payment_requests where id = $1",
+      [pago],
+    ))[0];
+  const eventos = (accion: string, pago: string) =>
+    contar("select 1 from audit_log where accion = $1 and identificador = $2", [accion, pago]);
+
+  test("«Rechazar» abre el motivo; uno en blanco vuelve con el aviso junto al campo y uno válido rechaza", async ({ page, context }) => {
+    await sesionDe(context, "rosa-pagos@ejemplo.mx");
+    const PAGO = "88888888-8888-4888-8888-88888888888a";
+    await page.goto(BANDEJA);
+    const fila = page.locator("li.decision").filter({ hasText: "E-13" });
+    await fila.getByRole("button", { name: "Rechazar" }).click();
+    await expect(page).toHaveURL(new RegExp(`/consola/aprobaciones\\?rechazar=${PAGO}$`));
+    const rechazo = fila.getByRole("dialog", { name: "Rechazar el pago" });
+    const motivo = rechazo.getByLabel("Motivo");
+    await expect(motivo).toBeFocused();
+
+    // Cinco espacios pasan el minLength del navegador, no al servidor: el motivo se recorta.
+    await motivo.fill("     ");
+    await rechazo.getByRole("button", { name: "Rechazar", exact: true }).click();
+    const aviso = rechazo.getByRole("alert");
+    await expect(aviso).toHaveText("Explica el motivo con al menos 10 caracteres. Al rechazar o cancelar bastan 5.");
+    await expect(motivo).toHaveAttribute("aria-invalid", "true");
+    await expect(motivo).toHaveAttribute("aria-describedby", (await aviso.getAttribute("id")) ?? "sin id");
+    await expect(motivo).toBeFocused();
+    await expect(motivo).toHaveValue("     ");
+    expect((await leer(PAGO))?.estado).toBe("por_autorizar");
+
+    await motivo.fill("Falta la orden de compra firmada");
+    await rechazo.getByRole("button", { name: "Rechazar", exact: true }).click();
+    await expect(page.getByText("Decisión asentada")).toBeVisible();
+    await expect(page.getByText("Quedó rechazado con su motivo. La factura sigue disponible para corrección.")).toBeVisible();
+    await expect(fila).toHaveCount(0);
+    expect(await leer(PAGO)).toEqual({ estado: "rechazado", motivo_resolucion: "Falta la orden de compra firmada" });
+    expect(await eventos("rechazar_pago_proveedor", PAGO)).toBe(1);
+  });
+
+  test("«Autorizar» decide con la acción del servidor, no con la dirección", async ({ page, context }) => {
+    await sesionDe(context, "rosa-pagos@ejemplo.mx");
+    const PAGO = "88888888-8888-4888-8888-88888888888b";
+    await page.goto(BANDEJA);
+    const fila = page.locator("li.decision").filter({ hasText: "E-14" });
+    await fila.getByRole("button", { name: "Autorizar" }).click();
+    await expect(page.getByText("Decisión asentada")).toBeVisible();
+    await expect(page.getByText("Quedó listo para pagar.")).toBeVisible();
+    expect(page.url()).not.toContain(PAGO);
+    await expect(fila).toHaveCount(0);
+    expect((await leer(PAGO))?.estado).toBe("listo_para_pagar");
+    expect(await eventos("autorizar_pago_proveedor", PAGO)).toBe(1);
+  });
+});

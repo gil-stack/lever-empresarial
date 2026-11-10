@@ -60,10 +60,13 @@ export function VistaDeAprobaciones({
   carga,
   vista,
   empresaId,
+  rechazar = null,
 }: {
   carga: CargaAprobaciones;
   vista: VistaAprobaciones;
   empresaId: string | null;
+  /** El pago con el rechazo abierto desde la dirección (`?rechazar=…`): así se rechaza sin JavaScript. */
+  rechazar?: string | null;
 }) {
   if (carga.tipo === "sin_empresa") {
     return (
@@ -97,7 +100,7 @@ export function VistaDeAprobaciones({
       {vista === "historial" ? (
         <Historial historial={carga.historial} empresaId={empresaId} />
       ) : (
-        <ConAvisoDeDecision>
+        <ConAvisoDeDecision rechazar={rechazar}>
           <Pendientes carga={carga} empresaId={empresaId} />
         </ConAvisoDeDecision>
       )}

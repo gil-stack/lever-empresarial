@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
+import { soloTexto, type Direccion } from "@/app/consola/direccion";
 import { armarAprobaciones } from "@/components/aprobaciones/armar";
 import {
   VistaDeAprobaciones,
@@ -34,17 +35,18 @@ type Apertura = Awaited<ReturnType<typeof abrirRuta>>;
  * con las decisiones que se toman aquí mismo (autorizar o rechazar pagos a
  * proveedores, preparar el lote de nómina) usando las acciones de siempre.
  */
-export default async function PaginaAprobaciones({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+export default async function PaginaAprobaciones({ searchParams }: { searchParams: Direccion }) {
   const apertura = await abrirRuta("/consola/aprobaciones");
   if (apertura.tipo === "sin_permiso") notFound();
   const ctx = apertura.tipo === "libro" ? null : apertura.ctx;
-  const vista: VistaAprobaciones = (await searchParams).vista === "historial" ? "historial" : "pendientes";
+  const params = await soloTexto(searchParams);
+  const vista: VistaAprobaciones = params.vista === "historial" ? "historial" : "pendientes";
   const carga = await cargar(apertura, vista);
   return (
     <Marco actual="/consola/aprobaciones" vista={vistaDeMarco(ctx)}>
       <main id="contenido" className="pagina aprobaciones">
         <h1 className="solo-lector">Aprobaciones</h1>
-        <VistaDeAprobaciones carga={carga} vista={vista} empresaId={ctx?.empresa?.id ?? null} />
+        <VistaDeAprobaciones carga={carga} vista={vista} empresaId={ctx?.empresa?.id ?? null} rechazar={params.rechazar ?? null} />
       </main>
     </Marco>
   );

@@ -158,3 +158,29 @@
     justify-items: start;
   }
 }
+
+/* Sin JavaScript, «Rechazar» pide la página con el rechazo abierto: su formulario no ocupa lugar en la fila. */
+.aprobaciones-abrir-rechazo {
+  display: contents;
+}
+
+/* El rechazo abierto desde la dirección: un diálogo no modal, debajo de los botones de la fila. */
+.aprobaciones .decision-acciones:has(> .aprobaciones-rechazo-en-linea) {
+  grid-column: 1 / -1;
+}
+
+.aprobaciones-rechazo-en-linea {
+  position: static;
+  flex-basis: 100%;
+  margin: 4px 0 0;
+  padding: 16px;
+  border: 1px solid var(--line2);
+  border-radius: var(--radio-control);
+  background: var(--s1);
+  color: var(--tx);
+  text-align: left;
+}
+
+.aprobaciones-rechazo-en-linea .dialogo-sub {
+  margin: 0 0 12px;
+}
