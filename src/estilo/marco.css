@@ -764,4 +764,16 @@ div.empresa-lateral:not(.menu-desplegable),
     gap: 6px;
     padding: 3px 4px;
   }
+
+  /* Sin JavaScript, «Salir» va en su propia fila, debajo de la búsqueda: en la primera no le quita ancho al título.
+     El elemento de la fila es el <noscript>; su display no se toca (con JavaScript el navegador lo oculta). */
+  .barra-salir-sin-script {
+    order: 4;
+    flex-basis: 100%;
+  }
+
+  .salir-sin-script {
+    display: flex;
+    justify-content: flex-end;
+  }
 }

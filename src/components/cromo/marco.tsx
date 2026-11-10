@@ -168,7 +168,7 @@ export async function Marco({
                   cambiarEmpresa={vista.variasEmpresas}
                 />
                 {/* Sin JavaScript el menú de la persona no abre: «Salir» queda a la vista, con la misma acción. */}
-                <noscript>
+                <noscript className="barra-salir-sin-script">
                   <form action={salir} className="salir-sin-script">
                     <button type="submit" className="boton-secundario">
                       <IconoSalir />

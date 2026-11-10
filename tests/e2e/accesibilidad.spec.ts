@@ -177,4 +177,32 @@ test.describe("sin JavaScript se puede salir", () => {
       await expect(page).toHaveURL(/\/entrar/);
     });
   }
+
+  // A 390, «Salir» en la primera fila le quitaba ancho al título («Per…»). Va en su propia fila: ningún texto a la
+  // vista se corta con puntos suspensivos, ni en los títulos largos. Los textos solo para lector (recortados a 1 px)
+  // no cuentan.
+  test("a 390 ningún texto a la vista se recorta, con «Salir» debajo", async ({ page, context }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await sesionDe(context, GIL);
+    for (const [ruta, titulo] of [
+      ["personas", "Personas"],
+      ["internacional", "Pagos internacionales"],
+      ["proveedores", "Proveedores"],
+    ] as const) {
+      await page.goto(`/c/${TALLER}/consola/${ruta}`);
+      await expect(page.locator(".barra-titulo"), ruta).toHaveText(titulo);
+      await expect(page.getByRole("button", { name: "Salir", exact: true }), ruta).toBeVisible();
+      const cortados = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>("body *")]
+          .filter((nodo) => {
+            const caja = nodo.getBoundingClientRect();
+            if (caja.width <= 1 || caja.bottom < 0 || caja.top > innerHeight) return false;
+            const estilo = getComputedStyle(nodo);
+            return estilo.textOverflow === "ellipsis" && nodo.scrollWidth > nodo.clientWidth;
+          })
+          .map((nodo) => `${nodo.className}: ${nodo.textContent?.trim()}`),
+      );
+      expect(cortados, ruta).toEqual([]);
+    }
+  });
 });
