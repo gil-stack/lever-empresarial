@@ -5,6 +5,10 @@ import { CIFRAS_DE_EJEMPLO, NOMBRES_DE_EJEMPLO } from "../../src/server/demo/cen
 import { altamar, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS } from "./siembra";
 
+// Cada prueba abre su propia sesión y no comparte estado: «parallel» solo para que el reparto de la e2e pueda partir el
+// archivo (con workers: 1 corren una tras otra). Junto con csp.spec, entero, llevaba la parte 2 a más de 500 s en el CI.
+test.describe.configure({ mode: "parallel" });
+
 /**
  * Modo demostración (Ola 2b): los módulos sin proveedor pintan los datos de
  * ejemplo de Altamar Logística solo en una empresa de demostración. Una

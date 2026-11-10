@@ -1,0 +1,23 @@
+// Modelo del reparto: para cada parte de --shard=N/K, la suma del tiempo de pruebas medido en el CI (run Sb1at…),
+// más un fijo por parte. Pruebas sin tiempo medido (nuevas u omitidas) cuentan 0 y se listan.
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+const K = Number(process.argv[2] ?? 7), FIJO = Number(process.env.FIJO ?? 145);
+const T = JSON.parse(readFileSync(new URL("./tiempos.json", import.meta.url), "utf8"));
+const sinTiempo = new Set();
+let peor = 0;
+for (let n = 1; n <= K; n++) {
+  const lista = execFileSync("./node_modules/.bin/playwright", ["test", "--list", `--shard=${n}/${K}`], { encoding: "utf8" }).split("\n").filter((l) => l.includes(" › "));
+  let s = 0; const porArchivo = {};
+  for (const l of lista) {
+    const m = /(tests\/e2e\/[^:]+\.spec\.ts):\d+:\d+ › (.*)$/.exec(l.trim().replace(/^\[[^\]]+\] › /, "")) ?? /(tests\/e2e\/[^:]+\.spec\.ts)?:?\d*:?\d* ?› ?(.*)$/.exec(l);
+    const archivo = (/([\w-]+\.(?:spec\.)?ts):\d+:\d+ › /.exec(l) ?? [])[1];
+    const titulo = l.split(/\.ts:\d+:\d+ › /)[1]?.trim();
+    const k = `tests/e2e/${archivo} › ${titulo}`;
+    const t = T[k] ?? T[k.replace(/tests\/e2e\/(fondo|retina)\.spec\.ts|tests\/e2e\/fondo-pruebas\.ts/, "tests/e2e/marco.spec.ts")]; if (t === undefined) sinTiempo.add(k);
+    s += t ?? 0; porArchivo[archivo] = (porArchivo[archivo] ?? 0) + (t ?? 0);
+  }
+  peor = Math.max(peor, s + FIJO);
+  console.log(`parte ${n}/${K}: ${String(lista.length).padStart(3)} pruebas · ${s.toFixed(0).padStart(4)} s de pruebas · ~${(s + FIJO).toFixed(0)} s con el fijo · ${Object.entries(porArchivo).map(([a, v]) => `${a.replace(".spec.ts", "")} ${v.toFixed(0)}`).join(", ")}`);
+}
+console.log(`peor parte ~${peor.toFixed(0)} s; sin tiempo medido: ${sinTiempo.size}${sinTiempo.size ? " (" + [...sinTiempo].slice(0, 4).join(" | ").slice(0, 300) + ")" : ""}`);

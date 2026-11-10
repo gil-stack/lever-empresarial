@@ -26,7 +26,7 @@ Hace falta un Postgres local desechable (nunca `plataforma` ni una base comparti
 ```sh
 E2E_ADMIN_URL=postgres://<usuario>@127.0.0.1:<puerto>/postgres npm run test:e2e
 npm run test:e2e -- tests/e2e/nomina.spec.ts   # un solo spec
-npm run test:e2e:2                              # solo la parte 2 de 5, como en CI
+npm run test:e2e:2                              # solo la parte 2 de 7, como en CI
 ```
 
 Sin `E2E_ADMIN_URL`, el script hace lo mismo que en CI: levanta `postgres:17` y el navegador en contenedores de Docker.
@@ -50,17 +50,18 @@ Variables:
 
 ## En Vercel CI
 
-`turbo.json` declara cinco tareas, de `test:e2e:1` a `test:e2e:5`, con las etiquetas `ci` y `ci:cpus:4`. Vercel CI las corre en cada push en paralelo, cada una en su propia máquina, junto con typecheck, lint, test, test:db, build y security. Cada parte corre `playwright test --shard=N/5` con su propio build, su propio Postgres y su propio `next start`, y el tope de 12 minutos se mide por parte. En CI:
+`turbo.json` declara siete tareas, de `test:e2e:1` a `test:e2e:7`, con las etiquetas `ci` y `ci:cpus:4`. Vercel CI las corre en cada push en paralelo, cada una en su propia máquina, junto con typecheck, lint, test, test:db, build y security. Cada parte corre `playwright test --shard=N/7` con su propio build, su propio Postgres y su propio `next start`, y el tope de 12 minutos se mide por parte. En CI:
 
 - Postgres corre en un contenedor `postgres:17` (puerto 5553, el mismo dentro y fuera).
 - Chromium corre en la imagen oficial `mcr.microsoft.com/playwright:v<versión>-noble` con `playwright run-server` y red del anfitrión. La imagen de la tarea no trae las bibliotecas del navegador. El corredor, la siembra, el emulador y `next start` siguen en la máquina de la tarea.
 - `retries: 0`, sin video, con traza sin capturas y sin capturas de evidencia.
-- Playwright reparte las partes por grupo y por número de pruebas, no por tiempo: un spec sin `mode: "parallel"` es un solo grupo (los `describe` seriales de adentro viajan juntos), y un grupo va entero a la parte donde empieza. `operacion.spec.ts` es `parallel` solo para partirse en nueve `describe` seriales; su orden decide el reparto (lo explica el comentario de arriba del archivo). Con 69 pruebas en cinco partes quedan 14, 18, 15, 13 y 9 (`--list --shard=N/5`). El orden sale de los tiempos de pruebas del CI, no de los locales: en el CI las de Operación tardan unas 6 veces más. Antecedentes:
+- Playwright reparte las partes por grupo y por número de pruebas, no por tiempo: un spec sin `mode: "parallel"` es un solo grupo (los `describe` seriales de adentro viajan juntos), y un grupo va entero a la parte donde empieza. `operacion.spec.ts` es `parallel` solo para partirse en nueve `describe` seriales; su orden decide el reparto (lo explica el comentario de arriba del archivo). Con 148 pruebas en siete partes quedan 25, 18, 21, 21, 24, 18 y 21 (`--list --shard=N/7`). El orden sale de los tiempos de pruebas del CI, no de los locales: en el CI las de Operación tardan unas 6 veces más. Antecedentes:
   - Con tres partes y Duna en la 1, esa parte tardó 554 s, con 470 s de pruebas, contra 202 y 301 de las otras dos.
   - Con cuatro, el CI de `d2d56df` dio 444, 352, 351 y 289 s, con 360, 276, 264 y 222 s de pruebas y de 57 a 74 s fijos por parte. La parte 1 llevaba los 5 specs anteriores a `operacion.spec.ts`, 17 pruebas que tardaron 318 s.
   - Con cinco y coincidencias junto a pagos-proveedores en la parte 4, el CI de `0dc1a7a` dio 316, 226, 241, 473 y 168 s. La 4 tuvo 343 s de pruebas: pagos-proveedores tardó 170 s (87 a 99 en las corridas anteriores) y coincidencias, 121 s (80 a 104). Son los dos grupos que más varían, y ahora van en partes distintas.
   - El reparto se evalúa con el tiempo máximo observado de cada grupo, no con el promedio. Con el orden de hoy, el modelo da 263, 266, 264, 270 y 113 s de pruebas con los máximos, y 223, 250, 210, 183 y 108 con los típicos.
-  - Si una parte se acerca a los 450 s, mueve un grupo de `operacion.spec.ts` o agrega otra parte (`test:e2e:6` y `--shard=N/6` en todas).
+  - Con la ola 2b (#60), el fondo animado vivía en `marco.spec.ts`, un solo grupo: en el CI de `88278c4` la parte 3 tardó 743 s, con 456 s de las 5 pruebas con GPU emulada a DPR 2 (66 a 114 s cada una; de 8 a 19 s en local, por el WebGL por software del navegador remoto). Ahora `marco.spec.ts`, `fondo.spec.ts` (DPR 1), `optica-retina.spec.ts` (DPR 2) y `demostracion.spec.ts` son `parallel` solo para partirse: sus pruebas no comparten estado. Las del fondo se definen en `fondo-pruebas.ts`; el nombre `optica-retina` deja ese archivo justo después de `operacion.spec.ts`, donde cruza el corte entre las partes 6 y 7, y su orden pone tres de GPU (114, 78 y 66 s) en la 6 y las otras dos en la 7. Con los tiempos de pruebas del CI de `88278c4`, el modelo da 133, 278, 196, 214, 272, 323 y 334 s de pruebas por parte.
+  - Si una parte se acerca a los 450 s, mueve un grupo de `operacion.spec.ts` (respetando G1 → G3 → G4 y «Brisa y Cima» antes de G4) o agrega otra parte (`test:e2e:8` y `--shard=N/8` en todas).
 - El script cuenta las pruebas corridas en el reporte JSON (`test-results/e2e-resumen.json`) y falla si una corrida, o una parte, no corrió ninguna: Playwright termina en 0 con una parte vacía. Antes, la parte 2 quedaba vacía (49, 0 y 14) porque `operacion.spec.ts` entero caía en la 1.
 - Si algo falla, como Vercel CI no guarda archivos de una tarea fallida, el script imprime en la salida el contexto de cada falla (árbol accesible de la página), las últimas líneas del servidor y las capturas en base64.
 
@@ -80,7 +81,7 @@ Para revisar una corrida: `vercel ci list --git-branch <rama>` y `vercel ci logs
 2. Todo lo que cambia datos de la aplicación pasa por clics. La base solo se toca para abrir sesiones, leer lo que prueba cada paso y mover relojes que la prueba no puede esperar.
 3. Después de cada envío de dinero o seguridad, cuenta en la base que quedó exactamente una operación y que la bitácora tiene su evento.
 4. Nada de `waitForTimeout`. Espera la condición: una URL, un texto, una fila o `expect.poll`.
-5. Cada spec debe pasar solo y dentro de la suite completa, en cualquier orden. Si necesitas una persona nueva, agrégala en `siembra.ts` (`CORREOS`) y no reuses la de otro spec para algo que la cambie, como su factor, su contraseña o su tope. Si las pruebas de un archivo dependen entre sí, usa `test.describe.configure({ mode: "serial" })`. Si el archivo se parte en grupos (`parallel` con `describe` seriales, como `operacion.spec.ts`), cada grupo debe pasar solo, con la siembra recién hecha: es lo que corre su parte. Pruébalo con las cinco partes (de `npm run test:e2e:1` a `:5`), no solo con la suite completa.
+5. Cada spec debe pasar solo y dentro de la suite completa, en cualquier orden. Si necesitas una persona nueva, agrégala en `siembra.ts` (`CORREOS`) y no reuses la de otro spec para algo que la cambie, como su factor, su contraseña o su tope. Si las pruebas de un archivo dependen entre sí, usa `test.describe.configure({ mode: "serial" })`. Si el archivo se parte en grupos (`parallel` con `describe` seriales, como `operacion.spec.ts`), cada grupo debe pasar solo, con la siembra recién hecha: es lo que corre su parte. Pruébalo con las siete partes (de `npm run test:e2e:1` a `:7`), no solo con la suite completa.
 6. Corre la suite completa tres veces seguidas antes de abrir el PR. Una prueba que falla a veces se arregla en su causa: no hay reintentos.
 
 ## Revisar la semilla de Pagos a mano

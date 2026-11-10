@@ -207,7 +207,7 @@ El #59 (`cfea61d`) y main (`f2b5d47`, con el #59; `dfe583e`, con el #65 y la 002
 **Compuertas sobre el árbol final** (con `9edb4e5`):
 - typecheck 0, lint 0, `npm test` 571/571 y security en verde;
 - Postgres en serie, los 17 archivos de `scripts/ci/pruebas-postgres.sh` (con la prueba nueva del #65), contra un Postgres 17 local: 85/85;
-- `test:e2e` en sus cinco partes: 33 + 30 + 29 + 28 + 28 = 148 (4 omitidas: `csp-evidencia`, que solo corre con `E2E_CAPTURAS`);
+- `test:e2e` en sus siete partes: 25 + 18 + 21 + 21 + 24 + 18 + 21 = 148, y la suite completa en un solo orden, 148 (4 omitidas: `csp-evidencia`, que solo corre con `E2E_CAPTURAS`; `datos/e2e-7-partes-*.txt`). En el CI de `88278c4`, con cinco partes, la 3 tardó 743 s y la 2, 555: el fondo animado (5 pruebas con GPU emulada a DPR 2, 456 s) iba entero en `marco.spec.ts`. Ahora se parte en `fondo.spec.ts` y `optica-retina.spec.ts`, y `demostracion.spec.ts` también es `parallel`, sin cambiar ninguna prueba; el modelo con los tiempos del CI da a lo más 334 s de pruebas por parte (`datos/e2e-reparto-7-partes-modelo.txt`, detalle en `tests/e2e/LEEME.md`);
 - build 0;
 - `git diff --check cfea61d..HEAD` limpio.
 

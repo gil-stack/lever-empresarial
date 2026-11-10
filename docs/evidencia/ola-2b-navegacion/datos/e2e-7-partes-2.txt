@@ -1,0 +1,64 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+   7 |  * ejecuta y el servidor no migra al arrancar.
+   8 |  */
+>  9 | export const CONTRATO_TABLAS = readFileSync(rutaDelContrato(), "utf8");
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  10 |
+  11 | function rutaDelContrato(): string {
+  12 |   try {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 5 s
+
+Running 22 tests using 1 worker, shard 2 of 7
+
+  ✓   1 tests/e2e/aprobaciones.spec.ts:48:5 › Aprobaciones se refresca al volver por el lateral tras una acción en Personas, Política, Proveedores y Flujo (3.6s)
+  ✓   2 tests/e2e/aprobaciones.spec.ts:122:5 › con el rechazo abierto, A y R no deciden el pago; con el foco en la fila, A lo autoriza una sola vez (4.4s)
+  ✓   3 tests/e2e/aprobaciones.spec.ts:176:5 › con JavaScript y el segundo factor vencido, el diálogo de rechazo pide el código y conserva el motivo (2.8s)
+  ✓   4 tests/e2e/aprobaciones.spec.ts:247:7 › sin JavaScript se decide desde la bandeja › «Rechazar» con la dirección solo abre el motivo; un pago ajeno se ve como uno que no existe (889ms)
+  ✓   5 tests/e2e/aprobaciones.spec.ts:273:7 › sin JavaScript se decide desde la bandeja › «Rechazar» abre el motivo; uno en blanco vuelve con el aviso junto al campo; doble clic y F5 deciden una vez (1.1s)
+  ✓   6 tests/e2e/aprobaciones.spec.ts:310:7 › sin JavaScript se decide desde la bandeja › «Autorizar» decide con la acción del servidor, no con la dirección; doble clic y F5 deciden una vez (734ms)
+  ✓   7 tests/e2e/aprobaciones.spec.ts:329:7 › sin JavaScript se decide desde la bandeja › con el segundo factor vencido, el rechazo pide el código ahí mismo y conserva el motivo (2.2s)
+  ✓   8 tests/e2e/aprobaciones.spec.ts:359:7 › sin JavaScript se decide desde la bandeja › con el segundo factor vencido, «Autorizar» pide el código en la misma fila (918ms)
+  ✓   9 tests/e2e/claves-repetidas.spec.ts:42:5 › ninguna página del portal da 500 con una clave repetida en la dirección (19.4s)
+  -  10 tests/e2e/csp-evidencia.spec.ts:62:5 › entrada del cliente con TOTP, clicada: 0 anotaciones de la política
+  -  11 tests/e2e/csp-evidencia.spec.ts:70:5 › entrada de Operación con TOTP, clicada: 0 anotaciones de la política
+  -  12 tests/e2e/csp-evidencia.spec.ts:77:5 › descarga del expediente clicada: llega con su política aislada y la pantalla con la estricta
+  -  13 tests/e2e/csp-evidencia.spec.ts:105:5 › sin JavaScript: una página de cada superficie con la política estricta y 0 anotaciones
+  ✓  14 tests/e2e/csp.spec.ts:83:5 › públicas: cada ruta sin sesión se pinta con su nonce y sin violaciones (12.9s)
+  ✓  15 tests/e2e/csp.spec.ts:90:5 › cliente: cada pantalla de la consola, con la administradora de Altamar (57.6s)
+  ✓  16 tests/e2e/csp.spec.ts:97:5 › teléfono: cada pantalla, con una persona tarjetahabiente (3.4s)
+  ✓  17 tests/e2e/csp.spec.ts:103:5 › Operación: cada pantalla del personal SOFIPO (14.2s)
+  ✓  18 tests/e2e/csp.spec.ts:109:5 › navegación del cliente: los enlaces del menú no traen un <style> con el nonce de otra petición (2.1s)
+  ✓  19 tests/e2e/csp.spec.ts:130:5 › lo que solo se parece a _next o a un archivo que no existe responde la 404 con su nonce; _next/static sigue fuera del proxy (5.3s)
+  ✓  20 tests/e2e/csp.spec.ts:145:5 › Safari anterior a 16.4 (sin Sec-Fetch-*): la navegación del cliente no trae el <style> del acento y el documento sí, con su nonce (1.5s)
+  ✓  21 tests/e2e/csp.spec.ts:163:5 › sin JavaScript: el formulario de entrada se envía (form-action 'self') y el navegador no anota violaciones (1.8s)
+  ✓  22 tests/e2e/demostracion.spec.ts:42:5 › empresa real: cada módulo de demostración dice «Disponible pronto» y ni el HTML ni la carga RSC traen datos de ejemplo (1.6s)
+
+  4 skipped
+  18 passed (2.4m)
+[e2e] recorridos terminados con estado 0 · 18 pruebas corridas · 150 s

@@ -1,0 +1,63 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+   7 |  * ejecuta y el servidor no migra al arrancar.
+   8 |  */
+>  9 | export const CONTRATO_TABLAS = readFileSync(rutaDelContrato(), "utf8");
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  10 |
+  11 | function rutaDelContrato(): string {
+  12 |   try {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 5 s
+
+Running 21 tests using 1 worker, shard 3 of 7
+
+  ✓   1 tests/e2e/demostracion.spec.ts:68:5 › empresa de demostración: cada módulo pinta el aviso y los datos de ejemplo, con los botones de dinero apagados (1.4s)
+  ✓   2 tests/e2e/demostracion.spec.ts:88:5 › Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegación cada uno (5.2s)
+  ✓   3 tests/e2e/demostracion.spec.ts:115:5 › Movimientos: un gesto del ratón en «7 días» que no lo elige no retrasa el siguiente filtro (9.9s)
+  ✓   4 tests/e2e/demostracion.spec.ts:188:5 › Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los campos como dice la dirección (7.1s)
+  ✓   5 tests/e2e/demostracion.spec.ts:269:5 › Movimientos: un monto a medias que aún no es número no se borra cuando llega otra navegación (3.7s)
+  ✓   6 tests/e2e/demostracion.spec.ts:304:5 › Movimientos: un monto con decimales o negativo no bloquea los filtros (6.1s)
+  ✓   7 tests/e2e/demostracion.spec.ts:332:5 › Movimientos: un monto que el filtro ignora (negativo o que no cabe) deja el campo vacío, como lo aplicado (3.4s)
+  ✓   8 tests/e2e/demostracion.spec.ts:355:5 › Movimientos: escribir el monto y hacer clic en un enlace a un ancla de esta página aplica el monto (2.5s)
+  ✓   9 tests/e2e/demostracion.spec.ts:393:5 › Movimientos: escribir el monto y hacer clic en «Movimientos» del lateral aplica el monto (2.5s)
+  ✓  10 tests/e2e/demostracion.spec.ts:400:7 › en la tableta › Movimientos: escribir el monto y tocar «Movimientos» del lateral aplica el monto (2.5s)
+  ✓  11 tests/e2e/demostracion.spec.ts:408:7 › en el teléfono › Movimientos: escribir el monto y tocar «7 días» lleva los dos en una sola navegación (2.6s)
+  ✓  12 tests/e2e/demostracion.spec.ts:434:7 › en el teléfono › Movimientos: escribir el monto y tocar un enlace lleva al enlace, sin que el monto lo pise después (5.7s)
+  ✓  13 tests/e2e/entrada.spec.ts:17:5 › entra con contraseña y código TOTP: doble clic abre una sola entrada y una sola sesión (2.5s)
+[tope] diferencias en el servidor (ms): 6, 36, 11, 11, 27, 11, 4, 1, 1 · mediana 11
+  ✓  14 tests/e2e/entrada.spec.ts:68:5 › el tope de intentos no revela si el correo tiene cuenta: mismo texto y mismo tiempo (30.5s)
+  ✓  15 tests/e2e/flujo-de-caja.spec.ts:43:5 › saldo declarado: doble clic deja una sola declaración y Inicio dice de dónde viene (1.7s)
+  ✓  16 tests/e2e/flujo-de-caja.spec.ts:65:5 › cobro esperado y cobro con XML: cada doble clic deja un solo cobro (1.6s)
+  ✓  17 tests/e2e/flujo-de-caja.spec.ts:116:5 › obligación recurrente con doble clic y presupuesto al 80 % y al 100 % en Presupuestos, Inicio y Aprobaciones (5.6s)
+  ✓  18 tests/e2e/flujo-de-caja.spec.ts:160:5 › escenario «mover pago»: la semana cambia en pantalla y la base no (1.9s)
+  ✓  19 tests/e2e/flujo-de-caja.spec.ts:199:5 › faltante: con poco saldo, Inicio y Aprobaciones avisan en qué semana (2.4s)
+  ✓  20 tests/e2e/flujo-de-caja.spec.ts:228:5 › nómina de una sola persona: finanzas ve «Monto reservado» y administración ve el monto (1.6s)
+  ✓  21 tests/e2e/fondo-pruebas.ts:173:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (5.4s)
+
+  21 passed (1.9m)
+[e2e] recorridos terminados con estado 0 · 21 pruebas corridas · 120 s
