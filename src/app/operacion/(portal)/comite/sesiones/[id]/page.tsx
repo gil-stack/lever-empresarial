@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { cargarActaAccion, registrarVotoAccion } from "@/app/operacion/(portal)/pld/acciones";
 import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { CampoArchivo } from "@/components/operacion/campo-archivo";

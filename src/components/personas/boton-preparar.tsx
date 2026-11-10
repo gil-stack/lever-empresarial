@@ -1,16 +1,21 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 
 import { enviarPreparacionNomina } from "@/app/consola/personas/acciones";
 import { BotonEnviar } from "@/components/sistema";
-import { ESTADO_MAESTRO_INICIAL, fechaLarga } from "@/dominio/personas";
+import { ESTADO_MAESTRO_INICIAL, fechaLarga, type EstadoMaestro } from "@/dominio/personas";
 import { enEmpresa } from "@/nucleo/rutas";
 
 import { AvisosFormulario } from "./estado-formulario";
 
-/** La fecha la calcula el servidor; el botón solo confirma la que se ve. */
+/**
+ * La fecha la calcula el servidor; el botón solo confirma la que se ve. Al
+ * terminar abre el lote desde la acción misma: en Aprobaciones la fila del
+ * botón desaparece en el mismo cuadro en que llega la respuesta y un efecto ya
+ * no correría.
+ */
 export function BotonPrepararNomina({
   empresaId,
   fechaPago,
@@ -20,10 +25,11 @@ export function BotonPrepararNomina({
 }) {
   const habilitado = fechaPago !== null;
   const router = useRouter();
-  const [estado, accion, pendiente] = useActionState(enviarPreparacionNomina, ESTADO_MAESTRO_INICIAL);
-  useEffect(() => {
-    if (estado.tipo === "listo" && estado.id) router.push(enEmpresa(empresaId, `/consola/personas/nomina/${estado.id}`));
-  }, [empresaId, estado, router]);
+  const [estado, accion, pendiente] = useActionState(async (previo: EstadoMaestro, datos: FormData) => {
+    const resultado = await enviarPreparacionNomina(previo, datos);
+    if (resultado.tipo === "listo" && resultado.id) router.push(enEmpresa(empresaId, `/consola/personas/nomina/${resultado.id}`));
+    return resultado;
+  }, ESTADO_MAESTRO_INICIAL);
   return (
     <form className="preparar-nomina" action={accion} aria-busy={pendiente}>
       <input type="hidden" name="fechaPago" value={fechaPago ?? ""} />

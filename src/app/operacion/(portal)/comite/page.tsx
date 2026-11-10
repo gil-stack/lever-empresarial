@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { idDeAncla } from "@/components/operacion/envio-sin-script";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
@@ -77,7 +77,7 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
         {vigentes.length === 0 ? (
           <Vacio titulo="Sin integrantes">Registra la integración completa: al menos tres titulares, un presidente, un secretario y al Oficial de Cumplimiento.</Vacio>
         ) : (
-          <div className="operacion-tabla" role="region" aria-label="Integrantes vigentes" tabIndex={0}>
+          <div className="operacion-tabla" role="region" aria-label="Tabla de integrantes vigentes" tabIndex={0}>
             <table>
               <thead>
                 <tr>
@@ -174,7 +174,7 @@ export default async function ComiteOperacion({ searchParams }: { searchParams: 
             </ul>
             <h3>Lo que el Oficial captura en el SITI</h3>
             {/* r2-serv-N11: desplazable a 390 px; con el teclado también (Tab llega, las flechas lo recorren). */}
-            <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Contenido para el SITI">
+            <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla del contenido para el SITI">
               <pre className="operacion-mono">{contenidoParaSiti(paraSiti)}</pre>
             </div>
             <p className="pista">Los 14 campos del instructivo de la CNBV, en el orden del layout. Lever no lo transmite.</p>

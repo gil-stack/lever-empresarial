@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { SinPermiso } from "@/components/operacion/sin-permiso";

@@ -1,0 +1,40 @@
+OK chromium JS @1440 /c/:taller/consola/proveedores: barras hasta 84 (scroll-padding-top 96px) | ancla «Actividad reciente» top=561 | foco input top=348
+OK chromium JS @1440 /c/:taller/consola/personas: barras hasta 84 (scroll-padding-top 96px) | ancla «Directorio» top=299
+OK chromium JS @1440 /c/:taller/consola/aprobaciones?vista=historial: barras hasta 84 (scroll-padding-top 96px) | ancla «Decisiones de pago» top=195
+OK chromium JS @1440 /operacion/clientes: barras hasta 84 (scroll-padding-top 96px) | ancla «Registrar prospect» top=125
+OK chromium JS @1440 /operacion/clientes/:taller/expediente#riesgo-titulo: barras hasta 84 (scroll-padding-top 96px) | ancla «Sin permiso» top=125
+OK chromium JS @390 /c/:taller/consola/proveedores: barras hasta 172 (scroll-padding-top 184px) | ancla «Actividad reciente» top=184 | foco input top=497
+OK chromium JS @390 /c/:taller/consola/personas: barras hasta 172 (scroll-padding-top 184px) | ancla «Directorio» top=184 | foco input top=494
+OK chromium JS @390 /c/:taller/consola/aprobaciones?vista=historial: barras hasta 172 (scroll-padding-top 184px) | ancla «Decisiones de pago» top=252
+OK chromium JS @390 /operacion/clientes: barras hasta 124 (scroll-padding-top 136px) | ancla «Registrar prospect» top=158
+OK chromium JS @390 /operacion/clientes/:taller/expediente#riesgo-titulo: barras hasta 124 (scroll-padding-top 136px) | ancla «Sin permiso» top=179
+OK chromium sin JS @1440 /c/:taller/consola/proveedores: barras hasta 84 (scroll-padding-top 96px) | ancla «Actividad reciente» top=561 | foco input top=348
+OK chromium sin JS @1440 /c/:taller/consola/personas: barras hasta 84 (scroll-padding-top 96px) | ancla «Directorio» top=299
+OK chromium sin JS @1440 /c/:taller/consola/aprobaciones?vista=historial: barras hasta 84 (scroll-padding-top 96px) | ancla «Decisiones de pago» top=195
+OK chromium sin JS @1440 /operacion/clientes: barras hasta 84 (scroll-padding-top 96px) | ancla «Registrar prospect» top=125
+OK chromium sin JS @1440 /operacion/clientes/:taller/expediente#riesgo-titulo: barras hasta 84 (scroll-padding-top 96px) | ancla «Sin permiso» top=125
+OK chromium sin JS @390 /c/:taller/consola/proveedores: barras hasta 220 (scroll-padding-top 232px) | ancla «Actividad reciente» top=232 | foco input top=521
+OK chromium sin JS @390 /c/:taller/consola/personas: barras hasta 220 (scroll-padding-top 232px) | ancla «Directorio» top=232 | foco input top=518
+OK chromium sin JS @390 /c/:taller/consola/aprobaciones?vista=historial: barras hasta 220 (scroll-padding-top 232px) | ancla «Decisiones de pago» top=252
+OK chromium sin JS @390 /operacion/clientes: barras hasta 172 (scroll-padding-top 184px) | ancla «Registrar prospect» top=184
+OK chromium sin JS @390 /operacion/clientes/:taller/expediente#riesgo-titulo: barras hasta 172 (scroll-padding-top 184px) | ancla «Sin permiso» top=227
+XX webkit JS @1440 /c/:taller/consola/proveedores: barras hasta 84 (scroll-padding-top 96px) | ancla «Actividad reciente» top=561 | foco input top=-295 | TAPADOS: 1
+OK webkit JS @1440 /c/:taller/consola/personas: barras hasta 84 (scroll-padding-top 96px) | ancla «Directorio» top=298
+OK webkit JS @1440 /c/:taller/consola/aprobaciones?vista=historial: barras hasta 84 (scroll-padding-top 96px) | ancla «Decisiones de pago» top=195
+OK webkit JS @1440 /operacion/clientes: barras hasta 84 (scroll-padding-top 96px) | ancla «Registrar prospect» top=125
+OK webkit JS @1440 /operacion/clientes/:taller/expediente#riesgo-titulo: barras hasta 84 (scroll-padding-top 96px) | ancla «Sin permiso» top=125
+XX webkit JS @390 /c/:taller/consola/proveedores: barras hasta 172 (scroll-padding-top 184px) | ancla «Actividad reciente» top=184 | foco input top=-1001 | TAPADOS: 1
+XX webkit JS @390 /c/:taller/consola/personas: barras hasta 172 (scroll-padding-top 184px) | ancla «Directorio» top=184 | foco input top=-91 | TAPADOS: 1
+OK webkit JS @390 /c/:taller/consola/aprobaciones?vista=historial: barras hasta 172 (scroll-padding-top 184px) | ancla «Decisiones de pago» top=252
+OK webkit JS @390 /operacion/clientes: barras hasta 124 (scroll-padding-top 136px) | ancla «Registrar prospect» top=158
+OK webkit JS @390 /operacion/clientes/:taller/expediente#riesgo-titulo: barras hasta 124 (scroll-padding-top 136px) | ancla «Sin permiso» top=179
+XX webkit sin JS @1440 /c/:taller/consola/proveedores: barras hasta 84 (scroll-padding-top 96px) | ancla «Actividad reciente» top=561 | foco input top=-295 | TAPADOS: 1
+OK webkit sin JS @1440 /c/:taller/consola/personas: barras hasta 84 (scroll-padding-top 96px) | ancla «Directorio» top=298
+OK webkit sin JS @1440 /c/:taller/consola/aprobaciones?vista=historial: barras hasta 84 (scroll-padding-top 96px) | ancla «Decisiones de pago» top=195
+OK webkit sin JS @1440 /operacion/clientes: barras hasta 84 (scroll-padding-top 96px) | ancla «Registrar prospect» top=125
+OK webkit sin JS @1440 /operacion/clientes/:taller/expediente#riesgo-titulo: barras hasta 84 (scroll-padding-top 96px) | ancla «Sin permiso» top=125
+XX webkit sin JS @390 /c/:taller/consola/proveedores: barras hasta 220 (scroll-padding-top 232px) | ancla «Actividad reciente» top=232 | foco input top=-1001 | TAPADOS: 1
+XX webkit sin JS @390 /c/:taller/consola/personas: barras hasta 220 (scroll-padding-top 232px) | ancla «Directorio» top=232 | foco input top=-91 | TAPADOS: 1
+OK webkit sin JS @390 /c/:taller/consola/aprobaciones?vista=historial: barras hasta 220 (scroll-padding-top 232px) | ancla «Decisiones de pago» top=252
+OK webkit sin JS @390 /operacion/clientes: barras hasta 172 (scroll-padding-top 184px) | ancla «Registrar prospect» top=184
+OK webkit sin JS @390 /operacion/clientes/:taller/expediente#riesgo-titulo: barras hasta 172 (scroll-padding-top 184px) | ancla «Sin permiso» top=227

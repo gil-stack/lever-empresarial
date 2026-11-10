@@ -64,6 +64,11 @@ export function repositorioPg(): RepositorioPagos {
               "editar_cargo_proveedor", "solicitar_pago_proveedor", "autorizar_pago_proveedor",
               "rechazar_pago_proveedor", "cancelar_pago_proveedor", "regresar_pago_proveedor",
             ]]);
+        // Las decisiones van aparte: tras 12 movimientos de otro tipo, la actividad ya no las alcanza (historial de Aprobaciones).
+        const decisiones = await consulta.query(`select a.id, a.accion, a.identificador, coalesce(u.nombre, 'Sistema') as actor, a.ocurrido_en
+            from audit_log a left join users u on u.id = a.actor_id
+            where a.company_id = $1 and a.accion in ('autorizar_pago_proveedor', 'rechazar_pago_proveedor')
+            order by a.ocurrido_en desc, a.id desc limit 12`, [ctx.empresa.id]);
         // Las sumas salen como texto: un numeric mayor que 2^53 no cabe en un número de JavaScript.
         const metricas = await consulta.query(`select
               count(*) filter (where r.estado in ('por_autorizar','listo_para_pagar') and p.vence_el >= hoy and p.vence_el <= hoy + 7)::int as por_vencer_cantidad,
@@ -97,6 +102,7 @@ export function repositorioPg(): RepositorioPagos {
           pagos: pagos.rows.slice(0, 50).map(mapearPago),
           documentos: documentos.rows.map(mapearDocumento),
           actividad: actividad.rows.map(mapearActividad),
+          decisiones: decisiones.rows.map(mapearActividad),
           metricas: mapearMetricas(metricas.rows[0]),
           historial: historial.rows.map(mapearVersion),
           pagina,

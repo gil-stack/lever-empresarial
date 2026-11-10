@@ -1,0 +1,50 @@
+▶ lectura segura del CFDI
+  ✔ lee timbre, partes, referencia, fecha y centavos sin consultar ni inventar vigencia SAT (2.310459ms)
+  ✔ rechaza entidades, XML roto, moneda distinta y datos incompletos (0.529958ms)
+  ✔ rechaza un CFDI válido que trae marcado ejecutable en la addenda (0.898917ms)
+✔ lectura segura del CFDI (4.133666ms)
+▶ fechas de la obligación
+  ✔ calcula días sin depender de la zona del servidor y rechaza calendario imposible (0.522916ms)
+  ✔ no permite programar en pasado ni vencer antes de emitir (0.066959ms)
+✔ fechas de la obligación (0.657583ms)
+▶ el CFDI leído cabe en la base
+  ✔ bar-7: un total de más de 9e15 centavos no se lee (0.307583ms)
+  ✔ bar-8: el RFC receptor tiene la forma del RFC y la serie y el folio no traen caracteres de control (0.358584ms)
+  ✔ serv-nuevo-3: los saltos literales valen un espacio y el nombre quita el control de una referencia (0.377458ms)
+  ✔ bar-9: decodifica las cinco entidades y las referencias numéricas en una pasada, sin expandir un DOCTYPE (0.3095ms)
+✔ el CFDI leído cabe en la base (1.465625ms)
+▶ bar-7: el monto escrito de un pago cabe en la base
+  ✔ hasta 9e15 centavos, como el CHECK `supplier_payables_total` (0.0745ms)
+✔ bar-7: el monto escrito de un pago cabe en la base (0.110584ms)
+▶ referencias de entidad en el CFDI
+  ✔ una entidad sin declarar o mal escrita es un XML inválido; las predefinidas y numéricas se leen (0.37325ms)
+✔ referencias de entidad en el CFDI (0.3975ms)
+▶ bar-10: las fechas del pago existen en el calendario
+  ✔ el año 0 y un día que no existe no son fechas de pago (0.080291ms)
+✔ bar-10: las fechas del pago existen en el calendario (0.103209ms)
+▶ cuentas por pagar contra Postgres: personas, versiones, CLABE, 69-B, SQL directo y concurrencia
+  ✔ Pendientes cuenta los pagos por autorizar solo para quien puede resolverlos (7.29725ms)
+  ✔ quien pidió el pago no lo ve como pendiente suyo (10.68075ms)
+  ✔ dos personas: quien solicita no autoriza y el CFDI repetido no sube archivos (45.891208ms)
+  ✔ se autoriza la versión que vio quien decide, no la que haya ahora (18.389792ms)
+  ✔ el rechazo se conserva en el historial y subir el importe exige evidencia nueva (65.483625ms)
+  ✔ la base protege cargo y solicitud aunque se escriba SQL directo (193.333375ms)
+  ✔ una escritura sin su evento de bitácora se revierte completa (107.127417ms)
+  ✔ el contador y un liberador dado de baja no autorizan, ni por servicio ni por SQL (81.997166ms)
+  ✔ el cambio de CLABE regresa los pagos listos a revisión en la misma transacción (78.180042ms)
+  ✔ un pago listo se cancela con motivo, un rechazado lo cancela quien solicitó y el UUID queda libre (78.55275ms)
+  ✔ los motivos cuentan caracteres como la base: un emoji no completa el mínimo (123.529917ms)
+  ✔ la lista 69-B posterior a la autorización regresa el pago a revisión (65.941042ms)
+  ✔ concurrencia: dos liberadores a la vez, y la carga 69-B espera a la autorización en vuelo (215.995542ms)
+  ✔ el aviso de CLABE que falla se registra sin datos sensibles (2.994834ms)
+  ✔ quien solicita ve la terminación de la CLABE y no descarga constancias (25.400125ms)
+  ✔ las decisiones recientes no se pierden detrás de otros movimientos (22.5ms)
+✔ cuentas por pagar contra Postgres: personas, versiones, CLABE, 69-B, SQL directo y concurrencia (2133.6055ms)
+ℹ tests 29
+ℹ suites 6
+ℹ pass 29
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2267.187417

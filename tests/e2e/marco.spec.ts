@@ -1,17 +1,12 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
-const EMPRESA = "33333333-3333-4333-8333-333333333333";
-const INICIO = `/c/${EMPRESA}/consola`;
-const GIL = "a".repeat(43);
-const ORIGEN = process.env.E2E_BASE_URL ?? `http://localhost:${process.env.E2E_PUERTO ?? "3109"}`;
+import { altamar, sesionDe } from "./apoyo";
+import { EMPRESA, INICIO, ORIGEN, entrar } from "./marco-apoyo";
+import { CORREOS } from "./siembra";
 
-async function entrar(page: Page, token = GIL) {
-  await page.context().clearCookies();
-  // `next start` corre en producción: la cookie de sesión lleva el prefijo __Host- (Secure, Path=/, sin Domain).
-  await page.context().addCookies([
-    { name: "__Host-sesion", value: token, domain: new URL(ORIGEN).hostname, path: "/", httpOnly: true, secure: true, sameSite: "Lax" },
-  ]);
-}
+// Cada prueba entra con su propia cookie y no comparte estado: «parallel» solo para que el reparto de la e2e pueda partir
+// el archivo (con workers: 1 siguen corriendo una tras otra). El fondo animado vive en fondo.spec.ts.
+test.describe.configure({ mode: "parallel" });
 
 test.describe("marco de la consola en escritorio", () => {
   test("menú de la persona: cuatro opciones fuera del Tab; Tab y Escape cierran y regresan el foco al botón", async ({ page }) => {
@@ -60,6 +55,16 @@ test.describe("marco de la consola en escritorio", () => {
     await expect(page.locator(".apariencia")).toBeVisible();
     await expect(page.locator(".temas").getByRole("button", { name: "Oscuro", exact: true })).toBeVisible();
 
+    // Las cookies de preferencia (acento al pintar, tema al cambiarlo): todo el sitio y Lax. Por http (localhost) van
+    // sin Secure para que el navegador las guarde; por https llevan Secure (cookie-preferencia.test.ts).
+    await page.locator(".temas").getByRole("button", { name: "Claro", exact: true }).click();
+    await expect.poll(async () => (await page.context().cookies()).filter((c) => c.name === "acento" || c.name === "tema").length).toBe(2);
+    for (const cookie of (await page.context().cookies()).filter((c) => c.name === "acento" || c.name === "tema")) {
+      expect({ nombre: cookie.name, path: cookie.path, sameSite: cookie.sameSite, secure: cookie.secure }).toEqual({
+        nombre: cookie.name, path: "/", sameSite: "Lax", secure: false,
+      });
+    }
+
     await page.goto("/c/00000000-0000-4000-8000-000000000000/consola/apariencia");
     await expect(page.locator(".apariencia")).toHaveCount(0);
   });
@@ -99,4 +104,37 @@ test.describe("cajón móvil", () => {
     await expect(page.locator(".pie-movil")).toHaveText("El saldo vive con el participante de la CLABE. El plástico vive con el emisor.");
     expect(errores).toEqual([]);
   });
+});
+
+// r60b-N1 (revisión del #60): Laura (Altamar) en /c/<Taller>/consola/… recibía HTTP 200 con «Error 404» dentro del marco de
+// su propia empresa. Tiene que ser un 404 de verdad y el mismo que para una empresa que no existe: la respuesta no dice si la
+// empresa existe. En los dos sentidos: Laura hacia Taller y Gil hacia Altamar.
+const INEXISTENTE = "99999999-9999-4999-8999-999999999999";
+const RUTAS_DE_LA_CONSOLA = ["/consola", "/consola/aprobaciones", "/consola/perfil", "/consola/proveedores", "/consola/personas"];
+test.describe("una empresa ajena o inexistente en la dirección", () => {
+  for (const conJs of [true, false]) {
+    for (const quien of ["laura", "gil"] as const) {
+      test(`${quien}: responde 404 de verdad, igual para la ajena y la inexistente (${conJs ? "con" : "sin"} JavaScript)`, async ({ browser }) => {
+        const contexto = await browser.newContext({ javaScriptEnabled: conJs });
+        const page = await contexto.newPage();
+        if (quien === "laura") await sesionDe(contexto, CORREOS.laura);
+        else await entrar(page);
+        const [propia, ajena] = quien === "laura" ? [altamar(), EMPRESA] : [EMPRESA, altamar()];
+        const textos: Record<string, string> = {};
+        for (const [cual, empresa] of [["ajena", ajena], ["inexistente", INEXISTENTE]] as const) {
+          for (const ruta of RUTAS_DE_LA_CONSOLA) {
+            const respuesta = await page.goto(`${ORIGEN}/c/${empresa}${ruta}`);
+            expect.soft(respuesta?.status(), `${cual} ${ruta}`).toBe(404);
+            textos[`${cual} ${ruta}`] = (await page.locator("body").innerText()).replaceAll(empresa, "EMPRESA");
+          }
+        }
+        for (const ruta of RUTAS_DE_LA_CONSOLA) {
+          expect.soft(textos[`ajena ${ruta}`], `${ruta}: lo mismo para la ajena que para la inexistente`).toBe(textos[`inexistente ${ruta}`]);
+        }
+        // Y la empresa propia sigue abriendo.
+        expect((await page.goto(`${ORIGEN}/c/${propia}/consola`))?.status()).toBe(200);
+        await contexto.close();
+      });
+    }
+  }
 });

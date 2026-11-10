@@ -1,0 +1,22 @@
+# Orden de los eventos de un gesto en Chromium headless (Playwright), sobre una página mínima con un campo y un botón de envío.
+# Con el ratón, el «change» del campo sale al bajar (mousedown), antes de soltar. Con el dedo sale después de soltar
+# (pointerup y touchend), en el mousedown de compatibilidad: por eso la marca no se apaga al soltar encima del botón.
+# Al arrastrar el dedo, el navegador cancela el gesto (pointercancel) y no hay clic. Milisegundos desde que abre la página.
+node:internal/modules/cjs/loader:1573
+  throw err;
+  ^
+
+Error: Cannot find module '/private/tmp/claude-501/-Users-gilbertovillarreal-dev-plataforma-administrativa--worktrees-ola-2b-navegacion/0fd1d85e-a8fa-4ea6-b1d1-20badea589cb/scratchpad/n4/n4/orden.mjs'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1569:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1123:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1147:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1174:12)
+    at Module._load (node:internal/modules/cjs/loader:1346:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+
+Node.js v26.7.0

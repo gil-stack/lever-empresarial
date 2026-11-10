@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { abrirCasoAccion } from "@/app/operacion/(portal)/pld/acciones";
 import { idDeAncla } from "@/components/operacion/envio-sin-script";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";

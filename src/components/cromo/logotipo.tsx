@@ -38,11 +38,21 @@ export function Lazo({ className = "lazo" }: { className?: string }) {
 /**
  * El logotipo de Lever Empresas: el lazo y la palabra «lever» en Sora 600, con la
  * línea del portal debajo («Empresas», «Operación SOFIPO»). Sin línea, solo la palabra.
- * Lleva su nombre para el lector de pantalla; el contenedor decide si es enlace.
+ * Lleva su nombre para el lector de pantalla; el contenedor decide si es enlace. Con
+ * `decorativo` no lo lleva: lo nombra el texto que lo acompaña (un enlace que dice a dónde va).
  */
-export function Logotipo({ linea = "Empresas", className }: { linea?: string | null; className?: string }) {
+export function Logotipo({
+  linea = "Empresas",
+  className,
+  decorativo = false,
+}: {
+  linea?: string | null;
+  className?: string;
+  decorativo?: boolean;
+}) {
+  const nombre = decorativo ? { "aria-hidden": true } : { role: "img", "aria-label": linea ? `Lever ${linea}` : "Lever" };
   return (
-    <span className={className ? `logotipo ${className}` : "logotipo"} role="img" aria-label={linea ? `Lever ${linea}` : "Lever"}>
+    <span className={className ? `logotipo ${className}` : "logotipo"} {...nombre}>
       <Lazo />
       <span className="logotipo-texto" aria-hidden="true">
         <span className="logotipo-palabra">lever</span>

@@ -91,7 +91,7 @@ export function ExpedientePersona({
             {!deBaja ? <FormularioClabeNomina persona={persona} /> : null}
             <NotaRegla>Cada cambio exige tu segundo factor reciente, queda en el historial y se avisa por correo a la persona.</NotaRegla>
             {detalle.historialClabe.length > 0 ? (
-              <div className="tabla-contenedor">
+              <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla del historial de la CLABE de nómina">
                 <table className="tabla personas-tabla clabe-historial">
                   <caption className="seccion-lectura">Historial de la CLABE de nómina</caption>
                   <thead><tr><th scope="col">CLABE</th><th scope="col">Desde</th><th scope="col">Hasta</th><th scope="col">Registró</th></tr></thead>

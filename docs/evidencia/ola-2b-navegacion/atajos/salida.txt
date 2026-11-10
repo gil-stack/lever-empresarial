@@ -1,0 +1,28 @@
+# Atajos de la bandeja desde un diálogo abierto (H1 y A1 de la revisión del PR #60)
+# Playwright headless con la siembra de los e2e (Postgres 17 en 5552, next start en 3152), 2026-11-07.
+
+## Aprobaciones (tests/e2e/aprobaciones.spec.ts, la prueba de regresión que corre en CI)
+### Sin el arreglo (bandeja.tsx de 384d37f)
+  ✓  1 tests/e2e/aprobaciones.spec.ts:22:5 › Aprobaciones se refresca al volver por el lateral tras una acción en Personas, Política, Proveedores y Flujo (3.1s)
+  ✘  2 tests/e2e/aprobaciones.spec.ts:96:5 › con el rechazo abierto, A y R no deciden el pago; con el foco en la fila, A lo autoriza una sola vez (1.8s)
+    Error: A con el foco en Cancelar
+    test-results/e2e/aprobaciones-con-el-rechaz-bccb0--A-lo-autoriza-una-sola-vez/test-failed-1.png
+  1 failed
+  1 passed (9.7s)
+### Con el arreglo
+  ✓  1 tests/e2e/aprobaciones.spec.ts:22:5 › Aprobaciones se refresca al volver por el lateral tras una acción en Personas, Política, Proveedores y Flujo (3.1s)
+  ✓  2 tests/e2e/aprobaciones.spec.ts:96:5 › con el rechazo abierto, A y R no deciden el pago; con el foco en la fila, A lo autoriza una sola vez (3.9s)
+  2 passed (11.7s)
+
+## Operación (atajos/operacion.spec.ts.txt, spec temporal que no se sube a operacion.spec.ts)
+### Sin el arreglo (bandeja.tsx de 384d37f)
+antes: solicitud=pendiente, empresa=en_alta, eventos=0
+POST tras escribir el motivo: 0
+foco en Cancelar («Cancelar»), tecla A: POST=1, solicitud=aprobada, empresa=activa, eventos=1
+### Con el arreglo
+antes: solicitud=pendiente, empresa=en_alta, eventos=0
+POST tras escribir el motivo: 0
+foco en Cancelar («Cancelar»), tecla A: POST=0, solicitud=pendiente, empresa=en_alta, eventos=0
+foco en Rechazar del diálogo («Rechazar»), tecla A: POST=0, solicitud=pendiente, empresa=en_alta, eventos=0
+foco en Rechazar del diálogo («Rechazar»), tecla R: POST=0, solicitud=pendiente, empresa=en_alta, eventos=0
+control: Escape, foco en la fila, tecla A: POST=1, solicitud=aprobada, empresa=activa, eventos=1

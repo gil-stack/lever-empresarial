@@ -1,0 +1,302 @@
+[
+  {
+    "ok": false,
+    "texto": "axe 01-resumen oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 10-aprobaciones-liberador oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca"
+  },
+  {
+    "ok": false,
+    "texto": "axe 11-aprobaciones-administrador oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 12-aprobaciones-vacio oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca"
+  },
+  {
+    "ok": false,
+    "texto": "axe 13-aprobaciones-historial oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 14-aprobaciones-altamar oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 15-perfil oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 20-demo-conciliacion oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 21-demo-gastos oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 22-demo-tarjetas oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 23-demo-movimientos oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 24-demo-fiscal oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 25-demo-cuenta oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 26-demo-internacional oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 27-demo-credito oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 28-demo-inversion oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 29-demo-viajes oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 30-demo-gasolina oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 31-demo-ahorro oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 32-demo-integraciones oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 34-demo-tarjetas-presupuestos oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 40-pronto-gastos oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 41-pronto-fiscal oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 42-pronto-cuenta oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".lateral-cabeza > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 50-recuperar oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".arco-marca"
+  },
+  {
+    "ok": false,
+    "texto": "axe 51-portada oscuro 1440: label-content-name-mismatch en 0",
+    "detalle": ".arco-header-marca"
+  },
+  {
+    "ok": false,
+    "texto": "logotipo laura oscuro 1440: «Lever Empresas, ir a Resumen», sin aria-label, lleva a consola",
+    "detalle": "1 enlace(s) visibles · aria-label Lever Empresas, ir a Resumen"
+  },
+  {
+    "ok": true,
+    "texto": "logotipo laura oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": false,
+    "texto": "logotipo rosa oscuro 1440: «Lever Empresas, ir a Aprobaciones», sin aria-label, lleva a aprobaciones",
+    "detalle": "1 enlace(s) visibles · aria-label Lever Empresas, ir a Aprobaciones"
+  },
+  {
+    "ok": true,
+    "texto": "logotipo rosa oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": false,
+    "texto": "axe 01-resumen oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 10-aprobaciones-liberador oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca"
+  },
+  {
+    "ok": false,
+    "texto": "axe 11-aprobaciones-administrador oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 12-aprobaciones-vacio oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca"
+  },
+  {
+    "ok": false,
+    "texto": "axe 13-aprobaciones-historial oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 14-aprobaciones-altamar oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 15-perfil oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 20-demo-conciliacion oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 21-demo-gastos oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 22-demo-tarjetas oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 23-demo-movimientos oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 24-demo-fiscal oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 25-demo-cuenta oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 26-demo-internacional oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 27-demo-credito oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 28-demo-inversion oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 29-demo-viajes oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 30-demo-gasolina oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 31-demo-ahorro oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 32-demo-integraciones oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 34-demo-tarjetas-presupuestos oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 40-pronto-gastos oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 41-pronto-fiscal oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 42-pronto-cuenta oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".barra-movil > .marca[aria-label=\"Lever Empresas, ir a Resumen\"]"
+  },
+  {
+    "ok": false,
+    "texto": "axe 50-recuperar oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".arco-marca"
+  },
+  {
+    "ok": false,
+    "texto": "axe 51-portada oscuro 390: label-content-name-mismatch en 0",
+    "detalle": ".arco-header-marca"
+  },
+  {
+    "ok": false,
+    "texto": "logotipo laura oscuro 390: «Lever Empresas, ir a Resumen», sin aria-label, lleva a consola",
+    "detalle": "1 enlace(s) visibles · aria-label Lever Empresas, ir a Resumen"
+  },
+  {
+    "ok": true,
+    "texto": "logotipo laura oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": false,
+    "texto": "logotipo rosa oscuro 390: «Lever Empresas, ir a Aprobaciones», sin aria-label, lleva a aprobaciones",
+    "detalle": "1 enlace(s) visibles · aria-label Lever Empresas, ir a Aprobaciones"
+  },
+  {
+    "ok": true,
+    "texto": "logotipo rosa oscuro 390: sin errores de consola",
+    "detalle": ""
+  }
+]

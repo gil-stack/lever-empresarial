@@ -18,8 +18,10 @@ export async function MarcoArco({ children }: { children: ReactNode }) {
           Saltar al contenido
         </a>
         <header className="arco-cabeza">
-          <Link href="/" className="arco-marca" aria-label="Lever Empresas, inicio">
-            <Logotipo />
+          {/* El nombre sale del contenido, como el del portal: un aria-label no contendría el texto que se ve. */}
+          <Link href="/" className="arco-marca">
+            <Logotipo decorativo />
+            <span className="solo-lector">Lever Empresas, inicio</span>
           </Link>
           <SelectorTema inicial={tema} />
         </header>

@@ -1,0 +1,1037 @@
+[
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: abre con las 34 compras y sin «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: elegir a Carlos Méndez filtra solo, con una navegación",
+    "detalle": "13 de 34 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: Enter en «Monto desde» filtra con una sola navegación",
+    "detalle": "9 compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: Tab en «Monto desde» filtra con una sola navegación",
+    "detalle": "1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: elegir en «Área» filtra con una sola navegación",
+    "detalle": "Compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: elegir en «Tarjeta» filtra con una sola navegación",
+    "detalle": "Combustible ••8833 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: elegir en «Categoría» filtra con una sola navegación",
+    "detalle": "Combustible · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: elegir en «Comprobante» filtra con una sola navegación",
+    "detalle": "Correo Lever · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: elegir en «Agrupar por» filtra con una sola navegación",
+    "detalle": "persona · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: monto y clic en «7 días» llevan los dos en una sola navegación",
+    "detalle": "1 navegación(es) · marcado «7 días» · monto 4000"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
+    "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "8 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: el clic derecho en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "14 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: el clic central en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "8 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: Ctrl + clic de macOS en «7 días» (menú contextual) no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «4000» en el monto y clic sin pausa en «Limpiar filtros»: se queda en el enlace, sin el monto",
+    "detalle": "/consola/movimientos · {\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «4000» en el monto y clic sin pausa en el logotipo (ir a Resumen): se queda en el enlace, sin el monto",
+    "detalle": "/consola"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «1e» a medio escribir sigue en el monto cuando llega el filtro de Área, y con «3» queda «1e3»",
+    "detalle": "entrada a medias=true · valor «1e3»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «1500.50» y Tab filtran con una navegación, y Área después también",
+    "detalle": "1 y 1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=1500.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: con ?desde=100.5 en la dirección, Área filtra y conserva el monto",
+    "detalle": "1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=100.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «4000» y clic sin pausa en «Movimientos» del lateral: el monto del campo es el de la dirección",
+    "detalle": "dirección «4000» · campo «4000»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «-5» y Tab no filtran y el campo queda vacío, como lo aplicado",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: ?desde=1e308 no filtra y el campo queda vacío",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «4000» y clic en un enlace absoluto a #movimientos-mapa aplican el monto",
+    "detalle": "dirección «4000» · campo «4000»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
+    "detalle": "0 vez(ces)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona, el monto y «Agrupar por» vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona, el monto y la agrupación de la dirección",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\",\"agrupar\":\"persona\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «Adelante» deja otra vez los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: el filtro siguiente (Área) va solo, sin la persona, el monto ni la agrupación de antes, con una navegación",
+    "detalle": "1 navegación(es) · persona «» · desde «» · agrupar «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
+    "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
+    "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":88}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Fiscal: «Lista 69-B» abre la lista real y el lateral sigue en Fiscal",
+    "detalle": "Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440 Fiscal: al volver, la DIOT sigue con sus tres columnas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: abre con las 34 compras y sin «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: elegir a Carlos Méndez filtra solo, con una navegación",
+    "detalle": "13 de 34 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: Enter en «Monto desde» filtra con una sola navegación",
+    "detalle": "9 compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: Tab en «Monto desde» filtra con una sola navegación",
+    "detalle": "1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: elegir en «Área» filtra con una sola navegación",
+    "detalle": "Compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: elegir en «Tarjeta» filtra con una sola navegación",
+    "detalle": "Combustible ••8833 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: elegir en «Categoría» filtra con una sola navegación",
+    "detalle": "Combustible · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: elegir en «Comprobante» filtra con una sola navegación",
+    "detalle": "Correo Lever · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: elegir en «Agrupar por» filtra con una sola navegación",
+    "detalle": "persona · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: monto y toque en «7 días» llevan los dos en una sola navegación",
+    "detalle": "1 navegación(es) · marcado «7 días» · monto 4000"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
+    "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "9 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «4000» en el monto y toque en «Limpiar filtros»: se queda en el enlace, sin el monto",
+    "detalle": "/consola/movimientos · {\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «4000» en el monto y toque en el logotipo (ir a Resumen): se queda en el enlace, sin el monto",
+    "detalle": "/consola"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «1e» a medio escribir sigue en el monto cuando llega el filtro de Área, y con «3» queda «1e3»",
+    "detalle": "entrada a medias=true · valor «1e3»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «1500.50» y Tab filtran con una navegación, y Área después también",
+    "detalle": "1 y 1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=1500.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: con ?desde=100.5 en la dirección, Área filtra y conserva el monto",
+    "detalle": "1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=100.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «4000» y «Movimientos» en el cajón: el monto del campo es el de la dirección",
+    "detalle": "dirección «» · campo «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «-5» y Tab no filtran y el campo queda vacío, como lo aplicado",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: ?desde=1e308 no filtra y el campo queda vacío",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «4000» y un toque en un enlace absoluto a #movimientos-mapa aplican el monto",
+    "detalle": "dirección «4000» · campo «4000»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
+    "detalle": "0 vez(ces)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona, el monto y «Agrupar por» vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona, el monto y la agrupación de la dirección",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\",\"agrupar\":\"persona\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «Adelante» deja otra vez los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: el filtro siguiente (Área) va solo, sin la persona, el monto ni la agrupación de antes, con una navegación",
+    "detalle": "1 navegación(es) · persona «» · desde «» · agrupar «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
+    "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
+    "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":277}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Fiscal: «Lista 69-B» abre la lista real y el lateral sigue en Fiscal",
+    "detalle": "Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390 Fiscal: al volver, la DIOT sigue con sus tres columnas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: abre con las 34 compras y sin «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: elegir a Carlos Méndez filtra solo, con una navegación",
+    "detalle": "13 de 34 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: Enter en «Monto desde» filtra con una sola navegación",
+    "detalle": "9 compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: Tab en «Monto desde» filtra con una sola navegación",
+    "detalle": "1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: elegir en «Área» filtra con una sola navegación",
+    "detalle": "Compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: elegir en «Tarjeta» filtra con una sola navegación",
+    "detalle": "Combustible ••8833 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: elegir en «Categoría» filtra con una sola navegación",
+    "detalle": "Combustible · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: elegir en «Comprobante» filtra con una sola navegación",
+    "detalle": "Correo Lever · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: elegir en «Agrupar por» filtra con una sola navegación",
+    "detalle": "persona · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: monto y clic en «7 días» llevan los dos en una sola navegación",
+    "detalle": "1 navegación(es) · marcado «7 días» · monto 4000"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
+    "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: el clic derecho en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "16 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: el clic central en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "6 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: Ctrl + clic de macOS en «7 días» (menú contextual) no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "3 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «4000» en el monto y clic sin pausa en «Limpiar filtros»: se queda en el enlace, sin el monto",
+    "detalle": "/consola/movimientos · {\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «4000» en el monto y clic sin pausa en el logotipo (ir a Resumen): se queda en el enlace, sin el monto",
+    "detalle": "/consola"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «1e» a medio escribir sigue en el monto cuando llega el filtro de Área, y con «3» queda «1e3»",
+    "detalle": "entrada a medias=true · valor «1e3»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «1500.50» y Tab filtran con una navegación, y Área después también",
+    "detalle": "1 y 1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=1500.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: con ?desde=100.5 en la dirección, Área filtra y conserva el monto",
+    "detalle": "1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=100.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «4000» y clic sin pausa en «Movimientos» del lateral: el monto del campo es el de la dirección",
+    "detalle": "dirección «4000» · campo «4000»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «-5» y Tab no filtran y el campo queda vacío, como lo aplicado",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: ?desde=1e308 no filtra y el campo queda vacío",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «4000» y clic en un enlace absoluto a #movimientos-mapa aplican el monto",
+    "detalle": "dirección «4000» · campo «4000»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
+    "detalle": "0 vez(ces)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona, el monto y «Agrupar por» vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona, el monto y la agrupación de la dirección",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\",\"agrupar\":\"persona\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «Adelante» deja otra vez los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: el filtro siguiente (Área) va solo, sin la persona, el monto ni la agrupación de antes, con una navegación",
+    "detalle": "1 navegación(es) · persona «» · desde «» · agrupar «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
+    "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
+    "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":88}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Fiscal: «Lista 69-B» abre la lista real y el lateral sigue en Fiscal",
+    "detalle": "Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440 Fiscal: al volver, la DIOT sigue con sus tres columnas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: abre con las 34 compras y sin «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: elegir a Carlos Méndez filtra solo, con una navegación",
+    "detalle": "13 de 34 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: Enter en «Monto desde» filtra con una sola navegación",
+    "detalle": "9 compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: Tab en «Monto desde» filtra con una sola navegación",
+    "detalle": "1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: elegir en «Área» filtra con una sola navegación",
+    "detalle": "Compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: elegir en «Tarjeta» filtra con una sola navegación",
+    "detalle": "Combustible ••8833 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: elegir en «Categoría» filtra con una sola navegación",
+    "detalle": "Combustible · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: elegir en «Comprobante» filtra con una sola navegación",
+    "detalle": "Correo Lever · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: elegir en «Agrupar por» filtra con una sola navegación",
+    "detalle": "persona · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: monto y toque en «7 días» llevan los dos en una sola navegación",
+    "detalle": "1 navegación(es) · marcado «7 días» · monto 4000"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
+    "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "26 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «4000» en el monto y toque en «Limpiar filtros»: se queda en el enlace, sin el monto",
+    "detalle": "/consola/movimientos · {\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «4000» en el monto y toque en el logotipo (ir a Resumen): se queda en el enlace, sin el monto",
+    "detalle": "/consola"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «1e» a medio escribir sigue en el monto cuando llega el filtro de Área, y con «3» queda «1e3»",
+    "detalle": "entrada a medias=true · valor «1e3»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «1500.50» y Tab filtran con una navegación, y Área después también",
+    "detalle": "1 y 1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=1500.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: con ?desde=100.5 en la dirección, Área filtra y conserva el monto",
+    "detalle": "1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=100.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «4000» y «Movimientos» en el cajón: el monto del campo es el de la dirección",
+    "detalle": "dirección «» · campo «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «-5» y Tab no filtran y el campo queda vacío, como lo aplicado",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: ?desde=1e308 no filtra y el campo queda vacío",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «4000» y un toque en un enlace absoluto a #movimientos-mapa aplican el monto",
+    "detalle": "dirección «4000» · campo «4000»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
+    "detalle": "0 vez(ces)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona, el monto y «Agrupar por» vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona, el monto y la agrupación de la dirección",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\",\"agrupar\":\"persona\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «Adelante» deja otra vez los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: el filtro siguiente (Área) va solo, sin la persona, el monto ni la agrupación de antes, con una navegación",
+    "detalle": "1 navegación(es) · persona «» · desde «» · agrupar «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
+    "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
+    "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":277}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Fiscal: «Lista 69-B» abre la lista real y el lateral sigue en Fiscal",
+    "detalle": "Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390 Fiscal: al volver, la DIOT sigue con sus tres columnas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: abre con las 34 compras y sin «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: elegir a Carlos Méndez filtra solo, con una navegación",
+    "detalle": "13 de 34 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: Enter en «Monto desde» filtra con una sola navegación",
+    "detalle": "9 compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: Tab en «Monto desde» filtra con una sola navegación",
+    "detalle": "1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: elegir en «Área» filtra con una sola navegación",
+    "detalle": "Compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: elegir en «Tarjeta» filtra con una sola navegación",
+    "detalle": "Combustible ••8833 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: elegir en «Categoría» filtra con una sola navegación",
+    "detalle": "Combustible · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: elegir en «Comprobante» filtra con una sola navegación",
+    "detalle": "Correo Lever · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: elegir en «Agrupar por» filtra con una sola navegación",
+    "detalle": "persona · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: monto y clic en «7 días» llevan los dos en una sola navegación",
+    "detalle": "1 navegación(es) · marcado «7 días» · monto 4000"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
+    "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "3 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: el clic derecho en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "6 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: el clic central en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "16 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: Ctrl + clic de macOS en «7 días» (menú contextual) no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "4 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «4000» en el monto y clic sin pausa en «Limpiar filtros»: se queda en el enlace, sin el monto",
+    "detalle": "/consola/movimientos · {\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «4000» en el monto y clic sin pausa en el logotipo (ir a Resumen): se queda en el enlace, sin el monto",
+    "detalle": "/consola"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «1e» a medio escribir sigue en el monto cuando llega el filtro de Área, y con «3» queda «1e3»",
+    "detalle": "entrada a medias=true · valor «1e3»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «1500.50» y Tab filtran con una navegación, y Área después también",
+    "detalle": "1 y 1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=1500.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: con ?desde=100.5 en la dirección, Área filtra y conserva el monto",
+    "detalle": "1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=100.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «4000» y clic sin pausa en «Movimientos» del lateral: el monto del campo es el de la dirección",
+    "detalle": "dirección «4000» · campo «4000»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «-5» y Tab no filtran y el campo queda vacío, como lo aplicado",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: ?desde=1e308 no filtra y el campo queda vacío",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «4000» y clic en un enlace absoluto a #movimientos-mapa aplican el monto",
+    "detalle": "dirección «4000» · campo «4000»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
+    "detalle": "0 vez(ces)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona, el monto y «Agrupar por» vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona, el monto y la agrupación de la dirección",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\",\"agrupar\":\"persona\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «Adelante» deja otra vez los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: el filtro siguiente (Área) va solo, sin la persona, el monto ni la agrupación de antes, con una navegación",
+    "detalle": "1 navegación(es) · persona «» · desde «» · agrupar «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
+    "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
+    "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":88}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Fiscal: «Lista 69-B» abre la lista real y el lateral sigue en Fiscal",
+    "detalle": "Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440 Fiscal: al volver, la DIOT sigue con sus tres columnas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: abre con las 34 compras y sin «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: elegir a Carlos Méndez filtra solo, con una navegación",
+    "detalle": "13 de 34 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: Enter en «Monto desde» filtra con una sola navegación",
+    "detalle": "9 compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «Limpiar filtros» vuelve a las 34 compras",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: Tab en «Monto desde» filtra con una sola navegación",
+    "detalle": "1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: elegir en «Área» filtra con una sola navegación",
+    "detalle": "Compras · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: elegir en «Tarjeta» filtra con una sola navegación",
+    "detalle": "Combustible ••8833 · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: elegir en «Categoría» filtra con una sola navegación",
+    "detalle": "Combustible · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: elegir en «Comprobante» filtra con una sola navegación",
+    "detalle": "Correo Lever · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: elegir en «Agrupar por» filtra con una sola navegación",
+    "detalle": "persona · 1 navegación(es)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: monto y toque en «7 días» llevan los dos en una sola navegación",
+    "detalle": "1 navegación(es) · marcado «7 días» · monto 4000"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: Enter en el periodo «Hoy» filtra con una navegación, marca «Hoy» y deja el foco ahí",
+    "detalle": "1 navegación(es) · foco «Hoy»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación",
+    "detalle": "11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «4000» en el monto y toque en «Limpiar filtros»: se queda en el enlace, sin el monto",
+    "detalle": "/consola/movimientos · {\"persona\":\"\",\"monto\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «4000» en el monto y toque en el logotipo (ir a Resumen): se queda en el enlace, sin el monto",
+    "detalle": "/consola"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «1e» a medio escribir sigue en el monto cuando llega el filtro de Área, y con «3» queda «1e3»",
+    "detalle": "entrada a medias=true · valor «1e3»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «1500.50» y Tab filtran con una navegación, y Área después también",
+    "detalle": "1 y 1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=1500.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: con ?desde=100.5 en la dirección, Área filtra y conserva el monto",
+    "detalle": "1 navegación(es) · ?periodo=mes&persona=&area=Compras&tarjeta=&categoria=&comprobante=&desde=100.5&agrupar="
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «4000» y «Movimientos» en el cajón: el monto del campo es el de la dirección",
+    "detalle": "dirección «» · campo «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «-5» y Tab no filtran y el campo queda vacío, como lo aplicado",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: ?desde=1e308 no filtra y el campo queda vacío",
+    "detalle": "{\"campo\":\"\",\"compras\":\"34\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «4000» y un toque en un enlace absoluto a #movimientos-mapa aplican el monto",
+    "detalle": "dirección «4000» · campo «4000»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: el botón oculto que usa Enter no recibe el foco con Tab ni con Shift+Tab",
+    "detalle": "0 vez(ces)"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona, el monto y «Agrupar por» vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona, el monto y la agrupación de la dirección",
+    "detalle": "{\"persona\":\"Carlos Méndez\",\"monto\":\"100\",\"agrupar\":\"persona\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «Adelante» deja otra vez los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: el filtro siguiente (Área) va solo, sin la persona, el monto ni la agrupación de antes, con una navegación",
+    "detalle": "1 navegación(es) · persona «» · desde «» · agrupar «»"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos",
+    "detalle": "{\"persona\":\"\",\"monto\":\"\",\"agrupar\":\"\"}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Movimientos: sin JavaScript, el periodo envía persona y monto, y «Filtrar» conserva el periodo",
+    "detalle": "periodo=7&persona=Carlos+M%C3%A9ndez&area=&tarjeta=&categoria=&comprobante=&desde=1000&agrupar= · tras Filtrar periodo=7"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Fiscal: al desplazar la DIOT a lo ancho se ve la columna IVA",
+    "detalle": "{\"texto\":\"IVA\",\"adentro\":true,\"desplazado\":277}"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Fiscal: «Lista 69-B» abre la lista real y el lateral sigue en Fiscal",
+    "detalle": "Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390 Fiscal: al volver, la DIOT sigue con sus tres columnas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "modulos lever 390: sin errores de consola",
+    "detalle": ""
+  }
+]

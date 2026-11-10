@@ -734,9 +734,9 @@ async function flujo7() {
   let enRegion = false;
   for (let tabs = 0; tabs < 400 && !enRegion; tabs++) {
     await movil.p.keyboard.press("Tab");
-    enRegion = await movil.p.evaluate(() => document.activeElement?.getAttribute("aria-label") === "Contenido para el SITI");
+    enRegion = await movil.p.evaluate(() => document.activeElement?.getAttribute("aria-label") === "Tabla del contenido para el SITI");
   }
-  exigir(enRegion, "7. a 390 px, Tab llega a la región «Contenido para el SITI»");
+  exigir(enRegion, "7. a 390 px, Tab llega a la región «Tabla del contenido para el SITI»");
   const desplazable = await movil.p.evaluate(() => {
     const region = document.activeElement;
     return region ? region.scrollWidth > region.clientWidth : false;

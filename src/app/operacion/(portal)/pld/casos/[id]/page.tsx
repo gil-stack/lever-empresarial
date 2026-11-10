@@ -5,7 +5,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { cargarDocumentoPldAccion, sumarAlertaAccion } from "@/app/operacion/(portal)/pld/acciones";
-import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { CampoArchivo } from "@/components/operacion/campo-archivo";
 import { idDeAncla } from "@/components/operacion/envio-sin-script";

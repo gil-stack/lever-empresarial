@@ -1,0 +1,32 @@
+// TEMPORAL (no se commitea): la secuencia de la parte 4 del CI de 7808ac0 antes de invitacion.spec, y la CPU del navegador.
+import { execSync } from "node:child_process";
+import { test } from "@playwright/test";
+import { pruebasDelFondo } from "./fondo-pruebas";
+test.describe.configure({ mode: "serial" });
+function procesos(): Map<number, { cpu: number; cmd: string }> {
+  const filas = execSync("ps -A -o pid=,ppid=,time=,command=", { encoding: "utf8" }).split("\n").map((l) => /^\s*(\d+)\s+(\d+)\s+(?:(\d+)-)?(?:(\d+):)?(\d+):(\d+(?:\.\d+)?)\s+(.*)$/.exec(l)).filter(Boolean) as RegExpExecArray[];
+  const hijos = new Map<number, number[]>();
+  for (const a of filas) { const pp = Number(a[2]); hijos.set(pp, [...(hijos.get(pp) ?? []), Number(a[1])]); }
+  const mios = new Set<number>(); const pila = [process.pid];
+  while (pila.length) { const p = pila.pop()!; for (const h of hijos.get(p) ?? []) if (!mios.has(h)) { mios.add(h); pila.push(h); } }
+  const m = new Map<number, { cpu: number; cmd: string }>();
+  for (const a of filas) {
+    const pid = Number(a[1]); if (!mios.has(pid) || /ps -A/.test(a[7])) continue;
+    const seg = Number(a[3] ?? 0) * 86400 + Number(a[4] ?? 0) * 3600 + Number(a[5]) * 60 + Number(a[6]);
+    m.set(pid, { cpu: seg, cmd: a[7] });
+  }
+  return m;
+}
+async function medir(etiqueta: string) {
+  const a = procesos();
+  await new Promise((r) => setTimeout(r, 5000));
+  const b = procesos();
+  let usado = 0; const renderers = [...b.values()].filter((p) => /--type=renderer/.test(p.cmd)).length;
+  for (const [pid, p] of b) usado += p.cpu - (a.get(pid)?.cpu ?? p.cpu);
+  console.log(`MEDIDA ${etiqueta}: ${b.size} procesos (${renderers} renderers, GPU: ${[...b.entries()].filter(([,p])=>/gpu-process/.test(p.cmd)).map(([pid,p])=>(p.cpu-(a.get(pid)?.cpu??p.cpu)).toFixed(2)+" s").join(",")||"ninguno"}) · CPU en 5 s: ${usado.toFixed(2)} s (${(usado / 5 * 100).toFixed(0)} % de un núcleo)`);
+}
+
+
+pruebasDelFondo([1], { equipos: ["con GPU rápida"] });
+pruebasDelFondo([2], { equipos: ["con GPU rápida"], escenarios: ["el búfer del motor crece una vez"] });
+test("CPU del navegador justo después de las de GPU", async () => { await medir("después, 0-5 s"); await medir("después, 5-10 s"); });

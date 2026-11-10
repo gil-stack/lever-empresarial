@@ -11,14 +11,16 @@ import type { ContextoConEmpresa } from "@/nucleo/contexto";
 import { abrirRuta } from "@/server/entrada";
 import { leerPagosProveedores } from "@/server/pagos-proveedores";
 
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
+
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Nuevo pago a proveedor" };
 
-export default async function NuevoPago({ searchParams }: { searchParams: Promise<{ proveedor?: string; pago?: string }> }) {
+export default async function NuevoPago({ searchParams }: { searchParams: Parametros }) {
   const apertura = await abrirRuta("/consola/proveedores/nuevo");
   if (apertura.tipo !== "abierta" || !apertura.ctx.empresa) notFound();
   const ctx = apertura.ctx as ContextoConEmpresa;
-  const params = await searchParams;
+  const params: { proveedor?: string; pago?: string } = await soloTexto(searchParams);
   const lectura = await leerPagosProveedores(ctx, { pagoId: params.pago });
   const edicion = params.pago ? lectura.pagos.find((pago) => pago.id === params.pago && pago.estado === "rechazado") : undefined;
   if (params.pago && !edicion) notFound();

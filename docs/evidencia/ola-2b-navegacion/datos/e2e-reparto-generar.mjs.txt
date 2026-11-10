@@ -1,0 +1,23 @@
+// Genera los archivos del fondo según un plan { archivo: [llamadas] } y deja intacto lo demás.
+import { readFileSync, writeFileSync, rmSync, existsSync } from "node:fs";
+const plan = JSON.parse(readFileSync(process.argv[2], "utf8"));
+const E = { tarea: "una tarea ajena de 800 ms", buf: "el búfer del motor crece una vez", lien: "el lienzo cambia de tamaño en cada cuadro", est: "estable", arr: "arrastrar la ventana" };
+const q = (a) => "[" + a.map((x) => JSON.stringify(E[x] ?? x)).join(", ") + "]";
+const llamada = (c) => {
+  if (c === "cuarenta") return "CUARENTA";
+  const [tipo, dpr, ...esc] = c.split(":");
+  if (tipo === "real") return `pruebasDelFondo([${dpr}], { equipos: [], deVerdad: true });`;
+  if (tipo === "sin") return `pruebasDelFondo([${dpr}], { equipos: ["sin GPU"], deVerdad: false${esc.length ? `, escenarios: ${q(esc)}` : ""} });`;
+  if (tipo === "gpu") return `pruebasDelFondo([${dpr}], { equipos: ["con GPU rápida"], escenarios: ${q(esc)} });`;
+  throw new Error(c);
+};
+const fondoAntes = readFileSync(process.argv[3], "utf8");
+const cuarenta = fondoAntes.slice(fondoAntes.indexOf('test.describe("fondo animado en un equipo que pinta cada cuadro en 40 ms"'));
+const cuarentaFin = cuarenta.slice(0, cuarenta.indexOf("\n});\n") + 5);
+for (const f of ["fondo", "lienzo-del-fondo", "optica-retina", "velocidad-del-fondo"]) if (existsSync(`tests/e2e/${f}.spec.ts`)) rmSync(`tests/e2e/${f}.spec.ts`);
+for (const [archivo, llamadas] of Object.entries(plan)) {
+  const usaCuarenta = llamadas.includes("cuarenta");
+  const cab = [usaCuarenta ? 'import { expect, test } from "@playwright/test";' : 'import { test } from "@playwright/test";', "", 'import { pruebasDelFondo } from "./fondo-pruebas";', ...(usaCuarenta ? ['import { INICIO, entrar } from "./marco-apoyo";'] : []), "", "// COMENTARIO", 'test.describe.configure({ mode: "parallel" });', ""];
+  const cuerpo = llamadas.map((c) => (c === "cuarenta" ? "\n" + cuarentaFin : llamada(c)));
+  writeFileSync(`tests/e2e/${archivo}.spec.ts`, [...cab, ...cuerpo, ""].join("\n"));
+}

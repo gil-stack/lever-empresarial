@@ -15,6 +15,7 @@ export const CLAVE = "clave-segura-12";
 
 export const altamar = () => requerida("E2E_ALTAMAR_ID");
 export const bahia = () => requerida("E2E_BAHIA_ID");
+export const arrecife = () => requerida("E2E_ARRECIFE_ID");
 
 function requerida(nombre: string): string {
   const valor = process.env[nombre];

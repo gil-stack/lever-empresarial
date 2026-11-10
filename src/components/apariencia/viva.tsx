@@ -6,6 +6,7 @@ import { COOKIE_TEMA } from "@/components/cromo/tema";
 
 import { COOKIE_ACENTO, valorAcentoGuardado } from "./acento-guardado";
 import { acentoPorTema, esTema, type ClaveTema } from "./catalogo";
+import { cookieDePreferencia } from "./cookie-preferencia";
 import { FondoEscena } from "./fondo-escena";
 import { claveDe, guardarPreferencias, leerPreferencias, type PreferenciasApariencia } from "./preferencias";
 
@@ -57,7 +58,7 @@ export function useApariencia(persona: string | undefined, temaInicial: ClaveTem
 /** Cambia el tema en la página y en la cookie, sin recargar. */
 export function fijarTema(tema: ClaveTema): void {
   document.documentElement.dataset.tema = tema;
-  document.cookie = `${COOKIE_TEMA}=${tema}; path=/; max-age=31536000; samesite=lax`;
+  document.cookie = cookieDePreferencia(COOKIE_TEMA, tema, location.protocol);
   window.dispatchEvent(new Event(EVENTO));
 }
 
@@ -82,7 +83,7 @@ export function AparienciaViva({ persona, tema: temaInicial }: { persona?: strin
     raiz.setProperty("--ink", tinta);
     // El servidor lo pinta desde el primer cuadro en la siguiente carga (AcentoInicial).
     const guardado = persona ? valorAcentoGuardado(persona, tema, acento, tinta) : null;
-    if (guardado) document.cookie = `${COOKIE_ACENTO}=${guardado}; path=/; max-age=31536000; samesite=lax`;
+    if (guardado) document.cookie = cookieDePreferencia(COOKIE_ACENTO, guardado, location.protocol);
   }, [persona, tema, tono, colorPropio]);
 
   return (

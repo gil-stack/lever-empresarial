@@ -112,14 +112,16 @@ describe("faltante en Pendientes", () => {
     assert.equal(registro.mock.callCount(), 1);
   });
 
-  it("la página lee el faltante una vez por petición, junto con la bandeja, y la bandeja no cae si el faltante falla", () => {
-    const pagina = readFileSync(new URL("../../app/consola/pendientes/page.tsx", import.meta.url), "utf8");
+  it("Aprobaciones lee el faltante una vez por petición, junto con la bandeja, y la bandeja no cae si el faltante falla", () => {
+    // Pendientes se unió con Aprobaciones: la página lee y la vista pinta.
+    const pagina = readFileSync(new URL("../../app/consola/aprobaciones/page.tsx", import.meta.url), "utf8");
+    const vista = readFileSync(new URL("../../components/aprobaciones/vista.tsx", import.meta.url), "utf8");
     assert.match(pagina, /const faltanteDeLaPeticion = cache\(\(ctx: ContextoDeTenant\) => leerFaltanteParaPendientes\(ctx\)\)/);
-    assert.match(pagina, /Promise\.all\(\[bandejaDeLaPeticion\(apertura\.ctx\), faltanteDeLaPeticion\(apertura\.ctx\)\]\)/);
+    assert.match(pagina, /Promise\.all\(\[bandejaDeLaPeticion\(ctx\), faltanteDeLaPeticion\(ctx\)\]\)/);
     assert.equal((pagina.match(/leerFaltante(ParaPendientes)?\(/g) ?? []).length, 1);
     // «no_disponible» pinta el aviso con su salida a Saldo y alertas.
-    assert.match(pagina, /faltante === "no_disponible"/);
-    assert.match(pagina, /titulo="No se pudo calcular si te alcanza el dinero"/);
-    assert.match(pagina, /Revisa <Link href=\{enEmpresa\(empresaId, "\/consola\/flujo"\)\}>Saldo y alertas<\/Link>\./);
+    assert.match(vista, /faltante === "no_disponible"/);
+    assert.match(vista, /titulo="No se pudo calcular si te alcanza el dinero"/);
+    assert.match(vista, /Revisa <Link href=\{enEmpresa\(empresaId, "\/consola\/flujo"\)\}>Saldo y alertas<\/Link>\./);
   });
 });

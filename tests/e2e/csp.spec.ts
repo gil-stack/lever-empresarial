@@ -21,6 +21,9 @@ const SIN_CAPTURAS = process.env.E2E_SIN_CAPTURAS === "1";
 const UUID = "00000000-0000-4000-8000-000000000000";
 // WebKit corre por el origen https local de la evidencia (certificado autofirmado de un día).
 test.use({ ignoreHTTPSErrors: ORIGEN.startsWith("https:") });
+// Cada prueba abre su propio contexto o su sesión y no comparte estado: «parallel» solo para que el reparto de la e2e pueda
+// partir el archivo (con workers: 1 corren una tras otra). Entero, sumaba unos 338 s en la parte 1 del CI del #61.
+test.describe.configure({ mode: "parallel" });
 
 type Violacion = { directiva: string; bloqueado: string; muestra: string; disposicion: string };
 declare global {
@@ -87,11 +90,36 @@ test("públicas: cada ruta sin sesión se pinta con su nonce y sin violaciones",
   await recorrer(page, [...rutas, ...DE("sofipo", "publica"), "/no-existe-csp"], "publicas");
 });
 
-test("cliente: cada pantalla de la consola, con la administradora de Altamar", async ({ page, context }) => {
-  await vigilarCsp(context);
-  await sesionDe(context, CORREOS.laura);
-  const rutas = DE("cliente", "sesion", "capacidad").filter((p) => p !== "/entrar/destino").map((p) => concreta(p));
-  await recorrer(page, [...rutas, `/c/${altamar()}/consola`], "consola");
+// Las pantallas de la consola y de Operación van en varias pruebas, en orden del registro, para que el reparto de la e2e
+// no las junte en una sola parte (la de la consola tardaba 2.3 min en el CI del #61). La prueba de abajo afirma que entre
+// todas recorren el registro completo, sin repetir.
+const RUTAS_CLIENTE = DE("cliente", "sesion", "capacidad").filter((p) => p !== "/entrar/destino");
+const RUTAS_OPERACION = DE("sofipo", "sesion", "capacidad");
+function partir(rutas: string[], partes: number): string[][] {
+  const tamano = Math.ceil(rutas.length / partes);
+  return Array.from({ length: partes }, (_, i) => rutas.slice(i * tamano, (i + 1) * tamano));
+}
+const PARTES_CLIENTE = partir(RUTAS_CLIENTE, 3);
+const PARTES_OPERACION = partir(RUTAS_OPERACION, 2);
+
+test("las partes de la consola y de Operación recorren el registro completo, sin repetir rutas", () => {
+  for (const [nombre, partes, registro] of [["consola", PARTES_CLIENTE, RUTAS_CLIENTE], ["Operación", PARTES_OPERACION, RUTAS_OPERACION]] as const) {
+    const recorridas = partes.flat();
+    expect(partes.every((parte) => parte.length > 0), `${nombre}: ninguna parte vacía`).toBe(true);
+    expect(new Set(recorridas).size, `${nombre}: sin repetir`).toBe(recorridas.length);
+    expect([...recorridas].sort(), `${nombre}: la unión es el registro`).toEqual([...registro].sort());
+  }
+  expect(RUTAS_CLIENTE.length).toBeGreaterThan(30);
+  expect(RUTAS_OPERACION.length).toBeGreaterThan(10);
+});
+
+PARTES_CLIENTE.forEach((rutas, i) => {
+  test(`cliente: cada pantalla de la consola, con la administradora de Altamar (${i + 1} de ${PARTES_CLIENTE.length}: ${rutas[0]} a ${rutas.at(-1)})`, async ({ page, context }) => {
+    await vigilarCsp(context);
+    await sesionDe(context, CORREOS.laura);
+    // La consola de la empresa por su dirección con /c/, en la primera parte.
+    await recorrer(page, [...rutas.map((p) => concreta(p)), ...(i === 0 ? [`/c/${altamar()}/consola`] : [])], `consola-${i + 1}`);
+  });
 });
 
 test("teléfono: cada pantalla, con una persona tarjetahabiente", async ({ page, context }) => {
@@ -100,10 +128,12 @@ test("teléfono: cada pantalla, con una persona tarjetahabiente", async ({ page,
   await recorrer(page, DE("telefono", "sesion", "capacidad"), "telefono");
 });
 
-test("Operación: cada pantalla del personal SOFIPO", async ({ page, context }) => {
-  await vigilarCsp(context);
-  await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-  await recorrer(page, DE("sofipo", "sesion", "capacidad").map((p) => concreta(p, { id: altamar() })), "operacion");
+PARTES_OPERACION.forEach((rutas, i) => {
+  test(`Operación: cada pantalla del personal SOFIPO (${i + 1} de ${PARTES_OPERACION.length}: ${rutas[0]} a ${rutas.at(-1)})`, async ({ page, context }) => {
+    await vigilarCsp(context);
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    await recorrer(page, rutas.map((p) => concreta(p, { id: altamar() })), `operacion-${i + 1}`);
+  });
 });
 
 test("navegación del cliente: los enlaces del menú no traen un <style> con el nonce de otra petición", async ({ page, context }) => {
@@ -115,7 +145,9 @@ test("navegación del cliente: los enlaces del menú no traen un <style> con el 
   expect((await context.cookies()).some((c) => c.name === "acento")).toBe(true);
   await page.evaluate(() => Object.assign(window, { __mismoDocumento: true }));
   const secciones = page.getByRole("navigation", { name: "Secciones" });
-  for (const [enlace, destino] of [["Proveedores", /\/consola\/proveedores$/], ["Política", /\/consola\/politica$/], [/^Pendientes/, /\/consola\/pendientes$/]] as const) {
+  // El menú de la ola 2b (#60) para Laura en Altamar: Pendientes vive en «Aprobaciones» (con su contador en el nombre) y
+  // Política no está en su menú; Calendario sí.
+  for (const [enlace, destino] of [["Proveedores", /\/consola\/proveedores$/], ["Calendario", /\/consola\/calendario$/], [/^Aprobaciones/, /\/consola\/aprobaciones$/]] as const) {
     await secciones.getByRole("link", { name: enlace, exact: typeof enlace === "string" }).click();
     await page.waitForURL(destino);
     await page.waitForLoadState("networkidle");

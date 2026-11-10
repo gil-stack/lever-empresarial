@@ -171,7 +171,7 @@ function ProyeccionSemanal({ flujo, empresaId }: { flujo: FlujoInicio; empresaId
         </div>
       ) : null}
 
-      <div className="tabla-contenedor">
+      <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla del flujo por semana">
         {/* Roles explícitos: en móvil la tabla se apila con CSS y sin ellos el lector de pantalla deja de verla como tabla. */}
         <table className="tabla flujo-tabla flujo-apilada" data-tabla="proyeccion" role="table">
           <caption className="solo-lector">Saldo inicial, entradas, salidas y saldo final por semana</caption>

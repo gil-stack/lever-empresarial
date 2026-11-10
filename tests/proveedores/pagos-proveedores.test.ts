@@ -441,6 +441,25 @@ test("cuentas por pagar contra Postgres: personas, versiones, CLABE, 69-B, SQL d
         assert.equal(leido, false, "ni siquiera se lee del almacén");
       });
 
+      // El historial de Aprobaciones salía de las 12 actividades más recientes de cualquier tipo: con 12 movimientos
+      // después de la última decisión decía «Sin decisiones todavía» (la e2e lo destapó: la siembra deja más de 12
+      // eventos con la misma hora y el desempate por id es al azar). Las decisiones se leen aparte.
+      await t.test("las decisiones recientes no se pierden detrás de otros movimientos", async () => {
+        const antes = await leerPagosProveedores(rosa, {}, deps);
+        const decisiones = ["autorizar_pago_proveedor", "rechazar_pago_proveedor"];
+        assert.ok(antes.actividad.some((evento) => decisiones.includes(evento.accion)), "hay decisiones en la empresa");
+        ejecutar(url, `insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, ocurrido_en)
+          select '${operadorId}', '${EMPRESA}', 'miembro', '${LUIS}', 'cliente', 'documento_proveedor', 'supplier_documents', gen_random_uuid(), now() + make_interval(mins => n)
+          from generate_series(1, 13) as n`);
+        const despues = await leerPagosProveedores(rosa, {}, deps);
+        assert.equal(despues.actividad.some((evento) => decisiones.includes(evento.accion)), false, "la actividad ya no las alcanza");
+        assert.ok(despues.decisiones.length > 0, "las decisiones siguen");
+        assert.ok(despues.decisiones.length <= 12);
+        assert.deepEqual(despues.decisiones.filter((evento) => !decisiones.includes(evento.accion)), [], "solo decisiones");
+        const fechas = despues.decisiones.map((evento) => evento.ocurridoEn);
+        assert.deepEqual(fechas, [...fechas].sort().reverse(), "de la más reciente a la más antigua");
+      });
+
       const aislamiento = consultarJson<Array<{ cargos: number; solicitudes: number; historial: number }>>(url, `begin;
         set local role plataforma_cliente;
         select set_config('app.company_id', '${OTRA}', true);

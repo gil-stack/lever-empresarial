@@ -1,0 +1,62 @@
+# Hallazgos de la re-verificación sobre 16c4265: cada regresión en 16c4265 y con el arreglo
+
+## e2e en 16c4265 (build de 16c4265, specs nuevos)
+### demostracion.spec.ts completo
+  1) tests/e2e/demostracion.spec.ts:111:5 › Movimientos: un gesto del ratón en «7 días» que no lo elige no retrasa el siguiente filtro
+    Error: Ctrl + clic de macOS en «7 días»: el formulario sale en los primeros 100 ms del reloj de la página
+    Expected: true
+    Received: false
+  2) tests/e2e/demostracion.spec.ts:184:5 › Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los campos como dice la dirección
+    Error: tras limpiar: sin agrupar
+    expect(locator).toHaveValue(expected) failed
+    Expected: ""
+    Received: "persona"
+  3) tests/e2e/demostracion.spec.ts:318:7 › en el teléfono › Movimientos: escribir el monto y tocar un enlace lleva al enlace, sin que el monto lo pise después
+    Error: monto y toque en «Limpiar filtros»
+    expect(page).toHaveURL(expected) failed
+    Expected pattern: /\/c\/33333333-3333-4333-8333-333333333333\/consola\/movimientos$/
+    Received string:  "http://localhost:3152/c/33333333-3333-4333-8333-333333333333/consola/movimientos?periodo=mes&persona=Ana+Torres&area=&tarjeta=&categoria=&comprobante=&desde=4000&agrupar="
+  3 failed
+  4 passed (1.0m)
+### N8 y N9 por separado (la de N9 vivía detrás de Agrupar, que ya fallaba)
+  1) tests/e2e/demostracion.spec.ts:265:5 › Movimientos: un monto a medias que aún no es número no se borra cuando llega otra navegación
+    Error: «1e» sigue en el campo
+    Expected: true
+    Received: false
+  2) tests/e2e/demostracion.spec.ts:329:7 › en el teléfono › Movimientos: escribir el monto y tocar un enlace lleva al enlace, sin que el monto lo pise después
+    Error: monto y toque en «Limpiar filtros»: se queda en el enlace
+    expect(page).toHaveURL(expected) failed
+    Expected pattern: /\/c\/33333333-3333-4333-8333-333333333333\/consola\/movimientos$/
+    Received string:  "http://localhost:3152/c/33333333-3333-4333-8333-333333333333/consola/movimientos?periodo=mes&persona=Ana+Torres&area=&tarjeta=&categoria=&comprobante=&desde=4000&agrupar="
+    Error: monto y toque en el logotipo (ir a Resumen): se queda en el enlace
+    expect(page).toHaveURL(expected) failed
+    Expected pattern: /\/c\/33333333-3333-4333-8333-333333333333\/consola$/
+    Received string:  "http://localhost:3152/c/33333333-3333-4333-8333-333333333333/consola/movimientos?periodo=mes&persona=&area=&tarjeta=&categoria=&comprobante=&desde=4000&agrupar="
+    Error: expect(locator).toHaveCount(expected) failed
+    Expected: 0
+    Received: 1
+  2 failed
+
+## Unitaria de leerFiltros (src/components/demo/vista.test.ts) en 16c4265
+  ✖ Movimientos: sin «agrupar» en la dirección, el filtro dice «Sin agrupar» y llega así a los campos (0.64875ms)
+✖ módulos de demostración en el servidor (86.622667ms)
+✖ failing tests:
+✖ Movimientos: sin «agrupar» en la dirección, el filtro dice «Sin agrupar» y llega así a los campos (0.64875ms)
+
+## Con los arreglos: `npm run test:e2e:1`, `:2` y `:3` (la e2e completa), líneas de demostracion.spec.ts y marco.spec.ts
+✓   3 tests/e2e/demostracion.spec.ts:38:5 › empresa real: cada módulo de demostración dice «Disponible pronto» y ni el HTML ni la carga RSC traen datos de ejemplo (1.5s)
+✓   4 tests/e2e/demostracion.spec.ts:64:5 › empresa de demostración: cada módulo pinta el aviso y los datos de ejemplo, con los botones de dinero apagados (1.1s)
+✓   5 tests/e2e/demostracion.spec.ts:84:5 › Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegación cada uno (3.5s)
+✓   6 tests/e2e/demostracion.spec.ts:111:5 › Movimientos: un gesto del ratón en «7 días» que no lo elige no retrasa el siguiente filtro (6.7s)
+✓   7 tests/e2e/demostracion.spec.ts:184:5 › Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los campos como dice la dirección (3.2s)
+✓   8 tests/e2e/demostracion.spec.ts:265:5 › Movimientos: un monto a medias que aún no es número no se borra cuando llega otra navegación (3.0s)
+✓   9 tests/e2e/demostracion.spec.ts:303:7 › en el teléfono › Movimientos: escribir el monto y tocar «7 días» lleva los dos en una sola navegación (2.4s)
+✓  10 tests/e2e/demostracion.spec.ts:329:7 › en el teléfono › Movimientos: escribir el monto y tocar un enlace lleva al enlace, sin que el monto lo pise después (4.8s)
+parte 1/3: 18 passed (1.4m)
+✓   3 tests/e2e/marco.spec.ts:17:7 › marco de la consola en escritorio › menú de la persona: cuatro opciones fuera del Tab; Tab y Escape cierran y regresan el foco al botón (1.3s)
+✓   4 tests/e2e/marco.spec.ts:43:7 › marco de la consola en escritorio › el buscador de la barra lleva a su sección con lo escrito (1.4s)
+✓   5 tests/e2e/marco.spec.ts:52:7 › marco de la consola en escritorio › Apariencia: con sesión y empresa se abre; sin sesión manda a entrar; otra empresa no la muestra (1.8s)
+✓   6 tests/e2e/marco.spec.ts:97:7 › fondo animado en un navegador sin GPU › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (6.8s)
+✓   7 tests/e2e/marco.spec.ts:133:7 › cajón móvil › sin checkVisibility (Safari < 17.4): abre, atrapa el foco, deja el fondo inert; Escape y el velo regresan el foco (828ms)
+parte 2/3: 14 passed (47.1s)
+parte 3/3: 13 passed (50.2s)
