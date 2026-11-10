@@ -1,0 +1,49 @@
+import { readFileSync, writeFileSync } from "node:fs";
+import { pruebasEnOrden, grupos, repartir } from "./simulador.mjs";
+const lista = JSON.parse(readFileSync(process.argv[2], "utf8"));
+const T = JSON.parse(readFileSync(process.argv[3], "utf8"));
+const K = Number(process.env.K), FIJO = 90;
+const FONDO = new Set(["fondo.spec.ts", "lienzo-del-fondo.spec.ts", "optica-retina.spec.ts", "velocidad-del-fondo.spec.ts", "animacion-del-fondo.spec.ts", "movimiento-del-fondo.spec.ts", "brillo-del-fondo.spec.ts", "nube-del-fondo.spec.ts", "pantalla-del-fondo.spec.ts", "potencia-del-fondo.spec.ts"]);
+const todas = pruebasEnOrden(lista, "tests/e2e");
+const base = todas.filter((p) => !FONDO.has(p.archivo));
+const fondo = todas.filter((p) => FONDO.has(p.archivo));
+const tiempo = (k) => T[k] ?? T[k.replace(/tests\/e2e\/(fondo|optica-retina|lienzo-del-fondo|velocidad-del-fondo|movimiento-del-fondo|animacion-del-fondo|brillo-del-fondo|nube-del-fondo|pantalla-del-fondo|potencia-del-fondo)\.spec\.ts|tests\/e2e\/fondo-pruebas\.ts/, "tests/e2e/marco.spec.ts")] ?? 5;
+const pesada = (p) => /con GPU rápida/.test(p.clave);
+// Posición de cada archivo del fondo: después de qué archivo base.
+const POS = { "animacion-del-fondo.spec.ts": "accesibilidad.spec.ts", "fondo.spec.ts": "flujo-de-caja.spec.ts", "lienzo-del-fondo.spec.ts": "invitacion.spec.ts", "movimiento-del-fondo.spec.ts": "marco.spec.ts", "optica-retina.spec.ts": "operacion.spec.ts", "velocidad-del-fondo.spec.ts": "roles.spec.ts", "brillo-del-fondo.spec.ts": "aprobaciones.spec.ts", "nube-del-fondo.spec.ts": "nomina.spec.ts", "pantalla-del-fondo.spec.ts": "pagos-proveedores.spec.ts", "potencia-del-fondo.spec.ts": "pld.spec.ts" };
+const ARCH = Object.keys(POS);
+function evaluar(asig) { // asig: { archivo: [pruebas] }
+  const seq = [];
+  const archivosBase = [...new Set(base.map((p) => p.archivo))];
+  for (const a of archivosBase) {
+    seq.push(...base.filter((p) => p.archivo === a));
+    for (const f of ARCH) if (POS[f] === a && asig[f]?.length) seq.push(...asig[f].map((p) => ({ ...p, archivo: f, paralelo: true, superior: null })));
+  }
+  const partes = repartir(grupos(seq), K);
+  const t = partes.map((pt) => pt.reduce((s, g) => s + g.pruebas.reduce((x, p) => x + tiempo(p.clave), 0), 0));
+  // Pesadas al final de su parte: cuántas pruebas no pesadas corren después de una pesada en la misma parte.
+  let despues = 0;
+  for (const pt of partes) { const pr = pt.flatMap((g) => g.pruebas); let vista = false; for (const p of pr) { if (pesada(p) && FONDO.has(p.archivo)) vista = true; else if (vista) despues++; } }
+  const usados = ARCH.filter((f) => asig[f]?.length).length;
+  return { t, max: Math.max(...t), despues, usados, costo: Math.max(...t) + 1000 * despues + 15 * usados };
+}
+let mejor = null;
+const rnd = (n) => Math.floor(Math.random() * n);
+for (let intento = 0; intento < Number(process.env.INTENTOS ?? 60); intento++) {
+  let asig = Object.fromEntries(ARCH.map((f) => [f, []]));
+  for (const p of fondo) asig[ARCH[rnd(ARCH.length)]].push(p);
+  let actual = evaluar(asig);
+  for (let paso = 0; paso < 4000; paso++) {
+    const nuevo = Object.fromEntries(ARCH.map((f) => [f, [...asig[f]]]));
+    const de = ARCH.filter((f) => nuevo[f].length)[rnd(ARCH.filter((f) => nuevo[f].length).length)];
+    const p = nuevo[de].splice(rnd(nuevo[de].length), 1)[0];
+    const a = ARCH[rnd(ARCH.length)];
+    nuevo[a].splice(rnd(nuevo[a].length + 1), 0, p);
+    const e = evaluar(nuevo);
+    if (e.costo <= actual.costo) { asig = nuevo; actual = e; }
+  }
+  if (!mejor || actual.costo < mejor.e.costo) mejor = { asig, e: actual };
+}
+console.log("partes (s de pruebas):", mejor.e.t.map((x) => x.toFixed(0)).join(", "), "· peor", mejor.e.max.toFixed(0), "· no pesadas después de una pesada:", mejor.e.despues, "· archivos:", mejor.e.usados);
+for (const f of ARCH) if (mejor.asig[f].length) console.log(f, "→", mejor.asig[f].map((p) => p.clave.replace(/.* › fondo animado /, "").replace(/(emulado) a /, "").replace(" › ", ": ").slice(0, 60) + ` (${tiempo(p.clave).toFixed(0)})`).join(" | "));
+writeFileSync(process.argv[4], JSON.stringify(Object.fromEntries(ARCH.map((f) => [f, mejor.asig[f].map((p) => p.clave)])), null, 1));
