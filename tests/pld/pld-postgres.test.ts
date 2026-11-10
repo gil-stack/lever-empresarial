@@ -1511,6 +1511,25 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await assert.rejects(sumarAlertaAlCaso(cum, { casoId: deCum.caso, alertaId: alertaTarde }), /serie_con_persona_excluida/);
           assert.equal(await laVe(cum2, deCum2Registrada), true);
 
+          // CUM2 solo dictaminó con una sesión de CUM: votar ahí el caso que la excluye también la sacaría de ella.
+          const conSuDictamen = await sesionDe(cum);
+          const dictaminadoPorCum2 = await normal(cum);
+          await votarTodos(cum, conSuDictamen, dictaminadoPorCum2.propuesta);
+          await dictaminar(cum2, dictaminadoPorCum2.caso, conSuDictamen, dictaminadoPorCum2.propuesta);
+          const ocultoTrasDictamen = await contraCum2();
+          await assert.rejects(votar(cum, conSuDictamen, ocultoTrasDictamen.propuesta), conExcluida);
+          assert.equal(await votos(conSuDictamen, ocultoTrasDictamen.caso), 0);
+          assert.equal(await laVe(cum2, conSuDictamen), true);
+
+          // CUM2 solo subió el acta de una sesión de CUM: sumar al caso votado ahí un aviso que la excluye se rechaza.
+          const conSuActa = await sesionDe(cum);
+          const votadoConActa = await normal(cum);
+          await votarTodos(cum, conSuActa, votadoConActa.propuesta);
+          await cargarActaFirmada(cum2, { formId: randomUUID(), sesionId: conSuActa, archivo: { nombre: "acta.pdf", bytes: PDF } }, { almacen: almacenEnMemoria() });
+          const avisoTrasActa = await emitirAviso(apr, { formId: randomUUID(), tipo: "posible_interna_preocupante", companyId: beta, mencionada: CUM2, superior: "", descripcion: "La analista firmó el acta sin revisar los votos." });
+          await assert.rejects(sumarAlertaAlCaso(cum, { casoId: votadoConActa.caso, alertaId: await alertaDe(avisoTrasActa.id) }), /serie_con_persona_excluida/);
+          assert.equal(await laVe(cum2, conSuActa), true);
+
           // Las carreras: lo que deja a CUM2 en una sesión y lo que la oculta comparten el candado de la sesión. A toma el
           // candado y no confirma; B espera, ve lo que A confirmó y se rechaza.
           const esperaElCandado = async (pendiente: Promise<unknown>) => {
