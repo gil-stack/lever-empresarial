@@ -2,16 +2,16 @@
 
 ## e2e en 16c4265 (build de 16c4265, specs nuevos)
 ### demostracion.spec.ts completo
-  1) tests/e2e/demostracion.spec.ts:111:5 › Movimientos: un gesto del ratón en «7 días» que no lo elige no retrasa el siguiente filtro 
+  1) tests/e2e/demostracion.spec.ts:111:5 › Movimientos: un gesto del ratón en «7 días» que no lo elige no retrasa el siguiente filtro
     Error: Ctrl + clic de macOS en «7 días»: el formulario sale en los primeros 100 ms del reloj de la página
     Expected: true
     Received: false
-  2) tests/e2e/demostracion.spec.ts:184:5 › Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los campos como dice la dirección 
+  2) tests/e2e/demostracion.spec.ts:184:5 › Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los campos como dice la dirección
     Error: tras limpiar: sin agrupar
     expect(locator).toHaveValue(expected) failed
     Expected: ""
     Received: "persona"
-  3) tests/e2e/demostracion.spec.ts:318:7 › en el teléfono › Movimientos: escribir el monto y tocar un enlace lleva al enlace, sin que el monto lo pise después 
+  3) tests/e2e/demostracion.spec.ts:318:7 › en el teléfono › Movimientos: escribir el monto y tocar un enlace lleva al enlace, sin que el monto lo pise después
     Error: monto y toque en «Limpiar filtros»
     expect(page).toHaveURL(expected) failed
     Expected pattern: /\/c\/33333333-3333-4333-8333-333333333333\/consola\/movimientos$/
@@ -19,11 +19,11 @@
   3 failed
   4 passed (1.0m)
 ### N8 y N9 por separado (la de N9 vivía detrás de Agrupar, que ya fallaba)
-  1) tests/e2e/demostracion.spec.ts:265:5 › Movimientos: un monto a medias que aún no es número no se borra cuando llega otra navegación 
+  1) tests/e2e/demostracion.spec.ts:265:5 › Movimientos: un monto a medias que aún no es número no se borra cuando llega otra navegación
     Error: «1e» sigue en el campo
     Expected: true
     Received: false
-  2) tests/e2e/demostracion.spec.ts:329:7 › en el teléfono › Movimientos: escribir el monto y tocar un enlace lleva al enlace, sin que el monto lo pise después 
+  2) tests/e2e/demostracion.spec.ts:329:7 › en el teléfono › Movimientos: escribir el monto y tocar un enlace lleva al enlace, sin que el monto lo pise después
     Error: monto y toque en «Limpiar filtros»: se queda en el enlace
     expect(page).toHaveURL(expected) failed
     Expected pattern: /\/c\/33333333-3333-4333-8333-333333333333\/consola\/movimientos$/

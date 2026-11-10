@@ -47,7 +47,7 @@ Running 9 tests using 1 worker
   ✘  9 tests/e2e/accesibilidad.spec.ts:300:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, lever a 390 y 1440: la barra lleva su fondo siempre (485ms)
 
 
-  1) tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › claro a 390: portal y Operación, desplazados al fondo 
+  1) tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › claro a 390: portal y Operación, desplazados al fondo
 
     Error: portal
 
@@ -107,7 +107,7 @@ Running 9 tests using 1 worker
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-  2) tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › claro a 1440: portal y Operación, desplazados al fondo 
+  2) tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › claro a 1440: portal y Operación, desplazados al fondo
 
     Error: portal
 
@@ -165,7 +165,7 @@ Running 9 tests using 1 worker
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-  3) tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › oscuro a 390: portal y Operación, desplazados al fondo 
+  3) tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › oscuro a 390: portal y Operación, desplazados al fondo
 
     Error: portal
 
@@ -225,7 +225,7 @@ Running 9 tests using 1 worker
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-  4) tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › oscuro a 1440: portal y Operación, desplazados al fondo 
+  4) tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › oscuro a 1440: portal y Operación, desplazados al fondo
 
     Error: portal
 
@@ -283,7 +283,7 @@ Running 9 tests using 1 worker
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-  5) tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › lever a 390: portal y Operación, desplazados al fondo 
+  5) tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › lever a 390: portal y Operación, desplazados al fondo
 
     Error: portal
 
@@ -343,7 +343,7 @@ Running 9 tests using 1 worker
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-  6) tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › lever a 1440: portal y Operación, desplazados al fondo 
+  6) tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › lever a 1440: portal y Operación, desplazados al fondo
 
     Error: portal
 
@@ -401,7 +401,7 @@ Running 9 tests using 1 worker
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-  7) tests/e2e/accesibilidad.spec.ts:300:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, claro a 390 y 1440: la barra lleva su fondo siempre 
+  7) tests/e2e/accesibilidad.spec.ts:300:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, claro a 390 y 1440: la barra lleva su fondo siempre
 
     Error: portal a 390
 
@@ -507,7 +507,7 @@ Running 9 tests using 1 worker
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-  8) tests/e2e/accesibilidad.spec.ts:300:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, oscuro a 390 y 1440: la barra lleva su fondo siempre 
+  8) tests/e2e/accesibilidad.spec.ts:300:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, oscuro a 390 y 1440: la barra lleva su fondo siempre
 
     Error: portal a 390
 
@@ -613,7 +613,7 @@ Running 9 tests using 1 worker
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-  9) tests/e2e/accesibilidad.spec.ts:300:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, lever a 390 y 1440: la barra lleva su fondo siempre 
+  9) tests/e2e/accesibilidad.spec.ts:300:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, lever a 390 y 1440: la barra lleva su fondo siempre
 
     Error: portal a 390
 
@@ -720,15 +720,15 @@ Running 9 tests using 1 worker
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
   9 failed
-    tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › claro a 390: portal y Operación, desplazados al fondo 
-    tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › claro a 1440: portal y Operación, desplazados al fondo 
-    tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › oscuro a 390: portal y Operación, desplazados al fondo 
-    tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › oscuro a 1440: portal y Operación, desplazados al fondo 
-    tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › lever a 390: portal y Operación, desplazados al fondo 
-    tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › lever a 1440: portal y Operación, desplazados al fondo 
-    tests/e2e/accesibilidad.spec.ts:300:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, claro a 390 y 1440: la barra lleva su fondo siempre 
-    tests/e2e/accesibilidad.spec.ts:300:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, oscuro a 390 y 1440: la barra lleva su fondo siempre 
-    tests/e2e/accesibilidad.spec.ts:300:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, lever a 390 y 1440: la barra lleva su fondo siempre 
+    tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › claro a 390: portal y Operación, desplazados al fondo
+    tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › claro a 1440: portal y Operación, desplazados al fondo
+    tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › oscuro a 390: portal y Operación, desplazados al fondo
+    tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › oscuro a 1440: portal y Operación, desplazados al fondo
+    tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › lever a 390: portal y Operación, desplazados al fondo
+    tests/e2e/accesibilidad.spec.ts:289:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › lever a 1440: portal y Operación, desplazados al fondo
+    tests/e2e/accesibilidad.spec.ts:300:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, claro a 390 y 1440: la barra lleva su fondo siempre
+    tests/e2e/accesibilidad.spec.ts:300:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, oscuro a 390 y 1440: la barra lleva su fondo siempre
+    tests/e2e/accesibilidad.spec.ts:300:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, lever a 390 y 1440: la barra lleva su fondo siempre
 [e2e] recorridos terminados con estado 1 · 9 pruebas corridas · 30 s
 [e2e] ===== Contexto de cada falla (árbol accesible de la página) =====
 test-results/e2e/accesibilidad-trece-N1-las-90abc-arra-lleva-su-fondo-siempre/error-context.md
@@ -999,7 +999,7 @@ expect(received).toEqual(expected) // deep equality
 # Test source
 
 ```ts
-  207 | 
+  207 |
   208 | test.describe("N19: lo que llega por un ancla queda debajo de las barras", () => {
   209 |   test("portal a 390 con JavaScript: «Directorio» de Personas", async ({ page, context }) => {
   210 |     await page.setViewportSize({ width: 390, height: 844 });
@@ -1008,7 +1008,7 @@ expect(received).toEqual(expected) // deep equality
   213 |     expect(desplazado, "la página bajó hasta el ancla").toBeGreaterThan(0);
   214 |     expect(arriba, `el título en y=${arriba}, las barras hasta y=${barras}`).toBeGreaterThanOrEqual(barras);
   215 |   });
-  216 | 
+  216 |
   217 |   test("portal y Operación a 390 sin JavaScript: «Directorio» y «Registrar prospecto»", async ({ browser }) => {
   218 |     const sinJs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   219 |     const page = await sinJs.newPage();
@@ -1022,7 +1022,7 @@ expect(received).toEqual(expected) // deep equality
   227 |     await sinJs.close();
   228 |   });
   229 | });
-  230 | 
+  230 |
   231 | // trece-N1 (revisión del #59): las barras pegadas arriba eran translúcidas (el fondo al 70 %). Con la página desplazada,
   232 | // lo que pasa por debajo se ve a través: a 390, un botón oscuro bajo «Operación SOFIPO» dejaba el texto en 3.27:1. axe
   233 | // solo mide lo que hay debajo en ese momento; esta prueba calcula el peor caso: compone el fondo de la barra sobre negro
@@ -1077,7 +1077,7 @@ expect(received).toEqual(expected) // deep equality
   282 |     return fallas;
   283 |   });
   284 | }
-  285 | 
+  285 |
   286 | test.describe("trece-N1: las barras de arriba conservan AA con cualquier cosa debajo", () => {
   287 |   for (const tema of ["claro", "oscuro", "lever"]) {
   288 |     for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -1090,7 +1090,7 @@ expect(received).toEqual(expected) // deep equality
   295 |       });
   296 |     }
   297 |   }
-  298 | 
+  298 |
   299 |   for (const tema of ["claro", "oscuro", "lever"]) {
   300 |     test(`sin JavaScript, ${tema} a 390 y 1440: la barra lleva su fondo siempre`, async ({ browser }) => {
   301 |       for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -1106,10 +1106,10 @@ expect(received).toEqual(expected) // deep equality
   310 |     });
   311 |   }
   312 | });
-  313 | 
+  313 |
   314 | test.describe("sin JavaScript se puede salir", () => {
   315 |   test.use({ javaScriptEnabled: false });
-  316 | 
+  316 |
   317 |   for (const ventana of [
   318 |     { width: 1440, height: 900 },
   319 |     { width: 390, height: 844 },
@@ -1127,7 +1127,7 @@ expect(received).toEqual(expected) // deep equality
   331 |       await expect(page).toHaveURL(/\/entrar/);
   332 |     });
   333 |   }
-  334 | 
+  334 |
   335 |   // A 390, «Salir» en la primera fila le quitaba ancho al título («Per…»). Va en su propia fila: ningún texto a la
   336 |   // vista se corta con puntos suspensivos, ni en los títulos largos. Los textos solo para lector (recortados a 1 px)
   337 |   // no cuentan.
@@ -1156,7 +1156,7 @@ expect(received).toEqual(expected) // deep equality
   360 |     }
   361 |   });
   362 | });
-  363 | 
+  363 |
 ```test-results/e2e/accesibilidad-trece-N1-las-80d95-arra-lleva-su-fondo-siempre/error-context.md
 # Instructions
 
@@ -1425,7 +1425,7 @@ expect(received).toEqual(expected) // deep equality
 # Test source
 
 ```ts
-  207 | 
+  207 |
   208 | test.describe("N19: lo que llega por un ancla queda debajo de las barras", () => {
   209 |   test("portal a 390 con JavaScript: «Directorio» de Personas", async ({ page, context }) => {
   210 |     await page.setViewportSize({ width: 390, height: 844 });
@@ -1434,7 +1434,7 @@ expect(received).toEqual(expected) // deep equality
   213 |     expect(desplazado, "la página bajó hasta el ancla").toBeGreaterThan(0);
   214 |     expect(arriba, `el título en y=${arriba}, las barras hasta y=${barras}`).toBeGreaterThanOrEqual(barras);
   215 |   });
-  216 | 
+  216 |
   217 |   test("portal y Operación a 390 sin JavaScript: «Directorio» y «Registrar prospecto»", async ({ browser }) => {
   218 |     const sinJs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   219 |     const page = await sinJs.newPage();
@@ -1448,7 +1448,7 @@ expect(received).toEqual(expected) // deep equality
   227 |     await sinJs.close();
   228 |   });
   229 | });
-  230 | 
+  230 |
   231 | // trece-N1 (revisión del #59): las barras pegadas arriba eran translúcidas (el fondo al 70 %). Con la página desplazada,
   232 | // lo que pasa por debajo se ve a través: a 390, un botón oscuro bajo «Operación SOFIPO» dejaba el texto en 3.27:1. axe
   233 | // solo mide lo que hay debajo en ese momento; esta prueba calcula el peor caso: compone el fondo de la barra sobre negro
@@ -1503,7 +1503,7 @@ expect(received).toEqual(expected) // deep equality
   282 |     return fallas;
   283 |   });
   284 | }
-  285 | 
+  285 |
   286 | test.describe("trece-N1: las barras de arriba conservan AA con cualquier cosa debajo", () => {
   287 |   for (const tema of ["claro", "oscuro", "lever"]) {
   288 |     for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -1516,7 +1516,7 @@ expect(received).toEqual(expected) // deep equality
   295 |       });
   296 |     }
   297 |   }
-  298 | 
+  298 |
   299 |   for (const tema of ["claro", "oscuro", "lever"]) {
   300 |     test(`sin JavaScript, ${tema} a 390 y 1440: la barra lleva su fondo siempre`, async ({ browser }) => {
   301 |       for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -1532,10 +1532,10 @@ expect(received).toEqual(expected) // deep equality
   310 |     });
   311 |   }
   312 | });
-  313 | 
+  313 |
   314 | test.describe("sin JavaScript se puede salir", () => {
   315 |   test.use({ javaScriptEnabled: false });
-  316 | 
+  316 |
   317 |   for (const ventana of [
   318 |     { width: 1440, height: 900 },
   319 |     { width: 390, height: 844 },
@@ -1553,7 +1553,7 @@ expect(received).toEqual(expected) // deep equality
   331 |       await expect(page).toHaveURL(/\/entrar/);
   332 |     });
   333 |   }
-  334 | 
+  334 |
   335 |   // A 390, «Salir» en la primera fila le quitaba ancho al título («Per…»). Va en su propia fila: ningún texto a la
   336 |   // vista se corta con puntos suspensivos, ni en los títulos largos. Los textos solo para lector (recortados a 1 px)
   337 |   // no cuentan.
@@ -1582,7 +1582,7 @@ expect(received).toEqual(expected) // deep equality
   360 |     }
   361 |   });
   362 | });
-  363 | 
+  363 |
 ```test-results/e2e/accesibilidad-trece-N1-las-52162-ración-desplazados-al-fondo/error-context.md
 # Instructions
 
@@ -1837,7 +1837,7 @@ expect(received).toEqual(expected) // deep equality
   204 |     return { arriba: document.getElementById(id)!.getBoundingClientRect().top, barras, desplazado: window.scrollY };
   205 |   }, ancla);
   206 | }
-  207 | 
+  207 |
   208 | test.describe("N19: lo que llega por un ancla queda debajo de las barras", () => {
   209 |   test("portal a 390 con JavaScript: «Directorio» de Personas", async ({ page, context }) => {
   210 |     await page.setViewportSize({ width: 390, height: 844 });
@@ -1846,7 +1846,7 @@ expect(received).toEqual(expected) // deep equality
   213 |     expect(desplazado, "la página bajó hasta el ancla").toBeGreaterThan(0);
   214 |     expect(arriba, `el título en y=${arriba}, las barras hasta y=${barras}`).toBeGreaterThanOrEqual(barras);
   215 |   });
-  216 | 
+  216 |
   217 |   test("portal y Operación a 390 sin JavaScript: «Directorio» y «Registrar prospecto»", async ({ browser }) => {
   218 |     const sinJs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   219 |     const page = await sinJs.newPage();
@@ -1860,7 +1860,7 @@ expect(received).toEqual(expected) // deep equality
   227 |     await sinJs.close();
   228 |   });
   229 | });
-  230 | 
+  230 |
   231 | // trece-N1 (revisión del #59): las barras pegadas arriba eran translúcidas (el fondo al 70 %). Con la página desplazada,
   232 | // lo que pasa por debajo se ve a través: a 390, un botón oscuro bajo «Operación SOFIPO» dejaba el texto en 3.27:1. axe
   233 | // solo mide lo que hay debajo en ese momento; esta prueba calcula el peor caso: compone el fondo de la barra sobre negro
@@ -1915,7 +1915,7 @@ expect(received).toEqual(expected) // deep equality
   282 |     return fallas;
   283 |   });
   284 | }
-  285 | 
+  285 |
   286 | test.describe("trece-N1: las barras de arriba conservan AA con cualquier cosa debajo", () => {
   287 |   for (const tema of ["claro", "oscuro", "lever"]) {
   288 |     for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -1929,7 +1929,7 @@ expect(received).toEqual(expected) // deep equality
   295 |       });
   296 |     }
   297 |   }
-  298 | 
+  298 |
   299 |   for (const tema of ["claro", "oscuro", "lever"]) {
   300 |     test(`sin JavaScript, ${tema} a 390 y 1440: la barra lleva su fondo siempre`, async ({ browser }) => {
   301 |       for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -1944,10 +1944,10 @@ expect(received).toEqual(expected) // deep equality
   310 |     });
   311 |   }
   312 | });
-  313 | 
+  313 |
   314 | test.describe("sin JavaScript se puede salir", () => {
   315 |   test.use({ javaScriptEnabled: false });
-  316 | 
+  316 |
   317 |   for (const ventana of [
   318 |     { width: 1440, height: 900 },
   319 |     { width: 390, height: 844 },
@@ -1965,7 +1965,7 @@ expect(received).toEqual(expected) // deep equality
   331 |       await expect(page).toHaveURL(/\/entrar/);
   332 |     });
   333 |   }
-  334 | 
+  334 |
   335 |   // A 390, «Salir» en la primera fila le quitaba ancho al título («Per…»). Va en su propia fila: ningún texto a la
   336 |   // vista se corta con puntos suspensivos, ni en los títulos largos. Los textos solo para lector (recortados a 1 px)
   337 |   // no cuentan.
@@ -1994,7 +1994,7 @@ expect(received).toEqual(expected) // deep equality
   360 |     }
   361 |   });
   362 | });
-  363 | 
+  363 |
 ```test-results/e2e/accesibilidad-trece-N1-las-54f6d-ración-desplazados-al-fondo/error-context.md
 # Instructions
 
@@ -2254,7 +2254,7 @@ expect(received).toEqual(expected) // deep equality
   204 |     return { arriba: document.getElementById(id)!.getBoundingClientRect().top, barras, desplazado: window.scrollY };
   205 |   }, ancla);
   206 | }
-  207 | 
+  207 |
   208 | test.describe("N19: lo que llega por un ancla queda debajo de las barras", () => {
   209 |   test("portal a 390 con JavaScript: «Directorio» de Personas", async ({ page, context }) => {
   210 |     await page.setViewportSize({ width: 390, height: 844 });
@@ -2263,7 +2263,7 @@ expect(received).toEqual(expected) // deep equality
   213 |     expect(desplazado, "la página bajó hasta el ancla").toBeGreaterThan(0);
   214 |     expect(arriba, `el título en y=${arriba}, las barras hasta y=${barras}`).toBeGreaterThanOrEqual(barras);
   215 |   });
-  216 | 
+  216 |
   217 |   test("portal y Operación a 390 sin JavaScript: «Directorio» y «Registrar prospecto»", async ({ browser }) => {
   218 |     const sinJs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   219 |     const page = await sinJs.newPage();
@@ -2277,7 +2277,7 @@ expect(received).toEqual(expected) // deep equality
   227 |     await sinJs.close();
   228 |   });
   229 | });
-  230 | 
+  230 |
   231 | // trece-N1 (revisión del #59): las barras pegadas arriba eran translúcidas (el fondo al 70 %). Con la página desplazada,
   232 | // lo que pasa por debajo se ve a través: a 390, un botón oscuro bajo «Operación SOFIPO» dejaba el texto en 3.27:1. axe
   233 | // solo mide lo que hay debajo en ese momento; esta prueba calcula el peor caso: compone el fondo de la barra sobre negro
@@ -2332,7 +2332,7 @@ expect(received).toEqual(expected) // deep equality
   282 |     return fallas;
   283 |   });
   284 | }
-  285 | 
+  285 |
   286 | test.describe("trece-N1: las barras de arriba conservan AA con cualquier cosa debajo", () => {
   287 |   for (const tema of ["claro", "oscuro", "lever"]) {
   288 |     for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -2346,7 +2346,7 @@ expect(received).toEqual(expected) // deep equality
   295 |       });
   296 |     }
   297 |   }
-  298 | 
+  298 |
   299 |   for (const tema of ["claro", "oscuro", "lever"]) {
   300 |     test(`sin JavaScript, ${tema} a 390 y 1440: la barra lleva su fondo siempre`, async ({ browser }) => {
   301 |       for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -2361,10 +2361,10 @@ expect(received).toEqual(expected) // deep equality
   310 |     });
   311 |   }
   312 | });
-  313 | 
+  313 |
   314 | test.describe("sin JavaScript se puede salir", () => {
   315 |   test.use({ javaScriptEnabled: false });
-  316 | 
+  316 |
   317 |   for (const ventana of [
   318 |     { width: 1440, height: 900 },
   319 |     { width: 390, height: 844 },
@@ -2382,7 +2382,7 @@ expect(received).toEqual(expected) // deep equality
   331 |       await expect(page).toHaveURL(/\/entrar/);
   332 |     });
   333 |   }
-  334 | 
+  334 |
   335 |   // A 390, «Salir» en la primera fila le quitaba ancho al título («Per…»). Va en su propia fila: ningún texto a la
   336 |   // vista se corta con puntos suspensivos, ni en los títulos largos. Los textos solo para lector (recortados a 1 px)
   337 |   // no cuentan.
@@ -2411,7 +2411,7 @@ expect(received).toEqual(expected) // deep equality
   360 |     }
   361 |   });
   362 | });
-  363 | 
+  363 |
 ```test-results/e2e/accesibilidad-trece-N1-las-8465e-ración-desplazados-al-fondo/error-context.md
 # Instructions
 
@@ -2666,7 +2666,7 @@ expect(received).toEqual(expected) // deep equality
   204 |     return { arriba: document.getElementById(id)!.getBoundingClientRect().top, barras, desplazado: window.scrollY };
   205 |   }, ancla);
   206 | }
-  207 | 
+  207 |
   208 | test.describe("N19: lo que llega por un ancla queda debajo de las barras", () => {
   209 |   test("portal a 390 con JavaScript: «Directorio» de Personas", async ({ page, context }) => {
   210 |     await page.setViewportSize({ width: 390, height: 844 });
@@ -2675,7 +2675,7 @@ expect(received).toEqual(expected) // deep equality
   213 |     expect(desplazado, "la página bajó hasta el ancla").toBeGreaterThan(0);
   214 |     expect(arriba, `el título en y=${arriba}, las barras hasta y=${barras}`).toBeGreaterThanOrEqual(barras);
   215 |   });
-  216 | 
+  216 |
   217 |   test("portal y Operación a 390 sin JavaScript: «Directorio» y «Registrar prospecto»", async ({ browser }) => {
   218 |     const sinJs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   219 |     const page = await sinJs.newPage();
@@ -2689,7 +2689,7 @@ expect(received).toEqual(expected) // deep equality
   227 |     await sinJs.close();
   228 |   });
   229 | });
-  230 | 
+  230 |
   231 | // trece-N1 (revisión del #59): las barras pegadas arriba eran translúcidas (el fondo al 70 %). Con la página desplazada,
   232 | // lo que pasa por debajo se ve a través: a 390, un botón oscuro bajo «Operación SOFIPO» dejaba el texto en 3.27:1. axe
   233 | // solo mide lo que hay debajo en ese momento; esta prueba calcula el peor caso: compone el fondo de la barra sobre negro
@@ -2744,7 +2744,7 @@ expect(received).toEqual(expected) // deep equality
   282 |     return fallas;
   283 |   });
   284 | }
-  285 | 
+  285 |
   286 | test.describe("trece-N1: las barras de arriba conservan AA con cualquier cosa debajo", () => {
   287 |   for (const tema of ["claro", "oscuro", "lever"]) {
   288 |     for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -2758,7 +2758,7 @@ expect(received).toEqual(expected) // deep equality
   295 |       });
   296 |     }
   297 |   }
-  298 | 
+  298 |
   299 |   for (const tema of ["claro", "oscuro", "lever"]) {
   300 |     test(`sin JavaScript, ${tema} a 390 y 1440: la barra lleva su fondo siempre`, async ({ browser }) => {
   301 |       for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -2773,10 +2773,10 @@ expect(received).toEqual(expected) // deep equality
   310 |     });
   311 |   }
   312 | });
-  313 | 
+  313 |
   314 | test.describe("sin JavaScript se puede salir", () => {
   315 |   test.use({ javaScriptEnabled: false });
-  316 | 
+  316 |
   317 |   for (const ventana of [
   318 |     { width: 1440, height: 900 },
   319 |     { width: 390, height: 844 },
@@ -2794,7 +2794,7 @@ expect(received).toEqual(expected) // deep equality
   331 |       await expect(page).toHaveURL(/\/entrar/);
   332 |     });
   333 |   }
-  334 | 
+  334 |
   335 |   // A 390, «Salir» en la primera fila le quitaba ancho al título («Per…»). Va en su propia fila: ningún texto a la
   336 |   // vista se corta con puntos suspensivos, ni en los títulos largos. Los textos solo para lector (recortados a 1 px)
   337 |   // no cuentan.
@@ -2823,7 +2823,7 @@ expect(received).toEqual(expected) // deep equality
   360 |     }
   361 |   });
   362 | });
-  363 | 
+  363 |
 ```test-results/e2e/accesibilidad-trece-N1-las-64949-arra-lleva-su-fondo-siempre/error-context.md
 # Instructions
 
@@ -3092,7 +3092,7 @@ expect(received).toEqual(expected) // deep equality
 # Test source
 
 ```ts
-  207 | 
+  207 |
   208 | test.describe("N19: lo que llega por un ancla queda debajo de las barras", () => {
   209 |   test("portal a 390 con JavaScript: «Directorio» de Personas", async ({ page, context }) => {
   210 |     await page.setViewportSize({ width: 390, height: 844 });
@@ -3101,7 +3101,7 @@ expect(received).toEqual(expected) // deep equality
   213 |     expect(desplazado, "la página bajó hasta el ancla").toBeGreaterThan(0);
   214 |     expect(arriba, `el título en y=${arriba}, las barras hasta y=${barras}`).toBeGreaterThanOrEqual(barras);
   215 |   });
-  216 | 
+  216 |
   217 |   test("portal y Operación a 390 sin JavaScript: «Directorio» y «Registrar prospecto»", async ({ browser }) => {
   218 |     const sinJs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   219 |     const page = await sinJs.newPage();
@@ -3115,7 +3115,7 @@ expect(received).toEqual(expected) // deep equality
   227 |     await sinJs.close();
   228 |   });
   229 | });
-  230 | 
+  230 |
   231 | // trece-N1 (revisión del #59): las barras pegadas arriba eran translúcidas (el fondo al 70 %). Con la página desplazada,
   232 | // lo que pasa por debajo se ve a través: a 390, un botón oscuro bajo «Operación SOFIPO» dejaba el texto en 3.27:1. axe
   233 | // solo mide lo que hay debajo en ese momento; esta prueba calcula el peor caso: compone el fondo de la barra sobre negro
@@ -3170,7 +3170,7 @@ expect(received).toEqual(expected) // deep equality
   282 |     return fallas;
   283 |   });
   284 | }
-  285 | 
+  285 |
   286 | test.describe("trece-N1: las barras de arriba conservan AA con cualquier cosa debajo", () => {
   287 |   for (const tema of ["claro", "oscuro", "lever"]) {
   288 |     for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -3183,7 +3183,7 @@ expect(received).toEqual(expected) // deep equality
   295 |       });
   296 |     }
   297 |   }
-  298 | 
+  298 |
   299 |   for (const tema of ["claro", "oscuro", "lever"]) {
   300 |     test(`sin JavaScript, ${tema} a 390 y 1440: la barra lleva su fondo siempre`, async ({ browser }) => {
   301 |       for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -3199,10 +3199,10 @@ expect(received).toEqual(expected) // deep equality
   310 |     });
   311 |   }
   312 | });
-  313 | 
+  313 |
   314 | test.describe("sin JavaScript se puede salir", () => {
   315 |   test.use({ javaScriptEnabled: false });
-  316 | 
+  316 |
   317 |   for (const ventana of [
   318 |     { width: 1440, height: 900 },
   319 |     { width: 390, height: 844 },
@@ -3220,7 +3220,7 @@ expect(received).toEqual(expected) // deep equality
   331 |       await expect(page).toHaveURL(/\/entrar/);
   332 |     });
   333 |   }
-  334 | 
+  334 |
   335 |   // A 390, «Salir» en la primera fila le quitaba ancho al título («Per…»). Va en su propia fila: ningún texto a la
   336 |   // vista se corta con puntos suspensivos, ni en los títulos largos. Los textos solo para lector (recortados a 1 px)
   337 |   // no cuentan.
@@ -3249,7 +3249,7 @@ expect(received).toEqual(expected) // deep equality
   360 |     }
   361 |   });
   362 | });
-  363 | 
+  363 |
 ```test-results/e2e/accesibilidad-trece-N1-las-c801d-ración-desplazados-al-fondo/error-context.md
 # Instructions
 
@@ -3509,7 +3509,7 @@ expect(received).toEqual(expected) // deep equality
   204 |     return { arriba: document.getElementById(id)!.getBoundingClientRect().top, barras, desplazado: window.scrollY };
   205 |   }, ancla);
   206 | }
-  207 | 
+  207 |
   208 | test.describe("N19: lo que llega por un ancla queda debajo de las barras", () => {
   209 |   test("portal a 390 con JavaScript: «Directorio» de Personas", async ({ page, context }) => {
   210 |     await page.setViewportSize({ width: 390, height: 844 });
@@ -3518,7 +3518,7 @@ expect(received).toEqual(expected) // deep equality
   213 |     expect(desplazado, "la página bajó hasta el ancla").toBeGreaterThan(0);
   214 |     expect(arriba, `el título en y=${arriba}, las barras hasta y=${barras}`).toBeGreaterThanOrEqual(barras);
   215 |   });
-  216 | 
+  216 |
   217 |   test("portal y Operación a 390 sin JavaScript: «Directorio» y «Registrar prospecto»", async ({ browser }) => {
   218 |     const sinJs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   219 |     const page = await sinJs.newPage();
@@ -3532,7 +3532,7 @@ expect(received).toEqual(expected) // deep equality
   227 |     await sinJs.close();
   228 |   });
   229 | });
-  230 | 
+  230 |
   231 | // trece-N1 (revisión del #59): las barras pegadas arriba eran translúcidas (el fondo al 70 %). Con la página desplazada,
   232 | // lo que pasa por debajo se ve a través: a 390, un botón oscuro bajo «Operación SOFIPO» dejaba el texto en 3.27:1. axe
   233 | // solo mide lo que hay debajo en ese momento; esta prueba calcula el peor caso: compone el fondo de la barra sobre negro
@@ -3587,7 +3587,7 @@ expect(received).toEqual(expected) // deep equality
   282 |     return fallas;
   283 |   });
   284 | }
-  285 | 
+  285 |
   286 | test.describe("trece-N1: las barras de arriba conservan AA con cualquier cosa debajo", () => {
   287 |   for (const tema of ["claro", "oscuro", "lever"]) {
   288 |     for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -3601,7 +3601,7 @@ expect(received).toEqual(expected) // deep equality
   295 |       });
   296 |     }
   297 |   }
-  298 | 
+  298 |
   299 |   for (const tema of ["claro", "oscuro", "lever"]) {
   300 |     test(`sin JavaScript, ${tema} a 390 y 1440: la barra lleva su fondo siempre`, async ({ browser }) => {
   301 |       for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -3616,10 +3616,10 @@ expect(received).toEqual(expected) // deep equality
   310 |     });
   311 |   }
   312 | });
-  313 | 
+  313 |
   314 | test.describe("sin JavaScript se puede salir", () => {
   315 |   test.use({ javaScriptEnabled: false });
-  316 | 
+  316 |
   317 |   for (const ventana of [
   318 |     { width: 1440, height: 900 },
   319 |     { width: 390, height: 844 },
@@ -3637,7 +3637,7 @@ expect(received).toEqual(expected) // deep equality
   331 |       await expect(page).toHaveURL(/\/entrar/);
   332 |     });
   333 |   }
-  334 | 
+  334 |
   335 |   // A 390, «Salir» en la primera fila le quitaba ancho al título («Per…»). Va en su propia fila: ningún texto a la
   336 |   // vista se corta con puntos suspensivos, ni en los títulos largos. Los textos solo para lector (recortados a 1 px)
   337 |   // no cuentan.
@@ -3666,7 +3666,7 @@ expect(received).toEqual(expected) // deep equality
   360 |     }
   361 |   });
   362 | });
-  363 | 
+  363 |
 ```test-results/e2e/accesibilidad-trece-N1-las-d0067-ración-desplazados-al-fondo/error-context.md
 # Instructions
 
@@ -3921,7 +3921,7 @@ expect(received).toEqual(expected) // deep equality
   204 |     return { arriba: document.getElementById(id)!.getBoundingClientRect().top, barras, desplazado: window.scrollY };
   205 |   }, ancla);
   206 | }
-  207 | 
+  207 |
   208 | test.describe("N19: lo que llega por un ancla queda debajo de las barras", () => {
   209 |   test("portal a 390 con JavaScript: «Directorio» de Personas", async ({ page, context }) => {
   210 |     await page.setViewportSize({ width: 390, height: 844 });
@@ -3930,7 +3930,7 @@ expect(received).toEqual(expected) // deep equality
   213 |     expect(desplazado, "la página bajó hasta el ancla").toBeGreaterThan(0);
   214 |     expect(arriba, `el título en y=${arriba}, las barras hasta y=${barras}`).toBeGreaterThanOrEqual(barras);
   215 |   });
-  216 | 
+  216 |
   217 |   test("portal y Operación a 390 sin JavaScript: «Directorio» y «Registrar prospecto»", async ({ browser }) => {
   218 |     const sinJs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   219 |     const page = await sinJs.newPage();
@@ -3944,7 +3944,7 @@ expect(received).toEqual(expected) // deep equality
   227 |     await sinJs.close();
   228 |   });
   229 | });
-  230 | 
+  230 |
   231 | // trece-N1 (revisión del #59): las barras pegadas arriba eran translúcidas (el fondo al 70 %). Con la página desplazada,
   232 | // lo que pasa por debajo se ve a través: a 390, un botón oscuro bajo «Operación SOFIPO» dejaba el texto en 3.27:1. axe
   233 | // solo mide lo que hay debajo en ese momento; esta prueba calcula el peor caso: compone el fondo de la barra sobre negro
@@ -3999,7 +3999,7 @@ expect(received).toEqual(expected) // deep equality
   282 |     return fallas;
   283 |   });
   284 | }
-  285 | 
+  285 |
   286 | test.describe("trece-N1: las barras de arriba conservan AA con cualquier cosa debajo", () => {
   287 |   for (const tema of ["claro", "oscuro", "lever"]) {
   288 |     for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -4013,7 +4013,7 @@ expect(received).toEqual(expected) // deep equality
   295 |       });
   296 |     }
   297 |   }
-  298 | 
+  298 |
   299 |   for (const tema of ["claro", "oscuro", "lever"]) {
   300 |     test(`sin JavaScript, ${tema} a 390 y 1440: la barra lleva su fondo siempre`, async ({ browser }) => {
   301 |       for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -4028,10 +4028,10 @@ expect(received).toEqual(expected) // deep equality
   310 |     });
   311 |   }
   312 | });
-  313 | 
+  313 |
   314 | test.describe("sin JavaScript se puede salir", () => {
   315 |   test.use({ javaScriptEnabled: false });
-  316 | 
+  316 |
   317 |   for (const ventana of [
   318 |     { width: 1440, height: 900 },
   319 |     { width: 390, height: 844 },
@@ -4049,7 +4049,7 @@ expect(received).toEqual(expected) // deep equality
   331 |       await expect(page).toHaveURL(/\/entrar/);
   332 |     });
   333 |   }
-  334 | 
+  334 |
   335 |   // A 390, «Salir» en la primera fila le quitaba ancho al título («Per…»). Va en su propia fila: ningún texto a la
   336 |   // vista se corta con puntos suspensivos, ni en los títulos largos. Los textos solo para lector (recortados a 1 px)
   337 |   // no cuentan.
@@ -4078,7 +4078,7 @@ expect(received).toEqual(expected) // deep equality
   360 |     }
   361 |   });
   362 | });
-  363 | 
+  363 |
 ```test-results/e2e/accesibilidad-trece-N1-las-5e912-ración-desplazados-al-fondo/error-context.md
 # Instructions
 
@@ -4338,7 +4338,7 @@ expect(received).toEqual(expected) // deep equality
   204 |     return { arriba: document.getElementById(id)!.getBoundingClientRect().top, barras, desplazado: window.scrollY };
   205 |   }, ancla);
   206 | }
-  207 | 
+  207 |
   208 | test.describe("N19: lo que llega por un ancla queda debajo de las barras", () => {
   209 |   test("portal a 390 con JavaScript: «Directorio» de Personas", async ({ page, context }) => {
   210 |     await page.setViewportSize({ width: 390, height: 844 });
@@ -4347,7 +4347,7 @@ expect(received).toEqual(expected) // deep equality
   213 |     expect(desplazado, "la página bajó hasta el ancla").toBeGreaterThan(0);
   214 |     expect(arriba, `el título en y=${arriba}, las barras hasta y=${barras}`).toBeGreaterThanOrEqual(barras);
   215 |   });
-  216 | 
+  216 |
   217 |   test("portal y Operación a 390 sin JavaScript: «Directorio» y «Registrar prospecto»", async ({ browser }) => {
   218 |     const sinJs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   219 |     const page = await sinJs.newPage();
@@ -4361,7 +4361,7 @@ expect(received).toEqual(expected) // deep equality
   227 |     await sinJs.close();
   228 |   });
   229 | });
-  230 | 
+  230 |
   231 | // trece-N1 (revisión del #59): las barras pegadas arriba eran translúcidas (el fondo al 70 %). Con la página desplazada,
   232 | // lo que pasa por debajo se ve a través: a 390, un botón oscuro bajo «Operación SOFIPO» dejaba el texto en 3.27:1. axe
   233 | // solo mide lo que hay debajo en ese momento; esta prueba calcula el peor caso: compone el fondo de la barra sobre negro
@@ -4416,7 +4416,7 @@ expect(received).toEqual(expected) // deep equality
   282 |     return fallas;
   283 |   });
   284 | }
-  285 | 
+  285 |
   286 | test.describe("trece-N1: las barras de arriba conservan AA con cualquier cosa debajo", () => {
   287 |   for (const tema of ["claro", "oscuro", "lever"]) {
   288 |     for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -4430,7 +4430,7 @@ expect(received).toEqual(expected) // deep equality
   295 |       });
   296 |     }
   297 |   }
-  298 | 
+  298 |
   299 |   for (const tema of ["claro", "oscuro", "lever"]) {
   300 |     test(`sin JavaScript, ${tema} a 390 y 1440: la barra lleva su fondo siempre`, async ({ browser }) => {
   301 |       for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
@@ -4445,10 +4445,10 @@ expect(received).toEqual(expected) // deep equality
   310 |     });
   311 |   }
   312 | });
-  313 | 
+  313 |
   314 | test.describe("sin JavaScript se puede salir", () => {
   315 |   test.use({ javaScriptEnabled: false });
-  316 | 
+  316 |
   317 |   for (const ventana of [
   318 |     { width: 1440, height: 900 },
   319 |     { width: 390, height: 844 },
@@ -4466,7 +4466,7 @@ expect(received).toEqual(expected) // deep equality
   331 |       await expect(page).toHaveURL(/\/entrar/);
   332 |     });
   333 |   }
-  334 | 
+  334 |
   335 |   // A 390, «Salir» en la primera fila le quitaba ancho al título («Per…»). Va en su propia fila: ningún texto a la
   336 |   // vista se corta con puntos suspensivos, ni en los títulos largos. Los textos solo para lector (recortados a 1 px)
   337 |   // no cuentan.
@@ -4495,7 +4495,7 @@ expect(received).toEqual(expected) // deep equality
   360 |     }
   361 |   });
   362 | });
-  363 | 
+  363 |
 ```[e2e] ===== Últimas líneas del servidor =====
 
 > plataforma-administrativa@0.1.0 start
