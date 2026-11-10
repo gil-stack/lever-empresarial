@@ -160,6 +160,15 @@ export const CATALOGO = {
   importar_estado_cuenta: { entidad: "collection_statement_imports", cambio: ["banco", "renglones", "abonos", "nuevos"] },
   confirmar_estado_cuenta: { entidad: "collection_statement_imports", cambio: ["aplicados", "por_conciliar", "ya_registrados", "descartados"] },
   renglon_estado_cuenta: { entidad: "collection_statement_rows", cambio: ["estado"] },
+  // Runway y alertas de caja (0032). Sin montos de nómina ni correos.
+  configurar_runway: { entidad: "cash_runway_settings", cambio: ["meses_anterior", "meses_nuevo"] },
+  estado_alerta_caja: {
+    entidad: "cash_alert_states",
+    cambio: ["bajo_colchon_anterior", "bajo_colchon", "runway_bajo_anterior", "runway_bajo"],
+  },
+  alerta_caja: { entidad: "cash_alerts", cambio: ["estado", "destinatarios", "codigo", "colchon", "runway"] },
+  alerta_caja_entregada: { entidad: "cash_alert_deliveries", cambio: [] },
+  foto_runway: { entidad: "cash_runway_snapshots", cambio: ["semana", "semanas_conservador", "semanas_esperado"] },
 } as const satisfies Record<string, { entidad: string; cambio: readonly string[] }>;
 
 export type AccionDeBitacora = keyof typeof CATALOGO;

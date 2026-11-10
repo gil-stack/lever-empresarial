@@ -161,7 +161,11 @@ export const SQL_FUENTES = `
 `;
 
 export async function leerFuentes(consulta: Consulta, empresaId: string, desde: string, hasta: string): Promise<Fuentes> {
-  const fila = unaFila(await aplicarSentencia(consulta, SQL_FUENTES, [empresaId, desde, hasta]));
+  return fuentesDeFila(unaFila(await aplicarSentencia(consulta, SQL_FUENTES, [empresaId, desde, hasta])));
+}
+
+/** La fila de SQL_FUENTES leída con su forma estricta. El runway la lee junto con los planes de cobranza. */
+export function fuentesDeFila(fila: Record<string, unknown>): Fuentes {
   return {
     nomina: lista(fila.nomina).map((p) => ({
       netoCentavos: centavos(p.neto),

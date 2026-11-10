@@ -3,6 +3,7 @@
   "regions": ["iad1"],
   "crons": [
     { "path": "/tareas/correo-semanal", "schedule": "0 14,16 * * 1" },
-    { "path": "/tareas/cobranza", "schedule": "0 14,18 * * *" }
+    { "path": "/tareas/cobranza", "schedule": "0 14,18 * * *" },
+    { "path": "/tareas/caja", "schedule": "*/15 0-3,13-23 * * *" }
   ]
 }

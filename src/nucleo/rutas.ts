@@ -238,6 +238,8 @@ export const RUTAS = [
   { patron: "/tareas/cobranza", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/webhooks/fintoc", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/pagar/[token]", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
+  // Runway y alertas de caja: la tarea cada 15 minutos (CRON_SECRET en la propia ruta).
+  { patron: "/tareas/caja", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   // El layout y las acciones vuelven a exigir la superficie SOFIPO y la capacidad.
   { patron: "/operacion/entrar", superficie: "sofipo", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/operacion/continuar", superficie: "sofipo", acceso: { tipo: "segundo_factor" }, conEmpresa: false },

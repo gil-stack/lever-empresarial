@@ -7,7 +7,7 @@ import { Ausencia, Aviso, CifraGrande, Insignia } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
 import { fechaConAnio, fechaCorta } from "@/dominio/flujo/fechas";
 import { cifrasDePresupuesto, ETIQUETA_ESTADO_PRESUPUESTO } from "@/dominio/flujo/presupuestos";
-import { textoAlcance } from "@/dominio/flujo/proyeccion";
+import { textoAlcanceConRunway } from "@/dominio/flujo/runway";
 import { horaEnMexico } from "@/dominio/reloj";
 import { enEmpresa } from "@/nucleo/rutas";
 import type { FlujoInicio } from "@/server/flujo/servicio";
@@ -38,7 +38,8 @@ export function InicioFlujo({ flujo, empresaId }: { flujo: FlujoInicio; empresaI
             <span data-cifra="gasto-neto" data-centavos={p.gastoNetoMensual}>{formatoPesos(p.gastoNetoMensual)}</span>
           </Indicador>
           <Indicador rotulo="Cuánto alcanza el dinero" origen={p.saldo ? "declarado" : null}>
-            <span data-cifra="alcance">{textoAlcance(p)}</span>
+            {/* Con un escenario en pantalla, el runway (sin escenario) no aplica: queda el alcance de las 13 semanas. */}
+            <span data-cifra="alcance">{textoAlcanceConRunway(p, flujo.real ? null : flujo.runway)}</span>
           </Indicador>
         </dl>
       </section>

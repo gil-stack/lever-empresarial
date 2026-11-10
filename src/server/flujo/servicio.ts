@@ -18,6 +18,7 @@ import {
 } from "../../dominio/flujo/entradas";
 import { desplazar, primeroDelMes, ultimoDelMes } from "../../dominio/flujo/fechas";
 import { calcularPresupuestos, reservarNominaDeUnaPersona, type Presupuestos } from "../../dominio/flujo/presupuestos";
+import { calcularRunway, horizonteDe, type Runway } from "../../dominio/flujo/runway";
 import {
   corteDe,
   escenarioValido,
@@ -84,17 +85,23 @@ export type FlujoInicio = {
   presupuestos: Presupuestos;
   cobros: { porCobrar: number; vencidos: number; vencidosCentavos: number };
   puedeEditar: boolean;
+  /** El runway conservador, con las mismas fuentes: Inicio lo dice cuando alcanza más de 13 semanas. */
+  runway: Pick<Runway, "conservador">;
 };
 
-/** Las fuentes de la proyección de una empresa. La consulta ya trae su contexto (RLS). */
+/**
+ * Las fuentes de la proyección de una empresa. La consulta ya trae su contexto (RLS).
+ * `hasta` alarga la lectura para el runway; la proyección de 13 semanas no la usa.
+ */
 export async function proyeccionCon(
   consulta: Consulta,
   empresaId: string,
   hoy: string,
+  hasta: string = ventanaDe(hoy).fin,
 ): Promise<{ fuentes: FuentesFlujo; extra: Fuentes }> {
   const { saldo, colchonCentavos } = await leerSaldo(consulta, empresaId);
   const corte = corteDe({ hoy, saldo });
-  const extra = await leerFuentes(consulta, empresaId, desplazar(corte, 1), ventanaDe(hoy).fin);
+  const extra = await leerFuentes(consulta, empresaId, desplazar(corte, 1), hasta);
   return { fuentes: { hoy, saldo, colchonCentavos, ...extra }, extra };
 }
 
@@ -107,7 +114,7 @@ export async function leerFlujoInicio(
   const conEmpresa = exigir(ctx, "cliente.flujo.ver");
   const hoy = hoyDe(deps);
   return leerCon(conEmpresa, async (consulta) => {
-    const { fuentes } = await proyeccionCon(consulta, conEmpresa.empresa.id, hoy);
+    const { fuentes } = await proyeccionCon(consulta, conEmpresa.empresa.id, hoy, horizonteDe(hoy).fin);
     const opciones = opcionesDeProyeccion(conEmpresa);
     const real = proyectar(fuentes, null, opciones);
     const escenario: Escenario | null = pedido.mover === undefined ? null : escenarioValido(real, pedido.mover, pedido.fecha);
@@ -121,6 +128,7 @@ export async function leerFlujoInicio(
       presupuestos,
       cobros: await leerTotalesCobro(consulta, conEmpresa.empresa.id, hoy),
       puedeEditar: puede(conEmpresa, "cliente.flujo.editar"),
+      runway: { conservador: calcularRunway(fuentes, [], opciones).conservador },
     };
   });
 }

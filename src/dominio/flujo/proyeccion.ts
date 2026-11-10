@@ -179,14 +179,15 @@ const FRECUENCIA_NOMINA: Record<FrecuenciaNomina, string> = {
  * Los movimientos que cuentan para la proyección: después del corte y hasta el
  * fin de la ventana, más los cargos de proveedor hasta el corte que nadie
  * autorizó, que van como vencidos sin autorizar. Los autorizados hasta el
- * corte se dan por pagados: ya están en el saldo declarado.
+ * corte se dan por pagados: ya están en el saldo declarado. El runway pide un
+ * `fin` más lejano con las mismas reglas.
  */
-export function movimientosDe(fuentes: FuentesFlujo): Movimiento[] {
+export function movimientosDe(fuentes: FuentesFlujo, fin: string = ventanaDe(fuentes.hoy).fin): Movimiento[] {
   const desde = desplazar(corteDe(fuentes), 1);
   const atrasados = fuentes.pagos
     .filter((pago) => pago.programadaEl < desde && pago.estado !== "listo_para_pagar")
     .map((pago) => ({ ...movimientoDePago(pago), atrasado: true }));
-  return [...atrasados, ...movimientosEntre(fuentes, desde, ventanaDe(fuentes.hoy).fin)];
+  return [...atrasados, ...movimientosEntre(fuentes, desde, fin)];
 }
 
 function movimientoDePago(pago: FuentesFlujo["pagos"][number]): Movimiento {
