@@ -41,7 +41,9 @@ export function useFormulario(accion: Accion, idPropio?: string) {
     }
   }, [estado, idForma]);
   const mensaje = (campo: string) => (estado.tipo === "invalido" ? estado.errores.find((error) => error.campo === campo)?.mensaje : undefined);
-  return { estado, enviar: enviarSinReiniciar(despachar), pendiente, idForma, mensaje };
+  // `accion` va en `<form action>`: sin JavaScript el navegador manda POST a la acción del servidor (nunca un GET con
+  // los campos en la dirección) y la página vuelve con el aviso. Con JavaScript, `enviar` (onSubmit) no reinicia.
+  return { estado, enviar: enviarSinReiniciar(despachar), accion: despachar, pendiente, idForma, mensaje };
 }
 
 const AvisarEnLista = createContext<((estado: EstadoFlujo) => void) | null>(null);
@@ -65,7 +67,10 @@ export function AvisosDeLista({ children }: { children: ReactNode }) {
 export function useAccionDeFila(accion: Accion, idForma: string, alAsentar: () => void) {
   const avisar = use(AvisarEnLista);
   if (!avisar) throw new Error("Las acciones de fila van dentro de <AvisosDeLista>.");
-  const [estado, setEstado] = useState<EstadoFlujo>(ESTADO_FLUJO_INICIAL);
+  const [estadoConJs, setEstado] = useState<EstadoFlujo>(ESTADO_FLUJO_INICIAL);
+  // Sin JavaScript, `<form action={accion}>` manda POST a la misma acción y su resultado se pinta en el formulario.
+  const [estadoSinJs, accionSinJs] = useActionState(accion, ESTADO_FLUJO_INICIAL);
+  const estado = estadoConJs.tipo === "inicial" ? estadoSinJs : estadoConJs;
   const [pendiente, iniciar] = useTransition();
   const enviar = (evento: FormEvent<HTMLFormElement>) => {
     evento.preventDefault();
@@ -87,7 +92,7 @@ export function useAccionDeFila(accion: Accion, idForma: string, alAsentar: () =
     });
   };
   const mensaje = (campo: string) => (estado.tipo === "invalido" ? estado.errores.find((error) => error.campo === campo)?.mensaje : undefined);
-  return { estado, enviar, pendiente, idForma, mensaje };
+  return { estado, enviar, accion: accionSinJs, pendiente, idForma, mensaje };
 }
 
 export function AvisoFlujo({ estado }: { estado: EstadoFlujo }) {

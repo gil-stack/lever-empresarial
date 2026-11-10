@@ -470,6 +470,9 @@ CREATE TABLE collection_payments (
   posible_duplicado boolean NOT NULL DEFAULT false,
   -- Se aplicó por referencia, pero la CLABE ordenante antes solo había pagado por otros clientes (r63-N4).
   de_otro_cliente boolean NOT NULL DEFAULT false,
+  -- El pago de otra fuente con el mismo monto, la misma referencia y fecha a ±1 día: este puede ser el mismo
+  -- depósito contado dos veces, así que no se aplicó solo (r63b-N1).
+  parecido_a uuid,
   document_id uuid,
   registrado_por uuid REFERENCES users (id) ON DELETE RESTRICT,
   registrado_en timestamptz NOT NULL DEFAULT now(),
@@ -483,6 +486,9 @@ CREATE TABLE collection_payments (
     FOREIGN KEY (customer_id, company_id) REFERENCES collection_customers (id, company_id) ON DELETE RESTRICT,
   CONSTRAINT collection_payments_comprobante
     FOREIGN KEY (document_id, company_id) REFERENCES documents (id, company_id) ON DELETE RESTRICT,
+  CONSTRAINT collection_payments_parecido_de
+    FOREIGN KEY (parecido_a, company_id) REFERENCES collection_payments (id, company_id) ON DELETE RESTRICT,
+  CONSTRAINT collection_payments_parecido CHECK (parecido_a IS NULL OR (posible_duplicado AND parecido_a <> id)),
   -- manual: una persona con su comprobante; demo: el simulador de una empresa de demostración;
   -- fintoc: el aviso del proveedor SPEI (lo registra el sistema); estado_cuenta: un renglón confirmado del estado de cuenta.
   CONSTRAINT collection_payments_fuente CHECK (fuente IN ('manual', 'demo', 'fintoc', 'estado_cuenta')),
@@ -497,7 +503,8 @@ CREATE TABLE collection_payments (
   CONSTRAINT collection_payments_estado CHECK (
     (estado = 'abierto' AND aplicado_centavos < monto_centavos AND motivo_anulacion IS NULL AND anulado_por IS NULL AND anulado_en IS NULL)
     OR (estado = 'aplicado' AND aplicado_centavos = monto_centavos AND motivo_anulacion IS NULL AND anulado_por IS NULL AND anulado_en IS NULL)
-    OR (estado = 'anulado' AND fuente = 'manual' AND aplicado_centavos = 0 AND anulado_por IS NOT NULL AND anulado_en IS NOT NULL
+    -- Una persona anula un pago manual hecho por error o descarta un posible duplicado de cualquier fuente (r63b-N1).
+    OR (estado = 'anulado' AND (fuente = 'manual' OR posible_duplicado) AND aplicado_centavos = 0 AND anulado_por IS NOT NULL AND anulado_en IS NOT NULL
         AND motivo_anulacion IS NOT NULL AND cobranza_texto(motivo_anulacion, 5, 500))
     -- El proveedor avisó que la empresa le devolvió la transferencia al ordenante (r63-N8): lo marca el sistema.
     OR (estado = 'devuelto' AND fuente = 'fintoc' AND aplicado_centavos = 0 AND anulado_por IS NULL AND anulado_en IS NOT NULL
@@ -536,9 +543,9 @@ BEGIN
     RETURN NEW;
   END IF;
   IF (NEW.id, NEW.company_id, NEW.fuente, NEW.id_externo, NEW.monto_centavos, NEW.recibido_el, NEW.clave_rastreo, NEW.referencia,
-      NEW.clabe_ordenante, NEW.nombre_ordenante, NEW.posible_duplicado, NEW.de_otro_cliente, NEW.document_id, NEW.registrado_por, NEW.registrado_en)
+      NEW.clabe_ordenante, NEW.nombre_ordenante, NEW.posible_duplicado, NEW.de_otro_cliente, NEW.parecido_a, NEW.document_id, NEW.registrado_por, NEW.registrado_en)
     IS DISTINCT FROM (OLD.id, OLD.company_id, OLD.fuente, OLD.id_externo, OLD.monto_centavos, OLD.recibido_el, OLD.clave_rastreo, OLD.referencia,
-      OLD.clabe_ordenante, OLD.nombre_ordenante, OLD.posible_duplicado, OLD.de_otro_cliente, OLD.document_id, OLD.registrado_por, OLD.registrado_en)
+      OLD.clabe_ordenante, OLD.nombre_ordenante, OLD.posible_duplicado, OLD.de_otro_cliente, OLD.parecido_a, OLD.document_id, OLD.registrado_por, OLD.registrado_en)
     OR (OLD.customer_id IS NOT NULL AND NEW.customer_id IS DISTINCT FROM OLD.customer_id)
   THEN
     RAISE EXCEPTION 'cobranza_inmutable';

@@ -338,22 +338,37 @@ async function reglas(app: string, ids: Ids, duena: string): Promise<void> {
   // tests/esquema/definer-search-path.test.ts), para que el search_path de la 0031 se pruebe por sí solo.
   const temporal = (accion: "grant" | "revoke") => ejecutar(duena,
     `do $$ begin execute format('${accion} temporary on database %I ${accion === "grant" ? "to" : "from"} ${C}', current_database()); end $$;`);
-  await rechaza("sin el permiso de la 0029 no hay tablas temporales", "42501",
+  const sinTemporal = (cuando: string) => rechaza(`${cuando}: sin el permiso de la 0029 no hay tablas temporales`, "42501",
     (c) => c.query("create temp table collection_provider_accounts (company_id uuid)"), C, "", "");
-  temporal("grant");
-  const sombraDestino = await acepta("base-N4 cobranza_destino_fintoc con collection_provider_accounts temporal", async (c) => {
-    await c.query("create temp table collection_provider_accounts (company_id uuid, proveedor text, cuenta_id text)");
-    await c.query("insert into collection_provider_accounts values ($1, 'fintoc', 'acc_Sombra1')", [ids.beta]);
-    return (await c.query("select company_id from cobranza_destino_fintoc('acc_Sombra1', 'acno_sombra1')")).rows;
-  }, C, "", "");
+  // r63c-N1: el préstamo va con psql en autocommit (plataforma_app no puede darlo), fuera de la transacción de la sonda.
+  // Se devuelve en un finally aunque la sonda falle, y después se vuelve a exigir el 42501.
+  async function conTemporalPrestado<T>(sonda: () => Promise<T>): Promise<T> {
+    temporal("grant");
+    try {
+      return await sonda();
+    } finally {
+      temporal("revoke");
+      await sinTemporal("después del préstamo");
+    }
+  }
+  await sinTemporal("antes del préstamo");
+  // Una sonda que falla no deja el permiso prestado.
+  await assert.rejects(() => conTemporalPrestado(async () => { throw new Error("sonda forzada a fallar"); }), /sonda forzada a fallar/);
+  const [sombraDestino, sombraEnlace] = await conTemporalPrestado(async () => {
+    const destino = await acepta("base-N4 cobranza_destino_fintoc con collection_provider_accounts temporal", async (c) => {
+      await c.query("create temp table collection_provider_accounts (company_id uuid, proveedor text, cuenta_id text)");
+      await c.query("insert into collection_provider_accounts values ($1, 'fintoc', 'acc_Sombra1')", [ids.beta]);
+      return (await c.query("select company_id from cobranza_destino_fintoc('acc_Sombra1', 'acno_sombra1')")).rows;
+    }, C, "", "");
+    const falso = createHash("sha256").update(randomUUID()).digest("hex");
+    const enlace = await acepta("base-N4 cobranza_por_enlace con collection_emails temporal", async (c) => {
+      await c.query("create temp table collection_emails (company_id uuid, charge_id uuid, enlace_hash text, enlace_vence date)");
+      await c.query("insert into collection_emails values ($1, $2, $3, '2099-01-01')", [ids.beta, ids.kb, falso]);
+      return (await c.query("select referencia from cobranza_por_enlace($1)", [falso])).rows;
+    }, C, "", E);
+    return [destino, enlace] as const;
+  });
   assert.deepEqual(sombraDestino, [], "base-N4: cobranza_destino_fintoc leyó la tabla temporal y devolvió Beta");
-  const falso = createHash("sha256").update(randomUUID()).digest("hex");
-  const sombraEnlace = await acepta("base-N4 cobranza_por_enlace con collection_emails temporal", async (c) => {
-    await c.query("create temp table collection_emails (company_id uuid, charge_id uuid, enlace_hash text, enlace_vence date)");
-    await c.query("insert into collection_emails values ($1, $2, $3, '2099-01-01')", [ids.beta, ids.kb, falso]);
-    return (await c.query("select referencia from cobranza_por_enlace($1)", [falso])).rows;
-  }, C, "", E);
-  temporal("revoke");
   assert.deepEqual(sombraEnlace, [], "base-N4: cobranza_por_enlace leyó la tabla temporal y devolvió el cargo de Beta");
 
   // r63-N2: una referencia con 0 inicial no existe (el consecutivo empieza en 100000).
@@ -367,4 +382,41 @@ async function reglas(app: string, ids: Ids, duena: string): Promise<void> {
     const p = await pago(c);
     await c.query("update collection_payments set estado = 'devuelto' where id = $1", [p]);
   });
+
+  // r63b-N1: el pago parecido. Un renglón del estado de cuenta (lo registra una persona) que apunta a otro pago.
+  const deEstadoDeCuenta = async (c: Cliente, parecidoA: string | null, posibleDuplicado: boolean) => {
+    const id = randomUUID();
+    await evento(c, E, A, "registrar_pago_cobranza", "collection_payments", id);
+    await c.query(`insert into collection_payments (id, company_id, fuente, id_externo, monto_centavos, recibido_el, registrado_por, posible_duplicado, parecido_a)
+      values ($1, $2, 'estado_cuenta', $3, 100000, '2026-11-10', $4, $5, $6)`, [id, E, `edc:${id.replace(/-/g, "")}`, A, posibleDuplicado, parecidoA]);
+    return id;
+  };
+  const anular = async (c: Cliente, p: string) => {
+    await evento(c, E, A, "descartar_duplicado_cobranza", "collection_payments", p);
+    await c.query("update collection_payments set estado = 'anulado', motivo_anulacion = 'Es el mismo depósito', anulado_por = $2, anulado_en = now() where id = $1", [p, A]);
+  };
+  await rechaza("r63b-N1 parecido_a en un pago que no es posible duplicado", "collection_payments_parecido", async (c) => {
+    await deEstadoDeCuenta(c, await pago(c), false);
+  });
+  await rechaza("r63b-N1 un pago parecido a sí mismo", "collection_payments_parecido", async (c) => {
+    const id = randomUUID();
+    await evento(c, E, A, "registrar_pago_cobranza", "collection_payments", id);
+    await c.query(`insert into collection_payments (id, company_id, fuente, id_externo, monto_centavos, recibido_el, registrado_por, posible_duplicado, parecido_a)
+      values ($1, $2, 'estado_cuenta', $3, 100000, '2026-11-10', $4, true, $1)`, [id, E, `edc:${id.replace(/-/g, "")}`, A]);
+  });
+  await rechaza("r63b-N1 parecido_a de otra empresa", "collection_payments_parecido_de", async (c) => {
+    await deEstadoDeCuenta(c, randomUUID(), true);
+  });
+  await rechaza("r63b-N1 cambiar el pago parecido", "cobranza_inmutable", async (c) => {
+    const d = await deEstadoDeCuenta(c, await pago(c), true);
+    await c.query("update collection_payments set parecido_a = $2 where id = $1", [d, await pago(c)]);
+  });
+  await rechaza("r63b-N1 anular un pago automático que no es posible duplicado", "collection_payments_estado", async (c) => {
+    await anular(c, await deEstadoDeCuenta(c, null, false));
+  });
+  assert.equal(await acepta("r63b-N1 descartar un posible duplicado automático", async (c) => {
+    const d = await deEstadoDeCuenta(c, await pago(c), true);
+    await anular(c, d);
+    return (await c.query<{ estado: string }>("select estado from collection_payments where id = $1", [d])).rows[0]!.estado;
+  }), "anulado");
 }

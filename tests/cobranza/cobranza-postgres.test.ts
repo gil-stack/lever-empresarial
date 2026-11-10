@@ -358,6 +358,7 @@ async function escenario(url: string): Promise<void> {
 
   // 12. Revisión del #63 ------------------------------------------------------------------------
   await revision63(url, { admin, adminBeta, sesionAdmin, personal, alfa, beta, deps, enviados, codigo, cuenta, propia, configFintoc, depsAviso, ahoraSeg, altaId, variableId: variable.clienteId, empate });
+  await revision63b(url, { admin, adminBeta, sesionAdmin, personal, alfa, beta, deps, enviados, codigo, cuenta, propia, configFintoc, depsAviso, ahoraSeg, altaId, variableId: variable.clienteId, empate });
 
   // Toda escritura dejó su evento: ninguna fila de cobranza sin bitácora.
   assert.equal(contar(url, `select count(*) from collection_payments p where not exists (select 1 from audit_log a where a.identificador = p.id)`), 0);
@@ -500,4 +501,171 @@ async function revision63(url: string, r: Revision63): Promise<void> {
   assert.equal(contar(url, `select count(*) from collection_applications where charge_id = '${deBetaEmitido.id}'`), 1);
   // La base frena el mismo archivo aunque dos subidas lleguen a la vez: UNIQUE (empresa, huella del archivo).
   assert.equal(contar(url, `select count(*) from pg_constraint where conname = 'collection_statement_imports_archivo_unico'`), 1);
+}
+
+/**
+ * r63b-N1: el mismo depósito por dos fuentes sin una clave de rastreo que los empate. El abono que coincide con un pago
+ * vigente de otra fuente en monto, referencia y fecha (±1 día) va a «Por conciliar» como posible duplicado, en los dos
+ * órdenes y también si las dos fuentes llegan a la vez. Cada caso falla en 247f0ef (se aplicaba dos veces).
+ */
+async function revision63b(url: string, r: Revision63): Promise<void> {
+  // revision63 deja a Alfa con su segunda cuenta de Fintoc (r63-base-N3).
+  const { admin, deps, configFintoc, depsAviso, ahoraSeg } = r;
+  const fila = <T,>(sql: string) => consultarJson<T[]>(url, `select json_agg(x) from (${sql}) x`)?.[0];
+  const cargo = async (nombre: string, monto: string) => {
+    const alta = await darDeAltaCliente(admin, { nombre, rfc: "", correos: "r63b@ejemplo.mx", concepto: `Servicio ${nombre}`, tipo: "fijo", monto, periodicidad: "mensual", primerVencimiento: "2026-11-15", fin: "", altaId: randomUUID() }, deps());
+    return fila<{ id: string; referencia: string }>(`select id, referencia from collection_charges where customer_id = '${alta.clienteId}' and estado = 'emitido'`)!;
+  };
+  // Un aviso de Fintoc a la cuenta de la empresa (no a la CLABE de un cliente): manda la referencia.
+  const fintoc = async (monto: number, referencia: string | null, fecha = "2026-11-10", rastreo: string | null = null) => {
+    const cuerpo = JSON.stringify({
+      id: `evt_${randomUUID().replace(/-/g, "")}`, type: "transfer.inbound.succeeded", object: "event", mode: "test", created_at: new Date().toISOString(),
+      data: {
+        id: `tr_${randomUUID().replace(/-/g, "")}`, object: "transfer", direction: "inbound", status: "succeeded", amount: monto, currency: "MXN", mode: "test",
+        transaction_date: `${fecha}T17:00:00.000Z`, reference_id: referencia, tracking_key: rastreo,
+        account_number: { id: "acno_CuentaDeLaEmpresa", account_id: "acc_PruebaAlfa02" }, counterparty: { holder_name: "Ordenante r63b", account_number: null, account_type: "clabe" },
+      },
+    });
+    return atenderAviso(new TextEncoder().encode(cuerpo), firmar(cuerpo, configFintoc.secretoWebhook, ahoraSeg), depsAviso);
+  };
+  // Un estado de cuenta de BBVA sin columna de rastreo (muchos bancos lo traen en el concepto).
+  const empateBbva = { banco: "bbva", empatar: "si", filaEncabezado: "0", columnaFecha: "0", columnaConcepto: "1", columnaReferencia: "2", columnaAbono: "3", columnaRastreo: "" };
+  const subir = async (renglones: string[]) => {
+    const csv = ["Fecha,Concepto,Referencia,Abono", ...renglones].join("\r\n");
+    const hecho = await prepararEstadoDeCuenta(admin, empateBbva, { nombre: `bbva-${randomUUID().slice(0, 8)}.csv`, bytes: new TextEncoder().encode(csv) }, deps());
+    assert.equal(hecho.tipo, "importado");
+    if (hecho.tipo !== "importado") throw new Error("sin importar");
+    const vista = await leerVistaEstadoDeCuenta(admin, hecho.importacionId);
+    return { id: hecho.importacionId, renglones: vista.actual!.renglones };
+  };
+  const confirmar = (id: string) => confirmarEstadoDeCuenta(admin, { importacionId: id, descartar: [] }, deps());
+  const pagado = (cargoId: string) => fila<{ p: number }>(`select pagado_centavos as p from collection_charges where id = '${cargoId}'`)!.p;
+  const aplicaciones = (cargoId: string) => contar(url, `select count(*) from collection_applications where charge_id = '${cargoId}' and regla <> 'reversion'`);
+  const ultimo = (fuente: string, monto: number) => fila<{ id: string; estado: string; posible_duplicado: boolean; parecido_a: string | null }>(
+    `select id, estado, posible_duplicado, parecido_a from collection_payments where company_id = '${r.alfa.id}' and fuente = '${fuente}' and monto_centavos = ${monto} order by registrado_en desc limit 1`)!;
+
+  // Cada caso corre aunque otro falle: así se ve cuáles caen sin el arreglo.
+  const fallas: string[] = [];
+  const caso = async (nombre: string, pasos: () => Promise<void>) => {
+    try {
+      await pasos();
+    } catch (error) {
+      fallas.push(`${nombre}: ${error instanceof Error ? error.message.split("\n")[0] : String(error)}`);
+    }
+  };
+
+  // Caso D del revisor: Fintoc aplica, y el mismo depósito en el estado de cuenta (rastreo en el concepto, sin columna) no.
+  await caso("caso D (Fintoc → estado de cuenta)", async () => {
+    // El cargo debe el doble: con saldo, el código anterior aplicaba el depósito otra vez (con el cargo ya pagado lo frenaba).
+    const d = await cargo("R63b D", "246.00");
+    assert.deepEqual(await fintoc(12_300, d.referencia, "2026-11-10", "R63D0000000001"), { estado: 200, cuerpo: { ok: true, efecto: "registrado" } });
+    assert.equal(pagado(d.id), 12_300);
+    const deD = await subir([`10/11/2026,SPEI RECIBIDO R63D0000000001,${d.referencia},123.00`]);
+    const propuestaD = deD.renglones[0]!.propuesta;
+    assert.equal(propuestaD?.tipo, "por_conciliar", "caso D: la propuesta aplicaba el mismo depósito otra vez");
+    assert.equal(propuestaD?.tipo === "por_conciliar" ? propuestaD.motivo : null, "parecido_de_otra_fuente");
+    assert.equal(propuestaD?.tipo === "por_conciliar" ? propuestaD.parecido?.fuente : null, "fintoc");
+    assert.deepEqual(await confirmar(deD.id), { aplicados: 0, porConciliar: 1, yaRegistrados: 0, descartados: 0 });
+    assert.deepEqual([pagado(d.id), aplicaciones(d.id)], [12_300, 1], "caso D: el cargo sumó dos aplicaciones");
+    const dupD = ultimo("estado_cuenta", 12_300);
+    assert.deepEqual([dupD.estado, dupD.posible_duplicado, dupD.parecido_a], ["abierto", true, ultimo("fintoc", 12_300).id]);
+    // Se descarta: queda anulado con su motivo y su evento, que nombra el pago parecido.
+    await anularPago(admin, { pagoId: dupD.id, motivo: "Es el mismo depósito que llegó por Fintoc" }, deps());
+    assert.equal(ultimo("estado_cuenta", 12_300).estado, "anulado");
+    assert.equal(contar(url, `select count(*) from audit_log where accion = 'descartar_duplicado_cobranza' and identificador = '${dupD.id}' and cambio->>'parecido_a' = '${dupD.parecido_a}'`), 1);
+    // Un pago automático que no es posible duplicado sigue sin poder anularse.
+    await assert.rejects(() => anularPago(admin, { pagoId: ultimo("fintoc", 12_300).id, motivo: "No se puede anular" }, deps()), r.codigo("pago_no_anulable"));
+  });
+
+  // Manual y luego el estado de cuenta (un día después): no se aplica dos veces.
+  await caso("manual → estado de cuenta", async () => {
+    const m = await cargo("R63b Manual", "468.00");
+    const manual = await registrarPagoManual(admin, { altaId: randomUUID(), cargoId: m.id, monto: "234.00", recibidoEl: "2026-11-09" }, null, deps());
+    assert.equal(manual.aplicadoCentavos, 23_400);
+    const deM = await subir([`10/11/2026,DEPOSITO ${m.referencia},${m.referencia},234.00`]);
+    assert.deepEqual(await confirmar(deM.id), { aplicados: 0, porConciliar: 1, yaRegistrados: 0, descartados: 0 }, "manual → estado de cuenta: se aplicó dos veces");
+    assert.deepEqual([pagado(m.id), aplicaciones(m.id)], [23_400, 1]);
+    assert.equal(ultimo("estado_cuenta", 23_400).parecido_a, manual.pagoId);
+  });
+
+  // El estado de cuenta primero y luego Fintoc: el aviso queda como posible duplicado.
+  await caso("estado de cuenta → Fintoc", async () => {
+    const e = await cargo("R63b Estado", "690.00");
+    const deE = await subir([`09/11/2026,SPEI RECIBIDO ${e.referencia},${e.referencia},345.00`]);
+    assert.deepEqual(await confirmar(deE.id), { aplicados: 1, porConciliar: 0, yaRegistrados: 0, descartados: 0 });
+    await fintoc(34_500, e.referencia, "2026-11-10");
+    assert.deepEqual([pagado(e.id), aplicaciones(e.id)], [34_500, 1], "estado de cuenta → Fintoc: se aplicó dos veces");
+    const dupE = ultimo("fintoc", 34_500);
+    assert.deepEqual([dupE.estado, dupE.posible_duplicado, dupE.parecido_a], ["abierto", true, ultimo("estado_cuenta", 34_500).id]);
+  });
+
+  // El pago a mano después de Fintoc, con el cargo elegido (aún con saldo): tampoco se aplica solo.
+  await caso("Fintoc → manual", async () => {
+    const f = await cargo("R63b Fintoc Manual", "1356.00");
+    await fintoc(67_800, f.referencia, "2026-11-10");
+    const tarde = await registrarPagoManual(admin, { altaId: randomUUID(), cargoId: f.id, monto: "678.00", recibidoEl: "2026-11-10" }, null, deps());
+    assert.deepEqual([tarde.aplicadoCentavos, tarde.posibleDuplicado, tarde.parecido], [0, true, true]);
+    assert.deepEqual([pagado(f.id), aplicaciones(f.id)], [67_800, 1]);
+  });
+
+  // La orilla: a dos días ya no es el mismo depósito (se aplica); a un día, sí lo parece.
+  await caso("orilla de ±1 día", async () => {
+    const o = await cargo("R63b Orilla", "912.00");
+    await fintoc(45_600, o.referencia, "2026-11-10");
+    const deO = await subir([`08/11/2026,SPEI RECIBIDO ${o.referencia},${o.referencia},456.00`]);
+    assert.deepEqual(await confirmar(deO.id), { aplicados: 1, porConciliar: 0, yaRegistrados: 0, descartados: 0 }, "a dos días se aplica");
+    assert.deepEqual([pagado(o.id), aplicaciones(o.id)], [91_200, 2]);
+  });
+
+  // Otro monto con la misma referencia y el mismo día: es otro pago y se aplica normal.
+  await caso("otro monto", async () => {
+    const p = await cargo("R63b Parcial", "1000.00");
+    await fintoc(40_000, p.referencia, "2026-11-10");
+    const deP = await subir([`10/11/2026,SPEI RECIBIDO ${p.referencia},${p.referencia},600.00`]);
+    assert.deepEqual(await confirmar(deP.id), { aplicados: 1, porConciliar: 0, yaRegistrados: 0, descartados: 0 }, "otro monto se aplica");
+    assert.equal(pagado(p.id), 100_000);
+  });
+
+  // Otra referencia, mismo monto y día: dos pagos distintos, los dos se aplican.
+  await caso("otra referencia", async () => {
+    const [x1, x2] = [await cargo("R63b Ref Uno", "321.00"), await cargo("R63b Ref Dos", "321.00")];
+    await fintoc(32_100, x1.referencia, "2026-11-10");
+    const deX = await subir([`10/11/2026,SPEI RECIBIDO ${x2.referencia},${x2.referencia},321.00`]);
+    assert.deepEqual(await confirmar(deX.id), { aplicados: 1, porConciliar: 0, yaRegistrados: 0, descartados: 0 });
+    assert.deepEqual([pagado(x1.id), pagado(x2.id)], [32_100, 32_100]);
+  });
+
+  // Sin referencia de un lado (criterio conservador): mismo monto y fecha que un pago de otra fuente va a «Por conciliar».
+  // Una persona decide que sí fueron dos depósitos y lo aplica.
+  await caso("sin referencia (conservador) y aplicar", async () => {
+    const q = await cargo("R63b Sin Ref", "1134.00");
+    await fintoc(56_700, q.referencia, "2026-11-10");
+    const deQ = await subir(["10/11/2026,SPEI RECIBIDO SIN REFERENCIA,,567.00"]);
+    const propuestaQ = deQ.renglones[0]!.propuesta;
+    assert.equal(propuestaQ?.tipo === "por_conciliar" ? propuestaQ.motivo : null, "parecido_de_otra_fuente");
+    assert.deepEqual(await confirmar(deQ.id), { aplicados: 0, porConciliar: 1, yaRegistrados: 0, descartados: 0 });
+    await aplicarPago(admin, { pagoId: ultimo("estado_cuenta", 56_700).id, cargoId: q.id }, deps());
+    assert.equal(pagado(q.id), 113_400);
+  });
+
+  // La carrera: Fintoc y el estado de cuenta del mismo depósito a la vez, en dos conexiones. El candado de la empresa
+  // las forma: la segunda ve a la primera y el cargo recibe una sola aplicación, en cualquier orden.
+  await caso("carrera de dos conexiones", async () => {
+    for (const [i, monto] of [[1, "789.00"], [2, "790.00"], [3, "791.00"]] as const) {
+      const centavosK = Math.round(Number(monto) * 100);
+      const k = await cargo(`R63b Carrera ${i}`, (centavosK * 2 / 100).toFixed(2));
+      const deK = await subir([`10/11/2026,SPEI RECIBIDO ${k.referencia},${k.referencia},${monto}`]);
+      const [aviso, confirmado] = await Promise.all([fintoc(centavosK, k.referencia, "2026-11-10"), confirmar(deK.id)]);
+      assert.equal(aviso.estado, 200);
+      assert.equal(confirmado.aplicados + confirmado.porConciliar, 1);
+      assert.deepEqual([pagado(k.id), aplicaciones(k.id)], [centavosK, 1], `carrera ${i}: dos aplicaciones`);
+      assert.equal(contar(url, `select count(*) from collection_payments where company_id = '${r.alfa.id}' and monto_centavos = ${centavosK} and posible_duplicado and parecido_a is not null`), 1);
+    }
+  });
+
+  assert.deepEqual(fallas, [], "r63b-N1: casos que aplicaron dos veces el mismo depósito");
+
+  // La base: parecido_a solo en un posible duplicado, y no cambia después.
+  assert.equal(contar(url, "select count(*) from collection_payments where parecido_a is not null and not posible_duplicado"), 0);
+  assert.equal(contar(url, "select count(*) from pg_constraint where conname in ('collection_payments_parecido', 'collection_payments_parecido_de')"), 2);
 }

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { avisoSinNuevos } from "@/dominio/cobranza/estado-cuenta";
 import type { EstadoFlujo } from "@/dominio/flujo/entradas";
 import { confirmarEstadoDeCuenta, prepararEstadoDeCuenta, type ResultadoPreparar, type VistaPrevia } from "@/server/cobranza/estado-cuenta";
 import {
@@ -239,6 +240,7 @@ export async function enviarPagoManual(_previo: EstadoFlujo, formData: FormData)
   return ejecutar(async () => {
     const comprobante = await leerArchivo(formData, "comprobante", 4 * 1024 * 1024, "El comprobante pesa más de 4 MB.");
     const hecho = await registrarPagoManual(await contextoDeAccion(), campos(formData, ["altaId", "cargoId", "clienteId", "monto", "recibidoEl", "claveRastreo"]), comprobante);
+    if (hecho.parecido) return "El pago quedó registrado como posible duplicado: ya hay un pago de otra fuente con el mismo monto, la misma referencia y casi la misma fecha. Quedó en «Por conciliar» sin aplicarse.";
     if (hecho.posibleDuplicado) return "El pago quedó registrado como posible duplicado: esa clave de rastreo ya estaba en otro pago. Quedó en «Por conciliar» sin aplicarse.";
     return hecho.aplicadoCentavos > 0 ? "El pago quedó registrado y aplicado al cargo. Lo que sobre queda como saldo a favor del cliente." : "El pago quedó registrado. Aplícalo desde «Por conciliar».";
   });
@@ -260,8 +262,8 @@ export async function enviarReversion(_previo: EstadoFlujo, formData: FormData):
 
 export async function enviarAnulacion(_previo: EstadoFlujo, formData: FormData): Promise<EstadoFlujo> {
   return ejecutar(async () => {
-    await anularPago(await contextoDeAccion(), campos(formData, ["pagoId", "motivo"]));
-    return "El pago quedó anulado con su motivo.";
+    const hecho = await anularPago(await contextoDeAccion(), campos(formData, ["pagoId", "motivo"]));
+    return hecho.descartado ? "El posible duplicado quedó descartado con su motivo: el depósito sigue contado una sola vez." : "El pago quedó anulado con su motivo.";
   });
 }
 
@@ -272,6 +274,7 @@ const DEMO: Record<string, string> = {
   cliente_sin_coincidencia: "Se supo el cliente, pero el monto no coincide con un solo cargo: quedó en «Por conciliar».",
   sin_identificar: "No se pudo identificar: quedó en «Por conciliar».",
   rastreo_ya_registrado: "Esa clave de rastreo ya estaba registrada: quedó como posible duplicado.",
+  parecido_de_otra_fuente: "Ya hay un pago de otra fuente con el mismo monto, la misma referencia y casi la misma fecha: quedó como posible duplicado, sin aplicarse.",
 };
 
 export async function enviarSimulacion(_previo: EstadoFlujo, formData: FormData): Promise<EstadoFlujo> {
@@ -304,10 +307,7 @@ export async function enviarEstadoDeCuenta(_previo: EstadoEstadoDeCuenta, formDa
     redirect(destino);
   }
   if (resultado.tipo === "empatar") return { tipo: "empatar", vista: resultado.vista };
-  return {
-    tipo: "listo",
-    mensaje: `Este archivo ya estaba importado: sus ${resultado.repetidos} ${resultado.repetidos === 1 ? "abono ya está" : "abonos ya están"} en Lever. No se duplicó nada.`,
-  };
+  return { tipo: "rechazado", ...avisoSinNuevos(resultado.repetidos) };
 }
 
 export async function enviarConfirmacionEstadoDeCuenta(_previo: EstadoFlujo, formData: FormData): Promise<EstadoFlujo> {

@@ -69,6 +69,7 @@ export type Decision = {
     | "referencia_sin_cargo_abierto"
     | "referencia_de_otro_cliente"
     | "rastreo_ya_registrado"
+    | "parecido_de_otra_fuente"
     | "cuenta_y_monto"
     | "clabe_y_monto"
     | "cliente_sin_coincidencia"
@@ -79,6 +80,11 @@ export type Decision = {
 export type DatosDeConciliacion = {
   /** La clave de rastreo del abono ya está en otro pago vigente de la empresa. */
   rastreoYaRegistrado: boolean;
+  /**
+   * Otra fuente ya registró un pago vigente con el mismo monto, la misma referencia y fecha a ±1 día (r63b-N1): puede
+   * ser el mismo depósito (Fintoc y el estado de cuenta, o un pago a mano y el estado de cuenta). No se aplica solo.
+   */
+  parecidoDeOtraFuente: boolean;
   /** El dueño de la CLABE propia a la que llegó el abono (proveedor SPEI), o nulo. */
   clienteDeLaCuenta: string | null;
   /** El cargo cuya referencia trae el abono, en cualquier estado, o nulo. */
@@ -100,6 +106,9 @@ export function conciliar(abono: AbonoAConciliar, datos: DatosDeConciliacion): D
   const cargo = datos.cargoDeLaReferencia;
   if (datos.rastreoYaRegistrado) {
     return { clienteId: cuenta ?? cargo?.clienteId ?? null, aplicacion: null, posibleDuplicado: true, deOtroCliente: false, motivo: "rastreo_ya_registrado" };
+  }
+  if (datos.parecidoDeOtraFuente) {
+    return { clienteId: cuenta ?? cargo?.clienteId ?? null, aplicacion: null, posibleDuplicado: true, deOtroCliente: false, motivo: "parecido_de_otra_fuente" };
   }
   if (cargo && cuenta && cargo.clienteId !== cuenta) {
     return { clienteId: cuenta, aplicacion: null, posibleDuplicado: false, deOtroCliente: false, motivo: "referencia_de_otro_cliente" };

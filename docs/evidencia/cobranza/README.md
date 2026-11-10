@@ -6,8 +6,8 @@ Resultado de la última corrida (2026-11-10, ronda r63):
 
 | Navegador | Origen | Resultado |
 |---|---|---|
-| Chromium 156 (Playwright 1.64.1) | `http://localhost:3181` | 15 de 15 |
-| WebKit 27.2 (Playwright 1.64.1) | `https://localhost:3182` → `3181` | 15 de 15 |
+| Chromium 156 (Playwright 1.64.1) | `http://localhost:3181` | 17 de 17 |
+| WebKit 27.2 (Playwright 1.64.1) | `https://localhost:3182` → `3181` | 17 de 17 |
 | Suite e2e completa (Chromium, como CI, en sus 3 partes) | `http://localhost:3181` | ver «Gates» en la sección de la ronda r63 |
 
 ## Entorno
@@ -50,6 +50,8 @@ Capturas `chromium-NN-…` y `webkit-NN-…` (mismo número en los dos navegador
 | 13 | Alta de «Grupo Uno» y «Filial Dos» con clics; la misma CLABE ordenante paga $300.00 con la referencia de Uno y luego $200.00 con la de Dos (dos avisos de Fintoc firmados); se abre la ficha de Dos y la de Uno | `17-pagado-desde-otro-cliente` | Los dos pagos `aplicado` a su cliente; `de_otro_cliente` falso en el de Uno y verdadero en el de Dos. La ficha de Dos muestra «Pagado desde la cuenta de otro cliente» en ese pago; la de Uno no muestra ninguna marca (r63-N4) |
 | 14 | En la ficha de Grupo Uno, «Registrar pago»; el id del cargo (campo oculto) se cambia por el de un cargo de la empresa de demostración; «Registrar el pago» | `18-pago-con-cargo-ajeno` | El diálogo dice «No encontrado / Recarga la lista.», no «Ese cargo ya cambió»; el número de pagos de toda la base no cambia (r63-N10) |
 | 15 | Configuración: cambiar el correo de contacto con el factor de hace 31 minutos; después, con el factor recién probado | `19-contacto-pide-factor`, `20-contacto-guardado-y-avisado` | Con el factor viejo: «Confirma que eres tú… el correo de contacto exige un segundo factor de los últimos 30 minutos», el contacto no cambia y no sale aviso. Con el factor reciente: «Avisamos del cambio a administración y finanzas», el contacto queda guardado y sale 1 aviso «Cambió el correo de contacto de cobranza…» con el correo nuevo (r63-N3) |
+| 16 | «Cargo único» de $2,468.00 a Colegio Alfa; «Registrar pago» a mano de $1,234.00; estado de cuenta de BBVA con ese mismo depósito y otro igual (otro concepto); «Confirmar la importación»; en «Por conciliar», «Descartar» el primero con motivo y «Aplicar» el segundo; la ficha del cliente | `21-duplicado-propuesta`, `22-duplicado-por-conciliar`, `23-duplicado-resuelto` | Los dos renglones proponen «A Por conciliar» con «Posible duplicado: ya está registrado a mano del …». Tras confirmar: «2 en Por conciliar», el cargo con 1 sola aplicación y dos pagos `posible_duplicado` con `parecido_a` = el pago a mano; cada tarjeta dice «Parece el mismo depósito que: Registrado a mano…». El descartado queda `anulado` con 1 evento `descartar_duplicado_cobranza` que nombra el pago parecido; el aplicado deja el cargo `pagado` con 2 aplicaciones; la ficha muestra «Posible duplicado descartado» (r63b-N1) |
+| 17 | Sin JavaScript: configuración, otro contacto y beneficiario, «Guardar la configuración» | `24-sin-javascript-configuracion` | El formulario es `method="post"`; la navegación es un POST y la dirección no lleva la CLABE, el beneficiario ni el contacto; se guarda y la página vuelve con «Quedó asentado» (r63b-N2) |
 
 ## Comando de Fintoc del personal
 
@@ -121,16 +123,25 @@ Unos 120-130 MB son la base del proceso. El tope de RSS ahora lo pone un libro l
 
 **Forma de `transfer.inbound.returned` (r63-N8).** Confirmada este turno contra la documentación oficial vigente de Fintoc (fuentes y citas en `tests/cobranza/fixtures/fintoc/LEEME.md`): el evento lleva como `data` el objeto `transfer` con `status: "returned"` (y `return_reason`); `transfer.inbound.return_failed` lo regresa a `succeeded` y el dinero se queda. Una devolución con cualquier otra forma no se lee: responde 500 `aviso_ilegible`, Fintoc reintenta y no se mueve dinero (probado en Postgres). **Pendiente:** verlo con un evento real del sandbox de Fintoc cuando Gil abra la cuenta.
 
+## Ronda r63b (re-verificación sobre c351463): hallazgo → arreglo → prueba
+
+| id | Arreglo | Prueba (cae con el código de `247f0ef`: `scripts/evidencia/cobranza/resultados-r63b-N1.txt`) |
+|---|---|---|
+| r63b-N1 (P1) | **Una sola regla** en `src/server/cobranza/abonos.ts` (`pagosParecidosDeOtraFuente`), que usan `recibirAbono` (Fintoc, estado de cuenta y demo), el pago manual y la propuesta del estado de cuenta, dentro del candado de la empresa: un abono sin empate por rastreo que coincide con un pago vigente de **otra** fuente en monto, referencia y fecha (±1 día) va a «Por conciliar» como posible duplicado, con el pago parecido (`parecido_a`). **Decisión, sin referencia de un lado:** basta monto y fecha (ante la duda, a «Por conciliar»; nunca se aplica doble). Dos referencias distintas son dos pagos. La referencia de un pago es la que trajo o, si no trajo, la del cargo al que se aplicó (así un pago a mano tiene la de su cargo). **Descartar** = anular con motivo, que la base permite en un automático solo si es posible duplicado (evento `descartar_duplicado_cobranza` con el pago parecido). En la base: `parecido_a` solo en un posible duplicado, de la misma empresa, nunca a sí mismo e inmutable | `cobranza-postgres` (`revision63b`, con cargos que deben el doble: con saldo es cuando se aplicaba dos veces): caso D (Fintoc → estado de cuenta con el rastreo en el concepto), manual → estado de cuenta, estado de cuenta → Fintoc, Fintoc → manual, sin referencia (y aplicarlo a mano) y la carrera Fintoc contra estado de cuenta en dos conexiones (×3): **los seis caen en `247f0ef`**. Controles que se aplican en los dos códigos: a dos días, otro monto y otra referencia. `reglas-base`: seis reglas, y las mutaciones AR7-AR10 de la 0031 caen. e2e 16 clicada (cae en `247f0ef`: proponía «aplicar») |
+| r63b-N2 (P3) | Los 21 formularios de la consola de cobranza llevan `action` (la acción del servidor): sin JavaScript el navegador manda POST (multipart) y la página vuelve con su aviso; nunca un GET con la CLABE, el beneficiario o el contacto en la dirección. `useAccionDeFila` suma `useActionState` para pintar el resultado sin JavaScript. Con JavaScript, `onSubmit` sigue igual | e2e 17 sin JavaScript (cae en `247f0ef`: el formulario no tenía `method`) |
+| r63b-N3 (P3) | Un archivo nuevo sin abonos nuevos responde «No había nada nuevo · Su único abono ya estaba en Lever: no se importó ni se duplicó nada.» (`avisoSinNuevos`), sin «Quedó asentado» | `src/dominio/cobranza/cobranza.test.ts` |
+| r63c-N1 (P3) | El préstamo de TEMP de `reglas-base` se devuelve en un `finally` y después se vuelve a exigir el 42501 | Una sonda forzada a fallar no deja el permiso (`reglas-base`) |
+
 **Gates de la ronda** (este turno, en local):
 
 | Gate | Resultado |
 |---|---|
 | `typecheck` / `lint` / `build` / `security` | Verde |
-| `test` | 555/555 (con `main` integrado) |
+| `test` | 557/557 (con `main` integrado y la ronda r63b) |
 | `test:db` (las 20 pruebas de `pruebas-postgres.sh`, en serie, Postgres 17.9 en 5581), con `main` (#59 y #65) integrado; `definer-search-path` cubre las 21 definers de la 0031 | **87/87** |
 | base-N4 tras la 0029 (#65): la app ya no crea tablas temporales (42501, comprobado); la sonda presta el permiso solo a ella. AR3 (quitar `pg_temp` de las 21) la tumba a ella y a `definer-search-path` | atrapada por las dos |
-| e2e en sus 5 partes (Chromium, como CI), con `main` integrado | 16 + 21 + 13 + 17 + 16 = 83 pasan, 1 omitida (la matriz de evidencia, que corre aparte en los dos navegadores) |
-| Recorrido con capturas | Chromium 15/15, WebKit 15/15 |
+| e2e en sus 5 partes (Chromium, como CI), con `main` integrado y la ronda r63b | 18 + 21 + 13 + 17 + 16 = 85 pasan, 1 omitida (la matriz de evidencia, que corre aparte en los dos navegadores) |
+| Recorrido con capturas | Chromium 17/17, WebKit 17/17 |
 
 **Ojo con el Postgres local.** Un clúster creado con `initdb` y `LC_ALL=C` queda en `SQL_ASCII`; ahí `'DEPÓSITO' ~ '[[:cntrl:]]'` es verdadero y el CHECK `collection_statement_rows_textos` rechaza los conceptos con acentos (la e2e 6 cae con «La base no respondió»). El CI usa `postgres:17` en UTF-8. Para repetir: `initdb -E UTF8 --locale=en_US.UTF-8`.
 
