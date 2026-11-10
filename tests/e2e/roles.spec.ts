@@ -18,7 +18,7 @@ const TITULOS: Record<string, string> = {
   "/consola/personas": "Personas",
   "/consola/poliza": "Póliza contable",
   "/consola/flujo": "Saldo y alertas",
-  "/consola/cobros": "Cobros esperados",
+  "/consola/cobros": "Cobranza",
   "/consola/calendario": "Calendario de obligaciones",
   "/consola/presupuestos": "Presupuestos",
   "/consola/configuracion": "Configuración",

@@ -6,6 +6,7 @@ import { Client } from "pg";
 
 import { iniciarBlobLocal, type BlobLocal } from "./blob-local/servidor";
 import { sembrarRecorridos } from "./siembra";
+import { sembrarCobranza } from "./siembra-cobranza";
 
 import { hoyEnMexico } from "../../src/dominio/personas";
 import { cerrarConexion } from "../../src/nucleo/db";
@@ -72,6 +73,8 @@ export async function iniciarEntorno(): Promise<void> {
     delete process.env.CORREO_REMITENTE;
     // Llave TOTP de esta corrida: la siembra cifra las semillas con ella y el servidor las lee.
     process.env.AUTENTICACION_LLAVE_TOTP = randomBytes(32).toString("base64url");
+    // Secreto de las tareas de esta corrida: la e2e de cobranza llama a /tareas/cobranza como el cron de Vercel.
+    process.env.CRON_SECRET = randomBytes(32).toString("base64url");
     ejecutar(owner, `
       insert into users (id, nombre, correo, password_hash)
         values ('99999999-9999-4999-8999-999999999999', 'Personal E2E', 'personal-e2e@ejemplo.mx', '$2b$12$${"a".repeat(53)}');
@@ -108,6 +111,7 @@ export async function iniciarEntorno(): Promise<void> {
     process.env.E2E_ADMIN_ID = invitacion.emitida.userId;
     process.env.E2E_TODAY = hoyEnMexico(new Date());
     await sembrarRecorridos(owner);
+    await sembrarCobranza();
     await cerrarConexion();
     await levantarBlobLocal();
     await levantarServidor();
