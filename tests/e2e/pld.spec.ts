@@ -100,6 +100,13 @@ test("una clave repetida en la dirección no tumba ninguna página de PLD", asyn
     const respuesta = await page.goto(`${ruta}?aviso=a&aviso=b&en=x&en=y`);
     expect(respuesta?.status(), ruta).toBe(200);
     await expect(page.locator("h1"), ruta).toBeVisible();
+    // Las llaves que trae todo objeto de JavaScript no son avisos: ni 500 ni el texto de una función en la página.
+    for (const clave of ["constructor", "__proto__", "toString"]) {
+      const conClave = await page.goto(`${ruta}?aviso=${clave}`);
+      expect(conClave?.status(), `${ruta} ?aviso=${clave}`).toBe(200);
+      await expect(page.locator("h1"), `${ruta} ?aviso=${clave}`).toBeVisible();
+      await expect(page.locator("main"), `${ruta} ?aviso=${clave}`).not.toContainText(/\[native code\]|\[object Object\]|function /);
+    }
   }
   expect(errores).toEqual([]);
 });
