@@ -27,7 +27,7 @@ type Accion = (previo: EstadoFlujo, datos: FormData) => Promise<EstadoFlujo>;
  * asentado. El formulario se ubica por su id (sin ref: el compilador de React
  * no deja leer refs durante el render).
  */
-function useFormulario(accion: Accion, idPropio?: string) {
+export function useFormulario(accion: Accion, idPropio?: string) {
   const [estado, despachar, pendiente] = useActionState(accion, ESTADO_FLUJO_INICIAL);
   const generado = useId();
   const idForma = idPropio ?? generado;
@@ -62,7 +62,7 @@ export function AvisosDeLista({ children }: { children: ReactNode }) {
 }
 
 /** Acción de una fila: los errores se quedan en su diálogo; lo asentado cierra el diálogo y se avisa en la lista. */
-function useAccionDeFila(accion: Accion, idForma: string, alAsentar: () => void) {
+export function useAccionDeFila(accion: Accion, idForma: string, alAsentar: () => void) {
   const avisar = use(AvisarEnLista);
   if (!avisar) throw new Error("Las acciones de fila van dentro de <AvisosDeLista>.");
   const [estado, setEstado] = useState<EstadoFlujo>(ESTADO_FLUJO_INICIAL);
@@ -103,7 +103,7 @@ export function AvisoFlujo({ estado }: { estado: EstadoFlujo }) {
   return null;
 }
 
-function Campo({ id, etiqueta, pista, error, children }: { id: string; etiqueta: string; pista?: string; error?: string; children: ReactNode }) {
+export function Campo({ id, etiqueta, pista, error, children }: { id: string; etiqueta: string; pista?: string; error?: string; children: ReactNode }) {
   return (
     <div className="campo">
       <label htmlFor={id}>{etiqueta}</label>
@@ -120,11 +120,11 @@ function Campo({ id, etiqueta, pista, error, children }: { id: string; etiqueta:
  * `key` se monta de nuevo cuando la página trae un id nuevo, y `reset()` lo
  * conserva.
  */
-function IdDeAlta({ id }: { id: string }) {
+export function IdDeAlta({ id }: { id: string }) {
   return <input key={id} type="hidden" name="altaId" defaultValue={id} />;
 }
 
-function describe(id: string, error?: string, pista = false): string | undefined {
+export function describe(id: string, error?: string, pista = false): string | undefined {
   const ids = [pista ? `${id}-pista` : "", error ? `${id}-error` : ""].filter(Boolean);
   return ids.length > 0 ? ids.join(" ") : undefined;
 }
