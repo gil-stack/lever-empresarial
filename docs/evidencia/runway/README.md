@@ -2,7 +2,7 @@
 
 Los 10 flujos del runway, clicados con Playwright contra `next build` + `next start`, sobre una base recién migrada y sembrada. Las aserciones de base van dentro de cada flujo: si una falla, la prueba se detiene. Son `tests/e2e/runway.spec.ts`, que también corre en CI en la parte que le toca de `test:e2e`.
 
-- Ronda r64 (2026-11-10, head con el #63 integrado): Chromium 11 de 11 y WebKit 11 de 11, con capturas (la 10 es la matriz de temas, que solo corre con capturas).
+- Ronda r64 (2026-11-10, con el #63 y `main` integrados): Chromium 11 de 11 y WebKit 11 de 11, con capturas (la 10 es la matriz de temas, que solo corre con capturas).
 
 La salida literal de las tres corridas está en [corridas.txt](corridas.txt). El rendimiento (p95 de la página por HTTP y la tarea con 1,000 empresas, con EXPLAIN) está en [rendimiento.md](rendimiento.md).
 
@@ -92,7 +92,7 @@ Revisión: `revision-64.md` y `hallazgos-64-para-6a.md` (head `504e9bc`). Antes 
 
 **Gráfica de tendencia (pendiente del revisor de servidor).** La prueba 10 recorre Saldo y alertas con la tendencia de 3 fotos en los 3 temas, a 1440 y a 390: axe sin violaciones y sin desplazamiento horizontal, en Chromium y en WebKit; la tabla equivalente se abre en el flujo 6.
 
-**Gates de la ronda** (en local, este turno): typecheck, lint, build y security en verde; test 508/508; test:db 41/43 (las 2 heredadas de `main` con `invitacion_vencida`); e2e en sus 3 partes 22 + 19 + 17 = 58 y 2 omitidas (las matrices de evidencia); recorrido Chromium 11/11 y WebKit 11/11.
+**Gates de la ronda** (en local, este turno, con el #63 y `main` con el #59 integrados): typecheck, lint, build y security en verde; test 590/590; test:db 86/86; e2e en sus 5 partes 22 + 15 + 24 + 15 + 17 = 93 y 2 omitidas (las matrices de evidencia); recorrido Chromium 11/11 y WebKit 11/11 (capturas regeneradas después del merge, con el `Referrer-Policy: same-origin` global en el flujo 5 sin JavaScript).
 
 ## Hallazgo: formularios sin JavaScript y `Referrer-Policy: no-referrer`
 
