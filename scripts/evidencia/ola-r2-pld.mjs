@@ -155,13 +155,16 @@ async function totp(quien) {
 
 // ---------- Navegador ----------
 const abiertos = new Set();
-async function abrir(quien, { tema = "oscuro", ancho = 1440 } = {}) {
+async function abrir(quien, { tema = "oscuro", ancho = 1440, sinCsp = false } = {}) {
   const nav = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
   abiertos.add(nav);
   const movil = ancho < 600;
   const ctx = await nav.newContext({
     viewport: { width: ancho, height: movil ? 844 : 900 }, isMobile: movil, hasTouch: movil, deviceScaleFactor: 1,
     reducedMotion: "reduce", locale: "es-MX", timezoneId: "America/Mexico_City", acceptDownloads: true,
+    // Solo el contraste: inyecta estilos para medir el fondo de cada texto, y la CSP con nonce del #62 los bloquea.
+    // Los flujos y las pantallas corren con la CSP real y la consola debe quedar limpia.
+    bypassCSP: sinCsp,
   });
   const host = new URL(BASE).hostname;
   await ctx.addCookies([
@@ -198,7 +201,7 @@ async function foto(p, nombre, completa = true) {
   numero += 1;
   const ruta = `${DIR}/capturas/${String(numero).padStart(2, "0")}-${nombre}.webp`;
   mkdirSync(`${DIR}/capturas`, { recursive: true });
-  await p.addStyleTag({ content: "nextjs-portal { display: none !important; }" }).catch(() => {});
+  // Sin <style> inyectado: con next start no hay overlay de desarrollo, y la CSP del #62 lo bloquearía.
   await p.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur()).catch(() => {});
   await p.waitForTimeout(350);
   let imagen;
@@ -1394,7 +1397,7 @@ async function contraste() {
       for (const pantalla of PANTALLAS()) {
         renovarSesiones();
         factor(E.IDS.celia, 0);
-        const { nav, p } = await abrir(pantalla.quien, { tema, ancho });
+        const { nav, p } = await abrir(pantalla.quien, { tema, ancho, sinCsp: true });
         await ir(p, pantalla.ruta);
         await p.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
         await p.waitForTimeout(300);
@@ -1533,7 +1536,8 @@ async function flujo15() {
     return enviar(c, c.getByRole("button", { name: "Subir acta firmada" }), null);
   };
   const subirOculta = await subirA(oculta.id);
-  const estadoOculta = await c.evaluate(() => document.title);
+  let estadoOculta = "";
+  await hasta(async () => (estadoOculta = await c.evaluate(() => document.title)) !== "");
   const subirInexistente = await subirA(inexistente);
   let estadoInexistente = "";
   const mismoTitulo = await hasta(async () => (estadoInexistente = await c.evaluate(() => document.title)) === estadoOculta);

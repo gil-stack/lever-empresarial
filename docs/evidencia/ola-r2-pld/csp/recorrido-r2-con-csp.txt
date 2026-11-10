@@ -1,0 +1,26 @@
+Recorrido R2 con la CSP con nonce del #62 (9edb4e5 integrado).
+
+--- primera corrida: la consola de Ana anota una violación de style-src
+Error: FALLO consola limpia en la sesión de Ana · consola Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'nonce-KWOCfCkOu/2l/9AsD2xDbg==''. Either the 'unsafe-inline' keyword, a hash ('sha256-ggU06W4xbm/vgA5Ix4yAjqmtm+sg8taNqhKX7qQotpM='), or a non
+El hash de la violación es el del <style> que inyectaba el propio guion en foto():
+ggU06W4xbm/vgA5Ix4yAjqmtm+sg8taNqhKX7qQotpM=
+Arreglo del guion (no de la app): foto() ya no inyecta ese estilo (con next start no hay overlay de desarrollo) y solo el contraste abre su navegador con bypassCSP, porque tapa texto con estilos para medir el fondo. Flujos y pantallas corren con la CSP real y la consola limpia.
+
+--- f15 leía el título de la primera página antes del repintado («»); ahora espera uno no vacío
+Error: FALLO 15. subir un acta a la sesión oculta: sesion_no_existe y la misma página que con una inexistente · sesion_no_existe / sesion_no_existe · «» / «Sesión del Comité · Operación · Lever Empresas»
+
+--- desde cero, con la CSP
+preparar=0
+f1,f2,f3,f4,f5,f6,f7 salida=0 164 comprobaciones en verde, 0 en rojo.
+f8,f9,f10,f11,f12,f13,f14 salida=0 198 comprobaciones en verde, 0 en rojo.
+f15 salida=0 32 comprobaciones en verde, 0 en rojo.
+f16 salida=0 19 comprobaciones en verde, 0 en rojo.
+f17 salida=0 9 comprobaciones en verde, 0 en rojo.
+f18 salida=0 16 comprobaciones en verde, 0 en rojo.
+
+pantallas: 180 comprobaciones en verde, 0 en rojo.
+contraste (bypassCSP solo aquí): 6 comprobaciones en verde, 0 en rojo.
+
+--- R1 (guion del #59, sin tocar) con la CSP: mismo efecto del guion
+156 comprobaciones en verde, 1 en rojo (el recorrido se detuvo).
+FALLO consola del navegador limpia en todos los flujos · ofelia: consola Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'nonce-gwEQkl5BriRSyP5jIy9OCA==''. Either the 'unsafe-inline' keyword, a hash ('sha256-ggU06W4xbm/vgA5Ix4yAjqmtm+sg8taNqhKX7qQotpM

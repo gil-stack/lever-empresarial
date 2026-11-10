@@ -1,4 +1,4 @@
-{"manifiesto":"conservacion-61a","empresa":"33333333-3333-4333-8333-333333333333","desde":"2025-11-10","hasta":"2026-11-10","pagina":1,"generado_en":"2026-11-10T15:12:40.713Z","nota":"Conteos de filas por tabla y huella SHA-256 de cada documento. El destino de la exportación de 10 años está pendiente."}
+{"manifiesto":"conservacion-61a","empresa":"33333333-3333-4333-8333-333333333333","desde":"2025-11-10","hasta":"2026-11-10","pagina":1,"generado_en":"2026-11-10T16:38:38.170Z","nota":"Conteos de filas por tabla y huella SHA-256 de cada documento. El destino de la exportación de 10 años está pendiente."}
 {"tabla":"supplier_payment_requests","filas":4}
 {"tabla":"supplier_payment_request_history","filas":4}
 {"tabla":"payroll_batches","filas":1}
@@ -21,5 +21,5 @@
 {"tabla":"pld_dictamenes","filas":2}
 {"tabla":"pld_reportes","filas":1}
 {"tabla":"audit_log","filas":81}
-{"documento":"464d4fc9-5b9f-4d68-ae80-342e4b6c0281","origen":"pld_documentos","cargado_en":"2026-11-10T15:10:12.463Z","nombre":"contrato-suministro.pdf","sha256":"b04f83905a009b6f8cbd7657345911f17686a5093cb73819ebf0858477761db2","ruta":"pld/67255bef-4e72-41aa-b704-1e85f5ce4e8c/aace1868-b143-409d-95ee-37c39d38713e/464d4fc9-5b9f-4d68-ae80-342e4b6c0281-eaba4eba.pdf","bytes":162}
+{"documento":"3cfda13b-8ed0-43c8-af89-fc5078a413d7","origen":"pld_documentos","cargado_en":"2026-11-10T16:35:06.396Z","nombre":"contrato-suministro.pdf","sha256":"b04f83905a009b6f8cbd7657345911f17686a5093cb73819ebf0858477761db2","ruta":"pld/17bac6a2-4057-4314-bafb-1f4d9912b908/26a9e20d-995d-4cad-828f-8bc8a839318b/3cfda13b-8ed0-43c8-af89-fc5078a413d7-0fa50512.pdf","bytes":162}
 {"fin_de_pagina":1,"documentos":1,"siguiente":null}
