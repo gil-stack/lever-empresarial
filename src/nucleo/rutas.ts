@@ -252,6 +252,12 @@ export const RUTAS = [
   { patron: "/operacion/bitacora", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/recuperaciones", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/precios", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  // Ola R1: alta regulada.
+  { patron: "/operacion/personal", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/cumplimiento", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/lpb", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/clientes/[id]/expediente", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/clientes/[id]/expediente/documento/[documentoId]", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
 ] as const satisfies readonly Ruta[];
 
 export type PatronDeRuta = (typeof RUTAS)[number]["patron"];

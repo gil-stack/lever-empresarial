@@ -11,7 +11,7 @@ import { hoyEnMexico } from "../../src/dominio/personas.ts";
 import type { ContextoConEmpresa } from "../../src/nucleo/contexto.ts";
 import { cerrarConexion } from "../../src/nucleo/db.ts";
 import { auditar } from "../../src/server/bitacora/auditar.ts";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
 import type { MensajeCorreo } from "../../src/server/correo/tipos.ts";
 import { correrAlertasDeCaja } from "../../src/server/flujo/alertas-caja.ts";
 import { configurarMesesMinimos } from "../../src/server/flujo/runway.ts";
@@ -79,8 +79,8 @@ const contar = (url: string, sql: string) => uno<{ n: number }>(url, `select cou
 async function sembrar(url: string): Promise<{ ids: Ids; admin: ContextoConEmpresa }> {
   sembrarPersonal(url);
   const personal = await contextoDePersonal("personal-cobranza@ejemplo.mx");
-  const alfa = await darDeAltaEmpresa(personal, { rfc: "TCM010101AB1", razonSocial: "Alfa Reglas Runway", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
-  const beta = await darDeAltaEmpresa(personal, { rfc: "CABL840215RF4", razonSocial: "Beta Reglas Runway", codigoPostal: "44100", regimen: "612", usoCfdi: "G03" }, { demostracion: false });
+  const alfa = await darDeAltaComoDuena(url, personal, { rfc: "TCM010101AB1", razonSocial: "Alfa Reglas Runway", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  const beta = await darDeAltaComoDuena(url, personal, { rfc: "CABL840215RF4", razonSocial: "Beta Reglas Runway", codigoPostal: "44100", regimen: "612", usoCfdi: "G03" }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
   const [admin] = await administrador(url, personal, alfa, "admin-alfa-reglas-runway@ejemplo.mx");
   await administrador(url, personal, beta, "admin-beta-reglas-runway@ejemplo.mx");
   const centro = await nombrarCentro(admin, { nombre: "Operación" }, { ahora: HOY });

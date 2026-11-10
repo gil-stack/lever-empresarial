@@ -72,6 +72,9 @@ export async function emitirEnTransaccion(
     correo: string;
     destino: Destino;
     ahora: Date;
+    /** La conexión que corrió el comando de la dueña (session_user) y el correo de quien lo corrió. */
+    ejecutadoPor?: string;
+    corridoPor?: string;
   },
 ): Promise<InvitacionEmitida> {
   const existente = await consulta.query(SQL.usuarioPorCorreo, [entrada.correo]);
@@ -109,7 +112,11 @@ export async function emitirEnTransaccion(
     await auditar(consulta, actor, {
       accion: "alta_personal",
       identificador: userId,
-      cambio: { rol: entrada.destino.roles.join(",") },
+      cambio: {
+        rol: entrada.destino.roles.join(","),
+        ...(entrada.ejecutadoPor ? { ejecutado_por: entrada.ejecutadoPor } : {}),
+        ...(entrada.corridoPor ? { corrido_por: entrada.corridoPor } : {}),
+      },
     });
   }
 
@@ -121,6 +128,8 @@ export async function emitirEnTransaccion(
     correo: entrada.correo,
     roles: entrada.destino.roles,
     ahora: entrada.ahora,
+    ejecutadoPor: entrada.ejecutadoPor,
+    corridoPor: entrada.corridoPor,
   });
 }
 
@@ -136,6 +145,9 @@ export async function emitirToken(
     correo: string;
     roles: readonly (RolCliente | RolPlataforma)[];
     ahora: Date;
+    /** Solo el comando de la dueña: la conexión (session_user) y el correo de quien lo corrió. */
+    ejecutadoPor?: string;
+    corridoPor?: string;
   },
 ): Promise<InvitacionEmitida> {
   await consulta.query(SQL.revocarPendientes, [entrada.userId, entrada.companyId]);
@@ -156,7 +168,12 @@ export async function emitirToken(
   await auditar(consulta, actor, {
     accion: "emitir_invitacion",
     identificador: id,
-    cambio: { roles: entrada.roles.join(","), expira_en: expiraEn.toISOString() },
+    cambio: {
+      roles: entrada.roles.join(","),
+      expira_en: expiraEn.toISOString(),
+      ...(entrada.ejecutadoPor ? { ejecutado_por: entrada.ejecutadoPor } : {}),
+      ...(entrada.corridoPor ? { corrido_por: entrada.corridoPor } : {}),
+    },
   });
   return {
     invitacionId: id,

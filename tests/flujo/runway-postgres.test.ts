@@ -10,7 +10,7 @@ import { baseCliente, type ContextoConEmpresa } from "../../src/nucleo/contexto.
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
 import { auditar } from "../../src/server/bitacora/auditar.ts";
 import { configurarCobranza, darDeAltaCliente, type DependenciasCobranza } from "../../src/server/cobranza/servicio.ts";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
 import { ErrorDeCorreo } from "../../src/server/correo/errores.ts";
 import type { MensajeCorreo } from "../../src/server/correo/tipos.ts";
 import { correrAlertasDeCaja } from "../../src/server/flujo/alertas-caja.ts";
@@ -76,10 +76,10 @@ function buzon() {
 async function escenario(url: string): Promise<void> {
   sembrarPersonal(url);
   const personal = await contextoDePersonal("personal-runway@ejemplo.mx");
-  const alfa = await darDeAltaEmpresa(personal, { rfc: "TCM010101AB1", razonSocial: "Alfa Runway", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
-  const beta = await darDeAltaEmpresa(personal, { rfc: "CABL840215RF4", razonSocial: "Beta Sin Saldo", codigoPostal: "44100", regimen: "612", usoCfdi: "G03" }, { demostracion: false });
-  const gamma = await darDeAltaEmpresa(personal, { rfc: "GAM010101AB1", razonSocial: "Gamma Planes", codigoPostal: "64000", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
-  const demo = await darDeAltaEmpresa(personal, { rfc: "MOT970101AA1", razonSocial: "Demo Runway", codigoPostal: "64000", regimen: "601", usoCfdi: "G03" }, { demostracion: true });
+  const alfa = await darDeAltaComoDuena(url, personal, { rfc: "TCM010101AB1", razonSocial: "Alfa Runway", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  const beta = await darDeAltaComoDuena(url, personal, { rfc: "CABL840215RF4", razonSocial: "Beta Sin Saldo", codigoPostal: "44100", regimen: "612", usoCfdi: "G03" }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  const gamma = await darDeAltaComoDuena(url, personal, { rfc: "GAM010101AB1", razonSocial: "Gamma Planes", codigoPostal: "64000", regimen: "601", usoCfdi: "G03" }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  const demo = await darDeAltaComoDuena(url, personal, { rfc: "MOT970101AA1", razonSocial: "Demo Runway", codigoPostal: "64000", regimen: "601", usoCfdi: "G03" }, { demostracion: true, corridoPor: "pruebas@ejemplo.mx" });
   const [admin] = await administrador(url, personal, alfa, "admin-alfa-runway@ejemplo.mx");
   const [adminBeta] = await administrador(url, personal, beta, "admin-beta-runway@ejemplo.mx");
   const [adminGamma, sesionGamma] = await administrador(url, personal, gamma, "admin-gamma-runway@ejemplo.mx");

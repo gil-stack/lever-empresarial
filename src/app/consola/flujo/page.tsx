@@ -11,14 +11,7 @@ import { leerVistaSaldo, type VistaSaldo } from "@/server/flujo/servicio";
 import { ErrorDeDominio } from "@/server/session";
 
 export const runtime = "nodejs";
-/**
- * El mínimo de meses funciona sin JavaScript: el formulario va directo a la acción
- * del servidor. Con la política global «no-referrer» el navegador manda
- * `Origin: null` en ese envío y Next lo rechaza (bien: nunca se acepta un origen
- * opaco). Esta página pide «same-origin»: el envío a la propia aplicación lleva su
- * origen y a otros sitios no sale nada.
- */
-export const metadata: Metadata = { title: "Saldo y alertas", referrer: "same-origin" };
+export const metadata: Metadata = { title: "Saldo y alertas" };
 
 export default async function PaginaFlujo() {
   const apertura = await abrirRuta("/consola/flujo");

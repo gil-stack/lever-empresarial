@@ -1,0 +1,9 @@
+# Expediente de Novena con aviso=archivo_demasiado_grande&en=documentos-titulo, código de esta ronda antes del arreglo de `fallo`: el fragmento le quita el autofocus al campo al cargar la página completa.
+js=false fragmento=#documentos-titulo: foco en #doc-archivo 0 · campos con autofocus 1
+js=false fragmento=(ninguno): foco en #doc-archivo 1 · campos con autofocus 1
+js=true fragmento=#documentos-titulo: foco en #doc-archivo 0 · campos con autofocus 1
+js=true fragmento=(ninguno): foco en #doc-archivo 1 · campos con autofocus 1
+
+# El envío real sin JavaScript (PDF de 4 MiB + 64 KiB) y con JavaScript (el navegador lo frena):
+{"js":false,"status":303,"origen":"http://localhost:4811","url":"http://localhost:4811/operacion/clientes/<novena>/expediente?aviso=archivo_demasiado_grande&en=documentos-titulo#documentos-titulo","invalido":"true","describe":"aviso-operacion","autofocus":"","foco":0,"activo":[]}
+{"js":true,"url":"http://localhost:4811/operacion/clientes/<novena>/expediente","invalido":"true","describe":"doc-archivo-error","autofocus":null,"foco":1,"activo":["doc-archivo"]}

@@ -302,8 +302,9 @@ describe("entradas", () => {
     assert.equal(unico.ok && unico.valor.concepto, "Uno Dos Tres");
     const editado = validarPlanEditado({ concepto: "Renta\r\n\r\nde bodega", monto: "1", fin: "" }, { tipo: "fijo", primerVencimiento: "2027-01-31" });
     assert.equal(editado.ok && editado.valor.concepto, "Renta de bodega");
-    // Otro control (un tabulador vertical) se sigue rechazando.
-    assert.equal(validarCargoUnico({ concepto: "Uno\u000bDos", monto: "1", vencimiento: "2027-01-31" }, HOY).ok, false);
+    // Desde el #59 la regla es de todos los textos libres (sinControles): cualquier control vale un espacio.
+    const tab = validarCargoUnico({ concepto: "Uno\u000bDos", monto: "1", vencimiento: "2027-01-31" }, HOY);
+    assert.equal(tab.ok && tab.valor.concepto, "Uno Dos");
   });
 
   it("los correos no aceptan saltos de línea ni encabezados escondidos", () => {

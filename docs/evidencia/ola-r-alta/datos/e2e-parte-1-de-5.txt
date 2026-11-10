@@ -1,0 +1,56 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+  [90m 7 |[0m [90m * ejecuta y el servidor no migra al arrancar.[0m
+  [90m 8 |[0m [90m */[0m
+[33m[1m>[0m [90m 9 |[0m [36mexport[0m [36mconst[0m [33mCONTRATO_TABLAS[0m = readFileSync(rutaDelContrato(), [32m"utf8"[0m);
+  [90m   |[0m                                [33m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m10 |[0m
+  [90m11 |[0m [36mfunction[0m rutaDelContrato(): string {
+  [90m12 |[0m   [36mtry[0m {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 3 s
+
+Running 14 tests using 1 worker, shard 1 of 5
+
+  ✓   1 tests/e2e/entrada.spec.ts:17:5 › entra con contraseña y código TOTP: doble clic abre una sola entrada y una sola sesión (1.7s)
+[tope] diferencias en el servidor (ms): 0, 2, 0, 0, 2, 0, 1, 0, 0 · mediana 0
+  ✓   2 tests/e2e/entrada.spec.ts:68:5 › el tope de intentos no revela si el correo tiene cuenta: mismo texto y mismo tiempo (28.8s)
+  ✓   3 tests/e2e/flujo-de-caja.spec.ts:43:5 › saldo declarado: doble clic deja una sola declaración y Inicio dice de dónde viene (1.3s)
+  ✓   4 tests/e2e/flujo-de-caja.spec.ts:65:5 › cobro esperado y cobro con XML: cada doble clic deja un solo cobro (1.3s)
+  ✓   5 tests/e2e/flujo-de-caja.spec.ts:116:5 › obligación recurrente con doble clic y presupuesto al 80 % y al 100 % en Presupuestos, Inicio y Pendientes (3.9s)
+  ✓   6 tests/e2e/flujo-de-caja.spec.ts:160:5 › escenario «mover pago»: la semana cambia en pantalla y la base no (1.6s)
+  ✓   7 tests/e2e/flujo-de-caja.spec.ts:199:5 › faltante: con poco saldo, Inicio y Pendientes avisan en qué semana (1.9s)
+  ✓   8 tests/e2e/flujo-de-caja.spec.ts:226:5 › nómina de una sola persona: finanzas ve «Monto reservado» y administración ve el monto (1.1s)
+  ✓   9 tests/e2e/invitacion.spec.ts:31:5 › invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta (5.9s)
+  ✓  10 tests/e2e/invitacion.spec.ts:117:5 › recuperar la contraseña por correo: un enlace, cierra las sesiones y entra con la nueva y su factor de siempre (6.1s)
+  ✓  11 tests/e2e/marco.spec.ts:17:7 › marco de la consola en escritorio › menú de la persona: cuatro opciones fuera del Tab; Tab y Escape cierran y regresan el foco al botón (1.1s)
+  ✓  12 tests/e2e/marco.spec.ts:43:7 › marco de la consola en escritorio › el buscador de la barra lleva a su sección con lo escrito (1.1s)
+  ✓  13 tests/e2e/marco.spec.ts:52:7 › marco de la consola en escritorio › Apariencia: con sesión y empresa se abre; sin sesión manda a entrar; otra empresa no la muestra (1.5s)
+  ✓  14 tests/e2e/marco.spec.ts:71:7 › cajón móvil › sin checkVisibility (Safari < 17.4): abre, atrapa el foco, deja el fondo inert; Escape y el velo regresan el foco (655ms)
+
+  14 passed (1.1m)
+[e2e] recorridos terminados con estado 0 · 14 pruebas corridas · 67 s

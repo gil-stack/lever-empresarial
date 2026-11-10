@@ -4,6 +4,7 @@ import type { ContextoConEmpresa, ContextoDePersonal, ContextoDeTenant } from ".
 import type { Consulta } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { contieneMaterialProhibido } from "./material";
+import { CONTROL } from "../../dominio/control";
 
 /**
  * La única función que escribe la bitácora. Cada acción viene de un catálogo
@@ -11,7 +12,7 @@ import { contieneMaterialProhibido } from "./material";
  * rechaza: la defensa es la forma fija del evento, no un recorrido de patrones.
  */
 export const CATALOGO = {
-  alta_empresa: { entidad: "companies", cambio: ["demostracion"] },
+  alta_empresa: { entidad: "companies", cambio: ["demostracion", "ejecutado_por", "corrido_por"] },
   alta_centro_costo: { entidad: "cost_centers", cambio: ["presupuesto_centavos", "es_tesoreria"] },
   editar_area: {
     entidad: "cost_centers",
@@ -110,10 +111,10 @@ export const CATALOGO = {
   publicar_precio: { entidad: "platform_pricing", cambio: ["centavos"] },
   aceptar_suscripcion: { entidad: "subscriptions", cambio: [] },
   cargar_lista_69b: { entidad: "lista_69b_snapshots", cambio: ["fecha_archivo", "contribuyentes"] },
-  emitir_invitacion: { entidad: "invitations", cambio: ["roles", "expira_en"] },
+  emitir_invitacion: { entidad: "invitations", cambio: ["roles", "expira_en", "ejecutado_por", "corrido_por"] },
   revocar_invitacion: { entidad: "invitations", cambio: [] },
   aceptar_invitacion: { entidad: "invitations", cambio: [] },
-  alta_personal: { entidad: "platform_staff", cambio: ["rol"] },
+  alta_personal: { entidad: "platform_staff", cambio: ["rol", "ejecutado_por", "corrido_por"] },
   entrada: { entidad: "sessions", cambio: [] },
   segundo_factor: { entidad: "sessions", cambio: ["metodo"] },
   salida: { entidad: "sessions", cambio: [] },
@@ -282,7 +283,7 @@ export function preparar(actor: Actor, hecho: Hecho): unknown[] {
   }
   if (actor.origen !== null && !ORIGEN.test(actor.origen)) throw new ErrorDeDominio("auditoria_no_disponible");
   const motivo = hecho.motivo?.trim() ? hecho.motivo.trim() : null;
-  if (motivo && (motivo.length > 500 || /[\u0000-\u001f\u007f]/.test(motivo) || contieneMaterialProhibido(motivo))) {
+  if (motivo && (motivo.length > 500 || CONTROL.test(motivo) || contieneMaterialProhibido(motivo))) {
     throw new ErrorDeDominio("auditoria_no_disponible");
   }
   const cambio = cambioPermitido(regla.cambio, hecho.cambio ?? null);

@@ -3,7 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { hoyEnMexico } from "../../src/dominio/personas";
 import type { ContextoConEmpresa } from "../../src/nucleo/contexto";
 import { capturarMontoVariable, configurarCobranza, darDeAltaCliente, type DependenciasCobranza } from "../../src/server/cobranza/servicio";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio";
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena";
 import { declararSaldo, marcarCobrado, registrarCobro, registrarObligacion } from "../../src/server/flujo/servicio";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio";
 import { darDeAltaPersona, nombrarCentro } from "../../src/server/personas/servicio";
@@ -71,7 +71,7 @@ export async function sembrarRunway(owner: string): Promise<void> {
   }
 
   async function empresa(rfc: string, razonSocial: string, demostracion: boolean, nombre: string, correo: string): Promise<[string, ContextoConEmpresa, Sesion]> {
-    const alta = await darDeAltaEmpresa(personal, { rfc, razonSocial, codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion });
+    const alta = await darDeAltaComoDuena(owner, personal, { rfc, razonSocial, codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion, corridoPor: "pruebas@ejemplo.mx" });
     const invitada = await invitarAdministrador(personal, { companyId: alta.id, razonSocial: alta.razonSocial, nombre, correo });
     await aceptarInvitacion({ token: invitada.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
     const [ctx, sesion] = await sesionDe(invitada.emitida.userId, alta.id);

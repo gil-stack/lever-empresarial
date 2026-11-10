@@ -5,6 +5,7 @@ import { describe, it } from "node:test";
 import { decodificarListado, leerListado69b } from "./lista-69b.ts";
 import {
   decidirPago,
+  validarConstancia,
   erroresDeAltaProveedor,
   horaDeLectura,
   mensajeDeAlta,
@@ -169,5 +170,17 @@ describe("la pantalla no mezcla la consola con el teléfono", () => {
     // La puerta del alta ya recorre estos archivos. Aquí no se escribe el
     // nombre del connection string: no es un secreto y no hace falta esconderlo.
     assert.doesNotMatch(forma, /SPEI|Pagar ahora|BLOB_READ_WRITE_TOKEN/);
+  });
+});
+
+describe("bar-6: el nombre de la constancia cabe en la base", () => {
+  it("cortado a 180 caracteres no termina en espacio (CHECK `documents_nombre_presente`)", () => {
+    const pdf = new TextEncoder().encode(`%PDF-1.4\n${"0".repeat(80)}\n%%EOF\n`);
+    const nombre = `${"a".repeat(179)} ${"b".repeat(21)}.pdf`;
+    const leida = validarConstancia({ nombre, bytes: pdf });
+    assert.ok(leida.ok);
+    if (!leida.ok) return;
+    assert.equal(leida.nombre, "a".repeat(179));
+    assert.equal(leida.nombre, leida.nombre.trim());
   });
 });

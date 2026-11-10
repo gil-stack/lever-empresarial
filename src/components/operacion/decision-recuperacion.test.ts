@@ -3,13 +3,13 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "node:test";
 
+import type { EstadoDelFormulario } from "../../app/operacion/rechazo.ts";
 import { DecisionRecuperacion } from "./decision-recuperacion.tsx";
 
-const pintar = (props: Partial<Parameters<typeof DecisionRecuperacion>[0]> = {}) =>
-  renderToStaticMarkup(
-    createElement(DecisionRecuperacion, { id: "r1", accion: async () => {}, errorMetodo: {}, errorNota: {}, ...props }),
-  );
+const pintar = () => renderToStaticMarkup(createElement(DecisionRecuperacion, { id: "r1", accion: async (previo: EstadoDelFormulario) => previo }));
 
+// El error del servidor por tarjeta (el método o la nota, con lo escrito de vuelta) lo prueba la e2e «con tres
+// recuperaciones pendientes…», con y sin JavaScript: desde la doceava revisión el aviso vuelve en el estado del formulario.
 describe("decisión de una recuperación", () => {
   it("el método arranca sin elegir y aprobar lo exige", () => {
     const html = pintar();
@@ -30,13 +30,7 @@ describe("decisión de una recuperación", () => {
     assert.doesNotMatch(html, /<button[^>]*value="aprobar"[^>]*formNoValidate/);
   });
 
-  it("el error del servidor marca el campo que lo causó", () => {
-    const marca = { "aria-invalid": true, "aria-describedby": "aviso-operacion" } as const;
-    const conNota = pintar({ errorNota: marca });
-    assert.match(conNota, /<textarea[^>]*aria-invalid="true"[^>]*aria-describedby="aviso-operacion"/);
-    assert.doesNotMatch(conNota, /<select[^>]*aria-invalid/);
-    const conMetodo = pintar({ errorMetodo: marca });
-    assert.match(conMetodo, /<select[^>]*aria-invalid="true"[^>]*aria-describedby="aviso-operacion"/);
-    assert.doesNotMatch(conMetodo, /<textarea[^>]*aria-invalid/);
+  it("sin rechazo no hay aviso, ni campo marcado, ni mensaje", () => {
+    assert.doesNotMatch(pintar(), /error-campo|aria-invalid|operacion-aviso/);
   });
 });

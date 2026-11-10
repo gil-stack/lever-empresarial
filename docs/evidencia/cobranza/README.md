@@ -95,7 +95,7 @@ Revisiones: `revision-63.md` (servidor y base, head `1340576`). Cada arreglo tie
 | r63-N6 un XLSX chico lleva el lector a ~1 GB | Tope por parte al inflar (10 MB hoja y textos, 1 MB el resto) y conteo de `<row>`, `<c>` y `<si>` antes del parser | `estado-cuenta.test.ts` (bomba, tres hojas, conteos) y la medición de abajo | `N6` |
 | r63-N7 aviso a una cuenta no registrada se pierde | Queda en `collection_unrouted_events`; el personal lo lista con `avisos:sin-destino` | `cobranza-postgres` (guardado, repetido, lectura del personal, una empresa no lo lee), el comando arriba | `N7` |
 | r63-N8 `transfer.inbound.returned` se ignora | Revierte la aplicación, regresa el cargo a emitido, el pago queda `devuelto` y avisa | `fintoc.test.ts` (forma de la doc y formas que no se leen), `cobranza-postgres` (devolución, repetida, `return_failed`, forma desconocida sin efecto) | `N8` |
-| r63-N9 el CRLF del concepto pega el texto | CR/LF → espacio en el alta, el cargo único y el plan editado | `cobranza.test.ts` | `N9` |
+| r63-N9 el CRLF del concepto pega el texto | CR/LF → espacio en el alta, el cargo único y el plan editado. Desde la integración del #59 lo hace `sinControles` para todo texto libre (cualquier control vale un espacio); la envoltura propia salió | `cobranza.test.ts` | `N9` (revierte `sinControles`) |
 | r63-N10 cargo de otra empresa dice «ya cambió» | `cargo_ausente` → «No encontrado / Recarga la lista.» | `cobranza-postgres`, e2e 14 | `N10` |
 | r63-base-N1 fechas que pone quien escribe | `pagado_el` fijo mientras siga pagado; `emitido_en` y `resuelto_en` los sella la base | `reglas-base` | `AR1`, `AR2` |
 | r63-base-N3 cambiar la cuenta de Fintoc deja huérfanas las CLABEs | `cobranza_destino_fintoc` busca primero por la CLABE del cliente | `cobranza-postgres` | `baseN3` |
@@ -126,9 +126,9 @@ Unos 120-130 MB son la base del proceso. El tope de RSS ahora lo pone un libro l
 | Gate | Resultado |
 |---|---|
 | `typecheck` / `lint` / `build` / `security` | Verde |
-| `test` | 473/473 |
-| `test:db` (las 18 pruebas de `pruebas-postgres.sh`, en serie, Postgres 17.9 en 5581) | 39/41. Las 2 rojas son las heredadas de `main` con `invitacion_vencida` (las corrige el #59) |
-| e2e en sus 3 partes (Chromium, como CI) | 16 + 19 + 13 = 48 pasan, 1 omitida (la matriz de evidencia, que corre aparte en los dos navegadores) |
+| `test` | 555/555 (con `main` integrado) |
+| `test:db` (las 19 pruebas de `pruebas-postgres.sh`, en serie, Postgres 17.9 en 5581), con `main` (#59) integrado | **84/84** |
+| e2e en sus 5 partes (Chromium, como CI), con `main` integrado | 16 + 21 + 13 + 17 + 16 = 83 pasan, 1 omitida (la matriz de evidencia, que corre aparte en los dos navegadores) |
 | Recorrido con capturas | Chromium 15/15, WebKit 15/15 |
 
 **Ojo con el Postgres local.** Un clúster creado con `initdb` y `LC_ALL=C` queda en `SQL_ASCII`; ahí `'DEPÓSITO' ~ '[[:cntrl:]]'` es verdadero y el CHECK `collection_statement_rows_textos` rechaza los conceptos con acentos (la e2e 6 cae con «La base no respondió»). El CI usa `postgres:17` en UTF-8. Para repetir: `initdb -E UTF8 --locale=en_US.UTF-8`.
@@ -136,7 +136,7 @@ Unos 120-130 MB son la base del proceso. El tope de RSS ahora lo pone un libro l
 ## Hallazgos fuera de cobranza
 
 - **Logotipo del marco compartido (WCAG 2.5.3, todas las páginas).** El enlace del logotipo lleva un `aria-label` que no contiene su texto visible (`label-content-name-mismatch`). Lo corrige el PR #60 (Ola 2b) en `logotipo.tsx`, `marco.tsx` y `marco-arco.tsx`; aquí no se toca y la revisión de axe excluye solo ese enlace. Al integrar #60 se quita la exclusión.
-- **`test:db`: dos pruebas fallan en `main` desde el 2026-11-10** (`tests/flujo/flujo-postgres.test.ts` y `tests/personas/colaboradores-postgres.test.ts`, `invitacion_vencida`): emiten la invitación con un reloj fijo de principios de noviembre y la base la vence con su propio reloj. Lo corrige el PR #59 (emite con la hora real). La prueba de cobranza en Postgres pasa.
+- **`test:db`: dos pruebas fallaban en `main` el 2026-11-10** (ya corregido: con el #59 integrado, `test:db` da 84/84) (`tests/flujo/flujo-postgres.test.ts` y `tests/personas/colaboradores-postgres.test.ts`, `invitacion_vencida`): emiten la invitación con un reloj fijo de principios de noviembre y la base la vence con su propio reloj. Lo corrige el PR #59 (emite con la hora real). La prueba de cobranza en Postgres pasa.
 
 ## Repetir
 

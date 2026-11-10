@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { startTransition, useActionState, useState } from "react";
+import { startTransition, useActionState, useState, type FormEvent } from "react";
 
 import {
   enviarPago,
@@ -10,10 +10,12 @@ import {
 } from "@/app/consola/proveedores/acciones-pagos";
 import { ESTADO_PAGO_INICIAL } from "@/app/consola/proveedores/estado";
 import { Aviso, BotonEnviar } from "@/components/sistema";
+import { TOPE_ARCHIVO_BYTES } from "@/dominio/archivos";
 import { formatoPesos } from "@/dominio/centavos";
 import { sumarDias, type OrigenPago } from "@/dominio/pagos-proveedores";
 import { enEmpresa } from "@/nucleo/rutas";
 import type { PagoVista, ProveedorPago } from "@/dominio/pagos-vistas";
+import { XML_Y_PDF } from "@/dominio/proveedores";
 
 import { enviarSinReiniciar } from "./sin-reinicio";
 
@@ -46,9 +48,27 @@ export function FormularioPago({
     ? enEmpresa(empresaId, `/consola/proveedores?pago=${estado.requestId}`)
     : null;
 
+  // Los dos archivos pasan juntos por un tope: si lo exceden, el envío no sale del navegador.
+  const [pesoExcedido, setPesoExcedido] = useState(false);
+  function alEnviar(evento: FormEvent<HTMLFormElement>) {
+    const datos = new FormData(evento.currentTarget);
+    const peso = ["xml", "pdf"].reduce((total, campo) => {
+      const valor = datos.get(campo);
+      return total + (valor instanceof File ? valor.size : 0);
+    }, 0);
+    if (peso > TOPE_ARCHIVO_BYTES) {
+      evento.preventDefault();
+      setPesoExcedido(true);
+      document.getElementById("pdf")?.focus();
+      return;
+    }
+    setPesoExcedido(false);
+    enviarSinReiniciar(accion)(evento);
+  }
+
   // El aviso de error se liga al campo que lo causó.
   function ligado(campo: string, ...pistas: (string | null)[]) {
-    const causa = estado.tipo === "invalido" && estado.campo === campo;
+    const causa = (estado.tipo === "invalido" && estado.campo === campo) || (pesoExcedido && campo === "pdf");
     const ids = [...pistas.filter((pista): pista is string => Boolean(pista)), ...(causa ? ["pago-error"] : [])];
     return { "aria-invalid": causa || undefined, "aria-describedby": ids.length > 0 ? ids.join(" ") : undefined };
   }
@@ -62,12 +82,13 @@ export function FormularioPago({
   }
 
   return (
-    <form className="pago-formulario" onSubmit={enviarSinReiniciar(accion)}>
+    <form className="pago-formulario" onSubmit={alEnviar}>
       <input type="hidden" name="clientRequestId" value={clientRequestId} />
       {edicion ? <input type="hidden" name="requestId" value={edicion.id} /> : null}
       <input type="hidden" name="origen" value={origen} />
       {edicion ? <input type="hidden" name="supplierId" value={supplierId} /> : null}
-      {estado.tipo === "invalido" ? <div id="pago-error"><Aviso titulo="No se guardó"><p>{estado.mensaje}</p></Aviso></div> : null}
+      {pesoExcedido ? <div id="pago-error"><Aviso titulo="No se guardó"><p>{XML_Y_PDF}</p></Aviso></div>
+        : estado.tipo === "invalido" ? <div id="pago-error"><Aviso titulo="No se guardó"><p>{estado.mensaje}</p></Aviso></div> : null}
       {estado.tipo === "listo" ? (
         <Aviso tono="asentado" titulo="Quedó en autorización">
           <p>{estado.mensaje}</p>

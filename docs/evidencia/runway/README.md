@@ -100,7 +100,7 @@ La primera corrida sin JavaScript del flujo 5 terminó en «Internal Server Erro
 
 La causa es la política global `Referrer-Policy: no-referrer`. Con ella, el navegador manda `Origin: null` en el envío nativo del formulario, y Next rechaza la acción de servidor, que es lo correcto: un origen opaco nunca se acepta.
 
-La página de Saldo y alertas ahora declara `referrer: "same-origin"` en su metadata. El envío a la propia aplicación lleva su origen y a otros sitios no sale nada. Así funciona sin JavaScript, como prueba el flujo 5 en los dos navegadores.
+La página de Saldo y alertas declaró `referrer: "same-origin"` en su metadata mientras tanto. **Con el #59 en `main`, el encabezado global es `Referrer-Policy: same-origin` y la página ya no lo declara** (se quitó al integrar). El envío a la propia aplicación lleva su origen y a otros sitios no sale nada. Así funciona sin JavaScript, como prueba el flujo 5 en los dos navegadores.
 
 El mismo problema afecta a todos los formularios de la aplicación que se envían sin JavaScript. El encabezado global vive fuera de este cambio, así que se le reportó al líder.
 

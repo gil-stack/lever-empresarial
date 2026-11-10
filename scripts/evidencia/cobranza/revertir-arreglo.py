@@ -42,8 +42,9 @@ R = {
                 'async function guardarSinDestino(aviso: AvisoFintoc, t: AbonoFintoc | DevolucionFintoc): Promise<RespuestaAviso> {\n  if (aviso) return { estado: 200, cuerpo: { ok: true, efecto: "ignorado" } };\n')],
   # r63-N8: transfer.inbound.returned se ignora.
   "N8": [exacto("src/server/cobranza/fintoc.ts", "  if (tipo === TIPO_DEVOLUCION) {\n", "  if (tipo === TIPO_DEVOLUCION && false) {\n")],
-  # r63-N9: el salto de línea del concepto deja de volverse espacio.
-  "N9": [exacto("src/dominio/cobranza/entradas.ts", 'valor.replace(/[\\r\\n]+/g, " ")', "valor")],
+  # r63-N9: el salto de línea del concepto deja de volverse espacio. Desde el #59 lo hace sinControles para todo
+  # texto libre (src/dominio/control.ts); se revierte ahí.
+  "N9": [exacto("src/dominio/control.ts", '(control) => COMILLAS[control] ?? " ")', '(control) => COMILLAS[control] ?? "")')],
   # r63-N10: el cargo de otra empresa vuelve a decir «ya cambió».
   "N10": [exacto("src/server/cobranza/servicio.ts", '«no encontrado», no «ya cambió» (r63-N10).\n        if (!f) throw new ErrorDeDominio("cargo_ausente");',
                  '«no encontrado», no «ya cambió» (r63-N10).\n        if (!f) throw new ErrorDeDominio("cargo_ya_resuelto");')],

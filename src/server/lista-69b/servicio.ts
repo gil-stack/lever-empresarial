@@ -65,11 +65,14 @@ export async function leerVista69b(
   if (!puede(conSesion, "cliente.lista69b.ver") && !puede(conSesion, "plataforma.lista69b.cargar")) {
     throw new ErrorDeDominio("sin_permiso");
   }
+  // Cada operador consulta su copia: el personal la del suyo; el portal, la del operador de su empresa.
+  const operadorId = conSesion.personal?.operadorId ?? conSesion.empresa?.operadorId;
+  if (!operadorId) throw new ErrorDeDominio("sin_permiso");
   const ahora = (deps?.ahora ?? reloj)();
   const repo = deps?.repositorio ?? repositorio69bPg();
-  const snapshot = await repo.vigente();
+  const snapshot = await repo.vigente(operadorId);
   const consulta =
-    rfcPedido === null ? ({ tipo: "vacia" } as const) : await decidirContra(rfcPedido, repo, snapshot);
+    rfcPedido === null ? ({ tipo: "vacia" } as const) : await decidirContra(rfcPedido, operadorId, repo, snapshot);
   return {
     puedeGuardar: puede(conSesion, "plataforma.lista69b.cargar"),
     fechaTexto: snapshot ? fraseFechaArchivo(snapshot.fechaArchivo) : null,
@@ -82,19 +85,20 @@ export async function leerVista69b(
   };
 }
 
-export async function consultarRfc(rfcTexto: string, deps?: Dependencias69b): Promise<ResultadoConsulta> {
+export async function consultarRfc(rfcTexto: string, operadorId: string, deps?: Dependencias69b): Promise<ResultadoConsulta> {
   const repo = deps?.repositorio ?? repositorio69bPg();
-  return decidirContra(rfcTexto, repo, await repo.vigente());
+  return decidirContra(rfcTexto, operadorId, repo, await repo.vigente(operadorId));
 }
 
 async function decidirContra(
   rfcTexto: string,
+  operadorId: string,
   repo: Repositorio69b,
   snapshot: Snapshot69b | null,
 ): Promise<ResultadoConsulta> {
   const validado = validarRfcDeAlta(rfcTexto);
   if (!validado.ok) return { tipo: "invalida", mensaje: MENSAJE_RFC[validado.error] };
-  const situaciones = snapshot ? await repo.situaciones(snapshot.id, validado.rfc) : [];
+  const situaciones = snapshot ? await repo.situaciones(operadorId, snapshot.id, validado.rfc) : [];
   const decision = decidirPago69b({ hayArchivo: snapshot !== null, situaciones });
   return {
     tipo: "lista",

@@ -548,14 +548,18 @@ function camposDeCobro(cobro: CobroAlta, personaId: string): CampoDeAlta[] {
   ];
 }
 
-/** La misma factura en otro cobro vivo de la empresa: el rechazo dice en qué estado está. Sin otro cobro vivo, no hace nada. */
-async function rechazarFacturaViva(consulta: Consulta, empresaId: string, cfdiUuid: string): Promise<void> {
+/**
+ * La misma factura en otro cobro vivo de la empresa: el rechazo dice en qué estado está. Sin otro cobro vivo, no hace nada.
+ * La fila de esta misma alta no cuenta: si el primer envío del formulario confirmó entre `altaPrevia` y esta lectura,
+ * el segundo sigue al insert, choca con el id y `altaPrevia` le responde igual.
+ */
+async function rechazarFacturaViva(consulta: Consulta, empresaId: string, cfdiUuid: string, altaId: string): Promise<void> {
   const previo = await aplicarSentencia(
     consulta,
     `select estado from expected_collections
-      where company_id = $1 and cfdi_uuid = $2 and estado <> 'cancelado'
+      where company_id = $1 and cfdi_uuid = $2 and estado <> 'cancelado' and id <> $3
       limit 1`,
-    [empresaId, cfdiUuid],
+    [empresaId, cfdiUuid, altaId],
   );
   const estado = (previo.rows[0] as { estado?: unknown } | undefined)?.estado;
   if (estado === "cobrado") throw new ErrorDeDominio("cobro_ya_cobrado");
@@ -583,7 +587,7 @@ async function insertarCobro(
   // (índice parcial), según cuál revise primero Postgres. Si no insertó, o es el mismo formulario o es otra alta de esa factura.
   if (insertado.rows.length === 0) {
     if (await altaPrevia(consulta, "expected_collections", id, c.empresa.id, camposDeCobro(cobro, c.persona.id))) return;
-    if (cobro.cfdiUuid) await rechazarFacturaViva(consulta, c.empresa.id, cobro.cfdiUuid);
+    if (cobro.cfdiUuid) await rechazarFacturaViva(consulta, c.empresa.id, cobro.cfdiUuid, id);
     throw new ErrorDeDominio("entrada_invalida");
   }
   await auditar(consulta, actorDeCliente(c), {
@@ -663,7 +667,7 @@ export async function registrarCobroCfdi(
     // Un segundo envío del mismo formulario ya encuentra su fila: se responde igual (o se rechaza si trae otra factura).
     if (await altaPrevia(consulta, "expected_collections", id, c.empresa.id, camposDeCobro(cobro, c.persona.id))) return;
     // La misma factura en otro cobro vivo: el mensaje dice en qué estado está.
-    await rechazarFacturaViva(consulta, c.empresa.id, cfdi.uuid);
+    await rechazarFacturaViva(consulta, c.empresa.id, cfdi.uuid, id);
     await insertarCobro(consulta, c, auditar, id, cobro);
   });
   return { id, cliente: cfdi.nombreReceptor, montoCentavos: cfdi.totalCentavos };

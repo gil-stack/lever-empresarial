@@ -29,7 +29,7 @@ import { performance } from "node:perf_hooks";
 
 import { cerrarConexion, conContexto } from "../../src/nucleo/db";
 import { baseCliente, type ContextoConEmpresa } from "../../src/nucleo/contexto";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio";
+import { darDeAltaComoDuena } from "../empresa-por-la-duena";
 import { correrAlertasDeCaja, PRESUPUESTO_MS } from "../../src/server/flujo/alertas-caja";
 import { CONCURRENCIA, RITMO_MS } from "../../src/server/flujo/correo-semanal";
 import { leerVistaRunway, SQL_RUNWAY } from "../../src/server/flujo/runway";
@@ -96,13 +96,13 @@ async function medirTarea(url: string, hoy: string): Promise<void> {
   const inicioAltas = performance.now();
   for (let i = 0; i < EMPRESAS; i += 1) {
     const dia = String(1 + Math.floor(i / 676)).padStart(2, "0");
-    const empresa = await darDeAltaEmpresa(personal, {
+    const empresa = await darDeAltaComoDuena(url, personal, {
       rfc: `E${letra(i % 26)}${letra(Math.floor(i / 26) % 26)}0101${dia}AB1`,
       razonSocial: `Empresa Runway ${i + 1}`,
       codigoPostal: "06600",
       regimen: "601",
       usoCfdi: "G03",
-    }, { demostracion: false });
+    }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
     ids.push(empresa.id);
   }
   const altasMs = performance.now() - inicioAltas;
@@ -190,12 +190,12 @@ async function medirTarea(url: string, hoy: string): Promise<void> {
 
 async function medirPagina(url: string, hoy: string): Promise<void> {
   const personal = await contextoDePersonal("personal-medicion@ejemplo.mx");
-  const empresa = await darDeAltaEmpresa(personal, {
+  const empresa = await darDeAltaComoDuena(url, personal, {
     rfc: "TCM010101AB1", razonSocial: "Carga Runway", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
-  }, { demostracion: false });
-  const ruido = await darDeAltaEmpresa(personal, {
+  }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  const ruido = await darDeAltaComoDuena(url, personal, {
     rfc: "CABL840215RF4", razonSocial: "Otra Empresa Carga", codigoPostal: "44100", regimen: "612", usoCfdi: "G03",
-  }, { demostracion: false });
+  }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
   const invitado = await invitarAdministrador(personal, { companyId: empresa.id, razonSocial: empresa.razonSocial, nombre: "Admin Carga", correo: "admin-carga@ejemplo.mx" });
   await aceptarInvitacion({ token: invitado.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
   const yo = invitado.emitida.userId;

@@ -13,6 +13,8 @@ const AHORA = new Date("2026-11-04T18:30:00.000Z");
 const COPIA = "33333333-3333-4333-8333-333333333333";
 const EMPRESA = "11111111-1111-4111-8111-111111111111";
 const PERSONA = "22222222-2222-4222-8222-222222222222";
+const OPERADOR = "66666666-6666-4666-8666-666666666666";
+const OTRO_OPERADOR = "77777777-7777-4777-8777-777777777777";
 
 const HTML = `
   <p>Artículo 69-B del Código Fiscal de la Federación</p>
@@ -56,7 +58,7 @@ describe("la copia y la consulta", () => {
     assert.equal(guardado.contribuyentesTexto, "2");
     assert.equal(libro.guardados, 1);
 
-    const publicado = await consultarRfc("pal 720216 1u0", { repositorio: libro.repo });
+    const publicado = await consultarRfc("pal 720216 1u0", OPERADOR, { repositorio: libro.repo });
     assert.equal(publicado.tipo, "lista");
     if (publicado.tipo !== "lista") return;
     assert.equal(publicado.rfc, "PAL7202161U0");
@@ -64,7 +66,7 @@ describe("la copia y la consulta", () => {
     assert.deepEqual(publicado.situaciones, ["Definitivo"]);
     assert.equal(publicado.frase, "El proveedor puede existir. El pago no.");
 
-    const limpio = await consultarRfc("EKU9003173C9", { repositorio: libro.repo });
+    const limpio = await consultarRfc("EKU9003173C9", OPERADOR, { repositorio: libro.repo });
     assert.equal(limpio.tipo, "lista");
     if (limpio.tipo !== "lista") return;
     assert.equal(limpio.bloqueado, false);
@@ -96,7 +98,7 @@ describe("la copia y la consulta", () => {
       (error: unknown) => error instanceof ErrorDeDominio && error.codigo === "fechas_distintas",
     );
     assert.equal(libro.guardados, 0);
-    assert.equal(await libro.repo.vigente(), null);
+    assert.equal(await libro.repo.vigente(OPERADOR), null);
   });
 
   it("el contador no guarda y el tarjetahabiente no abre la lista", async () => {
@@ -111,7 +113,7 @@ describe("la copia y la consulta", () => {
     );
     const solicitante = await leerVista69b(cliente("solicitante"), null, { repositorio: libro.repo });
     assert.equal(solicitante.puedeGuardar, false);
-    const invalido = await consultarRfc("XAXX010101000", { repositorio: libro.repo });
+    const invalido = await consultarRfc("XAXX010101000", OPERADOR, { repositorio: libro.repo });
     assert.equal(invalido.tipo, "invalida");
   });
 
@@ -131,12 +133,29 @@ describe("la copia y la consulta", () => {
       ahora: () => AHORA,
       id: () => segunda,
     });
-    const vigente = await libro.repo.vigente();
+    const vigente = await libro.repo.vigente(OPERADOR);
     assert.equal(vigente?.id, segunda);
-    const consulta = await consultarRfc("CABL840215RF4", { repositorio: libro.repo });
+    const consulta = await consultarRfc("CABL840215RF4", OPERADOR, { repositorio: libro.repo });
     assert.equal(consulta.tipo, "lista");
     if (consulta.tipo !== "lista") return;
     assert.deepEqual(consulta.situaciones, ["Desvirtuado"]);
+  });
+});
+
+describe("la copia es de cada operador", () => {
+  it("la copia que carga otro operador no la ve ni la usa el portal de este", async () => {
+    const libro = memoria();
+    await guardarListado69b(personal(OTRO_OPERADOR), {
+      repositorio: libro.repo,
+      origen: origen(CSV),
+      ahora: () => AHORA,
+      id: () => COPIA,
+    });
+    const vista = await leerVista69b(cliente("administrador"), "PAL7202161U0", { repositorio: libro.repo, ahora: () => AHORA });
+    assert.equal(vista.fechaTexto, null);
+    assert.deepEqual(vista.resultado?.situaciones, []);
+    const propia = await leerVista69b(personal(OTRO_OPERADOR), "PAL7202161U0", { repositorio: libro.repo, ahora: () => AHORA });
+    assert.deepEqual(propia.resultado?.situaciones, ["Definitivo"]);
   });
 });
 
@@ -152,7 +171,7 @@ function origen(csv: string): OrigenListado {
   };
 }
 
-function base(roles: RolCliente[], plataforma: boolean): ContextoDeTenant {
+function base(roles: RolCliente[], plataforma: boolean, operadorId = OPERADOR): ContextoDeTenant {
   return {
     sesionId: "55555555-5555-4555-8555-555555555555",
     peticionId: null,
@@ -165,13 +184,13 @@ function base(roles: RolCliente[], plataforma: boolean): ContextoDeTenant {
           id: EMPRESA,
           rfc: "EKU9003173C9",
           razonSocial: "Escuela",
-          operadorId: "66666666-6666-4666-8666-666666666666",
+          operadorId,
           estado: "activa",
           demostracion: true,
         },
     roles,
     personal: plataforma
-      ? { operadorId: "66666666-6666-4666-8666-666666666666", roles: ["administracion_plataforma"] }
+      ? { operadorId, roles: ["administracion_plataforma"] }
       : null,
     empresas: [],
     capacidades: capacidadesDe({
@@ -185,28 +204,33 @@ function cliente(rol: RolCliente): ContextoDeTenant {
   return base([rol], false);
 }
 
-function personal(): ContextoDeTenant {
-  return base([], true);
+function personal(operadorId = OPERADOR): ContextoDeTenant {
+  return base([], true, operadorId);
 }
 
 function memoria(): { repo: Repositorio69b; guardados: number } {
-  const snapshots: Snapshot69b[] = [];
+  const snapshots: Array<Snapshot69b & { operadorId: string }> = [];
   const filas: { snapshotId: string; fila: Fila69b }[] = [];
   const estado = { guardados: 0 };
   const repo: Repositorio69b = {
-    async vigente() {
-      const orden = [...snapshots].sort((a, b) => b.cargadoEn.getTime() - a.cargadoEn.getTime());
-      return orden[0] ?? null;
+    async vigente(operadorId) {
+      const orden = snapshots
+        .filter((copia) => copia.operadorId === operadorId)
+        .sort((a, b) => b.cargadoEn.getTime() - a.cargadoEn.getTime());
+      const [vigente] = orden;
+      return vigente ? { id: vigente.id, fechaArchivo: vigente.fechaArchivo, cargadoEn: vigente.cargadoEn, contribuyentes: vigente.contribuyentes } : null;
     },
-    async situaciones(snapshotId, rfc) {
+    async situaciones(operadorId, snapshotId, rfc) {
+      if (!snapshots.some((copia) => copia.id === snapshotId && copia.operadorId === operadorId)) return [];
       return filas
         .filter((fila) => fila.snapshotId === snapshotId && fila.fila.rfc === rfc)
         .map((fila) => fila.fila.situacion)
         .sort((a, b) => a.localeCompare(b, "es"));
     },
-    async guardar(_ctx, entrada) {
+    async guardar(ctx, entrada) {
       const contribuyentes = new Set(entrada.filas.map((fila) => fila.rfc)).size;
       snapshots.push({
+        operadorId: ctx.personal.operadorId,
         id: entrada.id,
         fechaArchivo: entrada.fechaArchivo,
         cargadoEn: entrada.cargadoEn,
