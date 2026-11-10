@@ -188,7 +188,7 @@ Salida cruda de las pruebas en `b84bf8a`: `datos/revision-b84bf8a.txt`. Capturas
 
 ## Ronda de integración con el #59 y main (2026-11-10)
 
-El #59 (`cfea61d`) y main (`f2b5d47`, con el #59; y `dfe583e`, con el #65 y la 0029) entran por merge, sin rebase. El merge de `cfea61d` no tuvo conflictos: `src/app/operacion/entrar/page.tsx` conserva `deCatalogo` del #59 y el import de `@/nucleo/direccion`. `git grep "app/operacion/busqueda\|app/consola/direccion"` sale vacío en `src/`, `tests/` y `scripts/`. `PIE_REGULATORIO` y `src/estilo/tokens.css` no cambian.
+El #59 (`cfea61d`) y main (`f2b5d47`, con el #59; `dfe583e`, con el #65 y la 0029; y `9edb4e5`, con el #62 y su CSP con nonce) entran por merge, sin rebase. El merge de `cfea61d` no tuvo conflictos: `src/app/operacion/entrar/page.tsx` conserva `deCatalogo` del #59 y el import de `@/nucleo/direccion`. `git grep "app/operacion/busqueda\|app/consola/direccion"` sale vacío en `src/`, `tests/` y `scripts/`. `PIE_REGULATORIO` y `src/estilo/tokens.css` no cambian.
 
 | Hallazgo | Arreglo | Prueba (rojo antes → verde) |
 | --- | --- | --- |
@@ -202,14 +202,16 @@ El #59 (`cfea61d`) y main (`f2b5d47`, con el #59; y `dfe583e`, con el #65 y la 0
 
 **#48 (Operación, N15 y N16):** el recorrido del #60 no pasa por Operación. La sonda de trece-N1 corre axe WCAG 2.0/2.1 A/AA en Clientes de Operación con JS: 0 en las 12 corridas (Chromium y WebKit, 3 temas, 390 y 1440). Las regiones de las tablas de Operación las cubre `accesibilidad.spec.ts`.
 
-**Compuertas sobre el árbol final** (con `dfe583e`):
-- typecheck 0, lint 0, `npm test` 550/550 y security en verde;
+**La CSP del #62 sobre las rutas del #60.** `csp.spec` recorre cada ruta del registro con su nonce y 0 violaciones: 8/8. Su prueba de navegación clicaba «Política» y «Pendientes», que en el menú de la ola 2b no están para Laura; ahora clica Proveedores, Calendario y Aprobaciones, y comprueba lo mismo. Sonda propia en Chromium y WebKit, con y sin JS (`datos/csp-62-*`): cada enlace del menú de Laura (Altamar) y de Gil (Taller), el historial de Aprobaciones, Mi perfil y Movimientos con filtros, 184/184 páginas con 0 avisos de la política y 0 eventos `securitypolicyviolation`. Control: un `<style>` sin nonce da aviso y evento en los dos motores, con y sin JS. Dos e2e del #60 se ajustaron a la política: la de Aprobaciones normaliza el nonce de cada respuesta al comparar dos páginas, y la de trece-N1 apaga la transición en el atributo `style` en lugar de inyectar un `<style>`; sigue en rojo 9/9 con las barras al 70 %.
+
+**Compuertas sobre el árbol final** (con `9edb4e5`):
+- typecheck 0, lint 0, `npm test` 571/571 y security en verde;
 - Postgres en serie, los 17 archivos de `scripts/ci/pruebas-postgres.sh` (con la prueba nueva del #65), contra un Postgres 17 local: 85/85;
-- `test:e2e` en sus cinco partes: 33 + 24 + 27 + 28 + 28 = 140/140;
+- `test:e2e` en sus cinco partes: 33 + 30 + 29 + 28 + 28 = 148 (4 omitidas: `csp-evidencia`, que solo corre con `E2E_CAPTURAS`);
 - build 0;
 - `git diff --check cfea61d..HEAD` limpio.
 
-**Recorrido** (`next start` en 4812, base sembrada por `preparar.ts`): `lado` 96/96, `modulos` 207/207, `fondo` 68/68, `pantallas` 299/276/276, `contraste` 2/2 en los 3 temas, `cargando` 9/9, `flujos` 185/185, `axe` 144/144 (los 8 de las regiones de Aprobaciones desaparecen al correr después de `flujos`) y `caida` 54/54. `lado`, `modulos`, `fondo` y `pantallas` corrieron sobre la base con la 0028, antes de integrar el #65 (que solo cambia las funciones de la base); `cargando`, `flujos`, `axe` y `caida`, sobre la base con la 0029. Las capturas de `lado`, `modulos`, `fondo` y `pantallas` son de antes de cambiar el color del rótulo de las cifras, salvo las de `28-demo-inversion`, que repetí con el código final (12/13/12 en verde): en las demás pantallas de demostración con cifras, ese rótulo se ve con `--tx3`. `contraste` corrió completo con el código final.
+**Recorrido** (`next start` en 4812, base sembrada por `preparar.ts`): `lado` 96/96, `modulos` 207/207, `fondo` 68/68, `pantallas` 299/276/276, `contraste` 2/2 en los 3 temas, `cargando` 9/9, `flujos` 185/185, `axe` 144/144 (los 8 de las regiones de Aprobaciones desaparecen al correr después de `flujos`) y `caida` 54/54. `lado`, `modulos`, `fondo` y `pantallas` corrieron sobre la base con la 0028, antes de integrar el #65 (que solo cambia las funciones de la base); `cargando`, `flujos`, `axe` y `caida`, sobre la base con la 0029. Las capturas de `lado`, `modulos`, `fondo` y `pantallas` son de antes de cambiar el color del rótulo de las cifras, salvo las de `28-demo-inversion`, que repetí con el código final (12/13/12 en verde): en las demás pantallas de demostración con cifras, ese rótulo se ve con `--tx3`. `contraste` corrió completo con el código final. Todo el recorrido corrió antes de integrar el #62; después de ese merge, lo cubren la sonda de la CSP en las rutas del #60 y la e2e completa.
 
 ## Pendiente al cambiar de cuenta
 
@@ -222,7 +224,7 @@ El #59 (`cfea61d`) y main (`f2b5d47`, con el #59; y `dfe583e`, con el #65 y la 0
 | **axe: nombre del logotipo (WCAG 2.5.3)** y **`region` del teléfono** | **Hecho** en `10ebaeb`; Vercel CI 8 de 9 (`test:db`, por la bomba de tiempo de main) | typecheck 0, lint 0, `npm test` 458/458, Postgres en serie 36/38 (los 2 de la bomba de tiempo de main, que corrige el #59), `test:e2e` 28 + 29 + 20 = 77/77, build 0 y security en verde. Recorrido: `axe` 60/60. Cada prueba nueva falla en `ef484dd` |
 | **N17** (`scrollable-region-focusable` en los archivos nuevos del #60) y **N18** | **Hecho** en el commit que agrega esta fila | typecheck 0, lint 0, `npm test` 458/458, Postgres en serie 36/38 (la bomba de tiempo de main), `test:e2e` en sus tres partes 30 + 29 + 20 = 79/79, build 0 y security en verde. Recorrido: `axe` 140/140 (con el teclado en Chromium y WebKit) y `flujos` 185/185. Cada prueba nueva falla en `10ebaeb` |
 | **`scrollable-region-focusable` en main y Operación** (13 archivos) | **Hecho** en `36643ce` (guardia `tests/tablas-desplazables.test.ts`) | Los de la ronda de integración |
-| **P3 del entorno, `soloTexto`, trece-N1, el historial de Aprobaciones, el botón de la nómina a 390 y el rótulo de las cifras** | **Hecho** en la ronda de integración con el #59 y main | Ver esa sección: typecheck 0, lint 0, `npm test` 550/550, Postgres en serie 85/85, `test:e2e` 140/140 en cinco partes, build 0, security en verde y el recorrido completo |
+| **P3 del entorno, `soloTexto`, trece-N1, el historial de Aprobaciones, el botón de la nómina a 390 y el rótulo de las cifras** | **Hecho** en la ronda de integración con el #59 y main | Ver esa sección: typecheck 0, lint 0, `npm test` 571/571, Postgres en serie 85/85, `test:e2e` 148 en cinco partes, build 0, security en verde y el recorrido completo |
 
 Falta:
 - **Vercel CI:** el del push de esta ronda; su estado terminal va en el PR.
