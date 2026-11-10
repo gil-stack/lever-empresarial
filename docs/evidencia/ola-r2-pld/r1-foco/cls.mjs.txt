@@ -1,0 +1,97 @@
+// CLS de la primera carga (contexto nuevo: sin caché de fuentes), con JavaScript, en Chromium (sin swiftshader) y WebKit.
+// Chromium: PerformanceObserver de layout-shift (buffered), suma y la peor ventana de sesión (1 s entre saltos, 5 s máx.).
+// WebKit no implementa layout-shift: ahí se reporta el alto del documento y la posición de los títulos antes y después
+// de document.fonts.ready. En los dos: font-family calculado de cuerpo, h1 y una cifra mono, y las caras cargadas.
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { chromium, webkit } from "../../../../node_modules/playwright/index.mjs";
+
+const E = JSON.parse(readFileSync(process.env.ESTADO, "utf8"));
+const BASE = process.env.BASE;
+const sql = (q) => execFileSync("psql", [E.DUENO_URL, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1", "-c", q], { encoding: "utf8" }).trim();
+sql("update sessions set ultimo_uso = now() where expires_at > now()");
+const brisa = sql("select id from companies where rfc = 'BRR180303CD6'");
+const PAGINAS = [
+  { nombre: "expediente (con perfil)", quien: "celia", ruta: `/operacion/clientes/${brisa}/expediente` },
+  { nombre: "/operacion", quien: "omar", ruta: "/operacion" },
+  { nombre: "/operacion/pld", quien: "celia", ruta: "/operacion/pld" },
+  { nombre: "consola del cliente", quien: "gil", ruta: "/consola" },
+];
+
+const INICIO = () => {
+  const w = window;
+  w.__saltos = [];
+  try {
+    new PerformanceObserver((lista) => {
+      for (const e of lista.getEntries()) if (!e.hadRecentInput) w.__saltos.push({ t: e.startTime, v: e.value });
+    }).observe({ type: "layout-shift", buffered: true });
+    w.__soportaLS = true;
+  } catch { w.__soportaLS = false; }
+  const foto = () => ({
+    alto: document.documentElement.scrollHeight,
+    titulos: [...document.querySelectorAll("h1, h2")].slice(0, 12).map((h) => Math.round(h.getBoundingClientRect().top + scrollY)),
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    w.__antes = foto();
+    w.__estadoFuentes = document.fonts.status;
+    document.fonts.ready.then(() => { w.__despues = foto(); });
+  });
+};
+
+function peorVentana(saltos) {
+  let peor = 0, actual = 0, inicio = -1, ultimo = -1;
+  for (const s of saltos) {
+    if (inicio < 0 || s.t - ultimo > 1000 || s.t - inicio > 5000) { actual = 0; inicio = s.t; }
+    actual += s.v; ultimo = s.t; peor = Math.max(peor, actual);
+  }
+  return peor;
+}
+
+const filas = [];
+for (const [nombreNav, tipo] of [["Chromium", chromium], ["WebKit", webkit]].filter(([n]) => !process.env.SOLO || n === process.env.SOLO)) {
+  const nav = await tipo.launch();
+  for (const ancho of [1440, 390]) {
+    for (const pagina of PAGINAS) {
+      const movil = ancho < 600;
+      const ctx = await nav.newContext({ viewport: { width: ancho, height: movil ? 844 : 900 }, isMobile: movil && nombreNav === "Chromium", hasTouch: movil, locale: "es-MX" });
+      const host = new URL(BASE).hostname;
+      await ctx.addCookies([
+        { name: "tema", value: "oscuro", domain: host, path: "/" },
+        { name: "__Host-sesion", value: E.SESIONES[pagina.quien], domain: host, path: "/", httpOnly: true, secure: true, sameSite: "Lax" },
+      ]);
+      if (nombreNav === "WebKit") {
+        // WebKit no guarda una cookie Secure en http://localhost: la sesión la pone Playwright en cada petición.
+        const galleta = `tema=oscuro; __Host-sesion=${E.SESIONES[pagina.quien]}`;
+        await ctx.route(`${BASE}/**`, async (ruta) => {
+          const r = await ruta.fetch({ headers: { ...ruta.request().headers(), cookie: galleta }, maxRedirects: 0 });
+          await ruta.fulfill({ response: r });
+        });
+      }
+      await ctx.addInitScript(INICIO);
+      const p = await ctx.newPage();
+      const respuesta = await p.goto(`${BASE}${pagina.ruta}`, { waitUntil: "networkidle" });
+      await p.evaluate(() => document.fonts.ready);
+      await p.waitForTimeout(1500);
+      const d = await p.evaluate(() => {
+        const ff = (sel) => { const n = document.querySelector(sel); return n ? getComputedStyle(n).fontFamily : null; };
+        const caras = [...document.fonts].filter((f) => f.status === "loaded").map((f) => f.family.replaceAll('"', ""));
+        return {
+          soporta: window.__soportaLS, saltos: window.__saltos, antes: window.__antes, despues: window.__despues ?? null, estadoInicial: window.__estadoFuentes,
+          cuerpo: ff("body"), h1: ff("h1"), mono: ff(".mono, code, [class*='mono'], .cifra"), caras: [...new Set(caras)],
+          url: location.pathname,
+        };
+      });
+      const suma = d.saltos.reduce((a, s) => a + s.v, 0);
+      const movidos = d.antes && d.despues ? d.antes.titulos.map((y, i) => (d.despues.titulos[i] ?? y) - y) : [];
+      filas.push({
+        navegador: nombreNav, ancho, pagina: pagina.nombre, status: respuesta?.status(), url: d.url,
+        cls: d.soporta ? Number(peorVentana(d.saltos).toFixed(4)) : "no soportado", sumaSaltos: d.soporta ? Number(suma.toFixed(4)) : null,
+        fuentesAlCargar: d.estadoInicial, altoAntes: d.antes?.alto, altoDespues: d.despues?.alto, maxMovTitulo: movidos.length ? Math.max(...movidos.map(Math.abs)) : null,
+        cuerpo: d.cuerpo, h1: d.h1, mono: d.mono, caras: d.caras,
+      });
+      console.log(JSON.stringify(filas.at(-1)));
+      await ctx.close();
+    }
+  }
+  await nav.close();
+}

@@ -1,0 +1,13 @@
+R1 regresiones sobre el #59 solo (ebfb52a, sin la 0030), misma máquina y puertos:
+273 comprobaciones en verde, 0 en rojo.
+OK    doceava. riesgo, sin JavaScript a 1440: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en
+duración: 731 s
+
+R1 regresiones sobre el #61 (c43aeb7, corrida de la sesión anterior):
+234 comprobaciones en verde, 1 en rojo (el recorrido se detuvo).
+"junto":"{\"foco\":1,\"nombra\":true,\"campo\":11,\"mensaje\":-15,\"separacion\":7,\"barras\":84,\"ventana\":900}
+
+R1 regresiones sobre el #61 (4a93a7a) con el diff de N19 del #60 aplicado sin commit:
+234 comprobaciones en verde, 1 en rojo (el recorrido se detuvo).
+"junto":"{\"foco\":1,\"nombra\":true,\"campo\":59,\"mensaje\":33,\"separacion\":7,\"barras\":84,\"ventana\":900}
+duración: 657 s

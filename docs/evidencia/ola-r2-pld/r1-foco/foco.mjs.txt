@@ -1,0 +1,71 @@
+// Sonda del rojo de R1 «doceava. riesgo, sin JavaScript a 1440»: repite el envío rechazado y mide dónde queda el foco.
+// VARIANTE=<css> se inyecta en el HTML de la respuesta del POST (sin JavaScript no hay addStyleTag).
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { chromium } from "../../../../node_modules/playwright/index.mjs";
+
+const E = JSON.parse(readFileSync(process.env.ESTADO, "utf8"));
+const BASE = process.env.BASE;
+const sql = (q) => execFileSync("psql", [E.DUENO_URL, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1", "-c", q], { encoding: "utf8" }).trim();
+sql("update sessions set ultimo_uso = now() where expires_at > now()");
+const brisa = sql("select id from companies where rfc = 'BRR180303CD6'");
+const ancho = Number(process.env.ANCHO ?? 1440);
+const js = process.env.JS === "1";
+const variante = process.env.VARIANTE ?? "";
+
+const nav = await chromium.launch(process.env.SWIFT === "1" ? { args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } : {});
+const ctx = await nav.newContext({ viewport: { width: ancho, height: ancho < 600 ? 844 : 900 }, isMobile: ancho < 600, hasTouch: ancho < 600, javaScriptEnabled: js, reducedMotion: "reduce", locale: "es-MX" });
+const host = new URL(BASE).hostname;
+await ctx.addCookies([
+  { name: "tema", value: "oscuro", domain: host, path: "/" },
+  { name: "__Host-sesion", value: E.SESIONES.celia, domain: host, path: "/", httpOnly: true, secure: true, sameSite: "Lax" },
+]);
+const p = await ctx.newPage();
+if (process.env.SIN_FUENTES === "1") await ctx.route(/\.(woff2?|ttf|otf)(\?|$)/, (r) => r.abort());
+const fuentes = [];
+p.on("request", (q) => { if (/\.(woff2?|ttf|otf)/.test(q.url())) fuentes.push(q.url().split("/").pop()); });
+await p.goto(`${BASE}/operacion/clientes/${brisa}/expediente`, { waitUntil: "networkidle" });
+await p.locator("#riesgo-actividad").selectOption("media");
+await p.locator("#riesgo-zona").selectOption("alta");
+await p.route("**/operacion/**", async (route) => {
+  const cuerpo = route.request().postDataBuffer();
+  if (route.request().method() !== "POST" || !cuerpo) return route.continue();
+  const cambiado = cuerpo.toString("latin1").replace(/(name="[^"]*actividad"\r\n\r\n)media/, "$1MEDIA");
+  if (!variante) return route.continue({ postData: Buffer.from(cambiado, "latin1") });
+  const r = await route.fetch({ postData: Buffer.from(cambiado, "latin1") });
+  const html = (await r.text()).replace("</head>", `<style>${variante}</style></head>`);
+  return route.fulfill({ response: r, body: html });
+});
+const boton = p.getByRole("button", { name: "Registrar revisión periódica" });
+await boton.scrollIntoViewIfNeeded();
+const antes = { scrollY: -Math.round((await p.locator("html").boundingBox()).y), campo: Math.round((await p.locator("#riesgo-actividad").boundingBox()).y), boton: Math.round((await boton.boundingBox()).y) };
+const linea = [];
+const t0 = Date.now();
+const respuestaPost = p.waitForResponse((r) => r.request().method() === "POST");
+await boton.click({ noWaitAfter: true });
+for (let i = 0; i < Number(process.env.MUESTRAS ?? 60); i++) {
+  try {
+    const h = await p.locator("html").boundingBox({ timeout: 200 });
+    const b = await p.locator("body").boundingBox({ timeout: 200 });
+    const c = (await p.locator("#riesgo-actividad:focus").count()) ? await p.locator("#riesgo-actividad").boundingBox({ timeout: 200 }) : null;
+    const ultimo = linea.at(-1);
+    const fila = { scrollY: h && -Math.round(h.y), altoBody: b && Math.round(b.height), campoConFoco: c && Math.round(c.y) };
+    if (!ultimo || JSON.stringify(ultimo.f) !== JSON.stringify(fila)) linea.push({ ms: Date.now() - t0, f: fila });
+  } catch (e) { linea.push({ ms: Date.now() - t0, error: String(e).slice(0, 60) }); }
+  await p.waitForTimeout(40);
+}
+await respuestaPost;
+console.log(JSON.stringify(linea));
+await p.waitForLoadState("networkidle");
+await p.waitForTimeout(500);
+const caja = async (sel) => { const l = p.locator(sel).first(); return (await l.count()) ? await l.boundingBox() : null; };
+const r = (b) => b && { y: Math.round(b.y), alto: Math.round(b.height) };
+const html = await p.locator("html").boundingBox();
+const foco = await p.locator("#riesgo-actividad:focus").count();
+const mensaje = await caja('[id="aviso-riesgo-campo"]');
+const aviso = await caja('[id="aviso-riesgo"]');
+const forma = await caja("form:has(#riesgo-actividad)");
+const campo = await caja("#riesgo-actividad");
+const barra = await caja(".barra-superior");
+console.log(JSON.stringify({ fuentes: [...new Set(fuentes)], antes, ancho, js, variante: variante || "(ninguna)", url: p.url().replace(BASE, ""), foco, altoBody: Math.round((await p.locator("body").boundingBox()).height), scrollY: html && -Math.round(html.y), altoPagina: html && Math.round(html.height), barra: r(barra), forma: r(forma), aviso: r(aviso), mensaje: r(mensaje), campo: r(campo) }));
+await nav.close();
