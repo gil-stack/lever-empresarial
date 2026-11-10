@@ -1,11 +1,8 @@
-# r2-fix2-N2: cada mutación de la 0030 contra tests/pld/pld-postgres.test.ts (scratchpad mutar.py: cambia un fragmento, corre la suite y restaura).
-# exit 1 = la suite la atrapa. «líneas» son las de la prueba que fallan. M6 de la primera corrida tenía un error de sintaxis y se rehízo.
+# r2-fix2-N2: cada mutación de la 0030 contra tests/pld/pld-postgres.test.ts en a39719d (mutar.py: cambia un fragmento, corre la suite y restaura).
+# exit 1 = la suite la atrapa; «líneas» son las de la prueba que fallan. Antes de los casos de dictamen y acta (a39719d), M2 y M3 pasaban con exit 0.
 M1 sin quien registró la sesión: exit 1 · líneas ['1458', '1511'] · ['AssertionError [ERR_ASSERTION]: Missing expected rejection.']
-M2 sin quien subió el acta: exit 0 · líneas [] · []
-M3 sin quien registró el dictamen: exit 0 · líneas [] · []
-M4 sin quienes trabajan los casos votados: exit 1 · líneas ['1458', '1539', '1563'] · ['AssertionError [ERR_ASSERTION]: Missing expected rejection.']
-M5 voto: sin los excluidos de la sesión: exit 1 · líneas ['1458', '1501'] · ['AssertionError [ERR_ASSERTION]: Missing expected rejection.']
-— con los casos de dictamen y acta:
 M2 sin quien subió el acta: exit 1 · líneas ['1458', '1530'] · ['AssertionError [ERR_ASSERTION]: Missing expected rejection.']
 M3 sin quien registró el dictamen: exit 1 · líneas ['1458', '1520'] · ['AssertionError [ERR_ASSERTION]: Missing expected rejection.']
+M4 sin quienes trabajan los casos votados: exit 1 · líneas ['1458', '1558', '1582'] · ['AssertionError [ERR_ASSERTION]: Missing expected rejection.']
+M5 voto: sin los excluidos de la sesión: exit 1 · líneas ['1458', '1501'] · ['AssertionError [ERR_ASSERTION]: Missing expected rejection.']
 M6 serie: sin las personas de las sesiones que votaron el caso: exit 1 · líneas ['1458', '1511'] · ['AssertionError [ERR_ASSERTION]: Missing expected rejection.']
