@@ -60,6 +60,16 @@ test.describe("marco de la consola en escritorio", () => {
     await expect(page.locator(".apariencia")).toBeVisible();
     await expect(page.locator(".temas").getByRole("button", { name: "Oscuro", exact: true })).toBeVisible();
 
+    // Las cookies de preferencia (acento al pintar, tema al cambiarlo): todo el sitio y Lax. Por http (localhost) van
+    // sin Secure para que el navegador las guarde; por https llevan Secure (cookie-preferencia.test.ts).
+    await page.locator(".temas").getByRole("button", { name: "Claro", exact: true }).click();
+    await expect.poll(async () => (await page.context().cookies()).filter((c) => c.name === "acento" || c.name === "tema").length).toBe(2);
+    for (const cookie of (await page.context().cookies()).filter((c) => c.name === "acento" || c.name === "tema")) {
+      expect({ nombre: cookie.name, path: cookie.path, sameSite: cookie.sameSite, secure: cookie.secure }).toEqual({
+        nombre: cookie.name, path: "/", sameSite: "Lax", secure: false,
+      });
+    }
+
     await page.goto("/c/00000000-0000-4000-8000-000000000000/consola/apariencia");
     await expect(page.locator(".apariencia")).toHaveCount(0);
   });
