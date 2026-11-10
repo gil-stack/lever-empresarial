@@ -475,73 +475,73 @@ pld_acta_para_descarga(uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/d
 pld_alerta_me_excluye(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
 pld_alertar(pld_operaciones,uuid,text,text,jsonb) | duena | {duena=X/duena} | t | search_path=public
 pld_alertas_que_me_excluyen() | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
-pld_aviso_con_cumplimiento() | duena | (por omisión: PUBLIC) | t | search_path=public
-pld_aviso_excluidos_revisar() | duena | (por omisión: PUBLIC) | t | search_path=public
+pld_aviso_con_cumplimiento() | duena | {duena=X/duena} | t | search_path=public
+pld_aviso_excluidos_revisar() | duena | {duena=X/duena} | t | search_path=public
 pld_aviso_me_excluye(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
 pld_aviso_sin_analista(uuid) | duena | {duena=X/duena} | t | search_path=public
-pld_avisos_alertar() | duena | (por omisión: PUBLIC) | t | search_path=public
+pld_avisos_alertar() | duena | {duena=X/duena} | t | search_path=public
 pld_avisos_que_me_excluyen() | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
-pld_avisos_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+pld_avisos_revisar() | duena | {duena=X/duena} | f | search_path=public
 pld_calendario_cargado(integer) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
-pld_caso_hijo_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+pld_caso_hijo_revisar() | duena | {duena=X/duena} | f | search_path=public
 pld_caso_me_excluye(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
 pld_caso_vence(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
-pld_casos_con_alerta() | duena | (por omisión: PUBLIC) | f | search_path=public
+pld_casos_con_alerta() | duena | {duena=X/duena} | f | search_path=public
 pld_casos_que_me_excluyen() | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
-pld_casos_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+pld_casos_revisar() | duena | {duena=X/duena} | f | search_path=public
 pld_celebracion_contrato(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
-pld_comite_auditores_sin_integrante() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_comite_bajas_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_comite_comunicaciones_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_comite_integrantes_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_comite_validar() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_comite_vigentes(uuid,date) | duena | {=X/duena,duena=X/duena,plataforma_sofipo=X/duena} | f | search_path=public
+pld_comite_auditores_sin_integrante() | duena | {duena=X/duena} | f | search_path=public
+pld_comite_bajas_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_comite_comunicaciones_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_comite_integrantes_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_comite_validar() | duena | {duena=X/duena} | f | search_path=public
+pld_comite_vigentes(uuid,date) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | f | search_path=public
 pld_dia_habil_del_mes(date,integer) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
 pld_dia_inhabil(date) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
 pld_dias_habiles_entre(date,date) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
-pld_dictamenes_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+pld_dictamenes_revisar() | duena | {duena=X/duena} | f | search_path=public
 pld_documento_para_descarga(uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
 pld_es_personal(uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
-pld_evaluaciones_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_evaluar_operacion() | duena | (por omisión: PUBLIC) | t | search_path=public
+pld_evaluaciones_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_evaluar_operacion() | duena | {duena=X/duena} | t | search_path=public
 pld_excluidos_de_la_sesion(uuid) | duena | {duena=X/duena} | t | search_path=public
 pld_excluidos_del_caso(uuid) | duena | {duena=X/duena} | t | search_path=public
-pld_exige_evento() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_fecha_mx(timestamp with time zone) | duena | (por omisión: PUBLIC) | f | 
+pld_exige_evento() | duena | {duena=X/duena} | f | search_path=public
+pld_fecha_mx(timestamp with time zone) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | f | 
 pld_ids_que_me_excluyen() | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
-pld_inmutable() | duena | (por omisión: PUBLIC) | f | search_path=public
+pld_inmutable() | duena | {duena=X/duena} | f | search_path=public
 pld_manifiesto_conteos(uuid,date,date,uuid,integer) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
 pld_manifiesto_documentos(uuid,date,date,timestamp with time zone,uuid,integer) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
-pld_modo_dictamen_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+pld_modo_dictamen_revisar() | duena | {duena=X/duena} | f | search_path=public
 pld_modo_vigente(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
-pld_nombre_de_integrante(pld_comite_integrantes) | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_operaciones_antes() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_operador_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_parametros_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+pld_nombre_de_integrante(pld_comite_integrantes) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | f | search_path=public
+pld_operaciones_antes() | duena | {duena=X/duena} | f | search_path=public
+pld_operador_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_parametros_revisar() | duena | {duena=X/duena} | f | search_path=public
 pld_parametros_vigentes(uuid) | duena | {duena=X/duena} | t | search_path=public
-pld_perfil_aprobado_con_resolucion() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_perfil_propuestas_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_perfil_resoluciones_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_perfiles_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_periodicos_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+pld_perfil_aprobado_con_resolucion() | duena | {duena=X/duena} | f | search_path=public
+pld_perfil_propuestas_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_perfil_resoluciones_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_perfiles_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_periodicos_revisar() | duena | {duena=X/duena} | f | search_path=public
 pld_personal_deja_analista() | duena | {duena=X/duena} | t | search_path=public
 pld_personas_de_la_sesion(uuid) | duena | {duena=X/duena} | t | search_path=public
 pld_personas_del_caso(uuid) | duena | {duena=X/duena} | t | search_path=public
-pld_registrar_nomina() | duena | (por omisión: PUBLIC) | t | search_path=public
-pld_registrar_pago() | duena | (por omisión: PUBLIC) | t | search_path=public
-pld_reportes_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_resultado_votacion(uuid,uuid) | duena | {=X/duena,duena=X/duena,plataforma_sofipo=X/duena} | f | search_path=public
+pld_registrar_nomina() | duena | {duena=X/duena} | t | search_path=public
+pld_registrar_pago() | duena | {duena=X/duena} | t | search_path=public
+pld_reportes_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_resultado_votacion(uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | f | search_path=public
 pld_rol(text[]) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
 pld_serie_choca(uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
 pld_sesion_excluye_a(uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
 pld_sesion_me_excluye(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
 pld_sesiones_que_me_excluyen() | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
-pld_sesiones_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
-pld_sin_invisibles(text) | duena | (por omisión: PUBLIC) | f | 
+pld_sesiones_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_sin_invisibles(text) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | f | 
 pld_sumar_dias_habiles(date,integer) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
 pld_ultimo_dia_habil(date) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
 pld_voto_choca(uuid,uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
-pld_votos_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+pld_votos_revisar() | duena | {duena=X/duena} | f | search_path=public
 policies_no_se_borran() | duena | (por omisión: PUBLIC) | f | search_path=public
 postings_solo_insercion() | duena | (por omisión: PUBLIC) | f | search_path=public
 recuperaciones_pendientes() | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
@@ -734,7 +734,7 @@ pld_reportes | pld_reportes_lectura | SELECT | {plataforma_sofipo} | ((operator_
 pld_sesiones | pld_sesiones_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol))
 pld_sesiones | pld_sesiones_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (id = ANY (( SELECT pld_sesiones_que_me_excluyen() AS pld_sesiones_que_me_excluyen)::uuid[])))) | 
 pld_votos | pld_votos_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[]))))
-pld_votos | pld_votos_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[])))) | 
+pld_votos | pld_votos_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[]))) AND (NOT (sesion_id = ANY (( SELECT pld_sesiones_que_me_excluyen() AS pld_sesiones_que_me_excluyen)::uuid[])))) | 
 policies | policies_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
 policy_categories | policy_categories_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
 policy_persons | policy_persons_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())

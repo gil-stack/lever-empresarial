@@ -1,11 +1,20 @@
 Pager usage is off.
-== SECURITY DEFINER de PLD que PUBLIC puede ejecutar y que NO son de disparador (debe ser 0)
+== funciones pld_ que PUBLIC puede ejecutar, de cualquier tipo (debe ser 0)
  count 
 -------
      0
 (1 row)
 
-== de invocador que PUBLIC puede ejecutar (corren con los privilegios de quien llama)
+== EXECUTE de funciones pld_ por rol
+      rolname       | puede_ejecutar 
+--------------------+----------------
+ plataforma_app     |              0
+ plataforma_cliente |              0
+ plataforma_sofipo  |             32
+ plataforma_tarea   |              0
+(4 rows)
+
+== las de invocador que la SOFIPO ejecuta (corren con sus privilegios)
                        oid                        
 --------------------------------------------------
  pld_fecha_mx(timestamp with time zone)
@@ -17,9 +26,10 @@ Pager usage is off.
 
 == como plataforma_cliente
 SET
-ERROR:  trigger functions can only be called as triggers
-ERROR:  permission denied for table pld_sesiones
-ERROR:  permission denied for table pld_comite_integrantes
+ERROR:  permission denied for function pld_registrar_pago
+ERROR:  permission denied for function pld_resultado_votacion
+ERROR:  permission denied for function pld_comite_vigentes
+ERROR:  permission denied for function pld_fecha_mx
 ERROR:  permission denied for table pld_alertas
 ERROR:  permission denied for function pld_rol
 RESET
@@ -31,4 +41,5 @@ RESET
 == como plataforma_app (sin SET ROLE)
 SET
 ERROR:  permission denied for table pld_avisos
+ERROR:  permission denied for function pld_sin_invisibles
 RESET

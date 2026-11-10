@@ -1,16 +1,22 @@
 Pager usage is off.
+== 0. Las empresas de esta base
+             razon_social             |   estado   | demostracion | perfiles 
+--------------------------------------+------------+--------------+----------
+ Distribuidora Lumbre, S.A. de C.V.   | prospecto  | f            |        0
+ Grupo Ébano Industrial, S.A. de C.V. | suspendida | f            |        0
+ Taller del Cierre                    | activa     | t            |        0
+(3 rows)
+
 BEGIN
-== 1. Los dos pagos por autorizar de antes de la 0030 pasan a listo_para_pagar (empresa activa sin perfil)
-   razon_social    | empresa | perfiles |     pago      | total_centavos 
--------------------+---------+----------+---------------+----------------
- Taller del Cierre | activa  |        0 | por_autorizar |        1269000
- Taller del Cierre | activa  |        0 | por_autorizar |        4821500
+== 1. Los dos pagos por autorizar de antes de la 0030 pasan a listo_para_pagar (Taller: activa, sin perfil y de demostración)
+   razon_social    | empresa | demostracion |     pago      | total_centavos 
+-------------------+---------+--------------+---------------+----------------
+ Taller del Cierre | activa  | t            | por_autorizar |        1269000
+ Taller del Cierre | activa  | t            | por_autorizar |        4821500
 (2 rows)
 
 SAVEPOINT
 ERROR:  pago_bloqueado_lpb
-ERROR:  current transaction is aborted, commands ignored until end of transaction block
-ERROR:  current transaction is aborted, commands ignored until end of transaction block
 ERROR:  current transaction is aborted, commands ignored until end of transaction block
 ROLLBACK
 == 2. Una empresa activa cambia un dato que no es su estado
@@ -18,18 +24,28 @@ SAVEPOINT
 UPDATE 1
 SET CONSTRAINTS
 ROLLBACK
-== 3. La empresa suspendida se reactiva (no pide perfil)
-SAVEPOINT
+== 3. La empresa suspendida se reactiva (no pide perfil) y entonces la bandeja la lista sin perfil (B)
+(la reactivación de verdad pasa por la solicitud aprobada de company_suspensions del #59; aquí, solo para ver B, en modo réplica)
+-- antes de reactivarla, la bandeja lista:
+ razon_social 
+--------------
+(0 rows)
+
+SET
 UPDATE 1
-ERROR:  estado_operativo_sin_transaccion
-ROLLBACK
-== 4. El prospecto pasa a en_alta y luego a activa sin perfil (lo nuevo de la 0030)
-SAVEPOINT
-  estado   
------------
- prospecto
+SET
+-- reactivada:
+             razon_social             
+--------------------------------------
+ Grupo Ébano Industrial, S.A. de C.V.
 (1 row)
 
+== 4. La marca de demostración no cambia en ningún sentido (C)
+SAVEPOINT
+ERROR:  demostracion_no_se_activa_para_dinero
+ROLLBACK
+SAVEPOINT
+ERROR:  empresa_real_no_pasa_a_demostracion
 ROLLBACK
 == 5. Suspender a alguien de Cumplimiento sin avisos abiertos
 SAVEPOINT
@@ -44,11 +60,11 @@ ROLLBACK
 
 Pager usage is off.
 BEGIN
-== Pagos por autorizar de antes de la 0030 (Taller, activa y sin perfil) liberados como la aplicación: rol cliente, contexto de Taller y Rosa, con su evento «autorizar_pago_proveedor»
+== Pagos por autorizar de antes de la 0030 (Taller: activa, sin perfil y de demostración) liberados como la aplicación: rol cliente, contexto de Taller y Rosa, con su evento «autorizar_pago_proveedor»
 (dentro de esta transacción, que se deshace, se apaga el disparador de LPB del #59 que bloquea a Taller por su coincidencia abierta)
- perfiles_de_taller | por_autorizar 
---------------------+---------------
-                  0 |             2
+ taller_de_demostracion | perfiles_de_taller | por_autorizar 
+------------------------+--------------------+---------------
+ t                      |                  0 |             2
 (1 row)
 
 ALTER TABLE
@@ -62,14 +78,16 @@ UPDATE 2
 INSERT 0 2
 SET CONSTRAINTS
 RESET
-      tipo      |       origen_tabla        | operaciones_pld | centavos 
-----------------+---------------------------+-----------------+----------
- pago_proveedor | supplier_payment_requests |               2 |  6090500
+-- PLD no registra nada de una empresa de demostración (C):
+ operaciones_pld | centavos 
+-----------------+----------
+               0 |        0
 (1 row)
 
- regla | alertas 
--------+---------
-(0 rows)
+ alertas_pld 
+-------------
+           0
+(1 row)
 
  pagos_listos 
 --------------

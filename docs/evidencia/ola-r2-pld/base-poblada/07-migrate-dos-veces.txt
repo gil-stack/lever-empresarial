@@ -2,7 +2,7 @@
 == corrida 1
 Aplicando 0030_pld_alertas_reportes
 Listo.
-rc=0 · 391 ms
+rc=0 · 329 ms
 == corrida 2
 Listo.
-rc=0 · 378 ms
+rc=0 · 256 ms

@@ -311,17 +311,18 @@ Archivos de prueba: `pld-postgres` y `reglas-postgres` son `tests/pld/*.test.ts`
 
 ## Aplicación sobre base poblada
 
-La 0030 se aplicó como en producción: sobre una base que ya opera con el código del #59 y con el mismo comando, `./db/migrate.sh`. Toda la salida cruda está en `base-poblada/`.
+La 0030 se aplicó como en producción: sobre una base que ya opera con el código del #59 y con el mismo comando, `./db/migrate.sh`. Toda la salida cruda está en `base-poblada/`. Del 05 al 14 se rehicieron con la 0030 final (C, N2, N3, higiene, A y B), desde la misma base poblada en 0028.
 
 **Cómo se armó.** Es la base `plataforma` en el Postgres 17 desechable de 5553, cuya dueña es `duena`, sin superusuario (como la dueña de Neon).
 1. Se migró hasta la 0028 con el `db/migrate.sh` del #59 (602af09), desde un worktree temporal (`01-migracion-hasta-0028.txt`).
 2. Se sembró con el `preparar.ts base` del #59 y se corrió su recorrido de flujos 0 a 12 con `next build` + `next start` del #59: 147 comprobaciones en verde (`02-…json`). Así quedan empresas, expedientes con documentos, LPB, invitaciones, roles, pagos, nómina y bitácora.
-3. A `audit_log`, la tabla más grande y la única que la 0030 bloquea en exclusiva, se le agregaron 492,252 filas con la forma de las reales. Quedaron 492,379 filas (348 MB), 164,084 con motivo de 500 caracteres, todas dentro de sus CHECK (`03-volumen-audit-log.txt`).
+3. A `audit_log`, la tabla más grande y la única que la 0030 bloquea en exclusiva, se le agregaron 492,252 filas con la forma de las reales. Quedaron 492,379 filas (348 MB), 164,084 con motivo de 500 caracteres, todas dentro de sus CHECK (`03-volumen-audit-log.txt`). Hoy son 492,380: la medición de la cola de la primera corrida dejó una escritura.
 
 **Lo que la 0030 le hace a tablas que ya existían.** No agrega ningún CHECK, NOT NULL, UNIQUE ni FK a una tabla existente, ni lee o reescribe sus datos. Solo inserta datos fijos: calendarios, días inhábiles y la fila inicial de parámetros sin operador. Sobre lo existente:
 - crea disparadores en pagos, nómina, personal, roles y las 6 tablas de conservación;
 - revoca DELETE y TRUNCATE, que nadie tenía: los ACL no cambian;
 - reemplaza `companies_candado_regulado`, que es idéntica a la de la 0028 más el bloque del perfil;
+- reemplaza `companies_demostracion_no_dinero`, de la 0020, para que tampoco una empresa real pase a ser de demostración (C);
 - recrea las dos políticas de lectura de `audit_log`, que ahora también ocultan `pld_%`.
 
 **Bloqueos y tiempo** (`05-bloqueos-y-tiempos.txt`, en una copia con BEGIN … ROLLBACK):
@@ -342,29 +343,29 @@ La 0030 se aplicó como en producción: sobre una base que ya opera con el códi
  supplier_payment_requests        | ShareRowExclusiveLock
  users                            | AccessShareLock, ShareRowExclusiveLock
  ms_hasta_audit_log | ms_con_audit_log_tomada | ms_total
-                140 |                       1 |      141
+                 65 |                       2 |       67
 ```
 
-- El único ACCESS EXCLUSIVE sobre una tabla existente es el de `audit_log`. Se toma al final, en el `DROP POLICY`, y se sostiene 1 ms más el commit.
-- Las demás toman SHARE ROW EXCLUSIVE, que frena escrituras pero no lecturas, durante los ~141 ms de la transacción.
-- Con `migrate.sh`, la aplicación completa tardó 391 ms, contando el arranque de psql (`07-migrate-dos-veces.txt`).
+- El único ACCESS EXCLUSIVE sobre una tabla existente es el de `audit_log`. Se toma al final, en el `DROP POLICY`, y se sostiene 2 ms más el commit.
+- Las demás toman SHARE ROW EXCLUSIVE, que frena escrituras pero no lecturas, durante los ~67 ms de la transacción.
+- Con `migrate.sh`, la aplicación completa tardó 329 ms, contando el arranque de psql (`07-migrate-dos-veces.txt`).
 
 **Una sola transacción y sin aplicar dos veces.**
 - `migrate.sh` corre todo lo pendiente entre un BEGIN y un COMMIT, con `ON_ERROR_STOP` y el candado de aviso 814271.
-- Con `SELECT 1 / 0;` al final de la 0030, salió con `rc=3` y la base quedó igual que antes (`06-falla-al-final-no-deja-nada.txt`): última migración 0028, 0 tablas y 0 funciones `pld_`, 0 disparadores nuevos, el candado sin el perfil, las 492,379 filas de `audit_log` y la foto de privilegios idéntica.
+- Con `SELECT 1 / 0;` al final de la 0030, salió con `rc=3` y la base quedó igual que antes (`06-falla-al-final-no-deja-nada.txt`): última migración 0028, 0 tablas y 0 funciones `pld_`, 0 disparadores nuevos, el candado sin el perfil, la marca de demostración de la 0020 como estaba, las 492,380 filas de `audit_log` y la foto de privilegios idéntica.
 - Corrida dos veces, la primera dice «Aplicando 0030_pld_alertas_reportes» y la segunda solo «Listo.».
 
 **Roles y dueños** (`04`, `08` y `09-foto.diff`; `\dp` en `11`, `\df+` en `12`; pruebas como cada rol en `10`):
 - De lo que ya existía cambian solo las dos políticas de `audit_log`. Ningún ACL de tabla, columna o función existente cambió, y no hay membresías ni privilegios por omisión nuevos.
 - Todo objeto nuevo es de `duena`. Las 29 tablas `pld_` tienen RLS con FORCE.
-- `plataforma_sofipo` solo tiene SELECT e INSERT en PLD (0 privilegios de otro tipo). `plataforma_app`, `plataforma_cliente`, `plataforma_tarea` y PUBLIC tienen 0 privilegios en tablas `pld_` y 0 EXECUTE de funciones `pld_`.
-- PUBLIC conserva EXECUTE en dos tipos de función:
-  - Las de disparador. Llamadas directo dan «trigger functions can only be called as triggers».
-  - Cinco de invocador: `pld_fecha_mx`, `pld_sin_invisibles`, `pld_comite_vigentes`, `pld_nombre_de_integrante` y `pld_resultado_votacion`. Corren con los privilegios de quien llama: como cliente dan «permission denied for table pld_sesiones» o «pld_comite_integrantes».
-- Ninguna SECURITY DEFINER de PLD que no sea de disparador queda abierta a PUBLIC.
+- `plataforma_sofipo` solo tiene SELECT e INSERT en PLD (0 privilegios de otro tipo). `plataforma_app`, `plataforma_cliente`, `plataforma_tarea` y PUBLIC tienen 0 privilegios en tablas `pld_`.
+- Higiene: PUBLIC no ejecuta ninguna función `pld_`, ni de disparador ni de invocador. `plataforma_sofipo` ejecuta 32, entre ellas las cinco de invocador (`pld_fecha_mx`, `pld_sin_invisibles`, `pld_comite_vigentes`, `pld_nombre_de_integrante` y `pld_resultado_votacion`), que corren con sus privilegios. `plataforma_app`, `plataforma_cliente` y `plataforma_tarea` ejecutan 0. Como cada uno de esos roles, llamarlas da «permission denied for function».
 
 **Los disparadores nuevos con datos viejos** (`13-disparadores-con-datos-viejos.txt`, todo con ROLLBACK):
-- Los dos pagos por autorizar de Taller, empresa activa sin perfil, se liberan como la aplicación: rol cliente, contexto de Taller y Rosa como liberadora, con su evento. PLD registra 2 operaciones por $60,905.00 y ninguna alerta: no hay perfil contra el cual comparar. Para esta prueba se apagó el disparador de LPB del #59, que bloquea a Taller por su coincidencia abierta.
+- En esta base Taller es de demostración (la siembra del #59 la crea así), Ébano está suspendida y Lumbre es prospecto.
+- Los dos pagos por autorizar de Taller se liberan como la aplicación: rol cliente, contexto de Taller y Rosa como liberadora, con su evento. Quedan 2 pagos listos y PLD no registra nada (0 operaciones y 0 alertas), porque las empresas de demostración no entran a PLD (C). Con la 0030 anterior eran 2 operaciones por $60,905.00. Para esta prueba se apagó el disparador de LPB del #59, que bloquea a Taller por su coincidencia abierta.
+- La marca de demostración no cambia en ningún sentido: `demostracion_no_se_activa_para_dinero` y `empresa_real_no_pasa_a_demostracion` (C).
+- La bandeja de Cumplimiento no lista a nadie sin perfil: Taller es de demostración y Ébano está suspendida. Reactivada Ébano, aparece (B; en modo réplica, porque la reactivación de verdad pasa por la solicitud aprobada del #59).
 - Una empresa activa que cambia un dato que no es su estado pasa.
 - Suspender a alguien de Cumplimiento sin avisos abiertos pasa.
 - Borrar un pago viejo da `pago_proveedor_no_se_borra`.
@@ -372,7 +373,7 @@ La 0030 se aplicó como en producción: sobre una base que ya opera con el códi
 **Si la 0030 falla por `lock_timeout`, se reintenta.** `migrate.sh` termina con «canceling statement due to lock timeout» y la base queda como estaba: sin tablas ni funciones de PLD y sin el renglón de `schema_migrations`. Se corre otra vez el mismo comando. Si vuelve a fallar, hay una transacción larga abierta; se ve con `select pid, now() - xact_start as abierta, state, left(query, 60) from pg_stat_activity where xact_start < now() - interval '5 seconds'`, se espera a que termine y se reintenta. `migrate.sh` no cambia.
 
 **Dos hallazgos, resueltos por decisión del líder (A y B):**
-1. **Cola detrás de `audit_log`** (`14-cola-detras-de-audit-log.txt`), resuelto con A. Con una lectura de `audit_log` abierta 25 s, la 0030 de entonces esperaba en el `DROP POLICY` los 15 s del `lock_timeout` de `migrate.sh`, y una escritura normal a la bitácora esperó 13,089 ms detrás de ella. Ahora la primera sentencia de la 0030 es `SET LOCAL lock_timeout = '2s'`, que vale para toda la migración y solo dentro de su transacción. `tests/pld/migracion-postgres.test.ts` mide los dos casos (`fix3/a-lock-timeout.txt`):
+1. **Cola detrás de `audit_log`**, resuelto con A. Con una lectura de `audit_log` abierta 25 s, la 0030 de entonces esperaba en el `DROP POLICY` los 15 s del `lock_timeout` de `migrate.sh`, y una escritura normal a la bitácora esperó 13,089 ms detrás de ella. Rehecho con la 0030 final (`14-cola-detras-de-audit-log.txt`, la escritura 0.5 s después de la migración): la migración cae por `lock_timeout` a los 2,111 ms y la escritura esperó 1,602 ms. Ahora la primera sentencia de la 0030 es `SET LOCAL lock_timeout = '2s'`, que vale para toda la migración y solo dentro de su transacción. `tests/pld/migracion-postgres.test.ts` mide los dos casos (`fix3/a-lock-timeout.txt`):
    - con una lectura larga de `audit_log`, la escritura normal a la bitácora esperó 2,012 ms;
    - con una escritura larga abierta en `companies`, la actualización de otra empresa esperó 1,999 ms;
    - en los dos, la migración falla por `lock_timeout`, no deja tablas, funciones ni renglón en `schema_migrations`, y el reintento entra completo;
