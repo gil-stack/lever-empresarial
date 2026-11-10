@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { NOMBRE_COOKIE_ENTRADA, NOMBRE_COOKIE_PORTAL } from "./server/autenticacion/cookie";
+import { CABECERA_CSP, esDescarga, nonceNuevo, politicaDeContenido } from "./nucleo/csp";
 import { CABECERA_EMPRESA, CABECERA_PETICION, RUTA_SEGUNDO_FACTOR, rutaDe, separarEmpresa } from "./nucleo/rutas";
 import { NOMBRE_COOKIE_ENTRADA_OPERACION, NOMBRE_COOKIE_PORTAL_OPERACION } from "./server/operacion/acceso";
 import { NOMBRE_COOKIE } from "./server/session/cookie";
@@ -13,15 +14,25 @@ import { NOMBRE_COOKIE } from "./server/session/cookie";
  * después de una passkey, un código TOTP o un código de respaldo. La cookie
  * `entrada` (la contraseña ya coincidió) solo abre la pantalla del segundo
  * factor. El servidor vuelve a exigir el factor en la base.
+ *
+ * También pone la política de contenido con un nonce nuevo (src/nucleo/csp.ts):
+ * en la petición, para que Next.js firme sus scripts, y en la respuesta.
  */
 export function proxy(request: NextRequest) {
+  const politica = politicaDeContenido(nonceNuevo());
   const { empresa, resto } = separarEmpresa(request.nextUrl.pathname);
   const ruta = rutaDe(resto);
   if (!ruta || (empresa && !ruta.conEmpresa)) {
-    return NextResponse.rewrite(new URL("/_no-existe", request.url), { status: 404 });
+    // La página 404 también se pinta con el nonce.
+    const conPolitica = new Headers(request.headers);
+    conPolitica.set(CABECERA_CSP, politica);
+    return firmar(NextResponse.rewrite(new URL("/_no-existe", request.url), { status: 404, request: { headers: conPolitica } }), politica);
   }
 
   const cabeceras = new Headers(request.headers);
+  // Las descargas responden con su propia política aislada (sandbox): no se mezclan.
+  const conCsp = !esDescarga(ruta.patron);
+  if (conCsp) cabeceras.set(CABECERA_CSP, politica);
   cabeceras.delete(CABECERA_EMPRESA);
   cabeceras.set(CABECERA_PETICION, crypto.randomUUID());
   if (empresa) cabeceras.set(CABECERA_EMPRESA, empresa);
@@ -41,18 +52,26 @@ export function proxy(request: NextRequest) {
   const continuacion = operacion ? "/operacion/continuar" : RUTA_SEGUNDO_FACTOR;
   const destinoAutenticado = operacion ? "/operacion" : "/entrar/destino";
   if (ruta.acceso.tipo === "segundo_factor" && !factor) {
-    return desviar(request, completa ? `${destinoAutenticado}?${siguiente}` : `${entrada}?${siguiente}`);
+    return firmar(desviar(request, completa ? `${destinoAutenticado}?${siguiente}` : `${entrada}?${siguiente}`), politica);
   }
   if ((ruta.acceso.tipo === "sesion" || ruta.acceso.tipo === "capacidad") && !completa) {
-    return desviar(request, factor ? `${continuacion}?${siguiente}` : `${entrada}?${siguiente}`);
+    return firmar(desviar(request, factor ? `${continuacion}?${siguiente}` : `${entrada}?${siguiente}`), politica);
   }
 
+  let respuesta: NextResponse;
   if (empresa) {
     const destino = request.nextUrl.clone();
     destino.pathname = resto;
-    return NextResponse.rewrite(destino, { request: { headers: cabeceras } });
+    respuesta = NextResponse.rewrite(destino, { request: { headers: cabeceras } });
+  } else {
+    respuesta = NextResponse.next({ request: { headers: cabeceras } });
   }
-  return NextResponse.next({ request: { headers: cabeceras } });
+  return conCsp ? firmar(respuesta, politica) : respuesta;
+}
+
+function firmar(respuesta: NextResponse, politica: string): NextResponse {
+  respuesta.headers.set(CABECERA_CSP, politica);
+  return respuesta;
 }
 
 function desviar(request: NextRequest, destino: string): NextResponse {
