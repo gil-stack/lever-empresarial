@@ -350,7 +350,7 @@ test("6 · estado de cuenta de tres bancos: empatar, proponer, confirmar y resub
   const filas = await contar("select 1 from collection_statement_rows where company_id = $1", [EMPRESA()]);
   const pagos = await contar("select 1 from collection_payments where company_id = $1", [EMPRESA()]);
   forma = await subir("banorte", "bbva-movimientos.csv", bbva, "text/csv");
-  await expect(forma.getByText(/^Ese archivo ya se importó el \d{1,2} de [a-z]+ de \d{4}\. Sus abonos ya están en la lista; no se volvieron a aplicar\.$/)).toBeVisible();
+  await expect(forma.locator("#archivo-error")).toHaveText(/^Ese archivo ya se importó el \d{1,2} de [a-z]+ de \d{4}\. Sus abonos ya están en la lista; no se volvieron a aplicar\.$/);
   await expect(forma.locator("#archivo")).toHaveAttribute("aria-invalid", "true");
   expect(await contar("select 1 from collection_statement_rows where company_id = $1", [EMPRESA()])).toBe(filas);
   expect(await contar("select 1 from collection_payments where company_id = $1", [EMPRESA()])).toBe(pagos);
