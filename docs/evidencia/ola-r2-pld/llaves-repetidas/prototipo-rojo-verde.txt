@@ -15,3 +15,7 @@ Received: 500
       |                                                             ^ Error: /operacion/pld ?aviso=constructor
 ⨯ Error: Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server". Or maybe you meant to call this function rather than return it.
 [e2e] captura: test-results/e2e/pld-una-clave-repetida-en--6357e-tumba-ninguna-página-de-PLD/test-failed-1.png
+
+Verde con la ronda 13 del #59 integrada (f22f911, deCatalogo con Object.hasOwn), pld.spec.ts completo:
+  ✓   3 tests/e2e/pld.spec.ts:92:5 › una clave repetida en la dirección no tumba ninguna página de PLD (11.3s)
+  18 passed (41.9s)
