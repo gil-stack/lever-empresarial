@@ -152,7 +152,7 @@ export async function Marco({
             <p className="barra-titulo">{tituloVisible}</p>
             <span className="barra-espacio" />
             {busqueda ? (
-              <form className="busqueda" role="search" action={busqueda.accion}>
+              <form className="busqueda" role="search" aria-label={busqueda.texto} action={busqueda.accion}>
                 <IconoBuscar />
                 {busqueda.vista ? <input type="hidden" name="vista" value={busqueda.vista} /> : null}
                 <input type="search" name="q" maxLength={100} placeholder={busqueda.texto} aria-label={busqueda.texto} autoComplete="off" />

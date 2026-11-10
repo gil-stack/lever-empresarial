@@ -1486,6 +1486,9 @@ async function revisarTeclado(carpeta) {
 const PANTALLAS_AXE = [
   { clave: "01-resumen", quien: "laura", ruta: `${ALTAMAR}/consola` },
   ...PANTALLAS,
+  // landmark-unique: el buscador de la barra y el de la mesa de Proveedores, cada uno con su nombre.
+  { clave: "40-proveedores-pagos", quien: "ana", ruta: `${TALLER}/consola/proveedores?vista=pagos` },
+  { clave: "41-proveedores-directorio", quien: "ana", ruta: `${TALLER}/consola/proveedores?vista=proveedores` },
   { clave: "50-recuperar", quien: null, ruta: "/recuperar" },
   { clave: "51-portada", quien: null, ruta: "/" },
 ];

@@ -93,7 +93,7 @@ export function MesaProveedores({
           )}
         </div>
         {vista !== "agenda" ? (
-          <Form className="buscador-pagos" role="search" action={href("/consola/proveedores")}>
+          <Form className="buscador-pagos" role="search" aria-label={vista === "proveedores" ? "Filtrar el directorio de proveedores" : "Filtrar facturas y obligaciones"} action={href("/consola/proveedores")}>
             <input type="hidden" name="vista" value={vista} />
             <label className="solo-lector" htmlFor="buscar-pagos">Buscar</label>
             <IconoBuscar />

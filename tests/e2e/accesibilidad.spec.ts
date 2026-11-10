@@ -1,4 +1,5 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+import axe from "axe-core";
 
 import { altamar, sesionDe } from "./apoyo";
 import { CORREOS } from "./siembra";
@@ -117,4 +118,39 @@ test.describe("las tablas que se desplazan se alcanzan con el teclado", () => {
     for (let i = 0; i < 5; i += 1) await page.keyboard.press("ArrowRight");
     await expect.poll(() => diot.evaluate((nodo) => nodo.scrollLeft), "ArrowRight desplaza la tabla").toBeGreaterThan(0);
   });
+});
+
+/** Las violaciones de axe en la página, solo de las reglas pedidas: «regla: selector | selector». */
+async function violaciones(page: Page, reglas: string[]): Promise<string[]> {
+  await page.evaluate(axe.source);
+  return page.evaluate(async (soloEstas) => {
+    const resultado = await (window as unknown as { axe: typeof axe }).axe.run(document, { runOnly: soloEstas });
+    return resultado.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`);
+  }, reglas);
+}
+
+// axe (`landmark-unique`): en Proveedores conviven el buscador de la barra de arriba y el de la mesa, los dos
+// `role="search"` y sin nombre: un lector de pantalla los anunciaba como dos «búsqueda» iguales. Cada uno se nombra
+// con lo que busca; el de la mesa cambia con la vista (facturas o directorio).
+test.describe("cada buscador de Proveedores tiene su propio nombre", () => {
+  for (const ventana of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    test(`Proveedores a ${ventana.width}: el de la barra y el de la mesa se distinguen y axe no marca landmark-unique`, async ({ page, context }) => {
+      await page.setViewportSize(ventana);
+      await sesionDe(context, GIL);
+      for (const [vista, mesa] of [
+        ["pagos", "Filtrar facturas y obligaciones"],
+        ["proveedores", "Filtrar el directorio de proveedores"],
+      ] as const) {
+        await page.goto(`/c/${TALLER}/consola/proveedores?vista=${vista}`);
+        await expect(page.locator("form.buscador-pagos"), vista).toBeVisible();
+        expect(await violaciones(page, ["landmark-unique"]), vista).toEqual([]);
+        await expect(page.getByRole("search", { name: mesa, exact: true }), vista).toHaveCount(1);
+        // Gil administra Taller: la barra busca personas.
+        await expect(page.getByRole("search", { name: "Buscar persona", exact: true }), vista).toHaveCount(1);
+      }
+    });
+  }
 });
