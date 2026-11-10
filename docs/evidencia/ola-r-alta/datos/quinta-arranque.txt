@@ -1,17 +1,17 @@
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test
 primera@lever.test: invitada
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-13T04:53:13.590Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-13T08:28:18.728Z.
 segunda@lever.test: invitada
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-13T04:53:13.598Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-13T08:28:18.737Z.
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)
 
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
 primera@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-13T04:53:13.728Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-13T08:28:18.884Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-13T04:53:13.732Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-13T08:28:18.888Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)
@@ -26,10 +26,10 @@ No se hizo: El operador ya tiene Administración invitada con otros correos. Par
 
 $ OPERADORES_PLATAFORMA=primera@lever.test,segunda@lever.test tsx scripts/plataforma.ts personal:migrar-variable --quien-corre evidencia@lever.test --mostrar-enlace
 primera@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-13T04:53:14.196Z.
+  La invitación a primera@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-13T08:28:19.386Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 segunda@lever.test: invitación nueva; el enlace anterior ya no sirve
-  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-13T04:53:14.199Z.
+  La invitación a segunda@lever.test quedó emitida y el correo no salió (correo_no_configurado). Vence 2026-11-13T08:28:19.390Z.
   Entrega este enlace solo a esa persona: <enlace omitido>
 Cuando cada persona acepte, borra OPERADORES_PLATAFORMA de las variables del proyecto.
 (salida 0)

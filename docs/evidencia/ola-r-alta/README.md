@@ -8,7 +8,7 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r-alta
 | Pantallas (3 temas × 1440/390) y contraste AA medido | 60 comprobaciones en verde, 0 en rojo; contraste mínimo 5.00 (Lever 1440) | `datos/resultados-pantallas-contraste.json` |
 | Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;»; el representante, el socio y la razón social con un control, el giro y el cobro con el control como espacio, el RFC con tabulador, el alta y el área con su aviso y las fechas de Pagos en su campo; el aviso propio del carácter invisible en el socio, el representante, las razones sociales y el folio, el representante que conserva lo capturado, el documento extranjero y la Lista con tabulador, el motivo con un emoji compuesto y el contrato con «Vigente hasta»; el representante con un relleno hangul, el envío sin giro ni domicilio, las fechas del folio en su campo y la recuperación marcada en su tarjeta; sin JavaScript la entrada, el giro, el dictamen y el archivo, las claves repetidas en la dirección, el foco del archivo rechazado y los valores largos a 390; el mensaje del error junto al campo, el representante sin JavaScript y el motivo de la coincidencia, y en cada aviso un solo campo marcado; cada formulario de Operación rechazado vuelve con lo capturado, con y sin JavaScript, a 1440 y 390) | 273 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
 
-Corrida del 2026-11-10 sobre el head de este PR, con los arreglos de las doce revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`; la carrera de F4 y F5 del CI, serv-nuevo-5, base-N24, base-N25, el aviso propio del carácter invisible y dos P3 de la re-verificación sobre `b2db0b5`; la bomba de fechas de `test:db`, base-N26, base-N27, serv-nuevo-6b y serv-nuevo-6d de la re-verificación sobre `a75d5e4`; N5 del CI, base-N28, serv-nuevo-7, los textos que no se ven, el JSDoc, dos reglas de axe, el campo de archivo y el desborde a 390 de la re-verificación sobre `32e49b8`; el mensaje junto al campo, el P2 de los formularios sin JavaScript, el motivo de la coincidencia, U+2800 y los Cf, y la nota del dictamen aprobado de la re-verificación sobre `edefd2e`; los formularios que vuelven con lo capturado, F1-F5, «Salir» sin JavaScript, el humo del preview N3, N4 y N6 y la guarda de las partes de la e2e de la re-verificación sobre `602af09`), sobre una base migrada de cero con la 0028 final. Las tres fases y axe corrieron sobre el código final de la doceava revisión.
+Corrida del 2026-11-10 sobre el head de este PR, con los arreglos de las doce revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`; la carrera de F4 y F5 del CI, serv-nuevo-5, base-N24, base-N25, el aviso propio del carácter invisible y dos P3 de la re-verificación sobre `b2db0b5`; la bomba de fechas de `test:db`, base-N26, base-N27, serv-nuevo-6b y serv-nuevo-6d de la re-verificación sobre `a75d5e4`; N5 del CI, base-N28, serv-nuevo-7, los textos que no se ven, el JSDoc, dos reglas de axe, el campo de archivo y el desborde a 390 de la re-verificación sobre `32e49b8`; el mensaje junto al campo, el P2 de los formularios sin JavaScript, el motivo de la coincidencia, U+2800 y los Cf, y la nota del dictamen aprobado de la re-verificación sobre `edefd2e`; los formularios que vuelven con lo capturado, F1-F5, «Salir» sin JavaScript, el humo del preview N3, N4 y N6 y la guarda de las partes de la e2e de la re-verificación sobre `602af09`), sobre una base migrada de cero con la 0028 final. Las tres fases y axe corrieron sobre `36c5cd4`, el código final de la doceava revisión (con humo-N9): todas las capturas son de ese código.
 
 ## Cómo se corre
 
@@ -874,7 +874,7 @@ Todo va en este PR. **La 0028 no cambia**, ni `PIE_REGULATORIO` ni `src/estilo/t
 - 81/81 de Postgres;
 - e2e completa 66/66 (con humo-N9) y las tres partes, con 23, 23 y 20 pruebas;
 - build y security;
-- recorrido sobre `6ae090e`: flujos 155, pantallas y contraste 60, regresiones 273, todos en verde;
+- recorrido sobre `36c5cd4`: flujos 155, pantallas y contraste 60, regresiones 273, todos en verde;
 - axe: `aria-prohibited-attr` 0 y `label-content-name-mismatch` 0 (`datos/axe-final.txt`).
 
 ## Flujo → captura → qué verifica en la base
@@ -1045,7 +1045,7 @@ Todo va en este PR. **La 0028 no cambia**, ni `PIE_REGULATORIO` ni `src/estilo/t
 
 Las capturas `NN-pantalla-<pantalla>-<tema>-<ancho>` son la fase de pantallas: un solo h1, campos con etiqueta, sin desborde horizontal y consola limpia en Personal, Cumplimiento, Lista, Expediente, Ficha, Aprobaciones, Clientes, Bitácora y Sin permiso.
 
-Las capturas del recorrido (`NN-…` y `rNN-…`) son de `6ae090e`, antes de humo-N9. En `r99` y `r131`, por ejemplo, el aviso todavía cae en una columna o junto a un campo. Las `n9-*` son de la e2e con el arreglo: `n9-antes-prospecto-1440` (sin la regla), `n9-prospecto-1440` y `-390`, `n9-documento-1440`, `n9-coincidencia-1440` y `n9-recuperacion-1440`.
+Todas las capturas son de `36c5cd4`. Las del recorrido (`NN-…` y `rNN-…`) salen de sus tres fases. Las `n9-*` salen de la e2e de humo-N9: `n9-antes-prospecto-1440` se tomó sin la regla y muestra el defecto; `n9-prospecto-1440` y `-390`, `n9-documento-1440`, `n9-coincidencia-1440` y `n9-recuperacion-1440`, con el arreglo.
 
 ## Salida literal
 
@@ -1087,7 +1087,7 @@ OK    1. la base no dejó a Aurelio con Cumplimiento
 OK    aviso «roles_incompatibles» tras la acción
 OK    1. tampoco Originación con Cumplimiento (Omar)
 OK    1. la fila de Ofelia no tiene botones: nadie se da roles a sí mismo
-Distribuidora Lumbre lista: expediente aprobado y revisión de riesgo vencida el 2026-10-09.
+Distribuidora Lumbre lista: expediente aprobado y revisión de riesgo vencida el 2026-10-10.
 
 — Flujo 2: Originación registra el prospecto y arma el expediente (2 capas, propietarios reales calculados)
 OK    aviso «prospecto_registrado» tras la acción
@@ -1235,7 +1235,7 @@ OK    12. la descarga entrega el PDF guardado
 OK    12. la SHA-256 del archivo descargado coincide con la guardada en la base
 OK    12. descargar deja «expediente_documento_descargado»
 OK    12. la bitácora muestra las dos lecturas con su etiqueta
-NOTA  f12-bitacora-lecturas-auditadas: la página mide 10123 px y no cabe en una captura completa; se guarda la ventana
+NOTA  f12-bitacora-lecturas-auditadas: la página mide 10142 px y no cabe en una captura completa; se guarda la ventana
 OK    12. Auditoría ve «Sin permiso» en Personal
 OK    consola del navegador limpia en todos los flujos
 
@@ -1292,15 +1292,15 @@ OK    pantalla clientes claro 1440: un h1, campos con etiqueta, sin desborde, co
 OK    pantalla clientes claro 390: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla clientes lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla clientes lever 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-oscuro-1440: la página mide 10532 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-oscuro-1440: la página mide 10551 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia
 NOTA  pantalla-bitacora-oscuro-390: la página mide 29444 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-claro-1440: la página mide 10532 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-claro-1440: la página mide 10551 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora claro 1440: un h1, campos con etiqueta, sin desborde, consola limpia
 NOTA  pantalla-bitacora-claro-390: la página mide 29444 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora claro 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-lever-1440: la página mide 10532 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-lever-1440: la página mide 10551 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia
 NOTA  pantalla-bitacora-lever-390: la página mide 29444 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora lever 390: un h1, campos con etiqueta, sin desborde, consola limpia
