@@ -1,12 +1,12 @@
 {
   "claro-1440": {
-    "medidos": 3274,
+    "medidos": 3317,
     "minimo": 4.97,
     "fallas": []
   },
   "claro-390": {
-    "medidos": 1665,
-    "minimo": 4.5,
+    "medidos": 1645,
+    "minimo": 4.53,
     "fallas": []
   }
 }

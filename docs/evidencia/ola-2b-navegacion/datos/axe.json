@@ -7,7 +7,7 @@
   {
     "ok": true,
     "texto": "axe 10-aprobaciones-liberador oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
-    "detalle": "otras reglas: aria-prohibited-attr (1)"
+    "detalle": "otras reglas: ninguna"
   },
   {
     "ok": true,
@@ -121,6 +121,16 @@
   },
   {
     "ok": true,
+    "texto": "axe 40-proveedores-pagos oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 41-proveedores-directorio oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
     "texto": "axe 50-recuperar oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
     "detalle": "otras reglas: ninguna"
   },
@@ -157,7 +167,7 @@
   {
     "ok": true,
     "texto": "axe 10-aprobaciones-liberador oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
-    "detalle": "otras reglas: aria-prohibited-attr (1)"
+    "detalle": "otras reglas: ninguna"
   },
   {
     "ok": true,
@@ -267,6 +277,16 @@
   {
     "ok": true,
     "texto": "axe 42-pronto-cuenta oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 40-proveedores-pagos oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 41-proveedores-directorio oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
     "detalle": "otras reglas: ninguna"
   },
   {
