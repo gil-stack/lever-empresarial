@@ -927,6 +927,10 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           // 44ª: con la marca de 24 horas, el plazo es de 24 horas desde que se conoce; se simulan 30 (venció hace 6).
           await marcarVeinticuatroHoras(cum, { casoId: casoW, motivo: "Hay información de recursos ilícitos" });
           await marcarVeinticuatroHoras(cum, { casoId: casoW, motivo: "Hay información de recursos ilícitos" });
+          // r61b-N1: otra pestaña (u otra persona) que lo marca con otro motivo no recibe «quedó como de 24 horas»: su
+          // motivo no se guardaría. El doble envío del mismo formulario (misma persona y mismo motivo) sí sale igual.
+          await assert.rejects(marcarVeinticuatroHoras(cum, { casoId: casoW, motivo: "Otra pestaña con otro motivo distinto" }), /caso_ya_marcado_24h/);
+          assert.equal((await uno<{ motivo: string }>("select motivo from pld_casos_24h where caso_id = $1", [casoW])).motivo, "Hay información de recursos ilícitos");
           await dueno.query("alter table pld_casos_24h disable trigger pld_casos_24h_inmutable");
           await dueno.query("update pld_casos_24h set registrado_en = now() - interval '30 hours' where caso_id = $1", [casoW]);
           await dueno.query("alter table pld_casos_24h enable trigger pld_casos_24h_inmutable");

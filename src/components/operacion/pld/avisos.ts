@@ -88,7 +88,7 @@ export const MENSAJES_PLD: Record<string, string> = {
   caso_no_existe: "No encontramos ese caso.",
   caso_sin_alertas: "Un caso nace con al menos una alerta.",
   caso_ya_dictaminado: "El caso ya tiene dictamen: no admite cambios.",
-  caso_ya_marcado_24h: "El caso ya estaba marcado como de 24 horas.",
+  caso_ya_marcado_24h: "Otra persona u otra pestaña ya marcó este caso como de 24 horas. Tu motivo no se guardó; sigue escrito abajo.",
   serie_de_otra_empresa: "Solo se suman alertas de la misma empresa: una serie va en un solo reporte por cliente.",
   serie_con_persona_excluida: "Esta alerta viene de un aviso que no puede ver alguien que ya trabajó en este caso. Ábrele un caso aparte.",
   serie_con_otra_reserva: "Esta alerta va en su propio caso: el caso ya se votó en el Comité.",

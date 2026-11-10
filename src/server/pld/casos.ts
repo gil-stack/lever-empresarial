@@ -392,8 +392,14 @@ export async function marcarVeinticuatroHoras(
   const motivo = motivoEscrito(entrada.motivo, 1000);
   const ahora = deps.ahora?.() ?? new Date();
   await unaVezPorFormulario(() => conPld(ctx, null, async (consulta) => {
-    const previo = await consulta.query("select 1 from pld_casos_24h where caso_id = $1", [entrada.casoId]);
-    if (previo.rows.length > 0) return;
+    const previo = (await consulta.query("select registrado_por, motivo from pld_casos_24h where caso_id = $1", [entrada.casoId])).rows[0] as
+      | { registrado_por: string; motivo: string } | undefined;
+    if (previo) {
+      // El mismo envío repetido (el doble clic, o el segundo POST sin JavaScript): misma persona y mismo motivo.
+      if (previo.registrado_por === ctx.persona.id && previo.motivo === motivo) return;
+      // r61b-N1: otra pestaña u otra persona ya lo marcó; este motivo no se guardaría, así que no es un éxito.
+      throw new ErrorDeDominio("caso_ya_marcado_24h");
+    }
     const companyId = await empresaDelCaso(consulta, entrada.casoId as string);
     await consulta.query("insert into pld_casos_24h (caso_id, operator_id, motivo, registrado_por) values ($1, $2, $3, $4)", [
       entrada.casoId, ctx.personal.operadorId, motivo, ctx.persona.id,
