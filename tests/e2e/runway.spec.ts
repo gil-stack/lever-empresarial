@@ -1,6 +1,7 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test, type APIRequestContext, type BrowserContext, type Page } from "@playwright/test";
+import { Client } from "pg";
 
 import { ORIGEN, consultar, contar, correos, dobleClic, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS_RUNWAY } from "./siembra-runway";
@@ -291,10 +292,16 @@ test("5 · mínimo de meses: rechazo con su campo, con JavaScript y sin él", as
 
 test("6 · tendencia con tres fotos: barras, línea del mínimo y su tabla", async ({ page, context, browserName }) => {
   const errores = vigilarConsola(page);
-  // Las dos semanas anteriores, como si la tarea las hubiera tomado (la prueba no puede esperar dos lunes): con su evento.
+  // Las dos semanas anteriores, como si la tarea las hubiera tomado (la prueba no puede esperar dos lunes): con su
+  // evento. La base solo admite la foto de esta semana o de la anterior (r64-base-N2); la dueña de la base desechable
+  // las siembra sin disparadores.
   const semana = lunesDe(hoy());
+  const duena = new Client({ connectionString: process.env.E2E_OWNER_DATABASE_URL });
+  await duena.connect();
   for (const [dias, conservador, esperado] of [[-14, 30, 40], [-7, 24, 36]] as const) {
-    await consultar(
+    await duena.query("begin");
+    await duena.query("set local session_replication_role = replica");
+    await duena.query(
       `with foto as (
          insert into cash_runway_snapshots (id, company_id, semana, semanas_conservador, semanas_esperado, horizonte_semanas, saldo_centavos, saldo_al_dia, colchon_centavos, meses_minimos)
          values (gen_random_uuid(), $1, $2::date, $3, $4, 53, 40000000, $2::date, 0, 3) returning id, company_id)
@@ -303,7 +310,9 @@ test("6 · tendencia con tres fotos: barras, línea del mínimo y su tabla", asy
            from foto join companies c on c.id = foto.company_id`,
       [EMPRESA(), desplazar(semana, dias), conservador, esperado],
     );
+    await duena.query("commit");
   }
+  await duena.end();
   expect(await contar("select 1 from cash_runway_snapshots where company_id = $1", [EMPRESA()])).toBe(3);
   await entrar(context, CORREOS_RUNWAY.rita);
   await page.goto(en("/consola/flujo"));

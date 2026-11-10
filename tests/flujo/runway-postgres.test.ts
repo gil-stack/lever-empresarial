@@ -43,6 +43,9 @@ describe("Runway y alertas de caja en Postgres", { skip: urlAdmin.length === 0 }
         if (archivo.endsWith(".sql")) aplicarArchivo(url, join(dir, archivo));
       }
       ejecutar(url, `do $$ begin execute format('alter database %I set timezone to %L', current_database(), 'UTC'); end $$;`);
+      // La prueba corre con fechas fijas: el «hoy» de la base (la semana de cada foto, r64-base-N2) es el lunes del
+      // paso 11, así caben la foto de la semana del 9 y la del 16. Solo la dueña de esta base desechable puede.
+      ejecutar(url, "create or replace function caja_hoy() returns date language sql stable set search_path = public, pg_temp as $$ select date '2026-11-16' $$");
       await cerrarConexion();
       const previo = process.env.DATABASE_URL;
       process.env.DATABASE_URL = urlDeAplicacion(url);

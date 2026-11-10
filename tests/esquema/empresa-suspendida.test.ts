@@ -90,6 +90,18 @@ function conLaDefinidoraAlFinal(m: Migraciones, url: string): string[] {
   return aplicadas;
 }
 
+/**
+ * La 0028 en medio (orden C de r64-base-N4, el probable): todo menos la última
+ * migración, luego la 0028 y al final la última (como el #64 desplegado después
+ * del #59 y del #63).
+ */
+function conLaDefinidoraEnMedio(m: Migraciones, url: string): string[] {
+  const ultima = m.resto.at(-1)!;
+  const aplicadas = conLaDefinidoraAlFinal({ ...m, resto: m.resto.slice(0, -1) }, url);
+  aplicarArchivoEnTransaccion(url, ultima);
+  return [...aplicadas, basename(ultima)];
+}
+
 function revisar(url: string, orden: string): string[] {
   const excepciones = `array[${Object.keys(EXCEPCIONES).map((t) => `'${t}'`).join(", ")}]::text[]`;
   const faltan = consultarJson<string[]>(url, SQL_FALTANTES.replace("$EXCEPCIONES$", excepciones));
@@ -112,15 +124,27 @@ function revisar(url: string, orden: string): string[] {
     /empresa_suspendida/,
     `${orden}: la empresa suspendida escribió en collection_customers`,
   );
+  // Y en las alertas de caja de la 0032, como las escribe la tarea (sin persona).
+  assert.throws(
+    () => ejecutar(url, `
+      begin;
+      set local role plataforma_cliente;
+      select set_config('app.company_id', '${empresa}', true);
+      insert into cash_alert_states (company_id, bajo_colchon, runway_bajo) values ('${empresa}', false, true);
+      commit;`),
+    /empresa_suspendida/,
+    `${orden}: la empresa suspendida escribió en cash_alert_states`,
+  );
   return consultarJson<string[]>(url, SQL_DISPARADORES);
 }
 
 describe("Empresa suspendida en todas las tablas que escribe el cliente", { skip: urlAdmin.length === 0 }, () => {
-  it("con la 0028 antes y después de las demás migraciones, el mismo disparador en las mismas tablas", async () => {
+  it("con la 0028 antes, después y en medio de las demás migraciones, el mismo disparador en las mismas tablas", async () => {
     const admin = exigirBaseDesechable();
     const m = migraciones();
     let antes: string[] = [];
     let despues: string[] = [];
+    let enMedio: string[] = [];
     await conBaseDesechable(admin, async (url) => {
       enOrden(m, url);
       antes = revisar(url, `orden por número (${m.real ? "0028 real" : "réplica de la 0028"} antes)`);
@@ -129,7 +153,15 @@ describe("Empresa suspendida en todas las tablas que escribe el cliente", { skip
       const orden = conLaDefinidoraAlFinal(m, url);
       despues = revisar(url, `0028 después (${orden.join(" → ")})`);
     });
+    await conBaseDesechable(admin, async (url) => {
+      const orden = conLaDefinidoraEnMedio(m, url);
+      enMedio = revisar(url, `0028 en medio (${orden.join(" → ")})`);
+    });
     assert.ok(antes.some((d) => d.includes(" ON public.collection_charges ")), "collection_charges lleva el disparador");
+    for (const tabla of ["cash_runway_settings", "cash_alert_states", "cash_alerts", "cash_alert_deliveries", "cash_runway_snapshots"]) {
+      assert.ok(antes.some((d) => d.includes(` ON public.${tabla} `)), `${tabla} lleva el disparador`);
+    }
     assert.deepEqual(despues, antes);
+    assert.deepEqual(enMedio, antes);
   });
 });
