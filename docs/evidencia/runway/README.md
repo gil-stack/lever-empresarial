@@ -92,7 +92,7 @@ Revisión: `revision-64.md` y `hallazgos-64-para-6a.md` (head `504e9bc`). Antes 
 
 **Gráfica de tendencia (pendiente del revisor de servidor).** La prueba 10 recorre Saldo y alertas con la tendencia de 3 fotos en los 3 temas, a 1440 y a 390: axe sin violaciones y sin desplazamiento horizontal, en Chromium y en WebKit; la tabla equivalente se abre en el flujo 6.
 
-**Gates de la ronda** (en local, este turno, con el #63 y `main` con el #59 integrados): typecheck, lint, build y security en verde; test 590/590; test:db 86/86; e2e en sus 5 partes 22 + 15 + 24 + 15 + 17 = 93 y 2 omitidas (las matrices de evidencia); recorrido Chromium 11/11 y WebKit 11/11 (capturas regeneradas después del merge, con el `Referrer-Policy: same-origin` global en el flujo 5 sin JavaScript).
+**Gates de la ronda** (en local, este turno, con el #63 y `main` con el #59 integrados): typecheck, lint, build y security en verde; test 590/590; test:db 86/86 (89/89 después de integrar el #63 con `main` y el #65: `definer-search-path` cubre las 3 definers de la 0032; la sonda de `pg_temp` comprueba primero el 42501 de la 0029 y presta el permiso temporal a `plataforma_tarea` solo para ella; AR1 la tumba a ella y a `definer-search-path`); e2e en sus 5 partes 22 + 15 + 24 + 15 + 17 = 93 y 2 omitidas (las matrices de evidencia); recorrido Chromium 11/11 y WebKit 11/11 (capturas regeneradas después del merge, con el `Referrer-Policy: same-origin` global en el flujo 5 sin JavaScript).
 
 ## Hallazgo: formularios sin JavaScript y `Referrer-Policy: no-referrer`
 

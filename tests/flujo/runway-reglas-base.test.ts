@@ -251,11 +251,20 @@ async function reglas(url: string, app: string, ids: Ids): Promise<void> {
   }
 
   // r65-N1 en la 0032: con `public, pg_temp` la puerta de la tarea no lee una tabla temporal de quien la llama.
-  assert.deepEqual(await acepta("pg_temp: la puerta de la tarea con una tabla temporal cash_balance_declarations", async (c) => {
+  // Desde la 0029 (#65) la tarea ya no crea tablas temporales; se le presta el permiso solo para esta sonda
+  // (como en tests/esquema/definer-search-path.test.ts), para que el search_path de la 0032 se pruebe por sí solo.
+  const temporal = (accion: "grant" | "revoke") => ejecutar(url,
+    `do $$ begin execute format('${accion} temporary on database %I ${accion === "grant" ? "to" : "from"} plataforma_tarea', current_database()); end $$;`);
+  await rechaza("sin el permiso de la 0029 no hay tablas temporales", "42501",
+    (c) => c.query("create temp table cash_balance_declarations (company_id uuid)"), "", "", "plataforma_tarea");
+  temporal("grant");
+  const sombra = await acepta("pg_temp: la puerta de la tarea con una tabla temporal cash_balance_declarations", async (c) => {
     await c.query("create temp table cash_balance_declarations (company_id uuid)");
     await c.query("insert into cash_balance_declarations values ($1)", [ids.beta]);
     return (await c.query("select company_id from empresas_para_alertas_de_caja() where company_id = $1", [ids.beta])).rows;
-  }, "", "", "plataforma_tarea"), []);
+  }, "", "", "plataforma_tarea");
+  temporal("revoke");
+  assert.deepEqual(sombra, [], "pg_temp: la puerta de la tarea leyó la tabla temporal");
 
   // r64-base-N2: la base pone las horas y la semana de la foto; lo que mande quien escribe se ignora.
   const viejo = "'2020-01-01T00:00:00Z'";
