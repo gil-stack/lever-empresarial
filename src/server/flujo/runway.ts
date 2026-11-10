@@ -57,7 +57,7 @@ const SQL_PLANES = `
     where p.company_id = $1 and p.estado = 'activo'), '[]'::json)`;
 
 /** Fuentes y planes en una sola sentencia: la misma foto de la base, sin contar dos veces un cargo recién generado. */
-const SQL_RUNWAY = `select f.*, ${SQL_PLANES} as planes from (${SQL_FUENTES}) f`;
+export const SQL_RUNWAY = `select f.*, ${SQL_PLANES} as planes from (${SQL_FUENTES}) f`;
 
 function planesDeFila(valor: unknown): PlanFuente[] {
   return lista(valor).map((p) => {
