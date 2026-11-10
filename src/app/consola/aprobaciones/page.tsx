@@ -103,7 +103,7 @@ async function fechaDeNomina(ctx: ContextoDeTenant) {
 async function leerHistorial(ctx: ContextoDeTenant): Promise<HistorialAprobaciones | null> {
   const [pagos, lotes] = await Promise.all([
     puede(ctx, "cliente.proveedores.ver")
-      ? opcional("historial_pagos", ctx, async () => (await leerPagosProveedores(ctx, { estado: "por_autorizar" })).actividad)
+      ? opcional("historial_pagos", ctx, async () => (await leerPagosProveedores(ctx, { estado: "por_autorizar" })).decisiones)
       : null,
     puede(ctx, "cliente.maestro.ver") ? opcional("historial_nomina", ctx, async () => (await leerNomina(ctx)).lotes) : null,
   ]);
