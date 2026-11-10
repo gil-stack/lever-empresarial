@@ -1,0 +1,51 @@
+// CSP del #62 sobre las rutas del #60, en Chromium y WebKit, con y sin JS: cada enlace del menú de Laura (Altamar, de
+// demostración) y de Gil (Taller), más el historial de Aprobaciones, Mi perfil y Movimientos con filtros. Cuenta los
+// avisos de la política en la consola y, con JS, los eventos securitypolicyviolation. Por https://localhost:3152 → 4812.
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+const W = "/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-2b-navegacion";
+const { chromium, webkit } = createRequire(`${W}/package.json`)("playwright");
+const E = JSON.parse(readFileSync(join(tmpdir(), "ola-2b-entorno.json"), "utf8"));
+const sql = (q) => execFileSync("psql", [E.DUENO_URL, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1", "-c", q], { encoding: "utf8" }).trim();
+const sesion = (correo) => {
+  const valor = randomBytes(32).toString("base64url"), entrada = randomUUID(), uid = sql(`select id from users where correo='${correo}'`);
+  sql(`insert into auth_entradas (id, user_id, token_hash, creada_en, vence_en, verificada_con, verificada_en, consumida_en) values ('${entrada}', '${uid}', '${createHash("sha256").update(entrada).digest("hex")}', now(), now() + interval '10 minutes', 'totp', now(), now());
+       insert into sessions (id, user_id, token_hash, expires_at, superficie, segundo_factor, entrada_id) values ('${randomUUID()}', '${uid}', '${createHash("sha256").update(valor).digest("hex")}', now() + interval '2 hours', 'cliente', 'totp', '${entrada}');`);
+  return valor;
+};
+const BASE = "https://localhost:3152";
+const QUIENES = [["Laura · Altamar", sesion(sql("select correo from users where correo like 'laura%' limit 1")), E.EMPRESA_ALTAMAR], ["Gil · Taller", sesion("gil-pagos@ejemplo.mx"), E.EMPRESA_TALLER]];
+const POLITICA = /content security policy|refused to (load|apply|execute)|blocked by csp|violates the following/i;
+let total = 0, conFallas = 0; const resumen = [];
+for (const motor of ["chromium", "webkit"]) {
+  const nav = await (motor === "webkit" ? webkit : chromium).launch({ headless: true });
+  for (const js of [true, false]) for (const [quien, ses, empresa] of QUIENES) {
+    const ctx = await nav.newContext({ javaScriptEnabled: js, viewport: { width: 1440, height: 900 }, ignoreHTTPSErrors: true, locale: "es-MX" });
+    await ctx.addCookies([{ name: "__Host-sesion", value: ses, url: `${BASE}/`, secure: true, httpOnly: true, sameSite: "Lax" }]);
+    if (js) await ctx.addInitScript(() => { window.__csp = []; document.addEventListener("securitypolicyviolation", (e) => window.__csp.push(`${e.violatedDirective} ${e.blockedURI}`)); });
+    const p = await ctx.newPage(); const avisos = [];
+    p.on("console", (m) => { if (POLITICA.test(m.text())) avisos.push(m.text().slice(0, 160)); });
+    await p.goto(`${BASE}/c/${empresa}/consola`, { waitUntil: "load" });
+    const enlaces = await p.evaluate(() => [...new Set([...document.querySelectorAll('nav[aria-label="Secciones"] a[href]')].map((a) => new URL(a.href).pathname))]);
+    const rutas = [...new Set([`/c/${empresa}/consola`, ...enlaces, `/c/${empresa}/consola/aprobaciones?vista=historial`, `/c/${empresa}/consola/perfil`, `/c/${empresa}/consola/movimientos?periodo=7d&tipo=cargo`])];
+    for (const ruta of rutas) {
+      avisos.length = 0;
+      const r = await p.goto(`${BASE}${ruta}`, { waitUntil: js ? "networkidle" : "load" }).catch((e) => ({ status: () => `error ${e.message.slice(0, 60)}` }));
+      const eventos = js ? await p.evaluate(() => window.__csp ?? []) : [];
+      const politica = (await p.evaluate(() => document.documentElement.outerHTML.length)) > 0;
+      const estado = r.status();
+      total++;
+      const malo = estado >= 400 || typeof estado === "string" || avisos.length || eventos.length;
+      if (malo) { conFallas++; resumen.push(`XX ${motor} ${js ? "JS" : "sin JS"} ${quien} ${ruta}: ${estado} avisos=${avisos.join(" | ")} eventos=${eventos.join(" | ")}`); }
+    }
+    resumen.push(`   ${motor} ${js ? "JS" : "sin JS"} ${quien}: ${rutas.length} rutas`);
+    await ctx.close();
+  }
+  await nav.close();
+}
+console.log(resumen.join("\n"));
+console.log(`\n${total - conFallas} de ${total} páginas con 0 avisos de la política, 0 eventos y sin error.`);

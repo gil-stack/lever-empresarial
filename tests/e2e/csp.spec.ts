@@ -115,7 +115,9 @@ test("navegación del cliente: los enlaces del menú no traen un <style> con el 
   expect((await context.cookies()).some((c) => c.name === "acento")).toBe(true);
   await page.evaluate(() => Object.assign(window, { __mismoDocumento: true }));
   const secciones = page.getByRole("navigation", { name: "Secciones" });
-  for (const [enlace, destino] of [["Proveedores", /\/consola\/proveedores$/], ["Política", /\/consola\/politica$/], [/^Pendientes/, /\/consola\/pendientes$/]] as const) {
+  // El menú de la ola 2b (#60) para Laura en Altamar: Pendientes vive en «Aprobaciones» (con su contador en el nombre) y
+  // Política no está en su menú; Calendario sí.
+  for (const [enlace, destino] of [["Proveedores", /\/consola\/proveedores$/], ["Calendario", /\/consola\/calendario$/], [/^Aprobaciones/, /\/consola\/aprobaciones$/]] as const) {
     await secciones.getByRole("link", { name: enlace, exact: typeof enlace === "string" }).click();
     await page.waitForURL(destino);
     await page.waitForLoadState("networkidle");
