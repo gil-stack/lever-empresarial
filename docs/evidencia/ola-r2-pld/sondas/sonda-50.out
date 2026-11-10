@@ -14,7 +14,7 @@
   'PABLO NUÑEZ (DIRECCIÓN GENERAL/DIRECTOR) PRESIDENTE SUPLENTE'
 ]
 == El auditor-integrante cuenta para el quórum y vota
-   caso sin dictamen para votar: 3ed96bb8-3857-4509-bda5-eaf0e73ff147
+   caso sin dictamen para votar: ff40cfda-ef3d-4c36-b23d-047950819863
    sesión con P, S y el auditor-integrante → error: sesion_presentes_invalidos
    la base calcula: undefined
    voto del auditor-integrante → error: sesion_no_existe

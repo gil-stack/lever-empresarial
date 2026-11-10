@@ -1,0 +1,13 @@
+== A. Operador sembrado: el aviso de Beta excluye a CUM2 y a AUD; CUM es la única que puede analizarlo
+   Administración le quita el rol a CUM → aviso_sin_analista
+   la dueña suspende a CUM → aviso_sin_analista
+   la dueña da de baja a CUM → update or delete on table "platform_staff" violates foreign key constraint "platform_staff_roles_personal" on table "platform_staff_roles"
+   control: la dueña suspende a CUM2 (excluida; CUM sigue) → pasa (se deshizo)
+== B. Carrera: T1 emite un aviso que excluye a CUMY · T2 le quita el rol de Cumplimiento a CUMX
+┌─────────┬──────────────────────────────┬──────────────────────────┬──────────────────────┬───────┬──────────────┬────────────────────┐
+│ (index) │ orden                        │ T1 (aviso)               │ T2 (quitar rol)      │ aviso │ cumx_con_rol │ aviso sin analista │
+├─────────┼──────────────────────────────┼──────────────────────────┼──────────────────────┼───────┼──────────────┼────────────────────┤
+│ 0       │ 'T1 confirma primero'        │ 'confirmó'               │ 'aviso_sin_analista' │ 1     │ 1            │ false              │
+│ 1       │ 'T2 confirma primero'        │ 'aviso_sin_cumplimiento' │ 'confirmó'           │ 0     │ 0            │ false              │
+│ 2       │ 'las dos confirman a la vez' │ 'aviso_sin_cumplimiento' │ 'confirmó'           │ 0     │ 0            │ false              │
+└─────────┴──────────────────────────────┴──────────────────────────┴──────────────────────┴───────┴──────────────┴────────────────────┘
