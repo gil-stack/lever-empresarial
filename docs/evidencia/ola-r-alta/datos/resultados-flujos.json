@@ -337,6 +337,38 @@
     },
     {
       "ok": true,
+      "texto": "aviso «dato_invalido_correo» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. invitacion, con JavaScript a 1440: «dato_invalido_correo» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_correo» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. invitacion, sin JavaScript a 390: «dato_invalido_correo» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «comision_valor_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. comision, con JavaScript a 1440: «comision_valor_invalido» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «comision_valor_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. comision, sin JavaScript a 390: «comision_valor_invalido» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
       "texto": "aviso «lpb_renglon_invalido» tras la acción"
     },
     {
