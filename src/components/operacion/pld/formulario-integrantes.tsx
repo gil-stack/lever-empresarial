@@ -49,7 +49,8 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
   const valor = (campo: string) => estado.valores[campo] ?? "";
   const primerCapturado = ids.findIndex((_, i) => valor(`nombres-${i}`).trim() !== "");
   const delAviso = (campo: string) =>
-    aviso !== null && (CAMPO_DE_INTEGRACION[aviso] === campo || Object.keys(errorDelCampo(aviso, campo)).length > 0);
+    aviso !== null &&
+    ((Object.hasOwn(CAMPO_DE_INTEGRACION, aviso) && CAMPO_DE_INTEGRACION[aviso] === campo) || Object.keys(errorDelCampo(aviso, campo)).length > 0);
   // El campo marcado lo describe su mensaje, junto a él; el aviso de arriba queda como resumen (onceava ronda del #59).
   const marca = { "aria-invalid": true, "aria-describedby": `${ID_AVISO}-campo` } as const;
   const mensajeDe = (marcado: object) =>
