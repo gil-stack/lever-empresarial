@@ -259,8 +259,11 @@ function Tendencia({ vista }: { vista: VistaRunway }) {
     );
   }
   const meses = (foto: Foto) => mesesDeSemanas(foto.semanasConservador, foto.horizonte);
+  // El mismo texto en la gráfica, su descripción y la tabla: a partir del horizonte, «12 meses o más» (r64b-N2).
+  const textoSemanas = (semanas: number, horizonte: number) => (semanas >= horizonte ? "12 meses o más" : formatoMeses(mesesDeSemanas(semanas, horizonte)));
+  const textoFoto = (foto: Foto) => textoSemanas(foto.semanasConservador, foto.horizonte);
   const ultima = fotos.at(-1)!;
-  const resumen = `Runway conservador de las últimas ${fotos.length} semanas: de ${formatoMeses(meses(fotos[0]!))} la semana del ${fechaCorta(fotos[0]!.semana)} a ${formatoMeses(meses(ultima))} la semana del ${fechaCorta(ultima.semana)}. Mínimo: ${textoMinimo(minimo)}.`;
+  const resumen = `Runway conservador de las últimas ${fotos.length} semanas: de ${textoFoto(fotos[0]!)} la semana del ${fechaCorta(fotos[0]!.semana)} a ${textoFoto(ultima)} la semana del ${fechaCorta(ultima.semana)}. Mínimo: ${textoMinimo(minimo)}.`;
   return (
     <Hoja id="tendencia-titulo" titulo="Tendencia semanal" className="flujo-bloque">
       {vista.fotosDeEjemplo ? (
@@ -282,7 +285,7 @@ function Tendencia({ vista }: { vista: VistaRunway }) {
               const valor = meses(foto);
               const ultimaBarra = i === fotos.length - 1;
               return (
-                <li key={foto.semana} title={`Semana del ${fechaCorta(foto.semana)}: ${formatoMeses(valor)}`} data-semana={foto.semana} data-meses={valor}>
+                <li key={foto.semana} title={`Semana del ${fechaCorta(foto.semana)}: ${textoFoto(foto)}`} data-semana={foto.semana} data-meses={valor}>
                   <span className="runway-barra" style={{ height: `${Math.max((valor / MESES_RUNWAY) * 100, 1)}%` }}>
                     {ultimaBarra ? <span className="runway-valor">{valor.toLocaleString("es-MX", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span> : null}
                   </span>
@@ -316,8 +319,8 @@ function Tendencia({ vista }: { vista: VistaRunway }) {
               {fotos.map((foto) => (
                 <tr key={foto.semana} data-semana={foto.semana}>
                   <th scope="row">{fechaCorta(foto.semana)}</th>
-                  <td className="cifra">{foto.semanasConservador >= foto.horizonte ? "12 meses o más" : formatoMeses(meses(foto))}</td>
-                  <td className="cifra">{foto.semanasEsperado >= foto.horizonte ? "12 meses o más" : formatoMeses(mesesDeSemanas(foto.semanasEsperado, foto.horizonte))}</td>
+                  <td className="cifra">{textoFoto(foto)}</td>
+                  <td className="cifra">{textoSemanas(foto.semanasEsperado, foto.horizonte)}</td>
                   <td className="cifra">{formatoPesos(foto.saldoCentavos)}</td>
                 </tr>
               ))}

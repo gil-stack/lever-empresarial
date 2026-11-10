@@ -255,15 +255,27 @@ async function reglas(url: string, app: string, ids: Ids): Promise<void> {
   // (como en tests/esquema/definer-search-path.test.ts), para que el search_path de la 0032 se pruebe por sí solo.
   const temporal = (accion: "grant" | "revoke") => ejecutar(url,
     `do $$ begin execute format('${accion} temporary on database %I ${accion === "grant" ? "to" : "from"} plataforma_tarea', current_database()); end $$;`);
-  await rechaza("sin el permiso de la 0029 no hay tablas temporales", "42501",
+  const sinTemporal = (cuando: string) => rechaza(`${cuando}: sin el permiso de la 0029 no hay tablas temporales`, "42501",
     (c) => c.query("create temp table cash_balance_declarations (company_id uuid)"), "", "", "plataforma_tarea");
-  temporal("grant");
-  const sombra = await acepta("pg_temp: la puerta de la tarea con una tabla temporal cash_balance_declarations", async (c) => {
+  // r63c-N1: el préstamo va con psql en autocommit (plataforma_app no puede darlo), fuera de la transacción de la sonda.
+  // Se devuelve en un finally aunque la sonda falle, y después se vuelve a exigir el 42501.
+  async function conTemporalPrestado<T>(sonda: () => Promise<T>): Promise<T> {
+    temporal("grant");
+    try {
+      return await sonda();
+    } finally {
+      temporal("revoke");
+      await sinTemporal("después del préstamo");
+    }
+  }
+  await sinTemporal("antes del préstamo");
+  // Una sonda que falla no deja el permiso prestado.
+  await assert.rejects(() => conTemporalPrestado(async () => { throw new Error("sonda forzada a fallar"); }), /sonda forzada a fallar/);
+  const sombra = await conTemporalPrestado(() => acepta("pg_temp: la puerta de la tarea con una tabla temporal cash_balance_declarations", async (c) => {
     await c.query("create temp table cash_balance_declarations (company_id uuid)");
     await c.query("insert into cash_balance_declarations values ($1)", [ids.beta]);
     return (await c.query("select company_id from empresas_para_alertas_de_caja() where company_id = $1", [ids.beta])).rows;
-  }, "", "", "plataforma_tarea");
-  temporal("revoke");
+  }, "", "", "plataforma_tarea"));
   assert.deepEqual(sombra, [], "pg_temp: la puerta de la tarea leyó la tabla temporal");
 
   // r64-base-N2: la base pone las horas y la semana de la foto; lo que mande quien escribe se ignora.
@@ -316,6 +328,22 @@ async function reglas(url: string, app: string, ids: Ids): Promise<void> {
     return (await c.query("select cruce_runway, cruce_colchon from cash_alerts where id = $1", [id])).rows[0];
   }), { cruce_runway: 2, cruce_colchon: null });
   await rechaza("N3 un segundo aviso del mismo cruce", "cash_alerts_un_aviso_por_cruce_runway", async (c) => { await nuevoAviso(c); });
+  // r64b-N1: la misma llave para el colchón. El índice existe y dos avisos del mismo cruce de colchón chocan con él.
+  assert.equal(contar(url, "select 1 from pg_indexes where indexname = 'cash_alerts_un_aviso_por_cruce_colchon' and indexdef like '%UNIQUE%(company_id, cruce_colchon) WHERE colchon'"), 1,
+    "falta el índice único del cruce de colchón");
+  const avisoDeColchon = (c: Cliente) => c.query(`insert into cash_alerts (id, company_id, colchon, runway, faltante_inicio, faltante_saldo_centavos, faltante_motivo, colchon_centavos, horizonte_semanas, meses_minimos, estado)
+    values ($1, $2, true, false, '2027-01-18', 0, 'colchon', 0, 52, 4, 'enviando')`, [randomUUID(), A]);
+  const cruzarColchon = async (c: Cliente) => {
+    await evento(c, A, null, "estado_alerta_caja", "cash_alert_states", A);
+    await c.query("update cash_alert_states set bajo_colchon = false where company_id = $1", [A]);
+    await c.query("update cash_alert_states set bajo_colchon = true where company_id = $1", [A]);
+  };
+  await acepta("r64b-N1 control: un aviso por el cruce de colchón", async (c) => { await cruzarColchon(c); await avisoDeColchon(c); });
+  await rechaza("r64b-N1 un segundo aviso del mismo cruce de colchón", "cash_alerts_un_aviso_por_cruce_colchon", async (c) => {
+    await cruzarColchon(c);
+    await avisoDeColchon(c);
+    await avisoDeColchon(c);
+  });
   await rechaza("N3 un aviso sin cruce (la bandera apagada)", "alerta_sin_cruce", async (c) => {
     await evento(c, A, null, "estado_alerta_caja", "cash_alert_states", A);
     await c.query("update cash_alert_states set runway_bajo = false where company_id = $1", [A]);

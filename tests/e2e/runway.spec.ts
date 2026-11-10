@@ -298,7 +298,8 @@ test("6 · tendencia con tres fotos: barras, línea del mínimo y su tabla", asy
   const semana = lunesDe(hoy());
   const duena = new Client({ connectionString: process.env.E2E_OWNER_DATABASE_URL });
   await duena.connect();
-  for (const [dias, conservador, esperado] of [[-14, 30, 40], [-7, 24, 36]] as const) {
+  // La más vieja llega al horizonte: la gráfica la describe igual que la tabla, «12 meses o más» (r64b-N2).
+  for (const [dias, conservador, esperado] of [[-14, 53, 53], [-7, 30, 40]] as const) {
     await duena.query("begin");
     await duena.query("set local session_replication_role = replica");
     await duena.query(
@@ -318,12 +319,15 @@ test("6 · tendencia con tres fotos: barras, línea del mínimo y su tabla", asy
   await page.goto(en("/consola/flujo"));
   const figura = page.locator('[data-tendencia="real"]');
   await expect(figura.locator(".runway-barras li")).toHaveCount(3);
-  await expect(figura.locator('[role="img"]')).toHaveAttribute("aria-label", /últimas 3 semanas: de 6\.8 meses .* Mínimo: 4 meses\./);
+  await expect(figura.locator('[role="img"]')).toHaveAttribute("aria-label", /últimas 3 semanas: de 12 meses o más la semana del .* Mínimo: 4 meses\./);
+  await expect(figura.locator(".runway-barras li").first()).toHaveAttribute("title", /: 12 meses o más$/);
   await expect(figura.locator(".runway-minimo")).toBeAttached();
   await expect(figura.locator(".runway-leyenda")).toContainText("Tu mínimo: 4 meses");
   await page.getByText("Ver los datos en tabla").click();
   await expect(page.locator('[data-tabla="tendencia"] tbody tr')).toHaveCount(3);
-  await expect(page.locator('[data-tabla="tendencia"] tbody tr').first()).toContainText("6.8 meses");
+  const filas = page.locator('[data-tabla="tendencia"] tbody tr');
+  await expect(filas.first()).toContainText("12 meses o más");
+  await expect(filas.nth(1)).toContainText("6.8 meses");
   await foto(page, browserName, "tendencia");
   expect(reales(errores, browserName)).toEqual([]);
 });

@@ -76,6 +76,8 @@ MUTACIONES = {
               "    NEW.cruce_colchon := CASE WHEN NEW.colchon THEN coalesce(NEW.cruce_colchon, vigente.cruces_colchon) END;\n    NEW.cruce_runway := CASE WHEN NEW.runway THEN coalesce(NEW.cruce_runway, vigente.cruces_runway) END;\n", 1)],
     # r64-base-N4: sin el DO del final (si la 0028 entró antes, las 5 tablas quedan sin el bloqueo).
     "AR13": [("  IF to_regprocedure('bloqueo_empresa_suspendida()') IS NOT NULL THEN", "  IF false THEN", 1)],
+    # r64b-N1: sin el índice único del cruce de colchón.
+    "AR14": [("CREATE UNIQUE INDEX cash_alerts_un_aviso_por_cruce_colchon ON cash_alerts (company_id, cruce_colchon) WHERE colchon;\n", "", 1)],
     # N3: el número del cruce se puede reescribir.
     "AR12": [("      NEW.colchon_centavos, NEW.runway_semanas, NEW.horizonte_semanas, NEW.meses_minimos, NEW.detectado_en,\n      NEW.cruce_colchon, NEW.cruce_runway)",
               "      NEW.colchon_centavos, NEW.runway_semanas, NEW.horizonte_semanas, NEW.meses_minimos, NEW.detectado_en,\n      OLD.cruce_colchon, OLD.cruce_runway)", 1)],

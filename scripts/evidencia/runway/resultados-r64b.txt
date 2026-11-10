@@ -1,0 +1,11 @@
+Ronda r64b (re-verificación del #64), 2026-11-10, Postgres 17.9 UTF-8 en 5583, Chromium.
+
+r64b-N1 · mutación AR14 de la 0032 (sin el índice único cash_alerts_un_aviso_por_cruce_colchon) contra tests/flujo/runway-reglas-base.test.ts:
+- con las dos aserciones: FALLA · «falta el índice único del cruce de colchón» (catálogo).
+- sin la aserción de catálogo (solo para comprobarlo): FALLA · «r64b-N1 un segundo aviso del mismo cruce de colchón: la base lo aceptó (esperado cash_alerts_un_aviso_por_cruce_colchon)».
+
+r64b-N2 · tests/e2e/runway.spec.ts, prueba 6, con src/components/flujo/runway.tsx de antes del arreglo:
+- FALLA · aria-label recibido: «Runway conservador de las últimas 3 semanas: de 12.0 meses la semana del 26 oct a 1.1 meses la semana del 9 nov. Mínimo: 4 meses.» (esperado «de 12 meses o más la semana del …»).
+- Con el arreglo: runway.spec 10 pasan, 1 omitida (la matriz de evidencia).
+
+r63c-N1 · el préstamo de TEMP de runway-reglas-base va en un finally y después se vuelve a exigir el 42501; una sonda forzada a fallar no deja el permiso.
