@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtempSync, readdirSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
@@ -11,34 +10,36 @@ import pg from "pg";
 import { aplicarArchivo, conBaseDesechable, exigirBaseDesechable } from "../aislamiento/postgres.ts";
 
 const urlAdmin = process.env.AISLAMIENTO_DATABASE_URL?.trim() ?? "";
-const MIGRACIONES = join(dirname(fileURLToPath(import.meta.url)), "../../db/migrations");
+const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "../..");
+const MIGRACIONES = join(RAIZ, "db/migrations");
 const LA_0030 = "0030_pld_alertas_reportes";
 
 /**
  * La 0030 sobre una base que ya tiene lo anterior, con la misma transacción que arma db/migrate.sh (lock_timeout de
  * 15 s, BEGIN, candado de migración, schema_migrations, la migración y COMMIT). Corre aparte (psql asíncrono) para
- * que la prueba pueda medir, mientras tanto, lo que espera una escritura normal.
+ * que la prueba pueda medir, mientras tanto, lo que espera una escritura normal. El guion va por la entrada estándar y
+ * el \i con ruta relativa a la raíz: en Vercel CI, psql es scripts/ci/bin/psql, que corre dentro del contenedor (con
+ * -w /work) y no ve archivos del temporal del anfitrión.
  */
 function migrar0030(urlDuena: string): Promise<{ codigo: number; error: string }> {
-  const carpeta = mkdtempSync(join(tmpdir(), "migracion-0030-"));
-  const corredor = join(carpeta, "corredor.sql");
-  writeFileSync(corredor, [
+  const guion = [
     "SET lock_timeout = '15s';",
     "SET client_min_messages TO warning;",
     "BEGIN;",
     "SELECT pg_advisory_xact_lock(814271) AS migracion_en_curso \\gset",
     "CREATE TABLE IF NOT EXISTS schema_migrations (version text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());",
-    `\\i ${join(MIGRACIONES, `${LA_0030}.sql`)}`,
+    `\\i db/migrations/${LA_0030}.sql`,
     `INSERT INTO schema_migrations (version) VALUES ('${LA_0030}');`,
     "COMMIT;",
-  ].join("\n"));
+  ].join("\n");
   const url = new URL(urlDuena);
   const env = { ...process.env, PGPASSWORD: decodeURIComponent(url.password) };
   url.password = "";
   return new Promise((listo) => {
-    execFile("psql", [url.toString(), "-X", "-q", "-v", "ON_ERROR_STOP=1", "-f", corredor], { env, timeout: 120_000 }, (error, _salida, errores) => {
+    const hijo = execFile("psql", [url.toString(), "-X", "-q", "-v", "ON_ERROR_STOP=1"], { env, cwd: RAIZ, timeout: 120_000 }, (error, _salida, errores) => {
       listo({ codigo: error ? Number((error as { code?: number }).code ?? 1) : 0, error: String(errores) });
     });
+    hijo.stdin?.end(`${guion}\n`);
   });
 }
 

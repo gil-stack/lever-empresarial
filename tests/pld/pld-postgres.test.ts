@@ -169,9 +169,16 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
             "    END IF;",
             "",
           ].join("\n");
+          // r65-N1: al redefinirla, la 0030 le agrega pg_temp al search_path, como a toda SECURITY DEFINER suya.
+          // Es el único otro cambio permitido respecto a la 0028.
+          const conPgTemp = "SECURITY DEFINER\nSET search_path = public, pg_temp\nAS $$";
           const de0030 = cuerpo("0030_pld_alertas_reportes.sql");
           assert.ok(de0030.includes(bloque0030));
-          assert.equal(de0030.replace(bloque0030, ""), cuerpo("0028_alta_regulada.sql"));
+          assert.ok(de0030.includes(conPgTemp));
+          assert.equal(
+            de0030.replace(bloque0030, ""),
+            cuerpo("0028_alta_regulada.sql").replace("SECURITY DEFINER\nSET search_path = public\nAS $$", () => conPgTemp),
+          );
 
           alfa = await prospecto("ALF150301AB1", "Alfa Comercial SA de CV");
           const { versionId } = await armarBorrador(ori, { companyId: alfa, razonSocial: "Alfa Comercial SA de CV", rfc: "ALF150301AB1", almacen });
@@ -2136,7 +2143,7 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
 
         await t.test("permisos de las funciones de PLD: PUBLIC no ejecuta ninguna; app, cliente y tarea tampoco; la SOFIPO, solo las que usa", async () => {
           const ejecutan = async (quien: string) => (await dueno.query(
-            `select coalesce(array_agg(p.oid::regprocedure::text order by p.oid::regprocedure::text), '{}') as funciones
+            `select coalesce(array_agg(p.oid::regprocedure::text order by p.oid::regprocedure::text collate "C"), '{}') as funciones
              from pg_proc p cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
              where p.pronamespace = 'public'::regnamespace and p.proname like 'pld\\_%' and a.privilege_type = 'EXECUTE'
                and a.grantee = case when $1 = 'PUBLIC' then 0::oid else $1::regrole::oid end`,
