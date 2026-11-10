@@ -1716,7 +1716,11 @@ test.describe("Operación SOFIPO: precio y descarga", () => {
     expect(await descargas()).toBe(antes);
     const pantalla = await page.request.get(`/operacion/clientes/${faro!.id}/expediente`);
     expect(pantalla.status()).toBe(200);
-    expect(pantalla.headers()["content-security-policy"]).toBe("frame-ancestors 'none'");
+    // La pantalla lleva la política estricta del proxy, con el nonce de su respuesta (#62), no la de la descarga.
+    const general = pantalla.headers()["content-security-policy"] ?? "";
+    expect(general).toMatch(/script-src 'self' 'nonce-[A-Za-z0-9+/=_-]+' 'strict-dynamic'/);
+    expect(general).toContain("frame-ancestors 'none'");
+    expect(general).not.toContain("sandbox");
     // Humo-N6 del preview: la política de permisos va en todas las respuestas, también en la descarga y fuera de Operación.
     const permisos =
       "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), display-capture=(), publickey-credentials-get=(self), publickey-credentials-create=(self)";
