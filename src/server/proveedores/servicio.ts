@@ -16,6 +16,7 @@ import { actorDeCliente, auditar as auditarPorDefecto, type Auditar } from "../b
 import { almacenVercel, type AlmacenConstancia } from "./constancia";
 import { repositorioPg } from "./repositorio";
 import type { AltaGuardada, LecturaProveedores, RepositorioProveedores } from "./tipos";
+import { INVISIBLE } from "../../dominio/control";
 
 export type DependenciasProveedores = {
   repositorio?: RepositorioProveedores;
@@ -228,7 +229,7 @@ function areaDeAlta(valor: unknown): string | null {
 
 function errorDeRazon(razon: string): string | null {
   if (razon.length === 0) return "razon_vacia";
-  if (/[\u0000-\u001F\u007F]/.test(razon)) return "razon_control";
+  if (INVISIBLE.test(razon)) return "razon_control";
   if (razon.length > 254) return "razon_larga";
   return null;
 }

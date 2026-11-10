@@ -1,4 +1,4 @@
-export { darDeAltaEmpresa, leerEmpresa } from "./servicio";
+export { leerEmpresa } from "./servicio";
 export type { DependenciasEmpresa } from "./servicio";
 export { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 export type { AltaEmpresaEntrada, Empresa } from "./tipos";

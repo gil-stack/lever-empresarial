@@ -403,6 +403,16 @@ div.empresa-lateral:not(.menu-desplegable),
   box-shadow: 0 1px 0 var(--line);
 }
 
+/* Sin JavaScript nadie pone data-desplazada: la barra lleva siempre su fondo y no se encima con el contenido. */
+@media (scripting: none) {
+  .barra-superior {
+    background: color-mix(in srgb, var(--void) 70%, transparent);
+    -webkit-backdrop-filter: blur(24px) saturate(120%);
+    backdrop-filter: blur(24px) saturate(120%);
+    box-shadow: 0 1px 0 var(--line);
+  }
+}
+
 .barra-titulo {
   min-width: 0;
   overflow: hidden;

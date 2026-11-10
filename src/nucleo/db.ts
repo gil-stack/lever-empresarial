@@ -168,6 +168,13 @@ export function traducirErrorDeBase(error: unknown): Error {
   const marca = `${campo(error, "constraint")} ${campo(error, "table")}`.toLowerCase();
   if (codigo === "42501") return new ErrorDeDominio("sin_permiso");
   if (codigo === "23505") {
+    // Alta regulada: un doble envío concurrente. Otro formulario sobre lo mismo dice su motivo;
+    // el mismo formulario (llave primaria repetida) se repite una vez y sale como el primero.
+    if (marca.includes("kyb_versiones_un_borrador")) return new ErrorDeDominio("expediente_con_borrador");
+    if (marca.includes("kyb_dictamenes_una_por_version")) return new ErrorDeDominio("dictamen_ya_registrado");
+    if (marca.includes("company_suspensions_una_pendiente")) return new ErrorDeDominio("suspension_pendiente");
+    if (marca.includes("lpb_cargas_archivo_unico")) return new ErrorDeDominio("lpb_ya_cargada");
+    if (FORMULARIOS_REGULADOS.test(marca)) return new ErrorDeDominio("formulario_ya_aplicado");
     if (marca.includes("auth_passkeys")) return new ErrorDeDominio("passkey_duplicada");
     if (marca.includes("auth_totp")) return new ErrorDeDominio("totp_duplicado");
     if (marca.includes("auth_recuperaciones")) return new ErrorDeDominio("recuperacion_abierta");
@@ -199,6 +206,14 @@ export function traducirErrorDeBase(error: unknown): Error {
     return new ErrorDeDominio("area_ajena");
   }
   if (codigo === "23514") {
+    // El servidor valida esos motivos antes y como la base (motivoEscrito: cuenta caracteres y los guarda
+    // en un renglón); si aun así la base los rechaza, se avisa del mínimo del motivo, no «la base no respondió».
+    if (/company_suspensions_textos|lpb_coincidencias_textos|kyb_dictamenes_motivo/.test(marca)) return new ErrorDeDominio("motivo_corto");
+    // La bitácora admite un motivo de hasta 500 caracteres, recortado y sin controles; el servidor ya lo limpia y
+    // `auditarOperacion` revisa el largo antes. Esto es la red: se avisa en el campo, no «la base no respondió».
+    if (marca.includes("audit_log_motivo_formato")) return new ErrorDeDominio("motivo_largo");
+    // Enviar una versión sin todos los datos generales: el servidor lo revisa antes; esto es la red.
+    if (marca.includes("kyb_versiones_forma")) return new ErrorDeDominio("expediente_datos_incompletos");
     if (marca.includes("lista_69b")) return new ErrorDeDominio("listado_irreconocible");
     if (marca.includes("clabe")) return new ErrorDeDominio("clabe_invalida");
     if (marca.includes("baja")) return new ErrorDeDominio("baja_anterior");
@@ -216,6 +231,7 @@ export function traducirErrorDeBase(error: unknown): Error {
     const dePersonas = FRASES_DE_PERSONAS[mensaje.trim()];
     if (dePersonas) return new ErrorDeDominio(dePersonas);
     if (CODIGOS_DE_TENENCIA.has(mensaje)) return new ErrorDeDominio(mensaje);
+    if (CODIGOS_DE_ALTA_REGULADA.has(mensaje)) return new ErrorDeDominio(mensaje);
     const deProveedor = FRASES_DE_PROVEEDOR[mensaje.trim()];
     if (deProveedor) return new ErrorDeDominio(deProveedor);
     const deFlujo = FRASES_DE_FLUJO[mensaje.trim()];
@@ -276,6 +292,72 @@ function registrarErrorSinTraducir(error: unknown, codigo: string): void {
   );
 }
 
+/** Llave primaria de las tablas reguladas: su id es el del formulario que la crea. */
+const FORMULARIOS_REGULADOS =
+  /^(kyb_versiones|kyb_documentos|kyb_representantes|kyb_accionistas|kyb_dictamenes|kyb_calificaciones_riesgo|lpb_cargas|company_suspensions)_pkey /;
+
+/** Reglas de la alta regulada (0028): roles, expediente, riesgo, lista de bloqueados, suspensión y candado. */
+const CODIGOS_DE_ALTA_REGULADA = new Set([
+  "empresa_nace_prospecto",
+  "sin_rol_de_administracion",
+  "personal_propio",
+  "personal_no_se_reescribe",
+  "expediente_con_borrador",
+  "expediente_accionista_sin_curp",
+  "expediente_accionista_sin_identificacion",
+  "expediente_misma_persona_dos_identificadores",
+  "expediente_accionista_sin_rfc",
+  "expediente_estructura_muy_profunda",
+  "rol_propio",
+  "roles_incompatibles",
+  "sin_permiso_roles",
+  "sin_rol_para_expediente",
+  "sin_rol_para_dictaminar",
+  "sin_rol_para_calificar",
+  "sin_rol_para_lpb",
+  "sin_rol_para_suspender",
+  "sin_rol_para_aprobar",
+  "sin_rol_para_solicitar_activacion",
+  "sin_rol_para_registrar",
+  "expediente_en_revision",
+  "expediente_enviado_inmutable",
+  "expediente_rfc_distinto",
+  "expediente_sin_representante",
+  "expediente_sin_administrador",
+  "expediente_falta_documento",
+  "expediente_documento_vencido",
+  "expediente_estructura_incompleta",
+  "documento_fecha_futura",
+  "documento_sin_representante",
+  "accionista_padre_invalido",
+  "accionista_con_desglose",
+  "misma_persona_en_dictamen",
+  "dictamen_sobre_borrador",
+  "calificacion_sobre_version_vieja",
+  "calificacion_fecha_invalida",
+  "riesgo_debe_ser_alto",
+  "coincidencia_transicion_invalida",
+  "coincidencia_sigue_en_lista",
+  "reporte_ya_registrado",
+  "reporte_fecha_futura",
+  "suspension_no_aplica",
+  "reactivacion_no_aplica",
+  "reactivacion_con_coincidencia_lpb",
+  "misma_persona_en_suspension",
+  "suspension_transicion_invalida",
+  "activacion_sin_expediente_aprobado",
+  "activacion_con_documento_vencido",
+  "activacion_con_coincidencia_lpb",
+  "activacion_sin_riesgo_vigente",
+  "activacion_sin_estructura_corporativa",
+  "empresa_suspendida",
+  "pago_bloqueado_lpb",
+  "nomina_bloqueada_lpb",
+  "sin_permiso_expediente",
+  "documento_no_existe",
+  "cliente_de_baja",
+]);
+
 const CODIGOS_DE_CLABE = new Set([
   "clabe_no_se_pisa",
   "clabe_ya_cerrada",
@@ -316,6 +398,8 @@ const FRASES_DE_AUDITORIA = new Set([
   "auditoria_de_rol_ausente",
   "auditoria_de_lista_ausente",
   "audit_log solo acepta inserciones",
+  "regulado_sin_auditoria",
+  "rol_personal_sin_auditoria",
 ]);
 
 const FRASES_DE_PROVEEDOR: Readonly<Record<string, string>> = {

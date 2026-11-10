@@ -9,6 +9,7 @@ import { entregarInvitacion } from "../invitaciones/servicio";
 import type { InvitacionEmitida } from "../invitaciones/tipos";
 import { correoValido, normalizarCorreo } from "../session/validar";
 import { auditarOperacion } from "./auditar";
+import { exigirEnOperacion } from "./permisos";
 
 export type ResultadoInvitacionOperacion = {
   invitationId: string;
@@ -39,10 +40,13 @@ export async function invitarPrimerAdministrador(
   entrada: { companyId: unknown; nombre: unknown; correo: unknown; vista?: unknown },
   deps: Dependencias = {},
 ): Promise<ResultadoInvitacionOperacion> {
+  exigirEnOperacion(ctx, "plataforma.invitacion.emitir");
   if (!uuidValido(entrada.companyId)) throw new ErrorDeDominio("cliente_ausente");
   const nombre = textoOperativo(entrada.nombre, 200);
   const correo = normalizarCorreo(typeof entrada.correo === "string" ? entrada.correo : "");
-  if (!nombre || !correoValido(correo)) throw new ErrorDeDominio("invitacion_invalida");
+  // Cada rechazo es de su campo: la pantalla marca el nombre o el correo y pone su mensaje junto a él.
+  if (!nombre) throw new ErrorDeDominio("dato_invalido_nombre");
+  if (!correoValido(correo)) throw new ErrorDeDominio("dato_invalido_correo");
   const ahora = (deps.ahora ?? (() => new Date()))();
   const produccion = deps.produccion ?? process.env.NODE_ENV === "production";
   const emitida = await conContexto(basePlataforma(ctx, entrada.companyId), async (consulta) => {
@@ -51,6 +55,8 @@ export async function invitarPrimerAdministrador(
     ]);
     const fila = empresa.rows[0] as { razon_social?: unknown; estado?: unknown } | undefined;
     if (!fila) throw new ErrorDeDominio("cliente_ausente");
+    // Desde una ficha abierta antes de la suspensión, el aviso dice el motivo real.
+    if (fila.estado === "suspendida") throw new ErrorDeDominio("empresa_suspendida");
     if (fila.estado !== "activa") throw new ErrorDeDominio("cliente_no_activo");
     const ultima = await consulta.query(
       "select id, emitida_en from invitations where company_id = $1 order by emitida_en desc, id desc limit 1",

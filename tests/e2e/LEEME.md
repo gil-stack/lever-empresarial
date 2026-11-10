@@ -9,7 +9,8 @@
 | `nomina.spec.ts` | Alta con nómina, cambio de CLABE de nómina con reautenticación y preparación del lote vencido, todo con doble clic. |
 | `flujo-de-caja.spec.ts` | Saldo declarado, cobro manual y con XML, obligación recurrente, presupuesto al 80 y al 100 %, «mover pago», faltante en Inicio y Aprobaciones (entrando por la dirección vieja de Pendientes) y «Monto reservado» para Finanzas. |
 | `entrada.spec.ts` | Entrada de cliente con contraseña y TOTP. El tope de intentos no revela si el correo tiene cuenta: mismo texto, marcado, dirección y tiempo. |
-| `operacion.spec.ts` | Entrada SOFIPO con TOTP, prospecto → activación decidida por otra persona, «Perdí el segundo factor» con «Confirma que eres tú» en Recuperaciones y publicación del precio con reautenticación. |
+| `operacion.spec.ts` | Entrada SOFIPO con TOTP; prospecto registrado y activación pedida por Originación: sin expediente aprobado la base no deja activar, y Faro E2E (en regla) la aprueba otra persona con Aprobación y factor reciente; «Perdí el segundo factor» con «Confirma que eres tú» en Recuperaciones y publicación del precio con reautenticación. |
+| `passkeys.spec.ts` | Con el autenticador virtual de Chromium (CDP) y el `Permissions-Policy` de la aplicación: Lucía registra una passkey en `/entrar/seguridad` y entra con ella; la primera persona del personal la registra en su primer ingreso a Operación (`/operacion/continuar`) y entra con ella. El servidor corre con `AUTENTICACION_DOMINIOS=localhost`. |
 | `invitacion.spec.ts` | Invitación del primer administrador desde Operación, «Reenviar invitación» con doble clic, cuenta con TOTP y recuperación de contraseña por correo. |
 | `roles.spec.ts` | Lo que cada rol ve en el lateral y en «Más», las rutas que no le abren aunque escriba la dirección y la redirección de Pendientes a Aprobaciones. |
 | `aprobaciones.spec.ts` | En Arrecife E2E (recién dada de alta), cada pendiente de puesta en marcha se resuelve en su módulo (área, categoría, proveedor con constancia, obligación de flujo de caja) y, al volver con un clic en el lateral, Aprobaciones ya no lo muestra o enciende el aviso nuevo. Sin JavaScript, «Rechazar» abre el motivo (aviso y campo marcado si el servidor no lo acepta) y rechaza; «Autorizar» decide con la acción del servidor; doble clic y F5 deciden una sola vez; con el segundo factor vencido, con o sin JavaScript, la fila pide el código de la app y conserva el motivo; `?rechazar=` con un pago ajeno se ve igual que con uno inexistente. |
@@ -34,7 +35,7 @@ Sin `E2E_ADMIN_URL`, el script hace lo mismo que en CI: levanta `postgres:17` y 
 
 1. crea una base con nombre aleatorio y le aplica todas las migraciones;
 2. carga `seed-pagos.sql` (Taller del Cierre con las sesiones de Gil y Rosa) y la empresa de Personas;
-3. siembra Altamar E2E, Bahía E2E y dos personas de Operación (`siembra.ts`);
+3. siembra Altamar E2E, Bahía E2E, tres personas de Operación con los roles de la 0028 y Faro E2E (`siembra.ts`). Los roles se dan con el servicio de la pantalla Personal, una persona a otra: op1 Originación (registra prospectos y pide activaciones), op2 Aprobación (las decide) y op3 Cumplimiento (dictamina expedientes); las tres conservan Administración. Faro E2E queda en alta con expediente aprobado por op3, riesgo vigente y la activación pedida por op1, lo que exige el candado de la base para que op2 la apruebe; sus documentos van a un almacén en memoria porque la siembra corre antes del emulador de Blob;
 4. levanta el emulador de Blob y `next start` en `E2E_PUERTO`, con el correo falso precargado.
 
 Al terminar, `global-teardown.ts` detiene el servidor y el emulador y borra la base. En la máquina de desarrollo la suite completa tarda unos 2 minutos.
@@ -54,7 +55,8 @@ Variables:
 - Postgres corre en un contenedor `postgres:17` (puerto 5553, el mismo dentro y fuera).
 - Chromium corre en la imagen oficial `mcr.microsoft.com/playwright:v<versión>-noble` con `playwright run-server` y red del anfitrión. La imagen de la tarea no trae las bibliotecas del navegador. El corredor, la siembra, el emulador y `next start` siguen en la máquina de la tarea.
 - `retries: 0`, sin video, con traza sin capturas y sin capturas de evidencia.
-- Playwright reparte las partes por archivo (la suite no usa `fullyParallel`): un spec nuevo cae completo en una parte. Si una parte se acerca a los 12 minutos, divide el spec más largo o agrega una cuarta parte (`test:e2e:4` y `--shard=N/4` en las cuatro).
+- Playwright reparte las partes por grupo y por número de pruebas, no por tiempo: un spec sin `mode: "parallel"` es un solo grupo (los `describe` seriales de adentro viajan juntos), y un grupo va entero a la parte donde empieza. `operacion.spec.ts` es `parallel` solo para partirse en cuatro `describe` seriales; su orden decide el reparto (lo explica el comentario de arriba del archivo). Con 66 pruebas quedaron 23, 23 y 20, con 73, 69 y 49 s de pruebas en local. Si una parte se acerca a los 12 minutos, divide el spec más largo o agrega una cuarta parte (`test:e2e:4` y `--shard=N/4` en las cuatro).
+- El script cuenta las pruebas corridas en el reporte JSON (`test-results/e2e-resumen.json`) y falla si una corrida, o una parte, no corrió ninguna: Playwright termina en 0 con una parte vacía. Antes, la parte 2 quedaba vacía (49, 0 y 14) porque `operacion.spec.ts` entero caía en la 1.
 - Si algo falla, como Vercel CI no guarda archivos de una tarea fallida, el script imprime en la salida el contexto de cada falla (árbol accesible de la página), las últimas líneas del servidor y las capturas en base64.
 
 Para revisar una corrida: `vercel ci list --git-branch <rama>` y `vercel ci logs <id> --task '//#test:e2e'`.
@@ -73,7 +75,7 @@ Para revisar una corrida: `vercel ci list --git-branch <rama>` y `vercel ci logs
 2. Todo lo que cambia datos de la aplicación pasa por clics. La base solo se toca para abrir sesiones, leer lo que prueba cada paso y mover relojes que la prueba no puede esperar.
 3. Después de cada envío de dinero o seguridad, cuenta en la base que quedó exactamente una operación y que la bitácora tiene su evento.
 4. Nada de `waitForTimeout`. Espera la condición: una URL, un texto, una fila o `expect.poll`.
-5. Cada spec debe pasar solo y dentro de la suite completa, en cualquier orden. Si necesitas una persona nueva, agrégala en `siembra.ts` (`CORREOS`) y no reuses la de otro spec para algo que la cambie, como su factor, su contraseña o su tope. Si las pruebas de un archivo dependen entre sí, usa `test.describe.configure({ mode: "serial" })`.
+5. Cada spec debe pasar solo y dentro de la suite completa, en cualquier orden. Si necesitas una persona nueva, agrégala en `siembra.ts` (`CORREOS`) y no reuses la de otro spec para algo que la cambie, como su factor, su contraseña o su tope. Si las pruebas de un archivo dependen entre sí, usa `test.describe.configure({ mode: "serial" })`. Si el archivo se parte en grupos (`parallel` con `describe` seriales, como `operacion.spec.ts`), cada grupo debe pasar solo, con la siembra recién hecha: es lo que corre su parte. Pruébalo con las tres partes (`npm run test:e2e:1`, `:2` y `:3`), no solo con la suite completa.
 6. Corre la suite completa tres veces seguidas antes de abrir el PR. Una prueba que falla a veces se arregla en su causa: no hay reintentos.
 
 ## Revisar la semilla de Pagos a mano

@@ -32,6 +32,7 @@ const MENSAJES: Record<string, string> = {
   politica_invalida: "Esos números no caben en la política.",
   cajones_incompletos: "Los cajones de esta cuenta no están completos.",
   base_no_disponible: "No se pudo guardar. El libro no respondió.",
+  empresa_suspendida: "La empresa está suspendida: no se puede mover dinero ni hacer cambios. Comunícate con Lever.",
   base_no_configurada: "No se pudo guardar. El libro no respondió.",
 };
 

@@ -28,6 +28,18 @@ describe("destino multiempresa con tenencia intacta", () => {
     assert.equal(resuelto.ctx.empresa, null);
     assert.deepEqual(resuelto.ctx.capacidades, []);
   });
+
+  it("una empresa suspendida conserva las capacidades de sus roles: quien rechaza la escritura es la base", async () => {
+    const resuelto = await resolverContexto(
+      { sesion: sesion(), empresaPedida: ID, peticionId: null, superficie: "cliente" },
+      { repositorio: { async pertenencia() { return { membresias: [{ ...membresia(ID, ["administrador", "liberador"]), estado: "suspendida" }], personal: null }; } } },
+    );
+    assert.equal(resuelto.ctx.empresa?.estado, "suspendida");
+    assert.deepEqual(resuelto.ctx.roles, ["administrador", "liberador"]);
+    for (const capacidad of ["cliente.consola.ver", "cliente.pago.liberar", "cliente.membresias.administrar"] as const) {
+      assert.ok(resuelto.ctx.capacidades.includes(capacidad), capacidad);
+    }
+  });
 });
 
 describe("el personal actúa como plataforma solo con la sesión SOFIPO", () => {

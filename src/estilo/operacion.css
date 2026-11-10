@@ -21,6 +21,44 @@
   margin-bottom: 24px;
 }
 
+/* En un formulario de dos columnas, el aviso y los campos anchos (razón social, detalle y archivo del documento…)
+   ocupan la fila entera. Sin esta regla, que se perdió al pasar Operación al sistema visual, el aviso de un rechazo
+   caía en una columna angosta y empujaba el primer campo a la derecha (humo-N9 del preview). Lo mismo en los
+   formularios en línea de una tarjeta (coincidencia, folio, cerrar una alerta) y en la decisión de una recuperación:
+   el aviso va en su propio renglón y los campos se quedan donde estaban. */
+.formulario-pareja > .operacion-ancho,
+.operacion-decision-forma > .operacion-aviso {
+  grid-column: 1 / -1;
+}
+
+.operacion-acciones > .operacion-aviso,
+.operacion-acciones form > .operacion-aviso {
+  flex-basis: 100%;
+}
+
+/* Sin JavaScript el menú de la cuenta no abre y «Salir» va junto a él (PaginaOperacion). En pantalla angosta toma su
+   propio renglón, a la derecha: el título y el chip de la persona conservan su ancho. Solo con (scripting: none): con
+   JavaScript el contenido de <noscript> es texto y, con display: contents, el navegador lo pintaría tal cual. */
+@media (scripting: none) {
+  .barra-superior > noscript {
+    display: contents;
+  }
+}
+
+@media (scripting: none) and (max-width: 960px) {
+  .salir-sin-script {
+    display: flex;
+    flex-basis: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* El aviso de un rechazo cuyo formulario ya no se pinta (PaginaOperacion): si un formulario muestra su aviso, sobra.
+   Con :has() sirve también sin JavaScript. */
+.operacion-pagina:has(.operacion-aviso:not(#aviso-rechazo)) .aviso-sin-formulario {
+  display: none;
+}
+
 .operacion-pagina > .bandeja,
 .operacion-pagina > .nota-regla {
   margin-top: 28px;
@@ -40,6 +78,16 @@
 
 .operacion-ficha-cabeza .etiqueta-mono {
   margin: 0;
+}
+
+/* La cabeza va sobre la escena, no sobre una hoja: la insignia lleva el panel debajo para que «Suspendida» se lea en los tres temas. */
+.operacion-ficha-cabeza .insignia {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  -webkit-backdrop-filter: blur(30px) saturate(115%);
+  backdrop-filter: blur(30px) saturate(115%);
 }
 
 /* Lista con filete dentro de una hoja: historial, entregas, alertas. */
@@ -104,6 +152,16 @@ form + .operacion-lista {
 .operacion-mono {
   font-family: var(--fm);
   letter-spacing: 0.04em;
+}
+
+/* Un valor largo sin espacios (el SHA-256 de un documento, el nombre de un archivo, un folio, una acción con guiones
+   bajos de la bitácora o un motivo con una dirección pegada) se parte donde haga falta en lugar de ensanchar la
+   página: a 390 px, el expediente con documentos medía 533. «anywhere» también deja encoger la caja flexible. */
+.operacion-fila-cuerpo,
+.operacion-meta,
+.operacion-detalle,
+.operacion-mono {
+  overflow-wrap: anywhere;
 }
 
 .operacion-sin-corte {
@@ -288,4 +346,26 @@ form + .operacion-lista {
   font-family: var(--fd);
   font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: 300;
+}
+
+/* Ola R1: alta regulada. Insignias de rol o de estado en una fila que se dobla. */
+.operacion-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.operacion-pagina > .operacion-confirmar + .hoja,
+.operacion-pagina > .metricas + .hoja,
+.operacion-pagina > .operacion-ficha-cabeza + .hoja {
+  margin-top: 24px;
+}
+
+/* Un formulario debajo de una lista o de una pista, dentro de la misma hoja. */
+.operacion-lista + form,
+.operacion-lista + .pista,
+.pista + form,
+.vacio + form,
+.renglones + form {
+  margin-top: 18px;
 }

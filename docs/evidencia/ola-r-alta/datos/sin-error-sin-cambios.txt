@@ -1,0 +1,32 @@
+# Sin error no cambia nada (onceava revisión): 10 pantallas de Operación con formularios × 1440 y 390, sin ningún error,
+# con el build de edefd2e y con el final, servidos en 4811 sobre la misma base del recorrido (después de las regresiones).
+# Esta ronda no cambia ningún CSS: con el mismo DOM, la pantalla es la misma.
+
+## DOM normalizado (sin scripts ni hojas, que llevan el hash del build; formId, nombre de la acción de servidor y data-ms del canvas del fondo)
+Mismo build dos veces: 0 de 20 distintos. edefd2e contra el final: 0 de 20 distintos.
+
+## Píxeles (captura completa), solo donde el mismo build repite la captura idéntica
+alta-1440.png: edefd2e contra el final, bytes distintos 0
+alta-390.png: el mismo build no la repite (27384 bytes; el canvas del fondo), se compara su DOM
+aprobaciones-1440.png: edefd2e contra el final, bytes distintos 0
+aprobaciones-390.png: edefd2e contra el final, bytes distintos 0
+comisiones-1440.png: edefd2e contra el final, bytes distintos 0
+comisiones-390.png: edefd2e contra el final, bytes distintos 0
+cumplimiento-1440.png: edefd2e contra el final, bytes distintos 0
+cumplimiento-390.png: el mismo build no la repite (55509 bytes; el canvas del fondo), se compara su DOM
+expediente-borrador-1440.png: el mismo build no la repite (172605 bytes; el canvas del fondo), se compara su DOM
+expediente-borrador-390.png: el mismo build no la repite (28696 bytes; el canvas del fondo), se compara su DOM
+expediente-dictamen-riesgo-1440.png: edefd2e contra el final, bytes distintos 0
+expediente-dictamen-riesgo-390.png: el mismo build no la repite (28556 bytes; el canvas del fondo), se compara su DOM
+ficha-ebano-1440.png: edefd2e contra el final, bytes distintos 214738
+ficha-ebano-390.png: el mismo build no la repite (26868 bytes; el canvas del fondo), se compara su DOM
+ficha-taller-1440.png: edefd2e contra el final, bytes distintos 0
+ficha-taller-390.png: el mismo build no la repite (26261 bytes; el canvas del fondo), se compara su DOM
+lpb-coincidencias-1440.png: edefd2e contra el final, bytes distintos 0
+lpb-coincidencias-390.png: el mismo build no la repite (21178 bytes; el canvas del fondo), se compara su DOM
+recuperaciones-1440.png: edefd2e contra el final, bytes distintos 0
+recuperaciones-390.png: edefd2e contra el final, bytes distintos 0
+
+Píxeles: 11 de 12 capturas estables idénticas entre edefd2e y el final.
+
+ficha-ebano-1440: en la primera prueba de determinismo, el mismo build dio 214738 bytes distintos en esa captura; contra edefd2e da la misma cifra, en la franja de todo el ancho y 164-921 de alto (el canvas fijo del fondo). Su DOM es idéntico.

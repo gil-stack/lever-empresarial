@@ -1,0 +1,248 @@
+{
+  "fases": [
+    "pantallas",
+    "contraste"
+  ],
+  "comprobaciones": [
+    {
+      "ok": true,
+      "texto": "pantalla personal oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla personal oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla personal claro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla personal claro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla personal lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla personal lever 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento claro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento claro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla cumplimiento lever 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla lpb oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla lpb oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla lpb claro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla lpb claro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla lpb lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla lpb lever 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente claro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente claro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla expediente lever 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla ficha oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla ficha oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla ficha claro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla ficha claro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla ficha lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla ficha lever 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla aprobaciones oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla aprobaciones oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla aprobaciones claro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla aprobaciones claro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla aprobaciones lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla aprobaciones lever 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla clientes oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla clientes oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla clientes claro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla clientes claro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla clientes lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla clientes lever 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla bitacora oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla bitacora oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla bitacora claro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla bitacora claro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla bitacora lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla bitacora lever 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sin-permiso oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sin-permiso oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sin-permiso claro 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sin-permiso claro 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sin-permiso lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "pantalla sin-permiso lever 390: un h1, campos con etiqueta, sin desborde, consola limpia"
+    },
+    {
+      "ok": true,
+      "texto": "contraste oscuro 1440: 381 textos, mínimo 5.08"
+    },
+    {
+      "ok": true,
+      "texto": "contraste oscuro 390: 162 textos, mínimo 6.23"
+    },
+    {
+      "ok": true,
+      "texto": "contraste claro 1440: 384 textos, mínimo 5.14"
+    },
+    {
+      "ok": true,
+      "texto": "contraste claro 390: 162 textos, mínimo 5.05"
+    },
+    {
+      "ok": true,
+      "texto": "contraste lever 1440: 387 textos, mínimo 5.00"
+    },
+    {
+      "ok": true,
+      "texto": "contraste lever 390: 162 textos, mínimo 5.91"
+    }
+  ]
+}

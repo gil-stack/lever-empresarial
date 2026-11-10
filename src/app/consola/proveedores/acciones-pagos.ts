@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { enEmpresa } from "@/nucleo/rutas";
+import { TOPE_ARCHIVO_BYTES, TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
+import { XML_Y_PDF } from "@/dominio/proveedores";
 
 import type { CfdiLeido } from "@/dominio/cfdi";
 import {
@@ -31,13 +33,17 @@ const MENSAJES: Record<string, string> = {
   proveedor_ausente: "Selecciona un proveedor válido.",
   pago_no_autorizable: "Revisa el proveedor, la lista 69-B, la CLABE vigente y las dos personas autorizadas para liberar.",
   monto_invalido: "Escribe un importe mayor que cero y con centavos válidos.",
-  fecha_invalida: "Revisa las fechas. El vencimiento no puede ser anterior a la emisión.",
+  fecha_invalida: "Revisa las fechas: deben existir en el calendario y el vencimiento no puede ser anterior a la emisión.",
+  fecha_emision_invalida: "Esa fecha de la obligación no existe en el calendario.",
+  fecha_programada_invalida: "Esa fecha prevista de pago no existe en el calendario.",
+  fecha_desde_invalida: "Esa fecha de «Vigente desde» no existe en el calendario.",
+  fecha_hasta_invalida: "Revisa «Vigente hasta»: debe existir en el calendario y no puede ser anterior a «Vigente desde».",
   fecha_pasada: "La fecha prevista de pago no puede estar en el pasado.",
   referencia_invalida: "Escribe una referencia de entre 1 y 120 caracteres.",
   motivo_invalido: "Explica el motivo con al menos 10 caracteres. Al rechazar o cancelar bastan 5.",
   archivo_ausente: "Carga todos los archivos requeridos antes de continuar.",
-  archivo_no_disponible: "El archivo no es válido o no está disponible. Usa PDF legible de hasta 8 MB.",
-  archivos_peso_total: "El XML y el PDF juntos no pueden superar 8 MB.",
+  archivo_no_disponible: `El archivo no es válido o no está disponible. Usa PDF legible de hasta ${TOPE_ARCHIVO_TEXTO}.`,
+  archivos_peso_total: XML_Y_PDF,
   cfdi_invalido: "El XML no es legible o contiene una estructura no permitida.",
   cfdi_codificacion: "El XML debe venir codificado en UTF-8.",
   cfdi_contenido_no_permitido: "El XML trae HTML, SVG, scripts u hojas de estilo, que un CFDI no lleva. Sube el XML original que timbró el SAT.",
@@ -56,6 +62,9 @@ const MENSAJES: Record<string, string> = {
   sin_permiso_para_solicitar: "Tu rol o tu alta vigente no permiten solicitar este pago.",
   idempotencia_invalida: "La referencia de esta solicitud no es válida. Recarga el formulario para generar una nueva.",
   base_no_disponible: "No se pudo completar la operación. Inténtalo de nuevo.",
+  // Ola R1: la base rechaza el pago de una empresa suspendida o con un proveedor en la Lista de Personas Bloqueadas.
+  empresa_suspendida: "La empresa está suspendida: no se puede mover dinero ni hacer cambios. Comunícate con Lever.",
+  pago_bloqueado_lpb: "Este pago quedó detenido para revisión de cumplimiento. No se liberó; Lever te contactará.",
   auditoria_no_disponible: "No se pudo dejar constancia. La operación no se guardó.",
 };
 
@@ -66,6 +75,10 @@ const CAMPO_DEL_ERROR: Record<string, string> = {
   monto_invalido: "monto",
   referencia_invalida: "referencia",
   fecha_invalida: "venceEl",
+  fecha_emision_invalida: "emitidaEl",
+  fecha_programada_invalida: "programadaEl",
+  fecha_desde_invalida: "vigenteDesde",
+  fecha_hasta_invalida: "vigenteHasta",
   fecha_pasada: "programadaEl",
   motivo_invalido: "motivoExcepcion",
   archivo_no_disponible: "pdf",
@@ -101,7 +114,7 @@ export async function enviarPago(
 ): Promise<EstadoPagoFormulario> {
   try {
     const [xml, pdf] = await Promise.all([leerArchivoPago(formData.get("xml")), leerArchivoPago(formData.get("pdf"))]);
-    if ((xml?.bytes.byteLength ?? 0) + (pdf?.bytes.byteLength ?? 0) > 8_000_000) throw new ErrorDeDominio("archivos_peso_total");
+    if ((xml?.bytes.byteLength ?? 0) + (pdf?.bytes.byteLength ?? 0) > TOPE_ARCHIVO_BYTES) throw new ErrorDeDominio("archivos_peso_total");
     const creado = await crearPagoProveedor(await contextoDeAccion(), entrada(formData, xml, pdf));
     revalidatePath("/consola/proveedores");
     return { tipo: "listo", mensaje: creado.existente ? "La solicitud ya existía. No se duplicó el pago." : "El pago quedó en autorización. Otra persona lo revisa.", requestId: creado.requestId };
@@ -193,7 +206,7 @@ export async function subirContrato(
     revalidatePath("/consola/proveedores");
     return { tipo: "listo", mensaje: "El contrato quedó guardado como documento privado." };
   } catch (error) {
-    return invalido(error, { archivo_ausente: "contrato", archivo_no_disponible: "contrato", fecha_invalida: "vigenteHasta" });
+    return invalido(error, { archivo_ausente: "contrato", archivo_no_disponible: "contrato" });
   }
 }
 

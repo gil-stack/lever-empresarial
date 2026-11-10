@@ -9,6 +9,7 @@ import { Logotipo } from "@/components/cromo/logotipo";
 import { SelectorTema } from "@/components/cromo/selector-tema";
 import { COOKIE_TEMA, temaDesde } from "@/components/cromo/tema";
 
+import { idDeAncla } from "./envio-sin-script";
 import { NavegacionOperacion } from "./navegacion";
 
 /**
@@ -16,14 +17,24 @@ import { NavegacionOperacion } from "./navegacion";
  * secciones (cajón en pantallas angostas) y lienzo. La barra de arriba la pone
  * cada página (`PaginaOperacion`), con su título y su acción.
  */
-export async function MarcoOperacion({ personaId, children }: { personaId: string; children: ReactNode }) {
-  const tema = temaDesde((await cookies()).get(COOKIE_TEMA)?.value);
+export async function MarcoOperacion({
+  personaId,
+  capacidades,
+  children,
+}: {
+  personaId: string;
+  capacidades: readonly string[];
+  children: ReactNode;
+}) {
+  const [almacen, destino] = await Promise.all([cookies(), idDeAncla("contenido")]);
+  const tema = temaDesde(almacen.get(COOKIE_TEMA)?.value);
   return (
     <>
       <AcentoInicial persona={personaId} tema={tema} />
       <AparienciaViva persona={personaId} tema={tema} />
       <div className="marco">
-        <a className="saltar" href="#contenido">
+        {/* El destino es el `main` de PaginaOperacion; sin JavaScript, tras un envío lleva sufijo (idDeAncla). */}
+        <a className="saltar" href={`#${destino}`}>
           Saltar al contenido
         </a>
         {/* Dos marcas, no el mismo elemento dos veces: el servidor lo mandaría una sola vez y los dos
@@ -32,7 +43,7 @@ export async function MarcoOperacion({ personaId, children }: { personaId: strin
           <div className="lateral-cabeza">
             <Marca />
           </div>
-          <NavegacionOperacion />
+          <NavegacionOperacion capacidades={capacidades} />
           <div className="operacion-lateral-pie">
             <SelectorTema inicial={tema} />
           </div>
@@ -45,8 +56,13 @@ export async function MarcoOperacion({ personaId, children }: { personaId: strin
 
 function Marca() {
   return (
-    <Link href="/operacion" className="marca" aria-label="Lever Operación SOFIPO, ir al resumen">
-      <Logotipo linea="Operación SOFIPO" />
+    <Link href="/operacion" className="marca">
+      {/* El nombre lo lleva un solo texto para el lector: el logotipo es flexible y, junto a otro texto, el nombre
+          quedaba «Lever Operación SOFIPO , ir al resumen». Sin aria-label, el nombre contiene lo que se ve (WCAG 2.5.3). */}
+      <span aria-hidden="true">
+        <Logotipo linea="Operación SOFIPO" />
+      </span>
+      <span className="solo-lector">Lever Operación SOFIPO, ir al resumen</span>
     </Link>
   );
 }

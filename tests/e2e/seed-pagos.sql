@@ -24,7 +24,7 @@ insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie
   select operator_id, '33333333-3333-4333-8333-333333333333', 'miembro', '11111111-1111-4111-8111-111111111111', 'cliente', 'asignar_rol', 'membership_roles', '22222222-2222-4222-8222-222222222222', '{"rol":"liberador"}' from companies where id = '33333333-3333-4333-8333-333333333333';
 insert into membership_roles (user_id, company_id, rol) values ('22222222-2222-4222-8222-222222222222', '33333333-3333-4333-8333-333333333333', 'liberador');
 
-insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values ('66666666-6666-4666-8666-666666666666', date '2026-09-30', timestamptz '2026-10-01 15:00:00+00');
+insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ('66666666-6666-4666-8666-666666666666', (select id from operators order by alta_en limit 1), date '2026-09-30', timestamptz '2026-10-01 15:00:00+00');
 insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador)
   values ((select id from operators order by alta_en limit 1), 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', '66666666-6666-4666-8666-666666666666');
 insert into lista_69b_rows (snapshot_id, rfc, situacion) values ('66666666-6666-4666-8666-666666666666', 'PAL7202161U0', 'Presunto');

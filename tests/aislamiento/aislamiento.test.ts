@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { test } from "node:test";
 
-import { darDeAltaEmpresa, leerEmpresa } from "../../src/server/company/servicio.ts";
+import { leerEmpresa } from "../../src/server/company/servicio.ts";
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
 import { invitarAdministrador, contextoDePersonal } from "../../src/server/plataforma/servicio.ts";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio.ts";
 import { leerSesion } from "../../src/server/session/servicio.ts";
@@ -45,15 +46,17 @@ test("el usuario de la empresa A no lee la empresa B, y Postgres tampoco", async
 async function escenario(url: string): Promise<void> {
   sembrarPersonal(url);
   const personal = await contextoDePersonal("sofipo-aislamiento@ejemplo.mx");
-  const alfa = await darDeAltaEmpresa(
+  const alfa = await darDeAltaComoDuena(
+    url,
     personal,
     { rfc: RFC_A, razonSocial: "Escuela Alfa Aislamiento", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" },
-    { demostracion: true },
+    { demostracion: true, corridoPor: "pruebas@ejemplo.mx" },
   );
-  const beta = await darDeAltaEmpresa(
+  const beta = await darDeAltaComoDuena(
+    url,
     personal,
     { rfc: RFC_B, razonSocial: "Taller Beta Aislamiento", codigoPostal: "44100", regimen: "612", usoCfdi: "G03" },
-    { demostracion: true },
+    { demostracion: true, corridoPor: "pruebas@ejemplo.mx" },
   );
 
   const primera = await invitarAdministrador(personal, {
