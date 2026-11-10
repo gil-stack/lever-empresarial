@@ -6,8 +6,8 @@ Resultado de la última corrida (2026-11-10, ronda r63):
 
 | Navegador | Origen | Resultado |
 |---|---|---|
-| Chromium 156 (Playwright 1.64.1) | `http://localhost:3181` | 17 de 17 |
-| WebKit 27.2 (Playwright 1.64.1) | `https://localhost:3182` → `3181` | 17 de 17 |
+| Chromium 156 (Playwright 1.64.1) | `http://localhost:3181` | 18 de 18 |
+| WebKit 27.2 (Playwright 1.64.1) | `https://localhost:3182` → `3181` | 18 de 18, más `csp.spec` 8 de 8 |
 | Suite e2e completa (Chromium, como CI, en sus 3 partes) | `http://localhost:3181` | ver «Gates» en la sección de la ronda r63 |
 
 ## Entorno
@@ -52,6 +52,7 @@ Capturas `chromium-NN-…` y `webkit-NN-…` (mismo número en los dos navegador
 | 15 | Configuración: cambiar el correo de contacto con el factor de hace 31 minutos; después, con el factor recién probado | `19-contacto-pide-factor`, `20-contacto-guardado-y-avisado` | Con el factor viejo: «Confirma que eres tú… el correo de contacto exige un segundo factor de los últimos 30 minutos», el contacto no cambia y no sale aviso. Con el factor reciente: «Avisamos del cambio a administración y finanzas», el contacto queda guardado y sale 1 aviso «Cambió el correo de contacto de cobranza…» con el correo nuevo (r63-N3) |
 | 16 | «Cargo único» de $2,468.00 a Colegio Alfa; «Registrar pago» a mano de $1,234.00; estado de cuenta de BBVA con ese mismo depósito y otro igual (otro concepto); «Confirmar la importación»; en «Por conciliar», «Descartar» el primero con motivo y «Aplicar» el segundo; la ficha del cliente | `21-duplicado-propuesta`, `22-duplicado-por-conciliar`, `23-duplicado-resuelto` | Los dos renglones proponen «A Por conciliar» con «Posible duplicado: ya está registrado a mano del …». Tras confirmar: «2 en Por conciliar», el cargo con 1 sola aplicación y dos pagos `posible_duplicado` con `parecido_a` = el pago a mano; cada tarjeta dice «Parece el mismo depósito que: Registrado a mano…». El descartado queda `anulado` con 1 evento `descartar_duplicado_cobranza` que nombra el pago parecido; el aplicado deja el cargo `pagado` con 2 aplicaciones; la ficha muestra «Posible duplicado descartado» (r63b-N1) |
 | 17 | Sin JavaScript: configuración, otro contacto y beneficiario, «Guardar la configuración» | `24-sin-javascript-configuracion` | El formulario es `method="post"`; la navegación es un POST y la dirección no lleva la CLABE, el beneficiario ni el contacto; se guarda y la página vuelve con «Quedó asentado» (r63b-N2) |
+| 18 | CSP estricta del #62, sin JavaScript: la lista, «Por conciliar», el alta, la ficha, la configuración, el estado de cuenta y la página real del pagador (desde el enlace del correo, sin sesión) | (sin captura) | Cada una responde 200 con `script-src 'self' 'nonce-…' 'strict-dynamic'`, todas sus etiquetas `<script>` y `<style>` llevan el nonce de su respuesta y la consola no anota nada de la política. Con JavaScript las recorre `csp.spec` (todas las rutas del registro, incluidas las de cobranza) y cada prueba de este archivo vigila la consola |
 
 ## Comando de Fintoc del personal
 
@@ -132,16 +133,24 @@ Unos 120-130 MB son la base del proceso. El tope de RSS ahora lo pone un libro l
 | r63b-N3 (P3) | Un archivo nuevo sin abonos nuevos responde «No había nada nuevo · Su único abono ya estaba en Lever: no se importó ni se duplicó nada.» (`avisoSinNuevos`), sin «Quedó asentado» | `src/dominio/cobranza/cobranza.test.ts` |
 | r63c-N1 (P3) | El préstamo de TEMP de `reglas-base` se devuelve en un `finally` y después se vuelve a exigir el 42501 | Una sonda forzada a fallar no deja el permiso (`reglas-base`) |
 
+## Con la CSP estricta del #62 (en `main` desde `9edb4e5`)
+
+- **Merge de `main`** en `5644583`, sin conflictos. `next.config.ts` ya traía las dos fuentes del comprobante (`/consola/cobros/comprobante/:id` y `/c/:empresa/consola/cobros/comprobante/:id`) con `POLITICA_DESCARGA`, y `esDescarga` del #62 reconoce `…/comprobante/[id]`. `encabezados.test.ts` pasa con el registro de cobranza, y la e2e 5 comprueba la respuesta real del comprobante con y sin `/c/<empresa>`.
+- **0 violaciones de la política en las rutas de cobranza**, en Chromium y WebKit:
+  - con JavaScript: `csp.spec` (todas las rutas del registro, incluidas las de cobranza) y las 18 pruebas de este archivo, que vigilan la consola;
+  - sin JavaScript: la e2e 18, más la 17 que guarda la configuración.
+- **Capturas en WebKit:** al capturar, el inspector de WebKit inserta un `<style>body {}</style>` y la política lo rechaza (lo documenta el #62). `foto()` descarta solo esa anotación exacta, solo en WebKit y solo si apareció durante la captura. Sin capturas no aparece.
+
 **Gates de la ronda** (este turno, en local):
 
 | Gate | Resultado |
 |---|---|
 | `typecheck` / `lint` / `build` / `security` | Verde |
-| `test` | 557/557 (con `main` integrado y la ronda r63b) |
+| `test` | 578/578 (con `main` integrado, #62 incluido, y la ronda r63b) |
 | `test:db` (las 20 pruebas de `pruebas-postgres.sh`, en serie, Postgres 17.9 en 5581), con `main` (#59 y #65) integrado; `definer-search-path` cubre las 21 definers de la 0031 | **87/87** |
 | base-N4 tras la 0029 (#65): la app ya no crea tablas temporales (42501, comprobado); la sonda presta el permiso solo a ella. AR3 (quitar `pg_temp` de las 21) la tumba a ella y a `definer-search-path` | atrapada por las dos |
-| e2e en sus 5 partes (Chromium, como CI), con `main` integrado y la ronda r63b | 18 + 21 + 13 + 17 + 16 = 85 pasan, 1 omitida (la matriz de evidencia, que corre aparte en los dos navegadores) |
-| Recorrido con capturas | Chromium 17/17, WebKit 17/17 |
+| e2e en sus 5 partes (Chromium, como CI), con `main` integrado (#62 incluido) y la ronda r63b | 25 + 14 + 18 + 19 + 18 = 94 pasan, 5 omitidas (la matriz de cobranza y las 4 de `csp-evidencia`, que corren aparte) |
+| Recorrido con capturas | Chromium 18/18, WebKit 18/18 más `csp.spec` 8/8 |
 
 **Ojo con el Postgres local.** Un clúster creado con `initdb` y `LC_ALL=C` queda en `SQL_ASCII`; ahí `'DEPÓSITO' ~ '[[:cntrl:]]'` es verdadero y el CHECK `collection_statement_rows_textos` rechaza los conceptos con acentos (la e2e 6 cae con «La base no respondió»). El CI usa `postgres:17` en UTF-8. Para repetir: `initdb -E UTF8 --locale=en_US.UTF-8`.
 

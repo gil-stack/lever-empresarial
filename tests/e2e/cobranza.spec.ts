@@ -71,12 +71,31 @@ function reales(errores: string[], browserName: string): string[] {
   return errores.filter((e) => !/^pageerror \S*[?&]_rsc=\S+ due to access control checks\.$/.test(e));
 }
 
+/** Los errores de consola de cada página vigilada, para que `foto` aparte lo que inserta el inspector de WebKit. */
+const vigiladas = new Map<Page, string[]>();
+function vigilar(page: Page): string[] {
+  const errores = vigilarConsola(page);
+  vigiladas.set(page, errores);
+  return errores;
+}
+
+// Al capturar, el inspector de WebKit inserta un <style> sin nonce y la CSP estricta lo rechaza (lo documenta el #62
+// en docs/evidencia/encabezados/con-main). Es de la herramienta: se descarta solo esa anotación exacta, solo en WebKit
+// y solo si apareció durante la captura. Cualquier otra cuenta.
+const DEL_INSPECTOR = "Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' does not appear in the style-src directive of the Content Security Policy.";
+
 let fotos = 0;
 async function foto(page: Page, browserName: string, nombre: string): Promise<void> {
   if (!EVIDENCIA) return;
   mkdirSync(EVIDENCIA, { recursive: true });
   fotos += 1;
+  const errores = vigiladas.get(page);
+  const antes = errores?.length ?? 0;
   await page.screenshot({ path: join(EVIDENCIA, `${browserName}-${String(fotos).padStart(2, "0")}-${nombre}.jpg`), fullPage: true, type: "jpeg", quality: 70 });
+  if (browserName !== "webkit" || !errores) return;
+  await page.waitForTimeout(200);
+  const durante = errores.splice(antes);
+  errores.push(...durante.filter((e) => e !== DEL_INSPECTOR));
 }
 
 async function idDeCliente(nombre: string, empresa = EMPRESA()): Promise<string> {
@@ -112,7 +131,7 @@ async function darDeAlta(page: Page, datos: { nombre: string; correo: string; co
 }
 
 test("1 · configurar dónde se recibe: CLABE, contacto y aviso al equipo", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_COBRANZA.carla);
   await page.goto(en("/consola/cobros"));
   await expect(page.getByText("Configura dónde te pagan")).toBeVisible();
@@ -140,7 +159,7 @@ test("1 · configurar dónde se recibe: CLABE, contacto y aviso al equipo", asyn
 });
 
 test("2 · alta fijo mensual: correo de cobro con CLABE y referencia, y página del pagador", async ({ page, context, browserName, browser }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_COBRANZA.carla);
   await darDeAlta(page, { nombre: "Colegio Alfa", correo: "pagos-alfa@ejemplo.mx", concepto: "Colegiatura", tipo: "fijo", monto: "10000", periodicidad: "mensual", dias: 5 });
   await expect(page).toHaveURL(/\?alta=enviado$/);
@@ -164,7 +183,7 @@ test("2 · alta fijo mensual: correo de cobro con CLABE y referencia, y página 
   const pagador = await browser.newContext({ javaScriptEnabled: true, ignoreHTTPSErrors: ORIGEN.startsWith("https:") });
   try {
     const pagina = await pagador.newPage();
-    const erroresPagador = vigilarConsola(pagina);
+    const erroresPagador = vigilar(pagina);
     await pagina.goto(enlaceDe(cobro!, /\/pagar\//));
     await expect(pagina.locator('h1[data-cifra="saldo"]')).toHaveAttribute("data-centavos", "1000000");
     await expect(pagina.locator(`[data-referencia="${cargo.referencia}"]`)).toBeVisible();
@@ -193,7 +212,7 @@ test("2 · alta fijo mensual: correo de cobro con CLABE y referencia, y página 
 });
 
 test("3 · variable trimestral: sin monto hasta capturarlo; anual con su primer cargo", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_COBRANZA.carla);
   await darDeAlta(page, { nombre: "Despacho Beta", correo: "pagos-beta@ejemplo.mx", concepto: "Honorarios", tipo: "variable", periodicidad: "trimestral", dias: 4 });
   const beta = await idDeCliente("Despacho Beta");
@@ -216,7 +235,7 @@ test("3 · variable trimestral: sin monto hasta capturarlo; anual con su primer 
 });
 
 test("4 · lista: resumen, antigüedad que filtra, búsqueda y pestañas", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_COBRANZA.carla);
   await page.goto(en("/consola/cobros"));
   await expect(page.locator('[data-cifra="por-cobrar"]')).toHaveAttribute("data-centavos", String(1_000_000 + 725_000 + 450_000));
@@ -246,7 +265,7 @@ test("4 · lista: resumen, antigüedad que filtra, búsqueda y pestañas", async
 });
 
 test("5 · pago a mano con comprobante: el cargo queda pagado y el comprobante baja", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_COBRANZA.carla);
   const alfa = await idDeCliente("Colegio Alfa");
   const cargo = await cargoDe(alfa);
@@ -288,7 +307,7 @@ test("5 · pago a mano con comprobante: el cargo queda pagado y el comprobante b
 });
 
 test("6 · estado de cuenta de tres bancos: empatar, proponer, confirmar y resubir sin duplicar", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_COBRANZA.carla);
   const refB = (await cargoDe(await idDeCliente("Despacho Beta"))).referencia;
   const refC = (await cargoDe(await idDeCliente("Clínica Gamma"))).referencia;
@@ -366,7 +385,7 @@ test("6 · estado de cuenta de tres bancos: empatar, proponer, confirmar y resub
 });
 
 test("7 · por conciliar: aplicar a un cargo, revertir y anular un pago", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_COBRANZA.carla);
   const alfa = await idDeCliente("Colegio Alfa");
   await page.goto(en(`/consola/cobros/clientes/${alfa}`));
@@ -419,7 +438,7 @@ test("7 · por conciliar: aplicar a un cargo, revertir y anular un pago", async 
 });
 
 test("8 · plan: pausar, reanudar, editar el monto y cancelar", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_COBRANZA.carla);
   const gamma = await idDeCliente("Clínica Gamma");
   await page.goto(en(`/consola/cobros/clientes/${gamma}`));
@@ -463,7 +482,7 @@ test("9 · tarea diaria: sin CRON_SECRET no abre; dos corridas el mismo día no 
 });
 
 test("10 · demostración: el correo queda simulado y el depósito simulado se aplica solo", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_COBRANZA.dario);
   await page.goto(en("/consola/cobros/configuracion", DEMO()));
   await expect(page.locator('[data-deteccion="demo"]')).toBeVisible();
@@ -497,7 +516,7 @@ test("10 · demostración: el correo queda simulado y el depósito simulado se a
 });
 
 test("11 · el contador ve la cobranza pero no la cambia", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS.diego);
   const altamar = requerida("E2E_ALTAMAR_ID");
   await page.goto(en("/consola/cobros", altamar));
@@ -564,7 +583,7 @@ test("12 · evidencia: 3 temas × 1440 y 390, axe sin violaciones y sin desplaza
 });
 
 test("13 · pagado desde la cuenta de otro cliente: se aplica a su cargo con la marca visible (r63-N4)", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_COBRANZA.carla);
   await darDeAlta(page, { nombre: "Grupo Uno", correo: "grupo-uno@ejemplo.mx", concepto: "Mantenimiento", tipo: "fijo", monto: "1000", periodicidad: "mensual", dias: 5 });
   await darDeAlta(page, { nombre: "Filial Dos", correo: "filial-dos@ejemplo.mx", concepto: "Mantenimiento", tipo: "fijo", monto: "1000", periodicidad: "mensual", dias: 5 });
@@ -614,7 +633,7 @@ test("13 · pagado desde la cuenta de otro cliente: se aplica a su cargo con la 
 });
 
 test("14 · registrar un pago con el cargo de otra empresa dice «No encontrado» (r63-N10)", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_COBRANZA.carla);
   const [ajeno] = await consultar<{ id: string }>("select id from collection_charges where company_id = $1 limit 1", [DEMO()]);
   expect(ajeno).toBeTruthy();
@@ -635,7 +654,7 @@ test("14 · registrar un pago con el cargo de otra empresa dice «No encontrado�
 });
 
 test("15 · cambiar el correo de contacto pide un segundo factor reciente y avisa al equipo (r63-N3)", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   const nuevo = "buzon-cobranza@ejemplo.mx";
   const guardar = async () => {
     await page.goto(en("/consola/cobros/configuracion"));
@@ -668,7 +687,7 @@ test("15 · cambiar el correo de contacto pide un segundo factor reciente y avis
 });
 
 test("16 · el mismo depósito a mano y en el estado de cuenta: posible duplicado en «Por conciliar», se descarta o se aplica (r63b-N1)", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_COBRANZA.carla);
   const alfa = await idDeCliente("Colegio Alfa");
   // Un cargo de 2,468.00: le queda saldo después del primer pago, que es cuando el código anterior aplicaba doble.
@@ -772,6 +791,36 @@ test("17 · sin JavaScript la configuración se guarda por POST: la CLABE, el be
     await page.screenshot({ path: join(EVIDENCIA, `${browserName}-${String(fotos).padStart(2, "0")}-sin-javascript-configuracion.jpg`), fullPage: true, type: "jpeg", quality: 70 });
   }
   await contexto.close();
+});
+
+test("18 · CSP estricta: las pantallas de cobranza y la del pagador, sin JavaScript, con su nonce y 0 anotaciones de la política", async ({ browser }) => {
+  // Con JavaScript las recorre csp.spec (todas las rutas del registro) y cada prueba de este archivo vigila la consola.
+  const alfa = await idDeCliente("Colegio Alfa");
+  const [cobro] = correosPara("pagos-alfa@ejemplo.mx");
+  const sesion = await browser.newContext({ javaScriptEnabled: false, ignoreHTTPSErrors: ORIGEN.startsWith("https:") });
+  const sinSesion = await browser.newContext({ javaScriptEnabled: false, ignoreHTTPSErrors: ORIGEN.startsWith("https:") });
+  await entrar(sesion, CORREOS_COBRANZA.carla);
+  const casos: [BrowserContext, string][] = [
+    ...["/consola/cobros", "/consola/cobros?vista=conciliar", "/consola/cobros/nuevo", `/consola/cobros/clientes/${alfa}`, "/consola/cobros/configuracion", "/consola/cobros/estado-de-cuenta"]
+      .map((ruta): [BrowserContext, string] => [sesion, en(ruta)]),
+    [sinSesion, new URL(enlaceDe(cobro!, /\/pagar\//)).pathname],
+  ];
+  for (const [contexto, ruta] of casos) {
+    const pagina = await contexto.newPage();
+    const anotadas: string[] = [];
+    pagina.on("console", (m) => { if (/Content Security Policy|Refused to/i.test(m.text())) anotadas.push(m.text().slice(0, 200)); });
+    const respuesta = await pagina.goto(ruta);
+    expect(respuesta?.status(), ruta).toBe(200);
+    const politica = respuesta?.headers()["content-security-policy"] ?? "";
+    expect(politica, ruta).toMatch(/script-src 'self' 'nonce-[A-Za-z0-9+/=]+' 'strict-dynamic'/);
+    const nonce = politica.match(/'nonce-([A-Za-z0-9+/=]+)'/)![1];
+    const etiquetas = [...(await respuesta!.text()).matchAll(/<(?:script|style)\b[^>]*>/g)].map((m) => m[0]);
+    expect(etiquetas.filter((e) => !e.includes(`nonce="${nonce}"`)), ruta).toEqual([]);
+    expect(anotadas, ruta).toEqual([]);
+    await pagina.close();
+  }
+  await sesion.close();
+  await sinSesion.close();
 });
 
 function pesos(centavos: number): string {
