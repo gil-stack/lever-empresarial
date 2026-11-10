@@ -1615,6 +1615,14 @@ async function contraste() {
                 const c = a.getBoundingClientRect();
                 vis = { l: Math.max(vis.l, c.left), t: Math.max(vis.t, c.top), r: Math.min(vis.r, c.right), b: Math.min(vis.b, c.bottom) };
               }
+              // Las barras pegadas arriba tapan lo que pasa por debajo: de un texto medio tapado solo cuenta lo que asoma.
+              // (Con las barras al 92 %, la mitad tapada de «Autorizar» a 390 se medía contra la barra: trece-N1.)
+              const techo = Math.max(0, ...[...document.querySelectorAll(".barra-movil, .barra-superior")]
+                .filter((b) => b.getClientRects().length && /sticky|fixed/.test(getComputedStyle(b).position) && !b.contains(el))
+                .map((b) => b.getBoundingClientRect())
+                .filter((c) => c.top <= 1 + (document.querySelector(".barra-movil")?.getBoundingClientRect().height ?? 0))
+                .map((c) => c.bottom));
+              vis.t = Math.max(vis.t, techo);
               if (vis.r - vis.l < 2 || vis.b - vis.t < 2) continue;
               // Lo que pasa por debajo de la barra superior (fija al desplazarse) no se ve: no se mide contra ella.
               const medio = (vis.t + vis.b) / 2;

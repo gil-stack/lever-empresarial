@@ -1,0 +1,71 @@
+// trece-N1 en Chromium y WebKit, con y sin JS, 3 temas, 390 y 1440: el fondo de cada barra de arriba compuesto sobre negro
+// y sobre blanco puros, AA por texto (el mismo cálculo que accesibilidad.spec). Y la #48: axe WCAG 2.0/2.1 A/AA en Operación
+// (Clientes) con JS. Portal: Gil en Taller (Personas). Operación: Ofelia. Por el proxy TLS https://localhost:3152 → 4812.
+import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+const W = "/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-2b-navegacion";
+const req = createRequire(`${W}/package.json`);
+const { chromium, webkit } = req("playwright");
+const AXE = readFileSync(`${W}/node_modules/axe-core/axe.min.js`, "utf8");
+const E = JSON.parse(readFileSync(join(tmpdir(), "ola-2b-entorno.json"), "utf8"));
+const sql = (q) => execFileSync("psql", [E.DUENO_URL, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1", "-c", q], { encoding: "utf8" }).trim();
+const sesion = (correo, superficie) => {
+  const valor = randomBytes(32).toString("base64url"), entrada = randomUUID();
+  const uid = sql(`select id from users where correo='${correo}'`);
+  sql(`insert into auth_entradas (id, user_id, token_hash, creada_en, vence_en, verificada_con, verificada_en, consumida_en) values ('${entrada}', '${uid}', '${createHash("sha256").update(entrada).digest("hex")}', now(), now() + interval '10 minutes', 'totp', now(), now());
+       insert into sessions (id, user_id, token_hash, expires_at, superficie, segundo_factor, entrada_id) values ('${randomUUID()}', '${uid}', '${createHash("sha256").update(valor).digest("hex")}', now() + interval '2 hours', '${superficie}', 'totp', '${entrada}');`);
+  return valor;
+};
+const BASE = "https://localhost:3152";
+const OFELIA = sesion("ofelia-2b@lever.test", "sofipo");
+const PAGINAS = [["portal", sesion("gil-pagos@ejemplo.mx", "cliente"), "/consola/personas"], ["Operación", OFELIA, "/operacion/clientes"]];
+const medir = () => {
+  const leer = (css) => { const n = (css.match(/-?[\d.]+%?/g) ?? []).map((x) => (x.endsWith("%") ? parseFloat(x) / 100 : parseFloat(x))); return css.startsWith("color(srgb") ? [n[0] * 255, n[1] * 255, n[2] * 255, n[3] ?? 1] : [n[0] ?? 0, n[1] ?? 0, n[2] ?? 0, n[3] ?? 1]; };
+  const sobre = ([r, g, b, a], [R, G, B]) => [r * a + R * (1 - a), g * a + G * (1 - a), b * a + B * (1 - a), 1];
+  const luz = ([r, g, b]) => { const c = (v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c(r) + 0.7152 * c(g) + 0.0722 * c(b); };
+  const razon = (x, y) => { const [a, b] = [luz(x), luz(y)].sort((p, q) => q - p); return (a + 0.05) / (b + 0.05); };
+  const fallas = []; let textos = 0, minimo = 99;
+  for (const barra of document.querySelectorAll(".barra-movil, .barra-superior")) {
+    if (!barra.getClientRects().length) continue;
+    for (const el of barra.querySelectorAll("*")) {
+      const texto = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join("").trim();
+      const caja = el.getBoundingClientRect(), estilo = getComputedStyle(el);
+      if (!texto || !caja.width || !caja.height || estilo.visibility === "hidden" || el.closest("[hidden], .solo-lector")) continue;
+      const capas = []; for (let x = el; x; x = x === barra ? null : x.parentElement) capas.unshift(leer(getComputedStyle(x).backgroundColor));
+      const grande = parseFloat(estilo.fontSize) >= 24 || (parseFloat(estilo.fontSize) >= 18.66 && Number(estilo.fontWeight) >= 700);
+      textos++;
+      for (const [nombre, debajo] of [["negro", [0, 0, 0, 1]], ["blanco", [255, 255, 255, 1]]]) {
+        const fondo = capas.reduce((acum, capa) => sobre(capa, acum), debajo); const r = razon(sobre(leer(estilo.color), fondo), fondo);
+        minimo = Math.min(minimo, r); if (r < (grande ? 3 : 4.5)) fallas.push(`«${texto.slice(0, 30)}» ${nombre} ${r.toFixed(2)}`);
+      }
+    }
+  }
+  return { textos, minimo: minimo.toFixed(2), fallas, desplazada: document.querySelector(".barra-superior")?.hasAttribute("data-desplazada") ?? null };
+};
+let total = 0, malas = 0;
+for (const motor of ["chromium", "webkit"]) {
+  const nav = await (motor === "webkit" ? webkit : chromium).launch({ headless: true });
+  for (const js of [true, false]) for (const tema of ["claro", "oscuro", "lever"]) for (const ancho of [390, 1440]) for (const [donde, ses, ruta] of PAGINAS) {
+    const ctx = await nav.newContext({ javaScriptEnabled: js, viewport: { width: ancho, height: ancho === 390 ? 844 : 900 }, ignoreHTTPSErrors: true, locale: "es-MX" });
+    await ctx.addCookies([{ name: "__Host-sesion", value: ses, url: `${BASE}/`, secure: true, httpOnly: true, sameSite: "Lax" }, { name: "tema", value: tema, url: `${BASE}/` }]);
+    const p = await ctx.newPage();
+    await p.goto(`${BASE}${ruta}`, { waitUntil: js ? "networkidle" : "load" });
+    const temaVisto = await p.evaluate(() => document.documentElement.dataset.tema);
+    if (js) await p.addStyleTag({ content: "*, *::before, *::after { transition: none !important; }" });
+    await p.evaluate(() => { document.body.style.paddingBottom = "3000px"; window.scrollTo(0, document.documentElement.scrollHeight); });
+    if (js) await p.waitForFunction(() => { const b = document.querySelector(".barra-superior"); return !b || !b.getClientRects().length || b.hasAttribute("data-desplazada"); }, null, { timeout: 5000 }).catch(() => {});
+    const r = await p.evaluate(medir);
+    let ax = "—";
+    if (js && donde === "Operación") { await p.evaluate(() => scrollTo(0, 0)); await p.addScriptTag({ content: AXE }); ax = (await p.evaluate(async () => (await axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } })).violations.map((v) => `${v.id}(${v.nodes.length})`).join(","))) || "0"; }
+    const ok = temaVisto === tema && r.fallas.length === 0 && r.textos > 0 && (ax === "—" || ax === "0") && (!js || r.desplazada !== false);
+    total++; if (!ok) malas++;
+    console.log(`${ok ? "OK" : "XX"} ${motor} ${js ? "JS" : "sin JS"} ${tema} @${ancho} ${donde}: tema=${temaVisto} textos=${r.textos} mínimo ${r.minimo}:1 desplazada=${r.desplazada} axe=${ax}${r.fallas.length ? " | " + r.fallas.join("; ") : ""}`);
+    await ctx.close();
+  }
+  await nav.close();
+}
+console.log(`\n${total - malas} de ${total} en verde.`);

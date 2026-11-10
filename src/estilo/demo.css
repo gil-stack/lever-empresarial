@@ -94,6 +94,12 @@
   border-left: 0;
 }
 
+/* El rótulo de la cifra va directo sobre la escena, sin tarjeta: en Lever, donde la escena aclara (#97483f), --tx3 daba
+   4.14:1. --tx2 da 4.76:1 ahí y más contraste también en Claro y Oscuro. */
+.demo-cifra > .eyebrow {
+  color: var(--tx2);
+}
+
 .demo-cifra-valor {
   margin: 14px 0 6px;
   font-family: var(--fd);

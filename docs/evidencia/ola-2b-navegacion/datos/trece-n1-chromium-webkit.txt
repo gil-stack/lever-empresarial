@@ -1,0 +1,50 @@
+OK chromium JS claro @390 portal: tema=claro textos=8 mínimo 5.22:1 desplazada=true axe=—
+OK chromium JS claro @390 Operación: tema=claro textos=7 mínimo 5.22:1 desplazada=true axe=0
+OK chromium JS claro @1440 portal: tema=claro textos=5 mínimo 5.22:1 desplazada=true axe=—
+OK chromium JS claro @1440 Operación: tema=claro textos=4 mínimo 5.22:1 desplazada=true axe=0
+OK chromium JS oscuro @390 portal: tema=oscuro textos=8 mínimo 7.28:1 desplazada=true axe=—
+OK chromium JS oscuro @390 Operación: tema=oscuro textos=7 mínimo 7.28:1 desplazada=true axe=0
+OK chromium JS oscuro @1440 portal: tema=oscuro textos=5 mínimo 7.28:1 desplazada=true axe=—
+OK chromium JS oscuro @1440 Operación: tema=oscuro textos=4 mínimo 7.28:1 desplazada=true axe=0
+OK chromium JS lever @390 portal: tema=lever textos=8 mínimo 6.70:1 desplazada=true axe=—
+OK chromium JS lever @390 Operación: tema=lever textos=7 mínimo 6.70:1 desplazada=true axe=0
+OK chromium JS lever @1440 portal: tema=lever textos=5 mínimo 6.70:1 desplazada=true axe=—
+OK chromium JS lever @1440 Operación: tema=lever textos=4 mínimo 6.70:1 desplazada=true axe=0
+OK chromium sin JS claro @390 portal: tema=claro textos=9 mínimo 5.22:1 desplazada=false axe=—
+OK chromium sin JS claro @390 Operación: tema=claro textos=8 mínimo 5.22:1 desplazada=false axe=—
+OK chromium sin JS claro @1440 portal: tema=claro textos=6 mínimo 5.22:1 desplazada=false axe=—
+OK chromium sin JS claro @1440 Operación: tema=claro textos=5 mínimo 5.22:1 desplazada=false axe=—
+OK chromium sin JS oscuro @390 portal: tema=oscuro textos=9 mínimo 7.28:1 desplazada=false axe=—
+OK chromium sin JS oscuro @390 Operación: tema=oscuro textos=8 mínimo 7.28:1 desplazada=false axe=—
+OK chromium sin JS oscuro @1440 portal: tema=oscuro textos=6 mínimo 7.28:1 desplazada=false axe=—
+OK chromium sin JS oscuro @1440 Operación: tema=oscuro textos=5 mínimo 7.28:1 desplazada=false axe=—
+OK chromium sin JS lever @390 portal: tema=lever textos=9 mínimo 6.70:1 desplazada=false axe=—
+OK chromium sin JS lever @390 Operación: tema=lever textos=8 mínimo 6.70:1 desplazada=false axe=—
+OK chromium sin JS lever @1440 portal: tema=lever textos=6 mínimo 6.70:1 desplazada=false axe=—
+OK chromium sin JS lever @1440 Operación: tema=lever textos=5 mínimo 6.70:1 desplazada=false axe=—
+OK webkit JS claro @390 portal: tema=claro textos=8 mínimo 5.22:1 desplazada=true axe=—
+OK webkit JS claro @390 Operación: tema=claro textos=7 mínimo 5.22:1 desplazada=true axe=0
+OK webkit JS claro @1440 portal: tema=claro textos=5 mínimo 5.22:1 desplazada=true axe=—
+OK webkit JS claro @1440 Operación: tema=claro textos=4 mínimo 5.22:1 desplazada=true axe=0
+OK webkit JS oscuro @390 portal: tema=oscuro textos=8 mínimo 7.28:1 desplazada=true axe=—
+OK webkit JS oscuro @390 Operación: tema=oscuro textos=7 mínimo 7.28:1 desplazada=true axe=0
+OK webkit JS oscuro @1440 portal: tema=oscuro textos=5 mínimo 7.28:1 desplazada=true axe=—
+OK webkit JS oscuro @1440 Operación: tema=oscuro textos=4 mínimo 7.28:1 desplazada=true axe=0
+OK webkit JS lever @390 portal: tema=lever textos=8 mínimo 6.70:1 desplazada=true axe=—
+OK webkit JS lever @390 Operación: tema=lever textos=7 mínimo 6.70:1 desplazada=true axe=0
+OK webkit JS lever @1440 portal: tema=lever textos=5 mínimo 6.70:1 desplazada=true axe=—
+OK webkit JS lever @1440 Operación: tema=lever textos=4 mínimo 6.70:1 desplazada=true axe=0
+OK webkit sin JS claro @390 portal: tema=claro textos=9 mínimo 5.22:1 desplazada=false axe=—
+OK webkit sin JS claro @390 Operación: tema=claro textos=8 mínimo 5.22:1 desplazada=false axe=—
+OK webkit sin JS claro @1440 portal: tema=claro textos=6 mínimo 5.22:1 desplazada=false axe=—
+OK webkit sin JS claro @1440 Operación: tema=claro textos=5 mínimo 5.22:1 desplazada=false axe=—
+OK webkit sin JS oscuro @390 portal: tema=oscuro textos=9 mínimo 7.28:1 desplazada=false axe=—
+OK webkit sin JS oscuro @390 Operación: tema=oscuro textos=8 mínimo 7.28:1 desplazada=false axe=—
+OK webkit sin JS oscuro @1440 portal: tema=oscuro textos=6 mínimo 7.28:1 desplazada=false axe=—
+OK webkit sin JS oscuro @1440 Operación: tema=oscuro textos=5 mínimo 7.28:1 desplazada=false axe=—
+OK webkit sin JS lever @390 portal: tema=lever textos=9 mínimo 6.70:1 desplazada=false axe=—
+OK webkit sin JS lever @390 Operación: tema=lever textos=8 mínimo 6.70:1 desplazada=false axe=—
+OK webkit sin JS lever @1440 portal: tema=lever textos=6 mínimo 6.70:1 desplazada=false axe=—
+OK webkit sin JS lever @1440 Operación: tema=lever textos=5 mínimo 6.70:1 desplazada=false axe=—
+
+48 de 48 en verde.
