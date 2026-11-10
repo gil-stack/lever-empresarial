@@ -237,7 +237,7 @@ Falta:
 # Postgres 17 desechable en 5552 (LC_ALL=C para que arranque en macOS)
 DUENO_URL=postgres://postgres@127.0.0.1:5552/postgres ./node_modules/.bin/tsx scripts/evidencia/ola-2b/preparar.ts > "${TMPDIR:-/tmp}/ola-2b-entorno.json"   # fuera del repo: trae sesiones y la clave de la base
 E2E_SERVER_ACTIONS=1 E2E_PUERTO=4812 ./node_modules/.bin/next build
-DATABASE_URL=<la de entorno.json> E2E_SERVER_ACTIONS=1 E2E_PUERTO=4812 ./node_modules/.bin/next start -p 4812 -H 127.0.0.1
+DATABASE_URL=<la de entorno.json> E2E_SERVER_ACTIONS=1 E2E_PUERTO=4812 ./node_modules/.bin/next start -p 4812 -H localhost   # no -H 127.0.0.1: ver r60b-N1 abajo
 DISENO=<carpeta de capturas del diseño> node scripts/evidencia/ola-2b-navegacion.mjs lado   # fPlat.html va junto a esa carpeta
 node scripts/evidencia/ola-2b-navegacion.mjs modulos
 node scripts/evidencia/ola-2b-navegacion.mjs limpiar     # solo N6 (va también en modulos); SUFIJO_LIMPIAR nombra sus capturas
@@ -250,5 +250,7 @@ TEMAS=oscuro node scripts/evidencia/ola-2b-navegacion.mjs axe   # después de fl
 node scripts/evidencia/ola-2b-navegacion.mjs sesiones    # y luego, con Postgres apagado:
 node scripts/evidencia/ola-2b-navegacion.mjs caida
 ```
+
+**`-H localhost`, no `-H 127.0.0.1` (r60b-N1).** Con `-H 127.0.0.1`, Next trata la reescritura de `/c/<empresa>/…` del proxy como externa y la vuelve a pedir por HTTP; en esa segunda pasada la ruta ya no trae `/c/` y el proxy borra la cabecera de la empresa: una empresa ajena o inexistente abre la empresa propia con 200 (sin datos ajenos). Con `-H localhost` o sin `-H`, como en la e2e y en Vercel, responde 404 (`datos/r60b-n1-arranques.txt`: 20 de 20 en cada modo, mismo build y misma base).
 
 `psql` tiene que estar en el `PATH`. El script solo acepta un Postgres en 127.0.0.1 o localhost.

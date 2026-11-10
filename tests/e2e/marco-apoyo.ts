@@ -4,7 +4,7 @@ import type { Page } from "@playwright/test";
 export const EMPRESA = "33333333-3333-4333-8333-333333333333";
 export const INICIO = `/c/${EMPRESA}/consola`;
 const GIL = "a".repeat(43);
-const ORIGEN = process.env.E2E_BASE_URL ?? `http://localhost:${process.env.E2E_PUERTO ?? "3109"}`;
+export const ORIGEN = process.env.E2E_BASE_URL ?? `http://localhost:${process.env.E2E_PUERTO ?? "3109"}`;
 
 export async function entrar(page: Page, token = GIL) {
   await page.context().clearCookies();
