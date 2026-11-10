@@ -207,9 +207,14 @@ async function aviso(p) {
   const caja = p.locator("#aviso-operacion");
   return (await caja.count()) ? (await caja.innerText()).replace(/\s+/g, " ").trim() : "";
 }
+/**
+ * Antes de cada envío el recorrido quita el aviso anterior de la dirección con `history.replaceState(null, …)`. Con el
+ * estado de Next (`history.state`, que lleva `__NA`) Next no actualiza su router: tras un rechazo, el `refresh()` del
+ * #59 volvía a poner el aviso anterior en la dirección (node_modules/next/dist/client/components/app-router.js).
+ */
 /** Envía un formulario con un clic (o doble clic) real y espera la redirección con su aviso. */
 async function enviar(p, boton, codigo, { doble = false } = {}) {
-  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.evaluate(() => history.replaceState(null, "", location.pathname + location.hash));
   await (doble ? boton.dblclick() : boton.click());
   await p.waitForURL((url) => url.searchParams.get("aviso") !== null, { timeout: 20000 });
   await listo(p);
@@ -283,7 +288,7 @@ async function registrarSesion(p, fecha, presentes, { auditor = false } = {}) {
   await p.locator("#sesion-fecha").fill(fecha);
   for (const nombre of presentes) await p.getByLabel(new RegExp(`${nombre} · `)).check();
   if (auditor) await p.locator('input[name="auditorPresente"]').check();
-  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.evaluate(() => history.replaceState(null, "", location.pathname + location.hash));
   await p.getByRole("button", { name: "Registrar sesión" }).dblclick();
   await p.waitForURL((url) => url.pathname.startsWith("/operacion/comite/sesiones/") && url.searchParams.get("aviso") !== null, { timeout: 20000 });
   await listo(p);
@@ -295,7 +300,7 @@ async function votar(p, razonSocial, votos) {
   for (const [nombre, voto] of votos) {
     const tema = p.locator("li", { has: p.locator("h3", { hasText: razonSocial }) }).first();
     const boton = tema.getByRole("button", { name: `${nombre} vota ${voto === "a_favor" ? "a favor" : "en contra"}` });
-    await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+    await p.evaluate(() => history.replaceState(null, "", location.pathname + location.hash));
     await boton.dblclick();
     await p.waitForURL((url) => url.searchParams.get("aviso") !== null, { timeout: 20000 });
     await listo(p);
@@ -559,13 +564,17 @@ async function abrirCaso(p, texto, detalle = "") {
  * recargar con lo capturado, el campo marcado y con el foco; ni el texto ni el aviso pasan por la dirección.
  */
 async function rechazoConservaElTexto(p, boton, campo, texto) {
-  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.evaluate(() => history.replaceState(null, "", location.pathname + location.hash));
   await p.getByRole("button", { name: boton }).click();
   const marcado = await p.locator(`${campo}[aria-invalid="true"]`).waitFor({ timeout: 20000 }).then(() => true, () => false);
   await listo(p);
   const foco = await p.waitForFunction((selector) => document.activeElement === document.querySelector(selector), campo, { timeout: 5000 }).then(() => true, () => false);
   const url = new URL(p.url());
-  return { marcado, foco, conserva: (await p.locator(campo).inputValue()) === texto, limpia: !url.searchParams.has("aviso") && !decodeURIComponent(url.href).includes(texto.slice(0, 3)) };
+  return {
+    marcado, foco, conserva: (await p.locator(campo).inputValue()) === texto,
+    limpia: !url.searchParams.has("aviso") && !decodeURIComponent(url.href).includes(texto.slice(0, 3)),
+    direccion: url.pathname + url.search + url.hash,
+  };
 }
 
 /**
@@ -774,10 +783,13 @@ async function flujo7() {
   const primeraDesignacion = 'input[name="integrantes"] >> nth=0';
   const segundaDesignacion = 'input[name="integrantes"] >> nth=1';
   await p.locator("#comunicacion-folio").fill("SITI-INT\u200b-2026-0001");
-  await p.locator("#comunicacion-recibido").fill(`${hoy()}T09:00`);
+  // La recepción no puede ser futura (max = ahora en la Ciudad de México): una hora fija como las 09:00 la bloquea el
+  // navegador si el recorrido corre antes de esa hora.
+  const recibido = await p.locator("#comunicacion-recibido").getAttribute("max");
+  await p.locator("#comunicacion-recibido").fill(recibido);
   await p.locator(primeraDesignacion).uncheck();
   const comunicacionRechazada = await rechazoEnFormulario(p, p.getByRole("button", { name: "Registrar comunicación" }), "#comunicacion-folio", "aviso-comunicacion", {
-    "#comunicacion-folio": "SITI-INT\u200b-2026-0001", "#comunicacion-recibido": `${hoy()}T09:00`, [primeraDesignacion]: false, [segundaDesignacion]: true,
+    "#comunicacion-folio": "SITI-INT\u200b-2026-0001", "#comunicacion-recibido": recibido, [primeraDesignacion]: false, [segundaDesignacion]: true,
   });
   exigir(sinRecarga(comunicacionRechazada) && cuenta("pld_comite_comunicaciones") === 0,
     "7. el folio con un carácter invisible se rechaza sin recargar: queda marcado, y el folio, la fecha y las casillas siguen como estaban", JSON.stringify(comunicacionRechazada));
@@ -851,13 +863,15 @@ async function flujo7() {
   const escrita = "El Comité aprobó reportar la serie: lo escribí antes de que venciera el factor.";
   await p.locator("#dictamen-justificacion").fill(escrita);
   factor(E.IDS.celia, 31);
-  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.evaluate(() => history.replaceState(null, "", location.pathname + location.hash));
   await p.getByRole("button", { name: "Registrar dictamen" }).click();
   await p.getByRole("region", { name: "Confirma que eres tú" }).waitFor({ timeout: 20000 });
   await listo(p);
   exigir((await p.locator("#dictamen-justificacion").inputValue()) === escrita && !new URL(p.url()).searchParams.has("aviso")
     && !decodeURIComponent(p.url()).includes("escribí") && cuenta(`pld_dictamenes where caso_id = '${ids.casoTaller}'`) === 0
-    && (await p.getByText("las decisiones de PLD lo piden de los últimos 30 minutos").isVisible()),
+    // El aviso va en el formulario. El de la página (#aviso-rechazo, del #59) está en el DOM pero oculto: se ve uno solo.
+    && (await p.locator("#aviso-dictamen").getByText("las decisiones de PLD lo piden de los últimos 30 minutos").isVisible())
+    && (await p.getByText("las decisiones de PLD lo piden de los últimos 30 minutos").filter({ visible: true }).count()) === 1,
     "7. el factor venció mientras escribía: pide «Confirma que eres tú», la justificación sigue escrita y nada va en la dirección", p.url());
   await foto(p, "f7-dictamen-factor-vencido-conserva-el-texto");
   await confirmarIdentidad(p, "celia");
@@ -1386,6 +1400,9 @@ async function contraste() {
             if (!el || vistos.has(el)) continue;
             vistos.add(el);
             if (el.closest("[aria-hidden=true], .logotipo, .solo-lector, script, style, noscript, option, [disabled], .saltar, svg, dialog:not([open])")) continue;
+            // El contenido de un <details> cerrado no se pinta, pero conserva su caja: en Conservación, «Página» caía
+            // sobre el botón «Descargar manifiesto» y se medía contra su fondo. checkVisibility() lo descarta.
+            if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) continue;
             const estilo = getComputedStyle(el);
             if (estilo.visibility === "hidden" || Number(estilo.opacity) === 0) continue;
             const rango = document.createRange();
@@ -1577,13 +1594,14 @@ async function flujo16() {
   };
   for (const [campo, valor] of Object.entries(nuevos)) await p.locator(campo).fill(valor);
   factor(E.IDS.celia, 31);
-  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.evaluate(() => history.replaceState(null, "", location.pathname + location.hash));
   await p.getByRole("button", { name: "Guardar versión nueva" }).click();
   await p.getByRole("region", { name: "Confirma que eres tú" }).waitFor({ timeout: 20000 });
   await listo(p);
   const limpia = () => !new URL(p.url()).searchParams.has("aviso") && !decodeURIComponent(p.url()).includes("Manual");
   exigir(igual(await escrito(p, nuevos), nuevos) && limpia() && cuenta("pld_parametros") === versiones
-    && (await p.getByText("las decisiones de PLD lo piden de los últimos 30 minutos").isVisible()),
+    && (await p.locator("#aviso-parametros").getByText("las decisiones de PLD lo piden de los últimos 30 minutos").isVisible())
+    && (await p.getByText("las decisiones de PLD lo piden de los últimos 30 minutos").filter({ visible: true }).count()) === 1,
     "16. el factor venció mientras escribía: pide «Confirma que eres tú», los 7 valores y el motivo siguen y nada va en la dirección", JSON.stringify(await escrito(p, nuevos)));
   await foto(p, "f16-parametros-factor-vencido-conserva-lo-capturado");
   await confirmarIdentidad(p, "celia");
@@ -1615,7 +1633,7 @@ async function flujo16() {
     motivo: await p.locator("#modo-motivo").inputValue(),
   });
   factor(E.IDS.celia, 31);
-  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.evaluate(() => history.replaceState(null, "", location.pathname + location.hash));
   await p.getByRole("button", { name: "Guardar quién dictamina" }).click();
   await p.getByRole("region", { name: "Confirma que eres tú" }).waitFor({ timeout: 20000 });
   await listo(p);
@@ -1626,7 +1644,7 @@ async function flujo16() {
   exigir(igual(await modo(), { oficial: true, persona: oficial, motivo }), "16. al confirmar, siguen");
   // Oficial sin persona: se rechaza, la persona queda marcada y con el foco, y el motivo sigue.
   await p.locator("#modo-oficial").selectOption("");
-  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.evaluate(() => history.replaceState(null, "", location.pathname + location.hash));
   await p.getByRole("button", { name: "Guardar quién dictamina" }).click();
   const marcada = await p.locator('#modo-oficial[aria-invalid="true"]').waitFor({ timeout: 20000 }).then(() => true, () => false);
   await listo(p);

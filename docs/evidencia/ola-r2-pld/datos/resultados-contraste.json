@@ -2,33 +2,33 @@
   "fases": [
     "contraste"
   ],
-  "segundos": 173,
+  "segundos": 187,
   "verdes": 6,
   "rojos": 0,
   "resultados": [
     {
       "ok": true,
-      "texto": "contraste oscuro 1440: 452 textos, mínimo 5.06"
+      "texto": "contraste oscuro 1440: 448 textos, mínimo 5.06"
     },
     {
       "ok": true,
-      "texto": "contraste oscuro 390: 167 textos, mínimo 6.19"
+      "texto": "contraste oscuro 390: 164 textos, mínimo 6.19"
     },
     {
       "ok": true,
-      "texto": "contraste claro 1440: 452 textos, mínimo 5.01"
+      "texto": "contraste claro 1440: 448 textos, mínimo 5.01"
     },
     {
       "ok": true,
-      "texto": "contraste claro 390: 167 textos, mínimo 5.05"
+      "texto": "contraste claro 390: 164 textos, mínimo 5.05"
     },
     {
       "ok": true,
-      "texto": "contraste lever 1440: 452 textos, mínimo 4.96"
+      "texto": "contraste lever 1440: 448 textos, mínimo 4.96"
     },
     {
       "ok": true,
-      "texto": "contraste lever 390: 167 textos, mínimo 5.66"
+      "texto": "contraste lever 390: 164 textos, mínimo 5.66"
     }
   ]
 }
