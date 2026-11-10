@@ -61,6 +61,15 @@ function sql(consulta, url = DUENO) {
 }
 const cuenta = (desde) => Number(sql(`select count(*) from ${desde}`));
 /** El campo que nombra el aviso queda marcado y con el foco (r2-serv-N6). */
+/** Espera hasta `ms` a que `condicion()` se cumpla: el foco y el título llegan con el repintado, después de la red quieta. */
+async function hasta(condicion, ms = 5000) {
+  const limite = Date.now() + ms;
+  for (;;) {
+    if (await condicion()) return true;
+    if (Date.now() > limite) return false;
+    await new Promise((listo) => setTimeout(listo, 100));
+  }
+}
 async function marcadoConFoco(p, selector) {
   const campo = p.locator(selector);
   return (await campo.getAttribute("aria-invalid")) === "true" && (await campo.evaluate((nodo) => nodo === document.activeElement));
@@ -1526,8 +1535,10 @@ async function flujo15() {
   const subirOculta = await subirA(oculta.id);
   const estadoOculta = await c.evaluate(() => document.title);
   const subirInexistente = await subirA(inexistente);
-  exigir(subirOculta === "sesion_no_existe" && subirInexistente === "sesion_no_existe" && estadoOculta === (await c.evaluate(() => document.title)),
-    "15. subir un acta a la sesión oculta: sesion_no_existe y la misma página que con una inexistente", `${subirOculta} / ${subirInexistente}`);
+  let estadoInexistente = "";
+  const mismoTitulo = await hasta(async () => (estadoInexistente = await c.evaluate(() => document.title)) === estadoOculta);
+  exigir(subirOculta === "sesion_no_existe" && subirInexistente === "sesion_no_existe" && mismoTitulo,
+    "15. subir un acta a la sesión oculta: sesion_no_existe y la misma página que con una inexistente", `${subirOculta} / ${subirInexistente} · «${estadoOculta}» / «${estadoInexistente}»`);
   exigir(cuenta(`pld_actas where sesion_id = '${oculta.id}'`) === 0, "15. y no quedó ninguna acta en la sesión oculta");
   await foto(c, "f15-ciro-no-sube-el-acta");
 
@@ -1722,7 +1733,9 @@ async function flujo17() {
   const avisos = cuenta("pld_avisos");
   await p.getByRole("button", { name: "Enviar aviso" }).click();
   await listo(p);
-  exigir(cuenta("pld_avisos") === avisos && await marcadoConFoco(p, "#aviso-empresa"), "17. el aviso sobre Fondo se rechaza en el campo Empresa, con el foco, y no queda aviso");
+  exigir(cuenta("pld_avisos") === avisos && await hasta(() => marcadoConFoco(p, "#aviso-empresa")), "17. el aviso sobre Fondo se rechaza en el campo Empresa, con el foco, y no queda aviso",
+    JSON.stringify({ avisos: cuenta("pld_avisos") - avisos, ariaInvalid: await p.locator("#aviso-empresa").getAttribute("aria-invalid"),
+      foco: await p.evaluate(() => document.activeElement?.id ?? document.activeElement?.tagName), aviso: await p.locator("[data-aviso]").evaluateAll((n) => n.map((x) => x.getAttribute("data-aviso"))), url: p.url().replace(BASE, "") }));
   await foto(p, "f17-aviso-sobre-la-empresa-de-demostracion-rechazado");
   await cerrar(celia, "Celia");
 }
