@@ -1,0 +1,75 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+  [90m 7 |[0m [90m * ejecuta y el servidor no migra al arrancar.[0m
+  [90m 8 |[0m [90m */[0m
+[33m[1m>[0m [90m 9 |[0m [36mexport[0m [36mconst[0m [33mCONTRATO_TABLAS[0m = readFileSync(rutaDelContrato(), [32m"utf8"[0m);
+  [90m   |[0m                                [33m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m10 |[0m
+  [90m11 |[0m [36mfunction[0m rutaDelContrato(): string {
+  [90m12 |[0m   [36mtry[0m {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 4 s
+
+Running 16 tests using 1 worker, shard 2 of 4
+
+  ✓   1 tests/e2e/operacion.spec.ts:370:7 › Operación SOFIPO: entrada › entrada SOFIPO: contraseña y código; un código malo no abre y el doble clic abre una sola sesión (1.7s)
+MEDIDA #razonSocial 1440: {"mensaje":{"arriba":332,"abajo":370},"campo":{"arriba":377,"abajo":417},"barras":84,"ventana":1000,"visible":true}
+  ✓   2 tests/e2e/operacion.spec.ts:403:9 › Operación SOFIPO: entrada › sin JavaScript › sin JavaScript los formularios responden: el alta vuelve con su aviso y lo capturado (200) y las dos entradas dan el suyo (3.5s)
+  ✓   3 tests/e2e/operacion.spec.ts:442:7 › Operación SOFIPO: alta con activación (Faro) › prospecto → pedir activación → el candado exige expediente; con todo en regla la decide otra persona con factor reciente (5.0s)
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #correo 1440: {"mensaje":{"arriba":419,"abajo":438},"campo":{"arriba":445,"abajo":485},"barras":84,"ventana":900,"visible":true}
+MEDIDA #valor 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA #titulo 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="motivo-593990a9-81d3-4dd7-895e-9c6079c8748f"] 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+  ✓   4 tests/e2e/operacion.spec.ts:539:7 › Operación SOFIPO: alta con activación (Faro) › doceava: prospecto, invitación, comisión y alertas vuelven con lo capturado y su campo marcado; el resumen de arriba no se queda (3.4s)
+  ✓   5 tests/e2e/operacion.spec.ts:545:7 › Operación SOFIPO: alta con activación (Faro) › doceava: la suspensión de Faro no consume el formulario al rechazarse, el doble clic pide una sola y la otra pestaña ve «ya hay una pendiente» sin recargar (2.2s)
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #correo 1440: {"mensaje":{"arriba":419,"abajo":438},"campo":{"arriba":445,"abajo":485},"barras":84,"ventana":900,"visible":true}
+MEDIDA #valor 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA #titulo 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="motivo-a65babda-6732-4761-94c1-1ce3087f28e2"] 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+  ✓   6 tests/e2e/operacion.spec.ts:554:9 › Operación SOFIPO: alta con activación (Faro) › doceava sin JavaScript, con Faro activa › sin JavaScript, invitación, comisión y alertas vuelven con lo capturado y el resumen del envío anterior no se pinta (1.3s)
+  ✓   7 tests/e2e/operacion.spec.ts:565:7 › Operación SOFIPO: Brisa y Cima › un caso abierto de Cumplimiento no se le nombra a Aprobación ni a Originación (1.4s)
+  ✓   8 tests/e2e/operacion.spec.ts:600:7 › Operación SOFIPO: Brisa y Cima › el grado de riesgo no le dice a Originación ni a Aprobación que hay una coincidencia; a Cumplimiento sí (1.4s)
+  ✓   9 tests/e2e/operacion.spec.ts:626:7 › Operación SOFIPO: Brisa y Cima › una clave repetida en la dirección (?aviso=a&aviso=b) no tumba ninguna página de Operación (7.9s)
+  ✓  10 tests/e2e/operacion.spec.ts:660:7 › Operación SOFIPO: recuperaciones › «Perdí el segundo factor»: Recuperaciones pide «Confirma que eres tú», otra persona aprueba y la clienta registra un factor nuevo (3.2s)
+MEDIDA [id="nota-a63993e7-64eb-4848-9a29-e59c7bc988f5"] 1440: {"mensaje":{"arriba":526,"abajo":565},"campo":{"arriba":572,"abajo":668},"barras":84,"ventana":1000,"visible":true}
+  ✓  11 tests/e2e/operacion.spec.ts:732:7 › Operación SOFIPO: recuperaciones › con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca solo la nota de esa tarjeta (1.4s)
+MEDIDA #dictamen-motivo 1440: {"mensaje":{"arriba":636,"abajo":655},"campo":{"arriba":662,"abajo":758},"barras":84,"ventana":900,"visible":true}
+MEDIDA #riesgo-actividad 1440: {"mensaje":{"arriba":468,"abajo":487},"campo":{"arriba":494,"abajo":534},"barras":84,"ventana":900,"visible":true}
+  ✓  12 tests/e2e/operacion.spec.ts:1003:7 › doceava con JavaScript: empresas propias de la siembra › doceava: el dictamen y el grado de riesgo de Eje vuelven con lo elegido; nada queda en «baja» sin elegirlo y el doble clic tras el rechazo registra una vez (2.2s)
+  ✓  13 tests/e2e/operacion.spec.ts:1009:7 › doceava con JavaScript: empresas propias de la siembra › doceava: si otra pestaña ya registró el dictamen, el rechazo de Fresno va arriba de la página aunque su formulario ya no se pinte (1.7s)
+  ✓  14 tests/e2e/operacion.spec.ts:1015:7 › doceava con JavaScript: empresas propias de la siembra › doceava: la cookie del rechazo fabricada en una visita normal solo pinta avisos del catálogo; un valor inventado no aparece (2.8s)
+MEDIDA #tipo 1440: {"mensaje":{"arriba":375,"abajo":413},"campo":{"arriba":420,"abajo":460},"barras":84,"ventana":900,"visible":true}
+MEDIDA #tipo 390: {"mensaje":{"arriba":728,"abajo":786},"campo":{"arriba":793,"abajo":833},"barras":60,"ventana":844,"visible":true}
+  ✓  15 tests/e2e/operacion.spec.ts:1056:7 › doceava con JavaScript: empresas propias de la siembra › doce-N1: pedir una comisión con otra pendiente para la misma empresa y tipo dice por qué, con y sin JavaScript (1.8s)
+  ✓  16 tests/e2e/operacion.spec.ts:1097:7 › doceava con JavaScript: empresas propias de la siembra › doce-N2: ?aviso=constructor y ?aviso=toString no tumban ninguna de las cinco páginas que leen un aviso de la dirección (937ms)
+
+  16 passed (49.2s)
+[e2e] recorridos terminados con estado 0 · 16 pruebas corridas · 54 s

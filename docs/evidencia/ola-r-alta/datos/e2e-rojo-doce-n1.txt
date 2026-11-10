@@ -1,0 +1,394 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+  [90m 7 |[0m [90m * ejecuta y el servidor no migra al arrancar.[0m
+  [90m 8 |[0m [90m */[0m
+[33m[1m>[0m [90m 9 |[0m [36mexport[0m [36mconst[0m [33mCONTRATO_TABLAS[0m = readFileSync(rutaDelContrato(), [32m"utf8"[0m);
+  [90m   |[0m                                [33m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m10 |[0m
+  [90m11 |[0m [36mfunction[0m rutaDelContrato(): string {
+  [90m12 |[0m   [36mtry[0m {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 3 s
+
+Running 1 test using 1 worker
+
+  ✘  1 tests/e2e/operacion.spec.ts:1423:7 › doceava con JavaScript: empresas propias de la siembra › doce-N1: pedir una comisión con otra pendiente para la misma empresa y tipo dice por qué, con y sin JavaScript (16.3s)
+
+
+  1) tests/e2e/operacion.spec.ts:1423:7 › doceava con JavaScript: empresas propias de la siembra › doce-N1: pedir una comisión con otra pendiente para la misma empresa y tipo dice por qué, con y sin JavaScript 
+
+    Error: expect(locator).toHaveCount(expected) failed
+
+    Locator:  locator('#tipo:focus')
+    Expected: 1
+    Received: 0
+    Timeout:  15000ms
+
+    Call log:
+      - Expect "toHaveCount" locator('#tipo:focus') with timeout 15000ms
+      - waiting for locator('#tipo:focus')
+        34 × locator resolved to 0 elements
+           - unexpected value "0"
+
+
+      50 | async function mensajeJunto(page: Page, campo: string, texto: string, idMensaje = "aviso-operacion-campo"): Promise<void> {
+      51 |   const control = page.locator(campo);
+    > 52 |   await expect(page.locator(`${campo}:focus`)).toHaveCount(1);
+         |                                                ^
+      53 |   const alto = page.viewportSize()!.height;
+      54 |   let tapa = 0;
+      55 |   for (const barra of [".barra-movil", ".barra-superior"]) {
+        at mensajeJunto (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:52:48)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1444:11
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/e2e/operacion-doceava-con-Java-cd1bd-or-qué-con-y-sin-JavaScript/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/e2e/operacion-doceava-con-Java-cd1bd-or-qué-con-y-sin-JavaScript/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/e2e/operacion-doceava-con-Java-cd1bd-or-qué-con-y-sin-JavaScript/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/e2e/operacion-doceava-con-Java-cd1bd-or-qué-con-y-sin-JavaScript/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/e2e/operacion.spec.ts:1423:7 › doceava con JavaScript: empresas propias de la siembra › doce-N1: pedir una comisión con otra pendiente para la misma empresa y tipo dice por qué, con y sin JavaScript 
+[e2e] recorridos terminados con estado 1 · 1 pruebas corridas · 25 s
+[e2e] ===== Contexto de cada falla (árbol accesible de la página) =====
+test-results/e2e/operacion-doceava-con-Java-cd1bd-or-qué-con-y-sin-JavaScript/error-context.md
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: operacion.spec.ts >> doceava con JavaScript: empresas propias de la siembra >> doce-N1: pedir una comisión con otra pendiente para la misma empresa y tipo dice por qué, con y sin JavaScript
+- Location: tests/e2e/operacion.spec.ts:1423:7
+
+# Error details
+
+```
+Error: expect(locator).toHaveCount(expected) failed
+
+Locator:  locator('#tipo:focus')
+Expected: 1
+Received: 0
+Timeout:  15000ms
+
+Call log:
+  - Expect "toHaveCount" locator('#tipo:focus') with timeout 15000ms
+  - waiting for locator('#tipo:focus')
+    34 × locator resolved to 0 elements
+       - unexpected value "0"
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - link "Saltar al contenido" [ref=f1e3] [cursor=pointer]:
+      - /url: "#contenido"
+    - complementary "Navegación" [ref=f1e4]:
+      - link "Lever Operación SOFIPO, ir al resumen" [ref=f1e6] [cursor=pointer]:
+        - /url: /operacion
+        - img [ref=f1e8]:
+          - generic [aria-hidden] [ref=f1e11]:
+            - generic [ref=f1e12]: lever
+            - generic [ref=f1e13]: Operación SOFIPO
+      - navigation "Operación" [ref=f1e15]:
+        - list [ref=f1e16]:
+          - listitem [ref=f1e17]:
+            - link "Resumen" [ref=f1e18] [cursor=pointer]:
+              - /url: /operacion
+          - listitem [ref=f1e22]:
+            - link "Clientes" [ref=f1e23] [cursor=pointer]:
+              - /url: /operacion/clientes
+          - listitem [ref=f1e27]:
+            - link "Aprobaciones" [ref=f1e28] [cursor=pointer]:
+              - /url: /operacion/aprobaciones
+          - listitem [ref=f1e32]:
+            - link "Alertas" [ref=f1e33] [cursor=pointer]:
+              - /url: /operacion/alertas
+          - listitem [ref=f1e37]:
+            - link "Comisiones" [ref=f1e38] [cursor=pointer]:
+              - /url: /operacion/comisiones
+          - listitem [ref=f1e42]:
+            - link "Recuperaciones" [ref=f1e43] [cursor=pointer]:
+              - /url: /operacion/recuperaciones
+          - listitem [ref=f1e47]:
+            - link "Precios" [ref=f1e48] [cursor=pointer]:
+              - /url: /operacion/precios
+          - listitem [ref=f1e52]:
+            - link "Personal" [ref=f1e53] [cursor=pointer]:
+              - /url: /operacion/personal
+          - listitem [ref=f1e57]:
+            - link "Bitácora" [ref=f1e58] [cursor=pointer]:
+              - /url: /operacion/bitacora
+      - group "Tema" [ref=f1e63]:
+        - generic [ref=f1e65]:
+          - generic "Claro" [ref=f1e66] [cursor=pointer]:
+            - radio "Claro" [ref=f1e67]
+          - generic "Oscuro" [ref=f1e69] [cursor=pointer]:
+            - radio "Oscuro" [checked] [ref=f1e70]
+          - generic "Lever" [ref=f1e72] [cursor=pointer]:
+            - radio "Lever" [ref=f1e73]
+    - generic [ref=f1e75]:
+      - banner [ref=f1e76]:
+        - paragraph [ref=f1e77]: Comisiones
+        - button "op1 Personal SOFIPO" [ref=f1e79] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e80]: OP
+          - generic [ref=f1e81]:
+            - generic [ref=f1e82]: op1
+            - generic [ref=f1e83]: Personal SOFIPO
+      - main [ref=f1e87]:
+        - heading "Comisiones" [level=1] [ref=f1e88]
+        - generic [ref=f1e89]:
+          - region [ref=f1e91]:
+            - heading "Versiones" [level=2] [ref=f1e92]
+            - table [ref=f1e94]:
+              - rowgroup [ref=f1e95]:
+                - row [ref=f1e96]:
+                  - columnheader "Empresa" [ref=f1e97]
+                  - columnheader "Tarifa" [ref=f1e98]
+                  - columnheader "Vigencia" [ref=f1e99]
+                  - columnheader "Estado" [ref=f1e100]
+              - rowgroup [ref=f1e101]:
+                - row [ref=f1e102]:
+                  - cell "Bahía E2E Propuso op1" [ref=f1e103]:
+                    - link "Bahía E2E" [ref=f1e104] [cursor=pointer]:
+                      - /url: /operacion/clientes/4b25c76e-656f-4e0e-a05a-c420d5698847
+                    - generic [ref=f1e105]: Propuso op1
+                  - cell "$5.00 MXN" [ref=f1e106]
+                  - cell "12 nov 2026" [ref=f1e107]
+                  - cell "Pendiente" [ref=f1e108]
+          - region [ref=f1e111]:
+            - heading "Proponer una versión" [level=2] [ref=f1e112]
+            - generic [ref=f1e113]:
+              - alert [ref=f1e115]:
+                - paragraph [ref=f1e116]: La base no respondió. No se aplicó ningún cambio; vuelve a intentar.
+              - generic [ref=f1e117]:
+                - generic [ref=f1e118]: Empresa
+                - combobox "Empresa" [ref=f1e119] [cursor=pointer]:
+                  - option "Bahía E2E · BEE190101CD2" [selected]
+                  - option "Altamar E2E · AEE180312AB1"
+                  - option "Empresa Personas E2E · TCM010101AB1"
+                  - option "Taller del Cierre · EKU9003173C9"
+              - generic [ref=f1e120]:
+                - generic [ref=f1e121]: Tipo
+                - combobox "Tipo" [ref=f1e122] [cursor=pointer]:
+                  - option "Fondeo · puntos base"
+                  - option "SPEI · centavos" [selected]
+              - generic [ref=f1e123]:
+                - generic [ref=f1e124]: Valor entero
+                - textbox "Valor entero" [ref=f1e125]: "650"
+                - paragraph [ref=f1e126]: 250 puntos base = 2.50 %; 1500 centavos = $15.00.
+              - generic [ref=f1e127]:
+                - generic [ref=f1e128]: Vigente desde
+                - textbox "Vigente desde" [ref=f1e129]: 2026-11-12
+              - button "Pedir autorización" [ref=f1e131] [cursor=pointer]
+        - paragraph [ref=f1e132]: Una persona propone la tarifa y otra la autoriza. Hoy no genera cargos.
+  - alert [ref=f1e133]
+```
+
+# Test source
+
+```ts
+  1   | import { randomUUID } from "node:crypto";
+  2   | 
+  3   | import { expect, test, type Browser, type BrowserContext, type Locator, type Page, type Route } from "@playwright/test";
+  4   | 
+  5   | import { CLAVE, codigoDeSemilla, codigoTotp, consultar, contar, dobleClic, envejecerFactor, idDe, ORIGEN, sesionDe, vigilarConsola } from "./apoyo";
+  6   | import { BRISA, CIMA, CORREOS, DUNA, EJE, ENEBRO, FARO, FRESNO, GRANADO, HIGUERA } from "./siembra";
+  7   | 
+  8   | /**
+  9   |  * Operación SOFIPO: entrada con segundo factor, alta de un prospecto con la
+  10  |  * activación decidida por otra persona (Originación pide, Aprobación decide y
+  11  |  * el candado de la 0028 exige expediente aprobado y riesgo vigente), la
+  12  |  * recuperación del segundo factor de
+  13  |  * una clienta (pedida desde /entrar, aprobada en Recuperaciones tras «Confirma
+  14  |  * que eres tú» y cerrada con un factor nuevo) y la publicación del precio, que
+  15  |  * exige un factor de los últimos 30 minutos. Cada envío con doble clic real y
+  16  |  * conteo en la base.
+  17  |  */
+  18  | 
+  19  | // Cuatro grupos seriales, cada uno con lo que siembra tests/e2e/siembra.ts: el archivo es «parallel» solo para que
+  20  | // `--shard` reparta grupos y no el archivo entero (con workers: 1 corren en orden). Playwright reparte por número de
+  21  | // pruebas y el grupo que empieza antes del corte va entero a esa parte: el más corto va primero y comparte la parte 1
+  22  | // con los specs anteriores (entrada, flujo de caja, invitación, marco y nómina, unos 70 s); «Operación SOFIPO» y el
+  23  | // grupo con JavaScript caen en la 2; el de coincidencias, con los specs posteriores, en la 3. La guarda de
+  24  | // scripts/ci/pruebas-e2e.sh falla si una parte queda sin pruebas.
+  25  | test.describe.configure({ mode: "parallel" });
+  26  | 
+  27  | const PROSPECTO = { razonSocial: "Puerto Nuevo E2E", rfc: "PNE200101AB3" };
+  28  | const MOTIVO_CORTO = "El motivo lleva al menos 10 caracteres: explica por qué en una frase. Queda en la bitácora y lo lee otra persona.";
+  29  | const FORMATO = "Revisa el campo marcado: el dato no tiene el formato esperado.";
+  30  | const VUELVE_A_ELEGIR = "Vuelve a elegir el archivo: por seguridad, el navegador no lo guarda después de un rechazo. Lo demás sigue como lo escribiste.";
+  31  | 
+  32  | async function entrarAOperacion(page: Page, correo: string): Promise<void> {
+  33  |   await page.goto("/operacion/entrar");
+  34  |   await page.getByLabel("Correo").fill(correo);
+  35  |   await page.getByLabel("Contraseña", { exact: true }).fill(CLAVE);
+  36  |   await page.getByRole("button", { name: "Continuar" }).click();
+  37  |   await page.waitForURL(/\/operacion\/continuar/);
+  38  |   await page.getByLabel("Código de la app autenticadora").fill(await codigoTotp(correo));
+  39  |   await page.getByRole("button", { name: "Entrar con el código" }).click();
+  40  |   await page.waitForURL(/\/operacion$/);
+  41  | }
+  42  | 
+  43  | /**
+  44  |  * Onceava revisión: el texto del error está a la vista junto al campo con foco, sin desplazarse. El campo tiene el foco
+  45  |  * y apunta al mensaje (`aria-describedby`), el mensaje está dentro de la ventana y fuera de las barras fijas, y en la
+  46  |  * página hay un solo campo marcado. Doceava: el mensaje va justo arriba del control, entre la etiqueta y el control
+  47  |  * (patrón GOV.UK), y el control asoma en la ventana. Mide con las cajas de Playwright, que sirven también sin
+  48  |  * JavaScript; antes de exigir, imprime la medida («MEDIDA …»).
+  49  |  */
+  50  | async function mensajeJunto(page: Page, campo: string, texto: string, idMensaje = "aviso-operacion-campo"): Promise<void> {
+  51  |   const control = page.locator(campo);
+> 52  |   await expect(page.locator(`${campo}:focus`)).toHaveCount(1);
+      |                                                ^ Error: expect(locator).toHaveCount(expected) failed
+  53  |   const alto = page.viewportSize()!.height;
+  54  |   let tapa = 0;
+  55  |   for (const barra of [".barra-movil", ".barra-superior"]) {
+  56  |     const caja = (await page.locator(barra).count()) ? await page.locator(barra).first().boundingBox() : null;
+  57  |     if (caja && caja.y <= 1 && caja.height > 0) tapa = Math.max(tapa, caja.y + caja.height);
+  58  |   }
+  59  |   const cajaCampo = (await control.boundingBox())!;
+  60  |   const cajaMensaje = await page.locator(`[id="${idMensaje}"]`).first().boundingBox();
+  61  |   const visible = cajaMensaje !== null && cajaMensaje.y >= tapa && cajaMensaje.y + cajaMensaje.height <= alto && cajaCampo.y + Math.min(cajaCampo.height, 40) <= alto;
+  62  |   const redondo = (caja: { y: number; height: number } | null) => (caja ? { arriba: Math.round(caja.y), abajo: Math.round(caja.y + caja.height) } : null);
+  63  |   console.log(`MEDIDA ${campo} ${page.viewportSize()!.width}: ${JSON.stringify({ mensaje: redondo(cajaMensaje), campo: redondo(cajaCampo), barras: Math.round(tapa), ventana: alto, visible })}`);
+  64  |   await expect(control).toHaveAttribute("aria-describedby", new RegExp(`(^| )${idMensaje}( |$)`));
+  65  |   await expect(page.locator(`[id="${idMensaje}"]`)).toHaveCount(1);
+  66  |   await expect(page.locator(`[id="${idMensaje}"]`)).toHaveText(texto);
+  67  |   await expect(page.locator('[aria-invalid="true"]')).toHaveCount(1);
+  68  |   expect(visible).toBe(true);
+  69  |   // Justo arriba del control: entre el mensaje y la orilla de arriba del control no cabe otro campo.
+  70  |   const separacion = cajaCampo.y - (cajaMensaje!.y + cajaMensaje!.height);
+  71  |   expect(separacion).toBeGreaterThanOrEqual(0);
+  72  |   expect(separacion).toBeLessThanOrEqual(24);
+  73  | }
+  74  | 
+  75  | /**
+  76  |  * Doceava revisión: un formulario de Operación rechazado no cambia la dirección y vuelve con su aviso arriba del
+  77  |  * formulario: con JavaScript sin recargar; sin JavaScript, la página que responde al POST con 200 (ningún dato
+  78  |  * capturado pasa por la dirección). Con JavaScript marca antes el aviso anterior para esperar el nuevo.
+  79  |  */
+  80  | async function rechazado(page: Page, boton: Locator, idAviso: string, sinJs = false): Promise<void> {
+  81  |   const direccion = page.url();
+  82  |   if (!sinJs) await page.evaluate((id) => document.getElementById(id)?.setAttribute("data-anterior", "1"), idAviso);
+  83  |   const [respuesta] = await Promise.all([page.waitForResponse((r) => r.request().method() === "POST"), boton.click()]);
+  84  |   await expect(page.locator(`[id="${idAviso}"]:not([data-anterior])`)).toBeVisible();
+  85  |   expect(respuesta.status()).toBe(200);
+  86  |   expect(page.url()).toBe(direccion);
+  87  |   // El aviso de un formulario que ya no se pinta (arriba de la página) sobra cuando el formulario muestra el suyo.
+  88  |   await expect(page.locator("#aviso-rechazo")).toBeHidden();
+  89  | }
+  90  | 
+  91  | /**
+  92  |  * Doceava revisión: otra pestaña registra el dictamen entre la vista y el envío. El rechazo vuelve a pintar la página,
+  93  |  * que ya no tiene el formulario del dictamen; antes su aviso se iba con él y la página quedaba sin explicación. Ahora va
+  94  |  * arriba de la página, anunciado, y no se queda: la cookie que lo trae nunca llega al navegador.
+  95  |  */
+  96  | async function dictamenYaRegistrado(page: Page, context: BrowserContext, rfc: string): Promise<void> {
+  97  |   const companyId = await empresaDe(rfc);
+  98  |   const dictamenes = () => contar("select 1 from kyb_dictamenes d join kyb_versiones v on v.id = d.version_id where v.company_id = $1", [companyId]);
+  99  |   await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  100 |   const ruta = `/operacion/clientes/${companyId}/expediente`;
+  101 |   await page.goto(ruta);
+  102 |   await page.locator("#dictamen-resultado").selectOption("observado");
+  103 |   await page.locator("#dictamen-motivo").fill("Falta el acta constitutiva completa.");
+  104 |   const otra = await context.newPage();
+  105 |   await otra.goto(ruta);
+  106 |   await otra.locator("#dictamen-resultado").selectOption("aprobado");
+  107 |   await otra.locator("form:has(#dictamen-motivo)").getByRole("button", { name: "Registrar dictamen" }).click();
+  108 |   await otra.waitForURL(/aviso=expediente_dictaminado/);
+  109 |   await otra.close();
+  110 |   expect(await dictamenes()).toBe(1);
+  111 |   const direccion = page.url();
+  112 |   const [respuesta] = await Promise.all([
+  113 |     page.waitForResponse((r) => r.request().method() === "POST"),
+  114 |     page.locator("form:has(#dictamen-motivo)").getByRole("button", { name: "Registrar dictamen" }).click(),
+  115 |   ]);
+  116 |   expect(respuesta.status()).toBe(200);
+  117 |   const aviso = page.locator("#aviso-rechazo");
+  118 |   await expect(aviso).toBeVisible();
+  119 |   await expect(aviso).toHaveAttribute("data-aviso", "dictamen_ya_registrado");
+  120 |   await expect(aviso).toHaveText("Esa versión ya tiene dictamen.");
+  121 |   await expect(aviso.locator(".alerta")).toHaveAttribute("role", "alert");
+  122 |   await expect(page.locator("#dictamen-motivo")).toHaveCount(0);
+  123 |   await expect(page.locator(".operacion-aviso")).toHaveCount(1);
+  124 |   expect(page.url()).toBe(direccion);
+  125 |   expect(await dictamenes()).toBe(1);
+  126 |   expect((await context.cookies()).map((cookie) => cookie.name)).not.toContain("operacion-rechazo");
+  127 |   await page.goto(ruta);
+  128 |   await expect(page.locator("#aviso-rechazo")).toHaveCount(0);
+  129 | }
+  130 | 
+  131 | /**
+  132 |  * Cambia el cuerpo de los envíos (POST) hasta `soltar()`: arma a mano lo que la pantalla no deja escribir (un nivel
+  133 |  * que no es de la lista) o reusa un identificador de formulario. Cada reemplazo conserva el largo del cuerpo.
+  134 |  */
+  135 | async function alterarEnvio(page: Page, cambio: (cuerpo: string) => string): Promise<{ soltar: () => Promise<void>; vistos: () => number }> {
+  136 |   let vistos = 0;
+  137 |   const ruta = async (route: Route) => {
+  138 |     const peticion = route.request();
+  139 |     const cuerpo = peticion.postDataBuffer();
+  140 |     if (peticion.method() !== "POST" || !cuerpo) return route.continue();
+  141 |     const antes = cuerpo.toString("latin1");
+  142 |     const despues = cambio(antes);
+  143 |     if (despues.length !== antes.length) throw new Error("el reemplazo cambia el largo del cuerpo");
+  144 |     if (despues !== antes) vistos += 1;
+  145 |     await route.continue({ postData: Buffer.from(despues, "latin1") });
+  146 |   };
+  147 |   await page.route("**/operacion/**", ruta);
+  148 |   return { soltar: () => page.unroute("**/operacion/**", ruta), vistos: () => vistos };
+  149 | }
+  150 | 
+  151 | /** El identificador de formulario (oculto) de un formulario de la página. */
+  152 | const formIdDe = (page: Page, formulario: string) => page.locator(`${formulario} input[name="formId"]`).getAttribute("value") as Promise<string>;
+```[e2e] ===== Últimas líneas del servidor =====
+
+> plataforma-administrativa@0.1.0 start
+> next start -p 3151
+
+▲ Next.js 16.4.4
+- Local:         http://localhost:3151
+- Network:       http://10.64.148.101:3151
+✓ Ready in 42ms
+✓ Running next.config.ts took 14ms
+{"nivel":"error","origen":"nucleo.db","evento":"error_de_base_sin_traducir","clase":"postgres","codigo":"23505","restriccion":"company_commissions_una_pendiente","tabla":"company_commissions","rutina":"_bt_check_unique","raise":null}
+[e2e] ===== Capturas de las primeras fallas (base64 de PNG: pégalo en un archivo y usa base64 -d) =====
+[e2e] captura: test-results/e2e/operacion-doceava-con-Java-cd1bd-or-qué-con-y-sin-JavaScript/test-failed-1.png
+[captura en base64 omitida: 1201460 caracteres]

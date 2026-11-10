@@ -52,16 +52,19 @@ export function NotaRegla({ children }: { children: ReactNode }) {
 export function Aviso({
   tono = "revisar",
   titulo,
+  anunciar = true,
   children,
 }: {
   tono?: "revisar" | "asentado";
   titulo: string;
+  /** Sin región viva cuando otro elemento ya lo anuncia (el campo con el foco que lo lee como su descripción). */
+  anunciar?: boolean;
   children?: ReactNode;
 }) {
   return (
     <div
       className={tono === "asentado" ? "alerta alerta-asentado" : "alerta alerta-revisar"}
-      role={tono === "asentado" ? "status" : "alert"}
+      role={anunciar ? (tono === "asentado" ? "status" : "alert") : undefined}
     >
       <p className="alerta-titulo">{titulo}</p>
       {children}

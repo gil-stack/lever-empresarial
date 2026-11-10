@@ -107,7 +107,7 @@ El comando de migrar se corre una vez por rama, con el `DATABASE_URL_UNPOOLED` d
 
 `0010_subscriptions.sql` abre una suscripción por empresa, en `recorrido`, con `recorrido_inicio` en la hora de alta. Los treinta días se cuentan desde esa hora; no hay una segunda columna. El alta de una empresa nueva inserta la fila en la misma transacción. Pasar a `aceptada` exige que `platform_pricing.suscripcion_centavos` ya no sea vacío. Si lo está, la base rechaza el cambio.
 
-La página `/precios` y la consola leen esa única fila. Quien publica el monto y registra la aceptación es el personal del operador, en `platform_staff` con rol `administracion_plataforma`. `OPERADORES_PLATAFORMA` ya no abre nada: solo la lee el comando `personal:migrar-variable`, que invita a esos correos. Hasta correr ese comando, no hay personal.
+La página `/precios` y la consola leen esa única fila. Quien publica el monto y registra la aceptación es el personal del operador, en `platform_staff` con rol `administracion_plataforma`. `OPERADORES_PLATAFORMA` ya no abre nada: solo la lee el comando `personal:migrar-variable --quien-corre <correo>`, que invita a esos correos, de una vez, como la primera Administración; si el operador ya tiene Administración activa, no invita a nadie. Si solo está invitada (el enlace no llegó o venció), otra corrida con los mismos correos emite un enlace nuevo y el anterior deja de servir; un correo distinto no entra. Corre con la conexión de la dueña (`DATABASE_URL_UNPOOLED`): desde la 0028, sin usuario nadie da roles ni registra personal desde la aplicación. La bitácora guarda la conexión (`ejecutado_por = session_user`, en Neon siempre la dueña) y el correo de quien lo corrió (`corrido_por`). Hasta correr ese comando, no hay personal.
 
 ## Fase 3. Proveedores, listado 69-B y CLABE
 
@@ -116,7 +116,7 @@ Dos piezas nacieron las dos como `0012`. Quedan en orden, y no se pierde ninguna
 | Archivo | Tablas |
 | --- | --- |
 | `0012_proveedores.sql` | `documents` y `suppliers`. Única por empresa y RFC. `boton_pago` solo si había archivo y el RFC no aparecía |
-| `0013_lista_69b.sql` | `lista_69b_snapshots` y `lista_69b_rows`. Archivo público, sin `company_id`. Una copia nueva no borra la anterior |
+| `0013_lista_69b.sql` | `lista_69b_snapshots` y `lista_69b_rows`. Archivo público, sin `company_id`. Una copia nueva no borra la anterior. Desde la 0028 cada copia es de su operador (`operator_id`) |
 | `0014_clabes_proveedor.sql` | `supplier_clabes`. Era la otra `0012`. 18 dígitos con el dígito 3, 7 y 1. Cambiar agrega una fila. También enlaza `suppliers.snapshot_id` con el listado |
 
 La constancia es un PDF en el almacén privado. La clave no es una URL y no baja al navegador. La consulta del 69-B usa la copia más reciente, y si dos copias comparten hora manda también el id. Si no hay copia, no hay pago. Si el RFC está en la copia, el proveedor puede existir y el pago no. No hay envío de dinero.
@@ -134,3 +134,13 @@ La contraseña abre una entrada de minutos, no una sesión. La sesión nace cuan
 ## Inicio financiero
 
 `0024_rol_finanzas.sql` admite el rol combinable `finanzas` en `membership_roles`. Administración ve Inicio por su propio rol; Finanzas permite que otra persona de consola vea el resumen y Pendientes sin darle acceso a póliza, proveedores, política, configuración ni liberación. El resumen solo lee `postings`: los ingresos son asientos positivos y los gastos son el valor absoluto de los negativos. El índice por empresa y fecha sostiene esa lectura. Este archivo no inserta asientos ni migra production.
+
+## Funciones SECURITY DEFINER y tablas temporales
+
+Una función `SECURITY DEFINER` corre con los privilegios de su dueña. Si su `search_path` no nombra `pg_temp`, Postgres busca primero en las tablas temporales de quien llama, y una tabla temporal con el nombre de una tabla real desvía la función. `0029_search_path_pg_temp.sql` deja cada definer del esquema `public` con `search_path = public, pg_temp`, como pide la documentación de Postgres 17 («Writing SECURITY DEFINER Functions Safely»). También quita `TEMPORARY` sobre la base a `PUBLIC` y a los roles de la aplicación (`plataforma_app`, `plataforma_cliente`, `plataforma_sofipo` y `plataforma_tarea`): ese privilegio viene de `PUBLIC` por omisión, así que quitárselo solo a un rol no surte efecto. La dueña de la base lo conserva. Ni la aplicación ni las migraciones crean tablas temporales con esos roles. `plataforma_app` entra con SET y sin INHERIT a tres roles (`plataforma_cliente`, `plataforma_sofipo` y `plataforma_tarea`), y `has_database_privilege` no ve esas membresías: la 0029 recorre `pg_auth_members` desde los roles de la aplicación y se detiene si alguno de los roles alcanzables tiene `TEMPORARY`.
+
+Quien migra tiene que ser la dueña de la base `plataforma`. Si no lo es, el `REVOKE` no surte efecto y la migración se detiene con un mensaje claro.
+
+Toda función `SECURITY DEFINER` nueva lleva `SET search_path = public, pg_temp`. `tests/esquema/definer-search-path.test.ts`, que corre en `test:db`, lo exige y comprueba que ningún rol de la aplicación tenga `TEMPORARY`. Las funciones `SECURITY INVOKER` conservan su `search_path`: corren con los privilegios de quien llama, y sin `TEMPORARY` los roles de la aplicación no pueden crear la tabla que las desviaría.
+
+`auth_exige_evento` es definer y `PUBLIC` la puede ejecutar. Se queda así: la llaman tres disparadores invoker (`auth_recuperaciones_exige_rastro`, `auth_factor_exige_rastro` y `sessions_sello_exige_rastro`) que corren como el rol de la aplicación, y solo responde por la bitácora de la transacción de quien llama.

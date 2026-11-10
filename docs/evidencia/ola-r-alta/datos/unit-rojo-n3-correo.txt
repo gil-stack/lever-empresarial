@@ -1,0 +1,43 @@
+▶ aviso de Operación
+  ✔ solo lo que quedó hecho se anuncia como asentado (0.383125ms)
+  ✔ una alerta que ya estaba cerrada es un rechazo: role=alert, no status (2.895458ms)
+  ✔ cada error de Recuperaciones marca su propio campo (0.43775ms)
+  ✔ el carácter invisible tiene su propio aviso por campo; el formato conserva el suyo (1.035292ms)
+  ✔ avisoDeCampo dice qué avisos son de un campo, los mismos que marca errorDelCampo (0.103208ms)
+  ✔ MensajeDelCampo pinta junto al campo el mismo texto del aviso, con el id que nombra errorDelCampo; sin error, nada (1.073ms)
+  ✖ los rechazos de comisiones, invitaciones y alertas son de su campo (1.345167ms)
+  ✔ el resumen de un aviso de campo en su formulario no es región viva (0.37225ms)
+  ✔ avisoConocido acepta los códigos del catálogo y rechaza lo inventado; data-aviso no copia un valor de fuera (0.3385ms)
+  ✔ la lista cerrada de campos cubre cada dato_invalido_ e invisible_ que lanza el código, y los datos generales (50.268666ms)
+✖ aviso de Operación (58.93875ms)
+ℹ tests 10
+ℹ suites 1
+ℹ pass 9
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 239.051
+
+✖ failing tests:
+
+test at src/components/operacion/aviso.test.ts:93:3
+✖ los rechazos de comisiones, invitaciones y alertas son de su campo (1.345167ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Escribe un correo válido, como nombre@empresa\.mx\./. Input:
+  
+  '<div id="aviso-operacion" class="operacion-aviso" data-aviso="dato_invalido_correo"><div class="alerta alerta-revisar" role="alert"><p class="alerta-titulo">Revisa el campo marcado: el dato no tiene el formato esperado.</p></div></div>'
+  
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/src/components/operacion/aviso.test.ts:111:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<div id="aviso-operacion" class="operacion-aviso" data-aviso="dato_invalido_correo"><div class="alerta alerta-revisar" role="alert"><p class="alerta-titulo">Revisa el campo marcado: el dato no tiene el formato esperado.</p></div></div>',
+    expected: /Escribe un correo válido, como nombre@empresa\.mx\./,
+    operator: 'match',
+    diff: 'simple'
+  }

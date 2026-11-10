@@ -1,0 +1,45 @@
+Functions are not valid as a React child. This may happen if you return Object instead of <Object /> from render. Or maybe you meant to call this function rather than return it.
+▶ aviso de Operación
+  ✔ solo lo que quedó hecho se anuncia como asentado (0.330375ms)
+  ✔ una alerta que ya estaba cerrada es un rechazo: role=alert, no status (2.730333ms)
+  ✔ cada error de Recuperaciones marca su propio campo (0.303958ms)
+  ✔ el carácter invisible tiene su propio aviso por campo; el formato conserva el suyo (0.80325ms)
+  ✔ avisoDeCampo dice qué avisos son de un campo, los mismos que marca errorDelCampo (0.071875ms)
+  ✔ MensajeDelCampo pinta junto al campo el mismo texto del aviso, con el id que nombra errorDelCampo; sin error, nada (0.620333ms)
+  ✔ los rechazos de comisiones, invitaciones y alertas son de su campo (0.644875ms)
+  ✔ el resumen de un aviso de campo en su formulario no es región viva (0.303833ms)
+  ✔ avisoConocido acepta los códigos del catálogo y rechaza lo inventado; data-aviso no copia un valor de fuera (0.22525ms)
+  ✖ lo heredado de Object.prototype no es un mensaje ni un campo: `constructor` se pinta con el texto genérico (0.77875ms)
+  ✔ la lista cerrada de campos cubre cada dato_invalido_ e invisible_ que lanza el código, y los datos generales (14.343791ms)
+✖ aviso de Operación (21.725791ms)
+ℹ tests 11
+ℹ suites 1
+ℹ pass 10
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 186.407542
+
+✖ failing tests:
+
+test at src/components/operacion/aviso.test.ts:143:3
+✖ lo heredado de Object.prototype no es un mensaje ni un campo: `constructor` se pinta con el texto genérico (0.77875ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /No se pudo completar\. Revisa los datos e inténtalo de nuevo\./. Input:
+  
+  '<div id="aviso-operacion" class="operacion-aviso" data-aviso="desconocido"><div class="alerta alerta-revisar" role="alert"><p class="alerta-titulo"></p></div></div>'
+  
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/src/components/operacion/aviso.test.ts:145:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '<div id="aviso-operacion" class="operacion-aviso" data-aviso="desconocido"><div class="alerta alerta-revisar" role="alert"><p class="alerta-titulo"></p></div></div>',
+    expected: /No se pudo completar\. Revisa los datos e inténtalo de nuevo\./,
+    operator: 'match',
+    diff: 'simple'
+  }

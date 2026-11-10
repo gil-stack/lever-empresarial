@@ -14,8 +14,8 @@ export type Snapshot69b = {
 };
 
 export type Repositorio69b = {
-  vigente: () => Promise<Snapshot69b | null>;
-  situaciones: (snapshotId: string, rfc: string) => Promise<string[]>;
+  vigente: (operadorId: string) => Promise<Snapshot69b | null>;
+  situaciones: (operadorId: string, snapshotId: string, rfc: string) => Promise<string[]>;
   guardar: (ctx: ContextoDePersonal, entrada: {
     id: string;
     fechaArchivo: string;
@@ -36,6 +36,7 @@ const SQL = {
         where r.snapshot_id = s.id
       ) as contribuyentes
     from lista_69b_snapshots s
+    where s.operator_id = $1
     order by s.cargado_en desc, s.id desc
     limit 1
   `,
@@ -46,8 +47,8 @@ const SQL = {
     order by situacion
   `,
   snapshot: `
-    insert into lista_69b_snapshots (id, fecha_archivo, cargado_en)
-    values ($1, $2::date, $3)
+    insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en)
+    values ($1, $2, $3::date, $4)
   `,
   filas: `
     insert into lista_69b_rows (snapshot_id, rfc, situacion)
@@ -58,20 +59,20 @@ const SQL = {
 
 const LOTE = 2000;
 
-/** La copia es de la plataforma: cualquier contexto la lee. */
-const LECTURA = { rol: "plataforma_cliente" } as const;
+/** Cada operador tiene su copia: la lee quien trae ese operador en el contexto. */
+const lectura = (operadorId: string) => ({ rol: "plataforma_cliente", operadorId }) as const;
 
 export function repositorio69bPg(): Repositorio69b {
   return {
-    vigente() {
-      return conContexto(LECTURA, async (consulta) => {
-        const resultado = await consulta.query(SQL.vigente);
+    vigente(operadorId) {
+      return conContexto(lectura(operadorId), async (consulta) => {
+        const resultado = await consulta.query(SQL.vigente, [operadorId]);
         const fila = resultado.rows[0];
         return fila ? exigirSnapshot(fila) : null;
       });
     },
-    async situaciones(snapshotId, rfc) {
-      const resultado = await conContexto(LECTURA, (consulta) => consulta.query(SQL.situaciones, [snapshotId, rfc]));
+    async situaciones(operadorId, snapshotId, rfc) {
+      const resultado = await conContexto(lectura(operadorId), (consulta) => consulta.query(SQL.situaciones, [snapshotId, rfc]));
       return resultado.rows.map((fila) => {
         if (!esRegistro(fila) || typeof fila.situacion !== "string" || fila.situacion.length === 0) {
           throw new ErrorDeDominio("base_no_disponible");
@@ -81,7 +82,7 @@ export function repositorio69bPg(): Repositorio69b {
     },
     async guardar(ctx, entrada) {
       await conContexto(basePlataforma(ctx), async (consulta) => {
-        await consulta.query(SQL.snapshot, [entrada.id, entrada.fechaArchivo, entrada.cargadoEn]);
+        await consulta.query(SQL.snapshot, [entrada.id, ctx.personal.operadorId, entrada.fechaArchivo, entrada.cargadoEn]);
         await auditar(consulta, actorDePersonal(ctx), {
           accion: "cargar_lista_69b",
           identificador: entrada.id,

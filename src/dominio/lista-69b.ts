@@ -1,5 +1,6 @@
 import { normalizarRfcDeAlta, validarRfc as validarRfcSat } from "../domain/rfc";
 import { normalizarRfc } from "./rfc";
+import { CONTROL } from "./control";
 
 /**
  * Página que el plan cita para el listado del artículo 69-B.
@@ -315,7 +316,6 @@ function registrosCsv(texto: string): string[][] {
  * Una fila ilegible se salta. Un archivo sin fecha o sin filas no se guarda:
  * guardarlo abriría el pago.
  */
-const CONTROL_LISTADO = /[\u0000-\u001F\u007F]/;
 const MES_LISTADO: Readonly<Record<string, string>> = {
   enero: "01",
   febrero: "02",
@@ -367,7 +367,7 @@ function leerFilaListado(fila: string[], columnaRfc: number, columnaSituacion: n
   const validado = validarRfcSat(normalizarRfcDeAlta(crudo));
   if (!validado.ok) return null;
   const situacion = (fila[columnaSituacion] ?? "").trim();
-  if (situacion.length === 0 || situacion.length > TOPE_SITUACION || CONTROL_LISTADO.test(situacion)) return null;
+  if (situacion.length === 0 || situacion.length > TOPE_SITUACION || CONTROL.test(situacion)) return null;
   return { rfc: validado.rfc, situacion };
 }
 

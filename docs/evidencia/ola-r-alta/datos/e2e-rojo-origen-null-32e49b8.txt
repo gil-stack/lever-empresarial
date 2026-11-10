@@ -1,0 +1,648 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+  [90m 7 |[0m [90m * ejecuta y el servidor no migra al arrancar.[0m
+  [90m 8 |[0m [90m */[0m
+[33m[1m>[0m [90m 9 |[0m [36mexport[0m [36mconst[0m [33mCONTRATO_TABLAS[0m = readFileSync(rutaDelContrato(), [32m"utf8"[0m);
+  [90m   |[0m                                [33m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m10 |[0m
+  [90m11 |[0m [36mfunction[0m rutaDelContrato(): string {
+  [90m12 |[0m   [36mtry[0m {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 3 s
+
+Running 2 tests using 1 worker
+
+  ✘  1 tests/e2e/invitacion.spec.ts:31:5 › invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta (4.4s)
+  ✘  2 tests/e2e/operacion.spec.ts:531:7 › sin JavaScript › sin JavaScript los formularios responden: el alta vuelve con su aviso (303) y las dos entradas dan el suyo (282ms)
+
+
+  1) tests/e2e/invitacion.spec.ts:31:5 › invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "http://localhost:3151"
+    Received: "null"
+
+      74 |       hoja.getByRole("button", { name: "Aceptar la invitación" }).click(),
+      75 |     ]);
+    > 76 |     expect(await respuesta.request().headerValue("origin")).toBe(new URL(respuesta.url()).origin);
+         |                                                             ^
+      77 |     expect(respuesta.status()).toBe(200);
+      78 |     await expect(hoja.locator("#invitacion-error")).toContainText("Las dos contraseñas no coinciden.");
+      79 |     expect(await contar("select 1 from invitations where company_id = $1 and usada_en is not null", [bahia()])).toBe(0);
+        at <worktree>/tests/e2e/invitacion.spec.ts:76:61
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/e2e/invitacion-invitación-del--2a404-enlace-nuevo-crea-la-cuenta/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/e2e/invitacion-invitación-del--2a404-enlace-nuevo-crea-la-cuenta/test-failed-2.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/e2e/invitacion-invitación-del--2a404-enlace-nuevo-crea-la-cuenta/error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/e2e/invitacion-invitación-del--2a404-enlace-nuevo-crea-la-cuenta/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/e2e/invitacion-invitación-del--2a404-enlace-nuevo-crea-la-cuenta/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) tests/e2e/operacion.spec.ts:531:7 › sin JavaScript › sin JavaScript los formularios responden: el alta vuelve con su aviso (303) y las dos entradas dan el suyo 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: "http://localhost:3151"
+    Received: "null"
+
+      538 |     const [alta] = await Promise.all([post(), page.getByRole("button", { name: "Registrar prospecto" }).click()]);
+      539 |     // La causa: con «no-referrer» el navegador manda «Origin: null» en el envío nativo del formulario.
+    > 540 |     expect(await alta.request().headerValue("origin")).toBe(new URL(alta.url()).origin);
+          |                                                        ^
+      541 |     expect(alta.status()).toBe(303);
+      542 |     await page.waitForURL(/aviso=razon_social_control/);
+      543 |     await expect(page.locator("#aviso-operacion")).toContainText("La razón social trae un carácter invisible");
+        at <worktree>/tests/e2e/operacion.spec.ts:540:56
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/e2e/operacion-sin-JavaScript-s-9121a-as-dos-entradas-dan-el-suyo/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/e2e/operacion-sin-JavaScript-s-9121a-as-dos-entradas-dan-el-suyo/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/e2e/operacion-sin-JavaScript-s-9121a-as-dos-entradas-dan-el-suyo/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/e2e/operacion-sin-JavaScript-s-9121a-as-dos-entradas-dan-el-suyo/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    tests/e2e/invitacion.spec.ts:31:5 › invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta 
+    tests/e2e/operacion.spec.ts:531:7 › sin JavaScript › sin JavaScript los formularios responden: el alta vuelve con su aviso (303) y las dos entradas dan el suyo 
+[e2e] recorridos terminados con estado 1 · 15 s
+[e2e] ===== Contexto de cada falla (árbol accesible de la página) =====
+test-results/e2e/operacion-sin-JavaScript-s-9121a-as-dos-entradas-dan-el-suyo/error-context.md
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: operacion.spec.ts >> sin JavaScript >> sin JavaScript los formularios responden: el alta vuelve con su aviso (303) y las dos entradas dan el suyo
+- Location: tests/e2e/operacion.spec.ts:531:7
+
+# Error details
+
+```
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: "http://localhost:3151"
+Received: "null"
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=f1e1]: Internal Server Error
+```
+
+# Test source
+
+```ts
+  440 |   const confirmar = await dobleClic(page.getByRole("button", { name: "Confirmar el código" }));
+  441 |   expect(confirmar.envios).toBe(1);
+  442 |   await page.getByRole("checkbox", { name: "Ya los guardé en un lugar seguro" }).check();
+  443 |   await page.getByRole("button", { name: "Entrar al portal" }).click();
+  444 |   await expect(page.getByRole("navigation", { name: "Secciones" })).toBeVisible();
+  445 |   expect(await contar("select 1 from auth_totp where id = $1 and revocado_en is not null", [totpViejo!.id])).toBe(1);
+  446 |   expect(await contar("select 1 from auth_totp where user_id = $1 and confirmado_en is not null and revocado_en is null", [paula])).toBe(1);
+  447 |   expect(await contar("select 1 from auth_recuperaciones where user_id = $1 and cumplida_en is not null", [paula])).toBe(1);
+  448 |   expect(errores).toEqual([]);
+  449 | });
+  450 | 
+  451 | // base-N27: con varias solicitudes pendientes, el error de una marca y enfoca solo su tarjeta. Antes la página marcaba
+  452 | // el campo en todas, y con el foco del aviso las tres notas pedían el foco.
+  453 | test("con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca solo la nota de esa tarjeta", async ({ page, context }) => {
+  454 |   const errores = vigilarConsola(page);
+  455 |   const personas = [CORREOS.diego, CORREOS.sol, CORREOS.ernesto];
+  456 |   const ids: string[] = [];
+  457 |   for (const correo of personas) {
+  458 |     const id = randomUUID();
+  459 |     // La solicitud y su evento en una sola sentencia: la base exige el rastro en la misma transacción.
+  460 |     await consultar(
+  461 |       `with r as (
+  462 |          insert into auth_recuperaciones (id, user_id, solicitada_en, motivo) values ($1, $2, now(), 'Cambié de teléfono y perdí la app.')
+  463 |          returning id, user_id
+  464 |        )
+  465 |        insert into audit_log (id, operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, ocurrido_en)
+  466 |        select gen_random_uuid(), (select id from operators order by alta_en limit 1), null, 'miembro', r.user_id, 'cliente',
+  467 |          'recuperacion_solicitada', 'auth_recuperaciones', r.id, now()
+  468 |        from r`,
+  469 |       [id, await idDe(correo)],
+  470 |     );
+  471 |     ids.push(id);
+  472 |   }
+  473 |   await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+  474 |   await page.goto("/operacion/recuperaciones");
+  475 |   const tarjeta = (correo: string) => page.locator("li.decision").filter({ hasText: correo });
+  476 |   const nota = (indice: number) => page.locator(`[id="nota-${ids[indice]}"]`);
+  477 |   for (const correo of personas) await expect(tarjeta(correo)).toBeVisible();
+  478 | 
+  479 |   await tarjeta(CORREOS.sol).getByRole("button", { name: "Rechazar" }).click();
+  480 |   await page.waitForURL(/aviso=motivo_invalido/);
+  481 |   expect(new URL(page.url()).searchParams.get("en")).toBe(ids[1]);
+  482 |   await expect(nota(1)).toHaveAttribute("aria-invalid", "true");
+  483 |   await expect(nota(1)).toHaveAttribute("aria-describedby", "aviso-operacion");
+  484 |   await expect(nota(1)).toBeFocused();
+  485 |   await expect(page.locator('[aria-invalid="true"]')).toHaveCount(1);
+  486 |   for (const indice of [0, 2]) await expect(nota(indice)).not.toHaveAttribute("aria-invalid", "true");
+  487 | 
+  488 |   // Con su nota, cada una se rechaza; ninguna queda abierta para las demás pruebas.
+  489 |   for (const [indice, correo] of personas.entries()) {
+  490 |     await nota(indice).fill("No se pudo confirmar la identidad por videollamada.");
+  491 |     await tarjeta(correo).getByRole("button", { name: "Rechazar" }).click();
+  492 |     await expect(tarjeta(correo)).toHaveCount(0);
+  493 |   }
+  494 |   expect(await contar("select 1 from auth_recuperaciones where id = any($1::uuid[]) and estado = 'rechazada'", [ids])).toBe(3);
+  495 |   expect(errores).toEqual([]);
+  496 | });
+  497 | 
+  498 | test("una clave repetida en la dirección (?aviso=a&aviso=b) no tumba ninguna página de Operación", async ({ page, context }) => {
+  499 |   const errores = vigilarConsola(page);
+  500 |   const [brisa] = await consultar<{ id: string }>("select id from companies where rfc = $1", [BRISA.rfc]);
+  501 |   const paginas = [
+  502 |     "/operacion/alertas", "/operacion/aprobaciones", "/operacion/clientes", `/operacion/clientes/${brisa!.id}`,
+  503 |     `/operacion/clientes/${brisa!.id}/expediente`, "/operacion/comisiones", "/operacion/cumplimiento", "/operacion/lpb",
+  504 |     "/operacion/personal", "/operacion/recuperaciones",
+  505 |   ];
+  506 |   const abrir = async (ruta: string) => {
+  507 |     const respuesta = await page.goto(ruta);
+  508 |     expect(respuesta?.status(), ruta).toBe(200);
+  509 |     await expect(page.locator("h1"), ruta).toBeVisible();
+  510 |   };
+  511 |   // Aprobación (con Administración) y Cumplimiento: entre las dos abren todas, cada una con su permiso.
+  512 |   for (const correo of [CORREOS.op2, CORREOS.op3]) {
+  513 |     await sesionDe(context, correo, { superficie: "sofipo" });
+  514 |     for (const ruta of paginas) await abrir(`${ruta}?aviso=a&aviso=b&en=x&en=y`);
+  515 |   }
+  516 |   // El detalle de lo que falta con `faltan` repetido: queda el aviso general, sin detalle.
+  517 |   await abrir(`/operacion/clientes/${brisa!.id}/expediente?aviso=expediente_datos_incompletos&faltan=giro&faltan=domicilio`);
+  518 |   await expect(page.locator("#aviso-operacion")).toHaveText("Faltan datos generales para enviar la versión. Revisa «Datos generales».");
+  519 |   // La Lista con su detalle repetido y la entrada sin sesión.
+  520 |   await abrir("/operacion/lpb?aviso=lpb_cargada&filas=1&filas=2&coincidencias=0");
+  521 |   await context.clearCookies();
+  522 |   await abrir("/operacion/entrar?aviso=a&aviso=b");
+  523 |   expect(errores).toEqual([]);
+  524 | });
+  525 | 
+  526 | test.describe("sin JavaScript", () => {
+  527 |   test.use({ javaScriptEnabled: false });
+  528 | 
+  529 |   // serv-nuevo-7: con Referrer-Policy: no-referrer, el envío nativo de un formulario lleva «Origin: null» y Next
+  530 |   // rechaza la acción con un 500. Pasa sin JavaScript y al hacer clic antes de que la página hidrate.
+  531 |   test("sin JavaScript los formularios responden: el alta vuelve con su aviso (303) y las dos entradas dan el suyo", async ({ page, context }) => {
+  532 |     const post = () => page.waitForResponse((respuesta) => respuesta.request().method() === "POST");
+  533 |     await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  534 |     await page.goto("/operacion/clientes");
+  535 |     await page.getByLabel("Razón social").fill("Sin Script\u0085Uno SA de CV");
+  536 |     await page.getByLabel("RFC").fill("SSU010101AB1");
+  537 |     await page.getByLabel("Código postal").fill("06600");
+  538 |     const [alta] = await Promise.all([post(), page.getByRole("button", { name: "Registrar prospecto" }).click()]);
+  539 |     // La causa: con «no-referrer» el navegador manda «Origin: null» en el envío nativo del formulario.
+> 540 |     expect(await alta.request().headerValue("origin")).toBe(new URL(alta.url()).origin);
+      |                                                        ^ Error: expect(received).toBe(expected) // Object.is equality
+  541 |     expect(alta.status()).toBe(303);
+  542 |     await page.waitForURL(/aviso=razon_social_control/);
+  543 |     await expect(page.locator("#aviso-operacion")).toContainText("La razón social trae un carácter invisible");
+  544 |     expect(await contar("select 1 from companies where rfc = $1", ["SSU010101AB1"])).toBe(0);
+  545 | 
+  546 |     // La entrada de Operación y la del portal del cliente, sin sesión: la contraseña equivocada da su aviso ahí mismo.
+  547 |     await context.clearCookies();
+  548 |     for (const ruta of ["/operacion/entrar", "/entrar"]) {
+  549 |       await page.goto(ruta);
+  550 |       await page.getByLabel("Correo").fill("nadie-sin-script@lever-e2e.mx");
+  551 |       await page.getByLabel("Contraseña", { exact: true }).fill("no-es-la-clave-1");
+  552 |       const [entrada] = await Promise.all([post(), page.getByRole("button", { name: "Continuar" }).click()]);
+  553 |       expect(await entrada.request().headerValue("origin"), ruta).toBe(new URL(entrada.url()).origin);
+  554 |       expect(entrada.status(), ruta).toBe(200);
+  555 |       await expect(page.locator("#entrar-error"), ruta).toContainText("El correo o la contraseña no coinciden.");
+  556 |     }
+  557 |   });
+  558 | });
+  559 | 
+  560 | test("publicar el precio exige factor de los últimos 30 minutos; tras volver a entrar, doble clic publica una vez", async ({ page, context }) => {
+  561 |   const errores = vigilarConsola(page);
+  562 |   const precio = async () => (await consultar<{ centavos: string | null }>("select suscripcion_centavos::text as centavos from platform_pricing where singleton"))[0]?.centavos ?? null;
+  563 |   const publicaciones = () => contar("select 1 from audit_log where accion = 'publicar_precio'");
+  564 |   expect(await precio()).toBeNull();
+  565 |   const antes = await publicaciones();
+  566 | 
+  567 |   await sesionDe(context, CORREOS.op1, { superficie: "sofipo", factorHaceMinutos: 31 });
+  568 |   await page.goto("/operacion/precios");
+  569 |   await page.getByLabel("Suscripción mensual, en pesos").fill("1499.00");
+  570 |   await page.getByRole("button", { name: "Publicar el monto" }).click();
+  571 |   await expect(page.getByText("Publicar exige un segundo factor verificado en los últimos 30 minutos. Sal y vuelve a entrar por la puerta de operación.")).toBeVisible();
+  572 |   expect(await precio()).toBeNull();
+  573 |   expect(await publicaciones()).toBe(antes);
+  574 | 
+  575 |   await salirDeOperacion(page);
+  576 |   await entrarAOperacion(page, CORREOS.op1);
+  577 |   await page.goto("/operacion/precios");
+  578 |   await page.getByLabel("Suscripción mensual, en pesos").fill("1499.00");
+  579 |   const publicar = await dobleClic(page.getByRole("button", { name: "Publicar el monto" }), { esperar: /\/operacion\/precios$/ });
+  580 |   expect(publicar.envios).toBe(1);
+  581 |   await expect(page.getByLabel("Suscripción mensual, en pesos")).toHaveCount(0);
+  582 |   await expect(page.getByText("1,499.00").first()).toBeVisible();
+  583 |   expect(await precio()).toBe("149900");
+  584 |   expect(await publicaciones()).toBe(antes + 1);
+  585 |   expect(errores).toEqual([]);
+  586 | });
+  587 | 
+  588 | test("la descarga del expediente llega aislada (sandbox) y la pantalla del expediente conserva la política general", async ({ page, context }) => {
+  589 |   const [faro] = await consultar<{ id: string }>("select id from companies where rfc = $1", [FARO.rfc]);
+  590 |   await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  591 |   // Un documento que no es de la empresa: 404 sin evento, pero la política de next.config ya aplica a la ruta.
+  592 |   const descargas = () => contar("select 1 from audit_log where company_id = $1 and accion = 'expediente_documento_descargado'", [faro!.id]);
+  593 |   const antes = await descargas();
+  594 |   const descarga = await page.request.get(`/operacion/clientes/${faro!.id}/expediente/documento/${crypto.randomUUID()}`);
+  595 |   expect(descarga.status()).toBe(404);
+  596 |   expect(descarga.headers()["content-security-policy"]).toBe("sandbox; default-src 'none'; frame-ancestors 'none'");
+  597 |   expect(await descargas()).toBe(antes);
+  598 |   const pantalla = await page.request.get(`/operacion/clientes/${faro!.id}/expediente`);
+  599 |   expect(pantalla.status()).toBe(200);
+  600 |   expect(pantalla.headers()["content-security-policy"]).toBe("frame-ancestors 'none'");
+  601 | });
+  602 | 
+```test-results/e2e/invitacion-invitación-del--2a404-enlace-nuevo-crea-la-cuenta/error-context.md
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: invitacion.spec.ts >> invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta
+- Location: tests/e2e/invitacion.spec.ts:31:5
+
+# Error details
+
+```
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: "http://localhost:3151"
+Received: "null"
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Saltar al contenido" [ref=e3] [cursor=pointer]:
+      - /url: "#contenido"
+    - complementary "Navegación" [ref=e4]:
+      - link "Lever Operación SOFIPO, ir al resumen" [ref=e6] [cursor=pointer]:
+        - /url: /operacion
+        - img "Lever Operación SOFIPO" [ref=e7]:
+          - generic [aria-hidden] [ref=e10]:
+            - generic [ref=e11]: lever
+            - generic [ref=e12]: Operación SOFIPO
+      - navigation "Operación" [ref=e13]:
+        - list [ref=e14]:
+          - listitem [ref=e15]:
+            - link "Resumen" [ref=e16] [cursor=pointer]:
+              - /url: /operacion
+          - listitem [ref=e20]:
+            - link "Clientes" [ref=e21] [cursor=pointer]:
+              - /url: /operacion/clientes
+          - listitem [ref=e25]:
+            - link "Aprobaciones" [ref=e26] [cursor=pointer]:
+              - /url: /operacion/aprobaciones
+          - listitem [ref=e30]:
+            - link "Alertas" [ref=e31] [cursor=pointer]:
+              - /url: /operacion/alertas
+          - listitem [ref=e35]:
+            - link "Comisiones" [ref=e36] [cursor=pointer]:
+              - /url: /operacion/comisiones
+          - listitem [ref=e40]:
+            - link "Recuperaciones" [ref=e41] [cursor=pointer]:
+              - /url: /operacion/recuperaciones
+          - listitem [ref=e45]:
+            - link "Precios" [ref=e46] [cursor=pointer]:
+              - /url: /operacion/precios
+          - listitem [ref=e50]:
+            - link "Personal" [ref=e51] [cursor=pointer]:
+              - /url: /operacion/personal
+          - listitem [ref=e55]:
+            - link "Bitácora" [ref=e56] [cursor=pointer]:
+              - /url: /operacion/bitacora
+      - group "Tema" [ref=e61]:
+        - generic [ref=e63]:
+          - generic "Claro" [ref=e64] [cursor=pointer]:
+            - radio "Claro" [ref=e65]
+          - generic "Oscuro" [ref=e67] [cursor=pointer]:
+            - radio "Oscuro" [checked] [ref=e68]
+          - generic "Lever" [ref=e70] [cursor=pointer]:
+            - radio "Lever" [ref=e71]
+    - generic [ref=e73]:
+      - banner [ref=e74]:
+        - paragraph [ref=e75]: Bahía E2E
+        - link "← Clientes" [ref=e76] [cursor=pointer]:
+          - /url: /operacion/clientes
+        - button "op1 Personal SOFIPO" [ref=e78] [cursor=pointer]:
+          - generic [aria-hidden] [ref=e79]: OP
+          - generic [ref=e80]:
+            - generic [ref=e81]: op1
+            - generic [ref=e82]: Personal SOFIPO
+      - main [ref=e86]:
+        - heading "Bahía E2E" [level=1] [ref=e87]
+        - status [ref=e89]:
+          - paragraph [ref=e90]: Invitación enviada. El enlace anterior ya no sirve.
+        - generic [ref=e91]:
+          - paragraph [ref=e92]:
+            - generic [ref=e93]: RFC
+            - text: BEE190101CD2
+          - generic [ref=e94]: Activa para portal
+        - generic [ref=e95]:
+          - generic [ref=e96]:
+            - region [ref=e97]:
+              - heading "Datos y activación" [level=2] [ref=e98]
+              - generic [ref=e99]:
+                - generic [ref=e100]:
+                  - term [ref=e101]: Código postal
+                  - definition [ref=e102]: "06600"
+                - generic [ref=e103]:
+                  - term [ref=e104]: Régimen fiscal
+                  - definition [ref=e105]: 601 · General de ley
+                - generic [ref=e106]:
+                  - term [ref=e107]: Uso CFDI
+                  - definition [ref=e108]: G03 · Gastos en general
+                - generic [ref=e109]:
+                  - term [ref=e110]: Administrador
+                  - definition [ref=e111]: Bruno Salas
+            - region [ref=e112]:
+              - heading "Expediente y riesgo" [level=2] [ref=e113]
+              - paragraph [ref=e114]: Datos de la empresa, representantes, estructura accionaria, propietarios reales, documentos, dictamen y grado de riesgo.
+              - paragraph [ref=e115]:
+                - link "Abrir expediente" [ref=e116] [cursor=pointer]:
+                  - /url: /operacion/clientes/d910976d-b6ee-441d-af84-f5f3915125bf/expediente
+              - paragraph [ref=e117]: Abrirlo queda en la bitácora con tu nombre y la hora.
+            - region [ref=e118]:
+              - heading "Suspensión" [level=2] [ref=e119]
+              - paragraph [ref=e120]: Suspender detiene en la base todo lo que mueve dinero o escribe en la consola de la empresa.
+              - generic [ref=e121]:
+                - generic [ref=e122]:
+                  - generic [ref=e123]: Motivo (de 10 a 500 caracteres)
+                  - textbox "Motivo (de 10 a 500 caracteres)" [ref=e124]
+                - generic [ref=e125]:
+                  - button "Pedir suspensión" [ref=e126] [cursor=pointer]
+                  - paragraph [ref=e127]: La aprueba otra persona con rol de Aprobación.
+            - region [ref=e128]:
+              - heading "Historial de estados" [level=2] [ref=e129]
+              - list
+          - generic [ref=e130]:
+            - region [ref=e131]:
+              - heading "Primer administrador" [level=2] [ref=e132]
+              - generic [ref=e133]:
+                - generic [ref=e134]:
+                  - generic [ref=e135]: Nombre
+                  - textbox "Nombre" [ref=e136]: Bruno Salas
+                - generic [ref=e137]:
+                  - generic [ref=e138]: Correo
+                  - textbox "Correo" [ref=e139]: bruno@bahia-e2e.mx
+                  - paragraph [ref=e140]: Reenviar anula el enlace anterior.
+                - button "Reenviar invitación" [ref=e142] [cursor=pointer]
+              - list [ref=e143]:
+                - listitem [ref=e144]:
+                  - paragraph [ref=e145]: Correo enviado
+                  - paragraph [ref=e146]: 9 nov 2026, 12:11 p.m.
+                - listitem [ref=e147]:
+                  - paragraph [ref=e148]: Correo enviado
+                  - paragraph [ref=e149]: 9 nov 2026, 12:11 p.m.
+            - region [ref=e150]:
+              - heading "Comisiones" [level=2] [ref=e151]
+              - generic [ref=e152]:
+                - paragraph [ref=e153]: Sin comisiones
+                - paragraph [ref=e154]: Se proponen en Comisiones y las autoriza otra persona.
+              - paragraph [ref=e155]:
+                - link "Ir a Comisiones" [ref=e156] [cursor=pointer]:
+                  - /url: /operacion/comisiones
+  - alert [ref=e157]: Ficha de cliente · Operación · Lever Empresas
+```
+
+# Test source
+
+```ts
+  1   | import { expect, test, type Page } from "@playwright/test";
+  2   | 
+  3   | import { CLAVE, bahia, codigoDeSemilla, codigoTotp, consultar, contar, correosPara, dobleClic, enlaceDe, sesionDe, vigilarConsola } from "./apoyo";
+  4   | import { CORREOS } from "./siembra";
+  5   | 
+  6   | /**
+  7   |  * Cuentas: Operación invita al primer administrador de Bahía E2E, el doble clic
+  8   |  * en «Reenviar invitación» emite una sola invitación nueva (y un solo correo),
+  9   |  * el enlace viejo deja de servir, el nuevo crea la cuenta con app autenticadora
+  10  |  * y después la persona recupera su contraseña por correo. Los correos salen del
+  11  |  * proveedor falso (tests/e2e/correo-local) y la prueba abre los enlaces que traen.
+  12  |  * «Perdí el segundo factor» vive en operacion.spec.ts, donde se aprueba.
+  13  |  */
+  14  | 
+  15  | test.describe.configure({ mode: "serial" });
+  16  | 
+  17  | const BRUNO = { nombre: "Bruno Salas", correo: "bruno@bahia-e2e.mx" };
+  18  | const CLAVE_NUEVA = "otra-clave-segura-34";
+  19  | let semillaBruno = "";
+  20  | 
+  21  | const invitacionesDe = (correo: string) => correosPara(correo).filter((c) => c.texto.includes("/invitacion/"));
+  22  | const restablecimientosDe = (correo: string) => correosPara(correo).filter((c) => c.texto.includes("/recuperar/"));
+  23  | 
+  24  | async function entrar(page: Page, correo: string, contrasena: string): Promise<void> {
+  25  |   await page.goto("/entrar");
+  26  |   await page.getByLabel("Correo").fill(correo);
+  27  |   await page.getByLabel("Contraseña", { exact: true }).fill(contrasena);
+  28  |   await page.getByRole("button", { name: "Continuar" }).click();
+  29  | }
+  30  | 
+  31  | test("invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta", async ({ page, context, browser }) => {
+  32  |   test.setTimeout(120_000);
+  33  |   const errores = vigilarConsola(page);
+  34  |   const invitaciones = () => contar("select 1 from invitations where company_id = $1", [bahia()]);
+  35  |   expect(await invitaciones()).toBe(0);
+  36  |   expect(invitacionesDe(BRUNO.correo)).toHaveLength(0);
+  37  | 
+  38  |   await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  39  |   await page.goto(`/operacion/clientes/${bahia()}`);
+  40  |   await page.getByLabel("Nombre").fill(BRUNO.nombre);
+  41  |   await page.getByLabel("Correo").fill(BRUNO.correo);
+  42  |   const enviar = await dobleClic(page.getByRole("button", { name: "Enviar invitación" }), { esperar: /aviso=invitacion_enviada/ });
+  43  |   expect(enviar.envios).toBe(1);
+  44  |   await expect(page.getByText("Invitación enviada. El enlace anterior ya no sirve.")).toBeVisible();
+  45  |   expect(await invitaciones()).toBe(1);
+  46  |   await expect.poll(() => invitacionesDe(BRUNO.correo).length).toBe(1);
+  47  |   const primera = invitacionesDe(BRUNO.correo)[0]!;
+  48  | 
+  49  |   // La ventana contra reenvíos seguidos es de 2 s: se espera a que pase, no se duerme a ciegas.
+  50  |   const [emitida] = await consultar<{ ms: string }>(
+  51  |     "select (extract(epoch from emitida_en) * 1000)::bigint::text as ms from invitations where company_id = $1",
+  52  |     [bahia()],
+  53  |   );
+  54  |   await expect.poll(() => Date.now() - Number(emitida!.ms), { timeout: 10_000 }).toBeGreaterThan(2_500);
+  55  | 
+  56  |   const reenviar = await dobleClic(page.getByRole("button", { name: "Reenviar invitación" }), { esperar: /aviso=invitacion_enviada/ });
+  57  |   expect(reenviar.envios).toBe(1);
+  58  |   expect(await invitaciones()).toBe(2);
+  59  |   expect(await contar("select 1 from invitations where company_id = $1 and revocada_en is null", [bahia()])).toBe(1);
+  60  |   await expect.poll(() => invitacionesDe(BRUNO.correo).length).toBe(2);
+  61  |   const segunda = invitacionesDe(BRUNO.correo)[1]!;
+  62  |   expect(segunda.idempotencia).not.toBe(primera.idempotencia);
+  63  | 
+  64  |   // serv-nuevo-7: sin JavaScript el formulario de la invitación también responde. Con «no-referrer», el navegador
+  65  |   // mandaba «Origin: null» y la acción daba 500. Con contraseñas distintas da su aviso y la invitación sigue sin usar.
+  66  |   const sinScript = await browser.newContext({ baseURL: test.info().project.use.baseURL, javaScriptEnabled: false });
+  67  |   try {
+  68  |     const hoja = await sinScript.newPage();
+  69  |     await hoja.goto(enlaceDe(segunda, /\/invitacion\//));
+  70  |     await hoja.getByLabel("Contraseña nueva").fill(CLAVE);
+  71  |     await hoja.getByLabel("Repite la contraseña").fill(`${CLAVE}-otra`);
+  72  |     const [respuesta] = await Promise.all([
+  73  |       hoja.waitForResponse((r) => r.request().method() === "POST"),
+  74  |       hoja.getByRole("button", { name: "Aceptar la invitación" }).click(),
+  75  |     ]);
+> 76  |     expect(await respuesta.request().headerValue("origin")).toBe(new URL(respuesta.url()).origin);
+      |                                                             ^ Error: expect(received).toBe(expected) // Object.is equality
+  77  |     expect(respuesta.status()).toBe(200);
+  78  |     await expect(hoja.locator("#invitacion-error")).toContainText("Las dos contraseñas no coinciden.");
+  79  |     expect(await contar("select 1 from invitations where company_id = $1 and usada_en is not null", [bahia()])).toBe(0);
+  80  |   } finally {
+  81  |     await sinScript.close();
+  82  |   }
+  83  | 
+  84  |   // El enlace viejo ya no sirve; el nuevo crea la cuenta.
+  85  |   await context.clearCookies();
+  86  |   await page.goto(enlaceDe(primera, /\/invitacion\//));
+  87  |   await expect(page.getByRole("heading", { name: "Esta invitación ya no sirve." })).toBeVisible();
+  88  |   await page.goto(enlaceDe(segunda, /\/invitacion\//));
+  89  |   await expect(page.getByRole("heading", { name: "Te invitaron a Bahía E2E." })).toBeVisible();
+  90  |   await page.getByLabel("Contraseña nueva").fill(CLAVE);
+  91  |   await page.getByLabel("Repite la contraseña").fill(CLAVE);
+  92  |   const aceptar = await dobleClic(page.getByRole("button", { name: "Aceptar la invitación" }), { esperar: /\/entrar\/continuar/ });
+  93  |   expect(aceptar.envios).toBe(1);
+  94  |   expect(await contar("select 1 from invitations where company_id = $1 and usada_en is not null", [bahia()])).toBe(1);
+  95  | 
+  96  |   await expect(page.getByRole("heading", { name: "Registra cómo vas a entrar." })).toBeVisible();
+  97  |   semillaBruno = (await page.locator(".arco-semilla").innerText()).trim();
+  98  |   await page.getByLabel("Código que muestra la app").fill(codigoDeSemilla(semillaBruno));
+  99  |   const confirmar = await dobleClic(page.getByRole("button", { name: "Confirmar el código" }));
+  100 |   expect(confirmar.envios).toBe(1);
+  101 |   await page.getByRole("checkbox", { name: "Ya los guardé en un lugar seguro" }).check();
+  102 |   await page.getByRole("button", { name: "Entrar al portal" }).click();
+  103 |   await expect(page.getByRole("navigation", { name: "Secciones" })).toBeVisible();
+  104 | 
+  105 |   const [cuenta] = await consultar<{ roles: string; estado: string; totp: number }>(
+  106 |     `select string_agg(r.rol, ',' order by r.rol) as roles, m.estado,
+  107 |             (select count(*)::int from auth_totp t where t.user_id = u.id and t.confirmado_en is not null and t.revocado_en is null) as totp
+  108 |      from users u join memberships m on m.user_id = u.id and m.company_id = $2
+  109 |      join membership_roles r on r.user_id = u.id and r.company_id = $2
+  110 |      where u.correo = $1 group by u.id, m.estado`,
+  111 |     [BRUNO.correo, bahia()],
+  112 |   );
+  113 |   expect(cuenta).toEqual({ roles: "administrador", estado: "activa", totp: 1 });
+  114 |   expect(errores).toEqual([]);
+  115 | });
+  116 | 
+  117 | test("recuperar la contraseña por correo: un enlace, cierra las sesiones y entra con la nueva y su factor de siempre", async ({ page, context }) => {
+  118 |   const errores = vigilarConsola(page);
+  119 |   expect(semillaBruno).not.toBe("");
+  120 |   const restablecimientos = () => contar("select 1 from password_resets r join users u on u.id = r.user_id where u.correo = $1", [BRUNO.correo]);
+  121 |   const vivas = () => contar("select 1 from sessions s join users u on u.id = s.user_id where u.correo = $1 and s.expires_at > now()", [BRUNO.correo]);
+  122 |   expect(await restablecimientos()).toBe(0);
+  123 |   expect(await vivas()).toBeGreaterThan(0);
+  124 | 
+  125 |   await context.clearCookies();
+  126 |   await page.goto("/entrar");
+  127 |   await page.getByRole("link", { name: "¿Olvidaste tu contraseña?" }).click();
+  128 |   await page.waitForURL(/\/recuperar$/);
+  129 |   await page.getByLabel("Correo").fill(BRUNO.correo);
+  130 |   const pedir = await dobleClic(page.getByRole("button", { name: "Enviar el enlace" }));
+  131 |   expect(pedir.envios).toBe(1);
+  132 |   await expect(page.getByText("Si ese correo tiene cuenta, te llega un enlace en unos minutos.", { exact: false })).toBeVisible();
+  133 |   // El correo sale después de responder (after()): se espera a que llegue.
+  134 |   await expect.poll(() => restablecimientosDe(BRUNO.correo).length).toBe(1);
+  135 |   expect(await restablecimientos()).toBe(1);
+  136 | 
+  137 |   await page.goto(enlaceDe(restablecimientosDe(BRUNO.correo)[0]!, /\/recuperar\//));
+  138 |   await page.getByLabel("Contraseña nueva").fill(CLAVE_NUEVA);
+  139 |   await page.getByLabel("Repite la contraseña").fill(CLAVE_NUEVA);
+  140 |   const guardar = await dobleClic(page.getByRole("button", { name: /Guardar/ }));
+  141 |   expect(guardar.envios).toBe(1);
+  142 |   await expect(page.getByText("Cerramos todas tus sesiones. Entra con la contraseña nueva y tu segundo factor de siempre.")).toBeVisible();
+  143 |   expect(await contar("select 1 from password_resets r join users u on u.id = r.user_id where u.correo = $1 and r.usado_en is not null", [BRUNO.correo])).toBe(1);
+  144 |   expect(await vivas()).toBe(0);
+  145 | 
+  146 |   // La contraseña vieja ya no entra; la nueva sí, con el mismo factor.
+  147 |   await entrar(page, BRUNO.correo, CLAVE);
+  148 |   await expect(page.locator('.alerta[role="alert"]')).toContainText("El correo o la contraseña no coinciden.");
+  149 |   await entrar(page, BRUNO.correo, CLAVE_NUEVA);
+  150 |   await page.waitForURL(/\/entrar\/continuar/);
+  151 |   await page.getByLabel("Código de la app autenticadora").fill(await codigoTotp(BRUNO.correo, semillaBruno));
+  152 |   await page.getByRole("button", { name: "Entrar con el código" }).click();
+  153 |   await expect(page.getByRole("navigation", { name: "Secciones" })).toBeVisible();
+  154 |   expect(errores).toEqual([]);
+  155 | });
+  156 | 
+```[e2e] ===== Últimas líneas del servidor =====
+
+> plataforma-administrativa@0.1.0 start
+> next start -p 3151
+
+▲ Next.js 16.4.4
+- Local:         http://localhost:3151
+- Network:       http://10.64.148.101:3151
+✓ Ready in 54ms
+✓ Running next.config.ts took 17ms
+`x-forwarded-host` header with value `localhost:3151` does not match `origin` header with value `null` from a forwarded Server Actions request. Aborting the action.
+⨯ Error: Invalid Server Actions request.
+    at ignore-listed frames
+⨯ Error: Invalid Server Actions request.
+    at ignore-listed frames
+`x-forwarded-host` header with value `localhost:3151` does not match `origin` header with value `null` from a forwarded Server Actions request. Aborting the action.
+⨯ Error: Invalid Server Actions request.
+    at ignore-listed frames
+⨯ Error: Invalid Server Actions request.
+    at ignore-listed frames
+[e2e] ===== Capturas de las primeras fallas (base64 de PNG: pégalo en un archivo y usa base64 -d) =====
+[e2e] captura: test-results/e2e/operacion-sin-JavaScript-s-9121a-as-dos-entradas-dan-el-suyo/test-failed-1.png
+iVBORw0KGgoAAAANSUhEUgAABaAAAAPoCAIAAACnGc6kAAAQAElEQVR4nOzdaaxdZaGA4d1KcUAlooKEQcUBYzUGqVosGgeQCI4IjUSFGmNVCIlTQDGpooCoiLGIc0iIQ722IVEwOJEwxFkQiRUFI6g4AIa0hhQoUO6Xs5OTptBzaUOMr/d5fpys9e211/nW2r++N2evs8M999wzAQAAACibPwEAAACIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyNthUnbXXXedc845d95554IFC5YvXz4BAAAA/l+ad88992zttZNPPvmaa66Z3X35y1/+xje+cbJ1P/zhD6+44ooTTjhh8u+ycePGFStW3HzzzSNzbNq0ad68ef/nW/5nxtq1axcuXLjHHnucddZZk/8k73//+//85z9vPnLwwQcvW7ZsAgAAAGzdXF9RWbRo0ZIlS373u9/ddtttY+PpT3/6FgdsEUeuu+66X/7yl1s721133TXZunt3lvssL6NibL674447nn766aeddtrk/rnwwgvf+ta3Ll269Nxzz73hhht+/OMfb3HyOXLPHC9tYVuvdHPjPk/v4ZIZD3nIQ8ac7/9J7v8kt/VgAAAA+E82V+A47LDDjj322IULF774xS8eG89+9rPH4Mc+9rF99933uOOO22233fbee+9zzjlnevDZZ599/vnn//rXvz51xpo1a6bjd9999yc/+cm99tprwYIFT3rSk77xjW9Mx5ctWzbO8/GPf/xzn/vc2Nh5552/853vXHTRRWP76KOP3n///cfIu971rtmi8fnPf37M5EEPetBzn/vcb3/725Pt8tWvfvWYY455/etfv3jx4lWrVr3oRS+ajl999dWHHnroOPn8+fPf8IY33HjjjWPw5z//+b4zrrrqqte85jXjpZe+9KVXXnnldPB973vf+vXrx5TG9rOe9azRgLbpSrc2w1e84hXjvQcddNA73vGOJz/5yeP3jogzxqfvPfzwwy+55JIDDjhgTObkk0+eY/yf//zn8uXLx2c0b968Me3LL798DI5JjqmO40c0Gfd2zGTM9q9//esEAAAA4rb5GRxj4f3Nb37z4osv/ta3vnXttdeOGDF6wcMe9rDx0lhdj59jeT9+jlgwPf7Tn/70WHKfd955o1mMtxx11FG77rrrS17yktECRis58cQTDznkkC996Ut/+ctfxnr+iU984ste9rLPfOYzI2E89rGPHdtHHnnk85///HGexz3ucZ/61Kf222+/1atXj8X5K1/5yvvzhZQtjF7wlre8ZZdddlm0aNHIAWMOY3DdunWjdLz61a/+05/+tGHDhtEFxi+99NJLR9D57ne/u88++xx44IFjqieccMI111zzjGc8421ve9t73vOe9773vSMQnHXWWSMf/OY3v3noQx965pln3v8rnXue4+3XXXfd1772tVFeppc/7vNjHvOYpUuXrl279hOf+MSoHjvssMMc4yeddNJvf/vbca923333lStXjuu9/vrrH//4x4+2Mj6vUXPGPfzBD34w2s0jHvGICQAAAMRtc+B45CMfORbzY3m8eMZY54+l9XOe85zjjjtuxxlbPIPj3HPPHdni0hljdyynL7jggrHsf/SjHz0SxsEHH3z++edPm8jUGB8NYvSLsT2iw09/+tPpCn9YtWrVyCtjAf/HP/7xH//4x1i6T7bR4YcfPmY4As2aNWvG+v+UU075wAc+MCZ20003PfzhD//yl788jhn5Y/SFm2++eUxvzHyMjNoy/VuP6UzGHD70oQ+NxHPEEUeMI8fuwoULt+NK5zCaxROe8ITJzHdwxtvHxk477bTXXnuNc46T77bbbrNH3uf43/72t1FSLrvsspFmxu4ZZ5wx5jYmMz6jPffcc3yCI8SsWLFivPS85z1vAgAAAH3b+V9UpqvuYXSB2Uc5zJs3b8OGDVsceeutt471/z777DPdPfvssxctWjT76njp3mv+sbzf4uSjaLz2ta9dvXr1qaeeum7duvGu7Xt+xGc/+9ljjjlmdJOx/f3vf/+QQw45/vjj77jjjrH7tKc9bfplkDHVN73pTY961KNm37XFw0dG3xlZZFzIqB4rV66cfQ7rdlzp1ixZsuTNb37zfvvt96tf/eqSSy555zvfOR0fLWPzujFri/H169dPZgrLdHckoZ133vm2226bPeCZz3zmBAAAAP6LzPUMjhERNm7cePfdd2+cMTs+RqbP0ZweMPtMzbGK/sUvfnHLLbf8/e9/X7Vq1XnnnTeZ+SuMtWvXjqX+KAsHHnjgWHtfffXVk5kncd55553j5zjD2Jg9+aZNm2ZPOPuLrrzyyl133fWFL3zh7bfffuaZZ042e5DnePu0UIyfm0/yPp1yyinvfve7p8/1uOmmm0YCGIv/Aw44YDLz0IrXve51Rx555J577vmTn/xknGp6dbNn3vz5psuXL7/44ovHz6VLlz7lKU+ZDm7rld6nTTPGYePg0UR+//vf/+xnP5veiumtvvdnce/xMaWnPvWpH/zgB6+//vp//etfZ5xxxg033DBqzvR2zR4898NQAQAAIGSufxM7gsJll102u3viiSeefvrpJ5100kc/+tGxO9bMK1asmD5kdN26daNu3HrrrUccccT3vve9MbJ48eKPfOQjBx100Bg89thjv/KVr0xPMirAhz/84b333nvzP5GYnm2PPfa48MILDz300LG7Zs2aDRs2HH300ZOZ/z77ghe84FWvetX0zG9/+9svuOCCcfzIKFddddV03T7r61//+lFHHbW1K9p///2vuOKK0TXGbHfZZZfTTjvtsMMOm8z8d5Vly5aN5DG2R+AYEx4XO+Y5fWDn1PHHH79y5crZ3el9uPzyy6fPXp3M/AXH/b/SuWe4+cjIKF/4whdGMfnRj340O7h69epxq8fG1sb/8Ic/jCuavjTa0Be/+MUxn4suumh8IrMHjwgyAsoEAAAA+uY94P8rdKzz58+fP33s6KxRK2655Zax0p5+DWT7jDPstNNOD37wgyfb69prr919991HyBjTGCFj85fGfbjxxhsXLFgw++2bud1xxx33+bjQB+RKHyjr16+//fbb7/NbLQAAAPDf5IEPHAAAAAD/ZvMnAAAAAHECBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncADABACAOoEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADI2LpMhwAAEABJREFUEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIE0/9UZMAAAH6SURBVDgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIC8/wUAAP//wjg/rgAAAAZJREFUAwCV0hhZIl3qrwAAAABJRU5ErkJggg==
+[e2e] captura: test-results/e2e/invitacion-invitación-del--2a404-enlace-nuevo-crea-la-cuenta/test-failed-2.png
+iVBORw0KGgoAAAANSUhEUgAABaAAAAPoCAIAAACnGc6kAAAQAElEQVR4nOzdaaxdZaGA4d1KcUAlooKEQcUBYzUGqVosGgeQCI4IjUSFGmNVCIlTQDGpooCoiLGIc0iIQ722IVEwOJEwxFkQiRUFI6g4AIa0hhQoUO6Xs5OTptBzaUOMr/d5fpys9e211/nW2r++N2evs8M999wzAQAAACibPwEAAACIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyNthUnbXXXedc845d95554IFC5YvXz4BAAAA/l+ad88992zttZNPPvmaa66Z3X35y1/+xje+cbJ1P/zhD6+44ooTTjhh8u+ycePGFStW3HzzzSNzbNq0ad68ef/nW/5nxtq1axcuXLjHHnucddZZk/8k73//+//85z9vPnLwwQcvW7ZsAgAAAGzdXF9RWbRo0ZIlS373u9/ddtttY+PpT3/6FgdsEUeuu+66X/7yl1s721133TXZunt3lvssL6NibL674447nn766aeddtrk/rnwwgvf+ta3Ll269Nxzz73hhht+/OMfb3HyOXLPHC9tYVuvdHPjPk/v4ZIZD3nIQ8ac7/9J7v8kt/VgAAAA+E82V+A47LDDjj322IULF774xS8eG89+9rPH4Mc+9rF99933uOOO22233fbee+9zzjlnevDZZ599/vnn//rXvz51xpo1a6bjd9999yc/+cm99tprwYIFT3rSk77xjW9Mx5ctWzbO8/GPf/xzn/vc2Nh5552/853vXHTRRWP76KOP3n///cfIu971rtmi8fnPf37M5EEPetBzn/vcb3/725Pt8tWvfvWYY455/etfv3jx4lWrVr3oRS+ajl999dWHHnroOPn8+fPf8IY33HjjjWPw5z//+b4zrrrqqte85jXjpZe+9KVXXnnldPB973vf+vXrx5TG9rOe9azRgLbpSrc2w1e84hXjvQcddNA73vGOJz/5yeP3jogzxqfvPfzwwy+55JIDDjhgTObkk0+eY/yf//zn8uXLx2c0b968Me3LL798DI5JjqmO40c0Gfd2zGTM9q9//esEAAAA4rb5GRxj4f3Nb37z4osv/ta3vnXttdeOGDF6wcMe9rDx0lhdj59jeT9+jlgwPf7Tn/70WHKfd955o1mMtxx11FG77rrrS17yktECRis58cQTDznkkC996Ut/+ctfxnr+iU984ste9rLPfOYzI2E89rGPHdtHHnnk85///HGexz3ucZ/61Kf222+/1atXj8X5K1/5yvvzhZQtjF7wlre8ZZdddlm0aNHIAWMOY3DdunWjdLz61a/+05/+tGHDhtEFxi+99NJLR9D57ne/u88++xx44IFjqieccMI111zzjGc8421ve9t73vOe9773vSMQnHXWWSMf/OY3v3noQx965pln3v8rnXue4+3XXXfd1772tVFeppc/7vNjHvOYpUuXrl279hOf+MSoHjvssMMc4yeddNJvf/vbca923333lStXjuu9/vrrH//4x4+2Mj6vUXPGPfzBD34w2s0jHvGICQAAAMRtc+B45CMfORbzY3m8eMZY54+l9XOe85zjjjtuxxlbPIPj3HPPHdni0hljdyynL7jggrHsf/SjHz0SxsEHH3z++edPm8jUGB8NYvSLsT2iw09/+tPpCn9YtWrVyCtjAf/HP/7xH//4x1i6T7bR4YcfPmY4As2aNWvG+v+UU075wAc+MCZ20003PfzhD//yl788jhn5Y/SFm2++eUxvzHyMjNoy/VuP6UzGHD70oQ+NxHPEEUeMI8fuwoULt+NK5zCaxROe8ITJzHdwxtvHxk477bTXXnuNc46T77bbbrNH3uf43/72t1FSLrvsspFmxu4ZZ5wx5jYmMz6jPffcc3yCI8SsWLFivPS85z1vAgAAAH3b+V9UpqvuYXSB2Uc5zJs3b8OGDVsceeutt471/z777DPdPfvssxctWjT76njp3mv+sbzf4uSjaLz2ta9dvXr1qaeeum7duvGu7Xt+xGc/+9ljjjlmdJOx/f3vf/+QQw45/vjj77jjjrH7tKc9bfplkDHVN73pTY961KNm37XFw0dG3xlZZFzIqB4rV66cfQ7rdlzp1ixZsuTNb37zfvvt96tf/eqSSy555zvfOR0fLWPzujFri/H169dPZgrLdHckoZ133vm2226bPeCZz3zmBAAAAP6LzPUMjhERNm7cePfdd2+cMTs+RqbP0ZweMPtMzbGK/sUvfnHLLbf8/e9/X7Vq1XnnnTeZ+SuMtWvXjqX+KAsHHnjgWHtfffXVk5kncd55553j5zjD2Jg9+aZNm2ZPOPuLrrzyyl133fWFL3zh7bfffuaZZ042e5DnePu0UIyfm0/yPp1yyinvfve7p8/1uOmmm0YCGIv/Aw44YDLz0IrXve51Rx555J577vmTn/xknGp6dbNn3vz5psuXL7/44ovHz6VLlz7lKU+ZDm7rld6nTTPGYePg0UR+//vf/+xnP5veiumtvvdnce/xMaWnPvWpH/zgB6+//vp//etfZ5xxxg033DBqzvR2zR4898NQAQAAIGSufxM7gsJll102u3viiSeefvrpJ5100kc/+tGxO9bMK1asmD5kdN26daNu3HrrrUccccT3vve9MbJ48eKPfOQjBx100Bg89thjv/KVr0xPMirAhz/84b333nvzP5GYnm2PPfa48MILDz300LG7Zs2aDRs2HH300ZOZ/z77ghe84FWvetX0zG9/+9svuOCCcfzIKFddddV03T7r61//+lFHHbW1K9p///2vuOKK0TXGbHfZZZfTTjvtsMMOm8z8d5Vly5aN5DG2R+AYEx4XO+Y5fWDn1PHHH79y5crZ3el9uPzyy6fPXp3M/AXH/b/SuWe4+cjIKF/4whdGMfnRj340O7h69epxq8fG1sb/8Ic/jCuavjTa0Be/+MUxn4suumh8IrMHjwgyAsoEAAAA+uY94P8rdKzz58+fP33s6KxRK2655Zax0p5+DWT7jDPstNNOD37wgyfb69prr919991HyBjTGCFj85fGfbjxxhsXLFgw++2bud1xxx33+bjQB+RKHyjr16+//fbb7/NbLQAAAPDf5IEPHAAAAAD/ZvMnAAAAAHECBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncAAAAAB5AgcAAACQJ3AAAAAAeQIHAAAAkCdwAAAAAHkCBwAAAJAncADABACAOoEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADI2LpMhwAAEABJREFUEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIE0/9UZMAAAH6SURBVDgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIA8gQMAAADIEzgAAACAPIEDAAAAyBM4AAAAgDyBAwAAAMgTOAAAAIC8/wUAAP//wjg/rgAAAAZJREFUAwCV0hhZIl3qrwAAAABJRU5ErkJggg==

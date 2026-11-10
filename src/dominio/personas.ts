@@ -1,6 +1,7 @@
 import { capacidadesDe, ROLES_CLIENTE, rolesLeidos, tiene, tieneRolDeTrabajo, type RolCliente } from "../nucleo/capacidades";
 import { leerCentavosEscritos } from "./centavos";
 import { clabeValida } from "./clabe";
+import { INVISIBLE } from "./control";
 
 export const ROLES_DE_CUENTA = ROLES_CLIENTE;
 
@@ -19,7 +20,6 @@ export const ACCESOS = ["no", "nueva", "ya"] as const;
 export type AccesoForma = (typeof ACCESOS)[number];
 
 const CORREO = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
-const CONTROL = /[\u0000-\u001F\u007F]/;
 const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -96,7 +96,9 @@ export type CodigoRechazoPersona =
   | "lote_inconsistente"
   | "lote_inmutable"
   | "persona_identidad_inmutable"
-  | "baja_no_efectiva";
+  | "baja_no_efectiva"
+  | "empresa_suspendida"
+  | "nomina_bloqueada_lpb";
 
 export type EstadoMaestro =
   | { tipo: "inicial" }
@@ -124,6 +126,7 @@ export type CodigoFinanzas =
   | "sin_membresia"
   | "rol_existente"
   | "ultimo_rol"
+  | "empresa_suspendida"
   | "libro";
 
 export const MENSAJE_FINANZAS: Record<CodigoFinanzas, { titulo: string; texto: string }> = {
@@ -147,6 +150,10 @@ export const MENSAJE_FINANZAS: Record<CodigoFinanzas, { titulo: string; texto: s
   ultimo_rol: {
     titulo: "No se quitó",
     texto: "Finanzas es su único rol y nadie queda sin rol. Dale primero su rol de trabajo.",
+  },
+  empresa_suspendida: {
+    titulo: "La empresa está suspendida",
+    texto: "El acceso no cambia mientras la empresa esté suspendida. Comunícate con Lever.",
   },
   libro: { titulo: "No se guardó", texto: "No se pudo confirmar el cambio. Vuelve a intentar." },
 };
@@ -292,7 +299,7 @@ export function accesoFinanzasDe(
 }
 
 export function normalizarNombrePersona(valor: unknown): string | null {
-  if (typeof valor !== "string" || CONTROL.test(valor)) return null;
+  if (typeof valor !== "string" || INVISIBLE.test(valor)) return null;
   const nombre = valor.normalize("NFKC").trim().replace(/\s+/g, " ");
   if (nombre.length < 1 || nombre.length > 120) return null;
   if (!/[\p{L}\p{N}]/u.test(nombre)) return null;
@@ -300,11 +307,16 @@ export function normalizarNombrePersona(valor: unknown): string | null {
 }
 
 export function normalizarCentro(valor: unknown): string | null {
-  if (typeof valor !== "string" || CONTROL.test(valor)) return null;
+  if (typeof valor !== "string" || INVISIBLE.test(valor)) return null;
   const nombre = valor.normalize("NFKC").trim().replace(/\s+/g, " ");
   if (nombre.length < 1 || nombre.length > 80) return null;
   if (!/[\p{L}\p{N}]/u.test(nombre)) return null;
   return nombre;
+}
+
+/** Un nombre con un control invisible no se limpia: se rechaza con su propio aviso (es una identidad). */
+function conControl(valor: unknown): boolean {
+  return typeof valor === "string" && INVISIBLE.test(valor);
 }
 
 export function normalizarCorreoPersona(valor: unknown): string {
@@ -425,7 +437,8 @@ function armarAlta(
   void hoy; // Las contrataciones futuras sí son válidas; el primer pago valida su propia fecha.
   const errores: Hallazgo[] = [];
   const nombre = normalizarNombrePersona(entrada.nombre);
-  if (!nombre) errores.push({ codigo: "nombre_invalido", campo: "nombre" });
+  if (conControl(entrada.nombre)) errores.push({ codigo: "nombre_control", campo: "nombre" });
+  else if (!nombre) errores.push({ codigo: "nombre_invalido", campo: "nombre" });
 
   const altaEn = fechaValida(entrada.alta);
   if (!altaEn) errores.push({ codigo: "fecha_invalida", campo: "alta" });
@@ -510,6 +523,7 @@ export function validarCentro(entrada: {
   esTesoreria?: unknown;
 }): ResultadoCentro {
   const nombre = normalizarCentro(entrada.nombre);
+  if (conControl(entrada.nombre)) return { ok: false, codigo: "centro_nombre_control" };
   if (!nombre) return { ok: false, codigo: "centro_nombre_invalido" };
   const monto = leerCentavosEscritos(typeof entrada.presupuesto === "string" ? entrada.presupuesto : "");
   if (monto.tipo === "invalido") return { ok: false, codigo: "centro_presupuesto_invalido" };
@@ -529,7 +543,7 @@ export type CentroValido = {
 
 type ResultadoCentro =
   | ({ ok: true } & CentroValido)
-  | { ok: false; codigo: "centro_nombre_invalido" | "centro_presupuesto_invalido" };
+  | { ok: false; codigo: "centro_nombre_invalido" | "centro_nombre_control" | "centro_presupuesto_invalido" };
 
 export function validarBaja(entrada: { personaId?: unknown; baja?: unknown }): ResultadoBaja {
   const personaId = typeof entrada.personaId === "string" ? entrada.personaId.trim() : "";
@@ -607,11 +621,13 @@ export function etiquetaDelRol(rol: RolCuenta): string {
 
 export const MENSAJE_CAMPO: Record<string, ErrorCampo> = {
   nombre_invalido: { campo: "nombre", mensaje: "Escribe el nombre de la persona." },
+  nombre_control: { campo: "nombre", mensaje: "El nombre trae un carácter invisible que no se puede guardar. Escríbelo de nuevo." },
   fecha_invalida: { campo: "alta", mensaje: "Esa fecha no existe." },
   alta_futura: { campo: "alta", mensaje: "La fecha de alta no puede ser posterior a hoy." },
   baja_anterior: { campo: "baja", mensaje: "La baja no puede ser anterior al alta." },
   centro_invalido: { campo: "centro", mensaje: "Elige un centro de costo de esta empresa." },
   centro_nombre_invalido: { campo: "centroNombre", mensaje: "Escribe el nombre del área." },
+  centro_nombre_control: { campo: "centroNombre", mensaje: "El nombre del área trae un carácter invisible que no se puede guardar. Escríbelo de nuevo." },
   centro_presupuesto_invalido: { campo: "centroPresupuesto", mensaje: "Escribe un presupuesto mensual válido." },
   presupuesto_invalido: { campo: "presupuesto", mensaje: "Escribe un presupuesto mensual válido o déjalo vacío." },
   destino_invalido: { campo: "destino", mensaje: "Elige CLABE externa o tarjeta de nómina." },
@@ -780,6 +796,14 @@ export const MENSAJE_RECHAZO: Record<
   baja_no_efectiva: {
     titulo: "La baja todavía no es efectiva",
     texto: "El acceso se cierra el día de la baja.",
+  },
+  empresa_suspendida: {
+    titulo: "La empresa está suspendida",
+    texto: "Mientras esté suspendida no se guardan cambios en Personas ni se prepara nómina. Comunícate con Lever.",
+  },
+  nomina_bloqueada_lpb: {
+    titulo: "La nómina quedó detenida",
+    texto: "Hay una revisión de cumplimiento pendiente. No se preparó el lote; Lever te contactará.",
   },
 };
 

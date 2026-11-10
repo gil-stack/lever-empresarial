@@ -52,6 +52,7 @@ unset DATABASE_URL
   tests/aislamiento/aislamiento.test.ts \
   tests/aislamiento/telefono.test.ts \
   tests/esquema/deriva.test.ts \
+  tests/esquema/definer-search-path.test.ts \
   tests/firmas/dos-firmas.test.ts \
   tests/proveedores/historial-clabe.test.ts \
   tests/proveedores/relectura-69b.test.ts \
@@ -61,6 +62,7 @@ unset DATABASE_URL
   tests/autenticacion/recuperacion-factor-nuevo.test.ts \
   tests/autenticacion/enumeracion-tope.test.ts \
   tests/operacion/portal-postgres.test.ts \
+  tests/operacion/alta-regulada-postgres.test.ts \
   tests/personas/colaboradores-postgres.test.ts \
   tests/inicio/resumen-postgres.test.ts \
   tests/flujo/flujo-postgres.test.ts

@@ -11,8 +11,12 @@ export type Superficie = (typeof SUPERFICIES)[number];
 export const ROLES_CLIENTE = ["administrador", "solicitante", "liberador", "tarjetahabiente", "contador", "finanzas"] as const;
 export type RolCliente = (typeof ROLES_CLIENTE)[number];
 
-/** Cada rol de la plataforma se enciende cuando su fase le da trabajo. */
-export const ROLES_PLATAFORMA = ["administracion_plataforma"] as const;
+/**
+ * Cada rol de la plataforma se enciende cuando su fase le da trabajo. Los cuatro de la Ola R1 separan
+ * funciones como piden las disposiciones del art. 124 LACP: quien origina no dictamina, quien dictamina
+ * no audita (50ª) y quien aprueba no es quien pidió.
+ */
+export const ROLES_PLATAFORMA = ["administracion_plataforma", "originacion", "aprobacion", "cumplimiento", "auditoria"] as const;
 export type RolPlataforma = (typeof ROLES_PLATAFORMA)[number];
 
 type Regla<R> = { superficie: Superficie; roles: readonly R[] };
@@ -69,6 +73,24 @@ const DE_LA_PLATAFORMA = {
   "plataforma.empresa.alta": { superficie: "sofipo", roles: ["administracion_plataforma"] },
   "plataforma.invitacion.emitir": { superficie: "sofipo", roles: ["administracion_plataforma"] },
   "plataforma.personal.administrar": { superficie: "sofipo", roles: ["administracion_plataforma"] },
+  // Ola R1: alta regulada. Entrar a Operación lo da cualquier rol; cada pantalla pide el suyo.
+  "plataforma.operacion.ver": {
+    superficie: "sofipo",
+    roles: ["administracion_plataforma", "originacion", "aprobacion", "cumplimiento", "auditoria"],
+  },
+  "plataforma.prospecto.registrar": { superficie: "sofipo", roles: ["administracion_plataforma", "originacion"] },
+  "plataforma.activacion.solicitar": { superficie: "sofipo", roles: ["administracion_plataforma", "originacion"] },
+  "plataforma.activacion.aprobar": { superficie: "sofipo", roles: ["aprobacion"] },
+  "plataforma.expediente.ver": { superficie: "sofipo", roles: ["originacion", "aprobacion", "cumplimiento", "auditoria"] },
+  "plataforma.expediente.capturar": { superficie: "sofipo", roles: ["originacion"] },
+  "plataforma.expediente.dictaminar": { superficie: "sofipo", roles: ["cumplimiento"] },
+  "plataforma.riesgo.calificar": { superficie: "sofipo", roles: ["cumplimiento"] },
+  "plataforma.lpb.cargar": { superficie: "sofipo", roles: ["cumplimiento"] },
+  "plataforma.lpb.resolver": { superficie: "sofipo", roles: ["cumplimiento"] },
+  "plataforma.cumplimiento.bandeja": { superficie: "sofipo", roles: ["cumplimiento", "auditoria"] },
+  "plataforma.suspension.solicitar": { superficie: "sofipo", roles: ["originacion", "cumplimiento"] },
+  "plataforma.suspension.aprobar": { superficie: "sofipo", roles: ["aprobacion"] },
+  "plataforma.bitacora.ver": { superficie: "sofipo", roles: ["administracion_plataforma", "cumplimiento", "auditoria"] },
 } as const satisfies Record<string, Regla<RolPlataforma>>;
 
 export type CapacidadCliente = keyof typeof DEL_CLIENTE;

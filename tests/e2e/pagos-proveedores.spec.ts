@@ -230,11 +230,34 @@ test("limita archivos combinados y no ofrece cambiar CLABE a un liberador", asyn
   await page.getByLabel("RFC", { exact: true }).fill("EEE050505EA5");
   await page.getByLabel("Razón social", { exact: true }).fill("Archivos Grandes");
   await page.getByLabel("CLABE", { exact: true }).fill("002180701150123452");
-  const grande = Buffer.concat([Buffer.from("%PDF-"), Buffer.alloc(4_500_000)]);
+  // Cada uno cabe en el tope de 4 MB, pero juntos no: el navegador lo frena antes de enviar.
+  const grande = Buffer.concat([Buffer.from("%PDF-"), Buffer.alloc(2_500_000)]);
   await page.locator("#constancia").setInputFiles({ name: "constancia-grande.pdf", mimeType: "application/pdf", buffer: grande });
   await page.locator("#contrato").setInputFiles({ name: "contrato-grande.pdf", mimeType: "application/pdf", buffer: grande });
   await page.getByRole("button", { name: "Dar de alta" }).click();
-  await expect(page.locator("#contrato-error")).toHaveText("La constancia y el contrato juntos no pueden superar 8 MB.");
+  await expect(page.locator("#contrato-error")).toHaveText("La constancia y el contrato juntos no pueden superar 4 MB.");
+  expect(await contar("select 1 from suppliers where rfc = $1", ["EEE050505EA5"])).toBe(0);
+});
+
+test("«Agregar contrato» no envía un PDF de más de 4 MB y liga el aviso al campo", async ({ page }) => {
+  await entrar(page);
+  const proveedor = "44444444-4444-4444-8444-444444444441";
+  await page.goto(`${BASE}?vista=proveedores&proveedor=${proveedor}`);
+  const dialogo = page.getByRole("dialog", { name: "Proveedor Uno, S.A. de C.V." });
+  await dialogo.getByText("Agregar contrato", { exact: true }).click();
+  let envios = 0;
+  page.on("request", (peticion) => {
+    if (peticion.method() === "POST") envios += 1;
+  });
+  const campo = page.locator(`#contrato-nuevo-${proveedor}`);
+  await campo.setInputFiles({ name: "contrato-grande.pdf", mimeType: "application/pdf", buffer: Buffer.concat([Buffer.from("%PDF-"), Buffer.alloc(4_600_000)]) });
+  await dialogo.getByRole("button", { name: "Guardar el contrato" }).click();
+  const aviso = page.locator(`#contrato-nuevo-${proveedor}-error`);
+  await expect(aviso).toHaveText("El contrato debe ser un PDF de hasta 4 MB.");
+  await expect(campo).toHaveAttribute("aria-describedby", `contrato-nuevo-${proveedor}-error`);
+  await expect(campo).toHaveAttribute("aria-invalid", "true");
+  await captura(page, "contrato-mas-de-4-mb");
+  expect(envios).toBe(0);
 });
 
 test("rechazo, corrección y cancelación conservan el historial", async ({ page }) => {

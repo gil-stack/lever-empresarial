@@ -1,0 +1,10 @@
+# Rojo del mismo e2e con src/estilo/marco.css como en 32e49b8 (sin @media (scripting: none)): la barra superior queda transparente sin JavaScript
+
+  ✘  1 tests/e2e/operacion.spec.ts:561:7 › sin JavaScript › sin JavaScript, el rechazo de un campo del expediente vuelve sin fragmento y con el foco en el campo (15.4s)
+    Error: expect(locator).not.toHaveCSS(expected) failed
+    Expected: not "rgba(0, 0, 0, 0)"
+    Received: "rgba(0, 0, 0, 0)"
+    > 580 |     await expect(page.locator(".barra-superior")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    test-results/e2e/operacion-sin-JavaScript-s-e4744-o-y-con-el-foco-en-el-campo/test-failed-1.png
+  1 failed
+- Following Playwright test failed.

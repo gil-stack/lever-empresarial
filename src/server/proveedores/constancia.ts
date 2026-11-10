@@ -22,7 +22,10 @@ type BlobPut = (
   },
 ) => Promise<{ pathname?: string; url?: string }>;
 
-type BlobDel = (path: string, opciones: CredencialesBlob) => Promise<void>;
+type BlobDel = (path: string, opciones: CredencialesBlob & { abortSignal?: AbortSignal }) => Promise<void>;
+
+/** Lo que espera el borrado de un huérfano antes de rendirse y dejar su clave en el registro. */
+export const TOPE_BORRADO_MS = 5000;
 type BlobGet = (
   path: string,
   opciones: CredencialesBlob & { access: "private"; useCache: boolean },
@@ -54,12 +57,38 @@ export function almacenVercel(): AlmacenConstancia {
     async borrar(clave) {
       const credenciales = credencialesBlobOpcional();
       if (!credenciales) return;
-      try {
+      // La petición no espera a Blob más del tope: el borrado compite con el reloj. @vercel/blob 2.8
+      // reintenta hasta 10 veces, con espera creciente (1-2 s, 2-4 s, 4-8 s…), la conexión rechazada, el
+      // 503 y su propio TimeoutError (por eso AbortSignal.timeout no sirve), y el abort() solo lo nota al
+      // empezar el siguiente intento. Tras el abort no sale otra petición: la espera que la biblioteca
+      // tenga pendiente termina sola en segundos con su intento ya abortado.
+      const tope = new AbortController();
+      let reloj: ReturnType<typeof setTimeout> | undefined;
+      const agotado = new Promise<never>((_, rechazar) => {
+        reloj = setTimeout(() => {
+          tope.abort();
+          rechazar(new Error("tiempo_agotado"));
+        }, TOPE_BORRADO_MS);
+      });
+      const borrado = (async () => {
         const modulo = (await import("@vercel/blob")) as unknown as { del?: BlobDel };
-        if (!modulo.del) return;
-        await modulo.del(clave, credenciales);
-      } catch {
-        // El PDF huérfano no se anuncia. El alta ya no está en el libro.
+        if (modulo.del) await modulo.del(clave, { ...credenciales, abortSignal: tope.signal });
+      })();
+      try {
+        await Promise.race([borrado, agotado]);
+      } catch (error) {
+        // El huérfano no se anuncia a quien subió el archivo, pero queda su clave para borrarlo a mano.
+        console.error(JSON.stringify({
+          nivel: "error",
+          origen: "blob.borrar",
+          evento: "huerfano_sin_borrar",
+          clave,
+          causa: tope.signal.aborted ? "tiempo_agotado" : "error",
+          tope_ms: TOPE_BORRADO_MS,
+          error: error instanceof Error ? error.name : "desconocido",
+        }));
+      } finally {
+        clearTimeout(reloj);
       }
     },
   };
