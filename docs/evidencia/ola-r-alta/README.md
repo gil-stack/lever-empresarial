@@ -858,6 +858,7 @@ Todo va en este PR. **La 0028 no cambia**, ni `PIE_REGULATORIO` ni `src/estilo/t
 | **Humo N6** Sin `Permissions-Policy` | La política, con `publickey-credentials-get=(self)` y `publickey-credentials-create=(self)`; sin `clipboard-write`, porque no hay «Copiar» | e2e en la pantalla, la descarga y la portada. Rojo: `datos/e2e-rojo-humo-602af09.txt` |
 | **Passkeys** (de la sesión del #61) | e2e con el autenticador virtual de Chromium; el servidor de la e2e admite `localhost` | `tests/e2e/passkeys.spec.ts`: el portal y la primera entrada de Operación |
 | **Guarda de las partes de la e2e** | La guarda y cuatro grupos seriales | Rojo: `datos/e2e-guarda-parte-vacia-rojo.txt`. Partes: 23, 22 y 20 pruebas (= 65), con 76, 53 y 54 s de pruebas (máximo 41 %): `datos/e2e-parte-N-de-3.txt`. Completa: 65/65, en `datos/e2e-completa-65.txt` |
+| **humo-N9** En un formulario de dos columnas, el aviso de un rechazo caía en una columna de unos 170 px y empujaba «Razón social» a la derecha. Lo mismo pasaba en la decisión de una recuperación (190 de 390 px) y en las tarjetas de Cumplimiento (737 de 1062 px, con el dictamen a un lado) | `.formulario-pareja > .operacion-ancho` y `.operacion-decision-forma > .operacion-aviso` ocupan la fila; en los formularios en línea, el aviso toma su propio renglón (`flex-basis: 100%`). La regla de `operacion-ancho` se perdió en `feaf618`: con ella, los campos anchos (razón social, detalle y archivo del documento) vuelven a ocupar la fila, también sin error | e2e: prospecto a 1440 y 390, documento, coincidencia y recuperación. El aviso mide el ancho del formulario y el primer campo queda en la orilla, debajo. Rojo: `datos/e2e-rojo-n9-6ae090e.txt` (174 de 368 px; «Razón social» en x=1196 en lugar de 1002), `datos/e2e-rojo-n9-sin-regla-en-linea.txt` y `datos/e2e-rojo-n9-sin-regla-de-decision.txt`. Capturas `n9-antes-prospecto-1440` y `n9-*` |
 
 **Verificación en rojo.**
 
@@ -871,9 +872,9 @@ Todo va en este PR. **La 0028 no cambia**, ni `PIE_REGULATORIO` ni `src/estilo/t
 - typecheck y lint;
 - 477/477 unitarias;
 - 81/81 de Postgres;
-- e2e completa 65/65 y las tres partes;
+- e2e completa 66/66 (con humo-N9) y las tres partes, con 23, 23 y 20 pruebas;
 - build y security;
-- recorrido: flujos 155, pantallas y contraste 60, regresiones 273, todos en verde;
+- recorrido sobre `6ae090e`: flujos 155, pantallas y contraste 60, regresiones 273, todos en verde;
 - axe: `aria-prohibited-attr` 0 y `label-content-name-mismatch` 0 (`datos/axe-final.txt`).
 
 ## Flujo → captura → qué verifica en la base
@@ -1043,6 +1044,8 @@ Todo va en este PR. **La 0028 no cambia**, ni `PIE_REGULATORIO` ni `src/estilo/t
 | Doceava: rechazo con lo capturado | `r136-doceava-alerta-sin-js-390` | Lo mismo sin JavaScript a 390. |
 
 Las capturas `NN-pantalla-<pantalla>-<tema>-<ancho>` son la fase de pantallas: un solo h1, campos con etiqueta, sin desborde horizontal y consola limpia en Personal, Cumplimiento, Lista, Expediente, Ficha, Aprobaciones, Clientes, Bitácora y Sin permiso.
+
+Las capturas del recorrido (`NN-…` y `rNN-…`) son de `6ae090e`, antes de humo-N9. En `r99` y `r131`, por ejemplo, el aviso todavía cae en una columna o junto a un campo. Las `n9-*` son de la e2e con el arreglo: `n9-antes-prospecto-1440` (sin la regla), `n9-prospecto-1440` y `-390`, `n9-documento-1440`, `n9-coincidencia-1440` y `n9-recuperacion-1440`.
 
 ## Salida literal
 

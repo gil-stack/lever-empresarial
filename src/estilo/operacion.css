@@ -21,6 +21,21 @@
   margin-bottom: 24px;
 }
 
+/* En un formulario de dos columnas, el aviso y los campos anchos (razón social, detalle y archivo del documento…)
+   ocupan la fila entera. Sin esta regla, que se perdió al pasar Operación al sistema visual, el aviso de un rechazo
+   caía en una columna angosta y empujaba el primer campo a la derecha (humo-N9 del preview). Lo mismo en los
+   formularios en línea de una tarjeta (coincidencia, folio, cerrar una alerta) y en la decisión de una recuperación:
+   el aviso va en su propio renglón y los campos se quedan donde estaban. */
+.formulario-pareja > .operacion-ancho,
+.operacion-decision-forma > .operacion-aviso {
+  grid-column: 1 / -1;
+}
+
+.operacion-acciones > .operacion-aviso,
+.operacion-acciones form > .operacion-aviso {
+  flex-basis: 100%;
+}
+
 /* Sin JavaScript el menú de la cuenta no abre y «Salir» va junto a él (PaginaOperacion). En pantalla angosta toma su
    propio renglón, a la derecha: el título y el chip de la persona conservan su ancho. Solo con (scripting: none): con
    JavaScript el contenido de <noscript> es texto y, con display: contents, el navegador lo pintaría tal cual. */
