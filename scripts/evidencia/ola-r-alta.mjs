@@ -109,12 +109,15 @@ async function totp(quien) {
 
 // ---------- Navegador ----------
 const abiertos = [];
-async function abrir(quien, { tema = "oscuro", ancho = 1440, js = true } = {}) {
+async function abrir(quien, { tema = "oscuro", ancho = 1440, js = true, sinCsp = false } = {}) {
   const nav = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
   const movil = ancho < 600;
   const ctx = await nav.newContext({
     viewport: { width: ancho, height: movil ? 844 : 900 }, isMobile: movil, hasTouch: movil, deviceScaleFactor: 1, javaScriptEnabled: js,
     reducedMotion: "reduce", locale: "es-MX", timezoneId: "America/Mexico_City", acceptDownloads: true,
+    // Solo el contraste: tapa texto con estilos para medir el fondo, y la CSP con nonce los bloquea. Lo demás corre
+    // con la CSP real y la consola debe quedar limpia.
+    bypassCSP: sinCsp,
   });
   const host = new URL(BASE).hostname;
   // Quien no tiene sesión sembrada (Iván, que llega por su invitación) entra sin cookie.
@@ -148,7 +151,7 @@ async function foto(p, nombre, completa = true) {
   const ruta = `${DIR}/capturas/${prefijo}${String(numero).padStart(2, "0")}-${nombre}.webp`;
   mkdirSync(`${DIR}/capturas`, { recursive: true });
   if (!p.sinScript) {
-    await p.addStyleTag({ content: "nextjs-portal { display: none !important; }" }).catch(() => {});
+    // Sin <style> inyectado: con next start no hay overlay de desarrollo, y la CSP lo bloquearía.
     await p.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur()).catch(() => {});
   }
   await p.waitForTimeout(350);
@@ -187,7 +190,7 @@ async function aviso(p) {
 async function enviar(p, boton, codigo, { doble = false } = {}) {
   if (!p.sinScript) {
     await p.evaluate(() => {
-      history.replaceState(history.state, "", location.pathname);
+      history.replaceState(null, "", location.pathname);
       for (const nodo of document.querySelectorAll(".operacion-aviso")) nodo.setAttribute("data-anterior", "1");
     });
   }
@@ -265,7 +268,7 @@ async function juntoAlCampo(p, selector, idMensaje) {
  * anterior (si lo hay) para esperar al nuevo, y devuelve su texto.
  */
 async function rechazarSocio(p) {
-  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.evaluate(() => history.replaceState(null, "", location.pathname + location.hash));
   await p.locator("#aviso-accionista").evaluate((nodo) => { nodo.dataset.anterior = "1"; }).catch(() => {});
   await p.getByRole("button", { name: "Agregar accionista" }).click();
   const nuevo = p.locator("#aviso-accionista:not([data-anterior])");
@@ -276,7 +279,7 @@ async function rechazarSocio(p) {
 }
 /** «Agregar representante» rechazado: como el del socio, vuelve sin recargar con su propio aviso y lo capturado. */
 async function rechazarRepresentante(p) {
-  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.evaluate(() => history.replaceState(null, "", location.pathname + location.hash));
   await p.locator("#aviso-representante").evaluate((nodo) => { nodo.dataset.anterior = "1"; }).catch(() => {});
   await p.getByRole("button", { name: "Agregar representante" }).click();
   const nuevo = p.locator("#aviso-representante:not([data-anterior])");
@@ -943,7 +946,7 @@ async function contraste() {
       let minimo = Infinity;
       for (const pantalla of PANTALLAS()) {
         renovarSesiones();
-        const { nav, p } = await abrir(pantalla.quien, { tema, ancho });
+        const { nav, p } = await abrir(pantalla.quien, { tema, ancho, sinCsp: true });
         await ir(p, pantalla.ruta);
         await p.waitForFunction(() => ["quieto", "lento", "sin-motor"].includes(document.querySelector(".escena-fondo canvas")?.dataset.estado ?? ""), null, { timeout: 20000 }).catch(() => {});
         await p.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
@@ -1269,7 +1272,7 @@ async function terceraRonda(rutaEbano) {
   await enVista(omar.p.locator("#acc-pais"));
   await foto(omar.p, "n2-formulario-socio-extranjero", false);
   // Sin documento el navegador no envía: con país, el documento es obligatorio (y el servidor y la base lo exigen).
-  await omar.p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await omar.p.evaluate(() => history.replaceState(null, "", location.pathname + location.hash));
   await omar.p.getByRole("button", { name: "Agregar accionista" }).click();
   await omar.p.waitForTimeout(800);
   exigir(
@@ -1706,7 +1709,8 @@ async function quintaRonda(rutaEbano) {
     "base-N15. con el enlace nuevo, primera acepta y su Administración queda activa",
   );
   // Llega a registrar su segundo factor: el QR y la semilla son secretos aunque la base sea desechable, se tapan.
-  await invitada.p.addStyleTag({ content: ".arco-qr { filter: blur(18px); }" });
+  // Con el estilo del elemento (CSSOM), que la CSP no bloquea: un <style> inyectado no se aplicaría y el QR saldría.
+  await invitada.p.locator(".arco-qr").evaluate((nodo) => { nodo.style.filter = "blur(18px)"; });
   await invitada.p.locator(".arco-semilla").evaluate((nodo) => { nodo.textContent = "(semilla omitida en la evidencia)"; });
   await foto(invitada.p, "sn15b-acepta-con-el-enlace-nuevo", false);
   await invitada.nav.close();
