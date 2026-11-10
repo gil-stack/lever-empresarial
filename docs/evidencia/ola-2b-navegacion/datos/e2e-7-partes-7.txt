@@ -1,4 +1,4 @@
-[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+[e2e] compilando Next con las acciones de servidor de la prueba · 1 s
 Turbopack build encountered 1 warning:
 ./src/server/roles/contrato.ts:9:32
 Warning: Dynamic filesystem access causes tracing of the whole project
@@ -34,29 +34,30 @@ Import traces:
 
 [e2e] compilado · 5 s
 
-Running 21 tests using 1 worker, shard 7 of 7
+Running 22 tests using 1 worker, shard 7 of 7
 
-  ✓   1 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (4.0s)
-  ✓   2 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms (4.2s)
-  ✓   3 tests/e2e/fondo-pruebas.ts:173:13 › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (6.1s)
-  ✓   4 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms (13.3s)
-  ✓   5 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 2 › estable (12.5s)
-  ✓   6 tests/e2e/pagos-proveedores.spec.ts:52:5 › la mesa se ve completa en claro, oscuro y móvil (8.0s)
-  ✓   7 tests/e2e/pagos-proveedores.spec.ts:90:5 › alta, factura, excepción, descarga y autorización con otra persona (5.6s)
-  ✓   8 tests/e2e/pagos-proveedores.spec.ts:174:5 › alta sin contrato y lectura del XML sin errores en la consola (2.3s)
-  ✓   9 tests/e2e/pagos-proveedores.spec.ts:206:5 › una corrección que falla conserva el importe y la evidencia elegidos (1.4s)
-  ✓  10 tests/e2e/pagos-proveedores.spec.ts:222:5 › limita archivos combinados y no ofrece cambiar CLABE a un liberador (1.7s)
-  ✓  11 tests/e2e/pagos-proveedores.spec.ts:242:5 › «Agregar contrato» no envía un PDF de más de 4 MB y liga el aviso al campo (1.5s)
-  ✓  12 tests/e2e/pagos-proveedores.spec.ts:263:5 › rechazo, corrección y cancelación conservan el historial (4.5s)
-  ✓  13 tests/e2e/passkeys.spec.ts:40:5 › portal: Lucía registra una passkey en /entrar/seguridad y entra con ella (2.8s)
-  ✓  14 tests/e2e/passkeys.spec.ts:77:5 › Operación: el primer ingreso registra una passkey en /operacion/continuar y la siguiente entrada la usa (3.1s)
-  ✓  15 tests/e2e/personas.spec.ts:57:5 › recorrido completo de colaboradores, presupuesto, nómina, tarjeta y baja (14.7s)
-  ✓  16 tests/e2e/roles.spec.ts:139:7 › administrador: el lateral y «Más» muestran solo sus secciones y las demás no abren (2.0s)
-  ✓  17 tests/e2e/roles.spec.ts:139:7 › finanzas (con tarjeta): el lateral y «Más» muestran solo sus secciones y las demás no abren (2.2s)
-  ✓  18 tests/e2e/roles.spec.ts:139:7 › contador: el lateral y «Más» muestran solo sus secciones y las demás no abren (2.4s)
-  ✓  19 tests/e2e/roles.spec.ts:139:7 › liberador: el lateral y «Más» muestran solo sus secciones y las demás no abren (2.5s)
-  ✓  20 tests/e2e/roles.spec.ts:139:7 › solicitante (con tarjeta): el lateral y «Más» muestran solo sus secciones y las demás no abren (2.0s)
-  ✓  21 tests/e2e/roles.spec.ts:139:7 › tarjetahabiente: el lateral y «Más» muestran solo sus secciones y las demás no abren (1.4s)
+  ✓   1 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (3.9s)
+  ✓   2 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez (2.2s)
+  ✓   3 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms (4.1s)
+  ✓   4 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana (2.5s)
+  ✓   5 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 2 › estable (8.6s)
+  ✓   6 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 2 › arrastrar la ventana (8.4s)
+  ✓   7 tests/e2e/pagos-proveedores.spec.ts:52:5 › la mesa se ve completa en claro, oscuro y móvil (7.0s)
+  ✓   8 tests/e2e/pagos-proveedores.spec.ts:90:5 › alta, factura, excepción, descarga y autorización con otra persona (4.2s)
+  ✓   9 tests/e2e/pagos-proveedores.spec.ts:174:5 › alta sin contrato y lectura del XML sin errores en la consola (1.3s)
+  ✓  10 tests/e2e/pagos-proveedores.spec.ts:206:5 › una corrección que falla conserva el importe y la evidencia elegidos (906ms)
+  ✓  11 tests/e2e/pagos-proveedores.spec.ts:222:5 › limita archivos combinados y no ofrece cambiar CLABE a un liberador (1.3s)
+  ✓  12 tests/e2e/pagos-proveedores.spec.ts:242:5 › «Agregar contrato» no envía un PDF de más de 4 MB y liga el aviso al campo (1.3s)
+  ✓  13 tests/e2e/pagos-proveedores.spec.ts:263:5 › rechazo, corrección y cancelación conservan el historial (3.6s)
+  ✓  14 tests/e2e/passkeys.spec.ts:40:5 › portal: Lucía registra una passkey en /entrar/seguridad y entra con ella (2.1s)
+  ✓  15 tests/e2e/passkeys.spec.ts:77:5 › Operación: el primer ingreso registra una passkey en /operacion/continuar y la siguiente entrada la usa (2.4s)
+  ✓  16 tests/e2e/personas.spec.ts:57:5 › recorrido completo de colaboradores, presupuesto, nómina, tarjeta y baja (8.7s)
+  ✓  17 tests/e2e/roles.spec.ts:139:7 › administrador: el lateral y «Más» muestran solo sus secciones y las demás no abren (1.2s)
+  ✓  18 tests/e2e/roles.spec.ts:139:7 › finanzas (con tarjeta): el lateral y «Más» muestran solo sus secciones y las demás no abren (1.2s)
+  ✓  19 tests/e2e/roles.spec.ts:139:7 › contador: el lateral y «Más» muestran solo sus secciones y las demás no abren (1.2s)
+  ✓  20 tests/e2e/roles.spec.ts:139:7 › liberador: el lateral y «Más» muestran solo sus secciones y las demás no abren (1.3s)
+  ✓  21 tests/e2e/roles.spec.ts:139:7 › solicitante (con tarjeta): el lateral y «Más» muestran solo sus secciones y las demás no abren (1.2s)
+  ✓  22 tests/e2e/roles.spec.ts:139:7 › tarjetahabiente: el lateral y «Más» muestran solo sus secciones y las demás no abren (851ms)
 
-  21 passed (1.8m)
-[e2e] recorridos terminados con estado 0 · 21 pruebas corridas · 112 s
+  22 passed (1.3m)
+[e2e] recorridos terminados con estado 0 · 22 pruebas corridas · 81 s

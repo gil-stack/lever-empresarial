@@ -1,12 +1,12 @@
-Modelo del reparto en 7 partes con los tiempos de pruebas del CI de 88278c4 (run Sb1atbrVZ3OH4PfiuEYmRMmV), fijo 145 s. Las 4 pruebas de r60b-N1 (marco.spec, parte 4) son nuevas y no tienen tiempo de CI:
+Modelo del reparto en 7 partes con los tiempos de pruebas del CI de 88278c4 (run Sb1atbrVZ3OH4PfiuEYmRMmV), fijo 145 s. csp.spec partido: los 114 s de la consola repartidos entre 3 y los 30 s de Operación entre 2; las 4 pruebas de r60b-N1 son nuevas y no tienen tiempo de CI:
 parte 1/7:  25 pruebas ·  133 s de pruebas · ~278 s con el fijo · accesibilidad 133
-parte 2/7:  23 pruebas ·  283 s de pruebas · ~428 s con el fijo · aprobaciones 39, claves-repetidas 31, csp-evidencia 0, csp 201, demostracion 12
-parte 3/7:  22 pruebas ·  198 s de pruebas · ~343 s con el fijo · demostracion 91, entrada 40, flujo-de-caja 53, fondo-pruebas.ts 14
-parte 4/7:  23 pruebas ·  207 s de pruebas · ~352 s con el fijo · fondo-pruebas.ts 129, fondo 2, invitacion 21, marco 25, nomina 31
-parte 5/7:  24 pruebas ·  272 s de pruebas · ~417 s con el fijo · operacion 272
-parte 6/7:  18 pruebas ·  323 s de pruebas · ~468 s con el fijo · operacion 56, fondo-pruebas.ts 267
-parte 7/7:  21 pruebas ·  334 s de pruebas · ~479 s con el fijo · fondo-pruebas.ts 219, pagos-proveedores 54, passkeys 14, personas 25, roles 23
-peor parte ~479 s; sin tiempo medido: 8 (tests/e2e/csp-evidencia.spec.ts › entrada del cliente con TOTP, clicada: 0 anotaciones de la política | tests/e2e/csp-evidencia.spec.ts › entrada de Operación con TOTP, clicada: 0 anotaciones de la política | tests/e2e/csp-evidencia.spec.ts › descarga del expediente clicada: llega con su política ai)
+parte 2/7:  25 pruebas ·  272 s de pruebas · ~417 s con el fijo · aprobaciones 39, claves-repetidas 31, csp-evidencia 0, csp 201
+parte 3/7:  22 pruebas ·  304 s de pruebas · ~449 s con el fijo · demostracion 102, entrada 40, flujo-de-caja 53, fondo-pruebas.ts 108
+parte 4/7:  22 pruebas ·  256 s de pruebas · ~401 s con el fijo · fondo-pruebas.ts 208, fondo 2, invitacion 21, marco 25
+parte 5/7:  24 pruebas ·  251 s de pruebas · ~396 s con el fijo · marco 0, nomina 31, operacion 220
+parte 6/7:  20 pruebas ·  237 s de pruebas · ~382 s con el fijo · operacion 108, fondo-pruebas.ts 129
+parte 7/7:  22 pruebas ·  298 s de pruebas · ~443 s con el fijo · fondo-pruebas.ts 183, pagos-proveedores 54, passkeys 14, personas 25, roles 23
+peor parte ~449 s; sin tiempo medido: 8 (tests/e2e/csp-evidencia.spec.ts › entrada del cliente con TOTP, clicada: 0 anotaciones de la política | tests/e2e/csp-evidencia.spec.ts › entrada de Operación con TOTP, clicada: 0 anotaciones de la política | tests/e2e/csp-evidencia.spec.ts › descarga del expediente clicada: llega con su política ai)
 
 Con el fijo medido en ese CI (unos 105 s):
-peor parte ~439 s; sin tiempo medido: 8 (tests/e2e/csp-evidencia.spec.ts › entrada del cliente con TOTP, clicada: 0 anotaciones de la política | tests/e2e/csp-evidencia.spec.ts › entrada de Operación con TOTP, clicada: 0 anotaciones de la política | tests/e2e/csp-evidencia.spec.ts › descarga del expediente clicada: llega con su política ai)
+peor parte ~409 s; sin tiempo medido: 8 (tests/e2e/csp-evidencia.spec.ts › entrada del cliente con TOTP, clicada: 0 anotaciones de la política | tests/e2e/csp-evidencia.spec.ts › entrada de Operación con TOTP, clicada: 0 anotaciones de la política | tests/e2e/csp-evidencia.spec.ts › descarga del expediente clicada: llega con su política ai)

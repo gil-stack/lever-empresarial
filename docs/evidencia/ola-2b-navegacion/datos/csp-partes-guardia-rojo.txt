@@ -1,0 +1,330 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+   7 |  * ejecuta y el servidor no migra al arrancar.
+   8 |  */
+>  9 | export const CONTRATO_TABLAS = readFileSync(rutaDelContrato(), "utf8");
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  10 |
+  11 | function rutaDelContrato(): string {
+  12 |   try {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 5 s
+
+Running 1 test using 1 worker
+
+  ✘  1 tests/e2e/csp.spec.ts:105:5 › las partes de la consola y de Operación recorren el registro completo, sin repetir rutas (7ms)
+
+
+  1) tests/e2e/csp.spec.ts:105:5 › las partes de la consola y de Operación recorren el registro completo, sin repetir rutas
+
+    Error: consola: la unión es el registro
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 0
+
+    @@ -35,7 +35,6 @@
+        "/consola/proveedores/nuevo-proveedor",
+        "/consola/tarjetas",
+        "/consola/viajes",
+        "/empresas",
+        "/entrar/seguridad",
+    -   "/precios",
+      ]
+
+      108 |     expect(partes.every((parte) => parte.length > 0), `${nombre}: ninguna parte vacía`).toBe(true);
+      109 |     expect(new Set(recorridas).size, `${nombre}: sin repetir`).toBe(recorridas.length);
+    > 110 |     expect([...recorridas].sort(), `${nombre}: la unión es el registro`).toEqual([...registro].sort());
+          |                                                                          ^
+      111 |   }
+      112 |   expect(RUTAS_CLIENTE.length).toBeGreaterThan(30);
+      113 |   expect(RUTAS_OPERACION.length).toBeGreaterThan(10);
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-2b-navegacion/tests/e2e/csp.spec.ts:110:74
+
+    Error Context: test-results/e2e/csp-las-partes-de-la-conso-4275e--completo-sin-repetir-rutas/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/e2e/csp-las-partes-de-la-conso-4275e--completo-sin-repetir-rutas/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/e2e/csp-las-partes-de-la-conso-4275e--completo-sin-repetir-rutas/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/e2e/csp.spec.ts:105:5 › las partes de la consola y de Operación recorren el registro completo, sin repetir rutas
+[e2e] recorridos terminados con estado 1 · 1 pruebas corridas · 12 s
+[e2e] ===== Contexto de cada falla (árbol accesible de la página) =====
+test-results/e2e/csp-las-partes-de-la-conso-4275e--completo-sin-repetir-rutas/error-context.md
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: csp.spec.ts >> las partes de la consola y de Operación recorren el registro completo, sin repetir rutas
+- Location: tests/e2e/csp.spec.ts:105:5
+
+# Error details
+
+```
+Error: consola: la unión es el registro
+
+expect(received).toEqual(expected) // deep equality
+
+- Expected  - 1
++ Received  + 0
+
+@@ -35,7 +35,6 @@
+    "/consola/proveedores/nuevo-proveedor",
+    "/consola/tarjetas",
+    "/consola/viajes",
+    "/empresas",
+    "/entrar/seguridad",
+-   "/precios",
+  ]
+```
+
+# Test source
+
+```ts
+  10  |
+  11  | /**
+  12  |  * La política de contenido (src/nucleo/csp.ts) no bloquea nada de la aplicación: cada ruta del registro,
+  13  |  * en su superficie y con una persona que la abre, se pinta con 0 violaciones y con todos sus scripts
+  14  |  * firmados con el nonce de la petición. Las entradas con TOTP, los formularios con doble clic y las
+  15  |  * descargas los recorren los demás specs, que exigen la consola limpia: una violación ahí también falla.
+  16  |  */
+  17  |
+  18  | // Fuera del árbol versionado (test-results está en .gitignore); E2E_CAPTURAS la cambia, como en los demás specs.
+  19  | const EVIDENCIA = process.env.E2E_CAPTURAS ?? "test-results/csp";
+  20  | const SIN_CAPTURAS = process.env.E2E_SIN_CAPTURAS === "1";
+  21  | const UUID = "00000000-0000-4000-8000-000000000000";
+  22  | // WebKit corre por el origen https local de la evidencia (certificado autofirmado de un día).
+  23  | test.use({ ignoreHTTPSErrors: ORIGEN.startsWith("https:") });
+  24  | // Cada prueba abre su propio contexto o su sesión y no comparte estado: «parallel» solo para que el reparto de la e2e pueda
+  25  | // partir el archivo (con workers: 1 corren una tras otra). Entero, sumaba unos 338 s en la parte 1 del CI del #61.
+  26  | test.describe.configure({ mode: "parallel" });
+  27  |
+  28  | type Violacion = { directiva: string; bloqueado: string; muestra: string; disposicion: string };
+  29  | declare global {
+  30  |   interface Window {
+  31  |     __csp?: Violacion[];
+  32  |   }
+  33  | }
+  34  |
+  35  | async function vigilarCsp(contexto: BrowserContext): Promise<void> {
+  36  |   await contexto.addInitScript(() => {
+  37  |     window.__csp = [];
+  38  |     document.addEventListener("securitypolicyviolation", (e) => {
+  39  |       window.__csp!.push({ directiva: e.effectiveDirective, bloqueado: e.blockedURI, muestra: e.sample, disposicion: e.disposition });
+  40  |     });
+  41  |   });
+  42  | }
+  43  |
+  44  | /**
+  45  |  * Abre la ruta y devuelve las violaciones que vio el navegador y las etiquetas <script> o <style> del HTML que no
+  46  |  * traen el nonce de esa misma respuesta. Los chunks que cargan después no necesitan nonce ('strict-dynamic'): si
+  47  |  * algo se bloqueara, lo diría el evento securitypolicyviolation.
+  48  |  */
+  49  | async function revisar(pagina: Page, ruta: string): Promise<{ status: number; politica: string; violaciones: Violacion[]; sinNonce: string[] }> {
+  50  |   const respuesta = await pagina.goto(ruta);
+  51  |   await pagina.waitForLoadState("networkidle");
+  52  |   const politica = (await respuesta?.headerValue("content-security-policy")) ?? (await respuesta?.headerValue("content-security-policy-report-only")) ?? "";
+  53  |   const nonce = nonceDeLaPolitica(politica);
+  54  |   const html = (await respuesta?.headerValue("content-type"))?.includes("text/html") ? await respuesta!.text() : "";
+  55  |   const sinNonce = [...html.matchAll(/<(?:script|style)\b[^>]*>/g)].map((m) => m[0]).filter((etiqueta) => !etiqueta.includes(`nonce="${nonce}"`));
+  56  |   const violaciones = await pagina.evaluate(() => window.__csp ?? []);
+  57  |   return { status: respuesta?.status() ?? 0, politica, violaciones, sinNonce };
+  58  | }
+  59  |
+  60  | function nonceDeLaPolitica(politica: string): string {
+  61  |   return politica.match(/'nonce-([A-Za-z0-9+/=]+)'/)?.[1] ?? "sin-nonce";
+  62  | }
+  63  |
+  64  | function concreta(patron: string, ids: Record<string, string> = {}): string {
+  65  |   return patron.replace(/\[([A-Za-z]+)\]/g, (_, nombre: string) => ids[nombre] ?? UUID);
+  66  | }
+  67  |
+  68  | async function recorrer(pagina: Page, rutas: string[], etiqueta: string): Promise<void> {
+  69  |   if (!SIN_CAPTURAS) mkdirSync(EVIDENCIA, { recursive: true });
+  70  |   const fallas: string[] = [];
+  71  |   for (const ruta of rutas) {
+  72  |     const { status, politica, violaciones, sinNonce } = await revisar(pagina, ruta);
+  73  |     if (status >= 500) fallas.push(`${ruta}: ${status}`);
+  74  |     if (!/script-src 'self' 'nonce-[A-Za-z0-9+/=]+' 'strict-dynamic'/.test(politica)) fallas.push(`${ruta}: sin política con nonce («${politica}»)`);
+  75  |     if (violaciones.length) fallas.push(`${ruta}: ${JSON.stringify(violaciones).slice(0, 400)}`);
+  76  |     if (sinNonce.length) fallas.push(`${ruta}: etiquetas sin el nonce de la respuesta ${sinNonce.join(" ").slice(0, 300)}`);
+  77  |   }
+  78  |   if (!SIN_CAPTURAS) await pagina.screenshot({ path: `${EVIDENCIA}/csp-${etiqueta}.png`, fullPage: true });
+  79  |   expect(fallas, `${etiqueta}: ${rutas.length} rutas`).toEqual([]);
+  80  | }
+  81  |
+  82  | // Las descargas no son páginas: responden el archivo con su propia política aislada (sandbox).
+  83  | const DE = (superficie: string, ...tipos: string[]) =>
+  84  |   RUTAS.filter((r) => r.superficie === superficie && tipos.includes(r.acceso.tipo) && !esDescarga(r.patron)).map((r) => r.patron);
+  85  |
+  86  | test("públicas: cada ruta sin sesión se pinta con su nonce y sin violaciones", async ({ page, context }) => {
+  87  |   await vigilarCsp(context);
+  88  |   // /salud responde texto y /tareas/correo-semanal es el cron: no son páginas.
+  89  |   const rutas = DE("cliente", "publica").filter((p) => !["/salud", "/tareas/correo-semanal"].includes(p)).map((p) => concreta(p, { token: "token-falso-de-la-prueba-csp" }));
+  90  |   await recorrer(page, [...rutas, ...DE("sofipo", "publica"), "/no-existe-csp"], "publicas");
+  91  | });
+  92  |
+  93  | // Las pantallas de la consola y de Operación van en varias pruebas, en orden del registro, para que el reparto de la e2e
+  94  | // no las junte en una sola parte (la de la consola tardaba 2.3 min en el CI del #61). La prueba de abajo afirma que entre
+  95  | // todas recorren el registro completo, sin repetir.
+  96  | const RUTAS_CLIENTE = DE("cliente", "sesion", "capacidad").filter((p) => p !== "/entrar/destino");
+  97  | const RUTAS_OPERACION = DE("sofipo", "sesion", "capacidad");
+  98  | function partir(rutas: string[], partes: number): string[][] {
+  99  |   const tamano = Math.ceil(rutas.length / partes);
+  100 |   return Array.from({ length: partes }, (_, i) => rutas.slice(i * tamano, (i + 1) * tamano - (i === partes - 1 ? 1 : 0)));
+  101 | }
+  102 | const PARTES_CLIENTE = partir(RUTAS_CLIENTE, 3);
+  103 | const PARTES_OPERACION = partir(RUTAS_OPERACION, 2);
+  104 |
+  105 | test("las partes de la consola y de Operación recorren el registro completo, sin repetir rutas", () => {
+  106 |   for (const [nombre, partes, registro] of [["consola", PARTES_CLIENTE, RUTAS_CLIENTE], ["Operación", PARTES_OPERACION, RUTAS_OPERACION]] as const) {
+  107 |     const recorridas = partes.flat();
+  108 |     expect(partes.every((parte) => parte.length > 0), `${nombre}: ninguna parte vacía`).toBe(true);
+  109 |     expect(new Set(recorridas).size, `${nombre}: sin repetir`).toBe(recorridas.length);
+> 110 |     expect([...recorridas].sort(), `${nombre}: la unión es el registro`).toEqual([...registro].sort());
+      |                                                                          ^ Error: consola: la unión es el registro
+  111 |   }
+  112 |   expect(RUTAS_CLIENTE.length).toBeGreaterThan(30);
+  113 |   expect(RUTAS_OPERACION.length).toBeGreaterThan(10);
+  114 | });
+  115 |
+  116 | PARTES_CLIENTE.forEach((rutas, i) => {
+  117 |   test(`cliente: cada pantalla de la consola, con la administradora de Altamar (${i + 1} de ${PARTES_CLIENTE.length}: ${rutas[0]} a ${rutas.at(-1)})`, async ({ page, context }) => {
+  118 |     await vigilarCsp(context);
+  119 |     await sesionDe(context, CORREOS.laura);
+  120 |     // La consola de la empresa por su dirección con /c/, en la primera parte.
+  121 |     await recorrer(page, [...rutas.map((p) => concreta(p)), ...(i === 0 ? [`/c/${altamar()}/consola`] : [])], `consola-${i + 1}`);
+  122 |   });
+  123 | });
+  124 |
+  125 | test("teléfono: cada pantalla, con una persona tarjetahabiente", async ({ page, context }) => {
+  126 |   await vigilarCsp(context);
+  127 |   await sesionDe(context, CORREOS.ernesto);
+  128 |   await recorrer(page, DE("telefono", "sesion", "capacidad"), "telefono");
+  129 | });
+  130 |
+  131 | PARTES_OPERACION.forEach((rutas, i) => {
+  132 |   test(`Operación: cada pantalla del personal SOFIPO (${i + 1} de ${PARTES_OPERACION.length}: ${rutas[0]} a ${rutas.at(-1)})`, async ({ page, context }) => {
+  133 |     await vigilarCsp(context);
+  134 |     await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  135 |     await recorrer(page, rutas.map((p) => concreta(p, { id: altamar() })), `operacion-${i + 1}`);
+  136 |   });
+  137 | });
+  138 |
+  139 | test("navegación del cliente: los enlaces del menú no traen un <style> con el nonce de otra petición", async ({ page, context }) => {
+  140 |   await vigilarCsp(context);
+  141 |   await sesionDe(context, CORREOS.laura);
+  142 |   await page.goto("/consola");
+  143 |   await page.waitForLoadState("networkidle");
+  144 |   // AparienciaViva ya guardó el acento en su cookie: desde aquí cada petición lo podría pintar en el servidor.
+  145 |   expect((await context.cookies()).some((c) => c.name === "acento")).toBe(true);
+  146 |   await page.evaluate(() => Object.assign(window, { __mismoDocumento: true }));
+  147 |   const secciones = page.getByRole("navigation", { name: "Secciones" });
+  148 |   // El menú de la ola 2b (#60) para Laura en Altamar: Pendientes vive en «Aprobaciones» (con su contador en el nombre) y
+  149 |   // Política no está en su menú; Calendario sí.
+  150 |   for (const [enlace, destino] of [["Proveedores", /\/consola\/proveedores$/], ["Calendario", /\/consola\/calendario$/], [/^Aprobaciones/, /\/consola\/aprobaciones$/]] as const) {
+  151 |     await secciones.getByRole("link", { name: enlace, exact: typeof enlace === "string" }).click();
+  152 |     await page.waitForURL(destino);
+  153 |     await page.waitForLoadState("networkidle");
+  154 |   }
+  155 |   // Sin recarga: el documento (y su nonce) es el mismo de la primera carga.
+  156 |   expect(await page.evaluate(() => "__mismoDocumento" in window)).toBe(true);
+  157 |   expect(await page.evaluate(() => window.__csp ?? [])).toEqual([]);
+  158 | });
+  159 |
+  160 | test("lo que solo se parece a _next o a un archivo que no existe responde la 404 con su nonce; _next/static sigue fuera del proxy", async ({ page, context }) => {
+  161 |   await vigilarCsp(context);
+  162 |   const rutas = ["/_nextfoo", "/__nextfoo", "/_next-algo/consola", "/__next/consola", "/favicon.ico"];
+  163 |   for (const ruta of rutas) expect((await page.request.get(ruta)).status(), ruta).toBe(404);
+  164 |   // Política con nonce, todas las etiquetas firmadas y 0 violaciones en cada una.
+  165 |   await recorrer(page, rutas, "fuera-del-matcher");
+  166 |   const html = await (await page.request.get("/entrar")).text();
+  167 |   const chunk = html.match(/\/_next\/static\/[^"']+\.js/)?.[0];
+  168 |   expect(chunk, "la entrada carga al menos un chunk de _next/static").toBeTruthy();
+  169 |   const estatico = await page.request.get(chunk!);
+  170 |   expect(estatico.status()).toBe(200);
+  171 |   expect(estatico.headers()["content-type"]).toContain("javascript");
+  172 |   expect(estatico.headers()["content-security-policy"]).toBeUndefined();
+  173 | });
+  174 |
+  175 | test("Safari anterior a 16.4 (sin Sec-Fetch-*): la navegación del cliente no trae el <style> del acento y el documento sí, con su nonce", async ({ page, context }) => {
+  176 |   await sesionDe(context, CORREOS.laura);
+  177 |   await page.goto("/consola");
+  178 |   await page.waitForLoadState("networkidle");
+  179 |   expect((await context.cookies()).some((c) => c.name === "acento")).toBe(true);
+  180 |   // La petición de Playwright no agrega Sec-Fetch-*: así llegan las de un Safari viejo. Usa las cookies del contexto.
+  181 |   const acento = /<style\b[^>]*>:root\[data-tema=[^<]*--acc:/;
+  182 |   const rsc = await context.request.get("/consola/politica", { headers: { RSC: "1", Accept: "*/*" } });
+  183 |   expect(rsc.status()).toBe(200);
+  184 |   expect(rsc.headers()["content-type"]).toContain("text/x-component");
+  185 |   expect(await rsc.text()).not.toMatch(/--acc:/);
+  186 |   const documento = await context.request.get("/consola/politica", { headers: { Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" } });
+  187 |   const nonce = nonceDeLaPolitica(documento.headers()["content-security-policy"] ?? "");
+  188 |   const etiqueta = (await documento.text()).match(acento)?.[0] ?? "";
+  189 |   expect(etiqueta, "el documento pinta el acento").not.toBe("");
+  190 |   expect(etiqueta).toContain(`nonce="${nonce}"`);
+  191 | });
+  192 |
+  193 | test("sin JavaScript: el formulario de entrada se envía (form-action 'self') y el navegador no anota violaciones", async ({ browser }) => {
+  194 |   const contexto = await browser.newContext({ javaScriptEnabled: false, ignoreHTTPSErrors: ORIGEN.startsWith("https:") });
+  195 |   const pagina = await contexto.newPage();
+  196 |   const anotadas: string[] = [];
+  197 |   pagina.on("console", (m) => {
+  198 |     if (/Content Security Policy|Refused to/i.test(m.text())) anotadas.push(m.text().slice(0, 300));
+  199 |   });
+  200 |   await pagina.goto("/entrar");
+  201 |   // Un correo que no existe: el rechazo no cambia el estado de ninguna persona sembrada.
+  202 |   await pagina.getByLabel("Correo").fill(`csp-${randomUUID().slice(0, 8)}@ejemplo.mx`);
+  203 |   await pagina.getByLabel("Contraseña", { exact: true }).fill("no-es-la-clave-12");
+  204 |   await Promise.all([pagina.waitForLoadState("load"), pagina.getByRole("button", { name: "Continuar" }).click()]);
+  205 |   await expect(pagina.getByRole("alert")).toBeVisible();
+  206 |   // Se mide antes de la captura: al capturar, el inspector de WebKit inserta un <style> y la política lo rechaza.
+  207 |   expect(anotadas).toEqual([]);
+  208 |   if (!SIN_CAPTURAS) await pagina.screenshot({ path: `${EVIDENCIA}/csp-sin-js-entrada.png`, fullPage: true });
+  209 |   await contexto.close();
+  210 | });
+```[e2e] ===== Últimas líneas del servidor =====
+
+> plataforma-administrativa@0.1.0 start
+> next start -p 3152
+
+▲ Next.js 16.4.4
+- Local:         http://localhost:3152
+- Network:       http://10.64.148.101:3152
+✓ Ready in 62ms
+✓ Running next.config.ts took 16ms
+[e2e] ===== Capturas de las primeras fallas (base64 de PNG: pégalo en un archivo y usa base64 -d) =====

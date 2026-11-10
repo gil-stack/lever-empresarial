@@ -32,31 +32,32 @@ Import traces:
     ./src/app/consola/poliza/page.tsx
 
 
-[e2e] compilado · 5 s
+[e2e] compilado · 4 s
 
-Running 21 tests using 1 worker, shard 4 of 7
+Running 22 tests using 1 worker, shard 4 of 7
 
-  ✓   1 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › estable (3.1s)
-  ✓   2 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (3.6s)
-  ✓   3 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez (2.0s)
-  ✓   4 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms (4.1s)
-  ✓   5 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana (2.3s)
-  ✓   6 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › estable (6.7s)
-  ✓   7 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (9.6s)
-  ✓   8 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez (6.2s)
-  ✓   9 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms (10.1s)
-  ✓  10 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana (6.5s)
-  ✓  11 tests/e2e/fondo.spec.ts:13:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (1.7s)
-  ✓  12 tests/e2e/invitacion.spec.ts:31:5 › invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta (7.2s)
-  ✓  13 tests/e2e/invitacion.spec.ts:117:5 › recuperar la contraseña por correo: un enlace, cierra las sesiones y entra con la nueva y su factor de siempre (7.3s)
-  ✓  14 tests/e2e/marco.spec.ts:10:7 › marco de la consola en escritorio › menú de la persona: cuatro opciones fuera del Tab; Tab y Escape cierran y regresan el foco al botón (1.6s)
-  ✓  15 tests/e2e/marco.spec.ts:36:7 › marco de la consola en escritorio › el buscador de la barra lleva a su sección con lo escrito (1.4s)
-  ✓  16 tests/e2e/marco.spec.ts:45:7 › marco de la consola en escritorio › Apariencia: con sesión y empresa se abre; sin sesión manda a entrar; otra empresa no la muestra (2.1s)
-  ✓  17 tests/e2e/marco.spec.ts:74:7 › cajón móvil › sin checkVisibility (Safari < 17.4): abre, atrapa el foco, deja el fondo inert; Escape y el velo regresan el foco (938ms)
-  ✓  18 tests/e2e/nomina.spec.ts:46:5 › alta de una persona con nómina: doble clic guarda una sola ficha, un perfil y una CLABE (1.3s)
-  ✓  19 tests/e2e/nomina.spec.ts:81:5 › cambio de CLABE de nómina: con factor viejo pide «Confirma que eres tú»; tras volver a entrar, doble clic = un cambio (3.4s)
-  ✓  20 tests/e2e/nomina.spec.ts:129:5 › Aprobaciones a 390: el botón de la nómina vencida cabe en su tarjeta, también con la fecha más larga (680ms)
-  ✓  21 tests/e2e/nomina.spec.ts:152:5 › preparar el lote vencido: doble clic = un lote con sus renglones y el calendario avanza (1.5s)
+  ✓   1 tests/e2e/fondo-pruebas.ts:173:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (5.1s)
+  ✓   2 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › estable (2.8s)
+  ✓   3 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (3.5s)
+  ✓   4 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez (2.0s)
+  ✓   5 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms (3.9s)
+  ✓   6 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana (2.2s)
+  ✓   7 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › estable (9.2s)
+  ✓   8 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (11.7s)
+  ✓   9 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez (4.3s)
+  ✓  10 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms (9.2s)
+  ✓  11 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana (4.7s)
+  ✓  12 tests/e2e/fondo.spec.ts:17:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (1.4s)
+  ✓  13 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez (7.3s)
+  ✓  14 tests/e2e/invitacion.spec.ts:31:5 › invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta (6.9s)
+  ✓  15 tests/e2e/invitacion.spec.ts:117:5 › recuperar la contraseña por correo: un enlace, cierra las sesiones y entra con la nueva y su factor de siempre (7.9s)
+  ✓  16 tests/e2e/marco.spec.ts:12:7 › marco de la consola en escritorio › menú de la persona: cuatro opciones fuera del Tab; Tab y Escape cierran y regresan el foco al botón (1.3s)
+  ✓  17 tests/e2e/marco.spec.ts:38:7 › marco de la consola en escritorio › el buscador de la barra lleva a su sección con lo escrito (1.7s)
+  ✓  18 tests/e2e/marco.spec.ts:47:7 › marco de la consola en escritorio › Apariencia: con sesión y empresa se abre; sin sesión manda a entrar; otra empresa no la muestra (2.4s)
+  ✓  19 tests/e2e/marco.spec.ts:76:7 › cajón móvil › sin checkVisibility (Safari < 17.4): abre, atrapa el foco, deja el fondo inert; Escape y el velo regresan el foco (1.0s)
+  ✓  20 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › laura: responde 404 de verdad, igual para la ajena y la inexistente (con JavaScript) (5.8s)
+  ✓  21 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › gil: responde 404 de verdad, igual para la ajena y la inexistente (con JavaScript) (4.3s)
+  ✓  22 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › laura: responde 404 de verdad, igual para la ajena y la inexistente (sin JavaScript) (353ms)
 
-  21 passed (1.5m)
-[e2e] recorridos terminados con estado 0 · 21 pruebas corridas · 98 s
+  22 passed (1.8m)
+[e2e] recorridos terminados con estado 0 · 22 pruebas corridas · 109 s

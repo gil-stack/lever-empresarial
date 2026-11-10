@@ -150,8 +150,8 @@ const ESCENARIOS: Escenario[] = [
 
 /**
  * Las pruebas del fondo animado en las densidades que se piden: sin GPU de verdad y con el equipo emulado (sin GPU y con GPU
- * rápida). fondo.spec.ts corre DPR 1 y retina.spec.ts DPR 2: en el CI, el WebGL por software del navegador remoto hace que
- * las de DPR 2 tarden hasta 91 s cada una, y en archivos separados el reparto de la e2e no las junta en una sola parte.
+ * rápida). fondo.spec.ts y optica-retina.spec.ts las reparten: en el CI, el WebGL por software del navegador remoto hace que
+ * las de GPU a DPR 2 tarden de 66 a 114 s cada una, y en partes distintas el reparto de la e2e no las junta.
  */
 const EQUIPOS = [["sin GPU", false], ["con GPU rápida", true]] as const;
 
