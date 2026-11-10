@@ -445,7 +445,7 @@
     },
     {
       "ok": true,
-      "texto": "serv-N16. Blob responde 503 al borrar el huérfano: la página vuelve en 5.2 s (tope de 5 s más la página), sin documento, y la clave queda en el registro"
+      "texto": "serv-N16. Blob responde 503 al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro"
     },
     {
       "ok": true,
@@ -461,7 +461,7 @@
     },
     {
       "ok": true,
-      "texto": "serv-N16. Blob no responde al borrar el huérfano: la página vuelve en 5.2 s (tope de 5 s más la página), sin documento, y la clave queda en el registro"
+      "texto": "serv-N16. Blob no responde al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro"
     },
     {
       "ok": true,
@@ -881,7 +881,7 @@
     },
     {
       "ok": true,
-      "texto": "P3 coincidencia. sin JavaScript a 390, «Revisar 😀» en el motivo: el aviso en su tarjeta y la dirección sin cambios, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto"
+      "texto": "P3 coincidencia. sin JavaScript a 390, «Revisar 😀» en el motivo: el aviso en su tarjeta y la dirección sin cambios salvo el fragmento del mensaje, el campo marcado y el primer Tab en él, y el mensaje junto a él a la vista; el caso sigue abierto"
     },
     {
       "ok": true,
@@ -925,7 +925,7 @@
     },
     {
       "ok": true,
-      "texto": "doceava. riesgo, sin JavaScript a 390: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+      "texto": "doceava. riesgo, sin JavaScript a 390: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el fragmento del mensaje: el mensaje y el campo bajo las barras y el primer Tab en el campo; la dirección solo cambia de fragmento y no se guarda nada"
     },
     {
       "ok": true,
@@ -941,7 +941,7 @@
     },
     {
       "ok": true,
-      "texto": "doceava. riesgo, sin JavaScript a 1440: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+      "texto": "doceava. riesgo, sin JavaScript a 1440: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el fragmento del mensaje: el mensaje y el campo bajo las barras y el primer Tab en el campo; la dirección solo cambia de fragmento y no se guarda nada"
     },
     {
       "ok": true,
@@ -957,7 +957,7 @@
     },
     {
       "ok": true,
-      "texto": "doceava. datos-generales, sin JavaScript a 390: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+      "texto": "doceava. datos-generales, sin JavaScript a 390: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el fragmento del mensaje: el mensaje y el campo bajo las barras y el primer Tab en el campo; la dirección solo cambia de fragmento y no se guarda nada"
     },
     {
       "ok": true,
@@ -973,7 +973,7 @@
     },
     {
       "ok": true,
-      "texto": "doceava. datos-generales, sin JavaScript a 1440: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+      "texto": "doceava. datos-generales, sin JavaScript a 1440: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el fragmento del mensaje: el mensaje y el campo bajo las barras y el primer Tab en el campo; la dirección solo cambia de fragmento y no se guarda nada"
     },
     {
       "ok": true,
@@ -989,7 +989,7 @@
     },
     {
       "ok": true,
-      "texto": "doceava. documento, sin JavaScript a 390: «dato_invalido_vigenteHasta» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+      "texto": "doceava. documento, sin JavaScript a 390: «dato_invalido_vigenteHasta» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el fragmento del mensaje: el mensaje y el campo bajo las barras y el primer Tab en el campo; la dirección solo cambia de fragmento y no se guarda nada"
     },
     {
       "ok": true,
@@ -1005,7 +1005,7 @@
     },
     {
       "ok": true,
-      "texto": "doceava. dictamen, sin JavaScript a 390: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+      "texto": "doceava. dictamen, sin JavaScript a 390: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el fragmento del mensaje: el mensaje y el campo bajo las barras y el primer Tab en el campo; la dirección solo cambia de fragmento y no se guarda nada"
     },
     {
       "ok": true,
@@ -1021,7 +1021,7 @@
     },
     {
       "ok": true,
-      "texto": "doceava. dictamen, sin JavaScript a 1440: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+      "texto": "doceava. dictamen, sin JavaScript a 1440: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el fragmento del mensaje: el mensaje y el campo bajo las barras y el primer Tab en el campo; la dirección solo cambia de fragmento y no se guarda nada"
     },
     {
       "ok": true,
@@ -1037,7 +1037,7 @@
     },
     {
       "ok": true,
-      "texto": "doceava. suspension, sin JavaScript a 390: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+      "texto": "doceava. suspension, sin JavaScript a 390: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el fragmento del mensaje: el mensaje y el campo bajo las barras y el primer Tab en el campo; la dirección solo cambia de fragmento y no se guarda nada"
     },
     {
       "ok": true,
@@ -1053,7 +1053,7 @@
     },
     {
       "ok": true,
-      "texto": "doceava. folio, sin JavaScript a 390: «dato_invalido_presentadoEl» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+      "texto": "doceava. folio, sin JavaScript a 390: «dato_invalido_presentadoEl» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el fragmento del mensaje: el mensaje y el campo bajo las barras y el primer Tab en el campo; la dirección solo cambia de fragmento y no se guarda nada"
     },
     {
       "ok": true,
@@ -1069,7 +1069,7 @@
     },
     {
       "ok": true,
-      "texto": "doceava. prospecto, sin JavaScript a 390: «rfc_generico» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+      "texto": "doceava. prospecto, sin JavaScript a 390: «rfc_generico» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el fragmento del mensaje: el mensaje y el campo bajo las barras y el primer Tab en el campo; la dirección solo cambia de fragmento y no se guarda nada"
     },
     {
       "ok": true,
@@ -1085,7 +1085,7 @@
     },
     {
       "ok": true,
-      "texto": "doceava. alerta, sin JavaScript a 390: «dato_invalido_titulo» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+      "texto": "doceava. alerta, sin JavaScript a 390: «dato_invalido_titulo» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el fragmento del mensaje: el mensaje y el campo bajo las barras y el primer Tab en el campo; la dirección solo cambia de fragmento y no se guarda nada"
     },
     {
       "ok": true,
