@@ -109,6 +109,28 @@ describe("Fintoc: lectura del aviso (payload oficial)", () => {
     });
   });
 
+  it("transfer.inbound.returned: el objeto transfer de la doc con status «returned» es una devolución (r63-N8)", () => {
+    // docs.fintoc.com: «Types of events» (data = objeto transfer) y «Returning an inbound transfer»
+    // («expect the transfer.inbound.returned event and a transfer with status set to returned»); return_reason viene lleno.
+    const evento = JSON.parse(aviso) as Record<string, unknown>;
+    const data = evento.data as Record<string, unknown>;
+    const devuelto = { ...evento, type: "transfer.inbound.returned", data: { ...data, status: "returned", return_reason: "R01" } };
+    assert.deepEqual(leerAviso(devuelto), {
+      eventoId: "evt_a4xK32BanKWYn", tipo: "transfer.inbound.returned", modo: "test", abono: null,
+      devolucion: {
+        idExterno: "fintoc:tr_jKaHD105H", transferenciaId: "tr_jKaHD105H", cuentaId: "acc_Lq7dP901xZgA2B", cuentaNumeroId: "acno_Kasf91034gj1AD",
+        montoCentavos: 2864, recibidoEl: "2020-04-17", referencia: "130824",
+      },
+    });
+    // Cualquier otra forma no se lee (el aviso responde 500 y Fintoc reintenta): ni con otro status, ni saliente, ni sin cuenta.
+    for (const otra of [{ status: "return_pending" }, { status: "succeeded" }, { direction: "outbound" }, { account_number: null }, { object: "payment" }]) {
+      assert.equal(leerAviso({ ...devuelto, data: { ...devuelto.data, ...otra } }), null, JSON.stringify(otra));
+    }
+    // return_failed: la transferencia vuelve a succeeded y el dinero se queda; se acusa sin mover nada.
+    const fallida = leerAviso({ ...evento, type: "transfer.inbound.return_failed" });
+    assert.deepEqual([fallida?.abono, fallida?.devolucion], [null, null]);
+  });
+
   it("otro tipo de evento se acusa sin abono; uno que no cuadra no se lee", () => {
     const evento = JSON.parse(aviso) as Record<string, unknown>;
     assert.equal(leerAviso({ ...evento, type: "transfer.outbound.succeeded" })?.abono, null);

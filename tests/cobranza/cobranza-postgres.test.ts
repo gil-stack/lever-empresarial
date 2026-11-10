@@ -427,6 +427,16 @@ async function revision63(url: string, r: Revision63): Promise<void> {
   const vistaVariable = await leerVistaCliente(admin, r.variableId, deps());
   assert.equal(vistaVariable?.detalle.pagos.find((p) => p.claveRastreo === "XDOS0001")?.deOtroCliente, true);
 
+  // r63-N8, falla segura: una devolución con una forma que no es la de la doc (aquí status «return_pending») no se lee:
+  // responde 500 para que Fintoc reintente y no mueve ni el pago ni el cargo.
+  const pagosAntes = contar(url, "select count(*) from collection_payments");
+  const reversionesAntes = contar(url, "select count(*) from collection_applications where regla = 'reversion'");
+  assert.deepEqual(await avisoFintoc({ tipo: "transfer.inbound.returned", status: "return_pending", cuentaNumero: principal, monto: 7_000, transferencia: transferenciaX }),
+    { estado: 500, cuerpo: { error: "aviso_ilegible" } });
+  assert.deepEqual(fila(`select estado, aplicado_centavos from collection_payments where clave_rastreo = 'XDOS0001'`), { estado: "aplicado", aplicado_centavos: 7_000 });
+  assert.equal(contar(url, "select count(*) from collection_payments"), pagosAntes);
+  assert.equal(contar(url, "select count(*) from collection_applications where regla = 'reversion'"), reversionesAntes);
+
   // r63-N8: Fintoc avisa que la empresa devolvió esa transferencia: se revierte, el cargo vuelve a emitido y se avisa.
   const avisosAntes = enviados.length;
   const devuelta = await avisoFintoc({ tipo: "transfer.inbound.returned", status: "returned", cuentaNumero: principal, monto: 7_000, referencia: deVariable.referencia, ordenante: clabeX, rastreo: "XDOS0001", transferencia: transferenciaX });
