@@ -366,8 +366,14 @@ La 0030 se aplicó como en producción: sobre una base que ya opera con el códi
 - Suspender a alguien de Cumplimiento sin avisos abiertos pasa.
 - Borrar un pago viejo da `pago_proveedor_no_se_borra`.
 
-**Dos hallazgos para decisión del líder (sin código en este commit):**
-1. **Cola detrás de `audit_log`** (`14-cola-detras-de-audit-log.txt`). Con una lectura de `audit_log` abierta 25 s, la 0030 espera en el `DROP POLICY` los 15 s del `lock_timeout` de `migrate.sh` y luego se deshace entera, sin daño. Mientras tanto, una escritura normal a la bitácora, como la de cualquier acción auditada, esperó 13,089 ms. Propuesta: `SET LOCAL lock_timeout = '2s'` justo antes del `DROP POLICY`, con una test:db que lo mida. Así la espera queda en 2 s como máximo y la migración se reintenta.
+**Si la 0030 falla por `lock_timeout`, se reintenta.** `migrate.sh` termina con «canceling statement due to lock timeout» y la base queda como estaba: sin tablas ni funciones de PLD y sin el renglón de `schema_migrations`. Se corre otra vez el mismo comando. Si vuelve a fallar, hay una transacción larga abierta; se ve con `select pid, now() - xact_start as abierta, state, left(query, 60) from pg_stat_activity where xact_start < now() - interval '5 seconds'`, se espera a que termine y se reintenta. `migrate.sh` no cambia.
+
+**Dos hallazgos para decisión del líder:**
+1. **Cola detrás de `audit_log`** (`14-cola-detras-de-audit-log.txt`), resuelto con A. Con una lectura de `audit_log` abierta 25 s, la 0030 de entonces esperaba en el `DROP POLICY` los 15 s del `lock_timeout` de `migrate.sh`, y una escritura normal a la bitácora esperó 13,089 ms detrás de ella. Ahora la primera sentencia de la 0030 es `SET LOCAL lock_timeout = '2s'`, que vale para toda la migración y solo dentro de su transacción. `tests/pld/migracion-postgres.test.ts` mide los dos casos (`fix3/a-lock-timeout.txt`):
+   - con una lectura larga de `audit_log`, la escritura normal a la bitácora esperó 2,012 ms;
+   - con una escritura larga abierta en `companies`, la actualización de otra empresa esperó 1,999 ms;
+   - en los dos, la migración falla por `lock_timeout`, no deja tablas, funciones ni renglón en `schema_migrations`, y el reintento entra completo;
+   - sin el `SET LOCAL`, la escritura normal esperó 14,992 ms y la prueba cae.
 2. **Empresas activas antes de la 0030 sin perfil.** Sus pagos entran a PLD sin «Excede el perfil». Solo aparecen en la bandeja seis meses después de su contrato, como evaluación semestral, y ahí «evaluacion_sin_perfil» manda a Originación a capturarlo. El camino existe: Originación propone y Cumplimiento aprueba. Pero nada lo pide antes. Propuesta: un pendiente «Empresas activas sin perfil transaccional (25ª)» en la bandeja de Cumplimiento.
 
 ## Lo que falta y su dueño

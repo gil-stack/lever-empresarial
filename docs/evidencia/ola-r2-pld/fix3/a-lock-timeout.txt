@@ -1,0 +1,21 @@
+# A · SET LOCAL lock_timeout = '2s' como primera sentencia de la 0030
+# Prueba: tests/pld/migracion-postgres.test.ts (Postgres 17 desechable en 5553, la 0030 con el corredor de db/migrate.sh)
+
+## Verde con la 0030 de este commit
+▶ 0030 sobre una base en uso: lock_timeout de 2 s desde su primera sentencia
+  ✔ una lectura larga de audit_log: una escritura normal espera a lo más unos 2 s, la 0030 se deshace completa y se reintenta (5379.386542ms)
+  ℹ la escritura normal esperó 2012 ms; la migración: psql:/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r2-pld/db/migrations/0030_pld_alertas_reportes.sql:3311: ERROR:  canceling statement due to lock timeout
+  ✔ una escritura larga abierta en companies: una escritura normal espera a lo más unos 2 s, la 0030 se deshace completa y se reintenta (7489.469125ms)
+  ℹ la escritura normal esperó 1999 ms; la migración: psql:/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r2-pld/db/migrations/0030_pld_alertas_reportes.sql:355: ERROR:  canceling statement due to lock timeout
+✔ 0030 sobre una base en uso: lock_timeout de 2 s desde su primera sentencia (12872.943209ms)
+ℹ tests 2
+ℹ suites 1
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13290.922667
+
+## Rojo: la misma prueba sin el SET LOCAL (queda el lock_timeout de 15 s de migrate.sh)
+A1 sin SET LOCAL lock_timeout (queda el de migrate.sh, 15 s) · db/migrations/0030_pld_alertas_reportes.sql: exit 1 · cae «una lectura larga de audit_log: una escritura normal espera a lo más unos 2 s, la 0030 se deshace completa y se reintenta» · líneas ['72', '113'] · ['AssertionError [ERR_ASSERTION]: la escritura normal esperó 14992 ms']

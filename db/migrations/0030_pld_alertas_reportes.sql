@@ -30,6 +30,12 @@
 -- registra el acuse que el Oficial de Cumplimiento obtiene en el SITI PLD/FT.
 -- Nunca guarda la clave de acceso al SITI del Oficial (72ª-1).
 
+-- Primera sentencia: ningún candado se espera más de 2 s (db/migrate.sh fija 15 s
+-- para toda la corrida). Detrás de un candado pedido por la migración se forma
+-- cualquier escritura normal; si una transacción larga lo tiene, la migración
+-- falla en 2 s, se deshace completa y se reintenta (README de evidencia).
+SET LOCAL lock_timeout = '2s';
+
 SET search_path TO public;
 
 -- 0. Utilidades ----------------------------------------------------------------
