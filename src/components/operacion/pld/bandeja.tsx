@@ -29,8 +29,8 @@ export function BandejaDePld({ bandeja }: { bandeja: BandejaPld }) {
         <Metrica rotulo="Reportes periódicos" nota="Por vencer o vencidos">
           <Monto>{periodicos.length}</Monto>
         </Metrica>
-        <Metrica rotulo="Evaluaciones" nota="Semestrales y cambios de perfil">
-          <Monto>{bandeja.evaluaciones.length + bandeja.propuestasDePerfil.length}</Monto>
+        <Metrica rotulo="Evaluaciones" nota="Semestrales y perfiles transaccionales">
+          <Monto>{bandeja.evaluaciones.length + bandeja.propuestasDePerfil.length + bandeja.sinPerfil.length}</Monto>
         </Metrica>
       </Metricas>
 
@@ -120,6 +120,28 @@ export function BandejaDePld({ bandeja }: { bandeja: BandejaPld }) {
           </ul>
         )}
       </Hoja>
+
+      {bandeja.sinPerfil.length > 0 ? (
+        <Hoja id="pld-sin-perfil-titulo" titulo="Empresas activas sin perfil transaccional (25ª)">
+          <ul className="operacion-lista">
+            {bandeja.sinPerfil.map((empresa) => (
+              <li key={empresa.companyId}>
+                <div className="operacion-fila">
+                  <div className="operacion-fila-cuerpo">
+                    <h3>
+                      <Link href={`/operacion/clientes/${empresa.companyId}/expediente#perfil-titulo`}>{empresa.razonSocial}</Link>
+                    </h3>
+                    <p className="operacion-meta">
+                      <span>Sus pagos y su nómina no se comparan contra un perfil. Originación lo propone en el expediente y Cumplimiento lo aprueba.</span>
+                    </p>
+                  </div>
+                  <Insignia tono="aviso">Sin perfil</Insignia>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Hoja>
+      ) : null}
 
       <Hoja id="pld-evaluaciones-titulo" titulo="Evaluaciones semestrales">
         {bandeja.propuestasDePerfil.length > 0 ? (

@@ -214,6 +214,8 @@ El **manifiesto de conservación** (Operación → Conservación) lo descargan C
 | 15. Sesión oculta y personal | Omar avisa sobre Ciro (Cumplimiento); Celia regresa a modo Comité, abre el caso, propone y el Comité lo vota. Ciro no ve esa sesión en el Comité; su página, el acta generada y la subida del acta (el formulario de otra sesión apuntado a la oculta) le responden igual que con una sesión inexistente (404, «Acta no disponible», `sesion_no_existe`), antes y después de que Celia suba el acta completa, que nombra el caso. Con el acta, la sesión ya no ofrece votar. En Personal, quitarle Cumplimiento a Celia se rechaza con «Antes da de alta a otra persona de Cumplimiento…», sin evento; a Ciro sí se le quita y se le devuelve (r2-fix-N1, r2-fix-N2, r2-serv-N15) | `01-f15` a `06-f15` |
 | 16. Parámetros, «quién dictamina» y 24 horas | Con el factor de hace 31 minutos, los parámetros nuevos y el motivo siguen escritos al pedir «Confirma que eres tú» y después de confirmar; un umbral de 50 centavos rechazado vuelve marcado y con el foco, con los 7 valores y el motivo como se escribieron, nada en la dirección ni en la base; doble clic = 1 versión con lo capturado. Lo mismo en «quién dictamina»: modo, persona y motivo siguen con el factor vencido; sin persona, la lista queda marcada y con el foco; doble clic = 1 cambio, y de regreso al Comité. En el caso abierto del aviso sobre Ciro, la marca de 24 horas rechazada conserva el motivo sin recargar; después, doble clic = 1 marca | `01-f16` a `05-f16` |
 
+| 18. Empresa activa sin perfil (B) | Roble Antiguo, activa desde antes de la 0030 y sin perfil, aparece en «Empresas activas sin perfil transaccional (25ª)», sin Fondo (demostración), ni las que tienen perfil, ni la que está en alta; a 1440 y a 390 px. El enlace lleva al perfil del expediente, que dice que la empresa opera sin perfil. Omar propone (doble clic = 1 propuesta) y Roble pasa a «Por resolver»; la hoja desaparece. Celia aprueba (doble clic = 1 resolución): versión 1 con $180,000.00 de pagos, un evento de cada uno, y Roble ya no está en la bandeja | `01-f18` a `06-f18` |
+
 Las 10 pantallas de la fase de pantallas son: bandeja de Cumplimiento, Alertas PLD, caso, parámetros, Comité, sesión, reportes, conservación, avisos y expediente (perfil).
 
 ## Revisión del #61: hallazgo → arreglo → prueba
@@ -368,13 +370,20 @@ La 0030 se aplicó como en producción: sobre una base que ya opera con el códi
 
 **Si la 0030 falla por `lock_timeout`, se reintenta.** `migrate.sh` termina con «canceling statement due to lock timeout» y la base queda como estaba: sin tablas ni funciones de PLD y sin el renglón de `schema_migrations`. Se corre otra vez el mismo comando. Si vuelve a fallar, hay una transacción larga abierta; se ve con `select pid, now() - xact_start as abierta, state, left(query, 60) from pg_stat_activity where xact_start < now() - interval '5 seconds'`, se espera a que termine y se reintenta. `migrate.sh` no cambia.
 
-**Dos hallazgos para decisión del líder:**
+**Dos hallazgos, resueltos por decisión del líder (A y B):**
 1. **Cola detrás de `audit_log`** (`14-cola-detras-de-audit-log.txt`), resuelto con A. Con una lectura de `audit_log` abierta 25 s, la 0030 de entonces esperaba en el `DROP POLICY` los 15 s del `lock_timeout` de `migrate.sh`, y una escritura normal a la bitácora esperó 13,089 ms detrás de ella. Ahora la primera sentencia de la 0030 es `SET LOCAL lock_timeout = '2s'`, que vale para toda la migración y solo dentro de su transacción. `tests/pld/migracion-postgres.test.ts` mide los dos casos (`fix3/a-lock-timeout.txt`):
    - con una lectura larga de `audit_log`, la escritura normal a la bitácora esperó 2,012 ms;
    - con una escritura larga abierta en `companies`, la actualización de otra empresa esperó 1,999 ms;
    - en los dos, la migración falla por `lock_timeout`, no deja tablas, funciones ni renglón en `schema_migrations`, y el reintento entra completo;
    - sin el `SET LOCAL`, la escritura normal esperó 14,992 ms y la prueba cae.
-2. **Empresas activas antes de la 0030 sin perfil.** Sus pagos entran a PLD sin «Excede el perfil». Solo aparecen en la bandeja seis meses después de su contrato, como evaluación semestral, y ahí «evaluacion_sin_perfil» manda a Originación a capturarlo. El camino existe: Originación propone y Cumplimiento aprueba. Pero nada lo pide antes. Propuesta: un pendiente «Empresas activas sin perfil transaccional (25ª)» en la bandeja de Cumplimiento.
+2. **Empresas activas antes de la 0030 sin perfil**, resuelto con B. Sus pagos entraban a PLD sin «Excede el perfil», y nada pedía el perfil hasta la evaluación semestral, seis meses después del contrato. Ahora la bandeja de Cumplimiento tiene la hoja «Empresas activas sin perfil transaccional (25ª)» (`sinPerfil` en `src/server/pld/bandeja.ts`):
+   - lista las empresas activas sin perfil y sin una propuesta por resolver, que ya aparece en «Por resolver»;
+   - no incluye las de demostración, que no entran a PLD;
+   - no incluye las suspendidas, que no operan; si se reactivan, aparecen;
+   - cada una enlaza al perfil del expediente, donde Originación lo propone y Cumplimiento lo aprueba;
+   - el expediente de una empresa activa sin perfil ya no dice «Sin perfil la empresa no se puede activar», sino que opera sin perfil y quién lo propone y quién lo aprueba.
+
+   Prueba `pld-postgres` «empresas activas sin perfil (B, 25ª)», con cuatro mutaciones en rojo (`fix3/b-sin-perfil.txt`), y el flujo 18 por clics.
 
 ## Lo que falta y su dueño
 

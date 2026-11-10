@@ -41,6 +41,8 @@ export type BandejaPld = {
   mesesSinSesion: string[];
   /** r2-base-N18: cambios de perfil que propuso Originación con la empresa activa, por resolver. */
   propuestasDePerfil: Array<{ propuestaId: string; companyId: string; razonSocial: string; propuestaEn: Date }>;
+  /** B (25ª): empresas activas sin perfil transaccional ni propuesta por resolver; las de demostración no entran a PLD. */
+  sinPerfil: Array<{ companyId: string; razonSocial: string }>;
   faltaClaveEntidad: boolean;
   faltaCalendario: number | null;
   modo: "comite" | "oficial";
@@ -64,12 +66,23 @@ export async function leerBandejaPld(ctx: ContextoDePersonal, opciones: { ahora?
     await leerModoDictamen(ctx),
     await leerEntidad(ctx),
   ];
-  const { casosAbiertos, porReportar, faltaCalendarioHoy, propuestasDePerfil } = await conPld(ctx, null, async (consulta) => {
+  const { casosAbiertos, porReportar, faltaCalendarioHoy, propuestasDePerfil, sinPerfil } = await conPld(ctx, null, async (consulta) => {
     const propuestas = (await consulta.query(
       `select x.id, x.company_id, c.razon_social, x.registrado_en
        from pld_perfil_propuestas x join companies c on c.id = x.company_id
        where not exists (select 1 from pld_perfil_resoluciones r where r.propuesta_id = x.id)
        order by x.registrado_en`,
+      [],
+    )).rows as Array<Record<string, unknown>>;
+    // Solo pueden ser de antes de la 0030: el candado ya no activa a nadie sin perfil. La que tiene una propuesta
+    // por resolver ya aparece en «Por resolver».
+    const sinPerfil = (await consulta.query(
+      `select c.id, c.razon_social from companies c
+       where c.estado = 'activa' and not c.demostracion
+         and not exists (select 1 from pld_perfiles p where p.company_id = c.id)
+         and not exists (select 1 from pld_perfil_propuestas x where x.company_id = c.id
+                         and not exists (select 1 from pld_perfil_resoluciones r where r.propuesta_id = x.id))
+       order by c.razon_social`,
       [],
     )).rows as Array<Record<string, unknown>>;
     const casos = (await consulta.query(
@@ -124,6 +137,7 @@ export async function leerBandejaPld(ctx: ContextoDePersonal, opciones: { ahora?
       propuestasDePerfil: propuestas.map((fila) => ({
         propuestaId: String(fila.id), companyId: String(fila.company_id), razonSocial: String(fila.razon_social), propuestaEn: fecha(fila.registrado_en),
       })),
+      sinPerfil: sinPerfil.map((fila) => ({ companyId: String(fila.id), razonSocial: String(fila.razon_social) })),
     };
   });
   const faltaPeriodicos = periodicos.map((p) => p.faltaCalendario).filter((anio): anio is number => anio !== null);
@@ -138,6 +152,7 @@ export async function leerBandejaPld(ctx: ContextoDePersonal, opciones: { ahora?
     sesionDelMesPendiente: modo.modo === "comite" && !comite.sesionDelMes,
     mesesSinSesion: comite.mesesSinSesion,
     propuestasDePerfil,
+    sinPerfil,
     faltaClaveEntidad: entidad === null,
     faltaCalendario,
     modo: modo.modo,

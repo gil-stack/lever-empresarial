@@ -86,7 +86,9 @@ export async function PerfilTransaccional({
           </>
         ) : (
           <Vacio titulo="Sin perfil declarado">
-            Originación captura cuánto estima mover la empresa cada mes. Sin perfil la empresa no se puede activar.
+            {propone
+              ? "La empresa ya opera sin perfil: sus pagos y su nómina no se comparan contra uno. Originación lo propone y Cumplimiento lo aprueba."
+              : "Originación captura cuánto estima mover la empresa cada mes. Sin perfil la empresa no se puede activar."}
           </Vacio>
         )}
         {pendiente ? (

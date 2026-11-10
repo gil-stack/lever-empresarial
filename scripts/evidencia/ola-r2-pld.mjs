@@ -37,6 +37,7 @@ const TALLER = E.EMPRESA_TALLER;
 const NOGAL = E.EMPRESA_NOGAL;
 const COBRE = E.EMPRESA_COBRE;
 const FONDO = E.EMPRESA_FONDO;
+const ROBLE = E.EMPRESA_ROBLE;
 const NOMBRES = { ofelia: "Ofelia Plataforma", omar: "Omar Originación", ana: "Ana Aprobación", celia: "Celia Cumplimiento", aurelio: "Aurelio Auditoría", ciro: "Ciro Cumplimiento" };
 const PERSONAL = ["ofelia", "omar", "ana", "celia", "aurelio"];
 const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -1708,8 +1709,69 @@ async function flujo17() {
   await cerrar(celia, "Celia");
 }
 
+async function flujo18() {
+  console.log("\n— Flujo 18 (B): una empresa activa sin perfil transaccional está en la bandeja hasta que Cumplimiento aprueba su perfil");
+  exigir(sql(`select estado from companies where id = '${ROBLE}'`) === "activa" && cuenta(`pld_perfiles where company_id = '${ROBLE}'`) === 0,
+    "18. Roble Antiguo opera desde antes de la 0030 y no tiene perfil");
+  renovarSesiones();
+  const celia = await abrir("celia");
+  await ir(celia.p, "/operacion/cumplimiento");
+  const sinPerfil = hoja(celia.p, "pld-sin-perfil-titulo");
+  const texto = await sinPerfil.innerText();
+  exigir(texto.includes("Empresas activas sin perfil transaccional (25ª)") && texto.includes("Roble Antiguo") && texto.includes("Sin perfil"),
+    "18. la bandeja de Cumplimiento lista a Roble en «Empresas activas sin perfil transaccional (25ª)»", texto);
+  exigir(!["Fondo Demostración", "Taller del Cierre", "Cobre Antiguo", "Nogal Comercial"].some((nombre) => texto.includes(nombre)),
+    "18. y a nadie más: ni Fondo (demostración), ni las que tienen perfil, ni la que está en alta", texto);
+  await foto(celia.p, "f18-bandeja-empresa-sin-perfil");
+  await sinPerfil.getByRole("link", { name: "Roble Antiguo, S.A. de C.V." }).click();
+  await celia.p.waitForURL((url) => url.pathname === `/operacion/clientes/${ROBLE}/expediente`, { timeout: 20000 });
+  await listo(celia.p);
+  const perfil = await hoja(celia.p, "perfil-titulo").innerText();
+  exigir(new URL(celia.p.url()).hash === "#perfil-titulo" && perfil.includes("La empresa ya opera sin perfil"),
+    "18. el enlace lleva al perfil transaccional del expediente, que dice que la empresa opera sin perfil", perfil);
+  await foto(celia.p, "f18-expediente-sin-perfil");
+  await cerrar(celia, "Celia");
+  const telefono = await abrir("celia", { ancho: 390 });
+  await ir(telefono.p, "/operacion/cumplimiento");
+  await foto(telefono.p, "f18-bandeja-empresa-sin-perfil-390");
+  await cerrar(telefono, "Celia a 390 px");
+
+  const omar = await abrir("omar");
+  await ir(omar.p, `/operacion/clientes/${ROBLE}/expediente#perfil-titulo`);
+  await omar.p.locator("#perfil-pagos-monto").fill("180,000.00");
+  await omar.p.locator("#perfil-pagos-operaciones").fill("12");
+  await omar.p.locator("#perfil-nomina-monto").fill("60,000.00");
+  await omar.p.locator("#perfil-nomina-operaciones").fill("2");
+  await omar.p.locator("#perfil-motivo").fill("Cliente que operaba antes del registro de perfiles; montos de sus últimos seis meses.");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Proponer el cambio a Cumplimiento" }), "perfil_propuesto", { doble: true });
+  exigir(cuenta(`pld_perfil_propuestas where company_id = '${ROBLE}'`) === 1 && cuenta(`pld_perfiles where company_id = '${ROBLE}'`) === 0,
+    "18. doble clic en «Proponer el cambio» = 1 propuesta; sigue sin perfil vigente");
+  await foto(omar.p, "f18-perfil-propuesto");
+  await cerrar(omar, "Omar");
+
+  const celia2 = await abrir("celia");
+  await ir(celia2.p, "/operacion/cumplimiento");
+  exigir((await hoja(celia2.p, "pld-sin-perfil-titulo").count()) === 0, "18. con la propuesta, Roble sale de «sin perfil» y la hoja desaparece: no queda ninguna");
+  const porResolver = fila(celia2.p, "Roble Antiguo").filter({ hasText: "Por resolver" });
+  exigir((await porResolver.count()) === 1, "18. y queda en «Por resolver»");
+  await foto(celia2.p, "f18-bandeja-propuesta-por-resolver");
+  await porResolver.getByRole("link", { name: "Roble Antiguo, S.A. de C.V." }).click();
+  await celia2.p.waitForURL((url) => url.pathname === `/operacion/clientes/${ROBLE}/expediente`, { timeout: 20000 });
+  await listo(celia2.p);
+  await celia2.p.locator("#perfil-resolucion-motivo").fill("Revisé sus estados de cuenta de seis meses: corresponde al giro.");
+  await enviar(celia2.p, celia2.p.getByRole("button", { name: "Aprobar el cambio" }), "perfil_aprobado", { doble: true });
+  exigir(sql(`select numero || ' ' || origen || ' ' || pagos_monto_mensual_centavos from pld_perfiles where company_id = '${ROBLE}'`) === "1 aprobacion 18000000",
+    "18. el vigente es la versión 1, aprobada, con $180,000.00 de pagos");
+  exigir(cuenta(`audit_log where accion = 'expediente_perfil_propuesto' and company_id = '${ROBLE}'`) === 1
+    && cuenta(`audit_log where accion = 'expediente_perfil_aprobado' and company_id = '${ROBLE}'`) === 1, "18. un evento de propuesta y uno de aprobación");
+  await ir(celia2.p, "/operacion/cumplimiento");
+  exigir(!(await celia2.p.locator("main").innerText()).includes("Roble Antiguo"), "18. aprobado el perfil, Roble ya no aparece en la bandeja");
+  await foto(celia2.p, "f18-bandeja-sin-pendiente");
+  await cerrar(celia2, "Celia");
+}
+
 // ---------- Corrida ----------
-const FLUJOS = { f1: flujo1, f2: flujo2, f3: flujo3, f4: flujo4, f5: flujo5, f6: flujo6, f7: flujo7, f8: flujo8, f9: flujo9, f10: flujo10, f11: flujo11, f12: flujo12, f13: flujo13, f14: flujo14, f15: flujo15, f16: flujo16, f17: flujo17 };
+const FLUJOS = { f1: flujo1, f2: flujo2, f3: flujo3, f4: flujo4, f5: flujo5, f6: flujo6, f7: flujo7, f8: flujo8, f9: flujo9, f10: flujo10, f11: flujo11, f12: flujo12, f13: flujo13, f14: flujo14, f15: flujo15, f16: flujo16, f17: flujo17, f18: flujo18 };
 const IDS_GUARDADOS = `${RUTA_ESTADO}.ids.json`;
 let fallo = null;
 const inicio = Date.now();

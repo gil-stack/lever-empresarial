@@ -1899,6 +1899,69 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.equal((await uno<{ demo: boolean }>("select demostracion as demo from companies where id = $1", [epsilon])).demo, false);
         });
 
+        await t.test("empresas activas sin perfil (B, 25ª): la bandeja las lista hasta que Cumplimiento aprueba su perfil; sin las de demostración", async () => {
+          // Como las de antes de la 0030: activas sin perfil. El candado de hoy ya no lo permite; por eso, en modo réplica.
+          const empresa = async (rfc: string, razonSocial: string, estado: "activa" | "suspendida" | "en_alta", demostracion: boolean) => {
+            const id = randomUUID();
+            await dueno.query("begin");
+            await dueno.query(
+              `insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, operator_id, estado, demostracion)
+               values ($1, $2, $3, '06600', '601', 'G03', $4, 'en_alta', $5)`,
+              [id, rfc, razonSocial, operador, demostracion],
+            );
+            await dueno.query(
+              "insert into audit_log (operator_id, company_id, actor_tipo, superficie, accion, entidad, identificador) values ($1, $2, 'sistema', 'sistema', 'alta_empresa', 'companies', $2)",
+              [operador, id],
+            );
+            await dueno.query("commit");
+            if (estado !== "en_alta") {
+              await dueno.query("begin");
+              await dueno.query("set local session_replication_role = replica");
+              await dueno.query("update companies set estado = $2 where id = $1", [id, estado]);
+              await dueno.query("commit");
+            }
+            return id;
+          };
+          const zeta = await empresa("ZET150301AB6", "Zeta Sin Perfil SA de CV", "activa", false);
+          const eta = await empresa("ETA150301AB7", "Eta Demostración SA de CV", "activa", true);
+          const theta = await empresa("TET150301AB8", "Theta En Alta SA de CV", "en_alta", false);
+          const iota = await empresa("IOT150301AB9", "Iota Suspendida SA de CV", "suspendida", false);
+          const sinPerfil = async (ctx: ContextoDePersonal = cum) => (await leerBandejaPld(ctx)).sinPerfil;
+          const ids = async () => (await sinPerfil()).map((x) => x.companyId);
+          const propuestas = async () => (await leerBandejaPld(cum)).propuestasDePerfil.map((x) => x.companyId);
+          const lista = await sinPerfil();
+          assert.deepEqual(lista.find((x) => x.companyId === zeta), { companyId: zeta, razonSocial: "Zeta Sin Perfil SA de CV" }, "la empresa real activa sin perfil aparece");
+          assert.equal(lista.some((x) => x.companyId === eta), false, "la de demostración no entra a PLD");
+          assert.equal(lista.some((x) => x.companyId === theta), false, "la que está en alta no opera: la detiene el candado de activación");
+          assert.equal(lista.some((x) => x.companyId === iota), false, "la suspendida no opera; si se reactiva, aparece");
+          const conPerfil = (await dueno.query("select distinct company_id from pld_perfiles")).rows.map((fila) => String(fila.company_id));
+          assert.ok(conPerfil.length > 0);
+          assert.deepEqual(lista.filter((x) => conPerfil.includes(x.companyId)), [], "ninguna con perfil, como Beta, aprobada arriba");
+          assert.deepEqual(await sinPerfil(aud), lista, "Auditoría la consulta igual");
+          // Originación propone: pasa a «Por resolver». Rechazada, vuelve. Aprobada, sale de las dos.
+          const pesos = { pagosMonto: "50,000.00", pagosOperaciones: "5", nominaMonto: "20,000.00", nominaOperaciones: "1" };
+          const resolver = (propuestaId: string, decision: string) =>
+            resolverPropuestaDePerfil(cum, { companyId: zeta, propuestaId, decision, motivo: "Revisado contra lo que ya mueve el cliente" });
+          const primera = randomUUID();
+          assert.equal(await declararPerfil(ori, { companyId: zeta, formId: primera, ...pesos, motivo: "Cliente que operaba antes del registro de perfiles" }), "propuesto");
+          assert.equal((await ids()).includes(zeta), false);
+          assert.equal((await propuestas()).includes(zeta), true);
+          assert.equal(await resolver(primera, "rechazada"), "rechazada");
+          assert.equal((await ids()).includes(zeta), true, "rechazada la propuesta, sigue sin perfil");
+          assert.equal((await propuestas()).includes(zeta), false);
+          const segunda = randomUUID();
+          assert.equal(await declararPerfil(ori, { companyId: zeta, formId: segunda, ...pesos, motivo: "Perfil corregido con su estado de cuenta" }), "propuesto");
+          assert.equal(await resolver(segunda, "aprobada"), "aprobada");
+          assert.equal((await ids()).includes(zeta), false);
+          assert.equal((await propuestas()).includes(zeta), false);
+          // Reactivada sin perfil (la reactivación no lo pide; ver «candado» arriba), la suspendida aparece.
+          await dueno.query("begin");
+          await dueno.query("set local session_replication_role = replica");
+          await dueno.query("update companies set estado = 'activa' where id = $1", [iota]);
+          await dueno.query("commit");
+          assert.equal((await ids()).includes(iota), true);
+        });
+
         await t.test("votos de la sesión oculta (r2-fix3-N2): quien la sesión excluye no ve los votos que registró sobre un caso que sí ve", async () => {
           // Datos de antes de las sesiones aparte (r2-fix3-N3), que ya no se pueden armar: K2, de E2, votado en S junto con
           // H, que excluye a CUM2. K0, de E0, es igual y nadie lo votó. Para CUM2, E2 se ve igual que E0; para CUM, no cambia.

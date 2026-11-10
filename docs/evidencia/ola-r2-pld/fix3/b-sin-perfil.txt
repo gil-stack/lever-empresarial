@@ -1,0 +1,48 @@
+# B · Empresas activas sin perfil transaccional (25ª) en la bandeja de Cumplimiento
+# Prueba: tests/pld/pld-postgres.test.ts, «empresas activas sin perfil (B, 25ª)»
+
+## Verde (suite completa)
+▶ PLD (0030) en Postgres desechable
+  ▶ candado, perfil, reglas en vivo, avisos confidenciales, Comité, dictamen, reportes, conservación y RLS
+    ✔ candado: sin perfil transaccional no se activa; con perfil, sí; la reactivación no cambia (102.474125ms)
+    ✔ perfil versionado y evaluaciones semestrales (27ª) (77.068375ms)
+    ✔ reglas en vivo: el pago liberado y el lote preparado entran una vez y alertan sin bloquear (51.744667ms)
+    ✔ reenvío (r2-base-N1): un pago corregido y liberado otra vez se evalúa con su instrucción y cuenta una vez (27.087458ms)
+    ✔ aviso del personal: acuse para quien avisa y nada para la persona mencionada (60ª) (114.631708ms)
+    ✔ análisis: caso, serie de la misma empresa, notas, documento con doble envío y propuesta (76.724958ms)
+    ✔ Comité: integración (47ª), quórum, empate con voto de calidad, suplentes, acta y dictamen (377.380083ms)
+    ✔ modo Oficial (47ª, último párrafo), dictamen fuera de plazo y reporte de 24 horas (44ª) (49.345375ms)
+    ✔ sesión con fecha atrasada (r2-base-N6): el dictamen registrado tarde queda marcado; los meses sin sesión se listan (41.424042ms)
+    ✔ carrera (r2-base-N9): lo que llega a un caso mientras se dictamina espera y ve el dictamen (349.664958ms)
+    ✔ días hábiles: los dos instrumentos de 2026 con criterio conservador y «falta el calendario» en 2027 (29.631667ms)
+    ✔ periódicos: 36ª de 41 columnas con clave CASFIM, 38ª en ceros y el catálogo de tipos de operación (33.863041ms)
+    ✔ parámetros versionados: los cambia Cumplimiento con motivo; la fila inicial queda (3.441417ms)
+    ✔ conservación (61ª): ni la app ni la dueña borran ni truncan operaciones ni nada de PLD (77.812958ms)
+    ✔ RLS cruzada: cada rol y cada operador leen solo lo suyo (75.840375ms)
+    ✔ manifiesto de conservación: conteos y huellas en streaming, con su evento por página (118.342708ms)
+    ✔ sesión oculta (47ª, decisión del líder): quien no la ve ve «falta»; quien la ve, «sí»; ninguna regla de la base la cuenta a escondidas (61.447208ms)
+    ✔ subidas (r2-serv-N15): lo que no queda en la base se borra del almacén (17.341458ms)
+    ✔ personal (r2-fix-N2): ningún cambio deja un aviso abierto sin quien lo analice; con candado común contra el aviso (173.062583ms)
+    ✔ sesión con persona excluida (r2-fix2-N2) y sesiones aparte (r2-fix3-N3): un caso entra solo a una sesión con su misma reserva (720.963458ms)
+    ✔ texto visible (r2-fix2-N1): la descripción del aviso y la nota cuentan solo lo que se ve (7.172458ms)
+    ✔ topes de texto (barrido del motivo largo): cada texto entra completo en su tope, se rechaza con uno más y la bitácora no lo recorta (38.153167ms)
+    ✔ empresas de demostración (C): nada entra a PLD; una empresa real con el mismo pago, igual que siempre (59.028709ms)
+    ✔ empresas activas sin perfil (B, 25ª): la bandeja las lista hasta que Cumplimiento aprueba su perfil; sin las de demostración (133.834916ms)
+    ✔ votos de la sesión oculta (r2-fix3-N2): quien la sesión excluye no ve los votos que registró sobre un caso que sí ve (63.357625ms)
+    ✔ permisos de las funciones de PLD: PUBLIC no ejecuta ninguna; app, cliente y tarea tampoco; la SOFIPO, solo las que usa (2.050708ms)
+  ✔ candado, perfil, reglas en vivo, avisos confidenciales, Comité, dictamen, reportes, conservación y RLS (3926.512ms)
+✔ PLD (0030) en Postgres desechable (3926.873916ms)
+ℹ tests 27
+ℹ suites 1
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4093.989958
+
+## Rojo: cada mutación de la consulta en src/server/pld/bandeja.ts
+B1 con las de demostración · src/server/pld/bandeja.ts: exit 1 · cae «empresas activas sin perfil (B, 25ª): la bandeja las lista hasta que Cumplimiento aprueba su perfil; sin las de demostración» · líneas ['101', '1902', '1934'] · ['AssertionError [ERR_ASSERTION]: la de demostración no entra a PLD']
+B2 sin quitar la que tiene propuesta pendiente · src/server/pld/bandeja.ts: exit 1 · cae «empresas activas sin perfil (B, 25ª): la bandeja las lista hasta que Cumplimiento aprueba su perfil; sin las de demostración» · líneas ['101', '1902', '1947'] · ['AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:']
+B3 también suspendidas y en alta · src/server/pld/bandeja.ts: exit 1 · cae «empresas activas sin perfil (B, 25ª): la bandeja las lista hasta que Cumplimiento aprueba su perfil; sin las de demostración» · líneas ['101', '1902', '1935'] · ['AssertionError [ERR_ASSERTION]: la que está en alta no opera: la detiene el candado de activación']
+B4 sin mirar pld_perfiles · src/server/pld/bandeja.ts: exit 1 · cae «empresas activas sin perfil (B, 25ª): la bandeja las lista hasta que Cumplimiento aprueba su perfil; sin las de demostración» · líneas ['101', '1902', '1939'] · ['AssertionError [ERR_ASSERTION]: ninguna con perfil, como Beta, aprobada arriba']

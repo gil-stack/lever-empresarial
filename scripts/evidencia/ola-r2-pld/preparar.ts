@@ -56,6 +56,8 @@ const PROVEEDOR_UNO = "44444444-4444-4444-8444-444444444441";
 const PAGABLE_TERCERO = "77777777-7777-4777-8777-777777777774";
 const PAGO_TERCERO = "88888888-8888-4888-8888-888888888884";
 const FONDO = "33333333-3333-4333-8333-333333333334";
+// B: real y activa desde antes de la 0030, sin perfil transaccional.
+const ROBLE = "33333333-3333-4333-8333-333333333335";
 const DORA = "11111111-1111-4111-8111-111111111113";
 const FITO = "22222222-2222-4222-8222-222222222223";
 const DOCUMENTO_FONDO = "55555555-5555-4555-8555-555555555554";
@@ -155,6 +157,15 @@ async function preparar(): Promise<void> {
     select set_config('app.user_id', '${FITO}', true);
     update supplier_payment_requests set estado = 'listo_para_pagar', resuelto_por = '${FITO}', resuelto_en = now() where id = '${PAGO_FONDO}';
     ${evento(FITO, "autorizar_pago_proveedor", "supplier_payment_requests", PAGO_FONDO)}
+    commit;
+  `);
+  // B: Roble Antiguo opera desde antes de la 0030 y no tiene perfil (el candado de hoy ya no activaría a nadie así).
+  ejecutar(url, `
+    begin;
+    insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, operator_id, estado, demostracion)
+      values ('${ROBLE}', 'RAN140303AB7', 'Roble Antiguo, S.A. de C.V.', '06600', '601', 'G03', (select id from operators order by alta_en limit 1), 'activa', false);
+    insert into audit_log (operator_id, company_id, actor_tipo, superficie, accion, entidad, identificador)
+      select operator_id, id, 'sistema', 'sistema', 'alta_empresa', 'companies', id from companies where id = '${ROBLE}';
     commit;
   `);
   process.env.DATABASE_URL = urlDeAplicacion(url);
@@ -270,6 +281,7 @@ async function preparar(): Promise<void> {
     EMPRESA_NOGAL: nogalId,
     EMPRESA_COBRE: cobreId,
     EMPRESA_FONDO: FONDO,
+    EMPRESA_ROBLE: ROBLE,
     PAGO_FONDO,
     CELEBRACION_COBRE: celebracion,
     PAGO_EXCEDE: "88888888-8888-4888-8888-888888888882",
@@ -278,7 +290,7 @@ async function preparar(): Promise<void> {
     SEMILLAS: semillas,
     IDS: ids,
   }, null, 2), { mode: 0o600 });
-  console.log(`Base ${BASE} lista: 0001-0030, Taller con perfil, dos pagos por autorizar, Marta con nómina, Nogal sin perfil, Cobre con contrato del ${celebracion}, Fondo de demostración con su pago liberado y ${PERSONAL.length} personas del personal.`);
+  console.log(`Base ${BASE} lista: 0001-0030, Taller con perfil, dos pagos por autorizar, Marta con nómina, Nogal sin perfil, Cobre con contrato del ${celebracion}, Fondo de demostración con su pago liberado, Roble activa sin perfil y ${PERSONAL.length} personas del personal.`);
 }
 
 preparar().catch(async (error: unknown) => {
