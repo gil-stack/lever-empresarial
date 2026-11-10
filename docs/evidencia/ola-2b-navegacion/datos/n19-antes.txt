@@ -1,0 +1,20 @@
+OK chromium JS @1440 /c/:taller/consola/proveedores: barras hasta 84 (scroll-padding-top auto) | ancla «Actividad reciente» top=561 | foco a top=234
+OK chromium JS @1440 /c/:taller/consola/personas: barras hasta 84 (scroll-padding-top auto) | ancla «Directorio» top=299
+OK chromium JS @1440 /c/:taller/consola/aprobaciones?vista=historial: barras hasta 84 (scroll-padding-top auto) | ancla «Decisiones de pago» top=195
+OK chromium JS @1440 /operacion/clientes: barras hasta 84 (scroll-padding-top auto) | ancla «Registrar prospect» top=125
+OK chromium JS @1440 /operacion/clientes/:taller/expediente#riesgo-titulo: barras hasta 84 (scroll-padding-top auto) | ancla «Sin permiso» top=125
+XX chromium JS @390 /c/:taller/consola/proveedores: barras hasta 172 (scroll-padding-top auto) | ancla «Actividad reciente» top=152 | foco a top=408 | TAPADOS: 1
+XX chromium JS @390 /c/:taller/consola/personas: barras hasta 172 (scroll-padding-top auto) | ancla «Directorio» top=0 | foco a top=408 | TAPADOS: 1
+OK chromium JS @390 /c/:taller/consola/aprobaciones?vista=historial: barras hasta 172 (scroll-padding-top auto) | ancla «Decisiones de pago» top=252
+OK chromium JS @390 /operacion/clientes: barras hasta 124 (scroll-padding-top auto) | ancla «Registrar prospect» top=158 | foco a top=208
+OK chromium JS @390 /operacion/clientes/:taller/expediente#riesgo-titulo: barras hasta 124 (scroll-padding-top auto) | ancla «Sin permiso» top=179
+OK chromium sin JS @1440 /c/:taller/consola/proveedores: barras hasta 84 (scroll-padding-top auto) | ancla «Actividad reciente» top=561 | foco a top=234
+OK chromium sin JS @1440 /c/:taller/consola/personas: barras hasta 84 (scroll-padding-top auto) | ancla «Directorio» top=299
+OK chromium sin JS @1440 /c/:taller/consola/aprobaciones?vista=historial: barras hasta 84 (scroll-padding-top auto) | ancla «Decisiones de pago» top=195
+OK chromium sin JS @1440 /operacion/clientes: barras hasta 84 (scroll-padding-top auto) | ancla «Registrar prospect» top=125
+OK chromium sin JS @1440 /operacion/clientes/:taller/expediente#riesgo-titulo: barras hasta 84 (scroll-padding-top auto) | ancla «Sin permiso» top=125
+XX chromium sin JS @390 /c/:taller/consola/proveedores: barras hasta 220 (scroll-padding-top auto) | ancla «Actividad reciente» top=152 | foco a top=408 | TAPADOS: 1
+XX chromium sin JS @390 /c/:taller/consola/personas: barras hasta 220 (scroll-padding-top auto) | ancla «Directorio» top=0 | foco a top=408 | TAPADOS: 1
+OK chromium sin JS @390 /c/:taller/consola/aprobaciones?vista=historial: barras hasta 220 (scroll-padding-top auto) | ancla «Decisiones de pago» top=252
+XX chromium sin JS @390 /operacion/clientes: barras hasta 172 (scroll-padding-top auto) | ancla «Registrar prospect» top=158 | foco a top=256 | TAPADOS: 1
+OK chromium sin JS @390 /operacion/clientes/:taller/expediente#riesgo-titulo: barras hasta 172 (scroll-padding-top auto) | ancla «Sin permiso» top=227

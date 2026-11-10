@@ -383,6 +383,30 @@ div.empresa-lateral:not(.menu-desplegable),
   flex: 1;
 }
 
+/* N19: un ancla, «Saltar al contenido» o el campo que recibe el foco quedan debajo de las barras pegadas arriba, no
+   tapados. BarraSuperior mide lo que tapan (--alto-barras); sin JavaScript (y antes de medir) va el alto de cada caso:
+   84 px en escritorio; en el teléfono la barra móvil (60) más la de arriba, con «Salir» en su renglón sin JavaScript. */
+html:has(.barra-superior) {
+  --alto-barras-sin-medir: 84px;
+  scroll-padding-top: calc(var(--alto-barras, var(--alto-barras-sin-medir)) + 12px);
+}
+
+@media (max-width: 960px) {
+  html:has(.barra-superior) {
+    --alto-barras-sin-medir: 172px;
+  }
+}
+
+@media (scripting: none) and (max-width: 960px) {
+  html:has(.barra-superior) {
+    --alto-barras-sin-medir: 220px;
+  }
+
+  html:has(.operacion-pagina) {
+    --alto-barras-sin-medir: 172px;
+  }
+}
+
 .barra-superior {
   position: sticky;
   top: 0;

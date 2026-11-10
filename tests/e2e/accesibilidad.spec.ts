@@ -193,6 +193,41 @@ test.describe("cada buscador de Proveedores tiene su propio nombre", () => {
 
 // Sin JavaScript (o con él apagado), el menú de la persona no abre y «Salir» vivía solo ahí: no había forma de cerrar
 // la sesión. Junto al menú queda «Salir» a la vista (en <noscript>), con la misma acción del servidor.
+// N19: en el teléfono las barras pegadas arriba (la móvil y la del título) tapaban lo que llega por un ancla: «Directorio»
+// quedaba en y=0, debajo de 172 px de barras. El documento lleva scroll-padding-top con lo que tapan (BarraSuperior lo
+// mide; sin JavaScript, el alto de cada caso en marco.css).
+async function llegadaPorAncla(page: Page, ruta: string, ancla: string): Promise<{ arriba: number; barras: number; desplazado: number }> {
+  await page.goto(`${ruta}#${ancla}`);
+  await page.waitForTimeout(300);
+  return page.evaluate((id) => {
+    const barras = Math.max(0, ...[...document.querySelectorAll(".barra-movil, .barra-superior")].filter((e) => e.getClientRects().length).map((e) => e.getBoundingClientRect().bottom));
+    return { arriba: document.getElementById(id)!.getBoundingClientRect().top, barras, desplazado: window.scrollY };
+  }, ancla);
+}
+
+test.describe("N19: lo que llega por un ancla queda debajo de las barras", () => {
+  test("portal a 390 con JavaScript: «Directorio» de Personas", async ({ page, context }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await sesionDe(context, GIL);
+    const { arriba, barras, desplazado } = await llegadaPorAncla(page, `/c/${TALLER}/consola/personas`, "directorio-titulo");
+    expect(desplazado, "la página bajó hasta el ancla").toBeGreaterThan(0);
+    expect(arriba, `el título en y=${arriba}, las barras hasta y=${barras}`).toBeGreaterThanOrEqual(barras);
+  });
+
+  test("portal y Operación a 390 sin JavaScript: «Directorio» y «Registrar prospecto»", async ({ browser }) => {
+    const sinJs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+    const page = await sinJs.newPage();
+    await sesionDe(sinJs, GIL);
+    const portal = await llegadaPorAncla(page, `/c/${TALLER}/consola/personas`, "directorio-titulo");
+    expect(portal.desplazado).toBeGreaterThan(0);
+    expect(portal.arriba, `portal: título en y=${portal.arriba}, barras hasta y=${portal.barras}`).toBeGreaterThanOrEqual(portal.barras);
+    await sesionDe(sinJs, CORREOS.op1, { superficie: "sofipo" });
+    const operacion = await llegadaPorAncla(page, "/operacion/clientes", "prospecto-titulo");
+    expect(operacion.arriba, `Operación: título en y=${operacion.arriba}, barras hasta y=${operacion.barras}`).toBeGreaterThanOrEqual(operacion.barras);
+    await sinJs.close();
+  });
+});
+
 test.describe("sin JavaScript se puede salir", () => {
   test.use({ javaScriptEnabled: false });
 
