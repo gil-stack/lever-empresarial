@@ -5,7 +5,7 @@ import { strToU8, zipSync } from "fflate";
 import { XMLParser } from "fast-xml-parser";
 
 import { aplicarEmpate, leerFecha, leerMonto, referenciaDeRenglon, referenciaEnTexto, sugerirEmpate, validarEmpate } from "../../dominio/cobranza/estado-cuenta";
-import { abrirZip, decodificarXml, ErrorDeLectura, leerCsv, leerEstadoDeCuenta, TOPE_RENGLONES, xmlSeguro } from "./lector-estado-cuenta";
+import { abrirZip, contarEtiquetas, decodificarXml, ErrorDeLectura, leerCsv, leerEstadoDeCuenta, TOPE_CADENAS, TOPE_CELDAS, TOPE_RENGLONES, xmlSeguro } from "./lector-estado-cuenta";
 
 const HOY = "2026-11-10";
 
@@ -60,11 +60,30 @@ describe("estado de cuenta: XLSX", () => {
     const bomba = zipSync({ "xl/worksheets/sheet1.xml": ceros }, { level: 9 });
     assert.ok(bomba.byteLength < 2 * 1024 * 1024);
     const antes = process.memoryUsage().arrayBuffers;
-    assert.throws(() => leerEstadoDeCuenta("bomba.xlsx", bomba), ilegible(/se infla a más de 25 MB/));
-    // Lo retenido no pasa de lo inflado hasta el tope más un pedazo.
-    assert.ok(process.memoryUsage().arrayBuffers - antes < 40 * 1024 * 1024);
+    // Se corta en el tope de la parte (10 MB), antes que en el total (r63-N6).
+    assert.throws(() => leerEstadoDeCuenta("bomba.xlsx", bomba), ilegible(/una parte demasiado grande por dentro|parte del libro de Excel es demasiado grande/));
+    // Sin recolectar, lo que se ve incluye la basura del inflado (medido: ~48 MB; con --expose-gc, 0):
+    // nunca llega a los 60 MB de la bomba entera.
+    assert.ok(process.memoryUsage().arrayBuffers - antes < 60 * 1024 * 1024);
     // Y con un tope chico se corta igual.
     assert.throws(() => abrirZip(bomba, 1024 * 1024), ilegible(/se infla/));
+    // Tres hojas de 9 MB: cada parte cabe, el total de 25 MB no.
+    const nueve = new Uint8Array(9 * 1024 * 1024);
+    const tres = zipSync({ "xl/worksheets/sheet1.xml": nueve, "xl/worksheets/sheet2.xml": nueve, "xl/worksheets/sheet3.xml": nueve }, { level: 9 });
+    assert.throws(() => leerEstadoDeCuenta("tres.xlsx", tres), ilegible(/se infla a más de 25 MB/));
+  });
+
+  it("cuenta renglones, celdas y textos antes de armar el árbol (r63-N6)", () => {
+    // Pocos KB comprimidos, dentro de los 10 MB por parte, pero más nodos de los que caben.
+    const celdas = `<row r="1">${"<c/>".repeat(TOPE_CELDAS + 1)}</row>`;
+    assert.throws(() => leerEstadoDeCuenta("celdas.xlsx", xlsx(celdas)), ilegible(/más de 200,000 celdas/));
+    const filas = '<row r="1"/>'.repeat(TOPE_RENGLONES + 1);
+    assert.throws(() => leerEstadoDeCuenta("filas.xlsx", xlsx(filas)), ilegible(/más de 5000 renglones/));
+    const sst = `<sst>${"<si><t>x</t></si>".repeat(TOPE_CADENAS + 1)}</sst>`;
+    const conCadenas = zipSync({ "xl/worksheets/sheet1.xml": strToU8(`<worksheet><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c></row></sheetData></worksheet>`), "xl/sharedStrings.xml": strToU8(sst) }, { level: 9 });
+    assert.throws(() => leerEstadoDeCuenta("cadenas.xlsx", conCadenas), ilegible(/demasiados textos/));
+    // El conteo no confunde <col>, <cols> ni <cfRule> con una celda, y reconoce el prefijo x:.
+    assert.equal(contarEtiquetas('<cols><col min="1"/></cols><x:c r="A1"/><c>1</c><cfRule/><c\tr="B1"/>', "c"), 3);
   });
 
   it("un archivo que no es XLSX con extensión .xlsx da su aviso en el campo, nunca un error de base", () => {

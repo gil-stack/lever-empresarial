@@ -9,6 +9,9 @@ import { XMLParser } from "fast-xml-parser";
  *
  * Topes: 2 MB de archivo, 5 000 renglones, 40 columnas y 25 MB inflados en
  * total (una zip bomb se corta al pasarlos, sin creerle al tamaño declarado).
+ * En un XLSX, además, cada parte tiene su tope al inflarse y los renglones, las
+ * celdas y las cadenas compartidas se cuentan en el texto antes de armar el
+ * árbol: el árbol de fast-xml-parser cuesta decenas de veces lo inflado (r63-N6).
  */
 
 export type Celda = string | number | null;
@@ -18,6 +21,12 @@ export const TOPE_ARCHIVO = 2 * 1024 * 1024;
 export const TOPE_RENGLONES = 5000;
 export const TOPE_COLUMNAS = 40;
 export const TOPE_INFLADO = 25 * 1024 * 1024;
+/** Una hoja de 5 000 × 40 celdas con estilo cabe en unos 9 MB; las cadenas compartidas, igual. */
+export const TOPE_PARTE_GRANDE = 10 * 1024 * 1024;
+/** El libro y sus relaciones son unos cuantos KB. */
+export const TOPE_PARTE_CHICA = 1024 * 1024;
+export const TOPE_CELDAS = TOPE_RENGLONES * TOPE_COLUMNAS;
+export const TOPE_CADENAS = TOPE_RENGLONES * TOPE_COLUMNAS;
 const TOPE_CELDA = 500;
 /** El zip entra en pedazos chicos: cada inflado queda acotado (DEFLATE no pasa de ~1 032:1). */
 const PEDAZO = 4 * 1024;
@@ -128,27 +137,36 @@ function adivinarSeparador(texto: string): string {
 
 const PARTES = /^xl\/(workbook\.xml|_rels\/workbook\.xml\.rels|sharedStrings\.xml|worksheets\/[A-Za-z0-9_]+\.xml)$/;
 
+/** La hoja y las cadenas compartidas pueden crecer; el libro y sus relaciones, no. */
+function topeDeParte(nombre: string): number {
+  return nombre === "xl/sharedStrings.xml" || nombre.startsWith("xl/worksheets/") ? TOPE_PARTE_GRANDE : TOPE_PARTE_CHICA;
+}
+
 /**
- * Infla solo las partes que hacen falta, en pedazos, contando lo inflado. Al
- * pasar el tope se detiene todo: el tamaño que declara el zip no se usa.
+ * Infla solo las partes que hacen falta, en pedazos, contando lo inflado en
+ * total y por parte. Al pasar un tope se detiene todo: el tamaño que declara
+ * el zip no se usa.
  */
 export function abrirZip(bytes: Uint8Array, tope = TOPE_INFLADO): Map<string, Uint8Array> {
   const partes = new Map<string, Uint8Array[]>();
   let inflado = 0;
-  let excedido = false;
+  let excedido: "total" | "parte" | null = null;
   let error: unknown = null;
   const unzip = new Unzip((archivo) => {
     if (!PARTES.test(archivo.name) || excedido) return;
     const pedazos: Uint8Array[] = [];
     partes.set(archivo.name, pedazos);
+    const topeParte = topeDeParte(archivo.name);
+    let infladoParte = 0;
     archivo.ondata = (err, datos) => {
       if (err) {
         error = err;
         return;
       }
       inflado += datos.byteLength;
-      if (inflado > tope) {
-        excedido = true;
+      infladoParte += datos.byteLength;
+      if (inflado > tope || infladoParte > topeParte) {
+        excedido = inflado > tope ? "total" : "parte";
         archivo.terminate();
         return;
       }
@@ -164,7 +182,8 @@ export function abrirZip(bytes: Uint8Array, tope = TOPE_INFLADO): Map<string, Ui
   } catch {
     throw new ErrorDeLectura("El libro de Excel está dañado. Exporta otra vez el estado de cuenta.");
   }
-  if (excedido) throw new ErrorDeLectura("El libro de Excel se infla a más de 25 MB. Exporta un periodo más corto o en CSV.");
+  if (excedido === "total") throw new ErrorDeLectura("El libro de Excel se infla a más de 25 MB. Exporta un periodo más corto o en CSV.");
+  if (excedido === "parte") throw new ErrorDeLectura("Una parte del libro de Excel es demasiado grande por dentro. Exporta un periodo más corto o en CSV.");
   if (error) throw new ErrorDeLectura("El libro de Excel está dañado. Exporta otra vez el estado de cuenta.");
   const unidas = new Map<string, Uint8Array>();
   for (const [nombre, pedazos] of partes) {
@@ -195,13 +214,40 @@ const parser = new XMLParser({
   isArray: (nombre) => ["si", "r", "row", "c", "sheet", "Relationship"].includes(nombre),
 });
 
-export function xmlSeguro(bytes: Uint8Array): Record<string, unknown> {
-  let texto: string;
+/**
+ * Cuántas veces abre la etiqueta `nombre` (`<c>`, `<c …>` o `<c/>`, no `<col>`),
+ * con o sin prefijo de espacio de nombres. Se cuenta en el texto, sin armar nada.
+ */
+export function contarEtiquetas(texto: string, nombre: string): number {
+  let n = 0;
+  for (let i = texto.indexOf("<"); i !== -1; i = texto.indexOf("<", i + 1)) {
+    // El nombre: letras, dígitos, «_», «-», «.» y «:» (el prefijo), hasta 64; lo local va después del último «:».
+    let j = i + 1;
+    let local = j;
+    while (j < texto.length && j - i <= 64) {
+      const c = texto.charCodeAt(j);
+      const deNombre = (c >= 97 && c <= 122) || (c >= 65 && c <= 90) || (c >= 48 && c <= 57) || c === 95 || c === 45 || c === 46;
+      if (c === 58) local = j + 1;
+      else if (!deNombre) break;
+      j += 1;
+    }
+    if (j - local !== nombre.length || !texto.startsWith(nombre, local)) continue;
+    const siguiente = texto[j];
+    if (siguiente === ">" || siguiente === "/" || siguiente === " " || siguiente === "\t" || siguiente === "\n" || siguiente === "\r") n += 1;
+  }
+  return n;
+}
+
+function textoUtf8(bytes: Uint8Array): string {
   try {
-    texto = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
   } catch {
     throw new ErrorDeLectura("El libro de Excel trae texto que no es UTF-8.");
   }
+}
+
+export function xmlSeguro(bytes: Uint8Array | string): Record<string, unknown> {
+  const texto = typeof bytes === "string" ? bytes : textoUtf8(bytes);
   if (/<!DOCTYPE|<!ENTITY/i.test(texto)) throw new ErrorDeLectura("El libro de Excel trae declaraciones que no se aceptan (DTD o entidades).");
   try {
     const leido = parser.parse(texto) as unknown;
@@ -247,10 +293,17 @@ export function leerXlsx(bytes: Uint8Array): Tabla {
   const hoja = rutaPrimeraHoja(partes);
   const datos = hoja ? partes.get(hoja) : undefined;
   if (!datos) throw new ErrorDeLectura("Este archivo no es un libro de Excel válido. Exporta otra vez en Excel (.xlsx) o en CSV.");
-  const compartidas = partes.has("xl/sharedStrings.xml")
-    ? lista(registro(xmlSeguro(partes.get("xl/sharedStrings.xml")!).sst)?.si).map(textoRico)
-    : [];
-  const hojaXml = registro(xmlSeguro(datos).worksheet);
+  // Se cuenta antes de armar el árbol: así un libro chico que se infla a millones de nodos no llega al parser.
+  const textoHoja = textoUtf8(datos);
+  if (contarEtiquetas(textoHoja, "row") > TOPE_RENGLONES) throw new ErrorDeLectura(`El archivo tiene más de ${TOPE_RENGLONES} renglones. Exporta un periodo más corto.`);
+  if (contarEtiquetas(textoHoja, "c") > TOPE_CELDAS) throw new ErrorDeLectura(`El archivo tiene más de ${TOPE_CELDAS.toLocaleString("es-MX")} celdas. Exporta un periodo más corto.`);
+  const cadenas = partes.get("xl/sharedStrings.xml");
+  const textoCadenas = cadenas ? textoUtf8(cadenas) : null;
+  if (textoCadenas !== null && contarEtiquetas(textoCadenas, "si") > TOPE_CADENAS) {
+    throw new ErrorDeLectura("El libro de Excel trae demasiados textos. Exporta un periodo más corto o en CSV.");
+  }
+  const compartidas = textoCadenas !== null ? lista(registro(xmlSeguro(textoCadenas).sst)?.si).map(textoRico) : [];
+  const hojaXml = registro(xmlSeguro(textoHoja).worksheet);
   const filas = lista(registro(hojaXml?.sheetData)?.row);
   if (filas.length > TOPE_RENGLONES) throw new ErrorDeLectura(`El archivo tiene más de ${TOPE_RENGLONES} renglones. Exporta un periodo más corto.`);
   const tabla: Tabla = [];
