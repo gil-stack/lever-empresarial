@@ -63,19 +63,23 @@ export type PagoParecido = { pagoId: string; fuente: FuenteDePago; recibidoEl: s
  * son dos pagos distintos. Corre dentro de la transacción de quien llama, con la empresa bloqueada
  * (`bloquearEmpresa`): dos fuentes a la vez se forman y la segunda ve a la primera.
  *
+ * Si el abono ya sabe de qué cliente es (la CLABE propia del cliente, la ordenante de un solo cliente o el cargo que
+ * eligió una persona), un pago parecido de OTRO cliente no cuenta: son dos depósitos de dos clientes (r63d-N1). Uno sin
+ * cliente, o del mismo, sí cuenta.
+ *
  * Recibe varios abonos a la vez (la propuesta de un estado de cuenta) y devuelve, por clave, el pago más cercano.
  */
 export async function pagosParecidosDeOtraFuente(
   consulta: Consulta,
   empresaId: string,
   fuente: FuenteDePago,
-  abonos: readonly { clave: string; montoCentavos: number; recibidoEl: string; referencia: string | null }[],
+  abonos: readonly { clave: string; montoCentavos: number; recibidoEl: string; referencia: string | null; clienteId?: string | null }[],
 ): Promise<Map<string, PagoParecido>> {
   if (abonos.length === 0) return new Map();
   const r = await aplicarSentencia(
     consulta,
     `select a.clave, p.id, p.fuente, p.recibido_el, p.monto_centavos::text as monto, k.nombre as cliente
-       from unnest($3::text[], $4::bigint[], $5::date[], $6::text[]) as a (clave, monto, recibido_el, referencia)
+       from unnest($3::text[], $4::bigint[], $5::date[], $6::text[], $7::uuid[]) as a (clave, monto, recibido_el, referencia, cliente)
        cross join lateral (
          select p.id, p.fuente, p.recibido_el, p.monto_centavos, p.customer_id
            from collection_payments p
@@ -88,6 +92,7 @@ export async function pagosParecidosDeOtraFuente(
           where p.company_id = $1 and p.fuente <> $2 and p.estado not in ('anulado', 'devuelto')
             and p.monto_centavos = a.monto
             and p.recibido_el between a.recibido_el - 1 and a.recibido_el + 1
+            and (a.cliente is null or p.customer_id is null or p.customer_id = a.cliente)
             and (a.referencia is null
                  or coalesce(case when p.referencia ~ '^[1-9][0-9]{6}$' then p.referencia end, aplicada.referencia) is null
                  or coalesce(case when p.referencia ~ '^[1-9][0-9]{6}$' then p.referencia end, aplicada.referencia) = a.referencia)
@@ -96,7 +101,7 @@ export async function pagosParecidosDeOtraFuente(
        ) p
        left join collection_customers k on k.id = p.customer_id and k.company_id = $1`,
     [empresaId, fuente, abonos.map((a) => a.clave), abonos.map((a) => a.montoCentavos), abonos.map((a) => a.recibidoEl),
-      abonos.map((a) => normalizarReferencia(a.referencia))],
+      abonos.map((a) => normalizarReferencia(a.referencia)), abonos.map((a) => a.clienteId ?? null)],
   );
   return new Map(r.rows.map(registro).map((f) => [texto(f.clave), {
     pagoId: texto(f.id),
@@ -154,9 +159,6 @@ export async function recibirAbono(
     "select 1 from collection_payments where company_id = $1 and upper(clave_rastreo) = upper($2) and estado not in ('anulado', 'devuelto') limit 1",
     [empresaId, abono.claveRastreo],
   )).rows.length > 0;
-  const parecido = rastreoYaRegistrado
-    ? null
-    : (await pagosParecidosDeOtraFuente(consulta, empresaId, fuente, [{ clave: "abono", montoCentavos: abono.montoCentavos, recibidoEl: abono.recibidoEl, referencia }])).get("abono") ?? null;
   const clienteDeLaCuenta = abono.clienteDeLaCuenta;
   // Quién ha pagado antes desde esa CLABE: identifica al cliente sin referencia y, con referencia, marca el pago que
   // llega desde la cuenta de otro cliente (r63-N4).
@@ -171,6 +173,13 @@ export async function recibirAbono(
     clientesDeLaClabe = r.rows.map(registro).map((f) => texto(f.customer_id));
   }
   const clienteConocido = clienteDeLaCuenta ?? (clientesDeLaClabe.length === 1 ? clientesDeLaClabe[0]! : null);
+  // El cliente que ya se sabe: el de la cuenta o la CLABE ordenante, o el del cargo de la referencia.
+  const clienteDelAbono = clienteConocido ?? cargoDeLaReferencia?.clienteId ?? null;
+  const parecido = rastreoYaRegistrado
+    ? null
+    : (await pagosParecidosDeOtraFuente(consulta, empresaId, fuente, [
+        { clave: "abono", montoCentavos: abono.montoCentavos, recibidoEl: abono.recibidoEl, referencia, clienteId: clienteDelAbono },
+      ])).get("abono") ?? null;
   let cargosAbiertosDelCliente: { id: string; saldoCentavos: number; vencimiento: string }[] = [];
   if (!cargoDeLaReferencia && clienteConocido) {
     const c = await aplicarSentencia(

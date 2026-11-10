@@ -19,3 +19,8 @@ AR7 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: r63b-N1 parecido_a e
 AR8 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: r63b-N1 cambiar el pago parecido: la base lo aceptó (esperado cobranza_inmutable)
 AR9 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: r63b-N1 anular un pago automático que no es posible duplicado: la base lo aceptó (esperado collection_payments_estado)
 AR10 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: r63b-N1 parecido_a de otra empresa: la base lo aceptó (esperado collection_payments_parecido_de)
+
+Ronda r63d (re-verificación de 09b40e0), tests/cobranza/cobranza-postgres.test.ts (revision63b):
+- r63d-N1 con src/server/cobranza/{abonos,servicio}.ts de 09b40e0: FALLA · «r63d-N1 otro cliente ya identificado: el abono a la CLABE de su cliente quedó frenado por el pago de otro cliente». El control «mismo cliente, otra fuente: sigue frenado» pasa en los dos códigos.
+- r63d-N2 con la mutación MF7 (los pagos anulados o devueltos cuentan como parecido): FALLAN · «el pago anulado frenó el abono» y «el pago devuelto frenó el abono».
+- Con el arreglo: ℹ pass 1, ℹ fail 0.

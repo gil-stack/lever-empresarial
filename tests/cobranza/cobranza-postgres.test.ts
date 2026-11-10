@@ -20,6 +20,7 @@ import {
   cambiarRecordatorios,
   capturarMontoVariable,
   configurarCobranza,
+  crearCargoUnico,
   darDeAltaCliente,
   leerVistaCliente,
   leerVistaCobranza,
@@ -517,13 +518,18 @@ async function revision63b(url: string, r: Revision63): Promise<void> {
     return fila<{ id: string; referencia: string }>(`select id, referencia from collection_charges where customer_id = '${alta.clienteId}' and estado = 'emitido'`)!;
   };
   // Un aviso de Fintoc a la cuenta de la empresa (no a la CLABE de un cliente): manda la referencia.
-  const fintoc = async (monto: number, referencia: string | null, fecha = "2026-11-10", rastreo: string | null = null) => {
+  // Por omisión a la cuenta de la empresa; `cuentaNumero` la manda a la CLABE propia de un cliente. Una devolución lleva
+  // el tipo `returned` y la misma transferencia.
+  const fintoc = async (
+    monto: number, referencia: string | null, fecha = "2026-11-10", rastreo: string | null = null,
+    extra: { cuentaNumero?: string; transferencia?: string; devolucion?: boolean } = {},
+  ) => {
     const cuerpo = JSON.stringify({
-      id: `evt_${randomUUID().replace(/-/g, "")}`, type: "transfer.inbound.succeeded", object: "event", mode: "test", created_at: new Date().toISOString(),
+      id: `evt_${randomUUID().replace(/-/g, "")}`, type: extra.devolucion ? "transfer.inbound.returned" : "transfer.inbound.succeeded", object: "event", mode: "test", created_at: new Date().toISOString(),
       data: {
-        id: `tr_${randomUUID().replace(/-/g, "")}`, object: "transfer", direction: "inbound", status: "succeeded", amount: monto, currency: "MXN", mode: "test",
+        id: extra.transferencia ?? `tr_${randomUUID().replace(/-/g, "")}`, object: "transfer", direction: "inbound", status: extra.devolucion ? "returned" : "succeeded", amount: monto, currency: "MXN", mode: "test",
         transaction_date: `${fecha}T17:00:00.000Z`, reference_id: referencia, tracking_key: rastreo,
-        account_number: { id: "acno_CuentaDeLaEmpresa", account_id: "acc_PruebaAlfa02" }, counterparty: { holder_name: "Ordenante r63b", account_number: null, account_type: "clabe" },
+        account_number: { id: extra.cuentaNumero ?? "acno_CuentaDeLaEmpresa", account_id: "acc_PruebaAlfa02" }, counterparty: { holder_name: "Ordenante r63b", account_number: null, account_type: "clabe" },
       },
     });
     return atenderAviso(new TextEncoder().encode(cuerpo), firmar(cuerpo, configFintoc.secretoWebhook, ahoraSeg), depsAviso);
@@ -661,6 +667,48 @@ async function revision63b(url: string, r: Revision63): Promise<void> {
       assert.deepEqual([pagado(k.id), aplicaciones(k.id)], [centavosK, 1], `carrera ${i}: dos aplicaciones`);
       assert.equal(contar(url, `select count(*) from collection_payments where company_id = '${r.alfa.id}' and monto_centavos = ${centavosK} and posible_duplicado and parecido_a is not null`), 1);
     }
+  });
+
+  // r63d-N1: el abono ya sabe de qué cliente es (llegó a la CLABE propia del cliente) y OTRO cliente pagó lo mismo ese día
+  // por otra fuente: son dos depósitos de dos clientes y se aplica. Del mismo cliente sí queda frenado.
+  const cargoDeLaClabe = async (concepto: string, monto: string) => {
+    const hecho = await crearCargoUnico(admin, { clienteId: r.propia.clienteId, altaId: randomUUID(), concepto, monto, vencimiento: "2026-11-20" }, deps());
+    return hecho.cargoId;
+  };
+  await caso("r63d-N1 otro cliente ya identificado", async () => {
+    const otro = await cargo("R63d Otro Cliente", "135.00");
+    await registrarPagoManual(admin, { altaId: randomUUID(), cargoId: otro.id, monto: "135.00", recibidoEl: "2026-11-10" }, null, deps());
+    const suyo = await cargoDeLaClabe("R63d por su CLABE", "135.00");
+    await fintoc(13_500, null, "2026-11-10", null, { cuentaNumero: r.propia.id });
+    assert.deepEqual([pagado(suyo), aplicaciones(suyo)], [13_500, 1], "r63d-N1: el abono a la CLABE de su cliente quedó frenado por el pago de otro cliente");
+    assert.equal(ultimo("fintoc", 13_500).posible_duplicado, false);
+  });
+  await caso("r63d-N1 mismo cliente, otra fuente: sigue frenado", async () => {
+    const suyo = await cargoDeLaClabe("R63d mismo cliente", "492.00");
+    const manual = await registrarPagoManual(admin, { altaId: randomUUID(), cargoId: suyo, monto: "246.00", recibidoEl: "2026-11-10" }, null, deps());
+    await fintoc(24_600, null, "2026-11-10", null, { cuentaNumero: r.propia.id });
+    assert.deepEqual([pagado(suyo), aplicaciones(suyo)], [24_600, 1], "mismo cliente: se aplicó dos veces");
+    assert.equal(ultimo("fintoc", 24_600).parecido_a, manual.pagoId);
+  });
+
+  // r63d-N2: un pago anulado o devuelto ya no cuenta como parecido: el abono nuevo idéntico se aplica.
+  await caso("r63d-N2 un pago anulado no frena", async () => {
+    const k = await cargo("R63d Anulado", "579.00");
+    const error = await registrarPagoManual(admin, { altaId: randomUUID(), monto: "579.00", recibidoEl: "2026-11-10" }, null, deps());
+    await anularPago(admin, { pagoId: error.pagoId, motivo: "Se capturó por error" }, deps());
+    const deK = await subir([`10/11/2026,SPEI RECIBIDO ${k.referencia},${k.referencia},579.00`]);
+    assert.deepEqual(await confirmar(deK.id), { aplicados: 1, porConciliar: 0, yaRegistrados: 0, descartados: 0 }, "r63d-N2: el pago anulado frenó el abono");
+  });
+  await caso("r63d-N2 un pago devuelto no frena", async () => {
+    const k = await cargo("R63d Devuelto", "681.00");
+    const transferencia = `tr_${randomUUID().replace(/-/g, "")}`;
+    await fintoc(34_050, k.referencia, "2026-11-10", null, { transferencia });
+    assert.equal(pagado(k.id), 34_050);
+    assert.deepEqual(await fintoc(34_050, k.referencia, "2026-11-10", null, { transferencia, devolucion: true }), { estado: 200, cuerpo: { ok: true, efecto: "devuelto" } });
+    assert.equal(pagado(k.id), 0);
+    const deK = await subir([`10/11/2026,SPEI RECIBIDO ${k.referencia} OTRA VEZ,${k.referencia},340.50`]);
+    assert.deepEqual(await confirmar(deK.id), { aplicados: 1, porConciliar: 0, yaRegistrados: 0, descartados: 0 }, "r63d-N2: el pago devuelto frenó el abono");
+    assert.equal(pagado(k.id), 34_050);
   });
 
   assert.deepEqual(fallas, [], "r63b-N1: casos que aplicaron dos veces el mismo depósito");

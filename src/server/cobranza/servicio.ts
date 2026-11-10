@@ -747,7 +747,7 @@ export async function registrarPagoManual(
       // La misma regla que los abonos automáticos (r63b-N1): el depósito ya llegó por Fintoc o en un estado de cuenta.
       const parecido = rastreoRepetido
         ? null
-        : (await pagosParecidosDeOtraFuente(consulta, c.empresa.id, "manual", [{ clave: "pago", montoCentavos: valor.montoCentavos, recibidoEl: valor.recibidoEl, referencia }])).get("pago") ?? null;
+        : (await pagosParecidosDeOtraFuente(consulta, c.empresa.id, "manual", [{ clave: "pago", montoCentavos: valor.montoCentavos, recibidoEl: valor.recibidoEl, referencia, clienteId }])).get("pago") ?? null;
       const posibleDuplicado = rastreoRepetido || parecido !== null;
       if (archivo && guardado) {
         await aplicarSentencia(
