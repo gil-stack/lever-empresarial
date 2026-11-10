@@ -22,13 +22,13 @@ import { Client } from "pg";
 
 import { hoyEnMexico } from "../../../src/dominio/personas";
 import { cerrarConexion } from "../../../src/nucleo/db";
-import { darDeAltaEmpresa } from "../../../src/server/company/servicio";
 import { aceptarInvitacion } from "../../../src/server/invitaciones/servicio";
 import { darDeAltaPersona, nombrarCentro } from "../../../src/server/personas/servicio";
 import { contextoDePersonal, invitarAdministrador } from "../../../src/server/plataforma/servicio";
 import { leerSesion } from "../../../src/server/session/servicio";
 import { resolverContexto } from "../../../src/server/tenencia/resolver";
 import { aplicarArchivo, ejecutar, urlDeAplicacion } from "../../../tests/aislamiento/postgres";
+import { darDeAltaComoDuena } from "../../empresa-por-la-duena";
 
 const BASE = "ola_2b";
 const CLAVE = "Clave-ola2b-2026!";
@@ -149,13 +149,13 @@ async function principal(): Promise<void> {
       values ((select id from operators order by alta_en limit 1), '${personalId}', 'administracion_plataforma');
   `);
   const personal = await contextoDePersonal("ofelia-2b@lever.test");
-  const altamar = await darDeAltaEmpresa(personal, {
+  const altamar = await darDeAltaComoDuena(url, personal, {
     rfc: "ALO180312AB1",
     razonSocial: "Altamar Logística",
     codigoPostal: "06600",
     regimen: "601",
     usoCfdi: "G03",
-  }, { demostracion: true });
+  }, { demostracion: true, corridoPor: "ofelia-2b@lever.test" });
   const invitacion = await invitarAdministrador(personal, {
     companyId: altamar.id,
     razonSocial: altamar.razonSocial,

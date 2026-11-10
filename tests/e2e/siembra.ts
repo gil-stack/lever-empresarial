@@ -221,9 +221,9 @@ export async function sembrarRecorridos(
   // ---------- Arrecife E2E: empresa real recién dada de alta, solo con su administradora ----------
   // Sin áreas, categorías ni proveedores: aprobaciones.spec ve cómo cada pendiente de puesta
   // en marcha sale de Aprobaciones al resolverlo en su módulo. Ningún otro spec la usa.
-  const arrecife = await darDeAltaEmpresa(personal, {
+  const arrecife = await darDeAltaComoDuena(owner, personal, {
     rfc: "AEE200202EF3", razonSocial: "Arrecife E2E", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
-  }, { demostracion: false });
+  }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
   const marina = await invitarAdministrador(personal, { companyId: arrecife.id, razonSocial: arrecife.razonSocial, nombre: "Marina Ríos", correo: CORREOS.marina });
   await aceptarInvitacion({ token: marina.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
   // Rosa de Taller del Cierre (seed-pagos.sql) con app autenticadora: aprobaciones.spec escribe su código al decidir
