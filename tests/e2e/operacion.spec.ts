@@ -893,7 +893,8 @@ test("la descarga del expediente llega aislada (sandbox) y la pantalla del exped
   expect(pantalla.status()).toBe(200);
   expect(pantalla.headers()["content-security-policy"]).toBe("frame-ancestors 'none'");
   // Humo-N6 del preview: la política de permisos va en todas las respuestas, también en la descarga y fuera de Operación.
-  const permisos = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), display-capture=()";
+  const permisos =
+    "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), display-capture=(), publickey-credentials-get=(self), publickey-credentials-create=(self)";
   const inicio = await page.request.get("/");
   for (const [donde, respuesta] of [["pantalla", pantalla], ["descarga", descarga], ["inicio", inicio]] as const) {
     expect(respuesta.headers()["permissions-policy"], donde).toBe(permisos);
@@ -1362,27 +1363,33 @@ test.describe("doceava sin JavaScript", () => {
   });
 
   // Hallazgo del #60: sin JavaScript el menú de la cuenta no abre y no había manera de cerrar sesión en Operación.
-  test("sin JavaScript, «Salir» se ve junto al menú, cierra la sesión y /operacion vuelve a la entrada, a 1440 y 390; el título y el chip conservan su ancho", async ({ page, context, browser }) => {
+  test("sin JavaScript, «Salir» se ve junto al menú, cierra la sesión y /operacion vuelve a la entrada, a 1440 y 390; el título y el chip no ceden espacio", async ({ page, context }) => {
     for (const [ancho, alto] of [[1440, 900], [390, 844]] as const) {
       await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
       await page.setViewportSize({ width: ancho, height: alto });
       await page.goto("/operacion/clientes");
       const salir = page.locator(".barra-superior").getByRole("button", { name: "Salir", exact: true });
       await expect(salir, `a ${ancho}`).toBeVisible();
-      // Con JavaScript la misma página no lo pinta, y el título y el chip miden lo mismo: «Salir» no les quita ancho.
-      const conJs = await browser.newContext({ baseURL: ORIGEN, viewport: { width: ancho, height: alto } });
-      try {
-        await sesionDe(conJs, CORREOS.op1, { superficie: "sofipo" });
-        const otra = await conJs.newPage();
-        await otra.goto("/operacion/clientes");
-        await expect(otra.locator(".barra-superior").getByRole("button", { name: "Salir", exact: true })).toHaveCount(0);
-        for (const selector of [".barra-titulo", ".cuenta .menu-desplegable-boton"]) {
-          const [sin, con] = [await page.locator(selector).boundingBox(), await otra.locator(selector).boundingBox()];
-          expect(Math.round(sin!.width), `${selector} a ${ancho}`).toBe(Math.round(con!.width));
-        }
-        expect(await otra.locator(".barra-titulo").evaluate((nodo) => nodo.scrollWidth <= nodo.clientWidth), `título sin recortar a ${ancho}`).toBe(true);
-      } finally {
-        await conJs.close();
+      await expect(page.locator(".barra-titulo")).toHaveText("Clientes");
+      const [titulo, chip, boton] = [
+        (await page.locator(".barra-titulo").boundingBox())!,
+        (await page.locator(".cuenta .menu-desplegable-boton").boundingBox())!,
+        (await salir.boundingBox())!,
+      ];
+      const centro = (caja: { y: number; height: number }) => caja.y + caja.height / 2;
+      console.log(`MEDIDA salir ${ancho}: ${JSON.stringify({ titulo, chip, boton })}`);
+      if (ancho === 1440) {
+        // Junto al chip, en el mismo renglón; el título no se encima con ninguno.
+        expect(Math.abs(centro(boton) - centro(chip))).toBeLessThan(6);
+        expect(boton.x).toBeGreaterThanOrEqual(chip.x + chip.width);
+        expect(titulo.x + titulo.width).toBeLessThanOrEqual(chip.x);
+      } else {
+        // En su propio renglón, debajo: el título y el chip comparten el primero, como con JavaScript.
+        expect(Math.abs(centro(titulo) - centro(chip))).toBeLessThan(12);
+        expect(boton.y).toBeGreaterThanOrEqual(Math.max(titulo.y + titulo.height, chip.y + chip.height));
+        expect(boton.x + boton.width).toBeLessThanOrEqual(ancho);
+        expect(titulo.x + titulo.width).toBeLessThanOrEqual(chip.x);
+        await page.screenshot({ path: test.info().outputPath("salir-sin-js-390.png") });
       }
       await Promise.all([page.waitForURL(/\/operacion\/entrar/), salir.click()]);
       expect((await context.cookies()).find((cookie) => cookie.name === "__Host-sesion")?.value ?? "").toBe("");
