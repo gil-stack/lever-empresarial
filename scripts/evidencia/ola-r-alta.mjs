@@ -584,10 +584,10 @@ async function flujo8b() {
     valores: { "#nombre": "Ana Ruiz Sol", "#correo": "ana@ejemplo" },
     filas: () => cuenta(`invitations where company_id = '${ctxEbano.id}'`),
   };
-  // La comisión, igual: solo con Ébano activa hay a quién proponerle tarifa.
+  // La comisión, igual: solo con Ébano activa hay a quién proponerle tarifa. La propone Administración (Ofelia).
   const manana = hoyMexico(2);
   const comision = {
-    nombre: "comision", quien: "omar", ruta: "/operacion/comisiones", codigo: "comision_valor_invalido", idAviso: "aviso-comision", campo: "#valor",
+    nombre: "comision", quien: "ofelia", ruta: "/operacion/comisiones", codigo: "comision_valor_invalido", idAviso: "aviso-comision", campo: "#valor",
     boton: (p) => p.getByRole("button", { name: "Pedir autorización" }),
     llenar: async (p) => {
       await p.locator("#companyId").selectOption(ctxEbano.id);
@@ -3076,7 +3076,7 @@ async function doceavaRonda() {
       filas: () => cuenta("companies where razon_social = 'Puerto Doce, S.A. de C.V.'"),
     },
     {
-      nombre: "alerta", quien: "omar", ruta: "/operacion/alertas", codigo: "dato_invalido_titulo", idAviso: "aviso-alerta", campo: "#titulo",
+      nombre: "alerta", quien: "ofelia", ruta: "/operacion/alertas", codigo: "dato_invalido_titulo", idAviso: "aviso-alerta", campo: "#titulo",
       boton: (p) => p.getByRole("button", { name: "Crear alerta" }),
       llenar: async (p) => {
         await p.locator("#companyId").selectOption(alertable);

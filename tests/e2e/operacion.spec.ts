@@ -1363,7 +1363,7 @@ test.describe("doceava sin JavaScript", () => {
   });
 
   // Hallazgo del #60: sin JavaScript el menú de la cuenta no abre y no había manera de cerrar sesión en Operación.
-  test("sin JavaScript, «Salir» se ve junto al menú, cierra la sesión y /operacion vuelve a la entrada, a 1440 y 390; el título y el chip no ceden espacio", async ({ page, context }) => {
+  test("sin JavaScript, «Salir» se ve junto al menú, cierra la sesión y /operacion vuelve a la entrada, a 1440 y 390; el título y el chip no ceden espacio; con JavaScript no se ve", async ({ page, context, browser }) => {
     for (const [ancho, alto] of [[1440, 900], [390, 844]] as const) {
       await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
       await page.setViewportSize({ width: ancho, height: alto });
@@ -1390,6 +1390,18 @@ test.describe("doceava sin JavaScript", () => {
         expect(boton.x + boton.width).toBeLessThanOrEqual(ancho);
         expect(titulo.x + titulo.width).toBeLessThanOrEqual(chip.x);
         await page.screenshot({ path: test.info().outputPath("salir-sin-js-390.png") });
+      }
+      // Con JavaScript el <noscript> no se ve: ni el botón ni su HTML como texto (la barra lo pintaba con display: contents).
+      const conJs = await browser.newContext({ baseURL: ORIGEN, viewport: { width: ancho, height: alto }, javaScriptEnabled: true });
+      try {
+        await sesionDe(conJs, CORREOS.op1, { superficie: "sofipo" });
+        const otra = await conJs.newPage();
+        await otra.goto("/operacion/clientes");
+        await expect(otra.locator(".barra-superior")).not.toContainText("salir-sin-script", { useInnerText: true });
+        await expect(otra.locator(".barra-superior").getByRole("button", { name: "Salir", exact: true })).toHaveCount(0);
+        expect(await otra.evaluate(() => document.documentElement.scrollWidth), `sin desborde a ${ancho}`).toBeLessThanOrEqual(ancho);
+      } finally {
+        await conJs.close();
       }
       await Promise.all([page.waitForURL(/\/operacion\/entrar/), salir.click()]);
       expect((await context.cookies()).find((cookie) => cookie.name === "__Host-sesion")?.value ?? "").toBe("");

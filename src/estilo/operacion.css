@@ -22,12 +22,15 @@
 }
 
 /* Sin JavaScript el menú de la cuenta no abre y «Salir» va junto a él (PaginaOperacion). En pantalla angosta toma su
-   propio renglón, a la derecha: el título y el chip de la persona conservan su ancho. */
-.barra-superior > noscript {
-  display: contents;
+   propio renglón, a la derecha: el título y el chip de la persona conservan su ancho. Solo con (scripting: none): con
+   JavaScript el contenido de <noscript> es texto y, con display: contents, el navegador lo pintaría tal cual. */
+@media (scripting: none) {
+  .barra-superior > noscript {
+    display: contents;
+  }
 }
 
-@media (max-width: 960px) {
+@media (scripting: none) and (max-width: 960px) {
   .salir-sin-script {
     display: flex;
     flex-basis: 100%;
