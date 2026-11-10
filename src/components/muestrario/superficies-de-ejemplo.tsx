@@ -36,7 +36,7 @@ export function SuperficiesDeEjemplo() {
         <button type="button" aria-pressed={vista === "botones"} onClick={() => setVista("botones")}>Botones</button>
       </div>
       {vista === "tabla" ? (
-        <div className="tabla-contenedor">
+        <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de tarjetas de ejemplo">
           <table className="tabla">
             <thead>
               <tr><th>Tarjeta</th><th>Persona</th><th className="derecha">Gastado este mes</th><th>Estado</th><th><span className="solo-lector">Acciones</span></th></tr>

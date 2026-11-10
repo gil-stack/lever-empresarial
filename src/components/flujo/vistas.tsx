@@ -60,7 +60,7 @@ export function VistaFlujo({ vista }: { vista: VistaSaldo | null }) {
               {vista.historial.length === 0 ? (
                 <Vacio titulo="Todavía no hay saldos declarados.">Inicio muestra lo comprometido hasta que alguien declare el primero.</Vacio>
               ) : (
-                <div className="tabla-contenedor">
+                <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla del historial de saldos declarados">
                   <table className="tabla flujo-historial" data-tabla="historial-saldo">
                     <thead>
                       <tr>
@@ -190,7 +190,7 @@ export function VistaCobrosPagina({
               {vista.cobros.length === 0 ? "Registra el primero a mano o con el XML de una factura que emitiste." : undefined}
             </Vacio>
           ) : (
-            <div className="tabla-contenedor">
+            <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de cobros esperados">
               {/* Roles explícitos: en móvil cada cobro se apila como tarjeta y la tabla sigue siendo tabla para el lector de pantalla. */}
               <table className="tabla flujo-apilada flujo-tabla-cobros" data-tabla="cobros" role="table">
                 <thead role="rowgroup">

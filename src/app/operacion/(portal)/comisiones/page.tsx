@@ -26,7 +26,7 @@ export default async function ComisionesOperacion({ searchParams }: { searchPara
             {versiones.length === 0 ? (
               <Vacio titulo="Sin versiones">Propón la primera para una empresa activa.</Vacio>
             ) : (
-              <div className="tabla-contenedor">
+              <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de versiones de comisiones">
                 <table className="tabla operacion-tabla">
                   <thead>
                     <tr>

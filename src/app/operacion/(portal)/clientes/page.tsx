@@ -24,7 +24,7 @@ export default async function ClientesOperacion({ searchParams }: { searchParams
             {clientes.length === 0 ? (
               <Vacio titulo="Todavía no hay clientes">Registra el primer prospecto con su RFC.</Vacio>
             ) : (
-              <div className="tabla-contenedor">
+              <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de la cartera de clientes">
                 <table className="tabla operacion-tabla">
                   <thead>
                     <tr>

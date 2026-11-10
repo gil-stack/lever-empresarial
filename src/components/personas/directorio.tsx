@@ -69,7 +69,7 @@ export function DirectorioPersonas({
             {lectura.total === 0 ? "Prueba con otra búsqueda o limpia los filtros." : "Vuelve a la primera página para seguir consultando."}
           </Vacio>
         ) : (
-          <div className="tabla-contenedor">
+          <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla del directorio de personas">
             <table className="tabla personas-tabla">
               <thead>
                 <tr>
