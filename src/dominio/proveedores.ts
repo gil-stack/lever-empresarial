@@ -1,7 +1,9 @@
 import { clabeValida } from "./clabe";
+import { TOPE_ARCHIVO_BYTES, TOPE_ARCHIVO_TEXTO } from "./archivos";
 import { FRASE_FUERA_DE_LISTA, FRASE_SIN_PAGO } from "./lista-69b";
 import { horaEnMexico } from "./reloj";
 import { normalizarRfc, validarRfc } from "./rfc";
+import { INVISIBLE } from "./control";
 
 /**
  * Alta de proveedor en la consola de finanzas.
@@ -12,9 +14,12 @@ import { normalizarRfc, validarRfc } from "./rfc";
  * el proveedor puede existir y el pago no. Esta fase no envía un SPEI.
  */
 
-export const PESO_MAXIMO_CONSTANCIA = 8_000_000;
+export const PESO_MAXIMO_CONSTANCIA = TOPE_ARCHIVO_BYTES;
+/** Dos archivos en un envío comparten el tope: lo revisan el navegador y la acción. */
+export const CONSTANCIA_Y_CONTRATO = `La constancia y el contrato juntos no pueden superar ${TOPE_ARCHIVO_TEXTO}.`;
+export const XML_Y_PDF = `El XML y el PDF juntos no pueden superar ${TOPE_ARCHIVO_TEXTO}.`;
+export const CONTRATO_DEMASIADO_GRANDE = `El contrato debe ser un PDF de hasta ${TOPE_ARCHIVO_TEXTO}.`;
 const TOPE_RAZON = 254;
-const CONTROL = /[\u0000-\u001F\u007F]/;
 
 const MESES = [
   "enero",
@@ -46,7 +51,8 @@ export type CodigoRechazoProveedor =
   | "libro"
   | "archivo_no_disponible"
   | "listado_ilegible"
-  | "listado_sin_fecha";
+  | "listado_sin_fecha"
+  | "empresa_suspendida";
 
 export type EstadoAltaProveedor =
   | { tipo: "inicial" }
@@ -139,12 +145,12 @@ const CAMPO_DE_CODIGO: Readonly<Record<string, ErrorCampoProveedor>> = {
   rfc_patron: { campo: "rfc", mensaje: "Ese RFC no tiene el patrón del SAT." },
   rfc_generico: { campo: "rfc", mensaje: "Ese RFC no es de un proveedor." },
   razon_vacia: { campo: "razonSocial", mensaje: "Escribe la razón social." },
-  razon_control: { campo: "razonSocial", mensaje: "La razón social tiene un carácter que no se puede guardar." },
+  razon_control: { campo: "razonSocial", mensaje: "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano." },
   razon_larga: { campo: "razonSocial", mensaje: "La razón social no cabe." },
   clabe_invalida: { campo: "clabe", mensaje: "La CLABE no cierra con el dígito. No se guarda." },
   constancia_ausente: { campo: "constancia", mensaje: "Falta la constancia de situación fiscal." },
   constancia_tipo: { campo: "constancia", mensaje: "La constancia tiene que ser un PDF." },
-  constancia_peso: { campo: "constancia", mensaje: "Ese PDF pesa de más. No se guardó." },
+  constancia_peso: { campo: "constancia", mensaje: `Ese PDF pasa de ${TOPE_ARCHIVO_TEXTO}. No se guardó.` },
   constancia_vacia: { campo: "constancia", mensaje: "Ese PDF está vacío." },
   proveedor_duplicado: { campo: "rfc", mensaje: "Ese RFC ya es un proveedor. No entra otra vez." },
   nombre_comercial_invalido: { campo: "nombreComercial", mensaje: "Revisa el nombre comercial." },
@@ -159,7 +165,7 @@ export function errorDeCodigo(codigo: string): ErrorCampoProveedor | null {
 
 export function mensajeConstancia(codigo: CodigoConstancia): string {
   if (codigo === "constancia_ausente") return "Falta la constancia de situación fiscal.";
-  if (codigo === "constancia_peso") return "Ese PDF pesa de más. No se guardó.";
+  if (codigo === "constancia_peso") return `Ese PDF pasa de ${TOPE_ARCHIVO_TEXTO}. No se guardó.`;
   if (codigo === "constancia_vacia") return "Ese PDF está vacío.";
   return "La constancia tiene que ser un PDF.";
 }
@@ -295,6 +301,10 @@ export function releerFichas<T extends FichaReleida>(
 }
 
 export const MENSAJE_RECHAZO: Record<CodigoRechazoProveedor, { titulo: string; texto: string }> = {
+  empresa_suspendida: {
+    titulo: "La empresa está suspendida",
+    texto: "No se dan de alta proveedores mientras esté suspendida. Comunícate con Lever.",
+  },
   sin_permiso: {
     titulo: "Tu rol no da de alta",
     texto: "El administrador y quien libera anotan al proveedor. El contador lo ve.",
@@ -343,7 +353,7 @@ function motivoRazon(valor: unknown): ErrorCampoProveedor | null {
   if (typeof valor !== "string") return errorDeCodigo("razon_vacia");
   const razon = valor.trim();
   if (razon.length === 0) return errorDeCodigo("razon_vacia");
-  if (CONTROL.test(razon)) return errorDeCodigo("razon_control");
+  if (INVISIBLE.test(razon)) return errorDeCodigo("razon_control");
   if (razon.length > TOPE_RAZON) return errorDeCodigo("razon_larga");
   return null;
 }
@@ -367,7 +377,8 @@ function motivoArchivo(archivo: { nombre: string; tipo: string; peso: number } |
 
 function nombreLimpio(nombre: string): string {
   const base = nombre.split(/[/\\]/).pop() ?? "";
-  const limpio = base.replace(/[\u0000-\u001F\u007F]/g, "").trim().slice(0, 180);
+  // Se recorta también después del corte: el CHECK `documents_nombre_presente` pide `btrim`.
+  const limpio = base.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim().slice(0, 180).trim();
   return limpio.length > 0 ? limpio : "constancia.pdf";
 }
 

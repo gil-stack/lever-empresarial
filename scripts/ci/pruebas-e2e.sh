@@ -102,11 +102,26 @@ if [ "$modo" = ci ]; then
   marca "Postgres y navegador listos"
 fi
 
+# El conteo sale del reporte JSON, no del código de salida: una parte de
+# `--shard` sin pruebas termina en 0 y pasaría por verde sin probar nada.
+resumen=test-results/e2e-resumen.json
+mkdir -p test-results
+rm -f "$resumen"
 set +e
-./node_modules/.bin/playwright test "$@"
+PLAYWRIGHT_JSON_OUTPUT_FILE="$resumen" ./node_modules/.bin/playwright test --reporter=list,json "$@"
 estado=$?
 set -e
-marca "recorridos terminados con estado $estado"
+corridas=$(node -e 'const s = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).stats; console.log(s.expected + s.unexpected + s.flaky)' "$resumen" 2>/dev/null || true)
+marca "recorridos terminados con estado $estado · ${corridas:-?} pruebas corridas"
+
+if [ -z "$corridas" ]; then
+  echo "[e2e] ERROR: no se pudo leer el conteo de pruebas de $resumen; la corrida no cuenta como verde." >&2
+  estado=1
+elif [ "$corridas" -eq 0 ]; then
+  echo "[e2e] ERROR: esta corrida no ejecutó ninguna prueba (argumentos: $*)." >&2
+  echo "[e2e] Si es una parte de --shard, el reparto la dejó vacía: un archivo con describe.configure({ mode: \"serial\" }) viaja entero a una sola parte. Divide ese archivo o reparte specs para que cada parte tenga pruebas." >&2
+  estado=1
+fi
 
 if [ "$estado" -ne 0 ]; then
   # Vercel CI no guarda archivos de una tarea que falla: la evidencia va a la salida.

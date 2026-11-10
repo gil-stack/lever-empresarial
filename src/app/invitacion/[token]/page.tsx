@@ -10,7 +10,9 @@ export const runtime = "nodejs";
 
 export const metadata: Metadata = {
   title: "Invitación",
-  referrer: "no-referrer",
+  // Como todo el sitio (next.config.ts): el enlace con el token no sale a otros sitios, y el navegador manda su
+  // Origin al aceptar sin JavaScript. Con no-referrer mandaba «null» y la acción daba 500.
+  referrer: "same-origin",
 };
 
 export default async function PaginaInvitacion({ params }: { params: Promise<{ token: string }> }) {

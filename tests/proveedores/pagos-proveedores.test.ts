@@ -10,6 +10,7 @@ import { leerPendientesInicio } from "../../src/server/inicio/servicio.ts";
 import { cerrarConexion } from "../../src/nucleo/db.ts";
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
 import {
+  agregarContratoProveedor,
   cancelarPagoProveedor,
   crearPagoProveedor,
   descargarDocumentoProveedor,
@@ -269,6 +270,58 @@ test("cuentas por pagar contra Postgres: personas, versiones, CLABE, 69-B, SQL d
         assert.throws(() => comoCliente(url, SOFIA, `update supplier_payables set anulado_en = null where id = '${pagoC.payableId}'`), /cargo_proveedor_no_editable/);
       });
 
+      await t.test("los motivos cuentan caracteres como la base: un emoji no completa el mínimo", async () => {
+        // líder-N2: «Revisar 😀» son 9 caracteres (10 unidades UTF-16). Antes pasaba el dominio y el CHECK
+        // `supplier_payables_motivo` lo rechazaba con un error genérico; ahora es «motivo_invalido».
+        await assert.rejects(
+          () => crearPagoProveedor(sofia, { ...excepcion("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae1"), motivoExcepcion: "Revisar 😀" }, deps),
+          conCodigo("motivo_invalido"),
+        );
+        // Con 10 caracteres y su emoji, lo que acepta el dominio lo acepta el CHECK de la base.
+        const conEmoji = await crearPagoProveedor(sofia, { ...excepcion("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae2"), motivoExcepcion: "Pago 😀 ya!" }, deps);
+        assert.equal(
+          consultarJson<Array<{ motivo: string; largo: number }>>(url, `select json_agg(json_build_object('motivo', motivo_excepcion, 'largo', char_length(motivo_excepcion))) from supplier_payables where id = '${conEmoji.payableId}'`)[0]?.largo,
+          10,
+        );
+        // serv-nuevo-1: un motivo de excepción de 30 caracteres pegado con un control invisible (U+0085) se guarda
+        // sin él (antes: «Explica el motivo con al menos 10 caracteres» o el error genérico del CHECK).
+        const conControl = await crearPagoProveedor(sofia, { ...excepcion("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae3"), motivoExcepcion: "Trabajo urgente\u0085 autorizado ya" }, deps);
+        assert.equal(
+          consultarJson<string[]>(url, `select json_agg(motivo_excepcion) from supplier_payables where id = '${conControl.payableId}'`)[0],
+          "Trabajo urgente autorizado ya",
+        );
+        await cancelarPagoProveedor(sofia, { requestId: conControl.requestId, motivo: "Prueba del control invisible" }, deps);
+        // bar-10: una fecha que no existe en el calendario (o del año 0) se rechaza sin filas (antes llegaba a la
+        // base y respondía 22008 sin traducir), y con el código de su campo para marcarlo (P3: antes todas eran
+        // «fecha_invalida» y el aviso marcaba el vencimiento o «Vigente hasta»).
+        const cargos = () => consultarJson<number[]>(url, "select json_agg(n) from (select count(*)::int as n from supplier_payables) t")[0];
+        const documentos = () => consultarJson<number[]>(url, "select json_agg(n) from (select count(*)::int as n from supplier_documents) t")[0];
+        const [cargosAntes, documentosAntes] = [cargos(), documentos()];
+        await assert.rejects(
+          () => crearPagoProveedor(sofia, { ...excepcion("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae4"), emitidaEl: "0000-01-01" }, deps),
+          conCodigo("fecha_emision_invalida"),
+        );
+        await assert.rejects(
+          () => agregarContratoProveedor(luis, { supplierId: PROVEEDOR, pdf: { nombre: "contrato.pdf", bytes: PDF }, vigenteDesde: "2026-02-30", vigenteHasta: "" }, deps),
+          conCodigo("fecha_desde_invalida"),
+        );
+        await assert.rejects(
+          () => agregarContratoProveedor(luis, { supplierId: PROVEEDOR, pdf: { nombre: "contrato.pdf", bytes: PDF }, vigenteDesde: "2026-11-01", vigenteHasta: "2026-13-01" }, deps),
+          conCodigo("fecha_hasta_invalida"),
+        );
+        // P3: «Vigente hasta» tiene su propio código y texto (antes reutilizaba «fecha_invalida», cuyo texto habla de
+        // la emisión y el vencimiento de un pago), también cuando queda antes de «Vigente desde».
+        await assert.rejects(
+          () => agregarContratoProveedor(luis, { supplierId: PROVEEDOR, pdf: { nombre: "contrato.pdf", bytes: PDF }, vigenteDesde: "2026-11-01", vigenteHasta: "2026-10-31" }, deps),
+          conCodigo("fecha_hasta_invalida"),
+        );
+        assert.deepEqual([cargos(), documentos()], [cargosAntes, documentosAntes]);
+        // El de cancelar pide 5: «ok 😀» son 4.
+        await assert.rejects(() => cancelarPagoProveedor(sofia, { requestId: conEmoji.requestId, motivo: "ok 😀" }, deps), conCodigo("motivo_invalido"));
+        await cancelarPagoProveedor(sofia, { requestId: conEmoji.requestId, motivo: "ok 😀!" }, deps);
+        assert.equal(estado(url, conEmoji.requestId), "cancelado");
+      });
+
       await t.test("la lista 69-B posterior a la autorización regresa el pago a revisión", async () => {
         const pagoE = await crearPagoProveedor(sofia, excepcion("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaae1", PROVEEDOR_69B), deps);
         await decidir(rosa, pagoE.requestId, "autorizar", { version: 1, total: 125050 });
@@ -440,7 +493,7 @@ async function esperarCandado(url: string): Promise<void> {
 }
 
 function sqlCarga(operadorId: string, copia: string, fecha: string, rfcs: string[]): string {
-  return `insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values ('${copia}', date '${fecha}', now());
+  return `insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ('${copia}', '${operadorId}', date '${fecha}', now());
     insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador)
       values ('${operadorId}', 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', '${copia}');
     insert into lista_69b_rows (snapshot_id, rfc, situacion) values ${rfcs.map((rfc) => `('${copia}', '${rfc}', 'Presunto')`).join(", ")};`;
@@ -525,7 +578,7 @@ function sembrar(url: string): string {
       values ((select id from operators order by alta_en limit 1), '${EMPRESA}', 'miembro', '${LUIS}', 'cliente', 'alta_empresa', 'companies', '${EMPRESA}');
     insert into memberships (user_id, company_id, estado) values ${personas.map(([id]) => `('${id}', '${EMPRESA}', 'activa')`).join(", ")};
     ${roles}
-    insert into lista_69b_snapshots (id, fecha_archivo, cargado_en) values ('${COPIA}', date '2026-09-30', timestamptz '2026-10-01 15:00:00+00');
+    insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en) values ('${COPIA}', (select id from operators order by alta_en limit 1), date '2026-09-30', timestamptz '2026-10-01 15:00:00+00');
     insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador)
       values ((select id from operators order by alta_en limit 1), 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', '${COPIA}');
     insert into lista_69b_rows (snapshot_id, rfc, situacion) values ('${COPIA}', 'PAL7202161U0', 'Presunto');

@@ -71,8 +71,8 @@ test("la copia nueva apaga el pago y la CLABE no cruza de empresa", async () => 
     ejecutar(
       url,
       `begin;
-       insert into lista_69b_snapshots (id, fecha_archivo, cargado_en)
-         values ('${COPIA_2}', date '2026-10-31', timestamptz '2026-11-04 21:09:00+00');
+       insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en)
+         values ('${COPIA_2}', (select id from operators order by alta_en limit 1), date '2026-10-31', timestamptz '2026-11-04 21:09:00+00');
        insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador)
          values ((select id from operators order by alta_en limit 1), 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', '${COPIA_2}');
        insert into lista_69b_rows (snapshot_id, rfc, situacion)
@@ -149,8 +149,8 @@ function sembrar(url: string): void {
        values ('${OTRA}', 'PAL7202161U0', 'Otra cuenta', '06600', '601', 'G03', (select id from operators order by alta_en limit 1), 'activa', true);
      insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
        values ((select id from operators order by alta_en limit 1), '${OTRA}', 'miembro', '${USUARIO}', 'cliente', 'alta_empresa', 'companies', '${OTRA}');
-     insert into lista_69b_snapshots (id, fecha_archivo, cargado_en)
-       values ('${COPIA_1}', date '2026-09-30', timestamptz '2026-10-01 15:00:00+00');
+     insert into lista_69b_snapshots (id, operator_id, fecha_archivo, cargado_en)
+       values ('${COPIA_1}', (select id from operators order by alta_en limit 1), date '2026-09-30', timestamptz '2026-10-01 15:00:00+00');
      insert into audit_log (operator_id, actor_tipo, superficie, accion, entidad, identificador)
        values ((select id from operators order by alta_en limit 1), 'sistema', 'sistema', 'cargar_lista_69b', 'lista_69b_snapshots', '${COPIA_1}');
      insert into lista_69b_rows (snapshot_id, rfc, situacion)

@@ -1,0 +1,180 @@
+== reloj +30 días · real 2026-11-09T16:20:57Z · código a75d5e4 (copia git archive)
+   Postgres: faketime -f +30d postgres -D <datos> -p 5551 (binario directo, sin pg_ctl)
+   Postgres now(): 2026-12-09 23:20:57.100273+07
+   Node (faketime): 2026-12-09T16:20:57.142Z
+   hijo por .bin/tsx (como spawnSync de las pruebas): 2026-12-09T16:20:57.477Z
+✔ el usuario de la empresa A no lee la empresa B, y Postgres tampoco (2852.205167ms)
+▶ teléfono y tenencia en Postgres
+  ✔ no expone tesorería, otra persona ni otra empresa; NULL y cero se conservan (2495.42625ms)
+✔ teléfono y tenencia en Postgres (2496.173666ms)
+▶ el tope de contraseña en Postgres
+  ✔ la cuenta en el tope, la contraseña mala y el correo inexistente responden igual y al mismo tiempo (20526.419959ms)
+  ℹ tope: 1501.5 1500.6 1501.4 ms
+  ℹ mala: 1501.5 1501.7 1500.6 ms
+  ℹ inexistente: 1501.9 1501.4 1501.5 ms
+✔ el tope de contraseña en Postgres (20527.136625ms)
+▶ autenticación en Postgres
+  ✔ niega la sesión sin factor, el borrado y la recuperación a la misma persona (1761.156ms)
+✔ autenticación en Postgres (1761.856583ms)
+▶ recuperación con factores viejos en Postgres
+  ✔ inscribe el factor nuevo, deja sin efecto los viejos con su bitácora y, si algo falla, no cambia nada (7765.836ms)
+  ✔ 0027 se aplica sobre datos que ya cumplían el índice de 0019 y los conserva (1613.848458ms)
+✔ recuperación con factores viejos en Postgres (9380.479ms)
+{"nivel":"error","origen":"invitaciones.recuperar","evento":"recuperacion_correo_no_enviado","solicitud":"6df4b077-bb19-43e3-82df-c81a8750e57a","error":"correo_no_disponible"}
+▶ seguridad de cuentas en Postgres
+  ✔ cierra la fuga entre empresas, indexa el bloqueo, vence por inactividad y no deja nada vivo al cambiar la contraseña (3473.727167ms)
+✔ seguridad de cuentas en Postgres (3474.531833ms)
+✔ el esquema vivo coincide con las migraciones y toda tabla tiene RLS (1729.539459ms)
+✔ dos usuarios firman, y el libro rechaza la misma persona, a la administradora y al contador (1810.245416ms)
+▶ Flujo de caja en Postgres
+  ✖ separa empresas, exige permiso de edición, no reescribe pagos y manda un correo por empresa y semana (2233.2235ms)
+✖ Flujo de caja en Postgres (2234.569625ms)
+▶ Inicio financiero en Postgres
+  ✔ consolida solo la empresa, corta el mes en hora de México y Finanzas se otorga y revoca (2945.065959ms)
+✔ Inicio financiero en Postgres (2945.8585ms)
+▶ caracteres de control: el servidor y la base cuentan lo mismo
+  ✔ CONTROL coincide con [[:cntrl:]] de pg_c_utf8 de U+0001 a U+FFFF (30.330417ms)
+✔ caracteres de control: el servidor y la base cuentan lo mismo (31.015625ms)
+▶ alta regulada en Postgres desechable
+  ✔ H2 y N3: la 0028 sobre una base en la 0027 asigna la 69-B al único operador; la primera Administración la da la dueña (5925.991ms)
+  ▶ roles, expediente, riesgo, LPB, suspensión, candado, RLS y lecturas auditadas
+    ✔ 50ª: el auditor no recibe cumplimiento, nadie se da roles y todo cambio deja evento (67.319042ms)
+    ✔ expediente: dos capas de socios, propietarios reales calculados, versión inmutable y dictamen (178.742625ms)
+    ✔ grado de riesgo: seis meses de vigencia y revisión vencida calculada al leer (44.36325ms)
+    ✔ candado de activación: la base rechaza cada faltante (90.409584ms)
+    ✔ LPB: carga versionada, posible por nombre y propietario real exacto que suspende con plazo de 24 h (63.705ms)
+    ✔ reactivar tras la LPB exige cerrar la coincidencia y dos personas (23.531125ms)
+    ✔ suspensión manual con doble firma: ni dinero ni consola ni invitaciones, tampoco por SQL (218.072958ms)
+    ✔ RLS entre operadores, lecturas auditadas y Blob sin borrados (52.788166ms)
+    ✔ roles iniciales por comando: solo la dueña de la base, con evento y sin saltarse la 50ª (2564.034334ms)
+    ✔ H1: desde la aplicación una empresa solo nace prospecto y real (81.897209ms)
+    ✔ H12: lo autorizado regresa a «por autorizar» al suspender o cuando la contraparte entra a la lista (71.618416ms)
+    ✔ H3 y H6: un caso cerrado se reabre con una carga nueva y no con la misma; la reactivación con foto vieja aborta (96.07425ms)
+    ✔ H2: solo Administración escribe el personal, la 69-B, el precio, invitaciones y membresías (1809.617875ms)
+    ✔ H6, H7, H8 y N3: la 50ª con foto vieja aborta, sin usuario nadie da roles y un evento por cosa (387.7985ms)
+    ✔ H9: las funciones del sistema no responden por otro operador ni sin contexto (71.006542ms)
+    ✔ H5 y H10: CURP y RFC obligatorios al enviar, suma por CURP y estructura de hasta 10 capas (261.631958ms)
+    ✔ N2: el socio extranjero sin CURP se identifica con país, documento y fecha de nacimiento y suma una vez (201.548417ms)
+    ✔ N2-resto y N6: la misma persona con dos identificadores no se parte; la moral extranjera se identifica con país y registro (457.900166ms)
+    ✔ H11: el portal no lee en la bitácora lo de Cumplimiento; que está suspendida, sí (11.506917ms)
+    ✔ F4 y F5: un doble envío simultáneo deja una fila y un evento; un formulario ajeno no se da por hecho (138.103791ms)
+    ✔ F6: el comando no adivina banderas: repetida, con valor en una de sí o no, desconocida o sin --demostracion (772.6485ms)
+    ✔ F8: Originación y Aprobación ven «en revisión de Cumplimiento» sin detalle; Administración no lee esos motivos (9.797542ms)
+    ✔ S6: en la bitácora del personal, los eventos de la lista de una empresa solo los leen Cumplimiento y Auditoría (26.650791ms)
+    ✔ S12 y N8: el alta por la dueña deja la conexión y el correo de quien corrió el comando; la bitácora nombra la coincidencia detectada (11.214041ms)
+    ✔ F9: sin el rol no se lee el archivo; uno que pasa del tope tampoco (2.735167ms)
+    ✔ H4: el nombre se compara sin orden de palabras, sin puntuación y sin letras fuera de la tabla (21.719375ms)
+    ✔ N1: el falso positivo exacto resuelto con una carga posterior no se reabre con esa misma; con la siguiente, sí (104.957583ms)
+    ✔ N5: Cumplimiento cierra un caso mientras otra pestaña carga una lista con la misma persona: o se reabre con la nueva o el cierre la anota (391.780375ms)
+    ✔ H2: con su propia copia el operador sí suspende y «fuera de lista» mira la copia de su operador (65.476584ms)
+    ✔ base-N23: un control entre dos palabras no pega el nombre que se coteja contra la Lista ni el giro (77.913125ms)
+  ✔ roles, expediente, riesgo, LPB, suspensión, candado, RLS y lecturas auditadas (10078.885666ms)
+✔ alta regulada en Postgres desechable (16005.158875ms)
+{"nivel":"error","origen":"nucleo.db","evento":"error_de_base_sin_traducir","clase":"postgres","codigo":"23P01","restriccion":"company_commissions_sin_solape","tabla":"company_commissions","rutina":"check_exclusion_or_unique_constraint","raise":null}
+▶ vertical slice 5A en Postgres desechable
+  ✔ origina, separa aprobadores, invalida reenvíos, aísla RLS y versiona sin solapes (1927.0635ms)
+✔ vertical slice 5A en Postgres desechable (1927.589583ms)
+✖ colaboradores, nómina, tarjetas y lotes conservan tenant, idempotencia y snapshot (2001.160958ms)
+✔ blindajes: baja que vence, CLABE de nómina, permisos, empresas ajenas y calendario (3330.80125ms)
+✖ calendario y lotes: fecha del servidor, fechas ya preparadas, totales sin tope y renglones por rol (1943.727541ms)
+✔ la CLABE del proveedor conserva el historial en Postgres (1502.220292ms)
+▶ lectura segura del CFDI
+  ✔ lee timbre, partes, referencia, fecha y centavos sin consultar ni inventar vigencia SAT (3.417041ms)
+  ✔ rechaza entidades, XML roto, moneda distinta y datos incompletos (1.763083ms)
+  ✔ rechaza un CFDI válido que trae marcado ejecutable en la addenda (0.953792ms)
+✔ lectura segura del CFDI (6.688375ms)
+▶ fechas de la obligación
+  ✔ calcula días sin depender de la zona del servidor y rechaza calendario imposible (0.573834ms)
+  ✔ no permite programar en pasado ni vencer antes de emitir (0.06575ms)
+✔ fechas de la obligación (0.71475ms)
+▶ el CFDI leído cabe en la base
+  ✔ bar-7: un total de más de 9e15 centavos no se lee (0.354833ms)
+  ✔ bar-8: el RFC receptor tiene la forma del RFC y la serie y el folio no traen caracteres de control (0.365709ms)
+  ✔ serv-nuevo-3: los saltos literales valen un espacio y el nombre quita el control de una referencia (0.3685ms)
+  ✔ bar-9: decodifica las cinco entidades y las referencias numéricas en una pasada, sin expandir un DOCTYPE (0.591458ms)
+✔ el CFDI leído cabe en la base (1.807ms)
+▶ bar-7: el monto escrito de un pago cabe en la base
+  ✔ hasta 9e15 centavos, como el CHECK `supplier_payables_total` (0.104167ms)
+✔ bar-7: el monto escrito de un pago cabe en la base (0.1425ms)
+▶ referencias de entidad en el CFDI
+  ✔ una entidad sin declarar o mal escrita es un XML inválido; las predefinidas y numéricas se leen (0.399292ms)
+✔ referencias de entidad en el CFDI (0.4345ms)
+▶ bar-10: las fechas del pago existen en el calendario
+  ✔ el año 0 y un día que no existe no son fechas de pago (0.130583ms)
+✔ bar-10: las fechas del pago existen en el calendario (0.152ms)
+▶ cuentas por pagar contra Postgres: personas, versiones, CLABE, 69-B, SQL directo y concurrencia
+  ✔ Pendientes cuenta los pagos por autorizar solo para quien puede resolverlos (15.768541ms)
+  ✔ quien pidió el pago no lo ve como pendiente suyo (100.0955ms)
+  ✔ dos personas: quien solicita no autoriza y el CFDI repetido no sube archivos (85.649583ms)
+  ✔ se autoriza la versión que vio quien decide, no la que haya ahora (32.522291ms)
+  ✔ el rechazo se conserva en el historial y subir el importe exige evidencia nueva (111.200458ms)
+  ✔ la base protege cargo y solicitud aunque se escriba SQL directo (334.938458ms)
+  ✔ una escritura sin su evento de bitácora se revierte completa (191.50275ms)
+  ✔ el contador y un liberador dado de baja no autorizan, ni por servicio ni por SQL (142.016625ms)
+  ✔ el cambio de CLABE regresa los pagos listos a revisión en la misma transacción (134.986875ms)
+  ✔ un pago listo se cancela con motivo, un rechazado lo cancela quien solicitó y el UUID queda libre (133.6825ms)
+  ✔ los motivos cuentan caracteres como la base: un emoji no completa el mínimo (199.273792ms)
+  ✔ la lista 69-B posterior a la autorización regresa el pago a revisión (116.306708ms)
+  ✔ concurrencia: dos liberadores a la vez, y la carga 69-B espera a la autorización en vuelo (302.04625ms)
+  ✔ el aviso de CLABE que falla se registra sin datos sensibles (5.18575ms)
+  ✔ quien solicita ve la terminación de la CLABE y no descarga constancias (44.013875ms)
+✔ cuentas por pagar contra Postgres: personas, versiones, CLABE, 69-B, SQL directo y concurrencia (3547.439875ms)
+✔ 0015 declara la relectura y no abre un riel de dinero (0.606ms)
+✔ la copia nueva apaga el pago y la CLABE no cruza de empresa (1624.090167ms)
+ℹ tests 79
+ℹ suites 16
+ℹ pass 76
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 84187.354791
+
+✖ failing tests:
+
+test at tests/flujo/flujo-postgres.test.ts:62:3
+✖ separa empresas, exige permiso de edición, no reescribe pagos y manda un correo por empresa y semana (2233.2235ms)
+  ErrorDeDominio: invitacion_vencida
+      at aceptarInvitacion (<copia de a75d5e4>/src/server/invitaciones/servicio.ts:58:50)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async persona (<copia de a75d5e4>/tests/flujo/flujo-postgres.test.ts:805:20)
+      at async escenario (<copia de a75d5e4>/tests/flujo/flujo-postgres.test.ts:110:20)
+      at async <anonymous> (<copia de a75d5e4>/tests/flujo/flujo-postgres.test.ts:75:9)
+      at async conBaseDesechable (<copia de a75d5e4>/tests/aislamiento/postgres.ts:71:12)
+      at async TestContext.<anonymous> (<copia de a75d5e4>/tests/flujo/flujo-postgres.test.ts:64:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1889:7) {
+    codigo: 'invitacion_vencida'
+  }
+
+test at tests/personas/colaboradores-postgres.test.ts:45:1
+✖ colaboradores, nómina, tarjetas y lotes conservan tenant, idempotencia y snapshot (2001.160958ms)
+  ErrorDeDominio: invitacion_vencida
+      at aceptarInvitacion (<copia de a75d5e4>/src/server/invitaciones/servicio.ts:58:50)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async escenario (<copia de a75d5e4>/tests/personas/colaboradores-postgres.test.ts:207:20)
+      at async <anonymous> (<copia de a75d5e4>/tests/personas/colaboradores-postgres.test.ts:56:7)
+      at async conBaseDesechable (<copia de a75d5e4>/tests/aislamiento/postgres.ts:71:12)
+      at async TestContext.<anonymous> (<copia de a75d5e4>/tests/personas/colaboradores-postgres.test.ts:48:3)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    codigo: 'invitacion_vencida'
+  }
+
+test at tests/personas/colaboradores-postgres.test.ts:529:1
+✖ calendario y lotes: fecha del servidor, fechas ya preparadas, totales sin tope y renglones por rol (1943.727541ms)
+  ErrorDeDominio: primer_pago_invalido
+      at darDeAltaPersona (<copia de a75d5e4>/src/server/personas/servicio.ts:186:35)
+      at miembro (<copia de a75d5e4>/tests/personas/colaboradores-postgres.test.ts:324:22)
+      at calendario (<copia de a75d5e4>/tests/personas/colaboradores-postgres.test.ts:564:28)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async <anonymous> (<copia de a75d5e4>/tests/personas/colaboradores-postgres.test.ts:540:7)
+      at async conBaseDesechable (<copia de a75d5e4>/tests/aislamiento/postgres.ts:71:12)
+      at async TestContext.<anonymous> (<copia de a75d5e4>/tests/personas/colaboradores-postgres.test.ts:532:3)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    codigo: 'primer_pago_invalido'
+  }
+   salida de la suite: 1
+   Postgres now() al final: 2026-12-09 23:22:21.802424+07

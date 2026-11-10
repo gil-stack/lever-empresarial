@@ -1,4 +1,5 @@
 import { formatoPesos } from "./centavos";
+import { CONTROL } from "./control";
 
 /**
  * La cuenta nace con cinco días y cinco comprobantes vencidos.
@@ -177,7 +178,7 @@ export function validarNombreCategoria(
 function nombreGuardado(nombre: string): string | null {
   if (nombre !== nombre.trim()) return null;
   if (nombre.length < 1 || nombre.length > NOMBRE_CATEGORIA_MAX) return null;
-  if (/[\u0000-\u001f\u007f]/.test(nombre)) return null;
+  if (CONTROL.test(nombre)) return null;
   return nombre;
 }
 

@@ -1,0 +1,11 @@
+# Rojo del e2e «sin JavaScript, el rechazo de un campo del expediente…» con fallo() como en 32e49b8 (redirige con #datos-titulo)
+# Comando: E2E_PUERTO=3151 E2E_BLOB_PUERTO=4894 sh scripts/ci/pruebas-e2e.sh -g "el rechazo de un campo del expediente"
+
+  ✘  1 tests/e2e/operacion.spec.ts:561:7 › sin JavaScript › sin JavaScript, el rechazo de un campo del expediente vuelve sin fragmento y con el foco en el campo (15.4s)
+    Error: expect(locator).toHaveCount(expected) failed
+    Expected: 1
+    Received: 0
+    > 577 |     await expect(page.locator("#dato-razonSocial:focus")).toHaveCount(1);
+    test-results/e2e/operacion-sin-JavaScript-s-e4744-o-y-con-el-foco-en-el-campo/test-failed-1.png
+  1 failed
+- Following Playwright test failed.

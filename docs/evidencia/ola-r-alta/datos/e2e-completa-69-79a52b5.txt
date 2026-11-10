@@ -1,0 +1,171 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+  [90m 7 |[0m [90m * ejecuta y el servidor no migra al arrancar.[0m
+  [90m 8 |[0m [90m */[0m
+[33m[1m>[0m [90m 9 |[0m [36mexport[0m [36mconst[0m [33mCONTRATO_TABLAS[0m = readFileSync(rutaDelContrato(), [32m"utf8"[0m);
+  [90m   |[0m                                [33m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m10 |[0m
+  [90m11 |[0m [36mfunction[0m rutaDelContrato(): string {
+  [90m12 |[0m   [36mtry[0m {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 4 s
+
+Running 69 tests using 1 worker
+
+  ✓   1 tests/e2e/entrada.spec.ts:17:5 › entra con contraseña y código TOTP: doble clic abre una sola entrada y una sola sesión (1.8s)
+[tope] diferencias en el servidor (ms): 0, 0, 0, 3, 1, 0, 1, 0, 0 · mediana 0
+  ✓   2 tests/e2e/entrada.spec.ts:68:5 › el tope de intentos no revela si el correo tiene cuenta: mismo texto y mismo tiempo (28.7s)
+  ✓   3 tests/e2e/flujo-de-caja.spec.ts:43:5 › saldo declarado: doble clic deja una sola declaración y Inicio dice de dónde viene (1.3s)
+  ✓   4 tests/e2e/flujo-de-caja.spec.ts:65:5 › cobro esperado y cobro con XML: cada doble clic deja un solo cobro (1.2s)
+  ✓   5 tests/e2e/flujo-de-caja.spec.ts:116:5 › obligación recurrente con doble clic y presupuesto al 80 % y al 100 % en Presupuestos, Inicio y Pendientes (3.8s)
+  ✓   6 tests/e2e/flujo-de-caja.spec.ts:160:5 › escenario «mover pago»: la semana cambia en pantalla y la base no (1.5s)
+  ✓   7 tests/e2e/flujo-de-caja.spec.ts:199:5 › faltante: con poco saldo, Inicio y Pendientes avisan en qué semana (1.7s)
+  ✓   8 tests/e2e/flujo-de-caja.spec.ts:226:5 › nómina de una sola persona: finanzas ve «Monto reservado» y administración ve el monto (1.2s)
+  ✓   9 tests/e2e/invitacion.spec.ts:31:5 › invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta (5.7s)
+  ✓  10 tests/e2e/invitacion.spec.ts:117:5 › recuperar la contraseña por correo: un enlace, cierra las sesiones y entra con la nueva y su factor de siempre (6.1s)
+  ✓  11 tests/e2e/marco.spec.ts:17:7 › marco de la consola en escritorio › menú de la persona: cuatro opciones fuera del Tab; Tab y Escape cierran y regresan el foco al botón (1.2s)
+  ✓  12 tests/e2e/marco.spec.ts:43:7 › marco de la consola en escritorio › el buscador de la barra lleva a su sección con lo escrito (1.1s)
+  ✓  13 tests/e2e/marco.spec.ts:52:7 › marco de la consola en escritorio › Apariencia: con sesión y empresa se abre; sin sesión manda a entrar; otra empresa no la muestra (1.6s)
+  ✓  14 tests/e2e/marco.spec.ts:71:7 › cajón móvil › sin checkVisibility (Safari < 17.4): abre, atrapa el foco, deja el fondo inert; Escape y el velo regresan el foco (712ms)
+  ✓  15 tests/e2e/nomina.spec.ts:46:5 › alta de una persona con nómina: doble clic guarda una sola ficha, un perfil y una CLABE (1.5s)
+  ✓  16 tests/e2e/nomina.spec.ts:81:5 › cambio de CLABE de nómina: con factor viejo pide «Confirma que eres tú»; tras volver a entrar, doble clic = un cambio (2.8s)
+  ✓  17 tests/e2e/nomina.spec.ts:126:5 › preparar el lote vencido: doble clic = un lote con sus renglones y el calendario avanza (1.4s)
+  ✓  18 tests/e2e/operacion.spec.ts:242:7 › Operación SOFIPO: recuperaciones › «Perdí el segundo factor»: Recuperaciones pide «Confirma que eres tú», otra persona aprueba y la clienta registra un factor nuevo (3.5s)
+MEDIDA [id="nota-e160e2ca-5ebc-455f-a752-f514858722f4"] 1440: {"mensaje":{"arriba":526,"abajo":565},"campo":{"arriba":572,"abajo":668},"barras":84,"ventana":1000,"visible":true}
+  ✓  19 tests/e2e/operacion.spec.ts:314:7 › Operación SOFIPO: recuperaciones › con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca solo la nota de esa tarjeta (1.4s)
+  ✓  20 tests/e2e/operacion.spec.ts:354:7 › Operación SOFIPO: precio y descarga › publicar el precio exige factor de los últimos 30 minutos; tras volver a entrar, doble clic publica una vez (2.4s)
+  ✓  21 tests/e2e/operacion.spec.ts:382:7 › Operación SOFIPO: precio y descarga › la descarga del expediente llega aislada (sandbox) y la pantalla del expediente conserva la política general (130ms)
+  ✓  22 tests/e2e/operacion.spec.ts:411:7 › Operación SOFIPO: expediente de Duna › tras un rechazo del socio extranjero el formulario vuelve con todo lo capturado y el campo marcado; la moral extranjera entra sin RFC (5.9s)
+  ✓  23 tests/e2e/operacion.spec.ts:490:7 › Operación SOFIPO: expediente de Duna › un nombre con un carácter invisible da su propio aviso; el formulario de representante conserva lo capturado (2.2s)
+MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":683,"abajo":702},"campo":{"arriba":709,"abajo":749},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":683,"abajo":702},"campo":{"arriba":709,"abajo":749},"barras":84,"ventana":900,"visible":true}
+MEDIDA #acc-capital 1440: {"mensaje":{"arriba":330,"abajo":349},"campo":{"arriba":356,"abajo":396},"barras":84,"ventana":900,"visible":true}
+MEDIDA #motivo-suspension 1440: {"mensaje":{"arriba":463,"abajo":501},"campo":{"arriba":508,"abajo":604},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 390: {"mensaje":{"arriba":741,"abajo":760},"campo":{"arriba":767,"abajo":807},"barras":60,"ventana":844,"visible":true}
+MEDIDA #doc-archivo 390: {"mensaje":{"arriba":241,"abajo":260},"campo":{"arriba":267,"abajo":307},"barras":60,"ventana":844,"visible":true}
+MEDIDA #acc-capital 390: {"mensaje":{"arriba":211,"abajo":250},"campo":{"arriba":257,"abajo":297},"barras":60,"ventana":844,"visible":true}
+MEDIDA #motivo-suspension 390: {"mensaje":{"arriba":492,"abajo":550},"campo":{"arriba":557,"abajo":653},"barras":60,"ventana":844,"visible":true}
+  ✓  24 tests/e2e/operacion.spec.ts:571:7 › Operación SOFIPO: expediente de Duna › el mensaje del error queda a la vista junto al campo con foco: un documento y un socio del expediente y el motivo de una reactivación, a 1440 y 390 (4.3s)
+MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":404,"abajo":423},"campo":{"arriba":430,"abajo":470},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":404,"abajo":423},"campo":{"arriba":430,"abajo":470},"barras":84,"ventana":900,"visible":true}
+MEDIDA #acc-capital 1440: {"mensaje":{"arriba":404,"abajo":423},"campo":{"arriba":430,"abajo":470},"barras":84,"ventana":900,"visible":true}
+MEDIDA #motivo-suspension 1440: {"mensaje":{"arriba":382,"abajo":420},"campo":{"arriba":427,"abajo":523},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 390: {"mensaje":{"arriba":376,"abajo":395},"campo":{"arriba":402,"abajo":442},"barras":60,"ventana":844,"visible":true}
+MEDIDA #doc-archivo 390: {"mensaje":{"arriba":376,"abajo":395},"campo":{"arriba":402,"abajo":442},"barras":60,"ventana":844,"visible":true}
+MEDIDA #acc-capital 390: {"mensaje":{"arriba":356,"abajo":395},"campo":{"arriba":402,"abajo":442},"barras":60,"ventana":844,"visible":true}
+MEDIDA #motivo-suspension 390: {"mensaje":{"arriba":335,"abajo":393},"campo":{"arriba":400,"abajo":496},"barras":60,"ventana":844,"visible":true}
+MEDIDA [id="nota-282f36e8-e007-4679-96fc-c9b575d87122"] 390: {"mensaje":{"arriba":439,"abajo":458},"campo":{"arriba":465,"abajo":561},"barras":60,"ventana":844,"visible":true}
+  ✓  25 tests/e2e/operacion.spec.ts:583:9 › Operación SOFIPO: expediente de Duna › sin JavaScript › sin JavaScript, el mensaje del error queda a la vista junto al campo con foco: documento, socio, motivo de reactivación y la nota de una recuperación, a 1440 y 390 (2.0s)
+MEDIDA #rep-nombre 1440: {"mensaje":{"arriba":454,"abajo":473},"campo":{"arriba":480,"abajo":520},"barras":84,"ventana":1000,"visible":true}
+MEDIDA #acc-nombre 1440: {"mensaje":{"arriba":434,"abajo":473},"campo":{"arriba":480,"abajo":520},"barras":84,"ventana":1000,"visible":true}
+  ✓  26 tests/e2e/operacion.spec.ts:610:9 › Operación SOFIPO: expediente de Duna › sin JavaScript › sin JavaScript, «Agregar representante» y «Agregar accionista» con un invisible vuelven con su aviso, el campo marcado, el foco y lo capturado (571ms)
+  ✓  27 tests/e2e/operacion.spec.ts:658:9 › Operación SOFIPO: expediente de Duna › sin JavaScript › sin JavaScript, el rechazo de un campo del expediente vuelve con lo capturado, sin fragmento y con el foco en el campo (267ms)
+MEDIDA #dictamen-motivo 390: {"mensaje":{"arriba":335,"abajo":393},"campo":{"arriba":400,"abajo":496},"barras":60,"ventana":844,"visible":true}
+MEDIDA #riesgo-actividad 390: {"mensaje":{"arriba":357,"abajo":395},"campo":{"arriba":402,"abajo":442},"barras":60,"ventana":844,"visible":true}
+  ✓  28 tests/e2e/operacion.spec.ts:688:7 › doceava sin JavaScript: empresas propias de la siembra › sin JavaScript, el dictamen y el grado de riesgo de Enebro vuelven con lo elegido a 390; el doble clic tras el rechazo registra una vez (1.4s)
+MEDIDA [id="motivo-7331b2c8-f232-4d27-8b75-7b97c80d9885"] 1440: {"mensaje":{"arriba":385,"abajo":462},"campo":{"arriba":469,"abajo":509},"barras":84,"ventana":1000,"visible":true}
+MEDIDA [id="motivo-7331b2c8-f232-4d27-8b75-7b97c80d9885"] 1440: {"mensaje":{"arriba":385,"abajo":462},"campo":{"arriba":469,"abajo":509},"barras":84,"ventana":1000,"visible":true}
+  ✓  29 tests/e2e/operacion.spec.ts:695:7 › doceava sin JavaScript: empresas propias de la siembra › sin JavaScript, tras «Saltar al contenido» el rechazo de una tarjeta deja el foco en su campo, dos veces seguidas (439ms)
+  ✓  30 tests/e2e/operacion.spec.ts:723:7 › doceava sin JavaScript: empresas propias de la siembra › sin JavaScript, si otra pestaña ya registró el dictamen, el rechazo de Granado va arriba de la página aunque su formulario ya no se pinte (502ms)
+MEDIDA salir 1440: {"titulo":{"x":284,"y":28.4375,"width":106.21875,"height":31.1875},"chip":{"x":1137.578125,"y":22,"width":185,"height":44.0625},"boton":{"x":1334.578125,"y":26.03125,"width":61.421875,"height":36}}
+MEDIDA salir 390: {"titulo":{"x":16,"y":78.796875,"width":274,"height":26.390625},"chip":{"x":302,"y":72,"width":72,"height":40},"boton":{"x":312.578125,"y":124,"width":61.421875,"height":36}}
+  ✓  31 tests/e2e/operacion.spec.ts:728:7 › doceava sin JavaScript: empresas propias de la siembra › sin JavaScript, «Salir» se ve junto al menú, cierra la sesión y /operacion vuelve a la entrada, a 1440 y 390; el título y el chip no ceden espacio; con JavaScript no se ve (1.6s)
+MEDIDA #dictamen-motivo 1440: {"mensaje":{"arriba":636,"abajo":655},"campo":{"arriba":662,"abajo":758},"barras":84,"ventana":1000,"visible":true}
+MEDIDA #riesgo-actividad 1440: {"mensaje":{"arriba":454,"abajo":473},"campo":{"arriba":480,"abajo":520},"barras":84,"ventana":1000,"visible":true}
+  ✓  32 tests/e2e/operacion.spec.ts:778:7 › doceava sin JavaScript: empresas propias de la siembra › sin JavaScript, llegando por #dictamen-titulo (Higuera) y por #riesgo-titulo (Brisa), el rechazo deja el foco en su campo (604ms)
+  ✓  33 tests/e2e/operacion.spec.ts:804:7 › doceava sin JavaScript: empresas propias de la siembra › sin JavaScript, la suspensión de Bahía no consume el formulario al rechazarse, el doble clic pide una sola y la otra pestaña ve «ya hay una pendiente» (660ms)
+  ✓  34 tests/e2e/operacion.spec.ts:814:7 › Operación SOFIPO: Brisa y Cima › un caso abierto de Cumplimiento no se le nombra a Aprobación ni a Originación (1.6s)
+  ✓  35 tests/e2e/operacion.spec.ts:849:7 › Operación SOFIPO: Brisa y Cima › el grado de riesgo no le dice a Originación ni a Aprobación que hay una coincidencia; a Cumplimiento sí (1.5s)
+  ✓  36 tests/e2e/operacion.spec.ts:875:7 › Operación SOFIPO: Brisa y Cima › una clave repetida en la dirección (?aviso=a&aviso=b) no tumba ninguna página de Operación (8.6s)
+MEDIDA #dictamen-motivo 1440: {"mensaje":{"arriba":636,"abajo":655},"campo":{"arriba":662,"abajo":758},"barras":84,"ventana":900,"visible":true}
+MEDIDA #riesgo-actividad 1440: {"mensaje":{"arriba":468,"abajo":487},"campo":{"arriba":494,"abajo":534},"barras":84,"ventana":900,"visible":true}
+  ✓  37 tests/e2e/operacion.spec.ts:1140:7 › doceava con JavaScript: empresas propias de la siembra › doceava: el dictamen y el grado de riesgo de Eje vuelven con lo elegido; nada queda en «baja» sin elegirlo y el doble clic tras el rechazo registra una vez (2.2s)
+  ✓  38 tests/e2e/operacion.spec.ts:1146:7 › doceava con JavaScript: empresas propias de la siembra › doceava: si otra pestaña ya registró el dictamen, el rechazo de Fresno va arriba de la página aunque su formulario ya no se pinte (1.9s)
+  ✓  39 tests/e2e/operacion.spec.ts:1152:7 › doceava con JavaScript: empresas propias de la siembra › doceava: la cookie del rechazo fabricada en una visita normal solo pinta avisos del catálogo; un valor inventado no aparece (3.0s)
+MEDIDA #tipo 1440: {"mensaje":{"arriba":375,"abajo":413},"campo":{"arriba":420,"abajo":460},"barras":84,"ventana":900,"visible":true}
+MEDIDA #tipo 390: {"mensaje":{"arriba":728,"abajo":786},"campo":{"arriba":793,"abajo":833},"barras":60,"ventana":844,"visible":true}
+  ✓  40 tests/e2e/operacion.spec.ts:1193:7 › doceava con JavaScript: empresas propias de la siembra › doce-N1: pedir una comisión con otra pendiente para la misma empresa y tipo dice por qué, con y sin JavaScript (1.8s)
+  ✓  41 tests/e2e/operacion.spec.ts:1234:7 › doceava con JavaScript: empresas propias de la siembra › doce-N2: ?aviso=constructor y ?aviso=toString no tumban ninguna de las cinco páginas que leen un aviso de la dirección (809ms)
+MEDIDA #dato-razonSocial 1440: {"mensaje":{"arriba":385,"abajo":423},"campo":{"arriba":430,"abajo":470},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":440,"abajo":459},"campo":{"arriba":466,"abajo":506},"barras":84,"ventana":900,"visible":true}
+  ✓  42 tests/e2e/operacion.spec.ts:1265:7 › doceava: coincidencias, datos generales y recuperaciones › doceava: los 17 datos generales vuelven como se escribieron; después de otro rechazo queda un solo aviso y el resumen de arriba se oculta (1.5s)
+MEDIDA [id="motivo-7331b2c8-f232-4d27-8b75-7b97c80d9885"] 1440: {"mensaje":{"arriba":385,"abajo":462},"campo":{"arriba":469,"abajo":509},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="motivo-a5a0ccd4-4b23-424b-9a6e-91684827a964"] 1440: {"mensaje":{"arriba":605,"abajo":682},"campo":{"arriba":689,"abajo":729},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="presentado-a5a0ccd4-4b23-424b-9a6e-91684827a964"] 1440: {"mensaje":{"arriba":630,"abajo":707},"campo":{"arriba":714,"abajo":754},"barras":84,"ventana":900,"visible":true}
+  ✓  43 tests/e2e/operacion.spec.ts:1308:7 › doceava: coincidencias, datos generales y recuperaciones › doceava: el dictamen de una coincidencia y su folio vuelven a su tarjeta con lo escrito; otro rechazo en otra tarjeta descarta el primero (1.3s)
+  ✓  44 tests/e2e/operacion.spec.ts:1343:7 › doceava: coincidencias, datos generales y recuperaciones › doceava: tras un rechazo la página se vuelve a pintar: con el factor caducado aparece «Confirma que eres tú» y la tarjeta conserva lo elegido (1.4s)
+MEDIDA [id="motivo-7331b2c8-f232-4d27-8b75-7b97c80d9885"] 1440: {"mensaje":{"arriba":385,"abajo":462},"campo":{"arriba":469,"abajo":509},"barras":84,"ventana":1000,"visible":true}
+MEDIDA [id="presentado-a5a0ccd4-4b23-424b-9a6e-91684827a964"] 1440: {"mensaje":{"arriba":630,"abajo":707},"campo":{"arriba":714,"abajo":754},"barras":84,"ventana":1000,"visible":true}
+  ✓  45 tests/e2e/operacion.spec.ts:1374:9 › doceava: coincidencias, datos generales y recuperaciones › sin JavaScript › sin JavaScript, el estado de cada formulario vuelve a su tarjeta (la clave es el id): el dictamen de Cima y el folio de Brisa (404ms)
+MEDIDA n9-prospecto-1440: {"formulario":{"x":1002.53125,"y":188.4375,"width":368.46875,"height":508.34375},"aviso":{"x":1002.53125,"y":188.4375,"width":368.46875,"height":73.09375},"#razonSocial":{"x":1002.53125,"y":307.53125,"width":368.46875,"height":64.5}}
+MEDIDA n9-prospecto-390: {"formulario":{"x":41,"y":240.1875,"width":308,"height":660.515625},"aviso":{"x":41,"y":240.1875,"width":308,"height":90.640625},"#razonSocial":{"x":41,"y":376.828125,"width":308,"height":64.5}}
+MEDIDA n9-documento-1440: {"formulario":{"x":309,"y":297.296875,"width":1062,"height":546.921875},"aviso":{"x":309,"y":297.296875,"width":1062,"height":55.546875},"#doc-tipo":{"x":309,"y":398.84375,"width":521,"height":64.5},"#doc-detalle":{"x":309,"y":571.84375,"width":1062,"height":64.5},"#doc-archivo":{"x":309,"y":658.34375,"width":1062,"height":117.875}}
+MEDIDA n9-coincidencia-1440: {"formulario":{"x":309,"y":469.28125,"width":1062,"height":261.796875},"aviso":{"x":309,"y":469.28125,"width":1062,"height":79.546875},"[id=\"resolucion-7331b2c8-f232-4d27-8b75-7b97c80d9885\"]":{"x":309,"y":666.578125,"width":246,"height":64.5}}
+MEDIDA n9-recuperacion-1440: {"formulario":{"x":981,"y":193.25,"width":390,"height":320.984375},"aviso":{"x":981,"y":193.25,"width":390,"height":79.546875},"[id=\"verificacion-c5113a6a-fb7f-4de6-93b1-d997e3a2f7e4\"]":{"x":981,"y":411.734375,"width":190,"height":64.5}}
+MEDIDA n9-folio-1440: {"formulario":{"x":309,"y":316.234375,"width":1062,"height":261.796875},"aviso":{"x":309,"y":316.234375,"width":1062,"height":79.546875},"[id=\"folio-a5a0ccd4-4b23-424b-9a6e-91684827a964\"]":{"x":309,"y":513.53125,"width":190,"height":64.5}}
+MEDIDA n9-folio-columnas: {"antes":[{"x":309,"y":316.234375,"width":190,"height":64.5},{"x":517,"y":316.234375,"width":190,"height":64.5},{"x":725,"y":316.234375,"width":190,"height":64.5}],"despues":[{"x":309,"y":513.53125,"width":190,"height":64.5},{"x":517,"y":429.78125,"width":190,"height":148.25},{"x":725,"y":513.53125,"width":190,"height":64.5}]}
+MEDIDA n9-folio-fondos: {"fondos":[578.03125,578.03125,578.03125],"boton":{"x":933,"y":542.03125,"width":105.8125,"height":36},"altoDelBoton":36}
+  ✓  46 tests/e2e/operacion.spec.ts:1398:7 › doceava: coincidencias, datos generales y recuperaciones › humo-N9: tras un rechazo, el aviso mide el ancho de su formulario y los campos no se mueven: prospecto (1440 y 390), documento, coincidencia, recuperación y folio (5.1s)
+  ✓  47 tests/e2e/operacion.spec.ts:1500:7 › doceava: coincidencias, datos generales y recuperaciones › doce-N3: si otra pestaña ya resolvió la coincidencia igual, el segundo dictamen dice que ya se resolvió y no guarda su motivo (1.5s)
+  ✓  48 tests/e2e/operacion.spec.ts:1538:7 › Operación SOFIPO: entrada › entrada SOFIPO: contraseña y código; un código malo no abre y el doble clic abre una sola sesión (1.5s)
+MEDIDA #razonSocial 1440: {"mensaje":{"arriba":332,"abajo":370},"campo":{"arriba":377,"abajo":417},"barras":84,"ventana":1000,"visible":true}
+  ✓  49 tests/e2e/operacion.spec.ts:1571:9 › Operación SOFIPO: entrada › sin JavaScript › sin JavaScript los formularios responden: el alta vuelve con su aviso y lo capturado (200) y las dos entradas dan el suyo (3.5s)
+  ✓  50 tests/e2e/operacion.spec.ts:1610:7 › Operación SOFIPO: alta con activación (Faro) › prospecto → pedir activación → el candado exige expediente; con todo en regla la decide otra persona con factor reciente (4.9s)
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #correo 1440: {"mensaje":{"arriba":419,"abajo":438},"campo":{"arriba":445,"abajo":485},"barras":84,"ventana":900,"visible":true}
+MEDIDA #valor 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA #titulo 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="motivo-5c4bd257-9b2c-46e9-934e-3b0c5be31fb1"] 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+  ✓  51 tests/e2e/operacion.spec.ts:1707:7 › Operación SOFIPO: alta con activación (Faro) › doceava: prospecto, invitación, comisión y alertas vuelven con lo capturado y su campo marcado; el resumen de arriba no se queda (3.6s)
+  ✓  52 tests/e2e/operacion.spec.ts:1713:7 › Operación SOFIPO: alta con activación (Faro) › doceava: la suspensión de Faro no consume el formulario al rechazarse, el doble clic pide una sola y la otra pestaña ve «ya hay una pendiente» sin recargar (2.3s)
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #correo 1440: {"mensaje":{"arriba":419,"abajo":438},"campo":{"arriba":445,"abajo":485},"barras":84,"ventana":900,"visible":true}
+MEDIDA #valor 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA #titulo 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="motivo-cf8f8883-5c5d-451c-8866-e9f8bef66551"] 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+  ✓  53 tests/e2e/operacion.spec.ts:1722:9 › Operación SOFIPO: alta con activación (Faro) › doceava sin JavaScript, con Faro activa › sin JavaScript, invitación, comisión y alertas vuelven con lo capturado y el resumen del envío anterior no se pinta (1.5s)
+  ✓  54 tests/e2e/pagos-proveedores.spec.ts:52:5 › la mesa se ve completa en claro, oscuro y móvil (7.1s)
+  ✓  55 tests/e2e/pagos-proveedores.spec.ts:90:5 › alta, factura, excepción, descarga y autorización con otra persona (5.0s)
+  ✓  56 tests/e2e/pagos-proveedores.spec.ts:174:5 › alta sin contrato y lectura del XML sin errores en la consola (1.9s)
+  ✓  57 tests/e2e/pagos-proveedores.spec.ts:206:5 › una corrección que falla conserva el importe y la evidencia elegidos (1.1s)
+  ✓  58 tests/e2e/pagos-proveedores.spec.ts:222:5 › limita archivos combinados y no ofrece cambiar CLABE a un liberador (1.7s)
+  ✓  59 tests/e2e/pagos-proveedores.spec.ts:242:5 › «Agregar contrato» no envía un PDF de más de 4 MB y liga el aviso al campo (1.7s)
+  ✓  60 tests/e2e/pagos-proveedores.spec.ts:263:5 › rechazo, corrección y cancelación conservan el historial (4.2s)
+  ✓  61 tests/e2e/passkeys.spec.ts:40:5 › portal: Lucía registra una passkey en /entrar/seguridad y entra con ella (2.7s)
+  ✓  62 tests/e2e/passkeys.spec.ts:77:5 › Operación: el primer ingreso registra una passkey en /operacion/continuar y la siguiente entrada la usa (3.1s)
+  ✓  63 tests/e2e/personas.spec.ts:57:5 › recorrido completo de colaboradores, presupuesto, nómina, tarjeta y baja (11.6s)
+  ✓  64 tests/e2e/roles.spec.ts:60:7 › administrador: el lateral muestra solo sus secciones y las demás no abren (1.3s)
+  ✓  65 tests/e2e/roles.spec.ts:60:7 › finanzas (con tarjeta): el lateral muestra solo sus secciones y las demás no abren (1.3s)
+  ✓  66 tests/e2e/roles.spec.ts:60:7 › contador: el lateral muestra solo sus secciones y las demás no abren (1.2s)
+  ✓  67 tests/e2e/roles.spec.ts:60:7 › liberador: el lateral muestra solo sus secciones y las demás no abren (1.2s)
+  ✓  68 tests/e2e/roles.spec.ts:60:7 › solicitante (con tarjeta): el lateral muestra solo sus secciones y las demás no abren (1.2s)
+  ✓  69 tests/e2e/roles.spec.ts:60:7 › tarjetahabiente: el lateral muestra solo sus secciones y las demás no abren (843ms)
+
+  69 passed (3.2m)
+[e2e] recorridos terminados con estado 0 · 69 pruebas corridas · 199 s

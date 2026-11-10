@@ -62,6 +62,7 @@ unset DATABASE_URL
   tests/autenticacion/recuperacion-factor-nuevo.test.ts \
   tests/autenticacion/enumeracion-tope.test.ts \
   tests/operacion/portal-postgres.test.ts \
+  tests/operacion/alta-regulada-postgres.test.ts \
   tests/personas/colaboradores-postgres.test.ts \
   tests/inicio/resumen-postgres.test.ts \
   tests/flujo/flujo-postgres.test.ts

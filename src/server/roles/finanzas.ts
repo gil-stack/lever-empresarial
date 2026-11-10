@@ -11,6 +11,7 @@ const CODIGOS: Readonly<Record<string, CodigoFinanzas>> = {
   sin_membresia: "sin_membresia",
   rol_existente: "rol_existente",
   ultimo_rol: "ultimo_rol",
+  empresa_suspendida: "empresa_suspendida",
 };
 
 /**

@@ -26,7 +26,8 @@ export const contextoOperacion = cache(async (): Promise<ContextoDePersonal | nu
     superficie: "sofipo",
   });
   if (!ctx.personal) return null;
-  return exigirPersonal(ctx, "plataforma.empresa.alta");
+  // Cualquier rol de la plataforma entra a Operación; cada página y cada acción piden su capacidad.
+  return exigirPersonal(ctx, "plataforma.operacion.ver");
 });
 
 export async function exigirContextoOperacion(): Promise<ContextoDePersonal> {
