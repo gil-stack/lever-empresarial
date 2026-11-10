@@ -10,7 +10,7 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: [
           { key: "X-Frame-Options", value: "DENY" },
-          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
+          // La política de contenido (CSP) la pone el proxy con un nonce por petición: src/nucleo/csp.ts.
           { key: "X-Content-Type-Options", value: "nosniff" },
           // same-origin, no no-referrer: con no-referrer el navegador manda «Origin: null» al enviar un formulario sin
           // JavaScript (o antes de que la página hidrate) y Next rechaza la acción de servidor con un 500. same-origin
@@ -25,6 +25,8 @@ const nextConfig: NextConfig = {
               "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), display-capture=(), " +
               "publickey-credentials-get=(self), publickey-credentials-create=(self)",
           },
+          // Todo *.leverpagos.com responde por https (Vercel DNS con comodín y certificado). Sin preload: lo decide Gil.
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
         ],
       },
       // Va después de la regla general: la última que coincide gana, y sin esta
