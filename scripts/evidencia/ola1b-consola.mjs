@@ -15,13 +15,17 @@ import { execFileSync } from "node:child_process";
 import { createHmac } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const requerir = createRequire(`${process.cwd()}/package.json`);
 const { chromium } = requerir("playwright");
 const sharp = requerir("sharp");
 const { PNG } = requerir("pngjs");
 
-const ENTORNO = JSON.parse(readFileSync(process.env.ENTORNO ?? "test-results/ola1b-consola/entorno.json", "utf8"));
+// El entorno guarda sesiones y la cadena de la base con su clave: vive fuera del repositorio (dentro del árbol,
+// `npm run security` lo marca aunque esté en .gitignore), como el de la ola 2b.
+const ENTORNO = JSON.parse(readFileSync(process.env.ENTORNO ?? join(tmpdir(), "ola1b-consola-entorno.json"), "utf8"));
 const BASE = process.env.BASE ?? "http://localhost:4807";
 const DIR = process.env.DIR ?? "docs/evidencia/ola1b-consola";
 const DUENO = ENTORNO.DUENO_URL;
