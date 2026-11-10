@@ -1,7 +1,7 @@
 import { etiquetaDelRol } from "@/dominio/personas";
 import { capacidadesDe, ROLES_CLIENTE, tiene, type Capacidad } from "@/nucleo/capacidades";
 import type { ContextoDeTenant } from "@/nucleo/contexto";
-import { enEmpresa, rutaConsola } from "@/nucleo/rutas";
+import { enEmpresa, rutaConsola, rutaDeclarada, type PatronDeRuta } from "@/nucleo/rutas";
 
 /** Otra empresa de la persona y la superficie donde aterriza al elegirla. */
 export type EmpresaElegible = { id: string; razonSocial: string; destino: string };
@@ -56,8 +56,28 @@ function destinoDe(empresaId: string, roles: ContextoDeTenant["roles"]): string 
   return "/empresas";
 }
 
-/** El menú no cambia de página en página. Lo decide la matriz de capacidades, no el marco. */
-export function puertasDe(capacidades: readonly Capacidad[]): {
+/** Las secciones del diseño que solo existían en el prototipo: las abre su declaración en rutas.ts. */
+export const MODULOS_DEL_DISENO = [
+  "/consola/aprobaciones",
+  "/consola/conciliacion",
+  "/consola/gastos",
+  "/consola/tarjetas",
+  "/consola/movimientos",
+  "/consola/fiscal",
+  "/consola/cuenta",
+  "/consola/internacional",
+  "/consola/credito",
+  "/consola/inversion",
+  "/consola/viajes",
+  "/consola/gasolina",
+  "/consola/ahorro",
+  "/consola/integraciones",
+  "/consola/perfil",
+] as const satisfies readonly PatronDeRuta[];
+
+export type ModuloDelDiseno = (typeof MODULOS_DEL_DISENO)[number];
+
+export type Puertas = {
   consola: boolean;
   resumen: boolean;
   politica: boolean;
@@ -68,7 +88,19 @@ export function puertasDe(capacidades: readonly Capacidad[]): {
   configuracion: boolean;
   telefono: boolean;
   flujo: boolean;
-} {
+  /** Cada sección nueva abre si su ruta declarada abre: el lateral no repite la regla. */
+  modulos: Record<ModuloDelDiseno, boolean>;
+};
+
+/** Lo mismo que pregunta abrirRuta: la capacidad declarada, o solo la sesión. */
+export function abreLaRuta(capacidades: readonly Capacidad[], patron: PatronDeRuta): boolean {
+  const { acceso } = rutaDeclarada(patron);
+  if (acceso.tipo === "capacidad") return acceso.alguna.some((capacidad) => tiene(capacidades, capacidad));
+  return acceso.tipo === "sesion";
+}
+
+/** El menú no cambia de página en página. Lo decide la matriz de capacidades, no el marco. */
+export function puertasDe(capacidades: readonly Capacidad[]): Puertas {
   return {
     consola: tiene(capacidades, "cliente.consola.ver"),
     resumen: tiene(capacidades, "cliente.resumen.ver"),
@@ -80,5 +112,6 @@ export function puertasDe(capacidades: readonly Capacidad[]): {
     configuracion: tiene(capacidades, "cliente.configuracion.ver"),
     telefono: tiene(capacidades, "telefono.inicio.ver"),
     flujo: tiene(capacidades, "cliente.flujo.ver"),
+    modulos: Object.fromEntries(MODULOS_DEL_DISENO.map((ruta) => [ruta, abreLaRuta(capacidades, ruta)])) as Record<ModuloDelDiseno, boolean>,
   };
 }

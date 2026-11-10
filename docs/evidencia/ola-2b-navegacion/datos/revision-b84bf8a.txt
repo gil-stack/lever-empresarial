@@ -1,0 +1,57 @@
+# Regresiones de la ronda de b84bf8a corridas contra el código de b84bf8a (antes del arreglo)
+
+## Unitaria (src/components/demo/vista.test.ts)
+  ✖ Movimientos ignora un monto negativo o que no cabe en centavos (0.617458ms)
+✖ módulos de demostración en el servidor (71.603542ms)
+ℹ pass 32
+ℹ fail 1
+✖ failing tests:
+✖ Movimientos ignora un monto negativo o que no cabe en centavos (0.617458ms)
+    actual: Infinity,
+    expected: 0,
+
+## Matriz del fondo (tests/e2e/marco.spec.ts -g emulado), versión final de la prueba, con fondo-escena.tsx de b84bf8a
+  1) tests/e2e/marco.spec.ts:292:13 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro
+    Error: cuadros largos del fondo después de su primera pintura
+    Received:    148
+    test-results/e2e/marco-fondo-animado-sin-GP-6436b-ia-de-tamaño-en-cada-cuadro/test-failed-1.png
+  2) tests/e2e/marco.spec.ts:292:13 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana
+    Error: cuadros largos del fondo después de su primera pintura
+    Received:    36
+    test-results/e2e/marco-fondo-animado-sin-GP-ecfa0--DPR-1-arrastrar-la-ventana/test-failed-1.png
+  3) tests/e2e/marco.spec.ts:292:13 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro
+    Error: cuadros largos del fondo después de su primera pintura
+    Received:    148
+    test-results/e2e/marco-fondo-animado-sin-GP-bc68e-ia-de-tamaño-en-cada-cuadro/test-failed-1.png
+  4) tests/e2e/marco.spec.ts:292:13 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana
+    Error: cuadros largos del fondo después de su primera pintura
+    Received:    36
+    test-results/e2e/marco-fondo-animado-sin-GP-95e3f--DPR-2-arrastrar-la-ventana/test-failed-1.png
+  5) tests/e2e/marco.spec.ts:292:13 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms
+    Error: sigue vivo: {"estado":"lento","cuadros":"28","ms":"0.20","gpu":"si","guardado":"1"}
+    expect(locator).toHaveAttribute(expected) failed
+    Received: "lento"
+    test-results/e2e/marco-fondo-animado-con-GP-13917-1-una-tarea-ajena-de-800-ms/test-failed-1.png
+  6) tests/e2e/marco.spec.ts:292:13 › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms
+    Error: sigue vivo: {"estado":"lento","cuadros":"28","ms":"0.18","gpu":"si","guardado":"1"}
+    expect(locator).toHaveAttribute(expected) failed
+    Received: "lento"
+    test-results/e2e/marco-fondo-animado-con-GP-51d17-2-una-tarea-ajena-de-800-ms/test-failed-1.png
+  6 failed
+  14 passed (1.7m)
+
+Con el arreglo: 60/60 en tres repeticiones (--repeat-each=3).
+
+## N14 y N11-latente (tests/e2e/demostracion.spec.ts)
+  1) tests/e2e/demostracion.spec.ts:328:5 › Movimientos: un monto que el filtro ignora (negativo o que no cabe) deja el campo vacío, como lo aplicado
+    Error: después de «-5» y Tab, el campo dice lo aplicado
+    expect(locator).toHaveValue(expected) failed
+    Expected: ""
+    Received: "-5"
+    test-results/e2e/demostracion-Movimientos-u-38f71-ampo-vacío-como-lo-aplicado/test-failed-1.png
+  2) tests/e2e/demostracion.spec.ts:351:5 › Movimientos: escribir el monto y hacer clic en un enlace a un ancla de esta página aplica el monto
+    Error: la dirección lleva el monto escrito
+    Expected: "4000"
+    Received: null
+    test-results/e2e/demostracion-Movimientos-e-6a28d-esta-página-aplica-el-monto/test-failed-1.png
+  2 failed

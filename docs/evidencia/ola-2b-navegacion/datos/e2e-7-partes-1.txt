@@ -1,0 +1,66 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+   7 |  * ejecuta y el servidor no migra al arrancar.
+   8 |  */
+>  9 | export const CONTRATO_TABLAS = readFileSync(rutaDelContrato(), "utf8");
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  10 |
+  11 | function rutaDelContrato(): string {
+  12 |   try {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 5 s
+
+Running 25 tests using 1 worker, shard 1 of 7
+
+  ✓   1 tests/e2e/accesibilidad.spec.ts:24:9 › el enlace del logotipo se nombra con lo que muestra › portal en escritorio: «ir a Resumen» o «ir a Aprobaciones», según quién entra, y lleva ahí (1.3s)
+  ✓   2 tests/e2e/accesibilidad.spec.ts:24:9 › el enlace del logotipo se nombra con lo que muestra › portal en teléfono: «ir a Resumen» o «ir a Aprobaciones», según quién entra, y lleva ahí (924ms)
+  ✓   3 tests/e2e/accesibilidad.spec.ts:43:7 › el enlace del logotipo se nombra con lo que muestra › portada y Recuperar: «Lever Empresas, inicio» (643ms)
+  ✓   4 tests/e2e/accesibilidad.spec.ts:60:7 › en el teléfono, la barra de arriba y el pie van en su landmark › portal: la barra es la navegación «Menú» y el aviso regulatorio, el pie; en escritorio no se ven (608ms)
+  ✓   5 tests/e2e/accesibilidad.spec.ts:74:7 › en el teléfono, la barra de arriba y el pie van en su landmark › Operación: la misma barra es la navegación «Menú» (405ms)
+  ✓   6 tests/e2e/accesibilidad.spec.ts:97:7 › las tablas que se desplazan se alcanzan con el teclado › cada tabla de las vistas de demostración es una región con nombre y parada de Tab (3.0s)
+  ✓   7 tests/e2e/accesibilidad.spec.ts:110:7 › las tablas que se desplazan se alcanzan con el teclado › Aprobaciones · historial a 390: la tabla de decisiones de pagos es una región con nombre y foco, y axe no marca scrollable-region-focusable (506ms)
+  ✓   8 tests/e2e/accesibilidad.spec.ts:123:7 › las tablas que se desplazan se alcanzan con el teclado › Operación a 390: las tablas de Clientes, Comisiones y Bitácora son regiones con nombre y foco, y axe no marca scrollable-region-focusable (1.2s)
+  ✓   9 tests/e2e/accesibilidad.spec.ts:143:7 › las tablas que se desplazan se alcanzan con el teclado › Fiscal a 1440: Tab llega a la DIOT, que no cabe, y las flechas la desplazan (727ms)
+  ✓  10 tests/e2e/accesibilidad.spec.ts:176:9 › cada buscador de Proveedores tiene su propio nombre › Proveedores a 1440: el de la barra y el de la mesa se distinguen y axe no marca landmark-unique (1.0s)
+  ✓  11 tests/e2e/accesibilidad.spec.ts:176:9 › cada buscador de Proveedores tiene su propio nombre › Proveedores a 390: el de la barra y el de la mesa se distinguen y axe no marca landmark-unique (852ms)
+  ✓  12 tests/e2e/accesibilidad.spec.ts:209:7 › N19: lo que llega por un ancla queda debajo de las barras › portal a 390 con JavaScript: «Directorio» de Personas (513ms)
+  ✓  13 tests/e2e/accesibilidad.spec.ts:217:7 › N19: lo que llega por un ancla queda debajo de las barras › portal y Operación a 390 sin JavaScript: «Directorio» y «Registrar prospecto» (752ms)
+  ✓  14 tests/e2e/accesibilidad.spec.ts:290:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › claro a 390: portal y Operación, desplazados al fondo (2.0s)
+  ✓  15 tests/e2e/accesibilidad.spec.ts:290:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › claro a 1440: portal y Operación, desplazados al fondo (2.2s)
+  ✓  16 tests/e2e/accesibilidad.spec.ts:290:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › oscuro a 390: portal y Operación, desplazados al fondo (2.0s)
+  ✓  17 tests/e2e/accesibilidad.spec.ts:290:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › oscuro a 1440: portal y Operación, desplazados al fondo (2.2s)
+  ✓  18 tests/e2e/accesibilidad.spec.ts:290:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › lever a 390: portal y Operación, desplazados al fondo (2.0s)
+  ✓  19 tests/e2e/accesibilidad.spec.ts:290:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › lever a 1440: portal y Operación, desplazados al fondo (2.3s)
+  ✓  20 tests/e2e/accesibilidad.spec.ts:301:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, claro a 390 y 1440: la barra lleva su fondo siempre (323ms)
+  ✓  21 tests/e2e/accesibilidad.spec.ts:301:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, oscuro a 390 y 1440: la barra lleva su fondo siempre (317ms)
+  ✓  22 tests/e2e/accesibilidad.spec.ts:301:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, lever a 390 y 1440: la barra lleva su fondo siempre (301ms)
+  ✓  23 tests/e2e/accesibilidad.spec.ts:322:9 › sin JavaScript se puede salir › a 1440: «Salir» está a la vista, cierra la sesión y la consola ya no abre (207ms)
+  ✓  24 tests/e2e/accesibilidad.spec.ts:322:9 › sin JavaScript se puede salir › a 390: «Salir» está a la vista, cierra la sesión y la consola ya no abre (190ms)
+  ✓  25 tests/e2e/accesibilidad.spec.ts:339:7 › sin JavaScript se puede salir › a 390 ningún texto a la vista se recorta, con «Salir» debajo (198ms)
+
+  25 passed (32.8s)
+[e2e] recorridos terminados con estado 0 · 25 pruebas corridas · 38 s

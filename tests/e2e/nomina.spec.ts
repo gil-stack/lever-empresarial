@@ -123,6 +123,32 @@ test("cambio de CLABE de nómina: con factor viejo pide «Confirma que eres tú�
   expect(errores).toEqual([]);
 });
 
+// El botón lleva la fecha («Preparar nómina del 10 de noviembre de 2026»). A 390, en la fila de Aprobaciones, no cabía en
+// un renglón y se salía de la tarjeta: la página se desplazaba a lo ancho (recorrido de la ola 2b, pantallas 10 y 11). Se
+// prueba con el texto de hoy y con el más largo que puede salir (septiembre, día de dos cifras).
+test("Aprobaciones a 390: el botón de la nómina vencida cabe en su tarjeta, también con la fecha más larga", async ({ page, context }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await sesionDe(context, CORREOS.laura);
+  await page.goto(en("/consola/aprobaciones"));
+  const boton = page.getByRole("button", { name: /^Preparar nómina del / });
+  await expect(boton).toBeVisible();
+  const medir = () =>
+    boton.evaluate((el) => {
+      const tarjeta = el.closest("li, article, section")!.getBoundingClientRect();
+      const caja = el.getBoundingClientRect();
+      return { sobra: Math.round(caja.right - tarjeta.right), desplazamiento: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+    });
+  expect(await medir(), "con la fecha de hoy").toEqual({ sobra: expect.any(Number), desplazamiento: 0 });
+  expect((await medir()).sobra, "con la fecha de hoy").toBeLessThanOrEqual(0);
+  await boton.evaluate((el) => {
+    const texto = [...el.querySelectorAll("*"), el].flatMap((n) => [...n.childNodes]).find((n) => n.nodeType === 3 && /Preparar nómina del/.test(n.textContent ?? ""));
+    texto!.textContent = "Preparar nómina del 30 de septiembre de 2026";
+  });
+  const largo = await medir();
+  expect(largo.desplazamiento, "con la fecha más larga").toBe(0);
+  expect(largo.sobra, "con la fecha más larga").toBeLessThanOrEqual(0);
+});
+
 test("preparar el lote vencido: doble clic = un lote con sus renglones y el calendario avanza", async ({ page, context }) => {
   const errores = vigilarConsola(page);
   await sesionDe(context, CORREOS.laura);

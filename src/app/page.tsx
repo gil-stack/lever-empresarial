@@ -79,7 +79,8 @@ export default function PaginaInicio() {
     <div className="arco-landing">
       <a className="arco-saltar" href="#contenido">Saltar al contenido</a>
       <header className="arco-header">
-        <Link href="/" className="arco-header-marca" aria-label="Lever Empresas, inicio"><Logotipo /></Link>
+        {/* El nombre sale del contenido, como el del portal: un aria-label no contendría el texto que se ve. */}
+        <Link href="/" className="arco-header-marca"><Logotipo decorativo /><span className="solo-lector">Lever Empresas, inicio</span></Link>
         <nav className="arco-nav" aria-label="Navegación principal">
           <a href="#producto">Producto</a>
           <a href="#como-funciona">Cómo funciona</a>

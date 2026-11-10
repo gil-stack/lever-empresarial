@@ -1,0 +1,12 @@
+{
+  "lever-1440": {
+    "medidos": 3317,
+    "minimo": 4.62,
+    "fallas": []
+  },
+  "lever-390": {
+    "medidos": 1645,
+    "minimo": 5.13,
+    "fallas": []
+  }
+}

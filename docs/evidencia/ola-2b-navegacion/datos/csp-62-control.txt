@@ -1,0 +1,4 @@
+chromium avisos: 1 Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'no | eventos: style-src-elem | outline aplicado: 3px
+webkit avisos: 1 Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' does not appear in the | eventos: style-src-elem | outline aplicado: 3px
+chromium avisos: 1 Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'no (sin JS) | outline aplicado: 3px
+webkit avisos: 1 Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' does not appear in the (sin JS) | outline aplicado: 3px

@@ -1,0 +1,60 @@
+# Re-verificación sobre a7b92d6: cada regresión en a7b92d6 y con el arreglo
+
+## Especificaciones finales contra el código de a7b92d6 (fondo-escena.tsx, filtros-al-cambiar.tsx y movimientos.tsx de ese commit)
+  ✘   7 tests/e2e/demostracion.spec.ts:300:5 › Movimientos: un monto con decimales o negativo no bloquea los filtros (16.4s)
+  ✘   8 tests/e2e/demostracion.spec.ts:344:5 › Movimientos: escribir el monto y hacer clic en «Movimientos» del lateral aplica el monto (2.8s)
+  ✘   9 tests/e2e/demostracion.spec.ts:351:7 › en la tableta › Movimientos: escribir el monto y tocar «Movimientos» del lateral aplica el monto (2.6s)
+  ✘  15 tests/e2e/marco.spec.ts:98:9 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (3.2s)
+  ✘  17 tests/e2e/marco.spec.ts:133:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (15.9s)
+  ✘  18 tests/e2e/marco.spec.ts:162:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › en un equipo rápido, el dibujo que cambia de tamaño no lo deja quieto aunque tarde (16.0s)
+    Error: «1500.50» y Tab filtran
+    Expected: "1500.50"
+    Received: null
+    Error: la dirección lleva el monto escrito
+    Expected: "4000"
+    Received: null
+    Error: la dirección lleva el monto escrito
+    Expected: "4000"
+    Received: null
+    Error: cuadros largos del fondo después de su primera pintura
+    Expected: <= 1
+    Received:    21
+    Error: pinturas hasta quedarse quieto
+    expect(locator).toHaveAttribute(expected) failed
+    Expected: "2"
+    Received: "28"
+    Error: sigue vivo después de cambiar de tamaño
+    expect(locator).toHaveAttribute(expected) failed
+    Expected: "vivo"
+    Received: "lento"
+  6 failed
+  13 passed (1.8m)
+
+## Con los arreglos
+  ✓   1 tests/e2e/demostracion.spec.ts:38:5 › empresa real: cada módulo de demostración dice «Disponible pronto» y ni el HTML ni la carga RSC traen datos de ejemplo (1.6s)
+  ✓   2 tests/e2e/demostracion.spec.ts:64:5 › empresa de demostración: cada módulo pinta el aviso y los datos de ejemplo, con los botones de dinero apagados (1.0s)
+  ✓   3 tests/e2e/demostracion.spec.ts:84:5 › Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegación cada uno (3.6s)
+  ✓   4 tests/e2e/demostracion.spec.ts:111:5 › Movimientos: un gesto del ratón en «7 días» que no lo elige no retrasa el siguiente filtro (6.8s)
+  ✓   5 tests/e2e/demostracion.spec.ts:184:5 › Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los campos como dice la dirección (3.3s)
+  ✓   6 tests/e2e/demostracion.spec.ts:265:5 › Movimientos: un monto a medias que aún no es número no se borra cuando llega otra navegación (3.1s)
+  ✓   7 tests/e2e/demostracion.spec.ts:300:5 › Movimientos: un monto con decimales o negativo no bloquea los filtros (3.6s)
+  ✓   8 tests/e2e/demostracion.spec.ts:344:5 › Movimientos: escribir el monto y hacer clic en «Movimientos» del lateral aplica el monto (2.4s)
+  ✓   9 tests/e2e/demostracion.spec.ts:351:7 › en la tableta › Movimientos: escribir el monto y tocar «Movimientos» del lateral aplica el monto (2.3s)
+  ✓  10 tests/e2e/demostracion.spec.ts:359:7 › en el teléfono › Movimientos: escribir el monto y tocar «7 días» lleva los dos en una sola navegación (2.4s)
+  ✓  11 tests/e2e/demostracion.spec.ts:385:7 › en el teléfono › Movimientos: escribir el monto y tocar un enlace lleva al enlace, sin que el monto lo pise después (4.9s)
+  ✓  12 tests/e2e/marco.spec.ts:17:7 › marco de la consola en escritorio › menú de la persona: cuatro opciones fuera del Tab; Tab y Escape cierran y regresan el foco al botón (1.2s)
+  ✓  13 tests/e2e/marco.spec.ts:43:7 › marco de la consola en escritorio › el buscador de la barra lleva a su sección con lo escrito (1.4s)
+  ✓  14 tests/e2e/marco.spec.ts:52:7 › marco de la consola en escritorio › Apariencia: con sesión y empresa se abre; sin sesión manda a entrar; otra empresa no la muestra (1.8s)
+  ✓  15 tests/e2e/marco.spec.ts:98:9 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (5.2s)
+  ✓  16 tests/e2e/marco.spec.ts:98:9 › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (6.5s)
+  ✓  17 tests/e2e/marco.spec.ts:133:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (741ms)
+  ✓  18 tests/e2e/marco.spec.ts:162:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › en un equipo rápido, el dibujo que cambia de tamaño no lo deja quieto aunque tarde (1.1s)
+  ✓  19 tests/e2e/marco.spec.ts:205:7 › cajón móvil › sin checkVisibility (Safari < 17.4): abre, atrapa el foco, deja el fondo inert; Escape y el velo regresan el foco (817ms)
+  19 passed (1.0m)
+
+## La prueba del cambio de tamaño contra una mutación (umbral de 25 ms sin excluir el dibujo que cambia de tamaño)
+  ✓  1 tests/e2e/marco.spec.ts:133:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (864ms)
+  ✘  2 tests/e2e/marco.spec.ts:162:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › en un equipo rápido, el dibujo que cambia de tamaño no lo deja quieto aunque tarde (29.8s)
+    Error: expect(received).toBeGreaterThanOrEqual(expected)
+    Expected: >= 6
+    Received:    5

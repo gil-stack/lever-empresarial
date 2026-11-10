@@ -1,0 +1,2 @@
+Revisión de seguridad: 1 hallazgo(s).
+test-results/ola1b-consola/entorno.json:1 cadena de Postgres con contraseña

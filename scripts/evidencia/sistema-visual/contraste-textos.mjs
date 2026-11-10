@@ -18,7 +18,7 @@ const mezcla = (frente, fondo, a) => frente.map((v, i) => v * a + fondo[i] * (1 
 const [anchoArg] = process.argv.slice(2);
 const ancho = Number(anchoArg ?? 1440);
 const alto = ancho < 600 ? 844 : 900;
-const RUTAS = (process.env.RUTAS ?? "/consola,/consola/pendientes,/consola/proveedores,/consola/personas,/consola/apariencia,/consola/configuracion").split(",");
+const RUTAS = (process.env.RUTAS ?? "/consola,/consola/aprobaciones,/consola/proveedores,/consola/personas,/consola/apariencia,/consola/configuracion").split(",");
 const EMPRESA = "/c/33333333-3333-4333-8333-333333333333";
 const informe = {};
 

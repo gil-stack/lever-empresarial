@@ -182,7 +182,7 @@ export function VistaCobranzaPagina({ vista, empresaId, pestana }: { vista: Vist
           {vista.clientes.length === 0 ? (
             <Vacio titulo="Todavía no tienes clientes en cobranza.">{vista.puedeEditar ? <>Da de alta al primero: <Link href={enEmpresa(empresaId, "/consola/cobros/nuevo")}>Nuevo cliente</Link>.</> : undefined}</Vacio>
           ) : (
-            <div className="tabla-contenedor">
+            <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de clientes en cobranza">
               <table className="tabla flujo-apilada cobranza-tabla-clientes" data-tabla="clientes" role="table">
                 <thead role="rowgroup"><tr role="row">
                   <th scope="col" role="columnheader">Cliente</th>
@@ -244,7 +244,7 @@ export function VistaCobranzaPagina({ vista, empresaId, pestana }: { vista: Vist
                 {vista.puedeEditar && filtros.estado === "todos" && !filtros.q ? <>Da de alta a tu primer cliente: <Link href={enEmpresa(empresaId, "/consola/cobros/nuevo")}>Nuevo cliente</Link>.</> : undefined}
               </Vacio>
             ) : (
-              <div className="tabla-contenedor">
+              <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de cargos por cobrar">
                 <table className="tabla flujo-apilada flujo-tabla-cobros cobranza-tabla-cargos" data-tabla="cargos" role="table">
                   <thead role="rowgroup"><tr role="row">
                     <th scope="col" role="columnheader">Cliente</th>
@@ -466,7 +466,7 @@ export function VistaClientePagina({ vista, empresaId, alta }: { vista: VistaCli
 
               <Hoja id="cargos-cliente" titulo="Cargos" className="flujo-bloque">
                 {detalle.cargos.length === 0 ? <Vacio titulo="Todavía no hay cargos.">El primero se genera unos días antes de su vencimiento.</Vacio> : (
-                  <div className="tabla-contenedor">
+                  <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de cargos del cliente">
                     <table className="tabla flujo-apilada flujo-tabla-cobros" data-tabla="cargos-cliente" role="table">
                       <thead role="rowgroup"><tr role="row">
                         <th scope="col" role="columnheader">Concepto</th>
@@ -639,7 +639,7 @@ function TablaPropuestas({ renglones, editable }: { renglones: NonNullable<Vista
     descartado: <Insignia>Descartado</Insignia>,
   };
   return (
-    <div className="tabla-contenedor">
+    <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de renglones del estado de cuenta">
       <table className="tabla flujo-apilada cobranza-tabla-propuestas" data-tabla="propuestas" role="table">
         <thead role="rowgroup"><tr role="row">
           <th scope="col" role="columnheader">Fecha</th>

@@ -1,0 +1,37 @@
+# La regla del fondo (ronda de b84bf8a) con pintores reales y cambios reales del tamaño de la ventana (page.setViewportSize)
+# gpu: Chromium completo con ANGLE Metal (Apple M5 Pro); sin: Chromium headless shell (SwiftShader, como CI). 1440×900 inicial.
+# primera: el dibujo que crea el búfer y compila (no se mide); dibujos: los que siguen; mayoresDe10: [número de dibujo, ms].
+# largosDelFondo: cuadros de más de 50 ms con un script del fondo, después de la primera pintura (ms).
+# Con GPU: 14/14 vivo y nada guardado; el dibujo más caro, 12.1 ms (arrastrar agrandando a DPR 2, búfer de unos 4352×2686).
+# Sin GPU: 14/14 quieto («lento») en el segundo dibujo y guardado; con cambios de tamaño, a lo más un repintado al terminar
+# (ninguno si el tamaño final es el mismo); a lo más 2 cuadros largos del fondo.
+# Congelar con Page.setWebLifecycleState no surte efecto en headless ni en Chromium completo (huecoMaximoRaf ≤ 33 ms):
+# el hueco de dormir la laptop se emula con la tarea de 800 ms (huecoMaximoRaf 783 ms), que la regla del ritmo descarta.
+{"modo":"gpu","dpr":1,"escenario":"estable","estado":"vivo","guardado":null,"primera":25.3,"dibujos":61,"maximo":0.5,"mayoresDe10":[],"largosDelFondo":[],"huecoMaximoRaf":33}
+{"modo":"gpu","dpr":1,"escenario":"cambio de tamaño en cada cuadro, sin crecer","estado":"vivo","guardado":null,"primera":9.1,"dibujos":44,"maximo":0.3,"mayoresDe10":[],"largosDelFondo":[],"huecoMaximoRaf":33}
+{"modo":"gpu","dpr":1,"escenario":"el búfer crece una vez (maximizar)","estado":"vivo","guardado":null,"primera":9.2,"dibujos":61,"maximo":1.8,"mayoresDe10":[],"largosDelFondo":[],"huecoMaximoRaf":17}
+{"modo":"gpu","dpr":1,"escenario":"tarea ajena de 800 ms","estado":"vivo","guardado":null,"primera":9.3,"dibujos":61,"maximo":0.3,"mayoresDe10":[],"largosDelFondo":[],"huecoMaximoRaf":783}
+{"modo":"gpu","dpr":1,"escenario":"arrastrar agrandando (crece en cada paso)","estado":"vivo","guardado":null,"primera":8.8,"dibujos":87,"maximo":3.2,"mayoresDe10":[],"largosDelFondo":[],"huecoMaximoRaf":33}
+{"modo":"gpu","dpr":1,"escenario":"arrastrar encogiendo y de regreso","estado":"vivo","guardado":null,"primera":9.9,"dibujos":85,"maximo":0.3,"mayoresDe10":[],"largosDelFondo":[],"huecoMaximoRaf":217}
+{"modo":"gpu","dpr":1,"escenario":"congelar 3 s (como dormir la laptop)","estado":"vivo","guardado":null,"primera":9.6,"dibujos":121,"maximo":0.4,"mayoresDe10":[],"largosDelFondo":[],"huecoMaximoRaf":17}
+{"modo":"gpu","dpr":2,"escenario":"estable","estado":"vivo","guardado":null,"primera":12.9,"dibujos":61,"maximo":0.4,"mayoresDe10":[],"largosDelFondo":[],"huecoMaximoRaf":17}
+{"modo":"gpu","dpr":2,"escenario":"cambio de tamaño en cada cuadro, sin crecer","estado":"vivo","guardado":null,"primera":9.9,"dibujos":41,"maximo":0.3,"mayoresDe10":[],"largosDelFondo":[],"huecoMaximoRaf":17}
+{"modo":"gpu","dpr":2,"escenario":"el búfer crece una vez (maximizar)","estado":"vivo","guardado":null,"primera":9.6,"dibujos":61,"maximo":4,"mayoresDe10":[],"largosDelFondo":[],"huecoMaximoRaf":17}
+{"modo":"gpu","dpr":2,"escenario":"tarea ajena de 800 ms","estado":"vivo","guardado":null,"primera":10.2,"dibujos":62,"maximo":0.3,"mayoresDe10":[],"largosDelFondo":[],"huecoMaximoRaf":783}
+{"modo":"gpu","dpr":2,"escenario":"arrastrar agrandando (crece en cada paso)","estado":"vivo","guardado":null,"primera":9.7,"dibujos":87,"maximo":12.1,"mayoresDe10":[[55,12.1]],"largosDelFondo":[],"huecoMaximoRaf":33}
+{"modo":"gpu","dpr":2,"escenario":"arrastrar encogiendo y de regreso","estado":"vivo","guardado":null,"primera":12.6,"dibujos":90,"maximo":0.4,"mayoresDe10":[],"largosDelFondo":[],"huecoMaximoRaf":17}
+{"modo":"gpu","dpr":2,"escenario":"congelar 3 s (como dormir la laptop)","estado":"vivo","guardado":null,"primera":10.1,"dibujos":121,"maximo":1.2,"mayoresDe10":[],"largosDelFondo":[],"huecoMaximoRaf":33}
+{"modo":"sin","dpr":1,"escenario":"estable","estado":"lento","guardado":"1","primera":242.7,"dibujos":1,"maximo":28.2,"mayoresDe10":[[2,28.2]],"largosDelFondo":[],"huecoMaximoRaf":233}
+{"modo":"sin","dpr":1,"escenario":"cambio de tamaño en cada cuadro, sin crecer","estado":"lento","guardado":"1","primera":240.1,"dibujos":1,"maximo":36.9,"mayoresDe10":[[2,36.9]],"largosDelFondo":[54],"huecoMaximoRaf":233}
+{"modo":"sin","dpr":1,"escenario":"el búfer crece una vez (maximizar)","estado":"lento","guardado":"1","primera":254.4,"dibujos":2,"maximo":43.2,"mayoresDe10":[[2,35.5],[3,43.2]],"largosDelFondo":[57],"huecoMaximoRaf":250}
+{"modo":"sin","dpr":1,"escenario":"tarea ajena de 800 ms","estado":"lento","guardado":"1","primera":252.3,"dibujos":1,"maximo":35.7,"mayoresDe10":[[2,35.7]],"largosDelFondo":[58],"huecoMaximoRaf":783}
+{"modo":"sin","dpr":1,"escenario":"arrastrar agrandando (crece en cada paso)","estado":"lento","guardado":"1","primera":239.3,"dibujos":2,"maximo":122.4,"mayoresDe10":[[2,35.8],[3,122.4]],"largosDelFondo":[57,123],"huecoMaximoRaf":233}
+{"modo":"sin","dpr":1,"escenario":"arrastrar encogiendo y de regreso","estado":"lento","guardado":"1","primera":263.7,"dibujos":1,"maximo":43.3,"mayoresDe10":[[2,43.3]],"largosDelFondo":[],"huecoMaximoRaf":250}
+{"modo":"sin","dpr":1,"escenario":"congelar 3 s (como dormir la laptop)","estado":"lento","guardado":"1","primera":250.3,"dibujos":1,"maximo":36.9,"mayoresDe10":[[2,36.9]],"largosDelFondo":[60],"huecoMaximoRaf":250}
+{"modo":"sin","dpr":2,"escenario":"estable","estado":"lento","guardado":"1","primera":316.2,"dibujos":1,"maximo":156.5,"mayoresDe10":[[2,156.5]],"largosDelFondo":[179],"huecoMaximoRaf":317}
+{"modo":"sin","dpr":2,"escenario":"cambio de tamaño en cada cuadro, sin crecer","estado":"lento","guardado":"1","primera":380.6,"dibujos":2,"maximo":94.7,"mayoresDe10":[[2,94.7],[3,94.2]],"largosDelFondo":[118,111],"huecoMaximoRaf":383}
+{"modo":"sin","dpr":2,"escenario":"el búfer crece una vez (maximizar)","estado":"lento","guardado":"1","primera":385.5,"dibujos":2,"maximo":278.5,"mayoresDe10":[[2,149],[3,278.5]],"largosDelFondo":[172,284],"huecoMaximoRaf":383}
+{"modo":"sin","dpr":2,"escenario":"tarea ajena de 800 ms","estado":"lento","guardado":"1","primera":383.3,"dibujos":1,"maximo":150.1,"mayoresDe10":[[2,150.1]],"largosDelFondo":[174],"huecoMaximoRaf":783}
+{"modo":"sin","dpr":2,"escenario":"arrastrar agrandando (crece en cada paso)","estado":"lento","guardado":"1","primera":414.6,"dibujos":2,"maximo":491.3,"mayoresDe10":[[2,146.6],[3,491.3]],"largosDelFondo":[169,496],"huecoMaximoRaf":467}
+{"modo":"sin","dpr":2,"escenario":"arrastrar encogiendo y de regreso","estado":"lento","guardado":"1","primera":394.9,"dibujos":1,"maximo":157.7,"mayoresDe10":[[2,157.7]],"largosDelFondo":[160],"huecoMaximoRaf":383}
+{"modo":"sin","dpr":2,"escenario":"congelar 3 s (como dormir la laptop)","estado":"lento","guardado":"1","primera":397.9,"dibujos":1,"maximo":152.1,"mayoresDe10":[[2,152.1]],"largosDelFondo":[175],"huecoMaximoRaf":400}

@@ -56,7 +56,7 @@ export function VistaFlujo({ vista }: { vista: VistaSaldo | null }) {
               {vista.historial.length === 0 ? (
                 <Vacio titulo="Todavía no hay saldos declarados.">Inicio muestra lo comprometido hasta que alguien declare el primero.</Vacio>
               ) : (
-                <div className="tabla-contenedor">
+                <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla del historial de saldos declarados">
                   <table className="tabla flujo-historial" data-tabla="historial-saldo">
                     <thead>
                       <tr>

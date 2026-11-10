@@ -52,7 +52,7 @@ export function PantallaNomina({
               {lectura.proximas.length < totales.programadas ? (
                 <p className="pista">Se muestran los primeros {lectura.proximas.length} de {totales.programadas} pagos programados. Los totales cuentan todos.</p>
               ) : null}
-              <div className="tabla-contenedor">
+              <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de la nómina programada">
                 <table className="tabla personas-tabla nomina-tabla">
                   <thead><tr><th scope="col">Fecha</th><th scope="col">Colaborador</th><th scope="col">Área</th><th scope="col" className="derecha">Neto</th><th scope="col">Destino</th></tr></thead>
                   <tbody>

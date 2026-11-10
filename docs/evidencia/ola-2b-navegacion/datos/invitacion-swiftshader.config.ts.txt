@@ -1,0 +1,3 @@
+// TEMPORAL (no se commitea): WebGL por SwiftShader, como el navegador remoto del CI.
+import base from "./playwright.config";
+export default { ...base, use: { ...base.use, launchOptions: { args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } } };

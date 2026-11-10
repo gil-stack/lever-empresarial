@@ -1,0 +1,45 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+   7 |  * ejecuta y el servidor no migra al arrancar.
+   8 |  */
+>  9 | export const CONTRATO_TABLAS = readFileSync(rutaDelContrato(), "utf8");
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  10 |
+  11 | function rutaDelContrato(): string {
+  12 |   try {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 3 s
+
+Running 4 tests using 1 worker
+
+  ✓  1 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › laura: responde 404 de verdad, igual para la ajena y la inexistente (con JavaScript) (4.4s)
+  ✓  2 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › gil: responde 404 de verdad, igual para la ajena y la inexistente (con JavaScript) (4.3s)
+  ✓  3 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › laura: responde 404 de verdad, igual para la ajena y la inexistente (sin JavaScript) (422ms)
+  ✓  4 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › gil: responde 404 de verdad, igual para la ajena y la inexistente (sin JavaScript) (469ms)
+
+  4 passed (15.9s)
+[e2e] recorridos terminados con estado 0 · 4 pruebas corridas · 19 s

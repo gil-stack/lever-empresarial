@@ -1,0 +1,263 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+   7 |  * ejecuta y el servidor no migra al arrancar.
+   8 |  */
+>  9 | export const CONTRATO_TABLAS = readFileSync(rutaDelContrato(), "utf8");
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  10 |
+  11 | function rutaDelContrato(): string {
+  12 |   try {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 3 s
+
+Running 160 tests using 1 worker
+
+  ✓    1 tests/e2e/accesibilidad.spec.ts:24:9 › el enlace del logotipo se nombra con lo que muestra › portal en escritorio: «ir a Resumen» o «ir a Aprobaciones», según quién entra, y lleva ahí (1.4s)
+  ✓    2 tests/e2e/accesibilidad.spec.ts:24:9 › el enlace del logotipo se nombra con lo que muestra › portal en teléfono: «ir a Resumen» o «ir a Aprobaciones», según quién entra, y lleva ahí (928ms)
+  ✓    3 tests/e2e/accesibilidad.spec.ts:43:7 › el enlace del logotipo se nombra con lo que muestra › portada y Recuperar: «Lever Empresas, inicio» (653ms)
+  ✓    4 tests/e2e/accesibilidad.spec.ts:60:7 › en el teléfono, la barra de arriba y el pie van en su landmark › portal: la barra es la navegación «Menú» y el aviso regulatorio, el pie; en escritorio no se ven (624ms)
+  ✓    5 tests/e2e/accesibilidad.spec.ts:74:7 › en el teléfono, la barra de arriba y el pie van en su landmark › Operación: la misma barra es la navegación «Menú» (448ms)
+  ✓    6 tests/e2e/accesibilidad.spec.ts:97:7 › las tablas que se desplazan se alcanzan con el teclado › cada tabla de las vistas de demostración es una región con nombre y parada de Tab (3.1s)
+  ✓    7 tests/e2e/accesibilidad.spec.ts:110:7 › las tablas que se desplazan se alcanzan con el teclado › Aprobaciones · historial a 390: la tabla de decisiones de pagos es una región con nombre y foco, y axe no marca scrollable-region-focusable (499ms)
+  ✓    8 tests/e2e/accesibilidad.spec.ts:123:7 › las tablas que se desplazan se alcanzan con el teclado › Operación a 390: las tablas de Clientes, Comisiones y Bitácora son regiones con nombre y foco, y axe no marca scrollable-region-focusable (1.2s)
+  ✓    9 tests/e2e/accesibilidad.spec.ts:143:7 › las tablas que se desplazan se alcanzan con el teclado › Fiscal a 1440: Tab llega a la DIOT, que no cabe, y las flechas la desplazan (763ms)
+  ✓   10 tests/e2e/accesibilidad.spec.ts:176:9 › cada buscador de Proveedores tiene su propio nombre › Proveedores a 1440: el de la barra y el de la mesa se distinguen y axe no marca landmark-unique (1.0s)
+  ✓   11 tests/e2e/accesibilidad.spec.ts:176:9 › cada buscador de Proveedores tiene su propio nombre › Proveedores a 390: el de la barra y el de la mesa se distinguen y axe no marca landmark-unique (855ms)
+  ✓   12 tests/e2e/accesibilidad.spec.ts:209:7 › N19: lo que llega por un ancla queda debajo de las barras › portal a 390 con JavaScript: «Directorio» de Personas (499ms)
+  ✓   13 tests/e2e/accesibilidad.spec.ts:217:7 › N19: lo que llega por un ancla queda debajo de las barras › portal y Operación a 390 sin JavaScript: «Directorio» y «Registrar prospecto» (774ms)
+  ✓   14 tests/e2e/accesibilidad.spec.ts:290:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › claro a 390: portal y Operación, desplazados al fondo (1.9s)
+  ✓   15 tests/e2e/accesibilidad.spec.ts:290:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › claro a 1440: portal y Operación, desplazados al fondo (2.1s)
+  ✓   16 tests/e2e/accesibilidad.spec.ts:290:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › oscuro a 390: portal y Operación, desplazados al fondo (1.9s)
+  ✓   17 tests/e2e/accesibilidad.spec.ts:290:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › oscuro a 1440: portal y Operación, desplazados al fondo (2.2s)
+  ✓   18 tests/e2e/accesibilidad.spec.ts:290:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › lever a 390: portal y Operación, desplazados al fondo (1.9s)
+  ✓   19 tests/e2e/accesibilidad.spec.ts:290:11 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › lever a 1440: portal y Operación, desplazados al fondo (2.2s)
+  ✓   20 tests/e2e/accesibilidad.spec.ts:301:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, claro a 390 y 1440: la barra lleva su fondo siempre (382ms)
+  ✓   21 tests/e2e/accesibilidad.spec.ts:301:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, oscuro a 390 y 1440: la barra lleva su fondo siempre (337ms)
+  ✓   22 tests/e2e/accesibilidad.spec.ts:301:9 › trece-N1: las barras de arriba conservan AA con cualquier cosa debajo › sin JavaScript, lever a 390 y 1440: la barra lleva su fondo siempre (314ms)
+  ✓   23 tests/e2e/accesibilidad.spec.ts:322:9 › sin JavaScript se puede salir › a 1440: «Salir» está a la vista, cierra la sesión y la consola ya no abre (207ms)
+  ✓   24 tests/e2e/accesibilidad.spec.ts:322:9 › sin JavaScript se puede salir › a 390: «Salir» está a la vista, cierra la sesión y la consola ya no abre (184ms)
+  ✓   25 tests/e2e/accesibilidad.spec.ts:339:7 › sin JavaScript se puede salir › a 390 ningún texto a la vista se recorta, con «Salir» debajo (189ms)
+  ✓   26 tests/e2e/aprobaciones.spec.ts:48:5 › Aprobaciones se refresca al volver por el lateral tras una acción en Personas, Política, Proveedores y Flujo (2.3s)
+  ✓   27 tests/e2e/aprobaciones.spec.ts:122:5 › con el rechazo abierto, A y R no deciden el pago; con el foco en la fila, A lo autoriza una sola vez (3.7s)
+  ✓   28 tests/e2e/aprobaciones.spec.ts:176:5 › con JavaScript y el segundo factor vencido, el diálogo de rechazo pide el código y conserva el motivo (1.9s)
+  ✓   29 tests/e2e/aprobaciones.spec.ts:247:7 › sin JavaScript se decide desde la bandeja › «Rechazar» con la dirección solo abre el motivo; un pago ajeno se ve como uno que no existe (277ms)
+  ✓   30 tests/e2e/aprobaciones.spec.ts:273:7 › sin JavaScript se decide desde la bandeja › «Rechazar» abre el motivo; uno en blanco vuelve con el aviso junto al campo; doble clic y F5 deciden una vez (490ms)
+  ✓   31 tests/e2e/aprobaciones.spec.ts:310:7 › sin JavaScript se decide desde la bandeja › «Autorizar» decide con la acción del servidor, no con la dirección; doble clic y F5 deciden una vez (272ms)
+  ✓   32 tests/e2e/aprobaciones.spec.ts:329:7 › sin JavaScript se decide desde la bandeja › con el segundo factor vencido, el rechazo pide el código ahí mismo y conserva el motivo (482ms)
+  ✓   33 tests/e2e/aprobaciones.spec.ts:359:7 › sin JavaScript se decide desde la bandeja › con el segundo factor vencido, «Autorizar» pide el código en la misma fila (313ms)
+  ✓   34 tests/e2e/claves-repetidas.spec.ts:42:5 › ninguna página del portal da 500 con una clave repetida en la dirección (4.3s)
+  -   35 tests/e2e/csp-evidencia.spec.ts:62:5 › entrada del cliente con TOTP, clicada: 0 anotaciones de la política
+  -   36 tests/e2e/csp-evidencia.spec.ts:70:5 › entrada de Operación con TOTP, clicada: 0 anotaciones de la política
+  -   37 tests/e2e/csp-evidencia.spec.ts:77:5 › descarga del expediente clicada: llega con su política aislada y la pantalla con la estricta
+  -   38 tests/e2e/csp-evidencia.spec.ts:105:5 › sin JavaScript: una página de cada superficie con la política estricta y 0 anotaciones
+  ✓   39 tests/e2e/csp.spec.ts:86:5 › públicas: cada ruta sin sesión se pinta con su nonce y sin violaciones (7.2s)
+  ✓   40 tests/e2e/csp.spec.ts:105:5 › las partes de la consola y de Operación recorren el registro completo, sin repetir rutas (0ms)
+  ✓   41 tests/e2e/csp.spec.ts:117:7 › cliente: cada pantalla de la consola, con la administradora de Altamar (1 de 3: /entrar/seguridad a /consola/personas/[id]) (13.5s)
+  ✓   42 tests/e2e/csp.spec.ts:117:7 › cliente: cada pantalla de la consola, con la administradora de Altamar (2 de 3: /consola/politica a /consola/conciliacion) (12.5s)
+  ✓   43 tests/e2e/csp.spec.ts:117:7 › cliente: cada pantalla de la consola, con la administradora de Altamar (3 de 3: /consola/gastos a /precios) (12.2s)
+  ✓   44 tests/e2e/csp.spec.ts:125:5 › teléfono: cada pantalla, con una persona tarjetahabiente (3.0s)
+  ✓   45 tests/e2e/csp.spec.ts:132:7 › Operación: cada pantalla del personal SOFIPO (1 de 2: /operacion a /operacion/bitacora) (7.5s)
+  ✓   46 tests/e2e/csp.spec.ts:132:7 › Operación: cada pantalla del personal SOFIPO (2 de 2: /operacion/recuperaciones a /operacion/clientes/[id]/expediente) (5.9s)
+  ✓   47 tests/e2e/csp.spec.ts:139:5 › navegación del cliente: los enlaces del menú no traen un <style> con el nonce de otra petición (1.7s)
+  ✓   48 tests/e2e/csp.spec.ts:160:5 › lo que solo se parece a _next o a un archivo que no existe responde la 404 con su nonce; _next/static sigue fuera del proxy (4.8s)
+  ✓   49 tests/e2e/csp.spec.ts:175:5 › Safari anterior a 16.4 (sin Sec-Fetch-*): la navegación del cliente no trae el <style> del acento y el documento sí, con su nonce (1.3s)
+  ✓   50 tests/e2e/csp.spec.ts:193:5 › sin JavaScript: el formulario de entrada se envía (form-action 'self') y el navegador no anota violaciones (1.7s)
+  ✓   51 tests/e2e/demostracion.spec.ts:42:5 › empresa real: cada módulo de demostración dice «Disponible pronto» y ni el HTML ni la carga RSC traen datos de ejemplo (1.2s)
+  ✓   52 tests/e2e/demostracion.spec.ts:68:5 › empresa de demostración: cada módulo pinta el aviso y los datos de ejemplo, con los botones de dinero apagados (825ms)
+  ✓   53 tests/e2e/demostracion.spec.ts:88:5 › Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegación cada uno (3.1s)
+  ✓   54 tests/e2e/demostracion.spec.ts:115:5 › Movimientos: un gesto del ratón en «7 días» que no lo elige no retrasa el siguiente filtro (6.1s)
+  ✓   55 tests/e2e/demostracion.spec.ts:188:5 › Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los campos como dice la dirección (2.8s)
+  ✓   56 tests/e2e/demostracion.spec.ts:269:5 › Movimientos: un monto a medias que aún no es número no se borra cuando llega otra navegación (2.8s)
+  ✓   57 tests/e2e/demostracion.spec.ts:304:5 › Movimientos: un monto con decimales o negativo no bloquea los filtros (3.2s)
+  ✓   58 tests/e2e/demostracion.spec.ts:332:5 › Movimientos: un monto que el filtro ignora (negativo o que no cabe) deja el campo vacío, como lo aplicado (2.1s)
+  ✓   59 tests/e2e/demostracion.spec.ts:355:5 › Movimientos: escribir el monto y hacer clic en un enlace a un ancla de esta página aplica el monto (2.2s)
+  ✓   60 tests/e2e/demostracion.spec.ts:393:5 › Movimientos: escribir el monto y hacer clic en «Movimientos» del lateral aplica el monto (2.4s)
+  ✓   61 tests/e2e/demostracion.spec.ts:400:7 › en la tableta › Movimientos: escribir el monto y tocar «Movimientos» del lateral aplica el monto (2.2s)
+  ✓   62 tests/e2e/demostracion.spec.ts:408:7 › en el teléfono › Movimientos: escribir el monto y tocar «7 días» lleva los dos en una sola navegación (2.2s)
+  ✓   63 tests/e2e/demostracion.spec.ts:434:7 › en el teléfono › Movimientos: escribir el monto y tocar un enlace lleva al enlace, sin que el monto lo pise después (4.6s)
+  ✓   64 tests/e2e/entrada.spec.ts:17:5 › entra con contraseña y código TOTP: doble clic abre una sola entrada y una sola sesión (1.4s)
+[tope] diferencias en el servidor (ms): 2, 2, 1, 1, 1, 2, 0, 3, 0 · mediana 1
+  ✓   65 tests/e2e/entrada.spec.ts:68:5 › el tope de intentos no revela si el correo tiene cuenta: mismo texto y mismo tiempo (29.0s)
+  ✓   66 tests/e2e/flujo-de-caja.spec.ts:43:5 › saldo declarado: doble clic deja una sola declaración y Inicio dice de dónde viene (1.4s)
+  ✓   67 tests/e2e/flujo-de-caja.spec.ts:65:5 › cobro esperado y cobro con XML: cada doble clic deja un solo cobro (1.2s)
+  ✓   68 tests/e2e/flujo-de-caja.spec.ts:116:5 › obligación recurrente con doble clic y presupuesto al 80 % y al 100 % en Presupuestos, Inicio y Aprobaciones (4.6s)
+  ✓   69 tests/e2e/flujo-de-caja.spec.ts:160:5 › escenario «mover pago»: la semana cambia en pantalla y la base no (1.6s)
+  ✓   70 tests/e2e/flujo-de-caja.spec.ts:199:5 › faltante: con poco saldo, Inicio y Aprobaciones avisan en qué semana (2.0s)
+  ✓   71 tests/e2e/flujo-de-caja.spec.ts:228:5 › nómina de una sola persona: finanzas ve «Monto reservado» y administración ve el monto (1.3s)
+  ✓   72 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez (7.5s)
+  ✓   73 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana (2.6s)
+  ✓   74 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (3.6s)
+  ✓   75 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (3.9s)
+  ✓   76 tests/e2e/invitacion.spec.ts:31:5 › invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta (5.9s)
+  ✓   77 tests/e2e/invitacion.spec.ts:117:5 › recuperar la contraseña por correo: un enlace, cierra las sesiones y entra con la nueva y su factor de siempre (6.4s)
+  ✓   78 tests/e2e/marco.spec.ts:12:7 › marco de la consola en escritorio › menú de la persona: cuatro opciones fuera del Tab; Tab y Escape cierran y regresan el foco al botón (1.2s)
+  ✓   79 tests/e2e/marco.spec.ts:38:7 › marco de la consola en escritorio › el buscador de la barra lleva a su sección con lo escrito (1.4s)
+  ✓   80 tests/e2e/marco.spec.ts:47:7 › marco de la consola en escritorio › Apariencia: con sesión y empresa se abre; sin sesión manda a entrar; otra empresa no la muestra (2.4s)
+  ✓   81 tests/e2e/marco.spec.ts:76:7 › cajón móvil › sin checkVisibility (Safari < 17.4): abre, atrapa el foco, deja el fondo inert; Escape y el velo regresan el foco (823ms)
+  ✓   82 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › laura: responde 404 de verdad, igual para la ajena y la inexistente (con JavaScript) (5.2s)
+  ✓   83 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › gil: responde 404 de verdad, igual para la ajena y la inexistente (con JavaScript) (5.1s)
+  ✓   84 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › laura: responde 404 de verdad, igual para la ajena y la inexistente (sin JavaScript) (468ms)
+  ✓   85 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › gil: responde 404 de verdad, igual para la ajena y la inexistente (sin JavaScript) (387ms)
+  ✓   86 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez (1.9s)
+  ✓   87 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 2 › estable (3.1s)
+  ✓   88 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms (4.1s)
+  ✓   89 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez (2.3s)
+  ✓   90 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 1 › estable (2.9s)
+  ✓   91 tests/e2e/movimiento-del-fondo.spec.ts:21:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (891ms)
+  ✓   92 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (6.8s)
+  ✓   93 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (14.2s)
+  ✓   94 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana (4.0s)
+  ✓   95 tests/e2e/fondo-pruebas.ts:183:13 › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (6.3s)
+  ✓   96 tests/e2e/nomina.spec.ts:46:5 › alta de una persona con nómina: doble clic guarda una sola ficha, un perfil y una CLABE (1.1s)
+  ✓   97 tests/e2e/nomina.spec.ts:81:5 › cambio de CLABE de nómina: con factor viejo pide «Confirma que eres tú»; tras volver a entrar, doble clic = un cambio (2.8s)
+  ✓   98 tests/e2e/nomina.spec.ts:129:5 › Aprobaciones a 390: el botón de la nómina vencida cabe en su tarjeta, también con la fecha más larga (555ms)
+  ✓   99 tests/e2e/nomina.spec.ts:152:5 › preparar el lote vencido: doble clic = un lote con sus renglones y el calendario avanza (1.5s)
+MEDIDA #dictamen-motivo 390: {"mensaje":{"arriba":427,"abajo":485},"campo":{"arriba":492,"abajo":588},"barras":60,"ventana":844,"visible":true}
+MEDIDA #riesgo-actividad 390: {"mensaje":{"arriba":449,"abajo":487},"campo":{"arriba":494,"abajo":534},"barras":60,"ventana":844,"visible":true}
+  ✓  100 tests/e2e/operacion.spec.ts:246:7 › doceava sin JavaScript: empresas propias de la siembra › sin JavaScript, el dictamen y el grado de riesgo de Enebro vuelven con lo elegido a 390; el doble clic tras el rechazo registra una vez (1.6s)
+MEDIDA [id="motivo-9bf7c50a-55c0-48cc-bd86-3bfa6b18dfd7"] 1440: {"mensaje":{"arriba":605,"abajo":682},"campo":{"arriba":689,"abajo":729},"barras":84,"ventana":1000,"visible":true}
+MEDIDA [id="motivo-9bf7c50a-55c0-48cc-bd86-3bfa6b18dfd7"] 1440: {"mensaje":{"arriba":605,"abajo":682},"campo":{"arriba":689,"abajo":729},"barras":84,"ventana":1000,"visible":true}
+  ✓  101 tests/e2e/operacion.spec.ts:253:7 › doceava sin JavaScript: empresas propias de la siembra › sin JavaScript, tras «Saltar al contenido» el rechazo de una tarjeta deja el foco en su campo, dos veces seguidas (539ms)
+  ✓  102 tests/e2e/operacion.spec.ts:281:7 › doceava sin JavaScript: empresas propias de la siembra › sin JavaScript, si otra pestaña ya registró el dictamen, el rechazo de Granado va arriba de la página aunque su formulario ya no se pinte (531ms)
+MEDIDA salir 1440: {"titulo":{"x":284,"y":28.4375,"width":106.21875,"height":31.1875},"chip":{"x":1137.578125,"y":22,"width":185,"height":44.0625},"boton":{"x":1334.578125,"y":26.03125,"width":61.421875,"height":36}}
+MEDIDA salir 390: {"titulo":{"x":16,"y":78.796875,"width":274,"height":26.390625},"chip":{"x":302,"y":72,"width":72,"height":40},"boton":{"x":312.578125,"y":124,"width":61.421875,"height":36}}
+  ✓  103 tests/e2e/operacion.spec.ts:286:7 › doceava sin JavaScript: empresas propias de la siembra › sin JavaScript, «Salir» se ve junto al menú, cierra la sesión y /operacion vuelve a la entrada, a 1440 y 390; el título y el chip no ceden espacio; con JavaScript no se ve (1.6s)
+MEDIDA #dictamen-motivo 1440: {"mensaje":{"arriba":636,"abajo":655},"campo":{"arriba":662,"abajo":758},"barras":84,"ventana":1000,"visible":true}
+MEDIDA #riesgo-actividad 1440: {"mensaje":{"arriba":502,"abajo":521},"campo":{"arriba":528,"abajo":568},"barras":84,"ventana":1000,"visible":true}
+  ✓  104 tests/e2e/operacion.spec.ts:336:7 › doceava sin JavaScript: empresas propias de la siembra › sin JavaScript, llegando por #dictamen-titulo (Higuera) y por #riesgo-titulo (Brisa), el rechazo deja el foco en su campo (590ms)
+  ✓  105 tests/e2e/operacion.spec.ts:362:7 › doceava sin JavaScript: empresas propias de la siembra › sin JavaScript, la suspensión de Bahía no consume el formulario al rechazarse, el doble clic pide una sola y la otra pestaña ve «ya hay una pendiente» (879ms)
+  ✓  106 tests/e2e/operacion.spec.ts:372:7 › Operación SOFIPO: Brisa y Cima › un caso abierto de Cumplimiento no se le nombra a Aprobación ni a Originación (1.4s)
+  ✓  107 tests/e2e/operacion.spec.ts:407:7 › Operación SOFIPO: Brisa y Cima › el grado de riesgo no le dice a Originación ni a Aprobación que hay una coincidencia; a Cumplimiento sí (1.5s)
+  ✓  108 tests/e2e/operacion.spec.ts:433:7 › Operación SOFIPO: Brisa y Cima › una clave repetida en la dirección (?aviso=a&aviso=b) no tumba ninguna página de Operación (10.2s)
+  ✓  109 tests/e2e/operacion.spec.ts:467:7 › Operación SOFIPO: expediente de Duna › tras un rechazo del socio extranjero el formulario vuelve con todo lo capturado y el campo marcado; la moral extranjera entra sin RFC (6.5s)
+  ✓  110 tests/e2e/operacion.spec.ts:546:7 › Operación SOFIPO: expediente de Duna › un nombre con un carácter invisible da su propio aviso; el formulario de representante conserva lo capturado (1.8s)
+MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":731,"abajo":750},"campo":{"arriba":757,"abajo":797},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":731,"abajo":750},"campo":{"arriba":757,"abajo":797},"barras":84,"ventana":900,"visible":true}
+MEDIDA #acc-capital 1440: {"mensaje":{"arriba":378,"abajo":397},"campo":{"arriba":404,"abajo":444},"barras":84,"ventana":900,"visible":true}
+MEDIDA #motivo-suspension 1440: {"mensaje":{"arriba":463,"abajo":501},"campo":{"arriba":508,"abajo":604},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 390: {"mensaje":{"arriba":778,"abajo":797},"campo":{"arriba":804,"abajo":844},"barras":60,"ventana":844,"visible":true}
+MEDIDA #doc-archivo 390: {"mensaje":{"arriba":309,"abajo":328},"campo":{"arriba":335,"abajo":375},"barras":60,"ventana":844,"visible":true}
+MEDIDA #acc-capital 390: {"mensaje":{"arriba":279,"abajo":318},"campo":{"arriba":325,"abajo":365},"barras":60,"ventana":844,"visible":true}
+MEDIDA #motivo-suspension 390: {"mensaje":{"arriba":560,"abajo":618},"campo":{"arriba":625,"abajo":721},"barras":60,"ventana":844,"visible":true}
+  ✓  111 tests/e2e/operacion.spec.ts:627:7 › Operación SOFIPO: expediente de Duna › el mensaje del error queda a la vista junto al campo con foco: un documento y un socio del expediente y el motivo de una reactivación, a 1440 y 390 (4.4s)
+MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":452,"abajo":471},"campo":{"arriba":478,"abajo":518},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":452,"abajo":471},"campo":{"arriba":478,"abajo":518},"barras":84,"ventana":900,"visible":true}
+MEDIDA #acc-capital 1440: {"mensaje":{"arriba":452,"abajo":471},"campo":{"arriba":478,"abajo":518},"barras":84,"ventana":900,"visible":true}
+MEDIDA #motivo-suspension 1440: {"mensaje":{"arriba":430,"abajo":468},"campo":{"arriba":475,"abajo":571},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 390: {"mensaje":{"arriba":468,"abajo":487},"campo":{"arriba":494,"abajo":534},"barras":60,"ventana":844,"visible":true}
+MEDIDA #doc-archivo 390: {"mensaje":{"arriba":468,"abajo":487},"campo":{"arriba":494,"abajo":534},"barras":60,"ventana":844,"visible":true}
+MEDIDA #acc-capital 390: {"mensaje":{"arriba":448,"abajo":487},"campo":{"arriba":494,"abajo":534},"barras":60,"ventana":844,"visible":true}
+MEDIDA #motivo-suspension 390: {"mensaje":{"arriba":427,"abajo":485},"campo":{"arriba":492,"abajo":588},"barras":60,"ventana":844,"visible":true}
+MEDIDA [id="nota-b84879dd-ce2f-46b0-95b4-17f62b9a4da9"] 390: {"mensaje":{"arriba":466,"abajo":485},"campo":{"arriba":492,"abajo":588},"barras":60,"ventana":844,"visible":true}
+  ✓  112 tests/e2e/operacion.spec.ts:639:9 › Operación SOFIPO: expediente de Duna › sin JavaScript › sin JavaScript, el mensaje del error queda a la vista junto al campo con foco: documento, socio, motivo de reactivación y la nota de una recuperación, a 1440 y 390 (2.3s)
+MEDIDA #rep-nombre 1440: {"mensaje":{"arriba":502,"abajo":521},"campo":{"arriba":528,"abajo":568},"barras":84,"ventana":1000,"visible":true}
+MEDIDA #acc-nombre 1440: {"mensaje":{"arriba":482,"abajo":521},"campo":{"arriba":528,"abajo":568},"barras":84,"ventana":1000,"visible":true}
+  ✓  113 tests/e2e/operacion.spec.ts:666:9 › Operación SOFIPO: expediente de Duna › sin JavaScript › sin JavaScript, «Agregar representante» y «Agregar accionista» con un invisible vuelven con su aviso, el campo marcado, el foco y lo capturado (712ms)
+  ✓  114 tests/e2e/operacion.spec.ts:714:9 › Operación SOFIPO: expediente de Duna › sin JavaScript › sin JavaScript, el rechazo de un campo del expediente vuelve con lo capturado, sin fragmento y con el foco en el campo (331ms)
+  ✓  115 tests/e2e/operacion.spec.ts:743:7 › Operación SOFIPO: alta con activación (Faro) › prospecto → pedir activación → el candado exige expediente; con todo en regla la decide otra persona con factor reciente (4.8s)
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #correo 1440: {"mensaje":{"arriba":419,"abajo":438},"campo":{"arriba":445,"abajo":485},"barras":84,"ventana":900,"visible":true}
+MEDIDA #valor 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA #titulo 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="motivo-58012a47-77b9-4334-93a2-829103fdb7ae"] 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+  ✓  116 tests/e2e/operacion.spec.ts:840:7 › Operación SOFIPO: alta con activación (Faro) › doceava: prospecto, invitación, comisión y alertas vuelven con lo capturado y su campo marcado; el resumen de arriba no se queda (3.1s)
+  ✓  117 tests/e2e/operacion.spec.ts:846:7 › Operación SOFIPO: alta con activación (Faro) › doceava: la suspensión de Faro no consume el formulario al rechazarse, el doble clic pide una sola y la otra pestaña ve «ya hay una pendiente» sin recargar (2.0s)
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #correo 1440: {"mensaje":{"arriba":419,"abajo":438},"campo":{"arriba":445,"abajo":485},"barras":84,"ventana":900,"visible":true}
+MEDIDA #valor 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA #titulo 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="motivo-ec9394bc-e307-4ae7-848f-2791b7dc18fd"] 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+  ✓  118 tests/e2e/operacion.spec.ts:855:9 › Operación SOFIPO: alta con activación (Faro) › doceava sin JavaScript, con Faro activa › sin JavaScript, invitación, comisión y alertas vuelven con lo capturado y el resumen del envío anterior no se pinta (1.6s)
+MEDIDA #dictamen-motivo 1440: {"mensaje":{"arriba":636,"abajo":655},"campo":{"arriba":662,"abajo":758},"barras":84,"ventana":900,"visible":true}
+MEDIDA #riesgo-actividad 1440: {"mensaje":{"arriba":488,"abajo":507},"campo":{"arriba":514,"abajo":554},"barras":84,"ventana":900,"visible":true}
+  ✓  119 tests/e2e/operacion.spec.ts:1097:7 › doceava con JavaScript: empresas propias de la siembra › doceava: el dictamen y el grado de riesgo de Eje vuelven con lo elegido; nada queda en «baja» sin elegirlo y el doble clic tras el rechazo registra una vez (1.9s)
+  ✓  120 tests/e2e/operacion.spec.ts:1103:7 › doceava con JavaScript: empresas propias de la siembra › doceava: si otra pestaña ya registró el dictamen, el rechazo de Fresno va arriba de la página aunque su formulario ya no se pinte (1.8s)
+  ✓  121 tests/e2e/operacion.spec.ts:1109:7 › doceava con JavaScript: empresas propias de la siembra › doceava: la cookie del rechazo fabricada en una visita normal solo pinta avisos del catálogo; un valor inventado no aparece (3.3s)
+MEDIDA #tipo 1440: {"mensaje":{"arriba":375,"abajo":413},"campo":{"arriba":420,"abajo":460},"barras":84,"ventana":900,"visible":true}
+MEDIDA #tipo 390: {"mensaje":{"arriba":728,"abajo":786},"campo":{"arriba":793,"abajo":833},"barras":60,"ventana":844,"visible":true}
+  ✓  122 tests/e2e/operacion.spec.ts:1150:7 › doceava con JavaScript: empresas propias de la siembra › doce-N1: pedir una comisión con otra pendiente para la misma empresa y tipo dice por qué, con y sin JavaScript (1.7s)
+  ✓  123 tests/e2e/operacion.spec.ts:1191:7 › doceava con JavaScript: empresas propias de la siembra › doce-N2: ?aviso=constructor y ?aviso=toString no tumban ninguna de las cinco páginas que leen un aviso de la dirección (918ms)
+MEDIDA #dato-razonSocial 1440: {"mensaje":{"arriba":433,"abajo":471},"campo":{"arriba":478,"abajo":518},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":488,"abajo":507},"campo":{"arriba":514,"abajo":554},"barras":84,"ventana":900,"visible":true}
+  ✓  124 tests/e2e/operacion.spec.ts:1222:7 › doceava: coincidencias, datos generales y recuperaciones › doceava: los 17 datos generales vuelven como se escribieron; después de otro rechazo queda un solo aviso y el resumen de arriba se oculta (1.4s)
+MEDIDA [id="motivo-9bf7c50a-55c0-48cc-bd86-3bfa6b18dfd7"] 1440: {"mensaje":{"arriba":605,"abajo":682},"campo":{"arriba":689,"abajo":729},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="motivo-922207a6-b808-473a-9eff-353685c96cd5"] 1440: {"mensaje":{"arriba":385,"abajo":462},"campo":{"arriba":469,"abajo":509},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="presentado-922207a6-b808-473a-9eff-353685c96cd5"] 1440: {"mensaje":{"arriba":630,"abajo":707},"campo":{"arriba":714,"abajo":754},"barras":84,"ventana":900,"visible":true}
+  ✓  125 tests/e2e/operacion.spec.ts:1265:7 › doceava: coincidencias, datos generales y recuperaciones › doceava: el dictamen de una coincidencia y su folio vuelven a su tarjeta con lo escrito; otro rechazo en otra tarjeta descarta el primero (1.1s)
+  ✓  126 tests/e2e/operacion.spec.ts:1300:7 › doceava: coincidencias, datos generales y recuperaciones › doceava: tras un rechazo la página se vuelve a pintar: con el factor caducado aparece «Confirma que eres tú» y la tarjeta conserva lo elegido (1.5s)
+MEDIDA [id="motivo-9bf7c50a-55c0-48cc-bd86-3bfa6b18dfd7"] 1440: {"mensaje":{"arriba":385,"abajo":462},"campo":{"arriba":469,"abajo":509},"barras":84,"ventana":1000,"visible":true}
+MEDIDA [id="presentado-922207a6-b808-473a-9eff-353685c96cd5"] 1440: {"mensaje":{"arriba":630,"abajo":707},"campo":{"arriba":714,"abajo":754},"barras":84,"ventana":1000,"visible":true}
+  ✓  127 tests/e2e/operacion.spec.ts:1331:9 › doceava: coincidencias, datos generales y recuperaciones › sin JavaScript › sin JavaScript, el estado de cada formulario vuelve a su tarjeta (la clave es el id): el dictamen de Cima y el folio de Brisa (578ms)
+MEDIDA n9-prospecto-1440: {"formulario":{"x":1002.53125,"y":188.4375,"width":368.46875,"height":508.34375},"aviso":{"x":1002.53125,"y":188.4375,"width":368.46875,"height":73.09375},"#razonSocial":{"x":1002.53125,"y":307.53125,"width":368.46875,"height":64.5}}
+MEDIDA n9-prospecto-390: {"formulario":{"x":41,"y":240.5625,"width":308,"height":660.515625},"aviso":{"x":41,"y":240.5625,"width":308,"height":90.640625},"#razonSocial":{"x":41,"y":377.203125,"width":308,"height":64.5}}
+MEDIDA n9-documento-1440: {"formulario":{"x":309,"y":345.296875,"width":1062,"height":546.921875},"aviso":{"x":309,"y":345.296875,"width":1062,"height":55.546875},"#doc-tipo":{"x":309,"y":446.84375,"width":521,"height":64.5},"#doc-detalle":{"x":309,"y":619.84375,"width":1062,"height":64.5},"#doc-archivo":{"x":309,"y":706.34375,"width":1062,"height":117.875}}
+MEDIDA n9-coincidencia-1440: {"formulario":{"x":309,"y":316.234375,"width":1062,"height":261.796875},"aviso":{"x":309,"y":316.234375,"width":1062,"height":79.546875},"[id=\"resolucion-9bf7c50a-55c0-48cc-bd86-3bfa6b18dfd7\"]":{"x":309,"y":513.53125,"width":246,"height":64.5}}
+MEDIDA n9-recuperacion-1440: {"formulario":{"x":981,"y":193.25,"width":390,"height":320.984375},"aviso":{"x":981,"y":193.25,"width":390,"height":79.546875},"[id=\"verificacion-98beda8b-5592-4a7e-b1ae-d51ca09a69ad\"]":{"x":981,"y":411.734375,"width":190,"height":64.5}}
+MEDIDA n9-folio-1440: {"formulario":{"x":309,"y":469.28125,"width":1062,"height":261.796875},"aviso":{"x":309,"y":469.28125,"width":1062,"height":79.546875},"[id=\"folio-922207a6-b808-473a-9eff-353685c96cd5\"]":{"x":309,"y":666.578125,"width":190,"height":64.5}}
+MEDIDA n9-folio-columnas: {"antes":[{"x":309,"y":469.28125,"width":190,"height":64.5},{"x":517,"y":469.28125,"width":190,"height":64.5},{"x":725,"y":469.28125,"width":190,"height":64.5}],"despues":[{"x":309,"y":666.578125,"width":190,"height":64.5},{"x":517,"y":582.828125,"width":190,"height":148.25},{"x":725,"y":666.578125,"width":190,"height":64.5}]}
+MEDIDA n9-folio-fondos: {"fondos":[731.078125,731.078125,731.078125],"boton":{"x":933,"y":695.078125,"width":105.8125,"height":36},"altoDelBoton":36}
+  ✓  128 tests/e2e/operacion.spec.ts:1355:7 › doceava: coincidencias, datos generales y recuperaciones › humo-N9: tras un rechazo, el aviso mide el ancho de su formulario y los campos no se mueven: prospecto (1440 y 390), documento, coincidencia, recuperación y folio (6.2s)
+  ✓  129 tests/e2e/operacion.spec.ts:1457:7 › doceava: coincidencias, datos generales y recuperaciones › doce-N3: si otra pestaña ya resolvió la coincidencia igual, el segundo dictamen dice que ya se resolvió y no guarda su motivo (1.8s)
+  ✓  130 tests/e2e/operacion.spec.ts:1495:7 › Operación SOFIPO: entrada › entrada SOFIPO: contraseña y código; un código malo no abre y el doble clic abre una sola sesión (1.4s)
+MEDIDA #razonSocial 1440: {"mensaje":{"arriba":332,"abajo":370},"campo":{"arriba":377,"abajo":417},"barras":84,"ventana":1000,"visible":true}
+  ✓  131 tests/e2e/operacion.spec.ts:1528:9 › Operación SOFIPO: entrada › sin JavaScript › sin JavaScript los formularios responden: el alta vuelve con su aviso y lo capturado (200) y las dos entradas dan el suyo (3.7s)
+  ✓  132 tests/e2e/operacion.spec.ts:1567:7 › Operación SOFIPO: recuperaciones › «Perdí el segundo factor»: Recuperaciones pide «Confirma que eres tú», otra persona aprueba y la clienta registra un factor nuevo (3.4s)
+MEDIDA [id="nota-998d13d1-8550-4192-a88f-50b009b6d870"] 1440: {"mensaje":{"arriba":526,"abajo":565},"campo":{"arriba":572,"abajo":668},"barras":84,"ventana":1000,"visible":true}
+  ✓  133 tests/e2e/operacion.spec.ts:1639:7 › Operación SOFIPO: recuperaciones › con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca solo la nota de esa tarjeta (1.6s)
+  ✓  134 tests/e2e/operacion.spec.ts:1679:7 › Operación SOFIPO: precio y descarga › publicar el precio exige factor de los últimos 30 minutos; tras volver a entrar, doble clic publica una vez (2.9s)
+  ✓  135 tests/e2e/operacion.spec.ts:1707:7 › Operación SOFIPO: precio y descarga › la descarga del expediente llega aislada (sandbox) y la pantalla del expediente conserva la política general (203ms)
+  ✓  136 tests/e2e/fondo-pruebas.ts:183:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (5.3s)
+  ✓  137 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 2 › estable (9.9s)
+  ✓  138 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 2 › arrastrar la ventana (8.1s)
+  ✓  139 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms (4.0s)
+  ✓  140 tests/e2e/pagos-proveedores.spec.ts:52:5 › la mesa se ve completa en claro, oscuro y móvil (6.6s)
+  ✓  141 tests/e2e/pagos-proveedores.spec.ts:90:5 › alta, factura, excepción, descarga y autorización con otra persona (4.6s)
+  ✓  142 tests/e2e/pagos-proveedores.spec.ts:174:5 › alta sin contrato y lectura del XML sin errores en la consola (1.6s)
+  ✓  143 tests/e2e/pagos-proveedores.spec.ts:206:5 › una corrección que falla conserva el importe y la evidencia elegidos (1.1s)
+  ✓  144 tests/e2e/pagos-proveedores.spec.ts:222:5 › limita archivos combinados y no ofrece cambiar CLABE a un liberador (1.5s)
+  ✓  145 tests/e2e/pagos-proveedores.spec.ts:242:5 › «Agregar contrato» no envía un PDF de más de 4 MB y liga el aviso al campo (1.5s)
+  ✓  146 tests/e2e/pagos-proveedores.spec.ts:263:5 › rechazo, corrección y cancelación conservan el historial (3.4s)
+  ✓  147 tests/e2e/passkeys.spec.ts:40:5 › portal: Lucía registra una passkey en /entrar/seguridad y entra con ella (2.4s)
+  ✓  148 tests/e2e/passkeys.spec.ts:77:5 › Operación: el primer ingreso registra una passkey en /operacion/continuar y la siguiente entrada la usa (2.6s)
+  ✓  149 tests/e2e/personas.spec.ts:57:5 › recorrido completo de colaboradores, presupuesto, nómina, tarjeta y baja (11.1s)
+  ✓  150 tests/e2e/roles.spec.ts:139:7 › administrador: el lateral y «Más» muestran solo sus secciones y las demás no abren (1.4s)
+  ✓  151 tests/e2e/roles.spec.ts:139:7 › finanzas (con tarjeta): el lateral y «Más» muestran solo sus secciones y las demás no abren (1.4s)
+  ✓  152 tests/e2e/roles.spec.ts:139:7 › contador: el lateral y «Más» muestran solo sus secciones y las demás no abren (1.5s)
+  ✓  153 tests/e2e/roles.spec.ts:139:7 › liberador: el lateral y «Más» muestran solo sus secciones y las demás no abren (1.4s)
+  ✓  154 tests/e2e/roles.spec.ts:139:7 › solicitante (con tarjeta): el lateral y «Más» muestran solo sus secciones y las demás no abren (1.7s)
+  ✓  155 tests/e2e/roles.spec.ts:139:7 › tarjetahabiente: el lateral y «Más» muestran solo sus secciones y las demás no abren (1.0s)
+  ✓  156 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana (2.2s)
+  ✓  157 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms (5.9s)
+  ✓  158 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez (3.3s)
+  ✓  159 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 1 › estable (4.9s)
+  ✓  160 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms (12.1s)
+
+  4 skipped
+  156 passed (8.0m)
+[e2e] recorridos terminados con estado 0 · 156 pruebas corridas · 485 s

@@ -1474,7 +1474,8 @@ async function estados() {
     // navegación) hasta que se comprueba la barra; luego la deja pasar.
     await page.setViewportSize({ width: 390, height: 844 });
     // La consola con empresa elegida vive en /c/<empresa>/consola/….
-    const personas = (url) => /\/consola\/personas$/.test(url.pathname);
+    // Ola 2b: el lateral lleva «Nómina» (/consola/personas/nomina) en lugar de Personas.
+    const personas = (url) => /\/consola\/personas\/nomina$/.test(url.pathname);
     let soltar = () => {};
     let retenida = Promise.resolve();
     await page.route(personas, async (ruta) => {
@@ -1484,18 +1485,18 @@ async function estados() {
     for (const tema of TEMAS) {
       retenida = new Promise((listo) => (soltar = listo));
       await ctx.addCookies([{ name: "tema", value: tema, url: BASE }]);
-      await page.goto(`${BASE}/consola/pendientes`, { waitUntil: "domcontentloaded" });
+      await page.goto(`${BASE}/consola/aprobaciones`, { waitUntil: "domcontentloaded" });
       await page.locator("main#contenido").waitFor();
       await page.getByRole("button", { name: "Secciones" }).click();
-      await page.locator("#lateral").getByRole("link", { name: /^Personas/ }).click();
-      exigir((await page.getByRole("button", { name: "Secciones" }).getAttribute("aria-expanded")) === "false", `consola ${tema}-390: el cajón se cerró al pulsar Personas`);
-      exigir(/\/consola\/pendientes$/.test(new URL(page.url()).pathname) && (await page.locator("main#contenido").isVisible()), `consola ${tema}-390: mientras carga, Pendientes sigue a la vista`);
+      await page.locator("#lateral").getByRole("link", { name: /^Nómina/ }).click();
+      exigir((await page.getByRole("button", { name: "Secciones" }).getAttribute("aria-expanded")) === "false", `consola ${tema}-390: el cajón se cerró al pulsar Nómina`);
+      exigir(/\/consola\/aprobaciones$/.test(new URL(page.url()).pathname) && (await page.locator("main#contenido").isVisible()), `consola ${tema}-390: mientras carga, Aprobaciones sigue a la vista`);
       await revisarCargaMovil(page, `consola ${tema}-390`, "/consola (cargando)");
       await captura(page, `96b-consola-cargando-${tema}-390`, { completa: false });
       soltar();
       await page.waitForURL(/\/consola\/personas/);
       await page.locator(".barra-movil-carga .seccion-spinner").waitFor({ state: "detached" });
-      exigir((await page.locator(".barra-movil-carga").innerText()).trim() === "", `consola ${tema}-390: al llegar Personas, la barra deja de decir «Cargando…»`);
+      exigir((await page.locator(".barra-movil-carga").innerText()).trim() === "", `consola ${tema}-390: al llegar Nómina, la barra deja de decir «Cargando…»`);
     }
     await page.unroute(personas);
 

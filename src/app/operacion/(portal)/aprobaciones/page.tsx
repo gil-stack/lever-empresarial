@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { DecisionesOperacion } from "@/components/operacion/decisiones";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { NotaRegla } from "@/components/sistema";

@@ -15,13 +15,17 @@ import { execFileSync } from "node:child_process";
 import { createHmac } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 const requerir = createRequire(`${process.cwd()}/package.json`);
 const { chromium } = requerir("playwright");
 const sharp = requerir("sharp");
 const { PNG } = requerir("pngjs");
 
-const ENTORNO = JSON.parse(readFileSync(process.env.ENTORNO ?? "test-results/ola1b-consola/entorno.json", "utf8"));
+// El entorno guarda sesiones y la cadena de la base con su clave: vive fuera del repositorio (dentro del árbol,
+// `npm run security` lo marca aunque esté en .gitignore), como el de la ola 2b.
+const ENTORNO = JSON.parse(readFileSync(process.env.ENTORNO ?? join(tmpdir(), "ola1b-consola-entorno.json"), "utf8"));
 const BASE = process.env.BASE ?? "http://localhost:4807";
 const DIR = process.env.DIR ?? "docs/evidencia/ola1b-consola";
 const DUENO = ENTORNO.DUENO_URL;
@@ -187,8 +191,8 @@ async function revisarAccesibilidad(p) {
 }
 
 const PANTALLAS = [
-  { clave: "10-pendientes", quien: "gil", ruta: `${TALLER}/consola/pendientes` },
-  { clave: "11-pendientes-altamar", quien: "laura", ruta: `${ALTAMAR}/consola/pendientes` },
+  { clave: "10-pendientes", quien: "gil", ruta: `${TALLER}/consola/aprobaciones` },
+  { clave: "11-pendientes-altamar", quien: "laura", ruta: `${ALTAMAR}/consola/aprobaciones` },
   // Inicio con su flujo: con el desglose de la nómina (administrador), sin él (finanzas) y sin saldo declarado.
   { clave: "12-inicio-administrador", quien: "gil", ruta: `${TALLER}/consola` },
   { clave: "13-inicio-finanzas", quien: "fernanda", ruta: `${TALLER}/consola` },
@@ -226,7 +230,7 @@ const PANTALLAS = [
   { clave: "84-sin-permiso-configuracion", quien: "fernanda", ruta: `${TALLER}/consola/configuracion` },
   { clave: "85-sin-permiso-plan", quien: "fernanda", ruta: `${TALLER}/consola/configuracion/plan` },
   { clave: "86-sin-permiso-poliza", quien: "fernanda", ruta: `${TALLER}/consola/poliza` },
-  { clave: "87-pendientes-finanzas", quien: "fernanda", ruta: `${TALLER}/consola/pendientes` },
+  { clave: "87-pendientes-finanzas", quien: "fernanda", ruta: `${TALLER}/consola/aprobaciones` },
   ...(process.env.EXTRA_PANTALLAS ? JSON.parse(process.env.EXTRA_PANTALLAS) : []),
 ];
 
@@ -308,14 +312,15 @@ async function cargando(carpeta) {
     const espera = new Promise((listo) => {
       soltar = listo;
     });
-    await p.route((url) => url.pathname.endsWith("/consola/politica"), async (ruta) => {
+    // Ola 2b: Política vive en «Más»; la sección del lateral que se retiene es Proveedores.
+    await p.route((url) => url.pathname.endsWith("/consola/proveedores"), async (ruta) => {
       await espera;
       await ruta.continue().catch(() => {});
     });
-    await p.goto(`${BASE}${TALLER}/consola/pendientes`, { waitUntil: "load" });
-    await p.getByRole("heading", { name: "Pendientes" }).waitFor({ state: "attached" });
+    await p.goto(`${BASE}${TALLER}/consola/aprobaciones`, { waitUntil: "load" });
+    await p.getByRole("heading", { name: "Aprobaciones" }).waitFor({ state: "attached" });
     await p.waitForTimeout(800);
-    await p.locator("a.seccion", { hasText: "Política" }).click();
+    await p.locator("a.seccion", { hasText: "Proveedores" }).click();
     const aviso = p.locator(".seccion-lectura", { hasText: "Cargando…" });
     const visto = await aviso.waitFor({ timeout: 8000 }).then(() => true, () => false);
     await capturar(p, `${carpeta}/95-cargando-${tema}-1440.webp`, { completa: false, espera: 100 });
@@ -323,8 +328,8 @@ async function cargando(carpeta) {
     const marco = await p.locator(".barra-superior").isVisible();
     anotar(marco, `95-cargando ${tema} 1440: la barra y el lateral siguen visibles`);
     soltar();
-    const llego = await p.getByRole("heading", { name: "Política de comprobantes" }).waitFor({ state: "attached", timeout: 15000 }).then(() => true, () => false);
-    anotar(llego, `95-cargando ${tema} 1440: al llegar, se pinta Política`);
+    const llego = await p.getByRole("heading", { name: "Pagos a proveedores" }).waitFor({ state: "attached", timeout: 15000 }).then(() => true, () => false);
+    anotar(llego, `95-cargando ${tema} 1440: al llegar, se pinta Proveedores`);
     anotar(errores.length === 0, `95-cargando ${tema} 1440: sin errores de consola`, errores.join(" | "));
     await nav.close();
 
