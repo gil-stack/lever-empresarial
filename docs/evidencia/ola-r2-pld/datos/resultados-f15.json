@@ -2,8 +2,8 @@
   "fases": [
     "f15"
   ],
-  "segundos": 27,
-  "verdes": 28,
+  "segundos": 34,
+  "verdes": 32,
   "rojos": 0,
   "resultados": [
     {
@@ -28,6 +28,18 @@
     },
     {
       "ok": true,
+      "texto": "consola limpia en la sesión de Ciro"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «sesion_con_persona_excluida» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "15. el caso del aviso sobre Ciro no se vota en la sesión que registró Ciro: «Este caso se vota en una sesión aparte», sin decir a quién excluye"
+    },
+    {
+      "ok": true,
       "texto": "15. el Comité votó el caso del aviso sobre Ciro (4 votos)"
     },
     {
@@ -37,6 +49,10 @@
     {
       "ok": true,
       "texto": "15. Ciro ve la sesión sin su caso y no la que lo votó"
+    },
+    {
+      "ok": true,
+      "texto": "15. y sigue viendo la sesión que él registró (r2-fix2-N2)"
     },
     {
       "ok": true,

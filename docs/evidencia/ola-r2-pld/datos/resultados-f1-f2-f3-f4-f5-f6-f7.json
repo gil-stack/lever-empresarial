@@ -8,8 +8,8 @@
     "f6",
     "f7"
   ],
-  "segundos": 141,
-  "verdes": 161,
+  "segundos": 138,
+  "verdes": 164,
   "rojos": 0,
   "resultados": [
     {
@@ -27,6 +27,10 @@
     {
       "ok": true,
       "texto": "consola limpia en la sesión de Ana"
+    },
+    {
+      "ok": true,
+      "texto": "1. un monto de nómina que no es número se rechaza sin recargar: queda marcado, con el foco, y los cuatro valores siguen"
     },
     {
       "ok": true,
@@ -91,6 +95,10 @@
     {
       "ok": true,
       "texto": "1. la bandeja de Cumplimiento lista la propuesta de Nogal"
+    },
+    {
+      "ok": true,
+      "texto": "1. un motivo que no llega a 10 caracteres visibles se rechaza sin recargar y sigue escrito"
     },
     {
       "ok": true,
@@ -226,6 +234,10 @@
     },
     {
       "ok": true,
+      "texto": "5. «Revisar» con 13 caracteres invisibles no llega a 20 que se vean: se rechaza, marcado y con el foco, sin guardar nada"
+    },
+    {
+      "ok": true,
       "texto": "consola limpia en la sesión de Omar"
     },
     {
@@ -238,7 +250,7 @@
     },
     {
       "ok": true,
-      "texto": "5. quien avisa ve su acuse con el folio 78AE1786"
+      "texto": "5. quien avisa ve su acuse con el folio E98EF453"
     },
     {
       "ok": true,
@@ -315,6 +327,10 @@
     {
       "ok": true,
       "texto": "6. el aviso del personal queda fuera, para su propio caso"
+    },
+    {
+      "ok": true,
+      "texto": "6. la nota «a» con un carácter invisible se rechaza sin recargar: el campo marcado, con el foco y el texto como se escribió"
     },
     {
       "ok": true,
@@ -482,11 +498,7 @@
     },
     {
       "ok": true,
-      "texto": "aviso «comite_auditor_integrante» tras la acción"
-    },
-    {
-      "ok": true,
-      "texto": "7. el auditor con el RFC de un integrante se rechaza con su aviso"
+      "texto": "7. el auditor con el RFC de un integrante se rechaza con su aviso, sin recargar: el RFC marcado y con el foco, y los cinco datos siguen"
     },
     {
       "ok": true,
@@ -498,11 +510,7 @@
     },
     {
       "ok": true,
-      "texto": "aviso «comite_auditor_integrante» tras la acción"
-    },
-    {
-      "ok": true,
-      "texto": "7. el auditor con el nombre de un integrante vigente se rechaza y no se guarda"
+      "texto": "7. el auditor con el nombre de un integrante vigente se rechaza sin recargar, no se guarda y lo escrito sigue"
     },
     {
       "ok": true,
@@ -511,6 +519,10 @@
     {
       "ok": true,
       "texto": "7. doble clic en «Registrar auditor» = 1 auditor (no es integrante)"
+    },
+    {
+      "ok": true,
+      "texto": "7. el folio con un carácter invisible se rechaza sin recargar: queda marcado, y el folio, la fecha y las casillas siguen como estaban"
     },
     {
       "ok": true,
@@ -534,7 +546,7 @@
     },
     {
       "ok": true,
-      "texto": "aviso «sesion_presentes_invalidos» tras la acción"
+      "texto": "7. sesión sin presentes: se rechaza sin recargar, y la fecha y la casilla del auditor siguen"
     },
     {
       "ok": true,

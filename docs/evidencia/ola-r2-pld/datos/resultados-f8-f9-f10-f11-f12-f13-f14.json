@@ -8,7 +8,7 @@
     "f13",
     "f14"
   ],
-  "segundos": 123,
+  "segundos": 124,
   "verdes": 197,
   "rojos": 0,
   "resultados": [
@@ -51,6 +51,10 @@
     {
       "ok": true,
       "texto": "8. el caso dice que el reporte vence el 5-nov (3 días hábiles)"
+    },
+    {
+      "ok": true,
+      "texto": "8. el folio del acuse con un carácter invisible se rechaza sin recargar: queda marcado, y periodo, fecha y registros siguen"
     },
     {
       "ok": true,
@@ -158,11 +162,7 @@
     },
     {
       "ok": true,
-      "texto": "aviso «dato_invalido_claveOrganoSupervisor» tras la acción"
-    },
-    {
-      "ok": true,
-      "texto": "10. la clave del órgano supervisor rechazada queda marcada y con el foco"
+      "texto": "10. la clave del órgano supervisor rechazada queda marcada y con el foco, sin recargar y con las dos claves como se escribieron"
     },
     {
       "ok": true,
@@ -179,6 +179,10 @@
     {
       "ok": true,
       "texto": "10. el archivo del trimestre jul-sep es el reporte vacío: 41 columnas, llenas la 1, 2, 4 y 5"
+    },
+    {
+      "ok": true,
+      "texto": "10. el folio del envío con un carácter invisible se rechaza sin recargar: queda marcado, y la fecha y los registros siguen"
     },
     {
       "ok": true,
@@ -242,11 +246,7 @@
     },
     {
       "ok": true,
-      "texto": "aviso «dato_invalido_pagosMonto» tras la acción"
-    },
-    {
-      "ok": true,
-      "texto": "12. el monto rechazado de la evaluación queda marcado y con el foco"
+      "texto": "12. el monto rechazado de la evaluación queda marcado y con el foco, sin recargar: «Cambia», el monto y la justificación siguen"
     },
     {
       "ok": true,
@@ -426,7 +426,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Ofelia Plataforma no ve /operacion/pld/casos/a15ed6f9-c876-40f9-9bde-4eaca20bd023 ni un dato de PLD"
+      "texto": "14. Ofelia Plataforma no ve /operacion/pld/casos/d1bb17f3-0963-4027-a451-be751be82690 ni un dato de PLD"
     },
     {
       "ok": true,
@@ -434,7 +434,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Ofelia Plataforma no ve /operacion/comite/sesiones/0ab2d291-e4dd-4a3f-b01d-4413d6616984 ni un dato de PLD"
+      "texto": "14. Ofelia Plataforma no ve /operacion/comite/sesiones/79ac2687-34f4-4b96-acb3-884b92e04e9d ni un dato de PLD"
     },
     {
       "ok": true,
@@ -490,7 +490,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Omar Originación no ve /operacion/pld/casos/a15ed6f9-c876-40f9-9bde-4eaca20bd023 ni un dato de PLD"
+      "texto": "14. Omar Originación no ve /operacion/pld/casos/d1bb17f3-0963-4027-a451-be751be82690 ni un dato de PLD"
     },
     {
       "ok": true,
@@ -498,7 +498,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Omar Originación no ve /operacion/comite/sesiones/0ab2d291-e4dd-4a3f-b01d-4413d6616984 ni un dato de PLD"
+      "texto": "14. Omar Originación no ve /operacion/comite/sesiones/79ac2687-34f4-4b96-acb3-884b92e04e9d ni un dato de PLD"
     },
     {
       "ok": true,
@@ -554,7 +554,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Ana Aprobación no ve /operacion/pld/casos/a15ed6f9-c876-40f9-9bde-4eaca20bd023 ni un dato de PLD"
+      "texto": "14. Ana Aprobación no ve /operacion/pld/casos/d1bb17f3-0963-4027-a451-be751be82690 ni un dato de PLD"
     },
     {
       "ok": true,
@@ -562,7 +562,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Ana Aprobación no ve /operacion/comite/sesiones/0ab2d291-e4dd-4a3f-b01d-4413d6616984 ni un dato de PLD"
+      "texto": "14. Ana Aprobación no ve /operacion/comite/sesiones/79ac2687-34f4-4b96-acb3-884b92e04e9d ni un dato de PLD"
     },
     {
       "ok": true,
@@ -626,7 +626,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Celia Cumplimiento ve /operacion/pld/casos/a15ed6f9-c876-40f9-9bde-4eaca20bd023"
+      "texto": "14. Celia Cumplimiento ve /operacion/pld/casos/d1bb17f3-0963-4027-a451-be751be82690"
     },
     {
       "ok": true,
@@ -634,7 +634,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Celia Cumplimiento ve /operacion/comite/sesiones/0ab2d291-e4dd-4a3f-b01d-4413d6616984"
+      "texto": "14. Celia Cumplimiento ve /operacion/comite/sesiones/79ac2687-34f4-4b96-acb3-884b92e04e9d"
     },
     {
       "ok": true,
@@ -690,7 +690,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Aurelio Auditoría ve /operacion/pld/casos/a15ed6f9-c876-40f9-9bde-4eaca20bd023"
+      "texto": "14. Aurelio Auditoría ve /operacion/pld/casos/d1bb17f3-0963-4027-a451-be751be82690"
     },
     {
       "ok": true,
@@ -698,7 +698,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Aurelio Auditoría ve /operacion/comite/sesiones/0ab2d291-e4dd-4a3f-b01d-4413d6616984"
+      "texto": "14. Aurelio Auditoría ve /operacion/comite/sesiones/79ac2687-34f4-4b96-acb3-884b92e04e9d"
     },
     {
       "ok": true,
