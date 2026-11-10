@@ -20,6 +20,16 @@ const CORREO = /^[^\s@<>",;:()[\]\\\u0000-\u001f\u007f]+@[a-z0-9]([a-z0-9-]*[a-z
 /** Hasta dos años adelante: un plan no arranca en otra década por un dedo. */
 const HORIZONTE_DIAS = 730;
 
+/**
+ * El concepto va al asunto y al cuerpo del correo de cobro. Un salto de línea
+ * pegado ahí se vuelve un espacio («Servicio\r\nBcc: x» → «Servicio Bcc: x»):
+ * ni se pega al texto de al lado ni se rechaza el formulario (r63-N9). Cualquier
+ * otro carácter de control sigue rechazándose.
+ */
+function conceptoLimpio(valor: unknown): string | null {
+  return textoLimpio(typeof valor === "string" ? valor.replace(/[\r\n]+/g, " ") : valor, 200);
+}
+
 export function correoValido(valor: string): boolean {
   return valor.length <= 254 && valor === valor.toLowerCase() && CORREO.test(valor);
 }
@@ -94,7 +104,7 @@ export function validarPlanNuevo(entrada: Record<string, unknown>, hoy: string):
 }
 
 function validarPlan(entrada: Record<string, unknown>, hoy: string, errores: ErrorFlujo[]): PlanEscrito | null {
-  const concepto = textoLimpio(entrada.concepto, 200);
+  const concepto = conceptoLimpio(entrada.concepto);
   if (!concepto) errores.push({ campo: "concepto", mensaje: "Escribe el concepto del cobro, por ejemplo «Renta de bodega»." });
   const tipo = entrada.tipo === "fijo" || entrada.tipo === "variable" ? entrada.tipo : null;
   if (!tipo) errores.push({ campo: "tipo", mensaje: "Elige si el monto es fijo o cambia cada periodo." });
@@ -123,7 +133,7 @@ export type PlanEditado = { concepto: string; montoCentavos: number | null; fin:
 
 export function validarPlanEditado(entrada: Record<string, unknown>, plan: { tipo: "fijo" | "variable"; primerVencimiento: string }): Resultado<PlanEditado> {
   const errores: ErrorFlujo[] = [];
-  const concepto = textoLimpio(entrada.concepto, 200);
+  const concepto = conceptoLimpio(entrada.concepto);
   if (!concepto) errores.push({ campo: "concepto", mensaje: "Escribe el concepto del cobro." });
   let montoCentavos: number | null = null;
   if (plan.tipo === "fijo") {
@@ -222,7 +232,7 @@ export type CargoUnicoEscrito = { concepto: string; montoCentavos: number; venci
 
 export function validarCargoUnico(entrada: Record<string, unknown>, hoy: string): Resultado<CargoUnicoEscrito> {
   const errores: ErrorFlujo[] = [];
-  const concepto = textoLimpio(entrada.concepto, 200);
+  const concepto = conceptoLimpio(entrada.concepto);
   if (!concepto) errores.push({ campo: "concepto", mensaje: "Escribe el concepto del cargo." });
   const montoCentavos = monto(entrada.monto);
   if (montoCentavos === null) errores.push({ campo: "monto", mensaje: "Escribe el monto en pesos, mayor a cero." });

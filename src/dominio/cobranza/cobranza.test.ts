@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import { clabeValida, digitoClabe } from "../clabe.ts";
 import { cubetaDe, dso, rangoDeCubeta } from "./antiguedad.ts";
 import { conciliar, referenciaABuscar, saldoAFavor } from "./conciliacion.ts";
-import { leerCorreos, validarAlta, validarConfiguracion, validarPagoManual } from "./entradas.ts";
+import { leerCorreos, validarAlta, validarCargoUnico, validarConfiguracion, validarPagoManual, validarPlanEditado } from "./entradas.ts";
 import { calendario, etiquetaPeriodo, periodosPorGenerar, vencimientoDe } from "./periodos.ts";
 import { correoDeHoy, CALENDARIO_POR_OMISION, type CorreoPrevio } from "./recordatorios.ts";
 import { digitoLuhn, normalizarReferencia, referenciaDe, referenciaValida } from "./referencia.ts";
@@ -289,6 +289,21 @@ describe("entradas", () => {
     if (!r.ok) {
       assert.deepEqual(r.errores.map((e) => e.campo).sort(), ["concepto", "correos", "monto", "nombre", "periodicidad", "primerVencimiento"]);
     }
+  });
+
+  it("el salto de línea del concepto se vuelve un espacio, sin pegar el texto (r63-N9)", () => {
+    const conSalto = "Servicio R63\r\nBcc: fuga@ejemplo.mx";
+    const alta = validarAlta({
+      nombre: "Abarrotes del Puerto", rfc: "", correos: "pagos@ejemplo.mx", concepto: conSalto,
+      tipo: "fijo", monto: "300.00", periodicidad: "mensual", primerVencimiento: "2027-01-31", fin: "",
+    }, HOY);
+    assert.equal(alta.ok && alta.valor.plan.concepto, "Servicio R63 Bcc: fuga@ejemplo.mx");
+    const unico = validarCargoUnico({ concepto: "Uno\nDos\rTres", monto: "1", vencimiento: "2027-01-31" }, HOY);
+    assert.equal(unico.ok && unico.valor.concepto, "Uno Dos Tres");
+    const editado = validarPlanEditado({ concepto: "Renta\r\n\r\nde bodega", monto: "1", fin: "" }, { tipo: "fijo", primerVencimiento: "2027-01-31" });
+    assert.equal(editado.ok && editado.valor.concepto, "Renta de bodega");
+    // Otro control (un tabulador vertical) se sigue rechazando.
+    assert.equal(validarCargoUnico({ concepto: "Uno\u000bDos", monto: "1", vencimiento: "2027-01-31" }, HOY).ok, false);
   });
 
   it("los correos no aceptan saltos de línea ni encabezados escondidos", () => {
