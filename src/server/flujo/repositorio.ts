@@ -78,7 +78,8 @@ export async function leerSaldo(consulta: Consulta, empresaId: string): Promise<
  * los de antes de $2 con su estado: la proyección da por pagados los
  * autorizados y lleva los no autorizados como vencidos sin autorizar.
  * Cobros: los esperados por su fecha probable y los cobrados por la fecha en
- * que llegó el dinero. Nómina y obligaciones: su base, para que el
+ * que llegó el dinero; con ellos, el saldo de los cargos de cobranza y los
+ * pagos recibidos (0031), sin copiarlos a expected_collections. Nómina y obligaciones: su base, para que el
  * dominio arme la serie.
  */
 export const SQL_FUENTES = `
@@ -126,17 +127,37 @@ export const SQL_FUENTES = `
        left join suppliers s on s.id = o.supplier_id and s.company_id = o.company_id
       where o.company_id = $1 and o.activa and o.proxima_fecha <= $3::date), '[]'::json) as obligaciones,
     coalesce((select json_agg(json_build_object(
-        'id', k.id, 'cliente', k.cliente_nombre, 'concepto', k.concepto, 'monto', k.monto_centavos::text,
-        'fecha', to_char(k.fecha_probable, 'YYYY-MM-DD'), 'referencia', k.referencia) order by k.fecha_probable, k.id)
-       from expected_collections k
-      where k.company_id = $1 and k.estado = 'esperado'
-        and k.fecha_probable between $2::date and $3::date), '[]'::json) as cobros,
+        'id', x.id, 'cliente', x.cliente, 'concepto', x.concepto, 'monto', x.monto::text,
+        'fecha', to_char(x.fecha, 'YYYY-MM-DD'), 'referencia', x.referencia) order by x.fecha, x.id)
+       from (
+         select k.id, k.cliente_nombre as cliente, k.concepto, k.monto_centavos as monto, k.fecha_probable as fecha, k.referencia
+           from expected_collections k
+          where k.company_id = $1 and k.estado = 'esperado'
+            and k.fecha_probable between $2::date and $3::date
+         -- Cobranza (0031): lo que falta por pagar de cada cargo emitido, por su vencimiento. No se copia a expected_collections.
+         union all
+         select c.id, n.nombre, c.concepto, c.monto_centavos - c.pagado_centavos, c.vencimiento, c.referencia
+           from collection_charges c
+           join collection_customers n on n.id = c.customer_id and n.company_id = c.company_id
+          where c.company_id = $1 and c.estado = 'emitido'
+            and c.vencimiento between $2::date and $3::date
+       ) x), '[]'::json) as cobros,
     coalesce((select json_agg(json_build_object(
-        'id', k.id, 'cliente', k.cliente_nombre, 'concepto', k.concepto, 'monto', k.monto_centavos::text,
-        'cobrado', to_char(k.cobrado_el, 'YYYY-MM-DD'), 'referencia', k.referencia) order by k.cobrado_el, k.id)
-       from expected_collections k
-      where k.company_id = $1 and k.estado = 'cobrado'
-        and k.cobrado_el between $2::date and $3::date), '[]'::json) as cobrados
+        'id', x.id, 'cliente', x.cliente, 'concepto', x.concepto, 'monto', x.monto::text,
+        'cobrado', to_char(x.fecha, 'YYYY-MM-DD'), 'referencia', x.referencia) order by x.fecha, x.id)
+       from (
+         select k.id, k.cliente_nombre as cliente, k.concepto, k.monto_centavos as monto, k.cobrado_el as fecha, k.referencia
+           from expected_collections k
+          where k.company_id = $1 and k.estado = 'cobrado'
+            and k.cobrado_el between $2::date and $3::date
+         -- Cobranza: cada pago que llegó, completo (lo aplicado y el saldo a favor), por el día en que llegó.
+         union all
+         select p.id, coalesce(n.nombre, 'Pago sin identificar'), 'Pago recibido', p.monto_centavos, p.recibido_el, p.clave_rastreo
+           from collection_payments p
+           left join collection_customers n on n.id = p.customer_id and n.company_id = p.company_id
+          where p.company_id = $1 and p.estado <> 'anulado'
+            and p.recibido_el between $2::date and $3::date
+       ) x), '[]'::json) as cobrados
 `;
 
 export async function leerFuentes(consulta: Consulta, empresaId: string, desde: string, hasta: string): Promise<Fuentes> {
@@ -349,11 +370,19 @@ export async function leerTotalesCobro(
 ): Promise<{ porCobrar: number; vencidos: number; vencidosCentavos: number }> {
   const fila = unaFila(await aplicarSentencia(
     consulta,
-    `select coalesce(sum(monto_centavos), 0)::text as por_cobrar,
-            count(*) filter (where fecha_probable < $2::date) as vencidos,
-            coalesce(sum(monto_centavos) filter (where fecha_probable < $2::date), 0)::text as vencidos_centavos
-       from expected_collections
-      where company_id = $1 and estado = 'esperado'`,
+    `select coalesce(sum(monto), 0)::text as por_cobrar,
+            count(*) filter (where fecha < $2::date) as vencidos,
+            coalesce(sum(monto) filter (where fecha < $2::date), 0)::text as vencidos_centavos
+       from (
+         select monto_centavos as monto, fecha_probable as fecha
+           from expected_collections
+          where company_id = $1 and estado = 'esperado'
+         union all
+         -- Cobranza (0031): el saldo de cada cargo emitido.
+         select monto_centavos - pagado_centavos, vencimiento
+           from collection_charges
+          where company_id = $1 and estado = 'emitido'
+       ) x`,
     [empresaId, hoy],
   ));
   return { porCobrar: centavos(fila.por_cobrar), vencidos: entero(fila.vencidos), vencidosCentavos: centavos(fila.vencidos_centavos) };

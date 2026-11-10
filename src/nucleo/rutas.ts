@@ -171,6 +171,36 @@ export const RUTAS = [
     conEmpresa: true,
   },
   {
+    patron: "/consola/cobros/nuevo",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] },
+    conEmpresa: true,
+  },
+  {
+    patron: "/consola/cobros/clientes/[id]",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] },
+    conEmpresa: true,
+  },
+  {
+    patron: "/consola/cobros/configuracion",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] },
+    conEmpresa: true,
+  },
+  {
+    patron: "/consola/cobros/estado-de-cuenta",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] },
+    conEmpresa: true,
+  },
+  {
+    patron: "/consola/cobros/comprobante/[id]",
+    superficie: "cliente",
+    acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] },
+    conEmpresa: true,
+  },
+  {
     patron: "/consola/calendario",
     superficie: "cliente",
     acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] },
@@ -204,6 +234,10 @@ export const RUTAS = [
   },
   // La tarea programada del lunes. Sin sesión: la protege CRON_SECRET en la propia ruta.
   { patron: "/tareas/correo-semanal", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
+  // Cobranza: la tarea diaria (CRON_SECRET), el aviso firmado de Fintoc y la página del pagador (token del correo).
+  { patron: "/tareas/cobranza", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
+  { patron: "/webhooks/fintoc", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
+  { patron: "/pagar/[token]", superficie: "cliente", acceso: { tipo: "publica" }, conEmpresa: false },
   // El layout y las acciones vuelven a exigir la superficie SOFIPO y la capacidad.
   { patron: "/operacion/entrar", superficie: "sofipo", acceso: { tipo: "publica" }, conEmpresa: false },
   { patron: "/operacion/continuar", superficie: "sofipo", acceso: { tipo: "segundo_factor" }, conEmpresa: false },

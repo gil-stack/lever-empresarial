@@ -220,6 +220,8 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (deProveedor) return new ErrorDeDominio(deProveedor);
     const deFlujo = FRASES_DE_FLUJO[mensaje.trim()];
     if (deFlujo) return new ErrorDeDominio(deFlujo);
+    const deCobranza = FRASES_DE_COBRANZA[mensaje.trim()];
+    if (deCobranza) return new ErrorDeDominio(deCobranza);
     if (FRASES_DE_AUDITORIA.has(mensaje)) return new ErrorDeDominio("auditoria_no_disponible");
   }
   if (codigo === "23514" && marca.includes("lotes_prueba_dos_firmas")) {
@@ -372,6 +374,31 @@ const FRASES_DE_FLUJO: Readonly<Record<string, string>> = {
   envio_ya_cerrado: "envio_cerrado",
   auditoria_de_flujo_ausente: "auditoria_no_disponible",
   auditoria_de_area_proveedor_ausente: "auditoria_no_disponible",
+};
+
+/** Cobranza (0031). */
+const FRASES_DE_COBRANZA: Readonly<Record<string, string>> = {
+  sin_permiso_para_cobranza: "sin_permiso",
+  cobranza_inmutable: "cobranza_inmutable",
+  cobranza_no_se_borra: "cobranza_inmutable",
+  cliente_archivado: "cliente_archivado",
+  cliente_no_valido: "cliente_no_valido",
+  plan_cancelado: "plan_cancelado",
+  plan_no_valido: "plan_no_valido",
+  cargo_no_valido: "cargo_no_valido",
+  cargo_ya_resuelto: "cargo_ya_resuelto",
+  pago_no_valido: "pago_no_valido",
+  pago_anulado: "pago_anulado",
+  aplicacion_no_valida: "aplicacion_no_valida",
+  aplicacion_no_se_reescribe: "aplicacion_no_valida",
+  cobranza_aplicado_no_cuadra: "aplicacion_no_valida",
+  cobranza_pagado_no_cuadra: "aplicacion_no_valida",
+  correo_no_valido: "correo_cerrado",
+  correo_ya_cerrado: "correo_cerrado",
+  entrega_no_se_reescribe: "correo_cerrado",
+  importacion_ya_confirmada: "importacion_ya_confirmada",
+  renglon_ya_resuelto: "renglon_ya_resuelto",
+  auditoria_de_cobranza_ausente: "auditoria_no_disponible",
 };
 
 const CODIGOS_DE_AUTENTICACION = new Set([

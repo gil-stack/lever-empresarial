@@ -120,6 +120,46 @@ export const CATALOGO = {
   entrada_fallida: { entidad: "users", cambio: ["motivo"] },
   recuperacion_solicitada: { entidad: "password_resets", cambio: [] },
   contrasena_restablecida: { entidad: "password_resets", cambio: [] },
+  // Cobranza (0031). La CLABE viaja enmascarada; nunca correos, nombres ni la referencia del pagador.
+  configurar_cobranza: {
+    entidad: "collection_settings",
+    cambio: ["clabe_anterior", "clabe_nueva", "beneficiario_cambio", "contacto", "calendario"],
+  },
+  alta_cliente_cobranza: { entidad: "collection_customers", cambio: ["correos", "con_rfc"] },
+  editar_cliente_cobranza: { entidad: "collection_customers", cambio: ["campos"] },
+  archivar_cliente_cobranza: { entidad: "collection_customers", cambio: [] },
+  recordatorios_cliente_cobranza: { entidad: "collection_customers", cambio: ["activos", "por"] },
+  alta_plan_cobranza: {
+    entidad: "collection_plans",
+    cambio: ["tipo", "periodicidad", "monto_centavos", "primer_vencimiento", "fin"],
+  },
+  editar_plan_cobranza: {
+    entidad: "collection_plans",
+    cambio: ["concepto_cambio", "monto_anterior", "monto_nuevo", "fin_anterior", "fin_nuevo"],
+  },
+  pausar_plan_cobranza: { entidad: "collection_plans", cambio: [] },
+  reanudar_plan_cobranza: { entidad: "collection_plans", cambio: ["reanudado_el"] },
+  cancelar_plan_cobranza: { entidad: "collection_plans", cambio: [] },
+  generar_cargo: { entidad: "collection_charges", cambio: ["periodo", "vencimiento", "monto_centavos", "estado"] },
+  emitir_cargo: { entidad: "collection_charges", cambio: ["monto_centavos"] },
+  cancelar_cargo: { entidad: "collection_charges", cambio: [] },
+  abono_cargo: { entidad: "collection_charges", cambio: ["pagado_centavos", "estado"] },
+  registrar_pago_cobranza: {
+    entidad: "collection_payments",
+    cambio: ["fuente", "monto_centavos", "recibido_el", "regla", "posible_duplicado", "con_comprobante"],
+  },
+  saldo_pago_cobranza: { entidad: "collection_payments", cambio: ["aplicado_centavos", "estado"] },
+  anular_pago_cobranza: { entidad: "collection_payments", cambio: [] },
+  aplicacion_cobranza: { entidad: "collection_applications", cambio: ["monto_centavos", "regla"] },
+  correo_cobranza: { entidad: "collection_emails", cambio: ["tipo", "estado", "destinatarios", "codigo"] },
+  correo_cobranza_entregado: { entidad: "collection_email_deliveries", cambio: [] },
+  cuenta_proveedor_cobranza: { entidad: "collection_provider_accounts", cambio: ["proveedor", "cuenta"] },
+  clabe_cliente_cobranza: { entidad: "collection_virtual_accounts", cambio: ["proveedor", "terminacion", "recuperada"] },
+  aviso_proveedor_cobranza: { entidad: "collection_provider_events", cambio: ["proveedor", "repetido"] },
+  empate_estado_cuenta: { entidad: "collection_statement_mappings", cambio: ["banco", "fila_encabezado"] },
+  importar_estado_cuenta: { entidad: "collection_statement_imports", cambio: ["banco", "renglones", "abonos", "nuevos"] },
+  confirmar_estado_cuenta: { entidad: "collection_statement_imports", cambio: ["aplicados", "por_conciliar", "ya_registrados", "descartados"] },
+  renglon_estado_cuenta: { entidad: "collection_statement_rows", cambio: ["estado"] },
 } as const satisfies Record<string, { entidad: string; cambio: readonly string[] }>;
 
 export type AccionDeBitacora = keyof typeof CATALOGO;

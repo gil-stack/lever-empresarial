@@ -1,0 +1,258 @@
+import { createHash, randomUUID } from "node:crypto";
+
+import { digitoClabe } from "../../dominio/clabe";
+import { conciliar, referenciaABuscar, type CargoConReferencia, type Decision } from "../../dominio/cobranza/conciliacion";
+import type { EmpresaDelContexto } from "../../nucleo/contexto";
+import { aplicarSentencia, bloquearEmpresa, type Consulta } from "../../nucleo/db";
+import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
+import type { Actor, Auditar } from "../bitacora/auditar";
+import { centavos, registro, texto } from "../flujo/lectura";
+import { autorDe } from "./comun";
+import { fechaDe } from "./repositorio";
+
+/**
+ * De dónde llega un abono: el aviso del proveedor SPEI (Fintoc, a la CLABE
+ * propia del cliente), un renglón confirmado del estado de cuenta, el adaptador
+ * demo (solo en empresas de demostración) o el modo manual (una persona con su
+ * comprobante). Cada adaptador solo traduce y verifica lo suyo; la conciliación
+ * es una sola y pasa por `recibirAbono`.
+ */
+
+export type AbonoRecibido = {
+  /** Del proveedor: su id de notificación, o clave de rastreo + fecha + monto. */
+  idExterno: string;
+  montoCentavos: number;
+  recibidoEl: string;
+  claveRastreo: string | null;
+  referencia: string | null;
+  clabeOrdenante: string | null;
+  nombreOrdenante: string | null;
+  /** El cliente dueño de la CLABE propia a la que llegó (proveedor SPEI), o nulo. */
+  clienteDeLaCuenta: string | null;
+};
+
+export type FuenteAutomatica = "demo" | "fintoc" | "estado_cuenta";
+
+export interface FuenteDeAbonos {
+  readonly fuente: FuenteAutomatica;
+  /** Si la empresa puede recibir abonos de esta fuente. */
+  disponiblePara(empresa: Pick<EmpresaDelContexto, "demostracion">): boolean;
+}
+
+export type ResultadoAbono = {
+  pagoId: string;
+  /** El mismo aviso ya había llegado: no se creó nada. */
+  repetido: boolean;
+  decision: Decision | null;
+};
+
+/**
+ * El único camino de un abono automático: lo guarda (o reconoce el repetido),
+ * concilia con las reglas puras contra los cargos de la empresa bloqueada,
+ * aplica lo que corresponde y deja todo en la bitácora. Va dentro de la
+ * transacción de quien llama, con la empresa en el contexto.
+ */
+export async function recibirAbono(
+  consulta: Consulta,
+  actor: Actor,
+  auditar: Auditar,
+  fuente: FuenteAutomatica,
+  abono: AbonoRecibido,
+): Promise<ResultadoAbono> {
+  const empresaId = actor.companyId;
+  if (!empresaId) throw new ErrorDeDominio("sin_empresa");
+  await bloquearEmpresa(consulta, empresaId);
+  const previo = await aplicarSentencia(
+    consulta,
+    "select id from collection_payments where company_id = $1 and fuente = $2 and id_externo = $3",
+    [empresaId, fuente, abono.idExterno],
+  );
+  if (previo.rows[0]) return { pagoId: texto(registro(previo.rows[0]).id), repetido: true, decision: null };
+
+  const referencia = referenciaABuscar(abono);
+  let cargoDeLaReferencia: CargoConReferencia | null = null;
+  if (referencia) {
+    const r = await aplicarSentencia(
+      consulta,
+      `select id, customer_id, estado, (coalesce(monto_centavos, 0) - pagado_centavos)::text as saldo
+         from collection_charges where company_id = $1 and referencia = $2 for update`,
+      [empresaId, referencia],
+    );
+    const fila = r.rows[0] ? registro(r.rows[0]) : null;
+    if (fila) {
+      cargoDeLaReferencia = {
+        id: texto(fila.id),
+        clienteId: texto(fila.customer_id),
+        estado: texto(fila.estado) as CargoConReferencia["estado"],
+        saldoCentavos: centavos(fila.saldo),
+      };
+    }
+  }
+  const rastreoYaRegistrado = abono.claveRastreo !== null && (await aplicarSentencia(
+    consulta,
+    "select 1 from collection_payments where company_id = $1 and upper(clave_rastreo) = upper($2) and estado <> 'anulado' limit 1",
+    [empresaId, abono.claveRastreo],
+  )).rows.length > 0;
+  const clienteDeLaCuenta = abono.clienteDeLaCuenta;
+  let clientesDeLaClabe: string[] = [];
+  if (!cargoDeLaReferencia && !clienteDeLaCuenta && abono.clabeOrdenante) {
+    const r = await aplicarSentencia(
+      consulta,
+      `select distinct customer_id from collection_payments
+        where company_id = $1 and clabe_ordenante = $2 and customer_id is not null and estado <> 'anulado'`,
+      [empresaId, abono.clabeOrdenante],
+    );
+    clientesDeLaClabe = r.rows.map(registro).map((f) => texto(f.customer_id));
+  }
+  const clienteConocido = clienteDeLaCuenta ?? (clientesDeLaClabe.length === 1 ? clientesDeLaClabe[0]! : null);
+  let cargosAbiertosDelCliente: { id: string; saldoCentavos: number; vencimiento: string }[] = [];
+  if (!cargoDeLaReferencia && clienteConocido) {
+    const c = await aplicarSentencia(
+      consulta,
+      `select id, (monto_centavos - pagado_centavos)::text as saldo, vencimiento from collection_charges
+        where company_id = $1 and customer_id = $2 and estado = 'emitido' order by vencimiento, id for update`,
+      [empresaId, clienteConocido],
+    );
+    cargosAbiertosDelCliente = c.rows.map(registro).map((f) => ({ id: texto(f.id), saldoCentavos: centavos(f.saldo), vencimiento: fechaDe(f.vencimiento) }));
+  }
+  const decision = conciliar(abono, { rastreoYaRegistrado, clienteDeLaCuenta, cargoDeLaReferencia, clientesDeLaClabe, cargosAbiertosDelCliente });
+  const pagoId = randomUUID();
+  await aplicarSentencia(
+    consulta,
+    `insert into collection_payments
+       (id, company_id, fuente, id_externo, monto_centavos, recibido_el, clave_rastreo, referencia, clabe_ordenante, nombre_ordenante,
+        customer_id, posible_duplicado, registrado_por)
+     values ($1, $2, $3, $4, $5, $6::date, $7, $8, $9, $10, $11, $12, $13)`,
+    [pagoId, empresaId, fuente, abono.idExterno, abono.montoCentavos, abono.recibidoEl, abono.claveRastreo, abono.referencia,
+      abono.clabeOrdenante, abono.nombreOrdenante, decision.clienteId, decision.posibleDuplicado, autorDe(actor)],
+  );
+  await auditar(consulta, actor, {
+    accion: "registrar_pago_cobranza",
+    identificador: pagoId,
+    cambio: { fuente, monto_centavos: abono.montoCentavos, recibido_el: abono.recibidoEl, regla: decision.motivo, posible_duplicado: decision.posibleDuplicado, con_comprobante: false },
+  });
+  if (decision.aplicacion) {
+    await aplicar(consulta, actor, auditar, empresaId, pagoId, decision.aplicacion.cargoId, decision.aplicacion.montoCentavos, decision.aplicacion.regla, abono.recibidoEl);
+  }
+  await alRecibirAbonoRegulado(consulta, fuente, pagoId);
+  return { pagoId, repetido: false, decision };
+}
+
+/**
+ * Aplica `monto` de un pago a un cargo emitido: la aplicación, lo pagado del
+ * cargo (y su estado) y lo aplicado del pago, cada uno con su evento. La base
+ * verifica al confirmar que las sumas cuadran.
+ */
+export async function aplicar(
+  consulta: Consulta,
+  actor: Actor,
+  auditar: Auditar,
+  empresaId: string,
+  pagoId: string,
+  cargoId: string,
+  monto: number,
+  regla: "referencia" | "clabe_y_monto" | "manual",
+  recibidoEl: string,
+): Promise<void> {
+  const aplicacionId = randomUUID();
+  await aplicarSentencia(
+    consulta,
+    `insert into collection_applications (id, company_id, payment_id, charge_id, monto_centavos, regla, aplicado_por)
+     values ($1, $2, $3, $4, $5, $6, $7)`,
+    [aplicacionId, empresaId, pagoId, cargoId, monto, regla, autorDe(actor)],
+  );
+  await auditar(consulta, actor, { accion: "aplicacion_cobranza", identificador: aplicacionId, cambio: { monto_centavos: monto, regla } });
+  const cargo = await aplicarSentencia(
+    consulta,
+    `update collection_charges
+        set pagado_centavos = pagado_centavos + $3,
+            estado = case when pagado_centavos + $3 >= monto_centavos then 'pagado' else 'emitido' end,
+            pagado_el = case when pagado_centavos + $3 >= monto_centavos then $4::date end
+      where company_id = $1 and id = $2 and estado = 'emitido' and pagado_centavos + $3 <= monto_centavos
+      returning estado, pagado_centavos::text as pagado`,
+    [empresaId, cargoId, monto, recibidoEl],
+  );
+  const fila = cargo.rows[0] ? registro(cargo.rows[0]) : null;
+  if (!fila) throw new ErrorDeDominio("cargo_ya_resuelto");
+  await auditar(consulta, actor, { accion: "abono_cargo", identificador: cargoId, cambio: { pagado_centavos: centavos(fila.pagado), estado: texto(fila.estado) } });
+  const pago = await aplicarSentencia(
+    consulta,
+    `update collection_payments
+        set aplicado_centavos = aplicado_centavos + $3,
+            estado = case when aplicado_centavos + $3 = monto_centavos then 'aplicado' else 'abierto' end
+      where company_id = $1 and id = $2 and estado = 'abierto' and aplicado_centavos + $3 <= monto_centavos
+      returning estado, aplicado_centavos::text as aplicado`,
+    [empresaId, pagoId, monto],
+  );
+  const filaPago = pago.rows[0] ? registro(pago.rows[0]) : null;
+  if (!filaPago) throw new ErrorDeDominio("pago_ya_aplicado");
+  await auditar(consulta, actor, { accion: "saldo_pago_cobranza", identificador: pagoId, cambio: { aplicado_centavos: centavos(filaPago.aplicado), estado: texto(filaPago.estado) } });
+}
+
+/**
+ * Punto de enganche de PLD. Hoy el dinero de la cobranza llega a cuentas de la
+ * empresa fuera de la SOFIPO: su banco (manual y estado de cuenta) o su cuenta
+ * en Fintoc, donde Fintoc es quien recibe y hace su propio PLD. Ninguna es una
+ * operación de la SOFIPO y no se reporta. Cuando la fuente sea la cuenta de la
+ * empresa en la SOFIPO, cada abono es operación relevante y aquí se llama
+ * `pld_registrar_*` (PR #61, migración 0030).
+ */
+const alRecibirAbonoRegulado: (consulta: Consulta, fuente: FuenteAutomatica | "manual", pagoId: string) => Promise<void> = async () => {};
+
+// Adaptador demo ------------------------------------------------------------------------
+
+export const fuenteDemo: FuenteDeAbonos = {
+  fuente: "demo",
+  disponiblePara: (empresa) => empresa.demostracion,
+};
+
+export type VarianteDemo = "exacto" | "parcial" | "de_mas" | "duplicado" | "repetir_aviso" | "sin_referencia";
+
+/** Una CLABE ordenante ficticia y fija por cliente, con su dígito verificador (banco 999: no existe). */
+export function clabeOrdenanteDemo(clienteId: string): string {
+  const digitos = BigInt(`0x${createHash("sha256").update(clienteId).digest("hex").slice(0, 15)}`).toString().padStart(14, "0").slice(-14);
+  const diecisiete = `999${digitos}`;
+  return `${diecisiete}${digitoClabe(diecisiete)}`;
+}
+
+/**
+ * El abono que «llega» en una empresa de demostración para el cargo elegido:
+ * exacto, parcial (la mitad), de más (+10 %), duplicado (otra transferencia por
+ * lo mismo, con la referencia de un cargo ya pagado), el mismo aviso repetido
+ * (misma clave de rastreo: no debe crear nada) o sin referencia (se identifica
+ * por la CLABE del cliente y el monto).
+ */
+export function abonoDemo(
+  cargo: { id: string; clienteId: string; referencia: string; montoCentavos: number; saldoCentavos: number },
+  variante: VarianteDemo,
+  hoy: string,
+  ultimo: { idExterno: string; claveRastreo: string | null } | null,
+): AbonoRecibido {
+  if (variante === "repetir_aviso") {
+    if (!ultimo) throw new ErrorDeDominio("sin_abono_previo");
+    return { ...abonoBase(cargo, cargo.saldoCentavos || cargo.montoCentavos, hoy), idExterno: ultimo.idExterno, claveRastreo: ultimo.claveRastreo };
+  }
+  const monto = variante === "parcial"
+    ? Math.max(1, Math.floor(cargo.saldoCentavos / 2))
+    : variante === "de_mas"
+      ? cargo.saldoCentavos + Math.max(100, Math.round(cargo.saldoCentavos / 10))
+      : variante === "duplicado"
+        ? cargo.montoCentavos
+        : cargo.saldoCentavos;
+  const abono = abonoBase(cargo, monto, hoy);
+  return variante === "sin_referencia" ? { ...abono, referencia: null } : abono;
+}
+
+function abonoBase(cargo: { clienteId: string; referencia: string }, monto: number, hoy: string): AbonoRecibido {
+  const rastreo = `DEMO${randomUUID().replace(/-/g, "").slice(0, 20).toUpperCase()}`;
+  return {
+    idExterno: `demo:${rastreo}`,
+    montoCentavos: monto,
+    recibidoEl: hoy,
+    claveRastreo: rastreo,
+    referencia: cargo.referencia,
+    clabeOrdenante: clabeOrdenanteDemo(cargo.clienteId),
+    nombreOrdenante: "Ordenante de demostración",
+    clienteDeLaCuenta: null,
+  };
+}

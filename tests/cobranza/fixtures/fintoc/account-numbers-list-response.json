@@ -1,0 +1,23 @@
+[
+  {
+    "id": "acno_2daFu0zqqDtZGJaSi2TGI2Mm1nN",
+    "object": "account_number",
+    "account_id": "acc_2hQ9vBmKpR7xLtZ3sWn1fJ4dGcA",
+    "created_at": "2026-03-01T12:00:00.000Z",
+    "deleted_at": null,
+    "description": "Payouts CLABE",
+    "is_root": false,
+    "last_transfer_at": null,
+    "metadata": {
+      "invoice_id": "12345"
+    },
+    "mode": "test",
+    "number": "646180111800000004",
+    "options": {
+      "min_amount": 1000,
+      "max_amount": 1000000
+    },
+    "status": "enabled",
+    "updated_at": "2026-03-01T12:00:00.000Z"
+  }
+]
