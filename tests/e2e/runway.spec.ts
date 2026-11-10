@@ -57,12 +57,31 @@ function reales(errores: string[], browserName: string): string[] {
   return errores.filter((e) => !/^pageerror \S*[?&]_rsc=\S+ due to access control checks\.$/.test(e));
 }
 
+/** Los errores de consola de cada página vigilada, para que `foto` aparte lo que inserta el inspector de WebKit. */
+const vigiladas = new Map<Page, string[]>();
+function vigilar(page: Page): string[] {
+  const errores = vigilarConsola(page);
+  vigiladas.set(page, errores);
+  return errores;
+}
+
+// Al capturar, el inspector de WebKit inserta un <style> sin nonce y la CSP estricta lo rechaza (lo documenta el #62
+// en docs/evidencia/encabezados/con-main). Es de la herramienta: se descarta solo esa anotación exacta, solo en WebKit
+// y solo si apareció durante la captura. Cualquier otra cuenta.
+const DEL_INSPECTOR = "Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' does not appear in the style-src directive of the Content Security Policy.";
+
 let fotos = 0;
 async function foto(page: Page, browserName: string, nombre: string): Promise<void> {
   if (!EVIDENCIA) return;
   mkdirSync(EVIDENCIA, { recursive: true });
   fotos += 1;
+  const errores = vigiladas.get(page);
+  const antes = errores?.length ?? 0;
   await page.screenshot({ path: join(EVIDENCIA, `${browserName}-${String(fotos).padStart(2, "0")}-${nombre}.jpg`), fullPage: true, type: "jpeg", quality: 70 });
+  if (browserName !== "webkit" || !errores) return;
+  await page.waitForTimeout(200);
+  const durante = errores.splice(antes);
+  errores.push(...durante.filter((e) => e !== DEL_INSPECTOR));
 }
 
 /** La tarea como la llama el cron de Vercel. */
@@ -98,7 +117,7 @@ async function registrarImpuesto(page: Page): Promise<void> {
 }
 
 test("1 · runway a 12 meses con cada tipo de movimiento: conservador, esperado y lo que cuenta", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_RUNWAY.rita);
   await page.goto(en("/consola/flujo"));
   const conservador = page.locator('[data-cifra="runway-conservador"]');
@@ -150,7 +169,7 @@ test("1 · runway a 12 meses con cada tipo de movimiento: conservador, esperado 
 });
 
 test("2 · un pago grande cruza el colchón: un solo aviso por correo", async ({ page, context, browserName, request }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_RUNWAY.rita);
   // Una sola foto y una empresa real: estado vacío, nunca cifras de ejemplo.
   await page.goto(en("/consola/flujo"));
@@ -204,7 +223,7 @@ test("3 · la tarea dos veces y dos a la vez: ni aviso ni correo ni foto nuevos"
 });
 
 test("4 · sube y vuelve a cruzar: avisa otra vez, una sola vez", async ({ page, context, browserName, request }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_RUNWAY.rita);
   // Sube: desactivar el impuesto apaga las dos alertas sin correo.
   await page.goto(en("/consola/calendario"));
@@ -235,7 +254,7 @@ test("4 · sube y vuelve a cruzar: avisa otra vez, una sola vez", async ({ page,
 });
 
 test("5 · mínimo de meses: rechazo con su campo, con JavaScript y sin él", async ({ page, context, browser, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_RUNWAY.rita);
   await page.goto(en("/consola/flujo"));
   const forma = page.locator('form[data-formulario="runway"]');
@@ -291,7 +310,7 @@ test("5 · mínimo de meses: rechazo con su campo, con JavaScript y sin él", as
 });
 
 test("6 · tendencia con tres fotos: barras, línea del mínimo y su tabla", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   // Las dos semanas anteriores, como si la tarea las hubiera tomado (la prueba no puede esperar dos lunes): con su
   // evento. La base solo admite la foto de esta semana o de la anterior (r64-base-N2); la dueña de la base desechable
   // las siembra sin disparadores.
@@ -333,7 +352,7 @@ test("6 · tendencia con tres fotos: barras, línea del mínimo y su tabla", asy
 });
 
 test("7 · empresa sin saldo declarado: sin runway, sin alertas, con lo comprometido", async ({ page, context, browserName, request }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_RUNWAY.sergio);
   await page.goto(en("/consola/flujo", SIN_SALDO()));
   await expect(page.locator('[data-cifra="runway-conservador"]')).toHaveText("Sin saldo declarado");
@@ -351,7 +370,7 @@ test("7 · empresa sin saldo declarado: sin runway, sin alertas, con lo comprome
 });
 
 test("8 · real sin cifras de ejemplo; demostración con ejemplo marcado y aviso simulado", async ({ page, context, browserName, request }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_RUNWAY.dora);
   await page.goto(en("/consola/flujo", DEMO()));
   await expect(page.locator('[data-ejemplo="tendencia"]')).toContainText("Ejemplo · demostración");
@@ -373,7 +392,7 @@ test("8 · real sin cifras de ejemplo; demostración con ejemplo marcado y aviso
 });
 
 test("9 · permisos: contaduría solo ve, un rol sin flujo, otra empresa y sin sesión no entran", async ({ page, context, browser, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   await entrar(context, CORREOS_RUNWAY.cora);
   await page.goto(en("/consola/flujo"));
   await expect(page.locator('[data-cifra="runway-conservador"]')).toBeVisible();
@@ -441,7 +460,7 @@ test("10 · evidencia: 3 temas × 1440 y 390, axe sin violaciones y sin desplaza
 });
 
 test("11 · nómina de una sola persona: el mes dice reservado a quien no tiene el detalle (r64-N3)", async ({ page, context, browserName }) => {
-  const errores = vigilarConsola(page);
+  const errores = vigilar(page);
   // Noé se va ayer: en adelante la nómina de la empresa es de una sola persona (Nora). La dueña lo prepara sin
   // disparadores; lo que se valida es lo que cada quien ve en Flujo de caja.
   const duena = new Client({ connectionString: process.env.E2E_OWNER_DATABASE_URL });
@@ -475,4 +494,31 @@ test("11 · nómina de una sola persona: el mes dice reservado a quien no tiene 
   await expect(reservados).toHaveCount(0);
   await expect(page.locator('[data-lista="runway-resumen"] li[data-tipo="nomina"] .cifra')).not.toHaveText("Monto reservado");
   expect(reales(errores, browserName)).toEqual([]);
+});
+
+test("12 · CSP estricta: las pantallas del runway sin JavaScript, con su nonce y 0 anotaciones de la política", async ({ browser }) => {
+  // Con JavaScript las recorre csp.spec (todas las rutas del registro) y cada prueba de este archivo vigila la consola.
+  const contexto = await browser.newContext({ javaScriptEnabled: false, ignoreHTTPSErrors: ORIGEN.startsWith("https:") });
+  const sinSaldo = await browser.newContext({ javaScriptEnabled: false, ignoreHTTPSErrors: ORIGEN.startsWith("https:") });
+  await entrar(contexto, CORREOS_RUNWAY.rita);
+  await entrar(sinSaldo, CORREOS_RUNWAY.sergio);
+  const casos: [BrowserContext, string][] = [
+    [contexto, en("/consola/flujo")], [contexto, en("/consola")], [contexto, en("/consola/pendientes")], [sinSaldo, en("/consola/flujo", SIN_SALDO())],
+  ];
+  for (const [sesion, ruta] of casos) {
+    const pagina = await sesion.newPage();
+    const anotadas: string[] = [];
+    pagina.on("console", (m) => { if (/Content Security Policy|Refused to/i.test(m.text())) anotadas.push(m.text().slice(0, 200)); });
+    const respuesta = await pagina.goto(ruta);
+    expect(respuesta?.status(), ruta).toBe(200);
+    const politica = respuesta?.headers()["content-security-policy"] ?? "";
+    expect(politica, ruta).toMatch(/script-src 'self' 'nonce-[A-Za-z0-9+/=]+' 'strict-dynamic'/);
+    const nonce = politica.match(/'nonce-([A-Za-z0-9+/=]+)'/)![1];
+    const etiquetas = [...(await respuesta!.text()).matchAll(/<(?:script|style)\b[^>]*>/g)].map((m) => m[0]);
+    expect(etiquetas.filter((e) => !e.includes(`nonce="${nonce}"`)), ruta).toEqual([]);
+    expect(anotadas, ruta).toEqual([]);
+    await pagina.close();
+  }
+  await contexto.close();
+  await sinSaldo.close();
 });

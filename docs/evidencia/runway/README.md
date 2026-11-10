@@ -3,6 +3,7 @@
 Los 10 flujos del runway, clicados con Playwright contra `next build` + `next start`, sobre una base recién migrada y sembrada. Las aserciones de base van dentro de cada flujo: si una falla, la prueba se detiene. Son `tests/e2e/runway.spec.ts`, que también corre en CI en la parte que le toca de `test:e2e`.
 
 - Ronda r64 (2026-11-10, con el #63 y `main` integrados): Chromium 11 de 11 y WebKit 11 de 11, con capturas (la 10 es la matriz de temas, que solo corre con capturas).
+- Ronda r64b (2026-11-11, con el #63 de la ronda r63b y `main` con la CSP estricta del #62): Chromium 12 de 12 y WebKit 12 de 12 con capturas, y `csp.spec` 8 de 8 en WebKit. La 12 es nueva: las pantallas del runway sin JavaScript con la CSP estricta.
 
 La salida literal de las tres corridas está en [corridas.txt](corridas.txt). El rendimiento (p95 de la página por HTTP y la tarea con 1,000 empresas, con EXPLAIN) está en [rendimiento.md](rendimiento.md).
 
@@ -91,6 +92,17 @@ Revisión: `revision-64.md` y `hallazgos-64-para-6a.md` (head `504e9bc`). Antes 
 **`caja_hoy()` y las pruebas con fecha fija.** La base usa el reloj real (como el resto del repositorio). `tests/flujo/runway-postgres.test.ts` y `runway-reglas-base.test.ts` corren con fechas fijas: como dueñas de su base desechable reemplazan `caja_hoy()` por su fecha, así no se vuelven una bomba de tiempo como el `invitacion_vencida` heredado. La aplicación no puede reemplazarla (no es dueña) y la llama con esquema. `runway-reglas-base` revisa primero que la de producción dé la fecha real de México.
 
 **Gráfica de tendencia (pendiente del revisor de servidor).** La prueba 10 recorre Saldo y alertas con la tendencia de 3 fotos en los 3 temas, a 1440 y a 390: axe sin violaciones y sin desplazamiento horizontal, en Chromium y en WebKit; la tabla equivalente se abre en el flujo 6.
+
+## Ronda r64b (re-verificación del #64)
+
+| id | Arreglo | Prueba (`scripts/evidencia/runway/resultados-r64b.txt`) |
+|---|---|---|
+| r64b-N1 (P3) | `runway-reglas-base` afirma en el catálogo el índice único `cash_alerts_un_aviso_por_cruce_colchon` y que dos avisos del mismo cruce de colchón chocan con él (23505) | La mutación AR14 de la 0032 (sin el índice) cae por las dos aserciones, cada una por separado |
+| r64b-N2 (P3) | La gráfica de tendencia, el `title` de cada barra y su descripción dicen «12 meses o más» igual que la tabla (`textoSemanas` en `runway.tsx`) | e2e 6: la foto más vieja llega al horizonte; con el componente anterior cae («de 12.0 meses») |
+| r63c-N1 (P3) | El préstamo de TEMP de `runway-reglas-base` se devuelve en un `finally` y después se vuelve a exigir el 42501 | Una sonda forzada a fallar no deja el permiso |
+| CSP del #62 | `main` con la CSP estricta llega por el #63. Las pantallas del runway la cumplen sin cambios | e2e 12 sin JavaScript (flujo, inicio, pendientes y la empresa sin saldo): 200, la política con nonce, todas las etiquetas con el nonce de su respuesta y 0 anotaciones. Con JavaScript: `csp.spec` y cada prueba vigila la consola. En WebKit, `foto()` descarta solo el `<style>` que inserta el inspector al capturar |
+
+**Gates de la ronda r64b** (en local, 2026-11-11): typecheck, lint, build y security en verde; test 613/613; test:db 89/89; e2e en sus 5 partes 25 + 23 + 18 + 19 + 20 = 105 y 6 omitidas (las matrices de evidencia y las 4 de `csp-evidencia`); recorrido Chromium 12/12 y WebKit 12/12 con capturas.
 
 **Gates de la ronda** (en local, este turno, con el #63 y `main` con el #59 integrados): typecheck, lint, build y security en verde; test 590/590; test:db 86/86 (89/89 después de integrar el #63 con `main` y el #65: `definer-search-path` cubre las 3 definers de la 0032; la sonda de `pg_temp` comprueba primero el 42501 de la 0029 y presta el permiso temporal a `plataforma_tarea` solo para ella; AR1 la tumba a ella y a `definer-search-path`); e2e en sus 5 partes 22 + 15 + 24 + 15 + 17 = 93 y 2 omitidas (las matrices de evidencia); recorrido Chromium 11/11 y WebKit 11/11 (capturas regeneradas después del merge, con el `Referrer-Policy: same-origin` global en el flujo 5 sin JavaScript).
 
