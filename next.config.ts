@@ -17,7 +17,13 @@ const nextConfig: NextConfig = {
       },
       // Va después de la regla general: la última que coincide gana, y sin esta
       // la descarga perdería su política aislada.
-      ...["/consola/proveedores/documento/:id", "/c/:empresa/consola/proveedores/documento/:id"].map((source) => ({
+      ...[
+        "/consola/proveedores/documento/:id",
+        "/c/:empresa/consola/proveedores/documento/:id",
+        // El comprobante de un pago de cobranza baja igual que el documento de un proveedor (r63-N5).
+        "/consola/cobros/comprobante/:id",
+        "/c/:empresa/consola/cobros/comprobante/:id",
+      ].map((source) => ({
         source,
         headers: [{ key: "Content-Security-Policy", value: POLITICA_DESCARGA }],
       })),

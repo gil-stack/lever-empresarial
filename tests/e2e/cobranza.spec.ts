@@ -270,6 +270,14 @@ test("5 · pago a mano con comprobante: el cargo queda pagado y el comprobante b
   await descarga.saveAs(copia);
   expect(readFileSync(copia).equals(pdf)).toBe(true);
   expect(await contar("select 1 from audit_log where company_id = $1 and accion = 'descargar_documento'", [EMPRESA()])).toBe(1);
+  // La respuesta de verdad, con y sin /c/<empresa>: aislada y en sandbox, no la regla general (r63-N5).
+  const ruta = new URL((await enlace.getAttribute("href"))!, ORIGEN).pathname.replace(/^\/c\/[^/]+/, "");
+  for (const camino of [ruta, en(ruta)]) {
+    const respuesta = await context.request.get(`${ORIGEN}${camino}`);
+    expect(respuesta.status(), camino).toBe(200);
+    expect(respuesta.headers()["content-security-policy"], camino).toBe("sandbox; default-src 'none'; frame-ancestors 'none'");
+    expect(respuesta.headers()["content-disposition"], camino).toMatch(/^attachment;/);
+  }
   await foto(page, browserName, "pago-con-comprobante");
   expect(reales(errores, browserName)).toEqual([]);
 });
