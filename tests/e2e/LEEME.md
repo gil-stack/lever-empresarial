@@ -15,7 +15,8 @@
 | `aprobaciones.spec.ts` | En Arrecife E2E (recién dada de alta), cada pendiente de puesta en marcha se resuelve en su módulo (área, categoría, proveedor con constancia, obligación de flujo de caja) y, al volver con un clic en el lateral, Aprobaciones ya no lo muestra o enciende el aviso nuevo. |
 | `demostracion.spec.ts` | Modo demostración: en la empresa real cada módulo sin proveedor dice «Disponible pronto» y ni el HTML ni la carga RSC traen cifras o nombres de ejemplo; en la de demostración, el aviso y los botones de dinero apagados. |
 | `marco.spec.ts` | Menú de la persona, buscador, Apariencia y cajón móvil. |
-| `accesibilidad.spec.ts` | El enlace del logotipo se nombra con lo que muestra (WCAG 2.5.3) y lleva a Resumen o a Aprobaciones; en el teléfono, la barra de arriba es la navegación «Menú» y el aviso regulatorio va en el pie, en el portal y en Operación. |
+| `accesibilidad.spec.ts` | El enlace del logotipo se nombra con lo que muestra (WCAG 2.5.3) y lleva a Resumen o a Aprobaciones; en el teléfono, la barra de arriba es la navegación «Menú» y el aviso regulatorio va en el pie, en el portal y en Operación; las tablas que se desplazan se alcanzan con Tab; los dos buscadores de Proveedores tienen nombre propio (axe `landmark-unique` a 1440 y 390). |
+| `claves-repetidas.spec.ts` | Cada página del portal que lee la dirección, pedida con todas sus claves repetidas (`?q=a&q=b`), responde 200: la clave repetida se descarta. |
 
 ## Correr en local
 
