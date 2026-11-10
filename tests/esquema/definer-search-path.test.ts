@@ -56,6 +56,27 @@ async function sonda(duena: Cliente, base: string, darTemp: boolean): Promise<{ 
  */
 type Acl = { nombre: string; preparar?: (urlDuena: string, base: string) => void; conserva?: string };
 
+/**
+ * has_database_privilege no ve las membresías con SET y sin INHERIT, que es como
+ * plataforma_app entra a cliente, sofipo y tarea. Se recorren todas las
+ * membresías desde los roles de la aplicación (lo mismo que hace la 0029).
+ */
+async function alcanzablesConTemp(duena: Cliente): Promise<Record<string, unknown>[]> {
+  return (
+    await duena.query(
+      `with recursive alcanzables (oid) as (
+         select oid from pg_roles where rolname = any($1)
+         union
+         select m.roleid from pg_auth_members m join alcanzables a on m.member = a.oid
+       )
+       select r.rolname from alcanzables a join pg_roles r on r.oid = a.oid
+       where has_database_privilege(r.oid, current_database(), 'TEMPORARY')
+       order by 1`,
+      [ROLES_APLICACION],
+    )
+  ).rows;
+}
+
 type Empresa = { empresa: string; usuario: string };
 
 /** Una empresa activa con su administradora, sembrada sin disparadores: la prueba no es del alta. */
@@ -142,6 +163,44 @@ describe("funciones SECURITY DEFINER frente a las tablas temporales de quien lla
   }
 });
 
+describe("la 0029 no deja a la aplicación llegar a un rol con tablas temporales", { skip: urlAdmin.length === 0 }, () => {
+  it("plataforma_app miembro con SET y sin INHERIT de un rol con TEMP: has_database_privilege no lo ve, SET ROLE sí crea la tabla y la 0029 se detiene", async () => {
+    exigirBaseDesechable();
+    const rol = `rol_con_temp_${randomBytes(3).toString("hex")}`;
+    try {
+      await conBaseDesechable(urlAdmin, async (urlDuena) => {
+        const archivos = readdirSync(MIGRACIONES).filter((a) => a.endsWith(".sql")).sort();
+        for (const archivo of archivos.filter((a) => a < "0029")) aplicarArchivo(urlDuena, join(MIGRACIONES, archivo));
+        const { Client } = (await import("pg")) as unknown as { Client: new (opts: { connectionString: string }) => Cliente };
+        const duena = new Client({ connectionString: urlDuena });
+        await duena.connect();
+        try {
+          const base = String((await duena.query("select current_database() as base")).rows[0]!.base);
+          await duena.query(`create role ${rol} nologin`);
+          await duena.query(`grant temporary on database "${base}" to ${rol}`);
+          await duena.query(`grant ${rol} to plataforma_app with inherit false, set true`);
+          await duena.query(`revoke temporary on database "${base}" from public`);
+          // Lo que no ve has_database_privilege y sí ve el recorrido.
+          const directo = (await duena.query("select has_database_privilege('plataforma_app', current_database(), 'TEMPORARY') as t")).rows[0];
+          assert.deepEqual(directo, { t: false });
+          assert.deepEqual(await alcanzablesConTemp(duena), [{ rolname: rol }]);
+          await duena.query("begin");
+          await duena.query("set local role plataforma_app");
+          await duena.query(`set local role ${rol}`);
+          await duena.query("create temp table sombra (n int) on commit drop");
+          await duena.query("rollback");
+        } finally {
+          await duena.end();
+        }
+        const archivo0029 = archivos.find((a) => a.startsWith("0029_"))!;
+        assert.throws(() => aplicarArchivo(urlDuena, join(MIGRACIONES, archivo0029)), new RegExp(`roles que crean tablas temporales \\(${rol}\\)`));
+      });
+    } finally {
+      ejecutar(urlAdmin, `drop role if exists ${rol}`);
+    }
+  });
+});
+
 async function recorrer(acl: Acl): Promise<void> {
   await conBaseDesechable(urlAdmin, async (urlDuena) => {
     const archivos = readdirSync(MIGRACIONES).filter((a) => a.endsWith(".sql")).sort();
@@ -185,13 +244,7 @@ async function recorrer(acl: Acl): Promise<void> {
       assert.ok(definers >= 54, `definers revisadas: ${definers}`);
 
       // 3. Ningún rol de la aplicación crea tablas temporales; se intenta de verdad como plataforma_cliente.
-      const conTemp = (
-        await duena.query(
-          "select rolname from pg_roles where rolname = any($1) and has_database_privilege(rolname, current_database(), 'TEMPORARY') order by 1",
-          [ROLES_APLICACION],
-        )
-      ).rows;
-      assert.deepEqual(conTemp, []);
+      assert.deepEqual(await alcanzablesConTemp(duena), []);
       const permisos = (
         await duena.query(
           `select has_database_privilege('public', current_database(), 'TEMPORARY') as publico,

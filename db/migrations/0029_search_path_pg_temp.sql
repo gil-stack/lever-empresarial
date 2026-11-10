@@ -14,9 +14,11 @@
 --    migración se detiene para revisarla.
 -- 2. TEMPORARY sobre la base viene de PUBLIC por omisión. Se le quita a PUBLIC y
 --    a los roles de la aplicación; la dueña de la base lo conserva. Ni la
---    aplicación ni las migraciones crean tablas temporales con esos roles. Si
---    quien migra no es dueña de la base, el REVOKE no surte efecto y la
---    migración se detiene.
+--    aplicación ni las migraciones crean tablas temporales con esos roles. La
+--    migración se detiene si algún rol al que llega la aplicación por sus
+--    membresías (plataforma_app entra con SET a cliente, sofipo y tarea) sigue
+--    con TEMPORARY: pasa si quien migra no es dueña de la base o si un rol de la
+--    aplicación es miembro de otro rol que lo tiene.
 --
 -- Toda función SECURITY DEFINER nueva lleva «SET search_path = public, pg_temp»:
 -- tests/esquema/definer-search-path.test.ts lo exige. No toca datos.
@@ -52,6 +54,7 @@ $$;
 DO $$
 DECLARE
   rol text;
+  con_temp text;
 BEGIN
   EXECUTE format('REVOKE TEMPORARY ON DATABASE %I FROM PUBLIC', current_database());
   FOR rol IN
@@ -59,9 +62,22 @@ BEGIN
     WHERE rolname IN ('plataforma_app', 'plataforma_cliente', 'plataforma_sofipo', 'plataforma_tarea')
   LOOP
     EXECUTE format('REVOKE TEMPORARY ON DATABASE %I FROM %I', current_database(), rol);
-    IF has_database_privilege(rol, current_database(), 'TEMPORARY') THEN
-      RAISE EXCEPTION 'El rol % todavía crea tablas temporales: quien migra tiene que ser dueña de la base', rol;
-    END IF;
   END LOOP;
+  -- has_database_privilege no ve las membresías con SET y sin INHERIT (así entra
+  -- plataforma_app a cliente, sofipo y tarea): se recorren todas las membresías
+  -- desde los roles de la aplicación y ninguno de los roles alcanzables puede
+  -- tener TEMPORARY.
+  WITH RECURSIVE alcanzables (oid) AS (
+    SELECT oid FROM pg_roles
+    WHERE rolname IN ('plataforma_app', 'plataforma_cliente', 'plataforma_sofipo', 'plataforma_tarea')
+    UNION
+    SELECT m.roleid FROM pg_auth_members AS m JOIN alcanzables AS a ON m.member = a.oid
+  )
+  SELECT string_agg(r.rolname, ', ' ORDER BY r.rolname) INTO con_temp
+  FROM alcanzables AS a JOIN pg_roles AS r ON r.oid = a.oid
+  WHERE has_database_privilege(r.oid, current_database(), 'TEMPORARY');
+  IF con_temp IS NOT NULL THEN
+    RAISE EXCEPTION 'La aplicación todavía alcanza roles que crean tablas temporales (%): quien migra tiene que ser dueña de la base y ningún rol de la aplicación puede ser miembro de un rol con TEMPORARY', con_temp;
+  END IF;
 END
 $$;
