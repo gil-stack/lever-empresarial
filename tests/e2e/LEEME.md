@@ -13,7 +13,7 @@
 | `invitacion.spec.ts` | Invitación del primer administrador desde Operación, «Reenviar invitación» con doble clic, cuenta con TOTP y recuperación de contraseña por correo. |
 | `roles.spec.ts` | Lo que cada rol ve en el lateral y las rutas que no le abren aunque escriba la dirección. |
 | `marco.spec.ts` | Menú de la persona, buscador, Apariencia y cajón móvil. |
-| `pld.spec.ts` | PLD (Ola R2): Originación declara el perfil transaccional de un prospecto y Aprobación lo ve sin alertas ni casos; un aviso del personal que menciona a op2 llega a Cumplimiento, que abre el caso y agrega una nota, y op2 no ve el menú ni la pantalla de PLD. Todo con doble clic y conteo en la base. Además, ninguna página de PLD se cae con una clave repetida en la dirección y, sin JavaScript, agregar una nota responde 303 con su aviso. |
+| `pld.spec.ts` | PLD (Ola R2): Originación declara el perfil transaccional de un prospecto y Aprobación lo ve sin alertas ni casos; un aviso del personal que menciona a op2 llega a Cumplimiento, que abre el caso y agrega una nota, y op2 no ve el menú ni la pantalla de PLD. Todo con doble clic y conteo en la base. Además, ninguna página de PLD se cae con una clave repetida en la dirección y, sin JavaScript, agregar una nota responde 303 con su aviso. Por último, el Comité: con tres integrantes y una sesión que ya votó un caso sin reserva, votar ahí el caso que menciona a op2 dice «Este caso va en otra sesión del Comité.» y no deja el voto (r2-fix3-N3). |
 
 ## Correr en local
 

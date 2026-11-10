@@ -215,3 +215,74 @@ test.describe("sin JavaScript", () => {
     expect(await descargas()).toBe(antes);
   });
 });
+
+// r2-fix3-N3 (60ª): un caso cuyo aviso excluye a alguien del personal se vota en su propia sesión del Comité. En la
+// sesión que ya votó un caso sin reserva, votarlo dice «Este caso va en otra sesión del Comité.», sin nombrar a nadie ni
+// decir por qué, y no queda el voto.
+test("Comité: un caso con reserva no se vota en la sesión de un caso sin reserva, y la pantalla no dice por qué", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  // Otro aviso sobre Ceiba, ahora sin mencionar a nadie: su caso no excluye a nadie.
+  await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  await page.goto("/operacion/avisos");
+  await page.locator("#aviso-tipo").selectOption("posible_inusual");
+  await page.locator("#aviso-empresa").selectOption(ceiba);
+  await page.locator("#aviso-descripcion").fill("Tres pagos seguidos a un proveedor recién dado de alta, sin factura de por medio.");
+  await dobleClic(page.getByRole("button", { name: "Enviar aviso" }), { esperar: /aviso=pld_aviso_emitido/ });
+
+  await context.clearCookies();
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  await page.goto("/operacion/pld");
+  await dobleClic(page.locator("li", { hasText: `Aviso del personal · ${CEIBA.razonSocial}` }).getByRole("button", { name: "Abrir caso" }),
+    { esperar: /\/operacion\/pld\/casos\/[0-9a-f-]{36}\?aviso=pld_caso_abierto/ });
+  const sinReserva = new URL(page.url()).pathname.split("/").pop() ?? "";
+  const [conReserva] = await consultar<{ id: string }>(
+    `select distinct c.id from pld_casos c join pld_caso_alertas ca on ca.caso_id = c.id join pld_alertas a on a.id = ca.alerta_id
+     join pld_aviso_excluidos e on e.aviso_id = a.aviso_id where c.company_id = $1`, [ceiba]);
+  for (const casoId of [sinReserva, conReserva!.id]) {
+    await page.goto(`/operacion/pld/casos/${casoId}#propuesta-titulo`);
+    await page.locator("#propuesta-propuesta").selectOption("no_reportar");
+    await page.locator("#propuesta-justificacion").fill("El representante entregó el contrato y los pagos corresponden a su giro.");
+    await dobleClic(page.getByRole("button", { name: "Registrar propuesta" }), { esperar: /aviso=pld_propuesta_registrada/ });
+  }
+
+  // Tres titulares del Comité (con su Oficial) y una sesión con los tres presentes.
+  const integrantes = [
+    { nombres: "Pedro", primer: "Ramos", segundo: "Luna", cargo: "PRESIDENTE", rfc: "RALP700101AB1", curp: "RALP700101HDFMNDA1", area: "Direccion General", puesto: "Director general" },
+    { nombres: "Sofia", primer: "Torres", segundo: "Diaz", cargo: "SECRETARIO", rfc: "TODS750202AB2", curp: "TODS750202MDFRZFA2", area: "Juridico", puesto: "Directora juridica" },
+    { nombres: "Celia", primer: "Morales", segundo: "Vega", cargo: "INTEGRANTE", rfc: "MOVC800303AB3", curp: "MOVC800303MDFRGLA3", area: "Cumplimiento", puesto: "Oficial de Cumplimiento" },
+  ];
+  await page.goto("/operacion/comite#integrantes-titulo");
+  for (const [i, persona] of integrantes.entries()) {
+    await page.locator(`#integrante-nombres-${i}`).fill(persona.nombres);
+    await page.locator(`#integrante-primer-${i}`).fill(persona.primer);
+    await page.locator(`#integrante-segundo-${i}`).fill(persona.segundo);
+    await page.locator(`#integrante-cargo-${i}`).selectOption(persona.cargo);
+    await page.locator(`#integrante-titularidad-${i}`).selectOption("TITULAR");
+    await page.locator(`#integrante-rfc-${i}`).fill(persona.rfc);
+    await page.locator(`#integrante-curp-${i}`).fill(persona.curp);
+    await page.locator(`#integrante-area-${i}`).fill(persona.area);
+    await page.locator(`#integrante-cargo-entidad-${i}`).fill(persona.puesto);
+    await page.locator(`#integrante-designado-${i}`).fill(hoy);
+  }
+  await page.locator('input[name="esOficial-2"]').check();
+  await dobleClic(page.getByRole("button", { name: "Registrar en el Comité" }), { esperar: /aviso=pld_integrantes_registrados/ });
+  await page.goto("/operacion/comite#sesiones-titulo");
+  await page.locator("#sesion-fecha").fill(hoy);
+  for (const persona of integrantes) await page.getByLabel(new RegExp(`${persona.nombres} ${persona.primer} ${persona.segundo} · `, "i")).check();
+  await dobleClic(page.getByRole("button", { name: "Registrar sesión" }), { esperar: /\/operacion\/comite\/sesiones\/[0-9a-f-]{36}\?aviso=pld_sesion_registrada/ });
+  const sesion = new URL(page.url()).pathname.split("/").pop() ?? "";
+
+  // El caso sin reserva se vota; el que excluye a alguien ya no entra a esta sesión.
+  const tema = (casoId: string) => page.locator('section[aria-labelledby="votaciones-titulo"] > ul > li').filter({ has: page.locator(`a[href="/operacion/pld/casos/${casoId}"]`) });
+  const votos = (casoId: string) => contar("select 1 from pld_votos where sesion_id = $1 and caso_id = $2", [sesion, casoId]);
+  await dobleClic(tema(sinReserva).getByRole("button", { name: /Pedro Ramos Luna vota a favor/i }), { esperar: /aviso=pld_voto_registrado/ });
+  expect(await votos(sinReserva)).toBe(1);
+  await tema(conReserva!.id).getByRole("button", { name: /Pedro Ramos Luna vota a favor/i }).click();
+  await page.waitForURL(/aviso=sesion_con_otra_reserva/);
+  await expect(page.locator("#aviso-operacion")).toHaveText(/^\s*Este caso va en otra sesión del Comité\.\s*$/);
+  const [mencionada] = await consultar<{ nombre: string }>("select nombre from users where correo = $1", [CORREOS.op2]);
+  await expect(page.locator("#aviso-operacion")).not.toContainText(mencionada!.nombre);
+  expect(await votos(conReserva!.id)).toBe(0);
+  expect(errores).toEqual([]);
+});

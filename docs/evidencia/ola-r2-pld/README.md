@@ -405,6 +405,8 @@ La 0030 se aplicó como en producción: sobre una base que ya opera con el códi
 14. Por ahora no se aceptan integrantes del Comité sin CURP (extranjeros).
 15. Al exportar, un texto libre que empieza como fórmula lleva un espacio antes; nada se rechaza al capturar.
 16. El acta firmada cierra la sesión: lo que falte por votar va en una sesión nueva.
-17. Para la persona excluida por un aviso, la sesión que votó ese caso no existe, ni su acta.
+17. Para la persona excluida por un aviso, la sesión que votó ese caso no existe, ni su acta. Confírmalo antes de publicar R2:
+    - Un aviso que señala a alguien del personal se vota en su propia sesión del Comité, y esa sesión no existe para esa persona.
+    - Si el caso del cliente ya se votó, una alerta nueva que señala a alguien del personal abre su propio caso y su propio reporte, en lugar de sumarse al reporte único de la serie (40ª, último párrafo). Quien dictamina puede mencionar en el texto del reporte la relación con el otro caso.
 18. Nadie se suspende, se da de baja ni pierde Cumplimiento si deja un aviso abierto sin quien lo analice; el mensaje no dice cuál.
 19. Los indicadores del Comité (sesión del mes y meses sin sesión con quórum) cuentan solo las sesiones que ve cada persona: a quien está excluida de un caso le puede salir «falta». Hoy ninguna regla avisa por un mes sin sesión.
