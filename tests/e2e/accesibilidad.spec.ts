@@ -237,10 +237,11 @@ async function contrasteConCualquierCosaDebajo(page: Page, ruta: string, tema: s
   await page.context().addCookies([{ name: "tema", value: tema, url: ORIGEN }]);
   await page.goto(ruta, { waitUntil: conJs ? "networkidle" : "load" });
   await expect(page.locator("html")).toHaveAttribute("data-tema", tema);
-  // Con JavaScript, sin transiciones: el fondo que se mide es el final (sin JavaScript no hay transición y addStyleTag no
-  // termina). Una página corta no se desplaza y la barra de escritorio seguiría sin fondo (nada pasa debajo): se alarga.
-  if (conJs) await page.addStyleTag({ content: "*, *::before, *::after { transition: none !important; }" });
+  // Sin transición en las barras, el fondo que se mide es el final (en su atributo style: la CSP del #62 no deja meter
+  // un <style> sin nonce). Una página corta no se desplaza y la barra de escritorio seguiría sin fondo (nada pasa
+  // debajo): se alarga para que sí.
   await page.evaluate(() => {
+    for (const barra of document.querySelectorAll<HTMLElement>(".barra-movil, .barra-superior")) barra.style.transition = "none";
     document.body.style.paddingBottom = "3000px";
     window.scrollTo(0, document.documentElement.scrollHeight);
   });

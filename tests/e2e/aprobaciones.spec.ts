@@ -262,7 +262,10 @@ test.describe("sin JavaScript se decide desde la bandeja", () => {
       const respuesta = await page.goto(`${BANDEJA}?rechazar=${id}`);
       expect(respuesta?.status(), id).toBe(200);
       await expect(page.getByRole("dialog"), id).toHaveCount(0);
-      paginas.push((await page.content()).replaceAll(id, "ID-PEDIDO"));
+      // Con la CSP del #62 cada respuesta lleva su propio nonce: tampoco cuenta como diferencia.
+      const nonce = /'nonce-([^']+)'/.exec((await respuesta!.headerValue("content-security-policy")) ?? "")?.[1];
+      expect(nonce, `${id}: la respuesta trae su nonce`).toBeTruthy();
+      paginas.push((await page.content()).replaceAll(id, "ID-PEDIDO").replaceAll(nonce!, "NONCE"));
     }
     expect(paginas[0]).toBe(paginas[1]);
   });
