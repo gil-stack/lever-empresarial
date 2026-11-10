@@ -265,7 +265,10 @@ test("5 · pago a mano con comprobante: el cargo queda pagado y el comprobante b
   await expect(enlace).toBeVisible();
   const [descarga] = await Promise.all([page.waitForEvent("download"), enlace.click()]);
   expect(descarga.suggestedFilename()).toBe("cep-colegio-alfa.pdf");
-  expect(readFileSync(await descarga.path()).equals(pdf)).toBe(true);
+  // En CI el navegador vive en otro contenedor: path() no existe ahí y saveAs() copia el archivo a este lado.
+  const copia = test.info().outputPath("comprobante-descargado.pdf");
+  await descarga.saveAs(copia);
+  expect(readFileSync(copia).equals(pdf)).toBe(true);
   expect(await contar("select 1 from audit_log where company_id = $1 and accion = 'descargar_documento'", [EMPRESA()])).toBe(1);
   await foto(page, browserName, "pago-con-comprobante");
   expect(reales(errores, browserName)).toEqual([]);
