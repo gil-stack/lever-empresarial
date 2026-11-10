@@ -19,19 +19,22 @@ import { execFileSync } from "node:child_process";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 
 const requerir = createRequire(`${process.cwd()}/package.json`);
 const { chromium, webkit } = requerir("playwright");
 const sharp = requerir("sharp");
 const { PNG } = requerir("pngjs");
 
-const ENTORNO = JSON.parse(readFileSync(process.env.ENTORNO ?? "test-results/ola-2b/entorno.json", "utf8"));
+// El entorno y las sesiones de la caída guardan sesiones y la cadena de la base con su clave: viven fuera del repositorio
+// (dentro del árbol, `npm run security` los marca aunque estén en .gitignore).
+const ENTORNO = JSON.parse(readFileSync(process.env.ENTORNO ?? join(tmpdir(), "ola-2b-entorno.json"), "utf8"));
 const BASE = process.env.BASE ?? "http://localhost:4812";
 const DIR = process.env.DIR ?? "docs/evidencia/ola-2b-navegacion";
 const DISENO = process.env.DISENO ?? "";
 const DUENO = ENTORNO.DUENO_URL;
-const SESIONES_CAIDA = process.env.SESIONES_CAIDA ?? "test-results/ola-2b/sesiones-caida.json";
+const SESIONES_CAIDA = process.env.SESIONES_CAIDA ?? join(tmpdir(), "ola-2b-sesiones-caida.json");
 if (!/^postgres(ql)?:\/\/[^@]+@(127\.0\.0\.1|localhost)(:\d+)?\//.test(DUENO)) throw new Error("DUENO_URL tiene que ser un Postgres local.");
 const TALLER = `/c/${ENTORNO.EMPRESA_TALLER}`;
 const ALTAMAR = `/c/${ENTORNO.EMPRESA_ALTAMAR}`;

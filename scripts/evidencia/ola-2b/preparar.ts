@@ -9,9 +9,10 @@
 // - Altamar Logística, la empresa de DEMOSTRACIÓN del diseño, con Laura.
 //
 //   DUENO_URL=postgres://postgres@127.0.0.1:5552/postgres \
-//   ./node_modules/.bin/tsx scripts/evidencia/ola-2b/preparar.ts > test-results/ola-2b/entorno.json
+//   ./node_modules/.bin/tsx scripts/evidencia/ola-2b/preparar.ts > "${TMPDIR:-/tmp}/ola-2b-entorno.json"
 //
-// Imprime, en JSON, las variables que lee scripts/evidencia/ola-2b-navegacion.mjs.
+// Imprime, en JSON, las variables que lee scripts/evidencia/ola-2b-navegacion.mjs. Esa salida trae sesiones y la cadena de
+// la base con su clave: va fuera del repositorio, donde el recorrido la busca por omisión (os.tmpdir()).
 // Solo acepta un Postgres en 127.0.0.1 o localhost.
 import { createHash, randomUUID } from "node:crypto";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";

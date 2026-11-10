@@ -208,7 +208,7 @@ Falta:
 
 ```sh
 # Postgres 17 desechable en 5552 (LC_ALL=C para que arranque en macOS)
-DUENO_URL=postgres://postgres@127.0.0.1:5552/postgres ./node_modules/.bin/tsx scripts/evidencia/ola-2b/preparar.ts > test-results/ola-2b/entorno.json
+DUENO_URL=postgres://postgres@127.0.0.1:5552/postgres ./node_modules/.bin/tsx scripts/evidencia/ola-2b/preparar.ts > "${TMPDIR:-/tmp}/ola-2b-entorno.json"   # fuera del repo: trae sesiones y la clave de la base
 E2E_SERVER_ACTIONS=1 E2E_PUERTO=4812 ./node_modules/.bin/next build
 DATABASE_URL=<la de entorno.json> E2E_SERVER_ACTIONS=1 E2E_PUERTO=4812 ./node_modules/.bin/next start -p 4812 -H 127.0.0.1
 DISENO=<carpeta de capturas del diseño> node scripts/evidencia/ola-2b-navegacion.mjs lado   # fPlat.html va junto a esa carpeta
