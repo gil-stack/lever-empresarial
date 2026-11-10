@@ -10,6 +10,7 @@ import {
   semanasDe,
   textoRunway,
   transicion,
+  type AlcanceRunway,
   type EstadoAlertas,
 } from "../../dominio/flujo/runway";
 import { hoyEnMexico } from "../../dominio/personas";
@@ -151,7 +152,7 @@ export async function correrAlertasDeCaja(deps: DependenciasAlertas = {}): Promi
 }
 
 /** Lo que el correo dice, calculado en la misma transacción que la evaluación. */
-type Contenido = { colchon: string | null; runway: string | null; conservador: string; esperado: string; saldo: string; minimo: string; razonSocial: string };
+type Contenido = { colchon: string | null; runway: AlcanceRunway | null; conservador: string; esperado: string; saldo: string; minimo: string; razonSocial: string };
 
 type PorMandar = { alertaId: string; colchon: boolean; runway: boolean };
 
@@ -332,7 +333,7 @@ async function evaluar(
   const contenido: Contenido = {
     razonSocial: texto(razon.razon_social),
     colchon: ahora.bajoColchon ? textoFaltante(proyeccion) : null,
-    runway: ahora.runwayBajo ? textoRunway(runway.conservador) : null,
+    runway: ahora.runwayBajo ? runway.conservador : null,
     conservador: textoRunway(runway.conservador),
     esperado: textoRunway(runway.esperado),
     saldo: fuentes.saldo ? `${formatoPesos(fuentes.saldo.centavos)} al ${fechaConAnio(fuentes.saldo.alDia)}` : "Sin declarar",

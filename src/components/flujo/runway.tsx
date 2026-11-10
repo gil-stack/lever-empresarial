@@ -189,7 +189,12 @@ function Meses({ vista }: { vista: VistaRunway }) {
                 </th>
                 <Pesos valor={mes.entradas} nombre="entradas" etiqueta="Entra" />
                 <Pesos valor={mes.estimadas} nombre="estimadas" etiqueta="Estimado" />
-                <Pesos valor={mes.salidas} nombre="salidas" etiqueta="Sale" />
+                <td className="cifra" data-cifra="salidas" data-etiqueta="Sale" data-centavos={mes.salidas}>
+                  {formatoPesos(mes.salidas)}
+                  {mes.nominaReservada ? (
+                    <span className="pista runway-reservado" data-nomina="reservada"> · incluye nómina reservada</span>
+                  ) : null}
+                </td>
                 <Pesos valor={mes.cierre} nombre="cierre" etiqueta="Cierre conservador" />
                 <Pesos valor={mes.cierreEsperado} nombre="cierre-esperado" etiqueta="Cierre esperado" />
               </tr>

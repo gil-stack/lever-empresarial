@@ -435,3 +435,40 @@ test("10 · evidencia: 3 temas × 1440 y 390, axe sin violaciones y sin desplaza
   }
   expect(hallazgos).toEqual([]);
 });
+
+test("11 · nómina de una sola persona: el mes dice reservado a quien no tiene el detalle (r64-N3)", async ({ page, context, browserName }) => {
+  const errores = vigilarConsola(page);
+  // Noé se va ayer: en adelante la nómina de la empresa es de una sola persona (Nora). La dueña lo prepara sin
+  // disparadores; lo que se valida es lo que cada quien ve en Flujo de caja.
+  const duena = new Client({ connectionString: process.env.E2E_OWNER_DATABASE_URL });
+  await duena.connect();
+  try {
+    await duena.query("begin");
+    await duena.query("set local session_replication_role = replica");
+    const r = await duena.query("update employees set baja_en = $2::date - 1 where company_id = $1 and nombre = 'Noé Nómina'", [EMPRESA(), hoy()]);
+    expect(r.rowCount).toBe(1);
+    await duena.query("commit");
+  } finally {
+    await duena.end();
+  }
+  const reservados = page.locator('table [data-cifra="salidas"] [data-nomina="reservada"]');
+
+  await entrar(context, CORREOS_RUNWAY.cora);
+  await page.goto(en("/consola/flujo"));
+  await expect(page.locator('[data-cifra="runway-conservador"]')).toBeVisible();
+  expect(await reservados.count()).toBeGreaterThanOrEqual(11);
+  await expect(reservados.first()).toHaveText(" · incluye nómina reservada");
+  await expect(page.locator('[data-lista="runway-resumen"] li[data-tipo="nomina"] .cifra')).toHaveText("Monto reservado");
+  await expect(page.locator('[data-lista="runway-resumen"] li[data-tipo="nomina"] .cifra')).not.toHaveAttribute("data-centavos", /.+/);
+  expect(await page.content()).not.toContain("480,000.00");
+  await reservados.first().scrollIntoViewIfNeeded();
+  await foto(page, browserName, "nomina-reservada-contadora");
+
+  // Rita (administración) tiene el detalle: ningún mes dice reservado y la nómina lleva su monto.
+  await entrar(context, CORREOS_RUNWAY.rita);
+  await page.goto(en("/consola/flujo"));
+  await expect(page.locator('[data-cifra="runway-conservador"]')).toBeVisible();
+  await expect(reservados).toHaveCount(0);
+  await expect(page.locator('[data-lista="runway-resumen"] li[data-tipo="nomina"] .cifra')).not.toHaveText("Monto reservado");
+  expect(reales(errores, browserName)).toEqual([]);
+});

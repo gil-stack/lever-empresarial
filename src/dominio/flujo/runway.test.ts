@@ -124,6 +124,50 @@ describe("el ejemplo del RFC", () => {
   });
 });
 
+describe("la tabla «Mes por mes» y el resumen cubren el mismo periodo (r64-N2)", () => {
+  it("lo del 1 al 10 del mes 13 no entra a ninguno: las sumas de la tabla y del resumen cuadran", () => {
+    // Martes 10 de noviembre de 2026: la tabla va de noviembre de 2026 a octubre de 2027. Una renta cada día 5 y un
+    // seguro anual el 5 de noviembre de 2027 (dentro de hoy + 12 meses, fuera del último mes de la tabla).
+    const fuentes = base({
+      hoy: "2026-11-10",
+      saldo: { centavos: 100_000_000, alDia: "2026-11-09", autor: "Laura Méndez", declaradoEn: "2026-11-10T01:00:00.000Z" },
+      nomina: [],
+      obligaciones: [
+        { id: "renta", concepto: "Renta", montoCentavos: 2_000_000, frecuencia: "mensual", proximaFecha: "2026-12-05", anclaDia: 5 },
+        { id: "seguro", concepto: "Seguro", montoCentavos: 1_200_000, frecuencia: "anual", proximaFecha: "2027-11-05", anclaDia: 5 },
+      ],
+      cobros: [{ id: "k1", cliente: "Cliente Uno", concepto: "Proyecto", montoCentavos: 5_000_000, fechaProbable: "2026-11-20" }],
+    });
+    const runway = calcularRunway(fuentes, [plan({ primerVencimiento: "2026-11-15" })], { detalleNomina: true });
+    assert.equal(runway.meses[0]!.mes, "2026-11-01");
+    assert.equal(runway.meses.at(-1)!.mes, "2027-10-01");
+    const suma = (tipos: string[]) => runway.resumen.filter((l) => tipos.includes(l.tipo)).reduce((s, l) => s + l.centavos, 0);
+    const tabla = (campo: "salidas" | "entradas" | "estimadas") => runway.meses.reduce((s, m) => s + m[campo], 0);
+    assert.equal(suma(["nomina", "proveedor", "obligacion"]), tabla("salidas"));
+    assert.equal(suma(["cobro", "cobrado"]), tabla("entradas"));
+    assert.equal(suma(["plan_fijo", "plan_variable"]), tabla("estimadas"));
+    // 11 rentas (diciembre a octubre) y ningún seguro.
+    assert.equal(tabla("salidas"), 11 * 2_000_000);
+    assert.equal(runway.resumen.find((l) => l.tipo === "obligacion")?.movimientos, 11);
+  });
+});
+
+describe("nómina de una sola persona en «Mes por mes» (r64-N3)", () => {
+  const unaPersona = base({ nomina: [{ netoCentavos: 4_000_000, frecuencia: "mensual", proximoPagoEn: "2027-01-05", anclaDia: 5, altaEn: "2026-01-01", bajaEn: null }] });
+
+  it("sin el detalle de nómina, cada mes con su pago dice reservado y el total del mes se sigue viendo", () => {
+    const runway = calcularRunway(unaPersona, [], { detalleNomina: false });
+    assert.deepEqual(runway.meses.map((m) => m.nominaReservada), Array.from({ length: 12 }, () => true));
+    assert.equal(runway.meses[0]!.salidas, 4_000_000 + 2_000_000);
+    assert.equal(runway.resumen.find((l) => l.tipo === "nomina")?.reservado, true);
+  });
+
+  it("con el detalle, o con dos personas, ningún mes dice reservado", () => {
+    assert.ok(calcularRunway(unaPersona, [], { detalleNomina: true }).meses.every((m) => !m.nominaReservada));
+    assert.ok(calcularRunway(base(), [], { detalleNomina: false }).meses.every((m) => !m.nominaReservada));
+  });
+});
+
 describe("conservador = proyección de Inicio en las primeras 13 semanas", () => {
   it("coincide semana por semana con proyectar en 300 casos al azar", () => {
     const azar = generador(20261110);

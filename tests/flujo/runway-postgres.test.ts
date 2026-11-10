@@ -131,7 +131,7 @@ async function escenario(url: string): Promise<void> {
   for (const m of enviados) {
     assert.match(m.idempotencia, /^alerta-caja\/[0-9a-f-]{36}\/[0-9a-f-]{36}$/);
     assert.match(m.asunto, /runway debajo de 4 meses · Alfa Runway/);
-    assert.match(m.texto, /3\.1 meses \(alcanza hasta el 14 de febrero de 2027\), menos que tu mínimo de 4 meses/);
+    assert.match(m.texto, /tu dinero dura 3\.1 meses \(hasta el 14 de febrero de 2027\), menos que tu mínimo de 4 meses\./);
   }
   assert.deepEqual(estado(url, alfa.id), { bajo_colchon: false, runway_bajo: true });
   assert.equal(contar(url, `select count(*) from cash_alerts where company_id = '${alfa.id}' and estado = 'enviado' and destinatarios = 2`), 1);

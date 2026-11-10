@@ -1,3 +1,4 @@
+import { fraseRunwayDelAviso, type AlcanceRunway } from "../../../dominio/flujo/runway";
 import type { CorreoPlantilla } from "../tipos";
 import { armarCorreo } from "./marco";
 
@@ -5,8 +6,8 @@ export type DatosAlertaCaja = {
   razonSocial: string;
   /** El faltante en palabras (el mismo texto del correo de los lunes), si cruzó el colchón. */
   colchon: string | null;
-  /** «2.9 meses (alcanza hasta el 4 de abril de 2027)», si el runway bajó del mínimo. */
-  runway: string | null;
+  /** El runway conservador, si bajó del mínimo: la frase sale completa para cada caso (r64-N1). */
+  runway: AlcanceRunway | null;
   /** El runway conservador de hoy en palabras, siempre. */
   conservador: string;
   /** «3 meses». */
@@ -25,7 +26,7 @@ export type DatosAlertaCaja = {
 export function plantillaAlertaCaja(datos: DatosAlertaCaja): CorreoPlantilla {
   const motivos = [
     ...(datos.colchon ? [`Caja proyectada: ${datos.colchon}`] : []),
-    ...(datos.runway ? [`Runway: con lo comprometido, tu dinero alcanza ${datos.runway}, menos que tu mínimo de ${datos.minimo}.`] : []),
+    ...(datos.runway ? [fraseRunwayDelAviso(datos.runway, datos.minimo)] : []),
   ];
   const asunto = datos.colchon && datos.runway
     ? `Aviso de caja: debajo del colchón y runway corto · ${datos.razonSocial}`

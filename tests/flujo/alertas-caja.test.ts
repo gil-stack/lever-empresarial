@@ -33,22 +33,30 @@ describe("Correo del aviso de caja", () => {
     enlace: "https://lever.ejemplo.mx/consola/flujo",
   };
 
-  it("dice qué cruzó: el colchón, el runway o los dos, y nombra a la empresa", () => {
-    const runway = plantillaAlertaCaja({ ...base, colchon: null, runway: base.conservador });
+  const agota = { tipo: "agota" as const, semanas: 12, meses: 2.9, hasta: "2027-04-04" };
+  const parrafos = (texto: string) => texto.split("\n").map((l) => l.trim()).filter((l) => /^(Runway:|Caja proyectada:)/.test(l));
+
+  it("dice qué cruzó: el colchón, el runway o los dos, cada uno con su frase completa (r64-N1)", () => {
+    const runway = plantillaAlertaCaja({ ...base, colchon: null, runway: agota });
     assert.equal(runway.asunto, "Aviso de caja: runway debajo de 3 meses · Altamar Logística");
-    assert.match(runway.texto, /tu dinero alcanza 2\.9 meses \(alcanza hasta el 4 de abril de 2027\), menos que tu mínimo de 3 meses/);
-    assert.doesNotMatch(runway.texto, /Caja proyectada:/);
+    assert.deepEqual(parrafos(runway.texto), ["Runway: con lo comprometido, tu dinero dura 2.9 meses (hasta el 4 de abril de 2027), menos que tu mínimo de 3 meses."]);
+    assert.doesNotMatch(runway.texto, /alcanza (No|\d)|alcanza [^.]*alcanza/);
+
+    const sinSemana = plantillaAlertaCaja({ ...base, colchon: null, runway: { tipo: "agota", semanas: 0, meses: 0, hasta: "2027-01-03" } });
+    assert.deepEqual(parrafos(sinSemana.texto), ["Runway: con lo comprometido, tu dinero no alcanza ni para esta semana; tu mínimo es de 3 meses."]);
+    assert.doesNotMatch(sinSemana.texto, /alcanza No alcanza/);
 
     const colchon = plantillaAlertaCaja({ ...base, colchon: "el saldo proyectado baja a $0.00 la semana del 18 ene al 24 ene.", runway: null });
     assert.match(colchon.asunto, /la caja proyectada baja de tu colchón · Altamar Logística/);
-    assert.match(colchon.texto, /Caja proyectada: el saldo proyectado baja a \$0\.00/);
+    assert.deepEqual(parrafos(colchon.texto), ["Caja proyectada: el saldo proyectado baja a $0.00 la semana del 18 ene al 24 ene."]);
 
-    const dos = plantillaAlertaCaja({ ...base, colchon: "x.", runway: base.conservador });
+    const dos = plantillaAlertaCaja({ ...base, colchon: "x.", runway: agota });
     assert.match(dos.asunto, /debajo del colchón y runway corto/);
+    assert.deepEqual(parrafos(dos.texto), ["Caja proyectada: x.", "Runway: con lo comprometido, tu dinero dura 2.9 meses (hasta el 4 de abril de 2027), menos que tu mínimo de 3 meses."]);
   });
 
   it("separa el runway conservador del esperado y no presenta el saldo como del banco", () => {
-    const correo = plantillaAlertaCaja({ ...base, colchon: null, runway: base.conservador });
+    const correo = plantillaAlertaCaja({ ...base, colchon: null, runway: agota });
     assert.match(correo.texto, /Runway conservador \(sin entradas estimadas\)/);
     assert.match(correo.texto, /Runway esperado \(con cobranza estimada\)/);
     assert.match(correo.texto, /Lever no confirma el saldo con el banco/);

@@ -136,6 +136,8 @@ export type MesRunway = {
   /** Saldo al último día del mes; nulo sin saldo declarado. */
   cierre: number | null;
   cierreEsperado: number | null;
+  /** El mes trae la nómina de una sola persona y quien mira no tiene el detalle: dice «reservado» (RFC §4, r64-N3). */
+  nominaReservada: boolean;
 };
 
 export type TipoResumen = "nomina" | "proveedor" | "obligacion" | "cobro" | "cobrado" | "plan_fijo" | "plan_variable";
@@ -150,7 +152,7 @@ export type Runway = {
   meses: MesRunway[];
   conservador: AlcanceRunway;
   esperado: AlcanceRunway;
-  /** Lo que cuenta en los 12 meses, por tipo. */
+  /** Lo que cuenta en los 12 meses calendario de `meses`, por tipo: el mismo periodo que la tabla. */
   resumen: LineaResumen[];
   planes: { incluidos: PlanEstimado[]; sinHistorial: PlanSinHistorial[] };
 };
@@ -202,6 +204,7 @@ export function calcularRunway(fuentes: FuentesFlujo, planes: readonly PlanFuent
     salidas: 0,
     cierre: null,
     cierreEsperado: null,
+    nominaReservada: false,
   }));
   const indiceMes = (fecha: string) => {
     const [a, m] = fecha.split("-").map(Number) as [number, number];
@@ -232,8 +235,10 @@ export function calcularRunway(fuentes: FuentesFlujo, planes: readonly PlanFuent
       if (movimiento.estimado) mes.estimadas += movimiento.centavos;
       else if (signo > 0) mes.entradas += movimiento.centavos;
       else mes.salidas += movimiento.centavos;
+      if (!opciones.detalleNomina && nominaDeUnaPersona(movimiento)) mes.nominaReservada = true;
     }
-    if (efectiva <= horizonte.limite) {
+    // El resumen cuenta lo mismo que la tabla «Mes por mes»: los 12 meses calendario desde este (r64-N2).
+    if (mes) {
       const tipo: TipoResumen = movimiento.estimado
         ? movimiento.plan === "variable"
           ? "plan_variable"
@@ -309,6 +314,23 @@ export function textoRunway(alcance: AlcanceRunway): string {
   if (alcance.tipo === "holgado") return "12 meses o más";
   if (alcance.semanas === 0) return "No alcanza esta semana";
   return `${formatoMeses(alcance.meses)} (alcanza hasta el ${fechaConAnio(alcance.hasta)})`;
+}
+
+/**
+ * El renglón del runway en el aviso de caja (r64-N1), completo para cada caso:
+ * «Runway: con lo comprometido, tu dinero dura 2.9 meses (hasta el 4 de abril de
+ * 2027), menos que tu mínimo de 3 meses.» o, si no alcanza ni esta semana, «…tu
+ * dinero no alcanza ni para esta semana; tu mínimo es de 3 meses.».
+ */
+export function fraseRunwayDelAviso(alcance: AlcanceRunway, minimo: string): string {
+  if (alcance.tipo === "agota" && alcance.semanas === 0) {
+    return `Runway: con lo comprometido, tu dinero no alcanza ni para esta semana; tu mínimo es de ${minimo}.`;
+  }
+  if (alcance.tipo === "agota") {
+    return `Runway: con lo comprometido, tu dinero dura ${formatoMeses(alcance.meses)} (hasta el ${fechaConAnio(alcance.hasta)}), menos que tu mínimo de ${minimo}.`;
+  }
+  // Un aviso de runway solo sale con el runway agotándose; lo demás se dice como en la vista.
+  return `Runway: con lo comprometido, ${textoRunway(alcance).toLocaleLowerCase("es-MX")}; tu mínimo es de ${minimo}.`;
 }
 
 /**
