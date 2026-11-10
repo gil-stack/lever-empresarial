@@ -162,6 +162,8 @@ async function levantarServidor(): Promise<void> {
     env: {
       ...process.env,
       NODE_ENV: "production",
+      // En producción las passkeys solo se registran en los dominios de la lista: el navegador de la prueba usa localhost.
+      AUTENTICACION_DOMINIOS: "localhost",
       RESEND_API_KEY: CLAVE_CORREO_LOCAL,
       CORREO_REMITENTE: "Lever E2E <no-responder@lever-e2e.mx>",
       // Solo el servidor de la prueba carga el desvío del almacén privado al emulador y el correo falso.

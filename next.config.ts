@@ -17,7 +17,8 @@ const nextConfig: NextConfig = {
           // sigue sin mandar la dirección a otros sitios, así que un enlace con token no sale de aquí.
           { key: "Referrer-Policy", value: "same-origin" },
           // Nada de la aplicación usa estas capacidades del navegador (ni el portapapeles: no hay botones de copiar). Si un
-          // script ajeno llegara a la página, no puede pedirlas. Las passkeys de la entrada sí: solo este mismo origen.
+          // script ajeno llegara a la página, no puede pedirlas. Las passkeys de la entrada sí: solo este mismo origen
+          // (tests/e2e/passkeys.spec.ts).
           {
             key: "Permissions-Policy",
             value:

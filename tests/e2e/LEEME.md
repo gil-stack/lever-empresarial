@@ -10,6 +10,7 @@
 | `flujo-de-caja.spec.ts` | Saldo declarado, cobro manual y con XML, obligación recurrente, presupuesto al 80 y al 100 %, «mover pago», faltante en Inicio y Pendientes y «Monto reservado» para Finanzas. |
 | `entrada.spec.ts` | Entrada de cliente con contraseña y TOTP. El tope de intentos no revela si el correo tiene cuenta: mismo texto, marcado, dirección y tiempo. |
 | `operacion.spec.ts` | Entrada SOFIPO con TOTP; prospecto registrado y activación pedida por Originación: sin expediente aprobado la base no deja activar, y Faro E2E (en regla) la aprueba otra persona con Aprobación y factor reciente; «Perdí el segundo factor» con «Confirma que eres tú» en Recuperaciones y publicación del precio con reautenticación. |
+| `passkeys.spec.ts` | Con el autenticador virtual de Chromium (CDP) y el `Permissions-Policy` de la aplicación: Lucía registra una passkey en `/entrar/seguridad` y entra con ella; la primera persona del personal la registra en su primer ingreso a Operación (`/operacion/continuar`) y entra con ella. El servidor corre con `AUTENTICACION_DOMINIOS=localhost`. |
 | `invitacion.spec.ts` | Invitación del primer administrador desde Operación, «Reenviar invitación» con doble clic, cuenta con TOTP y recuperación de contraseña por correo. |
 | `roles.spec.ts` | Lo que cada rol ve en el lateral y las rutas que no le abren aunque escriba la dirección. |
 | `marco.spec.ts` | Menú de la persona, buscador, Apariencia y cajón móvil. |
