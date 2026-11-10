@@ -2,7 +2,7 @@ import { Aviso } from "@/components/sistema";
 import { TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
 
 import { MensajeJuntoAlCampo } from "./mensaje-junto-al-campo";
-import { ASENTADOS_PLD, CAMPO_PLD, MENSAJES_PLD } from "./pld/avisos";
+import { ASENTADOS_PLD, CAMPO_PLD, CAMPOS_CON_AVISO_PLD, MENSAJES_PLD } from "./pld/avisos";
 
 const ID_AVISO = "aviso-operacion";
 /** El aviso de un rechazo cuyo formulario ya no se pinta (`AvisoSinFormulario`): sin campo al lado, siempre se anuncia. */
@@ -255,6 +255,7 @@ const CAMPOS_CON_AVISO = new Set([
   "actividad", "archivo", "avisoClienteEl", "capital", "cargo", "curp", "designadoPor", "detalle", "documentoExtranjero",
   "emitidoEl", "estado", "fechaNacimiento", "folio", "nombre", "padreClave", "pais", "pep", "presentadoEl",
   "representanteClave", "resultado", "tipo", "tipoPersona", "titulo", "vigenteHasta", "votos", "zona",
+  ...CAMPOS_CON_AVISO_PLD,
 ]);
 
 /**

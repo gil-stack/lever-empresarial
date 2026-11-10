@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { AvisoOperacion, errorDelCampo, tonoDelAviso } from "../aviso.tsx";
+import { AvisoOperacion, avisoConocido, errorDelCampo, tonoDelAviso } from "../aviso.tsx";
 import { ASENTADOS_PLD, CAMPO_PLD, MENSAJES_PLD, VISIBLES_FUERA_DE_CUMPLIMIENTO } from "./avisos.ts";
 
 const FUENTE_AVISO = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../aviso.tsx"), "utf8");
@@ -73,6 +73,41 @@ describe("avisos de PLD dentro de aviso.tsx", () => {
       "la búsqueda encuentra los códigos del expediente (también los de una subclase) y de 0028",
     );
     assert.deepEqual(Object.keys(MENSAJES_PLD).filter((codigo) => lanzados.has(codigo)).sort(), ["cliente_ausente", "conservacion_no_se_borra", "formulario_ya_aplicado"]);
+  });
+
+  // La lista cerrada de aviso.tsx (#59) solo pinta un `dato_invalido_<campo>` o `invisible_<campo>` de un campo conocido.
+  // aviso.test.ts revisa los códigos escritos tal cual; aquí van también los que arman los ayudantes de PLD con su campo.
+  it("cada dato_invalido_ e invisible_ que lanza PLD se pinta, también los que arman sus ayudantes", () => {
+    const servidor = join(dirname(fileURLToPath(import.meta.url)), "../../../server/pld");
+    const fuentes = readdirSync(servidor)
+      .filter((archivo) => archivo.endsWith(".ts") && !archivo.endsWith(".test.ts"))
+      .map((archivo) => ({ archivo, texto: readFileSync(join(servidor, archivo), "utf8") }));
+    // Si otro archivo arma un código con su campo, su ayudante entra a AYUDANTES.
+    assert.deepEqual(
+      fuentes.filter(({ texto }) => /`(?:dato_invalido|invisible)_\$\{/.test(texto)).map(({ archivo }) => archivo).sort(),
+      ["avisos.ts", "base.ts", "comite.ts", "parametros.ts", "perfil.ts"],
+    );
+    // Ayudante → prefijos que lanza. `texto` y `nombre` del Comité llaman también rechazarInvisible con el mismo campo.
+    const AYUDANTES: Array<[RegExp, string[]]> = [
+      [/rechazarInvisible\([^,()]+,\s*"([A-Za-z]+)"\)/g, ["invisible_"]],
+      [/\bexcluir\([^,()]+,\s*"([A-Za-z]+)"\)/g, ["dato_invalido_"]],
+      [/\btexto\([^,()]+,\s*\d+,\s*"([A-Za-z]+)"\)/g, ["invisible_", "dato_invalido_"]],
+      [/\bnombre\([^,()]+,\s*"([A-Za-z]+)"(?:,\s*"[^"]*")?\)/g, ["invisible_", "dato_invalido_"]],
+      [/\b(?:decimal|entero)\([^,()]+,\s*"([A-Za-z]+)",/g, ["dato_invalido_"]],
+      [/\b(?:monto|operaciones)\([^,()]+,\s*"([A-Za-z]+)"\)/g, ["dato_invalido_"]],
+    ];
+    const codigos = new Set<string>();
+    for (const { texto } of fuentes) {
+      for (const m of texto.matchAll(/"((?:dato_invalido|invisible)_[A-Za-z]+)"/g)) codigos.add(m[1]!);
+      for (const [patron, prefijos] of AYUDANTES) for (const m of texto.matchAll(patron)) for (const prefijo of prefijos) codigos.add(prefijo + m[1]);
+    }
+    for (const codigo of ["dato_invalido_fraccionN", "dato_invalido_pagosMonto", "invisible_folio", "invisible_area", "dato_invalido_superior"]) {
+      assert.ok(codigos.has(codigo), `la búsqueda encuentra ${codigo}`);
+    }
+    for (const codigo of codigos) {
+      assert.equal(avisoConocido(codigo), true, codigo);
+      assert.notEqual(renderToStaticMarkup(createElement(AvisoOperacion, { codigo })), "", codigo);
+    }
   });
 
   it("lo que leen Originación, Aprobación o Administración no habla de alertas, casos ni análisis (55ª)", () => {

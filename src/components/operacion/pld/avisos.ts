@@ -220,6 +220,18 @@ export const CAMPO_PLD: Record<string, string> = {
   evaluacion_sin_perfil_nuevo: "perfil",
 };
 
+/**
+ * Los campos de PLD cuyo `dato_invalido_<campo>` no tiene mensaje propio (dicen el texto general del campo marcado): se
+ * suman a la lista cerrada de aviso.tsx (`CAMPOS_CON_AVISO`) para que su aviso se pinte. avisos.test.ts revisa cada código
+ * que lanzan las acciones de PLD, también los que arman sus ayudantes (`dato_invalido_${campo}`).
+ */
+export const CAMPOS_CON_AVISO_PLD = [
+  // Parámetros de las reglas.
+  "fraccionUmbral", "fraccionN", "fraccionVentanaDias", "nominaPersonasPct", "atipicoK", "atipicoHistorialMinimo", "factorGradoAlto",
+  // Claves de los reportes periódicos.
+  "claveCasfim", "claveOrganoSupervisor",
+];
+
 /** Los que dicen que algo quedó hecho; los demás se anuncian como algo por revisar. */
 export const ASENTADOS_PLD = [
   "perfil_declarado",
