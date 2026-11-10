@@ -1346,6 +1346,76 @@ test.describe("doceava con JavaScript: empresas propias de la siembra", () => {
       expect(await marcado(), valor).not.toMatch(/onfocus|x<\/b>|x&lt;\/b&gt;/);
     }
   });
+
+  // Humo-N9 del preview: en un formulario de dos columnas, el aviso de un rechazo caía en una columna angosta (unos 170
+  // px) y empujaba «Razón social» a la derecha. El aviso va en su propio renglón, a lo ancho del formulario; el primer
+  // campo se queda en la orilla y los campos anchos ocupan la fila. Igual en los formularios en línea de una tarjeta
+  // (la coincidencia de Cima) y en la decisión de una recuperación. Solo rechaza: no deja nada en la base.
+  test("humo-N9: tras un rechazo, el aviso mide el ancho de su formulario y los campos no se mueven: prospecto (1440 y 390), documento, coincidencia y recuperación", async ({ page, context }) => {
+    /** `primero`: el campo que abre el formulario, en la orilla y debajo del aviso; `anchos`: los que ocupan la fila. */
+    const aLoAncho = async (forma: Locator, aviso: string, primero: string, anchos: string[], nombre: string) => {
+      const formulario = (await forma.boundingBox())!;
+      const caja = (await page.locator(`[id="${aviso}"]`).boundingBox())!;
+      const deCampo = async (campo: string) => (await forma.locator(`.campo:has(${campo})`).boundingBox())!;
+      const medidas = { formulario, aviso: caja, ...Object.fromEntries(await Promise.all([primero, ...anchos].map(async (campo) => [campo, await deCampo(campo)]))) };
+      console.log(`MEDIDA ${nombre}: ${JSON.stringify(medidas)}`);
+      if (!process.env.E2E_SIN_CAPTURAS) await page.screenshot({ path: test.info().outputPath(`${nombre}.png`) });
+      expect(Math.abs(caja.x - formulario.x), `${nombre}: el aviso empieza en la orilla del formulario`).toBeLessThanOrEqual(1);
+      expect(Math.abs(caja.width - formulario.width), `${nombre}: el aviso mide el ancho del formulario`).toBeLessThanOrEqual(1);
+      const abre = medidas[primero] as { x: number; y: number };
+      expect(Math.abs(abre.x - formulario.x), `${nombre}: ${primero} se queda en la orilla del formulario`).toBeLessThanOrEqual(1);
+      expect(abre.y, `${nombre}: ${primero} va debajo del aviso`).toBeGreaterThanOrEqual(caja.y + caja.height);
+      for (const campo of anchos) {
+        expect(Math.abs((medidas[campo] as { width: number }).width - formulario.width), `${nombre}: ${campo} ocupa la fila entera`).toBeLessThanOrEqual(1);
+      }
+    };
+
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    for (const [ancho, alto] of [[1440, 900], [390, 844]] as const) {
+      await page.setViewportSize({ width: ancho, height: alto });
+      await page.goto("/operacion/clientes");
+      await page.getByLabel("Razón social").fill("Puerto Nueve E2E");
+      await page.getByLabel("RFC").fill("XAXX010101000");
+      await page.getByLabel("Código postal").fill("64000");
+      await rechazado(page, page.getByRole("button", { name: "Registrar prospecto" }), "aviso-prospecto");
+      await aLoAncho(page.locator("form:has(#razonSocial)"), "aviso-prospecto", "#razonSocial", ["#razonSocial"], `n9-prospecto-${ancho}`);
+    }
+    expect(await contar("select 1 from companies where razon_social = 'Puerto Nueve E2E'")).toBe(0);
+
+    const duna = await empresaDe(DUNA.rfc);
+    const documentos = () => contar("select 1 from kyb_documentos where company_id = $1", [duna]);
+    const antes = await documentos();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/operacion/clientes/${duna}/expediente`);
+    await page.locator("#doc-emitido").fill("2015-03-01");
+    await page.locator("#doc-detalle").fill("Escritura 1,204, Notaría 9 de Monterrey");
+    await page.locator("#doc-archivo").setInputFiles({ name: "acta-n9.pdf", mimeType: "application/pdf", buffer: Buffer.from("esto no es un PDF") });
+    await rechazado(page, page.getByRole("button", { name: "Guardar documento" }), "aviso-documento");
+    await aLoAncho(page.locator("form:has(#doc-archivo)"), "aviso-documento", "#doc-tipo", ["#doc-detalle", "#doc-archivo"], "n9-documento-1440");
+    expect(await documentos()).toBe(antes);
+
+    // La coincidencia de Cima en Cumplimiento, donde la tarjeta es ancha y el aviso no llena el renglón: un motivo corto.
+    const cima = await coincidenciaDe(CIMA.rfc, "pendiente");
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.goto("/operacion/cumplimiento");
+    await page.locator(`[id="resolucion-${cima}"]`).selectOption("falso_positivo");
+    await page.locator(`[id="motivo-${cima}"]`).fill("Revisar 😀");
+    const tarjetaCima = page.locator(`form:has([id="motivo-${cima}"])`);
+    await rechazado(page, tarjetaCima.getByRole("button", { name: "Registrar dictamen" }), `aviso-coincidencia-${cima}`);
+    await aLoAncho(tarjetaCima, `aviso-coincidencia-${cima}`, `[id="resolucion-${cima}"]`, [], "n9-coincidencia-1440");
+    expect(await contar("select 1 from lpb_coincidencias where id = $1 and estado = 'pendiente'", [cima])).toBe(1);
+
+    // La decisión de una recuperación: rechazar sin nota. Al final se rechaza con su nota: ninguna queda abierta.
+    const [recuperacion] = await recuperacionesPendientes([CORREOS.diego]);
+    await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+    await page.goto("/operacion/recuperaciones");
+    const decision = page.locator(`form:has([id="nota-${recuperacion}"])`);
+    await rechazado(page, decision.getByRole("button", { name: "Rechazar" }), `aviso-recuperacion-${recuperacion}`);
+    await aLoAncho(decision, `aviso-recuperacion-${recuperacion}`, `[id="verificacion-${recuperacion}"]`, [], "n9-recuperacion-1440");
+    await page.locator(`[id="nota-${recuperacion}"]`).fill("No se pudo confirmar la identidad por videollamada.");
+    await decision.getByRole("button", { name: "Rechazar" }).click();
+    await expect(decision).toHaveCount(0);
+  });
 });
 
 // Doceava revisión: los 17 datos de Duna y la recuperación solo rechazan (la recuperación se cierra al final); la
