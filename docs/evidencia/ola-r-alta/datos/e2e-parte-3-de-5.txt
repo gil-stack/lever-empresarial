@@ -32,47 +32,56 @@ Import traces:
     ./src/app/consola/poliza/page.tsx
 
 
-[e2e] compilado · 5 s
+[e2e] compilado · 3 s
 
-Running 13 tests using 1 worker, shard 3 of 5
+Running 15 tests using 1 worker, shard 3 of 5
 
-  ✓   1 tests/e2e/operacion.spec.ts:589:7 › Operación SOFIPO: recuperaciones › «Perdí el segundo factor»: Recuperaciones pide «Confirma que eres tú», otra persona aprueba y la clienta registra un factor nuevo (4.3s)
-MEDIDA [id="nota-4d5554ca-8daa-4a4c-86ca-012a82d64893"] 1440: {"mensaje":{"arriba":526,"abajo":565},"campo":{"arriba":572,"abajo":668},"barras":84,"ventana":1000,"visible":true}
-  ✓   2 tests/e2e/operacion.spec.ts:661:7 › Operación SOFIPO: recuperaciones › con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca solo la nota de esa tarjeta (1.7s)
+  ✓   1 tests/e2e/operacion.spec.ts:743:7 › Operación SOFIPO: alta con activación (Faro) › prospecto → pedir activación → el candado exige expediente; con todo en regla la decide otra persona con factor reciente (5.2s)
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #correo 1440: {"mensaje":{"arriba":419,"abajo":438},"campo":{"arriba":445,"abajo":485},"barras":84,"ventana":900,"visible":true}
+MEDIDA #valor 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA #titulo 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="motivo-bc0e0017-0948-4078-80c8-ecf10b6995e8"] 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+  ✓   2 tests/e2e/operacion.spec.ts:840:7 › Operación SOFIPO: alta con activación (Faro) › doceava: prospecto, invitación, comisión y alertas vuelven con lo capturado y su campo marcado; el resumen de arriba no se queda (4.2s)
+  ✓   3 tests/e2e/operacion.spec.ts:846:7 › Operación SOFIPO: alta con activación (Faro) › doceava: la suspensión de Faro no consume el formulario al rechazarse, el doble clic pide una sola y la otra pestaña ve «ya hay una pendiente» sin recargar (2.4s)
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #rfc 1440: {"mensaje":{"arriba":419,"abajo":495},"campo":{"arriba":502,"abajo":542},"barras":84,"ventana":900,"visible":true}
+MEDIDA #correo 1440: {"mensaje":{"arriba":419,"abajo":438},"campo":{"arriba":445,"abajo":485},"barras":84,"ventana":900,"visible":true}
+MEDIDA #valor 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA #titulo 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="motivo-4c0b4c6c-0188-40e6-88bd-38d67999dd90"] 1440: {"mensaje":{"arriba":444,"abajo":482},"campo":{"arriba":489,"abajo":529},"barras":84,"ventana":900,"visible":true}
+  ✓   4 tests/e2e/operacion.spec.ts:855:9 › Operación SOFIPO: alta con activación (Faro) › doceava sin JavaScript, con Faro activa › sin JavaScript, invitación, comisión y alertas vuelven con lo capturado y el resumen del envío anterior no se pinta (1.6s)
 MEDIDA #dictamen-motivo 1440: {"mensaje":{"arriba":636,"abajo":655},"campo":{"arriba":662,"abajo":758},"barras":84,"ventana":900,"visible":true}
 MEDIDA #riesgo-actividad 1440: {"mensaje":{"arriba":468,"abajo":487},"campo":{"arriba":494,"abajo":534},"barras":84,"ventana":900,"visible":true}
-  ✓   3 tests/e2e/operacion.spec.ts:932:7 › doceava con JavaScript: empresas propias de la siembra › doceava: el dictamen y el grado de riesgo de Eje vuelven con lo elegido; nada queda en «baja» sin elegirlo y el doble clic tras el rechazo registra una vez (2.7s)
-  ✓   4 tests/e2e/operacion.spec.ts:938:7 › doceava con JavaScript: empresas propias de la siembra › doceava: si otra pestaña ya registró el dictamen, el rechazo de Fresno va arriba de la página aunque su formulario ya no se pinte (1.9s)
-  ✓   5 tests/e2e/operacion.spec.ts:944:7 › doceava con JavaScript: empresas propias de la siembra › doceava: la cookie del rechazo fabricada en una visita normal solo pinta avisos del catálogo; un valor inventado no aparece (3.0s)
+  ✓   5 tests/e2e/operacion.spec.ts:1097:7 › doceava con JavaScript: empresas propias de la siembra › doceava: el dictamen y el grado de riesgo de Eje vuelven con lo elegido; nada queda en «baja» sin elegirlo y el doble clic tras el rechazo registra una vez (2.4s)
+  ✓   6 tests/e2e/operacion.spec.ts:1103:7 › doceava con JavaScript: empresas propias de la siembra › doceava: si otra pestaña ya registró el dictamen, el rechazo de Fresno va arriba de la página aunque su formulario ya no se pinte (2.0s)
+  ✓   7 tests/e2e/operacion.spec.ts:1109:7 › doceava con JavaScript: empresas propias de la siembra › doceava: la cookie del rechazo fabricada en una visita normal solo pinta avisos del catálogo; un valor inventado no aparece (3.5s)
 MEDIDA #tipo 1440: {"mensaje":{"arriba":375,"abajo":413},"campo":{"arriba":420,"abajo":460},"barras":84,"ventana":900,"visible":true}
 MEDIDA #tipo 390: {"mensaje":{"arriba":728,"abajo":786},"campo":{"arriba":793,"abajo":833},"barras":60,"ventana":844,"visible":true}
-  ✓   6 tests/e2e/operacion.spec.ts:985:7 › doceava con JavaScript: empresas propias de la siembra › doce-N1: pedir una comisión con otra pendiente para la misma empresa y tipo dice por qué, con y sin JavaScript (1.8s)
-  ✓   7 tests/e2e/operacion.spec.ts:1026:7 › doceava con JavaScript: empresas propias de la siembra › doce-N2: ?aviso=constructor y ?aviso=toString no tumban ninguna de las cinco páginas que leen un aviso de la dirección (965ms)
-  ✓   8 tests/e2e/operacion.spec.ts:1056:7 › Operación SOFIPO: expediente de Duna › tras un rechazo del socio extranjero el formulario vuelve con todo lo capturado y el campo marcado; la moral extranjera entra sin RFC (6.7s)
-  ✓   9 tests/e2e/operacion.spec.ts:1135:7 › Operación SOFIPO: expediente de Duna › un nombre con un carácter invisible da su propio aviso; el formulario de representante conserva lo capturado (2.1s)
-MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":683,"abajo":702},"campo":{"arriba":709,"abajo":749},"barras":84,"ventana":900,"visible":true}
-MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":683,"abajo":702},"campo":{"arriba":709,"abajo":749},"barras":84,"ventana":900,"visible":true}
-MEDIDA #acc-capital 1440: {"mensaje":{"arriba":330,"abajo":349},"campo":{"arriba":356,"abajo":396},"barras":84,"ventana":900,"visible":true}
-MEDIDA #motivo-suspension 1440: {"mensaje":{"arriba":463,"abajo":501},"campo":{"arriba":508,"abajo":604},"barras":84,"ventana":900,"visible":true}
-MEDIDA #doc-archivo 390: {"mensaje":{"arriba":741,"abajo":760},"campo":{"arriba":767,"abajo":807},"barras":60,"ventana":844,"visible":true}
-MEDIDA #doc-archivo 390: {"mensaje":{"arriba":241,"abajo":260},"campo":{"arriba":267,"abajo":307},"barras":60,"ventana":844,"visible":true}
-MEDIDA #acc-capital 390: {"mensaje":{"arriba":211,"abajo":250},"campo":{"arriba":257,"abajo":297},"barras":60,"ventana":844,"visible":true}
-MEDIDA #motivo-suspension 390: {"mensaje":{"arriba":492,"abajo":550},"campo":{"arriba":557,"abajo":653},"barras":60,"ventana":844,"visible":true}
-  ✓  10 tests/e2e/operacion.spec.ts:1216:7 › Operación SOFIPO: expediente de Duna › el mensaje del error queda a la vista junto al campo con foco: un documento y un socio del expediente y el motivo de una reactivación, a 1440 y 390 (4.3s)
-MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":404,"abajo":423},"campo":{"arriba":430,"abajo":470},"barras":84,"ventana":900,"visible":true}
-MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":404,"abajo":423},"campo":{"arriba":430,"abajo":470},"barras":84,"ventana":900,"visible":true}
-MEDIDA #acc-capital 1440: {"mensaje":{"arriba":404,"abajo":423},"campo":{"arriba":430,"abajo":470},"barras":84,"ventana":900,"visible":true}
-MEDIDA #motivo-suspension 1440: {"mensaje":{"arriba":382,"abajo":420},"campo":{"arriba":427,"abajo":523},"barras":84,"ventana":900,"visible":true}
-MEDIDA #doc-archivo 390: {"mensaje":{"arriba":376,"abajo":395},"campo":{"arriba":402,"abajo":442},"barras":60,"ventana":844,"visible":true}
-MEDIDA #doc-archivo 390: {"mensaje":{"arriba":376,"abajo":395},"campo":{"arriba":402,"abajo":442},"barras":60,"ventana":844,"visible":true}
-MEDIDA #acc-capital 390: {"mensaje":{"arriba":356,"abajo":395},"campo":{"arriba":402,"abajo":442},"barras":60,"ventana":844,"visible":true}
-MEDIDA #motivo-suspension 390: {"mensaje":{"arriba":335,"abajo":393},"campo":{"arriba":400,"abajo":496},"barras":60,"ventana":844,"visible":true}
-MEDIDA [id="nota-d88d90e6-1e83-4007-aa78-85baa13c01fa"] 390: {"mensaje":{"arriba":439,"abajo":458},"campo":{"arriba":465,"abajo":561},"barras":60,"ventana":844,"visible":true}
-  ✓  11 tests/e2e/operacion.spec.ts:1228:9 › Operación SOFIPO: expediente de Duna › sin JavaScript › sin JavaScript, el mensaje del error queda a la vista junto al campo con foco: documento, socio, motivo de reactivación y la nota de una recuperación, a 1440 y 390 (1.9s)
-MEDIDA #rep-nombre 1440: {"mensaje":{"arriba":454,"abajo":473},"campo":{"arriba":480,"abajo":520},"barras":84,"ventana":1000,"visible":true}
-MEDIDA #acc-nombre 1440: {"mensaje":{"arriba":434,"abajo":473},"campo":{"arriba":480,"abajo":520},"barras":84,"ventana":1000,"visible":true}
-  ✓  12 tests/e2e/operacion.spec.ts:1255:9 › Operación SOFIPO: expediente de Duna › sin JavaScript › sin JavaScript, «Agregar representante» y «Agregar accionista» con un invisible vuelven con su aviso, el campo marcado, el foco y lo capturado (545ms)
-  ✓  13 tests/e2e/operacion.spec.ts:1303:9 › Operación SOFIPO: expediente de Duna › sin JavaScript › sin JavaScript, el rechazo de un campo del expediente vuelve con lo capturado, sin fragmento y con el foco en el campo (308ms)
+  ✓   8 tests/e2e/operacion.spec.ts:1150:7 › doceava con JavaScript: empresas propias de la siembra › doce-N1: pedir una comisión con otra pendiente para la misma empresa y tipo dice por qué, con y sin JavaScript (2.0s)
+  ✓   9 tests/e2e/operacion.spec.ts:1191:7 › doceava con JavaScript: empresas propias de la siembra › doce-N2: ?aviso=constructor y ?aviso=toString no tumban ninguna de las cinco páginas que leen un aviso de la dirección (955ms)
+MEDIDA #dato-razonSocial 1440: {"mensaje":{"arriba":385,"abajo":423},"campo":{"arriba":430,"abajo":470},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":440,"abajo":459},"campo":{"arriba":466,"abajo":506},"barras":84,"ventana":900,"visible":true}
+  ✓  10 tests/e2e/operacion.spec.ts:1222:7 › doceava: coincidencias, datos generales y recuperaciones › doceava: los 17 datos generales vuelven como se escribieron; después de otro rechazo queda un solo aviso y el resumen de arriba se oculta (1.8s)
+MEDIDA [id="motivo-6c277788-0a4d-4cdb-b1c8-908cb60da43a"] 1440: {"mensaje":{"arriba":605,"abajo":682},"campo":{"arriba":689,"abajo":729},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="motivo-5393c60d-445f-4c15-906e-6a203de75287"] 1440: {"mensaje":{"arriba":385,"abajo":462},"campo":{"arriba":469,"abajo":509},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="presentado-5393c60d-445f-4c15-906e-6a203de75287"] 1440: {"mensaje":{"arriba":630,"abajo":707},"campo":{"arriba":714,"abajo":754},"barras":84,"ventana":900,"visible":true}
+  ✓  11 tests/e2e/operacion.spec.ts:1265:7 › doceava: coincidencias, datos generales y recuperaciones › doceava: el dictamen de una coincidencia y su folio vuelven a su tarjeta con lo escrito; otro rechazo en otra tarjeta descarta el primero (1.5s)
+  ✓  12 tests/e2e/operacion.spec.ts:1300:7 › doceava: coincidencias, datos generales y recuperaciones › doceava: tras un rechazo la página se vuelve a pintar: con el factor caducado aparece «Confirma que eres tú» y la tarjeta conserva lo elegido (1.6s)
+MEDIDA [id="motivo-6c277788-0a4d-4cdb-b1c8-908cb60da43a"] 1440: {"mensaje":{"arriba":385,"abajo":462},"campo":{"arriba":469,"abajo":509},"barras":84,"ventana":1000,"visible":true}
+MEDIDA [id="presentado-5393c60d-445f-4c15-906e-6a203de75287"] 1440: {"mensaje":{"arriba":630,"abajo":707},"campo":{"arriba":714,"abajo":754},"barras":84,"ventana":1000,"visible":true}
+  ✓  13 tests/e2e/operacion.spec.ts:1331:9 › doceava: coincidencias, datos generales y recuperaciones › sin JavaScript › sin JavaScript, el estado de cada formulario vuelve a su tarjeta (la clave es el id): el dictamen de Cima y el folio de Brisa (460ms)
+MEDIDA n9-prospecto-1440: {"formulario":{"x":1002.53125,"y":188.4375,"width":368.46875,"height":508.34375},"aviso":{"x":1002.53125,"y":188.4375,"width":368.46875,"height":73.09375},"#razonSocial":{"x":1002.53125,"y":307.53125,"width":368.46875,"height":64.5}}
+MEDIDA n9-prospecto-390: {"formulario":{"x":41,"y":240.375,"width":308,"height":660.515625},"aviso":{"x":41,"y":240.375,"width":308,"height":90.640625},"#razonSocial":{"x":41,"y":377.015625,"width":308,"height":64.5}}
+MEDIDA n9-documento-1440: {"formulario":{"x":309,"y":297.234375,"width":1062,"height":546.921875},"aviso":{"x":309,"y":297.234375,"width":1062,"height":55.546875},"#doc-tipo":{"x":309,"y":398.78125,"width":521,"height":64.5},"#doc-detalle":{"x":309,"y":571.78125,"width":1062,"height":64.5},"#doc-archivo":{"x":309,"y":658.28125,"width":1062,"height":117.875}}
+MEDIDA n9-coincidencia-1440: {"formulario":{"x":309,"y":316.234375,"width":1062,"height":261.796875},"aviso":{"x":309,"y":316.234375,"width":1062,"height":79.546875},"[id=\"resolucion-6c277788-0a4d-4cdb-b1c8-908cb60da43a\"]":{"x":309,"y":513.53125,"width":246,"height":64.5}}
+MEDIDA n9-recuperacion-1440: {"formulario":{"x":981,"y":193.25,"width":390,"height":320.984375},"aviso":{"x":981,"y":193.25,"width":390,"height":79.546875},"[id=\"verificacion-f86814b6-b9f0-4b59-85dc-57ba8fa3d3cc\"]":{"x":981,"y":411.734375,"width":190,"height":64.5}}
+MEDIDA n9-folio-1440: {"formulario":{"x":309,"y":469.28125,"width":1062,"height":261.796875},"aviso":{"x":309,"y":469.28125,"width":1062,"height":79.546875},"[id=\"folio-5393c60d-445f-4c15-906e-6a203de75287\"]":{"x":309,"y":666.578125,"width":190,"height":64.5}}
+MEDIDA n9-folio-columnas: {"antes":[{"x":309,"y":469.28125,"width":190,"height":64.5},{"x":517,"y":469.28125,"width":190,"height":64.5},{"x":725,"y":469.28125,"width":190,"height":64.5}],"despues":[{"x":309,"y":666.578125,"width":190,"height":64.5},{"x":517,"y":582.828125,"width":190,"height":148.25},{"x":725,"y":666.578125,"width":190,"height":64.5}]}
+MEDIDA n9-folio-fondos: {"fondos":[731.078125,731.078125,731.078125],"boton":{"x":933,"y":695.078125,"width":105.8125,"height":36},"altoDelBoton":36}
+  ✓  14 tests/e2e/operacion.spec.ts:1355:7 › doceava: coincidencias, datos generales y recuperaciones › humo-N9: tras un rechazo, el aviso mide el ancho de su formulario y los campos no se mueven: prospecto (1440 y 390), documento, coincidencia, recuperación y folio (6.0s)
+  ✓  15 tests/e2e/operacion.spec.ts:1457:7 › doceava: coincidencias, datos generales y recuperaciones › doce-N3: si otra pestaña ya resolvió la coincidencia igual, el segundo dictamen dice que ya se resolvió y no guarda su motivo (1.6s)
 
-  13 passed (38.3s)
-[e2e] recorridos terminados con estado 0 · 13 pruebas corridas · 44 s
+  15 passed (43.3s)
+[e2e] recorridos terminados con estado 0 · 15 pruebas corridas · 47 s
