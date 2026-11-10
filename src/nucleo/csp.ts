@@ -42,9 +42,15 @@ export function politicaDeContenido(nonce: string, desarrollo = process.env.NODE
   ].join("; ");
 }
 
-/** Las descargas de documentos responden con su propia política aislada (sandbox). */
+/**
+ * Las descargas responden con su propia política aislada (sandbox): el documento de un proveedor y el del
+ * expediente (`…/documento/[id]`) y el comprobante de un cobro (`…/comprobante/[id]`). Cada una necesita además
+ * sus fuentes con POLITICA_DESCARGA en next.config (tests/operacion/encabezados.test.ts lo exige).
+ */
+const PATRON_DESCARGA = /\/(?:documento|comprobante)\/\[[A-Za-z]+\]$/;
+
 export function esDescarga(patron: string): boolean {
-  return /\/documento\/\[[A-Za-z]+\]$/.test(patron);
+  return PATRON_DESCARGA.test(patron);
 }
 
 /**

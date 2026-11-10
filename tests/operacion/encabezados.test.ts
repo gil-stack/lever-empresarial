@@ -124,8 +124,26 @@ describe("descargas y encabezados de next.config", () => {
   });
 
   it("ninguna página del registro pasa por esDescarga por accidente", () => {
-    for (const { patron } of RUTAS) if (esDescarga(patron)) assert.match(patron, /\/documento\/\[[A-Za-z]+\]$/);
+    for (const { patron } of RUTAS) if (esDescarga(patron)) assert.match(patron, /\/(?:documento|comprobante)\/\[[A-Za-z]+\]$/);
     assert.equal(esDescarga("/consola/proveedores"), false);
+  });
+
+  it("esDescarga reconoce las tres formas de descarga y nada más", () => {
+    for (const patron of [
+      "/consola/proveedores/documento/[id]",
+      "/operacion/clientes/[id]/expediente/documento/[documentoId]",
+      "/consola/cobros/comprobante/[id]",
+    ]) assert.equal(esDescarga(patron), true, patron);
+    for (const patron of [
+      "/consola/cobros",
+      "/consola/cobros/comprobante",
+      "/consola/cobros/comprobante/[id]/editar",
+      "/consola/cobros/comprobantes/[id]",
+      "/consola/proveedores/documento",
+      "/operacion/clientes/[id]/expediente",
+      "/consola/documentos/[id]",
+      "/consola/comprobante-[id]",
+    ]) assert.equal(esDescarga(patron), false, patron);
   });
 
   it("HSTS de dos años con includeSubDomains y sin preload; la regla general ya no trae otra CSP", async () => {
