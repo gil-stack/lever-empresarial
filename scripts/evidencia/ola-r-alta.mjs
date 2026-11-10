@@ -2919,10 +2919,11 @@ async function onceavaRonda() {
     const direccion = new URL(celia.p.url());
     const junto = await juntoAlCampo(celia.p, `[id="motivo-${caso}"]`, `aviso-coincidencia-${caso}-campo`);
     exigir(
-      direccion.search === "" && direccion.hash === "" && (await celia.p.locator(`[id="aviso-coincidencia-${caso}"]`).count()) === 1 && junto.ok
+      // Sin JavaScript solo cambia el fragmento: el del mensaje (permalinkDelRechazo, sexta vuelta del #61).
+      direccion.search === "" && direccion.hash === (js ? "" : `#aviso-coincidencia-${caso}-campo`) && (await celia.p.locator(`[id="aviso-coincidencia-${caso}"]`).count()) === 1 && junto.ok
         && (await celia.p.locator(`[id="motivo-${caso}"]`).getAttribute("aria-invalid")) === "true"
         && sql(`select estado from lpb_coincidencias where id = '${caso}'`) === "pendiente",
-      `P3 coincidencia. ${conOSin(js)} JavaScript a ${ancho}, «Revisar 😀» en el motivo: el aviso en su tarjeta y la dirección sin cambios, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto`,
+      `P3 coincidencia. ${conOSin(js)} JavaScript a ${ancho}, «Revisar 😀» en el motivo: el aviso en su tarjeta y la dirección sin cambios${js ? "" : " salvo el fragmento del mensaje"}, el campo marcado y ${js ? "con el foco" : "el primer Tab en él"}, y el mensaje junto a él a la vista; el caso sigue abierto`,
       junto.detalle,
     );
     await foto(celia.p, `r11-coincidencia-motivo-${conOSin(js)}-js-${ancho}`, false);

@@ -1,0 +1,17 @@
+R1 con la regla nueva sin JavaScript (Chromium con swiftshader y reducir movimiento, como corre R1), 10 corridas seguidas desde cero (preparar, flujos y regresiones):
+corrida 1: flujos «157 comprobaciones en verde, 0 en rojo.» · regresiones «273 comprobaciones en verde, 0 en rojo.» en 699 s
+corrida 2: flujos «157 comprobaciones en verde, 0 en rojo.» · regresiones «273 comprobaciones en verde, 0 en rojo.» en 674 s
+corrida 3: flujos «157 comprobaciones en verde, 0 en rojo.» · regresiones «273 comprobaciones en verde, 0 en rojo.» en 679 s
+corrida 4: flujos «157 comprobaciones en verde, 0 en rojo.» · regresiones «273 comprobaciones en verde, 0 en rojo.» en 663 s
+corrida 5: flujos «157 comprobaciones en verde, 0 en rojo.» · regresiones «273 comprobaciones en verde, 0 en rojo.» en 664 s
+corrida 6: flujos «157 comprobaciones en verde, 0 en rojo.» · regresiones «273 comprobaciones en verde, 0 en rojo.» en 666 s
+corrida 7: flujos «157 comprobaciones en verde, 0 en rojo.» · regresiones «273 comprobaciones en verde, 0 en rojo.» en 666 s
+corrida 8: flujos «157 comprobaciones en verde, 0 en rojo.» · regresiones «273 comprobaciones en verde, 0 en rojo.» en 666 s
+corrida 9: flujos «157 comprobaciones en verde, 0 en rojo.» · regresiones «273 comprobaciones en verde, 0 en rojo.» en 663 s
+corrida 10: flujos «157 comprobaciones en verde, 0 en rojo.» · regresiones «273 comprobaciones en verde, 0 en rojo.» en 666 s
+
+Corrida de prueba previa (tras ajustar «P3 coincidencia», que exigía la dirección sin fragmento):
+corrida prueba: flujos «157 comprobaciones en verde, 0 en rojo.» · regresiones «273 comprobaciones en verde, 0 en rojo.» en 727 s
+
+Antes de ese ajuste, la primera corrida se detuvo en él:
+FALLO P3 coincidencia. sin JavaScript a 390, «Revisar 😀» en el motivo: el aviso en su tarjeta y la dirección sin cambios, … · {"foco":1,"nombra":true,"campo":272,"mensaje":188,"separacion":7,"barras":60,"ventana":844,"fragmento":"#aviso-coincidencia-0f4e927d-…-campo","autofocus":null} (219 en verde, 1 en rojo, 577 s): la regla se cumplía; la comprobación exigía hash vacío.
