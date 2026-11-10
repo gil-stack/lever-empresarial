@@ -34,3 +34,5 @@ Ronda r63e (re-verificación de 442c21c), tests/cobranza/cobranza-postgres.test.
 - MF6 (referencias distintas también frenan): FALLA · «r63e mismo cliente, referencias distintas: los dos se aplican».
 - Con el arreglo: ℹ pass 1, ℹ fail 0.
 - Sondas del revisor (revision-63-scripts/zz-r63-{c351463,09b40e0,442c21c}.spec.ts, copias que escriben fuera de su carpeta, Chromium, api.fintoc.com bloqueada): 11/11, 5/5 y 6/6. Mismo veredicto que el revisor en cada escenario, salvo ADV2.ordenanteDeOtro y N1.ECaF, que en 442c21c se aplicaban dos veces y ahora quedan frenados (1 aplicación). En la de c351463, N1 esperaba el texto anterior al aviso de r63b-N3; la copia acepta también «ya estaba en Lever».
+
+Ronda r63f (re-verificación de f610d6d): «r63f-N1 la ordenante de un solo cliente lo identifica» FALLA con MF19 (clienteSinDuda sin los clientes de la ordenante) y pasa con el código. Sondas del revisor en copias que escriben en el scratchpad (c351463, 09b40e0, 442c21c y f610d6d): 11/11, 5/5, 6/6 y 7/7.
