@@ -160,12 +160,23 @@ export async function Marco({
             ) : null}
             {accion}
             {quien ? (
-              <MenuPersona
-                nombre={quien.nombre}
-                rol={quien.rol}
-                apariencia={vista.empresaId ? enEmpresa(vista.empresaId, "/consola/apariencia") : null}
-                cambiarEmpresa={vista.variasEmpresas}
-              />
+              <>
+                <MenuPersona
+                  nombre={quien.nombre}
+                  rol={quien.rol}
+                  apariencia={vista.empresaId ? enEmpresa(vista.empresaId, "/consola/apariencia") : null}
+                  cambiarEmpresa={vista.variasEmpresas}
+                />
+                {/* Sin JavaScript el menú de la persona no abre: «Salir» queda a la vista, con la misma acción. */}
+                <noscript>
+                  <form action={salir} className="salir-sin-script">
+                    <button type="submit" className="boton-secundario">
+                      <IconoSalir />
+                      Salir
+                    </button>
+                  </form>
+                </noscript>
+              </>
             ) : (
               <Link href="/entrar" className="boton-secundario barra-entrar" aria-current={actual === "/entrar" ? "page" : undefined}>
                 <IconoEntrar />

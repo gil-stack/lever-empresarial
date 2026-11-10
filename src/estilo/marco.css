@@ -610,6 +610,11 @@ div.empresa-lateral:not(.menu-desplegable),
   gap: 8px;
 }
 
+/* Sin JavaScript, junto al menú de la persona (que no abre). */
+.salir-sin-script .boton-secundario {
+  gap: 8px;
+}
+
 @media (max-width: 1180px) {
   .busqueda {
     width: 200px;

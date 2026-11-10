@@ -154,3 +154,27 @@ test.describe("cada buscador de Proveedores tiene su propio nombre", () => {
     });
   }
 });
+
+// Sin JavaScript (o con él apagado), el menú de la persona no abre y «Salir» vivía solo ahí: no había forma de cerrar
+// la sesión. Junto al menú queda «Salir» a la vista (en <noscript>), con la misma acción del servidor.
+test.describe("sin JavaScript se puede salir", () => {
+  test.use({ javaScriptEnabled: false });
+
+  for (const ventana of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    test(`a ${ventana.width}: «Salir» está a la vista, cierra la sesión y la consola ya no abre`, async ({ page, context }) => {
+      await page.setViewportSize(ventana);
+      await sesionDe(context, GIL);
+      await page.goto(`/c/${TALLER}/consola/personas`);
+      const salir = page.getByRole("button", { name: "Salir", exact: true });
+      await expect(salir).toBeVisible();
+      await salir.click();
+      await expect(page).toHaveURL(/\/$/);
+      expect((await context.cookies()).find((cookie) => cookie.name === "__Host-sesion")?.value ?? "").toBe("");
+      await page.goto(`/c/${TALLER}/consola/personas`);
+      await expect(page).toHaveURL(/\/entrar/);
+    });
+  }
+});
