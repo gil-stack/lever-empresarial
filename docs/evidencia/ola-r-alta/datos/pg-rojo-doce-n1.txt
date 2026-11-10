@@ -1,0 +1,46 @@
+{"nivel":"error","origen":"nucleo.db","evento":"error_de_base_sin_traducir","clase":"postgres","codigo":"23505","restriccion":"company_commissions_una_pendiente","tabla":"company_commissions","rutina":"_bt_check_unique","raise":null}
+▶ vertical slice 5A en Postgres desechable
+  ✖ origina, separa aprobadores, invalida reenvíos, aísla RLS y versiona sin solapes (1205.147917ms)
+✖ vertical slice 5A en Postgres desechable (1207.05275ms)
+ℹ tests 1
+ℹ suites 1
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1353.939833
+
+✖ failing tests:
+
+test at tests/operacion/portal-postgres.test.ts:28:3
+✖ origina, separa aprobadores, invalida reenvíos, aísla RLS y versiona sin solapes (1205.147917ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /comision_pendiente/. Input:
+  
+  'ErrorDeDominio: base_no_disponible'
+  
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async <anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/operacion/portal-postgres.test.ts:205:9)
+      at async conBaseDesechable (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/aislamiento/postgres.ts:71:12)
+      at async TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/operacion/portal-postgres.test.ts:30:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1889:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: ErrorDeDominio: base_no_disponible
+        at traducirErrorDeBase (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/src/nucleo/db.ts:248:10)
+        at conTransaccion (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/src/nucleo/db.ts:155:11)
+        at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        at async solicitarComision (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/src/server/operacion/comisiones.ts:34:3)
+        at async waitForActual (node:assert:615:5)
+        at async strict.rejects (node:assert:738:25)
+        at async <anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/operacion/portal-postgres.test.ts:205:9)
+        at async conBaseDesechable (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/aislamiento/postgres.ts:71:12)
+        at async TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/operacion/portal-postgres.test.ts:30:5)
+        at async Test.run (node:internal/test_runner/test:1404:7),
+    expected: /comision_pendiente/,
+    operator: 'rejects',
+    diff: 'simple'
+  }

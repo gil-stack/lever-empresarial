@@ -740,6 +740,19 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           // En dos renglones y con un tabulador: se guarda en un renglón (la base no acepta saltos de línea).
           await resolverCoincidencia(cum, SESION_SOFIPO, { id: pedro.id, estado: "falso_positivo", motivo: "Homónimo:\r\n\tla CURP del socio es distinta" });
           assert.equal((await dueno.query("select motivo_resolucion from lpb_coincidencias where id = $1", [pedro.id])).rows[0]?.motivo_resolucion, "Homónimo: la CURP del socio es distinta");
+          // Ronda 13 (doce-N3): el mismo envío repetido (doble clic sin JavaScript) sale como el primero, sin otro evento.
+          // Otro envío con la misma resolución (otra pestaña u otra persona) salía como éxito y su motivo no se guardaba:
+          // ahora dice que ya se resolvió y no toca lo guardado.
+          await resolverCoincidencia(cum, SESION_SOFIPO, { id: pedro.id, estado: "falso_positivo", motivo: "Homónimo:\r\n\tla CURP del socio es distinta" });
+          await assert.rejects(
+            resolverCoincidencia(cum, SESION_SOFIPO, { id: pedro.id, estado: "falso_positivo", motivo: "Homónimo revisado otra vez desde otra pestaña" }),
+            /coincidencia_ya_resuelta/,
+          );
+          assert.equal((await dueno.query("select motivo_resolucion from lpb_coincidencias where id = $1", [pedro.id])).rows[0]?.motivo_resolucion, "Homónimo: la CURP del socio es distinta");
+          assert.equal(
+            (await dueno.query("select count(*)::int as n from audit_log where accion = 'lpb_coincidencia_resuelta' and identificador = $1", [pedro.id])).rows[0]?.n,
+            1,
+          );
           await assert.rejects(registrarReporte(cum, { id: pedro.id, folio: "UIF-1", presentadoEl: hoy, avisoClienteEl: hoy }), /reporte_sin_confirmar/);
           await resolverCoincidencia(cum, SESION_SOFIPO, { id: mario.id, estado: "confirmada", motivo: "Coincide la CURP del propietario real" });
           // bar-4: la fecha de presentación o del aviso que no existe en el calendario se rechaza en su campo.

@@ -1,5 +1,6 @@
 import { Aviso } from "@/components/sistema";
 import { TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
+import { deCatalogo } from "@/dominio/catalogo";
 
 import { MensajeJuntoAlCampo } from "./mensaje-junto-al-campo";
 
@@ -30,6 +31,7 @@ const MENSAJES: Record<string, string> = {
   vigencia_en_pasado: "La vigencia no puede empezar en el pasado.",
   comision_valor_invalido: "Escribe un número entero: puntos base para fondeo o centavos para SPEI.",
   comision_tipo_invalido: "Elige el tipo: fondeo o SPEI.",
+  comision_pendiente: "Ya hay una versión pendiente de esta comisión para la empresa. Espera a que se decida antes de pedir otra.",
   vigencia_invalida: "Escribe una fecha que exista en el calendario.",
   cliente_no_activo: "Primero activa la empresa para el portal.",
   administrador_existente: "La empresa ya tiene un administrador activo.",
@@ -114,6 +116,7 @@ const MENSAJES: Record<string, string> = {
   coincidencia_resuelta: "Coincidencia resuelta con su motivo.",
   coincidencia_ausente: "Esa coincidencia ya no está pendiente.",
   coincidencia_transicion_invalida: "Esa coincidencia ya se resolvió de otra forma.",
+  coincidencia_ya_resuelta: "Esa coincidencia ya se resolvió. Tu dictamen y tu motivo no se guardaron.",
   coincidencia_sigue_en_lista: "La persona sigue en la lista vigente: no puede marcarse «fuera de la lista».",
   reporte_registrado: "Folio del reporte anotado. Lever no envía reportes a la UIF.",
   reporte_sin_confirmar: "Primero confirma la coincidencia.",
@@ -170,6 +173,7 @@ const MENSAJES: Record<string, string> = {
 const CAMPO: Record<string, string> = {
   comision_valor_invalido: "valor",
   comision_tipo_invalido: "tipo",
+  comision_pendiente: "tipo",
   vigencia_invalida: "vigenteDesde",
   responsable_invalido: "responsableId",
   rfc_duplicado: "rfc",
@@ -273,7 +277,7 @@ function avisoPintable(codigo: string): boolean {
 
 function textoDelAviso(codigo: string): string {
   return (
-    MENSAJES[codigo] ??
+    deCatalogo(MENSAJES, codigo) ??
     (codigo.startsWith("dato_invalido_") ? "Revisa el campo marcado: el dato no tiene el formato esperado." : null) ??
     "No se pudo completar. Revisa los datos e inténtalo de nuevo."
   );
@@ -330,5 +334,7 @@ export function MensajeDelCampo({ codigo, campo, idAviso = ID_AVISO }: { codigo:
 
 function esDelCampo(codigo: string | null | undefined, campo: string): codigo is string {
   if (!codigo) return false;
-  return (CAMPO[codigo] ?? codigo.replace(/^(dato_invalido|invisible)_/, "")) === campo;
+  // El campo sale del catálogo o del prefijo, como en `avisoDeCampo`; otro código no es de ningún campo.
+  const prefijo = /^(dato_invalido|invisible)_/;
+  return (deCatalogo(CAMPO, codigo) ?? (prefijo.test(codigo) ? codigo.replace(prefijo, "") : null)) === campo;
 }

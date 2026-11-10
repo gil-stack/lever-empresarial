@@ -95,6 +95,7 @@ describe("aviso de Operación", () => {
     for (const [codigo, campo] of [
       ["comision_valor_invalido", "valor"],
       ["comision_tipo_invalido", "tipo"],
+      ["comision_pendiente", "tipo"],
       ["vigencia_invalida", "vigenteDesde"],
       ["vigencia_solapada", "vigenteDesde"],
       ["responsable_invalido", "responsableId"],
@@ -135,6 +136,18 @@ describe("aviso de Operación", () => {
     for (const codigo of ["dato_invalido_<b>x</b>", 'invisible_" onfocus="x', "dato_invalido_inventado", "<script>x</script>", "a b"]) {
       assert.equal(avisoConocido(codigo), false, codigo);
       assert.equal(renderToStaticMarkup(createElement(AvisoOperacion, { codigo })), "", codigo);
+    }
+  });
+
+  // Ronda 13 (doce-N2): `?aviso=constructor` tiene forma de código y se pinta; el catálogo se leía sin Object.hasOwn y
+  // devolvía la función Object en lugar de un texto (en la página, un 500).
+  it("lo heredado de Object.prototype no es un mensaje ni un campo: `constructor` se pinta con el texto genérico", () => {
+    const html = renderToStaticMarkup(createElement(AvisoOperacion, { codigo: "constructor" }));
+    assert.match(html, /No se pudo completar\. Revisa los datos e inténtalo de nuevo\./);
+    assert.match(html, /data-aviso="desconocido"/);
+    for (const codigo of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
+      assert.equal(renderToStaticMarkup(createElement(MensajeDelCampo, { codigo, campo: "motivo" })), "", codigo);
+      assert.deepEqual(errorDelCampo(codigo, "motivo"), {}, codigo);
     }
   });
 

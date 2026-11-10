@@ -16,11 +16,15 @@ import { BRISA, CIMA, CORREOS, DUNA, EJE, ENEBRO, FARO, FRESNO, GRANADO, HIGUERA
  * conteo en la base.
  */
 
-// Cuatro grupos seriales, cada uno con lo que siembra tests/e2e/siembra.ts: el archivo es «parallel» solo para que
+// Nueve grupos seriales, cada uno con lo que siembra tests/e2e/siembra.ts y sin depender de lo que dejen los demás
+// (solo «Brisa y Cima» va antes del de coincidencias, que cierra sus casos): el archivo es «parallel» solo para que
 // `--shard` reparta grupos y no el archivo entero (con workers: 1 corren en orden). Playwright reparte por número de
-// pruebas y el grupo que empieza antes del corte va entero a esa parte: el más corto va primero y comparte la parte 1
-// con los specs anteriores (entrada, flujo de caja, invitación, marco y nómina, unos 70 s); «Operación SOFIPO» y el
-// grupo con JavaScript caen en la 2; el de coincidencias, con los specs posteriores, en la 3. La guarda de
+// pruebas y el grupo que empieza antes del corte va entero a esa parte; el orden de abajo decide el reparto (ver
+// tests/e2e/LEEME.md). En cinco partes, con 69 pruebas: la 1 son los specs anteriores menos nómina; la doceava sin
+// JavaScript, Brisa y Cima y Duna van a la 2 con nómina; Faro, la doceava con JavaScript y coincidencias, a la 3;
+// entrada, recuperaciones y precio, a la 4 con pagos-proveedores; la 5 son los demás specs posteriores. El orden sale
+// de los tiempos del CI (ver el LEEME): coincidencias y pagos-proveedores, los dos grupos más variables, van en partes
+// distintas. La doceava sin JavaScript va antes de «Brisa y Cima», y las dos antes de coincidencias. La guarda de
 // scripts/ci/pruebas-e2e.sh falla si una parte queda sin pruebas.
 test.describe.configure({ mode: "parallel" });
 
@@ -234,7 +238,7 @@ async function salirDeOperacion(page: Page): Promise<void> {
 }
 
 // Doceava revisión, sin JavaScript, sobre empresas que solo usa este grupo (Enebro, Granado, Higuera, Bahía) o que solo
-// rechaza (Cima y Brisa): no depende de los otros grupos ni los cambia. Va primero porque es el más corto (ver arriba).
+// rechaza (Cima y Brisa): no depende de los otros grupos ni los cambia.
 test.describe("doceava sin JavaScript: empresas propias de la siembra", () => {
   test.describe.configure({ mode: "serial" });
   test.use({ javaScriptEnabled: false });
@@ -360,135 +364,10 @@ test.describe("doceava sin JavaScript: empresas propias de la siembra", () => {
   });
 });
 
-// Entrada, alta con activación (Faro), expediente, recuperación y precio. Las pruebas de la doceava sobre Faro van
-// aquí porque necesitan a Faro activa, y la activa «prospecto → pedir activación».
-test.describe("Operación SOFIPO", () => {
+// Brisa (alta con una coincidencia abierta) y Cima (suspendida con su caso): Aprobación y Originación no ven la lista.
+// Solo rechaza y lee. Va antes del grupo de coincidencias, que confirma la de Brisa y resuelve la de Cima.
+test.describe("Operación SOFIPO: Brisa y Cima", () => {
   test.describe.configure({ mode: "serial" });
-
-  test("entrada SOFIPO: contraseña y código; un código malo no abre y el doble clic abre una sola sesión", async ({ page }) => {
-    const errores = vigilarConsola(page);
-    const op1 = await idDe(CORREOS.op1);
-    // Entrar puede cerrar sesiones viejas de la misma persona: se cuentan las que nacen en esta prueba.
-    const desde = (await consultar<{ desde: string }>("select now()::text as desde"))[0]!.desde;
-    const sesiones = () => contar("select 1 from sessions where user_id = $1 and superficie = 'sofipo' and creada_en >= $2::timestamptz", [op1, desde]);
-    const antes = await sesiones();
-    expect(antes).toBe(0);
-
-    await page.goto("/operacion/entrar");
-    await page.getByLabel("Correo").fill(CORREOS.op1);
-    await page.getByLabel("Contraseña", { exact: true }).fill(CLAVE);
-    const contrasena = await dobleClic(page.getByRole("button", { name: "Continuar" }), { esperar: /\/operacion\/continuar/ });
-    expect(contrasena.envios).toBe(1);
-
-    await page.getByLabel("Código de la app autenticadora").fill("000000");
-    await page.getByRole("button", { name: "Entrar con el código" }).click();
-    await expect(page.locator("#factor-error")).toBeVisible();
-    expect(await sesiones()).toBe(antes);
-
-    await page.getByLabel("Código de la app autenticadora").fill(await codigoTotp(CORREOS.op1));
-    const codigo = await dobleClic(page.getByRole("button", { name: "Entrar con el código" }), { esperar: /\/operacion$/ });
-    expect(codigo.envios).toBe(1);
-    expect(await sesiones()).toBe(antes + 1);
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    expect(errores).toEqual([]);
-  });
-
-  test("prospecto → pedir activación → el candado exige expediente; con todo en regla la decide otra persona con factor reciente", async ({ page, context }) => {
-    const errores = vigilarConsola(page);
-    const [op1, op2] = [await idDe(CORREOS.op1), await idDe(CORREOS.op2)];
-    const empresas = () => contar("select 1 from companies where rfc = $1", [PROSPECTO.rfc]);
-    expect(await empresas()).toBe(0);
-
-    // Originación registra el prospecto y pide su activación.
-    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-    await page.goto("/operacion/clientes");
-    await page.getByLabel("Razón social").fill(PROSPECTO.razonSocial);
-    await page.getByLabel("RFC").fill(PROSPECTO.rfc);
-    await page.getByLabel("Código postal").fill("64000");
-    const alta = await dobleClic(page.getByRole("button", { name: "Registrar prospecto" }), { esperar: /\/operacion\/clientes\/[0-9a-f-]{36}\?aviso=prospecto_registrado/ });
-    expect(alta.envios).toBe(1);
-    expect(await empresas()).toBe(1);
-    const [empresa] = await consultar<{ id: string; estado: string; originada_por: string }>(
-      "select id, estado, originada_por from companies where rfc = $1",
-      [PROSPECTO.rfc],
-    );
-    expect(empresa).toMatchObject({ estado: "prospecto", originada_por: op1 });
-    await expect(page.getByText("Prospecto registrado. Ya puedes solicitar su activación.")).toBeVisible();
-
-    const solicitudes = () => contar("select 1 from company_activation_requests where company_id = $1", [empresa!.id]);
-    const pedir = await dobleClic(page.getByRole("button", { name: "Solicitar activación" }), { esperar: /aviso=activacion_solicitada/ });
-    expect(pedir.envios).toBe(1);
-    expect(await solicitudes()).toBe(1);
-    await expect(page.getByText("Activación solicitada. La decide otra persona en Aprobaciones.")).toBeVisible();
-
-    // Quien la pidió la ve, pero sin botones.
-    const decision = (p: Page, razonSocial: string) => p.locator("li.decision").filter({ hasText: `Activación · ${razonSocial}` });
-    await page.goto("/operacion/aprobaciones");
-    await expect(decision(page, PROSPECTO.razonSocial).getByText("La pediste tú: decide otra persona.")).toBeVisible();
-    await expect(decision(page, PROSPECTO.razonSocial).getByRole("button", { name: "Aprobar" })).toHaveCount(0);
-
-    // Aprobación la decide, pero sin expediente aprobado la base no deja activar (candado de la 0028).
-    await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
-    await page.goto("/operacion/aprobaciones");
-    await decision(page, PROSPECTO.razonSocial).getByRole("button", { name: "Aprobar" }).click();
-    await page.waitForURL(/aviso=activacion_sin_expediente_aprobado/);
-    await expect(page.getByText("La base no deja activar: falta un expediente aprobado en su versión vigente.")).toBeVisible();
-    const [sinExpediente] = await consultar<{ estado: string; solicitud: string }>(
-      `select c.estado, r.estado as solicitud from companies c
-       join company_activation_requests r on r.company_id = c.id where c.id = $1`,
-      [empresa!.id],
-    );
-    expect(sinExpediente).toEqual({ estado: "en_alta", solicitud: "pendiente" });
-
-    // serv-N18: «Revisar 😀» son 9 caracteres (10 unidades UTF-16: el navegador lo deja pasar). El servidor lo
-    // rechaza y el diálogo sigue abierto con lo escrito, el aviso ligado al campo y el foco en él; corregido, rechaza.
-    await page.goto("/operacion/aprobaciones");
-    await decision(page, PROSPECTO.razonSocial).getByRole("button", { name: "Rechazar" }).click();
-    const dialogo = page.getByRole("dialog", { name: "Rechazar" });
-    const motivo = dialogo.getByLabel("Motivo (de 10 a 500 caracteres)");
-    await motivo.fill("Revisar 😀");
-    await dialogo.getByRole("button", { name: "Rechazar" }).click();
-    // El resumen arriba del diálogo y el mismo texto junto al campo, que es su descripción (onceava revisión).
-    await expect(dialogo.locator(".operacion-aviso")).toContainText("El motivo lleva al menos 10 caracteres");
-    await expect(motivo).toHaveValue("Revisar 😀");
-    await expect(motivo).toHaveAttribute("aria-invalid", "true");
-    await expect(motivo).toHaveAttribute("aria-describedby", /-aviso-campo$/);
-    await expect(dialogo.locator(`[id="${await motivo.getAttribute("aria-describedby")}"]`)).toContainText("al menos 10 caracteres");
-    await expect(motivo).toBeFocused();
-    expect(new URL(page.url()).search).toBe("");
-    expect(await solicitudes()).toBe(1);
-    expect((await consultar<{ estado: string }>("select estado from company_activation_requests where company_id = $1", [empresa!.id]))[0]?.estado).toBe("pendiente");
-    await motivo.fill("Falta el expediente aprobado de la empresa");
-    await dialogo.getByRole("button", { name: "Rechazar" }).click();
-    await page.waitForURL(/aviso=decision_registrada/);
-    expect((await consultar<{ estado: string }>("select estado from company_activation_requests where company_id = $1", [empresa!.id]))[0]?.estado).toBe("rechazada");
-
-    // Faro E2E (sembrada con expediente aprobado y riesgo vigente; la activación la pidió op1).
-    // Con el factor de hace 31 minutos, Aprobación no decide y la base no cambia.
-    const [faro] = await consultar<{ id: string; estado: string }>("select id, estado from companies where rfc = $1", [FARO.rfc]);
-    expect(faro!.estado).toBe("en_alta");
-    await sesionDe(context, CORREOS.op2, { superficie: "sofipo", factorHaceMinutos: 31 });
-    await page.goto("/operacion/aprobaciones");
-    await decision(page, FARO.razonSocial).getByRole("button", { name: "Aprobar" }).click();
-    await expect(page.getByText("Para decidir, tu segundo factor debe ser de los últimos 30 minutos. Sal y vuelve a entrar.")).toBeVisible();
-    const [pendiente] = await consultar<{ estado: string }>("select estado from companies where id = $1", [faro!.id]);
-    expect(pendiente!.estado).toBe("en_alta");
-
-    // Con factor reciente, un doble clic decide una sola vez.
-    await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
-    await page.goto("/operacion/aprobaciones");
-    const aprobar = await dobleClic(decision(page, FARO.razonSocial).getByRole("button", { name: "Aprobar" }), { esperar: /aviso=decision_registrada/ });
-    expect(aprobar.envios).toBe(1);
-    const [decidida] = await consultar<{ estado: string; requested_by: string; decided_by: string; empresa: string }>(
-      `select r.estado, r.requested_by, r.decided_by, c.estado as empresa from company_activation_requests r
-       join companies c on c.id = r.company_id where r.company_id = $1`,
-      [faro!.id],
-    );
-    expect(decidida).toEqual({ estado: "aprobada", requested_by: op1, decided_by: op2, empresa: "activa" });
-    expect(await contar("select 1 from audit_log where accion = 'activacion_aprobada' and company_id = $1", [faro!.id])).toBe(1);
-    expect(await contar("select 1 from company_state_history where company_id = $1 and estado_nuevo = 'activa'", [faro!.id])).toBe(1);
-    expect(errores).toEqual([]);
-  });
 
   test("un caso abierto de Cumplimiento no se le nombra a Aprobación ni a Originación", async ({ page, context }) => {
     const errores = vigilarConsola(page);
@@ -550,6 +429,40 @@ test.describe("Operación SOFIPO", () => {
     await expect(page.locator("#coincidencias-titulo")).toHaveText("Coincidencias con listas");
     expect(errores).toEqual([]);
   });
+
+  test("una clave repetida en la dirección (?aviso=a&aviso=b) no tumba ninguna página de Operación", async ({ page, context }) => {
+    const errores = vigilarConsola(page);
+    const [brisa] = await consultar<{ id: string }>("select id from companies where rfc = $1", [BRISA.rfc]);
+    const paginas = [
+      "/operacion/alertas", "/operacion/aprobaciones", "/operacion/clientes", `/operacion/clientes/${brisa!.id}`,
+      `/operacion/clientes/${brisa!.id}/expediente`, "/operacion/comisiones", "/operacion/cumplimiento", "/operacion/lpb",
+      "/operacion/personal", "/operacion/recuperaciones",
+    ];
+    const abrir = async (ruta: string) => {
+      const respuesta = await page.goto(ruta);
+      expect(respuesta?.status(), ruta).toBe(200);
+      await expect(page.locator("h1"), ruta).toBeVisible();
+    };
+    // Aprobación (con Administración) y Cumplimiento: entre las dos abren todas, cada una con su permiso.
+    for (const correo of [CORREOS.op2, CORREOS.op3]) {
+      await sesionDe(context, correo, { superficie: "sofipo" });
+      for (const ruta of paginas) await abrir(`${ruta}?aviso=a&aviso=b&en=x&en=y`);
+    }
+    // El detalle de lo que falta con `faltan` repetido: queda el aviso general, sin detalle.
+    await abrir(`/operacion/clientes/${brisa!.id}/expediente?aviso=expediente_datos_incompletos&faltan=giro&faltan=domicilio`);
+    await expect(page.locator("#aviso-operacion")).toHaveText("Faltan datos generales para enviar la versión. Revisa «Datos generales».");
+    // La Lista con su detalle repetido y la entrada sin sesión.
+    await abrir("/operacion/lpb?aviso=lpb_cargada&filas=1&filas=2&coincidencias=0");
+    await context.clearCookies();
+    await abrir("/operacion/entrar?aviso=a&aviso=b");
+    expect(errores).toEqual([]);
+  });
+});
+
+// El expediente de Duna: el socio extranjero (Duna empieza sin socios) y el representante entran una vez; lo demás
+// rechaza, también el motivo de reactivación de Cima, que no consume su formulario.
+test.describe("Operación SOFIPO: expediente de Duna", () => {
+  test.describe.configure({ mode: "serial" });
 
   test("tras un rechazo del socio extranjero el formulario vuelve con todo lo capturado y el campo marcado; la moral extranjera entra sin RFC", async ({ page, context }) => {
     const errores = vigilarConsola(page);
@@ -709,78 +622,6 @@ test.describe("Operación SOFIPO", () => {
     expect(errores).toEqual([]);
   });
 
-  test("«Perdí el segundo factor»: Recuperaciones pide «Confirma que eres tú», otra persona aprueba y la clienta registra un factor nuevo", async ({ page, context }) => {
-    const errores = vigilarConsola(page);
-    const paula = await idDe(CORREOS.perdida);
-    const op2 = await idDe(CORREOS.op2);
-    const recuperaciones = () => contar("select 1 from auth_recuperaciones where user_id = $1", [paula]);
-    const [totpViejo] = await consultar<{ id: string }>(
-      "select id from auth_totp where user_id = $1 and confirmado_en is not null and revocado_en is null",
-      [paula],
-    );
-    expect(totpViejo).toBeTruthy();
-    expect(await recuperaciones()).toBe(0);
-
-    // La clienta entra con su contraseña y, sin código, pide ayuda.
-    await page.goto("/entrar");
-    await page.getByLabel("Correo").fill(CORREOS.perdida);
-    await page.getByLabel("Contraseña", { exact: true }).fill(CLAVE);
-    await page.getByRole("button", { name: "Continuar" }).click();
-    await page.waitForURL(/\/entrar\/continuar/);
-    await page.getByRole("button", { name: "Perdí el segundo factor" }).click();
-    await page.getByLabel("Qué pasó").fill("Perdí el teléfono con la app autenticadora.");
-    const pedir = await dobleClic(page.getByRole("button", { name: "Pedir recuperación" }), { esperar: /\/entrar\?aviso=recuperacion/ });
-    expect(pedir.envios).toBe(1);
-    await expect(page.getByText("Tu solicitud quedó en revisión.")).toBeVisible();
-    expect(await recuperaciones()).toBe(1);
-
-    // En Operación, con el factor de hace 6 minutos, primero «Confirma que eres tú» (vale cinco).
-    await context.clearCookies();
-    await sesionDe(context, CORREOS.op2, { superficie: "sofipo", factorHaceMinutos: 6 });
-    await page.goto("/operacion/recuperaciones");
-    const solicitud = page.locator("li.decision").filter({ hasText: CORREOS.perdida });
-    await expect(page.getByRole("heading", { name: "Confirma que eres tú" })).toBeVisible();
-    await solicitud.getByLabel("Cómo verificaste la identidad").selectOption("videollamada");
-    await solicitud.getByRole("button", { name: "Aprobar" }).click();
-    // El aviso vuelve a la tarjeta (doceava); el de respaldo de arriba (formulario que ya no se pinta) queda oculto.
-    await expect(solicitud.getByText("Confirma que eres tú con tu segundo factor antes de decidir. Vale cinco minutos.")).toBeVisible();
-    await expect(page.locator("#aviso-rechazo")).toBeHidden();
-    const [sinDecidir] = await consultar<{ estado: string }>("select estado from auth_recuperaciones where user_id = $1", [paula]);
-    expect(sinDecidir!.estado).toBe("solicitada");
-
-    await page.locator("#confirmar-codigo").fill(await codigoTotp(CORREOS.op2));
-    await page.getByRole("button", { name: "Confirmar con el código" }).click();
-    await expect(page.getByRole("heading", { name: "Confirma que eres tú" })).toHaveCount(0);
-    await solicitud.getByLabel("Cómo verificaste la identidad").selectOption("videollamada");
-    const aprobar = await dobleClic(solicitud.getByRole("button", { name: "Aprobar" }), { esperar: /aviso=decision_registrada/ });
-    expect(aprobar.envios).toBe(1);
-    const [aprobada] = await consultar<{ estado: string; resuelta_por: string; verificacion: string }>(
-      "select estado, resuelta_por, verificacion from auth_recuperaciones where user_id = $1",
-      [paula],
-    );
-    expect(aprobada).toEqual({ estado: "aprobada", resuelta_por: op2, verificacion: "videollamada" });
-
-    // La clienta vuelve a entrar y registra un factor nuevo; el viejo deja de servir.
-    await context.clearCookies();
-    await page.goto("/entrar");
-    await page.getByLabel("Correo").fill(CORREOS.perdida);
-    await page.getByLabel("Contraseña", { exact: true }).fill(CLAVE);
-    await page.getByRole("button", { name: "Continuar" }).click();
-    await page.waitForURL(/\/entrar\/continuar/);
-    await expect(page.getByRole("heading", { name: "Registra un factor nuevo." })).toBeVisible();
-    const semilla = (await page.locator(".arco-semilla").innerText()).trim();
-    await page.getByLabel("Código que muestra la app").fill(codigoDeSemilla(semilla));
-    const confirmar = await dobleClic(page.getByRole("button", { name: "Confirmar el código" }));
-    expect(confirmar.envios).toBe(1);
-    await page.getByRole("checkbox", { name: "Ya los guardé en un lugar seguro" }).check();
-    await page.getByRole("button", { name: "Entrar al portal" }).click();
-    await expect(page.getByRole("navigation", { name: "Secciones" })).toBeVisible();
-    expect(await contar("select 1 from auth_totp where id = $1 and revocado_en is not null", [totpViejo!.id])).toBe(1);
-    expect(await contar("select 1 from auth_totp where user_id = $1 and confirmado_en is not null and revocado_en is null", [paula])).toBe(1);
-    expect(await contar("select 1 from auth_recuperaciones where user_id = $1 and cumplida_en is not null", [paula])).toBe(1);
-    expect(errores).toEqual([]);
-  });
-
   // base-N27: con varias solicitudes pendientes, el error de una marca y enfoca solo su tarjeta. Antes la página marcaba
   // el campo en todas, y con el foco del aviso las tres notas pedían el foco.
   test("el mensaje del error queda a la vista junto al campo con foco: un documento y un socio del expediente y el motivo de una reactivación, a 1440 y 390", async ({ page, context }) => {
@@ -790,104 +631,8 @@ test.describe("Operación SOFIPO", () => {
     expect(errores).toEqual([]);
   });
 
-  test("con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca solo la nota de esa tarjeta", async ({ page, context }) => {
-    const errores = vigilarConsola(page);
-    const personas = [CORREOS.diego, CORREOS.sol, CORREOS.ernesto];
-    const ids = await recuperacionesPendientes(personas);
-    await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
-    await page.goto("/operacion/recuperaciones");
-    const tarjeta = (correo: string) => page.locator("li.decision").filter({ hasText: correo });
-    const nota = (indice: number) => page.locator(`[id="nota-${ids[indice]}"]`);
-    for (const correo of personas) await expect(tarjeta(correo)).toBeVisible();
-
-    // Doceava: el aviso vuelve a esa tarjeta, con el método elegido; la dirección no cambia.
-    await page.locator(`[id="verificacion-${ids[1]}"]`).selectOption("videollamada");
-    await nota(1).fill("   ");
-    await rechazado(page, tarjeta(CORREOS.sol).getByRole("button", { name: "Rechazar" }), `aviso-recuperacion-${ids[1]}`);
-    await expect(nota(1)).toHaveAttribute("aria-invalid", "true");
-    await expect(nota(1)).toHaveAttribute("aria-describedby", `aviso-recuperacion-${ids[1]}-campo`);
-    await expect(nota(1)).toBeFocused();
-    await expect(page.locator('[aria-invalid="true"]')).toHaveCount(1);
-    for (const indice of [0, 2]) await expect(nota(indice)).not.toHaveAttribute("aria-invalid", "true");
-    await mensajeJunto(page, `[id="nota-${ids[1]}"]`, "Escribe un motivo breve y claro.", `aviso-recuperacion-${ids[1]}-campo`);
-    await expect(page.locator(`[id="verificacion-${ids[1]}"]`)).toHaveValue("videollamada");
-    // El resumen de un aviso de campo no es región viva: el campo con el foco ya lo lee como su descripción.
-    await expect(page.locator(`[id="aviso-recuperacion-${ids[1]}"] .alerta`)).not.toHaveAttribute("role", /./);
-
-    // Con su nota, cada una se rechaza; ninguna queda abierta para las demás pruebas.
-    for (const [indice, correo] of personas.entries()) {
-      await nota(indice).fill("No se pudo confirmar la identidad por videollamada.");
-      await tarjeta(correo).getByRole("button", { name: "Rechazar" }).click();
-      await expect(tarjeta(correo)).toHaveCount(0);
-    }
-    expect(await contar("select 1 from auth_recuperaciones where id = any($1::uuid[]) and estado = 'rechazada'", [ids])).toBe(3);
-    expect(errores).toEqual([]);
-  });
-
-  test("una clave repetida en la dirección (?aviso=a&aviso=b) no tumba ninguna página de Operación", async ({ page, context }) => {
-    const errores = vigilarConsola(page);
-    const [brisa] = await consultar<{ id: string }>("select id from companies where rfc = $1", [BRISA.rfc]);
-    const paginas = [
-      "/operacion/alertas", "/operacion/aprobaciones", "/operacion/clientes", `/operacion/clientes/${brisa!.id}`,
-      `/operacion/clientes/${brisa!.id}/expediente`, "/operacion/comisiones", "/operacion/cumplimiento", "/operacion/lpb",
-      "/operacion/personal", "/operacion/recuperaciones",
-    ];
-    const abrir = async (ruta: string) => {
-      const respuesta = await page.goto(ruta);
-      expect(respuesta?.status(), ruta).toBe(200);
-      await expect(page.locator("h1"), ruta).toBeVisible();
-    };
-    // Aprobación (con Administración) y Cumplimiento: entre las dos abren todas, cada una con su permiso.
-    for (const correo of [CORREOS.op2, CORREOS.op3]) {
-      await sesionDe(context, correo, { superficie: "sofipo" });
-      for (const ruta of paginas) await abrir(`${ruta}?aviso=a&aviso=b&en=x&en=y`);
-    }
-    // El detalle de lo que falta con `faltan` repetido: queda el aviso general, sin detalle.
-    await abrir(`/operacion/clientes/${brisa!.id}/expediente?aviso=expediente_datos_incompletos&faltan=giro&faltan=domicilio`);
-    await expect(page.locator("#aviso-operacion")).toHaveText("Faltan datos generales para enviar la versión. Revisa «Datos generales».");
-    // La Lista con su detalle repetido y la entrada sin sesión.
-    await abrir("/operacion/lpb?aviso=lpb_cargada&filas=1&filas=2&coincidencias=0");
-    await context.clearCookies();
-    await abrir("/operacion/entrar?aviso=a&aviso=b");
-    expect(errores).toEqual([]);
-  });
-
   test.describe("sin JavaScript", () => {
     test.use({ javaScriptEnabled: false });
-
-    // serv-nuevo-7: con Referrer-Policy: no-referrer, el envío nativo de un formulario lleva «Origin: null» y Next
-    // rechaza la acción con un 500. Pasa sin JavaScript y al hacer clic antes de que la página hidrate.
-    test("sin JavaScript los formularios responden: el alta vuelve con su aviso y lo capturado (200) y las dos entradas dan el suyo", async ({ page, context }) => {
-      const post = () => page.waitForResponse((respuesta) => respuesta.request().method() === "POST");
-      await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-      await page.goto("/operacion/clientes");
-      await page.getByLabel("Razón social").fill("Sin Script\u0085Uno SA de CV");
-      await page.getByLabel("RFC").fill("SSU010101AB1");
-      await page.getByLabel("Código postal").fill("06600");
-      const [alta] = await Promise.all([post(), page.getByRole("button", { name: "Registrar prospecto" }).click()]);
-      // La causa: con «no-referrer» el navegador manda «Origin: null» en el envío nativo del formulario.
-      expect(await alta.request().headerValue("origin")).toBe(new URL(alta.url()).origin);
-      // Doceava: el rechazo responde con la página (200) en la misma dirección, el aviso en el formulario y lo capturado.
-      expect(alta.status()).toBe(200);
-      expect(page.url()).not.toContain("aviso=");
-      await expect(page.locator("#aviso-prospecto")).toContainText("La razón social trae un carácter invisible");
-      await expect(page.getByLabel("RFC")).toHaveValue("SSU010101AB1");
-      await expect(page.getByLabel("Código postal")).toHaveValue("06600");
-      await mensajeJunto(page, "#razonSocial", "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano.", "aviso-prospecto-campo");
-      expect(await contar("select 1 from companies where rfc = $1", ["SSU010101AB1"])).toBe(0);
-
-      // La entrada de Operación y la del portal del cliente, sin sesión: la contraseña equivocada da su aviso ahí mismo.
-      await context.clearCookies();
-      for (const ruta of ["/operacion/entrar", "/entrar"]) {
-        await page.goto(ruta);
-        await page.getByLabel("Correo").fill("nadie-sin-script@lever-e2e.mx");
-        await page.getByLabel("Contraseña", { exact: true }).fill("no-es-la-clave-1");
-        const [entrada] = await Promise.all([post(), page.getByRole("button", { name: "Continuar" }).click()]);
-        expect(await entrada.request().headerValue("origin"), ruta).toBe(new URL(entrada.url()).origin);
-        expect(entrada.status(), ruta).toBe(200);
-        await expect(page.locator("#entrar-error"), ruta).toContainText("El correo o la contraseña no coinciden.");
-      }
-    });
 
     // Décima revisión: el aviso de un campo volvía con «#datos-titulo» y, al cargar la página completa, el navegador
     // descarta el autofocus cuando hay fragmento. Sin fragmento, el campo queda marcado y con el foco.
@@ -988,56 +733,108 @@ test.describe("Operación SOFIPO", () => {
       await expect(page.locator(".barra-superior")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     });
   });
+});
 
-  test("publicar el precio exige factor de los últimos 30 minutos; tras volver a entrar, doble clic publica una vez", async ({ page, context }) => {
+// Faro: prospecto → pedir activación → la activa otra persona. Las pruebas de la doceava sobre Faro van aquí porque
+// necesitan a Faro activa.
+test.describe("Operación SOFIPO: alta con activación (Faro)", () => {
+  test.describe.configure({ mode: "serial" });
+
+  test("prospecto → pedir activación → el candado exige expediente; con todo en regla la decide otra persona con factor reciente", async ({ page, context }) => {
     const errores = vigilarConsola(page);
-    const precio = async () => (await consultar<{ centavos: string | null }>("select suscripcion_centavos::text as centavos from platform_pricing where singleton"))[0]?.centavos ?? null;
-    const publicaciones = () => contar("select 1 from audit_log where accion = 'publicar_precio'");
-    expect(await precio()).toBeNull();
-    const antes = await publicaciones();
+    const [op1, op2] = [await idDe(CORREOS.op1), await idDe(CORREOS.op2)];
+    const empresas = () => contar("select 1 from companies where rfc = $1", [PROSPECTO.rfc]);
+    expect(await empresas()).toBe(0);
 
-    await sesionDe(context, CORREOS.op1, { superficie: "sofipo", factorHaceMinutos: 31 });
-    await page.goto("/operacion/precios");
-    await page.getByLabel("Suscripción mensual, en pesos").fill("1499.00");
-    await page.getByRole("button", { name: "Publicar el monto" }).click();
-    await expect(page.getByText("Publicar exige un segundo factor verificado en los últimos 30 minutos. Sal y vuelve a entrar por la puerta de operación.")).toBeVisible();
-    expect(await precio()).toBeNull();
-    expect(await publicaciones()).toBe(antes);
+    // Originación registra el prospecto y pide su activación.
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    await page.goto("/operacion/clientes");
+    await page.getByLabel("Razón social").fill(PROSPECTO.razonSocial);
+    await page.getByLabel("RFC").fill(PROSPECTO.rfc);
+    await page.getByLabel("Código postal").fill("64000");
+    const alta = await dobleClic(page.getByRole("button", { name: "Registrar prospecto" }), { esperar: /\/operacion\/clientes\/[0-9a-f-]{36}\?aviso=prospecto_registrado/ });
+    expect(alta.envios).toBe(1);
+    expect(await empresas()).toBe(1);
+    const [empresa] = await consultar<{ id: string; estado: string; originada_por: string }>(
+      "select id, estado, originada_por from companies where rfc = $1",
+      [PROSPECTO.rfc],
+    );
+    expect(empresa).toMatchObject({ estado: "prospecto", originada_por: op1 });
+    await expect(page.getByText("Prospecto registrado. Ya puedes solicitar su activación.")).toBeVisible();
 
-    await salirDeOperacion(page);
-    await entrarAOperacion(page, CORREOS.op1);
-    await page.goto("/operacion/precios");
-    await page.getByLabel("Suscripción mensual, en pesos").fill("1499.00");
-    const publicar = await dobleClic(page.getByRole("button", { name: "Publicar el monto" }), { esperar: /\/operacion\/precios$/ });
-    expect(publicar.envios).toBe(1);
-    await expect(page.getByLabel("Suscripción mensual, en pesos")).toHaveCount(0);
-    await expect(page.getByText("1,499.00").first()).toBeVisible();
-    expect(await precio()).toBe("149900");
-    expect(await publicaciones()).toBe(antes + 1);
+    const solicitudes = () => contar("select 1 from company_activation_requests where company_id = $1", [empresa!.id]);
+    const pedir = await dobleClic(page.getByRole("button", { name: "Solicitar activación" }), { esperar: /aviso=activacion_solicitada/ });
+    expect(pedir.envios).toBe(1);
+    expect(await solicitudes()).toBe(1);
+    await expect(page.getByText("Activación solicitada. La decide otra persona en Aprobaciones.")).toBeVisible();
+
+    // Quien la pidió la ve, pero sin botones.
+    const decision = (p: Page, razonSocial: string) => p.locator("li.decision").filter({ hasText: `Activación · ${razonSocial}` });
+    await page.goto("/operacion/aprobaciones");
+    await expect(decision(page, PROSPECTO.razonSocial).getByText("La pediste tú: decide otra persona.")).toBeVisible();
+    await expect(decision(page, PROSPECTO.razonSocial).getByRole("button", { name: "Aprobar" })).toHaveCount(0);
+
+    // Aprobación la decide, pero sin expediente aprobado la base no deja activar (candado de la 0028).
+    await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+    await page.goto("/operacion/aprobaciones");
+    await decision(page, PROSPECTO.razonSocial).getByRole("button", { name: "Aprobar" }).click();
+    await page.waitForURL(/aviso=activacion_sin_expediente_aprobado/);
+    await expect(page.getByText("La base no deja activar: falta un expediente aprobado en su versión vigente.")).toBeVisible();
+    const [sinExpediente] = await consultar<{ estado: string; solicitud: string }>(
+      `select c.estado, r.estado as solicitud from companies c
+       join company_activation_requests r on r.company_id = c.id where c.id = $1`,
+      [empresa!.id],
+    );
+    expect(sinExpediente).toEqual({ estado: "en_alta", solicitud: "pendiente" });
+
+    // serv-N18: «Revisar 😀» son 9 caracteres (10 unidades UTF-16: el navegador lo deja pasar). El servidor lo
+    // rechaza y el diálogo sigue abierto con lo escrito, el aviso ligado al campo y el foco en él; corregido, rechaza.
+    await page.goto("/operacion/aprobaciones");
+    await decision(page, PROSPECTO.razonSocial).getByRole("button", { name: "Rechazar" }).click();
+    const dialogo = page.getByRole("dialog", { name: "Rechazar" });
+    const motivo = dialogo.getByLabel("Motivo (de 10 a 500 caracteres)");
+    await motivo.fill("Revisar 😀");
+    await dialogo.getByRole("button", { name: "Rechazar" }).click();
+    // El resumen arriba del diálogo y el mismo texto junto al campo, que es su descripción (onceava revisión).
+    await expect(dialogo.locator(".operacion-aviso")).toContainText("El motivo lleva al menos 10 caracteres");
+    await expect(motivo).toHaveValue("Revisar 😀");
+    await expect(motivo).toHaveAttribute("aria-invalid", "true");
+    await expect(motivo).toHaveAttribute("aria-describedby", /-aviso-campo$/);
+    await expect(dialogo.locator(`[id="${await motivo.getAttribute("aria-describedby")}"]`)).toContainText("al menos 10 caracteres");
+    await expect(motivo).toBeFocused();
+    expect(new URL(page.url()).search).toBe("");
+    expect(await solicitudes()).toBe(1);
+    expect((await consultar<{ estado: string }>("select estado from company_activation_requests where company_id = $1", [empresa!.id]))[0]?.estado).toBe("pendiente");
+    await motivo.fill("Falta el expediente aprobado de la empresa");
+    await dialogo.getByRole("button", { name: "Rechazar" }).click();
+    await page.waitForURL(/aviso=decision_registrada/);
+    expect((await consultar<{ estado: string }>("select estado from company_activation_requests where company_id = $1", [empresa!.id]))[0]?.estado).toBe("rechazada");
+
+    // Faro E2E (sembrada con expediente aprobado y riesgo vigente; la activación la pidió op1).
+    // Con el factor de hace 31 minutos, Aprobación no decide y la base no cambia.
+    const [faro] = await consultar<{ id: string; estado: string }>("select id, estado from companies where rfc = $1", [FARO.rfc]);
+    expect(faro!.estado).toBe("en_alta");
+    await sesionDe(context, CORREOS.op2, { superficie: "sofipo", factorHaceMinutos: 31 });
+    await page.goto("/operacion/aprobaciones");
+    await decision(page, FARO.razonSocial).getByRole("button", { name: "Aprobar" }).click();
+    await expect(page.getByText("Para decidir, tu segundo factor debe ser de los últimos 30 minutos. Sal y vuelve a entrar.")).toBeVisible();
+    const [pendiente] = await consultar<{ estado: string }>("select estado from companies where id = $1", [faro!.id]);
+    expect(pendiente!.estado).toBe("en_alta");
+
+    // Con factor reciente, un doble clic decide una sola vez.
+    await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+    await page.goto("/operacion/aprobaciones");
+    const aprobar = await dobleClic(decision(page, FARO.razonSocial).getByRole("button", { name: "Aprobar" }), { esperar: /aviso=decision_registrada/ });
+    expect(aprobar.envios).toBe(1);
+    const [decidida] = await consultar<{ estado: string; requested_by: string; decided_by: string; empresa: string }>(
+      `select r.estado, r.requested_by, r.decided_by, c.estado as empresa from company_activation_requests r
+       join companies c on c.id = r.company_id where r.company_id = $1`,
+      [faro!.id],
+    );
+    expect(decidida).toEqual({ estado: "aprobada", requested_by: op1, decided_by: op2, empresa: "activa" });
+    expect(await contar("select 1 from audit_log where accion = 'activacion_aprobada' and company_id = $1", [faro!.id])).toBe(1);
+    expect(await contar("select 1 from company_state_history where company_id = $1 and estado_nuevo = 'activa'", [faro!.id])).toBe(1);
     expect(errores).toEqual([]);
-  });
-
-  test("la descarga del expediente llega aislada (sandbox) y la pantalla del expediente conserva la política general", async ({ page, context }) => {
-    const [faro] = await consultar<{ id: string }>("select id from companies where rfc = $1", [FARO.rfc]);
-    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
-    // Un documento que no es de la empresa: 404 sin evento, pero la política de next.config ya aplica a la ruta.
-    const descargas = () => contar("select 1 from audit_log where company_id = $1 and accion = 'expediente_documento_descargado'", [faro!.id]);
-    const antes = await descargas();
-    const descarga = await page.request.get(`/operacion/clientes/${faro!.id}/expediente/documento/${crypto.randomUUID()}`);
-    expect(descarga.status()).toBe(404);
-    expect(descarga.headers()["content-security-policy"]).toBe("sandbox; default-src 'none'; frame-ancestors 'none'");
-    expect(await descargas()).toBe(antes);
-    const pantalla = await page.request.get(`/operacion/clientes/${faro!.id}/expediente`);
-    expect(pantalla.status()).toBe(200);
-    expect(pantalla.headers()["content-security-policy"]).toBe("frame-ancestors 'none'");
-    // Humo-N6 del preview: la política de permisos va en todas las respuestas, también en la descarga y fuera de Operación.
-    const permisos =
-      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), display-capture=(), publickey-credentials-get=(self), publickey-credentials-create=(self)";
-    const inicio = await page.request.get("/");
-    for (const [donde, respuesta] of [["pantalla", pantalla], ["descarga", descarga], ["inicio", inicio]] as const) {
-      expect(respuesta.headers()["permissions-policy"], donde).toBe(permisos);
-      expect(respuesta.headers()["referrer-policy"], donde).toBe("same-origin");
-    }
   });
 
   test("doceava: prospecto, invitación, comisión y alertas vuelven con lo capturado y su campo marcado; el resumen de arriba no se queda", async ({ page, context }) => {
@@ -1347,80 +1144,78 @@ test.describe("doceava con JavaScript: empresas propias de la siembra", () => {
     }
   });
 
-  // Humo-N9 del preview: en un formulario de dos columnas, el aviso de un rechazo caía en una columna angosta (unos 170
-  // px) y empujaba «Razón social» a la derecha. El aviso va en su propio renglón, a lo ancho del formulario; el primer
-  // campo se queda en la orilla y los campos anchos ocupan la fila. Igual en los formularios en línea de una tarjeta
-  // (la coincidencia de Cima) y en la decisión de una recuperación. Solo rechaza: no deja nada en la base.
-  test("humo-N9: tras un rechazo, el aviso mide el ancho de su formulario y los campos no se mueven: prospecto (1440 y 390), documento, coincidencia y recuperación", async ({ page, context }) => {
-    /** `primero`: el campo que abre el formulario, en la orilla y debajo del aviso; `anchos`: los que ocupan la fila. */
-    const aLoAncho = async (forma: Locator, aviso: string, primero: string, anchos: string[], nombre: string) => {
-      const formulario = (await forma.boundingBox())!;
-      const caja = (await page.locator(`[id="${aviso}"]`).boundingBox())!;
-      const deCampo = async (campo: string) => (await forma.locator(`.campo:has(${campo})`).boundingBox())!;
-      const medidas = { formulario, aviso: caja, ...Object.fromEntries(await Promise.all([primero, ...anchos].map(async (campo) => [campo, await deCampo(campo)]))) };
-      console.log(`MEDIDA ${nombre}: ${JSON.stringify(medidas)}`);
-      if (!process.env.E2E_SIN_CAPTURAS) await page.screenshot({ path: test.info().outputPath(`${nombre}.png`) });
-      expect(Math.abs(caja.x - formulario.x), `${nombre}: el aviso empieza en la orilla del formulario`).toBeLessThanOrEqual(1);
-      expect(Math.abs(caja.width - formulario.width), `${nombre}: el aviso mide el ancho del formulario`).toBeLessThanOrEqual(1);
-      const abre = medidas[primero] as { x: number; y: number };
-      expect(Math.abs(abre.x - formulario.x), `${nombre}: ${primero} se queda en la orilla del formulario`).toBeLessThanOrEqual(1);
-      expect(abre.y, `${nombre}: ${primero} va debajo del aviso`).toBeGreaterThanOrEqual(caja.y + caja.height);
-      for (const campo of anchos) {
-        expect(Math.abs((medidas[campo] as { width: number }).width - formulario.width), `${nombre}: ${campo} ocupa la fila entera`).toBeLessThanOrEqual(1);
+  // Ronda 13 (doce-N1): con una versión pendiente, pedir otra para la misma empresa y tipo chocaba con
+  // `company_commissions_una_pendiente` y la pantalla decía «La base no respondió». Ahora vuelve en su formulario con
+  // lo capturado, el tipo marcado y su mensaje, con y sin JavaScript; sigue habiendo una sola pendiente.
+  test("doce-N1: pedir una comisión con otra pendiente para la misma empresa y tipo dice por qué, con y sin JavaScript", async ({ page, context, browser }) => {
+    const bahia = await empresaDe("BEE190101CD2");
+    const pendientes = () => contar("select 1 from company_commissions where company_id = $1 and tipo = 'spei' and estado = 'pendiente'", [bahia]);
+    const manana = new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10);
+    const llenar = async (p: Page, valor: string) => {
+      await p.goto("/operacion/comisiones");
+      await p.locator("#companyId").selectOption(bahia);
+      await p.locator("#tipo").selectOption("spei");
+      await p.locator("#valor").fill(valor);
+      await p.locator("#vigenteDesde").fill(manana);
+    };
+    const texto = "Ya hay una versión pendiente de esta comisión para la empresa. Espera a que se decida antes de pedir otra.";
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await llenar(page, "500");
+    await page.getByRole("button", { name: "Pedir autorización" }).click();
+    await page.waitForURL(/aviso=comision_solicitada/);
+    expect(await pendientes()).toBe(1);
+
+    await llenar(page, "650");
+    await rechazado(page, page.getByRole("button", { name: "Pedir autorización" }), "aviso-comision");
+    await mensajeJunto(page, "#tipo", texto, "aviso-comision-campo");
+    for (const [campo, valor] of [["#companyId", bahia], ["#tipo", "spei"], ["#valor", "650"], ["#vigenteDesde", manana]]) await expect(page.locator(campo!), campo).toHaveValue(valor!);
+    await expect(page.locator("#aviso-comision")).not.toContainText("La base no respondió");
+
+    const sinJs = await browser.newContext({ baseURL: ORIGEN, javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+    try {
+      await sesionDe(sinJs, CORREOS.op1, { superficie: "sofipo" });
+      const otra = await sinJs.newPage();
+      await llenar(otra, "700");
+      await rechazado(otra, otra.getByRole("button", { name: "Pedir autorización" }), "aviso-comision", true);
+      await mensajeJunto(otra, "#tipo", texto, "aviso-comision-campo");
+      await expect(otra.locator("#valor")).toHaveValue("700");
+    } finally {
+      await sinJs.close();
+    }
+    expect(await pendientes()).toBe(1);
+  });
+
+  // Ronda 13 (doce-N2, seguridad): los catálogos de avisos se leían con `catalogo[clave]` sin Object.hasOwn; con
+  // `?aviso=constructor` devolvían la función Object y la página daba 500. Las cinco lecturas usan `deCatalogo`.
+  test("doce-N2: ?aviso=constructor y ?aviso=toString no tumban ninguna de las cinco páginas que leen un aviso de la dirección", async ({ page, context }) => {
+    const pedir = async (ruta: string) => {
+      for (const clave of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
+        const respuesta = await page.request.get(`${ruta}?aviso=${clave}`, { maxRedirects: 0 });
+        const cuerpo = await respuesta.text();
+        // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+        expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+        expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
       }
     };
-
+    // Sin sesión: las dos entradas.
+    await pedir("/entrar");
+    await pedir("/operacion/entrar");
+    // Con sesión de Operación: la seguridad de la cuenta, Clientes (el aviso de la página) y el expediente (los campos).
     await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-    for (const [ancho, alto] of [[1440, 900], [390, 844]] as const) {
-      await page.setViewportSize({ width: ancho, height: alto });
-      await page.goto("/operacion/clientes");
-      await page.getByLabel("Razón social").fill("Puerto Nueve E2E");
-      await page.getByLabel("RFC").fill("XAXX010101000");
-      await page.getByLabel("Código postal").fill("64000");
-      await rechazado(page, page.getByRole("button", { name: "Registrar prospecto" }), "aviso-prospecto");
-      await aLoAncho(page.locator("form:has(#razonSocial)"), "aviso-prospecto", "#razonSocial", ["#razonSocial"], `n9-prospecto-${ancho}`);
-    }
-    expect(await contar("select 1 from companies where razon_social = 'Puerto Nueve E2E'")).toBe(0);
-
-    const duna = await empresaDe(DUNA.rfc);
-    const documentos = () => contar("select 1 from kyb_documentos where company_id = $1", [duna]);
-    const antes = await documentos();
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(`/operacion/clientes/${duna}/expediente`);
-    await page.locator("#doc-emitido").fill("2015-03-01");
-    await page.locator("#doc-detalle").fill("Escritura 1,204, Notaría 9 de Monterrey");
-    await page.locator("#doc-archivo").setInputFiles({ name: "acta-n9.pdf", mimeType: "application/pdf", buffer: Buffer.from("esto no es un PDF") });
-    await rechazado(page, page.getByRole("button", { name: "Guardar documento" }), "aviso-documento");
-    await aLoAncho(page.locator("form:has(#doc-archivo)"), "aviso-documento", "#doc-tipo", ["#doc-detalle", "#doc-archivo"], "n9-documento-1440");
-    expect(await documentos()).toBe(antes);
-
-    // La coincidencia de Cima en Cumplimiento, donde la tarjeta es ancha y el aviso no llena el renglón: un motivo corto.
-    const cima = await coincidenciaDe(CIMA.rfc, "pendiente");
-    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
-    await page.goto("/operacion/cumplimiento");
-    await page.locator(`[id="resolucion-${cima}"]`).selectOption("falso_positivo");
-    await page.locator(`[id="motivo-${cima}"]`).fill("Revisar 😀");
-    const tarjetaCima = page.locator(`form:has([id="motivo-${cima}"])`);
-    await rechazado(page, tarjetaCima.getByRole("button", { name: "Registrar dictamen" }), `aviso-coincidencia-${cima}`);
-    await aLoAncho(tarjetaCima, `aviso-coincidencia-${cima}`, `[id="resolucion-${cima}"]`, [], "n9-coincidencia-1440");
-    expect(await contar("select 1 from lpb_coincidencias where id = $1 and estado = 'pendiente'", [cima])).toBe(1);
-
-    // La decisión de una recuperación: rechazar sin nota. Al final se rechaza con su nota: ninguna queda abierta.
-    const [recuperacion] = await recuperacionesPendientes([CORREOS.diego]);
-    await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
-    await page.goto("/operacion/recuperaciones");
-    const decision = page.locator(`form:has([id="nota-${recuperacion}"])`);
-    await rechazado(page, decision.getByRole("button", { name: "Rechazar" }), `aviso-recuperacion-${recuperacion}`);
-    await aLoAncho(decision, `aviso-recuperacion-${recuperacion}`, `[id="verificacion-${recuperacion}"]`, [], "n9-recuperacion-1440");
-    await page.locator(`[id="nota-${recuperacion}"]`).fill("No se pudo confirmar la identidad por videollamada.");
-    await decision.getByRole("button", { name: "Rechazar" }).click();
-    await expect(decision).toHaveCount(0);
+    await pedir("/entrar/seguridad");
+    await pedir("/operacion/clientes");
+    await pedir(`/operacion/clientes/${await empresaDe(DUNA.rfc)}/expediente`);
+    // Y en el navegador: la página se pinta con su título, sin campo marcado.
+    await page.goto(`/operacion/clientes/${await empresaDe(DUNA.rfc)}/expediente?aviso=constructor`);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.locator('[aria-invalid="true"]')).toHaveCount(0);
   });
 });
 
 // Doceava revisión: los 17 datos de Duna y la recuperación solo rechazan (la recuperación se cierra al final); la
-// coincidencia de Brisa se confirma aquí y, sin JavaScript, se le anota el folio. Va después de «Operación SOFIPO»,
-// que necesita el caso de Brisa abierto.
+// coincidencia de Brisa se confirma aquí y, sin JavaScript, se le anota el folio; la de Cima se resuelve al final. Va
+// después de la doceava sin JavaScript y de «Brisa y Cima», que necesitan los dos casos abiertos.
 test.describe("doceava: coincidencias, datos generales y recuperaciones", () => {
   test.describe.configure({ mode: "serial" });
 
@@ -1551,5 +1346,384 @@ test.describe("doceava: coincidencias, datos generales y recuperaciones", () => 
       await expect(page.locator(`[id="aviso-coincidencia-${cima}"]`)).toHaveCount(0);
       expect(await contar("select 1 from lpb_coincidencias where id = $1 and estado = 'pendiente'", [cima])).toBe(1);
     });
+  });
+
+  // Humo-N9 del preview: en un formulario de dos columnas, el aviso de un rechazo caía en una columna angosta (unos 170
+  // px) y empujaba «Razón social» a la derecha. El aviso va en su propio renglón, a lo ancho del formulario; el primer
+  // campo se queda en la orilla y los campos anchos ocupan la fila. Igual en los formularios en línea de una tarjeta
+  // (la coincidencia de Cima) y en la decisión de una recuperación. Solo rechaza: no deja nada en la base.
+  test("humo-N9: tras un rechazo, el aviso mide el ancho de su formulario y los campos no se mueven: prospecto (1440 y 390), documento, coincidencia, recuperación y folio", async ({ page, context }) => {
+    /** `primero`: el campo que abre el formulario, en la orilla y debajo del aviso; `anchos`: los que ocupan la fila. */
+    const aLoAncho = async (forma: Locator, aviso: string, primero: string, anchos: string[], nombre: string) => {
+      const formulario = (await forma.boundingBox())!;
+      const caja = (await page.locator(`[id="${aviso}"]`).boundingBox())!;
+      const deCampo = async (campo: string) => (await forma.locator(`.campo:has(${campo})`).boundingBox())!;
+      const medidas = { formulario, aviso: caja, ...Object.fromEntries(await Promise.all([primero, ...anchos].map(async (campo) => [campo, await deCampo(campo)]))) };
+      console.log(`MEDIDA ${nombre}: ${JSON.stringify(medidas)}`);
+      if (!process.env.E2E_SIN_CAPTURAS) await page.screenshot({ path: test.info().outputPath(`${nombre}.png`) });
+      expect(Math.abs(caja.x - formulario.x), `${nombre}: el aviso empieza en la orilla del formulario`).toBeLessThanOrEqual(1);
+      expect(Math.abs(caja.width - formulario.width), `${nombre}: el aviso mide el ancho del formulario`).toBeLessThanOrEqual(1);
+      const abre = medidas[primero] as { x: number; y: number };
+      expect(Math.abs(abre.x - formulario.x), `${nombre}: ${primero} se queda en la orilla del formulario`).toBeLessThanOrEqual(1);
+      expect(abre.y, `${nombre}: ${primero} va debajo del aviso`).toBeGreaterThanOrEqual(caja.y + caja.height);
+      for (const campo of anchos) {
+        expect(Math.abs((medidas[campo] as { width: number }).width - formulario.width), `${nombre}: ${campo} ocupa la fila entera`).toBeLessThanOrEqual(1);
+      }
+    };
+
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    for (const [ancho, alto] of [[1440, 900], [390, 844]] as const) {
+      await page.setViewportSize({ width: ancho, height: alto });
+      await page.goto("/operacion/clientes");
+      await page.getByLabel("Razón social").fill("Puerto Nueve E2E");
+      await page.getByLabel("RFC").fill("XAXX010101000");
+      await page.getByLabel("Código postal").fill("64000");
+      await rechazado(page, page.getByRole("button", { name: "Registrar prospecto" }), "aviso-prospecto");
+      await aLoAncho(page.locator("form:has(#razonSocial)"), "aviso-prospecto", "#razonSocial", ["#razonSocial"], `n9-prospecto-${ancho}`);
+    }
+    expect(await contar("select 1 from companies where razon_social = 'Puerto Nueve E2E'")).toBe(0);
+
+    const duna = await empresaDe(DUNA.rfc);
+    const documentos = () => contar("select 1 from kyb_documentos where company_id = $1", [duna]);
+    const antes = await documentos();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/operacion/clientes/${duna}/expediente`);
+    await page.locator("#doc-emitido").fill("2015-03-01");
+    await page.locator("#doc-detalle").fill("Escritura 1,204, Notaría 9 de Monterrey");
+    await page.locator("#doc-archivo").setInputFiles({ name: "acta-n9.pdf", mimeType: "application/pdf", buffer: Buffer.from("esto no es un PDF") });
+    await rechazado(page, page.getByRole("button", { name: "Guardar documento" }), "aviso-documento");
+    await aLoAncho(page.locator("form:has(#doc-archivo)"), "aviso-documento", "#doc-tipo", ["#doc-detalle", "#doc-archivo"], "n9-documento-1440");
+    expect(await documentos()).toBe(antes);
+
+    // La coincidencia de Cima en Cumplimiento, donde la tarjeta es ancha y el aviso no llena el renglón: un motivo corto.
+    const cima = await coincidenciaDe(CIMA.rfc, "pendiente");
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.goto("/operacion/cumplimiento");
+    await page.locator(`[id="resolucion-${cima}"]`).selectOption("falso_positivo");
+    await page.locator(`[id="motivo-${cima}"]`).fill("Revisar 😀");
+    const tarjetaCima = page.locator(`form:has([id="motivo-${cima}"])`);
+    await rechazado(page, tarjetaCima.getByRole("button", { name: "Registrar dictamen" }), `aviso-coincidencia-${cima}`);
+    await aLoAncho(tarjetaCima, `aviso-coincidencia-${cima}`, `[id="resolucion-${cima}"]`, [], "n9-coincidencia-1440");
+    expect(await contar("select 1 from lpb_coincidencias where id = $1 and estado = 'pendiente'", [cima])).toBe(1);
+
+    // La decisión de una recuperación: rechazar sin nota. Al final se rechaza con su nota: ninguna queda abierta.
+    const [recuperacion] = await recuperacionesPendientes([CORREOS.diego]);
+    await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+    await page.goto("/operacion/recuperaciones");
+    const decision = page.locator(`form:has([id="nota-${recuperacion}"])`);
+    await rechazado(page, decision.getByRole("button", { name: "Rechazar" }), `aviso-recuperacion-${recuperacion}`);
+    await aLoAncho(decision, `aviso-recuperacion-${recuperacion}`, `[id="verificacion-${recuperacion}"]`, [], "n9-recuperacion-1440");
+    await page.locator(`[id="nota-${recuperacion}"]`).fill("No se pudo confirmar la identidad por videollamada.");
+    await decision.getByRole("button", { name: "Rechazar" }).click();
+    await expect(decision).toHaveCount(0);
+
+    // Ronda 13 (delta-N1): el folio de Brisa (confirmada y sin folio) rechazado a 1440. El mensaje junto a «Presentado el»
+    // ensanchaba su campo y los campos cambiaban de columna; ahora cada uno se queda donde estaba.
+    const brisa = await coincidenciaDe(BRISA.rfc, "confirmada");
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/operacion/cumplimiento");
+    const tarjetaFolio = page.locator(`form:has([id="folio-${brisa}"])`);
+    const columnas = async () => Promise.all(["folio", "presentado", "aviso"].map(async (campo) => (await tarjetaFolio.locator(`.campo:has([id="${campo}-${brisa}"])`).boundingBox())!));
+    const columnasAntes = await columnas();
+    const anotar = tarjetaFolio.getByRole("button", { name: "Anotar folio" });
+    const altoDelBoton = (await anotar.boundingBox())!.height;
+    await page.locator(`[id="folio-${brisa}"]`).fill("UIF-2026-0412");
+    await page.locator(`[id="presentado-${brisa}"]`).fill(new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10));
+    await rechazado(page, tarjetaFolio.getByRole("button", { name: "Anotar folio" }), `aviso-folio-${brisa}`);
+    await aLoAncho(tarjetaFolio, `aviso-folio-${brisa}`, `[id="folio-${brisa}"]`, [], "n9-folio-1440");
+    const columnasDespues = await columnas();
+    console.log(`MEDIDA n9-folio-columnas: ${JSON.stringify({ antes: columnasAntes, despues: columnasDespues })}`);
+    for (const [indice, campo] of ["folio", "presentado", "aviso"].entries()) {
+      expect(Math.abs(columnasDespues[indice]!.x - columnasAntes[indice]!.x), `${campo}: la misma columna`).toBeLessThanOrEqual(1);
+      expect(Math.abs(columnasDespues[indice]!.width - columnasAntes[indice]!.width), `${campo}: el mismo ancho`).toBeLessThanOrEqual(1);
+    }
+    // Los controles terminan a la misma altura aunque solo uno lleve mensaje, y el botón no se estira con el campo.
+    const fondos = await Promise.all(["folio", "presentado", "aviso"].map(async (campo) => {
+      const caja = (await page.locator(`[id="${campo}-${brisa}"]`).boundingBox())!;
+      return caja.y + caja.height;
+    }));
+    const boton = (await anotar.boundingBox())!;
+    console.log(`MEDIDA n9-folio-fondos: ${JSON.stringify({ fondos, boton, altoDelBoton })}`);
+    for (const fondo of fondos) expect(Math.abs(fondo - fondos[1]!), "los controles terminan a la misma altura").toBeLessThanOrEqual(1);
+    expect(Math.abs(boton.height - altoDelBoton), "el botón conserva su alto").toBeLessThanOrEqual(1);
+    expect(Math.abs(boton.y + boton.height - fondos[1]!), "el botón termina con los controles").toBeLessThanOrEqual(1);
+    expect(await contar("select 1 from lpb_coincidencias where id = $1 and reporte_folio is not null", [brisa])).toBe(0);
+  });
+
+  // Ronda 13 (doce-N3): otra pestaña resolvió la coincidencia de Cima con la misma resolución. El segundo dictamen salía
+  // como éxito y su motivo no se guardaba; ahora dice que ya se resolvió, arriba de la página (su tarjeta ya no tiene
+  // formulario), y lo guardado no cambia. Va al final: después, Cima ya no tiene caso abierto.
+  test("doce-N3: si otra pestaña ya resolvió la coincidencia igual, el segundo dictamen dice que ya se resolvió y no guarda su motivo", async ({ page, context }) => {
+    const cima = await coincidenciaDe(CIMA.rfc, "pendiente");
+    const primero = "El RFC de la lista es de otra persona moral.";
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/operacion/lpb");
+    await page.locator(`[id="resolucion-${cima}"]`).selectOption("falso_positivo");
+    await page.locator(`[id="motivo-${cima}"]`).fill("Homónimo revisado desde la primera pestaña.");
+    const otra = await context.newPage();
+    await otra.goto("/operacion/lpb");
+    await otra.locator(`[id="resolucion-${cima}"]`).selectOption("falso_positivo");
+    await otra.locator(`[id="motivo-${cima}"]`).fill(primero);
+    await otra.locator(`form:has([id="motivo-${cima}"])`).getByRole("button", { name: "Registrar dictamen" }).click();
+    await otra.waitForURL(/aviso=coincidencia_resuelta/);
+    await otra.close();
+
+    const direccion = page.url();
+    const [respuesta] = await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST"),
+      page.locator(`form:has([id="motivo-${cima}"])`).getByRole("button", { name: "Registrar dictamen" }).click(),
+    ]);
+    expect(respuesta.status()).toBe(200);
+    const aviso = page.locator("#aviso-rechazo");
+    await expect(aviso).toHaveText("Esa coincidencia ya se resolvió. Tu dictamen y tu motivo no se guardaron.");
+    await expect(aviso).toHaveAttribute("data-aviso", "coincidencia_ya_resuelta");
+    await expect(aviso.locator(".alerta")).toHaveAttribute("role", "alert");
+    await expect(page.locator(`[id="motivo-${cima}"]`)).toHaveCount(0);
+    expect(page.url()).toBe(direccion);
+    const [guardado] = await consultar<{ motivo_resolucion: string }>("select motivo_resolucion from lpb_coincidencias where id = $1", [cima]);
+    expect(guardado!.motivo_resolucion).toBe(primero);
+    expect(await contar("select 1 from audit_log where accion = 'lpb_coincidencia_resuelta' and identificador = $1", [cima])).toBe(1);
+  });
+});
+
+// La entrada de Operación con contraseña y código y, sin JavaScript, el alta rechazada y las dos entradas.
+test.describe("Operación SOFIPO: entrada", () => {
+  test.describe.configure({ mode: "serial" });
+
+  test("entrada SOFIPO: contraseña y código; un código malo no abre y el doble clic abre una sola sesión", async ({ page }) => {
+    const errores = vigilarConsola(page);
+    const op1 = await idDe(CORREOS.op1);
+    // Entrar puede cerrar sesiones viejas de la misma persona: se cuentan las que nacen en esta prueba.
+    const desde = (await consultar<{ desde: string }>("select now()::text as desde"))[0]!.desde;
+    const sesiones = () => contar("select 1 from sessions where user_id = $1 and superficie = 'sofipo' and creada_en >= $2::timestamptz", [op1, desde]);
+    const antes = await sesiones();
+    expect(antes).toBe(0);
+
+    await page.goto("/operacion/entrar");
+    await page.getByLabel("Correo").fill(CORREOS.op1);
+    await page.getByLabel("Contraseña", { exact: true }).fill(CLAVE);
+    const contrasena = await dobleClic(page.getByRole("button", { name: "Continuar" }), { esperar: /\/operacion\/continuar/ });
+    expect(contrasena.envios).toBe(1);
+
+    await page.getByLabel("Código de la app autenticadora").fill("000000");
+    await page.getByRole("button", { name: "Entrar con el código" }).click();
+    await expect(page.locator("#factor-error")).toBeVisible();
+    expect(await sesiones()).toBe(antes);
+
+    await page.getByLabel("Código de la app autenticadora").fill(await codigoTotp(CORREOS.op1));
+    const codigo = await dobleClic(page.getByRole("button", { name: "Entrar con el código" }), { esperar: /\/operacion$/ });
+    expect(codigo.envios).toBe(1);
+    expect(await sesiones()).toBe(antes + 1);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    expect(errores).toEqual([]);
+  });
+
+  test.describe("sin JavaScript", () => {
+    test.use({ javaScriptEnabled: false });
+
+    // serv-nuevo-7: con Referrer-Policy: no-referrer, el envío nativo de un formulario lleva «Origin: null» y Next
+    // rechaza la acción con un 500. Pasa sin JavaScript y al hacer clic antes de que la página hidrate.
+    test("sin JavaScript los formularios responden: el alta vuelve con su aviso y lo capturado (200) y las dos entradas dan el suyo", async ({ page, context }) => {
+      const post = () => page.waitForResponse((respuesta) => respuesta.request().method() === "POST");
+      await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+      await page.goto("/operacion/clientes");
+      await page.getByLabel("Razón social").fill("Sin Script\u0085Uno SA de CV");
+      await page.getByLabel("RFC").fill("SSU010101AB1");
+      await page.getByLabel("Código postal").fill("06600");
+      const [alta] = await Promise.all([post(), page.getByRole("button", { name: "Registrar prospecto" }).click()]);
+      // La causa: con «no-referrer» el navegador manda «Origin: null» en el envío nativo del formulario.
+      expect(await alta.request().headerValue("origin")).toBe(new URL(alta.url()).origin);
+      // Doceava: el rechazo responde con la página (200) en la misma dirección, el aviso en el formulario y lo capturado.
+      expect(alta.status()).toBe(200);
+      expect(page.url()).not.toContain("aviso=");
+      await expect(page.locator("#aviso-prospecto")).toContainText("La razón social trae un carácter invisible");
+      await expect(page.getByLabel("RFC")).toHaveValue("SSU010101AB1");
+      await expect(page.getByLabel("Código postal")).toHaveValue("06600");
+      await mensajeJunto(page, "#razonSocial", "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano.", "aviso-prospecto-campo");
+      expect(await contar("select 1 from companies where rfc = $1", ["SSU010101AB1"])).toBe(0);
+
+      // La entrada de Operación y la del portal del cliente, sin sesión: la contraseña equivocada da su aviso ahí mismo.
+      await context.clearCookies();
+      for (const ruta of ["/operacion/entrar", "/entrar"]) {
+        await page.goto(ruta);
+        await page.getByLabel("Correo").fill("nadie-sin-script@lever-e2e.mx");
+        await page.getByLabel("Contraseña", { exact: true }).fill("no-es-la-clave-1");
+        const [entrada] = await Promise.all([post(), page.getByRole("button", { name: "Continuar" }).click()]);
+        expect(await entrada.request().headerValue("origin"), ruta).toBe(new URL(entrada.url()).origin);
+        expect(entrada.status(), ruta).toBe(200);
+        await expect(page.locator("#entrar-error"), ruta).toContainText("El correo o la contraseña no coinciden.");
+      }
+    });
+  });
+});
+
+// Recuperaciones del segundo factor: Paula pide la suya y otra persona la aprueba; tres pendientes (Diego, Sol y
+// Ernesto) se rechazan al final. No usa empresas.
+test.describe("Operación SOFIPO: recuperaciones", () => {
+  test.describe.configure({ mode: "serial" });
+
+  test("«Perdí el segundo factor»: Recuperaciones pide «Confirma que eres tú», otra persona aprueba y la clienta registra un factor nuevo", async ({ page, context }) => {
+    const errores = vigilarConsola(page);
+    const paula = await idDe(CORREOS.perdida);
+    const op2 = await idDe(CORREOS.op2);
+    const recuperaciones = () => contar("select 1 from auth_recuperaciones where user_id = $1", [paula]);
+    const [totpViejo] = await consultar<{ id: string }>(
+      "select id from auth_totp where user_id = $1 and confirmado_en is not null and revocado_en is null",
+      [paula],
+    );
+    expect(totpViejo).toBeTruthy();
+    expect(await recuperaciones()).toBe(0);
+
+    // La clienta entra con su contraseña y, sin código, pide ayuda.
+    await page.goto("/entrar");
+    await page.getByLabel("Correo").fill(CORREOS.perdida);
+    await page.getByLabel("Contraseña", { exact: true }).fill(CLAVE);
+    await page.getByRole("button", { name: "Continuar" }).click();
+    await page.waitForURL(/\/entrar\/continuar/);
+    await page.getByRole("button", { name: "Perdí el segundo factor" }).click();
+    await page.getByLabel("Qué pasó").fill("Perdí el teléfono con la app autenticadora.");
+    const pedir = await dobleClic(page.getByRole("button", { name: "Pedir recuperación" }), { esperar: /\/entrar\?aviso=recuperacion/ });
+    expect(pedir.envios).toBe(1);
+    await expect(page.getByText("Tu solicitud quedó en revisión.")).toBeVisible();
+    expect(await recuperaciones()).toBe(1);
+
+    // En Operación, con el factor de hace 6 minutos, primero «Confirma que eres tú» (vale cinco).
+    await context.clearCookies();
+    await sesionDe(context, CORREOS.op2, { superficie: "sofipo", factorHaceMinutos: 6 });
+    await page.goto("/operacion/recuperaciones");
+    const solicitud = page.locator("li.decision").filter({ hasText: CORREOS.perdida });
+    await expect(page.getByRole("heading", { name: "Confirma que eres tú" })).toBeVisible();
+    await solicitud.getByLabel("Cómo verificaste la identidad").selectOption("videollamada");
+    await solicitud.getByRole("button", { name: "Aprobar" }).click();
+    // El aviso vuelve a la tarjeta (doceava); el de respaldo de arriba (formulario que ya no se pinta) queda oculto.
+    await expect(solicitud.getByText("Confirma que eres tú con tu segundo factor antes de decidir. Vale cinco minutos.")).toBeVisible();
+    await expect(page.locator("#aviso-rechazo")).toBeHidden();
+    const [sinDecidir] = await consultar<{ estado: string }>("select estado from auth_recuperaciones where user_id = $1", [paula]);
+    expect(sinDecidir!.estado).toBe("solicitada");
+
+    await page.locator("#confirmar-codigo").fill(await codigoTotp(CORREOS.op2));
+    await page.getByRole("button", { name: "Confirmar con el código" }).click();
+    await expect(page.getByRole("heading", { name: "Confirma que eres tú" })).toHaveCount(0);
+    await solicitud.getByLabel("Cómo verificaste la identidad").selectOption("videollamada");
+    const aprobar = await dobleClic(solicitud.getByRole("button", { name: "Aprobar" }), { esperar: /aviso=decision_registrada/ });
+    expect(aprobar.envios).toBe(1);
+    const [aprobada] = await consultar<{ estado: string; resuelta_por: string; verificacion: string }>(
+      "select estado, resuelta_por, verificacion from auth_recuperaciones where user_id = $1",
+      [paula],
+    );
+    expect(aprobada).toEqual({ estado: "aprobada", resuelta_por: op2, verificacion: "videollamada" });
+
+    // La clienta vuelve a entrar y registra un factor nuevo; el viejo deja de servir.
+    await context.clearCookies();
+    await page.goto("/entrar");
+    await page.getByLabel("Correo").fill(CORREOS.perdida);
+    await page.getByLabel("Contraseña", { exact: true }).fill(CLAVE);
+    await page.getByRole("button", { name: "Continuar" }).click();
+    await page.waitForURL(/\/entrar\/continuar/);
+    await expect(page.getByRole("heading", { name: "Registra un factor nuevo." })).toBeVisible();
+    const semilla = (await page.locator(".arco-semilla").innerText()).trim();
+    await page.getByLabel("Código que muestra la app").fill(codigoDeSemilla(semilla));
+    const confirmar = await dobleClic(page.getByRole("button", { name: "Confirmar el código" }));
+    expect(confirmar.envios).toBe(1);
+    await page.getByRole("checkbox", { name: "Ya los guardé en un lugar seguro" }).check();
+    await page.getByRole("button", { name: "Entrar al portal" }).click();
+    await expect(page.getByRole("navigation", { name: "Secciones" })).toBeVisible();
+    expect(await contar("select 1 from auth_totp where id = $1 and revocado_en is not null", [totpViejo!.id])).toBe(1);
+    expect(await contar("select 1 from auth_totp where user_id = $1 and confirmado_en is not null and revocado_en is null", [paula])).toBe(1);
+    expect(await contar("select 1 from auth_recuperaciones where user_id = $1 and cumplida_en is not null", [paula])).toBe(1);
+    expect(errores).toEqual([]);
+  });
+
+  test("con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca solo la nota de esa tarjeta", async ({ page, context }) => {
+    const errores = vigilarConsola(page);
+    const personas = [CORREOS.diego, CORREOS.sol, CORREOS.ernesto];
+    const ids = await recuperacionesPendientes(personas);
+    await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+    await page.goto("/operacion/recuperaciones");
+    const tarjeta = (correo: string) => page.locator("li.decision").filter({ hasText: correo });
+    const nota = (indice: number) => page.locator(`[id="nota-${ids[indice]}"]`);
+    for (const correo of personas) await expect(tarjeta(correo)).toBeVisible();
+
+    // Doceava: el aviso vuelve a esa tarjeta, con el método elegido; la dirección no cambia.
+    await page.locator(`[id="verificacion-${ids[1]}"]`).selectOption("videollamada");
+    await nota(1).fill("   ");
+    await rechazado(page, tarjeta(CORREOS.sol).getByRole("button", { name: "Rechazar" }), `aviso-recuperacion-${ids[1]}`);
+    await expect(nota(1)).toHaveAttribute("aria-invalid", "true");
+    await expect(nota(1)).toHaveAttribute("aria-describedby", `aviso-recuperacion-${ids[1]}-campo`);
+    await expect(nota(1)).toBeFocused();
+    await expect(page.locator('[aria-invalid="true"]')).toHaveCount(1);
+    for (const indice of [0, 2]) await expect(nota(indice)).not.toHaveAttribute("aria-invalid", "true");
+    await mensajeJunto(page, `[id="nota-${ids[1]}"]`, "Escribe un motivo breve y claro.", `aviso-recuperacion-${ids[1]}-campo`);
+    await expect(page.locator(`[id="verificacion-${ids[1]}"]`)).toHaveValue("videollamada");
+    // El resumen de un aviso de campo no es región viva: el campo con el foco ya lo lee como su descripción.
+    await expect(page.locator(`[id="aviso-recuperacion-${ids[1]}"] .alerta`)).not.toHaveAttribute("role", /./);
+
+    // Con su nota, cada una se rechaza; ninguna queda abierta para las demás pruebas.
+    for (const [indice, correo] of personas.entries()) {
+      await nota(indice).fill("No se pudo confirmar la identidad por videollamada.");
+      await tarjeta(correo).getByRole("button", { name: "Rechazar" }).click();
+      await expect(tarjeta(correo)).toHaveCount(0);
+    }
+    expect(await contar("select 1 from auth_recuperaciones where id = any($1::uuid[]) and estado = 'rechazada'", [ids])).toBe(3);
+    expect(errores).toEqual([]);
+  });
+});
+
+// El precio de la plataforma (empieza sin publicar y se publica una vez) y las cabeceras de la descarga del expediente,
+// que solo lee un documento que no existe.
+test.describe("Operación SOFIPO: precio y descarga", () => {
+  test.describe.configure({ mode: "serial" });
+
+  test("publicar el precio exige factor de los últimos 30 minutos; tras volver a entrar, doble clic publica una vez", async ({ page, context }) => {
+    const errores = vigilarConsola(page);
+    const precio = async () => (await consultar<{ centavos: string | null }>("select suscripcion_centavos::text as centavos from platform_pricing where singleton"))[0]?.centavos ?? null;
+    const publicaciones = () => contar("select 1 from audit_log where accion = 'publicar_precio'");
+    expect(await precio()).toBeNull();
+    const antes = await publicaciones();
+
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo", factorHaceMinutos: 31 });
+    await page.goto("/operacion/precios");
+    await page.getByLabel("Suscripción mensual, en pesos").fill("1499.00");
+    await page.getByRole("button", { name: "Publicar el monto" }).click();
+    await expect(page.getByText("Publicar exige un segundo factor verificado en los últimos 30 minutos. Sal y vuelve a entrar por la puerta de operación.")).toBeVisible();
+    expect(await precio()).toBeNull();
+    expect(await publicaciones()).toBe(antes);
+
+    await salirDeOperacion(page);
+    await entrarAOperacion(page, CORREOS.op1);
+    await page.goto("/operacion/precios");
+    await page.getByLabel("Suscripción mensual, en pesos").fill("1499.00");
+    const publicar = await dobleClic(page.getByRole("button", { name: "Publicar el monto" }), { esperar: /\/operacion\/precios$/ });
+    expect(publicar.envios).toBe(1);
+    await expect(page.getByLabel("Suscripción mensual, en pesos")).toHaveCount(0);
+    await expect(page.getByText("1,499.00").first()).toBeVisible();
+    expect(await precio()).toBe("149900");
+    expect(await publicaciones()).toBe(antes + 1);
+    expect(errores).toEqual([]);
+  });
+
+  test("la descarga del expediente llega aislada (sandbox) y la pantalla del expediente conserva la política general", async ({ page, context }) => {
+    const [faro] = await consultar<{ id: string }>("select id from companies where rfc = $1", [FARO.rfc]);
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    // Un documento que no es de la empresa: 404 sin evento, pero la política de next.config ya aplica a la ruta.
+    const descargas = () => contar("select 1 from audit_log where company_id = $1 and accion = 'expediente_documento_descargado'", [faro!.id]);
+    const antes = await descargas();
+    const descarga = await page.request.get(`/operacion/clientes/${faro!.id}/expediente/documento/${crypto.randomUUID()}`);
+    expect(descarga.status()).toBe(404);
+    expect(descarga.headers()["content-security-policy"]).toBe("sandbox; default-src 'none'; frame-ancestors 'none'");
+    expect(await descargas()).toBe(antes);
+    const pantalla = await page.request.get(`/operacion/clientes/${faro!.id}/expediente`);
+    expect(pantalla.status()).toBe(200);
+    expect(pantalla.headers()["content-security-policy"]).toBe("frame-ancestors 'none'");
+    // Humo-N6 del preview: la política de permisos va en todas las respuestas, también en la descarga y fuera de Operación.
+    const permisos =
+      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), display-capture=(), publickey-credentials-get=(self), publickey-credentials-create=(self)";
+    const inicio = await page.request.get("/");
+    for (const [donde, respuesta] of [["pantalla", pantalla], ["descarga", descarga], ["inicio", inicio]] as const) {
+      expect(respuesta.headers()["permissions-policy"], donde).toBe(permisos);
+      expect(respuesta.headers()["referrer-policy"], donde).toBe("same-origin");
+    }
   });
 });
