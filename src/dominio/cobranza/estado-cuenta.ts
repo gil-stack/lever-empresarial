@@ -171,8 +171,7 @@ export function referenciaEnTexto(texto: string | null): string | null {
 
 /** La referencia de Lever de un renglón: la columna de referencia (o lo que diga) y, si no, el concepto. */
 export function referenciaDeRenglon(referencia: string | null, concepto: string | null): string | null {
-  return normalizarReferencia(referencia && /^[0-9]{1,7}$/.test(referencia) ? referencia : null)
-    ?? referenciaEnTexto(referencia) ?? referenciaEnTexto(concepto);
+  return normalizarReferencia(referencia) ?? referenciaEnTexto(referencia) ?? referenciaEnTexto(concepto);
 }
 
 export type RenglonLeido = {
@@ -203,7 +202,7 @@ export function sinFormula(t: string | null): string | null {
   return t && /^[=+\-@]/.test(t) ? `'${t}` : t;
 }
 
-export function aplicarEmpate(tabla: readonly (readonly Celda[])[], empate: Empate, banco: ClaveBanco, hoy: string): Lectura {
+export function aplicarEmpate(tabla: readonly (readonly Celda[])[], empate: Empate, hoy: string): Lectura {
   const { columnas } = empate;
   const abonos: RenglonLeido[] = [];
   const vistas = new Map<string, number>();
@@ -230,7 +229,16 @@ export function aplicarEmpate(tabla: readonly (readonly Celda[])[], empate: Empa
     const rastreoCrudo = texto(columnas.rastreo === null ? null : r[columnas.rastreo], 60)?.replace(/\s/g, "") ?? null;
     const rastreo = rastreoCrudo && /^[A-Za-z0-9]{1,30}$/.test(rastreoCrudo) ? rastreoCrudo.toUpperCase() : null;
     const referenciaLever = referenciaDeRenglon(referencia, concepto);
-    const base = [banco, fecha, monto, rastreo ?? "", referencia ?? "", (concepto ?? "").toLowerCase()].join("|");
+    // La identidad del abono: fecha, monto y el texto normalizado de las demás celdas del renglón (donde vienen el
+    // concepto, la referencia y la clave de rastreo), ordenado. No entra el banco (la cuenta es una sola CLABE de la
+    // empresa) ni qué columna se eligió para qué: el mismo depósito leído con otro banco u otro empate es el mismo
+    // renglón (r63-N1).
+    const resto = r
+      .filter((_, i) => i !== columnas.fecha && i !== columnas.abono)
+      .map((c) => texto(c, 500)?.toLowerCase() ?? null)
+      .filter((t): t is string => t !== null)
+      .sort();
+    const base = [fecha, monto, ...resto].join("\u001f");
     // Dos depósitos idénticos el mismo día en el mismo archivo son dos renglones; volver a subirlo da las mismas claves.
     const ocurrencia = vistas.get(base) ?? 0;
     vistas.set(base, ocurrencia + 1);

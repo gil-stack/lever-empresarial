@@ -35,7 +35,12 @@ describe("encabezados globales de la aplicación", () => {
     const reglas = (await nextConfig.headers?.()) ?? [];
     const general = reglas.findIndex((regla) => regla.source === "/:path*");
     assert.ok(general >= 0);
-    for (const ruta of ["/consola/proveedores/documento/:id", "/c/:empresa/consola/proveedores/documento/:id"]) {
+    for (const ruta of [
+      "/consola/proveedores/documento/:id",
+      "/c/:empresa/consola/proveedores/documento/:id",
+      "/consola/cobros/comprobante/:id",
+      "/c/:empresa/consola/cobros/comprobante/:id",
+    ]) {
       const indice = reglas.findIndex((regla) => regla.source === ruta);
       assert.ok(indice > general, `${ruta} debe ir después de la regla general`);
       const politica = reglas[indice]?.headers.find((encabezado) => encabezado.key === "Content-Security-Policy")?.value;

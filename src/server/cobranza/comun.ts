@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 
 import { periodosPorGenerar } from "../../dominio/cobranza/periodos";
-import { referenciaDe } from "../../dominio/cobranza/referencia";
+import { CONSECUTIVO_INICIAL, referenciaDe } from "../../dominio/cobranza/referencia";
 import { esPeriodicidad } from "../../dominio/cobranza/periodos";
 import { hoyEnMexico } from "../../dominio/personas";
 import { aplicarSentencia, type Consulta, type ContextoDeBase } from "../../nucleo/db";
@@ -46,12 +46,16 @@ export function hashDeToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-/** El siguiente consecutivo de referencia de la empresa. Va con la empresa bloqueada (bloquearEmpresa). */
+/**
+ * El último consecutivo de referencia de la empresa (el siguiente es este + 1).
+ * Sin cargos, 99999: el primero es el 100000 y ninguna referencia empieza con
+ * cero (r63-N2). Va con la empresa bloqueada (bloquearEmpresa).
+ */
 export async function ultimoConsecutivo(consulta: Consulta, empresaId: string): Promise<number> {
   const fila = unaFila(await aplicarSentencia(
     consulta,
-    "select coalesce(max(substr(referencia, 1, 6)::integer), 0) as n from collection_charges where company_id = $1",
-    [empresaId],
+    "select coalesce(max(substr(referencia, 1, 6)::integer), $2) as n from collection_charges where company_id = $1",
+    [empresaId, CONSECUTIVO_INICIAL - 1],
   ));
   return entero(fila.n);
 }

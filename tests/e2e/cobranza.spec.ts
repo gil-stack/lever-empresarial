@@ -1,7 +1,12 @@
+import { createHash, randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 
+import { cerrarConexion } from "../../src/nucleo/db";
+import { auditar } from "../../src/server/bitacora/auditar";
+import { atenderAviso, firmar, registrarCuentaFintoc, type ConfigFintoc } from "../../src/server/cobranza/fintoc";
+import { contextoDePersonal } from "../../src/server/plataforma/servicio";
 import { ORIGEN, consultar, contar, correosPara, dobleClic, enlaceDe, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS } from "./siembra";
 import { CORREOS_COBRANZA } from "./siembra-cobranza";
@@ -270,6 +275,14 @@ test("5 · pago a mano con comprobante: el cargo queda pagado y el comprobante b
   await descarga.saveAs(copia);
   expect(readFileSync(copia).equals(pdf)).toBe(true);
   expect(await contar("select 1 from audit_log where company_id = $1 and accion = 'descargar_documento'", [EMPRESA()])).toBe(1);
+  // La respuesta de verdad, con y sin /c/<empresa>: aislada y en sandbox, no la regla general (r63-N5).
+  const ruta = new URL((await enlace.getAttribute("href"))!, ORIGEN).pathname.replace(/^\/c\/[^/]+/, "");
+  for (const camino of [ruta, en(ruta)]) {
+    const respuesta = await context.request.get(`${ORIGEN}${camino}`);
+    expect(respuesta.status(), camino).toBe(200);
+    expect(respuesta.headers()["content-security-policy"], camino).toBe("sandbox; default-src 'none'; frame-ancestors 'none'");
+    expect(respuesta.headers()["content-disposition"], camino).toMatch(/^attachment;/);
+  }
   await foto(page, browserName, "pago-con-comprobante");
   expect(reales(errores, browserName)).toEqual([]);
 });
@@ -337,11 +350,13 @@ test("6 · estado de cuenta de tres bancos: empatar, proponer, confirmar y resub
   await confirmar();
   expect(await contar("select 1 from collection_payments where company_id = $1 and clave_rastreo = $2", [EMPRESA(), RASTREO_A])).toBe(1);
 
-  // Volver a subir el de BBVA: el empate guardado se usa solo y nada se duplica.
+  // Volver a subir el de BBVA, ahora como si fuera de Banorte: el mismo archivo se frena por su huella,
+  // con el banco y el empate que sea (r63-N1), y nada se duplica.
   const filas = await contar("select 1 from collection_statement_rows where company_id = $1", [EMPRESA()]);
   const pagos = await contar("select 1 from collection_payments where company_id = $1", [EMPRESA()]);
-  forma = await subir("bbva", "bbva-movimientos.csv", bbva, "text/csv");
-  await expect(forma.locator(".alerta-asentado")).toContainText("Este archivo ya estaba importado");
+  forma = await subir("banorte", "bbva-movimientos.csv", bbva, "text/csv");
+  await expect(forma.locator("#archivo-error")).toHaveText(/^Ese archivo ya se importó el \d{1,2} de [a-z]+ de \d{4}\. Sus abonos ya están en la lista; no se volvieron a aplicar\.$/);
+  await expect(forma.locator("#archivo")).toHaveAttribute("aria-invalid", "true");
   expect(await contar("select 1 from collection_statement_rows where company_id = $1", [EMPRESA()])).toBe(filas);
   expect(await contar("select 1 from collection_payments where company_id = $1", [EMPRESA()])).toBe(pagos);
   expect(await contar("select 1 from collection_statement_mappings where company_id = $1", [EMPRESA()])).toBe(3);
@@ -546,6 +561,110 @@ test("12 · evidencia: 3 temas × 1440 y 390, axe sin violaciones y sin desplaza
     }
   }
   expect(hallazgos).toEqual([]);
+});
+
+test("13 · pagado desde la cuenta de otro cliente: se aplica a su cargo con la marca visible (r63-N4)", async ({ page, context, browserName }) => {
+  const errores = vigilarConsola(page);
+  await entrar(context, CORREOS_COBRANZA.carla);
+  await darDeAlta(page, { nombre: "Grupo Uno", correo: "grupo-uno@ejemplo.mx", concepto: "Mantenimiento", tipo: "fijo", monto: "1000", periodicidad: "mensual", dias: 5 });
+  await darDeAlta(page, { nombre: "Filial Dos", correo: "filial-dos@ejemplo.mx", concepto: "Mantenimiento", tipo: "fijo", monto: "1000", periodicidad: "mensual", dias: 5 });
+  const uno = await idDeCliente("Grupo Uno");
+  const dos = await idDeCliente("Filial Dos");
+  const [refUno, refDos] = [(await cargoDe(uno)).referencia, (await cargoDe(dos)).referencia];
+  // El servidor de la prueba corre sin llaves de Fintoc (no sale nada a api.fintoc.com): el aviso firmado pasa por
+  // atenderAviso, la misma función de /webhooks/fintoc, con un secreto generado al vuelo.
+  const cuenta = "acc_E2eMarca01";
+  try {
+    await registrarCuentaFintoc(await contextoDePersonal("personal-e2e@ejemplo.mx"), { empresaId: EMPRESA(), cuentaId: cuenta });
+    const config: ConfigFintoc = { llaveSecreta: `sk_test_${randomUUID().replace(/-/g, "")}`, secretoWebhook: createHash("sha256").update(randomUUID()).digest("hex"), modo: "test" };
+    const ahora = Math.floor(Date.now() / 1000);
+    const avisar = (referencia: string, monto: number, rastreo: string) => {
+      const cuerpo = JSON.stringify({
+        id: `evt_${randomUUID().replace(/-/g, "")}`, type: "transfer.inbound.succeeded", object: "event", mode: "test", created_at: new Date().toISOString(),
+        data: {
+          id: `tr_${randomUUID().replace(/-/g, "")}`, object: "transfer", direction: "inbound", status: "succeeded", amount: monto, currency: "MXN", mode: "test",
+          transaction_date: new Date().toISOString(), reference_id: referencia, tracking_key: rastreo,
+          account_number: { id: "acno_PrincipalE2e01", account_id: cuenta },
+          counterparty: { holder_name: "Corporativo Pagador", account_number: "012180001234567899", account_type: "clabe" },
+        },
+      });
+      return atenderAviso(new TextEncoder().encode(cuerpo), firmar(cuerpo, config.secretoWebhook, ahora), { config, ahora: () => new Date(ahora * 1000), auditar });
+    };
+    // La misma CLABE paga primero por Uno y luego manda la referencia de Dos.
+    expect(await avisar(refUno, 30_000, "XMARCA0001")).toEqual({ estado: 200, cuerpo: { ok: true, efecto: "registrado" } });
+    expect(await avisar(refDos, 20_000, "XMARCA0002")).toEqual({ estado: 200, cuerpo: { ok: true, efecto: "registrado" } });
+  } finally {
+    await cerrarConexion();
+  }
+  expect(await consultar("select clave_rastreo, estado, customer_id, de_otro_cliente from collection_payments where company_id = $1 and clave_rastreo like 'XMARCA%' order by clave_rastreo", [EMPRESA()]))
+    .toEqual([
+      { clave_rastreo: "XMARCA0001", estado: "aplicado", customer_id: uno, de_otro_cliente: false },
+      { clave_rastreo: "XMARCA0002", estado: "aplicado", customer_id: dos, de_otro_cliente: true },
+    ]);
+
+  await page.goto(en(`/consola/cobros/clientes/${dos}`));
+  const marca = page.locator('[data-lista="pagos"] [data-marca="otro-cliente"]');
+  await expect(marca).toHaveCount(1);
+  await expect(marca).toHaveText("Pagado desde la cuenta de otro cliente");
+  await foto(page, browserName, "pagado-desde-otro-cliente");
+  await page.goto(en(`/consola/cobros/clientes/${uno}`));
+  await expect(page.locator('[data-lista="pagos"] li').first()).toBeVisible();
+  await expect(page.locator('[data-marca="otro-cliente"]')).toHaveCount(0);
+  expect(reales(errores, browserName)).toEqual([]);
+});
+
+test("14 · registrar un pago con el cargo de otra empresa dice «No encontrado» (r63-N10)", async ({ page, context, browserName }) => {
+  const errores = vigilarConsola(page);
+  await entrar(context, CORREOS_COBRANZA.carla);
+  const [ajeno] = await consultar<{ id: string }>("select id from collection_charges where company_id = $1 limit 1", [DEMO()]);
+  expect(ajeno).toBeTruthy();
+  const pagos = await contar("select 1 from collection_payments");
+  await page.goto(en(`/consola/cobros/clientes/${await idDeCliente("Grupo Uno")}`));
+  await page.getByRole("button", { name: "Registrar pago" }).first().click();
+  const dialogo = page.getByRole("dialog", { name: "Registrar un pago" });
+  // El id del cargo viaja en un campo oculto: se cambia por el de un cargo de la empresa de demostración.
+  await dialogo.locator('input[name="cargoId"]').evaluate((el: HTMLInputElement, id: string) => { el.value = id; }, ajeno!.id);
+  await dialogo.getByLabel("Monto que llegó").fill("10.00");
+  await dialogo.getByRole("button", { name: "Registrar el pago" }).click();
+  await expect(dialogo.getByText("No encontrado", { exact: true })).toBeVisible();
+  await expect(dialogo.getByText("Recarga la lista.")).toBeVisible();
+  await expect(dialogo.getByText("Ese cargo ya cambió")).toHaveCount(0);
+  expect(await contar("select 1 from collection_payments")).toBe(pagos);
+  await foto(page, browserName, "pago-con-cargo-ajeno");
+  expect(reales(errores, browserName)).toEqual([]);
+});
+
+test("15 · cambiar el correo de contacto pide un segundo factor reciente y avisa al equipo (r63-N3)", async ({ page, context, browserName }) => {
+  const errores = vigilarConsola(page);
+  const nuevo = "buzon-cobranza@ejemplo.mx";
+  const guardar = async () => {
+    await page.goto(en("/consola/cobros/configuracion"));
+    const forma = page.locator('form[data-formulario="configuracion-cobranza"]');
+    await expect(forma.locator("#correoContacto")).toHaveValue("cobranza@ejemplo.mx");
+    await forma.locator("#correoContacto").fill(nuevo);
+    await forma.getByRole("button", { name: "Guardar la configuración" }).click();
+    return forma;
+  };
+  // Con el factor de hace 31 minutos no se guarda: «Confirma que eres tú».
+  await sesionDe(context, CORREOS_COBRANZA.carla, { factorHaceMinutos: 31 });
+  const avisosAntes = correosPara(CORREOS_COBRANZA.carla).length;
+  let forma = await guardar();
+  await expect(forma.getByText("Confirma que eres tú")).toBeVisible();
+  await expect(forma.getByText(/correo de contacto exige un segundo factor de los últimos 30 minutos/)).toBeVisible();
+  expect(await contar("select 1 from collection_settings where company_id = $1 and correo_contacto = $2", [EMPRESA(), nuevo])).toBe(0);
+  expect(correosPara(CORREOS_COBRANZA.carla).length).toBe(avisosAntes);
+  await foto(page, browserName, "contacto-pide-factor");
+  // Con el factor recién probado se guarda y avisa a administración y finanzas.
+  await entrar(context, CORREOS_COBRANZA.carla);
+  forma = await guardar();
+  await expect(forma.locator(".alerta-asentado")).toContainText("Avisamos del cambio a administración y finanzas");
+  expect(await contar("select 1 from collection_settings where company_id = $1 and correo_contacto = $2", [EMPRESA(), nuevo])).toBe(1);
+  const avisos = correosPara(CORREOS_COBRANZA.carla);
+  expect(avisos.length).toBe(avisosAntes + 1);
+  expect(avisos.at(-1)!.asunto).toMatch(/correo de contacto/i);
+  expect(avisos.at(-1)!.texto).toContain(nuevo);
+  await foto(page, browserName, "contacto-guardado-y-avisado");
+  expect(reales(errores, browserName)).toEqual([]);
 });
 
 function pesos(centavos: number): string {

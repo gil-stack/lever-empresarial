@@ -1,4 +1,4 @@
-import { normalizarReferencia } from "./referencia";
+import { normalizarReferencia, referenciaIncompleta } from "./referencia";
 
 /**
  * Reglas de conciliación de un abono. Puras: el servicio lee de la base lo que
@@ -19,6 +19,16 @@ import { normalizarReferencia } from "./referencia";
  * 4. Una referencia de otro cliente en la CLABE propia de un cliente → no se
  *    aplica: queda abierto con el dueño de la CLABE para que alguien decida.
  * 5. Cualquier otro caso → abierto, con el cliente si se supo.
+ *
+ * La referencia son los 7 dígitos exactos: un número de menos de 7 dígitos
+ * (un folio, «18», lo que la persona tecleó) nunca se aplica solo; queda
+ * abierto como «referencia incompleta» (r63-N2). La CLABE propia del cliente
+ * con el monto exacto sigue siendo una señal propia (regla 3).
+ *
+ * La referencia de un cliente que llega desde una CLABE ordenante que antes
+ * solo había pagado por otros clientes se aplica (puede ser un corporativo que
+ * paga por sus filiales), pero el pago lleva la marca «pagado desde la cuenta
+ * de otro cliente» para que se vea en el historial (r63-N4, decisión de Gil).
  *
  * 0. Antes que todo: si la misma clave de rastreo ya está en otro pago (por
  *    ejemplo, registrado a mano y luego avisado por el proveedor), no se aplica
@@ -50,6 +60,8 @@ export type Decision = {
   clienteId: string | null;
   aplicacion: { cargoId: string; montoCentavos: number; regla: Regla } | null;
   posibleDuplicado: boolean;
+  /** Se aplicó por referencia, pero la CLABE ordenante antes solo había pagado por otros clientes. */
+  deOtroCliente: boolean;
   /** Por qué: para la bitácora y para el aviso de la página. */
   motivo:
     | "referencia"
@@ -60,6 +72,7 @@ export type Decision = {
     | "cuenta_y_monto"
     | "clabe_y_monto"
     | "cliente_sin_coincidencia"
+    | "referencia_incompleta"
     | "sin_identificar";
 };
 
@@ -70,7 +83,7 @@ export type DatosDeConciliacion = {
   clienteDeLaCuenta: string | null;
   /** El cargo cuya referencia trae el abono, en cualquier estado, o nulo. */
   cargoDeLaReferencia: CargoConReferencia | null;
-  /** Los clientes que antes pagaron desde la CLABE ordenante (sin repetir). */
+  /** Los clientes que antes pagaron desde la CLABE ordenante (sin repetir); también con referencia, para la marca. */
   clientesDeLaClabe: readonly string[];
   /** Los cargos emitidos con saldo del cliente que se supo (por la cuenta o por la CLABE ordenante). */
   cargosAbiertosDelCliente: readonly CargoAbierto[];
@@ -86,10 +99,10 @@ export function conciliar(abono: AbonoAConciliar, datos: DatosDeConciliacion): D
   const cuenta = datos.clienteDeLaCuenta;
   const cargo = datos.cargoDeLaReferencia;
   if (datos.rastreoYaRegistrado) {
-    return { clienteId: cuenta ?? cargo?.clienteId ?? null, aplicacion: null, posibleDuplicado: true, motivo: "rastreo_ya_registrado" };
+    return { clienteId: cuenta ?? cargo?.clienteId ?? null, aplicacion: null, posibleDuplicado: true, deOtroCliente: false, motivo: "rastreo_ya_registrado" };
   }
   if (cargo && cuenta && cargo.clienteId !== cuenta) {
-    return { clienteId: cuenta, aplicacion: null, posibleDuplicado: false, motivo: "referencia_de_otro_cliente" };
+    return { clienteId: cuenta, aplicacion: null, posibleDuplicado: false, deOtroCliente: false, motivo: "referencia_de_otro_cliente" };
   }
   if (cargo) {
     if (cargo.estado === "emitido" && cargo.saldoCentavos > 0) {
@@ -97,31 +110,37 @@ export function conciliar(abono: AbonoAConciliar, datos: DatosDeConciliacion): D
         clienteId: cargo.clienteId,
         aplicacion: { cargoId: cargo.id, montoCentavos: Math.min(abono.montoCentavos, cargo.saldoCentavos), regla: "referencia" },
         posibleDuplicado: false,
+        deOtroCliente: datos.clientesDeLaClabe.length > 0 && !datos.clientesDeLaClabe.includes(cargo.clienteId),
         motivo: "referencia",
       };
     }
     if (cargo.estado === "pagado") {
-      return { clienteId: cargo.clienteId, aplicacion: null, posibleDuplicado: true, motivo: "referencia_pagada" };
+      return { clienteId: cargo.clienteId, aplicacion: null, posibleDuplicado: true, deOtroCliente: false, motivo: "referencia_pagada" };
     }
     // Cancelado, omitido o sin monto: el cliente se sabe, el cargo no se toca.
-    return { clienteId: cargo.clienteId, aplicacion: null, posibleDuplicado: false, motivo: "referencia_sin_cargo_abierto" };
+    return { clienteId: cargo.clienteId, aplicacion: null, posibleDuplicado: false, deOtroCliente: false, motivo: "referencia_sin_cargo_abierto" };
   }
+  // Lo que no se aplica con una referencia que llegó corta se nombra así en «Por conciliar».
+  const abierto = (clienteId: string | null, motivo: "cliente_sin_coincidencia" | "sin_identificar"): Decision => ({
+    clienteId, aplicacion: null, posibleDuplicado: false, deOtroCliente: false, motivo: referenciaIncompleta(abono.referencia) ? "referencia_incompleta" : motivo,
+  });
   const clientes = [...new Set(datos.clientesDeLaClabe)];
   const clienteId = cuenta ?? (clientes.length === 1 ? clientes[0]! : null);
-  if (!clienteId) return { clienteId: null, aplicacion: null, posibleDuplicado: false, motivo: "sin_identificar" };
+  if (!clienteId) return abierto(null, "sin_identificar");
   const exactos = datos.cargosAbiertosDelCliente.filter((c) => c.saldoCentavos === abono.montoCentavos);
   if (exactos.length === 1) {
     return {
       clienteId,
       aplicacion: { cargoId: exactos[0]!.id, montoCentavos: abono.montoCentavos, regla: "clabe_y_monto" },
       posibleDuplicado: false,
+      deOtroCliente: false,
       motivo: cuenta ? "cuenta_y_monto" : "clabe_y_monto",
     };
   }
-  return { clienteId, aplicacion: null, posibleDuplicado: false, motivo: "cliente_sin_coincidencia" };
+  return abierto(clienteId, "cliente_sin_coincidencia");
 }
 
-/** Saldo a favor de un pago: lo que no se ha aplicado a ningún cargo. */
+/** Saldo a favor de un pago: lo que no se ha aplicado a ningún cargo. Un pago anulado o devuelto al ordenante no deja nada. */
 export function saldoAFavor(pago: { montoCentavos: number; aplicadoCentavos: number; estado: string }): number {
-  return pago.estado === "anulado" ? 0 : pago.montoCentavos - pago.aplicadoCentavos;
+  return pago.estado === "anulado" || pago.estado === "devuelto" ? 0 : pago.montoCentavos - pago.aplicadoCentavos;
 }

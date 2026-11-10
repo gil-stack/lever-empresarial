@@ -1,0 +1,26 @@
+Base nueva en 5581 con 0001-0031, el personal sembrado y dos avisos guardados con cobranza_guardar_aviso_sin_destino como plataforma_cliente. Códigos de salida reales del comando.
+
+$ npx tsx scripts/cobranza-fintoc.ts avisos:sin-destino --personal personal-cmd@ejemplo.mx
+┌─────────┬────────────────────┬──────────────┬─────────────┬──────────────┬───────────────────────┬───────────────────┬────────────┬──────────────────┐
+│ (index) │ recibido           │ tipo         │ monto       │ fecha        │ cuenta                │ numero            │ referencia │ transferencia    │
+├─────────┼────────────────────┼──────────────┼─────────────┼──────────────┼───────────────────────┼───────────────────┼────────────┼──────────────────┤
+│ 0       │ '2026-11-10 21:26' │ 'abono'      │ '$1,250.00' │ '2026-11-10' │ 'acc_NadieLaRegistro' │ 'acno_SinDueno01' │ '1000009'  │ 'tr_CmdPrueba01' │
+│ 1       │ '2026-11-10 21:26' │ 'devolución' │ '$50.00'    │ '2026-11-10' │ 'acc_NadieLaRegistro' │ 'acno_SinDueno01' │ ''         │ 'tr_CmdPrueba02' │
+└─────────┴────────────────────┴──────────────┴─────────────┴──────────────┴───────────────────────┴───────────────────┴────────────┴──────────────────┘
+código 0
+$ npx tsx scripts/cobranza-fintoc.ts avisos:sin-destino --personal personal-cmd@ejemplo.mx --limite 1
+┌─────────┬────────────────────┬─────────┬─────────────┬──────────────┬───────────────────────┬───────────────────┬────────────┬──────────────────┐
+│ (index) │ recibido           │ tipo    │ monto       │ fecha        │ cuenta                │ numero            │ referencia │ transferencia    │
+├─────────┼────────────────────┼─────────┼─────────────┼──────────────┼───────────────────────┼───────────────────┼────────────┼──────────────────┤
+│ 0       │ '2026-11-10 21:26' │ 'abono' │ '$1,250.00' │ '2026-11-10' │ 'acc_NadieLaRegistro' │ 'acno_SinDueno01' │ '1000009'  │ 'tr_CmdPrueba01' │
+└─────────┴────────────────────┴─────────┴─────────────┴──────────────┴───────────────────────┴───────────────────┴────────────┴──────────────────┘
+código 0
+$ npx tsx scripts/cobranza-fintoc.ts avisos:sin-destino --personal personal-cmd@ejemplo.mx --limite 0
+--limite va de 1 a 500.
+código 1
+$ npx tsx scripts/cobranza-fintoc.ts avisos:sin-destino --personal nadie@ejemplo.mx
+No se hizo: no_es_operador
+código 1
+$ npx tsx scripts/cobranza-fintoc.ts otra:cosa
+Orden desconocida. Usa cuenta:registrar o avisos:sin-destino.
+código 1

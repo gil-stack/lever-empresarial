@@ -39,13 +39,15 @@ AS $$
 $$;
 
 -- Referencia numérica de 7 dígitos (el campo «referencia» de SPEI): 6 de un
--- consecutivo por empresa y un dígito de Luhn. Un dígito tecleado mal no cae
--- en el cargo de otro cliente.
+-- consecutivo por empresa, de 100000 a 999999, y un dígito de Luhn. Un dígito
+-- tecleado mal no cae en el cargo de otro cliente, y como ninguna empieza con
+-- cero no hay ceros a la izquierda que un banco recorte ni nada que rellenar:
+-- un número de menos de 7 dígitos nunca es una referencia (r63-N2).
 CREATE FUNCTION cobranza_referencia_valida(p text)
 RETURNS boolean
 LANGUAGE sql IMMUTABLE
 AS $$
-  SELECT p ~ '^[0-9]{7}$' AND (
+  SELECT p ~ '^[1-9][0-9]{6}$' AND (
     SELECT sum(CASE WHEN i % 2 = 0 THEN d * 2 - CASE WHEN d * 2 > 9 THEN 9 ELSE 0 END ELSE d END) % 10 = 0
     FROM (SELECT i, substr(p, i, 1)::integer AS d FROM generate_series(1, 7) AS i) AS digitos
   )
@@ -58,7 +60,7 @@ $$;
 CREATE FUNCTION cobranza_autor_valido(p_company uuid, p_autor uuid)
 RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT CASE
     WHEN app_usuario() IS NULL THEN p_autor IS NULL AND p_company = app_empresa()
@@ -112,7 +114,7 @@ CREATE FUNCTION collection_settings_revisar()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF TG_OP = 'UPDATE' AND NEW.company_id IS DISTINCT FROM OLD.company_id THEN
@@ -173,7 +175,7 @@ CREATE FUNCTION collection_customers_revisar()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
@@ -272,7 +274,7 @@ CREATE FUNCTION collection_plans_revisar()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF app_usuario() IS NULL OR NEW.actualizado_por IS DISTINCT FROM app_usuario() OR NOT flujo_editor(NEW.company_id) THEN
@@ -346,7 +348,7 @@ CREATE TABLE collection_charges (
   CONSTRAINT collection_charges_referencia_unica UNIQUE (company_id, referencia),
   CONSTRAINT collection_charges_periodo CHECK ((plan_id IS NULL) = (periodo IS NULL) AND (periodo IS NULL OR periodo BETWEEN 0 AND 10000)),
   CONSTRAINT collection_charges_concepto CHECK (cobranza_texto(concepto, 1, 200)),
-  CONSTRAINT collection_charges_referencia CHECK (cobranza_referencia_valida(referencia)),
+  CONSTRAINT collection_charges_referencia CHECK (referencia ~ '^[1-9][0-9]{6}$' AND cobranza_referencia_valida(referencia)),
   CONSTRAINT collection_charges_fecha CHECK (vencimiento >= DATE '2000-01-01'),
   CONSTRAINT collection_charges_monto CHECK (monto_centavos IS NULL OR monto_centavos BETWEEN 1 AND 9000000000000000),
   CONSTRAINT collection_charges_pagado CHECK (pagado_centavos >= 0 AND pagado_centavos <= coalesce(monto_centavos, 0)),
@@ -374,7 +376,7 @@ CREATE FUNCTION collection_charges_revisar()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
@@ -386,6 +388,12 @@ BEGIN
       OR (NEW.estado = 'omitido' AND NEW.resuelto_por IS DISTINCT FROM NEW.creado_por)
     THEN
       RAISE EXCEPTION 'cargo_no_valido';
+    END IF;
+    -- La hora la pone la base, no quien escribe (r63-base-N1): emitido_en alimenta el DSO.
+    IF NEW.estado = 'emitido' THEN
+      NEW.emitido_en := now();
+    ELSIF NEW.estado = 'omitido' THEN
+      NEW.resuelto_en := now();
     END IF;
     RETURN NEW;
   END IF;
@@ -410,6 +418,15 @@ BEGIN
     OR (OLD.estado = 'pagado' AND NEW.estado IN ('emitido', 'pagado'))
   ) THEN
     RAISE EXCEPTION 'cargo_ya_resuelto';
+  END IF;
+  -- La fecha de pago se fija al pasar a pagado y no cambia mientras siga pagado (r63-base-N1).
+  IF OLD.estado = 'pagado' AND NEW.estado = 'pagado' AND NEW.pagado_el IS DISTINCT FROM OLD.pagado_el THEN
+    RAISE EXCEPTION 'cobranza_inmutable';
+  END IF;
+  IF OLD.estado = 'por_emitir' AND NEW.estado = 'emitido' THEN
+    NEW.emitido_en := now();
+  ELSIF NEW.estado = 'cancelado' THEN
+    NEW.resuelto_en := now();
   END IF;
   -- Emitir y cancelar son de una persona; un abono lo aplica una persona o el sistema.
   IF OLD.estado = 'por_emitir' AND NEW.estado = 'emitido' THEN
@@ -451,6 +468,8 @@ CREATE TABLE collection_payments (
   estado text NOT NULL DEFAULT 'abierto',
   -- Llegó con la referencia de un cargo ya pagado: otra transferencia por lo mismo.
   posible_duplicado boolean NOT NULL DEFAULT false,
+  -- Se aplicó por referencia, pero la CLABE ordenante antes solo había pagado por otros clientes (r63-N4).
+  de_otro_cliente boolean NOT NULL DEFAULT false,
   document_id uuid,
   registrado_por uuid REFERENCES users (id) ON DELETE RESTRICT,
   registrado_en timestamptz NOT NULL DEFAULT now(),
@@ -480,6 +499,9 @@ CREATE TABLE collection_payments (
     OR (estado = 'aplicado' AND aplicado_centavos = monto_centavos AND motivo_anulacion IS NULL AND anulado_por IS NULL AND anulado_en IS NULL)
     OR (estado = 'anulado' AND fuente = 'manual' AND aplicado_centavos = 0 AND anulado_por IS NOT NULL AND anulado_en IS NOT NULL
         AND motivo_anulacion IS NOT NULL AND cobranza_texto(motivo_anulacion, 5, 500))
+    -- El proveedor avisó que la empresa le devolvió la transferencia al ordenante (r63-N8): lo marca el sistema.
+    OR (estado = 'devuelto' AND fuente = 'fintoc' AND aplicado_centavos = 0 AND anulado_por IS NULL AND anulado_en IS NOT NULL
+        AND motivo_anulacion IS NOT NULL AND cobranza_texto(motivo_anulacion, 5, 500))
   )
 );
 
@@ -494,7 +516,7 @@ CREATE FUNCTION collection_payments_revisar()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
@@ -514,18 +536,27 @@ BEGIN
     RETURN NEW;
   END IF;
   IF (NEW.id, NEW.company_id, NEW.fuente, NEW.id_externo, NEW.monto_centavos, NEW.recibido_el, NEW.clave_rastreo, NEW.referencia,
-      NEW.clabe_ordenante, NEW.nombre_ordenante, NEW.posible_duplicado, NEW.document_id, NEW.registrado_por, NEW.registrado_en)
+      NEW.clabe_ordenante, NEW.nombre_ordenante, NEW.posible_duplicado, NEW.de_otro_cliente, NEW.document_id, NEW.registrado_por, NEW.registrado_en)
     IS DISTINCT FROM (OLD.id, OLD.company_id, OLD.fuente, OLD.id_externo, OLD.monto_centavos, OLD.recibido_el, OLD.clave_rastreo, OLD.referencia,
-      OLD.clabe_ordenante, OLD.nombre_ordenante, OLD.posible_duplicado, OLD.document_id, OLD.registrado_por, OLD.registrado_en)
+      OLD.clabe_ordenante, OLD.nombre_ordenante, OLD.posible_duplicado, OLD.de_otro_cliente, OLD.document_id, OLD.registrado_por, OLD.registrado_en)
     OR (OLD.customer_id IS NOT NULL AND NEW.customer_id IS DISTINCT FROM OLD.customer_id)
   THEN
     RAISE EXCEPTION 'cobranza_inmutable';
   END IF;
-  IF OLD.estado = 'anulado' THEN
+  IF OLD.estado IN ('anulado', 'devuelto') THEN
     RAISE EXCEPTION 'pago_anulado';
   END IF;
   IF NEW.estado = 'anulado' AND NEW.anulado_por IS DISTINCT FROM app_usuario() THEN
     RAISE EXCEPTION 'sin_permiso_para_cobranza';
+  END IF;
+  -- Solo el aviso del proveedor marca una devolución; la hora la pone la base.
+  IF NEW.estado = 'devuelto' THEN
+    IF app_usuario() IS NOT NULL THEN
+      RAISE EXCEPTION 'sin_permiso_para_cobranza';
+    END IF;
+    NEW.anulado_en := now();
+  ELSIF NEW.estado = 'anulado' THEN
+    NEW.anulado_en := now();
   END IF;
   IF NOT cobranza_autor_valido(NEW.company_id, app_usuario()) THEN
     RAISE EXCEPTION 'sin_permiso_para_cobranza';
@@ -577,7 +608,7 @@ CREATE FUNCTION collection_applications_revisar()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   original collection_applications%ROWTYPE;
@@ -591,7 +622,10 @@ BEGIN
   IF NEW.regla = 'reversion' THEN
     SELECT * INTO original FROM collection_applications WHERE id = NEW.revierte_a AND company_id = NEW.company_id;
     IF NOT FOUND OR original.regla = 'reversion' OR original.payment_id <> NEW.payment_id OR original.charge_id <> NEW.charge_id
-      OR original.monto_centavos <> -NEW.monto_centavos OR NEW.aplicado_por IS NULL
+      OR original.monto_centavos <> -NEW.monto_centavos
+      -- Una persona revierte; el sistema solo revierte un abono de Fintoc que la empresa devolvió (r63-N8).
+      OR (NEW.aplicado_por IS NULL AND NOT EXISTS (
+        SELECT 1 FROM collection_payments p WHERE p.id = NEW.payment_id AND p.company_id = NEW.company_id AND p.fuente = 'fintoc'))
     THEN
       RAISE EXCEPTION 'aplicacion_no_valida';
     END IF;
@@ -610,7 +644,7 @@ CREATE FUNCTION cobranza_sumas_cuadran()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   -- Cada tabla nombra al cargo y al pago con su propia columna. PL/pgSQL resuelve
@@ -690,7 +724,8 @@ CREATE TABLE collection_emails (
   CONSTRAINT collection_emails_enlace_unico UNIQUE (enlace_hash),
   CONSTRAINT collection_emails_tipo CHECK (
     (tipo IN ('cobro', 'antes', 'dia') AND secuencia = 1)
-    OR (tipo IN ('despues', 'reenvio') AND secuencia BETWEEN 1 AND 6)
+    OR (tipo = 'despues' AND secuencia BETWEEN 1 AND 6)
+    OR (tipo = 'reenvio' AND secuencia BETWEEN 1 AND 5)
   ),
   CONSTRAINT collection_emails_estado CHECK (estado IN ('enviando', 'enviado', 'fallido', 'simulado')),
   CONSTRAINT collection_emails_cierre CHECK ((estado = 'enviando') = (terminado_en IS NULL)),
@@ -710,7 +745,7 @@ CREATE FUNCTION collection_emails_revisar()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
@@ -770,7 +805,7 @@ CREATE FUNCTION collection_email_deliveries_revisar()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF TG_OP <> 'INSERT' THEN
@@ -810,7 +845,7 @@ COMMENT ON TABLE collection_provider_accounts IS
 CREATE FUNCTION cobranza_registrar_cuenta_proveedor(p_company uuid, p_proveedor text, p_cuenta text)
 RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF app_usuario() IS NULL OR NOT EXISTS (
@@ -865,7 +900,7 @@ CREATE FUNCTION collection_virtual_accounts_revisar()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF TG_OP <> 'INSERT' THEN
@@ -903,7 +938,7 @@ CREATE FUNCTION collection_provider_events_revisar()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF TG_OP <> 'INSERT' THEN
@@ -923,21 +958,130 @@ FOR EACH ROW EXECUTE FUNCTION collection_provider_events_revisar();
 -- La ruta del aviso no tiene sesión ni empresa: con la cuenta y el número del
 -- proveedor sabe de qué empresa (y de qué cliente, si es su CLABE) es el abono.
 -- Lo demás lo hace ya con el contexto de esa empresa.
+-- La CLABE propia de un cliente va primero (su número es único por proveedor):
+-- si la plataforma cambia después la cuenta de la empresa, las CLABEs que ya
+-- se dieron siguen llevando sus pagos a su cliente (r63-base-N3). La cuenta
+-- solo decide para los números que no son de ningún cliente.
 CREATE FUNCTION cobranza_destino_fintoc(p_cuenta text, p_cuenta_numero text)
 RETURNS TABLE (company_id uuid, operator_id uuid, customer_id uuid)
 LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
-  SELECT a.company_id, c.operator_id,
-         (SELECT v.customer_id FROM collection_virtual_accounts v
-           WHERE v.company_id = a.company_id AND v.proveedor = 'fintoc' AND v.cuenta_numero_id = p_cuenta_numero)
+  SELECT v.company_id, c.operator_id, v.customer_id
+    FROM collection_virtual_accounts v
+    JOIN companies c ON c.id = v.company_id
+   WHERE v.proveedor = 'fintoc' AND v.cuenta_numero_id = p_cuenta_numero
+  UNION ALL
+  SELECT a.company_id, c.operator_id, NULL::uuid
     FROM collection_provider_accounts a
     JOIN companies c ON c.id = a.company_id
    WHERE a.proveedor = 'fintoc' AND a.cuenta_id = p_cuenta
+     AND NOT EXISTS (SELECT 1 FROM collection_virtual_accounts v WHERE v.proveedor = 'fintoc' AND v.cuenta_numero_id = p_cuenta_numero)
 $$;
 
 REVOKE ALL ON FUNCTION cobranza_destino_fintoc(text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION cobranza_destino_fintoc(text, text) TO plataforma_cliente;
+
+-- Avisos sin destino (r63-N7): un abono o una devolución a una cuenta que nadie
+-- registró, o de una transferencia que Lever no tiene. Responder 200 sin
+-- guardarlo perdía el abono; aquí queda, sin datos personales (solo los ids del
+-- proveedor, el monto, la fecha y la referencia), para que el personal lo
+-- revise en el proveedor. Solo se escribe con la función del aviso y solo lo
+-- lee el personal de administración de la plataforma.
+CREATE TABLE collection_unrouted_events (
+  id uuid PRIMARY KEY,
+  proveedor text NOT NULL,
+  evento_id text NOT NULL,
+  tipo text NOT NULL,
+  transferencia_id text NOT NULL,
+  cuenta_id text NOT NULL,
+  cuenta_numero_id text NOT NULL,
+  monto_centavos bigint NOT NULL,
+  recibido_el date NOT NULL,
+  referencia text,
+  recibido_en timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT collection_unrouted_events_unico UNIQUE (proveedor, evento_id),
+  CONSTRAINT collection_unrouted_events_proveedor CHECK (proveedor IN ('fintoc')),
+  CONSTRAINT collection_unrouted_events_evento CHECK (evento_id ~ '^evt_[A-Za-z0-9]{1,64}$'),
+  CONSTRAINT collection_unrouted_events_tipo CHECK (tipo IN ('transfer.inbound.succeeded', 'transfer.inbound.returned')),
+  CONSTRAINT collection_unrouted_events_transferencia CHECK (transferencia_id ~ '^tr_[A-Za-z0-9]{1,64}$'),
+  CONSTRAINT collection_unrouted_events_cuenta CHECK (cuenta_id ~ '^acc_[A-Za-z0-9]{1,64}$'),
+  CONSTRAINT collection_unrouted_events_numero CHECK (cuenta_numero_id ~ '^acno_[A-Za-z0-9]{1,64}$'),
+  CONSTRAINT collection_unrouted_events_monto CHECK (monto_centavos BETWEEN 1 AND 9000000000000000),
+  CONSTRAINT collection_unrouted_events_fecha CHECK (recibido_el >= DATE '2000-01-01'),
+  CONSTRAINT collection_unrouted_events_referencia CHECK (referencia IS NULL OR referencia ~ '^[0-9]{1,7}$')
+);
+
+CREATE INDEX collection_unrouted_events_lista ON collection_unrouted_events (recibido_en DESC);
+
+COMMENT ON TABLE collection_unrouted_events IS
+  'Aviso del proveedor sin empresa o sin pago en Lever: queda para el personal. Solo inserción, sin datos personales.';
+
+CREATE FUNCTION collection_unrouted_events_revisar()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  RAISE EXCEPTION 'cobranza_inmutable';
+END;
+$$;
+
+CREATE TRIGGER collection_unrouted_events_revisar
+BEFORE UPDATE OR DELETE ON collection_unrouted_events
+FOR EACH ROW EXECUTE FUNCTION collection_unrouted_events_revisar();
+
+-- La ruta del aviso (plataforma_cliente, sin empresa ni persona) guarda el aviso. Devuelve falso si ya estaba.
+CREATE FUNCTION cobranza_guardar_aviso_sin_destino(
+  p_evento text, p_tipo text, p_transferencia text, p_cuenta text, p_cuenta_numero text, p_monto bigint, p_fecha date, p_referencia text
+)
+RETURNS boolean
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  nuevo uuid;
+BEGIN
+  IF app_usuario() IS NOT NULL THEN
+    RAISE EXCEPTION 'sin_permiso_para_cobranza';
+  END IF;
+  INSERT INTO collection_unrouted_events (id, proveedor, evento_id, tipo, transferencia_id, cuenta_id, cuenta_numero_id, monto_centavos, recibido_el, referencia)
+  VALUES (gen_random_uuid(), 'fintoc', p_evento, p_tipo, p_transferencia, p_cuenta, p_cuenta_numero, p_monto, p_fecha, p_referencia)
+  ON CONFLICT (proveedor, evento_id) DO NOTHING
+  RETURNING id INTO nuevo;
+  RETURN nuevo IS NOT NULL;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION cobranza_guardar_aviso_sin_destino(text, text, text, text, text, bigint, date, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cobranza_guardar_aviso_sin_destino(text, text, text, text, text, bigint, date, text) TO plataforma_cliente;
+
+-- Lo que lee el personal (scripts/cobranza-fintoc.ts avisos:sin-destino): administración de la plataforma, vigente.
+CREATE FUNCTION cobranza_avisos_sin_destino(p_limite integer)
+RETURNS SETOF collection_unrouted_events
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF app_usuario() IS NULL OR NOT EXISTS (
+    SELECT 1
+      FROM platform_staff s
+      JOIN platform_staff_roles r ON r.operator_id = s.operator_id AND r.user_id = s.user_id
+     WHERE s.user_id = app_usuario() AND s.operator_id = app_operador() AND s.estado = 'activo'
+       AND r.rol = 'administracion_plataforma'
+  ) THEN
+    RAISE EXCEPTION 'sin_permiso_para_cobranza';
+  END IF;
+  RETURN QUERY SELECT * FROM collection_unrouted_events ORDER BY recibido_en DESC LIMIT least(greatest(p_limite, 1), 500);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION cobranza_avisos_sin_destino(integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cobranza_avisos_sin_destino(integer) TO plataforma_sofipo;
+
+ALTER TABLE collection_unrouted_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE collection_unrouted_events FORCE ROW LEVEL SECURITY;
 
 -- Estado de cuenta ---------------------------------------------------------------------
 -- La empresa sube el archivo de su banco. El empate de columnas se recuerda por
@@ -983,6 +1127,8 @@ CREATE TABLE collection_statement_imports (
   CONSTRAINT collection_statement_imports_banco CHECK (banco ~ '^[a-z][a-z0-9_]{1,30}$'),
   CONSTRAINT collection_statement_imports_nombre CHECK (cobranza_texto(nombre_archivo, 1, 180) AND nombre_archivo !~ '[/\\]'),
   CONSTRAINT collection_statement_imports_huella CHECK (huella_archivo ~ '^[0-9a-f]{64}$'),
+  -- El mismo archivo, con el banco o el empate que sea, se importa una sola vez (r63-N1).
+  CONSTRAINT collection_statement_imports_archivo_unico UNIQUE (company_id, huella_archivo),
   CONSTRAINT collection_statement_imports_cuentas CHECK (
     renglones BETWEEN 0 AND 5000 AND abonos BETWEEN 0 AND renglones AND nuevos BETWEEN 0 AND abonos
   ),
@@ -1041,7 +1187,7 @@ CREATE FUNCTION cobranza_estado_cuenta_revisar()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF app_usuario() IS NULL OR NOT flujo_editor(NEW.company_id) THEN
@@ -1125,7 +1271,7 @@ CREATE FUNCTION cobranza_exige_auditoria()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   fila_id uuid;
@@ -1199,7 +1345,7 @@ FOR EACH ROW EXECUTE FUNCTION cobranza_exige_auditoria();
 CREATE FUNCTION empresas_con_cobranza()
 RETURNS TABLE (company_id uuid, operator_id uuid, demostracion boolean)
 LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT s.company_id, c.operator_id, c.demostracion
   FROM collection_settings s
@@ -1238,7 +1384,7 @@ RETURNS TABLE (
   demostracion boolean
 )
 LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT c.company_id, e.operator_id, c.customer_id, c.id, e.razon_social, k.nombre, c.concepto, p.periodicidad,
          c.monto_centavos, c.pagado_centavos, c.vencimiento, c.referencia, c.estado, c.pagado_el,
@@ -1337,3 +1483,43 @@ ALTER TABLE collection_provider_events FORCE ROW LEVEL SECURITY;
 ALTER TABLE collection_statement_mappings FORCE ROW LEVEL SECURITY;
 ALTER TABLE collection_statement_imports FORCE ROW LEVEL SECURITY;
 ALTER TABLE collection_statement_rows FORCE ROW LEVEL SECURITY;
+
+-- Empresa suspendida (r63-base-N5) ---------------------------------------------------
+-- La 0028 pega bloqueo_empresa_suspendida a cada tabla base de public con
+-- company_id que plataforma_cliente escribe (salvo audit_log: la bitácora sigue
+-- recibiendo eventos), pero solo a las que existen cuando corre. Si la 0028
+-- entró antes que esta migración, las tablas creadas después se quedarían sin
+-- él y una empresa suspendida seguiría escribiendo. Aquí se pega, con el mismo
+-- criterio y sin filtro de nombre, a toda tabla que lo necesite y no lo tenga,
+-- si la función ya existe; si no existe, lo hace la 0028 al correr. En los dos
+-- órdenes queda igual (tests/esquema/empresa-suspendida.test.ts).
+DO $$
+DECLARE
+  tabla text;
+BEGIN
+  IF to_regprocedure('bloqueo_empresa_suspendida()') IS NOT NULL THEN
+    FOR tabla IN
+      SELECT DISTINCT c.table_name
+        FROM information_schema.columns c
+        JOIN information_schema.role_table_grants g
+          ON g.table_schema = c.table_schema AND g.table_name = c.table_name
+         AND g.grantee = 'plataforma_cliente' AND g.privilege_type IN ('INSERT', 'UPDATE', 'DELETE')
+        JOIN information_schema.tables t
+          ON t.table_schema = c.table_schema AND t.table_name = c.table_name AND t.table_type = 'BASE TABLE'
+       WHERE c.table_schema = 'public' AND c.column_name = 'company_id' AND c.table_name <> 'audit_log'
+         AND NOT EXISTS (
+           SELECT 1 FROM pg_trigger x
+            WHERE x.tgrelid = format('public.%I', c.table_name)::regclass
+              AND x.tgname = 'bloqueo_empresa_suspendida' AND NOT x.tgisinternal
+         )
+       ORDER BY c.table_name
+    LOOP
+      EXECUTE format(
+        'CREATE TRIGGER bloqueo_empresa_suspendida BEFORE INSERT OR UPDATE OR DELETE ON %I '
+        'FOR EACH ROW EXECUTE FUNCTION bloqueo_empresa_suspendida()',
+        tabla
+      );
+    END LOOP;
+  END IF;
+END;
+$$;

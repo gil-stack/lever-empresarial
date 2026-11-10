@@ -3,8 +3,8 @@ import { describe, it } from "node:test";
 
 import { clabeValida, digitoClabe } from "../clabe.ts";
 import { cubetaDe, dso, rangoDeCubeta } from "./antiguedad.ts";
-import { conciliar, saldoAFavor } from "./conciliacion.ts";
-import { leerCorreos, validarAlta, validarConfiguracion, validarPagoManual } from "./entradas.ts";
+import { conciliar, referenciaABuscar, saldoAFavor } from "./conciliacion.ts";
+import { leerCorreos, validarAlta, validarCargoUnico, validarConfiguracion, validarPagoManual, validarPlanEditado } from "./entradas.ts";
 import { calendario, etiquetaPeriodo, periodosPorGenerar, vencimientoDe } from "./periodos.ts";
 import { correoDeHoy, CALENDARIO_POR_OMISION, type CorreoPrevio } from "./recordatorios.ts";
 import { digitoLuhn, normalizarReferencia, referenciaDe, referenciaValida } from "./referencia.ts";
@@ -69,23 +69,33 @@ describe("periodos y regla de fin de mes", () => {
 });
 
 describe("referencia de 7 dígitos", () => {
-  it("lleva el dígito de Luhn y la base acepta las mismas", () => {
-    assert.equal(referenciaDe(1), "0000018");
-    assert.equal(referenciaDe(2), "0000026");
+  it("el consecutivo empieza en 100000: siete dígitos sin ceros a la izquierda, con el de Luhn (r63-N2)", () => {
+    assert.equal(referenciaDe(100_000), "1000009");
+    assert.equal(referenciaDe(100_001), "1000017");
     assert.equal(referenciaDe(123456), "1234566");
+    assert.equal(referenciaDe(999_999), "9999996");
     assert.equal(digitoLuhn("000001"), 8);
-    for (let n = 1; n < 2000; n += 37) assert.equal(referenciaValida(referenciaDe(n)), true);
+    assert.throws(() => referenciaDe(99_999), /referencia_agotada/);
+    assert.throws(() => referenciaDe(1_000_000), /referencia_agotada/);
+    for (let n = 100_000; n < 102_000; n += 37) {
+      assert.match(referenciaDe(n), /^[1-9][0-9]{6}$/);
+      assert.equal(referenciaValida(referenciaDe(n)), true);
+    }
   });
 
-  it("un dígito cambiado ya no es referencia", () => {
-    assert.equal(referenciaValida("0000019"), false);
+  it("un dígito cambiado ya no es referencia, ni una que empieza con cero", () => {
+    assert.equal(referenciaValida("1000008"), false);
     assert.equal(referenciaValida("1234565"), false);
     assert.equal(referenciaValida("123456"), false);
+    // Cierra por Luhn, pero ninguna referencia de Lever empieza con cero: lo que un banco recortó no se completa.
+    assert.equal(referenciaValida("0000018"), false);
   });
 
-  it("completa los ceros que algunos bancos quitan", () => {
-    assert.equal(normalizarReferencia("18"), "0000018");
-    assert.equal(normalizarReferencia(" 0000018 "), "0000018");
+  it("solo los 7 dígitos exactos: no rellena con ceros lo que llegó corto (r63-N2)", () => {
+    assert.equal(normalizarReferencia(" 1000009 "), "1000009");
+    assert.equal(normalizarReferencia("18"), null);
+    assert.equal(normalizarReferencia("000018"), null);
+    assert.equal(normalizarReferencia("0000018"), null);
     assert.equal(normalizarReferencia("ABC"), null);
     assert.equal(normalizarReferencia("12345678"), null);
   });
@@ -97,7 +107,7 @@ describe("conciliación", () => {
 
   it("referencia exacta: aplica el monto completo", () => {
     const d = conciliar({ montoCentavos: 100_000, referencia: "0000018", clabeOrdenante: null }, { ...sinDatos, cargoDeLaReferencia: emitido });
-    assert.deepEqual(d, { clienteId: "k1", aplicacion: { cargoId: "c1", montoCentavos: 100_000, regla: "referencia" }, posibleDuplicado: false, motivo: "referencia" });
+    assert.deepEqual(d, { clienteId: "k1", aplicacion: { cargoId: "c1", montoCentavos: 100_000, regla: "referencia" }, posibleDuplicado: false, deOtroCliente: false, motivo: "referencia" });
   });
 
   it("pago parcial: aplica lo que llegó y el cargo queda con saldo", () => {
@@ -114,7 +124,7 @@ describe("conciliación", () => {
   it("otra transferencia con la referencia de un cargo ya pagado: posible duplicado, nada aplicado", () => {
     const d = conciliar({ montoCentavos: 100_000, referencia: "0000018", clabeOrdenante: null },
       { ...sinDatos, cargoDeLaReferencia: { ...emitido, estado: "pagado", saldoCentavos: 0 } });
-    assert.deepEqual(d, { clienteId: "k1", aplicacion: null, posibleDuplicado: true, motivo: "referencia_pagada" });
+    assert.deepEqual(d, { clienteId: "k1", aplicacion: null, posibleDuplicado: true, deOtroCliente: false, motivo: "referencia_pagada" });
   });
 
   it("referencia de un cargo cancelado: sabe el cliente y no toca el cargo", () => {
@@ -139,9 +149,9 @@ describe("conciliación", () => {
       clientesDeLaClabe: ["k2"],
       cargosAbiertosDelCliente: [{ id: "a", saldoCentavos: 50_000, vencimiento: "2026-11-01" }, { id: "b", saldoCentavos: 50_000, vencimiento: "2026-12-01" }],
     });
-    assert.deepEqual(dos, { clienteId: "k2", aplicacion: null, posibleDuplicado: false, motivo: "cliente_sin_coincidencia" });
+    assert.deepEqual(dos, { clienteId: "k2", aplicacion: null, posibleDuplicado: false, deOtroCliente: false, motivo: "cliente_sin_coincidencia" });
     const ambigua = conciliar({ montoCentavos: 50_000, referencia: null, clabeOrdenante: "x" }, { ...sinDatos, clientesDeLaClabe: ["k1", "k2"] });
-    assert.deepEqual(ambigua, { clienteId: null, aplicacion: null, posibleDuplicado: false, motivo: "sin_identificar" });
+    assert.deepEqual(ambigua, { clienteId: null, aplicacion: null, posibleDuplicado: false, deOtroCliente: false, motivo: "sin_identificar" });
     assert.equal(conciliar({ montoCentavos: 1, referencia: null, clabeOrdenante: null }, sinDatos).motivo, "sin_identificar");
   });
 
@@ -149,16 +159,16 @@ describe("conciliación", () => {
     const cargos = [{ id: "a", saldoCentavos: 50_000, vencimiento: "2026-11-01" }, { id: "b", saldoCentavos: 70_000, vencimiento: "2026-12-01" }];
     const exacto = conciliar({ montoCentavos: 70_000, referencia: null, clabeOrdenante: null },
       { ...sinDatos, clienteDeLaCuenta: "k3", cargosAbiertosDelCliente: cargos });
-    assert.deepEqual(exacto, { clienteId: "k3", aplicacion: { cargoId: "b", montoCentavos: 70_000, regla: "clabe_y_monto" }, posibleDuplicado: false, motivo: "cuenta_y_monto" });
+    assert.deepEqual(exacto, { clienteId: "k3", aplicacion: { cargoId: "b", montoCentavos: 70_000, regla: "clabe_y_monto" }, posibleDuplicado: false, deOtroCliente: false, motivo: "cuenta_y_monto" });
     const otro = conciliar({ montoCentavos: 60_000, referencia: null, clabeOrdenante: null },
       { ...sinDatos, clienteDeLaCuenta: "k3", cargosAbiertosDelCliente: cargos });
-    assert.deepEqual(otro, { clienteId: "k3", aplicacion: null, posibleDuplicado: false, motivo: "cliente_sin_coincidencia" });
+    assert.deepEqual(otro, { clienteId: "k3", aplicacion: null, posibleDuplicado: false, deOtroCliente: false, motivo: "cliente_sin_coincidencia" });
   });
 
   it("CLABE propia de un cliente con la referencia de otro cliente: no aplica nada", () => {
     const d = conciliar({ montoCentavos: 100_000, referencia: "0000018", clabeOrdenante: null },
       { ...sinDatos, clienteDeLaCuenta: "k9", cargoDeLaReferencia: emitido });
-    assert.deepEqual(d, { clienteId: "k9", aplicacion: null, posibleDuplicado: false, motivo: "referencia_de_otro_cliente" });
+    assert.deepEqual(d, { clienteId: "k9", aplicacion: null, posibleDuplicado: false, deOtroCliente: false, motivo: "referencia_de_otro_cliente" });
     const mismo = conciliar({ montoCentavos: 100_000, referencia: "0000018", clabeOrdenante: null },
       { ...sinDatos, clienteDeLaCuenta: "k1", cargoDeLaReferencia: emitido });
     assert.equal(mismo.motivo, "referencia");
@@ -167,11 +177,40 @@ describe("conciliación", () => {
   it("la misma clave de rastreo ya registrada en otro pago: posible duplicado, nada aplicado", () => {
     const d = conciliar({ montoCentavos: 100_000, referencia: "0000018", clabeOrdenante: null },
       { ...sinDatos, rastreoYaRegistrado: true, cargoDeLaReferencia: emitido });
-    assert.deepEqual(d, { clienteId: "k1", aplicacion: null, posibleDuplicado: true, motivo: "rastreo_ya_registrado" });
+    assert.deepEqual(d, { clienteId: "k1", aplicacion: null, posibleDuplicado: true, deOtroCliente: false, motivo: "rastreo_ya_registrado" });
   });
 
-  it("un pago anulado no deja saldo a favor", () => {
+  it("un número de menos de 7 dígitos nunca se aplica solo: queda en «Por conciliar» (r63-N2)", () => {
+    assert.equal(referenciaABuscar({ montoCentavos: 100, referencia: "18", clabeOrdenante: null }), null);
+    assert.equal(referenciaABuscar({ montoCentavos: 100, referencia: "0000018", clabeOrdenante: null }), null);
+    assert.equal(referenciaABuscar({ montoCentavos: 100, referencia: "1000009", clabeOrdenante: null }), "1000009");
+    // El depósito ajeno del revisor: «18» por $1.00 a la cuenta de la empresa.
+    const ajeno = conciliar({ montoCentavos: 100, referencia: "18", clabeOrdenante: null }, sinDatos);
+    assert.deepEqual(ajeno, { clienteId: null, aplicacion: null, posibleDuplicado: false, deOtroCliente: false, motivo: "referencia_incompleta" });
+    // Otra señal sí basta: la CLABE propia del cliente y el monto exacto de un solo cargo (no el número).
+    const conCuenta = conciliar({ montoCentavos: 70_000, referencia: "18", clabeOrdenante: null },
+      { ...sinDatos, clienteDeLaCuenta: "k3", cargosAbiertosDelCliente: [{ id: "b", saldoCentavos: 70_000, vencimiento: "2026-12-01" }] });
+    assert.equal(conCuenta.aplicacion?.regla, "clabe_y_monto");
+    const sinCoincidir = conciliar({ montoCentavos: 60_000, referencia: "18", clabeOrdenante: null },
+      { ...sinDatos, clienteDeLaCuenta: "k3", cargosAbiertosDelCliente: [{ id: "b", saldoCentavos: 70_000, vencimiento: "2026-12-01" }] });
+    assert.deepEqual(sinCoincidir, { clienteId: "k3", aplicacion: null, posibleDuplicado: false, deOtroCliente: false, motivo: "referencia_incompleta" });
+  });
+
+  it("la referencia de un cliente desde la CLABE que ya pagó por otro: se aplica con la marca (r63-N4)", () => {
+    const desdeUno = conciliar({ montoCentavos: 7_000, referencia: "1000009", clabeOrdenante: "002180701150123452" },
+      { ...sinDatos, cargoDeLaReferencia: emitido, clientesDeLaClabe: ["k-uno"] });
+    assert.deepEqual(desdeUno, { clienteId: "k1", aplicacion: { cargoId: "c1", montoCentavos: 7_000, regla: "referencia" }, posibleDuplicado: false, deOtroCliente: true, motivo: "referencia" });
+    // Esa CLABE ya había pagado también por este cliente (un corporativo que paga por sus filiales): sin marca.
+    const corporativo = conciliar({ montoCentavos: 7_000, referencia: "1000009", clabeOrdenante: "002180701150123452" },
+      { ...sinDatos, cargoDeLaReferencia: emitido, clientesDeLaClabe: ["k-uno", "k1"] });
+    assert.equal(corporativo.deOtroCliente, false);
+    // Una CLABE que nunca había pagado: sin marca.
+    assert.equal(conciliar({ montoCentavos: 7_000, referencia: "1000009", clabeOrdenante: "002180701150123452" }, { ...sinDatos, cargoDeLaReferencia: emitido }).deOtroCliente, false);
+  });
+
+  it("un pago anulado o devuelto no deja saldo a favor", () => {
     assert.equal(saldoAFavor({ montoCentavos: 10, aplicadoCentavos: 0, estado: "anulado" }), 0);
+    assert.equal(saldoAFavor({ montoCentavos: 10, aplicadoCentavos: 0, estado: "devuelto" }), 0);
   });
 });
 
@@ -250,6 +289,21 @@ describe("entradas", () => {
     if (!r.ok) {
       assert.deepEqual(r.errores.map((e) => e.campo).sort(), ["concepto", "correos", "monto", "nombre", "periodicidad", "primerVencimiento"]);
     }
+  });
+
+  it("el salto de línea del concepto se vuelve un espacio, sin pegar el texto (r63-N9)", () => {
+    const conSalto = "Servicio R63\r\nBcc: fuga@ejemplo.mx";
+    const alta = validarAlta({
+      nombre: "Abarrotes del Puerto", rfc: "", correos: "pagos@ejemplo.mx", concepto: conSalto,
+      tipo: "fijo", monto: "300.00", periodicidad: "mensual", primerVencimiento: "2027-01-31", fin: "",
+    }, HOY);
+    assert.equal(alta.ok && alta.valor.plan.concepto, "Servicio R63 Bcc: fuga@ejemplo.mx");
+    const unico = validarCargoUnico({ concepto: "Uno\nDos\rTres", monto: "1", vencimiento: "2027-01-31" }, HOY);
+    assert.equal(unico.ok && unico.valor.concepto, "Uno Dos Tres");
+    const editado = validarPlanEditado({ concepto: "Renta\r\n\r\nde bodega", monto: "1", fin: "" }, { tipo: "fijo", primerVencimiento: "2027-01-31" });
+    assert.equal(editado.ok && editado.valor.concepto, "Renta de bodega");
+    // Otro control (un tabulador vertical) se sigue rechazando.
+    assert.equal(validarCargoUnico({ concepto: "Uno\u000bDos", monto: "1", vencimiento: "2027-01-31" }, HOY).ok, false);
   });
 
   it("los correos no aceptan saltos de línea ni encabezados escondidos", () => {

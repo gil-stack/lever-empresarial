@@ -104,6 +104,55 @@ export function plantillaAvisoClabeCobranza(d: { razonSocial: string; persona: s
   });
 }
 
+/**
+ * Aviso interno: cambió el beneficiario o el correo de contacto de la cobranza
+ * (r63-N3). El contacto es el Reply-To de cada cobro: quien lo cambia recibe
+ * las respuestas de los clientes, como «¿a qué cuenta pago?».
+ */
+export function plantillaAvisoDatosCobranza(d: {
+  razonSocial: string;
+  persona: string;
+  beneficiario: { anterior: string | null; nuevo: string } | null;
+  contacto: { anterior: string | null; nuevo: string | null } | null;
+  enlace: string;
+}): CorreoPlantilla {
+  const que = d.beneficiario && d.contacto ? "el beneficiario y el correo de contacto" : d.beneficiario ? "el beneficiario" : "el correo de contacto";
+  const parrafos: string[] = [];
+  if (d.beneficiario) {
+    parrafos.push(`${d.persona} cambió el beneficiario de los cobros${d.beneficiario.anterior ? ` de «${d.beneficiario.anterior}»` : ""} a «${d.beneficiario.nuevo}». Es el nombre que tus clientes ven para revisar a quién le pagan.`);
+  }
+  if (d.contacto) {
+    parrafos.push(d.contacto.nuevo
+      ? `${d.persona} cambió el correo de contacto de cobranza${d.contacto.anterior ? ` de ${d.contacto.anterior}` : ""} a ${d.contacto.nuevo}. Ahí llegan las respuestas de tus clientes a cada cobro.`
+      : `${d.persona} quitó el correo de contacto de cobranza${d.contacto.anterior ? ` (${d.contacto.anterior})` : ""}. Las respuestas de tus clientes ya no le llegan a nadie.`);
+  }
+  parrafos.push("Si no reconoces este cambio, revísalo de inmediato: desviar las respuestas de los clientes o cambiar el beneficiario son formas de desviar pagos.");
+  return armarCorreo(`Cambió ${que} de cobranza · ${d.razonSocial}`, {
+    preencabezado: `Cambió ${que} de la cobranza de ${d.razonSocial}.`,
+    kicker: "Aviso de seguridad",
+    titulo: `Cambió ${que} de la cobranza de ${d.razonSocial}`,
+    parrafos,
+    boton: { texto: "Revisar la configuración de cobranza", url: d.enlace },
+    notas: ["Recibes este aviso porque administras o llevas las finanzas de la empresa en Lever."],
+  });
+}
+
+/** Aviso interno: Fintoc avisó que la empresa devolvió al ordenante un abono ya aplicado (r63-N8). */
+export function plantillaAvisoDevolucionCobranza(d: { razonSocial: string; cliente: string | null; monto: string; enlace: string }): CorreoPlantilla {
+  const quien = d.cliente ?? "un cliente sin identificar";
+  return armarCorreo(`Se devolvió un abono de ${quien} · ${d.razonSocial}`, {
+    preencabezado: `El abono de ${d.monto} se devolvió al ordenante y su cargo volvió a quedar pendiente.`,
+    kicker: "Cobranza",
+    titulo: `Se devolvió un abono de ${d.monto}`,
+    parrafos: [
+      `Fintoc avisó que ${d.razonSocial} devolvió al ordenante el abono de ${d.monto} de ${quien}. Lever revirtió lo que ese abono había pagado: el cargo volvió a quedar pendiente y vuelve a recibir recordatorios.`,
+      "Si esa devolución no la pidió nadie de tu empresa, revísala con Fintoc.",
+    ],
+    boton: { texto: "Ver la cobranza", url: d.enlace },
+    notas: ["Recibes este aviso porque administras o llevas las finanzas de la empresa en Lever."],
+  });
+}
+
 /** Aviso interno: un cliente pidió no recibir recordatorios desde su enlace. */
 export function plantillaAvisoSinRecordatorios(d: { razonSocial: string; cliente: string; enlace: string }): CorreoPlantilla {
   return armarCorreo(`${d.cliente} pidió no recibir recordatorios · ${d.razonSocial}`, {

@@ -119,7 +119,7 @@ export async function leerResumen(consulta: Consulta, empresaId: string, hoy: st
        coalesce(sum(saldo) filter (where $2::date - vencimiento > 90), 0)::text as b4,
        count(*) filter (where $2::date - vencimiento > 90) as n4,
        ((select coalesce(sum(monto_centavos), 0) from collection_payments
-          where company_id = $1 and estado <> 'anulado' and recibido_el between $3::date and $2::date)
+          where company_id = $1 and estado not in ('anulado', 'devuelto') and recibido_el between $3::date and $2::date)
         + (select coalesce(sum(monto_centavos), 0) from expected_collections
           where company_id = $1 and estado = 'cobrado' and cobrado_el between $3::date and $2::date))::text as cobrado_mes,
        ((select coalesce(sum(monto_centavos), 0) from collection_charges
@@ -383,8 +383,10 @@ export type PagoVista = {
   referencia: string | null;
   clienteId: string | null;
   cliente: string | null;
-  estado: "abierto" | "aplicado" | "anulado";
+  estado: "abierto" | "aplicado" | "anulado" | "devuelto";
   posibleDuplicado: boolean;
+  /** Se aplicó por referencia desde una CLABE que antes solo había pagado por otros clientes (r63-N4). */
+  deOtroCliente: boolean;
   conComprobante: boolean;
   documentoId: string | null;
   motivo: string | null;
@@ -485,7 +487,7 @@ export async function leerPagos(
   const r = await aplicarSentencia(
     consulta,
     `select p.id, p.fuente, p.monto_centavos::text as monto, p.aplicado_centavos::text as aplicado, p.recibido_el, p.clave_rastreo,
-            p.referencia, p.customer_id, k.nombre as cliente, p.estado, p.posible_duplicado, p.document_id, p.motivo_anulacion,
+            p.referencia, p.customer_id, k.nombre as cliente, p.estado, p.posible_duplicado, p.de_otro_cliente, p.document_id, p.motivo_anulacion,
             coalesce((select json_agg(json_build_object('id', a.id, 'cargo', a.charge_id, 'monto', a.monto_centavos::text, 'regla', a.regla,
                                                         'concepto', c.concepto,
                                                         'revertida', exists (select 1 from collection_applications r
@@ -513,8 +515,9 @@ export async function leerPagos(
     referencia: textoONulo(p.referencia),
     clienteId: textoONulo(p.customer_id),
     cliente: textoONulo(p.cliente),
-    estado: p.estado === "aplicado" ? "aplicado" : p.estado === "anulado" ? "anulado" : "abierto",
+    estado: p.estado === "aplicado" ? "aplicado" : p.estado === "anulado" ? "anulado" : p.estado === "devuelto" ? "devuelto" : "abierto",
     posibleDuplicado: booleano(p.posible_duplicado),
+    deOtroCliente: booleano(p.de_otro_cliente),
     conComprobante: p.document_id !== null && p.document_id !== undefined,
     documentoId: textoONulo(p.document_id),
     motivo: textoONulo(p.motivo_anulacion),

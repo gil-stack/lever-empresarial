@@ -101,6 +101,11 @@ export function aplicarArchivo(url: string, archivo: string): void {
   correrPsql(url, ["-f", archivo]);
 }
 
+/** Como `aplicarArchivo`, en una sola transacción: si falla, la base queda como estaba (como db/migrate.sh). */
+export function aplicarArchivoEnTransaccion(url: string, archivo: string): void {
+  correrPsql(url, ["-1", "-f", archivo]);
+}
+
 export function ejecutar(url: string, sql: string): void {
   correrPsql(url, ["-c", sql]);
 }

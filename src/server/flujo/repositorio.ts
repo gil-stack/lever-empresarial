@@ -155,7 +155,7 @@ export const SQL_FUENTES = `
          select p.id, coalesce(n.nombre, 'Pago sin identificar'), 'Pago recibido', p.monto_centavos, p.recibido_el, p.clave_rastreo
            from collection_payments p
            left join collection_customers n on n.id = p.customer_id and n.company_id = p.company_id
-          where p.company_id = $1 and p.estado <> 'anulado'
+          where p.company_id = $1 and p.estado not in ('anulado', 'devuelto')
             and p.recibido_el between $2::date and $3::date
        ) x), '[]'::json) as cobrados
 `;

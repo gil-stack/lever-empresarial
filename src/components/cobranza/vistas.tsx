@@ -325,7 +325,8 @@ function ListaPagos({ pagos, puedeEditar, opciones, empresaId }: { pagos: readon
               <strong className="cifra">{formatoPesos(p.montoCentavos)}</strong>
               <span>{p.cliente ? p.clienteId ? <Link href={enEmpresa(empresaId, `/consola/cobros/clientes/${p.clienteId}`)}>{p.cliente}</Link> : p.cliente : "Sin identificar"}</span>
               {p.posibleDuplicado ? <Insignia tono="aviso">Posible duplicado</Insignia> : null}
-              {p.estado === "anulado" ? <Insignia>Anulado</Insignia> : p.estado === "abierto" ? <Insignia tono="aviso">{p.aplicadoCentavos > 0 ? `Saldo a favor ${formatoPesos(libre)}` : "Sin aplicar"}</Insignia> : <Insignia tono="sello">Aplicado</Insignia>}
+              {p.deOtroCliente ? <span data-marca="otro-cliente"><Insignia tono="aviso">Pagado desde la cuenta de otro cliente</Insignia></span> : null}
+              {p.estado === "anulado" ? <Insignia>Anulado</Insignia> : p.estado === "devuelto" ? <Insignia>Devuelto al ordenante</Insignia> : p.estado === "abierto" ? <Insignia tono="aviso">{p.aplicadoCentavos > 0 ? `Saldo a favor ${formatoPesos(libre)}` : "Sin aplicar"}</Insignia> : <Insignia tono="sello">Aplicado</Insignia>}
             </div>
             <p className="pista">
               {fuente[p.fuente]} · llegó el {fechaConAnio(p.recibidoEl)}{p.claveRastreo ? <> · rastreo <span className="mono">{p.claveRastreo}</span></> : null}{p.referencia ? ` · ref ${p.referencia}` : ""}
@@ -337,7 +338,7 @@ function ListaPagos({ pagos, puedeEditar, opciones, empresaId }: { pagos: readon
                 {p.aplicaciones.map((a) => (
                   <li key={a.id}>
                     <span>{formatoPesos(a.montoCentavos)} a «{a.concepto}»{a.revertida ? " · revertida" : ""}</span>
-                    {puedeEditar && !a.revertida && p.estado !== "anulado" ? <RevertirAplicacion aplicacionId={a.id} texto={`${formatoPesos(a.montoCentavos)} a «${a.concepto}»`} /> : null}
+                    {puedeEditar && !a.revertida && p.estado !== "anulado" && p.estado !== "devuelto" ? <RevertirAplicacion aplicacionId={a.id} texto={`${formatoPesos(a.montoCentavos)} a «${a.concepto}»`} /> : null}
                   </li>
                 ))}
               </ul>

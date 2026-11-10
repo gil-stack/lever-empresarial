@@ -13,6 +13,7 @@ import {
   type RenglonLeido,
 } from "../../dominio/cobranza/estado-cuenta";
 import { uuidValido } from "../../dominio/flujo/entradas";
+import { fechaConAnio } from "../../dominio/flujo/fechas";
 import { hoyEnMexico } from "../../dominio/personas";
 import { baseCliente, exigir, puede, type ContextoDeTenant } from "../../nucleo/contexto";
 import { aplicarSentencia, bloquearEmpresa, conContexto, type Consulta } from "../../nucleo/db";
@@ -58,6 +59,36 @@ function huella(clave: string): string {
 }
 
 /**
+ * El mismo archivo (byte por byte) se importa una sola vez por empresa, con el
+ * banco o el empate que sea (r63-N1). La base lo sostiene con UNIQUE (empresa,
+ * huella del archivo); esto da el día de la importación para el aviso.
+ */
+async function diaDeImportacion(consulta: Consulta, empresaId: string, huellaArchivo: string): Promise<string | null> {
+  const r = await aplicarSentencia(
+    consulta,
+    `select to_char(subido_en at time zone 'America/Mexico_City', 'YYYY-MM-DD') as dia
+       from collection_statement_imports where company_id = $1 and huella_archivo = $2`,
+    [empresaId, huellaArchivo],
+  );
+  return r.rows[0] ? texto(registro(r.rows[0]).dia) : null;
+}
+
+/** Se lanza fuera de la transacción: dentro, la base traduciría cualquier error a «base_no_disponible». */
+function archivoYaImportado(dia: string): ErrorDeCaptura {
+  return new ErrorDeCaptura([{ campo: "archivo", mensaje: `Ese archivo ya se importó el ${fechaConAnio(dia)}. Sus abonos ya están en la lista; no se volvieron a aplicar.` }]);
+}
+
+/**
+ * La referencia de un abono del estado de cuenta: la de Lever si se reconoce y,
+ * si no, el número corto tal como llegó, para que quede en «Por conciliar» como
+ * referencia incompleta (r63-N2). Nunca se completa con ceros.
+ */
+function referenciaDelAbono(renglon: { referencia: string | null; concepto: string | null }): string | null {
+  const corta = renglon.referencia?.trim() ?? "";
+  return referenciaLever(renglon) ?? (/^[0-9]{1,7}$/.test(corta) ? corta : null);
+}
+
+/**
  * Lee el archivo y, si ya hay empate para ese banco (o la persona lo acaba de
  * escribir), lo importa. Si no, regresa la vista previa para empatar: el
  * archivo sigue en el formulario y se vuelve a enviar con el empate.
@@ -73,6 +104,10 @@ export async function prepararEstadoDeCuenta(
   if (!banco) throw new ErrorDeCaptura([{ campo: "banco", mensaje: "Elige el banco del estado de cuenta." }]);
   if (!archivo || archivo.bytes.byteLength === 0) throw new ErrorDeCaptura([{ campo: "archivo", mensaje: "Elige el archivo del estado de cuenta (CSV o Excel)." }]);
   const nombre = archivo.nombre.replaceAll("\\", "/").split("/").pop()?.trim().slice(0, 180) || "estado-de-cuenta";
+  const huellaArchivo = createHash("sha256").update(archivo.bytes).digest("hex");
+  // Antes de leerlo: el mismo archivo ya importado se frena de entrada.
+  const dia = await conContexto(baseCliente(c), (consulta) => diaDeImportacion(consulta, c.empresa.id, huellaArchivo));
+  if (dia) throw archivoYaImportado(dia);
   let tabla: Tabla;
   try {
     tabla = leerEstadoDeCuenta(nombre, archivo.bytes);
@@ -106,7 +141,7 @@ export async function prepararEstadoDeCuenta(
       return previa("El archivo no tiene la forma del empate que guardaste para este banco. Revisa las columnas.", empate);
     }
   }
-  const lectura = aplicarEmpate(tabla, empate, banco, hoyDe(deps));
+  const lectura = aplicarEmpate(tabla, empate, hoyDe(deps));
   if (lectura.abonos.length === 0) {
     if (escrito) {
       throw new ErrorDeCaptura([{ campo: "columnaAbono", mensaje: "Con ese empate no encontramos abonos con fecha y monto. Revisa la columna de la fecha y la del abono." }]);
@@ -115,9 +150,11 @@ export async function prepararEstadoDeCuenta(
   }
   const auditar = deps?.auditar ?? auditarPorDefecto;
   const actor = actorDeCliente(c);
-  const huellaArchivo = createHash("sha256").update(archivo.bytes).digest("hex");
-  return conContexto(baseCliente(c), async (consulta) => {
+  const resultado = await conContexto(baseCliente(c), async (consulta) => {
     await bloquearEmpresa(consulta, c.empresa.id);
+    // Otra vez con la empresa bloqueada: dos subidas del mismo archivo a la vez, la segunda ya ve la primera.
+    const diaPrevio = await diaDeImportacion(consulta, c.empresa.id, huellaArchivo);
+    if (diaPrevio) return { tipo: "ya_importado" as const, dia: diaPrevio };
     if (escrito) {
       const previo = await empateGuardado(consulta, c.empresa.id, banco);
       if (!previo || JSON.stringify(previo) !== JSON.stringify(empate)) {
@@ -164,6 +201,8 @@ export async function prepararEstadoDeCuenta(
     }
     return { tipo: "importado" as const, importacionId, nuevos: nuevos.length, repetidos: conHuella.length - nuevos.length, sinFecha: lectura.sinFecha, futuros: lectura.futuros };
   });
+  if (resultado.tipo === "ya_importado") throw archivoYaImportado(resultado.dia);
+  return resultado;
 }
 
 async function empateGuardado(consulta: Consulta, empresaId: string, banco: ClaveBanco): Promise<Empate | null> {
@@ -239,7 +278,7 @@ async function proponer(consulta: Consulta, empresaId: string, renglones: { id: 
   )).rows.map(registro).map((f) => [texto(f.referencia), f] as const));
   const rastreos = new Map((await aplicarSentencia(
     consulta,
-    "select upper(clave_rastreo) as rastreo, id from collection_payments where company_id = $1 and estado <> 'anulado' and upper(clave_rastreo) = any($2::text[])",
+    "select upper(clave_rastreo) as rastreo, id from collection_payments where company_id = $1 and estado not in ('anulado', 'devuelto') and upper(clave_rastreo) = any($2::text[])",
     [empresaId, renglones.map((r) => r.rastreo).filter((r): r is string => r !== null)],
   )).rows.map(registro).map((f) => [texto(f.rastreo), texto(f.id)] as const));
   const abiertos = (await aplicarSentencia(
@@ -258,7 +297,7 @@ async function proponer(consulta: Consulta, empresaId: string, renglones: { id: 
     }
     const ref = refs.get(r.id) ?? null;
     const f = ref ? cargos.get(ref) : undefined;
-    const decision = conciliar({ montoCentavos: r.montoCentavos, referencia: ref, clabeOrdenante: null }, {
+    const decision = conciliar({ montoCentavos: r.montoCentavos, referencia: ref ?? referenciaDelAbono(r), clabeOrdenante: null }, {
       rastreoYaRegistrado: false,
       clienteDeLaCuenta: null,
       cargoDeLaReferencia: f ? { id: texto(f.id), clienteId: texto(f.customer_id), estado: texto(f.estado) as "emitido", saldoCentavos: centavos(f.saldo) } : null,
@@ -372,14 +411,14 @@ export async function confirmarEstadoDeCuenta(
       } else {
         const previo = rastreo ? (await aplicarSentencia(
           consulta,
-          "select id from collection_payments where company_id = $1 and upper(clave_rastreo) = upper($2) and estado <> 'anulado' limit 1",
+          "select id from collection_payments where company_id = $1 and upper(clave_rastreo) = upper($2) and estado not in ('anulado', 'devuelto') limit 1",
           [c.empresa.id, rastreo],
         )).rows[0] : undefined;
         if (previo) {
           estado = "ya_registrado";
           pagoId = texto(registro(previo).id);
         } else {
-          const ref = referenciaLever({ referencia: textoONulo(r.referencia), concepto: textoONulo(r.concepto) });
+          const ref = referenciaDelAbono({ referencia: textoONulo(r.referencia), concepto: textoONulo(r.concepto) });
           const recibido = await recibirAbono(consulta, actor, auditar, "estado_cuenta", {
             idExterno: `edc:${texto(r.huella)}`,
             montoCentavos: centavos(r.monto),
