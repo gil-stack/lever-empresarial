@@ -104,6 +104,42 @@ test.describe("las tablas que se desplazan se alcanzan con el teclado", () => {
     }
   });
 
+  // Las dos tablas del historial de Aprobaciones: la de pagos se prueba con el rechazado de seed-pagos.sql (Taller). La de
+  // lotes de nómina solo existe después de que nomina.spec prepara uno en Altamar, en otra parte de la e2e y sin orden
+  // fijo; sembrar uno aquí le quitaría a esa prueba el lote vencido. La cubre tests/tablas-desplazables.test.ts.
+  test("Aprobaciones · historial a 390: la tabla de decisiones de pagos es una región con nombre y foco, y axe no marca scrollable-region-focusable", async ({ page, context }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await sesionDe(context, GIL);
+    await page.goto(`/c/${TALLER}/consola/aprobaciones?vista=historial`);
+    const tabla = page.getByRole("region", { name: "Tabla de decisiones de pagos a proveedores", exact: true });
+    await expect(tabla).toHaveAttribute("tabindex", "0");
+    await expect(tabla.locator("tbody tr")).not.toHaveCount(0);
+    await tabla.focus();
+    await expect(tabla).toBeFocused();
+    expect(await violaciones(page, ["scrollable-region-focusable"])).toEqual([]);
+  });
+
+  // Las de Operación (Clientes, Comisiones y Bitácora) también: en el teléfono la cartera y la bitácora no caben.
+  test("Operación a 390: las tablas de Clientes, Comisiones y Bitácora son regiones con nombre y foco, y axe no marca scrollable-region-focusable", async ({ page, context }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    const revisadas: string[] = [];
+    for (const [ruta, nombre] of [
+      ["/operacion/clientes", "Tabla de la cartera de clientes"],
+      ["/operacion/comisiones", "Tabla de versiones de comisiones"],
+      ["/operacion/bitacora", "Tabla de eventos de la bitácora"],
+    ] as const) {
+      await page.goto(ruta);
+      const tabla = page.getByRole("region", { name: nombre, exact: true });
+      if (!(await tabla.count())) continue; // Sin filas la página muestra «Sin …» en lugar de la tabla.
+      await expect(tabla, ruta).toHaveAttribute("tabindex", "0");
+      expect(await violaciones(page, ["scrollable-region-focusable"]), ruta).toEqual([]);
+      revisadas.push(ruta);
+    }
+    // La cartera siempre tiene empresas de la siembra: al menos esa se revisó.
+    expect(revisadas).toContain("/operacion/clientes");
+  });
+
   test("Fiscal a 1440: Tab llega a la DIOT, que no cabe, y las flechas la desplazan", async ({ page, context }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await sesionDe(context, GIL);
