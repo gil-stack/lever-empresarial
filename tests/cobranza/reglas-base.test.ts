@@ -52,7 +52,7 @@ describe("Cobranza: reglas de la base (0031)", { skip: urlAdmin.length === 0 }, 
       process.env.DATABASE_URL = app;
       try {
         const ids = await sembrar(url);
-        await reglas(app, ids);
+        await reglas(app, ids, url);
       } finally {
         await cerrarConexion();
         if (previo === undefined) delete process.env.DATABASE_URL;
@@ -111,7 +111,7 @@ async function sembrar(url: string): Promise<Ids> {
 
 type Resultado = { ok: true; valor: unknown } | { ok: false; code?: string; constraint?: string; message: string };
 
-async function reglas(app: string, ids: Ids): Promise<void> {
+async function reglas(app: string, ids: Ids, duena: string): Promise<void> {
   const A = ids.admin;
   const E = ids.alfa;
   let n = 600_000;
@@ -333,7 +333,14 @@ async function reglas(app: string, ids: Ids): Promise<void> {
   });
   assert.deepEqual(sellos, { emitido: true, resuelto: true }, "base-N1: la base no selló las fechas");
 
-  // base-N4: con `public, pg_temp` las definers no leen las tablas temporales del que llama.
+  // base-N4: con `public, pg_temp` las definers no leen las tablas temporales del que llama. Desde la 0029
+  // la aplicación ya no crea tablas temporales; se le presta el permiso solo para esta sonda (como en
+  // tests/esquema/definer-search-path.test.ts), para que el search_path de la 0031 se pruebe por sí solo.
+  const temporal = (accion: "grant" | "revoke") => ejecutar(duena,
+    `do $$ begin execute format('${accion} temporary on database %I ${accion === "grant" ? "to" : "from"} ${C}', current_database()); end $$;`);
+  await rechaza("sin el permiso de la 0029 no hay tablas temporales", "42501",
+    (c) => c.query("create temp table collection_provider_accounts (company_id uuid)"), C, "", "");
+  temporal("grant");
   const sombraDestino = await acepta("base-N4 cobranza_destino_fintoc con collection_provider_accounts temporal", async (c) => {
     await c.query("create temp table collection_provider_accounts (company_id uuid, proveedor text, cuenta_id text)");
     await c.query("insert into collection_provider_accounts values ($1, 'fintoc', 'acc_Sombra1')", [ids.beta]);
@@ -346,6 +353,7 @@ async function reglas(app: string, ids: Ids): Promise<void> {
     await c.query("insert into collection_emails values ($1, $2, $3, '2099-01-01')", [ids.beta, ids.kb, falso]);
     return (await c.query("select referencia from cobranza_por_enlace($1)", [falso])).rows;
   }, C, "", E);
+  temporal("revoke");
   assert.deepEqual(sombraEnlace, [], "base-N4: cobranza_por_enlace leyó la tabla temporal y devolvió el cargo de Beta");
 
   // r63-N2: una referencia con 0 inicial no existe (el consecutivo empieza en 100000).
