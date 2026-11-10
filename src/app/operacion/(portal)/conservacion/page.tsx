@@ -76,15 +76,18 @@ export default async function ConservacionOperacion({ searchParams }: { searchPa
               <div className="formulario-pareja">
                 <div className="campo">
                   <label htmlFor="manifiesto-pagina">Página</label>
-                  <input id="manifiesto-pagina" name="pagina" inputMode="numeric" defaultValue={params.pagina ?? "1"} />
+                  <input id="manifiesto-pagina" name="pagina" inputMode="numeric" defaultValue={params.pagina ?? "1"} {...error("pagina")} />
+                  {mensaje("pagina")}
                 </div>
                 <div className="campo">
                   <label htmlFor="manifiesto-despues-en">Después de (fecha y hora)</label>
-                  <input id="manifiesto-despues-en" name="despuesEn" autoComplete="off" defaultValue={params.despuesEn ?? ""} />
+                  <input id="manifiesto-despues-en" name="despuesEn" autoComplete="off" defaultValue={params.despuesEn ?? ""} {...error("despuesEn")} />
+                  {mensaje("despuesEn")}
                 </div>
                 <div className="campo">
                   <label htmlFor="manifiesto-despues-id">Después del documento</label>
-                  <input id="manifiesto-despues-id" name="despuesId" autoComplete="off" className="operacion-mono" defaultValue={params.despuesId ?? ""} />
+                  <input id="manifiesto-despues-id" name="despuesId" autoComplete="off" className="operacion-mono" defaultValue={params.despuesId ?? ""} {...error("despuesId")} />
+                  {mensaje("despuesId")}
                 </div>
               </div>
             </details>

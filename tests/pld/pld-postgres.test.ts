@@ -51,6 +51,8 @@ import {
   leerPropuestasDePerfil,
   leerVotaciones,
   listarAlertasPld,
+  type CursorManifiesto,
+  DOCUMENTOS_POR_PAGINA,
   manifiestoDeConservacion,
   marcarVeinticuatroHoras,
   misAcuses,
@@ -2046,6 +2048,90 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           const deCum = { e2: await conteos(cum, e2), e0: await conteos(cum, e0) };
           assert.equal(deCum.e2.audit_log, deCum.e0.audit_log + heredados.length);
           assert.equal(k0.caso.length, 36);
+        });
+
+        // r2-serv-N23: con más de una página, el cursor (`siguiente.despues_en`) llevaba solo milisegundos: los documentos del
+        // mismo milisegundo que el último de la página salían otra vez en la siguiente. r2-serv-N24: página y cursor se
+        // revisan antes de la base.
+        await t.test("manifiesto por páginas (r2-serv-N23 y N24): el cursor lleva los microsegundos, cada documento sale una vez, y página y cursor se revisan antes de la base", async () => {
+          const zeta = randomUUID();
+          await dueno.query("begin");
+          await dueno.query(
+            `insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, operator_id, estado, demostracion)
+             values ($1, 'MNF150301AB8', 'Manifiesto Paginado SA de CV', '06600', '601', 'G03', $2, 'en_alta', false)`,
+            [zeta, operador],
+          );
+          await dueno.query(
+            "insert into audit_log (operator_id, company_id, actor_tipo, superficie, accion, entidad, identificador) values ($1, $2, 'sistema', 'sistema', 'alta_empresa', 'companies', $2)",
+            [operador, zeta],
+          );
+          await dueno.query("commit");
+          // 2,004 documentos, uno por microsegundo: la página 1 termina en el 2,000 (+1,999 µs), a mitad de un milisegundo.
+          const total = DOCUMENTOS_POR_PAGINA + 4;
+          const base = `${hoy}T18:00:00.000000Z`;
+          await dueno.query("begin");
+          await dueno.query("set local session_replication_role = replica");
+          await dueno.query(
+            `insert into kyb_documentos (id, operator_id, company_id, tipo, nombre_archivo, tipo_contenido, tamano_bytes, sha256, clave_blob, cargado_por, cargado_en)
+             select gen_random_uuid(), $1, $2::uuid, 'constancia_situacion_fiscal', 'csf-' || i || '.pdf', 'application/pdf', 1024, repeat('ab', 32),
+                    'kyb/' || $2::text || '/csf-' || i || '.pdf', $3, $4::timestamptz + make_interval(secs => i / 1000000.0)
+             from generate_series(0, $5::int - 1) as i`,
+            [operador, zeta, ORI, base, total],
+          );
+          await dueno.query("commit");
+
+          const pagina = async (numero: unknown, cursor: CursorManifiesto) => {
+            const lineas: Array<Record<string, unknown>> = [];
+            for await (const linea of manifiestoDeConservacion(cum, { companyId: zeta, desde: hoy, hasta: hoy, pagina: numero, cursor })) {
+              lineas.push(JSON.parse(linea) as Record<string, unknown>);
+            }
+            return lineas;
+          };
+          const vistos: string[] = [];
+          let numero = 1;
+          let cursor: CursorManifiesto = null;
+          const cursores: string[] = [];
+          for (let vuelta = 0; vuelta < 5; vuelta++) {
+            const lineas = await pagina(numero, cursor);
+            vistos.push(...lineas.filter((l) => "documento" in l).map((l) => String(l.documento)));
+            const siguiente = lineas.at(-1)?.siguiente as { pagina: number; despues_en: string; despues_id: string } | null;
+            if (!siguiente) break;
+            cursores.push(siguiente.despues_en);
+            numero = siguiente.pagina;
+            cursor = { despuesEn: siguiente.despues_en, despuesId: siguiente.despues_id };
+          }
+          assert.equal(vistos.length, total, "ningún documento sale dos veces");
+          assert.equal(new Set(vistos).size, total);
+          assert.deepEqual(cursores, [`${hoy}T18:00:00.001999Z`], "el cursor de la página 1 lleva sus microsegundos");
+          assert.equal(await contar("select count(*)::int as n from kyb_documentos where company_id = $1", [zeta]), total);
+
+          // r2-serv-N24: nada de esto llega a la base (ni deja evento en la bitácora).
+          const eventos = () => contar("select count(*)::int as n from audit_log where accion = 'pld_manifiesto_descargado' and company_id = $1", [zeta]);
+          const antes = await eventos();
+          const valido = { despuesEn: `${hoy}T18:00:00.001999Z`, despuesId: randomUUID() };
+          for (const [numeroMalo, cursorMalo, codigo] of [
+            [0, null, "manifiesto_pagina_invalida"],
+            [-1, null, "manifiesto_pagina_invalida"],
+            [1.5, null, "manifiesto_pagina_invalida"],
+            [2 ** 31, valido, "manifiesto_pagina_invalida"],
+            [Number.NaN, null, "manifiesto_pagina_invalida"],
+            ["2", valido, "manifiesto_pagina_invalida"],
+            [1, valido, "manifiesto_pagina_invalida"],
+            [2, null, "manifiesto_despues_en_invalido"],
+            [2, { ...valido, despuesEn: "" }, "manifiesto_despues_en_invalido"],
+            [2, { ...valido, despuesEn: "ayer" }, "manifiesto_despues_en_invalido"],
+            [2, { ...valido, despuesEn: `${hoy.slice(0, 4)}-02-30T18:00:00Z` }, "manifiesto_despues_en_invalido"],
+            [2, { ...valido, despuesEn: `${hoy}T24:00:00Z` }, "manifiesto_despues_en_invalido"],
+            [2, { ...valido, despuesEn: `${hoy}T18:00:00.0000001Z` }, "manifiesto_despues_en_invalido"],
+            [2, { ...valido, despuesId: "" }, "manifiesto_despues_id_invalido"],
+            [2, { ...valido, despuesId: "no-es-un-uuid" }, "manifiesto_despues_id_invalido"],
+          ] as Array<[unknown, CursorManifiesto, string]>) {
+            await assert.rejects(pagina(numeroMalo, cursorMalo), new RegExp(`^ErrorDeDominio: ${codigo}$|${codigo}`), `${String(numeroMalo)} ${JSON.stringify(cursorMalo)}`);
+          }
+          assert.equal(await eventos(), antes);
+          // La página 1 sin cursor y la 2 con uno de milisegundos (sin decimales extra) siguen sirviendo.
+          assert.ok((await pagina(1, null)).length > 1);
+          assert.ok((await pagina(2, { despuesEn: `${hoy}T18:00:00.001Z`, despuesId: randomUUID() })).length > 1);
         });
 
         await t.test("permisos de las funciones de PLD: PUBLIC no ejecuta ninguna; app, cliente y tarea tampoco; la SOFIPO, solo las que usa", async () => {

@@ -33,11 +33,14 @@ export async function GET(request: Request) {
     const companyId = url.searchParams.get("companyId") ?? "";
     const desde = url.searchParams.get("desde") ?? "";
     const hasta = url.searchParams.get("hasta") ?? "";
-    const pagina = Number(url.searchParams.get("pagina") ?? "1");
-    const despuesEn = url.searchParams.get("despuesEn");
-    const despuesId = url.searchParams.get("despuesId");
-    const cursor = despuesEn && despuesId && !Number.isNaN(Date.parse(despuesEn)) ? { despuesEn: new Date(despuesEn), despuesId } : null;
-    const lineas = manifiestoDeConservacion(ctx, { companyId, desde, hasta, pagina: Number.isInteger(pagina) && pagina >= 1 ? pagina : 1, cursor });
+    // r2-serv-N23 y N24: la página y el cursor van tal cual al servidor, que los revisa antes de la base; el cursor
+    // no pasa por Date (perdía los microsegundos).
+    const textoPagina = (url.searchParams.get("pagina") ?? "").trim() || "1";
+    const pagina = /^\d{1,10}$/.test(textoPagina) ? Number(textoPagina) : Number.NaN;
+    const despuesEn = (url.searchParams.get("despuesEn") ?? "").trim();
+    const despuesId = (url.searchParams.get("despuesId") ?? "").trim();
+    const cursor = despuesEn || despuesId ? { despuesEn, despuesId } : null;
+    const lineas = manifiestoDeConservacion(ctx, { companyId, desde, hasta, pagina, cursor });
     // La primera línea sale antes de responder: un permiso o un periodo inválido vuelven a la pantalla con su aviso.
     const primera = await lineas.next();
     const codificador = new TextEncoder();

@@ -151,6 +151,9 @@ export const MENSAJES_PLD: Record<string, string> = {
   dato_invalido_segundoApellido: "Escribe el segundo apellido, hasta 80 caracteres, o deja el campo vacío.",
   dato_invalido_cargoEntidad: "Escribe el cargo en la entidad, entre 1 y 120 caracteres.",
   auditor_nombre_invalido: "Escribe el nombre completo del auditor, entre 1 y 200 caracteres.",
+  manifiesto_pagina_invalida: "Escribe la página que dice «siguiente», un número desde 1. La página 1 va sin «después de».",
+  manifiesto_despues_en_invalido: "De la página 2 en adelante, copia la fecha y hora de «siguiente» tal como viene, con sus decimales.",
+  manifiesto_despues_id_invalido: "De la página 2 en adelante, copia el documento de «siguiente» tal como viene.",
   dato_invalido_designadoEl: "Escribe la fecha de designación; no puede ser futura.",
   dato_invalido_sustituidoEl: "Escribe la fecha de sustitución; no puede ser futura.",
   dato_invalido_certificado: "El número de certificado lleva hasta 22 letras, números, «/» o «-».",
@@ -219,6 +222,9 @@ export const CAMPO_PLD: Record<string, string> = {
   comite_persona_repetida: "rfc",
   comite_auditor_integrante: "rfc",
   auditor_nombre_invalido: "nombre",
+  manifiesto_pagina_invalida: "pagina",
+  manifiesto_despues_en_invalido: "despuesEn",
+  manifiesto_despues_id_invalido: "despuesId",
   evaluacion_sin_perfil_nuevo: "perfil",
 };
 

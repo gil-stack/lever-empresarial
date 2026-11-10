@@ -215,6 +215,45 @@ test.describe("sin JavaScript", () => {
     expect(await descargas()).toBe(antes);
   });
 
+  // r2-serv-N24: la página y el cursor se revisan antes de la base. Una página 0, una fecha que no es la de «siguiente» o
+  // un documento que no es un identificador vuelven a Conservación con lo capturado, el aviso en su campo y el foco ahí;
+  // la bitácora no registra una descarga.
+  test("sin JavaScript, una página o un cursor que no sirven vuelven con el aviso en su campo, el foco ahí y sin descarga", async ({ page, context }) => {
+    const descargas = () => contar("select 1 from audit_log where accion = 'pld_manifiesto_descargado'");
+    const antes = await descargas();
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    const casos = [
+      { pagina: "0", despuesEn: "", despuesId: "", campo: "#manifiesto-pagina", codigo: "manifiesto_pagina_invalida", texto: "Escribe la página que dice «siguiente», un número desde 1. La página 1 va sin «después de»." },
+      { pagina: "2", despuesEn: "ayer", despuesId: "0b6d3f8e-6c1a-4c1e-9d2a-3f4b5c6d7e8f", campo: "#manifiesto-despues-en", codigo: "manifiesto_despues_en_invalido", texto: "De la página 2 en adelante, copia la fecha y hora de «siguiente» tal como viene, con sus decimales." },
+      { pagina: "2", despuesEn: "2026-03-01T18:00:00.001999Z", despuesId: "no-es-un-documento", campo: "#manifiesto-despues-id", codigo: "manifiesto_despues_id_invalido", texto: "De la página 2 en adelante, copia el documento de «siguiente» tal como viene." },
+    ];
+    for (const caso of casos) {
+      await page.goto("/operacion/conservacion");
+      await page.locator("#manifiesto-empresa").selectOption(ceiba);
+      await page.locator("#manifiesto-desde").fill("2026-02-01");
+      await page.locator("#manifiesto-hasta").fill("2026-03-01");
+      await page.getByText("Continuar un manifiesto de varias páginas").click();
+      await page.locator("#manifiesto-pagina").fill(caso.pagina);
+      await page.locator("#manifiesto-despues-en").fill(caso.despuesEn);
+      await page.locator("#manifiesto-despues-id").fill(caso.despuesId);
+      const [envio] = await Promise.all([
+        page.waitForResponse((respuesta) => respuesta.url().includes("/operacion/conservacion/manifiesto")),
+        page.getByRole("button", { name: "Descargar manifiesto" }).click(),
+      ]);
+      expect(envio.status(), caso.codigo).toBe(303);
+      await page.waitForURL(new RegExp(`/operacion/conservacion\\?aviso=${caso.codigo}`));
+      expect(new URL(page.url()).hash, caso.codigo).toBe("");
+      await expect(page.locator("#manifiesto-empresa"), caso.codigo).toHaveValue(ceiba);
+      await expect(page.locator("#manifiesto-pagina"), caso.codigo).toHaveValue(caso.pagina);
+      await expect(page.locator("#manifiesto-despues-en"), caso.codigo).toHaveValue(caso.despuesEn);
+      await expect(page.locator("#manifiesto-despues-id"), caso.codigo).toHaveValue(caso.despuesId);
+      await expect(page.locator(`${caso.campo}:focus`), caso.codigo).toHaveCount(1);
+      await expect(page.locator(caso.campo), caso.codigo).toHaveAttribute("aria-invalid", "true");
+      await expect(page.locator('[id="aviso-operacion-campo"]'), caso.codigo).toHaveText(caso.texto);
+    }
+    expect(await descargas()).toBe(antes);
+  });
+
   // B (25ª): la bandeja de Cumplimiento enlaza al perfil del expediente. Sin JavaScript, quien entra por ese enlace y ve
   // rechazado el formulario del perfil recibe el foco en el campo: un fragmento que siga en la dirección haría que el
   // navegador vaya a ese id y descarte el autofocus (el mecanismo de F2 del #59).
