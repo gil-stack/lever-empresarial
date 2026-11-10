@@ -1,0 +1,27 @@
+Prueba «reglas de PLD: costo» (tests/pld/reglas-postgres.test.ts).
+
+Rojo en el CI de 10112ab (86FtEO1V5oAoog5eIFVoX40f): p95 30.73 ms contra el tope de 25. p50 y p95 del CI en las cuatro corridas con el escenario de 10,000:
+  EXPLAIN_PLD {"resumen":{"muestras":200,"p50":20.397,"p95":21.329,"p99":26.24,"max":39.511}
+  EXPLAIN_PLD {"resumen":{"muestras":200,"p50":20.544,"p95":20.957,"p99":21.746,"max":22.164}
+  EXPLAIN_PLD {"resumen":{"muestras":200,"p50":20.704,"p95":22.454,"p99":24.695,"max":32.784}
+  EXPLAIN_PLD {"resumen":{"muestras":200,"p50":21.284,"p95":30.73,"p99":37.275,"max":38.604}
+
+1) Guarda determinista (plan genérico de las 8 consultas de pld_evaluar_operacion). Sin la mutación:
+GUARDA_PLD {"perfil vigente":{"indices":["pld_perfiles_vigente_idx"],"secuenciales":[]},"excede_perfil: suma del mes":{"indices":["pld_operaciones_mes_idx","pld_operaciones_reemplazada"],"secuenciales":[]},"excede_perfil: alerta del mes":{"indices":["pld_alertas_excede_mes"],"secuenciales":[]},"monto_atipico: historial":{"indices":["pld_operaciones_tiempo_idx","pld_operaciones_reemplazada"],"secuenciales":[]},"monto_atipico: mediana":{"indices":["pld_operaciones_tiempo_idx","pld_operaciones_reemplazada"],"secuenciales":[]},"fraccionamiento":{"indices":["pld_operaciones_clabe_idx","pld_operaciones_reemplazada"],"secuenciales":[]},"nomina_atipica":{"indices":["pld_operaciones_tiempo_idx"],"secuenciales":[]},"grado de riesgo":{"indices":["kyb_calificaciones_riesgo_company_idx"],"secuenciales":[]}}
+
+Rojo quitando un índice a la vez antes de la guarda:
+sin pld_operaciones_mes_idx → salida 1 · AssertionError [ERR_ASSERTION]: excede_perfil: suma del mes: no usa pld_operaciones_mes_idx (usa pld_operaciones_tiempo_idx, pld_operaciones_reemplazada)
+sin pld_operaciones_tiempo_idx → salida 1 · AssertionError [ERR_ASSERTION]: monto_atipico: historial: no usa pld_operaciones_tiempo_idx (usa pld_operaciones_mes_idx, pld_operaciones_reemplazada)
+sin pld_operaciones_clabe_idx → salida 1 · AssertionError [ERR_ASSERTION]: fraccionamiento: no usa pld_operaciones_clabe_idx (usa pld_operaciones_tiempo_idx, pld_operaciones_reemplazada)
+sin pld_operaciones_reemplazada → salida 1 · AssertionError [ERR_ASSERTION]: excede_perfil: suma del mes: Seq Scan sobre pld_operaciones
+sin pld_alertas_excede_mes → salida 1 · AssertionError [ERR_ASSERTION]: excede_perfil: alerta del mes: no usa pld_alertas_excede_mes (usa pld_alertas_company_idx)
+sin pld_perfiles_vigente_idx → salida 1 · AssertionError [ERR_ASSERTION]: perfil vigente: no usa pld_perfiles_vigente_idx (usa pld_perfiles_numero_unico)
+
+2) Tiempo con calentamiento (20) y 300 muestras, topes del CI p50 ≤ 25 y p95 ≤ 40; cinco corridas seguidas en local (archivo completo) con la Mac ocupada por otras sesiones:
+corrida 1 (carga 61.20 69.30 52.23): salida 0 · costo ok=1 · registrar una más: p50 8.08 ms, p95 9.83 ms, p99 10.27 ms (300 muestras) 
+corrida 2 (carga 59.13 68.57 52.16): salida 0 · costo ok=1 · registrar una más: p50 8.13 ms, p95 10.07 ms, p99 14.63 ms (300 muestras) 
+corrida 3 (carga 56.96 67.80 52.08): salida 0 · costo ok=1 · registrar una más: p50 7.27 ms, p95 9.02 ms, p99 11.80 ms (300 muestras) 
+corrida 4 (carga 51.66 66.30 51.73): salida 0 · costo ok=1 · registrar una más: p50 6.40 ms, p95 8.02 ms, p99 8.94 ms (300 muestras) 
+corrida 5 (carga 47.54 64.94 51.42): salida 0 · costo ok=1 · registrar una más: p50 8.70 ms, p95 10.78 ms, p99 13.81 ms (300 muestras) 
+
+test:db completo (20 archivos en serie): ℹ tests 125 ℹ pass 125 ℹ fail 0 
