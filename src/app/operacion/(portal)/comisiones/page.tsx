@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
-import { solicitarComisionAccion } from "@/app/operacion/acciones";
-import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { etiquetaEstado, fechaDia } from "@/components/operacion/formato";
+import { FormularioComision } from "@/components/operacion/formulario-comision";
 import { PaginaOperacion } from "@/components/operacion/pagina";
-import { BotonEnviar, Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
+import { Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
 import { textoComision } from "@/dominio/operacion";
 import { exigirContextoOperacion, listarClientes, listarComisiones } from "@/server/operacion";
 import { puedeEnOperacion } from "@/server/operacion/permisos";
@@ -66,45 +65,7 @@ export default async function ComisionesOperacion({ searchParams }: { searchPara
               {activos.length === 0 ? (
                 <Vacio titulo="Sin empresas activas">Activa un cliente antes de configurar su tarifa.</Vacio>
               ) : (
-                <form action={solicitarComisionAccion}>
-                  <div className="campo">
-                    <label htmlFor="companyId">Empresa</label>
-                    <select id="companyId" name="companyId" required>
-                      {activos.map((cliente) => (
-                        <option key={cliente.id} value={cliente.id}>{cliente.razonSocial} · {cliente.rfc}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="campo">
-                    <label htmlFor="tipo">Tipo</label>
-                    <select id="tipo" name="tipo">
-                      <option value="fondeo">Fondeo · puntos base</option>
-                      <option value="spei">SPEI · centavos</option>
-                    </select>
-                  </div>
-                  <div className="campo">
-                    <label htmlFor="valor">Valor entero</label>
-                    <input
-                      id="valor"
-                      name="valor"
-                      inputMode="numeric"
-                      pattern="[0-9]+"
-                      maxLength={16}
-                      required
-                      aria-describedby={params.aviso === "comision_valor_invalido" ? "aviso-operacion valor-pista" : "valor-pista"}
-                      aria-invalid={params.aviso === "comision_valor_invalido" || undefined}
-                    />
-                    <p className="pista" id="valor-pista">250 puntos base = 2.50 %; 1500 centavos = $15.00.</p>
-                  </div>
-                  <div className="campo">
-                    <label htmlFor="vigenteDesde">Vigente desde</label>
-                    <input id="vigenteDesde" name="vigenteDesde" type="date" required {...errorDelCampo(params.aviso, "vigenteDesde")} />
-                    <MensajeDelCampo codigo={params.aviso} campo="vigenteDesde" />
-                  </div>
-                  <div className="acciones">
-                    <BotonEnviar>Pedir autorización</BotonEnviar>
-                  </div>
-                </form>
+                <FormularioComision empresas={activos.map((cliente) => ({ id: cliente.id, nombre: `${cliente.razonSocial} · ${cliente.rfc}` }))} />
               )}
             </Hoja>
           ) : undefined

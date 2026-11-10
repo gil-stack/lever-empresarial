@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { rechazado, type EstadoDelFormulario } from "@/app/operacion/rechazo";
 import { resolverRecuperacion } from "@/server/autenticacion";
 import { sesionSegura } from "@/server/entrada";
 import { exigirContextoOperacion } from "@/server/operacion";
@@ -17,8 +18,11 @@ import { ErrorDeDominio } from "@/server/session";
  * Rechazar y Aprobar comparten formulario y acción: el botón oprimido manda
  * `decision`, y así el formulario sabe cuál dice «Enviando…». Cualquier otro
  * valor se trata como rechazo, que exige nota y no concede nada.
+ *
+ * Con varias solicitudes pendientes, cada tarjeta lleva su formulario: un rechazo vuelve a esa tarjeta con lo
+ * elegido y lo escrito, y la página se vuelve a pintar (si el factor caducó, aparece «Confirma que eres tú»).
  */
-export async function decidirRecuperacionAccion(formData: FormData): Promise<void> {
+export async function decidirRecuperacionAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const aprobada = formData.get("decision") === "aprobar";
   const ctx = await exigirContextoOperacion();
   if (!puedeEnOperacion(ctx, "plataforma.empresa.alta")) redirect("/operacion/recuperaciones?aviso=sin_permiso_operacion");
@@ -32,14 +36,8 @@ export async function decidirRecuperacionAccion(formData: FormData): Promise<voi
       nota: formData.get("nota"),
     });
   } catch (error) {
-    if (error instanceof ErrorDeDominio) {
-      const aviso = error.codigo === "reautenticacion_requerida" ? "reautenticacion_factor" : error.codigo;
-      // Con varias solicitudes pendientes, el aviso marca y enfoca solo la tarjeta que se envió: va su id, nada más.
-      const id = formData.get("id");
-      const en = typeof id === "string" && /^[0-9a-f-]{36}$/i.test(id) ? `&en=${id}` : "";
-      redirect(`/operacion/recuperaciones?aviso=${encodeURIComponent(aviso)}${en}`);
-    }
-    throw error;
+    const reautenticar = error instanceof ErrorDeDominio && error.codigo === "reautenticacion_requerida";
+    return rechazado(previo, error, formData, ["verificacion", "nota"], reautenticar ? "reautenticacion_factor" : undefined);
   }
   revalidatePath("/operacion/recuperaciones");
   redirect("/operacion/recuperaciones?aviso=decision_registrada");

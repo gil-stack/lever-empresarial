@@ -5,11 +5,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
-import { calificarRiesgoAccion, crearVersionAccion, dictaminarAccion } from "@/app/operacion/acciones-alta";
-import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
+import { crearVersionAccion } from "@/app/operacion/acciones-alta";
 import { Coincidencias } from "@/components/operacion/coincidencias";
-import { FormulariosBorrador, VistaVersion, type ErrorDeCampo, type MensajeDeCampo } from "@/components/operacion/expediente";
+import { FormulariosBorrador, VistaVersion } from "@/components/operacion/expediente";
 import { etiquetaEstado, fechaDia, fechaHora } from "@/components/operacion/formato";
+import { FormularioDictamen } from "@/components/operacion/formulario-dictamen";
+import { FormularioRiesgo } from "@/components/operacion/formulario-riesgo";
+import { idDeAncla } from "@/components/operacion/envio-sin-script";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
@@ -51,7 +53,7 @@ export default async function ExpedienteCliente({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Parametros<"aviso" | "en" | "faltan">;
+  searchParams: Parametros<"aviso" | "faltan">;
 }) {
   const ctx = await exigirContextoOperacion();
   const [{ id }, busqueda] = await Promise.all([params, soloTexto(searchParams)]);
@@ -66,6 +68,9 @@ export default async function ExpedienteCliente({
   if (!expediente) notFound();
   // El detalle de la lista lo ven Cumplimiento y Auditoría; los demás, solo si hay revisión abierta.
   const veLista = puedeEnOperacion(ctx, "plataforma.cumplimiento.bandeja");
+  // Destinos de los enlaces de Cumplimiento (`#dictamen-titulo`, `#riesgo-titulo`): sin JavaScript, la página que responde
+  // a un envío los pinta con sufijo para que el fragmento no le quite el foco al campo rechazado (idDeAncla).
+  const [anclaDictamen, anclaRiesgo] = await Promise.all([idDeAncla("dictamen-titulo"), idDeAncla("riesgo-titulo")]);
   const [coincidencias, enRevision] = await Promise.all([
     veLista ? listarCoincidencias(ctx, { companyId: id }) : Promise.resolve([]),
     veLista ? Promise.resolve(false) : enRevisionDeCumplimiento(ctx, id),
@@ -76,9 +81,6 @@ export default async function ExpedienteCliente({
   const resuelve = puedeEnOperacion(ctx, "plataforma.lpb.resolver");
   const { vigente, borrador, riesgo } = expediente;
   const esperaDictamen = vigente !== null && vigente.dictamen === null;
-  const error: ErrorDeCampo = (seccion, campo) => (busqueda.en === seccion ? errorDelCampo(busqueda.aviso, campo) : {});
-  const mensaje: MensajeDeCampo = (seccion, campo) => (busqueda.en === seccion ? <MensajeDelCampo codigo={busqueda.aviso} campo={campo} /> : null);
-  const errorMotivo = error("dictamen-titulo", "motivo");
   const siguiente = (expediente.versiones[0]?.numero ?? 0) + 1;
 
   return (
@@ -140,12 +142,7 @@ export default async function ExpedienteCliente({
       </Hoja>
 
       {borrador && captura ? (
-        <FormulariosBorrador
-          version={borrador}
-          companyId={id}
-          error={error}
-          mensaje={mensaje}
-        />
+        <FormulariosBorrador version={borrador} companyId={id} />
       ) : null}
       {borrador && !captura ? (
         <Hoja id="borrador-titulo" titulo={`Borrador ${borrador.numero}`}>
@@ -155,7 +152,7 @@ export default async function ExpedienteCliente({
 
       {vigente ? (
         <>
-          <Hoja id="dictamen-titulo" titulo={`Dictamen · versión ${vigente.numero}`}>
+          <Hoja id={anclaDictamen} titulo={`Dictamen · versión ${vigente.numero}`}>
             {vigente.dictamen ? (
               <>
                 <Renglones>
@@ -170,42 +167,12 @@ export default async function ExpedienteCliente({
                 ) : null}
               </>
             ) : dictamina ? (
-              <form action={dictaminarAccion}>
-                <input type="hidden" name="companyId" value={id} />
-                <input type="hidden" name="versionId" value={vigente.id} />
-                <input type="hidden" name="formId" value={randomUUID()} />
-                <p>
-                  Envió {vigente.enviadaPor ?? "Originación"}
-                  {vigente.enviadaEn ? ` · ${fechaHora(vigente.enviadaEn)}` : ""}. Quien armó o envió la versión no puede dictaminarla.
-                </p>
-                <div className="campo">
-                  <label htmlFor="dictamen-resultado">Resultado</label>
-                  <select id="dictamen-resultado" name="resultado" required defaultValue="" {...error("dictamen-titulo", "resultado")}>
-                    <option value="" disabled>
-                      Elige uno
-                    </option>
-                    <option value="aprobado">Aprobado</option>
-                    <option value="observado">Observado: hay que corregir</option>
-                    <option value="rechazado">Rechazado</option>
-                  </select>
-                  {mensaje("dictamen-titulo", "resultado")}
-                </div>
-                <div className="campo">
-                  <label htmlFor="dictamen-motivo">Motivo (obligatorio si se observa o rechaza)</label>
-                  <textarea
-                    id="dictamen-motivo"
-                    name="motivo"
-                    maxLength={1000}
-                    {...errorMotivo}
-                    aria-describedby={["dictamen-motivo-pista", errorMotivo["aria-describedby"]].filter(Boolean).join(" ")}
-                  />
-                  {mensaje("dictamen-titulo", "motivo")}
-                  <p id="dictamen-motivo-pista" className="pista">Originación y Aprobación leen este motivo: no menciones la Lista ni el reporte.</p>
-                </div>
-                <div className="acciones">
-                  <BotonEnviar>Registrar dictamen</BotonEnviar>
-                </div>
-              </form>
+              <FormularioDictamen
+                companyId={id}
+                versionId={vigente.id}
+                formId={randomUUID()}
+                envio={`Envió ${vigente.enviadaPor ?? "Originación"}${vigente.enviadaEn ? ` · ${fechaHora(vigente.enviadaEn)}` : ""}`}
+              />
             ) : (
               <Vacio titulo="Por dictaminar">La dictamina Cumplimiento.</Vacio>
             )}
@@ -214,7 +181,7 @@ export default async function ExpedienteCliente({
         </>
       ) : null}
 
-      <Hoja id="riesgo-titulo" titulo="Grado de riesgo">
+      <Hoja id={anclaRiesgo} titulo="Grado de riesgo">
         {riesgo ? (
           <>
             <div className="operacion-ficha-cabeza">
@@ -244,32 +211,7 @@ export default async function ExpedienteCliente({
           <Vacio titulo="Sin grado de riesgo">Cumplimiento lo registra cuando la versión vigente está aprobada.</Vacio>
         )}
         {califica && vigente?.dictamen?.resultado === "aprobado" ? (
-          <form action={calificarRiesgoAccion} className="formulario-pareja operacion-forma">
-            <input type="hidden" name="companyId" value={id} />
-            <input type="hidden" name="formId" value={randomUUID()} />
-            <div className="campo">
-              <label htmlFor="riesgo-actividad">Riesgo de la actividad</label>
-              <select id="riesgo-actividad" name="actividad" defaultValue="baja" {...error("riesgo-titulo", "actividad")}>
-                <option value="baja">Baja</option>
-                <option value="media">Media</option>
-                <option value="alta">Alta</option>
-              </select>
-              {mensaje("riesgo-titulo", "actividad")}
-            </div>
-            <div className="campo">
-              <label htmlFor="riesgo-zona">Riesgo de la zona geográfica</label>
-              <select id="riesgo-zona" name="zona" defaultValue="baja" {...error("riesgo-titulo", "zona")}>
-                <option value="baja">Baja</option>
-                <option value="media">Media</option>
-                <option value="alta">Alta</option>
-              </select>
-              {mensaje("riesgo-titulo", "zona")}
-            </div>
-            <div className="acciones operacion-ancho">
-              <BotonEnviar>{riesgo ? "Registrar revisión periódica" : "Registrar grado al alta"}</BotonEnviar>
-              <p>Antigüedad, capas, persona expuesta, volumen y coincidencias salen del expediente.</p>
-            </div>
-          </form>
+          <FormularioRiesgo companyId={id} formId={randomUUID()} periodica={riesgo !== null} />
         ) : null}
       </Hoja>
 

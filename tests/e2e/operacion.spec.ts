@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Browser, type BrowserContext, type Locator, type Page, type Route } from "@playwright/test";
 
-import { CLAVE, codigoDeSemilla, codigoTotp, consultar, contar, dobleClic, idDe, sesionDe, vigilarConsola } from "./apoyo";
-import { BRISA, CIMA, CORREOS, DUNA, FARO } from "./siembra";
+import { CLAVE, codigoDeSemilla, codigoTotp, consultar, contar, dobleClic, envejecerFactor, idDe, ORIGEN, sesionDe, vigilarConsola } from "./apoyo";
+import { BRISA, CIMA, CORREOS, DUNA, EJE, ENEBRO, FARO, FRESNO, GRANADO, HIGUERA } from "./siembra";
 
 /**
  * Operación SOFIPO: entrada con segundo factor, alta de un prospecto con la
@@ -19,6 +19,9 @@ import { BRISA, CIMA, CORREOS, DUNA, FARO } from "./siembra";
 test.describe.configure({ mode: "serial" });
 
 const PROSPECTO = { razonSocial: "Puerto Nuevo E2E", rfc: "PNE200101AB3" };
+const MOTIVO_CORTO = "El motivo lleva al menos 10 caracteres: explica por qué en una frase. Queda en la bitácora y lo lee otra persona.";
+const FORMATO = "Revisa el campo marcado: el dato no tiene el formato esperado.";
+const VUELVE_A_ELEGIR = "Vuelve a elegir el archivo: por seguridad, el navegador no lo guarda después de un rechazo. Lo demás sigue como lo escribiste.";
 
 async function entrarAOperacion(page: Page, correo: string): Promise<void> {
   await page.goto("/operacion/entrar");
@@ -33,14 +36,14 @@ async function entrarAOperacion(page: Page, correo: string): Promise<void> {
 
 /**
  * Onceava revisión: el texto del error está a la vista junto al campo con foco, sin desplazarse. El campo tiene el foco
- * y apunta al mensaje (`aria-describedby`), el mensaje va justo debajo, dentro de la ventana y fuera de las barras
- * fijas, y en la página hay un solo campo marcado. Mide con las cajas de Playwright, que sirven también sin JavaScript;
- * antes de exigir, imprime la medida («MEDIDA …») con lo que el campo nombra como su descripción.
+ * y apunta al mensaje (`aria-describedby`), el mensaje está dentro de la ventana y fuera de las barras fijas, y en la
+ * página hay un solo campo marcado. Doceava: el mensaje va justo arriba del control, entre la etiqueta y el control
+ * (patrón GOV.UK), y el control asoma en la ventana. Mide con las cajas de Playwright, que sirven también sin
+ * JavaScript; antes de exigir, imprime la medida («MEDIDA …»).
  */
 async function mensajeJunto(page: Page, campo: string, texto: string, idMensaje = "aviso-operacion-campo"): Promise<void> {
   const control = page.locator(campo);
   await expect(page.locator(`${campo}:focus`)).toHaveCount(1);
-  const descrito = ((await control.getAttribute("aria-describedby")) ?? "").split(" ").filter(Boolean).at(-1) ?? "";
   const alto = page.viewportSize()!.height;
   let tapa = 0;
   for (const barra of [".barra-movil", ".barra-superior"]) {
@@ -48,26 +51,106 @@ async function mensajeJunto(page: Page, campo: string, texto: string, idMensaje 
     if (caja && caja.y <= 1 && caja.height > 0) tapa = Math.max(tapa, caja.y + caja.height);
   }
   const cajaCampo = (await control.boundingBox())!;
-  const cajaMensaje = descrito ? await page.locator(`[id="${descrito}"]`).first().boundingBox() : null;
-  const visible = cajaMensaje !== null && cajaMensaje.y >= tapa && cajaMensaje.y + cajaMensaje.height <= alto;
+  const cajaMensaje = await page.locator(`[id="${idMensaje}"]`).first().boundingBox();
+  const visible = cajaMensaje !== null && cajaMensaje.y >= tapa && cajaMensaje.y + cajaMensaje.height <= alto && cajaCampo.y + Math.min(cajaCampo.height, 40) <= alto;
   const redondo = (caja: { y: number; height: number } | null) => (caja ? { arriba: Math.round(caja.y), abajo: Math.round(caja.y + caja.height) } : null);
-  console.log(`MEDIDA ${campo} ${page.viewportSize()!.width}: ${JSON.stringify({ descrito, campo: redondo(cajaCampo), mensaje: redondo(cajaMensaje), barras: Math.round(tapa), ventana: alto, visible })}`);
-  await expect(control).toHaveAttribute("aria-describedby", new RegExp(`(^| )${idMensaje}$`));
+  console.log(`MEDIDA ${campo} ${page.viewportSize()!.width}: ${JSON.stringify({ mensaje: redondo(cajaMensaje), campo: redondo(cajaCampo), barras: Math.round(tapa), ventana: alto, visible })}`);
+  await expect(control).toHaveAttribute("aria-describedby", new RegExp(`(^| )${idMensaje}( |$)`));
   await expect(page.locator(`[id="${idMensaje}"]`)).toHaveCount(1);
   await expect(page.locator(`[id="${idMensaje}"]`)).toHaveText(texto);
   await expect(page.locator('[aria-invalid="true"]')).toHaveCount(1);
   expect(visible).toBe(true);
-  // Justo debajo del control: entre su orilla de abajo y el mensaje no cabe otro campo.
-  const separacion = cajaMensaje!.y - (cajaCampo.y + cajaCampo.height);
+  // Justo arriba del control: entre el mensaje y la orilla de arriba del control no cabe otro campo.
+  const separacion = cajaCampo.y - (cajaMensaje!.y + cajaMensaje!.height);
   expect(separacion).toBeGreaterThanOrEqual(0);
   expect(separacion).toBeLessThanOrEqual(24);
 }
 
 /**
+ * Doceava revisión: un formulario de Operación rechazado no cambia la dirección y vuelve con su aviso arriba del
+ * formulario: con JavaScript sin recargar; sin JavaScript, la página que responde al POST con 200 (ningún dato
+ * capturado pasa por la dirección). Con JavaScript marca antes el aviso anterior para esperar el nuevo.
+ */
+async function rechazado(page: Page, boton: Locator, idAviso: string, sinJs = false): Promise<void> {
+  const direccion = page.url();
+  if (!sinJs) await page.evaluate((id) => document.getElementById(id)?.setAttribute("data-anterior", "1"), idAviso);
+  const [respuesta] = await Promise.all([page.waitForResponse((r) => r.request().method() === "POST"), boton.click()]);
+  await expect(page.locator(`[id="${idAviso}"]:not([data-anterior])`)).toBeVisible();
+  expect(respuesta.status()).toBe(200);
+  expect(page.url()).toBe(direccion);
+  // El aviso de un formulario que ya no se pinta (arriba de la página) sobra cuando el formulario muestra el suyo.
+  await expect(page.locator("#aviso-rechazo")).toBeHidden();
+}
+
+/**
+ * Doceava revisión: otra pestaña registra el dictamen entre la vista y el envío. El rechazo vuelve a pintar la página,
+ * que ya no tiene el formulario del dictamen; antes su aviso se iba con él y la página quedaba sin explicación. Ahora va
+ * arriba de la página, anunciado, y no se queda: la cookie que lo trae nunca llega al navegador.
+ */
+async function dictamenYaRegistrado(page: Page, context: BrowserContext, rfc: string): Promise<void> {
+  const companyId = await empresaDe(rfc);
+  const dictamenes = () => contar("select 1 from kyb_dictamenes d join kyb_versiones v on v.id = d.version_id where v.company_id = $1", [companyId]);
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  const ruta = `/operacion/clientes/${companyId}/expediente`;
+  await page.goto(ruta);
+  await page.locator("#dictamen-resultado").selectOption("observado");
+  await page.locator("#dictamen-motivo").fill("Falta el acta constitutiva completa.");
+  const otra = await context.newPage();
+  await otra.goto(ruta);
+  await otra.locator("#dictamen-resultado").selectOption("aprobado");
+  await otra.locator("form:has(#dictamen-motivo)").getByRole("button", { name: "Registrar dictamen" }).click();
+  await otra.waitForURL(/aviso=expediente_dictaminado/);
+  await otra.close();
+  expect(await dictamenes()).toBe(1);
+  const direccion = page.url();
+  const [respuesta] = await Promise.all([
+    page.waitForResponse((r) => r.request().method() === "POST"),
+    page.locator("form:has(#dictamen-motivo)").getByRole("button", { name: "Registrar dictamen" }).click(),
+  ]);
+  expect(respuesta.status()).toBe(200);
+  const aviso = page.locator("#aviso-rechazo");
+  await expect(aviso).toBeVisible();
+  await expect(aviso).toHaveAttribute("data-aviso", "dictamen_ya_registrado");
+  await expect(aviso).toHaveText("Esa versión ya tiene dictamen.");
+  await expect(aviso.locator(".alerta")).toHaveAttribute("role", "alert");
+  await expect(page.locator("#dictamen-motivo")).toHaveCount(0);
+  await expect(page.locator(".operacion-aviso")).toHaveCount(1);
+  expect(page.url()).toBe(direccion);
+  expect(await dictamenes()).toBe(1);
+  expect((await context.cookies()).map((cookie) => cookie.name)).not.toContain("operacion-rechazo");
+  await page.goto(ruta);
+  await expect(page.locator("#aviso-rechazo")).toHaveCount(0);
+}
+
+/**
+ * Cambia el cuerpo de los envíos (POST) hasta `soltar()`: arma a mano lo que la pantalla no deja escribir (un nivel
+ * que no es de la lista) o reusa un identificador de formulario. Cada reemplazo conserva el largo del cuerpo.
+ */
+async function alterarEnvio(page: Page, cambio: (cuerpo: string) => string): Promise<{ soltar: () => Promise<void>; vistos: () => number }> {
+  let vistos = 0;
+  const ruta = async (route: Route) => {
+    const peticion = route.request();
+    const cuerpo = peticion.postDataBuffer();
+    if (peticion.method() !== "POST" || !cuerpo) return route.continue();
+    const antes = cuerpo.toString("latin1");
+    const despues = cambio(antes);
+    if (despues.length !== antes.length) throw new Error("el reemplazo cambia el largo del cuerpo");
+    if (despues !== antes) vistos += 1;
+    await route.continue({ postData: Buffer.from(despues, "latin1") });
+  };
+  await page.route("**/operacion/**", ruta);
+  return { soltar: () => page.unroute("**/operacion/**", ruta), vistos: () => vistos };
+}
+
+/** El identificador de formulario (oculto) de un formulario de la página. */
+const formIdDe = (page: Page, formulario: string) => page.locator(`${formulario} input[name="formId"]`).getAttribute("value") as Promise<string>;
+
+/**
  * El expediente de Duna rechaza un «PDF» que no lo es (documentos) y un capital «abc» del socio (accionistas); la ficha
  * de Cima, un motivo de reactivación de 9 caracteres («Revisar 😀», 10 unidades UTF-16: el navegador lo deja pasar).
+ * Doceava: cada uno vuelve con su aviso en el formulario y lo capturado; el archivo se elige otra vez y la nota lo dice.
  */
-async function errorDeDocumentoYDeSocio(page: Page, ancho: number): Promise<void> {
+async function errorDeDocumentoYDeSocio(page: Page, ancho: number, sinJs = false): Promise<void> {
   const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
   const documentos = () => contar("select 1 from kyb_documentos where company_id = $1", [duna!.id]);
   const socios = () => contar("select 1 from kyb_accionistas where company_id = $1", [duna!.id]);
@@ -75,18 +158,23 @@ async function errorDeDocumentoYDeSocio(page: Page, ancho: number): Promise<void
   await page.setViewportSize({ width: ancho, height: ancho < 600 ? 844 : 900 });
   await page.goto(`/operacion/clientes/${duna!.id}/expediente`);
   await page.locator("#doc-tipo").selectOption("acta_constitutiva");
+  await page.locator("#doc-emitido").fill("2015-03-01");
   await page.locator("#doc-detalle").fill("Escritura 1,204, Notaría 9 de Monterrey");
   await page.locator("#doc-archivo").setInputFiles({ name: "acta-falsa.pdf", mimeType: "application/pdf", buffer: Buffer.from("esto no es un PDF") });
-  await page.getByRole("button", { name: "Guardar documento" }).click();
-  await page.waitForURL(/aviso=archivo_no_admitido/);
-  await mensajeJunto(page, "#doc-archivo", "Sube un PDF, PNG o JPG legible.");
-  // El mismo error otra vez, desde la misma dirección: con JavaScript la página no se vuelve a montar.
-  await page.locator("#doc-detalle").fill("Escritura 1,204, Notaría 9 de Monterrey");
+  const guardar = page.getByRole("button", { name: "Guardar documento" });
+  await rechazado(page, guardar, "aviso-documento", sinJs);
+  await mensajeJunto(page, "#doc-archivo", "Sube un PDF, PNG o JPG legible.", "aviso-documento-campo");
+  // Vuelve todo menos el archivo, que se elige otra vez: la nota lo dice junto al campo y lo describe.
+  await expect(page.locator("#doc-tipo")).toHaveValue("acta_constitutiva");
+  await expect(page.locator("#doc-emitido")).toHaveValue("2015-03-01");
+  await expect(page.locator("#doc-detalle")).toHaveValue("Escritura 1,204, Notaría 9 de Monterrey");
+  await expect(page.locator("#doc-archivo")).toHaveValue("");
+  await expect(page.locator("#doc-archivo-nota")).toHaveText(VUELVE_A_ELEGIR);
+  await expect(page.locator("#doc-archivo")).toHaveAttribute("aria-describedby", "aviso-documento-campo doc-archivo-nota");
+  // El mismo error otra vez, con lo que volvió: solo se elige el archivo.
   await page.locator("#doc-archivo").setInputFiles({ name: "acta-falsa-2.pdf", mimeType: "application/pdf", buffer: Buffer.from("tampoco es un PDF") });
-  await page.getByRole("button", { name: "Guardar documento" }).click();
-  await page.waitForLoadState("networkidle");
-  await expect(page).toHaveURL(/aviso=archivo_no_admitido&en=documentos-titulo$/);
-  await mensajeJunto(page, "#doc-archivo", "Sube un PDF, PNG o JPG legible.");
+  await rechazado(page, guardar, "aviso-documento", sinJs);
+  await mensajeJunto(page, "#doc-archivo", "Sube un PDF, PNG o JPG legible.", "aviso-documento-campo");
 
   await page.goto(`/operacion/clientes/${duna!.id}/expediente`);
   await page.locator("#acc-tipo").selectOption("fisica");
@@ -106,9 +194,9 @@ async function errorDeDocumentoYDeSocio(page: Page, ancho: number): Promise<void
   const solicitudesAntes = await solicitudes();
   await page.goto(`/operacion/clientes/${cima!.id}`);
   await page.locator("#motivo-suspension").fill("Revisar 😀");
-  await page.getByRole("button", { name: "Pedir reactivación" }).click();
-  await page.waitForURL(/aviso=motivo_corto/);
-  await mensajeJunto(page, "#motivo-suspension", "El motivo lleva al menos 10 caracteres: explica por qué en una frase. Queda en la bitácora y lo lee otra persona.");
+  await rechazado(page, page.getByRole("button", { name: "Pedir reactivación" }), "aviso-suspension", sinJs);
+  await mensajeJunto(page, "#motivo-suspension", MOTIVO_CORTO, "aviso-suspension-campo");
+  await expect(page.locator("#motivo-suspension")).toHaveValue("Revisar 😀");
   expect(await solicitudes()).toBe(solicitudesAntes);
 }
 
@@ -270,8 +358,8 @@ test("un caso abierto de Cumplimiento no se le nombra a Aprobación ni a Origina
     "select rfc, estado from companies where rfc in ($1, $2) order by rfc", [BRISA.rfc, CIMA.rfc],
   )).map((fila) => fila.estado);
   expect(await estados()).toEqual(["en_alta", "suspendida"]);
-  const sinLista = async () => {
-    const aviso = page.locator("#aviso-operacion");
+  const sinLista = async (id = "aviso-operacion") => {
+    const aviso = page.locator(`#${id}`);
     await expect(aviso).toBeVisible();
     await expect(aviso).not.toContainText(/lista/i);
     await expect(aviso).not.toContainText(/bloquead/i);
@@ -290,9 +378,10 @@ test("un caso abierto de Cumplimiento no se le nombra a Aprobación ni a Origina
   await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
   await page.goto(`/operacion/clientes/${cima!.id}`);
   await page.locator("#motivo-suspension").fill("La empresa pidió revisar su caso.");
-  await page.getByRole("button", { name: "Pedir reactivación" }).click();
-  await page.waitForURL(/aviso=reactivacion_con_coincidencia_lpb/);
-  await expect(await sinLista()).toContainText("Cumplimiento tiene un caso abierto de esta empresa: no se puede reactivar hasta que lo resuelva.");
+  // Doceava: el aviso vuelve en el formulario, con el motivo escrito.
+  await rechazado(page, page.getByRole("button", { name: "Pedir reactivación" }), "aviso-suspension");
+  await expect(await sinLista("aviso-suspension")).toContainText("Cumplimiento tiene un caso abierto de esta empresa: no se puede reactivar hasta que lo resuelva.");
+  await expect(page.locator("#motivo-suspension")).toHaveValue("La empresa pidió revisar su caso.");
   expect(await contar("select 1 from company_suspensions where company_id = $1 and tipo = 'reactivacion'", [cima!.id])).toBe(0);
   expect(await estados()).toEqual(["en_alta", "suspendida"]);
   expect(errores).toEqual([]);
@@ -515,7 +604,9 @@ test("«Perdí el segundo factor»: Recuperaciones pide «Confirma que eres tú�
   await expect(page.getByRole("heading", { name: "Confirma que eres tú" })).toBeVisible();
   await solicitud.getByLabel("Cómo verificaste la identidad").selectOption("videollamada");
   await solicitud.getByRole("button", { name: "Aprobar" }).click();
-  await expect(page.getByText("Confirma que eres tú con tu segundo factor antes de decidir. Vale cinco minutos.")).toBeVisible();
+  // El aviso vuelve a la tarjeta (doceava); el de respaldo de arriba (formulario que ya no se pinta) queda oculto.
+  await expect(solicitud.getByText("Confirma que eres tú con tu segundo factor antes de decidir. Vale cinco minutos.")).toBeVisible();
+  await expect(page.locator("#aviso-rechazo")).toBeHidden();
   const [sinDecidir] = await consultar<{ estado: string }>("select estado from auth_recuperaciones where user_id = $1", [paula]);
   expect(sinDecidir!.estado).toBe("solicitada");
 
@@ -571,15 +662,19 @@ test("con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca sol
   const nota = (indice: number) => page.locator(`[id="nota-${ids[indice]}"]`);
   for (const correo of personas) await expect(tarjeta(correo)).toBeVisible();
 
-  await tarjeta(CORREOS.sol).getByRole("button", { name: "Rechazar" }).click();
-  await page.waitForURL(/aviso=motivo_invalido/);
-  expect(new URL(page.url()).searchParams.get("en")).toBe(ids[1]);
+  // Doceava: el aviso vuelve a esa tarjeta, con el método elegido; la dirección no cambia.
+  await page.locator(`[id="verificacion-${ids[1]}"]`).selectOption("videollamada");
+  await nota(1).fill("   ");
+  await rechazado(page, tarjeta(CORREOS.sol).getByRole("button", { name: "Rechazar" }), `aviso-recuperacion-${ids[1]}`);
   await expect(nota(1)).toHaveAttribute("aria-invalid", "true");
-  await expect(nota(1)).toHaveAttribute("aria-describedby", "aviso-operacion-campo");
+  await expect(nota(1)).toHaveAttribute("aria-describedby", `aviso-recuperacion-${ids[1]}-campo`);
   await expect(nota(1)).toBeFocused();
   await expect(page.locator('[aria-invalid="true"]')).toHaveCount(1);
   for (const indice of [0, 2]) await expect(nota(indice)).not.toHaveAttribute("aria-invalid", "true");
-  await mensajeJunto(page, `[id="nota-${ids[1]}"]`, "Escribe un motivo breve y claro.");
+  await mensajeJunto(page, `[id="nota-${ids[1]}"]`, "Escribe un motivo breve y claro.", `aviso-recuperacion-${ids[1]}-campo`);
+  await expect(page.locator(`[id="verificacion-${ids[1]}"]`)).toHaveValue("videollamada");
+  // El resumen de un aviso de campo no es región viva: el campo con el foco ya lo lee como su descripción.
+  await expect(page.locator(`[id="aviso-recuperacion-${ids[1]}"] .alerta`)).not.toHaveAttribute("role", /./);
 
   // Con su nota, cada una se rechaza; ninguna queda abierta para las demás pruebas.
   for (const [indice, correo] of personas.entries()) {
@@ -624,7 +719,7 @@ test.describe("sin JavaScript", () => {
 
   // serv-nuevo-7: con Referrer-Policy: no-referrer, el envío nativo de un formulario lleva «Origin: null» y Next
   // rechaza la acción con un 500. Pasa sin JavaScript y al hacer clic antes de que la página hidrate.
-  test("sin JavaScript los formularios responden: el alta vuelve con su aviso (303) y las dos entradas dan el suyo", async ({ page, context }) => {
+  test("sin JavaScript los formularios responden: el alta vuelve con su aviso y lo capturado (200) y las dos entradas dan el suyo", async ({ page, context }) => {
     const post = () => page.waitForResponse((respuesta) => respuesta.request().method() === "POST");
     await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
     await page.goto("/operacion/clientes");
@@ -634,9 +729,13 @@ test.describe("sin JavaScript", () => {
     const [alta] = await Promise.all([post(), page.getByRole("button", { name: "Registrar prospecto" }).click()]);
     // La causa: con «no-referrer» el navegador manda «Origin: null» en el envío nativo del formulario.
     expect(await alta.request().headerValue("origin")).toBe(new URL(alta.url()).origin);
-    expect(alta.status()).toBe(303);
-    await page.waitForURL(/aviso=razon_social_control/);
-    await expect(page.locator("#aviso-operacion")).toContainText("La razón social trae un carácter invisible");
+    // Doceava: el rechazo responde con la página (200) en la misma dirección, el aviso en el formulario y lo capturado.
+    expect(alta.status()).toBe(200);
+    expect(page.url()).not.toContain("aviso=");
+    await expect(page.locator("#aviso-prospecto")).toContainText("La razón social trae un carácter invisible");
+    await expect(page.getByLabel("RFC")).toHaveValue("SSU010101AB1");
+    await expect(page.getByLabel("Código postal")).toHaveValue("06600");
+    await mensajeJunto(page, "#razonSocial", "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano.", "aviso-prospecto-campo");
     expect(await contar("select 1 from companies where rfc = $1", ["SSU010101AB1"])).toBe(0);
 
     // La entrada de Operación y la del portal del cliente, sin sesión: la contraseña equivocada da su aviso ahí mismo.
@@ -656,7 +755,7 @@ test.describe("sin JavaScript", () => {
   // descarta el autofocus cuando hay fragmento. Sin fragmento, el campo queda marcado y con el foco.
   test("sin JavaScript, el mensaje del error queda a la vista junto al campo con foco: documento, socio, motivo de reactivación y la nota de una recuperación, a 1440 y 390", async ({ page, context }) => {
     await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-    for (const ancho of [1440, 390]) await errorDeDocumentoYDeSocio(page, ancho);
+    for (const ancho of [1440, 390]) await errorDeDocumentoYDeSocio(page, ancho, true);
 
     // La tercera de tres tarjetas de Recuperaciones, a 390: la nota queda lejos del aviso de arriba.
     const personas = [CORREOS.diego, CORREOS.sol, CORREOS.ernesto];
@@ -666,9 +765,10 @@ test.describe("sin JavaScript", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/operacion/recuperaciones");
     const tarjeta = (correo: string) => page.locator("li.decision").filter({ hasText: correo });
-    await tarjeta(CORREOS.ernesto).getByRole("button", { name: "Rechazar" }).click();
-    await page.waitForURL(/aviso=motivo_invalido/);
-    await mensajeJunto(page, `[id="nota-${ids[2]}"]`, "Escribe un motivo breve y claro.");
+    await page.locator(`[id="verificacion-${ids[2]}"]`).selectOption("presencial");
+    await rechazado(page, tarjeta(CORREOS.ernesto).getByRole("button", { name: "Rechazar" }), `aviso-recuperacion-${ids[2]}`, true);
+    await mensajeJunto(page, `[id="nota-${ids[2]}"]`, "Escribe un motivo breve y claro.", `aviso-recuperacion-${ids[2]}-campo`);
+    await expect(page.locator(`[id="verificacion-${ids[2]}"]`)).toHaveValue("presencial");
     // Con su nota, cada una se rechaza; ninguna queda abierta para las demás pruebas.
     for (const [indice, correo] of personas.entries()) {
       await page.locator(`[id="nota-${ids[indice]}"]`).fill("No se pudo confirmar la identidad por videollamada.");
@@ -728,25 +828,24 @@ test.describe("sin JavaScript", () => {
     expect([await representantes(), await socios()]).toEqual([representantesAntes, sociosAntes]);
   });
 
-  test("sin JavaScript, el rechazo de un campo del expediente vuelve sin fragmento y con el foco en el campo", async ({ page, context }) => {
+  test("sin JavaScript, el rechazo de un campo del expediente vuelve con lo capturado, sin fragmento y con el foco en el campo", async ({ page, context }) => {
     const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
-    const razonSocial = () => consultar<{ razon_social: string | null }>("select razon_social from kyb_versiones where company_id = $1 and estado = 'borrador'", [duna!.id]);
-    const antes = await razonSocial();
+    const datos = () => consultar("select razon_social, giro from kyb_versiones where company_id = $1 and estado = 'borrador'", [duna!.id]);
+    const antes = await datos();
     await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
     await page.goto(`/operacion/clientes/${duna!.id}/expediente`);
     await page.locator("#dato-razonSocial").fill("Duna\u200bComercial SA de CV");
-    const [guardado] = await Promise.all([
-      page.waitForResponse((respuesta) => respuesta.request().method() === "POST"),
-      page.getByRole("button", { name: "Guardar datos" }).click(),
-    ]);
-    expect(guardado.status()).toBe(303);
-    await page.waitForURL(/aviso=invisible_razonSocial&en=datos-titulo/);
+    await page.locator("#dato-giro").fill("Distribución de abarrotes al mayoreo");
+    await rechazado(page, page.getByRole("button", { name: "Guardar datos" }), "aviso-datos", true);
     const campo = page.locator("#dato-razonSocial");
     await expect(campo).toHaveAttribute("aria-invalid", "true");
-    await expect(campo).toHaveAttribute("aria-describedby", "aviso-operacion-campo");
+    await expect(campo).toHaveAttribute("aria-describedby", "aviso-datos-campo");
     await expect(page.locator("#dato-razonSocial:focus")).toHaveCount(1);
     expect(new URL(page.url()).hash).toBe("");
-    expect(await razonSocial()).toEqual(antes);
+    // Vuelve lo escrito en los dos campos, no lo guardado.
+    await expect(campo).toHaveValue("Duna\u200bComercial SA de CV");
+    await expect(page.locator("#dato-giro")).toHaveValue("Distribución de abarrotes al mayoreo");
+    expect(await datos()).toEqual(antes);
     // El foco desplazó la página: sin JavaScript nadie marca la barra superior, que lleva su fondo para no encimarse.
     await expect(page.locator(".barra-superior")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   });
@@ -793,4 +892,539 @@ test("la descarga del expediente llega aislada (sandbox) y la pantalla del exped
   const pantalla = await page.request.get(`/operacion/clientes/${faro!.id}/expediente`);
   expect(pantalla.status()).toBe(200);
   expect(pantalla.headers()["content-security-policy"]).toBe("frame-ancestors 'none'");
+  // Humo-N6 del preview: la política de permisos va en todas las respuestas, también en la descarga y fuera de Operación.
+  const permisos = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), display-capture=()";
+  const inicio = await page.request.get("/");
+  for (const [donde, respuesta] of [["pantalla", pantalla], ["descarga", descarga], ["inicio", inicio]] as const) {
+    expect(respuesta.headers()["permissions-policy"], donde).toBe(permisos);
+    expect(respuesta.headers()["referrer-policy"], donde).toBe("same-origin");
+  }
+});
+
+// ---------- Doceava revisión: los formularios de Operación vuelven con lo capturado tras un rechazo ----------
+
+const empresaDe = async (rfc: string) => (await consultar<{ id: string }>("select id from companies where rfc = $1", [rfc]))[0]!.id;
+const conId = (tabla: string, id: string) => contar(`select 1 from ${tabla} where id = $1`, [id]);
+
+/**
+ * Reintenta con el mismo identificador de formulario del envío rechazado (el rechazo no lo consumió) y con doble clic:
+ * con JavaScript, la página vuelve con otro identificador y el envío lo cambia por el del rechazo; sin JavaScript, los
+ * dos POST del doble clic llevan el mismo.
+ */
+async function reintentarConDobleClic(page: Page, boton: Locator, formulario: string, formId: string, esperar: RegExp, sinJs: boolean): Promise<void> {
+  const actual = await formIdDe(page, formulario);
+  const mismo = await alterarEnvio(page, (cuerpo) => cuerpo.split(actual).join(formId));
+  if (sinJs) {
+    await boton.dblclick();
+    await page.waitForURL(esperar);
+  } else {
+    await dobleClic(boton, { esperar });
+  }
+  await mismo.soltar();
+}
+
+/**
+ * El dictamen y el grado de riesgo al alta de una versión enviada por Originación: Cumplimiento observa con un motivo
+ * de 9 caracteres (vuelven el resultado y el motivo), el reintento con el mismo formulario y doble clic deja un solo
+ * dictamen; después, ningún nivel del riesgo arranca elegido, un nivel armado a mano vuelve sin elegir (nunca «baja»)
+ * con la zona elegida, y el reintento deja una sola calificación con lo elegido.
+ */
+async function dictamenYRiesgo(page: Page, context: BrowserContext, rfc: string, sinJs: boolean): Promise<void> {
+  const companyId = await empresaDe(rfc);
+  const [{ id: versionId }] = await consultar<{ id: string }>("select id from kyb_versiones where company_id = $1 and estado = 'enviada'", [companyId]);
+  const dictamenes = () => contar("select 1 from kyb_dictamenes where version_id = $1", [versionId!]);
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  await page.setViewportSize({ width: sinJs ? 390 : 1440, height: sinJs ? 844 : 900 });
+  await page.goto(`/operacion/clientes/${companyId}/expediente`);
+
+  const dictamen = "form:has(#dictamen-resultado)";
+  const registrar = page.getByRole("button", { name: "Registrar dictamen" });
+  const primero = await formIdDe(page, dictamen);
+  await page.locator("#dictamen-resultado").selectOption("observado");
+  await page.locator("#dictamen-motivo").fill("Revisar 😀");
+  await rechazado(page, registrar, "aviso-dictamen", sinJs);
+  await mensajeJunto(page, "#dictamen-motivo", MOTIVO_CORTO, "aviso-dictamen-campo");
+  await expect(page.locator("#dictamen-resultado")).toHaveValue("observado");
+  await expect(page.locator("#dictamen-motivo")).toHaveValue("Revisar 😀");
+  expect([await dictamenes(), await conId("kyb_dictamenes", primero)]).toEqual([0, 0]);
+  await page.locator("#dictamen-resultado").selectOption("aprobado");
+  await page.locator("#dictamen-motivo").fill("Expediente completo y vigente.");
+  await reintentarConDobleClic(page, registrar, dictamen, primero, /aviso=expediente_dictaminado/, sinJs);
+  expect([await dictamenes(), await conId("kyb_dictamenes", primero)]).toEqual([1, 1]);
+
+  const riesgo = "form:has(#riesgo-actividad)";
+  const calificaciones = () => contar("select 1 from kyb_calificaciones_riesgo where company_id = $1", [companyId]);
+  const calificar = page.getByRole("button", { name: "Registrar grado al alta" });
+  await expect(page.locator("#riesgo-actividad")).toHaveValue("");
+  await expect(page.locator("#riesgo-zona")).toHaveValue("");
+  // Sin elegir, el navegador no envía (también sin JavaScript): nada queda como «baja» sin haberlo elegido.
+  let envios = 0;
+  const contarEnvio = (peticion: { method(): string }) => { if (peticion.method() === "POST") envios += 1; };
+  page.on("request", contarEnvio);
+  await calificar.click();
+  await page.waitForTimeout(700);
+  page.off("request", contarEnvio);
+  expect(envios).toBe(0);
+  await expect(page.locator("#riesgo-actividad:invalid")).toHaveCount(1);
+  expect(await calificaciones()).toBe(0);
+
+  await page.locator("#riesgo-actividad").selectOption("media");
+  await page.locator("#riesgo-zona").selectOption("alta");
+  const formRiesgo = await formIdDe(page, riesgo);
+  const armado = await alterarEnvio(page, (cuerpo) => cuerpo.replace(/(name="[^"]*actividad"\r\n\r\n)media/, "$1MEDIA"));
+  await rechazado(page, calificar, "aviso-riesgo", sinJs);
+  await armado.soltar();
+  expect(armado.vistos()).toBe(1);
+  await mensajeJunto(page, "#riesgo-actividad", FORMATO, "aviso-riesgo-campo");
+  await expect(page.locator("#riesgo-actividad")).toHaveValue("");
+  await expect(page.locator("#riesgo-zona")).toHaveValue("alta");
+  expect([await calificaciones(), await conId("kyb_calificaciones_riesgo", formRiesgo)]).toEqual([0, 0]);
+  await page.locator("#riesgo-actividad").selectOption("media");
+  await reintentarConDobleClic(page, calificar, riesgo, formRiesgo, /aviso=riesgo_calificado/, sinJs);
+  expect(await calificaciones()).toBe(1);
+  expect(await consultar("select factores->'actividad'->>'valor' as actividad, factores->'zona'->>'valor' as zona from kyb_calificaciones_riesgo where id = $1", [formRiesgo])).toEqual([
+    { actividad: "media", zona: "alta" },
+  ]);
+}
+
+/** La coincidencia pendiente de una empresa de la siembra (Brisa o Cima), o la ya confirmada sin folio. */
+const coincidenciaDe = async (rfc: string, estado: "pendiente" | "confirmada") =>
+  (await consultar<{ id: string }>(
+    "select k.id from lpb_coincidencias k join companies c on c.id = k.company_id where c.rfc = $1 and k.estado = $2 and k.sujeto_tipo = 'empresa'",
+    [rfc, estado],
+  ))[0]!.id;
+
+/**
+ * Invitación, comisión y alerta con lo capturado de vuelta y su campo marcado (y, con JavaScript, el alta de un
+ * prospecto); el resumen de arriba (el aviso del envío anterior) no se queda junto al aviso del formulario rechazado, y
+ * en la página hay un solo campo marcado.
+ */
+async function formulariosConCaptura(page: Page, context: BrowserContext, sinJs: boolean): Promise<void> {
+  const faro = await empresaDe(FARO.rfc);
+  await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+
+  // Alta de prospecto, con y sin JavaScript. Humo del preview (N4): un RFC sin la forma de un RFC marcaba el RFC y vaciaba
+  // razón social, RFC y código postal. Ahora vuelven los cinco datos, con ese RFC y con el genérico.
+  await page.goto("/operacion/clientes");
+  const prospecto = `Puerto Sur E2E ${sinJs ? "sin" : "con"} JavaScript`;
+  await page.getByLabel("Razón social").fill(prospecto);
+  await page.getByLabel("Código postal").fill("64000");
+  await page.getByLabel("Régimen fiscal").selectOption("612");
+  await page.getByLabel("Uso CFDI").selectOption("S01");
+  for (const [rfc, texto] of [
+    ["1234567890AB", "Ese RFC no tiene la forma de un RFC: 12 caracteres si es persona moral o 13 si es física."],
+    ["XAXX010101000", "Ese es un RFC genérico (público en general o extranjero). Escribe el RFC de la empresa."],
+  ] as const) {
+    await page.getByLabel("RFC").fill(rfc);
+    await rechazado(page, page.getByRole("button", { name: "Registrar prospecto" }), "aviso-prospecto", sinJs);
+    await mensajeJunto(page, "#rfc", texto, "aviso-prospecto-campo");
+    for (const [campo, valor] of [["#razonSocial", prospecto], ["#rfc", rfc], ["#codigoPostal", "64000"], ["#regimen", "612"], ["#usoCfdi", "S01"]]) {
+      await expect(page.locator(campo), `${campo} tras ${rfc}`).toHaveValue(valor);
+    }
+  }
+  expect(await contar("select 1 from companies where razon_social = $1", [prospecto])).toBe(0);
+
+  // Invitación del primer administrador de Faro: «laura@ejemplo» pasa `type=email`; el servidor marca el correo con su
+  // mensaje (antes, `invitacion_invalida` no era de ningún campo; humo-N3 del preview).
+  const invitaciones = () => contar("select 1 from invitations where company_id = $1", [faro]);
+  const invitacionesAntes = await invitaciones();
+  await page.goto(`/operacion/clientes/${faro}`);
+  await page.locator("#nombre").fill("Ana Ruiz Sol");
+  await page.locator("#correo").fill("laura@ejemplo");
+  await rechazado(page, page.getByRole("button", { name: /Enviar invitación|Reenviar invitación/ }), "aviso-invitacion", sinJs);
+  await mensajeJunto(page, "#correo", "Escribe un correo válido, como nombre@empresa.mx.", "aviso-invitacion-campo");
+  await expect(page.locator("#nombre")).toHaveValue("Ana Ruiz Sol");
+  await expect(page.locator("#correo")).toHaveValue("laura@ejemplo");
+  expect(await invitaciones()).toBe(invitacionesAntes);
+
+  // Comisión: «Fondeo» con 20000 puntos base. El valor queda marcado, con el foco y su mensaje (revisor del servidor).
+  const comisiones = () => contar("select 1 from company_commissions where company_id = $1", [faro]);
+  const comisionesAntes = await comisiones();
+  const manana = new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10);
+  await page.goto("/operacion/comisiones");
+  await page.locator("#companyId").selectOption(faro);
+  await page.locator("#tipo").selectOption("fondeo");
+  await page.locator("#valor").fill("20000");
+  await page.locator("#vigenteDesde").fill(manana);
+  await rechazado(page, page.getByRole("button", { name: "Pedir autorización" }), "aviso-comision", sinJs);
+  await mensajeJunto(page, "#valor", "Escribe un número entero: puntos base para fondeo o centavos para SPEI.", "aviso-comision-campo");
+  await expect(page.locator("#valor")).toHaveAttribute("aria-describedby", "aviso-comision-campo valor-pista");
+  for (const [campo, valor] of [["#companyId", faro], ["#tipo", "fondeo"], ["#valor", "20000"], ["#vigenteDesde", manana]]) await expect(page.locator(campo!), campo).toHaveValue(valor!);
+  expect(await comisiones()).toBe(comisionesAntes);
+
+  // Alerta: un título de puros espacios (el navegador lo deja pasar) marca el título; vuelven la empresa y el detalle.
+  const alertas = () => contar("select 1 from operational_alerts where company_id = $1", [faro]);
+  const alertasAntes = await alertas();
+  await page.goto("/operacion/alertas");
+  await page.locator("#companyId").selectOption(faro);
+  await page.locator("#titulo").fill("   ");
+  await page.locator("#detalle").fill("Revisar el contrato firmado.");
+  const crear = page.getByRole("button", { name: "Crear alerta" });
+  await rechazado(page, crear, "aviso-alerta", sinJs);
+  await mensajeJunto(page, "#titulo", FORMATO, "aviso-alerta-campo");
+  await expect(page.locator("#companyId")).toHaveValue(faro);
+  await expect(page.locator("#detalle")).toHaveValue("Revisar el contrato firmado.");
+  expect(await alertas()).toBe(alertasAntes);
+
+  // Una alerta que sí se crea deja su aviso arriba; cerrarla con un motivo de puros espacios la marca en su tarjeta, y el
+  // resumen de arriba ya no aplica: no se queda junto al aviso del formulario.
+  const titulo = `Revisar contrato E2E ${sinJs ? "sin JavaScript" : "con JavaScript"}`;
+  await page.locator("#titulo").fill(titulo);
+  await crear.click();
+  await page.waitForURL(/aviso=alerta_creada/);
+  await expect(page.locator("#aviso-operacion")).toHaveText("Alerta creada con su responsable.");
+  const [{ id: alerta }] = await consultar<{ id: string }>("select id from operational_alerts where titulo = $1", [titulo]);
+  await page.locator(`[id="motivo-${alerta}"]`).fill("   ");
+  await rechazado(page, page.locator(`form:has([id="motivo-${alerta}"])`).getByRole("button", { name: "Cerrar alerta" }), `aviso-cierre-${alerta}`, sinJs);
+  await mensajeJunto(page, `[id="motivo-${alerta}"]`, "Escribe un motivo breve y claro.", `aviso-cierre-${alerta}-campo`);
+  await expect(page.locator("#aviso-operacion")).toHaveCount(0);
+  // Accesibilidad: el resumen de un aviso de campo no es región viva (el foco en el campo ya lo anuncia).
+  await expect(page.locator(`[id="aviso-cierre-${alerta}"] .alerta`)).not.toHaveAttribute("role", /./);
+  // Otro rechazo en otro formulario de la página: el aviso de la tarjeta se descarta y queda un solo campo marcado.
+  // (Tras crear la alerta, el formulario empezó en blanco.)
+  await page.locator("#titulo").fill("   ");
+  await page.locator("#detalle").fill("Revisar el contrato firmado.");
+  await rechazado(page, crear, "aviso-alerta", sinJs);
+  await expect(page.locator(`[id="aviso-cierre-${alerta}"]`)).toHaveCount(0);
+  await expect(page.locator('[aria-invalid="true"]')).toHaveCount(1);
+  await expect(page.locator("#titulo")).toHaveAttribute("aria-invalid", "true");
+  // Se cierra con su motivo: ninguna queda abierta para las demás pruebas.
+  await page.locator(`[id="motivo-${alerta}"]`).fill("Contrato revisado y firmado.");
+  await page.locator(`form:has([id="motivo-${alerta}"])`).getByRole("button", { name: "Cerrar alerta" }).click();
+  await page.waitForURL(/aviso=alerta_cerrada/);
+}
+
+/**
+ * Pedir la suspensión (o la reactivación): un motivo de 9 caracteres vuelve y no consume el formulario; el reintento con
+ * doble clic deja una sola solicitud. Otra persona tenía la ficha abierta desde antes: su envío vuelve con «ya hay una
+ * pendiente» y la página, sin recargar, muestra la nota en lugar del formulario.
+ */
+async function suspensionUnaVez(page: Page, context: BrowserContext, browser: Browser, rfc: string, boton: string, sinJs: boolean): Promise<void> {
+  const companyId = await empresaDe(rfc);
+  const solicitudes = () => contar("select 1 from company_suspensions where company_id = $1", [companyId]);
+  const antes = await solicitudes();
+  const otroContexto = await browser.newContext({ baseURL: ORIGEN, javaScriptEnabled: !sinJs });
+  await sesionDe(otroContexto, CORREOS.op3, { superficie: "sofipo" });
+  const otra = await otroContexto.newPage();
+  await otra.goto(`/operacion/clientes/${companyId}`);
+  await otra.locator("#motivo-suspension").fill("Revisión de Cumplimiento sobre el expediente.");
+
+  await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`/operacion/clientes/${companyId}`);
+  const formulario = "form:has(#motivo-suspension)";
+  const pedir = page.getByRole("button", { name: boton });
+  const primero = await formIdDe(page, formulario);
+  await page.locator("#motivo-suspension").fill("Revisar 😀");
+  await rechazado(page, pedir, "aviso-suspension", sinJs);
+  await expect(page.locator("#motivo-suspension")).toHaveValue("Revisar 😀");
+  expect([await solicitudes(), await conId("company_suspensions", primero)]).toEqual([antes, 0]);
+  await page.locator("#motivo-suspension").fill("Revisión del contrato y del expediente.");
+  await reintentarConDobleClic(page, pedir, formulario, primero, /aviso=(suspension|reactivacion)_solicitada/, sinJs);
+  expect([await solicitudes(), await conId("company_suspensions", primero)]).toEqual([antes + 1, 1]);
+
+  await rechazado(otra, otra.getByRole("button", { name: boton }), "aviso-suspension", sinJs);
+  await expect(otra.locator("#aviso-suspension")).toHaveText("Ya hay una solicitud de suspensión o reactivación pendiente para esta empresa.");
+  await expect(otra.locator("#aviso-suspension .alerta")).toHaveAttribute("role", "alert");
+  await expect(otra.getByText(/Hay una solicitud de (suspensión|reactivación) pendiente\. Se decide en Aprobaciones\./)).toBeVisible();
+  await expect(otra.locator("#motivo-suspension")).toHaveCount(0);
+  expect(await solicitudes()).toBe(antes + 1);
+  await otroContexto.close();
+}
+
+test("doceava: el dictamen y el grado de riesgo de Eje vuelven con lo elegido; nada queda en «baja» sin elegirlo y el doble clic tras el rechazo registra una vez", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  await dictamenYRiesgo(page, context, EJE.rfc, false);
+  expect(errores).toEqual([]);
+});
+
+test("doceava: los 17 datos generales vuelven como se escribieron; después de otro rechazo queda un solo aviso y el resumen de arriba se oculta", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const duna = await empresaDe(DUNA.rfc);
+  const guardados = () => consultar("select * from kyb_versiones where company_id = $1 and estado = 'borrador'", [duna]);
+  await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(`/operacion/clientes/${duna}/expediente`);
+  // Un envío que sí se aplica deja su aviso arriba, en la dirección.
+  const validos: Record<string, string> = {
+    razonSocial: DUNA.razonSocial, rfc: DUNA.rfc, giro: "Distribución de abarrotes", nacionalidad: "Mexicana", fechaConstitucion: "2019-04-04",
+    serieEfirma: "00001000000500000001", domicilioCalle: "Av. Constitución", domicilioExterior: "1200", domicilioInterior: "4B",
+    domicilioColonia: "Centro", domicilioMunicipio: "Monterrey", domicilioEntidad: "Nuevo León", domicilioCodigoPostal: "64000",
+    domicilioPais: "México", telefono: "8181234567", correo: "contacto@duna.mx", volumenMensualCentavos: "250000.00",
+  };
+  for (const [campo, valor] of Object.entries(validos)) await page.locator(`#dato-${campo}`).fill(valor);
+  await page.getByRole("button", { name: "Guardar datos" }).click();
+  await page.waitForURL(/aviso=expediente_datos_guardados/);
+  await expect(page.locator("#aviso-operacion")).toHaveText("Datos generales guardados en el borrador.");
+  const antes = await guardados();
+  // Los 17 con otro valor y la razón social con un carácter invisible: vuelven los 17 como se escribieron, no lo guardado.
+  const escritos: Record<string, string> = {
+    razonSocial: "Duna​Comercial SA de CV", rfc: DUNA.rfc, giro: "Comercio al por mayor de abarrotes", nacionalidad: "Mexicana",
+    fechaConstitucion: "2019-05-05", serieEfirma: "00001000000500000002", domicilioCalle: "Calle Hidalgo", domicilioExterior: "45",
+    domicilioInterior: "2", domicilioColonia: "Obispado", domicilioMunicipio: "San Pedro Garza García", domicilioEntidad: "Nuevo León",
+    domicilioCodigoPostal: "66220", domicilioPais: "México", telefono: "8187654321", correo: "ventas@duna.mx", volumenMensualCentavos: "300000.00",
+  };
+  for (const [campo, valor] of Object.entries(escritos)) await page.locator(`#dato-${campo}`).fill(valor);
+  await rechazado(page, page.getByRole("button", { name: "Guardar datos" }), "aviso-datos");
+  await mensajeJunto(page, "#dato-razonSocial", "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano.", "aviso-datos-campo");
+  for (const [campo, valor] of Object.entries(escritos)) await expect(page.locator(`#dato-${campo}`), campo).toHaveValue(valor);
+  await expect(page.locator("#aviso-operacion")).toHaveCount(0);
+  expect(await guardados()).toEqual(antes);
+  // Otro rechazo, en el documento: el aviso de los datos se descarta, lo escrito se queda y hay un solo campo marcado.
+  await page.locator("#doc-archivo").setInputFiles({ name: "acta-falsa.pdf", mimeType: "application/pdf", buffer: Buffer.from("esto no es un PDF") });
+  await page.locator("#doc-detalle").fill("Escritura 1,204, Notaría 9 de Monterrey");
+  await rechazado(page, page.getByRole("button", { name: "Guardar documento" }), "aviso-documento");
+  await expect(page.locator("#aviso-datos")).toHaveCount(0);
+  await expect(page.locator("#dato-razonSocial")).not.toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator("#dato-giro")).toHaveValue(escritos.giro!);
+  await mensajeJunto(page, "#doc-archivo", "Sube un PDF, PNG o JPG legible.", "aviso-documento-campo");
+  expect(errores).toEqual([]);
+});
+
+test("doceava: el dictamen de una coincidencia y su folio vuelven a su tarjeta con lo escrito; otro rechazo en otra tarjeta descarta el primero", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const [brisa, cima] = [await coincidenciaDe(BRISA.rfc, "pendiente"), await coincidenciaDe(CIMA.rfc, "pendiente")];
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/operacion/lpb");
+  const tarjeta = (id: string) => page.locator(`form:has([id="motivo-${id}"])`);
+  await page.locator(`[id="resolucion-${cima}"]`).selectOption("falso_positivo");
+  await page.locator(`[id="motivo-${cima}"]`).fill("Revisar 😀");
+  await rechazado(page, tarjeta(cima).getByRole("button", { name: "Registrar dictamen" }), `aviso-coincidencia-${cima}`);
+  await mensajeJunto(page, `[id="motivo-${cima}"]`, MOTIVO_CORTO, `aviso-coincidencia-${cima}-campo`);
+  await expect(page.locator(`[id="resolucion-${cima}"]`)).toHaveValue("falso_positivo");
+  await expect(page.locator(`[id="motivo-${cima}"]`)).toHaveValue("Revisar 😀");
+  await expect(page.locator(`[id="motivo-${brisa}"]`)).not.toHaveAttribute("aria-invalid", "true");
+  await page.locator(`[id="resolucion-${brisa}"]`).selectOption("confirmada");
+  await page.locator(`[id="motivo-${brisa}"]`).fill("Revisar 😀");
+  await rechazado(page, tarjeta(brisa).getByRole("button", { name: "Registrar dictamen" }), `aviso-coincidencia-${brisa}`);
+  await expect(page.locator(`[id="aviso-coincidencia-${cima}"]`)).toHaveCount(0);
+  await expect(page.locator(`[id="motivo-${cima}"]`)).toHaveValue("Revisar 😀");
+  await mensajeJunto(page, `[id="motivo-${brisa}"]`, MOTIVO_CORTO, `aviso-coincidencia-${brisa}-campo`);
+  expect(await contar("select 1 from lpb_coincidencias where id = any($1::uuid[]) and estado = 'pendiente'", [[brisa, cima]])).toBe(2);
+  // Brisa se confirma; su folio con una fecha futura vuelve a su tarjeta con lo escrito.
+  await page.locator(`[id="motivo-${brisa}"]`).fill("Coincide el RFC de la empresa con la lista.");
+  await tarjeta(brisa).getByRole("button", { name: "Registrar dictamen" }).click();
+  await page.waitForURL(/aviso=coincidencia_resuelta/);
+  await page.locator(`[id="folio-${brisa}"]`).fill("UIF-2026-0101");
+  await page.locator(`[id="presentado-${brisa}"]`).fill("2099-01-01");
+  await rechazado(page, page.locator(`form:has([id="folio-${brisa}"])`).getByRole("button", { name: "Anotar folio" }), `aviso-folio-${brisa}`);
+  await mensajeJunto(page, `[id="presentado-${brisa}"]`, "Revisa la fecha de presentación del reporte: debe existir en el calendario y no puede ser futura.", `aviso-folio-${brisa}-campo`);
+  await expect(page.locator(`[id="folio-${brisa}"]`)).toHaveValue("UIF-2026-0101");
+  await expect(page.locator(`[id="presentado-${brisa}"]`)).toHaveValue("2099-01-01");
+  expect(await contar("select 1 from lpb_coincidencias where id = $1 and reporte_folio is not null", [brisa])).toBe(0);
+  expect(errores).toEqual([]);
+});
+
+test("doceava: prospecto, invitación, comisión y alertas vuelven con lo capturado y su campo marcado; el resumen de arriba no se queda", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  await formulariosConCaptura(page, context, false);
+  expect(errores).toEqual([]);
+});
+
+test("doceava: tras un rechazo la página se vuelve a pintar: con el factor caducado aparece «Confirma que eres tú» y la tarjeta conserva lo elegido", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const [id] = await recuperacionesPendientes([CORREOS.sol]);
+  const tarjeta = () => page.locator("li.decision").filter({ hasText: CORREOS.sol });
+  await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+  await page.goto("/operacion/recuperaciones");
+  const panel = page.getByRole("heading", { name: "Confirma que eres tú" });
+  await expect(panel).toHaveCount(0);
+  await envejecerFactor(CORREOS.op2, 6);
+  await page.locator(`[id="verificacion-${id}"]`).selectOption("videollamada");
+  await page.locator(`[id="nota-${id}"]`).fill("Verificada por videollamada con su identificación.");
+  await rechazado(page, tarjeta().getByRole("button", { name: "Aprobar" }), `aviso-recuperacion-${id}`);
+  await expect(page.locator(`[id="aviso-recuperacion-${id}"]`)).toHaveText("Confirma que eres tú con tu segundo factor antes de decidir. Vale cinco minutos.");
+  await expect(page.locator(`[id="aviso-recuperacion-${id}"] .alerta`)).toHaveAttribute("role", "alert");
+  await expect(panel).toBeVisible();
+  await expect(page.locator(`[id="verificacion-${id}"]`)).toHaveValue("videollamada");
+  await expect(page.locator(`[id="nota-${id}"]`)).toHaveValue("Verificada por videollamada con su identificación.");
+  expect(await contar("select 1 from auth_recuperaciones where id = $1 and estado = 'solicitada'", [id])).toBe(1);
+  // Con una sesión nueva (factor reciente), se rechaza con su nota: ninguna queda abierta para las demás pruebas.
+  await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+  await page.goto("/operacion/recuperaciones");
+  await page.locator(`[id="nota-${id}"]`).fill("No se pudo confirmar la identidad por videollamada.");
+  await tarjeta().getByRole("button", { name: "Rechazar" }).click();
+  await expect(tarjeta()).toHaveCount(0);
+  expect(errores).toEqual([]);
+});
+
+test("doceava: la suspensión de Faro no consume el formulario al rechazarse, el doble clic pide una sola y la otra pestaña ve «ya hay una pendiente» sin recargar", async ({ page, context, browser }) => {
+  const errores = vigilarConsola(page);
+  await suspensionUnaVez(page, context, browser, FARO.rfc, "Pedir suspensión", false);
+  expect(errores).toEqual([]);
+});
+
+test("doceava: si otra pestaña ya registró el dictamen, el rechazo de Fresno va arriba de la página aunque su formulario ya no se pinte", async ({ page, context }) => {
+  await dictamenYaRegistrado(page, context, FRESNO.rfc);
+});
+
+// Doceava revisión: la cookie del rechazo también puede llegar del navegador en una visita normal (cualquiera la manda a
+// mano). La página solo pinta un código del catálogo, con su texto; lo demás se ignora y nunca se copia a la página.
+test("doceava: la cookie del rechazo fabricada en una visita normal solo pinta avisos del catálogo; un valor inventado no aparece", async ({ page, context }) => {
+  await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  const cookie = (value: string) => ({ name: "operacion-rechazo", value, domain: new URL(ORIGEN).hostname, path: "/operacion" });
+  await context.addCookies([cookie("dictamen_ya_registrado")]);
+  await page.goto("/operacion/clientes");
+  await expect(page.locator("#aviso-rechazo")).toHaveText("Esa versión ya tiene dictamen.");
+  await expect(page.locator("#aviso-rechazo")).toHaveAttribute("data-aviso", "dictamen_ya_registrado");
+  const inventado = "codigo_inventado<b>crudo</b>";
+  await context.addCookies([cookie(inventado)]);
+  await page.goto("/operacion/clientes");
+  await expect(page.locator("#aviso-rechazo")).toHaveCount(0);
+  expect(await page.content()).not.toContain("codigo_inventado");
+  await context.clearCookies({ name: "operacion-rechazo" });
+  // Lo mismo en la dirección: un código que no es del catálogo da el mensaje general y el aviso no lo copia (la dirección
+  // misma sí viaja en los datos del enrutador de Next).
+  await page.goto("/operacion/clientes?aviso=codigo_inventado");
+  await expect(page.locator("#aviso-operacion")).toHaveAttribute("data-aviso", "desconocido");
+  await expect(page.locator("#aviso-operacion")).toHaveText("No se pudo completar. Revisa los datos e inténtalo de nuevo.");
+  expect(await page.locator("#aviso-operacion").evaluate((nodo) => nodo.outerHTML)).not.toContain("codigo_inventado");
+  // Un campo fuera de la lista cerrada: ni por la cookie ni por la dirección se pinta un aviso, y el valor no queda en el
+  // marcado (la dirección misma solo viaja como texto en los datos del enrutador, dentro de un script).
+  const marcado = () => page.locator("body").evaluate((cuerpo) => {
+    const copia = cuerpo.cloneNode(true) as HTMLElement;
+    for (const script of copia.querySelectorAll("script")) script.remove();
+    return copia.innerHTML;
+  });
+  for (const valor of ["dato_invalido_<b>x</b>", 'invisible_" onfocus="x']) {
+    await context.addCookies([cookie(encodeURIComponent(valor))]);
+    await page.goto("/operacion/clientes");
+    await expect(page.locator(".operacion-aviso"), valor).toHaveCount(0);
+    expect(await page.content(), valor).not.toMatch(/onfocus|x<\/b>|x&lt;\/b&gt;/);
+    await context.clearCookies({ name: "operacion-rechazo" });
+    await page.goto(`/operacion/clientes?aviso=${encodeURIComponent(valor)}`);
+    await expect(page.locator(".operacion-aviso"), valor).toHaveCount(0);
+    expect(await marcado(), valor).not.toMatch(/onfocus|x<\/b>|x&lt;\/b&gt;/);
+  }
+});
+
+test.describe("doceava sin JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("sin JavaScript, el dictamen y el grado de riesgo de Enebro vuelven con lo elegido a 390; el doble clic tras el rechazo registra una vez", async ({ page, context }) => {
+    await dictamenYRiesgo(page, context, ENEBRO.rfc, true);
+  });
+
+  test("sin JavaScript, el estado de cada formulario vuelve a su tarjeta (la clave es el id): el dictamen de Cima y el folio de Brisa", async ({ page, context }) => {
+    const [cima, brisa] = [await coincidenciaDe(CIMA.rfc, "pendiente"), await coincidenciaDe(BRISA.rfc, "confirmada")];
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.goto("/operacion/lpb");
+    await page.locator(`[id="resolucion-${cima}"]`).selectOption("fuera_de_lista");
+    await page.locator(`[id="motivo-${cima}"]`).fill("Revisar 😀");
+    await rechazado(page, page.locator(`form:has([id="motivo-${cima}"])`).getByRole("button", { name: "Registrar dictamen" }), `aviso-coincidencia-${cima}`, true);
+    await mensajeJunto(page, `[id="motivo-${cima}"]`, MOTIVO_CORTO, `aviso-coincidencia-${cima}-campo`);
+    await expect(page.locator(`[id="resolucion-${cima}"]`)).toHaveValue("fuera_de_lista");
+    await expect(page.locator(`[id="aviso-folio-${brisa}"]`)).toHaveCount(0);
+    await page.locator(`[id="folio-${brisa}"]`).fill("UIF-2026-0102");
+    await page.locator(`[id="presentado-${brisa}"]`).fill("2099-01-01");
+    await rechazado(page, page.locator(`form:has([id="folio-${brisa}"])`).getByRole("button", { name: "Anotar folio" }), `aviso-folio-${brisa}`, true);
+    await mensajeJunto(page, `[id="presentado-${brisa}"]`, "Revisa la fecha de presentación del reporte: debe existir en el calendario y no puede ser futura.", `aviso-folio-${brisa}-campo`);
+    await expect(page.locator(`[id="folio-${brisa}"]`)).toHaveValue("UIF-2026-0102");
+    await expect(page.locator(`[id="aviso-coincidencia-${cima}"]`)).toHaveCount(0);
+    expect(await contar("select 1 from lpb_coincidencias where id = $1 and estado = 'pendiente'", [cima])).toBe(1);
+  });
+
+  // Doceava revisión: sin JavaScript, el envío va a la dirección del documento con todo y fragmento. Tras «Saltar al
+  // contenido» la dirección trae «#contenido» y, si la página que responde tuviera ese destino, el navegador descartaría
+  // el autofocus: el foco no llegaría al campo rechazado. En esa respuesta el destino lleva un sufijo nuevo.
+  test("sin JavaScript, tras «Saltar al contenido» el rechazo de una tarjeta deja el foco en su campo, dos veces seguidas", async ({ page, context }) => {
+    const cima = await coincidenciaDe(CIMA.rfc, "pendiente");
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.goto("/operacion/lpb");
+    const salto = page.getByRole("link", { name: "Saltar al contenido" });
+    await expect(salto).toHaveAttribute("href", "#contenido");
+    await expect(page.locator("main#contenido")).toHaveCount(1);
+    const motivo = page.locator(`[id="motivo-${cima}"]`);
+    const registrar = page.locator(`form:has([id="motivo-${cima}"])`).getByRole("button", { name: "Registrar dictamen" });
+    let anterior = "contenido";
+    for (const vuelta of [1, 2]) {
+      await salto.press("Enter");
+      await expect(page).toHaveURL(new RegExp(`#${anterior}$`));
+      await page.locator(`[id="resolucion-${cima}"]`).selectOption("fuera_de_lista");
+      await motivo.fill("Revisar 😀");
+      await rechazado(page, registrar, `aviso-coincidencia-${cima}`, true);
+      await mensajeJunto(page, `[id="motivo-${cima}"]`, MOTIVO_CORTO, `aviso-coincidencia-${cima}-campo`);
+      // El enlace sigue sirviendo: apunta al `main` de esta respuesta, con un destino que ninguna dirección anterior trae.
+      const destino = (await salto.getAttribute("href"))!.slice(1);
+      expect(destino, `vuelta ${vuelta}`).toMatch(/^contenido-[0-9a-f]{8}$/);
+      expect(destino).not.toBe(anterior);
+      await expect(page.locator(`main[id="${destino}"]`)).toHaveCount(1);
+      await expect(page.locator(`[id="${anterior}"]`)).toHaveCount(0);
+      anterior = destino;
+    }
+    expect(await contar("select 1 from lpb_coincidencias where id = $1 and estado = 'pendiente'", [cima])).toBe(1);
+  });
+
+  test("sin JavaScript, si otra pestaña ya registró el dictamen, el rechazo de Granado va arriba de la página aunque su formulario ya no se pinte", async ({ page, context }) => {
+    await dictamenYaRegistrado(page, context, GRANADO.rfc);
+  });
+
+  // Hallazgo del #60: sin JavaScript el menú de la cuenta no abre y no había manera de cerrar sesión en Operación.
+  test("sin JavaScript, «Salir» se ve junto al menú, cierra la sesión y /operacion vuelve a la entrada, a 1440 y 390; el título y el chip conservan su ancho", async ({ page, context, browser }) => {
+    for (const [ancho, alto] of [[1440, 900], [390, 844]] as const) {
+      await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+      await page.setViewportSize({ width: ancho, height: alto });
+      await page.goto("/operacion/clientes");
+      const salir = page.locator(".barra-superior").getByRole("button", { name: "Salir", exact: true });
+      await expect(salir, `a ${ancho}`).toBeVisible();
+      // Con JavaScript la misma página no lo pinta, y el título y el chip miden lo mismo: «Salir» no les quita ancho.
+      const conJs = await browser.newContext({ baseURL: ORIGEN, viewport: { width: ancho, height: alto } });
+      try {
+        await sesionDe(conJs, CORREOS.op1, { superficie: "sofipo" });
+        const otra = await conJs.newPage();
+        await otra.goto("/operacion/clientes");
+        await expect(otra.locator(".barra-superior").getByRole("button", { name: "Salir", exact: true })).toHaveCount(0);
+        for (const selector of [".barra-titulo", ".cuenta .menu-desplegable-boton"]) {
+          const [sin, con] = [await page.locator(selector).boundingBox(), await otra.locator(selector).boundingBox()];
+          expect(Math.round(sin!.width), `${selector} a ${ancho}`).toBe(Math.round(con!.width));
+        }
+        expect(await otra.locator(".barra-titulo").evaluate((nodo) => nodo.scrollWidth <= nodo.clientWidth), `título sin recortar a ${ancho}`).toBe(true);
+      } finally {
+        await conJs.close();
+      }
+      await Promise.all([page.waitForURL(/\/operacion\/entrar/), salir.click()]);
+      expect((await context.cookies()).find((cookie) => cookie.name === "__Host-sesion")?.value ?? "").toBe("");
+      await page.goto("/operacion");
+      await expect(page).toHaveURL(/\/operacion\/entrar/);
+    }
+  });
+
+  // Doceava revisión (F5): los enlaces de Cumplimiento llevan a `expediente#dictamen-titulo` y `#riesgo-titulo`. Sin
+  // JavaScript, el envío conserva ese fragmento; la página que responde pinta esos destinos con un sufijo, así el
+  // fragmento no apunta a nada y el foco llega al campo rechazado (idDeAncla).
+  test("sin JavaScript, llegando por #dictamen-titulo (Higuera) y por #riesgo-titulo (Brisa), el rechazo deja el foco en su campo", async ({ page, context }) => {
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    const higuera = await empresaDe(HIGUERA.rfc);
+    await page.goto("/operacion/cumplimiento");
+    await expect(page.locator(`a[href="/operacion/clientes/${higuera}/expediente#dictamen-titulo"]`)).toHaveCount(1);
+    await page.goto(`/operacion/clientes/${higuera}/expediente#dictamen-titulo`);
+    await page.locator("#dictamen-resultado").selectOption("observado");
+    await page.locator("#dictamen-motivo").fill("Revisar 😀");
+    await rechazado(page, page.locator("form:has(#dictamen-motivo)").getByRole("button", { name: "Registrar dictamen" }), "aviso-dictamen", true);
+    await mensajeJunto(page, "#dictamen-motivo", MOTIVO_CORTO, "aviso-dictamen-campo");
+    await expect(page.locator("#dictamen-titulo")).toHaveCount(0);
+    await expect(page.locator('[id^="dictamen-titulo-"]')).toHaveCount(1);
+
+    const brisa = await empresaDe(BRISA.rfc);
+    await page.goto(`/operacion/clientes/${brisa}/expediente#riesgo-titulo`);
+    await page.locator("#riesgo-actividad").selectOption("media");
+    await page.locator("#riesgo-zona").selectOption("alta");
+    const armado = await alterarEnvio(page, (cuerpo) => cuerpo.replace(/(name="[^"]*actividad"\r\n\r\n)media/, "$1MEDIA"));
+    await rechazado(page, page.getByRole("button", { name: /^Registrar (revisión periódica|grado al alta)$/ }), "aviso-riesgo", true);
+    await armado.soltar();
+    expect(armado.vistos()).toBe(1);
+    await mensajeJunto(page, "#riesgo-actividad", FORMATO, "aviso-riesgo-campo");
+    await expect(page.locator("#riesgo-titulo")).toHaveCount(0);
+    await expect(page.locator('[id^="riesgo-titulo-"]')).toHaveCount(1);
+  });
+
+  test("sin JavaScript, invitación, comisión y alertas vuelven con lo capturado y el resumen del envío anterior no se pinta", async ({ page, context }) => {
+    await formulariosConCaptura(page, context, true);
+  });
+
+  test("sin JavaScript, la suspensión de Bahía no consume el formulario al rechazarse, el doble clic pide una sola y la otra pestaña ve «ya hay una pendiente»", async ({ page, context, browser }) => {
+    await suspensionUnaVez(page, context, browser, "BEE190101CD2", "Pedir suspensión", true);
+  });
 });

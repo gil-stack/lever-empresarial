@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { rechazado, type EstadoDelFormulario } from "@/app/operacion/rechazo";
 import { fijarCookiesDeSesion, sesionSegura } from "@/server/entrada";
 import {
   asignarAlerta,
@@ -22,7 +23,7 @@ import { NOMBRE_COOKIE_ENTRADA_OPERACION, NOMBRE_COOKIE_PORTAL_OPERACION } from 
 import { cerrarSesion, ErrorDeDominio } from "@/server/session";
 import { NOMBRE_COOKIE, NOMBRE_COOKIE_PARCIAL } from "@/server/session/cookie";
 
-export async function registrarProspectoAccion(formData: FormData): Promise<void> {
+export async function registrarProspectoAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   let id: string;
   try {
@@ -34,7 +35,7 @@ export async function registrarProspectoAccion(formData: FormData): Promise<void
       usoCfdi: String(formData.get("usoCfdi") ?? ""),
     });
   } catch (error) {
-    return fallo(error, "/operacion/clientes");
+    return rechazado(previo, error, formData, ["razonSocial", "rfc", "codigoPostal", "regimen", "usoCfdi"]);
   }
   actualizar();
   redirect(`/operacion/clientes/${id}?aviso=prospecto_registrado`);
@@ -69,7 +70,7 @@ export async function decidirActivacionAccion(formData: FormData): Promise<void>
   redirect("/operacion/aprobaciones?aviso=decision_registrada");
 }
 
-export async function invitarAdministradorAccion(formData: FormData): Promise<void> {
+export async function invitarAdministradorAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const companyId = String(formData.get("companyId") ?? "");
   let resultado: Awaited<ReturnType<typeof invitarPrimerAdministrador>>;
@@ -81,13 +82,13 @@ export async function invitarAdministradorAccion(formData: FormData): Promise<vo
       vista: formData.get("vista"),
     });
   } catch (error) {
-    return fallo(error, `/operacion/clientes/${companyId}`);
+    return rechazado(previo, error, formData, ["nombre", "correo"]);
   }
   actualizar();
   redirect(`/operacion/clientes/${companyId}?aviso=invitacion_${resultado.entrega}`);
 }
 
-export async function crearAlertaAccion(formData: FormData): Promise<void> {
+export async function crearAlertaAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   try {
     await crearAlerta(ctx, {
@@ -97,7 +98,7 @@ export async function crearAlertaAccion(formData: FormData): Promise<void> {
       detalle: formData.get("detalle"),
     });
   } catch (error) {
-    return fallo(error, "/operacion/alertas");
+    return rechazado(previo, error, formData, ["companyId", "responsableId", "titulo", "detalle"]);
   }
   actualizar();
   redirect("/operacion/alertas?aviso=alerta_creada");
@@ -114,18 +115,18 @@ export async function asignarAlertaAccion(formData: FormData): Promise<void> {
   redirect("/operacion/alertas?aviso=alerta_asignada");
 }
 
-export async function cerrarAlertaAccion(formData: FormData): Promise<void> {
+export async function cerrarAlertaAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   try {
     await cerrarAlerta(ctx, formData.get("id"), formData.get("motivo"));
   } catch (error) {
-    return fallo(error, "/operacion/alertas");
+    return rechazado(previo, error, formData, ["motivo"]);
   }
   actualizar();
   redirect("/operacion/alertas?aviso=alerta_cerrada");
 }
 
-export async function solicitarComisionAccion(formData: FormData): Promise<void> {
+export async function solicitarComisionAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   try {
     await solicitarComision(ctx, {
@@ -135,7 +136,7 @@ export async function solicitarComisionAccion(formData: FormData): Promise<void>
       vigenteDesde: formData.get("vigenteDesde"),
     });
   } catch (error) {
-    return fallo(error, "/operacion/comisiones");
+    return rechazado(previo, error, formData, ["companyId", "tipo", "valor", "vigenteDesde"]);
   }
   actualizar();
   redirect("/operacion/comisiones?aviso=comision_solicitada");

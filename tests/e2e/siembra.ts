@@ -9,7 +9,7 @@ import { aBase32, pasoDe, semillaNueva } from "../../src/server/autenticacion/to
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio";
 import { solicitarActivacion } from "../../src/server/operacion/activaciones";
 import { registrarProspecto } from "../../src/server/operacion/clientes";
-import { calificarRiesgoEmpresa, crearVersion } from "../../src/server/operacion/expediente";
+import { calificarRiesgoEmpresa, crearVersion, enviarVersion } from "../../src/server/operacion/expediente";
 import { cargarListaBloqueadas } from "../../src/server/operacion/lpb";
 import { cambiarRolPersonal } from "../../src/server/operacion/personal";
 import { darDeAltaPersona, nombrarCentro } from "../../src/server/personas/servicio";
@@ -18,7 +18,7 @@ import { leerSesion } from "../../src/server/session/servicio";
 import { resolverContexto } from "../../src/server/tenencia/resolver";
 import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena";
 import { ejecutar } from "../aislamiento/postgres";
-import { expedienteEnRegla, SESION_SOFIPO } from "../operacion/apoyo-alta-regulada";
+import { armarBorrador, expedienteEnRegla, SESION_SOFIPO } from "../operacion/apoyo-alta-regulada";
 
 /**
  * Siembra de los recorridos nuevos (flujo de caja, nómina, entrada, Operación,
@@ -66,6 +66,14 @@ export const BRISA = { razonSocial: "Brisa E2E", rfc: "BRE180303CD6" } as const;
 export const CIMA = { razonSocial: "Cima E2E", rfc: "CIE160606CD7" } as const;
 /** Prospecto con el borrador abierto: Originación captura socios extranjeros. */
 export const DUNA = { razonSocial: "Duna E2E", rfc: "DUE190404CD8" } as const;
+/** Prospectos con la versión 1 enviada y sin dictamen: la doceava revisión dictamina y califica desde la pantalla, con JavaScript (Eje) y sin él (Enebro). */
+export const EJE = { razonSocial: "Eje E2E", rfc: "EJE170707CD5" } as const;
+export const ENEBRO = { razonSocial: "Enebro E2E", rfc: "ENE170808CD6" } as const;
+/** También por dictaminar: otra pestaña registra el dictamen antes que la primera, con JavaScript (Fresno) y sin él (Granado). */
+export const FRESNO = { razonSocial: "Fresno E2E", rfc: "FRE180909CD7" } as const;
+export const GRANADO = { razonSocial: "Granado E2E", rfc: "GRA181010CD8" } as const;
+/** Por dictaminar: sin JavaScript se llega a su dictamen por el enlace de Cumplimiento (`#dictamen-titulo`). */
+export const HIGUERA = { razonSocial: "Higuera E2E", rfc: "HIG191111CD9" } as const;
 
 export async function sembrarRecorridos(
   owner: string,
@@ -254,6 +262,13 @@ export async function sembrarRecorridos(
   // ---------- Duna E2E: prospecto con el borrador del expediente abierto ----------
   const duna = await registrarProspecto(origina, { ...DUNA, codigoPostal: "64000", regimen: "601", usoCfdi: "G03" });
   await crearVersion(origina, { companyId: duna, formId: randomUUID() });
+
+  // ---------- Eje, Enebro, Fresno y Granado E2E: la versión 1 enviada por Originación espera el dictamen de Cumplimiento ----------
+  for (const empresa of [EJE, ENEBRO, FRESNO, GRANADO, HIGUERA]) {
+    const companyId = await registrarProspecto(origina, { ...empresa, codigoPostal: "64000", regimen: "601", usoCfdi: "G03" });
+    const { versionId } = await armarBorrador(origina, { companyId, ...empresa });
+    await enviarVersion(origina, versionId);
+  }
 
   process.env.E2E_ALTAMAR_ID = altamar.id;
   process.env.E2E_BAHIA_ID = bahia.id;

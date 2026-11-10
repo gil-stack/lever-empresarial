@@ -49,7 +49,14 @@ const INSERTAR = `insert into audit_log (
   accion, entidad, identificador, motivo, peticion_id, origen, ocurrido_en, cambio
 ) values ($1, $2, $3, 'personal', $4, 'sofipo', $5, $6, $7, $8, $9, 'operacion', $10, $11)`;
 
-/** Catálogo cerrado: ningún evento admite tokens, enlaces, correos ni datos sensibles. */
+/** El tope del motivo en la bitácora: el CHECK `audit_log_motivo_formato` (0017) cuenta caracteres, como aquí. */
+export const MOTIVO_MAXIMO_BITACORA = 500;
+
+/**
+ * Catálogo cerrado: ningún evento admite tokens, enlaces, correos ni datos sensibles. Un motivo de más de 500
+ * caracteres se rechaza aquí, con su aviso en el campo (`motivo_largo`), antes de que la bitácora lo rechace como
+ * «La base no respondió»; nunca se trunca.
+ */
 export async function auditarOperacion(
   consulta: Consulta,
   ctx: ContextoDePersonal,
@@ -63,6 +70,7 @@ export async function auditarOperacion(
     cambio?: Record<string, string | number | boolean> | null;
   },
 ): Promise<void> {
+  if (entrada.motivo && [...entrada.motivo].length > MOTIVO_MAXIMO_BITACORA) throw new ErrorDeDominio("motivo_largo");
   const escrito = await consulta.query(INSERTAR, [
     randomUUID(),
     ctx.personal.operadorId,

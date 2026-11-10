@@ -212,7 +212,8 @@ export async function resolverCoincidencia(
   if (!uuidValido(entrada.id)) throw new ErrorDeDominio("coincidencia_ausente");
   const estado = entrada.estado;
   if (estado !== "confirmada" && estado !== "falso_positivo" && estado !== "fuera_de_lista") throw new ErrorDeDominio("dato_invalido_estado");
-  const motivo = motivoEscrito(entrada.motivo, 1000);
+  // El mismo motivo va a la bitácora, que admite 500 caracteres (`audit_log_motivo_formato`).
+  const motivo = motivoEscrito(entrada.motivo, 500);
   const ahora = new Date();
   await conContexto(basePlataforma(ctx), async (consulta) => {
     const fila = await consulta.query("select company_id, estado from lpb_coincidencias where id = $1 for update", [entrada.id]);

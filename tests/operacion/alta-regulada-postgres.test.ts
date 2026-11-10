@@ -578,10 +578,10 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           assert.equal(borrador?.representantes.length, 1);
           assert.equal(borrador?.documentos.length, 6);
           await enviarVersion(ori, alfaV2);
-          // Onceava revisión: la nota del aprobado es opcional, pero una inválida (1,001 caracteres, armada a mano: el
-          // textarea corta en 1,000) se avisa y no deja dictamen; antes se asentaba el aprobado sin nota y sin avisar.
+          // Onceava revisión: la nota del aprobado es opcional, pero una inválida (501 caracteres desde la doceava, armada a
+          // mano: el textarea corta en 500) se avisa y no deja dictamen; antes se asentaba el aprobado sin nota y sin avisar.
           const dictamenes = async () => (await dueno.query("select count(*)::int as n from kyb_dictamenes where version_id = $1", [alfaV2])).rows[0].n as number;
-          await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV2, formId: randomUUID(), resultado: "aprobado", motivo: "x".repeat(1001) }), /motivo_invalido/);
+          await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId: alfaV2, formId: randomUUID(), resultado: "aprobado", motivo: "x".repeat(501) }), /motivo_invalido/);
           assert.equal(await dictamenes(), 0);
           // Una nota sin nada que se vea queda vacía y el aprobado se asienta.
           const aprobado = randomUUID();
@@ -2303,6 +2303,21 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           const motivo = "Homónimo: revisado con la familia 👨‍👩‍👧 completa";
           await resolverCoincidencia(cum, SESION_SOFIPO, { id: ana.id, estado: "falso_positivo", motivo });
           assert.equal((await dueno.query("select motivo_resolucion from lpb_coincidencias where id = $1", [ana.id])).rows[0]?.motivo_resolucion, motivo);
+
+          // Doceava revisión (P2 del revisor de la base, desde 07b5e8c): el motivo va también a la bitácora, que admite 500
+          // caracteres. Con 501 a 1,000, el CHECK `audit_log_motivo_formato` rechazaba el evento y la pantalla decía «La base
+          // no respondió». Ahora 501 se rechaza antes, sin resolver nada; 500 se asienta igual en las dos tablas.
+          const pedro = (await listarCoincidencias(cum, { companyId })).find((k) => k.sujetoNombre === "Pedro Ruiz Sol");
+          assert.ok(pedro);
+          const largo = (n: number) => `Homónimo revisado con su CURP ${"x".repeat(n)}`.slice(0, n);
+          await assert.rejects(resolverCoincidencia(cum, SESION_SOFIPO, { id: pedro.id, estado: "falso_positivo", motivo: largo(501) }), /motivo_invalido/);
+          assert.equal((await dueno.query("select estado from lpb_coincidencias where id = $1", [pedro.id])).rows[0]?.estado, "pendiente");
+          await resolverCoincidencia(cum, SESION_SOFIPO, { id: pedro.id, estado: "falso_positivo", motivo: largo(500) });
+          assert.equal((await dueno.query("select motivo_resolucion from lpb_coincidencias where id = $1", [pedro.id])).rows[0]?.motivo_resolucion, largo(500));
+          assert.deepEqual(
+            (await dueno.query("select motivo from audit_log where accion = 'lpb_coincidencia_resuelta' and identificador = $1", [pedro.id])).rows.map((fila) => fila.motivo),
+            [largo(500)],
+          );
         });
 
         await t.test("serv-nuevo-6d: enviar sin giro ni domicilio dice qué falta; la versión sigue en borrador y sin evento", async () => {
@@ -2340,6 +2355,31 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           await guardarDatosGenerales(ori, { versionId, datos: { ...DATOS_GENERALES, razonSocial, rfc } });
           await enviarVersion(ori, versionId);
           assert.deepEqual([await estado(), await eventos()], ["enviada", 1]);
+        });
+
+        await t.test("doceava: el motivo del dictamen llega a la bitácora con 500 caracteres; con 501 se rechaza antes, sin dictamen", async () => {
+          // P2 del revisor de la base (desde 07b5e8c): el dictamen aceptaba 1,000 y la bitácora (`audit_log_motivo_formato`,
+          // 0017) admite 500. Observado, rechazado o aprobado con 501 a 1,000 daban «La base no respondió» y no se guardaba nada.
+          const largo = (n: number) => `Falta el poder notarial del apoderado ${"x".repeat(n)}`.slice(0, n);
+          for (const [rfc, razonSocial, resultado] of [
+            ["QOB150301AB1", "Quinientos Observado SA de CV", "observado"],
+            ["QRE150301AB2", "Quinientos Rechazado SA de CV", "rechazado"],
+            ["QAP150301AB3", "Quinientos Aprobado SA de CV", "aprobado"],
+          ] as const) {
+            const companyId = await prospecto(rfc, razonSocial);
+            const { versionId } = await armarBorrador(ori, { companyId, razonSocial, rfc, almacen });
+            await enviarVersion(ori, versionId);
+            await assert.rejects(dictaminarVersion(cum, SESION_SOFIPO, { versionId, formId: randomUUID(), resultado, motivo: largo(501) }), /motivo_invalido/, resultado);
+            assert.equal(await contar("select count(*)::int as n from kyb_dictamenes where version_id = $1", [versionId]), 0, resultado);
+            const formId = randomUUID();
+            await dictaminarVersion(cum, SESION_SOFIPO, { versionId, formId, resultado, motivo: largo(500) });
+            assert.equal((await dueno.query("select motivo from kyb_dictamenes where id = $1", [formId])).rows[0]?.motivo, largo(500), resultado);
+            assert.deepEqual(
+              (await dueno.query("select motivo from audit_log where accion = 'expediente_dictaminado' and identificador = $1", [formId])).rows.map((fila) => fila.motivo),
+              [largo(500)],
+              resultado,
+            );
+          }
         });
       } finally {
         await dueno.end();

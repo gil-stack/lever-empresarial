@@ -16,6 +16,12 @@ const nextConfig: NextConfig = {
           // JavaScript (o antes de que la página hidrate) y Next rechaza la acción de servidor con un 500. same-origin
           // sigue sin mandar la dirección a otros sitios, así que un enlace con token no sale de aquí.
           { key: "Referrer-Policy", value: "same-origin" },
+          // Nada de la aplicación usa estas capacidades del navegador (ni el portapapeles: no hay botones de copiar). Si un
+          // script ajeno llegara a la página, no puede pedirlas.
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), display-capture=()",
+          },
         ],
       },
       // Va después de la regla general: la última que coincide gana, y sin esta

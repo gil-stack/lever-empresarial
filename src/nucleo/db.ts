@@ -209,6 +209,9 @@ export function traducirErrorDeBase(error: unknown): Error {
     // El servidor valida esos motivos antes y como la base (motivoEscrito: cuenta caracteres y los guarda
     // en un renglón); si aun así la base los rechaza, se avisa del mínimo del motivo, no «la base no respondió».
     if (/company_suspensions_textos|lpb_coincidencias_textos|kyb_dictamenes_motivo/.test(marca)) return new ErrorDeDominio("motivo_corto");
+    // La bitácora admite un motivo de hasta 500 caracteres, recortado y sin controles; el servidor ya lo limpia y
+    // `auditarOperacion` revisa el largo antes. Esto es la red: se avisa en el campo, no «la base no respondió».
+    if (marca.includes("audit_log_motivo_formato")) return new ErrorDeDominio("motivo_largo");
     // Enviar una versión sin todos los datos generales: el servidor lo revisa antes; esto es la red.
     if (marca.includes("kyb_versiones_forma")) return new ErrorDeDominio("expediente_datos_incompletos");
     if (marca.includes("lista_69b")) return new ErrorDeDominio("listado_irreconocible");

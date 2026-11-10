@@ -19,7 +19,7 @@ export const metadata: Metadata = { title: "Cumplimiento · Operación" };
  * aprobados sin grado de riesgo. «Vencida» se calcula al leer con la fecha de hoy en México.
  * Auditoría la consulta sin botones.
  */
-export default async function CumplimientoOperacion({ searchParams }: { searchParams: Parametros<"aviso" | "en"> }) {
+export default async function CumplimientoOperacion({ searchParams }: { searchParams: Parametros<"aviso"> }) {
   const ctx = await exigirContextoOperacion();
   if (!puedeEnOperacion(ctx, "plataforma.cumplimiento.bandeja")) {
     return (
@@ -52,8 +52,6 @@ export default async function CumplimientoOperacion({ searchParams }: { searchPa
           resuelve={resuelve}
           desde="cumplimiento"
           ahora={ahora}
-          aviso={params.aviso}
-          en={params.en}
           vacio="Cuando una carga de la lista o un alta coincida con alguien, aparece aquí."
         />
       </Hoja>

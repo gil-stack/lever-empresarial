@@ -1,11 +1,11 @@
 import Link from "next/link";
 
-import { registrarReporteAccion, resolverCoincidenciaAccion } from "@/app/operacion/acciones-alta";
-import { BotonEnviar, Insignia, Vacio } from "@/components/sistema";
+import { registrarReporteAccion } from "@/app/operacion/acciones-alta";
+import { Insignia, Vacio } from "@/components/sistema";
 import { ETIQUETA_ESTADO_COINCIDENCIA, ETIQUETA_SUJETO } from "@/dominio/operacion";
 
-import { errorDelCampo, MensajeDelCampo } from "./aviso";
 import { fechaHora } from "./formato";
+import { FormularioCoincidencia } from "./formulario-coincidencia";
 import { FormularioFolio } from "./formulario-folio";
 
 export type CoincidenciaVista = {
@@ -38,27 +38,18 @@ export function Coincidencias({
   desde,
   ahora,
   vacio,
-  aviso,
-  en,
 }: {
   coincidencias: CoincidenciaVista[];
   resuelve: boolean;
   desde: "cumplimiento" | "lpb";
   ahora: Date;
   vacio: string;
-  /**
-   * El aviso del último envío y el campo que lo causó (`resolucion-<id>`, `motivo-<id>`, `folio-<id>`, `presentado-<id>`
-   * o `aviso-<id>`): marca ese campo y pone su mensaje junto a él.
-   */
-  aviso?: string;
-  en?: string;
 }) {
   if (coincidencias.length === 0) return <Vacio titulo="Sin coincidencias abiertas">{vacio}</Vacio>;
   return (
     <ul className="operacion-lista">
       {coincidencias.map((coincidencia) => {
         const vencido = coincidencia.plazoReporteHasta !== null && coincidencia.plazoReporteHasta.getTime() < ahora.getTime();
-        const suyo = (nombre: string) => en === `${nombre}-${coincidencia.id}`;
         return (
           <li key={coincidencia.id}>
             <div className="operacion-fila">
@@ -96,38 +87,10 @@ export function Coincidencias({
               </div>
             </div>
             {resuelve && coincidencia.estado === "pendiente" ? (
-              <form action={resolverCoincidenciaAccion} className="operacion-acciones">
-                <input type="hidden" name="id" value={coincidencia.id} />
-                <input type="hidden" name="desde" value={desde} />
-                <div className="campo">
-                  <label htmlFor={`resolucion-${coincidencia.id}`}>Dictamen</label>
-                  <select id={`resolucion-${coincidencia.id}`} name="estado" required defaultValue="" {...(suyo("resolucion") ? errorDelCampo(aviso, "estado") : {})}>
-                    <option value="" disabled>
-                      Elige uno
-                    </option>
-                    <option value="confirmada">Es la misma persona</option>
-                    <option value="falso_positivo">Falso positivo: es otra persona</option>
-                    <option value="fuera_de_lista">Ya no está en la lista vigente</option>
-                  </select>
-                  {suyo("resolucion") ? <MensajeDelCampo codigo={aviso} campo="estado" /> : null}
-                </div>
-                <div className="campo">
-                  <label htmlFor={`motivo-${coincidencia.id}`}>Motivo (al menos 10 caracteres)</label>
-                  <input
-                    id={`motivo-${coincidencia.id}`}
-                    name="motivo"
-                    minLength={10}
-                    maxLength={1000}
-                    required
-                    {...(suyo("motivo") ? errorDelCampo(aviso, "motivo") : {})}
-                  />
-                  {suyo("motivo") ? <MensajeDelCampo codigo={aviso} campo="motivo" /> : null}
-                </div>
-                <BotonEnviar className="boton-secundario">Registrar dictamen</BotonEnviar>
-              </form>
+              <FormularioCoincidencia key={coincidencia.id} id={coincidencia.id} desde={desde} />
             ) : null}
             {resuelve && coincidencia.estado === "confirmada" && !coincidencia.reporteFolio ? (
-              <FormularioFolio id={coincidencia.id} desde={desde} accion={registrarReporteAccion} aviso={aviso} en={en} />
+              <FormularioFolio key={coincidencia.id} id={coincidencia.id} desde={desde} accion={registrarReporteAccion} />
             ) : null}
           </li>
         );

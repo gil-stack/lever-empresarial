@@ -1,36 +1,22 @@
 import { randomUUID } from "node:crypto";
 
-import type { ReactNode } from "react";
-
-import {
-  cargarDocumentoAccion,
-  enviarVersionAccion,
-  guardarDatosAccion,
-  retirarDelBorradorAccion,
-} from "@/app/operacion/acciones-alta";
-import { ARCHIVO_DEMASIADO_GRANDE } from "@/components/operacion/aviso";
-import { CampoArchivo } from "@/components/operacion/campo-archivo";
+import { enviarVersionAccion, retirarDelBorradorAccion } from "@/app/operacion/acciones-alta";
 import { FormularioAccionista } from "@/components/operacion/formulario-accionista";
+import { FormularioDatos } from "@/components/operacion/formulario-datos";
+import { FormularioDocumento } from "@/components/operacion/formulario-documento";
 import { FormularioRepresentante } from "@/components/operacion/formulario-representante";
 import { BotonEnviar, Hoja, Insignia, Renglon, Renglones, Vacio } from "@/components/sistema";
-import { TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
 import {
   ETIQUETA_CARGO,
   ETIQUETA_DOCUMENTO,
   ETIQUETA_MOTIVO_BENEFICIARIO,
   ETIQUETA_PEP,
-  TIPOS_DOCUMENTO,
   paisesExtranjeros,
   puntosBaseATexto,
 } from "@/dominio/operacion";
 import type { Accionista, VersionExpediente } from "@/server/operacion";
 
 import { fechaDia, fechaHora } from "./formato";
-
-/** Liga un campo al aviso solo si el error vino de ese formulario. */
-export type ErrorDeCampo = (seccion: string, campo: string) => Record<string, unknown>;
-/** El mensaje del error junto al campo de esa sección (`MensajeDelCampo`), o nada. */
-export type MensajeDeCampo = (seccion: string, campo: string) => ReactNode;
 
 function pesos(centavos: number | null): string {
   return centavos === null ? "" : (centavos / 100).toFixed(2);
@@ -195,18 +181,11 @@ export function VistaVersion({ version, companyId }: { version: VersionExpedient
   );
 }
 
-/** El borrador abierto: lo captura Originación y lo envía a Cumplimiento. */
-export function FormulariosBorrador({
-  version,
-  companyId,
-  error,
-  mensaje,
-}: {
-  version: VersionExpediente;
-  companyId: string;
-  error: ErrorDeCampo;
-  mensaje: MensajeDeCampo;
-}) {
+/**
+ * El borrador abierto: lo captura Originación y lo envía a Cumplimiento. Cada formulario con algo capturado vuelve
+ * con lo escrito, su aviso y el campo marcado si el servidor lo rechaza.
+ */
+export function FormulariosBorrador({ version, companyId }: { version: VersionExpediente; companyId: string }) {
   const morales = version.accionistas.filter((accionista) => accionista.tipoPersona === "moral");
   // Cada vista nueva del borrador trae un formulario nuevo; tras un rechazo sigue el mismo (no se aplicó).
   const formAccionista = randomUUID();
@@ -222,40 +201,12 @@ export function FormulariosBorrador({
       <input type="hidden" name="versionId" value={version.id} />
     </>
   );
-  const datos = version.datos;
-  const campo = (nombre: string, etiqueta: string, valor: string | null, extra: Record<string, unknown> = {}) => (
-    <div className="campo">
-      <label htmlFor={`dato-${nombre}`}>{etiqueta}</label>
-      <input id={`dato-${nombre}`} name={nombre} defaultValue={valor ?? ""} {...extra} {...error("datos-titulo", nombre)} />
-      {mensaje("datos-titulo", nombre)}
-    </div>
-  );
+  const { volumenMensualCentavos, ...textos } = version.datos;
+  const guardados = { ...Object.fromEntries(Object.entries(textos).map(([campo, valor]) => [campo, valor ?? ""])), volumenMensualCentavos: pesos(volumenMensualCentavos) };
   return (
     <>
       <Hoja id="datos-titulo" titulo={`Datos generales · borrador ${version.numero}`}>
-        <form action={guardarDatosAccion} className="formulario-pareja operacion-forma">
-          {base}
-          {campo("razonSocial", "Razón social", datos.razonSocial, { maxLength: 300 })}
-          {campo("rfc", "RFC", datos.rfc, { maxLength: 12, autoCapitalize: "characters", className: "entrada-rfc" })}
-          {campo("giro", "Giro o actividad", datos.giro, { maxLength: 200 })}
-          {campo("nacionalidad", "Nacionalidad", datos.nacionalidad, { maxLength: 80 })}
-          {campo("fechaConstitucion", "Fecha de constitución", datos.fechaConstitucion, { type: "date" })}
-          {campo("serieEfirma", "Número de serie de la e.firma", datos.serieEfirma, { inputMode: "numeric", maxLength: 20 })}
-          {campo("domicilioCalle", "Calle", datos.domicilioCalle, { maxLength: 200 })}
-          {campo("domicilioExterior", "Número exterior", datos.domicilioExterior, { maxLength: 40 })}
-          {campo("domicilioInterior", "Número interior", datos.domicilioInterior, { maxLength: 40 })}
-          {campo("domicilioColonia", "Colonia", datos.domicilioColonia, { maxLength: 120 })}
-          {campo("domicilioMunicipio", "Municipio o alcaldía", datos.domicilioMunicipio, { maxLength: 120 })}
-          {campo("domicilioEntidad", "Entidad", datos.domicilioEntidad, { maxLength: 80 })}
-          {campo("domicilioCodigoPostal", "Código postal", datos.domicilioCodigoPostal, { inputMode: "numeric", maxLength: 5 })}
-          {campo("domicilioPais", "País", datos.domicilioPais, { maxLength: 80 })}
-          {campo("telefono", "Teléfono", datos.telefono, { inputMode: "tel", maxLength: 20 })}
-          {campo("correo", "Correo", datos.correo, { type: "email", maxLength: 254 })}
-          {campo("volumenMensualCentavos", "Volumen mensual esperado (pesos)", pesos(datos.volumenMensualCentavos), { inputMode: "decimal", maxLength: 20 })}
-          <div className="acciones operacion-ancho">
-            <BotonEnviar>Guardar datos</BotonEnviar>
-          </div>
-        </form>
+        <FormularioDatos companyId={companyId} versionId={version.id} guardados={guardados} />
       </Hoja>
 
       <Hoja id="representantes-titulo" titulo="Representantes y administración">
@@ -351,64 +302,12 @@ export function FormulariosBorrador({
             ))}
           </ul>
         )}
-        <form action={cargarDocumentoAccion} className="formulario-pareja operacion-forma">
-          {base}
-          <input type="hidden" name="formId" value={randomUUID()} />
-          <div className="campo">
-            <label htmlFor="doc-tipo">Documento</label>
-            <select id="doc-tipo" name="tipo" defaultValue="acta_constitutiva" {...error("documentos-titulo", "tipo")}>
-              {TIPOS_DOCUMENTO.map((tipo) => (
-                <option key={tipo} value={tipo}>
-                  {ETIQUETA_DOCUMENTO[tipo]}
-                </option>
-              ))}
-            </select>
-            {mensaje("documentos-titulo", "tipo")}
-          </div>
-          <div className="campo">
-            <label htmlFor="doc-representante">Representante (solo identificación y poder)</label>
-            <select id="doc-representante" name="representanteClave" defaultValue="" {...error("documentos-titulo", "representanteClave")}>
-              <option value="">No aplica</option>
-              {version.representantes.map((representante) => (
-                <option key={representante.clave} value={representante.clave}>
-                  {representante.nombre}
-                </option>
-              ))}
-            </select>
-            {mensaje("documentos-titulo", "representanteClave")}
-          </div>
-          <div className="campo">
-            <label htmlFor="doc-emitido">Emitido el</label>
-            <input id="doc-emitido" name="emitidoEl" type="date" {...error("documentos-titulo", "emitidoEl")} />
-            {mensaje("documentos-titulo", "emitidoEl")}
-          </div>
-          <div className="campo">
-            <label htmlFor="doc-vigente">Vigente hasta</label>
-            <input id="doc-vigente" name="vigenteHasta" type="date" {...error("documentos-titulo", "vigenteHasta")} />
-            {mensaje("documentos-titulo", "vigenteHasta")}
-          </div>
-          <div className="campo operacion-ancho">
-            <label htmlFor="doc-detalle">Detalle (folio mercantil, notaría…)</label>
-            <input id="doc-detalle" name="detalle" maxLength={300} {...error("documentos-titulo", "detalle")} />
-            {mensaje("documentos-titulo", "detalle")}
-          </div>
-          <div className="campo operacion-ancho">
-            <label htmlFor="doc-archivo">Archivo (PDF, PNG o JPG, hasta {TOPE_ARCHIVO_TEXTO})</label>
-            <CampoArchivo
-              id="doc-archivo"
-              name="archivo"
-              accept="application/pdf,image/png,image/jpeg"
-              mensaje={ARCHIVO_DEMASIADO_GRANDE}
-              required
-              ligado={error("documentos-titulo", "archivo")}
-              mensajeDelServidor={mensaje("documentos-titulo", "archivo")}
-            />
-          </div>
-          <div className="acciones operacion-ancho">
-            <BotonEnviar>Guardar documento</BotonEnviar>
-            <p>Se guarda con su huella SHA-256 y no se borra.</p>
-          </div>
-        </form>
+        <FormularioDocumento
+          companyId={companyId}
+          versionId={version.id}
+          formId={randomUUID()}
+          representantes={version.representantes.map((representante) => ({ clave: representante.clave, nombre: representante.nombre }))}
+        />
       </Hoja>
 
       <Hoja id="enviar-titulo" titulo="Enviar a Cumplimiento">

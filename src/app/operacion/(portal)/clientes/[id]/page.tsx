@@ -5,10 +5,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
-import { invitarAdministradorAccion, solicitarActivacionAccion } from "@/app/operacion/acciones";
-import { solicitarSuspensionAccion } from "@/app/operacion/acciones-alta";
-import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
+import { solicitarActivacionAccion } from "@/app/operacion/acciones";
 import { REGIMENES, USOS_CFDI, conNombre, etiquetaEstado, fechaDia, fechaHora, motivoDeEntrega } from "@/components/operacion/formato";
+import { FormularioInvitacion } from "@/components/operacion/formulario-invitacion";
+import { FormularioSuspension } from "@/components/operacion/formulario-suspension";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Rejilla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { textoComision } from "@/dominio/operacion";
@@ -38,6 +38,12 @@ export default async function FichaCliente({ params, searchParams }: { params: P
   const invita = puedeEnOperacion(ctx, "plataforma.invitacion.emitir");
   const pideSuspension = puedeEnOperacion(ctx, "plataforma.suspension.solicitar");
   const suspensionPendiente = suspensiones.find((suspension) => suspension.estado === "pendiente");
+  const notaPendiente = suspensionPendiente ? (
+    <NotaRegla>
+      Hay una solicitud de {suspensionPendiente.tipo === "suspension" ? "suspensión" : "reactivación"} pendiente. Se decide en{" "}
+      <Link href="/operacion/aprobaciones">Aprobaciones</Link>.
+    </NotaRegla>
+  ) : null;
   return (
     <PaginaOperacion
       titulo={cliente.razonSocial}
@@ -88,42 +94,17 @@ export default async function FichaCliente({ params, searchParams }: { params: P
               ) : (
                 <p>Suspender detiene en la base todo lo que mueve dinero o escribe en la consola de la empresa.</p>
               )}
-              {suspensionPendiente ? (
-                <NotaRegla>
-                  Hay una solicitud de {suspensionPendiente.tipo === "suspension" ? "suspensión" : "reactivación"} pendiente. Se decide en{" "}
-                  <Link href="/operacion/aprobaciones">Aprobaciones</Link>.
-                </NotaRegla>
-              ) : pideSuspension && (cliente.estado === "activa" || cliente.estado === "suspendida") ? (
-                <form action={solicitarSuspensionAccion}>
-                  <input type="hidden" name="companyId" value={cliente.id} />
-                  <input type="hidden" name="formId" value={randomUUID()} />
-                  <input type="hidden" name="tipo" value={cliente.estado === "activa" ? "suspension" : "reactivacion"} />
-                  <div className="campo">
-                    <label htmlFor="motivo-suspension">Motivo (de 10 a 500 caracteres)</label>
-                    <textarea
-                      id="motivo-suspension"
-                      name="motivo"
-                      minLength={10}
-                      maxLength={500}
-                      required
-                      {...errorDelCampo(aviso, "motivo")}
-                      aria-describedby={
-                        [veLista ? "motivo-suspension-pista" : "", errorDelCampo(aviso, "motivo")["aria-describedby"]].filter(Boolean).join(" ") ||
-                        undefined
-                      }
-                    />
-                    <MensajeDelCampo codigo={aviso} campo="motivo" />
-                    {/* Quien escribe desde Cumplimiento: Originación y Aprobación leen este motivo (55ª). */}
-                    {veLista ? (
-                      <p id="motivo-suspension-pista" className="pista">Originación y Aprobación leen este motivo: no menciones la Lista ni el reporte.</p>
-                    ) : null}
-                  </div>
-                  <div className="acciones">
-                    <BotonEnviar>{cliente.estado === "activa" ? "Pedir suspensión" : "Pedir reactivación"}</BotonEnviar>
-                    <p>La aprueba otra persona con rol de Aprobación.</p>
-                  </div>
-                </form>
-              ) : null}
+              {pideSuspension && (cliente.estado === "activa" || cliente.estado === "suspendida") ? (
+                <FormularioSuspension
+                  companyId={cliente.id}
+                  formId={randomUUID()}
+                  tipo={cliente.estado === "activa" ? "suspension" : "reactivacion"}
+                  paraCumplimiento={veLista}
+                  pendiente={notaPendiente}
+                />
+              ) : (
+                notaPendiente
+              )}
               {suspensiones.length > 0 ? (
                 <ul className="operacion-lista">
                   {suspensiones.map((suspension) => (
@@ -166,31 +147,12 @@ export default async function FichaCliente({ params, searchParams }: { params: P
           <>
             <Hoja id="administrador-titulo" titulo="Primer administrador">
               {cliente.estado === "activa" && cliente.administradorEstado !== "activa" && invita ? (
-                <form action={invitarAdministradorAccion}>
-                  <input type="hidden" name="companyId" value={cliente.id} />
-                  <input type="hidden" name="vista" value={cliente.ultimaInvitacionId ?? ""} />
-                  <div className="campo">
-                    <label htmlFor="nombre">Nombre</label>
-                    <input id="nombre" name="nombre" maxLength={200} defaultValue={cliente.administrador ?? ""} required />
-                  </div>
-                  <div className="campo">
-                    <label htmlFor="correo">Correo</label>
-                    <input
-                      id="correo"
-                      name="correo"
-                      type="email"
-                      maxLength={254}
-                      defaultValue={cliente.administradorCorreo ?? ""}
-                      required
-                      {...errorDelCampo(aviso, "correo")}
-                    />
-                    <MensajeDelCampo codigo={aviso} campo="correo" />
-                    {cliente.administrador ? <p className="pista">Reenviar anula el enlace anterior.</p> : null}
-                  </div>
-                  <div className="acciones">
-                    <BotonEnviar>{cliente.administrador ? "Reenviar invitación" : "Enviar invitación"}</BotonEnviar>
-                  </div>
-                </form>
+                <FormularioInvitacion
+                  companyId={cliente.id}
+                  vista={cliente.ultimaInvitacionId ?? ""}
+                  nombre={cliente.administrador}
+                  correo={cliente.administradorCorreo}
+                />
               ) : (
                 <Vacio
                   titulo={

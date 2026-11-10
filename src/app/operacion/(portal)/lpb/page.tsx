@@ -3,20 +3,18 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
-import { cargarListaAccion } from "@/app/operacion/acciones-alta";
-import { errorDelCampo, LISTA_DEMASIADO_GRANDE, MensajeDelCampo } from "@/components/operacion/aviso";
-import { CampoArchivo } from "@/components/operacion/campo-archivo";
 import { Coincidencias } from "@/components/operacion/coincidencias";
 import { fechaHora } from "@/components/operacion/formato";
+import { FormularioLista } from "@/components/operacion/formulario-lista";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
-import { BotonEnviar, Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
+import { Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
 import { exigirContextoOperacion, listarCargas, listarCoincidencias, puedeEnOperacion } from "@/server/operacion";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Personas bloqueadas · Operación" };
 
-type Busqueda = { aviso?: string; en?: string; linea?: string; filas?: string; coincidencias?: string };
+type Busqueda = { aviso?: string; filas?: string; coincidencias?: string };
 
 /**
  * La Lista de Personas Bloqueadas (74ª y 75ª). Cumplimiento sube la lista completa que le
@@ -37,11 +35,9 @@ export default async function ListaBloqueadas({ searchParams }: { searchParams: 
   const carga = puedeEnOperacion(ctx, "plataforma.lpb.cargar");
   const resuelve = puedeEnOperacion(ctx, "plataforma.lpb.resolver");
   const detalle =
-    params.aviso === "lpb_renglon_invalido" && /^\d{1,6}$/.test(params.linea ?? "")
-      ? `Revisa la línea ${params.linea} del archivo: nombre obligatorio, RFC de 12 o 13 caracteres, CURP de 18, tipo «fisica» o «moral» y fecha AAAA-MM-DD.`
-      : params.aviso === "lpb_cargada" && /^\d+$/.test(params.filas ?? "") && /^\d+$/.test(params.coincidencias ?? "")
-        ? `${params.filas} ${params.filas === "1" ? "renglón" : "renglones"}; ${params.coincidencias} ${params.coincidencias === "1" ? "coincidencia nueva" : "coincidencias nuevas"}.`
-        : undefined;
+    params.aviso === "lpb_cargada" && /^\d+$/.test(params.filas ?? "") && /^\d+$/.test(params.coincidencias ?? "")
+      ? `${params.filas} ${params.filas === "1" ? "renglón" : "renglones"}; ${params.coincidencias} ${params.coincidencias === "1" ? "coincidencia nueva" : "coincidencias nuevas"}.`
+      : undefined;
   return (
     <PaginaOperacion titulo="Personas bloqueadas" aviso={params.aviso} detalleAviso={detalle}>
       <Rejilla
@@ -52,8 +48,6 @@ export default async function ListaBloqueadas({ searchParams }: { searchParams: 
               resuelve={resuelve}
               desde="lpb"
               ahora={ahora}
-              aviso={params.aviso}
-              en={params.en}
               vacio="Al cargar la lista, la base coteja empresas, representantes, accionistas, propietarios reales y proveedores."
             />
           </Hoja>
@@ -66,24 +60,7 @@ export default async function ListaBloqueadas({ searchParams }: { searchParams: 
                   Un CSV en UTF-8 con este encabezado exacto: <code>nombre,rfc,curp,tipo,fecha</code>. El tipo es «fisica» o «moral»; RFC,
                   CURP y fecha pueden ir vacíos.
                 </p>
-                <form action={cargarListaAccion}>
-                  <input type="hidden" name="formId" value={randomUUID()} />
-                  <div className="campo">
-                    <label htmlFor="archivo">Archivo CSV</label>
-                    <CampoArchivo
-                      id="archivo"
-                      name="archivo"
-                      accept=".csv,text/csv"
-                      mensaje={LISTA_DEMASIADO_GRANDE}
-                      required
-                      ligado={errorDelCampo(params.aviso, "archivo")}
-                      mensajeDelServidor={<MensajeDelCampo codigo={params.aviso} campo="archivo" />}
-                    />
-                  </div>
-                  <div className="acciones">
-                    <BotonEnviar>Cargar y cotejar</BotonEnviar>
-                  </div>
-                </form>
+                <FormularioLista formId={randomUUID()} />
               </Hoja>
             ) : null}
             <Hoja id="cargas-titulo" titulo="Cargas">
