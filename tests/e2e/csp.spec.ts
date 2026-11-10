@@ -5,7 +5,7 @@ import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 
 import { esDescarga } from "../../src/nucleo/csp";
 import { RUTAS } from "../../src/nucleo/rutas";
-import { altamar, sesionDe } from "./apoyo";
+import { altamar, ORIGEN, sesionDe } from "./apoyo";
 import { CORREOS } from "./siembra";
 
 /**
@@ -19,6 +19,8 @@ import { CORREOS } from "./siembra";
 const EVIDENCIA = process.env.E2E_CAPTURAS ?? "test-results/csp";
 const SIN_CAPTURAS = process.env.E2E_SIN_CAPTURAS === "1";
 const UUID = "00000000-0000-4000-8000-000000000000";
+// WebKit corre por el origen https local de la evidencia (certificado autofirmado de un día).
+test.use({ ignoreHTTPSErrors: ORIGEN.startsWith("https:") });
 
 type Violacion = { directiva: string; bloqueado: string; muestra: string; disposicion: string };
 declare global {
@@ -157,7 +159,7 @@ test("Safari anterior a 16.4 (sin Sec-Fetch-*): la navegación del cliente no tr
 });
 
 test("sin JavaScript: el formulario de entrada se envía (form-action 'self') y el navegador no anota violaciones", async ({ browser }) => {
-  const contexto = await browser.newContext({ javaScriptEnabled: false });
+  const contexto = await browser.newContext({ javaScriptEnabled: false, ignoreHTTPSErrors: ORIGEN.startsWith("https:") });
   const pagina = await contexto.newPage();
   const anotadas: string[] = [];
   pagina.on("console", (m) => {
@@ -169,7 +171,8 @@ test("sin JavaScript: el formulario de entrada se envía (form-action 'self') y 
   await pagina.getByLabel("Contraseña", { exact: true }).fill("no-es-la-clave-12");
   await Promise.all([pagina.waitForLoadState("load"), pagina.getByRole("button", { name: "Continuar" }).click()]);
   await expect(pagina.getByRole("alert")).toBeVisible();
-  if (!SIN_CAPTURAS) await pagina.screenshot({ path: `${EVIDENCIA}/csp-sin-js-entrada.png`, fullPage: true });
+  // Se mide antes de la captura: al capturar, el inspector de WebKit inserta un <style> y la política lo rechaza.
   expect(anotadas).toEqual([]);
+  if (!SIN_CAPTURAS) await pagina.screenshot({ path: `${EVIDENCIA}/csp-sin-js-entrada.png`, fullPage: true });
   await contexto.close();
 });
