@@ -13,28 +13,28 @@ export function FormularioAuditor({ formId, hoy, otro }: { formId: string; hoy: 
       {aviso ? <div className="operacion-ancho">{aviso}</div> : null}
       <div className="campo">
         <label htmlFor="auditor-nombre">Nombre</label>
-        <input id="auditor-nombre" name="nombre" required maxLength={200} autoComplete="off" defaultValue={valor("nombre")} {...ligado("nombre")} />
         {mensaje("nombre")}
+        <input id="auditor-nombre" name="nombre" required maxLength={200} autoComplete="off" defaultValue={valor("nombre")} {...ligado("nombre")} />
       </div>
       <div className="campo">
         <label htmlFor="auditor-cargo">Cargo en la entidad</label>
-        <input id="auditor-cargo" name="cargoEntidad" required maxLength={120} autoComplete="off" defaultValue={valor("cargoEntidad")} {...ligado("cargoEntidad")} />
         {mensaje("cargoEntidad")}
+        <input id="auditor-cargo" name="cargoEntidad" required maxLength={120} autoComplete="off" defaultValue={valor("cargoEntidad")} {...ligado("cargoEntidad")} />
       </div>
       <div className="campo">
         <label htmlFor="auditor-rfc">RFC con homoclave</label>
-        <input id="auditor-rfc" name="rfc" required maxLength={13} autoComplete="off" className="operacion-mono" defaultValue={valor("rfc")} {...ligado("rfc")} />
         {mensaje("rfc")}
+        <input id="auditor-rfc" name="rfc" required maxLength={13} autoComplete="off" className="operacion-mono" defaultValue={valor("rfc")} {...ligado("rfc")} />
       </div>
       <div className="campo">
         <label htmlFor="auditor-curp">CURP</label>
-        <input id="auditor-curp" name="curp" required maxLength={18} autoComplete="off" className="operacion-mono" defaultValue={valor("curp")} {...ligado("curp")} />
         {mensaje("curp")}
+        <input id="auditor-curp" name="curp" required maxLength={18} autoComplete="off" className="operacion-mono" defaultValue={valor("curp")} {...ligado("curp")} />
       </div>
       <div className="campo">
         <label htmlFor="auditor-designado">Fecha de designación</label>
-        <input id="auditor-designado" name="designadoEl" type="date" required max={hoy} defaultValue={valor("designadoEl", hoy)} {...ligado("designadoEl")} />
         {mensaje("designadoEl")}
+        <input id="auditor-designado" name="designadoEl" type="date" required max={hoy} defaultValue={valor("designadoEl", hoy)} {...ligado("designadoEl")} />
       </div>
       <div className="acciones operacion-ancho">
         <BotonEnviar>{otro ? "Registrar otro auditor" : "Registrar auditor"}</BotonEnviar>
@@ -64,13 +64,13 @@ export function FormularioComunicacion({
       {aviso ? <div className="operacion-ancho">{aviso}</div> : null}
       <div className="campo">
         <label htmlFor="comunicacion-folio">Folio del acuse del SITI</label>
-        <input id="comunicacion-folio" name="folio" required maxLength={40} autoComplete="off" defaultValue={valor("folio")} {...ligado("folio")} />
         {mensaje("folio")}
+        <input id="comunicacion-folio" name="folio" required maxLength={40} autoComplete="off" defaultValue={valor("folio")} {...ligado("folio")} />
       </div>
       <div className="campo">
         <label htmlFor="comunicacion-recibido">Fecha y hora de recepción</label>
-        <input id="comunicacion-recibido" name="recibidoEn" type="datetime-local" required max={recibidoHasta} defaultValue={valor("recibidoEn")} {...ligado("recibidoEn")} />
         {mensaje("recibidoEn")}
+        <input id="comunicacion-recibido" name="recibidoEn" type="datetime-local" required max={recibidoHasta} defaultValue={valor("recibidoEn")} {...ligado("recibidoEn")} />
       </div>
       <fieldset className="opciones operacion-ancho">
         <legend>Qué cubre</legend>
@@ -107,22 +107,22 @@ export function FormularioSesion({
   auditor: string | null;
 }) {
   const { estado, enviar, forma, valor, marcada, ligado, mensaje, aviso } = useConservaLoCapturado(registrarSesionAccion, "aviso-sesion");
-  // r2-serv-N6: el fieldset no recibe el foco; con el aviso, lo toma la primera casilla.
-  const { autoFocus, ...sinPresentes } = ligado("presentes") as { "aria-invalid"?: true; "aria-describedby"?: string; autoFocus?: true };
+  // r2-serv-N6: el fieldset no recibe el foco; con el aviso, lo toma la primera casilla (useConservaLoCapturado).
+  const sinPresentes = ligado("presentes");
   return (
     <form key={estado.vuelta} ref={forma} action={enviar} className="formulario-pareja operacion-forma">
       <input type="hidden" name="formId" value={formId} />
       {aviso ? <div className="operacion-ancho">{aviso}</div> : null}
       <div className="campo">
         <label htmlFor="sesion-fecha">Fecha de la sesión</label>
-        <input id="sesion-fecha" name="celebradaEl" type="date" required max={hoy} defaultValue={valor("celebradaEl", hoy)} {...ligado("celebradaEl")} />
         {mensaje("celebradaEl")}
+        <input id="sesion-fecha" name="celebradaEl" type="date" required max={hoy} defaultValue={valor("celebradaEl", hoy)} {...ligado("celebradaEl")} />
       </div>
       <fieldset id="sesion-presentes" className="opciones operacion-ancho" {...sinPresentes}>
         <legend>Presentes</legend>
-        {integrantes.map((integrante, indice) => (
+        {integrantes.map((integrante) => (
           <label key={integrante.id} className="confirmacion">
-            <input type="checkbox" name="presentes" value={integrante.id} defaultChecked={marcada("presentes", integrante.id, false)} autoFocus={indice === 0 && autoFocus === true} />
+            <input type="checkbox" name="presentes" value={integrante.id} defaultChecked={marcada("presentes", integrante.id, false)} />
             <span>{integrante.etiqueta}</span>
           </label>
         ))}

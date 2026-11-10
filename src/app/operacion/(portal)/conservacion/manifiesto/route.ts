@@ -1,3 +1,4 @@
+import { fragmentoDelError } from "@/components/operacion/aviso";
 import { errorConSecreto } from "@/server/entrada";
 import { contextoOperacion } from "@/server/operacion";
 import { POLITICA_DESCARGA } from "@/server/pagos-proveedores/descarga";
@@ -16,7 +17,7 @@ const CAMPOS = ["companyId", "desde", "hasta", "pagina", "despuesEn", "despuesId
 export async function GET(request: Request) {
   const url = new URL(request.url);
   // Inventario de la ronda 12: vuelve con lo que se eligió (ya venía en esta dirección: empresa, fechas, página y cursor).
-  // r2-serv-N20: sin fragmento, como toda dirección de Operación: con él, el navegador descarta el autofocus del campo.
+  // r2-serv-N20 y la sexta vuelta: el único fragmento es el del mensaje del campo con error (fragmentoDelError).
   const volver = (aviso: string) => {
     const regreso = new URL("/operacion/conservacion", request.url);
     regreso.searchParams.set("aviso", aviso);
@@ -25,6 +26,7 @@ export async function GET(request: Request) {
       const valor = url.searchParams.get(campo);
       if (valor) regreso.searchParams.set(campo, valor);
     }
+    regreso.hash = fragmentoDelError(aviso);
     return Response.redirect(regreso, 303);
   };
   try {

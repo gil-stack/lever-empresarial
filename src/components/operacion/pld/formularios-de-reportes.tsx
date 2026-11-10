@@ -13,13 +13,13 @@ export function FormularioEntidad({ formId, casfim, supervisor, nuevas }: { form
       {aviso ? <div className="operacion-ancho">{aviso}</div> : null}
       <div className="campo">
         <label htmlFor="entidad-casfim">Clave CASFIM de la entidad (6 dígitos)</label>
-        <input id="entidad-casfim" name="claveCasfim" required inputMode="numeric" pattern="[0-9]{6}" defaultValue={valor("claveCasfim", casfim)} {...ligado("claveCasfim")} />
         {mensaje("claveCasfim")}
+        <input id="entidad-casfim" name="claveCasfim" required inputMode="numeric" pattern="[0-9]{6}" defaultValue={valor("claveCasfim", casfim)} {...ligado("claveCasfim")} />
       </div>
       <div className="campo">
         <label htmlFor="entidad-supervisor">Clave CASFIM del órgano supervisor (6 dígitos)</label>
-        <input id="entidad-supervisor" name="claveOrganoSupervisor" required inputMode="numeric" pattern="[0-9]{6}" defaultValue={valor("claveOrganoSupervisor", supervisor)} {...ligado("claveOrganoSupervisor")} />
         {mensaje("claveOrganoSupervisor")}
+        <input id="entidad-supervisor" name="claveOrganoSupervisor" required inputMode="numeric" pattern="[0-9]{6}" defaultValue={valor("claveOrganoSupervisor", supervisor)} {...ligado("claveOrganoSupervisor")} />
       </div>
       <div className="acciones operacion-ancho">
         <BotonEnviar>{nuevas ? "Registrar claves nuevas" : "Registrar claves"}</BotonEnviar>
@@ -59,18 +59,18 @@ export function FormularioPeriodico({
         <>
           <div className="campo">
             <label htmlFor={`${base}-folio`}>Folio del acuse del SITI</label>
-            <input id={`${base}-folio`} name="folio" required maxLength={40} autoComplete="off" defaultValue={valor("folio")} {...ligado("folio")} />
             {mensaje("folio")}
+            <input id={`${base}-folio`} name="folio" required maxLength={40} autoComplete="off" defaultValue={valor("folio")} {...ligado("folio")} />
           </div>
           <div className="campo">
             <label htmlFor={`${base}-recibido`}>Fecha y hora de recepción</label>
-            <input id={`${base}-recibido`} name="recibidoEn" type="datetime-local" required min={recibidoDesde} max={recibidoHasta} defaultValue={valor("recibidoEn")} {...ligado("recibidoEn")} />
             {mensaje("recibidoEn")}
+            <input id={`${base}-recibido`} name="recibidoEn" type="datetime-local" required min={recibidoDesde} max={recibidoHasta} defaultValue={valor("recibidoEn")} {...ligado("recibidoEn")} />
           </div>
           <div className="campo">
             <label htmlFor={`${base}-registros`}>Número de registros</label>
-            <input id={`${base}-registros`} name="registros" required inputMode="numeric" defaultValue={valor("registros", "1")} {...ligado("registros")} />
             {mensaje("registros")}
+            <input id={`${base}-registros`} name="registros" required inputMode="numeric" defaultValue={valor("registros", "1")} {...ligado("registros")} />
           </div>
         </>
       ) : (

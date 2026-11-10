@@ -244,3 +244,29 @@ export function enlaceDe(correo: Correo, ruta: RegExp): string {
   const url = new URL(encontrado[0]);
   return `${ORIGEN}${url.pathname}${url.search}`;
 }
+
+/**
+ * Sexta vuelta del #61 (decisión del líder): sin JavaScript, un formulario de Operación rechazado vuelve con el fragmento
+ * del mensaje del error en la dirección (permalinkDelRechazo / fragmentoDelError); el mensaje y el campo quedan a la vista
+ * bajo las barras pegadas arriba, y el primer Tab entra al campo. No hay autofocus: su desplazamiento depende del motor.
+ */
+export async function llegaSinScript(pagina: Page, campo: string, idMensaje = "", donde = campo): Promise<void> {
+  const control = pagina.locator(campo);
+  // Sin id, el del mensaje que describe al campo (el que termina en «-campo»).
+  const mensaje = idMensaje || ((await control.getAttribute("aria-describedby")) ?? "").split(" ").find((id) => id.endsWith("-campo")) || "";
+  expect(new URL(pagina.url()).hash, `${donde}: fragmento`).toBe(`#${mensaje}`);
+  await expect(control, donde).not.toHaveAttribute("autofocus");
+  let tapa = 0;
+  for (const barra of [".barra-movil", ".barra-superior"]) {
+    const caja = (await pagina.locator(barra).count()) ? await pagina.locator(barra).first().boundingBox() : null;
+    // Las barras pegadas arriba: la móvil en y=0 y, sin JavaScript a 960 o menos, la de arriba justo debajo.
+    if (caja && caja.y >= 0 && caja.y <= 61 && caja.height > 0) tapa = Math.max(tapa, caja.y + caja.height);
+  }
+  const alto = pagina.viewportSize()!.height;
+  const cajaMensaje = (await pagina.locator(`[id="${mensaje}"]`).boundingBox())!;
+  const cajaCampo = (await control.boundingBox())!;
+  expect(cajaMensaje.y, `${donde}: el mensaje bajo las barras (${Math.round(tapa)} px)`).toBeGreaterThanOrEqual(tapa);
+  expect(cajaCampo.y + Math.min(cajaCampo.height, 40), `${donde}: el campo a la vista`).toBeLessThanOrEqual(alto);
+  await pagina.keyboard.press("Tab");
+  await expect(control, `${donde}: el primer Tab entra al campo`).toBeFocused();
+}

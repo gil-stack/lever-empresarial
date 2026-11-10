@@ -1,5 +1,6 @@
 "use server";
 
+import { fragmentoDelError } from "@/components/operacion/aviso";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -59,7 +60,8 @@ function listo(destino: string, aviso: string): never {
 
 /** `en` dice qué formulario falló: la página liga el error solo a los campos de ese formulario. */
 function fallo(error: unknown, destino: string, en = ""): never {
-  if (error instanceof ErrorDeDominio) redirect(`${destino}?aviso=${encodeURIComponent(error.codigo)}${en ? `&en=${en}` : ""}`);
+  // Sin JavaScript llega al mensaje del campo por su fragmento (fragmentoDelError); con JavaScript, MensajeJuntoAlCampo le da el foco.
+  if (error instanceof ErrorDeDominio) redirect(`${destino}?aviso=${encodeURIComponent(error.codigo)}${en ? `&en=${en}` : ""}${fragmentoDelError(error.codigo)}`);
   throw error;
 }
 

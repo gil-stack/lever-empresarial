@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
-import { consultar, contar, dobleClic, idDe, sesionDe, vigilarConsola } from "./apoyo";
+import { consultar, contar, dobleClic, idDe, llegaSinScript, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS } from "./siembra";
 
 /**
@@ -135,9 +135,10 @@ test.describe("sin JavaScript", () => {
   });
 
   // Inventario de la ronda 12: un rechazo de PLD ya no redirige. Sin JavaScript, el servidor pinta la misma página con
-  // lo escrito, el campo marcado con el foco (autofocus, sin fragmento: r2-serv-N19) y su mensaje justo debajo. Nada de
+  // lo escrito y el campo marcado. Sexta vuelta (decisión del líder): la dirección lleva el fragmento del mensaje, que va
+  // entre la etiqueta y el control; el mensaje y el campo quedan bajo las barras y el primer Tab entra al campo. Nada de
   // lo escrito ni el aviso pasan por la dirección.
-  test("sin JavaScript, un rechazo de PLD conserva lo escrito, con el foco y su mensaje junto al campo: clave CASFIM, nota y RFC del auditor, a 1440 y 390", async ({ page, context }) => {
+  test("sin JavaScript, un rechazo de PLD conserva lo escrito y llega al mensaje junto al campo (fragmento, bajo las barras, primer Tab): clave CASFIM, nota y RFC del auditor, a 1440 y 390", async ({ page, context }) => {
     const [caso] = await consultar<{ id: string }>("select id from pld_casos where company_id = $1", [ceiba]);
     const generico = "Revisa el campo marcado: el dato no tiene el formato esperado.";
     const rechazos = [
@@ -178,28 +179,28 @@ test.describe("sin JavaScript", () => {
         expect(envio.status(), donde).toBe(200);
         await page.waitForLoadState();
         const url = new URL(page.url());
-        expect(url.pathname + url.search + url.hash, donde).toBe(rechazo.ruta);
+        expect(url.pathname + url.search, donde).toBe(rechazo.ruta);
         for (const [selector, valor] of Object.entries(rechazo.escrito)) await expect(page.locator(selector), `${donde} ${selector}`).toHaveValue(valor);
         const control = page.locator(rechazo.campo);
-        await expect(page.locator(`${rechazo.campo}:focus`), donde).toHaveCount(1);
         await expect(control, donde).toHaveAttribute("aria-invalid", "true");
         await expect(control, donde).toHaveAttribute("aria-describedby", new RegExp(`(^| )${rechazo.idMensaje}$`));
         const mensaje = page.locator(`[id="${rechazo.idMensaje}"]`);
         await expect(mensaje, donde).toHaveText(rechazo.texto);
-        // Sin JavaScript nadie desplaza la página: el foco la lleva al campo y el mensaje va justo debajo, a la vista.
+        // El mensaje va entre la etiqueta y el control (como en el #59), justo arriba de él.
         const [cajaCampo, cajaMensaje] = [(await control.boundingBox())!, (await mensaje.boundingBox())!];
-        const separacion = cajaMensaje.y - (cajaCampo.y + cajaCampo.height);
+        const separacion = cajaCampo.y - (cajaMensaje.y + cajaMensaje.height);
         expect(separacion, donde).toBeGreaterThanOrEqual(0);
         expect(separacion, donde).toBeLessThanOrEqual(24);
-        expect(cajaMensaje.y + cajaMensaje.height, donde).toBeLessThanOrEqual(page.viewportSize()!.height);
+        await llegaSinScript(page, rechazo.campo, rechazo.idMensaje, donde);
         expect(await rechazo.conteo(), donde).toBe(antes);
       }
     }
   });
 
   // El manifiesto es una descarga (GET): un periodo rechazado vuelve a Conservación con la empresa y las fechas que se
-  // eligieron, sin fragmento (r2-serv-N19) y con el foco en «Desde».
-  test("sin JavaScript, el manifiesto con un periodo al revés vuelve con lo elegido, sin fragmento y con el foco en el periodo", async ({ page, context }) => {
+  // eligieron. Sexta vuelta: la redirección lleva el fragmento del mensaje del campo (fragmentoDelError) y el primer Tab
+  // entra a «Desde».
+  test("sin JavaScript, el manifiesto con un periodo al revés vuelve con lo elegido y llega al mensaje del periodo (fragmento, primer Tab)", async ({ page, context }) => {
     const descargas = () => contar("select 1 from audit_log where accion = 'pld_manifiesto_descargado'");
     const antes = await descargas();
     await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
@@ -213,19 +214,18 @@ test.describe("sin JavaScript", () => {
     ]);
     expect(envio.status()).toBe(303);
     await page.waitForURL(/\/operacion\/conservacion\?aviso=periodo_invalido/);
-    expect(new URL(page.url()).hash).toBe("");
     await expect(page.locator("#manifiesto-empresa")).toHaveValue(ceiba);
     await expect(page.locator("#manifiesto-desde")).toHaveValue("2026-03-01");
     await expect(page.locator("#manifiesto-hasta")).toHaveValue("2026-02-01");
-    await expect(page.locator("#manifiesto-desde:focus")).toHaveCount(1);
     await expect(page.locator('[id="aviso-operacion-campo"]')).toHaveText("Revisa el periodo.");
+    await llegaSinScript(page, "#manifiesto-desde", "aviso-operacion-campo", "periodo");
     expect(await descargas()).toBe(antes);
   });
 
   // r2-serv-N24: la página y el cursor se revisan antes de la base. Una página 0, una fecha que no es la de «siguiente» o
-  // un documento que no es un identificador vuelven a Conservación con lo capturado, el aviso en su campo y el foco ahí;
-  // la bitácora no registra una descarga.
-  test("sin JavaScript, una página o un cursor que no sirven vuelven con el aviso en su campo, el foco ahí y sin descarga", async ({ page, context }) => {
+  // un documento que no es un identificador vuelven a Conservación con lo capturado y el aviso en su campo, al que se
+  // llega por el fragmento (el primer Tab entra al campo); la bitácora no registra una descarga.
+  test("sin JavaScript, una página o un cursor que no sirven vuelven con el aviso en su campo, se llega a él y no hay descarga", async ({ page, context }) => {
     const descargas = () => contar("select 1 from audit_log where accion = 'pld_manifiesto_descargado'");
     const antes = await descargas();
     await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
@@ -249,22 +249,21 @@ test.describe("sin JavaScript", () => {
       ]);
       expect(envio.status(), caso.codigo).toBe(303);
       await page.waitForURL(new RegExp(`/operacion/conservacion\\?aviso=${caso.codigo}`));
-      expect(new URL(page.url()).hash, caso.codigo).toBe("");
       await expect(page.locator("#manifiesto-empresa"), caso.codigo).toHaveValue(ceiba);
       await expect(page.locator("#manifiesto-pagina"), caso.codigo).toHaveValue(caso.pagina);
       await expect(page.locator("#manifiesto-despues-en"), caso.codigo).toHaveValue(caso.despuesEn);
       await expect(page.locator("#manifiesto-despues-id"), caso.codigo).toHaveValue(caso.despuesId);
-      await expect(page.locator(`${caso.campo}:focus`), caso.codigo).toHaveCount(1);
       await expect(page.locator(caso.campo), caso.codigo).toHaveAttribute("aria-invalid", "true");
       await expect(page.locator('[id="aviso-operacion-campo"]'), caso.codigo).toHaveText(caso.texto);
+      await llegaSinScript(page, caso.campo, "aviso-operacion-campo", caso.codigo);
     }
     expect(await descargas()).toBe(antes);
   });
 
   // B (25ª): la bandeja de Cumplimiento enlaza al perfil del expediente. Sin JavaScript, quien entra por ese enlace y ve
-  // rechazado el formulario del perfil recibe el foco en el campo: un fragmento que siga en la dirección haría que el
-  // navegador vaya a ese id y descarte el autofocus (el mecanismo de F2 del #59).
-  test("sin JavaScript, quien entra al perfil por un enlace de la bandeja y ve su formulario rechazado tiene el foco en el campo", async ({ page, context }) => {
+  // rechazado el formulario del perfil llega al mensaje del campo por el fragmento de la respuesta, aunque el enlace
+  // traiga el suyo, y el primer Tab entra al campo.
+  test("sin JavaScript, quien entra al perfil por un enlace de la bandeja y ve su formulario rechazado llega al campo", async ({ page, context }) => {
     const [fresno] = await consultar<{ id: string }>(
       `with alta as (
          insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, operator_id, estado, demostracion)
@@ -299,7 +298,7 @@ test.describe("sin JavaScript", () => {
     await enviarRechazado("Proponer el cambio a Cumplimiento");
     await expect(page.locator("#perfil-nomina-monto")).toHaveValue("noventa mil");
     await expect(page.locator("#perfil-nomina-monto")).toHaveAttribute("aria-invalid", "true");
-    await expect(page.locator("#perfil-nomina-monto:focus"), "foco en el monto rechazado").toHaveCount(1);
+    await llegaSinScript(page, "#perfil-nomina-monto", "aviso-perfil-campo", "monto rechazado");
     expect(await contar("select 1 from pld_perfil_propuestas where company_id = $1", [empresa])).toBe(0);
 
     // Con la propuesta, Cumplimiento entra por «Por resolver» y su resolución se rechaza: el foco va al motivo.
@@ -318,7 +317,7 @@ test.describe("sin JavaScript", () => {
     await page.locator("#perfil-resolucion-motivo").fill("Revisar\u3164\u3164\u3164");
     await enviarRechazado("Aprobar el cambio");
     await expect(page.locator("#perfil-resolucion-motivo")).toHaveAttribute("aria-invalid", "true");
-    await expect(page.locator("#perfil-resolucion-motivo:focus"), "foco en el motivo rechazado").toHaveCount(1);
+    await llegaSinScript(page, "#perfil-resolucion-motivo", "aviso-resolucion-campo", "motivo rechazado");
     expect(await contar("select 1 from pld_perfil_resoluciones where company_id = $1", [empresa])).toBe(0);
   });
 });
@@ -426,14 +425,21 @@ async function enviarPost(page: Page, boton: Locator): Promise<number> {
   return respuesta.status();
 }
 
-/** Lo que N20 revisa tras el rechazo de la propuesta: sin el aviso de la nota arriba, el foco en su campo y su aviso. */
-async function propuestaRechazadaSinAvisoViejo(page: Page, donde: string) {
+/**
+ * Lo que N20 revisa tras el rechazo de la propuesta: sin el aviso de la nota arriba y con el suyo. Con JavaScript, el
+ * foco en su campo y la dirección sin fragmento; sin JavaScript, el fragmento de su mensaje y el primer Tab en el campo.
+ */
+async function propuestaRechazadaSinAvisoViejo(page: Page, donde: string, conScript: boolean) {
   await expect(page.locator("#propuesta-justificacion"), donde).toHaveAttribute("aria-invalid", "true");
-  await expect(page.locator("#propuesta-justificacion:focus"), `${donde}: foco en la justificación`).toHaveCount(1);
   await expect(page.locator("#aviso-propuesta"), donde).toBeVisible();
   await expect(page.locator("#aviso-operacion"), `${donde}: el aviso de la nota ya no va arriba`).toHaveCount(0);
   await expect(page.locator("#aviso-rechazo"), `${donde}: el formulario muestra su aviso`).toBeHidden();
-  expect(new URL(page.url()).hash, donde).toBe("");
+  if (conScript) {
+    await expect(page.locator("#propuesta-justificacion:focus"), `${donde}: foco en la justificación`).toHaveCount(1);
+    expect(new URL(page.url()).hash, donde).toBe("");
+  } else {
+    await llegaSinScript(page, "#propuesta-justificacion", "aviso-propuesta-campo", donde);
+  }
 }
 
 // r2-serv-N20: una nota que se agrega deja su aviso arriba; si después la propuesta (otra tarjeta) se rechaza, ese aviso
@@ -453,7 +459,7 @@ test("r2-serv-N20 con JavaScript: tras agregar una nota, la propuesta rechazada 
   // «Revisar» con tres U+3164 pasa el mínimo del navegador (10) y el servidor cuenta 7 que se ven.
   await page.locator("#propuesta-justificacion").fill("Revisarㅤㅤㅤ");
   await page.getByRole("button", { name: "Registrar propuesta" }).click();
-  await propuestaRechazadaSinAvisoViejo(page, "con JavaScript");
+  await propuestaRechazadaSinAvisoViejo(page, "con JavaScript", true);
   // Un solo campo marcado a la vez (regla del #59, useAvisoVigente): si ahora se rechaza la nota, el aviso de la
   // propuesta se descarta y lo escrito en ella se queda.
   await page.locator("#nota-texto").fill("aㅤ");
@@ -469,7 +475,7 @@ test("r2-serv-N20 con JavaScript: tras agregar una nota, la propuesta rechazada 
 test.describe("doceava del #59 sin JavaScript, antes de cambiar quién dictamina", () => {
   test.use({ javaScriptEnabled: false });
 
-  test("r2-serv-N20 sin JavaScript: tras agregar una nota, la propuesta rechazada no pinta el aviso de la nota y deja el foco en su campo", async ({ page, context }) => {
+  test("r2-serv-N20 sin JavaScript: tras agregar una nota, la propuesta rechazada no pinta el aviso de la nota y se llega a su campo", async ({ page, context }) => {
     const [caso] = await casosAbiertos();
     await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
     await page.goto(`/operacion/pld/casos/${caso}`);
@@ -480,12 +486,13 @@ test.describe("doceava del #59 sin JavaScript, antes de cambiar quién dictamina
     await page.locator("#propuesta-propuesta").selectOption("no_reportar");
     await page.locator("#propuesta-justificacion").fill("Revisarㅤㅤㅤ");
     expect(await enviarPost(page, page.getByRole("button", { name: "Registrar propuesta" }))).toBe(200);
-    await propuestaRechazadaSinAvisoViejo(page, "sin JavaScript");
+    await propuestaRechazadaSinAvisoViejo(page, "sin JavaScript", false);
   });
 
-  // B5: quien llega por un enlace con fragmento (bandeja, Comité) y ve su formulario rechazado recibe el foco en el
-  // campo. La página que responde al envío pinta el destino con sufijo (idDeAncla del #59): el fragmento no coincide.
-  test("B5 sin JavaScript: llegando por #evaluacion-titulo, #sesiones-titulo, #comunicaciones-titulo y #reporte-<r>-<p>, el rechazo deja el foco en su campo", async ({ page, context }) => {
+  // B5: quien llega por un enlace con fragmento (bandeja, Comité) y ve su formulario rechazado llega a su campo: la
+  // respuesta trae el fragmento del mensaje (permalinkDelRechazo) en lugar del del enlace, y la página pinta el destino
+  // del enlace con sufijo (idDeAncla del #59).
+  test("B5 sin JavaScript: llegando por #evaluacion-titulo, #sesiones-titulo, #comunicaciones-titulo y #reporte-<r>-<p>, el rechazo lleva a su campo", async ({ page, context }) => {
     await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
     await page.goto("/operacion/reportes");
     // Sin las claves de la entidad, el acuse de la 36ª se rechaza por eso (falta_clave_entidad) y no por su folio.
@@ -533,8 +540,8 @@ test.describe("doceava del #59 sin JavaScript, antes de cambiar quién dictamina
       await page.goto(`${destino.ruta}#${destino.ancla}`);
       await destino.llenar();
       expect(await enviarPost(page, destino.boton), destino.ancla).toBe(200);
-      await expect(page.locator(`${destino.campo}:focus`), `${destino.ancla}: foco en el campo rechazado`).toHaveCount(1);
       await expect(page.locator(destino.campo), destino.ancla).toHaveAttribute("aria-invalid", "true");
+      await llegaSinScript(page, destino.campo, "", destino.ancla);
       await expect(page.locator(`[id="${destino.ancla}"]`), `${destino.ancla}: el destino lleva sufijo`).toHaveCount(0);
       const ids = await page.locator(`[id^="${destino.ancla}-"]`).evaluateAll((nodos) => nodos.map((nodo) => nodo.id));
       expect(ids.some((id) => new RegExp(`^${destino.ancla}-[0-9a-f]{8}$`).test(id)), `${destino.ancla}: ${ids.join(", ")}`).toBe(true);
@@ -694,7 +701,7 @@ test.describe("doceava del #59 sin JavaScript, con el Oficial dictaminando", () 
     await otra.close();
   });
 
-  test("B5 sin JavaScript: llegando por #reporte-titulo, el acuse rechazado deja el foco en el folio", async ({ page, context }) => {
+  test("B5 sin JavaScript: llegando por #reporte-titulo, el acuse rechazado lleva al folio", async ({ page, context }) => {
     const [conReporte] = await consultar<{ id: string }>(
       "select c.id from pld_casos c join pld_dictamenes d on d.caso_id = c.id where c.company_id = $1 and d.resultado = 'reportar_inusual' order by d.caso_id limit 1",
       [ceiba],
@@ -704,7 +711,7 @@ test.describe("doceava del #59 sin JavaScript, con el Oficial dictaminando", () 
     await page.locator("#reporte-folio").fill("SITI​0001");
     await page.locator("#reporte-recibido").fill(ahoraParaCampo());
     expect(await enviarPost(page, page.getByRole("button", { name: "Registrar acuse" }))).toBe(200);
-    await expect(page.locator("#reporte-folio:focus"), "foco en el folio").toHaveCount(1);
+    await llegaSinScript(page, "#reporte-folio", "aviso-acuse-campo", "folio");
     await expect(page.locator('[id="reporte-titulo"]')).toHaveCount(0);
     expect(await page.locator('[id^="reporte-titulo-"]').evaluateAll((nodos) => nodos.map((nodo) => nodo.id))).toEqual([expect.stringMatching(/^reporte-titulo-[0-9a-f]{8}$/)]);
   });

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { expect, test, type Browser, type BrowserContext, type Locator, type Page, type Route } from "@playwright/test";
 
-import { CLAVE, codigoDeSemilla, codigoTotp, consultar, contar, dobleClic, envejecerFactor, idDe, ORIGEN, sesionDe, vigilarConsola } from "./apoyo";
+import { CLAVE, codigoDeSemilla, codigoTotp, consultar, contar, dobleClic, envejecerFactor, idDe, llegaSinScript, ORIGEN, sesionDe, vigilarConsola } from "./apoyo";
 import { BRISA, CIMA, CORREOS, DUNA, EJE, ENEBRO, FARO, FRESNO, GRANADO, HIGUERA } from "./siembra";
 
 /**
@@ -49,11 +49,14 @@ async function entrarAOperacion(page: Page, correo: string): Promise<void> {
  * y apunta al mensaje (`aria-describedby`), el mensaje está dentro de la ventana y fuera de las barras fijas, y en la
  * página hay un solo campo marcado. Doceava: el mensaje va justo arriba del control, entre la etiqueta y el control
  * (patrón GOV.UK), y el control asoma en la ventana. Mide con las cajas de Playwright, que sirven también sin
- * JavaScript; antes de exigir, imprime la medida («MEDIDA …»).
+ * JavaScript; antes de exigir, imprime la medida («MEDIDA …»). Sexta vuelta del #61 (decisión del líder): sin
+ * JavaScript la dirección trae el fragmento del mensaje y, en lugar del foco, el primer Tab entra al campo; con
+ * JavaScript la dirección no lo trae y el campo tiene el foco.
  */
 async function mensajeJunto(page: Page, campo: string, texto: string, idMensaje = "aviso-operacion-campo"): Promise<void> {
   const control = page.locator(campo);
-  await expect(page.locator(`${campo}:focus`)).toHaveCount(1);
+  const sinScript = new URL(page.url()).hash === `#${idMensaje}`;
+  if (!sinScript) await expect(page.locator(`${campo}:focus`)).toHaveCount(1);
   const alto = page.viewportSize()!.height;
   let tapa = 0;
   for (const barra of [".barra-movil", ".barra-superior"]) {
@@ -74,12 +77,14 @@ async function mensajeJunto(page: Page, campo: string, texto: string, idMensaje 
   const separacion = cajaCampo.y - (cajaMensaje!.y + cajaMensaje!.height);
   expect(separacion).toBeGreaterThanOrEqual(0);
   expect(separacion).toBeLessThanOrEqual(24);
+  if (sinScript) await llegaSinScript(page, campo, idMensaje);
 }
 
 /**
  * Doceava revisión: un formulario de Operación rechazado no cambia la dirección y vuelve con su aviso arriba del
  * formulario: con JavaScript sin recargar; sin JavaScript, la página que responde al POST con 200 (ningún dato
- * capturado pasa por la dirección). Con JavaScript marca antes el aviso anterior para esperar el nuevo.
+ * capturado pasa por la dirección; solo cambia el fragmento, el del mensaje: permalinkDelRechazo). Con JavaScript marca
+ * antes el aviso anterior para esperar el nuevo.
  */
 async function rechazado(page: Page, boton: Locator, idAviso: string, sinJs = false): Promise<void> {
   const direccion = page.url();
@@ -87,7 +92,9 @@ async function rechazado(page: Page, boton: Locator, idAviso: string, sinJs = fa
   const [respuesta] = await Promise.all([page.waitForResponse((r) => r.request().method() === "POST"), boton.click()]);
   await expect(page.locator(`[id="${idAviso}"]:not([data-anterior])`)).toBeVisible();
   expect(respuesta.status()).toBe(200);
-  expect(page.url()).toBe(direccion);
+  const sinFragmento = (url: string) => url.split("#")[0];
+  expect(sinFragmento(page.url())).toBe(sinFragmento(direccion));
+  expect(new URL(page.url()).hash).toBe(sinJs ? `#${idAviso}-campo` : new URL(direccion).hash);
   // El aviso de un formulario que ya no se pinta (arriba de la página) sobra cuando el formulario muestra el suyo.
   await expect(page.locator("#aviso-rechazo")).toBeHidden();
 }
@@ -125,7 +132,10 @@ async function dictamenYaRegistrado(page: Page, context: BrowserContext, rfc: st
   await expect(aviso.locator(".alerta")).toHaveAttribute("role", "alert");
   await expect(page.locator("#dictamen-motivo")).toHaveCount(0);
   await expect(page.locator(".operacion-aviso")).toHaveCount(1);
-  expect(page.url()).toBe(direccion);
+  // Sin JavaScript la dirección trae el fragmento del formulario (permalinkDelRechazo); como el formulario ya no se pinta,
+  // no tiene destino y la página queda arriba, con el aviso a la vista.
+  expect(page.url().split("#")[0]).toBe(direccion.split("#")[0]);
+  await expect(aviso).toBeInViewport();
   expect(await dictamenes()).toBe(1);
   expect((await context.cookies()).map((cookie) => cookie.name)).not.toContain("operacion-rechazo");
   await page.goto(ruta);
@@ -711,7 +721,7 @@ test.describe("Operación SOFIPO: expediente de Duna", () => {
       expect([await representantes(), await socios()]).toEqual([representantesAntes, sociosAntes]);
     });
 
-    test("sin JavaScript, el rechazo de un campo del expediente vuelve con lo capturado, sin fragmento y con el foco en el campo", async ({ page, context }) => {
+    test("sin JavaScript, el rechazo de un campo del expediente vuelve con lo capturado y se llega al campo por el fragmento de su mensaje", async ({ page, context }) => {
       const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
       const datos = () => consultar("select razon_social, giro from kyb_versiones where company_id = $1 and estado = 'borrador'", [duna!.id]);
       const antes = await datos();
@@ -723,13 +733,12 @@ test.describe("Operación SOFIPO: expediente de Duna", () => {
       const campo = page.locator("#dato-razonSocial");
       await expect(campo).toHaveAttribute("aria-invalid", "true");
       await expect(campo).toHaveAttribute("aria-describedby", "aviso-datos-campo");
-      await expect(page.locator("#dato-razonSocial:focus")).toHaveCount(1);
-      expect(new URL(page.url()).hash).toBe("");
+      await llegaSinScript(page, "#dato-razonSocial", "aviso-datos-campo", "razón social");
       // Vuelve lo escrito en los dos campos, no lo guardado.
       await expect(campo).toHaveValue("Duna\u200bComercial SA de CV");
       await expect(page.locator("#dato-giro")).toHaveValue("Distribución de abarrotes al mayoreo");
       expect(await datos()).toEqual(antes);
-      // El foco desplazó la página: sin JavaScript nadie marca la barra superior, que lleva su fondo para no encimarse.
+      // El fragmento desplazó la página: sin JavaScript nadie marca la barra superior, que lleva su fondo para no encimarse.
       await expect(page.locator(".barra-superior")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     });
   });

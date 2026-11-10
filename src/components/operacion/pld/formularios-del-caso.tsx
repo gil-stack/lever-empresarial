@@ -13,8 +13,8 @@ export function FormularioVeinticuatroHoras({ casoId }: { casoId: string }) {
       {aviso}
       <div className="campo">
         <label htmlFor="plazo-motivo">Si hay información de que los recursos pueden venir de actividades ilícitas: qué se sabe</label>
-        <textarea id="plazo-motivo" name="motivo" required minLength={10} maxLength={1000} defaultValue={valor("motivo")} {...ligado("motivo")} />
         {mensaje("motivo")}
+        <textarea id="plazo-motivo" name="motivo" required minLength={10} maxLength={1000} defaultValue={valor("motivo")} {...ligado("motivo")} />
       </div>
       <div className="acciones">
         <BotonEnviar>Marcar como reporte de 24 horas</BotonEnviar>
@@ -34,8 +34,8 @@ export function FormularioNota({ casoId, formId }: { casoId: string; formId: str
       {aviso}
       <div className="campo">
         <label htmlFor="nota-texto">Nota</label>
-        <textarea id="nota-texto" name="texto" required maxLength={4000} defaultValue={valor("texto")} {...ligado("texto")} />
         {mensaje("texto")}
+        <textarea id="nota-texto" name="texto" required maxLength={4000} defaultValue={valor("texto")} {...ligado("texto")} />
       </div>
       <div className="acciones">
         <BotonEnviar>Agregar nota</BotonEnviar>
@@ -66,23 +66,23 @@ export function FormularioAcuseDelCaso({
       {aviso ? <div className="operacion-ancho">{aviso}</div> : null}
       <div className="campo">
         <label htmlFor="reporte-folio">Folio del acuse</label>
-        <input id="reporte-folio" name="folio" required maxLength={40} autoComplete="off" defaultValue={valor("folio")} {...ligado("folio")} />
         {mensaje("folio")}
+        <input id="reporte-folio" name="folio" required maxLength={40} autoComplete="off" defaultValue={valor("folio")} {...ligado("folio")} />
       </div>
       <div className="campo">
         <label htmlFor="reporte-periodo">Periodo (AAAAMMDD)</label>
-        <input id="reporte-periodo" name="periodo" required inputMode="numeric" pattern="[0-9]{8}" defaultValue={valor("periodo", periodo)} {...ligado("periodo")} />
         {mensaje("periodo")}
+        <input id="reporte-periodo" name="periodo" required inputMode="numeric" pattern="[0-9]{8}" defaultValue={valor("periodo", periodo)} {...ligado("periodo")} />
       </div>
       <div className="campo">
         <label htmlFor="reporte-recibido">Fecha y hora de recepción (Ciudad de México)</label>
-        <input id="reporte-recibido" name="recibidoEn" type="datetime-local" required min={recibidoDesde} max={recibidoHasta} defaultValue={valor("recibidoEn")} {...ligado("recibidoEn")} />
         {mensaje("recibidoEn")}
+        <input id="reporte-recibido" name="recibidoEn" type="datetime-local" required min={recibidoDesde} max={recibidoHasta} defaultValue={valor("recibidoEn")} {...ligado("recibidoEn")} />
       </div>
       <div className="campo">
         <label htmlFor="reporte-registros">Número de registros</label>
-        <input id="reporte-registros" name="registros" required inputMode="numeric" defaultValue={valor("registros", "1")} {...ligado("registros")} />
         {mensaje("registros")}
+        <input id="reporte-registros" name="registros" required inputMode="numeric" defaultValue={valor("registros", "1")} {...ligado("registros")} />
       </div>
       <div className="acciones operacion-ancho">
         <BotonEnviar>Registrar acuse</BotonEnviar>

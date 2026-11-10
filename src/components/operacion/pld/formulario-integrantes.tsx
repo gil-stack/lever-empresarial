@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef } from "react";
 
 import { registrarIntegrantesAccion, type EstadoDeIntegrantes } from "@/app/operacion/(portal)/pld/acciones";
-import { AvisoOperacion, errorDelCampo, textoDelAviso } from "@/components/operacion/aviso";
+import { AvisoOperacion, errorDelCampo, textoDelAviso, permalinkDelRechazo } from "@/components/operacion/aviso";
 import { useAvisoVigente } from "@/components/operacion/formulario-con-aviso";
 import { MensajeJuntoAlCampo } from "@/components/operacion/mensaje-junto-al-campo";
 import { BotonEnviar } from "@/components/sistema";
@@ -39,7 +39,7 @@ type Opcion = { id: string; etiqueta: string };
  * campos con lo capturado.
  */
 export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: string[]; hoy: string; titulares: Opcion[]; vigentes: Opcion[] }) {
-  const [estado, accion] = useActionState(registrarIntegrantesAccion, SIN_AVISO);
+  const [estado, accion] = useActionState(registrarIntegrantesAccion, SIN_AVISO, permalinkDelRechazo(ID_AVISO));
   const forma = useRef<HTMLFormElement>(null);
   // r2-serv-N20: el aviso vigente del #59 (oculta el del envío anterior; se descarta si se envía otro formulario).
   const aviso = useAvisoVigente(estado, forma);
@@ -75,11 +75,12 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
           <input type="hidden" name={`id-${i}`} value={id} />
           <div className="campo">
             <label htmlFor={`integrante-nombres-${i}`}>Nombre(s)</label>
-            <input id={`integrante-nombres-${i}`} name={`nombres-${i}`} maxLength={80} autoComplete="off" defaultValue={valor(`nombres-${i}`)} {...ligado("nombres", i)} />
             {mensajeDe(ligado("nombres", i))}
+            <input id={`integrante-nombres-${i}`} name={`nombres-${i}`} maxLength={80} autoComplete="off" defaultValue={valor(`nombres-${i}`)} {...ligado("nombres", i)} />
           </div>
           <div className="campo">
             <label htmlFor={`integrante-primer-${i}`}>Primer apellido</label>
+            {mensajeDe(ligado("primerApellido", i))}
             <input
               id={`integrante-primer-${i}`}
               name={`primerApellido-${i}`}
@@ -88,10 +89,10 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor(`primerApellido-${i}`)}
               {...ligado("primerApellido", i)}
             />
-            {mensajeDe(ligado("primerApellido", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-segundo-${i}`}>Segundo apellido (si tiene)</label>
+            {mensajeDe(ligado("segundoApellido", i))}
             <input
               id={`integrante-segundo-${i}`}
               name={`segundoApellido-${i}`}
@@ -100,10 +101,10 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor(`segundoApellido-${i}`)}
               {...ligado("segundoApellido", i)}
             />
-            {mensajeDe(ligado("segundoApellido", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-cargo-${i}`}>Cargo en el Comité</label>
+            {mensajeDe(ligado("cargo", i))}
             <select id={`integrante-cargo-${i}`} name={`cargo-${i}`} defaultValue={valor(`cargo-${i}`) || "INTEGRANTE"} {...ligado("cargo", i)}>
               {CARGOS_COMITE.map((cargo) => (
                 <option key={cargo} value={cargo}>
@@ -111,18 +112,18 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
                 </option>
               ))}
             </select>
-            {mensajeDe(ligado("cargo", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-titularidad-${i}`}>Titular o suplente</label>
+            {mensajeDe(ligado("titularidad", i))}
             <select id={`integrante-titularidad-${i}`} name={`titularidad-${i}`} defaultValue={valor(`titularidad-${i}`) || "TITULAR"} {...ligado("titularidad", i)}>
               <option value="TITULAR">Titular</option>
               <option value="SUPLENTE">Suplente</option>
             </select>
-            {mensajeDe(ligado("titularidad", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-suplente-${i}`}>Suplente de (si es suplente)</label>
+            {mensajeDe(ligado("suplenteDe", i))}
             <select id={`integrante-suplente-${i}`} name={`suplenteDe-${i}`} defaultValue={valor(`suplenteDe-${i}`)} {...ligado("suplenteDe", i)}>
               <option value="">No aplica</option>
               {titulares.map((titular) => (
@@ -136,10 +137,10 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
                 </option>
               ))}
             </select>
-            {mensajeDe(ligado("suplenteDe", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-rfc-${i}`}>RFC con homoclave</label>
+            {mensajeDe(ligado("rfc", i))}
             <input
               id={`integrante-rfc-${i}`}
               name={`rfc-${i}`}
@@ -149,10 +150,10 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor(`rfc-${i}`)}
               {...ligado("rfc", i)}
             />
-            {mensajeDe(ligado("rfc", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-curp-${i}`}>CURP</label>
+            {mensajeDe(ligado("curp", i))}
             <input
               id={`integrante-curp-${i}`}
               name={`curp-${i}`}
@@ -162,15 +163,15 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor(`curp-${i}`)}
               {...ligado("curp", i)}
             />
-            {mensajeDe(ligado("curp", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-area-${i}`}>Área de la entidad</label>
-            <input id={`integrante-area-${i}`} name={`area-${i}`} maxLength={120} autoComplete="off" defaultValue={valor(`area-${i}`)} {...ligado("area", i)} />
             {mensajeDe(ligado("area", i))}
+            <input id={`integrante-area-${i}`} name={`area-${i}`} maxLength={120} autoComplete="off" defaultValue={valor(`area-${i}`)} {...ligado("area", i)} />
           </div>
           <div className="campo">
             <label htmlFor={`integrante-cargo-entidad-${i}`}>Cargo en la entidad</label>
+            {mensajeDe(ligado("cargoEntidad", i))}
             <input
               id={`integrante-cargo-entidad-${i}`}
               name={`cargoEntidad-${i}`}
@@ -179,10 +180,10 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor(`cargoEntidad-${i}`)}
               {...ligado("cargoEntidad", i)}
             />
-            {mensajeDe(ligado("cargoEntidad", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-designado-${i}`}>Fecha de designación</label>
+            {mensajeDe(ligado("designadoEl", i))}
             <input
               id={`integrante-designado-${i}`}
               name={`designadoEl-${i}`}
@@ -191,10 +192,10 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor(`designadoEl-${i}`) || hoy}
               {...ligado("designadoEl", i)}
             />
-            {mensajeDe(ligado("designadoEl", i))}
           </div>
           <div className="campo">
             <label htmlFor={`integrante-certificado-${i}`}>Número de certificado (si tiene)</label>
+            {mensajeDe(ligado("certificado", i))}
             <input
               id={`integrante-certificado-${i}`}
               name={`certificado-${i}`}
@@ -203,7 +204,6 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor(`certificado-${i}`)}
               {...ligado("certificado", i)}
             />
-            {mensajeDe(ligado("certificado", i))}
           </div>
           <label className="confirmacion">
             <input type="checkbox" name={`esOficial-${i}`} value="si" defaultChecked={valor(`esOficial-${i}`) === "si"} {...ligado("esOficial", i)} />
@@ -217,6 +217,7 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
           <legend>Sustitución (si alguien deja el Comité)</legend>
           <div className="campo">
             <label htmlFor="integrante-sustituye">Sustituye a</label>
+            {mensajeDe(ligadoFuera("sustituye"))}
             <select id="integrante-sustituye" name="sustituye" defaultValue={valor("sustituye")} {...ligadoFuera("sustituye")}>
               <option value="">Nadie</option>
               {vigentes.map((integrante) => (
@@ -225,10 +226,10 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
                 </option>
               ))}
             </select>
-            {mensajeDe(ligadoFuera("sustituye"))}
           </div>
           <div className="campo">
             <label htmlFor="integrante-sustituido">Fecha de sustitución</label>
+            {mensajeDe(ligadoFuera("sustituidoEl"))}
             <input
               id="integrante-sustituido"
               name="sustituidoEl"
@@ -237,12 +238,11 @@ export function FormularioIntegrantes({ ids, hoy, titulares, vigentes }: { ids: 
               defaultValue={valor("sustituidoEl") || hoy}
               {...ligadoFuera("sustituidoEl")}
             />
-            {mensajeDe(ligadoFuera("sustituidoEl"))}
           </div>
           <div className="campo operacion-ancho">
             <label htmlFor="integrante-motivo">Motivo de la sustitución</label>
-            <textarea id="integrante-motivo" name="motivo" maxLength={500} defaultValue={valor("motivo")} {...ligadoFuera("motivo")} />
             {mensajeDe(ligadoFuera("motivo"))}
+            <textarea id="integrante-motivo" name="motivo" maxLength={500} defaultValue={valor("motivo")} {...ligadoFuera("motivo")} />
           </div>
         </fieldset>
       ) : null}

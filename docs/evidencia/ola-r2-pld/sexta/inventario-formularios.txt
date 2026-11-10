@@ -1,0 +1,72 @@
+## Hooks con permalinkDelRechazo (useFormularioConAviso / useConservaLoCapturado)
+src/components/operacion/formulario-riesgo.tsx:18 · calificarRiesgoAccion · ID_AVISO
+src/components/operacion/formulario-comision.tsx:12 · solicitarComisionAccion · ID_AVISO
+src/components/operacion/formulario-folio.tsx:14 · accion · `aviso-folio-${id}`
+src/components/operacion/formulario-prospecto.tsx:13 · registrarProspectoAccion · ID_AVISO
+src/components/operacion/formularios-alerta.tsx:12 · crearAlertaAccion · "aviso-alerta"
+src/components/operacion/formularios-alerta.tsx:61 · cerrarAlertaAccion · `aviso-cierre-${id}`
+src/components/operacion/formulario-lista.tsx:15 · cargarListaAccion · "aviso-lista"
+src/components/operacion/decision-recuperacion.tsx:22 · accion · `aviso-recuperacion-${id}`
+src/components/operacion/formulario-invitacion.tsx:26 · invitarAdministradorAccion · ID_AVISO
+src/components/operacion/formulario-suspension.tsx:31 · solicitarSuspensionAccion · ID_AVISO
+src/components/operacion/formulario-dictamen.tsx:24 · dictaminarAccion · ID_AVISO
+src/components/operacion/formulario-datos.tsx:37 · guardarDatosAccion · ID_AVISO
+src/components/operacion/formulario-coincidencia.tsx:16 · resolverCoincidenciaAccion · `aviso-coincidencia-${id}`
+src/components/operacion/formulario-documento.tsx:31 · cargarDocumentoAccion · ID_AVISO
+src/components/operacion/pld/formularios-de-texto.tsx:61 · emitirAvisoAccion · "aviso-nuevo"
+src/components/operacion/pld/formularios-de-texto.tsx:131 · registrarPropuestaAccion · "aviso-propuesta"
+src/components/operacion/pld/formularios-de-texto.tsx:189 · dictaminarCasoAccion · "aviso-dictamen"
+src/components/operacion/pld/formularios-de-texto.tsx:254 · cambiarParametrosAccion · "aviso-parametros"
+src/components/operacion/pld/formularios-de-texto.tsx:298 · cambiarModoAccion · "aviso-modo"
+src/components/operacion/pld/formularios-del-perfil.tsx:11 · resolverPropuestaDePerfilAccion · "aviso-resolucion"
+src/components/operacion/pld/formularios-del-perfil.tsx:46 · declararPerfilAccion · "aviso-perfil"
+src/components/operacion/pld/formularios-del-perfil.tsx:82 · registrarEvaluacionAccion · "aviso-evaluacion"
+src/components/operacion/pld/formularios-del-comite.tsx:9 · registrarAuditorAccion · "aviso-auditor"
+src/components/operacion/pld/formularios-del-comite.tsx:60 · registrarComunicacionAccion · "aviso-comunicacion"
+src/components/operacion/pld/formularios-del-comite.tsx:109 · registrarSesionAccion · "aviso-sesion"
+src/components/operacion/pld/formularios-del-caso.tsx:9 · marcarVeinticuatroHorasAccion · "aviso-plazo"
+src/components/operacion/pld/formularios-del-caso.tsx:29 · agregarNotaAccion · "aviso-nota"
+src/components/operacion/pld/formularios-del-caso.tsx:61 · registrarReportePldAccion · "aviso-acuse"
+src/components/operacion/pld/formularios-de-reportes.tsx:9 · registrarEntidadAccion · "aviso-entidad"
+src/components/operacion/pld/formularios-de-reportes.tsx:51 · registrarPeriodicoAccion · `aviso-${base}`
+
+## useActionState directo con permalinkDelRechazo
+src/components/operacion/formulario-representante.tsx
+src/components/operacion/pld/formulario-integrantes.tsx
+src/components/operacion/formulario-accionista.tsx
+
+## Páginas con ?aviso=&en= (fragmentoDelError en la redirección)
+src/app/operacion/(portal)/pld/acciones.ts:64
+src/app/operacion/(portal)/conservacion/manifiesto/route.ts:29
+src/app/operacion/(portal)/pld/casos/[id]/page.tsx
+src/app/operacion/(portal)/comite/sesiones/[id]/page.tsx
+src/app/operacion/(portal)/conservacion/page.tsx
+
+## autoFocus que queda en src
+(ninguno)
+
+## useActionState sin vuelta sin JavaScript con autofocus (no cambian)
+src/components/lista-69b/formulario-cargar.tsx
+src/components/operacion/continuar.tsx
+src/components/operacion/formulario-entrar.tsx
+src/components/operacion/rechazar.tsx
+src/components/recuperar/formularios.tsx
+src/components/personas/formulario-area.tsx
+src/components/proveedores/acciones-pago.tsx
+src/components/personas/formularios-detalle.tsx
+src/components/personas/boton-preparar.tsx
+src/components/sistema/boton-enviar.tsx
+src/components/personas/formularios.tsx
+src/components/invitacion/formulario-invitacion.tsx
+src/components/proveedores/formulario.tsx
+src/components/entrar/continuar.tsx
+src/components/flujo/formularios.tsx
+src/components/entrar/formulario-entrar.tsx
+src/components/precios/formulario-publicar.tsx
+src/components/entrar/confirmar-identidad.tsx
+src/components/operacion/envio-sin-script.ts
+src/components/personas/alta.tsx
+src/components/proveedores/formulario-pago.tsx
+src/components/politica/formularios.tsx
+src/components/entrar/seguridad.tsx
+src/components/proveedores/formulario-cambio.tsx

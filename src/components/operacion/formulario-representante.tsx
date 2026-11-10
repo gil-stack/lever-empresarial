@@ -6,7 +6,7 @@ import { agregarRepresentanteAccion, type EstadoDelRepresentante } from "@/app/o
 import { BotonEnviar } from "@/components/sistema";
 import { CARGOS, ETIQUETA_CARGO, ETIQUETA_PEP, PEPS } from "@/dominio/operacion";
 
-import { AvisoOperacion, errorDelCampo, MensajeDelCampo } from "./aviso";
+import { AvisoOperacion, errorDelCampo, MensajeDelCampo, permalinkDelRechazo } from "./aviso";
 import { useAvisoVigente } from "./formulario-con-aviso";
 
 const ID_AVISO = "aviso-representante";
@@ -19,7 +19,7 @@ const SIN_AVISO: EstadoDelRepresentante = { aviso: null, valores: {}, vuelta: 0 
  * los campos con lo capturado.
  */
 export function FormularioRepresentante({ companyId, versionId, formId }: { companyId: string; versionId: string; formId: string }) {
-  const [estado, accion] = useActionState(agregarRepresentanteAccion, SIN_AVISO);
+  const [estado, accion] = useActionState(agregarRepresentanteAccion, SIN_AVISO, permalinkDelRechazo(ID_AVISO));
   const forma = useRef<HTMLFormElement>(null);
   // Un solo campo marcado en la página: al enviarse otro formulario, el aviso de este se descarta.
   const aviso = useAvisoVigente(estado, forma);

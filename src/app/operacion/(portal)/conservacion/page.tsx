@@ -46,6 +46,7 @@ export default async function ConservacionOperacion({ searchParams }: { searchPa
           <form method="get" action="/operacion/conservacion/manifiesto" className="formulario-pareja operacion-forma">
             <div className="campo operacion-ancho">
               <label htmlFor="manifiesto-empresa">Empresa</label>
+              {mensaje("companyId")}
               <select id="manifiesto-empresa" name="companyId" required defaultValue={clientes.some((cliente) => cliente.id === params.companyId) ? params.companyId : ""} {...error("companyId")}>
                 <option value="" disabled>
                   Elige una
@@ -56,12 +57,11 @@ export default async function ConservacionOperacion({ searchParams }: { searchPa
                   </option>
                 ))}
               </select>
-              {mensaje("companyId")}
             </div>
             <div className="campo">
               <label htmlFor="manifiesto-desde">Desde</label>
-              <input id="manifiesto-desde" name="desde" type="date" required defaultValue={params.desde ?? haceUnAnio} max={hoy} {...error("periodo")} />
               {mensaje("periodo")}
+              <input id="manifiesto-desde" name="desde" type="date" required defaultValue={params.desde ?? haceUnAnio} max={hoy} {...error("periodo")} />
             </div>
             <div className="campo">
               <label htmlFor="manifiesto-hasta">Hasta</label>
@@ -76,18 +76,18 @@ export default async function ConservacionOperacion({ searchParams }: { searchPa
               <div className="formulario-pareja">
                 <div className="campo">
                   <label htmlFor="manifiesto-pagina">Página</label>
-                  <input id="manifiesto-pagina" name="pagina" inputMode="numeric" defaultValue={params.pagina ?? "1"} {...error("pagina")} />
                   {mensaje("pagina")}
+                  <input id="manifiesto-pagina" name="pagina" inputMode="numeric" defaultValue={params.pagina ?? "1"} {...error("pagina")} />
                 </div>
                 <div className="campo">
                   <label htmlFor="manifiesto-despues-en">Después de (fecha y hora)</label>
-                  <input id="manifiesto-despues-en" name="despuesEn" autoComplete="off" defaultValue={params.despuesEn ?? ""} {...error("despuesEn")} />
                   {mensaje("despuesEn")}
+                  <input id="manifiesto-despues-en" name="despuesEn" autoComplete="off" defaultValue={params.despuesEn ?? ""} {...error("despuesEn")} />
                 </div>
                 <div className="campo">
                   <label htmlFor="manifiesto-despues-id">Después del documento</label>
-                  <input id="manifiesto-despues-id" name="despuesId" autoComplete="off" className="operacion-mono" defaultValue={params.despuesId ?? ""} {...error("despuesId")} />
                   {mensaje("despuesId")}
+                  <input id="manifiesto-despues-id" name="despuesId" autoComplete="off" className="operacion-mono" defaultValue={params.despuesId ?? ""} {...error("despuesId")} />
                 </div>
               </div>
             </details>

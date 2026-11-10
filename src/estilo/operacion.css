@@ -385,3 +385,35 @@ form + .operacion-lista {
 .renglones + form {
   margin-top: 18px;
 }
+
+/* Vuelta sin JavaScript de un formulario rechazado: la respuesta llega con el fragmento del mensaje del error
+   (permalinkDelRechazo en aviso.tsx) y el navegador lo alinea arriba con este margen: el alto de las barras pegadas
+   arriba más un respiro. 84 px en escritorio; a 960 o menos, la barra móvil y la de arriba sin JavaScript (172 px,
+   medido en N19 del #60). tokens.css no cambia. */
+.operacion-pagina .error-campo[id$="-campo"],
+.operacion-pagina .destino-del-rechazo {
+  scroll-margin-top: calc(84px + 16px);
+}
+
+.destino-del-rechazo {
+  display: block;
+  height: 0;
+}
+
+@media (max-width: 960px) {
+  .operacion-pagina .error-campo[id$="-campo"],
+  .operacion-pagina .destino-del-rechazo {
+    scroll-margin-top: calc(172px + 16px);
+  }
+}
+
+/* Con «reducir movimiento», las páginas de Operación no hacen transiciones (las animaciones ya lo respetan). Además de lo
+   que pide quien lo activa, quita una carrera medida en Chromium con swiftshader: con transiciones corriendo, la página
+   salta unos 419 px después de llegar al fragmento del error de la vuelta sin JavaScript (docs/evidencia/ola-r2-pld/sexta). */
+@media (prefers-reduced-motion: reduce) {
+  .operacion-pagina *,
+  .operacion-pagina *::before,
+  .operacion-pagina *::after {
+    transition: none !important;
+  }
+}

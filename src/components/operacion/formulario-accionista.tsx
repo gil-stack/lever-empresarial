@@ -6,7 +6,7 @@ import { agregarAccionistaAccion, type EstadoDelSocio } from "@/app/operacion/ac
 import { BotonEnviar } from "@/components/sistema";
 import { ETIQUETA_PEP, PEPS } from "@/dominio/operacion";
 
-import { AvisoOperacion, errorDelCampo, MensajeDelCampo } from "./aviso";
+import { AvisoOperacion, errorDelCampo, MensajeDelCampo, permalinkDelRechazo } from "./aviso";
 import { useAvisoVigente } from "./formulario-con-aviso";
 import { IdentidadDelSocio } from "./identidad-socio";
 
@@ -32,7 +32,7 @@ export function FormularioAccionista({
   morales: ReadonlyArray<{ clave: string; nombre: string }>;
   paises: ReadonlyArray<{ codigo: string; nombre: string }>;
 }) {
-  const [estado, accion] = useActionState(agregarAccionistaAccion, SIN_AVISO);
+  const [estado, accion] = useActionState(agregarAccionistaAccion, SIN_AVISO, permalinkDelRechazo(ID_AVISO));
   const forma = useRef<HTMLFormElement>(null);
   // Un solo campo marcado en la página: al enviarse otro formulario, el aviso de este se descarta.
   const aviso = useAvisoVigente(estado, forma);

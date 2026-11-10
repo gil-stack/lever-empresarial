@@ -10,7 +10,7 @@ import {
   registrarPropuestaAccion,
   type EstadoDelFormulario,
 } from "@/app/operacion/(portal)/pld/acciones";
-import { AvisoOperacion, errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
+import { AvisoOperacion, errorDelCampo, MensajeDelCampo, permalinkDelRechazo } from "@/components/operacion/aviso";
 import { useAvisoVigente } from "@/components/operacion/formulario-con-aviso";
 import { BotonEnviar } from "@/components/sistema";
 import { PROPUESTA, PROPUESTAS, TIPO_AVISO, TIPOS_AVISO } from "@/dominio/pld/etiquetas";
@@ -26,7 +26,7 @@ const SIN_AVISO: EstadoDelFormulario = { aviso: null, valores: {}, vuelta: 0 };
  * arriba de la página (`ResumenDelEnvio`) y, al enviarse otro formulario de la página, el de este se descarta.
  */
 export function useConservaLoCapturado(accion: (previo: EstadoDelFormulario, datos: FormData) => Promise<EstadoDelFormulario>, idAviso: string) {
-  const [estado, enviar] = useActionState(accion, SIN_AVISO);
+  const [estado, enviar] = useActionState(accion, SIN_AVISO, permalinkDelRechazo(idAviso));
   const forma = useRef<HTMLFormElement>(null);
   const vigente = useAvisoVigente(estado, forma);
   useEffect(() => {
@@ -65,6 +65,7 @@ export function FormularioAviso({
       {aviso ? <div className="operacion-ancho">{aviso}</div> : null}
       <div className="campo">
         <label htmlFor="aviso-tipo">De qué se trata</label>
+        {mensaje("tipo")}
         <select id="aviso-tipo" name="tipo" required defaultValue={valor("tipo")} {...ligado("tipo")}>
           <option value="" disabled>
             Elige uno
@@ -75,10 +76,10 @@ export function FormularioAviso({
             </option>
           ))}
         </select>
-        {mensaje("tipo")}
       </div>
       <div className="campo">
         <label htmlFor="aviso-empresa">Empresa (si aplica)</label>
+        {mensaje("companyId")}
         <select id="aviso-empresa" name="companyId" defaultValue={valor("companyId")} {...ligado("companyId")}>
           <option value="">Ninguna en particular</option>
           {clientes.map((cliente) => (
@@ -87,15 +88,15 @@ export function FormularioAviso({
             </option>
           ))}
         </select>
-        {mensaje("companyId")}
       </div>
       <div className="campo operacion-ancho">
         <label htmlFor="aviso-descripcion">Qué viste, cuándo y quién estuvo involucrado</label>
-        <textarea id="aviso-descripcion" name="descripcion" required minLength={20} maxLength={4000} defaultValue={valor("descripcion")} {...ligado("descripcion")} />
         {mensaje("descripcion")}
+        <textarea id="aviso-descripcion" name="descripcion" required minLength={20} maxLength={4000} defaultValue={valor("descripcion")} {...ligado("descripcion")} />
       </div>
       <div className="campo">
         <label htmlFor="aviso-mencionada">Persona del personal mencionada (si aplica)</label>
+        {mensaje("mencionada")}
         <select id="aviso-mencionada" name="mencionada" defaultValue={valor("mencionada")} {...ligado("mencionada")}>
           <option value="">Nadie del personal</option>
           {personas.map((persona) => (
@@ -104,10 +105,10 @@ export function FormularioAviso({
             </option>
           ))}
         </select>
-        {mensaje("mencionada")}
       </div>
       <div className="campo">
         <label htmlFor="aviso-superior">Tu superior jerárquico (si no debe enterarse)</label>
+        {mensaje("superior")}
         <select id="aviso-superior" name="superior" defaultValue={valor("superior")} {...ligado("superior")}>
           <option value="">No marcar a nadie</option>
           {personas.map((persona) => (
@@ -116,7 +117,6 @@ export function FormularioAviso({
             </option>
           ))}
         </select>
-        {mensaje("superior")}
       </div>
       <div className="acciones operacion-ancho">
         <BotonEnviar>Enviar aviso</BotonEnviar>
@@ -136,6 +136,7 @@ export function FormularioPropuesta({ casoId, formId, pista }: { casoId: string;
       {aviso}
       <div className="campo">
         <label htmlFor="propuesta-propuesta">Propuesta</label>
+        {mensaje("propuesta")}
         <select id="propuesta-propuesta" name="propuesta" required defaultValue={valor("propuesta")} {...ligado("propuesta")}>
           <option value="" disabled>
             Elige una
@@ -146,10 +147,10 @@ export function FormularioPropuesta({ casoId, formId, pista }: { casoId: string;
             </option>
           ))}
         </select>
-        {mensaje("propuesta")}
       </div>
       <div className="campo">
         <label htmlFor="propuesta-justificacion">Justificación</label>
+        {mensaje("motivo")}
         <textarea
           id="propuesta-justificacion"
           name="justificacion"
@@ -159,7 +160,6 @@ export function FormularioPropuesta({ casoId, formId, pista }: { casoId: string;
           defaultValue={valor("justificacion")}
           {...ligado("motivo")}
         />
-        {mensaje("motivo")}
       </div>
       <div className="acciones">
         <BotonEnviar>Registrar propuesta</BotonEnviar>
@@ -202,6 +202,7 @@ export function FormularioDictamen({
           </p>
           <div className="campo">
             <label htmlFor="dictamen-sesion">Sesión</label>
+            {mensaje("sesionId")}
             <select id="dictamen-sesion" name="sesionId" required defaultValue={valor("sesionId", comite.sesiones[0]?.id ?? "")} {...ligado("sesionId")}>
               {comite.sesiones.map((sesion) => (
                 <option key={sesion.id} value={sesion.id}>
@@ -209,12 +210,12 @@ export function FormularioDictamen({
                 </option>
               ))}
             </select>
-            {mensaje("sesionId")}
           </div>
         </>
       ) : (
         <div className="campo">
           <label htmlFor="dictamen-resultado">Resultado</label>
+          {mensaje("resultado")}
           <select id="dictamen-resultado" name="resultado" required defaultValue={valor("resultado", oficial?.resultadoInicial ?? "")} {...ligado("resultado")}>
             <option value="" disabled>
               Elige uno
@@ -225,11 +226,11 @@ export function FormularioDictamen({
               </option>
             ))}
           </select>
-          {mensaje("resultado")}
         </div>
       )}
       <div className="campo">
         <label htmlFor="dictamen-justificacion">Justificación</label>
+        {mensaje("motivo")}
         <textarea
           id="dictamen-justificacion"
           name="justificacion"
@@ -239,7 +240,6 @@ export function FormularioDictamen({
           defaultValue={valor("justificacion")}
           {...ligado("motivo")}
         />
-        {mensaje("motivo")}
       </div>
       <div className="acciones">
         <BotonEnviar>Registrar dictamen</BotonEnviar>
@@ -255,8 +255,8 @@ export function FormularioParametros({ formId, iniciales }: { formId: string; in
   const numero = (id: string, campo: string, etiqueta: string, modo: "decimal" | "numeric") => (
     <div className="campo">
       <label htmlFor={id}>{etiqueta}</label>
-      <input id={id} name={campo} inputMode={modo} required defaultValue={valor(campo, iniciales[campo])} {...ligado(campo)} />
       {mensaje(campo)}
+      <input id={id} name={campo} inputMode={modo} required defaultValue={valor(campo, iniciales[campo])} {...ligado(campo)} />
     </div>
   );
   return (
@@ -272,8 +272,8 @@ export function FormularioParametros({ formId, iniciales }: { formId: string; in
       {numero("parametros-factor", "factorGradoAlto", "Grado alto: factor (más de 0 y hasta 1)", "decimal")}
       <div className="campo operacion-ancho">
         <label htmlFor="parametros-motivo">Motivo del cambio</label>
-        <textarea id="parametros-motivo" name="motivo" required minLength={10} maxLength={500} defaultValue={valor("motivo")} {...ligado("motivo")} />
         {mensaje("motivo")}
+        <textarea id="parametros-motivo" name="motivo" required minLength={10} maxLength={500} defaultValue={valor("motivo")} {...ligado("motivo")} />
       </div>
       <div className="acciones operacion-ancho">
         <BotonEnviar>Guardar versión nueva</BotonEnviar>
@@ -314,6 +314,7 @@ export function FormularioModo({
       </fieldset>
       <div className="campo">
         <label htmlFor="modo-oficial">Oficial de Cumplimiento (si dictamina el Oficial)</label>
+        {mensaje("oficialId")}
         <select id="modo-oficial" name="oficialId" defaultValue={valor("oficialId", oficialId)} {...ligado("oficialId")}>
           <option value="">Elige a una persona de Cumplimiento</option>
           {personas.map((persona) => (
@@ -322,12 +323,11 @@ export function FormularioModo({
             </option>
           ))}
         </select>
-        {mensaje("oficialId")}
       </div>
       <div className="campo operacion-ancho">
         <label htmlFor="modo-motivo">Motivo del cambio</label>
-        <textarea id="modo-motivo" name="motivo" required minLength={10} maxLength={500} defaultValue={valor("motivo")} {...ligado("motivo")} />
         {mensaje("motivo")}
+        <textarea id="modo-motivo" name="motivo" required minLength={10} maxLength={500} defaultValue={valor("motivo")} {...ligado("motivo")} />
       </div>
       <div className="acciones operacion-ancho">
         <BotonEnviar>Guardar quién dictamina</BotonEnviar>

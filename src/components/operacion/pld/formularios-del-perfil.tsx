@@ -16,8 +16,8 @@ export function FormularioResolverPropuesta({ companyId, propuestaId }: { compan
       {aviso ? <div className="operacion-ancho">{aviso}</div> : null}
       <div className="campo operacion-ancho">
         <label htmlFor="perfil-resolucion-motivo">Por qué la apruebas o la rechazas</label>
-        <textarea id="perfil-resolucion-motivo" name="motivo" required minLength={10} maxLength={500} defaultValue={valor("motivo")} {...ligado("motivo")} />
         {mensaje("motivo")}
+        <textarea id="perfil-resolucion-motivo" name="motivo" required minLength={10} maxLength={500} defaultValue={valor("motivo")} {...ligado("motivo")} />
       </div>
       <div className="acciones operacion-ancho">
         <BotonEnviar name="decision" value="aprobada">Aprobar el cambio</BotonEnviar>
@@ -47,8 +47,8 @@ export function FormularioPerfil({
   const monto = (id: string, campo: keyof Montos, etiqueta: string, modo: "decimal" | "numeric") => (
     <div className="campo">
       <label htmlFor={id}>{etiqueta}</label>
-      <input id={id} name={campo} inputMode={modo} required autoComplete="off" defaultValue={valor(campo, iniciales[campo])} {...ligado(campo)} />
       {mensaje(campo)}
+      <input id={id} name={campo} inputMode={modo} required autoComplete="off" defaultValue={valor(campo, iniciales[campo])} {...ligado(campo)} />
     </div>
   );
   return (
@@ -63,8 +63,8 @@ export function FormularioPerfil({
       {conMotivo ? (
         <div className="campo operacion-ancho">
           <label htmlFor="perfil-motivo">Motivo del cambio</label>
-          <textarea id="perfil-motivo" name="motivo" required minLength={10} maxLength={500} defaultValue={valor("motivo")} {...ligado("motivo")} />
           {mensaje("motivo")}
+          <textarea id="perfil-motivo" name="motivo" required minLength={10} maxLength={500} defaultValue={valor("motivo")} {...ligado("motivo")} />
         </div>
       ) : (
         <input type="hidden" name="motivo" value="" />
@@ -84,8 +84,8 @@ export function FormularioEvaluacion({ companyId, formId, iniciales }: { company
   const monto = (id: string, campo: keyof Montos, etiqueta: string, modo: "decimal" | "numeric") => (
     <div className="campo">
       <label htmlFor={id}>{etiqueta}</label>
-      <input id={id} name={campo} inputMode={modo} autoComplete="off" defaultValue={valor(campo, iniciales[campo])} {...ligado(campo)} />
       {mensaje(campo)}
+      <input id={id} name={campo} inputMode={modo} autoComplete="off" defaultValue={valor(campo, iniciales[campo])} {...ligado(campo)} />
     </div>
   );
   return (
@@ -111,8 +111,8 @@ export function FormularioEvaluacion({ companyId, formId, iniciales }: { company
       {monto("evaluacion-nomina-operaciones", "nominaOperaciones", "Nómina: lotes al mes (si cambia)", "numeric")}
       <div className="campo operacion-ancho">
         <label htmlFor="evaluacion-justificacion">Qué revisaste y por qué</label>
-        <textarea id="evaluacion-justificacion" name="justificacion" required minLength={10} maxLength={2000} defaultValue={valor("justificacion")} {...ligado("motivo")} />
         {mensaje("motivo")}
+        <textarea id="evaluacion-justificacion" name="justificacion" required minLength={10} maxLength={2000} defaultValue={valor("justificacion")} {...ligado("motivo")} />
       </div>
       <div className="acciones operacion-ancho">
         <BotonEnviar>Registrar evaluación</BotonEnviar>

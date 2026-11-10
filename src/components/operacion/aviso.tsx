@@ -302,6 +302,8 @@ export function AvisoOperacion({ codigo, detalle, id = ID_AVISO }: { codigo?: st
     // `data-aviso`: el código, como el de la dirección (?aviso=), para el recorrido de evidencia y el soporte. Uno que no
     // es del catálogo no se copia a la página.
     <div id={id} className="operacion-aviso" data-aviso={avisoConocido(codigo) ? codigo : "desconocido"}>
+      {/* El destino del fragmento de la vuelta sin JavaScript (`permalinkDelRechazo`) cuando el error no es de un campo. */}
+      {id !== ID_AVISO && id !== ID_AVISO_RECHAZO && !avisoDeCampo(codigo) ? <span id={`${id}-campo`} className="destino-del-rechazo" /> : null}
       <Aviso tono={tonoDelAviso(codigo)} titulo={mensaje} anunciar={id === ID_AVISO || id === ID_AVISO_RECHAZO || !avisoDeCampo(codigo)}>
         {detalle ? <p>{detalle}</p> : null}
       </Aviso>
@@ -310,23 +312,44 @@ export function AvisoOperacion({ codigo, detalle, id = ID_AVISO }: { codigo?: st
 }
 
 /**
- * Si el error es de un campo: `errorDelCampo` lo marca y le da el foco, y el resumen de su formulario se pinta sin región
- * viva (el campo con el foco ya lo anuncia). Ninguna dirección de Operación lleva fragmento (`#seccion`): con un destino
- * de fragmento, el navegador descarta el `autofocus` al cargar la página completa y el foco no llega (ver `listo` en
- * acciones-alta.ts e `idDeAncla`).
+ * Si el error es de un campo: `errorDelCampo` lo marca, el formulario le da el foco con JavaScript, y el resumen de su
+ * formulario se pinta sin región viva (el campo con el foco ya lo anuncia).
  */
 export function avisoDeCampo(codigo: string): boolean {
   return Object.hasOwn(CAMPO, codigo) || /^(dato_invalido|invisible)_/.test(codigo);
 }
 
 /**
- * Marca un campo como inválido, lo liga a su mensaje (`MensajeDelCampo`) y le da el foco cuando el error es suyo. `dato_invalido_<campo>`
+ * Marca un campo como inválido y lo liga a su mensaje (`MensajeDelCampo`) cuando el error es suyo. `dato_invalido_<campo>`
  * e `invisible_<campo>` son de ese campo. Un formulario que muestra su propio aviso (sin recargar la página) pasa
- * el id de ese aviso.
+ * el id de ese aviso. Sin `autofocus`: con JavaScript el formulario le da el foco al campo marcado (useFormularioConAviso
+ * y useConservaLoCapturado); sin JavaScript la respuesta llega al mensaje por su fragmento (`permalinkDelRechazo`).
  */
 export function errorDelCampo(codigo: string | null | undefined, campo: string, idAviso = ID_AVISO) {
   if (!esDelCampo(codigo, campo)) return {};
-  return { "aria-invalid": true, "aria-describedby": `${idAviso}-campo`, autoFocus: true } as const;
+  return { "aria-invalid": true, "aria-describedby": `${idAviso}-campo` } as const;
+}
+
+/**
+ * El `permalink` de `useActionState` de un formulario de Operación: sin JavaScript, el envío va a la misma dirección con
+ * el fragmento del mensaje del error (`#<idAviso>-campo`, o el destino del aviso si el error no es de un campo). El
+ * navegador alinea ese destino arriba respetando su `scroll-margin-top` (operacion.css: el alto de las barras más un
+ * respiro), y desde ahí el primer Tab entra al campo. Antes era el `autofocus`, cuyo desplazamiento depende del motor:
+ * con el Chromium de swiftshader del recorrido lo dejaba bajo la barra (docs/evidencia/ola-r2-pld/sexta). La llave del
+ * estado pasa a ser este permalink: cada formulario repetido en una página lleva su propio idAviso. Con JavaScript no
+ * tiene efecto.
+ */
+export function permalinkDelRechazo(idAviso: string): string {
+  return `#${idAviso}-campo`;
+}
+
+/**
+ * Lo mismo para las páginas que marcan el campo con el aviso de la dirección (`?aviso=…&en=…`, tras una redirección):
+ * si el error es de un campo, la redirección lleva el fragmento de su mensaje (`MensajeDelCampo` con el id de la página);
+ * si no, ninguno y el aviso queda arriba de la página. Es el único fragmento que una dirección de Operación puede llevar.
+ */
+export function fragmentoDelError(codigo: string): string {
+  return avisoDeCampo(codigo) ? `#${ID_AVISO}-campo` : "";
 }
 
 /**

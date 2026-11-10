@@ -39,12 +39,12 @@ describe("avisos de PLD dentro de aviso.tsx", () => {
     }
     const html = renderToStaticMarkup(createElement(AvisoOperacion, { codigo: "perfil_declarado" }));
     assert.match(html, /Perfil transaccional registrado/);
-    assert.deepEqual(errorDelCampo("folio_repetido", "folio"), { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo", autoFocus: true });
-    assert.deepEqual(errorDelCampo("dato_invalido_pagosMonto", "pagosMonto"), { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo", autoFocus: true });
+    assert.deepEqual(errorDelCampo("folio_repetido", "folio"), { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo" });
+    assert.deepEqual(errorDelCampo("dato_invalido_pagosMonto", "pagosMonto"), { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo" });
     // Las identidades del Comité con un carácter invisible tienen su aviso y marcan su campo.
     for (const campo of ["nombres", "primerApellido", "segundoApellido", "area", "cargoEntidad"]) {
       assert.match(renderToStaticMarkup(createElement(AvisoOperacion, { codigo: `invisible_${campo}` })), /trae un carácter invisible/, campo);
-      assert.deepEqual(errorDelCampo(`invisible_${campo}`, campo), { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo", autoFocus: true }, campo);
+      assert.deepEqual(errorDelCampo(`invisible_${campo}`, campo), { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo" }, campo);
     }
   });
 

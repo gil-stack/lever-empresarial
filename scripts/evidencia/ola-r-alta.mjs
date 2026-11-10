@@ -242,10 +242,21 @@ async function esperarAviso(p, codigo) {
 }
 // El campo tiene el foco y nombra al mensaje; el mensaje va justo arriba del control (doceava: entre la etiqueta y el
 // control), dentro de la ventana y fuera de las barras fijas. Con cajas y selectores, que sirven también sin JavaScript.
+/** Con JavaScript, el campo tiene el foco; sin JavaScript, la dirección trae el fragmento del mensaje y el primer Tab entra. */
+async function llegaAlCampo(p, selector, idMensaje) {
+  if (!p.sinScript) return (await p.locator(`${selector}:focus`).count()) === 1;
+  if (new URL(p.url()).hash !== `#${idMensaje}`) return false;
+  await p.keyboard.press("Tab");
+  return (await p.locator(`${selector}:focus`).count()) === 1;
+}
+// Sexta vuelta del #61 (decisión del líder): sin JavaScript no hay autofocus; la dirección trae el fragmento del mensaje,
+// el mensaje y el campo quedan a la vista bajo las barras y el primer Tab entra al campo (eso cuenta como «foco»).
 async function juntoAlCampo(p, selector, idMensaje) {
   const control = p.locator(selector);
   const mensaje = p.locator(`[id="${idMensaje}"]`);
-  const foco = await p.locator(`${selector}:focus`).count();
+  const fragmento = new URL(p.url()).hash;
+  const autofocus = await control.getAttribute("autofocus");
+  let foco = p.sinScript ? 0 : await p.locator(`${selector}:focus`).count();
   const nombra = ((await control.getAttribute("aria-describedby")) ?? "").split(" ").includes(idMensaje);
   let tapa = 0;
   for (const barra of [".barra-movil", ".barra-superior"]) {
@@ -256,11 +267,17 @@ async function juntoAlCampo(p, selector, idMensaje) {
   const cajaMensaje = (await mensaje.count()) === 1 ? await mensaje.boundingBox() : null;
   const alto = p.viewportSize().height;
   const separacion = cajaMensaje && cajaCampo ? Math.round(cajaCampo.y - (cajaMensaje.y + cajaMensaje.height)) : null;
-  const visible = cajaMensaje !== null && cajaMensaje.y >= tapa && cajaMensaje.y + cajaMensaje.height <= alto;
+  const visible = cajaMensaje !== null && cajaMensaje.y >= tapa && cajaMensaje.y + cajaMensaje.height <= alto
+    && cajaCampo !== null && cajaCampo.y + Math.min(cajaCampo.height, 40) <= alto;
   await unSoloCampo(p);
+  const sinScriptBien = !p.sinScript || (fragmento === `#${idMensaje}` && autofocus === null);
+  if (p.sinScript) {
+    await p.keyboard.press("Tab");
+    foco = await p.locator(`${selector}:focus`).count();
+  }
   return {
-    ok: foco === 1 && nombra && visible && separacion !== null && separacion >= 0 && separacion <= 24,
-    detalle: JSON.stringify({ foco, nombra, campo: cajaCampo && Math.round(cajaCampo.y), mensaje: cajaMensaje && Math.round(cajaMensaje.y), separacion, barras: Math.round(tapa), ventana: alto }),
+    ok: foco === 1 && nombra && visible && sinScriptBien && separacion !== null && separacion >= 0 && separacion <= 24,
+    detalle: JSON.stringify({ foco, nombra, campo: cajaCampo && Math.round(cajaCampo.y), mensaje: cajaMensaje && Math.round(cajaMensaje.y), separacion, barras: Math.round(tapa), ventana: alto, ...(p.sinScript ? { fragmento, autofocus } : {}) }),
   };
 }
 /**
@@ -2826,7 +2843,7 @@ async function decimaRonda(rutaEbano) {
     const control = omar.p.locator("#doc-archivo");
     exigir(
       (await aviso(omar.p)).includes(texto) && (await control.getAttribute("aria-invalid")) === "true"
-        && (await control.getAttribute("aria-describedby")) === "aviso-documento-campo doc-archivo-nota" && (await omar.p.locator("#doc-archivo:focus").count()) === 1
+        && (await control.getAttribute("aria-describedby")) === "aviso-documento-campo doc-archivo-nota" && (await llegaAlCampo(omar.p, "#doc-archivo", "aviso-documento-campo"))
         && documentosNovena() === antes && (await conSuOrigen(respuesta)) && (js || respuesta.status() === 200),
       `campo de archivo. ${conOSin(js)} JavaScript, ${codigo}: aviso, el control del archivo marcado, ligado al aviso y con el foco; ningún documento`,
       await aviso(omar.p),
@@ -3144,9 +3161,9 @@ async function rechazoConLoCapturado(caso, js, ancho) {
   const enSuFormulario = await s.p.locator(`form:has([id="${caso.idAviso}"])`).locator(caso.campo).count();
   const extra = caso.extra ? await caso.extra(s.p) : true;
   exigir(
-    junto.ok && distintos.length === 0 && enSuFormulario === 1 && titulo === mensaje && extra && s.p.url() === direccion
+    junto.ok && distintos.length === 0 && enSuFormulario === 1 && titulo === mensaje && extra && s.p.url().split("#")[0] === direccion.split("#")[0]
       && caso.filas() === antes && respuesta.status() === 200 && (!caso.armar || vistos === 1),
-    `doceava. ${caso.nombre}, ${conOSin} JavaScript a ${ancho}: «${caso.codigo}» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada`,
+    `doceava. ${caso.nombre}, ${conOSin} JavaScript a ${ancho}: «${caso.codigo}» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y ${js ? "el foco en él; la dirección no cambia" : "el fragmento del mensaje: el mensaje y el campo bajo las barras y el primer Tab en el campo; la dirección solo cambia de fragmento"} y no se guarda nada`,
     JSON.stringify({ junto: junto.detalle, distintos, titulo, mensaje, enSuFormulario, extra, url: s.p.url().replace(BASE, ""), status: respuesta.status(), vistos }),
   );
   await foto(s.p, `doceava-${caso.nombre}-${conOSin}-js-${ancho}`, false);
