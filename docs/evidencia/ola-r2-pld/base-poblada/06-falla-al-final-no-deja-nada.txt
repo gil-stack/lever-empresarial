@@ -1,0 +1,13 @@
+# db/migrate.sh del head sobre una copia de los archivos con «SELECT 1 / 0;» al final de la 0030.
+Aplicando 0030_pld_alertas_reportes
+psql:<copia-con-falla>/db/migrations/0030_pld_alertas_reportes.sql:3279: ERROR:  division by zero
+rc=3
+
+# Después de la falla:
+última migración: 0028_alta_regulada
+tablas pld_: 0
+funciones pld_: 0
+disparadores de la 0030 en tablas existentes: 0
+el candado pide perfil: false
+filas de audit_log: 492379
+foto de privilegios, dueños y políticas: idéntica a 04-foto-antes.txt (diff vacío)

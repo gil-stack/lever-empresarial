@@ -1,0 +1,6 @@
+# Una lectura de audit_log abierta 25 s (lector), la 0030 en plataforma_copia 1 s después (migración, lock_timeout 15 s de migrate.sh) y 2 s después una escritura normal a audit_log (escritor).
+== migración
+psql:<scratchpad>/0030-b.sql:1: ERROR:  canceling statement due to lock timeout
+migracion rc=3 fin=10:12:35
+== escritor
+escritura a audit_log esperó 13089 ms

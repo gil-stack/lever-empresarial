@@ -1,0 +1,34 @@
+Pager usage is off.
+== SECURITY DEFINER de PLD que PUBLIC puede ejecutar y que NO son de disparador (debe ser 0)
+ count 
+-------
+     0
+(1 row)
+
+== de invocador que PUBLIC puede ejecutar (corren con los privilegios de quien llama)
+                       oid                        
+--------------------------------------------------
+ pld_fecha_mx(timestamp with time zone)
+ pld_sin_invisibles(text)
+ pld_comite_vigentes(uuid,date)
+ pld_nombre_de_integrante(pld_comite_integrantes)
+ pld_resultado_votacion(uuid,uuid)
+(5 rows)
+
+== como plataforma_cliente
+SET
+ERROR:  trigger functions can only be called as triggers
+ERROR:  permission denied for table pld_sesiones
+ERROR:  permission denied for table pld_comite_integrantes
+ERROR:  permission denied for table pld_alertas
+ERROR:  permission denied for function pld_rol
+RESET
+== como plataforma_tarea
+SET
+ERROR:  permission denied for table pld_casos
+ERROR:  permission denied for function pld_caso_vence
+RESET
+== como plataforma_app (sin SET ROLE)
+SET
+ERROR:  permission denied for table pld_avisos
+RESET

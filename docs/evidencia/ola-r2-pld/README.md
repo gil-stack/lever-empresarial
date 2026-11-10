@@ -306,6 +306,70 @@ Archivos de prueba: `pld-postgres` y `reglas-postgres` son `tests/pld/*.test.ts`
 | Las casillas y opciones de R2 heredaban el estilo de un campo de texto (casilla de 40 px y el texto abajo); la CURP invadía la otra columna de la tabla de integrantes a 390 px | 4147745: `fieldset.opciones` con `label.confirmacion`; `data-rotulo` en la tabla y corte de claves largas en celdas mono angostas | Pantallas: «ningún control ni texto se sale de su caja», en rojo antes en Comité 390 y en la evaluación del expediente |
 | El flujo 9 se detuvo en «Confirma que eres tú»: el servidor rechazó el código de Celia como ya usado (bitácora: `reautenticacion` a las 18:15:00 y `reautenticacion_fallida` a las 18:15:24, el mismo paso de 30 s), porque cada fase corre en su propio proceso y el recorrido solo recordaba en memoria el último paso. El rechazo es correcto | 4656f59: el recorrido lee también el último paso aceptado de `auth_totp` | El recorrido completo desde cero, en verde |
 
+## Aplicación sobre base poblada
+
+La 0030 se aplicó como en producción: sobre una base que ya opera con el código del #59 y con el mismo comando, `./db/migrate.sh`. Toda la salida cruda está en `base-poblada/`.
+
+**Cómo se armó.** Es la base `plataforma` en el Postgres 17 desechable de 5553, cuya dueña es `duena`, sin superusuario (como la dueña de Neon).
+1. Se migró hasta la 0028 con el `db/migrate.sh` del #59 (602af09), desde un worktree temporal (`01-migracion-hasta-0028.txt`).
+2. Se sembró con el `preparar.ts base` del #59 y se corrió su recorrido de flujos 0 a 12 con `next build` + `next start` del #59: 147 comprobaciones en verde (`02-…json`). Así quedan empresas, expedientes con documentos, LPB, invitaciones, roles, pagos, nómina y bitácora.
+3. A `audit_log`, la tabla más grande y la única que la 0030 bloquea en exclusiva, se le agregaron 492,252 filas con la forma de las reales. Quedaron 492,379 filas (348 MB), 164,084 con motivo de 500 caracteres, todas dentro de sus CHECK (`03-volumen-audit-log.txt`).
+
+**Lo que la 0030 le hace a tablas que ya existían.** No agrega ningún CHECK, NOT NULL, UNIQUE ni FK a una tabla existente, ni lee o reescribe sus datos. Solo inserta datos fijos: calendarios, días inhábiles y la fila inicial de parámetros sin operador. Sobre lo existente:
+- crea disparadores en pagos, nómina, personal, roles y las 6 tablas de conservación;
+- revoca DELETE y TRUNCATE, que nadie tenía: los ACL no cambian;
+- reemplaza `companies_candado_regulado`, que es idéntica a la de la 0028 más el bloque del perfil;
+- recrea las dos políticas de lectura de `audit_log`, que ahora también ocultan `pld_%`.
+
+**Bloqueos y tiempo** (`05-bloqueos-y-tiempos.txt`, en una copia con BEGIN … ROLLBACK):
+
+```
+ audit_log                        | AccessExclusiveLock, AccessShareLock
+ companies                        | AccessShareLock, ShareRowExclusiveLock
+ company_activation_requests      | AccessShareLock
+ expected_collections             | ShareRowExclusiveLock
+ kyb_calificaciones_riesgo        | AccessShareLock, ShareRowExclusiveLock
+ operators                        | AccessShareLock, ShareRowExclusiveLock
+ payroll_batch_items              | ShareRowExclusiveLock
+ payroll_batches                  | ShareRowExclusiveLock
+ platform_staff                   | AccessShareLock, ShareRowExclusiveLock
+ platform_staff_roles             | AccessShareLock, ShareRowExclusiveLock
+ postings                         | ShareRowExclusiveLock
+ supplier_payment_request_history | ShareRowExclusiveLock
+ supplier_payment_requests        | ShareRowExclusiveLock
+ users                            | AccessShareLock, ShareRowExclusiveLock
+ ms_hasta_audit_log | ms_con_audit_log_tomada | ms_total
+                140 |                       1 |      141
+```
+
+- El único ACCESS EXCLUSIVE sobre una tabla existente es el de `audit_log`. Se toma al final, en el `DROP POLICY`, y se sostiene 1 ms más el commit.
+- Las demás toman SHARE ROW EXCLUSIVE, que frena escrituras pero no lecturas, durante los ~141 ms de la transacción.
+- Con `migrate.sh`, la aplicación completa tardó 391 ms, contando el arranque de psql (`07-migrate-dos-veces.txt`).
+
+**Una sola transacción y sin aplicar dos veces.**
+- `migrate.sh` corre todo lo pendiente entre un BEGIN y un COMMIT, con `ON_ERROR_STOP` y el candado de aviso 814271.
+- Con `SELECT 1 / 0;` al final de la 0030, salió con `rc=3` y la base quedó igual que antes (`06-falla-al-final-no-deja-nada.txt`): última migración 0028, 0 tablas y 0 funciones `pld_`, 0 disparadores nuevos, el candado sin el perfil, las 492,379 filas de `audit_log` y la foto de privilegios idéntica.
+- Corrida dos veces, la primera dice «Aplicando 0030_pld_alertas_reportes» y la segunda solo «Listo.».
+
+**Roles y dueños** (`04`, `08` y `09-foto.diff`; `\dp` en `11`, `\df+` en `12`; pruebas como cada rol en `10`):
+- De lo que ya existía cambian solo las dos políticas de `audit_log`. Ningún ACL de tabla, columna o función existente cambió, y no hay membresías ni privilegios por omisión nuevos.
+- Todo objeto nuevo es de `duena`. Las 29 tablas `pld_` tienen RLS con FORCE.
+- `plataforma_sofipo` solo tiene SELECT e INSERT en PLD (0 privilegios de otro tipo). `plataforma_app`, `plataforma_cliente`, `plataforma_tarea` y PUBLIC tienen 0 privilegios en tablas `pld_` y 0 EXECUTE de funciones `pld_`.
+- PUBLIC conserva EXECUTE en dos tipos de función:
+  - Las de disparador. Llamadas directo dan «trigger functions can only be called as triggers».
+  - Cinco de invocador: `pld_fecha_mx`, `pld_sin_invisibles`, `pld_comite_vigentes`, `pld_nombre_de_integrante` y `pld_resultado_votacion`. Corren con los privilegios de quien llama: como cliente dan «permission denied for table pld_sesiones» o «pld_comite_integrantes».
+- Ninguna SECURITY DEFINER de PLD que no sea de disparador queda abierta a PUBLIC.
+
+**Los disparadores nuevos con datos viejos** (`13-disparadores-con-datos-viejos.txt`, todo con ROLLBACK):
+- Los dos pagos por autorizar de Taller, empresa activa sin perfil, se liberan como la aplicación: rol cliente, contexto de Taller y Rosa como liberadora, con su evento. PLD registra 2 operaciones por $60,905.00 y ninguna alerta: no hay perfil contra el cual comparar. Para esta prueba se apagó el disparador de LPB del #59, que bloquea a Taller por su coincidencia abierta.
+- Una empresa activa que cambia un dato que no es su estado pasa.
+- Suspender a alguien de Cumplimiento sin avisos abiertos pasa.
+- Borrar un pago viejo da `pago_proveedor_no_se_borra`.
+
+**Dos hallazgos para decisión del líder (sin código en este commit):**
+1. **Cola detrás de `audit_log`** (`14-cola-detras-de-audit-log.txt`). Con una lectura de `audit_log` abierta 25 s, la 0030 espera en el `DROP POLICY` los 15 s del `lock_timeout` de `migrate.sh` y luego se deshace entera, sin daño. Mientras tanto, una escritura normal a la bitácora, como la de cualquier acción auditada, esperó 13,089 ms. Propuesta: `SET LOCAL lock_timeout = '2s'` justo antes del `DROP POLICY`, con una test:db que lo mida. Así la espera queda en 2 s como máximo y la migración se reintenta.
+2. **Empresas activas antes de la 0030 sin perfil.** Sus pagos entran a PLD sin «Excede el perfil». Solo aparecen en la bandeja seis meses después de su contrato, como evaluación semestral, y ahí «evaluacion_sin_perfil» manda a Originación a capturarlo. El camino existe: Originación propone y Cumplimiento aprueba. Pero nada lo pide antes. Propuesta: un pendiente «Empresas activas sin perfil transaccional (25ª)» en la bandeja de Cumplimiento.
+
 ## Lo que falta y su dueño
 
 | Pendiente | Dueño |
