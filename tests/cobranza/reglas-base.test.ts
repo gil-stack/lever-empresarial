@@ -382,4 +382,41 @@ async function reglas(app: string, ids: Ids, duena: string): Promise<void> {
     const p = await pago(c);
     await c.query("update collection_payments set estado = 'devuelto' where id = $1", [p]);
   });
+
+  // r63b-N1: el pago parecido. Un renglón del estado de cuenta (lo registra una persona) que apunta a otro pago.
+  const deEstadoDeCuenta = async (c: Cliente, parecidoA: string | null, posibleDuplicado: boolean) => {
+    const id = randomUUID();
+    await evento(c, E, A, "registrar_pago_cobranza", "collection_payments", id);
+    await c.query(`insert into collection_payments (id, company_id, fuente, id_externo, monto_centavos, recibido_el, registrado_por, posible_duplicado, parecido_a)
+      values ($1, $2, 'estado_cuenta', $3, 100000, '2026-11-10', $4, $5, $6)`, [id, E, `edc:${id.replace(/-/g, "")}`, A, posibleDuplicado, parecidoA]);
+    return id;
+  };
+  const anular = async (c: Cliente, p: string) => {
+    await evento(c, E, A, "descartar_duplicado_cobranza", "collection_payments", p);
+    await c.query("update collection_payments set estado = 'anulado', motivo_anulacion = 'Es el mismo depósito', anulado_por = $2, anulado_en = now() where id = $1", [p, A]);
+  };
+  await rechaza("r63b-N1 parecido_a en un pago que no es posible duplicado", "collection_payments_parecido", async (c) => {
+    await deEstadoDeCuenta(c, await pago(c), false);
+  });
+  await rechaza("r63b-N1 un pago parecido a sí mismo", "collection_payments_parecido", async (c) => {
+    const id = randomUUID();
+    await evento(c, E, A, "registrar_pago_cobranza", "collection_payments", id);
+    await c.query(`insert into collection_payments (id, company_id, fuente, id_externo, monto_centavos, recibido_el, registrado_por, posible_duplicado, parecido_a)
+      values ($1, $2, 'estado_cuenta', $3, 100000, '2026-11-10', $4, true, $1)`, [id, E, `edc:${id.replace(/-/g, "")}`, A]);
+  });
+  await rechaza("r63b-N1 parecido_a de otra empresa", "collection_payments_parecido_de", async (c) => {
+    await deEstadoDeCuenta(c, randomUUID(), true);
+  });
+  await rechaza("r63b-N1 cambiar el pago parecido", "cobranza_inmutable", async (c) => {
+    const d = await deEstadoDeCuenta(c, await pago(c), true);
+    await c.query("update collection_payments set parecido_a = $2 where id = $1", [d, await pago(c)]);
+  });
+  await rechaza("r63b-N1 anular un pago automático que no es posible duplicado", "collection_payments_estado", async (c) => {
+    await anular(c, await deEstadoDeCuenta(c, null, false));
+  });
+  assert.equal(await acepta("r63b-N1 descartar un posible duplicado automático", async (c) => {
+    const d = await deEstadoDeCuenta(c, await pago(c), true);
+    await anular(c, d);
+    return (await c.query<{ estado: string }>("select estado from collection_payments where id = $1", [d])).rows[0]!.estado;
+  }), "anulado");
 }

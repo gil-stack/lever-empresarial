@@ -64,6 +64,14 @@ MUTACIONES = {
     "AR5": [("referencia ~ '^[1-9][0-9]{6}$'", "referencia ~ '^[0-9]{7}$'", 1), ("  SELECT p ~ '^[1-9][0-9]{6}$' AND (", "  SELECT p ~ '^[0-9]{7}$' AND (", 1)],
     # Una persona marca un pago como devuelto.
     "AR6": [("    IF app_usuario() IS NOT NULL THEN\n      RAISE EXCEPTION 'sin_permiso_para_cobranza';\n    END IF;\n    NEW.anulado_en := now();", "    NEW.anulado_en := now();", 1)],
+    # r63b-N1: parecido_a en cualquier pago (sin el CHECK).
+    "AR7": [("  CONSTRAINT collection_payments_parecido CHECK (parecido_a IS NULL OR (posible_duplicado AND parecido_a <> id)),\n", "", 1)],
+    # r63b-N1: parecido_a se puede cambiar (fuera de la tupla inmutable).
+    "AR8": [("NEW.de_otro_cliente, NEW.parecido_a, NEW.document_id", "NEW.de_otro_cliente, NEW.document_id", 1), ("OLD.de_otro_cliente, OLD.parecido_a, OLD.document_id", "OLD.de_otro_cliente, OLD.document_id", 1)],
+    # r63b-N1: cualquier pago automático se puede anular, sea o no posible duplicado.
+    "AR9": [("(estado = 'anulado' AND (fuente = 'manual' OR posible_duplicado) AND", "(estado = 'anulado' AND", 1)],
+    # r63b-N1: el pago parecido puede ser de otra empresa (sin la llave compuesta).
+    "AR10": [("  CONSTRAINT collection_payments_parecido_de\n    FOREIGN KEY (parecido_a, company_id) REFERENCES collection_payments (id, company_id) ON DELETE RESTRICT,\n", "", 1)],
 }
 
 def main() -> int:
