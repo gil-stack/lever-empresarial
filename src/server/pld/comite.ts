@@ -420,7 +420,8 @@ export async function registrarAuditor(
   const ahora = deps.ahora?.() ?? new Date();
   rechazarInvisible(entrada.nombre, "nombre");
   const nombre = textoOperativo(entrada.nombre, 200);
-  if (!nombre) throw new ErrorDeDominio("dato_invalido_nombre");
+  // r2-serv-N22: su propio código, para que el aviso diga el rango (dato_invalido_nombre es del #59 y no lo dice).
+  if (!nombre) throw new ErrorDeDominio("auditor_nombre_invalido");
   rechazarInvisible(entrada.cargoEntidad, "cargoEntidad");
   const cargo = textoOperativo(entrada.cargoEntidad, 120);
   if (!cargo) throw new ErrorDeDominio("dato_invalido_cargoEntidad");

@@ -60,7 +60,7 @@ export const MENSAJES_PLD: Record<string, string> = {
   // Aviso del personal (54ª fr. VIII, 60ª).
   pld_aviso_emitido: "Aviso enviado a Cumplimiento. Tu acuse queda abajo con su folio.",
   sin_permiso_para_avisar: "Solo el personal activo de la SOFIPO puede enviar este aviso.",
-  dato_invalido_descripcion: "Describe lo que viste en al menos 20 caracteres que se vean.",
+  dato_invalido_descripcion: "Describe lo que viste, entre 20 y 4,000 caracteres que se vean.",
   dato_invalido_companyId: "Elige la empresa de la lista o deja el campo vacío.",
   dato_invalido_mencionada: "Elige a la persona de la lista o deja el campo vacío.",
   dato_invalido_superior: "Elige a tu superior de la lista, o deja el campo vacío. No puede ser la misma persona mencionada.",
@@ -92,7 +92,7 @@ export const MENSAJES_PLD: Record<string, string> = {
   serie_de_otra_empresa: "Solo se suman alertas de la misma empresa: una serie va en un solo reporte por cliente.",
   serie_con_persona_excluida: "Esta alerta viene de un aviso que no puede ver alguien que ya trabajó en este caso. Ábrele un caso aparte.",
   serie_con_otra_reserva: "Esta alerta va en su propio caso: el caso ya se votó en el Comité.",
-  dato_invalido_texto: "Escribe la nota, con al menos 2 caracteres que se vean.",
+  dato_invalido_texto: "Escribe la nota, entre 2 y 4,000 caracteres que se vean.",
   dato_invalido_propuesta: "Elige la propuesta: reportar como inusual, como interna preocupante o no reportar.",
 
   // Quién dictamina, Comité y sesiones (46ª-49ª).
@@ -145,11 +145,12 @@ export const MENSAJES_PLD: Record<string, string> = {
   dato_invalido_integrantes: "Captura al menos un integrante o elige a quién se sustituye.",
   dato_invalido_titularidad: "Elige si es titular o suplente.",
   dato_invalido_suplenteDe: "Elige al titular de quien es suplente.",
-  dato_invalido_area: "Escribe el área de la entidad.",
-  dato_invalido_nombres: "Escribe el nombre o los nombres, sin abreviaturas.",
-  dato_invalido_primerApellido: "Escribe el primer apellido.",
-  dato_invalido_segundoApellido: "Escribe el segundo apellido o deja el campo vacío.",
-  dato_invalido_cargoEntidad: "Escribe el cargo en la entidad.",
+  dato_invalido_area: "Escribe el área de la entidad, entre 1 y 120 caracteres.",
+  dato_invalido_nombres: "Escribe el nombre o los nombres, sin abreviaturas, entre 1 y 80 caracteres.",
+  dato_invalido_primerApellido: "Escribe el primer apellido, entre 1 y 80 caracteres.",
+  dato_invalido_segundoApellido: "Escribe el segundo apellido, hasta 80 caracteres, o deja el campo vacío.",
+  dato_invalido_cargoEntidad: "Escribe el cargo en la entidad, entre 1 y 120 caracteres.",
+  auditor_nombre_invalido: "Escribe el nombre completo del auditor, entre 1 y 200 caracteres.",
   dato_invalido_designadoEl: "Escribe la fecha de designación; no puede ser futura.",
   dato_invalido_sustituidoEl: "Escribe la fecha de sustitución; no puede ser futura.",
   dato_invalido_certificado: "El número de certificado lleva hasta 22 letras, números, «/» o «-».",
@@ -217,6 +218,7 @@ export const CAMPO_PLD: Record<string, string> = {
   oficial_sin_rol_de_cumplimiento: "oficialId",
   comite_persona_repetida: "rfc",
   comite_auditor_integrante: "rfc",
+  auditor_nombre_invalido: "nombre",
   evaluacion_sin_perfil_nuevo: "perfil",
 };
 

@@ -143,7 +143,7 @@ test.describe("sin JavaScript", () => {
       },
       {
         ruta: `/operacion/pld/casos/${caso!.id}`, campo: "#nota-texto", boton: "Agregar nota", idMensaje: "aviso-nota-campo",
-        texto: "Escribe la nota, con al menos 2 caracteres que se vean.",
+        texto: "Escribe la nota, entre 2 y 4,000 caracteres que se vean.",
         escrito: { "#nota-texto": "a\u3164" },
         conteo: () => contar("select 1 from pld_notas where caso_id = $1", [caso!.id]),
         antes: async () => {},
@@ -492,6 +492,79 @@ test.describe("doceava del #59 sin JavaScript, antes de cambiar quién dictamina
       await expect(page.locator(`[id="${destino.ancla}"]`), `${destino.ancla}: el destino lleva sufijo`).toHaveCount(0);
       const ids = await page.locator(`[id^="${destino.ancla}-"]`).evaluateAll((nodos) => nodos.map((nodo) => nodo.id));
       expect(ids.some((id) => new RegExp(`^${destino.ancla}-[0-9a-f]{8}$`).test(id)), `${destino.ancla}: ${ids.join(", ")}`).toBe(true);
+    }
+  });
+
+  // r2-serv-N22: con tope + 1 (sin el maxlength del navegador: lo mismo que un POST directo), el aviso dice el rango
+  // completo y no solo el mínimo, el campo queda marcado y no se guarda nada.
+  test("r2-serv-N22 sin JavaScript: con tope + 1 en nota, aviso, área, cargo, nombres y nombre del auditor, el aviso dice el rango", async ({ page, context }) => {
+    const [caso] = await casosAbiertos();
+    const largo = (n: number) => "a".repeat(n);
+    const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    const integrante = (cambios: Record<string, string>) => async () => {
+      const campos: Record<string, string> = {
+        "#integrante-nombres-0": "Ramiro", "#integrante-primer-0": "Vega", "#integrante-segundo-0": "Lara", "#integrante-rfc-0": "VELR800101AB4",
+        "#integrante-curp-0": "VELR800101HDFGRM04", "#integrante-area-0": "Finanzas", "#integrante-cargo-entidad-0": "Director de finanzas",
+        "#integrante-designado-0": hoy, ...cambios,
+      };
+      await page.locator("#integrante-cargo-0").selectOption("INTEGRANTE");
+      await page.locator("#integrante-titularidad-0").selectOption("TITULAR");
+      for (const [selector, valor] of Object.entries(campos)) await page.locator(selector).fill(valor);
+    };
+    const casosDePrueba = [
+      {
+        quien: CORREOS.op3, ruta: `/operacion/pld/casos/${caso}`, campo: "#nota-texto", boton: /^Agregar nota$/,
+        texto: "Escribe la nota, entre 2 y 4,000 caracteres que se vean.",
+        llenar: async () => page.locator("#nota-texto").fill(largo(4001)),
+        conteo: () => contar("select 1 from pld_notas"),
+      },
+      {
+        quien: CORREOS.op1, ruta: "/operacion/avisos", campo: "#aviso-descripcion", boton: /^Enviar aviso$/,
+        texto: "Describe lo que viste, entre 20 y 4,000 caracteres que se vean.",
+        llenar: async () => {
+          await page.locator("#aviso-tipo").selectOption("posible_inusual");
+          await page.locator("#aviso-descripcion").fill(largo(4001));
+        },
+        conteo: () => contar("select 1 from pld_avisos"),
+      },
+      {
+        quien: CORREOS.op3, ruta: "/operacion/comite", campo: "#integrante-area-0", boton: /^Registrar en el Comité$/,
+        texto: "Escribe el área de la entidad, entre 1 y 120 caracteres.", llenar: integrante({ "#integrante-area-0": largo(121) }),
+        conteo: () => contar("select 1 from pld_comite_integrantes"),
+      },
+      {
+        quien: CORREOS.op3, ruta: "/operacion/comite", campo: "#integrante-cargo-entidad-0", boton: /^Registrar en el Comité$/,
+        texto: "Escribe el cargo en la entidad, entre 1 y 120 caracteres.", llenar: integrante({ "#integrante-cargo-entidad-0": largo(121) }),
+        conteo: () => contar("select 1 from pld_comite_integrantes"),
+      },
+      {
+        quien: CORREOS.op3, ruta: "/operacion/comite", campo: "#integrante-nombres-0", boton: /^Registrar en el Comité$/,
+        texto: "Escribe el nombre o los nombres, sin abreviaturas, entre 1 y 80 caracteres.", llenar: integrante({ "#integrante-nombres-0": largo(81) }),
+        conteo: () => contar("select 1 from pld_comite_integrantes"),
+      },
+      {
+        quien: CORREOS.op3, ruta: "/operacion/comite", campo: "#auditor-nombre", boton: /^Registrar (otro )?auditor$/,
+        texto: "Escribe el nombre completo del auditor, entre 1 y 200 caracteres.",
+        llenar: async () => {
+          await page.locator("#auditor-nombre").fill(largo(201));
+          await page.locator("#auditor-cargo").fill("Auditora interna");
+          await page.locator("#auditor-rfc").fill("AUIA900101AB1");
+          await page.locator("#auditor-curp").fill("AUIA900101MDFLRN09");
+        },
+        conteo: () => contar("select 1 from pld_comite_auditores"),
+      },
+    ];
+    for (const prueba of casosDePrueba) {
+      await sesionDe(context, prueba.quien, { superficie: "sofipo" });
+      const antes = await prueba.conteo();
+      await page.goto(prueba.ruta);
+      await page.locator(prueba.campo).evaluate((campo) => campo.removeAttribute("maxlength"));
+      await prueba.llenar();
+      expect(await enviarPost(page, page.getByRole("button", { name: prueba.boton })), prueba.campo).toBe(200);
+      await expect(page.locator(prueba.campo), prueba.campo).toHaveAttribute("aria-invalid", "true");
+      const mensaje = page.locator(`[id="${(await page.locator(prueba.campo).getAttribute("aria-describedby"))!.split(" ").pop()}"]`);
+      await expect(mensaje, prueba.campo).toHaveText(prueba.texto);
+      expect(await prueba.conteo(), prueba.campo).toBe(antes);
     }
   });
 });
