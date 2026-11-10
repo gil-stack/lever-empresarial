@@ -4,11 +4,11 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r-alta
 
 | Fase | Resultado | Datos |
 | --- | --- | --- |
-| Flujos 0-12 | 147 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
+| Flujos 0-12 | 155 comprobaciones en verde, 0 en rojo, consola del navegador limpia | `datos/resultados-flujos.json` |
 | Pantallas (3 temas × 1440/390) y contraste AA medido | 60 comprobaciones en verde, 0 en rojo; contraste mínimo 5.00 (Lever 1440) | `datos/resultados-pantallas-contraste.json` |
-| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;»; el representante, el socio y la razón social con un control, el giro y el cobro con el control como espacio, el RFC con tabulador, el alta y el área con su aviso y las fechas de Pagos en su campo; el aviso propio del carácter invisible en el socio, el representante, las razones sociales y el folio, el representante que conserva lo capturado, el documento extranjero y la Lista con tabulador, el motivo con un emoji compuesto y el contrato con «Vigente hasta»; el representante con un relleno hangul, el envío sin giro ni domicilio, las fechas del folio en su campo y la recuperación marcada en su tarjeta; sin JavaScript la entrada, el giro, el dictamen y el archivo, las claves repetidas en la dirección, el foco del archivo rechazado y los valores largos a 390; el mensaje del error junto al campo, el representante sin JavaScript y el motivo de la coincidencia, y en cada aviso un solo campo marcado) | 215 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
+| Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;»; el representante, el socio y la razón social con un control, el giro y el cobro con el control como espacio, el RFC con tabulador, el alta y el área con su aviso y las fechas de Pagos en su campo; el aviso propio del carácter invisible en el socio, el representante, las razones sociales y el folio, el representante que conserva lo capturado, el documento extranjero y la Lista con tabulador, el motivo con un emoji compuesto y el contrato con «Vigente hasta»; el representante con un relleno hangul, el envío sin giro ni domicilio, las fechas del folio en su campo y la recuperación marcada en su tarjeta; sin JavaScript la entrada, el giro, el dictamen y el archivo, las claves repetidas en la dirección, el foco del archivo rechazado y los valores largos a 390; el mensaje del error junto al campo, el representante sin JavaScript y el motivo de la coincidencia, y en cada aviso un solo campo marcado; cada formulario de Operación rechazado vuelve con lo capturado, con y sin JavaScript, a 1440 y 390) | 273 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
 
-Corrida del 2026-11-09 sobre el head de este PR, con los arreglos de las once revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`; la carrera de F4 y F5 del CI, serv-nuevo-5, base-N24, base-N25, el aviso propio del carácter invisible y dos P3 de la re-verificación sobre `b2db0b5`; la bomba de fechas de `test:db`, base-N26, base-N27, serv-nuevo-6b y serv-nuevo-6d de la re-verificación sobre `a75d5e4`; N5 del CI, base-N28, serv-nuevo-7, los textos que no se ven, el JSDoc, dos reglas de axe, el campo de archivo y el desborde a 390 de la re-verificación sobre `32e49b8`; el mensaje junto al campo, el P2 de los formularios sin JavaScript, el motivo de la coincidencia, U+2800 y los Cf, y la nota del dictamen aprobado de la re-verificación sobre `edefd2e`), sobre una base migrada de cero con la 0028 final. Las tres fases corrieron sobre el código final de la onceava revisión.
+Corrida del 2026-11-10 sobre el head de este PR, con los arreglos de las doce revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`; la carrera de F4 y F5 del CI, serv-nuevo-5, base-N24, base-N25, el aviso propio del carácter invisible y dos P3 de la re-verificación sobre `b2db0b5`; la bomba de fechas de `test:db`, base-N26, base-N27, serv-nuevo-6b y serv-nuevo-6d de la re-verificación sobre `a75d5e4`; N5 del CI, base-N28, serv-nuevo-7, los textos que no se ven, el JSDoc, dos reglas de axe, el campo de archivo y el desborde a 390 de la re-verificación sobre `32e49b8`; el mensaje junto al campo, el P2 de los formularios sin JavaScript, el motivo de la coincidencia, U+2800 y los Cf, y la nota del dictamen aprobado de la re-verificación sobre `edefd2e`; los formularios que vuelven con lo capturado, F1-F5, «Salir» sin JavaScript, el humo del preview N3, N4 y N6 y la guarda de las partes de la e2e de la re-verificación sobre `602af09`), sobre una base migrada de cero con la 0028 final. Las tres fases y axe corrieron sobre el código final de la doceava revisión.
 
 ## Cómo se corre
 
@@ -773,6 +773,109 @@ Todo va en este PR. **La 0028 no cambia.**
 - **El mensaje va después del control, no entre la etiqueta y el control.** Así, en los formularios de dos columnas, las etiquetas y los controles de un renglón siguen alineados. En la tarjeta de una coincidencia con error, el motivo baja a su propio renglón por el largo del mensaje, y eso solo pasa con error.
 - **La clave del formulario cuenta lo que hay, no la vista.** Con JavaScript, tras agregar uno, el formulario empieza en blanco, igual que antes.
 
+### Doceava revisión (re-verificación sobre `602af09`)
+
+La sesión líder pidió que todo formulario de Operación rechazado vuelva con lo capturado:
+
+- **A:** riesgo, datos generales, documento, dictamen, suspensión y reactivación, coincidencia y folio.
+- **B:** prospecto, invitación, comisiones, Recuperaciones y alertas.
+
+Después llegaron otros pedidos:
+
+- los del revisor;
+- F1-F5, sobre el foco y los avisos sin JavaScript;
+- «Salir» sin JavaScript (hallazgo del #60) y `idDeAncla` para el #61;
+- el humo del preview (N3, N4 y N6);
+- la e2e de passkeys;
+- la guarda de las partes de la e2e.
+
+Todo va en este PR. **La 0028 no cambia**, ni `PIE_REGULATORIO` ni `src/estilo/tokens.css`.
+
+**Cambio de contrato.**
+
+- **Un rechazo ya no viaja en la dirección.** La acción devuelve `{ aviso, valores, vuelta }` a `useActionState` y llama a `refresh()`. Así, la página se vuelve a pintar con datos frescos, como el panel «Confirma que eres tú» o «ya hay una solicitud pendiente».
+  - El formulario vuelve con lo capturado, con su aviso arriba, el mensaje entre la etiqueta y el control, y el foco en el campo.
+  - Sin JavaScript, el POST responde 200 con la misma página.
+  - La dirección no cambia y no queda nada guardado.
+- **`?aviso=` queda solo para lo que se aplicó** y para los formularios de un solo botón, como enviar o abrir una versión.
+- **Ninguna redirección de Operación lleva fragmento** y `en=` desaparece. `tests/operacion/pistas.test.ts` revisa `src/app/operacion/*.ts`.
+- **Si el formulario ya no se pinta tras `refresh()`**, porque otra persona ya registró el dictamen, el aviso va arriba de la página.
+- **Lo común:**
+  - `rechazado()` y su tipo, en `src/app/operacion/rechazo.ts`;
+  - `useFormularioConAviso`, en `formulario-con-aviso.tsx`;
+  - la clave de cada tarjeta es el id de su registro;
+  - un rechazo no consume el `formId`, así que el reintento con doble clic registra una sola vez.
+- **Por qué no `permalink`.** Con `permalink`, la llave del estado de `useActionState` es la dirección. Las tarjetas repetidas de una página (coincidencias, folios, recuperaciones) compartirían el rechazo.
+
+**F3: la cookie del rechazo y la versión de Next.**
+
+- **Qué lleva.** `operacion-rechazo` lleva solo el código, con `httpOnly`, `sameSite=lax`, `path=/operacion`, `secure` en producción y `maxAge: 0`: el navegador la tira al recibirla.
+- **Por qué funciona.** La página la lee en el mismo render porque Next 16.4.4 copia las cookies que escribe una acción a la petición del `refresh()` (`synchronizeMutableCookies`, en `action-handler.ts`).
+- **Validación.** Al leerla, el código se valida contra el catálogo (`avisoConocido`): nunca se pinta ni se copia crudo, tampoco en `data-aviso`.
+- **Qué la protege.** Si otra versión de Next deja de copiarlas, falla la e2e «si otra pestaña ya registró el dictamen» (Fresno con JavaScript, Granado sin él).
+
+**F2 y F5: destinos de fragmento sin JavaScript.**
+
+- **El problema.** Sin JavaScript, el envío va a la dirección del documento con todo y fragmento. Si la página que responde tiene ese destino, el navegador descarta el autofocus y el foco no llega al campo rechazado.
+- **El arreglo.** `idDeAncla(id)` (`envio-sin-script.ts`) le pone al destino un sufijo nuevo, solo en la respuesta a un envío sin JavaScript (`Accept: text/html` con cuerpo multipart). Con JavaScript, el id no cambia. El marco y la página leen el mismo sufijo de la petición (`cache`).
+- **Inventario.** En Operación hay tres destinos de enlaces con `#`, y los tres usan `idDeAncla`: «Saltar al contenido» (`#contenido`) y los enlaces de Cumplimiento a `expediente#dictamen-titulo` y `#riesgo-titulo`.
+
+**Guarda de las partes de la e2e.**
+
+- **El problema.** Playwright reparte `--shard` por grupos y por número de pruebas. Un archivo sin `mode: "parallel"` es un solo grupo, así que `operacion.spec.ts` entero caía en la parte 1. La parte 2 corría 0 pruebas (49, 0 y 16) y Playwright terminaba en 0.
+- **La guarda.** `scripts/ci/pruebas-e2e.sh` cuenta las pruebas en el reporte JSON (expected + unexpected + flaky). Con 0, o sin reporte, falla con un mensaje que nombra `--shard`.
+- **El reparto.** `operacion.spec.ts` es `parallel` solo para partirse en cuatro `describe` seriales, cada uno con su siembra; con `workers: 1` corren en orden.
+- **Lo que destapó.** Al correr por partes salió una dependencia oculta: el folio sin JavaScript de Brisa necesita la coincidencia que confirma la prueba con JavaScript. Ahora va en el mismo grupo, después de ella.
+
+| Hallazgo | Arreglo | Prueba |
+| --- | --- | --- |
+| **A. Riesgo** Un rechazo volvía sin lo elegido | Actividad y zona sin nivel de inicio; vuelve lo elegido y un nivel fuera de la lista vuelve sin elegir, nunca como «baja» | e2e con y sin JavaScript (Eje; Enebro a 390): tras el rechazo, el doble clic registra una calificación. `r115`-`r118` |
+| **A. Datos generales** | Los 17 campos vuelven como se escribieron | e2e (Duna): otro rechazo deja un solo aviso y oculta el resumen de arriba. `r119`-`r122` |
+| **A. Documento** | Vuelven tipo, representante, fechas y detalle; junto al archivo, «Vuelve a elegir el archivo…» | e2e y `r123`-`r124` |
+| **A. Dictamen** | Vuelven resultado y motivo | e2e y `r125`-`r128` |
+| **A. Suspensión y reactivación** | Vuelve el motivo; el `formId` no se consume | e2e (Faro con JavaScript, Bahía sin él): tras el rechazo, el doble clic pide una sola; la otra pestaña ve «ya hay una pendiente» sin recargar. `r129`-`r130` |
+| **A. Coincidencia y folio** | Por tarjeta, con el id del registro como clave | e2e: otro rechazo en otra tarjeta descarta el primero; sin JavaScript, cada estado vuelve a su tarjeta. `r131`-`r132` |
+| **B. Prospecto, invitación, comisiones, Recuperaciones y alertas** (crear y cerrar) | Lo mismo | e2e con y sin JavaScript. Flujo 8 (b): `12`-`15`; `r133`-`r136` |
+| **Revisor: comisiones** `comision_valor_invalido` y `vigencia_invalida` no marcaban campo | Marcan `valor` y `vigenteDesde` | e2e: `#valor` con su mensaje en `aria-describedby` |
+| **Revisor: invitación** `invitacion_invalida` no era de ningún campo | `dato_invalido_nombre` y `dato_invalido_correo` | e2e y unitarias |
+| **Revisor: el mensaje entre la etiqueta y el control** | Patrón de GOV.UK en todos los campos de Operación. Sustituye la decisión de la onceava (después del control) | e2e y recorrido: «el mensaje entre la etiqueta y el control» en cada caso |
+| **Revisor: el resumen de un aviso de campo** era región viva | Va sin `role="alert"`; los demás avisos lo conservan | e2e |
+| **Un solo aviso de formulario a la vez** | Al enviar otro formulario se descartan el aviso y la marca del anterior | e2e: un solo `aria-invalid` en la página |
+| **Lista (LPB)** | La carga del CSV devuelve su aviso en el formulario | Recorrido: flujo 5 (renglón inválido) y `r34` |
+| **El resumen de arriba se quedaba viejo** junto al aviso de un formulario rechazado | Se oculta con y sin JavaScript (`:has()`) | e2e |
+| **Tras un rechazo con `refresh()`** | | e2e: con el factor caducado aparece «Confirma que eres tú» y la tarjeta conserva lo elegido; la ficha muestra «ya hay una pendiente» |
+| **P2 (revisor de la base): motivo de 501 a 1,000 caracteres** El CHECK `audit_log_motivo_formato` (500) daba «La base no respondió» | Tope de 500 en el dictamen y la coincidencia; `auditarOperacion` rechaza antes (`motivo_largo`) y `traducirErrorDeBase` traduce el CHECK | Postgres con 500 y 501 en el dictamen (observado, rechazado y aprobado) y en la coincidencia; unitarias |
+| **F1** Sin JavaScript, tras un éxito con `#sección`, el foco no llegaba al campo | Redirecciones sin fragmento | `pistas.test.ts`; e2e de Enebro. Rojo: `datos/e2e-rojo-f1-redireccion-con-fragmento.txt` |
+| **F2** «Saltar al contenido» sin JavaScript dejaba `#contenido` en la dirección | `idDeAncla("contenido")` | e2e: dos rechazos seguidos tras saltar, con el foco en el campo. Rojo: `datos/e2e-rojo-f2-saltar-al-contenido.txt` |
+| **F3** Si el formulario ya no se pintaba, el aviso se perdía | Cookie `operacion-rechazo` y aviso arriba solo si ningún formulario lo muestra | e2e de Fresno y Granado. Rojo: `datos/e2e-rojo-f3-formulario-que-ya-no-se-pinta.txt` |
+| **F3b** Condiciones de la cookie | Catálogo al leerla, solo el código, `httpOnly`, `secure` en producción | e2e con la cookie fabricada en una visita normal. Rojo: `datos/e2e-rojo-f3b-cookie-sin-catalogo.txt` |
+| **F3c** `dato_invalido_<campo>` e `invisible_<campo>` con cualquier sufijo | Lista cerrada de campos (`CAMPOS_CON_AVISO`); nada interpola el sufijo | e2e con `dato_invalido_<b>x</b>` e `invisible_" onfocus="x`, por cookie y por `?aviso=`; una unitaria exige que la lista cubra cada campo usado en `src`. Rojo: `datos/e2e-rojo-f3c-campos-sin-lista.txt` |
+| **F4** Sin JavaScript no había cómo salir de Operación (#60) | `<noscript>` con `salirOperacion` junto al menú; `MenuDesplegable` sin tocar | e2e sin JavaScript a 1440 y 390: el botón se ve, la cookie queda vacía y `/operacion` vuelve a la entrada; el título y el chip no ceden espacio. Rojo: `datos/e2e-rojo-salir-602af09.txt` |
+| **F4b** Con JavaScript, el `<noscript>` se pintaba como texto (105 px de desborde a 390; lo vio la fase de pantallas) | Estilos del `<noscript>` solo con `@media (scripting: none)` | e2e con JavaScript: sin el texto, sin botón y sin desborde. Rojo: `datos/e2e-rojo-f4b-noscript-como-texto.txt` |
+| **F5** `idDeAncla` genérico (#61) | `#dictamen-titulo` y `#riesgo-titulo` del expediente | e2e sin JavaScript por destino (Higuera y Brisa). Rojo, con el sufijo saboteado: `datos/e2e-rojo-f5-anclas.txt`, donde el foco no llega a `#dictamen-motivo`. Las otras dos fallas de ese archivo son de la corrida parcial, que no activó a Faro |
+| **Humo N3** El correo inválido de la invitación no tenía mensaje | «Escribe un correo válido, como nombre@empresa.mx.» | e2e con y sin JavaScript; unitaria. Rojo: `datos/unit-rojo-n3-correo.txt` |
+| **Humo N4** El prospecto con RFC inválido vaciaba lo capturado | Vuelven los cinco datos | e2e con y sin JavaScript, con un RFC sin forma y con el genérico. Rojo: `datos/e2e-rojo-humo-602af09.txt` (el aviso del prospecto no vuelve en su formulario) |
+| **Humo N6** Sin `Permissions-Policy` | La política, con `publickey-credentials-get=(self)` y `publickey-credentials-create=(self)`; sin `clipboard-write`, porque no hay «Copiar» | e2e en la pantalla, la descarga y la portada. Rojo: `datos/e2e-rojo-humo-602af09.txt` |
+| **Passkeys** (de la sesión del #61) | e2e con el autenticador virtual de Chromium; el servidor de la e2e admite `localhost` | `tests/e2e/passkeys.spec.ts`: el portal y la primera entrada de Operación |
+| **Guarda de las partes de la e2e** | La guarda y cuatro grupos seriales | Rojo: `datos/e2e-guarda-parte-vacia-rojo.txt`. Partes: 23, 22 y 20 pruebas (= 65), con 76, 53 y 54 s de pruebas (máximo 41 %): `datos/e2e-parte-N-de-3.txt`. Completa: 65/65, en `datos/e2e-completa-65.txt` |
+
+**Verificación en rojo.**
+
+- **Contra `602af09`:**
+  - las 15 pruebas de la doceava fallan (`datos/e2e-rojo-doceava-602af09.txt`);
+  - fallan también la política de permisos, el prospecto con un RFC sin forma y «Salir» sin JavaScript (`datos/e2e-rojo-humo-602af09.txt` y `datos/e2e-rojo-salir-602af09.txt`).
+- **F1-F5:** cada arreglo se quitó por separado y su prueba falló. Están los archivos de la tabla.
+
+**Compuertas sobre el código final.**
+
+- typecheck y lint;
+- 477/477 unitarias;
+- 81/81 de Postgres;
+- e2e completa 65/65 y las tres partes;
+- build y security;
+- recorrido: flujos 155, pantallas y contraste 60, regresiones 273, todos en verde;
+- axe: `aria-prohibited-attr` 0 y `label-content-name-mismatch` 0 (`datos/axe-final.txt`).
+
 ## Flujo → captura → qué verifica en la base
 
 | Flujo | Captura | Qué verifica en la base |
@@ -788,23 +891,27 @@ Todo va en este PR. **La 0028 no cambia.**
 | 8 (a). Candado | `09-f8-activacion-rechazada-por-la-base` | Doble clic = 1 solicitud; quien pidió no decide; sin riesgo vigente la base rechaza y la empresa sigue `en_alta`. |
 | 4. Riesgo | `10-f4-grado-de-riesgo-registrado` | Doble clic = 1 calificación; la matriz da grado medio. |
 | 4. | `11-f4-bandeja-revision-vencida` | Lumbre aparece con «Revisión vencida» (reloj fijo); Ébano, vigente. Con riesgo vigente, otra persona aprueba la activación (8 b). |
-| 5. Carga de la lista | `12-f5-lpb-cargada-coincidencias` | Un renglón inválido no deja carga; doble clic = 1 carga con 3 renglones. |
-| 6. Posible coincidencia | `13-f6-posible-coincidencia-resuelta` | Coincide solo por nombre: «posible», sin plazo; queda «falso positivo» con motivo y 1 evento. |
-| 7. Coincidencia exacta | `14-f7-bandeja-coincidencia-exacta-24h` | Propietaria real con RFC idéntico: empresa `suspendida` sin segunda firma, evento del sistema `empresa_suspendida_lpb` y plazo de 24 h. |
-| 7. | `15-f7-folio-anotado` | Cumplimiento anota el folio que presentó por su vía; la pantalla dice que Lever no transmite a la UIF. |
-| 7. | `16-f7-invitacion-bloqueada` | Con la empresa suspendida no se emite la invitación: 0 filas en `invitations`. |
-| 9. Suspensión manual | `17-f9-pago-rechazado-empresa-suspendida` | Doble firma (pide Originación, aprueba Aprobación). En la página abierta ya suspendida, «Autorizar para pagar» sigue visible; doble clic: el pago sigue `por_autorizar` y no hay evento `autorizar_pago_proveedor`. |
-| 9. | `18-f9-nomina-rechazada-empresa-suspendida` | «Preparar nómina» visible; doble clic: 0 lotes en `payroll_batches`. |
-| 9. | `19-f9-area-rechazada-empresa-suspendida` | Personas: doble clic en «Crear área»: 0 áreas nuevas en `cost_centers`. |
-| 9. | `20-f9-invitacion-rechazada-empresa-suspendida` | Doble clic en «Renovar y reenviar invitación»: el número de invitaciones de Iván no cambia. |
-| 9. | `21-f9-aceptar-invitacion-empresa-suspendida` | Con contraseñas distintas el aviso marca los dos campos. Con la empresa suspendida, Iván no puede aceptar: la invitación sigue sin usar y no hay membresía activa; el aviso se titula «La empresa está suspendida» y no marca los campos de contraseña. Además, como rol cliente directo en la base, liberar, preparar lote y editar un proveedor se rechazan con `empresa_suspendida`. |
-| 9. | `22` a `27-f9-consola-aviso-suspendida-<tema>-<ancho>` | El aviso de empresa suspendida en Oscuro, Claro y Lever, a 1440 y 390. |
-| 10. Reactivar | `28-f10-reactivacion-bloqueada-por-lpb` | Suspendida por la lista y con coincidencia confirmada, no se pide la reactivación: 0 solicitudes. |
-| 10. | `29-f10-reactivacion-aprobada` | Doble clic = 1 solicitud; otra persona aprueba; el historial guarda suspender y reactivar; la nómina se prepara otra vez (1 lote). |
-| 11. Proveedor en la lista | `30-f11-lpb-segunda-carga` | La carga nueva se guarda aparte; la contraparte coincide sin suspender a la empresa; el falso positivo no se reabre. |
-| 11. | `31-f11-pago-bloqueado-proveedor-en-lista` | Doble clic en «Autorizar para pagar»: el pago sigue `por_autorizar`; el mensaje no revela la lista. |
-| 12. Lectura auditada | `32-f12-bitacora-lecturas-auditadas` | Abrir el expediente deja `expediente_consultado`; descargar deja `expediente_documento_descargado` y la SHA-256 coincide. |
-| 12. | `33-f12-sin-permiso-personal` | Auditoría ve «Sin permiso» en Personal. |
+| 8 (b). Rechazos con lo capturado | `12-doceava-invitacion-con-js-1440` | Con Ébano ya activa, Ofelia invita a «Ana Ruiz Sol» con «ana@ejemplo»: `dato_invalido_correo` vuelve en su formulario con nombre y correo, el aviso arriba del formulario, «Escribe un correo válido, como nombre@empresa.mx.» entre la etiqueta y el control, y el foco en el correo. La dirección no cambia y no hay invitación nueva. |
+| 8 (b). | `13-doceava-invitacion-sin-js-390` | Lo mismo sin JavaScript, a 390: el POST responde 200 con la misma página. |
+| 8 (b). | `14-doceava-comision-con-js-1440` | «Fondeo» de Ébano con 20000 puntos base: `comision_valor_invalido` marca el valor, con su mensaje y el foco; vuelven empresa, tipo, valor y vigencia, y no hay comisión nueva. |
+| 8 (b). | `15-doceava-comision-sin-js-390` | Lo mismo sin JavaScript, a 390. |
+| 5. Carga de la lista | `16-f5-lpb-cargada-coincidencias` | Un renglón inválido no deja carga; doble clic = 1 carga con 3 renglones. |
+| 6. Posible coincidencia | `17-f6-posible-coincidencia-resuelta` | Coincide solo por nombre: «posible», sin plazo; queda «falso positivo» con motivo y 1 evento. |
+| 7. Coincidencia exacta | `18-f7-bandeja-coincidencia-exacta-24h` | Propietaria real con RFC idéntico: empresa `suspendida` sin segunda firma, evento del sistema `empresa_suspendida_lpb` y plazo de 24 h. |
+| 7. | `19-f7-folio-anotado` | Cumplimiento anota el folio que presentó por su vía; la pantalla dice que Lever no transmite a la UIF. |
+| 7. | `20-f7-invitacion-bloqueada` | Con la empresa suspendida no se emite la invitación: 0 filas en `invitations`. |
+| 9. Suspensión manual | `21-f9-pago-rechazado-empresa-suspendida` | Doble firma (pide Originación, aprueba Aprobación). En la página abierta ya suspendida, «Autorizar para pagar» sigue visible; doble clic: el pago sigue `por_autorizar` y no hay evento `autorizar_pago_proveedor`. |
+| 9. | `22-f9-nomina-rechazada-empresa-suspendida` | «Preparar nómina» visible; doble clic: 0 lotes en `payroll_batches`. |
+| 9. | `23-f9-area-rechazada-empresa-suspendida` | Personas: doble clic en «Crear área»: 0 áreas nuevas en `cost_centers`. |
+| 9. | `24-f9-invitacion-rechazada-empresa-suspendida` | Doble clic en «Renovar y reenviar invitación»: el número de invitaciones de Iván no cambia. |
+| 9. | `25-f9-aceptar-invitacion-empresa-suspendida` | Con contraseñas distintas el aviso marca los dos campos. Con la empresa suspendida, Iván no puede aceptar: la invitación sigue sin usar y no hay membresía activa; el aviso se titula «La empresa está suspendida» y no marca los campos de contraseña. Además, como rol cliente directo en la base, liberar, preparar lote y editar un proveedor se rechazan con `empresa_suspendida`. |
+| 9. | `26` a `31-f9-consola-aviso-suspendida-<tema>-<ancho>` | El aviso de empresa suspendida en Oscuro, Claro y Lever, a 1440 y 390. |
+| 10. Reactivar | `32-f10-reactivacion-bloqueada-por-lpb` | Suspendida por la lista y con coincidencia confirmada, no se pide la reactivación: 0 solicitudes. |
+| 10. | `33-f10-reactivacion-aprobada` | Doble clic = 1 solicitud; otra persona aprueba; el historial guarda suspender y reactivar; la nómina se prepara otra vez (1 lote). |
+| 11. Proveedor en la lista | `34-f11-lpb-segunda-carga` | La carga nueva se guarda aparte; la contraparte coincide sin suspender a la empresa; el falso positivo no se reabre. |
+| 11. | `35-f11-pago-bloqueado-proveedor-en-lista` | Doble clic en «Autorizar para pagar»: el pago sigue `por_autorizar`; el mensaje no revela la lista. |
+| 12. Lectura auditada | `36-f12-bitacora-lecturas-auditadas` | Abrir el expediente deja `expediente_consultado`; descargar deja `expediente_documento_descargado` y la SHA-256 coincide. |
+| 12. | `37-f12-sin-permiso-personal` | Auditoría ve «Sin permiso» en Personal. |
 
 ### Regresiones (`FASES=regresiones`)
 
@@ -893,25 +1000,47 @@ Todo va en este PR. **La 0028 no cambia.**
 | P3 | `r93-r8-contrato-vigente-hasta` | Contrato con «Vigente hasta» 2026-10-31 y «Vigente desde» 2026-11-01: «Revisa «Vigente hasta»: debe existir en el calendario y no puede ser anterior a «Vigente desde».», con «Vigente hasta» marcado y ningún documento (antes, el texto de la emisión y el vencimiento de un pago). |
 | serv-nuevo-5 | `r94-r8-proveedor-razon-social-ufeff` | El alta de un proveedor con «Escuela﻿Kemper Urgate»: «La razón social trae un carácter invisible…» en su campo y ningún proveedor. |
 | base-N26 | `r95-r9-representante-relleno-hangul` | Omar agrega al representante «Luis Rodrㅤíguez» (relleno hangul, que no es Cc ni Cf): «El nombre trae un carácter invisible…», con el nombre marcado y con el foco, y ningún representante de más (antes se guardaba y la Lista lo partía en «IGUEZ RODR»). |
-| serv-nuevo-6d | `r96-r9-enviar-sin-giro-ni-domicilio` | Omar registra a Laboratorio Novena, abre la versión 1 y guarda los datos generales sin giro ni domicilio. «Enviar versión 1»: «Faltan datos generales para enviar la versión…» y «Faltan el giro y el domicilio. Captura esos datos en «Datos generales» y vuelve a enviar.», con `en=enviar-titulo`. La versión sigue en borrador y no hay evento `expediente_enviado` (antes, «La base no respondió…»). |
-| serv-nuevo-6b | `r97-r9-folio-fecha-presentado-imposible` | Celia anota el folio de Brisa con «Presentado el» 2026-02-30 (petición armada): «Revisa la fecha de presentación del reporte…», con `en=presentado-<id>`. Solo «Presentado el» queda marcado y con el foco, no el folio, y no se guarda folio. La captura muestra el aviso y el campo juntos. |
+| serv-nuevo-6d | `r96-r9-enviar-sin-giro-ni-domicilio` | Omar registra a Laboratorio Novena, abre la versión 1 y guarda los datos generales sin giro ni domicilio. «Enviar versión 1»: «Faltan datos generales para enviar la versión…» y «Faltan el giro y el domicilio. Captura esos datos en «Datos generales» y vuelve a enviar.», con `?aviso=expediente_datos_incompletos&faltan=giro,domicilio` (un formulario de un solo botón; desde la doceava, sin `en=`). La versión sigue en borrador y no hay evento `expediente_enviado` (antes, «La base no respondió…»). |
+| serv-nuevo-6b | `r97-r9-folio-fecha-presentado-imposible` | Celia anota el folio de Brisa con «Presentado el» 2026-02-30 (petición armada): «Revisa la fecha de presentación del reporte…» en la tarjeta del folio (desde la doceava, sin `en=` en la dirección). Solo «Presentado el» queda marcado y con el foco, no el folio, y no se guarda folio. La captura muestra el aviso y el campo juntos. |
 | serv-nuevo-6b | `r98-r9-folio-fecha-aviso-imposible` | Lo mismo con «Aviso por escrito al cliente» 2026-13-01: «Revisa la fecha del aviso al cliente… Déjala vacía si aún no avisas.». Solo ese campo queda marcado y con el foco, y no se guarda folio. |
-| base-N27 | `r99-r9-recuperacion-nota-en-su-tarjeta` | Hay tres recuperaciones pendientes: Gil, Rosa y Aurelio. Ofelia confirma su identidad y rechaza sin nota la de en medio, la de Rosa: `en` es el id de Rosa y solo su nota queda marcada y con el foco; las tres siguen pendientes. Con su nota, las tres se rechazan. |
+| base-N27 | `r99-r9-recuperacion-nota-en-su-tarjeta` | Hay tres recuperaciones pendientes: Gil, Rosa y Aurelio. Ofelia confirma su identidad y rechaza sin nota la de en medio, la de Rosa: el aviso vuelve a la tarjeta de Rosa y solo su nota queda marcada y con el foco; las tres siguen pendientes. Con su nota, las tres se rechazan. |
 | serv-nuevo-7 | `r100-r10-sin-js-entrada-operacion` | Sin JavaScript, la entrada de Operación con una contraseña equivocada: el POST lleva su `Origin` y responde 200 con «El correo o la contraseña no coinciden…». Antes, con `no-referrer`, llevaba `Origin: null` y daba 500. Con JavaScript, lo mismo. |
 | Textos que no se ven | `r101-r10-giro-invisible-con-js` | Omar guarda los datos de Laboratorio Novena con el giro «\u3164» y el domicilio completo: el giro queda vacío. «Enviar versión 1»: «Falta el giro. Captura ese dato en «Datos generales» y vuelve a enviar.»; sigue en borrador y sin evento. |
 | serv-nuevo-7 y textos que no se ven | `r102-r10-giro-invisible-sin-js` | Lo mismo sin JavaScript: guardar y enviar responden 303 con su `Origin` y el mismo aviso. |
 | Textos que no se ven | `r103-r10-dictamen-motivo-invisible-con-js` | Celia observa el expediente de Cedro con «Revisar» y tres U+3164 (10 para la base, 7 que se ven): «El motivo lleva al menos 10 caracteres…» en el motivo marcado y ningún dictamen. |
-| serv-nuevo-7 y textos que no se ven | `r104-r10-dictamen-motivo-invisible-sin-js` | Sin JavaScript, con doce U+3164: 303, «Escribe un motivo breve y claro.» en el motivo marcado y ningún dictamen. |
+| serv-nuevo-7 y textos que no se ven | `r104-r10-dictamen-motivo-invisible-sin-js` | Sin JavaScript, con doce U+3164: «Escribe un motivo breve y claro.» en el motivo marcado y ningún dictamen. Desde la doceava, el rechazo responde 200 con el formulario y lo capturado, no 303. |
 | base-N28 | `r105-r10-clave-repetida-en-la-direccion` | Con y sin JavaScript, el expediente y la ficha de Novena y Clientes con `?aviso=a&aviso=b&en=x&en=y` responden 200 con su página. Con `faltan=giro&faltan=domicilio`, queda el aviso general sin detalle. Antes, 500. |
-| Campo de archivo y fragmento | `r106-r10-archivo-de-mas-de-4-mib-sin-js` | Sin JavaScript (sin la revisión del navegador), Omar sube a Novena un PDF de 4 MiB y 64 KiB: 303 a la dirección sin fragmento, «El archivo pasa de 4 MB. Sube uno más ligero.», el control del archivo marcado, ligado al aviso y con el foco; ningún documento. Captura de página completa: el aviso va arriba y el campo, en su sección. La barra superior lleva su fondo. |
+| Campo de archivo y fragmento | `r106-r10-archivo-de-mas-de-4-mib-sin-js` | Sin JavaScript (sin la revisión del navegador), Omar sube a Novena un PDF de 4 MiB y 64 KiB: desde la doceava, 200 con el formulario de vuelta (antes, 303 a la dirección sin fragmento), «El archivo pasa de 4 MB. Sube uno más ligero.», el control del archivo marcado, ligado al aviso y con el foco; ningún documento. Captura de página completa: el aviso va arriba y el campo, en su sección. La barra superior lleva su fondo. |
 | Campo de archivo | `r107-r10-archivo-no-admitido-con-js` | Con JavaScript, un «PDF» que no lo es: «Sube un PDF, PNG o JPG legible.», el control del archivo marcado y con el foco (antes, marcado sin foco). Página completa; la captura quita el foco antes de tomarla, como todas las del recorrido con JavaScript. |
 | Desborde a 390 | `r108-r10-sha-a-390-ebano` | El expediente de Ébano a 390 con sus documentos: cada SHA-256 se parte dentro de su renglón y su orilla queda dentro de 390 (antes, la página medía 533). Con y sin JavaScript. |
 | Desborde a 390 | `r109-r10-nombre-largo-a-390-novena` | El borrador de Laboratorio Novena con un acta de nombre de 136 caracteres sin espacios: el nombre se parte y queda dentro de 390, con y sin JavaScript. En el borrador, la lista muestra el nombre; el SHA-256 aparece en las versiones enviadas, como en Ébano. |
-| P3 coincidencia | `r110-r11-coincidencia-motivo-con-js-1440` | Celia dictamina la coincidencia de Cedro con «Revisar 😀» en el motivo, con JavaScript: `en=motivo-<caso>`, sin fragmento; el motivo marcado y con el foco, y «El motivo lleva al menos 10 caracteres…» justo debajo; el aviso de arriba queda como resumen; el caso sigue abierto. |
+| P3 coincidencia | `r110-r11-coincidencia-motivo-con-js-1440` | Celia dictamina la coincidencia de Cedro con «Revisar 😀» en el motivo, con JavaScript: el aviso en su tarjeta y la dirección sin cambios (desde la doceava, sin `en=`); el motivo marcado y con el foco, y «El motivo lleva al menos 10 caracteres…» junto a él; el aviso de arriba queda como resumen; el caso sigue abierto. |
 | P3 coincidencia | `r111-r11-coincidencia-motivo-sin-js-390` | Lo mismo sin JavaScript, a 390. |
-| Mensaje junto al campo | `r112-r11-documento-sin-js-390` | Sin JavaScript a 390, un «PDF» que no lo es en el borrador de Laboratorio Novena: «Sube un PDF, PNG o JPG legible.» justo debajo del control, que tiene el foco; ningún documento. |
-| Mensaje junto al campo | `r113-r11-socio-capital-con-js-390` | Con JavaScript a 390, un capital «abc»: el mensaje justo debajo de Capital, que tiene el foco y conserva «abc». Antes, el aviso del formulario quedaba en −452, fuera de la vista. |
+| Mensaje junto al campo | `r112-r11-documento-sin-js-390` | Sin JavaScript a 390, un «PDF» que no lo es en el borrador de Laboratorio Novena: «Sube un PDF, PNG o JPG legible.» justo arriba del control (desde la doceava, entre la etiqueta y el control), que tiene el foco; ningún documento. |
+| Mensaje junto al campo | `r113-r11-socio-capital-con-js-390` | Con JavaScript a 390, un capital «abc»: el mensaje justo arriba de Capital (desde la doceava), que tiene el foco y conserva «abc». Antes, el aviso del formulario quedaba en −452, fuera de la vista. |
 | P2 sin JavaScript | `r114-r11-representante-invisible-sin-js` | Sin JavaScript, «Agregar representante» con un U+200B en el nombre: 200 con su aviso, el nombre marcado y con el foco, su mensaje junto a él y todo lo capturado de vuelta. Antes volvía en blanco. |
+| Doceava: rechazo con lo capturado | `r115-doceava-riesgo-con-js-1440` | Celia registra la revisión periódica de Brisa con «media» armada como «MEDIA» (un nivel fuera de la lista): `dato_invalido_actividad` vuelve en su formulario con la zona elegida y la actividad sin elegir (nunca «baja»), el aviso arriba del formulario, el mensaje entre la etiqueta y el control, el foco en él, la dirección sin cambios y ninguna calificación. Con lo corregido, el doble clic registra una. |
+| Doceava: rechazo con lo capturado | `r116-doceava-riesgo-sin-js-390` | Lo mismo sin JavaScript a 390: el POST responde 200 con la misma página. |
+| Doceava: rechazo con lo capturado | `r117-doceava-riesgo-con-js-390` | Con JavaScript a 390. |
+| Doceava: rechazo con lo capturado | `r118-doceava-riesgo-sin-js-1440` | Sin JavaScript a 1440. |
+| Doceava: rechazo con lo capturado | `r119-doceava-datos-generales-con-js-1440` | Omar guarda los datos de Novena con un U+200B en la razón social: `invisible_razonSocial` y vuelven razón social, giro, teléfono y colonia como se escribieron; nada cambia en el borrador. |
+| Doceava: rechazo con lo capturado | `r120-doceava-datos-generales-sin-js-390` | Lo mismo sin JavaScript a 390. |
+| Doceava: rechazo con lo capturado | `r121-doceava-datos-generales-con-js-390` | Con JavaScript a 390. |
+| Doceava: rechazo con lo capturado | `r122-doceava-datos-generales-sin-js-1440` | Sin JavaScript a 1440. |
+| Doceava: rechazo con lo capturado | `r123-doceava-documento-con-js-1440` | Un poder con «Vigente hasta» antes de «Emitido el»: `dato_invalido_vigenteHasta` marca la vigencia; vuelven tipo, fechas y detalle, y la nota junto al archivo pide volver a elegirlo (el navegador no deja rellenarlo). Ningún documento. |
+| Doceava: rechazo con lo capturado | `r124-doceava-documento-sin-js-390` | Lo mismo sin JavaScript a 390. |
+| Doceava: rechazo con lo capturado | `r125-doceava-dictamen-con-js-1440` | Celia observa a Cedro con «Revisar 😀»: `motivo_corto` y vuelven «Observado» y el motivo; ningún dictamen. |
+| Doceava: rechazo con lo capturado | `r126-doceava-dictamen-sin-js-390` | Lo mismo sin JavaScript a 390. |
+| Doceava: rechazo con lo capturado | `r127-doceava-dictamen-con-js-390` | Con JavaScript a 390. |
+| Doceava: rechazo con lo capturado | `r128-doceava-dictamen-sin-js-1440` | Sin JavaScript a 1440. |
+| Doceava: rechazo con lo capturado | `r129-doceava-suspension-con-js-1440` | Omar pide la suspensión (o la reactivación) con «Revisar 😀»: `motivo_corto` y vuelve el motivo; ninguna solicitud. |
+| Doceava: rechazo con lo capturado | `r130-doceava-suspension-sin-js-390` | Lo mismo sin JavaScript a 390. |
+| Doceava: rechazo con lo capturado | `r131-doceava-folio-con-js-1440` | Celia anota el folio de una coincidencia confirmada con «Presentado el» de pasado mañana: `dato_invalido_presentadoEl` en su tarjeta, con el folio y la fecha de vuelta; ningún folio guardado. |
+| Doceava: rechazo con lo capturado | `r132-doceava-folio-sin-js-390` | Lo mismo sin JavaScript a 390. |
+| Doceava: rechazo con lo capturado | `r133-doceava-prospecto-con-js-1440` | Omar registra «Puerto Doce» con el RFC genérico XAXX010101000: `rfc_generico` marca el RFC y vuelven los cinco datos; ninguna empresa. |
+| Doceava: rechazo con lo capturado | `r134-doceava-prospecto-sin-js-390` | Lo mismo sin JavaScript a 390. |
+| Doceava: rechazo con lo capturado | `r135-doceava-alerta-con-js-1440` | Ofelia crea una alerta con un título de puros espacios: `dato_invalido_titulo` marca el título y vuelven la empresa y el detalle; ninguna alerta. |
+| Doceava: rechazo con lo capturado | `r136-doceava-alerta-sin-js-390` | Lo mismo sin JavaScript a 390. |
 
 Las capturas `NN-pantalla-<pantalla>-<tema>-<ancho>` son la fase de pantallas: un solo h1, campos con etiqueta, sin desborde horizontal y consola limpia en Personal, Cumplimiento, Lista, Expediente, Ficha, Aprobaciones, Clientes, Bitácora y Sin permiso.
 
@@ -1019,6 +1148,14 @@ OK    4. Grupo Ébano aparece «Vigente» con su fecha de revisión
 OK    8. Aprobación aprueba y la base deja pasar en_alta → activa
 OK    8. Grupo Ébano queda activa
 OK    8. con la empresa activa, la ficha ofrece invitar al primer administrador
+OK    aviso «dato_invalido_correo» tras la acción
+OK    doceava. invitacion, con JavaScript a 1440: «dato_invalido_correo» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «dato_invalido_correo» tras la acción
+OK    doceava. invitacion, sin JavaScript a 390: «dato_invalido_correo» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «comision_valor_invalido» tras la acción
+OK    doceava. comision, con JavaScript a 1440: «comision_valor_invalido» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «comision_valor_invalido» tras la acción
+OK    doceava. comision, sin JavaScript a 390: «comision_valor_invalido» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
 
 — Flujo 5: Cumplimiento carga la Lista de Personas Bloqueadas (CSV documentado)
 OK    aviso «lpb_renglon_invalido» tras la acción
@@ -1099,7 +1236,7 @@ NOTA  f12-bitacora-lecturas-auditadas: la página mide 10123 px y no cabe en una
 OK    12. Auditoría ve «Sin permiso» en Personal
 OK    consola del navegador limpia en todos los flujos
 
-147 comprobaciones en verde, 0 en rojo.
+155 comprobaciones en verde, 0 en rojo.
 ```
 
 </details>
@@ -1384,7 +1521,7 @@ OK    serv-nuevo-6b. «Aviso al cliente» 2026-13-01: su aviso, solo ese campo m
 OK    serv-nuevo-6b. la captura muestra el aviso y «aviso» marcado
 OK    base-N27. tres recuperaciones pendientes en la bandeja
 OK    aviso «motivo_invalido» tras la acción
-OK    base-N27. rechazar sin nota la recuperación de en medio: «en» es su id y solo su nota queda marcada y con el foco; las tres siguen pendientes
+OK    base-N27. rechazar sin nota la recuperación de en medio: el aviso vuelve a su tarjeta y solo su nota queda marcada y con el foco; las tres siguen pendientes
 OK    base-N27. la captura muestra el aviso y la nota marcada de la tarjeta de en medio
 OK    aviso «decision_registrada» tras la acción
 OK    aviso «decision_registrada» tras la acción
@@ -1394,9 +1531,15 @@ OK    base-N27. con su nota, las tres se rechazan: ninguna queda abierta
 — Décima revisión: sin JavaScript, claves repetidas en la dirección, textos que no se ven y valores largos a 390
 OK    serv-nuevo-7. con JavaScript, la entrada de Operación con la contraseña equivocada: 200, su Origin y su aviso
 OK    serv-nuevo-7. sin JavaScript, la entrada de Operación con la contraseña equivocada: 200, su Origin y su aviso
+OK    aviso «expediente_datos_guardados» tras la acción
+OK    aviso «expediente_datos_incompletos» tras la acción
 OK    textos invisibles. con JavaScript, el giro «\u3164» se guarda vacío y «Enviar versión 1» dice «Falta el giro.»; sigue en borrador y sin evento
+OK    aviso «expediente_datos_guardados» tras la acción
+OK    aviso «expediente_datos_incompletos» tras la acción
 OK    textos invisibles. sin JavaScript, el giro «\u3164» se guarda vacío y «Enviar versión 1» dice «Falta el giro.»; sigue en borrador y sin evento
+OK    aviso «motivo_corto» tras la acción
 OK    textos invisibles. con JavaScript, el dictamen observado con «Revisar» y tres U+3164 (10 para la base, 7 que se ven): motivo_corto en el motivo y sin dictamen
+OK    aviso «motivo_invalido» tras la acción
 OK    textos invisibles. sin JavaScript, el dictamen observado con doce U+3164: motivo_invalido en el motivo y sin dictamen
 OK    base-N28. con JavaScript, /operacion/clientes/<novena>/expediente?aviso=a&aviso=b&en=x&en=y responde 200 con su página
 OK    base-N28. con JavaScript, /operacion/clientes?aviso=a&aviso=b responde 200 con su página
@@ -1408,7 +1551,9 @@ OK    base-N28. sin JavaScript, /operacion/clientes?aviso=a&aviso=b responde 200
 OK    base-N28. sin JavaScript, /operacion/clientes/<novena>?aviso=a&aviso=b responde 200 con su página
 OK    base-N28. sin JavaScript, /operacion/clientes/<novena>/expediente?aviso=expediente_datos_incompletos&faltan=giro&faltan=domicilio responde 200 con su página
 OK    base-N28. sin JavaScript, con «faltan» repetido queda el aviso general, sin detalle
+OK    aviso «archivo_demasiado_grande» tras la acción
 OK    campo de archivo. sin JavaScript, archivo_demasiado_grande: aviso, el control del archivo marcado, ligado al aviso y con el foco; ningún documento
+OK    aviso «archivo_no_admitido» tras la acción
 OK    campo de archivo. con JavaScript, archivo_no_admitido: aviso, el control del archivo marcado, ligado al aviso y con el foco; ningún documento
 OK    aviso «expediente_documento_cargado» tras la acción
 OK    desborde. con JavaScript, en el expediente de Ébano (7 SHA-256) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)
@@ -1417,15 +1562,67 @@ OK    desborde. sin JavaScript, en el expediente de Ébano (7 SHA-256) la orilla
 OK    desborde. sin JavaScript, en el expediente de Laboratorio Novena (el nombre de archivo de 136 caracteres) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)
 
 — Onceava revisión: el mensaje del error junto al campo, los formularios del expediente sin JavaScript y el motivo de la coincidencia
-OK    P3 coincidencia. con JavaScript a 1440, «Revisar 😀» en el motivo: en=motivo-<caso>, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto
-OK    P3 coincidencia. sin JavaScript a 390, «Revisar 😀» en el motivo: en=motivo-<caso>, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto
-OK    mensaje junto al campo. sin JavaScript a 390, un «PDF» que no lo es: «Sube un PDF, PNG o JPG legible.» justo debajo del control, que tiene el foco; el aviso de arriba queda como resumen; ningún documento
-OK    mensaje junto al campo. con JavaScript a 390, el capital «abc» del socio: el mensaje justo debajo de Capital, que tiene el foco y conserva lo capturado; ningún socio
+OK    aviso «motivo_corto» tras la acción
+OK    P3 coincidencia. con JavaScript a 1440, «Revisar 😀» en el motivo: el aviso en su tarjeta y la dirección sin cambios, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto
+OK    aviso «motivo_corto» tras la acción
+OK    P3 coincidencia. sin JavaScript a 390, «Revisar 😀» en el motivo: el aviso en su tarjeta y la dirección sin cambios, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto
+OK    aviso «archivo_no_admitido» tras la acción
+OK    mensaje junto al campo. sin JavaScript a 390, un «PDF» que no lo es: «Sube un PDF, PNG o JPG legible.» justo arriba del control, que tiene el foco; el aviso del formulario queda como resumen; ningún documento
+OK    mensaje junto al campo. con JavaScript a 390, el capital «abc» del socio: el mensaje justo arriba de Capital, que tiene el foco y conserva lo capturado; ningún socio
 OK    P2 sin JavaScript. «Agregar representante» con un U+200B en el nombre: 200 con su aviso, el nombre marcado, con el foco y su mensaje junto a él, y todo lo capturado de vuelta; ningún representante
-OK    onceava revisión: en los 71 avisos de las regresiones nunca hubo dos campos marcados; 43 campos marcados, cada uno con su mensaje único junto a él
+
+— Doceava revisión: los formularios rechazados vuelven con lo capturado, con y sin JavaScript a 1440 y 390
+OK    doceava. hay empresa para pedir suspensión, coincidencia confirmada sin folio y empresa para la alerta
+OK    aviso «dato_invalido_actividad» tras la acción
+OK    doceava. riesgo, con JavaScript a 1440: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «riesgo_calificado» tras la acción
+OK    doceava. riesgo: tras el rechazo, el doble clic con lo corregido registra una sola calificación
+OK    aviso «dato_invalido_actividad» tras la acción
+OK    doceava. riesgo, sin JavaScript a 390: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «dato_invalido_actividad» tras la acción
+OK    doceava. riesgo, con JavaScript a 390: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «dato_invalido_actividad» tras la acción
+OK    doceava. riesgo, sin JavaScript a 1440: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «invisible_razonSocial» tras la acción
+OK    doceava. datos-generales, con JavaScript a 1440: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «invisible_razonSocial» tras la acción
+OK    doceava. datos-generales, sin JavaScript a 390: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «invisible_razonSocial» tras la acción
+OK    doceava. datos-generales, con JavaScript a 390: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «invisible_razonSocial» tras la acción
+OK    doceava. datos-generales, sin JavaScript a 1440: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «dato_invalido_vigenteHasta» tras la acción
+OK    doceava. documento, con JavaScript a 1440: «dato_invalido_vigenteHasta» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «dato_invalido_vigenteHasta» tras la acción
+OK    doceava. documento, sin JavaScript a 390: «dato_invalido_vigenteHasta» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «motivo_corto» tras la acción
+OK    doceava. dictamen, con JavaScript a 1440: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «motivo_corto» tras la acción
+OK    doceava. dictamen, sin JavaScript a 390: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «motivo_corto» tras la acción
+OK    doceava. dictamen, con JavaScript a 390: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «motivo_corto» tras la acción
+OK    doceava. dictamen, sin JavaScript a 1440: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «motivo_corto» tras la acción
+OK    doceava. suspension, con JavaScript a 1440: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «motivo_corto» tras la acción
+OK    doceava. suspension, sin JavaScript a 390: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «dato_invalido_presentadoEl» tras la acción
+OK    doceava. folio, con JavaScript a 1440: «dato_invalido_presentadoEl» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «dato_invalido_presentadoEl» tras la acción
+OK    doceava. folio, sin JavaScript a 390: «dato_invalido_presentadoEl» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «rfc_generico» tras la acción
+OK    doceava. prospecto, con JavaScript a 1440: «rfc_generico» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «rfc_generico» tras la acción
+OK    doceava. prospecto, sin JavaScript a 390: «rfc_generico» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «dato_invalido_titulo» tras la acción
+OK    doceava. alerta, con JavaScript a 1440: «dato_invalido_titulo» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    aviso «dato_invalido_titulo» tras la acción
+OK    doceava. alerta, sin JavaScript a 390: «dato_invalido_titulo» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada
+OK    onceava revisión: en los 116 avisos de las regresiones nunca hubo dos campos marcados; 87 campos marcados, cada uno con su mensaje único junto a él
 OK    consola del navegador limpia en las regresiones
 
-215 comprobaciones en verde, 0 en rojo.
+273 comprobaciones en verde, 0 en rojo.
 ```
 
 </details>

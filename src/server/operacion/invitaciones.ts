@@ -44,7 +44,9 @@ export async function invitarPrimerAdministrador(
   if (!uuidValido(entrada.companyId)) throw new ErrorDeDominio("cliente_ausente");
   const nombre = textoOperativo(entrada.nombre, 200);
   const correo = normalizarCorreo(typeof entrada.correo === "string" ? entrada.correo : "");
-  if (!nombre || !correoValido(correo)) throw new ErrorDeDominio("invitacion_invalida");
+  // Cada rechazo es de su campo: la pantalla marca el nombre o el correo y pone su mensaje junto a él.
+  if (!nombre) throw new ErrorDeDominio("dato_invalido_nombre");
+  if (!correoValido(correo)) throw new ErrorDeDominio("dato_invalido_correo");
   const ahora = (deps.ahora ?? (() => new Date()))();
   const produccion = deps.produccion ?? process.env.NODE_ENV === "production";
   const emitida = await conContexto(basePlataforma(ctx, entrada.companyId), async (consulta) => {

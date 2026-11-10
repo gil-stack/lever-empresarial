@@ -39,8 +39,8 @@ describe("tope de archivos", () => {
     for (const texto of [ARCHIVO_DEMASIADO_GRANDE, LISTA_DEMASIADO_GRANDE, CONSTANCIA_Y_CONTRATO, XML_Y_PDF, CONTRATO_DEMASIADO_GRANDE]) {
       assert.ok(texto.includes(TOPE_ARCHIVO_TEXTO), texto);
     }
-    const expediente = readFileSync(new URL("../components/operacion/expediente.tsx", import.meta.url), "utf8");
-    assert.match(expediente, /hasta \{TOPE_ARCHIVO_TEXTO\}/);
+    const documento = readFileSync(new URL("../components/operacion/formulario-documento.tsx", import.meta.url), "utf8");
+    assert.match(documento, /hasta \{TOPE_ARCHIVO_TEXTO\}/);
   });
 
   it("el campo de archivo no muestra aviso hasta que el navegador mide un archivo grande", () => {
@@ -50,7 +50,8 @@ describe("tope de archivos", () => {
   });
 
   // Décima revisión: con el error del archivo que devolvió el servidor, el control marcado recibe también el foco.
-  // Onceava: el mensaje del servidor va junto al control y es su descripción.
+  // Onceava: el mensaje del servidor va junto al control y es su descripción. Doceava: va entre la etiqueta y el control,
+  // y tras un rechazo la nota de volver a elegir el archivo también describe el control.
   it("el error del servidor marca el campo de archivo, lo liga a su mensaje junto a él y le da el foco", () => {
     const ligado = { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo", autoFocus: true };
     const mensajeDelServidor = createElement(MensajeDelCampo, { codigo: "archivo_no_admitido", campo: "archivo" });
@@ -58,7 +59,10 @@ describe("tope de archivos", () => {
     assert.match(html, /aria-invalid="true"/);
     assert.match(html, /aria-describedby="aviso-operacion-campo"/);
     assert.match(html, /autofocus=""/);
-    assert.match(html, /<input[^>]*type="file"[^>]*\/><p id="aviso-operacion-campo" class="error-campo">Sube un PDF, PNG o JPG legible\.<\/p>$/);
+    assert.match(html, /^<p id="aviso-operacion-campo" class="error-campo error-antes-del-control">Sube un PDF, PNG o JPG legible\.<\/p><input[^>]*type="file"[^>]*\/>$/);
+    const conNota = renderToStaticMarkup(createElement(CampoArchivo, { id: "doc-archivo", name: "archivo", accept: ".pdf", mensaje: ARCHIVO_DEMASIADO_GRANDE, ligado, mensajeDelServidor, nota: "Vuelve a elegir el archivo." }));
+    assert.match(conNota, /aria-describedby="aviso-operacion-campo doc-archivo-nota"/);
+    assert.match(conNota, /\/><p id="doc-archivo-nota" class="pista">Vuelve a elegir el archivo\.<\/p>$/);
     assert.doesNotMatch(renderToStaticMarkup(createElement(CampoArchivo, { id: "doc-archivo", name: "archivo", accept: ".pdf", mensaje: ARCHIVO_DEMASIADO_GRANDE })), /autofocus/);
   });
 });

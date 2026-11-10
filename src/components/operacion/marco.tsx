@@ -9,6 +9,7 @@ import { Logotipo } from "@/components/cromo/logotipo";
 import { SelectorTema } from "@/components/cromo/selector-tema";
 import { COOKIE_TEMA, temaDesde } from "@/components/cromo/tema";
 
+import { idDeAncla } from "./envio-sin-script";
 import { NavegacionOperacion } from "./navegacion";
 
 /**
@@ -25,13 +26,15 @@ export async function MarcoOperacion({
   capacidades: readonly string[];
   children: ReactNode;
 }) {
-  const tema = temaDesde((await cookies()).get(COOKIE_TEMA)?.value);
+  const [almacen, destino] = await Promise.all([cookies(), idDeAncla("contenido")]);
+  const tema = temaDesde(almacen.get(COOKIE_TEMA)?.value);
   return (
     <>
       <AcentoInicial persona={personaId} tema={tema} />
       <AparienciaViva persona={personaId} tema={tema} />
       <div className="marco">
-        <a className="saltar" href="#contenido">
+        {/* El destino es el `main` de PaginaOperacion; sin JavaScript, tras un envío lleva sufijo (idDeAncla). */}
+        <a className="saltar" href={`#${destino}`}>
           Saltar al contenido
         </a>
         {/* Dos marcas, no el mismo elemento dos veces: el servidor lo mandaría una sola vez y los dos

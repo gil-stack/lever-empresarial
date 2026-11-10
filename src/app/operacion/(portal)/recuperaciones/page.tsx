@@ -5,7 +5,6 @@ import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { decidirRecuperacionAccion } from "@/app/operacion/acciones-recuperaciones";
 import { ConfirmarIdentidad } from "@/components/entrar/confirmar-identidad";
 import { IconoSeguridad } from "@/components/cromo/iconos";
-import { errorDelCampo, MensajeDelCampo } from "@/components/operacion/aviso";
 import { DecisionRecuperacion } from "@/components/operacion/decision-recuperacion";
 import { fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
@@ -19,7 +18,7 @@ import { puedeEnOperacion } from "@/server/operacion/permisos";
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Recuperaciones · Operación" };
 
-export default async function RecuperacionesOperacion({ searchParams }: { searchParams: Parametros<"aviso" | "en"> }) {
+export default async function RecuperacionesOperacion({ searchParams }: { searchParams: Parametros<"aviso"> }) {
   const ctx = await exigirContextoOperacion();
   // Desde la Ola R1 hay roles que no administran cuentas: Auditoría o Cumplimiento no aprueban recuperaciones.
   if (!puedeEnOperacion(ctx, "plataforma.empresa.alta")) {
@@ -57,14 +56,7 @@ export default async function RecuperacionesOperacion({ searchParams }: { search
           detalle: <span className="operacion-detalle">{solicitud.motivo}</span>,
           contexto: [solicitud.correo, fechaHora(solicitud.solicitadaEn)],
           acciones: (
-            <DecisionRecuperacion
-              id={solicitud.id}
-              accion={decidirRecuperacionAccion}
-              errorMetodo={params.en === solicitud.id ? errorDelCampo(params.aviso, "verificacion") : {}}
-              errorNota={params.en === solicitud.id ? errorDelCampo(params.aviso, "motivo") : {}}
-              mensajeMetodo={params.en === solicitud.id ? <MensajeDelCampo codigo={params.aviso} campo="verificacion" /> : null}
-              mensajeNota={params.en === solicitud.id ? <MensajeDelCampo codigo={params.aviso} campo="motivo" /> : null}
-            />
+            <DecisionRecuperacion key={solicitud.id} id={solicitud.id} accion={decidirRecuperacionAccion} />
           ),
         }))}
       />

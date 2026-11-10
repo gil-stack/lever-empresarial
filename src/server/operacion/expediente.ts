@@ -777,11 +777,12 @@ export async function dictaminarVersion(
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
   const resultado = entrada.resultado;
   if (resultado !== "aprobado" && resultado !== "observado" && resultado !== "rechazado") throw new ErrorDeDominio("dato_invalido_resultado");
-  // El aprobado lleva nota opcional: sin nada que se vea queda vacía, e inválida (más de 1,000 caracteres, un control)
-  // se avisa en el campo; antes se asentaba el aprobado sin la nota y sin avisar.
-  const nota = typeof entrada.motivo === "string" && !tieneAlgoVisible(entrada.motivo) ? null : opcional(entrada.motivo, (t) => textoMultilinea(t, 1000));
+  // El aprobado lleva nota opcional: sin nada que se vea queda vacía; de más de 500 caracteres (el tope de la bitácora,
+  // `audit_log_motivo_formato`) se avisa en el campo. Un control no la invalida: se guarda como un espacio. Antes se
+  // asentaba el aprobado sin la nota y sin avisar.
+  const nota = typeof entrada.motivo === "string" && !tieneAlgoVisible(entrada.motivo) ? null : opcional(entrada.motivo, (t) => textoMultilinea(t, 500));
   if (resultado === "aprobado" && nota === undefined) throw new ErrorDeDominio("motivo_invalido");
-  const motivo = resultado === "aprobado" ? (nota ?? null) : motivoEscrito(entrada.motivo, 1000);
+  const motivo = resultado === "aprobado" ? (nota ?? null) : motivoEscrito(entrada.motivo, 500);
   const ahora = new Date();
   await unaVezPorFormulario(() => conContexto(basePlataforma(ctx), async (consulta) => {
     const fila = await consulta.query("select company_id, estado, enviada_por from kyb_versiones where id = $1", [entrada.versionId]);

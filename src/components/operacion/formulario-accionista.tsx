@@ -7,6 +7,7 @@ import { BotonEnviar } from "@/components/sistema";
 import { ETIQUETA_PEP, PEPS } from "@/dominio/operacion";
 
 import { AvisoOperacion, errorDelCampo, MensajeDelCampo } from "./aviso";
+import { useAvisoVigente } from "./formulario-con-aviso";
 import { IdentidadDelSocio } from "./identidad-socio";
 
 const ID_AVISO = "aviso-accionista";
@@ -33,24 +34,27 @@ export function FormularioAccionista({
 }) {
   const [estado, accion] = useActionState(agregarAccionistaAccion, SIN_AVISO);
   const forma = useRef<HTMLFormElement>(null);
+  // Un solo campo marcado en la página: al enviarse otro formulario, el aviso de este se descarta.
+  const aviso = useAvisoVigente(estado, forma);
   useEffect(() => {
     if (estado.vuelta) forma.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
   }, [estado.vuelta]);
   const valor = (campo: string) => estado.valores[campo] ?? "";
-  const ligado = (campo: string) => errorDelCampo(estado.aviso, campo, ID_AVISO);
-  const mensaje = (campo: string) => <MensajeDelCampo codigo={estado.aviso} campo={campo} idAviso={ID_AVISO} />;
+  const ligado = (campo: string) => errorDelCampo(aviso, campo, ID_AVISO);
+  const mensaje = (campo: string) => <MensajeDelCampo codigo={aviso} campo={campo} idAviso={ID_AVISO} />;
   return (
     <form key={estado.vuelta} ref={forma} action={accion} className="formulario-pareja operacion-forma">
       <input type="hidden" name="companyId" value={companyId} />
       <input type="hidden" name="versionId" value={versionId} />
       <input type="hidden" name="formId" value={formId} />
-      {estado.aviso ? (
+      {aviso ? (
         <div className="operacion-ancho">
-          <AvisoOperacion codigo={estado.aviso} id={ID_AVISO} />
+          <AvisoOperacion codigo={aviso} id={ID_AVISO} />
         </div>
       ) : null}
       <div className="campo operacion-ancho">
         <label htmlFor="acc-padre">Es socio de</label>
+        {mensaje("padreClave")}
         <select id="acc-padre" name="padreClave" defaultValue={valor("padreClave")} {...ligado("padreClave")}>
           <option value="">La empresa (socio directo)</option>
           {morales.map((moral) => (
@@ -59,7 +63,6 @@ export function FormularioAccionista({
             </option>
           ))}
         </select>
-        {mensaje("padreClave")}
       </div>
       <IdentidadDelSocio
         paises={paises}
@@ -81,22 +84,23 @@ export function FormularioAccionista({
       >
         <div className="campo">
           <label htmlFor="acc-nombre">Nombre o razón social</label>
-          <input id="acc-nombre" name="nombre" maxLength={300} required defaultValue={valor("nombre")} {...ligado("nombre")} />
           {mensaje("nombre")}
+          <input id="acc-nombre" name="nombre" maxLength={300} required defaultValue={valor("nombre")} {...ligado("nombre")} />
         </div>
       </IdentidadDelSocio>
       <div className="campo">
         <label htmlFor="acc-capital">Capital (%)</label>
-        <input id="acc-capital" name="capital" inputMode="decimal" maxLength={6} required defaultValue={valor("capital")} {...ligado("capital")} />
         {mensaje("capital")}
+        <input id="acc-capital" name="capital" inputMode="decimal" maxLength={6} required defaultValue={valor("capital")} {...ligado("capital")} />
       </div>
       <div className="campo">
         <label htmlFor="acc-votos">Votos (%)</label>
-        <input id="acc-votos" name="votos" inputMode="decimal" maxLength={6} required defaultValue={valor("votos")} {...ligado("votos")} />
         {mensaje("votos")}
+        <input id="acc-votos" name="votos" inputMode="decimal" maxLength={6} required defaultValue={valor("votos")} {...ligado("votos")} />
       </div>
       <div className="campo">
         <label htmlFor="acc-pep">¿Es persona expuesta políticamente?</label>
+        {mensaje("pep")}
         <select id="acc-pep" name="pep" defaultValue={valor("pep") || "no"} {...ligado("pep")}>
           {PEPS.map((pep) => (
             <option key={pep} value={pep}>
@@ -104,7 +108,6 @@ export function FormularioAccionista({
             </option>
           ))}
         </select>
-        {mensaje("pep")}
       </div>
       <label className="confirmacion operacion-ancho">
         <input name="controlOtrosMedios" type="checkbox" value="si" defaultChecked={valor("controlOtrosMedios") === "si"} />

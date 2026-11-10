@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { avisoDeCampo } from "@/components/operacion/aviso";
+import { capturado, rechazado, type EstadoDelFormulario } from "@/app/operacion/rechazo";
 import { sesionSegura } from "@/server/entrada";
 import {
   agregarAccionista,
@@ -30,9 +30,10 @@ import { almacenVercel } from "@/server/proveedores/constancia";
 import { ErrorDeDominio } from "@/server/session";
 
 /**
- * Acciones de la Ola R1 (alta regulada). Cada una vuelve a la pantalla de donde salió con un
- * aviso: el código del error o lo que quedó hecho. El servidor y la base exigen otra vez el rol,
- * la doble firma y el segundo factor; aquí solo se arma la entrada.
+ * Acciones de la Ola R1 (alta regulada). Lo que queda hecho vuelve a la pantalla con su aviso en la dirección. Un
+ * formulario con algo capturado que el servidor rechaza vuelve sin recargar con su aviso y lo capturado
+ * (`rechazado`); los de solo botones vuelven con el aviso del error en la dirección. El servidor y la base exigen otra
+ * vez el rol, la doble firma y el segundo factor; aquí solo se arma la entrada.
  */
 
 const CAMPOS_DATOS = [
@@ -75,18 +76,15 @@ export async function crearVersionAccion(formData: FormData): Promise<void> {
   listo(expediente(companyId), "expediente_version_creada");
 }
 
-export async function guardarDatosAccion(formData: FormData): Promise<void> {
+export async function guardarDatosAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const companyId = texto(formData, "companyId");
   try {
-    await guardarDatosGenerales(ctx, {
-      versionId: formData.get("versionId"),
-      datos: Object.fromEntries(CAMPOS_DATOS.map((campo) => [campo, texto(formData, campo)])),
-    });
+    await guardarDatosGenerales(ctx, { versionId: formData.get("versionId"), datos: capturado(formData, CAMPOS_DATOS) });
   } catch (error) {
-    return fallo(error, expediente(companyId), "#datos-titulo");
+    return rechazado(previo, error, formData, CAMPOS_DATOS);
   }
-  listo(expediente(companyId), "expediente_datos_guardados", "#datos-titulo");
+  listo(expediente(companyId), "expediente_datos_guardados");
 }
 
 /** Lo que vuelve al formulario del representante cuando el servidor lo rechaza: lo capturado y el aviso. */
@@ -116,7 +114,7 @@ export async function agregarRepresentanteAccion(previo: EstadoDelRepresentante,
     }
     throw error;
   }
-  listo(expediente(companyId), "expediente_representante_agregado", "#representantes-titulo");
+  listo(expediente(companyId), "expediente_representante_agregado");
 }
 
 /** Lo que vuelve al formulario del accionista cuando el servidor rechaza el socio: lo capturado y el aviso. */
@@ -165,7 +163,7 @@ export async function agregarAccionistaAccion(previo: EstadoDelSocio, formData: 
     }
     throw error;
   }
-  listo(expediente(companyId), "expediente_accionista_agregado", "#accionistas-titulo");
+  listo(expediente(companyId), "expediente_accionista_agregado");
 }
 
 export async function retirarDelBorradorAccion(formData: FormData): Promise<void> {
@@ -175,12 +173,15 @@ export async function retirarDelBorradorAccion(formData: FormData): Promise<void
   try {
     await retirarDelBorrador(ctx, { versionId: formData.get("versionId"), id: formData.get("id"), tipo });
   } catch (error) {
-    return fallo(error, expediente(companyId), tipo === "representante" ? "#representantes-titulo" : "#accionistas-titulo");
+    return fallo(error, expediente(companyId));
   }
-  listo(expediente(companyId), "expediente_retirado", tipo === "representante" ? "#representantes-titulo" : "#accionistas-titulo");
+  listo(expediente(companyId), "expediente_retirado");
 }
 
-export async function cargarDocumentoAccion(formData: FormData): Promise<void> {
+/** Lo que vuelve del documento tras un rechazo: todo menos el archivo, que el navegador no deja rellenar. */
+const CAMPOS_DOCUMENTO = ["tipo", "representanteClave", "emitidoEl", "vigenteHasta", "detalle"] as const;
+
+export async function cargarDocumentoAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const companyId = texto(formData, "companyId");
   try {
@@ -201,9 +202,9 @@ export async function cargarDocumentoAccion(formData: FormData): Promise<void> {
       { almacen: almacenVercel() },
     );
   } catch (error) {
-    return fallo(error, expediente(companyId), "#documentos-titulo");
+    return rechazado(previo, error, formData, CAMPOS_DOCUMENTO);
   }
-  listo(expediente(companyId), "expediente_documento_cargado", "#documentos-titulo");
+  listo(expediente(companyId), "expediente_documento_cargado");
 }
 
 export async function enviarVersionAccion(formData: FormData): Promise<void> {
@@ -214,14 +215,14 @@ export async function enviarVersionAccion(formData: FormData): Promise<void> {
   } catch (error) {
     // Lo que falta viaja como claves conocidas (giro, domicilio…), nunca como datos de la empresa.
     if (error instanceof ExpedienteIncompleto) {
-      redirect(`${expediente(companyId)}?aviso=${error.codigo}&faltan=${error.faltan.join(",")}&en=enviar-titulo#enviar-titulo`);
+      redirect(`${expediente(companyId)}?aviso=${error.codigo}&faltan=${error.faltan.join(",")}`);
     }
-    return fallo(error, expediente(companyId), "#enviar-titulo");
+    return fallo(error, expediente(companyId));
   }
   listo(expediente(companyId), "expediente_enviado");
 }
 
-export async function dictaminarAccion(formData: FormData): Promise<void> {
+export async function dictaminarAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const sesion = await sesionSegura();
   if (!sesion) redirect("/operacion/entrar");
@@ -234,12 +235,12 @@ export async function dictaminarAccion(formData: FormData): Promise<void> {
       motivo: texto(formData, "motivo"),
     });
   } catch (error) {
-    return fallo(error, expediente(companyId), "#dictamen-titulo");
+    return rechazado(previo, error, formData, ["resultado", "motivo"]);
   }
-  listo(expediente(companyId), "expediente_dictaminado", "#dictamen-titulo");
+  listo(expediente(companyId), "expediente_dictaminado");
 }
 
-export async function calificarRiesgoAccion(formData: FormData): Promise<void> {
+export async function calificarRiesgoAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const companyId = texto(formData, "companyId");
   try {
@@ -250,12 +251,12 @@ export async function calificarRiesgoAccion(formData: FormData): Promise<void> {
       zona: texto(formData, "zona"),
     });
   } catch (error) {
-    return fallo(error, expediente(companyId), "#riesgo-titulo");
+    return rechazado(previo, error, formData, ["actividad", "zona"]);
   }
-  listo(expediente(companyId), "riesgo_calificado", "#riesgo-titulo");
+  listo(expediente(companyId), "riesgo_calificado");
 }
 
-export async function solicitarSuspensionAccion(formData: FormData): Promise<void> {
+export async function solicitarSuspensionAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const companyId = texto(formData, "companyId");
   const ficha = `/operacion/clientes/${encodeURIComponent(companyId)}`;
@@ -263,9 +264,9 @@ export async function solicitarSuspensionAccion(formData: FormData): Promise<voi
   try {
     await solicitarCambioDeSuspension(ctx, { companyId, formId: formData.get("formId"), tipo, motivo: texto(formData, "motivo") });
   } catch (error) {
-    return fallo(error, ficha, "#suspension-titulo");
+    return rechazado(previo, error, formData, ["motivo"]);
   }
-  listo(ficha, tipo === "reactivacion" ? "reactivacion_solicitada" : "suspension_solicitada", "#suspension-titulo");
+  listo(ficha, tipo === "reactivacion" ? "reactivacion_solicitada" : "suspension_solicitada");
 }
 
 export async function decidirSuspensionAccion(formData: FormData): Promise<void> {
@@ -284,30 +285,33 @@ export async function decidirSuspensionAccion(formData: FormData): Promise<void>
   listo("/operacion/aprobaciones", "decision_registrada");
 }
 
-export async function cargarListaAccion(formData: FormData): Promise<void> {
+export async function cargarListaAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   // El rol se revisa antes de leer el archivo. La línea del renglón malo ayuda a corregirlo.
   let archivo: Awaited<ReturnType<typeof leerArchivoDeLista>>;
   try {
     archivo = await leerArchivoDeLista(ctx, formData.get("archivo"));
   } catch (error) {
-    return fallo(error, "/operacion/lpb");
+    return rechazado(previo, error, formData, []);
   }
   if (!archivo.ok) {
-    const linea = archivo.linea !== undefined ? `&linea=${archivo.linea}` : "";
-    redirect(`/operacion/lpb?aviso=${encodeURIComponent(archivo.codigo)}${linea}`);
+    const linea =
+      archivo.codigo === "lpb_renglon_invalido" && archivo.linea !== undefined
+        ? `Revisa la línea ${archivo.linea} del archivo: nombre obligatorio, RFC de 12 o 13 caracteres, CURP de 18, tipo «fisica» o «moral» y fecha AAAA-MM-DD.`
+        : undefined;
+    return { ...(await rechazado(previo, new ErrorDeDominio(archivo.codigo), formData, [])), detalle: linea };
   }
   let resultado: Awaited<ReturnType<typeof cargarListaBloqueadas>>;
   try {
     resultado = await cargarListaBloqueadas(ctx, { formId: formData.get("formId"), nombreArchivo: archivo.nombre, texto: archivo.texto });
   } catch (error) {
-    return fallo(error, "/operacion/lpb");
+    return rechazado(previo, error, formData, []);
   }
   revalidatePath("/operacion", "layout");
   redirect(`/operacion/lpb?aviso=lpb_cargada&filas=${resultado.filas}&coincidencias=${resultado.coincidencias}`);
 }
 
-export async function resolverCoincidenciaAccion(formData: FormData): Promise<void> {
+export async function resolverCoincidenciaAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const sesion = await sesionSegura();
   if (!sesion) redirect("/operacion/entrar");
@@ -315,18 +319,13 @@ export async function resolverCoincidenciaAccion(formData: FormData): Promise<vo
   try {
     await resolverCoincidencia(ctx, sesion, { id: formData.get("id"), estado: texto(formData, "estado"), motivo: texto(formData, "motivo") });
   } catch (error) {
-    // El aviso marca el campo que falló de esa coincidencia (el dictamen o el motivo) y le da el foco, como el folio.
-    const id = texto(formData, "id");
-    const campo = error instanceof ErrorDeDominio && error.codigo === "dato_invalido_estado" ? "resolucion" : "motivo";
-    return fallo(error, destino, /^[0-9a-f-]{36}$/i.test(id) ? `#${campo}-${id}` : "");
+    // Cada coincidencia lleva su formulario: el aviso vuelve a esa tarjeta, con su dictamen y su motivo.
+    return rechazado(previo, error, formData, ["estado", "motivo"]);
   }
   listo(destino, "coincidencia_resuelta");
 }
 
-/** El campo del formulario del folio que corresponde a cada rechazo de una fecha (el id del campo es `<campo>-<id>`). */
-const CAMPO_DEL_REPORTE: Record<string, string> = { dato_invalido_presentadoEl: "presentado", dato_invalido_avisoClienteEl: "aviso" };
-
-export async function registrarReporteAccion(formData: FormData): Promise<void> {
+export async function registrarReporteAccion(previo: EstadoDelFormulario, formData: FormData): Promise<EstadoDelFormulario> {
   const ctx = await exigirContextoOperacion();
   const destino = formData.get("desde") === "cumplimiento" ? "/operacion/cumplimiento" : "/operacion/lpb";
   try {
@@ -337,11 +336,7 @@ export async function registrarReporteAccion(formData: FormData): Promise<void> 
       avisoClienteEl: texto(formData, "avisoClienteEl"),
     });
   } catch (error) {
-    // El aviso marca el campo que falló (el folio o una de las dos fechas) de esa coincidencia y le da el foco; en la
-    // dirección solo va el campo y el id de la coincidencia.
-    const id = texto(formData, "id");
-    const campo = error instanceof ErrorDeDominio ? (CAMPO_DEL_REPORTE[error.codigo] ?? "folio") : "folio";
-    return fallo(error, destino, /^[0-9a-f-]{36}$/i.test(id) ? `#${campo}-${id}` : "");
+    return rechazado(previo, error, formData, ["folio", "presentadoEl", "avisoClienteEl"]);
   }
   listo(destino, "reporte_registrado");
 }
@@ -362,18 +357,17 @@ export async function cambiarRolAccion(formData: FormData): Promise<void> {
   listo("/operacion/personal", quitar ? "rol_retirado" : "rol_asignado");
 }
 
-function listo(destino: string, aviso: string, ancla = ""): never {
+/**
+ * Sin fragmento (#sección) a propósito: sin JavaScript, el siguiente envío va a la dirección del documento con todo y
+ * fragmento, y con un fragmento el navegador descarta el autofocus; un rechazo posterior ya no llevaría el foco al campo.
+ */
+function listo(destino: string, aviso: string): never {
   revalidatePath("/operacion", "layout");
-  redirect(`${destino}?aviso=${aviso}${ancla}`);
+  redirect(`${destino}?aviso=${aviso}`);
 }
 
-/** `en` dice qué formulario falló: la página liga el error solo a los campos de ese formulario. */
-function fallo(error: unknown, destino: string, ancla = ""): never {
-  if (error instanceof ErrorDeDominio) {
-    // Si el aviso es de un campo, va sin fragmento: con `#ancla`, el navegador no le da el foco al cargar la página
-    // completa (sin JavaScript); el foco lleva la página al campo.
-    const fragmento = avisoDeCampo(error.codigo) ? "" : ancla;
-    redirect(`${destino}?aviso=${encodeURIComponent(error.codigo)}${ancla ? `&en=${ancla.slice(1)}` : ""}${fragmento}`);
-  }
+/** Los formularios de solo botones: el aviso del error va en la dirección, sin fragmento (ver `listo`). */
+function fallo(error: unknown, destino: string): never {
+  if (error instanceof ErrorDeDominio) redirect(`${destino}?aviso=${encodeURIComponent(error.codigo)}`);
   throw error;
 }

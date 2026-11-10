@@ -721,7 +721,7 @@
     },
     {
       "ok": true,
-      "texto": "base-N27. rechazar sin nota la recuperación de en medio: «en» es su id y solo su nota queda marcada y con el foco; las tres siguen pendientes"
+      "texto": "base-N27. rechazar sin nota la recuperación de en medio: el aviso vuelve a su tarjeta y solo su nota queda marcada y con el foco; las tres siguen pendientes"
     },
     {
       "ok": true,
@@ -753,7 +753,23 @@
     },
     {
       "ok": true,
+      "texto": "aviso «expediente_datos_guardados» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_datos_incompletos» tras la acción"
+    },
+    {
+      "ok": true,
       "texto": "textos invisibles. con JavaScript, el giro «\\u3164» se guarda vacío y «Enviar versión 1» dice «Falta el giro.»; sigue en borrador y sin evento"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_datos_guardados» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_datos_incompletos» tras la acción"
     },
     {
       "ok": true,
@@ -761,7 +777,15 @@
     },
     {
       "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
       "texto": "textos invisibles. con JavaScript, el dictamen observado con «Revisar» y tres U+3164 (10 para la base, 7 que se ven): motivo_corto en el motivo y sin dictamen"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_invalido» tras la acción"
     },
     {
       "ok": true,
@@ -809,7 +833,15 @@
     },
     {
       "ok": true,
+      "texto": "aviso «archivo_demasiado_grande» tras la acción"
+    },
+    {
+      "ok": true,
       "texto": "campo de archivo. sin JavaScript, archivo_demasiado_grande: aviso, el control del archivo marcado, ligado al aviso y con el foco; ningún documento"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «archivo_no_admitido» tras la acción"
     },
     {
       "ok": true,
@@ -837,19 +869,31 @@
     },
     {
       "ok": true,
-      "texto": "P3 coincidencia. con JavaScript a 1440, «Revisar 😀» en el motivo: en=motivo-<caso>, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto"
+      "texto": "aviso «motivo_corto» tras la acción"
     },
     {
       "ok": true,
-      "texto": "P3 coincidencia. sin JavaScript a 390, «Revisar 😀» en el motivo: en=motivo-<caso>, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto"
+      "texto": "P3 coincidencia. con JavaScript a 1440, «Revisar 😀» en el motivo: el aviso en su tarjeta y la dirección sin cambios, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto"
     },
     {
       "ok": true,
-      "texto": "mensaje junto al campo. sin JavaScript a 390, un «PDF» que no lo es: «Sube un PDF, PNG o JPG legible.» justo debajo del control, que tiene el foco; el aviso de arriba queda como resumen; ningún documento"
+      "texto": "aviso «motivo_corto» tras la acción"
     },
     {
       "ok": true,
-      "texto": "mensaje junto al campo. con JavaScript a 390, el capital «abc» del socio: el mensaje justo debajo de Capital, que tiene el foco y conserva lo capturado; ningún socio"
+      "texto": "P3 coincidencia. sin JavaScript a 390, «Revisar 😀» en el motivo: el aviso en su tarjeta y la dirección sin cambios, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «archivo_no_admitido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "mensaje junto al campo. sin JavaScript a 390, un «PDF» que no lo es: «Sube un PDF, PNG o JPG legible.» justo arriba del control, que tiene el foco; el aviso del formulario queda como resumen; ningún documento"
+    },
+    {
+      "ok": true,
+      "texto": "mensaje junto al campo. con JavaScript a 390, el capital «abc» del socio: el mensaje justo arriba de Capital, que tiene el foco y conserva lo capturado; ningún socio"
     },
     {
       "ok": true,
@@ -857,7 +901,195 @@
     },
     {
       "ok": true,
-      "texto": "onceava revisión: en los 71 avisos de las regresiones nunca hubo dos campos marcados; 43 campos marcados, cada uno con su mensaje único junto a él"
+      "texto": "doceava. hay empresa para pedir suspensión, coincidencia confirmada sin folio y empresa para la alerta"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_actividad» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. riesgo, con JavaScript a 1440: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «riesgo_calificado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. riesgo: tras el rechazo, el doble clic con lo corregido registra una sola calificación"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_actividad» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. riesgo, sin JavaScript a 390: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_actividad» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. riesgo, con JavaScript a 390: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_actividad» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. riesgo, sin JavaScript a 1440: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «invisible_razonSocial» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. datos-generales, con JavaScript a 1440: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «invisible_razonSocial» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. datos-generales, sin JavaScript a 390: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «invisible_razonSocial» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. datos-generales, con JavaScript a 390: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «invisible_razonSocial» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. datos-generales, sin JavaScript a 1440: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_vigenteHasta» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. documento, con JavaScript a 1440: «dato_invalido_vigenteHasta» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_vigenteHasta» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. documento, sin JavaScript a 390: «dato_invalido_vigenteHasta» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. dictamen, con JavaScript a 1440: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. dictamen, sin JavaScript a 390: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. dictamen, con JavaScript a 390: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. dictamen, sin JavaScript a 1440: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. suspension, con JavaScript a 1440: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. suspension, sin JavaScript a 390: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_presentadoEl» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. folio, con JavaScript a 1440: «dato_invalido_presentadoEl» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_presentadoEl» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. folio, sin JavaScript a 390: «dato_invalido_presentadoEl» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «rfc_generico» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. prospecto, con JavaScript a 1440: «rfc_generico» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «rfc_generico» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. prospecto, sin JavaScript a 390: «rfc_generico» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_titulo» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. alerta, con JavaScript a 1440: «dato_invalido_titulo» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_titulo» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. alerta, sin JavaScript a 390: «dato_invalido_titulo» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "onceava revisión: en los 116 avisos de las regresiones nunca hubo dos campos marcados; 87 campos marcados, cada uno con su mensaje único junto a él"
     },
     {
       "ok": true,

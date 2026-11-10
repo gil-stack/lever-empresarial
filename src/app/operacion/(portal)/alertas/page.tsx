@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
-import { asignarAlertaAccion, cerrarAlertaAccion, crearAlertaAccion } from "@/app/operacion/acciones";
+import { asignarAlertaAccion } from "@/app/operacion/acciones";
 import { etiquetaCategoria, etiquetaEstado, fechaHora } from "@/components/operacion/formato";
+import { FormularioAlerta, FormularioCierre } from "@/components/operacion/formularios-alerta";
 import { PaginaOperacion } from "@/components/operacion/pagina";
 import { BotonEnviar, Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
 import { exigirContextoOperacion, listarAlertas, listarClientes, listarPersonal } from "@/server/operacion";
@@ -58,14 +59,7 @@ export default async function AlertasOperacion({ searchParams }: { searchParams:
                             </div>
                             <BotonEnviar className="boton-texto">Guardar responsable</BotonEnviar>
                           </form>
-                          <form action={cerrarAlertaAccion}>
-                            <input type="hidden" name="id" value={alerta.id} />
-                            <div className="campo">
-                              <label htmlFor={`motivo-${alerta.id}`}>Motivo de cierre</label>
-                              <input id={`motivo-${alerta.id}`} name="motivo" maxLength={500} required />
-                            </div>
-                            <BotonEnviar className="boton-texto">Cerrar alerta</BotonEnviar>
-                          </form>
+                          <FormularioCierre key={alerta.id} id={alerta.id} />
                         </div>
                       ) : null
                     ) : (
@@ -86,35 +80,11 @@ export default async function AlertasOperacion({ searchParams }: { searchParams:
               {clientes.length === 0 ? (
                 <Vacio titulo="Sin clientes">Registra un cliente antes de crear una alerta.</Vacio>
               ) : (
-                <form action={crearAlertaAccion}>
-                  <div className="campo">
-                    <label htmlFor="companyId">Empresa</label>
-                    <select id="companyId" name="companyId" required>
-                      {clientes.map((cliente) => (
-                        <option key={cliente.id} value={cliente.id}>{cliente.razonSocial}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="campo">
-                    <label htmlFor="responsableId">Responsable</label>
-                    <select id="responsableId" name="responsableId" defaultValue={ctx.persona.id} required>
-                      {personal.map((persona) => (
-                        <option key={persona.id} value={persona.id}>{persona.nombre}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="campo">
-                    <label htmlFor="titulo">Título</label>
-                    <input id="titulo" name="titulo" maxLength={160} required />
-                  </div>
-                  <div className="campo">
-                    <label htmlFor="detalle">Detalle</label>
-                    <textarea id="detalle" name="detalle" maxLength={500} required />
-                  </div>
-                  <div className="acciones">
-                    <BotonEnviar>Crear alerta</BotonEnviar>
-                  </div>
-                </form>
+                <FormularioAlerta
+                  empresas={clientes.map((cliente) => ({ id: cliente.id, nombre: cliente.razonSocial }))}
+                  personal={personal.map((persona) => ({ id: persona.id, nombre: persona.nombre }))}
+                  responsable={ctx.persona.id}
+                />
               )}
             </Hoja>
           ) : undefined

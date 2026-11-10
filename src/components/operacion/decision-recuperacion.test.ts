@@ -3,14 +3,13 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "node:test";
 
-import { MensajeDelCampo } from "./aviso.tsx";
+import type { EstadoDelFormulario } from "../../app/operacion/rechazo.ts";
 import { DecisionRecuperacion } from "./decision-recuperacion.tsx";
 
-const pintar = (props: Partial<Parameters<typeof DecisionRecuperacion>[0]> = {}) =>
-  renderToStaticMarkup(
-    createElement(DecisionRecuperacion, { id: "r1", accion: async () => {}, errorMetodo: {}, errorNota: {}, ...props }),
-  );
+const pintar = () => renderToStaticMarkup(createElement(DecisionRecuperacion, { id: "r1", accion: async (previo: EstadoDelFormulario) => previo }));
 
+// El error del servidor por tarjeta (el método o la nota, con lo escrito de vuelta) lo prueba la e2e «con tres
+// recuperaciones pendientes…», con y sin JavaScript: desde la doceava revisión el aviso vuelve en el estado del formulario.
 describe("decisión de una recuperación", () => {
   it("el método arranca sin elegir y aprobar lo exige", () => {
     const html = pintar();
@@ -31,14 +30,7 @@ describe("decisión de una recuperación", () => {
     assert.doesNotMatch(html, /<button[^>]*value="aprobar"[^>]*formNoValidate/);
   });
 
-  it("el error del servidor marca el campo que lo causó y pone su mensaje junto a él", () => {
-    const marca = { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo" } as const;
-    const conNota = pintar({ errorNota: marca, mensajeNota: createElement(MensajeDelCampo, { codigo: "motivo_invalido", campo: "motivo" }) });
-    assert.match(conNota, /<textarea[^>]*aria-invalid="true"[^>]*aria-describedby="aviso-operacion-campo"[^>]*><\/textarea><p id="aviso-operacion-campo" class="error-campo">Escribe un motivo breve y claro\.<\/p>/);
-    assert.doesNotMatch(conNota, /<select[^>]*aria-invalid/);
-    const conMetodo = pintar({ errorMetodo: marca, mensajeMetodo: createElement(MensajeDelCampo, { codigo: "verificacion_invalida", campo: "verificacion" }) });
-    assert.match(conMetodo, /<select[^>]*aria-invalid="true"[^>]*aria-describedby="aviso-operacion-campo"[^>]*>.*<\/select><p id="aviso-operacion-campo" class="error-campo">/);
-    assert.doesNotMatch(conMetodo, /<textarea[^>]*aria-invalid/);
-    assert.doesNotMatch(pintar(), /error-campo/);
+  it("sin rechazo no hay aviso, ni campo marcado, ni mensaje", () => {
+    assert.doesNotMatch(pintar(), /error-campo|aria-invalid|operacion-aviso/);
   });
 });

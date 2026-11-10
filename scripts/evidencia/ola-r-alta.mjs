@@ -165,17 +165,32 @@ async function foto(p, nombre, completa = true) {
   await sharp(imagen).webp({ quality: 76 }).toFile(ruta);
   return ruta;
 }
+/**
+ * Doceava revisión: el aviso a la vista. Un formulario rechazado vuelve con el suyo dentro del formulario (sin cambiar la
+ * dirección) y es el más reciente; si no hay, el de la página (`#aviso-operacion`, el de lo aplicado o de un botón).
+ * `#aviso-rechazo` (el de un formulario que ya no se pinta) cuenta solo si se ve: si el formulario muestra el suyo, se oculta.
+ */
+async function cajaDelAviso(p) {
+  const delFormulario = p.locator(".operacion-aviso:not(#aviso-operacion):visible");
+  return (await delFormulario.count()) ? delFormulario.first() : p.locator("#aviso-operacion");
+}
 async function aviso(p) {
-  // El de la página: el formulario del accionista y el diálogo de «Rechazar» traen el suyo, con otro id.
-  const caja = p.locator("#aviso-operacion");
+  const caja = await cajaDelAviso(p);
   return (await caja.count()) ? (await caja.innerText()).replace(/\s+/g, " ").trim() : "";
 }
 /**
- * Envía un formulario de Operación con un clic (o doble clic) real y espera la redirección con su aviso.
- * Antes quita el aviso anterior de la dirección, así la espera no se confunde con el de la acción previa.
+ * Envía un formulario de Operación con un clic (o doble clic) real y espera su aviso: el de la dirección si se aplicó
+ * (redirección con ?aviso=) o el del formulario si se rechazó. Con JavaScript, antes quita el aviso anterior de la
+ * dirección y marca los avisos que ya están, así la espera no se confunde con los de la acción previa. Sin JavaScript
+ * el envío carga una página nueva y el clic espera a que empiece.
  */
 async function enviar(p, boton, codigo, { doble = false } = {}) {
-  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  if (!p.sinScript) {
+    await p.evaluate(() => {
+      history.replaceState(history.state, "", location.pathname);
+      for (const nodo of document.querySelectorAll(".operacion-aviso")) nodo.setAttribute("data-anterior", "1");
+    });
+  }
   await (doble ? boton.dblclick() : boton.click());
   return esperarAviso(p, codigo);
 }
@@ -203,14 +218,47 @@ async function unSoloCampo(p) {
   camposRevisados.marcados += marcados;
 }
 
-/** Espera la redirección de una acción de Operación y devuelve el código del aviso. */
+/** El código del aviso nuevo: el del formulario rechazado (`data-aviso`) o, si no hay, el de la dirección. */
+async function avisoNuevo(p) {
+  const delFormulario = p.locator(".operacion-aviso[data-aviso]:not(#aviso-operacion):not([data-anterior]):visible");
+  if (await delFormulario.count()) return delFormulario.first().getAttribute("data-aviso");
+  return new URL(p.url()).searchParams.get("aviso");
+}
+/**
+ * Espera el aviso de una acción de Operación y devuelve su código. Solo con selectores y la dirección: sirve también
+ * sin JavaScript. Tras la red quieta vuelve a leerlo (con JavaScript, el aviso del formulario llega con el repintado).
+ */
 async function esperarAviso(p, codigo) {
-  await p.waitForURL((url) => url.searchParams.get("aviso") !== null, { timeout: 20000 });
+  const limite = Date.now() + 20000;
+  while ((await avisoNuevo(p)) === null && Date.now() < limite) await p.waitForTimeout(150);
   await listo(p);
+  const obtenido = await avisoNuevo(p);
   await unSoloCampo(p);
-  const obtenido = new URL(p.url()).searchParams.get("aviso");
   if (codigo) exigir(obtenido === codigo, `aviso «${codigo}» tras la acción`, `llegó «${obtenido}»: ${await aviso(p)}`);
   return obtenido;
+}
+// El campo tiene el foco y nombra al mensaje; el mensaje va justo arriba del control (doceava: entre la etiqueta y el
+// control), dentro de la ventana y fuera de las barras fijas. Con cajas y selectores, que sirven también sin JavaScript.
+async function juntoAlCampo(p, selector, idMensaje) {
+  const control = p.locator(selector);
+  const mensaje = p.locator(`[id="${idMensaje}"]`);
+  const foco = await p.locator(`${selector}:focus`).count();
+  const nombra = ((await control.getAttribute("aria-describedby")) ?? "").split(" ").includes(idMensaje);
+  let tapa = 0;
+  for (const barra of [".barra-movil", ".barra-superior"]) {
+    const caja = (await p.locator(barra).count()) ? await p.locator(barra).first().boundingBox() : null;
+    if (caja && caja.y <= 1 && caja.height > 0) tapa = Math.max(tapa, caja.y + caja.height);
+  }
+  const cajaCampo = await control.boundingBox();
+  const cajaMensaje = (await mensaje.count()) === 1 ? await mensaje.boundingBox() : null;
+  const alto = p.viewportSize().height;
+  const separacion = cajaMensaje && cajaCampo ? Math.round(cajaCampo.y - (cajaMensaje.y + cajaMensaje.height)) : null;
+  const visible = cajaMensaje !== null && cajaMensaje.y >= tapa && cajaMensaje.y + cajaMensaje.height <= alto;
+  await unSoloCampo(p);
+  return {
+    ok: foco === 1 && nombra && visible && separacion !== null && separacion >= 0 && separacion <= 24,
+    detalle: JSON.stringify({ foco, nombra, campo: cajaCampo && Math.round(cajaCampo.y), mensaje: cajaMensaje && Math.round(cajaMensaje.y), separacion, barras: Math.round(tapa), ventana: alto }),
+  };
 }
 /**
  * «Agregar accionista» rechazado: el formulario vuelve sin recargar con su propio aviso. Marca el aviso
@@ -535,6 +583,35 @@ async function flujo8b() {
   fichaVieja = await abrir("ofelia");
   await ir(fichaVieja.p, `/operacion/clientes/${ctxEbano.id}`);
   exigir(await fichaVieja.p.getByRole("button", { name: "Enviar invitación" }).isVisible(), "8. con la empresa activa, la ficha ofrece invitar al primer administrador");
+  // Doceava revisión: la invitación rechazada vuelve con lo capturado. Solo aquí la ficha ofrece invitar (en las
+  // regresiones, la única empresa activa ya tiene su administrador).
+  const invitacion = {
+    nombre: "invitacion", quien: "ofelia", ruta: `/operacion/clientes/${ctxEbano.id}`, codigo: "dato_invalido_correo", idAviso: "aviso-invitacion", campo: "#correo",
+    boton: (p) => p.getByRole("button", { name: /Enviar invitación|Reenviar invitación/ }),
+    llenar: async (p) => {
+      await campo(p, "#nombre", "Ana Ruiz Sol");
+      await campo(p, "#correo", "ana@ejemplo");
+    },
+    valores: { "#nombre": "Ana Ruiz Sol", "#correo": "ana@ejemplo" },
+    filas: () => cuenta(`invitations where company_id = '${ctxEbano.id}'`),
+  };
+  // La comisión, igual: solo con Ébano activa hay a quién proponerle tarifa. La propone Administración (Ofelia).
+  const manana = hoyMexico(2);
+  const comision = {
+    nombre: "comision", quien: "ofelia", ruta: "/operacion/comisiones", codigo: "comision_valor_invalido", idAviso: "aviso-comision", campo: "#valor",
+    boton: (p) => p.getByRole("button", { name: "Pedir autorización" }),
+    llenar: async (p) => {
+      await p.locator("#companyId").selectOption(ctxEbano.id);
+      await p.locator("#tipo").selectOption("fondeo");
+      await campo(p, "#valor", "20000");
+      await campo(p, "#vigenteDesde", manana);
+    },
+    valores: { "#companyId": ctxEbano.id, "#tipo": "fondeo", "#valor": "20000", "#vigenteDesde": manana },
+    filas: () => cuenta("company_commissions"),
+  };
+  for (const caso of [invitacion, comision]) {
+    for (const [js, ancho] of [[true, 1440], [false, 390]]) await rechazoConLoCapturado(caso, js, ancho);
+  }
 }
 
 let coincidenciaHector = null;
@@ -1350,7 +1427,7 @@ async function cuartaRonda(rutaEbano) {
     "N2. la misma persona con dos documentos no se envía; el aviso dice qué corregir y el borrador sigue abierto",
     await aviso(omar.p),
   );
-  await enVista(omar.p.locator("#aviso-operacion"));
+  await enVista(await cajaDelAviso(omar.p));
   await foto(omar.p, "n2-misma-persona-dos-identificadores", false);
 
   // N10: el mismo formulario de «Guardar documento» con otro archivo no se da por guardado; con el mismo, sí (una vez).
@@ -1369,19 +1446,22 @@ async function cuartaRonda(rutaEbano) {
   await subir("estructura-b");
   await enviar(omar.p, omar.p.getByRole("button", { name: "Guardar documento" }), "formulario_invalido");
   exigir(documentosEbano() === tras && (await aviso(omar.p)).includes("El formulario caducó"), "N10. mismo formulario con otro archivo: «El formulario caducó» y ningún documento nuevo");
-  await enVista(omar.p.locator("#aviso-operacion"));
+  await enVista(await cajaDelAviso(omar.p));
   await foto(omar.p, "n10-mismo-formulario-otro-archivo", false);
   await formularioDocumento.evaluate((nodo, valor) => { nodo.value = valor; }, reusado);
   await subir("estructura-a");
   await enviar(omar.p, omar.p.getByRole("button", { name: "Guardar documento" }), "expediente_documento_cargado");
   exigir(documentosEbano() === tras, "N10. mismo formulario con el mismo archivo: se da por guardado sin un documento de más");
-  await enVista(omar.p.locator("#aviso-operacion"));
+  await enVista(await cajaDelAviso(omar.p));
   await foto(omar.p, "n10-mismo-formulario-mismo-archivo", false);
   await omar.nav.close();
 
   // N9: Cumplimiento registra la revisión periódica de Brisa con su caso abierto; cada rol abre el expediente.
   const celia = await abrir("celia");
   await ir(celia.p, `/operacion/clientes/${brisa}/expediente`);
+  // Doceava revisión: actividad y zona ya no arrancan en «baja»; Cumplimiento las elige.
+  await celia.p.locator("#riesgo-actividad").selectOption("baja");
+  await celia.p.locator("#riesgo-zona").selectOption("baja");
   await enviar(celia.p, celia.p.getByRole("button", { name: "Registrar revisión periódica" }), "riesgo_calificado");
   const vistas = {
     omar: "Originación", ana: "Aprobación", celia: "Cumplimiento", aurelio: "Auditoría", ofelia: "Administración",
@@ -1418,7 +1498,7 @@ async function cuartaRonda(rutaEbano) {
   await enviar(celia.p, celia.p.getByRole("button", { name: "Registrar dictamen" }), "motivo_invalido");
   const motivo = celia.p.locator("#dictamen-motivo");
   exigir(
-    (await motivo.getAttribute("aria-describedby")) === "dictamen-motivo-pista aviso-operacion-campo" && (await motivo.getAttribute("aria-invalid")) === "true",
+    (await motivo.getAttribute("aria-describedby")) === "dictamen-motivo-pista aviso-dictamen-campo" && (await motivo.getAttribute("aria-invalid")) === "true",
     "N12. el motivo con error anuncia la pista y el aviso",
   );
   await enVista(motivo);
@@ -1559,7 +1639,7 @@ async function quintaRonda(rutaEbano) {
   await enviar(omar.p, pedir, "motivo_corto");
   const ligado = [await motivo.getAttribute("aria-invalid"), await motivo.getAttribute("aria-describedby")].join("|");
   exigir(
-    ligado.startsWith("true|") && ligado.includes("aviso-operacion") && (await aviso(omar.p)).includes("El motivo lleva al menos 10 caracteres") && solicitudes() === previas,
+    ligado.startsWith("true|") && ligado.includes("aviso-suspension-campo") && (await aviso(omar.p)).includes("El motivo lleva al menos 10 caracteres") && solicitudes() === previas,
     "serv-N17. sin el mínimo del navegador, el servidor rechaza el motivo corto con el aviso ligado al campo y no queda solicitud",
     `${ligado} · ${await aviso(omar.p)}`,
   );
@@ -1855,7 +1935,7 @@ async function sextaRonda(rutaEbano) {
       `${tardo} ms · ${JSON.stringify(nuevos)}`,
     );
     huerfanos.push({ blob: borrado, segundos_hasta_la_pagina: Number((tardo / 1000).toFixed(2)), registro: nuevos[0] });
-    await enVista(omar2.p.locator("#aviso-operacion"));
+    await enVista(await cajaDelAviso(omar2.p));
     await foto(omar2.p, `sn16r-blob-${borrado}-vuelve-al-tope`, false);
   }
   writeFileSync(`${DIR}/datos/sexta-huerfanos.json`, `${JSON.stringify(huerfanos, null, 2)}\n`);
@@ -2470,9 +2550,10 @@ async function novenaRonda(rutaEbano) {
   const marcados = (p) => p.locator('[aria-invalid="true"]').count();
   // La captura lleva el aviso de la página y el campo marcado juntos: se sube al inicio y se comprueba que los dos se ven.
   const avisoYCampo = async (p, selector) => {
-    await p.evaluate(() => window.scrollTo(0, 0));
+    const caja = await cajaDelAviso(p);
+    await caja.scrollIntoViewIfNeeded();
     const alto = p.viewportSize().height;
-    const cajas = await Promise.all(["#aviso-operacion", selector].map((s) => p.locator(s).boundingBox()));
+    const cajas = await Promise.all([caja, p.locator(selector)].map((l) => l.boundingBox()));
     return cajas.every((caja) => caja && caja.y >= 0 && caja.y + caja.height <= alto);
   };
 
@@ -2518,13 +2599,13 @@ async function novenaRonda(rutaEbano) {
   const textoFaltan = await aviso(omar.p);
   exigir(
     textoFaltan.includes("Faltan el giro y el domicilio. Captura esos datos en «Datos generales» y vuelve a enviar.")
-      && !textoFaltan.includes("La base no respondió") && new URL(omar.p.url()).searchParams.get("en") === "enviar-titulo"
+      && !textoFaltan.includes("La base no respondió") && new URL(omar.p.url()).search === "?aviso=expediente_datos_incompletos&faltan=giro,domicilio"
       && sql(`select estado from kyb_versiones where company_id = '${idNovena}'`) === "borrador"
       && cuenta(`audit_log where accion = 'expediente_enviado' and company_id = '${idNovena}'`) === 0,
     "serv-nuevo-6d. enviar sin giro ni domicilio: «Faltan el giro y el domicilio…», la versión sigue en borrador y sin evento «expediente_enviado»",
     textoFaltan,
   );
-  await enVista(omar.p.locator("#aviso-operacion"));
+  await enVista(await cajaDelAviso(omar.p));
   await foto(omar.p, "r9-enviar-sin-giro-ni-domicilio", false);
   await omar.nav.close();
 
@@ -2547,7 +2628,7 @@ async function novenaRonda(rutaEbano) {
     await enviar(celia.p, fila.getByRole("button", { name: "Anotar folio" }), codigo);
     await celia.p.unroute("**/*");
     exigir(
-      (await aviso(celia.p)) === texto && new URL(celia.p.url()).searchParams.get("en") === `${nombre}-${caso}`
+      (await aviso(celia.p)) === texto && (await celia.p.locator(`[id="aviso-folio-${caso}"]`).count()) === 1
         && (await marcado(celia.p, `[id="${nombre}-${caso}"]`)) && (await enFoco(celia.p)) === `${nombre}-${caso}`
         && !(await marcado(celia.p, `[id="folio-${caso}"]`)) && (await marcados(celia.p)) === 1 && folioGuardado() === "",
       `serv-nuevo-6b. «${nombre === "presentado" ? "Presentado el" : "Aviso al cliente"}» ${forzada}: su aviso, solo ese campo marcado y con el foco (no el folio), sin folio guardado`,
@@ -2582,10 +2663,10 @@ async function novenaRonda(rutaEbano) {
   exigir((await Promise.all(correos.map((correo) => tarjeta(correo).count()))).every((n) => n === 1), "base-N27. tres recuperaciones pendientes en la bandeja");
   await enviar(ofelia.p, tarjeta(correos[1]).getByRole("button", { name: "Rechazar" }), "motivo_invalido");
   exigir(
-    new URL(ofelia.p.url()).searchParams.get("en") === ids[1] && (await marcado(ofelia.p, nota(1))) && (await enFoco(ofelia.p)) === `nota-${ids[1]}`
+    (await ofelia.p.locator(`[id="aviso-recuperacion-${ids[1]}"]`).count()) === 1 && (await marcado(ofelia.p, nota(1))) && (await enFoco(ofelia.p)) === `nota-${ids[1]}`
       && !(await marcado(ofelia.p, nota(0))) && !(await marcado(ofelia.p, nota(2))) && (await marcados(ofelia.p)) === 1
       && cuenta(`auth_recuperaciones where id in ('${ids.join("','")}') and estado = 'solicitada'`) === 3,
-    "base-N27. rechazar sin nota la recuperación de en medio: «en» es su id y solo su nota queda marcada y con el foco; las tres siguen pendientes",
+    "base-N27. rechazar sin nota la recuperación de en medio: el aviso vuelve a su tarjeta y solo su nota queda marcada y con el foco; las tres siguen pendientes",
     await aviso(ofelia.p),
   );
   exigir(await avisoYCampo(ofelia.p, nota(1)), "base-N27. la captura muestra el aviso y la nota marcada de la tarjeta de en medio");
@@ -2601,6 +2682,7 @@ async function novenaRonda(rutaEbano) {
   await ofelia.nav.close();
   await decimaRonda(rutaEbano);
   await onceavaRonda();
+  await doceavaRonda();
 }
 
 /**
@@ -2617,7 +2699,13 @@ async function decimaRonda(rutaEbano) {
   // Envía con un clic real y devuelve la respuesta del POST: sin JavaScript es el envío nativo del formulario.
   const enviarYResponder = async (p, boton) => (await Promise.all([p.waitForResponse((r) => r.request().method() === "POST"), boton.click()]))[0];
   const conSuOrigen = async (respuesta) => (await respuesta.request().headerValue("origin")) === new URL(respuesta.url()).origin;
-  const avisoEs = (p, codigo) => p.waitForURL((url) => url.searchParams.get("aviso") === codigo, { timeout: 20000 }).then(() => listo(p));
+  // Doceava: un rechazo vuelve en su formulario (sin JavaScript, la misma página con 200); lo aplicado, en la dirección.
+  const avisoEs = async (p, codigo) => {
+    const limite = Date.now() + 20000;
+    while ((await avisoNuevo(p)) !== codigo && Date.now() < limite) await p.waitForTimeout(150);
+    await listo(p);
+    exigir((await avisoNuevo(p)) === codigo, `aviso «${codigo}» tras la acción`, `${await avisoNuevo(p)}: ${await aviso(p)}`);
+  };
 
   // serv-nuevo-7: la entrada de Operación con una contraseña equivocada da su aviso, no un 500.
   for (const js of [true, false]) {
@@ -2659,7 +2747,7 @@ async function decimaRonda(rutaEbano) {
       `textos invisibles. ${conOSin(js)} JavaScript, el giro «\\u3164» se guarda vacío y «Enviar versión 1» dice «Falta el giro.»; sigue en borrador y sin evento`,
       `${giro} · ${guardado.status()}/${envio.status()} · ${texto}`,
     );
-    await omar.p.locator("#aviso-operacion").scrollIntoViewIfNeeded();
+    await (await cajaDelAviso(omar.p)).scrollIntoViewIfNeeded();
     await foto(omar.p, `r10-giro-invisible-${conOSin(js)}-js`, false);
     await omar.nav.close();
   }
@@ -2680,7 +2768,7 @@ async function decimaRonda(rutaEbano) {
     await avisoEs(celia.p, codigo);
     exigir(
       (await aviso(celia.p)).includes(texto) && (await marcado(celia.p, "#dictamen-motivo")) && dictamenes() === antes
-        && (await conSuOrigen(respuesta)) && (js || respuesta.status() === 303),
+        && (await conSuOrigen(respuesta)) && (js || respuesta.status() === 200),
       `textos invisibles. ${conOSin(js)} JavaScript, el dictamen observado con ${js ? "«Revisar» y tres U+3164 (10 para la base, 7 que se ven)" : "doce U+3164"}: ${codigo} en el motivo y sin dictamen`,
       await aviso(celia.p),
     );
@@ -2734,12 +2822,12 @@ async function decimaRonda(rutaEbano) {
     const control = omar.p.locator("#doc-archivo");
     exigir(
       (await aviso(omar.p)).includes(texto) && (await control.getAttribute("aria-invalid")) === "true"
-        && (await control.getAttribute("aria-describedby")) === "aviso-operacion-campo" && (await omar.p.locator("#doc-archivo:focus").count()) === 1
-        && documentosNovena() === antes && (await conSuOrigen(respuesta)) && (js || respuesta.status() === 303),
+        && (await control.getAttribute("aria-describedby")) === "aviso-documento-campo doc-archivo-nota" && (await omar.p.locator("#doc-archivo:focus").count()) === 1
+        && documentosNovena() === antes && (await conSuOrigen(respuesta)) && (js || respuesta.status() === 200),
       `campo de archivo. ${conOSin(js)} JavaScript, ${codigo}: aviso, el control del archivo marcado, ligado al aviso y con el foco; ningún documento`,
       await aviso(omar.p),
     );
-    // Página completa: el aviso de Operación va arriba de la página y el campo, en su sección. Antes se sube al
+    // Página completa: el aviso va arriba del formulario y el campo, en su sección. Antes se sube al
     // título (el foco no cambia): con la página desplazada, la captura completa pinta la barra y el lateral a media página.
     await omar.p.locator("h1").scrollIntoViewIfNeeded();
     await foto(omar.p, `r10-archivo-${codigo === "archivo_demasiado_grande" ? "de-mas-de-4-mib-sin-js" : "no-admitido-con-js"}`);
@@ -2790,31 +2878,13 @@ async function onceavaRonda() {
   console.log("\n— Onceava revisión: el mensaje del error junto al campo, los formularios del expediente sin JavaScript y el motivo de la coincidencia");
   renovarSesiones();
   const conOSin = (js) => (js ? "con" : "sin");
-  const avisoEs = (p, codigo) => p.waitForURL((url) => url.searchParams.get("aviso") === codigo, { timeout: 20000 }).then(() => listo(p));
-  // El campo tiene el foco y nombra al mensaje; el mensaje va justo debajo, dentro de la ventana y fuera de las barras
-  // fijas. Con cajas y selectores, que sirven también sin JavaScript.
-  const juntoAlCampo = async (p, selector, idMensaje = "aviso-operacion-campo") => {
-    const control = p.locator(selector);
-    const mensaje = p.locator(`[id="${idMensaje}"]`);
-    const foco = await p.locator(`${selector}:focus`).count();
-    const nombra = ((await control.getAttribute("aria-describedby")) ?? "").split(" ").includes(idMensaje);
-    let tapa = 0;
-    for (const barra of [".barra-movil", ".barra-superior"]) {
-      const caja = (await p.locator(barra).count()) ? await p.locator(barra).first().boundingBox() : null;
-      if (caja && caja.y <= 1 && caja.height > 0) tapa = Math.max(tapa, caja.y + caja.height);
-    }
-    const cajaCampo = await control.boundingBox();
-    const cajaMensaje = (await mensaje.count()) === 1 ? await mensaje.boundingBox() : null;
-    const alto = p.viewportSize().height;
-    const separacion = cajaMensaje && cajaCampo ? Math.round(cajaMensaje.y - (cajaCampo.y + cajaCampo.height)) : null;
-    const visible = cajaMensaje !== null && cajaMensaje.y >= tapa && cajaMensaje.y + cajaMensaje.height <= alto;
-    await unSoloCampo(p);
-    return {
-      ok: foco === 1 && nombra && visible && separacion !== null && separacion >= 0 && separacion <= 24,
-      detalle: JSON.stringify({ foco, nombra, campo: cajaCampo && Math.round(cajaCampo.y), mensaje: cajaMensaje && Math.round(cajaMensaje.y), separacion, barras: Math.round(tapa), ventana: alto }),
-    };
+  // Doceava: un rechazo vuelve en su formulario (sin JavaScript, la misma página con 200); lo aplicado, en la dirección.
+  const avisoEs = async (p, codigo) => {
+    const limite = Date.now() + 20000;
+    while ((await avisoNuevo(p)) !== codigo && Date.now() < limite) await p.waitForTimeout(150);
+    await listo(p);
+    exigir((await avisoNuevo(p)) === codigo, `aviso «${codigo}» tras la acción`, `${await avisoNuevo(p)}: ${await aviso(p)}`);
   };
-
   // P3 del revisor de pantalla: el motivo de la coincidencia (la de Cedro, que sigue abierta) se liga a su campo.
   const cedro = companyIdDe("CER170404CD5");
   const caso = sql(`select id from lpb_coincidencias where company_id = '${cedro}' and estado = 'pendiente' limit 1`);
@@ -2826,12 +2896,12 @@ async function onceavaRonda() {
     await celia.p.locator("form", { has: celia.p.locator(`[id="motivo-${caso}"]`) }).getByRole("button", { name: "Registrar dictamen" }).click();
     await avisoEs(celia.p, "motivo_corto");
     const direccion = new URL(celia.p.url());
-    const junto = await juntoAlCampo(celia.p, `[id="motivo-${caso}"]`);
+    const junto = await juntoAlCampo(celia.p, `[id="motivo-${caso}"]`, `aviso-coincidencia-${caso}-campo`);
     exigir(
-      direccion.searchParams.get("en") === `motivo-${caso}` && direccion.hash === "" && junto.ok
+      direccion.search === "" && direccion.hash === "" && (await celia.p.locator(`[id="aviso-coincidencia-${caso}"]`).count()) === 1 && junto.ok
         && (await celia.p.locator(`[id="motivo-${caso}"]`).getAttribute("aria-invalid")) === "true"
         && sql(`select estado from lpb_coincidencias where id = '${caso}'`) === "pendiente",
-      `P3 coincidencia. ${conOSin(js)} JavaScript a ${ancho}, «Revisar 😀» en el motivo: en=motivo-<caso>, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto`,
+      `P3 coincidencia. ${conOSin(js)} JavaScript a ${ancho}, «Revisar 😀» en el motivo: el aviso en su tarjeta y la dirección sin cambios, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto`,
       junto.detalle,
     );
     await foto(celia.p, `r11-coincidencia-motivo-${conOSin(js)}-js-${ancho}`, false);
@@ -2853,10 +2923,10 @@ async function onceavaRonda() {
     await omar.p.locator("#doc-archivo").setInputFiles({ name: "acta-falsa.pdf", mimeType: "application/pdf", buffer: Buffer.from("esto no es un PDF") });
     await omar.p.getByRole("button", { name: "Guardar documento" }).click();
     await avisoEs(omar.p, "archivo_no_admitido");
-    const junto = await juntoAlCampo(omar.p, "#doc-archivo");
+    const junto = await juntoAlCampo(omar.p, "#doc-archivo", "aviso-documento-campo");
     exigir(
-      junto.ok && (await omar.p.locator("#aviso-operacion-campo").innerText()) === "Sube un PDF, PNG o JPG legible." && documentos() === antes,
-      "mensaje junto al campo. sin JavaScript a 390, un «PDF» que no lo es: «Sube un PDF, PNG o JPG legible.» justo debajo del control, que tiene el foco; el aviso de arriba queda como resumen; ningún documento",
+      junto.ok && (await omar.p.locator("#aviso-documento-campo").innerText()) === "Sube un PDF, PNG o JPG legible." && documentos() === antes,
+      "mensaje junto al campo. sin JavaScript a 390, un «PDF» que no lo es: «Sube un PDF, PNG o JPG legible.» justo arriba del control, que tiene el foco; el aviso del formulario queda como resumen; ningún documento",
       junto.detalle,
     );
     await foto(omar.p, "r11-documento-sin-js-390", false);
@@ -2877,7 +2947,7 @@ async function onceavaRonda() {
     const junto = await juntoAlCampo(omar.p, "#acc-capital", "aviso-accionista-campo");
     exigir(
       junto.ok && texto === "Revisa el campo marcado: el dato no tiene el formato esperado." && (await omar.p.locator("#acc-capital").inputValue()) === "abc" && socios() === antes,
-      "mensaje junto al campo. con JavaScript a 390, el capital «abc» del socio: el mensaje justo debajo de Capital, que tiene el foco y conserva lo capturado; ningún socio",
+      "mensaje junto al campo. con JavaScript a 390, el capital «abc» del socio: el mensaje justo arriba de Capital, que tiene el foco y conserva lo capturado; ningún socio",
       `${junto.detalle} · ${texto}`,
     );
     await foto(omar.p, "r11-socio-capital-con-js-390", false);
@@ -2911,6 +2981,179 @@ async function onceavaRonda() {
     await foto(omar.p, "r11-representante-invisible-sin-js", false);
     await omar.nav.close();
   }
+}
+
+/**
+ * Doceava revisión: cada formulario de Operación rechazado vuelve con lo capturado, con su aviso arriba del formulario,
+ * el mensaje entre la etiqueta y el control y el foco en él. La dirección no cambia (nada capturado pasa por ella) y no
+ * queda nada guardado. Con JavaScript y sin JavaScript, a 1440 y a 390; sin JavaScript, el POST responde 200 con la
+ * misma página. El riesgo, además: tras el rechazo, el doble clic con lo corregido registra una sola calificación.
+ */
+async function doceavaRonda() {
+  console.log("\n— Doceava revisión: los formularios rechazados vuelven con lo capturado, con y sin JavaScript a 1440 y 390");
+  renovarSesiones();
+  const novena = companyIdDe("NOV150301AB1");
+  const cedro = companyIdDe("CER170404CD5");
+  const brisa = companyIdDe("BRR180303CD6");
+  const borradorNovena = `(select id from kyb_versiones where company_id = '${novena}' and estado = 'borrador')`;
+  const operadorOmar = sql("select s.operator_id from platform_staff s join users u on u.id = s.user_id where u.correo = 'omar@lever.test'");
+  const suspendible = sql(`select c.id from companies c where c.operator_id = '${operadorOmar}' and c.estado in ('activa', 'suspendida')
+    and not exists (select 1 from company_suspensions s where s.company_id = c.id and s.estado = 'pendiente') order by c.razon_social limit 1`);
+  const folio = sql("select id from lpb_coincidencias where estado = 'confirmada' and reporte_folio is null order by resuelta_en desc limit 1");
+  const alertable = sql(`select id from companies where operator_id = '${operadorOmar}' order by razon_social limit 1`);
+  exigir(Boolean(suspendible && folio && alertable), "doceava. hay empresa para pedir suspensión, coincidencia confirmada sin folio y empresa para la alerta");
+  const manana = hoyMexico(2);
+  const casos = [
+    {
+      nombre: "riesgo", quien: "celia", ruta: `/operacion/clientes/${brisa}/expediente`, codigo: "dato_invalido_actividad", idAviso: "aviso-riesgo",
+      campo: "#riesgo-actividad", modos: [[true, 1440], [false, 390], [true, 390], [false, 1440]],
+      boton: (p) => p.getByRole("button", { name: "Registrar revisión periódica" }),
+      llenar: async (p) => {
+        await p.locator("#riesgo-actividad").selectOption("media");
+        await p.locator("#riesgo-zona").selectOption("alta");
+      },
+      // Un nivel que no es de la lista (la pantalla no deja elegirlo): vuelve sin elegir, nunca como «baja».
+      armar: (cuerpo) => cuerpo.replace(/(name="[^"]*actividad"\r\n\r\n)media/, "$1MEDIA"),
+      valores: { "#riesgo-actividad": "", "#riesgo-zona": "alta" },
+      filas: () => cuenta(`kyb_calificaciones_riesgo where company_id = '${brisa}'`),
+    },
+    {
+      nombre: "datos-generales", quien: "omar", ruta: `/operacion/clientes/${novena}/expediente`, codigo: "invisible_razonSocial", idAviso: "aviso-datos",
+      campo: "#dato-razonSocial", modos: [[true, 1440], [false, 390], [true, 390], [false, 1440]],
+      boton: (p) => p.getByRole("button", { name: "Guardar datos" }),
+      llenar: async (p) => {
+        await campo(p, "#dato-razonSocial", "Laboratorio​Novena SA de CV");
+        await campo(p, "#dato-giro", "Laboratorio de análisis clínicos");
+        await campo(p, "#dato-telefono", "8187654321");
+        await campo(p, "#dato-domicilioColonia", "Obispado");
+      },
+      valores: { "#dato-razonSocial": "Laboratorio​Novena SA de CV", "#dato-giro": "Laboratorio de análisis clínicos", "#dato-telefono": "8187654321", "#dato-domicilioColonia": "Obispado" },
+      filas: () => sql(`select concat_ws('|', razon_social, giro, telefono, domicilio_colonia) from kyb_versiones where id = ${borradorNovena}`),
+    },
+    {
+      nombre: "documento", quien: "omar", ruta: `/operacion/clientes/${novena}/expediente`, codigo: "dato_invalido_vigenteHasta", idAviso: "aviso-documento",
+      campo: "#doc-vigente", boton: (p) => p.getByRole("button", { name: "Guardar documento" }),
+      llenar: async (p) => {
+        await p.locator("#doc-tipo").selectOption("poder");
+        await campo(p, "#doc-emitido", "2026-10-01");
+        await campo(p, "#doc-vigente", "2026-09-30");
+        await campo(p, "#doc-detalle", "Poder notarial 4,512, Notaría 9 de Monterrey");
+        await p.locator("#doc-archivo").setInputFiles({ name: "poder-doceava.pdf", mimeType: "application/pdf", buffer: PDF("poder-doceava") });
+      },
+      valores: { "#doc-tipo": "poder", "#doc-emitido": "2026-10-01", "#doc-vigente": "2026-09-30", "#doc-detalle": "Poder notarial 4,512, Notaría 9 de Monterrey", "#doc-archivo": "" },
+      // El archivo no vuelve (el navegador no deja rellenar ese campo): la nota junto a él lo dice.
+      extra: async (p) => (await p.locator("#doc-archivo-nota").innerText()).startsWith("Vuelve a elegir el archivo"),
+      filas: () => cuenta(`kyb_documentos where company_id = '${novena}'`),
+    },
+    {
+      nombre: "dictamen", quien: "celia", ruta: `/operacion/clientes/${cedro}/expediente`, codigo: "motivo_corto", idAviso: "aviso-dictamen",
+      campo: "#dictamen-motivo", modos: [[true, 1440], [false, 390], [true, 390], [false, 1440]],
+      boton: (p) => p.locator("form:has(#dictamen-motivo)").getByRole("button", { name: "Registrar dictamen" }),
+      llenar: async (p) => {
+        await p.locator("#dictamen-resultado").selectOption("observado");
+        await campo(p, "#dictamen-motivo", EMOJI);
+      },
+      valores: { "#dictamen-resultado": "observado", "#dictamen-motivo": EMOJI },
+      filas: () => cuenta(`kyb_dictamenes d join kyb_versiones v on v.id = d.version_id where v.company_id = '${cedro}'`),
+    },
+    {
+      nombre: "suspension", quien: "omar", ruta: `/operacion/clientes/${suspendible}`, codigo: "motivo_corto", idAviso: "aviso-suspension",
+      campo: "#motivo-suspension", boton: (p) => p.getByRole("button", { name: /^Pedir (suspensión|reactivación)$/ }),
+      llenar: async (p) => campo(p, "#motivo-suspension", EMOJI),
+      valores: { "#motivo-suspension": EMOJI },
+      filas: () => cuenta(`company_suspensions where company_id = '${suspendible}'`),
+    },
+    {
+      nombre: "folio", quien: "celia", ruta: "/operacion/cumplimiento", codigo: "dato_invalido_presentadoEl", idAviso: `aviso-folio-${folio}`,
+      campo: `[id="presentado-${folio}"]`, boton: (p) => p.locator(`form:has([id="folio-${folio}"])`).getByRole("button", { name: "Anotar folio" }),
+      llenar: async (p) => {
+        await campo(p, `[id="folio-${folio}"]`, "UIF-2026-0412");
+        await campo(p, `[id="presentado-${folio}"]`, manana);
+      },
+      valores: { [`[id="folio-${folio}"]`]: "UIF-2026-0412", [`[id="presentado-${folio}"]`]: manana },
+      filas: () => sql(`select coalesce(reporte_folio, '') from lpb_coincidencias where id = '${folio}'`),
+    },
+    {
+      nombre: "prospecto", quien: "omar", ruta: "/operacion/clientes", codigo: "rfc_generico", idAviso: "aviso-prospecto", campo: "#rfc",
+      boton: (p) => p.getByRole("button", { name: "Registrar prospecto" }),
+      llenar: async (p) => {
+        await campo(p, "#razonSocial", "Puerto Doce, S.A. de C.V.");
+        await campo(p, "#rfc", "XAXX010101000");
+        await campo(p, "#codigoPostal", "64000");
+        await p.locator("#regimen").selectOption("612");
+        await p.locator("#usoCfdi").selectOption("S01");
+      },
+      valores: { "#razonSocial": "Puerto Doce, S.A. de C.V.", "#rfc": "XAXX010101000", "#codigoPostal": "64000", "#regimen": "612", "#usoCfdi": "S01" },
+      filas: () => cuenta("companies where razon_social = 'Puerto Doce, S.A. de C.V.'"),
+    },
+    {
+      nombre: "alerta", quien: "ofelia", ruta: "/operacion/alertas", codigo: "dato_invalido_titulo", idAviso: "aviso-alerta", campo: "#titulo",
+      boton: (p) => p.getByRole("button", { name: "Crear alerta" }),
+      llenar: async (p) => {
+        await p.locator("#companyId").selectOption(alertable);
+        await campo(p, "#titulo", "   ");
+        await campo(p, "#detalle", "Revisar el contrato firmado.");
+      },
+      valores: { "#companyId": alertable, "#titulo": "   ", "#detalle": "Revisar el contrato firmado." },
+      filas: () => cuenta("operational_alerts"),
+    },
+  ];
+  for (const caso of casos) {
+    for (const [js, ancho] of caso.modos ?? [[true, 1440], [false, 390]]) await rechazoConLoCapturado(caso, js, ancho);
+  }
+}
+
+/**
+ * Doceava revisión: un formulario rechazado vuelve con lo capturado (ver `doceavaRonda`). Abre la sesión de `caso.quien`
+ * con o sin JavaScript al ancho pedido, llena, envía con un clic real y comprueba el aviso en su formulario, el mensaje
+ * entre la etiqueta y el control con el foco, lo capturado, la dirección sin cambios, 200 y nada guardado.
+ */
+async function rechazoConLoCapturado(caso, js, ancho) {
+  const conOSin = js ? "con" : "sin";
+  const s = await abrir(caso.quien, { js, ancho });
+  await ir(s.p, caso.ruta);
+  await caso.llenar(s.p);
+  const antes = caso.filas();
+  const direccion = s.p.url();
+  let vistos = 0;
+  const ruta = async (route) => {
+    const cuerpo = route.request().postDataBuffer();
+    if (route.request().method() !== "POST" || !cuerpo) return route.continue();
+    const original = cuerpo.toString("latin1");
+    const cambiado = caso.armar(original);
+    if (cambiado.length !== original.length) throw new Error("el reemplazo cambia el largo del cuerpo");
+    if (cambiado !== original) vistos += 1;
+    await route.continue({ postData: Buffer.from(cambiado, "latin1") });
+  };
+  if (caso.armar) await s.p.route("**/operacion/**", ruta);
+  const [respuesta] = await Promise.all([s.p.waitForResponse((r) => r.request().method() === "POST"), caso.boton(s.p).click()]);
+  await esperarAviso(s.p, caso.codigo);
+  if (caso.armar) await s.p.unroute("**/operacion/**", ruta);
+  const junto = await juntoAlCampo(s.p, caso.campo, `${caso.idAviso}-campo`);
+  const distintos = [];
+  for (const [selector, esperado] of Object.entries(caso.valores)) {
+    const real = await s.p.locator(selector).inputValue();
+    if (real !== esperado) distintos.push({ selector, real, esperado });
+  }
+  const titulo = (await s.p.locator(`[id="${caso.idAviso}"] .alerta-titulo`).innerText()).trim();
+  const mensaje = (await s.p.locator(`[id="${caso.idAviso}-campo"]`).innerText()).trim();
+  const enSuFormulario = await s.p.locator(`form:has([id="${caso.idAviso}"])`).locator(caso.campo).count();
+  const extra = caso.extra ? await caso.extra(s.p) : true;
+  exigir(
+    junto.ok && distintos.length === 0 && enSuFormulario === 1 && titulo === mensaje && extra && s.p.url() === direccion
+      && caso.filas() === antes && respuesta.status() === 200 && (!caso.armar || vistos === 1),
+    `doceava. ${caso.nombre}, ${conOSin} JavaScript a ${ancho}: «${caso.codigo}» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada`,
+    JSON.stringify({ junto: junto.detalle, distintos, titulo, mensaje, enSuFormulario, extra, url: s.p.url().replace(BASE, ""), status: respuesta.status(), vistos }),
+  );
+  await foto(s.p, `doceava-${caso.nombre}-${conOSin}-js-${ancho}`, false);
+  // El riesgo, con JavaScript a 1440: el formulario rechazado no se consumió; con lo corregido, el doble clic registra una.
+  if (caso.nombre === "riesgo" && js && ancho === 1440) {
+    await s.p.locator("#riesgo-actividad").selectOption("baja");
+    const calificaciones = caso.filas();
+    await enviar(s.p, caso.boton(s.p), "riesgo_calificado", { doble: true });
+    exigir(caso.filas() === calificaciones + 1, "doceava. riesgo: tras el rechazo, el doble clic con lo corregido registra una sola calificación", String(caso.filas() - calificaciones));
+  }
+  await s.nav.close();
 }
 
 // ---------- Orden ----------

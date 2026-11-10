@@ -76,7 +76,9 @@ export async function crearAlerta(
   if (!uuidValido(entrada.companyId) || !uuidValido(entrada.responsableId)) throw new ErrorDeDominio("alerta_invalida");
   const titulo = textoOperativo(entrada.titulo, 160);
   const detalle = textoMultilinea(entrada.detalle, 500);
-  if (!titulo || !detalle) throw new ErrorDeDominio("alerta_invalida");
+  // Cada rechazo es de su campo: la pantalla marca el título o el detalle y pone su mensaje junto a él.
+  if (!titulo) throw new ErrorDeDominio("dato_invalido_titulo");
+  if (!detalle) throw new ErrorDeDominio("dato_invalido_detalle");
   const ahora = new Date();
   await conContexto(basePlataforma(ctx, entrada.companyId), async (consulta) => {
     await exigirEmpresa(consulta, entrada.companyId as string);

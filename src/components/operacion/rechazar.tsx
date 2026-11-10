@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useId, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 
 import { rechazarConMotivoAccion, type EstadoDelRechazo } from "@/app/operacion/acciones";
 import { BotonEnviar, Dialogo } from "@/components/sistema";
 
 import { AvisoOperacion, errorDelCampo, MensajeDelCampo } from "./aviso";
+import { useAvisoVigente } from "./formulario-con-aviso";
 
 const SIN_AVISO: EstadoDelRechazo = { aviso: null, motivo: "", vuelta: 0 };
 
@@ -26,6 +27,9 @@ export function RechazarConMotivo({
 }) {
   const [abierto, setAbierto] = useState(false);
   const [estado, accion] = useActionState(rechazarConMotivoAccion, SIN_AVISO);
+  const forma = useRef<HTMLFormElement>(null);
+  // Un solo campo marcado en la página: al enviarse otro formulario, el aviso de este se descarta.
+  const vigente = useAvisoVigente(estado, forma);
   const campo = useId();
   const aviso = `${campo}-aviso`;
   useEffect(() => {
@@ -43,12 +47,13 @@ export function RechazarConMotivo({
         explicacion={`Vas a rechazar ${que}. El motivo queda en la bitácora y no se puede editar.`}
         pie={null}
       >
-        <form action={accion} className="operacion-dialogo-forma">
+        <form ref={forma} action={accion} className="operacion-dialogo-forma">
           <input type="hidden" name="id" value={id} />
           <input type="hidden" name="tipo" value={tipo} />
-          <AvisoOperacion codigo={estado.aviso} id={aviso} />
+          <AvisoOperacion codigo={vigente} id={aviso} />
           <div className="campo">
             <label htmlFor={campo}>Motivo (de 10 a 500 caracteres)</label>
+            <MensajeDelCampo codigo={vigente} campo="motivo" idAviso={aviso} />
             <textarea
               key={estado.vuelta}
               id={campo}
@@ -57,9 +62,8 @@ export function RechazarConMotivo({
               maxLength={500}
               required
               defaultValue={estado.motivo}
-              {...errorDelCampo(estado.aviso, "motivo", aviso)}
+              {...errorDelCampo(vigente, "motivo", aviso)}
             />
-            <MensajeDelCampo codigo={estado.aviso} campo="motivo" idAviso={aviso} />
           </div>
           <div className="dialogo-pie">
             <button type="button" className="boton-texto" onClick={() => setAbierto(false)}>

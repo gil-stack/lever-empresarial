@@ -52,12 +52,13 @@ export function IdentidadDelSocio({
       {children}
       <div className="campo">
         <label htmlFor="acc-rfc">{extranjera ? "RFC en México (si tiene)" : "RFC"}</label>
-        <input id="acc-rfc" name="rfc" maxLength={13} autoCapitalize="characters" className="entrada-rfc" defaultValue={inicial.rfc} {...ligados.rfc} />
         {mensajes.rfc}
+        <input id="acc-rfc" name="rfc" maxLength={13} autoCapitalize="characters" className="entrada-rfc" defaultValue={inicial.rfc} {...ligados.rfc} />
       </div>
       {extranjera ? (
         <div className="campo">
           <label htmlFor="acc-pais">País</label>
+          {mensajes.pais}
           <select id="acc-pais" name="pais" required defaultValue={inicial.pais ?? ""} {...ligados.pais}>
             <option value="" disabled>
               Elige el país
@@ -68,14 +69,13 @@ export function IdentidadDelSocio({
               </option>
             ))}
           </select>
-          {mensajes.pais}
         </div>
       ) : null}
       {tipo === "fisica" && !extranjera ? (
         <div className="campo">
           <label htmlFor="acc-curp">CURP</label>
-          <input id="acc-curp" name="curp" maxLength={18} autoCapitalize="characters" defaultValue={inicial.curp} {...ligados.curp} />
           {mensajes.curp}
+          <input id="acc-curp" name="curp" maxLength={18} autoCapitalize="characters" defaultValue={inicial.curp} {...ligados.curp} />
         </div>
       ) : null}
       {extranjera ? (
@@ -83,6 +83,7 @@ export function IdentidadDelSocio({
           <label htmlFor="acc-documento">
             {tipo === "fisica" ? "Número de pasaporte o identificación oficial" : "Número de identificación fiscal o de registro en su país"}
           </label>
+          {mensajes.documentoExtranjero}
           <input
             id="acc-documento"
             name="documentoExtranjero"
@@ -92,7 +93,6 @@ export function IdentidadDelSocio({
             defaultValue={inicial.documentoExtranjero}
             {...conPista(ligados.documentoExtranjero, "acc-documento-pista")}
           />
-          {mensajes.documentoExtranjero}
           <p id="acc-documento-pista" className="pista">
             {tipo === "fisica"
               ? "La persona extranjera se identifica con su país, este número y su fecha de nacimiento."
@@ -103,8 +103,8 @@ export function IdentidadDelSocio({
       {tipo === "fisica" && extranjera ? (
         <div className="campo">
           <label htmlFor="acc-nacimiento">Fecha de nacimiento</label>
-          <input id="acc-nacimiento" name="fechaNacimiento" type="date" required defaultValue={inicial.fechaNacimiento} {...ligados.fechaNacimiento} />
           {mensajes.fechaNacimiento}
+          <input id="acc-nacimiento" name="fechaNacimiento" type="date" required defaultValue={inicial.fechaNacimiento} {...ligados.fechaNacimiento} />
         </div>
       ) : null}
     </>

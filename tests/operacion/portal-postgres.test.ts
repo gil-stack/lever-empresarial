@@ -116,6 +116,10 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
         const entregar = async () => { llamadasCorreo += 1; return { entregada: true as const }; };
         const inicio = Date.now();
         const alSegundo = (segundo: number) => ({ produccion: false, entregar, ahora: () => new Date(inicio + segundo * 1000) });
+        // Doceava revisión: «ana@ejemplo» pasa el `type=email` del navegador; antes el servidor respondía `invitacion_invalida`,
+        // que no era de ningún campo. Cada rechazo es de su campo y no emite nada.
+        await assert.rejects(invitarPrimerAdministrador(ana, { companyId, nombre: "Admin Uno", correo: "ana@ejemplo" }, alSegundo(0)), /dato_invalido_correo/);
+        await assert.rejects(invitarPrimerAdministrador(ana, { companyId, nombre: " \u200b ", correo: "admin@ejemplo.mx" }, alSegundo(0)), /dato_invalido_nombre/);
         const primera = await invitarPrimerAdministrador(ana, { companyId, nombre: "Admin Uno", correo: "admin@ejemplo.mx" }, alSegundo(0));
         const segunda = await invitarPrimerAdministrador(ana, { companyId, nombre: "Admin Uno", correo: "admin@ejemplo.mx" }, alSegundo(10));
         assert.equal(llamadasCorreo, 0);
@@ -213,6 +217,9 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
 
         // El detalle y el motivo escritos en varios renglones (el navegador manda CRLF) se guardan en uno:
         // la base no acepta saltos de línea. Antes, el servidor los aceptaba y la base los rechazaba.
+        // Doceava revisión: un título o un detalle sin nada que se vea (el navegador los deja pasar) da el error de su campo.
+        await assert.rejects(crearAlerta(ana, { companyId, titulo: "   ", detalle: "Seguimiento", responsableId: a }), /dato_invalido_titulo/);
+        await assert.rejects(crearAlerta(ana, { companyId, titulo: "Revisar datos", detalle: " \r\n ", responsableId: a }), /dato_invalido_detalle/);
         await crearAlerta(ana, { companyId, titulo: "Revisar datos", detalle: "Seguimiento\r\noperativo", responsableId: a });
         const abierta = (await listarAlertas(ana, companyId)).find((alerta) => alerta.titulo === "Revisar datos");
         assert.ok(abierta);
