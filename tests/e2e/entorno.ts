@@ -7,6 +7,7 @@ import { Client } from "pg";
 import { iniciarBlobLocal, type BlobLocal } from "./blob-local/servidor";
 import { sembrarRecorridos } from "./siembra";
 import { sembrarCobranza } from "./siembra-cobranza";
+import { sembrarRunway } from "./siembra-runway";
 
 import { hoyEnMexico } from "../../src/dominio/personas";
 import { cerrarConexion } from "../../src/nucleo/db";
@@ -112,6 +113,7 @@ export async function iniciarEntorno(): Promise<void> {
     process.env.E2E_TODAY = hoyEnMexico(new Date());
     await sembrarRecorridos(owner);
     await sembrarCobranza();
+    await sembrarRunway(owner);
     await cerrarConexion();
     await levantarBlobLocal();
     await levantarServidor();

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import "@/estilo/flujo.css";
 
@@ -35,12 +36,13 @@ const SOLO_LECTURA = "Tu rol ve el flujo de caja; lo cambian administración o f
 
 // Saldo y alertas ---------------------------------------------------------------------
 
-export function VistaFlujo({ vista }: { vista: VistaSaldo | null }) {
+export function VistaFlujo({ vista, runway, avisoRunway }: { vista: VistaSaldo | null; runway?: ReactNode; avisoRunway?: ReactNode }) {
   if (!vista) return <SinLectura kicker="Flujo de caja" titulo="Saldo y alertas" />;
   return (
     <>
       {/* El título y la acción viven en la barra del Marco; el h1 queda para el lector de pantalla. */}
       <h1 className="solo-lector">Saldo y alertas</h1>
+      {runway}
       <Rejilla
         principal={
           <>
@@ -56,7 +58,7 @@ export function VistaFlujo({ vista }: { vista: VistaSaldo | null }) {
               {vista.historial.length === 0 ? (
                 <Vacio titulo="Todavía no hay saldos declarados.">Inicio muestra lo comprometido hasta que alguien declare el primero.</Vacio>
               ) : (
-                <div className="tabla-contenedor">
+                <div className="tabla-contenedor" role="region" aria-labelledby="historial-titulo" tabIndex={0}>
                   <table className="tabla flujo-historial" data-tabla="historial-saldo">
                     <thead>
                       <tr>
@@ -84,15 +86,16 @@ export function VistaFlujo({ vista }: { vista: VistaSaldo | null }) {
         }
         lateral={
           <>
-            <Hoja id="colchon-titulo" titulo="Colchón">
+            {avisoRunway}
+            <Hoja id="colchon-titulo" titulo="Colchón" className={avisoRunway ? "flujo-bloque" : undefined}>
               {vista.puedeEditar ? (
                 <FormularioColchon colchonCentavos={vista.colchonCentavos} />
               ) : (
                 <p data-cifra="colchon">{vista.colchonCentavos > 0 ? formatoPesos(vista.colchonCentavos) : "Sin colchón: la alerta avisa solo en negativo."}</p>
               )}
             </Hoja>
-            <Hoja id="correo-titulo" titulo="Resumen de los lunes" className="flujo-bloque">
-              <p className="pista">Saldo declarado, lo comprometido a 4 semanas, alertas de faltante y de presupuesto y cobros vencidos.</p>
+            <Hoja id="correo-titulo" titulo="Resumen de los lunes y avisos de caja" className="flujo-bloque">
+              <p className="pista">Saldo declarado, lo comprometido a 4 semanas, alertas de faltante y de presupuesto y cobros vencidos. Con él llegan los avisos de caja: una sola vez cuando el saldo proyectado baja de tu colchón o el runway baja de tu mínimo.</p>
               <FormularioCorreo activo={vista.correoSemanal} />
             </Hoja>
           </>
