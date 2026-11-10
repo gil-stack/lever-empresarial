@@ -337,11 +337,13 @@ test("6 · estado de cuenta de tres bancos: empatar, proponer, confirmar y resub
   await confirmar();
   expect(await contar("select 1 from collection_payments where company_id = $1 and clave_rastreo = $2", [EMPRESA(), RASTREO_A])).toBe(1);
 
-  // Volver a subir el de BBVA: el empate guardado se usa solo y nada se duplica.
+  // Volver a subir el de BBVA, ahora como si fuera de Banorte: el mismo archivo se frena por su huella,
+  // con el banco y el empate que sea (r63-N1), y nada se duplica.
   const filas = await contar("select 1 from collection_statement_rows where company_id = $1", [EMPRESA()]);
   const pagos = await contar("select 1 from collection_payments where company_id = $1", [EMPRESA()]);
-  forma = await subir("bbva", "bbva-movimientos.csv", bbva, "text/csv");
-  await expect(forma.locator(".alerta-asentado")).toContainText("Este archivo ya estaba importado");
+  forma = await subir("banorte", "bbva-movimientos.csv", bbva, "text/csv");
+  await expect(forma.getByText(/^Ese archivo ya se importó el \d{1,2} de [a-z]+ de \d{4}\. Sus abonos ya están en la lista; no se volvieron a aplicar\.$/)).toBeVisible();
+  await expect(forma.locator("#archivo")).toHaveAttribute("aria-invalid", "true");
   expect(await contar("select 1 from collection_statement_rows where company_id = $1", [EMPRESA()])).toBe(filas);
   expect(await contar("select 1 from collection_payments where company_id = $1", [EMPRESA()])).toBe(pagos);
   expect(await contar("select 1 from collection_statement_mappings where company_id = $1", [EMPRESA()])).toBe(3);

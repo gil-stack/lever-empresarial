@@ -104,6 +104,8 @@ describe("Fintoc: lectura del aviso (payload oficial)", () => {
         cuentaId: "acc_Lq7dP901xZgA2B",
         cuentaNumeroId: "acno_Kasf91034gj1AD",
       },
+      // Un abono no es una devolución (transfer.inbound.returned, r63-N8).
+      devolucion: null,
     });
   });
 
