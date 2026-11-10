@@ -32,33 +32,33 @@ Import traces:
     ./src/app/consola/poliza/page.tsx
 
 
-[e2e] compilado · 8 s
+[e2e] compilado · 4 s
 
 Running 22 tests using 1 worker, shard 3 of 7
 
-  ✓   1 tests/e2e/demostracion.spec.ts:42:5 › empresa real: cada módulo de demostración dice «Disponible pronto» y ni el HTML ni la carga RSC traen datos de ejemplo (2.2s)
-  ✓   2 tests/e2e/demostracion.spec.ts:68:5 › empresa de demostración: cada módulo pinta el aviso y los datos de ejemplo, con los botones de dinero apagados (1.3s)
-  ✓   3 tests/e2e/demostracion.spec.ts:88:5 › Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegación cada uno (3.6s)
-  ✓   4 tests/e2e/demostracion.spec.ts:115:5 › Movimientos: un gesto del ratón en «7 días» que no lo elige no retrasa el siguiente filtro (7.1s)
-  ✓   5 tests/e2e/demostracion.spec.ts:188:5 › Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los campos como dice la dirección (3.3s)
-  ✓   6 tests/e2e/demostracion.spec.ts:269:5 › Movimientos: un monto a medias que aún no es número no se borra cuando llega otra navegación (2.8s)
-  ✓   7 tests/e2e/demostracion.spec.ts:304:5 › Movimientos: un monto con decimales o negativo no bloquea los filtros (3.1s)
+  ✓   1 tests/e2e/demostracion.spec.ts:42:5 › empresa real: cada módulo de demostración dice «Disponible pronto» y ni el HTML ni la carga RSC traen datos de ejemplo (1.4s)
+  ✓   2 tests/e2e/demostracion.spec.ts:68:5 › empresa de demostración: cada módulo pinta el aviso y los datos de ejemplo, con los botones de dinero apagados (815ms)
+  ✓   3 tests/e2e/demostracion.spec.ts:88:5 › Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegación cada uno (3.3s)
+  ✓   4 tests/e2e/demostracion.spec.ts:115:5 › Movimientos: un gesto del ratón en «7 días» que no lo elige no retrasa el siguiente filtro (6.1s)
+  ✓   5 tests/e2e/demostracion.spec.ts:188:5 › Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los campos como dice la dirección (2.8s)
+  ✓   6 tests/e2e/demostracion.spec.ts:269:5 › Movimientos: un monto a medias que aún no es número no se borra cuando llega otra navegación (2.6s)
+  ✓   7 tests/e2e/demostracion.spec.ts:304:5 › Movimientos: un monto con decimales o negativo no bloquea los filtros (2.7s)
   ✓   8 tests/e2e/demostracion.spec.ts:332:5 › Movimientos: un monto que el filtro ignora (negativo o que no cabe) deja el campo vacío, como lo aplicado (1.7s)
-  ✓   9 tests/e2e/demostracion.spec.ts:355:5 › Movimientos: escribir el monto y hacer clic en un enlace a un ancla de esta página aplica el monto (2.2s)
+  ✓   9 tests/e2e/demostracion.spec.ts:355:5 › Movimientos: escribir el monto y hacer clic en un enlace a un ancla de esta página aplica el monto (2.1s)
   ✓  10 tests/e2e/demostracion.spec.ts:393:5 › Movimientos: escribir el monto y hacer clic en «Movimientos» del lateral aplica el monto (2.2s)
-  ✓  11 tests/e2e/demostracion.spec.ts:400:7 › en la tableta › Movimientos: escribir el monto y tocar «Movimientos» del lateral aplica el monto (2.3s)
+  ✓  11 tests/e2e/demostracion.spec.ts:400:7 › en la tableta › Movimientos: escribir el monto y tocar «Movimientos» del lateral aplica el monto (2.2s)
   ✓  12 tests/e2e/demostracion.spec.ts:408:7 › en el teléfono › Movimientos: escribir el monto y tocar «7 días» lleva los dos en una sola navegación (2.1s)
-  ✓  13 tests/e2e/demostracion.spec.ts:434:7 › en el teléfono › Movimientos: escribir el monto y tocar un enlace lleva al enlace, sin que el monto lo pise después (4.6s)
-  ✓  14 tests/e2e/entrada.spec.ts:17:5 › entra con contraseña y código TOTP: doble clic abre una sola entrada y una sola sesión (1.5s)
-[tope] diferencias en el servidor (ms): 1, 1, 3, 2, 2, 2, 1, 1, 0 · mediana 1
-  ✓  15 tests/e2e/entrada.spec.ts:68:5 › el tope de intentos no revela si el correo tiene cuenta: mismo texto y mismo tiempo (28.8s)
-  ✓  16 tests/e2e/flujo-de-caja.spec.ts:43:5 › saldo declarado: doble clic deja una sola declaración y Inicio dice de dónde viene (1.0s)
-  ✓  17 tests/e2e/flujo-de-caja.spec.ts:65:5 › cobro esperado y cobro con XML: cada doble clic deja un solo cobro (934ms)
-  ✓  18 tests/e2e/flujo-de-caja.spec.ts:116:5 › obligación recurrente con doble clic y presupuesto al 80 % y al 100 % en Presupuestos, Inicio y Aprobaciones (3.4s)
-  ✓  19 tests/e2e/flujo-de-caja.spec.ts:160:5 › escenario «mover pago»: la semana cambia en pantalla y la base no (1.3s)
-  ✓  20 tests/e2e/flujo-de-caja.spec.ts:199:5 › faltante: con poco saldo, Inicio y Aprobaciones avisan en qué semana (1.5s)
-  ✓  21 tests/e2e/flujo-de-caja.spec.ts:228:5 › nómina de una sola persona: finanzas ve «Monto reservado» y administración ve el monto (1.0s)
-  ✓  22 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms (10.1s)
+  ✓  13 tests/e2e/demostracion.spec.ts:434:7 › en el teléfono › Movimientos: escribir el monto y tocar un enlace lleva al enlace, sin que el monto lo pise después (4.4s)
+  ✓  14 tests/e2e/entrada.spec.ts:17:5 › entra con contraseña y código TOTP: doble clic abre una sola entrada y una sola sesión (1.2s)
+[tope] diferencias en el servidor (ms): 2, 1, 2, 0, 1, 2, 1, 1, 1 · mediana 1
+  ✓  15 tests/e2e/entrada.spec.ts:68:5 › el tope de intentos no revela si el correo tiene cuenta: mismo texto y mismo tiempo (28.6s)
+  ✓  16 tests/e2e/flujo-de-caja.spec.ts:43:5 › saldo declarado: doble clic deja una sola declaración y Inicio dice de dónde viene (1.2s)
+  ✓  17 tests/e2e/flujo-de-caja.spec.ts:65:5 › cobro esperado y cobro con XML: cada doble clic deja un solo cobro (1.0s)
+  ✓  18 tests/e2e/flujo-de-caja.spec.ts:116:5 › obligación recurrente con doble clic y presupuesto al 80 % y al 100 % en Presupuestos, Inicio y Aprobaciones (3.8s)
+  ✓  19 tests/e2e/flujo-de-caja.spec.ts:160:5 › escenario «mover pago»: la semana cambia en pantalla y la base no (1.2s)
+  ✓  20 tests/e2e/flujo-de-caja.spec.ts:199:5 › faltante: con poco saldo, Inicio y Aprobaciones avisan en qué semana (1.6s)
+  ✓  21 tests/e2e/flujo-de-caja.spec.ts:228:5 › nómina de una sola persona: finanzas ve «Monto reservado» y administración ve el monto (1.1s)
+  ✓  22 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez (5.5s)
 
-  22 passed (1.6m)
-[e2e] recorridos terminados con estado 0 · 22 pruebas corridas · 106 s
+  22 passed (1.4m)
+[e2e] recorridos terminados con estado 0 · 22 pruebas corridas · 90 s

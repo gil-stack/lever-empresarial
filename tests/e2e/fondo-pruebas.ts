@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Browser, type LaunchOptions, type Page, type PlaywrightWorkerArgs } from "@playwright/test";
 
 import { INICIO, entrar } from "./marco-apoyo";
 
@@ -148,19 +148,29 @@ const ESCENARIOS: Escenario[] = [
   },
 ];
 
-/**
- * Las pruebas del fondo animado en las densidades que se piden: sin GPU de verdad y con el equipo emulado (sin GPU y con GPU
- * rápida). fondo.spec.ts y optica-retina.spec.ts las reparten: en el CI, el WebGL por software del navegador remoto hace que
- * las de GPU a DPR 2 tarden de 66 a 114 s cada una, y en partes distintas el reparto de la e2e no las junta.
- */
+/** Un navegador solo para una prueba: en el CI, otra conexión al servidor de navegadores (otro proceso); en local, otro lanzamiento. */
+async function navegadorPropio(playwright: PlaywrightWorkerArgs["playwright"], launchOptions: LaunchOptions): Promise<Browser> {
+  const remoto = process.env.PW_TEST_CONNECT_WS_ENDPOINT;
+  if (!remoto) return playwright.chromium.launch(launchOptions);
+  const headers = process.env.PW_TEST_CONNECT_HEADERS ? (JSON.parse(process.env.PW_TEST_CONNECT_HEADERS) as Record<string, string>) : undefined;
+  return playwright.chromium.connect(remoto, { headers, exposeNetwork: process.env.PW_TEST_CONNECT_EXPOSE_NETWORK });
+}
+
 const EQUIPOS = [["sin GPU", false], ["con GPU rápida", true]] as const;
 
 /**
- * Qué pruebas del fondo define cada llamada y en qué orden: el reparto de la e2e corta por número de pruebas, en orden, así
- * que retina.spec.ts reparte las de GPU a DPR 2 entre dos partes. Sin opciones, todas: sin GPU de verdad y luego las emuladas.
+ * Qué pruebas del fondo define cada llamada y en qué orden: el reparto de la e2e corta por número de pruebas, en orden, y los
+ * cuatro archivos del fondo eligen qué prueba queda al final de cada parte. Sin opciones, todas: sin GPU de verdad y luego las
+ * emuladas.
  */
 export type OrdenDelFondo = { equipos?: readonly (typeof EQUIPOS)[number][0][]; escenarios?: readonly string[]; deVerdad?: boolean };
 
+/**
+ * Las pruebas del fondo animado en las densidades que se piden: sin GPU de verdad y con el equipo emulado (sin GPU y con GPU
+ * rápida). Las reparten fondo, movimiento-del-fondo, optica-retina y velocidad-del-fondo (*.spec.ts): en el CI, el WebGL por
+ * software del navegador remoto hace que las de GPU emulada tarden de 34 a 132 s cada una, y el reparto de la e2e las deja al
+ * final de partes distintas.
+ */
 export function pruebasDelFondo(dprs: readonly number[], orden: OrdenDelFondo = {}) {
   const escenarios = orden.escenarios ? orden.escenarios.map((nombre) => ESCENARIOS.find((escenario) => escenario.nombre === nombre)!) : ESCENARIOS;
   const sinGpuDeVerdad = () => {
@@ -213,32 +223,41 @@ export function pruebasDelFondo(dprs: readonly number[], orden: OrdenDelFondo = 
         test.describe(`fondo animado ${equipo} (emulado) a DPR ${dpr}`, () => {
           test.use({ deviceScaleFactor: dpr, viewport: { width: 1440, height: 900 } });
           for (const escenario of escenarios) {
-            test(escenario.nombre, async ({ page }) => {
-              // Sin GPU, un dibujo cuesta unos 47 ms a DPR 1 y cientos de ms a DPR 2: aquí, con cuadros largos seguros.
-              await emularEquipo(page, { dibujoMs: conGpu ? 0 : dpr === 1 ? 60 : 150, crecerMs: escenario.crecerMs ?? 0 });
-              await entrar(page);
-              await page.goto(INICIO);
-              const lienzo = page.locator("canvas.escena-lienzo");
-              const pinturas = async () => Number(await lienzo.getAttribute("data-cuadros"));
-              const recordado = () => page.evaluate(() => sessionStorage.getItem("lever-fondo-lento"));
-              await expect(lienzo, "el fondo pinta con WebGL").toHaveAttribute("data-gpu", "si", { timeout: 60_000 });
-              await escenario.hacer(page);
-              const largos = (await cuadrosLargosDelFondo(page)).cuadros;
-              // Para leer un fallo: estado, pinturas, ms promedio por dibujo y si la decisión se guardó (solo la del dibujo).
-              const como = JSON.stringify(await lienzo.evaluate((nodo: HTMLCanvasElement) => ({ ...nodo.dataset, guardado: sessionStorage.getItem("lever-fondo-lento") })));
-              if (conGpu) {
-                await expect(lienzo, `sigue vivo: ${como}`).toHaveAttribute("data-estado", "vivo", { timeout: 1 });
-                expect(largos, `cuadros largos del fondo: ${como}`).toBeLessThanOrEqual(escenario.conGpuLargos ?? 0);
-                expect(await recordado(), "no recuerda nada").toBeNull();
-                // Y en la siguiente carga vuelve a animar.
-                await page.reload();
-                await expect.poll(pinturas, { timeout: 60_000 }).toBeGreaterThanOrEqual(3);
-                await expect(lienzo, "al recargar, vivo").toHaveAttribute("data-estado", "vivo");
-              } else {
-                await expect(lienzo, "quieto").toHaveAttribute("data-estado", "lento");
-                expect(largos, "cuadros largos del fondo después de su primera pintura").toBeLessThanOrEqual(escenario.sinGpu.largos);
-                expect(await pinturas(), "pinturas").toBeLessThanOrEqual(escenario.sinGpu.pinturas);
-                expect(await recordado(), "lo recuerda").toBe("1");
+            test(escenario.nombre, async ({ page: paginaDelWorker, playwright, baseURL, viewport, deviceScaleFactor, launchOptions }) => {
+              // Con GPU emulada, un navegador propio que se cierra al terminar: el proceso de GPU es de todo el navegador y,
+              // con WebGL por software, sigue trabajando después de cerrar el contexto (2.4 s de CPU en los 5 s siguientes, medido
+              // con SwiftShader). Cerrar el navegador lo termina, y la prueba que sigue en el worker no hereda esa carga.
+              const propio = conGpu ? await navegadorPropio(playwright, launchOptions) : null;
+              try {
+                const page = propio ? await (await propio.newContext({ baseURL, viewport, deviceScaleFactor })).newPage() : paginaDelWorker;
+                // Sin GPU, un dibujo cuesta unos 47 ms a DPR 1 y cientos de ms a DPR 2: aquí, con cuadros largos seguros.
+                await emularEquipo(page, { dibujoMs: conGpu ? 0 : dpr === 1 ? 60 : 150, crecerMs: escenario.crecerMs ?? 0 });
+                await entrar(page);
+                await page.goto(INICIO);
+                const lienzo = page.locator("canvas.escena-lienzo");
+                const pinturas = async () => Number(await lienzo.getAttribute("data-cuadros"));
+                const recordado = () => page.evaluate(() => sessionStorage.getItem("lever-fondo-lento"));
+                await expect(lienzo, "el fondo pinta con WebGL").toHaveAttribute("data-gpu", "si", { timeout: 60_000 });
+                await escenario.hacer(page);
+                const largos = (await cuadrosLargosDelFondo(page)).cuadros;
+                // Para leer un fallo: estado, pinturas, ms promedio por dibujo y si la decisión se guardó (solo la del dibujo).
+                const como = JSON.stringify(await lienzo.evaluate((nodo: HTMLCanvasElement) => ({ ...nodo.dataset, guardado: sessionStorage.getItem("lever-fondo-lento") })));
+                if (conGpu) {
+                  await expect(lienzo, `sigue vivo: ${como}`).toHaveAttribute("data-estado", "vivo", { timeout: 1 });
+                  expect(largos, `cuadros largos del fondo: ${como}`).toBeLessThanOrEqual(escenario.conGpuLargos ?? 0);
+                  expect(await recordado(), "no recuerda nada").toBeNull();
+                  // Y en la siguiente carga vuelve a animar.
+                  await page.reload();
+                  await expect.poll(pinturas, { timeout: 60_000 }).toBeGreaterThanOrEqual(3);
+                  await expect(lienzo, "al recargar, vivo").toHaveAttribute("data-estado", "vivo");
+                } else {
+                  await expect(lienzo, "quieto").toHaveAttribute("data-estado", "lento");
+                  expect(largos, "cuadros largos del fondo después de su primera pintura").toBeLessThanOrEqual(escenario.sinGpu.largos);
+                  expect(await pinturas(), "pinturas").toBeLessThanOrEqual(escenario.sinGpu.pinturas);
+                  expect(await recordado(), "lo recuerda").toBe("1");
+                }
+              } finally {
+                await propio?.close();
               }
             });
           }

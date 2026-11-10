@@ -38,45 +38,45 @@ Running 20 tests using 1 worker, shard 6 of 7
 
 MEDIDA #dictamen-motivo 1440: {"mensaje":{"arriba":636,"abajo":655},"campo":{"arriba":662,"abajo":758},"barras":84,"ventana":900,"visible":true}
 MEDIDA #riesgo-actividad 1440: {"mensaje":{"arriba":488,"abajo":507},"campo":{"arriba":514,"abajo":554},"barras":84,"ventana":900,"visible":true}
-  ✓   1 tests/e2e/operacion.spec.ts:1097:7 › doceava con JavaScript: empresas propias de la siembra › doceava: el dictamen y el grado de riesgo de Eje vuelven con lo elegido; nada queda en «baja» sin elegirlo y el doble clic tras el rechazo registra una vez (1.9s)
-  ✓   2 tests/e2e/operacion.spec.ts:1103:7 › doceava con JavaScript: empresas propias de la siembra › doceava: si otra pestaña ya registró el dictamen, el rechazo de Fresno va arriba de la página aunque su formulario ya no se pinte (1.6s)
-  ✓   3 tests/e2e/operacion.spec.ts:1109:7 › doceava con JavaScript: empresas propias de la siembra › doceava: la cookie del rechazo fabricada en una visita normal solo pinta avisos del catálogo; un valor inventado no aparece (3.6s)
+  ✓   1 tests/e2e/operacion.spec.ts:1097:7 › doceava con JavaScript: empresas propias de la siembra › doceava: el dictamen y el grado de riesgo de Eje vuelven con lo elegido; nada queda en «baja» sin elegirlo y el doble clic tras el rechazo registra una vez (1.8s)
+  ✓   2 tests/e2e/operacion.spec.ts:1103:7 › doceava con JavaScript: empresas propias de la siembra › doceava: si otra pestaña ya registró el dictamen, el rechazo de Fresno va arriba de la página aunque su formulario ya no se pinte (1.4s)
+  ✓   3 tests/e2e/operacion.spec.ts:1109:7 › doceava con JavaScript: empresas propias de la siembra › doceava: la cookie del rechazo fabricada en una visita normal solo pinta avisos del catálogo; un valor inventado no aparece (2.5s)
 MEDIDA #tipo 1440: {"mensaje":{"arriba":375,"abajo":413},"campo":{"arriba":420,"abajo":460},"barras":84,"ventana":900,"visible":true}
 MEDIDA #tipo 390: {"mensaje":{"arriba":728,"abajo":786},"campo":{"arriba":793,"abajo":833},"barras":60,"ventana":844,"visible":true}
-  ✓   4 tests/e2e/operacion.spec.ts:1150:7 › doceava con JavaScript: empresas propias de la siembra › doce-N1: pedir una comisión con otra pendiente para la misma empresa y tipo dice por qué, con y sin JavaScript (1.7s)
-  ✓   5 tests/e2e/operacion.spec.ts:1191:7 › doceava con JavaScript: empresas propias de la siembra › doce-N2: ?aviso=constructor y ?aviso=toString no tumban ninguna de las cinco páginas que leen un aviso de la dirección (890ms)
+  ✓   4 tests/e2e/operacion.spec.ts:1150:7 › doceava con JavaScript: empresas propias de la siembra › doce-N1: pedir una comisión con otra pendiente para la misma empresa y tipo dice por qué, con y sin JavaScript (1.3s)
+  ✓   5 tests/e2e/operacion.spec.ts:1191:7 › doceava con JavaScript: empresas propias de la siembra › doce-N2: ?aviso=constructor y ?aviso=toString no tumban ninguna de las cinco páginas que leen un aviso de la dirección (741ms)
 MEDIDA #dato-razonSocial 1440: {"mensaje":{"arriba":433,"abajo":471},"campo":{"arriba":478,"abajo":518},"barras":84,"ventana":900,"visible":true}
 MEDIDA #doc-archivo 1440: {"mensaje":{"arriba":488,"abajo":507},"campo":{"arriba":514,"abajo":554},"barras":84,"ventana":900,"visible":true}
-  ✓   6 tests/e2e/operacion.spec.ts:1222:7 › doceava: coincidencias, datos generales y recuperaciones › doceava: los 17 datos generales vuelven como se escribieron; después de otro rechazo queda un solo aviso y el resumen de arriba se oculta (1.2s)
-MEDIDA [id="motivo-b2ad3905-bbec-496d-9efa-9fc462bb6203"] 1440: {"mensaje":{"arriba":605,"abajo":682},"campo":{"arriba":689,"abajo":729},"barras":84,"ventana":900,"visible":true}
-MEDIDA [id="motivo-02793987-bc05-41be-a34e-8e98d0dc7748"] 1440: {"mensaje":{"arriba":385,"abajo":462},"campo":{"arriba":469,"abajo":509},"barras":84,"ventana":900,"visible":true}
-MEDIDA [id="presentado-02793987-bc05-41be-a34e-8e98d0dc7748"] 1440: {"mensaje":{"arriba":630,"abajo":707},"campo":{"arriba":714,"abajo":754},"barras":84,"ventana":900,"visible":true}
-  ✓   7 tests/e2e/operacion.spec.ts:1265:7 › doceava: coincidencias, datos generales y recuperaciones › doceava: el dictamen de una coincidencia y su folio vuelven a su tarjeta con lo escrito; otro rechazo en otra tarjeta descarta el primero (926ms)
+  ✓   6 tests/e2e/operacion.spec.ts:1222:7 › doceava: coincidencias, datos generales y recuperaciones › doceava: los 17 datos generales vuelven como se escribieron; después de otro rechazo queda un solo aviso y el resumen de arriba se oculta (1.0s)
+MEDIDA [id="motivo-8cdeaa16-639a-49dd-a028-49fd2d933fe8"] 1440: {"mensaje":{"arriba":385,"abajo":462},"campo":{"arriba":469,"abajo":509},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="motivo-436ae169-05b4-4b56-b11e-b6ebe48b1d65"] 1440: {"mensaje":{"arriba":605,"abajo":682},"campo":{"arriba":689,"abajo":729},"barras":84,"ventana":900,"visible":true}
+MEDIDA [id="presentado-436ae169-05b4-4b56-b11e-b6ebe48b1d65"] 1440: {"mensaje":{"arriba":630,"abajo":707},"campo":{"arriba":714,"abajo":754},"barras":84,"ventana":900,"visible":true}
+  ✓   7 tests/e2e/operacion.spec.ts:1265:7 › doceava: coincidencias, datos generales y recuperaciones › doceava: el dictamen de una coincidencia y su folio vuelven a su tarjeta con lo escrito; otro rechazo en otra tarjeta descarta el primero (902ms)
   ✓   8 tests/e2e/operacion.spec.ts:1300:7 › doceava: coincidencias, datos generales y recuperaciones › doceava: tras un rechazo la página se vuelve a pintar: con el factor caducado aparece «Confirma que eres tú» y la tarjeta conserva lo elegido (1.2s)
-MEDIDA [id="motivo-b2ad3905-bbec-496d-9efa-9fc462bb6203"] 1440: {"mensaje":{"arriba":385,"abajo":462},"campo":{"arriba":469,"abajo":509},"barras":84,"ventana":1000,"visible":true}
-MEDIDA [id="presentado-02793987-bc05-41be-a34e-8e98d0dc7748"] 1440: {"mensaje":{"arriba":630,"abajo":707},"campo":{"arriba":714,"abajo":754},"barras":84,"ventana":1000,"visible":true}
-  ✓   9 tests/e2e/operacion.spec.ts:1331:9 › doceava: coincidencias, datos generales y recuperaciones › sin JavaScript › sin JavaScript, el estado de cada formulario vuelve a su tarjeta (la clave es el id): el dictamen de Cima y el folio de Brisa (386ms)
+MEDIDA [id="motivo-8cdeaa16-639a-49dd-a028-49fd2d933fe8"] 1440: {"mensaje":{"arriba":385,"abajo":462},"campo":{"arriba":469,"abajo":509},"barras":84,"ventana":1000,"visible":true}
+MEDIDA [id="presentado-436ae169-05b4-4b56-b11e-b6ebe48b1d65"] 1440: {"mensaje":{"arriba":630,"abajo":707},"campo":{"arriba":714,"abajo":754},"barras":84,"ventana":1000,"visible":true}
+  ✓   9 tests/e2e/operacion.spec.ts:1331:9 › doceava: coincidencias, datos generales y recuperaciones › sin JavaScript › sin JavaScript, el estado de cada formulario vuelve a su tarjeta (la clave es el id): el dictamen de Cima y el folio de Brisa (331ms)
 MEDIDA n9-prospecto-1440: {"formulario":{"x":1002.53125,"y":188.4375,"width":368.46875,"height":508.34375},"aviso":{"x":1002.53125,"y":188.4375,"width":368.46875,"height":73.09375},"#razonSocial":{"x":1002.53125,"y":307.53125,"width":368.46875,"height":64.5}}
 MEDIDA n9-prospecto-390: {"formulario":{"x":41,"y":240.375,"width":308,"height":660.515625},"aviso":{"x":41,"y":240.375,"width":308,"height":90.640625},"#razonSocial":{"x":41,"y":377.015625,"width":308,"height":64.5}}
 MEDIDA n9-documento-1440: {"formulario":{"x":309,"y":345.234375,"width":1062,"height":546.921875},"aviso":{"x":309,"y":345.234375,"width":1062,"height":55.546875},"#doc-tipo":{"x":309,"y":446.78125,"width":521,"height":64.5},"#doc-detalle":{"x":309,"y":619.78125,"width":1062,"height":64.5},"#doc-archivo":{"x":309,"y":706.28125,"width":1062,"height":117.875}}
-MEDIDA n9-coincidencia-1440: {"formulario":{"x":309,"y":316.234375,"width":1062,"height":261.796875},"aviso":{"x":309,"y":316.234375,"width":1062,"height":79.546875},"[id=\"resolucion-b2ad3905-bbec-496d-9efa-9fc462bb6203\"]":{"x":309,"y":513.53125,"width":246,"height":64.5}}
-MEDIDA n9-recuperacion-1440: {"formulario":{"x":981,"y":193.25,"width":390,"height":320.984375},"aviso":{"x":981,"y":193.25,"width":390,"height":79.546875},"[id=\"verificacion-cbaee227-6ec7-4dfe-a5b8-f28926fdf308\"]":{"x":981,"y":411.734375,"width":190,"height":64.5}}
-MEDIDA n9-folio-1440: {"formulario":{"x":309,"y":469.28125,"width":1062,"height":261.796875},"aviso":{"x":309,"y":469.28125,"width":1062,"height":79.546875},"[id=\"folio-02793987-bc05-41be-a34e-8e98d0dc7748\"]":{"x":309,"y":666.578125,"width":190,"height":64.5}}
-MEDIDA n9-folio-columnas: {"antes":[{"x":309,"y":469.28125,"width":190,"height":64.5},{"x":517,"y":469.28125,"width":190,"height":64.5},{"x":725,"y":469.28125,"width":190,"height":64.5}],"despues":[{"x":309,"y":666.578125,"width":190,"height":64.5},{"x":517,"y":582.828125,"width":190,"height":148.25},{"x":725,"y":666.578125,"width":190,"height":64.5}]}
-MEDIDA n9-folio-fondos: {"fondos":[731.078125,731.078125,731.078125],"boton":{"x":933,"y":695.078125,"width":105.8125,"height":36},"altoDelBoton":36}
-  ✓  10 tests/e2e/operacion.spec.ts:1355:7 › doceava: coincidencias, datos generales y recuperaciones › humo-N9: tras un rechazo, el aviso mide el ancho de su formulario y los campos no se mueven: prospecto (1440 y 390), documento, coincidencia, recuperación y folio (4.1s)
-  ✓  11 tests/e2e/operacion.spec.ts:1457:7 › doceava: coincidencias, datos generales y recuperaciones › doce-N3: si otra pestaña ya resolvió la coincidencia igual, el segundo dictamen dice que ya se resolvió y no guarda su motivo (1.3s)
-  ✓  12 tests/e2e/operacion.spec.ts:1495:7 › Operación SOFIPO: entrada › entrada SOFIPO: contraseña y código; un código malo no abre y el doble clic abre una sola sesión (1.2s)
+MEDIDA n9-coincidencia-1440: {"formulario":{"x":309,"y":469.28125,"width":1062,"height":261.796875},"aviso":{"x":309,"y":469.28125,"width":1062,"height":79.546875},"[id=\"resolucion-8cdeaa16-639a-49dd-a028-49fd2d933fe8\"]":{"x":309,"y":666.578125,"width":246,"height":64.5}}
+MEDIDA n9-recuperacion-1440: {"formulario":{"x":981,"y":193.25,"width":390,"height":320.984375},"aviso":{"x":981,"y":193.25,"width":390,"height":79.546875},"[id=\"verificacion-a74f3f06-cea4-4ef9-b8f8-2584d652562c\"]":{"x":981,"y":411.734375,"width":190,"height":64.5}}
+MEDIDA n9-folio-1440: {"formulario":{"x":309,"y":316.234375,"width":1062,"height":261.796875},"aviso":{"x":309,"y":316.234375,"width":1062,"height":79.546875},"[id=\"folio-436ae169-05b4-4b56-b11e-b6ebe48b1d65\"]":{"x":309,"y":513.53125,"width":190,"height":64.5}}
+MEDIDA n9-folio-columnas: {"antes":[{"x":309,"y":316.234375,"width":190,"height":64.5},{"x":517,"y":316.234375,"width":190,"height":64.5},{"x":725,"y":316.234375,"width":190,"height":64.5}],"despues":[{"x":309,"y":513.53125,"width":190,"height":64.5},{"x":517,"y":429.78125,"width":190,"height":148.25},{"x":725,"y":513.53125,"width":190,"height":64.5}]}
+MEDIDA n9-folio-fondos: {"fondos":[578.03125,578.03125,578.03125],"boton":{"x":933,"y":542.03125,"width":105.8125,"height":36},"altoDelBoton":36}
+  ✓  10 tests/e2e/operacion.spec.ts:1355:7 › doceava: coincidencias, datos generales y recuperaciones › humo-N9: tras un rechazo, el aviso mide el ancho de su formulario y los campos no se mueven: prospecto (1440 y 390), documento, coincidencia, recuperación y folio (3.9s)
+  ✓  11 tests/e2e/operacion.spec.ts:1457:7 › doceava: coincidencias, datos generales y recuperaciones › doce-N3: si otra pestaña ya resolvió la coincidencia igual, el segundo dictamen dice que ya se resolvió y no guarda su motivo (1.1s)
+  ✓  12 tests/e2e/operacion.spec.ts:1495:7 › Operación SOFIPO: entrada › entrada SOFIPO: contraseña y código; un código malo no abre y el doble clic abre una sola sesión (1.1s)
 MEDIDA #razonSocial 1440: {"mensaje":{"arriba":332,"abajo":370},"campo":{"arriba":377,"abajo":417},"barras":84,"ventana":1000,"visible":true}
   ✓  13 tests/e2e/operacion.spec.ts:1528:9 › Operación SOFIPO: entrada › sin JavaScript › sin JavaScript los formularios responden: el alta vuelve con su aviso y lo capturado (200) y las dos entradas dan el suyo (3.5s)
-  ✓  14 tests/e2e/operacion.spec.ts:1567:7 › Operación SOFIPO: recuperaciones › «Perdí el segundo factor»: Recuperaciones pide «Confirma que eres tú», otra persona aprueba y la clienta registra un factor nuevo (2.7s)
-MEDIDA [id="nota-052a6863-bc47-49c3-87ec-1b511516e409"] 1440: {"mensaje":{"arriba":526,"abajo":565},"campo":{"arriba":572,"abajo":668},"barras":84,"ventana":1000,"visible":true}
+  ✓  14 tests/e2e/operacion.spec.ts:1567:7 › Operación SOFIPO: recuperaciones › «Perdí el segundo factor»: Recuperaciones pide «Confirma que eres tú», otra persona aprueba y la clienta registra un factor nuevo (2.5s)
+MEDIDA [id="nota-46c3676c-6a7c-433b-b100-b52dea44a3a3"] 1440: {"mensaje":{"arriba":526,"abajo":565},"campo":{"arriba":572,"abajo":668},"barras":84,"ventana":1000,"visible":true}
   ✓  15 tests/e2e/operacion.spec.ts:1639:7 › Operación SOFIPO: recuperaciones › con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca solo la nota de esa tarjeta (1.1s)
-  ✓  16 tests/e2e/operacion.spec.ts:1679:7 › Operación SOFIPO: precio y descarga › publicar el precio exige factor de los últimos 30 minutos; tras volver a entrar, doble clic publica una vez (2.1s)
-  ✓  17 tests/e2e/operacion.spec.ts:1707:7 › Operación SOFIPO: precio y descarga › la descarga del expediente llega aislada (sandbox) y la pantalla del expediente conserva la política general (140ms)
-  ✓  18 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (14.1s)
-  ✓  19 tests/e2e/fondo-pruebas.ts:173:13 › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (6.3s)
-  ✓  20 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 2 › estable (3.0s)
+  ✓  16 tests/e2e/operacion.spec.ts:1679:7 › Operación SOFIPO: precio y descarga › publicar el precio exige factor de los últimos 30 minutos; tras volver a entrar, doble clic publica una vez (2.0s)
+  ✓  17 tests/e2e/operacion.spec.ts:1707:7 › Operación SOFIPO: precio y descarga › la descarga del expediente llega aislada (sandbox) y la pantalla del expediente conserva la política general (113ms)
+  ✓  18 tests/e2e/fondo-pruebas.ts:183:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (5.0s)
+  ✓  19 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 2 › estable (8.7s)
+  ✓  20 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 2 › arrastrar la ventana (6.3s)
 
-  20 passed (58.9s)
-[e2e] recorridos terminados con estado 0 · 20 pruebas corridas · 64 s
+  20 passed (52.6s)
+[e2e] recorridos terminados con estado 0 · 20 pruebas corridas · 57 s

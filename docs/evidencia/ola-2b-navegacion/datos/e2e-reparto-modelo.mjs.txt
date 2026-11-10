@@ -3,7 +3,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 const K = Number(process.argv[2] ?? 7), FIJO = Number(process.env.FIJO ?? 145);
-const T = JSON.parse(readFileSync(new URL("./tiempos.json", import.meta.url), "utf8"));
+const T = JSON.parse(readFileSync(process.env.TIEMPOS ?? new URL("./tiempos.json", import.meta.url), "utf8"));
 const sinTiempo = new Set();
 let peor = 0;
 for (let n = 1; n <= K; n++) {
