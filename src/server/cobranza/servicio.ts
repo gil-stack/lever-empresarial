@@ -23,7 +23,7 @@ import { exigirAutenticacionRecienteCliente } from "../autenticacion/reautentica
 import { actorDeCliente, auditar as auditarPorDefecto, type Actor, type Auditar } from "../bitacora/auditar";
 import { leerUrlPublica } from "../correo/configuracion";
 import { enviadorDesdeEntorno } from "../correo/enviar";
-import { plantillaAvisoClabeCobranza } from "../correo/plantillas/cobro";
+import { plantillaAvisoClabeCobranza, plantillaAvisoDatosCobranza } from "../correo/plantillas/cobro";
 import type { Enviador } from "../correo/tipos";
 import { centavos, entero, registro, texto, textoONulo } from "../flujo/lectura";
 import { ErrorDeCaptura } from "../flujo/servicio";
@@ -125,9 +125,11 @@ const enmascarar = (clabe: string) => `•••• ${clabe.slice(-4)}`;
 export type ResultadoConfiguracion = { clabeCambio: boolean; avisos: number };
 
 /**
- * La CLABE donde la empresa recibe y su beneficiario. Cambiarlos (o fijarlos la
- * primera vez) exige un segundo factor reciente y avisa a administración y
- * finanzas: es el blanco clásico para desviar pagos.
+ * La CLABE donde la empresa recibe, su beneficiario y el correo de contacto (el
+ * Reply-To de cada cobro: a donde los clientes preguntan «¿a qué cuenta
+ * pago?»). Cambiar cualquiera de los tres (o fijarlos la primera vez) exige un
+ * segundo factor reciente y avisa a administración y finanzas: es el blanco
+ * clásico para desviar pagos (r63-N3). El calendario de recordatorios no.
  */
 export async function configurarCobranza(
   ctx: ContextoDeTenant | null | undefined,
@@ -142,7 +144,8 @@ export async function configurarCobranza(
     const previa = await leerConfiguracion(consulta, c.empresa.id);
     const clabeCambio = !previa || previa.clabe !== valor.clabe;
     const beneficiarioCambio = !previa || previa.beneficiario !== valor.beneficiario;
-    if (clabeCambio || beneficiarioCambio) exigirAutenticacionRecienteCliente(sesion, ahora);
+    const contactoCambio = !previa || previa.correoContacto !== valor.correoContacto;
+    if (clabeCambio || beneficiarioCambio || contactoCambio) exigirAutenticacionRecienteCliente(sesion, ahora);
     await aplicarSentencia(
       consulta,
       `insert into collection_settings
@@ -165,21 +168,36 @@ export async function configurarCobranza(
         clabe_nueva: enmascarar(valor.clabe),
         beneficiario_cambio: beneficiarioCambio,
         contacto: valor.correoContacto !== null,
+        contacto_cambio: contactoCambio,
         calendario: `emitir ${valor.emitirDiasAntes} · antes ${valor.antesDias} · día ${valor.avisoElDia ? "sí" : "no"} · después ${valor.despuesCadaDias}x${valor.despuesTope} · automático ${valor.envioAutomatico ? "sí" : "no"}`,
       },
     });
-    return clabeCambio ? { anterior: previa ? previa.clabe.slice(-4) : null, nueva: valor.clabe.slice(-4) } : null;
+    // La primera configuración avisa solo con la CLABE; un cambio después avisa de cada dato que cambió.
+    const clabe = clabeCambio ? { anterior: previa ? previa.clabe.slice(-4) : null, nueva: valor.clabe.slice(-4) } : null;
+    const datos = previa && (beneficiarioCambio || contactoCambio)
+      ? {
+          beneficiario: beneficiarioCambio ? { anterior: previa.beneficiario, nuevo: valor.beneficiario } : null,
+          contacto: contactoCambio ? { anterior: previa.correoContacto, nuevo: valor.correoContacto } : null,
+        }
+      : null;
+    return clabe || datos ? { clabe, datos } : null;
   });
   if (!cambio) return { clabeCambio: false, avisos: 0 };
   const c = exigir(ctx, "cliente.flujo.editar");
-  const avisos = await avisarAlEquipo(c, deps, plantillaAvisoClabeCobranza({
-    razonSocial: c.empresa.razonSocial,
-    persona: c.persona.nombre,
-    anterior: cambio.anterior,
-    nueva: cambio.nueva,
-    enlace: `${(deps?.urlPublica ?? (() => leerUrlPublica()))()}/c/${c.empresa.id}/consola/cobros/configuracion`,
-  }), `cobranza-clabe/${c.empresa.id}/${createHash("sha256").update(`${cambio.nueva}:${ahora.toISOString()}`).digest("hex").slice(0, 24)}`);
-  return { clabeCambio: true, avisos };
+  const enlace = `${(deps?.urlPublica ?? (() => leerUrlPublica()))()}/c/${c.empresa.id}/consola/cobros/configuracion`;
+  const llave = (tipo: string, valor: string) => `cobranza-${tipo}/${c.empresa.id}/${createHash("sha256").update(`${valor}:${ahora.toISOString()}`).digest("hex").slice(0, 24)}`;
+  let avisos = 0;
+  if (cambio.clabe) {
+    avisos += await avisarAlEquipo(c, deps, plantillaAvisoClabeCobranza({
+      razonSocial: c.empresa.razonSocial, persona: c.persona.nombre, anterior: cambio.clabe.anterior, nueva: cambio.clabe.nueva, enlace,
+    }), llave("clabe", cambio.clabe.nueva));
+  }
+  if (cambio.datos) {
+    avisos += await avisarAlEquipo(c, deps, plantillaAvisoDatosCobranza({
+      razonSocial: c.empresa.razonSocial, persona: c.persona.nombre, ...cambio.datos, enlace,
+    }), llave("datos", `${cambio.datos.beneficiario?.nuevo ?? ""}|${cambio.datos.contacto?.nuevo ?? ""}`));
+  }
+  return { clabeCambio: cambio.clabe !== null, avisos };
 }
 
 /**
@@ -709,17 +727,19 @@ export async function registrarPagoManual(
       if (cargoId) {
         const cargo = await aplicarSentencia(
           consulta,
-          "select customer_id, (monto_centavos - pagado_centavos)::text as saldo from collection_charges where company_id = $1 and id = $2 and estado = 'emitido' for update",
+          "select customer_id, estado, (coalesce(monto_centavos, 0) - pagado_centavos)::text as saldo from collection_charges where company_id = $1 and id = $2 for update",
           [c.empresa.id, cargoId],
         );
         const f = cargo.rows[0] ? registro(cargo.rows[0]) : null;
-        if (!f) throw new ErrorDeDominio("cargo_ya_resuelto");
+        // Un cargo que no es de esta empresa no existe para ella: «no encontrado», no «ya cambió» (r63-N10).
+        if (!f) throw new ErrorDeDominio("cargo_ausente");
+        if (f.estado !== "emitido") throw new ErrorDeDominio("cargo_ya_resuelto");
         clienteId = texto(f.customer_id);
         saldo = centavos(f.saldo);
       }
       const posibleDuplicado = valor.claveRastreo !== null && (await aplicarSentencia(
         consulta,
-        "select 1 from collection_payments where company_id = $1 and upper(clave_rastreo) = $2 and estado <> 'anulado' limit 1",
+        "select 1 from collection_payments where company_id = $1 and upper(clave_rastreo) = $2 and estado not in ('anulado', 'devuelto') limit 1",
         [c.empresa.id, valor.claveRastreo],
       )).rows.length > 0;
       if (archivo && guardado) {

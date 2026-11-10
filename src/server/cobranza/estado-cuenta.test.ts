@@ -4,7 +4,7 @@ import { describe, it } from "node:test";
 import { strToU8, zipSync } from "fflate";
 import { XMLParser } from "fast-xml-parser";
 
-import { aplicarEmpate, leerFecha, leerMonto, referenciaEnTexto, sugerirEmpate, validarEmpate } from "../../dominio/cobranza/estado-cuenta";
+import { aplicarEmpate, leerFecha, leerMonto, referenciaDeRenglon, referenciaEnTexto, sugerirEmpate, validarEmpate } from "../../dominio/cobranza/estado-cuenta";
 import { abrirZip, decodificarXml, ErrorDeLectura, leerCsv, leerEstadoDeCuenta, TOPE_RENGLONES, xmlSeguro } from "./lector-estado-cuenta";
 
 const HOY = "2026-11-10";
@@ -39,7 +39,7 @@ describe("estado de cuenta: XLSX", () => {
     const tabla = leerEstadoDeCuenta("banco.xlsx", xlsx(hoja));
     const empate = sugerirEmpate(tabla);
     assert.ok(empate);
-    const lectura = aplicarEmpate(tabla, empate, "bbva", "2026-12-31");
+    const lectura = aplicarEmpate(tabla, empate, "2026-12-31");
     assert.equal(lectura.abonos[0]?.fecha, "2026-11-15");
     assert.equal(lectura.abonos[0]?.montoCentavos, 250_000);
   });
@@ -99,7 +99,7 @@ describe("estado de cuenta: CSV", () => {
   it("nunca evalúa fórmulas: el texto queda neutralizado", () => {
     const tabla = leerCsv(new TextEncoder().encode("Fecha,Concepto,Abono\n15/11/2026,=HYPERLINK(\"http://x\"),100\n16/11/2026,@SUM(1),200\n"));
     const empate = sugerirEmpate(tabla)!;
-    const lectura = aplicarEmpate(tabla, empate, "banorte", HOY > "2026-11-16" ? HOY : "2026-11-30");
+    const lectura = aplicarEmpate(tabla, empate, HOY > "2026-11-16" ? HOY : "2026-11-30");
     assert.deepEqual(lectura.abonos.map((a) => a.concepto), ["'=HYPERLINK(\"http://x\")", "'@SUM(1)"]);
   });
 
@@ -130,17 +130,47 @@ describe("estado de cuenta: montos, fechas, empate y huella", () => {
   });
 
   it("encuentra la referencia de Lever en el concepto solo si es una y válida", () => {
-    assert.equal(referenciaEnTexto("SPEI RECIBIDO REF 0000018 COLEGIO"), "0000018");
-    assert.equal(referenciaEnTexto("REF 0000019"), null);
-    assert.equal(referenciaEnTexto("0000018 y 0000026"), null);
+    assert.equal(referenciaEnTexto("SPEI RECIBIDO REF 1000009 COLEGIO"), "1000009");
+    assert.equal(referenciaEnTexto("REF 1000008"), null);
+    assert.equal(referenciaEnTexto("1000009 y 1000017"), null);
+    // Cierra por Luhn pero empieza con cero: no es de Lever (r63-N2).
+    assert.equal(referenciaEnTexto("SPEI RECIBIDO REF 0000018"), null);
+  });
+
+  it("un número corto en la columna de referencia no se completa con ceros (r63-N2)", () => {
+    assert.equal(referenciaDeRenglon("18", "DEPOSITO DE TERCERO SIN RELACION"), null);
+    assert.equal(referenciaDeRenglon("0000018", null), null);
+    assert.equal(referenciaDeRenglon("1000009", null), "1000009");
+    assert.equal(referenciaDeRenglon("18", "SPEI RECIBIDO 1000017"), "1000017");
+  });
+
+  it("la clave de un renglón no depende del banco elegido ni del empate (r63-N1)", () => {
+    const tabla = [
+      ["Fecha", "Concepto", "Referencia", "Abono", "Saldo"],
+      ["09/11/2026", "SPEI RECIBIDO R63 DOS", "1000017", "500.00", "1,500.00"],
+      ["10/11/2026", "SPEI RECIBIDO R63 TRES", "", "500.00", "2,000.00"],
+    ];
+    const empate = (extra: Record<string, string>) => {
+      const e = validarEmpate({ filaEncabezado: "0", columnaFecha: "0", columnaAbono: "3", ...extra }, 5, tabla.length);
+      assert.ok(!("error" in e));
+      return e;
+    };
+    const completo = empate({ columnaConcepto: "1", columnaReferencia: "2" });
+    const cruzado = empate({ columnaConcepto: "2", columnaReferencia: "1" });
+    const minimo = empate({});
+    // El banco ya no entra en la lectura: el mismo archivo con otro banco da las mismas claves por construcción.
+    const lecturas = [completo, cruzado, minimo].map((e) => aplicarEmpate(tabla, e, "2026-11-30"));
+    for (const fila of [0, 1]) assert.equal(new Set(lecturas.map((l) => l.abonos[fila]!.clave)).size, 1, `renglón ${fila + 1}`);
+    // Dos depósitos distintos siguen siendo dos claves.
+    assert.notEqual(lecturas[0]!.abonos[0]!.clave, lecturas[0]!.abonos[1]!.clave);
   });
 
   it("la misma tabla da las mismas claves; dos depósitos idénticos son dos renglones", () => {
     const tabla = [["Fecha", "Concepto", "Abono", "Cargo"], ["15/11/2026", "SPEI", "100.00", ""], ["15/11/2026", "SPEI", "100.00", ""], ["15/11/2026", "Comisión", "", "10.00"], ["Saldo final", "", "", ""]];
     const empate = validarEmpate({ filaEncabezado: "0", columnaFecha: "0", columnaAbono: "2", columnaConcepto: "1" }, 4, tabla.length);
     assert.ok(!("error" in empate));
-    const una = aplicarEmpate(tabla, empate, "santander", HOY > "2026-11-15" ? HOY : "2026-11-30");
-    const otra = aplicarEmpate(tabla, empate, "santander", "2026-11-30");
+    const una = aplicarEmpate(tabla, empate, HOY > "2026-11-15" ? HOY : "2026-11-30");
+    const otra = aplicarEmpate(tabla, empate, "2026-11-30");
     assert.equal(una.abonos.length, 2);
     assert.notEqual(una.abonos[0]?.clave, una.abonos[1]?.clave);
     assert.deepEqual(una.abonos.map((a) => a.clave), otra.abonos.map((a) => a.clave));
@@ -155,7 +185,7 @@ describe("estado de cuenta: montos, fechas, empate y huella", () => {
 
   it("los abonos de fecha futura o sin fecha no entran", () => {
     const tabla = [["Fecha", "Abono"], ["15/12/2026", "100"], ["sin fecha", "100"], ["15/11/2026", "100"]];
-    const lectura = aplicarEmpate(tabla, sugerirEmpate(tabla)!, "otro", "2026-11-20");
+    const lectura = aplicarEmpate(tabla, sugerirEmpate(tabla)!, "2026-11-20");
     assert.deepEqual([lectura.abonos.length, lectura.futuros, lectura.sinFecha], [1, 1, 1]);
   });
 });

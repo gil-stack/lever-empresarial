@@ -28,26 +28,20 @@ import {
   revertirAplicacion,
   simularAbono,
   editarCliente,
+  ErrorDeCaptura,
   type DependenciasCobranza,
 } from "../../src/server/cobranza/servicio.ts";
 import { correrCobranza } from "../../src/server/cobranza/tarea.ts";
 import { actorDeCliente, auditar } from "../../src/server/bitacora/auditar.ts";
 import { baseCliente } from "../../src/nucleo/contexto.ts";
-import { aceptarInvitacion } from "../../src/server/invitaciones/servicio.ts";
-import { darDeAltaPersona, nombrarCentro } from "../../src/server/personas/servicio.ts";
-import { invitarAdministrador, contextoDePersonal } from "../../src/server/plataforma/servicio.ts";
-import { leerSesion } from "../../src/server/session/servicio.ts";
 import type { Sesion } from "../../src/server/session/tipos.ts";
-import { resolverContexto } from "../../src/server/tenencia/resolver.ts";
+import { nombrarCentro } from "../../src/server/personas/servicio.ts";
+import { contextoDePersonal } from "../../src/server/plataforma/servicio.ts";
+import { administrador, CLABE_EMPRESA, contar, HOY, persona, reloj, sembrarPersonal } from "./siembra.ts";
 import { aplicarArchivo, conBaseDesechable, consultarJson, ejecutar, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
 
 const urlAdmin = process.env.AISLAMIENTO_DATABASE_URL?.trim() ?? "";
-const CLAVE = "clave-segura-12";
-const CLABE_EMPRESA = "002180701150123452";
 const URL = "https://lever.ejemplo.mx";
-const reloj = (iso: string) => () => new Date(iso);
-/** Martes 10 de noviembre de 2026, mediodía en México. */
-const HOY = reloj("2026-11-10T18:00:00.000Z");
 
 describe("Cobranza en Postgres", { skip: urlAdmin.length === 0 }, () => {
   it("alta con plan, cron idempotente, pagos, pagador, demo, aislamiento y Fintoc", async () => {
@@ -164,7 +158,8 @@ async function escenario(url: string): Promise<void> {
   for (const m of cobros) {
     assert.equal(m.responderA, "cobranza-alfa@ejemplo.mx");
     assert.match(m.texto, new RegExp(clabeVisible(CLABE_EMPRESA)));
-    assert.match(m.texto, /0000018/);
+    // La primera referencia de la empresa: el consecutivo empieza en 100000, sin ceros a la izquierda (r63-N2).
+    assert.match(m.texto, /1000009/);
   }
   await assert.rejects(() => darDeAltaCliente(admin, { ...datosAlta, nombre: "Otro", altaId }, deps()), codigo("formulario_ya_enviado"));
   const conRfc = { ...datosAlta, nombre: "Con RFC", rfc: "CABL840215RF4", correos: "conrfc@ejemplo.mx" };
@@ -284,7 +279,7 @@ async function escenario(url: string): Promise<void> {
   // El aviso firmado: el mismo evento dos veces deja un solo pago; firma vieja es 400; cuenta ajena se ignora.
   const configFintoc: ConfigFintoc = { llaveSecreta: `sk_test_${randomUUID().replace(/-/g, "")}`, secretoWebhook: createHash("sha256").update(randomUUID()).digest("hex"), modo: "test" };
   const ahoraSeg = Math.floor(Date.now() / 1000);
-  const depsAviso = { config: configFintoc, ahora: () => new Date(ahoraSeg * 1000), auditar };
+  const depsAviso = { config: configFintoc, ahora: () => new Date(ahoraSeg * 1000), auditar, enviador: deps().enviador, urlPublica: () => URL, registrar: () => {} };
   const evento = (cuentaNumero: string, monto: number, cuentaDe = cuenta) => JSON.stringify({
     id: `evt_${randomUUID().replace(/-/g, "")}`, type: "transfer.inbound.succeeded", object: "event", mode: "test", created_at: new Date().toISOString(),
     data: {
@@ -301,8 +296,20 @@ async function escenario(url: string): Promise<void> {
   assert.equal(contar(url, `select count(*) from collection_payments where fuente = 'fintoc'`), 1);
   assert.equal(contar(url, `select count(*) from collection_payments where fuente = 'fintoc' and customer_id = '${conClabe.clienteId}' and estado = 'aplicado'`), 1);
   assert.equal((await atenderAviso(bytes, firmar(cuerpo, configFintoc.secretoWebhook, ahoraSeg - 301), depsAviso)).estado, 400);
+  // r63-N7: un abono a una cuenta que nadie registró no se pierde: queda «sin destino» para el personal, y el registro no lleva datos.
   const ajeno = evento("acno_NoExiste", 100, "acc_Ajena");
-  assert.deepEqual(await atenderAviso(new TextEncoder().encode(ajeno), firmar(ajeno, configFintoc.secretoWebhook, ahoraSeg), depsAviso), { estado: 200, cuerpo: { ok: true, efecto: "ignorado" } });
+  const lineas: string[] = [];
+  const errorOriginal = console.error;
+  console.error = (linea: unknown) => { lineas.push(String(linea)); };
+  try {
+    assert.deepEqual(await atenderAviso(new TextEncoder().encode(ajeno), firmar(ajeno, configFintoc.secretoWebhook, ahoraSeg), depsAviso), { estado: 200, cuerpo: { ok: true, efecto: "sin_destino" } });
+    assert.deepEqual(await atenderAviso(new TextEncoder().encode(ajeno), firmar(ajeno, configFintoc.secretoWebhook, ahoraSeg), depsAviso), { estado: 200, cuerpo: { ok: true, efecto: "repetido" } });
+  } finally {
+    console.error = errorOriginal;
+  }
+  assert.equal(contar(url, "select count(*) from collection_unrouted_events where proveedor = 'fintoc' and cuenta_id = 'acc_Ajena' and cuenta_numero_id = 'acno_NoExiste' and monto_centavos = 100"), 1);
+  assert.ok(lineas.length > 0);
+  for (const linea of lineas) assert.doesNotMatch(linea, /acc_Ajena|acno_NoExiste|evt_|tr_|"monto|Cliente con CLABE/);
 
   // 11. Estado de cuenta (Beta): la primera vez se empatan columnas; el abono con referencia se aplica,
   // el que no se identifica va a «Por conciliar», el marcado se descarta, y volver a subirlo no duplica nada.
@@ -338,69 +345,145 @@ async function escenario(url: string): Promise<void> {
   assert.equal(consultarJson<{ e: string }[]>(url, `select json_agg(json_build_object('e', estado)) from collection_charges where id = '${cargoBeta.id}'`)[0]!.e, "pagado");
   assert.equal(contar(url, `select count(*) from collection_payments where company_id = '${beta.id}' and fuente = 'estado_cuenta'`), 2);
   assert.equal(contar(url, `select count(*) from collection_payments where company_id = '${beta.id}' and fuente = 'estado_cuenta' and estado = 'abierto'`), 1);
-  // Segunda vez: el empate guardado se usa solo y ningún renglón entra de nuevo.
-  assert.deepEqual(await prepararEstadoDeCuenta(adminBeta, { banco: "banorte" }, archivo, deps()), { tipo: "sin_nuevos", repetidos: 3 });
+  // Segunda vez, el mismo archivo: se frena de entrada con su fecha, con el banco que sea (r63-N1).
+  const yaImportado = (e: unknown) => e instanceof ErrorDeCaptura && e.errores[0]?.campo === "archivo" && /^Ese archivo ya se importó el /.test(e.errores[0]?.mensaje ?? "");
+  await assert.rejects(() => prepararEstadoDeCuenta(adminBeta, { banco: "banorte" }, archivo, deps()), yaImportado);
+  await assert.rejects(() => prepararEstadoDeCuenta(adminBeta, { ...empate, banco: "hsbc" }, archivo, deps()), yaImportado);
   assert.equal(contar(url, `select count(*) from collection_statement_rows where company_id = '${beta.id}'`), 3);
   assert.equal(contar(url, `select count(*) from audit_log where accion in ('empate_estado_cuenta', 'importar_estado_cuenta', 'confirmar_estado_cuenta') and company_id = '${beta.id}'`), 3);
+
+  // 12. Revisión del #63 ------------------------------------------------------------------------
+  await revision63(url, { admin, adminBeta, sesionAdmin, personal, alfa, beta, deps, enviados, codigo, cuenta, propia, configFintoc, depsAviso, ahoraSeg, altaId, variableId: variable.clienteId, empate });
 
   // Toda escritura dejó su evento: ninguna fila de cobranza sin bitácora.
   assert.equal(contar(url, `select count(*) from collection_payments p where not exists (select 1 from audit_log a where a.identificador = p.id)`), 0);
   assert.equal(contar(url, `select count(*) from collection_virtual_accounts v where not exists (select 1 from audit_log a where a.identificador = v.id)`), 0);
 }
 
-async function administrador(url: string, personal: Awaited<ReturnType<typeof contextoDePersonal>>, empresa: { id: string; razonSocial: string }, correo: string): Promise<[ContextoConEmpresa, Sesion]> {
-  const invitado = await invitarAdministrador(personal, { companyId: empresa.id, razonSocial: empresa.razonSocial, nombre: `Admin ${empresa.razonSocial}`, correo });
-  await aceptarInvitacion({ token: invitado.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
-  const sesion = await sesionPara(url, invitado.emitida.userId);
-  return [(await resolverContexto({ sesion, empresaPedida: empresa.id, peticionId: null, superficie: "cliente" })).ctx as ContextoConEmpresa, sesion];
-}
+type Revision63 = {
+  admin: ContextoConEmpresa;
+  adminBeta: ContextoConEmpresa;
+  sesionAdmin: Sesion;
+  personal: Awaited<ReturnType<typeof contextoDePersonal>>;
+  alfa: { id: string };
+  beta: { id: string };
+  deps: (ahora?: () => Date, extra?: Partial<DependenciasCobranza>) => DependenciasCobranza;
+  enviados: MensajeCorreo[];
+  codigo: (esperado: string) => (e: unknown) => boolean;
+  cuenta: string;
+  propia: ClabeFintoc;
+  configFintoc: ConfigFintoc;
+  depsAviso: Parameters<typeof atenderAviso>[2];
+  ahoraSeg: number;
+  altaId: string;
+  variableId: string;
+  empate: Record<string, string>;
+};
 
-async function persona(url: string, admin: ContextoConEmpresa, centroId: string, nombre: string, correo: string, rol: string[]): Promise<ContextoConEmpresa> {
-  let token = "";
-  await darDeAltaPersona(admin, {
-    nombre, alta: "2026-11-01", baja: "", centroId, jefeId: "", presupuesto: "", altaLlave: randomUUID(),
-    nomina: "no", clabe: CLABE_EMPRESA, acceso: "nueva", correo, rol,
-  }, {
-    ahora: HOY,
-    entregar: async (emitida) => {
-      token = emitida.token;
-      return { entregada: false, codigo: "correo_no_configurado" };
-    },
-  });
-  const aceptada = await aceptarInvitacion({ token, contrasena: CLAVE, confirmacion: CLAVE });
-  const sesion = await sesionPara(url, aceptada.userId);
-  return (await resolverContexto({ sesion, empresaPedida: admin.empresa.id, peticionId: null, superficie: "cliente" })).ctx as ContextoConEmpresa;
-}
+/** Las regresiones de la revisión del #63 (revision-63.md): cada una falló antes de su arreglo. */
+async function revision63(url: string, r: Revision63): Promise<void> {
+  const { admin, adminBeta, deps, enviados, codigo, cuenta, configFintoc, depsAviso, ahoraSeg } = r;
+  const fila = <T,>(sql: string) => consultarJson<T[]>(url, `select json_agg(x) from (${sql}) x`)?.[0];
+  const avisoFintoc = async (datos: { tipo?: string; status?: string; transferencia?: string; cuentaNumero: string; cuentaDe?: string; monto: number; referencia?: string | null; ordenante?: string | null; rastreo?: string | null }) => {
+    const cuerpo = JSON.stringify({
+      id: `evt_${randomUUID().replace(/-/g, "")}`, type: datos.tipo ?? "transfer.inbound.succeeded", object: "event", mode: "test", created_at: new Date().toISOString(),
+      data: {
+        id: datos.transferencia ?? `tr_${randomUUID().replace(/-/g, "")}`, object: "transfer", direction: "inbound", status: datos.status ?? "succeeded",
+        amount: datos.monto, currency: "MXN", mode: "test", transaction_date: "2026-11-10T17:00:00.000Z",
+        reference_id: datos.referencia ?? null, tracking_key: datos.rastreo ?? null,
+        account_number: { id: datos.cuentaNumero, account_id: datos.cuentaDe ?? cuenta },
+        counterparty: { holder_name: "Ordenante de prueba", account_number: datos.ordenante ?? null, account_type: "clabe" },
+      },
+    });
+    return atenderAviso(new TextEncoder().encode(cuerpo), firmar(cuerpo, configFintoc.secretoWebhook, ahoraSeg), depsAviso);
+  };
+  const principal = "acno_PrincipalAlfa01";
+  const cargoAbierto = (cliente: string) => fila<{ id: string; referencia: string; saldo: number }>(
+    `select id, referencia, (monto_centavos - pagado_centavos)::int as saldo from collection_charges where customer_id = '${cliente}' and estado = 'emitido' order by vencimiento limit 1`)!;
 
-function contar(url: string, sql: string): number {
-  const fila = consultarJson<{ n: number }[]>(url, `select json_agg(json_build_object('n', (${sql}))) from (select 1) x`);
-  return fila[0]?.n ?? -1;
-}
+  // r63-N2 (webhook): un número corto de un tercero a la cuenta de la empresa no se aplica a nadie.
+  const deVariable = cargoAbierto(r.variableId);
+  const corto = deVariable.referencia.slice(-2);
+  assert.deepEqual(await avisoFintoc({ cuentaNumero: principal, monto: 100, referencia: corto, rastreo: "CORTO0001" }), { estado: 200, cuerpo: { ok: true, efecto: "registrado" } });
+  assert.deepEqual(fila(`select estado, customer_id, aplicado_centavos from collection_payments where clave_rastreo = 'CORTO0001'`), { estado: "abierto", customer_id: null, aplicado_centavos: 0 });
+  // Con los 7 dígitos sí se aplica, aunque sea un pago parcial.
+  assert.deepEqual(await avisoFintoc({ cuentaNumero: principal, monto: 100, referencia: deVariable.referencia, rastreo: "COMPLETO01" }), { estado: 200, cuerpo: { ok: true, efecto: "registrado" } });
+  assert.deepEqual(fila(`select estado, aplicado_centavos from collection_payments where clave_rastreo = 'COMPLETO01'`), { estado: "aplicado", aplicado_centavos: 100 });
+  assert.equal(fila<{ p: number }>(`select pagado_centavos as p from collection_charges where id = '${deVariable.id}'`)!.p, 100);
 
-async function sesionPara(url: string, userId: string): Promise<Sesion> {
-  const token = `S${randomUUID().replace(/-/g, "")}AAAAAAAAAA`.slice(0, 43);
-  const entradaId = randomUUID();
-  const sesionId = randomUUID();
-  const hashEntrada = createHash("sha256").update(entradaId).digest("hex");
-  const hashSesion = createHash("sha256").update(token).digest("hex");
-  ejecutar(url, `
-    insert into auth_entradas (id, user_id, token_hash, creada_en, vence_en, verificada_con, verificada_en, consumida_en)
-      values ('${entradaId}', '${userId}', '${hashEntrada}', now(), now() + interval '10 minutes', 'totp', now(), now());
-    insert into sessions (id, user_id, token_hash, expires_at, segundo_factor, entrada_id)
-      values ('${sesionId}', '${userId}', '${hashSesion}', now() + interval '12 hours', 'totp', '${entradaId}');
-  `);
-  const sesion = await leerSesion(`sesion=${token}`);
-  if (!sesion?.segundoFactor) throw new Error("La sesión de prueba no quedó abierta.");
-  return sesion;
-}
+  // r63-N4: la CLABE X pagó antes por Uno; ahora manda la referencia de Variable: se aplica a Variable, con la marca visible.
+  const d17 = "01218000123456789";
+  const clabeX = `${d17}${digitoClabe(d17)}`;
+  const deUno = cargoAbierto(r.altaId);
+  await avisoFintoc({ cuentaNumero: principal, monto: 10_000, referencia: deUno.referencia, ordenante: clabeX, rastreo: "XUNO0001" });
+  assert.equal(fila<{ m: boolean }>(`select de_otro_cliente as m from collection_payments where clave_rastreo = 'XUNO0001'`)!.m, false);
+  const transferenciaX = `tr_${randomUUID().replace(/-/g, "")}`;
+  await avisoFintoc({ cuentaNumero: principal, monto: 7_000, referencia: deVariable.referencia, ordenante: clabeX, rastreo: "XDOS0001", transferencia: transferenciaX });
+  assert.deepEqual(fila(`select estado, customer_id, de_otro_cliente from collection_payments where clave_rastreo = 'XDOS0001'`), { estado: "aplicado", customer_id: r.variableId, de_otro_cliente: true });
+  const vistaVariable = await leerVistaCliente(admin, r.variableId, deps());
+  assert.equal(vistaVariable?.detalle.pagos.find((p) => p.claveRastreo === "XDOS0001")?.deOtroCliente, true);
 
-function sembrarPersonal(url: string): void {
-  ejecutar(url, `
-    insert into users (id, nombre, correo, password_hash)
-      values ('99999999-9999-4999-8999-999999999998', 'Personal', 'personal-cobranza@ejemplo.mx', '$2b$12$${"a".repeat(53)}');
-    insert into platform_staff (operator_id, user_id, estado)
-      values ((select id from operators order by alta_en limit 1), '99999999-9999-4999-8999-999999999998', 'activo');
-    insert into platform_staff_roles (operator_id, user_id, rol)
-      values ((select id from operators order by alta_en limit 1), '99999999-9999-4999-8999-999999999998', 'administracion_plataforma');
-  `);
+  // r63-N8: Fintoc avisa que la empresa devolvió esa transferencia: se revierte, el cargo vuelve a emitido y se avisa.
+  const avisosAntes = enviados.length;
+  const devuelta = await avisoFintoc({ tipo: "transfer.inbound.returned", status: "returned", cuentaNumero: principal, monto: 7_000, referencia: deVariable.referencia, ordenante: clabeX, rastreo: "XDOS0001", transferencia: transferenciaX });
+  assert.deepEqual(devuelta, { estado: 200, cuerpo: { ok: true, efecto: "devuelto" } });
+  assert.deepEqual(fila(`select estado, aplicado_centavos from collection_payments where clave_rastreo = 'XDOS0001'`), { estado: "devuelto", aplicado_centavos: 0 });
+  assert.deepEqual(fila(`select estado, pagado_centavos from collection_charges where id = '${deVariable.id}'`), { estado: "emitido", pagado_centavos: 100 });
+  assert.equal(contar(url, `select count(*) from collection_applications a join collection_payments p on p.id = a.payment_id where p.clave_rastreo = 'XDOS0001' and a.regla = 'reversion'`), 1);
+  assert.equal(enviados.length, avisosAntes + 1);
+  assert.match(enviados.at(-1)?.asunto ?? "", /devolvi/i);
+  // El mismo aviso de devolución otra vez no revierte dos veces; «return_failed» no cambia nada.
+  assert.deepEqual((await avisoFintoc({ tipo: "transfer.inbound.returned", status: "returned", cuentaNumero: principal, monto: 7_000, transferencia: transferenciaX })).cuerpo, { ok: true, efecto: "repetido" });
+  assert.deepEqual((await avisoFintoc({ tipo: "transfer.inbound.return_failed", status: "succeeded", cuentaNumero: principal, monto: 7_000, transferencia: transferenciaX })).cuerpo, { ok: true, efecto: "ignorado" });
+  assert.equal(contar(url, `select count(*) from collection_applications a join collection_payments p on p.id = a.payment_id where p.clave_rastreo = 'XDOS0001' and a.regla = 'reversion'`), 1);
+
+  // r63-base-N3: la plataforma cambia la cuenta de Fintoc de Alfa; la CLABE que el cliente ya tenía sigue registrando sus pagos.
+  await registrarCuentaFintoc(r.personal, { empresaId: r.alfa.id, cuentaId: "acc_PruebaAlfa02" });
+  assert.deepEqual(await avisoFintoc({ cuentaNumero: r.propia.id, cuentaDe: cuenta, monto: 2_500, rastreo: "HUERFANA01" }), { estado: 200, cuerpo: { ok: true, efecto: "registrado" } });
+  assert.equal(contar(url, `select count(*) from collection_payments where clave_rastreo = 'HUERFANA01' and company_id = '${r.alfa.id}' and customer_id = '${r.propia.clienteId}'`), 1);
+
+  // r63-N3: el correo de contacto (el Reply-To de cada cobro) exige segundo factor reciente y avisa; el beneficiario también avisa.
+  const config = fila<{ clabe: string; beneficiario: string; correo_contacto: string }>(`select clabe, beneficiario, correo_contacto from collection_settings where company_id = '${r.alfa.id}'`)!;
+  const base = { clabe: config.clabe, beneficiario: config.beneficiario, correoContacto: config.correo_contacto, emitirDiasAntes: "7", antesDias: "3", avisoElDia: "si", despuesCadaDias: "7", despuesTope: "3", envioAutomatico: "si" };
+  const vieja = { ...r.sesionAdmin, segundoFactor: { metodo: r.sesionAdmin.segundoFactor!.metodo, en: new Date(Date.now() - 31 * 60_000) } };
+  await assert.rejects(() => configurarCobranza(admin, { ...base, correoContacto: "otro-buzon-r63@ejemplo.mx" }, vieja, deps()), codigo("reautenticacion_requerida"));
+  assert.equal(fila<{ c: string }>(`select correo_contacto as c from collection_settings where company_id = '${r.alfa.id}'`)!.c, config.correo_contacto);
+  const antesContacto = enviados.length;
+  assert.deepEqual(await configurarCobranza(admin, { ...base, correoContacto: "otro-buzon-r63@ejemplo.mx" }, r.sesionAdmin, deps()), { clabeCambio: false, avisos: 1 });
+  assert.match(enviados.at(-1)?.asunto ?? "", /correo de contacto/i);
+  assert.equal(enviados.length, antesContacto + 1);
+  assert.deepEqual(await configurarCobranza(admin, { ...base, correoContacto: "otro-buzon-r63@ejemplo.mx", beneficiario: "Escuela Alfa Cobranza SC" }, r.sesionAdmin, deps()), { clabeCambio: false, avisos: 1 });
+  assert.match(enviados.at(-1)?.asunto ?? "", /beneficiario/i);
+  // Lo demás (el calendario) no pide factor ni avisa.
+  assert.deepEqual(await configurarCobranza(admin, { ...base, correoContacto: "otro-buzon-r63@ejemplo.mx", beneficiario: "Escuela Alfa Cobranza SC", antesDias: "2" }, vieja, deps()), { clabeCambio: false, avisos: 0 });
+
+  // r63-N10: registrar un pago con el id de un cargo de otra empresa dice «no encontrado», no «ya cambió».
+  const deBeta = fila<{ id: string }>(`select id from collection_charges where company_id = '${r.beta.id}' limit 1`)!;
+  await assert.rejects(() => registrarPagoManual(admin, { altaId: randomUUID(), cargoId: deBeta.id, monto: "1.00", recibidoEl: "2026-11-10" }, null, deps()), codigo("cargo_ausente"));
+  assert.equal(contar(url, `select count(*) from collection_payments where id_externo like 'manual:%' and company_id = '${r.alfa.id}' and monto_centavos = 100`), 0);
+
+  // r63-N1: el mismo depósito en otro archivo (con un renglón nuevo), con otro banco y otro empate, no se aplica dos veces.
+  const deBetaEmitido = fila<{ id: string; referencia: string }>(`select id, referencia from collection_charges where company_id = '${r.beta.id}' and estado = 'pagado' limit 1`)!;
+  const pagadoAntes = fila<{ p: number }>(`select pagado_centavos as p from collection_charges where id = '${deBetaEmitido.id}'`)!.p;
+  const otroArchivo = [
+    "Fecha,Concepto,Referencia,Cargo,Abono,Saldo",
+    `09/11/2026,SPEI RECIBIDO ${deBetaEmitido.referencia},${deBetaEmitido.referencia},,"2,500.00","10,000.00"`,
+    `10/11/2026,DEPOSITO DE TERCERO SIN RELACION,18,,"1.00","10,740.34"`,
+  ].join("\r\n");
+  // Otro banco y otro empate (sin la columna del concepto): el renglón repetido se reconoce igual.
+  const conOtroEmpate = { ...r.empate, banco: "hsbc", columnaConcepto: "" };
+  const segunda = await prepararEstadoDeCuenta(adminBeta, conOtroEmpate, { nombre: "hsbc-noviembre.csv", bytes: new TextEncoder().encode(otroArchivo) }, deps());
+  assert.equal(segunda.tipo, "importado");
+  if (segunda.tipo !== "importado") return;
+  assert.deepEqual([segunda.nuevos, segunda.repetidos], [1, 1]);
+  // r63-N2 (estado de cuenta): «18» de un tercero va a «Por conciliar» como referencia incompleta.
+  const vistaSegunda = await leerVistaEstadoDeCuenta(adminBeta, segunda.importacionId);
+  const renglon18 = vistaSegunda.actual!.renglones.find((x) => x.montoCentavos === 100)!;
+  assert.equal(renglon18.propuesta?.tipo, "por_conciliar");
+  assert.equal(renglon18.propuesta?.tipo === "por_conciliar" ? renglon18.propuesta.motivo : null, "referencia_incompleta");
+  assert.deepEqual(await confirmarEstadoDeCuenta(adminBeta, { importacionId: segunda.importacionId, descartar: [] }, deps()), { aplicados: 0, porConciliar: 1, yaRegistrados: 0, descartados: 0 });
+  assert.equal(fila<{ p: number }>(`select pagado_centavos as p from collection_charges where id = '${deBetaEmitido.id}'`)!.p, pagadoAntes);
+  assert.equal(contar(url, `select count(*) from collection_applications where charge_id = '${deBetaEmitido.id}'`), 1);
+  // La base frena el mismo archivo aunque dos subidas lleguen a la vez: UNIQUE (empresa, huella del archivo).
+  assert.equal(contar(url, `select count(*) from pg_constraint where conname = 'collection_statement_imports_archivo_unico'`), 1);
 }

@@ -123,7 +123,7 @@ export const CATALOGO = {
   // Cobranza (0031). La CLABE viaja enmascarada; nunca correos, nombres ni la referencia del pagador.
   configurar_cobranza: {
     entidad: "collection_settings",
-    cambio: ["clabe_anterior", "clabe_nueva", "beneficiario_cambio", "contacto", "calendario"],
+    cambio: ["clabe_anterior", "clabe_nueva", "beneficiario_cambio", "contacto", "contacto_cambio", "calendario"],
   },
   alta_cliente_cobranza: { entidad: "collection_customers", cambio: ["correos", "con_rfc"] },
   editar_cliente_cobranza: { entidad: "collection_customers", cambio: ["campos"] },
@@ -146,10 +146,11 @@ export const CATALOGO = {
   abono_cargo: { entidad: "collection_charges", cambio: ["pagado_centavos", "estado"] },
   registrar_pago_cobranza: {
     entidad: "collection_payments",
-    cambio: ["fuente", "monto_centavos", "recibido_el", "regla", "posible_duplicado", "con_comprobante"],
+    cambio: ["fuente", "monto_centavos", "recibido_el", "regla", "posible_duplicado", "de_otro_cliente", "con_comprobante"],
   },
   saldo_pago_cobranza: { entidad: "collection_payments", cambio: ["aplicado_centavos", "estado"] },
   anular_pago_cobranza: { entidad: "collection_payments", cambio: [] },
+  devolver_pago_cobranza: { entidad: "collection_payments", cambio: ["proveedor", "monto_centavos"] },
   aplicacion_cobranza: { entidad: "collection_applications", cambio: ["monto_centavos", "regla"] },
   correo_cobranza: { entidad: "collection_emails", cambio: ["tipo", "estado", "destinatarios", "codigo"] },
   correo_cobranza_entregado: { entidad: "collection_email_deliveries", cambio: [] },

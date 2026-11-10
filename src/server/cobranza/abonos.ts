@@ -90,16 +90,18 @@ export async function recibirAbono(
   }
   const rastreoYaRegistrado = abono.claveRastreo !== null && (await aplicarSentencia(
     consulta,
-    "select 1 from collection_payments where company_id = $1 and upper(clave_rastreo) = upper($2) and estado <> 'anulado' limit 1",
+    "select 1 from collection_payments where company_id = $1 and upper(clave_rastreo) = upper($2) and estado not in ('anulado', 'devuelto') limit 1",
     [empresaId, abono.claveRastreo],
   )).rows.length > 0;
   const clienteDeLaCuenta = abono.clienteDeLaCuenta;
+  // Quién ha pagado antes desde esa CLABE: identifica al cliente sin referencia y, con referencia, marca el pago que
+  // llega desde la cuenta de otro cliente (r63-N4).
   let clientesDeLaClabe: string[] = [];
-  if (!cargoDeLaReferencia && !clienteDeLaCuenta && abono.clabeOrdenante) {
+  if (abono.clabeOrdenante) {
     const r = await aplicarSentencia(
       consulta,
       `select distinct customer_id from collection_payments
-        where company_id = $1 and clabe_ordenante = $2 and customer_id is not null and estado <> 'anulado'`,
+        where company_id = $1 and clabe_ordenante = $2 and customer_id is not null and estado not in ('anulado', 'devuelto')`,
       [empresaId, abono.clabeOrdenante],
     );
     clientesDeLaClabe = r.rows.map(registro).map((f) => texto(f.customer_id));
@@ -121,15 +123,18 @@ export async function recibirAbono(
     consulta,
     `insert into collection_payments
        (id, company_id, fuente, id_externo, monto_centavos, recibido_el, clave_rastreo, referencia, clabe_ordenante, nombre_ordenante,
-        customer_id, posible_duplicado, registrado_por)
-     values ($1, $2, $3, $4, $5, $6::date, $7, $8, $9, $10, $11, $12, $13)`,
+        customer_id, posible_duplicado, de_otro_cliente, registrado_por)
+     values ($1, $2, $3, $4, $5, $6::date, $7, $8, $9, $10, $11, $12, $13, $14)`,
     [pagoId, empresaId, fuente, abono.idExterno, abono.montoCentavos, abono.recibidoEl, abono.claveRastreo, abono.referencia,
-      abono.clabeOrdenante, abono.nombreOrdenante, decision.clienteId, decision.posibleDuplicado, autorDe(actor)],
+      abono.clabeOrdenante, abono.nombreOrdenante, decision.clienteId, decision.posibleDuplicado, decision.deOtroCliente, autorDe(actor)],
   );
   await auditar(consulta, actor, {
     accion: "registrar_pago_cobranza",
     identificador: pagoId,
-    cambio: { fuente, monto_centavos: abono.montoCentavos, recibido_el: abono.recibidoEl, regla: decision.motivo, posible_duplicado: decision.posibleDuplicado, con_comprobante: false },
+    cambio: {
+      fuente, monto_centavos: abono.montoCentavos, recibido_el: abono.recibidoEl, regla: decision.motivo, posible_duplicado: decision.posibleDuplicado,
+      de_otro_cliente: decision.deOtroCliente, con_comprobante: false,
+    },
   });
   if (decision.aplicacion) {
     await aplicar(consulta, actor, auditar, empresaId, pagoId, decision.aplicacion.cargoId, decision.aplicacion.montoCentavos, decision.aplicacion.regla, abono.recibidoEl);

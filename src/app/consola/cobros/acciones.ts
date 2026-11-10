@@ -42,7 +42,7 @@ const RECHAZO: Record<string, { titulo: string; mensaje: string }> = {
   sesion_ausente: { titulo: "Tu sesión terminó", mensaje: "Vuelve a entrar y repite el cambio." },
   sin_empresa: { titulo: "Sin empresa elegida", mensaje: "Elige la empresa desde el menú y repite el cambio." },
   cobranza_sin_configurar: { titulo: "Primero configura dónde te pagan", mensaje: "Captura la CLABE donde tus clientes te depositan y el correo de contacto. Después da de alta al cliente." },
-  reautenticacion_requerida: { titulo: "Confirma que eres tú", mensaje: "Cambiar la CLABE o el beneficiario exige un segundo factor reciente. Sal, vuelve a entrar y repite el cambio." },
+  reautenticacion_requerida: { titulo: "Confirma que eres tú", mensaje: "Cambiar la CLABE, el beneficiario o el correo de contacto exige un segundo factor de los últimos 30 minutos. Sal, vuelve a entrar y repite el cambio." },
   formulario_ya_enviado: { titulo: "Este formulario ya se envió con otros datos", mensaje: "Recarga la página para capturar uno nuevo." },
   entrada_invalida: { titulo: "No se entendió el cambio", mensaje: "Vuelve a intentar desde la página." },
   cliente_no_encontrado: { titulo: "No encontramos a ese cliente", mensaje: "Recarga la página. Si lo archivaron, ya no admite cambios." },
@@ -51,7 +51,7 @@ const RECHAZO: Record<string, { titulo: string; mensaje: string }> = {
   plan_no_encontrado: { titulo: "No encontramos ese plan", mensaje: "Recarga la página." },
   plan_cancelado: { titulo: "Ese plan ya está cancelado", mensaje: "Para volver a cobrarle, agrega un plan nuevo." },
   plan_no_valido: { titulo: "Ese cambio no aplica al plan", mensaje: "Solo se pausa un plan activo y solo se reanuda uno en pausa. Recarga la página." },
-  cargo_ausente: { titulo: "No encontramos ese cargo", mensaje: "Recarga la lista." },
+  cargo_ausente: { titulo: "No encontrado", mensaje: "Recarga la lista." },
   cargo_ya_resuelto: { titulo: "Ese cargo ya cambió", mensaje: "Alguien lo pagó, lo canceló o le puso monto antes. Recarga la lista." },
   cargo_no_cancelable: { titulo: "Ese cargo no se puede cancelar", mensaje: "Un cargo con pagos aplicados no se cancela: revierte primero la aplicación." },
   cargo_no_valido: { titulo: "Ese cargo no es válido", mensaje: "Revisa los datos y vuelve a intentar." },
@@ -147,10 +147,10 @@ export async function enviarConfiguracion(_previo: EstadoFlujo, formData: FormDa
     const hecho = await configurarCobranza(await contextoDeAccion(), campos(formData, [
       "clabe", "beneficiario", "correoContacto", "emitirDiasAntes", "antesDias", "avisoElDia", "despuesCadaDias", "despuesTope", "envioAutomatico",
     ]), sesion);
-    if (!hecho.clabeCambio) return "La configuración de cobranza quedó guardada.";
+    const guardado = hecho.clabeCambio ? "La CLABE de cobranza quedó guardada." : "La configuración de cobranza quedó guardada.";
     return hecho.avisos > 0
-      ? `La CLABE de cobranza quedó guardada. Avisamos del cambio a administración y finanzas (${hecho.avisos} ${hecho.avisos === 1 ? "correo" : "correos"}).`
-      : "La CLABE de cobranza quedó guardada.";
+      ? `${guardado} Avisamos del cambio a administración y finanzas (${hecho.avisos} ${hecho.avisos === 1 ? "correo" : "correos"}).`
+      : guardado;
   });
 }
 
