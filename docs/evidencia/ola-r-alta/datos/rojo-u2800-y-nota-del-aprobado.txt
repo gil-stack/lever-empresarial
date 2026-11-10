@@ -1,0 +1,23 @@
+# Rojo de los dos P3 del revisor de la base contra el código de edefd2e (src/dominio/control.ts y src/server/operacion/expediente.ts de edefd2e).
+
+## Unitarias (formulario.test.ts y alta-regulada.test.ts)
+  ✖ un texto hecho solo de invisibles está vacío y el mínimo cuenta lo que se ve (0.577167ms)
+ℹ pass 4
+ℹ fail 1
+✖ un texto hecho solo de invisibles está vacío y el mínimo cuenta lo que se ve (0.577167ms)
+  AssertionError [ERR_ASSERTION]: "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
+  ✖ un dato hecho solo de invisibles falta, como si estuviera vacío (0.767042ms)
+ℹ pass 16
+ℹ fail 1
+
+## Postgres con los dos archivos de edefd2e: el dictamen «observado» con diez U+2800 se asienta (línea 564)
+✖ expediente: dos capas de socios, propietarios reales calculados, versión inmutable y dictamen (112.657625ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (tests/operacion/alta-regulada-postgres.test.ts:564:11)
+
+## Postgres con solo expediente.ts de edefd2e (control.ts ya arreglado): el aprobado con una nota de 1,001 caracteres se asienta (línea 584)
+✖ expediente: dos capas de socios, propietarios reales calculados, versión inmutable y dictamen (108.286417ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (tests/operacion/alta-regulada-postgres.test.ts:584:11)

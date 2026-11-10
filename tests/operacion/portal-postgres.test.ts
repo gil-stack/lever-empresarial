@@ -18,6 +18,7 @@ import { hashDeRespaldo } from "../../src/server/autenticacion/respaldo.ts";
 import { hashDeToken } from "../../src/server/session/hash.ts";
 import { leerSesion } from "../../src/server/session/servicio.ts";
 import { aplicarArchivo, conBaseDesechable, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
+import { expedienteEnRegla, personal } from "./apoyo-alta-regulada.ts";
 
 const urlAdmin = process.env.AISLAMIENTO_DATABASE_URL?.trim() ?? "";
 const AHORA = new Date();
@@ -39,12 +40,20 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
       const a = randomUUID();
       const b = randomUUID();
       const externa = randomUUID();
-      for (const [id, correo] of [[a, "a@ejemplo.mx"], [b, "b@ejemplo.mx"], [externa, "externa@ejemplo.mx"]] as const) {
+      // Ola R1: el alta regulada pide originación y cumplimiento para el expediente, y aprobación para activar.
+      const origina = randomUUID();
+      const cumple = randomUUID();
+      for (const [id, correo] of [[a, "a@ejemplo.mx"], [b, "b@ejemplo.mx"], [externa, "externa@ejemplo.mx"], [origina, "origina@ejemplo.mx"], [cumple, "cumple@ejemplo.mx"]] as const) {
         await admin.query("insert into users (id, nombre, correo, password_hash) values ($1, $2, $3, null)", [id, correo.split("@")[0].toUpperCase(), correo]);
       }
       for (const id of [a, b]) {
         await admin.query("insert into platform_staff (operator_id, user_id, estado) values ($1, $2, 'activo')", [operatorId, id]);
         await admin.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'administracion_plataforma')", [operatorId, id]);
+      }
+      await admin.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'aprobacion')", [operatorId, b]);
+      for (const [id, rol] of [[origina, "originacion"], [cumple, "cumplimiento"]] as const) {
+        await admin.query("insert into platform_staff (operator_id, user_id, estado) values ($1, $2, 'activo')", [operatorId, id]);
+        await admin.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, $3)", [operatorId, id, rol]);
       }
       await admin.query("insert into platform_staff (operator_id, user_id, estado) values ($1, $2, 'activo')", [otroOperador, externa]);
       await admin.query("insert into platform_staff_roles (operator_id, user_id, rol) values ($1, $2, 'administracion_plataforma')", [otroOperador, externa]);
@@ -53,7 +62,10 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
       process.env.DATABASE_URL = urlDeAplicacion(urlDuena);
       await cerrarConexion();
       const ana = contexto(operatorId, a);
-      const beto = contexto(operatorId, b);
+      const beto = personal(operatorId, b, ["administracion_plataforma", "aprobacion"]);
+      const ori = personal(operatorId, origina, ["originacion"]);
+      const cum = personal(operatorId, cumple, ["cumplimiento"]);
+      const enRegla = (companyId: string, rfc: string, razonSocial: string) => expedienteEnRegla(ori, cum, { companyId, rfc, razonSocial });
       const ajena = contexto(otroOperador, externa);
       try {
         const authOwner = new Client({ connectionString: urlDuena });
@@ -86,7 +98,16 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
         assert.deepEqual(await listarClientes(ajena), []);
         const solicitudId = await solicitarActivacion(ana, companyId);
         assert.equal((await leerCliente(ana, companyId))?.estado, "en_alta");
-        await assert.rejects(decidirActivacion(ana, sesionSofipo, { id: solicitudId, aprobada: true }), /misma_persona_en_activacion/);
+        await assert.rejects(decidirActivacion(ana, sesionSofipo, { id: solicitudId, aprobada: true }), /sin_permiso_operacion/);
+        // El candado de la base: sin expediente aprobado ni grado de riesgo vigente no se activa.
+        await assert.rejects(decidirActivacion(beto, sesionSofipo, { id: solicitudId, aprobada: true }), /activacion_sin_expediente_aprobado/);
+        await enRegla(companyId, "AAA010101AAA", "Empresa Uno");
+        // Quien pide la activación no la decide, aunque también tenga el rol de aprobación.
+        const mixta = await registrarProspecto(ana, { rfc: "MIX010101MXA", razonSocial: "Empresa Mixta", codigoPostal: "01000", regimen: "601", usoCfdi: "G03" });
+        const pedidaPorBeto = await solicitarActivacion(beto, mixta);
+        await assert.rejects(decidirActivacion(beto, sesionSofipo, { id: pedidaPorBeto, aprobada: true }), /misma_persona_en_activacion/);
+        // serv-N18: el motivo del rechazo cuenta caracteres, no unidades UTF-16: «Revisar 😀» son 9.
+        await assert.rejects(decidirActivacion(beto, sesionSofipo, { id: solicitudId, aprobada: false, motivo: "Revisar 😀" }), /motivo_corto/);
         await decidirActivacion(beto, sesionSofipo, { id: solicitudId, aprobada: true });
         assert.equal((await leerCliente(ana, companyId))?.estado, "activa");
         assert.ok((await listarAlertas(ana, companyId)).every((alerta) => alerta.estado === "cerrada"));
@@ -95,6 +116,10 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
         const entregar = async () => { llamadasCorreo += 1; return { entregada: true as const }; };
         const inicio = Date.now();
         const alSegundo = (segundo: number) => ({ produccion: false, entregar, ahora: () => new Date(inicio + segundo * 1000) });
+        // Doceava revisión: «ana@ejemplo» pasa el `type=email` del navegador; antes el servidor respondía `invitacion_invalida`,
+        // que no era de ningún campo. Cada rechazo es de su campo y no emite nada.
+        await assert.rejects(invitarPrimerAdministrador(ana, { companyId, nombre: "Admin Uno", correo: "ana@ejemplo" }, alSegundo(0)), /dato_invalido_correo/);
+        await assert.rejects(invitarPrimerAdministrador(ana, { companyId, nombre: " \u200b ", correo: "admin@ejemplo.mx" }, alSegundo(0)), /dato_invalido_nombre/);
         const primera = await invitarPrimerAdministrador(ana, { companyId, nombre: "Admin Uno", correo: "admin@ejemplo.mx" }, alSegundo(0));
         const segunda = await invitarPrimerAdministrador(ana, { companyId, nombre: "Admin Uno", correo: "admin@ejemplo.mx" }, alSegundo(10));
         assert.equal(llamadasCorreo, 0);
@@ -137,6 +162,7 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
         // estado dejan una sola invitación y una sola entrega (el otro recibe invitacion_ya_enviada).
         const activa = async (rfc: string, razonSocial: string) => {
           const id = await registrarProspecto(ana, { rfc, razonSocial, codigoPostal: "01000", regimen: "601", usoCfdi: "G03" });
+          await enRegla(id, rfc, razonSocial);
           await decidirActivacion(beto, sesionSofipo, { id: await solicitarActivacion(ana, id), aprobada: true });
           return id;
         };
@@ -169,10 +195,17 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
         const vigenteDespues = despues.toISOString().slice(0, 10);
         const comisionId = await solicitarComision(ana, { companyId, tipo: "fondeo", valor: "250", vigenteDesde: hoy });
         await assert.rejects(decidirComision(ana, sesionSofipo, { id: comisionId, aprobada: true }), /misma_persona_en_comision/);
+        await assert.rejects(decidirComision(beto, sesionSofipo, { id: comisionId, aprobada: false, motivo: "Revisar 😀" }), /motivo_corto/);
         await decidirComision(beto, sesionSofipo, { id: comisionId, aprobada: true });
         const segundaComision = await solicitarComision(ana, { companyId, tipo: "fondeo", valor: "300", vigenteDesde: vigenteDespues });
         await decidirComision(beto, sesionSofipo, { id: segundaComision, aprobada: true });
-        const versiones = await listarComisiones(ana, companyId);
+        // Ronda 13 (doce-N1): con una versión pendiente, pedir otra para la misma empresa y tipo chocaba con
+        // `company_commissions_una_pendiente` y la pantalla decía «La base no respondió». Ahora dice cuál es el problema.
+        const speiPendiente = await solicitarComision(ana, { companyId, tipo: "spei", valor: "500", vigenteDesde: vigenteDespues });
+        await assert.rejects(solicitarComision(ana, { companyId, tipo: "spei", valor: "600", vigenteDesde: vigenteDespues }), /comision_pendiente/);
+        assert.deepEqual((await listarComisiones(ana, companyId)).filter((v) => v.tipo === "spei").map((v) => [v.id, v.estado]), [[speiPendiente, "pendiente"]]);
+        await decidirComision(beto, sesionSofipo, { id: speiPendiente, aprobada: false, motivo: "Se revisa con la tarifa del trimestre." });
+        const versiones = (await listarComisiones(ana, companyId)).filter((v) => v.tipo === "fondeo");
         assert.deepEqual(versiones.map((v) => v.estado).sort(), ["cerrada", "vigente"]);
         assert.equal(
           versiones.find((v) => v.id === comisionId)?.vigenteHasta,
@@ -188,17 +221,24 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
           /base_no_disponible|comision_sin_auditoria|company_commissions_sin_solape/,
         );
 
-        await crearAlerta(ana, { companyId, titulo: "Revisar datos", detalle: "Seguimiento operativo", responsableId: a });
+        // El detalle y el motivo escritos en varios renglones (el navegador manda CRLF) se guardan en uno:
+        // la base no acepta saltos de línea. Antes, el servidor los aceptaba y la base los rechazaba.
+        // Doceava revisión: un título o un detalle sin nada que se vea (el navegador los deja pasar) da el error de su campo.
+        await assert.rejects(crearAlerta(ana, { companyId, titulo: "   ", detalle: "Seguimiento", responsableId: a }), /dato_invalido_titulo/);
+        await assert.rejects(crearAlerta(ana, { companyId, titulo: "Revisar datos", detalle: " \r\n ", responsableId: a }), /dato_invalido_detalle/);
+        await crearAlerta(ana, { companyId, titulo: "Revisar datos", detalle: "Seguimiento\r\noperativo", responsableId: a });
         const abierta = (await listarAlertas(ana, companyId)).find((alerta) => alerta.titulo === "Revisar datos");
         assert.ok(abierta);
+        assert.equal(abierta.detalle, "Seguimiento operativo");
         await asignarAlerta(ana, abierta.id, b);
-        await cerrarAlerta(beto, abierta.id, "Datos revisados");
+        await cerrarAlerta(beto, abierta.id, "Datos\n\trevisados");
         assert.equal((await listarAlertas(ana, companyId)).find((alerta) => alerta.id === abierta.id)?.motivoCierre, "Datos revisados");
         await assert.rejects(cerrarAlerta(beto, abierta.id, "Otra vez"), /alerta_ya_cerrada/);
 
         const rollbackCompanyId = await registrarProspecto(ana, {
           rfc: "BBB010101BBA", razonSocial: "Empresa Rollback", codigoPostal: "01000", regimen: "601", usoCfdi: "G03",
         });
+        await enRegla(rollbackCompanyId, "BBB010101BBA", "Empresa Rollback");
         const rollbackRequestId = await solicitarActivacion(ana, rollbackCompanyId);
         const owner = new Client({ connectionString: urlDuena });
         await owner.connect();

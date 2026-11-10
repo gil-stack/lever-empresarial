@@ -1,0 +1,161 @@
+import { mkdirSync } from "node:fs";
+
+import { expect, test, type Page } from "@playwright/test";
+
+import { consultar, contar, dobleClic, ORIGEN, sesionDe } from "./apoyo";
+import { BRISA, CIMA, CORREOS, DUNA } from "./siembra";
+
+/**
+ * Recorrido clicado de la ronda 13 del #59 (doce-N1, delta-N1, doce-N3, doce-N2), con captura por flujo.
+ * No es parte de la e2e: se copia a tests/e2e/ solo para correrlo con scripts/ci/pruebas-e2e.sh, que deja la base
+ * recién sembrada, y se borra después. Capturas en docs/evidencia/ola-r-alta/capturas/r13-*.png (convertidas a .webp).
+ */
+test.describe.configure({ mode: "serial" });
+const DIR = "docs/evidencia/ola-r-alta/capturas";
+mkdirSync(DIR, { recursive: true });
+const captura = (page: Page, nombre: string) => page.screenshot({ path: `${DIR}/${nombre}.png`, fullPage: false });
+const empresaDe = async (rfc: string) => (await consultar<{ id: string }>("select id from companies where rfc = $1", [rfc]))[0]!.id;
+const coincidenciaDe = async (rfc: string) =>
+  (await consultar<{ id: string }>("select c.id from lpb_coincidencias c join companies e on e.id = c.company_id where e.rfc = $1 and c.estado = 'pendiente' and c.sujeto_tipo = 'empresa'", [rfc]))[0]!.id;
+const bitacora = (id: string) => contar("select 1 from audit_log where accion = 'lpb_coincidencia_resuelta' and identificador = $1", [id]);
+const log = (paso: string, datos: unknown) => console.log(`R13 ${paso}: ${JSON.stringify(datos)}`);
+
+test("a. comisiones: una segunda comisión con otra pendiente rechaza junto a «tipo», con JS a 1440 y sin JS a 390", async ({ page, context, browser }) => {
+  const bahia = await empresaDe("BEE190101CD2");
+  const pendientes = () => contar("select 1 from company_commissions where company_id = $1 and tipo = 'spei' and estado = 'pendiente'", [bahia]);
+  const manana = new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10);
+  const llenar = async (p: Page, valor: string) => {
+    await p.goto("/operacion/comisiones");
+    await p.locator("#companyId").selectOption(bahia);
+    await p.locator("#tipo").selectOption("spei");
+    await p.locator("#valor").fill(valor);
+    await p.locator("#vigenteDesde").fill(manana);
+  };
+  const texto = "Ya hay una versión pendiente de esta comisión para la empresa. Espera a que se decida antes de pedir otra.";
+  await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await llenar(page, "500");
+  await page.getByRole("button", { name: "Pedir autorización" }).click();
+  await page.waitForURL(/aviso=comision_solicitada/);
+  expect(await pendientes()).toBe(1);
+  await llenar(page, "650");
+  await page.getByRole("button", { name: "Pedir autorización" }).click();
+  await expect(page.locator("#aviso-comision-campo")).toHaveText(texto);
+  await expect(page.locator("#tipo")).toHaveAttribute("aria-invalid", "true");
+  await expect(page.locator("#tipo:focus")).toHaveCount(1);
+  await expect(page.locator("#valor")).toHaveValue("650");
+  await expect(page.locator("body")).not.toContainText("La base no respondió");
+  await page.locator("#tipo").scrollIntoViewIfNeeded();
+  await captura(page, "r13-a-comision-pendiente-js-1440");
+
+  const sinJs = await browser.newContext({ baseURL: ORIGEN, javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+  await sesionDe(sinJs, CORREOS.op1, { superficie: "sofipo" });
+  const otra = await sinJs.newPage();
+  await llenar(otra, "700");
+  const [respuesta] = await Promise.all([otra.waitForResponse((r) => r.request().method() === "POST"), otra.getByRole("button", { name: "Pedir autorización" }).click()]);
+  expect(respuesta.status()).toBe(200);
+  await expect(otra.locator("#aviso-comision-campo")).toHaveText(texto);
+  await expect(otra.locator("#tipo")).toHaveAttribute("aria-invalid", "true");
+  await expect(otra.locator("#valor")).toHaveValue("700");
+  await captura(otra, "r13-a-comision-pendiente-sin-js-390");
+  await sinJs.close();
+  expect(await pendientes()).toBe(1);
+  log("a", { pendientes: await pendientes() });
+});
+
+test("c. coincidencia ya resuelta: doble clic idéntico desde otra pestaña no duplica la bitácora; con otro motivo, aviso coincidencia_ya_resuelta", async ({ page, context }) => {
+  const [brisa, cima] = [await coincidenciaDe(BRISA.rfc), await coincidenciaDe(CIMA.rfc)];
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const tarjeta = (p: Page, id: string) => p.locator(`form:has([id="motivo-${id}"])`).getByRole("button", { name: "Registrar dictamen" });
+  const llenar = async (p: Page, id: string, resolucion: string, motivo: string) => {
+    await p.locator(`[id="resolucion-${id}"]`).selectOption(resolucion);
+    await p.locator(`[id="motivo-${id}"]`).fill(motivo);
+  };
+
+  // Brisa: dos pestañas de la misma persona con el mismo dictamen y el mismo motivo.
+  const motivoBrisa = "Coincide el RFC de la empresa con la lista.";
+  await page.goto("/operacion/lpb");
+  await llenar(page, brisa, "confirmada", motivoBrisa);
+  const otra = await context.newPage();
+  await otra.goto("/operacion/lpb");
+  await llenar(otra, brisa, "confirmada", motivoBrisa);
+  await tarjeta(otra, brisa).click();
+  await otra.waitForURL(/aviso=coincidencia_resuelta/);
+  await otra.close();
+  const envio = await dobleClic(tarjeta(page, brisa), { esperar: /aviso=coincidencia_resuelta/ });
+  await expect(page.locator("#aviso-rechazo")).toHaveCount(0);
+  await captura(page, "r13-c-doble-clic-identico");
+  expect(await bitacora(brisa)).toBe(1);
+  log("c-brisa", { envio, bitacora: await bitacora(brisa), url: new URL(page.url()).search });
+
+  // Cima: la otra pestaña resolvió con otro motivo; la segunda ve el aviso y su motivo no se guarda.
+  const primero = "El RFC de la lista es de otra persona moral.";
+  await page.goto("/operacion/lpb");
+  await llenar(page, cima, "falso_positivo", "Homónimo revisado desde la primera pestaña.");
+  const tercera = await context.newPage();
+  await tercera.goto("/operacion/lpb");
+  await llenar(tercera, cima, "falso_positivo", primero);
+  await tarjeta(tercera, cima).click();
+  await tercera.waitForURL(/aviso=coincidencia_resuelta/);
+  await tercera.close();
+  await tarjeta(page, cima).click();
+  const aviso = page.locator("#aviso-rechazo");
+  await expect(aviso).toHaveAttribute("data-aviso", "coincidencia_ya_resuelta");
+  await expect(aviso).toHaveText("Esa coincidencia ya se resolvió. Tu dictamen y tu motivo no se guardaron.");
+  await aviso.scrollIntoViewIfNeeded();
+  await captura(page, "r13-c-coincidencia-ya-resuelta");
+  const [guardado] = await consultar<{ motivo_resolucion: string }>("select motivo_resolucion from lpb_coincidencias where id = $1", [cima]);
+  expect(guardado!.motivo_resolucion).toBe(primero);
+  expect(await bitacora(cima)).toBe(1);
+  log("c-cima", { motivo: guardado!.motivo_resolucion, bitacora: await bitacora(cima) });
+});
+
+test("b. folio de una coincidencia a 1440: los tres controles alineados y el botón de 36 px tras el rechazo", async ({ page, context }) => {
+  const [{ id: brisa }] = (await consultar<{ id: string }>("select c.id from lpb_coincidencias c join companies e on e.id = c.company_id where e.rfc = $1 and c.estado = 'confirmada' and c.sujeto_tipo = 'empresa'", [BRISA.rfc])) as [{ id: string }];
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/operacion/cumplimiento");
+  const forma = page.locator(`form:has([id="folio-${brisa}"])`);
+  await page.locator(`[id="folio-${brisa}"]`).fill("UIF-2026-0412");
+  await page.locator(`[id="presentado-${brisa}"]`).fill(new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10));
+  await forma.getByRole("button", { name: "Anotar folio" }).click();
+  await expect(page.locator(`[id="aviso-folio-${brisa}"]`)).toBeVisible();
+  const fondos = await Promise.all(["folio", "presentado", "aviso"].map(async (campo) => {
+    const caja = (await page.locator(`[id="${campo}-${brisa}"]`).boundingBox())!;
+    return Math.round(caja.y + caja.height);
+  }));
+  const boton = (await forma.getByRole("button", { name: "Anotar folio" }).boundingBox())!;
+  log("b", { fondos, boton: { alto: boton.height, fondo: Math.round(boton.y + boton.height) } });
+  for (const fondo of fondos) expect(Math.abs(fondo - fondos[0]!)).toBeLessThanOrEqual(1);
+  expect(Math.round(boton.height)).toBe(36);
+  expect(Math.abs(boton.y + boton.height - fondos[0]!)).toBeLessThanOrEqual(1);
+  await forma.scrollIntoViewIfNeeded();
+  await captura(page, "r13-b-folio-1440");
+  expect(await contar("select 1 from lpb_coincidencias where id = $1 and reporte_folio is not null", [brisa])).toBe(0);
+});
+
+test("d. las 5 páginas con ?aviso=constructor, toString y __proto__: 200, sin 500 y sin «function Object»", async ({ page, context, browser }) => {
+  const resultados: Record<string, number> = {};
+  const visitar = async (p: Page, ruta: string, nombre: string) => {
+    for (const clave of ["constructor", "toString", "__proto__"]) {
+      const respuesta = (await p.goto(`${ruta}?aviso=${clave}`))!;
+      resultados[`${ruta}?aviso=${clave}`] = respuesta.status();
+      expect(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+      await expect(p.locator("body")).not.toContainText(/function Object|\[native code\]|\[object Object\]/);
+      await expect(p.getByRole("heading", { level: 1 })).toBeVisible();
+      if (clave === "constructor") await captura(p, `r13-d-${nombre}-constructor`);
+    }
+  };
+  const anonimo = await browser.newContext({ baseURL: ORIGEN, viewport: { width: 1440, height: 900 } });
+  const sinSesion = await anonimo.newPage();
+  await visitar(sinSesion, "/entrar", "entrar");
+  await visitar(sinSesion, "/operacion/entrar", "operacion-entrar");
+  await anonimo.close();
+  await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await visitar(page, "/entrar/seguridad", "entrar-seguridad");
+  await visitar(page, "/operacion/clientes", "operacion-clientes");
+  await visitar(page, `/operacion/clientes/${await empresaDe(DUNA.rfc)}/expediente`, "operacion-expediente");
+  log("d", resultados);
+});

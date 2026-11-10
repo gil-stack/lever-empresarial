@@ -1,0 +1,69 @@
+▶ caracteres de control: el servidor y la base cuentan lo mismo
+  ✔ CONTROL coincide con [[:cntrl:]] de pg_c_utf8 de U+0001 a U+FFFF (23.7115ms)
+✔ caracteres de control: el servidor y la base cuentan lo mismo (24.153ms)
+▶ alta regulada en Postgres desechable
+  ✔ H2 y N3: la 0028 sobre una base en la 0027 asigna la 69-B al único operador; la primera Administración la da la dueña (3865.538416ms)
+  ▶ roles, expediente, riesgo, LPB, suspensión, candado, RLS y lecturas auditadas
+    ✔ 50ª: el auditor no recibe cumplimiento, nadie se da roles y todo cambio deja evento (56.97475ms)
+    ✔ expediente: dos capas de socios, propietarios reales calculados, versión inmutable y dictamen (134.003542ms)
+    ✔ grado de riesgo: seis meses de vigencia y revisión vencida calculada al leer (23.233666ms)
+    ✔ candado de activación: la base rechaza cada faltante (60.81775ms)
+    ✖ LPB: carga versionada, posible por nombre y propietario real exacto que suspende con plazo de 24 h (19.977917ms)
+    ✔ reactivar tras la LPB exige cerrar la coincidencia y dos personas (10.554959ms)
+    ✔ suspensión manual con doble firma: ni dinero ni consola ni invitaciones, tampoco por SQL (136.381541ms)
+    ✔ RLS entre operadores, lecturas auditadas y Blob sin borrados (24.135084ms)
+    ✔ roles iniciales por comando: solo la dueña de la base, con evento y sin saltarse la 50ª (1854.202916ms)
+    ✔ H1: desde la aplicación una empresa solo nace prospecto y real (51.308125ms)
+    ✔ H12: lo autorizado regresa a «por autorizar» al suspender o cuando la contraparte entra a la lista (52.025709ms)
+    ✔ H3 y H6: un caso cerrado se reabre con una carga nueva y no con la misma; la reactivación con foto vieja aborta (75.362959ms)
+    ✔ H2: solo Administración escribe el personal, la 69-B, el precio, invitaciones y membresías (196.179291ms)
+    ✔ H6, H7, H8 y N3: la 50ª con foto vieja aborta, sin usuario nadie da roles y un evento por cosa (134.715292ms)
+    ✔ H9: las funciones del sistema no responden por otro operador ni sin contexto (57.451583ms)
+    ✔ H5 y H10: CURP y RFC obligatorios al enviar, suma por CURP y estructura de hasta 10 capas (149.118167ms)
+    ✔ N2: el socio extranjero sin CURP se identifica con país, documento y fecha de nacimiento y suma una vez (88.668666ms)
+    ✔ N2-resto y N6: la misma persona con dos identificadores no se parte; la moral extranjera se identifica con país y registro (249.946375ms)
+    ✔ H11: el portal no lee en la bitácora lo de Cumplimiento; que está suspendida, sí (6.506625ms)
+    ✔ F4 y F5: un doble envío simultáneo deja una fila y un evento; un formulario ajeno no se da por hecho (78.932709ms)
+    ✔ F6: el comando no adivina banderas: repetida, con valor en una de sí o no, desconocida o sin --demostracion (520.503958ms)
+    ✔ F8: Originación y Aprobación ven «en revisión de Cumplimiento» sin detalle; Administración no lee esos motivos (5.336333ms)
+    ✔ S6: en la bitácora del personal, los eventos de la lista de una empresa solo los leen Cumplimiento y Auditoría (18.101292ms)
+    ✔ S12 y N8: el alta por la dueña deja la conexión y el correo de quien corrió el comando; la bitácora nombra la coincidencia detectada (7.690917ms)
+    ✔ F9: sin el rol no se lee el archivo; uno que pasa del tope tampoco (1.907208ms)
+    ✔ H4: el nombre se compara sin orden de palabras, sin puntuación y sin letras fuera de la tabla (16.657542ms)
+    ✔ N1: el falso positivo exacto resuelto con una carga posterior no se reabre con esa misma; con la siguiente, sí (52.93075ms)
+    ✔ N5: Cumplimiento cierra un caso mientras otra pestaña carga una lista con la misma persona: o se reabre con la nueva o el cierre la anota (395.933583ms)
+    ✔ H2: con su propia copia el operador sí suspende y «fuera de lista» mira la copia de su operador (29.013833ms)
+    ✔ base-N23: un control entre dos palabras no pega el nombre que se coteja contra la Lista ni el giro (38.983292ms)
+    ✔ serv-nuevo-6d: enviar sin giro ni domicilio dice qué falta; la versión sigue en borrador y sin evento (25.160958ms)
+    ✔ doceava: el motivo del dictamen llega a la bitácora con 500 caracteres; con 501 se rechaza antes, sin dictamen (62.179833ms)
+  ✖ roles, expediente, riesgo, LPB, suspensión, candado, RLS y lecturas auditadas (5632.275459ms)
+✖ alta regulada en Postgres desechable (9498.174958ms)
+ℹ tests 35
+ℹ suites 2
+ℹ pass 33
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9773.7465
+
+✖ failing tests:
+
+test at tests/operacion/alta-regulada-postgres.test.ts:675:17
+✖ LPB: carga versionada, posible por nombre y propietario real exacto que suspende con plazo de 24 h (19.977917ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/operacion/alta-regulada-postgres.test.ts:747:11)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async <anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/operacion/alta-regulada-postgres.test.ts:675:9)
+      at async conBaseDesechable (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/aislamiento/postgres.ts:71:12)
+      at async TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/operacion/alta-regulada-postgres.test.ts:374:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /coincidencia_ya_resuelta/,
+    operator: 'rejects',
+    diff: 'simple'
+  }

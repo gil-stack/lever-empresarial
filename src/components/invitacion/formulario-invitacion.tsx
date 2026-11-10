@@ -9,13 +9,15 @@ import { CampoContrasena } from "@/components/sistema/campo-contrasena";
 
 export function FormularioInvitacion({ token, yaTieneContrasena }: { token: string; yaTieneContrasena: boolean }) {
   const [estado, accion, pendiente] = useActionState(enviarAceptacion, INVITACION_INICIAL);
-  const ligado = estado.tipo === "invalido" ? ({ "aria-invalid": true, "aria-describedby": "invitacion-error" } as const) : {};
+  // Solo un rechazo de lo escrito marca los campos; los demás (empresa suspendida, invitación vencida) van en el aviso.
+  const ligado =
+    estado.tipo === "invalido" && estado.deLaContrasena ? ({ "aria-invalid": true, "aria-describedby": "invitacion-error" } as const) : {};
 
   return (
     <form className="alta-formulario" action={accion} noValidate aria-busy={pendiente}>
       {estado.tipo === "invalido" ? (
         <div className="alerta" role="alert" id="invitacion-error">
-          <p className="alerta-titulo">No se aceptó</p>
+          <p className="alerta-titulo">{estado.titulo}</p>
           <p>{estado.mensaje}</p>
         </div>
       ) : null}

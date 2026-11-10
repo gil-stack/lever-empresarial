@@ -11,6 +11,10 @@ export type DatosInvitacionPersonal = {
 
 const ETIQUETAS: Readonly<Record<RolPlataforma, string>> = {
   administracion_plataforma: "Administración de plataforma",
+  originacion: "Originación",
+  aprobacion: "Aprobación",
+  cumplimiento: "Cumplimiento",
+  auditoria: "Auditoría",
 };
 
 export function plantillaInvitacionPersonal(datos: DatosInvitacionPersonal): CorreoPlantilla {

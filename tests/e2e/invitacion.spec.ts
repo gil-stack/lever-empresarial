@@ -28,7 +28,7 @@ async function entrar(page: Page, correo: string, contrasena: string): Promise<v
   await page.getByRole("button", { name: "Continuar" }).click();
 }
 
-test("invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta", async ({ page, context }) => {
+test("invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta", async ({ page, context, browser }) => {
   test.setTimeout(120_000);
   const errores = vigilarConsola(page);
   const invitaciones = () => contar("select 1 from invitations where company_id = $1", [bahia()]);
@@ -60,6 +60,26 @@ test("invitación del primer administrador: el doble clic en «Reenviar» emite 
   await expect.poll(() => invitacionesDe(BRUNO.correo).length).toBe(2);
   const segunda = invitacionesDe(BRUNO.correo)[1]!;
   expect(segunda.idempotencia).not.toBe(primera.idempotencia);
+
+  // serv-nuevo-7: sin JavaScript el formulario de la invitación también responde. Con «no-referrer», el navegador
+  // mandaba «Origin: null» y la acción daba 500. Con contraseñas distintas da su aviso y la invitación sigue sin usar.
+  const sinScript = await browser.newContext({ baseURL: test.info().project.use.baseURL, javaScriptEnabled: false });
+  try {
+    const hoja = await sinScript.newPage();
+    await hoja.goto(enlaceDe(segunda, /\/invitacion\//));
+    await hoja.getByLabel("Contraseña nueva").fill(CLAVE);
+    await hoja.getByLabel("Repite la contraseña").fill(`${CLAVE}-otra`);
+    const [respuesta] = await Promise.all([
+      hoja.waitForResponse((r) => r.request().method() === "POST"),
+      hoja.getByRole("button", { name: "Aceptar la invitación" }).click(),
+    ]);
+    expect(await respuesta.request().headerValue("origin")).toBe(new URL(respuesta.url()).origin);
+    expect(respuesta.status()).toBe(200);
+    await expect(hoja.locator("#invitacion-error")).toContainText("Las dos contraseñas no coinciden.");
+    expect(await contar("select 1 from invitations where company_id = $1 and usada_en is not null", [bahia()])).toBe(0);
+  } finally {
+    await sinScript.close();
+  }
 
   // El enlace viejo ya no sirve; el nuevo crea la cuenta.
   await context.clearCookies();

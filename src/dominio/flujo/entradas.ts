@@ -1,7 +1,8 @@
 import { leerCentavosEscritos } from "../centavos";
 import { fechaValida } from "../personas";
-import { validarRfc } from "../rfc";
+import { normalizarRfc, validarRfc } from "../rfc";
 import { FRECUENCIAS_OBLIGACION, type FrecuenciaObligacion } from "./fechas";
+import { INVISIBLE, sinControles } from "../control";
 
 /**
  * Lo que la persona escribe en los formularios del flujo, ya validado. Los
@@ -21,12 +22,14 @@ export const ESTADO_FLUJO_INICIAL: EstadoFlujo = { tipo: "inicial" };
 
 type Resultado<T> = { ok: true; valor: T } | { ok: false; errores: ErrorFlujo[] };
 
-const CONTROL = /[\u0000-\u001F\u007F]/;
 
 export function textoLimpio(valor: unknown, maximo: number, minimo = 1): string | null {
-  if (typeof valor !== "string" || CONTROL.test(valor)) return null;
-  const limpio = valor.normalize("NFKC").trim().replace(/\s+/g, " ");
-  return limpio.length >= minimo && limpio.length <= maximo ? limpio : null;
+  if (typeof valor !== "string") return null;
+  // Sin controles invisibles: se quitan al limpiar, no se rechazan.
+  const limpio = sinControles(valor.normalize("NFKC")).trim().replace(/\s+/g, " ");
+  // Caracteres, no unidades UTF-16: la base mide con char_length («ok 😀» son 4).
+  const largo = [...limpio].length;
+  return largo >= minimo && largo <= maximo ? limpio : null;
 }
 
 function montoPositivo(valor: unknown): number | null {
@@ -70,8 +73,11 @@ export function validarCobroManual(entrada: Record<string, unknown>): Resultado<
   const clienteNombre = textoLimpio(entrada.clienteNombre, 254);
   if (!clienteNombre) errores.push({ campo: "clienteNombre", mensaje: "Escribe el nombre del cliente." });
   const rfcEscrito = typeof entrada.clienteRfc === "string" ? entrada.clienteRfc.trim().toUpperCase() : "";
-  const clienteRfc = rfcEscrito === "" ? null : rfcEscrito;
-  if (clienteRfc && validarRfc(clienteRfc) !== null) errores.push({ campo: "clienteRfc", mensaje: "Ese RFC no tiene la forma de un RFC. Déjalo vacío si no lo tienes." });
+  // Se guarda lo que se valida: sin espacios ni guiones, como pide el CHECK de la base. Lo escrito que no
+  // queda en un RFC (solo guiones o espacios, por ejemplo) es error de su campo.
+  const clienteRfc = rfcEscrito === "" ? null : normalizarRfc(rfcEscrito);
+  // Con un control dentro (un tabulador también) se rechaza: normalizar lo borraría.
+  if (clienteRfc !== null && (INVISIBLE.test(rfcEscrito) || validarRfc(clienteRfc) !== null)) errores.push({ campo: "clienteRfc", mensaje: "Ese RFC no tiene la forma de un RFC. Déjalo vacío si no lo tienes." });
   const concepto = textoLimpio(entrada.concepto, 200);
   if (!concepto) errores.push({ campo: "concepto", mensaje: "Escribe el concepto del cobro." });
   const montoCentavos = montoPositivo(entrada.monto);

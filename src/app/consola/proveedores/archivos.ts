@@ -1,4 +1,5 @@
 import type { ArchivoPago } from "@/server/pagos-proveedores";
+import { TOPE_ARCHIVO_BYTES } from "@/dominio/archivos";
 
 /**
  * Un campo de archivo que se deja vacío llega a la acción como un File de 0
@@ -26,7 +27,7 @@ export async function leerArchivoAlta(valor: unknown): Promise<{
   const archivo = campoArchivo(valor);
   if (!archivo) return { meta: null, bytes: null };
   const { nombre, tipo, peso, leer } = archivo;
-  if (peso > 8_000_000 || !leer) return { meta: { nombre, tipo, peso }, bytes: null };
+  if (peso > TOPE_ARCHIVO_BYTES || !leer) return { meta: { nombre, tipo, peso }, bytes: null };
   const bytes = new Uint8Array(await leer());
   return { meta: { nombre, tipo, peso: bytes.byteLength }, bytes };
 }
@@ -34,6 +35,6 @@ export async function leerArchivoAlta(valor: unknown): Promise<{
 export async function leerArchivoPago(valor: unknown): Promise<ArchivoPago> {
   const archivo = campoArchivo(valor);
   if (!archivo) return null;
-  if (archivo.peso > 8_000_000 || !archivo.leer) return { nombre: archivo.nombre, bytes: new Uint8Array() };
+  if (archivo.peso > TOPE_ARCHIVO_BYTES || !archivo.leer) return { nombre: archivo.nombre, bytes: new Uint8Array() };
   return { nombre: archivo.nombre, bytes: new Uint8Array(await archivo.leer()) };
 }

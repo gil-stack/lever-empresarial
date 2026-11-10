@@ -87,14 +87,11 @@ export function Bandeja({
       <header className="bandeja-cabeza">
         <h2 id="bandeja-titulo">
           Necesita tu decisión
-          <span
-            className="bandeja-cuenta"
-            aria-label={
-              decisiones.length === 1 ? ", 1 pendiente" : `, ${decisiones.length} pendientes`
-            }
-          >
+          <span className="bandeja-cuenta">
             {decisiones.length > 0 ? <span className="bandeja-punto" aria-hidden="true" /> : null}
             <span aria-hidden="true">{decisiones.length}</span>
+            {/* Sin coma: el título es flexible y Chrome pone un espacio entre sus partes («decisión , 1»). */}
+            <span className="solo-lector">{decisiones.length === 1 ? "1 pendiente" : `${decisiones.length} pendientes`}</span>
           </span>
         </h2>
         {decisiones.length > 0 ? (

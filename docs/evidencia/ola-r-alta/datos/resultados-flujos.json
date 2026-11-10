@@ -1,0 +1,627 @@
+{
+  "fases": [
+    "flujos"
+  ],
+  "comprobaciones": [
+    {
+      "ok": true,
+      "texto": "0. como en producción, una sola persona administra al personal y nadie puede darle un rol por pantalla"
+    },
+    {
+      "ok": true,
+      "texto": "0. el comando le da Originación a Ofelia"
+    },
+    {
+      "ok": true,
+      "texto": "0. correrlo dos veces no cambia nada"
+    },
+    {
+      "ok": true,
+      "texto": "0. una fila y un solo evento «rol_personal_asignado» del comando, con su motivo"
+    },
+    {
+      "ok": true,
+      "texto": "0. el comando no imprime el connection string"
+    },
+    {
+      "ok": true,
+      "texto": "0. Personal muestra a Ofelia con Originación"
+    },
+    {
+      "ok": true,
+      "texto": "0. la bitácora muestra «Asignó un rol del personal»"
+    },
+    {
+      "ok": true,
+      "texto": "0. quitarlo deja su propio evento"
+    },
+    {
+      "ok": true,
+      "texto": "0. el comando no deja al personal sin administración"
+    },
+    {
+      "ok": true,
+      "texto": "0. Ofelia vuelve a solo Administración: los flujos siguen como en producción"
+    },
+    {
+      "ok": true,
+      "texto": "1. con el factor de hace 6 minutos, Personal pide «Confirma que eres tú» antes de tocar roles"
+    },
+    {
+      "ok": true,
+      "texto": "1. Ofelia confirmó con su app autenticadora y la pantalla deja asignar roles"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «rol_asignado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "1. Omar Originación recibe Originación (doble clic = 1 fila)"
+    },
+    {
+      "ok": true,
+      "texto": "1. un solo evento «rol_personal_asignado» para Omar Originación"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «rol_asignado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "1. Ana Aprobación recibe Aprobación (doble clic = 1 fila)"
+    },
+    {
+      "ok": true,
+      "texto": "1. un solo evento «rol_personal_asignado» para Ana Aprobación"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «rol_asignado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "1. Celia Cumplimiento recibe Cumplimiento (doble clic = 1 fila)"
+    },
+    {
+      "ok": true,
+      "texto": "1. un solo evento «rol_personal_asignado» para Celia Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «rol_asignado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "1. Aurelio Auditoría recibe Auditoría (doble clic = 1 fila)"
+    },
+    {
+      "ok": true,
+      "texto": "1. un solo evento «rol_personal_asignado» para Aurelio Auditoría"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «roles_incompatibles» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "1. la pantalla explica la 50ª: Cumplimiento no se junta con Auditoría"
+    },
+    {
+      "ok": true,
+      "texto": "1. la base no dejó a Aurelio con Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «roles_incompatibles» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "1. tampoco Originación con Cumplimiento (Omar)"
+    },
+    {
+      "ok": true,
+      "texto": "1. la fila de Ofelia no tiene botones: nadie se da roles a sí mismo"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «prospecto_registrado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "2. doble clic en «Registrar prospecto» = 1 empresa"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_version_creada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "2. doble clic en «Abrir versión 1» = 1 versión"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_datos_guardados» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_representante_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "2. doble clic en «Agregar representante» = 1 representante"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_representante_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_retirado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "2. doble clic en «Quitar» = 1 representante quitado del borrador, con un solo evento; la fila se conserva"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "2. cuatro accionistas en dos capas, sin duplicados por doble clic"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_retirado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "2. doble clic en «Quitar» = 1 socio quitado con un solo evento; quedan los cuatro de la estructura"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_documento_cargado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_documento_cargado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_documento_cargado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_documento_cargado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_documento_cargado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_documento_cargado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "2. seis documentos guardados, cada uno con su SHA-256"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_enviado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "2. propietarios reales calculados: Mariana 49 % (70 % × 70 %) y Joaquín 30 %; Héctor (21 %) no llega al 25 %"
+    },
+    {
+      "ok": true,
+      "texto": "2. la vista de la versión enviada muestra la estructura y los propietarios reales"
+    },
+    {
+      "ok": true,
+      "texto": "3. la versión 1 aparece en «Expedientes por dictaminar»"
+    },
+    {
+      "ok": true,
+      "texto": "3. «observado» sin motivo no se registra"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_dictaminado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "3. dictamen «observado» con motivo sobre la versión 1 (doble clic = 1)"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_version_creada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "3. la versión 2 hereda accionistas, representantes y documentos de la 1"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_documento_cargado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_enviado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_dictaminado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "3. la versión 2 queda aprobada por Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "3. el dictamen de la versión 1 no cambia (append-only)"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «activacion_solicitada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "8. doble clic en «Solicitar activación» = 1 solicitud"
+    },
+    {
+      "ok": true,
+      "texto": "8. Originación no decide su propia solicitud"
+    },
+    {
+      "ok": true,
+      "texto": "8. la base rechaza la activación: falta un grado de riesgo vigente"
+    },
+    {
+      "ok": true,
+      "texto": "8. Aprobación ve el mensaje propio del candado"
+    },
+    {
+      "ok": true,
+      "texto": "8. la empresa sigue en alta"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «riesgo_calificado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "4. doble clic en «Registrar grado al alta» = 1 calificación"
+    },
+    {
+      "ok": true,
+      "texto": "4. matriz de factores: actividad media + dos capas + volumen = grado medio"
+    },
+    {
+      "ok": true,
+      "texto": "4. la bandeja marca «Revisión vencida» a Distribuidora Lumbre (calificada hace 7 meses; se calcula al leer)"
+    },
+    {
+      "ok": true,
+      "texto": "4. Grupo Ébano aparece «Vigente» con su fecha de revisión"
+    },
+    {
+      "ok": true,
+      "texto": "8. Aprobación aprueba y la base deja pasar en_alta → activa"
+    },
+    {
+      "ok": true,
+      "texto": "8. Grupo Ébano queda activa"
+    },
+    {
+      "ok": true,
+      "texto": "8. con la empresa activa, la ficha ofrece invitar al primer administrador"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_correo» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. invitacion, con JavaScript a 1440: «dato_invalido_correo» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_correo» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. invitacion, sin JavaScript a 390: «dato_invalido_correo» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «comision_valor_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. comision, con JavaScript a 1440: «comision_valor_invalido» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «comision_valor_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. comision, sin JavaScript a 390: «comision_valor_invalido» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «lpb_renglon_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "5. un renglón inválido se rechaza diciendo qué línea revisar"
+    },
+    {
+      "ok": true,
+      "texto": "5. el archivo con error no deja carga"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «lpb_cargada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "5. doble clic en «Cargar y cotejar» = 1 carga con 3 renglones"
+    },
+    {
+      "ok": true,
+      "texto": "5. el aviso dice cuántos renglones y coincidencias nuevas"
+    },
+    {
+      "ok": true,
+      "texto": "6. Héctor (accionista) coincide solo por nombre: «posible», pendiente y sin plazo de reporte"
+    },
+    {
+      "ok": true,
+      "texto": "6. la fila dice «Nombre parecido»"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «coincidencia_resuelta» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "6. queda «falso positivo» con motivo y con quién lo resolvió"
+    },
+    {
+      "ok": true,
+      "texto": "6. un solo evento de resolución (doble clic)"
+    },
+    {
+      "ok": true,
+      "texto": "7. la carga detectó a Mariana Ébano Ruiz (propietaria real) por RFC idéntico"
+    },
+    {
+      "ok": true,
+      "texto": "7. Grupo Ébano quedó suspendida de inmediato, sin segunda firma"
+    },
+    {
+      "ok": true,
+      "texto": "7. evento del sistema «empresa_suspendida_lpb»"
+    },
+    {
+      "ok": true,
+      "texto": "7. plazo de reporte: 24 horas desde la detección"
+    },
+    {
+      "ok": true,
+      "texto": "7. la bandeja muestra «RFC idéntico» con su plazo"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «coincidencia_resuelta» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «reporte_registrado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "7. Cumplimiento anota el folio que presentó por su vía (Lever no transmite)"
+    },
+    {
+      "ok": true,
+      "texto": "7. el texto dice la verdad: Lever no transmite a la UIF"
+    },
+    {
+      "ok": true,
+      "texto": "7. con la empresa suspendida, la invitación queda bloqueada"
+    },
+    {
+      "ok": true,
+      "texto": "7. no quedó ninguna invitación"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «suspension_solicitada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "9. doble clic en «Pedir suspensión» = 1 solicitud pendiente"
+    },
+    {
+      "ok": true,
+      "texto": "9. sin la segunda firma la empresa sigue activa"
+    },
+    {
+      "ok": true,
+      "texto": "9. quien pidió no decide"
+    },
+    {
+      "ok": true,
+      "texto": "9. Aprobación (otra persona) aprueba la suspensión"
+    },
+    {
+      "ok": true,
+      "texto": "9. Taller del Cierre queda suspendida"
+    },
+    {
+      "ok": true,
+      "texto": "9. el aviso de empresa suspendida se ve arriba de la consola"
+    },
+    {
+      "ok": true,
+      "texto": "9. Pagos sigue ofreciendo «Autorizar para pagar» a Rosa"
+    },
+    {
+      "ok": true,
+      "texto": "9. doble clic en «Autorizar para pagar»: la base lo rechaza, el pago sigue por autorizar y no hay evento"
+    },
+    {
+      "ok": true,
+      "texto": "9. Nómina sigue ofreciendo «Preparar nómina» a Gil"
+    },
+    {
+      "ok": true,
+      "texto": "9. doble clic en «Preparar nómina»: la base lo rechaza y no hay lote"
+    },
+    {
+      "ok": true,
+      "texto": "9. Personas: doble clic en «Crear área»: la base lo rechaza y no hay área"
+    },
+    {
+      "ok": true,
+      "texto": "9. Invitaciones: doble clic en «Renovar y reenviar invitación»: la base lo rechaza y no sale otra"
+    },
+    {
+      "ok": true,
+      "texto": "9. con contraseñas distintas, el aviso marca los dos campos de contraseña"
+    },
+    {
+      "ok": true,
+      "texto": "9. Iván no puede aceptar su invitación: la base lo rechaza y la pantalla dice que la empresa está suspendida"
+    },
+    {
+      "ok": true,
+      "texto": "9. el aviso de la suspensión no marca los campos de contraseña: el motivo es la empresa, no lo escrito"
+    },
+    {
+      "ok": true,
+      "texto": "9. directo en la base como rol cliente, liberar el pago: rechazado con «empresa_suspendida»"
+    },
+    {
+      "ok": true,
+      "texto": "9. directo en la base como rol cliente, preparar un lote: rechazado con «empresa_suspendida»"
+    },
+    {
+      "ok": true,
+      "texto": "9. directo en la base como rol cliente, editar un proveedor: rechazado con «empresa_suspendida»"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «reactivacion_con_coincidencia_lpb» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "10. Grupo Ébano (suspendida por la lista, coincidencia confirmada) no se puede reactivar sin dictamen de falso positivo"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «reactivacion_solicitada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "10. doble clic en «Pedir reactivación» = 1 solicitud"
+    },
+    {
+      "ok": true,
+      "texto": "10. Aprobación aprueba y Taller vuelve a activa"
+    },
+    {
+      "ok": true,
+      "texto": "10. el historial guarda suspender y reactivar"
+    },
+    {
+      "ok": true,
+      "texto": "10. el aviso desaparece de la consola"
+    },
+    {
+      "ok": true,
+      "texto": "10. reactivada, la nómina se prepara otra vez"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «lpb_cargada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "11. la carga nueva se guarda aparte; la anterior no se borra"
+    },
+    {
+      "ok": true,
+      "texto": "11. la pantalla distingue la carga vigente de la anterior"
+    },
+    {
+      "ok": true,
+      "texto": "11. Servicios Norte Integrales coincide como contraparte de Taller"
+    },
+    {
+      "ok": true,
+      "texto": "11. una contraparte no suspende a la empresa"
+    },
+    {
+      "ok": true,
+      "texto": "11. el falso positivo dictaminado no se reabre con la carga nueva"
+    },
+    {
+      "ok": true,
+      "texto": "11. la base no libera el pago a un proveedor en la lista; el mensaje no revela la lista"
+    },
+    {
+      "ok": true,
+      "texto": "12. abrir el expediente deja «expediente_consultado» con Aurelio, la hora y la empresa"
+    },
+    {
+      "ok": true,
+      "texto": "12. Auditoría consulta sin botones de captura ni dictamen"
+    },
+    {
+      "ok": true,
+      "texto": "12. la descarga entrega el PDF guardado"
+    },
+    {
+      "ok": true,
+      "texto": "12. la SHA-256 del archivo descargado coincide con la guardada en la base"
+    },
+    {
+      "ok": true,
+      "texto": "12. descargar deja «expediente_documento_descargado»"
+    },
+    {
+      "ok": true,
+      "texto": "12. la bitácora muestra las dos lecturas con su etiqueta"
+    },
+    {
+      "ok": true,
+      "texto": "12. Auditoría ve «Sin permiso» en Personal"
+    },
+    {
+      "ok": true,
+      "texto": "consola del navegador limpia en todos los flujos"
+    }
+  ]
+}

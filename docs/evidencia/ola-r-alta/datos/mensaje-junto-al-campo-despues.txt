@@ -1,0 +1,24 @@
+# Medida «después» (código final de la onceava revisión), misma e2e que mensaje-junto-al-campo-antes.txt, más la ficha (motivo de reactivación) y los dos formularios sin JavaScript.
+# Con JavaScript: documento (dos veces el mismo error desde la misma dirección), socio y reactivación, a 1440 y 390; la nota de Recuperaciones a 1440.
+# Sin JavaScript: lo mismo, la nota de la tercera tarjeta a 390, y el representante y el socio con un invisible.
+
+MEDIDA #doc-archivo 1440: {"descrito":"aviso-operacion-campo","campo":{"arriba":430,"abajo":470},"mensaje":{"arriba":478,"abajo":497},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 1440: {"descrito":"aviso-operacion-campo","campo":{"arriba":430,"abajo":470},"mensaje":{"arriba":478,"abajo":497},"barras":84,"ventana":900,"visible":true}
+MEDIDA #acc-capital 1440: {"descrito":"aviso-accionista-campo","campo":{"arriba":274,"abajo":314},"mensaje":{"arriba":322,"abajo":341},"barras":84,"ventana":900,"visible":true}
+MEDIDA #motivo-suspension 1440: {"descrito":"aviso-operacion-campo","campo":{"arriba":402,"abajo":498},"mensaje":{"arriba":511,"abajo":550},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 390: {"descrito":"aviso-operacion-campo","campo":{"arriba":402,"abajo":442},"mensaje":{"arriba":450,"abajo":469},"barras":60,"ventana":844,"visible":true}
+MEDIDA #doc-archivo 390: {"descrito":"aviso-operacion-campo","campo":{"arriba":402,"abajo":442},"mensaje":{"arriba":450,"abajo":469},"barras":60,"ventana":844,"visible":true}
+MEDIDA #acc-capital 390: {"descrito":"aviso-accionista-campo","campo":{"arriba":211,"abajo":251},"mensaje":{"arriba":259,"abajo":298},"barras":60,"ventana":844,"visible":true}
+MEDIDA #motivo-suspension 390: {"descrito":"aviso-operacion-campo","campo":{"arriba":374,"abajo":470},"mensaje":{"arriba":484,"abajo":541},"barras":60,"ventana":844,"visible":true}
+MEDIDA [id="nota-cd21c612-8c2f-4e5f-a385-d04bd5143259"] 1440: {"descrito":"aviso-operacion-campo","campo":{"arriba":470,"abajo":566},"mensaje":{"arriba":580,"abajo":618},"barras":84,"ventana":1000,"visible":true}
+MEDIDA #doc-archivo 1440: {"descrito":"aviso-operacion-campo","campo":{"arriba":430,"abajo":470},"mensaje":{"arriba":478,"abajo":497},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 1440: {"descrito":"aviso-operacion-campo","campo":{"arriba":430,"abajo":470},"mensaje":{"arriba":478,"abajo":497},"barras":84,"ventana":900,"visible":true}
+MEDIDA #acc-capital 1440: {"descrito":"aviso-accionista-campo","campo":{"arriba":430,"abajo":470},"mensaje":{"arriba":478,"abajo":497},"barras":84,"ventana":900,"visible":true}
+MEDIDA #motivo-suspension 1440: {"descrito":"aviso-operacion-campo","campo":{"arriba":428,"abajo":524},"mensaje":{"arriba":537,"abajo":576},"barras":84,"ventana":900,"visible":true}
+MEDIDA #doc-archivo 390: {"descrito":"aviso-operacion-campo","campo":{"arriba":402,"abajo":442},"mensaje":{"arriba":450,"abajo":469},"barras":60,"ventana":844,"visible":true}
+MEDIDA #doc-archivo 390: {"descrito":"aviso-operacion-campo","campo":{"arriba":402,"abajo":442},"mensaje":{"arriba":450,"abajo":469},"barras":60,"ventana":844,"visible":true}
+MEDIDA #acc-capital 390: {"descrito":"aviso-accionista-campo","campo":{"arriba":402,"abajo":442},"mensaje":{"arriba":450,"abajo":489},"barras":60,"ventana":844,"visible":true}
+MEDIDA #motivo-suspension 390: {"descrito":"aviso-operacion-campo","campo":{"arriba":399,"abajo":495},"mensaje":{"arriba":509,"abajo":566},"barras":60,"ventana":844,"visible":true}
+MEDIDA [id="nota-57d12a30-361c-49f2-853e-aecd0c41f47e"] 390: {"descrito":"aviso-operacion-campo","campo":{"arriba":438,"abajo":534},"mensaje":{"arriba":547,"abajo":567},"barras":60,"ventana":844,"visible":true}
+MEDIDA #rep-nombre 1440: {"descrito":"aviso-representante-campo","campo":{"arriba":480,"abajo":520},"mensaje":{"arriba":528,"abajo":566},"barras":84,"ventana":1000,"visible":true}
+MEDIDA #acc-nombre 1440: {"descrito":"aviso-accionista-campo","campo":{"arriba":480,"abajo":520},"mensaje":{"arriba":528,"abajo":566},"barras":84,"ventana":1000,"visible":true}

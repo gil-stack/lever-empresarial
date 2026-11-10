@@ -3,14 +3,23 @@ import Link from "next/link";
 
 import { etiquetaAccion, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
+import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { Hoja, NotaRegla, Vacio } from "@/components/sistema";
 import { exigirContextoOperacion, leerBitacora } from "@/server/operacion";
+import { puedeEnOperacion } from "@/server/operacion/permisos";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Bitácora · Operación" };
 
 export default async function BitacoraOperacion() {
   const ctx = await exigirContextoOperacion();
+  if (!puedeEnOperacion(ctx, "plataforma.bitacora.ver")) {
+    return (
+      <PaginaOperacion titulo="Bitácora">
+        <SinPermiso>La bitácora la consultan Administración, Cumplimiento y Auditoría.</SinPermiso>
+      </PaginaOperacion>
+    );
+  }
   const eventos = await leerBitacora(ctx);
   return (
     <PaginaOperacion titulo="Bitácora">

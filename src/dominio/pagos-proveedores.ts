@@ -1,4 +1,6 @@
 import { leerCentavosEscritos } from "./centavos";
+import { INVISIBLE, sinControles } from "./control";
+import { fechaDeCalendario } from "./operacion/validar";
 
 export const ESTADOS_PAGO = ["por_autorizar", "listo_para_pagar", "rechazado", "cancelado"] as const;
 export type EstadoPago = (typeof ESTADOS_PAGO)[number];
@@ -8,6 +10,8 @@ export type ErrorPago =
   | "proveedor_ausente"
   | "monto_invalido"
   | "fecha_invalida"
+  | "fecha_emision_invalida"
+  | "fecha_programada_invalida"
   | "fecha_pasada"
   | "referencia_invalida"
   | "motivo_invalido"
@@ -37,10 +41,9 @@ export function fechaEnMexico(ahora = new Date()): string {
   return `${tomar("year")}-${tomar("month")}-${tomar("day")}`;
 }
 
+/** Una fecha que existe en el calendario, del año 1 en adelante, como el tipo `date` de la base (sin 22008). */
 export function fechaValida(valor: unknown): valor is string {
-  if (typeof valor !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
-  const fecha = new Date(`${valor}T00:00:00.000Z`);
-  return !Number.isNaN(fecha.getTime()) && fecha.toISOString().slice(0, 10) === valor;
+  return typeof valor === "string" && fechaDeCalendario(valor);
 }
 
 export function sumarDias(fecha: string, dias: number): string {
@@ -62,13 +65,16 @@ export function fechaLegible(fecha: string): string {
 
 export function montoEscrito(valor: unknown): number | null {
   const leido = leerCentavosEscritos(valor);
-  return leido.tipo === "centavos" && leido.centavos > 0 ? leido.centavos : null;
+  // Hasta 9e15 centavos, como el CHECK `supplier_payables_total`.
+  return leido.tipo === "centavos" && leido.centavos > 0 && leido.centavos <= 9_000_000_000_000_000 ? leido.centavos : null;
 }
 
 export function textoPago(valor: unknown, maximo: number, minimo = 1): string | null {
   if (typeof valor !== "string") return null;
-  const limpio = valor.trim().replace(/\s+/g, " ");
-  if (limpio.length < minimo || limpio.length > maximo || /[\u0000-\u001f\u007f]/.test(limpio)) return null;
+  // Sin controles invisibles (se quitan, no se rechazan) y en caracteres, como char_length («Revisar 😀» son 9).
+  const limpio = sinControles(valor).trim().replace(/\s+/g, " ");
+  const largo = [...limpio].length;
+  if (largo < minimo || largo > maximo) return null;
   return limpio;
 }
 
@@ -76,7 +82,7 @@ export function correoOpcional(valor: unknown): string | null | "invalido" {
   if (valor === null || valor === undefined || valor === "") return null;
   if (typeof valor !== "string") return "invalido";
   const limpio = valor.trim().toLowerCase();
-  return limpio.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(limpio) ? limpio : "invalido";
+  return limpio.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(limpio) && !INVISIBLE.test(limpio) ? limpio : "invalido";
 }
 
 export function uuidPago(valor: unknown): valor is string {
@@ -84,10 +90,10 @@ export function uuidPago(valor: unknown): valor is string {
 }
 
 export function validarFechasPago(entrada: { emitidaEl: unknown; venceEl: unknown; programadaEl: unknown; hoy: string }): ErrorPago | null {
-  if (!fechaValida(entrada.emitidaEl) || !fechaValida(entrada.venceEl) || !fechaValida(entrada.programadaEl)) {
-    return "fecha_invalida";
-  }
-  if (entrada.venceEl < entrada.emitidaEl) return "fecha_invalida";
+  // Cada fecha mala dice cuál es, para marcar su campo: la de la obligación, el vencimiento o la prevista de pago.
+  if (!fechaValida(entrada.emitidaEl)) return "fecha_emision_invalida";
+  if (!fechaValida(entrada.venceEl) || entrada.venceEl < entrada.emitidaEl) return "fecha_invalida";
+  if (!fechaValida(entrada.programadaEl)) return "fecha_programada_invalida";
   if (entrada.programadaEl < entrada.hoy) return "fecha_pasada";
   return null;
 }

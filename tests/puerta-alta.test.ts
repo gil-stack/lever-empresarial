@@ -17,9 +17,15 @@ describe("la puerta pública está cerrada", () => {
     }
   });
 
-  it("el alta de empresa solo la hace el personal del operador", () => {
-    const servicio = readFileSync(path.join(RAIZ, "src/server/company/servicio.ts"), "utf8");
-    assert.match(servicio, /exigirPersonal\(ctx, "plataforma\.empresa\.alta"\)/);
+  it("desde la aplicación una empresa solo nace prospecto y real", () => {
+    // Llega a activa por el alta regulada; las de demostración las crea la dueña de la base (scripts/).
+    const altas = archivosEn(path.join(RAIZ, "src")).filter((archivo) =>
+      /insert into companies/i.test(readFileSync(archivo, "utf8")),
+    );
+    assert.deepEqual(altas.map((archivo) => path.relative(RAIZ, archivo)), ["src/server/operacion/clientes.ts"]);
+    assert.match(readFileSync(altas[0] as string, "utf8"), /'prospecto', false/);
+    const duena = readFileSync(path.join(RAIZ, "scripts/empresa-por-la-duena.ts"), "utf8");
+    assert.match(duena, /exigirPersonal\(ctx, "plataforma\.empresa\.alta"\)/);
   });
 
   it("el código que pinta el navegador no nombra el connection string", () => {

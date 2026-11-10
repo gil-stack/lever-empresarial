@@ -10,8 +10,10 @@ import type { AltaEmpresaEntrada } from "../company/tipos";
 import { auditarOperacion } from "./auditar";
 import { crearAlertaEnTransaccion } from "./alertas";
 import type { ClienteDetalle, ClienteResumen } from "./tipos";
+import { exigirEnOperacion } from "./permisos";
 
 export async function registrarProspecto(ctx: ContextoDePersonal, entrada: AltaEmpresaEntrada): Promise<string> {
+  exigirEnOperacion(ctx, "plataforma.prospecto.registrar");
   const validada = validarAlta(entrada);
   if (!validada.ok) throw new ErrorDeDominio(validada.codigo);
   const id = randomUUID();
@@ -64,6 +66,7 @@ export async function registrarProspecto(ctx: ContextoDePersonal, entrada: AltaE
 }
 
 export async function listarClientes(ctx: ContextoDePersonal): Promise<ClienteResumen[]> {
+  exigirEnOperacion(ctx, "plataforma.operacion.ver");
   const resultado = await conContexto(basePlataforma(ctx), (consulta) =>
     consulta.query(
       `select c.id, c.rfc, c.razon_social, c.estado, c.alta_at,
@@ -83,6 +86,7 @@ export async function listarClientes(ctx: ContextoDePersonal): Promise<ClienteRe
 }
 
 export async function leerCliente(ctx: ContextoDePersonal, companyId: unknown): Promise<ClienteDetalle | null> {
+  exigirEnOperacion(ctx, "plataforma.operacion.ver");
   if (!uuidValido(companyId)) return null;
   return conContexto(basePlataforma(ctx, companyId), async (consulta) => {
     const empresa = await consulta.query(
@@ -111,7 +115,7 @@ export async function leerCliente(ctx: ContextoDePersonal, companyId: unknown): 
     const [historial, entregas] = await Promise.all([
       consulta.query(
         `select h.id, h.estado_anterior, h.estado_nuevo, h.ocurrido_en, u.nombre as actor
-         from company_state_history h join users u on u.id = h.actor_id
+         from company_state_history h left join users u on u.id = h.actor_id
          where h.company_id = $1 order by h.ocurrido_en, h.id`,
         [companyId],
       ),
@@ -129,7 +133,7 @@ export async function leerCliente(ctx: ContextoDePersonal, companyId: unknown): 
         id: String(evento.id),
         estadoAnterior: evento.estado_anterior === null ? null : (evento.estado_anterior as EstadoCliente),
         estadoNuevo: evento.estado_nuevo as EstadoCliente,
-        actor: String(evento.actor),
+        actor: typeof evento.actor === "string" ? evento.actor : "Sistema",
         ocurridoEn: fecha(evento.ocurrido_en),
       })),
       entregas: (entregas.rows as Array<Record<string, unknown>>).map((entrega) => ({

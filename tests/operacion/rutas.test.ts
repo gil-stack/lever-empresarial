@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readdirSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
 import { describe, it } from "node:test";
 import { NextRequest } from "next/server";
 
@@ -15,6 +17,11 @@ const PROTEGIDAS = [
   "/operacion/bitacora",
   "/operacion/recuperaciones",
   "/operacion/precios",
+  "/operacion/personal",
+  "/operacion/cumplimiento",
+  "/operacion/lpb",
+  "/operacion/clientes/123/expediente",
+  "/operacion/clientes/123/expediente/documento/456",
 ] as const;
 
 describe("guardia central del portal SOFIPO", () => {
@@ -23,6 +30,24 @@ describe("guardia central del portal SOFIPO", () => {
       const ruta = rutaDe(patron);
       assert.equal(ruta?.superficie, "sofipo");
       assert.equal(ruta?.acceso.tipo, "sesion", patron);
+    }
+  });
+
+  it("cada página del portal de Operación tiene su ruta declarada (sin ella el proxy responde 404)", () => {
+    const raiz = join(process.cwd(), "src/app/operacion/(portal)");
+    const paginas: string[] = [];
+    const recorrer = (carpeta: string) => {
+      for (const nombre of readdirSync(carpeta)) {
+        const ruta = join(carpeta, nombre);
+        if (statSync(ruta).isDirectory()) recorrer(ruta);
+        else if (nombre === "page.tsx" || nombre === "route.ts") paginas.push(relative(raiz, carpeta));
+      }
+    };
+    recorrer(raiz);
+    assert.ok(paginas.length >= 12);
+    for (const carpeta of paginas) {
+      const ejemplo = `/operacion${carpeta ? `/${carpeta}` : ""}`.replace(/\[[^\]]+\]/g, "123");
+      assert.equal(rutaDe(ejemplo)?.superficie, "sofipo", ejemplo);
     }
   });
 
