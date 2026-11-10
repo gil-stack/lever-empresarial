@@ -3202,6 +3202,14 @@ BEGIN
 END;
 $$;
 
+-- r2-fix3-N2 (60ª): los votos de una sesión que no existe para la persona tampoco se le
+-- muestran, aunque sean de un caso que sí ve: delatarían la sesión. Con las sesiones
+-- aparte (r2-fix3-N3) eso ya no se arma; queda como defensa ante datos de antes.
+ALTER POLICY pld_votos_lectura ON pld_votos USING (
+  operator_id = app_operador() AND (SELECT pld_rol(ARRAY['cumplimiento', 'auditoria']))
+  AND NOT (caso_id = ANY ((SELECT pld_casos_que_me_excluyen())::uuid[]))
+  AND NOT (sesion_id = ANY ((SELECT pld_sesiones_que_me_excluyen())::uuid[])));
+
 -- r2-fix-N1 (60ª): la sesión que votó un caso que excluye a la persona del contexto,
 -- y su acta, no existen para ella: no las lee ni escribe en ellas.
 CREATE POLICY pld_sesiones_lectura ON pld_sesiones FOR SELECT TO plataforma_sofipo
@@ -3263,6 +3271,8 @@ AS $$
     UNION ALL SELECT x.id FROM pld_reportes x WHERE x.caso_id IN (SELECT c.id FROM casos c)
     -- r2-fix-N1: el registro de la sesión que votó el caso tampoco se le muestra.
     UNION ALL SELECT unnest(pld_sesiones_que_me_excluyen())
+    -- r2-fix3-N2: ni los votos de esa sesión, aunque sean de un caso que sí ve.
+    UNION ALL SELECT x.id FROM pld_votos x WHERE x.sesion_id = ANY (pld_sesiones_que_me_excluyen())
     UNION ALL SELECT a.id FROM pld_actas a WHERE EXISTS (
       SELECT 1 FROM pld_votos v WHERE v.sesion_id = a.sesion_id AND v.caso_id IN (SELECT c.id FROM casos c)
     )

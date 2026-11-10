@@ -17,6 +17,7 @@ import { cerrarConexion } from "../../src/nucleo/db.ts";
 import { decidirActivacion, solicitarActivacion } from "../../src/server/operacion/activaciones.ts";
 import { leerCliente, registrarProspecto } from "../../src/server/operacion/clientes.ts";
 import { calificarRiesgoEmpresa, dictaminarVersion, enviarVersion } from "../../src/server/operacion/expediente.ts";
+import { leerBitacora } from "../../src/server/operacion/bitacora.ts";
 import { cambiarRolPersonal } from "../../src/server/operacion/personal.ts";
 import { decidirCambioDeSuspension, solicitarCambioDeSuspension } from "../../src/server/operacion/suspensiones.ts";
 import { cancelarPagoProveedor, crearPagoProveedor, editarYReenviarPago, resolverPagoProveedor } from "../../src/server/pagos-proveedores/servicio.ts";
@@ -48,6 +49,7 @@ import {
   leerPerfiles,
   leerPeriodicos,
   leerPropuestasDePerfil,
+  leerVotaciones,
   listarAlertasPld,
   manifiestoDeConservacion,
   marcarVeinticuatroHoras,
@@ -1825,6 +1827,92 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await assert.rejects(sofipo(ORI, (c) => c.query("update companies set demostracion = false where id = $1", [delta])), /demostracion_no_se_activa_para_dinero/);
           await assert.rejects(dueno.query("update companies set demostracion = true where id = $1", [epsilon]), /empresa_real_no_pasa_a_demostracion/);
           assert.equal((await uno<{ demo: boolean }>("select demostracion as demo from companies where id = $1", [epsilon])).demo, false);
+        });
+
+        await t.test("votos de la sesión oculta (r2-fix3-N2): quien la sesión excluye no ve los votos que registró sobre un caso que sí ve", async () => {
+          // Datos de antes de las sesiones aparte (r2-fix3-N3), que ya no se pueden armar: K2, de E2, votado en S junto con
+          // H, que excluye a CUM2. K0, de E0, es igual y nadie lo votó. Para CUM2, E2 se ve igual que E0; para CUM, no cambia.
+          const empresa = async (rfc: string, razonSocial: string) => {
+            const id = randomUUID();
+            await dueno.query("begin");
+            await dueno.query(
+              `insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, operator_id, estado, demostracion)
+               values ($1, $2, $3, '06600', '601', 'G03', $4, 'activa', false)`,
+              [id, rfc, razonSocial, operador],
+            );
+            await dueno.query(
+              "insert into audit_log (operator_id, company_id, actor_tipo, superficie, accion, entidad, identificador) values ($1, $2, 'sistema', 'sistema', 'alta_empresa', 'companies', $2)",
+              [operador, id],
+            );
+            await dueno.query("commit");
+            return id;
+          };
+          const e2 = await empresa("EDO150301AB7", "Equis Dos SA de CV");
+          const e0 = await empresa("ECE150301AB8", "Equis Cero SA de CV");
+          const casoDe = async (companyId: string, mencionada: string) => {
+            const acuse = await emitirAviso(apr, {
+              formId: randomUUID(), tipo: mencionada ? "posible_interna_preocupante" : "posible_inusual", companyId, mencionada, superior: "",
+              descripcion: "Pagos repetidos a un proveedor nuevo en pocos días.",
+            });
+            const caso = await abrirCaso(cum, { formId: randomUUID(), alertaId: String((await uno("select id from pld_alertas where aviso_id = $1", [acuse.id])).id) });
+            await registrarPropuesta(cum, { casoId: caso, formId: randomUUID(), propuesta: "no_reportar", justificacion: "El cliente explicó los pagos con contrato" });
+            return { caso, propuesta: String((await uno("select id from pld_propuestas where caso_id = $1", [caso])).id) };
+          };
+          const k2 = await casoDe(e2, "");
+          const k0 = await casoDe(e0, "");
+          const h = await casoDe(beta, CUM2);
+          // Los titulares vigentes a esta altura (I1 ya fue sustituido en «topes de texto»).
+          const presentes = (await dueno.query("select id from pld_comite_vigentes($1, $2::date) where titularidad = 'TITULAR' order by id", [operador, hoy])).rows.map((r) => String(r.id));
+          const sesion = randomUUID();
+          await registrarSesion(cum, { formId: sesion, celebradaEl: hoy, presentes, auditorPresente: false });
+          for (const integranteId of presentes) {
+            await registrarVoto(cum, { formId: randomUUID(), sesionId: sesion, propuestaId: h.propuesta, integranteId, voto: "a_favor" });
+          }
+          // Los votos heredados de K2 en S, sin disparadores, con su evento como lo deja registrarVoto.
+          const heredados = presentes.map((integranteId) => ({ id: randomUUID(), integranteId }));
+          await dueno.query("begin");
+          await dueno.query("set local session_replication_role = replica");
+          for (const voto of heredados) {
+            await dueno.query(
+              `insert into pld_votos (id, operator_id, company_id, sesion_id, caso_id, propuesta_id, integrante_id, voto, registrado_por)
+               values ($1, $2, $3, $4, $5, $6, $7, 'a_favor', $8)`,
+              [voto.id, operador, e2, sesion, k2.caso, k2.propuesta, voto.integranteId, CUM],
+            );
+          }
+          await dueno.query("set local session_replication_role = origin");
+          for (const voto of heredados) {
+            await dueno.query(
+              `insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, origen, cambio)
+               values ($1, $2, 'personal', $3, 'sofipo', 'pld_voto_registrado', 'pld_votos', $4, 'operacion', '{"voto": "a_favor"}')`,
+              [operador, e2, CUM, voto.id],
+            );
+          }
+          await dueno.query("commit");
+
+          // Bitácora: para CUM2, la de E2 tiene lo mismo que la de E0; CUM ve los votos heredados.
+          const acciones = async (ctx: ContextoDePersonal, companyId: string) => (await leerBitacora(ctx, companyId)).map((e) => e.accion).sort();
+          assert.deepEqual(await acciones(cum2, e2), await acciones(cum2, e0));
+          assert.equal((await acciones(cum, e2)).filter((a) => a === "pld_voto_registrado").length, heredados.length);
+          assert.equal((await acciones(cum, e0)).filter((a) => a === "pld_voto_registrado").length, 0);
+          // Los votos: CUM2 no recibe ninguno, ni pidiéndolos con el id de la sesión; CUM los ve todos.
+          const votosDeK2 = (userId: string) => sofipo(userId, async (c) => Number((await c.query("select count(*)::int as n from pld_votos where caso_id = $1", [k2.caso])).rows[0].n));
+          assert.equal(await votosDeK2(CUM2), 0);
+          assert.equal(await votosDeK2(CUM), heredados.length);
+          assert.deepEqual(await leerVotaciones(cum2, sesion), []);
+          assert.deepEqual((await leerVotaciones(cum, sesion)).map((v) => v.casoId).sort(), [h.caso, k2.caso].sort());
+          // Manifiesto: para CUM2, E2 cuenta lo mismo que E0 en cada tabla; para CUM, la bitácora de E2 trae los eventos de los votos.
+          const conteos = async (ctx: ContextoDePersonal, companyId: string) => {
+            const filas: Record<string, number> = {};
+            for await (const renglon of manifiestoDeConservacion(ctx, { companyId, desde: hoy, hasta: hoy, pagina: 1, cursor: null })) {
+              const dato = JSON.parse(renglon) as { tabla?: string; filas?: number };
+              if (dato.tabla) filas[dato.tabla] = Number(dato.filas);
+            }
+            return filas;
+          };
+          assert.deepEqual(await conteos(cum2, e2), await conteos(cum2, e0));
+          const deCum = { e2: await conteos(cum, e2), e0: await conteos(cum, e0) };
+          assert.equal(deCum.e2.audit_log, deCum.e0.audit_log + heredados.length);
+          assert.equal(k0.caso.length, 36);
         });
       } finally {
         await cerrarConexion();
