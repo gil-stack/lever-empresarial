@@ -1,0 +1,3 @@
+N1 · ROJO · ✖ dice qué cruzó: el colchón, el runway o los dos, cada uno con su frase completa (r64-N1) (2.649792ms)
+N2 · ROJO · ✖ lo del 1 al 10 del mes 13 no entra a ninguno: las sumas de la tabla y del resumen cuadran (0.919958ms)
+N3 · ROJO · ✖ sin el detalle de nómina, cada mes con su pago dice reservado y el total del mes se sigue viendo (1.030875ms)

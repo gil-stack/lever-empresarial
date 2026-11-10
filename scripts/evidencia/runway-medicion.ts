@@ -257,7 +257,7 @@ async function medirPagina(url: string, hoy: string): Promise<void> {
       select gen_random_uuid(), '${e}', md5('cli' || n)::uuid, md5('plan' || n)::uuid, p, 'Servicio ' || n,
              case when p > 15 then null else coalesce(pl.monto_centavos, 1500000 + ((n * 7 + p * 13) % 10) * 100000) end,
              (date '${primer}' + make_interval(months => p))::date,
-             (select b || d from (select lpad((n * ${PERIODOS} + p)::text, 6, '0') b) x, generate_series(0, 9) d where cobranza_referencia_valida(b || d) limit 1),
+             (select b || d from (select (100000 + n * ${PERIODOS} + p)::text b) x, generate_series(0, 9) d where cobranza_referencia_valida(b || d) limit 1),
              case when p < 15 then 'pagado' when p = 15 then 'emitido' else 'por_emitir' end,
              case when p < 15 then coalesce(pl.monto_centavos, 1500000 + ((n * 7 + p * 13) % 10) * 100000) else 0 end,
              case when p < 15 then (date '${primer}' + make_interval(months => p))::date else null end,
