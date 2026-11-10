@@ -52,6 +52,7 @@ unset DATABASE_URL
   tests/aislamiento/aislamiento.test.ts \
   tests/aislamiento/telefono.test.ts \
   tests/esquema/deriva.test.ts \
+  tests/esquema/definer-search-path.test.ts \
   tests/firmas/dos-firmas.test.ts \
   tests/proveedores/historial-clabe.test.ts \
   tests/proveedores/relectura-69b.test.ts \
