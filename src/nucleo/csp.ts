@@ -14,7 +14,10 @@
  * - Las descargas de documentos no pasan por aquí: llevan su propia política
  *   aislada (sandbox) desde el manejador.
  */
-export const CABECERA_CSP = "Content-Security-Policy-Report-Only"; // MEDICIÓN: volver a "Content-Security-Policy"
+export const CABECERA_CSP = "Content-Security-Policy";
+
+/** El nonce de la petición, para los <style> que pinta la aplicación (el de Next lo pone Next). */
+export const CABECERA_NONCE = "x-nonce";
 
 export function nonceNuevo(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(16));

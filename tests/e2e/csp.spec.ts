@@ -100,6 +100,25 @@ test("Operación: cada pantalla del personal SOFIPO", async ({ page, context }) 
   await recorrer(page, DE("sofipo", "sesion", "capacidad").map((p) => concreta(p, { id: altamar() })), "operacion");
 });
 
+test("navegación del cliente: los enlaces del menú no traen un <style> con el nonce de otra petición", async ({ page, context }) => {
+  await vigilarCsp(context);
+  await sesionDe(context, CORREOS.laura);
+  await page.goto("/consola");
+  await page.waitForLoadState("networkidle");
+  // AparienciaViva ya guardó el acento en su cookie: desde aquí cada petición lo podría pintar en el servidor.
+  expect((await context.cookies()).some((c) => c.name === "acento")).toBe(true);
+  await page.evaluate(() => Object.assign(window, { __mismoDocumento: true }));
+  const secciones = page.getByRole("navigation", { name: "Secciones" });
+  for (const [enlace, destino] of [["Proveedores", /\/consola\/proveedores$/], ["Política", /\/consola\/politica$/], [/^Pendientes/, /\/consola\/pendientes$/]] as const) {
+    await secciones.getByRole("link", { name: enlace, exact: typeof enlace === "string" }).click();
+    await page.waitForURL(destino);
+    await page.waitForLoadState("networkidle");
+  }
+  // Sin recarga: el documento (y su nonce) es el mismo de la primera carga.
+  expect(await page.evaluate(() => "__mismoDocumento" in window)).toBe(true);
+  expect(await page.evaluate(() => window.__csp ?? [])).toEqual([]);
+});
+
 test("sin JavaScript: el formulario de entrada se envía (form-action 'self') y el navegador no anota violaciones", async ({ browser }) => {
   const contexto = await browser.newContext({ javaScriptEnabled: false });
   const pagina = await contexto.newPage();

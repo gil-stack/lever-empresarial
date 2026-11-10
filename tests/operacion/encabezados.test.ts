@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import { NextRequest } from "next/server";
 
 import configuracion from "../../next.config.ts";
-import { CABECERA_CSP, esDescarga, nonceNuevo, politicaDeContenido } from "../../src/nucleo/csp.ts";
+import { CABECERA_CSP, CABECERA_NONCE, esDescarga, nonceNuevo, politicaDeContenido } from "../../src/nucleo/csp.ts";
 import { RUTAS } from "../../src/nucleo/rutas.ts";
 import { proxy } from "../../src/proxy.ts";
 import { POLITICA_DESCARGA } from "../../src/server/pagos-proveedores/descarga.ts";
@@ -72,6 +72,22 @@ describe("el proxy pone la política en cada respuesta", () => {
     assert.equal(respuesta.status, 200);
     assert.equal(respuesta.headers.get(CABECERA_CSP), null);
     assert.equal(respuesta.headers.get(`x-middleware-request-${CABECERA_CSP.toLowerCase()}`), null);
+    assert.equal(respuesta.headers.get(`x-middleware-request-${CABECERA_NONCE}`), null);
+  });
+
+  it("la petición que pinta Next lleva el nonce de la política, no el que mande el navegador", () => {
+    const falsos = { "x-nonce": "nonce-del-atacante", "content-security-policy": "script-src *", "content-security-policy-report-only": "script-src *" };
+    for (const ruta of ["/entrar", "/no-existe"]) {
+      const respuesta = proxy(new NextRequest(`http://localhost${ruta}`, { headers: falsos }));
+      const politica = respuesta.headers.get(CABECERA_CSP);
+      assert.equal(respuesta.headers.get(`x-middleware-request-${CABECERA_NONCE}`), nonceDe(politica), ruta);
+      assert.equal(respuesta.headers.get(`x-middleware-request-${CABECERA_CSP.toLowerCase()}`), politica, ruta);
+      const otra = CABECERA_CSP === "Content-Security-Policy" ? "content-security-policy-report-only" : "content-security-policy";
+      assert.equal(respuesta.headers.get(`x-middleware-request-${otra}`), null, ruta);
+    }
+    const descarga = proxy(new NextRequest("http://localhost/consola/proveedores/documento/abc", { headers: { cookie: SESION, ...falsos } }));
+    assert.equal(descarga.headers.get(`x-middleware-request-${CABECERA_NONCE}`), null);
+    assert.equal(descarga.headers.get("x-middleware-request-content-security-policy"), null);
   });
 });
 

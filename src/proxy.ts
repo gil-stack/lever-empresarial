@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { NOMBRE_COOKIE_ENTRADA, NOMBRE_COOKIE_PORTAL } from "./server/autenticacion/cookie";
-import { CABECERA_CSP, esDescarga, nonceNuevo, politicaDeContenido } from "./nucleo/csp";
+import { CABECERA_CSP, CABECERA_NONCE, esDescarga, nonceNuevo, politicaDeContenido } from "./nucleo/csp";
 import { CABECERA_EMPRESA, CABECERA_PETICION, RUTA_SEGUNDO_FACTOR, rutaDe, separarEmpresa } from "./nucleo/rutas";
 import { NOMBRE_COOKIE_ENTRADA_OPERACION, NOMBRE_COOKIE_PORTAL_OPERACION } from "./server/operacion/acceso";
 import { NOMBRE_COOKIE } from "./server/session/cookie";
@@ -19,20 +19,18 @@ import { NOMBRE_COOKIE } from "./server/session/cookie";
  * en la petición, para que Next.js firme sus scripts, y en la respuesta.
  */
 export function proxy(request: NextRequest) {
-  const politica = politicaDeContenido(nonceNuevo());
+  const nonce = nonceNuevo();
+  const politica = politicaDeContenido(nonce);
   const { empresa, resto } = separarEmpresa(request.nextUrl.pathname);
   const ruta = rutaDe(resto);
   if (!ruta || (empresa && !ruta.conEmpresa)) {
     // La página 404 también se pinta con el nonce.
-    const conPolitica = new Headers(request.headers);
-    conPolitica.set(CABECERA_CSP, politica);
-    return firmar(NextResponse.rewrite(new URL("/_no-existe", request.url), { status: 404, request: { headers: conPolitica } }), politica);
+    return firmar(NextResponse.rewrite(new URL("/_no-existe", request.url), { status: 404, request: { headers: conNonce(request.headers, nonce, politica) } }), politica);
   }
 
-  const cabeceras = new Headers(request.headers);
   // Las descargas responden con su propia política aislada (sandbox): no se mezclan.
   const conCsp = !esDescarga(ruta.patron);
-  if (conCsp) cabeceras.set(CABECERA_CSP, politica);
+  const cabeceras = conCsp ? conNonce(request.headers, nonce, politica) : sinNonce(request.headers);
   cabeceras.delete(CABECERA_EMPRESA);
   cabeceras.set(CABECERA_PETICION, crypto.randomUUID());
   if (empresa) cabeceras.set(CABECERA_EMPRESA, empresa);
@@ -67,6 +65,20 @@ export function proxy(request: NextRequest) {
     respuesta = NextResponse.next({ request: { headers: cabeceras } });
   }
   return conCsp ? firmar(respuesta, politica) : respuesta;
+}
+
+/** La petición que pinta Next lleva la política y el nonce del proxy; nunca los que mandó el navegador. */
+function sinNonce(entrantes: Headers): Headers {
+  const cabeceras = new Headers(entrantes);
+  for (const nombre of ["content-security-policy", "content-security-policy-report-only", CABECERA_NONCE]) cabeceras.delete(nombre);
+  return cabeceras;
+}
+
+function conNonce(entrantes: Headers, nonce: string, politica: string): Headers {
+  const cabeceras = sinNonce(entrantes);
+  cabeceras.set(CABECERA_CSP, politica);
+  cabeceras.set(CABECERA_NONCE, nonce);
+  return cabeceras;
 }
 
 function firmar(respuesta: NextResponse, politica: string): NextResponse {
