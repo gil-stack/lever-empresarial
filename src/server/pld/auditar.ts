@@ -69,7 +69,7 @@ export async function auditarPld(
     entrada.accion,
     ENTIDADES_PLD[entrada.accion],
     entrada.identificador,
-    entrada.motivo ? recortarMotivo(entrada.motivo) : null,
+    entrada.motivo ? motivoParaBitacora(entrada.motivo) : null,
     ctx.peticionId,
     entrada.ocurridoEn,
     entrada.cambio ? JSON.stringify(entrada.cambio) : null,
@@ -77,8 +77,12 @@ export async function auditarPld(
   if (escrito.rowCount !== 1) throw new ErrorDeDominio("auditoria_no_disponible");
 }
 
-/** audit_log.motivo admite 500 caracteres; un texto más largo se guarda completo en su tabla. */
-function recortarMotivo(motivo: string): string {
-  const caracteres = [...motivo];
-  return caracteres.length <= 500 ? motivo : `${caracteres.slice(0, 499).join("")}…`;
+/**
+ * audit_log.motivo admite 500 caracteres. Barrido del motivo largo: cada acción limita a 500 todo motivo que audita,
+ * así que la bitácora lo lleva entero. Si alguno llegara más largo, se rechaza antes de escribir (motivo_largo, como
+ * la red del #59 en auditarOperacion): nunca se recorta ni deja que la base responda con su CHECK.
+ */
+function motivoParaBitacora(motivo: string): string {
+  if ([...motivo].length > 500) throw new ErrorDeDominio("motivo_largo");
+  return motivo;
 }

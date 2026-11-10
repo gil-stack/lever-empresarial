@@ -345,7 +345,7 @@ CREATE TABLE pld_perfil_propuestas (
   CONSTRAINT pld_perfil_propuestas_operaciones CHECK (
     pagos_operaciones_mensuales BETWEEN 0 AND 1000000 AND nomina_operaciones_mensuales BETWEEN 0 AND 1000000
   ),
-  CONSTRAINT pld_perfil_propuestas_motivo CHECK (texto_regulado(motivo, 1000) AND char_length(motivo) >= 10)
+  CONSTRAINT pld_perfil_propuestas_motivo CHECK (texto_regulado(motivo, 500) AND char_length(motivo) >= 10)
 );
 
 CREATE INDEX pld_perfil_propuestas_company_idx ON pld_perfil_propuestas (company_id, registrado_en DESC);
@@ -378,7 +378,9 @@ CREATE TABLE pld_perfiles (
   CONSTRAINT pld_perfiles_operaciones CHECK (
     pagos_operaciones_mensuales BETWEEN 0 AND 1000000 AND nomina_operaciones_mensuales BETWEEN 0 AND 1000000
   ),
-  CONSTRAINT pld_perfiles_motivo CHECK (texto_regulado(motivo, 1000) AND (motivo IS NULL OR char_length(motivo) >= 10))
+  -- El motivo de una declaración o de una propuesta aprobada (500, el de la bitácora) o la justificación de la
+  -- evaluación semestral que cambia el perfil (2000).
+  CONSTRAINT pld_perfiles_motivo CHECK (texto_regulado(motivo, 2000) AND (motivo IS NULL OR char_length(motivo) >= 10))
 );
 
 CREATE INDEX pld_perfiles_vigente_idx ON pld_perfiles (company_id, numero DESC);
@@ -459,7 +461,7 @@ CREATE TABLE pld_perfil_resoluciones (
   registrado_en timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT pld_perfil_resoluciones_decision CHECK (decision IN ('aprobada', 'rechazada')),
   CONSTRAINT pld_perfil_resoluciones_perfil CHECK ((decision = 'aprobada') = (perfil_id IS NOT NULL)),
-  CONSTRAINT pld_perfil_resoluciones_motivo CHECK (texto_regulado(motivo, 1000) AND char_length(motivo) >= 10)
+  CONSTRAINT pld_perfil_resoluciones_motivo CHECK (texto_regulado(motivo, 500) AND char_length(motivo) >= 10)
 );
 
 CREATE FUNCTION pld_perfil_propuestas_revisar()

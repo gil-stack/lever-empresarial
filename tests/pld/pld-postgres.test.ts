@@ -1610,6 +1610,94 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           await agregarNota(cum, { casoId: caso, formId: randomUUID(), texto: "ok" });
           assert.equal(await notas(), 1);
         });
+
+        // Barrido del motivo largo (ronda 12): cada texto entra completo en su tope y se rechaza con uno más, sin que la
+        // base responda con un error que se lea «La base no respondió». Lo que va a la bitácora (audit_log.motivo, 500
+        // como máximo) va completo y no recortado: todo motivo que se audita tiene tope de 500.
+        await t.test("topes de texto (barrido del motivo largo): cada texto entra completo en su tope, se rechaza con uno más y la bitácora no lo recorta", async () => {
+          const texto = (n: number) => `Revisión ${"á".repeat(n - 9)}`;
+          const rechazo = /motivo_invalido|dato_invalido_/;
+          const motivoAuditado = async (accion: string, identificador: string) =>
+            (await uno<{ motivo: string | null }>("select motivo from audit_log where accion = $1 and identificador = $2", [accion, identificador])).motivo;
+          const tope = async <T>(nombre: string, maximo: number, accion: (valor: string) => Promise<T>, guardado: () => Promise<string | null>) => {
+            const antes = await guardado();
+            await assert.rejects(accion(texto(maximo + 1)), rechazo, `${nombre}: ${maximo + 1} se rechaza`);
+            assert.equal(await guardado(), antes, `${nombre}: con ${maximo + 1} no se guarda nada`);
+            const resultado = await accion(texto(maximo));
+            assert.equal(await guardado(), texto(maximo), `${nombre}: ${maximo} se guarda completo`);
+            return resultado;
+          };
+
+          // Aviso (4000), nota (4000), propuesta (4000) y 24 horas (1000): no van a la bitácora.
+          let acuse = { id: "" };
+          const avisoForm = randomUUID();
+          acuse = await tope("aviso", 4000, (descripcion) => emitirAviso(apr, { formId: descripcion.length > 4000 ? randomUUID() : avisoForm, tipo: "posible_inusual", companyId: beta, mencionada: "", superior: "", descripcion }),
+            async () => (await uno<{ d: string | null } | undefined>("select descripcion as d from pld_avisos where id = $1", [avisoForm]))?.d ?? null);
+          const caso = await abrirCaso(cum, { formId: randomUUID(), alertaId: String((await uno("select id from pld_alertas where aviso_id = $1", [acuse.id])).id) });
+          const ultimaNota = async () => (await uno<{ t: string } | undefined>("select texto as t from pld_notas where caso_id = $1 order by registrado_en desc limit 1", [caso]))?.t ?? null;
+          await tope("nota", 4000, (valor) => agregarNota(cum, { casoId: caso, formId: randomUUID(), texto: valor }), ultimaNota);
+          await tope("propuesta", 4000, (valor) => registrarPropuesta(cum, { casoId: caso, formId: randomUUID(), propuesta: "no_reportar", justificacion: valor }),
+            async () => (await uno<{ j: string } | undefined>("select justificacion as j from pld_propuestas where caso_id = $1", [caso]))?.j ?? null);
+          await tope("24 horas", 1000, (valor) => marcarVeinticuatroHoras(cum, { casoId: caso, motivo: valor }),
+            async () => (await uno<{ m: string } | undefined>("select motivo as m from pld_casos_24h where caso_id = $1", [caso]))?.m ?? null);
+
+          // «Quién dictamina» (500, a la bitácora) y el dictamen del Oficial (4000).
+          const modoForm = randomUUID();
+          await tope("quién dictamina", 500, (motivo) => cambiarModoDictamen(cum, SESION_SOFIPO, { formId: motivo.length > 500 ? randomUUID() : modoForm, modo: "oficial", oficialId: CUM, motivo }),
+            async () => (await uno<{ m: string } | undefined>("select motivo as m from pld_modo_dictamen where id = $1", [modoForm]))?.m ?? null);
+          assert.equal(await motivoAuditado("pld_modo_dictamen_cambiado", modoForm), texto(500), "la bitácora lleva el motivo completo de «quién dictamina»");
+          await tope("dictamen", 4000, (justificacion) =>
+            dictaminarCaso(cum, SESION_SOFIPO, { formId: randomUUID(), casoId: caso, via: "oficial", sesionId: "", propuestaId: "", resultado: "no_reportar", justificacion }),
+          async () => (await uno<{ j: string } | undefined>("select justificacion as j from pld_dictamenes where caso_id = $1", [caso]))?.j ?? null);
+          await cambiarModoDictamen(cum, SESION_SOFIPO, { formId: randomUUID(), modo: "comite", oficialId: "", motivo: "Regresa el Comité a dictaminar" });
+
+          // Parámetros (500, a la bitácora).
+          const parametrosForm = randomUUID();
+          await tope("parámetros", 500, (motivo) => cambiarParametros(cum, SESION_SOFIPO, {
+            formId: motivo.length > 500 ? randomUUID() : parametrosForm, atipicoK: "4", atipicoHistorialMinimo: "10", fraccionN: "3", fraccionVentanaDias: "7",
+            fraccionUmbral: "100,000.00", nominaPersonasPct: "25", factorGradoAlto: "0.8", motivo,
+          }), async () => (await uno<{ m: string } | undefined>("select motivo as m from pld_parametros where id = $1", [parametrosForm]))?.m ?? null);
+          assert.equal(await motivoAuditado("pld_parametros_cambiados", parametrosForm), texto(500), "la bitácora lleva el motivo completo de los parámetros");
+
+          // Sustitución en el Comité (500, a la bitácora): I1 deja su lugar a una persona nueva.
+          const I4 = randomUUID();
+          await tope("sustitución en el Comité", 500, (motivo) => registrarIntegrantes(cum, {
+            integrantes: [integrante(I4, "INTEGRANTE", "TITULAR", "Isaac", { designadoEl: hoy, esOficial: true })], sustituye: { integranteId: I1, sustituidoEl: hoy, motivo },
+          }), async () => (await uno<{ m: string } | undefined>("select motivo as m from pld_comite_bajas where integrante_id = $1", [I1]))?.m ?? null);
+          assert.equal(await motivoAuditado("pld_comite_integrante_sustituido", I1), texto(500), "la bitácora lleva el motivo completo de la sustitución");
+
+          // Perfil: el cambio declarado (500, a la bitácora) en una empresa en alta.
+          const delta = await prospecto("DTP150301AB1", "Delta Topes SA de CV");
+          const montos = { pagosMonto: "10,000.00", pagosOperaciones: "10", nominaMonto: "5,000.00", nominaOperaciones: "2" };
+          await declararPerfil(ori, { companyId: delta, formId: randomUUID(), ...montos, motivo: "" });
+          const cambio = randomUUID();
+          await tope("perfil declarado", 500, (motivo) => declararPerfil(ori, { companyId: delta, formId: motivo.length > 500 ? randomUUID() : cambio, ...montos, motivo }),
+            async () => (await uno<{ m: string | null } | undefined>("select motivo as m from pld_perfiles where id = $1", [cambio]))?.m ?? null);
+          assert.equal(await motivoAuditado("expediente_perfil_declarado", cambio), texto(500), "la bitácora lleva el motivo completo del perfil declarado");
+          // Una primera declaración con un motivo de más no lo descarta en silencio: se rechaza.
+          const otra = await prospecto("OTP150301AB2", "Otra Topes SA de CV");
+          await assert.rejects(declararPerfil(ori, { companyId: otra, formId: randomUUID(), ...montos, motivo: texto(501) }), rechazo);
+          assert.equal(await contar("select count(*)::int as n from pld_perfiles where company_id = $1", [otra]), 0);
+
+          // Perfil: la propuesta de Originación en una empresa activa y su resolución (500 cada una, a la bitácora).
+          const propuesta = randomUUID();
+          await tope("propuesta de perfil", 500, (motivo) => declararPerfil(ori, { companyId: beta, formId: motivo.length > 500 ? randomUUID() : propuesta, ...montos, motivo }),
+            async () => (await uno<{ m: string } | undefined>("select motivo as m from pld_perfil_propuestas where id = $1", [propuesta]))?.m ?? null);
+          assert.equal(await motivoAuditado("expediente_perfil_propuesto", propuesta), texto(500), "la bitácora lleva el motivo completo de la propuesta");
+          await tope("resolución de la propuesta", 500, (motivo) => resolverPropuestaDePerfil(cum, { companyId: beta, propuestaId: propuesta, decision: "rechazada", motivo }),
+            async () => (await uno<{ m: string } | undefined>("select motivo as m from pld_perfil_resoluciones where propuesta_id = $1", [propuesta]))?.m ?? null);
+          assert.equal(await motivoAuditado("expediente_perfil_rechazado", propuesta), texto(500), "la bitácora lleva el motivo completo de la resolución");
+
+          // Evaluación «Cambia» (2000): la justificación también es el motivo de la versión nueva del perfil.
+          const evaluacion = randomUUID();
+          await tope("evaluación", 2000, (justificacion) => registrarEvaluacion(cum, {
+            companyId: alfa, formId: justificacion.length > 2000 ? randomUUID() : evaluacion, perfil: "cambia", pagosMonto: "800,000.00", pagosOperaciones: "60",
+            nominaMonto: "300,000.00", nominaOperaciones: "2", justificacion,
+          }), async () => (await uno<{ j: string } | undefined>("select justificacion as j from pld_evaluaciones where id = $1", [evaluacion]))?.j ?? null);
+          assert.equal((await uno<{ m: string }>(
+            "select p.motivo as m from pld_evaluaciones e join pld_perfiles p on p.id = e.perfil_id where e.id = $1", [evaluacion])).m, texto(2000),
+          "la versión del perfil que nace de la evaluación lleva la justificación completa");
+        });
       } finally {
         await cerrarConexion();
         await dueno.end();

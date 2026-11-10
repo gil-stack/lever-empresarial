@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { leerCentavosEscritos } from "../../dominio/centavos";
-import { hoyEnMexico, textoMultilinea, uuidValido, type Grado } from "../../dominio/operacion";
+import { hoyEnMexico, uuidValido, type Grado } from "../../dominio/operacion";
 import { elegibleParaEvaluar, restarMeses, semestreAnterior, semestreDe, type Semestre } from "../../dominio/pld/plazos";
 import type { ContextoDePersonal } from "../../nucleo/contexto";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
@@ -142,7 +142,9 @@ export async function declararPerfil(
   if (!uuidValido(entrada.companyId)) throw new ErrorDeDominio("cliente_ausente");
   if (!uuidValido(entrada.formId)) throw new ErrorDeDominio("formulario_invalido");
   const montos = leerMontos(entrada);
-  const escrito = textoMultilinea(entrada.motivo, 1000);
+  // Barrido del motivo largo: todo motivo que va a la bitácora (audit_log.motivo) tiene tope de 500, entero y sin
+  // recortar. En la primera declaración el motivo es opcional, pero si viene se revisa: uno de más no se descarta.
+  const escrito = typeof entrada.motivo === "string" && entrada.motivo.trim() ? motivoEscrito(entrada.motivo, 500) : null;
   const companyId = entrada.companyId;
   const ahora = deps.ahora?.() ?? new Date();
   let resultado: "declarado" | "propuesto" = "declarado";
@@ -158,7 +160,7 @@ export async function declararPerfil(
     const empresa = (await consulta.query("select estado from companies where id = $1", [companyId])).rows[0] as { estado?: string } | undefined;
     if (!empresa) throw new ErrorDeDominio("cliente_ausente");
     if (empresa.estado === "activa" || empresa.estado === "suspendida") {
-      const motivo = motivoEscrito(entrada.motivo, 1000);
+      const motivo = motivoEscrito(entrada.motivo, 500);
       await consulta.query(
         `insert into pld_perfil_propuestas (
            id, operator_id, company_id, pagos_monto_mensual_centavos, pagos_operaciones_mensuales,
@@ -174,7 +176,7 @@ export async function declararPerfil(
       return;
     }
     const hay = await consulta.query("select 1 from pld_perfiles where company_id = $1 limit 1", [companyId]);
-    const motivo = hay.rows.length > 0 ? motivoEscrito(entrada.motivo, 1000) : escrito;
+    const motivo = hay.rows.length > 0 ? motivoEscrito(entrada.motivo, 500) : escrito;
     await consulta.query(
       `insert into pld_perfiles (
          id, operator_id, company_id, origen, pagos_monto_mensual_centavos, pagos_operaciones_mensuales,
@@ -205,7 +207,7 @@ export async function resolverPropuestaDePerfil(
   if (!uuidValido(entrada.propuestaId)) throw new ErrorDeDominio("propuesta_de_perfil_no_pendiente");
   if (entrada.decision !== "aprobada" && entrada.decision !== "rechazada") throw new ErrorDeDominio("dato_invalido_decision");
   const decision = entrada.decision;
-  const motivo = motivoEscrito(entrada.motivo, 1000);
+  const motivo = motivoEscrito(entrada.motivo, 500);
   const companyId = entrada.companyId;
   const ahora = deps.ahora?.() ?? new Date();
   await conPld(ctx, companyId, async (consulta) => {

@@ -16,7 +16,7 @@ export function FormularioResolverPropuesta({ companyId, propuestaId }: { compan
       {aviso ? <div className="operacion-ancho">{aviso}</div> : null}
       <div className="campo operacion-ancho">
         <label htmlFor="perfil-resolucion-motivo">Por qué la apruebas o la rechazas</label>
-        <textarea id="perfil-resolucion-motivo" name="motivo" required minLength={10} maxLength={1000} defaultValue={valor("motivo")} {...ligado("motivo")} />
+        <textarea id="perfil-resolucion-motivo" name="motivo" required minLength={10} maxLength={500} defaultValue={valor("motivo")} {...ligado("motivo")} />
         {mensaje("motivo")}
       </div>
       <div className="acciones operacion-ancho">
@@ -63,7 +63,7 @@ export function FormularioPerfil({
       {conMotivo ? (
         <div className="campo operacion-ancho">
           <label htmlFor="perfil-motivo">Motivo del cambio</label>
-          <textarea id="perfil-motivo" name="motivo" required minLength={10} maxLength={1000} defaultValue={valor("motivo")} {...ligado("motivo")} />
+          <textarea id="perfil-motivo" name="motivo" required minLength={10} maxLength={500} defaultValue={valor("motivo")} {...ligado("motivo")} />
           {mensaje("motivo")}
         </div>
       ) : (
