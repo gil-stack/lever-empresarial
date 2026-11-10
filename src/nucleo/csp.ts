@@ -46,3 +46,16 @@ export function politicaDeContenido(nonce: string, desarrollo = process.env.NODE
 export function esDescarga(patron: string): boolean {
   return /\/documento\/\[[A-Za-z]+\]$/.test(patron);
 }
+
+/**
+ * ¿La petición carga un documento? Solo ahí un <style> que pinta el servidor lleva
+ * el nonce de la política del documento; en una navegación del cliente o una
+ * acción de servidor llegaría con el de esa otra petición. Con Fetch Metadata lo
+ * dice Sec-Fetch-Dest. Sin él (Safari anterior a 16.4), la carga de un documento
+ * pide text/html y las peticiones RSC y las acciones no.
+ */
+export function esCargaDeDocumento(cabeceras: Pick<Headers, "get" | "has">): boolean {
+  const destino = cabeceras.get("sec-fetch-dest");
+  if (destino) return destino === "document";
+  return !cabeceras.has("rsc") && !cabeceras.has("next-action") && (cabeceras.get("accept") ?? "").includes("text/html");
+}

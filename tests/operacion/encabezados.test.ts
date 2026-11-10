@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import { NextRequest } from "next/server";
 
 import configuracion from "../../next.config.ts";
-import { CABECERA_CSP, CABECERA_NONCE, esDescarga, nonceNuevo, politicaDeContenido } from "../../src/nucleo/csp.ts";
+import { CABECERA_CSP, CABECERA_NONCE, esCargaDeDocumento, esDescarga, nonceNuevo, politicaDeContenido } from "../../src/nucleo/csp.ts";
 import { RUTAS } from "../../src/nucleo/rutas.ts";
 import { proxy } from "../../src/proxy.ts";
 import { POLITICA_DESCARGA } from "../../src/server/pagos-proveedores/descarga.ts";
@@ -89,6 +89,23 @@ describe("el proxy pone la política en cada respuesta", () => {
     assert.equal(descarga.headers.get(`x-middleware-request-${CABECERA_NONCE}`), null);
     assert.equal(descarga.headers.get("x-middleware-request-content-security-policy"), null);
   });
+});
+
+describe("el <style> del acento solo se pinta en la carga de un documento", () => {
+  const HTML = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+  const casos: [string, Record<string, string>, boolean][] = [
+    ["documento con Fetch Metadata", { "sec-fetch-dest": "document", accept: HTML }, true],
+    ["navegación del cliente con Fetch Metadata", { "sec-fetch-dest": "empty", rsc: "1", accept: "*/*" }, false],
+    ["acción de servidor con Fetch Metadata", { "sec-fetch-dest": "empty", "next-action": "abc", accept: "text/x-component" }, false],
+    ["documento en Safari anterior a 16.4 (sin Sec-Fetch-*)", { accept: HTML }, true],
+    ["navegación del cliente en Safari anterior a 16.4", { rsc: "1", accept: "*/*" }, false],
+    ["acción de servidor en Safari anterior a 16.4", { "next-action": "abc", accept: "text/x-component" }, false],
+    ["RSC que además pide text/html", { rsc: "1", accept: HTML }, false],
+    ["sin Accept ni Sec-Fetch-*", {}, false],
+  ];
+  for (const [nombre, cabeceras, esperado] of casos) {
+    it(nombre, () => assert.equal(esCargaDeDocumento(new Headers(cabeceras)), esperado));
+  }
 });
 
 describe("descargas y encabezados de next.config", () => {

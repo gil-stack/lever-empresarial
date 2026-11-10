@@ -1,6 +1,6 @@
 import { cookies, headers } from "next/headers";
 
-import { CABECERA_NONCE } from "@/nucleo/csp";
+import { CABECERA_NONCE, esCargaDeDocumento } from "@/nucleo/csp";
 
 import type { ClaveTema } from "./catalogo";
 import { COOKIE_ACENTO, leerAcentoGuardado } from "./acento-guardado";
@@ -14,13 +14,11 @@ import { COOKIE_ACENTO, leerAcentoGuardado } from "./acento-guardado";
  * Solo en la carga del documento. En una navegación del cliente o una acción de
  * servidor el <style> llegaría con el nonce de esa petición, no con el del
  * documento, y la política lo bloquearía; ahí ya no hace falta, porque
- * AparienciaViva dejó el acento en <html> al hidratar. Sin el encabezado
- * (navegadores viejos) se pinta, como antes.
+ * AparienciaViva dejó el acento en <html> al hidratar (ver esCargaDeDocumento).
  */
 export async function AcentoInicial({ persona, tema }: { persona?: string; tema: ClaveTema }) {
   const cabeceras = await headers();
-  const destino = cabeceras.get("sec-fetch-dest");
-  if (destino && destino !== "document") return null;
+  if (!esCargaDeDocumento(cabeceras)) return null;
   const guardado = leerAcentoGuardado((await cookies()).get(COOKIE_ACENTO)?.value, persona, tema);
   if (!guardado) return null;
   return <style nonce={cabeceras.get(CABECERA_NONCE) ?? undefined}>{`:root[data-tema="${tema}"]{--acc:${guardado.acento};--ink:${guardado.tinta}}`}</style>;

@@ -93,9 +93,11 @@ function desviar(request: NextRequest, destino: string): NextResponse {
   return new NextResponse(null, { status: 401 });
 }
 
-// Los archivos de public/ van por nombre exacto (sin comodín de extensiones: una ruta de la app con punto
-// debe seguir pasando por aquí). Sin esto el proxy reescribía /lever-email.png a 404 y los correos salían sin logo.
+// Fuera solo lo que sirve Next sin pasar por la app (_next/static/ y _next/image, como en su guía de CSP) y los
+// archivos de public/ por nombre exacto (sin comodín de extensiones: una ruta de la app con punto debe seguir
+// pasando por aquí). Sin esto el proxy reescribía /lever-email.png a 404 y los correos salían sin logo. Un
+// prefijo sin anclar («_next», «__next») dejaba /_nextfoo o /favicon.ico con la 404 de la app y sin política.
 // tests/operacion/publicos.test.ts falla si un archivo de public/ no queda fuera.
 export const config = {
-  matcher: ["/((?!_next|__next|favicon\\.ico$|icon\\.svg$|lever-email\\.png$).*)"],
+  matcher: ["/((?!_next/static/|_next/image$|icon\\.svg$|lever-email\\.png$).*)"],
 };

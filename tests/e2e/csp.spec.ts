@@ -45,11 +45,15 @@ async function revisar(pagina: Page, ruta: string): Promise<{ status: number; po
   const respuesta = await pagina.goto(ruta);
   await pagina.waitForLoadState("networkidle");
   const politica = (await respuesta?.headerValue("content-security-policy")) ?? (await respuesta?.headerValue("content-security-policy-report-only")) ?? "";
-  const nonce = politica.match(/'nonce-([A-Za-z0-9+/=]+)'/)?.[1] ?? "sin-nonce";
+  const nonce = nonceDeLaPolitica(politica);
   const html = (await respuesta?.headerValue("content-type"))?.includes("text/html") ? await respuesta!.text() : "";
   const sinNonce = [...html.matchAll(/<(?:script|style)\b[^>]*>/g)].map((m) => m[0]).filter((etiqueta) => !etiqueta.includes(`nonce="${nonce}"`));
   const violaciones = await pagina.evaluate(() => window.__csp ?? []);
   return { status: respuesta?.status() ?? 0, politica, violaciones, sinNonce };
+}
+
+function nonceDeLaPolitica(politica: string): string {
+  return politica.match(/'nonce-([A-Za-z0-9+/=]+)'/)?.[1] ?? "sin-nonce";
 }
 
 function concreta(patron: string, ids: Record<string, string> = {}): string {
@@ -117,6 +121,39 @@ test("navegación del cliente: los enlaces del menú no traen un <style> con el 
   // Sin recarga: el documento (y su nonce) es el mismo de la primera carga.
   expect(await page.evaluate(() => "__mismoDocumento" in window)).toBe(true);
   expect(await page.evaluate(() => window.__csp ?? [])).toEqual([]);
+});
+
+test("lo que solo se parece a _next o a un archivo que no existe responde la 404 con su nonce; _next/static sigue fuera del proxy", async ({ page, context }) => {
+  await vigilarCsp(context);
+  const rutas = ["/_nextfoo", "/__nextfoo", "/_next-algo/consola", "/__next/consola", "/favicon.ico"];
+  for (const ruta of rutas) expect((await page.request.get(ruta)).status(), ruta).toBe(404);
+  // Política con nonce, todas las etiquetas firmadas y 0 violaciones en cada una.
+  await recorrer(page, rutas, "fuera-del-matcher");
+  const html = await (await page.request.get("/entrar")).text();
+  const chunk = html.match(/\/_next\/static\/[^"']+\.js/)?.[0];
+  expect(chunk, "la entrada carga al menos un chunk de _next/static").toBeTruthy();
+  const estatico = await page.request.get(chunk!);
+  expect(estatico.status()).toBe(200);
+  expect(estatico.headers()["content-type"]).toContain("javascript");
+  expect(estatico.headers()["content-security-policy"]).toBeUndefined();
+});
+
+test("Safari anterior a 16.4 (sin Sec-Fetch-*): la navegación del cliente no trae el <style> del acento y el documento sí, con su nonce", async ({ page, context }) => {
+  await sesionDe(context, CORREOS.laura);
+  await page.goto("/consola");
+  await page.waitForLoadState("networkidle");
+  expect((await context.cookies()).some((c) => c.name === "acento")).toBe(true);
+  // La petición de Playwright no agrega Sec-Fetch-*: así llegan las de un Safari viejo. Usa las cookies del contexto.
+  const acento = /<style\b[^>]*>:root\[data-tema=[^<]*--acc:/;
+  const rsc = await context.request.get("/consola/politica", { headers: { RSC: "1", Accept: "*/*" } });
+  expect(rsc.status()).toBe(200);
+  expect(rsc.headers()["content-type"]).toContain("text/x-component");
+  expect(await rsc.text()).not.toMatch(/--acc:/);
+  const documento = await context.request.get("/consola/politica", { headers: { Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" } });
+  const nonce = nonceDeLaPolitica(documento.headers()["content-security-policy"] ?? "");
+  const etiqueta = (await documento.text()).match(acento)?.[0] ?? "";
+  expect(etiqueta, "el documento pinta el acento").not.toBe("");
+  expect(etiqueta).toContain(`nonce="${nonce}"`);
 });
 
 test("sin JavaScript: el formulario de entrada se envía (form-action 'self') y el navegador no anota violaciones", async ({ browser }) => {
