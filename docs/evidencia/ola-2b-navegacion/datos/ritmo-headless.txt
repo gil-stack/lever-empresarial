@@ -1,0 +1,11 @@
+# Ritmo de requestAnimationFrame en Chromium headless (shell, sin GPU), con el fondo barato (lienzo de 8 px)
+# Medido sobre b84bf8a, 1440×900, CPU limitada con Emulation.setCPUThrottlingRate. Congelar = Page.setWebLifecycleState frozen 3 s.
+# Conclusión: el intervalo entre cuadros no sube con la CPU limitada; congelar no surte efecto en el shell headless.
+{"dpr":1,"cpu":1,"n":180,"media":16.7,"mediana":16.7,"p95":16.8,"max":16.8,"masDe25":0}
+{"dpr":1,"cpu":4,"n":180,"media":16.8,"mediana":16.7,"p95":16.8,"max":33.3,"masDe25":1}
+{"dpr":1,"cpu":6,"n":181,"media":16.7,"mediana":16.7,"p95":16.8,"max":16.8,"masDe25":0}
+{"dpr":1,"congelar3s":{"maximo":17,"eventos":[]}}
+{"dpr":2,"cpu":1,"n":180,"media":16.7,"mediana":16.7,"p95":16.8,"max":16.8,"masDe25":0}
+{"dpr":2,"cpu":4,"n":180,"media":16.8,"mediana":16.7,"p95":16.7,"max":33.4,"masDe25":1}
+{"dpr":2,"cpu":6,"n":180,"media":16.8,"mediana":16.7,"p95":16.8,"max":33.4,"masDe25":1}
+{"dpr":2,"congelar3s":{"maximo":17,"eventos":[]}}

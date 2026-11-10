@@ -26,9 +26,51 @@ const CUADROS_DE_CALENTAMIENTO = 20;
 const CUADROS_POR_VENTANA = 60;
 const DIBUJO_LENTO_MS = 12;
 const INTERVALO_LENTO_MS = 1000 / 40;
+/** Un hueco así entre dos cuadros es la página ocupada en otra cosa o dormida (la laptop cerrada), no el fondo: no se mide. */
+const HUECO_MS = 250;
+/**
+ * Un solo dibujo así delata un equipo que pinta sin GPU (una máquina virtual, un escritorio remoto): el fondo se queda
+ * quieto en ese momento, sin esperar el calentamiento ni la ventana. Con el pintado del cuadro encima, un dibujo de
+ * unos 32 ms ya deja un cuadro de más de 50 ms; con GPU, el más caro medido es de 12 ms, arrastrando la ventana para
+ * agrandarla a DPR 2 (docs/evidencia/ola-2b-navegacion/datos/n7-regla.txt).
+ */
+const DIBUJO_BLOQUEANTE_MS = 25;
+/** Quieta, la escena se repinta una sola vez cuando el tamaño deja de cambiar este tiempo. */
+const ESPERA_DEL_TAMANO_MS = 180;
+/** En `sessionStorage`: recargar la página no vuelve a medir. */
+const RECUERDO_LENTO = "lever-fondo-lento";
 
-/** Una vez que el equipo resultó lento, el fondo se queda quieto en toda la sesión. */
+/** Una vez que el equipo resultó lento, el fondo se queda quieto en esta carga de la página. */
 let equipoLento = false;
+
+/**
+ * El búfer del motor solo crece, y agrandarlo cuesta aparte (con GPU, crecer a 2560×1600 a DPR 2 tomó 30 ms). Su tamaño
+ * según los dibujos de esta carga; vuelve a cero cuando el motor crea su renderer, en el primer dibujo o tras perder el
+ * contexto de WebGL, que además compila el shader. Sin WebGL2 el motor pinta un degradado 2D, sin búfer.
+ */
+const bufer = { ancho: 0, alto: 0, sinWebGl: false };
+
+/**
+ * El fondo se queda quieto en esta carga. Solo el costo medido del dibujo se guarda para las siguientes: el ritmo de la
+ * página también depende de lo que haga lo demás en ella.
+ */
+function quedarQuieto(guardar: boolean) {
+  equipoLento = true;
+  if (!guardar) return;
+  try {
+    sessionStorage.setItem(RECUERDO_LENTO, "1");
+  } catch {
+    // Sin almacenamiento la decisión dura lo que dure esta carga.
+  }
+}
+
+function equipoLentoRecordado(): boolean {
+  try {
+    return sessionStorage.getItem(RECUERDO_LENTO) === "1";
+  } catch {
+    return false;
+  }
+}
 
 export interface PropsFondoEscena {
   escena: ClaveEscena;
@@ -69,6 +111,7 @@ export function FondoEscena({
     if (!lienzo || !contexto) return;
 
     const reducir = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (!equipoLento) equipoLento = equipoLentoRecordado();
     const luz: [number, number] = [...LUZ_EN_REPOSO];
     const cursor: [number, number] = [...LUZ_EN_REPOSO];
     let motor: Motor | null = null;
@@ -76,6 +119,11 @@ export function FondoEscena({
     let raf = 0;
     let visible = true;
     let sucio = true;
+    /** Si el último dibujo agrandó el búfer del motor. */
+    let agrando = false;
+    /** Si el último dibujo del bucle no se midió. */
+    let sinMedir = false;
+    let esperaDelTamano: ReturnType<typeof setTimeout> | undefined;
     let n = 0;
     let cuadros = 0;
     let msDibujando = 0;
@@ -102,6 +150,11 @@ export function FondoEscena({
       return [Math.max(2, Math.round(lienzo.offsetWidth * dpr)), Math.max(2, Math.round(lienzo.offsetHeight * dpr))];
     };
 
+    const otroTamano = () => {
+      const [ancho, alto] = medida();
+      return ancho !== lienzo.width || alto !== lienzo.height;
+    };
+
     /** Pinta un cuadro y devuelve cuánto bloqueó el hilo principal, en ms. */
     const dibujar = (tiempo: number) => {
       if (!motor) return 0;
@@ -110,9 +163,17 @@ export function FondoEscena({
         lienzo.width = ancho;
         lienzo.height = alto;
       }
+      if (!motor.usaGpu() && !bufer.sinWebGl) {
+        bufer.ancho = 0;
+        bufer.alto = 0;
+      }
+      agrando = ancho > bufer.ancho || alto > bufer.alto;
+      bufer.ancho = Math.max(bufer.ancho, ancho);
+      bufer.alto = Math.max(bufer.alto, alto);
       const inicio = performance.now();
       motor.pintar(contexto, ancho, alto, { ...apariencia.current, luz, tiempo });
       const ms = performance.now() - inicio;
+      bufer.sinWebGl = !motor.usaGpu();
       msDibujando += ms;
       cuadros += 1;
       sucio = false;
@@ -131,24 +192,28 @@ export function FondoEscena({
       ventanaMsDibujo = 0;
     };
 
-    /** Mide una ventana de cuadros; devuelve `true` si el equipo no da para animar el fondo. */
-    const midiendoEsLento = (ts: number) => {
-      if (!ultimoCuadro) return false;
+    /** Mide una ventana de cuadros; devuelve por qué el equipo no da para animar el fondo, o `null`. */
+    const medirVentana = (ts: number): "dibujo" | "ritmo" | null => {
+      const intervalo = ts - ultimoCuadro;
+      if (!ultimoCuadro || intervalo > HUECO_MS) return null;
       if (calentados < CUADROS_DE_CALENTAMIENTO) {
         calentados += 1;
-        return false;
+        return null;
       }
       ventanaIntervalos += 1;
-      ventanaMs += ts - ultimoCuadro;
-      if (ventanaIntervalos < CUADROS_POR_VENTANA) return false;
-      const lento =
-        ventanaMs / ventanaIntervalos > INTERVALO_LENTO_MS ||
-        (ventanaDibujos > 0 && ventanaMsDibujo / ventanaDibujos > DIBUJO_LENTO_MS);
+      ventanaMs += intervalo;
+      if (ventanaIntervalos < CUADROS_POR_VENTANA) return null;
+      const motivo =
+        ventanaDibujos > 0 && ventanaMsDibujo / ventanaDibujos > DIBUJO_LENTO_MS
+          ? "dibujo"
+          : ventanaMs / ventanaIntervalos > INTERVALO_LENTO_MS
+            ? "ritmo"
+            : null;
       ventanaIntervalos = 0;
       ventanaMs = 0;
       ventanaDibujos = 0;
       ventanaMsDibujo = 0;
-      return lento;
+      return motivo;
     };
 
     const detener = () => {
@@ -184,8 +249,9 @@ export function FondoEscena({
     const cuadro = (ts: number) => {
       raf = 0;
       if (!activo || document.hidden || !visible || quieto()) return;
-      if (midiendoEsLento(ts)) {
-        equipoLento = true;
+      const motivo = medirVentana(ts);
+      if (motivo) {
+        quedarQuieto(motivo === "dibujo");
         actualizar();
         return;
       }
@@ -199,7 +265,20 @@ export function FondoEscena({
       n += 1;
       if (sucio || n % SALTO === 0) {
         const ms = dibujar(t);
-        if (calentados >= CUADROS_DE_CALENTAMIENTO) {
+        // El dibujo que agranda el búfer del motor (el primero, o el de una ventana más grande) no dice cuánto cuesta
+        // pintar en este equipo y no se mide; a lo más uno seguido, para que crecer en cada dibujo no lo tape.
+        const medido = !agrando || sinMedir;
+        sinMedir = !medido;
+        if (medido && ms > DIBUJO_BLOQUEANTE_MS) {
+          // Sin otra pintura, que bloquearía igual: la escena se queda en este cuadro y la luz vuelve al reposo
+          // para cuando haya que repintarla quieta (otro tema o tamaño).
+          quedarQuieto(true);
+          luz[0] = LUZ_EN_REPOSO[0];
+          luz[1] = LUZ_EN_REPOSO[1];
+          fijarEstado("lento");
+          return;
+        }
+        if (medido && calentados >= CUADROS_DE_CALENTAMIENTO) {
           ventanaDibujos += 1;
           ventanaMsDibujo += ms;
         }
@@ -220,8 +299,17 @@ export function FondoEscena({
     };
 
     const observadorTamano = new ResizeObserver(() => {
-      const [ancho, alto] = medida();
-      if (ancho !== lienzo.width || alto !== lienzo.height) repintar.current();
+      clearTimeout(esperaDelTamano);
+      if (!otroTamano()) return;
+      if (!quieto()) {
+        sucio = true;
+        return;
+      }
+      // Quieta, la escena se repinta una sola vez cuando el tamaño deja de cambiar: arrastrar la ventana lo cambia en
+      // cada cuadro, y sin GPU cada repintado bloquea decenas de ms.
+      esperaDelTamano = setTimeout(() => {
+        if (otroTamano()) repintar.current();
+      }, ESPERA_DEL_TAMANO_MS);
     });
     observadorTamano.observe(lienzo);
     const observadorVista = new IntersectionObserver(([entrada]) => {
@@ -248,6 +336,7 @@ export function FondoEscena({
     return () => {
       activo = false;
       detener();
+      clearTimeout(esperaDelTamano);
       repintar.current = () => {};
       observadorTamano.disconnect();
       observadorVista.disconnect();

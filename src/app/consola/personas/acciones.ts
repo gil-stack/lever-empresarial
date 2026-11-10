@@ -285,6 +285,6 @@ function refrescar(): void {
   revalidatePath("/consola/personas");
   revalidatePath("/consola/personas/areas");
   revalidatePath("/consola/personas/nomina");
-  revalidatePath("/consola/pendientes");
+  revalidatePath("/consola/aprobaciones");
   revalidatePath("/consola");
 }

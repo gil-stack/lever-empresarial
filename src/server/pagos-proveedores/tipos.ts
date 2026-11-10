@@ -40,6 +40,8 @@ export type LecturaPagosProveedores = {
   pagos: PagoVista[];
   documentos: DocumentoVista[];
   actividad: ActividadVista[];
+  /** Las últimas 12 autorizaciones y rechazos, de la más reciente a la más antigua (el historial de Aprobaciones). */
+  decisiones: ActividadVista[];
   metricas: MetricasPagos;
   /** Versiones cerradas del pago abierto en el detalle, de la más reciente a la más antigua. */
   historial: VersionPagoVista[];

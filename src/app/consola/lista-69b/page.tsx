@@ -5,6 +5,7 @@ import { vistaDeMarco } from "@/components/cromo/puertas";
 import { PanelLista69b } from "@/components/lista-69b/panel";
 import { CabezaPagina } from "@/components/sistema";
 import { puede, type ContextoDeTenant } from "@/nucleo/contexto";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { abrirRuta } from "@/server/entrada";
 import { leerVista69b, type VistaLista69b } from "@/server/lista-69b";
 import { ErrorDeDominio } from "@/server/session";
@@ -25,10 +26,9 @@ type Carga =
 export default async function PaginaLista69b({
   searchParams,
 }: {
-  searchParams: Promise<{ rfc?: string | string[] }>;
+  searchParams: Parametros<"rfc">;
 }) {
-  const params = await searchParams;
-  const rfc = typeof params.rfc === "string" ? params.rfc : null;
+  const rfc = (await soloTexto(searchParams)).rfc ?? null;
   const apertura = await abrirRuta("/consola/lista-69b");
   const ctx = apertura.tipo === "libro" ? null : apertura.ctx;
   const carga =

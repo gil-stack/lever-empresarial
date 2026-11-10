@@ -1,0 +1,40 @@
+// Simula el reparto de Playwright 1.64 (filterForShard) sobre la lista de pruebas en orden.
+import { readFileSync } from "node:fs";
+export function pruebasEnOrden(lista, dir) {
+  const fuera = [];
+  for (const archivo of lista.suites) {
+    const fuente = readFileSync(`${dir}/${archivo.title}`, "utf8");
+    const paralelo = /mode: "parallel"/.test(fuente);
+    const recorrer = (s, cadena, superior) => {
+      for (const sp of s.specs || []) for (const t of sp.tests) fuera.push({ archivo: archivo.title, paralelo, superior, clave: `tests/e2e/${sp.file} › ${[...cadena, sp.title].join(" › ")}`, activa: t.expectedStatus !== "skipped" });
+      for (const c of s.suites || []) recorrer(c, [...cadena, c.title], superior ?? c.title);
+    };
+    recorrer(archivo, [], null);
+  }
+  return fuera;
+}
+export function grupos(pruebas) {
+  const g = [];
+  for (const p of pruebas) {
+    const id = !p.paralelo ? p.archivo : p.archivo === "operacion.spec.ts" && p.superior ? `${p.archivo}#${p.superior}` : `${p.archivo}#${g.length}`;
+    const ultimo = g.at(-1);
+    if (ultimo && ultimo.id === id) ultimo.pruebas.push(p); else g.push({ id, pruebas: [p] });
+  }
+  return g;
+}
+export function repartir(g, K) {
+  const tam = g.map((x) => x.pruebas.filter((p) => p.activa).length);
+  const total = tam.reduce((a, b) => a + b, 0);
+  const tamanos = Array.from({ length: K }, () => Math.floor(total / K));
+  const resto = total - tamanos.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < resto; i++) tamanos[i % K]++;
+  const partes = Array.from({ length: K }, () => []);
+  let actual = 0;
+  g.forEach((grupo, i) => {
+    const pos = tam[i] ? actual : Math.max(actual - 1, 0);
+    let desde = 0;
+    for (let k = 0; k < K; k++) { if (pos >= desde && pos < desde + tamanos[k]) { partes[k].push(grupo); break; } desde += tamanos[k]; }
+    actual += tam[i];
+  });
+  return partes;
+}

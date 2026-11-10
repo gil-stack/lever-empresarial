@@ -1,0 +1,47 @@
+[
+  {
+    "ok": true,
+    "texto": "95-cargando oscuro: «Gastos» dice «Cargando…» y el marco se queda",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando oscuro: al llegar, se pinta Gastos",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando oscuro: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando claro: «Gastos» dice «Cargando…» y el marco se queda",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando claro: al llegar, se pinta Gastos",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando claro: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando lever: «Gastos» dice «Cargando…» y el marco se queda",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando lever: al llegar, se pinta Gastos",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "95-cargando lever: sin errores de consola",
+    "detalle": ""
+  }
+]

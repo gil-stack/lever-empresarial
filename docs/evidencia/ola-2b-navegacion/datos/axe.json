@@ -1,0 +1,722 @@
+[
+  {
+    "ok": true,
+    "texto": "axe 01-resumen oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 10-aprobaciones-liberador oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 11-aprobaciones-administrador oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 12-aprobaciones-vacio oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 13-aprobaciones-historial oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 14-aprobaciones-altamar oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 15-perfil oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 20-demo-conciliacion oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 21-demo-gastos oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 22-demo-tarjetas oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 23-demo-movimientos oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 24-demo-fiscal oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 25-demo-cuenta oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 26-demo-internacional oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 27-demo-credito oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 28-demo-inversion oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 29-demo-viajes oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 30-demo-gasolina oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 31-demo-ahorro oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 32-demo-integraciones oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 34-demo-tarjetas-presupuestos oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 40-pronto-gastos oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 41-pronto-fiscal oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 42-pronto-cuenta oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 40-proveedores-pagos oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 41-proveedores-directorio oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 50-recuperar oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 51-portada oscuro 1440: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "logotipo laura oscuro 1440: «Lever Empresas, ir a Resumen», sin aria-label, lleva a consola",
+    "detalle": "1 enlace(s) visibles · aria-label null"
+  },
+  {
+    "ok": true,
+    "texto": "logotipo laura oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "logotipo rosa oscuro 1440: «Lever Empresas, ir a Aprobaciones», sin aria-label, lleva a aprobaciones",
+    "detalle": "1 enlace(s) visibles · aria-label null"
+  },
+  {
+    "ok": true,
+    "texto": "logotipo rosa oscuro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "axe 01-resumen oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 10-aprobaciones-liberador oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 11-aprobaciones-administrador oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 12-aprobaciones-vacio oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 13-aprobaciones-historial oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 14-aprobaciones-altamar oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 15-perfil oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 20-demo-conciliacion oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 21-demo-gastos oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 22-demo-tarjetas oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 23-demo-movimientos oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 24-demo-fiscal oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 25-demo-cuenta oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 26-demo-internacional oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 27-demo-credito oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 28-demo-inversion oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 29-demo-viajes oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 30-demo-gasolina oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 31-demo-ahorro oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 32-demo-integraciones oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 34-demo-tarjetas-presupuestos oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 40-pronto-gastos oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 41-pronto-fiscal oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 42-pronto-cuenta oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 40-proveedores-pagos oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 41-proveedores-directorio oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 50-recuperar oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "axe 51-portada oscuro 390: label-content-name-mismatch y region y scrollable-region-focusable y landmark-unique en 0",
+    "detalle": "otras reglas: ninguna"
+  },
+  {
+    "ok": true,
+    "texto": "logotipo laura oscuro 390: «Lever Empresas, ir a Resumen», sin aria-label, lleva a consola",
+    "detalle": "1 enlace(s) visibles · aria-label null"
+  },
+  {
+    "ok": true,
+    "texto": "logotipo laura oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "logotipo rosa oscuro 390: «Lever Empresas, ir a Aprobaciones», sin aria-label, lleva a aprobaciones",
+    "detalle": "1 enlace(s) visibles · aria-label null"
+  },
+  {
+    "ok": true,
+    "texto": "logotipo rosa oscuro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 conciliacion: Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 conciliacion: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 tarjetas: Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 tarjetas: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 movimientos: Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 movimientos: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 fiscal: Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 fiscal: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 cuenta: Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 cuenta: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 internacional: Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 internacional: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 credito: Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 credito: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 gasolina: Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 gasolina: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 aprobaciones-pagos: Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 aprobaciones-pagos: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 aprobaciones-lotes: Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 1440 aprobaciones-lotes: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 conciliacion: Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 conciliacion: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 tarjetas: Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 tarjetas: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 movimientos: Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 movimientos: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 fiscal: Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 fiscal: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 cuenta: Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 cuenta: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 internacional: Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 internacional: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 credito: Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 credito: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 gasolina: Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 gasolina: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 aprobaciones-pagos: Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 aprobaciones-pagos: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 aprobaciones-lotes: Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado chromium 390 aprobaciones-lotes: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 conciliacion: Tab y Alt+Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 conciliacion: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 tarjetas: Tab y Alt+Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 tarjetas: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 movimientos: Tab y Alt+Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 movimientos: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 fiscal: Tab y Alt+Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 fiscal: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 cuenta: Tab y Alt+Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 cuenta: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 internacional: Tab y Alt+Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 internacional: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 credito: Tab y Alt+Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 credito: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 gasolina: Tab y Alt+Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 gasolina: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 aprobaciones-pagos: Tab y Alt+Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 aprobaciones-pagos: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 aprobaciones-lotes: Tab y Alt+Tab llega (cabe)",
+    "detalle": "{\"desborda\":false,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":null},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":null}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 1440 aprobaciones-lotes: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 conciliacion: Tab y Alt+Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 conciliacion: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 tarjetas: Tab y Alt+Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 tarjetas: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 movimientos: Tab y Alt+Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 movimientos: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 fiscal: Tab y Alt+Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 fiscal: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 cuenta: Tab y Alt+Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 cuenta: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 internacional: Tab y Alt+Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 internacional: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 credito: Tab y Alt+Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 credito: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 gasolina: Tab y Alt+Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 gasolina: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 aprobaciones-pagos: Tab y Alt+Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 aprobaciones-pagos: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 aprobaciones-lotes: Tab y Alt+Tab llega y las flechas desplazan (no cabe)",
+    "detalle": "{\"desborda\":true,\"resultados\":[{\"tecla\":\"Tab\",\"llega\":true,\"desplaza\":true},{\"tecla\":\"Alt+Tab\",\"llega\":true,\"desplaza\":true}]}"
+  },
+  {
+    "ok": true,
+    "texto": "teclado webkit 390 aprobaciones-lotes: sin errores de consola",
+    "detalle": ""
+  }
+]

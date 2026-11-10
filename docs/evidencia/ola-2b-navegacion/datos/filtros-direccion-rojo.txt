@@ -1,0 +1,55 @@
+▶ los filtros de la dirección de Personas y de la Lista 69-B pasan por soloTexto
+  ✖ src/app/consola/personas/page.tsx (0.849291ms)
+  ✖ src/app/consola/lista-69b/page.tsx (0.173083ms)
+✖ los filtros de la dirección de Personas y de la Lista 69-B pasan por soloTexto (1.480667ms)
+ℹ tests 2
+ℹ suites 1
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 91.835667
+
+✖ failing tests:
+
+test at tests/filtros-de-la-direccion.test.ts:15:5
+✖ src/app/consola/personas/page.tsx (0.849291ms)
+  AssertionError [ERR_ASSERTION]: importa soloTexto
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-2b-navegacion/tests/filtros-de-la-direccion.test.ts:17:14)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at node:internal/test_runner/test:1887:71
+      at node:internal/per_context/primordials:504:82
+      at new Promise (<anonymous>)
+      at new SafePromise (node:internal/per_context/primordials:478:3)
+      at node:internal/per_context/primordials:504:9
+      at Array.map (<anonymous>) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'import type { Metadata } from "next";\nimport Link from "next/link";\n\nimport { Marco } from "@/components/cromo/marco";\nimport { vistaDeMarco } from "@/components/cromo/puertas";\nimport { DirectorioPersonas } from "@/components/personas/directorio";\nimport { MaestroCerrado } from "@/components/personas/maestro";\nimport { hoyEnMexico } from "@/dominio/personas";\nimport { puede } from "@/nucleo/contexto";\nimport { enEmpresa } from "@/nucleo/rutas";\nimport { leerMaestro } from "@/server/personas";\nimport type { FiltrosPersonas, LecturaMaestro } from "@/server/personas/tipos";\n\nimport { abrirPersonas, errorDePersonas, type AvisoPersonas } from "./apertura";\n\nexport const runtime = "nodejs";\nexport const metadata: Metadata = { title: "Personas" };\n\ntype Busqueda = Promise<Record<string, string | string[] | undefined>>;\n\nexport default async function PaginaPersonas({ searchParams }: { searchParams: Busqueda }) {\n  const [apertura, parametros] = await Promise.all([abrirPersonas("/consola/personas"), searchParams]);\n  const filtros = leerFiltros(parametros);\n  let lectura: LecturaMaestro | null = null;\n  let aviso: AvisoPersonas | null = apertura.aviso;\n  if (apertura.ctx) {\n    try {\n      lectura = await leerMaestro(apertura.ctx, filtros);\n    } catch (error) {\n      aviso = errorDePersonas(error);\n    }\n  }\n  const contenido = aviso ? <MaestroCerrado aviso={aviso} /> : apertura.ctx && lectura ? (\n    <DirectorioPersonas lectura={lectura} filtros={filtros} hoy={hoyEnMexico(new Date())} empresaId={apertura.ctx.empresa?.id ?? ""} edita={puede(apertura.ctx, "cliente.maestro.editar")} />\n  ) : <MaestroCerrado aviso="libro" />;\n  const accion = !aviso && apertura.ctx && puede(apertura.ctx, "cliente.maestro.editar")\n    ? <Link className="boton" href={enEmpresa(apertura.ctx.empresa?.id ?? "", "/consola/personas/nueva")}>Dar de alta</Link>\n    : undefined;\n  return (\n    <Marco actual="/consola/personas" vista={vistaDeMarco(apertura.ctxMarco)} titulo="Personas" accion={accion}>\n      <main id="contenido" className="consola personas-modulo">{contenido}</main>\n    </Marco>\n  );\n}\n\nfunction leerFiltros(parametros: Record<string, string | string[] | undefined>): FiltrosPersonas {\n  const texto = (clave: string) => {\n    const valor = parametros[clave];\n    return typeof valor === "string" ? valor.trim() : "";\n  };\n  const estadoCrudo = texto("estado");\n  const estado = ["vigentes", "pendientes", "bajas"].includes(estadoCrudo) ? estadoCrudo as FiltrosPersonas["estado"] : "todos";\n  const area = texto("area");\n  const pagina = Math.max(1, Math.min(100000, Number.parseInt(texto("pagina"), 10) || 1));\n  return {\n    buscar: texto("q").slice(0, 100),\n    centroId: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(area) ? area : null,\n    estado,\n    pagina,\n  };\n}\n',
+    expected: /import \{[^}]*\bsoloTexto\b[^}]*\} from "@\/nucleo\/direccion";/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests/filtros-de-la-direccion.test.ts:15:5
+✖ src/app/consola/lista-69b/page.tsx (0.173083ms)
+  AssertionError [ERR_ASSERTION]: importa soloTexto
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-2b-navegacion/tests/filtros-de-la-direccion.test.ts:17:14)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1889:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'import type { Metadata } from "next";\n\nimport { Marco } from "@/components/cromo/marco";\nimport { vistaDeMarco } from "@/components/cromo/puertas";\nimport { PanelLista69b } from "@/components/lista-69b/panel";\nimport { CabezaPagina } from "@/components/sistema";\nimport { puede, type ContextoDeTenant } from "@/nucleo/contexto";\nimport { abrirRuta } from "@/server/entrada";\nimport { leerVista69b, type VistaLista69b } from "@/server/lista-69b";\nimport { ErrorDeDominio } from "@/server/session";\n\nexport const runtime = "nodejs";\nexport const maxDuration = 60;\n\nexport const metadata: Metadata = {\n  title: "Lista 69-B",\n};\n\ntype Carga =\n  | { tipo: "sin_empresa" }\n  | { tipo: "sin_permiso" }\n  | { tipo: "aviso"; mensaje: string }\n  | { tipo: "lista"; vista: VistaLista69b };\n\nexport default async function PaginaLista69b({\n  searchParams,\n}: {\n  searchParams: Promise<{ rfc?: string | string[] }>;\n}) {\n  const params = await searchParams;\n  const rfc = typeof params.rfc === "string" ? params.rfc : null;\n  const apertura = await abrirRuta("/consola/lista-69b");\n  const ctx = apertura.tipo === "libro" ? null : apertura.ctx;\n  const carga =\n    apertura.tipo === "libro"\n      ? ({ tipo: "aviso", mensaje: "No se pudo consultar el listado." } as const)\n      : apertura.tipo === "sin_permiso"\n        ? ({ tipo: "sin_permiso" } as const)\n        : apertura.tipo !== "abierta" || !ctx\n          ? ({ tipo: "sin_empresa" } as const)\n          : await cargar(ctx, rfc);\n\n  return (\n    <Marco actual="/consola/lista-69b" vista={vistaDeMarco(ctx)} titulo="Lista 69-B">\n      <main id="contenido" className="pagina">\n        {carga.tipo === "lista" ? (\n          <>\n            <h1 className="solo-lector">Listado del artículo 69-B</h1>\n            <PanelLista69b vista={carga.vista} />\n          </>\n        ) : (\n          <CabezaPagina kicker="Lista 69-B" titulo={titulo(carga)}>\n            <p className="lede">{detalle(carga)}</p>\n          </CabezaPagina>\n        )}\n      </main>\n    </Marco>\n  );\n}\n\nasync function cargar(ctx: ContextoDeTenant, rfc: string | null): Promise<Carga> {\n  try {\n    if (!puede(ctx, "cliente.lista69b.ver") && !puede(ctx, "plataforma.lista69b.cargar")) {\n      return { tipo: "sin_permiso" };\n    }\n    return { tipo: "lista", vista: await leerVista69b(ctx, rfc) };\n  } catch (error) {\n    if (error instanceof ErrorDeDominio) return { tipo: "aviso", mensaje: "No se pudo consultar el listado." };\n    throw error;\n  }\n}\n\nfunction titulo(carga: Exclude<Carga, { tipo: "lista" }>): string {\n  if (carga.tipo === "sin_empresa") return "Elige una empresa.";\n  if (carga.tipo === "sin_permiso") return "Tu rol no abre la lista 69-B.";\n  return "No se pudo consultar el listado.";\n}\n\nfunction detalle(carga: Exclude<Carga, { tipo: "lista" }>): string {\n  if (carga.tipo === "sin_empresa") return "La lista se consulta dentro de una empresa.";\n  if (carga.tipo === "sin_permiso") return "Pide acceso a quien administra la empresa.";\n  return carga.mensaje;\n}\n',
+    expected: /import \{[^}]*\bsoloTexto\b[^}]*\} from "@\/nucleo\/direccion";/,
+    operator: 'match',
+    diff: 'simple'
+  }

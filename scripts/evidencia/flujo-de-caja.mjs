@@ -715,9 +715,9 @@ async function principal() {
     await laura.goto(en(A, "/consola"));
     const alerta = await laura.locator('[data-alerta="presupuesto"]').innerText();
     exigir(alerta.includes("Operación") && alerta.includes("Ventas"), "Inicio avisa de los dos presupuestos");
-    await laura.goto(en(A, "/consola/pendientes"));
+    await laura.goto(en(A, "/consola/aprobaciones"));
     const pendientes = await laura.locator("body").innerText();
-    exigir(pendientes.includes("El presupuesto del área Operación está excedido") && pendientes.includes("El presupuesto del área Ventas está por agotarse"), "Pendientes también");
+    exigir(pendientes.includes("El presupuesto del área Operación está excedido") && pendientes.includes("El presupuesto del área Ventas está por agotarse"), "Aprobaciones (antes Pendientes) también");
     await captura(laura, "g2-pendientes.jpg", false);
 
     await laura.goto(en(A, "/consola/presupuestos"));
@@ -854,9 +854,9 @@ async function principal() {
     const alertaFinanzas = (await fernanda.locator('[data-alerta="presupuesto"]').innerText()).replace(/\s+/g, " ");
     exigir(alertaFinanzas.includes("Área Ventas: excedido (presupuesto de $40,000.00; el gasto está reservado)"),
       "en Inicio de finanzas, la alerta de Ventas dice «presupuesto de $40,000.00; el gasto está reservado»");
-    await diego.goto(en(A, "/consola/pendientes"));
+    await diego.goto(en(A, "/consola/aprobaciones"));
     exigir((await diego.locator("main").innerText()).includes("Presupuesto de $40,000.00 este mes. El gasto está reservado: solo lo ve quien puede ver el detalle de la nómina."),
-      "en Pendientes del contador, el presupuesto de Ventas no dice cuánto lleva");
+      "en Aprobaciones del contador, el presupuesto de Ventas no dice cuánto lleva");
     await laura.goto(en(A, "/consola/presupuestos"));
     exigir(Number(await laura.locator(`[data-presupuesto="${ventas}"] [data-cifra="gasto"]`).getAttribute("data-centavos")) > 0, "Laura (con el permiso) sí ve el gasto de Ventas");
 

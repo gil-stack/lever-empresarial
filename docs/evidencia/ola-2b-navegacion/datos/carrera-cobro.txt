@@ -1,0 +1,24 @@
+# Sin el arreglo: la búsqueda de la factura viva como en 479ff97 (sin «and id <> $3»)
+$ tsx --test src/server/flujo/cobro-cfdi.test.ts
+  ✖ el mismo formulario responde igual aunque el primero confirme entre altaPrevia y la búsqueda de la factura (11.118166ms)
+  ✔ dos formularios con la misma factura en ese orden: el segundo sigue rechazado como duplicado (0.933042ms)
+  ✖ el mismo formulario con otra factura u otra fecha en ese orden: sigue diciendo que ya se envió (1.428166ms)
+ℹ tests 3
+ℹ pass 1
+ℹ fail 2
+  ErrorDeDominio: cobro_duplicado
+    codigo: 'cobro_duplicado'
+    actual: ErrorDeDominio: cobro_duplicado
+
+# Con el arreglo
+$ tsx --test src/server/flujo/cobro-cfdi.test.ts
+  ✔ el mismo formulario responde igual aunque el primero confirme entre altaPrevia y la búsqueda de la factura (11.301ms)
+  ✔ dos formularios con la misma factura en ese orden: el segundo sigue rechazado como duplicado (0.620958ms)
+  ✔ el mismo formulario con otra factura u otra fecha en ese orden: sigue diciendo que ya se envió (0.828708ms)
+ℹ tests 3
+ℹ pass 3
+ℹ fail 0
+
+# Con el arreglo, contra Postgres 17 local (bucle de 12 vueltas de envíos simultáneos por corrida)
+$ for i in 1..20; tsx --test tests/flujo/flujo-postgres.test.ts
+pasaron 20 de 20 · fallaron 0

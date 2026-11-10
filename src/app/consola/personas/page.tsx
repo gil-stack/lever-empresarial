@@ -7,6 +7,7 @@ import { DirectorioPersonas } from "@/components/personas/directorio";
 import { MaestroCerrado } from "@/components/personas/maestro";
 import { hoyEnMexico } from "@/dominio/personas";
 import { puede } from "@/nucleo/contexto";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { enEmpresa } from "@/nucleo/rutas";
 import { leerMaestro } from "@/server/personas";
 import type { FiltrosPersonas, LecturaMaestro } from "@/server/personas/tipos";
@@ -16,10 +17,10 @@ import { abrirPersonas, errorDePersonas, type AvisoPersonas } from "./apertura";
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Personas" };
 
-type Busqueda = Promise<Record<string, string | string[] | undefined>>;
+type Filtro = "q" | "estado" | "area" | "pagina";
 
-export default async function PaginaPersonas({ searchParams }: { searchParams: Busqueda }) {
-  const [apertura, parametros] = await Promise.all([abrirPersonas("/consola/personas"), searchParams]);
+export default async function PaginaPersonas({ searchParams }: { searchParams: Parametros<Filtro> }) {
+  const [apertura, parametros] = await Promise.all([abrirPersonas("/consola/personas"), soloTexto(searchParams)]);
   const filtros = leerFiltros(parametros);
   let lectura: LecturaMaestro | null = null;
   let aviso: AvisoPersonas | null = apertura.aviso;
@@ -43,11 +44,8 @@ export default async function PaginaPersonas({ searchParams }: { searchParams: B
   );
 }
 
-function leerFiltros(parametros: Record<string, string | string[] | undefined>): FiltrosPersonas {
-  const texto = (clave: string) => {
-    const valor = parametros[clave];
-    return typeof valor === "string" ? valor.trim() : "";
-  };
+function leerFiltros(parametros: Partial<Record<Filtro, string>>): FiltrosPersonas {
+  const texto = (clave: Filtro) => (parametros[clave] ?? "").trim();
   const estadoCrudo = texto("estado");
   const estado = ["vigentes", "pendientes", "bajas"].includes(estadoCrudo) ? estadoCrudo as FiltrosPersonas["estado"] : "todos";
   const area = texto("area");

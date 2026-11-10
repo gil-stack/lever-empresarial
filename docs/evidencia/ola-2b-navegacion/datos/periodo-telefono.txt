@@ -1,0 +1,20 @@
+# Sin el arreglo (movimientos.tsx, filtros-al-cambiar.tsx y demo.css de 3b14c89): npm run test:e2e -- demostracion.spec.ts
+  ✓  1 tests/e2e/demostracion.spec.ts:38:5 › empresa real: cada módulo de demostración dice «Disponible pronto» y ni el HTML ni la carga RSC traen datos de ejemplo (1.3s)
+  ✓  2 tests/e2e/demostracion.spec.ts:64:5 › empresa de demostración: cada módulo pinta el aviso y los datos de ejemplo, con los botones de dinero apagados (730ms)
+  ✓  3 tests/e2e/demostracion.spec.ts:84:5 › Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegación cada uno (3.3s)
+  ✘  4 tests/e2e/demostracion.spec.ts:114:7 › en el teléfono › Movimientos: escribir el monto y tocar «7 días» lleva los dos en una sola navegación (15.8s)
+    Error: expect(page).toHaveURL(expected) failed
+    Expected pattern: /[?&]periodo=7(&|$)/
+    Received string:  "/consola/movimientos?persona=&area=&tarjeta=&categoria=&comprobante=&desde=4000&agrupar="
+  1 failed
+  3 passed (26.2s)
+Error: expect(page).toHaveURL(expected) failed
+Expected pattern: /[?&]periodo=7(&|$)/
+Received string:  "/consola/movimientos?persona=&area=&tarjeta=&categoria=&comprobante=&desde=4000&agrupar="
+
+# Con el arreglo: npm run test:e2e -- demostracion.spec.ts
+  ✓  1 tests/e2e/demostracion.spec.ts:38:5 › empresa real: cada módulo de demostración dice «Disponible pronto» y ni el HTML ni la carga RSC traen datos de ejemplo (1.6s)
+  ✓  2 tests/e2e/demostracion.spec.ts:64:5 › empresa de demostración: cada módulo pinta el aviso y los datos de ejemplo, con los botones de dinero apagados (823ms)
+  ✓  3 tests/e2e/demostracion.spec.ts:84:5 › Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegación cada uno (3.4s)
+  ✓  4 tests/e2e/demostracion.spec.ts:114:7 › en el teléfono › Movimientos: escribir el monto y tocar «7 días» lleva los dos en una sola navegación (2.4s)
+  4 passed (13.3s)

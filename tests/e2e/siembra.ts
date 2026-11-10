@@ -36,7 +36,7 @@ import { armarBorrador, expedienteEnRegla, SESION_SOFIPO } from "../operacion/ap
  * expediente aprobado, riesgo vigente y la activación pedida por op1: lo que
  * exige el candado de la base para que op2 la apruebe.
  *
- * Deja en el entorno E2E_ALTAMAR_ID, E2E_BAHIA_ID, E2E_FARO_ID y E2E_SEMILLAS para los specs.
+ * Deja en el entorno E2E_ALTAMAR_ID, E2E_BAHIA_ID, E2E_ARRECIFE_ID, E2E_FARO_ID y E2E_SEMILLAS para los specs.
  */
 
 const CLAVE = "clave-segura-12";
@@ -53,6 +53,7 @@ export const CORREOS = {
   entrada: "entrada@altamar-e2e.mx",
   tope: "tope@altamar-e2e.mx",
   perdida: "perdida@altamar-e2e.mx",
+  marina: "marina@arrecife-e2e.mx",
   op1: "op1@lever-e2e.mx",
   op2: "op2@lever-e2e.mx",
   op3: "op3@lever-e2e.mx",
@@ -217,6 +218,19 @@ export async function sembrarRecorridos(
     rfc: "BEE190101CD2", razonSocial: "Bahía E2E", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
   }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
 
+  // ---------- Arrecife E2E: empresa real recién dada de alta, solo con su administradora ----------
+  // Sin áreas, categorías ni proveedores: aprobaciones.spec ve cómo cada pendiente de puesta
+  // en marcha sale de Aprobaciones al resolverlo en su módulo. Ningún otro spec la usa.
+  const arrecife = await darDeAltaComoDuena(owner, personal, {
+    rfc: "AEE200202EF3", razonSocial: "Arrecife E2E", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
+  }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  const marina = await invitarAdministrador(personal, { companyId: arrecife.id, razonSocial: arrecife.razonSocial, nombre: "Marina Ríos", correo: CORREOS.marina });
+  await aceptarInvitacion({ token: marina.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
+  // Rosa de Taller del Cierre (seed-pagos.sql) con app autenticadora: aprobaciones.spec escribe su código al decidir
+  // sin JavaScript con el segundo factor vencido.
+  await factor("rosa-pagos@ejemplo.mx", "22222222-2222-4222-8222-222222222222");
+  await factor(CORREOS.marina, marina.emitida.userId);
+
   // ---------- Personal SOFIPO con contraseña y app autenticadora ----------
   // Invitados en el arranque del operador (entorno.ts): aceptan y registran su app autenticadora.
   const ids: Record<string, string> = {};
@@ -272,6 +286,7 @@ export async function sembrarRecorridos(
 
   process.env.E2E_ALTAMAR_ID = altamar.id;
   process.env.E2E_BAHIA_ID = bahia.id;
+  process.env.E2E_ARRECIFE_ID = arrecife.id;
   process.env.E2E_FARO_ID = faro;
   process.env.E2E_SEMILLAS = JSON.stringify(semillas);
 }

@@ -1,0 +1,4 @@
+OK    contraste lever 1440: 113 textos, mínimo 4.76
+OK    contraste lever 390: 52 textos, mínimo 5.66
+
+2 de 2 comprobaciones en verde.

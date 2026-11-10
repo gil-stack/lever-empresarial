@@ -8,7 +8,14 @@ export const FORMULARIO_CLABE_INICIAL: EstadoClabe = { tipo: "inicial" };
 
 export type EstadoPagoFormulario =
   | { tipo: "inicial" }
-  | { tipo: "invalido"; mensaje: string; /** El campo que causó el error, para ligarlo con aria-describedby. */ campo?: string }
+  | {
+      tipo: "invalido";
+      mensaje: string;
+      /** El campo que causó el error, para ligarlo con aria-describedby. */
+      campo?: string;
+      /** El código del error de dominio: la bandeja pide el código de la app si el segundo factor ya no es reciente. */
+      codigo?: string;
+    }
   | { tipo: "listo"; mensaje: string; requestId?: string };
 
 export const ESTADO_PAGO_INICIAL: EstadoPagoFormulario = { tipo: "inicial" };

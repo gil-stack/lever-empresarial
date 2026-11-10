@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { crearVersionAccion } from "@/app/operacion/acciones-alta";
 import { Coincidencias } from "@/components/operacion/coincidencias";
 import { FormulariosBorrador, VistaVersion } from "@/components/operacion/expediente";

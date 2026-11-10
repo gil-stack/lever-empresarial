@@ -47,7 +47,16 @@ insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie
 insert into supplier_payables (id, company_id, supplier_id, origen, cfdi_uuid, serie, folio, referencia, total_centavos, emitida_el, vence_el, programada_el, motivo_excepcion, creado_por, creado_en, actualizado_en) values
   ('77777777-7777-4777-8777-777777777771', '33333333-3333-4333-8333-333333333333', '44444444-4444-4444-8444-444444444441', 'cfdi', '123E4567-E89B-42D3-A456-426614174001', 'A', '81', 'A-81', 4821500, current_date - 12, current_date + 5, current_date + 2, null, '11111111-1111-4111-8111-111111111111', now(), now()),
   ('77777777-7777-4777-8777-777777777772', '33333333-3333-4333-8333-333333333333', '44444444-4444-4444-8444-444444444442', 'cfdi', '123E4567-E89B-42D3-A456-426614174002', 'N', '204', 'N-204', 1269000, current_date - 35, current_date - 3, current_date + 1, null, '11111111-1111-4111-8111-111111111111', now(), now()),
-  ('77777777-7777-4777-8777-777777777773', '33333333-3333-4333-8333-333333333333', '44444444-4444-4444-8444-444444444443', 'excepcion', null, null, null, 'Diseño editorial Q4', 890000, current_date - 5, current_date + 15, current_date + 4, 'Trabajo extraordinario aprobado por dirección', '11111111-1111-4111-8111-111111111111', now(), now());
+  ('77777777-7777-4777-8777-777777777773', '33333333-3333-4333-8333-333333333333', '44444444-4444-4444-8444-444444444443', 'excepcion', null, null, null, 'Diseño editorial Q4', 890000, current_date - 5, current_date + 15, current_date + 4, 'Trabajo extraordinario aprobado por dirección', '11111111-1111-4111-8111-111111111111', now(), now()),
+  -- Solo para los atajos de teclado de aprobaciones.spec.ts.
+  ('77777777-7777-4777-8777-777777777779', '33333333-3333-4333-8333-333333333333', '44444444-4444-4444-8444-444444444443', 'cfdi', '123E4567-E89B-42D3-A456-426614174009', 'E', '12', 'E-12', 345000, current_date - 3, current_date + 20, current_date + 7, null, '11111111-1111-4111-8111-111111111111', now(), now()),
+  -- Solo para decidir sin JavaScript en aprobaciones.spec.ts: E-13 y E-15 se rechazan, E-14 y E-16 se autorizan
+  -- (E-15 y E-16 con el segundo factor vencido). E-17 se rechaza con JavaScript y el segundo factor vencido.
+  ('77777777-7777-4777-8777-77777777777a', '33333333-3333-4333-8333-333333333333', '44444444-4444-4444-8444-444444444443', 'cfdi', '123E4567-E89B-42D3-A456-42661417400A', 'E', '13', 'E-13', 412000, current_date - 3, current_date + 20, current_date + 7, null, '11111111-1111-4111-8111-111111111111', now(), now()),
+  ('77777777-7777-4777-8777-77777777777b', '33333333-3333-4333-8333-333333333333', '44444444-4444-4444-8444-444444444443', 'cfdi', '123E4567-E89B-42D3-A456-42661417400B', 'E', '14', 'E-14', 228000, current_date - 3, current_date + 20, current_date + 7, null, '11111111-1111-4111-8111-111111111111', now(), now()),
+  ('77777777-7777-4777-8777-77777777777c', '33333333-3333-4333-8333-333333333333', '44444444-4444-4444-8444-444444444443', 'cfdi', '123E4567-E89B-42D3-A456-42661417400C', 'E', '15', 'E-15', 515000, current_date - 3, current_date + 20, current_date + 7, null, '11111111-1111-4111-8111-111111111111', now(), now()),
+  ('77777777-7777-4777-8777-77777777777d', '33333333-3333-4333-8333-333333333333', '44444444-4444-4444-8444-444444444443', 'cfdi', '123E4567-E89B-42D3-A456-42661417400D', 'E', '16', 'E-16', 167000, current_date - 3, current_date + 20, current_date + 7, null, '11111111-1111-4111-8111-111111111111', now(), now()),
+  ('77777777-7777-4777-8777-77777777777e', '33333333-3333-4333-8333-333333333333', '44444444-4444-4444-8444-444444444443', 'cfdi', '123E4567-E89B-42D3-A456-42661417400E', 'E', '17', 'E-17', 98000, current_date - 3, current_date + 20, current_date + 7, null, '11111111-1111-4111-8111-111111111111', now(), now());
 insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, cambio)
   select c.operator_id, p.company_id, 'miembro', '11111111-1111-4111-8111-111111111111', 'cliente', 'crear_cargo_proveedor', 'supplier_payables', p.id, json_build_object('origen', p.origen, 'total_centavos', p.total_centavos) from supplier_payables p join companies c on c.id = p.company_id where p.company_id = '33333333-3333-4333-8333-333333333333';
 
@@ -77,6 +86,41 @@ select set_config('app.user_id', '22222222-2222-4222-8222-222222222222', false);
 update supplier_payment_requests set estado = 'rechazado', resuelto_por = '22222222-2222-4222-8222-222222222222', resuelto_en = now(), motivo_resolucion = 'Falta el desglose por entregable' where id = '88888888-8888-4888-8888-888888888883';
 insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, motivo)
   select operator_id, '33333333-3333-4333-8333-333333333333', 'miembro', '22222222-2222-4222-8222-222222222222', 'cliente', 'rechazar_pago_proveedor', 'supplier_payment_requests', '88888888-8888-4888-8888-888888888883', 'Falta el desglose por entregable' from companies where id = '33333333-3333-4333-8333-333333333333';
+
+select set_config('app.user_id', '11111111-1111-4111-8111-111111111111', false);
+insert into supplier_payment_requests (id, company_id, payable_id, supplier_clabe_id, clabe, total_centavos, programada_el, solicitado_por, solicitado_en, creado_en)
+  select '88888888-8888-4888-8888-888888888889', p.company_id, p.id, sc.id, sc.clabe, p.total_centavos, p.programada_el, '11111111-1111-4111-8111-111111111111', now(), now()
+    from supplier_payables p join supplier_clabes sc on sc.company_id = p.company_id and sc.supplier_id = p.supplier_id and sc.vigente_hasta is null where p.id = '77777777-7777-4777-8777-777777777779';
+insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, cambio)
+  select operator_id, '33333333-3333-4333-8333-333333333333', 'miembro', '11111111-1111-4111-8111-111111111111', 'cliente', 'solicitar_pago_proveedor', 'supplier_payment_requests', '88888888-8888-4888-8888-888888888889', '{"total_centavos":345000}' from companies where id = '33333333-3333-4333-8333-333333333333';
+
+insert into supplier_payment_requests (id, company_id, payable_id, supplier_clabe_id, clabe, total_centavos, programada_el, solicitado_por, solicitado_en, creado_en)
+  select '88888888-8888-4888-8888-88888888888a', p.company_id, p.id, sc.id, sc.clabe, p.total_centavos, p.programada_el, '11111111-1111-4111-8111-111111111111', now(), now()
+    from supplier_payables p join supplier_clabes sc on sc.company_id = p.company_id and sc.supplier_id = p.supplier_id and sc.vigente_hasta is null where p.id = '77777777-7777-4777-8777-77777777777a';
+insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, cambio)
+  select operator_id, '33333333-3333-4333-8333-333333333333', 'miembro', '11111111-1111-4111-8111-111111111111', 'cliente', 'solicitar_pago_proveedor', 'supplier_payment_requests', '88888888-8888-4888-8888-88888888888a', '{"total_centavos":412000}' from companies where id = '33333333-3333-4333-8333-333333333333';
+insert into supplier_payment_requests (id, company_id, payable_id, supplier_clabe_id, clabe, total_centavos, programada_el, solicitado_por, solicitado_en, creado_en)
+  select '88888888-8888-4888-8888-88888888888b', p.company_id, p.id, sc.id, sc.clabe, p.total_centavos, p.programada_el, '11111111-1111-4111-8111-111111111111', now(), now()
+    from supplier_payables p join supplier_clabes sc on sc.company_id = p.company_id and sc.supplier_id = p.supplier_id and sc.vigente_hasta is null where p.id = '77777777-7777-4777-8777-77777777777b';
+insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, cambio)
+  select operator_id, '33333333-3333-4333-8333-333333333333', 'miembro', '11111111-1111-4111-8111-111111111111', 'cliente', 'solicitar_pago_proveedor', 'supplier_payment_requests', '88888888-8888-4888-8888-88888888888b', '{"total_centavos":228000}' from companies where id = '33333333-3333-4333-8333-333333333333';
+
+insert into supplier_payment_requests (id, company_id, payable_id, supplier_clabe_id, clabe, total_centavos, programada_el, solicitado_por, solicitado_en, creado_en)
+  select '88888888-8888-4888-8888-88888888888c', p.company_id, p.id, sc.id, sc.clabe, p.total_centavos, p.programada_el, '11111111-1111-4111-8111-111111111111', now(), now()
+    from supplier_payables p join supplier_clabes sc on sc.company_id = p.company_id and sc.supplier_id = p.supplier_id and sc.vigente_hasta is null where p.id = '77777777-7777-4777-8777-77777777777c';
+insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, cambio)
+  select operator_id, '33333333-3333-4333-8333-333333333333', 'miembro', '11111111-1111-4111-8111-111111111111', 'cliente', 'solicitar_pago_proveedor', 'supplier_payment_requests', '88888888-8888-4888-8888-88888888888c', '{"total_centavos":515000}' from companies where id = '33333333-3333-4333-8333-333333333333';
+insert into supplier_payment_requests (id, company_id, payable_id, supplier_clabe_id, clabe, total_centavos, programada_el, solicitado_por, solicitado_en, creado_en)
+  select '88888888-8888-4888-8888-88888888888d', p.company_id, p.id, sc.id, sc.clabe, p.total_centavos, p.programada_el, '11111111-1111-4111-8111-111111111111', now(), now()
+    from supplier_payables p join supplier_clabes sc on sc.company_id = p.company_id and sc.supplier_id = p.supplier_id and sc.vigente_hasta is null where p.id = '77777777-7777-4777-8777-77777777777d';
+insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, cambio)
+  select operator_id, '33333333-3333-4333-8333-333333333333', 'miembro', '11111111-1111-4111-8111-111111111111', 'cliente', 'solicitar_pago_proveedor', 'supplier_payment_requests', '88888888-8888-4888-8888-88888888888d', '{"total_centavos":167000}' from companies where id = '33333333-3333-4333-8333-333333333333';
+
+insert into supplier_payment_requests (id, company_id, payable_id, supplier_clabe_id, clabe, total_centavos, programada_el, solicitado_por, solicitado_en, creado_en)
+  select '88888888-8888-4888-8888-88888888888e', p.company_id, p.id, sc.id, sc.clabe, p.total_centavos, p.programada_el, '11111111-1111-4111-8111-111111111111', now(), now()
+    from supplier_payables p join supplier_clabes sc on sc.company_id = p.company_id and sc.supplier_id = p.supplier_id and sc.vigente_hasta is null where p.id = '77777777-7777-4777-8777-77777777777e';
+insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, cambio)
+  select operator_id, '33333333-3333-4333-8333-333333333333', 'miembro', '11111111-1111-4111-8111-111111111111', 'cliente', 'solicitar_pago_proveedor', 'supplier_payment_requests', '88888888-8888-4888-8888-88888888888e', '{"total_centavos":98000}' from companies where id = '33333333-3333-4333-8333-333333333333';
 
 update users set password_hash = '$2b$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234';
 insert into auth_entradas (id, user_id, token_hash, creada_en, vence_en, verificada_con, verificada_en, consumida_en) values

@@ -1,0 +1,927 @@
+[
+  {
+    "ok": true,
+    "texto": "1 lateral ana: ve lo de su rol y nada más",
+    "detalle": "[Resumen, Conciliación, Aprobaciones, Gastos, Tarjetas, Movimientos, Fiscal, Saldo y alertas, Cobros, Calendario, Presupuestos, Cuenta, Pagos internacionales, Proveedores, Nómina, Crédito, Inversión, Viajes y proyectos, Gasolina, Ahorro]"
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral ana: los 20 enlaces responden 200",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral ana: clic en «Ahorro» abre y queda marcado",
+    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola/ahorro actual=Ahorro"
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral ana: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón ana 390: 40 tabulaciones sin salir del cajón",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón ana 390: Escape cierra y el foco vuelve a «Secciones»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón ana 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral fernanda: ve lo de su rol y nada más",
+    "detalle": "[Resumen, Aprobaciones, Gastos, Tarjetas, Movimientos, Saldo y alertas, Cobros, Calendario, Presupuestos, Cuenta, Crédito, Inversión, Ahorro]"
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral fernanda: los 13 enlaces responden 200",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral fernanda: clic en «Ahorro» abre y queda marcado",
+    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola/ahorro actual=Ahorro"
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral fernanda: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón fernanda 390: 40 tabulaciones sin salir del cajón",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón fernanda 390: Escape cierra y el foco vuelve a «Secciones»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón fernanda 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral carla: ve lo de su rol y nada más",
+    "detalle": "[Conciliación, Aprobaciones, Gastos, Movimientos, Fiscal, Saldo y alertas, Cobros, Calendario, Presupuestos, Pagos internacionales, Proveedores, Nómina, Viajes y proyectos, Gasolina, Ahorro]"
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral carla: los 15 enlaces responden 200",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral carla: clic en «Ahorro» abre y queda marcado",
+    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola/ahorro actual=Ahorro"
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral carla: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón carla 390: 40 tabulaciones sin salir del cajón",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón carla 390: Escape cierra y el foco vuelve a «Secciones»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón carla 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral rosa: ve lo de su rol y nada más",
+    "detalle": "[Aprobaciones, Fiscal, Pagos internacionales, Proveedores, Nómina, Viajes y proyectos, Gasolina]"
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral rosa: los 7 enlaces responden 200",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral rosa: clic en «Gasolina» abre y queda marcado",
+    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola/gasolina actual=Gasolina"
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral rosa: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón rosa 390: 40 tabulaciones sin salir del cajón",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón rosa 390: Escape cierra y el foco vuelve a «Secciones»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón rosa 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral sergio: ve lo de su rol y nada más",
+    "detalle": "[Aprobaciones, Fiscal, Pagos internacionales, Proveedores, Viajes y proyectos, Gasolina]"
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral sergio: los 6 enlaces responden 200",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral sergio: clic en «Gasolina» abre y queda marcado",
+    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola/gasolina actual=Gasolina"
+  },
+  {
+    "ok": true,
+    "texto": "1 lateral sergio: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón sergio 390: 40 tabulaciones sin salir del cajón",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón sergio 390: Escape cierra y el foco vuelve a «Secciones»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "1 cajón sergio 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Conciliación: abre con el aviso de demostración",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Conciliación: ningún botón que mueva dinero encendido, ningún form POST",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Conciliación: clic en «A mano DEMOSTRACIÓN» no envía nada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Conciliación: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Gastos: abre con el aviso de demostración",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Gastos: ningún botón que mueva dinero encendido, ningún form POST",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Gastos: clic en «Excel DEMOSTRACIÓN» no envía nada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Gastos: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Tarjetas: abre con el aviso de demostración",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Tarjetas: ningún botón que mueva dinero encendido, ningún form POST",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Tarjetas: clic en «Nueva tarjeta DEMOSTRACIÓN» no envía nada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Tarjetas: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Movimientos: abre con el aviso de demostración",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Movimientos: ningún botón que mueva dinero encendido, ningún form POST",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Movimientos: clic en «Excel DEMOSTRACIÓN» no envía nada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Movimientos: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Fiscal: abre con el aviso de demostración",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Fiscal: ningún botón que mueva dinero encendido, ningún form POST",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Fiscal: clic en «Descargar DEMOSTRACIÓN» no envía nada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Fiscal: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Cuenta: abre con el aviso de demostración",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Cuenta: ningún botón que mueva dinero encendido, ningún form POST",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Cuenta: clic en «Fondear DEMOSTRACIÓN» no envía nada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Cuenta: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Pagos internacionales: abre con el aviso de demostración",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Pagos internacionales: ningún botón que mueva dinero encendido, ningún form POST",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Pagos internacionales: clic en «Enviar USD 12,500.00 DEMOSTRACIÓN» no envía nada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Pagos internacionales: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Crédito: abre con el aviso de demostración",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Crédito: ningún botón que mueva dinero encendido, ningún form POST",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Crédito: clic en «Disponer DEMOSTRACIÓN» no envía nada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Crédito: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Inversión: abre con el aviso de demostración",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Inversión: ningún botón que mueva dinero encendido, ningún form POST",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Inversión: clic en «Invertir $300,000 a 91 días DEMOSTRACIÓN» no envía nada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Inversión: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Viajes y proyectos: abre con el aviso de demostración",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Viajes y proyectos: ningún botón que mueva dinero encendido, ningún form POST",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Viajes y proyectos: clic en «Nuevo viaje o proyecto DEMOSTRACIÓN» no envía nada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Viajes y proyectos: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Gasolina: abre con el aviso de demostración",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Gasolina: ningún botón que mueva dinero encendido, ningún form POST",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Gasolina: clic en «Emitir tarjeta de gasolina DEMOSTRACIÓN» no envía nada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Gasolina: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Ahorro: abre con el aviso de demostración",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Ahorro: ningún botón que mueva dinero encendido, ningún form POST",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Ahorro: clic en «Revisar después DEMOSTRACIÓN» no envía nada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Ahorro: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Integraciones: abre con el aviso de demostración",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Integraciones: ningún botón que mueva dinero encendido, ningún form POST",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Integraciones: clic en «Conectar DEMOSTRACIÓN» no envía nada",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Integraciones: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Tarjetas: clic en «Presupuestos por área» cambia la vista",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Movimientos: sin filtros no hay «Filtrar» ni «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Movimientos: elegir a Carlos Méndez en Persona deja solo sus compras, sin botón",
+    "detalle": "13 de 34"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Movimientos: con un filtro puesto aparece «Limpiar filtros»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Movimientos: «Limpiar filtros» vuelve a todas las compras",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Movimientos: sin JavaScript, «Filtrar» deja las mismas compras",
+    "detalle": "13 de 34"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo Fiscal: «Lista 69-B» abre la lista real y el lateral sigue en Fiscal",
+    "detalle": "Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "2 demo interacción: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Conciliación: «Disponible pronto», sin dígitos ni marca de demostración",
+    "detalle": "Conciliación DISPONIBLE PRONTO Conciliación Cada movimiento de la cuenta empatado con su factura y su póliza."
+  },
+  {
+    "ok": true,
+    "texto": "3 real Conciliación: el HTML (65051 B) no trae ninguno de los 51 centinelas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Conciliación: la carga RSC (34269 B, text/x-component) no trae ninguno",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Conciliación: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Gastos: «Disponible pronto», sin dígitos ni marca de demostración",
+    "detalle": "Gastos DISPONIBLE PRONTO Gastos Lo que gasta cada área y cada persona, al día y contra el mes anterior."
+  },
+  {
+    "ok": true,
+    "texto": "3 real Gastos: el HTML (65003 B) no trae ninguno de los 51 centinelas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Gastos: la carga RSC (34245 B, text/x-component) no trae ninguno",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Gastos: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Tarjetas: «Disponible pronto», sin dígitos ni marca de demostración",
+    "detalle": "Tarjetas DISPONIBLE PRONTO Tarjetas Tarjetas precargadas para tu equipo, con límite por persona y por área."
+  },
+  {
+    "ok": true,
+    "texto": "3 real Tarjetas: el HTML (65023 B) no trae ninguno de los 51 centinelas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Tarjetas: la carga RSC (34255 B, text/x-component) no trae ninguno",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Tarjetas: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Movimientos: «Disponible pronto», sin dígitos ni marca de demostración",
+    "detalle": "Movimientos DISPONIBLE PRONTO Movimientos Cada compra con su comprobante, su lugar y su IVA en una sola lista."
+  },
+  {
+    "ok": true,
+    "texto": "3 real Movimientos: el HTML (65047 B) no trae ninguno de los 51 centinelas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Movimientos: la carga RSC (34267 B, text/x-component) no trae ninguno",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Movimientos: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Fiscal: «Disponible pronto», sin dígitos ni marca de demostración",
+    "detalle": "Fiscal Resumen fiscal Lista 69-B Póliza contable DISPONIBLE PRONTO IVA y DIOT El IVA acreditable, las alertas fiscales y"
+  },
+  {
+    "ok": true,
+    "texto": "3 real Fiscal: el HTML (65954 B) no trae ninguno de los 51 centinelas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Fiscal: la carga RSC (34761 B, text/x-component) no trae ninguno",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Fiscal: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Cuenta: «Disponible pronto», sin dígitos ni marca de demostración",
+    "detalle": "Cuenta DISPONIBLE PRONTO Cuenta La cuenta de la empresa con su CLABE para recibir y enviar por SPEI."
+  },
+  {
+    "ok": true,
+    "texto": "3 real Cuenta: el HTML (64997 B) no trae ninguno de los 51 centinelas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Cuenta: la carga RSC (34242 B, text/x-component) no trae ninguno",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Cuenta: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Pagos internacionales: «Disponible pronto», sin dígitos ni marca de demostración",
+    "detalle": "Pagos internacionales DISPONIBLE PRONTO Pagos internacionales Pagos a proveedores del extranjero con el tipo de cambio f"
+  },
+  {
+    "ok": true,
+    "texto": "3 real Pagos internacionales: el HTML (65149 B) no trae ninguno de los 51 centinelas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Pagos internacionales: la carga RSC (34318 B, text/x-component) no trae ninguno",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Pagos internacionales: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Crédito: «Disponible pronto», sin dígitos ni marca de demostración",
+    "detalle": "Crédito DISPONIBLE PRONTO Crédito Una línea de crédito revolvente para la empresa."
+  },
+  {
+    "ok": true,
+    "texto": "3 real Crédito: el HTML (64967 B) no trae ninguno de los 51 centinelas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Crédito: la carga RSC (34227 B, text/x-component) no trae ninguno",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Crédito: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Inversión: «Disponible pronto», sin dígitos ni marca de demostración",
+    "detalle": "Inversión DISPONIBLE PRONTO Inversión Inversiones a plazo fijo para el dinero que hoy no usas."
+  },
+  {
+    "ok": true,
+    "texto": "3 real Inversión: el HTML (65003 B) no trae ninguno de los 51 centinelas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Inversión: la carga RSC (34245 B, text/x-component) no trae ninguno",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Inversión: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Viajes y proyectos: «Disponible pronto», sin dígitos ni marca de demostración",
+    "detalle": "Viajes y proyectos DISPONIBLE PRONTO Viajes y proyectos Presupuesto y tope por día para viajes, eventos y proyectos."
+  },
+  {
+    "ok": true,
+    "texto": "3 real Viajes y proyectos: el HTML (65077 B) no trae ninguno de los 51 centinelas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Viajes y proyectos: la carga RSC (34282 B, text/x-component) no trae ninguno",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Viajes y proyectos: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Gasolina: «Disponible pronto», sin dígitos ni marca de demostración",
+    "detalle": "Gasolina DISPONIBLE PRONTO Gasolina Tarjetas de gasolina ligadas a cada vehículo, con reglas al cargar."
+  },
+  {
+    "ok": true,
+    "texto": "3 real Gasolina: el HTML (65015 B) no trae ninguno de los 51 centinelas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Gasolina: la carga RSC (34251 B, text/x-component) no trae ninguno",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Gasolina: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Ahorro: «Disponible pronto», sin dígitos ni marca de demostración",
+    "detalle": "Ahorro DISPONIBLE PRONTO Ahorro Suscripciones y gastos que se pueden recortar, encontrados en tus compras."
+  },
+  {
+    "ok": true,
+    "texto": "3 real Ahorro: el HTML (65009 B) no trae ninguno de los 51 centinelas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Ahorro: la carga RSC (34248 B, text/x-component) no trae ninguno",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Ahorro: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Integraciones: «Disponible pronto», sin dígitos ni marca de demostración",
+    "detalle": "Integraciones DISPONIBLE PRONTO Integraciones Tu sistema contable, el de recursos humanos y WhatsApp conectados a Lever."
+  },
+  {
+    "ok": true,
+    "texto": "3 real Integraciones: el HTML (65079 B) no trae ninguno de los 51 centinelas",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Integraciones: la carga RSC (34283 B, text/x-component) no trae ninguno",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 real Integraciones: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "3 control: en Altamar el HTML y la RSC de Cuenta sí traen el saldo de ejemplo (la prueba detecta)",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "4 autorizar (doble clic): queda listo para pagar con un solo evento en la bitácora",
+    "detalle": "por_autorizar→listo_para_pagar, eventos=1"
+  },
+  {
+    "ok": true,
+    "texto": "4 autorizar: la fila decidida sale de la bandeja",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "4 atajos: con el rechazo abierto, A en «Cancelar» y en su «Rechazar» no autoriza el pago",
+    "detalle": "por_autorizar, autorizaciones=0, foco en «Rechazar»"
+  },
+  {
+    "ok": true,
+    "texto": "4 rechazar (atajo R + doble clic): rechazado con su motivo y un solo evento",
+    "detalle": "rechazado|Falta la factura del servicio, eventos=1"
+  },
+  {
+    "ok": true,
+    "texto": "4 Rosa: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "4 Gil pidió los pagos: no se le ofrecen para autorizar",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "4 el contador del lateral es el mismo número que «Pendientes · N»",
+    "detalle": "lateral=4 pestaña=4"
+  },
+  {
+    "ok": true,
+    "texto": "4 preparar nómina (doble clic): un lote y un evento, y abre el lote",
+    "detalle": "fecha=2026-11-10 lotes=1 eventos=1"
+  },
+  {
+    "ok": true,
+    "texto": "4 tras preparar, Aprobaciones tiene un pendiente menos",
+    "detalle": "4→3"
+  },
+  {
+    "ok": true,
+    "texto": "4 Historial: muestra la autorización, el rechazo y el lote",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "4 /consola/pendientes redirige (307) a Aprobaciones",
+    "detalle": "307 → /c/33333333-3333-4333-8333-333333333333/consola/aprobaciones"
+  },
+  {
+    "ok": true,
+    "texto": "4 entrando por /consola/pendientes se llega a Aprobaciones con el mismo número",
+    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola/aprobaciones pendientes=3 lateral=Aprobaciones"
+  },
+  {
+    "ok": true,
+    "texto": "4 con poco saldo, la alerta de faltante aparece en Aprobaciones al entrar por /consola/pendientes",
+    "detalle": "Faltante: el saldo queda en negativo la semana del 9 nov al 15 nov Saldo proyectado al cie"
+  },
+  {
+    "ok": true,
+    "texto": "4 el enlace de la alerta lleva a la proyección",
+    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola#proyeccion-titulo"
+  },
+  {
+    "ok": true,
+    "texto": "4 Ana: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "4 vacío: el solicitante ve «Estás al corriente» con sus atajos",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "5 /consola/pendientes: redirige a /consola/aprobaciones y el lateral marca Aprobaciones",
+    "detalle": "200 /consola/aprobaciones Aprobaciones"
+  },
+  {
+    "ok": true,
+    "texto": "5 /consola/lista-69b: responde 200 y el lateral marca Fiscal",
+    "detalle": "200 /consola/lista-69b Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "5 /consola/poliza: responde 200 y el lateral marca Fiscal",
+    "detalle": "200 /consola/poliza Fiscal"
+  },
+  {
+    "ok": true,
+    "texto": "5 /consola/personas: responde 200 y el lateral marca Nómina",
+    "detalle": "200 /consola/personas Nómina"
+  },
+  {
+    "ok": true,
+    "texto": "5 /consola/personas/nomina: responde 200 y el lateral marca Nómina",
+    "detalle": "200 /consola/personas/nomina Nómina"
+  },
+  {
+    "ok": true,
+    "texto": "5 /consola/flujo: responde 200 y el lateral marca Saldo y alertas",
+    "detalle": "200 /consola/flujo Saldo y alertas"
+  },
+  {
+    "ok": true,
+    "texto": "5 /consola/cobros: responde 200 y el lateral marca Cobros",
+    "detalle": "200 /consola/cobros Cobros"
+  },
+  {
+    "ok": true,
+    "texto": "5 /consola/proveedores: responde 200 y el lateral marca Proveedores",
+    "detalle": "200 /consola/proveedores Proveedores"
+  },
+  {
+    "ok": true,
+    "texto": "5 /consola: responde 200 y el lateral marca Resumen",
+    "detalle": "200 /consola Resumen"
+  },
+  {
+    "ok": true,
+    "texto": "5 /consola/politica: responde 200 y el lateral marca nada (vive en «Más»)",
+    "detalle": "200 /consola/politica null"
+  },
+  {
+    "ok": true,
+    "texto": "5 /consola/configuracion: responde 200 y el lateral marca nada (vive en «Más»)",
+    "detalle": "200 /consola/configuracion null"
+  },
+  {
+    "ok": true,
+    "texto": "5 /consola/apariencia: responde 200 y el lateral marca nada (vive en «Más»)",
+    "detalle": "200 /consola/apariencia null"
+  },
+  {
+    "ok": true,
+    "texto": "5 rutas viejas: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "5 /consola sin Resumen (contadora) lleva a Aprobaciones",
+    "detalle": "/c/33333333-3333-4333-8333-333333333333/consola/aprobaciones"
+  },
+  {
+    "ok": true,
+    "texto": "5 sin permiso: la contadora no abre Tarjetas escribiendo la dirección (404)",
+    "detalle": "404"
+  },
+  {
+    "ok": true,
+    "texto": "6 «Más»: Tú (Mi perfil, Apariencia, Teléfono) y Empresa (Configuración, Políticas, Integraciones)",
+    "detalle": "Mi perfil, Apariencia, Teléfono, Configuración, Políticas, Integraciones"
+  },
+  {
+    "ok": true,
+    "texto": "6 Mi perfil: nombre, correo y empresa de quien entra",
+    "detalle": "Mi perfil Tus datos Nombre Ana Administradora Correo ana-2b@lever.test Empresa Taller del Cierre Tu rol aquí Administrador Tu rol en esta empresa lo asigna quie"
+  },
+  {
+    "ok": true,
+    "texto": "6 Perfil → «Abrir seguridad» abre /entrar/seguridad",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "6 Perfil → «Abrir apariencia» abre Apariencia",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "6 «Más» → Integraciones en la empresa real: «Disponible pronto»",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "6 sin errores de consola",
+    "detalle": ""
+  }
+]

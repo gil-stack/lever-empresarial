@@ -1,0 +1,16 @@
+$ tsx --test src/nucleo/capacidades.test.ts   # sin mutación
+ℹ tests 7
+ℹ pass 7
+ℹ fail 0
+
+$ # mutación: rutas.ts, Fiscal abre también con cliente.flujo.ver
+-    acceso: { tipo: "capacidad", alguna: ["cliente.lista69b.ver", "cliente.poliza.ver", "plataforma.lista69b.cargar"] },
++    acceso: { tipo: "capacidad", alguna: ["cliente.lista69b.ver", "cliente.poliza.ver", "plataforma.lista69b.cargar", "cliente.flujo.ver"] },
+$ tsx --test src/nucleo/capacidades.test.ts
+    actual: [ 'administrador', 'solicitante', 'liberador', 'contador', 'finanzas' ],
+    expected: [ 'administrador', 'solicitante', 'liberador', 'contador' ],
+  ✖ cada rol abre los módulos en demostración que dice el comentario de Finanzas (2.132375ms)
+ℹ fail 1
+ℹ pass 6
+ℹ tests 7
+✖ cada rol abre los módulos en demostración que dice el comentario de Finanzas (2.132375ms)

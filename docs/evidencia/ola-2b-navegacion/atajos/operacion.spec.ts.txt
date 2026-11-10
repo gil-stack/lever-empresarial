@@ -1,0 +1,67 @@
+import { expect, test } from "@playwright/test";
+
+import { consultar, contar, dobleClic, idDe, sesionDe } from "./apoyo";
+import { CORREOS } from "./siembra";
+
+/**
+ * Comprobación en vivo (no se sube a operacion.spec.ts): en Operación, con el diálogo
+ * «Rechazar» de una activación abierto, A y R no deciden; con el foco en la fila, A aprueba.
+ * Imprime lo que pasa en cada tecla para la evidencia del PR #60.
+ */
+test("Operación: los atajos no deciden desde el diálogo de rechazo", async ({ page, context }) => {
+  const PROSPECTO = { razonSocial: "Puerto Nuevo E2E", rfc: "PNE200101AB3" };
+  const reporte: string[] = [];
+  await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  await page.goto("/operacion/clientes");
+  await page.getByLabel("Razón social").fill(PROSPECTO.razonSocial);
+  await page.getByLabel("RFC").fill(PROSPECTO.rfc);
+  await page.getByLabel("Código postal").fill("64000");
+  await dobleClic(page.getByRole("button", { name: "Registrar prospecto" }), { esperar: /aviso=prospecto_registrado/ });
+  await dobleClic(page.getByRole("button", { name: "Solicitar activación" }), { esperar: /aviso=activacion_solicitada/ });
+  const [empresa] = await consultar<{ id: string }>("select id from companies where rfc = $1", [PROSPECTO.rfc]);
+  const estado = async () =>
+    (await consultar<{ solicitud: string; empresa: string }>(
+      `select r.estado as solicitud, c.estado as empresa from company_activation_requests r
+       join companies c on c.id = r.company_id where r.company_id = $1`,
+      [empresa!.id],
+    ))[0];
+  const eventos = () => contar("select 1 from audit_log where accion in ('activacion_aprobada', 'activacion_rechazada') and company_id = $1", [empresa!.id]);
+
+  await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+  const envios: string[] = [];
+  page.on("request", (peticion) => {
+    if (peticion.method() === "POST") envios.push(peticion.url());
+  });
+  await page.goto("/operacion/aprobaciones");
+  const fila = page.locator("li.decision").filter({ hasText: `Activación · ${PROSPECTO.razonSocial}` });
+  const e0 = await estado();
+  reporte.push(`antes: solicitud=${e0?.solicitud}, empresa=${e0?.empresa}, eventos=${await eventos()}`);
+  await fila.getByRole("button", { name: "Rechazar" }).click();
+  const dialogo = page.getByRole("dialog", { name: "Rechazar" });
+  await expect(dialogo).toBeVisible();
+  await dialogo.getByLabel("Motivo").pressSequentially("Falta el acta constitutiva");
+  reporte.push(`POST tras escribir el motivo: ${envios.length}`);
+  for (const [paso, tecla] of [["Cancelar", "a"], ["Rechazar del diálogo", "a"], ["Rechazar del diálogo", "r"]] as const) {
+    if (tecla === "a") await page.keyboard.press("Tab");
+    const foco = await page.evaluate(() => document.activeElement?.textContent?.trim());
+    await page.keyboard.press(tecla);
+    await page.waitForTimeout(1500);
+    const e = await estado();
+    reporte.push(`foco en ${paso} («${foco}»), tecla ${tecla.toUpperCase()}: POST=${envios.length}, solicitud=${e?.solicitud}, empresa=${e?.empresa}, eventos=${await eventos()}`);
+    if (envios.length > 0) break;
+  }
+  if (envios.length === 0) {
+    await page.keyboard.press("Escape");
+    await expect(dialogo).toBeHidden();
+    await fila.focus();
+    await page.keyboard.press("a");
+    await page.waitForURL(/aviso=decision_registrada/);
+    const e = await estado();
+    reporte.push(`control: Escape, foco en la fila, tecla A: POST=${envios.length}, solicitud=${e?.solicitud}, empresa=${e?.empresa}, eventos=${await eventos()}`);
+    expect(e).toEqual({ solicitud: "aprobada", empresa: "activa" });
+    expect(envios).toHaveLength(1);
+    expect(await eventos()).toBe(1);
+    expect(await contar("select 1 from audit_log where accion = 'activacion_aprobada' and company_id = $1 and actor_id = $2", [empresa!.id, await idDe(CORREOS.op2)])).toBe(1);
+  }
+  console.log(`\n[atajo-operacion]\n${reporte.join("\n")}\n[/atajo-operacion]`);
+});

@@ -2,6 +2,7 @@ import "server-only";
 
 import { cache } from "react";
 
+import { accionesPendientes } from "@/dominio/inicio";
 import { empresaOperable } from "@/dominio/personas";
 import { puede } from "@/nucleo/contexto";
 import { contextoOpcional, errorConSecreto } from "@/server/entrada";
@@ -28,7 +29,7 @@ export const estadoDelMarco = cache(async (): Promise<EstadoDelMarco> => {
     puede(ctx, "cliente.maestro.ver") ? liberadoresQueFaltan(ctx) : 0,
   ]);
   if (pendientes > 0) {
-    contadores["/consola/pendientes"] = {
+    contadores["/consola/aprobaciones"] = {
       valor: pendientes,
       etiqueta: pendientes === 1 ? "1 pendiente" : `${pendientes} pendientes`,
     };
@@ -49,7 +50,7 @@ type Contexto = NonNullable<Awaited<ReturnType<typeof contextoOpcional>>>;
 
 async function pendientesQueFaltan(ctx: Contexto): Promise<number> {
   try {
-    return (await bandejaDeLaPeticion(ctx)).pendientes.length;
+    return accionesPendientes((await bandejaDeLaPeticion(ctx)).pendientes);
   } catch (error) {
     if (error instanceof ErrorDeDominio || errorConSecreto(error)) {
       registrarFallo("pendientes", ctx, error);

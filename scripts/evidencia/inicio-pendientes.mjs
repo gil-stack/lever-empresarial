@@ -147,9 +147,17 @@ async function tamanoReal(texto) {
   return texto.evaluate((nodo) => parseFloat(getComputedStyle(nodo).fontSize));
 }
 
+/**
+ * Desde la Ola 2b, Pendientes es Aprobaciones: los avisos y el resto de la bandeja
+ * llevan su título en un h3 y lo que se decide ahí (pago por autorizar, nómina por
+ * preparar) es una decisión con su `.decision-titulo`.
+ */
 async function pendientesVisibles(pagina) {
-  return (await pagina.locator("main h3").allTextContents()).map((texto) => texto.trim());
+  return (await pagina.locator("main h3, main .decision-titulo").allTextContents()).map((texto) => texto.trim());
 }
+
+const esPago = (texto) => texto === "Autoriza un pago a proveedor" || texto.startsWith("Pago a proveedor · ");
+const esNomina = (texto) => texto.startsWith("Lote de nómina · ");
 
 const navegador = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
 try {
@@ -251,12 +259,12 @@ try {
     const pagina = await ctx.newPage();
     vigilar(pagina, persona.nombre);
     await entrarPorInvitacion(pagina, invitacionLocal(persona.correo));
-    exigir(pagina.url().endsWith(`/c/${empresa}/consola/pendientes`), `${persona.nombre} aterriza en Pendientes al entrar`);
+    exigir(pagina.url().endsWith(`/c/${empresa}/consola/aprobaciones`), `${persona.nombre} aterriza en Aprobaciones al entrar`);
     for (const ruta of [`/c/${empresa}`, `/c/${empresa}/consola`]) {
       const respuesta = await pagina.goto(`${BASE}${ruta}`);
       exigir(
-        respuesta.status() === 200 && pagina.url().endsWith(`/c/${empresa}/consola/pendientes`),
-        `${persona.nombre} abre ${ruta} y llega a Pendientes (HTTP ${respuesta.status()})`,
+        respuesta.status() === 200 && pagina.url().endsWith(`/c/${empresa}/consola/aprobaciones`),
+        `${persona.nombre} abre ${ruta} y llega a Aprobaciones (HTTP ${respuesta.status()})`,
       );
     }
     equipo.push({ ...persona, ctx, pagina });
@@ -288,44 +296,42 @@ try {
   await laura.getByText("El pago quedó en autorización. Otra persona lo revisa.").waitFor();
   exigir(sql(`select count(*) from supplier_payment_requests where company_id = '${empresa}' and estado = 'por_autorizar'`) === "1", "la base tiene un pago por autorizar");
 
-  // Al recargar, la liberadora ve el pago por autorizar y la nómina; el contador entra a Pendientes sin el pago como tarea.
+  // Al recargar, la liberadora ve el pago por autorizar y la nómina; el contador entra a Aprobaciones sin el pago como tarea.
   for (const { nombre, correo, archivo, ctx, pagina } of equipo) {
-    await pagina.goto(`${raiz}/consola/pendientes`);
-    await pagina.getByRole("heading", { level: 1 }).first().waitFor();
+    await pagina.goto(`${raiz}/consola/aprobaciones`);
+    await pagina.getByRole("heading", { level: 1 }).first().waitFor({ state: "attached" });
     const vistos = await pendientesVisibles(pagina);
     if (correo === "lucia@lever.test") {
-      exigir(vistos.includes("Autoriza un pago a proveedor"), `la liberadora ve el pago por autorizar: ${vistos.join(" | ")}`);
-      exigir(vistos.some((texto) => texto.startsWith("Prepara el lote de nómina del ")), "la liberadora ve la nómina por preparar");
+      exigir(vistos.some(esPago), `la liberadora ve el pago por autorizar: ${vistos.join(" | ")}`);
+      exigir(vistos.some(esNomina), "la liberadora ve la nómina por preparar");
       await captura(pagina, archivo, false);
-      await pagina.getByRole("link", { name: /Revisar pagos/ }).click();
-      await pagina.waitForURL(/\/consola\/proveedores$/);
+      await pagina.locator("li.decision", { hasText: "Diesel del Bajío" }).getByRole("link", { name: "Ver detalle" }).click();
+      await pagina.waitForURL(/\/consola\/proveedores\?pago=/);
       await pagina.getByText("Diesel del Bajío").first().waitFor();
-      anotar("«Revisar pagos» abre la mesa de Proveedores con el pago de Diesel del Bajío");
+      anotar("«Ver detalle» del pago abre Proveedores con el pago de Diesel del Bajío");
     } else if (correo === "carlos@lever.test") {
-      exigir(!vistos.includes("Autoriza un pago a proveedor"), `${nombre} entra a Pendientes y no recibe el pago como tarea suya: ${vistos.join(" | ") || "sin tareas"}`);
+      exigir(!vistos.some(esPago), `${nombre} entra a Aprobaciones y no recibe el pago como tarea suya: ${vistos.join(" | ") || "sin tareas"}`);
       await captura(pagina, archivo, false);
     }
     await ctx.close();
   }
 
   // La administradora ve la nómina por preparar (no autoriza pagos: no es liberadora).
-  await laura.goto(`${raiz}/consola/pendientes`);
+  await laura.goto(`${raiz}/consola/aprobaciones`);
   const deLaura = await pendientesVisibles(laura);
-  exigir(deLaura.some((texto) => texto.startsWith("Prepara el lote de nómina del ")) && !deLaura.includes("Autoriza un pago a proveedor"), `la administradora ve la nómina y no el pago: ${deLaura.join(" | ")}`);
+  exigir(deLaura.some(esNomina) && !deLaura.some(esPago), `la administradora ve la nómina y no el pago: ${deLaura.join(" | ")}`);
 
-  // La nómina se prepara desde Pendientes y el lote sale con la fecha que se anunciaba.
-  const avisoNomina = deLaura.find((texto) => texto.startsWith("Prepara el lote de nómina del "));
-  await laura.getByRole("link", { name: /Preparar nómina/ }).click();
-  await laura.waitForURL(/\/consola\/personas\/nomina$/);
+  // La nómina se prepara desde Aprobaciones (el botón de la decisión) y el lote sale con la fecha que se anunciaba.
+  const avisoNomina = deLaura.find(esNomina);
   await laura.getByRole("button", { name: /^Preparar nómina del / }).click();
   await laura.waitForURL(/\/consola\/personas\/nomina\/[0-9a-f-]{36}$/);
   await laura.getByRole("heading", { level: 1 }).first().waitFor();
   await captura(laura, "11-lote-preparado-desde-pendientes.png", false);
   const fechaLote = sql(`select to_char(fecha_pago, 'YYYY-MM-DD') from payroll_batches where company_id = '${empresa}'`);
   const fechaAnunciada = new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(`${fechaLote}T00:00:00Z`));
-  exigir(avisoNomina === `Prepara el lote de nómina del ${fechaAnunciada}`, `el lote preparado desde Pendientes es el del ${fechaLote}, la fecha anunciada`);
-  await laura.goto(`${raiz}/consola/pendientes`);
-  exigir(!(await pendientesVisibles(laura)).some((texto) => texto.startsWith("Prepara el lote de nómina del ")), "con el lote preparado, la nómina sale de Pendientes");
+  exigir(avisoNomina?.startsWith(`Lote de nómina · ${fechaAnunciada}`), `el lote preparado desde Aprobaciones es el del ${fechaLote}, la fecha anunciada`);
+  await laura.goto(`${raiz}/consola/aprobaciones`);
+  exigir(!(await pendientesVisibles(laura)).some(esNomina), "con el lote preparado, la nómina sale de Aprobaciones");
 
   // (c) Otorgar y quitar Finanzas desde la ficha nueva.
   const tomasCtx = await contexto(navegador, { tema: "oscuro", ancho: 390, alto: 844 });
