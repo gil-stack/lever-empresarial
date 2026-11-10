@@ -128,10 +128,13 @@ function codigoTotp(semilla, paso) {
   return String((hmac.readUInt32BE(desplazamiento) & 0x7fffffff) % 1e6).padStart(6, "0");
 }
 async function totp(quien) {
+  // Cada fase corre en su propio proceso: el último paso aceptado se lee también de la base, que rechaza reusarlo.
+  const enLaBase = Number(sql(`select coalesce(max(ultimo_paso), 0) from auth_totp where user_id = '${E.IDS[quien]}'`));
+  pasosUsados[quien] = Math.max(pasosUsados[quien] ?? 0, enLaBase);
   for (;;) {
     const paso = Math.floor(Date.now() / 30000);
     const resta = 30000 - (Date.now() % 30000);
-    if ((pasosUsados[quien] ?? 0) < paso && resta > 4000) {
+    if (pasosUsados[quien] < paso && resta > 4000) {
       pasosUsados[quien] = paso;
       return codigoTotp(E.SEMILLAS[quien], paso);
     }
