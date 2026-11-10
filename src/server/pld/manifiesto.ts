@@ -28,6 +28,9 @@ export async function* manifiestoDeConservacion(
   const pagina = typeof entrada.pagina === "number" && Number.isInteger(entrada.pagina) && entrada.pagina >= 1 ? entrada.pagina : 1;
   const companyId = entrada.companyId;
   const { conteos, documentos } = await conPld(ctx, companyId, async (consulta) => {
+    // C: las empresas de demostración no entran a PLD; tampoco su manifiesto.
+    const empresa = await consulta.query("select 1 from companies where id = $1 and not demostracion", [companyId]);
+    if (empresa.rows.length !== 1) throw new ErrorDeDominio("cliente_ausente");
     const conteos = (await consulta.query("select tabla, filas from pld_manifiesto_conteos($1, $2, $3, $4, $5)", [
       companyId, desde, hasta, ctx.peticionId, pagina,
     ])).rows as Array<{ tabla: string; filas: string | number }>;

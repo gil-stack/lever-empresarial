@@ -1,0 +1,62 @@
+# pld-postgres.test.ts con la prueba de C y la 0030 de 7df4243 (sin las guardas): la empresa de demostración tiene 2 operaciones (pago y lote).
+▶ PLD (0030) en Postgres desechable
+  ▶ candado, perfil, reglas en vivo, avisos confidenciales, Comité, dictamen, reportes, conservación y RLS
+    ✔ candado: sin perfil transaccional no se activa; con perfil, sí; la reactivación no cambia (118.91575ms)
+    ✔ perfil versionado y evaluaciones semestrales (27ª) (79.657667ms)
+    ✔ reglas en vivo: el pago liberado y el lote preparado entran una vez y alertan sin bloquear (58.95475ms)
+    ✔ reenvío (r2-base-N1): un pago corregido y liberado otra vez se evalúa con su instrucción y cuenta una vez (34.211458ms)
+    ✔ aviso del personal: acuse para quien avisa y nada para la persona mencionada (60ª) (163.582916ms)
+    ✔ análisis: caso, serie de la misma empresa, notas, documento con doble envío y propuesta (68.086291ms)
+    ✔ Comité: integración (47ª), quórum, empate con voto de calidad, suplentes, acta y dictamen (425.517917ms)
+    ✔ modo Oficial (47ª, último párrafo), dictamen fuera de plazo y reporte de 24 horas (44ª) (49.453542ms)
+    ✔ sesión con fecha atrasada (r2-base-N6): el dictamen registrado tarde queda marcado; los meses sin sesión se listan (52.848625ms)
+    ✔ carrera (r2-base-N9): lo que llega a un caso mientras se dictamina espera y ve el dictamen (340.5525ms)
+    ✔ días hábiles: los dos instrumentos de 2026 con criterio conservador y «falta el calendario» en 2027 (28.822208ms)
+    ✔ periódicos: 36ª de 41 columnas con clave CASFIM, 38ª en ceros y el catálogo de tipos de operación (30.212458ms)
+    ✔ parámetros versionados: los cambia Cumplimiento con motivo; la fila inicial queda (3.4725ms)
+    ✔ conservación (61ª): ni la app ni la dueña borran ni truncan operaciones ni nada de PLD (70.678667ms)
+    ✔ RLS cruzada: cada rol y cada operador leen solo lo suyo (61.110458ms)
+    ✔ manifiesto de conservación: conteos y huellas en streaming, con su evento por página (99.36975ms)
+    ✔ sesión oculta (47ª, decisión del líder): quien no la ve ve «falta»; quien la ve, «sí»; ninguna regla de la base la cuenta a escondidas (70.039542ms)
+    ✔ subidas (r2-serv-N15): lo que no queda en la base se borra del almacén (69.900791ms)
+    ✔ personal (r2-fix-N2): ningún cambio deja un aviso abierto sin quien lo analice; con candado común contra el aviso (182.033584ms)
+    ✔ sesión con persona excluida (r2-fix2-N2): ningún caso entra a una sesión de alguien a quien excluye (527.636666ms)
+    ✔ texto visible (r2-fix2-N1): la descripción del aviso y la nota cuentan solo lo que se ve (9.594417ms)
+    ✔ topes de texto (barrido del motivo largo): cada texto entra completo en su tope, se rechaza con uno más y la bitácora no lo recorta (47.306208ms)
+    ✖ empresas de demostración (C): nada entra a PLD; una empresa real con el mismo pago, igual que siempre (39.739292ms)
+  ✖ candado, perfil, reglas en vivo, avisos confidenciales, Comité, dictamen, reportes, conservación y RLS (3732.86525ms)
+✖ PLD (0030) en Postgres desechable (3733.370917ms)
+ℹ tests 24
+ℹ suites 1
+ℹ pass 22
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4025.190875
+
+✖ failing tests:
+
+test at tests/pld/pld-postgres.test.ts:1722:17
+✖ empresas de demostración (C): nada entra a PLD; una empresa real con el mismo pago, igual que siempre (39.739292ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r2-pld/tests/pld/pld-postgres.test.ts:1778:18)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async <anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r2-pld/tests/pld/pld-postgres.test.ts:1722:9)
+      at async conBaseDesechable (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r2-pld/tests/aislamiento/postgres.ts:71:12)
+      at async TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r2-pld/tests/pld/pld-postgres.test.ts:99:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1889:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

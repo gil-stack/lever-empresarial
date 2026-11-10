@@ -37,6 +37,7 @@ import {
   descargarDocumentoPld,
   dictaminarCaso,
   emitirAviso,
+  empresasParaPld,
   type EntradaIntegrante,
   ErrorDeIntegrante,
   leerCaso,
@@ -1716,6 +1717,114 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.equal((await uno<{ m: string }>(
             "select p.motivo as m from pld_evaluaciones e join pld_perfiles p on p.id = e.perfil_id where e.id = $1", [evaluacion])).m, texto(2000),
           "la versión del perfil que nace de la evaluación lleva la justificación completa");
+        });
+
+        await t.test("empresas de demostración (C): nada entra a PLD; una empresa real con el mismo pago, igual que siempre", async () => {
+          const deps = { almacen: almacenEnMemoria(), ahora: () => new Date() };
+          const sesionCliente = { superficie: "cliente" as const, segundoFactor: { metodo: "totp" as const, en: new Date() } };
+          // Delta es de demostración y Épsilon es real: las dos activas desde hoy con el mismo perfil (100,000.00 al mes en
+          // pagos y 5,000.00 en nómina), su portal, un pago de 900,000.00 liberado y un lote de nómina de 6,000.00.
+          const alta = async (rfc: string, razonSocial: string, demostracion: boolean, n: number) => {
+            const id = randomUUID();
+            await dueno.query("begin");
+            await dueno.query(
+              `insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, operator_id, estado, demostracion)
+               values ($1, $2, $3, '06600', '601', 'G03', $4, 'en_alta', $5)`,
+              [id, rfc, razonSocial, operador, demostracion],
+            );
+            await dueno.query(
+              "insert into audit_log (operator_id, company_id, actor_tipo, superficie, accion, entidad, identificador) values ($1, $2, 'sistema', 'sistema', 'alta_empresa', 'companies', $2)",
+              [operador, id],
+            );
+            await dueno.query("commit");
+            await declararPerfil(ori, { companyId: id, formId: randomUUID(), pagosMonto: "100,000.00", pagosOperaciones: "10", nominaMonto: "5,000.00", nominaOperaciones: "2", motivo: "" });
+            // Activa con su solicitud aprobada hoy: es la celebración del contrato de la evaluación semestral (27ª).
+            await dueno.query("begin");
+            await dueno.query("set local session_replication_role = replica");
+            await dueno.query("update companies set estado = 'activa' where id = $1", [id]);
+            await dueno.query(
+              `insert into company_activation_requests (id, operator_id, company_id, requested_by, requested_at, estado, decided_by, decided_at)
+               values ($1, $2, $3, $4, now(), 'aprobada', $5, now())`,
+              [randomUUID(), operador, id, ORI, APR],
+            );
+            await dueno.query("commit");
+            const ids = { proveedor: `f1000000-0000-4000-8000-00000000001${n}`, copia: `f2000000-0000-4000-8000-00000000001${n}` };
+            await sembrarPortal(dueno, id, operador, ids);
+            const marca = (ctx: ContextoDeTenant): ContextoDeTenant => ({ ...ctx, empresa: { ...ctx.empresa!, demostracion } });
+            const luis = marca(cliente(LUIS, ["administrador", "liberador"], id, operador));
+            const rosa = marca(cliente(ROSA, ["liberador"], id, operador));
+            const pago = await crearPagoProveedor(luis, {
+              supplierId: ids.proveedor, origen: "excepcion", emitidaEl: hoy, venceEl: sumarMeses(hoy, 1), programadaEl: sumarMeses(hoy, 1),
+              motivoExcepcion: "Servicio urgente autorizado por dirección", clientRequestId: randomUUID(), pdf: { nombre: "soporte.pdf", bytes: PDF },
+              monto: "900,000.00", referencia: "Servicio mayor",
+            }, deps);
+            await resolverPagoProveedor(rosa, sesionCliente, { requestId: pago.requestId, decision: "autorizar", version: 1, totalCentavos: 90000000 }, deps);
+            // PLD nunca bloquea: el pago queda listo para pagar en las dos.
+            assert.equal((await uno<{ estado: string }>("select estado from supplier_payment_requests where id = $1", [pago.requestId])).estado, "listo_para_pagar");
+            await sembrarLoteNomina(dueno, id, operador, 600000);
+            return id;
+          };
+          const delta = await alta("DEL150301AB4", "Delta Demostración SA de CV", true, 1);
+          const epsilon = await alta("EPS150301AB5", "Épsilon Real SA de CV", false, 2);
+          const deLaEmpresa = (tabla: string, companyId: string) => contar(`select count(*)::int as n from ${tabla} where company_id = $1`, [companyId]);
+
+          // La empresa real entra igual: el pago y el lote son operaciones, y cada uno pasa su perfil.
+          assert.equal(await deLaEmpresa("pld_operaciones", epsilon), 2);
+          const reglasReales = (await listarAlertasPld(cum)).filter((a) => a.companyId === epsilon).map((a) => a.regla);
+          assert.ok(reglasReales.includes("excede_perfil"), "el pago de la empresa real alerta");
+          assert.ok(reglasReales.includes("nomina_atipica"), "el lote de la empresa real alerta");
+
+          // La de demostración: ni operaciones ni alertas, y la bandeja no la muestra.
+          assert.equal(await deLaEmpresa("pld_operaciones", delta), 0);
+          assert.equal(await deLaEmpresa("pld_alertas", delta), 0);
+          assert.equal((await listarAlertasPld(cum)).some((a) => a.companyId === delta), false);
+          // Ni a mano: la base no acepta una operación de una empresa de demostración.
+          await assert.rejects(dueno.query(
+            `insert into pld_operaciones (operator_id, company_id, tipo, origen_tabla, origen_id, monto_centavos, clabe, ocurrida_en)
+             values ($1, $2, 'pago_proveedor', 'supplier_payment_requests', $3, 100, $4, now())`,
+            [operador, delta, randomUUID(), CLABE],
+          ), /pld_empresa_de_demostracion/);
+
+          // Aviso al personal: el formulario no la ofrece, el servicio no la acepta y la base tampoco.
+          const ofrecidas = (await empresasParaPld(ori)).map((e) => e.id);
+          assert.ok(ofrecidas.includes(epsilon));
+          assert.equal(ofrecidas.includes(delta), false);
+          const aviso = { tipo: "posible_inusual", mencionada: "", superior: "", descripcion: "Pagos grandes a un proveedor nuevo sin soporte suficiente." };
+          await assert.rejects(emitirAviso(ori, { ...aviso, formId: randomUUID(), companyId: delta }), /dato_invalido_companyId/);
+          await assert.rejects(sofipo(ORI, async (c) => {
+            const id = randomUUID();
+            await eventoPersonal(c, ORI, "pld_aviso_emitido", "pld_avisos", id, delta);
+            await c.query(
+              "insert into pld_avisos (id, operator_id, company_id, tipo, descripcion, registrado_por) values ($1, $2, $3, 'posible_inusual', $4, $5)",
+              [id, operador, delta, aviso.descripcion, ORI],
+            );
+          }), /aviso_empresa_demostracion/);
+          assert.ok(await emitirAviso(ori, { ...aviso, formId: randomUUID(), companyId: epsilon }));
+
+          // Evaluación semestral (27ª): a los siete meses la real queda pendiente y la de demostración no.
+          const enSieteMeses = new Date(`${sumarMeses(hoy, 7)}T18:00:00Z`);
+          const pendientes = (await leerEvaluacionesPendientes(cum, { ahora: enSieteMeses })).map((p) => p.companyId);
+          assert.ok(pendientes.includes(epsilon));
+          assert.equal(pendientes.includes(delta), false);
+
+          // Conservación (61ª): sin manifiesto de una empresa de demostración.
+          const manifiesto = async (companyId: string) => {
+            const renglones: string[] = [];
+            for await (const renglon of manifiestoDeConservacion(cum, { companyId, desde: hoy, hasta: hoy, pagina: 1, cursor: null })) renglones.push(renglon);
+            return renglones;
+          };
+          await assert.rejects(manifiesto(delta), /cliente_ausente/);
+          assert.ok((await manifiesto(epsilon)).length > 1);
+
+          // La marca no cambia en ningún sentido. Solo la SOFIPO tiene UPDATE en companies; la base se lo impide.
+          for (const rol of ["plataforma_app", "plataforma_cliente", "plataforma_tarea"]) {
+            assert.equal((await uno<{ puede: boolean }>("select has_column_privilege($1, 'companies', 'demostracion', 'UPDATE') as puede", [rol])).puede, false, rol);
+          }
+          assert.equal((await uno<{ puede: boolean }>("select has_column_privilege('plataforma_sofipo', 'companies', 'demostracion', 'UPDATE') as puede")).puede, true);
+          await assert.rejects(sofipo(ORI, (c) => c.query("update companies set demostracion = true where id = $1", [epsilon])), /empresa_real_no_pasa_a_demostracion/);
+          await assert.rejects(sofipo(ORI, (c) => c.query("update companies set demostracion = false where id = $1", [delta])), /demostracion_no_se_activa_para_dinero/);
+          await assert.rejects(dueno.query("update companies set demostracion = true where id = $1", [epsilon]), /empresa_real_no_pasa_a_demostracion/);
+          assert.equal((await uno<{ demo: boolean }>("select demostracion as demo from companies where id = $1", [epsilon])).demo, false);
         });
       } finally {
         await cerrarConexion();

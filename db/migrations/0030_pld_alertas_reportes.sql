@@ -794,12 +794,17 @@ COMMENT ON TABLE pld_operaciones IS
 -- al candado quedaba fuera de las ventanas de la otra, y la otra tampoco la había visto.
 -- Con el candado tomado aquí y clock_timestamp(), por empresa el orden de las horas es el
 -- orden en que se confirman. Una hora explícita (las pruebas de frontera) se respeta.
+-- C: una empresa de demostración no entra a PLD (0016: «recorre la interfaz y nunca se
+-- activa para dinero»). Los registradores de abajo la saltan; aquí se cierra todo otro camino.
 CREATE FUNCTION pld_operaciones_antes()
 RETURNS trigger
 LANGUAGE plpgsql
 SET search_path = public
 AS $$
 BEGIN
+  IF EXISTS (SELECT 1 FROM companies c WHERE c.id = NEW.company_id AND c.demostracion) THEN
+    RAISE EXCEPTION 'pld_empresa_de_demostracion';
+  END IF;
   PERFORM pg_advisory_xact_lock(hashtextextended('pld_operaciones:' || NEW.company_id::text, 0));
   NEW.ocurrida_en := coalesce(NEW.ocurrida_en, clock_timestamp());
   RETURN NEW;
@@ -1064,7 +1069,8 @@ CREATE TRIGGER pld_operaciones_evaluar
 AFTER INSERT ON pld_operaciones
 FOR EACH ROW EXECUTE FUNCTION pld_evaluar_operacion();
 
--- Pago a proveedor: la instrucción entra al pasar a «listo para pagar».
+-- Pago a proveedor: la instrucción entra al pasar a «listo para pagar». El pago de una
+-- empresa de demostración se libera igual y no entra (C).
 CREATE FUNCTION pld_registrar_pago()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -1085,7 +1091,7 @@ BEGIN
   INSERT INTO pld_operaciones (operator_id, company_id, tipo, origen_tabla, origen_id, instruccion, reemplaza, monto_centavos, clabe)
   SELECT c.operator_id, NEW.company_id, 'pago_proveedor', 'supplier_payment_requests', NEW.id,
          greatest(NEW.version, coalesce(vigente.instruccion, 0) + 1), vigente.id, NEW.total_centavos, NEW.clabe
-  FROM companies c WHERE c.id = NEW.company_id;
+  FROM companies c WHERE c.id = NEW.company_id AND NOT c.demostracion;
   RETURN NULL;
 END;
 $$;
@@ -1096,7 +1102,8 @@ FOR EACH ROW WHEN (OLD.estado = 'por_autorizar' AND NEW.estado = 'listo_para_pag
 EXECUTE FUNCTION pld_registrar_pago();
 
 -- Nómina: el lote nace «preparada» y sus renglones llegan después en la misma
--- transacción; la regla corre al cerrarla, con el lote completo.
+-- transacción; la regla corre al cerrarla, con el lote completo. El de una empresa de
+-- demostración no entra (C).
 CREATE FUNCTION pld_registrar_nomina()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -1112,7 +1119,7 @@ BEGIN
   END IF;
   INSERT INTO pld_operaciones (operator_id, company_id, tipo, origen_tabla, origen_id, monto_centavos, personas)
   SELECT c.operator_id, NEW.company_id, 'nomina', 'payroll_batches', NEW.id, NEW.total_centavos, personas
-  FROM companies c WHERE c.id = NEW.company_id
+  FROM companies c WHERE c.id = NEW.company_id AND NOT c.demostracion
   ON CONFLICT (origen_tabla, origen_id, instruccion) DO NOTHING;
   RETURN NULL;
 END;
@@ -1125,12 +1132,16 @@ FOR EACH ROW EXECUTE FUNCTION pld_registrar_nomina();
 
 -- 6. Avisos del personal ---------------------------------------------------------
 
+-- C: el aviso puede no nombrar empresa; si la nombra, no es de demostración.
 CREATE FUNCTION pld_avisos_revisar()
 RETURNS trigger
 LANGUAGE plpgsql
 SET search_path = public
 AS $$
 BEGIN
+  IF NEW.company_id IS NOT NULL AND EXISTS (SELECT 1 FROM companies c WHERE c.id = NEW.company_id AND c.demostracion) THEN
+    RAISE EXCEPTION 'aviso_empresa_demostracion';
+  END IF;
   IF current_user = 'plataforma_sofipo' THEN
     IF NEW.registrado_por IS DISTINCT FROM app_usuario() OR NEW.operator_id IS DISTINCT FROM app_operador()
       OR NOT personal_tiene_rol(NEW.operator_id, NEW.registrado_por,
@@ -2968,6 +2979,26 @@ BEGIN
     IF lpb_coincidencias_abiertas(NEW.id) THEN
       RAISE EXCEPTION 'reactivacion_con_coincidencia_lpb';
     END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+-- C: una empresa de demostración no entra a PLD; por eso la marca tampoco se pone
+-- después. Una empresa real que pasara a demostración dejaría de vigilarse, y la
+-- SOFIPO tiene UPDATE en companies. La 0020 ya impedía el sentido contrario. Solo
+-- cambia la función: el disparador de la 0020 sigue igual y no se toma candado nuevo.
+CREATE OR REPLACE FUNCTION companies_demostracion_no_dinero()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = public
+AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' AND OLD.demostracion IS TRUE AND NEW.demostracion IS FALSE THEN
+    RAISE EXCEPTION 'demostracion_no_se_activa_para_dinero';
+  END IF;
+  IF TG_OP = 'UPDATE' AND OLD.demostracion IS FALSE AND NEW.demostracion IS TRUE THEN
+    RAISE EXCEPTION 'empresa_real_no_pasa_a_demostracion';
   END IF;
   RETURN NEW;
 END;

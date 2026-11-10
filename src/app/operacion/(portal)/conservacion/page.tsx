@@ -6,8 +6,8 @@ import { PaginaOperacion } from "@/components/operacion/pagina";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { Hoja, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { hoyEnMexico } from "@/dominio/operacion/comisiones";
-import { exigirContextoOperacion, listarClientes, puedeEnOperacion } from "@/server/operacion";
-import { ahoraPld, DOCUMENTOS_POR_PAGINA } from "@/server/pld";
+import { exigirContextoOperacion, puedeEnOperacion } from "@/server/operacion";
+import { ahoraPld, DOCUMENTOS_POR_PAGINA, empresasParaPld } from "@/server/pld";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Conservación · Operación" };
@@ -27,7 +27,7 @@ export default async function ConservacionOperacion({ searchParams }: { searchPa
       </PaginaOperacion>
     );
   }
-  const clientes = puedeEnOperacion(ctx, "plataforma.operacion.ver") ? await listarClientes(ctx) : [];
+  const clientes = puedeEnOperacion(ctx, "plataforma.operacion.ver") ? await empresasParaPld(ctx) : [];
   const hoy = hoyEnMexico(ahoraPld());
   const haceUnAnio = `${Number(hoy.slice(0, 4)) - 1}${hoy.slice(4)}`;
   const error = (campo: string) => (params.en === "manifiesto-titulo" ? errorDelCampo(params.aviso, campo) : {});

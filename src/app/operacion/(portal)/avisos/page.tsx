@@ -9,8 +9,8 @@ import { FormularioAviso } from "@/components/operacion/pld/formularios-de-texto
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { EtiquetaMono, Hoja, NotaRegla, Vacio } from "@/components/sistema";
 import { TIPO_AVISO } from "@/dominio/pld";
-import { exigirContextoOperacion, listarClientes, puedeEnOperacion } from "@/server/operacion";
-import { misAcuses, personalParaExcluir } from "@/server/pld";
+import { exigirContextoOperacion, puedeEnOperacion } from "@/server/operacion";
+import { empresasParaPld, misAcuses, personalParaExcluir } from "@/server/pld";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Avisar a Cumplimiento · Operación" };
@@ -33,7 +33,7 @@ export default async function AvisosOperacion({ searchParams }: { searchParams: 
   const [acuses, personas, clientes] = await Promise.all([
     misAcuses(ctx),
     personalParaExcluir(ctx),
-    puedeEnOperacion(ctx, "plataforma.operacion.ver") ? listarClientes(ctx) : Promise.resolve([]),
+    puedeEnOperacion(ctx, "plataforma.operacion.ver") ? empresasParaPld(ctx) : Promise.resolve([]),
   ]);
 
   return (

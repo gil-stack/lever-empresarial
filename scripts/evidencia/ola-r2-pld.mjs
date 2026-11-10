@@ -36,6 +36,7 @@ const ANCHOS = [1440, 390];
 const TALLER = E.EMPRESA_TALLER;
 const NOGAL = E.EMPRESA_NOGAL;
 const COBRE = E.EMPRESA_COBRE;
+const FONDO = E.EMPRESA_FONDO;
 const NOMBRES = { ofelia: "Ofelia Plataforma", omar: "Omar Originación", ana: "Ana Aprobación", celia: "Celia Cumplimiento", aurelio: "Aurelio Auditoría", ciro: "Ciro Cumplimiento" };
 const PERSONAL = ["ofelia", "omar", "ana", "celia", "aurelio"];
 const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -1090,6 +1091,10 @@ async function flujo12() {
   await ir(p, "/operacion/cumplimiento#pld-evaluaciones-titulo");
   const item = hoja(p, "pld-evaluaciones-titulo").locator("li", { hasText: "Cobre Antiguo" });
   exigir((await item.innerText()).includes(`Contrato del ${fechaDia(E.CELEBRACION_COBRE)}`) && (await item.innerText()).includes(`Antes del ${fechaDia("2026-12-31")}`), "12. Cobre (contrato de hace siete meses) aparece con su evaluación del semestre pendiente", await item.innerText());
+  // C: Fondo también celebró su contrato hace siete meses, pero es de demostración: no entra a PLD.
+  exigir(sql(`select pld_celebracion_contrato('${FONDO}') = '${E.CELEBRACION_COBRE}'::date`) === "t"
+    && (await hoja(p, "pld-evaluaciones-titulo").locator("li", { hasText: "Fondo Demostración" }).count()) === 0,
+  "12. Fondo Demostración, con contrato del mismo día que Cobre, no pide evaluación: es de demostración (C)");
   await foto(p, "f12-evaluacion-semestral-pendiente");
   await item.getByRole("link", { name: "Cobre Antiguo, S.A. de C.V." }).click();
   await listo(p);
@@ -1656,8 +1661,55 @@ async function flujo16() {
   await cerrar(celia, "Celia");
 }
 
+async function flujo17() {
+  console.log("\n— Flujo 17 (C): una empresa de demostración no entra a PLD; Taller, real, sí");
+  exigir(sql(`select estado from supplier_payment_requests where id = '${E.PAGO_FONDO}'`) === "listo_para_pagar", "17. el pago de $250,000.00 de Fondo Demostración quedó liberado");
+  exigir(cuenta(`pld_operaciones where company_id = '${FONDO}'`) === 0 && cuenta(`pld_alertas where company_id = '${FONDO}'`) === 0,
+    "17. y no entra a PLD: 0 operaciones y 0 alertas, aunque Fondo no tiene perfil");
+  exigir(cuenta(`pld_operaciones where company_id = '${TALLER}'`) > 0 && cuenta(`pld_alertas where company_id = '${TALLER}'`) > 0,
+    "17. Taller, real, sí tiene sus operaciones y sus alertas");
+  renovarSesiones();
+  const celia = await abrir("celia");
+  const { p } = celia;
+  await ir(p, "/operacion/cumplimiento");
+  const bandeja = await p.locator("main").innerText();
+  exigir(bandeja.includes("Taller del Cierre") && !bandeja.includes("Fondo Demostración"), "17. la bandeja de Cumplimiento nombra a Taller y nunca a Fondo");
+  await foto(p, "f17-bandeja-sin-la-empresa-de-demostracion");
+  const opciones = async (ruta, selector) => {
+    await ir(p, ruta);
+    return p.locator(`${selector} option`).allInnerTexts();
+  };
+  for (const [ruta, selector, nombre] of [["/operacion/avisos", "#aviso-empresa", "«Avisar a Cumplimiento»"], ["/operacion/conservacion", "#manifiesto-empresa", "el manifiesto de conservación"]]) {
+    const lista = await opciones(ruta, selector);
+    exigir(lista.some((o) => o.includes("Taller del Cierre")) && !lista.some((o) => o.includes("Fondo Demostración")), `17. ${nombre} ofrece a Taller y no a Fondo`, JSON.stringify(lista));
+  }
+  // A mano, con el id de Fondo en la dirección del manifiesto: no lo da ni deja evento.
+  const eventos = () => cuenta(`audit_log where accion = 'pld_manifiesto_descargado' and company_id = '${FONDO}'`);
+  await ir(p, `/operacion/conservacion/manifiesto?companyId=${FONDO}&desde=${hoy()}&hasta=${hoy()}`);
+  exigir((await p.locator("main").innerText()).includes("No encontramos esa empresa.") && eventos() === 0,
+    "17. el manifiesto de Fondo pedido a mano dice «No encontramos esa empresa.» y no deja evento");
+  await foto(p, "f17-manifiesto-de-demostracion-rechazado");
+  // A mano, con el id de Fondo en el aviso: el servicio lo trata como una empresa que no existe y no queda aviso.
+  await ir(p, "/operacion/avisos");
+  await p.locator("#aviso-tipo").selectOption("posible_inusual");
+  await p.locator("#aviso-empresa").evaluate((select, id) => {
+    const opcion = document.createElement("option");
+    opcion.value = id;
+    opcion.textContent = "Fondo Demostración";
+    select.append(opcion);
+    select.value = id;
+  }, FONDO);
+  await p.locator("#aviso-descripcion").fill("Pagos grandes a un proveedor nuevo sin soporte suficiente en el expediente.");
+  const avisos = cuenta("pld_avisos");
+  await p.getByRole("button", { name: "Enviar aviso" }).click();
+  await listo(p);
+  exigir(cuenta("pld_avisos") === avisos && await marcadoConFoco(p, "#aviso-empresa"), "17. el aviso sobre Fondo se rechaza en el campo Empresa, con el foco, y no queda aviso");
+  await foto(p, "f17-aviso-sobre-la-empresa-de-demostracion-rechazado");
+  await cerrar(celia, "Celia");
+}
+
 // ---------- Corrida ----------
-const FLUJOS = { f1: flujo1, f2: flujo2, f3: flujo3, f4: flujo4, f5: flujo5, f6: flujo6, f7: flujo7, f8: flujo8, f9: flujo9, f10: flujo10, f11: flujo11, f12: flujo12, f13: flujo13, f14: flujo14, f15: flujo15, f16: flujo16 };
+const FLUJOS = { f1: flujo1, f2: flujo2, f3: flujo3, f4: flujo4, f5: flujo5, f6: flujo6, f7: flujo7, f8: flujo8, f9: flujo9, f10: flujo10, f11: flujo11, f12: flujo12, f13: flujo13, f14: flujo14, f15: flujo15, f16: flujo16, f17: flujo17 };
 const IDS_GUARDADOS = `${RUTA_ESTADO}.ids.json`;
 let fallo = null;
 const inicio = Date.now();

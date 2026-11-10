@@ -12,6 +12,10 @@
 //     perfil: la base no deja activarla (flujo 1).
 //   - Cobre Antiguo activa, con su contrato celebrado hace siete meses: la evaluación semestral del
 //     semestre en curso está pendiente (flujo 12). La aprobación de la activación la fecha la dueña.
+//   - C: las empresas de demostración no entran a PLD. La semilla del e2e da de alta a Taller como
+//     de demostración; aquí nace real, porque es la empresa que vigila el recorrido. Fondo
+//     Demostración es la de demostración: activa desde hace siete meses, con un pago de $250,000.00
+//     liberado contra un perfil que no tiene (flujo 17).
 //   - El personal SOFIPO con sus roles: Ofelia administra, Omar origina, Ana aprueba, Celia cumple
 //     (y es la Oficial) y Aurelio audita. Cada quien con su app autenticadora y una sesión SOFIPO.
 //
@@ -23,7 +27,7 @@
 // ESTADO guarda semillas TOTP y sesiones: tiene que vivir fuera del repositorio. Nada de eso se
 // imprime. Solo acepta un Postgres en 127.0.0.1 o localhost.
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import { readdirSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { Client } from "pg";
@@ -51,6 +55,13 @@ const GIL = "11111111-1111-4111-8111-111111111111";
 const PROVEEDOR_UNO = "44444444-4444-4444-8444-444444444441";
 const PAGABLE_TERCERO = "77777777-7777-4777-8777-777777777774";
 const PAGO_TERCERO = "88888888-8888-4888-8888-888888888884";
+const FONDO = "33333333-3333-4333-8333-333333333334";
+const DORA = "11111111-1111-4111-8111-111111111113";
+const FITO = "22222222-2222-4222-8222-222222222223";
+const DOCUMENTO_FONDO = "55555555-5555-4555-8555-555555555554";
+const PROVEEDOR_FONDO = "44444444-4444-4444-8444-444444444444";
+const PAGABLE_FONDO = "77777777-7777-4777-8777-777777777775";
+const PAGO_FONDO = "88888888-8888-4888-8888-888888888885";
 const rutaEstado = process.env.ESTADO ?? "";
 if (!rutaEstado || rutaEstado.includes("/docs/") || rutaEstado.startsWith("docs/") || rutaEstado.includes("/scripts/")) {
   throw new Error("ESTADO tiene que ser un archivo fuera del repositorio: guarda semillas TOTP y sesiones.");
@@ -104,7 +115,48 @@ async function preparar(): Promise<void> {
   const url = owner.toString();
   const dir = join(process.cwd(), "db/migrations");
   for (const archivo of readdirSync(dir).sort()) if (archivo.endsWith(".sql")) aplicarArchivo(url, join(dir, archivo));
-  aplicarArchivo(url, join(process.cwd(), "tests/e2e/seed-pagos.sql"));
+  // C: Taller nace real (la semilla del e2e la da de alta de demostración, que no entra a PLD).
+  const semilla = readFileSync(join(process.cwd(), "tests/e2e/seed-pagos.sql"), "utf8");
+  const tallerReal = semilla.replace("'activa', true);", "'activa', false);");
+  if (tallerReal === semilla || !tallerReal.includes("'Taller del Cierre'")) throw new Error("La semilla de pagos cambió: revisa cómo da de alta a Taller del Cierre.");
+  ejecutar(url, tallerReal);
+  // Fondo Demostración: Dora pide y Fito libera un pago de $250,000.00, como en la semilla de Taller.
+  const evento = (actor: string, accion: string, entidad: string, identificador: string, cambio = "null") =>
+    `insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, cambio)
+       select operator_id, id, 'miembro', '${actor}', 'cliente', '${accion}', '${entidad}', '${identificador}', ${cambio}::jsonb from companies where id = '${FONDO}';`;
+  ejecutar(url, `
+    begin;
+    select set_config('app.user_id', '${DORA}', true), set_config('app.company_id', '${FONDO}', true);
+    insert into users (id, nombre, correo) values ('${DORA}', 'Dora Demostración', 'dora-fondo@ejemplo.mx'), ('${FITO}', 'Fito Demostración', 'fito-fondo@ejemplo.mx');
+    insert into companies (id, rfc, razon_social, codigo_postal, regimen, uso_cfdi, operator_id, estado, demostracion)
+      values ('${FONDO}', 'FDE200202AB6', 'Fondo Demostración', '06600', '601', 'G03', (select id from operators order by alta_en limit 1), 'activa', true);
+    ${evento(DORA, "alta_empresa", "companies", FONDO)}
+    insert into memberships (user_id, company_id, estado) values ('${DORA}', '${FONDO}', 'activa'), ('${FITO}', '${FONDO}', 'activa');
+    ${[[DORA, "administrador"], [DORA, "liberador"], [FITO, "liberador"]].map(([quien, rol]) => `${evento(DORA, "asignar_rol", "membership_roles", quien!, `'{"rol":"${rol}"}'`)}
+    insert into membership_roles (user_id, company_id, rol) values ('${quien}', '${FONDO}', '${rol}');`).join("\n")}
+    insert into documents (id, company_id, clave_blob, hash_sha256, tipo, nombre_original, creado_en)
+      values ('${DOCUMENTO_FONDO}', '${FONDO}', 'demo/constancia-fondo', '${"d".repeat(64)}', 'application/pdf', 'Constancia_Proveedor_Fondo.pdf', now());
+    insert into suppliers (id, company_id, document_id, snapshot_id, rfc, razon_social, lista_fecha, lista_leida_en, boton_pago, alta_en)
+      values ('${PROVEEDOR_FONDO}', '${FONDO}', '${DOCUMENTO_FONDO}', '66666666-6666-4666-8666-666666666666', 'DDD040404DA4', 'Proveedor del Fondo', date '2026-09-30', now(), true, now());
+    ${evento(DORA, "alta_proveedor", "suppliers", PROVEEDOR_FONDO)}
+    insert into supplier_clabes (id, company_id, supplier_id, clabe, digito_valido, vigente_desde)
+      values (md5('${PROVEEDOR_FONDO}clabe')::uuid, '${FONDO}', '${PROVEEDOR_FONDO}', '002180701150123452', true, now());
+    insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)
+      select c.operator_id, sc.company_id, 'miembro', '${DORA}', 'cliente', 'clabe_proveedor', 'supplier_clabes', sc.id
+        from supplier_clabes sc join companies c on c.id = sc.company_id where sc.company_id = '${FONDO}';
+    insert into supplier_payables (id, company_id, supplier_id, origen, referencia, total_centavos, emitida_el, vence_el, programada_el, motivo_excepcion, creado_por, creado_en, actualizado_en)
+      values ('${PAGABLE_FONDO}', '${FONDO}', '${PROVEEDOR_FONDO}', 'excepcion', 'Servicio de demostración', 25000000, current_date - 5, current_date + 15, current_date + 4,
+        'Pago del recorrido de demostración', '${DORA}', now(), now());
+    ${evento(DORA, "crear_cargo_proveedor", "supplier_payables", PAGABLE_FONDO, `'{"origen":"excepcion","total_centavos":25000000}'`)}
+    insert into supplier_payment_requests (id, company_id, payable_id, supplier_clabe_id, clabe, total_centavos, programada_el, solicitado_por, solicitado_en, creado_en)
+      select '${PAGO_FONDO}', p.company_id, p.id, sc.id, sc.clabe, p.total_centavos, p.programada_el, '${DORA}', now(), now()
+        from supplier_payables p join supplier_clabes sc on sc.company_id = p.company_id and sc.supplier_id = p.supplier_id where p.id = '${PAGABLE_FONDO}';
+    ${evento(DORA, "solicitar_pago_proveedor", "supplier_payment_requests", PAGO_FONDO, `'{"total_centavos":25000000}'`)}
+    select set_config('app.user_id', '${FITO}', true);
+    update supplier_payment_requests set estado = 'listo_para_pagar', resuelto_por = '${FITO}', resuelto_en = now() where id = '${PAGO_FONDO}';
+    ${evento(FITO, "autorizar_pago_proveedor", "supplier_payment_requests", PAGO_FONDO)}
+    commit;
+  `);
   process.env.DATABASE_URL = urlDeAplicacion(url);
 
   // Personal SOFIPO con sus roles, app autenticadora y sesión.
@@ -200,6 +252,15 @@ async function preparar(): Promise<void> {
     commit;
   `);
   const celebracion = consultarJson<{ fecha: string }>(url, `select json_build_object('fecha', pld_celebracion_contrato('${cobreId}')::text)`).fecha;
+  // Fondo: contrato celebrado hace siete meses, como Cobre. Si fuera real, pediría su evaluación semestral (flujo 12).
+  ejecutar(url, `
+    begin;
+    set local session_replication_role = replica;
+    insert into company_activation_requests (id, operator_id, company_id, requested_by, requested_at, estado, decided_by, decided_at)
+      select '${randomUUID()}', operator_id, id, '${ids.omar}', now() - interval '7 months 1 day', 'aprobada', '${ids.ana}', now() - interval '7 months'
+        from companies where id = '${FONDO}';
+    commit;
+  `);
   await cerrarConexion();
 
   writeFileSync(rutaEstado, JSON.stringify({
@@ -208,6 +269,8 @@ async function preparar(): Promise<void> {
     EMPRESA_TALLER: TALLER,
     EMPRESA_NOGAL: nogalId,
     EMPRESA_COBRE: cobreId,
+    EMPRESA_FONDO: FONDO,
+    PAGO_FONDO,
     CELEBRACION_COBRE: celebracion,
     PAGO_EXCEDE: "88888888-8888-4888-8888-888888888882",
     PAGO_FRACCION: PAGO_TERCERO,
@@ -215,7 +278,7 @@ async function preparar(): Promise<void> {
     SEMILLAS: semillas,
     IDS: ids,
   }, null, 2), { mode: 0o600 });
-  console.log(`Base ${BASE} lista: 0001-0030, Taller con perfil, dos pagos por autorizar, Marta con nómina, Nogal sin perfil, Cobre con contrato del ${celebracion} y ${PERSONAL.length} personas del personal.`);
+  console.log(`Base ${BASE} lista: 0001-0030, Taller con perfil, dos pagos por autorizar, Marta con nómina, Nogal sin perfil, Cobre con contrato del ${celebracion}, Fondo de demostración con su pago liberado y ${PERSONAL.length} personas del personal.`);
 }
 
 preparar().catch(async (error: unknown) => {

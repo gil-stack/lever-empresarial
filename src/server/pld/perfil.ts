@@ -264,7 +264,8 @@ export type EvaluacionPendiente = {
 /**
  * 27ª: dos evaluaciones por año calendario, una por semestre, para cada cliente
  * que celebró su contrato al menos seis meses antes. Se calcula al leer, sin tarea
- * programada. La celebración la define pld_celebracion_contrato (0030).
+ * programada. La celebración la define pld_celebracion_contrato (0030). Las empresas
+ * de demostración no entran a PLD (C).
  */
 export async function leerEvaluacionesPendientes(ctx: ContextoDePersonal, opciones: { ahora?: Date } = {}): Promise<EvaluacionPendiente[]> {
   exigirEnOperacion(ctx, "plataforma.pld.ver");
@@ -278,7 +279,7 @@ export async function leerEvaluacionesPendientes(ctx: ContextoDePersonal, opcion
               exists (select 1 from pld_evaluaciones e where e.company_id = c.id and e.anio = $1 and e.semestre = $2) as actual,
               exists (select 1 from pld_evaluaciones e where e.company_id = c.id and e.anio = $3 and e.semestre = $4) as anterior
        from companies c
-       where c.estado in ('activa', 'suspendida')
+       where c.estado in ('activa', 'suspendida') and not c.demostracion
        order by c.razon_social`,
       [actual.anio, actual.semestre, anterior.anio, anterior.semestre],
     );

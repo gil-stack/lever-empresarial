@@ -30,6 +30,17 @@ export async function personalParaExcluir(ctx: ContextoDePersonal): Promise<Pers
   });
 }
 
+export type EmpresaParaPld = { id: string; rfc: string; razonSocial: string };
+
+/** Las empresas que se eligen en PLD (aviso y manifiesto): las de demostración no entran a PLD, como en la base. */
+export async function empresasParaPld(ctx: ContextoDePersonal): Promise<EmpresaParaPld[]> {
+  exigirEnOperacion(ctx, "plataforma.operacion.ver");
+  return conPld(ctx, null, async (consulta) => {
+    const filas = await consulta.query("select id, rfc, razon_social from companies where not demostracion order by alta_at desc, razon_social limit 300");
+    return (filas.rows as Array<Record<string, unknown>>).map((fila) => ({ id: String(fila.id), rfc: String(fila.rfc), razonSocial: String(fila.razon_social) }));
+  });
+}
+
 /**
  * 54ª fr. VIII y 60ª, último párrafo: cualquier persona del personal avisa al área
  * de Cumplimiento de forma confidencial. Quien avisa puede marcar a la persona
@@ -64,7 +75,8 @@ export async function emitirAviso(
     const fila = previo.rows[0] as { id?: string; tipo?: string; registrado_en?: unknown } | undefined;
     if (fila?.id) return { id: fila.id, folio: folioDeAviso(fila.id), tipo: fila.tipo as TipoAviso, recibidoEn: fecha(fila.registrado_en) };
     if (companyId) {
-      const empresa = await consulta.query("select 1 from companies where id = $1", [companyId]);
+      // C: las empresas de demostración no entran a PLD; para el aviso es como si no existieran.
+      const empresa = await consulta.query("select 1 from companies where id = $1 and not demostracion", [companyId]);
       if (empresa.rows.length !== 1) throw new ErrorDeDominio("dato_invalido_companyId");
     }
     const insertado = await consulta.query(
