@@ -8,8 +8,8 @@
     "f13",
     "f14"
   ],
-  "segundos": 124,
-  "verdes": 197,
+  "segundos": 129,
+  "verdes": 198,
   "rojos": 0,
   "resultados": [
     {
@@ -246,6 +246,10 @@
     },
     {
       "ok": true,
+      "texto": "12. Fondo Demostración, con contrato del mismo día que Cobre, no pide evaluación: es de demostración (C)"
+    },
+    {
+      "ok": true,
       "texto": "12. el monto rechazado de la evaluación queda marcado y con el foco, sin recargar: «Cambia», el monto y la justificación siguen"
     },
     {
@@ -426,7 +430,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Ofelia Plataforma no ve /operacion/pld/casos/d1bb17f3-0963-4027-a451-be751be82690 ni un dato de PLD"
+      "texto": "14. Ofelia Plataforma no ve /operacion/pld/casos/2b3ae90a-749f-4947-882e-254707ece87d ni un dato de PLD"
     },
     {
       "ok": true,
@@ -434,7 +438,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Ofelia Plataforma no ve /operacion/comite/sesiones/79ac2687-34f4-4b96-acb3-884b92e04e9d ni un dato de PLD"
+      "texto": "14. Ofelia Plataforma no ve /operacion/comite/sesiones/78739979-2f07-47b3-a3d8-3756eb52eb3a ni un dato de PLD"
     },
     {
       "ok": true,
@@ -490,7 +494,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Omar Originación no ve /operacion/pld/casos/d1bb17f3-0963-4027-a451-be751be82690 ni un dato de PLD"
+      "texto": "14. Omar Originación no ve /operacion/pld/casos/2b3ae90a-749f-4947-882e-254707ece87d ni un dato de PLD"
     },
     {
       "ok": true,
@@ -498,7 +502,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Omar Originación no ve /operacion/comite/sesiones/79ac2687-34f4-4b96-acb3-884b92e04e9d ni un dato de PLD"
+      "texto": "14. Omar Originación no ve /operacion/comite/sesiones/78739979-2f07-47b3-a3d8-3756eb52eb3a ni un dato de PLD"
     },
     {
       "ok": true,
@@ -554,7 +558,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Ana Aprobación no ve /operacion/pld/casos/d1bb17f3-0963-4027-a451-be751be82690 ni un dato de PLD"
+      "texto": "14. Ana Aprobación no ve /operacion/pld/casos/2b3ae90a-749f-4947-882e-254707ece87d ni un dato de PLD"
     },
     {
       "ok": true,
@@ -562,7 +566,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Ana Aprobación no ve /operacion/comite/sesiones/79ac2687-34f4-4b96-acb3-884b92e04e9d ni un dato de PLD"
+      "texto": "14. Ana Aprobación no ve /operacion/comite/sesiones/78739979-2f07-47b3-a3d8-3756eb52eb3a ni un dato de PLD"
     },
     {
       "ok": true,
@@ -626,7 +630,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Celia Cumplimiento ve /operacion/pld/casos/d1bb17f3-0963-4027-a451-be751be82690"
+      "texto": "14. Celia Cumplimiento ve /operacion/pld/casos/2b3ae90a-749f-4947-882e-254707ece87d"
     },
     {
       "ok": true,
@@ -634,7 +638,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Celia Cumplimiento ve /operacion/comite/sesiones/79ac2687-34f4-4b96-acb3-884b92e04e9d"
+      "texto": "14. Celia Cumplimiento ve /operacion/comite/sesiones/78739979-2f07-47b3-a3d8-3756eb52eb3a"
     },
     {
       "ok": true,
@@ -690,7 +694,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Aurelio Auditoría ve /operacion/pld/casos/d1bb17f3-0963-4027-a451-be751be82690"
+      "texto": "14. Aurelio Auditoría ve /operacion/pld/casos/2b3ae90a-749f-4947-882e-254707ece87d"
     },
     {
       "ok": true,
@@ -698,7 +702,7 @@
     },
     {
       "ok": true,
-      "texto": "14. Aurelio Auditoría ve /operacion/comite/sesiones/79ac2687-34f4-4b96-acb3-884b92e04e9d"
+      "texto": "14. Aurelio Auditoría ve /operacion/comite/sesiones/78739979-2f07-47b3-a3d8-3756eb52eb3a"
     },
     {
       "ok": true,

@@ -1,0 +1,46 @@
+{
+  "fases": [
+    "f17"
+  ],
+  "segundos": 10,
+  "verdes": 9,
+  "rojos": 0,
+  "resultados": [
+    {
+      "ok": true,
+      "texto": "17. el pago de $250,000.00 de Fondo Demostración quedó liberado"
+    },
+    {
+      "ok": true,
+      "texto": "17. y no entra a PLD: 0 operaciones y 0 alertas, aunque Fondo no tiene perfil"
+    },
+    {
+      "ok": true,
+      "texto": "17. Taller, real, sí tiene sus operaciones y sus alertas"
+    },
+    {
+      "ok": true,
+      "texto": "17. la bandeja de Cumplimiento nombra a Taller y nunca a Fondo"
+    },
+    {
+      "ok": true,
+      "texto": "17. «Avisar a Cumplimiento» ofrece a Taller y no a Fondo"
+    },
+    {
+      "ok": true,
+      "texto": "17. el manifiesto de conservación ofrece a Taller y no a Fondo"
+    },
+    {
+      "ok": true,
+      "texto": "17. el manifiesto de Fondo pedido a mano dice «No encontramos esa empresa.» y no deja evento"
+    },
+    {
+      "ok": true,
+      "texto": "17. el aviso sobre Fondo se rechaza en el campo Empresa, con el foco, y no queda aviso"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    }
+  ]
+}
