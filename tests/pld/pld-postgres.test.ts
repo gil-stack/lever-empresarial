@@ -1984,6 +1984,37 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.equal(deCum.e2.audit_log, deCum.e0.audit_log + heredados.length);
           assert.equal(k0.caso.length, 36);
         });
+
+        await t.test("permisos de las funciones de PLD: PUBLIC no ejecuta ninguna; app, cliente y tarea tampoco; la SOFIPO, solo las que usa", async () => {
+          const ejecutan = async (quien: string) => (await dueno.query(
+            `select coalesce(array_agg(p.oid::regprocedure::text order by p.oid::regprocedure::text), '{}') as funciones
+             from pg_proc p cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
+             where p.pronamespace = 'public'::regnamespace and p.proname like 'pld\\_%' and a.privilege_type = 'EXECUTE'
+               and a.grantee = case when $1 = 'PUBLIC' then 0::oid else $1::regrole::oid end`,
+            [quien],
+          )).rows[0].funciones as string[];
+          assert.deepEqual(await ejecutan("PUBLIC"), []);
+          for (const rol of ["plataforma_app", "plataforma_cliente", "plataforma_tarea"]) {
+            assert.deepEqual(await ejecutan(rol), [], rol);
+            assert.equal(await contar(
+              "select count(*)::int as n from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname like 'pld\\_%' and has_function_privilege($1, p.oid, 'EXECUTE')",
+              [rol],
+            ), 0, `${rol}, ni por pertenecer a otro rol`);
+          }
+          assert.deepEqual(await ejecutan("plataforma_sofipo"), [
+            "pld_acta_para_descarga(uuid,uuid)", "pld_alerta_me_excluye(uuid)", "pld_alertas_que_me_excluyen()", "pld_aviso_me_excluye(uuid)",
+            "pld_avisos_que_me_excluyen()", "pld_calendario_cargado(integer)", "pld_caso_me_excluye(uuid)", "pld_caso_vence(uuid)",
+            "pld_casos_que_me_excluyen()", "pld_celebracion_contrato(uuid)", "pld_comite_vigentes(uuid,date)", "pld_dia_habil_del_mes(date,integer)",
+            "pld_dia_inhabil(date)", "pld_dias_habiles_entre(date,date)", "pld_documento_para_descarga(uuid,uuid)", "pld_es_personal(uuid,uuid)",
+            "pld_fecha_mx(timestamp with time zone)", "pld_ids_que_me_excluyen()", "pld_manifiesto_conteos(uuid,date,date,uuid,integer)",
+            "pld_manifiesto_documentos(uuid,date,date,timestamp with time zone,uuid,integer)", "pld_modo_vigente(uuid)",
+            "pld_nombre_de_integrante(pld_comite_integrantes)", "pld_resultado_votacion(uuid,uuid)", "pld_rol(text[])", "pld_serie_choca(uuid,uuid)",
+            "pld_sesion_excluye_a(uuid,uuid)", "pld_sesion_me_excluye(uuid)", "pld_sesiones_que_me_excluyen()", "pld_sin_invisibles(text)",
+            "pld_sumar_dias_habiles(date,integer)", "pld_ultimo_dia_habil(date)", "pld_voto_choca(uuid,uuid,uuid)",
+          ]);
+          // Las de disparador no necesitan EXECUTE: siguen disparándose (las pruebas de arriba lo ejercen todas).
+          assert.ok(await contar("select count(*)::int as n from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname like 'pld\\_%' and p.prorettype = 'trigger'::regtype") > 30);
+        });
       } finally {
         await cerrarConexion();
         await dueno.end();

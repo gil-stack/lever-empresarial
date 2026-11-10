@@ -3334,3 +3334,18 @@ CREATE POLICY audit_log_sofipo_lectura ON audit_log FOR SELECT TO plataforma_sof
       )
     )
   );
+
+-- Higiene de permisos: ninguna función de PLD se ejecuta por PUBLIC. Las de disparador
+-- no necesitan EXECUTE para dispararse (Postgres solo lo revisa al crear el disparador).
+-- De las demás, plataforma_sofipo conserva las que ya tenía y recibe las tres que
+-- usan sus CHECK y sus disparadores de invocador; app, cliente y tarea, ninguna.
+DO $$
+DECLARE
+  funcion regprocedure;
+BEGIN
+  FOR funcion IN SELECT p.oid::regprocedure FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace AND p.proname LIKE 'pld\_%' LOOP
+    EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC', funcion);
+  END LOOP;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION pld_fecha_mx(timestamptz), pld_sin_invisibles(text), pld_nombre_de_integrante(pld_comite_integrantes) TO plataforma_sofipo;
