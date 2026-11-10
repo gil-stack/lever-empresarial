@@ -127,7 +127,8 @@ Unos 120-130 MB son la base del proceso. El tope de RSS ahora lo pone un libro l
 |---|---|
 | `typecheck` / `lint` / `build` / `security` | Verde |
 | `test` | 555/555 (con `main` integrado) |
-| `test:db` (las 19 pruebas de `pruebas-postgres.sh`, en serie, Postgres 17.9 en 5581), con `main` (#59) integrado | **84/84** |
+| `test:db` (las 20 pruebas de `pruebas-postgres.sh`, en serie, Postgres 17.9 en 5581), con `main` (#59 y #65) integrado; `definer-search-path` cubre las 21 definers de la 0031 | **87/87** |
+| base-N4 tras la 0029 (#65): la app ya no crea tablas temporales (42501, comprobado); la sonda presta el permiso solo a ella. AR3 (quitar `pg_temp` de las 21) la tumba a ella y a `definer-search-path` | atrapada por las dos |
 | e2e en sus 5 partes (Chromium, como CI), con `main` integrado | 16 + 21 + 13 + 17 + 16 = 83 pasan, 1 omitida (la matriz de evidencia, que corre aparte en los dos navegadores) |
 | Recorrido con capturas | Chromium 15/15, WebKit 15/15 |
 

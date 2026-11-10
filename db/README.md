@@ -134,3 +134,13 @@ La contraseña abre una entrada de minutos, no una sesión. La sesión nace cuan
 ## Inicio financiero
 
 `0024_rol_finanzas.sql` admite el rol combinable `finanzas` en `membership_roles`. Administración ve Inicio por su propio rol; Finanzas permite que otra persona de consola vea el resumen y Pendientes sin darle acceso a póliza, proveedores, política, configuración ni liberación. El resumen solo lee `postings`: los ingresos son asientos positivos y los gastos son el valor absoluto de los negativos. El índice por empresa y fecha sostiene esa lectura. Este archivo no inserta asientos ni migra production.
+
+## Funciones SECURITY DEFINER y tablas temporales
+
+Una función `SECURITY DEFINER` corre con los privilegios de su dueña. Si su `search_path` no nombra `pg_temp`, Postgres busca primero en las tablas temporales de quien llama, y una tabla temporal con el nombre de una tabla real desvía la función. `0029_search_path_pg_temp.sql` deja cada definer del esquema `public` con `search_path = public, pg_temp`, como pide la documentación de Postgres 17 («Writing SECURITY DEFINER Functions Safely»). También quita `TEMPORARY` sobre la base a `PUBLIC` y a los roles de la aplicación (`plataforma_app`, `plataforma_cliente`, `plataforma_sofipo` y `plataforma_tarea`): ese privilegio viene de `PUBLIC` por omisión, así que quitárselo solo a un rol no surte efecto. La dueña de la base lo conserva. Ni la aplicación ni las migraciones crean tablas temporales con esos roles. `plataforma_app` entra con SET y sin INHERIT a tres roles (`plataforma_cliente`, `plataforma_sofipo` y `plataforma_tarea`), y `has_database_privilege` no ve esas membresías: la 0029 recorre `pg_auth_members` desde los roles de la aplicación y se detiene si alguno de los roles alcanzables tiene `TEMPORARY`.
+
+Quien migra tiene que ser la dueña de la base `plataforma`. Si no lo es, el `REVOKE` no surte efecto y la migración se detiene con un mensaje claro.
+
+Toda función `SECURITY DEFINER` nueva lleva `SET search_path = public, pg_temp`. `tests/esquema/definer-search-path.test.ts`, que corre en `test:db`, lo exige y comprueba que ningún rol de la aplicación tenga `TEMPORARY`. Las funciones `SECURITY INVOKER` conservan su `search_path`: corren con los privilegios de quien llama, y sin `TEMPORARY` los roles de la aplicación no pueden crear la tabla que las desviaría.
+
+`auth_exige_evento` es definer y `PUBLIC` la puede ejecutar. Se queda así: la llaman tres disparadores invoker (`auth_recuperaciones_exige_rastro`, `auth_factor_exige_rastro` y `sessions_sello_exige_rastro`) que corren como el rol de la aplicación, y solo responde por la bitácora de la transacción de quien llama.
