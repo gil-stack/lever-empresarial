@@ -1,0 +1,1099 @@
+{
+  "fases": [
+    "regresiones"
+  ],
+  "comprobaciones": [
+    {
+      "ok": true,
+      "texto": "H12. el pago que estaba listo para pagar regresó a «por autorizar» al suspender a Taller (flujo 9)"
+    },
+    {
+      "ok": true,
+      "texto": "H12. un solo evento del sistema, con el motivo"
+    },
+    {
+      "ok": true,
+      "texto": "H12. el historial del pago dice por qué regresó"
+    },
+    {
+      "ok": true,
+      "texto": "H12. la cabeza del pago dice «Por autorizar»"
+    },
+    {
+      "ok": true,
+      "texto": "H12. con Taller reactivada, doble clic en «Autorizar para pagar» = una autorización nueva"
+    },
+    {
+      "ok": true,
+      "texto": "F4. dos pestañas a la vez: una versión nueva; la otra pestaña dice «Ya hay un borrador abierto», no «base no disponible»"
+    },
+    {
+      "ok": true,
+      "texto": "F4. el aviso de la pestaña que llegó tarde"
+    },
+    {
+      "ok": true,
+      "texto": "F1. al elegir el PDF de 4.6 MB aparece el aviso, ligado al campo, antes de enviar"
+    },
+    {
+      "ok": true,
+      "texto": "F1. clic en «Guardar documento»: no sale la petición y hay 0 filas nuevas"
+    },
+    {
+      "ok": true,
+      "texto": "F8. Originación ve en el expediente «En revisión de Cumplimiento»"
+    },
+    {
+      "ok": true,
+      "texto": "F8. Originación no ve el folio ni el motivo de Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "F8. en la ficha, Originación ve la suspensión «en revisión de Cumplimiento», sin el motivo"
+    },
+    {
+      "ok": true,
+      "texto": "F8. Cumplimiento ve el detalle del caso con su folio"
+    },
+    {
+      "ok": true,
+      "texto": "F8. Administración no lee en la bitácora los motivos de la lista"
+    },
+    {
+      "ok": true,
+      "texto": "F8. Auditoría sí lee el motivo de Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "F2. la descarga del expediente llega con «sandbox; default-src 'none'» y deja su evento"
+    },
+    {
+      "ok": true,
+      "texto": "F1. al elegir la lista de 4.6 MB aparece el aviso ligado al campo"
+    },
+    {
+      "ok": true,
+      "texto": "F1. clic en «Cargar y cotejar»: no sale la petición y hay 0 cargas nuevas"
+    },
+    {
+      "ok": true,
+      "texto": "N8. personal:rol sin --quien-corre no hace nada"
+    },
+    {
+      "ok": true,
+      "texto": "N7. personal:migrar-variable con Administración activa no invita a nadie"
+    },
+    {
+      "ok": true,
+      "texto": "N8. el rol que dio el comando queda en la bitácora con el correo de quien lo corrió (corrido_por) además de la conexión"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «lpb_cargada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "S5. la carga deja un caso abierto de Brisa Regresión, que sigue en alta"
+    },
+    {
+      "ok": true,
+      "texto": "S11. bajo «Motivo» del dictamen, Cumplimiento lee la pista, ligada al campo"
+    },
+    {
+      "ok": true,
+      "texto": "S11. bajo «Motivo» de la reactivación, Cumplimiento lee la pista"
+    },
+    {
+      "ok": true,
+      "texto": "S5. Aprobación ve «Cumplimiento tiene un caso abierto…», sin «Lista» ni «bloqueada»"
+    },
+    {
+      "ok": true,
+      "texto": "S5. Brisa Regresión sigue en alta"
+    },
+    {
+      "ok": true,
+      "texto": "S11. Originación no ve la pista de Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «reactivacion_con_coincidencia_lpb» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "S5. Originación ve «Cumplimiento tiene un caso abierto…», sin «Lista» ni «bloqueada»"
+    },
+    {
+      "ok": true,
+      "texto": "S5. no queda solicitud de reactivación"
+    },
+    {
+      "ok": true,
+      "texto": "N2. con «Extranjera» el formulario pide país, pasaporte o identificación y fecha de nacimiento, y no CURP"
+    },
+    {
+      "ok": true,
+      "texto": "N2. clic en «Agregar accionista» sin documento: el navegador no envía, el campo es obligatorio"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N2. el socio extranjero queda en el borrador con su país, su documento normalizado y su fecha de nacimiento"
+    },
+    {
+      "ok": true,
+      "texto": "S6. la bitácora de Administración no trae coincidencias, resoluciones ni suspensiones por la lista; la carga, sí"
+    },
+    {
+      "ok": true,
+      "texto": "S6. Auditoría sí lee las coincidencias detectadas"
+    },
+    {
+      "ok": true,
+      "texto": "S7. clic en «Guardar el contrato» con 4.6 MB: aviso ligado al campo, 0 envíos y 0 documentos nuevos"
+    },
+    {
+      "ok": true,
+      "texto": "H2. el portal consulta la copia de su operador: el RFC en definitivo de otro operador no aparece y la fecha es la de su copia"
+    },
+    {
+      "ok": true,
+      "texto": "N11. tras el rechazo de la persona física extranjera, el formulario vuelve en «Extranjera» con el documento marcado y su texto"
+    },
+    {
+      "ok": true,
+      "texto": "N11. tras el rechazo de la moral extranjera, vuelve como persona moral, en «Extranjera» y con el registro marcado"
+    },
+    {
+      "ok": true,
+      "texto": "N6. con «Extranjera» el RFC es opcional"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N6. Delaware Holdings LLC queda en el borrador sin RFC, con su país y su registro normalizado"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_misma_persona_dos_identificadores» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N2. la misma persona con dos documentos no se envía; el aviso dice qué corregir y el borrador sigue abierto"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_documento_cargado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «formulario_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N10. mismo formulario con otro archivo: «El formulario caducó» y ningún documento nuevo"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_documento_cargado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N10. mismo formulario con el mismo archivo: se da por guardado sin un documento de más"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «riesgo_calificado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N9. Originación ve solo el grado y la fecha de revisión, sin factores ni puntaje"
+    },
+    {
+      "ok": true,
+      "texto": "N9. Aprobación ve solo el grado y la fecha de revisión, sin factores ni puntaje"
+    },
+    {
+      "ok": true,
+      "texto": "N9. Cumplimiento ve el factor de listas con sus puntos"
+    },
+    {
+      "ok": true,
+      "texto": "N9. Auditoría ve el factor de listas con sus puntos"
+    },
+    {
+      "ok": true,
+      "texto": "N9. Administración no abre el expediente"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N12. el motivo con error anuncia la pista y el aviso"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «lpb_cargada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "N13. el detalle de la carga va en singular"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (con-caso). Originación ve solo el grado y la fecha de revisión; ni la página ni su respuesta RSC traen los factores"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (con-caso). Aprobación ve solo el grado y la fecha de revisión; ni la página ni su respuesta RSC traen los factores"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (con-caso). Cumplimiento ve el desglose completo"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (con-caso). Auditoría ve el desglose completo"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (con-caso). Administración no abre el expediente"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (sin-caso). Originación ve solo el grado y la fecha de revisión; ni la página ni su respuesta RSC traen los factores"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (sin-caso). Aprobación ve solo el grado y la fecha de revisión; ni la página ni su respuesta RSC traen los factores"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (sin-caso). Cumplimiento ve el desglose completo"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (sin-caso). Auditoría ve el desglose completo"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N9 (sin-caso). Administración no abre el expediente"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. rechazado el RFC opcional de la física extranjera (dato_invalido_rfc), vuelve en «Extranjera» con ese campo marcado y sin socio de más"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. rechazado el capital de la moral extranjera (dato_invalido_capital), vuelve en «Extranjera» con ese campo marcado y sin socio de más"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N17. con «Revisar» (7 caracteres) el navegador no envía la solicitud: el campo pide de 10 a 500"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N17. sin el mínimo del navegador, el servidor rechaza el motivo corto con el aviso ligado al campo y no queda solicitud"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. la base del arranque tiene un operador y 0 personal, como Preview"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. primera corrida: las dos quedan invitadas, el correo no sale y sin --mostrar-enlace no hay enlace"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. segunda corrida con los mismos correos y --mostrar-enlace: un enlace nuevo por persona"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. las invitaciones de la primera corrida quedan revocadas y el personal sigue siendo el mismo"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. cada enlace (los de la primera corrida y los nuevos) queda en la bitácora con quién corrió el comando y la conexión"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. un correo distinto, solo o junto a los mismos, se rechaza y no emite nada"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. otra corrida con los mismos correos vuelve a emitir"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. el enlace que reemplazó la corrida siguiente ya no sirve"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. con el enlace nuevo, primera acepta y su Administración queda activa"
+    },
+    {
+      "ok": true,
+      "texto": "base-N15. con Administración activa, el comando ya no invita ni reenvía"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N18. «Revisar 😀» pasa el mínimo de 10 del navegador (cuenta unidades UTF-16)"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N18. suspensión con «Revisar 😀»: «El motivo lleva al menos 10 caracteres» en el campo, no «La base no respondió», y no queda solicitud"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N18. con un motivo de 10 o más caracteres (y su emoji) la solicitud entra"
+    },
+    {
+      "ok": true,
+      "texto": "sexta-N1. el motivo escrito con Enter entra y se guarda en un renglón"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N18. Aprobaciones: el diálogo sigue abierto con «Revisar 😀», el aviso ligado al campo y el foco en él; la solicitud sigue pendiente"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «decision_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N18. corregido en el mismo diálogo, el rechazo queda con su motivo"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N18. dictamen observado con «Revisar 😀»: «motivo_corto» en el campo y ningún dictamen"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N18. caso de la Lista con «Revisar 😀»: «motivo_corto» y el caso sigue abierto"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. el RFC «XX» de la física extranjera: vuelve con país, documento, fecha, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. el nombre en blanco de la física extranjera: vuelve con país, documento, fecha, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. el capital «abc» de la física extranjera: vuelve con país, documento, fecha, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. el RFC «XX» de la moral extranjera: vuelve con país, documento, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. el nombre en blanco de la moral extranjera: vuelve con país, documento, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. el capital «abc» de la moral extranjera: vuelve con país, documento, nombre y porcentajes, el campo marcado y con el foco, sin datos en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_accionista_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N15. corregido el capital en el mismo formulario, la moral extranjera entra y el formulario queda limpio"
+    },
+    {
+      "ok": true,
+      "texto": "emulador de Blob: borrado «503»"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «documento_sin_representante» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "emulador de Blob: borrado «normal»"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N16. Blob responde 503 al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro"
+    },
+    {
+      "ok": true,
+      "texto": "emulador de Blob: borrado «sin_respuesta»"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «documento_sin_representante» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "emulador de Blob: borrado «normal»"
+    },
+    {
+      "ok": true,
+      "texto": "serv-N16. Blob no responde al borrar el huérfano: la página vuelve en 5.1 s (tope de 5 s más la página), sin documento, y la clave queda en el registro"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_vigenteHasta» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "bar-2. «Vigente hasta» 30 sep antes de «Emitido el» 1 oct: el campo queda marcado, sin documento nuevo y sin «La base no respondió»"
+    },
+    {
+      "ok": true,
+      "texto": "base-N21. cobro manual con el RFC « - - »: «Ese RFC no tiene la forma de un RFC» en su campo y sin cobro"
+    },
+    {
+      "ok": true,
+      "texto": "bar-1. cobro manual con el RFC «EKU900317-3C9»: queda registrado con «EKU9003173C9» (antes, «La base no respondió»)"
+    },
+    {
+      "ok": true,
+      "texto": "líder-N2. cancelar con «ok 😀»: «Explica el motivo en al menos 5 caracteres» en el campo y el cobro sigue esperado"
+    },
+    {
+      "ok": true,
+      "texto": "líder-N2. con «ok 😀!» (5 caracteres) el cobro se cancela y la base guarda 5 caracteres"
+    },
+    {
+      "ok": true,
+      "texto": "bar-8. XML con «&#x9;» en la serie: «Al XML le faltan datos» en el campo, sin cobro (antes se guardaba «&#x9;» literal)"
+    },
+    {
+      "ok": true,
+      "texto": "bar-9. XML con «PEREZ &amp;&#x85; ASOCIADOS»: el cobro se registra y la base guarda «PEREZ & ASOCIADOS» (sin el control)"
+    },
+    {
+      "ok": true,
+      "texto": "bar-9. la lista de cobros muestra «PEREZ & ASOCIADOS»"
+    },
+    {
+      "ok": true,
+      "texto": "líder-N2. hay un proveedor para el pago por excepción"
+    },
+    {
+      "ok": true,
+      "texto": "líder-N2. «Revisar 😀» pasa el mínimo de 10 del navegador"
+    },
+    {
+      "ok": true,
+      "texto": "líder-N2. pago por excepción con «Revisar 😀»: «No se guardó» con el aviso del motivo, sin pago (antes, el CHECK lo rechazaba con un error genérico)"
+    },
+    {
+      "ok": true,
+      "texto": "líder-N2. con «Pago 😀 ya!» (10 caracteres) queda en autorización y la base guarda 10 caracteres"
+    },
+    {
+      "ok": true,
+      "texto": "base-N23. el representante «Pedro\\u000bRuiz Sol» se rechaza en su campo y no se guarda (antes, «PedroRuiz Sol»)"
+    },
+    {
+      "ok": true,
+      "texto": "base-N23. el socio extranjero «Luis\\u0085Gómez Paz» se rechaza en su campo, sin socio de más y con lo capturado"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «invisible_razonSocial» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "base-N23. la razón social del expediente con U+0085 se rechaza en su campo y no cambia"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_datos_guardados» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-4. el giro «Distribución\\u0085de abarrotes» se guarda «Distribución de abarrotes»"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «razon_social_control» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "P3. la razón social del alta con U+0085: «trae un carácter invisible», con el campo marcado y sin empresa"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «codigo_postal_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "P3. el código postal 17000 del alta: su aviso, con el campo marcado y sin empresa"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-4. cobro con «Comercializadora\\u0085Uno» y «Servicio\\u000bde la séptima revisión»: se guardan con espacio"
+    },
+    {
+      "ok": true,
+      "texto": "regla 1. el RFC «EKU900317\\t3C9» del cobro se rechaza en su campo y no hay cobro (antes, el tabulador se borraba)"
+    },
+    {
+      "ok": true,
+      "texto": "P3. el área «Ventas\\u0085Norte»: «trae un carácter invisible» en su campo y sin área"
+    },
+    {
+      "ok": true,
+      "texto": "P3 bar-10. contrato con «Vigente desde» 2026-02-30: el aviso marca «Vigente desde» y no hay documento"
+    },
+    {
+      "ok": true,
+      "texto": "P3 bar-10. excepción con «Fecha de la obligación» 0000-01-01: el aviso marca esa fecha, no el vencimiento, y no hay pago"
+    },
+    {
+      "ok": true,
+      "texto": "aviso propio. el socio «Juan\\u0085Pérez López»: «El nombre trae un carácter invisible…», nombre marcado y con el foco, sin socio"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-5. el socio «Ana\\u200bRuiz Sol» (espacio de ancho cero): el mismo aviso y sin socio"
+    },
+    {
+      "ok": true,
+      "texto": "aviso propio. un nombre en blanco, sin invisibles, conserva «Revisa el campo marcado: el dato no tiene el formato esperado.»"
+    },
+    {
+      "ok": true,
+      "texto": "P3 y serv-nuevo-5. el representante «Pedro\\u00adRuiz Sol» (guion suave): aviso propio, nombre marcado y con el foco, y vuelve con RFC, CURP, cargo, PEP, quién lo designó y «Administra»"
+    },
+    {
+      "ok": true,
+      "texto": "P3. con la CURP «XX» el aviso de formato marca la CURP y todo lo demás sigue capturado"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_representante_agregado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "P3. corregido en el mismo formulario, doble clic en «Agregar representante» = un representante con todo lo capturado"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «invisible_razonSocial» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-5. la razón social del expediente con U+FEFF: aviso propio, campo marcado y con el foco, y no cambia"
+    },
+    {
+      "ok": true,
+      "texto": "base-N25. el documento extranjero «X123\\t4567» se rechaza en su campo; no se guarda X1234567"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «razon_social_control» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-5. la razón social del alta con U+2060: su aviso, campo marcado y con el foco, sin empresa"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «lpb_renglon_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "base-N24. la Lista con «EVA\\tRUIZ SOL» se rechaza en la línea 6 y no deja carga (antes se guardaba «EVA RUIZ SOL»)"
+    },
+    {
+      "ok": true,
+      "texto": "octava. hay una coincidencia pendiente para confirmar y anotar su folio"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «coincidencia_resuelta» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-5. el motivo con un emoji compuesto (U+200D) se guarda tal cual: los textos libres no cambian"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «invisible_folio» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-5. el folio «UIF-2026-\\u20600007»: aviso propio, el folio de esa coincidencia marcado y con el foco, sin folio guardado"
+    },
+    {
+      "ok": true,
+      "texto": "P3. el contrato con «Vigente hasta» antes de «Vigente desde»: su propio aviso (no el de la emisión del pago), «Vigente hasta» marcado y sin documento"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-5. el alta del proveedor con U+FEFF en la razón social: su aviso, campo marcado y sin proveedor"
+    },
+    {
+      "ok": true,
+      "texto": "base-N26. el representante «Luis Rodr\\u3164íguez» (relleno hangul): aviso propio, nombre marcado y con el foco, sin representante"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «prospecto_registrado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_version_creada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_datos_guardados» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_datos_incompletos» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-6d. enviar sin giro ni domicilio: «Faltan el giro y el domicilio…», la versión sigue en borrador y sin evento «expediente_enviado»"
+    },
+    {
+      "ok": true,
+      "texto": "novena. hay una coincidencia confirmada sin folio para anotarlo"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_presentadoEl» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-6b. «Presentado el» 2026-02-30: su aviso, solo ese campo marcado y con el foco (no el folio), sin folio guardado"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-6b. la captura muestra el aviso y «presentado» marcado"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_avisoClienteEl» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-6b. «Aviso al cliente» 2026-13-01: su aviso, solo ese campo marcado y con el foco (no el folio), sin folio guardado"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-6b. la captura muestra el aviso y «aviso» marcado"
+    },
+    {
+      "ok": true,
+      "texto": "base-N27. tres recuperaciones pendientes en la bandeja"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "base-N27. rechazar sin nota la recuperación de en medio: el aviso vuelve a su tarjeta y solo su nota queda marcada y con el foco; las tres siguen pendientes"
+    },
+    {
+      "ok": true,
+      "texto": "base-N27. la captura muestra el aviso y la nota marcada de la tarjeta de en medio"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «decision_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «decision_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «decision_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "base-N27. con su nota, las tres se rechazan: ninguna queda abierta"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-7. con JavaScript, la entrada de Operación con la contraseña equivocada: 200, su Origin y su aviso"
+    },
+    {
+      "ok": true,
+      "texto": "serv-nuevo-7. sin JavaScript, la entrada de Operación con la contraseña equivocada: 200, su Origin y su aviso"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_datos_guardados» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_datos_incompletos» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "textos invisibles. con JavaScript, el giro «\\u3164» se guarda vacío y «Enviar versión 1» dice «Falta el giro.»; sigue en borrador y sin evento"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_datos_guardados» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_datos_incompletos» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "textos invisibles. sin JavaScript, el giro «\\u3164» se guarda vacío y «Enviar versión 1» dice «Falta el giro.»; sigue en borrador y sin evento"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "textos invisibles. con JavaScript, el dictamen observado con «Revisar» y tres U+3164 (10 para la base, 7 que se ven): motivo_corto en el motivo y sin dictamen"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_invalido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "textos invisibles. sin JavaScript, el dictamen observado con doce U+3164: motivo_invalido en el motivo y sin dictamen"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. con JavaScript, /operacion/clientes/<novena>/expediente?aviso=a&aviso=b&en=x&en=y responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. con JavaScript, /operacion/clientes?aviso=a&aviso=b responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. con JavaScript, /operacion/clientes/<novena>?aviso=a&aviso=b responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. con JavaScript, /operacion/clientes/<novena>/expediente?aviso=expediente_datos_incompletos&faltan=giro&faltan=domicilio responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. con JavaScript, con «faltan» repetido queda el aviso general, sin detalle"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. sin JavaScript, /operacion/clientes/<novena>/expediente?aviso=a&aviso=b&en=x&en=y responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. sin JavaScript, /operacion/clientes?aviso=a&aviso=b responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. sin JavaScript, /operacion/clientes/<novena>?aviso=a&aviso=b responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. sin JavaScript, /operacion/clientes/<novena>/expediente?aviso=expediente_datos_incompletos&faltan=giro&faltan=domicilio responde 200 con su página"
+    },
+    {
+      "ok": true,
+      "texto": "base-N28. sin JavaScript, con «faltan» repetido queda el aviso general, sin detalle"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «archivo_demasiado_grande» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "campo de archivo. sin JavaScript, archivo_demasiado_grande: aviso, el control del archivo marcado, ligado al aviso y con el foco; ningún documento"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «archivo_no_admitido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "campo de archivo. con JavaScript, archivo_no_admitido: aviso, el control del archivo marcado, ligado al aviso y con el foco; ningún documento"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «expediente_documento_cargado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "desborde. con JavaScript, en el expediente de Ébano (7 SHA-256) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)"
+    },
+    {
+      "ok": true,
+      "texto": "desborde. con JavaScript, en el expediente de Laboratorio Novena (el nombre de archivo de 136 caracteres) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)"
+    },
+    {
+      "ok": true,
+      "texto": "desborde. sin JavaScript, en el expediente de Ébano (7 SHA-256) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)"
+    },
+    {
+      "ok": true,
+      "texto": "desborde. sin JavaScript, en el expediente de Laboratorio Novena (el nombre de archivo de 136 caracteres) la orilla de los SHA-256 y los nombres de archivo llega a 349 px de 390 (antes, 533)"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "P3 coincidencia. con JavaScript a 1440, «Revisar 😀» en el motivo: el aviso en su tarjeta y la dirección sin cambios, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "P3 coincidencia. sin JavaScript a 390, «Revisar 😀» en el motivo: el aviso en su tarjeta y la dirección sin cambios, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «archivo_no_admitido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "mensaje junto al campo. sin JavaScript a 390, un «PDF» que no lo es: «Sube un PDF, PNG o JPG legible.» justo arriba del control, que tiene el foco; el aviso del formulario queda como resumen; ningún documento"
+    },
+    {
+      "ok": true,
+      "texto": "mensaje junto al campo. con JavaScript a 390, el capital «abc» del socio: el mensaje justo arriba de Capital, que tiene el foco y conserva lo capturado; ningún socio"
+    },
+    {
+      "ok": true,
+      "texto": "P2 sin JavaScript. «Agregar representante» con un U+200B en el nombre: 200 con su aviso, el nombre marcado, con el foco y su mensaje junto a él, y todo lo capturado de vuelta; ningún representante"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. hay empresa para pedir suspensión, coincidencia confirmada sin folio y empresa para la alerta"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_actividad» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. riesgo, con JavaScript a 1440: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «riesgo_calificado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. riesgo: tras el rechazo, el doble clic con lo corregido registra una sola calificación"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_actividad» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. riesgo, sin JavaScript a 390: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_actividad» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. riesgo, con JavaScript a 390: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_actividad» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. riesgo, sin JavaScript a 1440: «dato_invalido_actividad» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «invisible_razonSocial» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. datos-generales, con JavaScript a 1440: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «invisible_razonSocial» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. datos-generales, sin JavaScript a 390: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «invisible_razonSocial» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. datos-generales, con JavaScript a 390: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «invisible_razonSocial» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. datos-generales, sin JavaScript a 1440: «invisible_razonSocial» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_vigenteHasta» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. documento, con JavaScript a 1440: «dato_invalido_vigenteHasta» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_vigenteHasta» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. documento, sin JavaScript a 390: «dato_invalido_vigenteHasta» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. dictamen, con JavaScript a 1440: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. dictamen, sin JavaScript a 390: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. dictamen, con JavaScript a 390: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. dictamen, sin JavaScript a 1440: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. suspension, con JavaScript a 1440: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «motivo_corto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. suspension, sin JavaScript a 390: «motivo_corto» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_presentadoEl» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. folio, con JavaScript a 1440: «dato_invalido_presentadoEl» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_presentadoEl» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. folio, sin JavaScript a 390: «dato_invalido_presentadoEl» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «rfc_generico» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. prospecto, con JavaScript a 1440: «rfc_generico» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «rfc_generico» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. prospecto, sin JavaScript a 390: «rfc_generico» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_titulo» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. alerta, con JavaScript a 1440: «dato_invalido_titulo» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «dato_invalido_titulo» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "doceava. alerta, sin JavaScript a 390: «dato_invalido_titulo» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada"
+    },
+    {
+      "ok": true,
+      "texto": "onceava revisión: en los 116 avisos de las regresiones nunca hubo dos campos marcados; 87 campos marcados, cada uno con su mensaje único junto a él"
+    },
+    {
+      "ok": true,
+      "texto": "consola del navegador limpia en las regresiones"
+    }
+  ]
+}

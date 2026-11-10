@@ -1,4 +1,4 @@
-import { darDeAltaEmpresa } from "../../src/server/company/servicio";
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio";
 import { contextoDePersonal, invitarAdministrador } from "../../src/server/plataforma/servicio";
 
@@ -19,10 +19,10 @@ export const CORREOS_COBRANZA = {
   dario: "dario-demo-cobranza@ejemplo.mx",
 } as const;
 
-export async function sembrarCobranza(): Promise<void> {
+export async function sembrarCobranza(owner: string): Promise<void> {
   const personal = await contextoDePersonal("personal-e2e@ejemplo.mx");
   const empresa = async (rfc: string, razonSocial: string, demostracion: boolean, nombre: string, correo: string) => {
-    const alta = await darDeAltaEmpresa(personal, { rfc, razonSocial, codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion });
+    const alta = await darDeAltaComoDuena(owner, personal, { rfc, razonSocial, codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion, corridoPor: "pruebas@ejemplo.mx" });
     const invitada = await invitarAdministrador(personal, { companyId: alta.id, razonSocial: alta.razonSocial, nombre, correo });
     await aceptarInvitacion({ token: invitada.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
     return alta.id;

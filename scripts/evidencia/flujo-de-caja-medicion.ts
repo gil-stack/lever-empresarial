@@ -18,7 +18,7 @@ import { performance } from "node:perf_hooks";
 
 import { cerrarConexion, conContexto } from "../../src/nucleo/db";
 import { baseCliente, type ContextoConEmpresa } from "../../src/nucleo/contexto";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio";
+import { darDeAltaComoDuena } from "../empresa-por-la-duena";
 import { leerFlujoInicio, leerVistaCalendario, leerVistaCobros, leerVistaPresupuestos } from "../../src/server/flujo/servicio";
 import { SQL_FUENTES, SQL_PRESUPUESTOS } from "../../src/server/flujo/repositorio";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio";
@@ -67,13 +67,13 @@ async function medir(url: string): Promise<void> {
       values ((select id from operators order by alta_en limit 1), '99999999-9999-4999-8999-999999999999', 'administracion_plataforma');
   `);
   const personal = await contextoDePersonal("personal-medicion@ejemplo.mx");
-  const empresa = await darDeAltaEmpresa(personal, {
+  const empresa = await darDeAltaComoDuena(url, personal, {
     rfc: "TCM010101AB1", razonSocial: "Carga Medición", codigoPostal: "06600", regimen: "601", usoCfdi: "G03",
-  }, { demostracion: false });
+  }, { demostracion: false, corridoPor: "evidencia@ejemplo.mx" });
   // Otra empresa con 20,000 cuentas por pagar: el volumen ajeno que RLS y los índices tienen que dejar fuera.
-  const ruido = await darDeAltaEmpresa(personal, {
+  const ruido = await darDeAltaComoDuena(url, personal, {
     rfc: "CABL840215RF4", razonSocial: "Otra Empresa Carga", codigoPostal: "44100", regimen: "612", usoCfdi: "G03",
-  }, { demostracion: false });
+  }, { demostracion: false, corridoPor: "evidencia@ejemplo.mx" });
   const invitado = await invitarAdministrador(personal, { companyId: empresa.id, razonSocial: empresa.razonSocial, nombre: "Admin Medición", correo: "admin-medicion@ejemplo.mx" });
   await aceptarInvitacion({ token: invitado.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
   const ctx = (await resolverContexto({ sesion: await sesion(url, invitado.emitida.userId), empresaPedida: empresa.id, peticionId: null, superficie: "cliente" })).ctx as ContextoConEmpresa;

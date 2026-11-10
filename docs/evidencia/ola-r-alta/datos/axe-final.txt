@@ -1,0 +1,153 @@
+axe-core 4.14.0 · reglas: aria-prohibited-attr, label-content-name-mismatch · 5 roles × 2 anchos × 13 pantallas
+Administración  1440 /operacion                             0
+Administración  1440 /operacion/clientes                    0
+Administración  1440 /operacion/clientes/<ébano>            0
+Administración  1440 /operacion/clientes/<ébano>/expediente 0
+Administración  1440 /operacion/aprobaciones                0
+Administración  1440 /operacion/cumplimiento                0
+Administración  1440 /operacion/lpb                         0
+Administración  1440 /operacion/alertas                     0
+Administración  1440 /operacion/comisiones                  0
+Administración  1440 /operacion/recuperaciones              0
+Administración  1440 /operacion/precios                     0
+Administración  1440 /operacion/personal                    0
+Administración  1440 /operacion/bitacora                    0
+Administración  390  /operacion                             0
+Administración  390  /operacion/clientes                    0
+Administración  390  /operacion/clientes/<ébano>            0
+Administración  390  /operacion/clientes/<ébano>/expediente 0
+Administración  390  /operacion/aprobaciones                0
+Administración  390  /operacion/cumplimiento                0
+Administración  390  /operacion/lpb                         0
+Administración  390  /operacion/alertas                     0
+Administración  390  /operacion/comisiones                  0
+Administración  390  /operacion/recuperaciones              0
+Administración  390  /operacion/precios                     0
+Administración  390  /operacion/personal                    0
+Administración  390  /operacion/bitacora                    0
+Originación     1440 /operacion                             0
+Originación     1440 /operacion/clientes                    0
+Originación     1440 /operacion/clientes/<ébano>            0
+Originación     1440 /operacion/clientes/<ébano>/expediente 0
+Originación     1440 /operacion/aprobaciones                0
+Originación     1440 /operacion/cumplimiento                0
+Originación     1440 /operacion/lpb                         0
+Originación     1440 /operacion/alertas                     0
+Originación     1440 /operacion/comisiones                  0
+Originación     1440 /operacion/recuperaciones              0
+Originación     1440 /operacion/precios                     0
+Originación     1440 /operacion/personal                    0
+Originación     1440 /operacion/bitacora                    0
+Originación     390  /operacion                             0
+Originación     390  /operacion/clientes                    0
+Originación     390  /operacion/clientes/<ébano>            0
+Originación     390  /operacion/clientes/<ébano>/expediente 0
+Originación     390  /operacion/aprobaciones                0
+Originación     390  /operacion/cumplimiento                0
+Originación     390  /operacion/lpb                         0
+Originación     390  /operacion/alertas                     0
+Originación     390  /operacion/comisiones                  0
+Originación     390  /operacion/recuperaciones              0
+Originación     390  /operacion/precios                     0
+Originación     390  /operacion/personal                    0
+Originación     390  /operacion/bitacora                    0
+Aprobación      1440 /operacion                             0
+Aprobación      1440 /operacion/clientes                    0
+Aprobación      1440 /operacion/clientes/<ébano>            0
+Aprobación      1440 /operacion/clientes/<ébano>/expediente 0
+Aprobación      1440 /operacion/aprobaciones                0
+Aprobación      1440 /operacion/cumplimiento                0
+Aprobación      1440 /operacion/lpb                         0
+Aprobación      1440 /operacion/alertas                     0
+Aprobación      1440 /operacion/comisiones                  0
+Aprobación      1440 /operacion/recuperaciones              0
+Aprobación      1440 /operacion/precios                     0
+Aprobación      1440 /operacion/personal                    0
+Aprobación      1440 /operacion/bitacora                    0
+Aprobación      390  /operacion                             0
+Aprobación      390  /operacion/clientes                    0
+Aprobación      390  /operacion/clientes/<ébano>            0
+Aprobación      390  /operacion/clientes/<ébano>/expediente 0
+Aprobación      390  /operacion/aprobaciones                0
+Aprobación      390  /operacion/cumplimiento                0
+Aprobación      390  /operacion/lpb                         0
+Aprobación      390  /operacion/alertas                     0
+Aprobación      390  /operacion/comisiones                  0
+Aprobación      390  /operacion/recuperaciones              0
+Aprobación      390  /operacion/precios                     0
+Aprobación      390  /operacion/personal                    0
+Aprobación      390  /operacion/bitacora                    0
+Cumplimiento    1440 /operacion                             0
+Cumplimiento    1440 /operacion/clientes                    0
+Cumplimiento    1440 /operacion/clientes/<ébano>            0
+Cumplimiento    1440 /operacion/clientes/<ébano>/expediente 0
+Cumplimiento    1440 /operacion/aprobaciones                0
+Cumplimiento    1440 /operacion/cumplimiento                0
+Cumplimiento    1440 /operacion/lpb                         0
+Cumplimiento    1440 /operacion/alertas                     0
+Cumplimiento    1440 /operacion/comisiones                  0
+Cumplimiento    1440 /operacion/recuperaciones              0
+Cumplimiento    1440 /operacion/precios                     0
+Cumplimiento    1440 /operacion/personal                    0
+Cumplimiento    1440 /operacion/bitacora                    0
+Cumplimiento    390  /operacion                             0
+Cumplimiento    390  /operacion/clientes                    0
+Cumplimiento    390  /operacion/clientes/<ébano>            0
+Cumplimiento    390  /operacion/clientes/<ébano>/expediente 0
+Cumplimiento    390  /operacion/aprobaciones                0
+Cumplimiento    390  /operacion/cumplimiento                0
+Cumplimiento    390  /operacion/lpb                         0
+Cumplimiento    390  /operacion/alertas                     0
+Cumplimiento    390  /operacion/comisiones                  0
+Cumplimiento    390  /operacion/recuperaciones              0
+Cumplimiento    390  /operacion/precios                     0
+Cumplimiento    390  /operacion/personal                    0
+Cumplimiento    390  /operacion/bitacora                    0
+Auditoría       1440 /operacion                             0
+Auditoría       1440 /operacion/clientes                    0
+Auditoría       1440 /operacion/clientes/<ébano>            0
+Auditoría       1440 /operacion/clientes/<ébano>/expediente 0
+Auditoría       1440 /operacion/aprobaciones                0
+Auditoría       1440 /operacion/cumplimiento                0
+Auditoría       1440 /operacion/lpb                         0
+Auditoría       1440 /operacion/alertas                     0
+Auditoría       1440 /operacion/comisiones                  0
+Auditoría       1440 /operacion/recuperaciones              0
+Auditoría       1440 /operacion/precios                     0
+Auditoría       1440 /operacion/personal                    0
+Auditoría       1440 /operacion/bitacora                    0
+Auditoría       390  /operacion                             0
+Auditoría       390  /operacion/clientes                    0
+Auditoría       390  /operacion/clientes/<ébano>            0
+Auditoría       390  /operacion/clientes/<ébano>/expediente 0
+Auditoría       390  /operacion/aprobaciones                0
+Auditoría       390  /operacion/cumplimiento                0
+Auditoría       390  /operacion/lpb                         0
+Auditoría       390  /operacion/alertas                     0
+Auditoría       390  /operacion/comisiones                  0
+Auditoría       390  /operacion/recuperaciones              0
+Auditoría       390  /operacion/precios                     0
+Auditoría       390  /operacion/personal                    0
+Auditoría       390  /operacion/bitacora                    0
+
+Lo que oye un lector (árbol de accesibilidad):
+  logotipo 1440: - link "Lever Operación SOFIPO, ir al resumen":
+  - /url: /operacion
+  bandeja /operacion Administración: - heading "Necesita tu decisión 1 pendiente" [level=2]
+  bandeja /operacion/aprobaciones Administración: - heading "Necesita tu decisión 1 pendiente" [level=2]
+  bandeja /operacion/recuperaciones Administración: - heading "Necesita tu decisión 0 pendientes" [level=2]
+  logotipo 390: - link "Lever Operación SOFIPO, ir al resumen":
+  - /url: /operacion
+  bandeja /operacion Originación: - heading "Necesita tu decisión 1 pendiente" [level=2]
+  bandeja /operacion/aprobaciones Originación: - heading "Necesita tu decisión 1 pendiente" [level=2]
+  bandeja /operacion Aprobación: - heading "Necesita tu decisión 1 pendiente" [level=2]
+  bandeja /operacion/aprobaciones Aprobación: - heading "Necesita tu decisión 1 pendiente" [level=2]
+  bandeja /operacion Cumplimiento: - heading "Necesita tu decisión 1 pendiente" [level=2]
+  bandeja /operacion/aprobaciones Cumplimiento: - heading "Necesita tu decisión 1 pendiente" [level=2]
+  bandeja /operacion Auditoría: - heading "Necesita tu decisión 1 pendiente" [level=2]
+  bandeja /operacion/aprobaciones Auditoría: - heading "Necesita tu decisión 1 pendiente" [level=2]
+
+Enlace del logotipo con el nombre exacto «Lever Operación SOFIPO, ir al resumen» (y visible): 130 de 130 vistas
+Títulos de la bandeja con el nombre exacto «Necesita tu decisión N pendiente(s)»: 22 de 22
+
+Total: aria-prohibited-attr 0 · label-content-name-mismatch 0

@@ -1,0 +1,28 @@
+[
+  {
+    "blob": "503",
+    "segundos_hasta_la_pagina": 5.12,
+    "registro": {
+      "nivel": "error",
+      "origen": "blob.borrar",
+      "evento": "huerfano_sin_borrar",
+      "clave": "expedientes/b9cda857-8b82-4ef1-814f-675e25d4e47e/40649d7c-bfc1-4cd3-a338-5f4767a05e86-5b59f0ec.pdf",
+      "causa": "tiempo_agotado",
+      "tope_ms": 5000,
+      "error": "Error"
+    }
+  },
+  {
+    "blob": "sin_respuesta",
+    "segundos_hasta_la_pagina": 5.11,
+    "registro": {
+      "nivel": "error",
+      "origen": "blob.borrar",
+      "evento": "huerfano_sin_borrar",
+      "clave": "expedientes/b9cda857-8b82-4ef1-814f-675e25d4e47e/271d51a4-b279-4e0d-a0fa-2b39c57af7da-2ca8a6db.pdf",
+      "causa": "tiempo_agotado",
+      "tope_ms": 5000,
+      "error": "Error"
+    }
+  }
+]

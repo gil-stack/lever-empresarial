@@ -43,6 +43,7 @@ const RECHAZO: Record<string, { titulo: string; mensaje: string }> = {
   formulario_ya_enviado: { titulo: "Este formulario ya se envió con otros datos", mensaje: "Recarga la página para capturar uno nuevo." },
   auditoria_no_disponible: { titulo: "No se guardó", mensaje: "No se pudo dejar el registro en la bitácora, así que el cambio no se aplicó." },
   base_no_disponible: { titulo: "No se guardó", mensaje: "La base no respondió. No se aplicó ningún cambio; vuelve a intentar." },
+  empresa_suspendida: { titulo: "La empresa está suspendida", mensaje: "No se pueden hacer cambios mientras esté suspendida. Comunícate con Lever." },
 };
 
 function traducir(error: unknown): EstadoFlujo {

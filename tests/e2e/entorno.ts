@@ -4,13 +4,14 @@ import { createWriteStream, mkdirSync, readdirSync, writeFileSync } from "node:f
 import { join } from "node:path";
 import { Client } from "pg";
 
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena";
+import { invitarPersonalComoDuena } from "../../scripts/personal-por-la-duena";
 import { iniciarBlobLocal, type BlobLocal } from "./blob-local/servidor";
-import { sembrarRecorridos } from "./siembra";
+import { CORREOS, sembrarRecorridos } from "./siembra";
 import { sembrarCobranza } from "./siembra-cobranza";
 
 import { hoyEnMexico } from "../../src/dominio/personas";
 import { cerrarConexion } from "../../src/nucleo/db";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio";
 import { contextoDePersonal, invitarAdministrador } from "../../src/server/plataforma/servicio";
 import { aplicarArchivo, ejecutar, urlDeAplicacion } from "../aislamiento/postgres";
@@ -75,22 +76,22 @@ export async function iniciarEntorno(): Promise<void> {
     process.env.AUTENTICACION_LLAVE_TOTP = randomBytes(32).toString("base64url");
     // Secreto de las tareas de esta corrida: la e2e de cobranza llama a /tareas/cobranza como el cron de Vercel.
     process.env.CRON_SECRET = randomBytes(32).toString("base64url");
-    ejecutar(owner, `
-      insert into users (id, nombre, correo, password_hash)
-        values ('99999999-9999-4999-8999-999999999999', 'Personal E2E', 'personal-e2e@ejemplo.mx', '$2b$12$${"a".repeat(53)}');
-      insert into platform_staff (operator_id, user_id, estado)
-        values ((select id from operators order by alta_en limit 1), '99999999-9999-4999-8999-999999999999', 'activo');
-      insert into platform_staff_roles (operator_id, user_id, rol)
-        values ((select id from operators order by alta_en limit 1), '99999999-9999-4999-8999-999999999999', 'administracion_plataforma');
-    `);
+    // El arranque del operador, como en producción: la dueña invita de una vez a la primera
+    // Administración (personal:migrar-variable); el comando no vuelve a invitar a nadie.
+    const arranque = await invitarPersonalComoDuena(
+      owner, ["personal-e2e@ejemplo.mx", CORREOS.op1, CORREOS.op2, CORREOS.op3], "pruebas@ejemplo.mx",
+    );
+    const delPersonal = arranque.find((fila) => fila.correo === "personal-e2e@ejemplo.mx")?.invitacion;
+    if (!delPersonal) throw new Error("personal-e2e@ejemplo.mx no quedó invitado como personal.");
+    await aceptarInvitacion({ token: delPersonal.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
     const personal = await contextoDePersonal("personal-e2e@ejemplo.mx");
-    const empresa = await darDeAltaEmpresa(personal, {
+    const empresa = await darDeAltaComoDuena(owner, personal, {
       rfc: "TCM010101AB1",
       razonSocial: "Empresa Personas E2E",
       codigoPostal: "06600",
       regimen: "601",
       usoCfdi: "G03",
-    }, { demostracion: true });
+    }, { demostracion: true, corridoPor: "pruebas@ejemplo.mx" });
     const invitacion = await invitarAdministrador(personal, {
       companyId: empresa.id,
       razonSocial: empresa.razonSocial,
@@ -110,8 +111,8 @@ export async function iniciarEntorno(): Promise<void> {
     process.env.E2E_COMPANY_ID = empresa.id;
     process.env.E2E_ADMIN_ID = invitacion.emitida.userId;
     process.env.E2E_TODAY = hoyEnMexico(new Date());
-    await sembrarRecorridos(owner);
-    await sembrarCobranza();
+    await sembrarRecorridos(owner, arranque);
+    await sembrarCobranza(owner);
     await cerrarConexion();
     await levantarBlobLocal();
     await levantarServidor();
@@ -165,6 +166,8 @@ async function levantarServidor(): Promise<void> {
     env: {
       ...process.env,
       NODE_ENV: "production",
+      // En producción las passkeys solo se registran en los dominios de la lista: el navegador de la prueba usa localhost.
+      AUTENTICACION_DOMINIOS: "localhost",
       RESEND_API_KEY: CLAVE_CORREO_LOCAL,
       CORREO_REMITENTE: "Lever E2E <no-responder@lever-e2e.mx>",
       // Solo el servidor de la prueba carga el desvío del almacén privado al emulador y el correo falso.

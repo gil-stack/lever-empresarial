@@ -9,7 +9,7 @@ import { digitoClabe, clabeVisible } from "../../src/dominio/clabe.ts";
 import { cerrarConexion } from "../../src/nucleo/db.ts";
 import type { ContextoConEmpresa } from "../../src/nucleo/contexto.ts";
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
 import type { MensajeCorreo } from "../../src/server/correo/tipos.ts";
 import { atenderAviso, asegurarClabeDeCliente, firmar, leerAvisosSinDestino, registrarCuentaFintoc, type ClabeFintoc, type ClienteFintoc, type ConfigFintoc } from "../../src/server/cobranza/fintoc.ts";
 import { confirmarEstadoDeCuenta, leerVistaEstadoDeCuenta, prepararEstadoDeCuenta } from "../../src/server/cobranza/estado-cuenta.ts";
@@ -115,9 +115,9 @@ function fintocFalso(cuentaId: string) {
 async function escenario(url: string): Promise<void> {
   sembrarPersonal(url);
   const personal = await contextoDePersonal("personal-cobranza@ejemplo.mx");
-  const alfa = await darDeAltaEmpresa(personal, { rfc: "TCM010101AB1", razonSocial: "Escuela Alfa Cobranza", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
-  const beta = await darDeAltaEmpresa(personal, { rfc: "CABL840215RF4", razonSocial: "Taller Beta Cobranza", codigoPostal: "44100", regimen: "612", usoCfdi: "G03" }, { demostracion: false });
-  const demo = await darDeAltaEmpresa(personal, { rfc: "MOT970101AA1", razonSocial: "Demo Cobranza", codigoPostal: "64000", regimen: "601", usoCfdi: "G03" }, { demostracion: true });
+  const alfa = await darDeAltaComoDuena(url, personal, { rfc: "TCM010101AB1", razonSocial: "Escuela Alfa Cobranza", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  const beta = await darDeAltaComoDuena(url, personal, { rfc: "CABL840215RF4", razonSocial: "Taller Beta Cobranza", codigoPostal: "44100", regimen: "612", usoCfdi: "G03" }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  const demo = await darDeAltaComoDuena(url, personal, { rfc: "MOT970101AA1", razonSocial: "Demo Cobranza", codigoPostal: "64000", regimen: "601", usoCfdi: "G03" }, { demostracion: true, corridoPor: "pruebas@ejemplo.mx" });
   const [admin, sesionAdmin] = await administrador(url, personal, alfa, "admin-alfa-cobranza@ejemplo.mx");
   const [adminBeta, sesionBeta] = await administrador(url, personal, beta, "admin-beta-cobranza@ejemplo.mx");
   const [adminDemo, sesionDemo] = await administrador(url, personal, demo, "admin-demo-cobranza@ejemplo.mx");

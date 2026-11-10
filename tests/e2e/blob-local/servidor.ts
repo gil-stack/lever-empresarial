@@ -12,6 +12,9 @@ import type { AddressInfo } from "node:net";
  *
  * Como el almacén real es privado, la lectura exige el mismo token con el que
  * se escribió. Un token que no es el del emulador recibe 403.
+ *
+ * `POST /simular` con `{ "borrado": "503" | "sin_respuesta" | "normal" }` simula un Blob caído solo para
+ * del(): put() y get() siguen funcionando, como cuando falla el borrado de un huérfano.
  */
 
 export type BlobLocal = {
@@ -28,6 +31,7 @@ type Archivo = { bytes: Buffer; tipo: string };
 
 export async function iniciarBlobLocal(puerto: number, token: string): Promise<BlobLocal> {
   const archivos = new Map<string, Archivo>();
+  let borrado: "normal" | "503" | "sin_respuesta" = "normal";
   const autorizado = (req: IncomingMessage) => req.headers.authorization === `Bearer ${token}`;
 
   const servidor: Server = createServer(async (req, res) => {
@@ -61,7 +65,16 @@ export async function iniciarBlobLocal(puerto: number, token: string): Promise<B
       });
     }
 
+    if (req.method === "POST" && url.pathname === "/simular") {
+      const pedido = JSON.parse((await leer(req)).toString() || "{}") as { borrado?: string };
+      if (pedido.borrado !== "normal" && pedido.borrado !== "503" && pedido.borrado !== "sin_respuesta") return error(400, "bad_request", "Modo de borrado desconocido.");
+      borrado = pedido.borrado;
+      return responder(200, { borrado });
+    }
+
     if (req.method === "POST" && url.pathname === "/api/blob/delete") {
+      if (borrado === "503") return error(503, "service_unavailable", "Blob caído (simulado).");
+      if (borrado === "sin_respuesta") return;
       const { urls } = JSON.parse((await leer(req)).toString() || "{}") as { urls?: string[] };
       for (const entrada of urls ?? []) {
         archivos.delete(/^https?:\/\//.test(entrada) ? decodeURIComponent(new URL(entrada).pathname.slice(1)) : entrada);

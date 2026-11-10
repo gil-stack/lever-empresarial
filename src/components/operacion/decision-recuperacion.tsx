@@ -2,28 +2,24 @@
 
 import { useRef, useState, type FormEvent } from "react";
 
+import type { AccionConAviso } from "@/app/operacion/rechazo";
 import { BotonEnviar } from "@/components/sistema";
 
-type ErrorDeCampo = { "aria-invalid"?: true; "aria-describedby"?: string };
+import { useFormularioConAviso } from "./formulario-con-aviso";
+
+const METODOS = ["videollamada", "presencial"];
 
 /**
  * Aprobar o rechazar una recuperación. Nada se decide sin elegirlo:
  * - el método de verificación arranca vacío y aprobar lo exige (el servidor también);
  * - la nota es un área de texto, así que Enter escribe una línea y no envía;
  * - rechazar no necesita método (`formNoValidate`); el servidor le exige la nota.
+ *
+ * Cada tarjeta lleva su formulario con la clave de la solicitud: si el servidor lo rechaza, el aviso vuelve a esa
+ * tarjeta con el método y la nota como se escribieron, el campo marcado y con el foco.
  */
-export function DecisionRecuperacion({
-  id,
-  accion,
-  errorMetodo,
-  errorNota,
-}: {
-  id: string;
-  accion: (datos: FormData) => Promise<void>;
-  /** El error que el servidor devolvió para el método o la nota, ligado al aviso de la página. */
-  errorMetodo: ErrorDeCampo;
-  errorNota: ErrorDeCampo;
-}) {
+export function DecisionRecuperacion({ id, accion }: { id: string; accion: AccionConAviso }) {
+  const { forma, enviar, vuelta, valor, ligado, mensaje, resumen } = useFormularioConAviso(accion, `aviso-recuperacion-${id}`);
   const metodo = useRef<HTMLSelectElement>(null);
   const [sinMetodo, setSinMetodo] = useState(false);
   const idError = `verificacion-${id}-error`;
@@ -38,19 +34,27 @@ export function DecisionRecuperacion({
   }
 
   return (
-    <form action={accion} className="operacion-decision-forma">
+    <form key={vuelta} ref={forma} action={enviar} className="operacion-decision-forma">
       <input type="hidden" name="id" value={id} />
+      {resumen}
       <div className="campo">
         <label htmlFor={`verificacion-${id}`}>Cómo verificaste la identidad</label>
+        {sinMetodo ? (
+          <p id={idError} className="error-campo error-antes-del-control">
+            Elige cómo verificaste la identidad para aprobar.
+          </p>
+        ) : (
+          mensaje("verificacion")
+        )}
         <select
           ref={metodo}
           id={`verificacion-${id}`}
           name="verificacion"
-          defaultValue=""
+          defaultValue={METODOS.includes(valor("verificacion")) ? valor("verificacion") : ""}
           required
           onInvalid={alFaltarMetodo}
           onChange={() => setSinMetodo(false)}
-          {...(sinMetodo ? { "aria-invalid": true, "aria-describedby": idError } : errorMetodo)}
+          {...(sinMetodo ? { "aria-invalid": true, "aria-describedby": idError } : ligado("verificacion"))}
         >
           <option value="" disabled>
             Elige cómo verificaste
@@ -58,15 +62,12 @@ export function DecisionRecuperacion({
           <option value="videollamada">Videollamada</option>
           <option value="presencial">En persona</option>
         </select>
-        {sinMetodo ? (
-          <p id={idError} className="error-campo">
-            Elige cómo verificaste la identidad para aprobar.
-          </p>
-        ) : null}
       </div>
       <div className="campo">
         <label htmlFor={`nota-${id}`}>Nota (obligatoria para rechazar)</label>
-        <textarea id={`nota-${id}`} name="nota" maxLength={500} rows={2} {...errorNota} />
+        {/* El servidor rechaza la nota como «motivo» (corto o vacío). */}
+        {mensaje("motivo")}
+        <textarea id={`nota-${id}`} name="nota" maxLength={500} rows={2} defaultValue={valor("nota")} {...ligado("motivo")} />
       </div>
       <div className="operacion-decision-botones">
         <BotonEnviar className="boton-texto" name="decision" value="rechazar" data-atajo="rechazar" formNoValidate>

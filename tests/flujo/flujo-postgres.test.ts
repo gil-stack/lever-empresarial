@@ -10,7 +10,7 @@ import pg from "pg";
 import { cerrarConexion, comoTarea, conContexto } from "../../src/nucleo/db.ts";
 import { baseCliente, type ContextoConEmpresa } from "../../src/nucleo/contexto.ts";
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
 import { ErrorDeCorreo } from "../../src/server/correo/errores.ts";
 import { enviadorResend } from "../../src/server/correo/resend.ts";
 import type { MensajeCorreo } from "../../src/server/correo/tipos.ts";
@@ -22,6 +22,7 @@ import {
   configurarColchon,
   declararSaldo,
   editarObligacion,
+  ErrorDeCaptura,
   leerAlertasPresupuesto,
   leerFlujoInicio,
   leerVistaCalendario,
@@ -33,6 +34,7 @@ import {
   registrarObligacion,
 } from "../../src/server/flujo/servicio.ts";
 import { leerPendientesInicio } from "../../src/server/inicio/servicio.ts";
+import { emitirEnTransaccion } from "../../src/server/invitaciones/repositorio.ts";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio.ts";
 import { darDeAltaPersona, nombrarCentro } from "../../src/server/personas/servicio.ts";
 import { invitarAdministrador, contextoDePersonal } from "../../src/server/plataforma/servicio.ts";
@@ -47,6 +49,11 @@ const CLAVE = "clave-segura-12";
 /** Reloj fijo: viernes 6 de noviembre de 2026 en México. Nada depende del día en que corre la prueba. */
 const VIERNES = new Date("2026-11-06T18:00:00.000Z");
 const AHORA = { ahora: () => VIERNES };
+/**
+ * La invitación la vence la base con su propio reloj (`expira_en > now()` al aceptarla). Se emite con la hora real
+ * aunque el alta fije su fecha: emitida con el reloj fijo, vencía 72 horas después de esa fecha y la prueba estallaba.
+ */
+const emitirConHoraReal: typeof emitirEnTransaccion = (consulta, actor, entrada) => emitirEnTransaccion(consulta, actor, { ...entrada, ahora: new Date() });
 const TABLAS = [
   "cash_balance_declarations",
   "expected_collections",
@@ -85,20 +92,20 @@ async function escenario(url: string): Promise<void> {
   sembrarPersonal(url);
   const personal = await contextoDePersonal("personal-flujo@ejemplo.mx");
   // Alfa y Beta son clientes reales (la tarea del correo solo escribe a empresas reales).
-  const alfa = await darDeAltaEmpresa(personal, {
+  const alfa = await darDeAltaComoDuena(url, personal, {
     rfc: "TCM010101AB1",
     razonSocial: "Escuela Alfa Flujo",
     codigoPostal: "06600",
     regimen: "601",
     usoCfdi: "G03",
-  }, { demostracion: false });
-  const beta = await darDeAltaEmpresa(personal, {
+  }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  const beta = await darDeAltaComoDuena(url, personal, {
     rfc: "CABL840215RF4",
     razonSocial: "Taller Beta Flujo",
     codigoPostal: "44100",
     regimen: "612",
     usoCfdi: "G03",
-  }, { demostracion: false });
+  }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
 
   const admin = await administrador(url, personal, alfa, "admin-alfa-flujo@ejemplo.mx");
   const adminBeta = await administrador(url, personal, beta, "admin-beta-flujo@ejemplo.mx");
@@ -492,7 +499,50 @@ async function escenario(url: string): Promise<void> {
   // Cancelado, la misma factura se puede volver a registrar.
   const otraFactura = "BBBBBBBB-CCCC-4DDD-8EEE-FFFFFFFFFFFF";
   const sustituida = await registrarCobroCfdi(admin, { bytes: factura(otraFactura), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA);
-  await cancelarCobro(admin, { id: sustituida.id, motivo: "Factura sustituida" }, AHORA);
+  // líder-N2: «ok 😀» son 4 caracteres (5 unidades UTF-16): antes pasaba el dominio y el CHECK
+  // `motivo_cancelacion` (5 a 500) lo rechazaba con un error genérico. Con 5 caracteres y su emoji, entra.
+  await assert.rejects(() => cancelarCobro(admin, { id: sustituida.id, motivo: "ok 😀" }, AHORA), (error: unknown) => error instanceof ErrorDeCaptura);
+  await cancelarCobro(admin, { id: sustituida.id, motivo: "ok 😀!" }, AHORA);
+  assert.equal(contar(url, `select char_length(motivo_cancelacion) from expected_collections where id = '${sustituida.id}'`), 5);
+  // bar-9 y bar-8: el nombre con «&amp;» se guarda con «&», y una referencia que da un carácter de control
+  // (&#x85;) se rechaza como XML incompleto en su campo, no como «La base no respondió».
+  const conNombre = (uuid: string, nombre: string) => new TextEncoder().encode(new TextDecoder().decode(factura(uuid)).replace('Nombre="Comercializadora Uno"', `Nombre="${nombre}"`));
+  const ampersand = await registrarCobroCfdi(admin, { bytes: conNombre("FFFFFFFF-0000-4000-8000-000000000001", "PEREZ &amp; ASOCIADOS"), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA);
+  assert.equal(ampersand.cliente, "PEREZ & ASOCIADOS");
+  assert.equal(consultarJson<string[]>(url, `select json_agg(cliente_nombre) from expected_collections where id = '${ampersand.id}'`)[0], "PEREZ & ASOCIADOS");
+  await cancelarCobro(admin, { id: ampersand.id, motivo: "Prueba del nombre con ampersand" }, AHORA);
+  // Con la serie, un identificador, la referencia que da un control («&#x9;») se rechaza como XML incompleto en su
+  // campo. serv-nuevo-3 y serv-nuevo-1: en el nombre, un texto libre, el salto literal vale un espacio (XML 1.0
+  // §3.3.3) y el control de una referencia («&#x85;») se quita.
+  const conSerie = (uuid: string, serie: string) => new TextEncoder().encode(new TextDecoder().decode(factura(uuid)).replace('Serie="F"', `Serie="${serie}"`));
+  await assert.rejects(
+    () => registrarCobroCfdi(admin, { bytes: conSerie("FFFFFFFF-0000-4000-8000-000000000002", "F&#x9;1"), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA),
+    (error: unknown) => error instanceof ErrorDeCaptura && error.errores.some((e) => e.campo === "xml"),
+  );
+  // serv-nuevo-4: el control solo, entre dos palabras (sin el salto que antes ponía el espacio), vale un espacio.
+  const partido = await registrarCobroCfdi(admin, { bytes: conNombre("FFFFFFFF-0000-4000-8000-000000000004", "Comercializadora&#x85;Uno"), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA);
+  assert.equal(consultarJson<string[]>(url, `select json_agg(cliente_nombre) from expected_collections where id = '${partido.id}'`)[0], "Comercializadora Uno");
+  await cancelarCobro(admin, { id: partido.id, motivo: "Prueba del nombre partido" }, AHORA);
+  // serv-nuevo-2: una entidad sin declarar («&x;») vuelve mal formado el XML: «El archivo no es un XML de CFDI válido.».
+  await assert.rejects(
+    () => registrarCobroCfdi(admin, { bytes: conNombre("FFFFFFFF-0000-4000-8000-000000000003", "Cliente &x; Lab"), fechaProbable: "2026-11-25", altaId: randomUUID() }, AHORA),
+    (error: unknown) => error instanceof ErrorDeCaptura && error.errores.some((e) => e.campo === "xml" && e.mensaje === "El archivo no es un XML de CFDI válido."),
+  );
+  // bar-1: el RFC del cliente escrito con guion o espacio se guarda como se validó, sin separadores (antes, el
+  // servidor lo validaba normalizado y guardaba lo escrito, y el CHECK `expected_collections_rfc` lo rechazaba).
+  for (const [escrito, alta] of [["EKU900317-3C9", randomUUID()], ["eku900317 3c9", randomUUID()]] as const) {
+    const conGuion = await registrarCobro(admin, { clienteNombre: "Cliente con guion", clienteRfc: escrito, concepto: "Asesoría", monto: "100.00", fechaProbable: "2026-11-20", referencia: "", altaId: alta }, AHORA);
+    assert.equal(consultarJson<string[]>(url, `select json_agg(cliente_rfc) from expected_collections where id = '${conGuion.id}'`)[0], "EKU9003173C9");
+    await cancelarCobro(admin, { id: conGuion.id, motivo: "Prueba del RFC con guion" }, AHORA);
+  }
+  // base-N21: lo escrito que no queda en un RFC («-», « - - ») es error de su campo, no un RFC vacío que la base rechaza.
+  // serv-nuevo-1: en un identificador el control invisible no se quita: es error de forma.
+  for (const escrito of ["-", " - - ", "EKU900317\u00853C9"]) {
+    await assert.rejects(
+      () => registrarCobro(admin, { clienteNombre: "Cliente sin RFC", clienteRfc: escrito, concepto: "Asesoría", monto: "100.00", fechaProbable: "2026-11-20", referencia: "", altaId: randomUUID() }, AHORA),
+      (error: unknown) => error instanceof ErrorDeCaptura && error.errores.some((e) => e.campo === "clienteRfc"),
+    );
+  }
   await registrarCobroCfdi(admin, { bytes: factura(otraFactura), fechaProbable: "2026-11-26", altaId: randomUUID() }, AHORA);
 
   // Correo semanal ----------------------------------------------------------------
@@ -526,16 +576,16 @@ async function escenario(url: string): Promise<void> {
   // La tarea ve solo empresas activas con al menos un destinatario vigente.
   const empresasDeTarea = async () =>
     (await comoTarea((consulta) => consulta.query("select empresa from empresas_con_correo_semanal() as empresa"))).rows.map((fila) => String(fila.empresa)).sort();
-  const gamma = await darDeAltaEmpresa(personal, { rfc: "GAM010101AB2", razonSocial: "Gamma Suspendida", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
+  const gamma = await darDeAltaComoDuena(url, personal, { rfc: "GAM010101AB2", razonSocial: "Gamma Suspendida", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
   await administrador(url, personal, gamma, "admin-gamma-flujo@ejemplo.mx");
-  const delta = await darDeAltaEmpresa(personal, { rfc: "DEL010101AB3", razonSocial: "Delta Baja", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
+  const delta = await darDeAltaComoDuena(url, personal, { rfc: "DEL010101AB3", razonSocial: "Delta Baja", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
   const adminDelta = await administrador(url, personal, delta, "admin-delta-flujo@ejemplo.mx");
   const areaDelta = await nombrarCentro(adminDelta, { nombre: "General", presupuesto: "" }, AHORA);
   await persona(url, adminDelta, areaDelta.id, "Finanzas Delta", "finanzas-delta@ejemplo.mx", ["tarjetahabiente", "finanzas"]);
   // En Delta solo queda Finanzas como destinataria.
   await cambiarCorreoSemanal(adminDelta, { activo: "no" }, AHORA);
   // S7: una empresa de demostración tiene cifras de ejemplo: nunca entra en la lista, aunque tenga administración.
-  const epsilon = await darDeAltaEmpresa(personal, { rfc: "EPS010101AB4", razonSocial: "Épsilon Demostración", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: true });
+  const epsilon = await darDeAltaComoDuena(url, personal, { rfc: "EPS010101AB4", razonSocial: "Épsilon Demostración", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: true, corridoPor: "pruebas@ejemplo.mx" });
   await administrador(url, personal, epsilon, "admin-epsilon-flujo@ejemplo.mx");
   assert.deepEqual(await empresasDeTarea(), [alfa.id, beta.id, gamma.id, delta.id].sort());
   // Gamma se suspende y la persona de Finanzas de Delta queda dada de baja (sin pasar por los
@@ -753,6 +803,7 @@ async function persona(url: string, admin: ContextoConEmpresa, centroId: string,
     nomina: "no", clabe: CLABE, acceso: "nueva", correo, rol,
   }, {
     ...AHORA,
+    emitir: emitirConHoraReal,
     entregar: async (emitida) => {
       token = emitida.token;
       return { entregada: false, codigo: "correo_no_configurado" };

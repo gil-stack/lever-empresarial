@@ -24,6 +24,7 @@ import type {
 import { normalizarCodigoTotp, semillaLegible, semillaNueva, uriOtpauth, verificarTotp } from "./totp";
 import type { Origen } from "./origen";
 import { credencialDeRespuesta, webauthnReal, type AdaptadorWebauthn } from "./webauthn";
+import { CONTROL } from "../../dominio/control";
 
 /**
  * Correo y contraseña abren una entrada, no el portal. La sesión —la cookie
@@ -883,7 +884,7 @@ function nombreDePasskey(valor: unknown): string {
 }
 
 function textoBreve(valor: unknown, maximo: number): string | null {
-  if (typeof valor !== "string" || /[\u0000-\u001F\u007F]/.test(valor)) return null;
+  if (typeof valor !== "string" || CONTROL.test(valor)) return null;
   const limpio = valor.trim().replace(/\s+/g, " ");
   if (limpio.length < 1 || limpio.length > maximo) return null;
   return limpio;

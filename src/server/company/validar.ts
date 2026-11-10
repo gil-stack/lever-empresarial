@@ -1,13 +1,14 @@
 import { validarRfcDeAlta } from "../../domain/rfc";
 import { regimenAplica, tipoDePersona, usoAplica } from "./catalogos";
 import type { AltaEmpresaEntrada, EmpresaNormalizada } from "./tipos";
+import { INVISIBLE } from "../../dominio/control";
 
-const CONTROL = /[\u0000-\u001F\u007F]/;
 
 export type CodigoAlta =
   | "rfc_invalido"
   | "rfc_generico"
   | "razon_social_invalida"
+  | "razon_social_control"
   | "codigo_postal_invalido"
   | "regimen_invalido"
   | "uso_cfdi_invalido";
@@ -22,6 +23,8 @@ export function validarAlta(entrada: Partial<AltaEmpresaEntrada> | null | undefi
     return { ok: false, codigo: rfc.error === "generico" ? "rfc_generico" : "rfc_invalido" };
   }
 
+  // Una identidad con un control invisible se rechaza con su propio aviso, no se limpia.
+  if (typeof entrada?.razonSocial === "string" && INVISIBLE.test(entrada.razonSocial)) return { ok: false, codigo: "razon_social_control" };
   const razonSocial = normalizarRazon(entrada?.razonSocial);
   if (!razonSocial) return { ok: false, codigo: "razon_social_invalida" };
 
@@ -39,7 +42,7 @@ export function validarAlta(entrada: Partial<AltaEmpresaEntrada> | null | undefi
 }
 
 function normalizarRazon(valor: unknown): string | null {
-  if (typeof valor !== "string" || CONTROL.test(valor)) return null;
+  if (typeof valor !== "string" || INVISIBLE.test(valor)) return null;
   const razon = valor.normalize("NFKC").trim().replace(/\s+/g, " ");
   if (razon.length < 1 || razon.length > 254) return null;
   if (!/[\p{L}\p{N}]/u.test(razon)) return null;

@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import pg from "pg";
 
 import { cerrarConexion } from "../../src/nucleo/db.ts";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
 import { configurarCobranza, darDeAltaCliente, type DependenciasCobranza } from "../../src/server/cobranza/servicio.ts";
 import { nombrarCentro } from "../../src/server/personas/servicio.ts";
 import { contextoDePersonal } from "../../src/server/plataforma/servicio.ts";
@@ -79,8 +79,8 @@ function deps(): DependenciasCobranza {
 async function sembrar(url: string): Promise<Ids> {
   sembrarPersonal(url);
   const personal = await contextoDePersonal("personal-cobranza@ejemplo.mx");
-  const alfa = await darDeAltaEmpresa(personal, { rfc: "TCM010101AB1", razonSocial: "Escuela Alfa Reglas", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false });
-  const beta = await darDeAltaEmpresa(personal, { rfc: "CABL840215RF4", razonSocial: "Taller Beta Reglas", codigoPostal: "44100", regimen: "612", usoCfdi: "G03" }, { demostracion: false });
+  const alfa = await darDeAltaComoDuena(url, personal, { rfc: "TCM010101AB1", razonSocial: "Escuela Alfa Reglas", codigoPostal: "06600", regimen: "601", usoCfdi: "G03" }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  const beta = await darDeAltaComoDuena(url, personal, { rfc: "CABL840215RF4", razonSocial: "Taller Beta Reglas", codigoPostal: "44100", regimen: "612", usoCfdi: "G03" }, { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
   const [admin, sesionAdmin] = await administrador(url, personal, alfa, "admin-alfa-reglas@ejemplo.mx");
   const [adminBeta, sesionBeta] = await administrador(url, personal, beta, "admin-beta-reglas@ejemplo.mx");
   const centro = await nombrarCentro(admin, { nombre: "Operación" }, { ahora: HOY });

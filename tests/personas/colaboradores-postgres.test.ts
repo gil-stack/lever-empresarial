@@ -8,7 +8,8 @@ import { fileURLToPath } from "node:url";
 import { cerrarConexion } from "../../src/nucleo/db.ts";
 import { configurarNomina, leerLoteNomina, leerNomina, prepararNomina } from "../../src/server/nomina/servicio.ts";
 import { leerPendientesInicio } from "../../src/server/inicio/servicio.ts";
-import { darDeAltaEmpresa } from "../../src/server/company/servicio.ts";
+import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
+import { emitirEnTransaccion } from "../../src/server/invitaciones/repositorio.ts";
 import { aceptarInvitacion } from "../../src/server/invitaciones/servicio.ts";
 import { hoyEnMexico } from "../../src/dominio/personas.ts";
 import type { ContextoDeTenant } from "../../src/nucleo/contexto.ts";
@@ -40,6 +41,11 @@ import {
 const CLABE = "002180701150123452";
 const CLAVE = "clave-segura-12";
 const AHORA = new Date("2026-11-05T18:00:00.000Z");
+/**
+ * La invitación la vence la base con su propio reloj (`expira_en > now()` al aceptarla). Se emite con la hora real
+ * aunque el alta fije su fecha: emitida con el reloj fijo, vencía 72 horas después de esa fecha y la prueba estallaba.
+ */
+const emitirConHoraReal: typeof emitirEnTransaccion = (consulta, actor, entrada) => emitirEnTransaccion(consulta, actor, { ...entrada, ahora: new Date() });
 const URL_ADMIN = process.env.AISLAMIENTO_DATABASE_URL?.trim() ?? "";
 
 test("colaboradores, nómina, tarjetas y lotes conservan tenant, idempotencia y snapshot", { skip: URL_ADMIN.length === 0 }, async () => {
@@ -65,13 +71,13 @@ test("colaboradores, nómina, tarjetas y lotes conservan tenant, idempotencia y 
 async function escenario(url: string): Promise<void> {
   sembrarPersonal(url);
   const personal = await contextoDePersonal("personal-colaboradores@ejemplo.mx");
-  const empresa = await darDeAltaEmpresa(personal, {
+  const empresa = await darDeAltaComoDuena(url, personal, {
     rfc: "TCM010101AB1",
     razonSocial: "Escuela Colaboradores",
     codigoPostal: "06600",
     regimen: "601",
     usoCfdi: "G03",
-  }, { demostracion: true });
+  }, { demostracion: true, corridoPor: "pruebas@ejemplo.mx" });
   const invitacion = await invitarAdministrador(personal, {
     companyId: empresa.id,
     razonSocial: empresa.razonSocial,
@@ -129,6 +135,7 @@ async function escenario(url: string): Promise<void> {
     rol: ["administrador", "liberador"],
   }, {
     ahora: () => AHORA,
+    emitir: emitirConHoraReal,
     entregar: async (emitida) => {
       tokenTesoreria = emitida.token;
       return { entregada: false, codigo: "correo_no_configurado" };
@@ -300,13 +307,13 @@ function eventos(url: string, accion: string, identificador: string): Array<{ ac
 }
 
 async function empresaCon(personal: ContextoDeTenant, url: string, rfc: string, razon: string, correo: string) {
-  const empresa = await darDeAltaEmpresa(personal, {
+  const empresa = await darDeAltaComoDuena(url, personal, {
     rfc,
     razonSocial: razon,
     codigoPostal: "06600",
     regimen: "601",
     usoCfdi: "G03",
-  }, { demostracion: true });
+  }, { demostracion: true, corridoPor: "pruebas@ejemplo.mx" });
   const invitacion = await invitarAdministrador(personal, { companyId: empresa.id, razonSocial: razon, nombre: `Admin ${razon}`, correo });
   await aceptarInvitacion({ token: invitacion.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
   const sesion = await sesionPara(url, invitacion.emitida.userId);
@@ -314,14 +321,18 @@ async function empresaCon(personal: ContextoDeTenant, url: string, rfc: string, 
   return { empresa, sesion, ctx, userId: invitacion.emitida.userId };
 }
 
+/** `reloj`: el de la prueba, si fija la fecha del alta (la nómina se valida contra ese día). La invitación, con la hora real. */
 async function miembro(
   url: string,
   admin: ContextoDeTenant,
   empresaId: string,
   entrada: Record<string, unknown>,
+  reloj?: { ahora: () => Date },
 ): Promise<{ id: string; userId: string; sesion: Sesion; ctx: ContextoDeTenant }> {
   let token = "";
   const alta = await darDeAltaPersona(admin, { altaLlave: randomUUID(), alta: "2026-11-01", baja: "", jefeId: "", ...entrada }, {
+    ...reloj,
+    emitir: emitirConHoraReal,
     entregar: async (emitida) => {
       token = emitida.token;
       return { entregada: false, codigo: "correo_no_configurado" };
@@ -564,10 +575,10 @@ async function calendario(url: string): Promise<void> {
   const liberadora = await miembro(url, a.ctx, a.empresa.id, {
     nombre: "Liberadora Cal", centroId: area.id, destino: "clabe", clabe: CLABE, neto: "300.00", frecuencia: "mensual",
     primerPago: "2026-11-30", acceso: "nueva", correo: "liberadora-cal@ejemplo.mx", rol: ["liberador"],
-  });
+  }, configurar);
   const contadora = await miembro(url, a.ctx, a.empresa.id, {
     nomina: "no", nombre: "Contadora Cal", centroId: area.id, acceso: "nueva", correo: "contadora-cal@ejemplo.mx", rol: ["contador"],
-  });
+  }, configurar);
   const semanal = await darDeAltaPersona(a.ctx, {
     ...base, nombre: "Semanal", altaLlave: randomUUID(), neto: "50.00", frecuencia: "semanal", primerPago: "2026-11-08",
   }, configurar);

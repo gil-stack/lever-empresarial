@@ -15,14 +15,12 @@ import { aplicarArchivoEnTransaccion, conBaseDesechable, consultarJson, ejecutar
  * migración nueva que olvide pegarlo hace fallar esta prueba con el nombre de
  * la tabla.
  *
- * Mientras la 0028 no está en la rama, la prueba usa su réplica
- * (fixtures/0028_bloqueo_empresa_suspendida.sql); cuando está, la de verdad.
+ * Usa la 0028 real (la que define bloqueo_empresa_suspendida).
  */
 
 const urlAdmin = process.env.AISLAMIENTO_DATABASE_URL?.trim() ?? "";
 const AQUI = dirname(fileURLToPath(import.meta.url));
 const MIGRACIONES = join(AQUI, "../../db/migrations");
-const REPLICA = join(AQUI, "fixtures/0028_bloqueo_empresa_suspendida.sql");
 const DEFINE = /CREATE\s+(OR\s+REPLACE\s+)?FUNCTION\s+bloqueo_empresa_suspendida\s*\(\s*\)/i;
 
 /** Tablas con company_id que plataforma_cliente escribe y que, a propósito, no llevan el disparador. */
@@ -51,12 +49,13 @@ const SQL_DISPARADORES = `
             from pg_trigger x join pg_class k on k.oid = x.tgrelid join pg_namespace n on n.oid = k.relnamespace
            where n.nspname = 'public' and x.tgname = 'bloqueo_empresa_suspendida' and not x.tgisinternal) d`;
 
-type Migraciones = { resto: string[]; definidora: string; real: boolean };
+type Migraciones = { resto: string[]; definidora: string };
 
 function migraciones(): Migraciones {
   const todas = readdirSync(MIGRACIONES).filter((f) => f.endsWith(".sql")).sort().map((f) => join(MIGRACIONES, f));
   const real = todas.find((a) => DEFINE.test(readFileSync(a, "utf8")));
-  return real ? { resto: todas.filter((a) => a !== real), definidora: real, real: true } : { resto: todas, definidora: REPLICA, real: false };
+  if (!real) throw new Error("Ninguna migración define bloqueo_empresa_suspendida(): falta la 0028.");
+  return { resto: todas.filter((a) => a !== real), definidora: real };
 }
 
 /** La 0028 en su lugar: todo en orden de número. */
@@ -123,7 +122,7 @@ describe("Empresa suspendida en todas las tablas que escribe el cliente", { skip
     let despues: string[] = [];
     await conBaseDesechable(admin, async (url) => {
       enOrden(m, url);
-      antes = revisar(url, `orden por número (${m.real ? "0028 real" : "réplica de la 0028"} antes)`);
+      antes = revisar(url, "orden por número (0028 antes)");
     });
     await conBaseDesechable(admin, async (url) => {
       const orden = conLaDefinidoraAlFinal(m, url);

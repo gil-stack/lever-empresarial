@@ -1,29 +1,39 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
 import { decidirRecuperacionAccion } from "@/app/operacion/acciones-recuperaciones";
 import { ConfirmarIdentidad } from "@/components/entrar/confirmar-identidad";
 import { IconoSeguridad } from "@/components/cromo/iconos";
-import { errorDelCampo } from "@/components/operacion/aviso";
 import { DecisionRecuperacion } from "@/components/operacion/decision-recuperacion";
 import { fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";
+import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { Bandeja, NotaRegla, Vacio } from "@/components/sistema";
 import { estadoDeConfirmacion, verRecuperaciones } from "@/server/autenticacion";
 import { sesionSegura } from "@/server/entrada";
 import { exigirContextoOperacion } from "@/server/operacion";
+import { puedeEnOperacion } from "@/server/operacion/permisos";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Recuperaciones · Operación" };
 
-export default async function RecuperacionesOperacion({ searchParams }: { searchParams: Promise<{ aviso?: string }> }) {
-  await exigirContextoOperacion();
+export default async function RecuperacionesOperacion({ searchParams }: { searchParams: Parametros<"aviso"> }) {
+  const ctx = await exigirContextoOperacion();
+  // Desde la Ola R1 hay roles que no administran cuentas: Auditoría o Cumplimiento no aprueban recuperaciones.
+  if (!puedeEnOperacion(ctx, "plataforma.empresa.alta")) {
+    return (
+      <PaginaOperacion titulo="Recuperaciones">
+        <SinPermiso>Las recuperaciones de segundo factor las decide Administración de la plataforma.</SinPermiso>
+      </PaginaOperacion>
+    );
+  }
   const sesion = await sesionSegura();
   if (!sesion) redirect("/operacion/entrar");
   const [pendientes, confirmacion, params] = await Promise.all([
     verRecuperaciones(sesion),
     estadoDeConfirmacion(sesion),
-    searchParams,
+    soloTexto(searchParams),
   ]);
   return (
     <PaginaOperacion titulo="Recuperaciones" aviso={params.aviso}>
@@ -46,12 +56,7 @@ export default async function RecuperacionesOperacion({ searchParams }: { search
           detalle: <span className="operacion-detalle">{solicitud.motivo}</span>,
           contexto: [solicitud.correo, fechaHora(solicitud.solicitadaEn)],
           acciones: (
-            <DecisionRecuperacion
-              id={solicitud.id}
-              accion={decidirRecuperacionAccion}
-              errorMetodo={errorDelCampo(params.aviso, "verificacion")}
-              errorNota={errorDelCampo(params.aviso, "motivo")}
-            />
+            <DecisionRecuperacion key={solicitud.id} id={solicitud.id} accion={decidirRecuperacionAccion} />
           ),
         }))}
       />

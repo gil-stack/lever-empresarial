@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { CONSTANCIA_Y_CONTRATO } from "@/dominio/proveedores";
+import { TOPE_ARCHIVO_BYTES, TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
 
 import {
   errorDeCodigo,
@@ -30,11 +32,11 @@ export async function enviarProveedor(
     clabe: formData.get("clabe"),
     archivo: archivo.meta,
   });
-  if ((archivo.bytes?.byteLength ?? 0) + (contrato.bytes?.byteLength ?? 0) > 8_000_000) {
-    return { tipo: "invalido", errores: [{ campo: "contrato", mensaje: "La constancia y el contrato juntos no pueden superar 8 MB." }] };
+  if ((archivo.bytes?.byteLength ?? 0) + (contrato.bytes?.byteLength ?? 0) > TOPE_ARCHIVO_BYTES) {
+    return { tipo: "invalido", errores: [{ campo: "contrato", mensaje: CONSTANCIA_Y_CONTRATO }] };
   }
   if (contrato.meta && !contrato.bytes) {
-    return { tipo: "invalido", errores: [{ campo: "contrato", mensaje: "El contrato debe ser un PDF de hasta 8 MB." }] };
+    return { tipo: "invalido", errores: [{ campo: "contrato", mensaje: `El contrato debe ser un PDF de hasta ${TOPE_ARCHIVO_TEXTO}.` }] };
   }
   if (archivo.bytes && archivo.meta) {
     const validada = validarConstancia({ nombre: archivo.meta.nombre, bytes: archivo.bytes });
@@ -135,6 +137,7 @@ const MENSAJES_CLABE: Record<string, string> = {
   auditoria_no_disponible: "No se pudo dejar constancia del cambio.",
   reautenticacion_requerida: "El cambio de CLABE exige un segundo factor reciente. Sal y vuelve a entrar.",
   base_no_disponible: "No se pudo guardar. El libro no respondió.",
+  empresa_suspendida: "La empresa está suspendida: no se puede mover dinero ni hacer cambios. Comunícate con Lever.",
   base_no_configurada: "No se pudo guardar. El libro no respondió.",
 };
 
