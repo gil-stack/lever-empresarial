@@ -750,6 +750,21 @@ async function revision63b(url: string, r: Revision63): Promise<void> {
     assert.equal(ultimo("fintoc", 17_000).posible_duplicado, true);
   });
 
+  // r63f-N1: lo único que identifica al abono es la CLABE ordenante, que solo ha usado U. Otro cliente registró a mano el
+  // mismo monto ese día: son dos depósitos de dos clientes, y el de U se aplica a su cargo (clabe_y_monto).
+  await caso("r63f-N1 la ordenante de un solo cliente lo identifica", async () => {
+    const clabeU = clabeNueva();
+    const u = await cargo("R63f U", "20.00");
+    await fintoc(1_000, u.referencia, "2026-11-10", null, { ordenante: clabeU });
+    const clienteU = fila<{ c: string }>(`select customer_id as c from collection_charges where id = '${u.id}'`)!.c;
+    const suyo = (await crearCargoUnico(admin, { clienteId: clienteU, altaId: randomUUID(), concepto: "R63f por la ordenante", monto: "455.00", vencimiento: "2026-11-22" }, deps())).cargoId;
+    const otro = await cargo("R63f Otro", "455.00");
+    await registrarPagoManual(admin, { altaId: randomUUID(), cargoId: otro.id, monto: "455.00", recibidoEl: "2026-11-10" }, null, deps());
+    await fintoc(45_500, null, "2026-11-10", null, { ordenante: clabeU });
+    assert.deepEqual([pagado(suyo), aplicaciones(suyo)], [45_500, 1], "r63f-N1 (MF19): el abono que su ordenante identifica quedó frenado por el pago de otro cliente");
+    assert.equal(ultimo("fintoc", 45_500).posible_duplicado, false);
+  });
+
   // MF14: un parecido sin cliente (un depósito en «Por conciliar» sin identificar) frena aunque el abono nuevo sí sepa su cliente.
   await caso("r63e un parecido sin cliente frena", async () => {
     const suyo = await cargoDeLaClabe("R63e sin cliente", "357.00");
