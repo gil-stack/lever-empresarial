@@ -1,0 +1,10 @@
+r63b-N1: tests/cobranza/cobranza-postgres.test.ts (revision63b) contra el código de 247f0ef (antes del arreglo), Postgres 17.9 UTF-8, 2026-11-10.
+Casos que aplicaron dos veces el mismo depósito (los controles «orilla de ±1 día», «otro monto» y «otra referencia» pasan en los dos códigos: deben aplicarse):
+caso D (Fintoc → estado de cuenta): caso D: la propuesta aplicaba el mismo depósito otra vez
+manual → estado de cuenta: manual → estado de cuenta: se aplicó dos veces
+estado de cuenta → Fintoc: estado de cuenta → Fintoc: se aplicó dos veces
+Fintoc → manual: Expected values to be strictly deep-equal:
+sin referencia (conservador) y aplicar: Expected values to be strictly equal:
+carrera de dos conexiones: carrera 1: dos aplicaciones
+
+Con el arreglo: ℹ pass 1, ℹ fail 0.

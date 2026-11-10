@@ -13,7 +13,7 @@ import {
   validarPlanEditado,
   validarPlanNuevo,
 } from "../../dominio/cobranza/entradas";
-import { abonoDemo, aplicar, fuenteDemo, recibirAbono, type VarianteDemo } from "./abonos";
+import { abonoDemo, aplicar, fuenteDemo, pagosParecidosDeOtraFuente, recibirAbono, type VarianteDemo } from "./abonos";
 import { uuidValido, validarMotivo, type ErrorFlujo } from "../../dominio/flujo/entradas";
 import { hoyEnMexico } from "../../dominio/personas";
 import { baseCliente, exigir, puede, type ContextoConEmpresa, type ContextoDeTenant } from "../../nucleo/contexto";
@@ -691,7 +691,7 @@ export async function registrarPagoManual(
   entrada: Record<string, unknown>,
   comprobante: ComprobanteSubido,
   deps?: DependenciasCobranza,
-): Promise<{ pagoId: string; aplicadoCentavos: number; posibleDuplicado: boolean }> {
+): Promise<{ pagoId: string; aplicadoCentavos: number; posibleDuplicado: boolean; parecido: boolean }> {
   const c = exigir(ctx, "cliente.flujo.editar");
   const pagoId = exigirId(entrada.altaId);
   const valor = exigirValido(validarPagoManual(entrada, hoyDe(deps)));
@@ -713,21 +713,22 @@ export async function registrarPagoManual(
     return await escribir(ctx, deps, async (consulta, _c, actor, auditar) => {
       const previo = await aplicarSentencia(
         consulta,
-        "select monto_centavos::text as monto, aplicado_centavos::text as aplicado, posible_duplicado from collection_payments where company_id = $1 and id = $2",
+        "select monto_centavos::text as monto, aplicado_centavos::text as aplicado, posible_duplicado, parecido_a from collection_payments where company_id = $1 and id = $2",
         [c.empresa.id, pagoId],
       );
       if (previo.rows[0]) {
         const f = registro(previo.rows[0]);
         if (centavos(f.monto) !== valor.montoCentavos) throw new ErrorDeDominio("formulario_ya_enviado");
         if (guardado) await almacen.borrar(guardado.clave);
-        return { pagoId, aplicadoCentavos: centavos(f.aplicado), posibleDuplicado: f.posible_duplicado === true };
+        return { pagoId, aplicadoCentavos: centavos(f.aplicado), posibleDuplicado: f.posible_duplicado === true, parecido: f.parecido_a !== null };
       }
       let clienteId = clienteEscrito;
       let saldo = 0;
+      let referencia: string | null = null;
       if (cargoId) {
         const cargo = await aplicarSentencia(
           consulta,
-          "select customer_id, estado, (coalesce(monto_centavos, 0) - pagado_centavos)::text as saldo from collection_charges where company_id = $1 and id = $2 for update",
+          "select customer_id, estado, referencia, (coalesce(monto_centavos, 0) - pagado_centavos)::text as saldo from collection_charges where company_id = $1 and id = $2 for update",
           [c.empresa.id, cargoId],
         );
         const f = cargo.rows[0] ? registro(cargo.rows[0]) : null;
@@ -736,12 +737,18 @@ export async function registrarPagoManual(
         if (f.estado !== "emitido") throw new ErrorDeDominio("cargo_ya_resuelto");
         clienteId = texto(f.customer_id);
         saldo = centavos(f.saldo);
+        referencia = texto(f.referencia);
       }
-      const posibleDuplicado = valor.claveRastreo !== null && (await aplicarSentencia(
+      const rastreoRepetido = valor.claveRastreo !== null && (await aplicarSentencia(
         consulta,
         "select 1 from collection_payments where company_id = $1 and upper(clave_rastreo) = $2 and estado not in ('anulado', 'devuelto') limit 1",
         [c.empresa.id, valor.claveRastreo],
       )).rows.length > 0;
+      // La misma regla que los abonos automáticos (r63b-N1): el depósito ya llegó por Fintoc o en un estado de cuenta.
+      const parecido = rastreoRepetido
+        ? null
+        : (await pagosParecidosDeOtraFuente(consulta, c.empresa.id, "manual", [{ clave: "pago", montoCentavos: valor.montoCentavos, recibidoEl: valor.recibidoEl, referencia }])).get("pago") ?? null;
+      const posibleDuplicado = rastreoRepetido || parecido !== null;
       if (archivo && guardado) {
         await aplicarSentencia(
           consulta,
@@ -753,20 +760,21 @@ export async function registrarPagoManual(
       await aplicarSentencia(
         consulta,
         `insert into collection_payments
-           (id, company_id, fuente, id_externo, monto_centavos, recibido_el, clave_rastreo, customer_id, posible_duplicado, document_id, registrado_por)
-         values ($1, $2, 'manual', $3, $4, $5::date, $6, $7, $8, $9, $10)`,
+           (id, company_id, fuente, id_externo, monto_centavos, recibido_el, clave_rastreo, customer_id, posible_duplicado, parecido_a, document_id, registrado_por)
+         values ($1, $2, 'manual', $3, $4, $5::date, $6, $7, $8, $9, $10, $11)`,
         [pagoId, c.empresa.id, `manual:${pagoId}`, valor.montoCentavos, valor.recibidoEl, valor.claveRastreo, clienteId, posibleDuplicado,
-          guardado ? documentoId : null, c.persona.id],
+          parecido?.pagoId ?? null, guardado ? documentoId : null, c.persona.id],
       );
       await auditar(consulta, actor, {
         accion: "registrar_pago_cobranza",
         identificador: pagoId,
-        cambio: { fuente: "manual", monto_centavos: valor.montoCentavos, recibido_el: valor.recibidoEl, regla: cargoId ? "manual" : null, posible_duplicado: posibleDuplicado, con_comprobante: guardado !== null },
+        cambio: { fuente: "manual", monto_centavos: valor.montoCentavos, recibido_el: valor.recibidoEl, regla: cargoId ? "manual" : null, posible_duplicado: posibleDuplicado, con_comprobante: guardado !== null,
+          parecido_a: parecido?.pagoId ?? null },
       });
       // Un posible duplicado no se aplica solo: queda abierto para que alguien decida.
       const aplicado = cargoId && !posibleDuplicado ? Math.min(valor.montoCentavos, saldo) : 0;
       if (cargoId && aplicado > 0) await aplicar(consulta, actor, auditar, c.empresa.id, pagoId, cargoId, aplicado, "manual", valor.recibidoEl);
-      return { pagoId, aplicadoCentavos: aplicado, posibleDuplicado };
+      return { pagoId, aplicadoCentavos: aplicado, posibleDuplicado, parecido: parecido !== null };
     });
   } catch (error) {
     if (guardado) await almacen.borrar(guardado.clave);
@@ -849,19 +857,32 @@ export async function revertirAplicacion(ctx: ContextoDeTenant | null | undefine
   });
 }
 
-/** Solo un pago manual sin nada aplicado (revierte antes sus aplicaciones). */
-export async function anularPago(ctx: ContextoDeTenant | null | undefined, entrada: Record<string, unknown>, deps?: DependenciasCobranza): Promise<void> {
+/**
+ * Un pago manual hecho por error, o un posible duplicado de cualquier fuente que una persona descarta (r63b-N1): el
+ * depósito ya está contado en el pago parecido. Sin nada aplicado (revierte antes sus aplicaciones).
+ */
+export async function anularPago(ctx: ContextoDeTenant | null | undefined, entrada: Record<string, unknown>, deps?: DependenciasCobranza): Promise<{ descartado: boolean }> {
   const pagoId = exigirId(entrada.pagoId, "pago_ausente");
   const motivo = exigirValido(validarMotivo(entrada.motivo));
-  await escribir(ctx, deps, async (consulta, c, actor, auditar) => {
+  return escribir(ctx, deps, async (consulta, c, actor, auditar) => {
     const r = await aplicarSentencia(
       consulta,
       `update collection_payments set estado = 'anulado', motivo_anulacion = $3, anulado_por = $4, anulado_en = now()
-        where company_id = $1 and id = $2 and fuente = 'manual' and estado = 'abierto' and aplicado_centavos = 0`,
+        where company_id = $1 and id = $2 and (fuente = 'manual' or posible_duplicado) and estado = 'abierto' and aplicado_centavos = 0
+        returning fuente, posible_duplicado, parecido_a`,
       [c.empresa.id, pagoId, motivo, c.persona.id],
     );
-    if (r.rowCount !== 1) throw new ErrorDeDominio("pago_no_anulable");
+    const f = r.rows[0] ? registro(r.rows[0]) : null;
+    if (!f) throw new ErrorDeDominio("pago_no_anulable");
+    if (f.posible_duplicado === true) {
+      await auditar(consulta, actor, {
+        accion: "descartar_duplicado_cobranza", identificador: pagoId, motivo,
+        cambio: { fuente: texto(f.fuente), parecido_a: f.parecido_a === null ? null : texto(f.parecido_a) },
+      });
+      return { descartado: true };
+    }
     await auditar(consulta, actor, { accion: "anular_pago_cobranza", identificador: pagoId, motivo });
+    return { descartado: false };
   });
 }
 

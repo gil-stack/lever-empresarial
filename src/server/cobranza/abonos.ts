@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 
 import { digitoClabe } from "../../dominio/clabe";
 import { conciliar, referenciaABuscar, type CargoConReferencia, type Decision } from "../../dominio/cobranza/conciliacion";
+import { normalizarReferencia } from "../../dominio/cobranza/referencia";
 import type { EmpresaDelContexto } from "../../nucleo/contexto";
 import { aplicarSentencia, bloquearEmpresa, type Consulta } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
@@ -45,6 +46,66 @@ export type ResultadoAbono = {
   repetido: boolean;
   decision: Decision | null;
 };
+
+export type FuenteDePago = FuenteAutomatica | "manual";
+
+export type PagoParecido = { pagoId: string; fuente: FuenteDePago; recibidoEl: string; montoCentavos: number; cliente: string | null };
+
+/**
+ * r63b-N1: el mismo depósito puede llegar por dos fuentes (el aviso de Fintoc y el estado de cuenta, o un pago a mano
+ * y el estado de cuenta) sin una clave de rastreo que los empate. Antes de aplicar un abono se busca un pago vigente de
+ * OTRA fuente con el mismo monto y fecha a ±1 día cuya referencia coincida. Si existe, el abono queda en «Por
+ * conciliar» como posible duplicado y una persona lo aplica o lo descarta.
+ *
+ * La referencia de un pago es la que trajo (si es una referencia válida de Lever) o, si no trajo, la del cargo al que se
+ * aplicó (así un pago a mano tiene la de su cargo). **Criterio conservador:** si el abono o el pago registrado no tienen
+ * referencia, basta monto y fecha; ante la duda va a «Por conciliar», nunca se aplica doble. Dos referencias distintas
+ * son dos pagos distintos. Corre dentro de la transacción de quien llama, con la empresa bloqueada
+ * (`bloquearEmpresa`): dos fuentes a la vez se forman y la segunda ve a la primera.
+ *
+ * Recibe varios abonos a la vez (la propuesta de un estado de cuenta) y devuelve, por clave, el pago más cercano.
+ */
+export async function pagosParecidosDeOtraFuente(
+  consulta: Consulta,
+  empresaId: string,
+  fuente: FuenteDePago,
+  abonos: readonly { clave: string; montoCentavos: number; recibidoEl: string; referencia: string | null }[],
+): Promise<Map<string, PagoParecido>> {
+  if (abonos.length === 0) return new Map();
+  const r = await aplicarSentencia(
+    consulta,
+    `select a.clave, p.id, p.fuente, p.recibido_el, p.monto_centavos::text as monto, k.nombre as cliente
+       from unnest($3::text[], $4::bigint[], $5::date[], $6::text[]) as a (clave, monto, recibido_el, referencia)
+       cross join lateral (
+         select p.id, p.fuente, p.recibido_el, p.monto_centavos, p.customer_id
+           from collection_payments p
+           left join lateral (
+             select c.referencia from collection_applications ap
+               join collection_charges c on c.id = ap.charge_id and c.company_id = ap.company_id
+              where ap.company_id = p.company_id and ap.payment_id = p.id and ap.regla <> 'reversion'
+              order by ap.aplicado_en, ap.id limit 1
+           ) aplicada on true
+          where p.company_id = $1 and p.fuente <> $2 and p.estado not in ('anulado', 'devuelto')
+            and p.monto_centavos = a.monto
+            and p.recibido_el between a.recibido_el - 1 and a.recibido_el + 1
+            and (a.referencia is null
+                 or coalesce(case when p.referencia ~ '^[1-9][0-9]{6}$' then p.referencia end, aplicada.referencia) is null
+                 or coalesce(case when p.referencia ~ '^[1-9][0-9]{6}$' then p.referencia end, aplicada.referencia) = a.referencia)
+          order by abs(p.recibido_el - a.recibido_el), p.registrado_en, p.id
+          limit 1
+       ) p
+       left join collection_customers k on k.id = p.customer_id and k.company_id = $1`,
+    [empresaId, fuente, abonos.map((a) => a.clave), abonos.map((a) => a.montoCentavos), abonos.map((a) => a.recibidoEl),
+      abonos.map((a) => normalizarReferencia(a.referencia))],
+  );
+  return new Map(r.rows.map(registro).map((f) => [texto(f.clave), {
+    pagoId: texto(f.id),
+    fuente: texto(f.fuente) as FuenteDePago,
+    recibidoEl: fechaDe(f.recibido_el),
+    montoCentavos: centavos(f.monto),
+    cliente: f.cliente === null || f.cliente === undefined ? null : texto(f.cliente),
+  }]));
+}
 
 /**
  * El único camino de un abono automático: lo guarda (o reconoce el repetido),
@@ -93,6 +154,9 @@ export async function recibirAbono(
     "select 1 from collection_payments where company_id = $1 and upper(clave_rastreo) = upper($2) and estado not in ('anulado', 'devuelto') limit 1",
     [empresaId, abono.claveRastreo],
   )).rows.length > 0;
+  const parecido = rastreoYaRegistrado
+    ? null
+    : (await pagosParecidosDeOtraFuente(consulta, empresaId, fuente, [{ clave: "abono", montoCentavos: abono.montoCentavos, recibidoEl: abono.recibidoEl, referencia }])).get("abono") ?? null;
   const clienteDeLaCuenta = abono.clienteDeLaCuenta;
   // Quién ha pagado antes desde esa CLABE: identifica al cliente sin referencia y, con referencia, marca el pago que
   // llega desde la cuenta de otro cliente (r63-N4).
@@ -117,16 +181,17 @@ export async function recibirAbono(
     );
     cargosAbiertosDelCliente = c.rows.map(registro).map((f) => ({ id: texto(f.id), saldoCentavos: centavos(f.saldo), vencimiento: fechaDe(f.vencimiento) }));
   }
-  const decision = conciliar(abono, { rastreoYaRegistrado, clienteDeLaCuenta, cargoDeLaReferencia, clientesDeLaClabe, cargosAbiertosDelCliente });
+  const decision = conciliar(abono, { rastreoYaRegistrado, parecidoDeOtraFuente: parecido !== null, clienteDeLaCuenta, cargoDeLaReferencia, clientesDeLaClabe, cargosAbiertosDelCliente });
   const pagoId = randomUUID();
   await aplicarSentencia(
     consulta,
     `insert into collection_payments
        (id, company_id, fuente, id_externo, monto_centavos, recibido_el, clave_rastreo, referencia, clabe_ordenante, nombre_ordenante,
-        customer_id, posible_duplicado, de_otro_cliente, registrado_por)
-     values ($1, $2, $3, $4, $5, $6::date, $7, $8, $9, $10, $11, $12, $13, $14)`,
+        customer_id, posible_duplicado, de_otro_cliente, parecido_a, registrado_por)
+     values ($1, $2, $3, $4, $5, $6::date, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
     [pagoId, empresaId, fuente, abono.idExterno, abono.montoCentavos, abono.recibidoEl, abono.claveRastreo, abono.referencia,
-      abono.clabeOrdenante, abono.nombreOrdenante, decision.clienteId, decision.posibleDuplicado, decision.deOtroCliente, autorDe(actor)],
+      abono.clabeOrdenante, abono.nombreOrdenante, decision.clienteId, decision.posibleDuplicado, decision.deOtroCliente,
+      decision.motivo === "parecido_de_otra_fuente" ? parecido!.pagoId : null, autorDe(actor)],
   );
   await auditar(consulta, actor, {
     accion: "registrar_pago_cobranza",
@@ -134,6 +199,7 @@ export async function recibirAbono(
     cambio: {
       fuente, monto_centavos: abono.montoCentavos, recibido_el: abono.recibidoEl, regla: decision.motivo, posible_duplicado: decision.posibleDuplicado,
       de_otro_cliente: decision.deOtroCliente, con_comprobante: false,
+      parecido_a: decision.motivo === "parecido_de_otra_fuente" ? parecido!.pagoId : null,
     },
   });
   if (decision.aplicacion) {
@@ -202,7 +268,7 @@ export async function aplicar(
  * empresa en la SOFIPO, cada abono es operación relevante y aquí se llama
  * `pld_registrar_*` (PR #61, migración 0030).
  */
-const alRecibirAbonoRegulado: (consulta: Consulta, fuente: FuenteAutomatica | "manual", pagoId: string) => Promise<void> = async () => {};
+const alRecibirAbonoRegulado: (consulta: Consulta, fuente: FuenteDePago, pagoId: string) => Promise<void> = async () => {};
 
 // Adaptador demo ------------------------------------------------------------------------
 

@@ -387,6 +387,8 @@ export type PagoVista = {
   posibleDuplicado: boolean;
   /** Se aplicó por referencia desde una CLABE que antes solo había pagado por otros clientes (r63-N4). */
   deOtroCliente: boolean;
+  /** El pago de otra fuente que parece ser este mismo depósito (r63b-N1): por eso no se aplicó solo. */
+  parecido: { id: string; fuente: FuentePago; recibidoEl: string; montoCentavos: number; estado: string; cliente: string | null } | null;
   conComprobante: boolean;
   documentoId: string | null;
   motivo: string | null;
@@ -488,6 +490,8 @@ export async function leerPagos(
     consulta,
     `select p.id, p.fuente, p.monto_centavos::text as monto, p.aplicado_centavos::text as aplicado, p.recibido_el, p.clave_rastreo,
             p.referencia, p.customer_id, k.nombre as cliente, p.estado, p.posible_duplicado, p.de_otro_cliente, p.document_id, p.motivo_anulacion,
+            case when q.id is null then null else json_build_object('id', q.id, 'fuente', q.fuente, 'recibido', q.recibido_el, 'monto', q.monto_centavos::text,
+                                                                    'estado', q.estado, 'cliente', kq.nombre) end as parecido,
             coalesce((select json_agg(json_build_object('id', a.id, 'cargo', a.charge_id, 'monto', a.monto_centavos::text, 'regla', a.regla,
                                                         'concepto', c.concepto,
                                                         'revertida', exists (select 1 from collection_applications r
@@ -498,6 +502,8 @@ export async function leerPagos(
                        where a.company_id = p.company_id and a.payment_id = p.id and a.regla <> 'reversion'), '[]'::json) as aplicaciones
        from collection_payments p
        left join collection_customers k on k.id = p.customer_id and k.company_id = p.company_id
+       left join collection_payments q on q.id = p.parecido_a and q.company_id = p.company_id
+       left join collection_customers kq on kq.id = q.customer_id and kq.company_id = q.company_id
       where p.company_id = $1
         and ($2::uuid is null or p.customer_id = $2::uuid)
         and (not $3::boolean or p.estado = 'abierto')
@@ -518,6 +524,13 @@ export async function leerPagos(
     estado: p.estado === "aplicado" ? "aplicado" : p.estado === "anulado" ? "anulado" : p.estado === "devuelto" ? "devuelto" : "abierto",
     posibleDuplicado: booleano(p.posible_duplicado),
     deOtroCliente: booleano(p.de_otro_cliente),
+    parecido: p.parecido === null || p.parecido === undefined ? null : (() => {
+      const q = registro(p.parecido);
+      return {
+        id: texto(q.id), fuente: FUENTES_PAGO.find((f) => f === q.fuente) ?? "manual", recibidoEl: fechaDe(q.recibido), montoCentavos: centavos(q.monto),
+        estado: texto(q.estado), cliente: textoONulo(q.cliente),
+      };
+    })(),
     conComprobante: p.document_id !== null && p.document_id !== undefined,
     documentoId: textoONulo(p.document_id),
     motivo: textoONulo(p.motivo_anulacion),

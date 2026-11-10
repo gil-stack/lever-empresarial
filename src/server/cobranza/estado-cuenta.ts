@@ -20,7 +20,7 @@ import { aplicarSentencia, bloquearEmpresa, conContexto, type Consulta } from ".
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { actorDeCliente, auditar as auditarPorDefecto } from "../bitacora/auditar";
 import { centavos, entero, registro, texto, textoONulo } from "../flujo/lectura";
-import { recibirAbono } from "./abonos";
+import { pagosParecidosDeOtraFuente, recibirAbono, type PagoParecido } from "./abonos";
 import { ErrorDeLectura, leerEstadoDeCuenta, type Tabla } from "./lector-estado-cuenta";
 import { fechaDe, instanteONulo } from "./repositorio";
 import { ErrorDeCaptura, type DependenciasCobranza } from "./servicio";
@@ -226,7 +226,14 @@ async function empateGuardado(consulta: Consulta, empresaId: string, banco: Clav
 export type Propuesta =
   | { tipo: "aplicar"; cargoId: string; cliente: string; concepto: string; montoCentavos: number; motivo: Decision["motivo"] }
   | { tipo: "ya_registrado"; pagoId: string }
-  | { tipo: "por_conciliar"; cliente: string | null; motivo: Decision["motivo"]; sugerencias: { cargoId: string; cliente: string; concepto: string; saldoCentavos: number; referencia: string }[] };
+  | {
+      tipo: "por_conciliar";
+      cliente: string | null;
+      motivo: Decision["motivo"];
+      sugerencias: { cargoId: string; cliente: string; concepto: string; saldoCentavos: number; referencia: string }[];
+      /** El pago de otra fuente que parece ser este mismo depósito (r63b-N1). */
+      parecido: PagoParecido | null;
+    };
 
 export type RenglonVista = {
   id: string;
@@ -267,7 +274,11 @@ function referenciaLever(renglon: { referencia: string | null; concepto: string 
  * aplicará `recibirAbono` al confirmar (referencia, clave de rastreo ya vista),
  * con sugerencias de cargos del mismo saldo cuando no hay coincidencia segura.
  */
-async function proponer(consulta: Consulta, empresaId: string, renglones: { id: string; montoCentavos: number; referencia: string | null; concepto: string | null; rastreo: string | null }[]): Promise<Map<string, Propuesta>> {
+async function proponer(
+  consulta: Consulta,
+  empresaId: string,
+  renglones: { id: string; fecha: string; montoCentavos: number; referencia: string | null; concepto: string | null; rastreo: string | null }[],
+): Promise<Map<string, Propuesta>> {
   const refs = new Map(renglones.map((r) => [r.id, referenciaLever(r)]));
   const cargos = new Map((await aplicarSentencia(
     consulta,
@@ -288,6 +299,10 @@ async function proponer(consulta: Consulta, empresaId: string, renglones: { id: 
       where c.company_id = $1 and c.estado = 'emitido' order by c.vencimiento limit 2000`,
     [empresaId],
   )).rows.map(registro).map((f) => ({ cargoId: texto(f.id), cliente: texto(f.nombre), concepto: texto(f.concepto), saldoCentavos: centavos(f.saldo), referencia: texto(f.referencia) }));
+  // La misma regla que aplicará recibirAbono al confirmar: el depósito ya llegó por otra fuente (r63b-N1).
+  const parecidos = await pagosParecidosDeOtraFuente(consulta, empresaId, "estado_cuenta", renglones
+    .filter((r) => !(r.rastreo && rastreos.has(r.rastreo.toUpperCase())))
+    .map((r) => ({ clave: r.id, montoCentavos: r.montoCentavos, recibidoEl: r.fecha, referencia: refs.get(r.id) ?? referenciaDelAbono(r) })));
   const propuestas = new Map<string, Propuesta>();
   for (const r of renglones) {
     const pagoPrevio = r.rastreo ? rastreos.get(r.rastreo.toUpperCase()) : undefined;
@@ -299,6 +314,7 @@ async function proponer(consulta: Consulta, empresaId: string, renglones: { id: 
     const f = ref ? cargos.get(ref) : undefined;
     const decision = conciliar({ montoCentavos: r.montoCentavos, referencia: ref ?? referenciaDelAbono(r), clabeOrdenante: null }, {
       rastreoYaRegistrado: false,
+      parecidoDeOtraFuente: parecidos.has(r.id),
       clienteDeLaCuenta: null,
       cargoDeLaReferencia: f ? { id: texto(f.id), clienteId: texto(f.customer_id), estado: texto(f.estado) as "emitido", saldoCentavos: centavos(f.saldo) } : null,
       clientesDeLaClabe: [],
@@ -312,6 +328,7 @@ async function proponer(consulta: Consulta, empresaId: string, renglones: { id: 
         cliente: f ? texto(f.nombre) : null,
         motivo: decision.motivo,
         sugerencias: abiertos.filter((a) => a.saldoCentavos === r.montoCentavos).slice(0, 3),
+        parecido: parecidos.get(r.id) ?? null,
       });
     }
   }

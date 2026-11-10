@@ -381,14 +381,18 @@ export function RevertirAplicacion({ aplicacionId, texto }: { aplicacionId: stri
   );
 }
 
-export function AnularPago({ pagoId, texto }: { pagoId: string; texto: string }) {
+/** Anula un pago manual hecho por error o descarta un posible duplicado (r63b-N1): queda en el historial con su motivo. */
+export function AnularPago({ pagoId, texto, descartar = false }: { pagoId: string; texto: string; descartar?: boolean }) {
   const [abierto, setAbierto] = useState(false);
   const f = useAccionDeFila(enviarAnulacion, `anular-${pagoId}`, () => setAbierto(false));
+  const explicacion = descartar
+    ? `${texto}. Es el mismo depósito que el pago parecido, que ya lo cuenta; queda en el historial con su motivo.`
+    : `${texto}. Para un pago registrado por error; queda en el historial con su motivo.`;
   return (
     <>
-      <button type="button" className="boton-fantasma boton-chico" onClick={() => setAbierto(true)}>Anular</button>
-      <Dialogo abierto={abierto} alCerrar={() => setAbierto(false)} titulo="Anular el pago" explicacion={`${texto}. Para un pago registrado por error; queda en el historial con su motivo.`}
-        pie={<BotonEnviar form={f.idForma} pendiente={f.pendiente}>Anular el pago</BotonEnviar>}>
+      <button type="button" className="boton-fantasma boton-chico" onClick={() => setAbierto(true)}>{descartar ? "Descartar" : "Anular"}</button>
+      <Dialogo abierto={abierto} alCerrar={() => setAbierto(false)} titulo={descartar ? "Descartar el posible duplicado" : "Anular el pago"} explicacion={explicacion}
+        pie={<BotonEnviar form={f.idForma} pendiente={f.pendiente}>{descartar ? "Descartar el duplicado" : "Anular el pago"}</BotonEnviar>}>
         <form id={f.idForma} className="flujo-resolver" onSubmit={f.enviar} noValidate>
           <AvisoFlujo estado={f.estado} />
           <input type="hidden" name="pagoId" value={pagoId} />

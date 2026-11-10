@@ -147,10 +147,11 @@ export const CATALOGO = {
   abono_cargo: { entidad: "collection_charges", cambio: ["pagado_centavos", "estado"] },
   registrar_pago_cobranza: {
     entidad: "collection_payments",
-    cambio: ["fuente", "monto_centavos", "recibido_el", "regla", "posible_duplicado", "de_otro_cliente", "con_comprobante"],
+    cambio: ["fuente", "monto_centavos", "recibido_el", "regla", "posible_duplicado", "de_otro_cliente", "con_comprobante", "parecido_a"],
   },
   saldo_pago_cobranza: { entidad: "collection_payments", cambio: ["aplicado_centavos", "estado"] },
   anular_pago_cobranza: { entidad: "collection_payments", cambio: [] },
+  descartar_duplicado_cobranza: { entidad: "collection_payments", cambio: ["fuente", "parecido_a"] },
   devolver_pago_cobranza: { entidad: "collection_payments", cambio: ["proveedor", "monto_centavos"] },
   aplicacion_cobranza: { entidad: "collection_applications", cambio: ["monto_centavos", "regla"] },
   correo_cobranza: { entidad: "collection_emails", cambio: ["tipo", "estado", "destinatarios", "codigo"] },

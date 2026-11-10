@@ -102,8 +102,17 @@ describe("referencia de 7 dígitos", () => {
 });
 
 describe("conciliación", () => {
-  const sinDatos = { rastreoYaRegistrado: false, clienteDeLaCuenta: null, cargoDeLaReferencia: null, clientesDeLaClabe: [], cargosAbiertosDelCliente: [] };
+  const sinDatos = { rastreoYaRegistrado: false, parecidoDeOtraFuente: false, clienteDeLaCuenta: null, cargoDeLaReferencia: null, clientesDeLaClabe: [], cargosAbiertosDelCliente: [] };
   const emitido = { id: "c1", clienteId: "k1", estado: "emitido" as const, saldoCentavos: 100_000 };
+
+  it("r63b-N1: un pago parecido de otra fuente no se aplica solo, aunque la referencia tenga un cargo con saldo", () => {
+    const d = conciliar({ montoCentavos: 100_000, referencia: "0000018", clabeOrdenante: null }, { ...sinDatos, parecidoDeOtraFuente: true, cargoDeLaReferencia: emitido });
+    assert.deepEqual(d, { clienteId: "k1", aplicacion: null, posibleDuplicado: true, deOtroCliente: false, motivo: "parecido_de_otra_fuente" });
+    const sinCargo = conciliar({ montoCentavos: 100_000, referencia: null, clabeOrdenante: null }, { ...sinDatos, parecidoDeOtraFuente: true, clienteDeLaCuenta: "k3", cargosAbiertosDelCliente: [{ id: "b", saldoCentavos: 100_000, vencimiento: "2026-11-01" }] });
+    assert.deepEqual(sinCargo, { clienteId: "k3", aplicacion: null, posibleDuplicado: true, deOtroCliente: false, motivo: "parecido_de_otra_fuente" });
+    // La clave de rastreo repetida manda: es el mismo depósito sin duda.
+    assert.equal(conciliar({ montoCentavos: 100_000, referencia: "0000018", clabeOrdenante: null }, { ...sinDatos, rastreoYaRegistrado: true, parecidoDeOtraFuente: true }).motivo, "rastreo_ya_registrado");
+  });
 
   it("referencia exacta: aplica el monto completo", () => {
     const d = conciliar({ montoCentavos: 100_000, referencia: "0000018", clabeOrdenante: null }, { ...sinDatos, cargoDeLaReferencia: emitido });

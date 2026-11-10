@@ -310,8 +310,10 @@ export function VistaCobranzaPagina({ vista, empresaId, pestana }: { vista: Vist
   );
 }
 
+const FUENTE_PAGO: Record<PagoVista["fuente"], string> = { manual: "Registrado a mano", demo: "Simulado", fintoc: "Aviso del banco (Fintoc)", estado_cuenta: "Estado de cuenta" };
+
 function ListaPagos({ pagos, puedeEditar, opciones, empresaId }: { pagos: readonly PagoVista[]; puedeEditar: boolean; opciones: { id: string; texto: string; clienteId: string; saldo: number }[]; empresaId: string }) {
-  const fuente: Record<PagoVista["fuente"], string> = { manual: "Registrado a mano", demo: "Simulado", fintoc: "Aviso del banco (Fintoc)", estado_cuenta: "Estado de cuenta" };
+  const fuente = FUENTE_PAGO;
   return (
     <ul className="cobranza-pagos" data-lista="pagos">
       {pagos.map((p) => {
@@ -333,6 +335,12 @@ function ListaPagos({ pagos, puedeEditar, opciones, empresaId }: { pagos: readon
               {p.documentoId ? <> · <a href={enEmpresa(empresaId, `/consola/cobros/comprobante/${p.documentoId}`)}>Comprobante</a></> : null}
               {p.motivo ? ` · ${p.motivo}` : ""}
             </p>
+            {p.parecido ? (
+              <p className="pista" data-parecido={p.parecido.id}>
+                Parece el mismo depósito que: {fuente[p.parecido.fuente]} del {fechaConAnio(p.parecido.recibidoEl)} por {formatoPesos(p.parecido.montoCentavos)}
+                {p.parecido.cliente ? ` · ${p.parecido.cliente}` : ""}{p.parecido.estado === "aplicado" ? " · ya aplicado" : ""}. Aplícalo solo si de verdad llegaron dos depósitos; si es el mismo, descártalo.
+              </p>
+            ) : null}
             {p.aplicaciones.length > 0 ? (
               <ul className="cobranza-aplicaciones">
                 {p.aplicaciones.map((a) => (
@@ -346,7 +354,7 @@ function ListaPagos({ pagos, puedeEditar, opciones, empresaId }: { pagos: readon
             {puedeEditar && p.estado === "abierto" ? (
               <div className="flujo-acciones-fila cobranza-acciones-pago">
                 <AplicarPago pagoId={p.id} opciones={sugeridas.slice(0, 50)} />
-                {p.fuente === "manual" && p.aplicadoCentavos === 0 ? <AnularPago pagoId={p.id} texto={texto} /> : null}
+                {(p.fuente === "manual" || p.posibleDuplicado) && p.aplicadoCentavos === 0 ? <AnularPago pagoId={p.id} texto={texto} descartar={p.posibleDuplicado} /> : null}
               </div>
             ) : null}
           </li>
@@ -374,6 +382,7 @@ const ACCION_HISTORIAL: Record<string, string> = {
   abono_cargo: "Abono al cargo",
   registrar_pago_cobranza: "Pago recibido",
   anular_pago_cobranza: "Pago anulado",
+  descartar_duplicado_cobranza: "Posible duplicado descartado",
   aplicacion_cobranza: "Pago aplicado",
   correo_cobranza: "Correo",
   clabe_cliente_cobranza: "CLABE propia asignada",
@@ -653,6 +662,11 @@ function TablaPropuestas({ renglones, editable }: { renglones: NonNullable<Vista
                 ) : r.propuesta?.tipo === "por_conciliar" ? (
                   <span>
                     A «Por conciliar»{r.propuesta.cliente ? ` (de ${r.propuesta.cliente})` : ""}.
+                    {r.propuesta.parecido ? (
+                      <small data-parecido>
+                        Posible duplicado: ya está {FUENTE_PAGO[r.propuesta.parecido.fuente].toLowerCase()} del {fechaCorta(r.propuesta.parecido.recibidoEl)} por {formatoPesos(r.propuesta.parecido.montoCentavos)}{r.propuesta.parecido.cliente ? ` (${r.propuesta.parecido.cliente})` : ""}. No se aplica solo.
+                      </small>
+                    ) : null}
                     {r.propuesta.sugerencias.length > 0 ? <small>Mismo monto: {r.propuesta.sugerencias.map((s) => `${s.cliente} · ${s.concepto}`).join("; ")}</small> : <small>Sin cargos del mismo monto.</small>}
                   </span>
                 ) : "—"}
