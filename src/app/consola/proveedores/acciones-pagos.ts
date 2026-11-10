@@ -15,8 +15,10 @@ import {
   resolverPagoProveedor,
   type ArchivoPago,
 } from "@/server/pagos-proveedores";
+import { confirmarConTotp } from "@/server/autenticacion";
 import { contextoDeAccion, errorConSecreto, sesionSegura } from "@/server/entrada";
 import { ErrorDeDominio } from "@/server/session";
+import type { Sesion } from "@/server/session/tipos";
 
 import { leerArchivoPago } from "./archivos";
 import type { EstadoPagoFormulario } from "./estado";
@@ -45,6 +47,7 @@ const MENSAJES: Record<string, string> = {
   cfdi_receptor_distinto: "El CFDI no está emitido a la empresa con la que entraste.",
   cfdi_duplicado: "Ese UUID ya está registrado en esta empresa.",
   reautenticacion_requerida: "La autorización exige un segundo factor reciente. Sal y vuelve a entrar para renovarlo.",
+  segundo_factor_invalido: "Ese código no coincide. Vuelve a intentar.",
   cancelacion_no_permitida: "Quien solicitó cancela mientras espera autorización o tras un rechazo; un pago listo para pagar lo cancela un liberador o administrador.",
   pago_cambio_en_revision: "La solicitud cambió mientras la revisabas (otra decisión, una corrección o un regreso a revisión). Recarga y revisa la versión vigente antes de decidir.",
   evidencia_requerida: "Si cambias el importe de una excepción, adjunta evidencia nueva en PDF que lo respalde.",
@@ -133,7 +136,7 @@ export async function decidirPago(
     if (decision !== "autorizar" && decision !== "rechazar") throw new ErrorDeDominio("pago_no_autorizable");
     const sesion = await sesionSegura();
     if (!sesion) throw new ErrorDeDominio("reautenticacion_requerida");
-    await resolverPagoProveedor(await contextoDeAccion(), sesion, {
+    await resolverPagoProveedor(await contextoDeAccion(), await conFactorRenovado(sesion, formData.get("codigo")), {
       requestId: texto(formData, "requestId"), decision, motivo: texto(formData, "motivo"),
       version: texto(formData, "version"), totalCentavos: texto(formData, "totalCentavos"),
     });
@@ -144,8 +147,23 @@ export async function decidirPago(
       requestId: texto(formData, "requestId"),
     };
   } catch (error) {
-    return invalido(error, { motivo_invalido: "motivo" });
+    // Al quinto código equivocado la sesión ya se cerró: a la entrada, como la confirmación de identidad.
+    if (error instanceof ErrorDeDominio && error.codigo === "reautenticacion_agotada") redirect("/entrar?aviso=reautenticacion_agotada");
+    return invalido(error, { motivo_invalido: "motivo", segundo_factor_invalido: "codigo", reautenticacion_requerida: "codigo" });
   }
+}
+
+/**
+ * Con el código de la app en el mismo envío, primero se renueva el segundo factor (la confirmación de identidad de
+ * siempre, con su tope de intentos) y la decisión se toma con la sesión ya renovada: quien decide no pierde lo que
+ * escribió por tener que salir y volver a entrar. Sin código, la sesión tal cual.
+ */
+async function conFactorRenovado(sesion: Sesion, codigo: FormDataEntryValue | null): Promise<Sesion> {
+  if (typeof codigo !== "string") return sesion;
+  await confirmarConTotp(sesion, codigo);
+  const renovada = await sesionSegura();
+  if (!renovada) throw new ErrorDeDominio("reautenticacion_requerida");
+  return renovada;
 }
 
 export async function cancelarPago(
@@ -194,12 +212,12 @@ function texto(formData: FormData, campo: string): string {
   return typeof valor === "string" ? valor : "";
 }
 
-/** El error traducido y, cuando nace de un campo, ese campo (los de esta acción mandan sobre los generales). */
+/** El error traducido, su código y, cuando nace de un campo, ese campo (los de esta acción mandan sobre los generales). */
 function invalido(error: unknown, propios: Record<string, string> = {}): EstadoPagoFormulario {
   const mensaje = traducir(error);
   const codigo = error instanceof ErrorDeDominio ? error.codigo : null;
   const campo = codigo ? (propios[codigo] ?? CAMPO_DEL_ERROR[codigo]) : undefined;
-  return campo ? { tipo: "invalido", mensaje, campo } : { tipo: "invalido", mensaje };
+  return { tipo: "invalido", mensaje, ...(campo ? { campo } : {}), ...(codigo ? { codigo } : {}) };
 }
 
 function traducir(error: unknown): string {

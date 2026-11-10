@@ -192,6 +192,9 @@ export async function sembrarRecorridos(owner: string): Promise<void> {
   }, { demostracion: false });
   const marina = await invitarAdministrador(personal, { companyId: arrecife.id, razonSocial: arrecife.razonSocial, nombre: "Marina Ríos", correo: CORREOS.marina });
   await aceptarInvitacion({ token: marina.emitida.token, contrasena: CLAVE, confirmacion: CLAVE });
+  // Rosa de Taller del Cierre (seed-pagos.sql) con app autenticadora: aprobaciones.spec escribe su código al decidir
+  // sin JavaScript con el segundo factor vencido.
+  await factor("rosa-pagos@ejemplo.mx", "22222222-2222-4222-8222-222222222222");
   await factor(CORREOS.marina, marina.emitida.userId);
 
   // ---------- Personal SOFIPO con contraseña y app autenticadora ----------

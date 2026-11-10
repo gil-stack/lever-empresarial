@@ -100,7 +100,7 @@ export function VistaDeAprobaciones({
       {vista === "historial" ? (
         <Historial historial={carga.historial} empresaId={empresaId} />
       ) : (
-        <ConAvisoDeDecision rechazar={rechazar}>
+        <ConAvisoDeDecision rechazar={rechazar} filas={aprobaciones.pagos?.pagos.map((pago) => pago.id) ?? []}>
           <Pendientes carga={carga} empresaId={empresaId} />
         </ConAvisoDeDecision>
       )}
