@@ -49,6 +49,15 @@ export type ResultadoAbono = {
 
 export type FuenteDePago = FuenteAutomatica | "manual";
 
+/**
+ * El cliente de un abono para el freno de duplicados: el único que nombran todas sus identificaciones, o nulo si ninguna
+ * lo nombra o si nombran a más de uno (r63e-N1). Nulo es el lado conservador: cualquier parecido frena.
+ */
+export function clienteSinDuda(identificaciones: readonly (string | null | undefined)[]): string | null {
+  const clientes = new Set(identificaciones.filter((c): c is string => typeof c === "string" && c !== ""));
+  return clientes.size === 1 ? [...clientes][0]! : null;
+}
+
 export type PagoParecido = { pagoId: string; fuente: FuenteDePago; recibidoEl: string; montoCentavos: number; cliente: string | null };
 
 /**
@@ -63,9 +72,11 @@ export type PagoParecido = { pagoId: string; fuente: FuenteDePago; recibidoEl: s
  * son dos pagos distintos. Corre dentro de la transacción de quien llama, con la empresa bloqueada
  * (`bloquearEmpresa`): dos fuentes a la vez se forman y la segunda ve a la primera.
  *
- * Si el abono ya sabe de qué cliente es (la CLABE propia del cliente, la ordenante de un solo cliente o el cargo que
- * eligió una persona), un pago parecido de OTRO cliente no cuenta: son dos depósitos de dos clientes (r63d-N1). Uno sin
- * cliente, o del mismo, sí cuenta.
+ * Si el abono sabe sin duda de qué cliente es, un pago parecido de OTRO cliente no cuenta: son dos depósitos de dos
+ * clientes (r63d-N1). «Sin duda» quiere decir que todo lo que lo identifica dice el mismo cliente: la CLABE propia, los
+ * clientes que antes pagaron desde la CLABE ordenante, el cargo de la referencia y el cargo o el cliente que eligió una
+ * persona (`clienteSinDuda`). Con cualquier desacuerdo (por ejemplo, la referencia de D desde la CLABE de U, r63e-N1) se
+ * trata como sin cliente y cualquier parecido frena. Un parecido sin cliente, o del mismo, siempre cuenta.
  *
  * Recibe varios abonos a la vez (la propuesta de un estado de cuenta) y devuelve, por clave, el pago más cercano.
  */
@@ -173,8 +184,8 @@ export async function recibirAbono(
     clientesDeLaClabe = r.rows.map(registro).map((f) => texto(f.customer_id));
   }
   const clienteConocido = clienteDeLaCuenta ?? (clientesDeLaClabe.length === 1 ? clientesDeLaClabe[0]! : null);
-  // El cliente que ya se sabe: el de la cuenta o la CLABE ordenante, o el del cargo de la referencia.
-  const clienteDelAbono = clienteConocido ?? cargoDeLaReferencia?.clienteId ?? null;
+  // El cliente al que va el dinero, solo si todo lo que identifica al abono coincide (r63e-N1).
+  const clienteDelAbono = clienteSinDuda([clienteDeLaCuenta, ...clientesDeLaClabe, cargoDeLaReferencia?.clienteId ?? null]);
   const parecido = rastreoYaRegistrado
     ? null
     : (await pagosParecidosDeOtraFuente(consulta, empresaId, fuente, [

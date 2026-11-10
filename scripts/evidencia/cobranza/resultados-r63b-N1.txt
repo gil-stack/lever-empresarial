@@ -24,3 +24,13 @@ Ronda r63d (re-verificación de 09b40e0), tests/cobranza/cobranza-postgres.test.
 - r63d-N1 con src/server/cobranza/{abonos,servicio}.ts de 09b40e0: FALLA · «r63d-N1 otro cliente ya identificado: el abono a la CLABE de su cliente quedó frenado por el pago de otro cliente». El control «mismo cliente, otra fuente: sigue frenado» pasa en los dos códigos.
 - r63d-N2 con la mutación MF7 (los pagos anulados o devueltos cuentan como parecido): FALLAN · «el pago anulado frenó el abono» y «el pago devuelto frenó el abono».
 - Con el arreglo: ℹ pass 1, ℹ fail 0.
+
+Ronda r63e (re-verificación de 442c21c), tests/cobranza/cobranza-postgres.test.ts (revision63b):
+- Con src/server/cobranza/{abonos,servicio}.ts de 442c21c: FALLAN
+  · r63e-N1 con el cliente elegido a mano: r63e-N1: el depósito de D (elegido a mano) se aplicó otra vez desde la CLABE de U
+  · r63e-N1 estado de cuenta primero y luego Fintoc desde la CLABE de otro cliente: r63e-N1 (N1.ECaF del revisor): el depósito se aplicó otra vez desde la CLABE de U
+  · r63e-N1 la referencia de D desde la CLABE de U: r63e-N1: el depósito de D desde la CLABE de U se aplicó dos veces
+- MF14 (un parecido sin cliente ya no frena a un abono con cliente): FALLA · «r63e un parecido sin cliente frena».
+- MF6 (referencias distintas también frenan): FALLA · «r63e mismo cliente, referencias distintas: los dos se aplican».
+- Con el arreglo: ℹ pass 1, ℹ fail 0.
+- Sondas del revisor (revision-63-scripts/zz-r63-{c351463,09b40e0,442c21c}.spec.ts, copias que escriben fuera de su carpeta, Chromium, api.fintoc.com bloqueada): 11/11, 5/5 y 6/6. Mismo veredicto que el revisor en cada escenario, salvo ADV2.ordenanteDeOtro y N1.ECaF, que en 442c21c se aplicaban dos veces y ahora quedan frenados (1 aplicación). En la de c351463, N1 esperaba el texto anterior al aviso de r63b-N3; la copia acepta también «ya estaba en Lever».

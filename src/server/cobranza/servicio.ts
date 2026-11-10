@@ -13,7 +13,7 @@ import {
   validarPlanEditado,
   validarPlanNuevo,
 } from "../../dominio/cobranza/entradas";
-import { abonoDemo, aplicar, fuenteDemo, pagosParecidosDeOtraFuente, recibirAbono, type VarianteDemo } from "./abonos";
+import { abonoDemo, aplicar, clienteSinDuda, fuenteDemo, pagosParecidosDeOtraFuente, recibirAbono, type VarianteDemo } from "./abonos";
 import { uuidValido, validarMotivo, type ErrorFlujo } from "../../dominio/flujo/entradas";
 import { hoyEnMexico } from "../../dominio/personas";
 import { baseCliente, exigir, puede, type ContextoConEmpresa, type ContextoDeTenant } from "../../nucleo/contexto";
@@ -747,7 +747,11 @@ export async function registrarPagoManual(
       // La misma regla que los abonos automáticos (r63b-N1): el depósito ya llegó por Fintoc o en un estado de cuenta.
       const parecido = rastreoRepetido
         ? null
-        : (await pagosParecidosDeOtraFuente(consulta, c.empresa.id, "manual", [{ clave: "pago", montoCentavos: valor.montoCentavos, recibidoEl: valor.recibidoEl, referencia, clienteId }])).get("pago") ?? null;
+        : (await pagosParecidosDeOtraFuente(consulta, c.empresa.id, "manual", [{
+            clave: "pago", montoCentavos: valor.montoCentavos, recibidoEl: valor.recibidoEl, referencia,
+            // El cliente del cargo y el elegido a mano tienen que coincidir; si no, sin cliente (r63e-N1).
+            clienteId: clienteSinDuda([clienteId, clienteEscrito]),
+          }])).get("pago") ?? null;
       const posibleDuplicado = rastreoRepetido || parecido !== null;
       if (archivo && guardado) {
         await aplicarSentencia(

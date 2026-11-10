@@ -522,14 +522,14 @@ async function revision63b(url: string, r: Revision63): Promise<void> {
   // el tipo `returned` y la misma transferencia.
   const fintoc = async (
     monto: number, referencia: string | null, fecha = "2026-11-10", rastreo: string | null = null,
-    extra: { cuentaNumero?: string; transferencia?: string; devolucion?: boolean } = {},
+    extra: { cuentaNumero?: string; transferencia?: string; devolucion?: boolean; ordenante?: string } = {},
   ) => {
     const cuerpo = JSON.stringify({
       id: `evt_${randomUUID().replace(/-/g, "")}`, type: extra.devolucion ? "transfer.inbound.returned" : "transfer.inbound.succeeded", object: "event", mode: "test", created_at: new Date().toISOString(),
       data: {
         id: extra.transferencia ?? `tr_${randomUUID().replace(/-/g, "")}`, object: "transfer", direction: "inbound", status: extra.devolucion ? "returned" : "succeeded", amount: monto, currency: "MXN", mode: "test",
         transaction_date: `${fecha}T17:00:00.000Z`, reference_id: referencia, tracking_key: rastreo,
-        account_number: { id: extra.cuentaNumero ?? "acno_CuentaDeLaEmpresa", account_id: "acc_PruebaAlfa02" }, counterparty: { holder_name: "Ordenante r63b", account_number: null, account_type: "clabe" },
+        account_number: { id: extra.cuentaNumero ?? "acno_CuentaDeLaEmpresa", account_id: "acc_PruebaAlfa02" }, counterparty: { holder_name: "Ordenante r63b", account_number: extra.ordenante ?? null, account_type: "clabe" },
       },
     });
     return atenderAviso(new TextEncoder().encode(cuerpo), firmar(cuerpo, configFintoc.secretoWebhook, ahoraSeg), depsAviso);
@@ -709,6 +709,65 @@ async function revision63b(url: string, r: Revision63): Promise<void> {
     const deK = await subir([`10/11/2026,SPEI RECIBIDO ${k.referencia} OTRA VEZ,${k.referencia},340.50`]);
     assert.deepEqual(await confirmar(deK.id), { aplicados: 1, porConciliar: 0, yaRegistrados: 0, descartados: 0 }, "r63d-N2: el pago devuelto frenó el abono");
     assert.equal(pagado(k.id), 34_050);
+  });
+
+  // r63e-N1: la referencia de D llega desde la CLABE que antes usó U. El cliente del abono no es seguro (U por la CLABE,
+  // D por la referencia), así que cualquier parecido frena; el dinero iría a D, que ya registró ese depósito a mano.
+  let consecutivoClabe = 0;
+  const clabeNueva = () => { const d = `999${String(20_000_000_000_000 + ++consecutivoClabe).padStart(14, "0")}`; return `${d}${digitoClabe(d)}`; };
+  await caso("r63e-N1 la referencia de D desde la CLABE de U", async () => {
+    const clabeU = clabeNueva();
+    const u = await cargo("R63e U", "20.00");
+    await fintoc(1_000, u.referencia, "2026-11-10", null, { ordenante: clabeU });
+    const d = await cargo("R63e D", "1000.00");
+    const manual = await registrarPagoManual(admin, { altaId: randomUUID(), cargoId: d.id, monto: "777.00", recibidoEl: "2026-11-10" }, null, deps());
+    await fintoc(77_700, d.referencia, "2026-11-10", null, { ordenante: clabeU });
+    assert.deepEqual([pagado(d.id), aplicaciones(d.id)], [77_700, 1], "r63e-N1: el depósito de D desde la CLABE de U se aplicó dos veces");
+    const f = ultimo("fintoc", 77_700);
+    assert.deepEqual([f.posible_duplicado, f.parecido_a], [true, manual.pagoId]);
+  });
+  await caso("r63e-N1 con el cliente elegido a mano", async () => {
+    const clabeU = clabeNueva();
+    const u = await cargo("R63e U2", "20.00");
+    await fintoc(1_000, u.referencia, "2026-11-10", null, { ordenante: clabeU });
+    const d = await cargo("R63e D2", "1000.00");
+    const clienteD = fila<{ c: string }>(`select customer_id as c from collection_charges where id = '${d.id}'`)!.c;
+    // Una persona registra el depósito sin elegir cargo, solo el cliente D: queda abierto, de D, sin referencia.
+    const manual = await registrarPagoManual(admin, { altaId: randomUUID(), clienteId: clienteD, monto: "778.00", recibidoEl: "2026-11-10" }, null, deps());
+    await fintoc(77_800, d.referencia, "2026-11-10", null, { ordenante: clabeU });
+    assert.deepEqual([pagado(d.id), ultimo("fintoc", 77_800).parecido_a], [0, manual.pagoId], "r63e-N1: el depósito de D (elegido a mano) se aplicó otra vez desde la CLABE de U");
+  });
+
+  await caso("r63e-N1 estado de cuenta primero y luego Fintoc desde la CLABE de otro cliente", async () => {
+    const clabeU = clabeNueva();
+    const u = await cargo("R63e U3", "20.00");
+    await fintoc(1_000, u.referencia, "2026-11-10", null, { ordenante: clabeU });
+    const d = await cargo("R63e D3", "340.00");
+    const deD = await subir([`10/11/2026,SPEI RECIBIDO ${d.referencia},${d.referencia},170.00`]);
+    assert.deepEqual(await confirmar(deD.id), { aplicados: 1, porConciliar: 0, yaRegistrados: 0, descartados: 0 });
+    await fintoc(17_000, d.referencia, "2026-11-10", null, { ordenante: clabeU });
+    assert.deepEqual([pagado(d.id), aplicaciones(d.id)], [17_000, 1], "r63e-N1 (N1.ECaF del revisor): el depósito se aplicó otra vez desde la CLABE de U");
+    assert.equal(ultimo("fintoc", 17_000).posible_duplicado, true);
+  });
+
+  // MF14: un parecido sin cliente (un depósito en «Por conciliar» sin identificar) frena aunque el abono nuevo sí sepa su cliente.
+  await caso("r63e un parecido sin cliente frena", async () => {
+    const suyo = await cargoDeLaClabe("R63e sin cliente", "357.00");
+    const sinCliente = await registrarPagoManual(admin, { altaId: randomUUID(), monto: "357.00", recibidoEl: "2026-11-10" }, null, deps());
+    await fintoc(35_700, null, "2026-11-10", null, { cuentaNumero: r.propia.id });
+    assert.deepEqual([pagado(suyo), ultimo("fintoc", 35_700).parecido_a], [0, sinCliente.pagoId], "MF14: el parecido sin cliente no frenó");
+  });
+
+  // MF6: el mismo cliente con dos cargos del mismo monto y referencias distintas, pagados el mismo día por dos fuentes: los dos se aplican.
+  await caso("r63e mismo cliente, referencias distintas: los dos se aplican", async () => {
+    const primero = await cargo("R63e Dos cargos", "448.00");
+    const cliente = fila<{ c: string }>(`select customer_id as c from collection_charges where id = '${primero.id}'`)!.c;
+    const segundo = (await crearCargoUnico(admin, { clienteId: cliente, altaId: randomUUID(), concepto: "R63e segundo cargo", monto: "448.00", vencimiento: "2026-11-21" }, deps())).cargoId;
+    const refSegundo = fila<{ r: string }>(`select referencia as r from collection_charges where id = '${segundo}'`)!.r;
+    await fintoc(44_800, primero.referencia, "2026-11-10");
+    const deS = await subir([`10/11/2026,SPEI RECIBIDO ${refSegundo},${refSegundo},448.00`]);
+    assert.deepEqual(await confirmar(deS.id), { aplicados: 1, porConciliar: 0, yaRegistrados: 0, descartados: 0 }, "MF6: dos referencias distintas del mismo cliente se frenaron");
+    assert.deepEqual([pagado(primero.id), pagado(segundo)], [44_800, 44_800]);
   });
 
   assert.deepEqual(fallas, [], "r63b-N1: casos que aplicaron dos veces el mismo depósito");
