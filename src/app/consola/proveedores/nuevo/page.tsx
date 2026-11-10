@@ -11,12 +11,12 @@ import type { ContextoConEmpresa } from "@/nucleo/contexto";
 import { abrirRuta } from "@/server/entrada";
 import { leerPagosProveedores } from "@/server/pagos-proveedores";
 
-import { soloTexto, type Direccion } from "@/app/consola/direccion";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Nuevo pago a proveedor" };
 
-export default async function NuevoPago({ searchParams }: { searchParams: Direccion }) {
+export default async function NuevoPago({ searchParams }: { searchParams: Parametros }) {
   const apertura = await abrirRuta("/consola/proveedores/nuevo");
   if (apertura.tipo !== "abierta" || !apertura.ctx.empresa) notFound();
   const ctx = apertura.ctx as ContextoConEmpresa;

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { MarcoArco } from "@/components/entrar/marco-arco";
 import { FormularioEntrarOperacion } from "@/components/operacion/formulario-entrar";
 import { contextoOperacion } from "@/server/operacion/contexto";

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
-import { soloTexto, type Direccion } from "@/app/consola/direccion";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { armarAprobaciones } from "@/components/aprobaciones/armar";
 import {
   VistaDeAprobaciones,
@@ -35,7 +35,7 @@ type Apertura = Awaited<ReturnType<typeof abrirRuta>>;
  * con las decisiones que se toman aquí mismo (autorizar o rechazar pagos a
  * proveedores, preparar el lote de nómina) usando las acciones de siempre.
  */
-export default async function PaginaAprobaciones({ searchParams }: { searchParams: Direccion }) {
+export default async function PaginaAprobaciones({ searchParams }: { searchParams: Parametros }) {
   const apertura = await abrirRuta("/consola/aprobaciones");
   if (apertura.tipo === "sin_permiso") notFound();
   const ctx = apertura.tipo === "libro" ? null : apertura.ctx;

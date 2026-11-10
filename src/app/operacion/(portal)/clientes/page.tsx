@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { etiquetaEstado } from "@/components/operacion/formato";
 import { FormularioProspecto } from "@/components/operacion/formulario-prospecto";
 import { PaginaOperacion } from "@/components/operacion/pagina";

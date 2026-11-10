@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { Coincidencias } from "@/components/operacion/coincidencias";
 import { fechaDia, fechaHora } from "@/components/operacion/formato";
 import { PaginaOperacion } from "@/components/operacion/pagina";

@@ -14,14 +14,14 @@ import { leerClabesProveedor } from "@/server/proveedores";
 import type { LecturaClabes } from "@/server/proveedores/tipos";
 import { ErrorDeDominio } from "@/server/session";
 
-import { soloTexto, type Direccion } from "@/app/consola/direccion";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 
 export const runtime = "nodejs";
 export const metadata: Metadata = { title: "Pagos a proveedores" };
 
 type Params = { vista?: string; q?: string; estado?: string; pagina?: string; pago?: string; proveedor?: string };
 
-export default async function PaginaProveedores({ searchParams }: { searchParams: Direccion }) {
+export default async function PaginaProveedores({ searchParams }: { searchParams: Parametros }) {
   const apertura = await abrirRuta("/consola/proveedores");
   const params: Params = await soloTexto(searchParams);
   if (apertura.tipo !== "abierta" || !apertura.ctx.empresa) {
