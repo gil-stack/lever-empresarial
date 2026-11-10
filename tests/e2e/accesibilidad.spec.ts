@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import axe from "axe-core";
 
-import { altamar, sesionDe } from "./apoyo";
+import { altamar, ORIGEN, sesionDe } from "./apoyo";
 import { CORREOS } from "./siembra";
 
 /**
@@ -226,6 +226,89 @@ test.describe("N19: lo que llega por un ancla queda debajo de las barras", () =>
     expect(operacion.arriba, `Operación: título en y=${operacion.arriba}, barras hasta y=${operacion.barras}`).toBeGreaterThanOrEqual(operacion.barras);
     await sinJs.close();
   });
+});
+
+// trece-N1 (revisión del #59): las barras pegadas arriba eran translúcidas (el fondo al 70 %). Con la página desplazada,
+// lo que pasa por debajo se ve a través: a 390, un botón oscuro bajo «Operación SOFIPO» dejaba el texto en 3.27:1. axe
+// solo mide lo que hay debajo en ese momento; esta prueba calcula el peor caso: compone el fondo de la barra sobre negro
+// y sobre blanco puros y pide AA a cada texto a la vista (4.5:1, o 3:1 si es grande).
+async function contrasteConCualquierCosaDebajo(page: Page, ruta: string, tema: string, conJs = true): Promise<string[]> {
+  // `sesionDe` borra las cookies: el tema va después de abrir la sesión, y se comprueba que la página lo tomó.
+  await page.context().addCookies([{ name: "tema", value: tema, url: ORIGEN }]);
+  await page.goto(ruta, { waitUntil: conJs ? "networkidle" : "load" });
+  await expect(page.locator("html")).toHaveAttribute("data-tema", tema);
+  // Con JavaScript, sin transiciones: el fondo que se mide es el final (sin JavaScript no hay transición y addStyleTag no
+  // termina). Una página corta no se desplaza y la barra de escritorio seguiría sin fondo (nada pasa debajo): se alarga.
+  if (conJs) await page.addStyleTag({ content: "*, *::before, *::after { transition: none !important; }" });
+  await page.evaluate(() => {
+    document.body.style.paddingBottom = "3000px";
+    window.scrollTo(0, document.documentElement.scrollHeight);
+  });
+  // Con JavaScript, la barra de escritorio toma su fondo al desplazarse (`data-desplazada`); sin él, lo lleva siempre.
+  const escritorio = page.locator(".barra-superior");
+  if (conJs && (await escritorio.isVisible())) await expect(escritorio).toHaveAttribute("data-desplazada", "");
+  return page.evaluate(() => {
+    type Rgba = [number, number, number, number];
+    const leer = (css: string): Rgba => {
+      const n = (css.match(/-?[\d.]+%?/g) ?? []).map((x) => (x.endsWith("%") ? parseFloat(x) / 100 : parseFloat(x)));
+      if (css.startsWith("color(srgb")) return [n[0]! * 255, n[1]! * 255, n[2]! * 255, n[3] ?? 1];
+      return [n[0] ?? 0, n[1] ?? 0, n[2] ?? 0, n[3] ?? 1];
+    };
+    const sobre = ([r, g, b, a]: Rgba, [R, G, B]: Rgba): Rgba => [r * a + R * (1 - a), g * a + G * (1 - a), b * a + B * (1 - a), 1];
+    const luz = ([r, g, b]: Rgba) => {
+      const c = (v: number) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+      return 0.2126 * c(r) + 0.7152 * c(g) + 0.0722 * c(b);
+    };
+    const razon = (x: Rgba, y: Rgba) => { const [a, b] = [luz(x), luz(y)].sort((p, q) => q - p); return (a! + 0.05) / (b! + 0.05); };
+    const fallas: string[] = [];
+    for (const barra of document.querySelectorAll<HTMLElement>(".barra-movil, .barra-superior")) {
+      if (!barra.getClientRects().length) continue;
+      for (const el of barra.querySelectorAll<HTMLElement>("*")) {
+        const texto = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent ?? "").join("").trim();
+        const caja = el.getBoundingClientRect();
+        const estilo = getComputedStyle(el);
+        if (!texto || !caja.width || !caja.height || estilo.visibility === "hidden" || el.closest("[hidden], .solo-lector")) continue;
+        // Los fondos desde la barra hasta el texto (la barra primero).
+        const capas: Rgba[] = [];
+        for (let x: HTMLElement | null = el; x; x = x === barra ? null : x.parentElement) capas.unshift(leer(getComputedStyle(x).backgroundColor));
+        const grande = parseFloat(estilo.fontSize) >= 24 || (parseFloat(estilo.fontSize) >= 18.66 && Number(estilo.fontWeight) >= 700);
+        for (const [nombre, debajo] of [["negro", [0, 0, 0, 1]], ["blanco", [255, 255, 255, 1]]] as const) {
+          const fondo = capas.reduce((acum, capa) => sobre(capa, acum), debajo as Rgba);
+          const r = razon(sobre(leer(estilo.color), fondo), fondo);
+          if (r < (grande ? 3 : 4.5)) fallas.push(`«${texto.slice(0, 30)}» (${barra.className.split(" ")[0]}) con ${nombre} debajo: ${r.toFixed(2)}:1`);
+        }
+      }
+    }
+    return fallas;
+  });
+}
+
+test.describe("trece-N1: las barras de arriba conservan AA con cualquier cosa debajo", () => {
+  for (const tema of ["claro", "oscuro", "lever"]) {
+    for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
+      test(`${tema} a ${ventana.width}: portal y Operación, desplazados al fondo`, async ({ page, context }) => {
+        await page.setViewportSize(ventana);
+        await sesionDe(context, GIL);
+        expect.soft(await contrasteConCualquierCosaDebajo(page, `/c/${TALLER}/consola/personas`, tema), "portal").toEqual([]);
+        await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+        expect.soft(await contrasteConCualquierCosaDebajo(page, "/operacion/clientes", tema), "Operación").toEqual([]);
+      });
+    }
+  }
+
+  for (const tema of ["claro", "oscuro", "lever"]) {
+    test(`sin JavaScript, ${tema} a 390 y 1440: la barra lleva su fondo siempre`, async ({ browser }) => {
+      for (const ventana of [{ width: 390, height: 844 }, { width: 1440, height: 900 }]) {
+        const sinJs = await browser.newContext({ javaScriptEnabled: false, viewport: ventana });
+        const page = await sinJs.newPage();
+        await sesionDe(sinJs, GIL);
+        expect.soft(await contrasteConCualquierCosaDebajo(page, `/c/${TALLER}/consola/personas`, tema, false), `portal a ${ventana.width}`).toEqual([]);
+        await sesionDe(sinJs, CORREOS.op1, { superficie: "sofipo" });
+        expect.soft(await contrasteConCualquierCosaDebajo(page, "/operacion/clientes", tema, false), `Operación a ${ventana.width}`).toEqual([]);
+        await sinJs.close();
+      }
+    });
+  }
 });
 
 test.describe("sin JavaScript se puede salir", () => {
