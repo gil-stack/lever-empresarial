@@ -68,7 +68,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT coalesce(
     app_operador() IS NOT NULL AND app_usuario() IS NOT NULL AND personal_tiene_rol(app_operador(), app_usuario(), p_roles),
@@ -126,7 +126,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM platform_staff s WHERE s.operator_id = p_operador AND s.user_id = p_user AND s.estado = 'activo'
@@ -212,7 +212,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT extract(isodow FROM p_dia) IN (6, 7)
       OR (SELECT count(DISTINCT d.instrumento) FROM pld_dias_inhabiles d WHERE d.fecha = p_dia) = 2
@@ -223,7 +223,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$ SELECT count(*) = 2 FROM pld_calendarios c WHERE c.anio = p_anio $$;
 
 -- El día hábil número p_dias contado desde el siguiente a p_desde (40ª: «dentro
@@ -233,7 +233,7 @@ RETURNS date
 LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   dia date := p_desde;
@@ -259,7 +259,7 @@ RETURNS date
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$ SELECT pld_sumar_dias_habiles(date_trunc('month', p_mes)::date - 1, p_n) $$;
 
 -- Último día hábil del mes (38ª: «siguientes al último día hábil del mes inmediato anterior»).
@@ -268,7 +268,7 @@ RETURNS date
 LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   dia date := (date_trunc('month', p_mes) + interval '1 month')::date - 1;
@@ -289,7 +289,7 @@ RETURNS integer
 LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF p_desde IS NULL OR p_hasta IS NULL OR p_hasta - p_desde > 366 THEN
@@ -312,7 +312,7 @@ RETURNS date
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT pld_fecha_mx(min(r.decided_at))
   FROM company_activation_requests r
@@ -731,7 +731,7 @@ RETURNS pld_parametros
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT p.* FROM pld_parametros p
   WHERE p.operator_id = p_operador OR p.operator_id IS NULL
@@ -891,7 +891,7 @@ CREATE FUNCTION pld_alertar(p_operacion pld_operaciones, p_parametros uuid, p_re
 RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   nueva uuid;
@@ -918,7 +918,7 @@ CREATE FUNCTION pld_evaluar_operacion()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   p pld_parametros%ROWTYPE;
@@ -1081,7 +1081,7 @@ CREATE FUNCTION pld_registrar_pago()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   vigente pld_operaciones%ROWTYPE;
@@ -1114,7 +1114,7 @@ CREATE FUNCTION pld_registrar_nomina()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   personas integer;
@@ -1170,7 +1170,7 @@ CREATE FUNCTION pld_avisos_alertar()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   nueva uuid;
@@ -1199,7 +1199,7 @@ CREATE FUNCTION pld_aviso_excluidos_revisar()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   aviso pld_avisos%ROWTYPE;
@@ -1244,7 +1244,7 @@ CREATE FUNCTION pld_aviso_con_cumplimiento()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   -- r2-fix-N2: el candado del personal de Cumplimiento del operador, el mismo que
@@ -1379,7 +1379,7 @@ RETURNS uuid[]
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT coalesce(array_agg(DISTINCT ca.caso_id), '{}')
   FROM pld_aviso_excluidos e
@@ -1393,7 +1393,7 @@ RETURNS uuid[]
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT coalesce(array_agg(DISTINCT z.id), '{}')
   FROM (
@@ -1408,7 +1408,7 @@ RETURNS uuid[]
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT coalesce(array_agg(DISTINCT z.aviso_id), '{}')
   FROM (
@@ -1424,7 +1424,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT p_caso = ANY (pld_casos_que_me_excluyen())
 $$;
@@ -1434,7 +1434,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT p_alerta = ANY (pld_alertas_que_me_excluyen())
 $$;
@@ -1444,7 +1444,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT p_aviso = ANY (pld_avisos_que_me_excluyen())
 $$;
@@ -1460,7 +1460,7 @@ RETURNS date
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   -- Con el rol del personal, solo del operador del contexto y nunca de un caso que
   -- excluye a quien pregunta (60ª). El ajuste «role» es el que fijó SET ROLE: esta
@@ -1625,7 +1625,7 @@ RETURNS TABLE (modo text, oficial_user_id uuid)
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT coalesce(m.modo, 'comite'), m.oficial_user_id
   FROM (SELECT 1) AS uno
@@ -2523,7 +2523,7 @@ CREATE FUNCTION pld_documento_para_descarga(p_documento uuid, p_peticion uuid)
 RETURNS TABLE (clave_blob text, nombre_archivo text, tipo_contenido text, sha256 text)
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   documento pld_documentos%ROWTYPE;
@@ -2555,7 +2555,7 @@ RETURNS uuid[]
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT coalesce(array_agg(DISTINCT v.sesion_id), '{}')
   FROM pld_votos v
@@ -2570,7 +2570,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT p_sesion = ANY (pld_sesiones_que_me_excluyen())
 $$;
@@ -2590,7 +2590,7 @@ RETURNS uuid[]
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT coalesce(array_agg(DISTINCT z.u), '{}')
   FROM (
@@ -2609,7 +2609,7 @@ RETURNS uuid[]
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT coalesce(array_agg(DISTINCT e.user_id), '{}')
   FROM pld_caso_alertas ca
@@ -2623,7 +2623,7 @@ RETURNS uuid[]
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT coalesce(array_agg(DISTINCT z.u), '{}')
   FROM (
@@ -2639,7 +2639,7 @@ RETURNS uuid[]
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT coalesce(array_agg(DISTINCT z.u), '{}')
   FROM (SELECT unnest(pld_excluidos_del_caso(v.caso_id)) FROM (SELECT DISTINCT caso_id FROM pld_votos WHERE sesion_id = p_sesion) v) z(u)
@@ -2664,7 +2664,7 @@ RETURNS text
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT CASE
     WHEN p_persona = ANY (pld_excluidos_de_la_sesion(p_sesion)) THEN 'sesion_no_existe'
@@ -2683,7 +2683,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   SELECT p_persona = ANY (pld_excluidos_de_la_sesion(p_sesion))
 $$;
@@ -2699,7 +2699,7 @@ RETURNS text
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   WITH aviso AS (SELECT coalesce(array_agg(e.user_id), '{}') AS excluidos FROM pld_aviso_excluidos e WHERE e.aviso_id = p_aviso)
   SELECT CASE
@@ -2721,7 +2721,7 @@ CREATE FUNCTION pld_acta_para_descarga(p_acta uuid, p_peticion uuid)
 RETURNS TABLE (clave_blob text, nombre_archivo text, tipo_contenido text, sha256 text)
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   acta pld_actas%ROWTYPE;
@@ -2753,7 +2753,7 @@ RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   WITH avisos AS (
     SELECT x.aviso_id, ca.caso_id
@@ -2796,7 +2796,7 @@ CREATE FUNCTION pld_personal_deja_analista()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   operador uuid;
@@ -2847,7 +2847,7 @@ CREATE FUNCTION pld_manifiesto_conteos(p_company uuid, p_desde date, p_hasta dat
 RETURNS TABLE (tabla text, filas bigint)
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   empresa companies%ROWTYPE;
@@ -2919,7 +2919,7 @@ CREATE FUNCTION pld_manifiesto_documentos(p_company uuid, p_desde date, p_hasta 
 RETURNS TABLE (origen text, id uuid, cargado_en timestamptz, nombre_archivo text, sha256 text, clave_blob text, tamano_bytes integer)
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   desde timestamptz := (p_desde::timestamp AT TIME ZONE 'America/Mexico_City');
@@ -2963,7 +2963,7 @@ CREATE OR REPLACE FUNCTION companies_candado_regulado()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   version kyb_versiones%ROWTYPE;
@@ -3280,7 +3280,7 @@ RETURNS uuid[]
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
-SET search_path = public
+SET search_path = public, pg_temp
 AS $$
   WITH casos AS (SELECT unnest(pld_casos_que_me_excluyen()) AS id)
   SELECT coalesce(array_agg(z.id), '{}')
