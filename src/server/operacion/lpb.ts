@@ -216,11 +216,19 @@ export async function resolverCoincidencia(
   const motivo = motivoEscrito(entrada.motivo, 500);
   const ahora = new Date();
   await conContexto(basePlataforma(ctx), async (consulta) => {
-    const fila = await consulta.query("select company_id, estado from lpb_coincidencias where id = $1 for update", [entrada.id]);
-    const actual = fila.rows[0] as { company_id?: unknown; estado?: unknown } | undefined;
+    const fila = await consulta.query(
+      "select company_id, estado, resuelta_por, motivo_resolucion from lpb_coincidencias where id = $1 for update",
+      [entrada.id],
+    );
+    const actual = fila.rows[0] as { company_id?: unknown; estado?: unknown; resuelta_por?: unknown; motivo_resolucion?: unknown } | undefined;
     if (!actual) throw new ErrorDeDominio("coincidencia_ausente");
-    // El segundo clic encuentra la coincidencia ya resuelta igual: no hace nada más.
-    if (actual.estado === estado) return;
+    if (actual.estado === estado) {
+      // El mismo envío repetido (el segundo POST de un doble clic sin JavaScript): quien la resolvió, con el mismo motivo.
+      // Sale como el primero, sin otro evento.
+      if (actual.resuelta_por === ctx.persona.id && actual.motivo_resolucion === motivo) return;
+      // Otra pestaña u otra persona ya la resolvió igual: su motivo no se guardaría, así que no es un éxito (doce-N3).
+      throw new ErrorDeDominio("coincidencia_ya_resuelta");
+    }
     await consulta.query(
       `update lpb_coincidencias set estado = $2, resuelta_por = $3, resuelta_en = $4, motivo_resolucion = $5 where id = $1`,
       [entrada.id, estado, ctx.persona.id, ahora, motivo],

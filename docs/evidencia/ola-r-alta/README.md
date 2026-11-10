@@ -8,7 +8,11 @@ Recorrido con clics reales de Playwright headless (`scripts/evidencia/ola-r-alta
 | Pantallas (3 temas × 1440/390) y contraste AA medido | 60 comprobaciones en verde, 0 en rojo; contraste mínimo 5.00 (Lever 1440) | `datos/resultados-pantallas-contraste.json` |
 | Regresiones de las revisiones del PR (pago que regresa, doble envío, tope de 4 MB, lo que ve cada rol, descarga aislada; avisos sin la lista, pistas de Cumplimiento, socio extranjero, bitácora de Administración, contrato y 69-B por operador; socio extranjero física y moral con su rechazo, la misma persona con dos documentos, el grado de riesgo con los 5 roles, el formulario reusado, la pista con el error, la carga de un renglón y los comandos de la dueña; el grado sin desglose con y sin caso, el socio extranjero tras el rechazo de otro campo, el motivo corto y el arranque de un operador sin personal; el motivo con emoji y con Enter, el diálogo de Aprobaciones que conserva el motivo, el socio extranjero que vuelve con todo lo capturado, el borrado con Blob caído, la vigencia invertida y, en la consola, el RFC con guion o de guiones, los motivos con emoji del cobro y del pago y el XML con un control y con «&amp;»; el representante, el socio y la razón social con un control, el giro y el cobro con el control como espacio, el RFC con tabulador, el alta y el área con su aviso y las fechas de Pagos en su campo; el aviso propio del carácter invisible en el socio, el representante, las razones sociales y el folio, el representante que conserva lo capturado, el documento extranjero y la Lista con tabulador, el motivo con un emoji compuesto y el contrato con «Vigente hasta»; el representante con un relleno hangul, el envío sin giro ni domicilio, las fechas del folio en su campo y la recuperación marcada en su tarjeta; sin JavaScript la entrada, el giro, el dictamen y el archivo, las claves repetidas en la dirección, el foco del archivo rechazado y los valores largos a 390; el mensaje del error junto al campo, el representante sin JavaScript y el motivo de la coincidencia, y en cada aviso un solo campo marcado; cada formulario de Operación rechazado vuelve con lo capturado, con y sin JavaScript, a 1440 y 390) | 273 comprobaciones en verde, 0 en rojo, consola limpia | `datos/resultados-regresiones.json`, `datos/quinta-arranque.txt`, `datos/sexta-huerfanos.json` |
 
-Corrida del 2026-11-10 sobre el head de este PR, con los arreglos de las doce revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`; la carrera de F4 y F5 del CI, serv-nuevo-5, base-N24, base-N25, el aviso propio del carácter invisible y dos P3 de la re-verificación sobre `b2db0b5`; la bomba de fechas de `test:db`, base-N26, base-N27, serv-nuevo-6b y serv-nuevo-6d de la re-verificación sobre `a75d5e4`; N5 del CI, base-N28, serv-nuevo-7, los textos que no se ven, el JSDoc, dos reglas de axe, el campo de archivo y el desborde a 390 de la re-verificación sobre `32e49b8`; el mensaje junto al campo, el P2 de los formularios sin JavaScript, el motivo de la coincidencia, U+2800 y los Cf, y la nota del dictamen aprobado de la re-verificación sobre `edefd2e`; los formularios que vuelven con lo capturado, F1-F5, «Salir» sin JavaScript, el humo del preview N3, N4 y N6 y la guarda de las partes de la e2e de la re-verificación sobre `602af09`), sobre una base migrada de cero con la 0028 final. Las tres fases y axe corrieron sobre el código final de la doceava revisión.
+Corrida del 2026-11-10 sobre el head de este PR, con los arreglos de las doce revisiones (H1-H12 y F1-F9; el resto de H2, N1-N3 y S5-S12 de la re-verificación sobre `57caa83`; N2-resto, N4-N14 de la re-verificación sobre `fd139bf`; serv-N9, serv-N15-N17 y base-N15-N18 de la re-verificación sobre `c67424a`; base-N19-N22, serv-N15-resto, serv-N16-resto, serv-N18, sexta-N1, líder-N1-N3, bar-1-bar-10 y serv-nuevo-1-3 de la re-verificación sobre `701bc25`; base-N23 = serv-nuevo-4 y dos P3 de avisos de la re-verificación sobre `98224e0`; la carrera de F4 y F5 del CI, serv-nuevo-5, base-N24, base-N25, el aviso propio del carácter invisible y dos P3 de la re-verificación sobre `b2db0b5`; la bomba de fechas de `test:db`, base-N26, base-N27, serv-nuevo-6b y serv-nuevo-6d de la re-verificación sobre `a75d5e4`; N5 del CI, base-N28, serv-nuevo-7, los textos que no se ven, el JSDoc, dos reglas de axe, el campo de archivo y el desborde a 390 de la re-verificación sobre `32e49b8`; el mensaje junto al campo, el P2 de los formularios sin JavaScript, el motivo de la coincidencia, U+2800 y los Cf, y la nota del dictamen aprobado de la re-verificación sobre `edefd2e`; los formularios que vuelven con lo capturado, F1-F5, «Salir» sin JavaScript, el humo del preview N3, N4 y N6 y la guarda de las partes de la e2e de la re-verificación sobre `602af09`), sobre una base migrada de cero con la 0028 final. Las tres fases y axe corrieron sobre `36c5cd4`, el código final de la doceava revisión (con humo-N9). Las capturas son de tres códigos:
+
+- De `36c5cd4`, todas menos las de abajo.
+- De `79a52b5` (ronda 13, con doce-N1, N2, N3 y delta-N1): las seis `n9-*` de la e2e (`n9-prospecto-1440`, `n9-prospecto-390`, `n9-documento-1440`, `n9-coincidencia-1440`, `n9-recuperacion-1440` y la nueva `n9-folio-1440`).
+- Del código de `79a52b5` sin cambios en `src/`, tomadas al preparar `d2d56df`: las diez `r13-a-*` a `r13-d-*` del recorrido de la ronda 13. `r13-s5-*` es de las fases, sobre `36c5cd4`.
 
 ## Cómo se corre
 
@@ -874,8 +878,45 @@ Todo va en este PR. **La 0028 no cambia**, ni `PIE_REGULATORIO` ni `src/estilo/t
 - 81/81 de Postgres;
 - e2e completa 66/66 (con humo-N9) y las tres partes, con 23, 23 y 20 pruebas;
 - build y security;
-- recorrido sobre `6ae090e`: flujos 155, pantallas y contraste 60, regresiones 273, todos en verde;
+- recorrido sobre `36c5cd4`: flujos 155, pantallas y contraste 60, regresiones 273, todos en verde;
 - axe: `aria-prohibited-attr` 0 y `label-content-name-mismatch` 0 (`datos/axe-final.txt`).
+
+### Ronda 13 (re-verificación sobre `6ae090e` + `36c5cd4`)
+
+El revisor de servidor dejó doce-N1, doce-N2 y doce-N3, sobre `6ae090e`, y delta-N1, sobre `36c5cd4`. A eso se sumó el reparto de la e2e: en el CI de `79a52b5`, la parte 1 tardó 554 s, arriba del tope de 450 s. Todo va en este PR. **La 0028 no cambia**, ni `PIE_REGULATORIO` ni `src/estilo/tokens.css`.
+
+| Hallazgo | Arreglo | Prueba (rojo antes del arreglo → verde) |
+| --- | --- | --- |
+| **doce-N1** (P2) Pedir una comisión con otra pendiente para la misma empresa y tipo chocaba con `company_commissions_una_pendiente`, y la pantalla decía «La base no respondió» | `src/nucleo/db.ts` traduce el índice a `ErrorDeDominio("comision_pendiente")`. `aviso.tsx` lleva el texto en `MENSAJES` y lo marca en `CAMPO.comision_pendiente = "tipo"` | **Postgres** (`tests/operacion/portal-postgres.test.ts`): un segundo SPEI pendiente rechaza con `comision_pendiente`. Rojo: `datos/pg-rojo-doce-n1.txt`. **e2e** «doce-N1», con Bahía, con JS a 1440 y sin JS a 390: el mensaje queda junto a `#tipo`, con el foco, lo capturado vuelve y sigue habiendo una sola pendiente. Rojo: `datos/e2e-rojo-doce-n1.txt` (`#tipo:focus` = 0) |
+| **doce-N2** (P2, seguridad) Los catálogos de avisos se leían con `catalogo[clave]`, sin `Object.hasOwn`. Con `?aviso=constructor`, la lectura devolvía la función `Object` y la página daba 500 | Ayudante único `deCatalogo` (`src/dominio/catalogo.ts`, con `Object.hasOwn`) en las 5 lecturas: `textoDelAviso` y `esDelCampo` de `aviso.tsx`, `app/operacion/entrar`, `app/entrar` y `app/entrar/seguridad`. `esDelCampo` solo acepta un código del catálogo o uno con prefijo `dato_invalido_` / `invisible_` | **Unitarias:** `src/dominio/catalogo.test.ts` (constructor, toString, `__proto__`, hasOwnProperty, valueOf, isPrototypeOf, null, undefined y "") y `aviso.test.ts`. Rojo: `datos/unit-rojo-doce-n2.txt`. **e2e** «doce-N2»: 5 páginas × 4 claves dan 200, sin `function Object`. Rojo con las fuentes de `ebfb52a`: 14 fallas, con 500 (`datos/e2e-rojo-doce-n2.txt`) |
+| **doce-N3** (P3) Otra pestaña ya había resuelto la coincidencia con la misma resolución. El segundo dictamen salía como éxito y su motivo no se guardaba | `resolverCoincidencia` (`src/server/operacion/lpb.ts`). Si coinciden la resolución, `resuelta_por` y el motivo, es un doble clic y sale como el primero. Si no, lanza `coincidencia_ya_resuelta` («Esa coincidencia ya se resolvió. Tu dictamen y tu motivo no se guardaron.») | **Postgres** (`tests/operacion/alta-regulada-postgres.test.ts`): el reenvío idéntico pasa, otro motivo rechaza, y el motivo y la bitácora (1) no cambian. Rojo: «Missing expected rejection» (`datos/pg-rojo-doce-n3.txt`). **e2e** «doce-N3», con dos pestañas: `#aviso-rechazo` con `data-aviso="coincidencia_ya_resuelta"` y `role=alert`; en la base, el primer motivo y una bitácora. Rojo: `datos/e2e-rojo-doce-n3.txt` |
+| **delta-N1** (P3) En el folio de una coincidencia, el mensaje de un campo ensanchaba su columna, y el botón «Anotar folio» se estiraba a 148 px | `src/estilo/operacion.css`: `.operacion-acciones .campo > .error-campo { contain: inline-size }`, la regla del revisor. Además, `form.operacion-acciones { align-items: end }`: sin ella, los controles quedaban 84 px desfasados. Aplica a los dos formularios en línea (folio y dictamen de coincidencia) | **e2e** humo-N9 suma el folio de Brisa a 1440: columnas y anchos iguales (±1 px), los tres controles terminan a la misma altura y el botón conserva sus 36 px. Rojos: `datos/e2e-rojo-delta-n1-columnas.txt` (+386 px) y `datos/e2e-rojo-delta-n1-alineacion.txt` (84 px). Captura `n9-folio-1440` |
+| **Reparto de la e2e** En el CI de `79a52b5` (run `ub9uVOwUAzNHf8dmu4PZbe11`), con tres partes, la 1 tardó 554 s, con 470 s de pruebas, contra 202 y 301 de las otras dos. Llevaba Duna (127 s en CI) junto con los 5 specs anteriores a `operacion.spec.ts`, que suman 17 pruebas y 274 s. Con cuatro partes, en `d2d56df` (run `7s8kA6GkA6eKKCvLrzWFQWoQ`), la 1 tardó 443.5 s, a 6.5 s del tope: esos 5 specs tardaron 318 s y eran su piso | **Cinco partes** (`test:e2e:5` en `turbo.json`, `--shard=N/5` en `package.json`). Con cortes en 14, 28, 42 y 56, nómina pasa a la parte 2. Los grupos de `operacion.spec.ts` se reordenan con los tiempos del CI. La 1 lleva entrada, flujo de caja, invitación y marco; la 2, nómina, G1 (doceava sin JS), Faro y «Brisa y Cima»; la 3, recuperaciones, G3 y Duna; la 4, la entrada de Operación, precio, G4 y pagos-proveedores; la 5, passkeys, personas y roles. Se respeta G1 → G3 → G4, con «Brisa y Cima» antes de G4. Ninguna línea de prueba cambia: contra `79a52b5`, el diff ordenado solo difiere en 8 líneas de comentario de la cabecera | `--list`: 14, 16, 13, 17 y 9 pruebas (= 69). El modelo con los tiempos del CI da 223, 202, 226, 215 y 108 s de pruebas. En local, una parte por llamada, todas pasan: 73, 53, 44, 52 y 31 s (`datos/e2e-parte-N-de-5.txt`). La e2e completa pasa 69/69 en un solo orden en cada paso: `79a52b5` (`datos/e2e-completa-69-79a52b5.txt`), cuatro partes (`datos/e2e-completa-69-4-partes.txt`, más `datos/e2e-parte-N-de-4.txt`) y cinco (`datos/e2e-completa-69-5-partes.txt`). CI: ver «Vercel CI» en el cuerpo del PR |
+
+**Recorrido clicado de la ronda 13.** Playwright headless desde node, con la base recién sembrada por `scripts/ci/pruebas-e2e.sh`. El spec es `datos/recorrido-ronda-13.spec.ts.txt`; para correrlo, se copia a `tests/e2e/`. Salida: `datos/recorrido-ronda-13.txt`, 4/4.
+
+| Flujo | Captura | Qué verifica |
+| --- | --- | --- |
+| a. Comisiones, segunda pendiente | `r13-a-comision-pendiente-js-1440`, `r13-a-comision-pendiente-sin-js-390` | op1 pide un SPEI de Bahía y luego otro. Con JS a 1440 y sin JS a 390 (POST 200), el aviso «Ya hay una versión pendiente…» queda arriba del formulario y entre la etiqueta y el control de «Tipo», que queda marcado y con el foco; el valor vuelve como se escribió y no aparece «La base no respondió». Sigue habiendo 1 pendiente |
+| b. Folio a 1440 | `r13-b-folio-1440` | op3 anota en Cumplimiento el folio de Brisa con una fecha futura. Tras el rechazo, folio, presentado y aviso terminan en y = 578, igual que el botón, que mide 36 px. No se guarda folio |
+| c. Coincidencia ya resuelta | `r13-c-doble-clic-identico`, `r13-c-coincidencia-ya-resuelta` | Brisa: dos pestañas de op3 con el mismo dictamen y motivo. La segunda, con doble clic, sale como éxito (`?aviso=coincidencia_resuelta`, sin aviso de rechazo) y la bitácora queda en 1. Cima: la otra pestaña resolvió con otro motivo, y la primera ve `coincidencia_ya_resuelta` arriba de la página; el motivo guardado es el primero y la bitácora queda en 1 |
+| d. `?aviso=` heredado | `r13-d-entrar-constructor`, `r13-d-operacion-entrar-constructor`, `r13-d-entrar-seguridad-constructor`, `r13-d-operacion-clientes-constructor`, `r13-d-operacion-expediente-constructor` | Las 5 páginas con `constructor`, `toString` y `__proto__`: 15 visitas con 200, el título visible y sin «function Object», `[native code]` ni `[object Object]` |
+
+**Compuertas sobre el código final de la ronda 13.**
+
+- typecheck y lint, en 0;
+- 481/481 unitarias;
+- 81/81 de Postgres, en serie;
+- e2e completa 69/69 y las cinco partes, con 14, 16, 13, 17 y 9 pruebas;
+- build y security, en 0.
+
+**Decisiones de la ronda 13.**
+
+1. **El recorrido es un spec temporal.** Corre en `tests/e2e` con `scripts/ci/pruebas-e2e.sh`, sobre una base recién sembrada. Se guarda como `datos/recorrido-ronda-13.spec.ts.txt` para que no entre a la e2e ni a tsc.
+2. **Los rojos de e2e copiados a `datos/` van sin las capturas en base64**, de 1.2 a 1.5 MB cada una. Una línea dice qué se omitió.
+3. **Las capturas del recorrido se convierten a webp**, como las demás.
+4. **El doble clic real en «Registrar dictamen» lo frena el botón ocupado** (1 envío). El reenvío idéntico lo prueba la pestaña obsoleta, que sale como éxito con la bitácora en 1; en Postgres, lo cubre `alta-regulada-postgres.test.ts`.
+5. **Cinco partes en lugar de cuatro**, por decisión de la sesión líder: con cuatro, la parte 1 quedaba a 6.5 s del tope.
 
 ## Flujo → captura → qué verifica en la base
 
@@ -1045,7 +1086,7 @@ Todo va en este PR. **La 0028 no cambia**, ni `PIE_REGULATORIO` ni `src/estilo/t
 
 Las capturas `NN-pantalla-<pantalla>-<tema>-<ancho>` son la fase de pantallas: un solo h1, campos con etiqueta, sin desborde horizontal y consola limpia en Personal, Cumplimiento, Lista, Expediente, Ficha, Aprobaciones, Clientes, Bitácora y Sin permiso.
 
-Las capturas del recorrido (`NN-…` y `rNN-…`) son de `6ae090e`, antes de humo-N9. En `r99` y `r131`, por ejemplo, el aviso todavía cae en una columna o junto a un campo. Las `n9-*` son de la e2e con el arreglo: `n9-antes-prospecto-1440` (sin la regla), `n9-prospecto-1440` y `-390`, `n9-documento-1440`, `n9-coincidencia-1440` y `n9-recuperacion-1440`.
+Todas las capturas son de `36c5cd4`. Las del recorrido (`NN-…` y `rNN-…`) salen de sus tres fases. Las `n9-*` salen de la e2e de humo-N9: `n9-antes-prospecto-1440` se tomó sin la regla y muestra el defecto; `n9-prospecto-1440` y `-390`, `n9-documento-1440`, `n9-coincidencia-1440` y `n9-recuperacion-1440`, con el arreglo.
 
 ## Salida literal
 
@@ -1087,7 +1128,7 @@ OK    1. la base no dejó a Aurelio con Cumplimiento
 OK    aviso «roles_incompatibles» tras la acción
 OK    1. tampoco Originación con Cumplimiento (Omar)
 OK    1. la fila de Ofelia no tiene botones: nadie se da roles a sí mismo
-Distribuidora Lumbre lista: expediente aprobado y revisión de riesgo vencida el 2026-10-09.
+Distribuidora Lumbre lista: expediente aprobado y revisión de riesgo vencida el 2026-10-10.
 
 — Flujo 2: Originación registra el prospecto y arma el expediente (2 capas, propietarios reales calculados)
 OK    aviso «prospecto_registrado» tras la acción
@@ -1235,7 +1276,7 @@ OK    12. la descarga entrega el PDF guardado
 OK    12. la SHA-256 del archivo descargado coincide con la guardada en la base
 OK    12. descargar deja «expediente_documento_descargado»
 OK    12. la bitácora muestra las dos lecturas con su etiqueta
-NOTA  f12-bitacora-lecturas-auditadas: la página mide 10123 px y no cabe en una captura completa; se guarda la ventana
+NOTA  f12-bitacora-lecturas-auditadas: la página mide 10142 px y no cabe en una captura completa; se guarda la ventana
 OK    12. Auditoría ve «Sin permiso» en Personal
 OK    consola del navegador limpia en todos los flujos
 
@@ -1292,15 +1333,15 @@ OK    pantalla clientes claro 1440: un h1, campos con etiqueta, sin desborde, co
 OK    pantalla clientes claro 390: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla clientes lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia
 OK    pantalla clientes lever 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-oscuro-1440: la página mide 10532 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-oscuro-1440: la página mide 10551 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora oscuro 1440: un h1, campos con etiqueta, sin desborde, consola limpia
 NOTA  pantalla-bitacora-oscuro-390: la página mide 29444 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora oscuro 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-claro-1440: la página mide 10532 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-claro-1440: la página mide 10551 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora claro 1440: un h1, campos con etiqueta, sin desborde, consola limpia
 NOTA  pantalla-bitacora-claro-390: la página mide 29444 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora claro 390: un h1, campos con etiqueta, sin desborde, consola limpia
-NOTA  pantalla-bitacora-lever-1440: la página mide 10532 px y no cabe en una captura completa; se guarda la ventana
+NOTA  pantalla-bitacora-lever-1440: la página mide 10551 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora lever 1440: un h1, campos con etiqueta, sin desborde, consola limpia
 NOTA  pantalla-bitacora-lever-390: la página mide 29444 px y no cabe en una captura completa; se guarda la ventana
 OK    pantalla bitacora lever 390: un h1, campos con etiqueta, sin desborde, consola limpia

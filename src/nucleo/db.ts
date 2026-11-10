@@ -173,6 +173,7 @@ export function traducirErrorDeBase(error: unknown): Error {
     if (marca.includes("kyb_versiones_un_borrador")) return new ErrorDeDominio("expediente_con_borrador");
     if (marca.includes("kyb_dictamenes_una_por_version")) return new ErrorDeDominio("dictamen_ya_registrado");
     if (marca.includes("company_suspensions_una_pendiente")) return new ErrorDeDominio("suspension_pendiente");
+    if (marca.includes("company_commissions_una_pendiente")) return new ErrorDeDominio("comision_pendiente");
     if (marca.includes("lpb_cargas_archivo_unico")) return new ErrorDeDominio("lpb_ya_cargada");
     if (FORMULARIOS_REGULADOS.test(marca)) return new ErrorDeDominio("formulario_ya_aplicado");
     if (marca.includes("auth_passkeys")) return new ErrorDeDominio("passkey_duplicada");

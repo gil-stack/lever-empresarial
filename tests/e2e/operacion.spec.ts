@@ -16,12 +16,15 @@ import { BRISA, CIMA, CORREOS, DUNA, EJE, ENEBRO, FARO, FRESNO, GRANADO, HIGUERA
  * conteo en la base.
  */
 
-// Cuatro grupos seriales, cada uno con lo que siembra tests/e2e/siembra.ts: el archivo es «parallel» solo para que
+// Nueve grupos seriales, cada uno con lo que siembra tests/e2e/siembra.ts y sin depender de lo que dejen los demás
+// (solo «Brisa y Cima» va antes del de coincidencias, que cierra sus casos): el archivo es «parallel» solo para que
 // `--shard` reparta grupos y no el archivo entero (con workers: 1 corren en orden). Playwright reparte por número de
-// pruebas y el grupo que empieza antes del corte va entero a esa parte: el más corto va primero y comparte la parte 1
-// con los specs anteriores (entrada, flujo de caja, invitación, marco y nómina, unos 70 s); «Operación SOFIPO» y el
-// grupo con JavaScript caen en la 2; el de coincidencias, con los specs posteriores, en la 3. La guarda de
-// scripts/ci/pruebas-e2e.sh falla si una parte queda sin pruebas.
+// pruebas y el grupo que empieza antes del corte va entero a esa parte; el orden de abajo decide el reparto (ver
+// tests/e2e/LEEME.md). En cinco partes, con 69 pruebas: la 1 son los specs anteriores menos nómina; la doceava sin
+// JavaScript, Faro y Brisa y Cima van a la 2 con nómina; recuperaciones, la doceava con JavaScript y Duna, a la 3; entrada,
+// precio y coincidencias, a la 4 con pagos-proveedores; la 5 son los demás specs posteriores. El orden sale de los
+// tiempos del CI (ver el LEEME). La doceava sin JavaScript va antes de «Brisa y Cima», y las dos antes de coincidencias.
+// La guarda de scripts/ci/pruebas-e2e.sh falla si una parte queda sin pruebas.
 test.describe.configure({ mode: "parallel" });
 
 const PROSPECTO = { razonSocial: "Puerto Nuevo E2E", rfc: "PNE200101AB3" };
@@ -234,7 +237,7 @@ async function salirDeOperacion(page: Page): Promise<void> {
 }
 
 // Doceava revisión, sin JavaScript, sobre empresas que solo usa este grupo (Enebro, Granado, Higuera, Bahía) o que solo
-// rechaza (Cima y Brisa): no depende de los otros grupos ni los cambia. Va primero porque es el más corto (ver arriba).
+// rechaza (Cima y Brisa): no depende de los otros grupos ni los cambia.
 test.describe("doceava sin JavaScript: empresas propias de la siembra", () => {
   test.describe.configure({ mode: "serial" });
   test.use({ javaScriptEnabled: false });
@@ -360,38 +363,10 @@ test.describe("doceava sin JavaScript: empresas propias de la siembra", () => {
   });
 });
 
-// Entrada, alta con activación (Faro), expediente, recuperación y precio. Las pruebas de la doceava sobre Faro van
-// aquí porque necesitan a Faro activa, y la activa «prospecto → pedir activación».
-test.describe("Operación SOFIPO", () => {
+// Faro: prospecto → pedir activación → la activa otra persona. Las pruebas de la doceava sobre Faro van aquí porque
+// necesitan a Faro activa.
+test.describe("Operación SOFIPO: alta con activación (Faro)", () => {
   test.describe.configure({ mode: "serial" });
-
-  test("entrada SOFIPO: contraseña y código; un código malo no abre y el doble clic abre una sola sesión", async ({ page }) => {
-    const errores = vigilarConsola(page);
-    const op1 = await idDe(CORREOS.op1);
-    // Entrar puede cerrar sesiones viejas de la misma persona: se cuentan las que nacen en esta prueba.
-    const desde = (await consultar<{ desde: string }>("select now()::text as desde"))[0]!.desde;
-    const sesiones = () => contar("select 1 from sessions where user_id = $1 and superficie = 'sofipo' and creada_en >= $2::timestamptz", [op1, desde]);
-    const antes = await sesiones();
-    expect(antes).toBe(0);
-
-    await page.goto("/operacion/entrar");
-    await page.getByLabel("Correo").fill(CORREOS.op1);
-    await page.getByLabel("Contraseña", { exact: true }).fill(CLAVE);
-    const contrasena = await dobleClic(page.getByRole("button", { name: "Continuar" }), { esperar: /\/operacion\/continuar/ });
-    expect(contrasena.envios).toBe(1);
-
-    await page.getByLabel("Código de la app autenticadora").fill("000000");
-    await page.getByRole("button", { name: "Entrar con el código" }).click();
-    await expect(page.locator("#factor-error")).toBeVisible();
-    expect(await sesiones()).toBe(antes);
-
-    await page.getByLabel("Código de la app autenticadora").fill(await codigoTotp(CORREOS.op1));
-    const codigo = await dobleClic(page.getByRole("button", { name: "Entrar con el código" }), { esperar: /\/operacion$/ });
-    expect(codigo.envios).toBe(1);
-    expect(await sesiones()).toBe(antes + 1);
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    expect(errores).toEqual([]);
-  });
 
   test("prospecto → pedir activación → el candado exige expediente; con todo en regla la decide otra persona con factor reciente", async ({ page, context }) => {
     const errores = vigilarConsola(page);
@@ -490,6 +465,32 @@ test.describe("Operación SOFIPO", () => {
     expect(errores).toEqual([]);
   });
 
+  test("doceava: prospecto, invitación, comisión y alertas vuelven con lo capturado y su campo marcado; el resumen de arriba no se queda", async ({ page, context }) => {
+    const errores = vigilarConsola(page);
+    await formulariosConCaptura(page, context, false);
+    expect(errores).toEqual([]);
+  });
+
+  test("doceava: la suspensión de Faro no consume el formulario al rechazarse, el doble clic pide una sola y la otra pestaña ve «ya hay una pendiente» sin recargar", async ({ page, context, browser }) => {
+    const errores = vigilarConsola(page);
+    await suspensionUnaVez(page, context, browser, FARO.rfc, "Pedir suspensión", false);
+    expect(errores).toEqual([]);
+  });
+
+  test.describe("doceava sin JavaScript, con Faro activa", () => {
+    test.use({ javaScriptEnabled: false });
+
+    test("sin JavaScript, invitación, comisión y alertas vuelven con lo capturado y el resumen del envío anterior no se pinta", async ({ page, context }) => {
+      await formulariosConCaptura(page, context, true);
+    });
+  });
+});
+
+// Brisa (alta con una coincidencia abierta) y Cima (suspendida con su caso): Aprobación y Originación no ven la lista.
+// Solo rechaza y lee. Va antes del grupo de coincidencias, que confirma la de Brisa y resuelve la de Cima.
+test.describe("Operación SOFIPO: Brisa y Cima", () => {
+  test.describe.configure({ mode: "serial" });
+
   test("un caso abierto de Cumplimiento no se le nombra a Aprobación ni a Originación", async ({ page, context }) => {
     const errores = vigilarConsola(page);
     const estados = async () => (await consultar<{ rfc: string; estado: string }>(
@@ -551,163 +552,39 @@ test.describe("Operación SOFIPO", () => {
     expect(errores).toEqual([]);
   });
 
-  test("tras un rechazo del socio extranjero el formulario vuelve con todo lo capturado y el campo marcado; la moral extranjera entra sin RFC", async ({ page, context }) => {
+  test("una clave repetida en la dirección (?aviso=a&aviso=b) no tumba ninguna página de Operación", async ({ page, context }) => {
     const errores = vigilarConsola(page);
-    const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
-    const expediente = `/operacion/clientes/${duna!.id}/expediente`;
-    const socios = () => contar("select 1 from kyb_accionistas where company_id = $1", [duna!.id]);
-    type Otros = { rfc?: string; capital?: string; nombre?: string };
-    const nombreDe = (tipo: "fisica" | "moral", otros: Otros) => otros.nombre ?? (tipo === "fisica" ? "John Smith Taylor" : "Delaware Holdings LLC");
-    const capturar = async (tipo: "fisica" | "moral", documento: string, otros: Otros = {}) => {
-      await page.goto(expediente);
-      await page.locator("#acc-tipo").selectOption(tipo);
-      await page.locator("#acc-nacionalidad").selectOption("extranjera");
-      await page.locator("#acc-nombre").fill(nombreDe(tipo, otros));
-      if (otros.rfc) await page.locator("#acc-rfc").fill(otros.rfc);
-      await page.locator("#acc-pais").selectOption("US");
-      await page.locator("#acc-documento").fill(documento);
-      if (tipo === "fisica") await page.locator("#acc-nacimiento").fill("1980-05-01");
-      await page.locator("#acc-capital").fill(otros.capital ?? "40");
-      await page.locator("#acc-votos").fill("40");
-      await page.getByRole("button", { name: "Agregar accionista" }).click();
+    const [brisa] = await consultar<{ id: string }>("select id from companies where rfc = $1", [BRISA.rfc]);
+    const paginas = [
+      "/operacion/alertas", "/operacion/aprobaciones", "/operacion/clientes", `/operacion/clientes/${brisa!.id}`,
+      `/operacion/clientes/${brisa!.id}/expediente`, "/operacion/comisiones", "/operacion/cumplimiento", "/operacion/lpb",
+      "/operacion/personal", "/operacion/recuperaciones",
+    ];
+    const abrir = async (ruta: string) => {
+      const respuesta = await page.goto(ruta);
+      expect(respuesta?.status(), ruta).toBe(200);
+      await expect(page.locator("h1"), ruta).toBeVisible();
     };
-    // serv-N15: vuelve sin recargar, con todo lo capturado, y ningún dato del socio pasa por la dirección.
-    const sigueCapturado = async (tipo: "fisica" | "moral", documento: string, otros: Otros = {}) => {
-      await expect(page.locator("#acc-tipo")).toHaveValue(tipo);
-      await expect(page.locator("#acc-nacionalidad")).toHaveValue("extranjera");
-      await expect(page.locator("#acc-pais")).toHaveValue("US");
-      await expect(page.locator("#acc-documento")).toHaveValue(documento);
-      if (tipo === "fisica") await expect(page.locator("#acc-nacimiento")).toHaveValue("1980-05-01");
-      await expect(page.locator("#acc-nombre")).toHaveValue(nombreDe(tipo, otros));
-      await expect(page.locator("#acc-rfc")).toHaveValue(otros.rfc ?? "");
-      await expect(page.locator("#acc-capital")).toHaveValue(otros.capital ?? "40");
-      await expect(page.locator("#acc-votos")).toHaveValue("40");
-      expect(new URL(page.url()).search).toBe("");
-      expect(await socios()).toBe(0);
-    };
-    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-    for (const tipo of ["fisica", "moral"] as const) {
-      await capturar(tipo, "A1");
-      await expect(page.locator("#aviso-accionista")).toContainText("de 4 a 20 letras y números");
-      const campo = page.locator("#acc-documento");
-      await expect(campo).toHaveAttribute("aria-invalid", "true");
-      await expect(campo).toHaveAttribute("aria-describedby", "acc-documento-pista aviso-accionista-campo");
-      await expect(campo).toBeFocused();
-      await expect(page.locator('label[for="acc-documento"]')).toHaveText(
-        tipo === "fisica" ? "Número de pasaporte o identificación oficial" : "Número de identificación fiscal o de registro en su país",
-      );
-      await sigueCapturado(tipo, "A1");
+    // Aprobación (con Administración) y Cumplimiento: entre las dos abren todas, cada una con su permiso.
+    for (const correo of [CORREOS.op2, CORREOS.op3]) {
+      await sesionDe(context, correo, { superficie: "sofipo" });
+      for (const ruta of paginas) await abrir(`${ruta}?aviso=a&aviso=b&en=x&en=y`);
     }
-    // serv-N15: los seis rechazos de la revisión (RFC «XX», nombre en blanco y capital «abc», en física y en
-    // moral extranjera) vuelven con país, documento, fecha, nombre y porcentajes.
-    for (const tipo of ["fisica", "moral"] as const) {
-      for (const [otros, campo] of [
-        [{ rfc: "XX" }, "#acc-rfc"],
-        [{ nombre: "   " }, "#acc-nombre"],
-        [{ capital: "abc" }, "#acc-capital"],
-      ] as const) {
-        await capturar(tipo, "12-3456789", otros);
-        await expect(page.locator("#aviso-accionista")).toBeVisible();
-        await expect(page.locator(campo)).toHaveAttribute("aria-invalid", "true");
-        await expect(page.locator(campo)).toHaveAttribute("aria-describedby", "aviso-accionista-campo");
-        await expect(page.locator(campo)).toBeFocused();
-        await sigueCapturado(tipo, "12-3456789", otros);
-      }
-    }
-    // El último rechazo (capital «abc» de la moral) se corrige en el mismo formulario y entra.
-    await page.locator("#acc-capital").fill("40");
-    await page.getByRole("button", { name: "Agregar accionista" }).click();
-    await page.waitForURL(/aviso=expediente_accionista_agregado/);
-    expect(await consultar("select rfc, pais, documento_extranjero, nacionalidad from kyb_accionistas where company_id = $1", [duna!.id])).toEqual([
-      { rfc: null, pais: "US", documento_extranjero: "123456789", nacionalidad: "Estados Unidos" },
-    ]);
-    await expect(page.locator("#accionistas-titulo").locator("..")).toContainText("Estados Unidos · registro 123456789");
-    await expect(page.locator("#aviso-accionista")).toHaveCount(0);
-    await expect(page.locator("#acc-nombre")).toHaveValue("");
+    // El detalle de lo que falta con `faltan` repetido: queda el aviso general, sin detalle.
+    await abrir(`/operacion/clientes/${brisa!.id}/expediente?aviso=expediente_datos_incompletos&faltan=giro&faltan=domicilio`);
+    await expect(page.locator("#aviso-operacion")).toHaveText("Faltan datos generales para enviar la versión. Revisa «Datos generales».");
+    // La Lista con su detalle repetido y la entrada sin sesión.
+    await abrir("/operacion/lpb?aviso=lpb_cargada&filas=1&filas=2&coincidencias=0");
+    await context.clearCookies();
+    await abrir("/operacion/entrar?aviso=a&aviso=b");
     expect(errores).toEqual([]);
   });
+});
 
-  // Una identidad con un carácter invisible (lo que deja copiar y pegar) se ve bien en pantalla: el aviso dice qué pasó,
-  // marca el campo y le da el foco. Un nombre mal formado sin invisibles conserva el aviso de formato. El formulario
-  // de representante, como el de socio, vuelve con lo capturado y sin datos personales en la dirección (P3).
-  test("un nombre con un carácter invisible da su propio aviso; el formulario de representante conserva lo capturado", async ({ page, context }) => {
-    const errores = vigilarConsola(page);
-    const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
-    const expediente = `/operacion/clientes/${duna!.id}/expediente`;
-    const socios = () => contar("select 1 from kyb_accionistas where company_id = $1", [duna!.id]);
-    const representantes = () => contar("select 1 from kyb_representantes where company_id = $1", [duna!.id]);
-    const INVISIBLE = "El nombre trae un carácter invisible, algo común al copiar y pegar. Escríbelo de nuevo a mano.";
-    const FORMATO = "Revisa el campo marcado: el dato no tiene el formato esperado.";
-    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-    const [sociosAntes, representantesAntes] = [await socios(), await representantes()];
-
-    // Socio persona física mexicana con «Juan\u0085Pérez López».
-    await page.goto(expediente);
-    for (const [nombre, aviso] of [["Juan\u0085Pérez López", INVISIBLE], ["Ana\u200bRuiz Sol", INVISIBLE], ["   ", FORMATO]] as const) {
-      await page.locator("#acc-tipo").selectOption("fisica");
-      await page.locator("#acc-nombre").fill(nombre);
-      await page.locator("#acc-curp").fill("GORL750505MDFMZR04");
-      await page.locator("#acc-capital").fill("10");
-      await page.locator("#acc-votos").fill("10");
-      await page.getByRole("button", { name: "Agregar accionista" }).click();
-      await expect(page.locator("#aviso-accionista")).toHaveText(aviso);
-      await expect(page.locator("#acc-nombre")).toHaveAttribute("aria-invalid", "true");
-      await expect(page.locator("#acc-nombre")).toHaveAttribute("aria-describedby", "aviso-accionista-campo");
-      await expect(page.locator("#acc-nombre")).toBeFocused();
-      await expect(page.locator("#acc-nombre")).toHaveValue(nombre);
-      await expect(page.locator("#acc-curp")).toHaveValue("GORL750505MDFMZR04");
-      expect(new URL(page.url()).search).toBe("");
-    }
-    expect(await socios()).toBe(sociosAntes);
-
-    // Representante: el mismo aviso, y vuelve con todo lo capturado (antes recargaba la página y lo perdía).
-    const capturado = { rfc: "RUSP800101AB1", curp: "RUSP800101HDFZLD09", cargo: "apoderado", pep: "no", designadoPor: "Asamblea del 3 de marzo" };
-    await page.locator("#rep-nombre").fill("Pedro\u00adRuiz Sol");
-    await page.locator("#rep-rfc").fill(capturado.rfc);
-    await page.locator("#rep-curp").fill(capturado.curp);
-    await page.locator("#rep-cargo").selectOption(capturado.cargo);
-    await page.locator("#rep-pep").selectOption(capturado.pep);
-    await page.locator("#rep-designado").fill(capturado.designadoPor);
-    await page.locator('input[name="esAdministrador"]').check();
-    const sigueCapturado = async (nombre: string, curp = capturado.curp) => {
-      await expect(page.locator("#rep-nombre")).toHaveValue(nombre);
-      await expect(page.locator("#rep-rfc")).toHaveValue(capturado.rfc);
-      await expect(page.locator("#rep-curp")).toHaveValue(curp);
-      await expect(page.locator("#rep-cargo")).toHaveValue(capturado.cargo);
-      await expect(page.locator("#rep-pep")).toHaveValue(capturado.pep);
-      await expect(page.locator("#rep-designado")).toHaveValue(capturado.designadoPor);
-      await expect(page.locator('input[name="esAdministrador"]')).toBeChecked();
-      expect(new URL(page.url()).search).toBe("");
-      expect(await representantes()).toBe(representantesAntes);
-    };
-    await page.getByRole("button", { name: "Agregar representante" }).click();
-    await expect(page.locator("#aviso-representante")).toHaveText(INVISIBLE);
-    await expect(page.locator("#rep-nombre")).toHaveAttribute("aria-invalid", "true");
-    await expect(page.locator("#rep-nombre")).toHaveAttribute("aria-describedby", "aviso-representante-campo");
-    await expect(page.locator("#rep-nombre")).toBeFocused();
-    await sigueCapturado("Pedro\u00adRuiz Sol");
-
-    // Se corrige el nombre y falla la CURP: el aviso de formato marca la CURP y todo lo demás sigue ahí.
-    await page.locator("#rep-nombre").fill("Pedro Ruiz Sol");
-    await page.locator("#rep-curp").fill("XX");
-    await page.getByRole("button", { name: "Agregar representante" }).click();
-    await expect(page.locator("#aviso-representante")).toHaveText(FORMATO);
-    await expect(page.locator("#rep-curp")).toHaveAttribute("aria-invalid", "true");
-    await expect(page.locator("#rep-curp")).toBeFocused();
-    await expect(page.locator("#rep-nombre")).not.toHaveAttribute("aria-invalid", "true");
-    await sigueCapturado("Pedro Ruiz Sol", "XX");
-
-    // Corregido en el mismo formulario, entra una sola vez.
-    await page.locator("#rep-curp").fill(capturado.curp);
-    await page.getByRole("button", { name: "Agregar representante" }).click();
-    await page.waitForURL(/aviso=expediente_representante_agregado/);
-    expect(await representantes()).toBe(representantesAntes + 1);
-    expect(await consultar("select nombre, rfc, curp, cargo, es_administrador, designado_por from kyb_representantes where company_id = $1 and nombre = $2", [duna!.id, "Pedro Ruiz Sol"])).toEqual([
-      { nombre: "Pedro Ruiz Sol", rfc: capturado.rfc, curp: capturado.curp, cargo: "apoderado", es_administrador: true, designado_por: capturado.designadoPor },
-    ]);
-    await expect(page.locator("#rep-nombre")).toHaveValue("");
-    expect(errores).toEqual([]);
-  });
+// Recuperaciones del segundo factor: Paula pide la suya y otra persona la aprueba; tres pendientes (Diego, Sol y
+// Ernesto) se rechazan al final. No usa empresas.
+test.describe("Operación SOFIPO: recuperaciones", () => {
+  test.describe.configure({ mode: "serial" });
 
   test("«Perdí el segundo factor»: Recuperaciones pide «Confirma que eres tú», otra persona aprueba y la clienta registra un factor nuevo", async ({ page, context }) => {
     const errores = vigilarConsola(page);
@@ -781,15 +658,6 @@ test.describe("Operación SOFIPO", () => {
     expect(errores).toEqual([]);
   });
 
-  // base-N27: con varias solicitudes pendientes, el error de una marca y enfoca solo su tarjeta. Antes la página marcaba
-  // el campo en todas, y con el foco del aviso las tres notas pedían el foco.
-  test("el mensaje del error queda a la vista junto al campo con foco: un documento y un socio del expediente y el motivo de una reactivación, a 1440 y 390", async ({ page, context }) => {
-    const errores = vigilarConsola(page);
-    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-    for (const ancho of [1440, 390]) await errorDeDocumentoYDeSocio(page, ancho);
-    expect(errores).toEqual([]);
-  });
-
   test("con tres recuperaciones pendientes, el rechazo sin nota marca y enfoca solo la nota de esa tarjeta", async ({ page, context }) => {
     const errores = vigilarConsola(page);
     const personas = [CORREOS.diego, CORREOS.sol, CORREOS.ernesto];
@@ -822,242 +690,6 @@ test.describe("Operación SOFIPO", () => {
     }
     expect(await contar("select 1 from auth_recuperaciones where id = any($1::uuid[]) and estado = 'rechazada'", [ids])).toBe(3);
     expect(errores).toEqual([]);
-  });
-
-  test("una clave repetida en la dirección (?aviso=a&aviso=b) no tumba ninguna página de Operación", async ({ page, context }) => {
-    const errores = vigilarConsola(page);
-    const [brisa] = await consultar<{ id: string }>("select id from companies where rfc = $1", [BRISA.rfc]);
-    const paginas = [
-      "/operacion/alertas", "/operacion/aprobaciones", "/operacion/clientes", `/operacion/clientes/${brisa!.id}`,
-      `/operacion/clientes/${brisa!.id}/expediente`, "/operacion/comisiones", "/operacion/cumplimiento", "/operacion/lpb",
-      "/operacion/personal", "/operacion/recuperaciones",
-    ];
-    const abrir = async (ruta: string) => {
-      const respuesta = await page.goto(ruta);
-      expect(respuesta?.status(), ruta).toBe(200);
-      await expect(page.locator("h1"), ruta).toBeVisible();
-    };
-    // Aprobación (con Administración) y Cumplimiento: entre las dos abren todas, cada una con su permiso.
-    for (const correo of [CORREOS.op2, CORREOS.op3]) {
-      await sesionDe(context, correo, { superficie: "sofipo" });
-      for (const ruta of paginas) await abrir(`${ruta}?aviso=a&aviso=b&en=x&en=y`);
-    }
-    // El detalle de lo que falta con `faltan` repetido: queda el aviso general, sin detalle.
-    await abrir(`/operacion/clientes/${brisa!.id}/expediente?aviso=expediente_datos_incompletos&faltan=giro&faltan=domicilio`);
-    await expect(page.locator("#aviso-operacion")).toHaveText("Faltan datos generales para enviar la versión. Revisa «Datos generales».");
-    // La Lista con su detalle repetido y la entrada sin sesión.
-    await abrir("/operacion/lpb?aviso=lpb_cargada&filas=1&filas=2&coincidencias=0");
-    await context.clearCookies();
-    await abrir("/operacion/entrar?aviso=a&aviso=b");
-    expect(errores).toEqual([]);
-  });
-
-  test.describe("sin JavaScript", () => {
-    test.use({ javaScriptEnabled: false });
-
-    // serv-nuevo-7: con Referrer-Policy: no-referrer, el envío nativo de un formulario lleva «Origin: null» y Next
-    // rechaza la acción con un 500. Pasa sin JavaScript y al hacer clic antes de que la página hidrate.
-    test("sin JavaScript los formularios responden: el alta vuelve con su aviso y lo capturado (200) y las dos entradas dan el suyo", async ({ page, context }) => {
-      const post = () => page.waitForResponse((respuesta) => respuesta.request().method() === "POST");
-      await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-      await page.goto("/operacion/clientes");
-      await page.getByLabel("Razón social").fill("Sin Script\u0085Uno SA de CV");
-      await page.getByLabel("RFC").fill("SSU010101AB1");
-      await page.getByLabel("Código postal").fill("06600");
-      const [alta] = await Promise.all([post(), page.getByRole("button", { name: "Registrar prospecto" }).click()]);
-      // La causa: con «no-referrer» el navegador manda «Origin: null» en el envío nativo del formulario.
-      expect(await alta.request().headerValue("origin")).toBe(new URL(alta.url()).origin);
-      // Doceava: el rechazo responde con la página (200) en la misma dirección, el aviso en el formulario y lo capturado.
-      expect(alta.status()).toBe(200);
-      expect(page.url()).not.toContain("aviso=");
-      await expect(page.locator("#aviso-prospecto")).toContainText("La razón social trae un carácter invisible");
-      await expect(page.getByLabel("RFC")).toHaveValue("SSU010101AB1");
-      await expect(page.getByLabel("Código postal")).toHaveValue("06600");
-      await mensajeJunto(page, "#razonSocial", "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano.", "aviso-prospecto-campo");
-      expect(await contar("select 1 from companies where rfc = $1", ["SSU010101AB1"])).toBe(0);
-
-      // La entrada de Operación y la del portal del cliente, sin sesión: la contraseña equivocada da su aviso ahí mismo.
-      await context.clearCookies();
-      for (const ruta of ["/operacion/entrar", "/entrar"]) {
-        await page.goto(ruta);
-        await page.getByLabel("Correo").fill("nadie-sin-script@lever-e2e.mx");
-        await page.getByLabel("Contraseña", { exact: true }).fill("no-es-la-clave-1");
-        const [entrada] = await Promise.all([post(), page.getByRole("button", { name: "Continuar" }).click()]);
-        expect(await entrada.request().headerValue("origin"), ruta).toBe(new URL(entrada.url()).origin);
-        expect(entrada.status(), ruta).toBe(200);
-        await expect(page.locator("#entrar-error"), ruta).toContainText("El correo o la contraseña no coinciden.");
-      }
-    });
-
-    // Décima revisión: el aviso de un campo volvía con «#datos-titulo» y, al cargar la página completa, el navegador
-    // descarta el autofocus cuando hay fragmento. Sin fragmento, el campo queda marcado y con el foco.
-    test("sin JavaScript, el mensaje del error queda a la vista junto al campo con foco: documento, socio, motivo de reactivación y la nota de una recuperación, a 1440 y 390", async ({ page, context }) => {
-      await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-      for (const ancho of [1440, 390]) await errorDeDocumentoYDeSocio(page, ancho, true);
-
-      // La tercera de tres tarjetas de Recuperaciones, a 390: la nota queda lejos del aviso de arriba.
-      const personas = [CORREOS.diego, CORREOS.sol, CORREOS.ernesto];
-      const ids = await recuperacionesPendientes(personas);
-      await context.clearCookies();
-      await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
-      await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto("/operacion/recuperaciones");
-      const tarjeta = (correo: string) => page.locator("li.decision").filter({ hasText: correo });
-      await page.locator(`[id="verificacion-${ids[2]}"]`).selectOption("presencial");
-      await rechazado(page, tarjeta(CORREOS.ernesto).getByRole("button", { name: "Rechazar" }), `aviso-recuperacion-${ids[2]}`, true);
-      await mensajeJunto(page, `[id="nota-${ids[2]}"]`, "Escribe un motivo breve y claro.", `aviso-recuperacion-${ids[2]}-campo`);
-      await expect(page.locator(`[id="verificacion-${ids[2]}"]`)).toHaveValue("presencial");
-      // Con su nota, cada una se rechaza; ninguna queda abierta para las demás pruebas.
-      for (const [indice, correo] of personas.entries()) {
-        await page.locator(`[id="nota-${ids[indice]}"]`).fill("No se pudo confirmar la identidad por videollamada.");
-        await tarjeta(correo).getByRole("button", { name: "Rechazar" }).click();
-        await expect(tarjeta(correo)).toHaveCount(0);
-      }
-      expect(await contar("select 1 from auth_recuperaciones where id = any($1::uuid[]) and estado = 'rechazada'", [ids])).toBe(3);
-    });
-
-    // P2 del revisor de pantalla: con una clave nueva en cada vista, React tiraba el estado que devuelve la acción y el
-    // formulario volvía en blanco (200, sin aviso, sin marca y sin lo capturado). Pasa también con un clic antes de hidratar.
-    test("sin JavaScript, «Agregar representante» y «Agregar accionista» con un invisible vuelven con su aviso, el campo marcado, el foco y lo capturado", async ({ page, context }) => {
-      const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
-      const representantes = () => contar("select 1 from kyb_representantes where company_id = $1", [duna!.id]);
-      const socios = () => contar("select 1 from kyb_accionistas where company_id = $1", [duna!.id]);
-      const [representantesAntes, sociosAntes] = [await representantes(), await socios()];
-      const INVISIBLE = "El nombre trae un carácter invisible, algo común al copiar y pegar. Escríbelo de nuevo a mano.";
-      await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-      await page.goto(`/operacion/clientes/${duna!.id}/expediente`);
-
-      const capturado = { rfc: "RUSP800101AB1", curp: "RUSP800101HDFZLD09", cargo: "apoderado", pep: "no", designadoPor: "Asamblea del 3 de marzo" };
-      await page.locator("#rep-nombre").fill("Pedro\u200bRuiz Sol");
-      await page.locator("#rep-rfc").fill(capturado.rfc);
-      await page.locator("#rep-curp").fill(capturado.curp);
-      await page.locator("#rep-cargo").selectOption(capturado.cargo);
-      await page.locator("#rep-pep").selectOption(capturado.pep);
-      await page.locator("#rep-designado").fill(capturado.designadoPor);
-      await page.locator('input[name="esAdministrador"]').check();
-      const [representante] = await Promise.all([
-        page.waitForResponse((respuesta) => respuesta.request().method() === "POST"),
-        page.getByRole("button", { name: "Agregar representante" }).click(),
-      ]);
-      expect(representante.status()).toBe(200);
-      await expect(page.locator("#aviso-representante")).toHaveText(INVISIBLE);
-      await expect(page.locator("#rep-nombre")).toHaveAttribute("aria-invalid", "true");
-      await mensajeJunto(page, "#rep-nombre", INVISIBLE, "aviso-representante-campo");
-      await expect(page.locator("#rep-nombre")).toHaveValue("Pedro\u200bRuiz Sol");
-      await expect(page.locator("#rep-rfc")).toHaveValue(capturado.rfc);
-      await expect(page.locator("#rep-curp")).toHaveValue(capturado.curp);
-      await expect(page.locator("#rep-cargo")).toHaveValue(capturado.cargo);
-      await expect(page.locator("#rep-designado")).toHaveValue(capturado.designadoPor);
-      await expect(page.locator('input[name="esAdministrador"]')).toBeChecked();
-
-      await page.goto(`/operacion/clientes/${duna!.id}/expediente`);
-      await page.locator("#acc-tipo").selectOption("fisica");
-      await page.locator("#acc-nombre").fill("Ana\u200bRuiz Sol");
-      await page.locator("#acc-curp").fill("GORL750505MDFMZR04");
-      await page.locator("#acc-capital").fill("10");
-      await page.locator("#acc-votos").fill("15");
-      await page.getByRole("button", { name: "Agregar accionista" }).click();
-      await expect(page.locator("#aviso-accionista")).toHaveText(INVISIBLE);
-      await mensajeJunto(page, "#acc-nombre", INVISIBLE, "aviso-accionista-campo");
-      await expect(page.locator("#acc-nombre")).toHaveValue("Ana\u200bRuiz Sol");
-      await expect(page.locator("#acc-curp")).toHaveValue("GORL750505MDFMZR04");
-      await expect(page.locator("#acc-capital")).toHaveValue("10");
-      await expect(page.locator("#acc-votos")).toHaveValue("15");
-      expect([await representantes(), await socios()]).toEqual([representantesAntes, sociosAntes]);
-    });
-
-    test("sin JavaScript, el rechazo de un campo del expediente vuelve con lo capturado, sin fragmento y con el foco en el campo", async ({ page, context }) => {
-      const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
-      const datos = () => consultar("select razon_social, giro from kyb_versiones where company_id = $1 and estado = 'borrador'", [duna!.id]);
-      const antes = await datos();
-      await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-      await page.goto(`/operacion/clientes/${duna!.id}/expediente`);
-      await page.locator("#dato-razonSocial").fill("Duna\u200bComercial SA de CV");
-      await page.locator("#dato-giro").fill("Distribución de abarrotes al mayoreo");
-      await rechazado(page, page.getByRole("button", { name: "Guardar datos" }), "aviso-datos", true);
-      const campo = page.locator("#dato-razonSocial");
-      await expect(campo).toHaveAttribute("aria-invalid", "true");
-      await expect(campo).toHaveAttribute("aria-describedby", "aviso-datos-campo");
-      await expect(page.locator("#dato-razonSocial:focus")).toHaveCount(1);
-      expect(new URL(page.url()).hash).toBe("");
-      // Vuelve lo escrito en los dos campos, no lo guardado.
-      await expect(campo).toHaveValue("Duna\u200bComercial SA de CV");
-      await expect(page.locator("#dato-giro")).toHaveValue("Distribución de abarrotes al mayoreo");
-      expect(await datos()).toEqual(antes);
-      // El foco desplazó la página: sin JavaScript nadie marca la barra superior, que lleva su fondo para no encimarse.
-      await expect(page.locator(".barra-superior")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-    });
-  });
-
-  test("publicar el precio exige factor de los últimos 30 minutos; tras volver a entrar, doble clic publica una vez", async ({ page, context }) => {
-    const errores = vigilarConsola(page);
-    const precio = async () => (await consultar<{ centavos: string | null }>("select suscripcion_centavos::text as centavos from platform_pricing where singleton"))[0]?.centavos ?? null;
-    const publicaciones = () => contar("select 1 from audit_log where accion = 'publicar_precio'");
-    expect(await precio()).toBeNull();
-    const antes = await publicaciones();
-
-    await sesionDe(context, CORREOS.op1, { superficie: "sofipo", factorHaceMinutos: 31 });
-    await page.goto("/operacion/precios");
-    await page.getByLabel("Suscripción mensual, en pesos").fill("1499.00");
-    await page.getByRole("button", { name: "Publicar el monto" }).click();
-    await expect(page.getByText("Publicar exige un segundo factor verificado en los últimos 30 minutos. Sal y vuelve a entrar por la puerta de operación.")).toBeVisible();
-    expect(await precio()).toBeNull();
-    expect(await publicaciones()).toBe(antes);
-
-    await salirDeOperacion(page);
-    await entrarAOperacion(page, CORREOS.op1);
-    await page.goto("/operacion/precios");
-    await page.getByLabel("Suscripción mensual, en pesos").fill("1499.00");
-    const publicar = await dobleClic(page.getByRole("button", { name: "Publicar el monto" }), { esperar: /\/operacion\/precios$/ });
-    expect(publicar.envios).toBe(1);
-    await expect(page.getByLabel("Suscripción mensual, en pesos")).toHaveCount(0);
-    await expect(page.getByText("1,499.00").first()).toBeVisible();
-    expect(await precio()).toBe("149900");
-    expect(await publicaciones()).toBe(antes + 1);
-    expect(errores).toEqual([]);
-  });
-
-  test("la descarga del expediente llega aislada (sandbox) y la pantalla del expediente conserva la política general", async ({ page, context }) => {
-    const [faro] = await consultar<{ id: string }>("select id from companies where rfc = $1", [FARO.rfc]);
-    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
-    // Un documento que no es de la empresa: 404 sin evento, pero la política de next.config ya aplica a la ruta.
-    const descargas = () => contar("select 1 from audit_log where company_id = $1 and accion = 'expediente_documento_descargado'", [faro!.id]);
-    const antes = await descargas();
-    const descarga = await page.request.get(`/operacion/clientes/${faro!.id}/expediente/documento/${crypto.randomUUID()}`);
-    expect(descarga.status()).toBe(404);
-    expect(descarga.headers()["content-security-policy"]).toBe("sandbox; default-src 'none'; frame-ancestors 'none'");
-    expect(await descargas()).toBe(antes);
-    const pantalla = await page.request.get(`/operacion/clientes/${faro!.id}/expediente`);
-    expect(pantalla.status()).toBe(200);
-    expect(pantalla.headers()["content-security-policy"]).toBe("frame-ancestors 'none'");
-    // Humo-N6 del preview: la política de permisos va en todas las respuestas, también en la descarga y fuera de Operación.
-    const permisos =
-      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), display-capture=(), publickey-credentials-get=(self), publickey-credentials-create=(self)";
-    const inicio = await page.request.get("/");
-    for (const [donde, respuesta] of [["pantalla", pantalla], ["descarga", descarga], ["inicio", inicio]] as const) {
-      expect(respuesta.headers()["permissions-policy"], donde).toBe(permisos);
-      expect(respuesta.headers()["referrer-policy"], donde).toBe("same-origin");
-    }
-  });
-
-  test("doceava: prospecto, invitación, comisión y alertas vuelven con lo capturado y su campo marcado; el resumen de arriba no se queda", async ({ page, context }) => {
-    const errores = vigilarConsola(page);
-    await formulariosConCaptura(page, context, false);
-    expect(errores).toEqual([]);
-  });
-
-  test("doceava: la suspensión de Faro no consume el formulario al rechazarse, el doble clic pide una sola y la otra pestaña ve «ya hay una pendiente» sin recargar", async ({ page, context, browser }) => {
-    const errores = vigilarConsola(page);
-    await suspensionUnaVez(page, context, browser, FARO.rfc, "Pedir suspensión", false);
-    expect(errores).toEqual([]);
-  });
-
-  test.describe("doceava sin JavaScript, con Faro activa", () => {
-    test.use({ javaScriptEnabled: false });
-
-    test("sin JavaScript, invitación, comisión y alertas vuelven con lo capturado y el resumen del envío anterior no se pinta", async ({ page, context }) => {
-      await formulariosConCaptura(page, context, true);
-    });
   });
 });
 
@@ -1347,80 +979,482 @@ test.describe("doceava con JavaScript: empresas propias de la siembra", () => {
     }
   });
 
-  // Humo-N9 del preview: en un formulario de dos columnas, el aviso de un rechazo caía en una columna angosta (unos 170
-  // px) y empujaba «Razón social» a la derecha. El aviso va en su propio renglón, a lo ancho del formulario; el primer
-  // campo se queda en la orilla y los campos anchos ocupan la fila. Igual en los formularios en línea de una tarjeta
-  // (la coincidencia de Cima) y en la decisión de una recuperación. Solo rechaza: no deja nada en la base.
-  test("humo-N9: tras un rechazo, el aviso mide el ancho de su formulario y los campos no se mueven: prospecto (1440 y 390), documento, coincidencia y recuperación", async ({ page, context }) => {
-    /** `primero`: el campo que abre el formulario, en la orilla y debajo del aviso; `anchos`: los que ocupan la fila. */
-    const aLoAncho = async (forma: Locator, aviso: string, primero: string, anchos: string[], nombre: string) => {
-      const formulario = (await forma.boundingBox())!;
-      const caja = (await page.locator(`[id="${aviso}"]`).boundingBox())!;
-      const deCampo = async (campo: string) => (await forma.locator(`.campo:has(${campo})`).boundingBox())!;
-      const medidas = { formulario, aviso: caja, ...Object.fromEntries(await Promise.all([primero, ...anchos].map(async (campo) => [campo, await deCampo(campo)]))) };
-      console.log(`MEDIDA ${nombre}: ${JSON.stringify(medidas)}`);
-      if (!process.env.E2E_SIN_CAPTURAS) await page.screenshot({ path: test.info().outputPath(`${nombre}.png`) });
-      expect(Math.abs(caja.x - formulario.x), `${nombre}: el aviso empieza en la orilla del formulario`).toBeLessThanOrEqual(1);
-      expect(Math.abs(caja.width - formulario.width), `${nombre}: el aviso mide el ancho del formulario`).toBeLessThanOrEqual(1);
-      const abre = medidas[primero] as { x: number; y: number };
-      expect(Math.abs(abre.x - formulario.x), `${nombre}: ${primero} se queda en la orilla del formulario`).toBeLessThanOrEqual(1);
-      expect(abre.y, `${nombre}: ${primero} va debajo del aviso`).toBeGreaterThanOrEqual(caja.y + caja.height);
-      for (const campo of anchos) {
-        expect(Math.abs((medidas[campo] as { width: number }).width - formulario.width), `${nombre}: ${campo} ocupa la fila entera`).toBeLessThanOrEqual(1);
+  // Ronda 13 (doce-N1): con una versión pendiente, pedir otra para la misma empresa y tipo chocaba con
+  // `company_commissions_una_pendiente` y la pantalla decía «La base no respondió». Ahora vuelve en su formulario con
+  // lo capturado, el tipo marcado y su mensaje, con y sin JavaScript; sigue habiendo una sola pendiente.
+  test("doce-N1: pedir una comisión con otra pendiente para la misma empresa y tipo dice por qué, con y sin JavaScript", async ({ page, context, browser }) => {
+    const bahia = await empresaDe("BEE190101CD2");
+    const pendientes = () => contar("select 1 from company_commissions where company_id = $1 and tipo = 'spei' and estado = 'pendiente'", [bahia]);
+    const manana = new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10);
+    const llenar = async (p: Page, valor: string) => {
+      await p.goto("/operacion/comisiones");
+      await p.locator("#companyId").selectOption(bahia);
+      await p.locator("#tipo").selectOption("spei");
+      await p.locator("#valor").fill(valor);
+      await p.locator("#vigenteDesde").fill(manana);
+    };
+    const texto = "Ya hay una versión pendiente de esta comisión para la empresa. Espera a que se decida antes de pedir otra.";
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await llenar(page, "500");
+    await page.getByRole("button", { name: "Pedir autorización" }).click();
+    await page.waitForURL(/aviso=comision_solicitada/);
+    expect(await pendientes()).toBe(1);
+
+    await llenar(page, "650");
+    await rechazado(page, page.getByRole("button", { name: "Pedir autorización" }), "aviso-comision");
+    await mensajeJunto(page, "#tipo", texto, "aviso-comision-campo");
+    for (const [campo, valor] of [["#companyId", bahia], ["#tipo", "spei"], ["#valor", "650"], ["#vigenteDesde", manana]]) await expect(page.locator(campo!), campo).toHaveValue(valor!);
+    await expect(page.locator("#aviso-comision")).not.toContainText("La base no respondió");
+
+    const sinJs = await browser.newContext({ baseURL: ORIGEN, javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+    try {
+      await sesionDe(sinJs, CORREOS.op1, { superficie: "sofipo" });
+      const otra = await sinJs.newPage();
+      await llenar(otra, "700");
+      await rechazado(otra, otra.getByRole("button", { name: "Pedir autorización" }), "aviso-comision", true);
+      await mensajeJunto(otra, "#tipo", texto, "aviso-comision-campo");
+      await expect(otra.locator("#valor")).toHaveValue("700");
+    } finally {
+      await sinJs.close();
+    }
+    expect(await pendientes()).toBe(1);
+  });
+
+  // Ronda 13 (doce-N2, seguridad): los catálogos de avisos se leían con `catalogo[clave]` sin Object.hasOwn; con
+  // `?aviso=constructor` devolvían la función Object y la página daba 500. Las cinco lecturas usan `deCatalogo`.
+  test("doce-N2: ?aviso=constructor y ?aviso=toString no tumban ninguna de las cinco páginas que leen un aviso de la dirección", async ({ page, context }) => {
+    const pedir = async (ruta: string) => {
+      for (const clave of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
+        const respuesta = await page.request.get(`${ruta}?aviso=${clave}`, { maxRedirects: 0 });
+        const cuerpo = await respuesta.text();
+        // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+        expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+        expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
       }
     };
-
+    // Sin sesión: las dos entradas.
+    await pedir("/entrar");
+    await pedir("/operacion/entrar");
+    // Con sesión de Operación: la seguridad de la cuenta, Clientes (el aviso de la página) y el expediente (los campos).
     await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
-    for (const [ancho, alto] of [[1440, 900], [390, 844]] as const) {
-      await page.setViewportSize({ width: ancho, height: alto });
-      await page.goto("/operacion/clientes");
-      await page.getByLabel("Razón social").fill("Puerto Nueve E2E");
-      await page.getByLabel("RFC").fill("XAXX010101000");
-      await page.getByLabel("Código postal").fill("64000");
-      await rechazado(page, page.getByRole("button", { name: "Registrar prospecto" }), "aviso-prospecto");
-      await aLoAncho(page.locator("form:has(#razonSocial)"), "aviso-prospecto", "#razonSocial", ["#razonSocial"], `n9-prospecto-${ancho}`);
+    await pedir("/entrar/seguridad");
+    await pedir("/operacion/clientes");
+    await pedir(`/operacion/clientes/${await empresaDe(DUNA.rfc)}/expediente`);
+    // Y en el navegador: la página se pinta con su título, sin campo marcado.
+    await page.goto(`/operacion/clientes/${await empresaDe(DUNA.rfc)}/expediente?aviso=constructor`);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.locator('[aria-invalid="true"]')).toHaveCount(0);
+  });
+});
+
+// El expediente de Duna: el socio extranjero (Duna empieza sin socios) y el representante entran una vez; lo demás
+// rechaza, también el motivo de reactivación de Cima, que no consume su formulario.
+test.describe("Operación SOFIPO: expediente de Duna", () => {
+  test.describe.configure({ mode: "serial" });
+
+  test("tras un rechazo del socio extranjero el formulario vuelve con todo lo capturado y el campo marcado; la moral extranjera entra sin RFC", async ({ page, context }) => {
+    const errores = vigilarConsola(page);
+    const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
+    const expediente = `/operacion/clientes/${duna!.id}/expediente`;
+    const socios = () => contar("select 1 from kyb_accionistas where company_id = $1", [duna!.id]);
+    type Otros = { rfc?: string; capital?: string; nombre?: string };
+    const nombreDe = (tipo: "fisica" | "moral", otros: Otros) => otros.nombre ?? (tipo === "fisica" ? "John Smith Taylor" : "Delaware Holdings LLC");
+    const capturar = async (tipo: "fisica" | "moral", documento: string, otros: Otros = {}) => {
+      await page.goto(expediente);
+      await page.locator("#acc-tipo").selectOption(tipo);
+      await page.locator("#acc-nacionalidad").selectOption("extranjera");
+      await page.locator("#acc-nombre").fill(nombreDe(tipo, otros));
+      if (otros.rfc) await page.locator("#acc-rfc").fill(otros.rfc);
+      await page.locator("#acc-pais").selectOption("US");
+      await page.locator("#acc-documento").fill(documento);
+      if (tipo === "fisica") await page.locator("#acc-nacimiento").fill("1980-05-01");
+      await page.locator("#acc-capital").fill(otros.capital ?? "40");
+      await page.locator("#acc-votos").fill("40");
+      await page.getByRole("button", { name: "Agregar accionista" }).click();
+    };
+    // serv-N15: vuelve sin recargar, con todo lo capturado, y ningún dato del socio pasa por la dirección.
+    const sigueCapturado = async (tipo: "fisica" | "moral", documento: string, otros: Otros = {}) => {
+      await expect(page.locator("#acc-tipo")).toHaveValue(tipo);
+      await expect(page.locator("#acc-nacionalidad")).toHaveValue("extranjera");
+      await expect(page.locator("#acc-pais")).toHaveValue("US");
+      await expect(page.locator("#acc-documento")).toHaveValue(documento);
+      if (tipo === "fisica") await expect(page.locator("#acc-nacimiento")).toHaveValue("1980-05-01");
+      await expect(page.locator("#acc-nombre")).toHaveValue(nombreDe(tipo, otros));
+      await expect(page.locator("#acc-rfc")).toHaveValue(otros.rfc ?? "");
+      await expect(page.locator("#acc-capital")).toHaveValue(otros.capital ?? "40");
+      await expect(page.locator("#acc-votos")).toHaveValue("40");
+      expect(new URL(page.url()).search).toBe("");
+      expect(await socios()).toBe(0);
+    };
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    for (const tipo of ["fisica", "moral"] as const) {
+      await capturar(tipo, "A1");
+      await expect(page.locator("#aviso-accionista")).toContainText("de 4 a 20 letras y números");
+      const campo = page.locator("#acc-documento");
+      await expect(campo).toHaveAttribute("aria-invalid", "true");
+      await expect(campo).toHaveAttribute("aria-describedby", "acc-documento-pista aviso-accionista-campo");
+      await expect(campo).toBeFocused();
+      await expect(page.locator('label[for="acc-documento"]')).toHaveText(
+        tipo === "fisica" ? "Número de pasaporte o identificación oficial" : "Número de identificación fiscal o de registro en su país",
+      );
+      await sigueCapturado(tipo, "A1");
     }
-    expect(await contar("select 1 from companies where razon_social = 'Puerto Nueve E2E'")).toBe(0);
+    // serv-N15: los seis rechazos de la revisión (RFC «XX», nombre en blanco y capital «abc», en física y en
+    // moral extranjera) vuelven con país, documento, fecha, nombre y porcentajes.
+    for (const tipo of ["fisica", "moral"] as const) {
+      for (const [otros, campo] of [
+        [{ rfc: "XX" }, "#acc-rfc"],
+        [{ nombre: "   " }, "#acc-nombre"],
+        [{ capital: "abc" }, "#acc-capital"],
+      ] as const) {
+        await capturar(tipo, "12-3456789", otros);
+        await expect(page.locator("#aviso-accionista")).toBeVisible();
+        await expect(page.locator(campo)).toHaveAttribute("aria-invalid", "true");
+        await expect(page.locator(campo)).toHaveAttribute("aria-describedby", "aviso-accionista-campo");
+        await expect(page.locator(campo)).toBeFocused();
+        await sigueCapturado(tipo, "12-3456789", otros);
+      }
+    }
+    // El último rechazo (capital «abc» de la moral) se corrige en el mismo formulario y entra.
+    await page.locator("#acc-capital").fill("40");
+    await page.getByRole("button", { name: "Agregar accionista" }).click();
+    await page.waitForURL(/aviso=expediente_accionista_agregado/);
+    expect(await consultar("select rfc, pais, documento_extranjero, nacionalidad from kyb_accionistas where company_id = $1", [duna!.id])).toEqual([
+      { rfc: null, pais: "US", documento_extranjero: "123456789", nacionalidad: "Estados Unidos" },
+    ]);
+    await expect(page.locator("#accionistas-titulo").locator("..")).toContainText("Estados Unidos · registro 123456789");
+    await expect(page.locator("#aviso-accionista")).toHaveCount(0);
+    await expect(page.locator("#acc-nombre")).toHaveValue("");
+    expect(errores).toEqual([]);
+  });
 
-    const duna = await empresaDe(DUNA.rfc);
-    const documentos = () => contar("select 1 from kyb_documentos where company_id = $1", [duna]);
-    const antes = await documentos();
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(`/operacion/clientes/${duna}/expediente`);
-    await page.locator("#doc-emitido").fill("2015-03-01");
-    await page.locator("#doc-detalle").fill("Escritura 1,204, Notaría 9 de Monterrey");
-    await page.locator("#doc-archivo").setInputFiles({ name: "acta-n9.pdf", mimeType: "application/pdf", buffer: Buffer.from("esto no es un PDF") });
-    await rechazado(page, page.getByRole("button", { name: "Guardar documento" }), "aviso-documento");
-    await aLoAncho(page.locator("form:has(#doc-archivo)"), "aviso-documento", "#doc-tipo", ["#doc-detalle", "#doc-archivo"], "n9-documento-1440");
-    expect(await documentos()).toBe(antes);
+  // Una identidad con un carácter invisible (lo que deja copiar y pegar) se ve bien en pantalla: el aviso dice qué pasó,
+  // marca el campo y le da el foco. Un nombre mal formado sin invisibles conserva el aviso de formato. El formulario
+  // de representante, como el de socio, vuelve con lo capturado y sin datos personales en la dirección (P3).
+  test("un nombre con un carácter invisible da su propio aviso; el formulario de representante conserva lo capturado", async ({ page, context }) => {
+    const errores = vigilarConsola(page);
+    const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
+    const expediente = `/operacion/clientes/${duna!.id}/expediente`;
+    const socios = () => contar("select 1 from kyb_accionistas where company_id = $1", [duna!.id]);
+    const representantes = () => contar("select 1 from kyb_representantes where company_id = $1", [duna!.id]);
+    const INVISIBLE = "El nombre trae un carácter invisible, algo común al copiar y pegar. Escríbelo de nuevo a mano.";
+    const FORMATO = "Revisa el campo marcado: el dato no tiene el formato esperado.";
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    const [sociosAntes, representantesAntes] = [await socios(), await representantes()];
 
-    // La coincidencia de Cima en Cumplimiento, donde la tarjeta es ancha y el aviso no llena el renglón: un motivo corto.
-    const cima = await coincidenciaDe(CIMA.rfc, "pendiente");
+    // Socio persona física mexicana con «Juan\u0085Pérez López».
+    await page.goto(expediente);
+    for (const [nombre, aviso] of [["Juan\u0085Pérez López", INVISIBLE], ["Ana\u200bRuiz Sol", INVISIBLE], ["   ", FORMATO]] as const) {
+      await page.locator("#acc-tipo").selectOption("fisica");
+      await page.locator("#acc-nombre").fill(nombre);
+      await page.locator("#acc-curp").fill("GORL750505MDFMZR04");
+      await page.locator("#acc-capital").fill("10");
+      await page.locator("#acc-votos").fill("10");
+      await page.getByRole("button", { name: "Agregar accionista" }).click();
+      await expect(page.locator("#aviso-accionista")).toHaveText(aviso);
+      await expect(page.locator("#acc-nombre")).toHaveAttribute("aria-invalid", "true");
+      await expect(page.locator("#acc-nombre")).toHaveAttribute("aria-describedby", "aviso-accionista-campo");
+      await expect(page.locator("#acc-nombre")).toBeFocused();
+      await expect(page.locator("#acc-nombre")).toHaveValue(nombre);
+      await expect(page.locator("#acc-curp")).toHaveValue("GORL750505MDFMZR04");
+      expect(new URL(page.url()).search).toBe("");
+    }
+    expect(await socios()).toBe(sociosAntes);
+
+    // Representante: el mismo aviso, y vuelve con todo lo capturado (antes recargaba la página y lo perdía).
+    const capturado = { rfc: "RUSP800101AB1", curp: "RUSP800101HDFZLD09", cargo: "apoderado", pep: "no", designadoPor: "Asamblea del 3 de marzo" };
+    await page.locator("#rep-nombre").fill("Pedro\u00adRuiz Sol");
+    await page.locator("#rep-rfc").fill(capturado.rfc);
+    await page.locator("#rep-curp").fill(capturado.curp);
+    await page.locator("#rep-cargo").selectOption(capturado.cargo);
+    await page.locator("#rep-pep").selectOption(capturado.pep);
+    await page.locator("#rep-designado").fill(capturado.designadoPor);
+    await page.locator('input[name="esAdministrador"]').check();
+    const sigueCapturado = async (nombre: string, curp = capturado.curp) => {
+      await expect(page.locator("#rep-nombre")).toHaveValue(nombre);
+      await expect(page.locator("#rep-rfc")).toHaveValue(capturado.rfc);
+      await expect(page.locator("#rep-curp")).toHaveValue(curp);
+      await expect(page.locator("#rep-cargo")).toHaveValue(capturado.cargo);
+      await expect(page.locator("#rep-pep")).toHaveValue(capturado.pep);
+      await expect(page.locator("#rep-designado")).toHaveValue(capturado.designadoPor);
+      await expect(page.locator('input[name="esAdministrador"]')).toBeChecked();
+      expect(new URL(page.url()).search).toBe("");
+      expect(await representantes()).toBe(representantesAntes);
+    };
+    await page.getByRole("button", { name: "Agregar representante" }).click();
+    await expect(page.locator("#aviso-representante")).toHaveText(INVISIBLE);
+    await expect(page.locator("#rep-nombre")).toHaveAttribute("aria-invalid", "true");
+    await expect(page.locator("#rep-nombre")).toHaveAttribute("aria-describedby", "aviso-representante-campo");
+    await expect(page.locator("#rep-nombre")).toBeFocused();
+    await sigueCapturado("Pedro\u00adRuiz Sol");
+
+    // Se corrige el nombre y falla la CURP: el aviso de formato marca la CURP y todo lo demás sigue ahí.
+    await page.locator("#rep-nombre").fill("Pedro Ruiz Sol");
+    await page.locator("#rep-curp").fill("XX");
+    await page.getByRole("button", { name: "Agregar representante" }).click();
+    await expect(page.locator("#aviso-representante")).toHaveText(FORMATO);
+    await expect(page.locator("#rep-curp")).toHaveAttribute("aria-invalid", "true");
+    await expect(page.locator("#rep-curp")).toBeFocused();
+    await expect(page.locator("#rep-nombre")).not.toHaveAttribute("aria-invalid", "true");
+    await sigueCapturado("Pedro Ruiz Sol", "XX");
+
+    // Corregido en el mismo formulario, entra una sola vez.
+    await page.locator("#rep-curp").fill(capturado.curp);
+    await page.getByRole("button", { name: "Agregar representante" }).click();
+    await page.waitForURL(/aviso=expediente_representante_agregado/);
+    expect(await representantes()).toBe(representantesAntes + 1);
+    expect(await consultar("select nombre, rfc, curp, cargo, es_administrador, designado_por from kyb_representantes where company_id = $1 and nombre = $2", [duna!.id, "Pedro Ruiz Sol"])).toEqual([
+      { nombre: "Pedro Ruiz Sol", rfc: capturado.rfc, curp: capturado.curp, cargo: "apoderado", es_administrador: true, designado_por: capturado.designadoPor },
+    ]);
+    await expect(page.locator("#rep-nombre")).toHaveValue("");
+    expect(errores).toEqual([]);
+  });
+
+  // base-N27: con varias solicitudes pendientes, el error de una marca y enfoca solo su tarjeta. Antes la página marcaba
+  // el campo en todas, y con el foco del aviso las tres notas pedían el foco.
+  test("el mensaje del error queda a la vista junto al campo con foco: un documento y un socio del expediente y el motivo de una reactivación, a 1440 y 390", async ({ page, context }) => {
+    const errores = vigilarConsola(page);
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    for (const ancho of [1440, 390]) await errorDeDocumentoYDeSocio(page, ancho);
+    expect(errores).toEqual([]);
+  });
+
+  test.describe("sin JavaScript", () => {
+    test.use({ javaScriptEnabled: false });
+
+    // Décima revisión: el aviso de un campo volvía con «#datos-titulo» y, al cargar la página completa, el navegador
+    // descarta el autofocus cuando hay fragmento. Sin fragmento, el campo queda marcado y con el foco.
+    test("sin JavaScript, el mensaje del error queda a la vista junto al campo con foco: documento, socio, motivo de reactivación y la nota de una recuperación, a 1440 y 390", async ({ page, context }) => {
+      await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+      for (const ancho of [1440, 390]) await errorDeDocumentoYDeSocio(page, ancho, true);
+
+      // La tercera de tres tarjetas de Recuperaciones, a 390: la nota queda lejos del aviso de arriba.
+      const personas = [CORREOS.diego, CORREOS.sol, CORREOS.ernesto];
+      const ids = await recuperacionesPendientes(personas);
+      await context.clearCookies();
+      await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto("/operacion/recuperaciones");
+      const tarjeta = (correo: string) => page.locator("li.decision").filter({ hasText: correo });
+      await page.locator(`[id="verificacion-${ids[2]}"]`).selectOption("presencial");
+      await rechazado(page, tarjeta(CORREOS.ernesto).getByRole("button", { name: "Rechazar" }), `aviso-recuperacion-${ids[2]}`, true);
+      await mensajeJunto(page, `[id="nota-${ids[2]}"]`, "Escribe un motivo breve y claro.", `aviso-recuperacion-${ids[2]}-campo`);
+      await expect(page.locator(`[id="verificacion-${ids[2]}"]`)).toHaveValue("presencial");
+      // Con su nota, cada una se rechaza; ninguna queda abierta para las demás pruebas.
+      for (const [indice, correo] of personas.entries()) {
+        await page.locator(`[id="nota-${ids[indice]}"]`).fill("No se pudo confirmar la identidad por videollamada.");
+        await tarjeta(correo).getByRole("button", { name: "Rechazar" }).click();
+        await expect(tarjeta(correo)).toHaveCount(0);
+      }
+      expect(await contar("select 1 from auth_recuperaciones where id = any($1::uuid[]) and estado = 'rechazada'", [ids])).toBe(3);
+    });
+
+    // P2 del revisor de pantalla: con una clave nueva en cada vista, React tiraba el estado que devuelve la acción y el
+    // formulario volvía en blanco (200, sin aviso, sin marca y sin lo capturado). Pasa también con un clic antes de hidratar.
+    test("sin JavaScript, «Agregar representante» y «Agregar accionista» con un invisible vuelven con su aviso, el campo marcado, el foco y lo capturado", async ({ page, context }) => {
+      const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
+      const representantes = () => contar("select 1 from kyb_representantes where company_id = $1", [duna!.id]);
+      const socios = () => contar("select 1 from kyb_accionistas where company_id = $1", [duna!.id]);
+      const [representantesAntes, sociosAntes] = [await representantes(), await socios()];
+      const INVISIBLE = "El nombre trae un carácter invisible, algo común al copiar y pegar. Escríbelo de nuevo a mano.";
+      await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+      await page.goto(`/operacion/clientes/${duna!.id}/expediente`);
+
+      const capturado = { rfc: "RUSP800101AB1", curp: "RUSP800101HDFZLD09", cargo: "apoderado", pep: "no", designadoPor: "Asamblea del 3 de marzo" };
+      await page.locator("#rep-nombre").fill("Pedro\u200bRuiz Sol");
+      await page.locator("#rep-rfc").fill(capturado.rfc);
+      await page.locator("#rep-curp").fill(capturado.curp);
+      await page.locator("#rep-cargo").selectOption(capturado.cargo);
+      await page.locator("#rep-pep").selectOption(capturado.pep);
+      await page.locator("#rep-designado").fill(capturado.designadoPor);
+      await page.locator('input[name="esAdministrador"]').check();
+      const [representante] = await Promise.all([
+        page.waitForResponse((respuesta) => respuesta.request().method() === "POST"),
+        page.getByRole("button", { name: "Agregar representante" }).click(),
+      ]);
+      expect(representante.status()).toBe(200);
+      await expect(page.locator("#aviso-representante")).toHaveText(INVISIBLE);
+      await expect(page.locator("#rep-nombre")).toHaveAttribute("aria-invalid", "true");
+      await mensajeJunto(page, "#rep-nombre", INVISIBLE, "aviso-representante-campo");
+      await expect(page.locator("#rep-nombre")).toHaveValue("Pedro\u200bRuiz Sol");
+      await expect(page.locator("#rep-rfc")).toHaveValue(capturado.rfc);
+      await expect(page.locator("#rep-curp")).toHaveValue(capturado.curp);
+      await expect(page.locator("#rep-cargo")).toHaveValue(capturado.cargo);
+      await expect(page.locator("#rep-designado")).toHaveValue(capturado.designadoPor);
+      await expect(page.locator('input[name="esAdministrador"]')).toBeChecked();
+
+      await page.goto(`/operacion/clientes/${duna!.id}/expediente`);
+      await page.locator("#acc-tipo").selectOption("fisica");
+      await page.locator("#acc-nombre").fill("Ana\u200bRuiz Sol");
+      await page.locator("#acc-curp").fill("GORL750505MDFMZR04");
+      await page.locator("#acc-capital").fill("10");
+      await page.locator("#acc-votos").fill("15");
+      await page.getByRole("button", { name: "Agregar accionista" }).click();
+      await expect(page.locator("#aviso-accionista")).toHaveText(INVISIBLE);
+      await mensajeJunto(page, "#acc-nombre", INVISIBLE, "aviso-accionista-campo");
+      await expect(page.locator("#acc-nombre")).toHaveValue("Ana\u200bRuiz Sol");
+      await expect(page.locator("#acc-curp")).toHaveValue("GORL750505MDFMZR04");
+      await expect(page.locator("#acc-capital")).toHaveValue("10");
+      await expect(page.locator("#acc-votos")).toHaveValue("15");
+      expect([await representantes(), await socios()]).toEqual([representantesAntes, sociosAntes]);
+    });
+
+    test("sin JavaScript, el rechazo de un campo del expediente vuelve con lo capturado, sin fragmento y con el foco en el campo", async ({ page, context }) => {
+      const [duna] = await consultar<{ id: string }>("select id from companies where rfc = $1", [DUNA.rfc]);
+      const datos = () => consultar("select razon_social, giro from kyb_versiones where company_id = $1 and estado = 'borrador'", [duna!.id]);
+      const antes = await datos();
+      await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+      await page.goto(`/operacion/clientes/${duna!.id}/expediente`);
+      await page.locator("#dato-razonSocial").fill("Duna\u200bComercial SA de CV");
+      await page.locator("#dato-giro").fill("Distribución de abarrotes al mayoreo");
+      await rechazado(page, page.getByRole("button", { name: "Guardar datos" }), "aviso-datos", true);
+      const campo = page.locator("#dato-razonSocial");
+      await expect(campo).toHaveAttribute("aria-invalid", "true");
+      await expect(campo).toHaveAttribute("aria-describedby", "aviso-datos-campo");
+      await expect(page.locator("#dato-razonSocial:focus")).toHaveCount(1);
+      expect(new URL(page.url()).hash).toBe("");
+      // Vuelve lo escrito en los dos campos, no lo guardado.
+      await expect(campo).toHaveValue("Duna\u200bComercial SA de CV");
+      await expect(page.locator("#dato-giro")).toHaveValue("Distribución de abarrotes al mayoreo");
+      expect(await datos()).toEqual(antes);
+      // El foco desplazó la página: sin JavaScript nadie marca la barra superior, que lleva su fondo para no encimarse.
+      await expect(page.locator(".barra-superior")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    });
+  });
+});
+
+// La entrada de Operación con contraseña y código y, sin JavaScript, el alta rechazada y las dos entradas.
+test.describe("Operación SOFIPO: entrada", () => {
+  test.describe.configure({ mode: "serial" });
+
+  test("entrada SOFIPO: contraseña y código; un código malo no abre y el doble clic abre una sola sesión", async ({ page }) => {
+    const errores = vigilarConsola(page);
+    const op1 = await idDe(CORREOS.op1);
+    // Entrar puede cerrar sesiones viejas de la misma persona: se cuentan las que nacen en esta prueba.
+    const desde = (await consultar<{ desde: string }>("select now()::text as desde"))[0]!.desde;
+    const sesiones = () => contar("select 1 from sessions where user_id = $1 and superficie = 'sofipo' and creada_en >= $2::timestamptz", [op1, desde]);
+    const antes = await sesiones();
+    expect(antes).toBe(0);
+
+    await page.goto("/operacion/entrar");
+    await page.getByLabel("Correo").fill(CORREOS.op1);
+    await page.getByLabel("Contraseña", { exact: true }).fill(CLAVE);
+    const contrasena = await dobleClic(page.getByRole("button", { name: "Continuar" }), { esperar: /\/operacion\/continuar/ });
+    expect(contrasena.envios).toBe(1);
+
+    await page.getByLabel("Código de la app autenticadora").fill("000000");
+    await page.getByRole("button", { name: "Entrar con el código" }).click();
+    await expect(page.locator("#factor-error")).toBeVisible();
+    expect(await sesiones()).toBe(antes);
+
+    await page.getByLabel("Código de la app autenticadora").fill(await codigoTotp(CORREOS.op1));
+    const codigo = await dobleClic(page.getByRole("button", { name: "Entrar con el código" }), { esperar: /\/operacion$/ });
+    expect(codigo.envios).toBe(1);
+    expect(await sesiones()).toBe(antes + 1);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    expect(errores).toEqual([]);
+  });
+
+  test.describe("sin JavaScript", () => {
+    test.use({ javaScriptEnabled: false });
+
+    // serv-nuevo-7: con Referrer-Policy: no-referrer, el envío nativo de un formulario lleva «Origin: null» y Next
+    // rechaza la acción con un 500. Pasa sin JavaScript y al hacer clic antes de que la página hidrate.
+    test("sin JavaScript los formularios responden: el alta vuelve con su aviso y lo capturado (200) y las dos entradas dan el suyo", async ({ page, context }) => {
+      const post = () => page.waitForResponse((respuesta) => respuesta.request().method() === "POST");
+      await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+      await page.goto("/operacion/clientes");
+      await page.getByLabel("Razón social").fill("Sin Script\u0085Uno SA de CV");
+      await page.getByLabel("RFC").fill("SSU010101AB1");
+      await page.getByLabel("Código postal").fill("06600");
+      const [alta] = await Promise.all([post(), page.getByRole("button", { name: "Registrar prospecto" }).click()]);
+      // La causa: con «no-referrer» el navegador manda «Origin: null» en el envío nativo del formulario.
+      expect(await alta.request().headerValue("origin")).toBe(new URL(alta.url()).origin);
+      // Doceava: el rechazo responde con la página (200) en la misma dirección, el aviso en el formulario y lo capturado.
+      expect(alta.status()).toBe(200);
+      expect(page.url()).not.toContain("aviso=");
+      await expect(page.locator("#aviso-prospecto")).toContainText("La razón social trae un carácter invisible");
+      await expect(page.getByLabel("RFC")).toHaveValue("SSU010101AB1");
+      await expect(page.getByLabel("Código postal")).toHaveValue("06600");
+      await mensajeJunto(page, "#razonSocial", "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano.", "aviso-prospecto-campo");
+      expect(await contar("select 1 from companies where rfc = $1", ["SSU010101AB1"])).toBe(0);
+
+      // La entrada de Operación y la del portal del cliente, sin sesión: la contraseña equivocada da su aviso ahí mismo.
+      await context.clearCookies();
+      for (const ruta of ["/operacion/entrar", "/entrar"]) {
+        await page.goto(ruta);
+        await page.getByLabel("Correo").fill("nadie-sin-script@lever-e2e.mx");
+        await page.getByLabel("Contraseña", { exact: true }).fill("no-es-la-clave-1");
+        const [entrada] = await Promise.all([post(), page.getByRole("button", { name: "Continuar" }).click()]);
+        expect(await entrada.request().headerValue("origin"), ruta).toBe(new URL(entrada.url()).origin);
+        expect(entrada.status(), ruta).toBe(200);
+        await expect(page.locator("#entrar-error"), ruta).toContainText("El correo o la contraseña no coinciden.");
+      }
+    });
+  });
+});
+
+// El precio de la plataforma (empieza sin publicar y se publica una vez) y las cabeceras de la descarga del expediente,
+// que solo lee un documento que no existe.
+test.describe("Operación SOFIPO: precio y descarga", () => {
+  test.describe.configure({ mode: "serial" });
+
+  test("publicar el precio exige factor de los últimos 30 minutos; tras volver a entrar, doble clic publica una vez", async ({ page, context }) => {
+    const errores = vigilarConsola(page);
+    const precio = async () => (await consultar<{ centavos: string | null }>("select suscripcion_centavos::text as centavos from platform_pricing where singleton"))[0]?.centavos ?? null;
+    const publicaciones = () => contar("select 1 from audit_log where accion = 'publicar_precio'");
+    expect(await precio()).toBeNull();
+    const antes = await publicaciones();
+
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo", factorHaceMinutos: 31 });
+    await page.goto("/operacion/precios");
+    await page.getByLabel("Suscripción mensual, en pesos").fill("1499.00");
+    await page.getByRole("button", { name: "Publicar el monto" }).click();
+    await expect(page.getByText("Publicar exige un segundo factor verificado en los últimos 30 minutos. Sal y vuelve a entrar por la puerta de operación.")).toBeVisible();
+    expect(await precio()).toBeNull();
+    expect(await publicaciones()).toBe(antes);
+
+    await salirDeOperacion(page);
+    await entrarAOperacion(page, CORREOS.op1);
+    await page.goto("/operacion/precios");
+    await page.getByLabel("Suscripción mensual, en pesos").fill("1499.00");
+    const publicar = await dobleClic(page.getByRole("button", { name: "Publicar el monto" }), { esperar: /\/operacion\/precios$/ });
+    expect(publicar.envios).toBe(1);
+    await expect(page.getByLabel("Suscripción mensual, en pesos")).toHaveCount(0);
+    await expect(page.getByText("1,499.00").first()).toBeVisible();
+    expect(await precio()).toBe("149900");
+    expect(await publicaciones()).toBe(antes + 1);
+    expect(errores).toEqual([]);
+  });
+
+  test("la descarga del expediente llega aislada (sandbox) y la pantalla del expediente conserva la política general", async ({ page, context }) => {
+    const [faro] = await consultar<{ id: string }>("select id from companies where rfc = $1", [FARO.rfc]);
     await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
-    await page.goto("/operacion/cumplimiento");
-    await page.locator(`[id="resolucion-${cima}"]`).selectOption("falso_positivo");
-    await page.locator(`[id="motivo-${cima}"]`).fill("Revisar 😀");
-    const tarjetaCima = page.locator(`form:has([id="motivo-${cima}"])`);
-    await rechazado(page, tarjetaCima.getByRole("button", { name: "Registrar dictamen" }), `aviso-coincidencia-${cima}`);
-    await aLoAncho(tarjetaCima, `aviso-coincidencia-${cima}`, `[id="resolucion-${cima}"]`, [], "n9-coincidencia-1440");
-    expect(await contar("select 1 from lpb_coincidencias where id = $1 and estado = 'pendiente'", [cima])).toBe(1);
-
-    // La decisión de una recuperación: rechazar sin nota. Al final se rechaza con su nota: ninguna queda abierta.
-    const [recuperacion] = await recuperacionesPendientes([CORREOS.diego]);
-    await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
-    await page.goto("/operacion/recuperaciones");
-    const decision = page.locator(`form:has([id="nota-${recuperacion}"])`);
-    await rechazado(page, decision.getByRole("button", { name: "Rechazar" }), `aviso-recuperacion-${recuperacion}`);
-    await aLoAncho(decision, `aviso-recuperacion-${recuperacion}`, `[id="verificacion-${recuperacion}"]`, [], "n9-recuperacion-1440");
-    await page.locator(`[id="nota-${recuperacion}"]`).fill("No se pudo confirmar la identidad por videollamada.");
-    await decision.getByRole("button", { name: "Rechazar" }).click();
-    await expect(decision).toHaveCount(0);
+    // Un documento que no es de la empresa: 404 sin evento, pero la política de next.config ya aplica a la ruta.
+    const descargas = () => contar("select 1 from audit_log where company_id = $1 and accion = 'expediente_documento_descargado'", [faro!.id]);
+    const antes = await descargas();
+    const descarga = await page.request.get(`/operacion/clientes/${faro!.id}/expediente/documento/${crypto.randomUUID()}`);
+    expect(descarga.status()).toBe(404);
+    expect(descarga.headers()["content-security-policy"]).toBe("sandbox; default-src 'none'; frame-ancestors 'none'");
+    expect(await descargas()).toBe(antes);
+    const pantalla = await page.request.get(`/operacion/clientes/${faro!.id}/expediente`);
+    expect(pantalla.status()).toBe(200);
+    expect(pantalla.headers()["content-security-policy"]).toBe("frame-ancestors 'none'");
+    // Humo-N6 del preview: la política de permisos va en todas las respuestas, también en la descarga y fuera de Operación.
+    const permisos =
+      "camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), display-capture=(), publickey-credentials-get=(self), publickey-credentials-create=(self)";
+    const inicio = await page.request.get("/");
+    for (const [donde, respuesta] of [["pantalla", pantalla], ["descarga", descarga], ["inicio", inicio]] as const) {
+      expect(respuesta.headers()["permissions-policy"], donde).toBe(permisos);
+      expect(respuesta.headers()["referrer-policy"], donde).toBe("same-origin");
+    }
   });
 });
 
 // Doceava revisión: los 17 datos de Duna y la recuperación solo rechazan (la recuperación se cierra al final); la
-// coincidencia de Brisa se confirma aquí y, sin JavaScript, se le anota el folio. Va después de «Operación SOFIPO»,
-// que necesita el caso de Brisa abierto.
+// coincidencia de Brisa se confirma aquí y, sin JavaScript, se le anota el folio; la de Cima se resuelve al final. Va
+// después de la doceava sin JavaScript y de «Brisa y Cima», que necesitan los dos casos abiertos.
 test.describe("doceava: coincidencias, datos generales y recuperaciones", () => {
   test.describe.configure({ mode: "serial" });
 
@@ -1551,5 +1585,144 @@ test.describe("doceava: coincidencias, datos generales y recuperaciones", () => 
       await expect(page.locator(`[id="aviso-coincidencia-${cima}"]`)).toHaveCount(0);
       expect(await contar("select 1 from lpb_coincidencias where id = $1 and estado = 'pendiente'", [cima])).toBe(1);
     });
+  });
+
+  // Humo-N9 del preview: en un formulario de dos columnas, el aviso de un rechazo caía en una columna angosta (unos 170
+  // px) y empujaba «Razón social» a la derecha. El aviso va en su propio renglón, a lo ancho del formulario; el primer
+  // campo se queda en la orilla y los campos anchos ocupan la fila. Igual en los formularios en línea de una tarjeta
+  // (la coincidencia de Cima) y en la decisión de una recuperación. Solo rechaza: no deja nada en la base.
+  test("humo-N9: tras un rechazo, el aviso mide el ancho de su formulario y los campos no se mueven: prospecto (1440 y 390), documento, coincidencia, recuperación y folio", async ({ page, context }) => {
+    /** `primero`: el campo que abre el formulario, en la orilla y debajo del aviso; `anchos`: los que ocupan la fila. */
+    const aLoAncho = async (forma: Locator, aviso: string, primero: string, anchos: string[], nombre: string) => {
+      const formulario = (await forma.boundingBox())!;
+      const caja = (await page.locator(`[id="${aviso}"]`).boundingBox())!;
+      const deCampo = async (campo: string) => (await forma.locator(`.campo:has(${campo})`).boundingBox())!;
+      const medidas = { formulario, aviso: caja, ...Object.fromEntries(await Promise.all([primero, ...anchos].map(async (campo) => [campo, await deCampo(campo)]))) };
+      console.log(`MEDIDA ${nombre}: ${JSON.stringify(medidas)}`);
+      if (!process.env.E2E_SIN_CAPTURAS) await page.screenshot({ path: test.info().outputPath(`${nombre}.png`) });
+      expect(Math.abs(caja.x - formulario.x), `${nombre}: el aviso empieza en la orilla del formulario`).toBeLessThanOrEqual(1);
+      expect(Math.abs(caja.width - formulario.width), `${nombre}: el aviso mide el ancho del formulario`).toBeLessThanOrEqual(1);
+      const abre = medidas[primero] as { x: number; y: number };
+      expect(Math.abs(abre.x - formulario.x), `${nombre}: ${primero} se queda en la orilla del formulario`).toBeLessThanOrEqual(1);
+      expect(abre.y, `${nombre}: ${primero} va debajo del aviso`).toBeGreaterThanOrEqual(caja.y + caja.height);
+      for (const campo of anchos) {
+        expect(Math.abs((medidas[campo] as { width: number }).width - formulario.width), `${nombre}: ${campo} ocupa la fila entera`).toBeLessThanOrEqual(1);
+      }
+    };
+
+    await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+    for (const [ancho, alto] of [[1440, 900], [390, 844]] as const) {
+      await page.setViewportSize({ width: ancho, height: alto });
+      await page.goto("/operacion/clientes");
+      await page.getByLabel("Razón social").fill("Puerto Nueve E2E");
+      await page.getByLabel("RFC").fill("XAXX010101000");
+      await page.getByLabel("Código postal").fill("64000");
+      await rechazado(page, page.getByRole("button", { name: "Registrar prospecto" }), "aviso-prospecto");
+      await aLoAncho(page.locator("form:has(#razonSocial)"), "aviso-prospecto", "#razonSocial", ["#razonSocial"], `n9-prospecto-${ancho}`);
+    }
+    expect(await contar("select 1 from companies where razon_social = 'Puerto Nueve E2E'")).toBe(0);
+
+    const duna = await empresaDe(DUNA.rfc);
+    const documentos = () => contar("select 1 from kyb_documentos where company_id = $1", [duna]);
+    const antes = await documentos();
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/operacion/clientes/${duna}/expediente`);
+    await page.locator("#doc-emitido").fill("2015-03-01");
+    await page.locator("#doc-detalle").fill("Escritura 1,204, Notaría 9 de Monterrey");
+    await page.locator("#doc-archivo").setInputFiles({ name: "acta-n9.pdf", mimeType: "application/pdf", buffer: Buffer.from("esto no es un PDF") });
+    await rechazado(page, page.getByRole("button", { name: "Guardar documento" }), "aviso-documento");
+    await aLoAncho(page.locator("form:has(#doc-archivo)"), "aviso-documento", "#doc-tipo", ["#doc-detalle", "#doc-archivo"], "n9-documento-1440");
+    expect(await documentos()).toBe(antes);
+
+    // La coincidencia de Cima en Cumplimiento, donde la tarjeta es ancha y el aviso no llena el renglón: un motivo corto.
+    const cima = await coincidenciaDe(CIMA.rfc, "pendiente");
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.goto("/operacion/cumplimiento");
+    await page.locator(`[id="resolucion-${cima}"]`).selectOption("falso_positivo");
+    await page.locator(`[id="motivo-${cima}"]`).fill("Revisar 😀");
+    const tarjetaCima = page.locator(`form:has([id="motivo-${cima}"])`);
+    await rechazado(page, tarjetaCima.getByRole("button", { name: "Registrar dictamen" }), `aviso-coincidencia-${cima}`);
+    await aLoAncho(tarjetaCima, `aviso-coincidencia-${cima}`, `[id="resolucion-${cima}"]`, [], "n9-coincidencia-1440");
+    expect(await contar("select 1 from lpb_coincidencias where id = $1 and estado = 'pendiente'", [cima])).toBe(1);
+
+    // La decisión de una recuperación: rechazar sin nota. Al final se rechaza con su nota: ninguna queda abierta.
+    const [recuperacion] = await recuperacionesPendientes([CORREOS.diego]);
+    await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+    await page.goto("/operacion/recuperaciones");
+    const decision = page.locator(`form:has([id="nota-${recuperacion}"])`);
+    await rechazado(page, decision.getByRole("button", { name: "Rechazar" }), `aviso-recuperacion-${recuperacion}`);
+    await aLoAncho(decision, `aviso-recuperacion-${recuperacion}`, `[id="verificacion-${recuperacion}"]`, [], "n9-recuperacion-1440");
+    await page.locator(`[id="nota-${recuperacion}"]`).fill("No se pudo confirmar la identidad por videollamada.");
+    await decision.getByRole("button", { name: "Rechazar" }).click();
+    await expect(decision).toHaveCount(0);
+
+    // Ronda 13 (delta-N1): el folio de Brisa (confirmada y sin folio) rechazado a 1440. El mensaje junto a «Presentado el»
+    // ensanchaba su campo y los campos cambiaban de columna; ahora cada uno se queda donde estaba.
+    const brisa = await coincidenciaDe(BRISA.rfc, "confirmada");
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/operacion/cumplimiento");
+    const tarjetaFolio = page.locator(`form:has([id="folio-${brisa}"])`);
+    const columnas = async () => Promise.all(["folio", "presentado", "aviso"].map(async (campo) => (await tarjetaFolio.locator(`.campo:has([id="${campo}-${brisa}"])`).boundingBox())!));
+    const columnasAntes = await columnas();
+    const anotar = tarjetaFolio.getByRole("button", { name: "Anotar folio" });
+    const altoDelBoton = (await anotar.boundingBox())!.height;
+    await page.locator(`[id="folio-${brisa}"]`).fill("UIF-2026-0412");
+    await page.locator(`[id="presentado-${brisa}"]`).fill(new Date(Date.now() + 2 * 86_400_000).toISOString().slice(0, 10));
+    await rechazado(page, tarjetaFolio.getByRole("button", { name: "Anotar folio" }), `aviso-folio-${brisa}`);
+    await aLoAncho(tarjetaFolio, `aviso-folio-${brisa}`, `[id="folio-${brisa}"]`, [], "n9-folio-1440");
+    const columnasDespues = await columnas();
+    console.log(`MEDIDA n9-folio-columnas: ${JSON.stringify({ antes: columnasAntes, despues: columnasDespues })}`);
+    for (const [indice, campo] of ["folio", "presentado", "aviso"].entries()) {
+      expect(Math.abs(columnasDespues[indice]!.x - columnasAntes[indice]!.x), `${campo}: la misma columna`).toBeLessThanOrEqual(1);
+      expect(Math.abs(columnasDespues[indice]!.width - columnasAntes[indice]!.width), `${campo}: el mismo ancho`).toBeLessThanOrEqual(1);
+    }
+    // Los controles terminan a la misma altura aunque solo uno lleve mensaje, y el botón no se estira con el campo.
+    const fondos = await Promise.all(["folio", "presentado", "aviso"].map(async (campo) => {
+      const caja = (await page.locator(`[id="${campo}-${brisa}"]`).boundingBox())!;
+      return caja.y + caja.height;
+    }));
+    const boton = (await anotar.boundingBox())!;
+    console.log(`MEDIDA n9-folio-fondos: ${JSON.stringify({ fondos, boton, altoDelBoton })}`);
+    for (const fondo of fondos) expect(Math.abs(fondo - fondos[1]!), "los controles terminan a la misma altura").toBeLessThanOrEqual(1);
+    expect(Math.abs(boton.height - altoDelBoton), "el botón conserva su alto").toBeLessThanOrEqual(1);
+    expect(Math.abs(boton.y + boton.height - fondos[1]!), "el botón termina con los controles").toBeLessThanOrEqual(1);
+    expect(await contar("select 1 from lpb_coincidencias where id = $1 and reporte_folio is not null", [brisa])).toBe(0);
+  });
+
+  // Ronda 13 (doce-N3): otra pestaña resolvió la coincidencia de Cima con la misma resolución. El segundo dictamen salía
+  // como éxito y su motivo no se guardaba; ahora dice que ya se resolvió, arriba de la página (su tarjeta ya no tiene
+  // formulario), y lo guardado no cambia. Va al final: después, Cima ya no tiene caso abierto.
+  test("doce-N3: si otra pestaña ya resolvió la coincidencia igual, el segundo dictamen dice que ya se resolvió y no guarda su motivo", async ({ page, context }) => {
+    const cima = await coincidenciaDe(CIMA.rfc, "pendiente");
+    const primero = "El RFC de la lista es de otra persona moral.";
+    await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/operacion/lpb");
+    await page.locator(`[id="resolucion-${cima}"]`).selectOption("falso_positivo");
+    await page.locator(`[id="motivo-${cima}"]`).fill("Homónimo revisado desde la primera pestaña.");
+    const otra = await context.newPage();
+    await otra.goto("/operacion/lpb");
+    await otra.locator(`[id="resolucion-${cima}"]`).selectOption("falso_positivo");
+    await otra.locator(`[id="motivo-${cima}"]`).fill(primero);
+    await otra.locator(`form:has([id="motivo-${cima}"])`).getByRole("button", { name: "Registrar dictamen" }).click();
+    await otra.waitForURL(/aviso=coincidencia_resuelta/);
+    await otra.close();
+
+    const direccion = page.url();
+    const [respuesta] = await Promise.all([
+      page.waitForResponse((r) => r.request().method() === "POST"),
+      page.locator(`form:has([id="motivo-${cima}"])`).getByRole("button", { name: "Registrar dictamen" }).click(),
+    ]);
+    expect(respuesta.status()).toBe(200);
+    const aviso = page.locator("#aviso-rechazo");
+    await expect(aviso).toHaveText("Esa coincidencia ya se resolvió. Tu dictamen y tu motivo no se guardaron.");
+    await expect(aviso).toHaveAttribute("data-aviso", "coincidencia_ya_resuelta");
+    await expect(aviso.locator(".alerta")).toHaveAttribute("role", "alert");
+    await expect(page.locator(`[id="motivo-${cima}"]`)).toHaveCount(0);
+    expect(page.url()).toBe(direccion);
+    const [guardado] = await consultar<{ motivo_resolucion: string }>("select motivo_resolucion from lpb_coincidencias where id = $1", [cima]);
+    expect(guardado!.motivo_resolucion).toBe(primero);
+    expect(await contar("select 1 from audit_log where accion = 'lpb_coincidencia_resuelta' and identificador = $1", [cima])).toBe(1);
   });
 });

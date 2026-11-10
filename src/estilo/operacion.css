@@ -36,6 +36,17 @@
   flex-basis: 100%;
 }
 
+/* En los formularios en línea, el mensaje junto a un campo no ensancha su campo: se parte en renglones dentro de él y los
+   campos se quedan en su columna (el folio rechazado a 1440). */
+.operacion-acciones .campo > .error-campo {
+  contain: inline-size;
+}
+
+/* El dictamen y el folio son formularios en línea: sus controles y su botón terminan juntos, aunque un campo lleve mensaje. */
+form.operacion-acciones {
+  align-items: end;
+}
+
 /* Sin JavaScript el menú de la cuenta no abre y «Salir» va junto a él (PaginaOperacion). En pantalla angosta toma su
    propio renglón, a la derecha: el título y el chip de la persona conservan su ancho. Solo con (scripting: none): con
    JavaScript el contenido de <noscript> es texto y, con display: contents, el navegador lo pintaría tal cual. */

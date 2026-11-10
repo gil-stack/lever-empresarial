@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { Seguridad } from "@/components/entrar/seguridad";
 import { MarcoArco } from "@/components/entrar/marco-arco";
+import { deCatalogo } from "@/dominio/catalogo";
 import { estadoDeConfirmacion, verFactores } from "@/server/autenticacion";
 import { contextoOpcional, sesionDesdeCookie } from "@/server/entrada";
 
@@ -29,7 +30,7 @@ export default async function PaginaSeguridad({
   if (!sesion) redirect("/entrar?siguiente=/entrar/seguridad");
   const [factores, confirmacion] = await Promise.all([verFactores(sesion), estadoDeConfirmacion(sesion)]);
   const avisoParam = (await searchParams).aviso;
-  const aviso = typeof avisoParam === "string" ? (AVISOS[avisoParam] ?? null) : null;
+  const aviso = deCatalogo(AVISOS, avisoParam);
   // Se regresa a la superficie con la que se abrió la sesión; la consola elige la empresa.
   const regreso =
     sesion.superficie === "sofipo"

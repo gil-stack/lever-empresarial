@@ -1,0 +1,788 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+  [90m 7 |[0m [90m * ejecuta y el servidor no migra al arrancar.[0m
+  [90m 8 |[0m [90m */[0m
+[33m[1m>[0m [90m 9 |[0m [36mexport[0m [36mconst[0m [33mCONTRATO_TABLAS[0m = readFileSync(rutaDelContrato(), [32m"utf8"[0m);
+  [90m   |[0m                                [33m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m10 |[0m
+  [90m11 |[0m [36mfunction[0m rutaDelContrato(): string {
+  [90m12 |[0m   [36mtry[0m {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 3 s
+
+Running 1 test using 1 worker
+
+  ✘  1 tests/e2e/operacion.spec.ts:1422:7 › doceava con JavaScript: empresas propias de la siembra › doce-N2: ?aviso=constructor y ?aviso=toString no tumban ninguna de las cinco páginas que leen un aviso de la dirección (1.1s)
+
+
+  1) tests/e2e/operacion.spec.ts:1422:7 › doceava con JavaScript: empresas propias de la siembra › doce-N2: ?aviso=constructor y ?aviso=toString no tumban ninguna de las cinco páginas que leen un aviso de la dirección 
+
+    Error: /entrar?aviso=constructor
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      1426 |         const cuerpo = await respuesta.text();
+      1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+    > 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+           |                                                                   ^
+      1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+      1430 |       }
+      1431 |     };
+        at pedir (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1428:67)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1433:5
+
+    Error: /entrar?aviso=toString
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      1426 |         const cuerpo = await respuesta.text();
+      1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+    > 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+           |                                                                   ^
+      1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+      1430 |       }
+      1431 |     };
+        at pedir (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1428:67)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1433:5
+
+    Error: /entrar?aviso=__proto__
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      1426 |         const cuerpo = await respuesta.text();
+      1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+    > 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+           |                                                                   ^
+      1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+      1430 |       }
+      1431 |     };
+        at pedir (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1428:67)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1433:5
+
+    Error: /entrar?aviso=hasOwnProperty
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      1426 |         const cuerpo = await respuesta.text();
+      1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+    > 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+           |                                                                   ^
+      1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+      1430 |       }
+      1431 |     };
+        at pedir (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1428:67)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1433:5
+
+    Error: /operacion/entrar?aviso=constructor
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      1426 |         const cuerpo = await respuesta.text();
+      1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+    > 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+           |                                                                   ^
+      1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+      1430 |       }
+      1431 |     };
+        at pedir (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1428:67)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1434:5
+
+    Error: /operacion/entrar?aviso=toString
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      1426 |         const cuerpo = await respuesta.text();
+      1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+    > 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+           |                                                                   ^
+      1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+      1430 |       }
+      1431 |     };
+        at pedir (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1428:67)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1434:5
+
+    Error: /operacion/entrar?aviso=__proto__
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      1426 |         const cuerpo = await respuesta.text();
+      1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+    > 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+           |                                                                   ^
+      1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+      1430 |       }
+      1431 |     };
+        at pedir (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1428:67)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1434:5
+
+    Error: /operacion/entrar?aviso=hasOwnProperty
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      1426 |         const cuerpo = await respuesta.text();
+      1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+    > 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+           |                                                                   ^
+      1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+      1430 |       }
+      1431 |     };
+        at pedir (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1428:67)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1434:5
+
+    Error: /entrar/seguridad?aviso=constructor
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      1426 |         const cuerpo = await respuesta.text();
+      1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+    > 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+           |                                                                   ^
+      1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+      1430 |       }
+      1431 |     };
+        at pedir (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1428:67)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1437:5
+
+    Error: /entrar/seguridad?aviso=toString
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      1426 |         const cuerpo = await respuesta.text();
+      1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+    > 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+           |                                                                   ^
+      1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+      1430 |       }
+      1431 |     };
+        at pedir (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1428:67)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1437:5
+
+    Error: /entrar/seguridad?aviso=__proto__
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      1426 |         const cuerpo = await respuesta.text();
+      1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+    > 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+           |                                                                   ^
+      1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+      1430 |       }
+      1431 |     };
+        at pedir (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1428:67)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1437:5
+
+    Error: /entrar/seguridad?aviso=hasOwnProperty
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      1426 |         const cuerpo = await respuesta.text();
+      1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+    > 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+           |                                                                   ^
+      1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+      1430 |       }
+      1431 |     };
+        at pedir (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1428:67)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1437:5
+
+    Error: /operacion/clientes?aviso=constructor
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      1426 |         const cuerpo = await respuesta.text();
+      1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+    > 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+           |                                                                   ^
+      1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+      1430 |       }
+      1431 |     };
+        at pedir (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1428:67)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1438:5
+
+    Error: /operacion/clientes/2ae81af0-40bc-4818-b9ba-e4c9c8adb661/expediente?aviso=constructor
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      1426 |         const cuerpo = await respuesta.text();
+      1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+    > 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+           |                                                                   ^
+      1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+      1430 |       }
+      1431 |     };
+        at pedir (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1428:67)
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/ola-r-alta/tests/e2e/operacion.spec.ts:1439:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/e2e/operacion-doceava-con-Java-24e44-en-un-aviso-de-la-dirección/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/e2e/operacion-doceava-con-Java-24e44-en-un-aviso-de-la-dirección/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/e2e/operacion-doceava-con-Java-24e44-en-un-aviso-de-la-dirección/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/e2e/operacion-doceava-con-Java-24e44-en-un-aviso-de-la-dirección/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/e2e/operacion.spec.ts:1422:7 › doceava con JavaScript: empresas propias de la siembra › doce-N2: ?aviso=constructor y ?aviso=toString no tumban ninguna de las cinco páginas que leen un aviso de la dirección 
+[e2e] recorridos terminados con estado 1 · 1 pruebas corridas · 10 s
+[e2e] ===== Contexto de cada falla (árbol accesible de la página) =====
+test-results/e2e/operacion-doceava-con-Java-24e44-en-un-aviso-de-la-dirección/error-context.md
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: operacion.spec.ts >> doceava con JavaScript: empresas propias de la siembra >> doce-N2: ?aviso=constructor y ?aviso=toString no tumban ninguna de las cinco páginas que leen un aviso de la dirección
+- Location: tests/e2e/operacion.spec.ts:1422:7
+
+# Error details
+
+```
+Error: /entrar?aviso=constructor
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 500
+```
+
+```
+Error: /entrar?aviso=toString
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 500
+```
+
+```
+Error: /entrar?aviso=__proto__
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 500
+```
+
+```
+Error: /entrar?aviso=hasOwnProperty
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 500
+```
+
+```
+Error: /operacion/entrar?aviso=constructor
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 500
+```
+
+```
+Error: /operacion/entrar?aviso=toString
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 500
+```
+
+```
+Error: /operacion/entrar?aviso=__proto__
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 500
+```
+
+```
+Error: /operacion/entrar?aviso=hasOwnProperty
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 500
+```
+
+```
+Error: /entrar/seguridad?aviso=constructor
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 500
+```
+
+```
+Error: /entrar/seguridad?aviso=toString
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 500
+```
+
+```
+Error: /entrar/seguridad?aviso=__proto__
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 500
+```
+
+```
+Error: /entrar/seguridad?aviso=hasOwnProperty
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 500
+```
+
+```
+Error: /operacion/clientes?aviso=constructor
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 500
+```
+
+```
+Error: /operacion/clientes/2ae81af0-40bc-4818-b9ba-e4c9c8adb661/expediente?aviso=constructor
+
+expect(received).toBe(expected) // Object.is equality
+
+Expected: 200
+Received: 500
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Saltar al contenido" [ref=e3] [cursor=pointer]:
+      - /url: "#contenido"
+    - complementary "Navegación" [ref=e4]:
+      - link "Lever Operación SOFIPO, ir al resumen" [ref=e6] [cursor=pointer]:
+        - /url: /operacion
+        - img [ref=e8]:
+          - generic [aria-hidden] [ref=e11]:
+            - generic [ref=e12]: lever
+            - generic [ref=e13]: Operación SOFIPO
+      - navigation "Operación" [ref=e15]:
+        - list [ref=e16]:
+          - listitem [ref=e17]:
+            - link "Resumen" [ref=e18] [cursor=pointer]:
+              - /url: /operacion
+          - listitem [ref=e22]:
+            - link "Clientes" [ref=e23] [cursor=pointer]:
+              - /url: /operacion/clientes
+          - listitem [ref=e27]:
+            - link "Aprobaciones" [ref=e28] [cursor=pointer]:
+              - /url: /operacion/aprobaciones
+          - listitem [ref=e32]:
+            - link "Alertas" [ref=e33] [cursor=pointer]:
+              - /url: /operacion/alertas
+          - listitem [ref=e37]:
+            - link "Comisiones" [ref=e38] [cursor=pointer]:
+              - /url: /operacion/comisiones
+          - listitem [ref=e42]:
+            - link "Recuperaciones" [ref=e43] [cursor=pointer]:
+              - /url: /operacion/recuperaciones
+          - listitem [ref=e47]:
+            - link "Precios" [ref=e48] [cursor=pointer]:
+              - /url: /operacion/precios
+          - listitem [ref=e52]:
+            - link "Personal" [ref=e53] [cursor=pointer]:
+              - /url: /operacion/personal
+          - listitem [ref=e57]:
+            - link "Bitácora" [ref=e58] [cursor=pointer]:
+              - /url: /operacion/bitacora
+      - group "Tema" [ref=e63]:
+        - generic [ref=e65]:
+          - generic "Claro" [ref=e66] [cursor=pointer]:
+            - radio "Claro" [ref=e67]
+          - generic "Oscuro" [ref=e69] [cursor=pointer]:
+            - radio "Oscuro" [checked] [ref=e70]
+          - generic "Lever" [ref=e72] [cursor=pointer]:
+            - radio "Lever" [ref=e73]
+    - main [ref=e76]:
+      - heading "No se pudo abrir esta sección." [level=1] [ref=e77]
+      - region [ref=e78]:
+        - heading "Vuelve a intentar" [level=2] [ref=e79]
+        - paragraph [ref=e80]: Si vuelve a pasar, revisa en la Bitácora si tu última decisión quedó registrada antes de repetirla.
+        - button "Reintentar" [ref=e82] [cursor=pointer]
+  - alert [ref=e83]
+```
+
+# Test source
+
+```ts
+  1328 |     await expect(page.locator("#aviso-operacion")).toHaveAttribute("data-aviso", "desconocido");
+  1329 |     await expect(page.locator("#aviso-operacion")).toHaveText("No se pudo completar. Revisa los datos e inténtalo de nuevo.");
+  1330 |     expect(await page.locator("#aviso-operacion").evaluate((nodo) => nodo.outerHTML)).not.toContain("codigo_inventado");
+  1331 |     // Un campo fuera de la lista cerrada: ni por la cookie ni por la dirección se pinta un aviso, y el valor no queda en el
+  1332 |     // marcado (la dirección misma solo viaja como texto en los datos del enrutador, dentro de un script).
+  1333 |     const marcado = () => page.locator("body").evaluate((cuerpo) => {
+  1334 |       const copia = cuerpo.cloneNode(true) as HTMLElement;
+  1335 |       for (const script of copia.querySelectorAll("script")) script.remove();
+  1336 |       return copia.innerHTML;
+  1337 |     });
+  1338 |     for (const valor of ["dato_invalido_<b>x</b>", 'invisible_" onfocus="x']) {
+  1339 |       await context.addCookies([cookie(encodeURIComponent(valor))]);
+  1340 |       await page.goto("/operacion/clientes");
+  1341 |       await expect(page.locator(".operacion-aviso"), valor).toHaveCount(0);
+  1342 |       expect(await page.content(), valor).not.toMatch(/onfocus|x<\/b>|x&lt;\/b&gt;/);
+  1343 |       await context.clearCookies({ name: "operacion-rechazo" });
+  1344 |       await page.goto(`/operacion/clientes?aviso=${encodeURIComponent(valor)}`);
+  1345 |       await expect(page.locator(".operacion-aviso"), valor).toHaveCount(0);
+  1346 |       expect(await marcado(), valor).not.toMatch(/onfocus|x<\/b>|x&lt;\/b&gt;/);
+  1347 |     }
+  1348 |   });
+  1349 | 
+  1350 |   // Humo-N9 del preview: en un formulario de dos columnas, el aviso de un rechazo caía en una columna angosta (unos 170
+  1351 |   // px) y empujaba «Razón social» a la derecha. El aviso va en su propio renglón, a lo ancho del formulario; el primer
+  1352 |   // campo se queda en la orilla y los campos anchos ocupan la fila. Igual en los formularios en línea de una tarjeta
+  1353 |   // (la coincidencia de Cima) y en la decisión de una recuperación. Solo rechaza: no deja nada en la base.
+  1354 |   test("humo-N9: tras un rechazo, el aviso mide el ancho de su formulario y los campos no se mueven: prospecto (1440 y 390), documento, coincidencia y recuperación", async ({ page, context }) => {
+  1355 |     /** `primero`: el campo que abre el formulario, en la orilla y debajo del aviso; `anchos`: los que ocupan la fila. */
+  1356 |     const aLoAncho = async (forma: Locator, aviso: string, primero: string, anchos: string[], nombre: string) => {
+  1357 |       const formulario = (await forma.boundingBox())!;
+  1358 |       const caja = (await page.locator(`[id="${aviso}"]`).boundingBox())!;
+  1359 |       const deCampo = async (campo: string) => (await forma.locator(`.campo:has(${campo})`).boundingBox())!;
+  1360 |       const medidas = { formulario, aviso: caja, ...Object.fromEntries(await Promise.all([primero, ...anchos].map(async (campo) => [campo, await deCampo(campo)]))) };
+  1361 |       console.log(`MEDIDA ${nombre}: ${JSON.stringify(medidas)}`);
+  1362 |       if (!process.env.E2E_SIN_CAPTURAS) await page.screenshot({ path: test.info().outputPath(`${nombre}.png`) });
+  1363 |       expect(Math.abs(caja.x - formulario.x), `${nombre}: el aviso empieza en la orilla del formulario`).toBeLessThanOrEqual(1);
+  1364 |       expect(Math.abs(caja.width - formulario.width), `${nombre}: el aviso mide el ancho del formulario`).toBeLessThanOrEqual(1);
+  1365 |       const abre = medidas[primero] as { x: number; y: number };
+  1366 |       expect(Math.abs(abre.x - formulario.x), `${nombre}: ${primero} se queda en la orilla del formulario`).toBeLessThanOrEqual(1);
+  1367 |       expect(abre.y, `${nombre}: ${primero} va debajo del aviso`).toBeGreaterThanOrEqual(caja.y + caja.height);
+  1368 |       for (const campo of anchos) {
+  1369 |         expect(Math.abs((medidas[campo] as { width: number }).width - formulario.width), `${nombre}: ${campo} ocupa la fila entera`).toBeLessThanOrEqual(1);
+  1370 |       }
+  1371 |     };
+  1372 | 
+  1373 |     await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  1374 |     for (const [ancho, alto] of [[1440, 900], [390, 844]] as const) {
+  1375 |       await page.setViewportSize({ width: ancho, height: alto });
+  1376 |       await page.goto("/operacion/clientes");
+  1377 |       await page.getByLabel("Razón social").fill("Puerto Nueve E2E");
+  1378 |       await page.getByLabel("RFC").fill("XAXX010101000");
+  1379 |       await page.getByLabel("Código postal").fill("64000");
+  1380 |       await rechazado(page, page.getByRole("button", { name: "Registrar prospecto" }), "aviso-prospecto");
+  1381 |       await aLoAncho(page.locator("form:has(#razonSocial)"), "aviso-prospecto", "#razonSocial", ["#razonSocial"], `n9-prospecto-${ancho}`);
+  1382 |     }
+  1383 |     expect(await contar("select 1 from companies where razon_social = 'Puerto Nueve E2E'")).toBe(0);
+  1384 | 
+  1385 |     const duna = await empresaDe(DUNA.rfc);
+  1386 |     const documentos = () => contar("select 1 from kyb_documentos where company_id = $1", [duna]);
+  1387 |     const antes = await documentos();
+  1388 |     await page.setViewportSize({ width: 1440, height: 900 });
+  1389 |     await page.goto(`/operacion/clientes/${duna}/expediente`);
+  1390 |     await page.locator("#doc-emitido").fill("2015-03-01");
+  1391 |     await page.locator("#doc-detalle").fill("Escritura 1,204, Notaría 9 de Monterrey");
+  1392 |     await page.locator("#doc-archivo").setInputFiles({ name: "acta-n9.pdf", mimeType: "application/pdf", buffer: Buffer.from("esto no es un PDF") });
+  1393 |     await rechazado(page, page.getByRole("button", { name: "Guardar documento" }), "aviso-documento");
+  1394 |     await aLoAncho(page.locator("form:has(#doc-archivo)"), "aviso-documento", "#doc-tipo", ["#doc-detalle", "#doc-archivo"], "n9-documento-1440");
+  1395 |     expect(await documentos()).toBe(antes);
+  1396 | 
+  1397 |     // La coincidencia de Cima en Cumplimiento, donde la tarjeta es ancha y el aviso no llena el renglón: un motivo corto.
+  1398 |     const cima = await coincidenciaDe(CIMA.rfc, "pendiente");
+  1399 |     await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  1400 |     await page.goto("/operacion/cumplimiento");
+  1401 |     await page.locator(`[id="resolucion-${cima}"]`).selectOption("falso_positivo");
+  1402 |     await page.locator(`[id="motivo-${cima}"]`).fill("Revisar 😀");
+  1403 |     const tarjetaCima = page.locator(`form:has([id="motivo-${cima}"])`);
+  1404 |     await rechazado(page, tarjetaCima.getByRole("button", { name: "Registrar dictamen" }), `aviso-coincidencia-${cima}`);
+  1405 |     await aLoAncho(tarjetaCima, `aviso-coincidencia-${cima}`, `[id="resolucion-${cima}"]`, [], "n9-coincidencia-1440");
+  1406 |     expect(await contar("select 1 from lpb_coincidencias where id = $1 and estado = 'pendiente'", [cima])).toBe(1);
+  1407 | 
+  1408 |     // La decisión de una recuperación: rechazar sin nota. Al final se rechaza con su nota: ninguna queda abierta.
+  1409 |     const [recuperacion] = await recuperacionesPendientes([CORREOS.diego]);
+  1410 |     await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+  1411 |     await page.goto("/operacion/recuperaciones");
+  1412 |     const decision = page.locator(`form:has([id="nota-${recuperacion}"])`);
+  1413 |     await rechazado(page, decision.getByRole("button", { name: "Rechazar" }), `aviso-recuperacion-${recuperacion}`);
+  1414 |     await aLoAncho(decision, `aviso-recuperacion-${recuperacion}`, `[id="verificacion-${recuperacion}"]`, [], "n9-recuperacion-1440");
+  1415 |     await page.locator(`[id="nota-${recuperacion}"]`).fill("No se pudo confirmar la identidad por videollamada.");
+  1416 |     await decision.getByRole("button", { name: "Rechazar" }).click();
+  1417 |     await expect(decision).toHaveCount(0);
+  1418 |   });
+  1419 | 
+  1420 |   // Ronda 13 (doce-N2, seguridad): los catálogos de avisos se leían con `catalogo[clave]` sin Object.hasOwn; con
+  1421 |   // `?aviso=constructor` devolvían la función Object y la página daba 500. Las cinco lecturas usan `deCatalogo`.
+  1422 |   test("doce-N2: ?aviso=constructor y ?aviso=toString no tumban ninguna de las cinco páginas que leen un aviso de la dirección", async ({ page, context }) => {
+  1423 |     const pedir = async (ruta: string) => {
+  1424 |       for (const clave of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
+  1425 |         const respuesta = await page.request.get(`${ruta}?aviso=${clave}`, { maxRedirects: 0 });
+  1426 |         const cuerpo = await respuesta.text();
+  1427 |         // Suaves: el rojo nombra cada página y cada clave que falla, no solo la primera.
+> 1428 |         expect.soft(respuesta.status(), `${ruta}?aviso=${clave}`).toBe(200);
+       |                                                                   ^ Error: /operacion/clientes/2ae81af0-40bc-4818-b9ba-e4c9c8adb661/expediente?aviso=constructor
+  1429 |         expect.soft(cuerpo, `${ruta}?aviso=${clave}`).not.toMatch(/function Object|\[native code\]|\[object Object\]/);
+  1430 |       }
+  1431 |     };
+  1432 |     // Sin sesión: las dos entradas.
+  1433 |     await pedir("/entrar");
+  1434 |     await pedir("/operacion/entrar");
+  1435 |     // Con sesión de Operación: la seguridad de la cuenta, Clientes (el aviso de la página) y el expediente (los campos).
+  1436 |     await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  1437 |     await pedir("/entrar/seguridad");
+  1438 |     await pedir("/operacion/clientes");
+  1439 |     await pedir(`/operacion/clientes/${await empresaDe(DUNA.rfc)}/expediente`);
+  1440 |     // Y en el navegador: la página se pinta con su título, sin campo marcado.
+  1441 |     await page.goto(`/operacion/clientes/${await empresaDe(DUNA.rfc)}/expediente?aviso=constructor`);
+  1442 |     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  1443 |     await expect(page.locator('[aria-invalid="true"]')).toHaveCount(0);
+  1444 |   });
+  1445 | });
+  1446 | 
+  1447 | // Doceava revisión: los 17 datos de Duna y la recuperación solo rechazan (la recuperación se cierra al final); la
+  1448 | // coincidencia de Brisa se confirma aquí y, sin JavaScript, se le anota el folio. Va después de «Operación SOFIPO»,
+  1449 | // que necesita el caso de Brisa abierto.
+  1450 | test.describe("doceava: coincidencias, datos generales y recuperaciones", () => {
+  1451 |   test.describe.configure({ mode: "serial" });
+  1452 | 
+  1453 |   test("doceava: los 17 datos generales vuelven como se escribieron; después de otro rechazo queda un solo aviso y el resumen de arriba se oculta", async ({ page, context }) => {
+  1454 |     const errores = vigilarConsola(page);
+  1455 |     const duna = await empresaDe(DUNA.rfc);
+  1456 |     const guardados = () => consultar("select * from kyb_versiones where company_id = $1 and estado = 'borrador'", [duna]);
+  1457 |     await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  1458 |     await page.setViewportSize({ width: 1440, height: 900 });
+  1459 |     await page.goto(`/operacion/clientes/${duna}/expediente`);
+  1460 |     // Un envío que sí se aplica deja su aviso arriba, en la dirección.
+  1461 |     const validos: Record<string, string> = {
+  1462 |       razonSocial: DUNA.razonSocial, rfc: DUNA.rfc, giro: "Distribución de abarrotes", nacionalidad: "Mexicana", fechaConstitucion: "2019-04-04",
+  1463 |       serieEfirma: "00001000000500000001", domicilioCalle: "Av. Constitución", domicilioExterior: "1200", domicilioInterior: "4B",
+  1464 |       domicilioColonia: "Centro", domicilioMunicipio: "Monterrey", domicilioEntidad: "Nuevo León", domicilioCodigoPostal: "64000",
+  1465 |       domicilioPais: "México", telefono: "8181234567", correo: "contacto@duna.mx", volumenMensualCentavos: "250000.00",
+  1466 |     };
+  1467 |     for (const [campo, valor] of Object.entries(validos)) await page.locator(`#dato-${campo}`).fill(valor);
+  1468 |     await page.getByRole("button", { name: "Guardar datos" }).click();
+  1469 |     await page.waitForURL(/aviso=expediente_datos_guardados/);
+  1470 |     await expect(page.locator("#aviso-operacion")).toHaveText("Datos generales guardados en el borrador.");
+  1471 |     const antes = await guardados();
+  1472 |     // Los 17 con otro valor y la razón social con un carácter invisible: vuelven los 17 como se escribieron, no lo guardado.
+  1473 |     const escritos: Record<string, string> = {
+  1474 |       razonSocial: "Duna​Comercial SA de CV", rfc: DUNA.rfc, giro: "Comercio al por mayor de abarrotes", nacionalidad: "Mexicana",
+  1475 |       fechaConstitucion: "2019-05-05", serieEfirma: "00001000000500000002", domicilioCalle: "Calle Hidalgo", domicilioExterior: "45",
+  1476 |       domicilioInterior: "2", domicilioColonia: "Obispado", domicilioMunicipio: "San Pedro Garza García", domicilioEntidad: "Nuevo León",
+  1477 |       domicilioCodigoPostal: "66220", domicilioPais: "México", telefono: "8187654321", correo: "ventas@duna.mx", volumenMensualCentavos: "300000.00",
+  1478 |     };
+  1479 |     for (const [campo, valor] of Object.entries(escritos)) await page.locator(`#dato-${campo}`).fill(valor);
+  1480 |     await rechazado(page, page.getByRole("button", { name: "Guardar datos" }), "aviso-datos");
+  1481 |     await mensajeJunto(page, "#dato-razonSocial", "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano.", "aviso-datos-campo");
+  1482 |     for (const [campo, valor] of Object.entries(escritos)) await expect(page.locator(`#dato-${campo}`), campo).toHaveValue(valor);
+  1483 |     await expect(page.locator("#aviso-operacion")).toHaveCount(0);
+  1484 |     expect(await guardados()).toEqual(antes);
+  1485 |     // Otro rechazo, en el documento: el aviso de los datos se descarta, lo escrito se queda y hay un solo campo marcado.
+  1486 |     await page.locator("#doc-archivo").setInputFiles({ name: "acta-falsa.pdf", mimeType: "application/pdf", buffer: Buffer.from("esto no es un PDF") });
+  1487 |     await page.locator("#doc-detalle").fill("Escritura 1,204, Notaría 9 de Monterrey");
+  1488 |     await rechazado(page, page.getByRole("button", { name: "Guardar documento" }), "aviso-documento");
+  1489 |     await expect(page.locator("#aviso-datos")).toHaveCount(0);
+  1490 |     await expect(page.locator("#dato-razonSocial")).not.toHaveAttribute("aria-invalid", "true");
+  1491 |     await expect(page.locator("#dato-giro")).toHaveValue(escritos.giro!);
+  1492 |     await mensajeJunto(page, "#doc-archivo", "Sube un PDF, PNG o JPG legible.", "aviso-documento-campo");
+  1493 |     expect(errores).toEqual([]);
+  1494 |   });
+  1495 | 
+  1496 |   test("doceava: el dictamen de una coincidencia y su folio vuelven a su tarjeta con lo escrito; otro rechazo en otra tarjeta descarta el primero", async ({ page, context }) => {
+  1497 |     const errores = vigilarConsola(page);
+  1498 |     const [brisa, cima] = [await coincidenciaDe(BRISA.rfc, "pendiente"), await coincidenciaDe(CIMA.rfc, "pendiente")];
+  1499 |     await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  1500 |     await page.setViewportSize({ width: 1440, height: 900 });
+  1501 |     await page.goto("/operacion/lpb");
+  1502 |     const tarjeta = (id: string) => page.locator(`form:has([id="motivo-${id}"])`);
+  1503 |     await page.locator(`[id="resolucion-${cima}"]`).selectOption("falso_positivo");
+  1504 |     await page.locator(`[id="motivo-${cima}"]`).fill("Revisar 😀");
+  1505 |     await rechazado(page, tarjeta(cima).getByRole("button", { name: "Registrar dictamen" }), `aviso-coincidencia-${cima}`);
+  1506 |     await mensajeJunto(page, `[id="motivo-${cima}"]`, MOTIVO_CORTO, `aviso-coincidencia-${cima}-campo`);
+  1507 |     await expect(page.locator(`[id="resolucion-${cima}"]`)).toHaveValue("falso_positivo");
+  1508 |     await expect(page.locator(`[id="motivo-${cima}"]`)).toHaveValue("Revisar 😀");
+  1509 |     await expect(page.locator(`[id="motivo-${brisa}"]`)).not.toHaveAttribute("aria-invalid", "true");
+  1510 |     await page.locator(`[id="resolucion-${brisa}"]`).selectOption("confirmada");
+  1511 |     await page.locator(`[id="motivo-${brisa}"]`).fill("Revisar 😀");
+  1512 |     await rechazado(page, tarjeta(brisa).getByRole("button", { name: "Registrar dictamen" }), `aviso-coincidencia-${brisa}`);
+  1513 |     await expect(page.locator(`[id="aviso-coincidencia-${cima}"]`)).toHaveCount(0);
+  1514 |     await expect(page.locator(`[id="motivo-${cima}"]`)).toHaveValue("Revisar 😀");
+  1515 |     await mensajeJunto(page, `[id="motivo-${brisa}"]`, MOTIVO_CORTO, `aviso-coincidencia-${brisa}-campo`);
+  1516 |     expect(await contar("select 1 from lpb_coincidencias where id = any($1::uuid[]) and estado = 'pendiente'", [[brisa, cima]])).toBe(2);
+  1517 |     // Brisa se confirma; su folio con una fecha futura vuelve a su tarjeta con lo escrito.
+  1518 |     await page.locator(`[id="motivo-${brisa}"]`).fill("Coincide el RFC de la empresa con la lista.");
+  1519 |     await tarjeta(brisa).getByRole("button", { name: "Registrar dictamen" }).click();
+  1520 |     await page.waitForURL(/aviso=coincidencia_resuelta/);
+  1521 |     await page.locator(`[id="folio-${brisa}"]`).fill("UIF-2026-0101");
+  1522 |     await page.locator(`[id="presentado-${brisa}"]`).fill("2099-01-01");
+  1523 |     await rechazado(page, page.locator(`form:has([id="folio-${brisa}"])`).getByRole("button", { name: "Anotar folio" }), `aviso-folio-${brisa}`);
+  1524 |     await mensajeJunto(page, `[id="presentado-${brisa}"]`, "Revisa la fecha de presentación del reporte: debe existir en el calendario y no puede ser futura.", `aviso-folio-${brisa}-campo`);
+  1525 |     await expect(page.locator(`[id="folio-${brisa}"]`)).toHaveValue("UIF-2026-0101");
+  1526 |     await expect(page.locator(`[id="presentado-${brisa}"]`)).toHaveValue("2099-01-01");
+  1527 |     expect(await contar("select 1 from lpb_coincidencias where id = $1 and reporte_folio is not null", [brisa])).toBe(0);
+  1528 |     expect(errores).toEqual([]);
+```[e2e] ===== Últimas líneas del servidor =====
+  digest: '4063069752'
+}
+⨯ Error: Only plain objects, and a few built-ins, can be passed to Client Components from Server Components. Classes or null prototypes are not supported.
+  {siguiente: ..., aviso: {}}
+                          ^^
+    at ignore-listed frames {
+  digest: '1395843545'
+}
+⨯ Error: Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server". Or maybe you meant to call this function rather than return it.
+  {siguiente: ..., aviso: function hasOwnProperty}
+                          ^^^^^^^^^^^^^^^^^^^^^^^
+    at ignore-listed frames {
+  digest: '2724940184'
+}
+⨯ Error: Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server". Or maybe you meant to call this function rather than return it.
+  {aviso: function Object}
+          ^^^^^^^^^^^^^^^
+    at ignore-listed frames {
+  digest: '2147996536'
+}
+⨯ Error: Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server". Or maybe you meant to call this function rather than return it.
+  {aviso: function toString}
+          ^^^^^^^^^^^^^^^^^
+    at ignore-listed frames {
+  digest: '2827357464'
+}
+⨯ Error: Only plain objects, and a few built-ins, can be passed to Client Components from Server Components. Classes or null prototypes are not supported.
+  {aviso: {}}
+          ^^
+    at ignore-listed frames {
+  digest: '1789835385'
+}
+⨯ Error: Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server". Or maybe you meant to call this function rather than return it.
+  {aviso: function hasOwnProperty}
+          ^^^^^^^^^^^^^^^^^^^^^^^
+    at ignore-listed frames {
+  digest: '1047451512'
+}
+⨯ Error: Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server". Or maybe you meant to call this function rather than return it.
+  {passkeys: [], totp: true, respaldoRestantes: ..., confirmacion: ..., esOperador: ..., aviso: function Object, regreso: ...}
+                                                                                                ^^^^^^^^^^^^^^^
+    at ignore-listed frames {
+  digest: '2217387133'
+}
+⨯ Error: Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server". Or maybe you meant to call this function rather than return it.
+  {passkeys: [], totp: true, respaldoRestantes: ..., confirmacion: ..., esOperador: ..., aviso: function toString, regreso: ...}
+                                                                                                ^^^^^^^^^^^^^^^^^
+    at ignore-listed frames {
+  digest: '3798809629'
+}
+⨯ Error: Only plain objects, and a few built-ins, can be passed to Client Components from Server Components. Classes or null prototypes are not supported.
+  {passkeys: [], totp: true, respaldoRestantes: ..., confirmacion: ..., esOperador: ..., aviso: {}, regreso: ...}
+                                                                                                ^^
+    at ignore-listed frames {
+  digest: '1677259196'
+}
+⨯ Error: Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server". Or maybe you meant to call this function rather than return it.
+  {passkeys: [], totp: true, respaldoRestantes: ..., confirmacion: ..., esOperador: ..., aviso: function hasOwnProperty, regreso: ...}
+                                                                                                ^^^^^^^^^^^^^^^^^^^^^^^
+    at ignore-listed frames {
+  digest: '2162146813'
+}
+⨯ Error: Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server". Or maybe you meant to call this function rather than return it.
+  {className: ..., children: function Object}
+                             ^^^^^^^^^^^^^^^
+    at ignore-listed frames {
+  digest: '2028015549'
+}
+⨯ Error: Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server". Or maybe you meant to call this function rather than return it.
+  {className: ..., children: function Object}
+                             ^^^^^^^^^^^^^^^
+    at ignore-listed frames {
+  digest: '2028015549'
+}
+⨯ Error: Functions cannot be passed directly to Client Components unless you explicitly expose it by marking it with "use server". Or maybe you meant to call this function rather than return it.
+  {className: ..., children: function Object}
+                             ^^^^^^^^^^^^^^^
+    at ignore-listed frames {
+  digest: '2028015549'
+}
+[e2e] ===== Capturas de las primeras fallas (base64 de PNG: pégalo en un archivo y usa base64 -d) =====
+[e2e] captura: test-results/e2e/operacion-doceava-con-Java-24e44-en-un-aviso-de-la-dirección/test-failed-1.png
+[captura en base64 omitida: 1450024 caracteres]

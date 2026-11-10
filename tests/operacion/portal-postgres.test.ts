@@ -199,7 +199,13 @@ describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length ===
         await decidirComision(beto, sesionSofipo, { id: comisionId, aprobada: true });
         const segundaComision = await solicitarComision(ana, { companyId, tipo: "fondeo", valor: "300", vigenteDesde: vigenteDespues });
         await decidirComision(beto, sesionSofipo, { id: segundaComision, aprobada: true });
-        const versiones = await listarComisiones(ana, companyId);
+        // Ronda 13 (doce-N1): con una versión pendiente, pedir otra para la misma empresa y tipo chocaba con
+        // `company_commissions_una_pendiente` y la pantalla decía «La base no respondió». Ahora dice cuál es el problema.
+        const speiPendiente = await solicitarComision(ana, { companyId, tipo: "spei", valor: "500", vigenteDesde: vigenteDespues });
+        await assert.rejects(solicitarComision(ana, { companyId, tipo: "spei", valor: "600", vigenteDesde: vigenteDespues }), /comision_pendiente/);
+        assert.deepEqual((await listarComisiones(ana, companyId)).filter((v) => v.tipo === "spei").map((v) => [v.id, v.estado]), [[speiPendiente, "pendiente"]]);
+        await decidirComision(beto, sesionSofipo, { id: speiPendiente, aprobada: false, motivo: "Se revisa con la tarifa del trimestre." });
+        const versiones = (await listarComisiones(ana, companyId)).filter((v) => v.tipo === "fondeo");
         assert.deepEqual(versiones.map((v) => v.estado).sort(), ["cerrada", "vigente"]);
         assert.equal(
           versiones.find((v) => v.id === comisionId)?.vigenteHasta,
