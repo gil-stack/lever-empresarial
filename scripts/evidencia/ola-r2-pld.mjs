@@ -1229,7 +1229,7 @@ async function flujo14() {
     const { p } = s;
     matriz[quien] = {};
     await ir(p, "/operacion");
-    const nav = await p.locator("nav").first().innerText();
+    const nav = await p.getByRole("navigation", { name: "Operación", exact: true }).innerText();
     for (const entrada of MENU) {
       exigir(nav.includes(entrada) === VEN_PLD[quien], `14. ${NOMBRES[quien]}: «${entrada}» ${VEN_PLD[quien] ? "está" : "no está"} en su menú`);
     }

@@ -78,7 +78,7 @@ test("aviso del personal: confidencial; Cumplimiento abre el caso y agrega una n
   await context.clearCookies();
   await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
   await page.goto("/operacion");
-  const menu = page.locator("nav").first();
+  const menu = page.getByRole("navigation", { name: "Operación", exact: true });
   await expect(menu).not.toContainText("Alertas PLD");
   await expect(menu).toContainText("Avisar a Cumplimiento");
   await page.goto("/operacion/pld");
