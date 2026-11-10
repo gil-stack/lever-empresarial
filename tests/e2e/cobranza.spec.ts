@@ -667,6 +667,113 @@ test("15 · cambiar el correo de contacto pide un segundo factor reciente y avis
   expect(reales(errores, browserName)).toEqual([]);
 });
 
+test("16 · el mismo depósito a mano y en el estado de cuenta: posible duplicado en «Por conciliar», se descarta o se aplica (r63b-N1)", async ({ page, context, browserName }) => {
+  const errores = vigilarConsola(page);
+  await entrar(context, CORREOS_COBRANZA.carla);
+  const alfa = await idDeCliente("Colegio Alfa");
+  // Un cargo de 2,468.00: le queda saldo después del primer pago, que es cuando el código anterior aplicaba doble.
+  await page.goto(en(`/consola/cobros/clientes/${alfa}`));
+  await page.getByRole("button", { name: "Cargo único" }).click();
+  const unico = page.getByRole("dialog", { name: "Cargo único" });
+  await unico.getByLabel("Concepto").fill("Duplicado entre fuentes");
+  await unico.getByLabel("Monto").fill("2468.00");
+  await unico.getByLabel("Vence").fill(desplazar(hoy(), 10));
+  await dobleClic(unico.getByRole("button", { name: "Emitir el cargo" }));
+  const cargo = await cargoDe(alfa, "Duplicado entre fuentes");
+
+  // Carla registra a mano el depósito de 1,234.00 que vio en el banco: se aplica.
+  await page.goto(en("/consola/cobros"));
+  await page.locator(`table[data-tabla="cargos"] tr[data-cargo="${cargo.id}"]`).getByRole("button", { name: "Registrar pago" }).click();
+  const dialogo = page.getByRole("dialog", { name: "Registrar un pago" });
+  await dialogo.getByLabel("Monto que llegó").fill("1234.00");
+  await dobleClic(dialogo.getByRole("button", { name: "Registrar el pago" }));
+  const [manual] = await consultar<{ id: string }>("select id from collection_payments where company_id = $1 and fuente = 'manual' and monto_centavos = 123400", [EMPRESA()]);
+  expect((await cargoDe(alfa, "Duplicado entre fuentes")).estado).toBe("emitido");
+
+  // Luego sube el estado de cuenta de BBVA con ese mismo depósito (y otro igual, con otro concepto): ninguno se aplica solo.
+  const fecha = hoy().split("-").reverse().join("/");
+  const csv = [
+    "BBVA México · Movimientos de la cuenta (ARCHIVO FICTICIO DE PRUEBA)", "Cuenta;0123456789", `Periodo;${fecha} al ${fecha}`, "",
+    "Día;Concepto / Referencia;Cargo;Abono;Saldo",
+    `${fecha};SPEI RECIBIDO REF ${cargo.referencia} COLEGIO ALFA;;1,234.00;110,000.00`,
+    `${fecha};SPEI RECIBIDO REF ${cargo.referencia} SEGUNDO DEPOSITO;;1,234.00;111,234.00`,
+  ].join("\r\n");
+  await page.goto(en("/consola/cobros/estado-de-cuenta"));
+  const forma = page.locator('form[data-formulario="estado-de-cuenta"]');
+  await forma.locator("#banco").selectOption("bbva");
+  await forma.locator("#archivo").setInputFiles({ name: "bbva-duplicado.csv", mimeType: "text/csv", buffer: Buffer.from(csv, "latin1") });
+  await dobleClic(forma.getByRole("button", { name: "Subir y ver las propuestas" }), { esperar: /importacion=.*nuevos=2/ });
+  const renglones = page.locator('table[data-tabla="propuestas"] tbody tr');
+  await expect(renglones).toHaveCount(2);
+  for (const r of await renglones.all()) {
+    await expect(r).toHaveAttribute("data-propuesta", "por_conciliar");
+    await expect(r.locator("[data-parecido]")).toContainText("Posible duplicado: ya está registrado a mano");
+  }
+  await foto(page, browserName, "duplicado-propuesta");
+  await dobleClic(page.locator('form[data-formulario="confirmar-estado-de-cuenta"]').getByRole("button", { name: "Confirmar la importación" }));
+  await expect(page.getByText("La importación quedó confirmada: 2 en «Por conciliar».")).toBeVisible();
+  expect(await contar("select 1 from collection_applications where charge_id = $1 and regla <> 'reversion'", [cargo.id])).toBe(1);
+
+  // En «Por conciliar» cada uno dice a qué pago se parece.
+  const dobles = await consultar<{ id: string }>(
+    "select id from collection_payments where company_id = $1 and fuente = 'estado_cuenta' and monto_centavos = 123400 and posible_duplicado and parecido_a = $2 order by id_externo",
+    [EMPRESA(), manual!.id],
+  );
+  expect(dobles).toHaveLength(2);
+  await page.goto(en("/consola/cobros?vista=conciliar"));
+  const [mismo, otro] = dobles.map((d) => page.locator(`[data-pago="${d.id}"]`));
+  for (const tarjeta of [mismo!, otro!]) {
+    await expect(tarjeta).toContainText("Posible duplicado");
+    await expect(tarjeta.locator(`[data-parecido="${manual!.id}"]`)).toContainText("Parece el mismo depósito que: Registrado a mano");
+  }
+  await foto(page, browserName, "duplicado-por-conciliar");
+  // El primero es el mismo depósito: se descarta con su motivo.
+  await mismo!.getByRole("button", { name: "Descartar" }).click();
+  const descartar = page.getByRole("dialog", { name: "Descartar el posible duplicado" });
+  await descartar.getByLabel("Motivo").fill("Es el depósito que ya registré a mano.");
+  await dobleClic(descartar.getByRole("button", { name: "Descartar el duplicado" }));
+  await expect(page.getByText("El posible duplicado quedó descartado con su motivo")).toBeVisible();
+  expect(await contar("select 1 from collection_payments where id = $1 and estado = 'anulado'", [dobles[0]!.id])).toBe(1);
+  expect(await contar("select 1 from audit_log where identificador = $1 and accion = 'descartar_duplicado_cobranza' and cambio->>'parecido_a' = $2", [dobles[0]!.id, manual!.id])).toBe(1);
+  // El segundo sí fue otro depósito: Carla lo aplica al cargo, que queda pagado.
+  await expect(otro!.getByRole("combobox", { name: "Aplicar a" })).toHaveValue(cargo.id);
+  await dobleClic(otro!.getByRole("button", { name: "Aplicar" }));
+  await expect(otro!).toHaveCount(0);
+  expect((await cargoDe(alfa, "Duplicado entre fuentes")).estado).toBe("pagado");
+  expect(await contar("select 1 from collection_applications where charge_id = $1 and regla <> 'reversion'", [cargo.id])).toBe(2);
+  // Y queda en el historial del cliente.
+  await page.goto(en(`/consola/cobros/clientes/${alfa}`));
+  await expect(page.getByText("Posible duplicado descartado").first()).toBeVisible();
+  await foto(page, browserName, "duplicado-resuelto");
+  expect(reales(errores, browserName)).toEqual([]);
+});
+
+test("17 · sin JavaScript la configuración se guarda por POST: la CLABE, el beneficiario y el contacto no van en la dirección (r63b-N2)", async ({ browser, browserName }) => {
+  const contexto = await browser.newContext({ javaScriptEnabled: false, ignoreHTTPSErrors: ORIGEN.startsWith("https:") });
+  const page = await contexto.newPage();
+  await entrar(contexto, CORREOS_COBRANZA.carla);
+  const nuevo = "sin-javascript@ejemplo.mx";
+  const metodos: string[] = [];
+  page.on("request", (r) => { if (r.isNavigationRequest()) metodos.push(`${r.method()} ${new URL(r.url()).search}`); });
+  await page.goto(en("/consola/cobros/configuracion"));
+  const forma = page.locator('form[data-formulario="configuracion-cobranza"]');
+  await expect(forma).toHaveAttribute("method", /^post$/i);
+  await forma.locator("#correoContacto").fill(nuevo);
+  await forma.locator("#beneficiario").fill("Cobranza E2E SA de CV");
+  await Promise.all([page.waitForLoadState("load"), forma.getByRole("button", { name: "Guardar la configuración" }).click()]);
+  await expect(page.locator(".alerta-asentado")).toBeVisible();
+  const direccion = page.url();
+  for (const dato of [CLABE, "correoContacto", "beneficiario", encodeURIComponent(nuevo), nuevo]) expect(direccion).not.toContain(dato);
+  expect(metodos.at(-1)).toBe("POST ");
+  expect(await contar("select 1 from collection_settings where company_id = $1 and correo_contacto = $2", [EMPRESA(), nuevo])).toBe(1);
+  if (EVIDENCIA) {
+    mkdirSync(EVIDENCIA, { recursive: true });
+    fotos += 1;
+    await page.screenshot({ path: join(EVIDENCIA, `${browserName}-${String(fotos).padStart(2, "0")}-sin-javascript-configuracion.jpg`), fullPage: true, type: "jpeg", quality: 70 });
+  }
+  await contexto.close();
+});
+
 function pesos(centavos: number): string {
   return `$${(centavos / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

@@ -338,22 +338,37 @@ async function reglas(app: string, ids: Ids, duena: string): Promise<void> {
   // tests/esquema/definer-search-path.test.ts), para que el search_path de la 0031 se pruebe por sí solo.
   const temporal = (accion: "grant" | "revoke") => ejecutar(duena,
     `do $$ begin execute format('${accion} temporary on database %I ${accion === "grant" ? "to" : "from"} ${C}', current_database()); end $$;`);
-  await rechaza("sin el permiso de la 0029 no hay tablas temporales", "42501",
+  const sinTemporal = (cuando: string) => rechaza(`${cuando}: sin el permiso de la 0029 no hay tablas temporales`, "42501",
     (c) => c.query("create temp table collection_provider_accounts (company_id uuid)"), C, "", "");
-  temporal("grant");
-  const sombraDestino = await acepta("base-N4 cobranza_destino_fintoc con collection_provider_accounts temporal", async (c) => {
-    await c.query("create temp table collection_provider_accounts (company_id uuid, proveedor text, cuenta_id text)");
-    await c.query("insert into collection_provider_accounts values ($1, 'fintoc', 'acc_Sombra1')", [ids.beta]);
-    return (await c.query("select company_id from cobranza_destino_fintoc('acc_Sombra1', 'acno_sombra1')")).rows;
-  }, C, "", "");
+  // r63c-N1: el préstamo va con psql en autocommit (plataforma_app no puede darlo), fuera de la transacción de la sonda.
+  // Se devuelve en un finally aunque la sonda falle, y después se vuelve a exigir el 42501.
+  async function conTemporalPrestado<T>(sonda: () => Promise<T>): Promise<T> {
+    temporal("grant");
+    try {
+      return await sonda();
+    } finally {
+      temporal("revoke");
+      await sinTemporal("después del préstamo");
+    }
+  }
+  await sinTemporal("antes del préstamo");
+  // Una sonda que falla no deja el permiso prestado.
+  await assert.rejects(() => conTemporalPrestado(async () => { throw new Error("sonda forzada a fallar"); }), /sonda forzada a fallar/);
+  const [sombraDestino, sombraEnlace] = await conTemporalPrestado(async () => {
+    const destino = await acepta("base-N4 cobranza_destino_fintoc con collection_provider_accounts temporal", async (c) => {
+      await c.query("create temp table collection_provider_accounts (company_id uuid, proveedor text, cuenta_id text)");
+      await c.query("insert into collection_provider_accounts values ($1, 'fintoc', 'acc_Sombra1')", [ids.beta]);
+      return (await c.query("select company_id from cobranza_destino_fintoc('acc_Sombra1', 'acno_sombra1')")).rows;
+    }, C, "", "");
+    const falso = createHash("sha256").update(randomUUID()).digest("hex");
+    const enlace = await acepta("base-N4 cobranza_por_enlace con collection_emails temporal", async (c) => {
+      await c.query("create temp table collection_emails (company_id uuid, charge_id uuid, enlace_hash text, enlace_vence date)");
+      await c.query("insert into collection_emails values ($1, $2, $3, '2099-01-01')", [ids.beta, ids.kb, falso]);
+      return (await c.query("select referencia from cobranza_por_enlace($1)", [falso])).rows;
+    }, C, "", E);
+    return [destino, enlace] as const;
+  });
   assert.deepEqual(sombraDestino, [], "base-N4: cobranza_destino_fintoc leyó la tabla temporal y devolvió Beta");
-  const falso = createHash("sha256").update(randomUUID()).digest("hex");
-  const sombraEnlace = await acepta("base-N4 cobranza_por_enlace con collection_emails temporal", async (c) => {
-    await c.query("create temp table collection_emails (company_id uuid, charge_id uuid, enlace_hash text, enlace_vence date)");
-    await c.query("insert into collection_emails values ($1, $2, $3, '2099-01-01')", [ids.beta, ids.kb, falso]);
-    return (await c.query("select referencia from cobranza_por_enlace($1)", [falso])).rows;
-  }, C, "", E);
-  temporal("revoke");
   assert.deepEqual(sombraEnlace, [], "base-N4: cobranza_por_enlace leyó la tabla temporal y devolvió el cargo de Beta");
 
   // r63-N2: una referencia con 0 inicial no existe (el consecutivo empieza en 100000).

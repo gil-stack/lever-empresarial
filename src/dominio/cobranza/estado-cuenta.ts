@@ -23,6 +23,15 @@ export const BANCOS = [
 ] as const;
 export type ClaveBanco = (typeof BANCOS)[number]["clave"];
 
+/**
+ * Un archivo nuevo cuyos abonos ya estaban todos en Lever: no se asentó nada, así que no se dice «Quedó asentado»
+ * (r63b-N3), y el número concuerda con el verbo.
+ */
+export function avisoSinNuevos(repetidos: number): { titulo: string; mensaje: string } {
+  const abonos = repetidos === 1 ? "Su único abono ya estaba en Lever" : `Sus ${repetidos} abonos ya estaban en Lever`;
+  return { titulo: "No había nada nuevo", mensaje: `${abonos}: no se importó ni se duplicó nada.` };
+}
+
 export function esBanco(valor: unknown): valor is ClaveBanco {
   return BANCOS.some((b) => b.clave === valor);
 }

@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import { clabeValida, digitoClabe } from "../clabe.ts";
 import { cubetaDe, dso, rangoDeCubeta } from "./antiguedad.ts";
 import { conciliar, referenciaABuscar, saldoAFavor } from "./conciliacion.ts";
+import { avisoSinNuevos } from "./estado-cuenta.ts";
 import { leerCorreos, validarAlta, validarCargoUnico, validarConfiguracion, validarPagoManual, validarPlanEditado } from "./entradas.ts";
 import { calendario, etiquetaPeriodo, periodosPorGenerar, vencimientoDe } from "./periodos.ts";
 import { correoDeHoy, CALENDARIO_POR_OMISION, type CorreoPrevio } from "./recordatorios.ts";
@@ -98,6 +99,13 @@ describe("referencia de 7 dígitos", () => {
     assert.equal(normalizarReferencia("0000018"), null);
     assert.equal(normalizarReferencia("ABC"), null);
     assert.equal(normalizarReferencia("12345678"), null);
+  });
+});
+
+describe("aviso de un archivo sin abonos nuevos (r63b-N3)", () => {
+  it("no dice «Quedó asentado» y el número concuerda", () => {
+    assert.deepEqual(avisoSinNuevos(1), { titulo: "No había nada nuevo", mensaje: "Su único abono ya estaba en Lever: no se importó ni se duplicó nada." });
+    assert.deepEqual(avisoSinNuevos(3), { titulo: "No había nada nuevo", mensaje: "Sus 3 abonos ya estaban en Lever: no se importó ni se duplicó nada." });
   });
 });
 

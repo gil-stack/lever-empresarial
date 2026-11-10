@@ -76,7 +76,7 @@ export function FormularioAlta({ altaId, hoy, emitirDiasAntes }: { altaId: strin
   const correo = vencimientos[0] ? desplazar(vencimientos[0].vencimiento, -emitirDiasAntes) : null;
   return (
     <div className="cobranza-alta">
-      <form id={f.idForma} className="flujo-formulario" onSubmit={f.enviar} noValidate aria-busy={f.pendiente} data-formulario="alta-cliente">
+      <form id={f.idForma} action={f.accion} className="flujo-formulario" onSubmit={f.enviar} noValidate aria-busy={f.pendiente} data-formulario="alta-cliente">
         <AvisoFlujo estado={f.estado} />
         <IdDeAlta id={altaId} />
         <fieldset className="cobranza-grupo">
@@ -176,7 +176,7 @@ export type ConfiguracionInicial = {
 export function FormularioConfiguracion({ inicial }: { inicial: ConfiguracionInicial }) {
   const f = useFormulario(enviarConfiguracion);
   return (
-    <form id={f.idForma} className="flujo-formulario" onSubmit={f.enviar} noValidate aria-busy={f.pendiente} data-formulario="configuracion-cobranza">
+    <form id={f.idForma} action={f.accion} className="flujo-formulario" onSubmit={f.enviar} noValidate aria-busy={f.pendiente} data-formulario="configuracion-cobranza">
       <AvisoFlujo estado={f.estado} />
       <fieldset className="cobranza-grupo">
         <legend>Dónde te pagan</legend>
@@ -265,7 +265,7 @@ export function AccionesCargo({ cargo, hoy, demostracion }: { cargo: CargoParaAc
       {cargo.estado === "emitido" ? (
         <>
           <button type="button" className="boton-texto boton-chico" onClick={() => { alta.nuevo(); setAbierto("pago"); }}>Registrar pago</button>
-          <form id={correo.idForma} onSubmit={correo.enviar} className="cobranza-en-linea">
+          <form id={correo.idForma} action={correo.accion} onSubmit={correo.enviar} className="cobranza-en-linea">
             <input type="hidden" name="cargoId" value={cargo.id} />
             <BotonEnviar className="boton-texto boton-chico" pendiente={correo.pendiente} enviando="Mandando…">Enviar cobro</BotonEnviar>
           </form>
@@ -281,7 +281,7 @@ export function AccionesCargo({ cargo, hoy, demostracion }: { cargo: CargoParaAc
 
       <Dialogo abierto={abierto === "pago"} alCerrar={cerrar} titulo="Registrar un pago" explicacion={`${resumen}. Lo que pase del saldo queda a favor del cliente.`}
         pie={<BotonEnviar form={pago.idForma} pendiente={pago.pendiente}>Registrar el pago</BotonEnviar>}>
-        <form id={pago.idForma} className="flujo-resolver" onSubmit={pago.enviar} noValidate encType="multipart/form-data">
+        <form id={pago.idForma} action={pago.accion} className="flujo-resolver" onSubmit={pago.enviar} noValidate>
           <AvisoFlujo estado={pago.estado} />
           {alta.id ? <input type="hidden" name="altaId" value={alta.id} /> : null}
           <input type="hidden" name="cargoId" value={cargo.id} />
@@ -304,7 +304,7 @@ export function AccionesCargo({ cargo, hoy, demostracion }: { cargo: CargoParaAc
 
       <Dialogo abierto={abierto === "monto"} alCerrar={cerrar} titulo="Capturar el monto del periodo" explicacion={`${resumen}. Al guardarlo, el cargo se emite y sale el cobro si el envío es automático.`}
         pie={<BotonEnviar form={monto.idForma} pendiente={monto.pendiente}>Emitir el cargo</BotonEnviar>}>
-        <form id={monto.idForma} className="flujo-resolver" onSubmit={monto.enviar} noValidate>
+        <form id={monto.idForma} action={monto.accion} className="flujo-resolver" onSubmit={monto.enviar} noValidate>
           <AvisoFlujo estado={monto.estado} />
           <input type="hidden" name="cargoId" value={cargo.id} />
           <Campo id={`monto-${cargo.id}-valor`} etiqueta="Monto de este periodo" error={monto.mensaje("monto")}>
@@ -315,7 +315,7 @@ export function AccionesCargo({ cargo, hoy, demostracion }: { cargo: CargoParaAc
 
       <Dialogo abierto={abierto === "cancelar"} alCerrar={cerrar} titulo="Cancelar el cargo" explicacion={`${resumen}. Deja de cobrarse y queda en el historial con su motivo.`}
         pie={<BotonEnviar form={cancelar.idForma} pendiente={cancelar.pendiente}>Cancelar el cargo</BotonEnviar>}>
-        <form id={cancelar.idForma} className="flujo-resolver" onSubmit={cancelar.enviar} noValidate>
+        <form id={cancelar.idForma} action={cancelar.accion} className="flujo-resolver" onSubmit={cancelar.enviar} noValidate>
           <AvisoFlujo estado={cancelar.estado} />
           <input type="hidden" name="cargoId" value={cargo.id} />
           <Campo id={`cancelar-${cargo.id}-motivo`} etiqueta="Motivo" error={cancelar.mensaje("motivo")}>
@@ -327,7 +327,7 @@ export function AccionesCargo({ cargo, hoy, demostracion }: { cargo: CargoParaAc
       {demostracion ? (
         <Dialogo abierto={abierto === "simular"} alCerrar={cerrar} titulo="Simular un abono" explicacion="Empresa de demostración: así se ve la detección automática cuando llega un depósito. No mueve dinero."
           pie={<BotonEnviar form={simular.idForma} pendiente={simular.pendiente}>Simular el abono</BotonEnviar>}>
-          <form id={simular.idForma} className="flujo-resolver" onSubmit={simular.enviar} noValidate>
+          <form id={simular.idForma} action={simular.accion} className="flujo-resolver" onSubmit={simular.enviar} noValidate>
             <AvisoFlujo estado={simular.estado} />
             <input type="hidden" name="cargoId" value={cargo.id} />
             <Campo id={`simular-${cargo.id}-variante`} etiqueta="¿Qué llega?">
@@ -349,7 +349,7 @@ export function AplicarPago({ pagoId, opciones }: { pagoId: string; opciones: { 
   const id = useId();
   if (opciones.length === 0) return <p className="pista">Sin cargos abiertos donde aplicarlo.</p>;
   return (
-    <form id={f.idForma} className="cobranza-aplicar" onSubmit={f.enviar} noValidate>
+    <form id={f.idForma} action={f.accion} className="cobranza-aplicar" onSubmit={f.enviar} noValidate>
       <AvisoFlujo estado={f.estado} />
       <input type="hidden" name="pagoId" value={pagoId} />
       <label htmlFor={id} className="solo-lector">Aplicar a</label>
@@ -369,7 +369,7 @@ export function RevertirAplicacion({ aplicacionId, texto }: { aplicacionId: stri
       <button type="button" className="boton-fantasma boton-chico" onClick={() => setAbierto(true)}>Revertir</button>
       <Dialogo abierto={abierto} alCerrar={() => setAbierto(false)} titulo="Revertir la aplicación" explicacion={`${texto}. El cargo vuelve a deber y el pago queda libre. Queda en el historial.`}
         pie={<BotonEnviar form={f.idForma} pendiente={f.pendiente}>Revertir</BotonEnviar>}>
-        <form id={f.idForma} className="flujo-resolver" onSubmit={f.enviar} noValidate>
+        <form id={f.idForma} action={f.accion} className="flujo-resolver" onSubmit={f.enviar} noValidate>
           <AvisoFlujo estado={f.estado} />
           <input type="hidden" name="aplicacionId" value={aplicacionId} />
           <Campo id={`revertir-${aplicacionId}-motivo`} etiqueta="Motivo" error={f.mensaje("motivo")}>
@@ -393,7 +393,7 @@ export function AnularPago({ pagoId, texto, descartar = false }: { pagoId: strin
       <button type="button" className="boton-fantasma boton-chico" onClick={() => setAbierto(true)}>{descartar ? "Descartar" : "Anular"}</button>
       <Dialogo abierto={abierto} alCerrar={() => setAbierto(false)} titulo={descartar ? "Descartar el posible duplicado" : "Anular el pago"} explicacion={explicacion}
         pie={<BotonEnviar form={f.idForma} pendiente={f.pendiente}>{descartar ? "Descartar el duplicado" : "Anular el pago"}</BotonEnviar>}>
-        <form id={f.idForma} className="flujo-resolver" onSubmit={f.enviar} noValidate>
+        <form id={f.idForma} action={f.accion} className="flujo-resolver" onSubmit={f.enviar} noValidate>
           <AvisoFlujo estado={f.estado} />
           <input type="hidden" name="pagoId" value={pagoId} />
           <Campo id={`anular-${pagoId}-motivo`} etiqueta="Motivo" error={f.mensaje("motivo")}>
@@ -415,7 +415,7 @@ export function PagoSinCargo({ clienteId, hoy }: { clienteId: string | null; hoy
       <button type="button" className="boton-texto boton-chico" onClick={() => { alta.nuevo(); setAbierto(true); }}>Registrar un pago sin cargo</button>
       <Dialogo abierto={abierto} alCerrar={() => { setAbierto(false); alta.limpiar(); }} titulo="Registrar un pago" explicacion="Queda como saldo a favor del cliente (o sin identificar) en «Por conciliar» para aplicarlo después."
         pie={<BotonEnviar form={f.idForma} pendiente={f.pendiente}>Registrar el pago</BotonEnviar>}>
-        <form id={f.idForma} className="flujo-resolver" onSubmit={f.enviar} noValidate encType="multipart/form-data">
+        <form id={f.idForma} action={f.accion} className="flujo-resolver" onSubmit={f.enviar} noValidate>
           <AvisoFlujo estado={f.estado} />
           {alta.id ? <input type="hidden" name="altaId" value={alta.id} /> : null}
           {clienteId ? <input type="hidden" name="clienteId" value={clienteId} /> : null}
@@ -448,7 +448,7 @@ export function EditarCliente({ cliente }: { cliente: { id: string; nombre: stri
     <>
       <button type="button" className="boton-texto boton-chico" onClick={() => setAbierto(true)}>Editar datos</button>
       <Dialogo abierto={abierto} alCerrar={() => setAbierto(false)} titulo="Editar el cliente" pie={<BotonEnviar form={f.idForma} pendiente={f.pendiente}>Guardar</BotonEnviar>}>
-        <form id={f.idForma} className="flujo-resolver" onSubmit={f.enviar} noValidate>
+        <form id={f.idForma} action={f.accion} className="flujo-resolver" onSubmit={f.enviar} noValidate>
           <AvisoFlujo estado={f.estado} />
           <input type="hidden" name="clienteId" value={cliente.id} />
           <Campo id="editar-nombre" etiqueta="Nombre o razón social" error={f.mensaje("nombre")}>
@@ -469,7 +469,7 @@ export function EditarCliente({ cliente }: { cliente: { id: string; nombre: stri
 export function Recordatorios({ clienteId, activos, porPagador }: { clienteId: string; activos: boolean; porPagador: boolean }) {
   const f = useAccionDeFila(enviarRecordatorios, `recordatorios-${clienteId}`, () => {});
   return (
-    <form id={f.idForma} onSubmit={f.enviar} className="cobranza-en-linea">
+    <form id={f.idForma} action={f.accion} onSubmit={f.enviar} className="cobranza-en-linea">
       <input type="hidden" name="clienteId" value={clienteId} />
       <input type="hidden" name="activos" value={activos ? "no" : "si"} />
       <BotonEnviar className="boton-texto boton-chico" pendiente={f.pendiente}>{activos ? "Apagar recordatorios" : porPagador ? "Encender recordatorios (el cliente los apagó)" : "Encender recordatorios"}</BotonEnviar>
@@ -486,7 +486,7 @@ export function ArchivarCliente({ clienteId, nombre }: { clienteId: string; nomb
       <button type="button" className="boton-fantasma boton-chico" onClick={() => setAbierto(true)}>Archivar cliente</button>
       <Dialogo abierto={abierto} alCerrar={() => setAbierto(false)} titulo={`Archivar a ${nombre}`} explicacion="Se cancelan sus planes y deja de generar cargos. Lo que ya debe se sigue viendo y cobrando."
         pie={<BotonEnviar form={f.idForma} pendiente={f.pendiente}>Archivar</BotonEnviar>}>
-        <form id={f.idForma} className="flujo-resolver" onSubmit={f.enviar} noValidate>
+        <form id={f.idForma} action={f.accion} className="flujo-resolver" onSubmit={f.enviar} noValidate>
           <AvisoFlujo estado={f.estado} />
           <input type="hidden" name="clienteId" value={clienteId} />
           <Campo id="archivar-motivo" etiqueta="Motivo" error={f.mensaje("motivo")}>
@@ -509,7 +509,7 @@ export function AccionesPlan({ plan }: { plan: PlanEditable }) {
   return (
     <div className="flujo-acciones-fila cobranza-acciones-plan">
       <button type="button" className="boton-texto boton-chico" onClick={() => setAbierto("editar")}>Editar plan</button>
-      <form id={estado.idForma} onSubmit={estado.enviar} className="cobranza-en-linea">
+      <form id={estado.idForma} action={estado.accion} onSubmit={estado.enviar} className="cobranza-en-linea">
         <input type="hidden" name="planId" value={plan.id} />
         <input type="hidden" name="accion" value={plan.estado === "activo" ? "pausar" : "reanudar"} />
         <BotonEnviar className="boton-texto boton-chico" pendiente={estado.pendiente}>{plan.estado === "activo" ? "Pausar" : "Reanudar desde hoy"}</BotonEnviar>
@@ -518,7 +518,7 @@ export function AccionesPlan({ plan }: { plan: PlanEditable }) {
       {estado.estado.tipo !== "inicial" ? <AvisoFlujo estado={estado.estado} /> : null}
       <Dialogo abierto={abierto === "editar"} alCerrar={() => setAbierto(null)} titulo="Editar el plan" explicacion="Cuenta desde el siguiente periodo: lo ya emitido no cambia. Para cambiar cada cuánto se cobra, cancela este plan y agrega otro."
         pie={<BotonEnviar form={editar.idForma} pendiente={editar.pendiente}>Guardar</BotonEnviar>}>
-        <form id={editar.idForma} className="flujo-resolver" onSubmit={editar.enviar} noValidate>
+        <form id={editar.idForma} action={editar.accion} className="flujo-resolver" onSubmit={editar.enviar} noValidate>
           <AvisoFlujo estado={editar.estado} />
           <input type="hidden" name="planId" value={plan.id} />
           <Campo id={`plan-concepto-${plan.id}`} etiqueta="Concepto" error={editar.mensaje("concepto")}>
@@ -536,7 +536,7 @@ export function AccionesPlan({ plan }: { plan: PlanEditable }) {
       </Dialogo>
       <Dialogo abierto={abierto === "cancelar"} alCerrar={() => setAbierto(null)} titulo="Cancelar el plan" explicacion="Deja de generar cargos. Lo ya emitido se sigue debiendo."
         pie={<BotonEnviar form={cancelar.idForma} pendiente={cancelar.pendiente}>Cancelar el plan</BotonEnviar>}>
-        <form id={cancelar.idForma} className="flujo-resolver" onSubmit={cancelar.enviar} noValidate>
+        <form id={cancelar.idForma} action={cancelar.accion} className="flujo-resolver" onSubmit={cancelar.enviar} noValidate>
           <AvisoFlujo estado={cancelar.estado} />
           <input type="hidden" name="planId" value={plan.id} />
           <input type="hidden" name="accion" value="cancelar" />
@@ -560,7 +560,7 @@ export function NuevoCobroDeCliente({ clienteId, hoy, altaPlan, altaCargo }: { c
       <button type="button" className="boton-texto boton-chico" onClick={() => setAbierto("plan")}>Agregar plan</button>
       <button type="button" className="boton-texto boton-chico" onClick={() => setAbierto("cargo")}>Cargo único</button>
       <Dialogo abierto={abierto === "plan"} alCerrar={() => setAbierto(null)} titulo="Agregar un plan" pie={<BotonEnviar form={plan.idForma} pendiente={plan.pendiente}>Agregar el plan</BotonEnviar>}>
-        <form id={plan.idForma} className="flujo-resolver" onSubmit={plan.enviar} noValidate>
+        <form id={plan.idForma} action={plan.accion} className="flujo-resolver" onSubmit={plan.enviar} noValidate>
           <AvisoFlujo estado={plan.estado} />
           <input type="hidden" name="clienteId" value={clienteId} />
           <input key={altaPlan} type="hidden" name="altaId" defaultValue={altaPlan} />
@@ -593,7 +593,7 @@ export function NuevoCobroDeCliente({ clienteId, hoy, altaPlan, altaCargo }: { c
       </Dialogo>
       <Dialogo abierto={abierto === "cargo"} alCerrar={() => setAbierto(null)} titulo="Cargo único" explicacion="Un cobro de una sola vez, con su referencia y su correo."
         pie={<BotonEnviar form={cargo.idForma} pendiente={cargo.pendiente}>Emitir el cargo</BotonEnviar>}>
-        <form id={cargo.idForma} className="flujo-resolver" onSubmit={cargo.enviar} noValidate>
+        <form id={cargo.idForma} action={cargo.accion} className="flujo-resolver" onSubmit={cargo.enviar} noValidate>
           <AvisoFlujo estado={cargo.estado} />
           <input type="hidden" name="clienteId" value={clienteId} />
           <input key={altaCargo} type="hidden" name="altaId" defaultValue={altaCargo} />
@@ -652,7 +652,7 @@ export function SubirEstadoDeCuenta({ bancosConEmpate }: { bancosConEmpate: read
     return v === null || v === undefined ? "" : String(v);
   };
   return (
-    <form id={idForma} className="flujo-formulario" onSubmit={enviarSinReiniciar(despachar)} noValidate aria-busy={pendiente} data-formulario="estado-de-cuenta" encType="multipart/form-data">
+    <form id={idForma} action={despachar} className="flujo-formulario" onSubmit={enviarSinReiniciar(despachar)} noValidate aria-busy={pendiente} data-formulario="estado-de-cuenta">
       {estado.tipo === "empatar" ? null : <AvisoFlujo estado={estado} />}
       <div className="formulario-pareja">
         <Campo id="banco" etiqueta="Banco" pista={banco && bancosConEmpate.includes(banco) ? "Ya tienes el empate de este banco: se usa solo." : "La primera vez eliges qué columna es qué; Lever lo recuerda."} error={mensaje("banco")}>
@@ -716,7 +716,7 @@ export function SubirEstadoDeCuenta({ bancosConEmpate }: { bancosConEmpate: read
 export function ConfirmarEstadoDeCuenta({ importacionId, confirmable, children }: { importacionId: string; confirmable: boolean; children: ReactNode }) {
   const f = useFormulario(enviarConfirmacionEstadoDeCuenta);
   return (
-    <form id={f.idForma} onSubmit={f.enviar} noValidate aria-busy={f.pendiente} data-formulario="confirmar-estado-de-cuenta">
+    <form id={f.idForma} action={f.accion} onSubmit={f.enviar} noValidate aria-busy={f.pendiente} data-formulario="confirmar-estado-de-cuenta">
       <AvisoFlujo estado={f.estado} />
       <input type="hidden" name="importacionId" value={importacionId} />
       {children}

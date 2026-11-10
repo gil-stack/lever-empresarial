@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { avisoSinNuevos } from "@/dominio/cobranza/estado-cuenta";
 import type { EstadoFlujo } from "@/dominio/flujo/entradas";
 import { confirmarEstadoDeCuenta, prepararEstadoDeCuenta, type ResultadoPreparar, type VistaPrevia } from "@/server/cobranza/estado-cuenta";
 import {
@@ -306,10 +307,7 @@ export async function enviarEstadoDeCuenta(_previo: EstadoEstadoDeCuenta, formDa
     redirect(destino);
   }
   if (resultado.tipo === "empatar") return { tipo: "empatar", vista: resultado.vista };
-  return {
-    tipo: "listo",
-    mensaje: `Este archivo ya estaba importado: sus ${resultado.repetidos} ${resultado.repetidos === 1 ? "abono ya está" : "abonos ya están"} en Lever. No se duplicó nada.`,
-  };
+  return { tipo: "rechazado", ...avisoSinNuevos(resultado.repetidos) };
 }
 
 export async function enviarConfirmacionEstadoDeCuenta(_previo: EstadoFlujo, formData: FormData): Promise<EstadoFlujo> {
