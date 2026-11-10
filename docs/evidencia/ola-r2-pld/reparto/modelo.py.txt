@@ -3,7 +3,7 @@ M, S = sys.argv[1], sys.argv[2]
 def seg(t):
     m = re.match(r"([\d.]+)(m|s|ms)$", t); v, u = float(m[1]), m[2]
     return v * 60 if u == "m" else v / 1000 if u == "ms" else v
-logs = glob.glob(f"{M}/rep/cfea-*.log") + glob.glob(f"{M}/ci/ci*-e2e-*.log") + glob.glob(f"{S}/ci*-e2e-*.log")
+logs = glob.glob(f"{M}/rep/cfea-*.log") + glob.glob(f"{M}/rep/c62-*.log") + glob.glob(f"{M}/rep/a742-*.log") + glob.glob(f"{M}/ci/ci*-e2e-*.log") + glob.glob(f"{S}/ci*-e2e-*.log")
 maximo = collections.defaultdict(float); veces = collections.Counter(); listos = []; cierre = []
 reales = {}
 for f in logs:
@@ -14,7 +14,7 @@ for f in logs:
     if a: listos.append(int(a[1]))
 LISTOS = max(listos); CIERRE = 45
 print(f"registros: {len(logs)}; «listos» observados {sorted(listos)} → uso {LISTOS} s; cierre {CIERRE} s")
-for total in (5, 6):
+for total in (6, 7):
     peor = 0
     print(f"--- {total} partes")
     for n in range(1, total + 1):
