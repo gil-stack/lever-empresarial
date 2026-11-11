@@ -43,7 +43,13 @@ src/app/operacion/(portal)/comite/sesiones/[id]/page.tsx
 src/app/operacion/(portal)/conservacion/page.tsx
 
 ## autoFocus que queda en src
-(ninguno)
+Actualizado con el #60 integrado (1f91ffe): `git grep -n autoFocus -- src` da dos, los dos en la consola del cliente.
+src/components/aprobaciones/decision-pago.tsx:138 · el código de la app en la fila de Aprobaciones (segundo factor vencido)
+src/components/aprobaciones/decision-pago.tsx:165 · el motivo del rechazo en línea (`dentro === "linea" && !codigoAqui`)
+Quedan fuera de la regla de la sexta vuelta (fragmento del mensaje en vez de autofocus): esa regla es para la vuelta
+sin JavaScript de los formularios de Operación (`src/app/operacion` y `src/components/operacion`), y estos dos son de
+Aprobaciones en la consola del cliente, del #60, con su propia prueba sin JavaScript en `aprobaciones.spec.ts`. En
+Operación sigue sin haber ninguno (`git grep -n autoFocus -- src/app/operacion src/components/operacion`: vacío).
 
 ## useActionState sin vuelta sin JavaScript con autofocus (no cambian)
 src/components/lista-69b/formulario-cargar.tsx

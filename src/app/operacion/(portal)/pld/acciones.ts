@@ -234,6 +234,9 @@ export async function marcarVeinticuatroHorasAccion(previo: EstadoDelFormulario,
   try {
     await marcarVeinticuatroHoras(ctx, { casoId, motivo: texto(formData, "motivo") });
   } catch (error) {
+    // r61b-N1: otra persona u otra pestaña lo marcó primero; la página se vuelve a leer con su marca y el motivo
+    // rechazado se queda a la vista, de solo lectura (FormularioVeinticuatroHoras).
+    if (error instanceof ErrorDeDominio && error.codigo === "caso_ya_marcado_24h") revalidatePath(caso(casoId));
     return rechazado(error, previo, formData, ["motivo"]);
   }
   listo(caso(casoId), "pld_caso_24_horas");

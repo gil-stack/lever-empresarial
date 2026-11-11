@@ -5,8 +5,23 @@ import { useConservaLoCapturado } from "@/components/operacion/pld/formularios-d
 import { BotonEnviar } from "@/components/sistema";
 
 /** 44ª: el caso pasa a reporte de 24 horas. Rechazado, el motivo vuelve como se escribió. */
-export function FormularioVeinticuatroHoras({ casoId }: { casoId: string }) {
+export function FormularioVeinticuatroHoras({ casoId, marcado }: { casoId: string; marcado: boolean }) {
   const { estado, enviar, forma, valor, ligado, mensaje, aviso } = useConservaLoCapturado(marcarVeinticuatroHorasAccion, "aviso-plazo");
+  // r61b-N1: si otra persona u otra pestaña lo marcó primero, la página ya pinta su marca y este formulario no va; el
+  // motivo de quien perdió se queda a la vista, de solo lectura, para copiarlo (con JavaScript el estado de este
+  // componente sobrevive porque la página lo deja en el mismo lugar; sin JavaScript llega en la respuesta del envío).
+  if (marcado) {
+    if (!estado.vuelta || estado.aviso !== "caso_ya_marcado_24h") return null;
+    return (
+      <div className="operacion-forma">
+        {aviso}
+        <div className="campo">
+          <label htmlFor="plazo-motivo-no-guardado">Tu motivo (no se guardó)</label>
+          <textarea id="plazo-motivo-no-guardado" readOnly value={valor("motivo")} />
+        </div>
+      </div>
+    );
+  }
   return (
     <form key={estado.vuelta} ref={forma} action={enviar} className="operacion-forma">
       <input type="hidden" name="casoId" value={casoId} />

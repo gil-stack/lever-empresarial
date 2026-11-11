@@ -16,6 +16,38 @@ test.describe.configure({ mode: "serial" });
 const CEIBA = { razonSocial: "Ceiba PLD E2E", rfc: "CPE210202AB4" };
 let ceiba = "";
 
+/**
+ * r61-e2e-N1: la política estricta del #62 en el detalle real de un caso y de una sesión (csp.spec abre esas rutas con
+ * un id que no existe y revisa la 404). Con JavaScript cuenta los eventos securitypolicyviolation (el contexto debe
+ * llevar `escucharCsp`); sin JavaScript, las anotaciones de la política en la consola. En los dos, la respuesta lleva
+ * la política con nonce y cada <script> o <style> del HTML trae ese nonce.
+ */
+async function escucharCsp(pagina: Page): Promise<string[]> {
+  const anotadas: string[] = [];
+  pagina.on("console", (m) => {
+    if (/Content Security Policy|Refused to/i.test(m.text())) anotadas.push(m.text().slice(0, 300));
+  });
+  await pagina.context().addInitScript(() => {
+    (window as unknown as { __csp: string[] }).__csp = [];
+    document.addEventListener("securitypolicyviolation", (e) => (window as unknown as { __csp: string[] }).__csp.push(`${e.effectiveDirective} ${e.blockedURI} ${e.sample}`));
+  });
+  return anotadas;
+}
+
+async function sinViolaciones(pagina: Page, ruta: string, detalle: string, anotadas: string[], conScript: boolean): Promise<void> {
+  const respuesta = await pagina.goto(ruta);
+  await pagina.waitForLoadState("networkidle");
+  expect(respuesta?.status(), ruta).toBe(200);
+  await expect(pagina.locator(detalle), `${ruta}: el detalle real, no la 404`).toBeVisible();
+  const politica = (await respuesta!.headerValue("content-security-policy")) ?? "";
+  expect(politica, ruta).toMatch(/script-src 'self' 'nonce-[A-Za-z0-9+/=]+' 'strict-dynamic'/);
+  const nonce = politica.match(/'nonce-([A-Za-z0-9+/=]+)'/)![1];
+  const sinNonce = [...(await respuesta!.text()).matchAll(/<(?:script|style)\b[^>]*>/g)].map((m) => m[0]).filter((etiqueta) => !etiqueta.includes(`nonce="${nonce}"`));
+  expect(sinNonce, `${ruta}: etiquetas sin el nonce`).toEqual([]);
+  if (conScript) expect(await pagina.evaluate(() => (window as unknown as { __csp?: string[] }).__csp ?? null), `${ruta}: violaciones`).toEqual([]);
+  expect(anotadas, `${ruta}: anotaciones de la política`).toEqual([]);
+}
+
 test("perfil transaccional: Originación lo declara con doble clic y Aprobación lo ve sin alertas ni casos", async ({ page, context }) => {
   const errores = vigilarConsola(page);
   await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
@@ -325,7 +357,7 @@ test.describe("sin JavaScript", () => {
 // r2-fix3-N3 (60ª): un caso cuyo aviso excluye a alguien del personal se vota en su propia sesión del Comité. En la
 // sesión que ya votó un caso sin reserva, votarlo dice «Este caso va en otra sesión del Comité.», sin nombrar a nadie ni
 // decir por qué, y no queda el voto.
-test("Comité: un caso con reserva no se vota en la sesión de un caso sin reserva, y la pantalla no dice por qué", async ({ page, context }) => {
+test("Comité: un caso con reserva no se vota en la sesión de un caso sin reserva, y la pantalla no dice por qué; el caso y la sesión reales, sin violaciones de la política con y sin JavaScript", async ({ page, context, browser }) => {
   const errores = vigilarConsola(page);
   const hoy = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
   // Otro aviso sobre Ceiba, ahora sin mencionar a nadie: su caso no excluye a nadie.
@@ -391,6 +423,17 @@ test("Comité: un caso con reserva no se vota en la sesión de un caso sin reser
   await expect(page.locator("#aviso-operacion")).not.toContainText(mencionada!.nombre);
   expect(await votos(conReserva!.id)).toBe(0);
   expect(errores).toEqual([]);
+
+  // r61-e2e-N1: el caso y la sesión reales, con la política estricta y 0 violaciones, con y sin JavaScript.
+  const anotadas = await escucharCsp(page);
+  const detalles: Array<[string, string]> = [[`/operacion/pld/casos/${sinReserva}`, "#propuesta-titulo"], [`/operacion/comite/sesiones/${sesion}`, 'section[aria-labelledby="votaciones-titulo"]']];
+  for (const [ruta, detalle] of detalles) await sinViolaciones(page, ruta, detalle, anotadas, true);
+  const sinScript = await browser.newContext({ javaScriptEnabled: false });
+  await sesionDe(sinScript, CORREOS.op3, { superficie: "sofipo" });
+  const paginaSinScript = await sinScript.newPage();
+  const anotadasSinScript = await escucharCsp(paginaSinScript);
+  for (const [ruta, detalle] of detalles) await sinViolaciones(paginaSinScript, ruta, detalle, anotadasSinScript, false);
+  await sinScript.close();
 });
 
 // ── Doceava del #59 en PLD: r2-serv-N20 (sin fragmento y sin el aviso viejo), r2-serv-N21 (rechazo sin formulario) y B5
@@ -744,4 +787,60 @@ test("B5 con JavaScript: cada enlace con fragmento de PLD lleva a su sección, s
     await expect(destino, ancla).toBeInViewport();
   }
   expect(errores).toEqual([]);
+});
+
+// r61b-N1: dos pestañas de Cumplimiento marcan el mismo caso como de 24 horas con motivos distintos. La que llega
+// segunda ve la marca de la otra (con su motivo), el aviso que dice lo que pasó y su propio motivo, de solo lectura,
+// para copiarlo; con y sin JavaScript. Rojo en 1f91ffe: la página pintaba la marca y desmontaba el formulario.
+test("r61b-N1: si otra pestaña marcó primero el caso como de 24 horas, la segunda ve la marca, el aviso y su motivo para copiarlo, con y sin JavaScript", async ({ browser }) => {
+  for (const conScript of [true, false]) {
+    const donde = conScript ? "con JavaScript" : "sin JavaScript";
+    // Un caso nuevo de Ceiba: un aviso del personal que Cumplimiento abre.
+    const avisa = await browser.newContext();
+    await sesionDe(avisa, CORREOS.op1, { superficie: "sofipo" });
+    const pagAvisa = await avisa.newPage();
+    await pagAvisa.goto("/operacion/avisos");
+    await pagAvisa.locator("#aviso-tipo").selectOption("posible_inusual");
+    await pagAvisa.locator("#aviso-empresa").selectOption(ceiba);
+    await pagAvisa.locator("#aviso-descripcion").fill(`Pagos partidos a un mismo proveedor en un solo día (${donde}).`);
+    await dobleClic(pagAvisa.getByRole("button", { name: "Enviar aviso" }), { esperar: /aviso=pld_aviso_emitido/ });
+    await avisa.close();
+
+    const a = await browser.newContext();
+    await sesionDe(a, CORREOS.op3, { superficie: "sofipo" });
+    const pestanaA = await a.newPage();
+    await pestanaA.goto("/operacion/pld");
+    await dobleClic(pestanaA.locator("li", { hasText: `Aviso del personal · ${CEIBA.razonSocial}` }).getByRole("button", { name: "Abrir caso" }).first(),
+      { esperar: /\/operacion\/pld\/casos\/[0-9a-f-]{36}\?aviso=pld_caso_abierto/ });
+    const casoId = new URL(pestanaA.url()).pathname.split("/").pop() ?? "";
+
+    const b = await browser.newContext({ javaScriptEnabled: conScript });
+    await sesionDe(b, CORREOS.op3, { superficie: "sofipo" });
+    const pestanaB = await b.newPage();
+    const errores = vigilarConsola(pestanaB);
+    await pestanaB.goto(`/operacion/pld/casos/${casoId}`);
+    const motivoA = `La pestaña A sabe que los recursos vienen de un fraude (${donde}).`;
+    const motivoB = `La pestaña B tiene otra información sobre el origen ilícito (${donde}).`;
+    await pestanaB.locator("#plazo-motivo").fill(motivoB);
+
+    await pestanaA.goto(`/operacion/pld/casos/${casoId}`);
+    await pestanaA.locator("#plazo-motivo").fill(motivoA);
+    await dobleClic(pestanaA.getByRole("button", { name: "Marcar como reporte de 24 horas" }), { esperar: /aviso=pld_caso_24_horas/ });
+
+    await pestanaB.getByRole("button", { name: "Marcar como reporte de 24 horas" }).click();
+    const suyo = pestanaB.locator("#plazo-motivo-no-guardado");
+    await expect(suyo, donde).toBeVisible();
+    await expect(suyo, donde).toHaveValue(motivoB);
+    await expect(suyo, donde).toHaveAttribute("readonly", "");
+    await expect(pestanaB.locator("#aviso-plazo"), donde).toHaveText(
+      /^\s*Otra persona u otra pestaña ya marcó este caso como de 24 horas: arriba está su motivo\. El tuyo no se guardó; lo tienes abajo para copiarlo\.\s*$/,
+    );
+    const plazo = pestanaB.locator('section[aria-labelledby="plazo-titulo"]');
+    await expect(plazo, `${donde}: la marca de la otra pestaña`).toContainText(motivoA);
+    await expect(pestanaB.locator("#plazo-motivo"), `${donde}: ya no hay formulario para marcar`).toHaveCount(0);
+    expect(await contar("select 1 from pld_casos_24h where caso_id = $1", [casoId]), donde).toBe(1);
+    expect(errores, donde).toEqual([]);
+    await a.close();
+    await b.close();
+  }
 });

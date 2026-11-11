@@ -164,15 +164,12 @@ export default async function CasoPld({
             {caso.venceEn ? <Renglon etiqueta="El reporte vence">{fechaHora(caso.venceEn)}</Renglon> : null}
           </Renglones>
         ) : (
-          <>
-            <p>
-              {caso.venceEl ? `El dictamen vence el ${fechaDia(caso.venceEl)}: 60 días naturales desde la alerta más antigua.` : "Sin plazo calculado."}
-            </p>
-            {abierto && analiza ? (
-              <FormularioVeinticuatroHoras casoId={caso.id} />
-            ) : null}
-          </>
+          <p>
+            {caso.venceEl ? `El dictamen vence el ${fechaDia(caso.venceEl)}: 60 días naturales desde la alerta más antigua.` : "Sin plazo calculado."}
+          </p>
         )}
+        {/* Siempre en el mismo lugar: si otra pestaña marcó primero, conserva el motivo que se rechazó (r61b-N1). */}
+        {abierto && analiza ? <FormularioVeinticuatroHoras casoId={caso.id} marcado={Boolean(caso.marca24h)} /> : null}
       </Hoja>
 
       <Hoja id="notas-titulo" titulo="Análisis">
