@@ -1113,11 +1113,13 @@ CREATE TABLE collection_held_events (
   motivo text,
   -- r63k-N2: los intentos que fallaron por un error pasajero (la base o la bitácora no respondieron).
   intentos integer NOT NULL DEFAULT 0,
+  -- r63l-N1: cuándo se contó el último intento; se cuenta a lo más uno por hora.
+  ultimo_intento_en timestamptz,
   CONSTRAINT collection_held_events_unico UNIQUE (proveedor, evento_id),
   CONSTRAINT collection_held_events_proveedor CHECK (proveedor IN ('fintoc')),
   CONSTRAINT collection_held_events_evento CHECK (evento_id ~ '^evt_[A-Za-z0-9]{1,64}$' AND aviso ->> 'eventoId' = evento_id),
   CONSTRAINT collection_held_events_tipo CHECK (tipo IN ('transfer.inbound.succeeded', 'transfer.inbound.returned')),
-  CONSTRAINT collection_held_events_intentos CHECK (intentos BETWEEN 0 AND 5),
+  CONSTRAINT collection_held_events_intentos CHECK (intentos BETWEEN 0 AND 5 AND (intentos = 0) = (ultimo_intento_en IS NULL)),
   CONSTRAINT collection_held_events_monto CHECK (monto_centavos BETWEEN 1 AND 9000000000000000),
   CONSTRAINT collection_held_events_fecha CHECK (recibido_el >= DATE '2000-01-01'),
   -- r63j-N1: un retenido que no se pudo aplicar queda «fallido» con el código del error (sin datos), a la vista de
@@ -1142,12 +1144,23 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
-  -- Del retenido solo cambian: su estado (a procesado o fallido) con lo que resultó, y sus intentos, de uno en uno.
+  -- r63l-P3: un retenido nace pendiente y sin intentos, también si lo inserta la dueña.
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.estado <> 'retenido' OR NEW.intentos <> 0 OR NEW.ultimo_intento_en IS NOT NULL THEN
+      RAISE EXCEPTION 'cobranza_inmutable';
+    END IF;
+    RETURN NEW;
+  END IF;
+  -- Del retenido solo cambian: su estado (a procesado o fallido) con lo que resultó, y sus intentos, de uno en uno, con
+  -- la hora del intento contado (r63l-N1: la hora cambia solo junto con un intento contado).
   IF TG_OP = 'DELETE' OR OLD.estado <> 'retenido'
     OR (NEW.estado = 'retenido' AND NEW.intentos <> OLD.intentos + 1)
     OR (NEW.estado <> 'retenido' AND NEW.intentos NOT IN (OLD.intentos, OLD.intentos + 1))
-    OR (to_jsonb(NEW) - 'estado' - 'procesado_en' - 'efecto' - 'motivo' - 'intentos')
-       IS DISTINCT FROM (to_jsonb(OLD) - 'estado' - 'procesado_en' - 'efecto' - 'motivo' - 'intentos') THEN
+    OR (NEW.intentos = OLD.intentos AND NEW.ultimo_intento_en IS DISTINCT FROM OLD.ultimo_intento_en)
+    OR (NEW.intentos = OLD.intentos + 1 AND (NEW.ultimo_intento_en IS NULL
+        OR NEW.ultimo_intento_en IS NOT DISTINCT FROM OLD.ultimo_intento_en))
+    OR (to_jsonb(NEW) - 'estado' - 'procesado_en' - 'efecto' - 'motivo' - 'intentos' - 'ultimo_intento_en')
+       IS DISTINCT FROM (to_jsonb(OLD) - 'estado' - 'procesado_en' - 'efecto' - 'motivo' - 'intentos' - 'ultimo_intento_en') THEN
     RAISE EXCEPTION 'cobranza_inmutable';
   END IF;
   RETURN NEW;
@@ -1155,7 +1168,7 @@ END;
 $$;
 
 CREATE TRIGGER collection_held_events_revisar
-BEFORE UPDATE OR DELETE ON collection_held_events
+BEFORE INSERT OR UPDATE OR DELETE ON collection_held_events
 FOR EACH ROW EXECUTE FUNCTION collection_held_events_revisar();
 
 -- La ruta del aviso (plataforma_cliente, el sistema con la empresa en el contexto) retiene el aviso.
@@ -1188,7 +1201,7 @@ GRANT EXECUTE ON FUNCTION cobranza_retener_aviso(text, text, bigint, date, jsonb
 -- Los retenidos de la empresa del contexto, ya activa, en el orden en que llegaron. El que llama tiene la empresa
 -- bloqueada (bloquearEmpresa): dos procesos a la vez se forman y el segundo ya no los ve.
 CREATE FUNCTION cobranza_retenidos_de_empresa()
-RETURNS TABLE (id uuid, aviso jsonb)
+RETURNS TABLE (id uuid, aviso jsonb, tipo text, monto_centavos bigint, recibido_el date)
 LANGUAGE plpgsql STABLE SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
@@ -1196,7 +1209,7 @@ BEGIN
   IF app_usuario() IS NOT NULL OR app_empresa() IS NULL THEN
     RAISE EXCEPTION 'sin_permiso_para_cobranza';
   END IF;
-  RETURN QUERY SELECT h.id, h.aviso FROM collection_held_events h
+  RETURN QUERY SELECT h.id, h.aviso, h.tipo, h.monto_centavos, h.recibido_el FROM collection_held_events h
     JOIN companies c ON c.id = h.company_id AND c.estado = 'activa'
    WHERE h.company_id = app_empresa() AND h.estado = 'retenido'
    ORDER BY h.retenido_en, h.id;
@@ -1251,10 +1264,22 @@ $$;
 REVOKE ALL ON FUNCTION cobranza_retenido_fallido(uuid, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION cobranza_retenido_fallido(uuid, text) TO plataforma_cliente;
 
+-- La hora con la que se cuentan los intentos de un retenido: now(). Existe aparte solo para que las pruebas simulen el
+-- paso del tiempo reemplazándola en su base desechable, sin tocar las reglas.
+CREATE FUNCTION cobranza_retenidos_ahora()
+RETURNS timestamptz
+LANGUAGE sql STABLE
+SET search_path = public, pg_temp
+AS $$ SELECT now() $$;
+
+REVOKE ALL ON FUNCTION cobranza_retenidos_ahora() FROM PUBLIC;
+
 -- r63k-N2: el retenido no pasó por un error pasajero (la base o la bitácora no respondieron): sigue pendiente para el
--- siguiente aviso o la tarea, con un intento más. Un error de datos de la base también llega así a la aplicación, así
--- que al quinto intento queda «fallido» con el código: un retenido que nunca pasa no frena para siempre a los demás.
--- Devuelve verdadero si quedó fallido.
+-- siguiente aviso o la tarea. Un error de datos de la base también llega así a la aplicación, así que al quinto
+-- intento queda «fallido» con el código: un retenido que nunca pasa no frena para siempre a los demás.
+-- r63l-N1: se cuenta a lo más un intento por hora (una contención breve no quema los cinco en un minuto): queda
+-- fallido tras al menos cuatro horas de falla. Fintoc reintenta un aviso hasta 17 veces con espera exponencial, en
+-- días: esas horas de 500 no pierden avisos. Devuelve verdadero si quedó fallido.
 CREATE FUNCTION cobranza_retenido_reintento(p_id uuid, p_motivo text)
 RETURNS boolean
 LANGUAGE plpgsql SECURITY DEFINER
@@ -1262,21 +1287,27 @@ SET search_path = public, pg_temp
 AS $$
 DECLARE
   previos integer;
+  ultimo timestamptz;
+  ahora timestamptz := cobranza_retenidos_ahora();
 BEGIN
   IF app_usuario() IS NOT NULL OR app_empresa() IS NULL THEN
     RAISE EXCEPTION 'sin_permiso_para_cobranza';
   END IF;
-  SELECT h.intentos INTO previos FROM collection_held_events h
+  SELECT h.intentos, h.ultimo_intento_en INTO previos, ultimo FROM collection_held_events h
    WHERE h.id = p_id AND h.company_id = app_empresa() AND h.estado = 'retenido' FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'retenido_ya_procesado';
   END IF;
+  IF ultimo IS NOT NULL AND ultimo > ahora - interval '1 hour' THEN
+    RETURN false;
+  END IF;
   IF previos + 1 >= 5 THEN
-    UPDATE collection_held_events SET estado = 'fallido', procesado_en = now(), motivo = p_motivo, intentos = previos + 1
+    UPDATE collection_held_events SET estado = 'fallido', procesado_en = now(), motivo = p_motivo,
+           intentos = previos + 1, ultimo_intento_en = ahora
      WHERE id = p_id;
     RETURN true;
   END IF;
-  UPDATE collection_held_events SET intentos = previos + 1 WHERE id = p_id;
+  UPDATE collection_held_events SET intentos = previos + 1, ultimo_intento_en = ahora WHERE id = p_id;
   RETURN false;
 END;
 $$;

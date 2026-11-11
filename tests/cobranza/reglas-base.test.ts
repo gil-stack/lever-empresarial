@@ -461,7 +461,22 @@ async function reglas(app: string, ids: Ids, duena: string): Promise<void> {
       await c.query("select cobranza_retenido_fallido($1, 'pago_anulado')", [id]);
       await c.query("select cobranza_retenido_fallido($1, 'pago_anulado')", [id]);
     }, C, sistema, B);
-    // r63k-N2: el error pasajero suma un intento; al quinto queda fallido. Los intentos van de uno en uno.
+    // r63l-N1: dentro de la misma hora solo cuenta el primer intento: cinco errores pasajeros seguidos no lo dejan fallido.
+    assert.deepEqual(await acepta("r63l-N1 cinco intentos en la misma hora cuentan uno", async (c) => {
+      const id = (await retener(c, "evt_Seguidos1")).rows[0]!.id;
+      const vueltas: boolean[] = [];
+      for (let i = 0; i < 5; i += 1) vueltas.push((await c.query<{ f: boolean }>("select cobranza_retenido_reintento($1, 'base_no_disponible') as f", [id])).rows[0]!.f);
+      return vueltas;
+    }, C, sistema, B), [false, false, false, false, false]);
+    // r63l-P3: un retenido nace pendiente y sin intentos, también si lo inserta la dueña.
+    assert.throws(() => ejecutar(duena, `insert into collection_held_events (id, company_id, proveedor, evento_id, tipo, monto_centavos, recibido_el, aviso, intentos, ultimo_intento_en)
+      values ('${randomUUID()}', '${B}', 'fintoc', 'evt_NaceConIntentos', 'transfer.inbound.succeeded', 1, '2026-11-10', '${aviso("evt_NaceConIntentos")}'::jsonb, 5, now())`), /cobranza_inmutable/);
+    assert.throws(() => ejecutar(duena, `insert into collection_held_events (id, company_id, proveedor, evento_id, tipo, monto_centavos, recibido_el, aviso, estado, procesado_en, efecto)
+      values ('${randomUUID()}', '${B}', 'fintoc', 'evt_NaceProcesado', 'transfer.inbound.succeeded', 1, '2026-11-10', '${aviso("evt_NaceProcesado")}'::jsonb, 'procesado', now(), 'registrado')`), /cobranza_inmutable/);
+    // Con un reloj que avanza una hora en cada intento (solo en esta base desechable): al quinto intento contado queda
+    // fallido. Los intentos van de uno en uno.
+    ejecutar(duena, `create sequence reloj_retenidos; create or replace function cobranza_retenidos_ahora() returns timestamptz
+      language sql volatile set search_path = public, pg_temp as $f$ select now() + nextval('reloj_retenidos') * interval '1 hour' $f$;`);
     assert.deepEqual(await acepta("r63k-N2 cinco intentos pasajeros dejan el retenido fallido", async (c) => {
       const id = (await retener(c, "evt_Pasajero1")).rows[0]!.id;
       const vueltas: boolean[] = [];
@@ -472,6 +487,8 @@ async function reglas(app: string, ids: Ids, duena: string): Promise<void> {
       const id = (await retener(c, "evt_Pasajero2")).rows[0]!.id;
       for (let i = 0; i < 6; i += 1) await c.query("select cobranza_retenido_reintento($1, 'base_no_disponible')", [id]);
     }, C, sistema, B);
+    ejecutar(duena, `create or replace function cobranza_retenidos_ahora() returns timestamptz
+      language sql stable set search_path = public, pg_temp as $f$ select now() $f$; drop sequence reloj_retenidos;`);
     await rechaza("r63k-N2 una persona no suma intentos", "sin_permiso_para_cobranza", (c) =>
       c.query("select cobranza_retenido_reintento(gen_random_uuid(), 'base_no_disponible')"), C, ids.adminB, B);
     await rechaza("r63j-N1 una persona no marca fallidos", "sin_permiso_para_cobranza", (c) =>

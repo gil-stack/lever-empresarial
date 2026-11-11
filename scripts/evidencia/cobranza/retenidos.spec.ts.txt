@@ -7,7 +7,7 @@ import { cerrarConexion } from "../../src/nucleo/db";
 import { auditar } from "../../src/server/bitacora/auditar";
 import { atenderAviso, firmar, registrarCuentaFintoc, type ConfigFintoc } from "../../src/server/cobranza/fintoc";
 import { contextoDePersonal } from "../../src/server/plataforma/servicio";
-import { consultar, contar, sesionDe, vigilarConsola } from "./apoyo";
+import { consultar, contar, correos, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS } from "./siembra";
 import { CORREOS_COBRANZA } from "./siembra-cobranza";
 
@@ -143,6 +143,18 @@ test("un abono de Fintoc a la empresa suspendida queda retenido, Cumplimiento lo
     { estado: "procesado", efecto: "registrado", motivo: null },
   ]);
   expect(await consultar("select estado from collection_payments where company_id = $1 and clave_rastreo = 'XRETENIDO01'", [empresa])).toEqual([{ estado: "aplicado" }]);
+  // Decisión de Gil: el fallido se avisa por correo a administración y finanzas de la empresa (Carla administra «Cobranza
+  // E2E»), una vez, sin el código del error ni datos del ordenante.
+  const aviso = correos().filter((c) => c.asunto.startsWith("Un depósito de $77.00 no se registró solo"));
+  expect(aviso.map((c) => c.para).flat()).toEqual([CORREOS_COBRANZA.carla]);
+  expect(aviso[0]!.texto).toContain("El dinero sí está en tu cuenta");
+  expect(aviso[0]!.texto).toContain("Regístralo a mano");
+  expect(aviso[0]!.texto + aviso[0]!.html).not.toMatch(/aviso_ilegible|Padre de familia/);
+  // El correo como lo ve quien lo recibe: en una pestaña en blanco, fuera de la política de la app.
+  const vista = await context.newPage();
+  await vista.setContent(aviso[0]!.html, { waitUntil: "load" });
+  await foto(vista, "correo-fallido");
+  await vista.close();
   expect(await consultar("select estado from collection_charges where customer_id = $1", [clienteId])).toEqual([{ estado: "pagado" }]);
   await context.clearCookies();
   await sesionDe(context, CORREOS_COBRANZA.carla);

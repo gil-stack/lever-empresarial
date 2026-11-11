@@ -8,7 +8,8 @@ import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { formatoPesos } from "../../dominio/centavos";
 import { actorDePersonal, auditar as auditarPorDefecto, type Actor, type Auditar } from "../bitacora/auditar";
 import { leerUrlPublica } from "../correo";
-import { plantillaAvisoDevolucionCobranza } from "../correo/plantillas/cobro";
+import { plantillaAvisoDevolucionCobranza, plantillaAvisoRetenidoFallidoCobranza } from "../correo/plantillas/cobro";
+import { fechaConAnio } from "../../dominio/flujo/fechas";
 import { centavos, registro, texto, textoONulo } from "../flujo/lectura";
 import { recibirAbono, type AbonoRecibido, type FuenteDeAbonos } from "./abonos";
 import { autorDe } from "./comun";
@@ -602,6 +603,39 @@ async function retenerAviso(consulta: Consulta, aviso: AvisoFintoc, destino: Des
   return { efecto: "retenido" };
 }
 
+type DatosRetenido = { devolucion: boolean; montoCentavos: number; recibidoEl: string; referencia: string | null };
+
+/**
+ * Decisión de Gil (2026-11-11): un retenido que queda fallido se avisa por correo a administración y finanzas de la
+ * empresa (avisarAlEquipo: solo personas activas de esa empresa con esos roles), además de la bandeja de Cumplimiento.
+ * Una sola vez: un retenido queda fallido una vez y la llave de idempotencia es la del retenido. Si el envío falla, el
+ * fallido no se deshace; el evento de la bitácora dice cuántos correos salieron (0 si ninguno).
+ */
+async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosRetenido, deps: DepsRetenidos): Promise<void> {
+  let enviados = 0;
+  try {
+    const fila = await conContexto(baseDe(empresa), async (consulta) =>
+      registro((await aplicarSentencia(consulta, "select razon_social, demostracion from companies where id = $1", [empresa.empresaId])).rows[0]));
+    enviados = await avisarAlEquipo({ empresa: { id: empresa.empresaId, operadorId: empresa.operadorId, demostracion: fila.demostracion === true } }, deps,
+      plantillaAvisoRetenidoFallidoCobranza({
+        razonSocial: texto(fila.razon_social),
+        devolucion: d.devolucion,
+        monto: formatoPesos(d.montoCentavos),
+        fecha: fechaConAnio(d.recibidoEl),
+        referencia: d.referencia,
+        enlace: `${(deps.urlPublica ?? (() => leerUrlPublica()))()}/c/${empresa.empresaId}/consola/cobros`,
+      }), `cobranza-retenido-fallido/${id}`);
+  } catch {
+    registrar("error", "aviso_retenido_fallido_no_preparado", {});
+  }
+  try {
+    await conContexto(baseDe(empresa), (consulta) =>
+      deps.auditar(consulta, actorDe(empresa), { accion: "aviso_retenido_fallido_cobranza", identificador: id, cambio: { enviados } }));
+  } catch {
+    registrar("error", "aviso_retenido_fallido_sin_bitacora", { enviados });
+  }
+}
+
 /**
  * r63k-N2: lo que puede pasar solo (la base sin respuesta, un interbloqueo o una conexión caída, o la bitácora). La base
  * traduce también sus errores de datos a base_no_disponible: por eso el reintento tiene tope (cobranza_retenido_reintento).
@@ -627,14 +661,24 @@ export async function procesarRetenidos(empresaId: string, operadorId: string, d
   let procesados = 0;
   while (procesados < tope) {
     let pendiente: string | null = null;
+    let datos: DatosRetenido | null = null;
     let paso: { aviso: AvisoFintoc; resultado: ResultadoAplicado; destino: Destino } | null;
     try {
       paso = await conContexto(baseDe(empresa), async (consulta) => {
         await bloquearEmpresa(consulta, empresaId);
-        const fila = (await aplicarSentencia(consulta, "select id, aviso from cobranza_retenidos_de_empresa() limit 1")).rows.map(registro)[0];
+        const fila = (await aplicarSentencia(
+          consulta,
+          "select id, aviso, tipo, monto_centavos::text as monto, recibido_el::text as recibido_el from cobranza_retenidos_de_empresa() limit 1",
+        )).rows.map(registro)[0];
         if (!fila) return null;
         pendiente = texto(fila.id);
         const aviso = fila.aviso as AvisoFintoc;
+        datos = {
+          devolucion: texto(fila.tipo) === "transfer.inbound.returned",
+          montoCentavos: centavos(fila.monto),
+          recibidoEl: texto(fila.recibido_el),
+          referencia: aviso?.abono?.referencia ?? aviso?.devolucion?.referencia ?? null,
+        };
         const t = aviso.abono ?? aviso.devolucion;
         // Un aviso guardado sin abono ni devolución no se aplicará nunca: permanente, no pasajero (r63k-N2).
         if (!t) throw new ErrorDeDominio("aviso_ilegible");
@@ -671,6 +715,7 @@ export async function procesarRetenidos(empresaId: string, operadorId: string, d
       // siguiente aviso o la tarea; los que vienen detrás esperan, en orden. Al quinto queda fallido y los demás siguen.
       if (!fallido) throw error;
       registrar("error", "retenido_fallido", { motivo });
+      if (datos) await avisarRetenidoFallido(empresa, id, datos, deps);
       procesados += 1;
       continue;
     }
