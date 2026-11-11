@@ -499,6 +499,42 @@ async function escenario(url: string): Promise<void> {
       { enviados: "1", recibidos: "1", pendientes: "0", motivo: null },
     ]);
 
+    // r63p (r63o-1, decisión del líder) A la persona que le falló el correo se la suspende el día 2 y se la reactiva el
+    //    día 4: el aviso sigue abierto en silencio mientras no está activa (sin evento) y, al volver, le llega una vez.
+    //    Antes la tarea lo cerraba el día 2 sin evento (la bitácora quedaba en «pendientes: 1») y al volver no le llegaba.
+    const pi = await empresa("PIX150301AB4", "601", "Pi Vuelve Retenidos", "acc_RetenidosPi0001");
+    const centroPi = await nombrarCentro(pi.admin, { nombre: "Administración" }, { ahora: HOY });
+    await persona(url, pi.admin, centroPi.id, "Zoe Finanzas", "zz-finanzas-pi@ejemplo.mx", ["tarjetahabiente", "finanzas"]);
+    const zoePi = usuario("zz-finanzas-pi@ejemplo.mx");
+    retenidoFallido(pi.id, "evt_Vuelve01");
+    buzonO.length = 0;
+    assert.equal(await procesarRetenidos(pi.id, operador, depsO(enviadorO((m) => m.para.startsWith("zz-")))), 1);
+    const idPi = idDe("evt_Vuelve01");
+    const dePi = () => buzonO.filter((m) => m.idempotencia.startsWith(`cobranza-retenido-fallido/${idPi}/`));
+    assert.deepEqual(eventosDe("evt_Vuelve01"), [{ enviados: "1", recibidos: "1", pendientes: "1", motivo: null }]);
+    const membresiaZoe = (estado: string) => ejecutar(url, `set session_replication_role = replica;
+      update memberships set estado = '${estado}' where company_id = '${pi.id}' and user_id = '${zoePi}'; set session_replication_role = origin;`);
+    try {
+      relojMas("1 day");
+      membresiaZoe("suspendida");
+      await corridaO(enviadorO());
+      assert.equal(eventosDe("evt_Vuelve01").length, 1, "sin evento mientras no está activa");
+      assert.equal(cuenta(`select count(*) from collection_held_events where id = '${idPi}' and not aviso_cerrado and aviso_faltan = array['${zoePi}'::uuid]`), 1, "sigue abierto, con quien falta");
+      relojMas("3 days");
+      membresiaZoe("activa");
+      await corridaO(enviadorO());
+      await corridaO(enviadorO());
+    } finally {
+      relojMas(null);
+    }
+    assert.deepEqual(dePi().map((m) => [m.para, m.idempotencia]), [
+      ["admin-pix150301ab4@ejemplo.mx", `cobranza-retenido-fallido/${idPi}/${usuario("admin-pix150301ab4@ejemplo.mx")}`],
+      ["zz-finanzas-pi@ejemplo.mx", `cobranza-retenido-fallido/${idPi}/${zoePi}`],
+    ], "a Zoe le llega una vez, al volver");
+    assert.deepEqual(eventosDe("evt_Vuelve01").at(-1), { enviados: "1", recibidos: "1", pendientes: "0", motivo: null });
+    assert.equal(eventosDe("evt_Vuelve01").length, 2);
+    assert.equal(cuenta(`select count(*) from collection_held_events where id = '${idPi}' and aviso_cerrado and aviso_faltan = '{}'`), 1);
+
     // r63j-N2 a) El aviso toma el candado y retiene (la empresa sigue suspendida) mientras la reactivación espera ese
     //    mismo candado: al reactivar, el retenido ya está ahí y se aplica. Antes el aviso revisaba en una transacción y
     //    guardaba en otra: el retenido confirmaba después de la reactivación y de su procesado, y quedaba varado.

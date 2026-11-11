@@ -222,7 +222,8 @@ export async function avisarAlEquipo(
  * entre dos intentos, la llave de una persona nunca pasa a otra. `excluir` son los ids de quienes ya lo recibieron
  * (el reintento va solo a los que faltan); `recibieron` devuelve los ids a los que les llegó en este intento, contando
  * a quien Resend responde que ya lo tenía (409 correo_ya_enviado), y `enviados` solo los correos nuevos (r63n-3).
- * `pendientes` son los que siguen sin recibirlo (un error al preparar cuenta como pendiente: se puede reintentar).
+ * `pendientes` son los que siguen sin recibirlo (un error al preparar cuenta como pendiente: se puede reintentar), y
+ * `fallaron` sus ids (r63p).
  */
 export async function avisarAlEquipoConMotivo(
   c: { empresa: { id: string; operadorId: string; demostracion: boolean } },
@@ -230,7 +231,7 @@ export async function avisarAlEquipoConMotivo(
   plantilla: { asunto: string; html: string; texto: string },
   llave: string,
   excluir: ReadonlySet<string> = new Set(),
-): Promise<{ enviados: number; recibieron: string[]; pendientes: number; sinEnvio: "sin_destinatarios" | "demostracion" | null }> {
+): Promise<{ enviados: number; recibieron: string[]; fallaron: string[]; pendientes: number; sinEnvio: "sin_destinatarios" | "demostracion" | null }> {
   const registrar = deps?.registrar ?? registrarPorDefecto;
   try {
     const equipo = await conContexto({ rol: "plataforma_cliente", companyId: c.empresa.id, operadorId: c.empresa.operadorId }, async (consulta) => {
@@ -248,12 +249,13 @@ export async function avisarAlEquipoConMotivo(
       );
       return r.rows.map(registro).map((f) => ({ id: texto(f.id), para: texto(f.correo) }));
     });
-    if (c.empresa.demostracion) return { enviados: 0, recibieron: [], pendientes: 0, sinEnvio: "demostracion" };
-    if (equipo.length === 0) return { enviados: 0, recibieron: [], pendientes: 0, sinEnvio: "sin_destinatarios" };
+    if (c.empresa.demostracion) return { enviados: 0, recibieron: [], fallaron: [], pendientes: 0, sinEnvio: "demostracion" };
+    if (equipo.length === 0) return { enviados: 0, recibieron: [], fallaron: [], pendientes: 0, sinEnvio: "sin_destinatarios" };
     const faltan = equipo.filter((p) => !excluir.has(p.id));
     const enviador = faltan.length > 0 ? (deps?.enviador ?? (() => enviadorDesdeEntorno()))() : null;
     let enviados = 0;
     const recibieron: string[] = [];
+    const fallaron: string[] = [];
     for (const { id, para } of faltan) {
       try {
         await enviador!({ para, ...plantilla, idempotencia: `${llave}/${id}`, etiqueta: "cobranza_aviso" });
@@ -262,13 +264,16 @@ export async function avisarAlEquipoConMotivo(
       } catch (error) {
         // Resend ya lo tenía con esa llave (otro intento salió y su respuesta se perdió): le llegó, pero no es nuevo.
         if (error instanceof ErrorDeCorreo && error.codigo === "correo_ya_enviado") recibieron.push(id);
-        else registrar({ evento: "aviso_cobranza_fallido", empresa: c.empresa.id, persona: id });
+        else {
+          fallaron.push(id);
+          registrar({ evento: "aviso_cobranza_fallido", empresa: c.empresa.id, persona: id });
+        }
       }
     }
-    return { enviados, recibieron, pendientes: faltan.length - recibieron.length, sinEnvio: null };
+    return { enviados, recibieron, fallaron, pendientes: fallaron.length, sinEnvio: null };
   } catch {
     registrar({ evento: "aviso_cobranza_no_preparado", empresa: c.empresa.id });
-    return { enviados: 0, recibieron: [], pendientes: 1, sinEnvio: null };
+    return { enviados: 0, recibieron: [], fallaron: [], pendientes: 1, sinEnvio: null };
   }
 }
 

@@ -634,7 +634,7 @@ async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosReten
   // Ya le llegó a todos, pasaron los 7 días, o alguien más lo está mandando.
   if (previos === null) return 0;
   // Sin la plantilla (la URL pública sin configurar) no sale nada: queda pendiente, para el reintento.
-  let r: Awaited<ReturnType<typeof avisarAlEquipoConMotivo>> = { enviados: 0, recibieron: [], pendientes: 1, sinEnvio: null };
+  let r: Awaited<ReturnType<typeof avisarAlEquipoConMotivo>> = { enviados: 0, recibieron: [], fallaron: [], pendientes: 1, sinEnvio: null };
   try {
     r = await avisarAlEquipoConMotivo({ empresa: { id: empresa.empresaId, operadorId: empresa.operadorId, demostracion: fila.demostracion === true } }, deps,
       plantillaAvisoRetenidoFallidoCobranza({
@@ -648,6 +648,7 @@ async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosReten
   } catch {
     registrar("error", "aviso_retenido_fallido_no_preparado", {});
   }
+  // r63p: la base solo lo cierra si además ya no falta nadie a quien se le haya intentado antes (aunque hoy no esté activo).
   const cerrar = r.sinEnvio === "demostracion" || (r.sinEnvio === null && r.pendientes === 0);
   // En el reintento, sin nadie a quién mandarlo (o sin nadie nuevo), no queda evento: sería ruido diario.
   const sinEvento = reintento && (r.sinEnvio === "sin_destinatarios" || (r.sinEnvio === null && r.recibieron.length === 0 && r.pendientes === 0));
@@ -660,7 +661,7 @@ async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosReten
           cambio: r.sinEnvio ? { enviados: 0, motivo: r.sinEnvio } : { enviados: r.enviados, recibidos: r.recibieron.length, pendientes: r.pendientes },
         });
       }
-      await aplicarSentencia(consulta, "select cobranza_soltar_aviso_fallido($1, $2::uuid[], $3)", [id, r.recibieron, cerrar]);
+      await aplicarSentencia(consulta, "select cobranza_soltar_aviso_fallido($1, $2::uuid[], $3::uuid[], $4)", [id, r.recibieron, r.fallaron, cerrar]);
     });
   } catch {
     // La reserva vence sola en una hora; lo que salió queda en el registro.

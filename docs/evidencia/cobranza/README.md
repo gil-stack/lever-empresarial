@@ -231,6 +231,14 @@ Unos 120-130 MB son la base del proceso. El tope de RSS ahora lo pone un libro l
 | r63n-4 (decisión del líder) `sin_destinatarios` no se volvía a intentar nunca | Durante los mismos 7 días, la tarea revisa en silencio los fallidos sin destinatarios: si ya hay alguien activo de administración o finanzas, le llega y queda su evento; si no, no queda nada. Una empresa de demostración queda cerrada sin correo | Sin nadie el día 1: ningún evento nuevo. Reactivada la administradora el día 3: le llega una vez, con su llave, y queda un solo evento más |
 | `ultimo_intento_en = 'infinity'` (solo la dueña) dejaba pasar un intento y después la definer ya no contaba ninguno | `CHECK collection_held_events_intento_finito`. Las columnas nuevas del correo solo cambian en un fallido (quién lo recibió solo crece; cerrado no se reabre) y también son finitas (`collection_held_events_aviso`) | `reglas-base`: la dueña con `infinity` y con `-infinity` choca con el CHECK; un pendiente no lleva datos del correo; en un fallido no se borra quién lo recibió ni se reabre; una persona no reserva ni anota. Con `6fd750c`: «Missing expected exception» (`:487`) |
 
+**Pre-revisión de r63o (`d876248`): un P3 en el mismo PR (r63p)**
+
+| id | Arreglo | Prueba (cae sin el arreglo) |
+|---|---|---|
+| r63o-1 (decisión del líder) Si la persona a la que le falló el correo dejaba de estar activa, la tarea cerraba el aviso sin evento (la bitácora quedaba en «pendientes: 1») y, si volvía dentro de los 7 días, no le llegaba | La fila guarda también a quiénes se les intentó y no les llegó (`aviso_faltan`). `cobranza_soltar_aviso_fallido` lo cierra solo si en esa vuelta le llegó a todas las personas activas y ya no falta nadie; mientras falte alguien que hoy no está activo, la tarea sigue revisando en silencio hasta los 7 días, sin evento. El evento queda solo cuando hay un intento de envío. `collection_held_events_aviso`: un aviso cerrado no tiene a nadie pendiente | `retenidos-postgres`: a Zoe le falla el correo, se la suspende el día 2 (sin evento, el aviso sigue abierto con ella pendiente) y se la reactiva el día 4: le llega una vez, con su llave, y queda un solo evento más. Con `d876248`: «sigue abierto, con quien falta», `0 !== 1` (el aviso quedaba cerrado el día 2) |
+
+Gates de r63p (Postgres 17 local en 5581): `typecheck` y `lint` limpios, `npm test` 669/669, `test:db` 130/130, `build` y el recorrido de retenidos (1/1, 31 s).
+
 Gates de r63o (Postgres 17 local en 5581): `typecheck` y `lint` limpios, `npm test` 669/669, `test:db` 130/130 (la lista de `scripts/ci/pruebas-postgres.sh`, en serie), `build` y el recorrido de retenidos (1/1, 34 s).
 
 **Por qué unas horas de 500 no pierden avisos** (documentación oficial de Fintoc, leída el 2026-11-12: https://docs.fintoc.com/guides/resources/webhooks-walkthrough/webhooks-creating-guide):

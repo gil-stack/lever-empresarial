@@ -504,10 +504,12 @@ async function reglas(app: string, ids: Ids, duena: string): Promise<void> {
     assert.throws(() => ejecutar(duena, `update collection_held_events set aviso_cerrado = false where id = '${avisoDuena}'`), /cobranza_inmutable/);
     assert.throws(() => ejecutar(duena, `update collection_held_events set motivo = 'otro' where id = '${avisoDuena}'`), /cobranza_inmutable/);
     assert.throws(() => ejecutar(duena, `update collection_held_events set aviso_tomado_en = 'infinity' where id = '${avisoDuena}'`), /collection_held_events_aviso/);
+    // r63p: un aviso cerrado no puede tener a nadie pendiente.
+    assert.throws(() => ejecutar(duena, `update collection_held_events set aviso_faltan = array['${ids.adminB}'::uuid] where id = '${avisoDuena}'`), /collection_held_events_aviso/);
     await rechaza("r63o una persona no reserva el correo de un fallido", "sin_permiso_para_cobranza", (c) =>
       c.query("select cobranza_tomar_aviso_fallido(gen_random_uuid())"), C, ids.adminB, B);
     await rechaza("r63o una persona no anota quién recibió el correo", "sin_permiso_para_cobranza", (c) =>
-      c.query("select cobranza_soltar_aviso_fallido(gen_random_uuid(), '{}', true)"), C, ids.adminB, B);
+      c.query("select cobranza_soltar_aviso_fallido(gen_random_uuid(), '{}', '{}', true)"), C, ids.adminB, B);
     // Con un reloj que avanza una hora en cada intento (solo en esta base desechable): al quinto intento contado queda
     // fallido. Los intentos van de uno en uno.
     ejecutar(duena, `create sequence reloj_retenidos; create or replace function cobranza_retenidos_ahora() returns timestamptz
