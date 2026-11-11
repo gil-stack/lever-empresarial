@@ -609,9 +609,10 @@ type DatosRetenido = { devolucion: boolean; montoCentavos: number; recibidoEl: s
  * Decisión de Gil (2026-11-11): un retenido que queda fallido se avisa por correo a administración y finanzas de la
  * empresa (avisarAlEquipo: solo personas activas de esa empresa con esos roles), además de la bandeja de Cumplimiento.
  * Una sola vez: un retenido queda fallido una vez y la llave de idempotencia es la del retenido. Si el envío falla, el
- * fallido no se deshace; el evento de la bitácora dice cuántos correos salieron (0 si ninguno).
+ * fallido no se deshace; el evento de la bitácora dice cuántos correos salieron (0 si ninguno), y la tarea diaria lo
+ * vuelve a intentar con la misma llave mientras ninguno haya salido (r63m, reavisarFallidos).
  */
-async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosRetenido, deps: DepsRetenidos): Promise<void> {
+async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosRetenido, deps: DepsRetenidos): Promise<number> {
   let enviados = 0;
   try {
     const fila = await conContexto(baseDe(empresa), async (consulta) =>
@@ -634,6 +635,37 @@ async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosReten
   } catch {
     registrar("error", "aviso_retenido_fallido_sin_bitacora", { enviados });
   }
+  return enviados;
+}
+
+/** Lo que el correo de un retenido necesita de su fila guardada: monto, fecha, tipo y referencia, sin el ordenante. */
+function datosDeRetenido(fila: Record<string, unknown>): DatosRetenido {
+  const aviso = fila.aviso as AvisoFintoc | null;
+  return {
+    devolucion: texto(fila.tipo) === "transfer.inbound.returned",
+    montoCentavos: centavos(fila.monto),
+    recibidoEl: texto(fila.recibido_el),
+    referencia: aviso?.abono?.referencia ?? aviso?.devolucion?.referencia ?? null,
+  };
+}
+
+/**
+ * r63m: los fallidos de la empresa cuyo correo no salió (el envío falló: la bitácora dice enviados 0) se vuelven a avisar
+ * con la misma llave de idempotencia, uno por uno, con un evento por intento. Lo llama la tarea diaria. Devuelve cuántos
+ * quedaron avisados.
+ */
+export async function reavisarFallidos(empresaId: string, operadorId: string, deps: DepsRetenidos): Promise<number> {
+  const empresa: Destino = { empresaId, operadorId, clienteDeLaCuenta: null };
+  const filas = await conContexto(baseDe(empresa), async (consulta) =>
+    (await aplicarSentencia(
+      consulta,
+      "select id, aviso, tipo, monto_centavos::text as monto, recibido_el::text as recibido_el from cobranza_fallidos_sin_aviso()",
+    )).rows.map(registro));
+  let avisados = 0;
+  for (const fila of filas) {
+    if ((await avisarRetenidoFallido(empresa, texto(fila.id), datosDeRetenido(fila), deps)) > 0) avisados += 1;
+  }
+  return avisados;
 }
 
 /**
@@ -673,12 +705,7 @@ export async function procesarRetenidos(empresaId: string, operadorId: string, d
         if (!fila) return null;
         pendiente = texto(fila.id);
         const aviso = fila.aviso as AvisoFintoc;
-        datos = {
-          devolucion: texto(fila.tipo) === "transfer.inbound.returned",
-          montoCentavos: centavos(fila.monto),
-          recibidoEl: texto(fila.recibido_el),
-          referencia: aviso?.abono?.referencia ?? aviso?.devolucion?.referencia ?? null,
-        };
+        datos = datosDeRetenido(fila);
         const t = aviso.abono ?? aviso.devolucion;
         // Un aviso guardado sin abono ni devolución no se aplicará nunca: permanente, no pasajero (r63k-N2).
         if (!t) throw new ErrorDeDominio("aviso_ilegible");

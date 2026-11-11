@@ -473,6 +473,15 @@ async function reglas(app: string, ids: Ids, duena: string): Promise<void> {
       values ('${randomUUID()}', '${B}', 'fintoc', 'evt_NaceConIntentos', 'transfer.inbound.succeeded', 1, '2026-11-10', '${aviso("evt_NaceConIntentos")}'::jsonb, 5, now())`), /cobranza_inmutable/);
     assert.throws(() => ejecutar(duena, `insert into collection_held_events (id, company_id, proveedor, evento_id, tipo, monto_centavos, recibido_el, aviso, estado, procesado_en, efecto)
       values ('${randomUUID()}', '${B}', 'fintoc', 'evt_NaceProcesado', 'transfer.inbound.succeeded', 1, '2026-11-10', '${aviso("evt_NaceProcesado")}'::jsonb, 'procesado', now(), 'registrado')`), /cobranza_inmutable/);
+    // r63m: un intento contado va al menos una hora después del anterior, también si lo escribe la dueña: ni una hora
+    // del pasado ni una dentro de la misma hora.
+    const horaDuena = randomUUID();
+    ejecutar(duena, `insert into collection_held_events (id, company_id, proveedor, evento_id, tipo, monto_centavos, recibido_el, aviso)
+      values ('${horaDuena}', '${B}', 'fintoc', 'evt_HoraDuena', 'transfer.inbound.succeeded', 1, '2026-11-10', '${aviso("evt_HoraDuena")}'::jsonb);
+      update collection_held_events set intentos = 1, ultimo_intento_en = '2026-11-10 12:00Z' where id = '${horaDuena}';`);
+    assert.throws(() => ejecutar(duena, `update collection_held_events set intentos = 2, ultimo_intento_en = '2026-11-10 10:00Z' where id = '${horaDuena}'`), /cobranza_inmutable/);
+    assert.throws(() => ejecutar(duena, `update collection_held_events set intentos = 2, ultimo_intento_en = '2026-11-10 12:59Z' where id = '${horaDuena}'`), /cobranza_inmutable/);
+    ejecutar(duena, `update collection_held_events set intentos = 2, ultimo_intento_en = '2026-11-10 13:00Z' where id = '${horaDuena}'`);
     // Con un reloj que avanza una hora en cada intento (solo en esta base desechable): al quinto intento contado queda
     // fallido. Los intentos van de uno en uno.
     ejecutar(duena, `create sequence reloj_retenidos; create or replace function cobranza_retenidos_ahora() returns timestamptz

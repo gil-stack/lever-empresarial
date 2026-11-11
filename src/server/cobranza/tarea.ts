@@ -10,7 +10,7 @@ import { marcarRitmo, RITMO_MS } from "../flujo/correo-semanal";
 import { booleano, entero, registro, texto } from "../flujo/lectura";
 import { actorDeSistema, baseDeSistema, generarCargos } from "./comun";
 import { enviarCorreoDeCargo, registrarPorDefecto, type PasoCorreo, type ResultadoCorreo } from "./correo";
-import { asegurarClabeDeCliente, clienteHttpFintoc, configFintoc, procesarRetenidos, type ClienteFintoc } from "./fintoc";
+import { asegurarClabeDeCliente, clienteHttpFintoc, configFintoc, procesarRetenidos, reavisarFallidos, type ClienteFintoc } from "./fintoc";
 import { fechaDe, leerConfiguracion } from "./repositorio";
 
 /**
@@ -99,6 +99,13 @@ export async function correrCobranza(deps: DependenciasTarea = {}): Promise<Resu
         if (retenidos > 0) registrar({ evento: "cobranza_retenidos_procesados", empresa: empresaId, retenidos });
       } catch (error) {
         registrar({ evento: "cobranza_retenidos_pendientes", empresa: empresaId, codigo: error instanceof ErrorDeDominio ? error.codigo : "desconocido" });
+      }
+      // 0b. r63m: el correo de los fallidos que no salió (el proveedor de correo caído) se vuelve a intentar.
+      try {
+        const reavisados = await reavisarFallidos(empresaId, operadorId, { auditar, enviador: deps.enviador, urlPublica: deps.urlPublica });
+        if (reavisados > 0) registrar({ evento: "cobranza_fallidos_reavisados", empresa: empresaId, reavisados });
+      } catch (error) {
+        registrar({ evento: "cobranza_fallidos_sin_reaviso", empresa: empresaId, codigo: error instanceof ErrorDeDominio ? error.codigo : "desconocido" });
       }
       // 1. Cargos.
       const generados = await conContexto(base, async (consulta) => {

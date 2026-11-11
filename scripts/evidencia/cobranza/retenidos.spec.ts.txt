@@ -169,6 +169,16 @@ test("un abono de Fintoc a la empresa suspendida queda retenido, Cumplimiento lo
   await expect(despues.locator("li")).toHaveCount(1);
   await expect(despues).toContainText("Abono de $77.00");
   await expect(despues).toContainText("No se pudo aplicar: el aviso guardado no se pudo leer");
-  await foto(page, "bandeja-con-fallido");
+  // r63m: la tarjeta de retenidos ya no queda pegada a las métricas de PLD de abajo (24 px, como métricas → tarjeta).
+  for (const ancho of [1280, 390]) {
+    await page.setViewportSize({ width: ancho, height: 900 });
+    await page.reload();
+    const separacion = await despues.evaluate((tarjeta) => {
+      const siguiente = tarjeta.nextElementSibling;
+      return siguiente?.classList.contains("metricas") ? siguiente.getBoundingClientRect().top - tarjeta.getBoundingClientRect().bottom : null;
+    });
+    expect(separacion).toBe(24);
+    await foto(page, ancho === 1280 ? "bandeja-con-fallido" : "bandeja-con-fallido-390");
+  }
   expect(errores).toEqual([]);
 });

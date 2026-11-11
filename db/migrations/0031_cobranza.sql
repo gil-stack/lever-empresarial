@@ -1152,13 +1152,14 @@ BEGIN
     RETURN NEW;
   END IF;
   -- Del retenido solo cambian: su estado (a procesado o fallido) con lo que resultó, y sus intentos, de uno en uno, con
-  -- la hora del intento contado (r63l-N1: la hora cambia solo junto con un intento contado).
+  -- la hora del intento contado (r63l-N1: la hora cambia solo junto con un intento contado; r63m: al menos una hora
+  -- después del intento anterior, la misma regla que aplica cobranza_retenido_reintento).
   IF TG_OP = 'DELETE' OR OLD.estado <> 'retenido'
     OR (NEW.estado = 'retenido' AND NEW.intentos <> OLD.intentos + 1)
     OR (NEW.estado <> 'retenido' AND NEW.intentos NOT IN (OLD.intentos, OLD.intentos + 1))
     OR (NEW.intentos = OLD.intentos AND NEW.ultimo_intento_en IS DISTINCT FROM OLD.ultimo_intento_en)
     OR (NEW.intentos = OLD.intentos + 1 AND (NEW.ultimo_intento_en IS NULL
-        OR NEW.ultimo_intento_en IS NOT DISTINCT FROM OLD.ultimo_intento_en))
+        OR NEW.ultimo_intento_en < OLD.ultimo_intento_en + interval '1 hour'))
     OR (to_jsonb(NEW) - 'estado' - 'procesado_en' - 'efecto' - 'motivo' - 'intentos' - 'ultimo_intento_en')
        IS DISTINCT FROM (to_jsonb(OLD) - 'estado' - 'procesado_en' - 'efecto' - 'motivo' - 'intentos' - 'ultimo_intento_en') THEN
     RAISE EXCEPTION 'cobranza_inmutable';
@@ -1314,6 +1315,30 @@ $$;
 
 REVOKE ALL ON FUNCTION cobranza_retenido_reintento(uuid, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION cobranza_retenido_reintento(uuid, text) TO plataforma_cliente;
+
+-- r63m: los fallidos de la empresa del contexto cuyo correo a la empresa (decisión de Gil, 2026-11-11) todavía no salió:
+-- sin un evento aviso_retenido_fallido_cobranza con enviados > 0. La tarea diaria vuelve a mandarlo con la misma llave.
+CREATE FUNCTION cobranza_fallidos_sin_aviso()
+RETURNS TABLE (id uuid, aviso jsonb, tipo text, monto_centavos bigint, recibido_el date)
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF app_usuario() IS NOT NULL OR app_empresa() IS NULL THEN
+    RAISE EXCEPTION 'sin_permiso_para_cobranza';
+  END IF;
+  RETURN QUERY SELECT h.id, h.aviso, h.tipo, h.monto_centavos, h.recibido_el FROM collection_held_events h
+   WHERE h.company_id = app_empresa() AND h.estado = 'fallido'
+     AND NOT EXISTS (SELECT 1 FROM audit_log a
+                      WHERE a.entidad = 'collection_held_events' AND a.identificador = h.id
+                        AND a.accion = 'aviso_retenido_fallido_cobranza'
+                        AND (a.cambio->>'enviados')::integer > 0)
+   ORDER BY h.procesado_en, h.id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION cobranza_fallidos_sin_aviso() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cobranza_fallidos_sin_aviso() TO plataforma_cliente;
 
 -- La bandeja de Cumplimiento (y Auditoría, que la consulta): los retenidos sin procesar y los fallidos del operador,
 -- sin datos personales del ordenante (monto, fechas, el tipo de aviso y, del fallido, el código del error).
