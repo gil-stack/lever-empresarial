@@ -68,6 +68,7 @@ unset DATABASE_URL
   tests/flujo/flujo-postgres.test.ts \
   tests/cobranza/cobranza-postgres.test.ts \
   tests/cobranza/reglas-base.test.ts \
+  tests/cobranza/retenidos-postgres.test.ts \
   tests/esquema/empresa-suspendida.test.ts \
   tests/pld/pld-postgres.test.ts \
   tests/pld/reglas-postgres.test.ts \

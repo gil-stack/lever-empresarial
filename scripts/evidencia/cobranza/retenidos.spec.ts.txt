@@ -1,0 +1,147 @@
+import { createHash, randomUUID } from "node:crypto";
+import { mkdirSync } from "node:fs";
+import { join } from "node:path";
+import { expect, test, type Page } from "@playwright/test";
+
+import { cerrarConexion } from "../../src/nucleo/db";
+import { auditar } from "../../src/server/bitacora/auditar";
+import { atenderAviso, firmar, registrarCuentaFintoc, type ConfigFintoc } from "../../src/server/cobranza/fintoc";
+import { contextoDePersonal } from "../../src/server/plataforma/servicio";
+import { consultar, contar, sesionDe, vigilarConsola } from "./apoyo";
+import { CORREOS } from "./siembra";
+import { CORREOS_COBRANZA } from "./siembra-cobranza";
+
+/**
+ * Recorrido de r63i-N1 (no corre en el CI: se copia a tests/e2e como zz-retenidos.spec.ts, ver
+ * docs/evidencia/cobranza/README.md). Con clics: Originación pide suspender a «Cobranza E2E» y Aprobación lo aprueba;
+ * llega un aviso firmado de Fintoc (el mismo `atenderAviso` de /webhooks/fintoc) que queda retenido con 200 y su
+ * reintento no lo duplica; Cumplimiento lo ve en su bandeja y Originación no la abre; la empresa no puede registrar el
+ * pago a mano; Cumplimiento pide reactivar, Aprobación lo aprueba y el abono queda aplicado una vez en la ficha.
+ */
+
+test.describe.configure({ mode: "serial" });
+
+const EMPRESA = () => process.env.E2E_COBRANZA_ID ?? "";
+const CAPTURAS = process.env.E2E_CAPTURAS ?? "";
+
+async function foto(page: Page, nombre: string): Promise<void> {
+  if (!CAPTURAS) return;
+  mkdirSync(CAPTURAS, { recursive: true });
+  await page.screenshot({ path: join(CAPTURAS, `retenidos-${nombre}.jpg`), fullPage: true, quality: 70, type: "jpeg" });
+}
+
+async function pedirYAprobar(page: Page, context: Parameters<typeof sesionDe>[0], tipo: "suspensión" | "reactivación", quien: string): Promise<void> {
+  await context.clearCookies();
+  await sesionDe(context, quien, { superficie: "sofipo" });
+  await page.goto(`/operacion/clientes/${EMPRESA()}`);
+  await page.locator("#motivo-suspension").fill(tipo === "suspensión" ? "Operaciones inusuales en revisión de Cumplimiento." : "Cumplimiento cerró la revisión sin hallazgos.");
+  await page.getByRole("button", { name: tipo === "suspensión" ? "Pedir suspensión" : "Pedir reactivación" }).click();
+  await page.waitForURL(/aviso=/);
+  await context.clearCookies();
+  await sesionDe(context, CORREOS.op2, { superficie: "sofipo" });
+  await page.goto("/operacion/aprobaciones");
+  const tarjeta = page.locator("li.decision").filter({ hasText: "Cobranza E2E" });
+  await foto(page, `aprobar-${tipo === "suspensión" ? "suspension" : "reactivacion"}`);
+  await tarjeta.getByRole("button", { name: "Aprobar" }).click();
+  await page.waitForURL(/aviso=decision_registrada/);
+}
+
+test("un abono de Fintoc a la empresa suspendida queda retenido, Cumplimiento lo ve y al reactivar se aplica una vez", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const empresa = EMPRESA();
+  expect(empresa).not.toBe("");
+  // Un cliente con su cargo de $1,500.00 y la cuenta de Fintoc de la empresa.
+  await sesionDe(context, CORREOS_COBRANZA.carla);
+  await page.goto(`/c/${empresa}/consola/cobros/configuracion`);
+  const ajustes = page.locator('form[data-formulario="configuracion-cobranza"]');
+  await ajustes.locator("#clabe").fill("002180701150123452");
+  await ajustes.locator("#beneficiario").fill("Cobranza E2E SA de CV");
+  await ajustes.locator("#correoContacto").fill("cobranza@ejemplo.mx");
+  await ajustes.getByRole("button", { name: "Guardar la configuración" }).click();
+  await expect(ajustes.locator(".alerta-asentado")).toBeVisible();
+  await page.goto(`/c/${empresa}/consola/cobros/nuevo`);
+  const alta = page.locator('form[data-formulario="alta-cliente"]');
+  await alta.locator("#nombre").fill("Colegio Retenido");
+  await alta.locator("#correos").fill("colegio-retenido@ejemplo.mx");
+  await alta.locator("#concepto").fill("Colegiatura");
+  await alta.locator("#monto").fill("1500");
+  await alta.locator("#periodicidad").selectOption("mensual");
+  await alta.locator("#primerVencimiento").fill(new Date(Date.now() + 5 * 86_400_000).toISOString().slice(0, 10));
+  await alta.getByRole("button", { name: "Dar de alta y cobrar" }).click();
+  await page.waitForURL(/\/consola\/cobros\/clientes\/[0-9a-f-]{36}\?alta=/);
+  const clienteId = /clientes\/([0-9a-f-]{36})/.exec(page.url())![1]!;
+  const [cargo] = await consultar<{ referencia: string }>("select referencia from collection_charges where customer_id = $1", [clienteId]);
+  const cuenta = "acc_E2eRetenidos01";
+  const config: ConfigFintoc = { llaveSecreta: `sk_test_${randomUUID().replace(/-/g, "")}`, secretoWebhook: createHash("sha256").update(randomUUID()).digest("hex"), modo: "test" };
+  const ahora = Math.floor(Date.now() / 1000);
+  const cuerpo = JSON.stringify({
+    id: `evt_${randomUUID().replace(/-/g, "")}`, type: "transfer.inbound.succeeded", object: "event", mode: "test", created_at: new Date().toISOString(),
+    data: {
+      id: `tr_${randomUUID().replace(/-/g, "")}`, object: "transfer", direction: "inbound", status: "succeeded", amount: 150_000, currency: "MXN", mode: "test",
+      transaction_date: new Date().toISOString(), reference_id: cargo!.referencia, tracking_key: "XRETENIDO01",
+      account_number: { id: "acno_RetenidoE2e01", account_id: cuenta },
+      counterparty: { holder_name: "Padre de familia", account_number: null, account_type: "clabe" },
+    },
+  });
+  const avisar = () => atenderAviso(new TextEncoder().encode(cuerpo), firmar(cuerpo, config.secretoWebhook, ahora), { config, ahora: () => new Date(ahora * 1000), auditar });
+  try {
+    await registrarCuentaFintoc(await contextoDePersonal("personal-e2e@ejemplo.mx"), { empresaId: empresa, cuentaId: cuenta });
+
+    // Originación pide la suspensión y Aprobación la aprueba.
+    await pedirYAprobar(page, context, "suspensión", CORREOS.op1);
+    expect(await consultar("select estado from companies where id = $1", [empresa])).toEqual([{ estado: "suspendida" }]);
+
+    // El aviso llega: 200 «retenido», sin pago; el reintento idéntico, «repetido».
+    expect(await avisar()).toEqual({ estado: 200, cuerpo: { ok: true, efecto: "retenido" } });
+    expect(await avisar()).toEqual({ estado: 200, cuerpo: { ok: true, efecto: "repetido" } });
+  } finally {
+    await cerrarConexion();
+  }
+  expect(await contar("select 1 from collection_payments where company_id = $1 and clave_rastreo = 'XRETENIDO01'", [empresa])).toBe(0);
+  expect(await contar("select 1 from collection_held_events where company_id = $1 and estado = 'retenido'", [empresa])).toBe(1);
+
+  // Cumplimiento lo ve en su bandeja, con el conteo arriba.
+  await context.clearCookies();
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  await page.goto("/operacion/cumplimiento");
+  const hoja = page.locator("section", { has: page.getByRole("heading", { name: "Abonos retenidos de empresas suspendidas" }) });
+  await expect(hoja.getByRole("link", { name: "Cobranza E2E" })).toBeVisible();
+  await expect(hoja).toContainText("Abono de $1,500.00");
+  await expect(hoja).toContainText("Se aplica al reactivar");
+  await expect(page.getByText("Abonos retenidos", { exact: true })).toBeVisible();
+  await foto(page, "bandeja-cumplimiento");
+  // Originación no abre la bandeja.
+  await context.clearCookies();
+  await sesionDe(context, CORREOS.op1, { superficie: "sofipo" });
+  await page.goto("/operacion/cumplimiento");
+  await expect(page.getByText("La bandeja de Cumplimiento la ven Cumplimiento y Auditoría.")).toBeVisible();
+
+  // La empresa suspendida no registra el pago a mano: la consola lo rechaza y no queda pago.
+  await context.clearCookies();
+  await sesionDe(context, CORREOS_COBRANZA.carla);
+  await page.goto(`/c/${empresa}/consola/cobros`);
+  await page.getByRole("button", { name: "Registrar pago" }).first().click();
+  const dialogo = page.getByRole("dialog", { name: "Registrar un pago" });
+  await dialogo.getByRole("button", { name: "Registrar el pago" }).click();
+  await expect(dialogo).toContainText("La empresa está suspendida");
+  await expect(dialogo).toContainText("No se pueden hacer cambios mientras esté suspendida.");
+  await foto(page, "pago-a-mano-suspendida");
+  expect(await contar("select 1 from collection_payments where company_id = $1", [empresa])).toBe(0);
+
+  // Cumplimiento pide reactivar y Aprobación lo aprueba: el abono se aplica una vez.
+  await pedirYAprobar(page, context, "reactivación", CORREOS.op3);
+  expect(await consultar("select estado, efecto from collection_held_events where company_id = $1", [empresa])).toEqual([{ estado: "procesado", efecto: "registrado" }]);
+  expect(await consultar("select estado from collection_payments where company_id = $1 and clave_rastreo = 'XRETENIDO01'", [empresa])).toEqual([{ estado: "aplicado" }]);
+  expect(await consultar("select estado from collection_charges where customer_id = $1", [clienteId])).toEqual([{ estado: "pagado" }]);
+  await context.clearCookies();
+  await sesionDe(context, CORREOS_COBRANZA.carla);
+  await page.goto(`/c/${empresa}/consola/cobros/clientes/${clienteId}`);
+  await expect(page.locator('[data-lista="pagos"] > li')).toHaveCount(1);
+  await foto(page, "ficha-reactivada");
+  await context.clearCookies();
+  await sesionDe(context, CORREOS.op3, { superficie: "sofipo" });
+  await page.goto("/operacion/cumplimiento");
+  await expect(page.getByText("Sin abonos retenidos")).toBeVisible();
+  await foto(page, "bandeja-vacia");
+  expect(errores).toEqual([]);
+});

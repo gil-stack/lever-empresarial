@@ -71,6 +71,8 @@ const RECHAZO: Record<string, { titulo: string; mensaje: string }> = {
   importacion_ausente: { titulo: "No encontramos esa importación", mensaje: "Recarga la página." },
   importacion_ya_confirmada: { titulo: "Esa importación ya estaba confirmada", mensaje: "Recarga la página para ver cómo quedó." },
   renglon_ya_resuelto: { titulo: "Ese renglón ya estaba resuelto", mensaje: "Recarga la página." },
+  // r63i: la consola de una empresa suspendida es de solo lectura (bloqueo_empresa_suspendida, 0028).
+  empresa_suspendida: { titulo: "La empresa está suspendida", mensaje: "No se pueden hacer cambios mientras esté suspendida. Comunícate con Lever." },
   auditoria_no_disponible: { titulo: "No se guardó", mensaje: "No se pudo dejar el registro en la bitácora, así que el cambio no se aplicó." },
   base_no_disponible: { titulo: "No se guardó", mensaje: "La base no respondió. No se aplicó ningún cambio; vuelve a intentar." },
 };

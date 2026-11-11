@@ -42,7 +42,8 @@ export interface TablaVista { archivo: string; padre: string | null; problema: s
  * `solo-lector`, que no se ven ni se desplazan.
  *
  * Límite conocido: lo que no se lee de forma estática se le escapa (un `style` en línea, un `className` calculado o un selector de
- * CSS sin clase). La red en tiempo de ejecución es axe `scrollable-region-focusable` sobre las páginas de verdad: la e2e de
+ * CSS sin clase), y `ETIQUETA` solo reconoce atributos con llaves anidadas hasta tres niveles: una `<table>` (o su contenedor)
+ * con llaves a cuatro niveles o más no se cuenta. La red en tiempo de ejecución es axe `scrollable-region-focusable` sobre las páginas de verdad: la e2e de
  * accesibilidad, la de cobranza a 390 (e2e 19) y el recorrido de evidencia.
  */
 export function tablasDe(archivo: string, texto: string, desplazan: Set<string>): TablaVista[] {

@@ -10,7 +10,7 @@ import { marcarRitmo, RITMO_MS } from "../flujo/correo-semanal";
 import { booleano, entero, registro, texto } from "../flujo/lectura";
 import { actorDeSistema, baseDeSistema, generarCargos } from "./comun";
 import { enviarCorreoDeCargo, registrarPorDefecto, type PasoCorreo, type ResultadoCorreo } from "./correo";
-import { asegurarClabeDeCliente, clienteHttpFintoc, configFintoc, type ClienteFintoc } from "./fintoc";
+import { asegurarClabeDeCliente, clienteHttpFintoc, configFintoc, procesarRetenidos, type ClienteFintoc } from "./fintoc";
 import { fechaDe, leerConfiguracion } from "./repositorio";
 
 /**
@@ -20,6 +20,8 @@ import { fechaDe, leerConfiguracion } from "./repositorio";
  *    veces no duplique nada);
  * 2. pide al proveedor SPEI las CLABEs propias que falten;
  * 3. manda el cobro y los recordatorios que tocan hoy (uno por cargo al día).
+ * Antes de todo, aplica los avisos de Fintoc que se retuvieron mientras la
+ * empresa estuvo suspendida, si la reactivación no alcanzó a hacerlo.
  * Corre como el sistema: sin persona, con la empresa en el contexto y RLS.
  */
 
@@ -90,6 +92,9 @@ export async function correrCobranza(deps: DependenciasTarea = {}): Promise<Resu
     const base = baseDeSistema(empresaId, operadorId);
     const actor = actorDeSistema(empresaId, operadorId, "tarea");
     try {
+      // 0. Los avisos de Fintoc retenidos mientras estuvo suspendida (r63i-N1): la red de la reactivación.
+      const retenidos = await procesarRetenidos(empresaId, operadorId, { auditar, enviador: deps.enviador, urlPublica: deps.urlPublica });
+      if (retenidos > 0) registrar({ evento: "cobranza_retenidos_procesados", empresa: empresaId, retenidos });
       // 1. Cargos.
       const generados = await conContexto(base, async (consulta) => {
         await bloquearEmpresa(consulta, empresaId);

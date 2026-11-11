@@ -13,10 +13,15 @@ export type BandejaCumplimiento = {
   }>;
   revisiones: Array<{ companyId: string; razonSocial: string; grado: Grado; revisarAntesDe: string; vencida: boolean }>;
   sinCalificar: Array<{ companyId: string; razonSocial: string; numero: number }>;
+  /** r63i-N1: abonos o devoluciones de Fintoc que llegaron con la empresa suspendida o de baja, sin aplicar. */
+  abonosRetenidos: Array<{
+    id: string; companyId: string; razonSocial: string; empresaDeBaja: boolean; devolucion: boolean;
+    montoCentavos: number; recibidoEl: string; retenidoEn: Date;
+  }>;
 };
 
 /**
- * La bandeja de Cumplimiento. La revisión vencida no es un dato guardado: se
+ * La bandeja de Cumplimiento. Incluye los abonos de Fintoc retenidos de empresas suspendidas (r63i-N1). La revisión vencida no es un dato guardado: se
  * calcula al leer con la fecha de hoy en México (27ª).
  */
 export async function leerBandejaCumplimiento(ctx: ContextoDePersonal, opciones: { ahora?: Date } = {}): Promise<BandejaCumplimiento> {
@@ -54,6 +59,11 @@ export async function leerBandejaCumplimiento(ctx: ContextoDePersonal, opciones:
          and not exists (select 1 from kyb_calificaciones_riesgo k where k.version_id = v.id)
          and v.numero = (select max(x.numero) from kyb_versiones x where x.company_id = v.company_id and x.estado = 'enviada')
        order by v.company_id`,
+      [],
+    );
+    const retenidos = await consulta.query(
+      `select id, company_id, razon_social, estado_empresa, tipo, monto_centavos::text as monto, recibido_el::text as recibido_el, retenido_en
+       from cobranza_abonos_retenidos()`,
       [],
     );
     return {
@@ -95,6 +105,16 @@ export async function leerBandejaCumplimiento(ctx: ContextoDePersonal, opciones:
         companyId: String(fila.company_id),
         razonSocial: String(fila.razon_social),
         numero: Number(fila.numero),
+      })),
+      abonosRetenidos: (retenidos.rows as Array<Record<string, unknown>>).map((fila) => ({
+        id: String(fila.id),
+        companyId: String(fila.company_id),
+        razonSocial: String(fila.razon_social),
+        empresaDeBaja: fila.estado_empresa === "baja",
+        devolucion: fila.tipo === "transfer.inbound.returned",
+        montoCentavos: Number(fila.monto),
+        recibidoEl: String(fila.recibido_el),
+        retenidoEn: fecha(fila.retenido_en),
       })),
     };
   });

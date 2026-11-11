@@ -478,40 +478,152 @@ export async function atenderAviso(cuerpo: Uint8Array, firma: string | null, dep
     return { estado: 200, cuerpo: { ok: true, efecto: "ignorado" } };
   }
   const transferencia = aviso.abono ?? aviso.devolucion!;
-  const destino = await conContexto({ rol: "plataforma_cliente" }, async (consulta) =>
-    (await aplicarSentencia(consulta, "select company_id, operator_id, customer_id from cobranza_destino_fintoc($1, $2)", [transferencia.cuentaId, transferencia.cuentaNumeroId])).rows.map(registro)[0] ?? null,
-  );
+  const destino = await conContexto({ rol: "plataforma_cliente" }, (consulta) => destinoDe(consulta, transferencia));
   if (!destino) return guardarSinDestino(aviso, transferencia);
-  const empresaId = texto(destino.company_id);
-  const operadorId = texto(destino.operator_id);
-  const clienteDeLaCuenta = destino.customer_id ? texto(destino.customer_id) : null;
-  const actor: Actor = { operadorId, companyId: empresaId, actorTipo: "sistema", actorId: null, superficie: "cliente", peticionId: null, origen: "fintoc" };
-  if (aviso.devolucion) return atenderDevolucion(aviso, aviso.devolucion, empresaId, operadorId, actor, deps);
-  const abono = aviso.abono!;
-  const efecto = await conContexto({ rol: "plataforma_cliente", companyId: empresaId, operadorId }, async (consulta) => {
-    // Dos entregas del mismo evento a la vez: la segunda espera y lo encuentra visto.
-    await bloquearEmpresa(consulta, empresaId);
-    const visto = await aplicarSentencia(
-      consulta,
-      "select 1 from collection_provider_events where proveedor = 'fintoc' and evento_id = $1",
-      [aviso.eventoId],
-    );
-    if (visto.rows.length > 0) return "repetido" as const;
-    const { idExterno, montoCentavos, recibidoEl, claveRastreo, referencia, clabeOrdenante, nombreOrdenante } = abono;
-    const recibido = await recibirAbono(consulta, actor, deps.auditar, "fintoc", {
-      idExterno, montoCentavos, recibidoEl, claveRastreo, referencia, clabeOrdenante, nombreOrdenante, clienteDeLaCuenta,
+  let resultado: ResultadoAplicado | "retener";
+  try {
+    resultado = await conContexto(baseDe(destino), async (consulta) => {
+      // Dos entregas del mismo evento a la vez: la segunda espera y lo encuentra visto.
+      await bloquearEmpresa(consulta, destino.empresaId);
+      if (await eventoVisto(consulta, aviso.eventoId)) return { efecto: "repetido" as const };
+      // r63i-N1: la empresa suspendida (o de baja) no escribe; el aviso se retiene sin aplicarse.
+      if (await empresaSinOperar(consulta, destino.empresaId)) return "retener" as const;
+      return aplicarAviso(consulta, aviso, destino, deps);
     });
-    const id = randomUUID();
-    await aplicarSentencia(
-      consulta,
-      "insert into collection_provider_events (id, company_id, proveedor, evento_id, payment_id) values ($1, $2, 'fintoc', $3, $4)",
-      [id, empresaId, aviso.eventoId, recibido.pagoId],
-    );
-    await deps.auditar(consulta, actor, { accion: "aviso_proveedor_cobranza", identificador: id, cambio: { proveedor: "fintoc", repetido: recibido.repetido } });
-    return recibido.repetido ? ("repetido" as const) : ("registrado" as const);
+  } catch (error) {
+    // La carrera: la suspensión confirmó mientras este aviso escribía y la base lo frenó a medio camino
+    // (bloqueo_empresa_suspendida). Nada de lo anterior quedó; se retiene en su propia transacción.
+    if (!(error instanceof ErrorDeDominio && error.codigo === "empresa_suspendida")) throw error;
+    resultado = "retener";
+  }
+  if (resultado === "retener") return retenerAviso(aviso, destino, deps);
+  return terminarAviso(aviso, resultado, destino, deps);
+}
+
+type Destino = { empresaId: string; operadorId: string; clienteDeLaCuenta: string | null };
+
+/** El efecto de un aviso ya aplicado en su transacción; lo que falta (correo, «sin destino») va después del commit. */
+type ResultadoAplicado =
+  | { efecto: "registrado" | "repetido" | "sin_pago" }
+  | { efecto: "devuelto"; pagoId: string; cliente: string | null; monto: number };
+
+async function destinoDe(consulta: Consulta, t: AbonoFintoc | DevolucionFintoc): Promise<Destino | null> {
+  const fila = (await aplicarSentencia(consulta, "select company_id, operator_id, customer_id from cobranza_destino_fintoc($1, $2)", [t.cuentaId, t.cuentaNumeroId])).rows.map(registro)[0];
+  if (!fila) return null;
+  return { empresaId: texto(fila.company_id), operadorId: texto(fila.operator_id), clienteDeLaCuenta: fila.customer_id ? texto(fila.customer_id) : null };
+}
+
+const baseDe = (d: Destino): ContextoDeBase => ({ rol: "plataforma_cliente", companyId: d.empresaId, operadorId: d.operadorId });
+const actorDe = (d: Destino): Actor => ({ operadorId: d.operadorId, companyId: d.empresaId, actorTipo: "sistema", actorId: null, superficie: "cliente", peticionId: null, origen: "fintoc" });
+
+async function eventoVisto(consulta: Consulta, eventoId: string): Promise<boolean> {
+  const r = await aplicarSentencia(consulta, "select 1 from collection_provider_events where proveedor = 'fintoc' and evento_id = $1", [eventoId]);
+  return r.rows.length > 0;
+}
+
+async function empresaSinOperar(consulta: Consulta, empresaId: string): Promise<boolean> {
+  const r = await aplicarSentencia(consulta, "select estado from companies where id = $1", [empresaId]);
+  const estado = r.rows[0] ? registro(r.rows[0]).estado : null;
+  return estado === "suspendida" || estado === "baja";
+}
+
+/** El camino normal de un aviso, dentro de la transacción de quien llama, con la empresa bloqueada y el evento sin ver. */
+async function aplicarAviso(consulta: Consulta, aviso: AvisoFintoc, destino: Destino, deps: Pick<DepsAviso, "auditar">): Promise<ResultadoAplicado> {
+  const actor = actorDe(destino);
+  if (aviso.devolucion) return aplicarDevolucion(consulta, aviso, aviso.devolucion, destino.empresaId, actor, deps);
+  const { idExterno, montoCentavos, recibidoEl, claveRastreo, referencia, clabeOrdenante, nombreOrdenante } = aviso.abono!;
+  const recibido = await recibirAbono(consulta, actor, deps.auditar, "fintoc", {
+    idExterno, montoCentavos, recibidoEl, claveRastreo, referencia, clabeOrdenante, nombreOrdenante, clienteDeLaCuenta: destino.clienteDeLaCuenta,
   });
-  registrar("info", "aviso_atendido", { evento_id: aviso.eventoId, efecto });
-  return { estado: 200, cuerpo: { ok: true, efecto } };
+  await registrarEvento(consulta, aviso, destino, recibido.pagoId, recibido.repetido, deps);
+  return { efecto: recibido.repetido ? "repetido" : "registrado" };
+}
+
+async function registrarEvento(consulta: Consulta, aviso: AvisoFintoc, destino: Destino, pagoId: string, repetido: boolean, deps: Pick<DepsAviso, "auditar">): Promise<void> {
+  const id = randomUUID();
+  await aplicarSentencia(
+    consulta,
+    "insert into collection_provider_events (id, company_id, proveedor, evento_id, payment_id) values ($1, $2, 'fintoc', $3, $4)",
+    [id, destino.empresaId, aviso.eventoId, pagoId],
+  );
+  await deps.auditar(consulta, actorDe(destino), { accion: "aviso_proveedor_cobranza", identificador: id, cambio: { proveedor: "fintoc", repetido } });
+}
+
+/** Lo que va después del commit: la devolución sin pago queda «sin destino» y la devuelta avisa al equipo. */
+async function terminarAviso(aviso: AvisoFintoc, resultado: ResultadoAplicado, destino: Destino, deps: DepsAviso | DepsRetenidos): Promise<RespuestaAviso> {
+  if (resultado.efecto === "sin_pago") return guardarSinDestino(aviso, aviso.devolucion!);
+  if (resultado.efecto === "devuelto") {
+    const empresa = await conContexto(baseDe(destino), async (consulta) =>
+      registro((await aplicarSentencia(consulta, "select razon_social, demostracion from companies where id = $1", [destino.empresaId])).rows[0]));
+    await avisarAlEquipo({ empresa: { id: destino.empresaId, operadorId: destino.operadorId, demostracion: empresa.demostracion === true } }, deps, plantillaAvisoDevolucionCobranza({
+      razonSocial: texto(empresa.razon_social),
+      cliente: resultado.cliente,
+      monto: formatoPesos(resultado.monto),
+      enlace: `${(deps.urlPublica ?? (() => leerUrlPublica()))()}/c/${destino.empresaId}/consola/cobros`,
+    }), `cobranza-devolucion/${resultado.pagoId}`);
+  }
+  registrar("info", "aviso_atendido", { evento_id: aviso.eventoId, efecto: resultado.efecto });
+  return { estado: 200, cuerpo: { ok: true, efecto: resultado.efecto } };
+}
+
+/**
+ * r63i-N1 (decisión de Gil): el aviso de una empresa suspendida o de baja se guarda sin aplicarse, con su evento en
+ * la bitácora (sin datos del ordenante), y Cumplimiento lo ve en su bandeja. 200 solo después de guardarlo: si no se
+ * pudo, la excepción llega a la ruta, que responde 500 y Fintoc reintenta. El mismo evento otra vez no se duplica.
+ */
+async function retenerAviso(aviso: AvisoFintoc, destino: Destino, deps: Pick<DepsAviso, "auditar">): Promise<RespuestaAviso> {
+  const t = aviso.abono ?? aviso.devolucion!;
+  const nuevo = await conContexto(baseDe(destino), async (consulta) => {
+    const r = await aplicarSentencia(
+      consulta,
+      "select cobranza_retener_aviso($1, $2, $3, $4::date, $5::jsonb) as id",
+      [aviso.eventoId, aviso.tipo, t.montoCentavos, t.recibidoEl, JSON.stringify(aviso)],
+    );
+    const id = registro(r.rows[0]).id;
+    if (!id) return false;
+    await deps.auditar(consulta, actorDe(destino), {
+      accion: "retener_aviso_cobranza",
+      identificador: texto(id),
+      cambio: { proveedor: "fintoc", tipo: aviso.abono ? "abono" : "devolucion", monto_centavos: t.montoCentavos },
+    });
+    return true;
+  });
+  registrar("warn", "aviso_retenido", { evento_id: aviso.eventoId, nuevo });
+  return { estado: 200, cuerpo: { ok: true, efecto: nuevo ? "retenido" : "repetido" } };
+}
+
+export type DepsRetenidos = Pick<DepsAviso, "auditar" | "enviador" | "urlPublica" | "registrar">;
+
+/**
+ * Los avisos retenidos de una empresa que ya está activa, uno por transacción y en el orden en que llegaron, por el
+ * camino normal: el freno de duplicados, el cliente sin duda y el evento visto hacen que nada se aplique dos veces.
+ * Idempotente: con la empresa bloqueada, dos corridas a la vez se forman y la segunda ya no los ve. Lo llaman la
+ * reactivación (después de su commit) y la tarea diaria, como red. Con la empresa suspendida o de baja no hace nada.
+ */
+export async function procesarRetenidos(empresaId: string, operadorId: string, deps: DepsRetenidos): Promise<number> {
+  const empresa: Destino = { empresaId, operadorId, clienteDeLaCuenta: null };
+  let procesados = 0;
+  for (;;) {
+    const paso = await conContexto(baseDe(empresa), async (consulta) => {
+      await bloquearEmpresa(consulta, empresaId);
+      const fila = (await aplicarSentencia(consulta, "select id, aviso from cobranza_retenidos_de_empresa() limit 1")).rows.map(registro)[0];
+      if (!fila) return null;
+      const aviso = fila.aviso as AvisoFintoc;
+      const t = aviso.abono ?? aviso.devolucion!;
+      // La CLABE propia sigue diciendo el cliente si es de esta empresa; si la cuenta cambió de empresa, sin cliente.
+      const ahora = await destinoDe(consulta, t);
+      const destino: Destino = { ...empresa, clienteDeLaCuenta: ahora?.empresaId === empresaId ? ahora.clienteDeLaCuenta : null };
+      const resultado: ResultadoAplicado = (await eventoVisto(consulta, aviso.eventoId))
+        ? { efecto: "repetido" }
+        : await aplicarAviso(consulta, aviso, destino, deps);
+      await aplicarSentencia(consulta, "select cobranza_retenido_procesado($1, $2)", [texto(fila.id), resultado.efecto]);
+      await deps.auditar(consulta, actorDe(destino), { accion: "procesar_retenido_cobranza", identificador: texto(fila.id), cambio: { efecto: resultado.efecto } });
+      return { aviso, resultado, destino };
+    });
+    if (!paso) return procesados;
+    await terminarAviso(paso.aviso, paso.resultado, paso.destino, deps);
+    procesados += 1;
+  }
 }
 
 /**
@@ -542,91 +654,73 @@ const MOTIVO_DEVOLUCION = "Fintoc avisó que la empresa devolvió esta transfere
  * a emitido con su saldo y vuelve a recibir recordatorios), el pago queda
  * «devuelto» (sin saldo a favor) y se avisa a administración y finanzas.
  */
-async function atenderDevolucion(
+async function aplicarDevolucion(
+  consulta: Consulta,
   aviso: AvisoFintoc,
   devolucion: DevolucionFintoc,
   empresaId: string,
-  operadorId: string,
   actor: Actor,
-  deps: DepsAviso,
-): Promise<RespuestaAviso> {
-  const resultado = await conContexto({ rol: "plataforma_cliente", companyId: empresaId, operadorId }, async (consulta) => {
-    await bloquearEmpresa(consulta, empresaId);
-    const visto = await aplicarSentencia(consulta, "select 1 from collection_provider_events where proveedor = 'fintoc' and evento_id = $1", [aviso.eventoId]);
-    if (visto.rows.length > 0) return { efecto: "repetido" as const };
-    const r = await aplicarSentencia(
+  deps: Pick<DepsAviso, "auditar">,
+): Promise<ResultadoAplicado> {
+  const r = await aplicarSentencia(
+    consulta,
+    `select p.id, p.estado, p.monto_centavos::text as monto, k.nombre as cliente
+       from collection_payments p left join collection_customers k on k.id = p.customer_id and k.company_id = p.company_id
+      where p.company_id = $1 and p.fuente = 'fintoc' and p.id_externo = $2 for update of p`,
+    [empresaId, devolucion.idExterno],
+  );
+  const pago = r.rows[0] ? registro(r.rows[0]) : null;
+  if (!pago) return { efecto: "sin_pago" as const };
+  const pagoId = texto(pago.id);
+  let devuelto = false;
+  if (pago.estado !== "devuelto") {
+    const aplicaciones = await aplicarSentencia(
       consulta,
-      `select p.id, p.estado, p.monto_centavos::text as monto, k.nombre as cliente
-         from collection_payments p left join collection_customers k on k.id = p.customer_id and k.company_id = p.company_id
-        where p.company_id = $1 and p.fuente = 'fintoc' and p.id_externo = $2 for update of p`,
-      [empresaId, devolucion.idExterno],
+      `select a.id, a.charge_id, a.monto_centavos::text as monto from collection_applications a
+        where a.company_id = $1 and a.payment_id = $2 and a.regla <> 'reversion'
+          and not exists (select 1 from collection_applications x where x.company_id = a.company_id and x.revierte_a = a.id)
+        order by a.aplicado_en, a.id`,
+      [empresaId, pagoId],
     );
-    const pago = r.rows[0] ? registro(r.rows[0]) : null;
-    if (!pago) return { efecto: "sin_pago" as const };
-    const pagoId = texto(pago.id);
-    let devuelto = false;
-    if (pago.estado !== "devuelto") {
-      const aplicaciones = await aplicarSentencia(
+    for (const a of aplicaciones.rows.map(registro)) {
+      const monto = centavos(a.monto);
+      const id = randomUUID();
+      await aplicarSentencia(
         consulta,
-        `select a.id, a.charge_id, a.monto_centavos::text as monto from collection_applications a
-          where a.company_id = $1 and a.payment_id = $2 and a.regla <> 'reversion'
-            and not exists (select 1 from collection_applications x where x.company_id = a.company_id and x.revierte_a = a.id)
-          order by a.aplicado_en, a.id`,
-        [empresaId, pagoId],
+        `insert into collection_applications (id, company_id, payment_id, charge_id, monto_centavos, regla, revierte_a, aplicado_por)
+         values ($1, $2, $3, $4, $5, 'reversion', $6, null)`,
+        [id, empresaId, pagoId, texto(a.charge_id), -monto, texto(a.id)],
       );
-      for (const a of aplicaciones.rows.map(registro)) {
-        const monto = centavos(a.monto);
-        const id = randomUUID();
-        await aplicarSentencia(
-          consulta,
-          `insert into collection_applications (id, company_id, payment_id, charge_id, monto_centavos, regla, revierte_a, aplicado_por)
-           values ($1, $2, $3, $4, $5, 'reversion', $6, null)`,
-          [id, empresaId, pagoId, texto(a.charge_id), -monto, texto(a.id)],
-        );
-        await deps.auditar(consulta, actor, { accion: "aplicacion_cobranza", identificador: id, motivo: MOTIVO_DEVOLUCION, cambio: { monto_centavos: -monto, regla: "reversion" } });
-        const cargo = await aplicarSentencia(
-          consulta,
-          `update collection_charges set pagado_centavos = pagado_centavos - $3, estado = 'emitido', pagado_el = null
-            where company_id = $1 and id = $2 and estado in ('emitido', 'pagado') returning pagado_centavos::text as pagado`,
-          [empresaId, texto(a.charge_id), monto],
-        );
-        if (!cargo.rows[0]) throw new ErrorDeDominio("cargo_ya_resuelto");
-        await deps.auditar(consulta, actor, { accion: "abono_cargo", identificador: texto(a.charge_id), cambio: { pagado_centavos: centavos(registro(cargo.rows[0]).pagado), estado: "emitido" } });
-      }
-      const marcado = await aplicarSentencia(
+      await deps.auditar(consulta, actor, { accion: "aplicacion_cobranza", identificador: id, motivo: MOTIVO_DEVOLUCION, cambio: { monto_centavos: -monto, regla: "reversion" } });
+      const cargo = await aplicarSentencia(
         consulta,
-        `update collection_payments set aplicado_centavos = 0, estado = 'devuelto', motivo_anulacion = $3
-          where company_id = $1 and id = $2 and estado in ('abierto', 'aplicado')`,
-        [empresaId, pagoId, MOTIVO_DEVOLUCION],
+        `update collection_charges set pagado_centavos = pagado_centavos - $3, estado = 'emitido', pagado_el = null
+          where company_id = $1 and id = $2 and estado in ('emitido', 'pagado') returning pagado_centavos::text as pagado`,
+        [empresaId, texto(a.charge_id), monto],
       );
-      if (marcado.rowCount !== 1) throw new ErrorDeDominio("pago_anulado");
-      await deps.auditar(consulta, actor, { accion: "devolver_pago_cobranza", identificador: pagoId, motivo: MOTIVO_DEVOLUCION, cambio: { proveedor: "fintoc", monto_centavos: centavos(pago.monto) } });
-      devuelto = true;
+      if (!cargo.rows[0]) throw new ErrorDeDominio("cargo_ya_resuelto");
+      await deps.auditar(consulta, actor, { accion: "abono_cargo", identificador: texto(a.charge_id), cambio: { pagado_centavos: centavos(registro(cargo.rows[0]).pagado), estado: "emitido" } });
     }
-    const id = randomUUID();
-    await aplicarSentencia(
+    const marcado = await aplicarSentencia(
       consulta,
-      "insert into collection_provider_events (id, company_id, proveedor, evento_id, payment_id) values ($1, $2, 'fintoc', $3, $4)",
-      [id, empresaId, aviso.eventoId, pagoId],
+      `update collection_payments set aplicado_centavos = 0, estado = 'devuelto', motivo_anulacion = $3
+        where company_id = $1 and id = $2 and estado in ('abierto', 'aplicado')`,
+      [empresaId, pagoId, MOTIVO_DEVOLUCION],
     );
-    await deps.auditar(consulta, actor, { accion: "aviso_proveedor_cobranza", identificador: id, cambio: { proveedor: "fintoc", repetido: !devuelto } });
-    return devuelto
-      ? { efecto: "devuelto" as const, pagoId, cliente: textoONulo(pago.cliente), monto: centavos(pago.monto) }
-      : { efecto: "repetido" as const };
-  });
-  if (resultado.efecto === "sin_pago") return guardarSinDestino(aviso, devolucion);
-  if (resultado.efecto === "devuelto") {
-    const empresa = await conContexto({ rol: "plataforma_cliente", companyId: empresaId, operadorId }, async (consulta) =>
-      registro((await aplicarSentencia(consulta, "select razon_social, demostracion from companies where id = $1", [empresaId])).rows[0]));
-    await avisarAlEquipo({ empresa: { id: empresaId, operadorId, demostracion: empresa.demostracion === true } }, deps, plantillaAvisoDevolucionCobranza({
-      razonSocial: texto(empresa.razon_social),
-      cliente: resultado.cliente,
-      monto: formatoPesos(resultado.monto),
-      enlace: `${(deps.urlPublica ?? (() => leerUrlPublica()))()}/c/${empresaId}/consola/cobros`,
-    }), `cobranza-devolucion/${resultado.pagoId}`);
+    if (marcado.rowCount !== 1) throw new ErrorDeDominio("pago_anulado");
+    await deps.auditar(consulta, actor, { accion: "devolver_pago_cobranza", identificador: pagoId, motivo: MOTIVO_DEVOLUCION, cambio: { proveedor: "fintoc", monto_centavos: centavos(pago.monto) } });
+    devuelto = true;
   }
-  registrar("info", "aviso_atendido", { evento_id: aviso.eventoId, efecto: resultado.efecto });
-  return { estado: 200, cuerpo: { ok: true, efecto: resultado.efecto } };
+  const id = randomUUID();
+  await aplicarSentencia(
+    consulta,
+    "insert into collection_provider_events (id, company_id, proveedor, evento_id, payment_id) values ($1, $2, 'fintoc', $3, $4)",
+    [id, empresaId, aviso.eventoId, pagoId],
+  );
+  await deps.auditar(consulta, actor, { accion: "aviso_proveedor_cobranza", identificador: id, cambio: { proveedor: "fintoc", repetido: !devuelto } });
+  return devuelto
+    ? { efecto: "devuelto" as const, pagoId, cliente: textoONulo(pago.cliente), monto: centavos(pago.monto) }
+    : { efecto: "repetido" as const };
 }
 
 /** Fintoc como fuente: hay llaves y la empresa no es de demostración. Falta además su cuenta registrada (collection_provider_accounts). */
