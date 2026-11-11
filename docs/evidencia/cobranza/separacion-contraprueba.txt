@@ -1,0 +1,16 @@
+Contraprueba de r63m-3 (separación entre la tarjeta de retenidos y las métricas de PLD), recorrido zz-retenidos con next build.
+
+== operacion.css de 27b1142 (sin la regla .hoja + .metricas)
+  ✘  1 tests/e2e/zz-retenidos.spec.ts:50:5 › un abono de Fintoc a la empresa suspendida queda retenido, Cumplimiento lo ve y al reactivar se aplica una vez (9.0s)
+    - Expected  - 2
+    + Received  + 2
+    -   "1280": 24,
+    -   "390": 24,
+    +   "1280": 0,
+    +   "390": 0,
+    test-results/e2e/zz-retenidos-un-abono-de-F-15aff-reactivar-se-aplica-una-vez/test-failed-1.png
+  1 failed
+
+== operacion.css de ef23086
+  ✓  1 tests/e2e/zz-retenidos.spec.ts:50:5 › un abono de Fintoc a la empresa suspendida queda retenido, Cumplimiento lo ve y al reactivar se aplica una vez (9.0s)
+  1 passed (16.7s)

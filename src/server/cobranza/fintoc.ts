@@ -13,7 +13,7 @@ import { fechaConAnio } from "../../dominio/flujo/fechas";
 import { centavos, registro, texto, textoONulo } from "../flujo/lectura";
 import { recibirAbono, type AbonoRecibido, type FuenteDeAbonos } from "./abonos";
 import { autorDe } from "./comun";
-import { avisarAlEquipo, type DependenciasCobranza } from "./servicio";
+import { avisarAlEquipo, avisarAlEquipoConMotivo, type DependenciasCobranza } from "./servicio";
 
 /**
  * Adaptador de Fintoc (API v2026-02-01, documentación leída el 2026-11-10;
@@ -610,14 +610,17 @@ type DatosRetenido = { devolucion: boolean; montoCentavos: number; recibidoEl: s
  * empresa (avisarAlEquipo: solo personas activas de esa empresa con esos roles), además de la bandeja de Cumplimiento.
  * Una sola vez: un retenido queda fallido una vez y la llave de idempotencia es la del retenido. Si el envío falla, el
  * fallido no se deshace; el evento de la bitácora dice cuántos correos salieron (0 si ninguno), y la tarea diaria lo
- * vuelve a intentar con la misma llave mientras ninguno haya salido (r63m, reavisarFallidos).
+ * vuelve a intentar con la misma llave mientras ninguno haya salido (r63m, reavisarFallidos). Decisión del líder (r63n):
+ * si no hay a quién mandarlo (nadie activo de administración o finanzas, o una empresa de demostración), el evento lleva
+ * ese motivo y no se reintenta: Cumplimiento ya lo ve en su bandeja y un evento diario sería ruido en la bitácora.
  */
 async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosRetenido, deps: DepsRetenidos): Promise<number> {
   let enviados = 0;
+  let sinEnvio: string | null = null;
   try {
     const fila = await conContexto(baseDe(empresa), async (consulta) =>
       registro((await aplicarSentencia(consulta, "select razon_social, demostracion from companies where id = $1", [empresa.empresaId])).rows[0]));
-    enviados = await avisarAlEquipo({ empresa: { id: empresa.empresaId, operadorId: empresa.operadorId, demostracion: fila.demostracion === true } }, deps,
+    ({ enviados, sinEnvio } = await avisarAlEquipoConMotivo({ empresa: { id: empresa.empresaId, operadorId: empresa.operadorId, demostracion: fila.demostracion === true } }, deps,
       plantillaAvisoRetenidoFallidoCobranza({
         razonSocial: texto(fila.razon_social),
         devolucion: d.devolucion,
@@ -625,13 +628,13 @@ async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosReten
         fecha: fechaConAnio(d.recibidoEl),
         referencia: d.referencia,
         enlace: `${(deps.urlPublica ?? (() => leerUrlPublica()))()}/c/${empresa.empresaId}/consola/cobros`,
-      }), `cobranza-retenido-fallido/${id}`);
+      }), `cobranza-retenido-fallido/${id}`));
   } catch {
     registrar("error", "aviso_retenido_fallido_no_preparado", {});
   }
   try {
     await conContexto(baseDe(empresa), (consulta) =>
-      deps.auditar(consulta, actorDe(empresa), { accion: "aviso_retenido_fallido_cobranza", identificador: id, cambio: { enviados } }));
+      deps.auditar(consulta, actorDe(empresa), { accion: "aviso_retenido_fallido_cobranza", identificador: id, cambio: sinEnvio ? { enviados, motivo: sinEnvio } : { enviados } }));
   } catch {
     registrar("error", "aviso_retenido_fallido_sin_bitacora", { enviados });
   }
