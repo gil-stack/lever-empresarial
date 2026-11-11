@@ -33,3 +33,7 @@ Salidas: `prueba-postgres-rojo-verde.txt` y `e2e-rojo-verde.txt`.
 - `cambio-clabe-con-aviso.png`: el expediente después de guardar la CLABE nueva («Quedó la CLABE nueva… Se avisó por correo a 2 personas.»).
 - `correo-cambio-clabe.png`: el correo tal como llegó al buzón local, renderizado.
 - `correos-enviados.txt`: los dos correos (destinatario, asunto, llave y texto), con datos de prueba `@ejemplo.mx`.
+
+## P3 de la revisión: la e2e repetida sobre la misma base
+
+El RFC al azar de la e2e tenía 9 valores. Repetida 10 veces sobre la misma base, sin reiniciarla, 4 corridas chocaban con «Ese RFC ya es un proveedor. No entra otra vez.». Ahora la homoclave sale al azar con el patrón del SAT (`[A-Z0-9]{2}[0-9A]`, 14,256 valores; `src/domain/rfc.ts`): 10 de 10 pasan, y el archivo completo, 8/8. Salida: `e2e-repetida-misma-base.txt`.

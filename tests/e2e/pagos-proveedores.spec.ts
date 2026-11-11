@@ -291,8 +291,12 @@ test("cambio de CLABE de un proveedor: avisa por correo a administración y libe
   // Proveedor propio de esta prueba: el cambio regresa a revisión los pagos del proveedor y no debe tocar a los demás.
   await entrar(page);
   await page.goto(`${BASE}/nuevo-proveedor`);
-  const rfc = `CCC050505CC${Math.floor(Math.random() * 9) + 1}`;
-  const razon = "Cambio Clabe Servicios";
+  // Homoclave al azar con el patrón del SAT ([A-Z0-9]{2}[0-9A], 14,256 valores, src/domain/rfc.ts): la prueba se puede
+  // repetir sobre la misma base sin chocar con su propio RFC.
+  const al = (letras: string) => letras[Math.floor(Math.random() * letras.length)];
+  const homoclave = `${al("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")}${al("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")}${al("0123456789A")}`;
+  const rfc = `CCC050505${homoclave}`;
+  const razon = `Cambio Clabe Servicios ${homoclave}`;
   await page.getByLabel("RFC", { exact: true }).fill(rfc);
   await page.getByLabel("Razón social", { exact: true }).fill(razon);
   await page.getByLabel("Correo de contacto").fill("facturas@cambio-clabe.mx");
