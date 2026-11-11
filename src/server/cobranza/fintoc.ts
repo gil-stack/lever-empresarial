@@ -608,19 +608,35 @@ type DatosRetenido = { devolucion: boolean; montoCentavos: number; recibidoEl: s
 /**
  * Decisión de Gil (2026-11-11): un retenido que queda fallido se avisa por correo a administración y finanzas de la
  * empresa (avisarAlEquipo: solo personas activas de esa empresa con esos roles), además de la bandeja de Cumplimiento.
- * Una sola vez: un retenido queda fallido una vez y la llave de idempotencia es la del retenido. Si el envío falla, el
- * fallido no se deshace; el evento de la bitácora dice cuántos correos salieron (0 si ninguno), y la tarea diaria lo
- * vuelve a intentar con la misma llave mientras ninguno haya salido (r63m, reavisarFallidos). Decisión del líder (r63n):
- * si no hay a quién mandarlo (nadie activo de administración o finanzas, o una empresa de demostración), el evento lleva
- * ese motivo y no se reintenta: Cumplimiento ya lo ve en su bandeja y un evento diario sería ruido en la bitácora.
+ * Si el envío falla, el fallido no se deshace; el evento de la bitácora dice cuántos correos nuevos salieron y cuántas
+ * personas siguen sin recibirlo, y la tarea diaria se lo vuelve a mandar solo a ellas (r63m, reavisarFallidos).
+ *
+ * r63o: la llave es por persona (`cobranza-retenido-fallido/<retenido>/<persona>`) y la fila guarda los ids de quienes
+ * ya lo recibieron. Quien lo manda lo reserva antes (cobranza_tomar_aviso_fallido), así que el aviso y la tarea no lo
+ * mandan a la vez ni la bitácora cuenta dos veces un correo. Se reintenta como máximo 7 días desde que quedó fallido.
+ * Decisiones del líder: una empresa de demostración no recibe nada y queda cerrada (r63n); sin nadie activo de
+ * administración o finanzas, el primer aviso deja un evento con ese motivo y la tarea revisa en silencio esos 7 días:
+ * en cuanto haya alguien, le llega, y mientras no, no deja eventos (r63n-4).
  */
-async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosRetenido, deps: DepsRetenidos): Promise<number> {
-  let enviados = 0;
-  let sinEnvio: string | null = null;
+async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosRetenido, deps: DepsRetenidos, reintento = false): Promise<number> {
+  let previos: string[] | null;
+  let fila: Record<string, unknown>;
   try {
-    const fila = await conContexto(baseDe(empresa), async (consulta) =>
-      registro((await aplicarSentencia(consulta, "select razon_social, demostracion from companies where id = $1", [empresa.empresaId])).rows[0]));
-    ({ enviados, sinEnvio } = await avisarAlEquipoConMotivo({ empresa: { id: empresa.empresaId, operadorId: empresa.operadorId, demostracion: fila.demostracion === true } }, deps,
+    [previos, fila] = await conContexto(baseDe(empresa), async (consulta) => {
+      const tomado = registro((await aplicarSentencia(consulta, "select cobranza_tomar_aviso_fallido($1)::text[] as recibieron", [id])).rows[0]).recibieron;
+      const datos = registro((await aplicarSentencia(consulta, "select razon_social, demostracion from companies where id = $1", [empresa.empresaId])).rows[0]);
+      return [Array.isArray(tomado) ? tomado.map(texto) : null, datos] as const;
+    });
+  } catch {
+    registrar("error", "aviso_retenido_fallido_no_preparado", {});
+    return 0;
+  }
+  // Ya le llegó a todos, pasaron los 7 días, o alguien más lo está mandando.
+  if (previos === null) return 0;
+  // Sin la plantilla (la URL pública sin configurar) no sale nada: queda pendiente, para el reintento.
+  let r: Awaited<ReturnType<typeof avisarAlEquipoConMotivo>> = { enviados: 0, recibieron: [], pendientes: 1, sinEnvio: null };
+  try {
+    r = await avisarAlEquipoConMotivo({ empresa: { id: empresa.empresaId, operadorId: empresa.operadorId, demostracion: fila.demostracion === true } }, deps,
       plantillaAvisoRetenidoFallidoCobranza({
         razonSocial: texto(fila.razon_social),
         devolucion: d.devolucion,
@@ -628,17 +644,29 @@ async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosReten
         fecha: fechaConAnio(d.recibidoEl),
         referencia: d.referencia,
         enlace: `${(deps.urlPublica ?? (() => leerUrlPublica()))()}/c/${empresa.empresaId}/consola/cobros`,
-      }), `cobranza-retenido-fallido/${id}`));
+      }), `cobranza-retenido-fallido/${id}`, new Set(previos));
   } catch {
     registrar("error", "aviso_retenido_fallido_no_preparado", {});
   }
+  const cerrar = r.sinEnvio === "demostracion" || (r.sinEnvio === null && r.pendientes === 0);
+  // En el reintento, sin nadie a quién mandarlo (o sin nadie nuevo), no queda evento: sería ruido diario.
+  const sinEvento = reintento && (r.sinEnvio === "sin_destinatarios" || (r.sinEnvio === null && r.recibieron.length === 0 && r.pendientes === 0));
   try {
-    await conContexto(baseDe(empresa), (consulta) =>
-      deps.auditar(consulta, actorDe(empresa), { accion: "aviso_retenido_fallido_cobranza", identificador: id, cambio: sinEnvio ? { enviados, motivo: sinEnvio } : { enviados } }));
+    await conContexto(baseDe(empresa), async (consulta) => {
+      if (!sinEvento) {
+        await deps.auditar(consulta, actorDe(empresa), {
+          accion: "aviso_retenido_fallido_cobranza",
+          identificador: id,
+          cambio: r.sinEnvio ? { enviados: 0, motivo: r.sinEnvio } : { enviados: r.enviados, recibidos: r.recibieron.length, pendientes: r.pendientes },
+        });
+      }
+      await aplicarSentencia(consulta, "select cobranza_soltar_aviso_fallido($1, $2::uuid[], $3)", [id, r.recibieron, cerrar]);
+    });
   } catch {
-    registrar("error", "aviso_retenido_fallido_sin_bitacora", { enviados });
+    // La reserva vence sola en una hora; lo que salió queda en el registro.
+    registrar("error", "aviso_retenido_fallido_sin_bitacora", { enviados: r.enviados });
   }
-  return enviados;
+  return r.enviados;
 }
 
 /** Lo que el correo de un retenido necesita de su fila guardada: monto, fecha, tipo y referencia, sin el ordenante. */
@@ -653,9 +681,9 @@ function datosDeRetenido(fila: Record<string, unknown>): DatosRetenido {
 }
 
 /**
- * r63m: los fallidos de la empresa cuyo correo no salió (el envío falló: la bitácora dice enviados 0) se vuelven a avisar
- * con la misma llave de idempotencia, uno por uno, con un evento por intento. Lo llama la tarea diaria. Devuelve cuántos
- * quedaron avisados.
+ * r63m: los fallidos de la empresa cuyo correo no le llegó a todos se vuelven a avisar, solo a quienes faltan y con la
+ * llave de cada persona (r63o), uno por uno. Lo llama la tarea diaria, hasta 7 días después de que quedó fallido.
+ * Devuelve a cuántos fallidos les salió al menos un correo nuevo.
  */
 export async function reavisarFallidos(empresaId: string, operadorId: string, deps: DepsRetenidos): Promise<number> {
   const empresa: Destino = { empresaId, operadorId, clienteDeLaCuenta: null };
@@ -666,7 +694,7 @@ export async function reavisarFallidos(empresaId: string, operadorId: string, de
     )).rows.map(registro));
   let avisados = 0;
   for (const fila of filas) {
-    if ((await avisarRetenidoFallido(empresa, texto(fila.id), datosDeRetenido(fila), deps)) > 0) avisados += 1;
+    if ((await avisarRetenidoFallido(empresa, texto(fila.id), datosDeRetenido(fila), deps, true)) > 0) avisados += 1;
   }
   return avisados;
 }

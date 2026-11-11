@@ -23,6 +23,7 @@ import { exigirAutenticacionRecienteCliente } from "../autenticacion/reautentica
 import { actorDeCliente, auditar as auditarPorDefecto, type Actor, type Auditar } from "../bitacora/auditar";
 import { leerUrlPublica } from "../correo/configuracion";
 import { enviadorDesdeEntorno } from "../correo/enviar";
+import { ErrorDeCorreo } from "../correo/errores";
 import { plantillaAvisoClabeCobranza, plantillaAvisoDatosCobranza } from "../correo/plantillas/cobro";
 import type { Enviador } from "../correo/tipos";
 import { centavos, entero, registro, texto, textoONulo } from "../flujo/lectura";
@@ -216,46 +217,58 @@ export async function avisarAlEquipo(
 /**
  * Lo mismo, y además por qué no se intentó mandar nada: la empresa no tiene a nadie activo de administración o
  * finanzas, o es de demostración. Un envío que falló (el proveedor o la base) no lleva motivo: se puede reintentar.
+ *
+ * r63o (r63n-1): la llave de cada destinatario lleva el id de la persona, no su lugar en la lista: si la lista cambia
+ * entre dos intentos, la llave de una persona nunca pasa a otra. `excluir` son los ids de quienes ya lo recibieron
+ * (el reintento va solo a los que faltan); `recibieron` devuelve los ids a los que les llegó en este intento, contando
+ * a quien Resend responde que ya lo tenía (409 correo_ya_enviado), y `enviados` solo los correos nuevos (r63n-3).
+ * `pendientes` son los que siguen sin recibirlo (un error al preparar cuenta como pendiente: se puede reintentar).
  */
 export async function avisarAlEquipoConMotivo(
   c: { empresa: { id: string; operadorId: string; demostracion: boolean } },
   deps: DependenciasCobranza | undefined,
   plantilla: { asunto: string; html: string; texto: string },
   llave: string,
-): Promise<{ enviados: number; sinEnvio: "sin_destinatarios" | "demostracion" | null }> {
+  excluir: ReadonlySet<string> = new Set(),
+): Promise<{ enviados: number; recibieron: string[]; pendientes: number; sinEnvio: "sin_destinatarios" | "demostracion" | null }> {
   const registrar = deps?.registrar ?? registrarPorDefecto;
   try {
-    const correos = await conContexto({ rol: "plataforma_cliente", companyId: c.empresa.id, operadorId: c.empresa.operadorId }, async (consulta) => {
+    const equipo = await conContexto({ rol: "plataforma_cliente", companyId: c.empresa.id, operadorId: c.empresa.operadorId }, async (consulta) => {
       const r = await aplicarSentencia(
         consulta,
-        `select distinct u.correo
+        `select distinct u.id, u.correo
            from memberships m
            join membership_roles r on r.company_id = m.company_id and r.user_id = m.user_id and r.rol in ('administrador', 'finanzas')
            join users u on u.id = m.user_id
            left join employees e on e.company_id = m.company_id and e.user_id = m.user_id
           where m.company_id = $1 and m.estado = 'activa'
             and (e.id is null or e.baja_en is null or e.baja_en > (timezone('America/Mexico_City', clock_timestamp()))::date)
-          order by u.correo`,
+          order by u.correo, u.id`,
         [c.empresa.id],
       );
-      return r.rows.map(registro).map((f) => texto(f.correo));
+      return r.rows.map(registro).map((f) => ({ id: texto(f.id), para: texto(f.correo) }));
     });
-    if (c.empresa.demostracion) return { enviados: 0, sinEnvio: "demostracion" };
-    if (correos.length === 0) return { enviados: 0, sinEnvio: "sin_destinatarios" };
-    const enviador = (deps?.enviador ?? (() => enviadorDesdeEntorno()))();
+    if (c.empresa.demostracion) return { enviados: 0, recibieron: [], pendientes: 0, sinEnvio: "demostracion" };
+    if (equipo.length === 0) return { enviados: 0, recibieron: [], pendientes: 0, sinEnvio: "sin_destinatarios" };
+    const faltan = equipo.filter((p) => !excluir.has(p.id));
+    const enviador = faltan.length > 0 ? (deps?.enviador ?? (() => enviadorDesdeEntorno()))() : null;
     let enviados = 0;
-    for (const [indice, para] of correos.entries()) {
+    const recibieron: string[] = [];
+    for (const { id, para } of faltan) {
       try {
-        await enviador({ para, ...plantilla, idempotencia: `${llave}/${indice}`, etiqueta: "cobranza_aviso" });
+        await enviador!({ para, ...plantilla, idempotencia: `${llave}/${id}`, etiqueta: "cobranza_aviso" });
         enviados += 1;
-      } catch {
-        registrar({ evento: "aviso_cobranza_fallido", empresa: c.empresa.id, indice });
+        recibieron.push(id);
+      } catch (error) {
+        // Resend ya lo tenía con esa llave (otro intento salió y su respuesta se perdió): le llegó, pero no es nuevo.
+        if (error instanceof ErrorDeCorreo && error.codigo === "correo_ya_enviado") recibieron.push(id);
+        else registrar({ evento: "aviso_cobranza_fallido", empresa: c.empresa.id, persona: id });
       }
     }
-    return { enviados, sinEnvio: null };
+    return { enviados, recibieron, pendientes: faltan.length - recibieron.length, sinEnvio: null };
   } catch {
     registrar({ evento: "aviso_cobranza_no_preparado", empresa: c.empresa.id });
-    return { enviados: 0, sinEnvio: null };
+    return { enviados: 0, recibieron: [], pendientes: 1, sinEnvio: null };
   }
 }
 

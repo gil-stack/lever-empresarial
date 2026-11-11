@@ -11,7 +11,7 @@ import { cerrarConexion } from "../../src/nucleo/db.ts";
 import { ErrorDeDominio } from "../../src/nucleo/error-de-dominio.ts";
 import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
 import { auditar } from "../../src/server/bitacora/auditar.ts";
-import { atenderAviso, firmar, procesarRetenidos, registrarCuentaFintoc, type ConfigFintoc } from "../../src/server/cobranza/fintoc.ts";
+import { atenderAviso, firmar, procesarRetenidos, reavisarFallidos, registrarCuentaFintoc, type ConfigFintoc } from "../../src/server/cobranza/fintoc.ts";
 import { prepararEstadoDeCuenta } from "../../src/server/cobranza/estado-cuenta.ts";
 import { anularPago, configurarCobranza, darDeAltaCliente, registrarPagoManual, type DependenciasCobranza } from "../../src/server/cobranza/servicio.ts";
 import { correrCobranza } from "../../src/server/cobranza/tarea.ts";
@@ -22,6 +22,7 @@ import { personal, SESION_SOFIPO } from "../operacion/apoyo-alta-regulada.ts";
 import { administrador, CLABE_EMPRESA, contar, HOY, persona, reloj, sembrarPersonal } from "./siembra.ts";
 import { nombrarCentro } from "../../src/server/personas/servicio.ts";
 import type { MensajeCorreo } from "../../src/server/correo/tipos.ts";
+import { ErrorDeCorreo } from "../../src/server/correo/errores.ts";
 import { aplicarArchivo, conBaseDesechable, consultarJson, ejecutar, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
 
 /**
@@ -362,6 +363,141 @@ async function escenario(url: string): Promise<void> {
        where h.evento_id = 'evt_SinEquipo01' and a.accion = 'aviso_retenido_fallido_cobranza') x`);
     assert.deepEqual(eventosSinEquipo, [{ enviados: "0", motivo: "sin_destinatarios" }], "un solo evento, sin reintento diario");
     assert.equal(buzonBeta.filter((m) => m.idempotencia.startsWith("cobranza-retenido-fallido/") && !del03(m)).length, 0);
+
+    // r63o ------------------------------------------------------------------------------------------------------------
+    const usuario = (correo: string) => consultarJson<{ id: string }[]>(url, `select json_agg(x) from (select id from users where correo = '${correo}') x`)[0]!.id;
+    const idDe = (id: string) => consultarJson<{ id: string }[]>(url, `select json_agg(x) from (select id from collection_held_events where evento_id = '${id}') x`)[0]!.id;
+    const eventosDe = (evento: string) => consultarJson<Record<string, string | null>[] | null>(url, `select jsonb_agg(to_jsonb(x) order by x.ocurrido_en) from (
+      select a.ocurrido_en, a.cambio->>'enviados' as enviados, a.cambio->>'recibidos' as recibidos, a.cambio->>'pendientes' as pendientes, a.cambio->>'motivo' as motivo
+        from audit_log a join collection_held_events h on h.id = a.identificador
+       where h.evento_id = '${evento}' and a.accion = 'aviso_retenido_fallido_cobranza') x`)?.map(({ ocurrido_en, ...e }) => (void ocurrido_en, e)) ?? [];
+    const relojMas = (intervalo: string | null) => ejecutar(url, `create or replace function cobranza_retenidos_ahora() returns timestamptz
+      language sql stable set search_path = public, pg_temp as $f$ select now()${intervalo ? ` + interval '${intervalo}'` : ""} $f$;`);
+    const buzonO: MensajeCorreo[] = [];
+    /** Un enviador que deja en el buzón lo que sí salió y hace fallar a quien se pida. */
+    const enviadorO = (falla: (m: MensajeCorreo) => boolean = () => false) => () => async (m: MensajeCorreo) => {
+      if (falla(m)) throw new Error("el proveedor de correo no respondió");
+      buzonO.push(m);
+      return { id: randomUUID() };
+    };
+    const corridaO = (enviador: ReturnType<typeof enviadorO>) =>
+      correrCobranza({ ahora: reloj("2027-01-10T18:00:00.000Z"), auditar, enviador, urlPublica: () => "https://lever.ejemplo.mx", fintoc: null, registrar: () => {} });
+    const depsO = (enviador: ReturnType<typeof enviadorO>) => ({ auditar, enviador, urlPublica: () => "https://lever.ejemplo.mx", registrar: () => {} });
+
+    // r63o-1 (r63n-1) La llave es por persona: `cobranza-retenido-fallido/<retenido>/<persona>`. Con un envío parcial,
+    //    el reintento va solo a quien no lo recibió; alguien que entra a la lista entre dos corridas recibe el suyo con
+    //    su propia llave, nunca la de otra persona. Antes la llave era la posición en la lista ordenada: la persona nueva
+    //    tomaba la llave de la que ya estaba, y a la que falló no se le reintentaba porque «ya había salido uno».
+    const omega = await empresa("OME150301AB4", "601", "Omega Llaves Retenidos", "acc_RetenidosOmega01");
+    const centroOmega = await nombrarCentro(omega.admin, { nombre: "Administración" }, { ahora: HOY });
+    await persona(url, omega.admin, centroOmega.id, "Zoe Finanzas", "zz-finanzas-omega@ejemplo.mx", ["tarjetahabiente", "finanzas"]);
+    retenidoFallido(omega.id, "evt_LlavePersona01");
+    buzonO.length = 0;
+    assert.equal(await procesarRetenidos(omega.id, operador, depsO(enviadorO((m) => m.para.startsWith("zz-")))), 1);
+    const idOmega = idDe("evt_LlavePersona01");
+    const [adminOmega, zoe] = [usuario("admin-ome150301ab4@ejemplo.mx"), usuario("zz-finanzas-omega@ejemplo.mx")];
+    assert.deepEqual(buzonO.map((m) => [m.para, m.idempotencia]), [["admin-ome150301ab4@ejemplo.mx", `cobranza-retenido-fallido/${idOmega}/${adminOmega}`]]);
+    assert.deepEqual(eventosDe("evt_LlavePersona01"), [{ enviados: "1", recibidos: "1", pendientes: "1", motivo: null }]);
+    await persona(url, omega.admin, centroOmega.id, "Mara Finanzas", "m-finanzas-omega@ejemplo.mx", ["tarjetahabiente", "finanzas"]);
+    const mara = usuario("m-finanzas-omega@ejemplo.mx");
+    buzonO.length = 0;
+    await corridaO(enviadorO());
+    const deOmega = buzonO.filter((m) => m.idempotencia.startsWith(`cobranza-retenido-fallido/${idOmega}/`));
+    assert.deepEqual(deOmega.map((m) => [m.para, m.idempotencia]).sort(), [
+      ["m-finanzas-omega@ejemplo.mx", `cobranza-retenido-fallido/${idOmega}/${mara}`],
+      ["zz-finanzas-omega@ejemplo.mx", `cobranza-retenido-fallido/${idOmega}/${zoe}`],
+    ], "solo quienes faltaban, cada quien con su llave; la administradora no lo recibe dos veces");
+    assert.ok(deOmega.every((m) => /^cobranza-retenido-fallido\/[A-Za-z0-9/_-]+$/.test(m.idempotencia)), "la llave pasa la validación de enviadorResend");
+    assert.deepEqual(eventosDe("evt_LlavePersona01").at(-1), { enviados: "2", recibidos: "2", pendientes: "0", motivo: null });
+    assert.deepEqual(consultarJson<{ r: string[]; c: boolean }[]>(url, `select json_agg(x) from (select aviso_recibieron::text[] as r, aviso_cerrado as c from collection_held_events where id = '${idOmega}') x`)[0],
+      { r: [adminOmega, mara, zoe].sort(), c: true }, "la fila guarda ids de personas, no correos");
+    buzonO.length = 0;
+    await corridaO(enviadorO());
+    assert.equal(buzonO.filter((m) => m.idempotencia.startsWith(`cobranza-retenido-fallido/${idOmega}/`)).length, 0, "ya le llegó a todos: no se reintenta");
+    assert.equal(eventosDe("evt_LlavePersona01").length, 2);
+
+    // r63o-3 (r63n-3) La bitácora cuenta solo los correos nuevos. a) Un 409 correo_ya_enviado (otro intento salió y su
+    //    respuesta se perdió) cuenta como recibido, no como enviado. b) La carrera de -03: el aviso deja fallido y se
+    //    queda mandando mientras corre la tarea; la tarea ve la reserva y no manda nada, y la bitácora suma los correos
+    //    que de verdad salieron. Antes salían los dos con las mismas llaves y quedaban dos eventos con enviados 2.
+    retenidoFallido(omega.id, "evt_YaEnviado01");
+    buzonO.length = 0;
+    const yaEnviado = () => async (m: MensajeCorreo) => {
+      if (m.para.startsWith("zz-")) throw new ErrorDeCorreo("correo_ya_enviado");
+      buzonO.push(m);
+      return { id: randomUUID() };
+    };
+    assert.equal(await procesarRetenidos(omega.id, operador, depsO(yaEnviado)), 1);
+    assert.deepEqual(eventosDe("evt_YaEnviado01"), [{ enviados: "2", recibidos: "3", pendientes: "0", motivo: null }]);
+    assert.equal(buzonO.length, 2);
+    retenidoFallido(omega.id, "evt_Carrera01");
+    buzonO.length = 0;
+    let soltar: () => void = () => {};
+    const puerta = new Promise<void>((r) => { soltar = r; });
+    const lento = () => async (m: MensajeCorreo) => { await puerta; buzonO.push(m); return { id: randomUUID() }; };
+    const enCurso = procesarRetenidos(omega.id, operador, depsO(lento));
+    for (let i = 0; i < 200 && cuenta(`select count(*) from collection_held_events where evento_id = 'evt_Carrera01' and aviso_tomado_en is not null`) === 0; i += 1) {
+      await new Promise((r) => setTimeout(r, 25));
+    }
+    assert.equal(await reavisarFallidos(omega.id, operador, depsO(enviadorO())), 0, "la tarea ve la reserva y no lo manda");
+    soltar();
+    assert.equal(await enCurso, 1);
+    const sumaCarrera = eventosDe("evt_Carrera01").reduce((t, e) => t + Number(e.enviados), 0);
+    assert.equal(buzonO.length, 3);
+    assert.equal(sumaCarrera, buzonO.length, "la bitácora suma los correos que salieron");
+    assert.equal(eventosDe("evt_Carrera01").length, 1);
+
+    // r63o-2 (r63n-2) El reintento diario tiene tope: 7 días desde que quedó fallido. Con el proveedor caído, el día 7
+    //    todavía se intenta (un evento); el día 8 ya no hay intento ni evento, y Cumplimiento lo sigue viendo.
+    retenidoFallido(omega.id, "evt_Tope01");
+    const intentosTope: string[] = [];
+    const caidoTope = () => async (m: MensajeCorreo) => { intentosTope.push(m.idempotencia); throw new Error("el proveedor de correo no respondió"); };
+    assert.equal(await procesarRetenidos(omega.id, operador, depsO(caidoTope)), 1);
+    const idTope = idDe("evt_Tope01");
+    const delTope = () => intentosTope.filter((l) => l.startsWith(`cobranza-retenido-fallido/${idTope}/`)).length;
+    assert.equal(eventosDe("evt_Tope01").length, 1);
+    try {
+      relojMas("6 days 23 hours");
+      const antes = delTope();
+      await corridaO(caidoTope);
+      assert.ok(delTope() > antes, "el día 7 se intenta");
+      assert.equal(eventosDe("evt_Tope01").length, 2);
+      relojMas("7 days 1 minute");
+      const antes8 = delTope();
+      await corridaO(caidoTope);
+      assert.equal(delTope(), antes8, "el día 8 no hay intento");
+      assert.equal(eventosDe("evt_Tope01").length, 2, "ni evento");
+    } finally {
+      relojMas(null);
+    }
+    assert.ok((await leerBandejaCumplimiento(cum)).abonosRetenidos.some((r) => r.companyId === omega.id && r.fallido), "Cumplimiento lo sigue viendo");
+
+    // r63o-4 (r63n-4, decisión del líder) Sin nadie activo de administración o finanzas, el primer aviso deja un evento con
+    //    ese motivo y la tarea lo revisa en silencio: sin eventos mientras siga sin nadie. Si el día 3 se reactiva a la
+    //    administradora, le llega una vez. Antes quedaba sin aviso para siempre.
+    const sigma = await empresa("SIG150301AB4", "601", "Sigma Sin Equipo Retenidos", "acc_RetenidosSigma01");
+    ejecutar(url, `set session_replication_role = replica; update memberships set estado = 'suspendida' where company_id = '${sigma.id}'; set session_replication_role = origin;`);
+    retenidoFallido(sigma.id, "evt_SinEquipo02");
+    buzonO.length = 0;
+    assert.equal(await procesarRetenidos(sigma.id, operador, depsO(enviadorO())), 1);
+    const idSigma = idDe("evt_SinEquipo02");
+    const deSigma = () => buzonO.filter((m) => m.idempotencia.startsWith(`cobranza-retenido-fallido/${idSigma}/`));
+    try {
+      relojMas("1 day");
+      await corridaO(enviadorO());
+      assert.deepEqual(eventosDe("evt_SinEquipo02"), [{ enviados: "0", recibidos: null, pendientes: null, motivo: "sin_destinatarios" }], "sin nadie, en silencio");
+      relojMas("2 days");
+      ejecutar(url, `set session_replication_role = replica; update memberships set estado = 'activa' where company_id = '${sigma.id}'; set session_replication_role = origin;`);
+      await corridaO(enviadorO());
+      await corridaO(enviadorO());
+    } finally {
+      relojMas(null);
+    }
+    assert.deepEqual(deSigma().map((m) => [m.para, m.idempotencia]), [["admin-sig150301ab4@ejemplo.mx", `cobranza-retenido-fallido/${idSigma}/${usuario("admin-sig150301ab4@ejemplo.mx")}`]], "le llega una vez");
+    assert.deepEqual(eventosDe("evt_SinEquipo02"), [
+      { enviados: "0", recibidos: null, pendientes: null, motivo: "sin_destinatarios" },
+      { enviados: "1", recibidos: "1", pendientes: "0", motivo: null },
+    ]);
 
     // r63j-N2 a) El aviso toma el candado y retiene (la empresa sigue suspendida) mientras la reactivación espera ese
     //    mismo candado: al reactivar, el retenido ya está ahí y se aplica. Antes el aviso revisaba en una transacción y

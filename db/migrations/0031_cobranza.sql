@@ -1115,11 +1115,24 @@ CREATE TABLE collection_held_events (
   intentos integer NOT NULL DEFAULT 0,
   -- r63l-N1: cuándo se contó el último intento; se cuenta a lo más uno por hora.
   ultimo_intento_en timestamptz,
+  -- r63o: el correo de un fallido a administración y finanzas (decisión de Gil, 2026-11-11). Quién ya lo recibió (ids de
+  -- personas, nunca correos), si ya no hay nada que reintentar, y la reserva de quien lo está mandando ahora, para que
+  -- el aviso y la tarea (o dos tareas) no lo manden a la vez.
+  aviso_recibieron uuid[] NOT NULL DEFAULT '{}',
+  aviso_cerrado boolean NOT NULL DEFAULT false,
+  aviso_tomado_en timestamptz,
   CONSTRAINT collection_held_events_unico UNIQUE (proveedor, evento_id),
   CONSTRAINT collection_held_events_proveedor CHECK (proveedor IN ('fintoc')),
   CONSTRAINT collection_held_events_evento CHECK (evento_id ~ '^evt_[A-Za-z0-9]{1,64}$' AND aviso ->> 'eventoId' = evento_id),
   CONSTRAINT collection_held_events_tipo CHECK (tipo IN ('transfer.inbound.succeeded', 'transfer.inbound.returned')),
   CONSTRAINT collection_held_events_intentos CHECK (intentos BETWEEN 0 AND 5 AND (intentos = 0) = (ultimo_intento_en IS NULL)),
+  -- r63o: con 'infinity' el disparador dejaría pasar un intento y la definer ya no contaría ninguno (un 500 para siempre).
+  CONSTRAINT collection_held_events_intento_finito CHECK (ultimo_intento_en IS NULL OR isfinite(ultimo_intento_en)),
+  CONSTRAINT collection_held_events_aviso CHECK (
+    (aviso_tomado_en IS NULL OR isfinite(aviso_tomado_en))
+    AND array_position(aviso_recibieron, NULL) IS NULL
+    AND (estado = 'fallido' OR (aviso_recibieron = '{}' AND NOT aviso_cerrado AND aviso_tomado_en IS NULL))
+  ),
   CONSTRAINT collection_held_events_monto CHECK (monto_centavos BETWEEN 1 AND 9000000000000000),
   CONSTRAINT collection_held_events_fecha CHECK (recibido_el >= DATE '2000-01-01'),
   -- r63j-N1: un retenido que no se pudo aplicar queda «fallido» con el código del error (sin datos), a la vista de
@@ -1146,7 +1159,18 @@ AS $$
 BEGIN
   -- r63l-P3: un retenido nace pendiente y sin intentos, también si lo inserta la dueña.
   IF TG_OP = 'INSERT' THEN
-    IF NEW.estado <> 'retenido' OR NEW.intentos <> 0 OR NEW.ultimo_intento_en IS NOT NULL THEN
+    IF NEW.estado <> 'retenido' OR NEW.intentos <> 0 OR NEW.ultimo_intento_en IS NOT NULL
+      OR NEW.aviso_recibieron <> '{}' OR NEW.aviso_cerrado OR NEW.aviso_tomado_en IS NOT NULL THEN
+      RAISE EXCEPTION 'cobranza_inmutable';
+    END IF;
+    RETURN NEW;
+  END IF;
+  -- r63o: de un fallido solo cambia su correo: quién lo recibió (solo se agrega), si quedó cerrado (no se reabre) y la
+  -- reserva de quien lo manda.
+  IF TG_OP = 'UPDATE' AND OLD.estado = 'fallido' THEN
+    IF NOT (NEW.aviso_recibieron @> OLD.aviso_recibieron) OR (OLD.aviso_cerrado AND NOT NEW.aviso_cerrado)
+      OR (to_jsonb(NEW) - 'aviso_recibieron' - 'aviso_cerrado' - 'aviso_tomado_en')
+         IS DISTINCT FROM (to_jsonb(OLD) - 'aviso_recibieron' - 'aviso_cerrado' - 'aviso_tomado_en') THEN
       RAISE EXCEPTION 'cobranza_inmutable';
     END IF;
     RETURN NEW;
@@ -1316,10 +1340,10 @@ $$;
 REVOKE ALL ON FUNCTION cobranza_retenido_reintento(uuid, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION cobranza_retenido_reintento(uuid, text) TO plataforma_cliente;
 
--- r63m: los fallidos de la empresa del contexto cuyo correo a la empresa (decisión de Gil, 2026-11-11) todavía no salió:
--- sin un evento aviso_retenido_fallido_cobranza con enviados > 0. La tarea diaria vuelve a mandarlo con la misma llave.
--- r63n (decisión del líder): solo los envíos que fallaron; si no había a quién mandarlo, el evento lleva su motivo
--- (sin_destinatarios o demostracion) y no se reintenta.
+-- r63m: los fallidos de la empresa del contexto cuyo correo a la empresa (decisión de Gil, 2026-11-11) todavía no le
+-- llegó a todos: la tarea diaria vuelve a mandarlo, solo a quienes faltan. r63o: como máximo 7 días desde que quedó
+-- fallido (después, solo la bandeja de Cumplimiento); sin cerrar (ya le llegó a todos, o es de demostración). Los que
+-- quedaron sin destinatarios siguen aquí esos 7 días: si la empresa nombra a alguien, le llega.
 CREATE FUNCTION cobranza_fallidos_sin_aviso()
 RETURNS TABLE (id uuid, aviso jsonb, tipo text, monto_centavos bigint, recibido_el date)
 LANGUAGE plpgsql STABLE SECURITY DEFINER
@@ -1330,17 +1354,69 @@ BEGIN
     RAISE EXCEPTION 'sin_permiso_para_cobranza';
   END IF;
   RETURN QUERY SELECT h.id, h.aviso, h.tipo, h.monto_centavos, h.recibido_el FROM collection_held_events h
-   WHERE h.company_id = app_empresa() AND h.estado = 'fallido'
-     AND NOT EXISTS (SELECT 1 FROM audit_log a
-                      WHERE a.entidad = 'collection_held_events' AND a.identificador = h.id
-                        AND a.accion = 'aviso_retenido_fallido_cobranza'
-                        AND ((a.cambio->>'enviados')::integer > 0 OR a.cambio ? 'motivo'))
+   WHERE h.company_id = app_empresa() AND h.estado = 'fallido' AND NOT h.aviso_cerrado
+     AND h.procesado_en >= cobranza_retenidos_ahora() - interval '7 days'
    ORDER BY h.procesado_en, h.id;
 END;
 $$;
 
 REVOKE ALL ON FUNCTION cobranza_fallidos_sin_aviso() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION cobranza_fallidos_sin_aviso() TO plataforma_cliente;
+
+-- r63o (r63n-3): reserva el correo de un fallido para mandarlo, en una transacción corta (el envío va fuera de ella).
+-- Devuelve quiénes ya lo recibieron, o nulo si no toca: cerrado, fuera de los 7 días, o reservado por otro hace menos
+-- de una hora (el aviso y la tarea, o dos tareas, no lo mandan a la vez; si quien lo reservó se cayó, la reserva vence).
+CREATE FUNCTION cobranza_tomar_aviso_fallido(p_id uuid)
+RETURNS uuid[]
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  ahora timestamptz := cobranza_retenidos_ahora();
+  tomado timestamptz;
+  recibieron uuid[];
+BEGIN
+  IF app_usuario() IS NOT NULL OR app_empresa() IS NULL THEN
+    RAISE EXCEPTION 'sin_permiso_para_cobranza';
+  END IF;
+  SELECT h.aviso_tomado_en, h.aviso_recibieron INTO tomado, recibieron FROM collection_held_events h
+   WHERE h.id = p_id AND h.company_id = app_empresa() AND h.estado = 'fallido' AND NOT h.aviso_cerrado
+     AND h.procesado_en >= ahora - interval '7 days'
+   FOR UPDATE;
+  IF NOT FOUND OR (tomado IS NOT NULL AND tomado > ahora - interval '1 hour') THEN
+    RETURN NULL;
+  END IF;
+  UPDATE collection_held_events SET aviso_tomado_en = ahora WHERE id = p_id;
+  RETURN recibieron;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION cobranza_tomar_aviso_fallido(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cobranza_tomar_aviso_fallido(uuid) TO plataforma_cliente;
+
+-- r63o: suelta la reserva con lo que resultó: agrega quiénes lo recibieron y, si ya no falta nadie, lo cierra.
+CREATE FUNCTION cobranza_soltar_aviso_fallido(p_id uuid, p_recibieron uuid[], p_cerrar boolean)
+RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF app_usuario() IS NOT NULL OR app_empresa() IS NULL THEN
+    RAISE EXCEPTION 'sin_permiso_para_cobranza';
+  END IF;
+  UPDATE collection_held_events h
+     SET aviso_recibieron = ARRAY(SELECT DISTINCT x FROM unnest(h.aviso_recibieron || coalesce(p_recibieron, '{}')) x ORDER BY x),
+         aviso_cerrado = h.aviso_cerrado OR coalesce(p_cerrar, false),
+         aviso_tomado_en = NULL
+   WHERE h.id = p_id AND h.company_id = app_empresa() AND h.estado = 'fallido';
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'retenido_ya_procesado';
+  END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION cobranza_soltar_aviso_fallido(uuid, uuid[], boolean) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cobranza_soltar_aviso_fallido(uuid, uuid[], boolean) TO plataforma_cliente;
 
 -- La bandeja de Cumplimiento (y Auditoría, que la consulta): los retenidos sin procesar y los fallidos del operador,
 -- sin datos personales del ordenante (monto, fechas, el tipo de aviso y, del fallido, el código del error).
