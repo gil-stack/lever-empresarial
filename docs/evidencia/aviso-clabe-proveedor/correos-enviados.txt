@@ -1,0 +1,46 @@
+Para: gil-pagos@ejemplo.mx
+Asunto: Cambió la CLABE de Cambio Clabe Servicios
+Idempotency-Key: clabe-proveedor/80099992-2f00-40fa-a6f0-641daf22e278/0217cce048fe3e59bbf6d2b625a763c3d929b798eb0821030f6fae13093d7275
+
+Cambió la CLABE de un proveedor.
+
+Cambio Clabe Servicios tiene una nueva CLABE vigente. La anterior permanece en el historial de la empresa.
+
+Si no reconoces este cambio, detén la autorización de pagos pendientes y revisa la actividad de la cuenta.
+
+Empresa: Taller del Cierre
+Proveedor: Cambio Clabe Servicios
+Nueva terminación: •••• 8871
+Fecha del cambio: 11 de noviembre de 2026 a las 11:29 (hora del centro de México)
+
+Revisar expediente:
+http://localhost:3199/c/33333333-3333-4333-8333-333333333333/consola/proveedores?vista=proveedores&proveedor=98eb1e79-f3f7-4381-97d9-f7e97521d4c4
+
+Este aviso nunca incluye la CLABE completa.
+Un pago solicitado antes del cambio debe revisarse de nuevo antes de autorizarse.
+
+LEVER · Finanzas empresariales en orden. Correo automático, no respondas a esta dirección.
+
+----------
+Para: rosa-pagos@ejemplo.mx
+Asunto: Cambió la CLABE de Cambio Clabe Servicios
+Idempotency-Key: clabe-proveedor/80099992-2f00-40fa-a6f0-641daf22e278/424edfb8149ad46e794dffa6cfa0b8ebcf81ff5bbe4ac0c89ca49e545ebbfff1
+
+Cambió la CLABE de un proveedor.
+
+Cambio Clabe Servicios tiene una nueva CLABE vigente. La anterior permanece en el historial de la empresa.
+
+Si no reconoces este cambio, detén la autorización de pagos pendientes y revisa la actividad de la cuenta.
+
+Empresa: Taller del Cierre
+Proveedor: Cambio Clabe Servicios
+Nueva terminación: •••• 8871
+Fecha del cambio: 11 de noviembre de 2026 a las 11:29 (hora del centro de México)
+
+Revisar expediente:
+http://localhost:3199/c/33333333-3333-4333-8333-333333333333/consola/proveedores?vista=proveedores&proveedor=98eb1e79-f3f7-4381-97d9-f7e97521d4c4
+
+Este aviso nunca incluye la CLABE completa.
+Un pago solicitado antes del cambio debe revisarse de nuevo antes de autorizarse.
+
+LEVER · Finanzas empresariales en orden. Correo automático, no respondas a esta dirección.

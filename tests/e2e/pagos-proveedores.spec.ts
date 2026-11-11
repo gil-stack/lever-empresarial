@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 
-import { consultar, contar, dobleClic } from "./apoyo";
+import { consultar, contar, correos, dobleClic } from "./apoyo";
 
 const EMPRESA = "33333333-3333-4333-8333-333333333333";
 const BASE = `/c/${EMPRESA}/consola/proveedores`;
@@ -285,4 +285,40 @@ test("rechazo, corrección y cancelación conservan el historial", async ({ page
   await page.getByRole("button", { name: "Confirmar cancelación" }).click();
   await expect(page.locator(".detalle-cabeza").getByText("Cancelado", { exact: true })).toBeVisible();
   await captura(page, "12-cancelacion-con-historial");
+});
+
+test("cambio de CLABE de un proveedor: avisa por correo a administración y liberación (M-1)", async ({ page }) => {
+  // Proveedor propio de esta prueba: el cambio regresa a revisión los pagos del proveedor y no debe tocar a los demás.
+  await entrar(page);
+  await page.goto(`${BASE}/nuevo-proveedor`);
+  const rfc = `CCC050505CC${Math.floor(Math.random() * 9) + 1}`;
+  const razon = "Cambio Clabe Servicios";
+  await page.getByLabel("RFC", { exact: true }).fill(rfc);
+  await page.getByLabel("Razón social", { exact: true }).fill(razon);
+  await page.getByLabel("Correo de contacto").fill("facturas@cambio-clabe.mx");
+  await page.getByLabel("CLABE", { exact: true }).fill("002180701150123452");
+  await page.locator("#constancia").setInputFiles("tests/e2e/fixtures/soporte-prueba.pdf");
+  await page.locator("#contrato").setInputFiles("tests/e2e/fixtures/soporte-prueba.pdf");
+  await page.getByRole("button", { name: "Dar de alta" }).click();
+  await expect(page.getByText("Quedó asentado", { exact: true })).toBeVisible();
+  const [{ id }] = await consultar<{ id: string }>("select id from suppliers where company_id = $1 and rfc = $2", [EMPRESA, rfc]);
+
+  const antes = correos().length;
+  await page.goto(`${BASE}?vista=proveedores&proveedor=${id}`);
+  const expediente = page.getByRole("dialog", { name: razon });
+  await expect(expediente.getByRole("heading", { name: "Cambiar CLABE", exact: true })).toBeVisible();
+  await expediente.getByLabel("Nueva CLABE", { exact: true }).fill("012180701150998871");
+  await expediente.getByRole("button", { name: "Guardar la CLABE" }).click();
+  // Antes del arreglo la llave de idempotencia llevaba el correo y el enviador la rechazaba: «No salió ningún correo de alerta».
+  await expect(expediente.getByText(/Se avisó por correo a 2 personas\./)).toBeVisible();
+  await expect(expediente.getByText(/No salió ningún correo de alerta/)).toHaveCount(0);
+  await captura(page, "13-cambio-clabe-con-aviso");
+
+  const avisos = correos().slice(antes).filter((correo) => correo.asunto === `Cambió la CLABE de ${razon}`);
+  expect(avisos.flatMap((correo) => correo.para).sort()).toEqual(["gil-pagos@ejemplo.mx", "rosa-pagos@ejemplo.mx"]);
+  for (const aviso of avisos) {
+    expect(aviso.idempotencia).toMatch(/^clabe-proveedor\/[0-9a-f-]{36}\/[0-9a-f]{64}$/);
+    expect(aviso.texto).toContain("•••• 8871");
+    expect(`${aviso.texto}${aviso.html}`).not.toContain("012180701150998871");
+  }
 });
