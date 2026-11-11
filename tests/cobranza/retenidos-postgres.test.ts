@@ -19,7 +19,9 @@ import { leerBandejaCumplimiento } from "../../src/server/operacion/cumplimiento
 import { decidirCambioDeSuspension, solicitarCambioDeSuspension } from "../../src/server/operacion/suspensiones.ts";
 import { contextoDePersonal } from "../../src/server/plataforma/servicio.ts";
 import { personal, SESION_SOFIPO } from "../operacion/apoyo-alta-regulada.ts";
-import { administrador, CLABE_EMPRESA, contar, HOY, reloj, sembrarPersonal } from "./siembra.ts";
+import { administrador, CLABE_EMPRESA, contar, HOY, persona, reloj, sembrarPersonal } from "./siembra.ts";
+import { nombrarCentro } from "../../src/server/personas/servicio.ts";
+import type { MensajeCorreo } from "../../src/server/correo/tipos.ts";
 import { aplicarArchivo, conBaseDesechable, consultarJson, ejecutar, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
 
 /**
@@ -277,12 +279,32 @@ async function escenario(url: string): Promise<void> {
 
     // r63j-N1 b) Un retenido envenenado seguido de uno legítimo: el primero queda «fallido» con su motivo, a la vista de
     //    Cumplimiento, y el segundo se aplica. Antes el primero lanzaba y el segundo no se aplicaba nunca.
+    //    Decisión de Gil (2026-11-11): el fallido se avisa por correo a administración y finanzas de la empresa, y a
+    //    nadie más (ni a la contadora de Alfa, ni a Beta, ni al personal de Lever).
+    const centroAlfa = await nombrarCentro(alfa.admin, { nombre: "Administración" }, { ahora: HOY });
+    await persona(url, alfa.admin, centroAlfa.id, "Fina Finanzas", "finanzas-alfa-retenidos@ejemplo.mx", ["tarjetahabiente", "finanzas"]);
+    await persona(url, alfa.admin, centroAlfa.id, "Cora Contadora", "contadora-alfa-retenidos@ejemplo.mx", ["contador"]);
+    const buzon: MensajeCorreo[] = [];
+    const alBuzon = () => async (m: MensajeCorreo) => { buzon.push(m); return { id: randomUUID() }; };
     await cambiar(alfa.id, "suspension");
     retenidoFallido(alfa.id, "evt_Envenenado01");
     assert.deepEqual(await avisar(abono(alfa, 55_500, { referencia: null })), { estado: 200, cuerpo: { ok: true, efecto: "retenido" } });
     await cambiar(alfa.id, "reactivacion");
-    assert.equal(await procesarRetenidos(alfa.id, operador, { auditar }), 2);
+    assert.equal(await procesarRetenidos(alfa.id, operador, { auditar, enviador: alBuzon, urlPublica: () => "https://lever.ejemplo.mx" }), 2);
     assert.equal(cuenta(`select count(*) from collection_held_events where company_id = '${alfa.id}' and estado = 'fallido' and motivo = 'aviso_ilegible'`), 1);
+    const avisos = buzon.filter((m) => m.asunto.startsWith("Un depósito de $77.00 no se registró solo"));
+    assert.deepEqual(avisos.map((m) => m.para).sort(), ["admin-tcm010101ab1@ejemplo.mx", "finanzas-alfa-retenidos@ejemplo.mx"]);
+    assert.equal(buzon.length, 2, "nadie más recibe el aviso");
+    const correo = avisos[0]!;
+    assert.match(correo.texto, /\$77\.00/);
+    assert.match(correo.texto, /10 de noviembre de 2026/);
+    assert.match(correo.texto, /El dinero sí está en tu cuenta/);
+    assert.match(correo.texto, /Regístralo a mano/);
+    assert.doesNotMatch(correo.texto + correo.html, /aviso_ilegible|Ordenante|base_no_disponible/);
+    assert.equal(cuenta(`select count(*) from audit_log where company_id = '${alfa.id}' and accion = 'aviso_retenido_fallido_cobranza' and cambio->>'enviados' = '2'`), 1);
+    // Una segunda corrida no lo reenvía: el fallido ya no se procesa.
+    assert.equal(await procesarRetenidos(alfa.id, operador, { auditar, enviador: alBuzon }), 0);
+    assert.equal(buzon.length, 2);
     assert.equal(cuenta(`select count(*) from collection_held_events where company_id = '${alfa.id}' and estado = 'procesado' and monto_centavos = 55500`), 1);
     assert.equal(cuenta(`select count(*) from collection_payments where company_id = '${alfa.id}' and monto_centavos = 55500`), 1);
     assert.equal(cuenta(`select count(*) from audit_log where company_id = '${alfa.id}' and accion = 'retenido_fallido_cobranza'`), 1);
@@ -297,6 +319,13 @@ async function escenario(url: string): Promise<void> {
     assert.equal(tarea.fallidas, 0, JSON.stringify(tarea));
     assert.ok(cuenta(`select count(*) from collection_charges where company_id = '${beta.id}'`) > cargosAntes, "la tarea generó los cargos de beta");
     assert.equal(cuenta(`select count(*) from collection_held_events where company_id = '${beta.id}' and estado = 'fallido'`), 1);
+    // Si el envío del aviso falla, el retenido sigue fallido y la bitácora dice que salieron 0 correos.
+    retenidoFallido(beta.id, "evt_Envenenado03");
+    const caido = () => async () => { throw new Error("el proveedor de correo no respondió"); };
+    assert.equal(await procesarRetenidos(beta.id, operador, { auditar, enviador: caido, urlPublica: () => "https://lever.ejemplo.mx" }), 1);
+    assert.equal(cuenta(`select count(*) from collection_held_events where evento_id = 'evt_Envenenado03' and estado = 'fallido'`), 1);
+    assert.equal(cuenta(`select count(*) from audit_log a join collection_held_events h on h.id = a.identificador
+      where h.evento_id = 'evt_Envenenado03' and a.accion = 'aviso_retenido_fallido_cobranza' and a.cambio->>'enviados' = '0'`), 1);
 
     // r63j-N2 a) El aviso toma el candado y retiene (la empresa sigue suspendida) mientras la reactivación espera ese
     //    mismo candado: al reactivar, el retenido ya está ahí y se aplica. Antes el aviso revisaba en una transacción y
@@ -379,6 +408,9 @@ async function escenario(url: string): Promise<void> {
 
     // r63k-N2 b) Un error de datos de la base también llega como base_no_disponible: se reintenta y al quinto intento
     //    queda fallido, así que no frena para siempre a los que vienen detrás.
+    // Con un reloj que avanza una hora en cada intento (r63l-N1: se cuenta uno por hora), solo en esta base desechable.
+    ejecutar(url, `create sequence reloj_retenidos; create or replace function cobranza_retenidos_ahora() returns timestamptz
+      language sql volatile set search_path = public, pg_temp as $f$ select now() + nextval('reloj_retenidos') * interval '1 hour' $f$;`);
     retenidoFallido(beta.id, "evt_FechaImposible01", "fecha");
     for (let i = 1; i <= 4; i += 1) {
       await assert.rejects(() => procesarRetenidos(beta.id, operador, { auditar }), codigo("base_no_disponible"));
@@ -386,6 +418,25 @@ async function escenario(url: string): Promise<void> {
     }
     assert.equal(await procesarRetenidos(beta.id, operador, { auditar }), 1);
     assert.equal(cuenta(`select count(*) from collection_held_events where evento_id = 'evt_FechaImposible01' and estado = 'fallido' and motivo = 'base_no_disponible' and intentos = 5`), 1);
+    ejecutar(url, `create or replace function cobranza_retenidos_ahora() returns timestamptz
+      language sql stable set search_path = public, pg_temp as $f$ select now() $f$; drop sequence reloj_retenidos;`);
+
+    // r63l-N1: una contención breve no quema los cinco intentos. Cinco avisos nuevos de la empresa en menos de un
+    //    minuto, con la bitácora sin responder (como la fila del cargo tomada más que el statement_timeout): cada uno
+    //    responde 500 para que Fintoc reintente, y el retenido sigue pendiente con un solo intento. Cuando la falla pasa,
+    //    el siguiente aviso lo aplica primero. Antes quedaba fallido al quinto aviso, con un abono que no tenía nada malo.
+    await cambiar(beta.id, "suspension");
+    assert.equal((await avisar(abono(beta, 1_600, { referencia: null }))).cuerpo.efecto, "retenido");
+    await cambiar(beta.id, "reactivacion");
+    const sinBitacora = { ...depsAviso, auditar: (async () => { throw new ErrorDeDominio("auditoria_no_disponible"); }) as typeof auditar };
+    for (let i = 0; i < 5; i += 1) {
+      const cuerpoNuevo = abono(beta, 1_700 + i, { referencia: null });
+      await assert.rejects(() => atenderAviso(new TextEncoder().encode(cuerpoNuevo), firmar(cuerpoNuevo, configFintoc.secretoWebhook, ahoraSeg), sinBitacora), codigo("auditoria_no_disponible"));
+    }
+    assert.equal(cuenta(`select count(*) from collection_held_events where company_id = '${beta.id}' and estado = 'retenido' and monto_centavos = 1600 and intentos = 1`), 1);
+    assert.equal((await avisar(abono(beta, 1_800, { referencia: null }))).cuerpo.efecto, "registrado");
+    assert.equal(cuenta(`select count(*) from collection_held_events where company_id = '${beta.id}' and monto_centavos = 1600 and estado = 'procesado' and efecto = 'registrado'`), 1);
+    assert.equal(cuenta(`select count(*) from collection_payments where company_id = '${beta.id}' and monto_centavos = 1600`), 1);
 
     // r63k-N1: la decisión de suspender contra el alta de un proveedor de la misma empresa con una coincidencia abierta
     //    (candado de la empresa → lpb_cotejar_empresa, que escribe la fila de companies), en los dos órdenes, con dos

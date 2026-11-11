@@ -153,6 +153,42 @@ export function plantillaAvisoDevolucionCobranza(d: { razonSocial: string; clien
   });
 }
 
+/**
+ * Aviso interno (decisión de Gil, 2026-11-11): un aviso de Fintoc retenido mientras la empresa estuvo suspendida no se
+ * pudo registrar solo (quedó «fallido»). El dinero ya está en su cuenta; lo registran a mano. Sin datos del ordenante
+ * ni el código del error, que se quedan en la bitácora.
+ */
+export function plantillaAvisoRetenidoFallidoCobranza(d: {
+  razonSocial: string; devolucion: boolean; monto: string; fecha: string; referencia: string | null; enlace: string;
+}): CorreoPlantilla {
+  const conReferencia = d.referencia ? ` con la referencia ${d.referencia}` : "";
+  const notas = ["Recibes este aviso porque administras o llevas las finanzas de la empresa en Lever."];
+  if (d.devolucion) {
+    return armarCorreo(`Una devolución de ${d.monto} no se registró sola · ${d.razonSocial}`, {
+      preencabezado: `Fintoc avisó una devolución de ${d.monto} que Lever no pudo registrar sola en la cobranza.`,
+      kicker: "Cobranza",
+      titulo: `Una devolución de ${d.monto} no se registró sola`,
+      parrafos: [
+        `El ${d.fecha}, Fintoc avisó que ${d.razonSocial} devolvió al ordenante un abono de ${d.monto}${conReferencia}. Lever lo guardó mientras la empresa estuvo suspendida y después no pudo registrarlo solo en la cobranza.`,
+        "Revisa ese pago en la cobranza: si sigue aplicado a un cargo, reviértelo para que el cargo vuelva a quedar pendiente.",
+      ],
+      boton: { texto: "Ir a la cobranza", url: d.enlace },
+      notas,
+    });
+  }
+  return armarCorreo(`Un depósito de ${d.monto} no se registró solo · ${d.razonSocial}`, {
+    preencabezado: `El dinero sí llegó a tu cuenta. Regístralo a mano para que se detengan los recordatorios.`,
+    kicker: "Cobranza",
+    titulo: `Llegó un depósito de ${d.monto} que no se registró solo`,
+    parrafos: [
+      `El ${d.fecha} llegó a la cuenta de cobranza de ${d.razonSocial} un depósito de ${d.monto}${conReferencia}. El dinero sí está en tu cuenta, pero Lever no pudo registrarlo solo en la cobranza: lo guardó mientras la empresa estuvo suspendida y después no pudo aplicarlo.`,
+      "Regístralo a mano en el cargo que corresponde («Registrar pago») para que Lever deje de mandarle recordatorios a tu cliente. Si ya lo registraste, no hace falta nada más.",
+    ],
+    boton: { texto: "Ir a la cobranza", url: d.enlace },
+    notas,
+  });
+}
+
 /** Aviso interno: un cliente pidió no recibir recordatorios desde su enlace. */
 export function plantillaAvisoSinRecordatorios(d: { razonSocial: string; cliente: string; enlace: string }): CorreoPlantilla {
   return armarCorreo(`${d.cliente} pidió no recibir recordatorios · ${d.razonSocial}`, {
