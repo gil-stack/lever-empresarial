@@ -1,0 +1,33 @@
+test:db sobre 51faf5a: rojo en el CI (w1sASlRWGRZYCX0wFSYcpvXh, 107/122) y verde con el arreglo (122/122).
+
+1) pld-postgres.test.ts:174 — la 0030 redefine companies_candado_regulado() con SET search_path = public, pg_temp (r65-N1).
+   La prueba comparaba el texto contra la 0028 (que sigue con public). Ahora exige pg_temp y que sea el único otro cambio.
+   Las 11 siguientes de ese archivo eran cascada: alfa y beta quedaban en "" (invalid input syntax for type uuid).
+2) permisos de las funciones de PLD — mismo conjunto, distinto orden: el contenedor del CI ordena con en_US.utf8 (ignora '_')
+   y el Postgres local con C. Ahora array_agg ordena con collate "C". Orden del CI reproducido con ICU ka-shifted:
+   {pld_caso_me_excluye(uuid),pld_casos_que_me_excluyen(),pld_caso_vence(uuid),pld_sesiones_que_me_excluyen(),pld_sesion_excluye_a(uuid,uuid),pld_sesion_me_excluye(uuid)}
+3) migracion-postgres.test.ts:107 (2 pruebas) — en CI psql es scripts/ci/bin/psql (docker exec, -w /work): no ve el guion
+   escrito en el temporal del anfitrión ni el \i con ruta absoluta. Ahora el guion va por stdin y el \i es relativo a la raíz.
+   Rojo/verde local con un psql que imita al contenedor (rechaza rutas fuera del repo):
+
+--- rojo (código de 51faf5a)
+✖ 0030 sobre una base en uso: lock_timeout de 2 s desde su primera sentencia (13739.563041ms)
+ℹ pass 0
+ℹ fail 2
+✖ failing tests:
+✖ una lectura larga de audit_log: una escritura normal espera a lo más unos 2 s, la 0030 se deshace completa y se reintenta (6737.568583ms)
+  AssertionError [ERR_ASSERTION]: la migración espera el candado que tiene la transacción larga
+✖ una escritura larga abierta en companies: una escritura normal espera a lo más unos 2 s, la 0030 se deshace completa y se reintenta (7001.213ms)
+  AssertionError [ERR_ASSERTION]: la migración espera el candado que tiene la transacción larga
+
+--- verde (arreglo)
+  ℹ la escritura normal esperó 1983 ms; la migración: psql:db/migrations/0030_pld_alertas_reportes.sql:3311: ERROR:  canceling statement due to lock timeout
+  ℹ la escritura normal esperó 1983 ms; la migración: psql:db/migrations/0030_pld_alertas_reportes.sql:355: ERROR:  canceling statement due to lock timeout
+✔ 0030 sobre una base en uso: lock_timeout de 2 s desde su primera sentencia (7632.919209ms)
+ℹ pass 2
+ℹ fail 0
+
+--- test:db completo, 19 archivos en serie, psql tipo contenedor
+ℹ tests 122
+ℹ pass 122
+ℹ fail 0

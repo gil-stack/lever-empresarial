@@ -1,0 +1,16 @@
+registros: 19; «listos» observados [50, 50, 51, 51, 52, 52, 52, 53, 53, 54, 60, 63, 67, 68, 69, 70, 80, 82, 88] → uso 88 s; cierre 45 s
+--- 5 partes
+parte 1: 23 pruebas, máx. 307 s de pruebas → ≈ 440 s · {'entrada.spec.ts': 2, 'flujo-de-caja.spec.ts': 6, 'invitacion.spec.ts': 2, 'marco.spec.ts': 4, 'nomina.spec.ts': 3, 'operacion.spec.ts': 6}
+parte 2: 13 pruebas, máx. 306 s de pruebas → ≈ 439 s · {'operacion.spec.ts': 13}
+parte 3: 17 pruebas, máx. 293 s de pruebas → ≈ 426 s · {'operacion.spec.ts': 17}
+parte 4: 28 pruebas, máx. 396 s de pruebas → ≈ 529 s · {'pagos-proveedores.spec.ts': 7, 'passkeys.spec.ts': 2, 'personas.spec.ts': 1, 'pld.spec.ts': 18}
+parte 5: 6 pruebas, máx. 31 s de pruebas → ≈ 164 s · {'roles.spec.ts': 6}
+peor parte con 5: ≈ 529 s
+--- 6 partes
+parte 1: 17 pruebas, máx. 287 s de pruebas → ≈ 420 s · {'entrada.spec.ts': 2, 'flujo-de-caja.spec.ts': 6, 'invitacion.spec.ts': 2, 'marco.spec.ts': 4, 'nomina.spec.ts': 3}
+parte 2: 15 pruebas, máx. 232 s de pruebas → ≈ 365 s · {'operacion.spec.ts': 15}
+parte 3: 15 pruebas, máx. 278 s de pruebas → ≈ 411 s · {'operacion.spec.ts': 15}
+parte 4: 13 pruebas, máx. 280 s de pruebas → ≈ 413 s · {'operacion.spec.ts': 6, 'pagos-proveedores.spec.ts': 7}
+parte 5: 21 pruebas, máx. 226 s de pruebas → ≈ 359 s · {'passkeys.spec.ts': 2, 'personas.spec.ts': 1, 'pld.spec.ts': 18}
+parte 6: 6 pruebas, máx. 31 s de pruebas → ≈ 164 s · {'roles.spec.ts': 6}
+peor parte con 6: ≈ 420 s

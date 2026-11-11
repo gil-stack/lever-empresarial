@@ -1,0 +1,11 @@
+== C1 cruzado (la que empezó antes espera el candado)
+   operaciones (hora de now() de cada transacción): [{"m":"4000000","t":"08:36:55.614"},{"m":"4000000","t":"08:36:55.672"},{"m":"4000000","t":"08:36:55.877"}]
+   suma $120,000.00 en 3 instrucciones bajo $100,000.00 a la misma CLABE → alertas: [{"regla":"fraccionamiento","n":"3","suma":"12000000"}]
+== C2 control (sin cruce)
+   operaciones (hora de now() de cada transacción): [{"m":"4000000","t":"08:36:55.899"},{"m":"4000000","t":"08:36:55.923"},{"m":"4000000","t":"08:36:55.961"}]
+   suma $120,000.00 en 3 instrucciones bajo $100,000.00 a la misma CLABE → alertas: [{"regla":"fraccionamiento","n":"3","suma":"12000000"}]
+== C3. sumar una alerta al caso mientras se registra el dictamen (dos personas de Cumplimiento)
+   ¿la suma de CUM2 espera un candado advisory mientras CUM no confirma? true
+   CUM2 suma la alerta B mientras CUM dictamina → caso_ya_dictaminado
+   alertas del caso: [ { es_b: false, despues_del_dictamen: false } ]
+   el dictamen (no_reportar) cubre ahora una alerta que nadie analizó; la bandeja ya no la muestra: sigue sin caso

@@ -1,0 +1,4 @@
+# r2-fix3-N2: cada mitad del arreglo quitada por separado; la prueba «votos de la sesión oculta» cae en las dos (exit 1).
+# N2a: la bitácora de E2 para CUM2 vuelve a traer los votos (línea 1894). N2b: CUM2 vuelve a leer los votos de K2 (línea 1899).
+N2a sin los votos en pld_ids_que_me_excluyen (bitácora y manifiesto) · db/migrations/0030_pld_alertas_reportes.sql: exit 1 · cae «votos de la sesión oculta (r2-fix3-N2): quien la sesión excluye no ve los votos que registró sobre un caso que sí ve» · líneas ['101', '1832', '1894'] · ['AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:']
+N2b sin la sesión en pld_votos_lectura (votos) · db/migrations/0030_pld_alertas_reportes.sql: exit 1 · cae «votos de la sesión oculta (r2-fix3-N2): quien la sesión excluye no ve los votos que registró sobre un caso que sí ve» · líneas ['101', '1832', '1899'] · ['AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:']

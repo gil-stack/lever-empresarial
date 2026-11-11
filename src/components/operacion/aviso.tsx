@@ -3,6 +3,7 @@ import { TOPE_ARCHIVO_TEXTO } from "@/dominio/archivos";
 import { deCatalogo } from "@/dominio/catalogo";
 
 import { MensajeJuntoAlCampo } from "./mensaje-junto-al-campo";
+import { ASENTADOS_PLD, CAMPO_PLD, CAMPOS_CON_AVISO_PLD, MENSAJES_PLD } from "./pld/avisos";
 
 const ID_AVISO = "aviso-operacion";
 /** El aviso de un rechazo cuyo formulario ya no se pinta (`AvisoSinFormulario`): sin campo al lado, siempre se anuncia. */
@@ -140,6 +141,8 @@ const MENSAJES: Record<string, string> = {
   activacion_con_coincidencia_lpb: "Cumplimiento tiene un caso abierto de esta empresa: no se puede activar hasta que lo resuelva.",
   activacion_sin_riesgo_vigente: "La base no deja activar: falta un grado de riesgo vigente.",
   activacion_sin_estructura_corporativa: "La base no deja activar: falta desglosar la estructura accionaria hasta personas físicas.",
+  activacion_sin_perfil_transaccional:
+    "La base no deja activar: falta el perfil transaccional declarado (montos y número de operaciones estimados al mes).",
   sin_rol_para_solicitar_activacion: "Pedir la activación es de Originación.",
   sin_rol_para_registrar: "Registrar prospectos es de Originación.",
   empresa_suspendida: "La empresa está suspendida: no se puede mover dinero ni cambiar nada hasta que se reactive.",
@@ -167,6 +170,7 @@ const MENSAJES: Record<string, string> = {
   invisible_razonSocial: "La razón social trae un carácter invisible, algo común al copiar y pegar. Escríbela de nuevo a mano.",
   invisible_folio: "El folio trae un carácter invisible, algo común al copiar y pegar. Escríbelo de nuevo a mano.",
   expediente_estructura_muy_profunda: "La cadena de socios pasa de 10 capas: el cálculo de propietarios reales no llega al final. Revísala con Cumplimiento.",
+  ...MENSAJES_PLD,
 };
 
 /** El campo que causó cada error: el aviso se liga a ese campo con aria-describedby. */
@@ -204,6 +208,7 @@ const CAMPO: Record<string, string> = {
   codigo_postal_invalido: "codigoPostal",
   regimen_invalido: "regimen",
   uso_cfdi_invalido: "usoCfdi",
+  ...CAMPO_PLD,
 };
 
 /** Los avisos de algo que sí quedó hecho. Cualquier otro código (un rechazo o algo por revisar) se anuncia como alerta. */
@@ -233,6 +238,7 @@ const ASENTADOS: ReadonlySet<string> = new Set([
   "reporte_registrado",
   "suspension_solicitada",
   "reactivacion_solicitada",
+  ...ASENTADOS_PLD,
 ]);
 
 export function tonoDelAviso(codigo: string): "asentado" | "revisar" {
@@ -253,6 +259,7 @@ const CAMPOS_CON_AVISO = new Set([
   "actividad", "archivo", "avisoClienteEl", "capital", "cargo", "curp", "designadoPor", "detalle", "documentoExtranjero",
   "emitidoEl", "estado", "fechaNacimiento", "folio", "nombre", "padreClave", "pais", "pep", "presentadoEl",
   "representanteClave", "resultado", "tipo", "tipoPersona", "titulo", "vigenteHasta", "votos", "zona",
+  ...CAMPOS_CON_AVISO_PLD,
 ]);
 
 /**
@@ -275,7 +282,7 @@ function avisoPintable(codigo: string): boolean {
   return codigo.length <= 80 && /^[a-z][a-z0-9]*(?:_[a-zA-Z0-9]+)*$/.test(codigo);
 }
 
-function textoDelAviso(codigo: string): string {
+export function textoDelAviso(codigo: string): string {
   return (
     deCatalogo(MENSAJES, codigo) ??
     (codigo.startsWith("dato_invalido_") ? "Revisa el campo marcado: el dato no tiene el formato esperado." : null) ??
@@ -295,6 +302,8 @@ export function AvisoOperacion({ codigo, detalle, id = ID_AVISO }: { codigo?: st
     // `data-aviso`: el código, como el de la dirección (?aviso=), para el recorrido de evidencia y el soporte. Uno que no
     // es del catálogo no se copia a la página.
     <div id={id} className="operacion-aviso" data-aviso={avisoConocido(codigo) ? codigo : "desconocido"}>
+      {/* El destino del fragmento de la vuelta sin JavaScript (`permalinkDelRechazo`) cuando el error no es de un campo. */}
+      {id !== ID_AVISO && id !== ID_AVISO_RECHAZO && !avisoDeCampo(codigo) ? <span id={`${id}-campo`} className="destino-del-rechazo" /> : null}
       <Aviso tono={tonoDelAviso(codigo)} titulo={mensaje} anunciar={id === ID_AVISO || id === ID_AVISO_RECHAZO || !avisoDeCampo(codigo)}>
         {detalle ? <p>{detalle}</p> : null}
       </Aviso>
@@ -303,23 +312,44 @@ export function AvisoOperacion({ codigo, detalle, id = ID_AVISO }: { codigo?: st
 }
 
 /**
- * Si el error es de un campo: `errorDelCampo` lo marca y le da el foco, y el resumen de su formulario se pinta sin región
- * viva (el campo con el foco ya lo anuncia). Ninguna dirección de Operación lleva fragmento (`#seccion`): con un destino
- * de fragmento, el navegador descarta el `autofocus` al cargar la página completa y el foco no llega (ver `listo` en
- * acciones-alta.ts e `idDeAncla`).
+ * Si el error es de un campo: `errorDelCampo` lo marca, el formulario le da el foco con JavaScript, y el resumen de su
+ * formulario se pinta sin región viva (el campo con el foco ya lo anuncia).
  */
 export function avisoDeCampo(codigo: string): boolean {
   return Object.hasOwn(CAMPO, codigo) || /^(dato_invalido|invisible)_/.test(codigo);
 }
 
 /**
- * Marca un campo como inválido, lo liga a su mensaje (`MensajeDelCampo`) y le da el foco cuando el error es suyo. `dato_invalido_<campo>`
+ * Marca un campo como inválido y lo liga a su mensaje (`MensajeDelCampo`) cuando el error es suyo. `dato_invalido_<campo>`
  * e `invisible_<campo>` son de ese campo. Un formulario que muestra su propio aviso (sin recargar la página) pasa
- * el id de ese aviso.
+ * el id de ese aviso. Sin `autofocus`: con JavaScript el formulario le da el foco al campo marcado (useFormularioConAviso
+ * y useConservaLoCapturado); sin JavaScript la respuesta llega al mensaje por su fragmento (`permalinkDelRechazo`).
  */
 export function errorDelCampo(codigo: string | null | undefined, campo: string, idAviso = ID_AVISO) {
   if (!esDelCampo(codigo, campo)) return {};
-  return { "aria-invalid": true, "aria-describedby": `${idAviso}-campo`, autoFocus: true } as const;
+  return { "aria-invalid": true, "aria-describedby": `${idAviso}-campo` } as const;
+}
+
+/**
+ * El `permalink` de `useActionState` de un formulario de Operación: sin JavaScript, el envío va a la misma dirección con
+ * el fragmento del mensaje del error (`#<idAviso>-campo`, o el destino del aviso si el error no es de un campo). El
+ * navegador alinea ese destino arriba respetando su `scroll-margin-top` (operacion.css: el alto de las barras más un
+ * respiro), y desde ahí el primer Tab entra al campo. Antes era el `autofocus`, cuyo desplazamiento depende del motor:
+ * con el Chromium de swiftshader del recorrido lo dejaba bajo la barra (docs/evidencia/ola-r2-pld/sexta). La llave del
+ * estado pasa a ser este permalink: cada formulario repetido en una página lleva su propio idAviso. Con JavaScript no
+ * tiene efecto.
+ */
+export function permalinkDelRechazo(idAviso: string): string {
+  return `#${idAviso}-campo`;
+}
+
+/**
+ * Lo mismo para las páginas que marcan el campo con el aviso de la dirección (`?aviso=…&en=…`, tras una redirección):
+ * si el error es de un campo, la redirección lleva el fragmento de su mensaje (`MensajeDelCampo` con el id de la página);
+ * si no, ninguno y el aviso queda arriba de la página. Es el único fragmento que una dirección de Operación puede llevar.
+ */
+export function fragmentoDelError(codigo: string): string {
+  return avisoDeCampo(codigo) ? `#${ID_AVISO}-campo` : "";
 }
 
 /**

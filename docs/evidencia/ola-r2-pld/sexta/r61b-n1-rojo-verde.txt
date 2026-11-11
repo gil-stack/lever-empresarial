@@ -1,0 +1,11 @@
+r61b-N1: la segunda pestaña que marca el caso como de 24 horas con otro motivo.
+Prueba: tests/pld/pld-postgres.test.ts, junto a la marca de 24 horas de casoW.
+
+--- rojo (código de f1711c5)
+ℹ pass 20
+ℹ fail 8
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+
+--- verde
+ℹ pass 28
+ℹ fail 0

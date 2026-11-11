@@ -1,0 +1,72 @@
+r2-serv-N23 y r2-serv-N24 — manifiesto de conservación por páginas. tests/pld/pld-postgres.test.ts y tests/e2e/pld.spec.ts
+Fecha: 2026-11-10 16:15 +0800. Postgres 17 desechable en 5553, e2e en 3153.
+
+N23: el cursor «siguiente.despues_en» salía de Date (milisegundos). Con documentos en el mismo milisegundo que el último
+de una página, la siguiente los repetía. Ahora es el texto de la base con sus microsegundos (to_char …US) y vuelve como
+$4::timestamptz, sin pasar por Date. Prueba: 2,004 documentos, uno por microsegundo, encadenando todas las páginas.
+N24: página y cursor se revisan antes de la base (paginaYCursor): página entera de 1 a 999,999,999; la 1 sin cursor;
+de la 2 en adelante, fecha y hora con hasta 6 decimales y fecha de calendario real, y documento UUID. Cada rechazo marca
+su campo en Conservación (manifiesto_pagina_invalida, manifiesto_despues_en_invalido, manifiesto_despues_id_invalido)
+y no deja evento en la bitácora.
+
+== rojo N23 · test:db con el cursor de antes (despues_en: fecha(ultimo.cargado_en).toISOString())
+ℹ pass 26
+ℹ fail 2
+✖ manifiesto por páginas (r2-serv-N23 y N24): el cursor lleva los microsegundos, cada documento sale una vez, y página y cursor se revisan antes de la base (37.343ms)
+  AssertionError [ERR_ASSERTION]: ningún documento sale dos veces
+  
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 3003,
+    expected: 2004,
+    operator: 'strictEqual',
+    diff: 'simple'
+    ✔ manifiesto de conservación: conteos y huellas en streaming, con su evento por página (122.153292ms)
+
+== rojo N24 · test:db sin paginaYCursor (la página inválida cae a 1 y el cursor va tal cual)
+ℹ pass 26
+ℹ fail 2
+✖ manifiesto por páginas (r2-serv-N23 y N24): el cursor lleva los microsegundos, cada documento sale una vez, y página y cursor se revisan antes de la base (46.317667ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection: 0 null
+    actual: undefined,
+    expected: /^ErrorDeDominio: manifiesto_pagina_invalida$|manifiesto_pagina_invalida/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+    ✔ manifiesto de conservación: conteos y huellas en streaming, con su evento por página (96.753334ms)
+
+== verde · test:db
+ℹ pass 28
+ℹ fail 0
+    ✔ manifiesto de conservación: conteos y huellas en streaming, con su evento por página (100.315875ms)
+    ✔ manifiesto por páginas (r2-serv-N23 y N24): el cursor lleva los microsegundos, cada documento sale una vez, y página y cursor se revisan antes de la base (50.163458ms)
+
+== rojo N24 · e2e sin paginaYCursor
+  ✘   7 tests/e2e/pld.spec.ts:221:7 › sin JavaScript › sin JavaScript, una página o un cursor que no sirven vuelven con el aviso en su campo, el foco ahí y sin descarga (333ms)
+    Error: manifiesto_pagina_invalida
+    Expected: 303
+    Received: 200
+  1 failed
+  11 did not run
+  6 passed (14.9s)
+
+== verde · e2e
+  ✓   1 tests/e2e/pld.spec.ts:19:5 › perfil transaccional: Originación lo declara con doble clic y Aprobación lo ve sin alertas ni casos (1.8s)
+  ✓   2 tests/e2e/pld.spec.ts:49:5 › aviso del personal: confidencial; Cumplimiento abre el caso y agrega una nota; Aprobación no ve PLD (2.1s)
+  ✓   3 tests/e2e/pld.spec.ts:92:5 › una clave repetida en la dirección no tumba ninguna página de PLD (2.3s)
+  ✓   4 tests/e2e/pld.spec.ts:112:7 › sin JavaScript › sin JavaScript, agregar una nota al caso responde 303 con su aviso (253ms)
+  ✓   5 tests/e2e/pld.spec.ts:133:7 › sin JavaScript › sin JavaScript, un rechazo de PLD conserva lo escrito, con el foco y su mensaje junto al campo: clave CASFIM, nota y RFC del auditor, a 1440 y 390 (987ms)
+  ✓   6 tests/e2e/pld.spec.ts:195:7 › sin JavaScript › sin JavaScript, el manifiesto con un periodo al revés vuelve con lo elegido, sin fragmento y con el foco en el periodo (257ms)
+  ✓   7 tests/e2e/pld.spec.ts:221:7 › sin JavaScript › sin JavaScript, una página o un cursor que no sirven vuelven con el aviso en su campo, el foco ahí y sin descarga (546ms)
+  ✓   8 tests/e2e/pld.spec.ts:260:7 › sin JavaScript › sin JavaScript, quien entra al perfil por un enlace de la bandeja y ve su formulario rechazado tiene el foco en el campo (642ms)
+  ✓   9 tests/e2e/pld.spec.ts:322:5 › Comité: un caso con reserva no se vota en la sesión de un caso sin reserva, y la pantalla no dice por qué (3.9s)
+  ✓  10 tests/e2e/pld.spec.ts:435:5 › r2-serv-N20 con JavaScript: tras agregar una nota, la propuesta rechazada quita el aviso de la nota y deja el foco en su campo (1.2s)
+  ✓  11 tests/e2e/pld.spec.ts:465:7 › doceava del #59 sin JavaScript, antes de cambiar quién dictamina › r2-serv-N20 sin JavaScript: tras agregar una nota, la propuesta rechazada no pinta el aviso de la nota y deja el foco en su campo (367ms)
+  ✓  12 tests/e2e/pld.spec.ts:481:7 › doceava del #59 sin JavaScript, antes de cambiar quién dictamina › B5 sin JavaScript: llegando por #evaluacion-titulo, #sesiones-titulo, #comunicaciones-titulo y #reporte-<r>-<p>, el rechazo deja el foco en su campo (861ms)
+  ✓  13 tests/e2e/pld.spec.ts:539:7 › doceava del #59 sin JavaScript, antes de cambiar quién dictamina › r2-serv-N22 sin JavaScript: con tope + 1 en nota, aviso, área, cargo, nombres y nombre del auditor, el aviso dice el rango (1.2s)
+  ✓  14 tests/e2e/pld.spec.ts:641:5 › quién dictamina: Cumplimiento elige al Oficial para los dictámenes que siguen (831ms)
+  ✓  15 tests/e2e/pld.spec.ts:651:5 › r2-serv-N21 con JavaScript: el dictamen y la constancia 38ª que otra pestaña ya registró se rechazan con el aviso arriba (2.5s)
+  ✓  16 tests/e2e/pld.spec.ts:671:7 › doceava del #59 sin JavaScript, con el Oficial dictaminando › r2-serv-N21 sin JavaScript: el dictamen y la constancia 38ª que otra pestaña ya registró se rechazan con el aviso arriba (636ms)
+  ✓  17 tests/e2e/pld.spec.ts:690:7 › doceava del #59 sin JavaScript, con el Oficial dictaminando › B5 sin JavaScript: llegando por #reporte-titulo, el acuse rechazado deja el foco en el folio (252ms)
+  ✓  18 tests/e2e/pld.spec.ts:707:5 › B5 con JavaScript: cada enlace con fragmento de PLD lleva a su sección, sin sufijo (4.4s)
+  18 passed (30.5s)

@@ -1,0 +1,15 @@
+== N4 en el head: avisos abiertos que excluyen a CUM2 (sin caso, sin dictamen o «reportar» sin acuse); ¿se puede suspender o quitarle Cumplimiento a CUM?
+ avisos_abiertos_que_excluyen_a_cum2 
+-------------------------------------
+                                   3
+(1 row)
+
+-- suspender a CUM (dueña):
+psql:<sondas>/n4-baja.sql:7: ERROR:  aviso_sin_analista
+-- quitarle Cumplimiento a CUM (dueña):
+psql:<sondas>/n4-baja.sql:9: ERROR:  aviso_sin_analista
+ estado | roles_cumplimiento 
+--------+--------------------
+ activo |                  1
+(1 row)
+

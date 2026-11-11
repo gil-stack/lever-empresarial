@@ -1,0 +1,20 @@
+# Reparto real de 8 partes (head con el #60 integrado), playwright test --list --shard=N/8 y máximos del CI (#60 + pld.spec de f1711c5 y 798e4a5)
+parte 1/8:  25 pruebas ·  133 s de pruebas · ~223 s · normales después de GPU: 0 · accesibilidad 133
+parte 2/8:  19 pruebas ·  311 s de pruebas · ~401 s · normales después de GPU: 0 · aprobaciones 40, fondo-pruebas.ts 266, brillo-del-fondo 5
+parte 3/8:  26 pruebas ·  313 s de pruebas · ~403 s · normales después de GPU: 0 · fondo-pruebas.ts 5, claves-repetidas 31, csp-evidencia 20, csp 181, demostracion 75
+parte 4/8:  22 pruebas ·  228 s de pruebas · ~319 s · normales después de GPU: 0 · demostracion 27, entrada 40, flujo-de-caja 53, invitacion 42, marco 65
+parte 5/8:  24 pruebas ·  256 s de pruebas · ~346 s · normales después de GPU: 0 · marco 2, nomina 31, operacion 223
+parte 6/8:  20 pruebas ·  333 s de pruebas · ~423 s · normales después de GPU: 0 · operacion 108, fondo-pruebas.ts 225
+parte 7/8:  32 pruebas ·  374 s de pruebas · ~464 s · normales después de GPU: 0 · fondo-pruebas.ts 36, pagos-proveedores 92, passkeys 16, personas 26, pld 203
+parte 8/8:  10 pruebas ·  372 s de pruebas · ~462 s · normales después de GPU: 0 · roles 27, fondo-pruebas.ts 345
+peor parte ~464 s · normales después de una con GPU: 0
+
+# Antes: los archivos del fondo del #60 con 7 partes y pld.spec adentro (mismo método)
+parte 1/7:  25 pruebas ·  133 s de pruebas · ~223 s · normales después de GPU: 0 · accesibilidad 133
+parte 2/7:  29 pruebas ·  309 s de pruebas · ~399 s · normales después de GPU: 0 · aprobaciones 40, claves-repetidas 31, csp-evidencia 20, csp 181, demostracion 36
+parte 3/7:  25 pruebas ·  339 s de pruebas · ~429 s · normales después de GPU: 7 · demostracion 66, entrada 40, flujo-de-caja 53, fondo-pruebas.ts 127, invitacion 42, marco 11
+parte 4/7:  26 pruebas ·  360 s de pruebas · ~450 s · normales después de GPU: 11 · marco 57, fondo-pruebas.ts 242, movimiento-del-fondo 5, nomina 31, operacion 25
+parte 5/7:  24 pruebas ·  276 s de pruebas · ~366 s · normales después de GPU: 0 · operacion 276
+parte 6/7:  38 pruebas ·  645 s de pruebas · ~735 s · normales después de GPU: 29 · operacion 30, fondo-pruebas.ts 278, pagos-proveedores 92, passkeys 16, personas 26, pld 203
+parte 7/7:  11 pruebas ·  258 s de pruebas · ~348 s · normales después de GPU: 0 · roles 27, fondo-pruebas.ts 231
+peor parte ~735 s · normales después de una con GPU: 47

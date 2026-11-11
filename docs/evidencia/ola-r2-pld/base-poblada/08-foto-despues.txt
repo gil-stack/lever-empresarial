@@ -1,0 +1,806 @@
+Pager usage is off.
+== relaciones: dueño y ACL
+relname | relkind | dueno | acl | rls | forzada
+audit_events | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=r/duena} | t | t
+audit_log | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=ar/duena,plataforma_sofipo=ar/duena} | t | t
+auth_codigos_respaldo | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arwd/duena} | t | t
+auth_entradas | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arwd/duena} | t | t
+auth_passkeys | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arwd/duena} | t | t
+auth_recuperaciones | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arwd/duena,plataforma_sofipo=rw/duena} | t | t
+auth_retos | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arwd/duena} | t | t
+auth_totp | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arwd/duena} | t | t
+cash_balance_declarations | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=ar/duena} | t | t
+cash_flow_settings | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+companies | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=r/duena,plataforma_sofipo=arw/duena} | t | t
+company_activation_requests | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=arw/duena} | t | t
+company_commissions | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=arw/duena} | t | t
+company_state_history | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+company_suspensions | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=arw/duena} | t | t
+cost_centers | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+documents | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=ar/duena} | t | t
+drawers | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=r/duena} | t | t
+employee_card_requests | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+employee_payroll_clabes | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+employee_payroll_profiles | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+employees | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+expected_collections | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+invitation_deliveries | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+invitations | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=ar/duena,plataforma_sofipo=ar/duena} | t | t
+kyb_accionistas | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=arw/duena} | t | t
+kyb_beneficiarios | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=r/duena} | t | t
+kyb_calificaciones_riesgo | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+kyb_dictamenes | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+kyb_documentos | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=a/duena} | t | t
+kyb_representantes | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=arw/duena} | t | t
+kyb_version_documentos | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+kyb_versiones | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=arw/duena} | t | t
+lista_69b_rows | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=r/duena,plataforma_sofipo=ar/duena} | t | t
+lista_69b_snapshots | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=r/duena,plataforma_sofipo=ar/duena} | t | t
+lotes_prueba | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+lpb_cargas | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+lpb_coincidencias | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=rw/duena} | t | t
+lpb_personas | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+membership_roles | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=ard/duena,plataforma_sofipo=ar/duena} | t | t
+memberships | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena,plataforma_sofipo=arw/duena} | t | t
+operational_alerts | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=arw/duena} | t | t
+operators | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=r/duena,plataforma_sofipo=r/duena} | t | t
+password_resets | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+payroll_batch_items | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=ar/duena} | t | t
+payroll_batches | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=ar/duena} | t | t
+platform_pricing | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=r/duena,plataforma_sofipo=rw/duena} | t | t
+platform_staff | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=r/duena,plataforma_sofipo=arw/duena} | t | t
+platform_staff_roles | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=r/duena,plataforma_sofipo=ard/duena} | t | t
+pld_actas | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=a/duena} | t | t
+pld_alertas | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=r/duena} | t | t
+pld_aviso_excluidos | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_avisos | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_calendarios | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=r/duena} | t | t
+pld_caso_alertas | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_casos | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_casos_24h | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_comite_auditores | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_comite_bajas | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_comite_comunicaciones | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_comite_integrantes | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_dias_inhabiles | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=r/duena} | t | t
+pld_dictamenes | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_documentos | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=a/duena} | t | t
+pld_entidad | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_evaluaciones | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_modo_dictamen | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_notas | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_operaciones | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=r/duena} | t | t
+pld_parametros | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_perfil_propuestas | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_perfil_resoluciones | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_perfiles | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_periodicos | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_propuestas | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_reportes | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_sesiones | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+pld_votos | r | duena | {duena=arwdDxtm/duena,plataforma_sofipo=ar/duena} | t | t
+policies | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=rw/duena} | t | t
+policy_categories | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arwd/duena} | t | t
+policy_persons | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arwd/duena} | t | t
+postings | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=r/duena} | t | t
+recurring_obligations | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+schema_migrations | r | duena |  | f | f
+sessions | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=ard/duena} | t | t
+subscriptions | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=r/duena,plataforma_sofipo=rw/duena} | t | t
+supplier_clabes | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+supplier_documents | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=ar/duena} | t | t
+supplier_payable_documents | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=ar/duena} | t | t
+supplier_payables | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+supplier_payment_request_history | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=r/duena} | t | t
+supplier_payment_requests | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+suppliers | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+users | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=ar/duena,plataforma_sofipo=ar/duena} | t | t
+weekly_digest_deliveries | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=ar/duena} | t | t
+weekly_digest_preferences | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+weekly_digest_sends | r | duena | {duena=arwdDxtm/duena,plataforma_cliente=arw/duena} | t | t
+(97 rows)
+== columnas con ACL
+relname | attname | attacl
+invitations | revocada_en | {plataforma_cliente=w/duena,plataforma_sofipo=w/duena}
+invitations | usada_en | {plataforma_cliente=w/duena,plataforma_sofipo=w/duena}
+kyb_documentos | cargado_en | {plataforma_sofipo=r/duena}
+kyb_documentos | cargado_por | {plataforma_sofipo=r/duena}
+kyb_documentos | company_id | {plataforma_sofipo=r/duena}
+kyb_documentos | detalle | {plataforma_sofipo=r/duena}
+kyb_documentos | emitido_el | {plataforma_sofipo=r/duena}
+kyb_documentos | id | {plataforma_sofipo=r/duena}
+kyb_documentos | nombre_archivo | {plataforma_sofipo=r/duena}
+kyb_documentos | operator_id | {plataforma_sofipo=r/duena}
+kyb_documentos | representante_clave | {plataforma_sofipo=r/duena}
+kyb_documentos | sha256 | {plataforma_sofipo=r/duena}
+kyb_documentos | tamano_bytes | {plataforma_sofipo=r/duena}
+kyb_documentos | tipo | {plataforma_sofipo=r/duena}
+kyb_documentos | tipo_contenido | {plataforma_sofipo=r/duena}
+kyb_documentos | txid | {plataforma_sofipo=r/duena}
+kyb_documentos | vigente_hasta | {plataforma_sofipo=r/duena}
+pld_actas | id | {plataforma_sofipo=r/duena}
+pld_actas | nombre_archivo | {plataforma_sofipo=r/duena}
+pld_actas | operator_id | {plataforma_sofipo=r/duena}
+pld_actas | registrado_en | {plataforma_sofipo=r/duena}
+pld_actas | registrado_por | {plataforma_sofipo=r/duena}
+pld_actas | sesion_id | {plataforma_sofipo=r/duena}
+pld_actas | sha256 | {plataforma_sofipo=r/duena}
+pld_actas | tamano_bytes | {plataforma_sofipo=r/duena}
+pld_actas | tipo_contenido | {plataforma_sofipo=r/duena}
+pld_documentos | caso_id | {plataforma_sofipo=r/duena}
+pld_documentos | company_id | {plataforma_sofipo=r/duena}
+pld_documentos | id | {plataforma_sofipo=r/duena}
+pld_documentos | nombre_archivo | {plataforma_sofipo=r/duena}
+pld_documentos | operator_id | {plataforma_sofipo=r/duena}
+pld_documentos | registrado_en | {plataforma_sofipo=r/duena}
+pld_documentos | registrado_por | {plataforma_sofipo=r/duena}
+pld_documentos | sha256 | {plataforma_sofipo=r/duena}
+pld_documentos | tamano_bytes | {plataforma_sofipo=r/duena}
+pld_documentos | tipo_contenido | {plataforma_sofipo=r/duena}
+sessions | entrada_id | {plataforma_cliente=w/duena}
+sessions | expires_at | {plataforma_cliente=w/duena}
+sessions | reautenticaciones_fallidas | {plataforma_cliente=w/duena}
+sessions | segundo_factor | {plataforma_cliente=w/duena}
+sessions | segundo_factor_en | {plataforma_cliente=w/duena}
+sessions | segundo_factor_metodo | {plataforma_cliente=w/duena}
+sessions | token_hash | {plataforma_cliente=w/duena}
+sessions | ultimo_uso | {plataforma_cliente=w/duena}
+users | correo_verificado_en | {plataforma_cliente=w/duena,plataforma_sofipo=w/duena}
+users | nombre | {plataforma_cliente=w/duena,plataforma_sofipo=w/duena}
+users | password_hash | {plataforma_cliente=w/duena,plataforma_sofipo=w/duena}
+(47 rows)
+== funciones: dueño, ACL y definer
+funcion | dueno | acl | definer | config
+aplicar_baja_vencida(uuid) | duena | {duena=X/duena} | t | search_path=public
+aplicar_bajas_vencidas_empresa() | duena | {duena=X/duena,plataforma_cliente=X/duena} | t | search_path=public
+aplicar_bajas_vencidas_propias() | duena | {duena=X/duena,plataforma_cliente=X/duena} | t | search_path=public
+app_empresa() | duena | (por omisión: PUBLIC) | f | 
+app_operador() | duena | (por omisión: PUBLIC) | f | 
+app_usuario() | duena | (por omisión: PUBLIC) | f | 
+audit_events_historico() | duena | (por omisión: PUBLIC) | f | search_path=public
+audit_events_solo_insercion() | duena | (por omisión: PUBLIC) | f | search_path=public
+audit_log_solo_insercion() | duena | (por omisión: PUBLIC) | f | search_path=public
+auth_codigos_respaldo_un_uso() | duena | (por omisión: PUBLIC) | f | search_path=public
+auth_entradas_solo_avanza() | duena | (por omisión: PUBLIC) | f | search_path=public
+auth_exige_evento(text,uuid) | duena | (por omisión: PUBLIC) | t | search_path=public
+auth_factor_exige_rastro() | duena | (por omisión: PUBLIC) | f | search_path=public
+auth_passkeys_solo_avanza() | duena | (por omisión: PUBLIC) | f | search_path=public
+auth_recuperaciones_exige_rastro() | duena | (por omisión: PUBLIC) | f | search_path=public
+auth_recuperaciones_transicion() | duena | (por omisión: PUBLIC) | f | search_path=public
+auth_totp_solo_avanza() | duena | (por omisión: PUBLIC) | f | search_path=public
+bitacora_tiene_evento(uuid,text,text,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+bloqueo_empresa_suspendida() | duena | (por omisión: PUBLIC) | f | search_path=public
+card_request_exige_auditoria() | duena | (por omisión: PUBLIC) | t | search_path=public
+cash_balance_revisar() | duena | (por omisión: PUBLIC) | t | search_path=public
+cash_dist(money,money) | postgres | (por omisión: PUBLIC) | f | 
+cash_flow_settings_revisar() | duena | (por omisión: PUBLIC) | t | search_path=public
+clabe_digito_371(text) | duena | (por omisión: PUBLIC) | f | search_path=public
+cliente_liberadores_operativos(uuid) | duena | {duena=X/duena,plataforma_cliente=X/duena} | t | search_path=public
+cliente_tiene_rol_operativo(uuid,uuid,text[]) | duena | {duena=X/duena,plataforma_cliente=X/duena} | t | search_path=public
+companies_abre_recorrido() | duena | (por omisión: PUBLIC) | t | search_path=public
+companies_alta_por_rol() | duena | (por omisión: PUBLIC) | f | search_path=public
+companies_candado_regulado() | duena | (por omisión: PUBLIC) | t | search_path=public
+companies_demostracion_no_dinero() | duena | (por omisión: PUBLIC) | f | search_path=public
+companies_exige_auditoria_de_alta() | duena | (por omisión: PUBLIC) | t | search_path=public
+companies_exige_origen_operativo() | duena | (por omisión: PUBLIC) | t | search_path=public
+companies_exige_politica_y_cajones() | duena | (por omisión: PUBLIC) | t | search_path=public
+companies_rfc_inmutable() | duena | (por omisión: PUBLIC) | f | search_path=public
+companies_siembra_politica_y_cajones() | duena | (por omisión: PUBLIC) | t | search_path=public
+companies_suspendida_regresa_pagos() | duena | (por omisión: PUBLIC) | t | search_path=public
+companies_transicion_operativa() | duena | (por omisión: PUBLIC) | f | search_path=public
+company_activation_requests_exige_rastro() | duena | (por omisión: PUBLIC) | t | search_path=public
+company_activation_requests_roles() | duena | (por omisión: PUBLIC) | f | search_path=public
+company_activation_requests_transicion() | duena | (por omisión: PUBLIC) | f | search_path=public
+company_commissions_exige_rastro() | duena | (por omisión: PUBLIC) | t | search_path=public
+company_commissions_solo_avanza() | duena | (por omisión: PUBLIC) | f | search_path=public
+company_state_history_append_only() | duena | (por omisión: PUBLIC) | f | search_path=public
+company_suspensions_exige_efecto() | duena | (por omisión: PUBLIC) | t | search_path=public
+company_suspensions_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+conservacion_no_se_borra() | duena | (por omisión: PUBLIC) | f | search_path=public
+cost_centers_cambios_auditados() | duena | (por omisión: PUBLIC) | t | search_path=public
+cost_centers_exige_auditoria_de_alta() | duena | (por omisión: PUBLIC) | t | search_path=public
+date_dist(date,date) | postgres | (por omisión: PUBLIC) | f | 
+desprovisionar_miembro(uuid,uuid) | duena | {duena=X/duena,plataforma_cliente=X/duena} | t | search_path=public
+documentos_relacionados_append_only() | duena | (por omisión: PUBLIC) | f | search_path=public
+documents_no_se_reescribe() | duena | (por omisión: PUBLIC) | f | search_path=public
+drawers_inamovibles() | duena | (por omisión: PUBLIC) | f | search_path=public
+employee_payroll_clabes_exige_auditoria() | duena | (por omisión: PUBLIC) | t | search_path=public
+employee_payroll_clabes_no_borra() | duena | (por omisión: PUBLIC) | f | search_path=public
+employee_payroll_clabes_solo_cierra() | duena | (por omisión: PUBLIC) | f | search_path=public
+employees_cambios_permitidos() | duena | (por omisión: PUBLIC) | t | search_path=public
+employees_clabe_con_historial() | duena | (por omisión: PUBLIC) | t | search_path=public
+employees_exige_auditoria_de_alta() | duena | (por omisión: PUBLIC) | t | search_path=public
+employees_exige_auditoria_de_baja() | duena | (por omisión: PUBLIC) | t | search_path=public
+employees_misma_empresa() | duena | (por omisión: PUBLIC) | f | search_path=public
+employees_quita_liberador() | duena | (por omisión: PUBLIC) | f | search_path=public
+empresas_con_correo_semanal() | duena | {duena=X/duena,plataforma_tarea=X/duena} | t | search_path=public
+entrada_por_token(text,timestamp with time zone) | duena | {duena=X/duena,plataforma_cliente=X/duena} | t | search_path=public
+expected_collections_revisar() | duena | (por omisión: PUBLIC) | t | search_path=public
+factor_de_sesion(uuid) | duena | {duena=X/duena,plataforma_cliente=X/duena} | t | search_path=public
+fallos_de_contrasena(uuid,timestamp with time zone) | duena | {duena=X/duena,plataforma_cliente=X/duena} | t | search_path=public
+float4_dist(real,real) | postgres | (por omisión: PUBLIC) | f | 
+float8_dist(double precision,double precision) | postgres | (por omisión: PUBLIC) | f | 
+flujo_editor(uuid) | duena | {duena=X/duena,plataforma_cliente=X/duena} | t | search_path=public
+flujo_exige_auditoria() | duena | (por omisión: PUBLIC) | t | search_path=public
+gbt_bit_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bit_consistent(internal,bit,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bit_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bit_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bit_same(gbtreekey_var,gbtreekey_var,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bit_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bool_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bool_consistent(internal,boolean,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bool_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bool_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bool_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bool_same(gbtreekey2,gbtreekey2,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bool_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bpchar_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bpchar_consistent(internal,character,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bytea_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bytea_consistent(internal,bytea,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bytea_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bytea_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bytea_same(gbtreekey_var,gbtreekey_var,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_bytea_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_cash_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_cash_consistent(internal,money,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_cash_distance(internal,money,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_cash_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_cash_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_cash_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_cash_same(gbtreekey16,gbtreekey16,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_cash_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_date_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_date_consistent(internal,date,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_date_distance(internal,date,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_date_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_date_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_date_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_date_same(gbtreekey8,gbtreekey8,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_date_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_decompress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_enum_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_enum_consistent(internal,anyenum,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_enum_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_enum_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_enum_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_enum_same(gbtreekey8,gbtreekey8,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_enum_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float4_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float4_consistent(internal,real,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float4_distance(internal,real,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float4_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float4_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float4_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float4_same(gbtreekey8,gbtreekey8,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float4_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float8_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float8_consistent(internal,double precision,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float8_distance(internal,double precision,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float8_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float8_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float8_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float8_same(gbtreekey16,gbtreekey16,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_float8_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_inet_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_inet_consistent(internal,inet,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_inet_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_inet_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_inet_same(gbtreekey16,gbtreekey16,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_inet_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int2_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int2_consistent(internal,smallint,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int2_distance(internal,smallint,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int2_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int2_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int2_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int2_same(gbtreekey4,gbtreekey4,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int2_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int4_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int4_consistent(internal,integer,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int4_distance(internal,integer,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int4_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int4_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int4_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int4_same(gbtreekey8,gbtreekey8,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int4_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int8_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int8_consistent(internal,bigint,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int8_distance(internal,bigint,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int8_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int8_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int8_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int8_same(gbtreekey16,gbtreekey16,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_int8_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_intv_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_intv_consistent(internal,interval,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_intv_decompress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_intv_distance(internal,interval,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_intv_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_intv_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_intv_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_intv_same(gbtreekey32,gbtreekey32,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_intv_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_macad8_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_macad8_consistent(internal,macaddr8,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_macad8_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_macad8_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_macad8_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_macad8_same(gbtreekey16,gbtreekey16,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_macad8_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_macad_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_macad_consistent(internal,macaddr,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_macad_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_macad_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_macad_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_macad_same(gbtreekey16,gbtreekey16,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_macad_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_numeric_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_numeric_consistent(internal,numeric,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_numeric_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_numeric_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_numeric_same(gbtreekey_var,gbtreekey_var,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_numeric_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_oid_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_oid_consistent(internal,oid,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_oid_distance(internal,oid,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_oid_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_oid_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_oid_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_oid_same(gbtreekey8,gbtreekey8,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_oid_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_text_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_text_consistent(internal,text,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_text_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_text_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_text_same(gbtreekey_var,gbtreekey_var,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_text_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_time_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_time_consistent(internal,time without time zone,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_time_distance(internal,time without time zone,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_time_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_time_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_time_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_time_same(gbtreekey16,gbtreekey16,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_time_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_timetz_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_timetz_consistent(internal,time with time zone,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_ts_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_ts_consistent(internal,timestamp without time zone,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_ts_distance(internal,timestamp without time zone,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_ts_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_ts_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_ts_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_ts_same(gbtreekey16,gbtreekey16,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_ts_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_tstz_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_tstz_consistent(internal,timestamp with time zone,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_tstz_distance(internal,timestamp with time zone,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_uuid_compress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_uuid_consistent(internal,uuid,smallint,oid,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_uuid_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_uuid_penalty(internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_uuid_picksplit(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_uuid_same(gbtreekey32,gbtreekey32,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_uuid_union(internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_var_decompress(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbt_var_fetch(internal) | postgres | (por omisión: PUBLIC) | f | 
+gbtreekey16_in(cstring) | postgres | (por omisión: PUBLIC) | f | 
+gbtreekey16_out(gbtreekey16) | postgres | (por omisión: PUBLIC) | f | 
+gbtreekey2_in(cstring) | postgres | (por omisión: PUBLIC) | f | 
+gbtreekey2_out(gbtreekey2) | postgres | (por omisión: PUBLIC) | f | 
+gbtreekey32_in(cstring) | postgres | (por omisión: PUBLIC) | f | 
+gbtreekey32_out(gbtreekey32) | postgres | (por omisión: PUBLIC) | f | 
+gbtreekey4_in(cstring) | postgres | (por omisión: PUBLIC) | f | 
+gbtreekey4_out(gbtreekey4) | postgres | (por omisión: PUBLIC) | f | 
+gbtreekey8_in(cstring) | postgres | (por omisión: PUBLIC) | f | 
+gbtreekey8_out(gbtreekey8) | postgres | (por omisión: PUBLIC) | f | 
+gbtreekey_var_in(cstring) | postgres | (por omisión: PUBLIC) | f | 
+gbtreekey_var_out(gbtreekey_var) | postgres | (por omisión: PUBLIC) | f | 
+historial_pago_append_only() | duena | (por omisión: PUBLIC) | f | search_path=public
+hoy_mexico() | duena | (por omisión: PUBLIC) | f | 
+identidad_por_correo(text) | duena | {duena=X/duena,plataforma_cliente=X/duena} | t | search_path=public
+int2_dist(smallint,smallint) | postgres | (por omisión: PUBLIC) | f | 
+int4_dist(integer,integer) | postgres | (por omisión: PUBLIC) | f | 
+int8_dist(bigint,bigint) | postgres | (por omisión: PUBLIC) | f | 
+interval_dist(interval,interval) | postgres | (por omisión: PUBLIC) | f | 
+invitacion_por_token(text) | duena | {duena=X/duena,plataforma_cliente=X/duena} | t | search_path=public
+invitation_deliveries_append_only() | duena | (por omisión: PUBLIC) | f | search_path=public
+invitation_deliveries_exige_rastro() | duena | (por omisión: PUBLIC) | t | search_path=public
+invitations_empresa_activa() | duena | (por omisión: PUBLIC) | t | search_path=public
+invitations_un_solo_uso() | duena | (por omisión: PUBLIC) | f | search_path=public
+kyb_beneficiarios_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+kyb_calcular_beneficiarios(uuid) | duena | {=X/duena,duena=X/duena,plataforma_sofipo=X/duena} | f | search_path=public
+kyb_calificaciones_riesgo_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+kyb_dictamenes_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+kyb_documento_para_descarga(uuid,uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+kyb_documento_vencido(uuid) | duena | (por omisión: PUBLIC) | f | search_path=public
+kyb_documentos_de_version(uuid) | duena | {=X/duena,duena=X/duena,plataforma_sofipo=X/duena} | f | search_path=public
+kyb_documentos_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+kyb_estructura_completa(uuid) | duena | {=X/duena,duena=X/duena,plataforma_sofipo=X/duena} | f | search_path=public
+kyb_exigir_completo(kyb_versiones) | duena | (por omisión: PUBLIC) | f | search_path=public
+kyb_fecha_de_curp(text) | duena | (por omisión: PUBLIC) | f | search_path=public
+kyb_persona(text,text,text,uuid) | duena | (por omisión: PUBLIC) | f | search_path=public
+kyb_solo_en_borrador() | duena | (por omisión: PUBLIC) | f | search_path=public
+kyb_versiones_al_enviar() | duena | (por omisión: PUBLIC) | t | search_path=public
+kyb_versiones_heredar() | duena | (por omisión: PUBLIC) | t | search_path=public
+kyb_versiones_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+lista_69b_cotejar_empresas() | duena | (por omisión: PUBLIC) | t | search_path=public
+lista_69b_exige_auditoria() | duena | (por omisión: PUBLIC) | t | search_path=public
+lista_69b_relee_al_cerrar() | duena | (por omisión: PUBLIC) | t | search_path=public
+lista_69b_solo_insercion() | duena | (por omisión: PUBLIC) | f | search_path=public
+lista_69b_vigente(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+lotes_prueba_revisar_firmas() | duena | (por omisión: PUBLIC) | f | search_path=public
+lpb_bloquea_empresa(uuid) | duena | {duena=X/duena} | t | search_path=public
+lpb_bloquea_pago(uuid,uuid) | duena | {duena=X/duena} | t | search_path=public
+lpb_carga_vigente(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+lpb_cargas_cotejar() | duena | (por omisión: PUBLIC) | t | search_path=public
+lpb_cargas_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+lpb_coincidencias_abiertas(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+lpb_coincidencias_al_confirmar() | duena | (por omisión: PUBLIC) | t | search_path=public
+lpb_coincidencias_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+lpb_cotejar_empresa(uuid) | duena | {duena=X/duena} | t | search_path=public
+lpb_cotejar_operador(uuid) | duena | {duena=X/duena} | t | search_path=public
+lpb_normalizar(text) | duena | (por omisión: PUBLIC) | f | 
+lpb_personas_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+lpb_sin_acentos(text) | duena | (por omisión: PUBLIC) | f | 
+lpb_suspender(uuid,uuid) | duena | {duena=X/duena} | t | search_path=public
+membership_roles_exige_auditoria() | duena | (por omisión: PUBLIC) | t | search_path=public
+oid_dist(oid,oid) | postgres | (por omisión: PUBLIC) | f | 
+operador_del_contexto(uuid) | duena | {duena=X/duena} | t | search_path=public
+operational_alerts_exige_rastro() | duena | (por omisión: PUBLIC) | t | search_path=public
+operational_alerts_solo_avanza() | duena | (por omisión: PUBLIC) | f | search_path=public
+pagos_listos_regresan(uuid,boolean) | duena | {duena=X/duena} | t | search_path=public
+pagos_listos_regresan_a_revision() | duena | (por omisión: PUBLIC) | f | search_path=public
+pagos_proveedores_exige_auditoria() | duena | (por omisión: PUBLIC) | t | search_path=public
+password_reset_por_token(text) | duena | {duena=X/duena,plataforma_cliente=X/duena} | t | search_path=public
+password_resets_un_solo_desenlace() | duena | (por omisión: PUBLIC) | f | search_path=public
+payroll_batch_exige_auditoria() | duena | (por omisión: PUBLIC) | t | search_path=public
+payroll_batch_item_exige_lote_auditado() | duena | (por omisión: PUBLIC) | t | search_path=public
+payroll_batches_lpb() | duena | (por omisión: PUBLIC) | t | search_path=public
+payroll_lote_inmutable() | duena | (por omisión: PUBLIC) | f | search_path=public
+payroll_profile_exige_auditoria() | duena | (por omisión: PUBLIC) | t | search_path=public
+personal_bloquear_fila(uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+personal_nace_en_esta_transaccion(uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+personal_no_es_miembro() | duena | (por omisión: PUBLIC) | f | search_path=public
+personal_rol_por_comando(text,text,boolean,text,text) | duena | {duena=X/duena} | t | search_path=public
+personal_rol_tiene_evento(text,uuid,uuid,text) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+personal_solo_administracion() | duena | (por omisión: PUBLIC) | f | search_path=public
+personal_tiene_rol(uuid,uuid,text[]) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+platform_pricing_proteger() | duena | (por omisión: PUBLIC) | f | search_path=public
+platform_staff_roles_exige_evento() | duena | (por omisión: PUBLIC) | f | search_path=public
+platform_staff_roles_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+pld_acta_para_descarga(uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_alerta_me_excluye(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_alertar(pld_operaciones,uuid,text,text,jsonb) | duena | {duena=X/duena} | t | search_path=public
+pld_alertas_que_me_excluyen() | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_aviso_con_cumplimiento() | duena | {duena=X/duena} | t | search_path=public
+pld_aviso_excluidos_revisar() | duena | {duena=X/duena} | t | search_path=public
+pld_aviso_me_excluye(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_aviso_sin_analista(uuid) | duena | {duena=X/duena} | t | search_path=public
+pld_avisos_alertar() | duena | {duena=X/duena} | t | search_path=public
+pld_avisos_que_me_excluyen() | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_avisos_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_calendario_cargado(integer) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_caso_hijo_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_caso_me_excluye(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_caso_vence(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_casos_con_alerta() | duena | {duena=X/duena} | f | search_path=public
+pld_casos_que_me_excluyen() | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_casos_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_celebracion_contrato(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_comite_auditores_sin_integrante() | duena | {duena=X/duena} | f | search_path=public
+pld_comite_bajas_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_comite_comunicaciones_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_comite_integrantes_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_comite_validar() | duena | {duena=X/duena} | f | search_path=public
+pld_comite_vigentes(uuid,date) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | f | search_path=public
+pld_dia_habil_del_mes(date,integer) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_dia_inhabil(date) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_dias_habiles_entre(date,date) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_dictamenes_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_documento_para_descarga(uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_es_personal(uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_evaluaciones_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_evaluar_operacion() | duena | {duena=X/duena} | t | search_path=public
+pld_excluidos_de_la_sesion(uuid) | duena | {duena=X/duena} | t | search_path=public
+pld_excluidos_del_caso(uuid) | duena | {duena=X/duena} | t | search_path=public
+pld_exige_evento() | duena | {duena=X/duena} | f | search_path=public
+pld_fecha_mx(timestamp with time zone) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | f | 
+pld_ids_que_me_excluyen() | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_inmutable() | duena | {duena=X/duena} | f | search_path=public
+pld_manifiesto_conteos(uuid,date,date,uuid,integer) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_manifiesto_documentos(uuid,date,date,timestamp with time zone,uuid,integer) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_modo_dictamen_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_modo_vigente(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_nombre_de_integrante(pld_comite_integrantes) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | f | search_path=public
+pld_operaciones_antes() | duena | {duena=X/duena} | f | search_path=public
+pld_operador_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_parametros_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_parametros_vigentes(uuid) | duena | {duena=X/duena} | t | search_path=public
+pld_perfil_aprobado_con_resolucion() | duena | {duena=X/duena} | f | search_path=public
+pld_perfil_propuestas_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_perfil_resoluciones_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_perfiles_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_periodicos_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_personal_deja_analista() | duena | {duena=X/duena} | t | search_path=public
+pld_personas_de_la_sesion(uuid) | duena | {duena=X/duena} | t | search_path=public
+pld_personas_del_caso(uuid) | duena | {duena=X/duena} | t | search_path=public
+pld_registrar_nomina() | duena | {duena=X/duena} | t | search_path=public
+pld_registrar_pago() | duena | {duena=X/duena} | t | search_path=public
+pld_reportes_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_resultado_votacion(uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | f | search_path=public
+pld_rol(text[]) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_serie_choca(uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_sesion_excluye_a(uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_sesion_me_excluye(uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_sesiones_que_me_excluyen() | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_sesiones_revisar() | duena | {duena=X/duena} | f | search_path=public
+pld_sin_invisibles(text) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | f | 
+pld_sumar_dias_habiles(date,integer) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_ultimo_dia_habil(date) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_voto_choca(uuid,uuid,uuid) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+pld_votos_revisar() | duena | {duena=X/duena} | f | search_path=public
+policies_no_se_borran() | duena | (por omisión: PUBLIC) | f | search_path=public
+postings_solo_insercion() | duena | (por omisión: PUBLIC) | f | search_path=public
+recuperaciones_pendientes() | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+recurring_obligations_revisar() | duena | (por omisión: PUBLIC) | t | search_path=public
+regulado_exige_evento() | duena | (por omisión: PUBLIC) | f | search_path=public
+releer_proveedores_69b(uuid,timestamp with time zone) | duena | {duena=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+sesion_por_token(text,timestamp with time zone,boolean) | duena | {duena=X/duena,plataforma_cliente=X/duena} | t | search_path=public
+sessions_exige_segundo_factor() | duena | (por omisión: PUBLIC) | f | search_path=public
+sessions_sello_exige_rastro() | duena | (por omisión: PUBLIC) | f | search_path=public
+subscriptions_proteger() | duena | (por omisión: PUBLIC) | f | search_path=public
+supplier_clabes_conserva_vigente() | duena | (por omisión: PUBLIC) | f | search_path=public
+supplier_clabes_exige_auditoria() | duena | (por omisión: PUBLIC) | t | search_path=public
+supplier_clabes_misma_empresa() | duena | (por omisión: PUBLIC) | f | search_path=public
+supplier_clabes_no_borra() | duena | (por omisión: PUBLIC) | f | search_path=public
+supplier_clabes_solo_cierra() | duena | (por omisión: PUBLIC) | f | search_path=public
+supplier_payables_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+supplier_payment_requests_anula_cargo() | duena | (por omisión: PUBLIC) | f | search_path=public
+supplier_payment_requests_historial() | duena | (por omisión: PUBLIC) | t | search_path=public
+supplier_payment_requests_lpb() | duena | (por omisión: PUBLIC) | t | search_path=public
+supplier_payment_requests_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+suppliers_area_auditada() | duena | (por omisión: PUBLIC) | t | search_path=public
+suppliers_constancia_de_la_empresa() | duena | (por omisión: PUBLIC) | f | search_path=public
+suppliers_cotejar_lpb() | duena | (por omisión: PUBLIC) | t | search_path=public
+suppliers_exige_auditoria_de_alta() | duena | (por omisión: PUBLIC) | t | search_path=public
+suppliers_exige_clabe() | duena | (por omisión: PUBLIC) | f | search_path=public
+suppliers_lectura_contra_copia() | duena | (por omisión: PUBLIC) | f | search_path=public
+suppliers_rfc_fijo() | duena | (por omisión: PUBLIC) | f | search_path=public
+texto_regulado(text,integer) | duena | (por omisión: PUBLIC) | f | 
+time_dist(time without time zone,time without time zone) | postgres | (por omisión: PUBLIC) | f | 
+ts_dist(timestamp without time zone,timestamp without time zone) | postgres | (por omisión: PUBLIC) | f | 
+tstz_dist(timestamp with time zone,timestamp with time zone) | postgres | (por omisión: PUBLIC) | f | 
+unaccent(regdictionary,text) | postgres | (por omisión: PUBLIC) | f | 
+unaccent(text) | postgres | (por omisión: PUBLIC) | f | 
+unaccent_init(internal) | postgres | (por omisión: PUBLIC) | f | 
+unaccent_lexize(internal,internal,internal,internal) | postgres | (por omisión: PUBLIC) | f | 
+usuario_por_correo(text) | duena | {duena=X/duena,plataforma_cliente=X/duena,plataforma_sofipo=X/duena} | t | search_path=public
+weekly_digest_deliveries_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+weekly_digest_preferences_revisar() | duena | (por omisión: PUBLIC) | t | search_path=public
+weekly_digest_sends_revisar() | duena | (por omisión: PUBLIC) | f | search_path=public
+(430 rows)
+== tipos y dominios: dueño
+typname | pg_get_userbyid
+(0 rows)
+== políticas
+tablename | policyname | cmd | roles | qual | with_check
+audit_events | audit_events_cliente | SELECT | {plataforma_cliente} | (company_id = app_empresa()) | 
+audit_log | audit_log_cliente_escritura | INSERT | {plataforma_cliente} |  | (((company_id = app_empresa()) OR ((company_id IS NULL) AND (app_empresa() IS NULL))) AND (actor_tipo = ANY (ARRAY['miembro'::text, 'sistema'::text])) AND (NOT (actor_id IS DISTINCT FROM app_usuario())) AND (superficie = ANY (ARRAY['cliente'::text, 'telefono'::text])))
+audit_log | audit_log_cliente_lectura | SELECT | {plataforma_cliente} | ((company_id = app_empresa()) AND (entidad !~~ 'kyb\_%'::text) AND (entidad !~~ 'lpb\_%'::text) AND (entidad !~~ 'pld\_%'::text) AND (entidad <> 'company_suspensions'::text) AND (accion !~~ 'expediente\_%'::text) AND (accion !~~ 'pld\_%'::text)) | 
+audit_log | audit_log_sofipo_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND (actor_tipo = ANY (ARRAY['personal'::text, 'sistema'::text])) AND (NOT (actor_id IS DISTINCT FROM app_usuario())) AND (superficie = ANY (ARRAY['sofipo'::text, 'sistema'::text])))
+audit_log | audit_log_sofipo_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND (((accion ~~ 'pld\_%'::text) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT COALESCE((identificador = ANY (( SELECT pld_ids_que_me_excluyen() AS pld_ids_que_me_excluyen)::uuid[])), false))) OR ((accion !~~ 'pld\_%'::text) AND ((company_id IS NULL) OR (NOT ((accion ~~ 'lpb\_%'::text) OR (accion = 'empresa_suspendida_lpb'::text))) OR ( SELECT personal_tiene_rol(app_operador(), app_usuario(), ARRAY['cumplimiento'::text, 'auditoria'::text]) AS personal_tiene_rol))))) | 
+auth_codigos_respaldo | auth_respaldo_cliente | ALL | {plataforma_cliente} | (user_id = app_usuario()) | (user_id = app_usuario())
+auth_entradas | auth_entradas_cliente | ALL | {plataforma_cliente} | (user_id = app_usuario()) | (user_id = app_usuario())
+auth_passkeys | auth_passkeys_cliente | ALL | {plataforma_cliente} | (user_id = app_usuario()) | (user_id = app_usuario())
+auth_recuperaciones | auth_recuperaciones_cliente | ALL | {plataforma_cliente} | (user_id = app_usuario()) | (user_id = app_usuario())
+auth_recuperaciones | auth_recuperaciones_sofipo | SELECT | {plataforma_sofipo} | (app_operador() IS NOT NULL) | 
+auth_recuperaciones | auth_recuperaciones_sofipo_cambio | UPDATE | {plataforma_sofipo} | (app_operador() IS NOT NULL) | (app_operador() IS NOT NULL)
+auth_retos | auth_retos_cliente | ALL | {plataforma_cliente} | (user_id = app_usuario()) | (user_id = app_usuario())
+auth_totp | auth_totp_cliente | ALL | {plataforma_cliente} | (user_id = app_usuario()) | (user_id = app_usuario())
+cash_balance_declarations | cash_balance_declarations_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+cash_flow_settings | cash_flow_settings_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+companies | companies_cliente | SELECT | {plataforma_cliente} | 
+CASE
+    WHEN (app_empresa() IS NOT NULL) THEN (id = app_empresa())
+    ELSE (EXISTS ( SELECT 1
+       FROM memberships m
+      WHERE ((m.company_id = companies.id) AND (m.user_id = app_usuario()) AND (m.estado = 'activa'::text))))
+END | 
+companies | companies_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+company_activation_requests | company_activation_requests_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+company_commissions | company_commissions_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+company_state_history | company_state_history_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+company_suspensions | company_suspensions_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+cost_centers | cost_centers_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+documents | documents_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+drawers | drawers_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+employee_card_requests | employee_card_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+employee_payroll_clabes | employee_payroll_clabes_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+employee_payroll_profiles | employee_payroll_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+employees | employees_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+expected_collections | expected_collections_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+invitation_deliveries | invitation_deliveries_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+invitations | invitations_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+invitations | invitations_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+kyb_accionistas | kyb_accionistas_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+kyb_beneficiarios | kyb_beneficiarios_sofipo | SELECT | {plataforma_sofipo} | (operator_id = app_operador()) | 
+kyb_calificaciones_riesgo | kyb_calificaciones_riesgo_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+kyb_dictamenes | kyb_dictamenes_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+kyb_documentos | kyb_documentos_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+kyb_representantes | kyb_representantes_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+kyb_version_documentos | kyb_version_documentos_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+kyb_versiones | kyb_versiones_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+lista_69b_rows | lista_69b_rows_lectura | SELECT | {plataforma_cliente} | (EXISTS ( SELECT 1
+   FROM lista_69b_snapshots s
+  WHERE (s.id = lista_69b_rows.snapshot_id))) | 
+lista_69b_rows | lista_69b_rows_sofipo | ALL | {plataforma_sofipo} | (EXISTS ( SELECT 1
+   FROM lista_69b_snapshots s
+  WHERE (s.id = lista_69b_rows.snapshot_id))) | (EXISTS ( SELECT 1
+   FROM lista_69b_snapshots s
+  WHERE (s.id = lista_69b_rows.snapshot_id)))
+lista_69b_snapshots | lista_69b_snapshots_lectura | SELECT | {plataforma_cliente} | (operator_id = COALESCE(app_operador(), ( SELECT c.operator_id
+   FROM companies c
+  WHERE (c.id = app_empresa())))) | 
+lista_69b_snapshots | lista_69b_snapshots_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+lotes_prueba | lotes_prueba_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+lpb_cargas | lpb_cargas_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+lpb_coincidencias | lpb_coincidencias_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+lpb_personas | lpb_personas_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+membership_roles | membership_roles_cliente | ALL | {plataforma_cliente} | 
+CASE
+    WHEN (app_empresa() IS NOT NULL) THEN (company_id = app_empresa())
+    ELSE (user_id = app_usuario())
+END | (company_id = app_empresa())
+membership_roles | membership_roles_sofipo | ALL | {plataforma_sofipo} | (EXISTS ( SELECT 1
+   FROM companies c
+  WHERE ((c.id = membership_roles.company_id) AND (c.operator_id = app_operador())))) | (EXISTS ( SELECT 1
+   FROM companies c
+  WHERE ((c.id = membership_roles.company_id) AND (c.operator_id = app_operador()))))
+memberships | memberships_cliente | ALL | {plataforma_cliente} | 
+CASE
+    WHEN (app_empresa() IS NOT NULL) THEN (company_id = app_empresa())
+    ELSE (user_id = app_usuario())
+END | (company_id = app_empresa())
+memberships | memberships_sofipo | ALL | {plataforma_sofipo} | (EXISTS ( SELECT 1
+   FROM companies c
+  WHERE ((c.id = memberships.company_id) AND (c.operator_id = app_operador())))) | (EXISTS ( SELECT 1
+   FROM companies c
+  WHERE ((c.id = memberships.company_id) AND (c.operator_id = app_operador()))))
+operational_alerts | operational_alerts_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+operators | operators_lectura | SELECT | {plataforma_cliente} | true | 
+operators | operators_sofipo | SELECT | {plataforma_sofipo} | (id = app_operador()) | 
+password_resets | password_resets_cliente | ALL | {plataforma_cliente} | (user_id = app_usuario()) | (user_id = app_usuario())
+payroll_batch_items | payroll_batch_items_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+payroll_batches | payroll_batches_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+platform_pricing | platform_pricing_lectura | SELECT | {plataforma_cliente} | true | 
+platform_pricing | platform_pricing_sofipo | ALL | {plataforma_sofipo} | true | true
+platform_staff | platform_staff_propio | SELECT | {plataforma_cliente} | (user_id = app_usuario()) | 
+platform_staff | platform_staff_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+platform_staff_roles | platform_staff_roles_propio | SELECT | {plataforma_cliente} | (user_id = app_usuario()) | 
+platform_staff_roles | platform_staff_roles_sofipo | ALL | {plataforma_sofipo} | (operator_id = app_operador()) | (operator_id = app_operador())
+pld_actas | pld_actas_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol) AND (NOT (sesion_id = ANY (( SELECT pld_sesiones_que_me_excluyen() AS pld_sesiones_que_me_excluyen)::uuid[]))))
+pld_actas | pld_actas_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (sesion_id = ANY (( SELECT pld_sesiones_que_me_excluyen() AS pld_sesiones_que_me_excluyen)::uuid[])))) | 
+pld_alertas | pld_alertas_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (id = ANY (( SELECT pld_alertas_que_me_excluyen() AS pld_alertas_que_me_excluyen)::uuid[])))) | 
+pld_aviso_excluidos | pld_aviso_excluidos_escritura | INSERT | {plataforma_sofipo} |  | (operator_id = app_operador())
+pld_aviso_excluidos | pld_aviso_excluidos_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (aviso_id = ANY (( SELECT pld_avisos_que_me_excluyen() AS pld_avisos_que_me_excluyen)::uuid[])))) | 
+pld_avisos | pld_avisos_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND (registrado_por = app_usuario()))
+pld_avisos | pld_avisos_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ((registrado_por = app_usuario()) OR (( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (id = ANY (( SELECT pld_avisos_que_me_excluyen() AS pld_avisos_que_me_excluyen)::uuid[])))))) | 
+pld_calendarios | pld_calendarios_sofipo | SELECT | {plataforma_sofipo} | true | 
+pld_caso_alertas | pld_caso_alertas_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[]))))
+pld_caso_alertas | pld_caso_alertas_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[])))) | 
+pld_casos | pld_casos_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol))
+pld_casos | pld_casos_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[])))) | 
+pld_casos_24h | pld_casos_24h_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[]))))
+pld_casos_24h | pld_casos_24h_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[])))) | 
+pld_comite_auditores | pld_comite_auditores_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol))
+pld_comite_auditores | pld_comite_auditores_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol)) | 
+pld_comite_bajas | pld_comite_bajas_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol))
+pld_comite_bajas | pld_comite_bajas_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol)) | 
+pld_comite_comunicaciones | pld_comite_comunicaciones_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol))
+pld_comite_comunicaciones | pld_comite_comunicaciones_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol)) | 
+pld_comite_integrantes | pld_comite_integrantes_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol))
+pld_comite_integrantes | pld_comite_integrantes_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol)) | 
+pld_dias_inhabiles | pld_dias_inhabiles_sofipo | SELECT | {plataforma_sofipo} | true | 
+pld_dictamenes | pld_dictamenes_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[]))))
+pld_dictamenes | pld_dictamenes_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[])))) | 
+pld_documentos | pld_documentos_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[]))))
+pld_documentos | pld_documentos_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[])))) | 
+pld_entidad | pld_entidad_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol))
+pld_entidad | pld_entidad_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol)) | 
+pld_evaluaciones | pld_evaluaciones_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol))
+pld_evaluaciones | pld_evaluaciones_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol)) | 
+pld_modo_dictamen | pld_modo_dictamen_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol))
+pld_modo_dictamen | pld_modo_dictamen_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol)) | 
+pld_notas | pld_notas_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[]))))
+pld_notas | pld_notas_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[])))) | 
+pld_operaciones | pld_operaciones_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol)) | 
+pld_parametros | pld_parametros_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol))
+pld_parametros | pld_parametros_lectura | SELECT | {plataforma_sofipo} | (((operator_id = app_operador()) OR (operator_id IS NULL)) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol)) | 
+pld_perfil_propuestas | pld_perfil_propuestas_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['originacion'::text]) AS pld_rol))
+pld_perfil_propuestas | pld_perfil_propuestas_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['originacion'::text, 'aprobacion'::text, 'cumplimiento'::text, 'auditoria'::text]) AS pld_rol)) | 
+pld_perfil_resoluciones | pld_perfil_resoluciones_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol))
+pld_perfil_resoluciones | pld_perfil_resoluciones_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['originacion'::text, 'aprobacion'::text, 'cumplimiento'::text, 'auditoria'::text]) AS pld_rol)) | 
+pld_perfiles | pld_perfiles_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['originacion'::text, 'cumplimiento'::text]) AS pld_rol))
+pld_perfiles | pld_perfiles_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['originacion'::text, 'aprobacion'::text, 'cumplimiento'::text, 'auditoria'::text]) AS pld_rol)) | 
+pld_periodicos | pld_periodicos_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol))
+pld_periodicos | pld_periodicos_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol)) | 
+pld_propuestas | pld_propuestas_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[]))))
+pld_propuestas | pld_propuestas_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[])))) | 
+pld_reportes | pld_reportes_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[]))))
+pld_reportes | pld_reportes_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[])))) | 
+pld_sesiones | pld_sesiones_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol))
+pld_sesiones | pld_sesiones_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (id = ANY (( SELECT pld_sesiones_que_me_excluyen() AS pld_sesiones_que_me_excluyen)::uuid[])))) | 
+pld_votos | pld_votos_escritura | INSERT | {plataforma_sofipo} |  | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[]))))
+pld_votos | pld_votos_lectura | SELECT | {plataforma_sofipo} | ((operator_id = app_operador()) AND ( SELECT pld_rol(ARRAY['cumplimiento'::text, 'auditoria'::text]) AS pld_rol) AND (NOT (caso_id = ANY (( SELECT pld_casos_que_me_excluyen() AS pld_casos_que_me_excluyen)::uuid[]))) AND (NOT (sesion_id = ANY (( SELECT pld_sesiones_que_me_excluyen() AS pld_sesiones_que_me_excluyen)::uuid[])))) | 
+policies | policies_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+policy_categories | policy_categories_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+policy_persons | policy_persons_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+postings | postings_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+recurring_obligations | recurring_obligations_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+sessions | sessions_cliente | ALL | {plataforma_cliente} | (user_id = app_usuario()) | (user_id = app_usuario())
+subscriptions | subscriptions_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+subscriptions | subscriptions_sofipo | ALL | {plataforma_sofipo} | (EXISTS ( SELECT 1
+   FROM companies c
+  WHERE ((c.id = subscriptions.company_id) AND (c.operator_id = app_operador())))) | (EXISTS ( SELECT 1
+   FROM companies c
+  WHERE ((c.id = subscriptions.company_id) AND (c.operator_id = app_operador()))))
+supplier_clabes | supplier_clabes_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+supplier_documents | supplier_documents_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+supplier_payable_documents | supplier_payable_documents_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+supplier_payables | supplier_payables_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+supplier_payment_request_history | supplier_payment_request_history_cliente | SELECT | {plataforma_cliente} | (company_id = app_empresa()) | 
+supplier_payment_requests | supplier_payment_requests_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+suppliers | suppliers_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+users | users_cliente_alta | INSERT | {plataforma_cliente} |  | (app_empresa() IS NOT NULL)
+users | users_cliente_lectura | SELECT | {plataforma_cliente} | ((id = app_usuario()) OR (EXISTS ( SELECT 1
+   FROM memberships m
+  WHERE ((m.user_id = users.id) AND (m.company_id = app_empresa()))))) | 
+users | users_cliente_propia | UPDATE | {plataforma_cliente} | (id = app_usuario()) | (id = app_usuario())
+users | users_sofipo_alta | INSERT | {plataforma_sofipo} |  | (app_operador() IS NOT NULL)
+users | users_sofipo_lectura | SELECT | {plataforma_sofipo} | (id = app_usuario()) | 
+users | users_sofipo_operacion | SELECT | {plataforma_sofipo} | ((app_operador() IS NOT NULL) AND ((EXISTS ( SELECT 1
+   FROM platform_staff s
+  WHERE ((s.user_id = users.id) AND (s.operator_id = app_operador())))) OR (EXISTS ( SELECT 1
+   FROM (memberships m
+     JOIN companies c ON ((c.id = m.company_id)))
+  WHERE ((m.user_id = users.id) AND (c.operator_id = app_operador())))))) | 
+users | users_sofipo_propia | UPDATE | {plataforma_sofipo} | (id = app_usuario()) | (id = app_usuario())
+weekly_digest_deliveries | weekly_digest_deliveries_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+weekly_digest_preferences | weekly_digest_preferences_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+weekly_digest_sends | weekly_digest_sends_cliente | ALL | {plataforma_cliente} | (company_id = app_empresa()) | (company_id = app_empresa())
+(143 rows)
+== membresías de roles
+rol | miembro | admin_option
+plataforma_app | duena | t
+plataforma_cliente | duena | f
+plataforma_cliente | duena | t
+plataforma_cliente | plataforma_app | f
+plataforma_cliente | plataforma_app | f
+plataforma_cliente | postgres | f
+plataforma_sofipo | duena | f
+plataforma_sofipo | duena | t
+plataforma_sofipo | plataforma_app | f
+plataforma_sofipo | plataforma_app | f
+plataforma_sofipo | postgres | f
+plataforma_tarea | duena | t
+plataforma_tarea | duena | f
+plataforma_tarea | plataforma_app | f
+plataforma_tarea | plataforma_app | f
+plataforma_tarea | postgres | f
+(16 rows)
+== privilegios por omisión
+pg_get_userbyid | defaclobjtype | defaclacl
+(0 rows)
+== esquema public
+nspname | pg_get_userbyid | nspacl
+public | duena | {duena=UC/duena,=U/duena,plataforma_cliente=U/duena,plataforma_sofipo=U/duena,plataforma_tarea=U/duena}
+(1 row)
+== extensiones
+extname | extversion | pg_get_userbyid
+btree_gist | 1.7 | duena
+plpgsql | 1.0 | postgres
+unaccent | 1.1 | duena
+(3 rows)

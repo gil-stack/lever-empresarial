@@ -38,6 +38,13 @@ const nextConfig: NextConfig = {
         // El comprobante de un pago de cobranza baja igual que el documento de un proveedor (r63-N5).
         "/consola/cobros/comprobante/:id",
         "/c/:empresa/consola/cobros/comprobante/:id",
+        // Las descargas de PLD (Ola R2).
+        "/operacion/pld/casos/:id/documento/:documentoId",
+        "/operacion/pld/casos/:id/reporte",
+        "/operacion/comite/sesiones/:id/acta",
+        "/operacion/comite/actas/:actaId",
+        "/operacion/reportes/archivo",
+        "/operacion/conservacion/manifiesto",
       ].map((source) => ({
         source,
         headers: [{ key: "Content-Security-Policy", value: POLITICA_DESCARGA }],

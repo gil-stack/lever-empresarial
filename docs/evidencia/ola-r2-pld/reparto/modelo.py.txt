@@ -1,0 +1,30 @@
+import re, sys, glob, collections
+M, S = sys.argv[1], sys.argv[2]
+def seg(t):
+    m = re.match(r"([\d.]+)(m|s|ms)$", t); v, u = float(m[1]), m[2]
+    return v * 60 if u == "m" else v / 1000 if u == "ms" else v
+logs = glob.glob(f"{M}/rep/cfea-*.log") + glob.glob(f"{M}/rep/c62-*.log") + glob.glob(f"{M}/rep/a742-*.log") + glob.glob(f"{M}/ci/ci*-e2e-*.log") + glob.glob(f"{S}/ci*-e2e-*.log")
+maximo = collections.defaultdict(float); veces = collections.Counter(); listos = []; cierre = []
+reales = {}
+for f in logs:
+    t = open(f).read()
+    for m in re.finditer(r'✓ +\d+ (?:tests/e2e/)?([a-z0-9-]+\.spec\.ts):\d+:\d+ › (.*?) \(([\d.]+(?:m|s|ms))\)"', t):
+        k = m[1] + " › " + m[2].strip(); maximo[k] = max(maximo[k], seg(m[3])); veces[k] += 1
+    a = re.search(r"listos · (\d+) s", t)
+    if a: listos.append(int(a[1]))
+LISTOS = max(listos); CIERRE = 45
+print(f"registros: {len(logs)}; «listos» observados {sorted(listos)} → uso {LISTOS} s; cierre {CIERRE} s")
+for total in (6, 7):
+    peor = 0
+    print(f"--- {total} partes")
+    for n in range(1, total + 1):
+        suma = 0.0; falta = []; archivos = collections.Counter()
+        for l in open(f"{M}/rep/lista-{total}-{n}.txt"):
+            m = re.match(r"\s+([a-z0-9-]+\.spec\.ts):\d+:\d+ › (.*)$", l.rstrip("\n"))
+            if not m: continue
+            k = m[1] + " › " + m[2].strip(); archivos[m[1]] += 1
+            if k in maximo: suma += maximo[k]
+            else: falta.append(k)
+        est = LISTOS + suma + CIERRE; peor = max(peor, est)
+        print(f"parte {n}: {sum(archivos.values())} pruebas, máx. {suma:.0f} s de pruebas → ≈ {est:.0f} s · {dict(archivos)}" + (f" · SIN DATO {len(falta)}: {falta[:3]}" if falta else ""))
+    print(f"peor parte con {total}: ≈ {peor:.0f} s")
