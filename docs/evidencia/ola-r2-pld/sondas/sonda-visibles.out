@@ -1,0 +1,9 @@
+== descripción del aviso (mínimo 20)
+   20 × U+3164 (nada visible) → dato_invalido_descripcion
+   «Revisar» + 13 × U+3164 (7 visibles, 20 para la base) → dato_invalido_descripcion
+== nota del caso (mínimo 2) y propuesta (motivoEscrito, mínimo 10 visibles)
+   nota: 2 × U+3164 → dato_invalido_texto
+   nota: «a» + U+3164 (1 visible) → dato_invalido_texto
+   propuesta: «Revisar» + 3 × U+3164 (7 visibles) → motivo_corto
+   propuesta: 10 × U+3164 → motivo_invalido
+   marca de 24 h: «Revisar» + 3 × U+3164 → motivo_corto

@@ -23,9 +23,9 @@ describe("aviso de Operación", () => {
   });
 
   it("cada error de Recuperaciones marca su propio campo", () => {
-    assert.deepEqual(errorDelCampo("motivo_invalido", "motivo"), { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo", autoFocus: true });
+    assert.deepEqual(errorDelCampo("motivo_invalido", "motivo"), { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo" });
     assert.deepEqual(errorDelCampo("motivo_invalido", "verificacion"), {});
-    assert.deepEqual(errorDelCampo("verificacion_invalida", "verificacion"), { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo", autoFocus: true });
+    assert.deepEqual(errorDelCampo("verificacion_invalida", "verificacion"), { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo" });
     assert.deepEqual(errorDelCampo("verificacion_invalida", "motivo"), {});
   });
 
@@ -43,7 +43,7 @@ describe("aviso de Operación", () => {
     assert.match(texto("dato_invalido_nombre"), /Revisa el campo marcado: el dato no tiene el formato esperado\./);
     assert.doesNotMatch(texto("dato_invalido_nombre"), /invisible/);
     for (const [codigo, campo] of [["invisible_nombre", "nombre"], ["invisible_razonSocial", "razonSocial"], ["invisible_folio", "folio"]] as const) {
-      assert.deepEqual(errorDelCampo(codigo, campo, "aviso-representante"), { "aria-invalid": true, "aria-describedby": "aviso-representante-campo", autoFocus: true }, codigo);
+      assert.deepEqual(errorDelCampo(codigo, campo, "aviso-representante"), { "aria-invalid": true, "aria-describedby": "aviso-representante-campo" }, codigo);
       assert.deepEqual(errorDelCampo(codigo, "rfc"), {}, codigo);
     }
   });
@@ -59,7 +59,7 @@ describe("aviso de Operación", () => {
       ["invisible_razonSocial", "razonSocial"],
     ] as const) {
       assert.equal(avisoDeCampo(codigo), true, codigo);
-      assert.equal(errorDelCampo(codigo, campo).autoFocus, true, codigo);
+      assert.equal(errorDelCampo(codigo, campo)["aria-invalid"], true, codigo);
     }
     for (const codigo of ["expediente_datos_incompletos", "expediente_ausente", "expediente_documento_cargado", "toString", "constructor", ""]) {
       assert.equal(avisoDeCampo(codigo), false, codigo);
@@ -105,7 +105,7 @@ describe("aviso de Operación", () => {
       ["dato_invalido_detalle", "detalle"],
     ] as const) {
       assert.equal(avisoDeCampo(codigo), true, codigo);
-      assert.equal(errorDelCampo(codigo, campo).autoFocus, true, codigo);
+      assert.equal(errorDelCampo(codigo, campo)["aria-invalid"], true, codigo);
       assert.doesNotMatch(texto(codigo), /No se pudo completar/, codigo);
     }
     // Humo-N3 del preview: el correo inválido tiene su propio mensaje, no el del formato en general.
@@ -164,5 +164,17 @@ describe("aviso de Operación", () => {
     assert.equal(claves.length, 17);
     assert.ok(lanzados.size > 20);
     for (const codigo of [...lanzados, ...claves]) assert.equal(avisoConocido(codigo), true, codigo);
+  });
+
+  // Sexta vuelta del #61: sin JavaScript, la respuesta llega al fragmento `#<idAviso>-campo`. Con un error de campo es el
+  // mensaje junto al campo; si no, un destino vacío al inicio del aviso del formulario. El aviso de la página no lleva.
+  it("el aviso de un formulario lleva el destino del fragmento solo cuando el error no es de un campo", () => {
+    const general = renderToStaticMarkup(createElement(AvisoOperacion, { codigo: "dictamen_ya_registrado", id: "aviso-dictamen" }));
+    assert.match(general, /<span id="aviso-dictamen-campo" class="destino-del-rechazo"><\/span>/);
+    const deCampo = renderToStaticMarkup(createElement(AvisoOperacion, { codigo: "dato_invalido_actividad", id: "aviso-riesgo" }));
+    assert.doesNotMatch(deCampo, /destino-del-rechazo/);
+    assert.doesNotMatch(renderToStaticMarkup(createElement(AvisoOperacion, { codigo: "dictamen_ya_registrado" })), /destino-del-rechazo/);
+    assert.match(renderToStaticMarkup(createElement(MensajeDelCampo, { codigo: "dato_invalido_actividad", campo: "actividad", idAviso: "aviso-riesgo" })), /id="aviso-riesgo-campo"/);
+    assert.equal(errorDelCampo("dato_invalido_actividad", "actividad", "aviso-riesgo").autoFocus, undefined);
   });
 });

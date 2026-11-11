@@ -1,0 +1,6 @@
+# sh scripts/ci/pruebas-e2e.sh tests/e2e/pld.spec.ts (sin la mutación)
+  ✓  1 tests/e2e/pld.spec.ts:19:5 › perfil transaccional: Originación lo declara con doble clic y Aprobación lo ve sin alertas ni casos (1.9s)
+  ✓  2 tests/e2e/pld.spec.ts:49:5 › aviso del personal: confidencial; Cumplimiento abre el caso y agrega una nota; Aprobación no ve PLD (2.3s)
+  ✓  3 tests/e2e/pld.spec.ts:92:5 › una clave repetida en la dirección no tumba ninguna página de PLD (2.8s)
+  ✓  4 tests/e2e/pld.spec.ts:112:7 › sin JavaScript › sin JavaScript, agregar una nota al caso responde 303 con su aviso (275ms)
+  4 passed (12.8s)

@@ -5,7 +5,7 @@ import { EMPRESA, INICIO, ORIGEN, entrar } from "./marco-apoyo";
 import { CORREOS } from "./siembra";
 
 // Cada prueba entra con su propia cookie y no comparte estado: «parallel» solo para que el reparto de la e2e pueda partir
-// el archivo (con workers: 1 siguen corriendo una tras otra). El fondo animado vive en fondo.spec.ts.
+// el archivo (con workers: 1 siguen corriendo una tras otra). El fondo animado vive en fondo-pruebas.ts.
 test.describe.configure({ mode: "parallel" });
 
 test.describe("marco de la consola en escritorio", () => {

@@ -1,0 +1,50 @@
+1. liberado $1,000.00     → {
+  estado: 'listo_para_pagar',
+  version: 1,
+  total: '100000',
+  clabe: '002180701150990012'
+} | pld_operaciones: [
+  {
+    monto: '100000',
+    clabe: '002180701150990012',
+    ocurrida_en: 2026-11-10T00:36:54.717Z
+  }
+] | alertas: []
+2. el cliente cambia la CLABE → { tipo: 'cambiada', pagosRegresados: 1, avisosEnviados: 0 } | {
+  estado: 'por_autorizar',
+  version: 2,
+  total: '100000',
+  clabe: '002180701150990012'
+}
+3. rechazado               → {
+  estado: 'rechazado',
+  version: 2,
+  total: '100000',
+  clabe: '002180701150990012'
+}
+4. corregido y reenviado   → {
+  estado: 'por_autorizar',
+  version: 3,
+  total: '90000000',
+  clabe: '002180701150990025'
+}
+5. liberado $900,000.00    → {
+  estado: 'listo_para_pagar',
+  version: 3,
+  total: '90000000',
+  clabe: '002180701150990025'
+}
+   pld_operaciones del pago: [
+  {
+    monto: '100000',
+    clabe: '002180701150990012',
+    ocurrida_en: 2026-11-10T00:36:54.717Z
+  },
+  {
+    monto: '90000000',
+    clabe: '002180701150990025',
+    ocurrida_en: 2026-11-10T00:36:54.735Z
+  }
+]
+   alertas de Gamma (perfil $100,000.00/mes en pagos): [ { regla: 'excede_perfil', suma: '90000000' } ]
+   suma del mes que ven las reglas: 90100000 · lo liberado de verdad: 90000000

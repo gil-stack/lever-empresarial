@@ -167,7 +167,7 @@ export type OrdenDelFondo = { equipos?: readonly (typeof EQUIPOS)[number][0][]; 
 
 /**
  * Las pruebas del fondo animado en las densidades que se piden: sin GPU de verdad y con el equipo emulado (sin GPU y con GPU
- * rápida). Las reparten fondo, movimiento-del-fondo, optica-retina y velocidad-del-fondo (*.spec.ts): en el CI, el WebGL por
+ * rápida). Las reparten brillo-del-fondo, optica-retina y velocidad-del-fondo (*.spec.ts): en el CI, el WebGL por
  * software del navegador remoto hace que las de GPU emulada tarden de 34 a 132 s cada una, y el reparto de la e2e las deja al
  * final de partes distintas.
  */

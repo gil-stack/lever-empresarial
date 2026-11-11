@@ -1,0 +1,6 @@
+# Una lectura de audit_log abierta 12 s (lector); la 0030 en plataforma_copia 1 s después (migración, con su SET LOCAL lock_timeout = '2s'); 0.5 s después una escritura normal a audit_log (escritor, que se deshace para no cambiar la copia).
+== migración
+psql:<scratchpad>/0030-b.sql:1: ERROR:  canceling statement due to lock timeout
+migracion rc=3 duró 2111 ms
+== escritor
+escritura a audit_log esperó 1602 ms

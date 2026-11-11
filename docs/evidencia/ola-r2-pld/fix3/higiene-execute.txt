@@ -1,0 +1,80 @@
+# Higiene de EXECUTE en funciones pld_. Antes (3ff5e27 + C + N2 + N3): 31 de disparador y 5 invocables con EXECUTE de PUBLIC.
+# función | tipo | seguridad | EXECUTE (sin la dueña)
+funcion | tipo | seguridad | execute
+pld_personal_deja_analista() | disparador | definer | -
+pld_inmutable() | disparador | invoker | PUBLIC
+pld_exige_evento() | disparador | invoker | PUBLIC
+pld_perfiles_revisar() | disparador | invoker | PUBLIC
+pld_perfil_propuestas_revisar() | disparador | invoker | PUBLIC
+pld_perfil_resoluciones_revisar() | disparador | invoker | PUBLIC
+pld_perfil_aprobado_con_resolucion() | disparador | invoker | PUBLIC
+pld_evaluaciones_revisar() | disparador | invoker | PUBLIC
+pld_parametros_revisar() | disparador | invoker | PUBLIC
+pld_operaciones_antes() | disparador | invoker | PUBLIC
+pld_evaluar_operacion() | disparador | definer | PUBLIC
+pld_registrar_pago() | disparador | definer | PUBLIC
+pld_registrar_nomina() | disparador | definer | PUBLIC
+pld_avisos_revisar() | disparador | invoker | PUBLIC
+pld_avisos_alertar() | disparador | definer | PUBLIC
+pld_aviso_excluidos_revisar() | disparador | definer | PUBLIC
+pld_aviso_con_cumplimiento() | disparador | definer | PUBLIC
+pld_casos_revisar() | disparador | invoker | PUBLIC
+pld_casos_con_alerta() | disparador | invoker | PUBLIC
+pld_caso_hijo_revisar() | disparador | invoker | PUBLIC
+pld_modo_dictamen_revisar() | disparador | invoker | PUBLIC
+pld_comite_integrantes_revisar() | disparador | invoker | PUBLIC
+pld_comite_bajas_revisar() | disparador | invoker | PUBLIC
+pld_comite_validar() | disparador | invoker | PUBLIC
+pld_sesiones_revisar() | disparador | invoker | PUBLIC
+pld_votos_revisar() | disparador | invoker | PUBLIC
+pld_operador_revisar() | disparador | invoker | PUBLIC
+pld_comite_auditores_sin_integrante() | disparador | invoker | PUBLIC
+pld_comite_comunicaciones_revisar() | disparador | invoker | PUBLIC
+pld_dictamenes_revisar() | disparador | invoker | PUBLIC
+pld_reportes_revisar() | disparador | invoker | PUBLIC
+pld_periodicos_revisar() | disparador | invoker | PUBLIC
+pld_parametros_vigentes(uuid) | invocable | definer | -
+pld_alertar(pld_operaciones,uuid,text,text,jsonb) | invocable | definer | -
+pld_personas_del_caso(uuid) | invocable | definer | -
+pld_excluidos_del_caso(uuid) | invocable | definer | -
+pld_personas_de_la_sesion(uuid) | invocable | definer | -
+pld_excluidos_de_la_sesion(uuid) | invocable | definer | -
+pld_aviso_sin_analista(uuid) | invocable | definer | -
+pld_fecha_mx(timestamp with time zone) | invocable | invoker | PUBLIC
+pld_sin_invisibles(text) | invocable | invoker | PUBLIC
+pld_nombre_de_integrante(pld_comite_integrantes) | invocable | invoker | PUBLIC
+pld_comite_vigentes(uuid,date) | invocable | invoker | PUBLIC,plataforma_sofipo
+pld_resultado_votacion(uuid,uuid) | invocable | invoker | PUBLIC,plataforma_sofipo
+pld_rol(text[]) | invocable | definer | plataforma_sofipo
+pld_es_personal(uuid,uuid) | invocable | definer | plataforma_sofipo
+pld_dia_inhabil(date) | invocable | definer | plataforma_sofipo
+pld_calendario_cargado(integer) | invocable | definer | plataforma_sofipo
+pld_sumar_dias_habiles(date,integer) | invocable | definer | plataforma_sofipo
+pld_dia_habil_del_mes(date,integer) | invocable | definer | plataforma_sofipo
+pld_ultimo_dia_habil(date) | invocable | definer | plataforma_sofipo
+pld_dias_habiles_entre(date,date) | invocable | definer | plataforma_sofipo
+pld_celebracion_contrato(uuid) | invocable | definer | plataforma_sofipo
+pld_casos_que_me_excluyen() | invocable | definer | plataforma_sofipo
+pld_alertas_que_me_excluyen() | invocable | definer | plataforma_sofipo
+pld_avisos_que_me_excluyen() | invocable | definer | plataforma_sofipo
+pld_caso_me_excluye(uuid) | invocable | definer | plataforma_sofipo
+pld_alerta_me_excluye(uuid) | invocable | definer | plataforma_sofipo
+pld_aviso_me_excluye(uuid) | invocable | definer | plataforma_sofipo
+pld_caso_vence(uuid) | invocable | definer | plataforma_sofipo
+pld_modo_vigente(uuid) | invocable | definer | plataforma_sofipo
+pld_documento_para_descarga(uuid,uuid) | invocable | definer | plataforma_sofipo
+pld_sesiones_que_me_excluyen() | invocable | definer | plataforma_sofipo
+pld_sesion_me_excluye(uuid) | invocable | definer | plataforma_sofipo
+pld_voto_choca(uuid,uuid,uuid) | invocable | definer | plataforma_sofipo
+pld_sesion_excluye_a(uuid,uuid) | invocable | definer | plataforma_sofipo
+pld_serie_choca(uuid,uuid) | invocable | definer | plataforma_sofipo
+pld_acta_para_descarga(uuid,uuid) | invocable | definer | plataforma_sofipo
+pld_manifiesto_conteos(uuid,date,date,uuid,integer) | invocable | definer | plataforma_sofipo
+pld_manifiesto_documentos(uuid,date,date,timestamp with time zone,uuid,integer) | invocable | definer | plataforma_sofipo
+pld_ids_que_me_excluyen() | invocable | definer | plataforma_sofipo
+(71 rows)
+
+# Después: PUBLIC 0, plataforma_sofipo 32, app/cliente/tarea 0 (también por has_function_privilege).
+# Mutaciones: H1 sin el REVOKE cae la prueba de permisos; H2 sin el GRANT de las tres funciones cae la suite desde la 27ª (permiso denegado).
+H1 sin el REVOKE a PUBLIC (como 3ff5e27) · db/migrations/0030_pld_alertas_reportes.sql: exit 1 · cae «permisos de las funciones de PLD: PUBLIC no ejecuta ninguna; app, cliente y tarea tampoco; la SOFIPO, solo las que usa» · líneas ['101', '1988', '1996'] · ['AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:']
+H2 sin el GRANT de las tres a sofipo · db/migrations/0030_pld_alertas_reportes.sql: exit 1 · cae «perfil versionado y evaluaciones semestrales» · líneas ['101', '251', '274', '355'] · ['AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:', 'AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:', 'AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:']

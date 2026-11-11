@@ -48,6 +48,7 @@ import { cambiarRolPersonal } from "../../src/server/operacion/personal.ts";
 import { decidirCambioDeSuspension, solicitarCambioDeSuspension } from "../../src/server/operacion/suspensiones.ts";
 import { crearPagoProveedor, resolverPagoProveedor } from "../../src/server/pagos-proveedores/servicio.ts";
 import { nombrarCentro } from "../../src/server/personas/servicio.ts";
+import { declararPerfil } from "../../src/server/pld/perfil.ts";
 import { cambiarAccesoFinanzas } from "../../src/server/roles/finanzas.ts";
 import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
 import { invitarPersonalComoDuena } from "../../scripts/personal-por-la-duena.ts";
@@ -667,6 +668,8 @@ describe("alta regulada en Postgres desechable", { skip: urlAdmin.length === 0 }
           await dueno.query("alter table kyb_documentos enable trigger user");
 
           await assert.rejects(decidirActivacion(ori, SESION_SOFIPO, { id: solicitudAlfa, aprobada: true }), /sin_permiso_operacion/);
+          // 0030 (Ola R2): el candado también exige el perfil transaccional declarado (25ª).
+          await declararPerfil(ori, { companyId: alfa, formId: randomUUID(), pagosMonto: "500000", pagosOperaciones: "40", nominaMonto: "300000", nominaOperaciones: "2", motivo: "" });
           await decidirActivacion(apr, SESION_SOFIPO, { id: solicitudAlfa, aprobada: true });
           assert.equal((await leerCliente(ori, alfa))?.estado, "activa");
         });

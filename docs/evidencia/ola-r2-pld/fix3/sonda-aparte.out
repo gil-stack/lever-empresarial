@@ -1,0 +1,44 @@
+# Copia de revision-61-base-scripts/aparte/sonda-aparte.mts (sin editar salvo la ruta W, que apunta a este worktree), contra la 0030 de este head en una base «aparte» de 5553.
+# 32 de 33. C2/s supone que S5 (informativo) pasa; con la regla del líder la serie de un caso ya votado se rechaza siempre, así que en C2/s se rechaza la serie y confirma el voto.
+== Orden de los votos
+O1 · sesión vacía de A; primer voto H(B) → ok · esperado ok ✔
+O2 · la sesión votó K{}; A vota H(B) → sesion_con_otra_reserva · esperado sesion_con_otra_reserva ✔
+O3 · la sesión votó H(B); A vota K{} → sesion_con_otra_reserva · esperado sesion_con_otra_reserva ✔
+O4 · la sesión votó H(B); A vota otro H(B) → ok · esperado ok ✔
+O5 · la sesión votó H(B); A vota H(C) → sesion_con_otra_reserva · esperado sesion_con_otra_reserva ✔
+O6 · la sesión votó H(B); A vota H(B,AUD) → sesion_con_otra_reserva · esperado sesion_con_otra_reserva ✔
+O7 · la sesión votó H(B,AUD); A vota H(B) → sesion_con_otra_reserva · esperado sesion_con_otra_reserva ✔
+O8 · la sesión votó K{}; A vota otro K{} → ok · esperado ok ✔
+O9 · sesión vacía que registró B; A vota H(B) (fix2-N2: B es de la sesión) → sesion_con_persona_excluida · esperado sesion_con_persona_excluida ✔
+O10 · sesión con H(B) y otro H(B) aprobados: A dictamina el primero → ok · esperado ok ✔
+O10b · B / C ven esa sesión → false / true · esperado false / true ✔
+O11 · sesión que registró B y votó K{}; A vota H(B) (persona y conjunto a la vez) → sesion_con_persona_excluida · esperado sesion_con_persona_excluida ✔
+O12 · la sesión votó H(B); B vota ahí K{} (B excluida y conjunto distinto a la vez) → sesion_no_existe · esperado sesion_no_existe ✔
+== Serie: sumar a un caso votado la alerta de un aviso con exclusiones
+S1 · la sesión votó K y K'; A suma a K un aviso que excluye a B → serie_con_otra_reserva · esperado serie_con_otra_reserva ✔
+S2 · la sesión solo votó H(B); A suma a H otro aviso que excluye a B (el conjunto no cambia) → ok · esperado ok ✔
+S3 · la sesión votó H(B) y H2(B); A suma a H un aviso que excluye a C → serie_con_otra_reserva · esperado serie_con_otra_reserva ✔
+S4 · la sesión solo votó H(B); A suma a H un aviso que excluye a C (la sesión cambia de conjunto con su único caso) → serie_con_otra_reserva · esperado info
+S5 · la sesión solo votó K{}; A suma a K un aviso que excluye a B (nadie de la sesión es B) → serie_con_otra_reserva · esperado info
+S6 · sesión que registró B, solo votó K{}; A suma a K un aviso que excluye a B (fix2-N2) → serie_con_persona_excluida · esperado serie_con_persona_excluida ✔
+S7 · sesión de A, solo votó K{}, B subió el acta; A suma a K un aviso que excluye a B (fix2-N2) → serie_con_persona_excluida · esperado serie_con_persona_excluida ✔
+S8 · sesión que registró B con K y K'; A suma a K un aviso que excluye a B (persona y conjunto a la vez; la serie sigue el orden del voto) → serie_con_persona_excluida · esperado serie_con_persona_excluida ✔
+== Carreras (dos conexiones como la app, READ COMMITTED)
+C1/K · sesión vacía: primer voto de K{} y de H(B) a la vez (K primero; la segunda esperó: true) → confirmó · sesion_con_otra_reserva · confirmadas 1 · esperado una confirma y la otra sesion_con_otra_reserva ✔
+C1/H · sesión vacía: primer voto de K{} y de H(B) a la vez (H primero; la segunda esperó: true) → confirmó · sesion_con_otra_reserva · confirmadas 1 · esperado una confirma y la otra sesion_con_otra_reserva ✔
+C2/s · la sesión solo votó K{}: sumar a K un aviso que excluye a B contra votar K'{} (serie primero; la segunda esperó: false) → serie_con_otra_reserva · confirmó · confirmadas 1 · esperado una confirma y la otra sesion_con_otra_reserva ✘
+C2/v · la sesión solo votó K{}: sumar a K un aviso que excluye a B contra votar K'{} (voto primero; la segunda esperó: true) → confirmó · serie_con_otra_reserva · confirmadas 1 · esperado una confirma y la otra serie_con_otra_reserva ✔
+INV · sesiones del operador con casos de conjuntos distintos (dueña) → 0 · esperado 0 ✔
+== Plazo (r2-fix3-N1 debe desaparecer)
+P1 · S votó K2{} aprobado; A vota ahí H(B) → sesion_con_otra_reserva · esperado sesion_con_otra_reserva ✔
+P2 · A vota H(B) en una sesión aparte S_H → ok · esperado ok ✔
+P3 · B ve S / B ve S_H → true / false · esperado true / false ✔
+P4 · sesiones que aprobaron K2 para B → ["S"] · esperado ["S"] ✔
+P5 · A dictamina H con S_H → ok · esperado ok ✔
+P6 · B dictamina K2 con S → ok · esperado ok ✔
+== Fuga (r2-fix3-N2 como defensa en profundidad y r2-fix3-N3)
+F1 · dictamen de K con S: ¿la sesión del dictamen está en el Comité de B? → true · esperado true ✔
+F2 · votos de S_H en la bitácora de B → 0 · esperado 0 ✔
+F3 · voto heredado de K3{} en S_H: ¿B lo ve en la bitácora / en pld_votos? → false / 0 · esperado false / 0 ✔
+
+resumen: 32 de 33 como se espera · distintos: C2/s

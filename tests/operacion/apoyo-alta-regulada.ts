@@ -13,6 +13,7 @@ import {
   guardarDatosGenerales,
   leerExpediente,
 } from "../../src/server/operacion/expediente.ts";
+import { declararPerfil } from "../../src/server/pld/perfil.ts";
 import type { AlmacenConstancia } from "../../src/server/proveedores/constancia.ts";
 
 export const SESION_SOFIPO = { superficie: "sofipo" as const, segundoFactor: { metodo: "totp" as const, en: new Date() } };
@@ -149,5 +150,10 @@ export async function expedienteEnRegla(
   await enviarVersion(origina, versionId);
   await dictaminarVersion(cumple, SESION_SOFIPO, { versionId, formId: randomUUID(), resultado: "aprobado", motivo: "" });
   await calificarRiesgoEmpresa(cumple, { companyId: entrada.companyId, formId: randomUUID(), actividad: "baja", zona: "baja" });
+  // 0030 (Ola R2): el candado de activación también exige el perfil transaccional declarado (25ª).
+  await declararPerfil(origina, {
+    companyId: entrada.companyId, formId: randomUUID(), pagosMonto: "500000", pagosOperaciones: "40",
+    nominaMonto: "300000", nominaOperaciones: "2", motivo: "",
+  });
   return { versionId };
 }

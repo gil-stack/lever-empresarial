@@ -1,0 +1,24 @@
+# Mutación: src/app/operacion/(portal)/pld/page.tsx sin soloTexto
+-import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
++import { type Parametros } from "@/app/operacion/busqueda";
+-  const params = await soloTexto(searchParams);
++  const params = (await searchParams) as { aviso?: string; en?: string }; // MUTACIÓN: sin soloTexto
+
+# sh scripts/ci/pruebas-e2e.sh tests/e2e/pld.spec.ts (con la mutación)
+  ✓  1 tests/e2e/pld.spec.ts:19:5 › perfil transaccional: Originación lo declara con doble clic y Aprobación lo ve sin alertas ni casos (1.8s)
+  ✓  2 tests/e2e/pld.spec.ts:49:5 › aviso del personal: confidencial; Cumplimiento abre el caso y agrega una nota; Aprobación no ve PLD (2.1s)
+  ✘  3 tests/e2e/pld.spec.ts:92:5 › una clave repetida en la dirección no tumba ninguna página de PLD (702ms)
+    Error: /operacion/pld
+    Expected: 200
+    Received: 500
+    test-results/e2e/pld-una-clave-repetida-en--6357e-tumba-ninguna-página-de-PLD/test-failed-1.png
+  1 failed
+  2 passed (10.2s)
+- Following Playwright test failed.
+Error: /operacion/pld
+Expected: 200
+Received: 500
+✓ Ready in 50ms
+✓ Running next.config.ts took 15ms
+⨯ TypeError: a.startsWith is not a function
+[e2e] captura: test-results/e2e/pld-una-clave-repetida-en--6357e-tumba-ninguna-página-de-PLD/test-failed-1.png

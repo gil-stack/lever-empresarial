@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState, type ReactNode, type RefOb
 
 import type { AccionConAviso, EstadoDelFormulario } from "@/app/operacion/rechazo";
 
-import { AvisoOperacion, errorDelCampo, MensajeDelCampo } from "./aviso";
+import { AvisoOperacion, errorDelCampo, MensajeDelCampo, permalinkDelRechazo } from "./aviso";
 
 const SIN_AVISO: EstadoDelFormulario = { aviso: null, valores: {}, vuelta: 0 };
 /** Lo emite un formulario rechazado: el resumen de arriba de la página (el aviso del envío anterior) ya no aplica. */
@@ -35,7 +35,7 @@ export function useAvisoVigente(estado: { aviso: string | null; vuelta: number }
  * su aviso, como antes. El formulario lleva `key={vuelta}`, `ref={forma}` y `action={enviar}`.
  */
 export function useFormularioConAviso(accion: AccionConAviso, idAviso: string) {
-  const [estado, enviar] = useActionState(accion, SIN_AVISO);
+  const [estado, enviar] = useActionState(accion, SIN_AVISO, permalinkDelRechazo(idAviso));
   const forma = useRef<HTMLFormElement>(null);
   const aviso = useAvisoVigente(estado, forma);
   useEffect(() => {

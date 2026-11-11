@@ -1,0 +1,65 @@
+# Pruebas del fondo con playwright test --list: antes (archivos del #60 en main: fondo, movimiento-del-fondo, optica-retina y velocidad-del-fondo) y después (brillo-del-fondo, optica-retina y velocidad-del-fondo)
+## Antes (23 pruebas, en orden)
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 2 › estable
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 1 › estable
+movimiento-del-fondo.spec.ts › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana
+fondo-pruebas.ts › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar
+fondo-pruebas.ts › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 2 › estable
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 2 › arrastrar la ventana
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 1 › estable
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms
+
+## Después (23 pruebas, en orden)
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez
+fondo-pruebas.ts › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 2 › estable
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 1 › estable
+brillo-del-fondo.spec.ts › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 2 › estable
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 1 › estable
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana
+fondo-pruebas.ts › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro
+fondo-pruebas.ts › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 2 › arrastrar la ventana
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro
+fondo-pruebas.ts › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms
+
+## diff de las listas ordenadas, sin el archivo (vacío = mismas pruebas)
+(salida de diff: 0)
+## Repetidas después: 0
+
+## Cuerpos
+- 22 de las 23 se definen en tests/e2e/fondo-pruebas.ts; su diff contra origin/main es solo el comentario con los nombres de los archivos:
+- * rápida). Las reparten fondo, movimiento-del-fondo, optica-retina y velocidad-del-fondo (*.spec.ts): en el CI, el WebGL por
++ * rápida). Las reparten brillo-del-fondo, optica-retina y velocidad-del-fondo (*.spec.ts): en el CI, el WebGL por
+- La de 40 ms vive en el spec: diff del bloque «fondo animado en un equipo que pinta cada cuadro en 40 ms» entre movimiento-del-fondo.spec.ts (main) y brillo-del-fondo.spec.ts:
+(salida de diff: 0, 30 líneas)
+- Navegador propio con GPU emulada, sin cambios (fondo-pruebas.ts):
+230:              const propio = conGpu ? await navegadorPropio(playwright, launchOptions) : null;
+259:              } finally {
+260:                await propio?.close();

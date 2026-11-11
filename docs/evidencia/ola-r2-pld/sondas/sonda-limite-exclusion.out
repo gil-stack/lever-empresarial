@@ -1,0 +1,24 @@
+Zeta: perfil $100,000 → $90,000; Originación declara $50,000; otra instrucción de $1,000
+ suma_mes | limite_vigente | alertas_excede 
+----------+----------------+----------------
+  9100000 |        5000000 |              1
+(1 row)
+
+Yota: perfil $100,000 → $90,000; grado alto (límite × 0.80 = $80,000); otra instrucción de $1,000
+ suma_mes | limite_con_factor | alertas_excede 
+----------+-------------------+----------------
+  9100000 |           8000000 |              1
+(1 row)
+
+Exclusión sin persona en el contexto sobre el aviso sembrado (excluye a CUM):
+ERROR:  exclusion_fuera_del_aviso
+ cum_excluida | eventos 
+--------------+---------
+            0 |       0
+(1 row)
+
+ cum_ve_el_aviso 
+-----------------
+               1
+(1 row)
+

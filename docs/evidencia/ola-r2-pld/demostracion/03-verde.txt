@@ -1,0 +1,36 @@
+# Con las guardas: 24/24.
+▶ PLD (0030) en Postgres desechable
+  ▶ candado, perfil, reglas en vivo, avisos confidenciales, Comité, dictamen, reportes, conservación y RLS
+    ✔ candado: sin perfil transaccional no se activa; con perfil, sí; la reactivación no cambia (139.511ms)
+    ✔ perfil versionado y evaluaciones semestrales (27ª) (82.737208ms)
+    ✔ reglas en vivo: el pago liberado y el lote preparado entran una vez y alertan sin bloquear (58.184958ms)
+    ✔ reenvío (r2-base-N1): un pago corregido y liberado otra vez se evalúa con su instrucción y cuenta una vez (32.429708ms)
+    ✔ aviso del personal: acuse para quien avisa y nada para la persona mencionada (60ª) (115.688833ms)
+    ✔ análisis: caso, serie de la misma empresa, notas, documento con doble envío y propuesta (57.609375ms)
+    ✔ Comité: integración (47ª), quórum, empate con voto de calidad, suplentes, acta y dictamen (370.397041ms)
+    ✔ modo Oficial (47ª, último párrafo), dictamen fuera de plazo y reporte de 24 horas (44ª) (47.154417ms)
+    ✔ sesión con fecha atrasada (r2-base-N6): el dictamen registrado tarde queda marcado; los meses sin sesión se listan (38.132542ms)
+    ✔ carrera (r2-base-N9): lo que llega a un caso mientras se dictamina espera y ve el dictamen (337.668917ms)
+    ✔ días hábiles: los dos instrumentos de 2026 con criterio conservador y «falta el calendario» en 2027 (33.313458ms)
+    ✔ periódicos: 36ª de 41 columnas con clave CASFIM, 38ª en ceros y el catálogo de tipos de operación (32.839292ms)
+    ✔ parámetros versionados: los cambia Cumplimiento con motivo; la fila inicial queda (3.510166ms)
+    ✔ conservación (61ª): ni la app ni la dueña borran ni truncan operaciones ni nada de PLD (81.524458ms)
+    ✔ RLS cruzada: cada rol y cada operador leen solo lo suyo (63.32525ms)
+    ✔ manifiesto de conservación: conteos y huellas en streaming, con su evento por página (120.333833ms)
+    ✔ sesión oculta (47ª, decisión del líder): quien no la ve ve «falta»; quien la ve, «sí»; ninguna regla de la base la cuenta a escondidas (71.6015ms)
+    ✔ subidas (r2-serv-N15): lo que no queda en la base se borra del almacén (20.53925ms)
+    ✔ personal (r2-fix-N2): ningún cambio deja un aviso abierto sin quien lo analice; con candado común contra el aviso (177.371958ms)
+    ✔ sesión con persona excluida (r2-fix2-N2): ningún caso entra a una sesión de alguien a quien excluye (560.586416ms)
+    ✔ texto visible (r2-fix2-N1): la descripción del aviso y la nota cuentan solo lo que se ve (7.175334ms)
+    ✔ topes de texto (barrido del motivo largo): cada texto entra completo en su tope, se rechaza con uno más y la bitácora no lo recorta (44.517375ms)
+    ✔ empresas de demostración (C): nada entra a PLD; una empresa real con el mismo pago, igual que siempre (62.399833ms)
+  ✔ candado, perfil, reglas en vivo, avisos confidenciales, Comité, dictamen, reportes, conservación y RLS (3639.947625ms)
+✔ PLD (0030) en Postgres desechable (3640.307417ms)
+ℹ tests 24
+ℹ suites 1
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3859.943458

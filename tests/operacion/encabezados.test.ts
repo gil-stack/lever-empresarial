@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import { NextRequest } from "next/server";
 
 import configuracion from "../../next.config.ts";
@@ -124,8 +127,26 @@ describe("descargas y encabezados de next.config", () => {
   });
 
   it("ninguna página del registro pasa por esDescarga por accidente", () => {
-    for (const { patron } of RUTAS) if (esDescarga(patron)) assert.match(patron, /\/(?:documento|comprobante)\/\[[A-Za-z]+\]$/);
+    const PLD = ["/operacion/pld/casos/[id]/reporte", "/operacion/comite/sesiones/[id]/acta", "/operacion/comite/actas/[actaId]", "/operacion/reportes/archivo", "/operacion/conservacion/manifiesto"];
+    for (const { patron } of RUTAS) if (esDescarga(patron) && !PLD.includes(patron)) assert.match(patron, /\/(?:documento|comprobante)\/\[[A-Za-z]+\]$/);
+    for (const patron of ["/operacion/pld", "/operacion/pld/casos/[id]", "/operacion/comite", "/operacion/comite/sesiones/[id]", "/operacion/reportes", "/operacion/conservacion", "/operacion/comite/actas"]) {
+      assert.equal(esDescarga(patron), false, patron);
+    }
     assert.equal(esDescarga("/consola/proveedores"), false);
+  });
+
+  it("todo manejador de src/app que responde con POLITICA_DESCARGA es una descarga para el proxy", () => {
+    // Cada route.ts que pone la política aislada es una descarga: si el proxy no la reconoce, le suma su CSP de
+    // página y un nonce, y las dos políticas se mezclan.
+    const raiz = join(dirname(fileURLToPath(import.meta.url)), "../../src/app");
+    const manejadores = (readdirSync(raiz, { recursive: true }) as string[]).filter((f) => f.endsWith("route.ts"));
+    const conPolitica = manejadores.filter((f) => /POLITICA_DESCARGA|encabezadosDescarga/.test(readFileSync(join(raiz, f), "utf8")));
+    assert.ok(conPolitica.length >= 7, conPolitica.join(", "));
+    for (const archivo of conPolitica) {
+      const patron = `/${archivo.replace(/\\/g, "/").replace(/(^|\/)\([^)]+\)/g, "").replace(/^\//, "").replace(/\/route\.ts$/, "")}`;
+      assert.equal(esDescarga(patron), true, patron);
+      assert.ok(RUTAS.some((r) => r.patron === patron), `${patron} no está en el registro`);
+    }
   });
 
   it("esDescarga reconoce las tres formas de descarga y nada más", () => {

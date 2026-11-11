@@ -52,13 +52,15 @@ describe("tope de archivos", () => {
   // Décima revisión: con el error del archivo que devolvió el servidor, el control marcado recibe también el foco.
   // Onceava: el mensaje del servidor va junto al control y es su descripción. Doceava: va entre la etiqueta y el control,
   // y tras un rechazo la nota de volver a elegir el archivo también describe el control.
-  it("el error del servidor marca el campo de archivo, lo liga a su mensaje junto a él y le da el foco", () => {
-    const ligado = { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo", autoFocus: true };
+  // Sexta vuelta del #61: sin autofocus; con JavaScript el foco lo da el formulario y sin JavaScript se llega por el
+  // fragmento del mensaje (permalinkDelRechazo).
+  it("el error del servidor marca el campo de archivo y lo liga a su mensaje junto a él, sin autofocus", () => {
+    const ligado = { "aria-invalid": true, "aria-describedby": "aviso-operacion-campo" };
     const mensajeDelServidor = createElement(MensajeDelCampo, { codigo: "archivo_no_admitido", campo: "archivo" });
     const html = renderToStaticMarkup(createElement(CampoArchivo, { id: "doc-archivo", name: "archivo", accept: ".pdf", mensaje: ARCHIVO_DEMASIADO_GRANDE, ligado, mensajeDelServidor }));
     assert.match(html, /aria-invalid="true"/);
     assert.match(html, /aria-describedby="aviso-operacion-campo"/);
-    assert.match(html, /autofocus=""/);
+    assert.doesNotMatch(html, /autofocus/);
     assert.match(html, /^<p id="aviso-operacion-campo" class="error-campo error-antes-del-control">Sube un PDF, PNG o JPG legible\.<\/p><input[^>]*type="file"[^>]*\/>$/);
     const conNota = renderToStaticMarkup(createElement(CampoArchivo, { id: "doc-archivo", name: "archivo", accept: ".pdf", mensaje: ARCHIVO_DEMASIADO_GRANDE, ligado, mensajeDelServidor, nota: "Vuelve a elegir el archivo." }));
     assert.match(conNota, /aria-describedby="aviso-operacion-campo doc-archivo-nota"/);

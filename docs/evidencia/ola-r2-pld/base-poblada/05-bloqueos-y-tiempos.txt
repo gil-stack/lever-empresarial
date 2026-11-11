@@ -1,0 +1,28 @@
+# Bloqueos y tiempos de la 0030 en plataforma_copia (TEMPLATE de la base poblada, en 0028), como la dueña, con BEGIN … ROLLBACK.
+# La 0030 se partió en la línea del DROP POLICY de audit_log: «ms_con_audit_log_tomada» es lo que corre con ese ACCESS EXCLUSIVE tomado antes del fin de la transacción.
+== bloqueos que tiene la transacción sobre tablas que ya existían (no pld_)
+             relname              |                 modos                  
+----------------------------------+----------------------------------------
+ audit_log                        | AccessExclusiveLock, AccessShareLock
+ companies                        | AccessShareLock, ShareRowExclusiveLock
+ company_activation_requests      | AccessShareLock
+ expected_collections             | ShareRowExclusiveLock
+ kyb_calificaciones_riesgo        | AccessShareLock, ShareRowExclusiveLock
+ operators                        | AccessShareLock, ShareRowExclusiveLock
+ payroll_batch_items              | ShareRowExclusiveLock
+ payroll_batches                  | ShareRowExclusiveLock
+ platform_staff                   | AccessShareLock, ShareRowExclusiveLock
+ platform_staff_roles             | AccessShareLock, ShareRowExclusiveLock
+ postings                         | ShareRowExclusiveLock
+ supplier_payment_request_history | ShareRowExclusiveLock
+ supplier_payment_requests        | ShareRowExclusiveLock
+ users                            | AccessShareLock, ShareRowExclusiveLock
+(14 rows)
+
+== tiempos
+ ms_hasta_audit_log | ms_con_audit_log_tomada | ms_total 
+--------------------+-------------------------+----------
+                 65 |                       2 |       67
+(1 row)
+
+ROLLBACK

@@ -1,0 +1,86 @@
+{
+  "fases": [
+    "f16"
+  ],
+  "segundos": 96,
+  "verdes": 19,
+  "rojos": 0,
+  "resultados": [
+    {
+      "ok": true,
+      "texto": "16. cambiar parámetros pide «Confirma que eres tú»"
+    },
+    {
+      "ok": true,
+      "texto": "16. el factor venció mientras escribía: pide «Confirma que eres tú», los 7 valores y el motivo siguen y nada va en la dirección"
+    },
+    {
+      "ok": true,
+      "texto": "16. al confirmar, lo capturado sigue"
+    },
+    {
+      "ok": true,
+      "texto": "16. el umbral rechazado queda marcado y con el foco; los otros valores y el motivo siguen, sin nada en la dirección ni en la base"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_parametros_cambiados» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "16. doble clic en «Guardar versión nueva» = 1 versión"
+    },
+    {
+      "ok": true,
+      "texto": "16. la versión nueva guarda lo capturado"
+    },
+    {
+      "ok": true,
+      "texto": "16. «quién dictamina» con el factor vencido: pide confirmar y siguen el modo, la persona y el motivo"
+    },
+    {
+      "ok": true,
+      "texto": "16. al confirmar, siguen"
+    },
+    {
+      "ok": true,
+      "texto": "16. el Oficial sin persona se rechaza: la persona queda marcada y con el foco, y el modo y el motivo siguen"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_modo_cambiado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "16. doble clic en «Guardar quién dictamina» = 1 cambio"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_modo_cambiado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "16. y regresa al Comité"
+    },
+    {
+      "ok": true,
+      "texto": "16. el caso del aviso sobre Ciro sigue abierto"
+    },
+    {
+      "ok": true,
+      "texto": "16. un motivo de 24 horas con 7 caracteres visibles se rechaza sin recargar: queda marcado, con el foco y como se escribió"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_caso_24_horas» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "16. doble clic en «Marcar como reporte de 24 horas» = 1 marca, y el caso lo dice"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    }
+  ]
+}

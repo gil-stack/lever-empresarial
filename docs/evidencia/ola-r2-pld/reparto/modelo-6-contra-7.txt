@@ -1,0 +1,18 @@
+registros: 30; «listos» observados [50, 50, 51, 51, 51, 52, 52, 52, 52, 53, 53, 53, 54, 54, 54, 59, 60, 63, 67, 68, 69, 70, 71, 73, 74, 79, 80, 80, 82, 88] → uso 88 s; cierre 45 s
+--- 6 partes
+parte 1: 20 pruebas, máx. 322 s de pruebas → ≈ 455 s · {'csp-evidencia.spec.ts': 4, 'csp.spec.ts': 8, 'entrada.spec.ts': 2, 'flujo-de-caja.spec.ts': 6} · SIN DATO 4: ['csp-evidencia.spec.ts › entrada del cliente con TOTP, clicada: 0 anotaciones de la política', 'csp-evidencia.spec.ts › entrada de Operación con TOTP, clicada: 0 anotaciones de la política', 'csp-evidencia.spec.ts › descarga del expediente clicada: llega con su política aislada y la pantalla con la estricta']
+parte 2: 18 pruebas, máx. 255 s de pruebas → ≈ 388 s · {'invitacion.spec.ts': 2, 'marco.spec.ts': 4, 'nomina.spec.ts': 3, 'operacion.spec.ts': 9}
+parte 3: 15 pruebas, máx. 296 s de pruebas → ≈ 429 s · {'operacion.spec.ts': 15}
+parte 4: 19 pruebas, máx. 408 s de pruebas → ≈ 541 s · {'operacion.spec.ts': 12, 'pagos-proveedores.spec.ts': 7}
+parte 5: 21 pruebas, máx. 332 s de pruebas → ≈ 465 s · {'passkeys.spec.ts': 2, 'personas.spec.ts': 1, 'pld.spec.ts': 18}
+parte 6: 6 pruebas, máx. 45 s de pruebas → ≈ 178 s · {'roles.spec.ts': 6}
+peor parte con 6: ≈ 541 s
+--- 7 partes
+parte 1: 20 pruebas, máx. 322 s de pruebas → ≈ 455 s · {'csp-evidencia.spec.ts': 4, 'csp.spec.ts': 8, 'entrada.spec.ts': 2, 'flujo-de-caja.spec.ts': 6} · SIN DATO 4: ['csp-evidencia.spec.ts › entrada del cliente con TOTP, clicada: 0 anotaciones de la política', 'csp-evidencia.spec.ts › entrada de Operación con TOTP, clicada: 0 anotaciones de la política', 'csp-evidencia.spec.ts › descarga del expediente clicada: llega con su política aislada y la pantalla con la estricta']
+parte 2: 15 pruebas, máx. 170 s de pruebas → ≈ 303 s · {'invitacion.spec.ts': 2, 'marco.spec.ts': 4, 'nomina.spec.ts': 3, 'operacion.spec.ts': 6}
+parte 3: 13 pruebas, máx. 318 s de pruebas → ≈ 451 s · {'operacion.spec.ts': 13}
+parte 4: 13 pruebas, máx. 214 s de pruebas → ≈ 347 s · {'operacion.spec.ts': 13}
+parte 5: 13 pruebas, máx. 311 s de pruebas → ≈ 444 s · {'operacion.spec.ts': 4, 'pagos-proveedores.spec.ts': 7, 'passkeys.spec.ts': 2}
+parte 6: 19 pruebas, máx. 279 s de pruebas → ≈ 412 s · {'personas.spec.ts': 1, 'pld.spec.ts': 18}
+parte 7: 6 pruebas, máx. 45 s de pruebas → ≈ 178 s · {'roles.spec.ts': 6}
+peor parte con 7: ≈ 455 s

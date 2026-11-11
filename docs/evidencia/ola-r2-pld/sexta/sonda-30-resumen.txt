@@ -1,0 +1,4 @@
+RESUMEN {"chromium-gpu movimiento-normal 390":{"verdes":30,"rojos":0},"chromium-gpu movimiento-normal 1440":{"verdes":30,"rojos":0}}
+RESUMEN {"chromium 390":{"verdes":30,"rojos":0},"chromium 1440":{"verdes":30,"rojos":0}}
+RESUMEN {"webkit movimiento-normal 390":{"verdes":30,"rojos":0},"webkit movimiento-normal 1440":{"verdes":30,"rojos":0}}
+RESUMEN {"webkit reducir-movimiento 390":{"verdes":30,"rojos":0},"webkit reducir-movimiento 1440":{"verdes":30,"rojos":0}}

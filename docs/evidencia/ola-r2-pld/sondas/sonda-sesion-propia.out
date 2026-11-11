@@ -1,0 +1,4 @@
+   antes: CUM2 ve la sesión que ella registró → true
+   CUM vota en esa sesión el caso que excluye a CUM2 → sesion_con_persona_excluida
+   después: CUM2 ve la sesión que ella registró → true
+   CUM2 dictamina su caso normal con esa sesión → ok

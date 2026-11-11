@@ -1,0 +1,74 @@
+EXPLAIN ANALYZE de las reglas de PLD con 10,000 instrucciones de una empresa en el mes (tests/pld/reglas-postgres.test.ts, r2-base-N11).
+Postgres 17 local (Homebrew), puerto 5553, base desechable. Fecha de la corrida: 2026-11-10 (Ciudad de México), código de 4147745.
+
+Registrar una instrucción más (INSERT con el disparador pld_operaciones_evaluar), 200 muestras, Execution Time en ms:
+  p50 6.053 · p95 6.869 · p99 9.016 · máx 9.319 (criterio: p95 <= 25 ms)
+
+Las sumas descartan la versión que una corrección reemplazó (r2-base-N1): de ahí el anti-join con pld_operaciones_reemplazada.
+
+== excede_perfil
+Aggregate (actual rows=1 loops=1)
+  Buffers: shared hit=110
+  ->  Hash Right Anti Join (actual rows=10200 loops=1)
+        Hash Cond: (r.reemplaza = o.id)
+        Buffers: shared hit=110
+        ->  Index Only Scan using pld_operaciones_reemplazada on pld_operaciones r (actual rows=0 loops=1)
+              Heap Fetches: 0
+              Buffers: shared hit=1
+        ->  Hash (actual rows=10200 loops=1)
+              Buckets: 16384 (originally 4096)  Batches: 1 (originally 1)  Memory Usage: 686kB
+              Buffers: shared hit=109
+              ->  Index Only Scan using pld_operaciones_mes_idx on pld_operaciones o (actual rows=10200 loops=1)
+                    Index Cond: ((company_id = '09e7ed90-2e46-4644-99c5-ba59c11ab412'::uuid) AND (tipo = 'pago_proveedor'::text) AND (mes = '2026-11-01'::date))
+                    Heap Fetches: 200
+                    Buffers: shared hit=109
+Planning:
+  Buffers: shared hit=2
+Planning Time: 0.078 ms
+Execution Time: 1.058 ms
+
+== monto_atipico
+Aggregate (actual rows=1 loops=1)
+  Buffers: shared hit=259
+  ->  Limit (actual rows=2 loops=1)
+        Buffers: shared hit=259
+        ->  Sort (actual rows=6101 loops=1)
+              Sort Key: o.monto_centavos
+              Sort Method: quicksort  Memory: 852kB
+              Buffers: shared hit=259
+              ->  Hash Right Anti Join (actual rows=11961 loops=1)
+                    Hash Cond: (r.reemplaza = o.id)
+                    Buffers: shared hit=259
+                    ->  Index Only Scan using pld_operaciones_reemplazada on pld_operaciones r (actual rows=0 loops=1)
+                          Heap Fetches: 0
+                          Buffers: shared hit=1
+                    ->  Hash (actual rows=11961 loops=1)
+                          Buckets: 16384  Batches: 1  Memory Usage: 783kB
+                          Buffers: shared hit=258
+                          ->  Index Only Scan using pld_operaciones_tiempo_idx on pld_operaciones o (actual rows=11961 loops=1)
+                                Index Cond: ((company_id = '09e7ed90-2e46-4644-99c5-ba59c11ab412'::uuid) AND (tipo = 'pago_proveedor'::text) AND (ocurrida_en > ('2026-11-27 02:00:00+08'::timestamp with time zone - '6 mons'::interval)) AND (ocurrida_en <= '2026-11-27 02:00:00+08'::timestamp with time zone))
+                                Filter: (id <> '00000000-0000-4000-8000-000000000000'::uuid)
+                                Heap Fetches: 200
+                                Buffers: shared hit=258
+Planning:
+  Buffers: shared hit=2
+Planning Time: 0.062 ms
+Execution Time: 2.436 ms
+
+== fraccionamiento
+Aggregate (actual rows=1 loops=1)
+  Buffers: shared hit=171
+  ->  Nested Loop Anti Join (actual rows=56 loops=1)
+        Buffers: shared hit=171
+        ->  Index Scan using pld_operaciones_clabe_idx on pld_operaciones o (actual rows=56 loops=1)
+              Index Cond: ((company_id = '09e7ed90-2e46-4644-99c5-ba59c11ab412'::uuid) AND (clabe = '002180701150100007'::text) AND (ocurrida_en > ('2026-11-27 02:00:00+08'::timestamp with time zone - '7 days'::interval)) AND (ocurrida_en <= '2026-11-27 02:00:00+08'::timestamp with time zone))
+              Filter: ((monto_centavos < 10000000) AND (tipo = 'pago_proveedor'::text))
+              Buffers: shared hit=59
+        ->  Index Only Scan using pld_operaciones_reemplazada on pld_operaciones r (actual rows=0 loops=56)
+              Index Cond: (reemplaza = o.id)
+              Heap Fetches: 0
+              Buffers: shared hit=112
+Planning:
+  Buffers: shared hit=5
+Planning Time: 0.080 ms
+Execution Time: 0.042 ms
