@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
-import { conContexto } from "../../nucleo/db";
+import { bloquearEmpresa, conContexto } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { uuidValido } from "../../dominio/operacion";
 import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
@@ -118,6 +118,9 @@ export async function decidirCambioDeSuspension(
     if (entrada.aprobada) {
       const antes = tipo === "suspension" ? "activa" : "suspendida";
       const despues = tipo === "suspension" ? "suspendida" : "activa";
+      // r63j-N2: el mismo candado que toma cada aviso de Fintoc de la empresa: un aviso ve el estado de antes o el de
+      // después, nunca uno a medias (un retenido no queda varado con la empresa ya activa).
+      await bloquearEmpresa(consulta, companyId);
       const cambiada = await consulta.query("update companies set estado = $2 where id = $1 and estado = $3", [companyId, despues, antes]);
       if (cambiada.rowCount !== 1) throw new ErrorDeDominio(tipo === "suspension" ? "suspension_no_aplica" : "reactivacion_no_aplica");
       await consulta.query(

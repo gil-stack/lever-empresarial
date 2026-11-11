@@ -15,8 +15,10 @@ export type BandejaCumplimiento = {
   sinCalificar: Array<{ companyId: string; razonSocial: string; numero: number }>;
   /** r63i-N1: abonos o devoluciones de Fintoc que llegaron con la empresa suspendida o de baja, sin aplicar. */
   abonosRetenidos: Array<{
-    id: string; companyId: string; razonSocial: string; empresaDeBaja: boolean; devolucion: boolean;
+    id: string; companyId: string; razonSocial: string; estadoEmpresa: string; devolucion: boolean;
     montoCentavos: number; recibidoEl: string; retenidoEn: Date;
+    /** r63j-N1: el que no pasó el camino normal, con el código del error. */
+    fallido: string | null;
   }>;
 };
 
@@ -62,7 +64,8 @@ export async function leerBandejaCumplimiento(ctx: ContextoDePersonal, opciones:
       [],
     );
     const retenidos = await consulta.query(
-      `select id, company_id, razon_social, estado_empresa, tipo, monto_centavos::text as monto, recibido_el::text as recibido_el, retenido_en
+      `select id, company_id, razon_social, estado_empresa, tipo, monto_centavos::text as monto, recibido_el::text as recibido_el, retenido_en,
+              estado, motivo
        from cobranza_abonos_retenidos()`,
       [],
     );
@@ -110,11 +113,12 @@ export async function leerBandejaCumplimiento(ctx: ContextoDePersonal, opciones:
         id: String(fila.id),
         companyId: String(fila.company_id),
         razonSocial: String(fila.razon_social),
-        empresaDeBaja: fila.estado_empresa === "baja",
+        estadoEmpresa: String(fila.estado_empresa),
         devolucion: fila.tipo === "transfer.inbound.returned",
         montoCentavos: Number(fila.monto),
         recibidoEl: String(fila.recibido_el),
         retenidoEn: fecha(fila.retenido_en),
+        fallido: fila.estado === "fallido" ? String(fila.motivo) : null,
       })),
     };
   });

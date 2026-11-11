@@ -23,6 +23,18 @@ export const metadata: Metadata = { title: "Cumplimiento · Operación" };
  * «Vencida» se calcula al leer con la fecha de hoy en México.
  * Auditoría la consulta sin botones.
  */
+/**
+ * Lo que dice cada abono retenido: si ya no se pudo aplicar (r63j-N1, con el código del error), si la empresa ya está
+ * activa y lo aplica la tarea diaria (lo que pasó del tope de la reactivación, r63j-P3), si es de una empresa de baja
+ * (se queda aquí) o si espera la reactivación.
+ */
+function etiquetaRetenido(retenido: { estadoEmpresa: string; fallido: string | null }): string {
+  if (retenido.fallido) return `No se pudo aplicar (${retenido.fallido})`;
+  if (retenido.estadoEmpresa === "activa") return "Empresa activa: lo aplica la tarea diaria";
+  if (retenido.estadoEmpresa === "baja") return "Empresa de baja";
+  return "Se aplica al reactivar";
+}
+
 export default async function CumplimientoOperacion({ searchParams }: { searchParams: Parametros<"aviso"> }) {
   const ctx = await exigirContextoOperacion();
   if (!puedeEnOperacion(ctx, "plataforma.cumplimiento.bandeja")) {
@@ -131,6 +143,7 @@ export default async function CumplimientoOperacion({ searchParams }: { searchPa
         {bandeja.abonosRetenidos.length === 0 ? (
           <Vacio titulo="Sin abonos retenidos">
             Si Fintoc avisa un abono o una devolución de una empresa suspendida o dada de baja, queda aquí sin aplicarse.
+            Si al reactivarla uno no se puede aplicar, queda aquí con el motivo.
           </Vacio>
         ) : (
           <ul className="operacion-lista">
@@ -149,7 +162,7 @@ export default async function CumplimientoOperacion({ searchParams }: { searchPa
                       <span>Avisado {fechaHora(retenido.retenidoEn)}</span>
                     </p>
                   </div>
-                  <Insignia tono="aviso">{retenido.empresaDeBaja ? "Empresa de baja" : "Se aplica al reactivar"}</Insignia>
+                  <Insignia tono="aviso">{etiquetaRetenido(retenido)}</Insignia>
                 </div>
               </li>
             ))}

@@ -13,13 +13,13 @@ import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena.ts";
 import { auditar } from "../../src/server/bitacora/auditar.ts";
 import { atenderAviso, firmar, procesarRetenidos, registrarCuentaFintoc, type ConfigFintoc } from "../../src/server/cobranza/fintoc.ts";
 import { prepararEstadoDeCuenta } from "../../src/server/cobranza/estado-cuenta.ts";
-import { configurarCobranza, darDeAltaCliente, registrarPagoManual, type DependenciasCobranza } from "../../src/server/cobranza/servicio.ts";
+import { anularPago, configurarCobranza, darDeAltaCliente, registrarPagoManual, type DependenciasCobranza } from "../../src/server/cobranza/servicio.ts";
 import { correrCobranza } from "../../src/server/cobranza/tarea.ts";
 import { leerBandejaCumplimiento } from "../../src/server/operacion/cumplimiento.ts";
 import { decidirCambioDeSuspension, solicitarCambioDeSuspension } from "../../src/server/operacion/suspensiones.ts";
 import { contextoDePersonal } from "../../src/server/plataforma/servicio.ts";
 import { personal, SESION_SOFIPO } from "../operacion/apoyo-alta-regulada.ts";
-import { administrador, CLABE_EMPRESA, contar, HOY, sembrarPersonal } from "./siembra.ts";
+import { administrador, CLABE_EMPRESA, contar, HOY, reloj, sembrarPersonal } from "./siembra.ts";
 import { aplicarArchivo, conBaseDesechable, consultarJson, ejecutar, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
 
 /**
@@ -119,12 +119,15 @@ async function escenario(url: string): Promise<void> {
   const configFintoc: ConfigFintoc = { llaveSecreta: `sk_test_${randomUUID().replace(/-/g, "")}`, secretoWebhook: createHash("sha256").update(randomUUID()).digest("hex"), modo: "test" };
   const ahoraSeg = Math.floor(Date.now() / 1000);
   const depsAviso = { config: configFintoc, ahora: () => new Date(ahoraSeg * 1000), auditar, enviador: deps().enviador, urlPublica: () => "https://lever.ejemplo.mx", registrar: () => {} };
-  /** El cuerpo firmado de un abono a la cuenta de la empresa, con la referencia de su cargo. */
-  const abono = (e: { cuenta: string; cargo: { referencia: string } }, monto = 100_000) => JSON.stringify({
-    id: `evt_${randomUUID().replace(/-/g, "")}`, type: "transfer.inbound.succeeded", object: "event", mode: "test", created_at: new Date().toISOString(),
+  /**
+   * El cuerpo firmado de un abono a la cuenta de la empresa, con la referencia de su cargo (o la que se pida), o de su
+   * devolución (`transfer.inbound.returned`, la misma transferencia con `status: returned`).
+   */
+  const abono = (e: { cuenta: string; cargo: { referencia: string } }, monto = 100_000, otro: { tr?: string; devolucion?: boolean; referencia?: string | null } = {}) => JSON.stringify({
+    id: `evt_${randomUUID().replace(/-/g, "")}`, type: otro.devolucion ? "transfer.inbound.returned" : "transfer.inbound.succeeded", object: "event", mode: "test", created_at: new Date().toISOString(),
     data: {
-      id: `tr_${randomUUID().replace(/-/g, "")}`, object: "transfer", direction: "inbound", status: "succeeded", amount: monto, currency: "MXN", mode: "test",
-      transaction_date: "2026-11-10T17:00:00.000Z", reference_id: e.cargo.referencia, tracking_key: null,
+      id: otro.tr ?? `tr_${randomUUID().replace(/-/g, "")}`, object: "transfer", direction: "inbound", status: otro.devolucion ? "returned" : "succeeded", amount: monto, currency: "MXN", mode: "test",
+      transaction_date: "2026-11-10T17:00:00.000Z", reference_id: otro.referencia === undefined ? e.cargo.referencia : otro.referencia, tracking_key: null,
       account_number: { id: `acno_Principal${e.cuenta.slice(4)}`, account_id: e.cuenta },
       counterparty: { holder_name: "Ordenante de prueba", account_number: null, account_type: "clabe" },
     },
@@ -153,8 +156,8 @@ async function escenario(url: string): Promise<void> {
 
   // 3. Cumplimiento lo ve en su bandeja; Auditoría también (solo lee); Originación no.
   const bandeja = await leerBandejaCumplimiento(cum);
-  assert.deepEqual(bandeja.abonosRetenidos.map((r) => [r.razonSocial, r.montoCentavos, r.devolucion, r.empresaDeBaja, r.recibidoEl]),
-    [["Escuela Alfa Retenidos", 100_000, false, false, "2026-11-10"]]);
+  assert.deepEqual(bandeja.abonosRetenidos.map((r) => [r.razonSocial, r.montoCentavos, r.devolucion, r.estadoEmpresa, r.fallido, r.recibidoEl]),
+    [["Escuela Alfa Retenidos", 100_000, false, "suspendida", null, "2026-11-10"]]);
   assert.equal((await leerBandejaCumplimiento(aud)).abonosRetenidos.length, 1);
   await assert.rejects(() => leerBandejaCumplimiento(ori), codigo("sin_permiso_operacion"));
 
@@ -192,10 +195,10 @@ async function escenario(url: string): Promise<void> {
   const duena = new pg.Client({ connectionString: url });
   await duena.connect();
   try {
-    const esperarBloqueo = async () => {
+    const esperarBloqueo = async (cuantos = 1) => {
       for (let i = 0; i < 200; i += 1) {
         const r = await duena.query("select count(*)::int as n from pg_stat_activity where wait_event_type = 'Lock' and datname = current_database()");
-        if (r.rows[0].n > 0) return;
+        if (r.rows[0].n >= cuantos) return;
         await new Promise((listo) => setTimeout(listo, 25));
       }
       throw new Error("El aviso no llegó a esperar el candado.");
@@ -207,33 +210,152 @@ async function escenario(url: string): Promise<void> {
     assert.deepEqual([pagos(beta.id), retenidos(beta.id)], [1, 0]);
     await cambiar(beta.id, "reactivacion");
 
-    // b) La suspensión confirma mientras el aviso espera el candado de la empresa: el aviso la ve y retiene.
+    // b) La suspensión y el aviso piden el candado de la empresa a la vez (r63j-N2: la suspensión ahora lo toma): uno
+    //    ve el estado de antes y el otro el de después. Sea cual sea el orden, el abono queda aplicado o retenido, nunca
+    //    perdido ni las dos cosas.
     await duena.query("begin");
     await duena.query("select pg_advisory_xact_lock(hashtextextended($1::text, 814272))", [beta.id]);
     const enEspera = avisar(abono(beta, 30_000));
     await esperarBloqueo();
-    await cambiar(beta.id, "suspension");
+    const suspension = cambiar(beta.id, "suspension");
+    await esperarBloqueo(2);
     await duena.query("commit");
-    assert.deepEqual(await enEspera, { estado: 200, cuerpo: { ok: true, efecto: "retenido" } });
-    assert.deepEqual([pagos(beta.id), retenidos(beta.id)], [1, 1]);
+    const [b1] = await Promise.all([enEspera, suspension]);
+    assert.ok(["retenido", "registrado"].includes(String(b1.cuerpo.efecto)), JSON.stringify(b1));
+    assert.equal(pagos(beta.id) + retenidos(beta.id), 2);
     await cambiar(beta.id, "reactivacion");
-    assert.equal(await procesarRetenidos(beta.id, operador, { auditar }), 1);
+    await procesarRetenidos(beta.id, operador, { auditar });
+    assert.deepEqual([pagos(beta.id), retenidos(beta.id)], [2, 0]);
 
-    // c) La suspensión confirma con el aviso a medio escribir (ya revisó el estado y espera el cargo): la base lo
-    //    frena con empresa_suspendida y el aviso se retiene en su propia transacción, con 200.
+    // c) Una suspensión que no toma el candado (la de la lista de personas bloqueadas, dentro de la base) confirma con
+    //    el aviso a medio escribir (ya revisó el estado y espera el cargo): la base lo frena con empresa_suspendida y la
+    //    segunda vuelta lo retiene, con 200.
     await duena.query("begin");
     await duena.query("select id from collection_charges where id = $1 for update", [beta.cargo.id]);
     const aMedias = avisar(abono(beta, 20_000));
     await esperarBloqueo();
-    await cambiar(beta.id, "suspension");
+    ejecutar(url, `set session_replication_role = replica; update companies set estado = 'suspendida' where id = '${beta.id}'; set session_replication_role = origin;`);
     await duena.query("commit");
     assert.deepEqual(await aMedias, { estado: 200, cuerpo: { ok: true, efecto: "retenido" } });
     assert.equal(pagos(beta.id), 2, "el abono frenado no dejó pago");
     assert.equal(retenidos(beta.id), 1);
-    await cambiar(beta.id, "reactivacion");
+    ejecutar(url, `set session_replication_role = replica; update companies set estado = 'activa' where id = '${beta.id}'; set session_replication_role = origin;`);
     assert.equal(await procesarRetenidos(beta.id, operador, { auditar }), 1);
     assert.equal(pagos(beta.id), 3);
     assert.equal(cuenta(`select count(*) from collection_provider_events where company_id = '${beta.id}'`), 3);
+
+    // r63j ------------------------------------------------------------------------------------------------------------
+    const clienteDe = (empresaId: string) => consultarJson<{ id: string }[]>(url,
+      `select json_agg(x) from (select id from collection_customers where company_id = '${empresaId}' limit 1) x`)[0]!.id;
+    const retenidoFallido = (empresaId: string, evento: string, fecha = "2026-13-45") => {
+      // Un retenido que el camino normal no puede aplicar (su fecha no existe): lo inserta la dueña, como si hubiera
+      // llegado así. La base lo acepta (el aviso es jsonb) y la aplicación lo rechaza al procesarlo.
+      const aviso = { eventoId: evento, tipo: "transfer.inbound.succeeded", modo: "test", devolucion: null,
+        abono: { idExterno: `fintoc:tr_${evento.slice(4)}`, montoCentavos: 7_700, recibidoEl: fecha, claveRastreo: null, referencia: null,
+          clabeOrdenante: null, nombreOrdenante: null, cuentaId: alfa.cuenta, cuentaNumeroId: `acno_Principal${alfa.cuenta.slice(4)}` } };
+      ejecutar(url, `insert into collection_held_events (id, company_id, proveedor, evento_id, tipo, monto_centavos, recibido_el, aviso, retenido_en)
+        values ('${randomUUID()}', '${empresaId}', 'fintoc', '${evento}', 'transfer.inbound.succeeded', 7700, '2026-11-10', '${JSON.stringify(aviso)}'::jsonb, now() - interval '1 hour')`);
+    };
+
+    // r63j-N1 a) La devolución de un pago que la empresa ya descartó como duplicado (anulado) queda resuelta, con su
+    //    evento y 200. Antes lanzaba pago_anulado: 500 y Fintoc reintentaba hasta rendirse.
+    const clienteAlfa = clienteDe(alfa.id);
+    await registrarPagoManual(alfa.admin, { altaId: randomUUID(), monto: "250.00", recibidoEl: "2026-11-10", clienteId: clienteAlfa }, null, deps());
+    const trDuplicado = `tr_${randomUUID().replace(/-/g, "")}`;
+    assert.deepEqual(await avisar(abono(alfa, 25_000, { tr: trDuplicado, referencia: null })), { estado: 200, cuerpo: { ok: true, efecto: "registrado" } });
+    const duplicado = consultarJson<{ id: string; posible_duplicado: boolean }[]>(url,
+      `select json_agg(x) from (select id, posible_duplicado from collection_payments where id_externo = 'fintoc:${trDuplicado}') x`)[0]!;
+    assert.equal(duplicado.posible_duplicado, true);
+    await anularPago(alfa.admin, { pagoId: duplicado.id, motivo: "Es el mismo depósito que el pago a mano." }, deps());
+    assert.deepEqual(await avisar(abono(alfa, 25_000, { tr: trDuplicado, devolucion: true, referencia: null })), { estado: 200, cuerpo: { ok: true, efecto: "anulado" } });
+    assert.equal(cuenta(`select count(*) from collection_provider_events p join collection_payments x on x.id = p.payment_id where x.id = '${duplicado.id}'`), 2);
+    assert.equal(cuenta(`select count(*) from collection_payments where id = '${duplicado.id}' and estado = 'anulado'`), 1);
+
+    // r63j-N1 b) Un retenido envenenado seguido de uno legítimo: el primero queda «fallido» con su motivo, a la vista de
+    //    Cumplimiento, y el segundo se aplica. Antes el primero lanzaba y el segundo no se aplicaba nunca.
+    await cambiar(alfa.id, "suspension");
+    retenidoFallido(alfa.id, "evt_Envenenado01");
+    assert.deepEqual(await avisar(abono(alfa, 55_500, { referencia: null })), { estado: 200, cuerpo: { ok: true, efecto: "retenido" } });
+    await cambiar(alfa.id, "reactivacion");
+    assert.equal(await procesarRetenidos(alfa.id, operador, { auditar }), 2);
+    assert.equal(cuenta(`select count(*) from collection_held_events where company_id = '${alfa.id}' and estado = 'fallido' and motivo = 'base_no_disponible'`), 1);
+    assert.equal(cuenta(`select count(*) from collection_held_events where company_id = '${alfa.id}' and estado = 'procesado' and monto_centavos = 55500`), 1);
+    assert.equal(cuenta(`select count(*) from collection_payments where company_id = '${alfa.id}' and monto_centavos = 55500`), 1);
+    assert.equal(cuenta(`select count(*) from audit_log where company_id = '${alfa.id}' and accion = 'retenido_fallido_cobranza'`), 1);
+    const fallidos = (await leerBandejaCumplimiento(cum)).abonosRetenidos.filter((r) => r.fallido);
+    assert.deepEqual(fallidos.map((r) => [r.razonSocial, r.montoCentavos, r.fallido]), [["Escuela Alfa Retenidos", 7_700, "base_no_disponible"]]);
+
+    // r63j-N1 c) La tarea diaria con un retenido envenenado sigue generando cargos y mandando recordatorios: el paso de
+    //    los retenidos tiene su propio try. Antes la empresa contaba como fallida y no se generaba nada.
+    retenidoFallido(beta.id, "evt_Envenenado02");
+    const cargosAntes = cuenta(`select count(*) from collection_charges where company_id = '${beta.id}'`);
+    const tarea = await correrCobranza({ ahora: reloj("2027-01-10T18:00:00.000Z"), auditar, enviador: deps().enviador, urlPublica: () => "https://lever.ejemplo.mx", fintoc: null, registrar: () => {} });
+    assert.equal(tarea.fallidas, 0, JSON.stringify(tarea));
+    assert.ok(cuenta(`select count(*) from collection_charges where company_id = '${beta.id}'`) > cargosAntes, "la tarea generó los cargos de beta");
+    assert.equal(cuenta(`select count(*) from collection_held_events where company_id = '${beta.id}' and estado = 'fallido'`), 1);
+
+    // r63j-N2 a) El aviso toma el candado y retiene (la empresa sigue suspendida) mientras la reactivación espera ese
+    //    mismo candado: al reactivar, el retenido ya está ahí y se aplica. Antes el aviso revisaba en una transacción y
+    //    guardaba en otra: el retenido confirmaba después de la reactivación y de su procesado, y quedaba varado.
+    await cambiar(beta.id, "suspension");
+    const pagosBeta = pagos(beta.id);
+    await duena.query("begin");
+    await duena.query("lock table collection_held_events in exclusive mode");
+    const avisoPrimero = avisar(abono(beta, 11_100, { referencia: null }));
+    await esperarBloqueo();
+    const reactivar = cambiar(beta.id, "reactivacion").then(() => procesarRetenidos(beta.id, operador, { auditar }));
+    let reactivada = false;
+    void reactivar.then(() => { reactivada = true; }, () => undefined);
+    await esperarBloqueo(2).catch(() => undefined);
+    await duena.query("commit");
+    assert.deepEqual(await avisoPrimero, { estado: 200, cuerpo: { ok: true, efecto: "retenido" } });
+    await reactivar;
+    assert.equal(reactivada, true);
+    assert.equal(retenidos(beta.id), 0, "ningún retenido varado con la empresa activa");
+    assert.equal(pagos(beta.id), pagosBeta + 1);
+
+    // r63j-N2 b) La reactivación toma el candado primero y el aviso espera: el aviso ve la empresa activa y se aplica
+    //    por el camino normal, sin retener.
+    await cambiar(beta.id, "suspension");
+    await duena.query("begin");
+    await duena.query("select pg_advisory_xact_lock(hashtextextended($1::text, 814272))", [beta.id]);
+    const reactivarPrimero = cambiar(beta.id, "reactivacion");
+    await esperarBloqueo();
+    const avisoDespues = avisar(abono(beta, 12_200, { referencia: null }));
+    await esperarBloqueo(2);
+    await duena.query("commit");
+    await reactivarPrimero;
+    assert.deepEqual(await avisoDespues, { estado: 200, cuerpo: { ok: true, efecto: "registrado" } });
+    assert.equal(cuenta(`select count(*) from collection_held_events where company_id = '${beta.id}' and monto_centavos = 12200`), 0);
+    assert.equal(pagos(beta.id), pagosBeta + 2);
+
+    // r63j-N2 c) Un abono retenido que la reactivación no alcanzó a aplicar y, después, su devolución: la devolución
+    //    procesa antes los retenidos de la empresa, así que encuentra su pago y lo revierte. El cargo no queda pagado con
+    //    dinero devuelto. Antes la devolución iba a «sin destino» y la tarea aplicaba después el abono.
+    await cambiar(beta.id, "suspension");
+    const k = consultarJson<{ id: string; referencia: string }[]>(url, `select json_agg(x) from (select id, referencia from collection_charges
+      where company_id = '${beta.id}' and estado = 'emitido' order by vencimiento limit 1) x`)[0]!;
+    const saldo = cuenta(`select (monto_centavos - pagado_centavos)::int from collection_charges where id = '${k.id}'`);
+    const trHueco = `tr_${randomUUID().replace(/-/g, "")}`;
+    assert.deepEqual(await avisar(abono(beta, saldo, { tr: trHueco, referencia: k.referencia })), { estado: 200, cuerpo: { ok: true, efecto: "retenido" } });
+    await cambiar(beta.id, "reactivacion");
+    assert.deepEqual(await avisar(abono(beta, saldo, { tr: trHueco, devolucion: true, referencia: k.referencia })), { estado: 200, cuerpo: { ok: true, efecto: "devuelto" } });
+    await correrCobranza({ ahora: reloj("2027-01-10T18:00:00.000Z"), auditar, enviador: deps().enviador, urlPublica: () => "https://lever.ejemplo.mx", fintoc: null, registrar: () => {} });
+    assert.equal(cuenta(`select count(*) from collection_charges where id = '${k.id}' and estado = 'emitido'`), 1, "el cargo no quedó pagado con dinero devuelto");
+    assert.equal(cuenta(`select count(*) from collection_payments where id_externo = 'fintoc:${trHueco}' and estado = 'devuelto'`), 1);
+    assert.equal(cuenta(`select count(*) from collection_unrouted_events where transferencia_id = '${trHueco}'`), 0);
+
+    // r63j-P3: con tope, la reactivación procesa a lo más ese número y el resto espera a la tarea; la bandeja lo dice.
+    await cambiar(beta.id, "suspension");
+    assert.equal((await avisar(abono(beta, 1_300, { referencia: null }))).cuerpo.efecto, "retenido");
+    assert.equal((await avisar(abono(beta, 1_400, { referencia: null }))).cuerpo.efecto, "retenido");
+    await cambiar(beta.id, "reactivacion");
+    assert.equal(await procesarRetenidos(beta.id, operador, { auditar }, 1), 1);
+    assert.equal(retenidos(beta.id), 1);
+    const espera = (await leerBandejaCumplimiento(cum)).abonosRetenidos.filter((r) => r.companyId === beta.id && !r.fallido);
+    assert.deepEqual(espera.map((r) => [r.montoCentavos, r.estadoEmpresa]), [[1_400, "activa"]]);
+    await correrCobranza({ ahora: reloj("2027-01-10T18:00:00.000Z"), auditar, enviador: deps().enviador, urlPublica: () => "https://lever.ejemplo.mx", fintoc: null, registrar: () => {} });
+    assert.equal(retenidos(beta.id), 0);
   } finally {
     await duena.query("rollback").catch(() => undefined);
     await duena.end();

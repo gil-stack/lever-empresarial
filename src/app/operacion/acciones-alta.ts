@@ -271,6 +271,8 @@ export async function solicitarSuspensionAccion(previo: EstadoDelFormulario, for
   listo(ficha, tipo === "reactivacion" ? "reactivacion_solicitada" : "suspension_solicitada");
 }
 
+const RETENIDOS_POR_REACTIVACION = 50;
+
 export async function decidirSuspensionAccion(formData: FormData): Promise<void> {
   const ctx = await exigirContextoOperacion();
   const sesion = await sesionSegura();
@@ -289,7 +291,9 @@ export async function decidirSuspensionAccion(formData: FormData): Promise<void>
   // confirmó: si esto falla, la tarea diaria de cobranza los vuelve a intentar.
   if (decidida.reactivada) {
     try {
-      await procesarRetenidos(decidida.companyId, ctx.personal.operadorId, { auditar });
+      // Con tope (r63j-P3): Aprobación no espera una cola larga; lo que falte lo aplica la tarea diaria y la bandeja de
+      // Cumplimiento lo cuenta mientras tanto.
+      await procesarRetenidos(decidida.companyId, ctx.personal.operadorId, { auditar }, RETENIDOS_POR_REACTIVACION);
     } catch {
       console.error(JSON.stringify({ nivel: "error", origen: "cobranza.fintoc", evento: "retenidos_pendientes" }));
     }
