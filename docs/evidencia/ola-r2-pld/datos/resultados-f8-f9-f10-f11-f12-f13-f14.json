@@ -1,0 +1,808 @@
+{
+  "fases": [
+    "f8",
+    "f9",
+    "f10",
+    "f11",
+    "f12",
+    "f13",
+    "f14"
+  ],
+  "segundos": 140,
+  "verdes": 198,
+  "rojos": 0,
+  "resultados": [
+    {
+      "ok": true,
+      "texto": "aviso «pld_caso_abierto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_propuesta_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "8. la dueña fechó el caso del aviso: alerta 27-oct, caso 28-oct, propuesta 29-oct"
+    },
+    {
+      "ok": true,
+      "texto": "8. sesión del viernes 30-oct con quórum (los integrantes se designaron el 28-oct)"
+    },
+    {
+      "ok": true,
+      "texto": "8. la sesión del 30-oct solo ofrece la propuesta del 29-oct (no las de hoy)"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_dictamen_registrado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "8. cálculo aparte: 3 días hábiles desde el viernes 30-oct, sin el 2-nov inhábil, son el 5-nov"
+    },
+    {
+      "ok": true,
+      "texto": "8. la base fecha el dictamen el 30-oct y el reporte vence el 5-nov"
+    },
+    {
+      "ok": true,
+      "texto": "8. con el reloj en el martes 3-nov, la bandeja dice «Quedan 2 días hábiles»"
+    },
+    {
+      "ok": true,
+      "texto": "8. el caso dice que el reporte vence el 5-nov (3 días hábiles)"
+    },
+    {
+      "ok": true,
+      "texto": "8. el folio del acuse con un carácter invisible se rechaza sin recargar: queda marcado, y periodo, fecha y registros siguen"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_reporte_registrado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "8. doble clic en «Registrar acuse» = 1 acuse"
+    },
+    {
+      "ok": true,
+      "texto": "8. folio y acuse registrados a tiempo, tipo 3 (interna preocupante)"
+    },
+    {
+      "ok": true,
+      "texto": "8. la pantalla dice «A tiempo»"
+    },
+    {
+      "ok": true,
+      "texto": "8. el borrador del reporte trae renglones de 41 columnas"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_aviso_emitido» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Ofelia"
+    },
+    {
+      "ok": true,
+      "texto": "9. la dueña envejeció la alerta de Nogal 61 días: generada el 2026-09-10, vence el 2026-11-09"
+    },
+    {
+      "ok": true,
+      "texto": "9. con el reloj en el día 60 (2026-11-09): «Vence hoy»"
+    },
+    {
+      "ok": true,
+      "texto": "9. al día 61: «Fuera de plazo: venció hace 1 día»"
+    },
+    {
+      "ok": true,
+      "texto": "9. cambiar quién dictamina pide «Confirma que eres tú»"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_modo_cambiado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "9. doble clic en «Guardar quién dictamina» = 1 cambio"
+    },
+    {
+      "ok": true,
+      "texto": "9. en modo Oficial no se registran sesiones nuevas"
+    },
+    {
+      "ok": true,
+      "texto": "9. ni aparece «Registrar sesión»"
+    },
+    {
+      "ok": true,
+      "texto": "9. el historial sigue a la vista: 3 sesiones con su enlace"
+    },
+    {
+      "ok": true,
+      "texto": "9. con sus actas firmadas"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_caso_abierto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "9. el caso hereda el plazo de la alerta más antigua"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_dictamen_fuera_de_plazo» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "9. el Oficial dictamina sin sesión y la base lo marca fuera de plazo"
+    },
+    {
+      "ok": true,
+      "texto": "9. la pantalla dice «Fuera de plazo»"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    },
+    {
+      "ok": true,
+      "texto": "10. sin la clave CASFIM, la bandeja lo dice"
+    },
+    {
+      "ok": true,
+      "texto": "10. sin la clave, el archivo no se genera y la pantalla lo dice"
+    },
+    {
+      "ok": true,
+      "texto": "10. la clave del órgano supervisor rechazada queda marcada y con el foco, sin recargar y con las dos claves como se escribieron"
+    },
+    {
+      "ok": true,
+      "texto": "10. y la CASFIM de la entidad no se marca"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_entidad_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "10. doble clic en «Registrar claves» = 1 registro"
+    },
+    {
+      "ok": true,
+      "texto": "10. el archivo del trimestre jul-sep es el reporte vacío: 41 columnas, llenas la 1, 2, 4 y 5"
+    },
+    {
+      "ok": true,
+      "texto": "10. el folio del envío con un carácter invisible se rechaza sin recargar: queda marcado, y la fecha y los registros siguen"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_periodico_registrado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "10. doble clic en «Registrar envío» = 1 acuse con la huella del archivo descargado"
+    },
+    {
+      "ok": true,
+      "texto": "10. la tarjeta queda «Registrado»"
+    },
+    {
+      "ok": true,
+      "texto": "10. la 37ª aparece «sin formato oficial para SOFIPO»"
+    },
+    {
+      "ok": true,
+      "texto": "10. el trimestre en curso no ofrece archivo ni registro"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    },
+    {
+      "ok": true,
+      "texto": "11. cálculo aparte: 15 días hábiles desde el último hábil de octubre (30-oct), sin el 2 ni el 16 de noviembre, son el 24-nov"
+    },
+    {
+      "ok": true,
+      "texto": "11. octubre vence el 24 nov 2026: «Quedan 9 días hábiles»"
+    },
+    {
+      "ok": true,
+      "texto": "11. la constancia de octubre va en ceros"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «pld_periodico_registrado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "11. doble clic en «Registrar constancia» = 1 registro"
+    },
+    {
+      "ok": true,
+      "texto": "11. con el reloj en el 4-ene-2027, reportes dice «Falta el calendario 2027»"
+    },
+    {
+      "ok": true,
+      "texto": "11. y la bandeja también"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    },
+    {
+      "ok": true,
+      "texto": "12. Cobre (contrato de hace siete meses) aparece con su evaluación del semestre pendiente"
+    },
+    {
+      "ok": true,
+      "texto": "12. Fondo Demostración, con contrato del mismo día que Cobre, no pide evaluación: es de demostración (C)"
+    },
+    {
+      "ok": true,
+      "texto": "12. el monto rechazado de la evaluación queda marcado y con el foco, sin recargar: «Cambia», el monto y la justificación siguen"
+    },
+    {
+      "ok": true,
+      "texto": "12. y no se registró nada"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «evaluacion_registrada» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "12. doble clic en «Registrar evaluación» = 1 evaluación"
+    },
+    {
+      "ok": true,
+      "texto": "12. el pendiente desaparece de la bandeja"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    },
+    {
+      "ok": true,
+      "texto": "13. la aplicación no puede borrar un pago"
+    },
+    {
+      "ok": true,
+      "texto": "13. ni truncar la nómina"
+    },
+    {
+      "ok": true,
+      "texto": "13. ni la dueña borra alertas de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "13. ni trunca los pagos"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto cuenta los pagos de Taller en el periodo"
+    },
+    {
+      "ok": true,
+      "texto": "13. y trae la huella SHA-256 de cada documento"
+    },
+    {
+      "ok": true,
+      "texto": "13. la descarga deja su evento en la bitácora"
+    },
+    {
+      "ok": true,
+      "texto": "13. Cumplimiento ve el evento en la bitácora"
+    },
+    {
+      "ok": true,
+      "texto": "13. la bitácora dice «Consultó un caso de análisis» al leerlo, no «Abrió» (r2-serv-N12)"
+    },
+    {
+      "ok": true,
+      "texto": "13. /operacion/pld/casos/:id/documento/:id responde con la política aislada"
+    },
+    {
+      "ok": true,
+      "texto": "13. /operacion/pld/casos/:id/reporte responde con la política aislada"
+    },
+    {
+      "ok": true,
+      "texto": "13. /operacion/comite/sesiones/:id/acta responde con la política aislada"
+    },
+    {
+      "ok": true,
+      "texto": "13. /operacion/comite/actas/:id responde con la política aislada"
+    },
+    {
+      "ok": true,
+      "texto": "13. /operacion/reportes/archivo responde con la política aislada"
+    },
+    {
+      "ok": true,
+      "texto": "13. /operacion/conservacion/manifiesto responde con la política aislada"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto de Aurelio trae pld_alertas"
+    },
+    {
+      "ok": true,
+      "texto": "13. manifiesto de Aurelio: pld_alertas cuenta lo que su RLS le deja ver (4)"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto de Aurelio trae pld_casos"
+    },
+    {
+      "ok": true,
+      "texto": "13. manifiesto de Aurelio: pld_casos cuenta lo que su RLS le deja ver (1)"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto de Aurelio trae pld_notas"
+    },
+    {
+      "ok": true,
+      "texto": "13. manifiesto de Aurelio: pld_notas cuenta lo que su RLS le deja ver (1)"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto de Aurelio trae pld_documentos"
+    },
+    {
+      "ok": true,
+      "texto": "13. manifiesto de Aurelio: pld_documentos cuenta lo que su RLS le deja ver (1)"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto de Aurelio trae pld_propuestas"
+    },
+    {
+      "ok": true,
+      "texto": "13. manifiesto de Aurelio: pld_propuestas cuenta lo que su RLS le deja ver (1)"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto de Aurelio trae pld_dictamenes"
+    },
+    {
+      "ok": true,
+      "texto": "13. manifiesto de Aurelio: pld_dictamenes cuenta lo que su RLS le deja ver (1)"
+    },
+    {
+      "ok": true,
+      "texto": "13. el manifiesto de Aurelio trae pld_reportes"
+    },
+    {
+      "ok": true,
+      "texto": "13. manifiesto de Aurelio: pld_reportes cuenta lo que su RLS le deja ver (0)"
+    },
+    {
+      "ok": true,
+      "texto": "13. Aurelio no cuenta la alerta del aviso que lo menciona ni su caso"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Aurelio"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ofelia Plataforma: «Alertas PLD» no está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ofelia Plataforma: «Comité» no está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ofelia Plataforma: «Reportes regulatorios» no está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ofelia Plataforma: «Conservación» no está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ofelia Plataforma: «Avisar a Cumplimiento» está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ofelia Plataforma no ve /operacion/pld ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ofelia Plataforma no ve /operacion/pld/parametros ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ofelia Plataforma no ve /operacion/pld/casos/9e9fd24e-8a08-4a91-a63a-ed9b70372a06 ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ofelia Plataforma no ve /operacion/comite ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ofelia Plataforma no ve /operacion/comite/sesiones/833ee41b-a4c7-4257-8a42-89f5b21916cc ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ofelia Plataforma no ve /operacion/reportes ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ofelia Plataforma no ve /operacion/conservacion ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ofelia Plataforma no ve /operacion/cumplimiento ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ofelia Plataforma puede avisar a Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "14. bitácora de Ofelia Plataforma: 0 avisos (ninguno)"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Ofelia Plataforma"
+    },
+    {
+      "ok": true,
+      "texto": "14. Omar Originación: «Alertas PLD» no está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Omar Originación: «Comité» no está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Omar Originación: «Reportes regulatorios» no está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Omar Originación: «Conservación» no está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Omar Originación: «Avisar a Cumplimiento» está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Omar Originación no ve /operacion/pld ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Omar Originación no ve /operacion/pld/parametros ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Omar Originación no ve /operacion/pld/casos/9e9fd24e-8a08-4a91-a63a-ed9b70372a06 ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Omar Originación no ve /operacion/comite ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Omar Originación no ve /operacion/comite/sesiones/833ee41b-a4c7-4257-8a42-89f5b21916cc ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Omar Originación no ve /operacion/reportes ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Omar Originación no ve /operacion/conservacion ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Omar Originación no ve /operacion/cumplimiento ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Omar Originación puede avisar a Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "14. bitácora de Omar Originación: 0 avisos (ninguno)"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Omar Originación"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ana Aprobación: «Alertas PLD» no está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ana Aprobación: «Comité» no está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ana Aprobación: «Reportes regulatorios» no está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ana Aprobación: «Conservación» no está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ana Aprobación: «Avisar a Cumplimiento» está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ana Aprobación no ve /operacion/pld ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ana Aprobación no ve /operacion/pld/parametros ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ana Aprobación no ve /operacion/pld/casos/9e9fd24e-8a08-4a91-a63a-ed9b70372a06 ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ana Aprobación no ve /operacion/comite ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ana Aprobación no ve /operacion/comite/sesiones/833ee41b-a4c7-4257-8a42-89f5b21916cc ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ana Aprobación no ve /operacion/reportes ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ana Aprobación no ve /operacion/conservacion ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ana Aprobación no ve /operacion/cumplimiento ni un dato de PLD"
+    },
+    {
+      "ok": true,
+      "texto": "14. Ana Aprobación puede avisar a Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "14. bitácora de Ana Aprobación: 0 avisos (ninguno)"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aprobación ve el perfil en el expediente, sin la evaluación semestral"
+    },
+    {
+      "ok": true,
+      "texto": "14. ni alertas, ni casos, ni conteos de PLD (55ª)"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Ana Aprobación"
+    },
+    {
+      "ok": true,
+      "texto": "14. Celia Cumplimiento: «Alertas PLD» está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Celia Cumplimiento: «Comité» está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Celia Cumplimiento: «Reportes regulatorios» está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Celia Cumplimiento: «Conservación» está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Celia Cumplimiento: «Avisar a Cumplimiento» está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Celia Cumplimiento ve /operacion/pld"
+    },
+    {
+      "ok": true,
+      "texto": "14. Celia Cumplimiento ve /operacion/pld/parametros"
+    },
+    {
+      "ok": true,
+      "texto": "14. Celia Cumplimiento ve /operacion/pld/casos/9e9fd24e-8a08-4a91-a63a-ed9b70372a06"
+    },
+    {
+      "ok": true,
+      "texto": "14. Celia Cumplimiento ve /operacion/comite"
+    },
+    {
+      "ok": true,
+      "texto": "14. Celia Cumplimiento ve /operacion/comite/sesiones/833ee41b-a4c7-4257-8a42-89f5b21916cc"
+    },
+    {
+      "ok": true,
+      "texto": "14. Celia Cumplimiento ve /operacion/reportes"
+    },
+    {
+      "ok": true,
+      "texto": "14. Celia Cumplimiento ve /operacion/conservacion"
+    },
+    {
+      "ok": true,
+      "texto": "14. Celia Cumplimiento ve /operacion/cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "14. Celia Cumplimiento puede avisar a Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "14. bitácora de Celia Cumplimiento: 3 avisos (todos)"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio Auditoría: «Alertas PLD» está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio Auditoría: «Comité» está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio Auditoría: «Reportes regulatorios» está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio Auditoría: «Conservación» está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio Auditoría: «Avisar a Cumplimiento» está en su menú"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio Auditoría ve /operacion/pld"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio Auditoría ve /operacion/pld/parametros"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio Auditoría ve /operacion/pld/casos/9e9fd24e-8a08-4a91-a63a-ed9b70372a06"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio Auditoría ve /operacion/comite"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio Auditoría ve /operacion/comite/sesiones/833ee41b-a4c7-4257-8a42-89f5b21916cc"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio Auditoría ve /operacion/reportes"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio Auditoría ve /operacion/conservacion"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio Auditoría ve /operacion/cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio Auditoría puede avisar a Cumplimiento"
+    },
+    {
+      "ok": true,
+      "texto": "14. Auditoría consulta sin el botón «Abrir caso»"
+    },
+    {
+      "ok": true,
+      "texto": "14. Auditoría consulta sin el botón «Registrar propuesta»"
+    },
+    {
+      "ok": true,
+      "texto": "14. Auditoría consulta sin el botón «Registrar dictamen»"
+    },
+    {
+      "ok": true,
+      "texto": "14. Auditoría consulta sin el botón «Registrar en el Comité»"
+    },
+    {
+      "ok": true,
+      "texto": "14. Auditoría consulta sin el botón «Registrar claves»"
+    },
+    {
+      "ok": true,
+      "texto": "14. Aurelio, mencionado en el aviso, no encuentra ese caso (60ª)"
+    },
+    {
+      "ok": true,
+      "texto": "14. el único mensaje de consola de esa navegación es el 404 esperado"
+    },
+    {
+      "ok": true,
+      "texto": "14. bitácora de Aurelio Auditoría: 2 avisos (el que lo menciona no)"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Aurelio Auditoría"
+    },
+    {
+      "ok": true,
+      "texto": "14. cliente (gil): /c/33333333-3333-4333-8333-333333333333/consola sin nada de PLD (HTML y RSC)"
+    },
+    {
+      "ok": true,
+      "texto": "14. cliente (gil): /c/33333333-3333-4333-8333-333333333333/consola/proveedores sin nada de PLD (HTML y RSC)"
+    },
+    {
+      "ok": true,
+      "texto": "14. cliente (gil): /c/33333333-3333-4333-8333-333333333333/consola/personas/nomina sin nada de PLD (HTML y RSC)"
+    },
+    {
+      "ok": true,
+      "texto": "14. cliente (gil): /c/33333333-3333-4333-8333-333333333333/consola/pendientes sin nada de PLD (HTML y RSC)"
+    },
+    {
+      "ok": true,
+      "texto": "14. cliente (gil): /operacion/pld lo manda a la entrada SOFIPO"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de gil"
+    },
+    {
+      "ok": true,
+      "texto": "14. cliente (rosa): /c/33333333-3333-4333-8333-333333333333/consola sin nada de PLD (HTML y RSC)"
+    },
+    {
+      "ok": true,
+      "texto": "14. cliente (rosa): /c/33333333-3333-4333-8333-333333333333/consola/proveedores sin nada de PLD (HTML y RSC)"
+    },
+    {
+      "ok": true,
+      "texto": "14. cliente (rosa): /c/33333333-3333-4333-8333-333333333333/consola/personas/nomina sin nada de PLD (HTML y RSC)"
+    },
+    {
+      "ok": true,
+      "texto": "14. cliente (rosa): /c/33333333-3333-4333-8333-333333333333/consola/pendientes sin nada de PLD (HTML y RSC)"
+    },
+    {
+      "ok": true,
+      "texto": "14. cliente (rosa): /operacion/pld lo manda a la entrada SOFIPO"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de rosa"
+    }
+  ]
+}

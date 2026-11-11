@@ -52,8 +52,6 @@ export function CampoArchivo({
         required={required}
         aria-invalid={excede || ligado["aria-invalid"] === true ? true : undefined}
         aria-describedby={descripcion || undefined}
-        // Con el error del servidor, el foco llega a este control, como en los demás campos de Operación (errorDelCampo).
-        autoFocus={ligado.autoFocus === true ? true : undefined}
         onChange={(evento) => {
           const archivo = evento.currentTarget.files?.[0];
           const grande = archivo !== undefined && archivo.size > TOPE_ARCHIVO_BYTES;

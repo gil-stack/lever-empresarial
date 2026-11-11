@@ -1,0 +1,13 @@
+esDescarga y las descargas de PLD (con el #62 integrado, 9edb4e5).
+Prueba nueva en tests/operacion/encabezados.test.ts: todo route.ts de src/app que responde con POLITICA_DESCARGA es esDescarga y está en el registro.
+
+--- rojo antes de ampliar esDescarga
+ℹ pass 20
+ℹ fail 1
+✖ todo manejador de src/app que responde con POLITICA_DESCARGA es una descarga para el proxy (12.515208ms)
+  AssertionError [ERR_ASSERTION]: /operacion/conservacion/manifiesto
+    actual: false,
+
+--- verde con DESCARGAS_PLD en src/nucleo/csp.ts
+ℹ pass 21
+ℹ fail 0

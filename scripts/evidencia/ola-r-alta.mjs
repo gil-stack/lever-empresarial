@@ -109,12 +109,15 @@ async function totp(quien) {
 
 // ---------- Navegador ----------
 const abiertos = [];
-async function abrir(quien, { tema = "oscuro", ancho = 1440, js = true } = {}) {
+async function abrir(quien, { tema = "oscuro", ancho = 1440, js = true, sinCsp = false } = {}) {
   const nav = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
   const movil = ancho < 600;
   const ctx = await nav.newContext({
     viewport: { width: ancho, height: movil ? 844 : 900 }, isMobile: movil, hasTouch: movil, deviceScaleFactor: 1, javaScriptEnabled: js,
     reducedMotion: "reduce", locale: "es-MX", timezoneId: "America/Mexico_City", acceptDownloads: true,
+    // Solo el contraste: tapa texto con estilos para medir el fondo, y la CSP con nonce los bloquea. Lo demás corre
+    // con la CSP real y la consola debe quedar limpia.
+    bypassCSP: sinCsp,
   });
   const host = new URL(BASE).hostname;
   // Quien no tiene sesión sembrada (Iván, que llega por su invitación) entra sin cookie.
@@ -148,7 +151,7 @@ async function foto(p, nombre, completa = true) {
   const ruta = `${DIR}/capturas/${prefijo}${String(numero).padStart(2, "0")}-${nombre}.webp`;
   mkdirSync(`${DIR}/capturas`, { recursive: true });
   if (!p.sinScript) {
-    await p.addStyleTag({ content: "nextjs-portal { display: none !important; }" }).catch(() => {});
+    // Sin <style> inyectado: con next start no hay overlay de desarrollo, y la CSP lo bloquearía.
     await p.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur()).catch(() => {});
   }
   await p.waitForTimeout(350);
@@ -187,7 +190,7 @@ async function aviso(p) {
 async function enviar(p, boton, codigo, { doble = false } = {}) {
   if (!p.sinScript) {
     await p.evaluate(() => {
-      history.replaceState(history.state, "", location.pathname);
+      history.replaceState(null, "", location.pathname);
       for (const nodo of document.querySelectorAll(".operacion-aviso")) nodo.setAttribute("data-anterior", "1");
     });
   }
@@ -239,10 +242,21 @@ async function esperarAviso(p, codigo) {
 }
 // El campo tiene el foco y nombra al mensaje; el mensaje va justo arriba del control (doceava: entre la etiqueta y el
 // control), dentro de la ventana y fuera de las barras fijas. Con cajas y selectores, que sirven también sin JavaScript.
+/** Con JavaScript, el campo tiene el foco; sin JavaScript, la dirección trae el fragmento del mensaje y el primer Tab entra. */
+async function llegaAlCampo(p, selector, idMensaje) {
+  if (!p.sinScript) return (await p.locator(`${selector}:focus`).count()) === 1;
+  if (new URL(p.url()).hash !== `#${idMensaje}`) return false;
+  await p.keyboard.press("Tab");
+  return (await p.locator(`${selector}:focus`).count()) === 1;
+}
+// Sexta vuelta del #61 (decisión del líder): sin JavaScript no hay autofocus; la dirección trae el fragmento del mensaje,
+// el mensaje y el campo quedan a la vista bajo las barras y el primer Tab entra al campo (eso cuenta como «foco»).
 async function juntoAlCampo(p, selector, idMensaje) {
   const control = p.locator(selector);
   const mensaje = p.locator(`[id="${idMensaje}"]`);
-  const foco = await p.locator(`${selector}:focus`).count();
+  const fragmento = new URL(p.url()).hash;
+  const autofocus = await control.getAttribute("autofocus");
+  let foco = p.sinScript ? 0 : await p.locator(`${selector}:focus`).count();
   const nombra = ((await control.getAttribute("aria-describedby")) ?? "").split(" ").includes(idMensaje);
   let tapa = 0;
   for (const barra of [".barra-movil", ".barra-superior"]) {
@@ -253,11 +267,17 @@ async function juntoAlCampo(p, selector, idMensaje) {
   const cajaMensaje = (await mensaje.count()) === 1 ? await mensaje.boundingBox() : null;
   const alto = p.viewportSize().height;
   const separacion = cajaMensaje && cajaCampo ? Math.round(cajaCampo.y - (cajaMensaje.y + cajaMensaje.height)) : null;
-  const visible = cajaMensaje !== null && cajaMensaje.y >= tapa && cajaMensaje.y + cajaMensaje.height <= alto;
+  const visible = cajaMensaje !== null && cajaMensaje.y >= tapa && cajaMensaje.y + cajaMensaje.height <= alto
+    && cajaCampo !== null && cajaCampo.y + Math.min(cajaCampo.height, 40) <= alto;
   await unSoloCampo(p);
+  const sinScriptBien = !p.sinScript || (fragmento === `#${idMensaje}` && autofocus === null);
+  if (p.sinScript) {
+    await p.keyboard.press("Tab");
+    foco = await p.locator(`${selector}:focus`).count();
+  }
   return {
-    ok: foco === 1 && nombra && visible && separacion !== null && separacion >= 0 && separacion <= 24,
-    detalle: JSON.stringify({ foco, nombra, campo: cajaCampo && Math.round(cajaCampo.y), mensaje: cajaMensaje && Math.round(cajaMensaje.y), separacion, barras: Math.round(tapa), ventana: alto }),
+    ok: foco === 1 && nombra && visible && sinScriptBien && separacion !== null && separacion >= 0 && separacion <= 24,
+    detalle: JSON.stringify({ foco, nombra, campo: cajaCampo && Math.round(cajaCampo.y), mensaje: cajaMensaje && Math.round(cajaMensaje.y), separacion, barras: Math.round(tapa), ventana: alto, ...(p.sinScript ? { fragmento, autofocus } : {}) }),
   };
 }
 /**
@@ -265,7 +285,7 @@ async function juntoAlCampo(p, selector, idMensaje) {
  * anterior (si lo hay) para esperar al nuevo, y devuelve su texto.
  */
 async function rechazarSocio(p) {
-  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.evaluate(() => history.replaceState(null, "", location.pathname + location.hash));
   await p.locator("#aviso-accionista").evaluate((nodo) => { nodo.dataset.anterior = "1"; }).catch(() => {});
   await p.getByRole("button", { name: "Agregar accionista" }).click();
   const nuevo = p.locator("#aviso-accionista:not([data-anterior])");
@@ -276,7 +296,7 @@ async function rechazarSocio(p) {
 }
 /** «Agregar representante» rechazado: como el del socio, vuelve sin recargar con su propio aviso y lo capturado. */
 async function rechazarRepresentante(p) {
-  await p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await p.evaluate(() => history.replaceState(null, "", location.pathname + location.hash));
   await p.locator("#aviso-representante").evaluate((nodo) => { nodo.dataset.anterior = "1"; }).catch(() => {});
   await p.getByRole("button", { name: "Agregar representante" }).click();
   const nuevo = p.locator("#aviso-representante:not([data-anterior])");
@@ -563,6 +583,17 @@ let fichaVieja = null;
 async function flujo8b() {
   console.log("\n— Flujo 8 (b): con todo en regla, otra persona aprueba la activación");
   renovarSesiones();
+  // 0030 (Ola R2): el candado también exige el perfil transaccional (25ª). Originación lo declara por clic.
+  const omar = await abrir("omar");
+  await ir(omar.p, `/operacion/clientes/${ctxEbano.id}/expediente#perfil-titulo`);
+  await omar.p.locator("#perfil-pagos-monto").fill("400,000.00");
+  await omar.p.locator("#perfil-pagos-operaciones").fill("60");
+  await omar.p.locator("#perfil-nomina-monto").fill("250,000.00");
+  await omar.p.locator("#perfil-nomina-operaciones").fill("2");
+  await enviar(omar.p, omar.p.getByRole("button", { name: "Registrar perfil" }), "perfil_declarado", { doble: true });
+  exigir(cuenta(`pld_perfiles where company_id = '${ctxEbano.id}'`) === 1, "8. doble clic en «Registrar perfil» = 1 perfil transaccional de Grupo Ébano");
+  await foto(omar.p, "f8-perfil-transaccional-de-ebano");
+  await omar.nav.close();
   const ana = await abrir("ana");
   const codigo = await aprobarDecision(ana.p, "Grupo Ébano");
   exigir(codigo === "decision_registrada", "8. Aprobación aprueba y la base deja pasar en_alta → activa", codigo);
@@ -932,7 +963,7 @@ async function contraste() {
       let minimo = Infinity;
       for (const pantalla of PANTALLAS()) {
         renovarSesiones();
-        const { nav, p } = await abrir(pantalla.quien, { tema, ancho });
+        const { nav, p } = await abrir(pantalla.quien, { tema, ancho, sinCsp: true });
         await ir(p, pantalla.ruta);
         await p.waitForFunction(() => ["quieto", "lento", "sin-motor"].includes(document.querySelector(".escena-fondo canvas")?.dataset.estado ?? ""), null, { timeout: 20000 }).catch(() => {});
         await p.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
@@ -1258,7 +1289,7 @@ async function terceraRonda(rutaEbano) {
   await enVista(omar.p.locator("#acc-pais"));
   await foto(omar.p, "n2-formulario-socio-extranjero", false);
   // Sin documento el navegador no envía: con país, el documento es obligatorio (y el servidor y la base lo exigen).
-  await omar.p.evaluate(() => history.replaceState(history.state, "", location.pathname + location.hash));
+  await omar.p.evaluate(() => history.replaceState(null, "", location.pathname + location.hash));
   await omar.p.getByRole("button", { name: "Agregar accionista" }).click();
   await omar.p.waitForTimeout(800);
   exigir(
@@ -1695,7 +1726,8 @@ async function quintaRonda(rutaEbano) {
     "base-N15. con el enlace nuevo, primera acepta y su Administración queda activa",
   );
   // Llega a registrar su segundo factor: el QR y la semilla son secretos aunque la base sea desechable, se tapan.
-  await invitada.p.addStyleTag({ content: ".arco-qr { filter: blur(18px); }" });
+  // Con el estilo del elemento (CSSOM), que la CSP no bloquea: un <style> inyectado no se aplicaría y el QR saldría.
+  await invitada.p.locator(".arco-qr").evaluate((nodo) => { nodo.style.filter = "blur(18px)"; });
   await invitada.p.locator(".arco-semilla").evaluate((nodo) => { nodo.textContent = "(semilla omitida en la evidencia)"; });
   await foto(invitada.p, "sn15b-acepta-con-el-enlace-nuevo", false);
   await invitada.nav.close();
@@ -2811,7 +2843,7 @@ async function decimaRonda(rutaEbano) {
     const control = omar.p.locator("#doc-archivo");
     exigir(
       (await aviso(omar.p)).includes(texto) && (await control.getAttribute("aria-invalid")) === "true"
-        && (await control.getAttribute("aria-describedby")) === "aviso-documento-campo doc-archivo-nota" && (await omar.p.locator("#doc-archivo:focus").count()) === 1
+        && (await control.getAttribute("aria-describedby")) === "aviso-documento-campo doc-archivo-nota" && (await llegaAlCampo(omar.p, "#doc-archivo", "aviso-documento-campo"))
         && documentosNovena() === antes && (await conSuOrigen(respuesta)) && (js || respuesta.status() === 200),
       `campo de archivo. ${conOSin(js)} JavaScript, ${codigo}: aviso, el control del archivo marcado, ligado al aviso y con el foco; ningún documento`,
       await aviso(omar.p),
@@ -2887,10 +2919,11 @@ async function onceavaRonda() {
     const direccion = new URL(celia.p.url());
     const junto = await juntoAlCampo(celia.p, `[id="motivo-${caso}"]`, `aviso-coincidencia-${caso}-campo`);
     exigir(
-      direccion.search === "" && direccion.hash === "" && (await celia.p.locator(`[id="aviso-coincidencia-${caso}"]`).count()) === 1 && junto.ok
+      // Sin JavaScript solo cambia el fragmento: el del mensaje (permalinkDelRechazo, sexta vuelta del #61).
+      direccion.search === "" && direccion.hash === (js ? "" : `#aviso-coincidencia-${caso}-campo`) && (await celia.p.locator(`[id="aviso-coincidencia-${caso}"]`).count()) === 1 && junto.ok
         && (await celia.p.locator(`[id="motivo-${caso}"]`).getAttribute("aria-invalid")) === "true"
         && sql(`select estado from lpb_coincidencias where id = '${caso}'`) === "pendiente",
-      `P3 coincidencia. ${conOSin(js)} JavaScript a ${ancho}, «Revisar 😀» en el motivo: el aviso en su tarjeta y la dirección sin cambios, el campo marcado y con el foco, y el mensaje junto a él a la vista; el caso sigue abierto`,
+      `P3 coincidencia. ${conOSin(js)} JavaScript a ${ancho}, «Revisar 😀» en el motivo: el aviso en su tarjeta y la dirección sin cambios${js ? "" : " salvo el fragmento del mensaje"}, el campo marcado y ${js ? "con el foco" : "el primer Tab en él"}, y el mensaje junto a él a la vista; el caso sigue abierto`,
       junto.detalle,
     );
     await foto(celia.p, `r11-coincidencia-motivo-${conOSin(js)}-js-${ancho}`, false);
@@ -3129,9 +3162,9 @@ async function rechazoConLoCapturado(caso, js, ancho) {
   const enSuFormulario = await s.p.locator(`form:has([id="${caso.idAviso}"])`).locator(caso.campo).count();
   const extra = caso.extra ? await caso.extra(s.p) : true;
   exigir(
-    junto.ok && distintos.length === 0 && enSuFormulario === 1 && titulo === mensaje && extra && s.p.url() === direccion
+    junto.ok && distintos.length === 0 && enSuFormulario === 1 && titulo === mensaje && extra && s.p.url().split("#")[0] === direccion.split("#")[0]
       && caso.filas() === antes && respuesta.status() === 200 && (!caso.armar || vistos === 1),
-    `doceava. ${caso.nombre}, ${conOSin} JavaScript a ${ancho}: «${caso.codigo}» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y el foco en él; la dirección no cambia y no se guarda nada`,
+    `doceava. ${caso.nombre}, ${conOSin} JavaScript a ${ancho}: «${caso.codigo}» vuelve en su formulario con lo capturado, el aviso arriba del formulario, el mensaje entre la etiqueta y el control y ${js ? "el foco en él; la dirección no cambia" : "el fragmento del mensaje: el mensaje y el campo bajo las barras y el primer Tab en el campo; la dirección solo cambia de fragmento"} y no se guarda nada`,
     JSON.stringify({ junto: junto.detalle, distintos, titulo, mensaje, enSuFormulario, extra, url: s.p.url().replace(BASE, ""), status: respuesta.status(), vistos }),
   );
   await foto(s.p, `doceava-${caso.nombre}-${conOSin}-js-${ancho}`, false);

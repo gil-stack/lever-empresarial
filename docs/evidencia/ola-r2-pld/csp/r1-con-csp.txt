@@ -1,0 +1,10 @@
+Guion de R1 (scripts/evidencia/ola-r-alta.mjs) con la CSP del #62: antes y después.
+
+--- antes (guion sin cambios): flujos
+156 comprobaciones en verde, 1 en rojo (el recorrido se detuvo).
+FALLO consola del navegador limpia en todos los flujos · ofelia: consola Applying inline style violates the following Content Security Policy directive 'style-src 'self' 'nonce-gwEQkl5BriRSyP5jIy9OCA==''. Either the 'unsafe-inline' keyword, a hash ('sha256-ggU06W4xbm/vgA5Ix4yAjqmtm+sg8taNqhKX7qQotpM
+
+--- después: sin <style> en las capturas, el QR del segundo factor tapado con element.style (CSSOM) y bypassCSP solo en el contraste; history.replaceState(null, …) en los cuatro lugares
+flujos: 157 comprobaciones en verde, 0 en rojo. · OK    consola del navegador limpia en todos los flujos
+pantallas y contraste: 60 comprobaciones en verde, 0 en rojo.
+regresiones: 234 comprobaciones en verde, 1 en rojo (el recorrido se detuvo). (729 s); el rojo es el del riesgo sin JavaScript a 1440, que se ataca aparte

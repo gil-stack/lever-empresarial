@@ -1,0 +1,72 @@
+// Sonda dirigida de la regla nueva sin JavaScript (sexta vuelta del #61): el riesgo de Brisa rechazado («MEDIA» en
+// Actividad) a 390 y 1440. Exige: el fragmento del mensaje en la dirección, el control sin autofocus, el mensaje bajo las
+// barras pegadas arriba, el campo a la vista y que el primer Tab entre al campo. NAV=chromium (con swiftshader, como R1)
+// o webkit (la sesión va en la cabecera Cookie con route.fetch: WebKit no guarda una cookie Secure en http://localhost).
+// VECES=n por ancho. Imprime una línea por corrida y el resumen.
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { chromium, webkit } from "../../../../node_modules/playwright/index.mjs";
+
+const E = JSON.parse(readFileSync(process.env.ESTADO, "utf8"));
+const BASE = process.env.BASE;
+const sql = (q) => execFileSync("psql", [E.DUENO_URL, "-X", "-q", "-tA", "-v", "ON_ERROR_STOP=1", "-c", q], { encoding: "utf8" }).trim();
+const brisa = sql("select id from companies where rfc = 'BRR180303CD6'");
+const veces = Number(process.env.VECES ?? 30);
+const motor = process.env.NAV === "webkit" ? webkit : chromium;
+const resumen = {};
+
+for (const ancho of (process.env.ANCHOS ?? "390,1440").split(",").map(Number)) {
+  const movil = ancho < 600;
+  for (let corrida = 1; corrida <= veces; corrida++) {
+    sql("update sessions set ultimo_uso = now() where expires_at > now()");
+    // SWIFT=0: Chromium con GPU (--use-angle por omisión); si no, swiftshader como R1. MOVIMIENTO=normal: sin reducedMotion.
+    const nav = await motor.launch(motor === chromium && process.env.SWIFT !== "0" ? { args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader"] } : {});
+    const ctx = await nav.newContext({ viewport: { width: ancho, height: movil ? 844 : 900 }, isMobile: movil && motor === chromium, hasTouch: movil,
+      deviceScaleFactor: 1, javaScriptEnabled: false, reducedMotion: process.env.MOVIMIENTO === "normal" ? "no-preference" : "reduce", locale: "es-MX", timezoneId: "America/Mexico_City" });
+    const host = new URL(BASE).hostname;
+    if (motor === webkit) {
+      const galleta = `tema=oscuro; __Host-sesion=${E.SESIONES.celia}`;
+      await ctx.route(`${BASE}/**`, async (ruta) => ruta.fulfill({ response: await ruta.fetch({ headers: { ...ruta.request().headers(), cookie: galleta }, maxRedirects: 0 }) }));
+    } else {
+      await ctx.addCookies([
+        { name: "tema", value: "oscuro", domain: host, path: "/" },
+        { name: "__Host-sesion", value: E.SESIONES.celia, domain: host, path: "/", httpOnly: true, secure: true, sameSite: "Lax" },
+      ]);
+    }
+    const p = await ctx.newPage();
+    await p.goto(`${BASE}/operacion/clientes/${brisa}/expediente`, { waitUntil: "networkidle" });
+    await p.locator("#riesgo-actividad").selectOption("media");
+    await p.locator("#riesgo-zona").selectOption("alta");
+    await p.route("**/operacion/**", async (route) => {
+      const cuerpo = route.request().postDataBuffer();
+      if (route.request().method() !== "POST" || !cuerpo) return route.fallback();
+      return route.fallback({ postData: Buffer.from(cuerpo.toString("latin1").replace(/(name="[^"]*actividad"\r\n\r\n)media/, "$1MEDIA"), "latin1") });
+    });
+    const [respuesta] = await Promise.all([
+      p.waitForResponse((r) => r.request().method() === "POST"),
+      p.getByRole("button", { name: "Registrar revisión periódica" }).click(),
+    ]);
+    await p.waitForLoadState("networkidle");
+    await p.waitForTimeout(800);
+    let tapa = 0;
+    for (const sel of [".barra-movil", ".barra-superior"]) {
+      const b = await p.locator(sel).first().boundingBox().catch(() => null);
+      if (b && b.y >= 0 && b.y <= 61 && b.height > 0) tapa = Math.max(tapa, b.y + b.height);
+    }
+    const alto = movil ? 844 : 900;
+    const mensaje = await p.locator('[id="aviso-riesgo-campo"]').boundingBox();
+    const campo = await p.locator("#riesgo-actividad").boundingBox();
+    const fragmento = new URL(p.url()).hash;
+    const autofocus = await p.locator("#riesgo-actividad").getAttribute("autofocus");
+    await p.keyboard.press("Tab");
+    const tab = await p.locator("#riesgo-actividad:focus").count();
+    const ok = respuesta.status() === 200 && fragmento === "#aviso-riesgo-campo" && autofocus === null && mensaje !== null && mensaje.y >= tapa
+      && campo !== null && campo.y + Math.min(campo.height, 40) <= alto && tab === 1;
+    const clave = `${process.env.NAV ?? "chromium"}${motor === chromium ? (process.env.SWIFT === "0" ? "-gpu" : "-swiftshader") : ""}${process.env.MOVIMIENTO === "normal" ? " movimiento-normal" : " reducir-movimiento"} ${ancho}`;
+    resumen[clave] ??= { verdes: 0, rojos: 0 };
+    resumen[clave][ok ? "verdes" : "rojos"] += 1;
+    console.log(JSON.stringify({ clave, corrida, ok, fragmento, autofocus, tapa, mensaje: mensaje && Math.round(mensaje.y), campo: campo && Math.round(campo.y), tab }));
+    await nav.close();
+  }
+}
+console.log(`RESUMEN ${JSON.stringify(resumen)}`);

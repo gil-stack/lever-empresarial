@@ -3,13 +3,20 @@
 import { useEffect } from "react";
 
 /**
- * El mensaje del error junto al campo (lo arma `MensajeDelCampo`). Va entre la etiqueta y el control: el navegador
- * desplaza la página hasta el campo con el foco, y así el mensaje queda a la vista aunque el campo quede a medio
- * asomar (sin JavaScript no hay más ayuda que esa). Con JavaScript, Next sube la página al terminar de navegar, después
- * del autofocus: si el campo que este mensaje describe tiene el foco y el mensaje queda bajo las barras de arriba o el
- * campo fuera de la ventana, se centra el mensaje.
+ * El mensaje del error junto al campo (lo arma `MensajeDelCampo`). Va entre la etiqueta y el control. Sin JavaScript es
+ * el destino del fragmento de la respuesta (`permalinkDelRechazo`): el navegador lo alinea bajo las barras con su
+ * `scroll-margin-top` y el primer Tab entra al campo. Con JavaScript el formulario le da el foco al campo y Next sube la
+ * página al terminar de navegar: si el mensaje queda bajo las barras de arriba o el campo fuera de la ventana, se centra
+ * el mensaje.
  */
 export function MensajeJuntoAlCampo({ id, texto }: { id: string; texto: string }) {
+  // Con JavaScript, al aparecer el mensaje el foco va al campo que describe (sin autofocus: las páginas que marcan el
+  // campo con el aviso de la dirección no tienen otro que lo haga). Una sola vez por mensaje.
+  useEffect(() => {
+    if (document.activeElement && (document.activeElement.getAttribute("aria-describedby") ?? "").split(" ").includes(id)) return;
+    const control = document.querySelector<HTMLElement>(`[aria-describedby~="${CSS.escape(id)}"]`);
+    (control instanceof HTMLFieldSetElement ? control.querySelector<HTMLElement>("input, select, textarea") : control)?.focus({ preventScroll: true });
+  }, [id]);
   useEffect(() => {
     const mensaje = document.getElementById(id);
     const campo = document.activeElement;

@@ -1,0 +1,69 @@
+{
+  "ofelia": {
+    "pld": "sin permiso",
+    "parametros": "sin permiso",
+    "caso": "sin permiso",
+    "comite": "sin permiso",
+    "sesion": "sin permiso",
+    "reportes": "sin permiso",
+    "conservacion": "sin permiso",
+    "cumplimiento": "sin permiso",
+    "avisos": "ve",
+    "avisosEnBitacora": 0
+  },
+  "omar": {
+    "pld": "sin permiso",
+    "parametros": "sin permiso",
+    "caso": "sin permiso",
+    "comite": "sin permiso",
+    "sesion": "sin permiso",
+    "reportes": "sin permiso",
+    "conservacion": "sin permiso",
+    "cumplimiento": "sin permiso",
+    "avisos": "ve",
+    "avisosEnBitacora": 0
+  },
+  "ana": {
+    "pld": "sin permiso",
+    "parametros": "sin permiso",
+    "caso": "sin permiso",
+    "comite": "sin permiso",
+    "sesion": "sin permiso",
+    "reportes": "sin permiso",
+    "conservacion": "sin permiso",
+    "cumplimiento": "sin permiso",
+    "avisos": "ve",
+    "avisosEnBitacora": 0
+  },
+  "celia": {
+    "pld": "ve",
+    "parametros": "ve",
+    "caso": "ve",
+    "comite": "ve",
+    "sesion": "ve",
+    "reportes": "ve",
+    "conservacion": "ve",
+    "cumplimiento": "ve",
+    "avisos": "ve",
+    "avisosEnBitacora": 3
+  },
+  "aurelio": {
+    "pld": "ve",
+    "parametros": "ve",
+    "caso": "ve",
+    "comite": "ve",
+    "sesion": "ve",
+    "reportes": "ve",
+    "conservacion": "ve",
+    "cumplimiento": "ve",
+    "avisos": "ve",
+    "casoDelAviso": "404",
+    "avisosEnBitacora": 2
+  },
+  "gil": {
+    "pld": "/operacion/entrar"
+  },
+  "rosa": {
+    "pld": "/operacion/entrar"
+  }
+}

@@ -1,0 +1,45 @@
+Pager usage is off.
+== funciones pld_ que PUBLIC puede ejecutar, de cualquier tipo (debe ser 0)
+ count 
+-------
+     0
+(1 row)
+
+== EXECUTE de funciones pld_ por rol
+      rolname       | puede_ejecutar 
+--------------------+----------------
+ plataforma_app     |              0
+ plataforma_cliente |              0
+ plataforma_sofipo  |             32
+ plataforma_tarea   |              0
+(4 rows)
+
+== las de invocador que la SOFIPO ejecuta (corren con sus privilegios)
+                       oid                        
+--------------------------------------------------
+ pld_fecha_mx(timestamp with time zone)
+ pld_sin_invisibles(text)
+ pld_comite_vigentes(uuid,date)
+ pld_nombre_de_integrante(pld_comite_integrantes)
+ pld_resultado_votacion(uuid,uuid)
+(5 rows)
+
+== como plataforma_cliente
+SET
+ERROR:  permission denied for function pld_registrar_pago
+ERROR:  permission denied for function pld_resultado_votacion
+ERROR:  permission denied for function pld_comite_vigentes
+ERROR:  permission denied for function pld_fecha_mx
+ERROR:  permission denied for table pld_alertas
+ERROR:  permission denied for function pld_rol
+RESET
+== como plataforma_tarea
+SET
+ERROR:  permission denied for table pld_casos
+ERROR:  permission denied for function pld_caso_vence
+RESET
+== como plataforma_app (sin SET ROLE)
+SET
+ERROR:  permission denied for table pld_avisos
+ERROR:  permission denied for function pld_sin_invisibles
+RESET

@@ -1,0 +1,71 @@
+Prueba «reglas de PLD: costo» (tests/pld/reglas-postgres.test.ts).
+
+Rojo en el CI de 10112ab (86FtEO1V5oAoog5eIFVoX40f): p95 30.73 ms contra el tope de 25. p50 y p95 del CI en las cuatro corridas con el escenario de 10,000:
+  EXPLAIN_PLD {"resumen":{"muestras":200,"p50":20.397,"p95":21.329,"p99":26.24,"max":39.511}
+  EXPLAIN_PLD {"resumen":{"muestras":200,"p50":20.544,"p95":20.957,"p99":21.746,"max":22.164}
+  EXPLAIN_PLD {"resumen":{"muestras":200,"p50":20.704,"p95":22.454,"p99":24.695,"max":32.784}
+  EXPLAIN_PLD {"resumen":{"muestras":200,"p50":21.284,"p95":30.73,"p99":37.275,"max":38.604}
+
+1) Guarda determinista (plan genérico de las 8 consultas de pld_evaluar_operacion). Sin la mutación:
+GUARDA_PLD {"perfil vigente":{"indices":["pld_perfiles_vigente_idx"],"secuenciales":[]},"excede_perfil: suma del mes":{"indices":["pld_operaciones_mes_idx","pld_operaciones_reemplazada"],"secuenciales":[]},"excede_perfil: alerta del mes":{"indices":["pld_alertas_excede_mes"],"secuenciales":[]},"monto_atipico: historial":{"indices":["pld_operaciones_tiempo_idx","pld_operaciones_reemplazada"],"secuenciales":[]},"monto_atipico: mediana":{"indices":["pld_operaciones_tiempo_idx","pld_operaciones_reemplazada"],"secuenciales":[]},"fraccionamiento":{"indices":["pld_operaciones_clabe_idx","pld_operaciones_reemplazada"],"secuenciales":[]},"nomina_atipica":{"indices":["pld_operaciones_tiempo_idx"],"secuenciales":[]},"grado de riesgo":{"indices":["kyb_calificaciones_riesgo_company_idx"],"secuenciales":[]}}
+
+Rojo quitando un índice a la vez antes de la guarda:
+sin pld_operaciones_mes_idx → salida 1 · AssertionError [ERR_ASSERTION]: excede_perfil: suma del mes: no usa pld_operaciones_mes_idx (usa pld_operaciones_tiempo_idx, pld_operaciones_reemplazada)
+sin pld_operaciones_tiempo_idx → salida 1 · AssertionError [ERR_ASSERTION]: monto_atipico: historial: no usa pld_operaciones_tiempo_idx (usa pld_operaciones_mes_idx, pld_operaciones_reemplazada)
+sin pld_operaciones_clabe_idx → salida 1 · AssertionError [ERR_ASSERTION]: fraccionamiento: no usa pld_operaciones_clabe_idx (usa pld_operaciones_tiempo_idx, pld_operaciones_reemplazada)
+sin pld_operaciones_reemplazada → salida 1 · AssertionError [ERR_ASSERTION]: excede_perfil: suma del mes: Seq Scan sobre pld_operaciones
+sin pld_alertas_excede_mes → salida 1 · AssertionError [ERR_ASSERTION]: excede_perfil: alerta del mes: no usa pld_alertas_excede_mes (usa pld_alertas_company_idx)
+sin pld_perfiles_vigente_idx → salida 1 · AssertionError [ERR_ASSERTION]: perfil vigente: no usa pld_perfiles_vigente_idx (usa pld_perfiles_numero_unico)
+
+2) Tiempo con calentamiento (20) y 300 muestras, topes del CI p50 ≤ 25 y p95 ≤ 40; cinco corridas seguidas en local (archivo completo) con la Mac ocupada por otras sesiones:
+corrida 1 (carga 61.20 69.30 52.23): salida 0 · costo ok=1 · registrar una más: p50 8.08 ms, p95 9.83 ms, p99 10.27 ms (300 muestras) 
+corrida 2 (carga 59.13 68.57 52.16): salida 0 · costo ok=1 · registrar una más: p50 8.13 ms, p95 10.07 ms, p99 14.63 ms (300 muestras) 
+corrida 3 (carga 56.96 67.80 52.08): salida 0 · costo ok=1 · registrar una más: p50 7.27 ms, p95 9.02 ms, p99 11.80 ms (300 muestras) 
+corrida 4 (carga 51.66 66.30 51.73): salida 0 · costo ok=1 · registrar una más: p50 6.40 ms, p95 8.02 ms, p99 8.94 ms (300 muestras) 
+corrida 5 (carga 47.54 64.94 51.42): salida 0 · costo ok=1 · registrar una más: p50 8.70 ms, p95 10.78 ms, p99 13.81 ms (300 muestras) 
+
+test:db completo (20 archivos en serie): ℹ tests 125 ℹ pass 125 ℹ fail 0 
+
+=== Bandeja con 20,000 alertas (r2-base-N10)
+En el CI (4 corridas): con 19,000 en casos p95 de 74 a 76 ms; en local con la Mac a carga ~94 llegó a 110.5 contra el tope de 100.
+Guarda del plan (rol de la aplicación y RLS): las 500 se eligen con pld_alertas_operador_idx; companies y pld_operaciones se unen fuera del Limit y con índice; con casos, el anti-join usa pld_caso_alertas_una_vez; sin Seq Scan en lo que crece.
+Rojo:
+sin pld_alertas_operador_idx → salida 1 · AssertionError [ERR_ASSERTION]: sin exclusiones: Seq Scan sobre pld_alertas
+sin pld_caso_alertas_una_vez → salida 1 · AssertionError [ERR_ASSERTION]: con 19,000 en casos: Seq Scan sobre pld_alertas, pld_caso_alertas
+
+Calentamiento (10) y 200 muestras, topes del CI p50 ≤ 120 ms y p95 ≤ 200 ms. Cinco corridas seguidas en local (archivo completo, con las reglas):
+corrida 1 (carga 70.06 67.94 53.67): salida 0
+  registrar una más: p50 6.01 ms, p95 6.32 ms, p99 6.68 ms (300 muestras)
+  bandeja sin exclusiones: p50 1.9 ms, p95 3.2 ms, p99 3.6 ms (200 muestras)
+  bandeja con exclusión: p50 2.0 ms, p95 3.2 ms, p99 3.7 ms (200 muestras)
+  bandeja con 19,000 en casos: p50 16.9 ms, p95 21.3 ms, p99 24.7 ms (200 muestras)
+  bandeja con 19,000 en casos y una exclusión: p50 16.4 ms, p95 18.8 ms, p99 19.7 ms (200 muestras)
+corrida 2 (carga 55.72 64.87 52.82): salida 0
+  registrar una más: p50 7.15 ms, p95 8.84 ms, p99 11.26 ms (300 muestras)
+  bandeja sin exclusiones: p50 2.2 ms, p95 5.3 ms, p99 12.3 ms (200 muestras)
+  bandeja con exclusión: p50 2.2 ms, p95 3.9 ms, p99 5.8 ms (200 muestras)
+  bandeja con 19,000 en casos: p50 20.6 ms, p95 30.7 ms, p99 35.7 ms (200 muestras)
+  bandeja con 19,000 en casos y una exclusión: p50 22.8 ms, p95 35.7 ms, p99 41.3 ms (200 muestras)
+corrida 3 (carga 47.68 62.61 52.23): salida 0
+  registrar una más: p50 7.55 ms, p95 10.28 ms, p99 11.86 ms (300 muestras)
+  bandeja sin exclusiones: p50 3.3 ms, p95 7.1 ms, p99 29.1 ms (200 muestras)
+  bandeja con exclusión: p50 3.2 ms, p95 5.4 ms, p99 17.1 ms (200 muestras)
+  bandeja con 19,000 en casos: p50 21.3 ms, p95 32.5 ms, p99 39.1 ms (200 muestras)
+  bandeja con 19,000 en casos y una exclusión: p50 22.1 ms, p95 31.8 ms, p99 45.5 ms (200 muestras)
+corrida 4 (carga 42.67 60.53 51.72): salida 0
+  registrar una más: p50 7.44 ms, p95 8.87 ms, p99 10.18 ms (300 muestras)
+  bandeja sin exclusiones: p50 3.0 ms, p95 4.3 ms, p99 5.1 ms (200 muestras)
+  bandeja con exclusión: p50 3.5 ms, p95 5.2 ms, p99 5.8 ms (200 muestras)
+  bandeja con 19,000 en casos: p50 20.4 ms, p95 24.4 ms, p99 27.6 ms (200 muestras)
+  bandeja con 19,000 en casos y una exclusión: p50 19.7 ms, p95 24.5 ms, p99 28.6 ms (200 muestras)
+corrida 5 (carga 36.33 57.88 50.97): salida 0
+  registrar una más: p50 7.60 ms, p95 8.98 ms, p99 9.74 ms (300 muestras)
+  bandeja sin exclusiones: p50 3.4 ms, p95 6.1 ms, p99 7.0 ms (200 muestras)
+  bandeja con exclusión: p50 2.9 ms, p95 4.4 ms, p99 5.4 ms (200 muestras)
+  bandeja con 19,000 en casos: p50 22.9 ms, p95 29.2 ms, p99 33.1 ms (200 muestras)
+  bandeja con 19,000 en casos y una exclusión: p50 22.4 ms, p95 28.9 ms, p99 31.2 ms (200 muestras)
+
+Otras pruebas de tiempo en los 20 archivos de test:db (grep de performance.now, Date.now y ms):
+- tests/autenticacion/enumeracion-tope.test.ts: rechazo en 1,500 ms ± 250 y medianas a ≤ 100 ms entre sí. Es un requisito de seguridad (que el tiempo no revele si el correo existe), relativo al piso del servidor; no ha fallado en el CI. Se queda.
+- tests/pld/migracion-postgres.test.ts: la escritura normal espera ≤ 3,000 ms detrás de la 0030 con lock_timeout de 2 s. Mide el lock_timeout (semántico), con 1 s de margen. Se queda.
+- tests/autenticacion/seguridad-cuentas.test.ts (< 10,000 ms desde que se renovó la sesión) y las fechas con Date.now() en pld-postgres, alta-regulada y colaboradores: arman fechas, no miden velocidad.

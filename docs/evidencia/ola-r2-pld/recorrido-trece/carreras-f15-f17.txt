@@ -1,0 +1,18 @@
+Recorrido R2 con la ronda 13 del #59 integrada (66c7f26): dos comprobaciones leían el estado una sola vez, antes del repintado.
+
+--- primera corrida (rojo)
+f15.log:Error: FALLO 15. subir un acta a la sesión oculta: sesion_no_existe y la misma página que con una inexistente · sesion_no_existe / sesion_no_existe
+f17.log:Error: FALLO 17. el aviso sobre Fondo se rechaza en el campo Empresa, con el foco, y no queda aviso
+
+--- f17 con el detalle: el campo sí queda marcado y con el foco, y no hay aviso
+Error: FALLO 17. el aviso sobre Fondo se rechaza en el campo Empresa, con el foco, y no queda aviso · {"avisos":0,"ariaInvalid":"true","foco":"aviso-empresa","aviso":["dato_invalido_companyId","dato_invalido_companyId"],"url":"/operacion/avisos"}
+
+--- desde cero con la espera (hasta 5 s) en las dos comprobaciones
+164 comprobaciones en verde, 0 en rojo.
+198 comprobaciones en verde, 0 en rojo.
+f15: 32 comprobaciones en verde, 0 en rojo.
+f16: 19 comprobaciones en verde, 0 en rojo.
+f17: 9 comprobaciones en verde, 0 en rojo.
+f18: 16 comprobaciones en verde, 0 en rojo.
+pantallas: 180 comprobaciones en verde, 0 en rojo.
+contraste: 6 comprobaciones en verde, 0 en rojo.

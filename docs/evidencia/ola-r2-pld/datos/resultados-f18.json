@@ -1,0 +1,74 @@
+{
+  "fases": [
+    "f18"
+  ],
+  "segundos": 17,
+  "verdes": 16,
+  "rojos": 0,
+  "resultados": [
+    {
+      "ok": true,
+      "texto": "18. Roble Antiguo opera desde antes de la 0030 y no tiene perfil"
+    },
+    {
+      "ok": true,
+      "texto": "18. la bandeja de Cumplimiento lista a Roble en «Empresas activas sin perfil transaccional (25ª)»"
+    },
+    {
+      "ok": true,
+      "texto": "18. y a nadie más: ni Fondo (demostración), ni las que tienen perfil, ni la que está en alta"
+    },
+    {
+      "ok": true,
+      "texto": "18. el enlace lleva al perfil transaccional del expediente, que dice que la empresa opera sin perfil"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia a 390 px"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «perfil_propuesto» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "18. doble clic en «Proponer el cambio» = 1 propuesta; sigue sin perfil vigente"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Omar"
+    },
+    {
+      "ok": true,
+      "texto": "18. con la propuesta, Roble sale de «sin perfil» y la hoja desaparece: no queda ninguna"
+    },
+    {
+      "ok": true,
+      "texto": "18. y queda en «Por resolver»"
+    },
+    {
+      "ok": true,
+      "texto": "aviso «perfil_aprobado» tras la acción"
+    },
+    {
+      "ok": true,
+      "texto": "18. el vigente es la versión 1, aprobada, con $180,000.00 de pagos"
+    },
+    {
+      "ok": true,
+      "texto": "18. un evento de propuesta y uno de aprobación"
+    },
+    {
+      "ok": true,
+      "texto": "18. aprobado el perfil, Roble ya no aparece en la bandeja"
+    },
+    {
+      "ok": true,
+      "texto": "consola limpia en la sesión de Celia"
+    }
+  ]
+}

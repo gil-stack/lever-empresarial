@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
+import { fragmentoDelError, permalinkDelRechazo } from "../../src/components/operacion/aviso.tsx";
+
 const RAIZ = new URL("../../", import.meta.url);
 const PISTA = "Originación y Aprobación leen este motivo: no menciones la Lista ni el reporte.";
 
@@ -33,5 +35,30 @@ describe("redirecciones de Operación", () => {
       assert.doesNotMatch(fuente, /redirect\(`[^`]*#/, nombre);
       assert.doesNotMatch(fuente, /(listo|fallo)\([^;]*"#[a-z-]+"/, nombre);
     }
+  });
+
+  // r2-serv-N20: lo mismo en PLD (acciones y rutas que redirigen), también si el fragmento lo arma un ayudante: ningún
+  // texto de esos archivos empieza con «#» ni toca `.hash`. Los comentarios no cuentan. Sexta vuelta del #61: la única
+  // excepción es el fragmento del mensaje del campo con error, y solo a través de fragmentoDelError (aviso.tsx).
+  it("ninguna acción ni ruta de PLD redirige con #sección, ni armada por un ayudante; solo el destino del error, con fragmentoDelError", () => {
+    const portal = new URL("src/app/operacion/(portal)/", RAIZ);
+    const archivos = (readdirSync(portal, { recursive: true }) as string[])
+      .filter((ruta) => /\.tsx?$/.test(ruta) && !/\.test\.tsx?$/.test(ruta))
+      .map((ruta) => ({ ruta, fuente: readFileSync(new URL(ruta, portal), "utf8") }))
+      .filter(({ fuente }) => /\bredirect\(|Response\.redirect\(/.test(fuente));
+    const rutas = archivos.map(({ ruta }) => ruta);
+    for (const esperada of ["pld/acciones.ts", "conservacion/manifiesto/route.ts", "reportes/archivo/route.ts"]) assert.ok(rutas.includes(esperada), esperada);
+    for (const { ruta, fuente } of archivos) {
+      const sinComentarios = fuente.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+      assert.doesNotMatch(sinComentarios, /["'`]#/, ruta);
+      assert.doesNotMatch(sinComentarios.replace(/\.hash = fragmentoDelError\(/g, ""), /\.hash\b/, ruta);
+    }
+  });
+
+  it("fragmentoDelError: el mensaje del campo si el error es de un campo; ninguno si no", () => {
+    assert.equal(fragmentoDelError("dato_invalido_desde"), "#aviso-operacion-campo");
+    assert.equal(fragmentoDelError("invisible_texto"), "#aviso-operacion-campo");
+    assert.equal(fragmentoDelError("caso_no_existe"), "");
+    assert.equal(permalinkDelRechazo("aviso-riesgo"), "#aviso-riesgo-campo");
   });
 });

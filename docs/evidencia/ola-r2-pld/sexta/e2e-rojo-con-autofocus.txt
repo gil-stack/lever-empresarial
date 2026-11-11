@@ -1,0 +1,9 @@
+e2e nueva (llegaSinScript) contra el código anterior, con autofocus (32400d4): roja
+  ✘   5 tests/e2e/pld.spec.ts:141:7 › sin JavaScript › sin JavaScript, un rechazo de PLD conserva lo escrito y llega al mensaje junto al campo (fragmento, bajo las barras, primer Tab): clave CASFIM, nota y RFC del auditor, a 1440 y 390 (272ms)
+    Expected: >= 0
+    Received:    -59.1875
+    test-results/e2e/pld-sin-JavaScript-sin-Jav-9aa99-FC-del-auditor-a-1440-y-390/test-failed-1.png
+  1 failed
+  4 passed (20.1s)
+- Following Playwright test failed.
+Expected: >= 0

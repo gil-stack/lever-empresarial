@@ -13,6 +13,7 @@ import { FormularioDictamen } from "@/components/operacion/formulario-dictamen";
 import { FormularioRiesgo } from "@/components/operacion/formulario-riesgo";
 import { idDeAncla } from "@/components/operacion/envio-sin-script";
 import { PaginaOperacion } from "@/components/operacion/pagina";
+import { PerfilTransaccional } from "@/components/operacion/pld/perfil";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { ETIQUETA_GRADO, ETIQUETA_NIVEL, ETIQUETA_RESULTADO, fraseDeLoQueFalta } from "@/dominio/operacion";
@@ -214,6 +215,8 @@ export default async function ExpedienteCliente({
           <FormularioRiesgo companyId={id} formId={randomUUID()} periodica={riesgo !== null} />
         ) : null}
       </Hoja>
+
+      <PerfilTransaccional ctx={ctx} companyId={id} estado={expediente.empresa.estado} />
 
       <Hoja id="coincidencias-titulo" titulo={veLista ? "Coincidencias con listas" : "Revisión de Cumplimiento"}>
         {veLista ? (

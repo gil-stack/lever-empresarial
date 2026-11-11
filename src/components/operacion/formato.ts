@@ -1,3 +1,5 @@
+import { ETIQUETAS_PLD } from "./pld/bitacora";
+
 export function fechaHora(valor: Date): string {
   return new Intl.DateTimeFormat("es-MX", { dateStyle: "medium", timeStyle: "short", timeZone: "America/Mexico_City" }).format(valor);
 }
@@ -125,6 +127,7 @@ export function etiquetaAccion(accion: string): string | null {
     reactivacion_solicitada: "Pidió reactivar la empresa",
     reactivacion_aprobada: "Aprobó la reactivación",
     reactivacion_rechazada: "Rechazó la reactivación",
+    ...ETIQUETAS_PLD,
   };
   return etiquetas[accion] ?? null;
 }

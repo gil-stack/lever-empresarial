@@ -288,6 +288,21 @@ export const RUTAS = [
   { patron: "/operacion/lpb", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/clientes/[id]/expediente", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
   { patron: "/operacion/clientes/[id]/expediente/documento/[documentoId]", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  // Ola R2: PLD. Cada página exige su capacidad (pld.ver, pld.manifiesto o pld.aviso.emitir).
+  { patron: "/operacion/avisos", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/pld", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/pld/parametros", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/pld/casos/[id]", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/pld/casos/[id]/documento/[documentoId]", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/pld/casos/[id]/reporte", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/comite", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/comite/sesiones/[id]", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/comite/sesiones/[id]/acta", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/comite/actas/[actaId]", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/reportes", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/reportes/archivo", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/conservacion", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
+  { patron: "/operacion/conservacion/manifiesto", superficie: "sofipo", acceso: { tipo: "sesion" }, conEmpresa: false },
 ] as const satisfies readonly Ruta[];
 
 export type PatronDeRuta = (typeof RUTAS)[number]["patron"];

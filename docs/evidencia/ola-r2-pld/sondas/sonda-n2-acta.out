@@ -1,0 +1,9 @@
+== 1. La sesión sembrada ya tiene el acta que subió CUM (CUM2 no la ve). CUM2 intenta subir otra:
+   CUM2 carga un acta firmada a la sesión sembrada → error: sesion_no_existe
+== 2. Caso oculto nuevo (aviso que excluye a CUM2), sesión nueva que lo vota, todavía sin acta
+   acta que genera CUM: menciona el caso
+   CUM2 genera el acta de esa sesión → error: sesion_no_existe
+   CUM2 sube como firmada el acta que generó → error: sesion_no_existe
+   CUM sube después el acta completa → ok 
+   actas de la sesión (dueña): [ { nombre_archivo: 'acta-completa.pdf', subio_cum2: false } ]
+   CUM2 descarga el acta que ella misma subió → error: documento_no_existe

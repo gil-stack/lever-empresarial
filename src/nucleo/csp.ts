@@ -49,8 +49,21 @@ export function politicaDeContenido(nonce: string, desarrollo = process.env.NODE
  */
 const PATRON_DESCARGA = /\/(?:documento|comprobante)\/\[[A-Za-z]+\]$/;
 
+/**
+ * Las descargas de PLD (Ola R2) que no tienen la forma `…/documento/[id]`: el reporte del caso, el acta generada y
+ * la firmada, el archivo de un reporte periódico y el manifiesto de conservación. Van por nombre exacto para que
+ * ninguna página entre por accidente.
+ */
+const DESCARGAS_PLD: ReadonlySet<string> = new Set([
+  "/operacion/pld/casos/[id]/reporte",
+  "/operacion/comite/sesiones/[id]/acta",
+  "/operacion/comite/actas/[actaId]",
+  "/operacion/reportes/archivo",
+  "/operacion/conservacion/manifiesto",
+]);
+
 export function esDescarga(patron: string): boolean {
-  return PATRON_DESCARGA.test(patron);
+  return PATRON_DESCARGA.test(patron) || DESCARGAS_PLD.has(patron);
 }
 
 /**

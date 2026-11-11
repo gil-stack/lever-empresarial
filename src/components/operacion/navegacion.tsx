@@ -17,6 +17,7 @@ import {
   IconoPrecios,
   IconoRecuperaciones,
 } from "./iconos";
+import { IconoAlertasPld, IconoAvisoPld, IconoComite, IconoConservacion, IconoReportes } from "./pld/iconos";
 import { rutaSeccionOperacion, seccionesVisibles, type RutaOperacion } from "./secciones";
 
 const ICONOS: Record<RutaOperacion, () => ReactNode> = {
@@ -31,6 +32,11 @@ const ICONOS: Record<RutaOperacion, () => ReactNode> = {
   "/operacion/precios": IconoPrecios,
   "/operacion/personal": IconoPersonal,
   "/operacion/bitacora": IconoBitacora,
+  "/operacion/pld": IconoAlertasPld,
+  "/operacion/avisos": IconoAvisoPld,
+  "/operacion/comite": IconoComite,
+  "/operacion/reportes": IconoReportes,
+  "/operacion/conservacion": IconoConservacion,
 };
 
 /**

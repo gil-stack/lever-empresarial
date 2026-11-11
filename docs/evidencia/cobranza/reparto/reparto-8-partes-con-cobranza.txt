@@ -1,0 +1,19 @@
+# Reparto real con cobranza: playwright test --list --shard=N/8 (docs/evidencia/ola-r2-pld/reparto/reparto-real.mjs.txt), máximos del CI, fijo 90 s
+parte 1/8:  27 pruebas ·  314 s de pruebas · ~404 s · normales después de GPU: 25 · fondo-pruebas.ts 181, accesibilidad 133
+parte 2/8:  28 pruebas ·  317 s de pruebas · ~407 s · normales después de GPU: 0 · aprobaciones 40, claves-repetidas 31, cobranza 245
+parte 3/8:  23 pruebas ·  338 s de pruebas · ~428 s · normales después de GPU: 0 · csp-evidencia 20, csp 252, demostracion 66
+parte 4/8:  24 pruebas ·  323 s de pruebas · ~413 s · normales después de GPU: 6 · demostracion 36, entrada 40, flujo-de-caja 53, fondo-pruebas.ts 120, invitacion 42, marco 31
+parte 5/8:  27 pruebas ·  296 s de pruebas · ~386 s · normales después de GPU: 0 · marco 36, nomina 31, operacion 228
+parte 6/8:  21 pruebas ·  349 s de pruebas · ~439 s · normales después de GPU: 1 · operacion 108, fondo-pruebas.ts 242
+parte 7/8:  32 pruebas ·  355 s de pruebas · ~445 s · normales después de GPU: 0 · fondo-pruebas.ts 12, pagos-proveedores 92, passkeys 16, personas 26, pld 209
+parte 8/8:  16 pruebas ·  355 s de pruebas · ~445 s · normales después de GPU: 4 · roles 27, fondo-pruebas.ts 323, velocidad-del-fondo 5
+peor parte ~445 s · normales después de una con GPU: 36
+
+# El acomodo del #61 (brillo, optica-retina, velocidad) con cobranza adentro, mismo método
+parte 2/8: 40 pruebas · ~658 s; parte 7/8: 38 pruebas · ~674 s (peor); 54 normales después de una con GPU
+
+# Optimizador (optimizar.mjs.txt) con la regla de GPU como restricción dura (peso 1000), 13 lugares posibles
+partes (s de pruebas): 133, 317, 332, 506, 501, 281, 400, 159 · peor 506 (~596 con el fijo)
+
+# Con la regla como preferencia (peso 0.4) y un lugar antes de accesibilidad (abanico-del-fondo): el plan elegido
+partes (s de pruebas, simulador): 314, 317, 318, 323, 296, 349, 355, 356 · peor 356 · 36 normales después de una de GPU

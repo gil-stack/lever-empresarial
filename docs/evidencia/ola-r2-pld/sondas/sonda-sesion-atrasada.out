@@ -1,0 +1,4 @@
+== sesión con la fecha real (hoy): el caso vence el 2026-10-25
+   dictaminarCaso → {"fueraDePlazo":true} | base: {"dictaminado_el":"2026-11-09","vence_el":"2026-10-25","fuera_de_plazo":true,"reporte_vence_el":"2026-11-12","registrado_el":"2026-11-09","sesion_registrada_el":"2026-11-09"}
+== sesión con fecha atrasada (hace 18 días): el caso vence el 2026-10-25
+   dictaminarCaso → {"fueraDePlazo":true} | base: {"dictaminado_el":"2026-10-22","vence_el":"2026-10-25","fuera_de_plazo":true,"reporte_vence_el":"2026-10-27","registrado_el":"2026-11-09","sesion_registrada_el":"2026-11-09"}
