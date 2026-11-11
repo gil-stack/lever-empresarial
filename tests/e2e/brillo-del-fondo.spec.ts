@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { pruebasDelFondo } from "./fondo-pruebas";
+import { comprobarSinWebGl, pruebasDelFondo } from "./fondo-pruebas";
 import { INICIO, entrar } from "./marco-apoyo";
 
 // brillo-del-fondo.spec.ts (después de aprobaciones): cuatro de GPU cierran la parte 2; la última, sin GPU, ya cae en la 3.
@@ -51,6 +51,10 @@ test.describe("fondo animado en un equipo que pinta cada cuadro en 40 ms", () =>
       .toBe(true);
     await expect(lienzo, "pinturas hasta quedarse quieto").toHaveAttribute("data-cuadros", "2");
     await expect(lienzo).toHaveAttribute("data-estado", "lento");
+
+    // r66-N9: y un equipo sin WebGL2 (degradado 2D) no pinta búferes más grandes que la escena ni los reasigna. En una página
+    // nueva de este contexto (con la sesión y sin la emulación de 40 ms) para no sumar una prueba al reparto.
+    await comprobarSinWebGl(await page.context().newPage());
   });
 });
 

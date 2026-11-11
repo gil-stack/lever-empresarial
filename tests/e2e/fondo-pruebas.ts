@@ -59,7 +59,7 @@ async function cuadrosLargosDelFondo(page: Page): Promise<{ archivos: number; cu
  * la escena no se copia y los escenarios no pasan de 48 px, salvo el que hace crecer el búfer. Así el costo es solo el
  * emulado. Registra los cuadros largos y la primera pintura del fondo.
  */
-async function emularEquipo(page: Page, costo: { dibujoMs: number; crecerMs: number }) {
+async function emularEquipo(page: Page, costo: { dibujoMs: number; crecerMs: number; sinWebGl?: boolean }) {
   await page.addInitScript((op) => {
     const registro = window as unknown as { cuadrosLargos: unknown[]; primeraPintura?: number };
     registro.cuadrosLargos = [];
@@ -73,14 +73,35 @@ async function emularEquipo(page: Page, costo: { dibujoMs: number; crecerMs: num
     // borra el canvas y, en WebGL, reasigna el búfer de dibujo aunque el tamaño no cambie).
     const maximoAsignado = new WeakMap<HTMLCanvasElement, [number, number]>();
     const repetidas = new WeakMap<HTMLCanvasElement, number>();
+    // r66-N7: todas las asignaciones desde que el tamaño quedó fijado (la prueba reinicia el conteo después del poll).
+    let asignaciones = new WeakMap<HTMLCanvasElement, number>();
+    (window as unknown as { reiniciarAsignaciones: () => void }).reiniciarAsignaciones = () => {
+      asignaciones = new WeakMap();
+    };
+    // r66-N9: todo canvas que pide un contexto, WebGL o 2D, aunque nunca se copie a la escena: un búfer que se pinta y no
+    // se ve también cuesta (en la GPU o, sin WebGL, en la CPU). Se vigilan los que no cuelgan del documento, que son los
+    // búferes; la escena se compara aparte y una gráfica de la página (colgada del DOM) no es del fondo. Medido en INICIO:
+    // solo la escena (2D, en el DOM) y el búfer del motor (webgl2, suelto) piden contexto. Se descartó seguir la pila de
+    // getContext hasta el archivo del fondo: el búfer del motor nace en otro chunk y depende del formato y del largo de la pila.
+    const conContexto = new Set<HTMLCanvasElement>();
+    const pedirContexto = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, tipo: string, ...resto: unknown[]) {
+      // Un equipo sin WebGL2: el motor pinta su degradado 2D.
+      if (op.sinWebGl && (tipo === "webgl" || tipo === "webgl2")) return null;
+      conContexto.add(this);
+      return (pedirContexto as (...a: unknown[]) => unknown).call(this, tipo, ...resto);
+    } as typeof pedirContexto;
     let buferDelMotor: HTMLCanvasElement | null = null;
     (["width", "height"] as const).forEach((lado, i) => {
       const propio = Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype, lado)!;
       Object.defineProperty(HTMLCanvasElement.prototype, lado, {
         ...propio,
         set(this: HTMLCanvasElement, valor: number) {
-          if (Number(valor) === propio.get!.call(this)) repetidas.set(this, (repetidas.get(this) ?? 0) + 1);
+          // r66-N8: se compara después de la coerción (41.25 queda en 41): el canvas reasigna su búfer igual.
+          const antes = propio.get!.call(this) as number;
           propio.set!.call(this, valor);
+          if (propio.get!.call(this) === antes) repetidas.set(this, (repetidas.get(this) ?? 0) + 1);
+          asignaciones.set(this, (asignaciones.get(this) ?? 0) + 1);
           const maximo = maximoAsignado.get(this) ?? [0, 0];
           maximo[i] = Math.max(maximo[i]!, propio.get!.call(this) as number);
           maximoAsignado.set(this, maximo);
@@ -91,6 +112,8 @@ async function emularEquipo(page: Page, costo: { dibujoMs: number; crecerMs: num
       const escena = document.querySelector<HTMLCanvasElement>("canvas.escena-lienzo");
       return {
         repetidas: { escena: escena ? (repetidas.get(escena) ?? 0) : -1, motor: buferDelMotor ? (repetidas.get(buferDelMotor) ?? 0) : -1 },
+        asignaciones: { escena: escena ? (asignaciones.get(escena) ?? 0) : -1, motor: buferDelMotor ? (asignaciones.get(buferDelMotor) ?? 0) : -1 },
+        buferes: [...conContexto].filter((canvas) => !canvas.isConnected).map((canvas) => [canvas.width, canvas.height]),
         maximo: { escena: escena ? (maximoAsignado.get(escena) ?? [0, 0]) : [], motor: buferDelMotor ? [buferDelMotor.width, buferDelMotor.height] : [] },
       };
     };
@@ -118,6 +141,56 @@ async function emularEquipo(page: Page, costo: { dibujoMs: number; crecerMs: num
       document.head.append(estilo);
     });
   }, costo);
+}
+
+/**
+ * La emulación está puesta y el tamaño quedó fijado. Si la hoja no se aplicó (la CSP, por ejemplo), el lienzo no mide
+ * 48 px y la prueba mediría otra cosa sin decirlo. r66-N5: el búfer de dibujo de la escena es el de 48 px de CSS ×
+ * min(DPR, 2) × 0.85 (DPR_MAXIMO y ESCALA de fondo-escena.tsx, que no se exportan): 41 a DPR 1 y 82 a DPR 2; dibujar a DPR
+ * completo o a pantalla completa lo cambia. Con espera acotada: el primer dibujo puede ser anterior a que la hoja llegue y
+ * el siguiente lo corrige. Desde aquí se cuentan las asignaciones a width y height (r66-N7).
+ */
+async function fijarTamano(page: Page, dpr: number) {
+  const lienzo = page.locator("canvas.escena-lienzo");
+  expect(await lienzo.evaluate((nodo) => [nodo.clientWidth, nodo.clientHeight]), "el lienzo emulado mide 48 px").toEqual([48, 48]);
+  const buferEsperado = Math.round(48 * Math.min(dpr, 2) * 0.85);
+  await expect
+    .poll(() => lienzo.evaluate((nodo: HTMLCanvasElement) => [nodo.width, nodo.height]), {
+      message: `búfer de dibujo de la escena: 48 px × min(DPR ${dpr}, 2) × 0.85 = ${buferEsperado}`,
+      timeout: 5_000,
+    })
+    .toEqual([buferEsperado, buferEsperado]);
+  await page.evaluate(() => (window as unknown as { reiniciarAsignaciones: () => void }).reiniciarAsignaciones());
+}
+
+/**
+ * Lo que se pinta no crece ni se reasigna sin necesidad:
+ * - r66-N5/N8: ninguna asignación a width o height deja el valor que ya tenía (reasignar borra el búfer y lo vuelve a pedir);
+ * - r66-N5: el búfer del motor no pasa del lienzo más grande que tuvo la escena;
+ * - r66-N9: ningún otro búfer (canvas con contexto fuera del documento, WebGL o 2D) pasa de ese lienzo;
+ * - r66-N7: si el escenario no cambia el tamaño, nada vuelve a asignar width ni height una vez fijado (reasignar con otro
+ *   valor en cada dibujo también reasigna el búfer, y «mismo valor» no lo ve).
+ * Sin WebGL no hay búfer del motor: se vigila solo la escena.
+ */
+async function vigilarTamanos(page: Page, { cambiaElTamano, conMotor }: { cambiaElTamano: boolean; conMotor: boolean }) {
+  const tamanos = (await page.evaluate(() => (window as unknown as { tamanosDelFondo: () => unknown }).tamanosDelFondo())) as {
+    repetidas: { escena: number; motor: number };
+    asignaciones: { escena: number; motor: number };
+    buferes: number[][];
+    maximo: { escena: number[]; motor: number[] };
+  };
+  const quien = <T>(valor: { escena: T; motor: T }) => (conMotor ? valor : { escena: valor.escena });
+  const ninguno = quien({ escena: 0, motor: 0 });
+  const dentro = (medidas: number[]) => medidas.every((medida, i) => medida <= (tamanos.maximo.escena[i] ?? 0));
+  expect(quien(tamanos.repetidas), `asignaciones a width/height que dejan el mismo valor: ${JSON.stringify(tamanos)}`).toEqual(ninguno);
+  if (conMotor) expect(dentro(tamanos.maximo.motor), `el búfer del motor no pasa del lienzo más grande de la escena: ${JSON.stringify(tamanos.maximo)}`).toBe(true);
+  expect(
+    tamanos.buferes.every(dentro),
+    `ningún búfer (canvas con contexto fuera del documento) pasa del lienzo más grande de la escena: ${JSON.stringify({ buferes: tamanos.buferes, escena: tamanos.maximo.escena })}`,
+  ).toBe(true);
+  if (!cambiaElTamano) {
+    expect(quien(tamanos.asignaciones), `asignaciones a width/height con el tamaño ya fijado: ${JSON.stringify(tamanos)}`).toEqual(ninguno);
+  }
 }
 
 /** El lado del lienzo cambia cada `cadaMs` (o en cada cuadro) por los valores dados; regresa al terminar. */
@@ -150,6 +223,8 @@ interface Escenario {
   sinGpu: { largos: number; pinturas: number };
   /** Con GPU: cuadros largos del fondo que se aceptan (el dibujo que agranda el búfer tarda lo que tarda). */
   conGpuLargos?: number;
+  /** El escenario cambia el tamaño del lienzo: ahí sí se reasigna (r66-N7 solo vigila los que no lo cambian). */
+  cambiaElTamano?: boolean;
 }
 
 const ESCENARIOS: Escenario[] = [
@@ -157,6 +232,7 @@ const ESCENARIOS: Escenario[] = [
   {
     // Lo que tapaba la excepción de tamaño: cada dibujo con otro tamaño, sin que crezca el búfer.
     nombre: "el lienzo cambia de tamaño en cada cuadro",
+    cambiaElTamano: true,
     hacer: async (page) => {
       await cambiarLado(page, Array.from({ length: 151 }, (_, i) => (i % 2 ? 48 : 44)), "cuadro");
       await page.waitForTimeout(700);
@@ -167,6 +243,7 @@ const ESCENARIOS: Escenario[] = [
     // Con GPU, crecer a 2560×1600 a DPR 2 tomó 30 ms: aquí, 40 ms en el dibujo que agranda el búfer. Crece con el fondo
     // ya animando (o ya quieto): el primer dibujo crea el búfer, así que el segundo siempre se mide aunque lo agrande.
     nombre: "el búfer del motor crece una vez",
+    cambiaElTamano: true,
     crecerMs: 40,
     hacer: async (page) => {
       await page.waitForFunction(() => {
@@ -196,6 +273,7 @@ const ESCENARIOS: Escenario[] = [
   {
     // Arrastrar la ventana: el lienzo encoge y vuelve a crecer, sin pasar de su tamaño inicial, 36 veces en 1.1 s.
     nombre: "arrastrar la ventana",
+    cambiaElTamano: true,
     hacer: async (page) => {
       await cambiarLado(page, Array.from({ length: 36 }, (_, i) => (i <= 20 ? 48 - 2 * i : 8 + 2 * (i - 20))), 30);
       await page.waitForTimeout(700);
@@ -298,31 +376,9 @@ export function pruebasDelFondo(dprs: readonly number[], orden: OrdenDelFondo = 
                 const pinturas = async () => Number(await lienzo.getAttribute("data-cuadros"));
                 const recordado = () => page.evaluate(() => sessionStorage.getItem("lever-fondo-lento"));
                 await expect(lienzo, "el fondo pinta con WebGL").toHaveAttribute("data-gpu", "si", { timeout: 20_000 });
-                // La emulación tiene que estar puesta: si la hoja no se aplicó (la CSP, por ejemplo), el lienzo no mide 48 px y la
-                // prueba mediría otra cosa sin decirlo.
-                expect(await lienzo.evaluate((nodo) => [nodo.clientWidth, nodo.clientHeight]), "el lienzo emulado mide 48 px").toEqual([48, 48]);
-                // r66-N5: el búfer de dibujo de la escena es el de 48 px de CSS × min(DPR, 2) × 0.85 (DPR_MAXIMO y ESCALA de
-                // fondo-escena.tsx, que no se exportan): 41 a DPR 1 y 82 a DPR 2. Dibujar a DPR completo o a pantalla completa lo
-                // cambia. Con espera acotada: el primer dibujo puede ser anterior a que la hoja llegue y el siguiente lo corrige.
-                const buferEsperado = Math.round(48 * Math.min(dpr, 2) * 0.85);
-                await expect
-                  .poll(() => lienzo.evaluate((nodo: HTMLCanvasElement) => [nodo.width, nodo.height]), {
-                    message: `búfer de dibujo de la escena: 48 px × min(DPR ${dpr}, 2) × 0.85 = ${buferEsperado}`,
-                    timeout: 5_000,
-                  })
-                  .toEqual([buferEsperado, buferEsperado]);
+                await fijarTamano(page, dpr);
                 await escenario.hacer(page);
-                // r66-N5: ninguna asignación repite el tamaño que ya tenía (reasignar en cada dibujo borra el búfer y lo vuelve a
-                // pedir a la GPU) y el búfer del motor no pasa del tamaño más grande que tuvo la escena (pintar más de lo que se ve).
-                const tamanos = (await page.evaluate(() => (window as unknown as { tamanosDelFondo: () => unknown }).tamanosDelFondo())) as {
-                  repetidas: { escena: number; motor: number };
-                  maximo: { escena: number[]; motor: number[] };
-                };
-                expect(tamanos.repetidas, `asignaciones a width/height con el mismo valor: ${JSON.stringify(tamanos)}`).toEqual({ escena: 0, motor: 0 });
-                expect(
-                  tamanos.maximo.motor.every((medida, i) => medida <= (tamanos.maximo.escena[i] ?? 0)),
-                  `el búfer del motor no pasa del lienzo más grande de la escena: ${JSON.stringify(tamanos.maximo)}`,
-                ).toBe(true);
+                await vigilarTamanos(page, { cambiaElTamano: escenario.cambiaElTamano ?? false, conMotor: true });
                 const largos = await cuadrosLargosDelFondo(page);
                 // Para leer un fallo: estado, pinturas, ms promedio por dibujo y si la decisión se guardó (solo la del dibujo).
                 const como = JSON.stringify(await lienzo.evaluate((nodo: HTMLCanvasElement) => ({ ...nodo.dataset, guardado: sessionStorage.getItem("lever-fondo-lento") })));
@@ -352,4 +408,27 @@ export function pruebasDelFondo(dprs: readonly number[], orden: OrdenDelFondo = 
 
   if (orden.deVerdad ?? (!orden.equipos || orden.equipos.includes("sin GPU"))) sinGpuDeVerdad();
   emulado();
+}
+
+/**
+ * r66-N9: un equipo sin WebGL2, en una página nueva. El motor pinta su degradado 2D en el lienzo de la escena; ningún otro
+ * canvas (un respaldo por CPU a pantalla completa que luego se escala, por ejemplo) pasa de él, y nada se reasigna con el
+ * tamaño ya fijado. Va dentro de una prueba que ya existe (brillo-del-fondo.spec.ts): una prueba más movería los cortes
+ * del reparto de la e2e y dejaría pruebas normales después de una con GPU emulada.
+ */
+export async function comprobarSinWebGl(page: Page) {
+  await emularEquipo(page, { dibujoMs: 0, crecerMs: 0, sinWebGl: true });
+  await page.goto(INICIO);
+  const lienzo = page.locator("canvas.escena-lienzo");
+  await expect(lienzo, "sin WebGL2, el fondo pinta en 2D").toHaveAttribute("data-gpu", "no", { timeout: 20_000 });
+  await fijarTamano(page, 1);
+  // Lo que hace el producto en ese camino (fondo-escena.tsx no lo trata aparte): el degradado 2D cuesta poco, se mide como
+  // cualquier dibujo y el fondo sigue animando, sin quedarse quieto ni recordar «lento».
+  const pinturas = async () => Number(await lienzo.getAttribute("data-cuadros"));
+  const antes = await pinturas();
+  await page.waitForTimeout(2500);
+  expect(await pinturas(), "sin WebGL2 sigue animando").toBeGreaterThan(antes);
+  await expect(lienzo, "sin WebGL2, vivo").toHaveAttribute("data-estado", "vivo");
+  expect(await page.evaluate(() => sessionStorage.getItem("lever-fondo-lento")), "sin WebGL2 no recuerda «lento»").toBeNull();
+  await vigilarTamanos(page, { cambiaElTamano: false, conMotor: false });
 }
