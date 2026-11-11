@@ -462,7 +462,7 @@ async function flujos() {
       ["ana", "/consola/personas", "Nómina"],
       ["ana", "/consola/personas/nomina", "Nómina"],
       ["ana", "/consola/flujo", "Saldo y alertas"],
-      ["ana", "/consola/cobros", "Cobros"],
+      ["ana", "/consola/cobros", "Cobranza"],
       ["ana", "/consola/proveedores", "Proveedores"],
       ["ana", "/consola", "Resumen"],
       ["ana", "/consola/politica", null],

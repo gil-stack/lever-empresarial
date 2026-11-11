@@ -23,7 +23,7 @@ describe("lateral con los grupos del diseño", () => {
   it("el administrador ve los grupos y el orden de NAV_MAIN, con el flujo de caja en su propio grupo", () => {
     assert.deepEqual(etiquetas("administrador").grupos, [
       ["Operación", ["Resumen", "Conciliación", "Aprobaciones", "Gastos", "Tarjetas", "Movimientos", "Fiscal"]],
-      ["Flujo de caja", ["Saldo y alertas", "Cobros", "Calendario", "Presupuestos"]],
+      ["Flujo de caja", ["Saldo y alertas", "Cobranza", "Calendario", "Presupuestos"]],
       ["Dinero", ["Cuenta", "Pagos internacionales", "Proveedores", "Nómina", "Crédito", "Inversión"]],
       ["Ocasionales", ["Viajes y proyectos", "Gasolina", "Ahorro"]],
     ]);
