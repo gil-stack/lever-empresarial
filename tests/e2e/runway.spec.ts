@@ -25,6 +25,7 @@ const EMPRESA = () => requerida("E2E_RUNWAY_ID");
 const SIN_SALDO = () => requerida("E2E_RUNWAY_SIN_SALDO_ID");
 const DEMO = () => requerida("E2E_RUNWAY_DEMO_ID");
 const EVIDENCIA = process.env.E2E_CAPTURAS ?? "";
+const AXE = readFileSync(join(process.cwd(), "node_modules/axe-core/axe.min.js"), "utf8");
 
 function requerida(nombre: string): string {
   const valor = process.env[nombre];
@@ -348,6 +349,19 @@ test("6 · tendencia con tres fotos: barras, línea del mínimo y su tabla", asy
   await expect(filas.first()).toContainText("12 meses o más");
   await expect(filas.nth(1)).toContainText("6.8 meses");
   await foto(page, browserName, "tendencia");
+  // La red en tiempo de ejecución de la guardia tablas-desplazables (r63h-N1), en el CI: a 390, con la tabla de la tendencia
+  // abierta, axe scrollable-region-focusable en Saldo y alertas (mes por mes, tendencia e historial) y en Inicio (flujo por semana).
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const [nombre, url] of [["flujo", null], ["inicio", en("/consola")]] as const) {
+    if (url) await page.goto(url);
+    await page.evaluate(AXE);
+    const marcas = await page.evaluate(async () => {
+      const r = await (window as unknown as { axe: { run: (c: object, o: object) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } })
+        .axe.run(document, { runOnly: { type: "rule", values: ["scrollable-region-focusable"] } });
+      return r.violations.flatMap((v) => v.nodes.map((n) => n.target.join(" ")));
+    });
+    expect(marcas, `${nombre} a 390`).toEqual([]);
+  }
   expect(reales(errores, browserName)).toEqual([]);
 });
 
@@ -418,7 +432,6 @@ test("9 · permisos: contaduría solo ve, un rol sin flujo, otra empresa y sin s
 
 test("10 · evidencia: 3 temas × 1440 y 390, axe sin violaciones y sin desplazamiento horizontal", async ({ browser, browserName }) => {
   test.skip(!EVIDENCIA, "Solo con E2E_CAPTURAS (evidencia local).");
-  const axe = readFileSync(join(process.cwd(), "node_modules/axe-core/axe.min.js"), "utf8");
   const paginas: [string, string, string][] = [
     ["flujo", en("/consola/flujo"), CORREOS_RUNWAY.rita],
     ["inicio", en("/consola"), CORREOS_RUNWAY.rita],
@@ -438,11 +451,10 @@ test("10 · evidencia: 3 temas × 1440 y 390, axe sin violaciones y sin desplaza
           await page.waitForLoadState("networkidle");
           const desborde = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
           if (desborde > 0) hallazgos.push(`${nombre} ${tema} ${ancho}: desborde ${desborde}px`);
-          await page.addScriptTag({ content: axe });
+          await page.evaluate(AXE);
           const violaciones = await page.evaluate(async () => {
             const r = await (window as unknown as { axe: { run: (c: object, o: object) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } })
-              // El enlace del logotipo del marco compartido (WCAG 2.5.3) lo corrige el PR #60; aquí no se toca.
-              .axe.run({ exclude: [[".lateral-cabeza > .marca"], [".barra-movil > .marca"], [".arco-marca"]] }, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } });
+              .axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } });
             return r.violations.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(", ")}`);
           });
           for (const v of violaciones) hallazgos.push(`${nombre} ${tema} ${ancho}: ${v}`);

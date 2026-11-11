@@ -1,0 +1,15 @@
+# Reparto real con runway: playwright test --list --shard=N/8 (docs/evidencia/ola-r2-pld/reparto/reparto-real.mjs.txt), máximos del CI, fijo 90 s
+parte 1/8:  26 pruebas ·  265 s de pruebas · ~355 s · normales después de GPU: 0 · accesibilidad 133, fondo-pruebas.ts 132
+parte 2/8:  31 pruebas ·  354 s de pruebas · ~444 s · normales después de GPU: 29 · fondo-pruebas.ts 88, animacion-del-fondo 5, aprobaciones 40, claves-repetidas 31, cobranza 190
+parte 3/8:  25 pruebas ·  352 s de pruebas · ~442 s · normales después de GPU: 0 · csp-evidencia 20, csp 252, demostracion 80
+parte 4/8:  26 pruebas ·  341 s de pruebas · ~431 s · normales después de GPU: 5 · demostracion 22, entrada 40, flujo-de-caja 53, invitacion 42, fondo-pruebas.ts 173, marco 11
+parte 5/8:  29 pruebas ·  316 s de pruebas · ~406 s · normales después de GPU: 0 · marco 57, nomina 31, operacion 228
+parte 6/8:  23 pruebas ·  349 s de pruebas · ~439 s · normales después de GPU: 0 · operacion 108, fondo-pruebas.ts 241
+parte 7/8:  30 pruebas ·  347 s de pruebas · ~437 s · normales después de GPU: 0 · fondo-pruebas.ts 3, pagos-proveedores 92, passkeys 16, personas 26, pld 209
+parte 8/8:  20 pruebas ·  358 s de pruebas · ~448 s · normales después de GPU: 12 · roles 27, fondo-pruebas.ts 240, runway 91
+peor parte ~448 s · normales después de una con GPU: 46
+
+# El acomodo del #63 (abanico, fondo, optica-retina, velocidad) con runway adentro, mismo método
+parte 6/8: ~491 s; parte 8/8: ~509 s (peor); 54 normales después de una con GPU
+
+# Primer plan del optimizador (abanico, lienzo, optica-retina, rueda): peor parte ~451 s con el orden real; el elegido, ~448 s
