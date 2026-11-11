@@ -321,11 +321,33 @@ async function escenario(url: string): Promise<void> {
     assert.equal(cuenta(`select count(*) from collection_held_events where company_id = '${beta.id}' and estado = 'fallido'`), 1);
     // Si el envío del aviso falla, el retenido sigue fallido y la bitácora dice que salieron 0 correos.
     retenidoFallido(beta.id, "evt_Envenenado03");
-    const caido = () => async () => { throw new Error("el proveedor de correo no respondió"); };
+    const intentadas: string[] = [];
+    const caido = () => async (m: MensajeCorreo) => { intentadas.push(m.idempotencia); throw new Error("el proveedor de correo no respondió"); };
     assert.equal(await procesarRetenidos(beta.id, operador, { auditar, enviador: caido, urlPublica: () => "https://lever.ejemplo.mx" }), 1);
     assert.equal(cuenta(`select count(*) from collection_held_events where evento_id = 'evt_Envenenado03' and estado = 'fallido'`), 1);
-    assert.equal(cuenta(`select count(*) from audit_log a join collection_held_events h on h.id = a.identificador
-      where h.evento_id = 'evt_Envenenado03' and a.accion = 'aviso_retenido_fallido_cobranza' and a.cambio->>'enviados' = '0'`), 1);
+    const avisosDe03 = (enviados: string) => cuenta(`select count(*) from audit_log a join collection_held_events h on h.id = a.identificador
+      where h.evento_id = 'evt_Envenenado03' and a.accion = 'aviso_retenido_fallido_cobranza' and a.cambio->>'enviados' ${enviados}`);
+    assert.equal(avisosDe03("= '0'"), 1);
+    // r63m: con el proveedor todavía caído, la tarea lo intenta de nuevo y sigue en 0 (un evento por intento); con el
+    //    proveedor de vuelta, la siguiente corrida lo manda una vez, con la misma llave, y la tercera ya no lo reenvía.
+    const id03 = consultarJson<{ id: string }[]>(url, "select json_agg(x) from (select id from collection_held_events where evento_id = 'evt_Envenenado03') x")[0]!.id;
+    const del03 = (m: MensajeCorreo) => m.idempotencia.startsWith(`cobranza-retenido-fallido/${id03}/`);
+    assert.ok(intentadas.length > 0 && intentadas.every((l) => l.startsWith(`cobranza-retenido-fallido/${id03}/`)));
+    const buzonBeta: MensajeCorreo[] = [];
+    const alBuzonBeta = () => async (m: MensajeCorreo) => { buzonBeta.push(m); return { id: randomUUID() }; };
+    const corrida = (enviador: typeof alBuzonBeta | typeof caido) =>
+      correrCobranza({ ahora: reloj("2027-01-10T18:00:00.000Z"), auditar, enviador, urlPublica: () => "https://lever.ejemplo.mx", fintoc: null, registrar: () => {} });
+    await corrida(caido);
+    assert.equal(avisosDe03("= '0'"), 2);
+    assert.equal(avisosDe03("<> '0'"), 0);
+    await corrida(alBuzonBeta);
+    const reenviados = buzonBeta.filter(del03);
+    assert.deepEqual(reenviados.map((m) => m.idempotencia).sort(), [...new Set(intentadas.filter((l) => l.startsWith(`cobranza-retenido-fallido/${id03}/`)))].sort(), "la misma llave que el intento caído");
+    assert.ok(reenviados.every((m) => m.asunto.startsWith("Un depósito de $77.00 no se registró solo")));
+    assert.equal(avisosDe03(`= '${reenviados.length}'`), 1);
+    await corrida(alBuzonBeta);
+    assert.equal(buzonBeta.filter(del03).length, reenviados.length, "la tercera corrida no lo reenvía");
+    assert.equal(avisosDe03("is not null"), 3);
 
     // r63j-N2 a) El aviso toma el candado y retiene (la empresa sigue suspendida) mientras la reactivación espera ese
     //    mismo candado: al reactivar, el retenido ya está ahí y se aplica. Antes el aviso revisaba en una transacción y
