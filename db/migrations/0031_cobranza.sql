@@ -1121,6 +1121,9 @@ CREATE TABLE collection_held_events (
   aviso_recibieron uuid[] NOT NULL DEFAULT '{}',
   aviso_cerrado boolean NOT NULL DEFAULT false,
   aviso_tomado_en timestamptz,
+  -- r63p: a quiénes se les intentó y todavía no les llega. Mientras quede alguien aquí (aunque hoy no esté activo), el
+  -- aviso no se cierra: si vuelve dentro de los 7 días, le llega.
+  aviso_faltan uuid[] NOT NULL DEFAULT '{}',
   CONSTRAINT collection_held_events_unico UNIQUE (proveedor, evento_id),
   CONSTRAINT collection_held_events_proveedor CHECK (proveedor IN ('fintoc')),
   CONSTRAINT collection_held_events_evento CHECK (evento_id ~ '^evt_[A-Za-z0-9]{1,64}$' AND aviso ->> 'eventoId' = evento_id),
@@ -1130,8 +1133,9 @@ CREATE TABLE collection_held_events (
   CONSTRAINT collection_held_events_intento_finito CHECK (ultimo_intento_en IS NULL OR isfinite(ultimo_intento_en)),
   CONSTRAINT collection_held_events_aviso CHECK (
     (aviso_tomado_en IS NULL OR isfinite(aviso_tomado_en))
-    AND array_position(aviso_recibieron, NULL) IS NULL
-    AND (estado = 'fallido' OR (aviso_recibieron = '{}' AND NOT aviso_cerrado AND aviso_tomado_en IS NULL))
+    AND array_position(aviso_recibieron, NULL) IS NULL AND array_position(aviso_faltan, NULL) IS NULL
+    AND NOT (aviso_cerrado AND aviso_faltan <> '{}')
+    AND (estado = 'fallido' OR (aviso_recibieron = '{}' AND aviso_faltan = '{}' AND NOT aviso_cerrado AND aviso_tomado_en IS NULL))
   ),
   CONSTRAINT collection_held_events_monto CHECK (monto_centavos BETWEEN 1 AND 9000000000000000),
   CONSTRAINT collection_held_events_fecha CHECK (recibido_el >= DATE '2000-01-01'),
@@ -1160,7 +1164,7 @@ BEGIN
   -- r63l-P3: un retenido nace pendiente y sin intentos, también si lo inserta la dueña.
   IF TG_OP = 'INSERT' THEN
     IF NEW.estado <> 'retenido' OR NEW.intentos <> 0 OR NEW.ultimo_intento_en IS NOT NULL
-      OR NEW.aviso_recibieron <> '{}' OR NEW.aviso_cerrado OR NEW.aviso_tomado_en IS NOT NULL THEN
+      OR NEW.aviso_recibieron <> '{}' OR NEW.aviso_faltan <> '{}' OR NEW.aviso_cerrado OR NEW.aviso_tomado_en IS NOT NULL THEN
       RAISE EXCEPTION 'cobranza_inmutable';
     END IF;
     RETURN NEW;
@@ -1169,8 +1173,8 @@ BEGIN
   -- reserva de quien lo manda.
   IF TG_OP = 'UPDATE' AND OLD.estado = 'fallido' THEN
     IF NOT (NEW.aviso_recibieron @> OLD.aviso_recibieron) OR (OLD.aviso_cerrado AND NOT NEW.aviso_cerrado)
-      OR (to_jsonb(NEW) - 'aviso_recibieron' - 'aviso_cerrado' - 'aviso_tomado_en')
-         IS DISTINCT FROM (to_jsonb(OLD) - 'aviso_recibieron' - 'aviso_cerrado' - 'aviso_tomado_en') THEN
+      OR (to_jsonb(NEW) - 'aviso_recibieron' - 'aviso_cerrado' - 'aviso_tomado_en' - 'aviso_faltan')
+         IS DISTINCT FROM (to_jsonb(OLD) - 'aviso_recibieron' - 'aviso_cerrado' - 'aviso_tomado_en' - 'aviso_faltan') THEN
       RAISE EXCEPTION 'cobranza_inmutable';
     END IF;
     RETURN NEW;
@@ -1394,29 +1398,42 @@ $$;
 REVOKE ALL ON FUNCTION cobranza_tomar_aviso_fallido(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION cobranza_tomar_aviso_fallido(uuid) TO plataforma_cliente;
 
--- r63o: suelta la reserva con lo que resultó: agrega quiénes lo recibieron y, si ya no falta nadie, lo cierra.
-CREATE FUNCTION cobranza_soltar_aviso_fallido(p_id uuid, p_recibieron uuid[], p_cerrar boolean)
+-- r63o: suelta la reserva con lo que resultó: agrega quiénes lo recibieron y a quiénes les falló. r63p: se cierra solo
+-- si en esta vuelta le llegó a todas las personas activas (p_cerrar) y ya no falta nadie a quien se le haya intentado
+-- antes: alguien que falló y hoy no está activo deja el aviso abierto, en silencio, hasta los 7 días.
+CREATE FUNCTION cobranza_soltar_aviso_fallido(p_id uuid, p_recibieron uuid[], p_fallaron uuid[], p_cerrar boolean)
 RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
+DECLARE
+  recibieron uuid[];
+  faltan uuid[];
 BEGIN
   IF app_usuario() IS NOT NULL OR app_empresa() IS NULL THEN
     RAISE EXCEPTION 'sin_permiso_para_cobranza';
   END IF;
-  UPDATE collection_held_events h
-     SET aviso_recibieron = ARRAY(SELECT DISTINCT x FROM unnest(h.aviso_recibieron || coalesce(p_recibieron, '{}')) x ORDER BY x),
-         aviso_cerrado = h.aviso_cerrado OR coalesce(p_cerrar, false),
-         aviso_tomado_en = NULL
-   WHERE h.id = p_id AND h.company_id = app_empresa() AND h.estado = 'fallido';
+  SELECT ARRAY(SELECT DISTINCT x FROM unnest(h.aviso_recibieron || coalesce(p_recibieron, '{}')) x ORDER BY x),
+         h.aviso_faltan || coalesce(p_fallaron, '{}')
+    INTO recibieron, faltan
+    FROM collection_held_events h
+   WHERE h.id = p_id AND h.company_id = app_empresa() AND h.estado = 'fallido'
+   FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'retenido_ya_procesado';
   END IF;
+  faltan := ARRAY(SELECT DISTINCT x FROM unnest(faltan) x WHERE x <> ALL (recibieron) ORDER BY x);
+  UPDATE collection_held_events h
+     SET aviso_recibieron = recibieron,
+         aviso_faltan = faltan,
+         aviso_cerrado = h.aviso_cerrado OR (coalesce(p_cerrar, false) AND faltan = '{}'),
+         aviso_tomado_en = NULL
+   WHERE h.id = p_id;
 END;
 $$;
 
-REVOKE ALL ON FUNCTION cobranza_soltar_aviso_fallido(uuid, uuid[], boolean) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION cobranza_soltar_aviso_fallido(uuid, uuid[], boolean) TO plataforma_cliente;
+REVOKE ALL ON FUNCTION cobranza_soltar_aviso_fallido(uuid, uuid[], uuid[], boolean) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cobranza_soltar_aviso_fallido(uuid, uuid[], uuid[], boolean) TO plataforma_cliente;
 
 -- La bandeja de Cumplimiento (y Auditoría, que la consulta): los retenidos sin procesar y los fallidos del operador,
 -- sin datos personales del ordenante (monto, fechas, el tipo de aviso y, del fallido, el código del error).
