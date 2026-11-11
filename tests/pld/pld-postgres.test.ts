@@ -75,6 +75,7 @@ import {
 } from "../../src/server/pld/index.ts";
 import { aplicarArchivo, conBaseDesechable, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
 import { almacenEnMemoria, armarBorrador, PDF, personal, SESION_SOFIPO } from "../operacion/apoyo-alta-regulada.ts";
+import { minutosAtrasDeHoy } from "./momento-en-mexico.ts";
 
 const urlAdmin = process.env.AISLAMIENTO_DATABASE_URL?.trim() ?? "";
 const MIGRACIONES = join(dirname(fileURLToPath(import.meta.url)), "../../db/migrations");
@@ -625,9 +626,9 @@ describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, (
           assert.equal(await contar("select count(*)::int as n from audit_log where accion = 'pld_caso_consultado' and identificador = $1", [casoX]), 1);
         });
 
-        // datetime-local de la Ciudad de México, como lo manda el formulario.
-        const enMexico = (fecha: Date) => fecha.toLocaleString("sv-SE", { timeZone: "America/Mexico_City" }).slice(0, 16).replace(" ", "T");
-        const haceMinutos = (minutos: number) => enMexico(new Date(Date.now() - minutos * 60_000));
+        // datetime-local de la Ciudad de México, como lo manda el formulario: «hace N minutos» sin salir de hoy, porque
+        // los acuses de hoy no pueden ser anteriores al dictamen de hoy (entre las 00:00 y las 00:0N caería en ayer).
+        const haceMinutos = (minutos: number) => minutosAtrasDeHoy(new Date(), minutos);
         const sumarDias = (dia: string, dias: number) => new Date(Date.parse(`${dia}T12:00:00Z`) + dias * 86_400_000).toISOString().slice(0, 10);
         const designado = sumarDias(hoy, -30);
         // Cada persona con su RFC y su CURP: una misma persona ocupa un solo lugar (r2-base-N5).

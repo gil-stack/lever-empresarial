@@ -1,0 +1,17 @@
+# tests/pld/momento-en-mexico.test.ts: con la fórmula de main (sin acotar a hoy) y con el arreglo
+
+## fórmula de main
+✖ minutosAtrasDeHoy cruza la medianoche de México sin salir de hoy (15.712916ms)
+ℹ pass 7
+ℹ fail 5
+✖ failing tests:
+✖ 2026-11-11T06:00:30Z menos 1 min → 2026-11-11T00:00 (12.720917ms)
+✖ 2026-11-11T06:00:30Z menos 5 min → 2026-11-11T00:00 (0.435209ms)
+✖ 2026-11-11T06:05:00Z menos 60 min → 2026-11-11T00:00 (0.185042ms)
+✖ 2026-11-11T06:59:00Z menos 60 min → 2026-11-11T00:00 (0.148ms)
+✖ 2026-11-12T06:20:00Z menos 60 min → 2026-11-12T00:00 (0.128209ms)
+
+## arreglo
+✔ minutosAtrasDeHoy cruza la medianoche de México sin salir de hoy (17.287041ms)
+ℹ pass 12
+ℹ fail 0

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 
+import { hoyEnMexico } from "../../src/dominio/personas";
 import { altamar, consultar, contar, dobleClic, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS } from "./siembra";
 
@@ -14,9 +15,9 @@ import { CORREOS } from "./siembra";
 
 const en = (ruta: string) => `/c/${altamar()}${ruta}`;
 
-function hoy(): string {
-  return process.env.E2E_TODAY ?? new Date().toISOString().slice(0, 10);
-}
+// La fecha de México al momento de usarla, la misma que calcula el servidor en esa petición. No el E2E_TODAY de la
+// siembra: una corrida que cruza la medianoche de México vería dos días distintos.
+const hoy = () => hoyEnMexico(new Date());
 
 function desplazar(fecha: string, dias: number): string {
   const d = new Date(`${fecha}T12:00:00Z`);
