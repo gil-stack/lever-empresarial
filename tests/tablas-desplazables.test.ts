@@ -13,12 +13,12 @@ function archivosEn(directorio: string, extension: string): string[] {
   });
 }
 
-/** Las clases de las reglas de CSS que desplazan su contenido (overflow o overflow-x en auto o scroll). */
+/** Las clases de las reglas de CSS que desplazan su contenido: overflow y sus formas por eje (x, y, inline, block) con auto o scroll en cualquiera de sus valores. */
 export function clasesQueDesplazan(css: string): Set<string> {
   const clases = new Set<string>();
   const sinComentarios = css.replace(/\/\*[\s\S]*?\*\//g, "");
   for (const [, selectores, cuerpo] of sinComentarios.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    if (!/(^|[;\s])overflow(-x)?\s*:\s*(auto|scroll)\b/.test(cuerpo!)) continue;
+    if (!/(^|[;\s{])overflow(-(x|y|inline|block))?\s*:[^;}]*\b(auto|scroll)\b/.test(cuerpo!)) continue;
     for (const selector of selectores!.split(",")) {
       // La clase del elemento que desplaza es la del último compuesto del selector (`.a .b:hover` → b).
       const ultimo = selector.trim().split(/[\s>+~]+/).at(-1) ?? "";
@@ -38,7 +38,12 @@ export interface TablaVista { archivo: string; padre: string | null; problema: s
 /**
  * Cada <table> del archivo con su contenedor inmediato. Una tabla visible debe estar dentro de una región con nombre «Tabla de …» y
  * tabIndex 0 (su padre directo, sea un div o un componente), y ningún ancestro con una clase que desplace puede ser otro elemento: si
- * el que desplaza no es la región, el teclado no llega. Solo se exceptúan las tablas `solo-lector`, que no se ven ni se desplazan.
+ * el que desplaza no es la región, el teclado no llega; tampoco puede desplazar la propia tabla. Solo se exceptúan las tablas
+ * `solo-lector`, que no se ven ni se desplazan.
+ *
+ * Límite conocido: lo que no se lee de forma estática se le escapa (un `style` en línea, un `className` calculado o un selector de
+ * CSS sin clase). La red en tiempo de ejecución es axe `scrollable-region-focusable` sobre las páginas de verdad: la e2e de
+ * accesibilidad, la de cobranza a 390 (e2e 19) y el recorrido de evidencia.
  */
 export function tablasDe(archivo: string, texto: string, desplazan: Set<string>): TablaVista[] {
   const pila: { nombre: string; etiqueta: string }[] = [];
@@ -57,6 +62,7 @@ export function tablasDe(archivo: string, texto: string, desplazan: Set<string>)
         if (!padre || !esRegion(padre)) problema = "su contenedor inmediato no es una región «Tabla de …» con tabIndex 0";
         const desplazante = pila.find((e) => clasesDe(e.etiqueta).some((c) => desplazan.has(c)) && e.etiqueta !== padre);
         if (!problema && desplazante) problema = `desplaza un ancestro que no es la región: ${desplazante.etiqueta.slice(0, 80)}`;
+        if (!problema && clasesDe(etiqueta).some((c) => desplazan.has(c))) problema = "la propia tabla desplaza: el teclado no llega";
       }
       tablas.push({ archivo, padre, problema });
     }
@@ -68,10 +74,12 @@ export function tablasDe(archivo: string, texto: string, desplazan: Set<string>)
 const DESPLAZAN = new Set(archivosEn(path.join(RAIZ, "src"), ".css").flatMap((archivo) => [...clasesQueDesplazan(readFileSync(archivo, "utf8"))]));
 
 describe("las tablas que se desplazan a lo ancho se alcanzan con el teclado (axe scrollable-region-focusable)", () => {
-  it("el CSS que desplaza tablas se reconoce (overflow y overflow-x, dentro de @media, en selectores compuestos)", () => {
+  it("el CSS que desplaza tablas se reconoce (overflow y sus formas por eje, de uno o dos valores, dentro de @media, en selectores compuestos)", () => {
     assert.ok(DESPLAZAN.has("tabla-contenedor"), [...DESPLAZAN].join(", "));
     const css = ".a { overflow-x: auto; } @media (max-width: 600px) { .b .c:hover, .d > .e { color: red; overflow: scroll } } .f { overflow: hidden }";
     assert.deepEqual([...clasesQueDesplazan(css)].sort(), ["a", "c", "e"]);
+    const ejes = ".g{overflow-y:auto} .h { overflow-inline: scroll; } .i { overflow-block: auto } .j { overflow: hidden auto } .k { overflow: clip } .l { overflow-x: hidden }";
+    assert.deepEqual([...clasesQueDesplazan(ejes)].sort(), ["g", "h", "i", "j"]);
   });
 
   it("la guardia ve las formas que se le escapaban (clase compuesta, otra clase que desplaza, componente, ancestro que desplaza)", () => {
@@ -86,6 +94,8 @@ describe("las tablas que se desplazan a lo ancho se alcanzan con el teclado (axe
       ['<div className="tabla-contenedor cobranza-muestra" tabIndex={0} role="region" aria-label="Tabla de la muestra"><table></table></div>', true],
       ['<Desplazable tabIndex={0} role="region" aria-label="Tabla de x" className={`tabla-contenedor ${extra}`}><table></table></Desplazable>', true],
       ['<div className="grafica"><table className="solo-lector"></table></div>', true],
+      // La propia tabla con una clase que desplaza, aunque su padre sea la región.
+      ['<div tabIndex={0} role="region" aria-label="Tabla de x"><table className="tabla cobranza-muestra"></table></div>', false],
     ];
     for (const [jsx, valida] of casos) {
       const [tabla] = tablasDe("prueba.tsx", jsx, desplazan);

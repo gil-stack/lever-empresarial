@@ -34,6 +34,7 @@ const DEMO = () => requerida("E2E_COBRANZA_DEMO_ID");
 const CLABE = "002180701150123452";
 const RASTREO_A = "BNET01002611060000123456";
 const FIXTURES = join(process.cwd(), "tests/cobranza/fixtures/estados");
+const AXE = readFileSync(join(process.cwd(), "node_modules/axe-core/axe.min.js"), "utf8");
 const EVIDENCIA = process.env.E2E_CAPTURAS ?? "";
 
 function requerida(nombre: string): string {
@@ -864,6 +865,19 @@ test("19 · a 390 y 360, el empate del estado de cuenta no desborda la página: 
         await expect.poll(() => muestra.evaluate((el) => el.scrollLeft), { message: "con el teclado se recorre a lo ancho" }).toBeGreaterThan(0);
       }
       await foto(page, browserName, `empatar-${ancho}`);
+      // La red en tiempo de ejecución de la guardia tablas-desplazables (r63h-N1): axe scrollable-region-focusable en el empate,
+      // la lista y la ficha, en el CI y no solo en la evidencia local.
+      const alfa = await idDeCliente("Colegio Alfa");
+      for (const [nombre, url] of [["empate", null], ["lista", en("/consola/cobros")], ["ficha", en(`/consola/cobros/clientes/${alfa}`)]] as const) {
+        if (url) await page.goto(url);
+        await page.evaluate(AXE);
+        const marcas = await page.evaluate(async () => {
+          const r = await (window as unknown as { axe: { run: (c: object, o: object) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } })
+            .axe.run(document, { runOnly: { type: "rule", values: ["scrollable-region-focusable"] } });
+          return r.violations.flatMap((v) => v.nodes.map((n) => n.target.join(" ")));
+        });
+        expect(marcas, `${nombre} a ${ancho}`).toEqual([]);
+      }
       expect(reales(errores, browserName)).toEqual([]);
     } finally {
       await context.close();
