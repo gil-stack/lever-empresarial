@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { expect, test, type APIRequestContext, type BrowserContext, type Page } from "@playwright/test";
 import { Client } from "pg";
 
+import { hoyEnMexico } from "../../src/dominio/personas";
 import { ORIGEN, consultar, contar, correos, dobleClic, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS_RUNWAY } from "./siembra-runway";
 
@@ -34,7 +35,10 @@ function requerida(nombre: string): string {
 }
 
 const en = (ruta: string, empresa = EMPRESA()) => `/c/${empresa}${ruta}`;
-const hoy = () => process.env.E2E_TODAY ?? new Date().toISOString().slice(0, 10);
+// La fecha de México al momento de usarla, la misma que calcula el servidor (caja_hoy) en esa petición. No el E2E_TODAY
+// fijado al sembrar: una corrida que cruza la medianoche de México (la del domingo al lunes cambia la semana de la foto)
+// vería otro día que el servidor.
+const hoy = () => hoyEnMexico(new Date());
 
 function desplazar(fecha: string, dias: number): string {
   const d = new Date(`${fecha}T12:00:00Z`);

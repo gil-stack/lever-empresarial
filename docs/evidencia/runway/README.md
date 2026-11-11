@@ -116,6 +116,16 @@ La página de Saldo y alertas declaró `referrer: "same-origin"` en su metadata 
 
 El mismo problema afecta a todos los formularios de la aplicación que se envían sin JavaScript. El encabezado global vive fuera de este cambio, así que se le reportó al líder.
 
+## La medianoche de México en la e2e
+
+`hoy()` de `runway.spec.ts` salía de `E2E_TODAY`, que se fija una sola vez al sembrar (`tests/e2e/entorno.ts`), mientras el servidor calcula el día en cada petición (`caja_hoy()`). Una corrida que empieza el domingo a las 23:59 de México y sigue el lunes buscaba la foto de la semana anterior (`:192`), sembraba la tendencia contra el lunes viejo (`:318`) y daba de baja a Noé un día antes (`:483`). Ahora `hoy()` es `hoyEnMexico(new Date())`, calculado al momento de usarlo, la misma fuente que usa el servidor; `cobranza.spec.ts` (#63) también.
+
+**Contraprueba** (`medianoche/contraprueba.txt`): con `E2E_TODAY` del domingo anterior, como si se hubiera sembrado antes de la medianoche del domingo, que es una mutación de `entorno.ts` que no se sube:
+- con el código anterior, la e2e 2 cae en `:192` (la foto de esta semana no está en la semana de `E2E_TODAY`: 0 en lugar de 1) y las 10 siguientes no corren;
+- con el arreglo, pasan las 11 (1 omitida, la de capturas).
+
+Límite: el servidor no se puede adelantar a las 23:59:50 sin tocar su reloj; la mutación simula el lado de la prueba, que es donde estaba el desfase.
+
 ## Rendimiento
 
 La salida literal y el EXPLAIN están en [rendimiento.md](rendimiento.md), medidos otra vez en la ronda r64 (con el contador de cruces y las fechas que pone la base). Se midió con Postgres local, sin la latencia de red de Neon, así que el tiempo de base es un piso.
