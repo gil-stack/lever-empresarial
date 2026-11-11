@@ -111,6 +111,11 @@ export async function decidirCambioDeSuspension(
     if (solicitud.solicitada_por === ctx.persona.id) throw new ErrorDeDominio("misma_persona_en_suspension");
     const companyId = String(solicitud.company_id);
     const tipo = solicitud.tipo === "reactivacion" ? "reactivacion" : "suspension";
+    // r63j-N2: el mismo candado que toma cada aviso de Fintoc de la empresa: un aviso ve el estado de antes o el de
+    // después, nunca uno a medias (un retenido no queda varado con la empresa ya activa). r63k-N1: antes de cualquier
+    // escritura (el disparador de company_suspensions ya escribe la fila de companies): el alta de un proveedor toma
+    // primero este candado y después puede escribir companies (lpb_cotejar_empresa); al revés se interbloqueaban.
+    await bloquearEmpresa(consulta, companyId);
     await consulta.query(
       "update company_suspensions set estado = $2, decidida_por = $3, decidida_en = $4, motivo_decision = $5 where id = $1",
       [entrada.id, entrada.aprobada ? "aprobada" : "rechazada", ctx.persona.id, ahora, motivo],
@@ -118,9 +123,6 @@ export async function decidirCambioDeSuspension(
     if (entrada.aprobada) {
       const antes = tipo === "suspension" ? "activa" : "suspendida";
       const despues = tipo === "suspension" ? "suspendida" : "activa";
-      // r63j-N2: el mismo candado que toma cada aviso de Fintoc de la empresa: un aviso ve el estado de antes o el de
-      // después, nunca uno a medias (un retenido no queda varado con la empresa ya activa).
-      await bloquearEmpresa(consulta, companyId);
       const cambiada = await consulta.query("update companies set estado = $2 where id = $1 and estado = $3", [companyId, despues, antes]);
       if (cambiada.rowCount !== 1) throw new ErrorDeDominio(tipo === "suspension" ? "suspension_no_aplica" : "reactivacion_no_aplica");
       await consulta.query(

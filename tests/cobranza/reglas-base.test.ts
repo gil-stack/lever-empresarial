@@ -461,6 +461,19 @@ async function reglas(app: string, ids: Ids, duena: string): Promise<void> {
       await c.query("select cobranza_retenido_fallido($1, 'pago_anulado')", [id]);
       await c.query("select cobranza_retenido_fallido($1, 'pago_anulado')", [id]);
     }, C, sistema, B);
+    // r63k-N2: el error pasajero suma un intento; al quinto queda fallido. Los intentos van de uno en uno.
+    assert.deepEqual(await acepta("r63k-N2 cinco intentos pasajeros dejan el retenido fallido", async (c) => {
+      const id = (await retener(c, "evt_Pasajero1")).rows[0]!.id;
+      const vueltas: boolean[] = [];
+      for (let i = 0; i < 5; i += 1) vueltas.push((await c.query<{ f: boolean }>("select cobranza_retenido_reintento($1, 'base_no_disponible') as f", [id])).rows[0]!.f);
+      return vueltas;
+    }, C, sistema, B), [false, false, false, false, true]);
+    await rechaza("r63k-N2 un fallido no suma más intentos", "retenido_ya_procesado", async (c) => {
+      const id = (await retener(c, "evt_Pasajero2")).rows[0]!.id;
+      for (let i = 0; i < 6; i += 1) await c.query("select cobranza_retenido_reintento($1, 'base_no_disponible')", [id]);
+    }, C, sistema, B);
+    await rechaza("r63k-N2 una persona no suma intentos", "sin_permiso_para_cobranza", (c) =>
+      c.query("select cobranza_retenido_reintento(gen_random_uuid(), 'base_no_disponible')"), C, ids.adminB, B);
     await rechaza("r63j-N1 una persona no marca fallidos", "sin_permiso_para_cobranza", (c) =>
       c.query("select cobranza_retenido_fallido(gen_random_uuid(), 'pago_anulado')"), C, ids.adminB, B);
     // La propia empresa suspendida no escribe: el pago a mano y el estado de cuenta pasan por collection_payments.

@@ -8,6 +8,7 @@ import { PaginaOperacion } from "@/components/operacion/pagina";
 import { BandejaDePld } from "@/components/operacion/pld/bandeja";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { Hoja, Insignia, Metrica, Metricas, Monto, NotaRegla, Vacio } from "@/components/sistema";
+import { deCatalogo } from "@/dominio/catalogo";
 import { formatoPesos } from "@/dominio/centavos";
 import { ETIQUETA_GRADO } from "@/dominio/operacion";
 import { exigirContextoOperacion, leerBandejaCumplimiento, puedeEnOperacion } from "@/server/operacion";
@@ -28,8 +29,18 @@ export const metadata: Metadata = { title: "Cumplimiento · Operación" };
  * activa y lo aplica la tarea diaria (lo que pasó del tope de la reactivación, r63j-P3), si es de una empresa de baja
  * (se queda aquí) o si espera la reactivación.
  */
+/** r63k-P3: el motivo de un retenido fallido en palabras; el código queda en la bitácora. */
+const MOTIVO_RETENIDO: Readonly<Record<string, string>> = {
+  base_no_disponible: "la base no respondió en cinco intentos",
+  auditoria_no_disponible: "la bitácora no respondió en cinco intentos",
+  cargo_ya_resuelto: "el cargo ya había cambiado",
+  pago_anulado: "el pago ya estaba anulado",
+  aviso_ilegible: "el aviso guardado no se pudo leer",
+  desconocido: "error sin clasificar",
+};
+
 function etiquetaRetenido(retenido: { estadoEmpresa: string; fallido: string | null }): string {
-  if (retenido.fallido) return `No se pudo aplicar (${retenido.fallido})`;
+  if (retenido.fallido) return `No se pudo aplicar: ${deCatalogo(MOTIVO_RETENIDO, retenido.fallido) ?? "revisarlo con el equipo técnico"}`;
   if (retenido.estadoEmpresa === "activa") return "Empresa activa: lo aplica la tarea diaria";
   if (retenido.estadoEmpresa === "baja") return "Empresa de baja";
   return "Se aplica al reactivar";

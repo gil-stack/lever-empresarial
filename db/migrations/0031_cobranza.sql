@@ -1111,10 +1111,13 @@ CREATE TABLE collection_held_events (
   procesado_en timestamptz,
   efecto text,
   motivo text,
+  -- r63k-N2: los intentos que fallaron por un error pasajero (la base o la bitácora no respondieron).
+  intentos integer NOT NULL DEFAULT 0,
   CONSTRAINT collection_held_events_unico UNIQUE (proveedor, evento_id),
   CONSTRAINT collection_held_events_proveedor CHECK (proveedor IN ('fintoc')),
   CONSTRAINT collection_held_events_evento CHECK (evento_id ~ '^evt_[A-Za-z0-9]{1,64}$' AND aviso ->> 'eventoId' = evento_id),
   CONSTRAINT collection_held_events_tipo CHECK (tipo IN ('transfer.inbound.succeeded', 'transfer.inbound.returned')),
+  CONSTRAINT collection_held_events_intentos CHECK (intentos BETWEEN 0 AND 5),
   CONSTRAINT collection_held_events_monto CHECK (monto_centavos BETWEEN 1 AND 9000000000000000),
   CONSTRAINT collection_held_events_fecha CHECK (recibido_el >= DATE '2000-01-01'),
   -- r63j-N1: un retenido que no se pudo aplicar queda «fallido» con el código del error (sin datos), a la vista de
@@ -1139,9 +1142,12 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
-  IF TG_OP = 'DELETE' OR OLD.estado <> 'retenido' OR NEW.estado NOT IN ('procesado', 'fallido')
-    OR (to_jsonb(NEW) - 'estado' - 'procesado_en' - 'efecto' - 'motivo')
-       IS DISTINCT FROM (to_jsonb(OLD) - 'estado' - 'procesado_en' - 'efecto' - 'motivo') THEN
+  -- Del retenido solo cambian: su estado (a procesado o fallido) con lo que resultó, y sus intentos, de uno en uno.
+  IF TG_OP = 'DELETE' OR OLD.estado <> 'retenido'
+    OR (NEW.estado = 'retenido' AND NEW.intentos <> OLD.intentos + 1)
+    OR (NEW.estado <> 'retenido' AND NEW.intentos NOT IN (OLD.intentos, OLD.intentos + 1))
+    OR (to_jsonb(NEW) - 'estado' - 'procesado_en' - 'efecto' - 'motivo' - 'intentos')
+       IS DISTINCT FROM (to_jsonb(OLD) - 'estado' - 'procesado_en' - 'efecto' - 'motivo' - 'intentos') THEN
     RAISE EXCEPTION 'cobranza_inmutable';
   END IF;
   RETURN NEW;
@@ -1244,6 +1250,39 @@ $$;
 
 REVOKE ALL ON FUNCTION cobranza_retenido_fallido(uuid, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION cobranza_retenido_fallido(uuid, text) TO plataforma_cliente;
+
+-- r63k-N2: el retenido no pasó por un error pasajero (la base o la bitácora no respondieron): sigue pendiente para el
+-- siguiente aviso o la tarea, con un intento más. Un error de datos de la base también llega así a la aplicación, así
+-- que al quinto intento queda «fallido» con el código: un retenido que nunca pasa no frena para siempre a los demás.
+-- Devuelve verdadero si quedó fallido.
+CREATE FUNCTION cobranza_retenido_reintento(p_id uuid, p_motivo text)
+RETURNS boolean
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  previos integer;
+BEGIN
+  IF app_usuario() IS NOT NULL OR app_empresa() IS NULL THEN
+    RAISE EXCEPTION 'sin_permiso_para_cobranza';
+  END IF;
+  SELECT h.intentos INTO previos FROM collection_held_events h
+   WHERE h.id = p_id AND h.company_id = app_empresa() AND h.estado = 'retenido' FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'retenido_ya_procesado';
+  END IF;
+  IF previos + 1 >= 5 THEN
+    UPDATE collection_held_events SET estado = 'fallido', procesado_en = now(), motivo = p_motivo, intentos = previos + 1
+     WHERE id = p_id;
+    RETURN true;
+  END IF;
+  UPDATE collection_held_events SET intentos = previos + 1 WHERE id = p_id;
+  RETURN false;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION cobranza_retenido_reintento(uuid, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cobranza_retenido_reintento(uuid, text) TO plataforma_cliente;
 
 -- La bandeja de Cumplimiento (y Auditoría, que la consulta): los retenidos sin procesar y los fallidos del operador,
 -- sin datos personales del ordenante (monto, fechas, el tipo de aviso y, del fallido, el código del error).
