@@ -482,6 +482,32 @@ async function reglas(app: string, ids: Ids, duena: string): Promise<void> {
     assert.throws(() => ejecutar(duena, `update collection_held_events set intentos = 2, ultimo_intento_en = '2026-11-10 10:00Z' where id = '${horaDuena}'`), /cobranza_inmutable/);
     assert.throws(() => ejecutar(duena, `update collection_held_events set intentos = 2, ultimo_intento_en = '2026-11-10 12:59Z' where id = '${horaDuena}'`), /cobranza_inmutable/);
     ejecutar(duena, `update collection_held_events set intentos = 2, ultimo_intento_en = '2026-11-10 13:00Z' where id = '${horaDuena}'`);
+    // r63o: la hora de un intento es finita, también para la dueña. Con 'infinity' el disparador dejaba pasar el +1 y
+    // la definer ya no contaba ningún intento después (el retenido respondía 500 para siempre).
+    assert.throws(() => ejecutar(duena, `update collection_held_events set intentos = 3, ultimo_intento_en = 'infinity' where id = '${horaDuena}'`), /collection_held_events_intento_finito/);
+    const infinitoDuena = randomUUID();
+    assert.throws(() => ejecutar(duena, `insert into collection_held_events (id, company_id, proveedor, evento_id, tipo, monto_centavos, recibido_el, aviso)
+      values ('${infinitoDuena}', '${B}', 'fintoc', 'evt_InfinitoDuena', 'transfer.inbound.succeeded', 1, '2026-11-10', '${aviso("evt_InfinitoDuena")}'::jsonb);
+      update collection_held_events set intentos = 1, ultimo_intento_en = '-infinity' where id = '${infinitoDuena}';`), /collection_held_events_intento_finito/);
+    // r63o: el correo de un retenido solo se anota en un fallido: quién lo recibió solo crece, cerrado no se reabre, y
+    // un pendiente no lleva nada de eso (ni al nacer ni después), también para la dueña.
+    assert.throws(() => ejecutar(duena, `update collection_held_events set aviso_cerrado = true where id = '${horaDuena}'`), /cobranza_inmutable/);
+    assert.throws(() => ejecutar(duena, `update collection_held_events set aviso_tomado_en = now() where id = '${horaDuena}'`), /cobranza_inmutable/);
+    assert.throws(() => ejecutar(duena, `insert into collection_held_events (id, company_id, proveedor, evento_id, tipo, monto_centavos, recibido_el, aviso, aviso_recibieron)
+      values ('${randomUUID()}', '${B}', 'fintoc', 'evt_NaceAvisado', 'transfer.inbound.succeeded', 1, '2026-11-10', '${aviso("evt_NaceAvisado")}'::jsonb, array[gen_random_uuid()])`), /cobranza_inmutable/);
+    const avisoDuena = randomUUID();
+    ejecutar(duena, `insert into collection_held_events (id, company_id, proveedor, evento_id, tipo, monto_centavos, recibido_el, aviso)
+      values ('${avisoDuena}', '${B}', 'fintoc', 'evt_AvisoDuena', 'transfer.inbound.succeeded', 1, '2026-11-10', '${aviso("evt_AvisoDuena")}'::jsonb);
+      update collection_held_events set estado = 'fallido', procesado_en = now(), motivo = 'aviso_ilegible' where id = '${avisoDuena}';
+      update collection_held_events set aviso_recibieron = array['${ids.adminB}'::uuid], aviso_cerrado = true where id = '${avisoDuena}';`);
+    assert.throws(() => ejecutar(duena, `update collection_held_events set aviso_recibieron = '{}' where id = '${avisoDuena}'`), /cobranza_inmutable/);
+    assert.throws(() => ejecutar(duena, `update collection_held_events set aviso_cerrado = false where id = '${avisoDuena}'`), /cobranza_inmutable/);
+    assert.throws(() => ejecutar(duena, `update collection_held_events set motivo = 'otro' where id = '${avisoDuena}'`), /cobranza_inmutable/);
+    assert.throws(() => ejecutar(duena, `update collection_held_events set aviso_tomado_en = 'infinity' where id = '${avisoDuena}'`), /collection_held_events_aviso/);
+    await rechaza("r63o una persona no reserva el correo de un fallido", "sin_permiso_para_cobranza", (c) =>
+      c.query("select cobranza_tomar_aviso_fallido(gen_random_uuid())"), C, ids.adminB, B);
+    await rechaza("r63o una persona no anota quién recibió el correo", "sin_permiso_para_cobranza", (c) =>
+      c.query("select cobranza_soltar_aviso_fallido(gen_random_uuid(), '{}', true)"), C, ids.adminB, B);
     // Con un reloj que avanza una hora en cada intento (solo en esta base desechable): al quinto intento contado queda
     // fallido. Los intentos van de uno en uno.
     ejecutar(duena, `create sequence reloj_retenidos; create or replace function cobranza_retenidos_ahora() returns timestamptz
