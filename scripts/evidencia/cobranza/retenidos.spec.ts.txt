@@ -100,10 +100,9 @@ test("un abono de Fintoc a la empresa suspendida queda retenido, Cumplimiento lo
   }
   expect(await contar("select 1 from collection_payments where company_id = $1 and clave_rastreo = 'XRETENIDO01'", [empresa])).toBe(0);
   expect(await contar("select 1 from collection_held_events where company_id = $1 and estado = 'retenido'", [empresa])).toBe(1);
-  // r63j-N1: un retenido envenenado que llegó antes (su fecha no existe): al reactivar no debe frenar al legítimo.
-  const envenenado = { eventoId: "evt_RecorridoVeneno01", tipo: "transfer.inbound.succeeded", modo: "test", devolucion: null,
-    abono: { idExterno: "fintoc:tr_RecorridoVeneno01", montoCentavos: 7_700, recibidoEl: "2026-13-45", claveRastreo: null, referencia: null,
-      clabeOrdenante: null, nombreOrdenante: null, cuentaId: cuenta, cuentaNumeroId: "acno_RetenidoE2e01" } };
+  // r63j-N1: un retenido envenenado que llegó antes (no trae ni abono ni devolución: nunca se aplicará): al reactivar
+  // queda fallido y no frena al legítimo.
+  const envenenado = { eventoId: "evt_RecorridoVeneno01", tipo: "transfer.inbound.succeeded", modo: "test", devolucion: null, abono: null };
   await consultar(`insert into collection_held_events (id, company_id, proveedor, evento_id, tipo, monto_centavos, recibido_el, aviso, retenido_en)
     values (gen_random_uuid(), $1, 'fintoc', 'evt_RecorridoVeneno01', 'transfer.inbound.succeeded', 7700, '2026-11-10', $2::jsonb, now() - interval '1 hour')`,
     [empresa, JSON.stringify(envenenado)]);
@@ -140,7 +139,7 @@ test("un abono de Fintoc a la empresa suspendida queda retenido, Cumplimiento lo
   // Cumplimiento pide reactivar y Aprobación lo aprueba: el abono se aplica una vez.
   await pedirYAprobar(page, context, "reactivación", CORREOS.op3);
   expect(await consultar("select estado, efecto, motivo from collection_held_events where company_id = $1 order by retenido_en", [empresa])).toEqual([
-    { estado: "fallido", efecto: null, motivo: "base_no_disponible" },
+    { estado: "fallido", efecto: null, motivo: "aviso_ilegible" },
     { estado: "procesado", efecto: "registrado", motivo: null },
   ]);
   expect(await consultar("select estado from collection_payments where company_id = $1 and clave_rastreo = 'XRETENIDO01'", [empresa])).toEqual([{ estado: "aplicado" }]);
@@ -157,7 +156,7 @@ test("un abono de Fintoc a la empresa suspendida queda retenido, Cumplimiento lo
   const despues = page.locator("section", { has: page.getByRole("heading", { name: "Abonos retenidos de empresas suspendidas" }) });
   await expect(despues.locator("li")).toHaveCount(1);
   await expect(despues).toContainText("Abono de $77.00");
-  await expect(despues).toContainText("No se pudo aplicar (base_no_disponible)");
+  await expect(despues).toContainText("No se pudo aplicar: el aviso guardado no se pudo leer");
   await foto(page, "bandeja-con-fallido");
   expect(errores).toEqual([]);
 });

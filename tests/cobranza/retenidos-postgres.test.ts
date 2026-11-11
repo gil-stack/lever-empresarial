@@ -247,12 +247,16 @@ async function escenario(url: string): Promise<void> {
     // r63j ------------------------------------------------------------------------------------------------------------
     const clienteDe = (empresaId: string) => consultarJson<{ id: string }[]>(url,
       `select json_agg(x) from (select id from collection_customers where company_id = '${empresaId}' limit 1) x`)[0]!.id;
-    const retenidoFallido = (empresaId: string, evento: string, fecha = "2026-13-45") => {
-      // Un retenido que el camino normal no puede aplicar (su fecha no existe): lo inserta la dueña, como si hubiera
-      // llegado así. La base lo acepta (el aviso es jsonb) y la aplicación lo rechaza al procesarlo.
-      const aviso = { eventoId: evento, tipo: "transfer.inbound.succeeded", modo: "test", devolucion: null,
-        abono: { idExterno: `fintoc:tr_${evento.slice(4)}`, montoCentavos: 7_700, recibidoEl: fecha, claveRastreo: null, referencia: null,
-          clabeOrdenante: null, nombreOrdenante: null, cuentaId: alfa.cuenta, cuentaNumeroId: `acno_Principal${alfa.cuenta.slice(4)}` } };
+    const retenidoFallido = (empresaId: string, evento: string, tipo: "ilegible" | "fecha" = "ilegible") => {
+      // Un retenido que el camino normal no puede aplicar: lo inserta la dueña, como si hubiera llegado así (la base lo
+      // acepta: el aviso es jsonb). «ilegible» no trae ni abono ni devolución: falla igual siempre y queda fallido al
+      // primer intento. «fecha» trae un día que no existe: la base lo rechaza con un error de datos, que llega a la
+      // aplicación como base_no_disponible (pasajero): se reintenta y queda fallido al quinto (r63k-N2).
+      const aviso = tipo === "ilegible"
+        ? { eventoId: evento, tipo: "transfer.inbound.succeeded", modo: "test", devolucion: null, abono: null }
+        : { eventoId: evento, tipo: "transfer.inbound.succeeded", modo: "test", devolucion: null,
+          abono: { idExterno: `fintoc:tr_${evento.slice(4)}`, montoCentavos: 7_700, recibidoEl: "2026-13-45", claveRastreo: null, referencia: null,
+            clabeOrdenante: null, nombreOrdenante: null, cuentaId: alfa.cuenta, cuentaNumeroId: `acno_Principal${alfa.cuenta.slice(4)}` } };
       ejecutar(url, `insert into collection_held_events (id, company_id, proveedor, evento_id, tipo, monto_centavos, recibido_el, aviso, retenido_en)
         values ('${randomUUID()}', '${empresaId}', 'fintoc', '${evento}', 'transfer.inbound.succeeded', 7700, '2026-11-10', '${JSON.stringify(aviso)}'::jsonb, now() - interval '1 hour')`);
     };
@@ -278,12 +282,12 @@ async function escenario(url: string): Promise<void> {
     assert.deepEqual(await avisar(abono(alfa, 55_500, { referencia: null })), { estado: 200, cuerpo: { ok: true, efecto: "retenido" } });
     await cambiar(alfa.id, "reactivacion");
     assert.equal(await procesarRetenidos(alfa.id, operador, { auditar }), 2);
-    assert.equal(cuenta(`select count(*) from collection_held_events where company_id = '${alfa.id}' and estado = 'fallido' and motivo = 'base_no_disponible'`), 1);
+    assert.equal(cuenta(`select count(*) from collection_held_events where company_id = '${alfa.id}' and estado = 'fallido' and motivo = 'aviso_ilegible'`), 1);
     assert.equal(cuenta(`select count(*) from collection_held_events where company_id = '${alfa.id}' and estado = 'procesado' and monto_centavos = 55500`), 1);
     assert.equal(cuenta(`select count(*) from collection_payments where company_id = '${alfa.id}' and monto_centavos = 55500`), 1);
     assert.equal(cuenta(`select count(*) from audit_log where company_id = '${alfa.id}' and accion = 'retenido_fallido_cobranza'`), 1);
     const fallidos = (await leerBandejaCumplimiento(cum)).abonosRetenidos.filter((r) => r.fallido);
-    assert.deepEqual(fallidos.map((r) => [r.razonSocial, r.montoCentavos, r.fallido]), [["Escuela Alfa Retenidos", 7_700, "base_no_disponible"]]);
+    assert.deepEqual(fallidos.map((r) => [r.razonSocial, r.montoCentavos, r.fallido]), [["Escuela Alfa Retenidos", 7_700, "aviso_ilegible"]]);
 
     // r63j-N1 c) La tarea diaria con un retenido envenenado sigue generando cargos y mandando recordatorios: el paso de
     //    los retenidos tiene su propio try. Antes la empresa contaba como fallida y no se generaba nada.
@@ -356,6 +360,62 @@ async function escenario(url: string): Promise<void> {
     assert.deepEqual(espera.map((r) => [r.montoCentavos, r.estadoEmpresa]), [[1_400, "activa"]]);
     await correrCobranza({ ahora: reloj("2027-01-10T18:00:00.000Z"), auditar, enviador: deps().enviador, urlPublica: () => "https://lever.ejemplo.mx", fintoc: null, registrar: () => {} });
     assert.equal(retenidos(beta.id), 0);
+
+    // r63k-N2 a) Un error pasajero (la bitácora no respondió) deja el retenido pendiente, con un intento más, y detiene la
+    //    corrida; la siguiente lo aplica. Antes quedaba «fallido» para siempre y el abono no se aplicaba nunca.
+    await cambiar(beta.id, "suspension");
+    assert.equal((await avisar(abono(beta, 1_500, { referencia: null }))).cuerpo.efecto, "retenido");
+    await cambiar(beta.id, "reactivacion");
+    let caida = true;
+    const bitacoraCaida: typeof auditar = async (...args) => {
+      if (caida) { caida = false; throw new ErrorDeDominio("auditoria_no_disponible"); }
+      return auditar(...args);
+    };
+    await assert.rejects(() => procesarRetenidos(beta.id, operador, { auditar: bitacoraCaida }), codigo("auditoria_no_disponible"));
+    assert.equal(cuenta(`select count(*) from collection_held_events where company_id = '${beta.id}' and estado = 'retenido' and intentos = 1`), 1);
+    assert.equal(await procesarRetenidos(beta.id, operador, { auditar }), 1);
+    assert.equal(cuenta(`select count(*) from collection_payments where company_id = '${beta.id}' and monto_centavos = 1500`), 1);
+    assert.equal(retenidos(beta.id), 0);
+
+    // r63k-N2 b) Un error de datos de la base también llega como base_no_disponible: se reintenta y al quinto intento
+    //    queda fallido, así que no frena para siempre a los que vienen detrás.
+    retenidoFallido(beta.id, "evt_FechaImposible01", "fecha");
+    for (let i = 1; i <= 4; i += 1) {
+      await assert.rejects(() => procesarRetenidos(beta.id, operador, { auditar }), codigo("base_no_disponible"));
+      assert.equal(cuenta(`select intentos from collection_held_events where evento_id = 'evt_FechaImposible01' and estado = 'retenido'`), i);
+    }
+    assert.equal(await procesarRetenidos(beta.id, operador, { auditar }), 1);
+    assert.equal(cuenta(`select count(*) from collection_held_events where evento_id = 'evt_FechaImposible01' and estado = 'fallido' and motivo = 'base_no_disponible' and intentos = 5`), 1);
+
+    // r63k-N1: la decisión de suspender contra el alta de un proveedor de la misma empresa con una coincidencia abierta
+    //    (candado de la empresa → lpb_cotejar_empresa, que escribe la fila de companies), en los dos órdenes, con dos
+    //    conexiones. La decisión toma el candado antes de escribir; antes lo tomaba después y se interbloqueaban.
+    const gamma = await empresa("EKU9003173C9", "601", "Grupo Gamma Retenidos", "acc_RetenidosGama01");
+    ejecutar(url, `begin; set local session_replication_role = replica;
+      insert into lpb_coincidencias (operator_id, company_id, sujeto_tipo, sujeto_clave, sujeto_nombre, sujeto_rfc, lista, snapshot_69b_id, tipo, coincide_por, valor_coincidente, estado, detectada_en, plazo_reporte_hasta)
+      values ('${operador}', '${gamma.id}', 'contraparte', gen_random_uuid(), 'Proveedor en lista', 'XAXX010101000', '69b', gen_random_uuid(), 'exacta', 'rfc', 'XAXX010101000', 'pendiente', now(), now() + interval '24 hours');
+      commit;`);
+    for (const primero of ["proveedor", "decision"] as const) {
+      ejecutar(url, `set session_replication_role = replica; update companies set estado = 'activa' where id = '${gamma.id}';
+        update company_suspensions set estado = 'rechazada' where company_id = '${gamma.id}' and estado = 'pendiente'; set session_replication_role = origin;`);
+      await solicitarCambioDeSuspension(ori, { companyId: gamma.id, formId: randomUUID(), tipo: "suspension", motivo: "Revisión de Cumplimiento por operaciones" });
+      const solicitud = consultarJson<{ id: string }[]>(url, `select json_agg(x) from (select id from company_suspensions where company_id = '${gamma.id}' and estado = 'pendiente') x`)[0]!.id;
+      await duena.query("begin");
+      let decision: Promise<unknown>;
+      if (primero === "proveedor") {
+        await duena.query("select pg_advisory_xact_lock(hashtextextended($1::text, 814272))", [gamma.id]);
+        decision = decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: solicitud, aprobada: true, motivo: "" }).then(() => "ok", (e) => e);
+        await esperarBloqueo();
+      } else {
+        decision = decidirCambioDeSuspension(apr, SESION_SOFIPO, { id: solicitud, aprobada: true, motivo: "" }).then(() => "ok", (e) => e);
+        await new Promise((listo) => setTimeout(listo, 300));
+        await duena.query("select pg_advisory_xact_lock(hashtextextended($1::text, 814272))", [gamma.id]);
+      }
+      const proveedor = await duena.query("select lpb_cotejar_empresa($1)", [gamma.id]).then(() => "ok", (e: Error) => e.message);
+      await duena.query(proveedor === "ok" ? "commit" : "rollback");
+      assert.equal(proveedor, "ok", `${primero}: el lado del proveedor`);
+      assert.equal(await decision, "ok", `${primero}: la decisión (antes: deadlock → base_no_disponible)`);
+    }
   } finally {
     await duena.query("rollback").catch(() => undefined);
     await duena.end();

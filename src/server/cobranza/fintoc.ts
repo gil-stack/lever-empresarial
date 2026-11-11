@@ -602,6 +602,12 @@ async function retenerAviso(consulta: Consulta, aviso: AvisoFintoc, destino: Des
   return { efecto: "retenido" };
 }
 
+/**
+ * r63k-N2: lo que puede pasar solo (la base sin respuesta, un interbloqueo o una conexión caída, o la bitácora). La base
+ * traduce también sus errores de datos a base_no_disponible: por eso el reintento tiene tope (cobranza_retenido_reintento).
+ */
+const PASAJEROS = new Set(["base_no_disponible", "auditoria_no_disponible"]);
+
 export type DepsRetenidos = Pick<DepsAviso, "auditar" | "enviador" | "urlPublica" | "registrar">;
 
 /**
@@ -611,10 +617,10 @@ export type DepsRetenidos = Pick<DepsAviso, "auditar" | "enviador" | "urlPublica
  * reactivación (después de su commit, con un tope), la tarea diaria y cada aviso nuevo de la empresa (r63j-N2). Con la
  * empresa suspendida o de baja no hace nada.
  *
- * r63j-N1: cada retenido va aislado. Si el camino normal lo rechaza, su transacción se deshace y queda «fallido» con
- * el código del error (sin datos), a la vista de Cumplimiento, y los demás siguen: uno envenenado no frena la cobranza
- * de la empresa. Si ni siquiera se puede marcar (la base no responde), la corrida se detiene y el retenido sigue
- * pendiente para la siguiente.
+ * r63j-N1: cada retenido va aislado. Si el camino normal lo rechaza por una regla, su transacción se deshace y queda
+ * «fallido» con el código del error (sin datos), a la vista de Cumplimiento, y los demás siguen: uno envenenado no frena
+ * la cobranza de la empresa. r63k-N2: si el error es pasajero, la corrida se detiene y el retenido sigue pendiente con
+ * un intento más; al quinto, queda fallido. Si ni siquiera se puede anotar, la corrida se detiene igual.
  */
 export async function procesarRetenidos(empresaId: string, operadorId: string, deps: DepsRetenidos, tope = Number.POSITIVE_INFINITY): Promise<number> {
   const empresa: Destino = { empresaId, operadorId, clienteDeLaCuenta: null };
@@ -629,7 +635,9 @@ export async function procesarRetenidos(empresaId: string, operadorId: string, d
         if (!fila) return null;
         pendiente = texto(fila.id);
         const aviso = fila.aviso as AvisoFintoc;
-        const t = aviso.abono ?? aviso.devolucion!;
+        const t = aviso.abono ?? aviso.devolucion;
+        // Un aviso guardado sin abono ni devolución no se aplicará nunca: permanente, no pasajero (r63k-N2).
+        if (!t) throw new ErrorDeDominio("aviso_ilegible");
         // La CLABE propia sigue diciendo el cliente si es de esta empresa; si la cuenta cambió de empresa, sin cliente.
         const ahora = await destinoDe(consulta, t);
         const destino: Destino = { ...empresa, clienteDeLaCuenta: ahora?.empresaId === empresaId ? ahora.clienteDeLaCuenta : null };
@@ -644,16 +652,24 @@ export async function procesarRetenidos(empresaId: string, operadorId: string, d
       if (pendiente === null) throw error;
       const id: string = pendiente;
       const motivo = error instanceof ErrorDeDominio ? error.codigo : "desconocido";
+      const pasajero = PASAJEROS.has(motivo);
+      let fallido: boolean;
       try {
-        await conContexto(baseDe(empresa), async (consulta) => {
+        fallido = await conContexto(baseDe(empresa), async (consulta) => {
           await bloquearEmpresa(consulta, empresaId);
-          await aplicarSentencia(consulta, "select cobranza_retenido_fallido($1, $2)", [id, motivo]);
-          await deps.auditar(consulta, actorDe(empresa), { accion: "retenido_fallido_cobranza", identificador: id, cambio: { motivo } });
+          const quedo = pasajero
+            ? registro((await aplicarSentencia(consulta, "select cobranza_retenido_reintento($1, $2) as fallido", [id, motivo])).rows[0]).fallido === true
+            : (await aplicarSentencia(consulta, "select cobranza_retenido_fallido($1, $2)", [id, motivo]), true);
+          if (quedo) await deps.auditar(consulta, actorDe(empresa), { accion: "retenido_fallido_cobranza", identificador: id, cambio: { motivo } });
+          return quedo;
         });
       } catch {
-        // Ni siquiera se pudo marcar (la base no responde): el retenido sigue pendiente y se reintenta después.
+        // Ni siquiera se pudo anotar (la base no responde): el retenido sigue pendiente y se reintenta después.
         throw error;
       }
+      // r63k-N2: un error pasajero detiene la corrida y deja el retenido pendiente (con un intento más) para el
+      // siguiente aviso o la tarea; los que vienen detrás esperan, en orden. Al quinto queda fallido y los demás siguen.
+      if (!fallido) throw error;
       registrar("error", "retenido_fallido", { motivo });
       procesados += 1;
       continue;
