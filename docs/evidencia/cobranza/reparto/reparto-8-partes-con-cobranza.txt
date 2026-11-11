@@ -1,6 +1,6 @@
 # Reparto real con cobranza: playwright test --list --shard=N/8 (docs/evidencia/ola-r2-pld/reparto/reparto-real.mjs.txt), máximos del CI, fijo 90 s
 parte 1/8:  27 pruebas ·  314 s de pruebas · ~404 s · normales después de GPU: 25 · fondo-pruebas.ts 181, accesibilidad 133
-parte 2/8:  28 pruebas ·  317 s de pruebas · ~407 s · normales después de GPU: 0 · aprobaciones 40, claves-repetidas 31, cobranza 245
+parte 2/8:  28 pruebas ·  261 s de pruebas · ~351 s · normales después de GPU: 0 · aprobaciones 40, claves-repetidas 31, cobranza 190
 parte 3/8:  23 pruebas ·  338 s de pruebas · ~428 s · normales después de GPU: 0 · csp-evidencia 20, csp 252, demostracion 66
 parte 4/8:  24 pruebas ·  323 s de pruebas · ~413 s · normales después de GPU: 6 · demostracion 36, entrada 40, flujo-de-caja 53, fondo-pruebas.ts 120, invitacion 42, marco 31
 parte 5/8:  27 pruebas ·  296 s de pruebas · ~386 s · normales después de GPU: 0 · marco 36, nomina 31, operacion 228

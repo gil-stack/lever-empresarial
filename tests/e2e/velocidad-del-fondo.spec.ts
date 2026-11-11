@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { pruebasDelFondo } from "./fondo-pruebas";
 import { INICIO, entrar } from "./marco-apoyo";
 
-// velocidad-del-fondo.spec.ts (después de roles): la parte 8, la última, con seis de GPU.
+// velocidad-del-fondo.spec.ts (después de roles): la parte 8, la última, con cinco de GPU.
 // Las pruebas se definen en fondo-pruebas.ts y se reparten en cuatro archivos (abanico-del-fondo, fondo, optica-retina y
 // velocidad-del-fondo), cuyo nombre los deja en distintos lugares del orden alfabético. El reparto de la e2e corta por número de
 // pruebas, en orden, y las pruebas con GPU emulada tardan en el CI de 34 a 132 s cada una (WebGL por software): el acomodo sale
