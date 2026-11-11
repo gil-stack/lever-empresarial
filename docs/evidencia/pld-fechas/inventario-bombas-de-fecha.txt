@@ -40,3 +40,27 @@
 - tests/e2e/cobranza.spec.ts:48 y tests/e2e/runway.spec.ts:38: ya usan hoyEnMexico al momento de usarla.
 - tests/cobranza/reglas-base.test.ts:189 y :224, pagado_el = current_date (UTC): ninguna regla compara pagado_el con
   «hoy» (solo la forma del estado y su inmutabilidad), así que no explota.
+
+## scripts/ (r66-N2; recorridos de evidencia y altas por la dueña, no corren en el CI)
+grep -rnE "toISOString\(\)\.slice\(0, ?10\)|current_date|now\(\)::date|T00:00|Date\.now\(\) - |hoyEnMexico|getDate\(\)|E2E_TODAY|new Date\(\)" scripts
+- scripts/evidencia/inicio-pendientes.mjs:61 y scripts/evidencia/ola1b-consola/flujos.mjs:16, fecha(dias) en UTC: se
+  usa con +5, +6, +10, +20 y +25 (futuros a cualquier hora de México) y con −2 para una obligación pasada, sin mínimo.
+- scripts/evidencia/ola-r2-pld/preparar.ts:150 y :213 y scripts/evidencia/ola-2b/preparar.ts:102, current_date ± N
+  días en pagos de ejemplo: ninguna regla compara esas fechas con «hoy» en México.
+- scripts/evidencia/ola1b-superficies.mjs:360 (alta_en = current_date) y scripts/evidencia/ola-r-alta.mjs:1360
+  (fecha_archivo = current_date): ni alta_en ni fecha_archivo tienen una regla contra «hoy» en la base.
+- scripts/evidencia/ola-r2-pld.mjs:43 y scripts/evidencia/ola1b-consola/flujos.mjs:24: «hoy» en México al momento de
+  usarlo. Los preparar.ts y flujo-de-caja-*.ts lo calculan con hoyEnMexico(new Date()) al sembrar, en un solo paso.
+- scripts/evidencia/flujo-de-caja.mjs:86 y :96, ola-r2-pld.mjs:111 y :126 e inicio-pendientes.mjs:331: aritmética o
+  formato de una fecha dada, sin «ahora».
+- Los Date.now() − inicio (seguridad-cuentas, enumeracion-tope, ola-2b-navegacion, ola-r-alta, ola-r2-pld) miden
+  duraciones. personal-por-la-duena.ts:82 y :96 pasan el instante actual, no un día.
+Sin bombas en scripts/.
+
+## pld-postgres.test.ts cruzando la medianoche a la mitad de la suite (r66-N1, arreglada en este PR)
+- :140 calculaba `hoy` una sola vez al arrancar; sesiones y manifiestos se fechan con él, y propuestas y documentos con
+  la hora de la base. Arrancando a las 23:59:57 de México fallaban 5 de 28 (propuesta_posterior_a_la_sesion ×3 y el
+  manifiesto con hasta: hoy). Calcular `hoy` en cada uso no basta: una misma prueba registra la sesión de hoy y la
+  propuesta segundos después, y si la medianoche cae entre las dos la regla la rechaza con razón. Por eso la suite
+  espera a que pase la medianoche si faltan menos de 10 min (la suite dura de 3.7 a 14 s en local y test:db completo
+  238 s en el CI). Evidencia en cruce-de-medianoche-r66-n1.txt.

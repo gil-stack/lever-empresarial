@@ -75,7 +75,7 @@ import {
 } from "../../src/server/pld/index.ts";
 import { aplicarArchivo, conBaseDesechable, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
 import { almacenEnMemoria, armarBorrador, PDF, personal, SESION_SOFIPO } from "../operacion/apoyo-alta-regulada.ts";
-import { minutosAtrasDeHoy } from "./momento-en-mexico.ts";
+import { esperarSiLlegaLaMedianoche, minutosAtrasDeHoy } from "./momento-en-mexico.ts";
 
 const urlAdmin = process.env.AISLAMIENTO_DATABASE_URL?.trim() ?? "";
 const MIGRACIONES = join(dirname(fileURLToPath(import.meta.url)), "../../db/migrations");
@@ -100,6 +100,11 @@ const CLABE = "002180701150123452";
 
 describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, () => {
   it("candado, perfil, reglas en vivo, avisos confidenciales, Comité, dictamen, reportes, conservación y RLS", async (t) => {
+    // r66-N1: las sesiones y los manifiestos se fechan con el `hoy` de abajo y las propuestas y los documentos con la
+    // hora de la base; una corrida que cruza la medianoche de México mezcla dos días. Toda la suite dura menos de 4 min
+    // en el CI (test:db completo, 238 s) y de 15 s en local: con menos de 10 min para la medianoche, espera a que pase.
+    const esperado = await esperarSiLlegaLaMedianoche(10 * 60_000);
+    if (esperado > 0) t.diagnostic(`Esperó ${Math.round(esperado / 1000)} s a que pasara la medianoche de México.`);
     exigirBaseDesechable();
     await conBaseDesechable(urlAdmin, async (urlDuena) => {
       for (const archivo of readdirSync(MIGRACIONES).sort()) if (archivo.endsWith(".sql")) aplicarArchivo(urlDuena, join(MIGRACIONES, archivo));
