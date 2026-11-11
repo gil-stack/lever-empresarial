@@ -210,6 +210,19 @@ export async function avisarAlEquipo(
   plantilla: { asunto: string; html: string; texto: string },
   llave: string,
 ): Promise<number> {
+  return (await avisarAlEquipoConMotivo(c, deps, plantilla, llave)).enviados;
+}
+
+/**
+ * Lo mismo, y además por qué no se intentó mandar nada: la empresa no tiene a nadie activo de administración o
+ * finanzas, o es de demostración. Un envío que falló (el proveedor o la base) no lleva motivo: se puede reintentar.
+ */
+export async function avisarAlEquipoConMotivo(
+  c: { empresa: { id: string; operadorId: string; demostracion: boolean } },
+  deps: DependenciasCobranza | undefined,
+  plantilla: { asunto: string; html: string; texto: string },
+  llave: string,
+): Promise<{ enviados: number; sinEnvio: "sin_destinatarios" | "demostracion" | null }> {
   const registrar = deps?.registrar ?? registrarPorDefecto;
   try {
     const correos = await conContexto({ rol: "plataforma_cliente", companyId: c.empresa.id, operadorId: c.empresa.operadorId }, async (consulta) => {
@@ -227,7 +240,8 @@ export async function avisarAlEquipo(
       );
       return r.rows.map(registro).map((f) => texto(f.correo));
     });
-    if (c.empresa.demostracion || correos.length === 0) return 0;
+    if (c.empresa.demostracion) return { enviados: 0, sinEnvio: "demostracion" };
+    if (correos.length === 0) return { enviados: 0, sinEnvio: "sin_destinatarios" };
     const enviador = (deps?.enviador ?? (() => enviadorDesdeEntorno()))();
     let enviados = 0;
     for (const [indice, para] of correos.entries()) {
@@ -238,10 +252,10 @@ export async function avisarAlEquipo(
         registrar({ evento: "aviso_cobranza_fallido", empresa: c.empresa.id, indice });
       }
     }
-    return enviados;
+    return { enviados, sinEnvio: null };
   } catch {
     registrar({ evento: "aviso_cobranza_no_preparado", empresa: c.empresa.id });
-    return 0;
+    return { enviados: 0, sinEnvio: null };
   }
 }
 

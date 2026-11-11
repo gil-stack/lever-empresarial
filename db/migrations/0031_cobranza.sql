@@ -1318,6 +1318,8 @@ GRANT EXECUTE ON FUNCTION cobranza_retenido_reintento(uuid, text) TO plataforma_
 
 -- r63m: los fallidos de la empresa del contexto cuyo correo a la empresa (decisión de Gil, 2026-11-11) todavía no salió:
 -- sin un evento aviso_retenido_fallido_cobranza con enviados > 0. La tarea diaria vuelve a mandarlo con la misma llave.
+-- r63n (decisión del líder): solo los envíos que fallaron; si no había a quién mandarlo, el evento lleva su motivo
+-- (sin_destinatarios o demostracion) y no se reintenta.
 CREATE FUNCTION cobranza_fallidos_sin_aviso()
 RETURNS TABLE (id uuid, aviso jsonb, tipo text, monto_centavos bigint, recibido_el date)
 LANGUAGE plpgsql STABLE SECURITY DEFINER
@@ -1332,7 +1334,7 @@ BEGIN
      AND NOT EXISTS (SELECT 1 FROM audit_log a
                       WHERE a.entidad = 'collection_held_events' AND a.identificador = h.id
                         AND a.accion = 'aviso_retenido_fallido_cobranza'
-                        AND (a.cambio->>'enviados')::integer > 0)
+                        AND ((a.cambio->>'enviados')::integer > 0 OR a.cambio ? 'motivo'))
    ORDER BY h.procesado_en, h.id;
 END;
 $$;

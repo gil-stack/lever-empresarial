@@ -348,6 +348,20 @@ async function escenario(url: string): Promise<void> {
     await corrida(alBuzonBeta);
     assert.equal(buzonBeta.filter(del03).length, reenviados.length, "la tercera corrida no lo reenvía");
     assert.equal(avisosDe03("is not null"), 3);
+    // r63n (decisión del líder): si la empresa no tiene a nadie activo de administración o finanzas, queda un solo
+    //    evento con el motivo sin_destinatarios y la tarea no lo reintenta cada día (el de arriba, que falló por el
+    //    proveedor, sí se reintentó).
+    const delta = await empresa("DEL150301AB4", "601", "Delta Sin Equipo Retenidos", "acc_RetenidosDelta01");
+    ejecutar(url, `set session_replication_role = replica; update memberships set estado = 'suspendida' where company_id = '${delta.id}'; set session_replication_role = origin;`);
+    retenidoFallido(delta.id, "evt_SinEquipo01");
+    assert.equal(await procesarRetenidos(delta.id, operador, { auditar, enviador: alBuzonBeta, urlPublica: () => "https://lever.ejemplo.mx" }), 1);
+    await corrida(alBuzonBeta);
+    await corrida(alBuzonBeta);
+    const eventosSinEquipo = consultarJson<{ enviados: string; motivo: string | null }[]>(url, `select json_agg(x) from (
+      select a.cambio->>'enviados' as enviados, a.cambio->>'motivo' as motivo from audit_log a join collection_held_events h on h.id = a.identificador
+       where h.evento_id = 'evt_SinEquipo01' and a.accion = 'aviso_retenido_fallido_cobranza') x`);
+    assert.deepEqual(eventosSinEquipo, [{ enviados: "0", motivo: "sin_destinatarios" }], "un solo evento, sin reintento diario");
+    assert.equal(buzonBeta.filter((m) => m.idempotencia.startsWith("cobranza-retenido-fallido/") && !del03(m)).length, 0);
 
     // r63j-N2 a) El aviso toma el candado y retiene (la empresa sigue suspendida) mientras la reactivación espera ese
     //    mismo candado: al reactivar, el retenido ya está ahí y se aplica. Antes el aviso revisaba en una transacción y
