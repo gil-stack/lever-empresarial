@@ -17,3 +17,16 @@ partes (s de pruebas): 133, 317, 332, 506, 501, 281, 400, 159 · peor 506 (~596 
 
 # Con la regla como preferencia (peso 0.4) y un lugar antes de accesibilidad (abanico-del-fondo): el plan elegido
 partes (s de pruebas, simulador): 314, 317, 318, 323, 296, 349, 355, 356 · peor 356 · 36 normales después de una de GPU
+
+# r63-rep-N1: el mismo reparto (sin cambios) con los MÁXIMOS reales de las pruebas con GPU emulada
+# (vercel ci grep "con GPU rápida (emulado) a DPR" --all-branches --runs 50: 14 corridas con esas pruebas).
+# El JSON tenía la mediana como máximo (lienzo a DPR 2: 114 s; el máximo es 162 s; tarea ajena 144; estable 150).
+parte 1/8:  27 pruebas ·  332 s de pruebas · ~422 s · normales después de GPU: 25 · fondo-pruebas.ts 199, accesibilidad 133
+parte 2/8:  28 pruebas ·  261 s de pruebas · ~351 s · normales después de GPU: 0 · aprobaciones 40, claves-repetidas 31, cobranza 190
+parte 3/8:  23 pruebas ·  338 s de pruebas · ~428 s · normales después de GPU: 0 · csp-evidencia 20, csp 252, demostracion 66
+parte 4/8:  24 pruebas ·  359 s de pruebas · ~449 s · normales después de GPU: 6 · demostracion 36, entrada 40, flujo-de-caja 53, fondo-pruebas.ts 156, invitacion 42, marco 31
+parte 5/8:  27 pruebas ·  296 s de pruebas · ~386 s · normales después de GPU: 0 · marco 36, nomina 31, operacion 228
+parte 6/8:  21 pruebas ·  397 s de pruebas · ~487 s · normales después de GPU: 1 · operacion 108, fondo-pruebas.ts 290
+parte 7/8:  32 pruebas ·  355 s de pruebas · ~445 s · normales después de GPU: 0 · fondo-pruebas.ts 12, pagos-proveedores 92, passkeys 16, personas 26, pld 209
+parte 8/8:  16 pruebas ·  359 s de pruebas · ~449 s · normales después de GPU: 4 · roles 27, fondo-pruebas.ts 327, velocidad-del-fondo 5
+peor parte ~487 s · normales después de una con GPU: 36

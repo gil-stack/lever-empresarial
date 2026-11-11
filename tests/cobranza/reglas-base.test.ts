@@ -419,4 +419,55 @@ async function reglas(app: string, ids: Ids, duena: string): Promise<void> {
     await anular(c, d);
     return (await c.query<{ estado: string }>("select estado from collection_payments where id = $1", [d])).rows[0]!.estado;
   }), "anulado");
+
+  // r63i-N1: el aviso de Fintoc a una empresa suspendida se retiene. Beta queda suspendida solo para estas reglas.
+  const B = ids.beta;
+  const aviso = (evento: string) => JSON.stringify({ eventoId: evento, tipo: "transfer.inbound.succeeded", modo: "test", abono: null, devolucion: null });
+  const retener = (c: Cliente, evento: string) =>
+    c.query<{ id: string | null }>("select cobranza_retener_aviso($1, 'transfer.inbound.succeeded', 100000, '2026-11-10', $2::jsonb) as id", [evento, aviso(evento)]);
+  const sistema = "";
+  // La tabla solo se escribe por las funciones: el cliente no tiene permisos de escritura y por eso no lleva
+  // bloqueo_empresa_suspendida (que, además, no frena a una definer: revisa current_user).
+  const escritura = consultarJson<{ grants: number; disparador: number }[]>(duena, `select json_agg(x) from (select
+    (select count(*) from information_schema.role_table_grants where table_name = 'collection_held_events' and grantee = 'plataforma_cliente' and privilege_type in ('INSERT', 'UPDATE', 'DELETE'))::int as grants,
+    (select count(*) from pg_trigger where tgrelid = 'collection_held_events'::regclass and tgname = 'bloqueo_empresa_suspendida')::int as disparador) x`);
+  assert.deepEqual(escritura, [{ grants: 0, disparador: 0 }]);
+  await rechaza("r63i-N1 el cliente no escribe la tabla de retenidos", "42501", (c) => c.query(
+    "insert into collection_held_events (id, company_id, proveedor, evento_id, tipo, monto_centavos, recibido_el, aviso) values (gen_random_uuid(), $1, 'fintoc', 'evt_Directo1', 'transfer.inbound.succeeded', 1, '2026-11-10', $2::jsonb)",
+    [E, aviso("evt_Directo1")]), C, sistema);
+  await rechaza("r63i-N1 no se retiene con la empresa activa", "empresa_no_suspendida", (c) => retener(c, "evt_Activa1"), C, sistema);
+  ejecutar(duena, `set session_replication_role = replica; update companies set estado = 'suspendida' where id = '${B}'; set session_replication_role = origin;`);
+  try {
+    await rechaza("r63i-N1 una persona no retiene avisos", "sin_permiso_para_cobranza", (c) => retener(c, "evt_Persona1"), C, ids.adminB, B);
+    assert.deepEqual(await acepta("r63i-N1 el sistema retiene y el mismo evento no se duplica", async (c) => {
+      const primero = (await retener(c, "evt_Suspendida1")).rows[0]!.id;
+      const segundo = (await retener(c, "evt_Suspendida1")).rows[0]!.id;
+      const pendientes = (await c.query("select id from cobranza_retenidos_de_empresa()")).rows.length;
+      return [typeof primero, segundo, pendientes];
+    }, C, sistema, B), ["string", null, 0]);
+    await rechaza("r63i-N1 el evento del aviso es el de su renglón", "collection_held_events_evento", (c) =>
+      c.query("select cobranza_retener_aviso('evt_Uno1', 'transfer.inbound.succeeded', 100000, '2026-11-10', $1::jsonb)", [aviso("evt_Otro1")]), C, sistema, B);
+    await rechaza("r63i-N1 no se procesa un retenido con la empresa suspendida", "empresa_suspendida", async (c) => {
+      const id = (await retener(c, "evt_Suspendida2")).rows[0]!.id;
+      await c.query("select cobranza_retenido_procesado($1, 'registrado')", [id]);
+    }, C, sistema, B);
+    // La propia empresa suspendida no escribe: el pago a mano y el estado de cuenta pasan por collection_payments.
+    await rechaza("r63i-N1 la empresa suspendida no registra pagos", "empresa_suspendida", async (c) => {
+      const id = randomUUID();
+      await evento(c, B, ids.adminB, "registrar_pago_cobranza", "collection_payments", id);
+      await c.query(`insert into collection_payments (id, company_id, fuente, id_externo, monto_centavos, recibido_el, registrado_por)
+        values ($1, $2, 'manual', $3, 100000, '2026-11-10', $4)`, [id, B, randomUUID(), ids.adminB]);
+    }, C, ids.adminB, B);
+    // Nadie lo reescribe ni lo borra, ni la dueña.
+    ejecutar(duena, `insert into collection_held_events (id, company_id, proveedor, evento_id, tipo, monto_centavos, recibido_el, aviso)
+      values ('${randomUUID()}', '${B}', 'fintoc', 'evt_Duena2', 'transfer.inbound.succeeded', 100000, '2026-11-10', '${aviso("evt_Duena2")}'::jsonb)`);
+    assert.throws(() => ejecutar(duena, "update collection_held_events set monto_centavos = 1 where evento_id = 'evt_Duena2'"), /cobranza_inmutable/);
+    assert.throws(() => ejecutar(duena, "delete from collection_held_events where evento_id = 'evt_Duena2'"), /cobranza_inmutable/);
+    assert.throws(() => ejecutar(duena, "update collection_held_events set estado = 'procesado', procesado_en = now(), efecto = 'inventado' where evento_id = 'evt_Duena2'"), /collection_held_events_estado/);
+    // La bandeja: solo Cumplimiento y Auditoría (la administración de la plataforma, no).
+    await rechaza("r63i-N1 la bandeja de retenidos es de Cumplimiento", "sin_permiso_para_cobranza", (c) => c.query("select * from cobranza_abonos_retenidos()"),
+      "plataforma_sofipo", "99999999-9999-4999-8999-999999999998", "");
+  } finally {
+    ejecutar(duena, `set session_replication_role = replica; update companies set estado = 'activa' where id = '${B}'; set session_replication_role = origin;`);
+  }
 }

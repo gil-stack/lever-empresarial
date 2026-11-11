@@ -136,6 +136,66 @@ Unos 120-130 MB son la base del proceso. El tope de RSS ahora lo pone un libro l
 | r63b-N3 (P3) | Un archivo nuevo sin abonos nuevos responde «No había nada nuevo · Su único abono ya estaba en Lever: no se importó ni se duplicó nada.» (`avisoSinNuevos`), sin «Quedó asentado» | `src/dominio/cobranza/cobranza.test.ts` |
 | r63c-N1 (P3) | El préstamo de TEMP de `reglas-base` se devuelve en un `finally` y después se vuelve a exigir el 42501 | Una sonda forzada a fallar no deja el permiso (`reglas-base`) |
 
+## Ronda r63i: un abono de Fintoc a una empresa suspendida (decisión de Gil: retenerlo y avisar)
+
+**Antes:** `atenderAviso` escribía el pago como `plataforma_cliente` y `bloqueo_empresa_suspendida` (0028) lo frenaba con `empresa_suspendida`. La ruta respondía 500 sin guardar nada (0 pagos, 0 «sin destino», 0 eventos) y, cuando Fintoc dejaba de reintentar, el abono se perdía sin que nadie se enterara.
+
+**Ahora:**
+- **Retener.** Con la empresa suspendida o de baja, el aviso (abono o devolución) se guarda **sin aplicarse a ningún cargo** en `collection_held_events`. Lo escribe la definer `cobranza_retener_aviso` (0031, `search_path = public, pg_temp`): solo el sistema y solo con la empresa suspendida o de baja.
+  - Deja el evento `retener_aviso_cobranza` en la bitácora: proveedor, tipo y monto, sin datos del ordenante.
+  - El log tampoco lleva datos: solo `aviso_retenido` con el id del evento.
+  - La ruta responde 200 «retenido» solo después de guardarlo; si no se pudo, 500 y Fintoc reintenta.
+  - El reintento idéntico responde 200 «repetido» y no duplica (llave única por evento).
+- **La carrera.**
+  - El aviso revisa el estado de la empresa con su candado tomado.
+  - Si la suspensión confirma con el aviso a medio escribir, la base lo frena con `empresa_suspendida`; nada de lo anterior queda, y el aviso se retiene en su propia transacción con 200.
+  - Si el aviso confirmó antes de la suspensión, queda aplicado como cualquier otro.
+- **El aviso a Cumplimiento.** En su bandeja (`/operacion/cumplimiento`) aparecen la métrica «Abonos retenidos» y la sección «Abonos retenidos de empresas suspendidas»: empresa, abono o devolución, monto y fechas.
+  - La lee la definer `cobranza_abonos_retenidos`, que solo abre a Cumplimiento y a Auditoría; Auditoría solo consulta, porque la sección no tiene botones.
+  - Originación, Aprobación y Administración no abren la bandeja.
+  - No se usó `operational_alerts`: exige una persona que la crea y otra responsable, y un aviso del sistema no tiene ninguna de las dos.
+- **Reactivar.** Cuando Aprobación aprueba la reactivación, la acción, después del commit, corre `procesarRetenidos`: cada retenido pasa por el **camino normal**, con el freno de duplicados (`pagosParecidosDeOtraFuente`), el cliente sin duda y el evento ya visto.
+  - Va uno por transacción, con el candado de la empresa, y queda «procesado» con su efecto y el evento `procesar_retenido_cobranza`.
+  - Nada se aplica dos veces: dos corridas a la vez, la tarea diaria y el reintento de Fintoc después de reactivar dan «repetido» o 0.
+  - Si falla después de la reactivación, la tarea diaria lo vuelve a intentar.
+- **Dada de baja.** El retenido se queda en la bandeja de Cumplimiento **indefinidamente**, con la marca «Empresa de baja», y nunca se aplica solo: no hay reactivación desde la baja. Cumplimiento y la plataforma resuelven fuera de Lever qué hacer con ese dinero.
+- **La propia empresa suspendida no escribe** (lo de siempre, ahora probado):
+  - el pago a mano y el estado de cuenta se rechazan;
+  - la consola de cobranza dice «La empresa está suspendida · No se pueden hacer cambios mientras esté suspendida. Comunícate con Lever.»; antes decía «La base no respondió», lo encontró el recorrido.
+
+**Pruebas que caen con el código de `36564ea`:**
+- `tests/cobranza/retenidos-postgres.test.ts`, nueva en `test:db`:
+  - retenido con 200, sin pago y con su evento sin datos del ordenante;
+  - el reintento no duplica;
+  - la bandeja para Cumplimiento y Auditoría, y no para Originación;
+  - pago a mano y estado de cuenta rechazados;
+  - la tarea diaria no toca a la suspendida;
+  - al reactivar se aplica una vez, también con dos corridas a la vez;
+  - la carrera en tres órdenes: el aviso antes de la suspensión; la suspensión mientras el aviso espera el candado; la suspensión con el aviso a medio escribir. Esta última pasa por el `catch`: quitarlo la tumba con `empresa_suspendida`.
+- `tests/cobranza/reglas-base.test.ts`:
+  - la tabla no tiene permisos de escritura para el cliente ni lleva `bloqueo_empresa_suspendida`, que de todos modos no frena a una definer;
+  - el cliente no la escribe (42501);
+  - no se retiene con la empresa activa ni lo hace una persona;
+  - el evento del aviso es el de su renglón;
+  - no se procesa con la empresa suspendida;
+  - la empresa suspendida no registra pagos;
+  - nadie la reescribe ni la borra, ni la dueña;
+  - la bandeja es solo de Cumplimiento.
+
+**Recorrido con clics** (`scripts/evidencia/cobranza/retenidos.spec.ts.txt`):
+- No corre en el CI, para no mover el reparto. Se copia a `tests/e2e/zz-retenidos.spec.ts` y corre con `sh scripts/ci/pruebas-e2e.sh tests/e2e/zz-retenidos.spec.ts`.
+- Recorre: configurar y dar de alta un cliente con clics; Originación pide la suspensión y Aprobación la aprueba; llega un aviso firmado («retenido») y su reintento («repetido»).
+- Cumplimiento lo ve en su bandeja con el conteo y Originación no la abre. «Registrar pago» en la empresa suspendida muestra el mensaje de la suspensión y no deja pago.
+- Cumplimiento pide reactivar y Aprobación lo aprueba: el abono queda aplicado una vez, el cargo pagado, la ficha con un pago y la bandeja vacía.
+- Capturas `retenidos-*.jpg`.
+
+**Lo que confirmó Gil:**
+- **Un abono a una empresa suspendida se retiene y se avisa a Cumplimiento** (r63i-N1), como se describe arriba.
+- **Los cobros recibidos quedan fuera de las reglas PLD** (r63i-N2):
+  - El dinero llega a la cuenta Fintoc o al banco de la empresa, no a la SOFIPO.
+  - Por eso `pld_operaciones` solo se alimenta de pagos a proveedores y nómina, y un cobro aplicado no genera operación ni alerta.
+  - Si el Oficial de Cumplimiento pide vigilarlos, se agrega una regla.
+
 ## Con la CSP estricta del #62 (en `main` desde `9edb4e5`)
 
 - **Merge de `main`** en `5644583`, sin conflictos. `next.config.ts` ya traía las dos fuentes del comprobante (`/consola/cobros/comprobante/:id` y `/c/:empresa/consola/cobros/comprobante/:id`) con `POLITICA_DESCARGA`, y `esDescarga` del #62 reconoce `…/comprobante/[id]`. `encabezados.test.ts` pasa con el registro de cobranza, y la e2e 5 comprueba la respuesta real del comprobante con y sin `/c/<empresa>`.

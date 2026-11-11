@@ -1090,6 +1090,166 @@ GRANT EXECUTE ON FUNCTION cobranza_avisos_sin_destino(integer) TO plataforma_sof
 ALTER TABLE collection_unrouted_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE collection_unrouted_events FORCE ROW LEVEL SECURITY;
 
+-- Avisos retenidos (r63i-N1, decisión de Gil): un abono o una devolución de
+-- Fintoc a una empresa suspendida o dada de baja. La empresa no escribe
+-- (bloqueo_empresa_suspendida, 0028) y el dinero ya llegó a su CLABE: el aviso
+-- queda aquí sin aplicarse a ningún cargo, Cumplimiento lo ve en su bandeja y,
+-- al reactivar la empresa, pasa por el camino normal (con el freno de
+-- duplicados y el evento visto: nada se aplica dos veces). Solo se escribe con
+-- las funciones de abajo; nadie lo borra ni lo reescribe.
+CREATE TABLE collection_held_events (
+  id uuid PRIMARY KEY,
+  company_id uuid NOT NULL REFERENCES companies (id) ON DELETE RESTRICT,
+  proveedor text NOT NULL,
+  evento_id text NOT NULL,
+  tipo text NOT NULL,
+  monto_centavos bigint NOT NULL,
+  recibido_el date NOT NULL,
+  aviso jsonb NOT NULL,
+  estado text NOT NULL DEFAULT 'retenido',
+  retenido_en timestamptz NOT NULL DEFAULT now(),
+  procesado_en timestamptz,
+  efecto text,
+  CONSTRAINT collection_held_events_unico UNIQUE (proveedor, evento_id),
+  CONSTRAINT collection_held_events_proveedor CHECK (proveedor IN ('fintoc')),
+  CONSTRAINT collection_held_events_evento CHECK (evento_id ~ '^evt_[A-Za-z0-9]{1,64}$' AND aviso ->> 'eventoId' = evento_id),
+  CONSTRAINT collection_held_events_tipo CHECK (tipo IN ('transfer.inbound.succeeded', 'transfer.inbound.returned')),
+  CONSTRAINT collection_held_events_monto CHECK (monto_centavos BETWEEN 1 AND 9000000000000000),
+  CONSTRAINT collection_held_events_fecha CHECK (recibido_el >= DATE '2000-01-01'),
+  CONSTRAINT collection_held_events_estado CHECK (
+    (estado = 'retenido' AND procesado_en IS NULL AND efecto IS NULL)
+    OR (estado = 'procesado' AND procesado_en IS NOT NULL AND efecto IN ('registrado', 'repetido', 'devuelto', 'sin_pago'))
+  )
+);
+
+CREATE INDEX collection_held_events_pendientes ON collection_held_events (company_id, retenido_en) WHERE estado = 'retenido';
+
+COMMENT ON TABLE collection_held_events IS
+  'Aviso del proveedor que llegó con la empresa suspendida o de baja: sin aplicar hasta reactivarla (r63i-N1).';
+
+CREATE FUNCTION collection_held_events_revisar()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF TG_OP = 'DELETE' OR OLD.estado <> 'retenido' OR NEW.estado <> 'procesado'
+    OR (to_jsonb(NEW) - 'estado' - 'procesado_en' - 'efecto') IS DISTINCT FROM (to_jsonb(OLD) - 'estado' - 'procesado_en' - 'efecto') THEN
+    RAISE EXCEPTION 'cobranza_inmutable';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER collection_held_events_revisar
+BEFORE UPDATE OR DELETE ON collection_held_events
+FOR EACH ROW EXECUTE FUNCTION collection_held_events_revisar();
+
+-- La ruta del aviso (plataforma_cliente, el sistema con la empresa en el contexto) retiene el aviso.
+-- Solo con la empresa suspendida o de baja. Devuelve el id nuevo, o nulo si el evento ya estaba retenido.
+CREATE FUNCTION cobranza_retener_aviso(p_evento text, p_tipo text, p_monto bigint, p_fecha date, p_aviso jsonb)
+RETURNS uuid
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  nuevo uuid;
+BEGIN
+  IF app_usuario() IS NOT NULL OR app_empresa() IS NULL THEN
+    RAISE EXCEPTION 'sin_permiso_para_cobranza';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM companies c WHERE c.id = app_empresa() AND c.estado IN ('suspendida', 'baja')) THEN
+    RAISE EXCEPTION 'empresa_no_suspendida';
+  END IF;
+  INSERT INTO collection_held_events (id, company_id, proveedor, evento_id, tipo, monto_centavos, recibido_el, aviso)
+  VALUES (gen_random_uuid(), app_empresa(), 'fintoc', p_evento, p_tipo, p_monto, p_fecha, p_aviso)
+  ON CONFLICT (proveedor, evento_id) DO NOTHING
+  RETURNING id INTO nuevo;
+  RETURN nuevo;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION cobranza_retener_aviso(text, text, bigint, date, jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cobranza_retener_aviso(text, text, bigint, date, jsonb) TO plataforma_cliente;
+
+-- Los retenidos de la empresa del contexto, ya activa, en el orden en que llegaron. El que llama tiene la empresa
+-- bloqueada (bloquearEmpresa): dos procesos a la vez se forman y el segundo ya no los ve.
+CREATE FUNCTION cobranza_retenidos_de_empresa()
+RETURNS TABLE (id uuid, aviso jsonb)
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF app_usuario() IS NOT NULL OR app_empresa() IS NULL THEN
+    RAISE EXCEPTION 'sin_permiso_para_cobranza';
+  END IF;
+  RETURN QUERY SELECT h.id, h.aviso FROM collection_held_events h
+    JOIN companies c ON c.id = h.company_id AND c.estado = 'activa'
+   WHERE h.company_id = app_empresa() AND h.estado = 'retenido'
+   ORDER BY h.retenido_en, h.id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION cobranza_retenidos_de_empresa() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cobranza_retenidos_de_empresa() TO plataforma_cliente;
+
+-- El retenido ya pasó por el camino normal (en la misma transacción): queda procesado con lo que resultó.
+CREATE FUNCTION cobranza_retenido_procesado(p_id uuid, p_efecto text)
+RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF app_usuario() IS NOT NULL OR app_empresa() IS NULL THEN
+    RAISE EXCEPTION 'sin_permiso_para_cobranza';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM companies c WHERE c.id = app_empresa() AND c.estado = 'activa') THEN
+    RAISE EXCEPTION 'empresa_suspendida';
+  END IF;
+  UPDATE collection_held_events SET estado = 'procesado', procesado_en = now(), efecto = p_efecto
+   WHERE id = p_id AND company_id = app_empresa() AND estado = 'retenido';
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'retenido_ya_procesado';
+  END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION cobranza_retenido_procesado(uuid, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cobranza_retenido_procesado(uuid, text) TO plataforma_cliente;
+
+-- La bandeja de Cumplimiento (y Auditoría, que la consulta): los retenidos sin procesar del operador, sin datos
+-- personales del ordenante (monto, fechas y el tipo de aviso).
+CREATE FUNCTION cobranza_abonos_retenidos()
+RETURNS TABLE (id uuid, company_id uuid, razon_social text, estado_empresa text, tipo text, monto_centavos bigint,
+               recibido_el date, retenido_en timestamptz)
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF app_usuario() IS NULL OR NOT EXISTS (
+    SELECT 1
+      FROM platform_staff s
+      JOIN platform_staff_roles r ON r.operator_id = s.operator_id AND r.user_id = s.user_id
+     WHERE s.user_id = app_usuario() AND s.operator_id = app_operador() AND s.estado = 'activo'
+       AND r.rol IN ('cumplimiento', 'auditoria')
+  ) THEN
+    RAISE EXCEPTION 'sin_permiso_para_cobranza';
+  END IF;
+  RETURN QUERY SELECT h.id, h.company_id, c.razon_social, c.estado, h.tipo, h.monto_centavos, h.recibido_el, h.retenido_en
+    FROM collection_held_events h JOIN companies c ON c.id = h.company_id
+   WHERE c.operator_id = app_operador() AND h.estado = 'retenido'
+   ORDER BY h.retenido_en, h.id
+   LIMIT 300;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION cobranza_abonos_retenidos() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cobranza_abonos_retenidos() TO plataforma_sofipo;
+
+ALTER TABLE collection_held_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE collection_held_events FORCE ROW LEVEL SECURITY;
+
 -- Estado de cuenta ---------------------------------------------------------------------
 -- La empresa sube el archivo de su banco. El empate de columnas se recuerda por
 -- banco; cada renglón lleva su huella y no se importa dos veces.

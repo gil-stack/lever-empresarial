@@ -87,18 +87,20 @@ export async function solicitarCambioDeSuspension(
  * Aprobación decide. Aprobada, la empresa cambia de estado en la misma
  * transacción, con su historial y su evento. Reactivar con una coincidencia
  * abierta lo rechaza la base (77ª): primero el dictamen de falso positivo.
+ * Devuelve la empresa y si quedó reactivada: quien llama procesa después del
+ * commit los abonos que se retuvieron mientras estuvo suspendida (r63i-N1).
  */
 export async function decidirCambioDeSuspension(
   ctx: ContextoDePersonal,
   sesion: SesionConFactor,
   entrada: { id: unknown; aprobada: boolean; motivo: unknown },
-): Promise<void> {
+): Promise<{ companyId: string; reactivada: boolean }> {
   exigirEnOperacion(ctx, "plataforma.suspension.aprobar");
   exigirAutenticacionReciente(sesion);
   if (!uuidValido(entrada.id)) throw new ErrorDeDominio("solicitud_ausente");
   const motivo = entrada.aprobada ? null : motivoEscrito(entrada.motivo, 500);
   const ahora = new Date();
-  await conContexto(basePlataforma(ctx), async (consulta) => {
+  return conContexto(basePlataforma(ctx), async (consulta) => {
     const fila = await consulta.query(
       "select company_id, tipo, estado, solicitada_por from company_suspensions where id = $1 for update",
       [entrada.id],
@@ -132,6 +134,7 @@ export async function decidirCambioDeSuspension(
       motivo,
       ocurridoEn: ahora,
     });
+    return { companyId, reactivada: entrada.aprobada && tipo === "reactivacion" };
   });
 }
 

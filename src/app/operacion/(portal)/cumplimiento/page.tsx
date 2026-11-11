@@ -8,6 +8,7 @@ import { PaginaOperacion } from "@/components/operacion/pagina";
 import { BandejaDePld } from "@/components/operacion/pld/bandeja";
 import { SinPermiso } from "@/components/operacion/sin-permiso";
 import { Hoja, Insignia, Metrica, Metricas, Monto, NotaRegla, Vacio } from "@/components/sistema";
+import { formatoPesos } from "@/dominio/centavos";
 import { ETIQUETA_GRADO } from "@/dominio/operacion";
 import { exigirContextoOperacion, leerBandejaCumplimiento, puedeEnOperacion } from "@/server/operacion";
 import { ahoraPld, leerBandejaPld } from "@/server/pld";
@@ -18,7 +19,8 @@ export const metadata: Metadata = { title: "Cumplimiento · Operación" };
 /**
  * La bandeja de Cumplimiento: coincidencias por revisar con su plazo de 24 horas (75ª),
  * versiones del expediente por dictaminar, revisiones de riesgo vencidas (27ª) y expedientes
- * aprobados sin grado de riesgo. «Vencida» se calcula al leer con la fecha de hoy en México.
+ * aprobados sin grado de riesgo, y los abonos de Fintoc retenidos de empresas suspendidas o de baja (r63i-N1).
+ * «Vencida» se calcula al leer con la fecha de hoy en México.
  * Auditoría la consulta sin botones.
  */
 export default async function CumplimientoOperacion({ searchParams }: { searchParams: Parametros<"aviso"> }) {
@@ -48,6 +50,9 @@ export default async function CumplimientoOperacion({ searchParams }: { searchPa
         </Metrica>
         <Metrica rotulo="Revisiones vencidas" nota={`${bandeja.sinCalificar.length} sin grado de riesgo`}>
           <Monto>{vencidas.length}</Monto>
+        </Metrica>
+        <Metrica rotulo="Abonos retenidos" nota="De empresas suspendidas o de baja">
+          <Monto>{bandeja.abonosRetenidos.length}</Monto>
         </Metrica>
       </Metricas>
       <Hoja id="coincidencias-titulo" titulo="Coincidencias con listas">
@@ -122,10 +127,40 @@ export default async function CumplimientoOperacion({ searchParams }: { searchPa
           </ul>
         )}
       </Hoja>
+      <Hoja id="retenidos-titulo" titulo="Abonos retenidos de empresas suspendidas">
+        {bandeja.abonosRetenidos.length === 0 ? (
+          <Vacio titulo="Sin abonos retenidos">
+            Si Fintoc avisa un abono o una devolución de una empresa suspendida o dada de baja, queda aquí sin aplicarse.
+          </Vacio>
+        ) : (
+          <ul className="operacion-lista">
+            {bandeja.abonosRetenidos.map((retenido) => (
+              <li key={retenido.id}>
+                <div className="operacion-fila">
+                  <div className="operacion-fila-cuerpo">
+                    <h3>
+                      <Link href={`/operacion/clientes/${retenido.companyId}`}>{retenido.razonSocial}</Link>
+                    </h3>
+                    <p className="operacion-meta">
+                      <span>
+                        {retenido.devolucion ? "Devolución" : "Abono"} de {formatoPesos(retenido.montoCentavos)}
+                      </span>
+                      <span>Recibido el {fechaDia(retenido.recibidoEl)}</span>
+                      <span>Avisado {fechaHora(retenido.retenidoEn)}</span>
+                    </p>
+                  </div>
+                  <Insignia tono="aviso">{retenido.empresaDeBaja ? "Empresa de baja" : "Se aplica al reactivar"}</Insignia>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Hoja>
       {pld ? <BandejaDePld bandeja={pld} /> : null}
       <NotaRegla>
         Lever no transmite reportes a la UIF: registra la coincidencia, el plazo de 24 horas, quién la atendió y el folio que
-        Cumplimiento presentó por su propia vía.
+        Cumplimiento presentó por su propia vía. Un abono retenido no se aplica a ningún cargo: al reactivar la empresa pasa
+        por las reglas normales de cobranza; el de una empresa dada de baja se queda aquí.
       </NotaRegla>
     </PaginaOperacion>
   );

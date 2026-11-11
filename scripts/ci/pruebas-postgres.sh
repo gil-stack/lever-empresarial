@@ -70,6 +70,7 @@ unset DATABASE_URL
   tests/flujo/runway-postgres.test.ts \
   tests/flujo/runway-reglas-base.test.ts \
   tests/cobranza/reglas-base.test.ts \
+  tests/cobranza/retenidos-postgres.test.ts \
   tests/esquema/empresa-suspendida.test.ts \
   tests/pld/pld-postgres.test.ts \
   tests/pld/reglas-postgres.test.ts \
