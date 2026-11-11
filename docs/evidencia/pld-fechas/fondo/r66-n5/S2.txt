@@ -1,0 +1,45 @@
+  ✘   1 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (5.3s)
+  ✘   2 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez (5.3s)
+  ✓   3 tests/e2e/fondo-pruebas.ts:236:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (5.0s)
+  ✘   4 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana (5.6s)
+  ✘   5 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 2 › estable (5.6s)
+  ✘   6 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 1 › estable (5.3s)
+  ✓   7 tests/e2e/brillo-del-fondo.spec.ts:24:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (483ms)
+  ✘   8 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez (5.2s)
+  ✘   9 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana (5.2s)
+  ✘  10 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 2 › estable (5.2s)
+  ✘  11 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 1 › estable (5.2s)
+  ✘  12 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms (5.6s)
+  ✘  13 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez (5.6s)
+  ✘  14 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez (5.2s)
+  ✘  15 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms (5.2s)
+  ✘  16 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana (5.3s)
+  ✓  17 tests/e2e/fondo-pruebas.ts:236:13 › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (5.8s)
+  ✘  18 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (4.6s)
+  ✘  19 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms (5.3s)
+  ✘  20 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (5.2s)
+  ✘  21 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 2 › arrastrar la ventana (5.2s)
+  ✘  22 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (5.2s)
+  ✘  23 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms (5.2s)
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 1, 2) × 0.85 = 41
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 1, 2) × 0.85 = 41
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 2, 2) × 0.85 = 82
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 2, 2) × 0.85 = 82
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 1, 2) × 0.85 = 41
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 1, 2) × 0.85 = 41
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 1, 2) × 0.85 = 41
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 2, 2) × 0.85 = 82
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 1, 2) × 0.85 = 41
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 2, 2) × 0.85 = 82
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 2, 2) × 0.85 = 82
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 2, 2) × 0.85 = 82
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 2, 2) × 0.85 = 82
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 1, 2) × 0.85 = 41
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 2, 2) × 0.85 = 82
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 1, 2) × 0.85 = 41
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 1, 2) × 0.85 = 41
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 2, 2) × 0.85 = 82
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 2, 2) × 0.85 = 82
+    Error: búfer de dibujo de la escena: 48 px × min(DPR 1, 2) × 0.85 = 41
+  20 failed
+  3 passed (2.1m)

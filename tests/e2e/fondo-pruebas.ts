@@ -7,6 +7,7 @@ interface CuadroLargo {
   startTime: number;
   duration: number;
   renderStart: number;
+  styleAndLayoutStart: number;
   scripts: { sourceURL: string; duration: number; invoker: string }[];
 }
 
@@ -22,7 +23,7 @@ const MS_DEL_FONDO_POR_CUADRO = 25;
  * largo por otro script de la página o por el pintado (en el CI, con la CPU compartida) no es suyo.
  * Medido con el navegador frenado ×16 y ×24 por CDP (docs/evidencia/pld-fechas/fondo/): en esos cuadros, de 53 a 137 ms,
  * el script del fondo pone de 5 a 12 ms y el resto son otros scripts de la página (el streaming de React) y su espera. `detalle` dice, de cada cuadro largo con algo del fondo, cuánto duró, cuánto
- * fue del fondo y cuánto de pintado, para leer una falla.
+ * fue del fondo y cuánto de estilo, layout y pintado, para leer una falla.
  */
 async function cuadrosLargosDelFondo(page: Page): Promise<{ archivos: number; cuadros: number; detalle: string }> {
   return page.evaluate(async (limite) => {
@@ -42,7 +43,9 @@ async function cuadrosLargosDelFondo(page: Page): Promise<{ archivos: number; cu
       }))
       .filter(({ cuadro }) => cuadro.scripts.some((script) => delFondo.has(script.sourceURL)));
     const detalle = conFondo
-      .map(({ cuadro, fondoMs }) => `${Math.round(cuadro.duration)} ms (fondo ${Math.round(fondoMs)}, pintado ${cuadro.renderStart ? Math.round(cuadro.startTime + cuadro.duration - cuadro.renderStart) : "?"})`)
+      // r66-N6: desde styleAndLayoutStart (estilo, layout y pintado). renderStart incluye los callbacks de rAF, y el fondo
+      // dibuja en uno de ellos: medido desde ahí, el «pintado» repetía el ms del fondo.
+      .map(({ cuadro, fondoMs }) => `${Math.round(cuadro.duration)} ms (fondo ${Math.round(fondoMs)}, estilo, layout y pintado ${cuadro.styleAndLayoutStart ? Math.round(cuadro.startTime + cuadro.duration - cuadro.styleAndLayoutStart) : "?"})`)
       .join("; ");
     return { archivos: delFondo.size, cuadros: conFondo.filter(({ fondoMs }) => fondoMs > limite).length, detalle };
   }, MS_DEL_FONDO_POR_CUADRO);
@@ -64,11 +67,39 @@ async function emularEquipo(page: Page, costo: { dibujoMs: number; crecerMs: num
     new MutationObserver(() => {
       if (registro.primeraPintura === undefined && document.querySelector("canvas.escena-lienzo[data-cuadros]")) registro.primeraPintura = performance.now();
     }).observe(document, { subtree: true, attributes: true, attributeFilter: ["data-cuadros"] });
+    // r66-N5: lo que se pinta de verdad. La emulación cambia la copia por una espera y fija el lienzo en 48 px, así que una
+    // regresión que agranda lo que se pinta (o lo reasigna en cada dibujo) no costaría nada aquí: se vigilan los tamaños.
+    // Cada asignación a width o height de un canvas: su máximo y cuántas veces repitió el valor que ya tenía (asignar
+    // borra el canvas y, en WebGL, reasigna el búfer de dibujo aunque el tamaño no cambie).
+    const maximoAsignado = new WeakMap<HTMLCanvasElement, [number, number]>();
+    const repetidas = new WeakMap<HTMLCanvasElement, number>();
+    let buferDelMotor: HTMLCanvasElement | null = null;
+    (["width", "height"] as const).forEach((lado, i) => {
+      const propio = Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype, lado)!;
+      Object.defineProperty(HTMLCanvasElement.prototype, lado, {
+        ...propio,
+        set(this: HTMLCanvasElement, valor: number) {
+          if (Number(valor) === propio.get!.call(this)) repetidas.set(this, (repetidas.get(this) ?? 0) + 1);
+          propio.set!.call(this, valor);
+          const maximo = maximoAsignado.get(this) ?? [0, 0];
+          maximo[i] = Math.max(maximo[i]!, propio.get!.call(this) as number);
+          maximoAsignado.set(this, maximo);
+        },
+      });
+    });
+    (window as unknown as { tamanosDelFondo: () => unknown }).tamanosDelFondo = () => {
+      const escena = document.querySelector<HTMLCanvasElement>("canvas.escena-lienzo");
+      return {
+        repetidas: { escena: escena ? (repetidas.get(escena) ?? 0) : -1, motor: buferDelMotor ? (repetidas.get(buferDelMotor) ?? 0) : -1 },
+        maximo: { escena: escena ? (maximoAsignado.get(escena) ?? [0, 0]) : [], motor: buferDelMotor ? [buferDelMotor.width, buferDelMotor.height] : [] },
+      };
+    };
     const copiar = CanvasRenderingContext2D.prototype.drawImage;
     const maximos = new WeakMap<object, [number, number]>();
     CanvasRenderingContext2D.prototype.drawImage = function (this: CanvasRenderingContext2D, ...argumentos: unknown[]) {
       if (this.canvas.classList.contains("escena-lienzo")) {
         const bufer = argumentos[0] as HTMLCanvasElement;
+        buferDelMotor = bufer;
         const antes = maximos.get(bufer);
         const crece = antes !== undefined && (bufer.width > antes[0] || bufer.height > antes[1]);
         maximos.set(bufer, [Math.max(bufer.width, antes?.[0] ?? 0), Math.max(bufer.height, antes?.[1] ?? 0)]);
@@ -270,7 +301,28 @@ export function pruebasDelFondo(dprs: readonly number[], orden: OrdenDelFondo = 
                 // La emulación tiene que estar puesta: si la hoja no se aplicó (la CSP, por ejemplo), el lienzo no mide 48 px y la
                 // prueba mediría otra cosa sin decirlo.
                 expect(await lienzo.evaluate((nodo) => [nodo.clientWidth, nodo.clientHeight]), "el lienzo emulado mide 48 px").toEqual([48, 48]);
+                // r66-N5: el búfer de dibujo de la escena es el de 48 px de CSS × min(DPR, 2) × 0.85 (DPR_MAXIMO y ESCALA de
+                // fondo-escena.tsx, que no se exportan): 41 a DPR 1 y 82 a DPR 2. Dibujar a DPR completo o a pantalla completa lo
+                // cambia. Con espera acotada: el primer dibujo puede ser anterior a que la hoja llegue y el siguiente lo corrige.
+                const buferEsperado = Math.round(48 * Math.min(dpr, 2) * 0.85);
+                await expect
+                  .poll(() => lienzo.evaluate((nodo: HTMLCanvasElement) => [nodo.width, nodo.height]), {
+                    message: `búfer de dibujo de la escena: 48 px × min(DPR ${dpr}, 2) × 0.85 = ${buferEsperado}`,
+                    timeout: 5_000,
+                  })
+                  .toEqual([buferEsperado, buferEsperado]);
                 await escenario.hacer(page);
+                // r66-N5: ninguna asignación repite el tamaño que ya tenía (reasignar en cada dibujo borra el búfer y lo vuelve a
+                // pedir a la GPU) y el búfer del motor no pasa del tamaño más grande que tuvo la escena (pintar más de lo que se ve).
+                const tamanos = (await page.evaluate(() => (window as unknown as { tamanosDelFondo: () => unknown }).tamanosDelFondo())) as {
+                  repetidas: { escena: number; motor: number };
+                  maximo: { escena: number[]; motor: number[] };
+                };
+                expect(tamanos.repetidas, `asignaciones a width/height con el mismo valor: ${JSON.stringify(tamanos)}`).toEqual({ escena: 0, motor: 0 });
+                expect(
+                  tamanos.maximo.motor.every((medida, i) => medida <= (tamanos.maximo.escena[i] ?? 0)),
+                  `el búfer del motor no pasa del lienzo más grande de la escena: ${JSON.stringify(tamanos.maximo)}`,
+                ).toBe(true);
                 const largos = await cuadrosLargosDelFondo(page);
                 // Para leer un fallo: estado, pinturas, ms promedio por dibujo y si la decisión se guardó (solo la del dibujo).
                 const como = JSON.stringify(await lienzo.evaluate((nodo: HTMLCanvasElement) => ({ ...nodo.dataset, guardado: sessionStorage.getItem("lever-fondo-lento") })));
