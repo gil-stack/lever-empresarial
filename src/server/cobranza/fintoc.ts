@@ -480,31 +480,44 @@ export async function atenderAviso(cuerpo: Uint8Array, firma: string | null, dep
   const transferencia = aviso.abono ?? aviso.devolucion!;
   const destino = await conContexto({ rol: "plataforma_cliente" }, (consulta) => destinoDe(consulta, transferencia));
   if (!destino) return guardarSinDestino(aviso, transferencia);
-  let resultado: ResultadoAplicado | "retener";
+  // r63j-N2: con la empresa activa, primero los retenidos que queden de su suspensión, en el orden en que llegaron: una
+  // devolución nunca se adelanta a su abono. Con la empresa suspendida no hace nada.
+  await procesarRetenidos(destino.empresaId, destino.operadorId, deps);
+  // Todo bajo el candado de la empresa, el mismo que toman la suspensión y la reactivación (r63j-N2): el estado que se
+  // lee aquí no cambia hasta el commit.
+  const atender = () => conContexto(baseDe(destino), async (consulta): Promise<ResultadoAplicado | ResultadoRetenido> => {
+    // Dos entregas del mismo evento a la vez: la segunda espera y lo encuentra visto.
+    await bloquearEmpresa(consulta, destino.empresaId);
+    if (await eventoVisto(consulta, aviso.eventoId)) return { efecto: "repetido" };
+    // r63i-N1: la empresa suspendida (o de baja) no escribe; el aviso se retiene sin aplicarse.
+    if (await empresaSinOperar(consulta, destino.empresaId)) return retenerAviso(consulta, aviso, destino, deps);
+    return aplicarAviso(consulta, aviso, destino, deps);
+  });
+  let resultado: ResultadoAplicado | ResultadoRetenido;
   try {
-    resultado = await conContexto(baseDe(destino), async (consulta) => {
-      // Dos entregas del mismo evento a la vez: la segunda espera y lo encuentra visto.
-      await bloquearEmpresa(consulta, destino.empresaId);
-      if (await eventoVisto(consulta, aviso.eventoId)) return { efecto: "repetido" as const };
-      // r63i-N1: la empresa suspendida (o de baja) no escribe; el aviso se retiene sin aplicarse.
-      if (await empresaSinOperar(consulta, destino.empresaId)) return "retener" as const;
-      return aplicarAviso(consulta, aviso, destino, deps);
-    });
+    resultado = await atender();
   } catch (error) {
-    // La carrera: la suspensión confirmó mientras este aviso escribía y la base lo frenó a medio camino
-    // (bloqueo_empresa_suspendida). Nada de lo anterior quedó; se retiene en su propia transacción.
+    // Una suspensión que no toma el candado (la de la lista de personas bloqueadas, dentro de la base) confirmó
+    // mientras este aviso escribía y la base lo frenó a medio camino (bloqueo_empresa_suspendida). Nada de lo anterior
+    // quedó; la segunda vuelta ve la empresa suspendida y lo retiene.
     if (!(error instanceof ErrorDeDominio && error.codigo === "empresa_suspendida")) throw error;
-    resultado = "retener";
+    resultado = await atender();
   }
-  if (resultado === "retener") return retenerAviso(aviso, destino, deps);
+  if (esRetenido(resultado)) {
+    registrar("warn", "aviso_retenido", { evento_id: aviso.eventoId, nuevo: resultado.efecto === "retenido" });
+    return { estado: 200, cuerpo: { ok: true, efecto: resultado.efecto === "retenido" ? "retenido" : "repetido" } };
+  }
   return terminarAviso(aviso, resultado, destino, deps);
 }
+
+type ResultadoRetenido = { efecto: "retenido" | "retenido_repetido" };
+const esRetenido = (r: ResultadoAplicado | ResultadoRetenido): r is ResultadoRetenido => r.efecto === "retenido" || r.efecto === "retenido_repetido";
 
 type Destino = { empresaId: string; operadorId: string; clienteDeLaCuenta: string | null };
 
 /** El efecto de un aviso ya aplicado en su transacción; lo que falta (correo, «sin destino») va después del commit. */
 type ResultadoAplicado =
-  | { efecto: "registrado" | "repetido" | "sin_pago" }
+  | { efecto: "registrado" | "repetido" | "sin_pago" | "anulado" }
   | { efecto: "devuelto"; pagoId: string; cliente: string | null; monto: number };
 
 async function destinoDe(consulta: Consulta, t: AbonoFintoc | DevolucionFintoc): Promise<Destino | null> {
@@ -568,28 +581,25 @@ async function terminarAviso(aviso: AvisoFintoc, resultado: ResultadoAplicado, d
 
 /**
  * r63i-N1 (decisión de Gil): el aviso de una empresa suspendida o de baja se guarda sin aplicarse, con su evento en
- * la bitácora (sin datos del ordenante), y Cumplimiento lo ve en su bandeja. 200 solo después de guardarlo: si no se
- * pudo, la excepción llega a la ruta, que responde 500 y Fintoc reintenta. El mismo evento otra vez no se duplica.
+ * la bitácora (sin datos del ordenante), y Cumplimiento lo ve en su bandeja. Va en la transacción de quien llama, con
+ * la empresa bloqueada: 200 solo después del commit; si no se pudo, la excepción llega a la ruta, que responde 500 y
+ * Fintoc reintenta. El mismo evento otra vez no se duplica.
  */
-async function retenerAviso(aviso: AvisoFintoc, destino: Destino, deps: Pick<DepsAviso, "auditar">): Promise<RespuestaAviso> {
+async function retenerAviso(consulta: Consulta, aviso: AvisoFintoc, destino: Destino, deps: Pick<DepsAviso, "auditar">): Promise<ResultadoRetenido> {
   const t = aviso.abono ?? aviso.devolucion!;
-  const nuevo = await conContexto(baseDe(destino), async (consulta) => {
-    const r = await aplicarSentencia(
-      consulta,
-      "select cobranza_retener_aviso($1, $2, $3, $4::date, $5::jsonb) as id",
-      [aviso.eventoId, aviso.tipo, t.montoCentavos, t.recibidoEl, JSON.stringify(aviso)],
-    );
-    const id = registro(r.rows[0]).id;
-    if (!id) return false;
-    await deps.auditar(consulta, actorDe(destino), {
-      accion: "retener_aviso_cobranza",
-      identificador: texto(id),
-      cambio: { proveedor: "fintoc", tipo: aviso.abono ? "abono" : "devolucion", monto_centavos: t.montoCentavos },
-    });
-    return true;
+  const r = await aplicarSentencia(
+    consulta,
+    "select cobranza_retener_aviso($1, $2, $3, $4::date, $5::jsonb) as id",
+    [aviso.eventoId, aviso.tipo, t.montoCentavos, t.recibidoEl, JSON.stringify(aviso)],
+  );
+  const id = registro(r.rows[0]).id;
+  if (!id) return { efecto: "retenido_repetido" };
+  await deps.auditar(consulta, actorDe(destino), {
+    accion: "retener_aviso_cobranza",
+    identificador: texto(id),
+    cambio: { proveedor: "fintoc", tipo: aviso.abono ? "abono" : "devolucion", monto_centavos: t.montoCentavos },
   });
-  registrar("warn", "aviso_retenido", { evento_id: aviso.eventoId, nuevo });
-  return { estado: 200, cuerpo: { ok: true, efecto: nuevo ? "retenido" : "repetido" } };
+  return { efecto: "retenido" };
 }
 
 export type DepsRetenidos = Pick<DepsAviso, "auditar" | "enviador" | "urlPublica" | "registrar">;
@@ -598,32 +608,61 @@ export type DepsRetenidos = Pick<DepsAviso, "auditar" | "enviador" | "urlPublica
  * Los avisos retenidos de una empresa que ya está activa, uno por transacción y en el orden en que llegaron, por el
  * camino normal: el freno de duplicados, el cliente sin duda y el evento visto hacen que nada se aplique dos veces.
  * Idempotente: con la empresa bloqueada, dos corridas a la vez se forman y la segunda ya no los ve. Lo llaman la
- * reactivación (después de su commit) y la tarea diaria, como red. Con la empresa suspendida o de baja no hace nada.
+ * reactivación (después de su commit, con un tope), la tarea diaria y cada aviso nuevo de la empresa (r63j-N2). Con la
+ * empresa suspendida o de baja no hace nada.
+ *
+ * r63j-N1: cada retenido va aislado. Si el camino normal lo rechaza, su transacción se deshace y queda «fallido» con
+ * el código del error (sin datos), a la vista de Cumplimiento, y los demás siguen: uno envenenado no frena la cobranza
+ * de la empresa. Si ni siquiera se puede marcar (la base no responde), la corrida se detiene y el retenido sigue
+ * pendiente para la siguiente.
  */
-export async function procesarRetenidos(empresaId: string, operadorId: string, deps: DepsRetenidos): Promise<number> {
+export async function procesarRetenidos(empresaId: string, operadorId: string, deps: DepsRetenidos, tope = Number.POSITIVE_INFINITY): Promise<number> {
   const empresa: Destino = { empresaId, operadorId, clienteDeLaCuenta: null };
   let procesados = 0;
-  for (;;) {
-    const paso = await conContexto(baseDe(empresa), async (consulta) => {
-      await bloquearEmpresa(consulta, empresaId);
-      const fila = (await aplicarSentencia(consulta, "select id, aviso from cobranza_retenidos_de_empresa() limit 1")).rows.map(registro)[0];
-      if (!fila) return null;
-      const aviso = fila.aviso as AvisoFintoc;
-      const t = aviso.abono ?? aviso.devolucion!;
-      // La CLABE propia sigue diciendo el cliente si es de esta empresa; si la cuenta cambió de empresa, sin cliente.
-      const ahora = await destinoDe(consulta, t);
-      const destino: Destino = { ...empresa, clienteDeLaCuenta: ahora?.empresaId === empresaId ? ahora.clienteDeLaCuenta : null };
-      const resultado: ResultadoAplicado = (await eventoVisto(consulta, aviso.eventoId))
-        ? { efecto: "repetido" }
-        : await aplicarAviso(consulta, aviso, destino, deps);
-      await aplicarSentencia(consulta, "select cobranza_retenido_procesado($1, $2)", [texto(fila.id), resultado.efecto]);
-      await deps.auditar(consulta, actorDe(destino), { accion: "procesar_retenido_cobranza", identificador: texto(fila.id), cambio: { efecto: resultado.efecto } });
-      return { aviso, resultado, destino };
-    });
+  while (procesados < tope) {
+    let pendiente: string | null = null;
+    let paso: { aviso: AvisoFintoc; resultado: ResultadoAplicado; destino: Destino } | null;
+    try {
+      paso = await conContexto(baseDe(empresa), async (consulta) => {
+        await bloquearEmpresa(consulta, empresaId);
+        const fila = (await aplicarSentencia(consulta, "select id, aviso from cobranza_retenidos_de_empresa() limit 1")).rows.map(registro)[0];
+        if (!fila) return null;
+        pendiente = texto(fila.id);
+        const aviso = fila.aviso as AvisoFintoc;
+        const t = aviso.abono ?? aviso.devolucion!;
+        // La CLABE propia sigue diciendo el cliente si es de esta empresa; si la cuenta cambió de empresa, sin cliente.
+        const ahora = await destinoDe(consulta, t);
+        const destino: Destino = { ...empresa, clienteDeLaCuenta: ahora?.empresaId === empresaId ? ahora.clienteDeLaCuenta : null };
+        const resultado: ResultadoAplicado = (await eventoVisto(consulta, aviso.eventoId))
+          ? { efecto: "repetido" }
+          : await aplicarAviso(consulta, aviso, destino, deps);
+        await aplicarSentencia(consulta, "select cobranza_retenido_procesado($1, $2)", [pendiente, resultado.efecto]);
+        await deps.auditar(consulta, actorDe(destino), { accion: "procesar_retenido_cobranza", identificador: pendiente, cambio: { efecto: resultado.efecto } });
+        return { aviso, resultado, destino };
+      });
+    } catch (error) {
+      if (pendiente === null) throw error;
+      const id: string = pendiente;
+      const motivo = error instanceof ErrorDeDominio ? error.codigo : "desconocido";
+      try {
+        await conContexto(baseDe(empresa), async (consulta) => {
+          await bloquearEmpresa(consulta, empresaId);
+          await aplicarSentencia(consulta, "select cobranza_retenido_fallido($1, $2)", [id, motivo]);
+          await deps.auditar(consulta, actorDe(empresa), { accion: "retenido_fallido_cobranza", identificador: id, cambio: { motivo } });
+        });
+      } catch {
+        // Ni siquiera se pudo marcar (la base no responde): el retenido sigue pendiente y se reintenta después.
+        throw error;
+      }
+      registrar("error", "retenido_fallido", { motivo });
+      procesados += 1;
+      continue;
+    }
     if (!paso) return procesados;
     await terminarAviso(paso.aviso, paso.resultado, paso.destino, deps);
     procesados += 1;
   }
+  return procesados;
 }
 
 /**
@@ -673,7 +712,10 @@ async function aplicarDevolucion(
   if (!pago) return { efecto: "sin_pago" as const };
   const pagoId = texto(pago.id);
   let devuelto = false;
-  if (pago.estado !== "devuelto") {
+  // r63j-N1: la empresa ya lo había descartado como duplicado (anulado, sin aplicaciones): la devolución no tiene nada
+  // que revertir. Queda resuelta con su evento, sin error; antes lanzaba pago_anulado (500 y Fintoc reintentaba).
+  const anulado = pago.estado === "anulado";
+  if (pago.estado !== "devuelto" && !anulado) {
     const aplicaciones = await aplicarSentencia(
       consulta,
       `select a.id, a.charge_id, a.monto_centavos::text as monto from collection_applications a
@@ -718,6 +760,7 @@ async function aplicarDevolucion(
     [id, empresaId, aviso.eventoId, pagoId],
   );
   await deps.auditar(consulta, actor, { accion: "aviso_proveedor_cobranza", identificador: id, cambio: { proveedor: "fintoc", repetido: !devuelto } });
+  if (anulado) return { efecto: "anulado" as const };
   return devuelto
     ? { efecto: "devuelto" as const, pagoId, cliente: textoONulo(pago.cliente), monto: centavos(pago.monto) }
     : { efecto: "repetido" as const };

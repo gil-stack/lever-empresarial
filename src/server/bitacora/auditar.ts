@@ -161,6 +161,7 @@ export const CATALOGO = {
   aviso_proveedor_cobranza: { entidad: "collection_provider_events", cambio: ["proveedor", "repetido"] },
   retener_aviso_cobranza: { entidad: "collection_held_events", cambio: ["proveedor", "tipo", "monto_centavos"] },
   procesar_retenido_cobranza: { entidad: "collection_held_events", cambio: ["efecto"] },
+  retenido_fallido_cobranza: { entidad: "collection_held_events", cambio: ["motivo"] },
   empate_estado_cuenta: { entidad: "collection_statement_mappings", cambio: ["banco", "fila_encabezado"] },
   importar_estado_cuenta: { entidad: "collection_statement_imports", cambio: ["banco", "renglones", "abonos", "nuevos"] },
   confirmar_estado_cuenta: { entidad: "collection_statement_imports", cambio: ["aplicados", "por_conciliar", "ya_registrados", "descartados"] },

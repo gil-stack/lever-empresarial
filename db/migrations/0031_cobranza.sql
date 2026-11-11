@@ -1110,15 +1110,20 @@ CREATE TABLE collection_held_events (
   retenido_en timestamptz NOT NULL DEFAULT now(),
   procesado_en timestamptz,
   efecto text,
+  motivo text,
   CONSTRAINT collection_held_events_unico UNIQUE (proveedor, evento_id),
   CONSTRAINT collection_held_events_proveedor CHECK (proveedor IN ('fintoc')),
   CONSTRAINT collection_held_events_evento CHECK (evento_id ~ '^evt_[A-Za-z0-9]{1,64}$' AND aviso ->> 'eventoId' = evento_id),
   CONSTRAINT collection_held_events_tipo CHECK (tipo IN ('transfer.inbound.succeeded', 'transfer.inbound.returned')),
   CONSTRAINT collection_held_events_monto CHECK (monto_centavos BETWEEN 1 AND 9000000000000000),
   CONSTRAINT collection_held_events_fecha CHECK (recibido_el >= DATE '2000-01-01'),
+  -- r63j-N1: un retenido que no se pudo aplicar queda «fallido» con el código del error (sin datos), a la vista de
+  -- Cumplimiento, y no frena a los que vienen detrás.
   CONSTRAINT collection_held_events_estado CHECK (
-    (estado = 'retenido' AND procesado_en IS NULL AND efecto IS NULL)
-    OR (estado = 'procesado' AND procesado_en IS NOT NULL AND efecto IN ('registrado', 'repetido', 'devuelto', 'sin_pago'))
+    (estado = 'retenido' AND procesado_en IS NULL AND efecto IS NULL AND motivo IS NULL)
+    OR (estado = 'procesado' AND procesado_en IS NOT NULL AND motivo IS NULL
+        AND efecto IN ('registrado', 'repetido', 'devuelto', 'sin_pago', 'anulado'))
+    OR (estado = 'fallido' AND procesado_en IS NOT NULL AND efecto IS NULL AND motivo ~ '^[a-z][a-z0-9_]{0,63}$')
   )
 );
 
@@ -1134,8 +1139,9 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
-  IF TG_OP = 'DELETE' OR OLD.estado <> 'retenido' OR NEW.estado <> 'procesado'
-    OR (to_jsonb(NEW) - 'estado' - 'procesado_en' - 'efecto') IS DISTINCT FROM (to_jsonb(OLD) - 'estado' - 'procesado_en' - 'efecto') THEN
+  IF TG_OP = 'DELETE' OR OLD.estado <> 'retenido' OR NEW.estado NOT IN ('procesado', 'fallido')
+    OR (to_jsonb(NEW) - 'estado' - 'procesado_en' - 'efecto' - 'motivo')
+       IS DISTINCT FROM (to_jsonb(OLD) - 'estado' - 'procesado_en' - 'efecto' - 'motivo') THEN
     RAISE EXCEPTION 'cobranza_inmutable';
   END IF;
   RETURN NEW;
@@ -1218,11 +1224,32 @@ $$;
 REVOKE ALL ON FUNCTION cobranza_retenido_procesado(uuid, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION cobranza_retenido_procesado(uuid, text) TO plataforma_cliente;
 
--- La bandeja de Cumplimiento (y Auditoría, que la consulta): los retenidos sin procesar del operador, sin datos
--- personales del ordenante (monto, fechas y el tipo de aviso).
+-- r63j-N1: el retenido no pasó el camino normal (su transacción se deshizo): queda «fallido» con el código del error.
+CREATE FUNCTION cobranza_retenido_fallido(p_id uuid, p_motivo text)
+RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  IF app_usuario() IS NOT NULL OR app_empresa() IS NULL THEN
+    RAISE EXCEPTION 'sin_permiso_para_cobranza';
+  END IF;
+  UPDATE collection_held_events SET estado = 'fallido', procesado_en = now(), motivo = p_motivo
+   WHERE id = p_id AND company_id = app_empresa() AND estado = 'retenido';
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'retenido_ya_procesado';
+  END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION cobranza_retenido_fallido(uuid, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION cobranza_retenido_fallido(uuid, text) TO plataforma_cliente;
+
+-- La bandeja de Cumplimiento (y Auditoría, que la consulta): los retenidos sin procesar y los fallidos del operador,
+-- sin datos personales del ordenante (monto, fechas, el tipo de aviso y, del fallido, el código del error).
 CREATE FUNCTION cobranza_abonos_retenidos()
 RETURNS TABLE (id uuid, company_id uuid, razon_social text, estado_empresa text, tipo text, monto_centavos bigint,
-               recibido_el date, retenido_en timestamptz)
+               recibido_el date, retenido_en timestamptz, estado text, motivo text)
 LANGUAGE plpgsql STABLE SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
@@ -1236,9 +1263,10 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'sin_permiso_para_cobranza';
   END IF;
-  RETURN QUERY SELECT h.id, h.company_id, c.razon_social, c.estado, h.tipo, h.monto_centavos, h.recibido_el, h.retenido_en
+  RETURN QUERY SELECT h.id, h.company_id, c.razon_social, c.estado, h.tipo, h.monto_centavos, h.recibido_el, h.retenido_en,
+                      h.estado, h.motivo
     FROM collection_held_events h JOIN companies c ON c.id = h.company_id
-   WHERE c.operator_id = app_operador() AND h.estado = 'retenido'
+   WHERE c.operator_id = app_operador() AND h.estado IN ('retenido', 'fallido')
    ORDER BY h.retenido_en, h.id
    LIMIT 300;
 END;

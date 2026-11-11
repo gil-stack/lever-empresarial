@@ -154,7 +154,7 @@ Unos 120-130 MB son la base del proceso. El tope de RSS ahora lo pone un libro l
   - La lee la definer `cobranza_abonos_retenidos`, que solo abre a Cumplimiento y a Auditoría; Auditoría solo consulta, porque la sección no tiene botones.
   - Originación, Aprobación y Administración no abren la bandeja.
   - No se usó `operational_alerts`: exige una persona que la crea y otra responsable, y un aviso del sistema no tiene ninguna de las dos.
-- **Reactivar.** Cuando Aprobación aprueba la reactivación, la acción, después del commit, corre `procesarRetenidos`: cada retenido pasa por el **camino normal**, con el freno de duplicados (`pagosParecidosDeOtraFuente`), el cliente sin duda y el evento ya visto.
+- **Reactivar.** Cuando Aprobación aprueba la reactivación (con el candado de la empresa, r63j-N2), la acción, después del commit, corre `procesarRetenidos` (hasta 50; el resto, la tarea diaria): cada retenido pasa por el **camino normal**, con el freno de duplicados (`pagosParecidosDeOtraFuente`), el cliente sin duda y el evento ya visto.
   - Va uno por transacción, con el candado de la empresa, y queda «procesado» con su efecto y el evento `procesar_retenido_cobranza`.
   - Nada se aplica dos veces: dos corridas a la vez, la tarea diaria y el reintento de Fintoc después de reactivar dan «repetido» o 0.
   - Si falla después de la reactivación, la tarea diaria lo vuelve a intentar.
@@ -186,8 +186,18 @@ Unos 120-130 MB son la base del proceso. El tope de RSS ahora lo pone un libro l
 - No corre en el CI, para no mover el reparto. Se copia a `tests/e2e/zz-retenidos.spec.ts` y corre con `sh scripts/ci/pruebas-e2e.sh tests/e2e/zz-retenidos.spec.ts`.
 - Recorre: configurar y dar de alta un cliente con clics; Originación pide la suspensión y Aprobación la aprueba; llega un aviso firmado («retenido») y su reintento («repetido»).
 - Cumplimiento lo ve en su bandeja con el conteo y Originación no la abre. «Registrar pago» en la empresa suspendida muestra el mensaje de la suspensión y no deja pago.
-- Cumplimiento pide reactivar y Aprobación lo aprueba: el abono queda aplicado una vez, el cargo pagado, la ficha con un pago y la bandeja vacía.
+- Cumplimiento pide reactivar y Aprobación lo aprueba: el abono queda aplicado una vez, el cargo pagado y la ficha con un pago; en la bandeja solo queda el envenenado (r63j), con su motivo.
 - Capturas `retenidos-*.jpg`.
+
+**Ronda r63j (re-verificación de `85acf30`): hallazgo → arreglo → prueba**
+
+| id | Arreglo | Prueba (cae al revertir su arreglo: mutaciones sobre el head) |
+|---|---|---|
+| **r63j-N1 (P1)** Un retenido envenenado frenaba para siempre la cobranza de la empresa. Era la devolución de un duplicado que la empresa ya había descartado (`pago_anulado`): la reactivación no aplicaba los que venían detrás, y la tarea diaria marcaba la empresa como fallida y dejaba de generar cargos y recordatorios. Con la empresa activa, la misma devolución daba 500 | 1) `aplicarDevolucion`: la devolución de un pago anulado queda resuelta con su evento, 200 con efecto «anulado», sin error. 2) `procesarRetenidos`: cada retenido va aislado. Si falla, su transacción se deshace y queda **«fallido»** con el código del error (`cobranza_retenido_fallido`, evento `retenido_fallido_cobranza`, sin datos); Cumplimiento lo ve en su bandeja («No se pudo aplicar (código)») y los demás siguen. Si ni siquiera se puede marcar (la base no responde), sigue pendiente. 3) La tarea diaria: el paso de los retenidos lleva su propio `try` | `retenidos-postgres`: la devolución de un anulado (sin el arreglo, `pago_anulado`); un envenenado seguido de uno legítimo, que se aplica, con el fallido en la bandeja; la tarea con un envenenado genera los cargos y queda en 0 fallidas (sin el arreglo, `fallidas: 1`). `reglas-base`: el motivo es un código, un fallido no se vuelve a marcar y una persona no marca fallidos |
+| **r63j-N2 (P2)** Un retenido podía quedar varado con la empresa ya activa (se revisaba en una transacción y se guardaba en otra, y la reactivación no tomaba el candado), y en ese hueco una devolución se adelantaba a su abono: el cargo quedaba pagado con dinero devuelto | 1) La suspensión y la reactivación (`suspensiones.ts`) toman `bloquearEmpresa`, el mismo candado de cada aviso. 2) El aviso revisa el estado y retiene **en la misma transacción**, bajo el candado: si la empresa ya está activa, va por el camino normal. Si una suspensión sin candado (la de la lista, dentro de la base) lo frena a medio escribir, la segunda vuelta lo retiene. 3) Cada aviso de una empresa activa procesa antes los retenidos pendientes, así una devolución nunca llega antes que su abono. La bandeja dice «Empresa activa: lo aplica la tarea diaria» si alguno queda pendiente con la empresa ya activa | La carrera aviso ↔ reactivación en los dos órdenes, con dos conexiones (sin el candado, el aviso no espera); el abono retenido y su devolución después de reactivar: la devolución lo encuentra y lo revierte, el cargo queda `emitido` y nada va a «sin destino» (sin el arreglo, el efecto no es «devuelto») |
+| r63j-P3 | La acción de la reactivación procesa a lo más 50 retenidos; el resto lo aplica la tarea diaria y la bandeja lo cuenta | `procesarRetenidos` con tope 1 deja 1 pendiente, visible como «Empresa activa»; la tarea lo aplica (sin el tope, procesa los dos) |
+
+El recorrido suma el caso envenenado: un retenido con fecha imposible llega antes del legítimo; al reactivar, el legítimo se aplica y el envenenado queda en la bandeja con «No se pudo aplicar (base_no_disponible)» (`retenidos-bandeja-con-fallido.jpg`).
 
 **Lo que confirmó Gil:**
 - **Un abono a una empresa suspendida se retiene y se avisa a Cumplimiento** (r63i-N1), como se describe arriba.

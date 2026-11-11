@@ -451,6 +451,18 @@ async function reglas(app: string, ids: Ids, duena: string): Promise<void> {
       const id = (await retener(c, "evt_Suspendida2")).rows[0]!.id;
       await c.query("select cobranza_retenido_procesado($1, 'registrado')", [id]);
     }, C, sistema, B);
+    // r63j-N1: el retenido que no se pudo aplicar queda «fallido» con un código (sin datos), una sola vez.
+    await rechaza("r63j-N1 el motivo del fallido es un código, no texto libre", "collection_held_events_estado", async (c) => {
+      const id = (await retener(c, "evt_Fallido1")).rows[0]!.id;
+      await c.query("select cobranza_retenido_fallido($1, $2)", [id, "Juan Pérez no pagó"]);
+    }, C, sistema, B);
+    await rechaza("r63j-N1 un fallido no se vuelve a marcar", "retenido_ya_procesado", async (c) => {
+      const id = (await retener(c, "evt_Fallido2")).rows[0]!.id;
+      await c.query("select cobranza_retenido_fallido($1, 'pago_anulado')", [id]);
+      await c.query("select cobranza_retenido_fallido($1, 'pago_anulado')", [id]);
+    }, C, sistema, B);
+    await rechaza("r63j-N1 una persona no marca fallidos", "sin_permiso_para_cobranza", (c) =>
+      c.query("select cobranza_retenido_fallido(gen_random_uuid(), 'pago_anulado')"), C, ids.adminB, B);
     // La propia empresa suspendida no escribe: el pago a mano y el estado de cuenta pasan por collection_payments.
     await rechaza("r63i-N1 la empresa suspendida no registra pagos", "empresa_suspendida", async (c) => {
       const id = randomUUID();

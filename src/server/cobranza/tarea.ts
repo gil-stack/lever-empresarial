@@ -92,9 +92,14 @@ export async function correrCobranza(deps: DependenciasTarea = {}): Promise<Resu
     const base = baseDeSistema(empresaId, operadorId);
     const actor = actorDeSistema(empresaId, operadorId, "tarea");
     try {
-      // 0. Los avisos de Fintoc retenidos mientras estuvo suspendida (r63i-N1): la red de la reactivación.
-      const retenidos = await procesarRetenidos(empresaId, operadorId, { auditar, enviador: deps.enviador, urlPublica: deps.urlPublica });
-      if (retenidos > 0) registrar({ evento: "cobranza_retenidos_procesados", empresa: empresaId, retenidos });
+      // 0. Los avisos de Fintoc retenidos mientras estuvo suspendida (r63i-N1): la red de la reactivación. Con su propio
+      //    try (r63j-N1): si falla, los cargos, las CLABEs y los recordatorios de la empresa siguen.
+      try {
+        const retenidos = await procesarRetenidos(empresaId, operadorId, { auditar, enviador: deps.enviador, urlPublica: deps.urlPublica });
+        if (retenidos > 0) registrar({ evento: "cobranza_retenidos_procesados", empresa: empresaId, retenidos });
+      } catch (error) {
+        registrar({ evento: "cobranza_retenidos_pendientes", empresa: empresaId, codigo: error instanceof ErrorDeDominio ? error.codigo : "desconocido" });
+      }
       // 1. Cargos.
       const generados = await conContexto(base, async (consulta) => {
         await bloquearEmpresa(consulta, empresaId);
