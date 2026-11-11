@@ -77,7 +77,7 @@ export function seccionesDe(puertas: Puertas, empresaId: string | null): GrupoDe
   const flujo = puertas.flujo
     ? [
       seccion("/consola/flujo", "Saldo y alertas", IconoFlujo),
-      seccion("/consola/cobros", "Cobros", IconoCobros),
+      seccion("/consola/cobros", "Cobranza", IconoCobros),
       seccion("/consola/calendario", "Calendario", IconoCalendario),
       seccion("/consola/presupuestos", "Presupuestos", IconoPresupuestos),
     ]

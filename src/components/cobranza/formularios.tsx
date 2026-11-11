@@ -670,7 +670,7 @@ export function SubirEstadoDeCuenta({ bancosConEmpate }: { bancosConEmpate: read
           <h3 id="empate-titulo" tabIndex={-1}>Empata las columnas de {BANCOS.find((b) => b.clave === vista.banco)?.nombre ?? "tu banco"}</h3>
           {vista.aviso ? <Aviso titulo="Revisa el empate">{vista.aviso}</Aviso> : null}
           <input type="hidden" name="empatar" value="si" />
-          <div className="tabla-contenedor cobranza-muestra">
+          <div className="tabla-contenedor cobranza-muestra" tabIndex={0} role="region" aria-label="Tabla de los primeros renglones del archivo">
             <table className="tabla" data-tabla="muestra">
               <caption className="solo-lector">Primeros renglones del archivo</caption>
               <tbody>

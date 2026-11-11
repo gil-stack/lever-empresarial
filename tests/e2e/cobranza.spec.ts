@@ -237,7 +237,14 @@ test("3 · variable trimestral: sin monto hasta capturarlo; anual con su primer 
 test("4 · lista: resumen, antigüedad que filtra, búsqueda y pestañas", async ({ page, context, browserName }) => {
   const errores = vigilar(page);
   await entrar(context, CORREOS_COBRANZA.carla);
-  await page.goto(en("/consola/cobros"));
+  // El módulo se llama «Cobranza» en el lateral, en el título de la pestaña y en el de la página.
+  await page.goto(en("/consola"));
+  const enlace = page.getByRole("navigation", { name: "Secciones" }).getByRole("link", { name: "Cobranza", exact: true });
+  await enlace.click();
+  await expect(page).toHaveURL(/\/consola\/cobros$/);
+  await expect(enlace).toHaveAttribute("aria-current", "page");
+  await expect(page).toHaveTitle(/^Cobranza\b/);
+  await expect(page.getByRole("heading", { level: 1, name: "Cobranza", exact: true })).toBeVisible();
   await expect(page.locator('[data-cifra="por-cobrar"]')).toHaveAttribute("data-centavos", String(1_000_000 + 725_000 + 450_000));
   await expect(page.locator('[data-cifra="vencido"]')).toHaveAttribute("data-centavos", "0");
   await expect(page.locator('table[data-tabla="cargos"] tbody tr')).toHaveCount(3);
@@ -334,6 +341,10 @@ test("6 · estado de cuenta de tres bancos: empatar, proponer, confirmar y resub
   let forma = await subir("bbva", "bbva-movimientos.csv", bbva, "text/csv");
   await expect(page.getByRole("heading", { name: "Empata las columnas de BBVA" })).toBeVisible();
   await foto(page, browserName, "empatar-bbva");
+  // La muestra se desplaza a lo ancho con muchas columnas: es una región con nombre que recibe el foco (r63g-N1).
+  const muestra = page.getByRole("region", { name: "Tabla de los primeros renglones del archivo", exact: true });
+  await muestra.focus();
+  await expect(muestra).toBeFocused();
   await forma.locator("#filaEncabezado").selectOption({ label: "Renglón 4" });
   await forma.locator("#columnaFecha").selectOption("0");
   await forma.locator("#columnaConcepto").selectOption("1");
@@ -819,6 +830,45 @@ test("18 · CSP estricta: las pantallas de cobranza y la del pagador, sin JavaSc
   }
   await sesion.close();
   await sinSesion.close();
+});
+
+test("19 · a 390 y 360, el empate del estado de cuenta no desborda la página: la muestra se desplaza dentro de su región (r63g-N2)", async ({ browser, browserName }) => {
+  // Sin confirmar: la importación queda pendiente y el empate no se guarda, así que cada ancho vuelve a pedirlo.
+  const bbva = Buffer.from(readFileSync(join(FIXTURES, "bbva-movimientos.csv")).toString("latin1").replace("{{REF_B}}", "SIN-REFERENCIA"), "latin1");
+  for (const ancho of [390, 360]) {
+    const context = await browser.newContext({ viewport: { width: ancho, height: 844 }, ignoreHTTPSErrors: ORIGEN.startsWith("https:") });
+    try {
+      await entrar(context, CORREOS_COBRANZA.carla);
+      const page = await context.newPage();
+      const errores = vigilar(page);
+      await page.goto(en("/consola/cobros/estado-de-cuenta"));
+      const forma = page.locator('form[data-formulario="estado-de-cuenta"]');
+      await forma.locator("#banco").selectOption("hsbc");
+      await forma.locator("#archivo").setInputFiles({ name: "hsbc-movimientos.csv", mimeType: "text/csv", buffer: bbva });
+      await forma.getByRole("button", { name: "Subir y ver las propuestas" }).click();
+      await expect(page.getByRole("heading", { name: "Empata las columnas de HSBC" })).toBeVisible();
+      const muestra = page.getByRole("region", { name: "Tabla de los primeros renglones del archivo", exact: true });
+      const medidas = await muestra.evaluate((el) => ({
+        pagina: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        region: Math.round(el.getBoundingClientRect().right),
+        desplaza: el.scrollWidth > el.clientWidth,
+      }));
+      expect(medidas.pagina, `desplazamiento horizontal de la página a ${ancho}`).toBe(0);
+      expect(medidas.region, `la región cabe en la ventana a ${ancho}`).toBeLessThanOrEqual(ancho);
+      expect(medidas.desplaza, "la muestra se desplaza dentro de su región").toBe(true);
+      await muestra.focus();
+      await expect(muestra).toBeFocused();
+      // El WebKit de Playwright no desplaza una región enfocada con las flechas; Chromium sí, y ahí se comprueba.
+      if (browserName === "chromium") {
+        await page.keyboard.press("ArrowRight");
+        await expect.poll(() => muestra.evaluate((el) => el.scrollLeft), { message: "con el teclado se recorre a lo ancho" }).toBeGreaterThan(0);
+      }
+      await foto(page, browserName, `empatar-${ancho}`);
+      expect(reales(errores, browserName)).toEqual([]);
+    } finally {
+      await context.close();
+    }
+  }
 });
 
 function pesos(centavos: number): string {
