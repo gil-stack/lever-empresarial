@@ -199,6 +199,12 @@ Unos 120-130 MB son la base del proceso. El tope de RSS ahora lo pone un libro l
 
 El recorrido suma el caso envenenado: un retenido con fecha imposible llega antes del legítimo; al reactivar, el legítimo se aplica y el envenenado queda en la bandeja con «No se pudo aplicar (base_no_disponible)» (`retenidos-bandeja-con-fallido.jpg`).
 
+**Barrido de fechas de México contra UTC (a raíz de la falla de PLD en `main`, la primera hora del día en México).** No hay ninguna falla de esa clase en cobranza ni en runway:
+- **Servidor:** Fintoc toma la fecha del abono con `hoyEnMexico(transaction_date)` (`fintoc.ts`). La tarea, el pagador y los cargos reciben `hoy` por sus dependencias y la calculan con `hoyEnMexico`. La 0032 usa `caja_hoy()` (`timezone('America/Mexico_City', clock_timestamp())`).
+- **0031:** ninguna regla compara una fecha de México contra `now()` o `current_date`; solo hay sellos `timestamptz DEFAULT now()` y CHECK contra el año 2000.
+- **Postgres:** las pruebas de cobranza usan fechas fijas (`HOY` = 2026-11-10 y `reloj(...)`). Los `current_date` de `reglas-base` quedan en transacciones que se revierten, y ninguna regla compara `pagado_el`. `runway-reglas-base` acepta el `caja_hoy()` de ahora o de hace un minuto.
+- **e2e:** `hoy()` salía de `E2E_TODAY`, fijado al sembrar, mientras el servidor calcula el día en cada petición. Una corrida que cruzara la medianoche de México veía otro día que el servidor (`runway.spec`: la semana de la foto y la baja de ayer; `cobranza.spec:723`: la fecha del estado de cuenta, que con la tolerancia de ±1 día no fallaba). Ahora `hoy()` es `hoyEnMexico(new Date())`, calculado al momento de usarlo. La contraprueba está en el README de runway (#64).
+
 **Lo que confirmó Gil:**
 - **Un abono a una empresa suspendida se retiene y se avisa a Cumplimiento** (r63i-N1), como se describe arriba.
 - **Los cobros recibidos quedan fuera de las reglas PLD** (r63i-N2):
