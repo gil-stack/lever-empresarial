@@ -5,12 +5,27 @@ import { INICIO, entrar } from "./marco-apoyo";
 /** Lo que este archivo necesita de un Long Animation Frame (el DOM de TypeScript aún no lo trae). */
 interface CuadroLargo {
   startTime: number;
-  scripts: { sourceURL: string }[];
+  duration: number;
+  renderStart: number;
+  scripts: { sourceURL: string; duration: number; invoker: string }[];
 }
 
-/** Los cuadros de más de 50 ms (los que registra Long Animation Frames) con un script del fondo, después de su primera pintura. */
-async function cuadrosLargosDelFondo(page: Page): Promise<{ archivos: number; cuadros: number }> {
-  return page.evaluate(async () => {
+/**
+ * Lo que el propio fondo puede tardar en un cuadro antes de contar como suyo: DIBUJO_BLOQUEANTE_MS de fondo-escena.tsx
+ * (con GPU, el dibujo más caro medido es de 12 ms; con el pintado encima, uno de ~32 ms ya deja un cuadro de más de 50).
+ */
+const MS_DEL_FONDO_POR_CUADRO = 25;
+
+/**
+ * Los cuadros de más de 50 ms (Long Animation Frames) después de la primera pintura del fondo en los que el fondo mismo
+ * tardó más de MS_DEL_FONDO_POR_CUADRO. El fondo anima en cada cuadro, así que su callback está en casi todos: un cuadro
+ * largo por otro script de la página o por el pintado (en el CI, con la CPU compartida) no es suyo.
+ * Medido con el navegador frenado ×16 y ×24 por CDP (docs/evidencia/pld-fechas/fondo/): en esos cuadros, de 53 a 137 ms,
+ * el script del fondo pone de 5 a 12 ms y el resto son otros scripts de la página (el streaming de React) y su espera. `detalle` dice, de cada cuadro largo con algo del fondo, cuánto duró, cuánto
+ * fue del fondo y cuánto de pintado, para leer una falla.
+ */
+async function cuadrosLargosDelFondo(page: Page): Promise<{ archivos: number; cuadros: number; detalle: string }> {
+  return page.evaluate(async (limite) => {
     const registro = window as unknown as { cuadrosLargos: CuadroLargo[]; primeraPintura?: number };
     // El archivo del bucle del fondo es el que trae su aviso de error.
     const delFondo = new Set<string>();
@@ -19,11 +34,18 @@ async function cuadrosLargosDelFondo(page: Page): Promise<{ archivos: number; cu
       if ((await (await fetch(recurso.name)).text()).includes("No se pudo cargar el fondo animado")) delFondo.add(recurso.name);
     }
     const primera = registro.primeraPintura ?? Infinity;
-    const cuadros = registro.cuadrosLargos.filter(
-      (cuadro) => cuadro.startTime > primera && cuadro.scripts.some((script) => delFondo.has(script.sourceURL)),
-    ).length;
-    return { archivos: delFondo.size, cuadros };
-  });
+    const conFondo = registro.cuadrosLargos
+      .filter((cuadro) => cuadro.startTime > primera)
+      .map((cuadro) => ({
+        cuadro,
+        fondoMs: cuadro.scripts.filter((script) => delFondo.has(script.sourceURL)).reduce((suma, script) => suma + script.duration, 0),
+      }))
+      .filter(({ cuadro }) => cuadro.scripts.some((script) => delFondo.has(script.sourceURL)));
+    const detalle = conFondo
+      .map(({ cuadro, fondoMs }) => `${Math.round(cuadro.duration)} ms (fondo ${Math.round(fondoMs)}, pintado ${cuadro.renderStart ? Math.round(cuadro.startTime + cuadro.duration - cuadro.renderStart) : "?"})`)
+      .join("; ");
+    return { archivos: delFondo.size, cuadros: conFondo.filter(({ fondoMs }) => fondoMs > limite).length, detalle };
+  }, MS_DEL_FONDO_POR_CUADRO);
 }
 
 /**
@@ -59,6 +81,9 @@ async function emularEquipo(page: Page, costo: { dibujoMs: number; crecerMs: num
     document.addEventListener("DOMContentLoaded", () => {
       const estilo = document.createElement("style");
       estilo.textContent = ".escena-lienzo { width: var(--lado, 48px) !important; height: var(--lado, 48px) !important; }";
+      // Con la CSP estricta (style-src con nonce, desde el #62), una hoja sin el nonce de la página no se aplica y el lienzo
+      // queda a pantalla completa: la emulación deja de serlo y el fondo pinta 1440×900 (2880×1800 a DPR 2) con WebGL.
+      estilo.nonce = document.querySelector<HTMLElement>("[nonce]")?.nonce ?? "";
       document.head.append(estilo);
     });
   }, costo);
@@ -224,6 +249,10 @@ export function pruebasDelFondo(dprs: readonly number[], orden: OrdenDelFondo = 
           test.use({ deviceScaleFactor: dpr, viewport: { width: 1440, height: 900 } });
           for (const escenario of escenarios) {
             test(escenario.nombre, async ({ page: paginaDelWorker, playwright, baseURL, viewport, deviceScaleFactor, launchOptions }) => {
+              // Con el lienzo emulado de 48 px, cada una tarda de 2 a 5 s (en el CI, con WebGL por software, también: el costo es el
+              // emulado). Si la emulación se cae y el fondo pinta a pantalla completa, o algo no llega, que falle pronto y diga
+              // qué esperaba, no a los 180 s de la e2e: 60 s por prueba y 20 s por espera.
+              test.setTimeout(60_000);
               // Con GPU emulada, un navegador propio que se cierra al terminar: el proceso de GPU es de todo el navegador y,
               // con WebGL por software, sigue trabajando después de cerrar el contexto (2.4 s de CPU en los 5 s siguientes, medido
               // con SwiftShader). Cerrar el navegador lo termina, y la prueba que sigue en el worker no hereda esa carga.
@@ -237,22 +266,25 @@ export function pruebasDelFondo(dprs: readonly number[], orden: OrdenDelFondo = 
                 const lienzo = page.locator("canvas.escena-lienzo");
                 const pinturas = async () => Number(await lienzo.getAttribute("data-cuadros"));
                 const recordado = () => page.evaluate(() => sessionStorage.getItem("lever-fondo-lento"));
-                await expect(lienzo, "el fondo pinta con WebGL").toHaveAttribute("data-gpu", "si", { timeout: 60_000 });
+                await expect(lienzo, "el fondo pinta con WebGL").toHaveAttribute("data-gpu", "si", { timeout: 20_000 });
+                // La emulación tiene que estar puesta: si la hoja no se aplicó (la CSP, por ejemplo), el lienzo no mide 48 px y la
+                // prueba mediría otra cosa sin decirlo.
+                expect(await lienzo.evaluate((nodo) => [nodo.clientWidth, nodo.clientHeight]), "el lienzo emulado mide 48 px").toEqual([48, 48]);
                 await escenario.hacer(page);
-                const largos = (await cuadrosLargosDelFondo(page)).cuadros;
+                const largos = await cuadrosLargosDelFondo(page);
                 // Para leer un fallo: estado, pinturas, ms promedio por dibujo y si la decisión se guardó (solo la del dibujo).
                 const como = JSON.stringify(await lienzo.evaluate((nodo: HTMLCanvasElement) => ({ ...nodo.dataset, guardado: sessionStorage.getItem("lever-fondo-lento") })));
                 if (conGpu) {
                   await expect(lienzo, `sigue vivo: ${como}`).toHaveAttribute("data-estado", "vivo", { timeout: 1 });
-                  expect(largos, `cuadros largos del fondo: ${como}`).toBeLessThanOrEqual(escenario.conGpuLargos ?? 0);
+                  expect(largos.cuadros, `cuadros largos del fondo: ${como} · ${largos.detalle}`).toBeLessThanOrEqual(escenario.conGpuLargos ?? 0);
                   expect(await recordado(), "no recuerda nada").toBeNull();
                   // Y en la siguiente carga vuelve a animar.
                   await page.reload();
-                  await expect.poll(pinturas, { timeout: 60_000 }).toBeGreaterThanOrEqual(3);
+                  await expect.poll(pinturas, { message: "al recargar, pinta al menos 3 veces", timeout: 20_000 }).toBeGreaterThanOrEqual(3);
                   await expect(lienzo, "al recargar, vivo").toHaveAttribute("data-estado", "vivo");
                 } else {
                   await expect(lienzo, "quieto").toHaveAttribute("data-estado", "lento");
-                  expect(largos, "cuadros largos del fondo después de su primera pintura").toBeLessThanOrEqual(escenario.sinGpu.largos);
+                  expect(largos.cuadros, `cuadros largos del fondo después de su primera pintura: ${largos.detalle}`).toBeLessThanOrEqual(escenario.sinGpu.largos);
                   expect(await pinturas(), "pinturas").toBeLessThanOrEqual(escenario.sinGpu.pinturas);
                   expect(await recordado(), "lo recuerda").toBe("1");
                 }

@@ -36,6 +36,8 @@ test.describe("fondo animado en un equipo que pinta cada cuadro en 40 ms", () =>
       document.addEventListener("DOMContentLoaded", () => {
         const estilo = document.createElement("style");
         estilo.textContent = ".escena-lienzo { width: 8px !important; height: 8px !important; }";
+        // La hoja lleva el nonce de la página: sin él, la CSP estricta no la aplica y el lienzo queda a pantalla completa.
+        estilo.nonce = document.querySelector<HTMLElement>("[nonce]")?.nonce ?? "";
         document.head.append(estilo);
       });
     });
@@ -43,6 +45,7 @@ test.describe("fondo animado en un equipo que pinta cada cuadro en 40 ms", () =>
     await page.goto(INICIO);
     const lienzo = page.locator("canvas.escena-lienzo");
     await expect(lienzo, "el fondo pinta con WebGL").toHaveAttribute("data-gpu", "si", { timeout: 60_000 });
+    expect(await lienzo.evaluate((nodo) => [nodo.clientWidth, nodo.clientHeight]), "el lienzo emulado mide 8 px").toEqual([8, 8]);
     await expect
       .poll(async () => (await lienzo.getAttribute("data-estado")) === "lento" || Number(await lienzo.getAttribute("data-cuadros")) >= 4, { timeout: 60_000 })
       .toBe(true);

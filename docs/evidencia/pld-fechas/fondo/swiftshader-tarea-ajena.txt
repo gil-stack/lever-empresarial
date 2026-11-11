@@ -1,0 +1,21 @@
+# «con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms» y «› el búfer del motor crece una vez», con WebGL por
+# software en el navegador propio (parche-swift.py, temporal: --use-angle=swiftshader, como el navegador remoto del CI)
+# y 54 bucles de CPU (carga.sh). La vieja pinta el lienzo a pantalla completa (2880×1800 a DPR 2).
+
+## vieja, sin carga (3 vueltas)
+una tarea ajena de 800 ms (10.2s)
+una tarea ajena de 800 ms (10.3s)
+una tarea ajena de 800 ms (10.4s)
+## vieja, con carga (3 vueltas de cada una)
+el búfer del motor crece una vez (22.8s)
+una tarea ajena de 800 ms (35.6s)
+el búfer del motor crece una vez (34.9s)
+una tarea ajena de 800 ms (34.5s)
+el búfer del motor crece una vez (24.5s)
+una tarea ajena de 800 ms (35.6s)
+## nueva, con carga (30 vueltas de cada una):  60 passed (14.6m) 
+tarea ajena 30 vueltas · mediana 14.5 s · máx 23.1 s
+crece 30 vueltas · mediana 11.9 s · máx 27.9 s
+
+# En el CI (#67 536af39, NhbasSFcu4oDTTH0jqYxjoha, e2e:6): «crece una vez» 2.1 min y «tarea ajena» agotada a los 180 s;
+# la captura de la falla mide 2880×1800 (el lienzo completo a DPR 2). En local, las 23 pruebas del fondo: 1.3 min.

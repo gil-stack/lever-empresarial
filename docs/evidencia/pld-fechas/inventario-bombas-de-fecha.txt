@@ -83,3 +83,13 @@ tests/pld/ y tests/operacion/:
 - Las demás sesiones con `en: new Date()` (pld-postgres:376, :455 y :1816; alta-regulada-postgres:818 y :1046) se crean
   dentro de la prueba, justo antes de usarse.
 El margen de la espera baja a 2 min: pld-postgres dura de 10 a 19 s en el CI (28 corridas) y 23 s en local con carga.
+
+## Fechas fijadas al cargar un módulo en todo tests/ y en los *.test.ts de src/ (r66-N4)
+Con el AST de TypeScript (docs/evidencia/pld-fechas/fondo/fechas-al-cargar.cjs.txt): cada new Date() sin argumentos,
+Date.now() o performance.now() que se evalúa fuera de toda función.
+- Antes de este PR había tres: tests/operacion/apoyo-alta-regulada.ts:19 (SESION_SOFIPO, r66-N3),
+  tests/operacion/portal-postgres.test.ts:24 (r66-N3) y src/server/proveedores/servicio-clabes.test.ts:16 (SESION del
+  cliente, vigencia de 30 min: no explotaba, la prueba dura milisegundos).
+- servicio-clabes.test.ts lleva el mismo getter que SESION_SOFIPO («verificado hace 1 s» en cada uso). Arreglada.
+- Después del arreglo, el detector da cero en tests/ (*.ts y *.mjs) y en src/**/*.test.ts. Los «hoy» de las e2e, de
+  colaboradores-postgres y los emitirConHoraReal son funciones: se evalúan en cada uso.
