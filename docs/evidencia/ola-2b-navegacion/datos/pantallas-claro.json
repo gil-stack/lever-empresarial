@@ -1,0 +1,1382 @@
+[
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta claro 1440: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta claro 1440: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta claro 1440: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta claro 1440: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta claro 1440: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta claro 1440: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "10-aprobaciones-liberador claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "11-aprobaciones-administrador claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "12-aprobaciones-vacio claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "13-aprobaciones-historial claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "14-aprobaciones-altamar claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "15-perfil claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "20-demo-conciliacion claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "21-demo-gastos claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "22-demo-tarjetas claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "23-demo-movimientos claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "24-demo-fiscal claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "25-demo-cuenta claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "26-demo-internacional claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "27-demo-credito claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "28-demo-inversion claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "29-demo-viajes claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "30-demo-gasolina claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "31-demo-ahorro claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "32-demo-integraciones claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "34-demo-tarjetas-presupuestos claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "40-pronto-gastos claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "41-pronto-fiscal claro 390: sin errores de consola",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta claro 390: responde 200",
+    "detalle": "200"
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta claro 390: un solo h1",
+    "detalle": "h1=1"
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta claro 390: campos, botones y enlaces con nombre",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta claro 390: errores ligados a su campo",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta claro 390: sin desplazamiento horizontal",
+    "detalle": ""
+  },
+  {
+    "ok": true,
+    "texto": "42-pronto-cuenta claro 390: sin errores de consola",
+    "detalle": ""
+  }
+]

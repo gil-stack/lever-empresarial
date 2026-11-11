@@ -162,7 +162,7 @@ function Meses({ vista }: { vista: VistaRunway }) {
         <Origen de="declarado" /> saldo de partida · <Origen de="comprometido" /> entradas y salidas · <span className="insignia" data-origen="estimado">Estimado</span> cobranza de tus planes
       </p>
       {/* En anchos intermedios la tabla se desliza: la región se alcanza con el teclado (WCAG 2.1.1). */}
-      <div className="tabla-contenedor" role="region" aria-labelledby="runway-meses-titulo" tabIndex={0}>
+      <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla del runway mes por mes">
         {/* Roles explícitos: en móvil la tabla se apila con CSS y sin ellos el lector de pantalla deja de verla como tabla. */}
         <table className="tabla flujo-apilada runway-meses" data-tabla="runway-meses" role="table" aria-labelledby="runway-meses-titulo">
           <thead role="rowgroup">
@@ -304,7 +304,7 @@ function Tendencia({ vista }: { vista: VistaRunway }) {
       </figure>
       <details className="runway-datos">
         <summary>Ver los datos en tabla</summary>
-        <div className="tabla-contenedor">
+        <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla del runway por semana">
           <table className="tabla" data-tabla="tendencia">
             <caption className="solo-lector">Runway por semana</caption>
             <thead>

@@ -1,0 +1,12 @@
+▶ los filtros de la dirección de Personas y de la Lista 69-B pasan por soloTexto
+  ✔ src/app/consola/personas/page.tsx (2.467125ms)
+  ✔ src/app/consola/lista-69b/page.tsx (0.230916ms)
+✔ los filtros de la dirección de Personas y de la Lista 69-B pasan por soloTexto (3.305416ms)
+ℹ tests 2
+ℹ suites 1
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 270.621208

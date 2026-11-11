@@ -33,7 +33,7 @@ export function DetalleLoteNomina({
           <Link className="enlace-texto" href={enEmpresa(empresaId, "/consola/personas/nomina")}>Volver a Nómina</Link>
         </div>
         {detalle ? (
-          <div className="tabla-contenedor">
+          <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de personas e importes congelados">
             <table className="tabla personas-tabla">
               <thead><tr><th scope="col">Colaborador</th><th scope="col" className="derecha">Neto</th><th scope="col">Destino registrado</th><th scope="col">Revisión</th></tr></thead>
               <tbody>

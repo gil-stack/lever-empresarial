@@ -1,0 +1,142 @@
+# Rojo de Vercel CI en demostracion.spec.ts:111 (N4/N5): causa raíz
+
+## Vercel CI, test:e2e:1 (vercel ci logs <run> --failed --attempt 1)
+### 16c4265 (run z8EYefjWhm8h3cArhs3noJMV)
+test:e2e:1:     Error: clic central en «7 días»: milisegundos entre el cambio y el envío
+test:e2e:1:     Expected: < 250
+test:e2e:1:     Received:   795.5999999999767
+test:e2e:1: Error: clic central en «7 días»: milisegundos entre el cambio y el envío
+test:e2e:1: Expected: < 250
+test:e2e:1: Received:   795.5999999999767
+test:e2e:1:       |                                                                                 ^ Error: clic central en «7 días»: milisegundos entre el cambio y el envío
+### fb27af5 (run hoLVFSprpYzWDcP9EsEKouac)
+test:e2e:1:     Error: bajar en «7 días» y soltar fuera: milisegundos entre el cambio y el envío
+test:e2e:1:     Expected: < 250
+test:e2e:1:     Received:   864.5
+test:e2e:1: Error: bajar en «7 días» y soltar fuera: milisegundos entre el cambio y el envío
+test:e2e:1: Expected: < 250
+test:e2e:1: Received:   864.5
+test:e2e:1:       |                                                                                 ^ Error: bajar en «7 días» y soltar fuera: milisegundos entre el cambio y el envío
+
+## Local: next build + next start, Chromium headless, 3 vueltas x 3 gestos
+pedido = setTimeout que armó el formulario al «change» (retraso@ms desde el cambio)
+largas = tareas largas entre el cambio y el envío (inicio desde el cambio .. +duración)
+fondo = estado del fondo animado, si pinta con WebGL y su pintura promedio en ms
+
+DPR 1 · reducir movimiento no · CPU 1x · soltar-fuera cambio→envío    6 ms · pedido ['0@+0'] · largas []
+DPR 1 · reducir movimiento no · CPU 1x · right        cambio→envío   10 ms · pedido ['0@+0'] · largas []
+DPR 1 · reducir movimiento no · CPU 1x · middle       cambio→envío    9 ms · pedido ['0@+0'] · largas []
+DPR 1 · reducir movimiento no · CPU 1x · soltar-fuera cambio→envío   11 ms · pedido ['0@+0'] · largas []
+DPR 1 · reducir movimiento no · CPU 1x · right        cambio→envío    7 ms · pedido ['0@+0'] · largas []
+DPR 1 · reducir movimiento no · CPU 1x · middle       cambio→envío    4 ms · pedido ['0@+0'] · largas []
+DPR 1 · reducir movimiento no · CPU 1x · soltar-fuera cambio→envío   77 ms · pedido ['0@+0'] · largas ['19..+58']
+DPR 1 · reducir movimiento no · CPU 1x · right        cambio→envío   71 ms · pedido ['0@+0'] · largas ['10..+58']
+DPR 1 · reducir movimiento no · CPU 1x · middle       cambio→envío   68 ms · pedido ['0@+0'] · largas ['10..+56']
+DPR 1 · reducir movimiento no · CPU 4x · soltar-fuera cambio→envío  107 ms · pedido ['0@+0'] · largas ['25..+80']
+DPR 1 · reducir movimiento no · CPU 4x · right        cambio→envío   35 ms · pedido ['0@+0'] · largas []
+DPR 1 · reducir movimiento no · CPU 4x · middle       cambio→envío   21 ms · pedido ['0@+0'] · largas []
+DPR 1 · reducir movimiento no · CPU 4x · soltar-fuera cambio→envío    9 ms · pedido ['0@+0'] · largas []
+DPR 1 · reducir movimiento no · CPU 4x · right        cambio→envío   96 ms · pedido ['0@+0'] · largas ['9..+86']
+DPR 1 · reducir movimiento no · CPU 4x · middle       cambio→envío   75 ms · pedido ['0@+0'] · largas ['2..+62']
+DPR 1 · reducir movimiento no · CPU 4x · soltar-fuera cambio→envío  101 ms · pedido ['0@+0'] · largas ['14..+85']
+DPR 1 · reducir movimiento no · CPU 4x · right        cambio→envío   14 ms · pedido ['0@+0'] · largas []
+DPR 1 · reducir movimiento no · CPU 4x · middle       cambio→envío  129 ms · pedido ['0@+0'] · largas ['31..+88']
+DPR 1 · reducir movimiento no · CPU 6x · soltar-fuera cambio→envío   23 ms · pedido ['0@+0'] · largas []
+DPR 1 · reducir movimiento no · CPU 6x · right        cambio→envío   20 ms · pedido ['0@+0'] · largas []
+DPR 1 · reducir movimiento no · CPU 6x · middle       cambio→envío   87 ms · pedido ['0@+0'] · largas ['4..+62']
+DPR 1 · reducir movimiento no · CPU 6x · soltar-fuera cambio→envío  109 ms · pedido ['0@+0'] · largas ['27..+80']
+DPR 1 · reducir movimiento no · CPU 6x · right        cambio→envío  138 ms · pedido ['0@+0'] · largas ['5..+98']
+DPR 1 · reducir movimiento no · CPU 6x · middle       cambio→envío   31 ms · pedido ['0@+0'] · largas []
+DPR 1 · reducir movimiento no · CPU 6x · soltar-fuera cambio→envío   97 ms · pedido ['0@+0'] · largas ['5..+92']
+DPR 1 · reducir movimiento no · CPU 6x · right        cambio→envío   30 ms · pedido ['0@+0'] · largas []
+DPR 1 · reducir movimiento no · CPU 6x · middle       cambio→envío  125 ms · pedido ['0@+0'] · largas ['6..+107']
+DPR 2 · reducir movimiento no · CPU 1x · soltar-fuera cambio→envío    4 ms · pedido ['0@+0'] · largas [] · fondo vivo gpu=si pintura=300.27 ms
+DPR 2 · reducir movimiento no · CPU 1x · right        cambio→envío  303 ms · pedido ['0@+0'] · largas ['9..+290'] · fondo vivo gpu=si pintura=412.30 ms
+DPR 2 · reducir movimiento no · CPU 1x · middle       cambio→envío  236 ms · pedido ['0@+0'] · largas ['10..+223'] · fondo vivo gpu=si pintura=295.87 ms
+DPR 2 · reducir movimiento no · CPU 1x · soltar-fuera cambio→envío  436 ms · pedido ['0@+0'] · largas ['29..+406'] · fondo vivo gpu=si pintura=402.87 ms
+DPR 2 · reducir movimiento no · CPU 1x · right        cambio→envío  412 ms · pedido ['0@+0'] · largas ['6..+403'] · fondo vivo gpu=si pintura=508.75 ms
+DPR 2 · reducir movimiento no · CPU 1x · middle       cambio→envío  415 ms · pedido ['0@+0'] · largas ['11..+403'] · fondo vivo gpu=si pintura=400.63 ms
+DPR 2 · reducir movimiento no · CPU 1x · soltar-fuera cambio→envío   11 ms · pedido ['0@+0'] · largas [] · fondo vivo gpu=si pintura=421.68 ms
+DPR 2 · reducir movimiento no · CPU 1x · right        cambio→envío    9 ms · pedido ['0@+0'] · largas [] · fondo vivo gpu=si pintura=430.00 ms
+DPR 2 · reducir movimiento no · CPU 1x · middle       cambio→envío  375 ms · pedido ['0@+0'] · largas ['25..+349'] · fondo vivo gpu=si pintura=442.33 ms
+DPR 2 · reducir movimiento no · CPU 6x · soltar-fuera cambio→envío   26 ms · pedido ['0@+0'] · largas [] · fondo vivo gpu=si pintura=327.53 ms
+DPR 2 · reducir movimiento no · CPU 6x · right        cambio→envío   16 ms · pedido ['0@+0'] · largas [] · fondo vivo gpu=si pintura=360.55 ms
+DPR 2 · reducir movimiento no · CPU 6x · middle       cambio→envío   27 ms · pedido ['0@+0'] · largas [] · fondo vivo gpu=si pintura=337.12 ms
+DPR 2 · reducir movimiento no · CPU 6x · soltar-fuera cambio→envío   22 ms · pedido ['0@+0'] · largas [] · fondo vivo gpu=si pintura=394.79 ms
+DPR 2 · reducir movimiento no · CPU 6x · right        cambio→envío  503 ms · pedido ['0@+0'] · largas ['-1..+487'] · fondo vivo gpu=si pintura=469.96 ms
+DPR 2 · reducir movimiento no · CPU 6x · middle       cambio→envío  361 ms · pedido ['0@+0'] · largas ['4..+335'] · fondo vivo gpu=si pintura=435.93 ms
+DPR 2 · reducir movimiento no · CPU 6x · soltar-fuera cambio→envío   12 ms · pedido ['0@+0'] · largas [] · fondo vivo gpu=si pintura=334.05 ms
+DPR 2 · reducir movimiento no · CPU 6x · right        cambio→envío   29 ms · pedido ['0@+0'] · largas [] · fondo vivo gpu=si pintura=431.62 ms
+DPR 2 · reducir movimiento no · CPU 6x · middle       cambio→envío  369 ms · pedido ['0@+0'] · largas ['6..+357'] · fondo vivo gpu=si pintura=450.42 ms
+DPR 2 · reducir movimiento sí · CPU 1x · soltar-fuera cambio→envío   24 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=454.40 ms
+DPR 2 · reducir movimiento sí · CPU 1x · right        cambio→envío   12 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=667.40 ms
+DPR 2 · reducir movimiento sí · CPU 1x · middle       cambio→envío    6 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=763.90 ms
+DPR 2 · reducir movimiento sí · CPU 1x · soltar-fuera cambio→envío   32 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=749.90 ms
+DPR 2 · reducir movimiento sí · CPU 1x · right        cambio→envío   25 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=771.20 ms
+DPR 2 · reducir movimiento sí · CPU 1x · middle       cambio→envío    9 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=649.60 ms
+DPR 2 · reducir movimiento sí · CPU 1x · soltar-fuera cambio→envío   10 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=759.40 ms
+DPR 2 · reducir movimiento sí · CPU 1x · right        cambio→envío   26 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=1054.20 ms
+DPR 2 · reducir movimiento sí · CPU 1x · middle       cambio→envío   21 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=880.60 ms
+DPR 2 · reducir movimiento sí · CPU 6x · soltar-fuera cambio→envío   42 ms · pedido ['0@+1'] · largas [] · fondo quieto gpu=si pintura=1243.60 ms
+DPR 2 · reducir movimiento sí · CPU 6x · right        cambio→envío   27 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=1480.20 ms
+DPR 2 · reducir movimiento sí · CPU 6x · middle       cambio→envío   29 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=968.30 ms
+DPR 2 · reducir movimiento sí · CPU 6x · soltar-fuera cambio→envío   27 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=923.40 ms
+DPR 2 · reducir movimiento sí · CPU 6x · right        cambio→envío   37 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=921.50 ms
+DPR 2 · reducir movimiento sí · CPU 6x · middle       cambio→envío   40 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=865.30 ms
+DPR 2 · reducir movimiento sí · CPU 6x · soltar-fuera cambio→envío   49 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=806.60 ms
+DPR 2 · reducir movimiento sí · CPU 6x · right        cambio→envío   32 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=683.20 ms
+DPR 2 · reducir movimiento sí · CPU 6x · middle       cambio→envío   33 ms · pedido ['0@+0'] · largas [] · fondo quieto gpu=si pintura=520.40 ms
+
+## Quién ocupa el hilo (Long Animation Frames, CPU 1x, DPR 1, 4 s después de cargar)
+requestAnimationFrame por pila: {"at T (http://localhost:3152/_next/static/chunks/3oi4hr9kkpyz3.js:1:12261) | at http://localhost:3152/_next/static/chunks/3oi4hr9kkpyz3.js:1:13209": 1, "at R (http://localhost:3152/_next/static/chunks/3oi4hr9kkpyz3.js:1:12683)": 80}
+{'start': 1763, 'duration': 71, 'render': 57, 'styleLayout': 0, 'blocking': 7, 'scripts': ['user-callback:FrameRequestCallback:http://localhost:3152/_next/static/chunks/3oi4hr9kkpyz3.js:R:57']}
+{'start': 1864, 'duration': 72, 'render': 58, 'styleLayout': 0, 'blocking': 8, 'scripts': ['user-callback:FrameRequestCallback:http://localhost:3152/_next/static/chunks/3oi4hr9kkpyz3.js:R:57']}
+{'start': 1964, 'duration': 68, 'render': 54, 'styleLayout': 0, 'blocking': 4, 'scripts': ['user-callback:FrameRequestCallback:http://localhost:3152/_next/static/chunks/3oi4hr9kkpyz3.js:R:54']}
+{'start': 2212, 'duration': 51, 'render': 35, 'styleLayout': 0, 'blocking': 0, 'scripts': ['user-callback:FrameRequestCallback:http://localhost:3152/_next/static/chunks/3oi4hr9kkpyz3.js:R:35']}
+{'start': 2296, 'duration': 50, 'render': 34, 'styleLayout': 0, 'blocking': 0, 'scripts': ['user-callback:FrameRequestCallback:http://localhost:3152/_next/static/chunks/3oi4hr9kkpyz3.js:R:34']}
+{'start': 2380, 'duration': 82, 'render': 67, 'styleLayout': 0, 'blocking': 17, 'scripts': ['user-callback:FrameRequestCallback:http://localhost:3152/_next/static/chunks/3oi4hr9kkpyz3.js:R:67']}
+
+## La prueba de 16c4265 (reloj real), 5 corridas a DPR 2, con el arreglo de N5 puesto
+    Error: clic central en «7 días»: milisegundos entre el cambio y el envío
+    Received:   271.59999990463257
+    test-results/e2e/demostracion-Movimientos-u-ce192-retrasa-el-siguiente-filtro/test-failed-1.png
+    Error: clic derecho en «7 días»: milisegundos entre el cambio y el envío
+    Received:   363.80000019073486
+    test-results/e2e/demostracion-Movimientos-u-ce192-retrasa-el-siguiente-filtro-repeat1/test-failed-1.png
+    Error: clic central en «7 días»: milisegundos entre el cambio y el envío
+    Received:   273.90000009536743
+    test-results/e2e/demostracion-Movimientos-u-ce192-retrasa-el-siguiente-filtro-repeat2/test-failed-1.png
+    Error: clic derecho en «7 días»: milisegundos entre el cambio y el envío
+    Received:   276.69999980926514
+    test-results/e2e/demostracion-Movimientos-u-ce192-retrasa-el-siguiente-filtro-repeat3/test-failed-1.png
+    Error: clic derecho en «7 días»: milisegundos entre el cambio y el envío
+    Received:   300.09999990463257
+    test-results/e2e/demostracion-Movimientos-u-ce192-retrasa-el-siguiente-filtro-repeat4/test-failed-1.png
+  5 failed
+
+## La prueba nueva (reloj de la página), 10 corridas a DPR 2 en el head con el arreglo
+  10 passed (2.4m)
+
+## La prueba nueva contra un worktree en 9b883b5 (antes de N5), 3 corridas
+    Error: clic derecho en «7 días»: el formulario sale en los primeros 100 ms del reloj de la página
+    Expected: true
+    Received: false
+    test-results/e2e/demostracion-Movimientos-u-ce192-retrasa-el-siguiente-filtro/test-failed-1.png
+    Error: clic derecho en «7 días»: el formulario sale en los primeros 100 ms del reloj de la página
+    Expected: true
+    Received: false
+    test-results/e2e/demostracion-Movimientos-u-ce192-retrasa-el-siguiente-filtro-repeat1/test-failed-1.png
+    Error: clic derecho en «7 días»: el formulario sale en los primeros 100 ms del reloj de la página
+    Expected: true
+    Received: false
+    test-results/e2e/demostracion-Movimientos-u-ce192-retrasa-el-siguiente-filtro-repeat2/test-failed-1.png
+  3 failed
+
+## La prueba nueva contra un worktree en f9b2460 (antes de N4), 2 corridas
+    Error: bajar en «7 días» y soltar fuera: el formulario sale en los primeros 100 ms del reloj de la página
+    Received: false
+    test-results/e2e/demostracion-Movimientos-u-ce192-retrasa-el-siguiente-filtro/test-failed-1.png
+    Error: bajar en «7 días» y soltar fuera: el formulario sale en los primeros 100 ms del reloj de la página
+    Received: false
+    test-results/e2e/demostracion-Movimientos-u-ce192-retrasa-el-siguiente-filtro-repeat1/test-failed-1.png
+  2 failed

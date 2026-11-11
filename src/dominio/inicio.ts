@@ -34,7 +34,14 @@ export type PendienteInicio = {
   ruta: RutaPendiente;
   accion: string;
   area: "operacion" | "configuracion";
+  /** Cuántas decisiones agrupa (los pagos por autorizar se cuentan uno por uno); sin valor, una. */
+  cantidad?: number;
 };
+
+/** Las acciones que esperan a la persona: lo que cuentan el lateral, Pendientes y Aprobaciones. */
+export function accionesPendientes(pendientes: readonly PendienteInicio[]): number {
+  return pendientes.reduce((total, pendiente) => total + (pendiente.cantidad ?? 1), 0);
+}
 
 /** Solo genera tareas que el rol actual puede abrir y completar. Nunca inventa gastos ni movimientos. */
 export function pendientesDeInicio(
@@ -51,6 +58,7 @@ export function pendientesDeInicio(
       ruta: "/consola/proveedores",
       accion: "Revisar pagos",
       area: "operacion",
+      cantidad: datos.pagosPorAutorizar,
     });
   }
   // Preparar la nómina pide las mismas capacidades que prepararNomina.

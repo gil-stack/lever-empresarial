@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import type { Metadata } from "next";
 
-import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { Coincidencias } from "@/components/operacion/coincidencias";
 import { fechaHora } from "@/components/operacion/formato";
 import { FormularioLista } from "@/components/operacion/formulario-lista";

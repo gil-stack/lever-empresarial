@@ -67,7 +67,7 @@ export async function enviarProveedor(
           areaId: formData.get("areaId"),
         });
         revalidatePath("/consola/proveedores");
-        revalidatePath("/consola/pendientes");
+        revalidatePath("/consola/aprobaciones");
         return { tipo: "listo", mensaje: guardado.mensaje };
       } catch (error) {
         return traducir(error);

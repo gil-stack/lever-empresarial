@@ -25,8 +25,8 @@ import { LateralMovil } from "./lateral-movil";
 import { Logotipo } from "./logotipo";
 import { MenuDesplegable } from "./menu-desplegable";
 import { ProgresoEnlace } from "./progreso-enlace";
-import { MARCO_SIN_SESION, puertasDe, type EmpresaElegible, type VistaDeMarco } from "./puertas";
-import { seccionesDe, type Contador, type GrupoDeSecciones } from "./secciones";
+import { MARCO_SIN_SESION, MODULOS_DEL_DISENO, puertasDe, type EmpresaElegible, type Puertas, type VistaDeMarco } from "./puertas";
+import { masDe, seccionActual, seccionesDe, type Contador, type GrupoDeSecciones, type Seccion } from "./secciones";
 import { COOKIE_TEMA, temaDesde } from "./tema";
 
 /**
@@ -35,9 +35,16 @@ import { COOKIE_TEMA, temaDesde } from "./tema";
  */
 export const PIE_REGULATORIO = "El saldo vive con el participante de la CLABE. El plástico vive con el emisor.";
 
-/** Títulos de las páginas que no están en el menú lateral. */
+/** Títulos de las páginas que no están en el menú lateral, o que viven dentro de otra sección. */
 const TITULOS_FUERA_DEL_MENU: Record<string, string> = {
   "/consola/apariencia": "Apariencia",
+  "/consola/perfil": "Mi perfil",
+  "/consola/configuracion": "Configuración",
+  "/consola/politica": "Políticas",
+  "/consola/integraciones": "Integraciones",
+  "/consola/personas": "Personas y nómina",
+  "/consola/lista-69b": "Lista 69-B",
+  "/consola/poliza": "Póliza",
   "/empresas": "Empresas",
   "/precios": "Precios",
   "/entrar": "Entrar",
@@ -87,7 +94,7 @@ export async function Marco({
   const leido = deMuestra
     ? { empresa: empresa ?? null, contadores: contadores ?? {} }
     : await estadoDelMarco();
-  const puertas = deMuestra
+  const puertas: Puertas = deMuestra
     ? {
         consola: true,
         resumen: true,
@@ -99,16 +106,19 @@ export async function Marco({
         configuracion: true,
         telefono: false,
         flujo: false,
+        modulos: Object.fromEntries(MODULOS_DEL_DISENO.map((ruta) => [ruta, false])) as Puertas["modulos"],
       }
     : puertasDe(vista.capacidades);
-  const grupos = seccionesDe(puertas, deMuestra ? null : vista.empresaId);
+  const empresaDeEnlaces = deMuestra ? null : vista.empresaId;
+  const grupos = seccionesDe(puertas, empresaDeEnlaces);
+  const mas = masDe(puertas, empresaDeEnlaces);
   const quien = deMuestra ? (persona ? { id: undefined, nombre: persona.nombre, rol: null } : null) : vista.persona;
+  // Sin cifras, la consola abre en Aprobaciones (antes Pendientes).
   const destinoConsola = deMuestra ? "/consola" : rutaConsola(vista.capacidades);
+  const exacta = [...grupos, ...mas].flatMap((grupo) => grupo.secciones).find((seccion) => seccion.ruta === actual);
   const tituloVisible =
-    titulo ??
-    grupos.flatMap((grupo) => grupo.secciones).find((seccion) => seccion.ruta === actual)?.etiqueta ??
-    TITULOS_FUERA_DEL_MENU[actual] ??
-    "";
+    titulo ?? exacta?.etiqueta ?? TITULOS_FUERA_DEL_MENU[actual] ?? seccionActual(grupos, actual)?.etiqueta ?? "";
+  const marcada = seccionActual(grupos, actual)?.ruta ?? null;
   const busqueda = puertas.maestro
     ? { accion: enEmpresa(vista.empresaId, "/consola/personas"), texto: "Buscar persona", vista: null }
     : puertas.proveedores
@@ -128,11 +138,11 @@ export async function Marco({
             <Marca empresaId={vista.empresaId} destino={destinoConsola} />
           </div>
           {leido.empresa ? (
-            <EmpresaLateral empresa={leido.empresa} empresas={vista.empresas} actual={vista.empresaId} />
+            <EmpresaLateral empresa={leido.empresa} empresas={vista.empresas} actual={vista.empresaId} mas={mas} rutaActual={actual} />
           ) : null}
           <nav className="secciones" aria-label="Secciones">
             {grupos.map((grupo) => (
-              <Grupo key={grupo.titulo} grupo={grupo} actual={actual} contadores={leido.contadores} />
+              <Grupo key={grupo.titulo} grupo={grupo} marcada={marcada} contadores={leido.contadores} />
             ))}
           </nav>
           <p className="lateral-pie">{PIE_REGULATORIO}</p>
@@ -142,7 +152,7 @@ export async function Marco({
             <p className="barra-titulo">{tituloVisible}</p>
             <span className="barra-espacio" />
             {busqueda ? (
-              <form className="busqueda" role="search" action={busqueda.accion}>
+              <form className="busqueda" role="search" aria-label={busqueda.texto} action={busqueda.accion}>
                 <IconoBuscar />
                 {busqueda.vista ? <input type="hidden" name="vista" value={busqueda.vista} /> : null}
                 <input type="search" name="q" maxLength={100} placeholder={busqueda.texto} aria-label={busqueda.texto} autoComplete="off" />
@@ -150,12 +160,23 @@ export async function Marco({
             ) : null}
             {accion}
             {quien ? (
-              <MenuPersona
-                nombre={quien.nombre}
-                rol={quien.rol}
-                apariencia={vista.empresaId ? enEmpresa(vista.empresaId, "/consola/apariencia") : null}
-                cambiarEmpresa={vista.variasEmpresas}
-              />
+              <>
+                <MenuPersona
+                  nombre={quien.nombre}
+                  rol={quien.rol}
+                  apariencia={vista.empresaId ? enEmpresa(vista.empresaId, "/consola/apariencia") : null}
+                  cambiarEmpresa={vista.variasEmpresas}
+                />
+                {/* Sin JavaScript el menú de la persona no abre: «Salir» queda a la vista, con la misma acción. */}
+                <noscript className="barra-salir-sin-script">
+                  <form action={salir} className="salir-sin-script">
+                    <button type="submit" className="boton-secundario">
+                      <IconoSalir />
+                      Salir
+                    </button>
+                  </form>
+                </noscript>
+              </>
             ) : (
               <Link href="/entrar" className="boton-secundario barra-entrar" aria-current={actual === "/entrar" ? "page" : undefined}>
                 <IconoEntrar />
@@ -164,22 +185,32 @@ export async function Marco({
             )}
           </BarraSuperior>
           {children}
-          {/* En pantallas angostas el lateral es un cajón: el aviso regulatorio no se esconde ahí, va al final de la página. */}
-          <p className="pie-movil">{PIE_REGULATORIO}</p>
+          {/* En pantallas angostas el lateral es un cajón: el aviso regulatorio no se esconde ahí, va al final de la página,
+              como su pie. */}
+          <footer className="pie-movil">{PIE_REGULATORIO}</footer>
         </div>
       </div>
     </>
   );
 }
 
+/**
+ * La tarjeta de la empresa abre «Más», como el menú de la empresa del diseño:
+ * Tú (perfil, apariencia, teléfono), Empresa (configuración, políticas,
+ * integraciones) y, si la persona tiene varias, sus empresas.
+ */
 function EmpresaLateral({
   empresa,
   empresas,
   actual,
+  mas,
+  rutaActual,
 }: {
   empresa: EmpresaDelMarco;
   empresas: readonly EmpresaElegible[];
   actual: string | null;
+  mas: readonly GrupoDeSecciones[];
+  rutaActual: string;
 }) {
   const tarjeta = (
     <>
@@ -192,25 +223,58 @@ function EmpresaLateral({
       </span>
     </>
   );
-  if (empresas.length < 2) return <div className="empresa-lateral">{tarjeta}</div>;
+  if (empresas.length < 2 && mas.length === 0) return <div className="empresa-lateral">{tarjeta}</div>;
   return (
-    <MenuDesplegable clase="empresa-lateral" etiqueta="Cambiar de empresa" disparador={tarjeta} fijo>
-      <p className="menu-seccion">Tus empresas</p>
-      {empresas.map((otra) => (
-        <Link
-          key={otra.id}
-          href={otra.destino}
-          role="menuitem"
-          tabIndex={-1}
-          className="menu-opcion"
-          aria-current={otra.id === actual ? "true" : undefined}
-        >
-          <span className="menu-iniciales" aria-hidden="true">
-            {inicialesDe(otra.razonSocial)}
-          </span>
-          {otra.razonSocial}
-        </Link>
+    <MenuDesplegable
+      clase="empresa-lateral"
+      etiqueta="Más: tu perfil y tu empresa"
+      disparador={
+        <>
+          {/* El botón se anuncia como lo que abre; la tarjeta sola diría solo el nombre de la empresa. */}
+          <span className="solo-lector">Más: tu perfil y tu empresa. </span>
+          {tarjeta}
+        </>
+      }
+      fijo
+    >
+      {mas.map((grupo) => (
+        <div key={grupo.titulo} className="menu-grupo">
+          <p className="menu-seccion">{grupo.titulo}</p>
+          {grupo.secciones.map((seccion: Seccion) => (
+            <Link
+              key={seccion.href}
+              href={seccion.href}
+              role="menuitem"
+              tabIndex={-1}
+              className="menu-opcion"
+              aria-current={seccion.ruta === rutaActual ? "page" : undefined}
+            >
+              <seccion.Icono />
+              {seccion.etiqueta}
+            </Link>
+          ))}
+        </div>
       ))}
+      {empresas.length > 1 ? (
+        <>
+          <p className="menu-seccion">Tus empresas</p>
+          {empresas.map((otra) => (
+            <Link
+              key={otra.id}
+              href={otra.destino}
+              role="menuitem"
+              tabIndex={-1}
+              className="menu-opcion"
+              aria-current={otra.id === actual ? "true" : undefined}
+            >
+              <span className="menu-iniciales" aria-hidden="true">
+                {inicialesDe(otra.razonSocial)}
+              </span>
+              {otra.razonSocial}
+            </Link>
+          ))}
+        </>
+      ) : null}
     </MenuDesplegable>
   );
 }
@@ -275,11 +339,12 @@ function MenuPersona({
 
 function Grupo({
   grupo,
-  actual,
+  marcada,
   contadores,
 }: {
   grupo: GrupoDeSecciones;
-  actual: string;
+  /** La ruta de la sección actual: la de la página o la que la incluye. */
+  marcada: string | null;
   contadores: Record<string, Contador>;
 }) {
   const id = `grupo-${grupo.titulo.toLocaleLowerCase("es-MX")}`;
@@ -289,11 +354,12 @@ function Grupo({
         {grupo.titulo}
       </p>
       <ul aria-labelledby={id}>
-        {grupo.secciones.map(({ ruta, href, etiqueta, Icono }) => {
-          const contador = contadores[ruta];
+        {grupo.secciones.map(({ ruta, href, etiqueta, Icono, incluye }) => {
+          // El contador de una página que vive dentro de otra sección (Personas en Nómina) sube a ella.
+          const contador = contadores[ruta] ?? incluye?.map((otra) => contadores[otra]).find(Boolean);
           return (
             <li key={href}>
-              <Link href={href} className="seccion" prefetch={true} aria-current={ruta === actual ? "page" : undefined}>
+              <Link href={href} className="seccion" prefetch={true} aria-current={ruta === marcada ? "page" : undefined}>
                 <Icono />
                 {etiqueta}
                 {contador ? (
@@ -312,14 +378,14 @@ function Grupo({
   );
 }
 
-function Marca({ empresaId = null, destino }: { empresaId?: string | null; destino: "/consola" | "/consola/pendientes" }) {
+function Marca({ empresaId = null, destino }: { empresaId?: string | null; destino: "/consola" | "/consola/aprobaciones" }) {
+  // El nombre sale del contenido, en un solo texto para el lector de pantalla que empieza con lo que se ve («Lever
+  // Empresas»). Un `aria-label` en el enlace no contendría el texto visible (WCAG 2.5.3), y el texto junto al logotipo
+  // con su propio nombre dejaría un espacio antes de la coma («Lever Empresas , ir a…»).
   return (
-    <Link
-      href={enEmpresa(empresaId, destino)}
-      className="marca"
-      aria-label={`Lever Empresas, ir a ${destino === "/consola" ? "Inicio" : "Pendientes"}`}
-    >
-      <Logotipo />
+    <Link href={enEmpresa(empresaId, destino)} className="marca">
+      <Logotipo decorativo />
+      <span className="solo-lector">Lever Empresas, ir a {destino === "/consola" ? "Resumen" : "Aprobaciones"}</span>
     </Link>
   );
 }
@@ -389,7 +455,7 @@ export async function MarcoTelefono({
               ))}
             </nav>
             <footer className="pie-app enlaces-app">
-              {consola ? <Link href={enEmpresa(empresaId, resumen ? "/consola" : "/consola/pendientes")}>Abrir consola</Link> : null}
+              {consola ? <Link href={enEmpresa(empresaId, resumen ? "/consola" : "/consola/aprobaciones")}>Abrir consola</Link> : null}
               {variasEmpresas ? <Link href="/empresas">Cambiar de empresa</Link> : null}
               <form action={salir}><BotonEnviar className="" enviando="Saliendo…">Salir</BotonEnviar></form>
             </footer>

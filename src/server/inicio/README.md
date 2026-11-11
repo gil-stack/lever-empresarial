@@ -1,13 +1,13 @@
-# Inicio y Pendientes
+# Inicio y Aprobaciones
 
 Dos lecturas de la consola del cliente:
 
 | Pantalla | Ruta | Permiso | Fuente |
 | --- | --- | --- | --- |
 | Inicio financiero | `/consola` | `cliente.resumen.ver` (administrador, finanzas) | `resumen-repositorio.ts` sobre `postings` y `drawers` |
-| Pendientes | `/consola/pendientes` | `cliente.consola.ver` (cualquier rol de consola) | `repositorio.ts` (conteos de configuración) |
+| Aprobaciones (antes Pendientes) | `/consola/aprobaciones` | `cliente.consola.ver` (cualquier rol de consola) | `repositorio.ts` (conteos de configuración) |
 
-Quien tiene consola pero no `cliente.resumen.ver` (contador, liberador, solicitante) y abre `/consola` o `/c/<empresa>` aterriza en Pendientes con un `redirect`, no en un 404. La lectura del resumen vuelve a exigir el permiso en `resumen-servicio.ts`.
+Quien tiene consola pero no `cliente.resumen.ver` (contador, liberador, solicitante) y abre `/consola` o `/c/<empresa>` aterriza en Aprobaciones con un `redirect`, no en un 404. Pendientes se unió con Aprobaciones en la Ola 2b: `/consola/pendientes` revisa la misma puerta y redirige. La lectura del resumen vuelve a exigir el permiso en `resumen-servicio.ts`.
 
 ## Regla de signo
 

@@ -383,6 +383,30 @@ div.empresa-lateral:not(.menu-desplegable),
   flex: 1;
 }
 
+/* N19: un ancla, «Saltar al contenido» o el campo que recibe el foco quedan debajo de las barras pegadas arriba, no
+   tapados. BarraSuperior mide lo que tapan (--alto-barras); sin JavaScript (y antes de medir) va el alto de cada caso:
+   84 px en escritorio; en el teléfono la barra móvil (60) más la de arriba, con «Salir» en su renglón sin JavaScript. */
+html:has(.barra-superior) {
+  --alto-barras-sin-medir: 84px;
+  scroll-padding-top: calc(var(--alto-barras, var(--alto-barras-sin-medir)) + 12px);
+}
+
+@media (max-width: 960px) {
+  html:has(.barra-superior) {
+    --alto-barras-sin-medir: 172px;
+  }
+}
+
+@media (scripting: none) and (max-width: 960px) {
+  html:has(.barra-superior) {
+    --alto-barras-sin-medir: 220px;
+  }
+
+  html:has(.operacion-pagina) {
+    --alto-barras-sin-medir: 172px;
+  }
+}
+
 .barra-superior {
   position: sticky;
   top: 0;
@@ -396,8 +420,11 @@ div.empresa-lateral:not(.menu-desplegable),
     box-shadow 0.5s;
 }
 
+/* Las barras pegadas arriba van al 92 % (antes 70 %): con el 70 %, lo que pasaba por debajo bajaba los textos
+   secundarios («Operación SOFIPO», el rol de la cuenta) a 3.0-3.4:1. Con negro o blanco puros debajo, el mínimo para
+   4.5:1 es 86 % en Claro, 78 % en Oscuro y 79 % en Lever (trece-N1). Lo cubre la e2e de accesibilidad.spec.ts. */
 .barra-superior[data-desplazada] {
-  background: color-mix(in srgb, var(--void) 70%, transparent);
+  background: color-mix(in srgb, var(--void) 92%, transparent);
   -webkit-backdrop-filter: blur(24px) saturate(120%);
   backdrop-filter: blur(24px) saturate(120%);
   box-shadow: 0 1px 0 var(--line);
@@ -406,7 +433,7 @@ div.empresa-lateral:not(.menu-desplegable),
 /* Sin JavaScript nadie pone data-desplazada: la barra lleva siempre su fondo y no se encima con el contenido. */
 @media (scripting: none) {
   .barra-superior {
-    background: color-mix(in srgb, var(--void) 70%, transparent);
+    background: color-mix(in srgb, var(--void) 92%, transparent);
     -webkit-backdrop-filter: blur(24px) saturate(120%);
     backdrop-filter: blur(24px) saturate(120%);
     box-shadow: 0 1px 0 var(--line);
@@ -620,6 +647,11 @@ div.empresa-lateral:not(.menu-desplegable),
   gap: 8px;
 }
 
+/* Sin JavaScript, junto al menú de la persona (que no abre). */
+.salir-sin-script .boton-secundario {
+  gap: 8px;
+}
+
 @media (max-width: 1180px) {
   .busqueda {
     width: 200px;
@@ -644,7 +676,7 @@ div.empresa-lateral:not(.menu-desplegable),
     height: 60px;
     padding: 0 12px 0 var(--margen);
     border-bottom: 1px solid var(--line);
-    background: color-mix(in srgb, var(--void) 70%, transparent);
+    background: color-mix(in srgb, var(--void) 92%, transparent);
     -webkit-backdrop-filter: blur(24px) saturate(120%);
     backdrop-filter: blur(24px) saturate(120%);
   }
@@ -768,5 +800,17 @@ div.empresa-lateral:not(.menu-desplegable),
   .cuenta .menu-desplegable-boton {
     gap: 6px;
     padding: 3px 4px;
+  }
+
+  /* Sin JavaScript, «Salir» va en su propia fila, debajo de la búsqueda: en la primera no le quita ancho al título.
+     El elemento de la fila es el <noscript>; su display no se toca (con JavaScript el navegador lo oculta). */
+  .barra-salir-sin-script {
+    order: 4;
+    flex-basis: 100%;
+  }
+
+  .salir-sin-script {
+    display: flex;
+    justify-content: flex-end;
   }
 }

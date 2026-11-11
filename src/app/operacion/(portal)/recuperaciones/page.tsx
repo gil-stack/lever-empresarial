@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { soloTexto, type Parametros } from "@/app/operacion/busqueda";
+import { soloTexto, type Parametros } from "@/nucleo/direccion";
 import { decidirRecuperacionAccion } from "@/app/operacion/acciones-recuperaciones";
 import { ConfirmarIdentidad } from "@/components/entrar/confirmar-identidad";
 import { IconoSeguridad } from "@/components/cromo/iconos";

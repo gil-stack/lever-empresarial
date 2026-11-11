@@ -59,6 +59,8 @@ import {
 export type DependenciasFlujo = {
   ahora?: () => Date;
   auditar?: Auditar;
+  /** La transacción de una escritura, con el contexto de la empresa. Por omisión, la de la base; las pruebas dan la suya. */
+  transaccion?: <T>(ctx: ContextoConEmpresa, fn: (consulta: Consulta) => Promise<T>) => Promise<T>;
 };
 
 /** Un error de captura que vuelve al formulario con su campo. */
@@ -395,7 +397,7 @@ function escribir<T>(
   fn: (consulta: Consulta, conEmpresa: ContextoConEmpresa, auditar: Auditar, hoy: string) => Promise<T>,
 ): Promise<T> {
   const conEmpresa = exigir(ctx, "cliente.flujo.editar");
-  return leerCon(conEmpresa, (consulta) => fn(consulta, conEmpresa, deps?.auditar ?? auditarPorDefecto, hoyDe(deps)));
+  return (deps?.transaccion ?? leerCon)(conEmpresa, (consulta) => fn(consulta, conEmpresa, deps?.auditar ?? auditarPorDefecto, hoyDe(deps)));
 }
 
 function exigirValido<T>(resultado: { ok: true; valor: T } | { ok: false; errores: ErrorFlujo[] }): T {

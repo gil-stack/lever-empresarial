@@ -27,7 +27,7 @@ export default async function BitacoraOperacion() {
         {eventos.length === 0 ? (
           <Vacio titulo="Sin eventos">Cada decisión de Operación queda aquí.</Vacio>
         ) : (
-          <div className="tabla-contenedor">
+          <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de eventos de la bitácora">
             <table className="tabla operacion-tabla">
               <thead>
                 <tr>

@@ -1,0 +1,121 @@
+[e2e] compilado · 39 s
+[e2e] imágenes listas (postgres:17 y mcr.microsoft.com/playwright:v1.64.1-noble) · 63 s
+[e2e] Postgres y navegador listos · 73 s
+
+Running 22 tests using 1 worker, shard 4 of 7
+
+  ✓   1 tests/e2e/fondo-pruebas.ts:173:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (9.3s)
+  ✓   2 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › estable (3.4s)
+  ✓   3 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (4.2s)
+  ✓   4 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez (2.4s)
+  ✓   5 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms (4.5s)
+  ✓   6 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana (2.6s)
+  ✓   7 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › estable (36.0s)
+  ✓   8 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (48.7s)
+  ✓   9 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez (34.1s)
+  ✓  10 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms (49.8s)
+  ✓  11 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana (38.2s)
+  ✓  12 tests/e2e/fondo.spec.ts:17:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (6.0s)
+  ✓  13 tests/e2e/fondo-pruebas.ts:216:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez (1.9m)
+  ✘  14 tests/e2e/invitacion.spec.ts:31:5 › invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta (31.5s)
+  -  15 tests/e2e/invitacion.spec.ts:117:5 › recuperar la contraseña por correo: un enlace, cierra las sesiones y entra con la nueva y su factor de siempre
+  ✓  16 tests/e2e/marco.spec.ts:12:7 › marco de la consola en escritorio › menú de la persona: cuatro opciones fuera del Tab; Tab y Escape cierran y regresan el foco al botón (5.6s)
+  ✓  17 tests/e2e/marco.spec.ts:38:7 › marco de la consola en escritorio › el buscador de la barra lleva a su sección con lo escrito (5.1s)
+  ✓  18 tests/e2e/marco.spec.ts:47:7 › marco de la consola en escritorio › Apariencia: con sesión y empresa se abre; sin sesión manda a entrar; otra empresa no la muestra (7.1s)
+  ✓  19 tests/e2e/marco.spec.ts:76:7 › cajón móvil › sin checkVisibility (Safari < 17.4): abre, atrapa el foco, deja el fondo inert; Escape y el velo regresan el foco (1.9s)
+  ✓  20 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › laura: responde 404 de verdad, igual para la ajena y la inexistente (con JavaScript) (16.1s)
+  ✓  21 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › gil: responde 404 de verdad, igual para la ajena y la inexistente (con JavaScript) (17.1s)
+  ✓  22 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › laura: responde 404 de verdad, igual para la ajena y la inexistente (sin JavaScript) (1.3s)
+
+
+  1) tests/e2e/invitacion.spec.ts:31:5 › invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta
+
+    TimeoutError: page.waitForResponse: Timeout 30000ms exceeded while waiting for event \
+
+       at apoyo.ts:196
+
+      194 |   };
+      195 |   pagina.on(\
+    > 196 |   const respuesta = pagina.waitForResponse((r) => r.request().method() === \
+          |                            ^
+      197 |   // Sin pausa, el segundo clic llega mientras la acción corre (el caso que BotonEnviar protege).
+      198 |   await boton.dblclick({ delay: opciones.pausaMs ?? 0 });
+      199 |   await respuesta;
+        at dobleClic (/vercel/jobs/repo/tests/e2e/apoyo.ts:196:28)
+        at /vercel/jobs/repo/tests/e2e/invitacion.spec.ts:42:18
+
+    Error: locator.dblclick: Test ended.
+    Call log:
+      - waiting for getByRole('button', { name: 'Enviar invitación' })
+        - locator resolved to <button type=\
+      - attempting dblclick action
+        - waiting for element to be visible, enabled and stable
+
+
+       at apoyo.ts:198
+
+      196 |   const respuesta = pagina.waitForResponse((r) => r.request().method() === \
+      197 |   // Sin pausa, el segundo clic llega mientras la acción corre (el caso que BotonEnviar protege).
+    > 198 |   await boton.dblclick({ delay: opciones.pausaMs ?? 0 });
+          |               ^
+      199 |   await respuesta;
+      200 |   if (opciones.esperar) await pagina.waitForURL(opciones.esperar, { timeout: 30_000 });
+      201 |   await pagina.waitForFunction(() => !document.querySelector('form[aria-busy=\
+        at dobleClic (/vercel/jobs/repo/tests/e2e/apoyo.ts:198:15)
+        at /vercel/jobs/repo/tests/e2e/invitacion.spec.ts:42:18
+
+    Error Context: test-results/e2e/invitacion-invitación-del--2a404-enlace-nuevo-crea-la-cuenta/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/e2e/invitacion-invitación-del--2a404-enlace-nuevo-crea-la-cuenta/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/e2e/invitacion-invitación-del--2a404-enlace-nuevo-crea-la-cuenta/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  Slow test file: tests/e2e/fondo-pruebas.ts (5.7m)
+  Consider running tests from slow files in parallel. See: https://playwright.dev/docs/test-parallel
+  1 failed
+    tests/e2e/invitacion.spec.ts:31:5 › invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta
+  1 did not run
+  20 passed (7.6m)
+[e2e] recorridos terminados con estado 1 · 21 pruebas corridas · 531 s
+[e2e] ===== Contexto de cada falla (árbol accesible de la página) =====
+test-results/e2e/invitacion-invitación-del--2a404-enlace-nuevo-crea-la-cuenta/error-context.md
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: invitacion.spec.ts >> invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta
+- Location: tests/e2e/invitacion.spec.ts:31:5
+
+# Error details
+
+```
+TimeoutError: page.waitForResponse: Timeout 30000ms exceeded while waiting for event \
+```
+
+```
+Error: locator.dblclick: Test ended.
+Call log:
+  - waiting for getByRole('button', { name: 'Enviar invitación' })
+    - locator resolved to <button type=\
+  - attempting dblclick action
+    - waiting for element to be visible, enabled and stable
+
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - link \
+      - /url: \
+    - complementary \
+      - link \

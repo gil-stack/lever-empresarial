@@ -1,0 +1,21 @@
+# Sin el arreglo (filtros-al-cambiar.tsx de b38728e): npm run test:e2e -- demostracion.spec.ts
+  ✓  1 tests/e2e/demostracion.spec.ts:38:5 › empresa real: cada módulo de demostración dice «Disponible pronto» y ni el HTML ni la carga RSC traen datos de ejemplo (1.7s)
+  ✓  2 tests/e2e/demostracion.spec.ts:64:5 › empresa de demostración: cada módulo pinta el aviso y los datos de ejemplo, con los botones de dinero apagados (1.4s)
+  ✘  3 tests/e2e/demostracion.spec.ts:84:5 › Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegación cada uno (2.5s)
+    Error: Enter en «Monto desde»
+    Expected length: 1
+    Received length: 2
+    Received array:  ["GET /consola/movimientos?persona=&area=&tarjeta=&categoria=&comprobante=&desde=2000&agrupar=&_rsc=Rf0ZX6bNwXM2mtTG", "GET /consola/movimientos?persona=&area=&tarjeta=&categoria=&comprobante=&desde=2000&agrupar=&_rsc=Rf0ZX6bNwXM2mtTG"]
+  1 failed
+  2 passed (11.6s)
+Error: Enter en «Monto desde»
+Expected length: 1
+Received length: 2
+Received array:  ["GET /consola/movimientos?persona=&area=&tarjeta=&categoria=&comprobante=&desde=2000&agrupar=&_rsc=Rf0ZX6bNwXM2mtTG", "GET /consola/movimientos?persona=&area=&tarjeta=&categoria=&comprobante=&desde=2000&agrupar=&_rsc=Rf0ZX6bNwXM2mtTG"]
+      |                                                       ^ Error: Enter en «Monto desde»
+
+# Con el arreglo: npm run test:e2e -- demostracion.spec.ts
+  ✓  1 tests/e2e/demostracion.spec.ts:38:5 › empresa real: cada módulo de demostración dice «Disponible pronto» y ni el HTML ni la carga RSC traen datos de ejemplo (3.4s)
+  ✓  2 tests/e2e/demostracion.spec.ts:64:5 › empresa de demostración: cada módulo pinta el aviso y los datos de ejemplo, con los botones de dinero apagados (963ms)
+  ✓  3 tests/e2e/demostracion.spec.ts:84:5 › Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegación cada uno (3.5s)
+  3 passed (16.9s)

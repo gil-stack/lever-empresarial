@@ -1,0 +1,23 @@
+# Sin el arreglo (filtros-al-cambiar.tsx de f9b2460): npm run test:e2e -- demostracion.spec.ts -g "soltarlo fuera"
+  ✘  1 tests/e2e/demostracion.spec.ts:111:5 › Movimientos: bajar el ratón en «7 días» y soltarlo fuera no retrasa el siguiente filtro (2.0s)
+    Error: milisegundos entre el cambio y el envío
+    Expected: < 250
+    Received:   502.30000019073486
+    Error Context: test-results/e2e/demostracion-Movimientos-b-e1d5a-retrasa-el-siguiente-filtro/error-context.md
+  1 failed
+
+# Con el arreglo: npm run test:e2e -- demostracion.spec.ts
+  ✓  1 tests/e2e/demostracion.spec.ts:38:5 › empresa real: cada módulo de demostración dice «Disponible pronto» y ni el HTML ni la carga RSC traen datos de ejemplo (1.3s)
+  ✓  2 tests/e2e/demostracion.spec.ts:64:5 › empresa de demostración: cada módulo pinta el aviso y los datos de ejemplo, con los botones de dinero apagados (700ms)
+  ✓  3 tests/e2e/demostracion.spec.ts:84:5 › Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegación cada uno (3.2s)
+  ✓  4 tests/e2e/demostracion.spec.ts:111:5 › Movimientos: bajar el ratón en «7 días» y soltarlo fuera no retrasa el siguiente filtro (2.0s)
+  ✓  5 tests/e2e/demostracion.spec.ts:148:7 › en el teléfono › Movimientos: escribir el monto y tocar «7 días» lleva los dos en una sola navegación (2.2s)
+  5 passed (14.0s)
+
+# modulos con el arreglo (ratón a 1440, dedo arrastrado a 390)
+OK    modulos oscuro 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación · 12 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»
+OK    modulos oscuro 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación · 11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»
+OK    modulos claro 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación · 13 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»
+OK    modulos claro 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación · 10 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»
+OK    modulos lever 1440 Movimientos: soltar el ratón fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación · 15 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»
+OK    modulos lever 390 Movimientos: arrastrar el dedo fuera de «7 días» no retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación · 11 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»

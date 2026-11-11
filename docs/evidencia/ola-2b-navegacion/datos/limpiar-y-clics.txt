@@ -1,0 +1,56 @@
+# Sin el arreglo (filtros-al-cambiar.tsx y movimientos.tsx de 9b883b5): npm run test:e2e -- demostracion.spec.ts -g "no lo elige|Limpiar filtros"
+  ✘  1 tests/e2e/demostracion.spec.ts:111:5 › Movimientos: un gesto del ratón en «7 días» que no lo elige no retrasa el siguiente filtro (3.4s)
+  ✘  2 tests/e2e/demostracion.spec.ts:166:5 › Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los campos como dice la dirección (16.1s)
+    Error: clic derecho en «7 días»: milisegundos entre el cambio y el envío
+    Expected: < 250
+    Received:   517
+    Error: tras limpiar: Persona vacía
+    Expected: ""
+    Received: "Ana Torres"
+  2 failed
+
+# Con el arreglo, sin la regla que conserva lo que se está escribiendo (mutación local): el monto retenido se borra
+  ✘  1 tests/e2e/demostracion.spec.ts:166:5 › Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los campos como dice la dirección (18.2s)
+    Error: el monto que se estaba escribiendo sigue ahí
+    Expected: "250"
+    Received: ""
+
+# Con el arreglo: npm run test:e2e completo (las de demostracion.spec.ts y el total)
+  ✓   3 tests/e2e/demostracion.spec.ts:38:5 › empresa real: cada módulo de demostración dice «Disponible pronto» y ni el HTML ni la carga RSC traen datos de ejemplo (1.2s)
+  ✓   4 tests/e2e/demostracion.spec.ts:64:5 › empresa de demostración: cada módulo pinta el aviso y los datos de ejemplo, con los botones de dinero apagados (740ms)
+  ✓   5 tests/e2e/demostracion.spec.ts:84:5 › Movimientos: Enter y Tab en «Monto desde» filtran con una sola navegación cada uno (3.3s)
+  ✓   6 tests/e2e/demostracion.spec.ts:111:5 › Movimientos: un gesto del ratón en «7 días» que no lo elige no retrasa el siguiente filtro (5.1s)
+  ✓   7 tests/e2e/demostracion.spec.ts:166:5 › Movimientos: «Limpiar filtros», «Atrás» y «Adelante» dejan los campos como dice la dirección (2.9s)
+  ✓   8 tests/e2e/demostracion.spec.ts:242:7 › en el teléfono › Movimientos: escribir el monto y tocar «7 días» lleva los dos en una sola navegación (2.2s)
+  42 passed (2.8m)
+
+# Recorrido «limpiar» contra el código de 9b883b5 (Oscuro, 1440 y 390)
+FALLO limpiar oscuro 1440 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona y el monto vacíos · {"persona":"Carlos Méndez","monto":"100"}
+OK    limpiar oscuro 1440 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona y el monto de la dirección · {"persona":"Carlos Méndez","monto":"100"}
+FALLO limpiar oscuro 1440 Movimientos: «Adelante» deja otra vez los campos vacíos · {"persona":"Carlos Méndez","monto":"100"}
+FALLO limpiar oscuro 1440 Movimientos: el filtro siguiente (Área) va solo, sin la persona ni el monto de antes, con una navegación · 1 navegación(es) · persona «Carlos Méndez» · desde «100»
+FALLO limpiar oscuro 1440 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos · {"persona":"Carlos Méndez","monto":""}
+OK    limpiar oscuro 1440: sin errores de consola
+FALLO limpiar oscuro 390 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona y el monto vacíos · {"persona":"Carlos Méndez","monto":"100"}
+OK    limpiar oscuro 390 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona y el monto de la dirección · {"persona":"Carlos Méndez","monto":"100"}
+FALLO limpiar oscuro 390 Movimientos: «Adelante» deja otra vez los campos vacíos · {"persona":"Carlos Méndez","monto":"100"}
+FALLO limpiar oscuro 390 Movimientos: el filtro siguiente (Área) va solo, sin la persona ni el monto de antes, con una navegación · 1 navegación(es) · persona «Carlos Méndez» · desde «100»
+FALLO limpiar oscuro 390 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos · {"persona":"Carlos Méndez","monto":""}
+OK    limpiar oscuro 390: sin errores de consola
+4 de 12 comprobaciones en verde.
+
+# modulos con el arreglo (Oscuro; Claro y Lever igual, en modulos.json)
+OK    modulos oscuro 1440 Movimientos: «Limpiar filtros» vuelve a las 34 compras
+OK    modulos oscuro 1440 Movimientos: el clic derecho en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación · 18 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»
+OK    modulos oscuro 1440 Movimientos: el clic central en «7 días» no lo elige ni retrasa el siguiente cambio: 5000 y Tab salen de inmediato, con una navegación · 12 ms del cambio al envío · 1 navegación(es) · marcado «Todo el mes»
+OK    modulos oscuro 1440 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona y el monto vacíos · {"persona":"","monto":""}
+OK    modulos oscuro 1440 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona y el monto de la dirección · {"persona":"Carlos Méndez","monto":"100"}
+OK    modulos oscuro 1440 Movimientos: «Adelante» deja otra vez los campos vacíos · {"persona":"","monto":""}
+OK    modulos oscuro 1440 Movimientos: el filtro siguiente (Área) va solo, sin la persona ni el monto de antes, con una navegación · 1 navegación(es) · persona «» · desde «»
+OK    modulos oscuro 1440 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos · {"persona":"","monto":""}
+OK    modulos oscuro 390 Movimientos: «Limpiar filtros» vuelve a las 34 compras
+OK    modulos oscuro 390 Movimientos: «Limpiar filtros» tras filtrar a mano deja Persona y el monto vacíos · {"persona":"","monto":""}
+OK    modulos oscuro 390 Movimientos: «Atrás» tras limpiar vuelve a mostrar la persona y el monto de la dirección · {"persona":"Carlos Méndez","monto":"100"}
+OK    modulos oscuro 390 Movimientos: «Adelante» deja otra vez los campos vacíos · {"persona":"","monto":""}
+OK    modulos oscuro 390 Movimientos: el filtro siguiente (Área) va solo, sin la persona ni el monto de antes, con una navegación · 1 navegación(es) · persona «» · desde «»
+OK    modulos oscuro 390 Movimientos: «Limpiar filtros» con los filtros llegados en la dirección deja los campos vacíos · {"persona":"","monto":""}

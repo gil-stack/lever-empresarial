@@ -562,9 +562,7 @@ test("12 · evidencia: 3 temas × 1440 y 390, axe sin violaciones y sin desplaza
           await page.addScriptTag({ content: axe });
           const violaciones = await page.evaluate(async () => {
             const r = await (window as unknown as { axe: { run: (c: object, o: object) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } })
-              // El enlace del logotipo del marco compartido tiene un aria-label que no contiene su texto visible
-              // (WCAG 2.5.3) en todas las páginas, no solo en cobranza; lo corrige el PR #60 (Ola 2b) y aquí no se toca.
-              .axe.run({ exclude: [[".lateral-cabeza > .marca"], [".barra-movil > .marca"], [".arco-marca"]] }, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } });
+              .axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] } });
             return r.violations.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(", ")}`);
           });
           for (const v of violaciones) hallazgos.push(`${nombre} ${tema} ${ancho}: ${v}`);

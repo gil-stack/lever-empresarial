@@ -67,17 +67,26 @@ function soloElOprimido(vistas, valor, enviando) {
   return { ok: anuncia && otrosCallan && otrosEsperan && otros.length > 0, anuncia, otrosCallan, otrosEsperan };
 }
 
-/** Un pendiente aparece en Pendientes y su acción lleva a la pantalla que lo resuelve. */
-async function pendiente(p, { BASE, empresa, titulo, accion, destino, anotar, foto, nombre }) {
-  await p.goto(`${BASE}${empresa}/consola/pendientes`);
-  const fila = p.locator(".pendientes-inicio li").filter({ has: p.getByRole("heading", { name: titulo }) });
+/**
+ * Un pendiente aparece en Aprobaciones (antes Pendientes, Ola 2b) y su acción lleva a la
+ * pantalla que lo resuelve. Lo que se decide ahí mismo (un pago que la persona puede
+ * autorizar, la nómina por preparar) se pinta como decisión: con `decision` se busca esa
+ * fila y, si trae `accion` como enlace, se sigue; el botón que prepara no se oprime aquí.
+ */
+async function pendiente(p, { BASE, empresa, titulo, accion, destino, anotar, foto, nombre, decision = null }) {
+  await p.goto(`${BASE}${empresa}/consola/aprobaciones`);
+  const renglon = p.locator(".aprobaciones-renglones li").filter({ has: p.getByRole("heading", { name: titulo }) });
+  const enBandeja = decision ? p.locator("li.decision").filter({ has: p.locator(".decision-titulo", { hasText: decision }) }) : null;
+  const fila = (await renglon.count()) === 1 || !enBandeja ? renglon : enBandeja;
   const visible = (await fila.count()) === 1;
   if (visible && foto) await foto(p, nombre);
-  if (visible) {
-    await fila.getByRole("link", { name: accion, exact: true }).click();
+  const enlace = visible ? fila.getByRole("link", { name: accion, exact: true }) : null;
+  if (enlace && (await enlace.count()) === 1) {
+    await enlace.click();
     await p.waitForURL(destino, { timeout: 20000 });
   }
-  anotar(visible && destino.test(p.url()), `flujo 11: «${typeof titulo === "string" ? titulo : titulo.source}» aparece y «${accion}» lleva a su pantalla`, p.url().replace(BASE, ""));
+  const llego = destino.test(p.url()) || (fila === enBandeja && visible);
+  anotar(visible && llego, `flujo 11: «${typeof titulo === "string" ? titulo : titulo.source}» aparece en Aprobaciones y «${accion}» lleva a su pantalla (o se decide ahí)`, p.url().replace(BASE, ""));
 }
 
 /** El botón queda desactivado y anuncia que trabaja entre el primer clic y la respuesta. */
@@ -179,7 +188,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
   if (corre(3)) {
     const id = estado.solicitud || sql(`select r.id from supplier_payment_requests r join supplier_payables p on p.id = r.payable_id where p.cfdi_uuid = '${UUID_FACTURA}'`);
     const { nav, p, errores } = await abrir({ quien: "rosa" });
-    if (corre(11)) await pendiente(p, { BASE, empresa: TALLER, titulo: /^Autoriza (un pago|\d+ pagos)/, accion: "Revisar pagos", destino: /\/consola\/proveedores/, anotar, foto, nombre: "11-pendiente-pago-por-autorizar" });
+    if (corre(11)) await pendiente(p, { BASE, empresa: TALLER, titulo: /^Autoriza (un pago|\d+ pagos)/, accion: "Revisar pagos", destino: /\/consola\/proveedores/, decision: /^Pago a proveedor · /, anotar, foto, nombre: "11-pendiente-pago-por-autorizar" });
     await p.goto(`${BASE}${TALLER}/consola/proveedores`);
     await p.getByRole("link", { name: "Abrir pago de Proveedor Uno, S.A. de C.V." }).first().click();
     await p.getByRole("dialog").waitFor();
@@ -372,7 +381,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
   // ---------- 7. Preparar el lote de nómina ----------
   if (corre(7)) {
     const { nav, p, errores } = await abrir({ quien: "laura" });
-    if (corre(11)) await pendiente(p, { BASE, empresa: ALTAMAR, titulo: /^Prepara el lote de nómina del /, accion: "Preparar nómina", destino: /\/consola\/personas\/nomina$/, anotar, foto, nombre: "11-pendiente-nomina" });
+    if (corre(11)) await pendiente(p, { BASE, empresa: ALTAMAR, titulo: /^Prepara el lote de nómina del /, accion: "Preparar nómina", destino: /\/consola\/personas\/nomina$/, decision: /^Lote de nómina · /, anotar, foto, nombre: "11-pendiente-nomina" });
     await p.goto(`${BASE}${ALTAMAR}/consola/personas/nomina`);
     const boton = p.getByRole("button", { name: /^Preparar nómina del / });
     await boton.waitFor();
@@ -558,7 +567,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
     await nav.close();
   }
 
-  // ---------- 11. Pendientes: los que quedan, con su acción clicada ----------
+  // ---------- 11. Aprobaciones (antes Pendientes): los que quedan, con su acción clicada ----------
   if (corre(11)) {
     const { nav, p, errores } = await abrir({ quien: "laura" });
     await pendiente(p, { BASE, empresa: ALTAMAR, titulo: /^Falta(n)? (una|dos) personas? autorizadas? para liberar/, accion: "Revisar accesos", destino: /\/consola\/personas$/, anotar, foto, nombre: "11-pendiente-liberadores" });
@@ -576,12 +585,12 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
     // faltante (mismo cálculo de Inicio) y la de presupuesto (la nómina de Marta
     // rebasa el tope del área Operación); Inicio, las dos.
     const presupuesto = /^El presupuesto del área Operación está excedido/;
-    const faltanteEn = (p) => p.locator('.flujo-alertas [data-alerta="faltante"]');
+    const faltanteEn = (p) => p.locator('main [data-alerta="faltante"]');
     for (const tema of ["oscuro", "claro", "lever"]) {
       for (const ancho of [1440, 390]) {
         const vista = `${tema} ${ancho}`;
         const { nav, p, errores } = await abrir({ quien: "gil", tema, ancho });
-        await p.goto(`${BASE}${TALLER}/consola/pendientes`);
+        await p.goto(`${BASE}${TALLER}/consola/aprobaciones`);
         const faltantePend = faltanteEn(p);
         const veFaltante = (await faltantePend.count()) === 1 && (await faltantePend.isVisible());
         const textoPendiente = veFaltante ? (await faltantePend.innerText()).replace(/\s+/g, " ") : "";
@@ -594,9 +603,9 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
           await p.waitForURL(/\/consola#proyeccion-titulo$/, { timeout: 20000 });
           aInicio = await p.getByRole("heading", { name: "Proyección a 13 semanas" }).isVisible();
         }
-        anotar(veFaltante && /^Faltante: el saldo queda en negativo la semana del/.test(textoPendiente) && /Saldo proyectado al cierre de la semana: -\$/.test(textoPendiente) && /Nómina semanal \(1 persona\) \(\$18,500\.00\)/.test(textoPendiente) && aInicio && !desbordaFaltante, `flujo 11 ${vista}: Pendientes muestra el faltante (con la nómina desglosada para quien ve su detalle) y «Ver la proyección» lleva a la proyección de Inicio`, `${textoPendiente.slice(0, 170)} → ${p.url().replace(BASE, "")}${desbordaFaltante ? " (desborda)" : ""}`);
-        await p.goto(`${BASE}${TALLER}/consola/pendientes`);
-        const fila = p.locator(".pendientes-inicio li").filter({ has: p.getByRole("heading", { name: presupuesto }) });
+        anotar(veFaltante && /^Faltante: el saldo queda en negativo la semana del/.test(textoPendiente) && /Saldo proyectado al cierre de la semana: -\$/.test(textoPendiente) && /Nómina semanal \(1 persona\) \(\$18,500\.00\)/.test(textoPendiente) && aInicio && !desbordaFaltante, `flujo 11 ${vista}: Aprobaciones muestra el faltante (con la nómina desglosada para quien ve su detalle) y «Ver la proyección» lleva a la proyección de Inicio`, `${textoPendiente.slice(0, 170)} → ${p.url().replace(BASE, "")}${desbordaFaltante ? " (desborda)" : ""}`);
+        await p.goto(`${BASE}${TALLER}/consola/aprobaciones`);
+        const fila = p.locator(".aprobaciones-renglones li").filter({ has: p.getByRole("heading", { name: presupuesto }) });
         const visible = (await fila.count()) === 1 && (await fila.isVisible());
         const detalle = visible ? (await fila.innerText()).replace(/\s+/g, " ") : "";
         const desborda = await p.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
@@ -606,7 +615,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
           await fila.getByRole("link", { name: "Ver presupuestos", exact: true }).click();
           await p.waitForURL(/\/consola\/presupuestos/, { timeout: 20000 });
         }
-        anotar(visible && /Lleva \$[\d,.]+ de \$80,000\.00/.test(detalle) && /\/consola\/presupuestos/.test(p.url()) && !desborda, `flujo 11 ${vista}: Pendientes muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos`, `${detalle.slice(0, 160)} → ${p.url().replace(BASE, "")}${desborda ? " (desborda)" : ""}`);
+        anotar(visible && /Lleva \$[\d,.]+ de \$80,000\.00/.test(detalle) && /\/consola\/presupuestos/.test(p.url()) && !desborda, `flujo 11 ${vista}: Aprobaciones muestra «El presupuesto del área Operación está excedido» y «Ver presupuestos» lleva a Presupuestos`, `${detalle.slice(0, 160)} → ${p.url().replace(BASE, "")}${desborda ? " (desborda)" : ""}`);
 
         await p.goto(`${BASE}${TALLER}/consola`);
         const alertas = p.locator(".flujo-alertas");
@@ -621,7 +630,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
           await foto(p, `11-inicio-alertas-${tema}-${ancho}`);
         }
         anotar(ambas && /Saldo proyectado al cierre de la semana/.test(textoFaltante) && /Operación/.test(textoPresupuesto) && !desbordaInicio, `flujo 11 ${vista}: Inicio muestra las alertas de faltante y de presupuesto`, `${textoFaltante.slice(0, 140)} | ${textoPresupuesto.slice(0, 120)}${desbordaInicio ? " (desborda)" : ""}`);
-        anotar(errores.length === 0, `flujo 11 ${vista}: sin errores de consola en Pendientes, Presupuestos e Inicio`, errores.join(" | "));
+        anotar(errores.length === 0, `flujo 11 ${vista}: sin errores de consola en Aprobaciones, Presupuestos e Inicio`, errores.join(" | "));
         await nav.close();
       }
     }
@@ -631,7 +640,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
     for (const [tema, ancho] of [["oscuro", 1440], ["oscuro", 390], ["claro", 1440], ["claro", 390], ["lever", 1440], ["lever", 390]]) {
       const vista = `${tema} ${ancho}`;
       const { nav, p, errores } = await abrir({ quien: "fernanda", tema, ancho });
-      await p.goto(`${BASE}${TALLER}/consola/pendientes`);
+      await p.goto(`${BASE}${TALLER}/consola/aprobaciones`);
       const faltante = faltanteEn(p);
       const ve = (await faltante.count()) === 1;
       const texto = ve ? (await faltante.innerText()).replace(/\s+/g, " ") : "";
@@ -663,7 +672,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
       const valor = randomBytes(32).toString("base64url");
       reponerSesion(sql, contadoraId, valor, "cliente");
       const { nav, p, errores } = await abrir({ sesion: valor, tema: "lever", ancho: 390 });
-      await p.goto(`${BASE}${TALLER}/consola/pendientes`);
+      await p.goto(`${BASE}${TALLER}/consola/aprobaciones`);
       const faltante = faltanteEn(p);
       const ve = (await faltante.count()) === 1;
       const texto = ve ? (await faltante.innerText()).replace(/\s+/g, " ") : "";
@@ -682,8 +691,8 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
     // Caso negativo: Rosa (liberadora, sin cliente.flujo.ver) no ve el faltante ni alertas del flujo.
     for (const [tema, ancho] of [["oscuro", 1440], ["lever", 390]]) {
       const { nav, p, errores } = await abrir({ quien: "rosa", tema, ancho });
-      await p.goto(`${BASE}${TALLER}/consola/pendientes`);
-      await p.locator(".pendientes-resumen").waitFor({ timeout: 20000 });
+      await p.goto(`${BASE}${TALLER}/consola/aprobaciones`);
+      await p.locator(".aprobaciones-vistas").waitFor({ timeout: 20000 });
       const alertas = await p.locator(".flujo-alertas, [data-alerta]").count();
       const cuerpo = await p.locator("main").innerText();
       await foto(p, `11-pendiente-sin-faltante-liberadora-${tema}-${ancho}`);
@@ -762,7 +771,7 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
   // ErrorDeDominio y cada página lo pinta dentro del marco.
   // (A) Dos obligaciones de 9,000,000,000,000,000 centavos en la misma fecha hacen que la suma de salidas pase
   //     de Number.MAX_SAFE_INTEGER y la proyección lance. Inicio se queda en su propio estado dentro del marco;
-  //     Pendientes se pinta con su bandeja y el aviso de faltante no disponible, y el servidor lo registra.
+  //     Aprobaciones se pinta con su bandeja y el aviso de faltante no disponible, y el servidor lo registra.
   // (B) Para ver el límite de error, error-forzado.mjs hace que dar formato a un saldo centinela lance al
   //     pintar Inicio. Al quitar el archivo, «Reintentar» vuelve a pedir la página y abre.
   if (corre(14)) {
@@ -793,18 +802,18 @@ export async function flujos({ abrir, capturar, anotar, sql, renovarSesiones, co
           const cuerpoInicio = (await p.locator("main").first().innerText()).replace(/\s+/g, " ");
           anotar(marcoInicio && (await p.locator("h1").count()) === 1 && /Vuelve a intentar\./.test(cuerpoInicio) && !/supuest/i.test(cuerpoInicio), `flujo 14 ${vista}: con la proyección rota, Inicio dice «No se pudo consultar el resumen.» y «Vuelve a intentar.» dentro del marco, sin «cifras supuestas» (no cae en consola/error.tsx)`, cuerpoInicio.slice(0, 160));
           const antes = errores.length;
-          await p.goto(`${BASE}${TALLER}/consola/pendientes`);
-          await p.locator(".pendientes-resumen").waitFor({ timeout: 20000 });
-          const aviso = p.locator('.flujo-alertas [data-alerta="faltante-no-disponible"]');
+          await p.goto(`${BASE}${TALLER}/consola/aprobaciones`);
+          await p.locator(".aprobaciones-vistas").waitFor({ timeout: 20000 });
+          const aviso = p.locator('main [data-alerta="faltante-no-disponible"]');
           const veAviso = (await aviso.count()) === 1 && (await aviso.isVisible());
           const textoAviso = veAviso ? (await aviso.innerText()).replace(/\s+/g, " ") : "";
           const enlace = veAviso ? await aviso.getByRole("link", { name: "Saldo y alertas", exact: true }).getAttribute("href") : null;
-          const renglones = await p.locator(".pendientes-inicio li").count();
+          const renglones = await p.locator(".aprobaciones-renglones li, li.decision").count();
           const h1Pendientes = await p.locator("h1").count();
           if (veAviso) await aviso.scrollIntoViewIfNeeded();
           await foto(p, `14-pendientes-faltante-no-disponible-${tema}-${ancho}`);
-          anotar(veAviso && /^No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas\.$/.test(textoAviso) && /\/consola\/flujo$/.test(enlace ?? "") && renglones > 0 && h1Pendientes === 1, `flujo 14 ${vista}: Pendientes se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas`, `${textoAviso} → ${enlace} · renglones=${renglones}`);
-          anotar(errores.length === antes, `flujo 14 ${vista}: Pendientes sin errores de consola`, errores.slice(antes).join(" | "));
+          anotar(veAviso && /^No se pudo calcular si te alcanza el dinero Revisa Saldo y alertas\.$/.test(textoAviso) && /\/consola\/flujo$/.test(enlace ?? "") && renglones > 0 && h1Pendientes === 1, `flujo 14 ${vista}: Aprobaciones se pinta con su bandeja y el aviso de faltante no disponible, con enlace a Saldo y alertas`, `${textoAviso} → ${enlace} · renglones=${renglones}`);
+          anotar(errores.length === antes, `flujo 14 ${vista}: Aprobaciones sin errores de consola`, errores.slice(antes).join(" | "));
           await nav.close();
         }
       }

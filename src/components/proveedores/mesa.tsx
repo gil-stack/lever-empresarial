@@ -93,7 +93,7 @@ export function MesaProveedores({
           )}
         </div>
         {vista !== "agenda" ? (
-          <Form className="buscador-pagos" role="search" action={href("/consola/proveedores")}>
+          <Form className="buscador-pagos" role="search" aria-label={vista === "proveedores" ? "Filtrar el directorio de proveedores" : "Filtrar facturas y obligaciones"} action={href("/consola/proveedores")}>
             <input type="hidden" name="vista" value={vista} />
             <label className="solo-lector" htmlFor="buscar-pagos">Buscar</label>
             <IconoBuscar />
@@ -152,7 +152,7 @@ function enAgenda(pago: PagoVista): boolean {
 function TablaPagos({ pagos, base, href, hoy }: { pagos: PagoVista[]; base: string; href: (ruta: string) => string; hoy: string }) {
   if (pagos.length === 0) return <Vacio titulo="No hay pagos en esta vista">Cambia los filtros o registra una factura para pedir su autorización.</Vacio>;
   return (
-    <div className="tabla-contenedor">
+    <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de facturas y obligaciones">
       <table className="tabla">
         <thead><tr><th scope="col">Proveedor</th><th scope="col" className="cifra">Importe</th><th scope="col">Vence</th><th scope="col">Fecha prevista</th><th scope="col">Estado</th><th scope="col"><span className="solo-lector">Abrir</span></th></tr></thead>
         <tbody>{pagos.map((pago) => (
@@ -173,7 +173,7 @@ function TablaPagos({ pagos, base, href, hoy }: { pagos: PagoVista[]; base: stri
 function TablaProveedores({ proveedores, pagos, base, href }: { proveedores: ProveedorPago[]; pagos: PagoVista[]; base: string; href: (ruta: string) => string }) {
   if (proveedores.length === 0) return <Vacio titulo="Todavía no hay proveedores">Da de alta un proveedor con su constancia, CLABE y contrato.</Vacio>;
   return (
-    <div className="tabla-contenedor">
+    <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla del directorio de proveedores">
       <table className="tabla">
         <thead><tr><th scope="col">Proveedor</th><th scope="col">Contacto</th><th scope="col">CLABE</th><th scope="col">Condiciones</th><th scope="col">Situación</th><th scope="col"><span className="solo-lector">Abrir</span></th></tr></thead>
         <tbody>{proveedores.map((proveedor) => {

@@ -1,0 +1,63 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+   7 |  * ejecuta y el servidor no migra al arrancar.
+   8 |  */
+>  9 | export const CONTRATO_TABLAS = readFileSync(rutaDelContrato(), "utf8");
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  10 |
+  11 | function rutaDelContrato(): string {
+  12 |   try {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 4 s
+
+Running 22 tests using 1 worker, shard 4 of 7
+
+  ✓   1 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana (2.6s)
+  ✓   2 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (3.5s)
+  ✓   3 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (3.9s)
+  ✓   4 tests/e2e/invitacion.spec.ts:31:5 › invitación del primer administrador: el doble clic en «Reenviar» emite una sola y el enlace nuevo crea la cuenta (5.6s)
+  ✓   5 tests/e2e/invitacion.spec.ts:117:5 › recuperar la contraseña por correo: un enlace, cierra las sesiones y entra con la nueva y su factor de siempre (5.7s)
+  ✓   6 tests/e2e/marco.spec.ts:12:7 › marco de la consola en escritorio › menú de la persona: cuatro opciones fuera del Tab; Tab y Escape cierran y regresan el foco al botón (875ms)
+  ✓   7 tests/e2e/marco.spec.ts:38:7 › marco de la consola en escritorio › el buscador de la barra lleva a su sección con lo escrito (1.0s)
+  ✓   8 tests/e2e/marco.spec.ts:47:7 › marco de la consola en escritorio › Apariencia: con sesión y empresa se abre; sin sesión manda a entrar; otra empresa no la muestra (1.4s)
+  ✓   9 tests/e2e/marco.spec.ts:76:7 › cajón móvil › sin checkVisibility (Safari < 17.4): abre, atrapa el foco, deja el fondo inert; Escape y el velo regresan el foco (630ms)
+  ✓  10 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › laura: responde 404 de verdad, igual para la ajena y la inexistente (con JavaScript) (3.5s)
+  ✓  11 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › gil: responde 404 de verdad, igual para la ajena y la inexistente (con JavaScript) (3.4s)
+  ✓  12 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › laura: responde 404 de verdad, igual para la ajena y la inexistente (sin JavaScript) (321ms)
+  ✓  13 tests/e2e/marco.spec.ts:117:11 › una empresa ajena o inexistente en la dirección › gil: responde 404 de verdad, igual para la ajena y la inexistente (sin JavaScript) (301ms)
+  ✓  14 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez (1.8s)
+  ✓  15 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 2 › estable (3.0s)
+  ✓  16 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms (4.1s)
+  ✓  17 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez (2.2s)
+  ✓  18 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 1 › estable (2.8s)
+  ✓  19 tests/e2e/movimiento-del-fondo.spec.ts:21:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (762ms)
+  ✓  20 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (5.4s)
+  ✓  21 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (10.5s)
+  ✓  22 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana (3.4s)
+
+  22 passed (1.2m)
+[e2e] recorridos terminados con estado 0 · 22 pruebas corridas · 77 s

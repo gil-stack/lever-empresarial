@@ -1,0 +1,63 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+   7 |  * ejecuta y el servidor no migra al arrancar.
+   8 |  */
+>  9 | export const CONTRATO_TABLAS = readFileSync(rutaDelContrato(), "utf8");
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  10 |
+  11 | function rutaDelContrato(): string {
+  12 |   try {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 3 s
+
+Running 22 tests using 1 worker, shard 7 of 7
+
+  ✓   1 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms (4.0s)
+  ✓   2 tests/e2e/pagos-proveedores.spec.ts:52:5 › la mesa se ve completa en claro, oscuro y móvil (6.1s)
+  ✓   3 tests/e2e/pagos-proveedores.spec.ts:90:5 › alta, factura, excepción, descarga y autorización con otra persona (3.7s)
+  ✓   4 tests/e2e/pagos-proveedores.spec.ts:174:5 › alta sin contrato y lectura del XML sin errores en la consola (1.2s)
+  ✓   5 tests/e2e/pagos-proveedores.spec.ts:206:5 › una corrección que falla conserva el importe y la evidencia elegidos (882ms)
+  ✓   6 tests/e2e/pagos-proveedores.spec.ts:222:5 › limita archivos combinados y no ofrece cambiar CLABE a un liberador (1.2s)
+  ✓   7 tests/e2e/pagos-proveedores.spec.ts:242:5 › «Agregar contrato» no envía un PDF de más de 4 MB y liga el aviso al campo (1.5s)
+  ✓   8 tests/e2e/pagos-proveedores.spec.ts:263:5 › rechazo, corrección y cancelación conservan el historial (3.2s)
+  ✓   9 tests/e2e/passkeys.spec.ts:40:5 › portal: Lucía registra una passkey en /entrar/seguridad y entra con ella (2.0s)
+  ✓  10 tests/e2e/passkeys.spec.ts:77:5 › Operación: el primer ingreso registra una passkey en /operacion/continuar y la siguiente entrada la usa (2.3s)
+  ✓  11 tests/e2e/personas.spec.ts:57:5 › recorrido completo de colaboradores, presupuesto, nómina, tarjeta y baja (8.8s)
+  ✓  12 tests/e2e/roles.spec.ts:139:7 › administrador: el lateral y «Más» muestran solo sus secciones y las demás no abren (1.2s)
+  ✓  13 tests/e2e/roles.spec.ts:139:7 › finanzas (con tarjeta): el lateral y «Más» muestran solo sus secciones y las demás no abren (1.2s)
+  ✓  14 tests/e2e/roles.spec.ts:139:7 › contador: el lateral y «Más» muestran solo sus secciones y las demás no abren (1.1s)
+  ✓  15 tests/e2e/roles.spec.ts:139:7 › liberador: el lateral y «Más» muestran solo sus secciones y las demás no abren (1.2s)
+  ✓  16 tests/e2e/roles.spec.ts:139:7 › solicitante (con tarjeta): el lateral y «Más» muestran solo sus secciones y las demás no abren (1.2s)
+  ✓  17 tests/e2e/roles.spec.ts:139:7 › tarjetahabiente: el lateral y «Más» muestran solo sus secciones y las demás no abren (760ms)
+  ✓  18 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana (2.2s)
+  ✓  19 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms (5.7s)
+  ✓  20 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez (3.0s)
+  ✓  21 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 1 › estable (4.5s)
+  ✓  22 tests/e2e/fondo-pruebas.ts:226:17 › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms (10.3s)
+
+  22 passed (1.2m)
+[e2e] recorridos terminados con estado 0 · 22 pruebas corridas · 76 s
