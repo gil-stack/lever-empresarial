@@ -101,9 +101,10 @@ const CLABE = "002180701150123452";
 describe("PLD (0030) en Postgres desechable", { skip: urlAdmin.length === 0 }, () => {
   it("candado, perfil, reglas en vivo, avisos confidenciales, Comité, dictamen, reportes, conservación y RLS", async (t) => {
     // r66-N1: las sesiones y los manifiestos se fechan con el `hoy` de abajo y las propuestas y los documentos con la
-    // hora de la base; una corrida que cruza la medianoche de México mezcla dos días. Toda la suite dura menos de 4 min
-    // en el CI (test:db completo, 238 s) y de 15 s en local: con menos de 10 min para la medianoche, espera a que pase.
-    const esperado = await esperarSiLlegaLaMedianoche(10 * 60_000);
+    // hora de la base; una corrida que cruza la medianoche de México mezcla dos días. Esta suite dura de 10 a 19 s en
+    // el CI (28 corridas) y 23 s en local con carga: con menos de 2 min para la medianoche, espera a que pase (r66-N3:
+    // a lo más 2 min, lejos de la vigencia de 5 min del segundo factor y sin alargar test:db).
+    const esperado = await esperarSiLlegaLaMedianoche(2 * 60_000);
     if (esperado > 0) t.diagnostic(`Esperó ${Math.round(esperado / 1000)} s a que pasara la medianoche de México.`);
     exigirBaseDesechable();
     await conBaseDesechable(urlAdmin, async (urlDuena) => {

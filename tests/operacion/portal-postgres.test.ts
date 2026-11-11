@@ -18,11 +18,11 @@ import { hashDeRespaldo } from "../../src/server/autenticacion/respaldo.ts";
 import { hashDeToken } from "../../src/server/session/hash.ts";
 import { leerSesion } from "../../src/server/session/servicio.ts";
 import { aplicarArchivo, conBaseDesechable, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
-import { expedienteEnRegla, personal } from "./apoyo-alta-regulada.ts";
+import { expedienteEnRegla, personal, SESION_SOFIPO } from "./apoyo-alta-regulada.ts";
 
 const urlAdmin = process.env.AISLAMIENTO_DATABASE_URL?.trim() ?? "";
-const AHORA = new Date();
-const sesionSofipo = { superficie: "sofipo" as const, segundoFactor: { metodo: "totp" as const, en: AHORA } };
+// r66-N3: el factor se fecha en cada uso (SESION_SOFIPO), no al cargar el módulo.
+const sesionSofipo = SESION_SOFIPO;
 
 describe("vertical slice 5A en Postgres desechable", { skip: urlAdmin.length === 0 }, () => {
   it("origina, separa aprobadores, invalida reenvíos, aísla RLS y versiona sin solapes", async () => {
