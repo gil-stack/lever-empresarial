@@ -14,7 +14,7 @@ La regla de producción no cambia en ningún punto: no hay migración y no se to
 | `espera-y-segundo-factor-r66-n3.txt` | La espera con el factor fechado al cargar: 26/28 en 46d5e6d; con el getter y 2 min, 28/28 en 5 horas × 2 husos |
 | `inventario-bombas-de-fecha.txt` | Cada «hoy», «hace N minutos», `T00:00`, `E2E_TODAY`, fecha UTC y fecha al cargar un módulo en `tests/`, `src/`, `db/` y `scripts/`, con su veredicto |
 
-## Fondo animado (cuarta y quinta vuelta), en `fondo/`
+## Fondo animado (cuarta a sexta vuelta), en `fondo/`
 
 | Archivo | Qué muestra |
 |---|---|
@@ -25,6 +25,8 @@ La regla de producción no cambia en ningún punto: no hay migración y no se to
 | `r66-n5/estres-familia.txt` | Las 23 pruebas del fondo × 30 vueltas con carga |
 | `r66-n7/resumen.md` | Sabotajes S1, S2, S4, S5, S5m, S6, S7, S8 y S9, el control con una gráfica 2D en la página y P2a/P2b, contra c9d9e8b y con r66-N7, N8 y N9 |
 | `r66-n7/estres-familia.txt` | Las 23 pruebas del fondo × 30 vueltas con carga, con las guardas de r66-N7, N8 y N9 |
+| `r66-n10/resumen.md` | Sabotajes S1 a S11, S5m, OFF+S1m y S2d, los controles C2D y C2Dg, el refactor OFF y P2a/P2b, contra 858db5c y con r66-N10, N11 y DPR 2 sin WebGL2 |
+| `r66-n10/estres-familia.txt` | Las 23 pruebas del fondo × 30 vueltas con carga, con las guardas de r66-N10 y N11 |
 | `fechas-al-cargar.cjs.txt` | Detector por AST de fechas evaluadas al cargar un módulo (r66-N4) |
 | `diagnostico-fondo.spec.ts.txt`, `*.sh.txt` y `*.py.txt` | Las sondas y los parches temporales con que se midió (no se suben como código) |
 
@@ -34,10 +36,12 @@ La regla de producción no cambia en ningún punto: no hay migración y no se to
 - **Lo que se pinta.** El búfer de dibujo de la escena es 48 × min(DPR, 2) × 0.85 (41 o 82).
   - El búfer del motor no pasa del lienzo más grande que tuvo la escena.
   - **r66-N9:** ningún otro canvas con contexto (WebGL o 2D) que no cuelgue del documento pasa de él. Se eligió vigilar los canvas sueltos y no seguir la pila: el búfer del motor nace en otro chunk, y una gráfica de la página cuelga del DOM y queda fuera.
+  - **r66-N10:** tampoco los canvas con contexto colgados dentro de `.escena-fondo`, salvo la escena (una capa encima, por ejemplo). Una gráfica colgada fuera del fondo sigue sin contar.
+  - **r66-N11:** lo mismo con `OffscreenCanvas`: `getContext`, `width` y `height` se interceptan también en su prototipo, así que pasar el búfer del motor a `OffscreenCanvas` sigue en verde y las guardas lo siguen vigilando.
   - Ninguna asignación a `width` o `height` deja el valor que ya tenía. **r66-N8:** se compara después de la coerción.
   - **r66-N7:** en «estable» y «tarea ajena», nada vuelve a asignar `width` ni `height` una vez fijado el tamaño.
-  - Todo se vigila con el setter y `getContext` interceptados en `HTMLCanvasElement`. El búfer del motor también es un canvas (`motor.ts:250`).
-- **Sin WebGL2** (r66-N9, dentro de la prueba de 40 ms, para no mover el reparto): `getContext("webgl2")` da `null`.
+  - Todo se vigila con el setter y `getContext` interceptados en `HTMLCanvasElement` y en `OffscreenCanvas`. Hoy el búfer del motor es un canvas (`motor.ts:250`).
+- **Sin WebGL2** (r66-N9, dentro de la prueba de 40 ms, para no mover el reparto): `getContext("webgl2")` da `null`, en `HTMLCanvasElement` y en `OffscreenCanvas`. Se comprueba a DPR 1 y (r66-N10) a DPR 2, en un contexto nuevo con la sesión copiada.
   - El fondo pinta en 2D (`data-gpu="no"`), sigue animando y vivo, y no recuerda «lento», que es lo que hace el producto en ese camino.
   - Aplican las mismas guardas de tamaño.
 - **El tiempo del fondo mismo.** Un cuadro largo cuenta contra el fondo solo si sus scripts pasan de 25 ms (`DIBUJO_BLOQUEANTE_MS`). El detalle de la falla da, de cada cuadro, cuánto fue del fondo y cuánto de estilo, layout y pintado (desde `styleAndLayoutStart`).

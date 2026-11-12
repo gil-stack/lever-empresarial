@@ -21,7 +21,7 @@ pruebasDelFondo([2], { equipos: ["sin GPU"], deVerdad: false, escenarios: ["esta
 pruebasDelFondo([1], { equipos: ["sin GPU"], deVerdad: false, escenarios: ["estable"] });
 
 test.describe("fondo animado en un equipo que pinta cada cuadro en 40 ms", () => {
-  test("se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros", async ({ page }) => {
+  test("se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros", async ({ page, browser, baseURL, viewport }) => {
     // Un equipo que pinta lento pero sin pasar de 50 ms por dibujo, igual en cualquier máquina: el lienzo se encoge para
     // que pintarlo no cueste nada y cada copia de la escena al lienzo tarda 40 ms.
     await page.addInitScript(() => {
@@ -54,7 +54,14 @@ test.describe("fondo animado en un equipo que pinta cada cuadro en 40 ms", () =>
 
     // r66-N9: y un equipo sin WebGL2 (degradado 2D) no pinta búferes más grandes que la escena ni los reasigna. En una página
     // nueva de este contexto (con la sesión y sin la emulación de 40 ms) para no sumar una prueba al reparto.
-    await comprobarSinWebGl(await page.context().newPage());
+    await comprobarSinWebGl(await page.context().newPage(), 1);
+    // r66-N10: lo mismo a DPR 2, en un contexto nuevo con la sesión copiada (el DPR es del contexto).
+    const aDpr2 = await browser.newContext({ baseURL, viewport, deviceScaleFactor: 2, storageState: await page.context().storageState() });
+    try {
+      await comprobarSinWebGl(await aDpr2.newPage(), 2);
+    } finally {
+      await aDpr2.close();
+    }
   });
 });
 

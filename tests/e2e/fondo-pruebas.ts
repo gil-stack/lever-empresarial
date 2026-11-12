@@ -71,32 +71,37 @@ async function emularEquipo(page: Page, costo: { dibujoMs: number; crecerMs: num
     // regresión que agranda lo que se pinta (o lo reasigna en cada dibujo) no costaría nada aquí: se vigilan los tamaños.
     // Cada asignación a width o height de un canvas: su máximo y cuántas veces repitió el valor que ya tenía (asignar
     // borra el canvas y, en WebGL, reasigna el búfer de dibujo aunque el tamaño no cambie).
-    const maximoAsignado = new WeakMap<HTMLCanvasElement, [number, number]>();
-    const repetidas = new WeakMap<HTMLCanvasElement, number>();
+    // r66-N11: también OffscreenCanvas, que puede ser el búfer del motor (un refactor legítimo) o uno que nunca se copia.
+    type Lienzo = HTMLCanvasElement | OffscreenCanvas;
+    const maximoAsignado = new WeakMap<Lienzo, [number, number]>();
+    const repetidas = new WeakMap<Lienzo, number>();
     // r66-N7: todas las asignaciones desde que el tamaño quedó fijado (la prueba reinicia el conteo después del poll).
-    let asignaciones = new WeakMap<HTMLCanvasElement, number>();
+    let asignaciones = new WeakMap<Lienzo, number>();
     (window as unknown as { reiniciarAsignaciones: () => void }).reiniciarAsignaciones = () => {
       asignaciones = new WeakMap();
     };
     // r66-N9: todo canvas que pide un contexto, WebGL o 2D, aunque nunca se copie a la escena: un búfer que se pinta y no
     // se ve también cuesta (en la GPU o, sin WebGL, en la CPU). Se vigilan los que no cuelgan del documento, que son los
-    // búferes; la escena se compara aparte y una gráfica de la página (colgada del DOM) no es del fondo. Medido en INICIO:
-    // solo la escena (2D, en el DOM) y el búfer del motor (webgl2, suelto) piden contexto. Se descartó seguir la pila de
-    // getContext hasta el archivo del fondo: el búfer del motor nace en otro chunk y depende del formato y del largo de la pila.
-    const conContexto = new Set<HTMLCanvasElement>();
-    const pedirContexto = HTMLCanvasElement.prototype.getContext;
-    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, tipo: string, ...resto: unknown[]) {
-      // Un equipo sin WebGL2: el motor pinta su degradado 2D.
-      if (op.sinWebGl && (tipo === "webgl" || tipo === "webgl2")) return null;
-      conContexto.add(this);
-      return (pedirContexto as (...a: unknown[]) => unknown).call(this, tipo, ...resto);
-    } as typeof pedirContexto;
-    let buferDelMotor: HTMLCanvasElement | null = null;
-    (["width", "height"] as const).forEach((lado, i) => {
-      const propio = Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype, lado)!;
-      Object.defineProperty(HTMLCanvasElement.prototype, lado, {
+    // búferes, y (r66-N10) los colgados dentro de `.escena-fondo` salvo la escena, como una capa encima; la escena se compara
+    // aparte y una gráfica de la página (colgada fuera del fondo) no es del fondo. Medido en INICIO: solo la escena (2D, en el
+    // DOM) y el búfer del motor (webgl2, suelto) piden contexto. Se descartó seguir la pila de getContext hasta el archivo del
+    // fondo: el búfer del motor nace en otro chunk y depende del formato y del largo de la pila.
+    const conContexto = new Set<Lienzo>();
+    for (const proto of [HTMLCanvasElement.prototype, OffscreenCanvas.prototype]) {
+      const pedirContexto = proto.getContext as (...a: unknown[]) => unknown;
+      (proto as { getContext: unknown }).getContext = function (this: Lienzo, tipo: string, ...resto: unknown[]) {
+        // Un equipo sin WebGL2: el motor pinta su degradado 2D.
+        if (op.sinWebGl && (tipo === "webgl" || tipo === "webgl2")) return null;
+        conContexto.add(this);
+        return pedirContexto.call(this, tipo, ...resto);
+      };
+    }
+    let buferDelMotor: Lienzo | null = null;
+    [HTMLCanvasElement.prototype, OffscreenCanvas.prototype].forEach((proto) => (["width", "height"] as const).forEach((lado, i) => {
+      const propio = Object.getOwnPropertyDescriptor(proto, lado)!;
+      Object.defineProperty(proto, lado, {
         ...propio,
-        set(this: HTMLCanvasElement, valor: number) {
+        set(this: Lienzo, valor: number) {
           // r66-N8: se compara después de la coerción (41.25 queda en 41): el canvas reasigna su búfer igual.
           const antes = propio.get!.call(this) as number;
           propio.set!.call(this, valor);
@@ -107,13 +112,15 @@ async function emularEquipo(page: Page, costo: { dibujoMs: number; crecerMs: num
           maximoAsignado.set(this, maximo);
         },
       });
-    });
+    }));
     (window as unknown as { tamanosDelFondo: () => unknown }).tamanosDelFondo = () => {
       const escena = document.querySelector<HTMLCanvasElement>("canvas.escena-lienzo");
       return {
         repetidas: { escena: escena ? (repetidas.get(escena) ?? 0) : -1, motor: buferDelMotor ? (repetidas.get(buferDelMotor) ?? 0) : -1 },
         asignaciones: { escena: escena ? (asignaciones.get(escena) ?? 0) : -1, motor: buferDelMotor ? (asignaciones.get(buferDelMotor) ?? 0) : -1 },
-        buferes: [...conContexto].filter((canvas) => !canvas.isConnected).map((canvas) => [canvas.width, canvas.height]),
+        buferes: [...conContexto]
+          .filter((canvas) => canvas !== escena && (!(canvas instanceof HTMLCanvasElement) || !canvas.isConnected || canvas.closest(".escena-fondo") !== null))
+          .map((canvas) => [canvas.width, canvas.height]),
         maximo: { escena: escena ? (maximoAsignado.get(escena) ?? [0, 0]) : [], motor: buferDelMotor ? [buferDelMotor.width, buferDelMotor.height] : [] },
       };
     };
@@ -121,7 +128,7 @@ async function emularEquipo(page: Page, costo: { dibujoMs: number; crecerMs: num
     const maximos = new WeakMap<object, [number, number]>();
     CanvasRenderingContext2D.prototype.drawImage = function (this: CanvasRenderingContext2D, ...argumentos: unknown[]) {
       if (this.canvas.classList.contains("escena-lienzo")) {
-        const bufer = argumentos[0] as HTMLCanvasElement;
+        const bufer = argumentos[0] as Lienzo;
         buferDelMotor = bufer;
         const antes = maximos.get(bufer);
         const crece = antes !== undefined && (bufer.width > antes[0] || bufer.height > antes[1]);
@@ -167,7 +174,8 @@ async function fijarTamano(page: Page, dpr: number) {
  * Lo que se pinta no crece ni se reasigna sin necesidad:
  * - r66-N5/N8: ninguna asignación a width o height deja el valor que ya tenía (reasignar borra el búfer y lo vuelve a pedir);
  * - r66-N5: el búfer del motor no pasa del lienzo más grande que tuvo la escena;
- * - r66-N9: ningún otro búfer (canvas con contexto fuera del documento, WebGL o 2D) pasa de ese lienzo;
+ * - r66-N9/N10/N11: ningún otro búfer (canvas u OffscreenCanvas con contexto, WebGL o 2D, suelto o dentro de
+ *   `.escena-fondo`) pasa de ese lienzo;
  * - r66-N7: si el escenario no cambia el tamaño, nada vuelve a asignar width ni height una vez fijado (reasignar con otro
  *   valor en cada dibujo también reasigna el búfer, y «mismo valor» no lo ve).
  * Sin WebGL no hay búfer del motor: se vigila solo la escena.
@@ -186,7 +194,7 @@ async function vigilarTamanos(page: Page, { cambiaElTamano, conMotor }: { cambia
   if (conMotor) expect(dentro(tamanos.maximo.motor), `el búfer del motor no pasa del lienzo más grande de la escena: ${JSON.stringify(tamanos.maximo)}`).toBe(true);
   expect(
     tamanos.buferes.every(dentro),
-    `ningún búfer (canvas con contexto fuera del documento) pasa del lienzo más grande de la escena: ${JSON.stringify({ buferes: tamanos.buferes, escena: tamanos.maximo.escena })}`,
+    `ningún búfer (canvas u OffscreenCanvas con contexto suelto, o dentro de .escena-fondo) pasa del lienzo más grande de la escena: ${JSON.stringify({ buferes: tamanos.buferes, escena: tamanos.maximo.escena })}`,
   ).toBe(true);
   if (!cambiaElTamano) {
     expect(quien(tamanos.asignaciones), `asignaciones a width/height con el tamaño ya fijado: ${JSON.stringify(tamanos)}`).toEqual(ninguno);
@@ -411,17 +419,17 @@ export function pruebasDelFondo(dprs: readonly number[], orden: OrdenDelFondo = 
 }
 
 /**
- * r66-N9: un equipo sin WebGL2, en una página nueva. El motor pinta su degradado 2D en el lienzo de la escena; ningún otro
+ * r66-N9: un equipo sin WebGL2, en una página nueva, a DPR `dpr` (1 y, desde r66-N10, 2). El motor pinta su degradado 2D en el lienzo de la escena; ningún otro
  * canvas (un respaldo por CPU a pantalla completa que luego se escala, por ejemplo) pasa de él, y nada se reasigna con el
  * tamaño ya fijado. Va dentro de una prueba que ya existe (brillo-del-fondo.spec.ts): una prueba más movería los cortes
  * del reparto de la e2e y dejaría pruebas normales después de una con GPU emulada.
  */
-export async function comprobarSinWebGl(page: Page) {
+export async function comprobarSinWebGl(page: Page, dpr: number) {
   await emularEquipo(page, { dibujoMs: 0, crecerMs: 0, sinWebGl: true });
   await page.goto(INICIO);
   const lienzo = page.locator("canvas.escena-lienzo");
   await expect(lienzo, "sin WebGL2, el fondo pinta en 2D").toHaveAttribute("data-gpu", "no", { timeout: 20_000 });
-  await fijarTamano(page, 1);
+  await fijarTamano(page, dpr);
   // Lo que hace el producto en ese camino (fondo-escena.tsx no lo trata aparte): el degradado 2D cuesta poco, se mide como
   // cualquier dibujo y el fondo sigue animando, sin quedarse quieto ni recordar «lento».
   const pinturas = async () => Number(await lienzo.getAttribute("data-cuadros"));

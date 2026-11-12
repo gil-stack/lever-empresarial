@@ -1,0 +1,64 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+  [90m 7 |[0m [90m * ejecuta y el servidor no migra al arrancar.[0m
+  [90m 8 |[0m [90m */[0m
+[33m[1m>[0m [90m 9 |[0m [36mexport[0m [36mconst[0m [33mCONTRATO_TABLAS[0m = readFileSync(rutaDelContrato(), [32m"utf8"[0m);
+  [90m   |[0m                                [33m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m10 |[0m
+  [90m11 |[0m [36mfunction[0m rutaDelContrato(): string {
+  [90m12 |[0m   [36mtry[0m {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 3 s
+
+Running 23 tests using 1 worker
+
+  ✓   1 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (3.6s)
+  ✓   2 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez (1.8s)
+  ✓   3 tests/e2e/fondo-pruebas.ts:334:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (5.0s)
+  ✓   4 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana (2.5s)
+  ✓   5 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado sin GPU (emulado) a DPR 2 › estable (3.2s)
+  ✓   6 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado sin GPU (emulado) a DPR 1 › estable (2.8s)
+  ✓   7 tests/e2e/brillo-del-fondo.spec.ts:24:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (6.2s)
+  ✓   8 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez (2.0s)
+  ✓   9 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana (2.5s)
+  ✓  10 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado con GPU rápida (emulado) a DPR 2 › estable (3.2s)
+  ✓  11 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado con GPU rápida (emulado) a DPR 1 › estable (3.1s)
+  ✓  12 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms (4.3s)
+  ✓  13 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez (2.2s)
+  ✓  14 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez (2.1s)
+  ✓  15 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms (4.3s)
+  ✓  16 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana (2.2s)
+  ✓  17 tests/e2e/fondo-pruebas.ts:334:13 › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (5.8s)
+  ✓  18 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (3.9s)
+  ✓  19 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms (3.9s)
+  ✓  20 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (3.9s)
+  ✓  21 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado con GPU rápida (emulado) a DPR 2 › arrastrar la ventana (2.5s)
+  ✓  22 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (3.9s)
+  ✓  23 tests/e2e/fondo-pruebas.ts:377:17 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms (4.3s)
+
+  23 passed (1.4m)
+[e2e] recorridos terminados con estado 0 · 23 pruebas corridas · 88 s
