@@ -7,6 +7,7 @@ import { Client } from "pg";
 import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena";
 import { invitarPersonalComoDuena } from "../../scripts/personal-por-la-duena";
 import { iniciarBlobLocal, type BlobLocal } from "./blob-local/servidor";
+import { iniciarEfevooFalso, type EfevooFalso } from "../efevoo/servidor-falso";
 import { CORREOS, sembrarRecorridos } from "./siembra";
 import { sembrarCobranza } from "./siembra-cobranza";
 import { sembrarRunway } from "./siembra-runway";
@@ -27,6 +28,8 @@ const PUERTO_BLOB = Number(process.env.E2E_BLOB_PUERTO ?? "0");
 // de ahí el almacén («e2elocal»). Solo vale contra el emulador local.
 const TOKEN_BLOB_LOCAL = ["vercel", "blob", "rw", "e2elocal", "emulador"].join("_");
 const PRELOAD_BLOB = join(process.cwd(), "tests/e2e/blob-local/preload.mjs");
+// El Efevoo falso (tests/efevoo/servidor-falso.ts): la e2e nunca llama al sandbox. 0 = puerto libre.
+const PUERTO_EFEVOO = Number(process.env.E2E_EFEVOO_PUERTO ?? "0");
 // Proveedor de correo falso: los recorridos leen las invitaciones y los enlaces de recuperación que «llegan».
 const PRELOAD_CORREO = join(process.cwd(), "tests/e2e/correo-local/preload.mjs");
 const ARCHIVO_CORREO = join(process.cwd(), "test-results/correos-e2e.jsonl");
@@ -35,6 +38,7 @@ const CLAVE_CORREO_LOCAL = ["e2e", "correo", "local"].join("-");
 
 declare global {
   var __blobLocalE2E: BlobLocal | undefined;
+  var __efevooFalsoE2E: EfevooFalso | undefined;
 }
 
 /** E2E_ADMIN_URL puede venir sin base (como la usa reiniciar-pagos.sh): se conecta a postgres. */
@@ -117,11 +121,13 @@ export async function iniciarEntorno(): Promise<void> {
     await sembrarRunway(owner);
     await cerrarConexion();
     await levantarBlobLocal();
+    await levantarEfevooFalso();
     await levantarServidor();
   } catch (error) {
     await cerrarConexion();
     await detenerServidor();
     await detenerBlobLocal();
+    await detenerEfevooFalso();
     await borrarBase(admin, nombre);
     throw error;
   }
@@ -130,6 +136,7 @@ export async function iniciarEntorno(): Promise<void> {
 export async function cerrarEntorno(): Promise<void> {
   await detenerServidor();
   await detenerBlobLocal();
+  await detenerEfevooFalso();
   await cerrarConexion();
   const admin = urlAdministrativa();
   const nombre = process.env.E2E_DATABASE_NAME;
@@ -155,6 +162,25 @@ async function levantarBlobLocal(): Promise<void> {
 async function detenerBlobLocal(): Promise<void> {
   await globalThis.__blobLocalE2E?.cerrar();
   globalThis.__blobLocalE2E = undefined;
+}
+
+/**
+ * Efevoo apunta al falso local en sandbox, con credenciales que solo valen ahí.
+ * Las llaves reales del entorno nunca llegan al servidor de la prueba.
+ */
+async function levantarEfevooFalso(): Promise<void> {
+  const efevoo = await iniciarEfevooFalso(PUERTO_EFEVOO);
+  globalThis.__efevooFalsoE2E = efevoo;
+  process.env.EFEVOO_URL = efevoo.url;
+  process.env.EFEVOO_API_USER = efevoo.usuario;
+  process.env.EFEVOO_API_KEY = efevoo.llave;
+  process.env.EFEVOO_AMBIENTE = "sandbox";
+  process.env.E2E_EFEVOO_URL = efevoo.url;
+}
+
+async function detenerEfevooFalso(): Promise<void> {
+  await globalThis.__efevooFalsoE2E?.cerrar();
+  globalThis.__efevooFalsoE2E = undefined;
 }
 
 async function levantarServidor(): Promise<void> {

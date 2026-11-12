@@ -1,0 +1,76 @@
+{
+  "pedido": {
+    "method": "getClientList",
+    "payload": {
+      "email": "<email:34>"
+    }
+  },
+  "http": 200,
+  "ms": 1231,
+  "cuerpo": {
+    "response": {
+      "clients": [
+        {
+          "idepCliente": 19,
+          "name": "<name:21>",
+          "balance": 3201.29,
+          "totalCardBalance": 500,
+          "totalCards": 2
+        },
+        {
+          "idepCliente": 20,
+          "name": "<name:20>",
+          "balance": 3500,
+          "totalCardBalance": 0,
+          "totalCards": 0
+        },
+        {
+          "idepCliente": 21,
+          "name": "<name:9>",
+          "balance": 50,
+          "totalCardBalance": 0,
+          "totalCards": 0
+        },
+        {
+          "idepCliente": 22,
+          "name": "<name:12>",
+          "balance": 0,
+          "totalCardBalance": 0,
+          "totalCards": 0
+        },
+        {
+          "idepCliente": 201,
+          "name": "<name:13>",
+          "balance": 0,
+          "totalCardBalance": 0,
+          "totalCards": 0
+        },
+        {
+          "idepCliente": 202,
+          "name": "<name:9>",
+          "balance": 0,
+          "totalCardBalance": 0,
+          "totalCards": 0
+        },
+        {
+          "idepCliente": 203,
+          "name": "<name:9>",
+          "balance": 0,
+          "totalCardBalance": 0,
+          "totalCards": 0
+        },
+        {
+          "idepCliente": 206,
+          "name": "<name:22>",
+          "balance": 0,
+          "totalCardBalance": 0,
+          "totalCards": 0
+        }
+      ]
+    },
+    "status": {
+      "code": 0,
+      "message": "Message OK."
+    }
+  }
+}
