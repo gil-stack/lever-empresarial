@@ -32,3 +32,4 @@
 2 tests/autenticacion/postgres.test.ts
 2 tests/efevoo/reglas-postgres.test.ts
 2 tests/efevoo/operaciones-postgres.test.ts
+2 tests/tarjetas/reautenticacion-postgres.test.ts
