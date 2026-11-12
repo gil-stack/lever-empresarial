@@ -102,10 +102,14 @@ test("T1: administración ve el saldo para tarjetas, cada tarjeta con su termina
 });
 
 test("T1: el detalle trae los movimientos del emisor y ningún número largo; una tarjeta que no existe es 404", async ({ page, context }) => {
+  // Un movimiento cuyo concepto trae un número de tarjeta partido con espacios: se pinta solo su terminación.
+  await falso("/simular", { metodo: "movimiento", idCard: await idEfevooDe(sembrado.tito.id), concepto: "COMPRA OXXO 4111 1111 1111 1111", importe: 12.34, tipo: "Cargo" });
   await abrir(page, context, CORREOS_TARJETAS.tania, `/consola/tarjetas/${sembrado.tito.id}`);
   const movimientos = page.getByRole("region", { name: "Tabla de movimientos de la tarjeta" });
   await expect(movimientos).toContainText("$1,234.56");
   await expect(movimientos).toContainText("PAGO A TARJETA");
+  await expect(movimientos).toContainText("COMPRA OXXO ••1111");
+  expect(await page.content()).not.toContain("4111 1111");
   await sinNumerosDeTarjeta(context, ruta(`/consola/tarjetas/${sembrado.tito.id}`));
   const ajena = await page.goto(ruta("/consola/tarjetas/00000000-0000-4000-8000-000000000000"));
   expect(ajena?.status()).toBe(404);
