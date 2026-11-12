@@ -2,7 +2,7 @@
 # Descarga una imagen de docker con reintentos: hasta 5 intentos, con 5, 10, 20 y 40 s de espera entre ellos.
 # El registro (mcr.microsoft.com) a veces corta la conexión con «EOF»; sin reintento, una parte entera del CI caía
 # antes de correr una prueba (#66 y #71, 2026-11-12).
-# Solo se reintenta lo pasajero (EOF, timeout, conexión cortada, 5xx). Lo permanente (manifest unknown, not found,
+# Solo se reintenta lo pasajero (EOF, timeout, conexión cortada, 5xx, 429 toomanyrequests y fallas de DNS). Lo permanente (manifest unknown, not found,
 # denied, unauthorized: una imagen que no existe o un permiso) falla al primer intento. Cada falla lleva el motivo
 # que dio docker; si fallan los 5, sale con 1 y un mensaje que nombra la imagen y el último motivo.
 # DESCARGA_ESPERAS cambia las esperas (las pruebas usan «0 0 0 0»).
@@ -23,7 +23,7 @@ while :; do
     exit 1
   fi
   echo "[docker] $imagen: intento $n de $intentos falló: $motivo" >&2
-  if ! printf '%s' "$motivo" | grep -qiE 'EOF|timeout|timed out|connection reset|TLS handshake|[^0-9]5[0-9][0-9][^0-9]|service unavailable|bad gateway|gateway time'; then
+  if ! printf '%s' "$motivo" | grep -qiE 'EOF|timeout|timed out|connection reset|TLS handshake|[^0-9]5[0-9][0-9][^0-9]|service unavailable|bad gateway|gateway time|toomanyrequests|[^0-9]429[^0-9]|no such host|temporary failure in name resolution'; then
     echo "No se pudo descargar la imagen $imagen: $motivo (no parece pasajero; no se reintenta)." >&2
     exit 1
   fi

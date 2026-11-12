@@ -70,6 +70,20 @@ describe("descarga de imágenes con reintentos", () => {
     }, "Error response from daemon: received unexpected HTTP status: 503 Service Unavailable");
   });
 
+  it("también son pasajeros el 429 (toomanyrequests) y el DNS: se reintentan", () => {
+    for (const motivo of [
+      "Error response from daemon: toomanyrequests: You have reached your pull rate limit",
+      'Error response from daemon: Get "https://mcr.microsoft.com/v2/": dial tcp: lookup mcr.microsoft.com: no such host',
+      'Error response from daemon: Get "https://mcr.microsoft.com/v2/": dial tcp: lookup mcr.microsoft.com: Temporary failure in name resolution',
+    ]) {
+      conDockerFalso(2, (dir) => {
+        const r = descargar(dir, "postgres:17");
+        assert.equal(r.status, 0, `${motivo}: ${r.stderr}`);
+        assert.equal(readFileSync(join(dir, "llamadas"), "utf8").split("\n").filter((l) => l.startsWith("pull")).length, 3, motivo);
+      }, motivo);
+    }
+  });
+
   it("r71-1: lo permanente (manifest unknown, not found, denied, unauthorized) no se reintenta y el motivo de docker va en el mensaje", () => {
     for (const motivo of [
       "Error response from daemon: manifest unknown",

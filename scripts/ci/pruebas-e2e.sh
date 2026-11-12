@@ -22,10 +22,12 @@ marca() {
   echo "[e2e] $1 · $(( $(date +%s) - inicio )) s"
 }
 
-export E2E_PUERTO="${E2E_PUERTO:-3153}"
-export E2E_BLOB_PUERTO="${E2E_BLOB_PUERTO:-4896}"
-puerto_pg=5553
-puerto_navegador=4813
+# Puertos del modo ci (sin E2E_ADMIN_URL): ninguno de los laboratorios asignados (HANDOFF y relevo-2026-11-12), para
+# que una corrida local en modo ci no choque con el laboratorio de nadie. tests/ci/contenedores-ci.test.ts lo revisa.
+export E2E_PUERTO="${E2E_PUERTO:-3263}"
+export E2E_BLOB_PUERTO="${E2E_BLOB_PUERTO:-4926}"
+puerto_pg=5643
+puerto_navegador=4833
 # Otro contenedor que las partes de test:db (r71-2).
 pg=ci-postgres-e2e
 export CI_POSTGRES_CONTENEDOR="$pg"

@@ -55,4 +55,21 @@ describe("contenedores del CI", () => {
       assert.notEqual(puerto, parte.puerto);
     }
   });
+
+  it("los puertos del modo ci de la e2e no son los de ningún laboratorio asignado (HANDOFF y relevo-2026-11-12)", () => {
+    // Laboratorios: -06 (5553, 4813, 3153, 4896, 4897), -4e (5581, 5583, 3181, 3183, 4881, 4882), revisores (5552, 3152, 4895,
+    // 5563, 3163, 4823, 5591, 3191, 4891, 3192, 5571) y el Postgres de la máquina (5432).
+    const ASIGNADOS = new Set(["5553", "4813", "3153", "4896", "4897", "5581", "5583", "3181", "3183", "4881", "4882", "5552", "3152", "4895", "5563", "3163", "4823", "5591", "3191", "4891", "3192", "5571", "5432"]);
+    const e2e = readFileSync(join(RAIZ, "scripts/ci/pruebas-e2e.sh"), "utf8");
+    const puertos = {
+      postgres: /^puerto_pg=(\d+)$/m.exec(e2e)?.[1],
+      navegador: /^puerto_navegador=(\d+)$/m.exec(e2e)?.[1],
+      next: /E2E_PUERTO="\$\{E2E_PUERTO:-(\d+)\}"/.exec(e2e)?.[1],
+      blob: /E2E_BLOB_PUERTO="\$\{E2E_BLOB_PUERTO:-(\d+)\}"/.exec(e2e)?.[1],
+    };
+    for (const [nombre, puerto] of Object.entries(puertos)) {
+      assert.ok(puerto, `no se encontró el puerto de ${nombre}`);
+      assert.equal(ASIGNADOS.has(puerto), false, `el puerto de ${nombre} (${puerto}) es de un laboratorio asignado`);
+    }
+  });
 });
