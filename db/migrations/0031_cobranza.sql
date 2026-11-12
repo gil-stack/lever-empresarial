@@ -1404,42 +1404,48 @@ GRANT EXECUTE ON FUNCTION cobranza_tomar_aviso_fallido(uuid) TO plataforma_clien
 -- tiene la baja efectiva (`baja_en` <= hoy en México; no se puede cancelar) sale de faltan: ya no hay a quién esperar.
 -- La suspensión y quitar un rol sí se revierten, así que esas personas se siguen esperando. r63q-2: devuelve cuántas
 -- personas siguen en faltan, para que el evento de la bitácora diga a cuántas les falta (no solo las de esta vuelta).
+-- r63q-3: y si esta llamada cerró el aviso porque la baja efectiva dejó vacío faltan (`cerro_por_baja`), para que ese
+-- cierre, que pasa una sola vez, deje su evento aunque en la vuelta no haya salido ningún correo.
 CREATE FUNCTION cobranza_soltar_aviso_fallido(p_id uuid, p_recibieron uuid[], p_fallaron uuid[], p_cerrar boolean)
-RETURNS integer
+RETURNS TABLE (faltan integer, cerro_por_baja boolean)
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 DECLARE
   recibieron uuid[];
-  faltan uuid[];
+  pendientes uuid[];
+  sin_baja uuid[];
+  cerrado boolean;
 BEGIN
   IF app_usuario() IS NOT NULL OR app_empresa() IS NULL THEN
     RAISE EXCEPTION 'sin_permiso_para_cobranza';
   END IF;
   SELECT ARRAY(SELECT DISTINCT x FROM unnest(h.aviso_recibieron || coalesce(p_recibieron, '{}')) x ORDER BY x),
-         h.aviso_faltan || coalesce(p_fallaron, '{}')
-    INTO recibieron, faltan
+         h.aviso_faltan || coalesce(p_fallaron, '{}'), h.aviso_cerrado
+    INTO recibieron, pendientes, cerrado
     FROM collection_held_events h
    WHERE h.id = p_id AND h.company_id = app_empresa() AND h.estado = 'fallido'
    FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'retenido_ya_procesado';
   END IF;
-  faltan := ARRAY(
-    SELECT DISTINCT x FROM unnest(faltan) x
-     WHERE x <> ALL (recibieron)
-       AND NOT EXISTS (
+  pendientes := ARRAY(SELECT DISTINCT x FROM unnest(pendientes) x WHERE x <> ALL (recibieron) ORDER BY x);
+  sin_baja := ARRAY(
+    SELECT x FROM unnest(pendientes) x
+     WHERE NOT EXISTS (
          SELECT 1 FROM employees e
           WHERE e.company_id = app_empresa() AND e.user_id = x
             AND e.baja_en <= (timezone('America/Mexico_City', clock_timestamp()))::date)
      ORDER BY x);
   UPDATE collection_held_events h
      SET aviso_recibieron = recibieron,
-         aviso_faltan = faltan,
-         aviso_cerrado = h.aviso_cerrado OR (coalesce(p_cerrar, false) AND faltan = '{}'),
+         aviso_faltan = sin_baja,
+         aviso_cerrado = h.aviso_cerrado OR (coalesce(p_cerrar, false) AND sin_baja = '{}'),
          aviso_tomado_en = NULL
    WHERE h.id = p_id;
-  RETURN cardinality(faltan);
+  faltan := cardinality(sin_baja);
+  cerro_por_baja := NOT cerrado AND coalesce(p_cerrar, false) AND sin_baja = '{}' AND pendientes <> '{}';
+  RETURN NEXT;
 END;
 $$;
 

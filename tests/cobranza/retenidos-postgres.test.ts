@@ -552,11 +552,19 @@ async function escenario(url: string): Promise<void> {
     try {
       relojMas("1 day");
       await corridaO(enviadorO());
+      // r63q-3 (decisión del líder): el cierre es un cambio de estado de una sola vez y deja su evento, con pendientes 0 y
+      //    el motivo, sin ids de personas. Otra vuelta después no agrega nada.
+      relojMas("2 days");
+      await corridaO(enviadorO());
     } finally {
       relojMas(null);
     }
     assert.equal(cuenta(`select count(*) from collection_held_events where id = '${idRho}' and aviso_cerrado and aviso_faltan = '{}'`), 1, "con la baja efectiva, el aviso se cierra");
     assert.equal(buzonO.filter((m) => m.para === "zz-finanzas-rho@ejemplo.mx").length, 0, "a quien ya se fue no le llega");
+    assert.deepEqual(eventosDe("evt_Baja01"), [
+      { enviados: "1", recibidos: "1", pendientes: "1", motivo: null },
+      { enviados: "0", recibidos: null, pendientes: "0", motivo: "baja_efectiva" },
+    ], "un solo evento de cierre, con su motivo");
 
     // r63q-2 Ana y Bea fallan; se suspende a Bea y el día 1 a Ana le llega: el evento dice «pendientes: 1» (Bea sigue en
     //    `aviso_faltan`, el aviso abierto). Antes decía 0: contaba solo a quienes fallaron en esa vuelta, no a quien falta.
@@ -579,6 +587,23 @@ async function escenario(url: string): Promise<void> {
     }
     assert.deepEqual(eventosDe("evt_Pendientes01").at(-1), { enviados: "1", recibidos: "1", pendientes: "1", motivo: null }, "Bea sigue pendiente");
     assert.equal(cuenta(`select count(*) from collection_held_events where id = '${idTau}' and not aviso_cerrado and aviso_faltan = array['${beaTau}'::uuid]`), 1);
+
+    // r63q-2b A Zoe le falla el correo y en el reintento la plantilla no se puede preparar (sin URL pública): solo falta
+    //    ella y el evento dice «pendientes: 1». Antes sumaba el 1 de «no preparado» a quien ya estaba en faltan y decía 2.
+    const kappa = await empresa("KAP150301AB4", "601", "Kappa Plantilla Retenidos", "acc_RetenidosKap0001");
+    const centroKappa = await nombrarCentro(kappa.admin, { nombre: "Administración" }, { ahora: HOY });
+    await persona(url, kappa.admin, centroKappa.id, "Zoe Finanzas", "zz-finanzas-kap@ejemplo.mx", ["tarjetahabiente", "finanzas"]);
+    retenidoFallido(kappa.id, "evt_SinPlantilla01");
+    assert.equal(await procesarRetenidos(kappa.id, operador, depsO(enviadorO((m) => m.para.startsWith("zz-")))), 1);
+    assert.deepEqual(eventosDe("evt_SinPlantilla01"), [{ enviados: "1", recibidos: "1", pendientes: "1", motivo: null }]);
+    try {
+      relojMas("1 day");
+      await correrCobranza({ ahora: reloj("2027-01-10T18:00:00.000Z"), auditar, enviador: enviadorO(), fintoc: null, registrar: () => {},
+        urlPublica: () => { throw new Error("sin URL pública"); } });
+    } finally {
+      relojMas(null);
+    }
+    assert.deepEqual(eventosDe("evt_SinPlantilla01").at(-1), { enviados: "0", recibidos: "0", pendientes: "1", motivo: null }, "solo falta Zoe");
 
     // r63j-N2 a) El aviso toma el candado y retiene (la empresa sigue suspendida) mientras la reactivación espera ese
     //    mismo candado: al reactivar, el retenido ya está ahí y se aplica. Antes el aviso revisaba en una transacción y
