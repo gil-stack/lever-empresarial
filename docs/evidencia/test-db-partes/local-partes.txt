@@ -7,3 +7,5 @@ Con E1 integrado (merge de origin/main 0b79358, 2026-11-12), Postgres 17 en 5581
 parte 1: ℹ tests 46 ℹ pass 46 ℹ fail 0 
 parte 2: ℹ tests 89 ℹ pass 89 ℹ fail 0 
 parte 1: 73 s; parte 2: 63 s (con reglas-postgres y operaciones-postgres de Efevoo)
+
+Con el margen del falso (6 plásticos en cero, 801-806), parte 8 local: 28 de 28 en 116 s (tarjetas-efevoo 8 y tarjetas 13 en el mismo falso).

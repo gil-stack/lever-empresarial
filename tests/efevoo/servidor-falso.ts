@@ -83,13 +83,24 @@ export type EfevooFalso = {
   cerrar(): Promise<void>;
 };
 
-/** El inventario inicial: los cinco plásticos en inStock del sandbox, con sus terminaciones reales. */
+/**
+ * El inventario inicial: los cinco plásticos en inStock del sandbox, con sus terminaciones reales, y seis plásticos de
+ * margen en cero que no existen en el sandbox (ids 801 a 806, terminaciones 2101 a 2106: ninguno aparece en los
+ * contratos ni en la evidencia). En la parte 8 de la e2e, tarjetas-efevoo y tarjetas comparten el falso y, sin margen,
+ * una prueba más que tomara un plástico rompía la siembra (lo revisa servidor-falso.test.ts).
+ */
 export const INVENTARIO = [
   { id: 557, terminacion: "1363", saldoCentavos: 0 },
   { id: 563, terminacion: "0168", saldoCentavos: 0 },
   { id: 564, terminacion: "3474", saldoCentavos: 0 },
   { id: 567, terminacion: "7992", saldoCentavos: 6_035_234 },
   { id: 568, terminacion: "8182", saldoCentavos: 0 },
+  { id: 801, terminacion: "2101", saldoCentavos: 0 },
+  { id: 802, terminacion: "2102", saldoCentavos: 0 },
+  { id: 803, terminacion: "2103", saldoCentavos: 0 },
+  { id: 804, terminacion: "2104", saldoCentavos: 0 },
+  { id: 805, terminacion: "2105", saldoCentavos: 0 },
+  { id: 806, terminacion: "2106", saldoCentavos: 0 },
 ] as const;
 /** Los últimos 8 del plástico, que en la vida real se leen del plástico físico: aquí, «4000» + la terminación. */
 export const ultimos8De = (terminacion: string) => `4000${terminacion}`;
