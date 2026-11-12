@@ -246,6 +246,7 @@ export const RUTAS = [
   { patron: "/consola/gastos", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] }, conEmpresa: true },
   // Tarjetas: con la empresa vinculada a Efevoo Pay, las tarjetas reales; si no, como los demás módulos en demostración.
   { patron: "/consola/tarjetas", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.tarjetas.ver"] }, conEmpresa: true },
+  { patron: "/consola/tarjetas/[id]", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.tarjetas.ver"] }, conEmpresa: true },
   { patron: "/consola/movimientos", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] }, conEmpresa: true },
   { patron: "/consola/cuenta", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.resumen.ver"] }, conEmpresa: true },
   { patron: "/consola/internacional", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.proveedores.ver"] }, conEmpresa: true },

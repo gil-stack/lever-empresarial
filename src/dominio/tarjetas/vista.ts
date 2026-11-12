@@ -28,6 +28,8 @@ export type OperacionTarjeta = {
   readonly codigoEfevoo: string | null;
   /** Si es el reintento de una operación incierta que no apareció en Efevoo. */
   readonly reintentoDe: string | null;
+  /** Incierta que ya se buscó en Efevoo y no apareció: se puede reintentar (con referencia nueva). */
+  readonly buscadaSinEncontrar: boolean;
 };
 
 export type TarjetaEmpresa = {
