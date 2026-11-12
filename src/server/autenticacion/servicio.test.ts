@@ -38,6 +38,7 @@ import {
 } from "./servicio";
 import type { AvisoDeSeguridad } from "../seguridad/avisos";
 import type {
+  CeremoniaTotp,
   Efecto,
   EstadoFactores,
   NuevaPasskey,
@@ -352,6 +353,21 @@ describe("las recuperaciones se resuelven solo desde Operación y con confirmaci
 });
 
 describe("con la recuperación aprobada se inscribe un factor nuevo y los anteriores quedan sin efecto", () => {
+  it("la recuperación no adopta la semilla que dejó pendiente otra sesión", async () => {
+    const repo = anaConPasskey();
+    repo.totp = [];
+    const deps = base(repo);
+    const atacante = sesionDe(repo);
+    const previa = await prepararTotpDeSesion(atacante, deps);
+    conRecuperacionAprobada(repo);
+    const token = await entrarHasta(deps);
+    const nueva = await prepararTotp(token, { ...deps, semilla: () => SEMILLA_NUEVA });
+    assert.notEqual(nueva.semilla, previa.semilla, "la semilla del atacante no pertenece a esta recuperación");
+    assert.equal(await codigoDe(inscribirTotp(token, codigoDelPaso(SEMILLA, pasoDe(AHORA)), deps)), "segundo_factor_invalido");
+    await inscribirTotp(token, codigoDelPaso(SEMILLA_NUEVA, pasoDe(AHORA)), deps);
+    assert.equal(repo.recuperaciones[0]?.estado, "cumplida");
+  });
+
   it("Ana pide, otra persona aprueba, Ana inscribe una app nueva: la app, la passkey, los códigos y la sesión viejos dejan de servir", async () => {
     const repo = anaConPasskey();
     const deps = base(repo, undefined, LUEGO);
@@ -837,7 +853,7 @@ class Memoria {
   /** Persona de cada contraseña fallida; null cuando el correo no tiene cuenta. */
   fallos: (string | null)[] = [];
   passkeys: (PasskeyGuardada & { revocado: boolean })[] = [];
-  totp: (TotpGuardado & { revocado: boolean })[] = [];
+  totp: (TotpGuardado & { revocado: boolean; ceremonia?: CeremoniaTotp; venceEn?: Date })[] = [];
   respaldos: RespaldoMem[] = [];
   retos: { userId: string; proposito: string; reto: string; usado: boolean; sesionId: string | null }[] = [];
   sesiones: { id: string; userId: string; factor: string; fallos?: number; renovadaCon?: string }[] = [];
@@ -913,7 +929,7 @@ class Memoria {
         return reto.reto;
       },
       completarEntrada: async ({ entradaId, userId, metodo, sesion, efecto }) => {
-        this.aplicar(userId, efecto);
+        this.aplicar(userId, efecto, entradaId);
         const entrada = this.entradas.find((e) => e.id === entradaId && !e.consumida && e.intentos >= 1);
         if (!entrada) throw new ErrorDeDominio("entrada_vencida");
         entrada.consumida = true;
@@ -923,13 +939,22 @@ class Memoria {
         this.sesiones.push({ id: sesion.id, userId, factor: metodo });
         this.eventos.push("entrada_completa");
       },
-      guardarTotpPendiente: async ({ id, userId, secretoCifrado }) => {
-        this.totp = this.totp.filter((t) => t.confirmado || t.revocado);
-        this.totp.push({ id, userId, secretoCifrado, confirmado: false, ultimoPaso: null, revocado: false });
+      leerTotpPendiente: async (userId, ceremonia, ahora) => {
+        return this.pendiente(userId, ceremonia, ahora);
       },
-      confirmarTotp: async ({ userId, totpId, paso }) => {
-        const totp = this.totp.find((t) => t.id === totpId && t.userId === userId && !t.confirmado && !t.revocado);
-        if (!totp) throw new ErrorDeDominio("segundo_factor_invalido");
+      guardarTotpPendiente: async ({ id, userId, secretoCifrado, creadoEn, venceEn, ceremonia }) => {
+        this.totp = this.totp.filter((t) => t.userId !== userId || t.confirmado || t.revocado ||
+          (t.venceEn && t.venceEn > creadoEn && (!("entradaId" in ceremonia) || !ceremonia.recuperacionId ||
+            (t.ceremonia && "entradaId" in t.ceremonia && t.ceremonia.recuperacionId === ceremonia.recuperacionId))));
+        const existente = this.pendiente(userId, ceremonia, creadoEn);
+        if (existente) return existente;
+        const nueva = { id, userId, secretoCifrado, confirmado: false, ultimoPaso: null, revocado: false, ceremonia, venceEn };
+        this.totp.push(nueva);
+        return nueva;
+      },
+      confirmarTotp: async ({ userId, totpId, paso, ahora, ceremonia }) => {
+        const totp = this.pendiente(userId, ceremonia, ahora);
+        if (!totp || totp.id !== totpId) throw new ErrorDeDominio("segundo_factor_invalido");
         totp.confirmado = true;
         totp.ultimoPaso = paso;
       },
@@ -1014,10 +1039,14 @@ class Memoria {
     return {
       passkeys,
       totp: vivas.find((t) => t.confirmado) ?? null,
-      totpPendiente: vivas.find((t) => !t.confirmado) ?? null,
       respaldoRestantes: this.respaldos.filter((r) => r.userId === userId && !r.usado).length,
       tuvoFactores: this.passkeys.some((p) => p.userId === userId) || this.totp.some((t) => t.userId === userId && t.confirmado),
     };
+  }
+
+  pendiente(userId: string, ceremonia: CeremoniaTotp, ahora: Date) {
+    return this.totp.find((t) => t.userId === userId && !t.confirmado && !t.revocado && t.venceEn && t.venceEn > ahora
+      && JSON.stringify(t.ceremonia) === JSON.stringify(ceremonia)) as (TotpGuardado & { venceEn: Date }) | undefined ?? null;
   }
 
   vigentes(userId: string): number {
@@ -1025,7 +1054,7 @@ class Memoria {
     return estado.passkeys.length + (estado.totp?.confirmado ? 1 : 0);
   }
 
-  aplicar(userId: string, efecto: Efecto): void {
+  aplicar(userId: string, efecto: Efecto, entradaId?: string): void {
     if (efecto.tipo === "totp") {
       const totp = this.totp.find((t) => t.id === efecto.totpId && t.confirmado && !t.revocado);
       if (!totp || (totp.ultimoPaso !== null && efecto.paso <= totp.ultimoPaso)) {
@@ -1048,7 +1077,8 @@ class Memoria {
     }
     if (efecto.tipo === "inscribir_totp") {
       this.retirarAnteriores(userId, efecto.recuperacionId);
-      const totp = this.totp.find((t) => t.id === efecto.totpId && !t.confirmado && !t.revocado);
+      const totp = entradaId ? this.pendiente(userId, { entradaId, recuperacionId: efecto.recuperacionId }, AHORA) : null;
+      if (totp?.id !== efecto.totpId) throw new ErrorDeDominio("segundo_factor_invalido");
       if (!totp) throw new ErrorDeDominio("segundo_factor_invalido");
       totp.confirmado = true;
       totp.ultimoPaso = efecto.paso;

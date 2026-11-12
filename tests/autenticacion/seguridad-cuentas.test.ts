@@ -364,10 +364,12 @@ describe("seguridad de cuentas en Postgres", { skip: urlAdmin.length === 0 }, ()
         // H10. Revocar una app autenticadora ya usada funciona; un paso repetido o menor sigue rechazado.
         const totpUsado = randomUUID();
         await duena.query("begin");
-        await duena.query("insert into auth_totp (id, user_id, secreto_cifrado, creado_en) values ($1, $2, $3, now())", [
+        await duena.query(`insert into auth_totp (id, user_id, secreto_cifrado, creado_en, sesion_id, vence_en)
+          values ($1, $2, $3, now(), $4, now() + interval '10 minutes')`, [
           totpUsado,
           ana,
           `v1.${"a".repeat(16)}.${"b".repeat(32)}.${"c".repeat(22)}`,
+          sesionRetos,
         ]);
         await duena.query(
           `insert into audit_log (operator_id, actor_tipo, actor_id, superficie, accion, entidad, identificador)

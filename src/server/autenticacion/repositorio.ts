@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { aplicarSentencia, conContexto, type Consulta } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { hecho, registrarHechoAutenticacion } from "./auditar";
+import { VIGENCIA_FACTORES_MS } from "./reautenticacion";
 import type { MetodoSegundoFactor, RecuperacionPendiente, VerificacionIdentidad } from "./tipos";
 
 function conTransaccion<T>(userId: string, fn: (consulta: Consulta) => Promise<T>): Promise<T> {
@@ -60,12 +61,17 @@ export type TotpGuardado = {
   ultimoPaso: number | null;
 };
 
+/** Una semilla pertenece a una entrada (y su recuperación) o a una sesión concreta. */
+export type CeremoniaTotp =
+  | { entradaId: string; recuperacionId: string | null }
+  | { sesionId: string };
+
+export type TotpPendiente = TotpGuardado & { venceEn: Date };
+
 export type EstadoFactores = {
   passkeys: PasskeyGuardada[];
   /** La app autenticadora confirmada y vigente. */
   totp: TotpGuardado | null;
-  /** La app que se está inscribiendo. Con una recuperación aprobada convive con la confirmada vieja. */
-  totpPendiente: TotpGuardado | null;
   respaldoRestantes: number;
   /** Alguna vez tuvo passkey o TOTP confirmado, aunque hoy estén revocados. */
   tuvoFactores: boolean;
@@ -143,8 +149,14 @@ export type RepositorioAutenticacion = {
     efecto: Efecto;
     ahora: Date;
   }) => Promise<void>;
-  guardarTotpPendiente: (args: { id: string; userId: string; secretoCifrado: string; creadoEn: Date }) => Promise<void>;
-  confirmarTotp: (args: { userId: string; totpId: string; paso: number; ahora: Date }) => Promise<void>;
+  leerTotpPendiente: (userId: string, ceremonia: CeremoniaTotp, ahora: Date) => Promise<TotpPendiente | null>;
+  /** Obtiene o crea bajo el candado del usuario: dos preparaciones no rotan la semilla entre sí. */
+  guardarTotpPendiente: (args: {
+    id: string; userId: string; secretoCifrado: string; creadoEn: Date; venceEn: Date; ceremonia: CeremoniaTotp;
+  }) => Promise<TotpPendiente>;
+  confirmarTotp: (args: {
+    userId: string; totpId: string; paso: number; ahora: Date; ceremonia: CeremoniaTotp;
+  }) => Promise<void>;
   agregarPasskey: (args: { userId: string; passkey: NuevaPasskey; ahora: Date }) => Promise<void>;
   revocarPasskey: (args: { userId: string; passkeyId: string; actorId: string; ahora: Date }) => Promise<void>;
   revocarTotp: (args: { userId: string; actorId: string; ahora: Date }) => Promise<void>;
@@ -215,7 +227,7 @@ export const SQL = {
       creada_en, ultimo_uso_en
     from auth_passkeys where user_id = $1 and revocada_en is null order by creada_en`,
   totpVigente: `select id, user_id, secreto_cifrado, confirmado_en, ultimo_paso
-    from auth_totp where user_id = $1 and revocado_en is null`,
+    from auth_totp where user_id = $1 and revocado_en is null and confirmado_en is not null`,
   respaldoRestantes: `select count(*)::int as restantes from auth_codigos_respaldo
     where user_id = $1 and usado_en is null and invalidado_en is null`,
   tuvoFactores: `select (
@@ -253,9 +265,22 @@ export const SQL = {
     where user_id = $1 and codigo_hash = $2 and usado_en is null and invalidado_en is null
     returning id`,
   borrarTotpPendiente: "delete from auth_totp where user_id = $1 and confirmado_en is null",
-  insertarTotp: "insert into auth_totp (id, user_id, secreto_cifrado, creado_en) values ($1, $2, $3, $4)",
+  leerTotpPendiente: `select id, user_id, secreto_cifrado, confirmado_en, ultimo_paso, vence_en
+    from auth_totp where user_id = $1 and confirmado_en is null and revocado_en is null
+      and entrada_id is not distinct from $2::uuid and sesion_id is not distinct from $3::uuid
+      and recuperacion_id is not distinct from $4::uuid and vence_en > greatest($5, clock_timestamp())`,
+  borrarTotpCaducado: `delete from auth_totp where user_id = $1 and confirmado_en is null
+    and vence_en <= greatest($2, clock_timestamp())`,
+  borrarTotpAjenoARecuperacion: `delete from auth_totp where user_id = $1 and confirmado_en is null
+    and recuperacion_id is distinct from $2::uuid`,
+  borrarOtrosTotpPendientes: `delete from auth_totp where user_id = $1 and confirmado_en is null and id <> $2`,
+  insertarTotp: `insert into auth_totp (id, user_id, secreto_cifrado, creado_en, vence_en, entrada_id, sesion_id, recuperacion_id)
+    values ($1, $2, $3, $4, $5, $6, $7, $8)
+    returning id, user_id, secreto_cifrado, confirmado_en, ultimo_paso, vence_en`,
   confirmarTotp: `update auth_totp set confirmado_en = $3, ultimo_paso = $4
-    where id = $1 and user_id = $2 and confirmado_en is null and revocado_en is null`,
+    where id = $1 and user_id = $2 and confirmado_en is null and revocado_en is null
+      and entrada_id is not distinct from $5::uuid and sesion_id is not distinct from $6::uuid
+      and recuperacion_id is not distinct from $7::uuid and vence_en > greatest($3, clock_timestamp())`,
   insertarPasskey: `insert into auth_passkeys
       (id, user_id, credencial_id, llave_publica, contador, transportes, nombre, respaldada, creada_en)
     values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
@@ -375,7 +400,6 @@ export function repositorioPg(): RepositorioAutenticacion {
       return {
         passkeys: (passkeys.rows as Record<string, unknown>[]).map(mapearPasskey),
         totp: apps.find((app) => app.confirmado) ?? null,
-        totpPendiente: apps.find((app) => !app.confirmado) ?? null,
         respaldoRestantes: Number((respaldo.rows[0] as { restantes?: unknown } | undefined)?.restantes ?? 0),
         tuvoFactores: (tuvo.rows[0] as { tuvo?: unknown } | undefined)?.tuvo === true,
       };
@@ -397,7 +421,7 @@ export function repositorioPg(): RepositorioAutenticacion {
     async completarEntrada({ entradaId, userId, metodo, sesion, efecto, ahora }) {
       await conTransaccion(userId, async (consulta) => {
         await consulta.query(SQL.bloquearUsuario, [userId]);
-        await aplicarEfecto(consulta, userId, efecto, ahora);
+        await aplicarEfecto(consulta, userId, efecto, ahora, entradaId);
         const consumida = await consulta.query(SQL.consumirEntrada, [entradaId, userId, metodo]);
         if (consumida.rowCount !== 1) throw new ErrorDeDominio("entrada_vencida");
         // Hoy la sesión de la persona es una. El frente de tenencia va a
@@ -434,17 +458,31 @@ export function repositorioPg(): RepositorioAutenticacion {
         );
       });
     },
-    async guardarTotpPendiente({ id, userId, secretoCifrado, creadoEn }) {
-      await conTransaccion(userId, async (consulta) => {
+    async leerTotpPendiente(userId, ceremonia, ahora) {
+      const fila = primera(await consultar(SQL.leerTotpPendiente, [userId, ...columnasCeremonia(ceremonia), ahora], userId));
+      return fila ? mapearPendiente(fila) : null;
+    },
+    async guardarTotpPendiente({ id, userId, secretoCifrado, creadoEn, venceEn, ceremonia }) {
+      return conTransaccion(userId, async (consulta) => {
         await consulta.query(SQL.bloquearUsuario, [userId]);
-        await consulta.query(SQL.borrarTotpPendiente, [userId]);
-        await consulta.query(SQL.insertarTotp, [id, userId, secretoCifrado, creadoEn]);
+        await exigirCeremoniaTotp(consulta, userId, ceremonia, creadoEn);
+        await consulta.query(SQL.borrarTotpCaducado, [userId, creadoEn]);
+        if ("entradaId" in ceremonia && ceremonia.recuperacionId) {
+          await consulta.query(SQL.borrarTotpAjenoARecuperacion, [userId, ceremonia.recuperacionId]);
+        }
+        const existente = primera(await consulta.query(SQL.leerTotpPendiente, [userId, ...columnasCeremonia(ceremonia), creadoEn]));
+        if (existente) return mapearPendiente(existente);
+        const nueva = primera(await consulta.query(SQL.insertarTotp, [
+          id, userId, secretoCifrado, creadoEn, venceEn, ...columnasCeremonia(ceremonia),
+        ]));
+        return mapearPendiente(nueva!);
       });
     },
-    async confirmarTotp({ userId, totpId, paso, ahora }) {
+    async confirmarTotp({ userId, totpId, paso, ahora, ceremonia }) {
       await conTransaccion(userId, async (consulta) => {
         await consulta.query(SQL.bloquearUsuario, [userId]);
-        const confirmado = await consulta.query(SQL.confirmarTotp, [totpId, userId, ahora, paso]);
+        await exigirCeremoniaTotp(consulta, userId, ceremonia, ahora);
+        const confirmado = await consulta.query(SQL.confirmarTotp, [totpId, userId, ahora, paso, ...columnasCeremonia(ceremonia)]);
         if (confirmado.rowCount !== 1) throw new ErrorDeDominio("segundo_factor_invalido");
         await registrarHechoAutenticacion(hecho("totp_confirmado", totpId, userId, ahora), consulta);
       });
@@ -573,7 +611,7 @@ export function repositorioPg(): RepositorioAutenticacion {
   };
 }
 
-async function aplicarEfecto(consulta: Consulta, userId: string, efecto: Efecto, ahora: Date): Promise<void> {
+async function aplicarEfecto(consulta: Consulta, userId: string, efecto: Efecto, ahora: Date, entradaId?: string): Promise<void> {
   switch (efecto.tipo) {
     case "totp": {
       const usado = await consulta.query(SQL.usarTotp, [efecto.totpId, efecto.paso, userId]);
@@ -593,9 +631,15 @@ async function aplicarEfecto(consulta: Consulta, userId: string, efecto: Efecto,
       return;
     }
     case "inscribir_totp": {
+      if (!entradaId) throw new ErrorDeDominio("entrada_vencida");
+      const ceremonia = { entradaId, recuperacionId: efecto.recuperacionId };
+      await exigirCeremoniaTotp(consulta, userId, ceremonia, ahora);
       await retirarFactoresAnteriores(consulta, userId, efecto.recuperacionId, ahora);
-      const confirmado = await consulta.query(SQL.confirmarTotp, [efecto.totpId, userId, ahora, efecto.paso]);
+      const confirmado = await consulta.query(SQL.confirmarTotp, [
+        efecto.totpId, userId, ahora, efecto.paso, ...columnasCeremonia(ceremonia),
+      ]);
       if (confirmado.rowCount !== 1) throw new ErrorDeDominio("segundo_factor_invalido");
+      if (efecto.recuperacionId) await consulta.query(SQL.borrarOtrosTotpPendientes, [userId, efecto.totpId]);
       await registrarHechoAutenticacion(hecho("totp_confirmado", efecto.totpId, userId, ahora), consulta);
       await guardarRespaldo(consulta, userId, efecto.codigosHash, ahora);
       await cumplirRecuperacion(consulta, userId, efecto.recuperacionId, ahora);
@@ -610,6 +654,37 @@ async function aplicarEfecto(consulta: Consulta, userId: string, efecto: Efecto,
       return;
     }
   }
+}
+
+function columnasCeremonia(ceremonia: CeremoniaTotp): [string | null, string | null, string | null] {
+  return "entradaId" in ceremonia ? [ceremonia.entradaId, null, ceremonia.recuperacionId] : [null, ceremonia.sesionId, null];
+}
+
+/** Revalida el padre después del candado: una petición anterior no sobrevive al cierre de su sesión/entrada. */
+async function exigirCeremoniaTotp(consulta: Consulta, userId: string, ceremonia: CeremoniaTotp, ahora: Date): Promise<void> {
+  if ("sesionId" in ceremonia) {
+    const sesion = await consulta.query(`select id from sessions where id = $1 and user_id = $2
+      and expires_at > greatest($3, clock_timestamp())
+      and segundo_factor_en <= $3 and segundo_factor_en >= $3 - ($4 * interval '1 millisecond') for update`,
+    [ceremonia.sesionId, userId, ahora, VIGENCIA_FACTORES_MS]);
+    if (sesion.rowCount !== 1) throw new ErrorDeDominio("reautenticacion_requerida");
+    return;
+  }
+  const entrada = await consulta.query(`select id from auth_entradas where id = $1 and user_id = $2
+    and consumida_en is null and vence_en > greatest($3, clock_timestamp()) for update`,
+  [ceremonia.entradaId, userId, ahora]);
+  if (entrada.rowCount !== 1) throw new ErrorDeDominio("entrada_vencida");
+  if (ceremonia.recuperacionId) {
+    const recuperacion = await consulta.query(`select id from auth_recuperaciones where id = $1 and user_id = $2
+      and estado = 'aprobada' and vence_en > greatest($3, clock_timestamp())`, [ceremonia.recuperacionId, userId, ahora]);
+    if (recuperacion.rowCount !== 1) throw new ErrorDeDominio("recuperacion_vencida");
+  } else {
+    await exigirSinFactores(consulta, userId);
+  }
+}
+
+function mapearPendiente(fila: Record<string, unknown>): TotpPendiente {
+  return { ...mapearTotp(fila), venceEn: fecha(fila.vence_en) };
 }
 
 async function insertarPasskey(consulta: Consulta, userId: string, passkey: NuevaPasskey, ahora: Date): Promise<void> {

@@ -11,7 +11,7 @@ import { cookieDeEntrada, VIGENCIA_ENTRADA_MS, type CookieEntrada } from "./cook
 import { llaveTotpDesdeEntorno } from "./entorno";
 import { qrComoDataUri } from "./qr";
 import { exigirFactorReciente, factorReciente, VIGENCIA_FACTORES_MS } from "./reautenticacion";
-import { repositorioPg, type Entrada, type PropositoDeReto, type RepositorioAutenticacion } from "./repositorio";
+import { repositorioPg, type CeremoniaTotp, type Entrada, type PropositoDeReto, type RepositorioAutenticacion } from "./repositorio";
 import { codigosNuevos, hashDeRespaldo, normalizarRespaldo } from "./respaldo";
 import type {
   AltaTotp,
@@ -48,6 +48,7 @@ const TOPE_SEGUNDO_FACTOR = 5;
 const VIGENCIA_RETO_MS = 5 * 60 * 1000;
 const VIGENCIA_RECUPERACION_MS = 12 * 60 * 60 * 1000;
 const EMISOR = "Lever";
+const VIGENCIA_ALTA_TOTP_MS = 10 * 60 * 1000;
 
 type Hashear = (contrasena: string) => Promise<string>;
 type Verificar = (contrasena: string, hash: string) => Promise<boolean>;
@@ -241,9 +242,9 @@ export async function entrarConPasskey(
 export async function prepararTotp(token: string | null, deps?: DependenciasAutenticacion): Promise<AltaTotp> {
   const listo = resolver(deps);
   const entrada = await exigirEntrada(token, listo);
-  const { paso, persona } = await contextoDeInscripcion(entrada.userId, listo);
+  const { paso, persona, recuperacionId } = await contextoDeInscripcion(entrada.userId, listo);
   if (paso.paso !== "inscribir") throw new ErrorDeDominio("ya_tiene_segundo_factor");
-  return altaTotp(entrada.userId, persona.correo, listo);
+  return altaTotp(entrada.userId, persona.correo, { entradaId: entrada.id, recuperacionId }, listo);
 }
 
 export async function inscribirTotp(
@@ -255,8 +256,7 @@ export async function inscribirTotp(
   const entrada = await exigirEntrada(token, listo);
   const { paso, persona, recuperacionId } = await contextoDeInscripcion(entrada.userId, listo);
   if (paso.paso !== "inscribir") throw new ErrorDeDominio("ya_tiene_segundo_factor");
-  const factores = await listo.repositorio.factores(entrada.userId);
-  const pendiente = factores.totpPendiente;
+  const pendiente = await listo.repositorio.leerTotpPendiente(entrada.userId, { entradaId: entrada.id, recuperacionId }, listo.ahora());
   const intentos = await apartarIntento(entrada, listo);
   const normalizado = normalizarCodigoTotp(codigo);
   const semilla = pendiente ? descifrarDe(pendiente.secretoCifrado, entrada.userId, listo) : null;
@@ -345,7 +345,7 @@ export async function prepararTotpDeSesion(sesion: Sesion, deps?: DependenciasAu
   await exigirCambioDeFactor(sesion, listo);
   const factores = await listo.repositorio.factores(sesion.usuario.id);
   if (factores.totp?.confirmado) throw new ErrorDeDominio("ya_tiene_segundo_factor");
-  return altaTotp(sesion.usuario.id, sesion.usuario.correo, listo);
+  return altaTotp(sesion.usuario.id, sesion.usuario.correo, { sesionId: sesion.id }, listo);
 }
 
 export async function confirmarTotpDeSesion(
@@ -355,13 +355,12 @@ export async function confirmarTotpDeSesion(
 ): Promise<void> {
   const listo = resolver(deps);
   await exigirCambioDeFactor(sesion, listo);
-  const factores = await listo.repositorio.factores(sesion.usuario.id);
-  const pendiente = factores.totpPendiente;
+  const pendiente = await listo.repositorio.leerTotpPendiente(sesion.usuario.id, { sesionId: sesion.id }, listo.ahora());
   const normalizado = normalizarCodigoTotp(codigo);
   const semilla = pendiente ? descifrarDe(pendiente.secretoCifrado, sesion.usuario.id, listo) : null;
   const paso = semilla && normalizado ? verificarTotp(semilla, normalizado, listo.ahora(), null) : null;
   if (!pendiente || paso === null) throw new ErrorDeDominio("segundo_factor_invalido");
-  await listo.repositorio.confirmarTotp({ userId: sesion.usuario.id, totpId: pendiente.id, paso, ahora: listo.ahora() });
+  await listo.repositorio.confirmarTotp({ userId: sesion.usuario.id, totpId: pendiente.id, paso, ahora: listo.ahora(), ceremonia: { sesionId: sesion.id } });
   await avisar(sesion.usuario, "totp_activado", listo);
 }
 
@@ -728,27 +727,18 @@ async function fallo(entrada: Entrada, intentos: number, listo: Listo): Promise<
   throw new ErrorDeDominio(intentos >= TOPE_SEGUNDO_FACTOR ? "entrada_agotada" : "segundo_factor_invalido");
 }
 
-async function altaTotp(userId: string, correo: string, listo: Listo): Promise<AltaTotp> {
-  const factores = await listo.repositorio.factores(userId);
-  const pendiente = factores.totpPendiente;
+async function altaTotp(userId: string, correo: string, ceremonia: CeremoniaTotp, listo: Listo): Promise<AltaTotp> {
   const llave = exigirLlave(listo);
-  let semilla: Buffer | null = null;
-  if (pendiente) {
-    try {
-      semilla = descifrarSemilla(pendiente.secretoCifrado, userId, llave);
-    } catch {
-      semilla = null;
-    }
-  }
-  if (!semilla) {
-    semilla = listo.semilla();
-    await listo.repositorio.guardarTotpPendiente({
-      id: listo.ids(),
-      userId,
-      secretoCifrado: cifrarSemilla(semilla, userId, llave),
-      creadoEn: listo.ahora(),
-    });
-  }
+  const ahora = listo.ahora();
+  const pendiente = await listo.repositorio.guardarTotpPendiente({
+    id: listo.ids(),
+    userId,
+    secretoCifrado: cifrarSemilla(listo.semilla(), userId, llave),
+    creadoEn: ahora,
+    venceEn: new Date(ahora.getTime() + VIGENCIA_ALTA_TOTP_MS),
+    ceremonia,
+  });
+  const semilla = descifrarDe(pendiente.secretoCifrado, userId, listo);
   const uri = uriOtpauth(EMISOR, correo, semilla);
   return { qr: await qrComoDataUri(uri), semilla: semillaLegible(semilla) };
 }
