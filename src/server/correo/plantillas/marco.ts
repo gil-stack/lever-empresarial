@@ -52,7 +52,11 @@ export type Bloque = {
   boton: { texto: string; url: string };
   notas: readonly string[];
   preencabezado: string;
+  /** El pie bajo la hoja. Sin él, el de los correos automáticos de Lever. */
+  pie?: string;
 };
+
+const PIE = "LEVER · Finanzas empresariales en orden. Correo automático, no respondas a esta dirección.";
 
 export function escapar(texto: string): string {
   return texto
@@ -131,7 +135,7 @@ ${tablaDatos}
 <div class="filo" style="border-top:1px solid ${CLARO.linea};padding-top:18px;">${notas}</div>
 </td></tr>
 <tr><td style="padding:20px 4px 0;">
-<p class="tenue" style="margin:0;color:${CLARO.tintaTenue};font-family:${SANS};font-size:12px;line-height:1.5;">LEVER · Finanzas empresariales en orden. Correo automático, no respondas a esta dirección.</p>
+<p class="tenue" style="margin:0;color:${CLARO.tintaTenue};font-family:${SANS};font-size:12px;line-height:1.5;">${escapar(b.pie ?? PIE)}</p>
 </td></tr>
 </table>
 </td></tr>
@@ -152,7 +156,7 @@ function texto(b: Bloque): string {
     "",
     ...b.notas,
     "",
-    "LEVER · Finanzas empresariales en orden. Correo automático, no respondas a esta dirección.",
+    b.pie ?? PIE,
   ].join("\n");
 }
 

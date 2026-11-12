@@ -6,6 +6,8 @@ const ENDPOINT = "https://api.resend.com/emails";
 const ESPERA_MS = 10_000;
 const LLAVE_IDEMPOTENCIA = /^[A-Za-z0-9/_-]{1,256}$/;
 const ETIQUETA = /^[A-Za-z0-9_-]{1,256}$/;
+/** Una dirección simple: sin nombre, espacios, saltos de línea ni signos que abran otro encabezado. */
+const RESPONDER_A = /^[^\s@<>",;:()[\]\\\u0000-\u001f\u007f]+@[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?(\.[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?)*\.[A-Za-z]{2,}$/;
 
 export type Fetch = (url: string, init: RequestInit) => Promise<Response>;
 
@@ -25,6 +27,11 @@ export function enviadorResend(config: ConfiguracionCorreo, hacerFetch: Fetch = 
       html: mensaje.html,
       text: mensaje.texto,
     };
+    if (mensaje.responderA !== undefined) {
+      // Se cierra antes de tocar la red: una dirección rara nunca viaja como encabezado.
+      if (mensaje.responderA.length > 254 || !RESPONDER_A.test(mensaje.responderA)) throw new ErrorDeCorreo("correo_destinatario_invalido");
+      cuerpo.reply_to = [mensaje.responderA];
+    }
     if (mensaje.etiqueta && ETIQUETA.test(mensaje.etiqueta)) {
       cuerpo.tags = [{ name: "tipo", value: mensaje.etiqueta }];
     }

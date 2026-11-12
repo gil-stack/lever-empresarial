@@ -26,6 +26,8 @@ import {
   retirarDelBorrador,
   solicitarCambioDeSuspension,
 } from "@/server/operacion";
+import { auditar } from "@/server/bitacora/auditar";
+import { procesarRetenidos } from "@/server/cobranza/fintoc";
 import { almacenVercel } from "@/server/proveedores/constancia";
 import { ErrorDeDominio } from "@/server/session";
 
@@ -269,18 +271,32 @@ export async function solicitarSuspensionAccion(previo: EstadoDelFormulario, for
   listo(ficha, tipo === "reactivacion" ? "reactivacion_solicitada" : "suspension_solicitada");
 }
 
+const RETENIDOS_POR_REACTIVACION = 50;
+
 export async function decidirSuspensionAccion(formData: FormData): Promise<void> {
   const ctx = await exigirContextoOperacion();
   const sesion = await sesionSegura();
   if (!sesion) redirect("/operacion/entrar");
+  let decidida: Awaited<ReturnType<typeof decidirCambioDeSuspension>>;
   try {
-    await decidirCambioDeSuspension(ctx, sesion, {
+    decidida = await decidirCambioDeSuspension(ctx, sesion, {
       id: formData.get("id"),
       aprobada: formData.get("decision") === "aprobar",
       motivo: formData.get("motivo"),
     });
   } catch (error) {
     return fallo(error, "/operacion/aprobaciones");
+  }
+  // r63i-N1: los abonos de Fintoc que llegaron mientras estuvo suspendida, por el camino normal. La reactivación ya
+  // confirmó: si esto falla, la tarea diaria de cobranza los vuelve a intentar.
+  if (decidida.reactivada) {
+    try {
+      // Con tope (r63j-P3): Aprobación no espera una cola larga; lo que falte lo aplica la tarea diaria y la bandeja de
+      // Cumplimiento lo cuenta mientras tanto.
+      await procesarRetenidos(decidida.companyId, ctx.personal.operadorId, { auditar }, RETENIDOS_POR_REACTIVACION);
+    } catch {
+      console.error(JSON.stringify({ nivel: "error", origen: "cobranza.fintoc", evento: "retenidos_pendientes" }));
+    }
   }
   listo("/operacion/aprobaciones", "decision_registrada");
 }

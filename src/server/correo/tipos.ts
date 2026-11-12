@@ -6,6 +6,8 @@ export type MensajeCorreo = {
   /** `<tipo>/<id>`. Un reintento con la misma llave no manda un segundo correo. */
   idempotencia: string;
   etiqueta?: string;
+  /** «Responder a»: el contacto de la empresa en un correo de cobro. Solo una dirección simple, sin nombre. */
+  responderA?: string;
 };
 
 export type Enviador = (mensaje: MensajeCorreo) => Promise<{ id: string }>;

@@ -373,6 +373,7 @@ form + .operacion-lista {
 
 .operacion-pagina > .operacion-confirmar + .hoja,
 .operacion-pagina > .metricas + .hoja,
+.operacion-pagina > .hoja + .metricas,
 .operacion-pagina > .operacion-ficha-cabeza + .hoja {
   margin-top: 24px;
 }

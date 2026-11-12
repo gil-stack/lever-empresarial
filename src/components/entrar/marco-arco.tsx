@@ -8,7 +8,7 @@ import { SelectorTema } from "@/components/cromo/selector-tema";
 import { COOKIE_TEMA, temaDesde } from "@/components/cromo/tema";
 
 /** La puerta de las tres superficies. No usa el menú de la consola ni el del teléfono. */
-export async function MarcoArco({ children }: { children: ReactNode }) {
+export async function MarcoArco({ children, pie = "Acceso seguro a tu empresa" }: { children: ReactNode; pie?: string }) {
   const tema = temaDesde((await cookies()).get(COOKIE_TEMA)?.value);
   return (
     <>
@@ -28,7 +28,7 @@ export async function MarcoArco({ children }: { children: ReactNode }) {
         <main id="contenido" className="arco-lienzo">
           <section className="arco-acceso-tarjeta">{children}</section>
         </main>
-        <footer className="arco-pie-pagina">Acceso seguro a tu empresa</footer>
+        <footer className="arco-pie-pagina">{pie}</footer>
       </div>
     </>
   );

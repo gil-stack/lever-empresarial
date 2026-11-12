@@ -1,0 +1,38 @@
+r63b-N1: tests/cobranza/cobranza-postgres.test.ts (revision63b) contra el código de 247f0ef (antes del arreglo), Postgres 17.9 UTF-8, 2026-11-10.
+Casos que aplicaron dos veces el mismo depósito (los controles «orilla de ±1 día», «otro monto» y «otra referencia» pasan en los dos códigos: deben aplicarse):
+caso D (Fintoc → estado de cuenta): caso D: la propuesta aplicaba el mismo depósito otra vez
+manual → estado de cuenta: manual → estado de cuenta: se aplicó dos veces
+estado de cuenta → Fintoc: estado de cuenta → Fintoc: se aplicó dos veces
+Fintoc → manual: Expected values to be strictly deep-equal:
+sin referencia (conservador) y aplicar: Expected values to be strictly equal:
+carrera de dos conexiones: carrera 1: dos aplicaciones
+
+Con el arreglo: ℹ pass 1, ℹ fail 0.
+
+e2e con el código de 247f0ef (Chromium, next start en 3181, Postgres 5581), la spec nueva copiada:
+- 16 · el mismo depósito a mano y en el estado de cuenta: FALLA · el renglón del estado de cuenta proponía «aplicar» (esperado «por_conciliar»).
+- 17 · sin JavaScript la configuración se guarda por POST (r63b-N2): FALLA · el formulario no tenía method (esperado «post»): sin JavaScript se iba por GET con la CLABE y el contacto en la dirección.
+Con el arreglo: cobranza.spec 16 pasan y 1 omitida (la matriz de evidencia, solo con E2E_CAPTURAS).
+
+Reglas de base de r63b-N1 (mutaciones de la 0031 contra tests/cobranza/reglas-base.test.ts):
+AR7 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: r63b-N1 parecido_a en un pago que no es posible duplicado: la base lo aceptó (esperado collection_payments_parecido)
+AR8 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: r63b-N1 cambiar el pago parecido: la base lo aceptó (esperado cobranza_inmutable)
+AR9 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: r63b-N1 anular un pago automático que no es posible duplicado: la base lo aceptó (esperado collection_payments_estado)
+AR10 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: r63b-N1 parecido_a de otra empresa: la base lo aceptó (esperado collection_payments_parecido_de)
+
+Ronda r63d (re-verificación de 09b40e0), tests/cobranza/cobranza-postgres.test.ts (revision63b):
+- r63d-N1 con src/server/cobranza/{abonos,servicio}.ts de 09b40e0: FALLA · «r63d-N1 otro cliente ya identificado: el abono a la CLABE de su cliente quedó frenado por el pago de otro cliente». El control «mismo cliente, otra fuente: sigue frenado» pasa en los dos códigos.
+- r63d-N2 con la mutación MF7 (los pagos anulados o devueltos cuentan como parecido): FALLAN · «el pago anulado frenó el abono» y «el pago devuelto frenó el abono».
+- Con el arreglo: ℹ pass 1, ℹ fail 0.
+
+Ronda r63e (re-verificación de 442c21c), tests/cobranza/cobranza-postgres.test.ts (revision63b):
+- Con src/server/cobranza/{abonos,servicio}.ts de 442c21c: FALLAN
+  · r63e-N1 con el cliente elegido a mano: r63e-N1: el depósito de D (elegido a mano) se aplicó otra vez desde la CLABE de U
+  · r63e-N1 estado de cuenta primero y luego Fintoc desde la CLABE de otro cliente: r63e-N1 (N1.ECaF del revisor): el depósito se aplicó otra vez desde la CLABE de U
+  · r63e-N1 la referencia de D desde la CLABE de U: r63e-N1: el depósito de D desde la CLABE de U se aplicó dos veces
+- MF14 (un parecido sin cliente ya no frena a un abono con cliente): FALLA · «r63e un parecido sin cliente frena».
+- MF6 (referencias distintas también frenan): FALLA · «r63e mismo cliente, referencias distintas: los dos se aplican».
+- Con el arreglo: ℹ pass 1, ℹ fail 0.
+- Sondas del revisor (revision-63-scripts/zz-r63-{c351463,09b40e0,442c21c}.spec.ts, copias que escriben fuera de su carpeta, Chromium, api.fintoc.com bloqueada): 11/11, 5/5 y 6/6. Mismo veredicto que el revisor en cada escenario, salvo ADV2.ordenanteDeOtro y N1.ECaF, que en 442c21c se aplicaban dos veces y ahora quedan frenados (1 aplicación). En la de c351463, N1 esperaba el texto anterior al aviso de r63b-N3; la copia acepta también «ya estaba en Lever».
+
+Ronda r63f (re-verificación de f610d6d): «r63f-N1 la ordenante de un solo cliente lo identifica» FALLA con MF19 (clienteSinDuda sin los clientes de la ordenante) y pasa con el código. Sondas del revisor en copias que escriben en el scratchpad (c351463, 09b40e0, 442c21c y f610d6d): 11/11, 5/5, 6/6 y 7/7.

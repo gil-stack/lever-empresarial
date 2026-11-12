@@ -1,0 +1,12 @@
+head {"caso":"celdas","zipKB":72,"infladoMB":24,"ms":1679,"rssMB":1006,"picoRssMB":1006,"heapDeltaMB":710,"resultado":"El archivo tiene más de 40 columnas."}
+head {"caso":"filas","zipKB":49,"infladoMB":24,"ms":1974,"rssMB":820,"picoRssMB":820,"heapDeltaMB":508,"resultado":"El archivo tiene más de 5000 renglones. Exporta un periodo más corto."}
+head {"caso":"celdasBajoTope","zipKB":29,"infladoMB":9.5,"ms":672,"rssMB":479,"picoRssMB":479,"heapDeltaMB":276,"resultado":"El archivo tiene más de 40 columnas."}
+head {"caso":"filasBajoTope","zipKB":20,"infladoMB":9.5,"ms":764,"rssMB":396,"picoRssMB":396,"heapDeltaMB":206,"resultado":"El archivo tiene más de 5000 renglones. Exporta un periodo más corto."}
+head {"caso":"cadenasBajoTope","zipKB":24,"infladoMB":9.5,"ms":966,"rssMB":601,"picoRssMB":601,"heapDeltaMB":389,"resultado":"leído 1 renglones"}
+head {"caso":"legitimo5000x40","zipKB":658,"infladoMB":7.9,"ms":663,"rssMB":362,"picoRssMB":362,"heapDeltaMB":151,"resultado":"leído 5000 renglones"}
+nuevo {"caso":"celdas","zipKB":72,"infladoMB":24,"ms":41,"rssMB":164,"picoRssMB":164,"heapDeltaMB":1,"resultado":"Una parte del libro de Excel es demasiado grande por dentro. Exporta un periodo más corto o en CSV."}
+nuevo {"caso":"filas","zipKB":49,"infladoMB":24,"ms":44,"rssMB":162,"picoRssMB":162,"heapDeltaMB":1,"resultado":"Una parte del libro de Excel es demasiado grande por dentro. Exporta un periodo más corto o en CSV."}
+nuevo {"caso":"celdasBajoTope","zipKB":29,"infladoMB":9.5,"ms":88,"rssMB":145,"picoRssMB":145,"heapDeltaMB":1,"resultado":"El archivo tiene más de 200,000 celdas. Exporta un periodo más corto."}
+nuevo {"caso":"filasBajoTope","zipKB":20,"infladoMB":9.5,"ms":59,"rssMB":133,"picoRssMB":133,"heapDeltaMB":1,"resultado":"El archivo tiene más de 5000 renglones. Exporta un periodo más corto."}
+nuevo {"caso":"cadenasBajoTope","zipKB":24,"infladoMB":9.5,"ms":65,"rssMB":136,"picoRssMB":136,"heapDeltaMB":1,"resultado":"El libro de Excel trae demasiados textos. Exporta un periodo más corto o en CSV."}
+nuevo {"caso":"legitimo5000x40","zipKB":658,"infladoMB":7.9,"ms":602,"rssMB":357,"picoRssMB":357,"heapDeltaMB":168,"resultado":"leído 5000 renglones"}

@@ -8,6 +8,7 @@ import { darDeAltaComoDuena } from "../../scripts/empresa-por-la-duena";
 import { invitarPersonalComoDuena } from "../../scripts/personal-por-la-duena";
 import { iniciarBlobLocal, type BlobLocal } from "./blob-local/servidor";
 import { CORREOS, sembrarRecorridos } from "./siembra";
+import { sembrarCobranza } from "./siembra-cobranza";
 
 import { hoyEnMexico } from "../../src/dominio/personas";
 import { cerrarConexion } from "../../src/nucleo/db";
@@ -73,6 +74,8 @@ export async function iniciarEntorno(): Promise<void> {
     delete process.env.CORREO_REMITENTE;
     // Llave TOTP de esta corrida: la siembra cifra las semillas con ella y el servidor las lee.
     process.env.AUTENTICACION_LLAVE_TOTP = randomBytes(32).toString("base64url");
+    // Secreto de las tareas de esta corrida: la e2e de cobranza llama a /tareas/cobranza como el cron de Vercel.
+    process.env.CRON_SECRET = randomBytes(32).toString("base64url");
     // El arranque del operador, como en producción: la dueña invita de una vez a la primera
     // Administración (personal:migrar-variable); el comando no vuelve a invitar a nadie.
     const arranque = await invitarPersonalComoDuena(
@@ -109,6 +112,7 @@ export async function iniciarEntorno(): Promise<void> {
     process.env.E2E_ADMIN_ID = invitacion.emitida.userId;
     process.env.E2E_TODAY = hoyEnMexico(new Date());
     await sembrarRecorridos(owner, arranque);
+    await sembrarCobranza(owner);
     await cerrarConexion();
     await levantarBlobLocal();
     await levantarServidor();

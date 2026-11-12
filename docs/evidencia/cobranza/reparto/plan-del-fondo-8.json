@@ -1,0 +1,33 @@
+{
+ "fondo": [
+  "sin:1:tarea",
+  "sin:2:lien",
+  "sin:1:arr",
+  "gpu:2:tarea"
+ ],
+ "optica-retina": [
+  "real:1",
+  "gpu:2:buf",
+  "sin:1:lien",
+  "gpu:2:lien",
+  "sin:2:tarea",
+  "sin:2:arr",
+  "sin:1:est"
+ ],
+ "velocidad-del-fondo": [
+  "sin:2:buf",
+  "gpu:2:arr",
+  "gpu:1:est",
+  "real:2",
+  "cuarenta",
+  "gpu:1:arr",
+  "sin:1:buf",
+  "gpu:1:tarea",
+  "gpu:1:buf",
+  "sin:2:est"
+ ],
+ "abanico-del-fondo": [
+  "gpu:1:lien",
+  "gpu:2:est"
+ ]
+}

@@ -35,6 +35,9 @@ const nextConfig: NextConfig = {
         "/consola/proveedores/documento/:id",
         "/c/:empresa/consola/proveedores/documento/:id",
         "/operacion/clientes/:id/expediente/documento/:documentoId",
+        // El comprobante de un pago de cobranza baja igual que el documento de un proveedor (r63-N5).
+        "/consola/cobros/comprobante/:id",
+        "/c/:empresa/consola/cobros/comprobante/:id",
         // Las descargas de PLD (Ola R2).
         "/operacion/pld/casos/:id/documento/:documentoId",
         "/operacion/pld/casos/:id/reporte",

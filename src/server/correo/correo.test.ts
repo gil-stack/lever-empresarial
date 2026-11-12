@@ -10,6 +10,7 @@ import { ErrorDeCorreo, explicarErrorDeCorreo } from "./errores.ts";
 import { plantillaInvitacionEmpresa } from "./plantillas/invitacion-empresa.ts";
 import { plantillaInvitacionPersonal } from "./plantillas/invitacion-personal.ts";
 import { plantillaInvitacionUsuario } from "./plantillas/invitacion-usuario.ts";
+import { plantillaCobro } from "./plantillas/cobro.ts";
 import { escapar } from "./plantillas/marco.ts";
 import { plantillaRecuperarContrasena } from "./plantillas/recuperar-contrasena.ts";
 import { enviadorResend } from "./resend.ts";
@@ -268,6 +269,64 @@ describe("plantillas", () => {
       assert.ok(html.includes(linea[1]), `${token} claro`);
       assert.ok(html.includes(linea[2]), `${token} oscuro`);
     }
+  });
+});
+
+describe("correo de cobro", () => {
+  const DATOS = {
+    tipo: "cobro" as const,
+    razonSocial: "Altamar Logística",
+    cliente: "Abarrotes del Puerto",
+    concepto: "Renta de bodega",
+    periodo: "enero 2027",
+    montoCentavos: 1_250_000,
+    saldoCentavos: 1_250_000,
+    vencimiento: "2027-01-31",
+    clabe: "002180701150123452",
+    banco: "BANAMEX",
+    beneficiario: "Altamar Logística SA de CV",
+    referencia: "0000018",
+    enlace: `https://app.ejemplo.mx/pagar/${"b".repeat(43)}`,
+    contacto: "cobranza@ejemplo.mx",
+  };
+
+  it("lleva monto, concepto, periodo, vencimiento, la CLABE completa con banco y beneficiario, la referencia y el enlace", () => {
+    const correo = plantillaCobro(DATOS);
+    for (const parte of ["$12,500.00", "Renta de bodega", "enero 2027", "31 de enero de 2027", "002 180 70115012345 2", "BANAMEX", "Altamar Logística SA de CV", "0000018", DATOS.enlace, "cobranza@ejemplo.mx"]) {
+      assert.ok(correo.texto.includes(parte), parte);
+      assert.ok(correo.html.includes(escapar(parte)), parte);
+    }
+    assert.ok(correo.texto.includes("no recibe este dinero"));
+    assert.equal(correo.texto.includes("no respondas"), false, "las respuestas van a la empresa");
+  });
+
+  it("escapa el nombre del cliente y el concepto; el asunto no lleva saltos", () => {
+    const correo = plantillaCobro({ ...DATOS, cliente: `<img src=x onerror=alert(1)>`, concepto: "Renta\r\nBcc: x@y.mx", razonSocial: "A\r\nB" });
+    assert.equal(correo.html.includes("<img src=x"), false);
+    assert.equal(/[\r\n]/.test(correo.asunto), false);
+  });
+
+  it("recordatorio de vencido con pago parcial dice cuánto falta y cómo dejar de recibirlos", () => {
+    const correo = plantillaCobro({ ...DATOS, tipo: "despues", saldoCentavos: 500_000 });
+    assert.ok(correo.texto.includes("faltan $5,000.00"));
+    assert.ok(correo.texto.includes("No quieres recibir recordatorios"));
+    assert.ok(correo.asunto.startsWith("Pago vencido"));
+  });
+
+  it("«Responder a» viaja como reply_to y una dirección con saltos de línea no sale", async () => {
+    const cuerpos: unknown[] = [];
+    const enviar = enviadorResend({ apiKey: CLAVE, remitente: REMITENTE }, async (_url, init) => {
+      cuerpos.push(JSON.parse(String(init.body)));
+      return Response.json({ id: "correo-2" });
+    });
+    await enviar({ ...MENSAJE, responderA: "cobranza@ejemplo.mx" });
+    assert.deepEqual((cuerpos[0] as { reply_to: unknown }).reply_to, ["cobranza@ejemplo.mx"]);
+    for (const malo of ["cobranza@ejemplo.mx\r\nBcc: todos@victima.mx", "Cobranza <c@ejemplo.mx>", "a@b.mx, c@d.mx", "sin-arroba", ""]) {
+      const error = await enviar({ ...MENSAJE, responderA: malo }).catch((e: unknown) => e);
+      assert.ok(error instanceof ErrorDeCorreo, malo);
+      assert.equal((error as ErrorDeCorreo).codigo, "correo_destinatario_invalido");
+    }
+    assert.equal(cuerpos.length, 1, "ninguna dirección mala llegó al proveedor");
   });
 });
 

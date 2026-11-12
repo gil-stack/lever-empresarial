@@ -55,7 +55,7 @@ export function ultimoDelMes(fecha: string): string {
   return deUtc(Date.UTC(anio, mes, 0));
 }
 
-function sumarMeses(fecha: string, meses: number, anclaDia: number): string {
+export function sumarMeses(fecha: string, meses: number, anclaDia: number): string {
   const [anio, mes] = exigirFecha(fecha).split("-").map(Number) as [number, number];
   const indice = mes - 1 + meses;
   const anioDestino = anio + Math.floor(indice / 12);

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { basePlataforma, type ContextoDePersonal } from "../../nucleo/contexto";
-import { conContexto } from "../../nucleo/db";
+import { bloquearEmpresa, conContexto } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { uuidValido } from "../../dominio/operacion";
 import { exigirAutenticacionReciente } from "../autenticacion/reautenticacion";
@@ -87,18 +87,20 @@ export async function solicitarCambioDeSuspension(
  * Aprobación decide. Aprobada, la empresa cambia de estado en la misma
  * transacción, con su historial y su evento. Reactivar con una coincidencia
  * abierta lo rechaza la base (77ª): primero el dictamen de falso positivo.
+ * Devuelve la empresa y si quedó reactivada: quien llama procesa después del
+ * commit los abonos que se retuvieron mientras estuvo suspendida (r63i-N1).
  */
 export async function decidirCambioDeSuspension(
   ctx: ContextoDePersonal,
   sesion: SesionConFactor,
   entrada: { id: unknown; aprobada: boolean; motivo: unknown },
-): Promise<void> {
+): Promise<{ companyId: string; reactivada: boolean }> {
   exigirEnOperacion(ctx, "plataforma.suspension.aprobar");
   exigirAutenticacionReciente(sesion);
   if (!uuidValido(entrada.id)) throw new ErrorDeDominio("solicitud_ausente");
   const motivo = entrada.aprobada ? null : motivoEscrito(entrada.motivo, 500);
   const ahora = new Date();
-  await conContexto(basePlataforma(ctx), async (consulta) => {
+  return conContexto(basePlataforma(ctx), async (consulta) => {
     const fila = await consulta.query(
       "select company_id, tipo, estado, solicitada_por from company_suspensions where id = $1 for update",
       [entrada.id],
@@ -109,6 +111,11 @@ export async function decidirCambioDeSuspension(
     if (solicitud.solicitada_por === ctx.persona.id) throw new ErrorDeDominio("misma_persona_en_suspension");
     const companyId = String(solicitud.company_id);
     const tipo = solicitud.tipo === "reactivacion" ? "reactivacion" : "suspension";
+    // r63j-N2: el mismo candado que toma cada aviso de Fintoc de la empresa: un aviso ve el estado de antes o el de
+    // después, nunca uno a medias (un retenido no queda varado con la empresa ya activa). r63k-N1: antes de cualquier
+    // escritura (el disparador de company_suspensions ya escribe la fila de companies): el alta de un proveedor toma
+    // primero este candado y después puede escribir companies (lpb_cotejar_empresa); al revés se interbloqueaban.
+    await bloquearEmpresa(consulta, companyId);
     await consulta.query(
       "update company_suspensions set estado = $2, decidida_por = $3, decidida_en = $4, motivo_decision = $5 where id = $1",
       [entrada.id, entrada.aprobada ? "aprobada" : "rechazada", ctx.persona.id, ahora, motivo],
@@ -132,6 +139,7 @@ export async function decidirCambioDeSuspension(
       motivo,
       ocurridoEn: ahora,
     });
+    return { companyId, reactivada: entrada.aprobada && tipo === "reactivacion" };
   });
 }
 

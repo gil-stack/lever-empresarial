@@ -2,28 +2,24 @@ import Link from "next/link";
 
 import "@/estilo/flujo.css";
 
-import { BarraAvance, CabezaPagina, EtiquetaMono, Hoja, Insignia, Metrica, Metricas, Monto, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
+import { BarraAvance, CabezaPagina, EtiquetaMono, Hoja, Insignia, NotaRegla, Rejilla, Vacio } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
 import { ETIQUETA_FRECUENCIA } from "@/dominio/flujo/entradas";
 import { desplazar, fechaConAnio, fechaCorta, nombreDelMes, primeroDelMes, ultimoDelMes } from "@/dominio/flujo/fechas";
 import { ETIQUETA_ESTADO_PRESUPUESTO, GASTO_RESERVADO, porcentaje, type LineaPresupuesto } from "@/dominio/flujo/presupuestos";
 import { horaEnMexico } from "@/dominio/reloj";
 import { enEmpresa } from "@/nucleo/rutas";
-import type { CobroVista } from "@/server/flujo/repositorio";
-import type { VistaCalendario, VistaCobros, VistaPresupuestos, VistaSaldo } from "@/server/flujo/servicio";
+import type { VistaCalendario, VistaPresupuestos, VistaSaldo } from "@/server/flujo/servicio";
 
 import { Calendario } from "./calendario";
 import {
   AreaProveedor,
   AvisosDeLista,
   DesactivarObligacion,
-  FormularioCobro,
-  FormularioCobroXml,
   FormularioColchon,
   FormularioCorreo,
   FormularioObligacion,
   FormularioSaldo,
-  ResolverCobro,
 } from "./formularios";
 import { Origen } from "./origen";
 
@@ -104,142 +100,6 @@ export function VistaFlujo({ vista }: { vista: VistaSaldo | null }) {
       />
     </>
   );
-}
-
-// Cobros ----------------------------------------------------------------------------------
-
-const FILTROS_ESTADO = [
-  ["todos", "Todos"],
-  ["esperado", "Esperados"],
-  ["vencido", "Vencidos"],
-  ["cobrado", "Cobrados"],
-  ["cancelado", "Cancelados"],
-] as const;
-
-const FILTROS_VENCE = [
-  ["todas", "Cualquier fecha"],
-  ["7", "Próximos 7 días"],
-  ["30", "Próximos 30 días"],
-] as const;
-
-function vencido(cobro: CobroVista, hoy: string): boolean {
-  return cobro.estado === "esperado" && cobro.fechaProbable < hoy;
-}
-
-export function filtrarCobros(cobros: readonly CobroVista[], hoy: string, estado: string, vence: string): CobroVista[] {
-  return cobros.filter((cobro) => {
-    if (estado === "vencido" && !vencido(cobro, hoy)) return false;
-    if (estado === "esperado" && (cobro.estado !== "esperado" || vencido(cobro, hoy))) return false;
-    if ((estado === "cobrado" || estado === "cancelado") && cobro.estado !== estado) return false;
-    if (vence === "7" || vence === "30") {
-      if (cobro.estado !== "esperado" || cobro.fechaProbable < hoy || cobro.fechaProbable > desplazar(hoy, Number(vence))) return false;
-    }
-    return true;
-  });
-}
-
-export function VistaCobrosPagina({
-  vista,
-  empresaId,
-  estado: estadoPedido,
-  vence: vencePedido,
-}: {
-  vista: VistaCobros | null;
-  empresaId: string | null;
-  estado?: string;
-  vence?: string;
-}) {
-  if (!vista) return <SinLectura kicker="Flujo de caja" titulo="Cobros esperados" />;
-  const estado = FILTROS_ESTADO.some(([clave]) => clave === estadoPedido) ? estadoPedido! : "todos";
-  const vence = FILTROS_VENCE.some(([clave]) => clave === vencePedido) ? vencePedido! : "todas";
-  const lista = filtrarCobros(vista.cobros, vista.hoy, estado, vence);
-  const enlace = (cambio: { estado?: string; vence?: string }) => {
-    const e = cambio.estado ?? estado;
-    const v = cambio.vence ?? vence;
-    const query = [e !== "todos" ? `estado=${e}` : "", v !== "todas" ? `vence=${v}` : ""].filter(Boolean).join("&");
-    return enEmpresa(empresaId, `/consola/cobros${query ? `?${query}` : ""}`);
-  };
-  return (
-    <>
-      <h1 className="solo-lector">Cobros esperados</h1>
-      <Metricas etiqueta="Totales de cobros">
-        <Metrica rotulo="Por cobrar" nota={<Origen de="comprometido" />}>
-          <Monto><span data-cifra="por-cobrar" data-centavos={vista.totales.porCobrar}>{formatoPesos(vista.totales.porCobrar)}</span></Monto>
-        </Metrica>
-        <Metrica rotulo={vista.totales.vencidos === 1 ? "1 cobro vencido" : `${vista.totales.vencidos} cobros vencidos`} nota="No entran en la proyección.">
-          <Monto><span data-cifra="vencidos" data-centavos={vista.totales.vencidosCentavos}>{formatoPesos(vista.totales.vencidosCentavos)}</span></Monto>
-        </Metrica>
-      </Metricas>
-
-      <Hoja id="lista-cobros" titulo="Cobros" className="flujo-bloque">
-        <AvisosDeLista>
-          <div className="flujo-filtros">
-            <nav className="segmentado" aria-label="Estado">
-              {FILTROS_ESTADO.map(([clave, texto]) => (
-                <Link key={clave} href={enlace({ estado: clave })} aria-current={estado === clave ? "page" : undefined}>{texto}</Link>
-              ))}
-            </nav>
-            <nav className="segmentado" aria-label="Vencimiento">
-              {FILTROS_VENCE.map(([clave, texto]) => (
-                <Link key={clave} href={enlace({ vence: clave })} aria-current={vence === clave ? "page" : undefined}>{texto}</Link>
-              ))}
-            </nav>
-          </div>
-          {lista.length === 0 ? (
-            <Vacio titulo={vista.cobros.length === 0 ? "Todavía no hay cobros esperados." : "Ningún cobro con estos filtros."}>
-              {vista.cobros.length === 0 ? "Registra el primero a mano o con el XML de una factura que emitiste." : undefined}
-            </Vacio>
-          ) : (
-            <div className="tabla-contenedor" tabIndex={0} role="region" aria-label="Tabla de cobros esperados">
-              {/* Roles explícitos: en móvil cada cobro se apila como tarjeta y la tabla sigue siendo tabla para el lector de pantalla. */}
-              <table className="tabla flujo-apilada flujo-tabla-cobros" data-tabla="cobros" role="table">
-                <thead role="rowgroup">
-                  <tr role="row">
-                    <th scope="col" role="columnheader">Cliente</th>
-                    <th scope="col" role="columnheader">Concepto</th>
-                    <th scope="col" role="columnheader">Fecha probable</th>
-                    <th scope="col" role="columnheader" className="derecha">Monto</th>
-                    <th scope="col" role="columnheader">Estado</th>
-                    {vista.puedeEditar ? <th scope="col" role="columnheader"><span className="solo-lector">Acciones</span></th> : null}
-                  </tr>
-                </thead>
-                <tbody role="rowgroup">
-                  {lista.map((cobro) => (
-                    <tr key={cobro.id} role="row" data-cobro={cobro.id} data-estado={vencido(cobro, vista.hoy) ? "vencido" : cobro.estado}>
-                      <td role="cell" data-columna="cliente">{cobro.cliente}{cobro.rfc ? <small>{cobro.rfc}</small> : null}</td>
-                      <td role="cell" data-columna="concepto">{cobro.concepto}{cobro.referencia ? <small>{cobro.origen === "cfdi" ? "Factura " : ""}{cobro.referencia}</small> : null}</td>
-                      <td role="cell" data-columna="fecha" data-etiqueta="Fecha probable">{fechaCorta(cobro.fechaProbable)}</td>
-                      <td role="cell" data-columna="monto" className="cifra">{formatoPesos(cobro.montoCentavos)}</td>
-                      <td role="cell" data-columna="estado"><EstadoCobro cobro={cobro} hoy={vista.hoy} /></td>
-                      {vista.puedeEditar ? (
-                        <td role="cell" data-columna="acciones">{cobro.estado === "esperado" ? <ResolverCobro id={cobro.id} cliente={cobro.cliente} montoCentavos={cobro.montoCentavos} hoy={vista.hoy} /> : null}</td>
-                      ) : null}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </AvisosDeLista>
-      </Hoja>
-
-      {vista.puedeEditar ? (
-        <Rejilla
-          principal={<Hoja id="nuevo-cobro" titulo="Registrar un cobro" className="flujo-bloque"><FormularioCobro hoy={vista.hoy} altaId={vista.altaIds.manual} /></Hoja>}
-          lateral={<Hoja id="cobro-xml" titulo="Desde una factura emitida" className="flujo-bloque"><FormularioCobroXml hoy={vista.hoy} altaId={vista.altaIds.xml} /></Hoja>}
-        />
-      ) : (
-        <NotaRegla>{SOLO_LECTURA}</NotaRegla>
-      )}
-    </>
-  );
-}
-
-function EstadoCobro({ cobro, hoy }: { cobro: CobroVista; hoy: string }) {
-  if (vencido(cobro, hoy)) return <Insignia tono="aviso">Vencido</Insignia>;
-  if (cobro.estado === "cobrado") return <><Insignia tono="sello">Cobrado</Insignia><small>el {fechaCorta(cobro.cobradoEl ?? cobro.fechaProbable)}</small></>;
-  if (cobro.estado === "cancelado") return <><Insignia>Cancelado</Insignia>{cobro.motivo ? <small>{cobro.motivo}</small> : null}</>;
-  return <Insignia>Esperado</Insignia>;
 }
 
 // Calendario ------------------------------------------------------------------------------

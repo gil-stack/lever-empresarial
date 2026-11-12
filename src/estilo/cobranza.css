@@ -1,0 +1,552 @@
+/*
+ * Cobranza: resumen, antigüedad, listas, ficha del cliente, alta, estado de cuenta
+ * y la página del pagador. Solo tokens del sistema visual (tokens.css); ningún color suelto.
+ */
+
+.cobranza-deteccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 18px 0 22px;
+  color: var(--tinta-suave);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.cobranza-pendientes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.86rem;
+}
+
+.cobranza-fallido {
+  color: var(--aviso);
+}
+
+.cobranza-subtitulo {
+  margin: 36px 0 4px;
+  font-size: 1.05rem;
+}
+
+/* Antigüedad: barra apilada y tramos que filtran */
+.cobranza-barra {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--realce);
+}
+
+.cobranza-barra i,
+.cobranza-punto {
+  display: block;
+  background: var(--surco);
+}
+
+.cobranza-punto {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.cobranza-barra [data-cubeta="vacia"] {
+  background: transparent;
+}
+
+[data-cubeta="por_vencer"].cobranza-punto,
+.cobranza-barra [data-cubeta="por_vencer"] {
+  background: var(--tinta-tenue);
+}
+
+[data-cubeta="d1_30"].cobranza-punto,
+.cobranza-barra [data-cubeta="d1_30"] {
+  background: var(--warn);
+}
+
+[data-cubeta="d31_60"].cobranza-punto,
+.cobranza-barra [data-cubeta="d31_60"] {
+  background: color-mix(in srgb, var(--warn) 50%, var(--aviso));
+}
+
+[data-cubeta="d61_90"].cobranza-punto,
+.cobranza-barra [data-cubeta="d61_90"] {
+  background: var(--aviso);
+}
+
+[data-cubeta="d90_mas"].cobranza-punto,
+.cobranza-barra [data-cubeta="d90_mas"] {
+  background: var(--sello-profundo);
+}
+
+.cobranza-cubetas {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cobranza-cubetas a {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 2px 8px;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-control);
+  color: var(--tinta-suave);
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+
+.cobranza-cubetas a:hover {
+  border-color: var(--linea-fuerte);
+  color: var(--tinta);
+}
+
+.cobranza-cubetas a[aria-current="true"] {
+  border-color: var(--tinta);
+  background: var(--realce);
+  color: var(--tinta);
+}
+
+.cobranza-cubetas strong,
+.cobranza-cubetas small {
+  grid-column: 2;
+}
+
+.cobranza-cubetas strong {
+  color: var(--tinta);
+  font-size: 1rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.cobranza-cubetas small {
+  color: var(--tinta-tenue);
+  font-size: 0.75rem;
+}
+
+.cobranza-pestanas {
+  margin-top: 28px;
+}
+
+.cobranza-buscar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cobranza-buscar input {
+  width: min(280px, 100%);
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--linea-fuerte);
+  border-radius: var(--radio-control);
+  background: var(--campo);
+  color: var(--tinta);
+  font: inherit;
+  font-size: 0.86rem;
+}
+
+.cobranza-paginas {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+  color: var(--tinta-suave);
+  font-size: 0.85rem;
+}
+
+.cobranza-acciones-arriba {
+  justify-content: flex-start;
+  margin: 12px 0 16px;
+}
+
+.cobranza-en-linea {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.cobranza-tabla-cargos .mono,
+.cobranza-tabla-clientes .mono,
+.cobranza-pagos .mono,
+.cobranza-cabeza-cliente .mono,
+.cobranza-tabla-propuestas .mono,
+[data-tabla="cargos-cliente"] .mono {
+  font-family: var(--fuente-mono);
+  font-size: 0.92em;
+  letter-spacing: 0;
+}
+
+/* Pagos (por conciliar y del cliente) */
+.cobranza-pagos {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cobranza-pagos > li {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.cobranza-pagos > li:last-child {
+  border-bottom: 0;
+}
+
+.cobranza-pago-cabeza {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.cobranza-pago-cabeza strong {
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.cobranza-pagos .pista {
+  margin: 6px 0 0;
+}
+
+.cobranza-aplicaciones {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+
+.cobranza-aplicaciones li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+
+.cobranza-acciones-pago {
+  justify-content: flex-start;
+  margin-top: 12px;
+}
+
+.cobranza-aplicar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.cobranza-aplicar select {
+  max-width: min(420px, 100%);
+}
+
+/* Ficha del cliente */
+.cobranza-cabeza-cliente .pista {
+  margin: 6px 0 0;
+}
+
+.cobranza-calendario {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+  margin: 14px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cobranza-calendario li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-control);
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.cobranza-calendario li[data-generado] {
+  border-color: var(--linea-fuerte);
+  background: var(--realce);
+}
+
+.cobranza-acciones-plan {
+  justify-content: flex-start;
+  margin: 8px 0 12px;
+}
+
+.cobranza-historial,
+.cobranza-importaciones {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.86rem;
+}
+
+.cobranza-historial li,
+.cobranza-importaciones li {
+  display: grid;
+  gap: 2px;
+}
+
+.cobranza-importaciones a[aria-current="true"] {
+  color: var(--tinta);
+  font-weight: 500;
+}
+
+/* Alta y configuración */
+.cobranza-alta {
+  display: grid;
+  margin-top: 18px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(260px, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.cobranza-grupo {
+  min-width: 0;
+  margin: 0 0 22px;
+  padding: 0;
+  border: 0;
+}
+
+.cobranza-grupo legend {
+  margin-bottom: 12px;
+  padding: 0;
+  color: var(--tinta);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.etiqueta-campo {
+  margin: 0 0 6px;
+  color: var(--tinta-suave);
+  font-size: 0.85rem;
+}
+
+.cobranza-opciones {
+  flex-wrap: wrap;
+}
+
+.cobranza-opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--tinta-suave);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* El grupo vive en un .campo: sin esto el radio toma el ancho y el alto de un campo de texto. */
+.campo .cobranza-opcion input[type="radio"] {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--tinta);
+}
+
+.cobranza-opcion:has(input:checked) {
+  background: color-mix(in srgb, var(--tx) 9%, transparent);
+  color: var(--tinta);
+}
+
+.cobranza-opcion:has(input:focus-visible) {
+  outline: 2px solid var(--tinta);
+  outline-offset: 1px;
+}
+
+.cobranza-casilla {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 10px 0 0;
+  color: var(--tinta-suave);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.cobranza-casilla input {
+  margin-top: 3px;
+}
+
+.cobranza-nota-variable {
+  align-self: center;
+  margin: 0;
+}
+
+.cobranza-vista-previa {
+  position: sticky;
+  top: 20px;
+  padding: 20px;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio);
+  background: var(--hoja-solida);
+}
+
+.cobranza-vista-previa h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+
+.cobranza-vista-previa .cobranza-calendario {
+  grid-template-columns: 1fr;
+}
+
+/* Estado de cuenta */
+.cobranza-empate {
+  /* Es un renglón de la rejilla del formulario: sin min-width: 0 crece al ancho de la muestra y desborda la página (r63g-N2). */
+  min-width: 0;
+  margin-top: 22px;
+}
+
+.cobranza-empate h3 {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+}
+
+.cobranza-muestra {
+  max-width: 100%;
+  max-height: 320px;
+  margin-bottom: 18px;
+  overflow: auto;
+  border: 1px solid var(--linea);
+  border-radius: var(--radio-control);
+}
+
+.cobranza-muestra td {
+  max-width: 220px;
+  overflow: hidden;
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cobranza-empate-campos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 16px;
+}
+
+.cobranza-resumen-importacion {
+  margin: 0 0 14px;
+}
+
+.cobranza-tabla-cargos td[data-columna="fecha"],
+[data-tabla="cargos-cliente"] td[data-columna="fecha"],
+.cobranza-tabla-propuestas td[data-columna="fecha"] {
+  white-space: nowrap;
+}
+
+.cobranza-tabla-propuestas td[data-columna="propuesta"] small {
+  display: block;
+}
+
+@media (max-width: 760px) {
+  .cobranza-cubetas {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cobranza-cubetas li:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .cobranza-buscar {
+    width: 100%;
+  }
+
+  .cobranza-buscar input {
+    flex: 1;
+    width: auto;
+  }
+
+  .cobranza-alta {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cobranza-vista-previa {
+    position: static;
+  }
+
+  .cobranza-empate-campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cobranza-tabla-clientes.flujo-apilada tbody tr,
+  .cobranza-tabla-propuestas.flujo-apilada tbody tr {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .cobranza-tabla-clientes td[data-columna="cliente"],
+  .cobranza-tabla-propuestas td[data-columna="propuesta"],
+  .cobranza-tabla-propuestas td[data-columna="descartar"] {
+    grid-column: 1 / -1;
+  }
+
+  .cobranza-tabla-propuestas td[data-columna="monto"] {
+    grid-column: 2;
+    grid-row: 1;
+    text-align: right;
+  }
+}
+
+/* Página del pagador (dentro de la tarjeta de arco) */
+.pagador-datos > div {
+  grid-template-columns: minmax(96px, 0.6fr) minmax(0, 1.4fr);
+  gap: 12px;
+  padding: 14px 0;
+}
+
+.pagador-datos dt {
+  color: var(--tinta-suave);
+  font-size: 0.85rem;
+}
+
+.pagador-datos dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  margin: 0;
+}
+
+.pagador-mono {
+  font-family: var(--fuente-mono);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.pagador-sin-recordatorios {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--linea);
+}
+
+.pagador-sin-recordatorios .pista {
+  margin: 8px 0 0;
+}

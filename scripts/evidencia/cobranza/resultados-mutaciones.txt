@@ -1,0 +1,25 @@
+MU1 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X1 cargo cancelado → emitido: la base lo aceptó (esperado cargo_ya_resuelto) 
+MU2 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X2 cambiar la referencia de un cargo emitido: la base lo aceptó (esperado cobranza_inmutable) 
+MU3 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X3 cambiar el monto de un cargo emitido: la base lo aceptó (esperado cobranza_inmutable) 
+MU4 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: falta la llave del cron (plan, periodo) 
+MU5 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X4 dos cargos de la empresa con la misma referencia: la base lo aceptó (esperado collection_charges_referencia_unica) 
+MU6 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X5 cargo a pagado sin aplicaciones: la base lo aceptó (esperado cobranza_pagado_no_cuadra) 
+MU7 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X6 pago a aplicado sin aplicaciones: la base lo aceptó (esperado cobranza_aplicado_no_cuadra) 
+MU8 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X7 pago sin evento en la bitácora: la base lo aceptó (esperado auditoria_de_cobranza_ausente) 
+MU9 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X8: Beta ve cargos de Alfa 
+MU10 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X9 Beta aplica su pago al cargo de Alfa: esperado 23503, dio P0001 [] cobranza_aplicado_no_cuadra 
+MU11 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X10 referencia que no cierra por Luhn: la base lo aceptó (esperado collection_charges_referencia) 
+MU12 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X11 el mismo evento de Fintoc dos veces: la base lo aceptó (esperado collection_provider_events_unico) 
+MU13 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: falta la llave del correo (cargo, tipo, secuencia) 
+MU14 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X12 dos renglones del estado de cuenta con la misma huella: la base lo aceptó (esperado collection_statement_rows_huella_unica) 
+MU15 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X13 dos pagos manuales con el mismo id_externo: la base lo aceptó (esperado collection_payments_externo_unico) 
+MU16 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X14 reversión por la mitad de la aplicación: la base lo aceptó (esperado aplicacion_no_valida) 
+MU17 · PASA (sobrevive)
+MU18 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: X16 la contadora registra un pago: la base lo aceptó (esperado sin_permiso_para_cobranza) 
+MU19 · PASA (sobrevive)
+AR1 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: base-N1 pagado_el de un cargo pagado: la base lo aceptó (esperado cobranza_inmutable) 
+AR2 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: base-N1: la base no selló las fechas 
+AR3 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: base-N4: cobranza_destino_fintoc leyó la tabla temporal y devolvió Beta 
+AR4 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: reenvío 6: la base lo aceptó (esperado collection_emails_tipo) 
+AR5 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: referencia con 0 inicial: la base lo aceptó (esperado collection_charges_referencia) 
+AR6 · FALLA (la atrapa) ·  AssertionError [ERR_ASSERTION]: pago manual a devuelto: esperado sin_permiso_para_cobranza, dio 23514 [collection_payments_estado] new row for relation "collection_payments" violates check constraint "collection_payment
