@@ -2,3 +2,8 @@ parte 1: rc=0 83 s 14 archivos ℹ tests 46 ℹ pass 46 ℹ fail 0
 parte 2: rc=0 65 s 12 archivos ℹ tests 87 ℹ pass 87 ℹ fail 0 
 lista de main completa: rc=0 143 s ℹ tests 133 ℹ pass 133 ℹ fail 0 
 FIN
+
+Con E1 integrado (merge de origin/main 0b79358, 2026-11-12), Postgres 17 en 5581:
+parte 1: ℹ tests 46 ℹ pass 46 ℹ fail 0 
+parte 2: ℹ tests 89 ℹ pass 89 ℹ fail 0 
+parte 1: 73 s; parte 2: 63 s (con reglas-postgres y operaciones-postgres de Efevoo)
