@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, describe, test } from "node:test";
 
-import { leerModulosDesde, revisarSql } from "../../scripts/ci/seguridad.mjs";
+import { esServidor, leerModulosDesde, revisarSql } from "../../scripts/ci/seguridad.mjs";
 
 /**
  * La regla de SQL interpolado del gate de seguridad (scripts/ci/seguridad.mjs)
@@ -249,4 +249,15 @@ describe("regla de SQL: caminos de la revisión del #70", () => {
     pasa(`import { consultar } from "../autenticacion/repositorio";
       export async function f(id: string) { return consultar("select id from users where id = $1", [id], id); }`);
   });
+});
+
+test("alcance: las acciones del servidor de src/app también se revisan (acciones-efevoo.ts y cualquier \"use server\")", () => {
+  assert.equal(esServidor("src/app/operacion/acciones-efevoo.ts"), true);
+  assert.equal(esServidor("src/app/consola/acciones.ts"), true);
+  assert.equal(esServidor("src/app/x/otro.ts", '"use server";\nexport async function f() {}'), true);
+  assert.equal(esServidor("src/app/x/otro.ts", '/** comentario */\n"use server";'), true);
+  // Mencionarlo en un comentario no lo vuelve acción; un componente no se revisa.
+  assert.equal(esServidor("src/app/entrar/estado.ts", '/** un módulo "use server" solo exporta funciones */\nexport type X = 1;'), false);
+  assert.equal(esServidor("src/app/x/pagina.tsx", "export default function P() { return null; }"), false);
+  assert.equal(esServidor("src/app/operacion/acciones-efevoo.test.ts"), false);
 });

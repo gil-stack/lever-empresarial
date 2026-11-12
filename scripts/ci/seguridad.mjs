@@ -660,12 +660,16 @@ function esTexto(nombre) {
   return /\.(ts|tsx|js|mjs|cjs|sql|json|sh|md|css|mjs)$/.test(nombre);
 }
 
-function esServidor(ruta) {
+export function esServidor(ruta, texto = "") {
   if (ruta.endsWith(".test.ts") || ruta.endsWith(".test.tsx")) return false;
   if (ruta.startsWith("src/server/") && ruta.endsWith(".ts")) return true;
   // El núcleo lleva aplicarSentencia, la entrega del SQL al driver: también se revisa.
   if (ruta.startsWith("src/nucleo/") && ruta.endsWith(".ts")) return true;
-  if (ruta.startsWith("src/app/") && (ruta.endsWith("/route.ts") || ruta.endsWith("/acciones.ts"))) return true;
+  if (ruta.startsWith("src/app/") && ruta.endsWith("/route.ts")) return true;
+  // Las acciones del servidor: `acciones.ts`, `acciones-<algo>.ts` (por ejemplo acciones-efevoo.ts) y todo
+  // archivo de src/app que empiece con "use server".
+  if (ruta.startsWith("src/app/") && /\/acciones(-[^/]+)?\.ts$/.test(ruta)) return true;
+  if (ruta.startsWith("src/app/") && /\.tsx?$/.test(ruta) && /^\s*(\/\/[^\n]*\n\s*|\/\*[\s\S]*?\*\/\s*)*['"]use server['"]/.test(texto)) return true;
   return false;
 }
 
@@ -743,7 +747,7 @@ export function main() {
     if (ruta.endsWith(".ts") || ruta.endsWith(".tsx")) {
       hallazgos.push(...revisarCliente(ruta, texto));
     }
-    if (esServidor(ruta)) {
+    if (esServidor(ruta, texto)) {
       hallazgos.push(...revisarSql(ruta, texto));
     }
   }
