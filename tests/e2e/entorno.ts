@@ -171,6 +171,16 @@ async function detenerBlobLocal(): Promise<void> {
  * Las llaves reales del entorno nunca llegan al servidor de la prueba.
  */
 async function levantarEfevooFalso(): Promise<void> {
+  // Solo la validación a mano contra el sandbox (tests/efevoo/sandbox/): usa las EFEVOO_* del entorno, que tienen que
+  // ser del sandbox. El CI nunca pone E2E_EFEVOO_REAL.
+  if (process.env.E2E_EFEVOO_REAL === "1") {
+    const url = process.env.EFEVOO_URL ?? "";
+    if (process.env.EFEVOO_AMBIENTE !== "sandbox" || !url.startsWith("https://test-intgapi.efevoopay.com")) {
+      throw new Error("E2E_EFEVOO_REAL solo va contra el sandbox de Efevoo (EFEVOO_AMBIENTE=sandbox y su URL de pruebas).");
+    }
+    delete process.env.E2E_EFEVOO_URL;
+    return;
+  }
   const efevoo = await iniciarEfevooFalso(PUERTO_EFEVOO);
   globalThis.__efevooFalsoE2E = efevoo;
   process.env.EFEVOO_URL = efevoo.url;
