@@ -1,0 +1,27 @@
+{
+  "pedido": {
+    "method": "getCardsBalance",
+    "payload": {
+      "cards": [
+        560
+      ]
+    }
+  },
+  "http": 200,
+  "ms": 1138,
+  "cuerpo": {
+    "status": {
+      "code": "0",
+      "message": "Message OK."
+    },
+    "response": {
+      "total_balance": 500,
+      "cards": [
+        {
+          "bin": "****6509",
+          "balance": 500
+        }
+      ]
+    }
+  }
+}
