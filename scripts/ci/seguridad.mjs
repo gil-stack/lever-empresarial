@@ -195,7 +195,7 @@ function esUsoComoValor(nodo) {
 }
 
 export function revisarSql(ruta, texto) {
-  const archivo = ts.createSourceFile(ruta, texto, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const archivo = ts.createSourceFile(ruta, texto, ts.ScriptTarget.Latest, true, ruta.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
   const hallazgos = [];
 
   function visitar(nodo) {
@@ -670,7 +670,27 @@ export function esServidor(ruta, texto = "") {
   // archivo de src/app que empiece con "use server".
   if (ruta.startsWith("src/app/") && /\/acciones(-[^/]+)?\.ts$/.test(ruta)) return true;
   if (ruta.startsWith("src/app/") && /\.tsx?$/.test(ruta) && /^\s*(\/\/[^\n]*\n\s*|\/\*[\s\S]*?\*\/\s*)*['"]use server['"]/.test(texto)) return true;
+  // R70-7: una acción en línea (por ejemplo dentro de un page.tsx): "use server" como primera sentencia de una función.
+  if (ruta.startsWith("src/app/") && /\.tsx?$/.test(ruta) && texto.includes("use server") && tieneAccionEnLinea(ruta, texto)) return true;
   return false;
+}
+
+function tieneAccionEnLinea(ruta, texto) {
+  const fuente = ts.createSourceFile(ruta, texto, ts.ScriptTarget.Latest, true, ruta.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  let hallada = false;
+  function visitar(nodo) {
+    if (hallada) return;
+    if (ts.isFunctionLike(nodo) && nodo.body && ts.isBlock(nodo.body)) {
+      const primera = nodo.body.statements[0];
+      if (primera && ts.isExpressionStatement(primera) && ts.isStringLiteral(primera.expression) && primera.expression.text === "use server") {
+        hallada = true;
+        return;
+      }
+    }
+    ts.forEachChild(nodo, visitar);
+  }
+  visitar(fuente);
+  return hallada;
 }
 
 export function revisarPaquete(directorio) {

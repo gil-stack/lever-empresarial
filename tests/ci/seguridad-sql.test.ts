@@ -261,3 +261,19 @@ test("alcance: las acciones del servidor de src/app también se revisan (accione
   assert.equal(esServidor("src/app/x/pagina.tsx", "export default function P() { return null; }"), false);
   assert.equal(esServidor("src/app/operacion/acciones-efevoo.test.ts"), false);
 });
+
+test("R70-7: una acción en línea (\"use server\" como primera sentencia de una función) hace que el archivo se revise", () => {
+  const pagina = `export default function Pagina() {
+    async function guardar(datos: FormData) {
+      "use server";
+      const x = String(datos.get("x"));
+      return aplicarSentencia(consulta, \`select * from t where a = '\${x}'\`, []);
+    }
+    return <form action={guardar} />;
+  }`;
+  assert.equal(esServidor("src/app/x/page.tsx", pagina), true);
+  assert.ok((revisarSql("src/app/x/page.tsx", pagina) as string[]).length > 0);
+  // Una cadena "use server" que no es la primera sentencia no la vuelve acción.
+  assert.equal(esServidor("src/app/x/page.tsx", `export default function P() { const a = 1; "use server"; return null; }`), false);
+  assert.equal(esServidor("src/app/x/page.tsx", `export default function P() { return <p>use server</p>; }`), false);
+});
