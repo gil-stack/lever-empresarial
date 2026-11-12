@@ -106,6 +106,13 @@ Revisión: `revision-64.md` y `hallazgos-64-para-6a.md` (head `504e9bc`). Antes 
 
 **Gates de la ronda** (en local, este turno, con el #63 y `main` con el #59 integrados): typecheck, lint, build y security en verde; test 590/590; test:db 86/86 (89/89 después de integrar el #63 con `main` y el #65: `definer-search-path` cubre las 3 definers de la 0032; la sonda de `pg_temp` comprueba primero el 42501 de la 0029 y presta el permiso temporal a `plataforma_tarea` solo para ella; AR1 la tumba a ella y a `definer-search-path`); e2e en sus 5 partes 22 + 15 + 24 + 15 + 17 = 93 y 2 omitidas (las matrices de evidencia); recorrido Chromium 11/11 y WebKit 11/11 (capturas regeneradas después del merge, con el `Referrer-Policy: same-origin` global en el flujo 5 sin JavaScript).
 
+## Integración del #63 hasta r63q y de `main` con el #66 y el #67
+
+- Merges en `3ad9f88` y `d8096e0`, sin conflictos; la 0032 no cambia.
+- Gates en local (Postgres 17 en 5583): typecheck, lint y build en verde; `npm test` 724/724; `test:db` 133/133.
+- Las 8 partes sobre `3ad9f88` (5583/3183/4881): 47, 84, 118, 106, 60, 56, 84 y 37 s; 205 pasan y 6 se omiten (211). Después de `01d5072` (solo SQL de la 0031, `fintoc.ts` y pruebas de Postgres), las mismas compuertas y la parte 2: 30 pasan y 1 omitida (74 s).
+- Reparto real 26, 31, 25, 26, 29, 23, 31 y 20; con los máximos del CI, la peor parte sigue siendo la 6 con ~491 s (`reparto/reparto-8-partes-con-66-67.txt`).
+
 ## Hallazgo: formularios sin JavaScript y `Referrer-Policy: no-referrer`
 
 La primera corrida sin JavaScript del flujo 5 terminó en «Internal Server Error». El registro de `next start` decía que `x-forwarded-host` no coincidía con el encabezado `origin`, que llegaba con valor `null`.
