@@ -6,7 +6,7 @@ import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { clienteHttpEfevoo } from "../../src/server/efevoo/cliente";
 import { leerConfigEfevoo } from "../../src/server/efevoo/config";
 import { ultimos8De } from "../efevoo/servidor-falso";
-import { consultar, dobleClic, sesionDe, vigilarConsola } from "./apoyo";
+import { consultar, dobleClic, envejecerFactor, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS_TARJETAS } from "./siembra-tarjetas";
 
 /**
@@ -273,6 +273,27 @@ test("T2 y T3: liberación carga $100.00 con doble clic (una sola operación) y 
   expect(errores).toEqual([]);
 });
 
+for (const [rol, correo] of [["administración", CORREOS_TARJETAS.tania], ["liberación", CORREOS_TARJETAS.leo]] as const) {
+  test(`MFA: ${rol} no carga ni retira con una sesión activa cuyo factor venció`, async ({ page, context }) => {
+    const tito = sembrado.tito;
+    const idEfevoo = await idEfevooDe(tito.id);
+    await abrir(page, context, correo, "/consola/tarjetas");
+    await envejecerFactor(correo, 31);
+    const antes = await saldoEnEfevoo(idEfevoo);
+    const previas = await operaciones(tito.id);
+    for (const accion of ["Cargar", "Retirar"] as const) {
+      await page.reload();
+      const dialogo = await dialogoDe(page, tito.terminacion, accion);
+      await dialogo.getByLabel("Monto en pesos").fill("1.00");
+      await dialogo.getByRole("button", { name: accion, exact: true }).click();
+      await expect(dialogo.getByText("Confirma que eres tú")).toBeVisible();
+      await expect(dialogo.getByText(/segundo factor de los últimos 30 minutos/)).toBeVisible();
+      expect(await operaciones(tito.id)).toEqual(previas);
+      expect(await saldoEnEfevoo(idEfevoo)).toBe(antes);
+    }
+  });
+}
+
 test("T3: un retiro mayor al saldo de la tarjeta lo rechaza Lever antes de llamar al emisor", async ({ page, context }) => {
   const tere = sembrado.tere;
   const idEfevoo = await idEfevooDe(tere.id);
@@ -387,6 +408,15 @@ test("T6: un timeout sin efecto se queda sin confirmar 10 minutos; después no a
   await page.getByRole("dialog").getByRole("button", { name: "Buscar en el emisor" }).click();
   await expect(page.getByText(`La operación ${op!.referencia} no aparece en el emisor. No se movió dinero; puedes reintentarla.`)).toBeVisible();
   await foto(page, "t6-no-aparecio-reintentar");
+  await envejecerFactor(CORREOS_TARJETAS.leo, 31);
+  await page.locator(`[data-operacion="${op!.referencia}"]`).getByRole("button", { name: "Reintentar" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Reintentar", exact: true }).click();
+  await expect(page.getByRole("dialog").getByText("Confirma que eres tú")).toBeVisible();
+  expect((await operaciones(tito.id)).filter((o) => o.reintento_de === op!.id)).toEqual([]);
+  expect(await saldoEnEfevoo(idEfevoo)).toBe(antes);
+  // Volver a entrar renueva el factor; ahora sí se puede reintentar una sola vez.
+  await sesionDe(context, CORREOS_TARJETAS.leo);
+  await page.reload();
   await page.locator(`[data-operacion="${op!.referencia}"]`).getByRole("button", { name: "Reintentar" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Reintentar", exact: true }).click();
   await expect(page.getByText(/Se reintentó con una referencia nueva\. Referencia \d{7}\./)).toBeVisible();

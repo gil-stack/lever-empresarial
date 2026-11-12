@@ -27,6 +27,8 @@ import {
   type OperacionEfevoo,
 } from "@/server/efevoo/operaciones";
 import { registrarEfevoo } from "@/server/efevoo/registros";
+import { exigirAutenticacionRecienteCliente } from "@/server/autenticacion/reautenticacion";
+import type { Sesion } from "@/server/session/tipos";
 
 /**
  * Tarjetas de la empresa con Efevoo Pay. Cada operación que mueve dinero o cambia una tarjeta se asienta primero en la
@@ -259,6 +261,14 @@ export async function leerDetalleTarjeta(ctx: ContextoDeTenant | null, tarjetaId
 
 export type EntradaSaldo = { readonly tarjetaId: string; readonly tipo: "carga" | "retiro"; readonly centavos: number; readonly intento: string };
 
+type SesionDeOperacion = Pick<Sesion, "id" | "segundoFactor" | "superficie"> | null;
+
+/** La prueba reciente pertenece a la misma sesión que resolvió los permisos de esta empresa. */
+function exigirSesionReciente(ctx: ContextoConEmpresa, sesion: SesionDeOperacion, deps?: DependenciasOperacion): void {
+  if (!sesion || sesion.id !== ctx.sesionId) throw new ErrorDeDominio("reautenticacion_requerida");
+  exigirAutenticacionRecienteCliente(sesion, deps?.ahora?.() ?? new Date());
+}
+
 /** Lo que regresa el ciclo de E1, en la forma de la pantalla. */
 function deEjecutada(op: OperacionEfevoo): OperacionTarjeta {
   if (!TIPOS_DE_LA_EMPRESA.includes(op.tipo)) throw new ErrorDeDominio("base_no_disponible");
@@ -279,8 +289,9 @@ function deEjecutada(op: OperacionEfevoo): OperacionTarjeta {
  * Carga o retira saldo de una tarjeta desde (o hacia) el saldo de la empresa en Efevoo, con el ciclo de E1: se asienta
  * antes de llamar, la misma llave regresa la misma operación, y sin saldo queda fallida sin llamar al emisor.
  */
-export async function moverSaldoTarjeta(ctx: ContextoDeTenant | null, entrada: EntradaSaldo, deps?: DependenciasOperacion): Promise<ResultadoOperacion> {
+export async function moverSaldoTarjeta(ctx: ContextoDeTenant | null, sesion: SesionDeOperacion, entrada: EntradaSaldo, deps?: DependenciasOperacion): Promise<ResultadoOperacion> {
   const conEmpresa = exigirOperar(ctx);
+  exigirSesionReciente(conEmpresa, sesion, deps);
   const r = await ejecutarOperacionEfevoo(conEmpresa, {
     tipo: entrada.tipo, llave: entrada.intento, companyId: conEmpresa.empresa.id, tarjetaId: entrada.tarjetaId, montoCentavos: entrada.centavos,
   }, llamadaEstandar, deps);
@@ -313,9 +324,10 @@ export async function conciliarOperacionTarjeta(ctx: ContextoDeTenant | null, op
   return { resultado: c.resultado, operacion };
 }
 
-/** Una operación que no apareció en el emisor: la persona decide reintentar, con una referencia nueva ligada. */
-export async function reintentarOperacionTarjeta(ctx: ContextoDeTenant | null, operacionId: string, intento: string, deps?: DependenciasOperacion): Promise<ResultadoOperacion> {
+/** Una operación que no apareció en el emisor: la persona decide reintentar con MFA reciente y una referencia nueva ligada. */
+export async function reintentarOperacionTarjeta(ctx: ContextoDeTenant | null, sesion: SesionDeOperacion, operacionId: string, intento: string, deps?: DependenciasOperacion): Promise<ResultadoOperacion> {
   const conEmpresa = exigirOperar(ctx);
+  exigirSesionReciente(conEmpresa, sesion, deps);
   // Solo las que se buscaron y no aparecieron: un rechazo del emisor no se repite desde aquí.
   const anterior = await conContexto(baseCliente(conEmpresa), async (consulta) =>
     (await consulta.query("select estado, codigo_efevoo from efevoo_operaciones where id = $1 and company_id = app_empresa()", [operacionId])).rows[0] as

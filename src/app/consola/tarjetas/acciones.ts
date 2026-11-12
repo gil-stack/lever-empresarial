@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import type { EstadoFlujo } from "@/dominio/flujo/entradas";
 import { leerMontoTarjeta, type OperacionTarjeta } from "@/dominio/tarjetas/vista";
-import { contextoDeAccion, errorConSecreto } from "@/server/entrada";
+import { contextoDeAccion, errorConSecreto, sesionSegura } from "@/server/entrada";
 import { ErrorDeDominio } from "@/server/session";
 import {
   cambiarBloqueoTarjeta,
@@ -23,6 +23,7 @@ import {
 const RECHAZO: Record<string, { titulo: string; mensaje: string }> = {
   sin_permiso: { titulo: "Sin permiso para operar tarjetas", mensaje: "Tu rol puede ver las tarjetas; las cargan, retiran y bloquean administración y liberación." },
   sesion_ausente: { titulo: "Tu sesión terminó", mensaje: "Vuelve a entrar y repite la operación." },
+  reautenticacion_requerida: { titulo: "Confirma que eres tú", mensaje: "Mover saldo o reintentar exige un segundo factor de los últimos 30 minutos. Sal, vuelve a entrar y repite la operación." },
   sin_empresa: { titulo: "Sin empresa elegida", mensaje: "Elige la empresa desde el menú y repite la operación." },
   tarjeta_ausente: { titulo: "No encontramos esa tarjeta", mensaje: "Recarga la página." },
   tarjeta_no_operable: { titulo: "Esa tarjeta no se puede operar", mensaje: "Está cancelada o todavía no se activa." },
@@ -112,7 +113,7 @@ export async function enviarSaldoTarjeta(_previo: EstadoFlujo, datos: FormData):
   const monto = leerMontoTarjeta(campo(datos, "monto"), null);
   if (monto.tipo === "invalido") return { tipo: "invalido", errores: [{ campo: "monto", mensaje: "Escribe un monto mayor que cero, en pesos y con centavos válidos." }] };
   return ejecutar(async () => {
-    const r = await moverSaldoTarjeta(await contextoDeAccion(), { tarjetaId: campo(datos, "tarjetaId"), tipo, centavos: monto.centavos, intento: uuid(datos, "intento") });
+    const r = await moverSaldoTarjeta(await contextoDeAccion(), await sesionSegura(), { tarjetaId: campo(datos, "tarjetaId"), tipo, centavos: monto.centavos, intento: uuid(datos, "intento") });
     return resultado(r, tipo === "carga" ? "Se cargó el saldo a la tarjeta." : "Se retiró el saldo de la tarjeta.");
   });
 }
@@ -147,7 +148,7 @@ export async function enviarConciliacion(_previo: EstadoFlujo, datos: FormData):
 
 export async function enviarReintento(_previo: EstadoFlujo, datos: FormData): Promise<EstadoFlujo> {
   return ejecutar(async () => {
-    const r = await reintentarOperacionTarjeta(await contextoDeAccion(), uuid(datos, "operacionId"), uuid(datos, "intento"));
+    const r = await reintentarOperacionTarjeta(await contextoDeAccion(), await sesionSegura(), uuid(datos, "operacionId"), uuid(datos, "intento"));
     return resultado(r, "Se reintentó con una referencia nueva.");
   });
 }
