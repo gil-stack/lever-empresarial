@@ -1,0 +1,60 @@
+  1) tests/e2e/tarjetas.spec.ts:232:5 › r-e2-1: el emisor rechaza una carga, se corrige el monto en el mismo diálogo y la carga nueva sí se hace 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText(/Se cargó el saldo a la tarjeta\./)
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByText(/Se cargó el saldo a la tarjeta\./) with timeout 15000ms
+      - waiting for getByText(/Se cargó el saldo a la tarjeta\./)
+
+
+      242 |   await dialogo.getByLabel("Monto en pesos").fill("11.00");
+      243 |   await dialogo.getByRole("button", { name: "Cargar", exact: true }).click();
+    > 244 |   await expect(page.getByText(/Se cargó el saldo a la tarjeta\./)).toBeVisible();
+          |                                                                    ^
+      245 |   expect((await operaciones(tito.id)).slice(previas).map((o) => [o.tipo, o.estado, o.monto, o.codigo])).toEqual([
+      246 |     ["carga", "fallida", "1000", "401"],
+      247 |     ["carga", "confirmada", "1100", null],
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/efevoo-tarjetas/tests/e2e/tarjetas.spec.ts:244:68
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/e2e/tarjetas-r-e2-1-el-emisor--7e67f-y-la-carga-nueva-sí-se-hace/error-context.md
+
+    test-results/e2e/tarjetas-r-e2-1-el-emisor--7e67f-y-la-carga-nueva-sí-se-hace/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/e2e/tarjetas-r-e2-1-el-emisor--7e67f-y-la-carga-nueva-sí-se-hace/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests/e2e/tarjetas.spec.ts:232:5 › r-e2-1: el emisor rechaza una carga, se corrige el monto en el mismo diálogo y la carga nueva sí se hace 
+  4 did not run
+  8 passed (34.0s)
+[e2e] recorridos terminados con estado 1 · 9 pruebas corridas · 40 s
+[e2e] ===== Contexto de cada falla (árbol accesible de la página) =====
+test-results/e2e/tarjetas-r-e2-1-el-emisor--7e67f-y-la-carga-nueva-sí-se-hace/error-context.md
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: tarjetas.spec.ts >> r-e2-1: el emisor rechaza una carga, se corrige el monto en el mismo diálogo y la carga nueva sí se hace
+- Location: tests/e2e/tarjetas.spec.ts:232:5
+
+# Error details
+
+```
+Error: expect(locator).toBeVisible() failed
+
+Locator: getByText(/Se cargó el saldo a la tarjeta\./)
+Expected: visible
+Timeout: 15000ms

@@ -3,7 +3,7 @@ import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { clienteHttpEfevoo } from "../../src/server/efevoo/cliente";
 import { leerConfigEfevoo } from "../../src/server/efevoo/config";
 import { ultimos8De } from "../efevoo/servidor-falso";
-import { consultar, sesionDe, vigilarConsola } from "./apoyo";
+import { consultar, dobleClic, sesionDe, vigilarConsola } from "./apoyo";
 import { CORREOS_TARJETAS } from "./siembra-tarjetas";
 
 /**
@@ -156,3 +156,202 @@ test("T5: el titular ve solo su tarjeta en el teléfono, con saldo y movimientos
   }
   expect(errores).toEqual([]);
 });
+
+// Operaciones: T2 a T6 -------------------------------------------------------------------------------------------
+
+/** El control del Efevoo falso (sin credenciales, solo en 127.0.0.1). */
+async function falso(ruta: string, cuerpo?: unknown): Promise<unknown> {
+  const base = process.env.E2E_EFEVOO_URL;
+  if (!base) throw new Error("Falta E2E_EFEVOO_URL.");
+  const r = await fetch(new URL(ruta, base), cuerpo === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) });
+  if (!r.ok) throw new Error(`El Efevoo falso respondió ${r.status} en ${ruta}`);
+  return r.json();
+}
+const simular = (metodo: string, falla: string, idCard: number) => falso("/simular", { metodo, falla, idCard });
+async function saldoEnEfevoo(idEfevoo: number): Promise<number> {
+  const estado = (await falso("/estado")) as { tarjetas: { id: number; saldoCentavos: number; estado: string }[] };
+  return estado.tarjetas.find((t) => t.id === idEfevoo)!.saldoCentavos;
+}
+async function idEfevooDe(tarjetaId: string): Promise<number> {
+  const [fila] = await consultar<{ id_efevoo: number }>("select id_efevoo from efevoo_tarjetas where id = $1", [tarjetaId]);
+  return fila!.id_efevoo;
+}
+type Op = { id: string; tipo: string; estado: string; monto: string | null; codigo: string | null; reintento_de: string | null; referencia: string };
+const operaciones = (tarjetaId: string) => consultar<Op>(
+  `select id, tipo, estado, monto_centavos::text as monto, codigo_efevoo as codigo, reintento_de, referencia
+     from efevoo_operaciones where tarjeta_id = $1 order by creada_en`, [tarjetaId]);
+
+/** Abre el diálogo de una acción en la fila de la tarjeta. */
+async function dialogoDe(page: Page, terminacion: string, accion: "Cargar" | "Retirar" | "Bloquear" | "Desbloquear") {
+  await page.getByRole("row").filter({ hasText: `••${terminacion}` }).getByRole("button", { name: accion, exact: true }).click();
+  const dialogo = page.getByRole("dialog");
+  await expect(dialogo).toBeVisible();
+  return dialogo;
+}
+
+test("T2 y T3: liberación carga $100.00 con doble clic (una sola operación) y retira $25.50 al centavo", async ({ page, context }) => {
+  const errores = vigilarConsola(page);
+  const tito = sembrado.tito;
+  const idEfevoo = await idEfevooDe(tito.id);
+  const antes = await saldoEnEfevoo(idEfevoo);
+  const previas = (await operaciones(tito.id)).length;
+  await abrir(page, context, CORREOS_TARJETAS.leo, "/consola/tarjetas");
+  let dialogo = await dialogoDe(page, tito.terminacion, "Cargar");
+  await dialogo.getByLabel("Monto en pesos").fill("100.00");
+  await dobleClic(dialogo.getByRole("button", { name: "Cargar", exact: true }));
+  await expect(page.getByText(/Se cargó el saldo a la tarjeta\. Referencia \d{7}\./)).toBeVisible();
+  const tras = await operaciones(tito.id);
+  expect(tras.slice(previas).map((o) => [o.tipo, o.estado, o.monto])).toEqual([["carga", "confirmada", "10000"]]);
+  expect(await saldoEnEfevoo(idEfevoo)).toBe(antes + 10_000);
+
+  dialogo = await dialogoDe(page, tito.terminacion, "Retirar");
+  await dialogo.getByLabel("Monto en pesos").fill("25.50");
+  await dialogo.getByRole("button", { name: "Retirar", exact: true }).click();
+  await expect(page.getByText(/Se retiró el saldo de la tarjeta\. Referencia \d{7}\./)).toBeVisible();
+  expect((await operaciones(tito.id)).slice(previas).map((o) => [o.tipo, o.estado, o.monto])).toEqual([["carga", "confirmada", "10000"], ["retiro", "confirmada", "2550"]]);
+  expect(await saldoEnEfevoo(idEfevoo)).toBe(antes + 10_000 - 2_550);
+  await expect(page.getByRole("row").filter({ hasText: `••${tito.terminacion}` })).toContainText(pesosDe(antes + 10_000 - 2_550));
+  expect(errores).toEqual([]);
+});
+
+test("T3: un retiro mayor al saldo de la tarjeta lo rechaza Lever antes de llamar al emisor", async ({ page, context }) => {
+  const tere = sembrado.tere;
+  const idEfevoo = await idEfevooDe(tere.id);
+  const antes = await saldoEnEfevoo(idEfevoo);
+  await abrir(page, context, CORREOS_TARJETAS.leo, "/consola/tarjetas");
+  const dialogo = await dialogoDe(page, tere.terminacion, "Retirar");
+  await dialogo.getByLabel("Monto en pesos").fill("1.00");
+  await expect(dialogo.getByText("No alcanza el saldo para ese monto.")).toBeVisible();
+  await dialogo.getByRole("button", { name: "Retirar", exact: true }).click();
+  await expect(dialogo.getByText(/No alcanza el saldo de la tarjeta para ese retiro\. No se llamó al emisor/)).toBeVisible();
+  const [op] = (await operaciones(tere.id)).slice(-1);
+  expect([op?.tipo, op?.estado, op?.codigo]).toEqual(["retiro", "fallida", "saldo_insuficiente"]);
+  expect(await saldoEnEfevoo(idEfevoo)).toBe(antes);
+});
+
+test("r-e2-1: el emisor rechaza una carga, se corrige el monto en el mismo diálogo y la carga nueva sí se hace", async ({ page, context }) => {
+  const tito = sembrado.tito;
+  const idEfevoo = await idEfevooDe(tito.id);
+  const previas = (await operaciones(tito.id)).length;
+  await simular("fundCard", "401", idEfevoo);
+  await abrir(page, context, CORREOS_TARJETAS.leo, "/consola/tarjetas");
+  const dialogo = await dialogoDe(page, tito.terminacion, "Cargar");
+  await dialogo.getByLabel("Monto en pesos").fill("10.00");
+  await dialogo.getByRole("button", { name: "Cargar", exact: true }).click();
+  await expect(dialogo.getByText(/El emisor la rechazó \(código 401\)/)).toBeVisible();
+  await dialogo.getByLabel("Monto en pesos").fill("11.00");
+  await dialogo.getByRole("button", { name: "Cargar", exact: true }).click();
+  await expect(page.getByText(/Se cargó el saldo a la tarjeta\./)).toBeVisible();
+  expect((await operaciones(tito.id)).slice(previas).map((o) => [o.tipo, o.estado, o.monto, o.codigo])).toEqual([
+    ["carga", "fallida", "1000", "401"],
+    ["carga", "confirmada", "1100", null],
+  ]);
+});
+
+test("T4: bloquear y desbloquear; el estado se ve en la lista y en el emisor", async ({ page, context }) => {
+  const tere = sembrado.tere;
+  const idEfevoo = await idEfevooDe(tere.id);
+  await abrir(page, context, CORREOS_TARJETAS.tania, "/consola/tarjetas");
+  let dialogo = await dialogoDe(page, tere.terminacion, "Bloquear");
+  await dialogo.getByRole("button", { name: "Bloquear", exact: true }).click();
+  await expect(page.getByText("La tarjeta quedó bloqueada.", { exact: false })).toBeVisible();
+  const fila = page.getByRole("row").filter({ hasText: `••${tere.terminacion}` });
+  await expect(fila).toContainText("Bloqueada");
+  expect(((await falso("/estado")) as { tarjetas: { id: number; estado: string }[] }).tarjetas.find((t) => t.id === idEfevoo)?.estado).toBe("blocked");
+  dialogo = await dialogoDe(page, tere.terminacion, "Desbloquear");
+  await dialogo.getByRole("button", { name: "Desbloquear", exact: true }).click();
+  await expect(page.getByText("La tarjeta quedó desbloqueada.", { exact: false })).toBeVisible();
+  await expect(fila).toContainText("Activa");
+  expect(((await falso("/estado")) as { tarjetas: { id: number; estado: string }[] }).tarjetas.find((t) => t.id === idEfevoo)?.estado).toBe("active");
+});
+
+test("T6: un timeout con efecto deja la carga sin confirmar; «Conciliar» la encuentra por su referencia y la confirma", async ({ page, context }) => {
+  test.setTimeout(120_000);
+  const tito = sembrado.tito;
+  const idEfevoo = await idEfevooDe(tito.id);
+  const antes = await saldoEnEfevoo(idEfevoo);
+  await simular("fundCard", "timeout", idEfevoo);
+  await abrir(page, context, CORREOS_TARJETAS.leo, "/consola/tarjetas");
+  const dialogo = await dialogoDe(page, tito.terminacion, "Cargar");
+  await dialogo.getByLabel("Monto en pesos").fill("7.00");
+  await dialogo.getByRole("button", { name: "Cargar", exact: true }).click();
+  await expect(page.getByText(/El emisor no confirmó la operación \d{7}\. No se repite sola/)).toBeVisible({ timeout: 40_000 });
+  const [op] = (await operaciones(tito.id)).slice(-1);
+  expect([op?.estado, op?.monto]).toEqual(["incierta", "700"]);
+  // Efevoo sí la hizo: el saldo ya subió, sin que Lever lo supiera.
+  expect(await saldoEnEfevoo(idEfevoo)).toBe(antes + 700);
+  await page.reload();
+  const pendiente = page.locator(`[data-operacion="${op!.referencia}"]`);
+  await pendiente.getByRole("button", { name: "Conciliar" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Buscar en el emisor" }).click();
+  await expect(page.getByText(`La operación ${op!.referencia} sí se hizo en el emisor. Quedó confirmada.`)).toBeVisible();
+  expect((await operaciones(tito.id)).slice(-1).map((o) => o.estado)).toEqual(["confirmada"]);
+  // No se repitió: el saldo subió una sola vez.
+  expect(await saldoEnEfevoo(idEfevoo)).toBe(antes + 700);
+});
+
+test("T6: un timeout sin efecto se queda sin confirmar 10 minutos; después no aparece y «Reintentar» la hace con referencia nueva", async ({ page, context }) => {
+  test.setTimeout(120_000);
+  const tito = sembrado.tito;
+  const idEfevoo = await idEfevooDe(tito.id);
+  const antes = await saldoEnEfevoo(idEfevoo);
+  await simular("fundCard", "timeout_sin_efecto", idEfevoo);
+  await abrir(page, context, CORREOS_TARJETAS.leo, "/consola/tarjetas");
+  const dialogo = await dialogoDe(page, tito.terminacion, "Cargar");
+  await dialogo.getByLabel("Monto en pesos").fill("3.00");
+  await dialogo.getByRole("button", { name: "Cargar", exact: true }).click();
+  await expect(page.getByText(/El emisor no confirmó la operación \d{7}/)).toBeVisible({ timeout: 40_000 });
+  const [op] = (await operaciones(tito.id)).slice(-1);
+  expect(op?.estado).toBe("incierta");
+  await page.reload();
+  const pendiente = page.locator(`[data-operacion="${op!.referencia}"]`);
+  await expect(pendiente).toContainText(/vuelve a conciliar en \d+ min/);
+  await expect(pendiente.getByRole("button", { name: "Reintentar" })).toHaveCount(0);
+  await pendiente.getByRole("button", { name: "Conciliar" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Buscar en el emisor" }).click();
+  await expect(page.getByRole("dialog").getByText(/Vuelve a conciliar en \d+ min/)).toBeVisible();
+  expect((await operaciones(tito.id)).slice(-1).map((o) => o.estado)).toEqual(["incierta"]);
+
+  // Pasan los 10 minutos: se mueve la hora de la operación (en la base desechable, como dueña, por la transición).
+  // La 0033 exige un evento de la bitácora en la misma transacción que toca la operación.
+  await consultar(`begin; select set_config('efevoo.resolviendo', '${op!.id}', true);
+    insert into audit_log (operator_id, company_id, actor_tipo, actor_id, superficie, accion, entidad, identificador, origen)
+      select c.operator_id, c.id, 'miembro', (select id from users where correo = '${CORREOS_TARJETAS.leo}'), 'cliente', 'efevoo_incierta',
+             'efevoo_operaciones', '${op!.id}', 'consola' from companies c where c.id = '${EMPRESA()}';
+    update efevoo_operaciones set creada_en = now() - interval '11 minutes' where id = '${op!.id}'; commit;`);
+  await page.reload();
+  await page.locator(`[data-operacion="${op!.referencia}"]`).getByRole("button", { name: "Conciliar" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Buscar en el emisor" }).click();
+  await expect(page.getByText(`La operación ${op!.referencia} no aparece en el emisor. No se movió dinero; puedes reintentarla.`)).toBeVisible();
+  await page.locator(`[data-operacion="${op!.referencia}"]`).getByRole("button", { name: "Reintentar" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Reintentar", exact: true }).click();
+  await expect(page.getByText(/Se reintentó con una referencia nueva\. Referencia \d{7}\./)).toBeVisible();
+  const todas = await operaciones(tito.id);
+  const anterior = todas.find((o) => o.id === op!.id);
+  const nueva = todas.find((o) => o.reintento_de === op!.id);
+  expect([anterior?.estado, anterior?.codigo]).toEqual(["fallida", "no_aparecio"]);
+  expect([nueva?.estado, nueva?.monto, nueva?.reintento_de]).toEqual(["confirmada", "300", anterior?.id]);
+  expect(nueva?.referencia).not.toBe(anterior?.referencia);
+  expect(await saldoEnEfevoo(idEfevoo)).toBe(antes + 300);
+});
+
+test("empresa suspendida: no se carga ni se bloquea; la base lo impide", async ({ page, context }) => {
+  const tito = sembrado.tito;
+  const previas = (await operaciones(tito.id)).length;
+  await consultar("begin; set local session_replication_role = replica; update companies set estado = 'suspendida' where id = $1; commit;".replace("$1", `'${EMPRESA()}'`));
+  try {
+    await abrir(page, context, CORREOS_TARJETAS.tania, "/consola/tarjetas");
+    const dialogo = await dialogoDe(page, tito.terminacion, "Cargar");
+    await dialogo.getByLabel("Monto en pesos").fill("5.00");
+    await dialogo.getByRole("button", { name: "Cargar", exact: true }).click();
+    await expect(dialogo.getByText(/La empresa está suspendida/)).toBeVisible();
+    expect((await operaciones(tito.id)).length).toBe(previas);
+  } finally {
+    await consultar(`begin; set local session_replication_role = replica; update companies set estado = 'activa' where id = '${EMPRESA()}'; commit;`);
+  }
+});
+
+/** $1,234.56 como la pinta la tabla. */
+function pesosDe(centavos: number): string {
+  return `$${Math.trunc(centavos / 100).toLocaleString("en-US")}.${String(centavos % 100).padStart(2, "0")}`;
+}

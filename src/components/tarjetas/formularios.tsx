@@ -6,12 +6,24 @@ import { enviarBloqueoTarjeta, enviarConciliacion, enviarReintento, enviarSaldoT
 import { AvisoFlujo, Campo, describe, useAccionDeFila } from "@/components/flujo/formularios";
 import { BotonEnviar, Dialogo } from "@/components/sistema";
 import { formatoPesos } from "@/dominio/centavos";
+import type { EstadoFlujo } from "@/dominio/flujo/entradas";
 import { leerMontoTarjeta, type EstadoTarjeta } from "@/dominio/tarjetas/vista";
 
 /** La llave de intento se pide al abrir el diálogo, no al pintar: el doble clic y el reenvío llevan la misma. */
 function useIntento() {
   const [intento, setIntento] = useState<string | null>(null);
   return { intento, nuevo: () => setIntento(crypto.randomUUID()), limpiar: () => setIntento(null) };
+}
+
+type Accion = (previo: EstadoFlujo, datos: FormData) => Promise<EstadoFlujo>;
+
+/** La acción, y al volver del servidor, una llave de intento nueva para el siguiente envío del mismo diálogo. */
+function conLlaveNueva(accion: Accion, renovar: () => void): Accion {
+  return async (previo, datos) => {
+    const resultado = await accion(previo, datos);
+    renovar();
+    return resultado;
+  };
 }
 
 type Abierto = "carga" | "retiro" | "bloqueo" | null;
@@ -48,8 +60,10 @@ export function AccionesTarjeta({
     intento.nuevo();
     setAbierto(cual);
   };
-  const saldo = useAccionDeFila(enviarSaldoTarjeta, `saldo-${id}`, cerrar);
-  const bloqueo = useAccionDeFila(enviarBloqueoTarjeta, `bloqueo-${id}`, cerrar);
+  // r-e2-1: cada respuesta del servidor asentó (o rechazó) una operación con esa llave: la siguiente lleva otra. Mientras
+  // la operación está en vuelo el botón sigue deshabilitado y la llave es la misma (el doble clic deja una sola).
+  const saldo = useAccionDeFila(conLlaveNueva(enviarSaldoTarjeta, intento.nuevo), `saldo-${id}`, cerrar);
+  const bloqueo = useAccionDeFila(conLlaveNueva(enviarBloqueoTarjeta, intento.nuevo), `bloqueo-${id}`, cerrar);
   const tipoSaldo = abierto === "retiro" ? "retiro" : "carga";
   const disponible = tipoSaldo === "carga" ? saldoEmpresaCentavos : saldoTarjetaCentavos;
   const aviso = useMemo(() => {
@@ -135,7 +149,7 @@ export function ResolverOperacion({
     intento.limpiar();
   };
   const conciliar = useAccionDeFila(enviarConciliacion, `conciliar-${id}`, cerrar);
-  const reintentar = useAccionDeFila(enviarReintento, `reintentar-${id}`, cerrar);
+  const reintentar = useAccionDeFila(conLlaveNueva(enviarReintento, intento.nuevo), `reintentar-${id}`, cerrar);
   return (
     <div className="flujo-acciones-fila">
       {incierta ? <button type="button" className="boton-texto boton-chico" onClick={() => setAbierto("conciliar")}>Conciliar</button> : null}

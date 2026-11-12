@@ -31,6 +31,17 @@ const RECHAZO: Record<string, { titulo: string; mensaje: string }> = {
   operacion_no_incierta: { titulo: "Esa operación ya está resuelta", mensaje: "Recarga la página para ver su estado." },
   operacion_no_reintentable: { titulo: "Concíliala antes de reintentar", mensaje: "Solo se reintenta una operación que se buscó en Efevoo y no apareció." },
   intento_invalido: { titulo: "No se entendió el formulario", mensaje: "Recarga la página y vuelve a intentar." },
+  entrada_invalida: { titulo: "No se entendió el formulario", mensaje: "Recarga la página y vuelve a intentar." },
+  monto_invalido: { titulo: "Revisa el monto", mensaje: "Escribe un monto mayor que cero, en pesos y con centavos válidos." },
+  intento_con_otros_datos: { titulo: "Este formulario ya se envió con otros datos", mensaje: "Cierra el diálogo y ábrelo de nuevo para una operación nueva." },
+  operacion_en_curso: { titulo: "Esa tarjeta tiene una operación sin terminar", mensaje: "Espera a que se confirme o concíliala en «Operaciones por confirmar»." },
+  tarjeta_en_cancelacion: { titulo: "Esa tarjeta se está cancelando", mensaje: "No se puede operar mientras se cancela." },
+  tarjeta_no_encontrada: { titulo: "No encontramos esa tarjeta", mensaje: "Recarga la página." },
+  tarjeta_en_otro_estado: { titulo: "La tarjeta cambió de estado", mensaje: "Recarga la página para ver cómo está ahora." },
+  sin_permiso_para_efevoo: { titulo: "Sin permiso para operar tarjetas", mensaje: "Tu rol puede ver las tarjetas; las cargan, retiran y bloquean administración y liberación." },
+  empresa_sin_vinculo: { titulo: "Tarjetas no está conectada", mensaje: "La empresa no está dada de alta con el emisor. Comunícate con Lever." },
+  operacion_no_encontrada: { titulo: "No encontramos esa operación", mensaje: "Recarga la página." },
+  reintento_no_valido: { titulo: "Concíliala antes de reintentar", mensaje: "Solo se reintenta una operación que se buscó en Efevoo y no apareció." },
   efevoo_no_configurado: { titulo: "Tarjetas no está conectada", mensaje: "La conexión con el emisor no está configurada. Comunícate con Lever." },
   efevoo_no_autorizado: { titulo: "El emisor rechazó la conexión", mensaje: "No se movió dinero. Lever ya tiene el aviso." },
   efevoo_rechazo: { titulo: "El emisor no hizo la operación", mensaje: "No se movió dinero. Revisa el detalle de la operación." },
@@ -71,6 +82,11 @@ function resultado(r: ResultadoOperacion, hecho: string): EstadoFlujo {
 }
 
 function mensajeFallida(operacion: OperacionTarjeta): string {
+  if (operacion.codigoEfevoo === "saldo_insuficiente") {
+    return operacion.tipo === "retiro"
+      ? "No alcanza el saldo de la tarjeta para ese retiro. No se llamó al emisor ni se movió dinero."
+      : "No alcanza el saldo para tarjetas de la empresa para esa carga. No se llamó al emisor ni se movió dinero.";
+  }
   return operacion.codigoEfevoo ? `El emisor la rechazó (código ${operacion.codigoEfevoo}). No se movió dinero.` : "El emisor la rechazó. No se movió dinero.";
 }
 
@@ -112,9 +128,20 @@ export async function enviarBloqueoTarjeta(_previo: EstadoFlujo, datos: FormData
 
 export async function enviarConciliacion(_previo: EstadoFlujo, datos: FormData): Promise<EstadoFlujo> {
   return ejecutar(async () => {
-    const operacion = await conciliarOperacionTarjeta(await contextoDeAccion(), uuid(datos, "operacionId"));
-    if (operacion.estado === "confirmada") return { tipo: "listo", mensaje: `La operación ${operacion.referencia} sí se hizo en el emisor. Quedó confirmada.` };
-    return { tipo: "listo", mensaje: `La operación ${operacion.referencia} no aparece en el emisor. No se movió dinero; puedes reintentarla.` };
+    const c = await conciliarOperacionTarjeta(await contextoDeAccion(), uuid(datos, "operacionId"));
+    const ref = c.operacion.referencia;
+    switch (c.resultado) {
+      case "confirmada":
+        return { tipo: "listo", mensaje: `La operación ${ref} sí se hizo en el emisor. Quedó confirmada.` };
+      case "no_aparecio":
+        return { tipo: "listo", mensaje: `La operación ${ref} no aparece en el emisor. No se movió dinero; puedes reintentarla.` };
+      case "espera":
+        return { tipo: "rechazado", titulo: "Todavía no aparece", mensaje: `El emisor puede tardar en reflejarla. Vuelve a conciliar en ${c.minutos} min.` };
+      case "ambigua":
+        return { tipo: "rechazado", titulo: "No se puede concluir", mensaje: `Hay más de un movimiento que coincide con la operación ${ref}; revísalo con Operación.` };
+      case "ya_resuelta":
+        return { tipo: "listo", mensaje: `La operación ${ref} ya estaba resuelta.` };
+    }
   });
 }
 

@@ -1,4 +1,3 @@
-import "server-only";
 
 import { baseCliente, exigirEmpresa, puede, type ContextoConEmpresa, type ContextoDeTenant } from "@/nucleo/contexto";
 import { conContexto, type Consulta } from "@/nucleo/db";
@@ -18,6 +17,14 @@ import {
 } from "@/dominio/tarjetas/vista";
 import { clienteHttpEfevoo, type ClienteEfevoo } from "@/server/efevoo/cliente";
 import { configEfevoo } from "@/server/efevoo/config";
+import {
+  conciliarOperacionEfevoo,
+  ejecutarOperacionEfevoo,
+  llamadaEstandar,
+  reintentarOperacionEfevoo,
+  type DependenciasOperacion,
+  type OperacionEfevoo,
+} from "@/server/efevoo/operaciones";
 import { registrarEfevoo } from "@/server/efevoo/registros";
 
 /**
@@ -247,32 +254,69 @@ export async function leerDetalleTarjeta(ctx: ContextoDeTenant | null, tarjetaId
 
 export type EntradaSaldo = { readonly tarjetaId: string; readonly tipo: "carga" | "retiro"; readonly centavos: number; readonly intento: string };
 
-/** Carga o retira saldo de una tarjeta desde (o hacia) el saldo de la empresa en Efevoo. */
-export async function moverSaldoTarjeta(ctx: ContextoDeTenant | null, entrada: EntradaSaldo): Promise<ResultadoOperacion> {
-  exigirOperar(ctx);
-  void entrada;
-  throw new ErrorDeDominio("efevoo_no_configurado");
+/** Lo que regresa el ciclo de E1, en la forma de la pantalla. */
+function deEjecutada(op: OperacionEfevoo): OperacionTarjeta {
+  if (!TIPOS_DE_LA_EMPRESA.includes(op.tipo)) throw new ErrorDeDominio("base_no_disponible");
+  return {
+    id: op.id,
+    tipo: op.tipo as TipoOperacionTarjeta,
+    montoCentavos: op.montoCentavos,
+    estado: op.estado,
+    referencia: op.referencia,
+    creadaEn: new Date(op.creadaEn).toISOString(),
+    codigoEfevoo: op.codigoEfevoo,
+    reintentoDe: op.reintentoDe,
+    buscadaSinEncontrar: op.estado === "fallida" && op.codigoEfevoo === "no_aparecio",
+  };
+}
+
+/**
+ * Carga o retira saldo de una tarjeta desde (o hacia) el saldo de la empresa en Efevoo, con el ciclo de E1: se asienta
+ * antes de llamar, la misma llave regresa la misma operación, y sin saldo queda fallida sin llamar al emisor.
+ */
+export async function moverSaldoTarjeta(ctx: ContextoDeTenant | null, entrada: EntradaSaldo, deps?: DependenciasOperacion): Promise<ResultadoOperacion> {
+  const conEmpresa = exigirOperar(ctx);
+  const r = await ejecutarOperacionEfevoo(conEmpresa, {
+    tipo: entrada.tipo, llave: entrada.intento, companyId: conEmpresa.empresa.id, tarjetaId: entrada.tarjetaId, montoCentavos: entrada.centavos,
+  }, llamadaEstandar, deps);
+  return { operacion: deEjecutada(r), existente: !r.nueva };
 }
 
 export type EntradaBloqueo = { readonly tarjetaId: string; readonly accion: "bloqueo" | "desbloqueo"; readonly intento: string };
 
-export async function cambiarBloqueoTarjeta(ctx: ContextoDeTenant | null, entrada: EntradaBloqueo): Promise<ResultadoOperacion> {
-  exigirOperar(ctx);
-  void entrada;
-  throw new ErrorDeDominio("efevoo_no_configurado");
+export async function cambiarBloqueoTarjeta(ctx: ContextoDeTenant | null, entrada: EntradaBloqueo, deps?: DependenciasOperacion): Promise<ResultadoOperacion> {
+  const conEmpresa = exigirOperar(ctx);
+  const r = await ejecutarOperacionEfevoo(conEmpresa, {
+    tipo: entrada.accion, llave: entrada.intento, companyId: conEmpresa.empresa.id, tarjetaId: entrada.tarjetaId,
+  }, llamadaEstandar, deps);
+  return { operacion: deEjecutada(r), existente: !r.nueva };
 }
 
-/** Busca la referencia de una operación incierta en los movimientos de Efevoo: si aparece queda confirmada. */
-export async function conciliarOperacionTarjeta(ctx: ContextoDeTenant | null, operacionId: string): Promise<OperacionTarjeta> {
-  exigirOperar(ctx);
-  void operacionId;
-  throw new ErrorDeDominio("efevoo_no_configurado");
+export type ResultadoConciliacion =
+  | { readonly resultado: "confirmada" | "no_aparecio" | "ambigua" | "ya_resuelta"; readonly operacion: OperacionTarjeta }
+  | { readonly resultado: "espera"; readonly operacion: OperacionTarjeta; readonly minutos: number };
+
+/** Busca una operación incierta en el emisor (E1): confirmada, no apareció (pasados 10 min), espera, ambigua o ya resuelta. */
+export async function conciliarOperacionTarjeta(ctx: ContextoDeTenant | null, operacionId: string, deps?: DependenciasOperacion): Promise<ResultadoConciliacion> {
+  const conEmpresa = exigirOperar(ctx);
+  const c = await conciliarOperacionEfevoo(conEmpresa, conEmpresa.empresa.id, operacionId, deps);
+  const operacion = deEjecutada(c.operacion);
+  if (c.resultado === "espera") {
+    const ahora = deps?.ahora?.() ?? new Date();
+    return { resultado: "espera", operacion, minutos: Math.max(1, Math.ceil((new Date(c.reintentarDespuesDe).getTime() - ahora.getTime()) / 60_000)) };
+  }
+  return { resultado: c.resultado, operacion };
 }
 
-/** Una operación incierta que no apareció en Efevoo: la persona decide reintentar, con una referencia nueva ligada. */
-export async function reintentarOperacionTarjeta(ctx: ContextoDeTenant | null, operacionId: string, intento: string): Promise<ResultadoOperacion> {
-  exigirOperar(ctx);
-  void operacionId;
-  void intento;
-  throw new ErrorDeDominio("efevoo_no_configurado");
+/** Una operación que no apareció en el emisor: la persona decide reintentar, con una referencia nueva ligada. */
+export async function reintentarOperacionTarjeta(ctx: ContextoDeTenant | null, operacionId: string, intento: string, deps?: DependenciasOperacion): Promise<ResultadoOperacion> {
+  const conEmpresa = exigirOperar(ctx);
+  // Solo las que se buscaron y no aparecieron: un rechazo del emisor no se repite desde aquí.
+  const anterior = await conContexto(baseCliente(conEmpresa), async (consulta) =>
+    (await consulta.query("select estado, codigo_efevoo from efevoo_operaciones where id = $1 and company_id = app_empresa()", [operacionId])).rows[0] as
+      { estado: string; codigo_efevoo: string | null } | undefined);
+  if (!anterior) throw new ErrorDeDominio("operacion_ausente");
+  if (anterior.estado !== "fallida" || anterior.codigo_efevoo !== "no_aparecio") throw new ErrorDeDominio("operacion_no_reintentable");
+  const r = await reintentarOperacionEfevoo(conEmpresa, conEmpresa.empresa.id, operacionId, intento, llamadaEstandar, deps);
+  return { operacion: deEjecutada(r), existente: !r.nueva };
 }
