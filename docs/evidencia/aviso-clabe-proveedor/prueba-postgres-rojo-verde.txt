@@ -1,0 +1,35 @@
+# Sin el arreglo (main dd24198), con el enviador real de Resend
+  ✖ el aviso de CLABE sale por el enviador real de Resend, una vez por persona (4.024916ms)
+  ✔ el aviso de CLABE que falla se registra sin datos sensibles (6.916334ms)
+  ✔ quien solicita ve la terminación de la CLABE y no descarga constancias (73.7855ms)
+  ✔ las decisiones recientes no se pierden detrás de otros movimientos (70.230208ms)
+✖ cuentas por pagar contra Postgres: personas, versiones, CLABE, 69-B, SQL directo y concurrencia (6717.756958ms)
+ℹ tests 30
+ℹ suites 6
+ℹ pass 28
+ℹ fail 2
+✖ el aviso de CLABE sale por el enviador real de Resend, una vez por persona (4.024916ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 2
+  
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/clabe-aviso/tests/proveedores/pagos-proveedores.test.ts:407:16)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async <anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/clabe-aviso/tests/proveedores/pagos-proveedores.test.ts:397:7)
+      at async conBaseDesechable (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/clabe-aviso/tests/aislamiento/postgres.ts:71:12)
+      at async TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/clabe-aviso/tests/proveedores/pagos-proveedores.test.ts:55:3)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+# Con el arreglo
+  ✔ el aviso de CLABE sale por el enviador real de Resend, una vez por persona (11.947542ms)
+ℹ pass 30
+ℹ fail 0
