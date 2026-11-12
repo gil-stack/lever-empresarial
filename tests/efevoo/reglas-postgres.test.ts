@@ -13,6 +13,7 @@ import { nombrarCentro } from "../../src/server/personas/servicio.ts";
 import { contextoDePersonal } from "../../src/server/plataforma/servicio.ts";
 import { aplicarArchivo, conBaseDesechable, consultarJson, ejecutar, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
 import { administrador, persona, sembrarPersonal } from "../cobranza/siembra.ts";
+import { RECHAZOS_DEFINITIVOS } from "../../src/server/efevoo/operaciones.ts";
 
 /**
  * Las reglas de la 0033 (Efevoo), una por una, con el error crudo de Postgres.
@@ -325,7 +326,7 @@ async function reglas(app: string, base: Omit<Ids, "tarjetaTitular" | "tarjetaOt
   await acepta("cerrar la incierta vieja", (c) => resolver(c, C, ids.liberador, vieja, "fallida", null, "no_aparecio"), C, ids.liberador, E, true);
   await rechaza("un reintento con otro monto", "reintento_no_valido", async (c) => {
     const id = await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: T, monto: 500 });
-    await resolver(c, C, ids.liberador, id!, "fallida", null, "1");
+    await resolver(c, C, ids.liberador, id!, "fallida", null, "122");
     await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: T, monto: 600, reintento: id });
   }, C, ids.liberador);
   await rechaza("una confirmada no vuelve a cambiar", "transicion_no_valida", async (c) => {
@@ -336,8 +337,8 @@ async function reglas(app: string, base: Omit<Ids, "tarjetaTitular" | "tarjetaOt
   const pendienteDeOtro = await acepta("una carga pendiente de la liberadora", (c) =>
     asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: ids.tarjetaOtra, monto: 7 }), C, ids.liberador, E, true);
   await rechaza("el contador no resuelve la operación de otro", "sin_permiso_para_efevoo", (c) =>
-    resolver(c, C, ids.contador, pendienteDeOtro!, "fallida", null, "1"), C, ids.contador);
-  await acepta("cerrar la pendiente", (c) => resolver(c, C, ids.liberador, pendienteDeOtro!, "fallida", null, "1"), C, ids.liberador, E, true);
+    resolver(c, C, ids.contador, pendienteDeOtro!, "fallida", null, "122"), C, ids.contador);
+  await acepta("cerrar la pendiente", (c) => resolver(c, C, ids.liberador, pendienteDeOtro!, "fallida", null, "122"), C, ids.liberador, E, true);
 
   // Bloquear cambia el estado de la tarjeta al confirmarse.
   await acepta("bloqueo confirmado deja la tarjeta bloqueada", async (c) => {
@@ -393,6 +394,33 @@ async function reglas(app: string, base: Omit<Ids, "tarjetaTitular" | "tarjetaOt
     await asentar(c, C, ids.admin, { tipo: "carga", tarjeta: ids.tarjetaOtra, monto: 1 });
   }, C, ids.admin);
 
+  // E1-12: una pendiente solo falla con un rechazo que diga que Efevoo no hizo nada; «1», «901» o «100» no.
+  for (const codigo of ["1", "901", "100", null]) {
+    await rechaza(`pendiente → fallida con ${codigo}`, "transicion_no_valida", async (c) => {
+      const id = await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: ids.tarjetaOtra, monto: 1 });
+      await resolver(c, C, ids.liberador, id!, "fallida", null, codigo);
+    }, C, ids.liberador);
+  }
+  // La lista de la base es la misma del ciclo (RECHAZOS_DEFINITIVOS): ni uno de más ni uno de menos.
+  const definicion = leer<{ d: string }>("select pg_get_functiondef('efevoo_resolver_operacion(uuid, text, text, text, text)'::regprocedure) as d")[0]!.d;
+  const enLaBase = [...(/ANY \(ARRAY\[([^\]]+)\]/.exec(definicion)?.[1] ?? "").matchAll(/'([^']+)'/g)].map((m) => m[1]!).sort();
+  assert.deepEqual(enLaBase, [...RECHAZOS_DEFINITIVOS].sort());
+  for (const codigo of [...RECHAZOS_DEFINITIVOS]) {
+    await acepta(`pendiente → fallida con ${codigo}`, async (c) => {
+      const id = await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: ids.tarjetaOtra, monto: 1 });
+      await resolver(c, C, ids.liberador, id!, "fallida", null, codigo);
+    }, C, ids.liberador);
+  }
+
+  // E1-13: el IDMovimiento va en su propia columna; con él solo, una carga confirmada también es válida.
+  await acepta("carga confirmada por su IDMovimiento", async (c) => {
+    const id = await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: ids.tarjetaOtra, monto: 1 });
+    await evento(c, C, ids.liberador, E, "efevoo_confirmada", id!);
+    await c.query("select efevoo_resolver_operacion($1, 'confirmada', null, 'conciliada', '4526')", [id]);
+    const r = await c.query("select id_efevoo, id_movimiento_efevoo from efevoo_operaciones where id = $1", [id]);
+    assert.deepEqual(r.rows[0], { id_efevoo: null, id_movimiento_efevoo: "4526" });
+  }, C, ids.liberador);
+
   // E1-6: una carga confirmada lleva un id positivo; el id 0 (falso éxito) o vacío no se acepta.
   for (const idMalo of ["0", null]) {
     await rechaza(`carga confirmada con id ${idMalo}`, "efevoo_operacion_no_valida", async (c) => {
@@ -409,7 +437,7 @@ async function reglas(app: string, base: Omit<Ids, "tarjetaTitular" | "tarjetaOt
     asentar(c, C, ids.contador, { tipo: "bloqueo", tarjeta: ids.tarjetaOtra, llave: llaveAjena, evento: false }), C, ids.contador);
   await rechaza("el administrador repite la llave de otra persona", "intento_con_otros_datos", (c) =>
     asentar(c, C, ids.admin, { tipo: "bloqueo", tarjeta: ids.tarjetaOtra, llave: llaveAjena, evento: false }), C, ids.admin);
-  await acepta("cerrar el bloqueo", (c) => resolver(c, C, ids.liberador, bloqueoAjeno!, "fallida", null, "1"), C, ids.liberador, E, true);
+  await acepta("cerrar el bloqueo", (c) => resolver(c, C, ids.liberador, bloqueoAjeno!, "fallida", null, "122"), C, ids.liberador, E, true);
 
   // E1-4: doble clic simultáneo (dos funciones a la vez) con la misma llave: una operación y la segunda regresa la existente.
   {
@@ -436,7 +464,7 @@ async function reglas(app: string, base: Omit<Ids, "tarjetaTitular" | "tarjetaOt
       assert.equal(resultadoB, null, `el segundo envío regresa sin insertar: ${String(resultadoB)}`);
       await b.query("commit");
       assert.equal(leer<{ n: number }>(`select count(*)::int as n from efevoo_operaciones where llave_intento = '${llave}'`)[0]!.n, 1);
-      await acepta("cerrar la carga simultánea", (c) => resolver(c, C, ids.liberador, idA!, "fallida", null, "1"), C, ids.liberador, E, true);
+      await acepta("cerrar la carga simultánea", (c) => resolver(c, C, ids.liberador, idA!, "fallida", null, "122"), C, ids.liberador, E, true);
     } finally {
       await a.query("rollback").catch(() => undefined);
       await b.query("rollback").catch(() => undefined);

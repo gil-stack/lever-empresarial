@@ -114,6 +114,20 @@ async function ciclo(url: string, falso: EfevooFalso): Promise<void> {
   await rechazo(ejecutarOperacionEfevoo(personal, entrada({ tipo: "deposito_prueba", llave: llaveDeposito, montoCentavos: 200_000 }), llamadaEstandar, deps()),
     "intento_con_otros_datos");
 
+  // E1-14: un depósito sin respuesta que sí ocurrió se encuentra por monto, saldo previo y hora (guarda el id del movimiento).
+  falso.simular({ metodo: "clientBalance", falla: "timeout" });
+  const depIncierto = await saldoDeEmpresaEfevoo(efevoo, 300).then((saldo) => ejecutarOperacionEfevoo(personal,
+    entrada({ tipo: "deposito_prueba", montoCentavos: 50_000, saldoPrevioCentavos: saldo }), llamadaEstandar, deps()));
+  assert.deepEqual(pick(depIncierto), ["incierta", "timeout"]);
+  const depConciliado = await conciliarOperacionEfevoo(personal, E, depIncierto.id, deps());
+  assert.deepEqual([depConciliado.resultado, depConciliado.operacion.idEfevoo], ["confirmada", null]);
+  assert.match(depConciliado.operacion.idMovimientoEfevoo ?? "", /^[1-9][0-9]*$/);
+  // Sin saldo previo anotado, un depósito anterior del mismo monto no lo confirma: no se adivina.
+  falso.simular({ metodo: "clientBalance", falla: "timeout_sin_efecto" });
+  const depSinPrevio = await ejecutarOperacionEfevoo(personal, entrada({ tipo: "deposito_prueba", montoCentavos: 50_000, saldoPrevioCentavos: null }), llamadaEstandar, deps());
+  assert.equal((await conciliarOperacionEfevoo(personal, E, depSinPrevio.id, deps())).resultado, "ambigua");
+  ejecutar(url, `set session_replication_role = replica; update efevoo_operaciones set estado = 'fallida', codigo_efevoo = 'revisada_a_mano' where id = '${depSinPrevio.id}'; set session_replication_role = origin;`);
+
   // O3: asignar el plástico 1363 al titular y activarlo.
   const asignada = await ejecutarOperacionEfevoo(personal, entrada({
     tipo: "asignacion", inventario: { idEfevoo: 557, terminacion: "1363", employeeId: empleado, nombreTarjeta: "PRUEBA LEVER" },
@@ -129,7 +143,27 @@ async function ciclo(url: string, falso: EfevooFalso): Promise<void> {
   const carga = await ejecutarOperacionEfevoo(liberador, entrada({ tipo: "carga", tarjetaId: T, montoCentavos: 5_000 }), llamadaEstandar, deps());
   assert.equal(carga.estado, "confirmada");
   assert.match(carga.idEfevoo ?? "", /^[0-9]+$/);
+  assert.equal(carga.idMovimientoEfevoo, null, "el id de la respuesta y el IDMovimiento no se mezclan");
+  assert.notEqual(carga.idEfevoo, (await efevoo.movimientosDeTarjeta(557, TITULAR.correo))[0]!.idMovimiento);
   assert.equal(falso.estado().tarjetas.find((t) => t.id === 557)!.saldoCentavos, 5_000);
+
+  // E1-11: dos cargas abiertas a la vez en tarjetas distintas de la empresa no gastan el mismo saldo.
+  // Una carga incierta en otra tarjeta cuenta como gastada: si el resto no alcanza, Efevoo no se llama.
+  const otra = await ejecutarOperacionEfevoo(personal, entrada({
+    tipo: "asignacion", inventario: { idEfevoo: 563, terminacion: "0168", employeeId: null, nombreTarjeta: "OTRA LEVER" },
+  }), async (op, ef) => String((await ef.asignarTarjeta({ producto: 16, subproducto: 19, idepCliente: op.idepCliente!, ultimos8: ultimos8De("0168"), titular: { ...TITULAR, correo: "otra-ciclo@lever.test" } })).id), deps());
+  const T2 = uno<{ id: string }>(`select id from efevoo_tarjetas where id_efevoo = ${otra.idEfevoo}`)[0]!.id;
+  await ejecutarOperacionEfevoo(personal, entrada({ tipo: "activacion", tarjetaId: T2 }), llamadaEstandar, deps());
+  const saldoEmpresa = (await saldoDeEmpresaEfevoo(efevoo, 300))!;
+  falso.simular({ metodo: "fundCard", falla: "timeout_sin_efecto", idCard: 563 });
+  const grande = await ejecutarOperacionEfevoo(liberador, entrada({ tipo: "carga", tarjetaId: T2, montoCentavos: saldoEmpresa - 1_000 }), llamadaEstandar, deps());
+  assert.deepEqual(pick(grande), ["incierta", "timeout"]);
+  const antesReserva = llamadas();
+  const sinReserva = await ejecutarOperacionEfevoo(liberador, entrada({ tipo: "carga", tarjetaId: T, montoCentavos: 2_000 }), llamadaEstandar, deps());
+  assert.deepEqual(pick(sinReserva), ["fallida", "saldo_insuficiente"], "el saldo ya está apartado por la carga incierta de la otra tarjeta");
+  assert.equal(llamadas(), antesReserva);
+  ejecutar(url, `set session_replication_role = replica; update efevoo_operaciones set creada_en = now() - interval '11 minutes' where id = '${grande.id}'; set session_replication_role = origin;`);
+  assert.equal((await conciliarOperacionEfevoo(liberador, E, grande.id, deps())).resultado, "no_aparecio");
 
   // Lever valida los saldos: sin saldo de la empresa no carga; sin saldo de la tarjeta no retira. Efevoo no se llama.
   const antes = llamadas();
@@ -178,7 +212,8 @@ async function ciclo(url: string, falso: EfevooFalso): Promise<void> {
   assert.equal(llamadas(), antesTimeout + 1, "una sola llamada: sin reintento automático");
   const conciliada = await conciliarOperacionEfevoo(liberador, E, timeout.id, deps());
   assert.deepEqual([conciliada.resultado, conciliada.operacion.estado], ["confirmada", "confirmada"]);
-  assert.match(conciliada.operacion.idEfevoo ?? "", /^[0-9]+$/);
+  assert.match(conciliada.operacion.idMovimientoEfevoo ?? "", /^[1-9][0-9]*$/);
+  assert.equal(conciliada.operacion.idEfevoo, null);
   assert.equal((await conciliarOperacionEfevoo(liberador, E, timeout.id, deps())).resultado, "ya_resuelta");
 
   // E1-5: la conciliación no confunde la referencia con un movimiento viejo, de otro tipo o repetido.
@@ -193,7 +228,18 @@ async function ciclo(url: string, falso: EfevooFalso): Promise<void> {
   const buena = await conciliarOperacionEfevoo(liberador, E, sinEfecto.id, deps());
   assert.deepEqual([buena.resultado, buena.operacion.estado], ["confirmada", "confirmada"]);
   const idInyectado = (await efevoo.movimientosDeTarjeta(557, TITULAR.correo)).find((m) => m.referencia === sinEfecto.referencia && m.centavos === 777 && m.tipo === "abono" && m.fechaHora.startsWith("2026"));
-  assert.equal(buena.operacion.idEfevoo, idInyectado?.idMovimiento, "guarda el IDMovimiento encontrado");
+  assert.equal(buena.operacion.idMovimientoEfevoo, idInyectado?.idMovimiento, "guarda el IDMovimiento encontrado");
+  // E1-10: un movimiento con la misma referencia que no se puede leer completo (sin tipo y con un concepto
+  // desconocido) da «ambigua», nunca «no apareció», aunque ya pasaron los 10 minutos.
+  falso.simular({ metodo: "fundCard", falla: "timeout_sin_efecto", idCard: 557 });
+  const ilegible = await ejecutarOperacionEfevoo(liberador, entrada({ tipo: "carga", tarjetaId: T, montoCentavos: 999 }), llamadaEstandar, deps());
+  falso.inyectarMovimiento({ idCard: 557, concepto: "AJUSTE DE SALDO", importe: 9.99, tipo: null, referencia: ilegible.referencia });
+  ejecutar(url, `set session_replication_role = replica; update efevoo_operaciones set creada_en = now() - interval '11 minutes' where id = '${ilegible.id}'; set session_replication_role = origin;`);
+  falso.inyectarMovimiento({ idCard: 557, concepto: "AJUSTE DE SALDO", importe: 9.99, tipo: null, referencia: ilegible.referencia });
+  const sinLeer = await conciliarOperacionEfevoo(liberador, E, ilegible.id, deps());
+  assert.deepEqual([sinLeer.resultado, sinLeer.operacion.estado], ["ambigua", "incierta"]);
+  ejecutar(url, `set session_replication_role = replica; update efevoo_operaciones set estado = 'fallida', codigo_efevoo = 'revisada_a_mano' where id = '${ilegible.id}'; set session_replication_role = origin;`);
+
   // Dos movimientos que cuadran: no se adivina.
   falso.simular({ metodo: "fundCard", falla: "timeout_sin_efecto", idCard: 557 });
   const doble = await ejecutarOperacionEfevoo(liberador, entrada({ tipo: "carga", tarjetaId: T, montoCentavos: 888 }), llamadaEstandar, deps());

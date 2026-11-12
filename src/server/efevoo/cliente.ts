@@ -146,6 +146,20 @@ function ilegible(metodo: string): ErrorEfevoo {
   return new ErrorEfevoo("efevoo_incierto", "forma");
 }
 
+/**
+ * Abono (carga) o cargo (retiro). Recién hecho, el movimiento puede llegar sin
+ * TipoMovimientoCargoAbono (captura getTransactionsCard-560-b): entonces se saca
+ * del concepto medido. Otro concepto sin tipo queda nulo: no se adivina.
+ */
+export function tipoDeMovimiento(declarado: string | null, concepto: string): "abono" | "cargo" | null {
+  const t = declarado?.trim().toLowerCase();
+  if (t === "abono" || t === "cargo") return t;
+  const k = concepto.trim().toUpperCase();
+  if (k === "PAGO A TARJETA") return "abono";
+  if (k === "DEVOLUCIÓN PAGO A TARJETA" || k === "DEVOLUCION PAGO A TARJETA") return "cargo";
+  return null;
+}
+
 /** `status.code` normalizado a texto: 0, "0" y " 0 " son lo mismo. */
 export function codigoDeEstado(cuerpo: unknown): string | null {
   const status = objeto(objeto(cuerpo)?.status);
@@ -398,12 +412,12 @@ export function clienteHttpEfevoo(config: ConfigEfevoo, hacerFetch: Fetch = fetc
         const idMovimiento = texto(o?.IDMovimiento) ?? (entero(o?.IDMovimiento) !== null ? String(o?.IDMovimiento) : null);
         if (!o || !idMovimiento) throw ilegible("getTransactionsCard");
         const referencia = texto(o.Referencia)?.trim() ?? null;
-        const tipo = texto(o.TipoMovimientoCargoAbono)?.trim().toLowerCase();
+        const concepto = (texto(o.ConceptoMovimiento) ?? "").trim();
         return {
           idMovimiento,
           referencia: referencia && REFERENCIA.test(referencia) ? referencia : null,
           centavos: pesosACentavos(o.ImporteMovimiento ?? o.Importe),
-          tipo: tipo === "abono" || tipo === "cargo" ? tipo : null,
+          tipo: tipoDeMovimiento(texto(o.TipoMovimientoCargoAbono), concepto),
           concepto: (texto(o.ConceptoMovimiento) ?? "").slice(0, 80),
           fechaHora: texto(o.FechaHora) ?? "",
           saldoDespuesCentavos: pesosACentavos(o.SaldoDespuesMovimiento),

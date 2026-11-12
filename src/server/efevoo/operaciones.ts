@@ -101,7 +101,15 @@ export type OperacionEfevoo = {
   tarjetaInventario: number | null;
   terminacion: string | null;
   saldoPrevioCentavos: number | null;
+  /** El id con que respondió Efevoo (idepCliente, id de la tarjeta o id de la respuesta de fundCard/unfundCard). */
   idEfevoo: string | null;
+  /** El IDMovimiento de getTransactionsCard (o el id de balanceMovements) cuando se encontró al conciliar: otra serie. */
+  idMovimientoEfevoo: string | null;
+  /**
+   * Carga: lo que suman las demás cargas abiertas (pendientes o inciertas) de la
+   * empresa al momento de llamar. Se resta del saldo de Efevoo: una incierta cuenta como gastada.
+   */
+  otrasCargasAbiertasCentavos: number;
   codigoEfevoo: string | null;
   reintentoDe: string | null;
   creadaEn: string;
@@ -133,7 +141,7 @@ export type Ejecutada = OperacionEfevoo & {
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const COLUMNAS = `o.id, o.company_id, o.tipo, o.estado, o.ambiente, o.referencia, o.monto_centavos::text as monto_centavos,
   o.tarjeta_id, o.tarjeta_inventario, o.terminacion, o.saldo_previo_centavos::text as saldo_previo_centavos,
-  o.id_efevoo, o.codigo_efevoo, o.reintento_de, o.creada_en, o.resuelta_en,
+  o.id_efevoo, o.id_movimiento_efevoo, o.codigo_efevoo, o.reintento_de, o.creada_en, o.resuelta_en,
   o.employee_id, o.nombre_tarjeta, o.motivo,
   v.idep_cliente, t.id_efevoo as tarjeta_id_efevoo, t.terminacion as terminacion_tarjeta`;
 const DESDE = `from efevoo_operaciones o
@@ -170,6 +178,8 @@ function leerFila(valor: unknown): OperacionEfevoo & { employeeId: string | null
     terminacion: textoONulo(f.terminacion) ?? textoONulo(f.terminacion_tarjeta),
     saldoPrevioCentavos: centavosONulo(f.saldo_previo_centavos),
     idEfevoo: textoONulo(f.id_efevoo),
+    idMovimientoEfevoo: textoONulo(f.id_movimiento_efevoo),
+    otrasCargasAbiertasCentavos: 0,
     codigoEfevoo: textoONulo(f.codigo_efevoo),
     reintentoDe: textoONulo(f.reintento_de),
     creadaEn: instante(f.creada_en),
@@ -281,11 +291,11 @@ function mismaOperacion(previa: ReturnType<typeof leerFila>, entrada: EntradaOpe
 }
 
 /** 3. Resuelve con su evento. */
-async function resolver(q: Quien, op: OperacionEfevoo, estado: Exclude<EstadoOperacion, "pendiente">, idEfevoo: string | null, codigo: string | null, auditar: Auditar) {
+async function resolver(q: Quien, op: OperacionEfevoo, estado: Exclude<EstadoOperacion, "pendiente">, idEfevoo: string | null, codigo: string | null, auditar: Auditar, idMovimiento: string | null = null) {
   const codigoBase = codigoParaBase(codigo);
   return conContexto(q.base, async (consulta) => {
     await auditar(consulta, q.actor, { accion: `efevoo_${estado}`, identificador: op.id, cambio: cambioDe(op, estado, codigoBase) });
-    await aplicarSentencia(consulta, "select efevoo_resolver_operacion($1, $2, $3, $4)", [op.id, estado, idEfevoo, codigoBase]);
+    await aplicarSentencia(consulta, "select efevoo_resolver_operacion($1, $2, $3, $4, $5)", [op.id, estado, idEfevoo, codigoBase, idMovimiento]);
     const fila = await leerOperacion(consulta, "o.id = $1", [op.id]);
     if (!fila) throw new ErrorDeDominio("base_no_disponible");
     return publica(fila);
@@ -325,6 +335,16 @@ export async function ejecutarOperacionEfevoo(
   let idEfevoo: string | null = null;
   let resultado: { estado: "confirmada" | "fallida" | "incierta"; codigo: string | null };
   try {
+    if (op.tipo === "carga") {
+      // Con la operación ya asentada (y confirmada en la base), las demás cargas abiertas de la empresa se ven:
+      // dos cargas a la vez en tarjetas distintas se restan una a la otra y, en el peor caso, las dos se rechazan.
+      op.otrasCargasAbiertasCentavos = await conContexto(q.base, async (consulta) => {
+        const r = await aplicarSentencia(consulta,
+          `select coalesce(sum(monto_centavos), 0)::text as total from efevoo_operaciones
+            where company_id = $1 and tipo = 'carga' and estado in ('pendiente', 'incierta') and id <> $2`, [op.companyId, op.id]);
+        return Number(texto(registro(r.rows[0]).total));
+      });
+    }
     idEfevoo = await llamada(op, d.efevoo);
     resultado = { estado: "confirmada", codigo: null };
   } catch (error) {
@@ -386,7 +406,7 @@ export async function conciliarOperacionEfevoo(
   const encontrada = await buscarEnEfevoo(fila, d.efevoo, companyId, q);
   if (encontrada.ambigua) return { resultado: "ambigua", operacion: op };
   if (encontrada.aparecio) {
-    return { resultado: "confirmada", operacion: await resolver(q, op, "confirmada", encontrada.idEfevoo, "conciliada", d.auditar) };
+    return { resultado: "confirmada", operacion: await resolver(q, op, "confirmada", encontrada.idEfevoo, "conciliada", d.auditar, encontrada.idMovimiento ?? null) };
   }
   const desde = new Date(new Date(op.creadaEn).getTime() + MINUTOS_PARA_NO_APARECIO * 60_000);
   if (d.ahora() < desde) return { resultado: "espera", operacion: op, reintentarDespuesDe: desde.toISOString() };
@@ -398,8 +418,9 @@ async function buscarEnEfevoo(
   efevoo: ClienteEfevoo,
   companyId: string,
   q: Quien,
-): Promise<{ aparecio: boolean; idEfevoo: string | null; ambigua?: boolean }> {
+): Promise<{ aparecio: boolean; idEfevoo: string | null; idMovimiento?: string | null; ambigua?: boolean }> {
   const no = { aparecio: false, idEfevoo: null };
+  const ambigua = { ...no, ambigua: true };
   switch (op.tipo) {
     case "carga":
     case "retiro": {
@@ -409,22 +430,31 @@ async function buscarEnEfevoo(
       // Efevoo no deduplica referencias y el consecutivo de Lever se reinicia con la base del sandbox:
       // la misma referencia, el importe exacto, el tipo (Abono = carga, Cargo = retiro) y una hora no
       // anterior a la operación (con un margen de 2 minutos por relojes). Se guarda el IDMovimiento.
+      // Un movimiento recién hecho puede llegar sin TipoMovimientoCargoAbono (el cliente lo saca del
+      // concepto). Uno con la misma referencia que no se pueda leer completo (tipo, importe u hora) no
+      // se descarta: da «ambigua», nunca «no apareció», para no reintentar algo que sí pasó.
       const desde = new Date(op.creadaEn).getTime() - 2 * 60_000;
       const tipo = op.tipo === "carga" ? "abono" : "cargo";
-      const cuadran = (await efevoo.movimientosDeTarjeta(op.tarjetaIdEfevoo, correo)).filter((x) => {
-        const hora = horaDeMexico(x.fechaHora);
-        return x.referencia === op.referencia && x.centavos === op.montoCentavos && x.tipo === tipo && hora !== null && hora >= desde;
-      });
-      if (cuadran.length > 1) return { ...no, ambigua: true };
+      const conReferencia = (await efevoo.movimientosDeTarjeta(op.tarjetaIdEfevoo, correo)).filter((x) => x.referencia === op.referencia);
+      if (conReferencia.some((x) => x.tipo === null || x.centavos === null || horaDeMexico(x.fechaHora) === null)) return ambigua;
+      const cuadran = conReferencia.filter((x) => x.centavos === op.montoCentavos && x.tipo === tipo && horaDeMexico(x.fechaHora)! >= desde);
+      if (cuadran.length > 1) return ambigua;
       const m = cuadran[0];
-      return m && /^[1-9][0-9]{0,17}$/.test(m.idMovimiento) ? { aparecio: true, idEfevoo: m.idMovimiento } : no;
+      if (!m) return no;
+      return /^[1-9][0-9]{0,17}$/.test(m.idMovimiento) ? { aparecio: true, idEfevoo: null, idMovimiento: m.idMovimiento } : ambigua;
     }
     case "deposito_prueba": {
+      // clientBalance no lleva referencia: el depósito del monto, con el saldo previo anotado y una
+      // hora no anterior a la operación. Sin saldo previo anotado, o con una hora ilegible, no se adivina.
       if (!op.idepCliente || op.montoCentavos === null) return no;
-      const movimientos = await efevoo.movimientosCliente(op.idepCliente, 1, 50);
-      const m = movimientos.find((x) => x.operacion === "deposit" && x.centavos === op.montoCentavos
-        && (op.saldoPrevioCentavos === null || x.saldoPrevioCentavos === op.saldoPrevioCentavos));
-      return m ? { aparecio: true, idEfevoo: String(m.id) } : no;
+      if (op.saldoPrevioCentavos === null) return ambigua;
+      const desde = new Date(op.creadaEn).getTime() - 2 * 60_000;
+      const delMonto = (await efevoo.movimientosCliente(op.idepCliente, 1, 50))
+        .filter((x) => x.operacion === "deposit" && x.centavos === op.montoCentavos && x.saldoPrevioCentavos === op.saldoPrevioCentavos);
+      if (delMonto.some((x) => horaDeRegistro(x.registradoEn) === null)) return ambigua;
+      const cuadran = delMonto.filter((x) => horaDeRegistro(x.registradoEn)! >= desde);
+      if (cuadran.length > 1) return ambigua;
+      return cuadran[0] ? { aparecio: true, idEfevoo: null, idMovimiento: String(cuadran[0].id) } : no;
     }
     case "alta_cliente": {
       const razon = await conContexto(q.base, async (consulta) => {
@@ -466,6 +496,16 @@ export function horaDeMexico(texto: string): number | null {
   const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/.exec(texto.trim());
   if (!m) return null;
   const ms = Date.parse(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}-06:00`);
+  return Number.isNaN(ms) ? null : ms;
+}
+
+/** registerDate de balanceMovements ("4/1/2026 5:22:52 PM", hora de México) → milisegundos. */
+export function horaDeRegistro(texto: string): number | null {
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4}) (\d{1,2}):(\d{2}):(\d{2}) (AM|PM)$/.exec(texto.trim());
+  if (!m) return null;
+  const hora = (Number(m[4]) % 12) + (m[7] === "PM" ? 12 : 0);
+  const dos = (n: number | string) => String(n).padStart(2, "0");
+  const ms = Date.parse(`${m[3]}-${dos(m[1]!)}-${dos(m[2]!)}T${dos(hora)}:${m[5]}:${m[6]}-06:00`);
   return Number.isNaN(ms) ? null : ms;
 }
 
@@ -543,7 +583,9 @@ export const llamadaEstandar: LlamadaEfevoo = async (op, efevoo) => {
     case "carga": {
       if (!op.idepCliente || op.montoCentavos === null) throw new ErrorEfevoo("efevoo_rechazo", "sin_vinculo");
       const [empresa] = await efevoo.listarClientes([op.idepCliente]);
-      if (!empresa || empresa.saldoCentavos === null || empresa.saldoCentavos < op.montoCentavos) throw new ErrorDeDominio("saldo_insuficiente");
+      if (!empresa || empresa.saldoCentavos === null || empresa.saldoCentavos - op.otrasCargasAbiertasCentavos < op.montoCentavos) {
+        throw new ErrorDeDominio("saldo_insuficiente");
+      }
       const { id, correo } = await correoDe(efevoo, op);
       return String((await efevoo.cargarTarjeta(id, correo, op.montoCentavos, op.referencia, OBSERVACION)).id);
     }
