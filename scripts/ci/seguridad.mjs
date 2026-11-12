@@ -98,6 +98,33 @@ export function revisarCliente(ruta, texto) {
   return hallazgos;
 }
 
+/**
+ * Envoltorios que reciben el SQL como texto y lo ejecutan. Sus llamadas se
+ * revisan igual que `.query(...)`, en el argumento que lleva el SQL, y dentro
+ * del envoltorio mismo no se marca «SQL recibido como parámetro» para ese
+ * parámetro (es su trabajo recibirlo). Cada uno va por nombre y archivo:
+ *
+ * - aplicarSentencia (src/nucleo/db.ts): la entrega única del SQL al driver;
+ *   se llama desde todo el servidor con el SQL en el segundo argumento.
+ * - consultar y consultarDefinidor (src/server/autenticacion/repositorio.ts):
+ *   abren la transacción con su rol y pasan el SQL a aplicarSentencia; solo se
+ *   llaman en ese archivo, con el SQL en el primer argumento.
+ * - query de comoConsulta (src/nucleo/db.ts): adapta el cliente de pg a
+ *   Consulta; sus llamadores ya se revisan como `.query(...)`.
+ */
+export const ENVOLTORIOS_SQL = [
+  { nombre: "aplicarSentencia", archivo: "src/nucleo/db.ts", argumento: 1, parametro: "sentencia", global: true },
+  { nombre: "consultar", archivo: "src/server/autenticacion/repositorio.ts", argumento: 0, parametro: "sentencia", global: false },
+  { nombre: "consultarDefinidor", archivo: "src/server/autenticacion/repositorio.ts", argumento: 0, parametro: "sentencia", global: false },
+  // El adaptador del cliente de pg a Consulta (comoConsulta): su `query` es la del driver.
+  { nombre: "query", archivo: "src/nucleo/db.ts", argumento: 0, parametro: "sql", global: false },
+];
+
+function envoltorioLlamado(ruta, llamado) {
+  if (!ts.isIdentifier(llamado)) return null;
+  return ENVOLTORIOS_SQL.find((e) => e.nombre === llamado.text && (e.global || e.archivo === ruta)) ?? null;
+}
+
 export function revisarSql(ruta, texto) {
   const archivo = ts.createSourceFile(ruta, texto, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
   const hallazgos = [];
@@ -128,6 +155,12 @@ export function revisarSql(ruta, texto) {
         const argumento = nodo.arguments[0];
         if (argumento) revisarArgumentoSql(archivo, argumento, hallazgos);
       }
+      const envoltorio = envoltorioLlamado(ruta, llamado);
+      if (envoltorio) {
+        const argumento = nodo.arguments[envoltorio.argumento];
+        if (argumento) revisarArgumentoSql(archivo, argumento, hallazgos);
+        else hallazgos.push(`${ubicar(archivo, nodo)} ${envoltorio.nombre} sin SQL`);
+      }
     }
 
     if (
@@ -145,26 +178,50 @@ export function revisarSql(ruta, texto) {
   return hallazgos;
 }
 
-function revisarArgumentoSql(archivo, nodo, hallazgos) {
+function sinEnvoltura(nodo) {
+  let actual = nodo;
+  while (
+    ts.isParenthesizedExpression(actual) ||
+    ts.isAsExpression(actual) ||
+    (ts.isSatisfiesExpression && ts.isSatisfiesExpression(actual)) ||
+    ts.isTypeAssertionExpression(actual)
+  ) {
+    actual = actual.expression;
+  }
+  return actual;
+}
+
+function revisarArgumentoSql(archivo, nodoOriginal, hallazgos, vistos = new Set()) {
+  const nodo = sinEnvoltura(nodoOriginal);
   if (ts.isStringLiteral(nodo) || ts.isNoSubstitutionTemplateLiteral(nodo)) return;
   if (ts.isPropertyAccessExpression(nodo) || ts.isIdentifier(nodo)) {
     const inicial = inicializadorDe(nodo);
+    if (inicial && vistos.has(inicial)) {
+      hallazgos.push(`${ubicar(archivo, nodo)} SQL de origen no comprobable (constantes circulares)`);
+      return;
+    }
     if (inicial) {
-      revisarArgumentoSql(archivo, inicial, hallazgos);
+      vistos.add(inicial);
+      revisarArgumentoSql(archivo, inicial, hallazgos, vistos);
       return;
     }
     if (ts.isIdentifier(nodo) && esParametroSql(nodo)) {
-      hallazgos.push(`${ubicar(archivo, nodo)} SQL recibido como parámetro`);
+      if (!esParametroDeEnvoltorio(archivo, nodo)) hallazgos.push(`${ubicar(archivo, nodo)} SQL recibido como parámetro`);
+      return;
     }
+    // Ni constante del archivo, ni importada de un módulo del repo, ni parámetro: no se puede comprobar.
+    hallazgos.push(`${ubicar(archivo, nodo)} SQL de origen no comprobable`);
     return;
   }
   if (ts.isTemplateExpression(nodo)) {
     for (const tramo of nodo.templateSpans) {
-      if (!interpolacionDePlaceholders(tramo.expression)) {
-        hallazgos.push(
-          `${ubicar(archivo, tramo.expression)} SQL con un valor interpolado que no es un placeholder $n`,
-        );
-      }
+      if (interpolacionDePlaceholders(tramo.expression)) continue;
+      // Decisión del líder (2026-11-12): se puede interpolar una constante cuyo
+      // inicializador sea a su vez SQL verificable (fragmentos compartidos).
+      if (constanteSqlVerificable(tramo.expression, new Set())) continue;
+      hallazgos.push(
+        `${ubicar(archivo, tramo.expression)} SQL con un valor interpolado que no es un placeholder $n ni una constante verificable`,
+      );
     }
     return;
   }
@@ -173,6 +230,74 @@ function revisarArgumentoSql(archivo, nodo, hallazgos) {
     return;
   }
   hallazgos.push(`${ubicar(archivo, nodo)} SQL de origen no comprobable`);
+}
+
+/**
+ * Una constante (`const`) cuyo inicializador es SQL verificable, revisada de
+ * forma recursiva: un literal, o una plantilla cuyas interpolaciones son a su
+ * vez constantes verificables. Sin llamadas, sin parámetros, sin
+ * concatenación y sin ciclos. Vale `NOMBRE` y `OBJETO.propiedad` de un objeto
+ * literal `const`.
+ */
+function constanteSqlVerificable(expresion, visitados) {
+  const nodo = sinEnvoltura(expresion);
+  const inicial = inicializadorConstante(nodo);
+  if (!inicial || visitados.has(inicial)) return false;
+  visitados.add(inicial);
+  return sqlVerificable(inicial, visitados);
+}
+
+function sqlVerificable(expresion, visitados) {
+  const nodo = sinEnvoltura(expresion);
+  if (ts.isStringLiteral(nodo) || ts.isNoSubstitutionTemplateLiteral(nodo) || ts.isNumericLiteral(nodo)) return true;
+  if (ts.isTemplateExpression(nodo)) {
+    return nodo.templateSpans.every((tramo) => constanteSqlVerificable(tramo.expression, visitados));
+  }
+  if (ts.isIdentifier(nodo) || ts.isPropertyAccessExpression(nodo)) return constanteSqlVerificable(nodo, visitados);
+  return false;
+}
+
+function esConstante(declaracion) {
+  return ts.isVariableDeclaration(declaracion) && (ts.getCombinedNodeFlags(declaracion) & ts.NodeFlags.Const) !== 0;
+}
+
+function inicializadorConstante(nodo) {
+  if (ts.isIdentifier(nodo)) {
+    const declaracion = declaracionEnScope(nodo.text, nodo);
+    if (!declaracion || !esConstante(declaracion) || !declaracion.initializer) return null;
+    return declaracion.initializer;
+  }
+  if (!ts.isPropertyAccessExpression(nodo) || !ts.isIdentifier(nodo.expression) || !ts.isIdentifier(nodo.name)) return null;
+  const objeto = declaracionEnScope(nodo.expression.text, nodo);
+  if (!objeto || !esConstante(objeto) || !objeto.initializer) return null;
+  const literal = sinEnvoltura(objeto.initializer);
+  if (!ts.isObjectLiteralExpression(literal)) return null;
+  for (const propiedad of literal.properties) {
+    if (!ts.isPropertyAssignment(propiedad) || !ts.isIdentifier(propiedad.name)) continue;
+    if (propiedad.name.text === nodo.name.text) return propiedad.initializer;
+  }
+  return null;
+}
+
+/** El parámetro que lleva el SQL dentro de un envoltorio registrado (ENVOLTORIOS_SQL), por nombre y archivo. */
+function esParametroDeEnvoltorio(archivo, nodo) {
+  let actual = nodo.parent;
+  while (actual) {
+    if (ts.isFunctionLike(actual) && actual.parameters.some((p) => ts.isIdentifier(p.name) && p.name.text === nodo.text)) {
+      const nombre = nombreDeFuncion(actual);
+      return ENVOLTORIOS_SQL.some((e) => e.nombre === nombre && e.archivo === archivo.fileName && e.parametro === nodo.text);
+    }
+    actual = actual.parent;
+  }
+  return false;
+}
+
+function nombreDeFuncion(funcion) {
+  if (ts.isFunctionDeclaration(funcion) && funcion.name) return funcion.name.text;
+  const padre = funcion.parent;
+  if (padre && (ts.isVariableDeclaration(padre) || ts.isPropertyAssignment(padre)) && ts.isIdentifier(padre.name)) return padre.name.text;
+  if (ts.isMethodDeclaration(funcion) && ts.isIdentifier(funcion.name)) return funcion.name.text;
+  return null;
 }
 
 function esParametroSql(nodo) {
@@ -192,7 +317,8 @@ function esParametroSql(nodo) {
 function inicializadorDe(nodo) {
   if (ts.isIdentifier(nodo)) {
     const declaracion = declaracionEnScope(nodo.text, nodo);
-    if (declaracion && ts.isVariableDeclaration(declaracion) && declaracion.initializer) {
+    // Solo `const`: una variable que se puede reasignar no dice qué SQL lleva al ejecutarse.
+    if (declaracion && esConstante(declaracion) && declaracion.initializer) {
       return declaracion.initializer;
     }
     return null;
@@ -201,10 +327,12 @@ function inicializadorDe(nodo) {
     return null;
   }
   const objeto = declaracionEnScope(nodo.expression.text, nodo);
-  if (!objeto || !ts.isVariableDeclaration(objeto) || !objeto.initializer || !ts.isObjectLiteralExpression(objeto.initializer)) {
+  // `{ ... } as const` también es un objeto literal: antes se saltaba la revisión de sus sentencias.
+  const literal = objeto && esConstante(objeto) && objeto.initializer ? sinEnvoltura(objeto.initializer) : null;
+  if (!literal || !ts.isObjectLiteralExpression(literal)) {
     return null;
   }
-  for (const propiedad of objeto.initializer.properties) {
+  for (const propiedad of literal.properties) {
     if (!ts.isPropertyAssignment(propiedad) || !ts.isIdentifier(propiedad.name)) continue;
     if (propiedad.name.text === nodo.name.text) return propiedad.initializer;
   }
@@ -285,8 +413,62 @@ function declaracionEnScope(nombre, desde) {
       }
       const variable = buscarVariable(actual, nombre);
       if (variable) return variable;
+      if (ts.isSourceFile(actual)) return buscarImportado(actual, nombre);
     }
     actual = actual.parent;
+  }
+  return null;
+}
+
+/**
+ * Una constante importada de un módulo del repo (`./x`, `../x` o `@/x`): se
+ * busca su `export const` en ese archivo para revisarla ahí. Un import de un
+ * paquete, o un archivo que no se puede leer, no se resuelve (no comprobable).
+ */
+const MODULOS = new Map();
+let leerModulo = (relativa) => {
+  const absoluta = path.join(RAIZ, relativa);
+  return existsSync(absoluta) ? readFileSync(absoluta, "utf8") : null;
+};
+
+/** Para las pruebas: de dónde lee la regla los módulos importados. */
+export function leerModulosDesde(lector) {
+  leerModulo = lector;
+  MODULOS.clear();
+}
+
+function buscarImportado(archivo, nombre) {
+  for (const sentencia of archivo.statements) {
+    if (!ts.isImportDeclaration(sentencia) || !ts.isStringLiteral(sentencia.moduleSpecifier)) continue;
+    const enlaces = sentencia.importClause?.namedBindings;
+    if (!enlaces || !ts.isNamedImports(enlaces)) continue;
+    const especificador = enlaces.elements.find((e) => e.name.text === nombre);
+    if (!especificador) continue;
+    const modulo = moduloDelRepo(archivo.fileName, sentencia.moduleSpecifier.text);
+    if (!modulo) return null;
+    const original = (especificador.propertyName ?? especificador.name).text;
+    for (const s of modulo.statements) {
+      if (!ts.isVariableStatement(s) || !s.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) continue;
+      const declaracion = s.declarationList.declarations.find((d) => ts.isIdentifier(d.name) && d.name.text === original);
+      if (declaracion) return declaracion;
+    }
+    return null;
+  }
+  return null;
+}
+
+function moduloDelRepo(desde, especificador) {
+  let base;
+  if (especificador.startsWith("./") || especificador.startsWith("../")) base = path.posix.join(path.posix.dirname(desde), especificador);
+  else if (especificador.startsWith("@/")) base = `src/${especificador.slice(2)}`;
+  else return null;
+  for (const relativa of [`${base}.ts`, `${base}/index.ts`, base]) {
+    if (MODULOS.has(relativa)) return MODULOS.get(relativa);
+    const texto = leerModulo(relativa);
+    if (texto === null) continue;
+    const fuente = ts.createSourceFile(relativa, texto, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    MODULOS.set(relativa, fuente);
+    return fuente;
   }
   return null;
 }
@@ -326,9 +508,11 @@ function ancestroFuncion(nodo) {
   return null;
 }
 
-function ubicar(archivo, nodo) {
-  const { line } = archivo.getLineAndCharacterOfPosition(nodo.getStart(archivo));
-  return `${archivo.fileName}:${line + 1}`;
+function ubicar(_archivo, nodo) {
+  // El nodo puede venir de otro módulo (una constante importada): se ubica en el suyo.
+  const fuente = nodo.getSourceFile();
+  const { line } = fuente.getLineAndCharacterOfPosition(nodo.getStart(fuente));
+  return `${fuente.fileName}:${line + 1}`;
 }
 
 function esArchivoCliente(texto) {
@@ -358,6 +542,8 @@ function esTexto(nombre) {
 function esServidor(ruta) {
   if (ruta.endsWith(".test.ts") || ruta.endsWith(".test.tsx")) return false;
   if (ruta.startsWith("src/server/") && ruta.endsWith(".ts")) return true;
+  // El núcleo lleva aplicarSentencia, la entrega del SQL al driver: también se revisa.
+  if (ruta.startsWith("src/nucleo/") && ruta.endsWith(".ts")) return true;
   if (ruta.startsWith("src/app/") && (ruta.endsWith("/route.ts") || ruta.endsWith("/acciones.ts"))) return true;
   return false;
 }

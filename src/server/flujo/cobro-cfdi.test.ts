@@ -40,7 +40,7 @@ function factura(uuid: string): Uint8Array {
 }
 
 /** Lo que `altaPrevia` compara, en el orden de los parámetros $3 a $11 del insert de expected_collections. */
-const COLUMNAS = ["origen", "cliente_nombre", "cliente_rfc", "concepto", "monto_centavos::text", "to_char(fecha_probable, 'YYYY-MM-DD')", "referencia", "cfdi_uuid", "creado_por::text"];
+const COLUMNAS = ["origen", "cliente_nombre", "cliente_rfc", "concepto", "monto_centavos", "fecha_probable", "referencia", "cfdi_uuid", "creado_por"];
 
 type Fila = { id: string; empresa: string; estado: string; valores: Record<string, string | null> };
 
@@ -59,9 +59,8 @@ function baseFalsa() {
         const p = params as readonly (string | number | null)[];
         if (/^select .+ from expected_collections where id = \$1 and company_id = \$2$/s.test(sql.trim())) {
           const fila = filas.find((f) => f.id === p[0] && f.empresa === p[1]);
-          const rows = fila
-            ? [Object.fromEntries([...sql.matchAll(/(?:select |, )(.+?) as (c\d+)/g)].map(([, expresion, alias]) => [alias, fila.valores[expresion!] ?? null]))]
-            : [];
+          // altaPrevia lee las columnas de SQL_ALTA_PREVIA por su nombre (cada una como texto).
+          const rows = fila ? [Object.fromEntries(COLUMNAS.map((columna) => [columna, fila.valores[columna] ?? null]))] : [];
           if (pendiente) {
             const otraAlta = pendiente;
             pendiente = undefined;
