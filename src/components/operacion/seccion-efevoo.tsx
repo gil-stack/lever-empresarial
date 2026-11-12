@@ -111,6 +111,15 @@ export function SeccionTarjetasEfevoo({ companyId, seccion }: { companyId: strin
 
           <section aria-labelledby="efevoo-asignar-titulo" className="efevoo-bloque">
             <h3 id="efevoo-asignar-titulo">Asignar una tarjeta</h3>
+            {seccion.empleados.filter((e) => e.porActivar).map((e) => (
+              <form key={e.id} action={activarEfevooAccion} className="efevoo-retomar" data-retomar={e.porActivar!.terminacion}>
+                <input type="hidden" name="companyId" value={companyId} />
+                <input type="hidden" name="llave" value={randomUUID()} />
+                <input type="hidden" name="tarjetaId" value={e.porActivar!.tarjetaId} />
+                <p>{e.nombre} tiene la tarjeta ****{e.porActivar!.terminacion} asignada sin activar: retómala antes de asignarle otra.</p>
+                <div className="acciones"><BotonEnviar>Retomar: activar ****{e.porActivar!.terminacion}</BotonEnviar></div>
+              </form>
+            ))}
             {seccion.inventario.length === 0 ? (
               <Vacio titulo="Sin plásticos en el inventario">{seccion.errorEfevoo ? "No se pudo leer el inventario de Efevoo." : "Efevoo no tiene plásticos disponibles."}</Vacio>
             ) : seccion.empleados.length === 0 ? (

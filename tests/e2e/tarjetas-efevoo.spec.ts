@@ -64,7 +64,9 @@ const ops = (tipo: string, estado?: string) =>
 
 /** Llena el formulario de asignación (los datos del titular no vuelven tras un rechazo: se escriben cada vez). */
 async function llenarAsignacion(page: Page, datos: { empleado: string; terminacion: string; ultimos8: string; correo?: string }): Promise<void> {
-  await page.getByLabel("Empleado").selectOption({ label: datos.empleado });
+  // La opción lleva el nombre y cuántas tarjetas tiene («· 1 tarjeta», «· sin tarjeta»).
+  const opcion = page.getByLabel("Empleado").locator("option", { hasText: datos.empleado });
+  await page.getByLabel("Empleado").selectOption((await opcion.getAttribute("value"))!);
   await page.getByLabel("Plástico del inventario").selectOption({ label: `Terminación ${datos.terminacion}` });
   await page.getByLabel("Últimos 8 dígitos del plástico").fill(datos.ultimos8);
   await page.getByLabel("Nombre(s)").fill("PAULA");
@@ -156,10 +158,24 @@ test.describe("Tarjetas (Efevoo) en Operación", () => {
     await expect(page.locator("li[data-operacion='asignacion'][data-estado='fallida']")).toContainText("Código 401");
     expect((await estadoFalso()).tarjetas.find((t) => t.id === 563)!.email).toBe("");
     await captura(page, "o3-asignacion-401");
+    // PC2-2: el selector dice cuántas tarjetas tiene cada quien.
+    await expect(page.getByLabel("Empleado").locator("option", { hasText: EMPLEADOS_CEIBA[0] })).toHaveText(`${EMPLEADOS_CEIBA[0]} · 1 tarjeta`);
+    // Ahora la asignación pasa pero la activación cae (401): la tarjeta queda asignada sin activar.
+    await simular({ metodo: "activateCard", falla: "401" });
     await llenarAsignacion(page, { empleado: EMPLEADOS_CEIBA[1], terminacion: "0168", ultimos8: "40000168" });
     await page.getByRole("button", { name: "Asignar y activar la tarjeta" }).click();
+    await page.waitForURL(/aviso=efevoo_tarjeta_asignada_sin_activar/);
+    await expect(page.locator("li[data-tarjeta='0168']")).toContainText("Asignada");
+    // A esa persona no se le ofrece asignar otra: se ofrece retomar la que tiene.
+    const opcionMarco = page.getByLabel("Empleado").locator("option", { hasText: EMPLEADOS_CEIBA[1] });
+    await expect(opcionMarco).toBeDisabled();
+    await expect(opcionMarco).toContainText("tiene ****0168 sin activar");
+    await captura(page, "o3-asignada-sin-activar");
+    await page.getByRole("button", { name: "Retomar: activar ****0168" }).click();
     await page.waitForURL(/aviso=efevoo_tarjeta_activada/);
     await expect(page.locator("li[data-tarjeta='0168']")).toContainText("Activa");
+    await expect(page.getByRole("button", { name: /Retomar/ })).toHaveCount(0);
+    await expect(page.getByLabel("Empleado").locator("option", { hasText: EMPLEADOS_CEIBA[1] })).toHaveText(`${EMPLEADOS_CEIBA[1]} · 1 tarjeta`);
   });
 
   test("O4: cancelar pide la terminación escrita y es irreversible", async () => {

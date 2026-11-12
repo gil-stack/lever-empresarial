@@ -85,7 +85,8 @@ export type SeccionEfevoo = {
   errorEfevoo: string | null;
   tarjetas: TarjetaEnOperacion[];
   operaciones: OperacionEnOperacion[];
-  empleados: { id: string; nombre: string }[];
+  /** Empleados activos, con cuántas tarjetas vivas tienen y la que tengan asignada sin activar (PC2-2). */
+  empleados: { id: string; nombre: string; tarjetas: number; porActivar: { tarjetaId: string; terminacion: string } | null }[];
   expediente: { razonSocial: string; rfc: string; conDomicilio: boolean; representantes: number; correo: string | null } | null;
 };
 
@@ -176,7 +177,11 @@ export async function leerSeccionEfevoo(ctx: ContextoDePersonal, companyIdCrudo:
         cerrable: (estado === "pendiente" || estado === "incierta") && o.sobre_cancelada === true,
       };
     }),
-    empleados: lever.empleados,
+    empleados: lever.empleados.map((e) => {
+      const suyas = lever.tarjetas.filter((t) => t.employee_id === e.id && t.estado !== "cancelada");
+      const asignada = suyas.find((t) => t.estado === "asignada");
+      return { ...e, tarjetas: suyas.length, porActivar: asignada ? { tarjetaId: texto(asignada.id), terminacion: texto(asignada.terminacion) } : null };
+    }),
     expediente: lever.version ? {
       razonSocial: textoONulo(lever.version.razon_social) ?? texto(lever.empresa.razon_social),
       rfc: textoONulo(lever.version.rfc) ?? texto(lever.empresa.rfc),
