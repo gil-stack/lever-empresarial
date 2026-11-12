@@ -297,10 +297,13 @@ function mismaOperacion(previa: ReturnType<typeof leerFila>, entrada: EntradaOpe
 }
 
 /** 3. Resuelve con su evento. */
-async function resolver(q: Quien, op: OperacionEfevoo, estado: Exclude<EstadoOperacion, "pendiente">, idEfevoo: string | null, codigo: string | null, auditar: Auditar, idMovimiento: string | null = null) {
+async function resolver(
+  q: Quien, op: OperacionEfevoo, estado: Exclude<EstadoOperacion, "pendiente">, idEfevoo: string | null, codigo: string | null, auditar: Auditar,
+  idMovimiento: string | null = null, evento: { accion: "efevoo_cierre_manual"; motivo: string } | null = null,
+) {
   const codigoBase = codigoParaBase(codigo);
   return conContexto(q.base, async (consulta) => {
-    await auditar(consulta, q.actor, { accion: `efevoo_${estado}`, identificador: op.id, cambio: cambioDe(op, estado, codigoBase) });
+    await auditar(consulta, q.actor, { accion: evento?.accion ?? `efevoo_${estado}`, identificador: op.id, motivo: evento?.motivo ?? null, cambio: cambioDe(op, estado, codigoBase) });
     await aplicarSentencia(consulta, "select efevoo_resolver_operacion($1, $2, $3, $4, $5)", [op.id, estado, idEfevoo, codigoBase, idMovimiento]);
     const fila = await leerOperacion(consulta, op.companyId, { id: op.id });
     if (!fila) throw new ErrorDeDominio("base_no_disponible");
@@ -373,6 +376,21 @@ export async function ejecutarOperacionEfevoo(
   if (resultado.estado === "confirmada" && (op.tipo === "alta_cliente" || op.tipo === "asignacion") && !idEfevoo) {
     resultado = { estado: "incierta", codigo: "sin_id" };
   }
+  // Un alta que Efevoo no confirmó (sin respuesta, o «Cliente previamente registrado», código 1) se busca de
+  // inmediato por su correo: si el cliente con ese correo existe y no está vinculado, es esta empresa.
+  if (op.tipo === "alta_cliente" && resultado.estado === "incierta") {
+    try {
+      const fila = await conContexto(q.base, (consulta) => leerOperacion(consulta, op.companyId, { id: op.id }));
+      const hallada = fila ? await buscarEnEfevoo(fila, d.efevoo, op.companyId, q, d.ambiente) : null;
+      if (hallada?.aparecio && hallada.idEfevoo) {
+        idEfevoo = hallada.idEfevoo;
+        resultado = { estado: "confirmada", codigo: "conciliada" };
+      }
+    } catch (error) {
+      if (!(error instanceof ErrorEfevoo)) throw error;
+      // Efevoo no respondió al buscar: queda incierta, como estaba.
+    }
+  }
   const resuelta = await resolver(q, op, resultado.estado, resultado.estado === "confirmada" ? idEfevoo : null, resultado.codigo, d.auditar);
   return { ...resuelta, nueva: true };
 }
@@ -409,7 +427,7 @@ export async function conciliarOperacionEfevoo(
   const op = publica(fila);
   if (op.estado === "confirmada" || op.estado === "fallida") return { resultado: "ya_resuelta", operacion: op };
 
-  const encontrada = await buscarEnEfevoo(fila, d.efevoo, companyId, q);
+  const encontrada = await buscarEnEfevoo(fila, d.efevoo, companyId, q, d.ambiente);
   if (encontrada.ambigua) return { resultado: "ambigua", operacion: op };
   if (encontrada.aparecio) {
     return { resultado: "confirmada", operacion: await resolver(q, op, "confirmada", encontrada.idEfevoo, "conciliada", d.auditar, encontrada.idMovimiento ?? null) };
@@ -424,6 +442,7 @@ async function buscarEnEfevoo(
   efevoo: ClienteEfevoo,
   companyId: string,
   q: Quien,
+  ambiente: "sandbox" | "produccion",
 ): Promise<{ aparecio: boolean; idEfevoo: string | null; idMovimiento?: string | null; ambigua?: boolean }> {
   const no = { aparecio: false, idEfevoo: null };
   const ambigua = { ...no, ambigua: true };
@@ -463,21 +482,21 @@ async function buscarEnEfevoo(
       return cuadran[0] ? { aparecio: true, idEfevoo: null, idMovimiento: String(cuadran[0].id) } : no;
     }
     case "alta_cliente": {
-      const razon = await conContexto(q.base, async (consulta) => {
-        const r = await aplicarSentencia(consulta, "select razon_social from companies where id = $1", [companyId]);
-        return r.rows[0] ? texto(registro(r.rows[0]).razon_social) : null;
-      });
-      if (!razon) return no;
-      const vinculados = await conContexto(q.base, async (consulta) => {
-        const r = await aplicarSentencia(consulta, "select idep_cliente from efevoo_clientes", []);
-        return new Set(r.rows.map((x) => Number(registro(x).idep_cliente)));
-      });
-      // getClientList da el nombre (la razón social con la que se dio de alta) y no filtra por correo.
-      const candidatos = (await efevoo.listarClientes())
-        .filter((c) => !vinculados.has(c.idepCliente) && c.nombre?.trim().toLowerCase() === razon.trim().toLowerCase())
-        .map((c) => c.idepCliente);
-      // Solo con uno: dos clientes con la misma razón social no se adivinan.
-      return candidatos.length === 1 ? { aparecio: true, idEfevoo: String(candidatos[0]) } : no;
+      // Por CORREO (PC2-1): en Efevoo el correo es único (un segundo alta con el mismo da «Cliente previamente
+      // registrado»), la razón social no. getClientList no filtra por correo: se lee cada cliente sin vincular.
+      const { correo, vinculados } = await conContexto(q.base, async (consulta) => ({
+        correo: await correoDeAltaEfevoo(consulta, companyId, ambiente),
+        vinculados: new Set((await aplicarSentencia(consulta, "select idep_cliente from efevoo_clientes", [])).rows.map((x) => Number(registro(x).idep_cliente))),
+      }));
+      if (!correo) return no;
+      const candidatos = (await efevoo.listarClientes()).filter((c) => !vinculados.has(c.idepCliente)).slice(0, 200);
+      const iguales: number[] = [];
+      for (const c of candidatos) {
+        const detalle = await efevoo.leerCliente(c.idepCliente);
+        if (detalle.correo === correo) iguales.push(c.idepCliente);
+      }
+      if (iguales.length > 1) return ambigua;
+      return iguales.length === 1 ? { aparecio: true, idEfevoo: String(iguales[0]) } : no;
     }
     default: {
       const id = op.tipo === "asignacion" ? op.tarjetaInventario : op.tarjetaIdEfevoo;
@@ -495,6 +514,39 @@ async function buscarEnEfevoo(
       return listo ? { aparecio: true, idEfevoo: op.tipo === "asignacion" ? String(id) : null } : no;
     }
   }
+}
+
+/**
+ * El correo con que Lever da de alta a la empresa en Efevoo: en sandbox, uno de prueba derivado de su id
+ * (`empresa-<12 del id>@lever.test`); en producción, el del expediente vigente. Lo usan el alta y su conciliación.
+ */
+export async function correoDeAltaEfevoo(consulta: Consulta, companyId: string, ambiente: "sandbox" | "produccion"): Promise<string | null> {
+  if (ambiente === "sandbox") return `empresa-${companyId.replace(/-/g, "").slice(0, 12)}@lever.test`;
+  const r = (await aplicarSentencia(consulta,
+    "select correo from kyb_versiones where company_id = $1 and estado = 'enviada' order by numero desc limit 1", [companyId])).rows[0];
+  const correo = r ? textoONulo(registro(r).correo) : null;
+  return correo ? correo.trim().toLowerCase() : null;
+}
+
+/**
+ * Cierre manual (PC2-4): una operación abierta sobre una tarjeta CANCELADA, que la conciliación ya no puede leer,
+ * la cierra Administración de la plataforma a los 10 minutos, con motivo. El evento dice que el resultado en
+ * Efevoo es desconocido (efevoo_cierre_manual). La operación queda fallida con «cierre_manual» y no se puede
+ * reintentar: la base lo exige todo.
+ */
+export async function cerrarOperacionManualEfevoo(
+  ctx: ContextoDeTenant | null | undefined,
+  companyId: string,
+  operacionId: string,
+  motivo: string,
+  deps?: DependenciasOperacion,
+): Promise<OperacionEfevoo> {
+  if (!UUID.test(operacionId)) throw new ErrorDeDominio("entrada_invalida");
+  const q = quien(ctx, companyId);
+  const d = dependencias(deps);
+  const fila = await conContexto(q.base, (consulta) => leerOperacion(consulta, companyId, { id: operacionId }));
+  if (!fila) throw new ErrorDeDominio("operacion_no_encontrada");
+  return resolver(q, publica(fila), "fallida", null, "cierre_manual", d.auditar, null, { accion: "efevoo_cierre_manual", motivo });
 }
 
 /** FechaHora de Efevoo ("2026-11-11 22:37:22", hora de México, UTC−6 sin horario de verano) → milisegundos. */

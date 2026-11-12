@@ -5,11 +5,13 @@ import { aplicarSentencia, conContexto } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { centavos, centavosONulo, instante, registro, texto, textoONulo } from "../flujo/lectura";
 import { exigirEnOperacion } from "../operacion/permisos";
-import { clienteHttpEfevoo, type ClienteEfevoo, type MovimientoCliente, type Titular } from "./cliente";
+import { clienteHttpEfevoo, type ClienteEfevoo, type DatosEmpresa, type MovimientoCliente, type Titular } from "./cliente";
 import { configEfevoo, type ConfigEfevoo } from "./config";
 import { ErrorEfevoo } from "./errores";
 import {
+  cerrarOperacionManualEfevoo,
   conciliarOperacionEfevoo,
+  correoDeAltaEfevoo,
   ejecutarOperacionEfevoo,
   llamadaEstandar,
   reintentarOperacionEfevoo,
@@ -66,6 +68,8 @@ export type OperacionEnOperacion = {
   conciliable: boolean;
   /** Fallida porque no apareció, de un tipo que Lever puede repetir solo con lo que guarda. */
   reintentable: boolean;
+  /** Abierta sobre una tarjeta cancelada desde hace 10 minutos o más: se puede cerrar a mano (PC2-4). */
+  cerrable: boolean;
 };
 
 export type SeccionEfevoo = {
@@ -120,7 +124,8 @@ export async function leerSeccionEfevoo(ctx: ContextoDePersonal, companyIdCrudo:
       consulta,
       `select o.id, o.tipo, o.estado, o.referencia, o.monto_centavos::text as monto_centavos, coalesce(o.terminacion, t.terminacion) as terminacion,
               o.codigo_efevoo, o.creada_en, o.reintento_de,
-              exists (select 1 from efevoo_operaciones r where r.reintento_de = o.id) as reintentada
+              exists (select 1 from efevoo_operaciones r where r.reintento_de = o.id) as reintentada,
+              (t.estado = 'cancelada' and o.creada_en <= now() - interval '10 minutes') as sobre_cancelada
          from efevoo_operaciones o left join efevoo_tarjetas t on t.id = o.tarjeta_id
         where o.company_id = $1 order by o.creada_en desc, o.id limit 50`,
       [companyId],
@@ -168,6 +173,7 @@ export async function leerSeccionEfevoo(ctx: ContextoDePersonal, companyIdCrudo:
         reintentoDe: textoONulo(o.reintento_de),
         conciliable: estado === "pendiente" || estado === "incierta",
         reintentable: estado === "fallida" && o.codigo_efevoo === "no_aparecio" && o.reintentada !== true && REINTENTABLES.has(tipo),
+        cerrable: (estado === "pendiente" || estado === "incierta") && o.sobre_cancelada === true,
       };
     }),
     empleados: lever.empleados,
@@ -224,30 +230,44 @@ async function armarAlta(ctx: ContextoDePersonal, companyId: string, config: Con
     const representantes = (await aplicarSentencia(
       consulta, "select nombre, rfc, curp from kyb_representantes where version_id = $1 order by nombre, id limit 4", [texto(version.id)],
     )).rows.map(registro);
-    return { version, representantes };
+    return { version, representantes, correo: await correoDeAltaEfevoo(consulta, companyId, config.ambiente) };
   });
-  const v = datos.version;
-  const razonSocial = textoONulo(v.razon_social);
+  const alta = datosDeAltaEfevoo(config.ambiente, datos.version, datos.representantes, datos.correo);
+  return async (_op, efevoo) => String((await efevoo.crearCliente(alta)).idepCliente);
+}
+
+/**
+ * Lo que se manda en el alta. En sandbox (PC2-3, decisión del líder) solo la razón social y el correo de prueba:
+ * el sandbox es compartido con terceros, así que no salen el RFC, el teléfono, el domicilio ni los representantes
+ * del expediente. En producción, el expediente completo.
+ */
+export function datosDeAltaEfevoo(
+  ambiente: "sandbox" | "produccion",
+  version: Record<string, unknown>,
+  representantes: Record<string, unknown>[],
+  correo: string | null,
+): DatosEmpresa {
+  const razonSocial = textoONulo(version.razon_social);
   if (!razonSocial) throw new ErrorDeDominio("expediente_sin_datos");
-  const correo = config.ambiente === "sandbox" ? `empresa-${companyId.replace(/-/g, "").slice(0, 12)}@lever.test` : textoONulo(v.correo);
   if (!correo) throw new ErrorDeDominio("expediente_sin_correo");
-  return async (_op, efevoo) => String((await efevoo.crearCliente({
+  if (ambiente === "sandbox") return { correo, razonSocial };
+  return {
     correo,
     razonSocial,
-    rfc: textoONulo(v.rfc),
-    telefono: textoONulo(v.telefono),
+    rfc: textoONulo(version.rfc),
+    telefono: textoONulo(version.telefono),
     domicilio: {
-      calle: textoONulo(v.domicilio_calle),
-      numExt: textoONulo(v.domicilio_exterior),
-      numInt: textoONulo(v.domicilio_interior),
-      colonia: textoONulo(v.domicilio_colonia),
-      municipio: textoONulo(v.domicilio_municipio),
-      codigoPostal: textoONulo(v.domicilio_codigo_postal),
-      estado: textoONulo(v.domicilio_entidad),
-      pais: textoONulo(v.domicilio_pais),
+      calle: textoONulo(version.domicilio_calle),
+      numExt: textoONulo(version.domicilio_exterior),
+      numInt: textoONulo(version.domicilio_interior),
+      colonia: textoONulo(version.domicilio_colonia),
+      municipio: textoONulo(version.domicilio_municipio),
+      codigoPostal: textoONulo(version.domicilio_codigo_postal),
+      estado: textoONulo(version.domicilio_entidad),
+      pais: textoONulo(version.domicilio_pais),
     },
-    representantes: datos.representantes.map((r) => ({ nombre: texto(r.nombre), rfc: textoONulo(r.rfc), curp: textoONulo(r.curp) })),
-  })).idepCliente);
+    representantes: representantes.map((p) => ({ nombre: texto(p.nombre), rfc: textoONulo(p.rfc), curp: textoONulo(p.curp) })),
+  };
 }
 
 // O2 --------------------------------------------------------------------------------
@@ -418,6 +438,21 @@ export async function reintentarEnEfevoo(ctx: ContextoDePersonal, entrada: { com
     return reintentarOperacionEfevoo(ctx, companyId, entrada.operacionId, llave(entrada.llave), await armarAlta(ctx, companyId, config), deps);
   }
   return reintentarOperacionEfevoo(ctx, companyId, entrada.operacionId, llave(entrada.llave), llamadaEstandar, deps);
+}
+
+/** Cierre manual de una operación abierta sobre una tarjeta cancelada, con motivo (PC2-4). */
+export async function cerrarEnEfevoo(
+  ctx: ContextoDePersonal,
+  entrada: { companyId: unknown; operacionId: unknown; motivo: unknown },
+  deps?: Dependencias,
+) {
+  const companyId = exigir(ctx, entrada.companyId);
+  if (typeof entrada.operacionId !== "string" || !UUID.test(entrada.operacionId)) throw new ErrorDeDominio("entrada_invalida");
+  const motivo = typeof entrada.motivo === "string" ? entrada.motivo.replace(/\s+/g, " ").trim() : "";
+  if (motivo.length < 10) throw new ErrorDeDominio("motivo_corto");
+  if (motivo.length > 500) throw new ErrorDeDominio("motivo_largo");
+  if (/[\p{Cc}\p{Cf}]/u.test(motivo)) throw new ErrorDeDominio("motivo_invalido");
+  return cerrarOperacionManualEfevoo(ctx, companyId, entrada.operacionId, motivo, deps);
 }
 
 // Ayudantes ----------------------------------------------------------------------------

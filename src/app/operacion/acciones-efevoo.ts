@@ -8,6 +8,7 @@ import {
   activarTarjetaEnEfevoo,
   asignarTarjetaEnEfevoo,
   cancelarTarjetaEnEfevoo,
+  cerrarEnEfevoo,
   conciliarEnEfevoo,
   darDeAltaEnEfevoo,
   depositarDineroDePrueba,
@@ -149,6 +150,17 @@ export async function conciliarEfevooAccion(formData: FormData): Promise<void> {
     return fallo(error, companyId);
   }
   listo(companyId, aviso);
+}
+
+export async function cerrarEfevooAccion(formData: FormData): Promise<void> {
+  const ctx = await exigirContextoOperacion();
+  const companyId = texto(formData, "companyId");
+  try {
+    await cerrarEnEfevoo(ctx, { companyId, operacionId: texto(formData, "operacionId"), motivo: texto(formData, "motivo") });
+  } catch (error) {
+    return fallo(error, companyId);
+  }
+  listo(companyId, "efevoo_cierre_manual");
 }
 
 export async function reintentarEfevooAccion(formData: FormData): Promise<void> {

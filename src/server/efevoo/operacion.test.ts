@@ -7,6 +7,7 @@ import {
   asignarTarjetaEnEfevoo,
   cancelarTarjetaEnEfevoo,
   darDeAltaEnEfevoo,
+  datosDeAltaEfevoo,
   depositarDineroDePrueba,
   leerSeccionEfevoo,
   validarTitular,
@@ -84,5 +85,32 @@ describe("Efevoo en Operación: los datos del titular", () => {
     assert.equal(titular.correo, "paula@empresa.mx");
     assert.equal(titular.segundoApellido, "");
     assert.equal(ultimos8, "40001363");
+  });
+});
+
+describe("Efevoo en Operación: lo que sale en el alta (PC2-3)", () => {
+  const version = {
+    razon_social: "Ceiba SA de CV", rfc: "CEE170101AB2", telefono: "5512345678", domicilio_calle: "Reforma", domicilio_exterior: "10",
+    domicilio_interior: null, domicilio_colonia: "Centro", domicilio_municipio: "Cuauhtémoc", domicilio_codigo_postal: "06600",
+    domicilio_entidad: "CDMX", domicilio_pais: "México",
+  };
+  const representantes = [{ nombre: "Rosa Pérez Ríos", rfc: "PERR800101AB1", curp: "PERR800101MDFRSS09" }];
+
+  it("en sandbox solo la razón social y el correo de prueba: nada del expediente sale al sandbox compartido", () => {
+    const alta = datosDeAltaEfevoo("sandbox", version, representantes, "empresa-abc@lever.test");
+    assert.deepEqual(alta, { correo: "empresa-abc@lever.test", razonSocial: "Ceiba SA de CV" });
+    assert.doesNotMatch(JSON.stringify(alta), /CEE170101AB2|5512345678|Reforma|PERR800101/);
+  });
+
+  it("en producción, el expediente completo", () => {
+    const alta = datosDeAltaEfevoo("produccion", version, representantes, "contacto@ceiba.mx");
+    assert.equal(alta.rfc, "CEE170101AB2");
+    assert.equal(alta.domicilio?.calle, "Reforma");
+    assert.deepEqual(alta.representantes, [{ nombre: "Rosa Pérez Ríos", rfc: "PERR800101AB1", curp: "PERR800101MDFRSS09" }]);
+  });
+
+  it("sin razón social o sin correo no hay alta", () => {
+    assert.throws(() => datosDeAltaEfevoo("sandbox", { razon_social: null }, [], "a@lever.test"), /expediente_sin_datos/);
+    assert.throws(() => datosDeAltaEfevoo("produccion", version, [], null), /expediente_sin_correo/);
   });
 });

@@ -126,6 +126,7 @@ CREATE TABLE efevoo_tarjetas (
 
 CREATE INDEX efevoo_tarjetas_empresa_idx ON efevoo_tarjetas (company_id, estado, creada_en);
 CREATE INDEX efevoo_tarjetas_empleado_idx ON efevoo_tarjetas (employee_id) WHERE employee_id IS NOT NULL;
+CREATE UNIQUE INDEX efevoo_tarjetas_una_por_activar ON efevoo_tarjetas (employee_id) WHERE estado = 'asignada' AND employee_id IS NOT NULL;
 
 COMMENT ON TABLE efevoo_tarjetas IS
   'Tarjeta de Efevoo de la empresa. Solo la terminación y el nombre en la tarjeta; nunca el número completo, el CVV ni los datos del titular. La escribe efevoo_resolver_operacion.';
@@ -280,6 +281,10 @@ CREATE UNIQUE INDEX efevoo_operaciones_abierta_estado ON efevoo_operaciones (tar
   WHERE estado IN ('pendiente', 'incierta') AND tipo IN ('activacion', 'asignacion_cliente', 'bloqueo', 'desbloqueo');
 CREATE UNIQUE INDEX efevoo_operaciones_abierta_cancelacion ON efevoo_operaciones (tarjeta_id)
   WHERE estado IN ('pendiente', 'incierta') AND tipo = 'cancelacion';
+-- Un empleado puede tener varias tarjetas (viáticos, combustible, virtuales), pero no recibe otra mientras
+-- tenga una asignación abierta o una tarjeta asignada sin activar (decisión del líder, PC2-2).
+CREATE UNIQUE INDEX efevoo_operaciones_asignacion_por_empleado ON efevoo_operaciones (employee_id)
+  WHERE estado IN ('pendiente', 'incierta') AND tipo = 'asignacion' AND employee_id IS NOT NULL;
 CREATE UNIQUE INDEX efevoo_operaciones_abierta_inventario ON efevoo_operaciones (ambiente, tarjeta_inventario)
   WHERE estado IN ('pendiente', 'incierta') AND tarjeta_inventario IS NOT NULL;
 CREATE UNIQUE INDEX efevoo_operaciones_abierta_empresa ON efevoo_operaciones (company_id, tipo)
@@ -427,12 +432,18 @@ BEGIN
     IF NEW.employee_id IS NOT NULL AND NOT efevoo_empleado_activo(NEW.company_id, NEW.employee_id) THEN
       RAISE EXCEPTION 'empleado_no_activo';
     END IF;
+    IF NEW.employee_id IS NOT NULL AND (
+      EXISTS (SELECT 1 FROM efevoo_tarjetas t WHERE t.employee_id = NEW.employee_id AND t.estado = 'asignada')
+      OR EXISTS (SELECT 1 FROM efevoo_operaciones o WHERE o.employee_id = NEW.employee_id AND o.tipo = 'asignacion' AND o.estado IN ('pendiente', 'incierta'))
+    ) THEN
+      RAISE EXCEPTION 'empleado_con_tarjeta_por_activar';
+    END IF;
   END IF;
 
   -- Un reintento sale de una operación fallida igual (tipo, tarjeta, plástico y monto).
   IF NEW.reintento_de IS NOT NULL THEN
     SELECT * INTO anterior FROM efevoo_operaciones o WHERE o.id = NEW.reintento_de AND o.company_id = NEW.company_id;
-    IF NOT FOUND OR anterior.estado <> 'fallida'
+    IF NOT FOUND OR anterior.estado <> 'fallida' OR anterior.codigo_efevoo = 'cierre_manual'
        OR (anterior.tipo, anterior.tarjeta_id, anterior.tarjeta_inventario, anterior.monto_centavos)
           IS DISTINCT FROM (NEW.tipo, NEW.tarjeta_id, NEW.tarjeta_inventario, NEW.monto_centavos) THEN
       RAISE EXCEPTION 'reintento_no_valido';
@@ -487,8 +498,18 @@ BEGIN
   -- 10 minutos después de asentarla: antes, Efevoo podría estar procesándola
   -- todavía y un reintento sería un doble cargo. Lo mismo para una pendiente que
   -- se quedó sin resolver (la llamada se cortó antes de anotar el resultado).
-  IF op.estado = 'incierta' AND p_estado = 'fallida' AND p_codigo IS DISTINCT FROM 'no_aparecio' THEN
+  IF op.estado = 'incierta' AND p_estado = 'fallida' AND p_codigo IS DISTINCT FROM 'no_aparecio' AND p_codigo IS DISTINCT FROM 'cierre_manual' THEN
     RAISE EXCEPTION 'transicion_no_valida';
+  END IF;
+  -- Cierre manual (PC2-4): una operación abierta sobre una tarjeta CANCELADA, que la conciliación ya no puede
+  -- leer, la cierra Administración de la plataforma a los 10 minutos, con motivo (en su evento). El resultado en
+  -- Efevoo queda desconocido: por eso no se puede reintentar (sería cargar dos veces lo que sí pasó).
+  IF p_codigo = 'cierre_manual' AND (
+    p_estado <> 'fallida' OR op.estado NOT IN ('pendiente', 'incierta') OR NOT efevoo_es_administracion(op.operator_id)
+    OR clock_timestamp() < op.creada_en + interval '10 minutes'
+    OR NOT EXISTS (SELECT 1 FROM efevoo_tarjetas t WHERE t.id = op.tarjeta_id AND t.estado = 'cancelada')
+  ) THEN
+    RAISE EXCEPTION 'cierre_manual_no_valido';
   END IF;
   IF p_codigo = 'no_aparecio' AND (p_estado <> 'fallida' OR clock_timestamp() < op.creada_en + interval '10 minutes') THEN
     RAISE EXCEPTION 'conciliacion_prematura';
@@ -504,7 +525,7 @@ BEGIN
   -- Una pendiente solo falla por un rechazo que diga que Efevoo no hizo nada
   -- (los mismos del ciclo, RECHAZOS_DEFINITIVOS en src/server/efevoo/operaciones.ts)
   -- o porque no apareció a los 10 minutos. Cualquier otro código la deja incierta.
-  IF op.estado = 'pendiente' AND p_estado = 'fallida' AND p_codigo IS DISTINCT FROM 'no_aparecio'
+  IF op.estado = 'pendiente' AND p_estado = 'fallida' AND p_codigo IS DISTINCT FROM 'no_aparecio' AND p_codigo IS DISTINCT FROM 'cierre_manual'
      AND (p_codigo IS NULL OR NOT p_codigo = ANY (ARRAY[
        'validacion', 'id_cero', '115', '122', '101', '163', '112', '401',
        'saldo_insuficiente', 'sin_tarjeta', 'tarjeta_sin_titular', 'sin_vinculo', 'sin_monto'

@@ -90,33 +90,46 @@ async function ciclo(url: string, falso: EfevooFalso): Promise<void> {
     await assert.rejects(p, (e: unknown) => e instanceof ErrorDeDominio && e.codigo === codigo, codigo);
   };
 
-  // O1: alta. Doble clic: la misma llave regresa la misma operación y Efevoo tiene un solo cliente.
+  // O1: alta. En el sandbox compartido ya hay un HOMÓNIMO (otra integración, otro correo): idepCliente 300.
+  // PC2-1: el alta de Lever no responde (timeout con efecto) y se concilia en el acto por CORREO, no por nombre.
+  const correoAlfa = `empresa-${E.replace(/-/g, "").slice(0, 12)}@lever.test`;
+  await clienteHttpEfevoo(config).crearCliente({ correo: "otro-integrador@lever.test", razonSocial: RAZON });
   const llaveAlta = randomUUID();
   const crear = (ctx: ContextoDeTenant) => ejecutarOperacionEfevoo(ctx, entrada({ tipo: "alta_cliente", llave: llaveAlta }),
-    async (_op, efevoo) => String((await efevoo.crearCliente({ correo: "alfa-ciclo@lever.test", razonSocial: RAZON })).idepCliente), deps());
+    async (_op, efevoo) => String((await efevoo.crearCliente({ correo: correoAlfa, razonSocial: RAZON })).idepCliente), deps());
+  falso.simular({ metodo: "createClient", falla: "timeout" });
   const alta = await crear(personal);
-  assert.deepEqual([alta.estado, alta.idEfevoo, alta.nueva], ["confirmada", "300", true]);
+  assert.deepEqual([alta.estado, alta.idEfevoo, alta.codigoEfevoo, alta.nueva], ["confirmada", "301", "conciliada", true], "con un homónimo, el alta se concilia por correo");
   const otraVez = await crear(personal);
   assert.deepEqual([otraVez.id, otraVez.nueva], [alta.id, false]);
-  assert.equal(falso.estado().clientes.length, 1, "doble clic en el alta: un solo cliente en Efevoo");
-  assert.equal(uno<{ idep_cliente: number }>(`select idep_cliente from efevoo_clientes where company_id = '${E}'`)[0]!.idep_cliente, 300);
+  assert.equal(falso.estado().clientes.length, 2, "doble clic en el alta: un solo cliente de Lever en Efevoo");
+  assert.equal(uno<{ idep_cliente: number }>(`select idep_cliente from efevoo_clientes where company_id = '${E}'`)[0]!.idep_cliente, 301);
+
+  // PC2-1: «Cliente previamente registrado» (el alta sí ocurrió antes y Lever no se enteró) vincula por correo en el acto.
+  const beta = await darDeAltaComoDuena(url, personal, { rfc: "CABL840215RF4", razonSocial: RAZON, codigoPostal: "06600", regimen: "612", usoCfdi: "G03" },
+    { demostracion: false, corridoPor: "pruebas@ejemplo.mx" });
+  const correoBeta = `empresa-${beta.id.replace(/-/g, "").slice(0, 12)}@lever.test`;
+  const previa = await clienteHttpEfevoo(config).crearCliente({ correo: correoBeta, razonSocial: RAZON });
+  const altaBeta = await ejecutarOperacionEfevoo(personal, { tipo: "alta_cliente", llave: randomUUID(), companyId: beta.id },
+    async (_op, efevoo) => String((await efevoo.crearCliente({ correo: correoBeta, razonSocial: RAZON })).idepCliente), deps());
+  assert.deepEqual([altaBeta.estado, altaBeta.idEfevoo, altaBeta.codigoEfevoo], ["confirmada", String(previa.idepCliente), "conciliada"]);
 
   // O2: depósito de prueba con su saldo previo anotado; doble clic deja uno.
   const efevoo = deps().efevoo!;
   const llaveDeposito = randomUUID();
-  const depositar = () => saldoDeEmpresaEfevoo(efevoo, 300).then((saldo) => ejecutarOperacionEfevoo(personal,
+  const depositar = () => saldoDeEmpresaEfevoo(efevoo, 301).then((saldo) => ejecutarOperacionEfevoo(personal,
     entrada({ tipo: "deposito_prueba", llave: llaveDeposito, montoCentavos: 100_000, saldoPrevioCentavos: saldo }), llamadaEstandar, deps()));
   const deposito = await depositar();
   assert.deepEqual([deposito.estado, deposito.saldoPrevioCentavos], ["confirmada", 0]);
   assert.equal((await depositar()).id, deposito.id);
-  assert.equal(falso.estado().clientes[0]!.saldoCentavos, 100_000, "doble clic en el depósito: un solo depósito");
+  assert.equal(falso.estado().clientes.find((c) => c.id === 301)!.saldoCentavos, 100_000, "doble clic en el depósito: un solo depósito");
   // La misma llave con otro monto es un error, no la operación de antes.
   await rechazo(ejecutarOperacionEfevoo(personal, entrada({ tipo: "deposito_prueba", llave: llaveDeposito, montoCentavos: 200_000 }), llamadaEstandar, deps()),
     "intento_con_otros_datos");
 
   // E1-14: un depósito sin respuesta que sí ocurrió se encuentra por monto, saldo previo y hora (guarda el id del movimiento).
   falso.simular({ metodo: "clientBalance", falla: "timeout" });
-  const depIncierto = await saldoDeEmpresaEfevoo(efevoo, 300).then((saldo) => ejecutarOperacionEfevoo(personal,
+  const depIncierto = await saldoDeEmpresaEfevoo(efevoo, 301).then((saldo) => ejecutarOperacionEfevoo(personal,
     entrada({ tipo: "deposito_prueba", montoCentavos: 50_000, saldoPrevioCentavos: saldo }), llamadaEstandar, deps()));
   assert.deepEqual(pick(depIncierto), ["incierta", "timeout"]);
   const depConciliado = await conciliarOperacionEfevoo(personal, E, depIncierto.id, deps());
@@ -154,7 +167,7 @@ async function ciclo(url: string, falso: EfevooFalso): Promise<void> {
   }), async (op, ef) => String((await ef.asignarTarjeta({ producto: 16, subproducto: 19, idepCliente: op.idepCliente!, ultimos8: ultimos8De("0168"), titular: { ...TITULAR, correo: "otra-ciclo@lever.test" } })).id), deps());
   const T2 = uno<{ id: string }>(`select id from efevoo_tarjetas where id_efevoo = ${otra.idEfevoo}`)[0]!.id;
   await ejecutarOperacionEfevoo(personal, entrada({ tipo: "activacion", tarjetaId: T2 }), llamadaEstandar, deps());
-  const saldoEmpresa = (await saldoDeEmpresaEfevoo(efevoo, 300))!;
+  const saldoEmpresa = (await saldoDeEmpresaEfevoo(efevoo, 301))!;
   falso.simular({ metodo: "fundCard", falla: "timeout_sin_efecto", idCard: 563 });
   const grande = await ejecutarOperacionEfevoo(liberador, entrada({ tipo: "carga", tarjetaId: T2, montoCentavos: saldoEmpresa - 1_000 }), llamadaEstandar, deps());
   assert.deepEqual(pick(grande), ["incierta", "timeout"]);
