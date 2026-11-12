@@ -13,6 +13,7 @@
 1 tests/cobranza/reglas-base.test.ts
 1 tests/flujo/runway-postgres.test.ts
 1 tests/proveedores/pagos-proveedores.test.ts
+1 tests/proveedores/migracion-pagos-postgres.test.ts
 1 tests/inicio/resumen-postgres.test.ts
 1 tests/aislamiento/aislamiento.test.ts
 1 tests/operacion/portal-postgres.test.ts

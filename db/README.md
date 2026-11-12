@@ -17,6 +17,10 @@ export DATABASE_URL_UNPOOLED
 
 El script aplica `db/migrations/` en orden numérico, dentro de una transacción, y anota cada archivo en `schema_migrations`. Volver a correrlo no repite una versión ya aplicada. Hace falta `psql` en el PATH.
 
+Hay una reparación de compatibilidad para las versiones históricas de `0022_pagos_proveedores`: si al llegar a `0030` falta `supplier_payment_request_history`, el runner aplica y registra primero `0034_pagos_proveedores_hardening`. La `0030` necesita esa tabla. La reparación comparte la transacción y el candado de migraciones; no repite `0022` ni borra sus marcas. Con el historial ya presente, `0034` se aplica en su posición numérica normal.
+
+La `0034` agrega las columnas, el historial, los permisos y los triggers que faltaban en aquellas versiones de `0022`, conservando las reglas posteriores de `0028` y el `search_path` seguro de `0029`. También completa `anulado_en` de cargos ya cancelados y retira autorizaciones cuya CLABE ya está cerrada o cuyo proveedor ya está inactivo/bloqueado. Conserva la instrucción y resolución anteriores en el historial, con un evento de sistema en bitácora. Los cargos, documentos e historial existentes se conservan; no se reconstruyen transiciones antiguas desconocidas. La comparación de las tres versiones publicadas de `0022` contra una instalación nueva vive en `tests/proveedores/migracion-pagos-postgres.test.ts`.
+
 En Vercel, `DATABASE_URL` es el string agrupado que lee el servidor. `DATABASE_URL_UNPOOLED` es el directo y solo lo usa este comando. Este corte no lo agrega a production ni migra ese libro. Cada rama de Neon se migra con su propio directo, a mano. Los valores se quedan en Vercel y no en el repositorio.
 
 ## Tablas
