@@ -11,6 +11,7 @@ import { iniciarEfevooFalso, type EfevooFalso } from "../efevoo/servidor-falso";
 import { CORREOS, sembrarRecorridos } from "./siembra";
 import { sembrarCobranza } from "./siembra-cobranza";
 import { sembrarRunway } from "./siembra-runway";
+import { sembrarEfevoo } from "./siembra-efevoo";
 
 import { hoyEnMexico } from "../../src/dominio/personas";
 import { cerrarConexion } from "../../src/nucleo/db";
@@ -119,6 +120,7 @@ export async function iniciarEntorno(): Promise<void> {
     await sembrarRecorridos(owner, arranque);
     await sembrarCobranza(owner);
     await sembrarRunway(owner);
+    await sembrarEfevoo(owner);
     await cerrarConexion();
     await levantarBlobLocal();
     await levantarEfevooFalso();
