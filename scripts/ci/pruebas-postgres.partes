@@ -24,6 +24,7 @@
 2 tests/autenticacion/recuperacion-factor-nuevo.test.ts
 2 tests/pld/pld-postgres.test.ts
 2 tests/pld/migracion-postgres.test.ts
+2 tests/pld/actualizacion-postgres.test.ts
 2 tests/flujo/runway-reglas-base.test.ts
 2 tests/autenticacion/seguridad-cuentas.test.ts
 2 tests/aislamiento/telefono.test.ts

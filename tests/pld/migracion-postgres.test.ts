@@ -72,7 +72,7 @@ describe("0030 sobre una base en uso: lock_timeout de 2 s desde su primera sente
       exigirBaseDesechable();
       await conBaseDesechable(urlAdmin, async (urlDuena) => {
         for (const archivo of readdirSync(MIGRACIONES).sort()) {
-          if (archivo.endsWith(".sql") && !archivo.startsWith("0030_")) aplicarArchivo(urlDuena, join(MIGRACIONES, archivo));
+          if (archivo.endsWith(".sql") && archivo < "0030_") aplicarArchivo(urlDuena, join(MIGRACIONES, archivo));
         }
         const conectar = async () => {
           const c = new pg.Client({ connectionString: urlDuena });
