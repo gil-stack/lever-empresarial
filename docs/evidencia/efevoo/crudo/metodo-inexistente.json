@@ -1,0 +1,12 @@
+{
+  "pedido": {
+    "method": "noExiste",
+    "payload": {}
+  },
+  "http": 401,
+  "ms": 534,
+  "cuerpo": {
+    "code": 401,
+    "message": "Unauthorized"
+  }
+}

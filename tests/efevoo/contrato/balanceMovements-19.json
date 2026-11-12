@@ -1,0 +1,74 @@
+{
+  "pedido": {
+    "method": "balanceMovements",
+    "payload": {
+      "idepCliente": 19,
+      "page": 1,
+      "pageSize": 5
+    }
+  },
+  "http": 200,
+  "ms": 1287,
+  "cuerpo": {
+    "response": {
+      "movements": [
+        {
+          "id": 120568,
+          "amount": 400,
+          "operation": "deposit",
+          "idepCliente": 19,
+          "clientName": "<clientName:20>",
+          "registerDate": "4/1/2026 5:22:52 PM",
+          "previousBalance": 4440.43,
+          "updatedBalance": 4840.43
+        },
+        {
+          "id": 120482,
+          "amount": 5000,
+          "operation": "deposit",
+          "idepCliente": 19,
+          "clientName": "<clientName:20>",
+          "registerDate": "2/26/2026 4:39:43 PM",
+          "previousBalance": -299.57,
+          "updatedBalance": 4700.43
+        },
+        {
+          "id": 120477,
+          "amount": 25,
+          "operation": "deposit",
+          "idepCliente": 19,
+          "clientName": "<clientName:20>",
+          "registerDate": "2/26/2026 2:29:11 PM",
+          "previousBalance": 75.43,
+          "updatedBalance": 100.43
+        },
+        {
+          "id": 120476,
+          "amount": 500,
+          "operation": "withdraw",
+          "idepCliente": 19,
+          "clientName": "<clientName:20>",
+          "registerDate": "2/26/2026 2:21:11 PM",
+          "previousBalance": 575.43,
+          "updatedBalance": 75.43
+        },
+        {
+          "id": 120474,
+          "amount": 400,
+          "operation": "deposit",
+          "idepCliente": 19,
+          "clientName": "<clientName:20>",
+          "registerDate": "2/26/2026 2:21:00 PM",
+          "previousBalance": 175.43,
+          "updatedBalance": 575.43
+        }
+      ],
+      "page": 1,
+      "pageSize": 5
+    },
+    "status": {
+      "code": 0,
+      "message": "Message OK."
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "pedido": {
+    "method": "unfundCard",
+    "payload": {
+      "idCard": 560,
+      "emailCard": "<emailCard:23>",
+      "amount": 999999,
+      "observations": "Lever E1 sonda excede",
+      "reference": "9100004"
+    }
+  },
+  "http": 200,
+  "ms": 1215,
+  "cuerpo": {
+    "response": {
+      "id": 2665,
+      "idCard": 560,
+      "finalCardBalance": -999499,
+      "message": "Operación realizada correctamente"
+    },
+    "status": {
+      "code": 0,
+      "message": "Message OK."
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "pedido": {
+    "method": "getCardsList",
+    "payload": {
+      "status": [
+        "new"
+      ],
+      "size": 30,
+      "page": 1,
+      "currency": "MXN",
+      "card_bin": ""
+    }
+  },
+  "http": 200,
+  "ms": 776,
+  "cuerpo": {
+    "status": {
+      "code": "0",
+      "message": "Message OK."
+    },
+    "response": {
+      "total_cards": 0,
+      "cards_with_balance": 0,
+      "total_credit": 0,
+      "total_balance": 118866.14,
+      "remaining_credit": -118866.14,
+      "cards_in_stock": 5,
+      "current_page": 1,
+      "final_page": 0,
+      "cards": []
+    }
+  }
+}

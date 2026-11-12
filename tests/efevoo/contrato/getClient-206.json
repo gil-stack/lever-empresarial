@@ -1,0 +1,45 @@
+{
+  "pedido": {
+    "method": "getClient",
+    "payload": {
+      "idepCliente": 206
+    }
+  },
+  "http": 200,
+  "ms": 589,
+  "cuerpo": {
+    "response": {
+      "company": 1,
+      "email": "<email:34>",
+      "estatus": 1,
+      "idepCliente": 206,
+      "balance": 0,
+      "comercio": {
+        "razonSocial": "<razonSocial:22>",
+        "rfc": null,
+        "fechaConst": null,
+        "giroSocial": null,
+        "paisConst": null,
+        "telefono": null,
+        "email": "<email:34>"
+      },
+      "domicilio": {
+        "calle": null,
+        "numInt": null,
+        "numExt": null,
+        "colonia": null,
+        "municipio": null,
+        "codigoPostal": null,
+        "ciudad": null,
+        "estado": null,
+        "pais": null
+      },
+      "contactos": [],
+      "representantes": []
+    },
+    "status": {
+      "code": 0,
+      "message": "Message OK."
+    }
+  }
+}
