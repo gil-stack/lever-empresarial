@@ -1,0 +1,37 @@
+# Contraprueba de E2E_TODAY (mutación de tests/e2e/entorno.ts que no se sube): la siembra «de ayer» y «del domingo anterior»
+# Specs: aprobaciones, flujo-de-caja y nómina, con el código de main y con el arreglo (hoyEnMexico al usarlo).
+
+python3 - "$2" <<'PY'
+import sys
+p="tests/e2e/entorno.ts"; s=open(p).read()
+a="    process.env.E2E_TODAY = hoyEnMexico(new Date());"
+assert a in s
+desfase = "1" if sys.argv[1]=="ayer" else "((d.getUTCDay() + 6) % 7) + 1"
+s=s.replace(a,"    // CONTRAPRUEBA (no se sube): la siembra del día anterior / del domingo anterior.\n    { const d = new Date(`${hoyEnMexico(new Date())}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - (%s)); process.env.E2E_TODAY = d.toISOString().slice(0, 10); }" % desfase)
+open(p,"w").write(s)
+PY
+
+## main-ayer
+      |                            ^ TimeoutError: page.waitForResponse: Timeout 30000ms exceeded while waiting for event "response"
+  ✘  15 tests/e2e/nomina.spec.ts:46:5 › alta de una persona con nómina: doble clic guarda una sola ficha, un perfil y una CLABE (31.3s)
+    TimeoutError: page.waitForResponse: Timeout 30000ms exceeded while waiting for event "response"
+  1 failed
+  14 passed (1.2m)
+  3 did not run
+TimeoutError: page.waitForResponse: Timeout 30000ms exceeded while waiting for event "response"
+
+## arreglo-ayer
+  18 passed (34.7s)
+
+## main-domingo
+      |                            ^ TimeoutError: page.waitForResponse: Timeout 30000ms exceeded while waiting for event "response"
+  ✘  15 tests/e2e/nomina.spec.ts:46:5 › alta de una persona con nómina: doble clic guarda una sola ficha, un perfil y una CLABE (30.8s)
+    TimeoutError: page.waitForResponse: Timeout 30000ms exceeded while waiting for event "response"
+  1 failed
+  14 passed (55.7s)
+  3 did not run
+TimeoutError: page.waitForResponse: Timeout 30000ms exceeded while waiting for event "response"
+
+## arreglo-domingo
+  18 passed (28.3s)
+

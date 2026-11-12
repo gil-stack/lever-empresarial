@@ -1,0 +1,45 @@
+  ✘   1 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (3.6s)
+  ✘   2 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez (1.9s)
+  ✓   3 tests/e2e/fondo-pruebas.ts:236:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (5.0s)
+  ✘   4 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana (2.5s)
+  ✘   5 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 2 › estable (3.2s)
+  ✘   6 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 1 › estable (2.9s)
+  ✓   7 tests/e2e/brillo-del-fondo.spec.ts:24:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (483ms)
+  ✘   8 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez (1.8s)
+  ✘   9 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana (2.2s)
+  ✘  10 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 2 › estable (2.8s)
+  ✘  11 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 1 › estable (2.8s)
+  ✘  12 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms (4.3s)
+  ✘  13 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez (2.2s)
+  ✘  14 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez (1.9s)
+  ✘  15 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms (3.9s)
+  ✘  16 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana (2.2s)
+  ✓  17 tests/e2e/fondo-pruebas.ts:236:13 › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (5.7s)
+  ✘  18 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (3.9s)
+  ✘  19 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms (4.0s)
+  ✘  20 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (3.5s)
+  ✘  21 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 2 › arrastrar la ventana (2.2s)
+  ✘  22 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (3.5s)
+  ✘  23 tests/e2e/fondo-pruebas.ts:279:17 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms (3.9s)
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":2,"motor":4},"maximo":{"escena":[41,41],"motor":[41,41]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":2,"motor":2},"maximo":{"escena":[54,54],"motor":[54,54]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":2,"motor":4},"maximo":{"escena":[82,82],"motor":[82,82]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":2,"motor":2},"maximo":{"escena":[82,82],"motor":[82,82]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":2,"motor":2},"maximo":{"escena":[41,41],"motor":[41,41]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":62,"motor":62},"maximo":{"escena":[54,54],"motor":[54,54]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":30,"motor":100},"maximo":{"escena":[41,41],"motor":[41,41]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":102,"motor":102},"maximo":{"escena":[82,82],"motor":[82,82]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":102,"motor":102},"maximo":{"escena":[41,41],"motor":[41,41]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":2,"motor":2},"maximo":{"escena":[82,82],"motor":[82,82]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":2,"motor":2},"maximo":{"escena":[109,109],"motor":[109,109]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":62,"motor":62},"maximo":{"escena":[109,109],"motor":[109,109]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":116,"motor":116},"maximo":{"escena":[82,82],"motor":[82,82]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":2,"motor":4},"maximo":{"escena":[41,41],"motor":[41,41]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":2,"motor":4},"maximo":{"escena":[82,82],"motor":[82,82]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":2,"motor":2},"maximo":{"escena":[41,41],"motor":[41,41]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":28,"motor":326},"maximo":{"escena":[41,41],"motor":[41,41]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":30,"motor":96},"maximo":{"escena":[82,82],"motor":[82,82]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":30,"motor":328},"maximo":{"escena":[82,82],"motor":[82,82]}}
+    Error: asignaciones a width/height con el mismo valor: {"repetidas":{"escena":116,"motor":116},"maximo":{"escena":[41,41],"motor":[41,41]}}
+  20 failed
+  3 passed (1.3m)

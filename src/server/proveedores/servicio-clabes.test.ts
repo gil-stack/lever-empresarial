@@ -13,7 +13,17 @@ const PERSONA = "22222222-2222-4222-8222-222222222222";
 const PROVEEDOR = "33333333-3333-4333-8333-333333333333";
 const VIGENTE = "002180701150123452";
 const NUEVA = "646180701150123452";
-const SESION = { superficie: "cliente" as const, segundoFactor: { metodo: "totp" as const, en: new Date() } };
+// r66-N4: el factor se fecha en cada uso, no al cargar el módulo (como SESION_SOFIPO, tests/operacion/apoyo-alta-regulada.ts):
+// 1 s atrás porque factorReciente lee la hora antes que el factor y exige una edad ≥ 0.
+const SESION = {
+  superficie: "cliente" as const,
+  segundoFactor: {
+    metodo: "totp" as const,
+    get en(): Date {
+      return new Date(Date.now() - 1_000);
+    },
+  },
+};
 
 describe("historial de la CLABE del proveedor", () => {
   it("cierra la vigente y deja la anterior", async () => {

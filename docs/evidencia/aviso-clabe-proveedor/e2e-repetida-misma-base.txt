@@ -1,0 +1,12 @@
+# P3 de la revisión (r67-P3): la e2e de M-1 repetida 10 veces sobre la misma base, sin reiniciarla
+
+## de89f7c7 (RFC al azar entre 9 valores)
+  4 failed
+  6 passed (1.5m)
+- link "Ese RFC ya es un proveedor. No entra otra vez.":
+
+## Con la homoclave al azar del patrón del SAT (14,256 valores)
+  10 passed (27.9s)
+
+## pagos-proveedores.spec.ts completo con el cambio
+  8 passed (26.3s)

@@ -1400,9 +1400,12 @@ GRANT EXECUTE ON FUNCTION cobranza_tomar_aviso_fallido(uuid) TO plataforma_clien
 
 -- r63o: suelta la reserva con lo que resultó: agrega quiénes lo recibieron y a quiénes les falló. r63p: se cierra solo
 -- si en esta vuelta le llegó a todas las personas activas (p_cerrar) y ya no falta nadie a quien se le haya intentado
--- antes: alguien que falló y hoy no está activo deja el aviso abierto, en silencio, hasta los 7 días.
+-- antes: alguien que falló y hoy no está activo deja el aviso abierto, en silencio, hasta los 7 días. r63q-1: quien
+-- tiene la baja efectiva (`baja_en` <= hoy en México; no se puede cancelar) sale de faltan: ya no hay a quién esperar.
+-- La suspensión y quitar un rol sí se revierten, así que esas personas se siguen esperando. r63q-2: devuelve cuántas
+-- personas siguen en faltan, para que el evento de la bitácora diga a cuántas les falta (no solo las de esta vuelta).
 CREATE FUNCTION cobranza_soltar_aviso_fallido(p_id uuid, p_recibieron uuid[], p_fallaron uuid[], p_cerrar boolean)
-RETURNS void
+RETURNS integer
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
@@ -1422,13 +1425,21 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'retenido_ya_procesado';
   END IF;
-  faltan := ARRAY(SELECT DISTINCT x FROM unnest(faltan) x WHERE x <> ALL (recibieron) ORDER BY x);
+  faltan := ARRAY(
+    SELECT DISTINCT x FROM unnest(faltan) x
+     WHERE x <> ALL (recibieron)
+       AND NOT EXISTS (
+         SELECT 1 FROM employees e
+          WHERE e.company_id = app_empresa() AND e.user_id = x
+            AND e.baja_en <= (timezone('America/Mexico_City', clock_timestamp()))::date)
+     ORDER BY x);
   UPDATE collection_held_events h
      SET aviso_recibieron = recibieron,
          aviso_faltan = faltan,
          aviso_cerrado = h.aviso_cerrado OR (coalesce(p_cerrar, false) AND faltan = '{}'),
          aviso_tomado_en = NULL
    WHERE h.id = p_id;
+  RETURN cardinality(faltan);
 END;
 $$;
 

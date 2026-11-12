@@ -1,0 +1,64 @@
+  ✘   1 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado sin GPU (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (6.9s)
+  ✘   2 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado sin GPU (emulado) a DPR 1 › el búfer del motor crece una vez (2.9s)
+  ✘   3 tests/e2e/fondo-pruebas.ts:239:13 › fondo animado en un navegador sin GPU a DPR 1 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (3.0s)
+  ✘   4 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado sin GPU (emulado) a DPR 2 › arrastrar la ventana (7.8s)
+  ✘   5 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado sin GPU (emulado) a DPR 2 › estable (5.6s)
+  ✘   6 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado sin GPU (emulado) a DPR 1 › estable (2.9s)
+  ✘   7 tests/e2e/brillo-del-fondo.spec.ts:24:7 › fondo animado en un equipo que pinta cada cuadro en 40 ms › se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros (15.7s)
+  ✓   8 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el búfer del motor crece una vez (2.0s)
+  ✓   9 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado con GPU rápida (emulado) a DPR 1 › arrastrar la ventana (2.5s)
+  ✓  10 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado con GPU rápida (emulado) a DPR 2 › estable (3.2s)
+  ✓  11 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado con GPU rápida (emulado) a DPR 1 › estable (3.1s)
+  ✘  12 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado sin GPU (emulado) a DPR 2 › una tarea ajena de 800 ms (6.3s)
+  ✘  13 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado sin GPU (emulado) a DPR 2 › el búfer del motor crece una vez (5.8s)
+  ✓  14 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el búfer del motor crece una vez (2.1s)
+  ✓  15 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado con GPU rápida (emulado) a DPR 2 › una tarea ajena de 800 ms (4.3s)
+  ✘  16 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado sin GPU (emulado) a DPR 1 › arrastrar la ventana (3.9s)
+  ✘  17 tests/e2e/fondo-pruebas.ts:239:13 › fondo animado en un navegador sin GPU a DPR 2 › tras la primera pintura, a lo más un cuadro largo: el fondo se queda quieto y lo recuerda al recargar (4.2s)
+  ✘  18 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado sin GPU (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (13.9s)
+  ✘  19 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado sin GPU (emulado) a DPR 1 › una tarea ajena de 800 ms (4.1s)
+  ✓  20 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado con GPU rápida (emulado) a DPR 1 › el lienzo cambia de tamaño en cada cuadro (3.9s)
+  ✓  21 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado con GPU rápida (emulado) a DPR 2 › arrastrar la ventana (2.5s)
+  ✓  22 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado con GPU rápida (emulado) a DPR 2 › el lienzo cambia de tamaño en cada cuadro (3.9s)
+  ✓  23 tests/e2e/fondo-pruebas.ts:282:17 › fondo animado con GPU rápida (emulado) a DPR 1 › una tarea ajena de 800 ms (4.2s)
+    Error: cuadros largos del fondo después de su primera pintura: 75 ms (fondo 60, estilo, layout y pintado 0); 76 ms (fondo 60, estilo, layout y pintado 0); 75 ms (fondo 60, estilo, layout y pintado 0); 62 ms (fondo 60, estilo, layout y pintado 0); 62 ms (fondo 60, estilo, layout y pintado 0); 63 ms (fondo 60, estilo, layout y pintado 0); 62 ms (fondo 60, estilo, layout y pintado 0); 63 ms (fond
+    Expected: <= 2
+    Received:    76
+    Error: cuadros largos del fondo después de su primera pintura: 77 ms (fondo 60, estilo, layout y pintado 0); 75 ms (fondo 60, estilo, layout y pintado 0); 117 ms (fondo 101, estilo, layout y pintado 0); 76 ms (fondo 60, estilo, layout y pintado 0); 74 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fo
+    Expected: <= 2
+    Received:    20
+    Error: cuadros largos del fondo después de su primera pintura
+    Expected: <= 1
+    Received:    24
+    Error: cuadros largos del fondo después de su primera pintura: 161 ms (fondo 150, estilo, layout y pintado 0); 166 ms (fondo 150, estilo, layout y pintado 0); 166 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 161 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 167 ms (fondo 150, estilo, layout y pintado 0
+    Expected: <= 2
+    Received:    42
+    Error: cuadros largos del fondo después de su primera pintura: 163 ms (fondo 150, estilo, layout y pintado 0); 167 ms (fondo 150, estilo, layout y pintado 0); 166 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0
+    Expected: <= 1
+    Received:    15
+    Error: cuadros largos del fondo después de su primera pintura: 76 ms (fondo 60, estilo, layout y pintado 0); 76 ms (fondo 60, estilo, layout y pintado 0); 78 ms (fondo 60, estilo, layout y pintado 0); 73 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fond
+    Expected: <= 1
+    Received:    27
+    Error: pinturas hasta quedarse quieto
+    Expected: "2"
+    Received: "28"
+    Error: cuadros largos del fondo después de su primera pintura: 162 ms (fondo 150, estilo, layout y pintado 0); 168 ms (fondo 150, estilo, layout y pintado 0); 166 ms (fondo 150, estilo, layout y pintado 0); 151 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0
+    Expected: <= 1
+    Received:    18
+    Error: cuadros largos del fondo después de su primera pintura: 162 ms (fondo 150, estilo, layout y pintado 0); 168 ms (fondo 150, estilo, layout y pintado 0); 208 ms (fondo 191, estilo, layout y pintado 0); 164 ms (fondo 150, estilo, layout y pintado 0); 166 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0); 150 ms (fondo 150, estilo, layout y pintado 0
+    Expected: <= 2
+    Received:    10
+    Error: cuadros largos del fondo después de su primera pintura: 78 ms (fondo 60, estilo, layout y pintado 0); 76 ms (fondo 60, estilo, layout y pintado 0); 78 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 64 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 63 ms (fond
+    Expected: <= 2
+    Received:    42
+    Error: cuadros largos del fondo después de su primera pintura
+    Expected: <= 1
+    Received:    15
+    Error: cuadros largos del fondo después de su primera pintura: 163 ms (fondo 150, estilo, layout y pintado 0); 167 ms (fondo 150, estilo, layout y pintado 0); 166 ms (fondo 150, estilo, layout y pintado 0); 151 ms (fondo 150, estilo, layout y pintado 0); 151 ms (fondo 150, estilo, layout y pintado 0); 151 ms (fondo 150, estilo, layout y pintado 0); 151 ms (fondo 150, estilo, layout y pintado 0
+    Expected: <= 2
+    Received:    76
+    Error: cuadros largos del fondo después de su primera pintura: 78 ms (fondo 60, estilo, layout y pintado 0); 79 ms (fondo 60, estilo, layout y pintado 0); 78 ms (fondo 60, estilo, layout y pintado 0); 78 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fondo 60, estilo, layout y pintado 0); 60 ms (fond
+    Expected: <= 1
+    Received:    28
+  13 failed
+  10 passed (2.1m)

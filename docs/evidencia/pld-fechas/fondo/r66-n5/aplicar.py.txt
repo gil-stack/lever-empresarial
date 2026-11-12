@@ -1,0 +1,40 @@
+import sys, re
+s, raiz = sys.argv[1], sys.argv[2]
+def reemplazar(ruta, viejo, nuevo):
+    p = f"{raiz}/{ruta}"; t = open(p, encoding="utf8").read()
+    assert t.count(viejo) == 1, (ruta, viejo[:60]); open(p, "w", encoding="utf8").write(t.replace(viejo, nuevo))
+M, F, P = "src/components/apariencia/motor.ts", "src/components/apariencia/fondo-escena.tsx", "tests/e2e/fondo-pruebas.ts"
+if s == "S1":  # reasignar el búfer (WebGL y 2D) en cada dibujo
+    reemplazar(M, """        if (lienzo.width < ancho || lienzo.height < alto) {
+          lienzo.width = Math.max(lienzo.width, ancho);
+          lienzo.height = Math.max(lienzo.height, alto);
+        }""", """        lienzo.width = Math.max(lienzo.width, ancho);
+        lienzo.height = Math.max(lienzo.height, alto);""")
+    reemplazar(F, """      if (lienzo.width !== ancho || lienzo.height !== alto) {
+        lienzo.width = ancho;
+        lienzo.height = alto;
+      }""", """      lienzo.width = ancho;
+      lienzo.height = alto;""")
+elif s == "S2":  # dibujar a DPR completo (sin tope de 2 ni escala de 85 %)
+    reemplazar(F, "const dpr = Math.min(window.devicePixelRatio || 1, DPR_MAXIMO) * ESCALA;", "const dpr = (window.devicePixelRatio || 1) * 1;")
+elif s == "S4":  # el motor pinta la pantalla completa a DPR completo: el costo cae en la GPU, no en JS
+    reemplazar(M, """        if (lienzo.width < ancho || lienzo.height < alto) {
+          lienzo.width = Math.max(lienzo.width, ancho);
+          lienzo.height = Math.max(lienzo.height, alto);
+        }
+        gl.viewport(0, 0, ancho, alto);""", """        const W = Math.round(screen.width * devicePixelRatio), H = Math.round(screen.height * devicePixelRatio);
+        if (lienzo.width !== W || lienzo.height !== H) {
+          lienzo.width = W;
+          lienzo.height = H;
+        }
+        gl.viewport(0, 0, W, H);""")
+    reemplazar(M, "gl.uniform2f(u.uRes, ancho, alto);", "gl.uniform2f(u.uRes, W, H);")
+elif s == "P2a":  # sin GPU: el fondo nunca se detiene por un dibujo bloqueante ni por la ventana
+    reemplazar(F, "if (medido && ms > DIBUJO_BLOQUEANTE_MS) {", "if (false && medido && ms > DIBUJO_BLOQUEANTE_MS) {")
+    reemplazar(F, "if (motivo) {\n        quedarQuieto", "if (false && motivo) {\n        quedarQuieto")
+elif s == "P2b":  # sin GPU: solo se detiene por la ventana (sin el corte del dibujo bloqueante)
+    reemplazar(F, "if (medido && ms > DIBUJO_BLOQUEANTE_MS) {", "if (false && medido && ms > DIBUJO_BLOQUEANTE_MS) {")
+elif s == "VIEJO":  # criterio de antes: cualquier script del fondo en un cuadro largo
+    reemplazar(P, "const MS_DEL_FONDO_POR_CUADRO = 25;", "const MS_DEL_FONDO_POR_CUADRO = -1;")
+else: raise SystemExit("sabotaje desconocido " + s)
+print("aplicado", s)

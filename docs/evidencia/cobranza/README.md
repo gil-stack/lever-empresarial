@@ -237,6 +237,22 @@ Unos 120-130 MB son la base del proceso. El tope de RSS ahora lo pone un libro l
 |---|---|---|
 | r63o-1 (decisión del líder) Si la persona a la que le falló el correo dejaba de estar activa, la tarea cerraba el aviso sin evento (la bitácora quedaba en «pendientes: 1») y, si volvía dentro de los 7 días, no le llegaba | La fila guarda también a quiénes se les intentó y no les llegó (`aviso_faltan`). `cobranza_soltar_aviso_fallido` lo cierra solo si en esa vuelta le llegó a todas las personas activas y ya no falta nadie; mientras falte alguien que hoy no está activo, la tarea sigue revisando en silencio hasta los 7 días, sin evento. El evento queda solo cuando hay un intento de envío. `collection_held_events_aviso`: un aviso cerrado no tiene a nadie pendiente | `retenidos-postgres`: a Zoe le falla el correo, se la suspende el día 2 (sin evento, el aviso sigue abierto con ella pendiente) y se la reactiva el día 4: le llega una vez, con su llave, y queda un solo evento más. Con `d876248`: «sigue abierto, con quien falta», `0 !== 1` (el aviso quedaba cerrado el día 2) |
 
+**Pre-revisión de r63p (`75b78360`): dos P3 en el mismo PR (r63q)**
+
+| id | Arreglo | Prueba (cae sin el arreglo) |
+|---|---|---|
+| r63q-1 Si a quien le falló el correo se le daba la baja efectiva (que no se puede cancelar: `baja_ya_efectiva`), seguía en `aviso_faltan` y el aviso quedaba abierto en silencio los 7 días y después para siempre | `cobranza_soltar_aviso_fallido` quita de faltan a quien tiene `employees.baja_en` <= hoy en México (con la misma fecha que usa la selección de destinatarios). La suspensión y quitar un rol se pueden revertir, así que a esas personas se les sigue esperando. No existe una membresía revocada: `memberships` solo admite «invitada», «activa» y «suspendida» | `retenidos-postgres`, empresa Rho: a Zoe le falla el correo, se le da la baja efectiva y la tarea del día 1 cierra el aviso con faltan vacío, sin correo para ella. Sin el arreglo: «con la baja efectiva, el aviso se cierra», `0 !== 1` (`:558`) |
+| r63q-2 Ana y Bea fallan, se suspende a Bea y el día 1 a Ana le llega: el evento decía «pendientes: 0» con el aviso abierto y Bea en faltan | `soltar` devuelve cuántas personas siguen en faltan y corre antes del evento, en la misma transacción; el evento lleva ese número (más el envío que no se pudo preparar, si lo hubo) | `retenidos-postgres`, empresa Tau: el segundo evento dice `{enviados: 1, recibidos: 1, pendientes: 1}`. Sin el arreglo: «Bea sigue pendiente», `pendientes: '0'` (`:580`) |
+
+Gates de r63q, sobre la integración con el #66 y el #67 (Postgres 17 local en 5581): `typecheck` y `lint` limpios, `npm test` 689/689, `test:db` 131/131, `build`, el recorrido de retenidos (1/1, 16 s) y la parte 2 de la e2e, la de cobranza (27 pasan y 1 omitida, 58 s).
+
+**Integración con el #66 y el #67 (en `main` desde `cca9d98` y `4542b40`):**
+- **Merge del #66 (`b313a3d`):** chocó en `brillo-del-fondo.spec.ts`, que esta rama había borrado al reacomodar el fondo en 8 partes. La prueba de 40 ms vive en `velocidad-del-fondo.spec.ts`: ahí llevé los cambios del #66 (el nonce de la hoja, la medida de 8 px y `comprobarSinWebGl` a DPR 1 y 2). Esa prueba queda idéntica a la del #66, y las 22 llamadas a `pruebasDelFondo` son las mismas (23 pruebas del fondo).
+- **Sabotajes de -10 (S9 y S2w2) sobre el árbol integrado,** con los cuatro archivos del fondo: la base da 23 ✓ (89 s); S9 da 22 ✓ y 1 ✘ (87 s), y S2w2 también 22 ✓ y 1 ✘ (93 s). En los dos, la que cae es la de 40 ms (`velocidad-del-fondo.spec.ts:23`).
+- **Merge del #67 (`2a8dc69`):** sin conflictos. Suma una prueba: son 199 y el reparto real queda en 27, 28, 24, 24, 26, 22, 32 y 16 por parte. Con los máximos del CI, el modelo (`reparto-real.mjs`) da como peor la parte 6, con ~492 s (antes ~487), en la franja de documentar, y 38 pruebas normales después de una de GPU (antes 36).
+- **Las 8 partes en local, sobre `2a8dc69`:** 44, 59, 113, 95, 58, 57, 86 y 50 s; 194 pasan y 5 se omiten (199).
+- **Merge de `main` (`4542b40`) después de r63q:** `git diff 5a7aadc HEAD --stat` sale vacío.
+
 Gates de r63p (Postgres 17 local en 5581): `typecheck` y `lint` limpios, `npm test` 669/669, `test:db` 130/130, `build` y el recorrido de retenidos (1/1, 31 s).
 
 Gates de r63o (Postgres 17 local en 5581): `typecheck` y `lint` limpios, `npm test` 669/669, `test:db` 130/130 (la lista de `scripts/ci/pruebas-postgres.sh`, en serie), `build` y el recorrido de retenidos (1/1, 34 s).

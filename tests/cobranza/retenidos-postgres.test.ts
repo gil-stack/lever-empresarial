@@ -535,6 +535,51 @@ async function escenario(url: string): Promise<void> {
     assert.equal(eventosDe("evt_Vuelve01").length, 2);
     assert.equal(cuenta(`select count(*) from collection_held_events where id = '${idPi}' and aviso_cerrado and aviso_faltan = '{}'`), 1);
 
+    // r63q-1 A quien le falló el correo se le da de baja efectiva (no se puede cancelar: `baja_ya_efectiva`): ya no hay a
+    //    quién esperar y la tarea siguiente cierra el aviso. Antes quedaba abierto con ella en `aviso_faltan`, en silencio
+    //    los 7 días y después para siempre.
+    const rho = await empresa("RHO150301AB4", "601", "Rho Baja Retenidos", "acc_RetenidosRho0001");
+    const centroRho = await nombrarCentro(rho.admin, { nombre: "Administración" }, { ahora: HOY });
+    await persona(url, rho.admin, centroRho.id, "Zoe Finanzas", "zz-finanzas-rho@ejemplo.mx", ["tarjetahabiente", "finanzas"]);
+    const zoeRho = usuario("zz-finanzas-rho@ejemplo.mx");
+    retenidoFallido(rho.id, "evt_Baja01");
+    buzonO.length = 0;
+    assert.equal(await procesarRetenidos(rho.id, operador, depsO(enviadorO((m) => m.para.startsWith("zz-")))), 1);
+    const idRho = idDe("evt_Baja01");
+    assert.equal(cuenta(`select count(*) from collection_held_events where id = '${idRho}' and not aviso_cerrado and aviso_faltan = array['${zoeRho}'::uuid]`), 1);
+    ejecutar(url, `set session_replication_role = replica; update employees set baja_en = (timezone('America/Mexico_City', clock_timestamp()))::date
+      where company_id = '${rho.id}' and user_id = '${zoeRho}'; set session_replication_role = origin;`);
+    try {
+      relojMas("1 day");
+      await corridaO(enviadorO());
+    } finally {
+      relojMas(null);
+    }
+    assert.equal(cuenta(`select count(*) from collection_held_events where id = '${idRho}' and aviso_cerrado and aviso_faltan = '{}'`), 1, "con la baja efectiva, el aviso se cierra");
+    assert.equal(buzonO.filter((m) => m.para === "zz-finanzas-rho@ejemplo.mx").length, 0, "a quien ya se fue no le llega");
+
+    // r63q-2 Ana y Bea fallan; se suspende a Bea y el día 1 a Ana le llega: el evento dice «pendientes: 1» (Bea sigue en
+    //    `aviso_faltan`, el aviso abierto). Antes decía 0: contaba solo a quienes fallaron en esa vuelta, no a quien falta.
+    const tau = await empresa("TAU150301AB4", "601", "Tau Pendientes Retenidos", "acc_RetenidosTau0001");
+    const centroTau = await nombrarCentro(tau.admin, { nombre: "Administración" }, { ahora: HOY });
+    await persona(url, tau.admin, centroTau.id, "Ana Finanzas", "zz-ana-tau@ejemplo.mx", ["tarjetahabiente", "finanzas"]);
+    await persona(url, tau.admin, centroTau.id, "Bea Finanzas", "zz-bea-tau@ejemplo.mx", ["tarjetahabiente", "finanzas"]);
+    const beaTau = usuario("zz-bea-tau@ejemplo.mx");
+    retenidoFallido(tau.id, "evt_Pendientes01");
+    assert.equal(await procesarRetenidos(tau.id, operador, depsO(enviadorO((m) => m.para.startsWith("zz-")))), 1);
+    assert.deepEqual(eventosDe("evt_Pendientes01"), [{ enviados: "1", recibidos: "1", pendientes: "2", motivo: null }]);
+    const idTau = idDe("evt_Pendientes01");
+    ejecutar(url, `set session_replication_role = replica;
+      update memberships set estado = 'suspendida' where company_id = '${tau.id}' and user_id = '${beaTau}'; set session_replication_role = origin;`);
+    try {
+      relojMas("1 day");
+      await corridaO(enviadorO());
+    } finally {
+      relojMas(null);
+    }
+    assert.deepEqual(eventosDe("evt_Pendientes01").at(-1), { enviados: "1", recibidos: "1", pendientes: "1", motivo: null }, "Bea sigue pendiente");
+    assert.equal(cuenta(`select count(*) from collection_held_events where id = '${idTau}' and not aviso_cerrado and aviso_faltan = array['${beaTau}'::uuid]`), 1);
+
     // r63j-N2 a) El aviso toma el candado y retiene (la empresa sigue suspendida) mientras la reactivación espera ese
     //    mismo candado: al reactivar, el retenido ya está ahí y se aplica. Antes el aviso revisaba en una transacción y
     //    guardaba en otra: el retenido confirmaba después de la reactivación y de su procesado, y quedaba varado.

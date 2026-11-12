@@ -1,0 +1,14 @@
+#!/bin/zsh
+# estres.sh <vieja|nueva> <freno> <vueltas> [carga]: la prueba real «con GPU rápida (emulado) a DPR 1 › arrastrar la ventana»
+R=<scratchpad>/r66/fondo
+S=<scratchpad>
+cd <raíz del repo>
+cp $R/fondo-pruebas.$1-freno.ts tests/e2e/fondo-pruebas.ts
+export PATH=/opt/homebrew/opt/postgresql@17/bin:$PATH
+LC_ALL=C pg_ctl -D $S/pg5553 -l $S/pg5553.log -o "-p 5553 -c unix_socket_directories=''" start -w >/dev/null 2>&1
+cpid=""; if [ "${4:-0}" -gt 0 ]; then $R/carga.sh $4 3000 & cpid=$!; fi
+E2E_FRENO_FONDO=$2 E2E_ADMIN_URL=postgres://postgres@127.0.0.1:5553/postgres E2E_PUERTO=3153 E2E_BLOB_PUERTO=4896 npm run test:e2e -- tests/e2e/brillo-del-fondo.spec.ts -g "rápida.+DPR.1.+arrastrar" --repeat-each=$3 > $R/estres-$1-f$2.log 2>&1
+echo "salida=$?" >> $R/estres-$1-f$2.log
+[ -n "$cpid" ] && kill -TERM $cpid 2>/dev/null; wait $cpid 2>/dev/null
+LC_ALL=C pg_ctl -D $S/pg5553 stop -w >/dev/null 2>&1
+cp $R/fondo-pruebas.nueva.ts tests/e2e/fondo-pruebas.ts

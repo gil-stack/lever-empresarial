@@ -1,0 +1,20 @@
+# Con el #66 y el #67 (199 pruebas), sobre 2a8dc69: node reparto-real.mjs 8 tiempos-max-ci-con-cobranza.json
+parte 1/8:  27 pruebas ·  332 s de pruebas · ~422 s · normales después de GPU: 25 · fondo-pruebas.ts 199, accesibilidad 133
+parte 2/8:  28 pruebas ·  261 s de pruebas · ~351 s · normales después de GPU: 0 · aprobaciones 40, claves-repetidas 31, cobranza 190
+parte 3/8:  24 pruebas ·  347 s de pruebas · ~437 s · normales después de GPU: 0 · csp-evidencia 20, csp 252, demostracion 75
+parte 4/8:  24 pruebas ·  366 s de pruebas · ~456 s · normales después de GPU: 7 · demostracion 27, entrada 40, flujo-de-caja 53, fondo-pruebas.ts 156, invitacion 42, marco 47
+parte 5/8:  26 pruebas ·  280 s de pruebas · ~370 s · normales después de GPU: 0 · marco 20, nomina 31, operacion 228
+parte 6/8:  22 pruebas ·  402 s de pruebas · ~492 s · normales después de GPU: 2 · operacion 108, fondo-pruebas.ts 295
+parte 7/8:  32 pruebas ·  355 s de pruebas · ~445 s · normales después de GPU: 0 · fondo-pruebas.ts 7, pagos-proveedores 97, passkeys 16, personas 26, pld 209
+parte 8/8:  16 pruebas ·  359 s de pruebas · ~449 s · normales después de GPU: 4 · roles 27, fondo-pruebas.ts 327, velocidad-del-fondo 5
+peor parte ~492 s · normales después de una con GPU: 38
+
+# Las 8 partes en local (Chromium, 5581/3181/4881)
+parte 1: rc=0 44 s ·  27 passed (41.1s)
+parte 2: rc=0 59 s ·  1 skipped, 27 passed (55.4s)
+parte 3: rc=0 113 s ·  4 skipped, 20 passed (1.8m)
+parte 4: rc=0 95 s ·  24 passed (1.5m)
+parte 5: rc=0 58 s ·  26 passed (53.4s)
+parte 6: rc=0 57 s ·  22 passed (52.5s)
+parte 7: rc=0 86 s ·  32 passed (1.4m)
+parte 8: rc=0 50 s ·  16 passed (46.8s)
