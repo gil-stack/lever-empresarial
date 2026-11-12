@@ -1,0 +1,64 @@
+// Copia del optimizador del #60 (datos/e2e-reparto-optimizar.mjs.txt) con: ninguna prueba no pesada después de una pesada
+// en la misma parte (obligatorio), archivos candidatos por argumento, y el plan como llamadas para generar.mjs.
+import { readFileSync, writeFileSync } from "node:fs";
+import { pruebasEnOrden, grupos, repartir } from "./simulador.mjs";
+const lista = JSON.parse(readFileSync(process.argv[2], "utf8"));
+const T = JSON.parse(readFileSync(process.argv[3], "utf8"));
+const K = Number(process.env.K ?? 7);
+const FONDO = new Set(["fondo.spec.ts", "lienzo-del-fondo.spec.ts", "optica-retina.spec.ts", "velocidad-del-fondo.spec.ts", "animacion-del-fondo.spec.ts", "movimiento-del-fondo.spec.ts", "brillo-del-fondo.spec.ts", "color-del-fondo.spec.ts", "dpr-del-fondo.spec.ts", "escena-del-fondo.spec.ts", "nitidez-del-fondo.spec.ts", "parpadeo-del-fondo.spec.ts", "pintura-del-fondo.spec.ts", "nube-del-fondo.spec.ts", "pantalla-del-fondo.spec.ts", "potencia-del-fondo.spec.ts", "abanico-del-fondo.spec.ts", "rueda-del-fondo.spec.ts", "sombra-del-fondo.spec.ts"]);
+const todas = pruebasEnOrden(lista, "tests/e2e");
+const base = todas.filter((p) => !FONDO.has(p.archivo));
+const fondo = todas.filter((p) => FONDO.has(p.archivo));
+const tiempo = (k) => T[k] ?? T[k.replace(/tests\/e2e\/[\w-]+\.spec\.ts › fondo animado en un equipo/, "tests/e2e/fondo.spec.ts › fondo animado en un equipo")] ?? (() => { throw new Error("sin tiempo: " + k); })();
+const pesada = (p) => /con GPU rápida/.test(p.clave);
+const POS = { "animacion-del-fondo.spec.ts": "accesibilidad.spec.ts", "fondo.spec.ts": "flujo-de-caja.spec.ts", "lienzo-del-fondo.spec.ts": "invitacion.spec.ts", "movimiento-del-fondo.spec.ts": "marco.spec.ts", "optica-retina.spec.ts": "operacion.spec.ts", "velocidad-del-fondo.spec.ts": "tarjetas.spec.ts", "rueda-del-fondo.spec.ts": "roles.spec.ts", "sombra-del-fondo.spec.ts": "runway.spec.ts", "brillo-del-fondo.spec.ts": "aprobaciones.spec.ts", "color-del-fondo.spec.ts": "cobranza.spec.ts", "dpr-del-fondo.spec.ts": "demostracion.spec.ts", "escena-del-fondo.spec.ts": "entrada.spec.ts", "nitidez-del-fondo.spec.ts": "marco.spec.ts", "parpadeo-del-fondo.spec.ts": "pagos-proveedores.spec.ts", "pintura-del-fondo.spec.ts": "personas.spec.ts", "nube-del-fondo.spec.ts": "nomina.spec.ts", "pantalla-del-fondo.spec.ts": "pagos-proveedores.spec.ts", "potencia-del-fondo.spec.ts": "pld.spec.ts", "abanico-del-fondo.spec.ts": "" };
+const ARCH = (process.argv[5] ?? Object.keys(POS).join(",")).split(",");
+const archivosBase = [...new Set(base.map((p) => p.archivo))];
+let PESO_ACTUAL = Number(process.env.PESO ?? 1000);
+function evaluar(asig) {
+  const seq = [];
+  for (const f of ARCH) if (POS[f] === "" && asig[f]?.length) seq.push(...asig[f].map((p) => ({ ...p, archivo: f, paralelo: true, superior: null })));
+  for (const a of archivosBase) {
+    seq.push(...base.filter((p) => p.archivo === a));
+    for (const f of ARCH) if (POS[f] === a && asig[f]?.length) seq.push(...asig[f].map((p) => ({ ...p, archivo: f, paralelo: true, superior: null })));
+  }
+  if (seq.length !== todas.length) throw new Error(`se perdieron pruebas: ${seq.length} de ${todas.length}`);
+  const partes = repartir(grupos(seq), K);
+  const t = partes.map((pt) => pt.reduce((s, g) => s + g.pruebas.reduce((x, p) => x + (p.activa ? tiempo(p.clave) : 0), 0), 0));
+  let despues = 0;
+  for (const pt of partes) { let vista = false; for (const p of pt.flatMap((g) => g.pruebas)) { if (pesada(p)) vista = true; else if (vista) despues++; } }
+  const usados = ARCH.filter((f) => asig[f]?.length).length;
+  return { t, partes, max: Math.max(...t), despues, usados, costo: Math.max(...t) + PESO_ACTUAL * despues + 15 * usados };
+}
+let mejor = null;
+const rnd = (n) => Math.floor(Math.random() * n);
+for (let intento = 0; intento < Number(process.env.INTENTOS ?? 60); intento++) {
+  let asig = Object.fromEntries(ARCH.map((f) => [f, []]));
+  for (const p of fondo) asig[ARCH[rnd(ARCH.length)]].push(p);
+  let actual = evaluar(asig); let mejorLocal = null; const PASOS = Number(process.env.PASOS ?? 4000);
+  for (let paso = 0; paso < PASOS; paso++) {
+    const nuevo = Object.fromEntries(ARCH.map((f) => [f, [...asig[f]]]));
+    const llenos = ARCH.filter((f) => nuevo[f].length);
+    const de = llenos[rnd(llenos.length)];
+    const p = nuevo[de].splice(rnd(nuevo[de].length), 1)[0];
+    const a = ARCH[rnd(ARCH.length)];
+    nuevo[a].splice(rnd(nuevo[a].length + 1), 0, p);
+    PESO_ACTUAL = Number(process.env.PESO ?? 1000) * Math.min(1, (paso / PASOS) * 1.5); actual = evaluar(asig);
+    const e = evaluar(nuevo);
+    const temp = 60 * (1 - paso / PASOS); if (e.costo <= actual.costo || Math.random() < Math.exp((actual.costo - e.costo) / Math.max(temp, 0.01))) { asig = nuevo; actual = e; }
+    if (PESO_ACTUAL >= Number(process.env.PESO ?? 1000) && (!mejorLocal || e.costo < mejorLocal.e.costo)) mejorLocal = { asig: nuevo, e };
+  }
+  if (!mejor || mejorLocal.e.costo < mejor.e.costo) mejor = mejorLocal;
+}
+console.log("partes (s de pruebas):", mejor.e.t.map((x) => x.toFixed(0)).join(", "), "· peor", mejor.e.max.toFixed(0), "· no pesadas después de una pesada:", mejor.e.despues, "· archivos:", mejor.e.usados);
+mejor.e.partes.forEach((pt, i) => console.log(`  parte ${i + 1}: ${pt.flatMap((g) => g.pruebas).filter((p) => p.activa).length} pruebas · ${[...new Set(pt.flatMap((g) => g.pruebas).map((p) => p.archivo.replace(".spec.ts", "")))].join(", ")}`));
+const COD = { "una tarea ajena de 800 ms": "tarea", "el búfer del motor crece una vez": "buf", "el lienzo cambia de tamaño en cada cuadro": "lien", "estable": "est", "arrastrar la ventana": "arr" };
+const token = (c) => {
+  if (/en un equipo que pinta cada cuadro en 40 ms/.test(c)) return "cuarenta";
+  let m = /con GPU rápida \(emulado\) a DPR (\d) › (.*)$/.exec(c); if (m) return `gpu:${m[1]}:${COD[m[2]]}`;
+  m = /sin GPU \(emulado\) a DPR (\d) › (.*)$/.exec(c); if (m) return `sin:${m[1]}:${COD[m[2]]}`;
+  m = /en un navegador sin GPU a DPR (\d)/.exec(c); if (m) return `real:${m[1]}`;
+  throw new Error(c);
+};
+for (const f of ARCH) if (mejor.asig[f].length) console.log(f, "→", mejor.asig[f].map((p) => `${token(p.clave)} (${tiempo(p.clave).toFixed(0)})`).join(" | "));
+writeFileSync(process.argv[4], JSON.stringify(Object.fromEntries(ARCH.filter((f) => mejor.asig[f].length).map((f) => [f.replace(".spec.ts", ""), mejor.asig[f].map((p) => token(p.clave))])), null, 1));

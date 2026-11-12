@@ -17,6 +17,7 @@ import {
   IconoEntrar,
   IconoInicio,
   IconoPolitica,
+  IconoTarjetas,
   IconoPoliza,
   IconoSalir,
   IconoSeguridad,
@@ -416,7 +417,7 @@ export async function MarcoTelefono({
   children: ReactNode;
   /** Título de la barra en las pantallas internas; Inicio lleva el logotipo, como en el diseño. */
   titulo?: string;
-  actual?: "/telefono" | "/telefono/topes" | "/telefono/facturacion";
+  actual?: "/telefono" | "/telefono/topes" | "/telefono/tarjetas" | "/telefono/facturacion";
   empresaId?: string | null;
   /** Para leer la apariencia de la persona (escena y tono). */
   personaId?: string;
@@ -428,6 +429,7 @@ export async function MarcoTelefono({
   const secciones = [
     { ruta: "/telefono", etiqueta: "Inicio", Icono: IconoInicio },
     { ruta: "/telefono/topes", etiqueta: "Topes", Icono: IconoPolitica },
+    { ruta: "/telefono/tarjetas", etiqueta: "Tarjetas", Icono: IconoTarjetas },
     { ruta: "/telefono/facturacion", etiqueta: "Factura", Icono: IconoPoliza },
   ] as const;
   return (

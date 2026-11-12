@@ -58,6 +58,12 @@ export const RUTAS = [
     acceso: { tipo: "capacidad", alguna: ["telefono.facturacion.ver"] },
     conEmpresa: true,
   },
+  {
+    patron: "/telefono/tarjetas",
+    superficie: "telefono",
+    acceso: { tipo: "capacidad", alguna: ["telefono.tarjetas.ver"] },
+    conEmpresa: true,
+  },
   { patron: "/empresas", superficie: "cliente", acceso: { tipo: "sesion" }, conEmpresa: false },
   {
     // Abre con cualquier rol de consola: sin cliente.resumen.ver la página manda a Pendientes.
@@ -238,7 +244,9 @@ export const RUTAS = [
   // pronto» en las reales. Cada uno abre con la capacidad existente más cercana a su trabajo.
   { patron: "/consola/conciliacion", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.poliza.ver"] }, conEmpresa: true },
   { patron: "/consola/gastos", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] }, conEmpresa: true },
-  { patron: "/consola/tarjetas", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.resumen.ver"] }, conEmpresa: true },
+  // Tarjetas: con la empresa vinculada a Efevoo Pay, las tarjetas reales; si no, como los demás módulos en demostración.
+  { patron: "/consola/tarjetas", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.tarjetas.ver"] }, conEmpresa: true },
+  { patron: "/consola/tarjetas/[id]", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.tarjetas.ver"] }, conEmpresa: true },
   { patron: "/consola/movimientos", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.flujo.ver"] }, conEmpresa: true },
   { patron: "/consola/cuenta", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.resumen.ver"] }, conEmpresa: true },
   { patron: "/consola/internacional", superficie: "cliente", acceso: { tipo: "capacidad", alguna: ["cliente.proveedores.ver"] }, conEmpresa: true },

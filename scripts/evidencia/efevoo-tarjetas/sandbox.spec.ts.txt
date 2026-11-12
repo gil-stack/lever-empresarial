@@ -1,0 +1,129 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { expect, test, type Page } from "@playwright/test";
+
+import { consultar, sesionDe } from "./apoyo";
+import { CORREOS_TARJETAS } from "./siembra-tarjetas";
+
+/**
+ * Validación funcional de E2 contra el SANDBOX real de Efevoo (no corre en el CI; ver LEEME.md de esta carpeta).
+ * Con la excepción que autorizó Gil: «Tarjetas E2E» se vincula al cliente 19 y su tarjeta 560 (terminación 6509),
+ * y cada operación se revierte en el acto: carga $100.00 → retiro $100.00, carga $25.50 → retiro $25.50,
+ * bloqueo → desbloqueo. La tarjeta termina con el mismo saldo y `active`. No se cancela ni se reasigna nada.
+ * El correo del titular de la 560 lo pide la aplicación y solo vive en memoria.
+ */
+test.describe.configure({ mode: "serial" });
+
+const EMPRESA = () => process.env.E2E_TARJETAS_ID!;
+const ruta = (r: string) => `/c/${EMPRESA()}${r}`;
+const EVIDENCIA = process.env.E2E_CAPTURAS ?? "";
+const IDEP = 19;
+const TARJETA = { idEfevoo: 560, terminacion: "6509" };
+let tarjetaId = "";
+let fotos = 0;
+const referencias: { paso: string; tipo: string; estado: string; monto: string | null; referencia: string; codigo: string | null }[] = [];
+
+async function foto(page: Page, nombre: string): Promise<void> {
+  if (!EVIDENCIA) return;
+  mkdirSync(EVIDENCIA, { recursive: true });
+  fotos += 1;
+  for (const [ancho, sufijo] of [[1440, "escritorio"], [390, "telefono"]] as const) {
+    await page.setViewportSize({ width: ancho, height: 900 });
+    await page.screenshot({ path: join(EVIDENCIA, `sandbox-${String(fotos).padStart(2, "0")}-${nombre}-${sufijo}.jpg`), fullPage: true, type: "jpeg", quality: 70, animations: "disabled" });
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+}
+
+async function ultimaOperacion(paso: string) {
+  const [op] = await consultar<{ tipo: string; estado: string; monto: string | null; referencia: string; codigo: string | null }>(
+    `select tipo, estado, monto_centavos::text as monto, referencia, codigo_efevoo as codigo from efevoo_operaciones
+      where tarjeta_id = $1 order by creada_en desc limit 1`, [tarjetaId]);
+  referencias.push({ paso, ...op! });
+  return op!;
+}
+
+test.beforeAll(async () => {
+  const [e] = await consultar<{ operator_id: string; tania: string }>(
+    "select c.operator_id, (select id from users where correo = $2) as tania from companies c where c.id = $1", [EMPRESA(), CORREOS_TARJETAS.tania]);
+  await consultar(
+    "insert into efevoo_clientes (company_id, operator_id, ambiente, idep_cliente, operacion_id, vinculado_por) values ($1, $2, 'sandbox', $3, gen_random_uuid(), $4)",
+    [EMPRESA(), e!.operator_id, IDEP, e!.tania]);
+  const [t] = await consultar<{ id: string }>(
+    `insert into efevoo_tarjetas (id, company_id, operator_id, ambiente, id_efevoo, employee_id, terminacion, nombre_tarjeta, estado, creada_por)
+     select gen_random_uuid(), $1, $2, 'sandbox', $3, e.id, $4, 'TITO TITULAR', 'activa', $5
+       from employees e join users u on u.id = e.user_id where e.company_id = $1 and u.correo = $6 returning id`,
+    [EMPRESA(), e!.operator_id, TARJETA.idEfevoo, TARJETA.terminacion, e!.tania, CORREOS_TARJETAS.tito]);
+  tarjetaId = t!.id;
+});
+
+test.afterAll(() => {
+  if (EVIDENCIA) writeFileSync(join(EVIDENCIA, "sandbox-operaciones.json"), JSON.stringify(referencias, null, 2));
+});
+
+async function operar(page: Page, accion: "Cargar" | "Retirar" | "Bloquear" | "Desbloquear", monto: string | null, exito: RegExp, paso: string) {
+  await page.getByRole("row").filter({ hasText: `••${TARJETA.terminacion}` }).getByRole("button", { name: accion, exact: true }).click();
+  const dialogo = page.getByRole("dialog");
+  if (monto) await dialogo.getByLabel("Monto en pesos").fill(monto);
+  await dialogo.getByRole("button", { name: accion, exact: true }).click();
+  await expect(page.getByText(exito)).toBeVisible({ timeout: 60_000 });
+  const op = await ultimaOperacion(paso);
+  expect(op.estado, paso).toBe("confirmada");
+  await foto(page, paso);
+}
+
+test("1. ver las tarjetas con el saldo real del emisor", async ({ page, context }) => {
+  await sesionDe(context, CORREOS_TARJETAS.leo);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(ruta("/consola/tarjetas"));
+  await expect(page.getByRole("row").filter({ hasText: `••${TARJETA.terminacion}` })).toContainText("$500.00", { timeout: 60_000 });
+  await foto(page, "01-ver");
+});
+
+test("2 y 3. cargar $100.00 y retirarlos; cargar $25.50 y retirarlos (cada uno se revierte en el acto)", async ({ page, context }) => {
+  test.setTimeout(600_000);
+  await sesionDe(context, CORREOS_TARJETAS.leo);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(ruta("/consola/tarjetas"));
+  const fila = page.getByRole("row").filter({ hasText: `••${TARJETA.terminacion}` });
+  await operar(page, "Cargar", "100.00", /Se cargó el saldo a la tarjeta\./, "02-carga-100");
+  await expect(fila).toContainText("$600.00");
+  await operar(page, "Retirar", "100.00", /Se retiró el saldo de la tarjeta\./, "03-retiro-100");
+  await expect(fila).toContainText("$500.00");
+  await operar(page, "Cargar", "25.50", /Se cargó el saldo a la tarjeta\./, "04-carga-25-50");
+  await expect(fila).toContainText("$525.50");
+  await operar(page, "Retirar", "25.50", /Se retiró el saldo de la tarjeta\./, "05-retiro-25-50");
+  await expect(fila).toContainText("$500.00");
+});
+
+test("4. bloquear y desbloquear", async ({ page, context }) => {
+  test.setTimeout(300_000);
+  await sesionDe(context, CORREOS_TARJETAS.leo);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(ruta("/consola/tarjetas"));
+  const fila = page.getByRole("row").filter({ hasText: `••${TARJETA.terminacion}` });
+  await operar(page, "Bloquear", null, /La tarjeta quedó bloqueada\./, "06-bloqueo");
+  await expect(fila).toContainText("Bloqueada");
+  await operar(page, "Desbloquear", null, /La tarjeta quedó desbloqueada\./, "07-desbloqueo");
+  await expect(fila).toContainText("Activa");
+});
+
+test("5. ver los movimientos en el emisor, con las referencias de Lever", async ({ page, context }) => {
+  await sesionDe(context, CORREOS_TARJETAS.leo);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(ruta(`/consola/tarjetas/${tarjetaId}`));
+  const movimientos = page.getByRole("region", { name: "Tabla de movimientos de la tarjeta" });
+  await expect(movimientos).toBeVisible({ timeout: 60_000 });
+  await foto(page, "08-movimientos");
+});
+
+test("6. el titular ve solo la suya en el teléfono", async ({ page, context }) => {
+  await sesionDe(context, CORREOS_TARJETAS.tito);
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto(ruta("/telefono/tarjetas"));
+  const lista = page.locator(".tarjetas-app > li");
+  await expect(lista).toHaveCount(1, { timeout: 60_000 });
+  await expect(lista).toContainText(`••${TARJETA.terminacion}`);
+  await expect(lista).toContainText("$500.00");
+  await foto(page, "09-titular");
+});

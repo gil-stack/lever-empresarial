@@ -1,0 +1,11 @@
+> plataforma-administrativa@0.1.0 security
+> node scripts/ci/seguridad.mjs
+Revisión de seguridad: 8 hallazgo(s).
+src/server/tarjetas/index.ts:179 SQL con un valor interpolado que no es un placeholder $n
+src/server/tarjetas/index.ts:179 SQL con un valor interpolado que no es un placeholder $n
+src/server/tarjetas/index.ts:184 SQL con un valor interpolado que no es un placeholder $n
+src/server/tarjetas/index.ts:214 SQL con un valor interpolado que no es un placeholder $n
+src/server/tarjetas/index.ts:214 SQL con un valor interpolado que no es un placeholder $n
+src/server/tarjetas/index.ts:243 SQL con un valor interpolado que no es un placeholder $n
+src/server/tarjetas/index.ts:243 SQL con un valor interpolado que no es un placeholder $n
+src/server/tarjetas/index.ts:247 SQL con un valor interpolado que no es un placeholder $n

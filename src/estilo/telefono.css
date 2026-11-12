@@ -272,7 +272,8 @@
 /* La barra de abajo del diseño: ícono sobre el rótulo, en una píldora mate. */
 .navegacion-app {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* Inicio, Topes, Tarjetas y Factura. */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
   margin-top: 30px;
   padding: 6px;
@@ -378,6 +379,70 @@
   text-decoration: underline;
   text-underline-offset: 4px;
   cursor: pointer;
+}
+
+/* Las tarjetas del titular (Efevoo): una por renglón, con su saldo y sus movimientos. */
+.tarjetas-app {
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--linea);
+}
+
+.tarjetas-app > li {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.tarjetas-app-cabeza {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: baseline;
+}
+
+.tarjetas-app-cabeza p {
+  margin: 0;
+  min-width: 0;
+}
+
+.tarjetas-app-cabeza small,
+.movimientos-app li small {
+  display: block;
+  color: var(--tinta-suave);
+  font-size: 0.82rem;
+}
+
+.movimientos-app {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.movimientos-app li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 0.9rem;
+}
+
+.movimientos-app li > span:last-child {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.monto-abono {
+  font-weight: 600;
+}
+
+.monto-cargo {
+  color: var(--tinta-suave);
+}
+
+/* Sin tipo todavía (el emisor tarda unos minutos en decirlo): ni abono ni cargo. */
+.monto-neutro {
+  color: var(--tinta);
 }
 
 @media (max-width: 360px) {

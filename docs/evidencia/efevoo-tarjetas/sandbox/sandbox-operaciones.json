@@ -1,0 +1,50 @@
+[
+  {
+    "paso": "02-carga-100",
+    "tipo": "carga",
+    "estado": "confirmada",
+    "monto": "10000",
+    "referencia": "1000001",
+    "codigo": null
+  },
+  {
+    "paso": "03-retiro-100",
+    "tipo": "retiro",
+    "estado": "confirmada",
+    "monto": "10000",
+    "referencia": "1000002",
+    "codigo": null
+  },
+  {
+    "paso": "04-carga-25-50",
+    "tipo": "carga",
+    "estado": "confirmada",
+    "monto": "2550",
+    "referencia": "1000003",
+    "codigo": null
+  },
+  {
+    "paso": "05-retiro-25-50",
+    "tipo": "retiro",
+    "estado": "confirmada",
+    "monto": "2550",
+    "referencia": "1000004",
+    "codigo": null
+  },
+  {
+    "paso": "06-bloqueo",
+    "tipo": "bloqueo",
+    "estado": "confirmada",
+    "monto": null,
+    "referencia": "1000005",
+    "codigo": null
+  },
+  {
+    "paso": "07-desbloqueo",
+    "tipo": "desbloqueo",
+    "estado": "confirmada",
+    "monto": null,
+    "referencia": "1000006",
+    "codigo": null
+  }
+]

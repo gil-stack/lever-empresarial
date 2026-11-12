@@ -10,6 +10,7 @@ import { iniciarBlobLocal, type BlobLocal } from "./blob-local/servidor";
 import { iniciarEfevooFalso, type EfevooFalso } from "../efevoo/servidor-falso";
 import { CORREOS, sembrarRecorridos } from "./siembra";
 import { sembrarCobranza } from "./siembra-cobranza";
+import { sembrarTarjetas } from "./siembra-tarjetas";
 import { sembrarRunway } from "./siembra-runway";
 import { sembrarEfevoo } from "./siembra-efevoo";
 
@@ -120,6 +121,7 @@ export async function iniciarEntorno(): Promise<void> {
     await sembrarRecorridos(owner, arranque);
     await sembrarCobranza(owner);
     await sembrarRunway(owner);
+    await sembrarTarjetas(owner);
     await sembrarEfevoo(owner);
     await cerrarConexion();
     await levantarBlobLocal();
