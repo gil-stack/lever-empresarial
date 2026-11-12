@@ -85,7 +85,7 @@ function mensajeFallida(operacion: OperacionTarjeta): string {
   if (operacion.codigoEfevoo === "saldo_insuficiente") {
     return operacion.tipo === "retiro"
       ? "No alcanza el saldo de la tarjeta para ese retiro. No se llamó al emisor ni se movió dinero."
-      : "No alcanza el saldo para tarjetas de la empresa para esa carga. No se llamó al emisor ni se movió dinero.";
+      : "No alcanza el saldo para tarjetas de la empresa para esa carga. Hay otras cargas por confirmar en la empresa que también cuentan. No se llamó al emisor ni se movió dinero.";
   }
   return operacion.codigoEfevoo ? `El emisor la rechazó (código ${operacion.codigoEfevoo}). No se movió dinero.` : "El emisor la rechazó. No se movió dinero.";
 }

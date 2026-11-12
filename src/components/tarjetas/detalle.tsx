@@ -6,6 +6,7 @@ import { formatoPesos } from "@/dominio/centavos";
 import {
   ETIQUETA_ESTADO_OPERACION,
   conceptoSeguro,
+  importeMovimiento,
   ETIQUETA_ESTADO_TARJETA,
   ETIQUETA_TIPO_OPERACION,
   minutosParaConciliar,
@@ -50,7 +51,7 @@ export function VistaDetalleTarjeta({ detalle, empresaId, puedeOperar, ahora }: 
               <thead><tr><th scope="col">Fecha</th><th scope="col">Concepto</th><th scope="col" className="derecha">Importe</th></tr></thead>
               <tbody>
                 {movimientos.map((m, i) => (
-                  <tr key={`${m.fecha}-${i}`}><td>{m.fecha}</td><td>{conceptoSeguro(m.concepto)}</td><td className="derecha">{m.montoCentavos === null ? "—" : pesos(m.montoCentavos, true)}</td></tr>
+                  <tr key={`${m.fecha}-${i}`}><td>{m.fecha}</td><td>{conceptoSeguro(m.concepto)}</td><td className="derecha">{importeMovimiento(m) ?? "—"}</td></tr>
                 ))}
               </tbody>
             </table>

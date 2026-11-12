@@ -159,7 +159,7 @@ export async function movimientosDe(cliente: ClienteEfevoo, idEfevoo: number): P
       return null;
     }
     const movimientos = await cliente.movimientosDeTarjeta(idEfevoo, correo);
-    return movimientos.slice(0, 50).map((m) => ({ fecha: m.fechaHora, concepto: m.concepto, montoCentavos: m.centavos }));
+    return movimientos.slice(0, 50).map((m) => ({ fecha: m.fechaHora, concepto: m.concepto, montoCentavos: m.centavos, tipo: m.tipo }));
   } catch (error) {
     if (!esErrorEfevoo(error)) throw error;
     registrarEfevoo("error", "tarjetas_movimientos_no_disponibles", {});

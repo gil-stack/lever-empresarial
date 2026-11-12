@@ -60,3 +60,14 @@ describe("el concepto de un movimiento del emisor", () => {
     assert.equal(conceptoSeguro("Folio 123456789012"), "Folio 123456789012", "12 dígitos no es una tarjeta");
   });
 });
+
+describe("el importe de un movimiento", () => {
+  it("lleva el signo de su tipo: «+» un abono, «−» un cargo y sin signo si el emisor no lo dice", async () => {
+    const { importeMovimiento } = await import("./vista.ts");
+    assert.equal(importeMovimiento({ montoCentavos: 1_234, tipo: "cargo" }), "−$12.34");
+    assert.equal(importeMovimiento({ montoCentavos: 123_456, tipo: "abono" }), "+$1,234.56");
+    assert.equal(importeMovimiento({ montoCentavos: 1, tipo: null }), "$0.01");
+    assert.equal(importeMovimiento({ montoCentavos: -500, tipo: "cargo" }), "−$5.00");
+    assert.equal(importeMovimiento({ montoCentavos: null, tipo: "abono" }), null);
+  });
+});

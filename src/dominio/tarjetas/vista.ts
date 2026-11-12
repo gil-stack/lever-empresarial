@@ -47,8 +47,10 @@ export type TarjetaEmpresa = {
 export type MovimientoTarjeta = {
   readonly fecha: string;
   readonly concepto: string;
-  /** Con signo como lo da el emisor; nulo si no se pudo leer el importe. */
+  /** El importe, sin signo; nulo si no se pudo leer. */
   readonly montoCentavos: number | null;
+  /** Abono (entra a la tarjeta) o cargo (sale). Nulo mientras el emisor no lo dice y el concepto no alcanza para deducirlo. */
+  readonly tipo: "abono" | "cargo" | null;
 };
 
 /** El saldo de la empresa en Efevoo, del que salen las cargas a tarjetas. */
@@ -146,4 +148,12 @@ export const ESPERA_CONCILIACION_MS = 10 * 60 * 1000;
 export function minutosParaConciliar(creadaEn: string, ahora: Date): number {
   const falta = new Date(creadaEn).getTime() + ESPERA_CONCILIACION_MS - ahora.getTime();
   return falta > 0 ? Math.ceil(falta / 60_000) : 0;
+}
+
+/** El importe de un movimiento con el signo de su tipo: «+» un abono, «−» un cargo, sin signo si no se sabe. */
+export function importeMovimiento(m: Pick<MovimientoTarjeta, "montoCentavos" | "tipo">): string | null {
+  if (m.montoCentavos === null) return null;
+  const absoluto = Math.abs(m.montoCentavos);
+  const texto = `$${Math.trunc(absoluto / 100).toLocaleString("en-US")}.${String(absoluto % 100).padStart(2, "0")}`;
+  return m.tipo === "cargo" ? `−${texto}` : m.tipo === "abono" ? `+${texto}` : texto;
 }
