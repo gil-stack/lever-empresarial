@@ -1,3 +1,6 @@
+import { mkdirSync } from "node:fs";
+import { join } from "node:path";
+
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 
 import { clienteHttpEfevoo } from "../../src/server/efevoo/cliente";
@@ -25,6 +28,22 @@ const CARGA_TITO = 123_456;
 
 type Sembrado = { tito: { id: string; terminacion: string }; tere: { id: string; terminacion: string } };
 let sembrado: Sembrado;
+
+/** Con E2E_CAPTURAS, la evidencia: cada paso a 1440 (escritorio) y a 390 (teléfono). En el CI no hace nada. */
+const EVIDENCIA = process.env.E2E_CAPTURAS ?? "";
+let fotos = 0;
+async function foto(page: Page, nombre: string): Promise<void> {
+  if (!EVIDENCIA) return;
+  mkdirSync(EVIDENCIA, { recursive: true });
+  const antes = page.viewportSize();
+  fotos += 1;
+  for (const [ancho, sufijo] of [[1440, "escritorio"], [390, "telefono"]] as const) {
+    await page.setViewportSize({ width: ancho, height: 900 });
+    // Sin animaciones: al cambiar el ancho, el lateral se cierra con una transición que no es la pantalla real.
+    await page.screenshot({ path: join(EVIDENCIA, `${String(fotos).padStart(2, "0")}-${nombre}-${sufijo}.jpg`), fullPage: true, type: "jpeg", quality: 70, animations: "disabled" });
+  }
+  if (antes) await page.setViewportSize(antes);
+}
 
 async function vincular(): Promise<Sembrado> {
   const leida = leerConfigEfevoo(process.env);
@@ -98,6 +117,7 @@ test("T1: administración ve el saldo para tarjetas, cada tarjeta con su termina
   // r-e2-4: el nombre de la tarjeta va en negritas, como la demostración, sin subrayado de enlace.
   expect(await filaTito.getByRole("link").first().evaluate((a) => getComputedStyle(a).textDecorationLine)).toBe("none");
   await sinNumerosDeTarjeta(context, ruta("/consola/tarjetas"));
+  await foto(page, "t1-lista-administracion");
   expect(errores).toEqual([]);
 });
 
@@ -117,6 +137,7 @@ test("T1: el detalle trae los movimientos del emisor y ningún número largo; un
   await expect(movimientos.getByRole("row").filter({ hasText: "COMPRA OXXO" })).toContainText("−$12.34");
   await expect(movimientos.getByRole("row").filter({ hasText: "PAGO A TARJETA" })).toContainText("+$1,234.56");
   expect(await page.content()).not.toContain("4111 1111");
+  await foto(page, "t1-detalle-movimientos");
   await sinNumerosDeTarjeta(context, ruta(`/consola/tarjetas/${sembrado.tito.id}`));
   const ajena = await page.goto(ruta("/consola/tarjetas/00000000-0000-4000-8000-000000000000"));
   expect(ajena?.status()).toBe(404);
@@ -128,6 +149,7 @@ test("r-e2-2: en el detalle, cargar avisa antes de enviar si no alcanza el saldo
   const dialogo = page.getByRole("dialog");
   await dialogo.getByLabel("Monto en pesos").fill("48765.45");
   await expect(dialogo.getByText("No alcanza el saldo para ese monto.")).toBeVisible();
+  await foto(page, "t2-aviso-de-saldo");
   await dialogo.getByLabel("Monto en pesos").fill("48765.44");
   await expect(dialogo.getByText("No alcanza el saldo para ese monto.")).toHaveCount(0);
 });
@@ -149,6 +171,7 @@ test("finanzas ve todas las tarjetas sin botones; el contador no abre Tarjetas",
   await expect(tabla.getByRole("row")).toHaveCount(3);
   await expect(page.getByRole("button", { name: "Cargar" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Bloquear|Desbloquear/ })).toHaveCount(0);
+  await foto(page, "finanzas-solo-lectura");
   const contador = await abrir(page, context, CORREOS_TARJETAS.cuco, "/consola/tarjetas");
   expect(contador?.status()).toBe(404);
 });
@@ -163,6 +186,7 @@ test("T5: el titular ve solo su tarjeta en el teléfono, con saldo y movimientos
   await expect(lista).toContainText("PAGO A TARJETA");
   await expect(page.getByText(`••${sembrado.tere.terminacion}`)).toHaveCount(0);
   await sinNumerosDeTarjeta(context, ruta("/telefono/tarjetas"));
+  await foto(page, "t5-titular-telefono");
   // r-e2-5: con «Tarjetas» la barra del teléfono tiene 4 secciones, todas en una fila (390 y 320 px).
   for (const ancho of [390, 320]) {
     await page.setViewportSize({ width: ancho, height: 800 });
@@ -220,6 +244,7 @@ test("T2 y T3: liberación carga $100.00 con doble clic (una sola operación) y 
   await dialogo.getByLabel("Monto en pesos").fill("100.00");
   await dobleClic(dialogo.getByRole("button", { name: "Cargar", exact: true }));
   await expect(page.getByText(/Se cargó el saldo a la tarjeta\. Referencia \d{7}\./)).toBeVisible();
+  await foto(page, "t2-carga-confirmada");
   const tras = await operaciones(tito.id);
   expect(tras.slice(previas).map((o) => [o.tipo, o.estado, o.monto])).toEqual([["carga", "confirmada", "10000"]]);
   expect(await saldoEnEfevoo(idEfevoo)).toBe(antes + 10_000);
@@ -228,6 +253,7 @@ test("T2 y T3: liberación carga $100.00 con doble clic (una sola operación) y 
   await dialogo.getByLabel("Monto en pesos").fill("25.50");
   await dialogo.getByRole("button", { name: "Retirar", exact: true }).click();
   await expect(page.getByText(/Se retiró el saldo de la tarjeta\. Referencia \d{7}\./)).toBeVisible();
+  await foto(page, "t3-retiro-confirmado");
   expect((await operaciones(tito.id)).slice(previas).map((o) => [o.tipo, o.estado, o.monto])).toEqual([["carga", "confirmada", "10000"], ["retiro", "confirmada", "2550"]]);
   expect(await saldoEnEfevoo(idEfevoo)).toBe(antes + 10_000 - 2_550);
   await expect(page.getByRole("row").filter({ hasText: `••${tito.terminacion}` })).toContainText(pesosDe(antes + 10_000 - 2_550));
@@ -244,6 +270,7 @@ test("T3: un retiro mayor al saldo de la tarjeta lo rechaza Lever antes de llama
   await expect(dialogo.getByText("No alcanza el saldo para ese monto.")).toBeVisible();
   await dialogo.getByRole("button", { name: "Retirar", exact: true }).click();
   await expect(dialogo.getByText(/No alcanza el saldo de la tarjeta para ese retiro\. No se llamó al emisor/)).toBeVisible();
+  await foto(page, "t3-retiro-sin-saldo");
   const [op] = (await operaciones(tere.id)).slice(-1);
   expect([op?.tipo, op?.estado, op?.codigo]).toEqual(["retiro", "fallida", "saldo_insuficiente"]);
   expect(await saldoEnEfevoo(idEfevoo)).toBe(antes);
@@ -277,6 +304,7 @@ test("T4: bloquear y desbloquear; el estado se ve en la lista y en el emisor", a
   await expect(page.getByText("La tarjeta quedó bloqueada.", { exact: false })).toBeVisible();
   const fila = page.getByRole("row").filter({ hasText: `••${tere.terminacion}` });
   await expect(fila).toContainText("Bloqueada");
+  await foto(page, "t4-bloqueada");
   expect(((await falso("/estado")) as { tarjetas: { id: number; estado: string }[] }).tarjetas.find((t) => t.id === idEfevoo)?.estado).toBe("blocked");
   dialogo = await dialogoDe(page, tere.terminacion, "Desbloquear");
   await dialogo.getByRole("button", { name: "Desbloquear", exact: true }).click();
@@ -305,6 +333,7 @@ test("T6: un timeout con efecto deja la carga sin confirmar; «Conciliar» la en
   await pendiente.getByRole("button", { name: "Conciliar" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Buscar en el emisor" }).click();
   await expect(page.getByText(`La operación ${op!.referencia} sí se hizo en el emisor. Quedó confirmada.`)).toBeVisible();
+  await foto(page, "t6-conciliada");
   expect((await operaciones(tito.id)).slice(-1).map((o) => o.estado)).toEqual(["confirmada"]);
   // No se repitió: el saldo subió una sola vez.
   expect(await saldoEnEfevoo(idEfevoo)).toBe(antes + 700);
@@ -326,6 +355,7 @@ test("T6: un timeout sin efecto se queda sin confirmar 10 minutos; después no a
   await page.reload();
   const pendiente = page.locator(`[data-operacion="${op!.referencia}"]`);
   await expect(pendiente).toContainText(/vuelve a conciliar en \d+ min/);
+  await foto(page, "t6-por-confirmar");
   await expect(pendiente.getByRole("button", { name: "Reintentar" })).toHaveCount(0);
   await pendiente.getByRole("button", { name: "Conciliar" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Buscar en el emisor" }).click();
@@ -343,6 +373,7 @@ test("T6: un timeout sin efecto se queda sin confirmar 10 minutos; después no a
   await page.locator(`[data-operacion="${op!.referencia}"]`).getByRole("button", { name: "Conciliar" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Buscar en el emisor" }).click();
   await expect(page.getByText(`La operación ${op!.referencia} no aparece en el emisor. No se movió dinero; puedes reintentarla.`)).toBeVisible();
+  await foto(page, "t6-no-aparecio-reintentar");
   await page.locator(`[data-operacion="${op!.referencia}"]`).getByRole("button", { name: "Reintentar" }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Reintentar", exact: true }).click();
   await expect(page.getByText(/Se reintentó con una referencia nueva\. Referencia \d{7}\./)).toBeVisible();
@@ -365,6 +396,7 @@ test("empresa suspendida: no se carga ni se bloquea; la base lo impide", async (
     await dialogo.getByLabel("Monto en pesos").fill("5.00");
     await dialogo.getByRole("button", { name: "Cargar", exact: true }).click();
     await expect(dialogo.getByText(/La empresa está suspendida/)).toBeVisible();
+    await foto(page, "empresa-suspendida");
     expect((await operaciones(tito.id)).length).toBe(previas);
   } finally {
     await consultar(`begin; set local session_replication_role = replica; update companies set estado = 'activa' where id = '${EMPRESA()}'; commit;`);
