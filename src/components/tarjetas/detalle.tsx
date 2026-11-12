@@ -5,6 +5,7 @@ import { Estado, pesos, Tarjeta } from "@/components/demo/piezas";
 import { formatoPesos } from "@/dominio/centavos";
 import {
   ETIQUETA_ESTADO_OPERACION,
+  conceptoSeguro,
   ETIQUETA_ESTADO_TARJETA,
   ETIQUETA_TIPO_OPERACION,
   operable,
@@ -30,7 +31,7 @@ export function VistaDetalleTarjeta({ detalle, empresaId, puedeOperar }: { detal
         <Estado estado={{ texto: ETIQUETA_ESTADO_TARJETA[tarjeta.estado], tono: TONO_ESTADO_TARJETA[tarjeta.estado] }} />
         <span className="demo-empuje" />
         {puedeOperar && operable(tarjeta) ? (
-          <AccionesTarjeta id={tarjeta.id} terminacion={terminacion} estado={tarjeta.estado} saldoTarjetaCentavos={tarjeta.saldoCentavos} saldoEmpresaCentavos={null} />
+          <AccionesTarjeta id={tarjeta.id} terminacion={terminacion} estado={tarjeta.estado} saldoTarjetaCentavos={tarjeta.saldoCentavos} saldoEmpresaCentavos={detalle.saldoEmpresa.tipo === "listo" ? detalle.saldoEmpresa.centavos : null} />
         ) : null}
       </div>
       <dl className="demo-cifras" aria-label="La tarjeta">
@@ -48,7 +49,7 @@ export function VistaDetalleTarjeta({ detalle, empresaId, puedeOperar }: { detal
               <thead><tr><th scope="col">Fecha</th><th scope="col">Concepto</th><th scope="col" className="derecha">Importe</th></tr></thead>
               <tbody>
                 {movimientos.map((m, i) => (
-                  <tr key={`${m.fecha}-${i}`}><td>{m.fecha}</td><td>{m.concepto}</td><td className="derecha">{pesos(m.montoCentavos, true)}</td></tr>
+                  <tr key={`${m.fecha}-${i}`}><td>{m.fecha}</td><td>{conceptoSeguro(m.concepto)}</td><td className="derecha">{pesos(m.montoCentavos, true)}</td></tr>
                 ))}
               </tbody>
             </table>

@@ -130,3 +130,11 @@ export function cifrasTarjetas(datos: Pick<TarjetasEmpresa, "saldo" | "tarjetas"
     repartidoCentavos: conSaldo.some((s) => s === null) ? null : conSaldo.reduce<number>((suma, s) => suma + (s ?? 0), 0),
   };
 }
+
+/**
+ * El concepto de un movimiento tal como lo manda el emisor, sin ningún número de tarjeta: cualquier secuencia de 13 o
+ * más dígitos (aunque venga partida con espacios o guiones) se pinta como su terminación.
+ */
+export function conceptoSeguro(texto: string): string {
+  return texto.replace(/\d(?:[ -]?\d){12,}/g, (secuencia) => `••${secuencia.replace(/\D/g, "").slice(-4)}`);
+}

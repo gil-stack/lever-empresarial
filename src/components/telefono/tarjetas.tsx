@@ -1,5 +1,5 @@
 import { formatoPesos } from "@/dominio/centavos";
-import { ETIQUETA_ESTADO_TARJETA, terminacionSegura } from "@/dominio/tarjetas/vista";
+import { conceptoSeguro, ETIQUETA_ESTADO_TARJETA, terminacionSegura } from "@/dominio/tarjetas/vista";
 import type { TarjetaDelTitular } from "@/server/tarjetas";
 
 /** Las tarjetas del titular: terminación, estado, saldo y sus últimos movimientos. Sin operar: eso lo hace la empresa. */
@@ -28,7 +28,7 @@ export function TarjetasTitular({ tarjetas }: { tarjetas: readonly TarjetaDelTit
                 <ul className="movimientos-app" aria-label={`Movimientos de la tarjeta ••${terminacionSegura(tarjeta.terminacion)}`}>
                   {movimientos.map((m, i) => (
                     <li key={`${m.fecha}-${i}`}>
-                      <span>{m.concepto}<small>{m.fecha}</small></span>
+                      <span>{conceptoSeguro(m.concepto)}<small>{m.fecha}</small></span>
                       <span className={m.montoCentavos < 0 ? "monto-cargo" : "monto-abono"}>{formatoPesos(m.montoCentavos)}</span>
                     </li>
                   ))}

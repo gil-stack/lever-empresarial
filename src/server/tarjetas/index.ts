@@ -2,7 +2,7 @@ import "server-only";
 
 import { exigirEmpresa, puede, type ContextoConEmpresa, type ContextoDeTenant } from "@/nucleo/contexto";
 import { ErrorDeDominio } from "@/nucleo/error-de-dominio";
-import type { MovimientoTarjeta, OperacionTarjeta, TarjetaEmpresa, TarjetasEmpresa } from "@/dominio/tarjetas/vista";
+import type { MovimientoTarjeta, OperacionTarjeta, SaldoEmpresa, TarjetaEmpresa, TarjetasEmpresa } from "@/dominio/tarjetas/vista";
 
 /**
  * Tarjetas de la empresa con Efevoo Pay. Cada operación que mueve dinero o cambia una tarjeta se asienta primero en la
@@ -49,6 +49,8 @@ export async function leerMisTarjetas(ctx: ContextoDeTenant | null): Promise<rea
 
 export type DetalleTarjeta = {
   readonly tarjeta: TarjetaEmpresa;
+  /** El saldo de la empresa en el emisor: cargar avisa antes si no alcanza. */
+  readonly saldoEmpresa: SaldoEmpresa;
   /** Los movimientos en Efevoo, del más nuevo al más viejo; nulo si el emisor no respondió. */
   readonly movimientos: readonly MovimientoTarjeta[] | null;
   /** Lo que Lever le pidió al emisor sobre esta tarjeta, con su estado. */

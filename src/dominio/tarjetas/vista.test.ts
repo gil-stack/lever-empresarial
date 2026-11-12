@@ -48,3 +48,15 @@ describe("Tarjetas con Efevoo: la vista", () => {
     assert.deepEqual(["asignada", "activa", "bloqueada", "cancelada"].map((estado) => operable({ estado: estado as TarjetaEmpresa["estado"] })), [false, true, true, false]);
   });
 });
+
+describe("el concepto de un movimiento del emisor", () => {
+  it("no deja pasar ninguna secuencia de 13 a 19 dígitos (ni con espacios o guiones); el resto se queda", async () => {
+    const { conceptoSeguro } = await import("./vista.ts");
+    assert.equal(conceptoSeguro("Compra 4111111111111111 OXXO"), "Compra ••1111 OXXO");
+    assert.equal(conceptoSeguro("Pago 4111 1111 1111 1111"), "Pago ••1111");
+    assert.equal(conceptoSeguro("Pago 4111-1111-1111-1111"), "Pago ••1111");
+    assert.equal(conceptoSeguro("Ref 1234567890123456789"), "Ref ••6789");
+    assert.equal(conceptoSeguro("Carga 1234567 de 500.00"), "Carga 1234567 de 500.00", "la referencia de 7 se queda");
+    assert.equal(conceptoSeguro("Folio 123456789012"), "Folio 123456789012", "12 dígitos no es una tarjeta");
+  });
+});

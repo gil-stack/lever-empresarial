@@ -36,17 +36,20 @@ export function AccionesTarjeta({
 }) {
   const [abierto, setAbierto] = useState<Abierto>(null);
   const intento = useIntento();
+  const [monto, setMonto] = useState("");
+  // r-e2-3: el monto no pasa de un diálogo a otro (cargar → retirar) ni se queda al cerrar.
   const cerrar = () => {
     setAbierto(null);
+    setMonto("");
     intento.limpiar();
   };
   const abrir = (cual: Exclude<Abierto, null>) => {
+    setMonto("");
     intento.nuevo();
     setAbierto(cual);
   };
   const saldo = useAccionDeFila(enviarSaldoTarjeta, `saldo-${id}`, cerrar);
   const bloqueo = useAccionDeFila(enviarBloqueoTarjeta, `bloqueo-${id}`, cerrar);
-  const [monto, setMonto] = useState("");
   const tipoSaldo = abierto === "retiro" ? "retiro" : "carga";
   const disponible = tipoSaldo === "carga" ? saldoEmpresaCentavos : saldoTarjetaCentavos;
   const aviso = useMemo(() => {
