@@ -146,6 +146,7 @@ const MENSAJES: Record<string, string> = {
   sin_rol_para_solicitar_activacion: "Pedir la activación es de Originación.",
   sin_rol_para_registrar: "Registrar prospectos es de Originación.",
   empresa_suspendida: "La empresa está suspendida: no se puede mover dinero ni cambiar nada hasta que se reactive.",
+  empresa_no_activa_efevoo: "La empresa debe estar activa para operar con Efevoo en producción.",
   cliente_de_baja: "La empresa está dada de baja.",
   formulario_invalido: "El formulario caducó. Recarga la página.",
   // Revisión del PR #59.

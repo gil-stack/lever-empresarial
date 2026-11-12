@@ -1,7 +1,7 @@
 import { leerCentavosEscritos } from "../../dominio/centavos";
 import type { ContextoDePersonal } from "../../nucleo/contexto";
 import { basePlataforma } from "../../nucleo/contexto";
-import { aplicarSentencia, conContexto } from "../../nucleo/db";
+import { aplicarSentencia, conContexto, type Consulta } from "../../nucleo/db";
 import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { centavos, centavosONulo, instante, registro, texto, textoONulo } from "../flujo/lectura";
 import { exigirEnOperacion } from "../operacion/permisos";
@@ -223,6 +223,7 @@ export async function darDeAltaEnEfevoo(ctx: ContextoDePersonal, entrada: { comp
 /** La llamada del alta, con los datos del expediente vigente. No asienta nada. */
 async function armarAlta(ctx: ContextoDePersonal, companyId: string, config: ConfigEfevoo): Promise<LlamadaEfevoo> {
   const datos = await conContexto(basePlataforma(ctx, companyId), async (consulta) => {
+    await exigirEmpresaActiva(consulta, companyId, config.ambiente);
     const v = (await aplicarSentencia(
       consulta,
       `select v.id, v.razon_social, v.rfc, v.telefono, v.correo, v.domicilio_calle, v.domicilio_exterior, v.domicilio_interior,
@@ -363,6 +364,7 @@ export async function asignarTarjetaEnEfevoo(ctx: ContextoDePersonal, entrada: E
   const companyId = exigir(ctx, entrada.companyId);
   const { config, efevoo } = cliente(deps);
   if (!config || !efevoo) throw new ErrorEfevoo("efevoo_no_configurado");
+  await conContexto(basePlataforma(ctx, companyId), (consulta) => exigirEmpresaActiva(consulta, companyId, config.ambiente));
   if (typeof entrada.employeeId !== "string" || !UUID.test(entrada.employeeId)) throw new ErrorDeDominio("dato_invalido_employeeId");
   const inventarioId = typeof entrada.inventarioId === "string" && /^[1-9][0-9]{0,8}$/.test(entrada.inventarioId) ? Number(entrada.inventarioId) : null;
   if (inventarioId === null) throw new ErrorDeDominio("dato_invalido_inventarioId");
@@ -461,6 +463,13 @@ export async function cerrarEnEfevoo(
 }
 
 // Ayudantes ----------------------------------------------------------------------------
+
+/** Rechazo temprano antes de preparar datos o consultar inventario. La base lo repite al asentar cada operación. */
+async function exigirEmpresaActiva(consulta: Consulta, companyId: string, ambiente: ConfigEfevoo["ambiente"]): Promise<void> {
+  if (ambiente === "sandbox") return;
+  const empresa = (await aplicarSentencia(consulta, "select estado from companies where id = $1", [companyId])).rows[0];
+  if (!empresa || registro(empresa).estado !== "activa") throw new ErrorDeDominio("empresa_no_activa_efevoo");
+}
 
 function llave(valor: unknown): string {
   if (typeof valor !== "string" || !UUID.test(valor)) throw new ErrorDeDominio("formulario_invalido");
