@@ -26,7 +26,9 @@ export E2E_PUERTO="${E2E_PUERTO:-3153}"
 export E2E_BLOB_PUERTO="${E2E_BLOB_PUERTO:-4896}"
 puerto_pg=5553
 puerto_navegador=4813
-pg=ci-postgres
+# Otro contenedor que las partes de test:db (r71-2).
+pg=ci-postgres-e2e
+export CI_POSTGRES_CONTENEDOR="$pg"
 navegador=ci-navegador
 contenedores=""
 

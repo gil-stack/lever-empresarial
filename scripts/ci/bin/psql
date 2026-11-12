@@ -20,5 +20,5 @@ exec docker exec -i \
   -e PGOPTIONS \
   -e PGCLIENTENCODING \
   -w /work \
-  ci-postgres \
+  "${CI_POSTGRES_CONTENEDOR:-ci-postgres}" \
   psql "${args[@]}"

@@ -21,7 +21,15 @@ if [ -z "$lista" ]; then
   exit 1
 fi
 
-contenedor=ci-postgres
+# Contenedor y puerto propios por parte (r71-2): todas empiezan con docker rm -f del suyo, y con el mismo nombre dos
+# en la misma máquina se borrarían entre ellas. La e2e usa ci-postgres-e2e. Postgres escucha dentro del contenedor en
+# el mismo puerto que fuera: el psql de scripts/ci/bin corre dentro con la misma URL.
+case "$parte" in
+  1) contenedor=ci-postgres-db-1; puerto=5441 ;;
+  2) contenedor=ci-postgres-db-2; puerto=5442 ;;
+  *) contenedor=ci-postgres-db; puerto=5440 ;;
+esac
+export CI_POSTGRES_CONTENEDOR="$contenedor"
 
 # Con reintentos: el registro a veces corta con EOF, y docker run la bajaría sin reintentar.
 sh scripts/ci/descargar-imagen.sh postgres:17
@@ -31,10 +39,10 @@ if docker inspect "$contenedor" >/dev/null 2>&1; then
 fi
 
 docker run -d --name "$contenedor" \
-  -p 127.0.0.1:5432:5432 \
+  -p "127.0.0.1:${puerto}:${puerto}" \
   -v "$PWD:/work:ro" \
   -e POSTGRES_PASSWORD=postgres \
-  postgres:17 >/dev/null
+  postgres:17 -p "$puerto" >/dev/null
 
 limpiar() {
   docker rm -f "$contenedor" >/dev/null 2>&1 || true
@@ -43,7 +51,7 @@ trap limpiar EXIT
 
 i=0
 while [ "$i" -lt 120 ]; do
-  if docker exec "$contenedor" pg_isready -h 127.0.0.1 -U postgres >/dev/null 2>&1; then
+  if docker exec "$contenedor" pg_isready -h 127.0.0.1 -p "$puerto" -U postgres >/dev/null 2>&1; then
     break
   fi
   i=$((i + 1))
@@ -60,7 +68,7 @@ echo "Postgres desechable listo. Corren las pruebas que migran y borran su base.
 export PATH="$PWD/scripts/ci/bin:$PATH"
 usuario_local=postgres
 clave_local=postgres
-export AISLAMIENTO_DATABASE_URL="postgres://${usuario_local}:${clave_local}@127.0.0.1:5432/postgres"
+export AISLAMIENTO_DATABASE_URL="postgres://${usuario_local}:${clave_local}@127.0.0.1:${puerto}/postgres"
 unset DATABASE_URL
 
 echo "test:db, parte $parte: $(echo "$lista" | wc -l | tr -d ' ') archivos."
@@ -69,7 +77,7 @@ echo "test:db, parte $parte: $(echo "$lista" | wc -l | tr -d ' ') archivos."
 # con «tuple concurrently updated».
 set +e
 # shellcheck disable=SC2086
-./node_modules/.bin/tsx --test --test-concurrency=1 $lista
+"${TSX:-./node_modules/.bin/tsx}" --test --test-concurrency=1 $lista
 estado=$?
 limpiar
 trap - EXIT
