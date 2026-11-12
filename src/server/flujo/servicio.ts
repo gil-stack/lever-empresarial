@@ -419,22 +419,51 @@ function exigirAltaId(valor: unknown): string {
 
 type TablaDeAlta = "cash_balance_declarations" | "expected_collections" | "recurring_obligations";
 
-/** Lo que se compara de una alta repetida: una expresión SQL fija (del código, nunca del usuario) y el valor esperado como texto. */
-type CampoDeAlta = readonly [expresion: string, valor: string | null];
+/**
+ * Lo que se compara de una alta repetida, por tabla: un SQL literal que lee la
+ * fila de esta empresa con cada columna como texto (la regla de SQL del gate de
+ * seguridad no deja armar la lista de columnas ni la tabla en el llamador).
+ */
+const SQL_ALTA_PREVIA = {
+  cash_balance_declarations: `
+    select saldo_centavos::text as saldo_centavos, to_char(al_dia, 'YYYY-MM-DD') as al_dia, declarado_por::text as declarado_por
+      from cash_balance_declarations where id = $1 and company_id = $2`,
+  expected_collections: `
+    select origen, cliente_nombre, cliente_rfc, concepto, monto_centavos::text as monto_centavos,
+           to_char(fecha_probable, 'YYYY-MM-DD') as fecha_probable, referencia, cfdi_uuid, creado_por::text as creado_por
+      from expected_collections where id = $1 and company_id = $2`,
+  recurring_obligations: `
+    select concepto, monto_centavos::text as monto_centavos, frecuencia, to_char(proxima_fecha, 'YYYY-MM-DD') as proxima_fecha,
+           ancla_dia::text as ancla_dia, cost_center_id::text as cost_center_id, supplier_id::text as supplier_id,
+           creado_por::text as creado_por
+      from recurring_obligations where id = $1 and company_id = $2`,
+} as const;
+
+/** Una columna de SQL_ALTA_PREVIA de esa tabla y el valor esperado como texto. */
+type CampoDeAlta = readonly [columna: string, valor: string | null];
 
 /**
  * ¿La alta con este id ya quedó? Solo cuenta si es de esta empresa (RLS y el
  * filtro): un id ajeno no se encuentra. Si quedó con otros datos, se rechaza.
  */
 async function altaPrevia(consulta: Consulta, tabla: TablaDeAlta, id: string, empresaId: string, campos: readonly CampoDeAlta[]): Promise<boolean> {
-  const fila = await aplicarSentencia(
-    consulta,
-    `select ${campos.map(([expresion], indice) => `${expresion} as c${indice}`).join(", ")} from ${tabla} where id = $1 and company_id = $2`,
-    [id, empresaId],
-  );
+  const params = [id, empresaId];
+  let fila;
+  switch (tabla) {
+    case "cash_balance_declarations":
+      fila = await aplicarSentencia(consulta, SQL_ALTA_PREVIA.cash_balance_declarations, params);
+      break;
+    case "expected_collections":
+      fila = await aplicarSentencia(consulta, SQL_ALTA_PREVIA.expected_collections, params);
+      break;
+    case "recurring_obligations":
+      fila = await aplicarSentencia(consulta, SQL_ALTA_PREVIA.recurring_obligations, params);
+      break;
+  }
   const previa = fila.rows[0] as Record<string, unknown> | undefined;
   if (!previa) return false;
-  if (campos.some(([, valor], indice) => (previa[`c${indice}`] ?? null) !== valor)) throw new ErrorDeDominio("formulario_ya_enviado");
+  if (campos.some(([columna]) => !(columna in previa))) throw new ErrorDeDominio("base_no_disponible");
+  if (campos.some(([columna, valor]) => (previa[columna] ?? null) !== valor)) throw new ErrorDeDominio("formulario_ya_enviado");
   return true;
 }
 
@@ -467,9 +496,9 @@ export async function declararSaldo(
     );
     if (insertado.rows.length === 0) {
       return exigirAltaPropia(consulta, "cash_balance_declarations", id, c.empresa.id, [
-        ["saldo_centavos::text", String(valor.centavos)],
-        ["to_char(al_dia, 'YYYY-MM-DD')", valor.alDia],
-        ["declarado_por::text", c.persona.id.toLowerCase()],
+        ["saldo_centavos", String(valor.centavos)],
+        ["al_dia", valor.alDia],
+        ["declarado_por", c.persona.id.toLowerCase()],
       ]);
     }
     // El evento va después de la fila: el trigger diferido lo exige al confirmar, y un envío repetido no deja otro.
@@ -542,11 +571,11 @@ function camposDeCobro(cobro: CobroAlta, personaId: string): CampoDeAlta[] {
     ["cliente_nombre", cobro.clienteNombre],
     ["cliente_rfc", cobro.clienteRfc],
     ["concepto", cobro.concepto],
-    ["monto_centavos::text", String(cobro.montoCentavos)],
-    ["to_char(fecha_probable, 'YYYY-MM-DD')", cobro.fechaProbable],
+    ["monto_centavos", String(cobro.montoCentavos)],
+    ["fecha_probable", cobro.fechaProbable],
     ["referencia", cobro.referencia],
     ["cfdi_uuid", cobro.cfdiUuid],
-    ["creado_por::text", personaId.toLowerCase()],
+    ["creado_por", personaId.toLowerCase()],
   ];
 }
 
@@ -763,13 +792,13 @@ export async function registrarObligacion(
     if (insertado.rows.length === 0) {
       return exigirAltaPropia(consulta, "recurring_obligations", id, c.empresa.id, [
         ["concepto", valor.concepto],
-        ["monto_centavos::text", String(valor.montoCentavos)],
+        ["monto_centavos", String(valor.montoCentavos)],
         ["frecuencia", valor.frecuencia],
-        ["to_char(proxima_fecha, 'YYYY-MM-DD')", valor.proximaFecha],
-        ["ancla_dia::text", String(valor.anclaDia)],
-        ["cost_center_id::text", valor.areaId?.toLowerCase() ?? null],
-        ["supplier_id::text", valor.proveedorId?.toLowerCase() ?? null],
-        ["creado_por::text", c.persona.id.toLowerCase()],
+        ["proxima_fecha", valor.proximaFecha],
+        ["ancla_dia", String(valor.anclaDia)],
+        ["cost_center_id", valor.areaId?.toLowerCase() ?? null],
+        ["supplier_id", valor.proveedorId?.toLowerCase() ?? null],
+        ["creado_por", c.persona.id.toLowerCase()],
       ]);
     }
     await auditar(consulta, actorDeCliente(c), {

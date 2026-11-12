@@ -98,8 +98,104 @@ export function revisarCliente(ruta, texto) {
   return hallazgos;
 }
 
+/**
+ * Envoltorios que reciben el SQL como texto y lo ejecutan. Sus llamadas se
+ * revisan igual que `.query(...)`, en el argumento que lleva el SQL, y dentro
+ * del envoltorio mismo no se marca «SQL recibido como parámetro» para ese
+ * parámetro (es su trabajo recibirlo). Cada uno va por nombre y archivo:
+ *
+ * - aplicarSentencia (src/nucleo/db.ts): la entrega única del SQL al driver;
+ *   se llama desde todo el servidor con el SQL en el segundo argumento.
+ * - consultar y consultarDefinidor (src/server/autenticacion/repositorio.ts):
+ *   abren la transacción con su rol y pasan el SQL a aplicarSentencia, con el
+ *   SQL en el primer argumento. Hoy solo se llaman en ese archivo; si se
+ *   importan en otro, sus llamadas se revisan igual (por el import).
+ * - query de comoConsulta (src/nucleo/db.ts): adapta el cliente de pg a
+ *   Consulta; sus llamadores ya se revisan como `.query(...)`.
+ */
+export const ENVOLTORIOS_SQL = [
+  { nombre: "aplicarSentencia", archivo: "src/nucleo/db.ts", argumento: 1, parametro: "sentencia", global: true },
+  { nombre: "consultar", archivo: "src/server/autenticacion/repositorio.ts", argumento: 0, parametro: "sentencia", global: false },
+  { nombre: "consultarDefinidor", archivo: "src/server/autenticacion/repositorio.ts", argumento: 0, parametro: "sentencia", global: false },
+  // El adaptador del cliente de pg a Consulta (comoConsulta): su `query` es la del driver.
+  { nombre: "query", archivo: "src/nucleo/db.ts", argumento: 0, parametro: "sql", global: false },
+];
+
+/**
+ * Alcance (decisión del líder, 2026-11-12): esta regla es una defensa contra
+ * errores accidentales de inyección (un valor que se cuela en el texto del SQL
+ * al escribir el servidor), no contra código malicioso escrito a propósito por
+ * el equipo. Por eso es estática y conservadora: lo que no puede comprobar lo
+ * marca, pero no intenta seguir todo lo que un autor decidido podría hacer.
+ */
+
+/** Las rutas del repo a las que puede apuntar un import (`./x`, `../x` o `@/x`). */
+function rutasDeModulo(desde, especificador) {
+  let base;
+  if (especificador.startsWith("./") || especificador.startsWith("../")) base = path.posix.join(path.posix.dirname(desde), especificador);
+  else if (especificador.startsWith("@/")) base = `src/${especificador.slice(2)}`;
+  else return [];
+  return [`${base}.ts`, `${base}/index.ts`, base];
+}
+
+/** El import de un nombre en el archivo: `{ original as nombre }` o `* as nombre`. */
+function importDe(archivo, nombre) {
+  for (const sentencia of archivo.statements) {
+    if (!ts.isImportDeclaration(sentencia) || !ts.isStringLiteral(sentencia.moduleSpecifier)) continue;
+    const enlaces = sentencia.importClause?.namedBindings;
+    if (!enlaces) continue;
+    const modulo = sentencia.moduleSpecifier.text;
+    if (ts.isNamespaceImport(enlaces) && enlaces.name.text === nombre) return { modulo, original: null };
+    if (ts.isNamedImports(enlaces)) {
+      const e = enlaces.elements.find((x) => x.name.text === nombre);
+      if (e) return { modulo, original: (e.propertyName ?? e.name).text };
+    }
+  }
+  return null;
+}
+
+/**
+ * El envoltorio al que apunta una expresión: un identificador (por su import,
+ * con o sin alias, o por nombre en el archivo del envoltorio o si es global) o
+ * `espacio.nombre` de un `import * as espacio` de su módulo.
+ */
+function envoltorioDe(ruta, archivo, expresion) {
+  if (ts.isIdentifier(expresion)) {
+    const imp = importDe(archivo, expresion.text);
+    if (imp) {
+      if (imp.original === null) return null;
+      const rutas = rutasDeModulo(ruta, imp.modulo);
+      return ENVOLTORIOS_SQL.find((e) => e.nombre === imp.original && rutas.includes(e.archivo)) ?? null;
+    }
+    return ENVOLTORIOS_SQL.find((e) => e.nombre === expresion.text && (e.global || e.archivo === ruta)) ?? null;
+  }
+  if (ts.isPropertyAccessExpression(expresion) && ts.isIdentifier(expresion.expression)) {
+    const imp = importDe(archivo, expresion.expression.text);
+    if (!imp || imp.original !== null) return null;
+    const rutas = rutasDeModulo(ruta, imp.modulo);
+    return ENVOLTORIOS_SQL.find((e) => e.nombre === expresion.name.text && rutas.includes(e.archivo)) ?? null;
+  }
+  return null;
+}
+
+/** ¿Este identificador es un uso como valor (no un nombre de import, de propiedad, de declaración o de tipo)? */
+function esUsoComoValor(nodo) {
+  const padre = nodo.parent;
+  if (!padre) return false;
+  if (ts.isImportSpecifier(padre) || ts.isExportSpecifier(padre) || ts.isNamespaceImport(padre) || ts.isImportClause(padre)) return false;
+  if (ts.isPropertyAccessExpression(padre) && padre.name === nodo) return false;
+  if ((ts.isPropertyAssignment(padre) || ts.isMethodDeclaration(padre) || ts.isPropertyDeclaration(padre)) && padre.name === nodo) return false;
+  if ((ts.isVariableDeclaration(padre) || ts.isFunctionDeclaration(padre) || ts.isParameter(padre) || ts.isBindingElement(padre)) && padre.name === nodo) return false;
+  let actual = padre;
+  while (actual) {
+    if (ts.isTypeNode(actual)) return false;
+    actual = actual.parent;
+  }
+  return true;
+}
+
 export function revisarSql(ruta, texto) {
-  const archivo = ts.createSourceFile(ruta, texto, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const archivo = ts.createSourceFile(ruta, texto, ts.ScriptTarget.Latest, true, ruta.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
   const hallazgos = [];
 
   function visitar(nodo) {
@@ -128,6 +224,22 @@ export function revisarSql(ruta, texto) {
         const argumento = nodo.arguments[0];
         if (argumento) revisarArgumentoSql(archivo, argumento, hallazgos);
       }
+      const envoltorio = envoltorioDe(ruta, archivo, llamado);
+      if (envoltorio) {
+        const argumento = nodo.arguments[envoltorio.argumento];
+        if (argumento) revisarArgumentoSql(archivo, argumento, hallazgos);
+        else hallazgos.push(`${ubicar(archivo, nodo)} ${envoltorio.nombre} sin SQL`);
+      }
+    }
+
+    // Fuera de su archivo, un envoltorio solo se usa llamándolo directo: guardarlo en otra variable,
+    // pasarlo como valor o `.call`/`.apply` lo dejaría ejecutar SQL sin que la regla lo vea.
+    if ((ts.isIdentifier(nodo) && esUsoComoValor(nodo)) || (ts.isPropertyAccessExpression(nodo) && ts.isIdentifier(nodo.expression))) {
+      const envoltorio = envoltorioDe(ruta, archivo, nodo);
+      const llamadoDirecto = ts.isCallExpression(nodo.parent) && nodo.parent.expression === nodo;
+      if (envoltorio && envoltorio.archivo !== ruta && !llamadoDirecto) {
+        hallazgos.push(`${ubicar(archivo, nodo)} ${envoltorio.nombre} sin llamada directa (el SQL no se puede revisar)`);
+      }
     }
 
     if (
@@ -145,26 +257,50 @@ export function revisarSql(ruta, texto) {
   return hallazgos;
 }
 
-function revisarArgumentoSql(archivo, nodo, hallazgos) {
+function sinEnvoltura(nodo) {
+  let actual = nodo;
+  while (
+    ts.isParenthesizedExpression(actual) ||
+    ts.isAsExpression(actual) ||
+    (ts.isSatisfiesExpression && ts.isSatisfiesExpression(actual)) ||
+    ts.isTypeAssertionExpression(actual)
+  ) {
+    actual = actual.expression;
+  }
+  return actual;
+}
+
+function revisarArgumentoSql(archivo, nodoOriginal, hallazgos, vistos = new Set()) {
+  const nodo = sinEnvoltura(nodoOriginal);
   if (ts.isStringLiteral(nodo) || ts.isNoSubstitutionTemplateLiteral(nodo)) return;
   if (ts.isPropertyAccessExpression(nodo) || ts.isIdentifier(nodo)) {
     const inicial = inicializadorDe(nodo);
+    if (inicial && vistos.has(inicial)) {
+      hallazgos.push(`${ubicar(archivo, nodo)} SQL de origen no comprobable (constantes circulares)`);
+      return;
+    }
     if (inicial) {
-      revisarArgumentoSql(archivo, inicial, hallazgos);
+      vistos.add(inicial);
+      revisarArgumentoSql(archivo, inicial, hallazgos, vistos);
       return;
     }
     if (ts.isIdentifier(nodo) && esParametroSql(nodo)) {
-      hallazgos.push(`${ubicar(archivo, nodo)} SQL recibido como parámetro`);
+      if (!esParametroDeEnvoltorio(archivo, nodo)) hallazgos.push(`${ubicar(archivo, nodo)} SQL recibido como parámetro`);
+      return;
     }
+    // Ni constante del archivo, ni importada de un módulo del repo, ni parámetro: no se puede comprobar.
+    hallazgos.push(`${ubicar(archivo, nodo)} SQL de origen no comprobable`);
     return;
   }
   if (ts.isTemplateExpression(nodo)) {
     for (const tramo of nodo.templateSpans) {
-      if (!interpolacionDePlaceholders(tramo.expression)) {
-        hallazgos.push(
-          `${ubicar(archivo, tramo.expression)} SQL con un valor interpolado que no es un placeholder $n`,
-        );
-      }
+      if (interpolacionDePlaceholders(tramo.expression)) continue;
+      // Decisión del líder (2026-11-12): se puede interpolar una constante cuyo
+      // inicializador sea a su vez SQL verificable (fragmentos compartidos).
+      if (constanteSqlVerificable(tramo.expression, new Set())) continue;
+      hallazgos.push(
+        `${ubicar(archivo, tramo.expression)} SQL con un valor interpolado que no es un placeholder $n ni una constante verificable`,
+      );
     }
     return;
   }
@@ -173,6 +309,109 @@ function revisarArgumentoSql(archivo, nodo, hallazgos) {
     return;
   }
   hallazgos.push(`${ubicar(archivo, nodo)} SQL de origen no comprobable`);
+}
+
+/**
+ * Una constante (`const`) cuyo inicializador es SQL verificable, revisada de
+ * forma recursiva: un literal, o una plantilla cuyas interpolaciones son a su
+ * vez constantes verificables. Sin llamadas, sin parámetros, sin
+ * concatenación y sin ciclos. Vale `NOMBRE` y `OBJETO.propiedad` de un objeto
+ * literal `const`.
+ */
+function constanteSqlVerificable(expresion, visitados) {
+  const nodo = sinEnvoltura(expresion);
+  const inicial = inicializadorConstante(nodo);
+  if (!inicial || visitados.has(inicial)) return false;
+  visitados.add(inicial);
+  return sqlVerificable(inicial, visitados);
+}
+
+function sqlVerificable(expresion, visitados) {
+  const nodo = sinEnvoltura(expresion);
+  if (ts.isStringLiteral(nodo) || ts.isNoSubstitutionTemplateLiteral(nodo) || ts.isNumericLiteral(nodo)) return true;
+  if (ts.isTemplateExpression(nodo)) {
+    return nodo.templateSpans.every((tramo) => constanteSqlVerificable(tramo.expression, visitados));
+  }
+  if (ts.isIdentifier(nodo) || ts.isPropertyAccessExpression(nodo)) return constanteSqlVerificable(nodo, visitados);
+  return false;
+}
+
+/**
+ * Un objeto `const` cuyas propiedades no cambian: `{ … } as const` (TypeScript
+ * no deja asignarlas), o uno cuyo nombre en su archivo solo aparece leyendo una
+ * propiedad (`OBJ.x`), sin asignarla, borrarla ni pasar el objeto entero.
+ */
+function objetoSinMutar(declaracion) {
+  const inicial = declaracion.initializer;
+  if (inicial && ts.isAsExpression(inicial) && ts.isTypeReferenceNode(inicial.type) && ts.isIdentifier(inicial.type.typeName) && inicial.type.typeName.text === "const") {
+    return true;
+  }
+  if (!ts.isIdentifier(declaracion.name)) return false;
+  const nombre = declaracion.name.text;
+  let limpio = true;
+  function visitar(nodo) {
+    if (!limpio) return;
+    if (ts.isIdentifier(nodo) && nodo.text === nombre && nodo !== declaracion.name && esUsoComoValor(nodo) && declaracionEnScope(nombre, nodo) === declaracion) {
+      const acceso = nodo.parent;
+      if (!ts.isPropertyAccessExpression(acceso) || acceso.expression !== nodo || seEscribe(acceso)) limpio = false;
+    }
+    ts.forEachChild(nodo, visitar);
+  }
+  visitar(declaracion.getSourceFile());
+  return limpio;
+}
+
+/** ¿Se asigna, se incrementa o se borra esta expresión? */
+function seEscribe(expresion) {
+  const padre = expresion.parent;
+  if (!padre) return false;
+  if (ts.isBinaryExpression(padre) && padre.left === expresion && padre.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && padre.operatorToken.kind <= ts.SyntaxKind.LastAssignment) return true;
+  if ((ts.isPrefixUnaryExpression(padre) || ts.isPostfixUnaryExpression(padre)) && (padre.operator === ts.SyntaxKind.PlusPlusToken || padre.operator === ts.SyntaxKind.MinusMinusToken)) return true;
+  if (ts.isDeleteExpression(padre)) return true;
+  return false;
+}
+
+function esConstante(declaracion) {
+  return ts.isVariableDeclaration(declaracion) && (ts.getCombinedNodeFlags(declaracion) & ts.NodeFlags.Const) !== 0;
+}
+
+function inicializadorConstante(nodo) {
+  if (ts.isIdentifier(nodo)) {
+    const declaracion = declaracionEnScope(nodo.text, nodo);
+    if (!declaracion || !esConstante(declaracion) || !declaracion.initializer) return null;
+    return declaracion.initializer;
+  }
+  if (!ts.isPropertyAccessExpression(nodo) || !ts.isIdentifier(nodo.expression) || !ts.isIdentifier(nodo.name)) return null;
+  const objeto = declaracionEnScope(nodo.expression.text, nodo);
+  if (!objeto || !esConstante(objeto) || !objeto.initializer || !objetoSinMutar(objeto)) return null;
+  const literal = sinEnvoltura(objeto.initializer);
+  if (!ts.isObjectLiteralExpression(literal)) return null;
+  for (const propiedad of literal.properties) {
+    if (!ts.isPropertyAssignment(propiedad) || !ts.isIdentifier(propiedad.name)) continue;
+    if (propiedad.name.text === nodo.name.text) return propiedad.initializer;
+  }
+  return null;
+}
+
+/** El parámetro que lleva el SQL dentro de un envoltorio registrado (ENVOLTORIOS_SQL), por nombre y archivo. */
+function esParametroDeEnvoltorio(archivo, nodo) {
+  let actual = nodo.parent;
+  while (actual) {
+    if (ts.isFunctionLike(actual) && actual.parameters.some((p) => ts.isIdentifier(p.name) && p.name.text === nodo.text)) {
+      const nombre = nombreDeFuncion(actual);
+      return ENVOLTORIOS_SQL.some((e) => e.nombre === nombre && e.archivo === archivo.fileName && e.parametro === nodo.text);
+    }
+    actual = actual.parent;
+  }
+  return false;
+}
+
+function nombreDeFuncion(funcion) {
+  if (ts.isFunctionDeclaration(funcion) && funcion.name) return funcion.name.text;
+  const padre = funcion.parent;
+  if (padre && (ts.isVariableDeclaration(padre) || ts.isPropertyAssignment(padre)) && ts.isIdentifier(padre.name)) return padre.name.text;
+  if (ts.isMethodDeclaration(funcion) && ts.isIdentifier(funcion.name)) return funcion.name.text;
+  return null;
 }
 
 function esParametroSql(nodo) {
@@ -192,7 +431,8 @@ function esParametroSql(nodo) {
 function inicializadorDe(nodo) {
   if (ts.isIdentifier(nodo)) {
     const declaracion = declaracionEnScope(nodo.text, nodo);
-    if (declaracion && ts.isVariableDeclaration(declaracion) && declaracion.initializer) {
+    // Solo `const`: una variable que se puede reasignar no dice qué SQL lleva al ejecutarse.
+    if (declaracion && esConstante(declaracion) && declaracion.initializer) {
       return declaracion.initializer;
     }
     return null;
@@ -201,10 +441,12 @@ function inicializadorDe(nodo) {
     return null;
   }
   const objeto = declaracionEnScope(nodo.expression.text, nodo);
-  if (!objeto || !ts.isVariableDeclaration(objeto) || !objeto.initializer || !ts.isObjectLiteralExpression(objeto.initializer)) {
+  // `{ ... } as const` también es un objeto literal: antes se saltaba la revisión de sus sentencias.
+  const literal = objeto && esConstante(objeto) && objeto.initializer && objetoSinMutar(objeto) ? sinEnvoltura(objeto.initializer) : null;
+  if (!literal || !ts.isObjectLiteralExpression(literal)) {
     return null;
   }
-  for (const propiedad of objeto.initializer.properties) {
+  for (const propiedad of literal.properties) {
     if (!ts.isPropertyAssignment(propiedad) || !ts.isIdentifier(propiedad.name)) continue;
     if (propiedad.name.text === nodo.name.text) return propiedad.initializer;
   }
@@ -219,31 +461,43 @@ function interpolacionDePlaceholders(expresion) {
   const separador = expresion.arguments[0];
   if (!separador || !ts.isStringLiteral(separador)) return false;
 
+  // El arreglo nace vacío (`const x = []`) y en todo su ámbito solo se usa con
+  // `x.push(<plantillas de números>)`, `x.join("…")` y `x.length`. Cualquier otra
+  // cosa (nacer con valores, unshift, splice, asignar por índice, pasarlo entero) no se comprueba.
   const nombre = llamado.expression.text;
-  const pushes = pushesDelArreglo(nombre, expresion);
-  if (pushes.length === 0) return false;
-  return pushes.every((argumento) => plantillaSoloNumeros(argumento));
-}
-
-function pushesDelArreglo(nombre, desde) {
-  const funcion = ancestroFuncion(desde);
-  if (!funcion) return [];
-  const argumentos = [];
+  const declaracion = declaracionEnScope(nombre, llamado.expression);
+  if (!declaracion || !esConstante(declaracion) || !declaracion.initializer) return false;
+  const inicial = sinEnvoltura(declaracion.initializer);
+  if (!ts.isArrayLiteralExpression(inicial) || inicial.elements.length > 0) return false;
+  let pushes = 0;
+  let limpio = true;
   function visitar(nodo) {
-    if (
-      ts.isCallExpression(nodo) &&
-      ts.isPropertyAccessExpression(nodo.expression) &&
-      nodo.expression.name.text === "push" &&
-      ts.isIdentifier(nodo.expression.expression) &&
-      nodo.expression.expression.text === nombre &&
-      nodo.arguments[0]
-    ) {
-      argumentos.push(nodo.arguments[0]);
+    if (!limpio) return;
+    if (ts.isIdentifier(nodo) && nodo.text === nombre && nodo !== declaracion.name && esUsoComoValor(nodo) && declaracionEnScope(nombre, nodo) === declaracion) {
+      const acceso = nodo.parent;
+      const llamada = acceso?.parent;
+      const directo = ts.isPropertyAccessExpression(acceso) && acceso.expression === nodo && ts.isCallExpression(llamada) && llamada.expression === acceso;
+      if (directo && acceso.name.text === "push" && llamada.arguments.length > 0 && llamada.arguments.every(plantillaSoloNumeros)) pushes += 1;
+      else if (directo && acceso.name.text === "join") {
+        // join solo lee
+      } else if (ts.isPropertyAccessExpression(acceso) && acceso.expression === nodo && acceso.name.text === "length" && !seEscribe(acceso)) {
+        // length solo lee
+      } else limpio = false;
     }
     ts.forEachChild(nodo, visitar);
   }
-  visitar(funcion);
-  return argumentos;
+  visitar(ambitoDe(declaracion));
+  return limpio && pushes > 0;
+}
+
+/** El bloque (o el archivo) donde vive una declaración: su ámbito léxico. */
+function ambitoDe(declaracion) {
+  let actual = declaracion.parent;
+  while (actual && !ts.isBlock(actual) && !ts.isSourceFile(actual) && !ts.isModuleBlock(actual) && !ts.isCaseClause(actual) && !ts.isDefaultClause(actual)
+    && !ts.isForStatement(actual) && !ts.isForOfStatement(actual) && !ts.isForInStatement(actual)) {
+    actual = actual.parent;
+  }
+  return actual ?? declaracion.getSourceFile();
 }
 
 function plantillaSoloNumeros(nodo) {
@@ -270,40 +524,98 @@ function esNumero(nodo) {
   return declaracion.tipo === "indice";
 }
 
+/**
+ * La declaración que ve un uso, por ámbito léxico: sube por bloques, `for`,
+ * `catch`, funciones (sus parámetros) y el archivo (sus imports del repo), y en
+ * cada uno toma solo lo declarado directamente ahí. Así una `const` homónima en
+ * otro bloque, o la variable de un `for…of`, no se confunden.
+ */
 function declaracionEnScope(nombre, desde) {
   let actual = desde;
   while (actual) {
-    if (ts.isFunctionLike(actual) || ts.isSourceFile(actual)) {
-      if (ts.isFunctionLike(actual)) {
-        for (const [posicion, parametro] of actual.parameters.entries()) {
-          if (ts.isIdentifier(parametro.name) && parametro.name.text === nombre) {
-            if (esParametroIndice(actual, posicion)) return { tipo: "indice" };
-            if (parametro.initializer && esNumero(parametro.initializer)) return { tipo: "indice" };
-            return null;
-          }
+    if (ts.isFunctionLike(actual)) {
+      for (const [posicion, parametro] of actual.parameters.entries()) {
+        if (ts.isIdentifier(parametro.name) && parametro.name.text === nombre) {
+          if (esParametroIndice(actual, posicion)) return { tipo: "indice" };
+          if (parametro.initializer && esNumero(parametro.initializer)) return { tipo: "indice" };
+          return null;
         }
       }
-      const variable = buscarVariable(actual, nombre);
-      if (variable) return variable;
     }
+    const local = declaracionDelAmbito(actual, nombre);
+    if (local) return local;
+    if (ts.isSourceFile(actual)) return buscarImportado(actual, nombre);
     actual = actual.parent;
   }
   return null;
 }
 
-function buscarVariable(raiz, nombre) {
-  let hallada = null;
-  function visitar(nodo) {
-    if (hallada) return;
-    if (ts.isFunctionLike(nodo) && nodo !== raiz) return;
-    if (ts.isVariableDeclaration(nodo) && ts.isIdentifier(nodo.name) && nodo.name.text === nombre) {
-      hallada = nodo;
-      return;
+function declaracionDelAmbito(nodo, nombre) {
+  const deLista = (lista) => lista.declarations.find((d) => ts.isIdentifier(d.name) && d.name.text === nombre) ?? null;
+  if (ts.isBlock(nodo) || ts.isSourceFile(nodo) || ts.isModuleBlock(nodo) || ts.isCaseClause(nodo) || ts.isDefaultClause(nodo)) {
+    for (const sentencia of nodo.statements) {
+      if (!ts.isVariableStatement(sentencia)) continue;
+      const declaracion = deLista(sentencia.declarationList);
+      if (declaracion) return declaracion;
     }
-    ts.forEachChild(nodo, visitar);
+    return null;
   }
-  visitar(raiz);
-  return hallada;
+  if ((ts.isForStatement(nodo) || ts.isForOfStatement(nodo) || ts.isForInStatement(nodo)) && nodo.initializer && ts.isVariableDeclarationList(nodo.initializer)) {
+    return deLista(nodo.initializer);
+  }
+  if (ts.isCatchClause(nodo) && nodo.variableDeclaration && ts.isIdentifier(nodo.variableDeclaration.name) && nodo.variableDeclaration.name.text === nombre) {
+    return nodo.variableDeclaration;
+  }
+  return null;
+}
+
+/**
+ * Una constante importada de un módulo del repo (`./x`, `../x` o `@/x`): se
+ * busca su `export const` en ese archivo para revisarla ahí. Un import de un
+ * paquete, o un archivo que no se puede leer, no se resuelve (no comprobable).
+ */
+const MODULOS = new Map();
+let leerModulo = (relativa) => {
+  const absoluta = path.join(RAIZ, relativa);
+  return existsSync(absoluta) ? readFileSync(absoluta, "utf8") : null;
+};
+
+/** Para las pruebas: de dónde lee la regla los módulos importados. */
+export function leerModulosDesde(lector) {
+  leerModulo = lector;
+  MODULOS.clear();
+}
+
+function buscarImportado(archivo, nombre) {
+  for (const sentencia of archivo.statements) {
+    if (!ts.isImportDeclaration(sentencia) || !ts.isStringLiteral(sentencia.moduleSpecifier)) continue;
+    const enlaces = sentencia.importClause?.namedBindings;
+    if (!enlaces || !ts.isNamedImports(enlaces)) continue;
+    const especificador = enlaces.elements.find((e) => e.name.text === nombre);
+    if (!especificador) continue;
+    const modulo = moduloDelRepo(archivo.fileName, sentencia.moduleSpecifier.text);
+    if (!modulo) return null;
+    const original = (especificador.propertyName ?? especificador.name).text;
+    for (const s of modulo.statements) {
+      if (!ts.isVariableStatement(s) || !s.modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword)) continue;
+      const declaracion = s.declarationList.declarations.find((d) => ts.isIdentifier(d.name) && d.name.text === original);
+      if (declaracion) return declaracion;
+    }
+    return null;
+  }
+  return null;
+}
+
+function moduloDelRepo(desde, especificador) {
+  for (const relativa of rutasDeModulo(desde, especificador)) {
+    if (MODULOS.has(relativa)) return MODULOS.get(relativa);
+    const texto = leerModulo(relativa);
+    if (texto === null) continue;
+    const fuente = ts.createSourceFile(relativa, texto, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+    MODULOS.set(relativa, fuente);
+    return fuente;
+  }
+  return null;
 }
 
 function esParametroIndice(funcion, posicion) {
@@ -317,18 +629,11 @@ function esParametroIndice(funcion, posicion) {
   return conIndice.includes(metodo) && posicion === indice;
 }
 
-function ancestroFuncion(nodo) {
-  let actual = nodo;
-  while (actual) {
-    if (ts.isFunctionLike(actual)) return actual;
-    actual = actual.parent;
-  }
-  return null;
-}
-
-function ubicar(archivo, nodo) {
-  const { line } = archivo.getLineAndCharacterOfPosition(nodo.getStart(archivo));
-  return `${archivo.fileName}:${line + 1}`;
+function ubicar(_archivo, nodo) {
+  // El nodo puede venir de otro módulo (una constante importada): se ubica en el suyo.
+  const fuente = nodo.getSourceFile();
+  const { line } = fuente.getLineAndCharacterOfPosition(nodo.getStart(fuente));
+  return `${fuente.fileName}:${line + 1}`;
 }
 
 function esArchivoCliente(texto) {
@@ -355,11 +660,46 @@ function esTexto(nombre) {
   return /\.(ts|tsx|js|mjs|cjs|sql|json|sh|md|css|mjs)$/.test(nombre);
 }
 
-function esServidor(ruta) {
+export function esServidor(ruta, texto = "") {
   if (ruta.endsWith(".test.ts") || ruta.endsWith(".test.tsx")) return false;
   if (ruta.startsWith("src/server/") && ruta.endsWith(".ts")) return true;
-  if (ruta.startsWith("src/app/") && (ruta.endsWith("/route.ts") || ruta.endsWith("/acciones.ts"))) return true;
+  // El núcleo lleva aplicarSentencia, la entrega del SQL al driver: también se revisa.
+  if (ruta.startsWith("src/nucleo/") && ruta.endsWith(".ts")) return true;
+  if (ruta.startsWith("src/app/") && ruta.endsWith("/route.ts")) return true;
+  // Las acciones del servidor: `acciones.ts`, `acciones-<algo>.ts` (por ejemplo acciones-efevoo.ts) y todo
+  // archivo de src/app con "use server" en su prólogo de directivas, o en el de una de sus funciones (R70-7/8).
+  if (ruta.startsWith("src/app/") && /\/acciones(-[^/]+)?\.ts$/.test(ruta)) return true;
+  if (ruta.startsWith("src/app/") && /\.tsx?$/.test(ruta) && texto.includes("use server") && tieneAccionDeServidor(ruta, texto)) return true;
   return false;
+}
+
+/**
+ * ¿Alguna directiva del prólogo (las sentencias iniciales que son una cadena literal, como "use strict") es
+ * "use server"? Así lo lee Next: `"use strict"; "use server";` también es una acción de servidor (R70-8).
+ */
+function prologoConUseServer(sentencias) {
+  for (const sentencia of sentencias) {
+    if (!ts.isExpressionStatement(sentencia) || !ts.isStringLiteral(sentencia.expression)) return false;
+    if (sentencia.expression.text === "use server") return true;
+  }
+  return false;
+}
+
+/** El archivo (su prólogo) o alguna de sus funciones (el prólogo de su cuerpo) es una acción de servidor. */
+function tieneAccionDeServidor(ruta, texto) {
+  const fuente = ts.createSourceFile(ruta, texto, ts.ScriptTarget.Latest, true, ruta.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  if (prologoConUseServer(fuente.statements)) return true;
+  let hallada = false;
+  function visitar(nodo) {
+    if (hallada) return;
+    if (ts.isFunctionLike(nodo) && nodo.body && ts.isBlock(nodo.body) && prologoConUseServer(nodo.body.statements)) {
+      hallada = true;
+      return;
+    }
+    ts.forEachChild(nodo, visitar);
+  }
+  visitar(fuente);
+  return hallada;
 }
 
 export function revisarPaquete(directorio) {
@@ -436,7 +776,7 @@ export function main() {
     if (ruta.endsWith(".ts") || ruta.endsWith(".tsx")) {
       hallazgos.push(...revisarCliente(ruta, texto));
     }
-    if (esServidor(ruta)) {
+    if (esServidor(ruta, texto)) {
       hallazgos.push(...revisarSql(ruta, texto));
     }
   }
