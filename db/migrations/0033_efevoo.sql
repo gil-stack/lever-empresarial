@@ -48,13 +48,15 @@ $$;
 REVOKE ALL ON FUNCTION efevoo_miembro_con_rol(uuid, text[]) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION efevoo_miembro_con_rol(uuid, text[]) TO plataforma_cliente, plataforma_sofipo;
 
--- Ve todas las tarjetas de la empresa quien tiene un rol distinto de tarjetahabiente.
+-- Ve todas las tarjetas de la empresa quien abre Tarjetas en el portal:
+-- administración, liberación y finanzas. El tarjetahabiente ve solo las suyas
+-- (efevoo_tarjeta_del_titular); el contador y el solicitante, ninguna.
 CREATE FUNCTION efevoo_ve_todas(p_company uuid)
 RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
-  SELECT efevoo_miembro_con_rol(p_company, ARRAY['administrador', 'solicitante', 'liberador', 'contador', 'finanzas'])
+  SELECT efevoo_miembro_con_rol(p_company, ARRAY['administrador', 'liberador', 'finanzas'])
 $$;
 
 REVOKE ALL ON FUNCTION efevoo_ve_todas(uuid) FROM PUBLIC;
@@ -138,7 +140,9 @@ AS $$
     SELECT 1
       FROM efevoo_tarjetas t
       JOIN employees e ON e.id = t.employee_id AND e.company_id = t.company_id
+      JOIN memberships m ON m.company_id = t.company_id AND m.user_id = e.user_id AND m.estado = 'activa'
      WHERE t.id = p_tarjeta AND t.company_id = app_empresa() AND e.user_id = app_usuario()
+       AND (e.baja_en IS NULL OR e.baja_en > (timezone('America/Mexico_City', clock_timestamp()))::date)
   )
 $$;
 
@@ -257,11 +261,19 @@ CREATE TABLE efevoo_operaciones (
   CONSTRAINT efevoo_operaciones_codigo CHECK (codigo_efevoo IS NULL OR codigo_efevoo ~ '^[a-z0-9_]{1,32}$')
 );
 
--- Una sola operación abierta (pendiente o incierta) a la vez por tarjeta, por
--- plástico del inventario y, en el alta y el depósito, por empresa: un segundo
--- intento con otra llave espera a que se resuelva o se concilie la primera.
-CREATE UNIQUE INDEX efevoo_operaciones_abierta_tarjeta ON efevoo_operaciones (tarjeta_id)
-  WHERE estado IN ('pendiente', 'incierta') AND tarjeta_id IS NOT NULL;
+-- Una sola operación abierta (pendiente o incierta) a la vez: de dinero por
+-- tarjeta (carga y retiro), de estado por tarjeta (activar, bloquear,
+-- desbloquear y pasarla a la empresa), una cancelación por tarjeta, una por
+-- plástico del inventario y, en el alta y el depósito, una por empresa. Un
+-- segundo intento con otra llave espera a que se resuelva o se concilie el
+-- primero. Van separadas para que una carga sin respuesta de Efevoo no impida
+-- bloquear ni cancelar una tarjeta robada.
+CREATE UNIQUE INDEX efevoo_operaciones_abierta_dinero ON efevoo_operaciones (tarjeta_id)
+  WHERE estado IN ('pendiente', 'incierta') AND tipo IN ('carga', 'retiro');
+CREATE UNIQUE INDEX efevoo_operaciones_abierta_estado ON efevoo_operaciones (tarjeta_id)
+  WHERE estado IN ('pendiente', 'incierta') AND tipo IN ('activacion', 'asignacion_cliente', 'bloqueo', 'desbloqueo');
+CREATE UNIQUE INDEX efevoo_operaciones_abierta_cancelacion ON efevoo_operaciones (tarjeta_id)
+  WHERE estado IN ('pendiente', 'incierta') AND tipo = 'cancelacion';
 CREATE UNIQUE INDEX efevoo_operaciones_abierta_inventario ON efevoo_operaciones (ambiente, tarjeta_inventario)
   WHERE estado IN ('pendiente', 'incierta') AND tarjeta_inventario IS NOT NULL;
 CREATE UNIQUE INDEX efevoo_operaciones_abierta_empresa ON efevoo_operaciones (company_id, tipo)
@@ -295,17 +307,6 @@ BEGIN
       RAISE EXCEPTION 'efevoo_operacion_inmutable';
     END IF;
     RETURN NEW;
-  END IF;
-
-  -- Idempotencia: la misma llave de intento con los mismos datos no inserta otra
-  -- (quien llama lee la que ya estaba); con otros datos es un error.
-  SELECT * INTO previa FROM efevoo_operaciones o WHERE o.company_id = NEW.company_id AND o.llave_intento = NEW.llave_intento;
-  IF FOUND THEN
-    IF (previa.tipo, previa.tarjeta_id, previa.tarjeta_inventario, previa.monto_centavos, previa.employee_id, previa.reintento_de)
-       IS NOT DISTINCT FROM (NEW.tipo, NEW.tarjeta_id, NEW.tarjeta_inventario, NEW.monto_centavos, NEW.employee_id, NEW.reintento_de) THEN
-      RETURN NULL;
-    END IF;
-    RAISE EXCEPTION 'intento_con_otros_datos';
   END IF;
 
   IF NEW.estado <> 'pendiente' OR NEW.resuelta_por IS NOT NULL OR NEW.resuelta_en IS NOT NULL
@@ -361,6 +362,22 @@ BEGIN
     RAISE EXCEPTION 'solo_empresas_reales';
   END IF;
 
+  -- Idempotencia, después de los permisos (quien no puede asentar no recibe
+  -- «ok» por repetir una llave ajena): la misma llave, de la misma persona y
+  -- con los mismos datos, no inserta otra (quien llama lee la que ya estaba);
+  -- con otros datos es un error. El candado por (empresa, llave) hace esperar a
+  -- un segundo envío simultáneo hasta que el primero confirme: entonces lo ve
+  -- (cada consulta toma su foto en READ COMMITTED) y regresa sin insertar.
+  PERFORM pg_advisory_xact_lock(hashtextextended(NEW.company_id::text || ':' || NEW.llave_intento::text, 334033));
+  SELECT * INTO previa FROM efevoo_operaciones o WHERE o.company_id = NEW.company_id AND o.llave_intento = NEW.llave_intento;
+  IF FOUND THEN
+    IF (previa.tipo, previa.tarjeta_id, previa.tarjeta_inventario, previa.monto_centavos, previa.employee_id, previa.reintento_de, previa.creada_por)
+       IS NOT DISTINCT FROM (NEW.tipo, NEW.tarjeta_id, NEW.tarjeta_inventario, NEW.monto_centavos, NEW.employee_id, NEW.reintento_de, NEW.creada_por) THEN
+      RETURN NULL;
+    END IF;
+    RAISE EXCEPTION 'intento_con_otros_datos';
+  END IF;
+
   SELECT * INTO vinculo FROM efevoo_clientes v WHERE v.company_id = NEW.company_id;
   IF NEW.tipo = 'alta_cliente' THEN
     IF FOUND THEN
@@ -388,6 +405,12 @@ BEGIN
       ELSE false
     END) THEN
       RAISE EXCEPTION 'tarjeta_en_otro_estado';
+    END IF;
+    IF NEW.tipo <> 'cancelacion' AND EXISTS (
+      SELECT 1 FROM efevoo_operaciones o
+       WHERE o.tarjeta_id = NEW.tarjeta_id AND o.tipo = 'cancelacion' AND o.estado IN ('pendiente', 'incierta')
+    ) THEN
+      RAISE EXCEPTION 'tarjeta_en_cancelacion';
     END IF;
   END IF;
 
@@ -454,7 +477,21 @@ BEGIN
           OR (op.estado = 'incierta' AND p_estado IN ('confirmada', 'fallida'))) THEN
     RAISE EXCEPTION 'transicion_no_valida';
   END IF;
+  -- Una incierta solo falla porque no apareció en Efevoo, y eso solo se concluye
+  -- 10 minutos después de asentarla: antes, Efevoo podría estar procesándola
+  -- todavía y un reintento sería un doble cargo. Lo mismo para una pendiente que
+  -- se quedó sin resolver (la llamada se cortó antes de anotar el resultado).
+  IF op.estado = 'incierta' AND p_estado = 'fallida' AND p_codigo IS DISTINCT FROM 'no_aparecio' THEN
+    RAISE EXCEPTION 'transicion_no_valida';
+  END IF;
+  IF p_codigo = 'no_aparecio' AND (p_estado <> 'fallida' OR clock_timestamp() < op.creada_en + interval '10 minutes') THEN
+    RAISE EXCEPTION 'conciliacion_prematura';
+  END IF;
   IF p_estado = 'confirmada' AND op.tipo IN ('alta_cliente', 'asignacion') AND (p_id_efevoo IS NULL OR p_id_efevoo !~ '^[1-9][0-9]{0,8}$') THEN
+    RAISE EXCEPTION 'efevoo_operacion_no_valida';
+  END IF;
+  -- Una carga o un retiro confirmados llevan el id positivo de Efevoo: un id 0 es el falso éxito.
+  IF p_estado = 'confirmada' AND op.tipo IN ('carga', 'retiro') AND (p_id_efevoo IS NULL OR p_id_efevoo !~ '^[1-9][0-9]{0,17}$') THEN
     RAISE EXCEPTION 'efevoo_operacion_no_valida';
   END IF;
 

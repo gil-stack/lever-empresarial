@@ -55,7 +55,23 @@ describe("Efevoo falso", () => {
     const retiro = await efevoo.retirarTarjeta(557, titular.correo, 45, "1000002", "retiro");
     assert.equal(retiro.saldoFinalCentavos, 12_300);
     const movs = await efevoo.movimientosDeTarjeta(557, titular.correo);
-    assert.deepEqual(movs.map((m) => [m.referencia, m.centavos]), [["1000002", 45], ["1000001", 12_345]]);
+    // Como en el sandbox: la carga es Abono «PAGO A TARJETA», el retiro Cargo «DEVOLUCIÓN PAGO A TARJETA»,
+    // y el IDMovimiento es de otra serie que el id que respondieron fundCard y unfundCard.
+    assert.deepEqual(movs.map((m) => [m.referencia, m.centavos, m.tipo, m.concepto]), [
+      ["1000002", 45, "cargo", "DEVOLUCIÓN PAGO A TARJETA"],
+      ["1000001", 12_345, "abono", "PAGO A TARJETA"],
+    ]);
+    assert.equal(movs[0]!.saldoDespuesCentavos, 12_300);
+    assert.notEqual(movs[1]!.idMovimiento, String(carga.id));
+    assert.notEqual(movs[0]!.idMovimiento, String(retiro.id));
+    assert.match(movs[0]!.fechaHora, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+    // Solo pruebas: un movimiento con concepto a medida, sin tocar el saldo.
+    falso.inyectarMovimiento({ idCard: 557, concepto: "COMPRA 4495830012349476", importe: 1.5, tipo: "Cargo" });
+    const r = await fetch(`${falso.url}/simular`, { method: "POST", body: JSON.stringify({ metodo: "movimiento", idCard: 557, concepto: "OTRO", importe: 2, tipo: "Abono" }) });
+    assert.equal(r.status, 200);
+    const conInyectados = await efevoo.movimientosDeTarjeta(557, titular.correo);
+    assert.deepEqual(conInyectados.slice(0, 2).map((m) => [m.concepto, m.centavos, m.tipo]), [["OTRO", 200, "abono"], ["COMPRA 4495830012349476", 150, "cargo"]]);
+    assert.equal(falso.estado().tarjetas.find((t) => t.id === 557)!.saldoCentavos, 12_300, "inyectar no toca el saldo");
 
     await efevoo.bloquearTarjeta(557, titular.correo, "block");
     assert.equal((await efevoo.listarTarjetas({ estados: ["blocked"], pagina: 1, tamano: 10 })).tarjetas[0]?.id, 557);

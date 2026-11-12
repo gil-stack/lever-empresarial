@@ -18,6 +18,8 @@ import type { Socket } from "node:net";
  *   POST /simular   {"metodo": "fundCard", "falla": "901"|"401"|"5xx"|"ilegible"|"timeout"|"timeout_sin_efecto", "idCard"?: 557, "idepCliente"?: 300}
  *                   La siguiente llamada a ese método (y a esa tarjeta o cliente, si se dice) falla una sola vez.
  *                   `ilegible` y `timeout` aplican el efecto antes de fallar: Efevoo sí lo hizo y Lever no lo sabe.
+ *   POST /simular   {"metodo": "movimiento", "idCard": 557, "concepto": "…", "importe": 12.34, "tipo": "Abono"|"Cargo", "referencia"?: "1234567", "fecha"?: ISO}
+ *                   Solo para pruebas: agrega a la tarjeta un movimiento con ese concepto, sin tocar su saldo.
  *   GET  /estado    Clientes, tarjetas y movimientos, para revisar qué hizo la aplicación.
  *   POST /reiniciar Vuelve al inventario inicial.
  */
@@ -39,8 +41,28 @@ type TarjetaFalsa = {
   activada: boolean;
   producto: number;
   subproducto: number;
-  transacciones: { idMovimiento: number; referencia: string; centavos: number; concepto: string; fecha: Date; observaciones: string }[];
+  transacciones: MovimientoFalso[];
 };
+
+/**
+ * Como los da getTransactionsCard en el sandbox (lectura de -03 de la tarjeta 560,
+ * revision-efevoo-e1.md): importe sin signo como texto «x.0000»; el signo lo da
+ * TipoMovimientoCargoAbono; una carga es «PAGO A TARJETA» (Abono, M09282600MXN484)
+ * y un retiro «DEVOLUCIÓN PAGO A TARJETA» (Cargo, M09DT2600MXN484); el
+ * IDMovimiento es de otra serie que el id que responde fundCard o unfundCard.
+ */
+export type MovimientoFalso = {
+  idMovimiento: number;
+  referencia: string | null;
+  centavos: number;
+  tipo: "Abono" | "Cargo";
+  concepto: string;
+  clave: string;
+  fecha: Date;
+  observaciones: string;
+  saldoDespuesCentavos: number | null;
+};
+export type MovimientoInyectado = { idCard: number; concepto: string; importe: number; tipo: "Abono" | "Cargo"; referencia?: string; fecha?: string };
 
 export type EfevooFalso = {
   /** Valor de EFEVOO_URL. */
@@ -48,6 +70,8 @@ export type EfevooFalso = {
   usuario: string;
   llave: string;
   simular(f: FallaPendiente): void;
+  /** Solo pruebas: un movimiento con concepto a medida, sin tocar el saldo. */
+  inyectarMovimiento(m: MovimientoInyectado): void;
   estado(): { clientes: ClienteFalso[]; tarjetas: TarjetaFalsa[] };
   reiniciar(): void;
   cerrar(): Promise<void>;
@@ -75,10 +99,13 @@ function fechaRegistro(d: Date): string {
   const dos = (n: number) => String(n).padStart(2, "0");
   return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()} ${h}:${dos(d.getMinutes())}:${dos(d.getSeconds())} ${d.getHours() < 12 ? "AM" : "PM"}`;
 }
+/** FechaHora de getTransactionsCard: hora de México (UTC−6, sin horario de verano desde 2022). */
 function fechaHora(d: Date): string {
+  const m = new Date(d.getTime() - 6 * 3_600_000);
   const dos = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${dos(d.getMonth() + 1)}-${dos(d.getDate())} ${dos(d.getHours())}:${dos(d.getMinutes())}:${dos(d.getSeconds())}`;
+  return `${m.getUTCFullYear()}-${dos(m.getUTCMonth() + 1)}-${dos(m.getUTCDate())} ${dos(m.getUTCHours())}:${dos(m.getUTCMinutes())}:${dos(m.getUTCSeconds())}`;
 }
+const importeTexto = (centavos: number) => `${Math.trunc(centavos / 100)}.${String(centavos % 100).padStart(2, "0")}00`;
 const pesos = (centavos: number) => Number((centavos / 100).toFixed(2));
 /** Pesos que llegan en el JSON → centavos, con texto para no arrastrar flotantes. */
 function centavos(v: unknown): number | null {
@@ -94,7 +121,11 @@ export async function iniciarEfevooFalso(puerto = 0, credenciales = { usuario: "
   let tarjetas = new Map<number, TarjetaFalsa>();
   let fallas: FallaPendiente[] = [];
   let siguienteCliente = 300;
-  let siguienteMovimiento = 5000;
+  let siguienteMovimiento = 120_600;
+  // Series distintas, como en el sandbox: el id que responde fundCard (3060…), el de unfundCard (2664…) y el IDMovimiento (4526…).
+  let siguienteCarga = 3000;
+  let siguienteRetiro = 2600;
+  let siguienteIdMovimiento = 4500;
   const colgados = new Set<ServerResponse>();
   const sockets = new Set<Socket>();
 
@@ -106,7 +137,21 @@ export async function iniciarEfevooFalso(puerto = 0, credenciales = { usuario: "
     } satisfies TarjetaFalsa]));
     fallas = [];
     siguienteCliente = 300;
-    siguienteMovimiento = 5000;
+    siguienteMovimiento = 120_600;
+    siguienteCarga = 3000;
+    siguienteRetiro = 2600;
+    siguienteIdMovimiento = 4500;
+  }
+
+  function inyectarMovimiento(m: MovimientoInyectado) {
+    const t = tarjetas.get(Number(m.idCard));
+    const c = centavos(m.importe);
+    if (!t || c === null || c <= 0 || (m.tipo !== "Abono" && m.tipo !== "Cargo") || typeof m.concepto !== "string") throw new Error("movimiento no válido");
+    t.transacciones.push({
+      idMovimiento: siguienteIdMovimiento++, referencia: m.referencia ?? null, centavos: c, tipo: m.tipo, concepto: m.concepto.slice(0, 200),
+      clave: m.tipo === "Abono" ? "M09282600MXN484" : "M09DT2600MXN484", fecha: m.fecha ? new Date(m.fecha) : new Date(),
+      observaciones: "", saldoDespuesCentavos: null,
+    });
   }
   reiniciar();
 
@@ -201,9 +246,13 @@ export async function iniciarEfevooFalso(puerto = 0, credenciales = { usuario: "
         if (!t || !t.email || t.email !== p.email) return [200, ERROR_TEXTO("115", "ERROR: Cuenta no encontrada.")];
         const lista = [...t.transacciones].sort((a, b) => (p.descending === false ? a.idMovimiento - b.idMovimiento : b.idMovimiento - a.idMovimiento));
         return [200, { status: OK_TEXTO, response: { transactions: lista.map((x) => ({
-          Correo: t.email, Moneda: "MXN", Nombre: t.nombre, Importe: pesos(x.centavos), Tarjeta: t.bin, company: 1, FechaHora: fechaHora(x.fecha),
-          Referencia: x.referencia, IDOperacion: 0, IDMovimiento: String(x.idMovimiento), IdMovimiento: String(x.idMovimiento),
-          Observaciones: x.observaciones, ImporteMovimiento: pesos(x.centavos), ConceptoMovimiento: x.concepto, MonedaMovimiento: "MXN",
+          MCC: "", Correo: t.email, IDSpei: null, Moneda: "MXN", Nombre: t.nombre, Importe: importeTexto(x.centavos), Tarjeta: t.bin, company: 1,
+          Comercio: null, FechaHora: fechaHora(x.fecha), EnTransito: null, Referencia: x.referencia ?? "", IDOperacion: "0", IdOperacion: "",
+          MedioAcceso: t.bin, Autorizacion: "", IDMovimiento: String(x.idMovimiento), IdMovimiento: String(x.idMovimiento), Organizacion: "EPCVC",
+          Observaciones: x.observaciones, ClaveMovimiento: x.clave, FechaMovimiento: fechaHora(x.fecha), TipoTransaccion: null, MonedaMovimiento: "MXN",
+          ImporteMovimiento: importeTexto(x.centavos), ConceptoMovimiento: x.concepto, ReferenciaNumerica: x.referencia ?? "",
+          DescripcionMovimiento: x.concepto, SaldoDespuesMovimiento: x.saldoDespuesCentavos === null ? "" : (x.saldoDespuesCentavos / 100).toFixed(2),
+          ImporteOrigenMovimiento: importeTexto(x.centavos), TipoMovimientoCargoAbono: x.tipo,
         })) } }];
       }
       case "assignCard": {
@@ -254,9 +303,14 @@ export async function iniciarEfevooFalso(puerto = 0, credenciales = { usuario: "
         t.saldoCentavos += signo * monto;
         const c = clientes.get(t.subcliente);
         if (c) c.saldoCentavos -= signo * monto;
-        const idMovimiento = siguienteMovimiento++;
-        t.transacciones.push({ idMovimiento, referencia: p.reference, centavos: monto, concepto: metodo === "fundCard" ? "PAGO A TARJETA" : "RETIRO DE TARJETA", fecha: new Date(), observaciones: String(p.observations ?? "") });
-        return [200, { response: { id: idMovimiento, idCard: t.id, finalCardBalance: pesos(t.saldoCentavos), message: "Operación realizada correctamente" }, status: OK_NUMERO }];
+        const carga = metodo === "fundCard";
+        t.transacciones.push({
+          idMovimiento: siguienteIdMovimiento++, referencia: p.reference, centavos: monto, tipo: carga ? "Abono" : "Cargo",
+          concepto: carga ? "PAGO A TARJETA" : "DEVOLUCIÓN PAGO A TARJETA", clave: carga ? "M09282600MXN484" : "M09DT2600MXN484",
+          fecha: new Date(), observaciones: String(p.observations ?? ""), saldoDespuesCentavos: t.saldoCentavos,
+        });
+        const id = carga ? siguienteCarga++ : siguienteRetiro++;
+        return [200, { response: { id, idCard: t.id, finalCardBalance: pesos(t.saldoCentavos), message: "Operación realizada correctamente" }, status: OK_NUMERO }];
       }
       case "cardBlocker": {
         const t = tarjetas.get(Number(p.card));
@@ -299,6 +353,14 @@ export async function iniciarEfevooFalso(puerto = 0, credenciales = { usuario: "
     if (url.pathname === "/estado" && req.method === "GET") return responder(200, { clientes: [...clientes.values()], tarjetas: [...tarjetas.values()] });
     if (url.pathname === "/reiniciar" && req.method === "POST") {
       reiniciar();
+      return responder(200, { ok: true });
+    }
+    if (url.pathname === "/simular" && req.method === "POST" && (cuerpo as { metodo?: unknown })?.metodo === "movimiento") {
+      try {
+        inyectarMovimiento(cuerpo as MovimientoInyectado);
+      } catch {
+        return responder(400, { error: "movimiento no válido" });
+      }
       return responder(200, { ok: true });
     }
     if (url.pathname === "/simular" && req.method === "POST") {
@@ -345,6 +407,7 @@ export async function iniciarEfevooFalso(puerto = 0, credenciales = { usuario: "
     usuario: credenciales.usuario,
     llave: credenciales.llave,
     simular: (f) => fallas.push(f),
+    inyectarMovimiento,
     estado: () => ({ clientes: [...clientes.values()], tarjetas: [...tarjetas.values()] }),
     reiniciar,
     cerrar: () => new Promise<void>((resolver) => {

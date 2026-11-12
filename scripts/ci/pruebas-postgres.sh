@@ -72,6 +72,7 @@ unset DATABASE_URL
   tests/cobranza/reglas-base.test.ts \
   tests/cobranza/retenidos-postgres.test.ts \
   tests/efevoo/reglas-postgres.test.ts \
+  tests/efevoo/operaciones-postgres.test.ts \
   tests/esquema/empresa-suspendida.test.ts \
   tests/pld/pld-postgres.test.ts \
   tests/pld/reglas-postgres.test.ts \

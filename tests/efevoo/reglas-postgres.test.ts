@@ -29,7 +29,7 @@ type Cliente = InstanceType<typeof pg.Client>;
 type Ids = {
   operador: string; alfa: string; beta: string; demo: string;
   personal: string; cumplimiento: string;
-  admin: string; liberador: string; titular: string; contador: string; adminBeta: string;
+  admin: string; liberador: string; titular: string; contador: string; solicitante: string; adminBeta: string;
   empleadoTitular: string; empleadoOtro: string;
   tarjetaTitular: string; tarjetaOtra: string;
 };
@@ -82,6 +82,11 @@ async function sembrar(url: string): Promise<Omit<Ids, "tarjetaTitular" | "tarje
   await persona(url, admin, centro.id, "Titular Efevoo", "titular-efevoo@ejemplo.mx", ["tarjetahabiente"]);
   await persona(url, admin, centro.id, "Otra Persona Efevoo", "otra-efevoo@ejemplo.mx", ["tarjetahabiente"]);
   await persona(url, admin, centro.id, "Contadora Efevoo", "contadora-efevoo@ejemplo.mx", ["contador"]);
+  // Solicitante es un rol histórico que el alta ya no ofrece: se siembra como contador y la dueña le cambia el rol.
+  await persona(url, admin, centro.id, "Solicitante Efevoo", "solicitante-efevoo@ejemplo.mx", ["contador"]);
+  ejecutar(url, `set session_replication_role = replica;
+    update membership_roles set rol = 'solicitante' where user_id = (select id from users where correo = 'solicitante-efevoo@ejemplo.mx');
+    set session_replication_role = origin;`);
   const uno = <T>(sql: string) => consultarJson<T[]>(url, `select json_agg(x) from (${sql}) x`)[0]!;
   const usuario = (correo: string) => uno<{ id: string }>(`select id from users where correo = '${correo}'`).id;
   const empleado = (correo: string) => uno<{ id: string }>(`select e.id from employees e join users u on u.id = e.user_id where u.correo = '${correo}'`).id;
@@ -89,7 +94,7 @@ async function sembrar(url: string): Promise<Omit<Ids, "tarjetaTitular" | "tarje
     operador, alfa: alfa.id, beta: beta.id, demo: demo.id,
     personal: usuario("personal-cobranza@ejemplo.mx"), cumplimiento: "99999999-9999-4999-8999-999999999997",
     admin: usuario("admin-alfa-efevoo@ejemplo.mx"), liberador: usuario("liberadora-efevoo@ejemplo.mx"),
-    titular: usuario("titular-efevoo@ejemplo.mx"), contador: usuario("contadora-efevoo@ejemplo.mx"),
+    titular: usuario("titular-efevoo@ejemplo.mx"), contador: usuario("contadora-efevoo@ejemplo.mx"), solicitante: usuario("solicitante-efevoo@ejemplo.mx"),
     adminBeta: usuario("admin-beta-efevoo@ejemplo.mx"),
     empleadoTitular: empleado("titular-efevoo@ejemplo.mx"), empleadoOtro: empleado("otra-efevoo@ejemplo.mx"),
   };
@@ -223,7 +228,7 @@ async function reglas(app: string, base: Omit<Ids, "tarjetaTitular" | "tarjetaOt
   }, C, ids.liberador);
 
   // Una sola operación abierta por tarjeta: otro intento espera a que se resuelva o se concilie.
-  await rechaza("dos cargas abiertas en la misma tarjeta", "efevoo_operaciones_abierta_tarjeta", async (c) => {
+  await rechaza("dos cargas abiertas en la misma tarjeta", "efevoo_operaciones_abierta_dinero", async (c) => {
     await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: T, monto: 100 });
     await asentar(c, C, ids.liberador, { tipo: "retiro", tarjeta: T, monto: 100 });
   }, C, ids.liberador);
@@ -289,16 +294,35 @@ async function reglas(app: string, base: Omit<Ids, "tarjetaTitular" | "tarjetaOt
     const r = await c.query("select estado, id_efevoo from efevoo_operaciones where id = $1", [id]);
     assert.deepEqual(r.rows[0], { estado: "confirmada", id_efevoo: "3060" });
   }, C, ids.liberador);
-  await acepta("conciliada: si no aparece, el reintento lleva referencia nueva ligada", async (c) => {
+  // «No apareció» solo 10 minutos después de asentarla: antes, Efevoo podría estar procesándola todavía.
+  await rechaza("no apareció antes de 10 minutos", "conciliacion_prematura", async (c) => {
     const id = await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: T, monto: 500 });
     await resolver(c, C, ids.liberador, id!, "incierta", null, "timeout");
-    await resolver(c, C, ids.liberador, id!, "fallida", null, "no_encontrada");
+    await resolver(c, C, ids.liberador, id!, "fallida", null, "no_aparecio");
+  }, C, ids.liberador);
+  await rechaza("una incierta no falla por otra razón que no aparecer", "transicion_no_valida", async (c) => {
+    const id = await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: T, monto: 500 });
+    await resolver(c, C, ids.liberador, id!, "incierta", null, "timeout");
+    await resolver(c, C, ids.liberador, id!, "fallida", null, "901");
+  }, C, ids.liberador);
+  // Una incierta confirmada en la base y asentada hace 11 minutos (la dueña mueve la hora, sin disparadores).
+  const vieja = await acepta("incierta de hace 11 minutos", async (c) => {
+    const id = await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: T, monto: 500 });
+    await resolver(c, C, ids.liberador, id!, "incierta", null, "timeout");
+    return id!;
+  }, C, ids.liberador, E, true);
+  ejecutar(duena, `set session_replication_role = replica; update efevoo_operaciones set creada_en = now() - interval '11 minutes' where id = '${vieja}'; set session_replication_role = origin;`);
+  await acepta("conciliada: si no aparece, el reintento lleva referencia nueva ligada", async (c) => {
+    const id = vieja;
+    await resolver(c, C, ids.liberador, id, "fallida", null, "no_aparecio");
     const nueva = await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: T, monto: 500, reintento: id });
     const r = await c.query("select o.referencia as nueva, a.referencia as anterior, o.reintento_de from efevoo_operaciones o join efevoo_operaciones a on a.id = o.reintento_de where o.id = $1", [nueva]);
     assert.equal(r.rows[0]!.reintento_de, id);
     assert.notEqual(r.rows[0]!.nueva, r.rows[0]!.anterior);
     await falla(c, () => asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: T, monto: 500, reintento: id }), /efevoo_operaciones_reintento_unico|efevoo_operaciones_abierta_tarjeta/);
   }, C, ids.liberador);
+  // Se cierra la vieja para que no deje la tarjeta con una operación abierta.
+  await acepta("cerrar la incierta vieja", (c) => resolver(c, C, ids.liberador, vieja, "fallida", null, "no_aparecio"), C, ids.liberador, E, true);
   await rechaza("un reintento con otro monto", "reintento_no_valido", async (c) => {
     const id = await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: T, monto: 500 });
     await resolver(c, C, ids.liberador, id!, "fallida", null, "1");
@@ -309,10 +333,11 @@ async function reglas(app: string, base: Omit<Ids, "tarjetaTitular" | "tarjetaOt
     await resolver(c, C, ids.liberador, id!, "confirmada", "1");
     await resolver(c, C, ids.liberador, id!, "fallida");
   }, C, ids.liberador);
-  await rechaza("el contador no resuelve la operación de otro", "sin_permiso_para_efevoo", async (c) => {
-    const r = await c.query("select id from efevoo_operaciones where estado = 'confirmada' limit 1");
-    await resolver(c, C, ids.contador, r.rows[0]!.id as string, "fallida");
-  }, C, ids.contador);
+  const pendienteDeOtro = await acepta("una carga pendiente de la liberadora", (c) =>
+    asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: ids.tarjetaOtra, monto: 7 }), C, ids.liberador, E, true);
+  await rechaza("el contador no resuelve la operación de otro", "sin_permiso_para_efevoo", (c) =>
+    resolver(c, C, ids.contador, pendienteDeOtro!, "fallida", null, "1"), C, ids.contador);
+  await acepta("cerrar la pendiente", (c) => resolver(c, C, ids.liberador, pendienteDeOtro!, "fallida", null, "1"), C, ids.liberador, E, true);
 
   // Bloquear cambia el estado de la tarjeta al confirmarse.
   await acepta("bloqueo confirmado deja la tarjeta bloqueada", async (c) => {
@@ -335,11 +360,99 @@ async function reglas(app: string, base: Omit<Ids, "tarjetaTitular" | "tarjetaOt
   assert.deepEqual(delTitular.opsTarjetas, [T]);
   const deLaLiberadora = await vistas(ids.liberador);
   assert.deepEqual(deLaLiberadora.tarjetas, [T, ids.tarjetaOtra]);
+  // El contador y el solicitante no abren Tarjetas: no leen ninguna tarjeta ni operación de tarjeta.
+  assert.deepEqual((await vistas(ids.contador)).tarjetas, [], "el contador no lee efevoo_tarjetas");
+  assert.deepEqual((await vistas(ids.contador)).opsTarjetas, []);
+  assert.deepEqual((await vistas(ids.solicitante)).tarjetas, [], "el solicitante no lee efevoo_tarjetas");
   const deBeta = await vistas(ids.adminBeta, ids.beta);
   assert.deepEqual(deBeta, { tarjetas: [], opsTarjetas: [], vinculo: 0 });
   const delOtroTitular = await acepta("el otro titular", async (c) => (await c.query("select id from efevoo_tarjetas")).rows.map((r) => r.id as string), C,
     leer<{ id: string }>("select id from users where correo = 'otra-efevoo@ejemplo.mx'")[0]!.id);
   assert.deepEqual(delOtroTitular, [ids.tarjetaOtra]);
+
+  // E1-2: una carga abierta (Efevoo no respondió) no impide bloquear ni cancelar una tarjeta robada.
+  // Z3 de -03: una carga incierta confirmada en la base, y el personal cancela la tarjeta.
+  const cargaAbierta = await acepta("una carga incierta", async (c) => {
+    const carga = await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: ids.tarjetaOtra, monto: 900 });
+    await resolver(c, C, ids.liberador, carga!, "incierta", null, "timeout");
+    return carga!;
+  }, C, ids.liberador, E, true);
+  await acepta("el personal cancela con una carga incierta abierta", (c) =>
+    asentar(c, S, P, { tipo: "cancelacion", tarjeta: ids.tarjetaOtra, motivo: "Robo de la tarjeta" }), S, P);
+  await acepta("la liberadora bloquea con una carga incierta abierta", (c) => asentar(c, C, ids.liberador, { tipo: "bloqueo", tarjeta: ids.tarjetaOtra }), C, ids.liberador);
+  ejecutar(duena, `set session_replication_role = replica; update efevoo_operaciones set creada_en = now() - interval '11 minutes' where id = '${cargaAbierta}'; set session_replication_role = origin;`);
+  await acepta("cerrar la carga incierta", (c) => resolver(c, C, ids.liberador, cargaAbierta, "fallida", null, "no_aparecio"), C, ids.liberador, E, true);
+  await acepta("el administrador cancela con una carga y un bloqueo abiertos", async (c) => {
+    const carga = await asentar(c, C, ids.admin, { tipo: "carga", tarjeta: ids.tarjetaOtra, monto: 900 });
+    await resolver(c, C, ids.admin, carga!, "incierta", null, "timeout");
+    await asentar(c, C, ids.admin, { tipo: "bloqueo", tarjeta: ids.tarjetaOtra });
+    await asentar(c, C, ids.admin, { tipo: "cancelacion", tarjeta: ids.tarjetaOtra, motivo: "Robo de la tarjeta" });
+  }, C, ids.admin);
+  await rechaza("con una cancelación abierta no se carga", "tarjeta_en_cancelacion", async (c) => {
+    await asentar(c, C, ids.admin, { tipo: "cancelacion", tarjeta: ids.tarjetaOtra, motivo: "Robo de la tarjeta" });
+    await asentar(c, C, ids.admin, { tipo: "carga", tarjeta: ids.tarjetaOtra, monto: 1 });
+  }, C, ids.admin);
+
+  // E1-6: una carga confirmada lleva un id positivo; el id 0 (falso éxito) o vacío no se acepta.
+  for (const idMalo of ["0", null]) {
+    await rechaza(`carga confirmada con id ${idMalo}`, "efevoo_operacion_no_valida", async (c) => {
+      const id = await asentar(c, C, ids.liberador, { tipo: "carga", tarjeta: ids.tarjetaOtra, monto: 1 });
+      await resolver(c, C, ids.liberador, id!, "confirmada", idMalo);
+    }, C, ids.liberador);
+  }
+
+  // E1-7: repetir la llave de otra persona no da «ok» a quien no puede asentar.
+  const llaveAjena = randomUUID();
+  const bloqueoAjeno = await acepta("bloqueo de la liberadora", (c) => asentar(c, C, ids.liberador, { tipo: "bloqueo", tarjeta: ids.tarjetaOtra, llave: llaveAjena }),
+    C, ids.liberador, E, true);
+  await rechaza("el contador repite la llave del bloqueo", "sin_permiso_para_efevoo", (c) =>
+    asentar(c, C, ids.contador, { tipo: "bloqueo", tarjeta: ids.tarjetaOtra, llave: llaveAjena, evento: false }), C, ids.contador);
+  await rechaza("el administrador repite la llave de otra persona", "intento_con_otros_datos", (c) =>
+    asentar(c, C, ids.admin, { tipo: "bloqueo", tarjeta: ids.tarjetaOtra, llave: llaveAjena, evento: false }), C, ids.admin);
+  await acepta("cerrar el bloqueo", (c) => resolver(c, C, ids.liberador, bloqueoAjeno!, "fallida", null, "1"), C, ids.liberador, E, true);
+
+  // E1-4: doble clic simultáneo (dos funciones a la vez) con la misma llave: una operación y la segunda regresa la existente.
+  {
+    const llave = randomUUID();
+    const abrir = async () => {
+      const c = new pg.Client({ connectionString: app });
+      await c.connect();
+      await c.query("begin");
+      await c.query(`set local role ${C}`);
+      await c.query("select set_config('app.company_id', $1, true), set_config('app.user_id', $2, true), set_config('app.operator_id', '', true)", [E, ids.liberador]);
+      return c;
+    };
+    const a = await abrir();
+    const b = await abrir();
+    try {
+      const idA = await asentar(a, C, ids.liberador, { tipo: "carga", tarjeta: ids.tarjetaOtra, monto: 333, llave });
+      let resultadoB: string | null | Error = "esperando";
+      const pB = asentar(b, C, ids.liberador, { tipo: "carga", tarjeta: ids.tarjetaOtra, monto: 333, llave, evento: false })
+        .then((x) => { resultadoB = x; }, (e: Error) => { resultadoB = e; });
+      await new Promise((r) => setTimeout(r, 300));
+      assert.equal(resultadoB, "esperando", "el segundo envío espera al primero");
+      await a.query("commit");
+      await pB;
+      assert.equal(resultadoB, null, `el segundo envío regresa sin insertar: ${String(resultadoB)}`);
+      await b.query("commit");
+      assert.equal(leer<{ n: number }>(`select count(*)::int as n from efevoo_operaciones where llave_intento = '${llave}'`)[0]!.n, 1);
+      await acepta("cerrar la carga simultánea", (c) => resolver(c, C, ids.liberador, idA!, "fallida", null, "1"), C, ids.liberador, E, true);
+    } finally {
+      await a.query("rollback").catch(() => undefined);
+      await b.query("rollback").catch(() => undefined);
+      await a.end();
+      await b.end();
+    }
+  }
+
+  // E1-8: un titular con la membresía suspendida ya no ve su tarjeta.
+  ejecutar(duena, `set session_replication_role = replica; update memberships set estado = 'suspendida' where user_id = '${ids.titular}'; set session_replication_role = origin;`);
+  try {
+    assert.deepEqual((await vistas(ids.titular)).tarjetas, [], "el titular suspendido no ve su tarjeta");
+  } finally {
+    ejecutar(duena, `set session_replication_role = replica; update memberships set estado = 'activa' where user_id = '${ids.titular}'; set session_replication_role = origin;`);
+  }
+  assert.deepEqual((await vistas(ids.titular)).tarjetas, [T]);
 
   // Empresa suspendida: la empresa no opera; el personal solo cancela.
   ejecutar(duena, `set session_replication_role = replica; update companies set estado = 'suspendida' where id = '${E}'; set session_replication_role = origin;`);

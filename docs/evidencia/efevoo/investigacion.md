@@ -58,3 +58,16 @@ Se creó un solo cliente de prueba: **206** («Lever Investigacion E1», correo 
 - **d)** ¿Se puede cancelar una tarjeta de inventario de prueba?
 
 Por eso O2, O3 y O4 se construyen y se prueban contra el Efevoo falso, y su validación contra el sandbox queda pendiente de Efevoo.
+
+## Agregado de la revisión del PC1 (-03, 2026-11-12)
+
+- **Los retiros sí aparecen en `getTransactionsCard`** (lectura autorizada de la 560, `tests/efevoo/contrato/getTransactionsCard-560-tras-retiros.json`).
+  - El importe llega sin signo y el signo lo da `TipoMovimientoCargoAbono`:
+    - `Abono`: carga, «PAGO A TARJETA», `M09282600MXN484`;
+    - `Cargo`: retiro, «DEVOLUCIÓN PAGO A TARJETA», `M09DT2600MXN484`.
+  - El importe llega como texto `"x.0000"`; en capturas anteriores llegó como número.
+  - Trae `SaldoDespuesMovimiento`.
+- **El id de la respuesta y el `IDMovimiento` son series distintas:** fundCard responde 3060 a 3062, unfundCard 2664 y 2665, y los movimientos son 4526 a 4530. La conciliación guarda el `IDMovimiento` que encuentra.
+- **Cómo se concilia ahora** una carga o un retiro incierto: misma referencia, importe exacto, tipo `Abono`/`Cargo` y `FechaHora` (hora de México) no anterior a la operación, con 2 minutos de margen. Con más de una coincidencia queda incierta para revisarla a mano. Efevoo repite referencias: en la 560 conviven dos `9100002` y una `1234567` de otro origen.
+- **Solo son rechazo definitivo** `validacion`, `id_cero`, 115, 122, 101, 163, 112 y 401. Cualquier otro código (901, 1, 100…) deja la operación incierta: no prueba que el dinero no se movió.
+- **Cloudflare:** el sandbox responde 403 «error code: 1010» a `urllib` de Python por su firma; con `fetch` de node funciona. Las sondas van con node.
