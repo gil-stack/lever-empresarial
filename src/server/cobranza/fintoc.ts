@@ -654,14 +654,18 @@ async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosReten
   const sinEvento = reintento && (r.sinEnvio === "sin_destinatarios" || (r.sinEnvio === null && r.recibieron.length === 0 && r.pendientes === 0));
   try {
     await conContexto(baseDe(empresa), async (consulta) => {
+      // r63q-2: «pendientes» son todas las personas que siguen en faltan al soltar (también las que hoy no están activas),
+      // no solo las que fallaron en esta vuelta; soltar y el evento van en la misma transacción. Si el correo no se pudo
+      // preparar, nadie quedó en faltan y ese envío sin hacer cuenta aparte (r.pendientes − r.fallaron).
+      const faltan = Number(registro((await aplicarSentencia(consulta,
+        "select cobranza_soltar_aviso_fallido($1, $2::uuid[], $3::uuid[], $4) as faltan", [id, r.recibieron, r.fallaron, cerrar])).rows[0]).faltan);
       if (!sinEvento) {
         await deps.auditar(consulta, actorDe(empresa), {
           accion: "aviso_retenido_fallido_cobranza",
           identificador: id,
-          cambio: r.sinEnvio ? { enviados: 0, motivo: r.sinEnvio } : { enviados: r.enviados, recibidos: r.recibieron.length, pendientes: r.pendientes },
+          cambio: r.sinEnvio ? { enviados: 0, motivo: r.sinEnvio } : { enviados: r.enviados, recibidos: r.recibieron.length, pendientes: faltan + r.pendientes - r.fallaron.length },
         });
       }
-      await aplicarSentencia(consulta, "select cobranza_soltar_aviso_fallido($1, $2::uuid[], $3::uuid[], $4)", [id, r.recibieron, r.fallaron, cerrar]);
     });
   } catch {
     // La reserva vence sola en una hora; lo que salió queda en el registro.
