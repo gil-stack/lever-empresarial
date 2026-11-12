@@ -1,0 +1,23 @@
+{
+  "pedido": {
+    "method": "balanceMovements",
+    "payload": {
+      "idepCliente": 206,
+      "page": 1,
+      "pageSize": 50
+    }
+  },
+  "http": 200,
+  "ms": 749,
+  "cuerpo": {
+    "response": {
+      "movements": [],
+      "page": 1,
+      "pageSize": 50
+    },
+    "status": {
+      "code": 0,
+      "message": "Message OK."
+    }
+  }
+}

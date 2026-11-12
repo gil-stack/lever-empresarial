@@ -1,0 +1,54 @@
+{
+  "fecha": "2026-11-12T06:57:06.555Z",
+  "o1": {
+    "aviso": "efevoo_alta_confirmada",
+    "ms": 3289
+  },
+  "o1EnEfevoo": {
+    "idepCliente": 208,
+    "estatus": 1,
+    "saldoCentavos": 0,
+    "correoDePrueba": true
+  },
+  "o2": {
+    "aviso": "efevoo_incierta"
+  },
+  "o2Conciliacion": "efevoo_espera",
+  "o3Inventario": [
+    "Terminación 1363",
+    "Terminación 0168",
+    "Terminación 3474",
+    "Terminación 7992",
+    "Terminación 8182"
+  ],
+  "o3": {
+    "aviso": "efevoo_fallida",
+    "terminacion": "1363"
+  },
+  "operaciones": [
+    {
+      "tipo": "alta_cliente",
+      "estado": "confirmada",
+      "referencia": "1000001",
+      "codigo_efevoo": null,
+      "id_efevoo": "208",
+      "creada_en": "2026-11-12T06:57:08.027Z"
+    },
+    {
+      "tipo": "deposito_prueba",
+      "estado": "incierta",
+      "referencia": "1000002",
+      "codigo_efevoo": "1",
+      "id_efevoo": null,
+      "creada_en": "2026-11-12T06:57:15.983Z"
+    },
+    {
+      "tipo": "asignacion",
+      "estado": "fallida",
+      "referencia": "1000003",
+      "codigo_efevoo": "101",
+      "id_efevoo": null,
+      "creada_en": "2026-11-12T06:57:26.736Z"
+    }
+  ]
+}

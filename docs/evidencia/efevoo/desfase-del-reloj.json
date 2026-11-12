@@ -1,0 +1,37 @@
+{
+  "tarjeta": "****6509",
+  "saldoInicial": 500,
+  "estadoInicial": "active",
+  "saldoFinal": 500,
+  "estadoFinal": "active",
+  "movimientos": [
+    {
+      "metodo": "fundCard",
+      "referencia": "9200001",
+      "code": 0,
+      "idRespuesta": 3065,
+      "idMovimiento": "4535",
+      "tipo": null,
+      "concepto": "PAGO A TARJETA",
+      "importe": 0.01,
+      "horaLlamadaUTC": "2026-11-12T06:48:11.722Z",
+      "fechaHoraEfevoo": "2026-11-12 00:48:13",
+      "desfaseSegundos": 1,
+      "duracionLlamadaMs": 2149
+    },
+    {
+      "metodo": "unfundCard",
+      "referencia": "9200002",
+      "code": 0,
+      "idRespuesta": 2668,
+      "idMovimiento": "4536",
+      "tipo": null,
+      "concepto": "DEVOLUCIÓN PAGO A TARJETA",
+      "importe": 0.01,
+      "horaLlamadaUTC": "2026-11-12T06:48:13.871Z",
+      "fechaHoraEfevoo": "2026-11-12 00:48:15",
+      "desfaseSegundos": 1,
+      "duracionLlamadaMs": 1674
+    }
+  ]
+}

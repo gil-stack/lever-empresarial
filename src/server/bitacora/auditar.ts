@@ -6,6 +6,8 @@ import { ErrorDeDominio } from "../../nucleo/error-de-dominio";
 import { contieneMaterialProhibido } from "./material";
 import { CONTROL } from "../../dominio/control";
 
+const CAMBIO_EFEVOO = ["tipo", "monto_centavos", "referencia", "terminacion", "estado", "codigo_efevoo"] as const;
+
 /**
  * La única función que escribe la bitácora. Cada acción viene de un catálogo
  * con su entidad y las claves de `cambio` que puede llevar. Lo demás se
@@ -176,6 +178,23 @@ export const CATALOGO = {
   alerta_caja: { entidad: "cash_alerts", cambio: ["estado", "destinatarios", "codigo", "colchon", "runway"] },
   alerta_caja_entregada: { entidad: "cash_alert_deliveries", cambio: [] },
   foto_runway: { entidad: "cash_runway_snapshots", cambio: ["semana", "semanas_conservador", "semanas_esperado"] },
+  // Efevoo (0033): asentar cada tipo de operación y resolverla. Solo ids, la
+  // terminación y montos; nunca el número de la tarjeta, correos ni nombres.
+  efevoo_alta_cliente: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
+  efevoo_deposito_prueba: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
+  efevoo_asignacion: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
+  efevoo_activacion: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
+  efevoo_asignacion_cliente: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
+  efevoo_carga: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
+  efevoo_retiro: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
+  efevoo_bloqueo: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
+  efevoo_desbloqueo: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
+  efevoo_cancelacion: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
+  efevoo_confirmada: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
+  efevoo_fallida: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
+  efevoo_incierta: { entidad: "efevoo_operaciones", cambio: CAMBIO_EFEVOO },
+  // Cerrada a mano con motivo: el resultado en Efevoo es desconocido (la tarjeta está cancelada y no se puede leer).
+  efevoo_cierre_manual: { entidad: "efevoo_operaciones", cambio: ["tipo", "monto_centavos", "referencia", "terminacion", "resultado", "codigo_efevoo"] },
 } as const satisfies Record<string, { entidad: string; cambio: readonly string[] }>;
 
 export type AccionDeBitacora = keyof typeof CATALOGO;

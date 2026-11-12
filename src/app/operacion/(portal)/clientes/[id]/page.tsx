@@ -10,8 +10,10 @@ import { REGIMENES, USOS_CFDI, conNombre, etiquetaEstado, fechaDia, fechaHora, m
 import { FormularioInvitacion } from "@/components/operacion/formulario-invitacion";
 import { FormularioSuspension } from "@/components/operacion/formulario-suspension";
 import { PaginaOperacion } from "@/components/operacion/pagina";
+import { SeccionTarjetasEfevoo } from "@/components/operacion/seccion-efevoo";
 import { BotonEnviar, EtiquetaMono, Hoja, Insignia, NotaRegla, Rejilla, Renglon, Renglones, Vacio } from "@/components/sistema";
 import { textoComision } from "@/dominio/operacion";
+import { leerSeccionEfevoo } from "@/server/efevoo/operacion";
 import { exigirContextoOperacion, leerCliente, listarComisiones, listarSuspensionesDeEmpresa, puedeEnOperacion } from "@/server/operacion";
 
 export const runtime = "nodejs";
@@ -30,9 +32,12 @@ export default async function FichaCliente({ params, searchParams }: { params: P
   const veExpediente = puedeEnOperacion(ctx, "plataforma.expediente.ver");
   // Que la suspensión vino de la lista lo ven Cumplimiento y Auditoría (55ª fr. I).
   const veLista = puedeEnOperacion(ctx, "plataforma.cumplimiento.bandeja");
-  const [comisiones, suspensiones] = await Promise.all([
+  // Tarjetas (Efevoo): solo Administración de la plataforma.
+  const veEfevoo = puedeEnOperacion(ctx, "plataforma.empresa.alta");
+  const [comisiones, suspensiones, efevoo] = await Promise.all([
     listarComisiones(ctx, id),
     veExpediente ? listarSuspensionesDeEmpresa(ctx, id) : Promise.resolve([]),
+    veEfevoo ? leerSeccionEfevoo(ctx, cliente.id) : Promise.resolve(null),
   ]);
   const pideActivacion = puedeEnOperacion(ctx, "plataforma.activacion.solicitar");
   const invita = puedeEnOperacion(ctx, "plataforma.invitacion.emitir");
@@ -126,6 +131,7 @@ export default async function FichaCliente({ params, searchParams }: { params: P
                 </ul>
               ) : null}
             </Hoja>
+            {efevoo ? <SeccionTarjetasEfevoo companyId={cliente.id} seccion={efevoo} /> : null}
             <Hoja id="historial-titulo" titulo="Historial de estados">
               <ul className="operacion-lista">
                 {cliente.historial.map((evento) => (

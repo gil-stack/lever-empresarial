@@ -1,0 +1,15 @@
+{
+  "pedido": {
+    "method": "activateCard",
+    "payload": {
+      "email": "<email:16>",
+      "id": 999999
+    }
+  },
+  "http": 401,
+  "ms": 1012,
+  "cuerpo": {
+    "code": 401,
+    "message": "Unauthorized"
+  }
+}
