@@ -22,6 +22,7 @@ import type { AlmacenConstancia } from "../../src/server/proveedores/constancia.
 import { avisarCambioClabe } from "../../src/server/proveedores/avisos.ts";
 import { cambiarClabeProveedor } from "../../src/server/proveedores/servicio-clabes.ts";
 import type { MensajeCorreo } from "../../src/server/correo/tipos.ts";
+import { enviadorResend } from "../../src/server/correo/resend.ts";
 import { DIRECTORIO_MIGRACIONES, evaluarEsquema } from "../aislamiento/esquema.ts";
 import { aplicarArchivo, conBaseDesechable, consultarJson, ejecutar, exigirBaseDesechable, urlDeAplicacion } from "../aislamiento/postgres.ts";
 
@@ -391,6 +392,30 @@ test("cuentas por pagar contra Postgres: personas, versiones, CLABE, 69-B, SQL d
           await relee.end();
         }
         assert.equal(estado(url, pagoH.requestId), "por_autorizar");
+      });
+
+      await t.test("el aviso de CLABE sale por el enviador real de Resend, una vez por persona", async () => {
+        // M-1: la llave llevaba el correo (con @ y punto) y enviadorResend la rechazaba antes de tocar la red.
+        const llaves: string[] = [];
+        const destinatarios: string[] = [];
+        const enviador = enviadorResend({ apiKey: "clave_de_prueba_no_real", remitente: "Plataforma <avisos@ejemplo.mx>" }, async (_url, init) => {
+          llaves.push((init.headers as Record<string, string>)["Idempotency-Key"]);
+          destinatarios.push(...(JSON.parse(String(init.body)) as { to: string[] }).to);
+          return Response.json({ id: `correo-${llaves.length}` });
+        });
+        const datos = { supplierId: PROVEEDOR, clabeId: CLABE_ID, clabe: CLABE_NUEVA, ahora: AHORA };
+        assert.equal(await avisarCambioClabe(luis, datos, enviador), 2);
+        assert.deepEqual(destinatarios.sort(), ["luis-pagos@ejemplo.mx", "rosa-pagos@ejemplo.mx"]);
+        assert.equal(new Set(llaves).size, 2, "una llave por persona");
+        for (const llave of llaves) {
+          assert.match(llave, new RegExp(`^clabe-proveedor/${CLABE_ID}/[0-9a-f]{64}$`));
+          assert.doesNotMatch(llave, /@|ejemplo/, "la llave no lleva el correo");
+        }
+        // Un reintento del mismo cambio usa las mismas llaves: Resend no manda un segundo correo.
+        const primeras = [...llaves].sort();
+        llaves.length = 0;
+        assert.equal(await avisarCambioClabe(luis, datos, enviador), 2);
+        assert.deepEqual([...llaves].sort(), primeras);
       });
 
       await t.test("el aviso de CLABE que falla se registra sin datos sensibles", async () => {

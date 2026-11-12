@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { baseCliente, type ContextoConEmpresa } from "../../nucleo/contexto";
 import { conContexto } from "../../nucleo/db";
 import { leerUrlPublica } from "../correo/configuracion";
@@ -47,7 +48,7 @@ export async function avisarCambioClabe(
           asunto: plantilla.asunto,
           html: plantilla.html,
           texto: plantilla.texto,
-          idempotencia: `clabe-proveedor/${datos.clabeId}/${correo.toLowerCase()}`,
+          idempotencia: llaveDelAviso(datos.clabeId, correo),
           etiqueta: "clabe_proveedor",
         });
         enviados += 1;
@@ -61,6 +62,14 @@ export async function avisarCambioClabe(
     registrarFallo({ ...rastro, evento: "aviso_clabe_no_preparado", error: nombreDeError(error) });
     return 0;
   }
+}
+
+/**
+ * Una llave por persona y por cambio, estable entre reintentos. Resend solo acepta
+ * `[A-Za-z0-9/_-]` (resend.ts): el correo, con @ y punto, va como su SHA-256.
+ */
+function llaveDelAviso(clabeId: string, correo: string): string {
+  return `clabe-proveedor/${clabeId}/${createHash("sha256").update(correo.trim().toLowerCase()).digest("hex")}`;
 }
 
 /**

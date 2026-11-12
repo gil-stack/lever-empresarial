@@ -1,0 +1,37 @@
+# e2e sin el arreglo (main dd24198)
+  ✘  1 tests/e2e/pagos-proveedores.spec.ts:290:5 › cambio de CLABE de un proveedor: avisa por correo a administración y liberación (M-1) (17.3s)
+
+
+  1) tests/e2e/pagos-proveedores.spec.ts:290:5 › cambio de CLABE de un proveedor: avisa por correo a administración y liberación (M-1) 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByRole('dialog', { name: 'Cambio Clabe Servicios' }).getByText(/Se avisó por correo a 2 personas\./)
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByRole('dialog', { name: 'Cambio Clabe Servicios' }).getByText(/Se avisó por correo a 2 personas\./) with timeout 15000ms
+      - waiting for getByRole('dialog', { name: 'Cambio Clabe Servicios' }).getByText(/Se avisó por correo a 2 personas\./)
+
+
+      311 |   await expediente.getByRole("button", { name: "Guardar la CLABE" }).click();
+      312 |   // Antes del arreglo la llave de idempotencia llevaba el correo y el enviador la rechazaba: «No salió ningún correo de alerta».
+    > 313 |   await expect(expediente.getByText(/Se avisó por correo a 2 personas\./)).toBeVisible();
+          |                                                                            ^
+      314 |   await expect(expediente.getByText(/No salió ningún correo de alerta/)).toHaveCount(0);
+      312 |   // Antes del arreglo la llave de idempotencia llevaba el correo y el enviador la rechazaba: «No salió ningún correo de alerta».
+
+# e2e con el arreglo: pagos-proveedores.spec.ts completo
+  ✓  1 tests/e2e/pagos-proveedores.spec.ts:52:5 › la mesa se ve completa en claro, oscuro y móvil (7.7s)
+  ✓  2 tests/e2e/pagos-proveedores.spec.ts:90:5 › alta, factura, excepción, descarga y autorización con otra persona (5.1s)
+  ✓  3 tests/e2e/pagos-proveedores.spec.ts:174:5 › alta sin contrato y lectura del XML sin errores en la consola (2.0s)
+  ✓  4 tests/e2e/pagos-proveedores.spec.ts:206:5 › una corrección que falla conserva el importe y la evidencia elegidos (1.2s)
+  ✓  5 tests/e2e/pagos-proveedores.spec.ts:222:5 › limita archivos combinados y no ofrece cambiar CLABE a un liberador (1.8s)
+  ✓  6 tests/e2e/pagos-proveedores.spec.ts:242:5 › «Agregar contrato» no envía un PDF de más de 4 MB y liga el aviso al campo (1.7s)
+  ✓  7 tests/e2e/pagos-proveedores.spec.ts:263:5 › rechazo, corrección y cancelación conservan el historial (3.9s)
+  ✓  8 tests/e2e/pagos-proveedores.spec.ts:290:5 › cambio de CLABE de un proveedor: avisa por correo a administración y liberación (M-1) (2.0s)
+
+  8 passed (40.8s)
+[e2e] recorridos terminados con estado 0 · 8 pruebas corridas · 48 s
