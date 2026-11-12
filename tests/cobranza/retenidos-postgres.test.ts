@@ -605,6 +605,57 @@ async function escenario(url: string): Promise<void> {
     }
     assert.deepEqual(eventosDe("evt_SinPlantilla01").at(-1), { enviados: "0", recibidos: "0", pendientes: "1", motivo: null }, "solo falta Zoe");
 
+    // r63q-3b A Zoe le falla el correo y después tiene la baja efectiva; la administradora (la única que lo recibió) queda
+    //    suspendida: la vuelta no tiene destinatarios. La limpieza saca a Zoe de faltan y deja un solo evento con el motivo,
+    //    sin cerrar el aviso (r63n-4: si aparece alguien dentro de los 7 días, le llega). Antes no quedaba evento y la
+    //    bitácora se quedaba en «pendientes: 1» para siempre.
+    const sinNadieTrasBaja = async (rfc: string, nombre: string, cuentaId: string, evento: string, conLia: boolean) => {
+      const e = await empresa(rfc, "601", nombre, cuentaId);
+      const centro = await nombrarCentro(e.admin, { nombre: "Administración" }, { ahora: HOY });
+      const sufijo = rfc.slice(0, 3).toLowerCase();
+      await persona(url, e.admin, centro.id, "Zoe Finanzas", `zz-finanzas-${sufijo}@ejemplo.mx`, ["tarjetahabiente", "finanzas"]);
+      retenidoFallido(e.id, evento);
+      assert.equal(await procesarRetenidos(e.id, operador, depsO(enviadorO((m) => m.para.startsWith("zz-")))), 1);
+      // Lia llega al equipo después del primer aviso y queda sin acceso hasta el día 3 (como si la nombraran ese día).
+      if (conLia) await persona(url, e.admin, centro.id, "Lia Finanzas", `lia-finanzas-${sufijo}@ejemplo.mx`, ["tarjetahabiente", "finanzas"]);
+      const zoeE = usuario(`zz-finanzas-${sufijo}@ejemplo.mx`);
+      ejecutar(url, `set session_replication_role = replica;
+        update employees set baja_en = (timezone('America/Mexico_City', clock_timestamp()))::date where company_id = '${e.id}' and user_id = '${zoeE}';
+        update memberships set estado = 'suspendida' where company_id = '${e.id}' and user_id <> '${zoeE}'; set session_replication_role = origin;`);
+      buzonO.length = 0;
+      try {
+        for (const d of ["1 day", "3 days", "8 days"]) {
+          relojMas(d);
+          if (conLia && d === "3 days")
+            ejecutar(url, `set session_replication_role = replica; update memberships set estado = 'activa' where company_id = '${e.id}'
+              and user_id = (select id from users where correo = 'lia-finanzas-${sufijo}@ejemplo.mx'); set session_replication_role = origin;`);
+          await corridaO(enviadorO());
+          await corridaO(enviadorO());
+        }
+      } finally {
+        relojMas(null);
+      }
+      return { id: idDe(evento), zoe: zoeE };
+    };
+    const ocho = await sinNadieTrasBaja("OCH150301AB4", "Ocho Sin Nadie Retenidos", "acc_RetenidosOch0001", "evt_SinNadieBaja01", false);
+    assert.deepEqual(eventosDe("evt_SinNadieBaja01"), [
+      { enviados: "1", recibidos: "1", pendientes: "1", motivo: null },
+      { enviados: "0", recibidos: null, pendientes: "0", motivo: "baja_efectiva" },
+    ], "un solo evento de la baja, en los días 1, 3 y 8");
+    assert.equal(cuenta(`select count(*) from collection_held_events where id = '${ocho.id}' and not aviso_cerrado and aviso_faltan = '{}'`), 1, "sin cerrar: r63n-4");
+    assert.equal(buzonO.filter((m) => m.idempotencia.startsWith(`cobranza-retenido-fallido/${ocho.id}/`)).length, 0);
+    // La variante: Lia (finanzas) aparece el día 3, dentro de los 7 días, y le llega una vez.
+    const nueve = await sinNadieTrasBaja("NUE150301AB4", "Nueve Llega Despues Retenidos", "acc_RetenidosNue0001", "evt_SinNadieBaja02", true);
+    assert.deepEqual(buzonO.filter((m) => m.idempotencia.startsWith(`cobranza-retenido-fallido/${nueve.id}/`)).map((m) => [m.para, m.idempotencia]), [
+      ["lia-finanzas-nue@ejemplo.mx", `cobranza-retenido-fallido/${nueve.id}/${usuario("lia-finanzas-nue@ejemplo.mx")}`],
+    ], "a Lia le llega una vez");
+    assert.deepEqual(eventosDe("evt_SinNadieBaja02"), [
+      { enviados: "1", recibidos: "1", pendientes: "1", motivo: null },
+      { enviados: "0", recibidos: null, pendientes: "0", motivo: "baja_efectiva" },
+      { enviados: "1", recibidos: "1", pendientes: "0", motivo: null },
+    ]);
+    assert.equal(cuenta(`select count(*) from collection_held_events where id = '${nueve.id}' and aviso_cerrado and aviso_faltan = '{}'`), 1);
+
     // r63j-N2 a) El aviso toma el candado y retiene (la empresa sigue suspendida) mientras la reactivación espera ese
     //    mismo candado: al reactivar, el retenido ya está ahí y se aplica. Antes el aviso revisaba en una transacción y
     //    guardaba en otra: el retenido confirmaba después de la reactivación y de su procesado, y quedaba varado.

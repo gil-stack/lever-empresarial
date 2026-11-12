@@ -658,7 +658,7 @@ async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosReten
       // no solo las que fallaron en esta vuelta; soltar y el evento van en la misma transacción. r63q-2b: si el correo no
       // se pudo preparar, falta al menos uno aunque nadie haya quedado en faltan (el primer intento), sin sumarlo a ellos.
       const soltado = registro((await aplicarSentencia(consulta,
-        "select faltan, cerro_por_baja from cobranza_soltar_aviso_fallido($1, $2::uuid[], $3::uuid[], $4)", [id, r.recibieron, r.fallaron, cerrar])).rows[0]);
+        "select faltan, quito_por_baja from cobranza_soltar_aviso_fallido($1, $2::uuid[], $3::uuid[], $4)", [id, r.recibieron, r.fallaron, cerrar])).rows[0]);
       const faltan = Number(soltado.faltan);
       const noPreparado = r.sinEnvio === null && r.pendientes > r.fallaron.length;
       if (!sinEvento) {
@@ -667,13 +667,14 @@ async function avisarRetenidoFallido(empresa: Destino, id: string, d: DatosReten
           identificador: id,
           cambio: r.sinEnvio ? { enviados: 0, motivo: r.sinEnvio } : { enviados: r.enviados, recibidos: r.recibieron.length, pendientes: noPreparado ? Math.max(faltan, 1) : faltan },
         });
-      } else if (soltado.cerro_por_baja === true) {
-        // r63q-3 (decisión del líder): una revisión sin envío no deja evento, salvo la que cierra el aviso porque quien
-        // faltaba tiene la baja efectiva: ese cambio pasa una sola vez y sin él la bitácora se quedaría en «pendientes: N».
+      } else if (soltado.quito_por_baja === true) {
+        // r63q-3 y r63q-3b (decisiones del líder): una revisión sin envío no deja evento, salvo la que saca de faltan a
+        // quien tiene la baja efectiva (pasa una sola vez por persona); sin él la bitácora se quedaría en «pendientes: N».
+        // También en la vuelta sin destinatarios, que no cierra el aviso (r63n-4).
         await deps.auditar(consulta, actorDe(empresa), {
           accion: "aviso_retenido_fallido_cobranza",
           identificador: id,
-          cambio: { enviados: 0, pendientes: 0, motivo: "baja_efectiva" },
+          cambio: { enviados: 0, pendientes: faltan, motivo: "baja_efectiva" },
         });
       }
     });
