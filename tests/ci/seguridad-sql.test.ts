@@ -166,3 +166,87 @@ test("constantes circulares como argumento directo: la regla termina y no pasa",
     }`) as string[];
   assert.ok(hallazgos.some((h) => h.includes("circulares")), hallazgos.join("\n"));
 });
+
+/**
+ * Los caminos que encontró la revisión del #70 (-06, M5 a M14 y C4). Alcance
+ * de la regla (decisión del líder): errores accidentales, no código malicioso.
+ */
+describe("regla de SQL: caminos de la revisión del #70", () => {
+  const cae = (fuente: string, ruta = SERVIDOR) => {
+    const hallazgos = revisarSql(ruta, fuente) as string[];
+    assert.ok(hallazgos.length > 0, `debía caer:\n${fuente}`);
+    return hallazgos;
+  };
+  const pasa = (fuente: string, ruta = SERVIDOR) => assert.deepEqual(revisarSql(ruta, fuente), []);
+  const valor = "`select * from t where a = '${x}'`";
+
+  test("R70-1: aplicarSentencia por alias, espacio de nombres, otra variable o .call (M7 a M10)", () => {
+    cae(`import { aplicarSentencia as ejecutar } from "../../nucleo/db";
+      export async function f(c: Consulta, x: string) { return ejecutar(c, ${valor}, []); }`);
+    cae(`import * as db from "@/nucleo/db";
+      export async function f(c: Consulta, x: string) { return db.aplicarSentencia(c, ${valor}, []); }`);
+    assert.ok(cae(`const correr = aplicarSentencia;
+      export async function f(c: Consulta, x: string) { return correr(c, ${valor}, []); }`).some((h) => h.includes("sin llamada directa")));
+    assert.ok(cae(`export async function f(c: Consulta, x: string) { return aplicarSentencia.call(null, c, ${valor}, []); }`)
+      .some((h) => h.includes("sin llamada directa")));
+    cae(`export function g(f: (...a: unknown[]) => unknown) { return f(aplicarSentencia); }`);
+    // El alias con SQL literal pasa: se revisa como el llamado directo.
+    pasa(`import { aplicarSentencia as ejecutar } from "../../nucleo/db";
+      export async function f(c: Consulta, id: string) { return ejecutar(c, "select * from t where id = $1", [id]); }`);
+    // En su propio archivo, db.ts puede exportarla y referirla.
+    pasa(`export function aplicarSentencia(consulta: Consulta, sentencia: string) { return consulta.query(sentencia, []); }
+      export const alias = aplicarSentencia;`, "src/nucleo/db.ts");
+  });
+
+  test("R70-2: sombreado por bloques y for…of (M6 y M14)", () => {
+    cae(`export async function f(c: Consulta, x: string) {
+      { const q = "select 1"; void q; }
+      { const q = ${valor}; return aplicarSentencia(c, q, []); }
+    }`);
+    cae(`export async function f(c: Consulta, entradas: string[]) {
+      { const q = "select 1"; void q; }
+      for (const q of entradas) await aplicarSentencia(c, q, []);
+    }`);
+    // La const del mismo bloque, la que de verdad se usa, pasa.
+    pasa(`export async function f(c: Consulta, x: string) {
+      { const q = ${valor}; void q; }
+      { const q = "select * from t where id = $1"; return aplicarSentencia(c, q, [x]); }
+    }`);
+  });
+
+  test("R70-3: el .join de placeholders exige un arreglo que nace vacío y solo recibe push (M5)", () => {
+    const con = (antes: string) => `export async function f(c: Consulta, x: string) {
+      ${antes}
+      partes.push(\`b = $1\`);
+      return aplicarSentencia(c, \`select * from t where \${partes.join(" and ")}\`, [1]);
+    }`;
+    cae(con("const partes = [`a = '${x}'`];"));
+    cae(con("const partes: string[] = []; partes.unshift(`a = '${x}'`);"));
+    cae(con("const partes: string[] = []; partes[1] = `a = '${x}'`;"));
+    cae(con("const partes: string[] = []; partes.splice(0, 0, `a = '${x}'`);"));
+    cae(con("const partes: string[] = []; meter(partes, x);"));
+    pasa(con("const partes: string[] = []; if (partes.length > 3) return null;"));
+  });
+
+  test("R70-4: la propiedad de un objeto const mutado no cuenta como constante (M11)", () => {
+    cae(`const SQL = { lista: "select 1" };
+      export async function f(c: Consulta, x: string) { SQL.lista = ${valor}; return aplicarSentencia(c, SQL.lista, []); }`);
+    cae(`const SQL = { lista: "select 1" };
+      Object.assign(SQL, { lista: "otro" });
+      export async function f(c: Consulta) { return aplicarSentencia(c, SQL.lista, []); }`);
+    // Sin mutaciones, o con as const, pasa.
+    pasa(`const SQL = { lista: "select * from t where id = $1" };
+      export async function f(c: Consulta, id: string) { return aplicarSentencia(c, SQL.lista, [id]); }`);
+    pasa(`const SQL = { lista: "select * from t where id = $1" } as const;
+      export async function f(c: Consulta, id: string) { return aplicarSentencia(c, SQL.lista, [id]); }`);
+  });
+
+  test("R70-5: consultar y consultarDefinidor se revisan también importados desde otro archivo (C4)", () => {
+    cae(`import { consultar } from "../autenticacion/repositorio";
+      export async function f(x: string) { return consultar(${valor}, [], "u"); }`);
+    cae(`import { consultarDefinidor as leer } from "@/server/autenticacion/repositorio";
+      export async function f(x: string) { return leer(${valor}, []); }`);
+    pasa(`import { consultar } from "../autenticacion/repositorio";
+      export async function f(id: string) { return consultar("select id from users where id = $1", [id], id); }`);
+  });
+});
