@@ -1,0 +1,38 @@
+import json, os, sys
+plan = json.load(open(sys.argv[1]))
+import glob
+brillo = next(t for t in (open(f).read() for f in sorted(glob.glob("tests/e2e/*.spec.ts"))) if 'test.describe("fondo animado en un equipo que pinta cada cuadro en 40 ms"' in t)
+ini = brillo.index('test.describe("fondo animado en un equipo que pinta cada cuadro en 40 ms"')
+fin = brillo.index("\n});\n", ini) + 5
+cuarenta = brillo[ini:fin]
+E = {"tarea": "una tarea ajena de 800 ms", "buf": "el búfer del motor crece una vez", "lien": "el lienzo cambia de tamaño en cada cuadro", "est": "estable", "arr": "arrastrar la ventana"}
+def llamada(c):
+    if c == "cuarenta": return "\n" + cuarenta
+    tipo, dpr, *esc = c.split(":")
+    if tipo == "real": return f"pruebasDelFondo([{dpr}], {{ equipos: [], deVerdad: true }});"
+    if tipo == "sin": return f'pruebasDelFondo([{dpr}], {{ equipos: ["sin GPU"], deVerdad: false, escenarios: ["{E[esc[0]]}"] }});'
+    if tipo == "gpu": return f'pruebasDelFondo([{dpr}], {{ equipos: ["con GPU rápida"], escenarios: ["{E[esc[0]]}"] }});'
+    raise Exception(c)
+LUGAR = {
+    "lienzo-del-fondo": "lienzo-del-fondo.spec.ts (después de invitacion): la de GPU a DPR 2 «una tarea ajena» cierra el archivo, dentro de la parte 4.",
+    "rueda-del-fondo": "rueda-del-fondo.spec.ts (entre roles y runway): tres de GPU en la parte 8, la última, antes de runway.",
+    "abanico-del-fondo": "abanico-del-fondo.spec.ts (el primer archivo, antes de accesibilidad): dos de GPU abren la parte 1, que con accesibilidad sola quedaba en 133 s.",
+    "fondo": "fondo.spec.ts (después de flujo-de-caja): la de GPU a DPR 2 «una tarea ajena» cierra el archivo, dentro de la parte 4.",
+    "optica-retina": "optica-retina.spec.ts (después de operacion): dos de GPU a DPR 2 entre las cortas, en la parte 6 y el inicio de la 7.",
+    "velocidad-del-fondo": "velocidad-del-fondo.spec.ts (después de roles): la parte 8, la última, con seis de GPU.",
+}
+import textwrap
+COMUN_TEXTO = 'Las pruebas se definen en fondo-pruebas.ts y se reparten en ARCHIVOS, cuyo nombre los deja en distintos lugares del orden alfabético. El reparto de la e2e corta por número de pruebas, en orden, y las pruebas con GPU emulada tardan en el CI de 34 a 132 s cada una (WebGL por software): el acomodo sale del simulador del reparto con el tiempo máximo observado de cada prueba, comprobado con `playwright test --list --shard=N/8` (tests/e2e/LEEME.md), y prefiere, sin exigirlo, dejarlas al final de su parte (cada una abre y cierra su propio navegador). Si cambia el número de pruebas antes de estos archivos, los cortes se mueven y hay que volver a acomodarlas. Cada prueba entra con su propia cookie y no comparte estado: «parallel» solo para que el reparto pueda partir el archivo (con workers: 1 corren una tras otra).'
+
+for f in ["brillo-del-fondo", "fondo", "optica-retina", "velocidad-del-fondo", "abanico-del-fondo", "lienzo-del-fondo", "rueda-del-fondo", "nube-del-fondo", "potencia-del-fondo", "movimiento-del-fondo", "nitidez-del-fondo", "color-del-fondo", "escena-del-fondo", "dpr-del-fondo", "parpadeo-del-fondo", "pintura-del-fondo", "pantalla-del-fondo"]:
+    p = f"tests/e2e/{f}.spec.ts"
+    if os.path.exists(p): os.remove(p)
+nombres = sorted(plan)
+lista = ", ".join(nombres[:-1]) + " y " + nombres[-1]
+COMUN = chr(10).join("// " + l for l in textwrap.wrap(COMUN_TEXTO.replace("ARCHIVOS", f"{len(nombres)} archivos ({lista})"), 126))
+for archivo, llamadas in plan.items():
+    usa = "cuarenta" in llamadas
+    cab = ['import { expect, test } from "@playwright/test";' if usa else 'import { test } from "@playwright/test";', "", 'import { pruebasDelFondo } from "./fondo-pruebas";']
+    if usa: cab.append('import { INICIO, entrar } from "./marco-apoyo";')
+    cab += ["", "// " + LUGAR.get(archivo, f"{archivo}.spec.ts: su lugar en el orden lo da el nombre."), COMUN, 'test.describe.configure({ mode: "parallel" });', ""]
+    open(f"tests/e2e/{archivo}.spec.ts", "w").write("\n".join(cab + [llamada(c) for c in llamadas]) + "\n")

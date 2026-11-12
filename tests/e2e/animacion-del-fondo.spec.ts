@@ -3,21 +3,19 @@ import { expect, test } from "@playwright/test";
 import { comprobarSinWebGl, pruebasDelFondo } from "./fondo-pruebas";
 import { INICIO, entrar } from "./marco-apoyo";
 
-// velocidad-del-fondo.spec.ts (después de roles): la parte 8, la última, con cinco de GPU.
-// Las pruebas se definen en fondo-pruebas.ts y se reparten en cuatro archivos (abanico-del-fondo, fondo, optica-retina y
-// velocidad-del-fondo), cuyo nombre los deja en distintos lugares del orden alfabético. El reparto de la e2e corta por número de
+// animacion-del-fondo.spec.ts (después de accesibilidad): dos de GPU cierran la parte 1 y las otras dos abren la 2.
+// Las pruebas se definen en fondo-pruebas.ts y se reparten en 4 archivos (animacion-del-fondo, lienzo-del-fondo, optica-retina y
+// rueda-del-fondo), cuyo nombre los deja en distintos lugares del orden alfabético. El reparto de la e2e corta por número de
 // pruebas, en orden, y las pruebas con GPU emulada tardan en el CI de 34 a 132 s cada una (WebGL por software): el acomodo sale
 // del simulador del reparto con el tiempo máximo observado de cada prueba, comprobado con `playwright test --list --shard=N/8`
 // (tests/e2e/LEEME.md), y prefiere, sin exigirlo, dejarlas al final de su parte (cada una abre y cierra su propio navegador). Si
-// cambia el número de pruebas antes de estos archivos, los cortes se mueven y hay que volver a acomodarlas. Cada prueba entra con
-// su propia cookie y no comparte estado: «parallel» solo para que el reparto pueda partir el archivo (con workers: 1 corren una
-// tras otra).
+// cambia el número de pruebas antes de estos archivos, los cortes se mueven y hay que volver a acomodarlas. Cada prueba entra
+// con su propia cookie y no comparte estado: «parallel» solo para que el reparto pueda partir el archivo (con workers: 1 corren
+// una tras otra).
 test.describe.configure({ mode: "parallel" });
 
-pruebasDelFondo([2], { equipos: ["sin GPU"], deVerdad: false, escenarios: ["el búfer del motor crece una vez"] });
-pruebasDelFondo([2], { equipos: ["con GPU rápida"], escenarios: ["arrastrar la ventana"] });
-pruebasDelFondo([1], { equipos: ["con GPU rápida"], escenarios: ["estable"] });
-pruebasDelFondo([2], { equipos: [], deVerdad: true });
+pruebasDelFondo([2], { equipos: ["con GPU rápida"], escenarios: ["estable"] });
+pruebasDelFondo([1], { equipos: ["con GPU rápida"], escenarios: ["una tarea ajena de 800 ms"] });
 
 test.describe("fondo animado en un equipo que pinta cada cuadro en 40 ms", () => {
   test("se queda quieto en la segunda pintura, sin esperar la ventana de 80 cuadros", async ({ page, browser, baseURL, viewport }) => {
@@ -65,7 +63,3 @@ test.describe("fondo animado en un equipo que pinta cada cuadro en 40 ms", () =>
 });
 
 pruebasDelFondo([1], { equipos: ["con GPU rápida"], escenarios: ["arrastrar la ventana"] });
-pruebasDelFondo([1], { equipos: ["sin GPU"], deVerdad: false, escenarios: ["el búfer del motor crece una vez"] });
-pruebasDelFondo([1], { equipos: ["con GPU rápida"], escenarios: ["una tarea ajena de 800 ms"] });
-pruebasDelFondo([1], { equipos: ["con GPU rápida"], escenarios: ["el búfer del motor crece una vez"] });
-pruebasDelFondo([2], { equipos: ["sin GPU"], deVerdad: false, escenarios: ["estable"] });

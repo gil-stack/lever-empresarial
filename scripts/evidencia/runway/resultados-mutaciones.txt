@@ -1,0 +1,32 @@
+MV1 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y1 una persona escribe el estado: esperado alerta_solo_del_sistema, dio P0001 [] auditoria_de_flujo_ausente
+MV2 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y2 alta de un aviso ya enviado: la base lo aceptó (esperado alerta_no_valida)
+MV3 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y3 enviado → enviando: la base lo aceptó (esperado alerta_ya_cerrada)
+MV4 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y4 cambiar runway_semanas al cerrar: la base lo aceptó (esperado alerta_inmutable)
+MV5 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y5 fallido → enviando sin contar el intento: la base lo aceptó (esperado alerta_ya_cerrada)
+MV6 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y6 dos entregas del mismo aviso a la misma persona: la base lo aceptó (esperado cash_alert_deliveries_unica)
+MV7 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+MV8 · PASA (sobrevive)
+MV9 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y9 cerrar un aviso sin evento: la base lo aceptó (esperado auditoria_de_flujo_ausente)
+MV10 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y10 cerrar un aviso con el evento de otra acción: la base lo aceptó (esperado auditoria_de_flujo_ausente)
+MV11 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+MV12 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y12 Beta registra una entrega con el aviso de Alfa: la base lo aceptó (esperado 23503)
+MV13 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y13 el contador cambia el mínimo: la base lo aceptó (esperado sin_permiso_para_flujo)
+MV14 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y14 finanzas cambia el mínimo firmando como el admin: la base lo aceptó (esperado sin_permiso_para_flujo)
+MV15 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y15 mínimo de 13 meses: la base lo aceptó (esperado cash_runway_meses)
+MV16 · PASA (sobrevive)
+MV17 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y17 plataforma_cliente pide la puerta de la tarea: la base lo aceptó (esperado 42501)
+MV18 · PASA (sobrevive)
+MV19 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y19: la tarea evalúa una empresa suspendida
+AR1 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+AR2 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+AR3 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+AR4 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: control: cruce, aviso, cierre, entrega y foto de la semana: la base lo rechazó: 23514 [cash_alerts_cierre] new row for relation "cash_alerts" violates check constraint 
+AR5 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Y8 foto en martes: esperado foto_fuera_de_semana, dio 23514 [cash_runway_snapshots_lunes] new row for relation "cash_runway_snapshots" violates check constraint "cash_r
+AR6 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+AR7 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+AR8 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: control: cruce, aviso, cierre, entrega y foto de la semana: la base lo rechazó: 23505 [cash_alerts_un_aviso_por_cruce_runway] duplicate key value violates unique constr
+AR9 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: N3 un segundo aviso del mismo cruce: la base lo aceptó (esperado cash_alerts_un_aviso_por_cruce_runway)
+AR10 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: N3 un aviso sin cruce (la bandera apagada): esperado alerta_sin_cruce, dio 23505 [cash_alerts_un_aviso_por_cruce_runway] duplicate key value violates unique constraint 
+AR11 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+AR12 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: N3 el cruce de un aviso no se reescribe: esperado alerta_inmutable, dio 23505 [cash_alerts_un_aviso_por_cruce_runway] duplicate key value violates unique constraint "ca
+AR13 · FALLA (la atrapa) · AssertionError [ERR_ASSERTION]: orden por número (réplica de la 0028 antes): tablas sin bloqueo_empresa_suspendida: cash_alert_deliveries, cash_alert_states, cash_alerts, cash_runway_settings, cash_ru

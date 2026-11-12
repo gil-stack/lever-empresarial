@@ -3,7 +3,8 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { formatoPesos } from "../../dominio/centavos";
 import { fechaConAnio, fechaCorta, lunesDe, primeroDelMes, ultimoDelMes } from "../../dominio/flujo/fechas";
 import { calcularPresupuestos, cifrasDePresupuesto, ETIQUETA_ESTADO_PRESUPUESTO, reservarNominaDeUnaPersona, type LineaPresupuesto } from "../../dominio/flujo/presupuestos";
-import { proyectar, textoAlcance, textoDeCausas, type Proyeccion } from "../../dominio/flujo/proyeccion";
+import { proyectar, textoDeCausas, type Proyeccion } from "../../dominio/flujo/proyeccion";
+import { calcularRunway, horizonteDe, textoAlcanceConRunway, type Runway } from "../../dominio/flujo/runway";
 import { hoyEnMexico } from "../../dominio/personas";
 import { capacidadesDe, rolesLeidos, tiene } from "../../nucleo/capacidades";
 import { aplicarSentencia, comoTarea, conContexto, type Consulta, type ContextoDeBase } from "../../nucleo/db";
@@ -152,7 +153,7 @@ async function enviarAEmpresa(empresaId: string, paso: Paso): Promise<"enviados"
         : null,
       salidas4: formatoPesos(datos.proyeccion.comprometido4),
       entradas4: formatoPesos(datos.proyeccion.entradas4),
-      alcance: textoAlcance(datos.proyeccion),
+      alcance: textoAlcanceConRunway(datos.proyeccion, datos.runway),
       faltante: textoFaltante(datos.proyeccion),
       cobrosVencidos: datos.cobros.vencidos > 0 ? `${datos.cobros.vencidos} por ${formatoPesos(datos.cobros.vencidosCentavos)}` : null,
       presupuestos: alertas.map(
@@ -305,6 +306,7 @@ async function registrarEntrega(consulta: Consulta, apartado: Apartado, paso: Pa
 
 type Resumen = {
   proyeccion: Proyeccion;
+  runway: Pick<Runway, "conservador">;
   cobros: { vencidos: number; vencidosCentavos: number };
   /** Las alertas de presupuesto completas y, para quien no ve el detalle de la nómina, con el gasto reservado. */
   alertas: { conDetalle: LineaPresupuesto[]; sinDetalle: LineaPresupuesto[] };
@@ -319,7 +321,7 @@ type Resumen = {
  * proyección sale sin desglosar el pago de una sola persona.
  */
 async function leerResumen(consulta: Consulta, empresaId: string, hoy: string, semana: string): Promise<Resumen> {
-  const { fuentes } = await proyeccionCon(consulta, empresaId, hoy);
+  const { fuentes } = await proyeccionCon(consulta, empresaId, hoy, horizonteDe(hoy).fin);
   const presupuestos = calcularPresupuestos(
     await leerFuentesPresupuesto(consulta, empresaId, hoy, primeroDelMes(hoy), ultimoDelMes(hoy)),
   );
@@ -330,6 +332,7 @@ async function leerResumen(consulta: Consulta, empresaId: string, hoy: string, s
   );
   return {
     proyeccion: proyectar(fuentes, null, { detalleNomina: false }),
+    runway: { conservador: calcularRunway(fuentes, [], { detalleNomina: false }).conservador },
     cobros: await leerTotalesCobro(consulta, empresaId, hoy),
     alertas: { conDetalle: presupuestos.alertas, sinDetalle: reservarNominaDeUnaPersona(presupuestos).alertas },
     destinatarios: await leerDestinatarios(consulta, empresaId, hoy),

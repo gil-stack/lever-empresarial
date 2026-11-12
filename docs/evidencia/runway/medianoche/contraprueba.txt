@@ -1,0 +1,33 @@
+# Contraprueba de la medianoche de México (E2E_TODAY del domingo anterior, mutación de tests/e2e/entorno.ts que no se sube)
+# 2026-11-11T06:10:08Z · runway.spec.ts con el hoy() anterior (E2E_TODAY) y con el arreglo (hoyEnMexico al usarlo)
+
+p="tests/e2e/entorno.ts"; s=open(p).read()
+a="    process.env.E2E_TODAY = hoyEnMexico(new Date());"
+assert a in s
+s=s.replace(a,"""    // CONTRAPRUEBA (no se sube): la siembra «del domingo anterior», como si la corrida hubiera empezado el domingo a las
+    // 23:59 de México y siguiera el lunes.
+    { const d = new Date(`${hoyEnMexico(new Date())}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7) - 1); process.env.E2E_TODAY = d.toISOString().slice(0, 10); }""")
+open(p,"w").write(s)
+
+## Con el código anterior
+  ✘   2 tests/e2e/runway.spec.ts:172:5 › 2 · un pago grande cruza el colchón: un solo aviso por correo (1.8s)
+  1 failed
+  10 did not run
+  1 passed (11.8s)
+  1) tests/e2e/runway.spec.ts:172:5 › 2 · un pago grande cruza el colchón: un solo aviso por correo 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 0
+
+      190 |   expect(await contar("select 1 from cash_alerts where company_id = $1 and estado = 'enviado' and destinatarios = 2 and colchon and runway", [EMPRESA()])).toBe(1);
+      191 |   expect(await contar("select 1 from cash_alert_deliveries where company_id = $1", [EMPRESA()])).toBe(2);
+    > 192 |   expect(await contar("select 1 from cash_runway_snapshots where company_id = $1 and semana = $2", [EMPRESA(), lunesDe(hoy())])).toBe(1);
+          |                                                                                                                                  ^
+      193 |   // Un correo a administración y uno a finanzas; contaduría no lo encendió.
+      194 |   expect(avisosPara(CORREOS_RUNWAY.rita).length).toBe(antes.rita + 1);
+
+## Con el arreglo
+  1 skipped
+  11 passed (28.8s)

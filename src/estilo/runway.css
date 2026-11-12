@@ -1,0 +1,272 @@
+/*
+ * Runway a 12 meses y tendencia, en Flujo de caja › Saldo y alertas.
+ * Solo tokens del sistema visual (tokens.css); ningún color suelto.
+ */
+
+.runway-cifras {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 22px 28px;
+  margin: 18px 0 0;
+}
+
+.runway-cifras > div {
+  min-width: 0;
+}
+
+.runway-cifras dt {
+  color: var(--tinta-suave);
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.runway-cifras dd {
+  margin: 8px 0 0;
+  font-size: 1.55rem;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.runway-cifras dd.pista {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  letter-spacing: 0;
+}
+
+.runway-bloque {
+  margin-top: 26px;
+}
+
+.runway-bloque h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  font-weight: 550;
+}
+
+[data-origen="estimado"] {
+  margin-left: 8px;
+  font-size: 11.5px;
+}
+
+.runway-meses th[scope="row"] .pista {
+  margin: 0;
+  font-size: 0.75rem;
+}
+
+.runway-mes-negativo th[scope="row"] {
+  box-shadow: inset 2px 0 0 var(--danger);
+}
+
+.runway-resumen {
+  display: grid;
+  margin: 8px 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.runway-resumen li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--linea);
+  font-size: 0.88rem;
+}
+
+.runway-resumen li:last-child {
+  border-bottom: 0;
+}
+
+.runway-resumen .cifra {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tendencia: barras en HTML para que el texto mida lo mismo a cualquier ancho. */
+.runway-tendencia {
+  margin: 14px 0 0;
+}
+
+.runway-grafica {
+  position: relative;
+  height: 180px;
+  margin: 28px 8px 34px 34px;
+  border-bottom: 1px solid var(--linea-fuerte);
+}
+
+.runway-rejilla span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1px solid var(--linea);
+}
+
+.runway-rejilla em {
+  position: absolute;
+  left: -34px;
+  width: 26px;
+  transform: translateY(-50%);
+  color: var(--tinta-tenue);
+  font-size: 0.75rem;
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.runway-barras {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.runway-barras li {
+  display: flex;
+  flex: 1 1 0;
+  align-items: flex-end;
+  justify-content: center;
+  height: 100%;
+  min-width: 0;
+}
+
+.runway-barra {
+  position: relative;
+  width: min(24px, 70%);
+  border-radius: 4px 4px 0 0;
+  background: var(--sello);
+}
+
+.runway-barras li:hover .runway-barra {
+  opacity: 0.8;
+}
+
+.runway-valor {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-bottom: 4px;
+  transform: translateX(-50%);
+  color: var(--tinta);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.runway-minimo {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 2px solid var(--tinta-suave);
+  pointer-events: none;
+}
+
+.runway-leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--tinta-suave);
+  font-size: 0.75rem;
+}
+
+.runway-leyenda-barra {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--sello);
+}
+
+.runway-leyenda-linea {
+  display: inline-block;
+  width: 16px;
+  height: 0;
+  border-top: 2px solid var(--tinta-suave);
+}
+
+.runway-hasta {
+  font-size: 0.85rem;
+  letter-spacing: 0;
+}
+
+.runway-cifras dd.runway-hasta {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  letter-spacing: 0;
+  color: var(--tinta-suave);
+}
+
+.runway-ejes {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding-top: 8px;
+  color: var(--tinta-tenue);
+  font-size: 0.75rem;
+}
+
+.runway-datos {
+  margin-top: 8px;
+}
+
+.runway-datos summary {
+  cursor: pointer;
+  color: var(--tinta-suave);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 760px) {
+  .runway-cifras {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Mes por mes apilado: el mes y su cierre arriba; el detalle abajo. */
+  .runway-meses.flujo-apilada tbody tr {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .runway-meses.flujo-apilada th[scope="row"] {
+    grid-column: 1 / -1;
+  }
+
+  /* Primero los dos cierres; después lo que entra, lo estimado y lo que sale. */
+  .runway-meses.flujo-apilada td {
+    font-size: 13px;
+    text-align: left;
+  }
+
+  .runway-meses.flujo-apilada td[data-cifra="cierre"],
+  .runway-meses.flujo-apilada td[data-cifra="cierre-esperado"] {
+    order: 1;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .runway-meses.flujo-apilada td[data-cifra="entradas"],
+  .runway-meses.flujo-apilada td[data-cifra="estimadas"] {
+    order: 2;
+  }
+
+  .runway-meses.flujo-apilada td[data-cifra="salidas"] {
+    order: 3;
+  }
+
+  .runway-meses.flujo-apilada .runway-mes-negativo {
+    box-shadow: inset 2px 0 0 var(--danger);
+    padding-left: 12px;
+  }
+
+  .runway-meses.flujo-apilada .runway-mes-negativo th[scope="row"] {
+    box-shadow: none;
+  }
+}

@@ -9,6 +9,7 @@ import { invitarPersonalComoDuena } from "../../scripts/personal-por-la-duena";
 import { iniciarBlobLocal, type BlobLocal } from "./blob-local/servidor";
 import { CORREOS, sembrarRecorridos } from "./siembra";
 import { sembrarCobranza } from "./siembra-cobranza";
+import { sembrarRunway } from "./siembra-runway";
 
 import { hoyEnMexico } from "../../src/dominio/personas";
 import { cerrarConexion } from "../../src/nucleo/db";
@@ -113,6 +114,7 @@ export async function iniciarEntorno(): Promise<void> {
     process.env.E2E_TODAY = hoyEnMexico(new Date());
     await sembrarRecorridos(owner, arranque);
     await sembrarCobranza(owner);
+    await sembrarRunway(owner);
     await cerrarConexion();
     await levantarBlobLocal();
     await levantarServidor();

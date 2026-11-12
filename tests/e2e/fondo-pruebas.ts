@@ -309,7 +309,7 @@ export type OrdenDelFondo = { equipos?: readonly (typeof EQUIPOS)[number][0][]; 
 
 /**
  * Las pruebas del fondo animado en las densidades que se piden: sin GPU de verdad y con el equipo emulado (sin GPU y con GPU
- * rápida). Las reparten abanico-del-fondo, fondo, optica-retina y velocidad-del-fondo (*.spec.ts): en el CI, el WebGL por
+ * rápida). Las reparten animacion-del-fondo, lienzo-del-fondo, optica-retina y rueda-del-fondo (*.spec.ts): en el CI, el WebGL por
  * software del navegador remoto hace que las de GPU emulada tarden de 34 a 132 s cada una, y el reparto de la e2e las deja al
  * final de partes distintas.
  */
@@ -421,7 +421,7 @@ export function pruebasDelFondo(dprs: readonly number[], orden: OrdenDelFondo = 
 /**
  * r66-N9: un equipo sin WebGL2, en una página nueva, a DPR `dpr` (1 y, desde r66-N10, 2). El motor pinta su degradado 2D en el lienzo de la escena; ningún otro
  * canvas (un respaldo por CPU a pantalla completa que luego se escala, por ejemplo) pasa de él, y nada se reasigna con el
- * tamaño ya fijado. Va dentro de una prueba que ya existe (la de 40 ms, en velocidad-del-fondo.spec.ts): una prueba más movería los cortes
+ * tamaño ya fijado. Va dentro de una prueba que ya existe (la de 40 ms, en animacion-del-fondo.spec.ts): una prueba más movería los cortes
  * del reparto de la e2e y dejaría pruebas normales después de una con GPU emulada.
  */
 export async function comprobarSinWebGl(page: Page, dpr: number) {
