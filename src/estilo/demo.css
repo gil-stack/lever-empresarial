@@ -1229,3 +1229,14 @@
     display: none;
   }
 }
+
+/* Tarjetas con Efevoo: el nombre de la tarjeta lleva a su detalle, en negritas como el diseño; el subrayado, solo al pasar o enfocar. */
+.demo-persona b a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.demo-persona b a:hover,
+.demo-persona b a:focus-visible {
+  text-decoration: underline;
+}

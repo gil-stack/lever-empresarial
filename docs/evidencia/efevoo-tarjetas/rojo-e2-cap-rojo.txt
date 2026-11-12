@@ -1,0 +1,46 @@
+▶ capacidades por superficie
+  ✔ el tarjetahabiente puro no recibe consola ni tesorería (0.375791ms)
+  ✔ el rol combinado conserva consola y teléfono (0.059291ms)
+  ✔ finanzas abre exactamente el resumen, pendientes y el flujo: sin teléfono ni permisos operativos (0.287042ms)
+  ✔ finanzas no agrega teléfono a un rol de consola y no cuenta como rol de trabajo (0.065917ms)
+  ✔ el flujo de caja: administración y finanzas editan, contaduría solo lee, nadie más lo abre (0.132584ms)
+  ✔ cada rol abre los módulos en demostración que dice el comentario de Finanzas (1.043667ms)
+  ✖ Tarjetas con Efevoo: administración, liberación y finanzas la abren; operan administración y liberación; el titular, en el teléfono (0.709792ms)
+  ✔ solicitante sigue leyéndose en membresías históricas (0.066791ms)
+✖ capacidades por superficie (3.220542ms)
+ℹ tests 8
+ℹ suites 1
+ℹ pass 7
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 232.232917
+
+✖ failing tests:
+
+test at src/nucleo/capacidades.test.ts:86:3
+✖ Tarjetas con Efevoo: administración, liberación y finanzas la abren; operan administración y liberación; el titular, en el teléfono (0.709792ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      'administrador',
+  -   'liberador',
+      'finanzas'
+    ]
+  
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/efevoo-tarjetas/src/nucleo/capacidades.test.ts:92:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Suite.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ 'administrador', 'finanzas' ],
+    expected: [ 'administrador', 'liberador', 'finanzas' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

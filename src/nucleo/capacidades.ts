@@ -34,8 +34,13 @@ type Regla<R> = { superficie: Superficie; roles: readonly R[] };
  * - finanzas: Gastos, Tarjetas, Movimientos, Cuenta, Crédito, Inversión y Ahorro;
  * - contador: Conciliación, Gastos, Movimientos, Pagos internacionales, Viajes
  *   y proyectos, Gasolina y Ahorro;
- * - liberador y solicitante: Pagos internacionales, Viajes y proyectos y Gasolina;
+ * - liberador: Tarjetas, Pagos internacionales, Viajes y proyectos y Gasolina;
+ * - solicitante: Pagos internacionales, Viajes y proyectos y Gasolina;
  * - tarjetahabiente: ninguno.
+ * Tarjetas (Efevoo Pay) tiene capacidades propias: la abren administración, liberación y finanzas; cargan, retiran,
+ * bloquean y desbloquean administración y liberación (las mismas personas que autorizan pagos), y finanzas solo la
+ * lee. El contador no la abre: el gasto con tarjeta le llega por Gastos y Movimientos. El titular ve solo sus tarjetas
+ * en el teléfono (`/telefono/tarjetas`), sin operar.
  * Fiscal abre con la Lista 69-B o la Póliza que guarda dentro: administrador,
  * contador, liberador y solicitante, no finanzas ni tarjetahabiente.
  */
@@ -71,12 +76,17 @@ const DEL_CLIENTE = {
   "cliente.pago.solicitar": { superficie: "cliente", roles: ["administrador", "liberador", "solicitante"] },
   "cliente.pago.liberar": { superficie: "cliente", roles: ["liberador"] },
   "cliente.pago.cancelar_listo": { superficie: "cliente", roles: ["administrador", "liberador"] },
+  // Tarjetas con Efevoo Pay: ver todas las de la empresa, y cargar, retirar, bloquear y desbloquear.
+  "cliente.tarjetas.ver": { superficie: "cliente", roles: ["administrador", "liberador", "finanzas"] },
+  "cliente.tarjetas.operar": { superficie: "cliente", roles: ["administrador", "liberador"] },
 } as const satisfies Record<string, Regla<RolCliente>>;
 
 const DEL_TELEFONO = {
   "telefono.inicio.ver": { superficie: "telefono", roles: DE_TRABAJO },
   "telefono.topes.ver": { superficie: "telefono", roles: DE_TRABAJO },
   "telefono.facturacion.ver": { superficie: "telefono", roles: DE_TRABAJO },
+  // Las tarjetas de Efevoo de la persona: la base solo le deja ver las suyas.
+  "telefono.tarjetas.ver": { superficie: "telefono", roles: DE_TRABAJO },
 } as const satisfies Record<string, Regla<RolCliente>>;
 
 const DE_LA_PLATAFORMA = {

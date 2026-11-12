@@ -1,0 +1,31 @@
+{
+  "pedido": {
+    "method": "assignCard",
+    "payload": {
+      "product": 16,
+      "subproduct": 19,
+      "subclient": 206,
+      "type": "F",
+      "client_data": {
+        "nombre": "<nombre:6>",
+        "primerApellido": "<primerApellido:5>",
+        "segundoApellido": "<segundoApellido:3>",
+        "nombreEmbozar": "<nombreEmbozar:12>",
+        "telefono": "<telefono:10>",
+        "correo": "<correo:25>",
+        "paisNacimiento": "México",
+        "address": "<address:14>"
+      }
+    }
+  },
+  "http": 200,
+  "ms": 666,
+  "cuerpo": {
+    "status": {
+      "code": "101",
+      "message": "ERROR: Hash incorrecto.",
+      "mensaje": "ERROR: Hash incorrecto."
+    },
+    "response": {}
+  }
+}

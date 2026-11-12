@@ -1,0 +1,40 @@
+  1) tests/e2e/tarjetas.spec.ts:192:5 › T2 y T3: liberación carga $100.00 con doble clic (una sola operación) y retira $25.50 al centavo 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 5
+
+    @@ -2,6 +2,11 @@
+        Array [
+          "carga",
+          "confirmada",
+          "10000",
+        ],
+    +   Array [
+    +     "carga",
+    +     "confirmada",
+    +     "10000",
+    +   ],
+      ]
+
+      202 |   await expect(page.getByText(/Se cargó el saldo a la tarjeta\. Referencia \d{7}\./)).toBeVisible();
+      203 |   const tras = await operaciones(tito.id);
+    > 204 |   expect(tras.slice(previas).map((o) => [o.tipo, o.estado, o.monto])).toEqual([["carga", "confirmada", "10000"]]);
+          |                                                                       ^
+      205 |   expect(await saldoEnEfevoo(idEfevoo)).toBe(antes + 10_000);
+      206 |
+      207 |   dialogo = await dialogoDe(page, tito.terminacion, "Retirar");
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/efevoo-tarjetas/tests/e2e/tarjetas.spec.ts:204:71
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/e2e/tarjetas-T2-y-T3-liberació-00149-n-y-retira-25-50-al-centavo/error-context.md
+
+    test-results/e2e/tarjetas-T2-y-T3-liberació-00149-n-y-retira-25-50-al-centavo/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/e2e/tarjetas-T2-y-T3-liberació-00149-n-y-retira-25-50-al-centavo/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+

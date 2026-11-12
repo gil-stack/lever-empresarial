@@ -90,7 +90,8 @@ const CASOS: Caso[] = [
     rol: "liberador",
     correo: CORREOS.rosa,
     lateral: [
-      "/consola/aprobaciones", "/consola/fiscal", "/consola/internacional", "/consola/proveedores", "/consola/personas/nomina", "/consola/viajes",
+      // Tarjetas con Efevoo: el liberador carga, retira y bloquea (decisión de Gil).
+      "/consola/aprobaciones", "/consola/tarjetas", "/consola/fiscal", "/consola/internacional", "/consola/proveedores", "/consola/personas/nomina", "/consola/viajes",
       "/consola/gasolina",
     ],
     mas: ["/consola/perfil", "/consola/apariencia", "/telefono", "/consola/politica"],

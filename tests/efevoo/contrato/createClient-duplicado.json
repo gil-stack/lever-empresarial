@@ -1,0 +1,21 @@
+{
+  "pedido": {
+    "method": "createClient",
+    "payload": {
+      "email": "<email:34>",
+      "comercio": {
+        "razonSocial": "<razonSocial:22>",
+        "email": "<email:34>"
+      }
+    }
+  },
+  "http": 200,
+  "ms": 1119,
+  "cuerpo": {
+    "response": "Cliente previamente registrado",
+    "status": {
+      "code": 1,
+      "message": "Error"
+    }
+  }
+}

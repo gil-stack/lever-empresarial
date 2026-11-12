@@ -1,0 +1,80 @@
+[e2e] compilando Next con las acciones de servidor de la prueba · 0 s
+Turbopack build encountered 1 warning:
+./src/server/roles/contrato.ts:9:32
+Warning: Dynamic filesystem access causes tracing of the whole project
+   7 |  * ejecuta y el servidor no migra al arrancar.
+   8 |  */
+>  9 | export const CONTRATO_TABLAS = readFileSync(rutaDelContrato(), "utf8");
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  10 |
+  11 | function rutaDelContrato(): string {
+  12 |   try {
+
+Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+This can slow down deployments or lead to failures when size limits are exceeded.
+To resolve this, you can
+- make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+- only use them in development, or
+- opt out by adding an ignore comment to the highlighted call: fs.readFileSync(/*turbopackIgnore: true*/ ...), or
+- remove them.
+
+Import traces:
+  #1 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/index.ts
+    ./src/app/consola/personas/acciones.ts
+
+  #2 [Server Component]:
+    ./src/server/roles/contrato.ts
+    ./src/server/roles/repositorio.ts
+    ./src/server/roles/servicio.ts
+    ./src/app/consola/poliza/page.tsx
+
+
+[e2e] compilado · 9 s
+
+Running 6 tests using 1 worker
+
+  ✓  1 tests/e2e/roles.spec.ts:139:7 › administrador: el lateral y «Más» muestran solo sus secciones y las demás no abren (1.2s)
+  ✓  2 tests/e2e/roles.spec.ts:139:7 › finanzas (con tarjeta): el lateral y «Más» muestran solo sus secciones y las demás no abren (1.1s)
+  ✓  3 tests/e2e/roles.spec.ts:139:7 › contador: el lateral y «Más» muestran solo sus secciones y las demás no abren (1.1s)
+  ✘  4 tests/e2e/roles.spec.ts:139:7 › liberador: el lateral y «Más» muestran solo sus secciones y las demás no abren (600ms)
+  ✓  5 tests/e2e/roles.spec.ts:139:7 › solicitante (con tarjeta): el lateral y «Más» muestran solo sus secciones y las demás no abren (1.1s)
+  ✓  6 tests/e2e/roles.spec.ts:139:7 › tarjetahabiente: el lateral y «Más» muestran solo sus secciones y las demás no abren (751ms)
+
+
+  1) tests/e2e/roles.spec.ts:139:7 › liberador: el lateral y «Más» muestran solo sus secciones y las demás no abren 
+
+    Error: expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+    @@ -1,7 +1,8 @@
+      Array [
+        "/consola/aprobaciones",
+    +   "/consola/tarjetas",
+        "/consola/fiscal",
+        "/consola/internacional",
+        "/consola/proveedores",
+        "/consola/personas/nomina",
+        "/consola/viajes",
+
+      143 |     if (caso.lateral) {
+      144 |       await page.goto(`/c/${altamar()}/consola/aprobaciones`);
+    > 145 |       expect(await lateral(page)).toEqual(caso.lateral);
+          |                                   ^
+      146 |       expect(await mas(page)).toEqual(caso.mas);
+      147 |     }
+      148 |
+        at /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/efevoo-tarjetas/tests/e2e/roles.spec.ts:145:35
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/e2e/roles-liberador-el-lateral-6530d-ciones-y-las-demás-no-abren/error-context.md
+
+    test-results/e2e/roles-liberador-el-lateral-6530d-ciones-y-las-demás-no-abren/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/e2e/roles-liberador-el-lateral-6530d-ciones-y-las-demás-no-abren/trace.zip

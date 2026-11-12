@@ -1,0 +1,3 @@
+  1) tests/e2e/tarjetas.spec.ts:338:5 › empresa suspendida: no se carga ni se bloquea; la base lo impide 
+
+    Error: expect(locator).toBeVisible() failed

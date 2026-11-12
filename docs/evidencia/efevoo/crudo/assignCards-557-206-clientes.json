@@ -1,0 +1,16 @@
+{
+  "pedido": {
+    "method": "assignCards",
+    "payload": {
+      "idepClientes": 206,
+      "cards": [
+        557
+      ]
+    }
+  },
+  "http": 200,
+  "ms": 565,
+  "cuerpo": {
+    "IdepCliente": "Campo obligatorio"
+  }
+}
