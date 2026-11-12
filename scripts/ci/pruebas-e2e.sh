@@ -55,10 +55,10 @@ esperar() {
 if [ -z "${E2E_ADMIN_URL:-}" ]; then
   version=$(node -p 'require("@playwright/test/package.json").version')
   imagen="mcr.microsoft.com/playwright:v${version}-noble"
-  # Las dos imágenes se descargan mientras compila Next.
-  docker pull -q postgres:17 >/dev/null &
+  # Las dos imágenes se descargan mientras compila Next, con reintentos (el registro a veces corta con EOF).
+  sh scripts/ci/descargar-imagen.sh postgres:17 &
   descarga_pg=$!
-  docker pull -q "$imagen" >/dev/null &
+  sh scripts/ci/descargar-imagen.sh "$imagen" &
   descarga_navegador=$!
   docker rm -f "$pg" "$navegador" >/dev/null 2>&1 || true
   contenedores="$pg $navegador"

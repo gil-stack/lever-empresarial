@@ -1,0 +1,49 @@
+# El patrón de main (pruebas-e2e.sh:59-62) con un docker falso que falla 2 pulls:
+Error response from daemon: EOF
+salida: 1
+
+# Con descargar-imagen.sh (esperas en 0):
+[docker] mcr.microsoft.com/playwright:v1.64.1-noble: intento 1 de 5 falló.
+[docker] mcr.microsoft.com/playwright:v1.64.1-noble: intento 2 de 5 falló.
+[docker] mcr.microsoft.com/playwright:v1.64.1-noble descargada al intento 3 de 5.
+salida: 0
+▶ descarga de imágenes con reintentos
+  ✖ el script existe y los dos scripts del CI descargan con él, no con un docker pull suelto (0.591958ms)
+  ✖ dos fallas del registro y luego bien: descarga al tercer intento y registra los intentos (4.785125ms)
+  ✖ cinco fallas: sale con error y un mensaje que nombra la imagen (3.792791ms)
+✖ descarga de imágenes con reintentos (9.594417ms)
+ℹ tests 3
+ℹ suites 1
+ℹ pass 0
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 198.490333
+
+✖ failing tests:
+
+test at tests/ci/descargar-imagen.test.ts:43:3
+✖ el script existe y los dos scripts del CI descargan con él, no con un docker pull suelto (0.591958ms)
+  AssertionError [ERR_ASSERTION]: falta scripts/ci/descargar-imagen.sh
+      at TestContext.<anonymous> (/Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/tests/ci/descargar-imagen.test.ts:44:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at node:internal/test_runner/test:1887:71
+      at node:internal/per_context/primordials:504:82
+      at new Promise (<anonymous>)
+      at new SafePromise (node:internal/per_context/primordials:478:3)
+      at node:internal/per_context/primordials:504:9
+      at Array.map (<anonymous>) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests/ci/descargar-imagen.test.ts:52:3
+✖ dos fallas del registro y luego bien: descarga al tercer intento y registra los intentos (4.785125ms)
+  AssertionError [ERR_ASSERTION]: sh: /Users/gilbertovillarreal/dev/plataforma-administrativa/.worktrees/test-db-partes/scripts/ci/descargar-imagen.sh: No such file or directory

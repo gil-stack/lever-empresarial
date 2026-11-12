@@ -23,6 +23,9 @@ fi
 
 contenedor=ci-postgres
 
+# Con reintentos: el registro a veces corta con EOF, y docker run la bajaría sin reintentar.
+sh scripts/ci/descargar-imagen.sh postgres:17
+
 if docker inspect "$contenedor" >/dev/null 2>&1; then
   docker rm -f "$contenedor" >/dev/null 2>&1 || true
 fi
