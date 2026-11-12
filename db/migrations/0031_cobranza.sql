@@ -1404,10 +1404,11 @@ GRANT EXECUTE ON FUNCTION cobranza_tomar_aviso_fallido(uuid) TO plataforma_clien
 -- tiene la baja efectiva (`baja_en` <= hoy en México; no se puede cancelar) sale de faltan: ya no hay a quién esperar.
 -- La suspensión y quitar un rol sí se revierten, así que esas personas se siguen esperando. r63q-2: devuelve cuántas
 -- personas siguen en faltan, para que el evento de la bitácora diga a cuántas les falta (no solo las de esta vuelta).
--- r63q-3: y si esta llamada cerró el aviso porque la baja efectiva dejó vacío faltan (`cerro_por_baja`), para que ese
--- cierre, que pasa una sola vez, deje su evento aunque en la vuelta no haya salido ningún correo.
+-- r63q-3 y r63q-3b: y si la baja efectiva sacó a alguien de faltan en esta llamada (`quito_por_baja`), para que ese
+-- cambio, que pasa una sola vez por persona, deje su evento aunque en la vuelta no haya salido ningún correo (también
+-- en la vuelta sin destinatarios, que no cierra el aviso: r63n-4).
 CREATE FUNCTION cobranza_soltar_aviso_fallido(p_id uuid, p_recibieron uuid[], p_fallaron uuid[], p_cerrar boolean)
-RETURNS TABLE (faltan integer, cerro_por_baja boolean)
+RETURNS TABLE (faltan integer, quito_por_baja boolean)
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
@@ -1415,14 +1416,13 @@ DECLARE
   recibieron uuid[];
   pendientes uuid[];
   sin_baja uuid[];
-  cerrado boolean;
 BEGIN
   IF app_usuario() IS NOT NULL OR app_empresa() IS NULL THEN
     RAISE EXCEPTION 'sin_permiso_para_cobranza';
   END IF;
   SELECT ARRAY(SELECT DISTINCT x FROM unnest(h.aviso_recibieron || coalesce(p_recibieron, '{}')) x ORDER BY x),
-         h.aviso_faltan || coalesce(p_fallaron, '{}'), h.aviso_cerrado
-    INTO recibieron, pendientes, cerrado
+         h.aviso_faltan || coalesce(p_fallaron, '{}')
+    INTO recibieron, pendientes
     FROM collection_held_events h
    WHERE h.id = p_id AND h.company_id = app_empresa() AND h.estado = 'fallido'
    FOR UPDATE;
@@ -1444,7 +1444,7 @@ BEGIN
          aviso_tomado_en = NULL
    WHERE h.id = p_id;
   faltan := cardinality(sin_baja);
-  cerro_por_baja := NOT cerrado AND coalesce(p_cerrar, false) AND sin_baja = '{}' AND pendientes <> '{}';
+  quito_por_baja := cardinality(sin_baja) < cardinality(pendientes);
   RETURN NEXT;
 END;
 $$;
